@@ -25,6 +25,11 @@ pub enum AdmissionDecision {
     New(PreparedAdmission),
     Existing(CommandRecord),
 }
+/// Result of publishing a first-attempt claim, including a concurrent winner.
+pub enum PublishedAdmission {
+    New(AdmittedCommand),
+    Existing(CommandRecord),
+}
 pub struct PreparedAdmission {
     record: CommandRecord,
     batch: AtomicBatch,
@@ -273,6 +278,59 @@ impl PreparedAdmission {
             expected,
             physical,
         })
+    }
+
+    /// Publish a first attempt or observe an identical claim that won its CAS.
+    /// Only an engine expectation conflict permits the fresh, authorized read;
+    /// a failed authority fence or uncertain write is never retried or replaced.
+    /// Re-observe the original protected clock only for a present winner: a
+    /// competing admission may have captured a later floor than this caller.
+    /// The observation does not renew this caller's admission or deadline.
+    pub fn publish_or_existing(
+        self,
+        store: &EmbeddedStore,
+        current_time: impl FnOnce() -> Result<CommandTime, AtomicError>,
+        final_accept: impl FnOnce() -> Result<(), AtomicError>,
+        mut authorize: impl FnMut(CommandAccess, Option<&CommandRecord>) -> Result<(), AtomicError>,
+    ) -> Result<PublishedAdmission, AtomicError> {
+        if self.record.attempt != 1 {
+            return Err(AtomicError::Invalid);
+        }
+        let expected = self.record.encode()?;
+        match store.apply_fenced(self.batch, final_accept) {
+            Ok(()) => {
+                let physical =
+                    super::ownership::AttemptState::new(self.record.clone(), expected.clone());
+                Ok(PublishedAdmission::New(AdmittedCommand {
+                    record: self.record,
+                    expected,
+                    physical,
+                }))
+            }
+            Err(FencedStoreError::Store(latent_state::embedded::StoreError::Conflict)) => {
+                let view = store.snapshot()?;
+                let bytes = view
+                    .get(&command_row_key(self.record.id))?
+                    .ok_or(AtomicError::Conflict)?;
+                let time = current_time()?;
+                if super::RetiredCommand::is_present(&bytes) {
+                    let floor = super::RetiredCommand::decode(&bytes)?;
+                    floor.verify_key(&self.record.key)?;
+                    time.check(floor.retired_at())?;
+                    return Err(AtomicError::Expired);
+                }
+                let existing = CommandRecord::decode(&bytes)?;
+                authorize(CommandAccess::Replay, Some(&existing))?;
+                if existing.key != self.record.key
+                    || existing.fingerprint != self.record.fingerprint
+                {
+                    return Err(AtomicError::Conflict);
+                }
+                time.check(existing.clock_floor)?;
+                Ok(PublishedAdmission::Existing(existing))
+            }
+            Err(error) => Err(fenced_error(error)),
+        }
     }
 }
 impl AdmittedCommand {

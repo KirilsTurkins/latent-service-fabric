@@ -76,21 +76,19 @@ pub(super) async fn mutate(
                     ),
                 };
                 let finish = pending.finish(disposition, reason, digest, replayed);
-                Ok((result, access.inspect, finish, retained))
+                // Preserve native errors for the protected store's physical
+                // failure owner; a domain refusal still returns its audit ticket.
+                result.map(|value| (value, access.inspect, finish, retained))
             },
         )
         .map_err(protected_error)?;
     let (result, decision, finish, worker_permit) =
         job.await.map_err(io_error)?.map_err(protected_error)?;
-    // Retire the durable audit attempt on rejected/native-error paths as well.
+    // Retire the durable audit attempt on rejected domain paths as well.
     // Returning early would leave the original critical slot pending when the
     // caller immediately makes its next authenticated request.
     let ack = audit::ack(finish).await;
-    let (read, receipt, replayed) = result.map_err(|error| {
-        protected_error(latent_state::protected_store::ProtectedStoreError::Store(
-            error,
-        ))
-    })??;
+    let (read, receipt, replayed) = result?;
     response::owned(
         inner,
         worker_permit,
@@ -170,6 +168,7 @@ fn write(
         clock,
     ) {
         Ok(prepared) => prepared,
+        Err(AtomicError::Corrupt) => return Err(StoreError::Corrupt),
         Err(error) => return Ok(Err(atomic_error(error))),
     };
     if prepared.before() != read.record() {
@@ -211,7 +210,10 @@ fn write(
                 value: Some(receipt.encode()?),
             }],
         })
-        .map_err(|_| StoreError::Capacity)?;
+        .map_err(|error| match error {
+            AtomicError::Corrupt => StoreError::Corrupt,
+            _ => StoreError::Capacity,
+        })?;
     // Native reclamation refuses physically live views before policy acceptance.
     drop(view);
     if let Err(error) = pending.started() {
@@ -292,6 +294,9 @@ fn write(
     if let Err(error) = committed {
         if let Some(error) = rejected {
             return Ok(Err(error));
+        }
+        if error == AtomicError::Corrupt {
+            return Err(StoreError::Corrupt);
         }
         if matches!(
             error,
