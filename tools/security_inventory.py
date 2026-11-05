@@ -99,7 +99,7 @@ def wasmtime_inventory(repo: Path, entry: dict, paths: list[str]) -> tuple[set[s
         "upstreamSourceLockSha256": checked["files"]["Cargo.lock"]["sha256"],
         "boundary": "The exact maintained source keeps its upstream advisory coordinate. "
                     "The root Cargo.lock selects actual build dependencies; the vendored lock is "
-                    "unchanged upstream provenance. RustSec still audits every tracked lock intact."
+                    "maintained provenance with reviewed source patches. RustSec still audits every tracked lock intact."
     }
 
 
