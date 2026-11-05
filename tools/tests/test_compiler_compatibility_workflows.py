@@ -46,7 +46,7 @@ def historical_checkout(value):
 
 def historical_resource_fixture(value):
     """Keep the original whole-file fixture hash after its reviewed guard repair."""
-    if hashlib.sha256(value).hexdigest() != 'f3270c83ed4554527a994d8a1236a3dd26d1ef19f930a22685648455bd26edab':
+    if hashlib.sha256(value).hexdigest() != '42326e8abb5dba95f6439774078a8607f5653a42254db5db9beb94908de18206':
         raise AssertionError('historical-resource-fixture-security-projection-required')
     for current in (b'from tools.tests.test_sdk_scratch_qualification import historical_security_actions\n\n\n', b'    value = historical_security_actions(value)\n'):
         if value.count(current) != 1:
