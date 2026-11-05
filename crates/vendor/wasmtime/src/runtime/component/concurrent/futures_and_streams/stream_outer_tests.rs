@@ -1512,7 +1512,10 @@ async fn consumer_inner_future_deferred_replay_refusal_precedes_busy() {
             .call_async(&mut store, ())
             .await;
         DEFERRED_ARM.with(|arm| assert!(arm.borrow_mut().take().is_some()));
-        assert!(DEFERRED_ENTERED.with(Cell::get));
+        assert!(
+            DEFERRED_ENTERED.with(Cell::get),
+            "mode {mode}: deferred hook not reached; call outcome: {result:#?}"
+        );
         if mode != 0 {
             assert_eq!(DEFERRED_FINISHED.with(Cell::get), mode == 2);
             let error = result.unwrap_err();
