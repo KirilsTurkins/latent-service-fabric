@@ -220,18 +220,16 @@ pub(super) async fn receipt(
                     None,
                     true,
                 );
-                Ok((result, access.inspect, finish, retained))
+                // Let the protected worker observe corrupt or unsupported
+                // persisted data instead of wrapping it as a healthy completion.
+                result.map(|value| (value, access.inspect, finish, retained))
             },
         )
         .map_err(protected_error)?;
     let (result, decision, finish, worker_permit) =
         job.await.map_err(io_error)?.map_err(protected_error)?;
     let acknowledgement = audit::ack(finish).await;
-    let (read, receipt, public) = result.map_err(|error| {
-        protected_error(latent_state::protected_store::ProtectedStoreError::Store(
-            error,
-        ))
-    })??;
+    let (read, receipt, public) = result?;
     if acknowledgement.status == c::AuditAckStatus::OutcomeUnknown as i32 {
         return Err(error(
             PlatformErrorCode::Unavailable,
