@@ -946,7 +946,7 @@ jobs:
       - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
-      - uses: KirilsTurkins/lsf-buf-setup-action@7e1d5f1d4a4a7d82b1ff79968166c4f50a66ce57 # v1.50.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-buf-setup-action@483cc1af1999992e503ff1da69b431f7b9f3bae9 # v1.50.0 + upstream changes + LSF security fixes
         with:
           version: 1.72.0
           github_token: ${{ github.token }}
@@ -1085,7 +1085,7 @@ jobs:
         with:
           go-version: 1.27.3
           cache-dependency-path: sdk/go/go.sum
-      - uses: KirilsTurkins/lsf-buf-setup-action@7e1d5f1d4a4a7d82b1ff79968166c4f50a66ce57 # v1.50.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-buf-setup-action@483cc1af1999992e503ff1da69b431f7b9f3bae9 # v1.50.0 + upstream changes + LSF security fixes
         with:
           version: 1.72.0
           github_token: ${{ github.token }}
