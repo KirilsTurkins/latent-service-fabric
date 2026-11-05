@@ -569,6 +569,14 @@ class Q35NodePciIntxControls(unittest.TestCase):
             with self.subTest(raw=bad), self.assertRaises(ValueError):
                 owner.node_intx_serial(bad)
 
+    def test_selected_irq_state_is_fenced_on_both_sides_of_the_write(self):
+        source = (owner.ROOT/owner.INTX_VIRTIO).read_text(encoding='utf8')
+        before = source.split("b'    pci_default_write_config(pci_dev, address, val, len);\\n'", 1)
+        self.assertEqual(len(before), 2)
+        self.assertIn('pci_dev->irq_state ||', before[0])
+        self.assertIn('pci_dev->irq_state ||', before[1])
+        self.assertIn('grabbed=0 irq=0 master=1', before[1])
+
     def test_source_capture_and_unbound_projection_refuse(self):
         captured = owner.node_intx_capture(owner.ROOT)
         self.assertEqual(set(captured), {owner.INTX_PROJECTOR, owner.INTX_FACTORY,
@@ -664,11 +672,11 @@ def example():
              cfg(b'read', 4, 7), cfg(b'write', 4, 0x407)]
     for i, parent in enumerate((7, 4, 5, 6)):
         rows += route(i, parent, i+8)
-    rows += [b'lsf_q35_virtio_guard old=0x7 new=0x407 status=0 isr=0 disabled=0 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 master=1 vga=0 mappings=stable bql=1',
+    rows += [b'lsf_q35_virtio_guard old=0x7 new=0x407 status=0 isr=0 disabled=0 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 irq=0 master=1 vga=0 mappings=stable bql=1',
              cfg(b'read', 4, 0x407), cfg(b'write', 4, 7)]
     for i, parent in enumerate((7, 4, 5, 6)):
         rows += route(i, parent, i+8)
-    rows += [b'lsf_q35_virtio_guard old=0x407 new=0x7 status=0 isr=0 disabled=0 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 master=1 vga=0 mappings=stable bql=1',
+    rows += [b'lsf_q35_virtio_guard old=0x407 new=0x7 status=0 isr=0 disabled=0 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 irq=0 master=1 vga=0 mappings=stable bql=1',
              cfg(b'read', 4, 7), cfg(b'read', 0x3d, 1), cfg(b'read', 0x3c, 0xff),
              cfg(b'read', 4, 7), cfg(b'read', 0x3d, 1), cfg(b'read', 0x3c, 0xff)]
     rows += [cfg(b'read', off, value) for off, value in reversed(trace.PREFIX)]
@@ -698,7 +706,8 @@ class TraceRefusalControls(unittest.TestCase):
                              b'x86_gsi_interrupt GSI interrupt #9 level:0', 1),
                  raw.replace(b'status=0 isr=0 disabled=0 broken=0',
                              b'status=0 isr=0 disabled=1 broken=0', 1),
-                 raw.replace(b'lsf_q35_virtio_guard old=0x7 new=0x407 status=0 isr=0 disabled=0 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 master=1 vga=0 mappings=stable bql=1\n', b'', 1))
+                 raw.replace(b'grabbed=0 irq=0 master=1', b'grabbed=0 irq=1 master=1', 1),
+                 raw.replace(b'lsf_q35_virtio_guard old=0x7 new=0x407 status=0 isr=0 disabled=0 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 irq=0 master=1 vga=0 mappings=stable bql=1\n', b'', 1))
         for case in cases:
             with self.subTest(case=case[:80]), self.assertRaises(ValueError):
                 trace.inspect(case, 7, 1, 0xff)

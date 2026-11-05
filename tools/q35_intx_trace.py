@@ -16,7 +16,7 @@ PCI = re.compile(rb'^pci_cfg_(read|write) ([A-Za-z0-9_.-]{1,80}) '
 ROUTE = re.compile(rb'^pci_route_irq IRQ ([0-3]) @([^ ]{1,160}) -> IRQ ([0-7]) @([^ ]{1,160})$')
 GSI = re.compile(rb'^x86_gsi_interrupt GSI interrupt #([0-9]{1,2}) level:([01])$')
 VIRTIO = re.compile(rb'^lsf_q35_virtio_guard old=0x([0-9a-f]+) new=0x([0-9a-f]+) '
-                    rb'status=0 isr=0 disabled=0 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 master=1 vga=0 mappings=stable bql=1$')
+                    rb'status=0 isr=0 disabled=0 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 irq=0 master=1 vga=0 mappings=stable bql=1$')
 
 def require(value, reason):
     if not value:

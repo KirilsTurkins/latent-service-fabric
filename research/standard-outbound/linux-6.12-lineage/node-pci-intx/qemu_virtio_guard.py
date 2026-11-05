@@ -44,7 +44,7 @@ def transform(raw):
          b'        vdev->status || qatomic_read(&vdev->isr) || vdev->disabled || vdev->broken ||\n'
          b'        vdev->started || vdev->start_on_kick || vdev->vhost_started ||\n'
          b'        proxy->bus.ioeventfd_started || proxy->bus.ioeventfd_grabbed ||\n'
-         b'        !pci_dev->enabled || !pci_dev->is_master ||\n'
+         b'        pci_dev->irq_state || !pci_dev->enabled || !pci_dev->is_master ||\n'
          b'        !pci_dev->bus_master_enable_region.enabled || pci_dev->has_vga ||\n'
          b'        ((pci_dev->cap_present & QEMU_PCI_CAP_PM) &&\n'
          b'         (pci_get_word(pci_dev->config + pci_dev->pm_cap + PCI_PM_CTRL) & PCI_PM_CTRL_STATE_MASK)) ||\n'
@@ -64,7 +64,7 @@ def transform(raw):
          b'        if (!bql_locked() || vdev->status || qatomic_read(&vdev->isr) || vdev->disabled || vdev->broken ||\n'
          b'            vdev->started || vdev->start_on_kick || vdev->vhost_started ||\n'
          b'            proxy->bus.ioeventfd_started || proxy->bus.ioeventfd_grabbed ||\n'
-         b'            !pci_dev->enabled || !pci_dev->is_master ||\n'
+         b'            pci_dev->irq_state || !pci_dev->enabled || !pci_dev->is_master ||\n'
          b'            !pci_dev->bus_master_enable_region.enabled || pci_dev->has_vga ||\n'
          b'            ((pci_dev->cap_present & QEMU_PCI_CAP_PM) &&\n'
          b'             (pci_get_word(pci_dev->config + pci_dev->pm_cap + PCI_PM_CTRL) & PCI_PM_CTRL_STATE_MASK)) ||\n'
@@ -76,7 +76,7 @@ def transform(raw):
          b'            if (r->size && r->addr != pci_bar_address(pci_dev, lsf_region, r->type, r->size))\n'
          b'                _exit(75);\n'
          b'        }\n'
-         b'        qemu_log("lsf_q35_virtio_guard old=0x%x new=0x%x status=0 isr=0 disabled=0 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 master=1 vga=0 mappings=stable bql=1\\n",\n'
+         b'        qemu_log("lsf_q35_virtio_guard old=0x%x new=0x%x status=0 isr=0 disabled=0 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 irq=0 master=1 vga=0 mappings=stable bql=1\\n",\n'
          b'                 lsf_old, (unsigned int)val);\n'
          b'    }\n}\n\n')]
     for old, new in changes:
