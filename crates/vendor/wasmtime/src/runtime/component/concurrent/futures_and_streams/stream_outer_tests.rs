@@ -416,7 +416,8 @@ async fn waiting_writer(store: &mut Store<()>, instance: Instance) -> StreamRead
     reader
 }
 async fn reverse_refusal_cases(engine: &Engine, component: &Component) {
-    for local in 1..=3 {
+    // Queue, task, outer continuation, consumer value/cell and poll factory.
+    for local in 1..=6 {
         let probe = Arc::new(Probe::default());
         let (mut store, instance) = setup(engine, component, true, &probe).await;
         let reader = waiting_writer(&mut store, instance).await;
@@ -1178,6 +1179,82 @@ fn producer_factory_output_layout<A, B, F>(
     _: &PreparedProducerFactory<A, B, F>,
 ) -> core::alloc::Layout {
     core::alloc::Layout::new::<F>()
+}
+
+#[test]
+fn consumer_poll_factory_admits_exact_capture_before_publication_and_releases_after_drop() {
+    for refuse in [true, false] {
+        let probe = Arc::new(ConsumerCellProbe::default());
+        let trace = Arc::new(Mutex::new(Vec::new()));
+        probe.refuse.store(if refuse { 1 } else { 0 }, SeqCst);
+        probe.check_value_drop.store(true, SeqCst);
+        let capture = producer_factory_capture(&probe, &trace, "consumer", false, false);
+        let function = move || capture.produce();
+        let expected = core::mem::size_of_val(&function);
+        assert!(expected > 0);
+        let result = own_consumer_poll_factory(&consumer_cell_memory(&probe), function);
+        assert_eq!(*probe.requests.lock().unwrap(), [expected]);
+        if refuse {
+            assert!(result.is_err());
+            assert_eq!(probe.confirmations.load(SeqCst), 0);
+            assert_eq!(probe.value_drops.load(SeqCst), 1);
+            assert_eq!(probe.live.load(SeqCst), 0);
+            assert_eq!(*trace.lock().unwrap(), ["consumer"]);
+        } else {
+            let factory = result.unwrap();
+            assert_eq!(probe.confirmations.load(SeqCst), 1);
+            assert_eq!(probe.live.load(SeqCst), expected);
+            let future = factory.invoke_consumer();
+            assert_eq!(probe.live.load(SeqCst), expected);
+            drop(future); // The returned future is a distinct, unqualified owner.
+            assert_eq!(probe.live.load(SeqCst), expected);
+            drop(factory);
+            assert_eq!(probe.value_drops.load(SeqCst), 1);
+            assert_eq!(probe.live.load(SeqCst), 0);
+            assert_eq!(*trace.lock().unwrap(), ["call", "consumer"]);
+        }
+    }
+}
+
+#[test]
+fn consumer_poll_factory_confirmation_unwind_drops_capture_before_original_guard() {
+    let probe = Arc::new(ConsumerCellProbe::default());
+    let trace = Arc::new(Mutex::new(Vec::new()));
+    probe.panic_confirmation.store(1, SeqCst);
+    probe.check_value_drop.store(true, SeqCst);
+    let capture = producer_factory_capture(&probe, &trace, "consumer", false, false);
+    assert!(
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            own_consumer_poll_factory(&consumer_cell_memory(&probe), move || capture.produce())
+        }))
+        .is_err()
+    );
+    assert_eq!(probe.value_drops.load(SeqCst), 1);
+    assert_eq!(probe.live.load(SeqCst), 0);
+    assert_eq!(*trace.lock().unwrap(), ["consumer"]);
+}
+
+#[test]
+fn consumer_poll_factory_legacy_and_uncertain_destructor_keep_existing_boundaries() {
+    let probe = Arc::new(ConsumerCellProbe::default());
+    let trace = Arc::new(Mutex::new(Vec::new()));
+    let capture = producer_factory_capture(&probe, &trace, "legacy", false, false);
+    let legacy = own_consumer_poll_factory(&None, move || capture.produce()).unwrap();
+    drop(legacy.invoke_consumer());
+    drop(legacy);
+    assert!(probe.requests.lock().unwrap().is_empty());
+    assert_eq!(*trace.lock().unwrap(), ["call", "legacy"]);
+
+    let probe = Arc::new(ConsumerCellProbe::default());
+    let trace = Arc::new(Mutex::new(Vec::new()));
+    let capture = producer_factory_capture(&probe, &trace, "uncertain", false, true);
+    let factory =
+        own_consumer_poll_factory(&consumer_cell_memory(&probe), move || capture.produce())
+            .unwrap();
+    let reserved = probe.live.load(SeqCst);
+    assert!(reserved > 0);
+    assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(factory))).is_err());
+    assert_eq!(probe.live.load(SeqCst), reserved);
 }
 
 #[test]
