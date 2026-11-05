@@ -130,7 +130,7 @@ def distribution(files: dict) -> bytes:
 
 
 CHECKOUT_PROFILE = "checkout-deepmerge-source-v1"
-CHECKOUT_REFERENCE = "KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8"
+CHECKOUT_REFERENCE = "KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13"
 CHECKOUT_PREFIX = ".github/security/actions/checkout/"
 CHECKOUT_ARCHIVE = "file:.lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar"
 ACTION_PROFILE = "deepmerge-action-source-v1"
@@ -300,9 +300,9 @@ def verify_action_sources(repo: Path, packages: list, configuration: dict, fetch
             installed = review["installed"]
             require(build["repository"] == "KirilsTurkins/lsf-checkout"
                     and build["publishedRevision"] == CHECKOUT_REFERENCE.split("@")[1]
-                    and build["builtHead"] == installed["sourceCommit"] == "1d698c70938869d668a809ef4f9670156bf18809"
-                    and build["builtTree"] == build["publishedTree"] == "9dc7521dc1111fe9ac5037a37e5bfff2eb77db6e"
-                    and build["run"] == 40884108136 and build["job"] == 123483100746
+                    and build["builtHead"] == installed["sourceCommit"] == "4d310727149d3abacc52b5dcb0a1c4d18b345d13"
+                    and build["builtTree"] == build["publishedTree"] == "81dab5f9c6afaf3a60de1d3c46f2629c86f44e94"
+                    and build["run"] == 41993289481 and build["job"] == 127130383712
                     and build["jobConclusion"] == "success" and build["node"] == installed["node"] == "24.19.0"
                     and build["npm"] == "11.17.0"
                     and build["existingBuildFormatLintJestAndStrictDistReadmeComparisonPassed"] is True

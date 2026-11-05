@@ -192,7 +192,7 @@
       "upstream_repository": "actions/cache",
       "upstream_revision": "3edfce9056124e459a23f683a21433670d47daca"
     },
-    "KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8": {
+    "KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13": {
       "files": [
         {
           "sha256": "fc3f945029a3905c34bb8d52a6d2faf4a2bdde2ce7baa57ae648154b0b6f05b5",
@@ -201,16 +201,16 @@
           "source_sha256": "fc3f945029a3905c34bb8d52a6d2faf4a2bdde2ce7baa57ae648154b0b6f05b5"
         },
         {
-          "sha256": "64f50ca0c2e03efe66a47042c2347978b66d64ce3585d0a9f1f3047ac95e1484",
+          "sha256": "26a03b49371aa7c27d52c9eea23f7735c8f650d27ec57b59a2bb3691dbf9ae55",
           "snapshot": ".github/security/actions/checkout/package.json",
           "source": "package.json",
-          "source_sha256": "64f50ca0c2e03efe66a47042c2347978b66d64ce3585d0a9f1f3047ac95e1484"
+          "source_sha256": "26a03b49371aa7c27d52c9eea23f7735c8f650d27ec57b59a2bb3691dbf9ae55"
         },
         {
-          "sha256": "150804961399dd5d5689b87aaf7d1f7963dbb14dd4993851ee4a34893d860be3",
+          "sha256": "b33854c1c407343b348ad2fe92bb089992a4963e53be565e0eb9835a7f813c48",
           "snapshot": ".github/security/actions/checkout/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "150804961399dd5d5689b87aaf7d1f7963dbb14dd4993851ee4a34893d860be3"
+          "source_sha256": "b33854c1c407343b348ad2fe92bb089992a4963e53be565e0eb9835a7f813c48"
         }
       ],
       "kind": "npm",
@@ -221,7 +221,7 @@
         "source_sha256": "fc3f945029a3905c34bb8d52a6d2faf4a2bdde2ce7baa57ae648154b0b6f05b5"
       },
       "repository": "KirilsTurkins/lsf-checkout",
-      "revision": "842365d0a25bf5a868311e4cb89c908bdcab4bb8",
+      "revision": "4d310727149d3abacc52b5dcb0a1c4d18b345d13",
       "security_pr": "https://github.com/actions/checkout/pull/2607",
       "upstream_repository": "actions/checkout",
       "upstream_revision": "f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a"

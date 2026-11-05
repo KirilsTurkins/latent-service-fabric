@@ -35,7 +35,7 @@ def historical_checkout(value):
     """Authenticate the current action before the exact historical pin inverse."""
     value = historical_security_actions(value)
     prefix = 'KirilsTurkins/lsf-checkout@'
-    current = prefix + '842365d0a25bf5a868311e4cb89c908bdcab4bb8'
+    current = prefix + '4d310727149d3abacc52b5dcb0a1c4d18b345d13'
     previous = prefix + 'c3024dfac542bb46ebccc7829ddf1f95e0be8da9'
     if type(value) is bytes:
         prefix, current, previous = (item.encode('ascii') for item in (prefix, current, previous))
@@ -52,7 +52,7 @@ def historical_resource_fixture(value):
         if value.count(current) != 1:
             raise AssertionError('historical-resource-fixture-security-projection-required')
         value = value.replace(current, b'', 1)
-    edits = ((b'\n\ndef historical_checkout(value):\n    """Authenticate the current action before the exact historical pin inverse."""\n    prefix = \'KirilsTurkins/lsf-checkout@\'\n    current = prefix + \'842365d0a25bf5a868311e4cb89c908bdcab4bb8\'\n    previous = prefix + \'c3024dfac542bb46ebccc7829ddf1f95e0be8da9\'\n    if type(value) is bytes:\n        prefix, current, previous = (item.encode(\'ascii\') for item in (prefix, current, previous))\n    if type(value) not in (str, bytes) or not value.count(current) or value.count(prefix) != value.count(current):\n        raise AssertionError(\'historical-workflow-exact-current-checkout-required\')\n    return value.replace(current, previous)\n', b''), (b"historical_checkout(read_file(ROOT/('.github/workflows/'+language+'-resource-runtime.yml')))", b"read_file(ROOT/('.github/workflows/'+language+'-resource-runtime.yml'))"))
+    edits = ((b'\n\ndef historical_checkout(value):\n    """Authenticate the current action before the exact historical pin inverse."""\n    prefix = \'KirilsTurkins/lsf-checkout@\'\n    current = prefix + \'4d310727149d3abacc52b5dcb0a1c4d18b345d13\'\n    previous = prefix + \'c3024dfac542bb46ebccc7829ddf1f95e0be8da9\'\n    if type(value) is bytes:\n        prefix, current, previous = (item.encode(\'ascii\') for item in (prefix, current, previous))\n    if type(value) not in (str, bytes) or not value.count(current) or value.count(prefix) != value.count(current):\n        raise AssertionError(\'historical-workflow-exact-current-checkout-required\')\n    return value.replace(current, previous)\n', b''), (b"historical_checkout(read_file(ROOT/('.github/workflows/'+language+'-resource-runtime.yml')))", b"read_file(ROOT/('.github/workflows/'+language+'-resource-runtime.yml'))"))
     for current, previous in edits:
         if value.count(current) != 1:
             raise AssertionError('historical-resource-fixture-source-inverse-required')
