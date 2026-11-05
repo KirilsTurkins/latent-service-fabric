@@ -36,8 +36,8 @@ The current security forks were reviewed on **2026-10-30**. They extend the pins
 | `KirilsTurkins/lsf-setup-go` | `v7.0.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-go/pull/805)) | `3f9b437aa6b8f8b1f8c7d851365be125c6b21d9e` |
 | `KirilsTurkins/lsf-setup-node` | `v7.1.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-node/pull/1653)) | `34275fdec80b5be172c3327cadef76aa2f3b31c6` |
 | `KirilsTurkins/lsf-setup-python` | `v7.1.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-python/pull/1381)) | `164c4cbba5d1b03a046ac8bc25ae695bee0667a8` |
-| `KirilsTurkins/lsf-upload-artifact` | `v7.0.2` + upstream changes and security fixes ([review](https://github.com/actions/upload-artifact/pull/825)) | `5c42799caf30eda69cb2db5da0be2400c47cef16` |
-| `KirilsTurkins/lsf-upload-pages-artifact` | `v5.0.0` + upstream changes and security fixes ([review](https://github.com/actions/upload-pages-artifact/pull/166)) | `78e399e92cd7485cca2752423a3eb0ccf404df77` |
+| `KirilsTurkins/lsf-upload-artifact` | `v7.0.2` + upstream changes and security fixes ([review](https://github.com/actions/upload-artifact/pull/825)) | `d74a697ce553b389f4219545e07c97fb8542c64f` |
+| `KirilsTurkins/lsf-upload-pages-artifact` | `v5.0.0` + upstream changes and security fixes ([review](https://github.com/actions/upload-pages-artifact/pull/166)) | `28d7597d6f6497a5d34e5ecaa1d97c510ce3556b` |
 | `KirilsTurkins/lsf-buf-setup-action` | `v1.50.0` + upstream changes and security fixes ([review](https://github.com/KirilsTurkins/lsf-buf-setup-action/pull/1)) | `7e1d5f1d4a4a7d82b1ff79968166c4f50a66ce57` |
 | `KirilsTurkins/lsf-bytecodealliance-actions` | `v1.1.3` + upstream changes and security fixes ([review](https://github.com/bytecodealliance/actions/pull/24)) | `9244ec9f4725400c84054e3e6ec97514cadddf53` |
 | `KirilsTurkins/lsf-setup-zig` | `v2.2.1` + upstream changes and security fixes ([review](https://github.com/KirilsTurkins/lsf-setup-zig/pull/1)) | `e064b42fa88ad0859d8b54838b44f672ffd5ea7a` |
