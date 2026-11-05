@@ -771,3 +771,16 @@ closures or buffers, unrelated transitive captures, or prove full activation
 accounting. The compiled dynamic-value-memory profile constant has a separate
 pre-existing cohort mismatch and is not corrected or qualified here. No
 new native or signed-guest outcome is claimed by this source.
+
+## v33: host-to-host accept-factory header
+
+The original Store owner admits the concrete HostToHost accept-factory
+closure before its Box and before replacing the original producer state.
+The same guard remains until the retained closure is physically destroyed.
+Paid HostToHost avoids an unused poll-factory allocation; None keeps its
+original closure path.
+
+This source slice does not pay returned per-call futures, HostToHost buffers,
+unrelated transitive captures or prove aggregate activation accounting. The
+compiled dynamic-value-memory profile constant has a separate pre-existing
+cohort mismatch. No new native or signed-guest outcome is claimed here.
