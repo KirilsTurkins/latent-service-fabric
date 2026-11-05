@@ -1,0 +1,69 @@
+{
+  "schema": 1,
+  "repository": "KirilsTurkins/lsf-deploy-pages",
+  "publishedRevision": "e249fe4e7520b3d7aa16ef72f45eeb05de6cf4f6",
+  "publishedTree": "79d01754bcbda86178d60a411e8256696a265f5c",
+  "sourceHead": "28eb881c437639997329a63ba203044a1e930cef",
+  "diagnosticHead": "cac159f297ebd83907e26e57ad07c139d1f03cf8",
+  "diagnosticTree": "3cc77d0178fe62389be42f6a2ef144ad2f39f780",
+  "diagnosticOnlyPath": ".github/workflows/deploy-pages-linux-probe.yml",
+  "run": 42116676439,
+  "job": 127558041486,
+  "jobConclusion": "success",
+  "node": "24.19.0",
+  "npm": "11.17.0",
+  "sourceControls": 7,
+  "formatPassed": true,
+  "rebuiltFilesIdentical": true,
+  "artifact": {
+    "id": 13457066659,
+    "bytes": 2265006,
+    "sha256": "488468c35d1aa563165495cf451e36932ba28c045682a5d3b58fc34593a75157",
+    "crcVerified": true
+  },
+  "earlierJest": {
+    "sourceHead": "ce5657b184ecb0534e41b6814f1ef8ce74783319",
+    "run": 42115832424,
+    "job": 127555089232,
+    "tests": 32,
+    "suites": 2,
+    "artifact": {
+      "id": 13456511299,
+      "bytes": 2265002,
+      "sha256": "949f9976f8103c7b307635293457c928d867e07ff963b3dac80617ecdb46aff3",
+      "crcVerified": true
+    }
+  },
+  "bundles": {
+    "dist/index.js": {
+      "bytes": 5032045,
+      "sha256": "6afca1e03014a24815b1bd07b000af7d409ff50deaeb39336d981fd86dc8317e",
+      "gitBlob": "9739ab7250dc1fd371faa5a990405213b9243900"
+    },
+    "dist/index.js.map": {
+      "bytes": 5946146,
+      "sha256": "41100efb5feee01b35d10f4c825e010ea703c79287e773756e2a770402a5cb96",
+      "gitBlob": "1004a34997339803856978e2100a66ab6b8d14fe"
+    },
+    "dist/835.index.js": {
+      "bytes": 660750,
+      "sha256": "ef21ce95aa5da03df4d6f256d2fe6cfe59b38198d6331a12371ae15221e61c02",
+      "gitBlob": "72fe4fa3ffa01eefdb4f2de4f6ce9f43229dc328"
+    },
+    "dist/835.index.js.map": {
+      "bytes": 782267,
+      "sha256": "a07018c68de28b43de69c576b6674b2195379da0c458cf16ecc68e8192328b87",
+      "gitBlob": "abe24ee659129171cca2322a8af083cfb9418ed7"
+    },
+    "dist/licenses.txt": {
+      "bytes": 22765,
+      "sha256": "7a844415f5cd040c903e71f4316cdcdcd70efc31ccf2193cfc5e74a2bcab09ee",
+      "gitBlob": "f1eea4fc0237f4040c98ad934cc07cf32e459471"
+    },
+    "dist/sourcemap-register.js": {
+      "bytes": 41053,
+      "sha256": "c2a14a81784d12c15b7baeed88c1faae3457e84890d1e5244cbfc0f4455b5e06",
+      "gitBlob": "cb1fb13627f07ab9250566c7069e0756f882663a"
+    }
+  }
+}

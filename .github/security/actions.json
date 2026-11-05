@@ -244,7 +244,7 @@
       "upstream_repository": "actions/checkout",
       "upstream_revision": "f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a"
     },
-    "KirilsTurkins/lsf-deploy-pages@9290f9265d55d382005aa5f300fc4e9d5bb65cb2": {
+    "KirilsTurkins/lsf-deploy-pages@e249fe4e7520b3d7aa16ef72f45eeb05de6cf4f6": {
       "files": [
         {
           "sha256": "64c44539fba53559a157b5de16c01d3ab91dbc999c1b98b5c0b2fc3528d5d059",
@@ -253,16 +253,94 @@
           "source_sha256": "64c44539fba53559a157b5de16c01d3ab91dbc999c1b98b5c0b2fc3528d5d059"
         },
         {
-          "sha256": "87c9b813279686090ee7a8bbb7bdec1f58c81df561e018d18fd583a0436bd68f",
+          "sha256": "1f1ba01a30c2f8aa80e60493e6e154bb59e4ff94b1010371447816f609eac771",
           "snapshot": ".github/security/actions/deploy-pages/package.json",
           "source": "package.json",
-          "source_sha256": "87c9b813279686090ee7a8bbb7bdec1f58c81df561e018d18fd583a0436bd68f"
+          "source_sha256": "1f1ba01a30c2f8aa80e60493e6e154bb59e4ff94b1010371447816f609eac771"
         },
         {
-          "sha256": "d7b135f2db38eea17e8c11738fc1c7a52aaa428ea4cb0a19e4d55c6171235f90",
+          "sha256": "88d39a5c99be6e0ba2af6cd8ca6535acd4ef645ee297c51735c64078246513fa",
           "snapshot": ".github/security/actions/deploy-pages/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "d7b135f2db38eea17e8c11738fc1c7a52aaa428ea4cb0a19e4d55c6171235f90"
+          "source_sha256": "88d39a5c99be6e0ba2af6cd8ca6535acd4ef645ee297c51735c64078246513fa"
+        },
+        {
+          "sha256": "48dc90cb16ed138f1da2672e018bf35602f8bdd22adbde4caf6c7e3e5da9ce6b",
+          "snapshot": ".github/security/actions/deploy-pages/applied-source-guard.cjs.snapshot",
+          "source": ".lsf-source/apply-verified-sources.cjs",
+          "source_sha256": "48dc90cb16ed138f1da2672e018bf35602f8bdd22adbde4caf6c7e3e5da9ce6b"
+        },
+        {
+          "sha256": "89329f4116bf44f7f0c7b744e1ec51124737b5816c78999005dbee4ef096d948",
+          "snapshot": ".github/security/actions/deploy-pages/security-controls.test.cjs.snapshot",
+          "source": ".lsf-source/security-controls.test.cjs",
+          "source_sha256": "89329f4116bf44f7f0c7b744e1ec51124737b5816c78999005dbee4ef096d948"
+        },
+        {
+          "sha256": "dd16c19390bedda6e22581e7e53f61696c76a7cb5da3ba39d6511dc078a3c269",
+          "snapshot": ".github/security/actions/deploy-pages/installed-verifier.mjs.snapshot",
+          "source": ".lsf-source/verify-installed-deepmerge.mjs",
+          "source_sha256": "dd16c19390bedda6e22581e7e53f61696c76a7cb5da3ba39d6511dc078a3c269"
+        },
+        {
+          "sha256": "beb9c5bed151b7a67f3b7b384e04ae0c01ca52e093795c042b9b3a3542a54e0f",
+          "snapshot": ".github/security/actions/download-artifact-source/glob-10.5.0-lsf-abort-v1.repair.json",
+          "source": ".lsf-source/glob-10.5.0-lsf-abort-v1.repair.json",
+          "source_sha256": "beb9c5bed151b7a67f3b7b384e04ae0c01ca52e093795c042b9b3a3542a54e0f"
+        },
+        {
+          "sha256": "b2f6d5fb3bd7b63df8454989bfb9d812a29ea67bbbbe81cc5e0e2c4c32e06d68",
+          "snapshot": ".github/security/actions/download-artifact-source/glob-10.5.0-lsf-abort-v1.tar",
+          "source": ".lsf-source/glob-10.5.0-lsf-abort-v1.tar",
+          "source_sha256": "b2f6d5fb3bd7b63df8454989bfb9d812a29ea67bbbbe81cc5e0e2c4c32e06d68"
+        },
+        {
+          "sha256": "18b75cb9c66c8c08bab5cacccd09013c31d3182f1e001c19d8815c5bb46e0802",
+          "snapshot": ".github/security/actions/download-artifact-source/glob-10.5.0.original.tgz",
+          "source": ".lsf-source/glob-10.5.0.original.tgz",
+          "source_sha256": "18b75cb9c66c8c08bab5cacccd09013c31d3182f1e001c19d8815c5bb46e0802"
+        },
+        {
+          "sha256": "67f874fd66ff2bbc9930e5a3529cf15fb7eb9fc15bd7e7d82969c0289b12a207",
+          "snapshot": ".github/security/actions/download-artifact-source/minimatch-9.0.9-lsf-bound-v1.repair.json",
+          "source": ".lsf-source/minimatch-9.0.9-lsf-bound-v1.repair.json",
+          "source_sha256": "67f874fd66ff2bbc9930e5a3529cf15fb7eb9fc15bd7e7d82969c0289b12a207"
+        },
+        {
+          "sha256": "66bcb5a384e44e094efb868280fa4607660da97bbd9d0489eb7cc69eb2da93b2",
+          "snapshot": ".github/security/actions/download-artifact-source/minimatch-9.0.9-lsf-bound-v1.tar",
+          "source": ".lsf-source/minimatch-9.0.9-lsf-bound-v1.tar",
+          "source_sha256": "66bcb5a384e44e094efb868280fa4607660da97bbd9d0489eb7cc69eb2da93b2"
+        },
+        {
+          "sha256": "7d28c9a3ef17ce542093c78ec191481503e2711d29db1bd1522062303ab40478",
+          "snapshot": ".github/security/actions/download-artifact-source/minimatch-9.0.9.original.tgz",
+          "source": ".lsf-source/minimatch-9.0.9.original.tgz",
+          "source_sha256": "7d28c9a3ef17ce542093c78ec191481503e2711d29db1bd1522062303ab40478"
+        },
+        {
+          "sha256": "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7",
+          "snapshot": ".github/security/actions/checkout-source/repair.json",
+          "source": ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.repair.json",
+          "source_sha256": "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7"
+        },
+        {
+          "sha256": "b4b0b79fa2bc84c6f1e1c61ddcc1ab228df629f9fce4b1067d3ac8b3d1c42892",
+          "snapshot": ".github/security/actions/checkout-source/declaration.json",
+          "source": ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.source.json",
+          "source_sha256": "b4b0b79fa2bc84c6f1e1c61ddcc1ab228df629f9fce4b1067d3ac8b3d1c42892"
+        },
+        {
+          "sha256": "c4ca0f4eb3a2464c026bc3dec5d9eaf04544aed24c3fd1d77da95f85e36c369f",
+          "snapshot": ".github/security/actions/checkout-source/deepmerge-4.3.1.repaired.tar",
+          "source": ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar",
+          "source_sha256": "c4ca0f4eb3a2464c026bc3dec5d9eaf04544aed24c3fd1d77da95f85e36c369f"
+        },
+        {
+          "sha256": "4003a0a348276a95543fa969f561f6b5968629acbbb59d66018dd23e7b8f1d5c",
+          "snapshot": ".github/security/actions/checkout-source/deepmerge-4.3.1.original.tgz",
+          "source": ".lsf-source/deepmerge-4.3.1.original.tgz",
+          "source_sha256": "4003a0a348276a95543fa969f561f6b5968629acbbb59d66018dd23e7b8f1d5c"
         }
       ],
       "kind": "npm",
@@ -273,8 +351,8 @@
         "source_sha256": "64c44539fba53559a157b5de16c01d3ab91dbc999c1b98b5c0b2fc3528d5d059"
       },
       "repository": "KirilsTurkins/lsf-deploy-pages",
-      "revision": "9290f9265d55d382005aa5f300fc4e9d5bb65cb2",
-      "security_pr": "https://github.com/actions/deploy-pages/pull/453",
+      "revision": "e249fe4e7520b3d7aa16ef72f45eeb05de6cf4f6",
+      "security_pr": "https://github.com/KirilsTurkins/lsf-deploy-pages/pull/1",
       "upstream_repository": "actions/deploy-pages",
       "upstream_revision": "368f82528645a54fb793d4d04e342629a3f51346"
     },

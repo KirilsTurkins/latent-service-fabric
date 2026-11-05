@@ -19,7 +19,8 @@
     "make-coverage-badge": "^1.2.0",
     "nock": "^13.5.4",
     "prettier": "^3.3.3",
-    "undici": "6.29.1"
+    "undici": "6.29.1",
+    "deepmerge": "file:.lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar"
   },
   "scripts": {
     "all": "npm run format && npm run lint && npm run prepare && npm run test && npm run coverage-badge",
@@ -28,8 +29,9 @@
     "format:check": "prettier --check .",
     "lint": "DEBUG=eslint:cli-engine eslint --fix .",
     "lint:check": "DEBUG=eslint:cli-engine eslint .",
-    "prepare": "ncc build src/index.js -o dist --source-map --license licenses.txt",
-    "test": "jest"
+    "prepare": "node .lsf-source/apply-verified-sources.cjs && node .lsf-source/verify-installed-deepmerge.mjs && ncc build src/index.js -o dist --source-map --license licenses.txt",
+    "test": "node .lsf-source/apply-verified-sources.cjs && node .lsf-source/verify-installed-deepmerge.mjs && jest",
+    "test:security-source": "node --test .lsf-source/security-controls.test.cjs"
   },
   "repository": {
     "type": "git",
