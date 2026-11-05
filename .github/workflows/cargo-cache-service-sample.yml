@@ -69,8 +69,38 @@ jobs:
           cache-all-crates: false
           cache-on-failure: false
           save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && inputs.state == 'cold' }}
+      - name: Install the pinned stream fixture compiler
+        uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+        with:
+          version: 1.254.0
+      - name: Prepare the fixed native stream component fixture
+        id: stream_outer_fixture
+        run: |
+          set -euo pipefail
+          python3 -c 'import tomllib; assert tomllib.load(open("tools/toolchain.toml", "rb"))["contracts"]["wasm-tools"] == "1.254.0"'
+          wasm-tools --version | grep -E '^wasm-tools 1[.]254[.]0([[:space:]]|$)'
+          wat=crates/latent-wasmtime/src/host/native-stream-outers.wat
+          test -f "$wat" && test ! -L "$wat"
+          git cat-file blob "${GITHUB_SHA}:$wat" | cmp - "$wat"
+          fixture_dir="$(mktemp -d "$RUNNER_TEMP/lsf-stream-outers.XXXXXXXX")"
+          wasm-tools parse "$wat" -o "$fixture_dir/native-stream-outers.wasm"
+          python3 - "$fixture_dir/native-stream-outers.wasm" <<'PY'
+          import os
+          from pathlib import Path
+          import sys
+          from tools.qualify_stream_outers import FIXTURE_ENV, WAT, fixture_identity
+
+          assert WAT == 'crates/latent-wasmtime/src/host/native-stream-outers.wat'
+          assert FIXTURE_ENV == 'LSF_TEST_STREAM_OUTERS_COMPONENT'
+          fixture = Path(sys.argv[1])
+          print('Fixed stream component:', fixture_identity(fixture))
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              output.write(f'path={fixture}\n')
+          PY
+
       - name: Execute every reviewed Cargo invocation
         env:
+          LSF_TEST_STREAM_OUTERS_COMPONENT: ${{ steps.stream_outer_fixture.outputs.path }}
           CONFIGURATION: ${{ steps.identity.outputs.configuration }}
           SAMPLE_STATE: ${{ inputs.state }}
           CACHE_HIT: ${{ steps.dependencies.outputs.cache-hit || 'false' }}
