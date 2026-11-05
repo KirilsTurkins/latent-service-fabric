@@ -608,6 +608,101 @@ class Q35NodePciIntxControls(unittest.TestCase):
         self.assertNotIn('pci_write_config', restore)
 
 
+class Q35NodeKvmLaunchControls(unittest.TestCase):
+    @staticmethod
+    def record():
+        return {'uid':1001, 'euid':1001, 'gid':1001, 'egid':1001,
+            'groups':[4,100,118,999,1001], 'label':'unconfined',
+            'entry':{'symlink':False,'characterDevice':True,'mode':8624,'device':7,'inode':460,
+                'rdev':2792,'major':10,'minor':232,'ownerUid':0,'ownerGid':993,
+                'readWrite':True},
+            'statErrno':None,'opened':True,'openErrno':None,'sameEntry':True}
+
+    @staticmethod
+    def receipt():
+        after = {'uid':1001, 'euid':1001, 'gid':1001, 'egid':1001,
+            'groups':[4,100,118,999,1001], 'mode':8624,'device':7,'inode':460,
+            'rdev':2792,'major':10,'minor':232,'ownerUid':0,'ownerGid':993}
+        return {'kvmAccess':{'after':after,'aclAfter':[
+            'user::rw-','user:1001:rw-','group::rw-','mask::rw-','other::---']}}
+
+    def test_child_probe_reports_real_open_and_denial_without_a_vm(self):
+        import contextlib, io, os, stat
+        from types import SimpleNamespace
+        entry=SimpleNamespace(st_mode=stat.S_IFCHR|0o660,st_dev=7,st_ino=460,
+            st_rdev=2792,st_uid=0,st_gid=993)
+        for denied in (False,True):
+            with self.subTest(denied=denied), contextlib.ExitStack() as stack:
+                for name,value in (('getuid',1001),('geteuid',1001),('getgid',1001),
+                                   ('getegid',1001),('getgroups',[4,100,118,999,1001])):
+                    stack.enter_context(patch.object(os,name,return_value=value,create=True))
+                stack.enter_context(patch.object(os,'major',return_value=10,create=True))
+                stack.enter_context(patch.object(os,'minor',return_value=232,create=True))
+                stack.enter_context(patch.object(os,'O_CLOEXEC',0,create=True))
+                stack.enter_context(patch.object(os,'O_NOFOLLOW',0,create=True))
+                stack.enter_context(patch.object(os,'lstat',return_value=entry))
+                stack.enter_context(patch.object(os,'fstat',return_value=entry))
+                stack.enter_context(patch.object(os,'access',return_value=True))
+                close=stack.enter_context(patch.object(os,'close'))
+                stack.enter_context(patch.object(os,'open',
+                    side_effect=PermissionError(13,'denied') if denied else None,
+                    return_value=123))
+                stack.enter_context(patch('builtins.open',return_value=io.BytesIO(b'unconfined\n')))
+                output=stack.enter_context(patch('sys.stdout',new_callable=io.StringIO))
+                exec(compile(programme._NODE_KVM_OPEN_PROBE,'<fixed KVM probe>','exec'),{})
+                row=json.loads(output.getvalue())
+                self.assertTrue(row['entry']['readWrite'])
+                self.assertEqual(row['opened'],not denied)
+                self.assertEqual(row['openErrno'],13 if denied else None)
+                self.assertEqual(row['sameEntry'],None if denied else True)
+                self.assertEqual(close.call_count,0 if denied else 1)
+
+    def test_same_owned_child_requires_actual_matching_open_and_exact_acl(self):
+        record = self.record(); receipt = self.receipt(); calls = []
+        def run(label,*argv,seconds):
+            calls.append((label,argv,seconds))
+            if label.endswith('-open'):
+                self.assertEqual(argv[:4],(programme.sys.executable,'-I','-B','-c'))
+                self.assertEqual(argv[4],programme._NODE_KVM_OPEN_PROBE)
+                return json.dumps(record).encode()
+            return b'user::rw-\nuser:1001:rw-\ngroup::rw-\nmask::rw-\nother::---\n'
+        row = programme.node_kvm_observe(run,receipt,'before-boot',require_open=True)
+        self.assertEqual(row['child'],record)
+        self.assertEqual(row['acl'],receipt['kvmAccess']['aclAfter'])
+        self.assertEqual([call[0] for call in calls],
+            ['node-KVM-before-boot-open','node-KVM-before-boot-ACL'])
+        self.assertEqual(receipt['kvmLaunchChecks'],[row])
+
+    def test_access_true_but_open_denied_is_retained_and_refused(self):
+        record=self.record();record.update(opened=False,openErrno=13,sameEntry=None)
+        receipt=self.receipt()
+        def run(label,*argv,seconds):
+            return (json.dumps(record).encode() if label.endswith('-open') else
+                b'user::rw-\nuser:1001:rw-\ngroup::rw-\nmask::rw-\nother::---\n')
+        with self.assertRaisesRegex(ValueError,'node-KVM-probe-real-open-required'):
+            programme.node_kvm_observe(run,receipt,'initial',require_open=True)
+        self.assertTrue(receipt['kvmLaunchChecks'][0]['child']['entry']['readWrite'])
+        self.assertEqual(receipt['kvmLaunchChecks'][0]['child']['openErrno'],13)
+        after=self.receipt()
+        observed=programme.node_kvm_observe(run,after,'after-boot-failure',require_open=False)
+        self.assertEqual(observed['child']['openErrno'],13)
+
+    def test_changed_identity_acl_and_malformed_records_fail_closed(self):
+        for change,expected in (('inode','identity-changed'),('acl','ACL-changed'),
+                                ('schema','closed-record'),('inconsistent','record-consistency')):
+            with self.subTest(change=change):
+                record=self.record();receipt=self.receipt()
+                if change=='inode':record['entry']['inode']+=1
+                if change=='schema':record['unexpected']=True
+                if change=='inconsistent':record['openErrno']=13
+                def run(label,*argv,seconds):
+                    if label.endswith('-open'):return json.dumps(record).encode()
+                    if change=='acl':return b'user::rw-\ngroup::rw-\nother::---\n'
+                    return b'user::rw-\nuser:1001:rw-\ngroup::rw-\nmask::rw-\nother::---\n'
+                with self.assertRaisesRegex(ValueError,expected):
+                    programme.node_kvm_observe(run,receipt,'before-boot',require_open=True)
+
+
 class Q35NodePciIntxOwnerControls(unittest.TestCase):
     def test_trace_configuration_is_explicit_and_refuses_replacement(self):
         from tools import q35_intx_owner as host

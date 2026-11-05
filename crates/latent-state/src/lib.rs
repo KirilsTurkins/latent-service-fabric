@@ -6,6 +6,8 @@ pub mod embedded;
 pub mod entity_lanes;
 /// Versioned namespace records and lifecycle guards; descriptors grant no access.
 pub mod namespace;
+/// Independent bounded payload ownership records; they do not grant blob access.
+pub mod payload_references;
 pub mod protected_store;
 /// Bounded offline recovery descriptions and durable paused admission guards.
 /// Original restored history remains paused until an authorized review.

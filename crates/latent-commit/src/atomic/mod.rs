@@ -29,7 +29,7 @@ pub use validation::{
 };
 pub use writer::{
     inspect, AdmissionDecision, AdmittedCommand, CompleteEnvelope, EnvelopeNamespaceExpectation,
-    PreparedAdmission, PreparedDisposition, RetryRequest, StagedIntent,
+    PreparedAdmission, PreparedDisposition, PublishedAdmission, RetryRequest, StagedIntent,
 };
 
 use latent_core::transaction_contract::{self as contract, CommandFingerprint, CommandKey};

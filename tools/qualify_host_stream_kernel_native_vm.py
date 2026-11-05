@@ -342,6 +342,105 @@ def node_kvm_access(run, receipt, tool_pins):
         after['readWrite'],'node-real-KVM-required-no-fallback')
 
 
+# This is executed by the SAME owned child launcher as the positive QEMU,
+# without starting a VM, opening a network device, or changing permissions.
+_NODE_KVM_OPEN_PROBE = r"""
+import json, os, stat
+path = '/dev/kvm'
+out = {'uid':os.getuid(), 'euid':os.geteuid(), 'gid':os.getgid(),
+       'egid':os.getegid(), 'groups':sorted(os.getgroups()), 'label':None,
+       'entry':None, 'statErrno':None, 'opened':False, 'openErrno':None, 'sameEntry':None}
+try:
+    with open('/proc/self/attr/current', 'rb') as source:
+        label = source.read(257).strip()
+    if len(label) <= 256:
+        out['label'] = label.decode('ascii')
+except (OSError, UnicodeError):
+    pass
+try:
+    entry = os.lstat(path)
+    out['entry'] = {'symlink':stat.S_ISLNK(entry.st_mode),
+        'characterDevice':stat.S_ISCHR(entry.st_mode), 'mode':entry.st_mode,
+        'device':entry.st_dev, 'inode':entry.st_ino, 'rdev':entry.st_rdev, 'major':os.major(entry.st_rdev),
+        'minor':os.minor(entry.st_rdev), 'ownerUid':entry.st_uid, 'ownerGid':entry.st_gid,
+        'readWrite':os.access(path, os.R_OK | os.W_OK, effective_ids=True)}
+except OSError as error:
+    out['statErrno'] = error.errno
+else:
+    try:
+        fd = os.open(path, os.O_RDWR | os.O_CLOEXEC | os.O_NOFOLLOW)
+    except OSError as error:
+        out['openErrno'] = error.errno
+    else:
+        try:
+            opened = os.fstat(fd)
+            out['opened'] = True
+            out['sameEntry'] = ((opened.st_dev, opened.st_ino, opened.st_rdev) ==
+                                (entry.st_dev, entry.st_ino, entry.st_rdev))
+        finally:
+            os.close(fd)
+print(json.dumps(out, sort_keys=True, separators=(',', ':')))
+"""
+
+
+def node_kvm_observe(run, receipt, label, *, require_open):
+    """Bound the actual child-context open without replacing the KVM boot."""
+    native.require(label in ('initial', 'before-trace', 'before-boot', 'after-boot-failure')
+        and type(require_open) is bool, 'node-KVM-probe-fixed-stage')
+    raw = run('node-KVM-'+label+'-open',sys.executable,'-I','-B','-c',
+        _NODE_KVM_OPEN_PROBE,seconds=10)
+    native.require(type(raw) is bytes and len(raw) <= 4096, 'node-KVM-probe-output-bound')
+    observed = json.loads(raw)
+    native.require(type(observed) is dict and set(observed) == {
+        'uid','euid','gid','egid','groups','label','entry','statErrno',
+        'opened','openErrno','sameEntry'}, 'node-KVM-probe-closed-record')
+    native.require(all(type(observed[k]) is int and 0 <= observed[k] < 2**32
+        for k in ('uid','euid','gid','egid')) and
+        type(observed['groups']) is list and len(observed['groups']) <= 128 and
+        all(type(x) is int and 0 <= x < 2**32 for x in observed['groups']) and
+        observed['groups'] == sorted(set(observed['groups'])) and
+        (observed['label'] is None or type(observed['label']) is str and
+         len(observed['label']) <= 256 and all(32 <= ord(c) <= 126 for c in observed['label'])) and
+        type(observed['opened']) is bool and
+        (observed['openErrno'] is None or type(observed['openErrno']) is int and 0 < observed['openErrno'] < 4096) and
+        (observed['statErrno'] is None or type(observed['statErrno']) is int and 0 < observed['statErrno'] < 4096) and
+        (observed['sameEntry'] is None or type(observed['sameEntry']) is bool),
+        'node-KVM-probe-record-types')
+    entry = observed['entry']
+    keys = ('mode','device','inode','rdev','major','minor','ownerUid','ownerGid')
+    native.require(entry is None or type(entry) is dict and set(entry) == {
+        *keys,'symlink','characterDevice','readWrite'} and
+        all(type(entry[k]) is int and 0 <= entry[k] < 2**64 for k in keys) and
+        all(type(entry[k]) is bool for k in ('symlink','characterDevice','readWrite')),
+        'node-KVM-probe-device-types')
+    native.require((observed['opened'] and observed['openErrno'] is None
+                    and type(observed['sameEntry']) is bool and entry is not None
+                    and observed['statErrno'] is None) or
+        (not observed['opened'] and observed['sameEntry'] is None and
+         ((entry is None and observed['statErrno'] is not None and observed['openErrno'] is None) or
+          (entry is not None and observed['statErrno'] is None and observed['openErrno'] is not None))),
+        'node-KVM-probe-record-consistency')
+    row = {'stage':label, 'child':observed, 'acl':None}
+    receipt.setdefault('kvmLaunchChecks',[]).append(row)
+    baseline = receipt['kvmAccess']['after']
+    same_identity = (entry is not None and not entry['symlink'] and entry['characterDevice'] and
+        all(entry[k] == baseline[k] for k in keys) and
+        all(observed[k] == baseline[k] for k in ('uid','euid','gid','egid','groups')))
+    if same_identity:
+        acl = run('node-KVM-'+label+'-ACL','/usr/bin/getfacl','--omit-header','--numeric',
+            '--no-effective','--','/dev/kvm',seconds=10)
+        native.require(type(acl) is bytes and len(acl) <= 4096, 'node-KVM-probe-ACL-bound')
+        lines = [line for line in acl.decode('ascii').splitlines() if line]
+        native.require(len(lines) <= 32 and all(re.fullmatch(r'[A-Za-z0-9:_-]{1,128}',line)
+            for line in lines), 'node-KVM-probe-ACL-text')
+        row['acl'] = lines
+    if require_open:
+        native.require(same_identity, 'node-KVM-probe-identity-changed')
+        native.require(row['acl'] == receipt['kvmAccess']['aclAfter'], 'node-KVM-probe-ACL-changed')
+        native.require(observed['opened'] and observed['sameEntry'], 'node-KVM-probe-real-open-required')
+    return row
+
+
 def qualify_node(output,revision):
     """One fresh development image; no ordinary constructor/TCG receipt reuse."""
     import math
@@ -430,6 +529,8 @@ def qualify_node(output,revision):
             cPhysicalCount=len(physical)+len(extra_raw))
         write_json(output/'native-source-inputs.json',receipt['sourceBefore'])
         node_kvm_access(run,receipt,tool_pins)
+        if intx:
+            node_kvm_observe(run,receipt,'initial',require_open=True)
         run('source-clean','git','-c','core.fsmonitor=false','diff','--no-ext-diff','--exit-code','HEAD','--',seconds=30)
         run('baseline-fetch','git','-c','core.fsmonitor=false','-c','gc.auto=0','fetch',
             '--no-tags','--no-recurse-submodules','--depth=1',
@@ -466,6 +567,7 @@ def qualify_node(output,revision):
             run('node-q35-intx-refusal-controls',owner_python,'-B','-m','unittest',
                 'tools.tests.test_kernel_native_constructor_vm.Q35NodePciIntxControls',
                 'tools.tests.test_kernel_native_constructor_vm.Q35NodePciIntxOwnerControls',
+                'tools.tests.test_kernel_native_constructor_vm.Q35NodeKvmLaunchControls',
                 'tools.tests.test_kernel_native_constructor_vm.TraceRefusalControls','-v',seconds=30)
         run('normal-prerequisite-update','sudo','apt-get','update',seconds=180)
         run('normal-prerequisite-install','sudo','apt-get','install','--yes','--no-install-recommends',
@@ -690,13 +792,27 @@ def qualify_node(output,revision):
         if intx:
             from tools import q35_intx_owner, q35_intx_trace
             boot_args = q35_intx_owner.trace_argv(boot_args)
+            node_kvm_observe(run,receipt,'before-trace',require_open=True)
             stage = 'qemu-trace-loss-refusal'
             commands.root = ROOT
             receipt['traceLossControl'] = q35_intx_owner.probe_loss(commands,boot_args)
-            receipt['emulatorAttempts'] = 2  # loss probe may boot partway; one positive VM below.
+            receipt['emulatorAttempts'] = 1  # The loss probe may boot partway.
+            node_kvm_observe(run,receipt,'before-boot',require_open=True)
+            receipt['emulatorAttempts'] = 2  # The next command is the single positive VM.
         receipt['vmArgv'] = list(boot_args)
         vm_log_index = len(commands.records)
-        serial = run('one-real-q35-kvm-node-prepare',*boot_args,seconds=image.VM_SECONDS)
+        try:
+            serial = run('one-real-q35-kvm-node-prepare',*boot_args,seconds=image.VM_SECONDS)
+        except Exception:
+            if intx:
+                failed_stage = stage
+                try:
+                    node_kvm_observe(run,receipt,'after-boot-failure',require_open=False)
+                except Exception as inspection_error:
+                    receipt['kvmFailureInspection'] = {'errorType':type(inspection_error).__name__}
+                finally:
+                    stage = failed_stage
+            raise
         native.require(len(serial) <= image.MAX_SERIAL,'node-serial-channel-bound')
         receipt['observations'] = (native.node_intx_serial(serial) if intx else
             native.node_fixup_serial(serial) if fixup else
