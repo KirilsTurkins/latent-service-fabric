@@ -71,7 +71,7 @@ def inspect_archive(path,codes):
             text=z.read(info).decode('utf-8',errors='replace')
             selected=any('-'+stage+'.' in n for stage in failing)
             for line in text.splitlines():
-                if selected and any(w in line.lower() for w in ('error','fail','panic','refus','exception')):
+                if selected:
                     matches.update(t for t in TOKEN.findall(line) if t in codes)
                 progress.update(PROGRESS.findall(line));symbols.update(COMPILER.findall(line))
         return {'zipMembers':len(files),'crcVerified':True,'stages':sorted(stages)[:20],

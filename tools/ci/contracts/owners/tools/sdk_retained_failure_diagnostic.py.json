@@ -3,6 +3,6 @@
   "kind": "owner",
   "reviewReason": "Authenticate exact retained failed owners and emit bounded source-bound diagnostic codes; no qualification claim.",
   "path": "tools/sdk_retained_failure_diagnostic.py",
-  "sha256": "4ed7bdc0d51e69b44f087bc42b00b4799154c99d086d21de298bc18031d23e05",
+  "sha256": "e793e8979878098d72ed02c0cadbef4ada1b08e051f461d941d6af97755399f9",
   "reviewBoundary": "committed-fingerprint"
 }
