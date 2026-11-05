@@ -390,7 +390,10 @@ def sdk_dynamic_excludes(root: Path, candidate: str) -> bool:
                 if len(data) > MAX_SOURCE_BYTES: return False
                 text = data.decode('utf-8-sig')
                 if token in text or candidate in text: return False
-                if not any(value in text for value in ('importlib', '__import__', 'exec(', 'eval(')): continue
+                names = ('importlib', '__import__')
+                calls = ('exec', 'eval')
+                if not any(value in text for value in names) and not any(value + '(' in text for value in calls):
+                    continue
                 tree = ast.parse(text)
                 aliases = {'__import__', 'eval', 'exec', 'importlib.import_module', 'importlib.util.spec_from_file_location'}
                 for node in ast.walk(tree):
