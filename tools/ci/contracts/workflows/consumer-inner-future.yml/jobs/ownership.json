@@ -1,0 +1,70 @@
+{
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "Check consumer future admission, deferred replay and retirement",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "KirilsTurkins/lsf-rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-directories": "target/debug\ntarget/release\ntarget/wasm32-unknown-unknown\ntarget/wasm32-wasip2\n",
+          "cache-on-failure": false,
+          "cache-targets": false,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v3-contract-profiles",
+          "save-if": false,
+          "shared-key": "host-contracts"
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Run exact source-bound ownership controls",
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_consumer_inner_future_owner -v\ntimeout --signal=TERM --kill-after=10s 2400s python3 -B tools/qualify_consumer_inner_future.py --source-commit \"${{ github.sha }}\" --output \"$RUNNER_TEMP/consumer-inner-future\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain the finite ownership observations",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "consumer-inner-future-${{ github.sha }}",
+          "path": "${{ runner.temp }}/consumer-inner-future/receipt.json\n${{ runner.temp }}/consumer-inner-future/FAILED.json\n${{ runner.temp }}/consumer-inner-future/source-inputs.json\n${{ runner.temp }}/consumer-inner-future/commands.json\n${{ runner.temp }}/consumer-inner-future/commands/logs/*.txt\n${{ runner.temp }}/consumer-inner-future/fixtures/native-stream-outers.wasm\n${{ runner.temp }}/consumer-inner-future/fixtures/native-stream-deferred.wasm\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 45
+  },
+  "jobId": "ownership",
+  "kind": "job",
+  "reviewReason": "Retain bounded original-budget and private ownership controls at the exact source.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/consumer-inner-future.yml"
+}
