@@ -1,0 +1,73 @@
+name: Phase 4 integrated custody diagnostic
+
+on:
+  push:
+    branches:
+      - diag/phase4-396-integrated-20261105
+
+permissions:
+  contents: read
+
+jobs:
+  integrated:
+    name: Integrated graph, selectors, type identity and downstream compile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      CARGO_BUILD_JOBS: "2"
+      CARGO_INCREMENTAL: "0"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+      CARGO_TERM_COLOR: never
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          fetch-depth: 3
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
+        with:
+          python-version: 3.13.5
+      - name: Install pinned Python checks
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Check exact source, complete dependency graph and existing guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p custody-integrated-report
+          python3 tools/phase4_396_integrated_check.py tree | tee custody-integrated-report/tree.txt
+          python3 tools/check_testkit_dependencies.py 2>&1 | tee custody-integrated-report/graph.txt
+          python3 -m unittest tools.tests.test_testkit_dependencies tools.tests.test_ci_suite_fragments.SuiteFragmentTests.test_fragments_are_additive_and_preserve_primary_recipes tools.tests.test_ci_suite_fragments.SuiteFragmentTests.test_duplicate_suite_ids_across_primary_and_fragments_are_rejected tools.tests.test_ci_suite_fragments.SuiteFragmentTests.test_fragment_rows_receive_the_same_suite_validation tools.tests.test_ci_suite_discovery.SelectionTests.test_empty_renamed_missing_unexpected_ignored_and_ambiguous_selection_fail tools.tests.test_ci_suite_discovery.ArtifactTests.test_unregistered_executable_is_not_silently_dropped 2>&1 | tee custody-integrated-report/policy-tests.txt
+      - name: Validate actual suite and security owners
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked -p latent-local-blobs --lib -- --list 2>&1 | tee custody-integrated-report/local-list.txt
+          python3 tools/phase4_396_integrated_check.py selections 2>&1 | tee custody-integrated-report/selections.txt
+          cargo test --locked -p latent-blobs --lib local_facade_type_tests::local_facade_reexports_the_original_custody_types -- --exact 2>&1 | tee custody-integrated-report/facade.txt
+          cargo test --locked -p latent-blobs --test phase4-custody-provenance -- --nocapture 2>&1 | tee custody-integrated-report/type-provenance.txt
+      - name: Compile the downstream node library
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo check --locked -p latentd --lib 2>&1 | tee custody-integrated-report/latentd-check.txt
+          git diff --exit-code HEAD -- Cargo.lock
+      - name: Retain integrated diagnostic
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: phase4-396-integrated-diagnostic
+          path: custody-integrated-report/
+          if-no-files-found: warn
+          retention-days: 7
