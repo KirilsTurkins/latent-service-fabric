@@ -38,9 +38,34 @@ pub struct Fixture {
 }
 impl Fixture {
     pub fn new() -> Self {
+        Self::with_state_limit(None)
+    }
+    pub fn with_state_limit(maximum_file_bytes: Option<u64>) -> Self {
         let authority = authority::Fixture::new(CapabilityBrokerLimits::default());
         let root = tempfile::tempdir().unwrap();
-        let state = open(&root.path().join("state.redb"));
+        let path = root.path().join("state.redb");
+        let state = if let Some(maximum) = maximum_file_bytes {
+            let file = std::fs::OpenOptions::new()
+                .read(true)
+                .write(true)
+                .create_new(true)
+                .open(path)
+                .unwrap();
+            EmbeddedStore::open_bounded_file(
+                file,
+                StoreLimits {
+                    maximum_key_bytes: 4096,
+                    maximum_value_bytes: 2 * 1024 * 1024,
+                    maximum_batch_rows: 1024,
+                    ..StoreLimits::default()
+                },
+                maximum,
+            )
+            .unwrap()
+            .0
+        } else {
+            open(&path)
+        };
         let view = state.snapshot().unwrap();
         let initialized = StoreIdentity::new("payload-envelope-a".into())
             .unwrap()

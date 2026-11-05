@@ -90,6 +90,138 @@ fn state_scope_a() -> StateScope {
         mode: StateMode::Command,
     }
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn bounded_engine_failure_keeps_original_blob_and_recovers_the_durable_outcome() {
+    let fixture = Fixture::with_state_limit(Some(2 * 1024 * 1024));
+    let claim = fixture.claim("blob-engine-failure");
+    let view = fixture.state.snapshot().unwrap();
+    let mut session =
+        StateSession::open(&view, state_scope_a(), SessionLimits::default(), |_, _| {
+            Ok(())
+        })
+        .unwrap();
+    let bytes = vec![0x5a; 64 * 1024];
+    for index in 0..32 {
+        session
+            .put(
+                &view,
+                format!("pressure/{index:02}").into_bytes(),
+                value(&bytes),
+                |_, _| Ok(()),
+            )
+            .unwrap();
+    }
+    let state = session.seal(&view, |_, _| Ok(())).unwrap();
+    let envelope = CompleteEnvelope::success(
+        &view,
+        claim,
+        Some(state),
+        vec![],
+        value(b"body"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap();
+    let pin = fixture.capture().await;
+    let physical = pin.identity().clone();
+    let envelope = envelope
+        .attach_verified_payloads(
+            &view,
+            &fixture.session,
+            vec![PayloadAttachment {
+                target: PayloadAttachmentTarget::Result,
+                payload: pin,
+            }],
+        )
+        .unwrap();
+    drop(view);
+    assert!(matches!(
+        envelope.publish_with_payloads(&fixture.state, |_, _| Ok(())),
+        PreparedDisposition::RecoveryRequired { .. }
+    ));
+    assert!(fixture
+        .provider
+        .store()
+        .release_durable_reference(
+            &TenantId("a".into()),
+            &fixture.blob,
+            &fixture.state,
+            &|| Ok(())
+        )
+        .is_err());
+    assert_eq!(
+        fixture
+            .provider
+            .store()
+            .reclaim(1, &|| Ok(()))
+            .unwrap()
+            .objects,
+        0
+    );
+    let key = fixture.input("blob-engine-failure").key;
+    let Fixture {
+        authority,
+        provider,
+        state,
+        blob,
+        session,
+        effects,
+        _root: root,
+    } = fixture;
+    drop(session);
+    drop(provider);
+    drop(effects);
+    drop(authority);
+    drop(state);
+    let state = open(&root.path().join("state.redb"));
+    let view = state.snapshot().unwrap();
+    let (command, result) = inspect(&view, &key, time(201), |_, _| Ok(())).unwrap();
+    let count = latent_state::payload_references::physical_owner_count(&view, &physical).unwrap();
+    match command.outcome() {
+        Outcome::Pending => {
+            assert!(result.is_none());
+            assert_eq!(count, None);
+        }
+        Outcome::Committed => {
+            assert!(result.is_some());
+            assert_eq!(count, Some(1));
+        }
+        _ => panic!("unexpected recovered disposition"),
+    }
+    drop(view);
+    let owner = latent_blobs::local::LocalBlobStore::open_durable(
+        &root.path().join("blobs"),
+        "private",
+        latent_blobs::local::LocalBlobLimits {
+            maximum_objects: 4,
+            maximum_object_bytes: 64,
+            maximum_disk_bytes: 65536,
+            maximum_stages: 4,
+            maximum_stage_bytes: 128,
+            maximum_handles: 8,
+            maximum_chunk_bytes: 8,
+            ..latent_blobs::local::LocalBlobLimits::default()
+        },
+        &state,
+    )
+    .unwrap();
+    let reader = owner
+        .open_read(&TenantId("a".into()), &blob, &|| Ok(()))
+        .unwrap();
+    let mut readback = [0; 4];
+    reader
+        .read(
+            &latent_blobs::BlobRange {
+                offset: 0,
+                length: 4,
+            },
+            &mut readback,
+            &|| Ok(()),
+        )
+        .unwrap();
+    assert_eq!(&readback, b"body");
+}
 fn state_mutation(
     view: &latent_state::embedded::ReadView,
     bytes: Option<&[u8]>,
