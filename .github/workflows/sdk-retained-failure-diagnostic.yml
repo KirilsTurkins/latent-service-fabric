@@ -1,7 +1,7 @@
 name: SDK retained failure evidence review
 on:
   push:
-    branches: ['diag/sdk-retained-failures-20261105']
+    branches: ['diag/sdk-java-guard-20261105']
 permissions:
   contents: read
   actions: read
@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   inspect:
-    name: Authenticate four retained failed owners
+    name: Authenticate retained Java guard failure
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     env:

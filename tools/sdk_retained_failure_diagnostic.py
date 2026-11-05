@@ -7,15 +7,17 @@ import re,subprocess,zipfile
 
 REPO = 'KirilsTurkins/latent-service-fabric'
 OWNERS = (
- ('rust',41959459784,127022081605,13386221747,1857881,
-  '23681a99be7d82bcba44acfbe09736b511fea04353932ad27951325a054c0aac','80243cfa55377d15c03f433602bb9f00fa85fb05'),
- ('q35',41960168003,127024405192,13386252486,791131,
-  'bec9926aff592f5517a555ed0009297d399861855ae450a0fee979d3cc1e29cc','15e8e4b31493a2bd5df7a936578c00fe513cdcdc'),
- ('dotnet',41956909273,127013898742,13386035903,6691708,
-  'fe24765685faa0b42fe918b004cb78eaf6ef4a90f19cc02bb9628bbabd547e31','589a81643094e2c3a3f9bec6b8293acb92e3203b'),
- ('java',41959719013,127022935214,13385972468,31022,
-  '2978750678e1ab7c21ba2fa6a330e7a944ffabce3be0927ffd3b2b88f160ce13','9538b0c991e58fe2677c1ab187fdd2a5310afddc'),
+ ('java-guard',41966722819,127045319343,13389050424,23429411,
+  '4a4da4c4930570768260b3010601f5882097a042491a67bbb98946dc86719464','b2de1326f0c9411e24746a936759e66f19c92e09'),
 )
+GUARD_MARKERS = (
+ 'CHECKPOINT_CLASSINFO_DIRECT_CONTROL PASS original',
+ 'CHECKPOINT_CLASSINFO_DIRECT_CONTROL PASS corrected',
+ 'CHECKPOINT_COMPATIBILITY finite PASS', 'CHECKPOINT_COMPATIBILITY finite FAIL',
+ 'CHECKPOINT_COMPATIBILITY class-reflection PASS', 'CHECKPOINT_COMPATIBILITY class-reflection FAIL',
+ 'latent.java.classinfo-operands.v1 refused', 'checkpoint-control-progress-verdict',
+)
+
 IDENT=re.compile(r'^[a-z][a-z0-9_.-]{1,119}$')
 TOKEN=re.compile(r'(?<![A-Za-z0-9-])[a-z][a-z0-9]+(?:-[a-z0-9]+){2,}(?![A-Za-z0-9-])')
 PROGRESS=re.compile(r'\bprogress-[a-z0-9.-]{1,60}[ =:]+[0-9:.-]{1,30}\b',re.I)
@@ -49,12 +51,22 @@ def inspect_archive(path,codes):
         files=z.infolist()
         if len(files)>1000 or sum(f.file_size for f in files)>160*1024*1024: raise ValueError('sdk-evidence-archive-bound')
         if z.testzip() is not None: raise ValueError('sdk-evidence-archive-crc')
-        stages,failures,matches,progress,symbols=set(),set(),set(),set(),set()
+        stages,failures,matches,progress,symbols,guard_markers=set(),set(),set(),set(),set(),set()
+        guard_summary=None
         for info in files:
-            if info.file_size>4*1024*1024 or not info.filename.endswith(('FAILED.json','commands.json')): continue
+            if info.file_size>4*1024*1024 or not info.filename.endswith(('FAILED.json','commands.json','result.json')): continue
             try: value=json.loads(z.read(info))
             except (ValueError,UnicodeError): continue
             if isinstance(value,dict):
+                if value.get('scope') == 'jvm-only-compiler-control':
+                    status=value.get('status')
+                    guard_summary={'status':status if status in ('started','failed','passed') else None}
+                    for key in ('controls','compilerControls','monitorControls','classloaderControls'):
+                        v=value.get(key)
+                        guard_summary[key]=min(len(v),16) if isinstance(v,list) else None
+                    for key in ('componentExecutionPerformed','nativeExecutionPerformed'):
+                        v=value.get(key)
+                        guard_summary[key]=v if type(v) is bool else None
                 stage=identity(value.get('stage'))
                 if stage: stages.add(stage)
                 seq=value.get('commands',[])
@@ -71,13 +83,15 @@ def inspect_archive(path,codes):
             text=z.read(info).decode('utf-8',errors='replace')
             selected=any('-'+stage+'.' in n for stage in failing)
             for line in text.splitlines():
+                guard_markers.update(marker for marker in GUARD_MARKERS if marker in line)
                 if selected:
                     matches.update(t for t in TOKEN.findall(line) if t in codes)
                 progress.update(PROGRESS.findall(line));symbols.update(COMPILER.findall(line))
         return {'zipMembers':len(files),'crcVerified':True,'stages':sorted(stages)[:20],
                 'failedCommands':[{'stage':x,'exitCode':y} for x,y in sorted(failures)[:20]],
                 'committedDiagnosticCodes':sorted(matches)[:30],
-                'progressMarkers':sorted(progress)[:15],'compilerErrorSymbols':sorted(symbols)[:15]}
+                'progressMarkers':sorted(progress)[:15],'compilerErrorSymbols':sorted(symbols)[:15],
+                'guardMarkers':sorted(guard_markers),'guardControlSummary':guard_summary}
 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--output',type=Path,required=True);args=parser.parse_args()
@@ -87,7 +101,7 @@ def main():
         if (m.get('head_sha')!=head or m.get('status')!='completed' or m.get('conclusion')!='failure'
             or item.get('expired') or item.get('size_in_bytes')!=size or item.get('digest')!='sha256:'+digest):
             raise ValueError('sdk-evidence-owner-identity-mismatch')
-        archive=args.output/(label+'.zip');actual=fetch(f'actions/artifacts/{artifact}/zip',archive,16*1024*1024)
+        archive=args.output/(label+'.zip');actual=fetch(f'actions/artifacts/{artifact}/zip',archive,32*1024*1024)
         if actual!=digest or archive.stat().st_size!=size: raise ValueError('sdk-evidence-artifact-digest-mismatch')
         log=args.output/(label+'.log');log_digest=fetch(f'actions/jobs/{job}/logs',log,16*1024*1024)
         found=inspect_archive(archive,codes);found.update(label=label,run=run,job=job,artifact=artifact,head=head,
