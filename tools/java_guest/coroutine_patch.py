@@ -992,12 +992,84 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         }
     }
 
+    // Diagnostic only: closed public TeaVM ordinals and caller categories.
+    // It does not authenticate a caller or change the existing refusal.
+    private static int progressClassInfoOperandOrdinal(MethodReference reference) {
+        if (!reference.getClassName().equals("org.teavm.runtime.reflect.ClassInfo")) {
+            return -1;
+        }
+        String[] methods = {
+            "modifiers", "primitiveKind", "superinterfaceCount", "itemType", "declaringClass",
+            "enclosingClass", "parent", "name", "simpleName", "superinterface", "arrayLength",
+            "isSuperTypeOf", "reflection", "classObject", "enumConstantCount", "enumConstant",
+            "arrayType", "newArrayInstance", "getItem", "putItem", "initialize"
+        };
+        for (int index = 0; index < methods.length; index++) {
+            if (reference.getName().equals(methods[index])) return index;
+        }
+        return -1;
+    }
+
+    private void reportProgressClassInfoOperands() {
+        try {
+            int mask = 0;
+            int work = 0;
+            int[] callers = new int[21];
+            org.teavm.callgraph.CallGraph graph = dependency.getCallGraph();
+            for (MethodReference reference : dependency.getReachableMethods()) {
+                if (++work > 65536) {
+                    System.err.println("latent.java.classinfo-operand-mask.v1 unavailable");
+                    return;
+                }
+                int index = progressClassInfoOperandOrdinal(reference);
+                if (index < 0) continue;
+                org.teavm.dependency.MethodDependencyInfo linked = dependency.getMethod(reference);
+                if (linked != null && !linked.isUsed() && !linked.isCalled()) continue;
+                mask |= 1 << index;
+                org.teavm.callgraph.CallGraphNode node = graph == null ? null : graph.getNode(reference);
+                if (node == null) { callers[index] |= 1; continue; }
+                boolean found = false;
+                for (org.teavm.callgraph.CallSite site : node.getCallerCallSites()) {
+                    if (++work > 65536) {
+                        System.err.println("latent.java.classinfo-operand-mask.v1 unavailable");
+                        return;
+                    }
+                    for (org.teavm.callgraph.CallGraphNode caller : site.getCallers()) {
+                        if (++work > 65536) {
+                            System.err.println("latent.java.classinfo-operand-mask.v1 unavailable");
+                            return;
+                        }
+                        found = true;
+                        String owner = caller.getMethod().getClassName();
+                        if (owner.equals("java.lang.Object")
+                                || owner.equals("org.teavm.classlib.java.lang.TObject")) callers[index] |= 2;
+                        else if (owner.equals("java.lang.Class")
+                                || owner.equals("org.teavm.classlib.java.lang.TClass")) callers[index] |= 4;
+                        else if (owner.equals("org.teavm.runtime.reflect.ClassInfo")) callers[index] |= 8;
+                        else if (owner.startsWith("org.teavm.runtime.")) callers[index] |= 16;
+                        else callers[index] |= 32;
+                    }
+                }
+                if (!found) callers[index] |= 64;
+            }
+            System.err.println("latent.java.classinfo-operand-mask.v1 " + mask);
+            for (int index = 0; index < callers.length; index++) {
+                if ((mask & (1 << index)) != 0) {
+                    System.err.println("latent.java.classinfo-operand-caller.v1 " + index + ":" + callers[index]);
+                }
+            }
+        } catch (RuntimeException unavailable) {
+            System.err.println("latent.java.classinfo-operand-mask.v1 unavailable");
+        }
+    }
+
     private void validateNonsuspendableProgress() {
         progressRuntimeProofs.clear(); // Never reuse a proof across completion rounds.
         progressOriginalClasses.clear();
         progressMetadataProofs.clear();
         progressPlatformProofs.clear();
         progressClasslibTypes.clear();
+        reportProgressClassInfoOperands();
         // Unlike checkpoint-call validation, this closure is required even if
         // Activation.checkpoint is entirely unreachable in the final programme.
         java.util.Map<MethodReference, Integer> contexts = new java.util.HashMap<>();

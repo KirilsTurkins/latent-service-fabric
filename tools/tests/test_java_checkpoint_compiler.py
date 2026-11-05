@@ -107,6 +107,32 @@ class CheckpointCompiler(unittest.TestCase):
         self.assertIn('checkpoint-control-class-info-fence-name', source)
         self.assertIn('checkpoint-control-class-info-shadow-header-refused', source)
 
+    def test_class_info_diagnostic_uses_only_fixed_ordinals_and_caller_buckets(self):
+        from tools.java_guest import coroutine_patch
+        emitted = coroutine_patch.corrected_async_source(
+            (probe.SDK/'fibers/compiler-patch/AsyncMethodFinder.java').read_bytes()).decode()
+        ordinal = emitted.split('private static int progressClassInfoOperandOrdinal(', 1)[1].split(
+            'private void reportProgressClassInfoOperands()', 1)[0]
+        self.assertEqual(re.findall(r'"([A-Za-z]+)"', ordinal), [
+            'modifiers', 'primitiveKind', 'superinterfaceCount', 'itemType', 'declaringClass',
+            'enclosingClass', 'parent', 'name', 'simpleName', 'superinterface', 'arrayLength',
+            'isSuperTypeOf', 'reflection', 'classObject', 'enumConstantCount', 'enumConstant',
+            'arrayType', 'newArrayInstance', 'getItem', 'putItem', 'initialize'])
+        self.assertIn('return -1;', ordinal)
+        report = emitted.split('private void reportProgressClassInfoOperands()', 1)[1].split(
+            'private void validateNonsuspendableProgress()', 1)[0]
+        self.assertIn('int[] callers = new int[21]', report)
+        self.assertEqual(report.count('++work > 65536'), 3)
+        self.assertIn('!linked.isUsed() && !linked.isCalled()', report)
+        self.assertIn('latent.java.classinfo-operand-mask.v1 ', report)
+        self.assertIn('latent.java.classinfo-operand-caller.v1 ', report)
+        self.assertNotIn('caller.getMethod().toString()', report)
+        self.assertNotIn('throw checkpointRefusal(', report)
+        self.assertIn('catch (RuntimeException unavailable)', report)
+        scan = emitted.split('private void validateNonsuspendableProgress()', 1)[1]
+        self.assertLess(scan.index('reportProgressClassInfoOperands();'),
+                        scan.index('progressUnprovenClassInfoOperands(reference)'))
+
     def test_archive_receipt_is_per_compiler_even_when_target_is_reused(self):
         from tools.java_guest import coroutine_patch
         emitted = coroutine_patch.corrected_async_source(
