@@ -1,0 +1,58 @@
+name: Integrated Java network custody model
+on:
+  push:
+    branches: ['diag/java-network-integrated-20261105']
+permissions:
+  contents: read
+concurrency:
+  group: java-network-integrated-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  network-borrow-control:
+    name: Pinned Java resource borrow and ownership model
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
+        with:
+          distribution: temurin
+          java-version: 25.0.4+101.0.LTS
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+        with:
+          version: 1.254.0
+      - name: Install the verified WIT binding generator
+        run: |
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/java-network-bindgen"
+          echo "$RUNNER_TEMP/java-network-bindgen" >> "$GITHUB_PATH"
+      - name: Verify the reviewed default SDK binding lock
+        run: python3 -B tools/java_guest/lock.py
+      - name: Exercise real resource custody, the pinned TeaVM model, and generated WIT ABI
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B tools/qualify_java_network_borrow_model.py --output "$RUNNER_TEMP/java-network-borrow"
+      - name: Exercise the corrected pinned self-loop checkpoint control
+        run: python3 -B tools/qualify_java_self_loop.py --output "$RUNNER_TEMP/java-self-loop"
+      - name: Retain bounded Java and compiler-model evidence
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: java-network-borrow-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/java-network-borrow/result.json
+            ${{ runner.temp }}/java-network-borrow/commands.json
+            ${{ runner.temp }}/java-network-borrow/commands/logs/**
+            ${{ runner.temp }}/java-network-borrow/network-abi/**
+            ${{ runner.temp }}/java-self-loop/result.json
+            ${{ runner.temp }}/java-self-loop/commands.json
+            ${{ runner.temp }}/java-self-loop/commands/logs/**
+

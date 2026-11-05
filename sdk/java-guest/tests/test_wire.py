@@ -26,10 +26,16 @@ class WireUtf8(unittest.TestCase):
                 "public static native Address ofData(byte[] value); }\n", encoding="utf-8")
             (interop / "Import.java").write_text(
                 "package org.teavm.interop; public @interface Import { String name(); }\n", encoding="utf-8")
+            generated = root / "dev/latent/generated"
+            generated.mkdir(parents=True)
+            (generated / "Bindings.java").write_text(
+                "package dev.latent.generated; import dev.latent.guest.Wire; public final class Bindings {"
+                " public static final class BorrowPermit { public int direction() { throw new AssertionError(); }"
+                " public boolean authorizes(Wire.HostFunction f, int o) { throw new AssertionError(); } } }\n", encoding="utf-8")
             sources = [sdk / "runtime/dev/latent/guest/Wire.java",
                        sdk / "runtime/dev/latent/guest/Resource.java",
                        sdk / "tests/wire/WireUtf8Control.java",
-                       interop / "Address.java", interop / "Import.java"]
+                       interop / "Address.java", interop / "Import.java", generated / "Bindings.java"]
             subprocess.run(["javac", "-proc:none", "-encoding", "UTF-8", "-d", str(root), *map(str, sources)],
                            check=True, capture_output=True, timeout=30)
             result = subprocess.run(["java", "-Xmx256m", "-cp", str(root), "dev.latent.guest.WireUtf8Control"],
