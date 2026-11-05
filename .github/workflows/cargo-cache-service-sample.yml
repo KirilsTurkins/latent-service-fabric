@@ -67,7 +67,7 @@ jobs:
         run: python3 tools/ci_cargo_service.py identity --kind "$KIND" --experiment "$EXPERIMENT" --output "$RUNNER_TEMP/cargo-service/identity.json" --github-output "$GITHUB_OUTPUT"
       - name: Restore dependency cache
         id: dependencies
-        uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: ${{ steps.identity.outputs.prefix }}
           shared-key: host-correctness

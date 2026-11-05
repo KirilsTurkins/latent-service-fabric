@@ -398,7 +398,8 @@
     {
       "kind": "npm",
       "lock": ".github/security/actions/rust-cache/package-lock.json",
-      "path": ".github/security/actions/rust-cache/package.json"
+      "path": ".github/security/actions/rust-cache/package.json",
+      "source_repair": "rust-cache-dual-source-v1"
     },
     {
       "kind": "npm",

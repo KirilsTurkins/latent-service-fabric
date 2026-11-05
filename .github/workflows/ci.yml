@@ -219,7 +219,7 @@ jobs:
           CARGO_INCREMENTAL: "0"
         run: python3 tools/ci_cargo_cache.py --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/lsf-cargo-cache-identity.json"
       - name: Restore compiled Rust dependencies
-        uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: ${{ inputs.cargo_dependency_cache == 'recipe' && steps.cargo-cache-identity.outputs.prefix || 'lsf-ci-dependencies-v2' }}
           shared-key: host-correctness
@@ -582,7 +582,7 @@ jobs:
           python3 tools/build_angular_package.py --input-root examples/angular-application --toolchain-root examples/renderer-profile --cli "$RUNNER_TEMP/lsf-angular-package-assembler" --target-root "$RUNNER_TEMP/angular-build" --output "$RUNNER_TEMP/angular-build/actual" --cargo-target-dir "$PWD/target" --repository https://example.com/source
       - name: Restore isolated Angular compiler dependencies
         if: (matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'
-        uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v3
           shared-key: angular-release-compiler
@@ -710,7 +710,7 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - name: Restore compiled Rust dependencies
-        uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: host-correctness
@@ -783,7 +783,7 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - name: Restore compiled Rust dependencies
-        uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: host-correctness
@@ -831,7 +831,7 @@ jobs:
       - name: Install the declared minimum supported Rust toolchain
         run: rustup toolchain install 1.95.0 --profile minimal --no-self-update
       - name: Restore compiled Rust dependencies
-        uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: msrv-correctness
@@ -926,7 +926,7 @@ jobs:
         with:
           targets: wasm32-wasip2,wasm32-unknown-unknown
       - name: Restore compiled Rust dependencies
-        uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v3-contract-profiles
           shared-key: ${{ matrix.lane == 'measurements' && 'frozen-collector' || matrix.lane == 'optimization' && 'optimization-smoke' || matrix.lane == 'bindings' && 'host-correctness' || 'host-contracts' }}

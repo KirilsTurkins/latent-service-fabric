@@ -312,7 +312,7 @@
       "upstream_repository": "actions/download-artifact",
       "upstream_revision": "9000827ccba6bdab643e8b6fd33ac0654aef8333"
     },
-    "KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477": {
+    "KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e": {
       "files": [
         {
           "sha256": "0bf18e525796c2e43b4cccbc5c914e745de700a4e56735f53a8f1b0e6504aa2a",
@@ -321,16 +321,46 @@
           "source_sha256": "0bf18e525796c2e43b4cccbc5c914e745de700a4e56735f53a8f1b0e6504aa2a"
         },
         {
-          "sha256": "95008ac425dc7e74368b8d75a4fdbda56475c1e90d39b55269a42d77af31143d",
+          "sha256": "2aba49452ea432f269e679216b426c9e2e9459d1211745b06bbc9692dcab89ff",
           "snapshot": ".github/security/actions/rust-cache/package.json",
           "source": "package.json",
-          "source_sha256": "95008ac425dc7e74368b8d75a4fdbda56475c1e90d39b55269a42d77af31143d"
+          "source_sha256": "2aba49452ea432f269e679216b426c9e2e9459d1211745b06bbc9692dcab89ff"
         },
         {
-          "sha256": "449745f795286d81f4bb835ef9d5072b0b19b99213f674a97fcca9d7b07fdea0",
+          "sha256": "73ab20e6b215286eaf3c3060dfe66c4e9e426b0533ab907299bf9386aa91022a",
           "snapshot": ".github/security/actions/rust-cache/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "449745f795286d81f4bb835ef9d5072b0b19b99213f674a97fcca9d7b07fdea0"
+          "source_sha256": "73ab20e6b215286eaf3c3060dfe66c4e9e426b0533ab907299bf9386aa91022a"
+        },
+        {
+          "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
+          "snapshot": ".github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot",
+          "source": ".lsf-source/verify-installed-deepmerge.mjs",
+          "source_sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7"
+        },
+        {
+          "sha256": "4af8eaff4b0b6f6b4b084ceeab68932ba8940048c9e49f9ed8fdc400e9e2f72d",
+          "snapshot": ".github/security/actions/setup-node-minimatch/installed-verifier.mjs.snapshot",
+          "source": ".lsf-source/verify-installed-minimatch.mjs",
+          "source_sha256": "4af8eaff4b0b6f6b4b084ceeab68932ba8940048c9e49f9ed8fdc400e9e2f72d"
+        },
+        {
+          "sha256": "4fd2675946ecfa56ccf5a3c59e76ef50a5dc7d84f0a37fefd47e0037c50a4492",
+          "snapshot": ".github/security/actions/setup-node-minimatch/bounds.test.mjs.snapshot",
+          "source": ".lsf-source/minimatch-bounds.test.mjs",
+          "source_sha256": "4fd2675946ecfa56ccf5a3c59e76ef50a5dc7d84f0a37fefd47e0037c50a4492"
+        },
+        {
+          "sha256": "93437849b770f19a97251121d354f55705cff9f3771e9faad36db85cd0472841",
+          "snapshot": ".github/security/actions/rust-cache-source/verify-rust-cache-lock.mjs.snapshot",
+          "source": ".lsf-source/verify-rust-cache-lock.mjs",
+          "source_sha256": "93437849b770f19a97251121d354f55705cff9f3771e9faad36db85cd0472841"
+        },
+        {
+          "sha256": "4610bfc55e9451600b3acf8ad67639ad6800b86802f3634b5e06afe3d20e6684",
+          "snapshot": ".github/security/actions/rust-cache-source/rust-cache-lock.test.mjs.snapshot",
+          "source": ".lsf-source/rust-cache-lock.test.mjs",
+          "source_sha256": "4610bfc55e9451600b3acf8ad67639ad6800b86802f3634b5e06afe3d20e6684"
         }
       ],
       "kind": "npm",
@@ -341,8 +371,8 @@
         "source_sha256": "0bf18e525796c2e43b4cccbc5c914e745de700a4e56735f53a8f1b0e6504aa2a"
       },
       "repository": "KirilsTurkins/lsf-rust-cache",
-      "revision": "476b290465f7c84db317df6e6a6e2d3c12ea3477",
-      "security_pr": "https://github.com/Swatinem/rust-cache/pull/396",
+      "revision": "38534d49940bc6c6aef1e8dfd45349a99d37f14e",
+      "security_pr": "https://github.com/KirilsTurkins/lsf-rust-cache/pull/1",
       "upstream_repository": "Swatinem/rust-cache",
       "upstream_revision": "c8037a86dde8214a8310e9f54a8fc61ab362aa31"
     },

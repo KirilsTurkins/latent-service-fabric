@@ -56,7 +56,8 @@ def verify(repo: Path, paths: list[str]) -> list[dict]:
             seen_actions.add(value)
             row = actions[value]
             require(isinstance(row, dict) and isinstance(row.get("files"), list)
-                    and 1 <= len(row["files"]) <= 6 and isinstance(row.get("metadata"), dict),
+                    and (1 <= len(row["files"]) <= 6 or len(row["files"]) == 8)
+                    and isinstance(row.get("metadata"), dict),
                     "invalid-action-graph-binding")
             source, revision = value.rsplit("@", 1)
             if source == "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup":
@@ -88,6 +89,13 @@ def verify(repo: Path, paths: list[str]) -> list[dict]:
                             "action.yml", "package.json", "package-lock.json", ".lsf-source/minimatch-bounds.test.mjs",
                             ".lsf-source/verify-installed-deepmerge.mjs", ".lsf-source/verify-installed-minimatch.mjs"},
                         "unreviewed-additional-action-source")
+            if len(row["files"]) == 8:
+                require(value == "KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e"
+                        and {item.get("source") for item in row["files"]} == {
+                            "action.yml", "package.json", "package-lock.json",
+                            ".lsf-source/verify-installed-deepmerge.mjs", ".lsf-source/verify-installed-minimatch.mjs",
+                            ".lsf-source/minimatch-bounds.test.mjs", ".lsf-source/verify-rust-cache-lock.mjs",
+                            ".lsf-source/rust-cache-lock.test.mjs"}, "unreviewed-additional-action-source")
             require(re.fullmatch(r"[0-9a-f]{40}", revision) is not None
                     and row["revision"] == revision and row["repository"] == "/".join(source.split("/")[:2]),
                     "action-graph-revision-drift")
