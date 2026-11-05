@@ -1,0 +1,38 @@
+{
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "Inspect original source-bound owner failure",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "fetch-depth": 2,
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Report bounded original failure evidence",
+        "if": "always()",
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "run": "if [ ! -f tools/report_consumer_inner_failure.py ]; then\n  echo '::error title=Original failure reporter::stage=checkout-unavailable'\n  exit 1\nfi\nset +e\ntimeout --signal=TERM --kill-after=5s 180s python3 -B tools/report_consumer_inner_failure.py\nstatus=$?\nif [ \"$status\" -eq 124 ] || [ \"$status\" -eq 137 ]; then\n  echo '::error title=Original failure reporter::stage=timeout'\nfi\nexit \"$status\"\n"
+      }
+    ],
+    "timeout-minutes": 6
+  },
+  "jobId": "inspect",
+  "kind": "job",
+  "reviewReason": "Authenticate the original failure artifact and emit bounded, source-attributed failure data.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/consumer-inner-future-failure-report.yml"
+}

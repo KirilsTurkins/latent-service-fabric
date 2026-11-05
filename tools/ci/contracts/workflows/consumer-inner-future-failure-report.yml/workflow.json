@@ -1,0 +1,31 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "consumer-inner-future-original-report-${{ github.ref }}"
+    },
+    "name": "Consumer inner-future original failure report",
+    "on": {
+      "push": {
+        "branches": [
+          "diag/sdk-745-consumer-failure-20261105"
+        ],
+        "paths": [
+          ".github/workflows/consumer-inner-future-failure-report.yml",
+          "tools/report_consumer_inner_failure.py"
+        ]
+      }
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "inspect"
+  ],
+  "reviewReason": "Bound inspection to the original retained owner artifact on the dedicated push branch.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/consumer-inner-future-failure-report.yml"
+}
