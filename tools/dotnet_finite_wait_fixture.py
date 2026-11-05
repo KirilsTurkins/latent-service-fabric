@@ -26,13 +26,19 @@ def expected(mode):
     return 'finite-task-wait:'+mode+'|'+EXPECTED[mode]
 
 
-def prepare(output: Path, outside: Path, tools: Path):
+def prepare(output: Path, outside: Path, tools: Path, *, poll_prefetch_diagnostic: bool = False):
+    require(type(poll_prefetch_diagnostic) is bool, 'dotnet-finite-wait-diagnostic-selection')
+    if poll_prefetch_diagnostic:
+        source = read_file(ROOT / 'tools/fixtures/dotnet-poll-prefetch/Library.cs', 64 * 1024).decode('utf-8')
+        cases = ('poll-prefetch',)
+    else:
+        source, cases = LIBRARY_SOURCE, CASES
     project = create(output, 'greeting')
     declare_tasks(project)
     outside.mkdir(mode=0o700)
     library, evidence, feed = (outside / name for name in ('library', 'evidence', 'feed'))
     for directory in (library, evidence, feed): directory.mkdir()
-    (library / 'Library.cs').write_text(LIBRARY_SOURCE, encoding='utf-8', newline='\n')
+    (library / 'Library.cs').write_text(source, encoding='utf-8', newline='\n')
     (library / 'Library.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup>'
         '<TargetFramework>net10.0</TargetFramework><OutputType>Library</OutputType>'
         '<AssemblyName>' + PACKAGE + '</AssemblyName><Nullable>enable</Nullable>'
@@ -91,4 +97,4 @@ def prepare(output: Path, outside: Path, tools: Path):
         'dependencyLock': digest((project / LOCK).read_bytes()),
         'originalLibraryAndFeedRemoved': not library.exists() and not feed.exists(),
         'applicationSchedulerReplacement': False, 'httpDeclaration': False,
-        'entropyDeclaration': 'explicit-threadpool-selector-seed', 'cases': list(CASES), 'librarySourceDigest': digest(LIBRARY_SOURCE.encode())}
+        'entropyDeclaration': 'explicit-threadpool-selector-seed', 'cases': list(cases), 'librarySourceDigest': digest(source.encode())}

@@ -33,11 +33,17 @@ public final class DependencyCheckpointControl {
     }
 
     private static Set<Integer> headers(Program program) {
-        var graph = new LoopGraph(ProgramUtils.buildControlFlowGraph(program));
+        var controlFlow = ProgramUtils.buildControlFlowGraph(program);
+        var graph = new LoopGraph(controlFlow);
         var result = new HashSet<Integer>();
         for (int index = 0; index < graph.size(); index++) {
             var loop = graph.loopAt(index);
             if (loop != null) result.add(loop.getHead());
+            if (graph.indexAt(index) >= 0) {
+                for (int successor : controlFlow.outgoingEdges(index)) {
+                    if (successor == index) result.add(index);
+                }
+            }
         }
         return result;
     }

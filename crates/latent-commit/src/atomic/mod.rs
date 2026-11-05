@@ -31,7 +31,7 @@ pub use validation::{
 };
 pub use writer::{
     inspect, AdmissionDecision, AdmittedCommand, CompleteEnvelope, EnvelopeNamespaceExpectation,
-    PreparedAdmission, PreparedDisposition, RetryRequest, StagedIntent,
+    PreparedAdmission, PreparedDisposition, PublishedAdmission, RetryRequest, StagedIntent,
 };
 #[cfg(target_os = "linux")]
 pub use writer::{PayloadAttachment, PayloadAttachmentTarget};

@@ -34,6 +34,8 @@ class CheckpointCompiler(unittest.TestCase):
             'reset-counted', 'exceptional-retry', 'unmanaged-class', 'transitive-initializer',
             'near-max-counted', 'nested-polling', 'mutual-recursion', 'virtual-initializer',
             'string-info-getter', 'string-info-declaration', 'string-info-parent', 'string-info-target',
+            'class-info-enum-count', 'class-info-enum-other-refused', 'class-info-declaration',
+            'class-info-parent', 'class-info-layout', 'class-info-target', 'class-info-header-shadow',
             'compiler-archive-control', 'compiler-cache-isolation'])
 
     def test_real_frontend_executes_every_declared_progress_case(self):
@@ -46,15 +48,36 @@ class CheckpointCompiler(unittest.TestCase):
             ('WrappingCounted', 'true'), ('ResetCounted', 'true'), ('ExceptionalRetry', 'true'),
             ('UnmanagedClassPolling', 'true'), ('TransitiveInitializer', 'true'),
             ('NearMaxCounted', 'false'), ('NestedPolling', 'true'), ('MutualRecursion', 'true'),
-            ('VirtualInitializer', 'true'), ('StringInfoAccess', 'false')])
+            ('VirtualInitializer', 'true'), ('StringInfoAccess', 'false'),
+            ('ClassInfoEnumCountAccess', 'false'), ('ClassInfoEnumElementAccess', 'true')])
         self.assertIn('new String[] { "runtime-initializer", "class-object-helper", "string-copy-body" }', source)
         self.assertIn('check(Finite.class.getName(), corrected, true, mutation);', source)
         self.assertIn('new String[] { "string-info-declaration", "string-info-parent" }', source)
         self.assertIn('check(StringInfoAccess.class.getName(), corrected, true, mutation);', source)
         self.assertIn('check(StringInfoAccess.class.getName(), corrected, true, "", true);', source)
+        self.assertIn('new String[] { "class-info-declaration", "string-info-parent", "class-info-layout" }', source)
+        self.assertIn('check(ClassInfoEnumCountAccess.class.getName(), corrected, true, mutation);', source)
+        self.assertIn('check(ClassInfoEnumCountAccess.class.getName(), corrected, true, "", true);', source)
+        self.assertIn('checkClassInfoHeader(corrected);', source)
+        self.assertIn('checkpoint-control-class-info-shadow-header-refused', source)
         self.assertIn('checkCompilerArchive(corrected);', source)
         self.assertIn('checkCompilerCacheIsolation(corrected);', source)
-        self.assertEqual(len(cases) + 8, len(probe.COMPILER_EXPECTED.split(';')) - 1)
+        self.assertEqual(len(cases) + 13, len(probe.COMPILER_EXPECTED.split(';')) - 1)
+
+    def test_enum_count_proof_binds_exact_emitter_and_loader_header(self):
+        from tools.java_guest import coroutine_patch
+        emitted = coroutine_patch.corrected_async_source(
+            (probe.SDK/'fibers/compiler-patch/AsyncMethodFinder.java').read_bytes()).decode()
+        self.assertIn('case "enumConstantCount":', emitted)
+        self.assertIn('pinnedClassMetadataMethod(method) && pinnedClassInfoCompiler()', emitted)
+        self.assertIn('Class.forName(emitterName, false, targetClass.getClassLoader()) != emitter', emitted)
+        self.assertIn('loader.getResourceAsStream("org/teavm/backend/c/core.h")', emitted)
+        self.assertIn('3e0b5c2bdbc3fdcd61241fe02b8fa3710adb39e54e8cad0c9710a6a69e265ce6', emitted)
+        self.assertIn('!((org.teavm.model.lowlevel.Characteristics) traits).isFunction(owner)', emitted)
+        source = probe.COMPILER_CONTROL.read_text()
+        self.assertIn('"org/teavm/backend/c/intrinsic/reflection/ClassInfoIntrinsic.class"', source)
+        self.assertIn('"org/teavm/backend/c/core.h"', source)
+        self.assertIn('checkpoint-control-class-info-shadow-header-refused', source)
 
     def test_archive_receipt_is_per_compiler_even_when_target_is_reused(self):
         from tools.java_guest import coroutine_patch

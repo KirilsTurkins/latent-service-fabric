@@ -299,6 +299,126 @@ fn linked_row(
 }
 
 #[tokio::test]
+async fn audited_floor_release_allows_explicit_destroy_and_incarnation_recreation() {
+    let mut fixture = Fixture::new(true).await;
+    let select = c::SelectEntityRequest {
+        namespace: Some(fixture.target()),
+        prefix: None,
+        page: Some(latent_rpc::transaction::v1::PageRequest {
+            limit: 1,
+            cursor: None,
+        }),
+    };
+    assert_eq!(
+        fixture
+            .backend
+            .execute_state(context("alice"), select.into())
+            .await
+            .err()
+            .unwrap()
+            .code,
+        PlatformErrorCode::NotFound
+    );
+    assert_eq!(
+        fixture
+            .backend
+            .execute_state(context("alice"), fixture.target().into())
+            .await
+            .err()
+            .unwrap()
+            .code,
+        PlatformErrorCode::NotFound
+    );
+    let floor = seed_floor(&mut fixture).await;
+    let mut malformed = fixture.mutation("malformed-create", c::NamespaceMutationKind::Create, 0);
+    malformed.configuration = None;
+    assert!(fixture
+        .backend
+        .execute_state(context("alice"), malformed.into())
+        .await
+        .is_err());
+    retire(&fixture).await;
+    let generation = inspect(&fixture).await.generation;
+    let refused = fixture
+        .backend
+        .execute_state(
+            context("alice"),
+            fixture
+                .mutation(
+                    "destroy-with-floor",
+                    c::NamespaceMutationKind::Destroy,
+                    generation,
+                )
+                .into(),
+        )
+        .await;
+    assert_eq!(
+        refused.err().unwrap().code,
+        PlatformErrorCode::StateConflict,
+        "a retained floor must block destruction"
+    );
+    let release = request(&fixture, floor, &inspect(&fixture).await);
+    drop(
+        fixture
+            .backend
+            .execute_state(context("alice"), release.into())
+            .await
+            .unwrap(),
+    );
+    let generation = inspect(&fixture).await.generation;
+    let destroyed = fixture
+        .backend
+        .execute_state(
+            context("alice"),
+            fixture
+                .mutation(
+                    "destroy-after-release",
+                    c::NamespaceMutationKind::Destroy,
+                    generation,
+                )
+                .into(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        receipt(&destroyed).status,
+        c::NamespaceStatus::Tombstone as i32
+    );
+    drop(destroyed);
+    // Re-creation requires separate current inspection authority for the new
+    // incarnation; the old-incarnation grant must not imply that permission.
+    let mut document = fixture.document.clone();
+    let scopes = document["rules"][0]["resources"]["scopes"]
+        .as_array_mut()
+        .unwrap();
+    let mut next_scope = scopes[0].clone();
+    next_scope["incarnation"] = 2.into();
+    scopes.push(next_scope);
+    fixture.update(Some(&document), "grant-new-incarnation-inspection");
+    let generation = inspect(&fixture).await.generation;
+    let recreated = fixture
+        .backend
+        .execute_state(
+            context("alice"),
+            fixture
+                .mutation(
+                    "recreate-after-release",
+                    c::NamespaceMutationKind::Recreate,
+                    generation,
+                )
+                .into(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        receipt(&recreated).namespace.as_ref().unwrap().incarnation,
+        "2"
+    );
+    drop(recreated);
+    fixture.finish().await;
+}
+
+#[tokio::test]
 async fn actual_audited_floor_release_preserves_original_receipt_and_reopens_linked_native_rows() {
     let mut fixture = Fixture::new(true).await;
     let floor = seed_floor(&mut fixture).await;
@@ -538,4 +658,104 @@ async fn another_namespace_current_permission_cannot_disclose_original_floor_ope
     assert_eq!(recovered(&original).record_id, Some(floor.hex()));
     drop(original);
     fixture.finish().await;
+}
+
+#[tokio::test]
+async fn floor_release_corrupt_namespace_quarantines_the_protected_store() {
+    let mut fixture = Fixture::new(true).await;
+    let floor = seed_floor(&mut fixture).await;
+    retire(&fixture).await;
+    let request = request(&fixture, floor, &inspect(&fixture).await);
+    fixture
+        .store
+        .with_store(StoreIoKind::RecoveryWrite, WORK_BYTES as u64, |engine| {
+            let key = latent_state::namespace::namespace_record_key(
+                &latent_core::TenantId("a".into()),
+                &StateNamespaceId("orders".into()),
+            )
+            .unwrap();
+            engine.apply(latent_state::embedded::AtomicBatch {
+                expectations: vec![],
+                mutations: vec![latent_state::embedded::RowMutation {
+                    key: latent_state::embedded::RowKey {
+                        family: latent_state::embedded::Family::Namespace,
+                        key,
+                    },
+                    value: Some(b"corrupt-namespace".to_vec()),
+                }],
+            })
+        })
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap();
+    let error = fixture
+        .backend
+        .execute_state(context("alice"), request.into())
+        .await
+        .err()
+        .unwrap();
+    assert_eq!(error.code, PlatformErrorCode::Unavailable);
+    assert_eq!(
+        fixture.store.failure(),
+        Some(latent_state::protected_store::ProtectedStoreError::Store(
+            StoreError::Corrupt
+        ))
+    );
+    fixture.store.close();
+    let report = fixture
+        .store
+        .drain_async(deadline(), std::future::pending())
+        .unwrap()
+        .await;
+    assert!(!report.clean);
+    assert!(report.snapshot.physically_retired());
+}
+
+#[tokio::test]
+async fn floor_release_corrupt_retained_floor_quarantines_the_protected_store() {
+    let mut fixture = Fixture::new(true).await;
+    let floor = seed_floor(&mut fixture).await;
+    retire(&fixture).await;
+    let request = request(&fixture, floor, &inspect(&fixture).await);
+    fixture
+        .store
+        .with_store(
+            StoreIoKind::RecoveryWrite,
+            WORK_BYTES as u64,
+            move |engine| {
+                engine.apply(latent_state::embedded::AtomicBatch {
+                    expectations: vec![],
+                    mutations: vec![latent_state::embedded::RowMutation {
+                        key: command_row_key(floor),
+                        value: Some(b"LCX\0\x01broken".to_vec()),
+                    }],
+                })
+            },
+        )
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap();
+    let error = fixture
+        .backend
+        .execute_state(context("alice"), request.into())
+        .await
+        .err()
+        .unwrap();
+    assert_eq!(error.code, PlatformErrorCode::Unavailable);
+    assert_eq!(
+        fixture.store.failure(),
+        Some(latent_state::protected_store::ProtectedStoreError::Store(
+            StoreError::Corrupt
+        ))
+    );
+    fixture.store.close();
+    let report = fixture
+        .store
+        .drain_async(deadline(), std::future::pending())
+        .unwrap()
+        .await;
+    assert!(!report.clean);
+    assert!(report.snapshot.physically_retired());
 }
