@@ -1,5 +1,7 @@
 package dev.latent.guest.runtime.compiler;
 
+import dev.latent.generated.Bindings;
+import dev.latent.guest.Option;
 import dev.latent.guest.runtime.HostCalls;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -13,6 +15,7 @@ import org.teavm.backend.c.generate.CNameProvider;
 import org.teavm.classlib.impl.ClasslibSubstitutionPolicy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformerContext;
+import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.PreOptimizingClassHolderSource;
 import org.teavm.model.ReferenceCache;
@@ -71,6 +74,17 @@ public final class NetworkFrontendControl {
         String symbol = names.forMethod(callback);
         Pattern definition = Pattern.compile("(?s)\\b" + Pattern.quote(symbol) + "\\s*\\([^;{}]*\\)\\s*\\{");
         String selected = null;
+        String writer = "dev.latent.guest.Wire$Writer";
+        String rootName = "teavm_gc_localStaticRoots_" + names.forClassInstance(ValueType.object(writer));
+        String[] writerTokens = {
+                "(void**) &" + names.forStaticField(new FieldReference(writer, "rootedInputs")),
+                "teavm_registerStaticGcRoots(" + rootName + ",",
+                "offsetof(" + names.forClass(writer) + ", "
+                        + names.forMemberField(new FieldReference(writer, "data")) + ")"
+        };
+        int writerRootBits = 0;
+        int writerWindows = 0;
+        StringBuilder writerSnippets = new StringBuilder();
         StringBuilder snippets = new StringBuilder();
         int windows = 0;
         int diagnostics = 0;
@@ -84,6 +98,20 @@ public final class NetworkFrontendControl {
             String text = new String(bytes, StandardCharsets.UTF_8);
             if (text.contains(symbol)) diagnostics |= 1;
             if (text.contains("lsf_java_async_begin")) diagnostics |= 2;
+            // The generated fixture is fixed SDK/WIT input. Observe the actual
+            // static root, its registration and the Writer.data GC layout.
+            for (int index = 0; index < writerTokens.length; ++index) {
+                int at = text.indexOf(writerTokens[index]);
+                if (at >= 0 && (writerRootBits & (1 << index)) == 0) {
+                    writerRootBits |= 1 << index;
+                    if (writerWindows < 3) {
+                        writerSnippets.append("--- fixed Writer GC metadata ---\n");
+                        writerSnippets.append(text, Math.max(0, at - 384), Math.min(text.length(), at + 1664));
+                        writerSnippets.append("\n");
+                        ++writerWindows;
+                    }
+                }
+            }
             // The fixture contains only fixed SDK/test sources. Keep bounded
             // snippets around its symbol or import to diagnose optimization.
             for (String token : new String[] { symbol, "lsf_java_async_begin" }) {
@@ -122,19 +150,26 @@ public final class NetworkFrontendControl {
         Path target = Path.of(args[1]);
         if (selected != null) Files.writeString(target, selected, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
         Files.writeString(target.resolveSibling(args[0] + "-network-diagnostic.txt"),
-                snippets.length() == 0 ? "no fixed SDK C candidates\n" : snippets.toString(),
+                (snippets.length() == 0 ? "no fixed SDK C candidates\n" : snippets.toString())
+                        + writerSnippets,
                 StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
         System.err.println("NETWORK_FRONTEND_DIAGNOSTIC " + diagnostics);
+        System.err.println("NETWORK_WRITER_GC_DIAGNOSTIC " + writerRootBits);
         require(selected != null && selected.contains("lsf_java_async_begin")
                 && selected.contains("TEAVM_ARRAY_DATA"), "network-frontend-callback-emitted");
+        require(writerRootBits == 7, "network-frontend-writer-static-root-and-data-layout");
         System.out.println("NETWORK_FRONTEND_CAPTURE " + args[0]
-                + ";actual-sdk-callback;locked-ctarget;COMPONENT_QUALIFICATION=pending");
+                + ";actual-sdk-callback;generated-wit;writer-static-root-and-layout;locked-ctarget;COMPONENT_QUALIFICATION=pending");
     }
 
     public static final class App {
         public static void main(String[] args) {
-            HostCalls.Call call = HostCalls.admit();
-            call.callOwned(1, new byte[] { 1, 2, 3 }, 3);
+            var request = new Bindings.LatentNetworkStreamsConnectRequest("localhost", 443,
+                    Bindings.LatentNetworkStreamsTransport.Tcp, Option.none());
+            var connection = Bindings.LatentNetworkStreams.connect(request);
+            if (!connection.isError()) {
+                Bindings.LatentNetworkStreams.write(connection.value(), new byte[] { 1, 2, 3 }, Option.none());
+            }
         }
     }
 }

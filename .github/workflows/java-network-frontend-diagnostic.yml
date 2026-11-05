@@ -51,3 +51,6 @@ jobs:
             ${{ runner.temp }}/java-network-frontend/commands/logs/**
             ${{ runner.temp }}/java-network-frontend/*-owned-callback.c
             ${{ runner.temp }}/java-network-frontend/*-network-diagnostic.txt
+            ${{ runner.temp }}/java-network-frontend/network-abi/Bindings.java
+            ${{ runner.temp }}/java-network-frontend/network-abi/bridge.c
+            ${{ runner.temp }}/java-network-frontend/network-abi/probe.h
