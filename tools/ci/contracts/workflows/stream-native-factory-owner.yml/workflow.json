@@ -16,12 +16,14 @@
           "feat/sdk-738-q35-pci-identity-20261104",
           "feat/sdk-738-q35-node-pci-prefix-20261104",
           "feat/sdk-738-q35-pci-setup-20261104",
-          "feat/sdk-738-q35-pci-fixup-20261104"
+          "feat/sdk-738-q35-pci-fixup-20261104",
+          "feat/sdk-738-q35-pci-intx-20261105"
         ],
         "paths": [
           ".github/workflows/stream-native-factory-owner.yml",
           "apps/**",
           "crates/latent-streams/**",
+          "crates/latent-component-threading/**",
           "examples/renderer-profile/package.json",
           "examples/renderer-profile/package-lock.json",
           "crates/latent-capabilities/src/broker/pools/control.rs",
@@ -33,6 +35,8 @@
           "tools/host_stream_kernel_native_vm.py",
           "tools/host_stream_kernel_native_vm_inputs.py",
           "tools/tests/test_kernel_native_constructor_vm.py",
+          "tools/ci_tool_graph.py",
+          "tools/tests/test_ci_contracts.py",
           "tools/ci/suites.json",
           "tools/ci/suites.d/outbound-streams.json",
           "research/standard-outbound/linux-6.12-lineage/native-constructor-vm-init.c",
@@ -40,7 +44,10 @@
           "research/standard-outbound/linux-6.12-lineage/node-constructor-bridge/**",
           "research/standard-outbound/linux-6.12-lineage/node-pci-prefix/**",
           "research/standard-outbound/linux-6.12-lineage/node-pci-setup/**",
-          "research/standard-outbound/linux-6.12-lineage/node-pci-fixup/**"
+          "research/standard-outbound/linux-6.12-lineage/node-pci-fixup/**",
+          "research/standard-outbound/linux-6.12-lineage/node-pci-intx/**",
+          "tools/q35_intx_owner.py",
+          "tools/q35_intx_trace.py"
         ]
       },
       "workflow_dispatch": null
@@ -53,7 +60,7 @@
     "native-kernel-vm",
     "native-owner"
   ],
-  "reviewReason": "Default-off original-Node q35 early-fixup no-match qualification; preserve existing setup, record-retirement, source bounds, and IRQ/TCP exclusions.",
+  "reviewReason": "Trigger the existing feature-branch owner for captured threading and CI source inputs.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/stream-native-factory-owner.yml"
 }

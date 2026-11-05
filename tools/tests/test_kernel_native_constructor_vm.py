@@ -538,3 +538,538 @@ class Q35NodePciFixupControls(unittest.TestCase):
                 'lsf_node_setup_records_locked', 'pci_record->phase != LSF_PREPAID_LIVE',
                 'fw_record->phase != LSF_PREPAID_LIVE', 'factory.pool.poisoned = 1u'):
             self.assertIn(predicate, material)
+
+
+class Q35NodePciIntxControls(unittest.TestCase):
+    @staticmethod
+    def serial():
+        raw = Q35NodePciFixupControls.serial()
+        old = b'intxCheck=0 barProbe=0 registered=0\n'
+        replacement = (b'intxCheck=1 barProbe=0 registered=0\n'
+            b'[    2.345680] LSFQ35PCIINTX1 command=0103 pin=1 line=255 '
+            b'restored=1 barProbe=0 registered=0\n')
+        assert raw.count(old) == 1
+        return raw.replace(old, replacement)
+
+    def test_marker_requires_saved_word_and_ordered_original_owner(self):
+        raw = self.serial()
+        observation = owner.node_intx_serial(raw)
+        self.assertEqual(observation['pciIntx']['originalCommand'], 0x103)
+        self.assertFalse(observation['pciIntx']['busMasterEnabled'])
+        self.assertTrue(observation['pciIntx']['savedCommandRestored'])
+        for name in ('irqFundingQualified', 'sharedInterruptCustodyQualified', 'physicalBankRetired'):
+            self.assertFalse(observation['pciIntx'][name])
+        for bad in (raw.replace(b'command=0103', b'command=0003'),
+                    raw.replace(b'command=0103', b'command=0107'),
+                    raw.replace(b'command=0103', b'command=0503'),
+                    raw.replace(b'pin=1', b'pin=0'), raw.replace(b'line=255', b'line=256'),
+                    raw.replace(b'restored=1', b'restored=0'),
+                    raw.replace(b'intxCheck=1', b'intxCheck=0'),
+                    raw.replace(b'LSFQ35PCIINTX1', b'OTHER'),
+                    raw.replace(b'barProbe=0', b'barProbe=1', 1),
+                    raw + b'[    2.345680] LSFQ35PCIINTX1 command=0103 pin=1 line=255 restored=1 barProbe=0 registered=0\n'):
+            with self.subTest(raw=bad), self.assertRaises(ValueError):
+                owner.node_intx_serial(bad)
+
+    def test_selected_irq_state_is_fenced_on_both_sides_of_the_write(self):
+        source = (owner.ROOT/owner.INTX_VIRTIO).read_text(encoding='utf8')
+        before = source.split("b'    pci_default_write_config(pci_dev, address, val, len);\\n'", 1)
+        self.assertEqual(len(before), 2)
+        self.assertIn('lsf_old == 0x0103 && val == 0x0503', before[0])
+        self.assertIn('lsf_old == 0x0503 && val == 0x0103', before[0])
+        for predicate in ('lsf_q35_phase == 1', 'lsf_q35_phase == 2',
+                'address != PCI_COMMAND || len != 2', 'pci_dev != lsf_q35_device',
+                'bool lsf_watch = lsf_q35_selected(pci_dev) && lsf_q35_phase'):
+            self.assertIn(predicate, before[0])
+        self.assertIn('++lsf_q35_phase', before[1])
+        self.assertIn('lsf_q35_challenge == ARRAY_SIZE(lsf_q35_offsets)', before[1])
+        self.assertIn('lsf_q35_intx_armed command=0x103', before[1])
+        self.assertIn('object_dynamic_cast(OBJECT(vdev), TYPE_VIRTIO_NET)', before[0])
+        self.assertIn('pci_dev->irq_state ||', before[0])
+        self.assertIn('pci_dev->irq_state ||', before[1])
+        self.assertIn('grabbed=0 irq=0 master=0', before[1])
+        for predicate in ('!vdev->use_disabled_flag', '!vdev->disabled',
+                'pci_dev->is_master', 'pci_dev->bus_master_enable_region.enabled',
+                'lsf_net->max_queue_pairs != 1', 'lsf_net->curr_queue_pairs != 1',
+                'lsf_net->multiqueue', 'lsf_net->vhost_started'):
+            self.assertIn(predicate, before[0])
+            self.assertIn(predicate, before[1])
+        self.assertIn('lsf_net->nic->ncs[0].peer', before[0])
+        self.assertIn('lsf_net->vqs[0].tx_waiting', before[0])
+        self.assertIn('lsf_ncs[0].peer', before[1])
+        self.assertIn('lsf_queues[0].tx_waiting', before[1])
+        self.assertIn('lsf_net->status != lsf_net_status', before[1])
+        for predicate in ('lsf_net->nic != lsf_nic', 'lsf_nic->ncs != lsf_ncs',
+                'lsf_net->vqs != lsf_queues'):
+            self.assertIn(predicate, before[1])
+
+    def test_source_capture_and_unbound_projection_refuse(self):
+        captured = owner.node_intx_capture(owner.ROOT)
+        self.assertEqual(set(captured), {owner.INTX_PROJECTOR, owner.INTX_FACTORY,
+            owner.INTX_PROBE, owner.INTX_SINK, owner.INTX_VIRTIO})
+        with self.assertRaises(ValueError):
+            owner.node_intx_compose({}, captured)
+        with self.assertRaises(ValueError):
+            owner.node_intx_compose({}, {})
+
+    def test_exact_actor_forward_and_restore_only_are_distinct(self):
+        material = (owner.ROOT/owner.INTX_FACTORY).read_text(encoding='utf8')
+        for predicate in ('node->prefix_task != current', 'node->mm != current->mm',
+                'node->tgid != task_tgid(current)', 'node->cred != current_cred()',
+                'node->net != current->nsproxy->net_ns', 'lsf_node_setup_records_locked',
+                'pci_record->phase != LSF_PREPAID_LIVE', 'fw_record->phase != LSF_PREPAID_LIVE'):
+            self.assertIn(predicate, material)
+        forward_start = 'int lsf_node_intx_forward(struct pci_dev *pci)\n{'
+        forward_end = 'int lsf_node_intx_preflight(struct pci_dev *pci, u16 original)\n{'
+        restore_start = 'int lsf_node_intx_claim_restore(struct pci_dev *pci, u16 original)\n{'
+        restore_end = 'int lsf_node_intx_restore_written(struct pci_dev *pci, u16 original)\n{'
+        for marker in (forward_start, forward_end, restore_start, restore_end):
+            self.assertEqual(material.count(marker), 1, marker)
+        forward = material.split(forward_start, 1)[1].split(forward_end, 1)[0]
+        restore = material.split(restore_start, 1)[1].split(restore_end, 1)[0]
+        self.assertIn('lsf_node_constructor_actor_current()', forward)
+        self.assertNotIn('lsf_node_constructor_actor_current()', restore)
+        self.assertIn('node->prefix_intx_saved == original', restore)
+        self.assertIn('original == LSF_Q35_INTX_ORIGINAL_COMMAND', restore)
+        self.assertIn('LSF_NODE_INTX_RESTORE_CLAIMED', restore)
+        self.assertNotIn('pci_write_config', restore)
+        self.assertIn('node->prefix_intx_saved == LSF_Q35_INTX_ORIGINAL_COMMAND', forward)
+        self.assertIn('#define LSF_Q35_INTX_ORIGINAL_COMMAND 0x0103u', material)
+        for name in ('preflight', 'prepare_toggle', 'restore_written', 'observed'):
+            start = '\nint lsf_node_intx_' + name + '('
+            self.assertEqual(material.count(start), 1)
+            section = material.split(start, 1)[1].split('\n}', 1)[0]
+            self.assertIn('LSF_Q35_INTX_ORIGINAL_COMMAND', section)
+        probe = (owner.ROOT/owner.INTX_PROBE).read_text(encoding='utf8')
+        for predicate in ('*command != LSF_Q35_INTX_ORIGINAL_COMMAND',
+                'orig != LSF_Q35_INTX_ORIGINAL_COMMAND',
+                'toggle != (LSF_Q35_INTX_ORIGINAL_COMMAND ^ PCI_COMMAND_INTX_DISABLE)',
+                'value != toggle', 'restored != orig'):
+            self.assertIn(predicate, probe)
+
+
+class Q35NodeKvmLaunchControls(unittest.TestCase):
+    @staticmethod
+    def record():
+        return {'uid':1001, 'euid':1001, 'gid':1001, 'egid':1001,
+            'groups':[4,100,118,999,1001], 'label':'unconfined',
+            'entry':{'symlink':False,'characterDevice':True,'mode':8624,'device':7,'inode':460,
+                'rdev':2792,'major':10,'minor':232,'ownerUid':0,'ownerGid':993,
+                'readWrite':True},
+            'statErrno':None,'opened':True,'openErrno':None,'sameEntry':True}
+
+    @staticmethod
+    def receipt():
+        after = {'uid':1001, 'euid':1001, 'gid':1001, 'egid':1001,
+            'groups':[4,100,118,999,1001], 'mode':8624,'device':7,'inode':460,
+            'rdev':2792,'major':10,'minor':232,'ownerUid':0,'ownerGid':993}
+        return {'kvmAccess':{'after':after,'aclAfter':[
+            'user::rw-','user:1001:rw-','group::rw-','mask::rw-','other::---']}}
+
+    def test_child_probe_reports_real_open_and_denial_without_a_vm(self):
+        import contextlib, io, os, stat
+        from types import SimpleNamespace
+        entry=SimpleNamespace(st_mode=stat.S_IFCHR|0o660,st_dev=7,st_ino=460,
+            st_rdev=2792,st_uid=0,st_gid=993)
+        for denied in (False,True):
+            with self.subTest(denied=denied), contextlib.ExitStack() as stack:
+                for name,value in (('getuid',1001),('geteuid',1001),('getgid',1001),
+                                   ('getegid',1001),('getgroups',[4,100,118,999,1001])):
+                    stack.enter_context(patch.object(os,name,return_value=value,create=True))
+                stack.enter_context(patch.object(os,'major',return_value=10,create=True))
+                stack.enter_context(patch.object(os,'minor',return_value=232,create=True))
+                stack.enter_context(patch.object(os,'O_CLOEXEC',0,create=True))
+                stack.enter_context(patch.object(os,'O_NOFOLLOW',0,create=True))
+                stack.enter_context(patch.object(os,'lstat',return_value=entry))
+                stack.enter_context(patch.object(os,'fstat',return_value=entry))
+                stack.enter_context(patch.object(os,'access',return_value=True))
+                close=stack.enter_context(patch.object(os,'close'))
+                stack.enter_context(patch.object(os,'open',
+                    side_effect=PermissionError(13,'denied') if denied else None,
+                    return_value=123))
+                stack.enter_context(patch('builtins.open',return_value=io.BytesIO(b'unconfined\n')))
+                output=stack.enter_context(patch('sys.stdout',new_callable=io.StringIO))
+                exec(compile(programme._NODE_KVM_OPEN_PROBE,'<fixed KVM probe>','exec'),{})
+                row=json.loads(output.getvalue())
+                self.assertTrue(row['entry']['readWrite'])
+                self.assertEqual(row['opened'],not denied)
+                self.assertEqual(row['openErrno'],13 if denied else None)
+                self.assertEqual(row['sameEntry'],None if denied else True)
+                self.assertEqual(close.call_count,0 if denied else 1)
+
+    def test_same_owned_child_requires_actual_matching_open_and_exact_acl(self):
+        record = self.record(); receipt = self.receipt(); calls = []
+        def run(label,*argv,seconds):
+            calls.append((label,argv,seconds))
+            if label.endswith('-open'):
+                self.assertEqual(argv[:4],(programme.sys.executable,'-I','-B','-c'))
+                self.assertEqual(argv[4],programme._NODE_KVM_OPEN_PROBE)
+                return json.dumps(record).encode()
+            return b'user::rw-\nuser:1001:rw-\ngroup::rw-\nmask::rw-\nother::---\n'
+        row = programme.node_kvm_observe(run,receipt,'before-boot',require_open=True)
+        self.assertEqual(row['child'],record)
+        self.assertEqual(row['acl'],receipt['kvmAccess']['aclAfter'])
+        self.assertEqual([call[0] for call in calls],
+            ['node-KVM-before-boot-open','node-KVM-before-boot-ACL'])
+        self.assertEqual(receipt['kvmLaunchChecks'],[row])
+
+    def test_access_true_but_open_denied_is_retained_and_refused(self):
+        record=self.record();record.update(opened=False,openErrno=13,sameEntry=None)
+        receipt=self.receipt()
+        def run(label,*argv,seconds):
+            return (json.dumps(record).encode() if label.endswith('-open') else
+                b'user::rw-\nuser:1001:rw-\ngroup::rw-\nmask::rw-\nother::---\n')
+        with self.assertRaisesRegex(ValueError,'node-KVM-probe-real-open-required'):
+            programme.node_kvm_observe(run,receipt,'initial',require_open=True)
+        self.assertTrue(receipt['kvmLaunchChecks'][0]['child']['entry']['readWrite'])
+        self.assertEqual(receipt['kvmLaunchChecks'][0]['child']['openErrno'],13)
+        after=self.receipt()
+        observed=programme.node_kvm_observe(run,after,'after-boot-failure',require_open=False)
+        self.assertEqual(observed['child']['openErrno'],13)
+
+    def test_changed_identity_acl_and_malformed_records_fail_closed(self):
+        for change,expected in (('inode','identity-changed'),('acl','ACL-changed'),
+                                ('schema','closed-record'),('inconsistent','record-consistency')):
+            with self.subTest(change=change):
+                record=self.record();receipt=self.receipt()
+                if change=='inode':record['entry']['inode']+=1
+                if change=='schema':record['unexpected']=True
+                if change=='inconsistent':record['openErrno']=13
+                def run(label,*argv,seconds):
+                    if label.endswith('-open'):return json.dumps(record).encode()
+                    if change=='acl':return b'user::rw-\ngroup::rw-\nother::---\n'
+                    return b'user::rw-\nuser:1001:rw-\ngroup::rw-\nmask::rw-\nother::---\n'
+                with self.assertRaisesRegex(ValueError,expected):
+                    programme.node_kvm_observe(run,receipt,'before-boot',require_open=True)
+
+
+class Q35NodeKvmRecoveryControls(unittest.TestCase):
+    record = staticmethod(Q35NodeKvmLaunchControls.record)
+
+    @staticmethod
+    def recovery_receipt():
+        value = Q35NodeKvmLaunchControls.receipt()
+        value['kvmAccess'].update(grantAttempted=True,aclBefore=['user::rw-','group::rw-','other::---'])
+        value['kvmLaunchChecks'] = [{'stage':'before-trace',
+            'child':Q35NodeKvmLaunchControls.record(), 'acl':list(value['kvmAccess']['aclAfter'])}]
+        value['traceLossControl'] = {'sink':'/dev/full','deviceMajor':1,'deviceMinor':7,
+            'expectedExit':74,'actualExit':74,'allDescendantsCleaned':True,
+            'partialGuestMayHaveBooted':True,'guestResultQualified':False}
+        value['emulatorAttempts'] = 1
+        return value
+
+    def fake_run(self, record, receipt, *, anchor_before=None, anchor_after=None, restored=None):
+        admitted=receipt['kvmAccess']['aclAfter']
+        lost=[line for line in admitted if line != 'user:1001:rw-']
+        calls=[]
+        def text(lines): return ('\n'.join(lines)+'\n').encode()
+        def run(label,*args,seconds):
+            calls.append((label,args,seconds))
+            if label == 'node-KVM-before-boot-open': return json.dumps(record).encode()
+            if label == 'node-KVM-before-boot-ACL': return text(lost)
+            if label == 'node-KVM-recovery-before-ACL': return text(lost if anchor_before is None else anchor_before)
+            if label == 'node-KVM-recovery-runner-UID-ACL': return b''
+            if label == 'node-KVM-recovery-after-ACL': return text(admitted if anchor_after is None else anchor_after)
+            if label == 'node-KVM-after-restore-open': return json.dumps(self.record() if restored is None else restored).encode()
+            if label == 'node-KVM-after-restore-ACL': return text(admitted)
+            raise AssertionError(label)
+        return run,calls
+
+    def no_access(self):
+        value=self.record()
+        value.update(opened=False,openErrno=13,sameEntry=None)
+        value['entry']['readWrite']=False
+        return value
+
+    def anchor_patches(self, *, inode=460):
+        import contextlib, os, stat
+        from types import SimpleNamespace
+        stack=contextlib.ExitStack()
+        for name,value in (('getuid',1001),('geteuid',1001),('getgid',1001),
+                           ('getegid',1001),('getgroups',[4,100,118,999,1001]),('getpid',2345)):
+            stack.enter_context(patch.object(os,name,return_value=value,create=True))
+        stack.enter_context(patch.object(os,'O_PATH',0x200000,create=True))
+        stack.enter_context(patch.object(os,'O_NOFOLLOW',0x20000,create=True))
+        stack.enter_context(patch.object(os,'O_CLOEXEC',0x80000,create=True))
+        stack.enter_context(patch.object(os,'major',return_value=10,create=True))
+        stack.enter_context(patch.object(os,'minor',return_value=232,create=True))
+        opened=stack.enter_context(patch.object(os,'open',return_value=77))
+        closed=stack.enter_context(patch.object(os,'close'))
+        st=SimpleNamespace(st_mode=stat.S_IFCHR|0o660,st_dev=7,st_ino=inode,
+            st_rdev=2792,st_uid=0,st_gid=993)
+        stack.enter_context(patch.object(os,'fstat',return_value=st))
+        return stack,opened,closed
+
+    def test_missing_exact_runner_grant_is_restored_once_on_pinned_device(self):
+        receipt=self.recovery_receipt(); run,calls=self.fake_run(self.no_access(),receipt)
+        stack,opened,closed=self.anchor_patches()
+        with stack: programme.node_kvm_before_boot(run,receipt)
+        self.assertEqual(opened.call_args.args[0],'/dev/kvm')
+        closed.assert_called_once_with(77)
+        changed=[args for label,args,seconds in calls if label == 'node-KVM-recovery-runner-UID-ACL']
+        self.assertEqual(changed,[('sudo','-n','/usr/bin/setfacl','--no-mask','--modify',
+            'user:1001:rw-','--','/proc/2345/fd/77')])
+        self.assertEqual(receipt['kvmAclRecovery'],{'uid':1001,'attempted':True,
+            'before':['user::rw-','group::rw-','mask::rw-','other::---'],
+            'after':receipt['kvmAccess']['aclAfter'],'restored':True,'target':'opened-device'})
+        self.assertEqual([x['stage'] for x in receipt['kvmLaunchChecks']],
+            ['before-trace','before-boot','after-restore'])
+        self.assertEqual(receipt['kvmLaunchChecks'][1]['child']['openErrno'],13)
+        self.assertTrue(receipt['kvmLaunchChecks'][2]['child']['opened'])
+
+    def test_unchanged_acl_and_open_use_no_restoration(self):
+        receipt=self.recovery_receipt();calls=[]
+        def run(label,*args,seconds):
+            calls.append(label)
+            if label.endswith('-open'):return json.dumps(self.record()).encode()
+            return ('\n'.join(receipt['kvmAccess']['aclAfter'])+'\n').encode()
+        programme.node_kvm_before_boot(run,receipt)
+        self.assertEqual(calls,['node-KVM-before-boot-open','node-KVM-before-boot-ACL'])
+        self.assertNotIn('kvmAclRecovery',receipt)
+
+    def test_any_other_change_is_refused_before_privileged_grant(self):
+        for changed in ('uid','gid','groups','inode','mode','owner','extra-acl','mask','missing-mask',
+                        'no-prior-grant','prior-acl','duplicate-base','trace','attempts','label','wrong-errno','still-open'):
+            with self.subTest(changed=changed):
+                receipt=self.recovery_receipt(); record=self.no_access()
+                if changed=='uid':record['uid']+=1
+                if changed=='gid':record['egid']+=1
+                if changed=='groups':record['groups']=[1001]
+                if changed=='inode':record['entry']['inode']+=1
+                if changed=='mode':record['entry']['mode']+=1
+                if changed=='owner':record['entry']['ownerUid']+=1
+                if changed=='no-prior-grant':receipt['kvmAccess']['grantAttempted']=False
+                if changed=='prior-acl':receipt['kvmAccess']['aclBefore'][0]='user::r--'
+                if changed=='duplicate-base':receipt['kvmAccess']['aclBefore'][1]='user::r--'
+                if changed=='trace':receipt['traceLossControl']['actualExit']=1
+                if changed=='attempts':receipt['emulatorAttempts']=2
+                if changed=='label':record['label']='other'
+                if changed=='wrong-errno':record['openErrno']=1
+                if changed=='still-open':record.update(opened=True,openErrno=None,sameEntry=True)
+                base,calls=self.fake_run(record,receipt)
+                def run(label,*args,seconds):
+                    if label == 'node-KVM-before-boot-ACL' and changed in ('extra-acl','mask','missing-mask'):
+                        lines=['user::rw-','group::rw-','mask::rw-','other::---']
+                        if changed=='extra-acl':lines.append('user:1002:rw-')
+                        if changed=='mask':lines[2]='mask::r--'
+                        if changed=='missing-mask':lines.pop(2)
+                        calls.append((label,args,seconds))
+                        return ('\n'.join(lines)+'\n').encode()
+                    return base(label,*args,seconds=seconds)
+                with self.assertRaises(ValueError):programme.node_kvm_before_boot(run,receipt)
+                self.assertFalse(any(x[0]=='node-KVM-recovery-runner-UID-ACL' for x in calls))
+                self.assertNotIn('kvmAclRecovery',receipt)
+
+    def test_anchor_changes_or_failed_recheck_refuse_without_retry(self):
+        for changed in ('inode','before-acl','after-acl','open'):
+            with self.subTest(changed=changed):
+                receipt=self.recovery_receipt(); bad=['user::rw-','group::rw-','mask::r--','other::---']
+                run,calls=self.fake_run(self.no_access(),receipt,
+                    anchor_before=bad if changed=='before-acl' else None,
+                    anchor_after=bad if changed=='after-acl' else None,
+                    restored=self.no_access() if changed=='open' else None)
+                stack,opened,closed=self.anchor_patches(inode=461 if changed=='inode' else 460)
+                with stack,self.assertRaises(ValueError):programme.node_kvm_before_boot(run,receipt)
+                closed.assert_called_once_with(77)
+                attempts=sum(x[0]=='node-KVM-recovery-runner-UID-ACL' for x in calls)
+                self.assertEqual(attempts,0 if changed in ('inode','before-acl') else 1)
+                self.assertFalse(receipt['kvmAclRecovery']['restored'])
+
+
+class Q35NodePciIntxOwnerControls(unittest.TestCase):
+    def test_trace_configuration_is_explicit_and_refuses_replacement(self):
+        from tools import q35_intx_owner as host
+        command = ('/absolute/qemu', '-machine', 'pc-q35-11.1')
+        traced = host.trace_argv(command)
+        self.assertEqual(traced[:len(command)], command)
+        configure = (owner.ROOT/'tools/qualify_host_stream_kernel_native_vm.py').read_text(encoding='utf8')
+        self.assertIn("*(['--enable-trace-backends=log'] if intx else [])", configure)
+        self.assertEqual(traced[len(command):], tuple(part for event in host.EVENTS
+            for part in ('-trace', 'enable='+event)))
+        for bad in (command+('-trace', 'old'), command+('-D', 'old'), list(command)):
+            with self.subTest(argv=bad), self.assertRaises(ValueError):
+                host.trace_argv(bad)
+
+    def test_loss_probe_requires_exact_sink_and_only_accepts_exit_74(self):
+        import stat
+        import time
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools import q35_intx_owner as host
+        class Commands:
+            root = '/owned'
+            environment = {}
+            deadline = time.monotonic()+10
+            def __init__(self): self.records, self.retained = [], []
+            def retain(self,label,result): self.retained.append((label,result.output,result.stderr))
+        class Result:
+            stdout, stderr = b'', b''
+            def __init__(self, code): self.returncode = code
+        device = SimpleNamespace(st_mode=stat.S_IFCHR, st_rdev=123)
+        argv = ('/absolute/qemu','-trace','enable=pci_cfg_read')
+        with patch.object(host.Path, 'lstat', return_value=device), \
+             patch.object(host.os, 'major', return_value=1, create=True), \
+             patch.object(host.os, 'minor', return_value=7, create=True), \
+             patch.object(host.build_process, 'run_bounded_result', return_value=Result(74)) as invoke:
+            commands=Commands(); result=host.probe_loss(commands,argv)
+            self.assertEqual(result['actualExit'],74)
+            self.assertTrue(commands.records[0]['descendantsCleaned'])
+            self.assertEqual(invoke.call_args.args[0][-2:], ['-D',str(host.Path('/dev/full'))])
+        for code in (0, 1, 75):
+            with self.subTest(code=code), patch.object(host.Path, 'lstat', return_value=device), \
+                 patch.object(host.os, 'major', return_value=1, create=True), \
+                 patch.object(host.os, 'minor', return_value=7, create=True), \
+                 patch.object(host.build_process, 'run_bounded_result', return_value=Result(code)), \
+                 self.assertRaises(ValueError):
+                host.probe_loss(Commands(),argv)
+        device.st_mode = stat.S_IFREG
+        with patch.object(host.Path, 'lstat', return_value=device), \
+             patch.object(host.build_process, 'run_bounded_result') as invoke, self.assertRaises(ValueError):
+            host.probe_loss(Commands(),argv)
+        invoke.assert_not_called()
+
+
+"""Bounded grammar/refusal controls; synthetic data is not a VM observation."""
+import unittest
+from tools import q35_intx_trace as trace
+
+def cfg(kind, offset, value, device=b'virtio-net-pci'):
+    arrow = b'->' if kind == b'read' else b'<-'
+    return b'pci_cfg_'+kind+b' '+device+b' 00:03.0 @0x'+format(offset, 'x').encode()+b' '+arrow+b' 0x'+format(value, 'x').encode()
+
+def route(index, parent, pic):
+    return [b'pci_route_irq IRQ '+str(index).encode()+b' @/machine/peripheral/net0 -> IRQ '+str(parent).encode()+b' @root-complex',
+            b'x86_gsi_interrupt GSI interrupt #'+str(16+parent).encode()+b' level:0',
+            b'x86_gsi_interrupt GSI interrupt #'+str(pic).encode()+b' level:0']
+
+def example():
+    rows = [cfg(b'read', off, value) for off, value in trace.PREFIX[:-1]]
+    rows += [trace.ARMED, cfg(b'read', *trace.PREFIX[-1])]
+    rows += [cfg(b'read', 4, 0x103), cfg(b'read', 0x3d, 1), cfg(b'read', 0x3c, 0xff),
+             cfg(b'read', 4, 0x103), cfg(b'write', 4, 0x503)]
+    for i, parent in enumerate((7, 4, 5, 6)):
+        rows += route(i, parent, i+8)
+    rows += [b'lsf_q35_virtio_guard old=0x103 new=0x503 phase=2 status=0 isr=0 disabled=1 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 irq=0 master=0 vga=0 peer=0 waiting=0 netVhost=0 queues=1 netStable=1 mappings=stable bql=1',
+             cfg(b'read', 4, 0x503), cfg(b'write', 4, 0x103)]
+    for i, parent in enumerate((7, 4, 5, 6)):
+        rows += route(i, parent, i+8)
+    rows += [b'lsf_q35_virtio_guard old=0x503 new=0x103 phase=3 status=0 isr=0 disabled=1 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 irq=0 master=0 vga=0 peer=0 waiting=0 netVhost=0 queues=1 netStable=1 mappings=stable bql=1',
+             cfg(b'read', 4, 0x103), cfg(b'read', 0x3d, 1), cfg(b'read', 0x3c, 0xff),
+             cfg(b'read', 4, 0x103), cfg(b'read', 0x3d, 1), cfg(b'read', 0x3c, 0xff)]
+    rows += [cfg(b'read', off, value) for off, value in reversed(trace.PREFIX)]
+    return b'\n'.join(rows)+b'\n'
+
+class TraceRefusalControls(unittest.TestCase):
+    def test_expected_complete_pattern_is_only_a_source_model(self):
+        result = trace.inspect(example(), 0x103, 1, 0xff)
+        self.assertFalse(result['busMasterEnabled'])
+        self.assertEqual(result['selectedCommandWrites'], 2)
+        self.assertEqual(result['selectedRouteCallbacks'], 8)
+        self.assertEqual(result['virtioGuardPasses'], 2)
+        self.assertEqual(result['apicGsi'], [23, 20, 21, 22])
+        self.assertEqual(result['picGsi'], [8, 9, 10, 11])
+        self.assertEqual(result['postGuardNonselectedGsi0Deassertions'], 0)
+        self.assertFalse(result['traceDeliveryQualified'])
+        self.assertFalse(result['irqFundingQualified'])
+
+    def test_only_one_unselected_gsi0_deassertion_after_each_guard_is_accepted(self):
+        raw = example()
+        event = b'x86_gsi_interrupt GSI interrupt #0 level:0'
+        guards = [line for line in raw.splitlines()
+                  if line.startswith(b'lsf_q35_virtio_guard ')]
+        self.assertEqual(len(guards), 2)
+        for guard in guards:
+            with self.subTest(guard=guard[:60]):
+                candidate = raw.replace(guard + b'\n', guard + b'\n' + event + b'\n', 1)
+                observation = trace.inspect(candidate, 0x103, 1, 0xff)
+                self.assertEqual(observation['postGuardNonselectedGsi0Deassertions'], 1)
+                self.assertEqual(observation['selectedRouteCallbacks'], 8)
+                self.assertEqual(observation['picGsi'], [8, 9, 10, 11])
+                self.assertEqual(observation['observedGsiAssertionsDuringWrites'], 0)
+        both = raw
+        for guard in guards:
+            both = both.replace(guard + b'\n', guard + b'\n' + event + b'\n', 1)
+        self.assertEqual(trace.inspect(both, 0x103, 1, 0xff)
+                         ['postGuardNonselectedGsi0Deassertions'], 2)
+
+    def test_post_guard_events_cannot_hide_selected_routes_or_assertions(self):
+        raw = example()
+        guard = next(line for line in raw.splitlines()
+                     if line.startswith(b'lsf_q35_virtio_guard ') and b'phase=2' in line)
+        def after(events):
+            return raw.replace(guard + b'\n', guard + b'\n' + events + b'\n', 1)
+        zero = b'x86_gsi_interrupt GSI interrupt #0 level:0'
+        cases = (
+            after(b'x86_gsi_interrupt GSI interrupt #0 level:1'),
+            after(zero + b'\n' + zero),
+            after(b'x86_gsi_interrupt GSI interrupt #8 level:0'),
+            after(b'x86_gsi_interrupt GSI interrupt #8 level:1'),
+            after(b'x86_gsi_interrupt GSI interrupt #23 level:0'),
+            after(b'x86_gsi_interrupt GSI interrupt #23 level:1'),
+            after(route(0, 7, 8)[0]),
+            raw.replace(guard + b'\n', zero + b'\n' + guard + b'\n', 1),
+        )
+        for candidate in cases:
+            with self.subTest(candidate=candidate[-180:]), self.assertRaises(ValueError):
+                trace.inspect(candidate, 0x103, 1, 0xff)
+        # If GSI 0 is a selected PIC route, even a post-guard deassertion cannot
+        # be classified as non-selected and must refuse.
+        alias = raw.replace(b'x86_gsi_interrupt GSI interrupt #8 level:0',
+                            b'x86_gsi_interrupt GSI interrupt #0 level:0')
+        alias = alias.replace(guard + b'\n', guard + b'\n' + zero + b'\n', 1)
+        with self.assertRaises(ValueError):
+            trace.inspect(alias, 0x103, 1, 0xff)
+
+    def test_missing_extra_or_asserted_callbacks_refuse(self):
+        raw = example()
+        cases = (raw.replace(b'x86_gsi_interrupt GSI interrupt #23 level:0\n', b'', 1),
+                 raw.replace(b'x86_gsi_interrupt GSI interrupt #23 level:0',
+                             b'x86_gsi_interrupt GSI interrupt #23 level:1', 1),
+                 raw.replace(b'x86_gsi_interrupt GSI interrupt #8 level:0\n',
+                             b'x86_gsi_interrupt GSI interrupt #8 level:0\n'
+                             b'x86_gsi_interrupt GSI interrupt #8 level:0\n', 1),
+                 raw.replace(b'@/machine/peripheral/net0', b'@/machine/peripheral/foreign', 1),
+                 raw.replace(b'x86_gsi_interrupt GSI interrupt #8 level:0',
+                             b'x86_gsi_interrupt GSI interrupt #9 level:0', 1),
+                 raw.replace(b'status=0 isr=0 disabled=1 broken=0',
+                             b'status=0 isr=0 disabled=0 broken=0', 1),
+                 raw.replace(b'grabbed=0 irq=0 master=0', b'grabbed=0 irq=1 master=0', 1),
+                 raw.replace(b'irq=0 master=0', b'irq=0 master=1', 1),
+                 raw.replace(b'peer=0 waiting=0', b'peer=1 waiting=0', 1),
+                 raw.replace(b'peer=0 waiting=0', b'peer=0 waiting=1', 1),
+                 raw.replace(b'netVhost=0', b'netVhost=1', 1),
+                 raw.replace(b'queues=1', b'queues=2', 1),
+                 raw.replace(b'netStable=1', b'netStable=0', 1),
+                 raw.replace(b'phase=2', b'phase=3', 1),
+                 raw.replace(b'phase=3', b'phase=2', 1),
+                 raw.replace(trace.ARMED+b'\n', b'', 1),
+                 raw.replace(trace.ARMED+b'\n', trace.ARMED+b'\n'+trace.ARMED+b'\n', 1),
+                 raw.replace(trace.ARMED, b'lsf_q35_intx_armed command=0x107', 1),
+                 raw.replace(b'lsf_q35_virtio_guard old=0x103 new=0x503 phase=2 status=0 isr=0 disabled=1 broken=0 started=0 kick=0 vhost=0 ioeventfd=0 grabbed=0 irq=0 master=0 vga=0 peer=0 waiting=0 netVhost=0 queues=1 netStable=1 mappings=stable bql=1\n', b'', 1))
+        for case in cases:
+            with self.subTest(case=case[:80]), self.assertRaises(ValueError):
+                trace.inspect(case, 0x103, 1, 0xff)
+
+    def test_config_mutation_and_unbounded_or_ambiguous_trace_refuse(self):
+        raw = example()
+        first = b'\n'.join(cfg(b'read', *row) for row in trace.PREFIX)+b'\n'
+        cases = (raw.replace(cfg(b'write', 4, 0x503), cfg(b'write', 4, 0x501), 1),
+                 raw.replace(cfg(b'write', 4, 0x503), cfg(b'write', 4, 0x507), 1),
+                 raw.replace(cfg(b'write', 4, 0x103), cfg(b'write', 4, 0x107), 1),
+                 raw.replace(cfg(b'write', 4, 0x503),
+                             cfg(b'write', 0x10, 1)+b'\n'+cfg(b'write', 4, 0x503), 1),
+                 raw.replace(cfg(b'write', 4, 0x103), cfg(b'write', 0x10, 0x103), 1),
+                 first+raw, raw[:-1], raw+b'trace event missing\n',
+                 raw+b'x'*(trace.MAX_TRACE+1),
+                 raw.replace(cfg(b'read', 0x3d, 1), cfg(b'read', 0x3d, 2), 1))
+        for case in cases:
+            with self.subTest(length=len(case)), self.assertRaises(ValueError):
+                trace.inspect(case, 0x103, 1, 0xff)
+
+    def test_bus_master_and_different_original_commands_refuse(self):
+        for command in (0x003, 0x007, 0x107, 0x503, True):
+            with self.subTest(command=command), self.assertRaises(ValueError):
+                trace.inspect(example(), command, 1, 0xff)
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)
