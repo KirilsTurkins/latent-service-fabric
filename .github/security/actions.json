@@ -56,7 +56,7 @@
       "upstream_repository": "actions/attest",
       "upstream_revision": "b60c2628ab941b449db82e38ba8d500980ce8a54"
     },
-    "KirilsTurkins/lsf-buf-setup-action@7e1d5f1d4a4a7d82b1ff79968166c4f50a66ce57": {
+    "KirilsTurkins/lsf-buf-setup-action@483cc1af1999992e503ff1da69b431f7b9f3bae9": {
       "files": [
         {
           "sha256": "a931565ee9d2bb5c6c23eb7b858404bbf03abc6777ec2243b255c848290fd70b",
@@ -65,16 +65,16 @@
           "source_sha256": "a931565ee9d2bb5c6c23eb7b858404bbf03abc6777ec2243b255c848290fd70b"
         },
         {
-          "sha256": "26585ad81f173007d8ab276f0cdc7395799c9256fd7bf4a8cbe3b877cda4b1ed",
+          "sha256": "823db409417fe0cdf7ce0ba97c67c047da7c59c7958a44c13456963e01889fc8",
           "snapshot": ".github/security/actions/buf-setup-action/package.json",
           "source": "package.json",
-          "source_sha256": "26585ad81f173007d8ab276f0cdc7395799c9256fd7bf4a8cbe3b877cda4b1ed"
+          "source_sha256": "823db409417fe0cdf7ce0ba97c67c047da7c59c7958a44c13456963e01889fc8"
         },
         {
-          "sha256": "8a6d3d9d9f67289dcbe1c0aabe299203c396074688017cfae7c68504be19e75b",
+          "sha256": "5355cf0e4b0b5b7927912e5f1c2074387dddaba17a5aea1c0be49764566ab01c",
           "snapshot": ".github/security/actions/buf-setup-action/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "8a6d3d9d9f67289dcbe1c0aabe299203c396074688017cfae7c68504be19e75b"
+          "source_sha256": "5355cf0e4b0b5b7927912e5f1c2074387dddaba17a5aea1c0be49764566ab01c"
         }
       ],
       "kind": "npm",
@@ -85,8 +85,8 @@
         "source_sha256": "a931565ee9d2bb5c6c23eb7b858404bbf03abc6777ec2243b255c848290fd70b"
       },
       "repository": "KirilsTurkins/lsf-buf-setup-action",
-      "revision": "7e1d5f1d4a4a7d82b1ff79968166c4f50a66ce57",
-      "security_pr": "https://github.com/KirilsTurkins/lsf-buf-setup-action/pull/1",
+      "revision": "483cc1af1999992e503ff1da69b431f7b9f3bae9",
+      "security_pr": "https://github.com/KirilsTurkins/lsf-buf-setup-action/pull/2",
       "upstream_repository": "bufbuild/buf-setup-action",
       "upstream_revision": "fbb91772b52752bd36ca8552d2ff4b94e111f24f"
     },
