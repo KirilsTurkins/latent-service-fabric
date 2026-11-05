@@ -27,7 +27,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 LIMIT = 16 * 1024 * 1024
 EXPANDED_LIMIT = 64 * 1024 * 1024
-PROFILE = "npm-11.19.1-lsf-bundle-v5"
+PROFILE = "npm-11.19.1-lsf-bundle-v6"
 OUTPUT = ROOT / "target/website-package-manager" / (PROFILE + ".tar")
 CACHE = OUTPUT.parent / "inputs"
 NETWORK_TIMEOUT = 30.0
@@ -228,7 +228,64 @@ def packed(files: dict[str, tuple[bytes, int]]) -> bytes:
     return output.getvalue()
 
 
-def compose(base: bytes, patches: list[tuple[dict, bytes]], *, repair: dict | None = None) -> bytes:
+BUNDLE_REPAIR_FILES = {
+    "node_modules/minimatch/dist/commonjs/index.js", "node_modules/minimatch/dist/esm/index.js",
+    "node_modules/glob/dist/commonjs/walker.js", "node_modules/glob/dist/esm/walker.js",
+    "node_modules/glob/dist/commonjs/index.min.js", "node_modules/glob/dist/esm/index.min.js",
+}
+
+
+def repair_bundle(files: dict[str, tuple[bytes, int]], repair: dict, base: dict) -> dict[str, tuple[bytes, int]]:
+    """Repair all shipped glob entry points and minimatch from the pinned npm archive."""
+    if (set(repair) != {"schema", "profile", "name", "version", "upstreamIntegrity", "files"}
+            or repair["schema"] != 1 or repair["profile"] != "npm-11.19.1-lsf-glob-minimatch-source-v1"
+            or repair["name"] != base["name"] or repair["version"] != base["version"]
+            or repair["upstreamIntegrity"] != base["integrity"]):
+        raise ValueError("bundle repair identity")
+    expected = {"glob": ("13.0.6", {"minimatch": "^10.2.2", "minipass": "^7.1.3", "path-scurry": "^2.0.2"}),
+                "minimatch": ("10.2.5", {"brace-expansion": "^5.0.5"})}
+    for name, (version, dependencies) in expected.items():
+        prefix = f"package/node_modules/{name}/"
+        value = package(files, prefix)
+        if (value.get("name") != name or value.get("version") != version
+                or value.get("dependencies") != dependencies
+                or any(value.get(field) for field in ("optionalDependencies", "peerDependencies", "bundleDependencies", "bundledDependencies"))
+                or any(key.startswith(prefix + "node_modules/") for key in files)):
+            raise ValueError("bundle repair package graph")
+    rows = repair["files"]
+    if (not isinstance(rows, list) or len(rows) != len(BUNDLE_REPAIR_FILES)
+            or {row.get("path") for row in rows} != BUNDLE_REPAIR_FILES):
+        raise ValueError("bundle repair file coverage")
+    output = files.copy()
+    for row in rows:
+        if (set(row) != {"path", "beforeSha256", "afterSha256", "edits"}
+                or not all(isinstance(row[field], str) and re.fullmatch(r"[0-9a-f]{64}", row[field])
+                           for field in ("beforeSha256", "afterSha256"))):
+            raise ValueError("bundle repair file identity")
+        key = "package/" + row["path"]
+        raw, mode = files[key]
+        if hashlib.sha256(raw).hexdigest() != row["beforeSha256"]:
+            raise ValueError("bundle repair preimage drift")
+        edits = row["edits"]
+        if not isinstance(edits, list) or not 0 < len(edits) <= 8:
+            raise ValueError("bundle repair edit bound")
+        value = raw.decode("utf-8")
+        for edit in edits:
+            if (set(edit) != {"before", "after", "count"}
+                    or not all(isinstance(edit[field], str) and 0 < len(edit[field]) <= 8192 for field in ("before", "after"))
+                    or edit["before"] == edit["after"] or type(edit["count"]) is not int
+                    or not 0 < edit["count"] <= 4 or value.count(edit["before"]) != edit["count"]):
+                raise ValueError("bundle repair edit drift")
+            value = value.replace(edit["before"], edit["after"])
+        patched = value.encode("utf-8")
+        if patched == raw or hashlib.sha256(patched).hexdigest() != row["afterSha256"]:
+            raise ValueError("bundle repair postimage drift")
+        output[key] = patched, mode
+    return output
+
+
+def compose(base: bytes, patches: list[tuple[dict, bytes]], *, repair: dict | None = None,
+            bundle_repair: dict | None = None, base_pin: dict | None = None) -> bytes:
     files = unpack(base)
     manifest = package(files)
     if manifest["name"] != "npm" or manifest["version"] != "11.19.1":
@@ -285,12 +342,16 @@ def compose(base: bytes, patches: list[tuple[dict, bytes]], *, repair: dict | No
             files[prefix + key.removeprefix("package/")] = value
     if names != {"ip-address", "undici", "brace-expansion", "http-cache-semantics", "postcss-selector-parser"}:
         raise ValueError("incomplete bundle replacement")
+    if bundle_repair is not None:
+        if base_pin is None or integrity(base) != base_pin["integrity"]:
+            raise ValueError("bundle repair upstream identity")
+        files = repair_bundle(files, bundle_repair, base_pin)
     return packed(files)
 
 
 def library_material(pins: dict, acquired: list[tuple[dict, bytes]], *, offline: bool) -> tuple[dict, dict]:
     """Authenticate the three fixed repair documents and their upstream archives."""
-    if set(pins) != {"schema", "profile", "base", "patches", "libraries", "repairs"}:
+    if set(pins) != {"schema", "profile", "base", "patches", "libraries", "repairs", "bundleRepair"}:
         raise ValueError("source repair profile fields")
     if not isinstance(pins["libraries"], list) or [pin.get("name") for pin in pins["libraries"]] != ["braces", "deepmerge"]:
         raise ValueError("source repair library selection")
@@ -319,6 +380,18 @@ def library_material(pins: dict, acquired: list[tuple[dict, bytes]], *, offline:
     return libraries, repairs
 
 
+def bundle_material(pins: dict) -> dict:
+    row = pins["bundleRepair"]
+    if (set(row) != {"path", "sha256"} or row["path"] != "repairs/npm-glob-minimatch.json"
+            or not isinstance(row["sha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", row["sha256"])):
+        raise ValueError("bundle repair document identity")
+    with (HERE / row["path"]).open("rb") as stream:
+        raw = stream.read(65537)
+    if len(raw) > 65536 or hashlib.sha256(raw).hexdigest() != row["sha256"]:
+        raise ValueError("bundle repair document drift")
+    return json.loads(raw)
+
+
 def verify_library_locks(libraries: dict, repairs: dict) -> None:
     for directory in (ROOT / "website", ROOT / "examples/framework-compatibility"):
         lock = json.loads((directory / "package-lock.json").read_text(encoding="utf-8"))
@@ -336,7 +409,8 @@ def prepare(*, offline: bool = False, refresh: bool = False) -> str:
         raise ValueError("unsupported bundle source profile")
     acquired = [(pin, acquire(pin, CACHE, offline)) for pin in pins["patches"]]
     libraries, repairs = library_material(pins, acquired, offline=offline)
-    raw = compose(acquire(pins["base"], CACHE, offline), acquired, repair=repairs["http-cache-semantics"])
+    raw = compose(acquire(pins["base"], CACHE, offline), acquired, repair=repairs["http-cache-semantics"],
+                  bundle_repair=bundle_material(pins), base_pin=pins["base"])
     actual = integrity(raw)
     if not refresh:
         lock = json.loads((HERE / "package-lock.json").read_text(encoding="utf-8"))

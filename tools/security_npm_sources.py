@@ -118,6 +118,55 @@ def source_repair(files: dict, repair: dict, pin: dict) -> dict:
     return output
 
 
+BUNDLE_REPAIR_FILES = {
+    "node_modules/minimatch/dist/commonjs/index.js", "node_modules/minimatch/dist/esm/index.js",
+    "node_modules/glob/dist/commonjs/walker.js", "node_modules/glob/dist/esm/walker.js",
+    "node_modules/glob/dist/commonjs/index.min.js", "node_modules/glob/dist/esm/index.min.js",
+}
+
+
+def bundle_source_repair(files: dict, repair: dict, base: dict) -> dict:
+    """Independently reconstruct the fixed npm bundle without executing it."""
+    require(set(repair) == {"schema", "profile", "name", "version", "upstreamIntegrity", "files"}
+            and repair["schema"] == 1 and repair["profile"] == "npm-11.19.1-lsf-glob-minimatch-source-v1"
+            and repair["name"] == base["name"] and repair["version"] == base["version"]
+            and repair["upstreamIntegrity"] == base["integrity"], "npm-bundle-repair-identity")
+    for name, version, dependencies in (
+            ("glob", "13.0.6", {"minimatch": "^10.2.2", "minipass": "^7.1.3", "path-scurry": "^2.0.2"}),
+            ("minimatch", "10.2.5", {"brace-expansion": "^5.0.5"})):
+        prefix = f"package/node_modules/{name}/"
+        manifest(files, name, version, dependencies, prefix)
+        require(not any(key.startswith(prefix + "node_modules/") for key in files), "npm-bundle-repair-shadow")
+        all_manifests = [key for key in files if key.endswith(f"/node_modules/{name}/package.json")]
+        require(all_manifests == [prefix + "package.json"], "npm-bundle-repair-extra-member")
+    rows = repair["files"]
+    require(isinstance(rows, list) and len(rows) == len(BUNDLE_REPAIR_FILES)
+            and {row.get("path") for row in rows} == BUNDLE_REPAIR_FILES, "npm-bundle-repair-coverage")
+    output = files.copy()
+    for row in rows:
+        require(set(row) == {"path", "beforeSha256", "afterSha256", "edits"}
+                and all(isinstance(row[field], str) and re.fullmatch(r"[0-9a-f]{64}", row[field])
+                        for field in ("beforeSha256", "afterSha256")), "npm-bundle-repair-file-identity")
+        key = "package/" + row["path"]
+        raw, mode = files[key]
+        require(digest(raw) == row["beforeSha256"], "npm-bundle-repair-preimage")
+        edits = row["edits"]
+        require(isinstance(edits, list) and 0 < len(edits) <= 8, "npm-bundle-repair-edit-bound")
+        value = raw.decode("utf-8")
+        for edit in edits:
+            require(set(edit) == {"before", "after", "count"}
+                    and all(isinstance(edit[field], str) and 0 < len(edit[field]) <= 8192
+                            for field in ("before", "after"))
+                    and edit["before"] != edit["after"] and type(edit["count"]) is int
+                    and 0 < edit["count"] <= 4 and value.count(edit["before"]) == edit["count"],
+                    "npm-bundle-repair-edit")
+            value = value.replace(edit["before"], edit["after"])
+        patched = value.encode("utf-8")
+        require(patched != raw and digest(patched) == row["afterSha256"], "npm-bundle-repair-postimage")
+        output[key] = patched, mode
+    return output
+
+
 def distribution(files: dict) -> bytes:
     output = io.BytesIO()
     with tarfile.open(fileobj=output, mode="w", format=tarfile.USTAR_FORMAT) as archive:
@@ -340,7 +389,7 @@ def verify_sources(repo: Path, packages: list, configuration: dict, fetch=regist
     if not selected:
         return action_receipts
     policy = decode_json(read_file(POLICY, "npm-source-repairs.json"))
-    require(set(policy) == {"schema", "source_sha256", "builder_sha256", "repairs"}
+    require(set(policy) == {"schema", "source_sha256", "builder_sha256", "repairs", "bundle_repair"}
             and policy["schema"] == 1 and set(policy["repairs"]) == {"braces", "http-cache-semantics", "deepmerge"},
             "npm-repair-policy")
     for path, field in (("website/toolchain/source.json", "source_sha256"),
@@ -348,8 +397,8 @@ def verify_sources(repo: Path, packages: list, configuration: dict, fetch=regist
         require(digest(read_file(repo, path).replace(b"\r\n", b"\n")) == policy[field],
                 "npm-repair-control-input-drift")
     source = decode_json(read_file(repo, "website/toolchain/source.json"))
-    require(set(source) == {"schema", "profile", "base", "patches", "libraries", "repairs"}
-            and source["schema"] == 1 and source["profile"] == "npm-11.19.1-lsf-bundle-v5"
+    require(set(source) == {"schema", "profile", "base", "patches", "libraries", "repairs", "bundleRepair"}
+            and source["schema"] == 1 and source["profile"] == "npm-11.19.1-lsf-bundle-v6"
             and isinstance(source["patches"], list) and len(source["patches"]) == 5
             and isinstance(source["libraries"], list)
             and [pin.get("name") for pin in source["libraries"]] == ["braces", "deepmerge"], "npm-repair-source-profile")
@@ -397,6 +446,15 @@ def verify_sources(repo: Path, packages: list, configuration: dict, fetch=regist
     require(owner["name"] == base["name"] and owner["version"] == base["version"]
             and not any(path in bundle for path in ("package/package-lock.json", "package/npm-shrinkwrap.json")),
             "npm-repair-bundle-graph")
+    reviewed = policy["bundle_repair"]
+    require(set(reviewed) == {"profile", "repair_sha256", "advisories"}
+            and reviewed["profile"] == "npm-11.19.1-lsf-glob-minimatch-source-v1"
+            and set(reviewed["advisories"]) == {"glob", "minimatch"}, "npm-bundle-repair-policy")
+    repair_path = "website/toolchain/repairs/npm-glob-minimatch.json"
+    repair_raw = read_file(repo, repair_path).replace(b"\r\n", b"\n")
+    require(len(repair_raw) <= 65536 and digest(repair_raw) == reviewed["repair_sha256"]
+            and source["bundleRepair"] == {"path": "repairs/npm-glob-minimatch.json", "sha256": reviewed["repair_sha256"]},
+            "npm-bundle-repair-document")
     for pin in source["patches"]:
         name = pin["name"]
         prefix = f"package/node_modules/{name}/"
@@ -415,6 +473,7 @@ def verify_sources(repo: Path, packages: list, configuration: dict, fetch=regist
                 manifest(bundle, dependency_name, version, {}, "package/node_modules/"+dependency_name+"/")
         bundle = {key: value for key, value in bundle.items() if not key.startswith(prefix)}
         bundle.update({prefix + key.removeprefix("package/"): value for key, value in material[name].items()})
+    bundle = bundle_source_repair(bundle, decode_json(repair_raw), base)
     bundle_integrity = integrity(distribution(bundle))
     for entry in selected:
         lock = decode_json(read_file(repo, entry["lock"]))
@@ -425,6 +484,21 @@ def verify_sources(repo: Path, packages: list, configuration: dict, fetch=regist
             require(bundle_integrity == profile["integrity"]
                     and lock["packages"]["node_modules/npm"]["integrity"] == bundle_integrity,
                     "npm-repair-bundle-distribution-drift")
+            for name, version, advisory_id in (("glob", "13.0.6", "GHSA-3g3m-2fjr-6pw4"),
+                                                ("minimatch", "10.2.5", "GHSA-g3hv-75wg-m249")):
+                rows = [(key, value) for key, value in lock["packages"].items()
+                        if key.rsplit("node_modules/", 1)[-1] == name]
+                require(len(rows) == 1 and rows[0][0] == f"node_modules/npm/node_modules/{name}"
+                        and rows[0][1].get("version") == version and rows[0][1].get("inBundle") is True
+                        and not rows[0][1].get("resolved"), "npm-bundle-repair-lock-identity")
+                advisories = reviewed["advisories"][name]
+                require(isinstance(advisories, list) and len(advisories) == 1
+                        and set(advisories[0]) == {"id", "modified"} and advisories[0]["id"] == advisory_id
+                        and isinstance(advisories[0]["modified"], str), "npm-bundle-repair-advisory")
+                receipts.append({"name": name, "version": version, "profile": reviewed["profile"],
+                                 "upstream_integrity": base["integrity"], "derived_integrity": bundle_integrity,
+                                 "repair_sha256": reviewed["repair_sha256"], "files": len(BUNDLE_REPAIR_FILES),
+                                 "locks": [entry["lock"]], "advisories": advisories})
             for receipt in receipts:
                 if receipt["name"] == "http-cache-semantics":
                     receipt["locks"].append(entry["lock"])

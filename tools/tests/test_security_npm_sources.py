@@ -180,6 +180,11 @@ class NpmSourceRepairTests(unittest.TestCase):
                       "package/node_modules/balanced-match/package.json": (b'{"name":"balanced-match","version":"4.0.4"}', 0o644),
                       "package/node_modules/cssesc/package.json": (b'{"name":"cssesc","version":"3.0.0"}', 0o644),
                       "package/node_modules/util-deprecate/package.json": (b'{"name":"util-deprecate","version":"1.0.2"}', 0o644)}
+        base_files["package/node_modules/glob/package.json"] = (json.dumps({"name": "glob", "version": "13.0.6",
+            "dependencies": {"minimatch": "^10.2.2", "minipass": "^7.1.3", "path-scurry": "^2.0.2"}}).encode(), 0o644)
+        base_files["package/node_modules/minimatch/package.json"] = (json.dumps({"name": "minimatch", "version": "10.2.5",
+            "dependencies": {"brace-expansion": "^5.0.5"}}).encode(), 0o644)
+        base_files.update({"package/" + path: (b"fixture original bytes", 0o644) for path in sources.BUNDLE_REPAIR_FILES})
         derived = base_files.copy()
         for pin in patches:
             prefix = "package/node_modules/" + pin["name"] + "/"
@@ -191,15 +196,29 @@ class NpmSourceRepairTests(unittest.TestCase):
             base_files[prefix + "package.json"] = json.dumps(old).encode(), 0o644
             derived.update({prefix + name.removeprefix("package/"): value for name, value in material[pin["name"]].items()})
         raw_inputs["npm"] = tarball(base_files)
-        source = {"schema": 1, "profile": "npm-11.19.1-lsf-bundle-v5", "patches": patches,
+        base_pin = {"name": "npm", "version": "11.19.1", "integrity": sources.integrity(raw_inputs["npm"])}
+        bundle_repair = {"schema": 1, "profile": "npm-11.19.1-lsf-glob-minimatch-source-v1",
+            "name": "npm", "version": "11.19.1", "upstreamIntegrity": base_pin["integrity"],
+            "files": [{"path": path, "beforeSha256": sources.digest(b"fixture original bytes"),
+                       "afterSha256": sources.digest(b"fixture repaired bytes"),
+                       "edits": [{"before": "fixture original bytes", "after": "fixture repaired bytes", "count": 1}]}
+                      for path in sorted(sources.BUNDLE_REPAIR_FILES)]}
+        encoded_bundle = (json.dumps(bundle_repair) + "\n").encode()
+        (root / "website/toolchain/repairs/npm-glob-minimatch.json").write_bytes(encoded_bundle)
+        derived = sources.bundle_source_repair(derived, bundle_repair, base_pin)
+        source = {"schema": 1, "profile": "npm-11.19.1-lsf-bundle-v6", "patches": patches,
                   "libraries": libraries, "repairs": repairs,
-                  "base": {"name": "npm", "version": "11.19.1", "integrity": sources.integrity(raw_inputs["npm"])}}
+                  "base": base_pin,
+                  "bundleRepair": {"path": "repairs/npm-glob-minimatch.json", "sha256": sources.digest(encoded_bundle)}}
         source_path = root / "website/toolchain/source.json"
         source_path.write_text(json.dumps(source), encoding="utf-8")
         builder = root / "website/toolchain/prepare.py"
         builder.write_bytes(b"trusted builder identity; scanner never executes this\n")
         control = {"schema": 1, "source_sha256": sources.digest(source_path.read_bytes()),
-                   "builder_sha256": sources.digest(builder.read_bytes()), "repairs": policy}
+                   "builder_sha256": sources.digest(builder.read_bytes()), "repairs": policy,
+                   "bundle_repair": {"profile": bundle_repair["profile"], "repair_sha256": sources.digest(encoded_bundle),
+                       "advisories": {"glob": [{"id": "GHSA-3g3m-2fjr-6pw4", "modified": "reviewed-glob"}],
+                                      "minimatch": [{"id": "GHSA-g3hv-75wg-m249", "modified": "reviewed-minimatch"}]}}}
         (root / "npm-source-repairs.json").write_text(json.dumps(control), encoding="utf-8")
         entries, packages = [], []
         for directory in ("website", "examples/framework-compatibility", "website/toolchain"):
@@ -208,6 +227,8 @@ class NpmSourceRepairTests(unittest.TestCase):
             if directory.endswith("toolchain"):
                 selected = {"integrity": sources.integrity(sources.distribution(derived))}
                 lock["packages"]["node_modules/npm"] = {"integrity": selected["integrity"]}
+                for name, version in (("glob", "13.0.6"), ("minimatch", "10.2.5")):
+                    lock["packages"]["node_modules/npm/node_modules/" + name] = {"version": version, "inBundle": True}
                 kind = "derived_bundle"
             else:
                 selected = {"libraries": {name: {"integrity": row["integrity"]} for name, row in policy.items()}}
@@ -227,23 +248,60 @@ class NpmSourceRepairTests(unittest.TestCase):
             packages, config, fetch = self.verification_fixture(root)
             with patch.object(sources, "POLICY", root):
                 result = sources.verify_sources(root, packages, config, fetch)
-            self.assertEqual({row["name"] for row in result}, {"braces", "http-cache-semantics", "deepmerge"})
+            self.assertEqual({row["name"] for row in result}, {"braces", "http-cache-semantics", "deepmerge", "glob", "minimatch"})
             self.assertEqual({row["name"]: len(row["locks"]) for row in result},
-                             {"braces": 2, "http-cache-semantics": 3, "deepmerge": 2})
+                             {"braces": 2, "http-cache-semantics": 3, "deepmerge": 2, "glob": 1, "minimatch": 1})
 
     def test_independent_reconstruction_rejects_upstream_source_lock_and_patch_drift(self):
-        for change in ("upstream", "source", "lock", "repair", "builder"):
+        for change in ("upstream", "source", "lock", "repair", "bundle-repair", "builder"):
             with self.subTest(change=change), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary)
                 packages, config, fetch = self.verification_fixture(root)
                 paths = {"source": "website/toolchain/source.json", "lock": "website/package-lock.json",
-                         "repair": "website/toolchain/repairs/braces.json", "builder": "website/toolchain/prepare.py"}
+                         "repair": "website/toolchain/repairs/braces.json", "builder": "website/toolchain/prepare.py",
+                         "bundle-repair": "website/toolchain/repairs/npm-glob-minimatch.json"}
                 if change == "upstream":
                     fetch = lambda pin: b"unauthenticated replacement"
                 else:
                     path = root / paths[change]
                     path.write_bytes(path.read_bytes() + b" ")
                 with patch.object(sources, "POLICY", root), self.assertRaises(SecurityError):
+                    sources.verify_sources(root, packages, config, fetch)
+
+    def test_bundle_receipts_are_bound_to_exact_versions_locks_and_advisory_revisions(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            packages, config, fetch = self.verification_fixture(root)
+            with patch.object(sources, "POLICY", root):
+                receipts = sources.verify_sources(root, packages, config, fetch)
+            selected = [row for row in receipts if row["name"] in {"glob", "minimatch"}]
+            known = [finding("osv", row["advisories"][0]["id"], row["locks"][0],
+                             f'npm:{row["name"]}@{row["version"]}') for row in selected]
+            future = finding("osv", "GHSA-future-test", known[0].path, known[0].package)
+            observations = [{"advisories": [{"package": {"name": row["name"], "version": row["version"],
+                              "path": row["locks"][0]}, **row["advisories"][0]} for row in selected]}]
+            self.assertEqual(sources.resolve_findings(known + [future], observations, selected), ([future], known))
+            observations[0]["advisories"][0]["modified"] = "changed-revision"
+            remaining, fixed = sources.resolve_findings(known, observations, selected)
+            self.assertEqual(remaining, [known[0]])
+            self.assertEqual(fixed, [known[1]])
+        for change in ("missing", "version", "duplicate"):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                packages, config, fetch = self.verification_fixture(root)
+                entry = config["manifests"][-1]
+                path = root / entry["lock"]
+                lock = json.loads(path.read_bytes())
+                key = "node_modules/npm/node_modules/glob"
+                if change == "missing":
+                    del lock["packages"][key]
+                elif change == "version":
+                    lock["packages"][key]["version"] = "13.0.5"
+                else:
+                    lock["packages"]["node_modules/glob"] = dict(lock["packages"][key])
+                path.write_text(json.dumps(lock), encoding="utf-8")
+                entry["derived_bundle"]["lock_sha256"] = sources.digest(path.read_bytes())
+                with patch.object(sources, "POLICY", root), self.assertRaisesRegex(SecurityError, "npm-bundle-repair-lock-identity"):
                     sources.verify_sources(root, packages, config, fetch)
 
     def test_selector_bundle_refuses_changed_or_shadowed_existing_dependencies(self):
