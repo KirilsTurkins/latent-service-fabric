@@ -721,6 +721,188 @@ async fn deleting_state_keeps_the_shared_unresolved_effect_payload() {
     );
 }
 
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn rejected_result_retains_real_blob_until_response_expiry() {
+    let fixture = Fixture::new();
+    let claim = fixture.claim("rejected-blob");
+    let view = fixture.state.snapshot().unwrap();
+    let envelope =
+        CompleteEnvelope::rejection(&view, claim, "declined".into(), value(b"body"), time(200))
+            .unwrap();
+    let pin = fixture.capture().await;
+    let physical = pin.identity().clone();
+    let envelope = envelope
+        .attach_verified_payloads(
+            &view,
+            &fixture.session,
+            vec![PayloadAttachment {
+                target: PayloadAttachmentTarget::Result,
+                payload: pin,
+            }],
+        )
+        .unwrap();
+    drop(view);
+    let command = publish_payload_envelope(&fixture, envelope);
+    assert_eq!(command.outcome(), Outcome::Rejected);
+    let view = fixture.state.snapshot().unwrap();
+    assert_eq!(
+        latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
+        Some(1)
+    );
+    validate_payload_census(&view);
+    drop(view);
+    let owner = ResultMaintenanceOwner::default();
+    let clock = |now| MaintenanceClock {
+        time: time(now),
+        boot: [7; 32],
+        monotonic_millis: now,
+    };
+    owner
+        .anchor(&fixture.state, None, clock(200), |_| Ok(()))
+        .unwrap();
+    owner.step(&fixture.state, clock(1100), |_| Ok(())).unwrap();
+    let view = fixture.state.snapshot().unwrap();
+    assert_eq!(
+        latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
+        Some(0)
+    );
+    assert_eq!(validate_payload_census(&view).payload_bytes, 0);
+    drop(view);
+    assert!(fixture
+        .provider
+        .store()
+        .release_durable_reference(
+            &TenantId("a".into()),
+            &fixture.blob,
+            &fixture.state,
+            &|| Ok(())
+        )
+        .unwrap());
+    assert_eq!(
+        fixture
+            .provider
+            .store()
+            .reclaim(1, &|| Ok(()))
+            .unwrap()
+            .objects,
+        1
+    );
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn response_expiry_keeps_real_shared_effect_blob_until_reviewed_purge() {
+    let fixture = Fixture::new();
+    let claim = fixture.claim("response-effect-blob");
+    let key = fixture.input("response-effect-blob").key;
+    let view = fixture.state.snapshot().unwrap();
+    let intent = StagedIntent {
+        binding: "approved-event".into(),
+        operation: "event".into(),
+        payload: value(b"body"),
+        expires_at_millis: None,
+    };
+    let envelope = CompleteEnvelope::success(
+        &view,
+        claim,
+        None,
+        vec![intent],
+        value(b"body"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap();
+    let result_pin = fixture.capture().await;
+    let physical = result_pin.identity().clone();
+    let effect_pin = fixture.capture().await;
+    let envelope = envelope
+        .attach_verified_payloads(
+            &view,
+            &fixture.session,
+            vec![
+                PayloadAttachment {
+                    target: PayloadAttachmentTarget::Result,
+                    payload: result_pin,
+                },
+                PayloadAttachment {
+                    target: PayloadAttachmentTarget::Effect(0),
+                    payload: effect_pin,
+                },
+            ],
+        )
+        .unwrap();
+    drop(view);
+    publish_payload_envelope(&fixture, envelope);
+    let owner = ResultMaintenanceOwner::default();
+    let clock = |now| MaintenanceClock {
+        time: time(now),
+        boot: [7; 32],
+        monotonic_millis: now,
+    };
+    owner
+        .anchor(&fixture.state, None, clock(200), |_| Ok(()))
+        .unwrap();
+    owner.step(&fixture.state, clock(1100), |_| Ok(())).unwrap();
+    let view = fixture.state.snapshot().unwrap();
+    let (record, result) = inspect(&view, &key, time(1100), |_, _| Ok(())).unwrap();
+    assert!(result.is_none());
+    assert_eq!(
+        latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
+        Some(1)
+    );
+    validate_payload_census(&view);
+    drop(view);
+    assert_eq!(
+        fixture.provider.store().release_durable_reference(
+            &TenantId("a".into()),
+            &fixture.blob,
+            &fixture.state,
+            &|| Ok(())
+        ),
+        Err(latent_blobs::local::LocalBlobError::Busy)
+    );
+    let request = RetentionRequest {
+        key,
+        expected_command_digest: RetentionRequest::command_digest(&record).unwrap(),
+        actor: "operator".into(),
+        operation_id: "review".into(),
+        policy: "retention".into(),
+        retain_until_millis: 5300,
+        inbox_expires_at_millis: None,
+    };
+    owner
+        .terminalize(&fixture.state, &request, clock(5200), |_, _, _| Ok(()))
+        .unwrap();
+    owner
+        .purge(&fixture.state, &request, clock(5300), |_, _, _| Ok(()))
+        .unwrap();
+    let view = fixture.state.snapshot().unwrap();
+    assert_eq!(
+        latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
+        Some(0)
+    );
+    validate_payload_census(&view);
+    drop(view);
+    assert!(fixture
+        .provider
+        .store()
+        .release_durable_reference(
+            &TenantId("a".into()),
+            &fixture.blob,
+            &fixture.state,
+            &|| Ok(())
+        )
+        .unwrap());
+    assert_eq!(
+        fixture
+            .provider
+            .store()
+            .reclaim(1, &|| Ok(()))
+            .unwrap()
+            .objects,
+        1
+    );
+}
+
 fn protected_recovery(
     root: &std::path::Path,
 ) -> latent_state::protected_store::ProtectedStoreStartup {
