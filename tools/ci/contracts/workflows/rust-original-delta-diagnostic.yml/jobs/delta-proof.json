@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "job",
+  "reviewReason": "Compile the diagnostic-only bounded original-core delta decoder and verify the fixed real graph; no runtime admission or signed qualification.",
+  "workflow": ".github/workflows/rust-original-delta-diagnostic.yml",
+  "jobId": "delta-proof",
+  "definition": {
+    "name": "Bounded reconstruction and fixed graph source proof",
+    "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 25,
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "KirilsTurkins/lsf-rust-cache",
+        "with": {
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "shared-key": "host-correctness",
+          "key": "ubuntu-24.04",
+          "cache-targets": true,
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-all-crates": false,
+          "cache-on-failure": false,
+          "save-if": false
+        }
+      },
+      {
+        "name": "Recreate the original-core delta and execute bounded Rust controls",
+        "shell": "bash",
+        "run": "set -euo pipefail\nmkdir -p \"$RUNNER_TEMP/rust-original-delta\"\ncatalog=crates/latent-component-threading/src/rust_catalogue\npython3 -B tools/rust_original_delta.py --original \"$catalog/combined-original-core.wasm\" --base \"$catalog/combined-final-component.wasm\" --output \"$RUNNER_TEMP/rust-original-delta/reconstructed.bin\" | tee \"$RUNNER_TEMP/rust-original-delta/generator.log\"\ncmp \"$RUNNER_TEMP/rust-original-delta/reconstructed.bin\" \"$catalog/combined-original-delta.bin\"\ncargo test --locked -p latent-component-threading --lib --features rust-http-combined-preview-diagnostic rust_original_delta::tests:: -- --nocapture 2>&1 | tee \"$RUNNER_TEMP/rust-original-delta/tests.log\"\ngrep -F 'test rust_original_delta::tests::fixed_real_delta_reconstructs_and_still_requires_full_source_proof ... ok' \"$RUNNER_TEMP/rust-original-delta/tests.log\"\ngrep -F 'test rust_original_delta::tests::malformed_ranges_lengths_commands_and_trailing_data_fail_closed ... ok' \"$RUNNER_TEMP/rust-original-delta/tests.log\"\ngrep -F 'test rust_original_delta::tests::fixed_graph_roundtrips_final_section_and_rejects_nonfinal_or_forged_material ... ok' \"$RUNNER_TEMP/rust-original-delta/tests.log\"\n"
+      },
+      {
+        "name": "Retain bounded diagnostic outputs including failures",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "name": "rust-original-delta-diagnostic-${{ github.sha }}",
+          "retention-days": 7,
+          "if-no-files-found": "warn",
+          "path": "${{ runner.temp }}/rust-original-delta/*.log"
+        }
+      }
+    ]
+  }
+}
