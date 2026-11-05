@@ -92,7 +92,7 @@ runs:
       id: attest
       env:
         NODE_OPTIONS: "--max-http-header-size=32768"
-      uses: KirilsTurkins/lsf-attest@5c5af1d743b681abf5f53d906d2bcbbcb6da5ba2 # v4.2.2
+      uses: KirilsTurkins/lsf-attest@ac3d77bef0ab118e8a29decb53e9f03622ee7299 # v4.2.2
       with:
         subject-path: ${{ inputs.subject-path }}
         subject-name: ${{ inputs.subject-name }}

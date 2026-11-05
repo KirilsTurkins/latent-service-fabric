@@ -28,11 +28,17 @@ reconstructed the committed distribution and completed a cache miss, save and
 restore with a Rust build marker and artifact. This covers the tested Linux
 cache provider and does not qualify other operating systems or cache providers.
 
+The attest action's [focused Linux owner](https://github.com/KirilsTurkins/lsf-attest/actions/runs/42118781914)
+verified all 15 installed source copies, the five runtime files and the existing
+mocked suite. Its [wrapper owner](https://github.com/KirilsTurkins/lsf-attest-build-provenance/actions/runs/42119738981)
+checked the exact child pin and runtime identities. These checks do not perform a
+real signing or attestation request.
+
 | Upstream | Fork commit | Contribution |
 | --- | --- | --- |
 | `actions/setup-java` | [63c7977881fc](https://github.com/KirilsTurkins/lsf-setup-java/commit/63c7977881fc344a6ed464f7ed5e242aedc8d56c) | [PR](https://github.com/actions/setup-java/pull/1296) |
 | `Swatinem/rust-cache` | [38534d49940b](https://github.com/KirilsTurkins/lsf-rust-cache/commit/38534d49940bc6c6aef1e8dfd45349a99d37f14e) | [PR](https://github.com/Swatinem/rust-cache/pull/396); [fork repair](https://github.com/KirilsTurkins/lsf-rust-cache/pull/1) |
-| `actions/attest-build-provenance` | [16b356100dfe](https://github.com/KirilsTurkins/lsf-attest-build-provenance/commit/16b356100dfe77222eebe783b5e26a565b76055a) | [PR](https://github.com/KirilsTurkins/lsf-attest-build-provenance/pull/1); upstream creation blocked: pull request create failed: GraphQL: KirilsTurkins does not have the correct permissions to execute `CreatePullRequest` (createPullRequest) |
+| `actions/attest-build-provenance` | [d67c30405853](https://github.com/KirilsTurkins/lsf-attest-build-provenance/commit/d67c304058531c46441ba89c83b3bbe075fd9d00) | [PR](https://github.com/KirilsTurkins/lsf-attest-build-provenance/pull/1); [fork repair](https://github.com/KirilsTurkins/lsf-attest-build-provenance/pull/2); upstream creation blocked: pull request create failed: GraphQL: KirilsTurkins does not have the correct permissions to execute `CreatePullRequest` (createPullRequest) |
 | `actions/cache` | [ec176dce9471](https://github.com/KirilsTurkins/lsf-cache/commit/ec176dce9471270c8a9be1289040c0a8fd6aa708) | [PR](https://github.com/actions/cache/pull/1804); [fork repair](https://github.com/KirilsTurkins/lsf-cache/pull/1) |
 | `actions/checkout` | [4d310727149d](https://github.com/KirilsTurkins/lsf-checkout/commit/4d310727149d3abacc52b5dcb0a1c4d18b345d13) | [PR](https://github.com/actions/checkout/pull/2607) |
 | `actions/deploy-pages` | [e249fe4e7520](https://github.com/KirilsTurkins/lsf-deploy-pages/commit/e249fe4e7520b3d7aa16ef72f45eeb05de6cf4f6) | [PR](https://github.com/actions/deploy-pages/pull/453); [fork repair](https://github.com/KirilsTurkins/lsf-deploy-pages/pull/1) |
@@ -46,7 +52,7 @@ cache provider and does not qualify other operating systems or cache providers.
 | `bufbuild/buf-setup-action` | [483cc1af1999](https://github.com/KirilsTurkins/lsf-buf-setup-action/commit/483cc1af1999992e503ff1da69b431f7b9f3bae9) | [PR](https://github.com/KirilsTurkins/lsf-buf-setup-action/pull/1); [fork repair](https://github.com/KirilsTurkins/lsf-buf-setup-action/pull/2); upstream creation blocked: Upstream repository is archived and read-only. |
 | `bytecodealliance/actions` | [1ce6e3461b7d](https://github.com/KirilsTurkins/lsf-bytecodealliance-actions/commit/1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce) | [PR](https://github.com/bytecodealliance/actions/pull/24); [fork repair](https://github.com/KirilsTurkins/lsf-bytecodealliance-actions/pull/1) |
 | `mlugg/setup-zig` | [e064b42fa88a](https://github.com/KirilsTurkins/lsf-setup-zig/commit/e064b42fa88ad0859d8b54838b44f672ffd5ea7a) | [PR](https://github.com/KirilsTurkins/lsf-setup-zig/pull/1); upstream creation blocked: Upstream has disabled pull requests. |
-| `actions/attest` | [5c5af1d743b6](https://github.com/KirilsTurkins/lsf-attest/commit/5c5af1d743b681abf5f53d906d2bcbbcb6da5ba2) | [PR](https://github.com/KirilsTurkins/lsf-attest/pull/1); upstream creation blocked: Upstream rejected PR creation through GraphQL and REST. |
+| `actions/attest` | [ac3d77bef0ab](https://github.com/KirilsTurkins/lsf-attest/commit/ac3d77bef0ab118e8a29decb53e9f03622ee7299) | [PR](https://github.com/KirilsTurkins/lsf-attest/pull/1); [fork repair](https://github.com/KirilsTurkins/lsf-attest/pull/2); upstream creation blocked: Upstream rejected PR creation through GraphQL and REST. |
 
 The composite wrapper proposals are drafts until an official patched child action can replace their temporary fork reference. Rebuilt child forks remain pinned in LSF.
 
