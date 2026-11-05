@@ -294,7 +294,8 @@ impl Drop for PhysicalSocket {
 struct State {
     socket: Option<PhysicalSocket>,
     pending: usize,
-    busy: [bool; 3],
+    // Read, write/send-shutdown, readiness, and one abort-both control.
+    busy: [bool; 4],
     closing: bool,
     quarantined: bool,
     failure: Option<StreamErrorCode>,
@@ -398,7 +399,7 @@ pub(crate) async fn connect(
         state: Mutex::new(State {
             socket: Some(socket),
             pending: 0,
-            busy: [false; 3],
+            busy: [false; 4],
             closing: false,
             quarantined: false,
             failure: None,
@@ -826,7 +827,7 @@ impl Connection {
                     .uncertain(state.attempted_write),
             );
         }
-        if state.busy[direction] || (direction == 1 && state.write_shut) {
+        if state.busy[direction] || (direction == 1 && (state.write_shut || state.busy[3])) {
             return Err(error(StreamErrorCode::InvalidState));
         }
         let now = Instant::now();
@@ -1345,7 +1346,11 @@ impl OutboundStream for Handle {
                     drop(pending);
                     Ok(connection.observe())
                 })?;
-        let pending = self.connection.pending(1, None)?;
+        // Full abort must be available while a write is held or after the
+        // send half has closed. It still has one prepaid control owner; no
+        // new write/send-shutdown can start while that control is pending.
+        let direction = if how == StreamShutdown::Both { 3 } else { 1 };
+        let pending = self.connection.pending(direction, None)?;
         Ok(prepared.finish(pending))
     }
     fn close(self: Box<Self>) -> IoFuture<'static, Result<StreamObservation, StreamError>> {
