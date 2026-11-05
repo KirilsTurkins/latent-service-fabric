@@ -155,6 +155,16 @@ runtime entrypoints to its reviewed fork revision and hosted build using the sam
 bounded raw-content retrieval. The receipt covers only the exact reviewed advisory
 revision and setup-node lock.
 
+Rust-cache retains deepmerge 4.3.1 and minimatch 10.2.6 with separate source
+repairs. Its exact fork, manifest, lock, build guards, repaired archives and
+hosted cache-owner evidence are bound by the independent Rust-cache source
+verifier. The verifier retrieves all six executable Rollup files from the exact
+fork commit using the same bounded, fail-closed raw-content retrieval described
+above. This adds six requests to the existing GitHub raw-content dependency.
+OSV continues to observe both original versions; only the two specifically
+reviewed advisory revisions for the Rust-cache lock can receive source-repair
+credit. Other findings and changed advisory revisions remain blocking.
+
 The selector-parser repair introduced by v4 remains at upstream 7.1.6 with its
 exact dependency graph. The selected v6 bundle also carries ip-address 10.7.4
 and undici 6.29.1. Current frontend locks pin tinypool 2.1.2, source-map-js 1.2.2,

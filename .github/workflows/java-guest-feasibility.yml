@@ -197,7 +197,7 @@ jobs:
         run: python3 tools/qualify_java_server_analysis.py --output "$RUNNER_TEMP/java-server-native"
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - name: Restore compiled Rust dependencies
-        uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: host-correctness
@@ -722,7 +722,7 @@ jobs:
           distribution: temurin
           java-version: '25.0.4+101.0.LTS'
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
-      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: host-correctness

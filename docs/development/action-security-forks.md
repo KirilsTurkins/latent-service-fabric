@@ -22,10 +22,16 @@ minimatch 10.2.5 remains an affected release. The [focused Linux owner](https://
 checked the exact published source tree with only its diagnostic workflow added;
 the retained artifact includes both rebuilt bundles and the source inputs.
 
+The Rust-cache fork retains deepmerge 4.3.1 and minimatch 10.2.6 with bounded
+source repairs. Its [focused Linux owner](https://github.com/KirilsTurkins/lsf-rust-cache/actions/runs/42111587240)
+reconstructed the committed distribution and completed a cache miss, save and
+restore with a Rust build marker and artifact. This covers the tested Linux
+cache provider and does not qualify other operating systems or cache providers.
+
 | Upstream | Fork commit | Contribution |
 | --- | --- | --- |
 | `actions/setup-java` | [63c7977881fc](https://github.com/KirilsTurkins/lsf-setup-java/commit/63c7977881fc344a6ed464f7ed5e242aedc8d56c) | [PR](https://github.com/actions/setup-java/pull/1296) |
-| `Swatinem/rust-cache` | [476b290465f7](https://github.com/KirilsTurkins/lsf-rust-cache/commit/476b290465f7c84db317df6e6a6e2d3c12ea3477) | [PR](https://github.com/Swatinem/rust-cache/pull/396) |
+| `Swatinem/rust-cache` | [38534d49940b](https://github.com/KirilsTurkins/lsf-rust-cache/commit/38534d49940bc6c6aef1e8dfd45349a99d37f14e) | [PR](https://github.com/Swatinem/rust-cache/pull/396); [fork repair](https://github.com/KirilsTurkins/lsf-rust-cache/pull/1) |
 | `actions/attest-build-provenance` | [16b356100dfe](https://github.com/KirilsTurkins/lsf-attest-build-provenance/commit/16b356100dfe77222eebe783b5e26a565b76055a) | [PR](https://github.com/KirilsTurkins/lsf-attest-build-provenance/pull/1); upstream creation blocked: pull request create failed: GraphQL: KirilsTurkins does not have the correct permissions to execute `CreatePullRequest` (createPullRequest) |
 | `actions/cache` | [ec176dce9471](https://github.com/KirilsTurkins/lsf-cache/commit/ec176dce9471270c8a9be1289040c0a8fd6aa708) | [PR](https://github.com/actions/cache/pull/1804); [fork repair](https://github.com/KirilsTurkins/lsf-cache/pull/1) |
 | `actions/checkout` | [4d310727149d](https://github.com/KirilsTurkins/lsf-checkout/commit/4d310727149d3abacc52b5dcb0a1c4d18b345d13) | [PR](https://github.com/actions/checkout/pull/2607) |

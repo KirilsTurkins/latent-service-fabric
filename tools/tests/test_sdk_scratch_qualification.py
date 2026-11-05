@@ -12,6 +12,7 @@ from tools.rust_capsule_project import digest, inventory, write_json
 
 
 SECURITY_ACTION_PIN_INVERSES = (
+    ('KirilsTurkins/lsf-rust-cache', '38534d49940bc6c6aef1e8dfd45349a99d37f14e', '476b290465f7c84db317df6e6a6e2d3c12ea3477'),
     ('KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup', '1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce', '9244ec9f4725400c84054e3e6ec97514cadddf53'),
     ('KirilsTurkins/lsf-setup-dotnet', '258c927924210be905f8908a4be714e5d0daffa8', 'f5bcdac7f26977ef44527f837688dd86faf648ec'),
     ('KirilsTurkins/lsf-setup-python', '164c4cbba5d1b03a046ac8bc25ae695bee0667a8', '50257733267ef69f611231aad6b77a62adca7140'),
@@ -23,7 +24,7 @@ SECURITY_ACTION_PIN_INVERSES = (
 
 
 def historical_security_actions(value):
-    """Invert only the seven reviewed security pins before immutable old guards."""
+    """Invert only the eight reviewed security pins before immutable old guards."""
     if type(value) not in (str, bytes):
         raise AssertionError('historical-workflow-exact-current-security-actions-required')
     for action, current_sha, previous_sha in SECURITY_ACTION_PIN_INVERSES:

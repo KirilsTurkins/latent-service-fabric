@@ -39,7 +39,8 @@
     "uuid@8": "11.1.1",
     "@fastify/busboy@2": "3.2.4",
     "uuid@9": "11.1.1",
-    "uuid@3": "11.1.1"
+    "uuid@3": "11.1.1",
+    "minimatch@10": "$minimatch"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^29.0.3",
@@ -48,13 +49,16 @@
     "@types/node": "^26.6.5",
     "linefix": "^0.1.1",
     "rollup": "^4.64.12",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "deepmerge": "file:.lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar",
+    "minimatch": "file:.lsf-source/minimatch-10.2.6-lsf-bound-v1.tar"
   },
   "scripts": {
     "clean": "node -e \"(async () => { try { await require('fs/promises').rm('dist', { recursive: true }); } catch {} })()\"",
-    "prebuild": "npm run clean",
+    "prebuild": "node .lsf-source/verify-installed-deepmerge.mjs && node .lsf-source/verify-installed-minimatch.mjs && node .lsf-source/verify-rust-cache-lock.mjs && npm run clean",
     "build": "tsc && rollup --config .build/rollup.config.js",
     "prepublishOnly": "npm run test",
-    "prepare": "npm run build && linefix dist"
+    "prepare": "npm run build && linefix dist",
+    "test:security-source": "node --test .lsf-source/minimatch-bounds.test.mjs .lsf-source/rust-cache-lock.test.mjs"
   }
 }

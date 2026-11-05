@@ -17,7 +17,7 @@ from pathlib import Path, PurePosixPath
 from time import monotonic
 
 from tools import security_dotnet_minimatch as dotnet_sources
-from tools import security_setup_go, security_upload_artifact
+from tools import security_setup_go, security_upload_artifact, security_rust_cache
 from tools.security_common import POLICY, decode_json, digest, read_file, require
 
 
@@ -762,6 +762,8 @@ def node_minimatch_action_inputs(repo: Path, entry: dict, owner: dict, lock: dic
 
 
 def action_library_sources(repo: Path, entry: dict, owner: dict, lock: dict) -> dict:
+    if entry.get("source_repair") == security_rust_cache.PROFILE:
+        return security_rust_cache.libraries(repo, entry, owner, lock)
     selected = action_source_inputs(repo, entry, owner, lock)
     libraries = {} if selected is None else {"deepmerge": {
         "version": "4.3.1", "resolved": CHECKOUT_ARCHIVE,
@@ -786,7 +788,8 @@ def action_library_sources(repo: Path, entry: dict, owner: dict, lock: dict) -> 
 def verify_action_sources(repo: Path, packages: list, configuration: dict, fetch=registry_archive) -> list[dict]:
     receipts = []
     for entry in configuration["manifests"]:
-        if entry.get("source_repair") is None or not any(item.path == entry["lock"] for item in packages):
+        if (entry.get("source_repair") is None or entry.get("source_repair") == security_rust_cache.PROFILE
+                or not any(item.path == entry["lock"] for item in packages)):
             continue
         selected = action_source_inputs(repo, entry, decode_json(read_file(repo, entry["path"])),
                                         decode_json(read_file(repo, entry["lock"])))
@@ -889,7 +892,8 @@ def action_runtime(reference: str, source: str) -> bytes:
                  or (reference == ACTION_REFERENCES[NODE_MINIMATCH_PREFIX]
                      and source in {row["source"] for row in NODE_MINIMATCH_RUNTIME.values()})
                  or (reference == security_setup_go.REFERENCE and source in security_setup_go.RUNTIME)
-                 or (reference == security_upload_artifact.REFERENCE and source in security_upload_artifact.RUNTIME)),
+                 or (reference == security_upload_artifact.REFERENCE and source in security_upload_artifact.RUNTIME)
+                 or (reference == security_rust_cache.REFERENCE and source in security_rust_cache.RUNTIME)),
             "invalid-minimatch-action-runtime-source")
     url = f"https://raw.githubusercontent.com/{repository}/{revision}/{source}"
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
@@ -1163,6 +1167,8 @@ def verify_sources(repo: Path, packages: list, configuration: dict, fetch=regist
                                                                   fetch_runtime or action_runtime)
     action_receipts += security_upload_artifact.verify_sources(repo, packages, configuration, fetch,
                                                                fetch_runtime or action_runtime)
+    action_receipts += security_rust_cache.verify_sources(repo, packages, configuration, fetch,
+                                                           fetch_runtime or action_runtime)
     selected = [entry for entry in configuration["manifests"]
                 if (entry.get("derived_bundle") or entry.get("derived_libraries"))
                 and any(package.path == entry["lock"] for package in packages)]
