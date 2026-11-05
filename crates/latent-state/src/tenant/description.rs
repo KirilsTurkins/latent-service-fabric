@@ -47,6 +47,13 @@ pub fn census_contribution(
         })?;
         return metadata(tenant, key, bytes);
     }
+    if crate::payload_references::owns_row(key) {
+        crate::payload_references::validate_row(view, key, bytes)?;
+        let tenant = TenantId(crate::payload_references::row_tenant(key, bytes)?);
+        // The upper command/effect ledger already owns payload byte charges.
+        // These lower rows contribute their metadata only.
+        return metadata(tenant, key, bytes);
+    }
     if key.family == Family::Maintenance
         && key
             .key
