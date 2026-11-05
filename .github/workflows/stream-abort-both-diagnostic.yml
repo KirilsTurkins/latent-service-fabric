@@ -1,0 +1,74 @@
+name: Bounded stream abort-both diagnostic
+
+on:
+  push:
+    branches: ['diag/sdk-738-abort-both-20261105']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stream-abort-both-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  abort-both:
+    name: Four original-owner abort controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+      CARGO_TERM_COLOR: never
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v3-contract-profiles
+          shared-key: host-contracts
+          key: ubuntu-24.04
+          cache-targets: false
+          cache-directories: target/debug
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Bind the checked-out source and toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          git diff --exit-code HEAD --
+          mkdir "$RUNNER_TEMP/stream-abort-both"
+          git rev-parse HEAD > "$RUNNER_TEMP/stream-abort-both/source.txt"
+          rustc --version --verbose > "$RUNNER_TEMP/stream-abort-both/rustc.txt"
+          cargo --version > "$RUNNER_TEMP/stream-abort-both/cargo.txt"
+      - name: Run exactly four real-loopback ownership controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked -p latent-streams --lib abort_both_ -- --nocapture --test-threads=1 2>&1 | tee "$RUNNER_TEMP/stream-abort-both/tests.log"
+          grep -F 'running 4 tests' "$RUNNER_TEMP/stream-abort-both/tests.log"
+          grep -F 'test tests::sockets::abort_both_wakes_read_and_keeps_the_held_write_owner_until_drop ... ok' "$RUNNER_TEMP/stream-abort-both/tests.log"
+          grep -F 'test tests::sockets::abort_both_is_available_after_the_send_half_was_closed ... ok' "$RUNNER_TEMP/stream-abort-both/tests.log"
+          grep -F 'test tests::sockets::abort_both_unpolled_reserves_control_and_blocks_new_send_without_dispatch ... ok' "$RUNNER_TEMP/stream-abort-both/tests.log"
+          grep -F 'test tests::sockets::abort_both_cancels_an_accepted_send_shutdown_owner ... ok' "$RUNNER_TEMP/stream-abort-both/tests.log"
+          grep -F 'test result: ok. 4 passed; 0 failed; 0 ignored;' "$RUNNER_TEMP/stream-abort-both/tests.log"
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          git diff --exit-code HEAD --
+      - name: Retain the actual source and focused test output
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: stream-abort-both-${{ github.sha }}
+          path: ${{ runner.temp }}/stream-abort-both/*
+          if-no-files-found: warn
+          retention-days: 3
