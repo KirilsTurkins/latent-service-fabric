@@ -59,7 +59,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 -B tools/wait_runtime_native_products.py --output "$RUNNER_TEMP/java-resource-native"
-      - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c # v6.1.0 + upstream changes + LSF security fixes
         with:
           distribution: temurin
           java-version: 25.0.4+101.0.LTS
@@ -206,7 +206,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 -B tools/release_preparation_cli_native_products.py --output "$RUNNER_TEMP/java-resource-native"
-      - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c # v6.1.0 + upstream changes + LSF security fixes
         with:
           distribution: temurin
           java-version: 25.0.4+101.0.LTS

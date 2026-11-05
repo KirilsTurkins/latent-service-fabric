@@ -25,7 +25,7 @@ The current security forks were reviewed on **2026-10-30**. They extend the pins
 
 | Action | Reviewed upstream ref | Commit |
 | --- | --- | --- |
-| `KirilsTurkins/lsf-setup-java` | `v6.1.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-java/pull/1296)) | `5d910981b146bc2d4fd97fa349210f3e3d454039` |
+| `KirilsTurkins/lsf-setup-java` | `v6.1.0` + upstream changes and security fixes ([review](https://github.com/actions/setup-java/pull/1296)) | `63c7977881fc344a6ed464f7ed5e242aedc8d56c` |
 | `KirilsTurkins/lsf-rust-cache` | `v2.9.3` + upstream changes and security fixes ([review](https://github.com/Swatinem/rust-cache/pull/396)) | `476b290465f7c84db317df6e6a6e2d3c12ea3477` |
 | `KirilsTurkins/lsf-attest-build-provenance` | `v4.2.2` + upstream changes and security fixes ([review](https://github.com/KirilsTurkins/lsf-attest-build-provenance/pull/1)) | `16b356100dfe77222eebe783b5e26a565b76055a` |
 | `KirilsTurkins/lsf-cache` | `v6.1.0` + upstream changes and security fixes ([review](https://github.com/actions/cache/pull/1804)) | `ec176dce9471270c8a9be1289040c0a8fd6aa708` |

@@ -77,7 +77,7 @@ jobs:
       - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
-      - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c # v6.1.0 + upstream changes + LSF security fixes
         with:
           distribution: temurin
           java-version: 25.0.4+101.0.LTS
@@ -189,7 +189,7 @@ jobs:
       - name: Check exclusive post-stage diagnostic inputs and retained compiler plans
         id: transaction-diagnostic-source-tests
         run: python3 -m unittest tools.tests.test_java_transaction_diagnostics tools.tests.test_transaction_guest_compilers
-      - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c # v6.1.0 + upstream changes + LSF security fixes
         with:
           distribution: temurin
           java-version: '25.0.4+101.0.LTS'
@@ -717,7 +717,7 @@ jobs:
       - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: '3.13.5'
-      - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c # v6.1.0 + upstream changes + LSF security fixes
         with:
           distribution: temurin
           java-version: '25.0.4+101.0.LTS'
@@ -809,7 +809,7 @@ jobs:
       - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: '3.13.5'
-      - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c # v6.1.0 + upstream changes + LSF security fixes
         with:
           distribution: temurin
           java-version: '25.0.4+101.0.LTS'
@@ -886,7 +886,7 @@ jobs:
     - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
       with:
         python-version: 3.13.5
-    - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c # v6.1.0 + upstream changes + LSF security fixes
       with:
         distribution: temurin
         java-version: 25.0.4+101.0.LTS
@@ -976,7 +976,7 @@ jobs:
       run: git fetch --no-tags --depth=1 origin 36eaed79dbd92cac12bad2dd1f52cd5d1acd525f
     - name: Fetch the exact independent-tenant HTTP producer before its helper verification
       run: git fetch --no-tags --depth=1 origin 6f5f180136d140ac670561695260f71514781015
-    - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c # v6.1.0 + upstream changes + LSF security fixes
       with:
         distribution: temurin
         java-version: 25.0.4+101.0.LTS
@@ -1103,7 +1103,7 @@ jobs:
       - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: '3.13.5'
-      - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c # v6.1.0 + upstream changes + LSF security fixes
         with:
           distribution: temurin
           java-version: '25.0.4+101.0.LTS'

@@ -967,7 +967,7 @@ jobs:
           go-version: 1.27.3
           cache-dependency-path: sdk/go/go.sum
       - name: Set up the Java SDK provider participant
-        uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c # v6.1.0 + upstream changes + LSF security fixes
         with:
           distribution: temurin
           # Exact Temurin runtime 25.0.4.1+1; Adoptium SemVer patch/build encoding.
@@ -1094,7 +1094,7 @@ jobs:
           node-version: 24.19.0
           cache: npm
           cache-dependency-path: sdk/typescript-client/package-lock.json
-      - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c # v6.1.0 + upstream changes + LSF security fixes
         with:
           distribution: temurin
           # Exact Temurin runtime 25.0.4.1+1; Adoptium SemVer patch/build encoding.

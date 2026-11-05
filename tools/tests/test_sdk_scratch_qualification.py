@@ -15,7 +15,7 @@ SECURITY_ACTION_PIN_INVERSES = (
     ('KirilsTurkins/lsf-setup-python', '164c4cbba5d1b03a046ac8bc25ae695bee0667a8', '50257733267ef69f611231aad6b77a62adca7140'),
     ('KirilsTurkins/lsf-upload-artifact', '5c42799caf30eda69cb2db5da0be2400c47cef16', '01d82cc6ae713563e8d04f36a17af500cf82a6a9'),
     ('KirilsTurkins/lsf-setup-node', 'fdae00b14e855eb751452bc70c64dde286270415', 'c1136b2d97fe79ef645e9508b2048a222f50a170'),
-    ('KirilsTurkins/lsf-setup-java', '5d910981b146bc2d4fd97fa349210f3e3d454039', 'f041d6677134ada73c077d0c012bd78164b251a7'),
+    ('KirilsTurkins/lsf-setup-java', '63c7977881fc344a6ed464f7ed5e242aedc8d56c', 'f041d6677134ada73c077d0c012bd78164b251a7'),
     ('KirilsTurkins/lsf-upload-pages-artifact', '78e399e92cd7485cca2752423a3eb0ccf404df77', 'f6fd45bb134f6855d391ed2198e9b3d57d305a05'),
 )
 

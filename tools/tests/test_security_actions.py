@@ -111,6 +111,27 @@ class ActionGraphTests(unittest.TestCase):
         with self.assertRaises(OSError):
             verify(self.root, self.paths)
 
+    def test_six_source_java_binding_requires_the_exact_revision_and_source_set(self):
+        revision = '63c7977881fc344a6ed464f7ed5e242aedc8d56c'
+        reference = 'KirilsTurkins/lsf-setup-java@' + revision
+        self.write('.github/workflows/ci.yml', 'jobs:\n  test:\n    steps:\n      - uses: ' + reference + '\n')
+        self.row.update(repository='KirilsTurkins/lsf-setup-java', revision=revision)
+        self.row['files'].extend(self.snapshot(name, 'fixture\n') for name in (
+            '.lsf-source/verify-installed-deepmerge.mjs', '.lsf-source/verify-installed-minimatch.mjs',
+            '.lsf-source/minimatch-bounds.test.mjs'))
+        self.actions = {reference: self.row}
+        self.assertEqual(len(self.check()), 1)
+        self.row['files'][-1]['source'] = '.lsf-source/unreviewed.mjs'
+        with self.assertRaisesRegex(SecurityError, 'unreviewed-additional-action-source'):
+            self.check()
+        self.row['files'][-1]['source'] = '.lsf-source/minimatch-bounds.test.mjs'
+        stale = 'KirilsTurkins/lsf-setup-java@' + 'a' * 40
+        self.write('.github/workflows/ci.yml', 'jobs:\n  test:\n    steps:\n      - uses: ' + stale + '\n')
+        self.row['revision'] = 'a' * 40
+        self.actions = {stale: self.row}
+        with self.assertRaisesRegex(SecurityError, 'unreviewed-additional-action-source'):
+            self.check()
+
 
 if __name__ == "__main__":
     unittest.main()

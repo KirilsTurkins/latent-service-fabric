@@ -400,7 +400,8 @@ class NpmSourceRepairTests(unittest.TestCase):
                    if entry.get("source_repair") == sources.ACTION_PROFILE]
         packages = [package for entry in entries for package in npm_packages(ROOT, entry)]
         upstream = read_file(ROOT, ".github/security/actions/checkout-source/deepmerge-4.3.1.original.tgz")
-        with patch.object(sources, "verify_minimatch_action_sources", return_value=[]):
+        with patch.object(sources, "verify_minimatch_action_sources", return_value=[]), \
+                patch.object(sources, "verify_java_minimatch_action_sources", return_value=[]):
             receipts = sources.verify_sources(ROOT, packages, {"manifests": entries}, lambda pin: upstream)
         self.assertEqual(len(entries), len(receipts), 5)
         self.assertEqual({receipt["action"] for receipt in receipts}, set(sources.ACTION_REFERENCES.values()))
