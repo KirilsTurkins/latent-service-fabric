@@ -575,7 +575,7 @@ fn validate_effect_link(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(
     Ok(())
 }
 
-fn parse_identity(text: &str) -> Result<Identity, AtomicError> {
+pub(super) fn parse_identity(text: &str) -> Result<Identity, AtomicError> {
     if text.len() != 64 {
         return Err(AtomicError::Corrupt);
     }

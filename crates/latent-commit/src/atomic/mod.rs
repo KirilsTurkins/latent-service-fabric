@@ -7,6 +7,7 @@ mod captured;
 mod census;
 mod codec;
 mod ownership;
+mod payload_links;
 mod record;
 pub mod retention;
 mod retry_receipt;
@@ -15,6 +16,7 @@ mod writer;
 pub use captured::{CapturedIntent, IntentCaptureContext};
 pub use census::tenant_census_contribution;
 pub use ownership::{AttemptRetirement, PhysicalAttemptWork, RetiredAttempt};
+pub use payload_links::inspect_payload_reference;
 pub use record::{
     attempt_row_key, command_row_key, result_row_key, CommandRecord, DurableResult, InboxIdentity,
     SourceIdentity,
