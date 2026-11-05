@@ -7,8 +7,10 @@ use super::{
 };
 use crate::BlobReference;
 use latent_state::{
-    embedded::{EmbeddedStore, ReadView, StoreBinding, StoreError},
-    payload_references::{physical_owner_count, required_physical_page, LocalPayloadIdentity},
+    embedded::{EmbeddedStore, ReadView, RowKey, StoreBinding, StoreError},
+    payload_references::{
+        self, physical_owner_count, required_physical_page, LocalPayloadIdentity,
+    },
     store_identity::StoreIdentity,
 };
 use serde::{Deserialize, Serialize};
@@ -82,6 +84,69 @@ impl LocalDurablePin {
     }
 }
 impl LocalBlobStore {
+    /// Check one required catalogue row and its actual local immutable bytes.
+    /// The caller separately validates the owner's semantic closure and scans all
+    /// required rows. This observation grants no blob-read or deletion right.
+    pub fn verify_required_reference(
+        &self,
+        view: &ReadView,
+        key: &RowKey,
+        bytes: &[u8],
+        checkpoint: &dyn Fn() -> Result<()>,
+    ) -> Result<()> {
+        let mode = self.inner.durable.as_ref().ok_or(LocalBlobError::Invalid)?;
+        let binding = self
+            .inner
+            .durable_binding
+            .as_ref()
+            .ok_or(LocalBlobError::PermissionDenied)?;
+        if !view.is_bound_to(binding) {
+            return Err(LocalBlobError::PermissionDenied);
+        }
+        if view
+            .get_bounded(key, payload_references::MAX_REFERENCE_BYTES)
+            .map_err(storage)?
+            .as_deref()
+            != Some(bytes)
+        {
+            return Err(LocalBlobError::Corrupt);
+        }
+        payload_references::validate_row(view, key, bytes).map_err(storage)?;
+        let reference = payload_references::owner_reference(key, bytes)
+            .map_err(storage)?
+            .ok_or(LocalBlobError::Invalid)?;
+        let identity = StoreIdentity::inspect(view)
+            .map_err(storage)?
+            .ok_or(LocalBlobError::Corrupt)?;
+        if identity.as_str() != mode.store_identity
+            || reference.payload.provider_configuration
+                != decode_digest(&mode.configuration_digest)?
+            || reference.payload.blob_namespace != self.namespace()
+            || self.configuration_digest()? != mode.configuration_digest
+        {
+            return Err(LocalBlobError::PermissionDenied);
+        }
+        let scope = TenantId(reference.payload.tenant.clone());
+        let blob = BlobReference {
+            digest: latent_core::BlobDigest(format!(
+                "sha256:{:x}",
+                latent_core::digest::HexDigest(reference.payload.digest)
+            )),
+            size_bytes: reference.payload.size,
+            media_type: reference.payload.media_type,
+            tenant: scope.clone(),
+            metadata: latent_core::Metadata::new(),
+        };
+        let reader = self
+            .open_read(&scope, &blob, checkpoint)
+            .map_err(|error| match error {
+                LocalBlobError::NotFound => LocalBlobError::Corrupt,
+                other => other,
+            })?;
+        drop(reader);
+        checkpoint()
+    }
+
     /// Trusted setup on the fixed native storage owner. The actual selected
     /// store must already have its immutable identity. Ordinary opening later
     /// still recognizes this durable mode and cannot release without review.

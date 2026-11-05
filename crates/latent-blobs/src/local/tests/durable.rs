@@ -260,3 +260,52 @@ fn same_label_different_live_engine_cannot_authorize_release() {
     let reader = owner.open_read(&scope(), &blob, &|| Ok(())).unwrap();
     assert_eq!(read(&reader, 0, 5).unwrap(), b"proof");
 }
+
+#[test]
+fn recovery_checks_actual_required_bytes_and_rejects_foreign_view_or_corruption() {
+    let state_root = temporary_root();
+    let other_root = temporary_root();
+    let blob_root = temporary_root();
+    let state = database(state_root.path(), true, "same-label");
+    let other = database(other_root.path(), true, "same-label");
+    let owner =
+        LocalBlobStore::open_durable(blob_root.path(), "private", limits(), &state).unwrap();
+    let blob = put(&owner, b"proof");
+    let pin = owner
+        .capture_durable_reference(&scope(), &blob, &|| Ok(()))
+        .unwrap();
+    let reference = reference(&pin, PayloadOwnerKind::Effect, 7, "local", 1);
+    update(&state, &[(None, Some(reference.clone()))]);
+    let key = reference.owner_key().unwrap();
+    let bytes = reference.encode().unwrap();
+    let view = state.snapshot().unwrap();
+    owner
+        .verify_required_reference(&view, &key, &bytes, &|| Ok(()))
+        .unwrap();
+    let foreign = other.snapshot().unwrap();
+    assert_eq!(
+        owner.verify_required_reference(&foreign, &key, &bytes, &|| Ok(())),
+        Err(LocalBlobError::PermissionDenied)
+    );
+    drop((view, foreign, pin));
+    let object = owner
+        .inner
+        .state()
+        .unwrap()
+        .objects
+        .keys()
+        .next()
+        .unwrap()
+        .clone();
+    let path = blob_root.path().join("objects").join(object).join("data");
+    std::fs::write(&path, b"wrong").unwrap();
+    let view = state.snapshot().unwrap();
+    assert_eq!(
+        owner.verify_required_reference(&view, &key, &bytes, &|| Ok(())),
+        Err(LocalBlobError::Corrupt)
+    );
+    std::fs::remove_file(path).unwrap();
+    assert!(owner
+        .verify_required_reference(&view, &key, &bytes, &|| Ok(()))
+        .is_err());
+}

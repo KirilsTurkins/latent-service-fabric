@@ -86,6 +86,7 @@ async fn actual_captured_blob_pin_moves_into_atomic_result_and_effect_owners() {
         .unwrap();
     super::super::payload_links::verify(&view, &command, &links).unwrap();
     assert_eq!(links.references.len(), 2);
+    let required_key = links.references[0].owner_key().unwrap();
     assert_eq!(
         latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
         Some(2)
@@ -162,6 +163,12 @@ async fn actual_captured_blob_pin_moves_into_atomic_result_and_effect_owners() {
         &state,
     )
     .unwrap();
+    let view = state.snapshot().unwrap();
+    let bytes = view.get(&required_key).unwrap().unwrap();
+    store
+        .verify_required_reference(&view, &required_key, &bytes, &|| Ok(()))
+        .unwrap();
+    drop(view);
     let reader = store
         .open_read(&TenantId("a".into()), &blob, &|| Ok(()))
         .unwrap();
