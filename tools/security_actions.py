@@ -56,9 +56,15 @@ def verify(repo: Path, paths: list[str]) -> list[dict]:
             seen_actions.add(value)
             row = actions[value]
             require(isinstance(row, dict) and isinstance(row.get("files"), list)
-                    and 1 <= len(row["files"]) <= 4 and isinstance(row.get("metadata"), dict),
+                    and 1 <= len(row["files"]) <= 5 and isinstance(row.get("metadata"), dict),
                     "invalid-action-graph-binding")
             source, revision = value.rsplit("@", 1)
+            if len(row["files"]) == 5:
+                require(source == "KirilsTurkins/lsf-setup-python"
+                        and {item.get("source") for item in row["files"]} == {
+                            "action.yml", "package.json", "package-lock.json",
+                            ".lsf-source/verify-installed-deepmerge.mjs", ".lsf-source/verify-installed-minimatch.mjs"},
+                        "unreviewed-additional-action-source")
             require(re.fullmatch(r"[0-9a-f]{40}", revision) is not None
                     and row["revision"] == revision and row["repository"] == "/".join(source.split("/")[:2]),
                     "action-graph-revision-drift")

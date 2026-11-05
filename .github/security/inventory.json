@@ -383,7 +383,8 @@
       "kind": "npm",
       "lock": ".github/security/actions/setup-python/package-lock.json",
       "path": ".github/security/actions/setup-python/package.json",
-      "source_repair": "deepmerge-action-source-v1"
+      "source_repair": "deepmerge-action-source-v1",
+      "minimatch_source_repair": "minimatch-action-source-v1"
     },
     {
       "kind": "npm",

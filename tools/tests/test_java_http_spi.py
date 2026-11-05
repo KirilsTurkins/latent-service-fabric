@@ -176,7 +176,7 @@ class JavaSpiManualWorkflow(unittest.TestCase):
             step['uses'] = 'KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039'
         action_migrations = {
             'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1': 'KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13',
-            'actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97': 'KirilsTurkins/lsf-setup-python@e0aa7f1b2061a76e0424bd22ac45be035ce42a6e',
+            'actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97': 'KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8',
             'actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333': 'KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f',
             'actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9': 'KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16',
             'Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6': 'KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477',
