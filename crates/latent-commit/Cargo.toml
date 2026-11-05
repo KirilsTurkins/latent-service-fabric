@@ -33,5 +33,5 @@ latent-routing = { path = "../latent-routing" }
 serde_json.workspace = true
 
 [target.'cfg(target_os = "linux")'.dependencies]
-latent-blobs = { path = "../latent-blobs" }
+latent-blobs = { package = "latent-local-blobs", path = "../latent-local-blobs" }
 latent-capabilities = { path = "../latent-capabilities" }
