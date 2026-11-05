@@ -33,7 +33,7 @@ def decision(observation, gates, *, body_released):
                 for gate in gates), 'rust-thread-http-peer-stale-gate')
 
     def row(vector):
-        selected = [item for item in rows if item['vector'] == vector]
+        selected = [item for item in rows if item.get('vector') == vector]
         require(len(selected) <= 1, 'rust-thread-http-peer-ambiguous-gate')
         return selected[0] if selected else None
 
@@ -45,7 +45,7 @@ def decision(observation, gates, *, body_released):
         return selected[0] if selected else None
 
     held, partial = row('pending-headers'), row('partial-body')
-    json_rows = [item for item in rows if item['vector'] == 'domain-json']
+    json_rows = [item for item in rows if item.get('vector') == 'domain-json']
     require(len(json_rows) <= 2, 'rust-thread-http-peer-extra-sibling')
     if held is None or partial is None:
         require(not body_released, 'rust-thread-http-peer-missing-release-preimage')
