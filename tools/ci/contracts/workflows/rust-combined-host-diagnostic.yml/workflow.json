@@ -13,6 +13,7 @@
         "paths": [
           ".github/workflows/rust-combined-host-diagnostic.yml",
           "crates/latent-component-threading/**",
+          "crates/latent-packaging/**",
           "crates/latent-wasmtime/**",
           "apps/latentd/**",
           "tools/rust_combined_diagnostic_envelope.py",

@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/rust-combined-host-diagnostic.yml'
       - 'crates/latent-component-threading/**'
+      - 'crates/latent-packaging/**'
       - 'crates/latent-wasmtime/**'
       - 'apps/latentd/**'
       - 'tools/rust_combined_diagnostic_envelope.py'
@@ -54,6 +55,14 @@ jobs:
           c=crates/latent-component-threading/src/rust_catalogue
           python3 -B tools/rust_combined_diagnostic_envelope.py --original "$c/combined-original-core.wasm" --component "$c/combined-final-component.wasm" --output "$RUNNER_TEMP/rust-combined-host/framed.wasm" | tee "$RUNNER_TEMP/rust-combined-host/framing.log"
           echo '5634429a97b4a3f0cf8afca2877dbbddbc98f5e4fd7bf59ae6f7f50e780c2e17  '"$RUNNER_TEMP/rust-combined-host/framed.wasm" | sha256sum --check --strict
+      - name: Check default refusal and fixed diagnostic inspection
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked -p latent-packaging --lib semantics::wasm::tests::combined_creator_recognition_is_explicit_and_fixed -- --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/rust-combined-host/inspector-default.log"
+          cargo test --locked -p latent-packaging --lib --features development-rust-http-combined semantics::wasm::tests::combined_creator_recognition_is_explicit_and_fixed -- --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/rust-combined-host/inspector-diagnostic.log"
+          grep -F 'test semantics::wasm::tests::combined_creator_recognition_is_explicit_and_fixed ... ok' "$RUNNER_TEMP/rust-combined-host/inspector-default.log"
+          grep -F 'test semantics::wasm::tests::combined_creator_recognition_is_explicit_and_fixed ... ok' "$RUNNER_TEMP/rust-combined-host/inspector-diagnostic.log"
       - name: Refuse the incompatible historic catalogue
         shell: bash
         run: |

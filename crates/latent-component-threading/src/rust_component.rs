@@ -485,6 +485,38 @@ pub struct CombinedEmbeddedProof {
     pub runtime_qualified: bool,
 }
 
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+fn fixed_combined_parts(wrapped: &[u8]) -> Result<(&[u8], &[u8]), &'static str> {
+    let (component, delta) = crate::rust_original_delta::split_unverified(wrapped)?;
+    if component != COMBINED_FINAL_IMAGE || delta != COMBINED_ORIGINAL_DELTA {
+        return Err("rust-combined-fixed-material-required");
+    }
+    Ok((component, delta))
+}
+
+/// A non-allocating identity filter for the one retained diagnostic graph.
+/// This does not establish source provenance, grant authority, or select an
+/// engine: actual execution must still reserve work and recompute the proof.
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+pub fn matches_fixed_combined_diagnostic(wrapped: &[u8]) -> bool {
+    fixed_combined_parts(wrapped).is_ok()
+}
+
+// The incompatible historic catalogue cannot recognize this fixed graph.
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    feature = "rust-thread-diagnostic-legacy"
+))]
+pub fn matches_fixed_combined_diagnostic(_wrapped: &[u8]) -> bool {
+    false
+}
+
 /// Diagnostic proof of the embedded source and complete fixed final graph.
 /// Callers must separately reserve reconstruction/verification work before
 /// allocation. This path does not select an engine or authorize execution.
@@ -496,12 +528,9 @@ pub struct CombinedEmbeddedProof {
 pub fn verify_embedded_combined_diagnostic(
     wrapped: &[u8],
 ) -> Result<CombinedEmbeddedProof, &'static str> {
-    let (component, delta) = crate::rust_original_delta::split_unverified(wrapped)?;
-    // Refuse non-catalogue material without allocating. Equality is only a
-    // prefilter: the independent source and final-graph proof below still runs.
-    if component != COMBINED_FINAL_IMAGE || delta != COMBINED_ORIGINAL_DELTA {
-        return Err("rust-combined-fixed-material-required");
-    }
+    // Equality is only a prefilter: the independent source and final-graph
+    // proof below still runs for the accepted fixed material.
+    let (component, delta) = fixed_combined_parts(wrapped)?;
     let main = combined_final_main(component)?;
     let original = crate::rust_original_delta::reconstruct(component, delta)?;
     require_combined_wit(&original)?;
@@ -749,6 +778,7 @@ mod tests {
             COMBINED_ORIGINAL_DELTA,
         )
         .unwrap();
+        assert!(matches_fixed_combined_diagnostic(&wrapped));
         assert!(verify_embedded_combined_diagnostic(&wrapped).is_ok());
 
         let mut changed_delta = COMBINED_ORIGINAL_DELTA.to_vec();
@@ -756,6 +786,7 @@ mod tests {
         let wrapped =
             crate::rust_original_delta::attach_unverified(COMBINED_FINAL_IMAGE, &changed_delta)
                 .unwrap();
+        assert!(!matches_fixed_combined_diagnostic(&wrapped));
         assert_eq!(
             verify_embedded_combined_diagnostic(&wrapped).unwrap_err(),
             "rust-combined-fixed-material-required"
@@ -766,6 +797,7 @@ mod tests {
         let wrapped =
             crate::rust_original_delta::attach_unverified(&changed_final, COMBINED_ORIGINAL_DELTA)
                 .unwrap();
+        assert!(!matches_fixed_combined_diagnostic(&wrapped));
         assert_eq!(
             verify_embedded_combined_diagnostic(&wrapped).unwrap_err(),
             "rust-combined-fixed-material-required"
