@@ -757,3 +757,17 @@ gate or authority/retirement limit changes. The new observation is independent
 nonqualifying cause evidence; stderr can block and perturb timing. All v29/e3
 compiler/component/native/four-helper receipts remain immutable and historical;
 only a freshly built explicit diagnostic runtime may claim v30.
+
+## v32: consumer poll-factory header
+
+The original Store memory owner now admits the concrete consumer poll-factory
+closure before its Box and any consumer call or transmit publication. Its
+existing inline affine owner survives with the same closure until physical
+Box destruction; allocation refusal leaves the prior transmit state intact.
+The original unselected path still uses its original closure and one Box.
+
+This source slice does not pay returned per-call futures, HostToHost accept
+closures or buffers, unrelated transitive captures, or prove full activation
+accounting. The compiled dynamic-value-memory profile constant has a separate
+pre-existing cohort mismatch and is not corrected or qualified here. No
+new native or signed-guest outcome is claimed by this source.
