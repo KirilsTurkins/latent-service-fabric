@@ -1,7 +1,7 @@
 name: .NET monitor wait causal diagnostic
 on:
   push:
-    branches: ['diag/dotnet-monitor-cause-20261105']
+    branches: ['diag/dotnet-monitor-dispatch-20261105']
     paths:
       - '.github/workflows/dotnet-monitor-cause.yml'
       - 'tools/dotnet_task_runtime_fixture.py'

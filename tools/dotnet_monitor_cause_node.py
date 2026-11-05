@@ -60,8 +60,8 @@ def observe_cases(client, target, component, record, accounting, checkpoint):
             'monitor-cause-original-budget-no-effects')
         try:
             # Mismatches also use the existing bounded/redacted diagnostics.
-            value = fixture.observation(row) if mode == 'monitor-cause' else fixture.expected(mode)
-            if mode == 'monitor-cause':
+            value = fixture.observation(row, mode) if mode in ('monitor-cause', 'monitor-dispatch') else fixture.expected(mode)
+            if mode in ('monitor-cause', 'monitor-dispatch'):
                 attempt['diagnosticObservation'] = value
             assert_value(client, row, [{'ok': value}])
         except WorkflowError as error:
@@ -78,7 +78,7 @@ def observe_cases(client, target, component, record, accounting, checkpoint):
                 diagnostic.rename(destination)
                 attempt['diagnostic'] = destination.name
         else:
-            attempt['status'] = 'observed' if mode == 'monitor-cause' else 'passed'
+            attempt['status'] = 'observed' if mode in ('monitor-cause', 'monitor-dispatch') else 'passed'
         checkpoint()
         # Continue after an unexpected *known* terminal only if the actual
         # node remains alive and all original provider/cell owners are idle.
@@ -93,9 +93,9 @@ def observe_cases(client, target, component, record, accounting, checkpoint):
 def run(artifact: Path, native: dict, output: Path):
     output = fresh(output); component = file_identity(artifact / 'component.wasm')
     native_before = {key: file_identity(path) for key, path in native.items()}
-    record = {'schemaVersion': 'latent.dotnet.monitor-cause.node.v1', 'status': 'incomplete',
+    record = {'schemaVersion': 'latent.dotnet.monitor-cause.node.v2', 'status': 'incomplete',
         'expectedModes': list(MODES), 'attempts': [], 'component': component, 'native': native_before,
-        'theseTwoCasesOnly': True, 'fullTicketQualification': False, 'diagnosticOnly': True}
+        'theseThreeCasesOnly': True, 'fullTicketQualification': False, 'diagnosticOnly': True}
     commands = Commands(ROOT, fresh(output / 'commands'), build_environment(output),
         deadline_seconds=360, command_seconds=120)
     peer = node = client = None; stage = 'sign-one-component'
@@ -134,7 +134,7 @@ def run(artifact: Path, native: dict, output: Path):
                 record['budget'] = original_budget(target)
                 record['afterGrants'] = {'provider': owners.provider_idle(client, target),
                     'physical': sample(client, accounting, 'monitor-cause-after-grants', 1)}
-                stage = 'two-actual-ordinary-observations'
+                stage = 'three-actual-ordinary-observations'
                 observations_passed = observe_cases(client, target, component, record, accounting, checkpoint)
                 delete_when_audit_idle(client, target)
                 record['afterDeletes'] = sample(client, accounting, 'monitor-cause-deleted', 0)

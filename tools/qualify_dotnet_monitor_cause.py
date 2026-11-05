@@ -59,16 +59,16 @@ def qualify(native_directory, tools_directory, output, *, expected_head):
     require(type(expected_head) is str and len(expected_head) == 40
         and all(c in '0123456789abcdef' for c in expected_head), 'monitor-cause-exact-source')
     require(fixture.CASES == ORIGINAL_CASES and witness.CASES == node.MODES,
-        'monitor-cause-original-and-two-new-cases')
+        'monitor-cause-original-and-two-probe-cases')
     native_directory, tools_directory = (Path(path).resolve(strict=True) for path in (native_directory, tools_directory))
     output = Path(output).absolute()
     require(output != ROOT and ROOT not in output.parents and output not in ROOT.parents
         and all(output != path and output not in path.parents and path not in output.parents
             for path in (native_directory, tools_directory)), 'monitor-cause-separated-inputs')
     output = fresh(output)
-    record = {'schemaVersion': 'latent.dotnet.monitor-cause.qualification.v1', 'status': 'incomplete',
+    record = {'schemaVersion': 'latent.dotnet.monitor-cause.qualification.v2', 'status': 'incomplete',
         'sourceCommit': expected_head, 'selectedModes': list(node.MODES),
-        'theseTwoCasesOnly': True, 'fullTicketQualification': False, 'diagnosticOnly': True,
+        'theseThreeCasesOnly': True, 'fullTicketQualification': False, 'diagnosticOnly': True,
         'nativeAotCompilationAttempted': False}
     stage = 'exact-source-and-native-authentication'
     try:
@@ -107,7 +107,7 @@ def qualify(native_directory, tools_directory, output, *, expected_head):
             and read_file(artifact / 'recipe-inputs.json') == recipe_inputs(artifact),
             'monitor-cause-exact-captured-source-and-recipe')
         record['freshBuild'] = build_evidence(artifact, aggregate=True)
-        stage = 'two-signed-original-node-observations'
+        stage = 'three-signed-original-node-observations'
         observed = node.run(artifact, native, output / 'node')
         require(observed['status'] == 'passed'
             and [row['mode'] for row in observed['attempts']] == list(node.MODES)
