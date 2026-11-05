@@ -163,31 +163,44 @@ fn protected_c_profile_reaches_normal_node_settings_without_raising_any_limits()
         selected["engine"]["threadingProfile"] =
             "rust-context40-combined-http-diagnostic-v1".into();
         let diagnostic = derive(&selected).unwrap();
-        assert_eq!(
-            diagnostic.wasmtime.native_thread_profile,
-            latent_wasmtime::NativeThreadProfile::RustContext40CombinedHttpDiagnosticV1
-        );
-        assert_eq!(
-            diagnostic.wasmtime.activation_runtime,
-            settings.wasmtime.activation_runtime
-        );
-        assert_eq!(
-            diagnostic.wasmtime.maximum_memory_bytes,
-            settings.wasmtime.maximum_memory_bytes
-        );
-        assert_eq!(
-            diagnostic.wasmtime.maximum_fuel,
-            settings.wasmtime.maximum_fuel
-        );
-        assert!(diagnostic
-            .admission
-            .cell_classes
-            .values()
-            .all(|cell| cell.threading_models == selected_models));
+        assert_combined_http_configuration(&diagnostic, &settings, &selected_models);
     }
     selected.as_object_mut().unwrap().remove("engine");
     assert!(derive(&selected).is_err());
     assert!(!uncreated.exists());
+}
+
+#[cfg(all(
+    target_os = "linux",
+    target_arch = "x86_64",
+    feature = "development-rust-http-combined"
+))]
+fn assert_combined_http_configuration(
+    diagnostic: &super::super::NodeSettings,
+    settings: &super::super::NodeSettings,
+    selected_models: &[latent_routing::revision_policy::ThreadingModel],
+) {
+    assert_eq!(
+        diagnostic.wasmtime.native_thread_profile,
+        latent_wasmtime::NativeThreadProfile::RustContext40CombinedHttpDiagnosticV1
+    );
+    assert_eq!(
+        diagnostic.wasmtime.activation_runtime,
+        settings.wasmtime.activation_runtime
+    );
+    assert_eq!(
+        diagnostic.wasmtime.maximum_memory_bytes,
+        settings.wasmtime.maximum_memory_bytes
+    );
+    assert_eq!(
+        diagnostic.wasmtime.maximum_fuel,
+        settings.wasmtime.maximum_fuel
+    );
+    assert!(diagnostic
+        .admission
+        .cell_classes
+        .values()
+        .all(|cell| cell.threading_models.as_slice() == selected_models));
 }
 
 #[test]
