@@ -5,6 +5,16 @@
 #error "PCI INTx custody requires its distinct qualification image"
 #endif
 
+/* These helpers are called from the selected PCI translation unit. */
+extern int lsf_node_intx_begin(struct pci_dev *pci);
+extern int lsf_node_intx_forward(struct pci_dev *pci);
+extern int lsf_node_intx_preflight(struct pci_dev *pci, u16 original);
+extern int lsf_node_intx_prepare_toggle(struct pci_dev *pci, u16 original);
+extern int lsf_node_intx_claim_restore(struct pci_dev *pci, u16 original);
+extern int lsf_node_intx_restore_written(struct pci_dev *pci, u16 original);
+extern int lsf_node_intx_observed(struct pci_dev *pci, u16 restored, u8 pin, u8 line);
+extern void lsf_node_intx_fault(void);
+
 /* The original syscall retains its file, Node actor, device Root, both exact
  * live prepaid records and constructor task. This helper never uses an input
  * address until the existing whole-object classifier has accepted it. */
