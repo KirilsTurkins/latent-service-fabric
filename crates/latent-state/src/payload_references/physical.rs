@@ -75,10 +75,11 @@ pub fn validate_physical_inventory_head(
 }
 
 /// A bounded, generation-fenced inventory of one physical object's owners.
-/// Each page is checked against a coherent view and the original head bytes.
+/// Each page is checked against the original live engine and head bytes.
 /// Completion is an observation, not authority to delete or read an object.
 pub struct PhysicalInventory {
     payload: LocalPayloadIdentity,
+    binding: crate::embedded::StoreBinding,
     head: Option<Vec<u8>>,
     expected: u64,
     observed: u64,
@@ -99,6 +100,7 @@ impl PhysicalInventory {
         };
         Ok(Self {
             payload: payload.clone(),
+            binding: view.binding(),
             head,
             expected,
             observed: 0,
@@ -119,7 +121,9 @@ impl PhysicalInventory {
         if self.finished {
             return Err(StoreError::Invalid);
         }
-        if view.get_bounded(&head_key(&self.payload)?, MAX_REFERENCE_BYTES)? != self.head {
+        if !view.is_bound_to(&self.binding)
+            || view.get_bounded(&head_key(&self.payload)?, MAX_REFERENCE_BYTES)? != self.head
+        {
             return Err(StoreError::Conflict);
         }
         let page = super::required_physical_page(

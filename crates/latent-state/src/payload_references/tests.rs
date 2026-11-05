@@ -131,6 +131,39 @@ fn physical_inventory_fences_changed_generation_and_detects_missing_index() {
 }
 
 #[test]
+fn physical_inventory_rejects_another_engine_with_identical_head() {
+    let first_root = tempfile::tempdir().unwrap();
+    let other_root = tempfile::tempdir().unwrap();
+    let first_store = store(first_root.path(), true);
+    let other_store = store(other_root.path(), true);
+    let first = reference(PayloadOwnerKind::Result, 1);
+    let second = reference(PayloadOwnerKind::Effect, 2);
+    for database in [&first_store, &other_store] {
+        update(database, None, Some(first.clone()));
+        update(database, None, Some(second.clone()));
+    }
+    let first_view = first_store.snapshot().unwrap();
+    let mut inventory = PhysicalInventory::begin(&first_view, &first.payload).unwrap();
+    assert!(
+        !inventory
+            .next_page(&first_view, 1, MAX_REFERENCE_BYTES)
+            .unwrap()
+            .1
+    );
+    let other_view = other_store.snapshot().unwrap();
+    assert!(matches!(
+        inventory.next_page(&other_view, 1, MAX_REFERENCE_BYTES),
+        Err(StoreError::Conflict)
+    ));
+    assert!(
+        inventory
+            .next_page(&first_view, 1, MAX_REFERENCE_BYTES)
+            .unwrap()
+            .1
+    );
+}
+
+#[test]
 fn physical_count_and_attempt_closure_keep_effect_after_result_expiry() {
     let root = tempfile::tempdir().unwrap();
     let database = store(root.path(), true);
