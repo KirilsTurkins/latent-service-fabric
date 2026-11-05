@@ -667,35 +667,46 @@ class Q35NodeKvmLaunchControls(unittest.TestCase):
             'user::rw-','user:1001:rw-','group::rw-','mask::rw-','other::---']}}
 
     def test_child_probe_reports_real_open_and_denial_without_a_vm(self):
-        import contextlib, io, os, stat
-        from types import SimpleNamespace
-        entry=SimpleNamespace(st_mode=stat.S_IFCHR|0o660,st_dev=7,st_ino=460,
-            st_rdev=2792,st_uid=0,st_gid=993)
-        for denied in (False,True):
-            with self.subTest(denied=denied), contextlib.ExitStack() as stack:
-                for name,value in (('getuid',1001),('geteuid',1001),('getgid',1001),
-                                   ('getegid',1001),('getgroups',[4,100,118,999,1001])):
-                    stack.enter_context(patch.object(os,name,return_value=value,create=True))
-                stack.enter_context(patch.object(os,'major',return_value=10,create=True))
-                stack.enter_context(patch.object(os,'minor',return_value=232,create=True))
-                stack.enter_context(patch.object(os,'O_CLOEXEC',0,create=True))
-                stack.enter_context(patch.object(os,'O_NOFOLLOW',0,create=True))
-                stack.enter_context(patch.object(os,'lstat',return_value=entry))
-                stack.enter_context(patch.object(os,'fstat',return_value=entry))
-                stack.enter_context(patch.object(os,'access',return_value=True))
-                close=stack.enter_context(patch.object(os,'close'))
-                stack.enter_context(patch.object(os,'open',
-                    side_effect=PermissionError(13,'denied') if denied else None,
-                    return_value=123))
-                stack.enter_context(patch('builtins.open',return_value=io.BytesIO(b'unconfined\n')))
-                output=stack.enter_context(patch('sys.stdout',new_callable=io.StringIO))
-                exec(compile(programme._NODE_KVM_OPEN_PROBE,'<fixed KVM probe>','exec'),{})
-                row=json.loads(output.getvalue())
+        import subprocess, sys
+        # Run the real fixed probe in an isolated child, with only its device
+        # observations mocked. This exercises the same interpreter boundary as
+        # the owner without evaluating source in the test process.
+        setup = r"""
+import io, os, stat, sys
+from types import SimpleNamespace
+from unittest.mock import patch
+entry = SimpleNamespace(st_mode=stat.S_IFCHR | 0o660, st_dev=7, st_ino=460,
+                        st_rdev=2792, st_uid=0, st_gid=993)
+for name, value in (('getuid', 1001), ('geteuid', 1001), ('getgid', 1001),
+                    ('getegid', 1001), ('getgroups', [4, 100, 118, 999, 1001])):
+    patch.object(os, name, return_value=value, create=True).start()
+patch.object(os, 'major', return_value=10, create=True).start()
+patch.object(os, 'minor', return_value=232, create=True).start()
+patch.object(os, 'O_CLOEXEC', 0, create=True).start()
+patch.object(os, 'O_NOFOLLOW', 0, create=True).start()
+patch.object(os, 'lstat', return_value=entry).start()
+patch.object(os, 'fstat', return_value=entry).start()
+patch.object(os, 'access', return_value=True).start()
+close = patch.object(os, 'close').start()
+patch.object(os, 'open', side_effect=PermissionError(13, 'denied')
+             if sys.argv[1] == '1' else None, return_value=123).start()
+patch('builtins.open', return_value=io.BytesIO(b'unconfined\n')).start()
+"""
+        for denied in (False, True):
+            with self.subTest(denied=denied):
+                result = subprocess.run(
+                    [sys.executable, '-I', '-B', '-c',
+                     setup + programme._NODE_KVM_OPEN_PROBE + '\nprint(close.call_count)\n',
+                     '1' if denied else '0'],
+                    check=True, capture_output=True, text=True, encoding='utf-8', timeout=10)
+                lines = result.stdout.splitlines()
+                self.assertEqual(len(lines), 2)
+                row = json.loads(lines[0])
                 self.assertTrue(row['entry']['readWrite'])
-                self.assertEqual(row['opened'],not denied)
-                self.assertEqual(row['openErrno'],13 if denied else None)
-                self.assertEqual(row['sameEntry'],None if denied else True)
-                self.assertEqual(close.call_count,0 if denied else 1)
+                self.assertEqual(row['opened'], not denied)
+                self.assertEqual(row['openErrno'], 13 if denied else None)
+                self.assertEqual(row['sameEntry'], None if denied else True)
+                self.assertEqual(int(lines[1]), 0 if denied else 1)
 
     def test_same_owned_child_requires_actual_matching_open_and_exact_acl(self):
         record = self.record(); receipt = self.receipt(); calls = []
