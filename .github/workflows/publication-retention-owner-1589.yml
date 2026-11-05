@@ -1,0 +1,141 @@
+name: Publication retention focused owner (review only)
+
+on:
+  push:
+    branches:
+      - test/pr1589-publication-owner-caaad83-20261106
+
+permissions:
+  contents: read
+
+env:
+  RUSTUP_TOOLCHAIN: "1.97.1"
+  CARGO_BUILD_JOBS: "2"
+  CARGO_INCREMENTAL: "0"
+  CARGO_PROFILE_DEV_DEBUG: "0"
+  CARGO_PROFILE_TEST_DEBUG: "0"
+  CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: "true"
+  CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: "true"
+  CARGO_PROFILE_DEV_OVERFLOW_CHECKS: "true"
+  CARGO_PROFILE_TEST_OVERFLOW_CHECKS: "true"
+  CARGO_TERM_COLOR: never
+  PYTHONDONTWRITEBYTECODE: "1"
+  LSF_REQUIRE_NATIVE_PROCESS_TESTS: "1"
+
+jobs:
+  focused:
+    name: Immutable publication safety and strict lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 100
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          components: clippy, rustfmt
+
+      - name: Authenticate owner and exact candidate source
+        id: verify
+        shell: bash
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          owner_dir="$(mktemp -d "$RUNNER_TEMP/lsf-publication-1589.XXXXXXXX")"
+          mkdir -m 700 "$owner_dir/reports" "$owner_dir/tests" "$owner_dir/target"
+          python3 - <<'PY'
+          import hashlib, os, platform, subprocess
+          from pathlib import Path
+          source = "caaad83be6053e6e19635acbe62cb33b08bac234"
+          expected = {
+              ("A", ".github/workflows/publication-retention-owner-1589.yml"),
+              ("A", "tools/ci/publication_owner_1589.py"),
+          }
+          def git(*args):
+              return subprocess.check_output(["git", *args], text=True).strip()
+          assert platform.system() == "Linux" and platform.machine() == "x86_64"
+          assert git("rev-parse", "HEAD") == os.environ["GITHUB_SHA"]
+          assert git("show", "-s", "--format=%P", "HEAD").split() == [source]
+          lines = git("diff", "--name-status", "--no-renames", source, "HEAD").splitlines()
+          assert {tuple(line.split("\t", 1)) for line in lines} == expected
+          assert not git("status", "--porcelain=v1", "--untracked-files=all")
+          helper = Path("tools/ci/publication_owner_1589.py")
+          assert not helper.is_symlink()
+          assert hashlib.sha256(helper.read_bytes()).hexdigest() == "0d7587867469dbb5b4b002415beaa24b54bc749bd90101d0035ab41fe3137f8f"
+          assert subprocess.check_output(["rustc", "--version"], text=True).startswith("rustc 1.97.1 ")
+          assert subprocess.check_output(["cargo", "--version"], text=True).startswith("cargo 1.97.1 ")
+          PY
+          cp tools/ci/publication_owner_1589.py "$owner_dir/publication_owner.py"
+          chmod 600 "$owner_dir/publication_owner.py"
+          git checkout --detach caaad83be6053e6e19635acbe62cb33b08bac234
+          test "$(git rev-parse HEAD)" = caaad83be6053e6e19635acbe62cb33b08bac234
+          test "$(git rev-parse 'HEAD^{tree}')" = 035644bf3336ac4bc1f85a4ae5a377cb44347a09
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+          python3 -B "$owner_dir/publication_owner.py" check-plan
+          {
+            printf 'PUBLICATION_HELPER=%s\n' "$owner_dir/publication_owner.py"
+            printf 'PUBLICATION_REPORTS=%s\n' "$owner_dir/reports"
+            printf 'PUBLICATION_TESTS=%s\n' "$owner_dir/tests"
+            printf 'CARGO_TARGET_DIR=%s\n' "$owner_dir/target"
+          } >> "$GITHUB_ENV"
+          df -h "$owner_dir"
+
+      - name: Restore registry dependency cache read-only
+        uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: false
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+
+      - name: Confirm disposable target was not restored
+        id: cache_check
+        shell: bash
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          test -z "$(find "$CARGO_TARGET_DIR" -mindepth 1 -print -quit)"
+          python3 -B "$PUBLICATION_HELPER" check-plan
+
+      - name: Run CI strict all-target Clippy selection
+        id: clippy
+        timeout-minutes: 35
+        run: python3 -B "$PUBLICATION_HELPER" clippy
+
+      - name: Run source-owned publication safety cases
+        if: always() && steps.verify.outcome == 'success' && steps.cache_check.outcome == 'success'
+        id: publication
+        timeout-minutes: 50
+        run: python3 -B "$PUBLICATION_HELPER" tests
+
+      - name: Stage bounded owner results
+        if: always()
+        shell: bash
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          mkdir -p .publication-owner-report
+          reports="$(printenv PUBLICATION_REPORTS || true)"
+          if [[ -n "$reports" && -d "$reports" ]]; then
+            cp -a "$reports/." .publication-owner-report/
+          else
+            printf '%s\n' 'Owner failed before authenticated report setup.' > .publication-owner-report/setup-failed.txt
+          fi
+
+      - name: Retain bounded diagnostics, including failures
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: pr1589-focused-owner
+          path: .publication-owner-report/
+          if-no-files-found: error
+          retention-days: 7
