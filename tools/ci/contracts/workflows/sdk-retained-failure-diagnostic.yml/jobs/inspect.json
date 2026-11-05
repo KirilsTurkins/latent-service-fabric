@@ -32,14 +32,14 @@
         "run": "python3 -B tools/sdk_retained_failure_diagnostic.py --output \"$RUNNER_TEMP/sdk-retained-failures\""
       },
       {
-        "name": "Retain verified originals and bounded public summary",
+        "name": "Retain bounded public summary",
         "if": "always()",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
           "name": "sdk-retained-failures-${{ github.sha }}",
           "retention-days": 7,
           "if-no-files-found": "warn",
-          "path": "${{ runner.temp }}/sdk-retained-failures/*"
+          "path": "${{ runner.temp }}/sdk-retained-failures/summary.json"
         }
       }
     ]
