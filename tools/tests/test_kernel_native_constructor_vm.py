@@ -608,6 +608,8 @@ class Q35NodePciIntxOwnerControls(unittest.TestCase):
         command = ('/absolute/qemu', '-machine', 'pc-q35-11.1')
         traced = host.trace_argv(command)
         self.assertEqual(traced[:len(command)], command)
+        configure = (owner.ROOT/'tools/qualify_host_stream_kernel_native_vm.py').read_text(encoding='utf8')
+        self.assertIn("*(['--enable-trace-backends=log'] if intx else [])", configure)
         self.assertEqual(traced[len(command):], tuple(part for event in host.EVENTS
             for part in ('-trace', 'enable='+event)))
         for bad in (command+('-trace', 'old'), command+('-D', 'old'), list(command)):

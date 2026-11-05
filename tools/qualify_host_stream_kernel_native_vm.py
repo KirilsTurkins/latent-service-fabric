@@ -640,7 +640,7 @@ def qualify_node(output,revision):
             '--disable-debug-info','--disable-docs','--disable-guest-agent','--disable-tools',
             '--disable-slirp','--disable-sdl','--disable-gtk','--disable-vnc','--disable-opengl',
             '--disable-virglrenderer','--disable-plugins','--disable-capstone',
-            *(['--trace-backends=log'] if intx else []),root=qemu_build)
+            *(['--enable-trace-backends=log'] if intx else []),root=qemu_build)
         run('qemu-fixed-build',tools['ninja'],'-j2','qemu-system-x86_64',root=qemu_build)
         qemu = qemu_build/'qemu-system-x86_64'
         qemu_pin = native.identity(read_file(qemu,128*1024**2))
