@@ -142,13 +142,14 @@
       }
     },
     "permissions": {
+      "actions": "read",
       "contents": "read"
     }
   },
   "requiredJobs": [
     "qualify"
   ],
-  "reviewReason": "Run the existing qualification for selected development changes.",
+  "reviewReason": "Run the existing qualification for selected development changes; grant the caller the read-only actions permission already requested by the nested diagnostic job.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest-development.yml"
 }

@@ -133,6 +133,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: dotnet-guest-development-wrapper-${{ github.ref }}
