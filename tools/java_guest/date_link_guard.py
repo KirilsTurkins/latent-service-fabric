@@ -84,7 +84,7 @@ def run(compiler, generated: Path, selected: tuple[str, ...], destination: Path,
     common = ('-target', 'wasm32-wasip1', '-std=c11', '-O2',
               '-DLSF_JAVA_ACTIVATION_PROFILE=1', '-DLSF_TEAVM_WASM=1', '-DTEAVM_CUSTOM_LOG=1',
               '-mllvm', '-wasm-enable-sjlj', '-mllvm', '-wasm-use-legacy-eh=false',
-              '-mexec-model=reactor', '-include', sdk / 'runtime/native.h',
+              '-include', sdk / 'runtime/native.h',
               '-I', bindings, '-I', sdk / 'runtime', '-iquote', generated)
     compiler.run('date-main-object', 'clang', *common, '-c', '-x', 'cpp-output', '-',
                  '-o', owned / 'main.o', input_bytes=sealed)

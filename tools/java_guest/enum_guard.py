@@ -246,6 +246,11 @@ def _bindings_identity(directory: Path) -> dict:
     return result
 
 
+def _date_graph(data: bytes) -> dict:
+    need(data in (b'required\n', b'unused\n'), 'date-index')
+    return {'selection': data.decode('ascii').strip(), 'sha256': hashlib.sha256(data).hexdigest()}
+
+
 def run(compiler, generated: Path, selected: tuple[str, ...], destination: Path, core: Path) -> dict:
     """Preprocess once, validate, then link the exact sealed bytes on stdin."""
     bindings = destination / 'bindings'
@@ -255,7 +260,7 @@ def run(compiler, generated: Path, selected: tuple[str, ...], destination: Path,
     index = read_file(index_path, MAX_INDEX)
     date_index_path = index_path.with_name('date-init-required-v1.txt')
     date_index = read_file(date_index_path, 32)
-    need(date_index in (b'required\n', b'unused\n'), 'date-index')
+    graph_receipt = _date_graph(date_index)
     source_before = inventory(generated)[-1]
     preprocessed = compiler.capture_preprocessed('-target', 'wasm32-wasip1', '-std=c11', '-O2',
         '-DLSF_JAVA_ACTIVATION_PROFILE=1', '-DLSF_TEAVM_WASM=1', '-DTEAVM_CUSTOM_LOG=1',
@@ -281,5 +286,6 @@ def run(compiler, generated: Path, selected: tuple[str, ...], destination: Path,
     need(original == _bindings_identity(bindings), 'bindings-drift')
     need(index == read_file(index_path, MAX_INDEX), 'index-drift')
     need(date_index == read_file(date_index_path, 32), 'date-index-drift')
+    receipt['dateGraph'] = graph_receipt
     receipt['bindings'] = original
     return receipt

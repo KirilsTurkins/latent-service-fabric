@@ -172,6 +172,16 @@ build if its captured reachable classes include a subclass of TeaVM's substitute
 `java.lang.Integer`, or if their inheritance cannot be verified. Other virtual
 calls retain their existing progress checks.
 
+When the activation graph reaches TeaVM's `Date` initializer, its bounded native
+lowering requires the fully authenticated promoted `lsf-private-scalar-v1` WASI
+compiler and the reviewed UTC libc. The separately accepted version-only official
+SDK does not qualify for this path. Alternate Date initializer callers, additional
+native definitions of the protected time symbols, mismatched generated C or
+unverifiable link inputs fail compilation. Each owned link object is limited to
+16 MiB and their combined bytes with the copied runtime libraries to 64 MiB; the
+existing build deadline and activation limits are unchanged. This restriction is
+applied when the initializer is reached, and does not qualify timer execution.
+
 Keep the selected world and exported contracts in the project tenant's namespace.
 The isolated example signer uses tenant `examples`. The normal full activation
 build and its first signed execution attempt are recorded in

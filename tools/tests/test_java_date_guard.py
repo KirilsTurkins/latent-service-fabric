@@ -3,8 +3,9 @@ import hashlib
 import unittest
 from unittest.mock import patch
 
+from tools import java_capsule_build, qualify_java_fibers
 from tools.java_guest import coroutine_patch, date_guard
-from tools.java_guest.enum_guard import _directives
+from tools.java_guest.enum_guard import _date_graph, _directives
 
 
 def fixture(call=True):
@@ -18,6 +19,31 @@ def fixture(call=True):
 
 
 class DateGuardTests(unittest.TestCase):
+    def test_both_graph_selections_record_the_exact_marker_digest(self):
+        for selected in ('required', 'unused'):
+            raw = (selected + '\n').encode()
+            self.assertEqual(_date_graph(raw), {'selection': selected,
+                             'sha256': hashlib.sha256(raw).hexdigest()})
+        for raw in (b'', b'required', b'required\nunused\n'):
+            with self.subTest(raw=raw), self.assertRaises(ValueError):
+                _date_graph(raw)
+
+    def test_recipe_captures_each_date_guard_and_detects_input_drift(self):
+        names = ('tools/java_guest/date_guard.py', 'tools/java_guest/date_link_guard.py',
+                 'tools/c_application_dependencies.py', 'tools/c_static_symbols.py')
+        self.assertTrue(set(names).issubset(java_capsule_build.RECIPE))
+        before = qualify_java_fibers.recipe_inputs()
+        original = qualify_java_fibers.read_file
+        for name in names:
+            selected = qualify_java_fibers.ROOT / name
+            def drift(path):
+                data = original(path)
+                return data + b'\n' if path == selected else data
+            with self.subTest(path=name), patch.object(qualify_java_fibers, 'read_file', side_effect=drift):
+                after = qualify_java_fibers.recipe_inputs()
+                self.assertNotEqual(before, after)
+                self.assertEqual([key for key in before if before[key] != after[key]], [name])
+
     def test_java_marker_literals_are_emitted_without_physical_newlines(self):
         self.assertIn('dateRequired ? "required\\n" : "unused\\n"', coroutine_patch.CHECKPOINT_VALIDATION)
         self.assertNotIn('"required\n"', coroutine_patch.CHECKPOINT_VALIDATION)
