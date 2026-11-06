@@ -4,14 +4,27 @@ Immutable large-value storage with staged writers, ranged readers and explicit t
 
 Staging, publication, leases and reclamation are separate operations. An abandoned handle remains owned/charged until its physical cleanup boundary; dropping an object is not a background deletion command.
 
+An explicitly selected durable local root retains verified provisional pins and
+requires a fresh, matching state-store view before physical reference release.
+The durable opener binds the actual live engine, not just its persisted label;
+an ordinary opener preserves the release fence but cannot mint durable pins or
+approve release until the trusted durable opener binds a store. After restart,
+the host must select and validate the intended store before binding it.
+This library port is not yet installed in the transaction coordinator; S3
+references do not acquire this local retention guarantee.
+Standalone startup rejects required durable payload references until its
+physical blob inventory is installed; logical records alone cannot prove bytes
+are present.
+
 ## Responsibilities and architecture
 
 | Source | Responsibility |
 | --- | --- |
 | [src/lib.rs](src/lib.rs) | BlobReference/range/write/lease models and generic storage/transfer ports. |
-| [src/local.rs](src/local.rs) | Bounded synchronous immutable storage under one privately owned root. |
+| [src/local.rs](../latent-local-blobs/src/local.rs) | Bounded synchronous immutable storage under one privately owned root. |
+| [src/local/durable.rs](../latent-local-blobs/src/local/durable.rs) | Opt-in local retention pins and state-backed release checks. |
 | [src/local/fs.rs](src/local/fs.rs) | Descriptor-relative no-follow operations and inode/type checks. |
-| [src/provider.rs](src/provider.rs) | Broker integration and owned chunks on bounded blocking/I/O resources. |
+| [src/provider.rs](../latent-local-blobs/src/provider.rs) | Broker integration and owned chunks on bounded blocking/I/O resources. |
 | [src/s3.rs](src/s3.rs) | HTTPS, explicit peers, SigV4, versioned bucket and finite multipart staging. |
 | [src/s3/inventory.rs](src/s3/inventory.rs) | Durable upload receipts that precede network mutations and survive uncertain replies. |
 | [src/s3/provider/recovery.rs](src/s3/provider/recovery.rs) | Explicit bounded operator reconciliation without automatic uncertain completion replay. |
@@ -29,7 +42,7 @@ Local primitives are synchronous and belong on an existing bounded blocking owne
 
 ## Dependencies and build
 
-Direct workspace dependencies: [latent-core](../latent-core/README.md), [latent-capabilities](../latent-capabilities/README.md), [latent-policy](../latent-policy/README.md).
+Direct workspace dependencies: [latent-core](../latent-core/README.md), [latent-capabilities](../latent-capabilities/README.md), [latent-policy](../latent-policy/README.md), [latent-state](../latent-state/README.md).
 
 Consumers with normal workspace dependency edges include [latentd](../../apps/latentd/README.md). Optional features still gate the selected graph; target-specific and test edges are also declared in the manifests.
 
@@ -55,10 +68,10 @@ Use `list --output json` to find the remaining package targets. Follow the suite
 
 Representative source tests (not a complete coverage inventory):
 
-- [`exact_empty_and_ranged_data_survive_reopen`](src/local/tests.rs)
-- [`exact_size_and_sequential_writes_reserve_before_staging`](src/local/tests.rs)
-- [`duplicate_publication_and_tenant_authority_are_independent`](src/local/tests.rs)
-- [`pinned_released_object_is_not_reclaimed_and_drop_does_no_deletion`](src/local/tests.rs)
+- [`exact_empty_and_ranged_data_survive_reopen`](../latent-local-blobs/src/local/tests.rs)
+- [`exact_size_and_sequential_writes_reserve_before_staging`](../latent-local-blobs/src/local/tests.rs)
+- [`duplicate_publication_and_tenant_authority_are_independent`](../latent-local-blobs/src/local/tests.rs)
+- [`pinned_released_object_is_not_reclaimed_and_drop_does_no_deletion`](../latent-local-blobs/src/local/tests.rs)
 
 ## Related documentation
 

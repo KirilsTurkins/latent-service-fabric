@@ -226,7 +226,11 @@ impl DirectoryArtifactRepository {
                     && receipt.action == ReleaseLifecycleAction::Publish
                 {
                     let publication = self.operation_publication_ref(&receipt)?;
-                    self.publication_catalog_entry(&publication)?
+                    self.index
+                        .read()
+                        .map_err(lock_error)?
+                        .historical_entry(&publication)
+                        .map(|entry| entry.value.clone())
                 } else {
                     None
                 };
@@ -280,7 +284,9 @@ impl DirectoryArtifactRepository {
             PlatformErrorCode::ResourceExhausted => return Ok(failure),
             _ => ReleaseLifecycleReason::InvalidPackage,
         };
-        if failure.message == "publication-selector-ambiguous" {
+        if failure.message == "publication-selector-ambiguous"
+            || failure.message == "publication-payload-reclaimed-query-original-operation"
+        {
             return Ok(failure);
         }
         let old = request

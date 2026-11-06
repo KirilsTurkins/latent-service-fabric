@@ -273,7 +273,7 @@ class PrivateEntryFrames(unittest.TestCase):
     def test_private_observer_is_last_after_all_acceptance_with_no_binary_or_raw_output_artifact(self):
         model = yaml.safe_load(read_file(ROOT/'.github/workflows/go-guest.yml'))
         job = model['jobs']['upstream-probe']
-        self.assertEqual(job['timeout-minutes'], 45)
+        self.assertEqual(job['timeout-minutes'], 60)
         steps = job['steps']
         index = next(i for i, step in enumerate(steps) if step.get('name') == 'Observe private numeric frames for the unchanged Go integer entry')
         observer = steps[index]

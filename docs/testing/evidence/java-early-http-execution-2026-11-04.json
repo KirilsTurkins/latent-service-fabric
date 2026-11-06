@@ -1,0 +1,68 @@
+{
+  "formatVersion": 1,
+  "schemaVersion": "latent.java.early-http-execution-evidence.v1",
+  "scope": "Signed Java early immediate-HTTP denial before state and intent staging; not post-stage rollback or packaged qualification",
+  "nativeSourceCommit": "7d22ee26ac2d5adb7bfe9c83448f2859bebc5109",
+  "nativeSourceTree": "cbe09c9c26cf88dbd91703282287e795c461c32a",
+  "conductorSourceCommit": "7d22ee26ac2d5adb7bfe9c83448f2859bebc5109",
+  "compilerSourceCommit": "fccc27dbc52f2dd0db137078f8e7e436a41ebe8a",
+  "trust": "ephemeral-native-package-test-only",
+  "passed": true,
+  "signedGuestExecutionQualified": true,
+  "immediateHttpDenialQualified": true,
+  "postStageRollbackQualified": false,
+  "packagedDistributionQualified": false,
+  "actualTcpContacts": 0,
+  "applicationStateCommitted": false,
+  "receiptSha256": "sha256:14ce7a61b971a68a7d7be8bdccb0b962ac2ce1123f0755ad0b8ee459affa3ff4",
+  "evidenceInventorySha256": "sha256:5c12242755eec981850e203d702197ced68c7fdf8525dd8072031294833f89de",
+  "selectionDigest": "sha256:b332775d57f24090b7d8dae5df691672712375da530a4dc7190123ba68ba3843",
+  "nativeTools": {
+    "cli": {
+      "name": "cli",
+      "digest": "sha256:7a5d4fb7632ba22ebb301d199bbcde5e310ce20b4c645014f0a6595950722f52",
+      "size": 79037600
+    },
+    "node": {
+      "name": "node",
+      "digest": "sha256:25ea312fc453fc41d2176a5279523cd9cb26d4edfca5eb69b6e1d7435f1d6294",
+      "size": 201648672
+    },
+    "aot_compiler": {
+      "name": "aot_compiler",
+      "digest": "sha256:d1fe077759d6626542784bfa57fe744545ecad2b143bb3e50bcd650a3ce4b9e9",
+      "size": 51837056
+    },
+    "contracts_tool": {
+      "name": "contracts_tool",
+      "digest": "sha256:057bf90bb316a23dd98f9754449e972a377a75037eff7d6d393df56f373b78ac",
+      "size": 14848400
+    },
+    "signer": {
+      "name": "signer",
+      "digest": "sha256:63d121a86fbd974165fd4ea7681f001ed0cc341020f399ec716477ce3736b178",
+      "size": 29846032
+    }
+  },
+  "capturedInput": {
+    "variant": "forbidden-http-before-stage",
+    "componentDigest": "sha256:bbbae747c7f66f293c0f9b00ae60c8596be78a194d7b6bb74788386c32b69d28",
+    "companionDigest": "sha256:1169abe0b6b6e621208798c06cd61b0e9ede51feb3858baec075685f16fbbf56",
+    "sourceDigest": "sha256:e04e6bae1382045860b5a1a887057669bfbc8836ec16ad29ca929ac940b31724",
+    "compilerSource": "fccc27dbc52f2dd0db137078f8e7e436a41ebe8a",
+    "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+    "requirementsDigest": null,
+    "signedNodeExecutionQualified": false
+  },
+  "measuredCases": [
+    "publish-early-http",
+    "namespace-create",
+    "signed-early-http-typed-denial",
+    "early-physical-retirement"
+  ],
+  "caseEvidenceSha256": {
+    "signed-early-http-typed-denial": "sha256:5f0a81a3ed725258ff04cd7379553b0f6c79a91785c0143a87c270d9222a7a17",
+    "early-physical-retirement": "sha256:cb4f41387a1522a156e0d822cab65f8902fe80815a7f5c6ef175d2f40f7a20ad"
+  },
+  "retainedEvidence": "session-owned Docker volume lsf-phase4-387-linux, java-early-http-attempt1"
+}

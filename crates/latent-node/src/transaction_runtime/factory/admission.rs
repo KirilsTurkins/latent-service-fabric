@@ -8,7 +8,9 @@ use crate::transaction_runtime::observation::{self, Phase};
 use crate::transaction_runtime::{CommandHostSelection, StateAuthorization};
 use latent_activation::ActivationEnvelope;
 use latent_capabilities::namespace::{NamespaceAdmission, NamespaceAuthority};
-use latent_commit::atomic::{AdmissionDecision, AdmissionInput, CommandAccess, PreparedAdmission};
+use latent_commit::atomic::{
+    AdmissionDecision, AdmissionInput, CommandAccess, PreparedAdmission, PublishedAdmission,
+};
 use latent_core::{
     transaction_contract::{CommandFingerprint, CommandKey, Value},
     ActivationBudget, BoxFuture, StateNamespaceId,
@@ -17,6 +19,7 @@ use latent_executor::transaction::{TransactionHost, ViewIdentity};
 use latent_manifest::TransactionOperationMode;
 use latent_policy::capability::OwnedPolicyDecision;
 use latent_state::{
+    embedded::StoreError,
     namespace::catalog::NamespaceRead,
     session::{StateMode, StateScope},
     store_io::StoreIoKind,
@@ -412,16 +415,20 @@ impl NativeTransactionAdmission {
                     )
                     .map_err(|_| AtomicError::PermissionDenied)
                 };
+                let first_attempt = retry.is_none();
                 let prepared = if let Some(retry) = retry {
                     authorize(CommandAccess::Admit, None).and_then(|()| {
                         super::retry::check_association(&view, &input, &retry)?;
-                        PreparedAdmission::retry(&view, &input, &retry.request, time, authorize)
+                        PreparedAdmission::retry(&view, &input, &retry.request, time, &authorize)
                     })
                 } else {
-                    PreparedAdmission::prepare(&view, input, time, authorize)
+                    PreparedAdmission::prepare(&view, input, time, &authorize)
                 };
                 let prepared = observation::atomic(Phase::PendingPreparation, prepared);
-                Ok(match prepared {
+                // A CAS loser may take one fresh view to inspect the winning
+                // command. Retire the original planning view first.
+                drop(view);
+                let result = match prepared {
                     Ok(AdmissionDecision::New(prepared)) => {
                         let expected = authorization.namespace.expectation();
                         if !prepared
@@ -432,21 +439,64 @@ impl NativeTransactionAdmission {
                         {
                             return Ok(Ok(PendingPublication::Refused(AtomicError::Conflict)));
                         }
-                        prepared
-                            .publish(store, || {
-                                retained_role.with_current(|_| {
-                                    authorization
-                                        .authorize("commit", 0, 0, || Ok(()))
-                                        .map_err(|_| AtomicError::PermissionDenied)
-                                })
+                        let final_accept = || {
+                            retained_role.with_current(|_| {
+                                authorization
+                                    .authorize("commit", 0, 0, || Ok(()))
+                                    .map_err(|_| AtomicError::PermissionDenied)
                             })
-                            .map(PendingPublication::New)
+                        };
+                        if first_attempt {
+                            prepared
+                                .publish_or_existing(
+                                    store,
+                                    || {
+                                        retained_role.with_current(|now| {
+                                            Ok(super::super::command_role::command_time(now))
+                                        })
+                                    },
+                                    final_accept,
+                                    &authorize,
+                                )
+                                .map(|result| match result {
+                                    PublishedAdmission::New(claim) => {
+                                        PendingPublication::New(claim)
+                                    }
+                                    PublishedAdmission::Existing(record) => {
+                                        PendingPublication::Existing(record)
+                                    }
+                                })
+                        } else {
+                            prepared
+                                .publish(store, final_accept)
+                                .map(PendingPublication::New)
+                        }
                     }
                     Ok(AdmissionDecision::Existing(record)) => {
                         Ok(PendingPublication::Existing(record))
                     }
+                    Err(AtomicError::Corrupt) => {
+                        // The planning view is retired and no writer or guest
+                        // was accepted. Release this contender's role before
+                        // the protected store quarantines its physical worker.
+                        retained_role
+                            .retire()
+                            .map_err(|_| StoreError::CommitUncertain)?;
+                        return Err(StoreError::Corrupt);
+                    }
                     Err(error) => Ok(PendingPublication::Refused(error)),
-                })
+                };
+                match result {
+                    Err(AtomicError::Corrupt) => {
+                        // Corrupt is a known noncommitted engine result;
+                        // uncertain commits use RecoveryRequired instead.
+                        retained_role
+                            .retire()
+                            .map_err(|_| StoreError::CommitUncertain)?;
+                        Err(StoreError::Corrupt)
+                    }
+                    other => Ok(other),
+                }
             },
         );
         let Ok(job) = job else {

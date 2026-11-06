@@ -44,7 +44,7 @@ impl NativeTransactionAdmission {
                         .with_current(&mut || {})
                         .map_err(|_| AtomicError::PermissionDenied)
                 });
-                Ok(observation::atomic(
+                let result = observation::atomic(
                     Phase::ExistingReplay,
                     read.and_then(|(command, result)| {
                         if command.attempt() == selected.attempt() {
@@ -55,7 +55,11 @@ impl NativeTransactionAdmission {
                         drop(result);
                         historical_attempt(&view, &selected, observed)
                     }),
-                ))
+                );
+                match result {
+                    Err(AtomicError::Corrupt) => Err(latent_state::embedded::StoreError::Corrupt),
+                    other => Ok(other),
+                }
             })
             .map_err(|_| atomic(AtomicError::Unavailable))?;
         let read = job

@@ -205,6 +205,7 @@ impl DirectoryArtifactRepository {
         Ok(revision)
     }
     pub(super) fn recover_web_evidence(&self, state: &mut State) -> Result<(), PlatformError> {
+        let mut verified = std::collections::BTreeSet::new();
         for entry in fs::read_dir(self.web_path().join(EVIDENCE)).map_err(io_error)? {
             let entry = entry.map_err(io_error)?;
             if !state.enabled {
@@ -235,10 +236,34 @@ impl DirectoryArtifactRepository {
                 .ok_or_else(capacity)?;
             if entry.path().join(COMPLETE).try_exists().map_err(io_error)? {
                 let revision = self.web_revision(&digest)?;
-                if self.web_storage(&revision.publication)?.digest()? != revision.original {
+                let original = if let Some(row) = state
+                    .entries
+                    .get(&revision.publication.id)
+                    .filter(|e| e.layout.is_none())
+                {
+                    if row.record.publication != revision.publication {
+                        return Err(corrupt("web-evidence-original-association"));
+                    }
+                    row.completion.clone()
+                } else {
+                    self.web_storage(&revision.publication)?.digest()?
+                };
+                if original != revision.original {
                     return Err(corrupt("web-evidence-original-changed"));
                 }
+                if let Some(row) = state.entries.get(&revision.publication.id) {
+                    if row.record.publication == revision.publication
+                        && row.record.evidence_revision.as_ref() == Some(&digest)
+                    {
+                        verified.insert(revision.publication.id.clone());
+                    }
+                }
             }
+        }
+        if state.entries.values().any(|e| {
+            e.record.evidence_revision.is_some() && !verified.contains(&e.record.publication.id)
+        }) {
+            return Err(corrupt("web-selected-evidence-missing"));
         }
         Ok(())
     }

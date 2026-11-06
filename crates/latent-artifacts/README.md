@@ -12,6 +12,7 @@ Storage integrity, admission evidence and current release eligibility remain sep
 | [src/local_repository/mod.rs](src/local_repository/mod.rs) | DirectoryArtifactRepository, bounded indexes, recovery, publication storage and exact metadata/component reads. |
 | [src/admission.rs](src/admission.rs) | Sealed admission authority, upload and recheck ports. |
 | [src/lifecycle.rs](src/lifecycle.rs) | Publication/release state, live eligibility, revocation and management preconditions. |
+| [src/publication_retention.rs](src/publication_retention.rs) | Bounded durable negative-only rollback pins and original-operation recovery; not physical history reclamation. |
 | [src/preparation.rs](src/preparation.rs) | Owned source identity and bounded preparation reads. |
 | [src/raw_cache.rs](src/raw_cache.rs) | Finite raw-byte cache, pins, eviction and actual reclamation. |
 | [src/web.rs](src/web.rs) | Componentless web artifact/publication metadata and selection contracts. |
@@ -65,6 +66,7 @@ Integration targets: [tests/package_adversarial.rs](tests/package_adversarial.rs
 
 ## Related documentation
 
+- [Durable publication retention pins and remaining deletion scope](../../docs/reference/publication-retention-pins.md)
 - [Tenant-scoped publication catalog](../../docs/reference/publication-catalog.md)
 - [Publication-bound deployment and execution](../../docs/reference/publication-runtime.md)
 - [Authenticated package admission](../../docs/reference/package-admission.md)
@@ -73,3 +75,34 @@ Integration targets: [tests/package_adversarial.rs](tests/package_adversarial.rs
 - [ADR-0027: Separate publication authority from component identity](../../adr/0027-separate-publication-authority-from-component-identity.md)
 - [Workspace package index](../README.md)
 - [Architecture index](../../ARCHITECTURE.md)
+
+## Publication deletion admission
+
+The native retention owner exposes a read-only exact-selection assessment
+against its bound control-store authority and physical read/preparation owners.
+Assessment does not delete content or create a mutation receipt. The separate
+`tombstone_publications` native stage rechecks those owners through a durable
+negative-authority commit, removes public visibility, and preserves original
+receipts. Tombstones alone retain every payload charge. The separate native
+`reclaim_tombstoned_capsules` commits a recoverable cleanup plan before unlinking
+selected capsule files and last-reference blobs, synchronizes parents before
+refunds, and retains compact identities plus bounded original-operation receipts.
+The generic `reclaim_tombstoned_publications` also handles componentless-web
+payloads with a v2 compatibility marker and compact negative identities. Web
+history/evidence remain validated and retained; no serving grant is reconstructed.
+Independent history pruning, operator CLI and real finite audit integration
+remain outstanding. Borrowed preparation
+sources are explicit `Clone` owners, no longer `Copy`; quiesce all source clones
+before maintenance. See the [retention and assessment contract](../../docs/reference/publication-retention-pins.md).
+
+For an exact retained tombstone operation, the trusted host may use
+`inspect_publication_reclamation` to obtain bounded, content-verified
+last-reference accounting for capsule or static-web publication files. File,
+aggregate hashing-byte and deadline limits apply while native reader and
+reference owners remain held. The observation is not a cleanup permit or a
+reclamation receipt; it leaves every file, quota charge and original receipt
+unchanged. See the [retention reference](../../docs/reference/publication-retention-pins.md#bounded-physical-reclamation-assessment).
+
+## Audited publication maintenance
+
+`audited_publication_maintenance` composes native pin/delete/reclaim with mandatory finite audit admission. Complete response preflight precedes the journal attempt; exact original receipt digests govern audit conclusion and startup reconciliation. It runs on an existing bounded control worker, never a new per-publication task.

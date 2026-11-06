@@ -24,6 +24,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.crates.latent-http.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.crates.latent-http.iml" group="LSF/crates" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.crates.latent-identity.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.crates.latent-identity.iml" group="LSF/crates" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.crates.latent-ingress.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.crates.latent-ingress.iml" group="LSF/crates" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.crates.latent-local-blobs.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.crates.latent-local-blobs.iml" group="LSF/crates" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.crates.latent-manifest.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.crates.latent-manifest.iml" group="LSF/crates" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.crates.latent-nats.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.crates.latent-nats.iml" group="LSF/crates" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lsf.crates.latent-network.iml" filepath="$PROJECT_DIR$/.idea/modules/lsf.crates.latent-network.iml" group="LSF/crates" />

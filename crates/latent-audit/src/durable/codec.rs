@@ -328,7 +328,27 @@ pub(super) fn attempt(v: &AuditOperationAttempt) -> Result<()> {
     {
         return Err(invalid());
     }
+    if publication_action(v.action)
+        && (v.preview_receipt_digest.is_none()
+            || v.identities != AuditIdentities::default()
+            || v.expected_generation.is_some()
+            || v.expected_deployment_generation.is_some()
+            || v.expected_rollout_revision.is_some()
+            || v.expected_state_version.is_some()
+            || v.expected_rollback_target_generation.is_some())
+    {
+        return Err(invalid());
+    }
     identities(&v.identities)
+}
+fn publication_action(action: AuditControlAction) -> bool {
+    matches!(
+        action,
+        AuditControlAction::PublicationPin
+            | AuditControlAction::PublicationUnpin
+            | AuditControlAction::PublicationDelete
+            | AuditControlAction::PublicationReclaim
+    )
 }
 fn capability_attempt(v: &AuditOperationAttempt) -> Result<()> {
     if v.action == AuditControlAction::CapabilityCall {
@@ -465,6 +485,14 @@ pub(super) fn capability_pair(
         || a.identities.dispatcher.is_some()
         || c.identities.dispatcher.is_some())
         && a.identities != c.identities
+    {
+        return Err(invalid());
+    }
+    if publication_action(a.action)
+        && (c.identities != AuditIdentities::default()
+            || c.canary_decision.is_some()
+            || (c.result == AuditOperationResult::Committed
+                && (c.receipt_digest != a.preview_receipt_digest || c.replay != a.replay)))
     {
         return Err(invalid());
     }

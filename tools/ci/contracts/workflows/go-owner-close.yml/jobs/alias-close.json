@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "job",
+  "reviewReason": "Exercise concurrent Go resource aliases and retained ownership controls in the pinned native Go runtime; no signed guest claim.",
+  "workflow": ".github/workflows/go-owner-close.yml",
+  "jobId": "alias-close",
+  "definition": {
+    "name": "Concurrent aliases keep one destructor",
+    "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 12,
+    "env": {
+      "GO111MODULE": "off",
+      "GOTOOLCHAIN": "local",
+      "GOMAXPROCS": "4"
+    },
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-go",
+        "with": {
+          "go-version": "1.27.3",
+          "cache": false
+        }
+      },
+      {
+        "name": "Check ordinary concurrent close and the existing ownership contract",
+        "shell": "bash",
+        "run": "set -euo pipefail\nmkdir -p \"$RUNNER_TEMP/go-owner-close\"\nsha256sum sdk/go-guest/ownership/owner.go sdk/go-guest/ownership/owner_test.go > \"$RUNNER_TEMP/go-owner-close/source.sha256\"\ngo version | tee \"$RUNNER_TEMP/go-owner-close/go-version.log\"\ngo test -race -count=1 -v ./sdk/go-guest/ownership 2>&1 | tee \"$RUNNER_TEMP/go-owner-close/owner-tests.log\"\ngrep -F -- '--- PASS: TestConcurrentAliasCloseIsIdempotent' \"$RUNNER_TEMP/go-owner-close/owner-tests.log\"\nsha256sum --check --strict \"$RUNNER_TEMP/go-owner-close/source.sha256\"\n"
+      },
+      {
+        "name": "Retain bounded native-control evidence",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "name": "go-owner-close-${{ github.sha }}",
+          "retention-days": 7,
+          "if-no-files-found": "warn",
+          "path": "${{ runner.temp }}/go-owner-close/*"
+        }
+      }
+    ]
+  }
+}

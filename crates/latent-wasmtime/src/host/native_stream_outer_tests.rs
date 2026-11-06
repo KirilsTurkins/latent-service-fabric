@@ -11,7 +11,8 @@ use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Waker};
 use std::time::Duration;
 use wasmtime::component::{
-    Destination, Source, StreamConsumer, StreamProducer, StreamReader, StreamResult,
+    Component, Destination, Linker, Source, StreamConsumer, StreamProducer, StreamReader,
+    StreamResult,
 };
 use wasmtime::{Config, Engine, Module, Store, StoreContextMut};
 
@@ -157,6 +158,174 @@ struct Padding {
     _owner: Box<dyn wasmtime::NativeAllocation>,
 }
 
+// Count existing native reservations exactly at the first real consumer poll;
+// the immediately preceding request is the prepared consumer-future Box.
+struct ObservedConsumer {
+    inner: Consumer,
+    observations: Arc<Observations>,
+    first_poll_requests: Arc<AtomicUsize>,
+}
+impl<D: 'static> StreamConsumer<D> for ObservedConsumer {
+    type Item = u8;
+    fn poll_consume(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        store: StoreContextMut<D>,
+        source: Source<'_, u8>,
+        finish: bool,
+    ) -> Poll<wasmtime::Result<StreamResult>> {
+        let this = self.as_mut().get_mut();
+        let count = requests(&this.observations).len();
+        let _ = this
+            .first_poll_requests
+            .compare_exchange(0, count, SeqCst, SeqCst);
+        Pin::new(&mut this.inner).poll_consume(cx, store, source, finish)
+    }
+}
+
+#[tokio::test]
+async fn actual_consumer_future_original_budget_refusal_and_retirement() {
+    let engine = engine();
+    let core = Module::new(&engine, CORE).unwrap();
+    let path = std::env::var_os("LSF_TEST_STREAM_OUTERS_COMPONENT")
+        .expect("owner-only fixed canonical fixture path required");
+    let meta = std::fs::symlink_metadata(&path).unwrap();
+    assert!(meta.file_type().is_file() && !meta.file_type().is_symlink());
+    assert!(meta.len() > 8 && meta.len() <= 64 * 1024);
+    let bytes = std::fs::read(path).unwrap();
+    assert!(bytes.starts_with(b"\0asm"));
+    let component = Component::new(&engine, bytes).unwrap();
+
+    // Establish the real owner-request prefix up to the first user poll.
+    let baseline_budget = budget(MIB);
+    let baseline_observed = Arc::new(Observations::default());
+    let mut baseline = store(&engine, &baseline_budget, &baseline_observed).unwrap();
+    warm(&mut baseline).await;
+    let instance = Linker::new(&engine)
+        .instantiate_async(&mut baseline, &component)
+        .await
+        .unwrap();
+    let make = instance
+        .get_typed_func::<(), (StreamReader<u8>,)>(&mut baseline, "make")
+        .unwrap();
+    let (reader,) = make.call_async(&mut baseline, ()).await.unwrap();
+    let (_, consumer) = gates();
+    let first_poll = Arc::new(AtomicUsize::new(0));
+    reader
+        .pipe(
+            &mut baseline,
+            ObservedConsumer {
+                inner: Consumer(consumer.clone()),
+                observations: baseline_observed.clone(),
+                first_poll_requests: first_poll.clone(),
+            },
+        )
+        .unwrap();
+    let write = instance
+        .get_typed_func::<(), (u32,)>(&mut baseline, "write")
+        .unwrap();
+    let before = requests(&baseline_observed).len();
+    let value = tokio::time::timeout(Duration::from_secs(5), write.call_async(&mut baseline, ()))
+        .await
+        .expect("original public 5s wall")
+        .unwrap();
+    assert_eq!(value, (17,));
+    assert_eq!(consumer.payload.load(SeqCst), 42);
+    let cut = first_poll.load(SeqCst);
+    let entries = requests(&baseline_observed);
+    assert!(cut > before && cut <= entries.len());
+    let prefix = entries[before..cut].to_vec();
+    assert!(*prefix.last().unwrap() > 0);
+    drop(baseline);
+    consumer.release();
+    assert_eq!(baseline_budget.host_memory_bytes(), 0);
+    assert_eq!(baseline_budget.outstanding_reservations(), 0);
+    assert!(allocation_rows(&baseline_observed)
+        .iter()
+        .all(|row| !row.admitted || row.released));
+
+    // Reproduce the same prefix and exhaust the original budget at the last
+    // pre-poll admission, without replacing or fabricating that reservation.
+    let original = budget(MIB);
+    let observed = Arc::new(Observations::default());
+    let mut first = store(&engine, &original, &observed).unwrap();
+    warm(&mut first).await;
+    let instance = Linker::new(&engine)
+        .instantiate_async(&mut first, &component)
+        .await
+        .unwrap();
+    let make = instance
+        .get_typed_func::<(), (StreamReader<u8>,)>(&mut first, "make")
+        .unwrap();
+    let (reader,) = make.call_async(&mut first, ()).await.unwrap();
+    let (_, consumer) = gates();
+    let denied_poll = Arc::new(AtomicUsize::new(0));
+    reader
+        .pipe(
+            &mut first,
+            ObservedConsumer {
+                inner: Consumer(consumer.clone()),
+                observations: observed.clone(),
+                first_poll_requests: denied_poll.clone(),
+            },
+        )
+        .unwrap();
+    let write = instance
+        .get_typed_func::<(), (u32,)>(&mut first, "write")
+        .unwrap();
+    let before = requests(&observed).len();
+    let padding = Arc::new(Mutex::new(None::<Padding>));
+    let consumed = Arc::new(AtomicU64::new(0));
+    let requested = Arc::new(AtomicU64::new(0));
+    let kept = padding.clone();
+    let kept_consumed = consumed.clone();
+    let kept_requested = requested.clone();
+    let invocation = original.clone();
+    observed.before_request(before + prefix.len(), move |bytes| {
+        let request = bytes as u64 + OWNER;
+        let payload = MIB - invocation.host_memory_bytes() - request + 1 - OWNER;
+        let mut owner = crate::native_tables::reserve(&invocation, payload as usize)
+            .unwrap()
+            .unwrap();
+        let bytes = vec![0u8; payload as usize];
+        assert_eq!(bytes.capacity(), payload as usize);
+        owner.allocated();
+        *kept.lock().unwrap() = Some(Padding {
+            _bytes: bytes,
+            _owner: owner,
+        });
+        kept_consumed.store(invocation.host_memory_bytes(), SeqCst);
+        kept_requested.store(request, SeqCst);
+    });
+    let error = tokio::time::timeout(Duration::from_secs(5), write.call_async(&mut first, ()))
+        .await
+        .expect("original public 5s wall")
+        .unwrap_err();
+    denial(&error, MIB, consumed.load(SeqCst), requested.load(SeqCst));
+    assert_eq!(consumed.load(SeqCst) + requested.load(SeqCst), MIB + 1);
+    let actual = requests(&observed);
+    assert_eq!(actual.len(), before + prefix.len());
+    assert_eq!(&actual[before..], prefix.as_slice());
+    assert_eq!(consumer.polls.load(SeqCst), 0);
+    assert_eq!(denied_poll.load(SeqCst), 0);
+    drop(error);
+    drop(padding.lock().unwrap().take());
+    drop(first);
+    consumer.release();
+    assert_eq!(original.host_memory_bytes(), 0);
+    assert_eq!(original.outstanding_reservations(), 0);
+    assert!(allocation_rows(&observed)
+        .iter()
+        .all(|row| !row.admitted || row.released));
+    let mut fresh = store(&engine, &original, &observed).unwrap();
+    fresh.set_fuel(FUEL).unwrap();
+    let instance = wasmtime::Instance::new(&mut fresh, &core, &[]).unwrap();
+    assert_eq!(core_answer(instance, &mut fresh), 42);
+    drop(fresh);
+    assert_eq!(original.host_memory_bytes(), 0);
+    assert_eq!(original.outstanding_reservations(), 0);
+}
+
 #[tokio::test]
 async fn actual_stream_host_ready_refusals_precede_consumer_factory_and_polls() {
     let engine = engine();
@@ -177,7 +346,7 @@ async fn actual_stream_host_ready_refusals_precede_consumer_factory_and_polls() 
         let kept_consumed = consumed.clone();
         let kept_requested = requested.clone();
         let invocation = original.clone();
-        // Source-owned LOCAL queue -> Task -> outer -> pinned C -> shared C cell -> consume factory.
+        // Source-owned LOCAL queue -> Task -> outer -> pinned C -> shared C cell -> accept factory.
         // Warmed shared headers and the original real-budget padding stay unchanged.
         observed.before_request(before + local, move |bytes| {
             let request = bytes as u64 + OWNER;
@@ -259,8 +428,10 @@ async fn actual_stream_host_ready_pending_ready_and_error_preserve_cleanup() {
             entries[before + 3],
             std::alloc::Layout::new::<Consumer>().size()
         );
-        // The HostToHost branch does not retain the temporary consume factory.
-        let task_outer_and_consumer = entries[before + 1..before + 5]
+        // The HostToHost branch retains its paid accept factory until the
+        // original transmit owner is physically destroyed.
+        assert!(entries[before + 5] > 0);
+        let task_outer_and_consumer = entries[before + 1..before + 6]
             .iter()
             .map(|bytes| *bytes as u64 + OWNER)
             .sum::<u64>();

@@ -346,5 +346,38 @@ fn retire_body(
         .result_bytes
         .checked_sub(reclaimed)
         .ok_or(AtomicError::Corrupt)?;
+    let mut reference_batch = latent_state::embedded::AtomicBatch::default();
+    if let Some(released) =
+        super::super::step::release_result_reference(view, &captured.record, &mut reference_batch)?
+    {
+        usage.payload_bytes = usage
+            .payload_bytes
+            .checked_sub(released)
+            .ok_or(AtomicError::Corrupt)?;
+        captured.namespace.pins.payload_references = captured
+            .namespace
+            .pins
+            .payload_references
+            .checked_sub(1)
+            .ok_or(AtomicError::Corrupt)?;
+        let namespace_key = latent_state::embedded::RowKey {
+            family: latent_state::embedded::Family::Namespace,
+            key: latent_state::namespace::namespace_record_key(
+                &captured.namespace.tenant,
+                &captured.namespace.id,
+            )
+            .map_err(|_| AtomicError::Corrupt)?,
+        };
+        captured.plan.mutation(
+            namespace_key,
+            Some(
+                captured
+                    .namespace
+                    .encode()
+                    .map_err(|_| AtomicError::Corrupt)?,
+            ),
+        )?;
+        captured.plan.append(reference_batch)?;
+    }
     captured.plan.replace(key, Some(bytes), Some(marker))
 }

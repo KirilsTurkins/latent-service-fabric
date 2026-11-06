@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "latent.ci.suite-fragment.v1",
+  "suites": [
+    {
+      "id": "latent.test.publication-operator",
+      "package": "latent",
+      "manifest": "apps/latent/Cargo.toml",
+      "target": "publication_operator",
+      "source": "tests/publication_operator.rs",
+      "kind": "test",
+      "boundary": "host",
+      "resourceClass": "host-bounded",
+      "timeoutSeconds": 120,
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "source-matched Cargo CLI binary and native test inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "mode": "libtest",
+      "expectedIgnored": [],
+      "ignoredLeaves": [],
+      "requiredCases": [
+        "native_cli_audit_capacity_refuses_mutation_and_preserves_pinned_catalog",
+        "native_cli_pins_deletes_reclaims_and_queries_original_receipts_after_reopen"
+      ]
+    }
+  ]
+}

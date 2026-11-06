@@ -731,3 +731,7 @@ currentness, offline and bounded resource evidence. See
 [validation commands](../../VALIDATION.md) for the focused configuration,
 transport, catalog and execution tests. No heavy scale or soak run is required
 to exercise these startup and shutdown checks.
+
+## Mandatory audit for publication maintenance
+
+Publication pin/unpin, visibility deletion and payload reclamation require `audit.mode` to be `durable`; the older optional-audit behavior does not apply to these methods. No emergency revocation exception permits unaudited deletion. Each admitted attempt reserves attempt/outcome capacity before mutation. Snapshot, assessment and operation lookup remain read-only. Startup reconciles native publication attempts before generic release attempts. See the [operator guide](../operations/publication-deletion.md).

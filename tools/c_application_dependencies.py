@@ -8,7 +8,7 @@ import re
 from tools.application_dependencies import Closure
 from tools.application_dependency_store import DependencyError, MAX_OBJECT, path_name, read_bytes
 from tools.build_snapshot import digest
-from tools.c_static_symbols import MAX_SYMBOL_BYTES, MAX_SYMBOLS, strong_symbols
+from tools.c_static_symbols import MAX_SYMBOL_BYTES, MAX_SYMBOLS, defined_symbols, strong_symbols
 
 
 class CDependencyError(DependencyError):
@@ -34,15 +34,16 @@ def unsigned(data: bytes, offset: int) -> tuple[int, int]:
     raise DependencyError("c-wasm-object-malformed")
 
 
-def wasm_object(payload: bytes) -> dict:
+def wasm_object(payload: bytes, *, include_all_symbols: bool = False,
+                allow_exception_tags: bool = False) -> dict:
     if not payload.startswith(b"\0asm\x01\0\0\0"):
         raise CDependencyError("c-static-archive-host-native-member")
-    offset, linking, features, definitions = 8, None, {}, []
+    offset, linking, features, definitions, all_definitions = 8, None, {}, [], None
     while offset < len(payload):
         section = payload[offset]; offset += 1
         size, offset = unsigned(payload, offset)
         end = offset + size
-        if end > len(payload) or section > 12:
+        if end > len(payload) or section > (13 if allow_exception_tags else 12):
             raise DependencyError("c-wasm-object-malformed")
         if section == 0:
             length, content = unsigned(payload, offset)
@@ -60,6 +61,8 @@ def wasm_object(payload: bytes) -> dict:
                 if linking != 2:
                     raise CDependencyError("c-wasm-linking-abi-unsupported")
                 definitions = strong_symbols(payload[content:end])
+                if include_all_symbols:
+                    all_definitions = defined_symbols(payload[content:end])
             elif name == "target_features":
                 count, content = unsigned(payload, content)
                 if count > 64:
@@ -82,11 +85,15 @@ def wasm_object(payload: bytes) -> dict:
         raise CDependencyError("c-wasm-static-member-is-not-relocatable-object")
     if any(features.get(name) == "+" for name in ("atomics", "memory64", "shared-mem")):
         raise CDependencyError("c-wasm-object-requires-unqualified-runtime-profile")
-    return {"digest": digest(payload), "size": len(payload), "linkingVersion": linking,
-            "targetFeatures": features, "strongSymbols": definitions}
+    result = {"digest": digest(payload), "size": len(payload), "linkingVersion": linking,
+              "targetFeatures": features, "strongSymbols": definitions}
+    if include_all_symbols:
+        result["definedSymbols"] = all_definitions
+    return result
 
 
-def archive_members(data: bytes, *, validator=None) -> list[dict]:
+def archive_members(data: bytes, *, validator=None, include_all_symbols: bool = False,
+                    allow_exception_tags: bool = False) -> list[dict]:
     if not data.startswith(b"!<arch>\n"):
         raise CDependencyError("c-static-archive-format-or-thin-archive-denied")
     offset, long_names, members, seen, symbols, symbol_bytes = 8, b"", [], set(), set(), 0
@@ -133,7 +140,8 @@ def archive_members(data: bytes, *, validator=None) -> list[dict]:
         if "/" in name or name.casefold() in seen or len(members) >= 1024:
             raise DependencyError("c-static-archive-member-collision-or-limit")
         seen.add(name.casefold())
-        inspected = wasm_object(payload)
+        inspected = wasm_object(payload, include_all_symbols=include_all_symbols,
+                                allow_exception_tags=allow_exception_tags)
         if validator is not None:
             validator(name, payload)
         for symbol in inspected["strongSymbols"]:

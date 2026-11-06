@@ -23,6 +23,25 @@ pub(super) fn one(
     }
     let authority = closure.record.authority()?;
     super::super::operation::verify_effect(&captured.record, &authority, *effect)?;
+    let released = release_reference(
+        view,
+        &captured.record,
+        *effect,
+        &authority.profile().payload_format,
+    )?;
+    if let Some((size, batch)) = released {
+        usage.payload_bytes = usage
+            .payload_bytes
+            .checked_sub(size)
+            .ok_or(AtomicError::Corrupt)?;
+        captured.namespace.pins.payload_references = captured
+            .namespace
+            .pins
+            .payload_references
+            .checked_sub(1)
+            .ok_or(AtomicError::Corrupt)?;
+        captured.plan.append(batch)?;
+    }
     usage.effect_bytes = usage
         .effect_bytes
         .checked_sub(
@@ -64,4 +83,59 @@ pub(super) fn one(
     }
     audit.purged = audit.purged.checked_add(1).ok_or(AtomicError::Limit)?;
     Ok(reclaimed)
+}
+
+fn release_reference(
+    view: &ReadView,
+    record: &crate::atomic::CommandRecord,
+    effect: crate::atomic::Identity,
+    format: &str,
+) -> Result<Option<(u64, latent_state::embedded::AtomicBatch)>, AtomicError> {
+    use latent_state::payload_references::{
+        PayloadOwner, PayloadOwnerKind, PreparedPayloadReferences, MAX_REFERENCE_BYTES,
+    };
+    let owner = PayloadOwner {
+        tenant: record.key.tenant.clone(),
+        namespace: record.key.namespace.clone(),
+        incarnation: crate::atomic::incarnation(&record.key)?,
+        kind: PayloadOwnerKind::Effect,
+        identity: effect.0,
+        generation: record.attempt,
+        format: format.into(),
+    };
+    let Some(links) = crate::atomic::payload_links::read(view, record)? else {
+        if view
+            .get_bounded(&owner.row_key()?, MAX_REFERENCE_BYTES)?
+            .is_some()
+        {
+            return Err(AtomicError::Corrupt);
+        }
+        return Ok(None);
+    };
+    crate::atomic::payload_links::verify(view, record, &links)?;
+    let Some(reference) = links
+        .references
+        .iter()
+        .find(|row| row.owner == owner)
+        .cloned()
+    else {
+        if view
+            .get_bounded(&owner.row_key()?, MAX_REFERENCE_BYTES)?
+            .is_some()
+        {
+            return Err(AtomicError::Corrupt);
+        }
+        return Ok(None);
+    };
+    let mut remaining = links.clone();
+    remaining.references.retain(|row| row.owner != owner);
+    let mut plan = PreparedPayloadReferences::prepare(view, &[(Some(reference.clone()), None)])?;
+    plan.replace_links(
+        view,
+        Some(&links),
+        (!remaining.references.is_empty()).then_some(&remaining),
+    )?;
+    let mut batch = latent_state::embedded::AtomicBatch::default();
+    plan.append_to(&mut batch)?;
+    Ok(Some((reference.payload.size, batch)))
 }

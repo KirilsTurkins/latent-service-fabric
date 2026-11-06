@@ -40,6 +40,7 @@ ABORT_CASES = frozenset("tests::sockets::" + name for name in (
     "abort_both_wakes_tls_waiters_and_retains_held_write",
     "abort_both_unpolled_tls_control_releases_slot_without_dispatch",
     "abort_both_after_tls_peer_close_notify_retires_original_owner",
+    "abort_both_cancels_tls_ciphertext_flush_under_real_backpressure",
 ))
 KERNEL_CASE = 'tests::kernel::current_linux_pressure_and_active_close_distinguish_kernel_tail_from_fd_refund'
 KERNEL_RETIREMENT_CASES = frozenset(('tests::kernel::current_linux_kernel_tail_keeps_original_leases_quarantined', 'tests::kernel::current_linux_failed_connect_quarantines_original_dial_and_native_charge', 'tests::kernel::current_linux_cancelled_dns_quarantines_original_scope_and_native_charge', 'tests::kernel::current_unqualified_kernel_profile_refuses_normal_install_without_allocation'))

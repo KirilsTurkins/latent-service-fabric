@@ -34,7 +34,11 @@
     "package": "ncc build src/index.ts --license licenses.txt",
     "package:watch": "npm run package -- --watch",
     "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
-    "all": "npm run format:write && npm run lint && npm run test && npm run package"
+    "all": "npm run format:write && npm run lint && npm run test && npm run package",
+    "prepare": "node .lsf-source/verify-attest-sources.mjs --runtime-install",
+    "prepackage": "node .lsf-source/verify-attest-sources.mjs",
+    "pretest": "node .lsf-source/verify-attest-sources.mjs",
+    "test:security-source": "node --test .lsf-source/attest-sources.test.mjs"
   },
   "license": "MIT",
   "jest": {

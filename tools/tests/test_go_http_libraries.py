@@ -363,7 +363,7 @@ class HttpLibraryCapture(unittest.TestCase):
         self.assertNotIn('if',shared)
         for value in (job,normal,shared,boundaries,clients):
             self.assertFalse(value.get('continue-on-error',False))
-        self.assertEqual(job['timeout-minutes'],45)
+        self.assertEqual(job['timeout-minutes'],60)
 
     def test_private_coordinates_change_application_inputs_without_changing_captured_sdk(self):
         with tempfile.TemporaryDirectory() as name:

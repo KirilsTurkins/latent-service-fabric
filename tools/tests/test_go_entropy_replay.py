@@ -47,10 +47,10 @@ class EntropyReplay(unittest.TestCase):
                      'go-standard-http-signed/build/component.wasm'):
             self.assertFalse(inputs.selected(name), name)
 
-    def test_explicit_replay_preserves_original_45_minute_default_programme(self):
+    def test_explicit_replay_preserves_60_minute_default_programme(self):
         from tools import ci_lane_inventory
         value = ci_lane_inventory.workflow_model((ROOT / '.github/workflows/go-guest.yml').read_text())
-        self.assertEqual(value['jobs']['upstream-probe']['timeout-minutes'], 45)
+        self.assertEqual(value['jobs']['upstream-probe']['timeout-minutes'], 60)
         self.assertEqual(value['jobs']['upstream-probe']['if'],
             "${{ github.event_name != 'workflow_dispatch' || (!inputs.replay-entropy-authority && !inputs.qualify-entropy-retained && !inputs.entropy-only) }}")
         self.assertEqual(value['jobs']['entropy-authority-replay']['timeout-minutes'], 20)

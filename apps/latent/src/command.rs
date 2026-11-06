@@ -254,6 +254,7 @@ fn name(command: &Command) -> &'static str {
             args::rollout::RolloutCommand::Promote(_) => "rollout promote",
             args::rollout::RolloutCommand::Rollback(_) => "rollout rollback",
         },
+        Command::Release(R::Retention(command)) => command.name(),
         Command::Release(R::Prepare(_)) => "release prepare",
         Command::Release(R::Lifecycle(_)) => "release lifecycle",
         Command::Release(R::Operation(_)) => "release operation",

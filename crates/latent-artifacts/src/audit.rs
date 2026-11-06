@@ -6,6 +6,11 @@
 //! No method here belongs in an activation currentness or invocation path.
 
 mod mapping;
+mod publication;
+pub use publication::{
+    reconcile_publication_maintenance_audit, PublicationAuditGuard, PublicationMaintenanceOutcome,
+    PublicationMaintenanceReceipt, PublicationMaintenanceRequest, PublicationMaintenanceResult,
+};
 mod verification;
 mod web;
 pub use verification::AuditedAdmissionAuthority;
@@ -164,6 +169,20 @@ pub async fn reconcile_release_audit(
     repository: &dyn ArtifactRepository,
 ) -> Result<(), PlatformError> {
     for pending in audit.pending_attempts()? {
+        if matches!(
+            pending.attempt().action,
+            AuditControlAction::PublicationPin
+                | AuditControlAction::PublicationUnpin
+                | AuditControlAction::PublicationDelete
+                | AuditControlAction::PublicationReclaim
+        ) {
+            return Err(PlatformError {
+                code: PlatformErrorCode::Unavailable,
+                message: "publication-audit-requires-native-reconciliation".into(),
+                retryable: false,
+                details: Vec::new(),
+            });
+        }
         let conclusion = if matches!(
             pending.attempt().action,
             AuditControlAction::Publish

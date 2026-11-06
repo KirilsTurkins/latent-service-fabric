@@ -101,7 +101,11 @@ class Campaign:
         return value, result
 
     def original(self, key):
-        return self.result(self.socket("result", original_key=key))
+        observed = self.socket("result", original_key=key)
+        if observed.get("status") == 503:
+            from .refusal_observation import observe_original_result
+            observe_original_result(self, key)
+        return self.result(observed)
 
     def refusal(self, name, observed, statuses):
         bodies = {403: {b"", b"Forbidden\n"}, 409: {b"", b"Conflict\n"}}

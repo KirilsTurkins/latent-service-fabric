@@ -40,6 +40,8 @@ CURRENT_HTTP_TERMINAL_METADATA_SESSIONS = CURRENT_METADATA_SESSIONS | {
     'cancellation-legacy-metadata', 'cancellation-compatible-metadata'}
 PENDING_NODE_PROGRAM = ('publish', 'authority', 'namespace-create', 'legacy-runtime',
                         'pending-original-runtime', 'pending-restored-runtime')
+PRECOMMIT_NODE_PROGRAM = ('publish', 'authority', 'namespace-create', 'legacy-runtime',
+                          'diagnostic-metadata', 'diagnostic-runtime', 'diagnostic-after-crash')
 EARLY_HTTP_NODE_PROGRAM = ('publish', 'authority', 'namespace-create', 'early-http-runtime')
 
 
@@ -49,7 +51,7 @@ class Node:
         require(type(current_publication_program) is bool
                 and (not current_publication_program or getattr(client, 'phase4', False)),
                 'explicit-current-node-program')
-        require(type(current_program) is str and current_program in {'terminal', 'pending-close', 'early-http'}
+        require(type(current_program) is str and current_program in {'terminal', 'pending-close', 'early-http', 'precommit-crash'}
                 and (current_program == 'terminal' or current_publication_program),
                 'closed-current-node-program-selection')
         self.client, self.executable, self.directory = client, executable, directory
@@ -59,7 +61,8 @@ class Node:
         self.current_publication_program = current_publication_program
         self.current_program = current_program
         self.program = {'terminal': CURRENT_NODE_PROGRAM, 'pending-close': PENDING_NODE_PROGRAM,
-                        'early-http': EARLY_HTTP_NODE_PROGRAM}[current_program]
+                        'early-http': EARLY_HTTP_NODE_PROGRAM,
+                        'precommit-crash': PRECOMMIT_NODE_PROGRAM}[current_program]
         self.metadata_sessions = CURRENT_METADATA_SESSIONS
         self.current_activation = None
 
@@ -75,6 +78,7 @@ class Node:
         require(type(restore_authority) is bool, "explicit-restore-authority-session")
         if restore_authority:
             require(self.current_program != 'early-http', 'early-http-cannot-install-restore-authority')
+            require(self.current_program != 'precommit-crash', 'precommit-cannot-install-restore-authority')
             settings = read_json(configuration)
             state = settings.get("state")
             require(not self.current_publication_program
@@ -106,6 +110,7 @@ class Node:
             require(current_session is None and self.process is None and self.ordinal - self.restore_authority_sessions < 6,
                     "bounded-exclusive-node-session")
         self.ordinal += 1
+        startup_began = time.monotonic()
         process = Process([str(self.executable), "serve", "--config", str(configuration)], self.directory,
             dict(self.client.environment, HOME=str(self.directory)), self.client.cancellation, maximum=262144)
         try:
@@ -129,6 +134,7 @@ class Node:
             self.client.evidence.record(f"node-{self.ordinal}-started", started)
             return process
         except BaseException:
+            startup_elapsed_millis = max(0, int((time.monotonic() - startup_began) * 1000))
             self.client.node = None
             self.process = None
             process.close()
@@ -136,7 +142,8 @@ class Node:
             self.client.evidence.write(f"node-{self.ordinal}-startup.stderr", bytes(process.buffers[1]))
             self.client.evidence.record(f"node-{self.ordinal}-startup-failure", {
                 "exitStatus": process.owner.process.returncode, "reaped": process.closed and process.owner.finished,
-                "started": getattr(process, "startup_record", None)})
+                "started": getattr(process, "startup_record", None),
+                "startupElapsedMillis": startup_elapsed_millis})
             raise
 
     def stop(self):

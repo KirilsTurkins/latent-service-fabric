@@ -252,3 +252,94 @@ async fn abort_both_after_tls_peer_close_notify_retires_original_owner() {
         control.assert_native_settled();
     }
 }
+
+#[tokio::test]
+async fn abort_both_cancels_tls_ciphertext_flush_under_real_backpressure() {
+    for (version, expected) in versions() {
+        let peer = Peer::with_versions(&[version]).await;
+        let fixture = Fixture::for_tls_accounting(peer.config());
+        let (session, control) = fixture.session(5000);
+        let baseline = control.native_session_bytes();
+        let (stream, mut server) = connect_peer(&peer, &fixture, &session, expected).await;
+        socket2::SockRef::from(server.get_ref().0)
+            .set_recv_buffer_size(16 * 1024)
+            .unwrap();
+        // The peer deliberately stops reading. Keep the original future when
+        // its accepted plaintext cannot finish flushing to the real TCP wire.
+        let mut completed = 0_u64;
+        let mut blocked = None;
+        for _ in 0..24 {
+            let mut write = stream.write(vec![0x5a; 16 * 1024], None).unwrap();
+            if let Ok(result) = tokio::time::timeout(Duration::from_millis(20), &mut write).await {
+                completed += u64::from(result.unwrap());
+            } else {
+                blocked = Some(write);
+                break;
+            }
+        }
+        let blocked = blocked.expect("the non-reading TLS peer must apply real backpressure");
+        assert!(completed > 0);
+        assert_eq!(fixture.provider.usage().unwrap().pending_operations, 1);
+        assert_eq!(stream.inspect().accepted_write_bytes, completed);
+        assert!(stream.inspect().application_write_attempted);
+        let abort = stream.shutdown(StreamShutdown::Both).unwrap();
+        assert_eq!(fixture.provider.usage().unwrap().pending_operations, 2);
+        assert_eq!(
+            tokio::time::timeout(Duration::from_secs(1), abort)
+                .await
+                .expect("abort must not wait for ciphertext or the non-reading peer")
+                .unwrap()
+                .state,
+            StreamState::Stopping
+        );
+        assert_eq!(fixture.provider.usage().unwrap().pending_operations, 1);
+        assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+        assert!(control.budget.host_memory_bytes() > baseline);
+        let failure = tokio::time::timeout(Duration::from_secs(1), blocked)
+            .await
+            .expect("the original ciphertext flush must observe local cancellation")
+            .unwrap_err();
+        assert_eq!(failure.code, StreamErrorCode::Cancelled);
+        assert!(failure.may_have_applied);
+        // A nonzero plaintext prefix proves this was an actually dispatched
+        // TLS write, not merely an accepted future waiting for authorization.
+        assert!(failure.accepted_prefix_bytes > 0);
+        assert!(failure.accepted_prefix_bytes <= 16 * 1024);
+        let accepted = completed + u64::from(failure.accepted_prefix_bytes);
+        assert_eq!(stream.inspect().accepted_write_bytes, accepted);
+        assert_eq!(fixture.provider.usage().unwrap().pending_operations, 0);
+        assert_eq!(fixture.provider.usage().unwrap().connections, 0);
+        let received = tokio::time::timeout(Duration::from_secs(2), async {
+            let mut received = 0_u64;
+            let mut bytes = [0; 16 * 1024];
+            loop {
+                match server.read(&mut bytes).await {
+                    Ok(0) => panic!("local abort must not emit a TLS close-notify"),
+                    Ok(count) => {
+                        assert!(bytes[..count].iter().all(|byte| *byte == 0x5a));
+                        received += count as u64;
+                        assert!(received <= accepted, "no plaintext replay after abort");
+                    }
+                    Err(failure) => {
+                        assert_eq!(failure.kind(), std::io::ErrorKind::UnexpectedEof);
+                        return received;
+                    }
+                }
+            }
+        })
+        .await
+        .expect("the peer must observe original socket closure without a graceful alert");
+        assert!(received >= completed);
+        assert!(
+            tokio::time::timeout(Duration::from_millis(20), peer.listener.accept())
+                .await
+                .is_err()
+        );
+        drop(stream);
+        assert_eq!(control.budget.host_memory_bytes(), baseline);
+        drop((server, session));
+        fixture.clean().await;
+        drop(fixture);
+        control.assert_native_settled();
+    }
+}

@@ -32,7 +32,7 @@ impl DirectoryArtifactRepository {
         self.web_payload_preflight(&payload, reference, &mut next, &writer, &content)?;
         let retained = next.retained_bytes()?;
         self.index.read().map_err(lock_error)?.check_web(
-            next.entries.len(),
+            next.payload_entries(),
             retained,
             self.config,
         )?;
@@ -92,7 +92,7 @@ impl DirectoryArtifactRepository {
             let entry = next.entry(reference)?;
             entry.generation.replace(entry.record.generation);
             self.index.write().map_err(lock_error)?.replace_web(
-                next.entries.len(),
+                next.payload_entries(),
                 retained,
                 self.config,
             )?;

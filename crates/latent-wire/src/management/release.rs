@@ -1,5 +1,6 @@
 mod conversion;
 mod lifecycle;
+mod maintenance;
 mod package;
 #[cfg(test)]
 mod package_tests;
@@ -28,6 +29,31 @@ pub use web::{
 
 #[tonic::async_trait]
 impl proto::release_service_server::ReleaseService for ManagementServiceAdapter {
+    async fn get_publication_retention(
+        &self,
+        request: Request<proto::GetPublicationRetentionRequest>,
+    ) -> Result<Response<proto::GetPublicationRetentionResponse>, Status> {
+        self.retention_snapshot(request)
+    }
+    async fn maintain_publications(
+        &self,
+        request: Request<proto::MaintainPublicationsRequest>,
+    ) -> Result<Response<proto::MaintainPublicationsResponse>, Status> {
+        self.publication_maintenance(request)
+    }
+    async fn assess_publication_reclamation(
+        &self,
+        request: Request<proto::AssessPublicationReclamationRequest>,
+    ) -> Result<Response<proto::AssessPublicationReclamationResponse>, Status> {
+        self.reclamation_assessment(request)
+    }
+    async fn get_publication_maintenance_operation(
+        &self,
+        request: Request<proto::GetPublicationMaintenanceOperationRequest>,
+    ) -> Result<Response<proto::GetPublicationMaintenanceOperationResponse>, Status> {
+        self.maintenance_operation(request)
+    }
+
     async fn prepare_release(
         &self,
         request: Request<proto::PrepareReleaseRequest>,

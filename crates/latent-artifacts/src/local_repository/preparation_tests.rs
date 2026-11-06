@@ -376,6 +376,7 @@ fn delegated_source_binds_its_fetch_even_when_outer_repository_fetch_disagrees()
                 .verify_metadata(&wrapper.other, 1024 * 1024, 32)
                 .is_err());
         }
+        drop(capability);
         let fallback = Delegating {
             enabled: false,
             ..wrapper

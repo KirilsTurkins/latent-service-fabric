@@ -8,6 +8,7 @@ mod codec;
 pub mod entities;
 pub(crate) mod migration;
 pub(crate) mod offline;
+mod payload;
 mod validation;
 pub mod version;
 use crate::{
@@ -22,6 +23,11 @@ use codec::{Cell, Usage};
 use latent_core::{
     transaction_contract::{self as contract, ExpectedVersion, Precondition, Value},
     StateNamespaceId, TenantId,
+};
+pub use payload::{
+    describe_staged_state_payload_owner, describe_state_payload_owner,
+    require_no_state_payload_reference, retained_state_payload_reference, state_payload_cell_key,
+    verify_state_payload_reference,
 };
 use std::{
     collections::BTreeMap,

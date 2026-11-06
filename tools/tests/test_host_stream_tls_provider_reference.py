@@ -37,6 +37,7 @@ class BoundedTlsProviderReference(unittest.TestCase):
             "tests::tls::abort::abort_both_wakes_tls_waiters_and_retains_held_write",
             "tests::tls::abort::abort_both_unpolled_tls_control_releases_slot_without_dispatch",
             "tests::tls::abort::abort_both_after_tls_peer_close_notify_retires_original_owner",
+            "tests::tls::abort::abort_both_cancels_tls_ciphertext_flush_under_real_backpressure",
         }
         self.assertTrue(required <= reference.ABORT_CASES <= reference.REQUIRED_CASES)
         for missing in reference.ABORT_CASES:

@@ -98,8 +98,12 @@ filtered smoke tests. The TLS controls pin and verify TLS 1.2 and TLS 1.3,
 exercise read/readiness cancellation with an accepted unpolled write, distinguish
 possible earlier writes from no application write, retain the original socket
 through handle drop, and check unpolled-abort cancellation and peer close-notify.
-These controls do not claim an already-dispatched blocked ciphertext or kernel
-FIN race, kernel final-free proof, or production TLS qualification.
+An additional real non-reading peer forces an already-dispatched TLS write to
+block while flushing ciphertext. Its abort control checks prompt cancellation,
+nonzero accepted-plaintext uncertainty, original socket/charge retention, bounded
+peer delivery without replay, and EOF without a local close-notify. These controls
+do not claim an already-dispatched kernel FIN race, kernel final-free proof, or
+production TLS qualification.
 
 Representative source tests (not a complete coverage inventory):
 

@@ -19,7 +19,19 @@ sha2.workspace = true
 [dev-dependencies]
 tempfile.workspace = true
 latent-test-process = { path = "../latent-test-process" }
-tokio.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
 
 [target.'cfg(target_os = "linux")'.dev-dependencies]
 rustix = { version = "=1.1.5", features = ["process"] }
+latent-activation = { path = "../latent-activation" }
+latent-artifacts = { path = "../latent-artifacts" }
+latent-audit = { path = "../latent-audit" }
+latent-executor = { path = "../latent-executor" }
+latent-manifest = { path = "../latent-manifest" }
+latent-policy = { path = "../latent-policy" }
+latent-routing = { path = "../latent-routing" }
+serde_json.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+latent-blobs = { package = "latent-local-blobs", path = "../latent-local-blobs" }
+latent-capabilities = { path = "../latent-capabilities" }

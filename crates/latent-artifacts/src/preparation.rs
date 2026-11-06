@@ -31,14 +31,16 @@ pub(crate) struct RepositoryEpoch;
 /// A borrowed preparation capability. Both operations use the same directory
 /// owner, even when an outer repository adapter delegates to this capability.
 /// Never combine its identity with that adapter's separate `fetch` operation.
-#[derive(Clone, Copy)]
 pub struct ArtifactPreparationSource<'repo> {
     repository: &'repo DirectoryArtifactRepository,
 }
 
 impl<'repo> ArtifactPreparationSource<'repo> {
-    pub(crate) fn new(repository: &'repo DirectoryArtifactRepository) -> Self {
-        Self { repository }
+    pub(crate) fn new(repository: &'repo DirectoryArtifactRepository) -> Option<Self> {
+        if !repository.capture_preparation_read() {
+            return None;
+        }
+        Some(Self { repository })
     }
 
     pub fn eligibility(
@@ -71,6 +73,20 @@ impl<'repo> ArtifactPreparationSource<'repo> {
         release: &'a ReleaseDigest,
     ) -> BoxFuture<'a, Result<CapsuleArtifact, PlatformError>> {
         self.repository.fetch(release)
+    }
+}
+
+impl Clone for ArtifactPreparationSource<'_> {
+    fn clone(&self) -> Self {
+        self.repository.clone_preparation_read();
+        Self {
+            repository: self.repository,
+        }
+    }
+}
+impl Drop for ArtifactPreparationSource<'_> {
+    fn drop(&mut self) {
+        self.repository.release_preparation_read();
     }
 }
 

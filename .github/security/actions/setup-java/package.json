@@ -9,7 +9,7 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "build": "node .lsf-source/verify-installed-deepmerge.mjs && node scripts/patch-is-unsafe.mjs && ncc build -o dist/setup src/setup-java.ts && ncc build -o dist/cleanup src/cleanup-java.ts",
+    "build": "node .lsf-source/verify-installed-deepmerge.mjs && node .lsf-source/verify-installed-minimatch.mjs && node scripts/patch-is-unsafe.mjs && ncc build -o dist/setup src/setup-java.ts && ncc build -o dist/cleanup src/cleanup-java.ts",
     "format": "prettier --no-error-on-unmatched-pattern --write \"**/*.{ts,yml,yaml}\"",
     "format-check": "prettier --no-error-on-unmatched-pattern --check \"**/*.{ts,yml,yaml}\"",
     "lint": "eslint \"**/*.ts\"",
@@ -19,7 +19,8 @@
     "prepare": "husky install",
     "prerelease": "npm run-script build",
     "release": "git add -f dist/setup/*.js dist/setup/package.json dist/cleanup/*.js",
-    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand --coverage"
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand --coverage",
+    "test:security-source": "node --test .lsf-source/minimatch-bounds.test.mjs"
   },
   "lint-staged": {
     "*.ts": [
@@ -71,7 +72,8 @@
     "lint-staged": "^17.5.1",
     "prettier": "^3.9.9",
     "ts-jest": "^29.4.13",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "minimatch": "file:.lsf-source/minimatch-10.2.6-lsf-bound-v1.tar"
   },
   "bugs": {
     "url": "https://github.com/actions/setup-java/issues"
@@ -81,7 +83,8 @@
     "@actions/cache": {
       "@actions/glob": "0.7.0"
     },
-    "glob": "^11.1.0",
-    "test-exclude": "^7.0.2"
+    "glob": "14.0.2",
+    "test-exclude": "^7.0.2",
+    "minimatch@10": "$minimatch"
   }
 }

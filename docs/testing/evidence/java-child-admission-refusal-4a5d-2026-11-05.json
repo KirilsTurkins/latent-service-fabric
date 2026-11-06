@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "schemaVersion": "latent.java.child-call-admission-observation.v1",
+  "scope": "Actual component package validation failed before signing or node execution",
+  "passed": false,
+  "failedStage": "package",
+  "failureType": "ValueError",
+  "failureCode": "unsupported-package-capsule-manifest",
+  "signerLogDigest": "sha256:841f587aa177fe74aa5497f588ea4aeb9cab40b063cecae79cbf733608992f83",
+  "nativeSourceCommit": "4a5d465b44d31a1ad54d12b300c7fd4cf9179dfd",
+  "conductorSourceCommit": "4a5d465b44d31a1ad54d12b300c7fd4cf9179dfd",
+  "compilerSourceCommit": "5f99649cd3b583d4a855c7c3b07ed3167419b866",
+  "selectionDigest": "sha256:8e62324c252f603f751bae40829396d765027807ccfa342c0884d8cc1209693f",
+  "componentDigest": "sha256:ec6fbc143884c12077140e1784eb2d1ef962d345186a80a1b922bb1805c36f27",
+  "signedGuestExecutionQualified": false,
+  "strictChildDenialQualified": false,
+  "measuredCases": [],
+  "profileEvidence": "crates/latent-manifest/src/validation_profile/tests.rs: supported_http_is_descriptive_but_raw_network_wrong_versions_and_optional_state_reject"
+}

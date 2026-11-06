@@ -771,3 +771,32 @@ closures or buffers, unrelated transitive captures, or prove full activation
 accounting. The compiled dynamic-value-memory profile constant has a separate
 pre-existing cohort mismatch and is not corrected or qualified here. No
 new native or signed-guest outcome is claimed by this source.
+
+## v33: host-to-host accept-factory header
+
+The original Store owner admits the concrete HostToHost accept-factory
+closure before its Box and before replacing the original producer state.
+The same guard remains until the retained closure is physically destroyed.
+Paid HostToHost avoids an unused poll-factory allocation; None keeps its
+original closure path.
+
+This source slice does not pay returned per-call futures, HostToHost buffers,
+unrelated transitive captures or prove aggregate activation accounting. The
+compiled dynamic-value-memory profile constant has a separate pre-existing
+cohort mismatch. No new native or signed-guest outcome is claimed here.
+
+## v34: consumer poll inner-future allocation
+
+The paid consumer poll factory retains its original native-memory authority.
+It admits the concrete unpolled future allocation before publishing a guest
+write or the initial waiting writer, and retains the same guard until physical
+future destruction. The legacy path retains its original closure and Box.
+
+Deferred guest-frame replay remains fallible and is moved before the Busy
+transition only for the paid HostReady path, before the new future admission.
+A hosted forwarding fixture must prove the real thread is deferred, replay and
+future refusals precede Busy, and successful execution and cleanup remain intact.
+
+This slice does not pay producer futures, borrowed host-to-host accept futures,
+buffers or aggregate activation costs. It does not resolve the pre-existing
+compiled cohort discrepancy and makes no signed-guest qualification claim.

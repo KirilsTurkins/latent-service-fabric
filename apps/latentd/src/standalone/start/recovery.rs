@@ -1,16 +1,21 @@
 use std::{future::Future, time::Duration, time::Instant};
 
-use latent_artifacts::ArtifactRepository;
+use latent_artifacts::DirectoryArtifactRepository;
 use latent_audit::AuditHandle;
 use latent_core::{PlatformError, PlatformErrorCode};
 
 pub(super) async fn reconcile(
     audit: &AuditHandle,
-    repository: &dyn ArtifactRepository,
+    repository: &DirectoryArtifactRepository,
     deadline: Instant,
 ) -> Result<(), PlatformError> {
     wait_before_admission(
         || latent_capabilities::broker::reconcile_capability_audit(audit, deadline),
+        deadline,
+    )
+    .await?;
+    wait_before_admission(
+        || latent_artifacts::reconcile_publication_maintenance_audit(audit, repository),
         deadline,
     )
     .await?;

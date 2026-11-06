@@ -12,7 +12,7 @@ mod tests;
 pub use control::{
     NamespaceControl, NamespaceControlFence, NamespaceControlRequest, PreparedNamespaceControl,
     PreparedRetainedNamespaceControl, RetainedNamespaceControlFence,
-    RetainedNamespaceControlRequest,
+    RetainedNamespaceControlRequest, RetainedPreparationError,
 };
 pub use gate::{AcceptedCommit, CommitCancellation, CommitIoAcceptance};
 pub use page::ScopedPage;
