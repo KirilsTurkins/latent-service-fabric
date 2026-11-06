@@ -5831,7 +5831,6 @@ struct PreparedProducerFactory<Args, Builder, Function> {
     _output: PhantomData<fn(Args) -> Function>,
 }
 
-#[cfg(test)]
 impl<Args, Builder, Function> PreparedProducerFactory<Args, Builder, Function>
 where
     Builder: FnOnce(Args) -> Function,
@@ -5851,6 +5850,7 @@ where
     }
 }
 
+#[cfg(test)]
 impl<Args, Builder, Function> PreparedProducerFactory<Args, Builder, Function>
 where
     Builder: FnOnce(Args) -> Function,
