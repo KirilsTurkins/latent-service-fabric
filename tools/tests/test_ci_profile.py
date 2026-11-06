@@ -101,6 +101,41 @@ class GoQualificationTriggerTests(unittest.TestCase):
                 self.assertTrue(any(source == item or source.startswith(item + "/") for item in included), source)
 
 
+class CQualificationTriggerTests(unittest.TestCase):
+    def test_c_and_rust_build_inputs_select_both_events(self) -> None:
+        from fnmatch import fnmatchcase
+        from tools import build_guest_capsules, c_capsule_build, c_capsule_project
+        from tools.ci_lane_inventory import workflow_model
+
+        root = Path(__file__).resolve().parents[2]
+        workflow = workflow_model((root / ".github/workflows/c-guest-authoring.yml").read_text(encoding="utf-8"))
+        events = workflow["on"]
+        self.assertIn("development", events["push"]["branches"])
+        paths = events["pull_request"]["paths"]
+        self.assertEqual(paths, events["push"]["paths"])
+        self.assertEqual(len(paths), len(set(paths)))
+
+        def matches(pattern: str, source: str) -> bool:
+            self.assertFalse(pattern.startswith("!"))
+            if pattern.endswith("/**"):
+                return source.startswith(pattern[:-2])
+            pattern_parts, source_parts = pattern.split("/"), source.split("/")
+            return len(pattern_parts) == len(source_parts) and all(
+                fnmatchcase(part, glob) for part, glob in zip(source_parts, pattern_parts))
+
+        # The same job compiles standalone authored C projects and the signed
+        # C and Rust guests, and separately compiles the transaction contract.
+        inputs = set(c_capsule_build.RECIPE) | set(c_capsule_project.authoring_inputs(root))
+        inputs.update(json.loads(build_guest_capsules.source_inputs()))
+        for directory in ("sdk/profile", "sdk/transaction-contract"):
+            inputs.update(path.relative_to(root).as_posix()
+                          for path in (root / directory).rglob("*") if path.is_file())
+        for source in sorted(inputs):
+            with self.subTest(source=source):
+                self.assertTrue(any(matches(pattern, source) for pattern in paths), source)
+        self.assertFalse(any(matches(pattern, "docs/unrelated.md") for pattern in paths))
+
+
 class ClassificationTests(unittest.TestCase):
     def test_sparse_selector_keeps_ignore_rules_available_offline(self) -> None:
         # A blob-filtered checkout may not have the root ignore blob locally.
