@@ -12,6 +12,8 @@ on:
     paths:
       - '.github/workflows/rust-capsule-authoring.yml'
       - 'sdk/rust-guest/**'
+      - 'sdk/c-guest/**'
+      - 'sdk/profile/**'
       - 'sdk/rust-standard-runtime/**'
       - 'sdk/rust-standard-stdio/**'
       - 'sdk/transaction-contract/**'
@@ -22,6 +24,10 @@ on:
       - 'tools/**'
       - 'wit/**'
       - 'Cargo.*'
+      - '.cargo/**'
+      - 'rust-toolchain.toml'
+      - 'LICENSE'
+      - 'NOTICE'
       - 'docs/component-development/rust-authoring.md'
       - 'docs/component-development/rust-dependencies.md'
   push:
@@ -29,6 +35,8 @@ on:
     paths:
       - '.github/workflows/rust-capsule-authoring.yml'
       - 'sdk/rust-guest/**'
+      - 'sdk/c-guest/**'
+      - 'sdk/profile/**'
       - 'sdk/rust-standard-runtime/**'
       - 'sdk/rust-standard-stdio/**'
       - 'sdk/transaction-contract/**'
@@ -39,6 +47,10 @@ on:
       - 'tools/**'
       - 'wit/**'
       - 'Cargo.*'
+      - '.cargo/**'
+      - 'rust-toolchain.toml'
+      - 'LICENSE'
+      - 'NOTICE'
       - 'docs/component-development/rust-authoring.md'
       - 'docs/component-development/rust-dependencies.md'
 
