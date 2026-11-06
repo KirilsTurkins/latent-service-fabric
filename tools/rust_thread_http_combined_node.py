@@ -33,6 +33,11 @@ from tools.standard_http.observations import require_zero_contact
 from tools.standard_http.peer import Peer
 
 NATIVE = 'latent:runtime-native/threads@0.1.0'
+# This fixed two-pool programme is not the single-client HTTP fixture. Its
+# eight retained PAL/stack owners leave no room for real HTTP completion
+# fibers. Provision those two additional owners explicitly, not by refunding
+# live stacks or bypassing the original activation memory ledger.
+COMBINED_NATIVE_OWNERS = 10
 PROVIDERS = (
     ('clockMonotonic', http.CLOCK, ['now-nanos'], 'activation-monotonic-v1', 'clock'),
     ('activation', http.ACTIVATION, list(OPS), 'activation-owned-v1', 'clock'),
@@ -63,6 +68,7 @@ def configure(directory, releases, peers, credentials):
     providers = value['providers']
     activation = providers['activationRuntime']
     activation['nativeThreads'] = True
+    activation['limits'] = {**http.RUNTIME_LIMITS, 'nativeOwners': COMBINED_NATIVE_OWNERS}
     providers['bindings'].append({'name': 'native-examples', 'tenant': 'examples',
         'consumerService': http.SERVICE, 'providerService': activation['identity']['service'],
         'contract': NATIVE, 'providerBinding': 'native-examples-installed'})
@@ -153,6 +159,7 @@ def run(artifact: Path, native: dict, output: Path) -> dict:
                                            'guestWallTimeLimitMillis': 5000, 'invocationRetries': 0}
             config = configure(work / 'node', signed, peers, credentials)
             record['configurationIdentity'] = file_identity(config)
+            record['runtimeLimits'] = read_json(config)['providers']['activationRuntime']['limits']
             stage = 'start-local-experimental-diagnostic-node'
             node = connect(client, native['latentd'], work / 'node', config, 'examples', 1)
             cleanup.callback(node.close)

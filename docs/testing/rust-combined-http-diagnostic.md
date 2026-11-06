@@ -38,14 +38,34 @@ controller, process and peer lifetimes remain bounded, and there is no
 invocation retry. An unknown RPC outcome fails even if later evidence appears.
 
 The authenticated fixed graph uses both explicitly admitted child stacks and
-engine-owned HTTP completion fibers. Both draw from the original eight-Native-owner
-ceiling and the same 16 MiB activation ledger. Child admission still requires its
-separate native grant and a distinct original Task; accepted child-start capacity
-is not recycled on logical completion. Every actual mapping and its metadata
-remain charged until physical drop, and cached child permits remain charged
-until Store destruction. Other native-thread profiles keep refusing unadmitted
-stack creation; a configuration name or package inspection cannot select this
+engine-owned HTTP completion fibers. The combined controller explicitly sets
+`nativeOwners` to ten: eight retained PAL/stack owners and capacity for two
+concurrent HTTP completion fibers. This is a change to this diagnostic's host
+capacity, not a successful qualification under the earlier eight-owner ceiling.
+The ordinary HTTP fixture remains at eight; no ordinary default is changed.
+The witness records the selected runtime limits alongside the configuration
+identity. A complete signed run is still required to establish that this
+provisioning suffices; it is not a general or certified minimum-owner bound.
+
+All actual owners still share the same runtime Native ceiling and 16 MiB
+activation ledger. Child admission still requires its separate native grant
+and a distinct original Task; accepted child-start capacity is not recycled
+on logical completion. Every actual mapping and its metadata remain charged
+until physical drop, and cached child permits remain charged until Store
+destruction. Other native-thread profiles keep refusing unadmitted stack
+creation; a configuration name or package inspection cannot select this
 combined path without the immutable final-graph proof.
+
+HTTP invocation connection setup may wait behind the same client's one active
+dial. This waits before allocating a socket or attempting protocol work, using
+the already accepted request's original deadline, cancellation, authority, and
+running-request ownership. The dial slot releases after setup, not after the
+first response, so withheld response headers do not serialize independent
+requests. Capacity exhaustion, backoff, poisoned ownership, and revocation still
+refuse; an attempted dial or HTTP request is never replayed. Other callers of
+the ordinary connection-admission API retain their immediate active-dial
+refusal. The regression controls live in
+`crates/latent-capabilities/src/broker/pools/client/admission/http_tests.rs`.
 
 The original HTTP response headers stay withheld until the independent
 sibling has consumed its partial body, parsed its first JSON response, and
