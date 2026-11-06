@@ -1,0 +1,102 @@
+diff --git a/docs/testing/rust-combined-http-diagnostic.md b/docs/testing/rust-combined-http-diagnostic.md
+index b10ae68..6489dc9 100644
+--- a/docs/testing/rust-combined-http-diagnostic.md
++++ b/docs/testing/rust-combined-http-diagnostic.md
+@@ -54,6 +54,27 @@ must be observed while the original request is held. A pass also requires
+ exact results, zero active provider counters, retired physical guest owners,
+ no foreign peer contact, deployment removal and clean node shutdown.
+ 
++## Stack-boundary review
++
++The combined selection does not change `mmap`, guard-page protection, `munmap`,
++or failed-unmapping quarantine. The allocator's only change is the
++feature-gated safe `combined` module. The worker implementation changes its
++profile description, not its allocation or refund operations. The new selector
++checks the prepared component's immutable proof before creating the context,
++then passes the same activation budget and runtime ledger to both admission
++paths. Child starts retain their distinct Task requirement and total-start bound;
++worker mappings retain a live parent and prepay their original Native, memory,
++and metadata charges. Refund still follows successful unmapping, and cached
++child permits still require the Store-drop fence.
++
++`tools/native_loader_boundary.py` records these reviewed source identities,
++including the combined selector, without adding an unsafe allowance. Its mutation
++controls reject removed or substituted proofs, substituted ledgers, expanded
++limits, and added unsafe code. Native regressions separately execute proof
++refusals, shared-limit admission, allocation rollback, duplicate child starts,
++actual nested engine fibers, and physical retirement. The source tripwire is
++not a replacement for these behavioral tests or the signed witness.
++
+ ## Read failures without treating them as passes
+ 
+ `FAILED.json` records the failing stage. The `controls` directory retains the
+ diff --git a/tools/native_loader_boundary.py b/tools/native_loader_boundary.py
+index 1abfc62..24a4acd 100644
+--- a/tools/native_loader_boundary.py
++++ b/tools/native_loader_boundary.py
+@@ -82,13 +82,18 @@ unsafe impl wasmtime::MemoryCreator for RefusingCreator {
+ # admission retains distinct prepaid original Task tokens. Ordinary async workers
+ # admit their own original Native/memory owners under a live mapped parent;
+ # parents retire only after successful munmap, with failed unmapping quarantined.
+-# Bind all three sources; child/worker state receives no unsafe allowance.
++# The fixed combined diagnostic checks its final-byte proof before selecting
++# both paths; no raw mapping, child-admission or physical-retirement operation
++# changes. Bind all four sources; child/worker/combined state gets no unsafe
++# allowance. See docs/testing/rust-combined-http-diagnostic.md.
+ NATIVE_STACK = f"{CRATE}/src/native_stacks.rs"
+ NATIVE_STACK_CHILD = f"{CRATE}/src/native_stacks/children.rs"
+ NATIVE_STACK_WORKER = f"{CRATE}/src/native_stacks/workers.rs"
++NATIVE_STACK_COMBINED = f"{CRATE}/src/native_stacks/combined.rs"
+ NATIVE_STACK_CHILD_SHA256 = "d1814527adf59a2ca9c94f7b5dd9fbcd32b3c02d265863856a62ca3ada73a9a4"
+-NATIVE_STACK_SHA256 = "baee4644bcb751ce7bb922df61c155e1ebde96ddcf1353c205df968704123244"
+-NATIVE_STACK_WORKER_SHA256 = "8b42a5a426bb83b462f44dec140118326de19487f88e628f0c210cd442cad791"
++NATIVE_STACK_SHA256 = "3aecb4465665fcf7ff4a389e5f28cab5f22c0e56fea7cefe9f2886afadbf413e"
++NATIVE_STACK_WORKER_SHA256 = "dba9018a5401e807dac8b9853e9a327c566054d700b519eff2788b2289a19bb9"
++NATIVE_STACK_COMBINED_SHA256 = "b616094bea5e9f6b7dfd31573378800b2a5563b38c5b7a43a701cca2ff099b83"
+ ALLOW = '''#[allow(
+     unsafe_code,
+     reason = "the sole native loader accepts only a private proof over authenticated immutable bytes"
+@@ -194,6 +199,10 @@ def validate(root: Path) -> list[str]:
+             if hashlib.sha256(source.encode("utf-8")).hexdigest() != NATIVE_STACK_WORKER_SHA256:
+                 errors.append("audited native worker admission/retirement changed; review live parents, original limits and post-munmap release")
+             # No unsafe allowance is granted to ordinary worker admission.
++        elif relative == NATIVE_STACK_COMBINED:
++            if hashlib.sha256(source.encode("utf-8")).hexdigest() != NATIVE_STACK_COMBINED_SHA256:
++                errors.append("audited combined stack selection changed; review immutable proof and shared original ledgers")
++            # Proof-gated selection is safe Rust, not another unsafe exception.
+         if unsafe.search(source) or lowered.search(source):
+             errors.append(f"unreviewed unsafe code or allowance in {relative}")
+     return errors
+ diff --git a/tools/tests/test_native_loader_boundary.py b/tools/tests/test_native_loader_boundary.py
+index 40020c2..f734f81 100644
+--- a/tools/tests/test_native_loader_boundary.py
++++ b/tools/tests/test_native_loader_boundary.py
+@@ -214,6 +214,28 @@ rustix = { version = "=1.1.5", features = ["fs"] }
+                 self.write(boundary.NATIVE_STACK_WORKER, source.replace(before, after))
+                 self.assertTrue(boundary.validate(self.root))
+ 
++    def test_combined_selection_requires_the_exact_proof_and_shared_original_ledgers(self) -> None:
++        source = (Path(__file__).resolve().parents[2] / boundary.NATIVE_STACK_COMBINED).read_text(encoding="utf-8")
++        self.write(boundary.NATIVE_STACK_COMBINED, source)
++        self.assertEqual(boundary.validate(self.root), [])
++        for before, after in (
++            ('proof.check_before_instantiation(descriptor)?;', ''),
++            ('Authentication::RustCombinedHttpVerified(_)', 'Authentication::RustSyncVerified(_)'),
++            ('maximum_native.saturating_sub(1)', '8191'),
++            ('Some(maximum_native)', 'Some(8192)'),
++            ('            runtime,', '            unrelated_runtime,'),
++            ('use super::*;', 'use super::*;\n#[allow(unsafe_code)] unsafe fn extra() {}'),
++        ):
++            with self.subTest(change=before):
++                self.assertIn(before, source)
++                self.write(boundary.NATIVE_STACK_COMBINED, source.replace(before, after))
++                errors = boundary.validate(self.root)
++                self.assertTrue(any("combined stack selection changed" in error for error in errors))
++                if 'unsafe fn' in after:
++                    self.assertTrue(any("unreviewed unsafe" in error for error in errors))
++        self.write(boundary.NATIVE_STACK_COMBINED, source)
++        self.assertEqual(boundary.validate(self.root), [])
++
+     def test_allowance_cannot_expand_to_module_or_another_function(self) -> None:
+         self.write(boundary.LOADER, self.loader.replace(
+             "fn deserialize_authenticated(", "fn unrelated() {}\nfn deserialize_authenticated("))

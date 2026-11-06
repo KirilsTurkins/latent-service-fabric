@@ -1,0 +1,60 @@
+name: PR 1657 reviewed stack boundary validation
+on:
+  push:
+    branches: ['diag/pr1657-audit-20261106']
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
+        with:
+          python-version: 3.13.5
+      - name: Apply exact reviewed patch to the PR source
+        run: |
+          sed 's/^ diff --git/diff --git/' .github/pr1657-audit.patch > "$RUNNER_TEMP/audit.patch"
+          git fetch --no-tags --depth=1 origin d97f8183004afa261b101fa09adcac150ad88865
+          git checkout --detach d97f8183004afa261b101fa09adcac150ad88865
+          git apply --check "$RUNNER_TEMP/audit.patch"
+          git apply "$RUNNER_TEMP/audit.patch"
+          git diff --check
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_native_loader_boundary -v
+          python3 -B tools/validate_foundation.py
+          python3 -B -c 'from tools.ci_coverage import validate; validate()'
+      - name: Publish only verified source blobs without moving any branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -B - <<'PY'
+          import hashlib,json,os,subprocess,urllib.request
+          from pathlib import Path
+          expected={'tools/native_loader_boundary.py':'24a4acd0b6f59ebc33679a22fed27643a89fc2a5','tools/tests/test_native_loader_boundary.py':'f734f81f9a0139e3a454866b8e86b4696601bbc8','docs/testing/rust-combined-http-diagnostic.md':'6489dc99b3aaad40ea3d865eb953c5e2709ff7b9'}
+          changed=set(subprocess.check_output(['git','diff','--name-only'],text=True).splitlines())
+          assert changed==set(expected)
+          result=[]
+          for path,sha in expected.items():
+              data=Path(path).read_bytes()
+              assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()==sha
+              request=urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs',data=json.dumps({'content':data.decode(),'encoding':'utf-8'}).encode(),headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Content-Type':'application/json'},method='POST')
+              with urllib.request.urlopen(request,timeout=30) as response: actual=json.load(response)['sha']
+              assert actual==sha
+              result.append({'path':path,'sha':sha})
+          Path(os.environ['RUNNER_TEMP'],'audit-blobs.json').write_text(json.dumps(result,indent=2)+'\n')
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        if: always()
+        with:
+          name: pr1657-audit-source-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/audit.patch
+            ${{ runner.temp }}/audit-blobs.json
+          if-no-files-found: error
+          retention-days: 3
