@@ -1917,6 +1917,8 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                 return "3fc8c6aecaccc62681b45f33e0c3c8070eac14707665055fe882cd5b39a90491";
             case "org.teavm.classlib.java.lang.TNumber":
                 return "d3c14bbc5392ffdd2af74f74db3ec585e18a50983dc6fa1a2b667776b4bf3fbb";
+            case "org.teavm.classlib.java.util.TDate":
+                return "47ee4061b17358b957a50e05a489488ede1413302896f1cee5f7ff413ef5e303";
             case "org.teavm.runtime.Fiber":
                 return "88c9972155df3fad727253caf68f7359534a0639386571b2eb5680fa17fee605";
             case "org.teavm.classlib.java.lang.TStackTraceElement":
@@ -2279,6 +2281,15 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         }
         byte[] bytes = output.toString().getBytes(java.nio.charset.StandardCharsets.US_ASCII);
         if (bytes.length > 1048576) return false;
+        MethodReference date = new MethodReference("java.util.Date", "initLowLevel",
+                org.teavm.model.ValueType.VOID);
+        var dateInfo = dependency.getMethod(date);
+        boolean dateRequired = dateInfo != null && (dateInfo.isUsed() || dateInfo.isCalled());
+        java.nio.file.Path dateIndex = index.resolveSibling("date-init-required-v1.txt");
+        byte[] dateBytes = (dateRequired ? "required\\n" : "unused\\n")
+                .getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+        java.nio.file.Files.write(dateIndex, dateBytes, java.nio.file.StandardOpenOption.CREATE_NEW,
+                java.nio.file.StandardOpenOption.WRITE);
         java.nio.file.Files.write(index, bytes, java.nio.file.StandardOpenOption.CREATE_NEW,
                 java.nio.file.StandardOpenOption.WRITE);
         guardedEnumIndexCaptured = true;
@@ -2495,7 +2506,54 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         }
     }
 
+    private boolean guardedDateInit(MethodReader method) {
+        MethodReference reference = new MethodReference("java.util.Date", "initLowLevel",
+                org.teavm.model.ValueType.VOID);
+        MethodReference callerRef = new MethodReference("java.util.Date", "<clinit>",
+                org.teavm.model.ValueType.VOID);
+        if (!reference.equals(method.getReference()) || !method.hasModifier(ElementModifier.NATIVE)
+                || !method.hasModifier(ElementModifier.STATIC) || method.getProgram() != null
+                || method.getAnnotations().get("org.teavm.interop.Import") == null
+                || method.getAnnotations().get("org.teavm.interop.Unmanaged") == null) return false;
+        try {
+            Class<?> precise = progressHostClass("org.teavm.dependency.PreciseDependencyAnalyzer");
+            if (precise == null || dependency.getClass() != precise || !dependency.isPrecise()
+                    || dependency.getCallGraph() != callGraph || !pinnedClassInfoCompiler()
+                    || !pinnedProgressPlatformMethod(reference, "org.teavm.classlib.java.util.TDate", false)
+                    || !pinnedProgressPlatformMethod(callerRef, "org.teavm.classlib.java.util.TDate", false)
+                    || !captureGuardedEnums()) return false;
+            var info = dependency.getMethod(reference);
+            CallGraphNode node = callGraph.getNode(reference);
+            if (info == null || info.isMissing() || !info.isUsed() || info.isCalled()
+                    || !reference.equals(info.getReference()) || node == null || node.getGraph() != callGraph
+                    || !reference.equals(node.getMethod())) return false;
+            int sites = 0, work = 0;
+            for (CallSite site : node.getCallerCallSites()) {
+                if (site == null || ++sites > 65536) return false;
+                int targets = 0, callers = 0;
+                for (CallGraphNode target : site.getCalledMethods()) {
+                    if (++work > 262144 || target == null || target.getGraph() != callGraph
+                            || !reference.equals(target.getMethod())) return false;
+                    ++targets;
+                }
+                for (CallGraphNode caller : site.getCallers()) {
+                    if (++work > 262144 || caller == null || caller.getGraph() != callGraph
+                            || !callerRef.equals(caller.getMethod()) || caller.getCallSites() == null
+                            || caller.getCallSites().size() > 262144 - work) return false;
+                    work += caller.getCallSites().size();
+                    if (!caller.getCallSites().contains(site) || site.getLocations(caller) == null) return false;
+                    ++callers;
+                }
+                if (targets != 1 || callers == 0) return false;
+            }
+            return sites != 0;
+        } catch (Exception unavailable) {
+            return false;
+        }
+    }
+
     private boolean progressNativePrimitive(MethodReader method) {
+        if (guardedDateInit(method)) return true;
         if (progressClassMetadataPrimitive(method) || progressStringInfoPrimitive(method)) {
             return true;
         }
