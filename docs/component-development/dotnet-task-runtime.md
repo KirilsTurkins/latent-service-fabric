@@ -72,9 +72,19 @@ the programme rejects a task represented as already completed. It installs no
 SynchronizationContext, scheduler, executor, HTTP handler or task implementation.
 The original source and local feed are removed before offline NativeAOT build.
 
-The signed programme keeps all 27 original node cases and adds distinct
+The normal programme also selects the existing `cancel-pending` witness: a
+`Task.Run` delegate first enters and awaits an incomplete token-bound delay,
+then cancellation must retain the original token and canceled Task state. Its
+case bytes are the same as the separately observed signed case in
+[run 41938149935](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41938149935),
+whose overall two-case monitor/cancellation job failed on `Monitor.Wait`. That
+historical observation used the separately authenticated 678b native products;
+normal qualification of the current source must run independently. The
+separate monitor witness and its failing assertion remain unchanged.
+
+The normal programme keeps all 27 original node cases and adds distinct
 activation/entropy setup refusals, four isolated single-missing-grant refusals
-and 16 managed task cases. Every successful case
+and 17 managed task cases. Every successful case
 requires the actual expected return value, known and reaped invocation, original
 fuel/memory limits, zero outbound/log/effect consumption, provider-idle counters
 and physical retirement observations. Original shutdown and cleanup assertions
