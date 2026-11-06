@@ -171,10 +171,10 @@ class GoRuntimeCosts(unittest.TestCase):
                 output = root / 'output'
                 with patch.object(reference.sys, 'platform', 'linux'), \
                         patch.object(reference.os, 'geteuid', return_value=1000, create=True), \
-                        patch.object(reference.original, 'validate_producer', return_value={}), \
-                        patch.object(reference.original, 'prepared', side_effect=RuntimeError('tuple-drift')
+                        patch.object(reference.producer_selection, 'validate_receipt', return_value={'headSha': 'a' * 40}), \
+                        patch.object(reference, 'prepared', side_effect=RuntimeError('tuple-drift')
                             if stage == 'tuple' else None,
-                            return_value=(binaries, {}, {'originalInvocations': 27}, {})), \
+                            return_value=(binaries, {}, {'originalInvocations': 27})), \
                         patch.object(reference, 'stack_placement_reference', return_value={}), \
                         patch.object(reference, 'build_component', side_effect=RuntimeError('build-failed')) as build, \
                         patch.object(reference, 'programme', side_effect=AssertionError('guest before build')) as run, \
@@ -186,6 +186,162 @@ class GoRuntimeCosts(unittest.TestCase):
                 self.assertEqual(record['status'], 'failed')
                 self.assertFalse(record['newNativeBuild'])
                 self.assertFalse((output / 'qualification.json').exists())
+
+    def test_current_producer_rejects_wrong_owner_unsuccessful_or_unverified_artifact(self):
+        owner = reference.producer_selection
+        sha, run_id = 'a' * 40, 42
+        run = {'id': run_id, 'path': owner.WORKFLOW, 'event': 'push', 'head_branch': 'development',
+               'status': 'completed', 'conclusion': 'success', 'head_sha': sha,
+               'repository': {'id': owner.REPOSITORY_ID}, 'head_repository': {'id': owner.REPOSITORY_ID}}
+        job = {'id': 43, 'run_id': run_id, 'head_sha': sha, 'name': owner.JOB,
+               'status': 'completed', 'conclusion': 'success',
+               'steps': [{'name': name, 'status': 'completed', 'conclusion': 'success'} for name in owner.STEPS]}
+        artifact = {'id': 44, 'name': 'go-guest-upstream-' + sha, 'expired': False,
+                    'size_in_bytes': 123, 'digest': 'sha256:' + 'b' * 64,
+                    'workflow_run': {'id': run_id, 'head_sha': sha, 'head_branch': 'development',
+                                     'repository_id': owner.REPOSITORY_ID,
+                                     'head_repository_id': owner.REPOSITORY_ID}}
+        jobs = {'total_count': 1, 'jobs': [job]}
+        artifacts = {'total_count': 1, 'artifacts': [artifact]}
+        selected = owner.validate_metadata(run, jobs, artifacts, run_id)
+        import hashlib
+        selected.update(workflowSha256=hashlib.sha256((owner.ROOT / owner.WORKFLOW).read_bytes()).hexdigest(),
+                        sourceComparison={'consumerHead': 'c' * 40, 'relevantChangedFiles': 0,
+                                          'comparisonFiles': 2, 'comparisonFileLimit': 299,
+                                          'comparisonCommits': 1, 'comparisonCommitLimit': 100})
+        with patch.object(owner, 'current_head', return_value='c' * 40):
+            self.assertEqual(owner.validate_receipt(selected), selected)
+        self.assertEqual((selected['runId'], selected['jobId'], selected['artifactId']), (42, 43, 44))
+        def copy(value): return json.loads(json.dumps(value))
+        for target, field, replacement in (
+                ('run', 'conclusion', 'failure'), ('run', 'event', 'pull_request'),
+                ('run', 'head_branch', 'release'), ('run', 'path', 'other.yml'),
+                ('job', 'conclusion', 'failure'), ('job', 'head_sha', 'c' * 40),
+                ('artifact', 'digest', None), ('artifact', 'digest', 'sha256:' + 'x' * 64),
+                ('artifact', 'expired', True), ('artifact', 'size_in_bytes', 1024**3 + 1)):
+            checked_run, checked_jobs, checked_artifacts = copy(run), copy(jobs), copy(artifacts)
+            values = {'run': checked_run, 'job': checked_jobs['jobs'][0],
+                      'artifact': checked_artifacts['artifacts'][0]}
+            values[target][field] = replacement
+            with self.subTest(target=target, field=field, replacement=replacement), self.assertRaises(RuntimeError):
+                owner.validate_metadata(checked_run, checked_jobs, checked_artifacts, run_id)
+        for mutate in ('foreign-repository', 'failed-step', 'missing-step', 'foreign-artifact', 'duplicate-artifact', 'truncated-jobs'):
+            checked_run, checked_jobs, checked_artifacts = copy(run), copy(jobs), copy(artifacts)
+            if mutate == 'foreign-repository': checked_run['head_repository']['id'] += 1
+            if mutate == 'failed-step': checked_jobs['jobs'][0]['steps'][0]['conclusion'] = 'failure'
+            if mutate == 'missing-step': checked_jobs['jobs'][0]['steps'].pop()
+            if mutate == 'foreign-artifact': checked_artifacts['artifacts'][0]['workflow_run']['id'] += 1
+            if mutate == 'duplicate-artifact':
+                checked_artifacts['artifacts'].append(copy(artifact))
+                checked_artifacts['total_count'] = 2
+            if mutate == 'truncated-jobs': checked_jobs['total_count'] += 1
+            with self.subTest(mutate=mutate), self.assertRaises(RuntimeError):
+                owner.validate_metadata(checked_run, checked_jobs, checked_artifacts, run_id)
+        bad_receipt = copy(selected)
+        bad_receipt['artifactName'] = 'some-other-artifact'
+        with self.assertRaisesRegex(RuntimeError, 'Go-cost-producer-receipt'):
+            owner.validate_receipt(bad_receipt)
+
+    def test_producer_selection_can_skip_expired_artifact_but_never_an_invalid_run(self):
+        owner = reference.producer_selection
+        def api(path):
+            if path.startswith('actions/workflows/'):
+                return {'workflow_runs': [{'id': 42}, {'id': 41}]}
+            if path.startswith('actions/runs/'):
+                return {'path': path}
+            self.fail('unexpected API path')
+        def metadata(run, jobs, artifacts, requested, *, allow_expired=False):
+            self.assertEqual(allow_expired, True)
+            return None if requested == 42 else {'runId': requested}
+        with patch.object(owner, 'validate_run'), patch.object(owner, 'validate_metadata', side_effect=metadata), \
+                patch.object(owner, 'bind_source', side_effect=lambda receipt, api: receipt):
+            self.assertEqual(owner.select(api=api), {'runId': 41})
+        with patch.object(owner, 'validate_run', side_effect=RuntimeError('invalid-run')), \
+                self.assertRaisesRegex(RuntimeError, 'invalid-run'):
+            owner.select(api=api)
+        with self.assertRaisesRegex(RuntimeError, 'run-id'):
+            owner.select('42\nartifact_id=43', api=api)
+
+    def test_producer_source_and_workflow_are_bound_to_consumer_before_download(self):
+        import base64
+        owner = reference.producer_selection
+        producer, consumer = 'a' * 40, 'b' * 40
+        comparison = {'status': 'ahead', 'base_commit': {'sha': producer},
+                      'merge_base_commit': {'sha': producer},
+                      'ahead_by': 1, 'behind_by': 0, 'total_commits': 1,
+                      'commits': [{'sha': consumer}],
+                      'files': [{'filename': 'tools/go_runtime_cost_probe.py'},
+                                {'filename': 'docs/development/go-runtime-costs.md'}]}
+        raw = (owner.ROOT / owner.WORKFLOW).read_bytes()
+        recipe = {'type': 'file', 'path': owner.WORKFLOW, 'encoding': 'base64',
+                  'size': len(raw), 'content': base64.b64encode(raw).decode('ascii')}
+        def api(path):
+            if path.startswith('compare/'):
+                self.assertIn(producer + '...' + consumer, path)
+                return comparison
+            self.assertEqual(path, 'contents/' + owner.WORKFLOW + '?ref=' + producer)
+            return recipe
+        with patch.object(owner, 'current_head', return_value=consumer):
+            selected = owner.bind_source({'headSha': producer}, api)
+        self.assertEqual(selected['sourceComparison']['consumerHead'], consumer)
+        self.assertEqual(selected['sourceComparison']['relevantChangedFiles'], 0)
+        for row in ({'filename': 'tools/requirements.lock'}, {'filename': 'crates/latent-core/src/budget.rs'},
+                    {'filename': 'docs/other.md', 'previous_filename': owner.WORKFLOW}):
+            with self.subTest(row=row), self.assertRaisesRegex(RuntimeError, 'Go-cost-producer-source-'):
+                owner.validate_comparison(dict(comparison, files=[row]), producer, consumer)
+        with self.assertRaisesRegex(RuntimeError, 'nonancestor-comparison'):
+            owner.validate_comparison(dict(comparison, merge_base_commit={'sha': consumer}), producer, consumer)
+        with self.assertRaisesRegex(RuntimeError, 'nonancestor-comparison'):
+            owner.validate_comparison(dict(comparison, files=[{'filename': 'docs/x'}] * 300), producer, consumer)
+        for bad in (dict(comparison, commits=[{'sha': 'c' * 40}]),
+                    dict(comparison, ahead_by=2, total_commits=2),
+                    dict(comparison, ahead_by=101, total_commits=101, commits=[{'sha': consumer}] * 100),
+                    dict(comparison, behind_by=1)):
+            with self.subTest(bad=bad), self.assertRaisesRegex(RuntimeError, 'nonancestor-comparison'):
+                owner.validate_comparison(bad, producer, consumer)
+        identical = {'status': 'identical', 'base_commit': {'sha': producer},
+                     'merge_base_commit': {'sha': producer}, 'ahead_by': 0, 'behind_by': 0,
+                     'total_commits': 0, 'commits': [], 'files': []}
+        self.assertEqual(owner.validate_comparison(identical, producer, producer)['consumerHead'], producer)
+        with self.assertRaisesRegex(RuntimeError, 'nonancestor-comparison'):
+            owner.validate_comparison(identical, producer, consumer)
+        recipe['content'] = base64.b64encode(b'changed').decode('ascii')
+        recipe['size'] = len(b'changed')
+        with patch.object(owner, 'current_head', return_value=consumer), \
+                self.assertRaisesRegex(RuntimeError, 'recipe-changed'):
+            owner.bind_source({'headSha': producer}, api)
+
+    def test_current_source_rejects_relevant_untracked_and_ignored_files(self):
+        owner = reference.producer_selection
+        head = b'a' * 40 + b'\n'
+        def inspect(changes=b'', untracked=b'', ignored=b''):
+            outputs = [SimpleNamespace(stdout=value) for value in (head, changes, untracked, ignored)]
+            with patch.object(owner.subprocess, 'run', side_effect=outputs) as command:
+                result = owner.current_head()
+            self.assertEqual(command.call_count, 4)
+            self.assertIn('--ignored', command.call_args_list[3].args[0])
+            return result
+        self.assertEqual(inspect(untracked=b'tools/go_cost_producer.py\0'), 'a' * 40)
+        for field, value in (('changes', b'tools/ci/contracts/python/other.json\0'),
+                             ('untracked', b'tools/untracked-helper.py\0'),
+                             ('ignored', b'tools/__pycache__/unexpected.pyc\0')):
+            with self.subTest(field=field), self.assertRaisesRegex(RuntimeError, 'Go-cost-producer-un'):
+                inspect(**{field: value})
+
+    def test_current_go_source_mismatch_is_rejected_before_inspecting_or_executing_products(self):
+        import hashlib
+        from tools import qualify_sdk_scratch as scratch
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            old = b'{"recorded":"old"}'
+            (directory / 'source-inputs.json').write_bytes(old)
+            (directory / 'qualification.json').write_text(json.dumps({
+                'schemaVersion': 'latent.go-capsule.qualification.v1', 'status': 'passed',
+                'sourceIdentityDigest': hashlib.sha256(old).hexdigest()}), encoding='utf-8')
+            with patch.object(scratch, 'current_inputs', return_value={'recorded': 'new'}) as current, \
+                    self.assertRaisesRegex(RuntimeError, 'scratch-original-source-mismatch'):
+                scratch.prepared(directory, 'go')
+            current.assert_called_once_with('go')
 
     def test_private_unknown_duplicate_reordered_or_foreign_mode_observations_are_rejected(self):
         for value in ([{'ok': 'private'}], [{'err': 'memory'}], row() * 2,
