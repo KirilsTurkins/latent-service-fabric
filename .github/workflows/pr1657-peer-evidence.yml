@@ -4,35 +4,29 @@ on:
     branches: ['diag/pr1657-peer-evidence-20261106']
 permissions:
   contents: read
-  actions: read
 jobs:
-  evidence:
+  source:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Read only authenticated bounded peer and source identities
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+      - name: Inspect bounded canonical wait source
         run: |
-          set -euo pipefail
-          gh api repos/KirilsTurkins/latent-service-fabric/actions/artifacts/13526828570/zip > "$RUNNER_TEMP/evidence.zip"
           python3 - <<'PY'
-          import hashlib, json, os, zipfile
           from pathlib import Path
-          path = Path(os.environ['RUNNER_TEMP']) / 'evidence.zip'
-          data = path.read_bytes()
-          assert len(data) == 1921905
-          assert hashlib.sha256(data).hexdigest() == '4ff863d9a6233f8c212a064b60c24fbd549f10fd3fde50450575de0be94a1ccc'
-          with zipfile.ZipFile(path) as archive:
-              assert len(archive.infolist()) <= 200
-              assert sum(item.file_size for item in archive.infolist()) <= 40 * 1024 * 1024
-              assert archive.testzip() is None
-              selected = {'blobs.json', 'rust-thread-http-peer-refusal.json', 'rust-thread-http-terminal.json', 'rust-thread-http-terminal-peer.json', 'rust-thread-http-pending.json', 'rust-thread-http-sibling-before-release.json'}
-              for name in archive.namelist():
-                  if Path(name).name in selected:
-                      assert archive.getinfo(name).file_size < 150000
-                      value = json.loads(archive.read(name))
-                      print('EVIDENCE', name, json.dumps(value, ensure_ascii=True, sort_keys=True))
-              print('JSON_MEMBERS', json.dumps([name for name in archive.namelist() if name.endswith('.json')]))
+          import re
+          p=Path('crates/vendor/wasmtime/src/runtime/component/concurrent.rs')
+          lines=p.read_text().splitlines()
+          print('SOURCE',p,'LINES',len(lines))
+          for i,line in enumerate(lines):
+              if re.search(r'(fn .*waitable|fn .*event|struct WaitableSet|fn .*wake)',line):
+                  print('INDEX',i+1,line)
+          selected=set()
+          for i,line in enumerate(lines):
+              if re.search(r'fn waitable_set_wait\(|fn waitable_set_poll\(|struct WaitableSet|fn wait_for_event\(',line):
+                  selected.update(range(max(0,i-8),min(len(lines),i+140)))
+          assert len(selected)<700
+          for i in sorted(selected):print(f'{i+1}: {lines[i]}')
           PY
