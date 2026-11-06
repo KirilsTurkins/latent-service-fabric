@@ -77,7 +77,62 @@ on:
       - 'wit/**'
       - 'crates/latent-wasmtime/**'
       - '.github/workflows/dotnet-guest.yml'
+      - '.github/workflows/dotnet-guest-development.yml'
+      - 'Cargo.lock'
+      - 'Cargo.toml'
+      - 'examples/echo-contract/capsule.json'
+      - 'examples/echo-contract/deployment.json'
+      - 'rust-toolchain.toml'
+      - 'sdk/profile/transaction-requirements-v1.json'
+      - 'tools/build_observation.py'
+      - 'tools/build_process.py'
+      - 'tools/build_process_linux.py'
+      - 'tools/build_process_signals.py'
+      - 'tools/build_process_windows.py'
+      - 'tools/build_snapshot.py'
+      - 'tools/ci_lane_inventory.py'
+      - 'tools/dev_workflow/__init__.py'
+      - 'tools/dev_workflow/common.py'
+      - 'tools/dev_workflow/dependencies.py'
+      - 'tools/dev_workflow/paths.py'
+      - 'tools/dev_workflow/project.py'
+      - 'tools/dev_workflow/resource_inputs.py'
+      - 'tools/dev_workflow/snapshot.py'
+      - 'tools/dev_workflow/state.py'
+      - 'tools/dev_workflow/transaction_binding.py'
+      - 'tools/dev_workflow/windows.py'
+      - 'tools/guest_api_analysis.py'
+      - 'tools/guest_compatibility.py'
+      - 'tools/guest_compatibility_build.py'
+      - 'tools/guest_compatibility_context.py'
+      - 'tools/guest_compatibility_context_build.py'
+      - 'tools/guest_compiler_capture.py'
+      - 'tools/guest_compiler_edges.py'
+      - 'tools/guest_dependency_inputs.py'
+      - 'tools/guest_emitted_code.py'
+      - 'tools/guest_resources.py'
+      - 'tools/guest_runtime_receipts.py'
+      - 'tools/install_guest_bindgen.py'
+      - 'tools/qualify_dotnet_closed_filesystem.py'
+      - 'tools/qualify_dotnet_published_tasks.py'
+      - 'tools/qualify_dotnet_resources.py'
+      - 'tools/qualify_sdk_scratch.py'
+      - 'tools/requirements.lock'
+      - 'tools/stage_runtime_wit.py'
+      - 'tools/tests/test_build_provenance_schemas.py'
+      - 'tools/tests/test_captured_compiler_isolation.py'
+      - 'tools/tests/test_dotnet_closed_filesystem.py'
+      - 'tools/tests/test_dotnet_closed_io.py'
+      - 'tools/tests/test_dotnet_filesystem_qualification.py'
+      - 'tools/tests/test_dotnet_filesystem_runtime.py'
+      - 'tools/tests/test_dotnet_published_tasks.py'
+      - 'tools/tests/test_dotnet_resources.py'
+      - 'tools/tests/test_dotnet_task_wait.py'
+      - 'tools/tests/test_sdk_scratch_fixture.py'
+      - 'tools/tests/test_sdk_scratch_probe.py'
+      - 'tools/tests/test_sdk_scratch_qualification.py'
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -113,8 +168,8 @@ jobs:
         shell: bash
         run: |
           git archive --format=tar.gz --output "$RUNNER_TEMP/dotnet-guest-source.tar.gz" HEAD -- \
-            apps sdk/dotnet-guest sdk/rust examples tools crates wit schemas docs .cargo \
-            Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/dotnet-guest.yml
+            apps sdk/dotnet-guest sdk/rust sdk/transaction-contract examples tools crates wit schemas docs .cargo \
+            sdk/profile/transaction-requirements-v1.json Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/dotnet-guest.yml
           test "$(stat --format=%s "$RUNNER_TEMP/dotnet-guest-source.tar.gz")" -le 134217728
           git rev-parse HEAD > "$RUNNER_TEMP/dotnet-guest-source.sha"
       - name: Retain the exact reviewed command contract input
