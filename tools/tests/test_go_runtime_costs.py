@@ -76,7 +76,7 @@ class GoRuntimeCosts(unittest.TestCase):
         def actual():
             return {'processReaped': True, 'exitCode': 0, 'decoded': row('stack-gc'),
                 'response': {'outcomeKnown': True, 'data': {'resolvedRevision': 'selected',
-                    'consumption': {'cpuFuel': '5000000', 'peakMemoryBytes': '3145728',
+                    'consumption': {'cpuFuel': '5000000', 'peakMemoryBytes': '16777216',
                         'wallTimeMicros': '10000', **{key: '0' for key in probe.ZERO_EFFECTS}}}}}
         receipt = probe.invocation(actual(), 'stack-gc', budget, 'selected')
         self.assertEqual(receipt['consumption']['cpuFuel'], 5000000)
@@ -99,6 +99,21 @@ class GoRuntimeCosts(unittest.TestCase):
             probe.invocation(changed, 'stack-gc', budget, 'selected')
         with self.assertRaisesRegex(RuntimeError, 'exact-published-revision'):
             probe.invocation(actual(), 'stack-gc', budget, 'foreign')
+
+    def test_reported_node_peak_must_cover_simultaneous_heap_and_stack(self):
+        budget = {'cpuFuel': 1000000000, 'memoryBytes': 67108864, 'wallTimeLimitMillis': 120000}
+        decoded = row('stack-gc')
+        live = probe.observed(decoded, 'stack-gc')['memory']
+        minimum = live['heapAlloc'] + live['stackInuse']
+        actual = {'processReaped': True, 'exitCode': 0, 'decoded': decoded,
+            'response': {'outcomeKnown': True, 'data': {'resolvedRevision': 'selected',
+                'consumption': {'cpuFuel': '5000000', 'peakMemoryBytes': str(minimum),
+                    'wallTimeMicros': '10000', **{key: '0' for key in probe.ZERO_EFFECTS}}}}}
+        self.assertEqual(probe.invocation(actual, 'stack-gc', budget, 'selected')
+                         ['consumption']['peakMemoryBytes'], minimum)
+        actual['response']['data']['consumption']['peakMemoryBytes'] = str(minimum - 1)
+        with self.assertRaisesRegex(RuntimeError, 'live-guest-memory-exceeds-node-peak'):
+            probe.invocation(actual, 'stack-gc', budget, 'selected')
 
     def test_consumption_cannot_accept_boolean_negative_private_or_unbounded_integer_fields(self):
         for value in (True, -1, 'private', '1.0', str(2**64)):
