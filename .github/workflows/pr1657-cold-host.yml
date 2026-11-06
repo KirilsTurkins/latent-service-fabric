@@ -1,0 +1,103 @@
+name: PR 1657 checked cold-host build profile
+on:
+  push:
+    branches: ['diag/pr1657-cold-host-20261106']
+permissions:
+  contents: read
+jobs:
+  source:
+    name: Check the diagnostic-only host optimization without changing guest budgets
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
+        with:
+          python-version: 3.13.5
+      - name: Select exact current PR source and retain the object publisher separately
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/pr1657-cold-host"
+          cp .github/pr1657_http_followup.py "$RUNNER_TEMP/pr1657-cold-host/publish.py"
+          git fetch --no-tags --depth=1 origin 00d6ecd48187c292e2d7b9fdc401c8698d3df896
+          git checkout --detach 00d6ecd48187c292e2d7b9fdc401c8698d3df896
+          python3 -m pip install --requirement tools/requirements.lock
+      - name: Apply only the build-selection, matching regression and documentation changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -B - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          names = {
+              'tools/qualify_rust_thread_http_combined.py': '2b9684645994db09d40ac505192ce92ad1f02a01',
+              'tools/tests/test_rust_thread_http_combined_node.py': '6706bd35cb76082dcf3edee8cd3c5245c77dca00',
+              'docs/testing/rust-combined-http-diagnostic.md': 'b7cf981da1d35a8cfeab0d15c7c2e7aaa708c54b',
+          }
+          assert not subprocess.check_output(['git', 'status', '--porcelain']).strip()
+          for name, sha in names.items():
+              assert subprocess.check_output(['git', 'hash-object', name]).decode().strip() == sha
+          def replace(name, before, after):
+              path = Path(name)
+              text = path.read_text(encoding='utf-8')
+              assert text.count(before) == 1, name
+              path.write_text(text.replace(before, after), encoding='utf-8')
+          qualification = 'tools/qualify_rust_thread_http_combined.py'
+          replace(qualification,
+              '# Only this diagnostic build opts into optimized source-proof code. Debug\n# assertions and overflow checks remain enabled by the owner environment.\n',
+              '# Only this diagnostic build optimizes host preparation as well as the\n# source verifier. Cold compilation still consumes the original guest deadline.\n# Debug assertions and overflow checks stay enabled by the owner environment;\n# no source proof, runtime admission, or guest compiler setting is changed.\nHOST_OPTIMIZATION = \'profile.dev.opt-level=1\'\n')
+          replace(qualification,
+              "'--config', ROOT / '.cargo/managed-guest.toml', '--config', VERIFIER_OPTIMIZATION,",
+              "'--config', ROOT / '.cargo/managed-guest.toml',\n        '--config', HOST_OPTIMIZATION, '--config', VERIFIER_OPTIMIZATION,")
+          replace(qualification, 'sourceVerifierOptimization=3, hostDebugAssertions=True, hostOverflowChecks=True,',
+              'hostOptimization=1, sourceVerifierOptimization=3, hostDebugAssertions=True, hostOverflowChecks=True,')
+          tests = 'tools/tests/test_rust_thread_http_combined_node.py'
+          replace(tests, 'def test_only_diagnostic_source_verifier_build_is_optimized(self):',
+              'def test_diagnostic_host_optimization_preserves_guest_features_and_verifier(self):')
+          replace(tests,
+              "self.assertEqual(configurations, [qualification.ROOT / '.cargo/managed-guest.toml',\n                         'profile.dev.package.latent-component-threading.opt-level=3'])",
+              "self.assertEqual(configurations, [qualification.ROOT / '.cargo/managed-guest.toml',\n                         'profile.dev.opt-level=1',\n                         'profile.dev.package.latent-component-threading.opt-level=3'])")
+          replace('docs/testing/rust-combined-http-diagnostic.md',
+              'build additionally optimizes `latent-component-threading` at level 3, alongside\nthe existing managed-guest compiler/parser optimizations, while preserving\nhost debug assertions and overflow checks. It still independently recomputes\n',
+              'build selects host optimization level 1 for cold preparation and keeps\n`latent-component-threading` at level 3, alongside the existing managed-guest\ncompiler/parser optimizations. Host debug assertions and overflow checks remain\nenabled. This is a diagnostic build choice, not a change to ordinary profiles,\nWasmtime guest optimization, or any preparation/activation deadline. The native\norigin receipt records both host and verifier optimization levels. The host\nstill independently recomputes\n')
+          stage = Path(os.environ['RUNNER_TEMP']) / 'pr1657-cold-host'
+          (stage / 'paths.json').write_text(json.dumps(sorted(names)), encoding='utf-8')
+          PY
+          git diff --check
+          python3 -B -m unittest tools.tests.test_rust_thread_http_combined_node tools.tests.test_rust_thread_http_sibling -v
+          python3 -B -c 'from tools.ci_coverage import validate; validate(); print("CI contracts passed")'
+      - name: Publish exact three-file source objects without moving the PR branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -B - <<'PY'
+          import importlib.util, json, os
+          from pathlib import Path
+          stage = Path(os.environ['RUNNER_TEMP']) / 'pr1657-cold-host'
+          spec = importlib.util.spec_from_file_location('publisher', stage / 'publish.py')
+          publisher = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(publisher)
+          publisher.BASE = '00d6ecd48187c292e2d7b9fdc401c8698d3df896'
+          publisher.BASE_TREE = '07f61d25edcc3fb12ab01334b7732c3515b8cf68'
+          publisher.PATHS = json.loads((stage / 'paths.json').read_bytes())
+          # The retained publisher only writes immutable blobs/tree/commit;
+          # it has no ref-update call. Promotion remains an expected-head write.
+          publisher.publish()
+          PY
+      - name: Retain exact checked changes and object identities
+        if: always()
+        run: git diff HEAD --binary > "$RUNNER_TEMP/pr1657-cold-host/continuation.patch"
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        if: always()
+        with:
+          name: pr1657-cold-host-${{ github.sha }}
+          path: ${{ runner.temp }}/pr1657-cold-host/
+          retention-days: 7
+          if-no-files-found: error
