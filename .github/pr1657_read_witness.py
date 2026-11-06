@@ -33,9 +33,6 @@ def api(suffix):
 
 
 def public(value, depth=0):
-    # Only bounded enums, hashes, counters and structural state reach the log.
-    # Headers, environment, command lines and credential/configuration values
-    # are not needed to assess causal progress or retirement.
     if depth > 14:
         return '[depth-bound]'
     if value is None or isinstance(value, (bool, int, float)):
@@ -50,7 +47,7 @@ def public(value, depth=0):
     assert isinstance(value, dict)
     return {key: public(item, depth + 1) for key, item in value.items()
             if not any(word in key.lower() for word in
-                ('credential', 'secret', 'authorization', 'headers', 'environment', 'argv', 'startup', 'signing', 'commands'))}
+                ('credential', 'secret', 'authorization', 'headers', 'environment', 'argv', 'startup', 'signing', 'commands', 'materials', 'compilerprojection'))}
 
 
 def main():
@@ -80,7 +77,6 @@ def main():
     parsed = urllib.parse.urlsplit(location)
     assert parsed.scheme == 'https' and parsed.hostname and not parsed.username and not parsed.password
     assert parsed.hostname.endswith(('.blob.core.windows.net', '.githubusercontent.com', '.github.com'))
-    # A separate request deliberately carries no GitHub authentication.
     with urllib.request.urlopen(location, timeout=60) as response:
         data = response.read(LIMIT + 1)
     assert len(data) == selected['size_in_bytes']
@@ -90,7 +86,7 @@ def main():
                'artifact': selected['id'], 'bytes': len(data), 'digest': digest, 'records': {}}
     wanted = {'result.json', 'FAILED.json', 'witness.json', 'rust-thread-http-sibling.json',
               'rust-thread-http-terminal.json', 'rust-thread-http-peer-refusal.json',
-              'examples-peer-final.json', 'foreign-peer-final.json'}
+              'examples-peer-final.json', 'foreign-peer-final.json', 'rust-combined-native-denied.json'}
     with zipfile.ZipFile(io.BytesIO(data)) as archive:
         members = archive.infolist()
         assert 0 < len(members) <= 512
@@ -103,14 +99,15 @@ def main():
         assert archive.testzip() is None
         summary['members'] = len(members)
         summary['crcVerified'] = True
+        summary['controlMembers'] = [row.filename for row in members if 'controls' in PurePosixPath(row.filename).parts]
         for row in members:
             path = PurePosixPath(row.filename)
             if path.name not in wanted or 'commands' in path.parts or 'signed' in path.parts:
                 continue
             assert row.file_size <= 2 * 1024 * 1024
             value = json.loads(archive.read(row))
-            if path.name == 'result.json':
-                value = {key: value[key] for key in ('schemaVersion', 'status', 'source', 'witness') if key in value}
+            if path.name in ('result.json', 'FAILED.json'):
+                value = {key: value[key] for key in ('schemaVersion', 'status', 'sourceRevision', 'stage', 'errorCategory', 'nativeGrantRefusal', 'runtimeLimits', 'witness', 'cleanup') if key in value}
             summary['records'][row.filename] = public(value)
     encoded = json.dumps(summary, indent=2, sort_keys=True)
     assert len(encoded.encode()) <= 256 * 1024, 'bounded summary'
