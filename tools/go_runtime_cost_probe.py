@@ -61,6 +61,12 @@ def invocation(row, mode, budget, revision):
             and 0 < wall <= budget['wallTimeLimitMillis'] * 1000
             and all(integer(consumption[key]) == 0 for key in ZERO_EFFECTS),
             'Go-cost-original-admitted-budget-and-zero-effects')
+    # ReadMemStats captures disjoint live heap objects and stack spans at one
+    # instant in the guest's Wasm linear memory. The node's aggregate Store
+    # peak cannot be smaller than those simultaneously observed guest bytes.
+    live = result['memory']
+    require(live['heapAlloc'] + live['stackInuse'] <= memory,
+            'Go-cost-live-guest-memory-exceeds-node-peak')
     return {**result, 'consumption': {'cpuFuel': fuel, 'peakMemoryBytes': memory,
                                      'wallTimeMicros': wall},
             'sourceOfConsumption': 'actual-node-invocation-result',
