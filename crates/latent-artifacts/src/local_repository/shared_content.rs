@@ -1,8 +1,11 @@
 //! Bounded immutable blobs, hard-linked into publication directories.
 //!
 //! Committed publication/history membership pins its files, including after
-//! retirement. Only uncommitted directories and zero-reference blobs are GC
-//! candidates. No live source can lose a committed payload through this GC.
+//! retirement. General GC still handles only uncommitted content. A separate
+//! durable tombstone cleanup plan is required to release committed capsule files.
+
+mod cleanup;
+pub(super) mod reclamation;
 
 use super::*;
 use latent_core::{ArtifactBlobDigest, PublicationId};
@@ -34,6 +37,7 @@ pub(super) struct SharedContent {
     publication_bytes: u64,
     incomplete_bytes: u64,
     external_bytes: u64,
+    retention_bytes: u64,
     metadata_bytes: usize,
     healthy: bool,
 }
@@ -49,6 +53,8 @@ pub struct PublicationStorageSnapshot {
     pub incomplete_file_bytes: u64,
     /// Web lifecycle/evidence files, including bounded atomic-write exposure.
     pub web_control_bytes: u64,
+    /// Retention pins/receipts and bounded intent/atomic-write exposure.
+    pub retention_control_bytes: u64,
     pub accounted_metadata_bytes: usize,
 }
 
@@ -60,6 +66,16 @@ pub struct PublicationContentReclamation {
 }
 
 impl SharedContent {
+    pub(super) fn check_retention_control(&self, bytes: u64) -> Result<(), PlatformError> {
+        self.check()?;
+        self.check_exposure(bytes.saturating_sub(self.retention_bytes), 0, 0)
+    }
+    pub(super) fn replace_retention_control(&mut self, bytes: u64) -> Result<(), PlatformError> {
+        self.check_retention_control(bytes)?;
+        self.retention_bytes = bytes;
+        Ok(())
+    }
+
     pub(super) fn check_web_control(&self, bytes: u64) -> Result<(), PlatformError> {
         self.check()?;
         self.check_exposure(bytes.saturating_sub(self.external_bytes), 0, 0)
@@ -80,6 +96,7 @@ impl SharedContent {
             publication_bytes: 0,
             incomplete_bytes: 0,
             external_bytes: 0,
+            retention_bytes: 0,
             metadata_bytes: 0,
             healthy: true,
         }
@@ -158,6 +175,7 @@ impl SharedContent {
             .checked_add(self.publication_bytes)
             .and_then(|n| n.checked_add(self.incomplete_bytes))
             .and_then(|n| n.checked_add(self.external_bytes))
+            .and_then(|n| n.checked_add(self.retention_bytes))
             .and_then(|n| n.checked_add(blobs))
             .and_then(|n| n.checked_add(publications))
             .is_none_or(|n| n > self.config.max_storage_bytes)
@@ -473,6 +491,7 @@ impl SharedContent {
             publication_file_bytes: self.publication_bytes,
             incomplete_file_bytes: self.incomplete_bytes,
             web_control_bytes: self.external_bytes,
+            retention_control_bytes: self.retention_bytes,
             accounted_metadata_bytes: self.metadata_bytes,
         }
     }

@@ -58,11 +58,11 @@ impl Harness {
         source: Option<Arc<dyn ArtifactRepository>>,
         audit: Option<latent_audit::AuditHandle>,
     ) -> Self {
-        Self::open(limits, source, audit, false, None, false, None).await
+        Self::open(limits, source, audit, false, None, false, None, false).await
     }
 
     pub async fn with_rollouts(limits: ManagementLimits, audit: latent_audit::AuditHandle) -> Self {
-        Self::open(limits, None, Some(audit), true, None, false, None).await
+        Self::open(limits, None, Some(audit), true, None, false, None, false).await
     }
 
     pub async fn with_canary(
@@ -70,17 +70,34 @@ impl Harness {
         audit: latent_audit::AuditHandle,
         hub: latent_telemetry::BoundedPhase2CanaryOutcomeWindow,
     ) -> Self {
-        Self::open(limits, None, Some(audit), true, Some(hub), false, None).await
+        Self::open(
+            limits,
+            None,
+            Some(audit),
+            true,
+            Some(hub),
+            false,
+            None,
+            false,
+        )
+        .await
     }
     pub async fn with_capabilities(limits: ManagementLimits) -> Self {
-        Self::open(limits, None, None, false, None, true, None).await
+        Self::open(limits, None, None, false, None, true, None, false).await
     }
 
     pub async fn with_preparation(
         limits: ManagementLimits,
         backend: Arc<dyn latent_executor::ExecutionBackend>,
     ) -> Self {
-        Self::open(limits, None, None, false, None, false, Some(backend)).await
+        Self::open(limits, None, None, false, None, false, Some(backend), false).await
+    }
+
+    pub async fn with_publication_maintenance(
+        limits: ManagementLimits,
+        audit: Option<latent_audit::AuditHandle>,
+    ) -> Self {
+        Self::open(limits, None, audit, false, None, false, None, true).await
     }
 
     async fn open(
@@ -91,6 +108,7 @@ impl Harness {
         canary: Option<latent_telemetry::BoundedPhase2CanaryOutcomeWindow>,
         capabilities: bool,
         preparation: Option<Arc<dyn latent_executor::ExecutionBackend>>,
+        publication_maintenance: bool,
     ) -> Self {
         let root = TempRoot::new();
         let artifacts = Arc::new(
@@ -100,13 +118,35 @@ impl Harness {
             )
             .unwrap(),
         );
-        let deployments = DirectoryDeploymentRepository::open(
-            root.0.join("deployments"),
-            artifacts.clone(),
-            DirectoryDeploymentRepositoryConfig::default(),
-        )
-        .await
-        .unwrap();
+        let deployments = if publication_maintenance {
+            DirectoryDeploymentRepository::open_with_catalog(
+                root.0.join("deployments"),
+                artifacts.clone(),
+                DirectoryDeploymentRepositoryConfig::default(),
+                artifacts.lifecycle_authority(),
+                Arc::new(
+                    latent_manifest::RuntimeCompatibilityProfile::new(
+                        "wasmtime",
+                        "48.0.7",
+                        "x86_64-unknown-linux-gnu",
+                        &["x86_64.sse2"],
+                        65536,
+                        1000,
+                    )
+                    .unwrap(),
+                ),
+            )
+            .await
+            .unwrap()
+        } else {
+            DirectoryDeploymentRepository::open(
+                root.0.join("deployments"),
+                artifacts.clone(),
+                DirectoryDeploymentRepositoryConfig::default(),
+            )
+            .await
+            .unwrap()
+        };
         let deployments = Arc::new(match canary {
             Some(hub) => deployments.with_canary(hub).unwrap(),
             None => deployments,
@@ -127,6 +167,11 @@ impl Harness {
         } else {
             (None, None)
         };
+        if publication_maintenance {
+            deployments
+                .bind_publication_reference_authority(&artifacts)
+                .unwrap();
+        }
         let inventory = Arc::new(Inventory::new());
         let services = ManagementServices {
             rollouts,
@@ -150,6 +195,11 @@ impl Harness {
             )
             .with_http_control(deployments.clone())
             .unwrap();
+        let adapter = if publication_maintenance {
+            adapter.with_web_catalog(artifacts.clone()).unwrap()
+        } else {
+            adapter
+        };
         let adapter = if let Some(backend) = preparation {
             adapter
                 .with_web_catalog(artifacts.clone())

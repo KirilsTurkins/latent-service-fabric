@@ -142,12 +142,14 @@ impl PageCharge {
             return Ok(());
         };
         let heap = codec::owned_graph_bound(bytes, maximum)?;
-        let bytes = heap.checked_add(std::mem::size_of::<AuditStoredRecord>())
+        let bytes = heap
+            .checked_add(std::mem::size_of::<AuditStoredRecord>())
             .and_then(|bytes| bytes.checked_add(4096))
             // Original graph, currently converted protobuf graph, and one
             // temporary cloning/conversion image may coexist. Encoded buffers
             // and the reservation Vec remain in the historical4q allowance.
-            .and_then(|bytes| bytes.checked_mul(3)).ok_or_else(capacity)?;
+            .and_then(|bytes| bytes.checked_mul(3))
+            .ok_or_else(capacity)?;
         let mut records = self.records.lock().map_err(|_| unavailable())?;
         if records.len() == records.capacity() {
             return Err(capacity());

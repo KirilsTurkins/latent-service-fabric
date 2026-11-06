@@ -28,15 +28,18 @@ pub struct ArtifactPreparationReadLimits {
 /// A compiler job retains this source until its actual reads and compilation
 /// finish, even if its last caller disappears. Cache entries and ready results
 /// should retain the fixed epoch identity instead, so they do not keep the
-/// repository's ownership lock alive. Cloning only clones the owner's `Arc`.
-#[derive(Clone)]
+/// repository's ownership lock alive. Cloning retains the owner's `Arc` and
+/// increments the same fixed-size preparation-read count.
 pub struct OwnedArtifactPreparationSource {
     repository: Arc<DirectoryArtifactRepository>,
 }
 
 impl OwnedArtifactPreparationSource {
-    pub(crate) fn new(repository: Arc<DirectoryArtifactRepository>) -> Self {
-        Self { repository }
+    pub(crate) fn new(repository: Arc<DirectoryArtifactRepository>) -> Option<Self> {
+        if !repository.capture_preparation_read() {
+            return None;
+        }
+        Some(Self { repository })
     }
 
     pub fn eligibility(
@@ -136,5 +139,19 @@ impl OwnedArtifactPreparationSource {
             limits,
             Some(super::read_wait::ReadControl { original, wait }),
         )
+    }
+}
+
+impl Clone for OwnedArtifactPreparationSource {
+    fn clone(&self) -> Self {
+        self.repository.clone_preparation_read();
+        Self {
+            repository: Arc::clone(&self.repository),
+        }
+    }
+}
+impl Drop for OwnedArtifactPreparationSource {
+    fn drop(&mut self) {
+        self.repository.release_preparation_read();
     }
 }

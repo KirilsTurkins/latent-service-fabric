@@ -1,5 +1,7 @@
 //! Embedded, tenant-safe deployment catalog and immutable route publication.
 
+mod publication_deletion;
+
 mod admission_fence;
 pub mod bindings;
 mod compiler;
@@ -522,6 +524,7 @@ impl DirectoryDeploymentRepository {
                 }
                 None => http::table::HttpTable::empty(&http_budget)?,
             };
+            http.validate_retained_web_publications(artifacts.as_ref())?;
             let operations = if let Some(mut data) = control
                 .as_mut()
                 .and_then(|value| value.deployment_operations.take())

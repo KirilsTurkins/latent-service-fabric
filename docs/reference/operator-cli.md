@@ -423,3 +423,7 @@ typed classification. See [validation tiers](../../VALIDATION.md) for the bounde
 CLI/unit/real-process tests. The separate
 [historical runtime acceptance report](../phase-1-completion.md) records the completed
 scaling, reclamation and integrated conformance gate.
+
+## Publication retention and deletion
+
+`release retention` has snapshot, pin, unpin, delete, assess, reclaim and operation subcommands. All mutations use explicit retained operation IDs; the CLI never retries or invents a new ID after uncertainty. The [deletion guide](../operations/publication-deletion.md) documents both fences, mandatory audit, capacity and recovery.

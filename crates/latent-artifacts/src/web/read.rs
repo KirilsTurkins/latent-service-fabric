@@ -1,6 +1,8 @@
 use super::{CheckedWebLayout, WebUseEligibility};
 use crate::{AdmissionRecheck, PublicationRef};
+use latent_core::PublicationId;
 use latent_core::{PlatformError, TenantId};
+use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
 /// Shared catalog response/read ownership. Per-asset/render limits still apply;
@@ -39,48 +41,87 @@ pub struct WebReadSnapshot {
 }
 pub(crate) struct WebReadBudget {
     limits: WebReadLimits,
-    state: Mutex<WebReadSnapshot>,
+    state: Mutex<WebReadState>,
+}
+#[derive(Default)]
+struct WebReadState {
+    snapshot: WebReadSnapshot,
+    references: BTreeMap<PublicationId, usize>,
 }
 impl WebReadBudget {
     pub(crate) fn new(limits: WebReadLimits) -> Result<Self, PlatformError> {
         limits.validate()?;
         Ok(Self {
             limits,
-            state: Mutex::new(WebReadSnapshot::default()),
+            state: Mutex::new(WebReadState::default()),
         })
     }
+    #[cfg(test)]
     pub(crate) fn reserve(
         self: &Arc<Self>,
         bytes: usize,
     ) -> Result<Arc<WebReadPermit>, PlatformError> {
+        self.reserve_inner(bytes, None)
+    }
+    pub(crate) fn reserve_publication(
+        self: &Arc<Self>,
+        bytes: usize,
+        publication: &PublicationId,
+    ) -> Result<Arc<WebReadPermit>, PlatformError> {
+        // Includes the key, one map node, and its bounded allocation overhead.
+        let bytes = bytes
+            .checked_add(PublicationId::TEXT_BYTES + 256)
+            .ok_or_else(super::exhausted)?;
+        self.reserve_inner(bytes, Some(publication.clone()))
+    }
+    pub(crate) fn references_any(
+        &self,
+        publications: &[crate::PublicationRef],
+    ) -> Result<bool, PlatformError> {
+        let state = self.state.try_lock().map_err(|_| super::exhausted())?;
+        Ok(publications
+            .iter()
+            .any(|p| state.references.contains_key(&p.id)))
+    }
+    fn reserve_inner(
+        self: &Arc<Self>,
+        bytes: usize,
+        publication: Option<PublicationId>,
+    ) -> Result<Arc<WebReadPermit>, PlatformError> {
         let mut state = self.state.try_lock().map_err(|_| super::exhausted())?;
         let retained_bytes = state
+            .snapshot
             .retained_bytes
             .checked_add(bytes)
             .ok_or_else(super::exhausted)?;
         if bytes == 0
-            || state.active_reads >= self.limits.maximum_reads
+            || state.snapshot.active_reads >= self.limits.maximum_reads
             || retained_bytes > self.limits.maximum_bytes
         {
             return Err(super::exhausted());
         }
-        state.active_reads += 1;
-        state.retained_bytes = retained_bytes;
+        state.snapshot.active_reads += 1;
+        state.snapshot.retained_bytes = retained_bytes;
+        if let Some(id) = &publication {
+            *state.references.entry(id.clone()).or_default() += 1;
+        }
         Ok(Arc::new(WebReadPermit {
             owner: Arc::clone(self),
             bytes,
+            publication,
         }))
     }
     pub(crate) fn snapshot(&self) -> Result<WebReadSnapshot, PlatformError> {
         self.state
             .try_lock()
-            .map(|state| *state)
+            .map(|state| state.snapshot)
             .map_err(|_| super::exhausted())
     }
 }
 pub(crate) struct WebReadPermit {
     owner: Arc<WebReadBudget>,
     bytes: usize,
+    publication: Option<PublicationId>,
 }
 impl Drop for WebReadPermit {
     fn drop(&mut self) {
@@ -89,8 +130,18 @@ impl Drop for WebReadPermit {
             .state
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        state.active_reads -= 1;
-        state.retained_bytes -= self.bytes;
+        state.snapshot.active_reads -= 1;
+        state.snapshot.retained_bytes -= self.bytes;
+        if let Some(id) = &self.publication {
+            let count = state
+                .references
+                .get_mut(id)
+                .expect("owned web read reference");
+            *count -= 1;
+            if *count == 0 {
+                state.references.remove(id);
+            }
+        }
     }
 }
 

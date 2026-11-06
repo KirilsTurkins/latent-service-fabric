@@ -372,6 +372,10 @@ impl Catalogs {
                 deployments
             };
             let deployments = Arc::new(deployments);
+            platform(
+                Stage::DeploymentCatalog,
+                deployments.bind_publication_reference_authority(artifacts.as_ref()),
+            )?;
             if settings.providers.is_none() && !deployments.binding_definitions()?.is_empty() {
                 return Err(mode_error());
             }

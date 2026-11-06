@@ -51,6 +51,9 @@ pub async fn execute(operation: Operation, session: &Session) -> Result<Outcome,
         return super::phase2::execute(operation, session).await;
     }
     match operation {
+        Operation::PublicationMaintenance(operation) => {
+            super::retention::execute(*operation, session).await
+        }
         Operation::Web(operation) => super::web::execute(*operation, session).await,
         Operation::Trigger(operation) => super::triggers::execute(*operation, session).await,
         Operation::Capability(operation) => super::capabilities::execute(*operation, session).await,

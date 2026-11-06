@@ -1,6 +1,7 @@
 //! Componentless web publications inside the exclusively owned artifact catalog.
 //! Componentless web publications share the actual catalog owner, admission
 //! work slot, writer and content/index budgets. They never enter capsule indexes.
+pub(super) mod cleanup;
 mod evidence;
 mod mutation;
 mod persistence;
@@ -44,6 +45,87 @@ pub(super) struct WebCatalog {
     pub(super) after_payload_staged: std::sync::Mutex<Option<Box<dyn FnOnce() + Send>>>,
 }
 impl WebCatalog {
+    /// Hold the private web index across durable visibility removal. The outer
+    /// caller already holds the shared lifecycle and web writer epochs.
+    pub(super) fn with_tombstones(
+        &self,
+        publications: &[PublicationRef],
+        action: &mut dyn FnMut() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        let mut state = self.state.try_write().map_err(|_| busy())?;
+        for reference in publications {
+            if let Some(entry) = state.entries.get(&reference.id) {
+                if entry.record.publication != *reference
+                    || (entry.deleted && entry.layout.is_some())
+                    || !matches!(
+                        entry.record.state,
+                        ReleaseLifecycleState::Retired | ReleaseLifecycleState::Revoked
+                    )
+                {
+                    return Err(corrupt("publication-deletion-web-authority-changed"));
+                }
+            }
+        }
+        action()?;
+        for reference in publications {
+            if let Some(entry) = state.entries.get_mut(&reference.id) {
+                entry.deleted = true;
+            }
+        }
+        Ok(())
+    }
+    pub(super) fn terminal_for_deletion(
+        &self,
+        publication: &PublicationRef,
+    ) -> Result<bool, PlatformError> {
+        let state = self.state.try_read().map_err(|_| busy())?;
+        let entry = state.entry(publication)?;
+        Ok(matches!(
+            entry.record.state,
+            ReleaseLifecycleState::Retired | ReleaseLifecycleState::Revoked
+        ))
+    }
+    pub(super) fn retained_readers(
+        &self,
+        publications: &[PublicationRef],
+    ) -> Result<bool, PlatformError> {
+        self.reads.references_any(publications)
+    }
+    pub(super) fn tombstoned_generation(
+        &self,
+        reference: &PublicationRef,
+    ) -> Result<u64, PlatformError> {
+        self.epoch.check()?;
+        let state = self.state.try_read().map_err(|_| busy())?;
+        state
+            .entries
+            .get(&reference.id)
+            .filter(|entry| {
+                entry.deleted
+                    && entry.record.publication == *reference
+                    && matches!(
+                        entry.record.state,
+                        ReleaseLifecycleState::Retired | ReleaseLifecycleState::Revoked
+                    )
+            })
+            .map(|entry| entry.record.generation)
+            .ok_or_else(crate::publication_retention::unavailable_target)
+    }
+
+    pub(super) fn retention_generation(
+        &self,
+        reference: &PublicationRef,
+    ) -> Result<u64, PlatformError> {
+        self.epoch.check()?;
+        let state = self.state.try_read().map_err(|_| busy())?;
+        state
+            .entries
+            .get(&reference.id)
+            .filter(|entry| !entry.deleted && entry.record.publication.scope == reference.scope)
+            .map(|entry| entry.record.generation)
+            .ok_or_else(crate::publication_retention::unavailable_target)
+    }
+
     pub(super) fn new(
         authority: Option<Arc<dyn crate::AdmissionAuthority>>,
     ) -> Result<Self, PlatformError> {
@@ -71,14 +153,20 @@ struct State {
 }
 #[derive(Clone)]
 struct Entry {
+    deleted: bool,
     record: WebLifecycleRecord,
     completion: ArtifactBlobDigest,
-    layout: Arc<CheckedWebLayout>,
+    layout: Option<Arc<CheckedWebLayout>>,
     projection: Option<Arc<projection::Projection>>,
     grant: Option<Arc<dyn WebAdmissionGrant>>,
     generation: Arc<WebGeneration>,
 }
 impl Entry {
+    fn layout(&self) -> Result<&Arc<CheckedWebLayout>, PlatformError> {
+        self.layout
+            .as_ref()
+            .ok_or_else(|| corrupt("web-payload-reclaimed"))
+    }
     fn retained_bytes(&self) -> Result<usize, PlatformError> {
         let encoded = persistence::encode_line(
             &self.record,
@@ -88,7 +176,13 @@ impl Entry {
             .len()
             .checked_mul(4)
             .and_then(|n| n.checked_add(2048))
-            .and_then(|n| n.checked_add(self.layout.retained_bytes()))
+            .and_then(|n| {
+                n.checked_add(
+                    self.layout
+                        .as_ref()
+                        .map_or(0, |layout| layout.retained_bytes()),
+                )
+            })
             .and_then(|n| {
                 n.checked_add(
                     self.projection
@@ -107,6 +201,12 @@ impl Entry {
     }
 }
 impl State {
+    fn payload_entries(&self) -> usize {
+        self.entries
+            .values()
+            .filter(|entry| entry.layout.is_some())
+            .count()
+    }
     fn retained_bytes(&self) -> Result<usize, PlatformError> {
         let mut bytes = 4096usize;
         for entry in self.entries.values() {
@@ -134,7 +234,7 @@ impl State {
         reference.scope.validate()?;
         self.entries
             .get(&reference.id)
-            .filter(|entry| entry.record.publication == *reference)
+            .filter(|entry| !entry.deleted && entry.record.publication == *reference)
             .ok_or_else(|| error(PlatformErrorCode::NotFound, "web-publication-not-found"))
     }
     fn check_receipt(
@@ -163,7 +263,7 @@ impl DirectoryArtifactRepository {
     fn web_path(&self) -> PathBuf {
         self.root.join(DIRECTORY)
     }
-    fn web_publication_path(&self, id: &PublicationId) -> PathBuf {
+    pub(in crate::local_repository) fn web_publication_path(&self, id: &PublicationId) -> PathBuf {
         self.web_path().join(PUBLICATIONS).join(id.hex())
     }
     fn web_authority(&self) -> Result<&admission::RepositoryAdmission, PlatformError> {

@@ -66,3 +66,7 @@ Integration targets: [tests/invocation_service.rs](tests/invocation_service.rs),
 - [Platform error model](../../docs/protocol/platform-errors.md)
 - [Workspace package index](../README.md)
 - [Architecture index](../../ARCHITECTURE.md)
+
+## Publication maintenance transport
+
+The four typed release-service methods expose scoped snapshots, mandatory-audit maintenance, diagnostic assessment and original-operation lookup. Authentication supplies tenant and actor, and complete bounded response preflight precedes audit/catalog changes. Disabled audit refuses mutations.

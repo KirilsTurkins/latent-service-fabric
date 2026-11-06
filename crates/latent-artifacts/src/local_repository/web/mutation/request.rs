@@ -64,6 +64,16 @@ pub(super) fn check_generation(
     state: &State,
     receipt: &WebOperationReceipt,
 ) -> Result<(), PlatformError> {
+    if state
+        .entries
+        .get(&receipt.publication.id)
+        .is_some_and(|e| e.deleted)
+    {
+        return Err(error(
+            PlatformErrorCode::NotFound,
+            "web-publication-not-found",
+        ));
+    }
     let generation = state
         .entries
         .get(&receipt.publication.id)

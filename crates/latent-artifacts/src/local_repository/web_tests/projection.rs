@@ -372,3 +372,49 @@ fn web_evidence_renewal_preserves_immutable_cache_identity_but_retires_start_aut
     drop(renewed);
     assert_eq!(repo.web_read_snapshot().unwrap().active_reads, 0);
 }
+
+#[test]
+fn historical_renderer_read_blocks_deletion_but_an_unrelated_web_read_does_not() {
+    let root = TempRoot::new();
+    let repo = open(&root);
+    let old = renderer(&repo, "old", b"old assets");
+    let current = renderer(&repo, "current", b"current assets");
+    let unrelated = repo.select_web_publication(&current).unwrap();
+    revoke(&repo, &old).unwrap();
+    let selection = repo
+        .publication_retention_snapshot(
+            &old.scope,
+            std::slice::from_ref(&old),
+            std::time::Duration::from_secs(10),
+        )
+        .unwrap();
+    let request = PublicationDeletionRequest {
+        scope: old.scope.clone(),
+        actor: context("unused", 0).actor,
+        operation_id: "delete-original".into(),
+        expected_catalog_fence: selection.catalog_fence,
+        targets: selection
+            .selections
+            .into_iter()
+            .map(|value| value.target)
+            .collect(),
+    };
+    let historical = repo
+        .selected_historical_snapshot(&component(), Some(&old.id))
+        .unwrap();
+    assert_eq!(
+        repo.inspect_publication_deletion(&request, std::time::Duration::from_secs(10))
+            .unwrap_err()
+            .message,
+        "publication-deletion-readers-active"
+    );
+    drop(historical);
+    assert_eq!(
+        repo.inspect_publication_deletion(&request, std::time::Duration::from_secs(10))
+            .unwrap_err()
+            .message,
+        "publication-deletion-reference-authority-unavailable"
+    );
+    assert_eq!(repo.web_read_snapshot().unwrap().active_reads, 1);
+    unrelated.eligibility().check_current(&tenant()).unwrap();
+}

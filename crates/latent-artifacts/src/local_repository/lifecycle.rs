@@ -40,8 +40,13 @@ impl DirectoryArtifactRepository {
             Err(failure) if failure.kind() == std::io::ErrorKind::NotFound => false,
             Err(failure) => return Err(io_error(failure)),
         };
+        let marker_bytes = if marker_exists {
+            read_bounded_file(&marker, 64, "lifecycle mode")?
+        } else {
+            Vec::new()
+        };
         if marker_exists
-            && (read_bounded_file(&marker, 64, "lifecycle mode")? != LIFECYCLE_MODE
+            && ((marker_bytes != LIFECYCLE_MODE && !super::retention::is_marker(&marker_bytes))
                 || !path.join("MODE").is_file())
         {
             return Err(corrupt("catalog-lifecycle-history-missing"));
@@ -73,6 +78,9 @@ impl DirectoryArtifactRepository {
         // COMPLETE proves content integrity. Only durable lifecycle membership
         // proves that the publication transaction committed.
         for identity in baseline {
+            if self.is_reclaimed_publication(&identity.publication()?.id)? {
+                continue;
+            }
             match self
                 .life_store()
                 .record_publication(&identity.publication()?.id)?
