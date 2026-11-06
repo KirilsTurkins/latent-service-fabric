@@ -4,6 +4,9 @@ use latent_core::activation_runtime::{RuntimeLimits, RuntimePhase};
 use latent_core::{BudgetProfile, ClockSample, EffectiveActivationBudget, ResourceBudget};
 use wasmtime::{Engine, Linker, Module, StackCreator, Store};
 
+#[cfg(feature = "development-rust-http-combined")]
+mod combined;
+
 struct Signal;
 impl latent_core::BudgetCancellationProbe for Signal {
     fn is_cancelled(&self) -> bool {

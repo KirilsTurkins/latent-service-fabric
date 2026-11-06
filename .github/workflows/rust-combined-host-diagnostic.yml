@@ -88,6 +88,12 @@ jobs:
           grep -F 'test component_threading::tests::combined_http_diagnostic_requires_explicit_original_cache_capacity ... ok' "$RUNNER_TEMP/rust-combined-host/host.log"
           grep -F 'test component_threading::tests::combined_http_diagnostic_authenticates_wrapped_final_graph_before_reuse' "$RUNNER_TEMP/rust-combined-host/host.log"
           grep -F 'test result: ok. 3 passed; 0 failed;' "$RUNNER_TEMP/rust-combined-host/host.log"
+      - name: Check original stack admission and fixed combined worker ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked -p latent-wasmtime --lib native_stacks:: -- --nocapture --test-threads=1 2>&1 | tee "$RUNNER_TEMP/rust-combined-host/stacks-ordinary.log"
+          cargo test --locked -p latent-wasmtime --lib --features development-rust-http-combined native_stacks:: -- --nocapture --test-threads=1 2>&1 | tee "$RUNNER_TEMP/rust-combined-host/stacks-combined.log"
       - name: Check diagnostic node selection without raising its budgets
         shell: bash
         run: |
