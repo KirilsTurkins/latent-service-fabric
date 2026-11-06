@@ -271,6 +271,7 @@ class StandardConsole(unittest.TestCase):
 
     def test_development_workflow_matches_pull_request_inputs_and_preserves_diagnostic_pushes(self):
         import re
+        import shlex
         from tools.ci_lane_inventory import workflow_model
         from tools.dotnet_guest.build import RECIPE
         from tools.rust_capsule_project import ROOT
@@ -332,6 +333,17 @@ class StandardConsole(unittest.TestCase):
         for branch in diagnostic_branches:
             self.assertIn("github.ref != 'refs/heads/" + branch + "'", original['jobs']['toolchain']['if'])
             self.assertIn("github.ref == 'refs/heads/" + branch + "'", original['jobs']['root-return']['if'])
+
+        capture = next(step for step in original['jobs']['toolchain']['steps']
+            if step.get('name') == 'Capture immutable qualification source inputs')
+        archive = shlex.split(capture['run'].replace('\\\n', ' ').splitlines()[0])
+        self.assertEqual(archive[:2], ['git', 'archive'])
+        archived_inputs = archive[archive.index('--') + 1:]
+        self.assertIn('sdk/transaction-contract', archived_inputs)
+        for path in RECIPE:
+            with self.subTest(archived_recipe=path):
+                self.assertTrue(any(path == item or path.startswith(item.rstrip('/') + '/')
+                    for item in archived_inputs))
 
     def test_late_workflow_preserves_all_programmes_and_authenticates_before_mode_restore(self):
         from tools.ci_lane_inventory import workflow_model

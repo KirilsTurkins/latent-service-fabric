@@ -168,8 +168,8 @@ jobs:
         shell: bash
         run: |
           git archive --format=tar.gz --output "$RUNNER_TEMP/dotnet-guest-source.tar.gz" HEAD -- \
-            apps sdk/dotnet-guest sdk/rust examples tools crates wit schemas docs .cargo \
-            Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/dotnet-guest.yml
+            apps sdk/dotnet-guest sdk/rust sdk/transaction-contract examples tools crates wit schemas docs .cargo \
+            sdk/profile/transaction-requirements-v1.json Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/dotnet-guest.yml
           test "$(stat --format=%s "$RUNNER_TEMP/dotnet-guest-source.tar.gz")" -le 134217728
           git rev-parse HEAD > "$RUNNER_TEMP/dotnet-guest-source.sha"
       - name: Retain the exact reviewed command contract input
