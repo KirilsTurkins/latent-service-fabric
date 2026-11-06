@@ -1,0 +1,10 @@
+{
+  "definition": {
+    "uses": "$/.github/workflows/dotnet-guest.yml"
+  },
+  "jobId": "qualify",
+  "kind": "job",
+  "reviewReason": "Call the existing guest qualification from the path-filtered development wrapper.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-guest-development.yml"
+}
