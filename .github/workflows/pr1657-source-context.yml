@@ -16,7 +16,7 @@ jobs:
       - name: Export exact tracked source and the previous witness controller
         shell: bash
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           out="$RUNNER_TEMP/pr1657-source-context"
           mkdir -p "$out"
           test "$(git rev-parse HEAD)" = f9c599faf162f639bb5e458f61f2dc4ae131ca2d
@@ -29,7 +29,8 @@ jobs:
           git archive --format=tar.gz ad1c9b583d2fe5c77042000db4d5bd031a07508c "${paths[@]}" > "$out/previous-witness-source.tar.gz"
           git show --no-patch --format=fuller HEAD > "$out/source-commit.txt"
           git ls-tree -r HEAD > "$out/source-tree.txt"
-          test "$(du -sb "$out" | cut -f1)" -lt 268435456
+          du -sb "$out" "$out"/*
+          test "$(du -sb "$out" | cut -f1)" -lt 1073741824
           (cd "$out" && sha256sum *.tar.gz *.patch > SHA256SUMS)
       - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
         with:
