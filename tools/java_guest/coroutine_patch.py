@@ -1099,6 +1099,9 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                         throw checkpointRefusal("java-checkpoint-unresolved-741");
                     }
                     MethodReference target = callee.getMethod();
+                    if (pinnedFiberIntegerNominalEdge(reference, node, site, target)) {
+                        continue; // Non-executable ancestor declaration; concrete target stays in the worklist.
+                    }
                     if (runtime && progressRuntimeClassIdentity(target.getClassName()) != null) {
                         continue; // Independently checked, source-bound ABI roots.
                     }
@@ -1155,6 +1158,129 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                 }
             }
         }
+    }
+
+    private boolean pinnedFiberIntegerNominalEdge(MethodReference caller, CallGraphNode node,
+            CallSite nominalSite, MethodReference target) {
+        org.teavm.model.ValueType integer = org.teavm.model.ValueType.INTEGER;
+        MethodReference fiber = new MethodReference("org.teavm.runtime.Fiber", "getInt",
+                org.teavm.model.ValueType.object("java.lang.Object"), integer);
+        MethodReference nominal = new MethodReference("java.lang.Number", "intValue", integer);
+        MethodReference concrete = new MethodReference("java.lang.Integer", "intValue", integer);
+        if (!fiber.equals(caller) || !nominal.equals(target) || !guardedEnumIndexCaptured) return false;
+        try {
+            Class<?> precise = progressHostClass("org.teavm.dependency.PreciseDependencyAnalyzer");
+            if (precise == null || dependency.getClass() != precise || !dependency.isPrecise()
+                    || dependency.getCallGraph() != callGraph || node == null
+                    || node.getGraph() != callGraph || !fiber.equals(node.getMethod())) return false;
+            ClassReader fiberClass = classSource.get(fiber.getClassName());
+            MethodReader fiberMethod = fiberClass == null ? null : fiberClass.getMethod(fiber.getDescriptor());
+            ClassReader numberClass = classSource.get(nominal.getClassName());
+            MethodReader numberMethod = numberClass == null ? null : numberClass.getMethod(nominal.getDescriptor());
+            ClassReader integerClass = classSource.get(concrete.getClassName());
+            MethodReader integerMethod = integerClass == null ? null : integerClass.getMethod(concrete.getDescriptor());
+            if (fiberMethod == null || !pinnedProgressPlatformMethod(fiber, "org.teavm.runtime.Fiber", false)
+                    || numberMethod == null || !numberMethod.hasModifier(ElementModifier.ABSTRACT)
+                    || numberMethod.hasModifier(ElementModifier.STATIC) || numberMethod.getProgram() != null
+                    || integerMethod == null || integerMethod.hasModifier(ElementModifier.ABSTRACT)
+                    || integerMethod.hasModifier(ElementModifier.STATIC) || integerMethod.getProgram() == null
+                    || !pinnedProgressPlatformMethod(nominal, "org.teavm.classlib.java.lang.TNumber", true)
+                    || !pinnedProgressPlatformMethod(concrete, "org.teavm.classlib.java.lang.TInteger", false)) return false;
+            var nominalInfo = dependency.getMethod(nominal);
+            var concreteInfo = dependency.getMethod(concrete);
+            CallGraphNode nominalNode = callGraph.getNode(nominal);
+            if (nominalInfo == null || !nominalInfo.isMissing() || nominalInfo.isUsed() || nominalInfo.isCalled()
+                    || concreteInfo == null || concreteInfo.isMissing() || !concreteInfo.isUsed()
+                    || nominalNode == null || nominalNode.getGraph() != callGraph
+                    || !nominal.equals(nominalNode.getMethod()) || !nominalNode.getCallSites().isEmpty()) return false;
+            int incoming = 0, edgeWork = 0;
+            boolean incomingNominal = false;
+            for (CallSite site : nominalNode.getCallerCallSites()) {
+                if (site == null || ++incoming > 65536 || ++edgeWork > 262144) return false;
+                incomingNominal |= site == nominalSite;
+                int callers = 0, targets = 0;
+                for (CallGraphNode source : site.getCallers()) {
+                    if (++edgeWork > 262144 || source == null || source.getGraph() != callGraph
+                            || ++callers > 65536) return false;
+                    var backEdges = source.getCallSites();
+                    if (backEdges.size() > 262144 - edgeWork) return false;
+                    edgeWork += backEdges.size();
+                    if (!backEdges.contains(site)) return false;
+                }
+                for (CallGraphNode destination : site.getCalledMethods()) {
+                    if (++edgeWork > 262144 || destination != nominalNode || ++targets > 1) return false;
+                }
+                if (callers == 0 || targets != 1) return false;
+            }
+            if (incoming == 0 || !incomingNominal) return false;
+            int nominalEdges = 0, concreteEdges = 0, checked = 0;
+            boolean outgoingNominal = false;
+            for (CallSite site : node.getCallSites()) {
+                if (site == null || ++checked > 65536 || ++edgeWork > 262144) return false;
+                outgoingNominal |= site == nominalSite;
+                for (CallGraphNode destination : site.getCalledMethods()) {
+                    if (++edgeWork > 262144 || destination == null || destination.getGraph() != callGraph || destination.getMethod() == null)
+                        return false;
+                    MethodReference value = destination.getMethod();
+                    if (!value.getDescriptor().equals(nominal.getDescriptor())) continue;
+                    int sources = 0, destinations = 0;
+                    for (CallGraphNode source : site.getCallers()) {
+                        if (++edgeWork > 262144 || source != node || ++sources > 1) return false;
+                    }
+                    for (CallGraphNode ignored : site.getCalledMethods()) {
+                        if (++edgeWork > 262144) return false;
+                        ++destinations;
+                    }
+                    if (sources != 1 || destinations != 1) return false;
+                    if (value.equals(nominal)) ++nominalEdges;
+                    else if (value.equals(concrete)) ++concreteEdges;
+                    else return false;
+                }
+            }
+            if (!outgoingNominal || nominalEdges != 1 || concreteEdges != 1) return false;
+            org.teavm.model.Program program = boundedProgressProgram(fiberMethod.getProgram());
+            if (program == null) return false;
+            int invokes = 0;
+            for (int index = 0; index < program.basicBlockCount(); ++index) {
+                for (org.teavm.model.Instruction instruction : program.basicBlockAt(index)) {
+                    if (!(instruction instanceof org.teavm.model.instructions.InvokeInstruction)) continue;
+                    var invoke = (org.teavm.model.instructions.InvokeInstruction) instruction;
+                    if (!invoke.getMethod().getDescriptor().equals(nominal.getDescriptor())) continue;
+                    if (!concrete.equals(invoke.getMethod())
+                            || invoke.getType() != org.teavm.model.instructions.InvocationType.VIRTUAL
+                            || invoke.getInstance() == null || ++invokes > 1) return false;
+                }
+            }
+            if (invokes != 1) return false;
+            return closedIntegerHierarchy(classSource);
+        } catch (Exception unavailable) {
+            return false;
+        }
+    }
+
+    private static boolean closedIntegerHierarchy(ListableClassReaderSource source) {
+        if (source == null || source.getClassNames() == null || source.getClassNames().size() > 65536
+                || !source.getClassNames().contains("java.lang.Integer")
+                || source.get("java.lang.Integer") == null) return false;
+        // The analyzer's complete, captured class universe is closed. TeaVM's
+        // substituted Integer is not final, so reject even an uncalled
+        // reachable subclass rather than assuming Java source finality.
+        int work = 0;
+        for (String name : source.getClassNames()) {
+            if (name == null) return false;
+            java.util.Set<String> visited = new java.util.HashSet<>();
+            for (String current = name; current != null;) {
+                if (++work > 262144 || !visited.add(current)) return false;
+                if (current.equals("java.lang.Integer")) {
+                    if (!name.equals(current)) return false;
+                    break;
+                }
+                ClassReader cls = source.get(current);
+                if (cls == null) return false;
+                current = cls.getParent();
+            }
+        }
+        return true;
     }
 
     private boolean pinnedStringCopyCycle(int[] component, java.util.List<MethodReference> methods) {
@@ -1789,6 +1915,10 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                 return "dc3ef8b117975faf357bd6c9cdb772df390e914c8f3d82f1265af0b752c61651";
             case "org.teavm.classlib.java.lang.TClass":
                 return "3fc8c6aecaccc62681b45f33e0c3c8070eac14707665055fe882cd5b39a90491";
+            case "org.teavm.classlib.java.lang.TNumber":
+                return "d3c14bbc5392ffdd2af74f74db3ec585e18a50983dc6fa1a2b667776b4bf3fbb";
+            case "org.teavm.runtime.Fiber":
+                return "88c9972155df3fad727253caf68f7359534a0639386571b2eb5680fa17fee605";
             case "org.teavm.classlib.java.lang.TStackTraceElement":
                 return "9ba416fd3d6ab3503eb37b937fa1155ffdfc64012de17573e733ef6af20b74f9";
             case "org.teavm.classlib.java.lang.TInteger":
@@ -1905,6 +2035,8 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                 if (completeDeclaration && !sameProgressMetadata(cls, actualClass)) {
                     return false;
                 }
+                if (reference.equals(new MethodReference("java.lang.Integer", "intValue",
+                        org.teavm.model.ValueType.INTEGER)) && !sameProgressIntegerValueField(cls, actualClass)) return false;
                 org.teavm.model.ClassHolder left = new org.teavm.model.ClassHolder(reference.getClassName());
                 org.teavm.model.ClassHolder right = new org.teavm.model.ClassHolder(reference.getClassName());
                 left.addMethod(ModelUtils.copyMethod(expected));
@@ -1928,6 +2060,23 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         }
         progressPlatformProofs.put(proofKey, result);
         return result;
+    }
+
+    private boolean sameProgressIntegerValueField(ClassReader expectedClass, ClassReader actualClass)
+            throws java.io.IOException {
+        if (expectedClass == null || actualClass == null) return false;
+        var expectedField = expectedClass.getField("value");
+        var actualField = actualClass.getField("value");
+        if (expectedField == null || actualField == null
+                || expectedField.hasModifier(ElementModifier.STATIC)
+                || actualField.hasModifier(ElementModifier.STATIC)
+                || !org.teavm.model.ValueType.INTEGER.equals(expectedField.getType())
+                || !org.teavm.model.ValueType.INTEGER.equals(actualField.getType())) return false;
+        org.teavm.model.ClassHolder left = new org.teavm.model.ClassHolder("java.lang.Integer");
+        org.teavm.model.ClassHolder right = new org.teavm.model.ClassHolder("java.lang.Integer");
+        left.addField(ModelUtils.copyField(expectedField));
+        right.addField(ModelUtils.copyField(actualField));
+        return sameProgressMetadata(left, right);
     }
 
     private boolean progressClassMetadataPrimitive(MethodReader method) {

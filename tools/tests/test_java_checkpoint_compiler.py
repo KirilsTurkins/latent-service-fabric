@@ -36,13 +36,15 @@ class CheckpointCompiler(unittest.TestCase):
             'string-info-getter', 'string-info-declaration', 'string-info-parent', 'string-info-target',
             'class-info-enum-count', 'class-info-managed-count-refused', 'class-info-enum-other-refused', 'class-info-declaration',
             'class-info-parent', 'class-info-layout', 'class-info-target', 'class-info-header-shadow',
-            'compiler-archive-control', 'compiler-cache-isolation'])
+            'compiler-archive-control', 'compiler-cache-isolation', 'number-override-refused',
+            'integer-field-identity', 'integer-hierarchy-bounds'])
 
     def test_real_frontend_executes_every_declared_progress_case(self):
         source = probe.COMPILER_CONTROL.read_text()
         cases = re.findall(r'check\((\w+)\.class\.getName\(\), corrected, (false|true), ""\);', source)
         self.assertEqual(cases, [
-            ('Finite', 'false'), ('InitializerPolling', 'true'), ('UnmanagedPolling', 'true'),
+            ('Finite', 'false'), ('InitializerPolling', 'true'), ('NumberOverridePolling', 'true'),
+            ('UnmanagedPolling', 'true'),
             ('ManagedPolling', 'false'), ('RecursiveInitializer', 'true'),
             ('FiniteUnmanaged', 'false'), ('NestedCounted', 'false'), ('ChangingBound', 'false'),
             ('WrappingCounted', 'true'), ('ResetCounted', 'true'), ('ExceptionalRetry', 'true'),
@@ -63,7 +65,9 @@ class CheckpointCompiler(unittest.TestCase):
         self.assertIn('checkpoint-control-class-info-shadow-header-refused', source)
         self.assertIn('checkCompilerArchive(corrected);', source)
         self.assertIn('checkCompilerCacheIsolation(corrected);', source)
-        self.assertEqual(len(cases) + 13, len(probe.COMPILER_EXPECTED.split(';')) - 1)
+        self.assertIn('checkIntegerValueField(corrected);', source)
+        self.assertIn('checkIntegerHierarchy(corrected);', source)
+        self.assertEqual(len(cases) + 15, len(probe.COMPILER_EXPECTED.split(';')) - 1)
 
     def test_enum_count_proof_binds_exact_emitter_and_loader_header(self):
         from tools.java_guest import coroutine_patch

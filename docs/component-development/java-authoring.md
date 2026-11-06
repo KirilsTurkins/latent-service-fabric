@@ -167,6 +167,10 @@ and sealed C input is limited to 16 MiB. Builds exceeding these bounds, or using
 generated C syntax the guard cannot verify, are refused; other Java compiler
 profiles are unaffected. The separate experimental diagnostic compiler variants
 are not qualified for this guarded activation build.
+For the fiber integer-unboxing path, the compiler also refuses an activation
+build if its captured reachable classes include a subclass of TeaVM's substituted
+`java.lang.Integer`, or if their inheritance cannot be verified. Other virtual
+calls retain their existing progress checks.
 
 Keep the selected world and exported contracts in the project tenant's namespace.
 The isolated example signer uses tenant `examples`. The normal full activation
