@@ -270,3 +270,187 @@ async fn revoking_policy_prevents_application_write_on_existing_socket() {
     drop(fixture);
     control.assert_native_settled();
 }
+
+#[tokio::test]
+async fn abort_both_wakes_read_and_keeps_the_held_write_owner_until_drop() {
+    use std::{
+        future::{poll_fn, Future},
+        pin::Pin,
+        task::Poll,
+    };
+
+    let (fixture, listener) = fixture().await;
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let stream = fixture
+        .provider
+        .start(&session, request(&fixture))
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    assert_eq!(
+        stream.write(b"PAID".to_vec(), None).unwrap().await.unwrap(),
+        4
+    );
+    let mut received = [0; 4];
+    peer.read_exact(&mut received).await.unwrap();
+    assert_eq!(&received, b"PAID");
+    let mut read = stream.read(1, None).unwrap();
+    assert!(poll_fn(|cx| Poll::Ready(Pin::new(&mut read).poll(cx)))
+        .await
+        .is_pending());
+    // The accepted but unpolled write owns its input and the original socket;
+    // it never reaches the peer and holds the ordinary write slot.
+    let write = stream.write(b"NEVER".to_vec(), None).unwrap();
+    let abort = stream.shutdown(StreamShutdown::Both).unwrap();
+    assert_eq!(fixture.provider.usage().unwrap().pending_operations, 3);
+    assert_eq!(
+        stream.shutdown(StreamShutdown::Both).err().unwrap().code,
+        StreamErrorCode::InvalidState
+    );
+    assert_eq!(abort.await.unwrap().state, StreamState::Stopping);
+    let failure = tokio::time::timeout(Duration::from_secs(1), read)
+        .await
+        .expect("local abort must wake the original read")
+        .err()
+        .unwrap();
+    assert_eq!(failure.code, StreamErrorCode::Cancelled);
+    assert!(failure.may_have_applied);
+    assert_eq!(fixture.provider.usage().unwrap().pending_operations, 1);
+    assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+    assert!(control.budget.host_memory_bytes() > baseline);
+    assert!(stream.inspect().application_write_attempted);
+    assert_eq!(stream.inspect().accepted_write_bytes, 4);
+    drop(write);
+    let mut byte = [0];
+    assert_eq!(
+        tokio::time::timeout(Duration::from_secs(1), peer.read(&mut byte))
+            .await
+            .expect("the original socket must close after its last owner")
+            .unwrap(),
+        0
+    );
+    assert_eq!(fixture.provider.usage().unwrap().connections, 0);
+    drop((peer, stream, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
+#[tokio::test]
+async fn abort_both_is_available_after_the_send_half_was_closed() {
+    let (fixture, listener) = fixture().await;
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let stream = fixture
+        .provider
+        .start(&session, request(&fixture))
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    assert_eq!(
+        stream
+            .shutdown(StreamShutdown::Send)
+            .unwrap()
+            .await
+            .unwrap()
+            .state,
+        StreamState::WriteShut
+    );
+    assert_eq!(
+        stream
+            .shutdown(StreamShutdown::Both)
+            .unwrap()
+            .await
+            .unwrap()
+            .state,
+        StreamState::Closed
+    );
+    let mut byte = [0];
+    assert_eq!(peer.read(&mut byte).await.unwrap(), 0);
+    assert_eq!(fixture.provider.usage().unwrap().connections, 0);
+    drop((peer, stream));
+    assert_eq!(control.budget.host_memory_bytes(), baseline);
+    drop(session);
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
+#[tokio::test]
+async fn abort_both_unpolled_reserves_control_and_blocks_new_send_without_dispatch() {
+    let (fixture, listener) = fixture().await;
+    let (session, control) = fixture.session(5000);
+    let stream = fixture
+        .provider
+        .start(&session, request(&fixture))
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    let abort = stream.shutdown(StreamShutdown::Both).unwrap();
+    assert_eq!(
+        stream.write(b"X".to_vec(), None).err().unwrap().code,
+        StreamErrorCode::InvalidState
+    );
+    assert_eq!(
+        stream.shutdown(StreamShutdown::Send).err().unwrap().code,
+        StreamErrorCode::InvalidState
+    );
+    drop(abort);
+    assert_eq!(stream.inspect().state, StreamState::Open);
+    assert_eq!(stream.write(b"X".to_vec(), None).unwrap().await.unwrap(), 1);
+    let mut byte = [0];
+    peer.read_exact(&mut byte).await.unwrap();
+    assert_eq!(byte, *b"X");
+    stream.close().await.unwrap();
+    drop((peer, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
+#[tokio::test]
+async fn abort_both_cancels_an_accepted_send_shutdown_owner() {
+    let (fixture, listener) = fixture().await;
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let stream = fixture
+        .provider
+        .start(&session, request(&fixture))
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    // Acceptance owns the send slot and original transport before polling;
+    // no kernel send-shutdown has been dispatched by this owner yet.
+    let send = stream.shutdown(StreamShutdown::Send).unwrap();
+    let abort = stream.shutdown(StreamShutdown::Both).unwrap();
+    assert_eq!(fixture.provider.usage().unwrap().pending_operations, 2);
+    assert_eq!(abort.await.unwrap().state, StreamState::Stopping);
+    assert_eq!(fixture.provider.usage().unwrap().pending_operations, 1);
+    assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+    assert!(control.budget.host_memory_bytes() > baseline);
+    let failure = tokio::time::timeout(Duration::from_secs(1), send)
+        .await
+        .expect("the accepted send owner must retire after local abort")
+        .err()
+        .unwrap();
+    assert_eq!(failure.code, StreamErrorCode::Cancelled);
+    assert!(!failure.may_have_applied);
+    let mut byte = [0];
+    assert_eq!(
+        tokio::time::timeout(Duration::from_secs(1), peer.read(&mut byte))
+            .await
+            .expect("the original socket must close after the send owner")
+            .unwrap(),
+        0
+    );
+    assert_eq!(fixture.provider.usage().unwrap().connections, 0);
+    drop((peer, stream, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}

@@ -18,6 +18,8 @@ use tokio::{
 };
 use tokio_rustls::TlsAcceptor;
 
+mod abort;
+
 struct Peer {
     listener: TcpListener,
     acceptor: TlsAcceptor,
@@ -26,6 +28,9 @@ struct Peer {
 }
 impl Peer {
     async fn new() -> Self {
+        Self::with_versions(&[&rustls::version::TLS13, &rustls::version::TLS12]).await
+    }
+    async fn with_versions(versions: &[&'static rustls::SupportedProtocolVersion]) -> Self {
         use std::os::unix::fs::PermissionsExt;
         let certified = rcgen::generate_simple_self_signed(vec!["stream.test".into()]).unwrap();
         let key = rustls::pki_types::PrivateKeyDer::Pkcs8(
@@ -34,7 +39,7 @@ impl Peer {
         let mut server = rustls::ServerConfig::builder_with_provider(Arc::new(
             rustls::crypto::ring::default_provider(),
         ))
-        .with_safe_default_protocol_versions()
+        .with_protocol_versions(versions)
         .unwrap()
         .with_no_client_auth()
         .with_single_cert(vec![certified.cert.der().clone()], key)

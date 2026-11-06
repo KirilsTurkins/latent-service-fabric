@@ -28,6 +28,34 @@ class BoundedTlsProviderReference(unittest.TestCase):
             with self.subTest(missing=missing), self.assertRaisesRegex(ValueError, "required-case-missing"):
                 reference.validate_obligations(reference.REQUIRED_CASES - {missing}, frozenset())
 
+    def test_tcp_and_tls_abort_controls_cannot_be_missing_or_ignored(self):
+        required = {
+            "tests::sockets::abort_both_wakes_read_and_keeps_the_held_write_owner_until_drop",
+            "tests::sockets::abort_both_is_available_after_the_send_half_was_closed",
+            "tests::sockets::abort_both_unpolled_reserves_control_and_blocks_new_send_without_dispatch",
+            "tests::sockets::abort_both_cancels_an_accepted_send_shutdown_owner",
+            "tests::tls::abort::abort_both_wakes_tls_waiters_and_retains_held_write",
+            "tests::tls::abort::abort_both_unpolled_tls_control_releases_slot_without_dispatch",
+            "tests::tls::abort::abort_both_after_tls_peer_close_notify_retires_original_owner",
+            "tests::tls::abort::abort_both_cancels_tls_ciphertext_flush_under_real_backpressure",
+        }
+        self.assertTrue(required <= reference.ABORT_CASES <= reference.REQUIRED_CASES)
+        for missing in reference.ABORT_CASES:
+            with self.subTest(missing=missing), self.assertRaisesRegex(ValueError, "required-case-missing"):
+                reference.validate_obligations(reference.REQUIRED_CASES - {missing}, frozenset())
+            with self.subTest(ignored=missing), self.assertRaisesRegex(ValueError, "required-case-missing"):
+                reference.validate_obligations(reference.REQUIRED_CASES, frozenset({missing}))
+
+    def test_summary_reports_the_actual_receipt_case_count(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            arguments = ["qualify", "--output", temporary, "--source-commit", "a" * 40]
+            with patch.object(reference.sys, "argv", arguments), \
+                    patch.object(reference, "qualify", return_value={"cases": ["one", "two"]}), \
+                    patch("builtins.print") as output:
+                self.assertEqual(reference.main(), 0)
+            output.assert_called_once_with(
+                "Actual bounded TLS provider: 2 cases passed; accounting remains unqualified")
+
     def test_kernel_tail_witness_cannot_be_replaced_with_a_logical_drop_substitute(self):
         with self.assertRaisesRegex(ValueError, "required-case-missing"):
             reference.validate_obligations(reference.REQUIRED_CASES - {reference.KERNEL_CASE}, frozenset())
