@@ -1,0 +1,40 @@
+name: PR 1657 bounded source context
+on:
+  push:
+    branches: ['diag/pr1657-source-context-20261106']
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+          ref: f9c599faf162f639bb5e458f61f2dc4ae131ca2d
+      - name: Export exact tracked source and the previous witness controller
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/pr1657-source-context"
+          mkdir -p "$out"
+          test "$(git rev-parse HEAD)" = f9c599faf162f639bb5e458f61f2dc4ae131ca2d
+          git archive --format=tar.gz HEAD > "$out/merged-source.tar.gz"
+          git fetch --no-tags --depth=1 origin 81356c22de6fbdb7493e5e0104960d4227e736ef 50e4a3d93c44f99a7d610c0d45a2a6d51bf91974 ad1c9b583d2fe5c77042000db4d5bd031a07508c
+          git diff --binary 50e4a3d93c44f99a7d610c0d45a2a6d51bf91974 HEAD > "$out/pr-against-development.patch"
+          git diff --binary 81356c22de6fbdb7493e5e0104960d4227e736ef HEAD > "$out/development-integration.patch"
+          git ls-tree -r --name-only ad1c9b583d2fe5c77042000db4d5bd031a07508c | grep -E '(rust.*combined|combined.*rust)' > "$out/previous-witness-paths.txt"
+          mapfile -t paths < "$out/previous-witness-paths.txt"
+          git archive --format=tar.gz ad1c9b583d2fe5c77042000db4d5bd031a07508c "${paths[@]}" > "$out/previous-witness-source.tar.gz"
+          git show --no-patch --format=fuller HEAD > "$out/source-commit.txt"
+          git ls-tree -r HEAD > "$out/source-tree.txt"
+          test "$(du -sb "$out" | cut -f1)" -lt 268435456
+          (cd "$out" && sha256sum *.tar.gz *.patch > SHA256SUMS)
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: pr1657-source-context
+          path: ${{ runner.temp }}/pr1657-source-context/
+          if-no-files-found: error
+          retention-days: 2
+          compression-level: 0
