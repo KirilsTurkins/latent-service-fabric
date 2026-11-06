@@ -206,20 +206,23 @@ def _guard(enums: dict) -> bytes:
     return raw
 
 
-def seal(data: bytes, generated: Path, compiler_index: bytes, *, source_before: str | None = None) -> tuple[bytes, dict]:
+def seal(data: bytes, generated: Path, compiler_index: bytes, *, source_before: str | None = None,
+         date_required: bool = False) -> tuple[bytes, dict]:
     _, enums, source_bytes, parents, types, source_digest = inventory(generated)
     need(source_before is None or source_before == source_digest, 'source-drift')
     need(len(enums) <= MAX_CLASSES and all(len(fields) <= MAX_SLOTS_PER_CLASS for fields in enums.values())
          and sum(map(len, enums.values())) <= MAX_SLOTS, 'cost-bound')
     _index(compiler_index, enums, parents)
     cleaned = _verify_translation_unit(data, enums, parents, types)
+    from tools.java_guest.date_guard import seal as seal_date
+    cleaned, date_receipt = seal_date(data, cleaned, required=date_required)
     need(cleaned.count(OLD_COUNT) == 1 and cleaned.count(OLD_VALUE) == 1, 'helper-preimage')
     cleaned = cleaned.replace(OLD_COUNT, b'static int32_t teavm_enumConstantCount(TeaVM_Class* cls);')
     cleaned = cleaned.replace(OLD_VALUE, b'static void* teavm_enumConstant(TeaVM_Class* cls, int32_t index);')
     guard = _guard(enums)
     result = cleaned + guard
     need(len(result) <= MAX_INPUT and source_bytes + len(result) <= MAX_SOURCE, 'sealed-bound')
-    return result, {'schemaVersion': 'latent.java.enum-guard.v1',
+    receipt = {'schemaVersion': 'latent.java.enum-guard.v1',
                     'compilerIndexSha256': hashlib.sha256(compiler_index).hexdigest(),
                     'generatedSourceSha256': source_digest,
                     'preprocessedSha256': hashlib.sha256(data).hexdigest(),
@@ -229,6 +232,9 @@ def seal(data: bytes, generated: Path, compiler_index: bytes, *, source_before: 
                     'slots': sum(map(len, enums.values())),
                     'maximumClassComparisons': len(enums),
                     'maximumSlotComparisons': max(map(len, enums.values()), default=0)}
+    if date_receipt is not None:
+        receipt['dateGuard'] = date_receipt
+    return result, receipt
 
 
 def _bindings_identity(directory: Path) -> dict:
@@ -247,6 +253,9 @@ def run(compiler, generated: Path, selected: tuple[str, ...], destination: Path,
     original = _bindings_identity(bindings)
     index_path = generated.parents[2] / 'compiler-patch/enum-index-v1.tsv'
     index = read_file(index_path, MAX_INDEX)
+    date_index_path = index_path.with_name('date-init-required-v1.txt')
+    date_index = read_file(date_index_path, 32)
+    need(date_index in (b'required\n', b'unused\n'), 'date-index')
     source_before = inventory(generated)[-1]
     preprocessed = compiler.capture_preprocessed('-target', 'wasm32-wasip1', '-std=c11', '-O2',
         '-DLSF_JAVA_ACTIVATION_PROFILE=1', '-DLSF_TEAVM_WASM=1', '-DTEAVM_CUSTOM_LOG=1',
@@ -254,17 +263,23 @@ def run(compiler, generated: Path, selected: tuple[str, ...], destination: Path,
         '-include', sdk / 'runtime/native.h', '-I', bindings, '-I', sdk / 'runtime', '-iquote', generated,
         '-E', '-dD', generated / 'all.c')
     need(time.monotonic() < compiler.deadline, 'deadline')
-    sealed, receipt = seal(preprocessed, generated, index, source_before=source_before)
+    sealed, receipt = seal(preprocessed, generated, index, source_before=source_before,
+                           date_required=date_index == b'required\n')
     need(time.monotonic() < compiler.deadline, 'deadline')
-    c_failure_context.run(compiler, generated, selected, '-target', 'wasm32-wasip1', '-std=c11', '-O2',
-        '-DLSF_JAVA_ACTIVATION_PROFILE=1', '-DLSF_TEAVM_WASM=1', '-DTEAVM_CUSTOM_LOG=1',
-        '-mllvm', '-wasm-enable-sjlj', '-lsetjmp', '-mllvm', '-wasm-use-legacy-eh=false',
-        '-mexec-model=reactor', '-Wl,--no-entry', '-Wl,--export-memory', '-Wl,-z,stack-size=65536',
-        '-Wl,--max-memory=67108864', '-include', sdk / 'runtime/native.h',
-        '-I', bindings, '-I', sdk / 'runtime', '-iquote', generated,
-        '-x', 'cpp-output', '-', '-x', 'none', bindings / 'bridge.c', sdk / 'feasibility/platform.c',
-        bindings / 'probe.c', bindings / 'probe_component_type.o', '-o', core, input_bytes=sealed)
+    if 'dateGuard' in receipt:
+        from tools.java_guest.date_link_guard import run as run_date_link
+        receipt['dateGuard']['link'] = run_date_link(compiler, generated, selected, destination, core, sealed)
+    else:
+        c_failure_context.run(compiler, generated, selected, '-target', 'wasm32-wasip1', '-std=c11', '-O2',
+            '-DLSF_JAVA_ACTIVATION_PROFILE=1', '-DLSF_TEAVM_WASM=1', '-DTEAVM_CUSTOM_LOG=1',
+            '-mllvm', '-wasm-enable-sjlj', '-lsetjmp', '-mllvm', '-wasm-use-legacy-eh=false',
+            '-mexec-model=reactor', '-Wl,--no-entry', '-Wl,--export-memory', '-Wl,-z,stack-size=65536',
+            '-Wl,--max-memory=67108864', '-include', sdk / 'runtime/native.h',
+            '-I', bindings, '-I', sdk / 'runtime', '-iquote', generated,
+            '-x', 'cpp-output', '-', '-x', 'none', bindings / 'bridge.c', sdk / 'feasibility/platform.c',
+            bindings / 'probe.c', bindings / 'probe_component_type.o', '-o', core, input_bytes=sealed)
     need(original == _bindings_identity(bindings), 'bindings-drift')
     need(index == read_file(index_path, MAX_INDEX), 'index-drift')
+    need(date_index == read_file(date_index_path, 32), 'date-index-drift')
     receipt['bindings'] = original
     return receipt
