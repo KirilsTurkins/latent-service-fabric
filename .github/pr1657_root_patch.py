@@ -3,7 +3,7 @@ import runpy
 runpy.run_path('.github/pr1657_pressure_patch.py')
 p=Path('crates/latent-http/src/streaming/exchange.rs'); s=p.read_text()
 needle='    let limits = inner.streaming.expect("stream profile");\n'
-assert s.count(needle)==1
+assert s.count(needle)==2
 s=s.replace(needle,'''    let diagnostic_request = match input.destination.url.path() {
         "/conformance/hold/headers" => 1,
         "/conformance/body/partial" => 2,
@@ -11,7 +11,7 @@ s=s.replace(needle,'''    let diagnostic_request = match input.destination.url.p
         _ => 0,
     };
     eprintln!("LSF-COMBINED-HTTP:{}:1", diagnostic_request);
-'''+needle)
+'''+needle,1)
 for before,after in [
  ('    let ready = admission.wait().await?;', '    let ready = admission.wait().await?;\n    eprintln!("LSF-COMBINED-HTTP:{}:2", diagnostic_request);'),
  ('    let opening = async {', '    eprintln!("LSF-COMBINED-HTTP:{}:3", diagnostic_request);\n    let opening = async {'),
