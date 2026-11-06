@@ -15,6 +15,74 @@ from tools import rust_capsule_project as project
 from tools import rust_standard_logging_inputs as standard
 
 
+class RustFaultFuelBudgetTests(unittest.TestCase):
+    def exercise(self, language="rust", ceiling=100_000_000, fault=None):
+        from types import SimpleNamespace
+        from tools import rust_capsule_cases as cases, rust_capsule_node as node
+
+        with tempfile.TemporaryDirectory() as temporary:
+            client = SimpleNamespace(directory=Path(temporary), executable="latent", config=Path("config"),
+                                     invocation_timeout_millis=3000, environment={}, cancellation=None)
+            target = {"service": "examples/recovery", "name": "recovery", "budget": {
+                "cpuFuel": ceiling, "memoryBytes": 4_194_304, "wallTimeLimitMillis": 1000}}
+            original = dict(target["budget"])
+            requests = []
+
+            def invoke(client, selected, template, function, arguments, activation):
+                node.start_call(client, selected, template, function, arguments, activation)
+                budget = json.loads((client.directory / f"{activation}-budget.json").read_text())
+                which = arguments[0]
+                requests.append((which, budget))
+                code = "guest-trap" if which == 1 else "resource-exhausted"
+                state = code.replace("-", "_")
+                details = [{"kind": "activation.fuel-exhausted", "fields": {"dimension": "cpu-fuel"}}]
+                consumed = budget["cpuFuel"]
+                if which == 3 and fault == "deadline":
+                    code, state = "deadline-exceeded", "deadline_exceeded"
+                if which == 3 and fault == "wrong-dimension":
+                    details = [{"kind": "activation.memory-exhausted", "fields": {"dimension": "memory-bytes"}}]
+                if which == 3 and fault == "partial-fuel":
+                    consumed -= 1
+                return {"exitCode": 0 if which == 0 else 4, "decoded": [1] if which == 0 else None,
+                        "processReaped": True, "response": {"outcomeKnown": True,
+                        "category": "success" if which == 0 else "platform-failure",
+                        "error": {"code": code, "details": details}, "data": {"terminalState": state,
+                        "consumption": {"cpuFuel": str(consumed), "peakMemoryBytes": "1"}}}}
+
+            result = {"invocations": [], "samples": []}
+            with patch.object(node, "Process"), patch.object(cases, "call", side_effect=invoke), \
+                    patch.object(cases, "sample", return_value={}):
+                if fault:
+                    expected = "authoring-fault-classification" if fault == "deadline" else "authoring-fuel-exhaustion-evidence"
+                    with self.assertRaisesRegex(RuntimeError, expected):
+                        cases.faults(client, target, None, result, 1, language=language)
+                else:
+                    cases.faults(client, target, None, result, 1, language=language)
+            self.assertEqual(target["budget"], original)
+            return original, requests, result
+
+    def test_only_rust_spin_uses_the_smaller_written_request_budget(self):
+        original, requests, result = self.exercise()
+        self.assertEqual([mode for mode, _ in requests], [0, 1, 0, 2, 0, 3, 0])
+        for mode, budget in requests:
+            self.assertEqual(budget, {**original, "cpuFuel": 1_000_000} if mode == 3 else original)
+        self.assertEqual(len(result["invocations"]), 7)
+        self.assertEqual(len(result["samples"]), 7)
+
+    def test_existing_lower_ceiling_and_other_languages_are_preserved(self):
+        original, requests, _ = self.exercise(ceiling=500_000)
+        self.assertTrue(all(budget == original for _, budget in requests))
+        for language in ("c", "go", "dotnet", "typescript"):
+            with self.subTest(language=language):
+                original, requests, _ = self.exercise(language=language)
+                self.assertTrue(all(budget == original for _, budget in requests))
+
+    def test_deadline_other_resource_exhaustion_and_partial_fuel_are_refused(self):
+        for fault in ("deadline", "wrong-dimension", "partial-fuel"):
+            with self.subTest(fault=fault):
+                self.exercise(fault=fault)
+
+
 class RustProjectTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

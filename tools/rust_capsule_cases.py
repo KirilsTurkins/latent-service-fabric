@@ -17,6 +17,11 @@ TUTORIAL_CASES = {
         ([0, True], [{"err": "Choose between 1 and 100 items."}], 3)]),
 }
 
+# This infinite loop proves request-fuel exhaustion. Keep its request below
+# the package ceiling so a busy runner's one-second wall deadline does not
+# win before the intended fuel limit; all other recovery calls keep their budget.
+RUST_FAULT_FUEL = 1_000_000
+
 
 def tutorials(client, targets, result):
     for template, (function, cases) in TUTORIAL_CASES.items():
@@ -34,7 +39,12 @@ def tutorials(client, targets, result):
 
 def faults(client, target, probe, result, population, *, language="rust"):
     for ordinal, which in enumerate((0, 1, 0, 2, 0, 3, 0)):
-        row = call(client, target, "recovery", "run", [which], f"authoring-fault-{ordinal}")
+        selected = target
+        if language == "rust" and which == 3:
+            ceiling = target["budget"]["cpuFuel"]
+            require(type(ceiling) is int and ceiling > 0, "authoring-fuel-budget")
+            selected = {**target, "budget": {**target["budget"], "cpuFuel": min(ceiling, RUST_FAULT_FUEL)}}
+        row = call(client, selected, "recovery", "run", [which], f"authoring-fault-{ordinal}")
         result["invocations"].append(row)
         if which == 0:
             assert_value(client, row, [1])
@@ -46,6 +56,13 @@ def faults(client, target, probe, result, population, *, language="rust"):
             # exception, not a host ResourceLimiter rejection. Test both.
             expected = "guest-trap" if which == 1 or language == "java" and which == 2 else "resource-exhausted"
             require(code == expected, "authoring-fault-classification")
+            if language == "rust" and which == 3:
+                details = row["response"]["error"].get("details")
+                require(row["processReaped"] and row["response"]["data"]["terminalState"] == "resource_exhausted"
+                        and type(details) is list
+                        and {"kind": "activation.fuel-exhausted", "fields": {"dimension": "cpu-fuel"}} in details
+                        and int(row["response"]["data"]["consumption"]["cpuFuel"]) == selected["budget"]["cpuFuel"],
+                        "authoring-fuel-exhaustion-evidence")
         require(int(row["response"]["data"]["consumption"]["peakMemoryBytes"]) <= target["budget"]["memoryBytes"],
                 "authoring-guest-memory-bound")
         result["samples"].append(sample(client, probe, "after-fault-" + str(which), population))
