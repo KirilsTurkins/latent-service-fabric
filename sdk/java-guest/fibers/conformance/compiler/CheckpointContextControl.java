@@ -513,6 +513,48 @@ public final class CheckpointContextControl {
             count.setProgram(countedProgram(arrayBound));
             isolatedProgress(finite, counted, corrected, null);
         }
+        for (int limit : new int[] { -1, 18, Integer.MAX_VALUE - 1 }) {
+            var finite = new Inputs();
+            var counted = ref("control.InclusiveBound", "<clinit>");
+            var count = method(finite.source, counted, null);
+            count.setProgram(countedProgram(false));
+            var inclusiveHead = count.getProgram().basicBlockAt(1);
+            ((IntegerConstantInstruction) inclusiveHead.getFirstInstruction()).setConstant(limit);
+            ((BranchingInstruction) inclusiveHead.getLastInstruction()).setCondition(BranchingCondition.GREATER);
+            isolatedProgress(finite, counted, corrected, null);
+        }
+        var dynamic = new Inputs();
+        var dynamicEntry = ref("control.InclusiveDynamic", "<clinit>");
+        var dynamicMethod = method(dynamic.source, dynamicEntry, null);
+        dynamicMethod.setProgram(countedProgram(true));
+        ((BranchingInstruction) dynamicMethod.getProgram().basicBlockAt(1).getLastInstruction())
+                .setCondition(BranchingCondition.GREATER);
+        isolatedProgress(dynamic, dynamicEntry, corrected, refusal);
+
+        var stalled = new Inputs();
+        var stalledEntry = ref("control.InclusiveStalled", "<clinit>");
+        var stalledMethod = method(stalled.source, stalledEntry, null);
+        stalledMethod.setProgram(countedProgram(false));
+        var stalledProgram = stalledMethod.getProgram();
+        ((IntegerConstantInstruction) stalledProgram.basicBlockAt(0).getFirstInstruction().getNext()).setConstant(0);
+        var stalledHead = stalledProgram.basicBlockAt(1);
+        ((IntegerConstantInstruction) stalledHead.getFirstInstruction()).setConstant(18);
+        ((BranchingInstruction) stalledHead.getLastInstruction()).setCondition(BranchingCondition.GREATER);
+        isolatedProgress(stalled, stalledEntry, corrected, refusal);
+
+        var late = new Inputs();
+        var lateEntry = ref("control.InclusiveLateBound", "<clinit>");
+        var lateMethod = method(late.source, lateEntry, null);
+        lateMethod.setProgram(countedProgram(false));
+        var lateHead = lateMethod.getProgram().basicBlockAt(1);
+        var bound = (IntegerConstantInstruction) lateHead.getFirstInstruction();
+        bound.setConstant(18);
+        var comparison = bound.getNext();
+        bound.delete();
+        comparison.insertNext(bound);
+        ((BranchingInstruction) lateHead.getLastInstruction()).setCondition(BranchingCondition.GREATER);
+        isolatedProgress(late, lateEntry, corrected, refusal);
+
         var overflow = new Inputs();
         var wrapping = ref("control.WrappingInitializer", "<clinit>");
         var wrappingMethod = method(overflow.source, wrapping, null);

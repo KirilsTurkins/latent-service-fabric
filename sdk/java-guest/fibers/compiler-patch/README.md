@@ -160,10 +160,13 @@ Managed loops outside these contexts keep the existing checkpoint transformation
 
 The generic rule uses a reducible CFG, including exceptional edges, and SSA
 induction. Every entry supplies a signed `int`; every backedge must supply
-exactly `i + 1`; the dominating continuation test is strict signed `i < limit`.
-The limit may be an array length or a getter recomputed at the header: the rank
-`Integer.MAX_VALUE - (long) i` still decreases on every cycle because no signed
-limit can admit a cycle at `Integer.MAX_VALUE`. Header exception paths cannot
+exactly `i + 1`; the dominating continuation test is signed `i < limit`, or
+`i <= constant` with a constant strictly below `Integer.MAX_VALUE`.
+For the strict comparison, the limit may be an array length or a getter
+recomputed at the header. Both supported comparisons keep the rank
+`Integer.MAX_VALUE - (long) i` decreasing on every cycle because neither admits
+a cycle at `Integer.MAX_VALUE`. Dynamic inclusive bounds and the inclusive
+maximum-integer boundary remain refused. Header exception paths cannot
 bypass that test, and a body backedge must be dominated by its continuation.
 The increment on a traversed backedge cannot wrap. Mutable
 flag polling, reset/bypassed updates, unsupported exception cycles and unknown
@@ -261,11 +264,27 @@ javac output must still pass that unchanged closure before acceptance.
 finite progress in the excluded call closure. It does not assert that every
 rejected programme is mathematically nonterminating: unsupported finite loop or
 recursion shapes also refuse. Keep initializer/unmanaged work finite using the
-supported strict counted form, or move waiting and potentially suspending work
+supported counted forms above, or move waiting and potentially suspending work
 out of that excluded context into managed execution. A finite outer loop does
 not make an unbounded inner loop or callee safe. Do not remove synchronization,
 insert a checkpoint inside an unsupported non-suspendable region, or increase
 fuel/heap limits to bypass the refusal.
+
+#### Exact StringAmplifier lowering and extension boundary
+
+The additional finite native certificate covers only the pinned
+`StringAmplifier.amplify(String): String` identity lowering. It authenticates the
+platform archive and transformed declaration, checks the actual C target's
+ordered intrinsic/generator factory profile, and verifies the selected emitter
+after those factories initialize. The array overload is not covered. Additional,
+reordered or replaced factories are refused, and the selected factory lists are
+frozen before C generation. This is a fixed compiler-profile proof, not a
+sandbox for arbitrary compiler plugins executing in the compiler JVM.
+
+[The split-loader amplifier control](string-amplifier-qualification.md) exercises
+service-discovered extensions, the generated identity assignment, and inclusive
+loop boundaries with the actual C frontend. It is separate from the earlier
+analysis-only context control and does not qualify a worker component or guest.
 
 #### Executable qualification and evidence boundary
 

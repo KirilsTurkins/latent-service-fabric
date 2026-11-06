@@ -1,0 +1,26 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "java-string-amplifier-${{ github.ref }}-${{ github.sha }}"
+    },
+    "name": "Java string amplifier compiler control",
+    "on": {
+      "push": {
+        "branches": [
+          "fix/java-string-amplifier-20261106"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "compiler"
+  ],
+  "reviewReason": "Bind the focused split-loader Java intrinsic control to its exact draft branch and permissions.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-string-amplifier.yml"
+}

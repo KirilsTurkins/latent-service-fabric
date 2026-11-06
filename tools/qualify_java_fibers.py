@@ -116,6 +116,7 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
     classpath, identities = locked_model_classpath(compiler, include_platform=True)
     output.mkdir()
     sources = ("fibers/compiler/dev/latent/guest/runtime/compiler/RuntimePlugin.java",
+               "fibers/compiler/dev/latent/guest/runtime/compiler/BoundedMathInitialization.java",
                "fibers/compiler/dev/latent/guest/runtime/compiler/EventQueueHeapMethods.java",
                "fibers/dev/latent/guest/runtime/EventQueueHeapDonor.java",
                "fibers/conformance/compiler/QueueHeapControl.java",
