@@ -1,7 +1,7 @@
 name: Consumer inner-future native ownership
 on:
   push:
-    branches: ['feat/sdk-745-consumer-inner-future-20261105']
+    branches: ['feat/sdk-745-consumer-inner-future-20261105', 'feat/sdk-745-producer-inner-future-20261106']
     paths:
       - '.github/workflows/consumer-inner-future.yml'
       - 'crates/vendor/wasmtime/**'
