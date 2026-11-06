@@ -171,6 +171,12 @@ def qualify(output: Path, read_only_cache: Path | None = None) -> dict:
         source_module(SDK / 'tools/feasibility.py').verify_version('java-version', version, pins['sdk']['java'])
         model = output / 'model'
         model.mkdir()
+        # Match the production SDK's compileOnly core dependency: shaded ASM
+        # is present at compiler runtime but is not exported to SDK compilation.
+        core_api = [p for p in tooling.split(os.pathsep) if Path(p).name == 'teavm-core-0.15.0.jar']
+        require(len(core_api) == 1, 'java-amplifier-core-api')
+        commands.run('compile-math-core-api', javac, '--release', '25', '-proc:none', '-encoding', 'UTF-8',
+            '-cp', core_api[0], '-d', model, MATH)
         commands.run('compile-control', javac, '--release', '25', '-proc:none', '-encoding', 'UTF-8',
             '-cp', tooling, '-d', model, CONTROL, SPLIT, PLUGIN, WORKER, MATH, MATH_REFERENCE)
         reference = commands.run('math-initializer-reference', java, '-Xmx256m',

@@ -21,7 +21,9 @@ import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.parsing.ClassRefsRenamer;
-import org.teavm.parsing.Parser;
+import org.teavm.parsing.resource.Resource;
+import org.teavm.parsing.resource.ResourceProvider;
+import org.teavm.parsing.resource.ResourceBytecodeClassHolderSource;
 
 /** Keep the pinned small power tables out of the generic recursive multiplier.
  * The ordinary application multiply implementation is not changed or exempted
@@ -99,10 +101,21 @@ final class BoundedMathInitialization {
                         HexFormat.of().parseHex("4503818e36f8595cae20b26f94b7e955e8bb26e9966e4003732b1ab8e7868067")));
             }
             // Parse the same authenticated bytes, not a second resource read.
-            var node = new org.teavm.asm.tree.ClassNode();
-            new org.teavm.asm.ClassReader(bytes).accept(node, 0);
-            var parsed = new Parser(new ReferenceCache()).parseClass(node);
-            var source = new PreOptimizingClassHolderSource(name -> name.equals(DONOR) ? parsed : null);
+            // Use only teavm-core's public API on the compile classpath. Its
+            // shaded ASM implementation is a runtime dependency, not an SDK API.
+            Resource resource = new Resource() {
+                public java.io.InputStream open() { return new java.io.ByteArrayInputStream(bytes); }
+                public java.util.Date getModificationDate() { return null; }
+            };
+            var provider = new ResourceProvider() {
+                public java.util.Iterator<Resource> getResources(String name) {
+                    return name.equals(DONOR.replace('.', '/') + ".class")
+                            ? java.util.List.of(resource).iterator() : java.util.Collections.emptyIterator();
+                }
+                public void close() { }
+            };
+            var source = new PreOptimizingClassHolderSource(
+                    new ResourceBytecodeClassHolderSource(provider, new ReferenceCache()));
             var expected = source.get(DONOR);
             require(expected != null && cls.getMethods().size() <= 64 && cls.getFields().size() <= 16);
             // The JCL substitution changes these two identities in this class's
