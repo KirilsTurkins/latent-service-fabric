@@ -57,7 +57,15 @@ jobs:
           git checkout --detach 6994c4c4c7f0bb40aa405d804e47850a2dd60081
           python3 -m pip install --requirement tools/requirements.lock
           python3 -B "$out/apply.py"
-          cargo fmt --all
+          python3 -B - <<'PY'
+          from pathlib import Path
+          import subprocess
+          from tools.ci_cargo import format_command
+          command = format_command(Path.cwd())
+          assert command[-1] == '--check' and '--all' not in command
+          subprocess.run(command[:-1], check=True)
+          subprocess.run(command, check=True)
+          PY
           git diff --check
           python3 -B -c 'from tools.ci_coverage import validate; validate(); print("CI contracts passed")'
       - name: Store exact source objects without updating any branch
