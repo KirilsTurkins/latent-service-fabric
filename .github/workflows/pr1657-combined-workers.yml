@@ -9,9 +9,6 @@ jobs:
   candidate:
     runs-on: ubuntu-24.04
     timeout-minutes: 75
-    permissions:
-      contents: write
-      actions: read
     env:
       CARGO_BUILD_JOBS: '2'
       CARGO_INCREMENTAL: '0'
@@ -26,6 +23,7 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
         with:
           persist-credentials: false
+          ref: 3fc286a0218d0a77dbb9c8a51df13eeaaa081dc9
       - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
         with:
           python-version: 3.13.5
@@ -41,37 +39,17 @@ jobs:
           cache-all-crates: false
           cache-on-failure: false
           save-if: false
-      - name: Apply the reviewed changes to the exact PR head
+      - name: Verify exact source and formatting
         shell: bash
         run: |
           set -euo pipefail
-          out="$RUNNER_TEMP/pr1657-worker-stage"
-          mkdir -p "$out"
-          cp .github/pr1657_worker_apply.py "$out/apply.py"
-          cp .github/pr1657_worker_publish.py "$out/publish.py"
-          for path in crates/latent-wasmtime/src/native_stacks/combined.rs crates/latent-wasmtime/src/native_stacks/tests/combined.rs; do
-            mkdir -p "$out/$(dirname "$path")"
-            cp "$path" "$out/$path"
-          done
-          git fetch --no-tags --depth=1 origin 6994c4c4c7f0bb40aa405d804e47850a2dd60081
-          git checkout --detach 6994c4c4c7f0bb40aa405d804e47850a2dd60081
+          test "$(git rev-parse HEAD)" = 3fc286a0218d0a77dbb9c8a51df13eeaaa081dc9
+          test "$(git rev-parse HEAD^{tree})" = 2bac4e3605f245c7bbdabaccbd7fe9114cc192d9
+          mkdir -p "$RUNNER_TEMP/pr1657-worker-stage"
+          git show --no-patch --format=fuller HEAD > "$RUNNER_TEMP/pr1657-worker-stage/source-commit.txt"
           python3 -m pip install --requirement tools/requirements.lock
-          python3 -B "$out/apply.py"
-          python3 -B - <<'PY'
-          from pathlib import Path
-          import subprocess
-          from tools.ci_cargo import format_command
-          command = format_command(Path.cwd())
-          assert command[-1] == '--check' and '--all' not in command
-          subprocess.run(command[:-1], check=True)
-          subprocess.run(command, check=True)
-          PY
-          git diff --check
+          python3 -B tools/ci_cargo.py run format
           python3 -B -c 'from tools.ci_coverage import validate; validate(); print("CI contracts passed")'
-      - name: Store exact source objects without updating any branch
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: python3 -B "$RUNNER_TEMP/pr1657-worker-stage/publish.py"
       - name: Compile and execute ordinary and combined stack controls
         shell: bash
         run: |
@@ -89,24 +67,6 @@ jobs:
         run: |
           set -euo pipefail
           python3 -B tools/qualify_rust_thread_http_combined.py --compiler-materials "$RUNNER_TEMP/rust-combined-original" --output "$RUNNER_TEMP/rust-combined-signed" --source-commit "$(git rev-parse HEAD)"
-      - name: Retain exact candidate source and behavioral results
-        if: always()
-        shell: bash
-        run: |
-          set -euo pipefail
-          out="$RUNNER_TEMP/pr1657-worker-stage"
-          git diff --binary > "$out/uncommitted.patch"
-          python3 - <<'PY'
-          from pathlib import Path
-          import json, os, tarfile
-          out=Path(os.environ['RUNNER_TEMP'])/'pr1657-worker-stage'
-          paths=out/'paths.json'
-          if paths.is_file():
-              with tarfile.open(out/'candidate-source.tar.gz','w:gz') as archive:
-                  for name in json.loads(paths.read_bytes()):
-                      p=Path(name)
-                      if p.is_file():archive.add(p,arcname=name)
-          PY
       - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
         if: always()
         with:
