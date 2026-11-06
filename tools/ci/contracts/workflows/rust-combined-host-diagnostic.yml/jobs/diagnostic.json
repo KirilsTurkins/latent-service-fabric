@@ -1,7 +1,7 @@
 {
   "schemaVersion": "latent.ci.contracts.v1",
   "kind": "job",
-  "reviewReason": "Qualify only the opt-in original-owner host proof, fixed engine compilation, and node profile; no signed execution or physical work bound claim.",
+  "reviewReason": "Retain original strict stack admission and verify fixed-graph child/engine-worker ownership under shared limits.",
   "workflow": ".github/workflows/rust-combined-host-diagnostic.yml",
   "jobId": "diagnostic",
   "definition": {
@@ -64,6 +64,11 @@
         "name": "Check the selected host proof and actual engine compilation",
         "shell": "bash",
         "run": "set -euo pipefail\ncargo test --locked -p latent-wasmtime --lib --features development-rust-http-combined component_threading::tests::combined_http_diagnostic -- --nocapture --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/rust-combined-host/host.log\"\ngrep -F 'COMBINED_HTTP_CATALOGUE=current' \"$RUNNER_TEMP/rust-combined-host/host.log\"\ngrep -F 'test component_threading::tests::combined_http_diagnostic_requires_its_distinct_prepaid_profile ... ok' \"$RUNNER_TEMP/rust-combined-host/host.log\"\ngrep -F 'test component_threading::tests::combined_http_diagnostic_requires_explicit_original_cache_capacity ... ok' \"$RUNNER_TEMP/rust-combined-host/host.log\"\ngrep -F 'test component_threading::tests::combined_http_diagnostic_authenticates_wrapped_final_graph_before_reuse' \"$RUNNER_TEMP/rust-combined-host/host.log\"\ngrep -F 'test result: ok. 3 passed; 0 failed;' \"$RUNNER_TEMP/rust-combined-host/host.log\"\n"
+      },
+      {
+        "name": "Check original stack admission and fixed combined worker ownership",
+        "shell": "bash",
+        "run": "set -euo pipefail\ncargo test --locked -p latent-wasmtime --lib native_stacks:: -- --nocapture --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/rust-combined-host/stacks-ordinary.log\"\ncargo test --locked -p latent-wasmtime --lib --features development-rust-http-combined native_stacks:: -- --nocapture --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/rust-combined-host/stacks-combined.log\"\n"
       },
       {
         "name": "Check diagnostic node selection without raising its budgets",

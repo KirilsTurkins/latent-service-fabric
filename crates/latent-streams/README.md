@@ -23,6 +23,27 @@ An ordinary HTTP method/path grant cannot authorize opaque socket bytes. The str
 3. Recheck current authority before physical syscalls after waits; retain accepted I/O and chunks under original ownership.
 4. Drain/retire provider epochs and actual sockets before refunding capacity or reporting shutdown.
 
+### Local abort and half-close
+
+`shutdown(Both)` is a local abort, not a graceful TLS shutdown or proof that a
+peer rolled back earlier writes. It has one bounded control slot independent of
+the ordinary write/send-shutdown slot. A held write, an accepted TCP send-shutdown,
+or an already closed TCP send half does not by itself prevent admission of the
+abort. Original authority, deadline and prepaid I/O admission gates still apply.
+
+An accepted but unpolled abort blocks new writes and TCP send-shutdowns; a second
+abort is rejected. Dropping that unpolled future releases only its slot and does
+not stop the connection. Once the abort executes, existing read/readiness waits
+are cancelled. The result can remain `Stopping` while accepted owners still hold
+the original socket and reservations. Dropping the guest-facing handle is not a
+refund proof: the final accepted owner must retire as well. Earlier application
+write attempts retain their possible-write uncertainty; no reconnect or replay
+is performed.
+
+TCP supports send-only shutdown. TLS send-only shutdown and receive-only shutdown
+remain unsupported. TLS `shutdown(Both)` does not send a close-notify record; it
+can also retire a connection after the peer has sent its own close-notify.
+
 ## Integration boundaries
 
 ADR-0061's bounded design was accepted on October 16, 2026; production
@@ -57,7 +78,32 @@ Use [Cargo.toml](Cargo.toml) for external dependencies, target gates and test/bu
 
 The [package entry point](src/lib.rs) and the module links above are the source map. [The workspace package guide](../../docs/development/workspace-packages.md) explains feature/target selection, generated inputs and the registered test workflow.
 
-No package suite is registered in the current suite inventory. Build/type checks and the linked consuming integration/qualification paths establish their own narrower coverage; this is not an implicit test pass.
+The Linux x86-64 library suite `latent-streams.lib.latent-streams` is registered
+in [the outbound suite fragment](../../tools/ci/suites.d/outbound-streams.json).
+The [host TLS provider owner](../../tools/qualify_host_stream_tls_provider.py)
+builds a source-matched executable, runs the complete library suite without
+ignored or filtered cases, and retains source-bound evidence. From a clean
+checkout with the pinned toolchain, run it from the repository root with a fresh
+output directory:
+
+```sh
+python3 tools/qualify_host_stream_tls_provider.py \
+  --output /tmp/lsf-host-tls-provider-reference \
+  --source-commit "$(git rev-parse HEAD)"
+```
+
+The [TCP abort controls](src/tests/sockets.rs) and
+[TLS abort controls](src/tests/tls/abort.rs) are required evidence, not optional
+filtered smoke tests. The TLS controls pin and verify TLS 1.2 and TLS 1.3,
+exercise read/readiness cancellation with an accepted unpolled write, distinguish
+possible earlier writes from no application write, retain the original socket
+through handle drop, and check unpolled-abort cancellation and peer close-notify.
+An additional real non-reading peer forces an already-dispatched TLS write to
+block while flushing ciphertext. Its abort control checks prompt cancellation,
+nonzero accepted-plaintext uncertainty, original socket/charge retention, bounded
+peer delivery without replay, and EOF without a local close-notify. These controls
+do not claim an already-dispatched kernel FIN race, kernel final-free proof, or
+production TLS qualification.
 
 Representative source tests (not a complete coverage inventory):
 
