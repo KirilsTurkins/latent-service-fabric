@@ -10,7 +10,8 @@ public final class Activation {
     private static final int[] owners = new int[3];
     private static final ArrayList<ManagedPool> pools = new ArrayList<>();
     public static String denyNext;
-    public interface ManagedPool { boolean hasPendingWork(); void closeAtRoot(); }
+    public static boolean retainFailedStart;
+    public interface ManagedPool { boolean hasPendingWork(); boolean isRetired(); void closeAtRoot(); }
     public static final class Lease implements AutoCloseable {
         private final int kind;
         private boolean closed;
@@ -32,7 +33,10 @@ public final class Activation {
     }
     public static synchronized int count(Bindings.LatentRuntimeActivationOwnerKind kind) { return owners[kind.ordinal()]; }
     public static synchronized void manage(ManagedPool pool) { pools.add(pool); }
-    public static void startManaged(Thread worker) { worker.start(); }
+    public static void startManaged(Thread worker, ManagedPool pool) { worker.start(); }
+    public static boolean alive(Thread worker) { return retainFailedStart || worker.isAlive(); }
+    // The separate real-Activation control verifies physical-owner retirement.
+    public static void unmanageRetired(ManagedPool pool) { }
     public static boolean closing() { return false; }
     public static boolean acceptedContinuation() { return false; }
     public static void checkpoint() { Thread.yield(); }

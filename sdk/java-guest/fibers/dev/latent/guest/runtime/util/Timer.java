@@ -12,7 +12,7 @@ public class Timer implements Activation.ManagedPool {
     private final Object lock = new Object();
     private final ArrayList<Entry> queue = new ArrayList<>();
     private final Thread worker;
-    private Activation.Lease owner;
+    private volatile Activation.Lease owner;
     private boolean cancelled;
     private volatile boolean retiring;
     private volatile int pendingWork;
@@ -31,9 +31,14 @@ public class Timer implements Activation.ManagedPool {
     }
 
     private static final class Worker implements Runnable {
-        private final Timer timer;
+        private Timer timer;
         Worker(Timer timer) { this.timer = timer; }
-        @Override public void run() { timer.work(); }
+        @Override public void run() {
+            Timer current = timer;
+            if (current == null) return;
+            try { current.work(); } finally { clear(); }
+        }
+        void clear() { timer = null; }
     }
 
     private static synchronized String nextName() { return "Timer-" + serial++; }
@@ -42,15 +47,19 @@ public class Timer implements Activation.ManagedPool {
     public Timer(String name) { this(name, false); }
     public Timer(String name, boolean daemon) {
         Objects.requireNonNull(name);
-        worker = new Thread(new Worker(this), name);
+        Worker target = new Worker(this);
+        worker = new Thread(target, name);
         worker.setDaemon(daemon);
         owner = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Executor);
         try {
             Activation.manage(this);
-            Activation.startManaged(worker);
+            Activation.startManaged(worker, this);
         } catch (Throwable error) {
+            // An accepted or rollback-uncertain thread may still run this target.
+            if (!Activation.alive(worker)) target.clear();
             cancelled = true;
             owner.close(); owner = null;
+            Activation.unmanageRetired(this);
             throw error;
         }
     }
@@ -168,7 +177,7 @@ public class Timer implements Activation.ManagedPool {
             synchronized (lock) {
                 cancelled = true;
                 clearQueue();
-                if (owner != null) { owner.close(); owner = null; }
+                if (owner != null) { owner.close(); owner = null; Activation.unmanageRetired(this); }
                 lock.notifyAll();
             }
         }
@@ -200,6 +209,7 @@ public class Timer implements Activation.ManagedPool {
         }
     }
 
+    @Override public boolean isRetired() { return owner == null; }
     @Override public boolean hasPendingWork() { return pendingWork != 0; }
     @Override public void closeAtRoot() {
         // The coordinator observes an idle queue without taking a suspendable

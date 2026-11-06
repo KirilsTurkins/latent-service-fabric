@@ -27,6 +27,53 @@ public final class ScheduledOwnerControl {
             Thread.yield();
         }
     }
+    private static Object capturedPool(Runnable target) throws Exception {
+        // The factory deliberately retains the actual Runnable after the thread
+        // exits, matching the pinned TeaVM Thread target lifetime.
+        var capture = target.getClass().getDeclaredFields()[0]; capture.setAccessible(true);
+        Object worker = capture.get(target);
+        var pool = worker.getClass().getDeclaredField("pool"); pool.setAccessible(true);
+        return pool.get(worker);
+    }
+    private static void clearedWorkerTarget(Runnable target) throws Exception {
+        require(capturedPool(target) == null);
+        target.run(); // A retained target is inert after retirement.
+    }
+    private static void rejectedWorkerTargets() throws Exception {
+        for (boolean uncertain : new boolean[]{false, true}) {
+            AtomicReference<Runnable> target = new AtomicReference<>();
+            var failure = new IllegalThreadStateException("source-start-failure");
+            var pool = new ScheduledThreadPoolExecutor(1, task -> {
+                target.set(task);
+                return new Thread(task) { @Override public void start() { throw failure; } };
+            });
+            // This private fake selects the Activation.alive result; the real
+            // Activation control separately checks the owner and Work ledger.
+            Activation.retainFailedStart = uncertain;
+            try {
+                try { pool.schedule(() -> 42, 0, TimeUnit.NANOSECONDS); throw new AssertionError("expected-start-failure"); }
+                catch (IllegalThreadStateException error) { require(error == failure); }
+                require((capturedPool(target.get()) != null) == uncertain);
+            } finally { Activation.retainFailedStart = false; }
+            finish(pool);
+        }
+    }
+    private static void workerTargets() throws Exception {
+        AtomicReference<Runnable> target = new AtomicReference<>();
+        AtomicReference<Thread> worker = new AtomicReference<>();
+        java.util.concurrent.ThreadFactory factory = runnable -> {
+            target.set(runnable); Thread thread = new Thread(runnable); worker.set(thread); return thread;
+        };
+        var executor = dev.latent.guest.runtime.concurrent.Executors.newSingleThreadExecutor(factory);
+        CountDownLatch ran = new CountDownLatch(1); executor.execute(ran::countDown); await(ran);
+        executor.shutdown(); require(executor.awaitTermination(5, TimeUnit.SECONDS));
+        worker.get().join(5000); require(!worker.get().isAlive()); clearedWorkerTarget(target.get()); Activation.idle();
+        target.set(null); worker.set(null);
+        var scheduled = new ScheduledThreadPoolExecutor(1, factory);
+        require(scheduled.schedule(() -> 42, 0, TimeUnit.NANOSECONDS).get(5, TimeUnit.SECONDS) == 42);
+        scheduled.shutdown(); require(scheduled.awaitTermination(5, TimeUnit.SECONDS));
+        worker.get().join(5000); require(!worker.get().isAlive()); clearedWorkerTarget(target.get()); Activation.idle();
+    }
     public static void main(String[] arguments) throws Exception {
         ScheduledThreadPoolExecutor pool = new ScheduledThreadPoolExecutor(1);
         for (String denied : new String[]{"QueuedWork", "Result"}) {
@@ -87,6 +134,7 @@ public final class ScheduledOwnerControl {
                 waiting.cancel(false);
             } else require(waiting.cancel(false));
             finish(pool);
+            actual.get().join(5000);
             require(!actual.get().isAlive());
         }
 
@@ -100,6 +148,8 @@ public final class ScheduledOwnerControl {
         try { pool.schedule(() -> { throw new AssertionError("failed-worker-callback"); }, 0, TimeUnit.NANOSECONDS); throw new AssertionError(); }
         catch (java.util.concurrent.RejectedExecutionException expected) { held(0, 0); }
         finish(pool);
+        workerTargets();
+        rejectedWorkerTargets();
         System.out.println("SCHEDULED_OWNER_CONTROL PASS preadmission;actual-result;running-cancel-held;periodic-nonoverlap;original-error-suppresses-repeat;timed-wait-cancel-and-interrupt;shutdown-policy;factory-rollback;all-retired");
     }
 }

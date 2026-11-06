@@ -61,6 +61,89 @@ public final class TimerReadinessSourceControl {
         Activation.finished(rejected);
         require(owners() == original, "failed-rollback-explicit-source-settlement");
     }
+    private static final class Pool implements Activation.ManagedPool {
+        Activation.Lease owner = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Executor);
+        Runnable onClose;
+        int closes;
+        @Override public boolean hasPendingWork() { return false; }
+        @Override public boolean isRetired() { return owner == null; }
+        @Override public void closeAtRoot() { closes++; if (onClose != null) onClose.run(); }
+        void retire() { owner.close(); owner = null; Activation.unmanageRetired(this); }
+    }
+    private static void poolRetirement() throws Exception {
+        @SuppressWarnings("unchecked") List<Activation.ManagedPool> pools = (List<Activation.ManagedPool>)get("pools");
+        require(pools.isEmpty(), "initial-pool-registry");
+        for (int i = 0; i < 256; i++) {
+            Pool pool = new Pool(); Activation.manage(pool);
+            Activation.unmanageRetired(pool);
+            require(pools.size() == 1, "live-executor-remains-registered");
+            pool.retire();
+            require(pools.isEmpty(), "sequential-settlement-compacts-registry");
+        }
+        Pool pool = new Pool(); Activation.manage(pool);
+        Bindings.LatentRuntimeActivation.denySettle = true;
+        try { denied(pool::retire); } finally { Bindings.LatentRuntimeActivation.denySettle = false; }
+        Activation.unmanageRetired(pool);
+        require(pools.contains(pool) && !pool.isRetired(), "failed-executor-settlement-remains-owned");
+        var startFailure = new IllegalThreadStateException("uncertain-start");
+        Thread first = new Thread() { @Override public void start() { Activation.starting(this); throw startFailure; } };
+        Thread second = new Thread() { @Override public void start() { Activation.starting(this); throw startFailure; } };
+        for (Thread thread : new Thread[]{first, second}) {
+            try { Activation.startManaged(thread, pool); throw new AssertionError("expected-uncertain-start"); }
+            catch (IllegalThreadStateException expected) { require(expected == startFailure, "uncertain-start-cause"); }
+        }
+        Thread rejected = new Thread() { @Override public void start() { throw startFailure; } };
+        Bindings.LatentRuntimeActivation.denySettle = true;
+        try {
+            try { Activation.startManaged(rejected, pool); throw new AssertionError("expected-rollback-denial"); }
+            catch (IllegalStateException expected) { require(expected.getCause() == startFailure, "rollback-preserves-start-error"); }
+        } finally { Bindings.LatentRuntimeActivation.denySettle = false; }
+        require(Activation.alive(rejected), "failed-start-rollback-remains-owned");
+        pool.retire();
+        require(pools.contains(pool), "uncertain-workers-retain-settled-pool");
+        Bindings.LatentRuntimeActivation.denySettle = true;
+        try { denied(() -> Activation.finished(first)); } finally { Bindings.LatentRuntimeActivation.denySettle = false; }
+        require(pools.contains(pool) && Activation.alive(first), "failed-worker-settlement-retains-pool");
+        Activation.finished(first);
+        require(pools.contains(pool) && Activation.alive(second), "all-physical-workers-must-retire");
+        Activation.finished(second);
+        require(pools.contains(pool), "failed-rollback-still-retains-pool");
+        Activation.finished(rejected);
+        require(pools.isEmpty(), "last-physical-worker-releases-pool");
+        require(field(workClass(), "pool").get(((Map<?, ?>)get("threads")).get(first)) == null,
+            "finished-work-does-not-retain-pool");
+
+        // The timer test creates a private worker outside the managed-start path.
+        for (Thread thread : ((Map<Thread, ?>)get("threads")).keySet().toArray(new Thread[0]))
+            if (thread != Thread.currentThread() && Activation.alive(thread)) Activation.finished(thread);
+        Pool firstClose = new Pool(), removedByFirst = new Pool(), lastClose = new Pool();
+        Activation.manage(firstClose); Activation.manage(removedByFirst); Activation.manage(lastClose);
+        set("closing", true);
+        firstClose.onClose = () -> {
+            firstClose.retire(); removedByFirst.retire();
+            denied(() -> Activation.manage(firstClose));
+        };
+        lastClose.onClose = lastClose::retire;
+        var retire = Activation.class.getDeclaredMethod("retireIdlePools"); retire.setAccessible(true);
+        require((boolean)retire.invoke(null), "root-retirement-started");
+        require(firstClose.closes == 1 && removedByFirst.closes == 0 && lastClose.closes == 1 && pools.isEmpty(),
+            "reentrant-removals-do-not-skip-live-pools-or-leave-tombstones");
+        // Reset this private fixture to exercise an independent failing close.
+        set("closing", false); set("retiringPools", false);
+        Pool failing = new Pool(), retained = new Pool();
+        Activation.manage(failing); Activation.manage(retained);
+        set("closing", true);
+        RuntimeException marker = new RuntimeException("root-close-failure");
+        failing.onClose = () -> { failing.retire(); throw marker; };
+        retained.onClose = retained::retire;
+        try { retire.invoke(null); throw new AssertionError("expected-root-close-failure"); }
+        catch (java.lang.reflect.InvocationTargetException error) { require(error.getCause() == marker, "root-close-error-preserved"); }
+        require(pools.size() == 1 && pools.get(0) == retained && (boolean)get("retiringPools"),
+            "exception-compacts-tombstones-and-retains-owner-without-retry");
+        retained.retire(); // Isolated control cleanup, not a production retry.
+        require(pools.isEmpty(), "isolated-control-cleanup");
+    }
+    private static Class<?> workClass() throws Exception { return Class.forName("dev.latent.guest.runtime.Activation$Work"); }
     public static void main(String[] arguments) throws Exception {
         set("entered", true); set("root", work(Thread.currentThread()));
         long deadline = Activation.monotonicMillis() + 200;
@@ -111,6 +194,7 @@ public final class TimerReadinessSourceControl {
         require(Bindings.LatentRuntimeActivation.waits == waits + 2 && Bindings.LatentRuntimeActivation.timers() == 0, "unmatched-and-indefinite-waits-stay-charged");
         require(Monitors.absoluteSleepDeadline(Long.MAX_VALUE - 1, 2) == Long.MAX_VALUE, "pure-saturation-preserved");
         managedStartRollback();
+        poolRetirement();
         System.out.println("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback");
     }
 }

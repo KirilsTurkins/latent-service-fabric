@@ -20,6 +20,7 @@ public final class Activation {
     private static boolean rootComplete;
     private static boolean closing;
     private static boolean retiringPools;
+    private static boolean iteratingPoolRetirement;
     private static Address result;
     private static Throwable failure;
     private static Work root;
@@ -34,6 +35,7 @@ public final class Activation {
         boolean complete;
         boolean prepared;
         boolean managed;
+        ManagedPool pool;
         TimerLease timer;
         Work(Bindings.LatentRuntimeActivationToken token) { this.token = token; }
     }
@@ -64,11 +66,15 @@ public final class Activation {
     }
 
     /** SDK-managed workers remain real independently scheduled Java threads. */
-    public static void startManaged(Thread thread) {
+    public static void startManaged(Thread thread) { startManaged(thread, null); }
+
+    public static void startManaged(Thread thread, ManagedPool pool) {
         if (thread == null || threads.containsKey(thread)) throw new IllegalThreadStateException();
+        if (pool != null && !containsPool(pool)) throw new IllegalStateException("activation-runtime-pool-entry");
         Work work = new Work(register(Bindings.LatentRuntimeActivationOwnerKind.ManagedIdleWorker));
         work.prepared = true;
         work.managed = true;
+        work.pool = pool;
         try { threads.put(thread, work); }
         catch (Throwable error) { Bindings.LatentRuntimeActivation.settle(work.token); throw error; }
         try { thread.start(); }
@@ -88,11 +94,31 @@ public final class Activation {
 
     public interface ManagedPool {
         boolean hasPendingWork();
+        boolean isRetired();
         void closeAtRoot();
     }
     public static void manage(ManagedPool pool) {
-        if (!entered || closing && !acceptedContinuation()) throw new IllegalStateException("activation-runtime-pool-entry");
+        if (!entered || retiringPools || closing && !acceptedContinuation())
+            throw new IllegalStateException("activation-runtime-pool-entry");
         pools.add(pool);
+    }
+
+    private static boolean containsPool(ManagedPool pool) {
+        for (ManagedPool registered : pools) if (registered == pool) return true;
+        return false;
+    }
+
+    /** Drop only a settled pool whose real workers have also settled. */
+    public static void unmanageRetired(ManagedPool pool) {
+        if (!pool.isRetired()) return;
+        for (Work work : threads.values()) if (work.pool == pool && !work.complete) return;
+        for (int index = pools.size() - 1; index >= 0; --index) {
+            if (pools.get(index) == pool) {
+                // closeAtRoot can retire itself or another pool reentrantly.
+                if (iteratingPoolRetirement) pools.set(index, null);
+                else pools.remove(index);
+            }
+        }
     }
 
     public static boolean acceptedContinuation() {
@@ -205,6 +231,9 @@ public final class Activation {
         if (settled.isError()) throw new IllegalStateException("activation-runtime-settle-" + settled.error());
         work.token = null;
         work.complete = true;
+        ManagedPool pool = work.pool;
+        work.pool = null;
+        if (pool != null) unmanageRetired(pool);
         synchronized (thread) { thread.notifyAll(); }
     }
 
@@ -274,7 +303,17 @@ public final class Activation {
         }
         for (ManagedPool pool : pools) if (pool.hasPendingWork()) return false;
         retiringPools = true;
-        for (int index = 0, count = pools.size(); index < count; index++) pools.get(index).closeAtRoot();
+        iteratingPoolRetirement = true;
+        try {
+            for (int index = 0, count = pools.size(); index < count; index++) {
+                ManagedPool pool = pools.get(index);
+                if (pool != null) pool.closeAtRoot();
+            }
+        } finally {
+            iteratingPoolRetirement = false;
+            for (int index = pools.size() - 1; index >= 0; --index)
+                if (pools.get(index) == null) pools.remove(index);
+        }
         return true;
     }
 

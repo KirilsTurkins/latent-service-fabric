@@ -17,7 +17,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     private final boolean expireIdle;
     private final ArrayDeque<Item> queue = new ArrayDeque<>();
     private final ArrayList<Thread> workers = new ArrayList<>();
-    private Activation.Lease owner;
+    private volatile Activation.Lease owner;
     private boolean shutdown;
     private boolean interrupting;
     private volatile boolean retiring;
@@ -83,12 +83,31 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         }
     }
 
+    // TeaVM retains a completed Thread's Runnable; do not let that target
+    // retain an otherwise retired executor through the thread identity ledger.
+    private static final class Worker {
+        private ManagedExecutor pool;
+        Worker(ManagedExecutor pool) { this.pool = pool; }
+        void run() {
+            ManagedExecutor current = pool;
+            if (current == null) return;
+            try { current.work(); } finally { clear(); }
+        }
+        void clear() { pool = null; }
+    }
+
     private void startWorker() {
-        Thread thread = factory.newThread(this::work);
+        Worker worker = new Worker(this);
+        Thread thread = factory.newThread(worker::run);
         if (thread == null || thread.isAlive()) throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
         workers.add(thread);
-        try { Activation.startManaged(thread); }
-        catch (Throwable error) { workers.remove(thread); throw error; }
+        try { Activation.startManaged(thread, this); }
+        catch (Throwable error) {
+            workers.remove(thread);
+            // An accepted or rollback-uncertain thread may still run this target.
+            if (!Activation.alive(thread)) worker.clear();
+            throw error;
+        }
     }
 
     private void work() {
@@ -138,8 +157,10 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         if ((shutdown || retiring) && queue.isEmpty() && workers.isEmpty() && owner != null) {
             owner.close();
             owner = null;
+            Activation.unmanageRetired(this);
         }
     }
+    @Override public boolean isRetired() { return owner == null; }
     // The coordinator is outside any logical Java fiber. Observing this value
     // must not try to suspend on a monitor held by a runnable factory/callback.
     @Override public boolean hasPendingWork() { return pendingWork != 0; }

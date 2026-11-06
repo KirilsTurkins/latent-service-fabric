@@ -13,6 +13,7 @@ public final class Activation {
 
     public interface ManagedPool {
         boolean hasPendingWork();
+        boolean isRetired();
         void closeAtRoot();
     }
     public static final class Lease implements AutoCloseable {
@@ -39,7 +40,10 @@ public final class Activation {
         return new Lease(kind);
     }
     public static synchronized void manage(ManagedPool pool) { pools.add(pool); }
-    public static synchronized void startManaged(Thread worker) { workers.add(worker); worker.start(); }
+    public static synchronized void startManaged(Thread worker, ManagedPool pool) { workers.add(worker); worker.start(); }
+    public static boolean alive(Thread worker) { return worker.isAlive(); }
+    // The separate real-Activation control verifies physical-owner retirement.
+    public static void unmanageRetired(ManagedPool pool) { }
     public static boolean closing() { return closing; }
     public static boolean acceptedContinuation() { return false; }
     public static void checkpoint() { Thread.yield(); }

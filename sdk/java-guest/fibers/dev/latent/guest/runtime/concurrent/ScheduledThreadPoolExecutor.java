@@ -21,7 +21,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     private final long origin = System.nanoTime();
     private final ArrayList<Task<?>> queue = new ArrayList<>();
     private final ArrayList<Thread> workers = new ArrayList<>();
-    private Activation.Lease owner;
+    private volatile Activation.Lease owner;
     private boolean shutdown;
     private volatile boolean interrupting;
     private boolean continuePeriodic;
@@ -131,13 +131,32 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         }
     }
 
+    // TeaVM retains a completed Thread's Runnable; do not let that target
+    // retain an otherwise retired executor through the thread identity ledger.
+    private static final class Worker {
+        private ScheduledThreadPoolExecutor pool;
+        Worker(ScheduledThreadPoolExecutor pool) { this.pool = pool; }
+        void run() {
+            ScheduledThreadPoolExecutor current = pool;
+            if (current == null) return;
+            try { current.work(); } finally { clear(); }
+        }
+        void clear() { pool = null; }
+    }
+
     private void startWorker() {
-        Thread thread = factory.newThread(this::work);
+        Worker worker = new Worker(this);
+        Thread thread = factory.newThread(worker::run);
         if (thread == null || thread.isAlive())
             throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
         workers.add(thread);
-        try { Activation.startManaged(thread); }
-        catch (Throwable error) { workers.remove(thread); throw error; }
+        try { Activation.startManaged(thread, this); }
+        catch (Throwable error) {
+            workers.remove(thread);
+            // An accepted or rollback-uncertain thread may still run this target.
+            if (!Activation.alive(thread)) worker.clear();
+            throw error;
+        }
     }
 
     private int first() {
@@ -261,8 +280,10 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     private void settleIfTerminated() {
         if ((shutdown || retiring) && pendingWork == 0 && workers.isEmpty() && owner != null) {
             owner.close(); owner = null;
+            Activation.unmanageRetired(this);
         }
     }
+    @Override public boolean isRetired() { return owner == null; }
     @Override public synchronized boolean isShutdown() { return shutdown || retiring; }
     @Override public synchronized boolean isTerminated() { return (shutdown || retiring) && owner == null; }
     @Override public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
