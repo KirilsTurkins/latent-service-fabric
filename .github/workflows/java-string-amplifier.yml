@@ -28,6 +28,7 @@ jobs:
       - name: Compile the fixed split-loader control and refusal cases
         run: |
           python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_java_amplifier -v
           python3 -B tools/qualify_java_amplifier.py --output "$RUNNER_TEMP/java-amplifier"
       - name: Retain bounded compiler controls without guest execution
         if: always()

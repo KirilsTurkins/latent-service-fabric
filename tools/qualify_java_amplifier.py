@@ -24,7 +24,7 @@ if __package__ in (None, ''):
 
 from tools.java_guest.compiler import source_module
 from tools.java_guest.coroutine_patch import ASYNC_CLASSES, corrected_async_source
-from tools.phase2_operator_process import require
+from tools.phase2_operator_process import WorkflowError, require
 from tools.phase3_resource_identity import file_identity
 from tools.qualify_java_checkpoint_context import acquire, overlay, retain_compiler_inputs
 from tools.qualify_java_fibers import locked_model_classpath
@@ -34,6 +34,7 @@ from tools.rust_capsule_project import ROOT, fresh, read_file, write_json
 SDK = ROOT / 'sdk/java-guest'
 CONTROL = SDK / 'fibers/conformance/compiler/CheckpointAmplifierProbe.java'
 SPLIT = SDK / 'fibers/conformance/compiler/AmplifierSplitLauncher.java'
+PLUGIN = SDK / 'fibers/conformance/compiler/AmplifierPluginControl.java'
 FINDER = SDK / 'fibers/compiler-patch/AsyncMethodFinder.java'
 LOCK = SDK / 'feasibility/dependencies.lock.json'
 VERIFICATION = SDK / 'feasibility/gradle/verification-metadata.xml'
@@ -42,8 +43,10 @@ PLATFORM_BYTES = 101636
 EMITTER = 'org/teavm/platform/plugin/PlatformPlugin$1.class'
 MODES = ('pass', 'reorder', 'replace', 'late', 'array', 'declaration', 'parent',
     'generator-reorder', 'generator-replace', 'extra-intrinsic', 'extra-generator',
-    'wrong-target', 'tampered')
-POSITIVE = frozenset(('pass', 'late'))
+    'wrong-target', 'tampered', 'inclusive', 'inclusive-near-max', 'inclusive-overflow',
+    'inclusive-dynamic', 'plugin-neutral', 'plugin-intrinsic', 'plugin-generator',
+    'plugin-completion-intrinsic', 'plugin-completion-generator', 'plugin-declaration')
+POSITIVE = frozenset(('pass', 'late', 'inclusive', 'inclusive-near-max', 'plugin-neutral'))
 
 
 def alter_emitter(source: Path, destination: Path) -> dict:
@@ -80,7 +83,7 @@ def alter_emitter(source: Path, destination: Path) -> dict:
 
 
 def observed_sources() -> list[Path]:
-    paths = (CONTROL, SPLIT, FINDER, LOCK, VERIFICATION, ROOT / 'tools/toolchain.toml',
+    paths = (CONTROL, SPLIT, PLUGIN, FINDER, LOCK, VERIFICATION, ROOT / 'tools/toolchain.toml',
         ROOT / 'sdk/java-guest/tools/dependencies.py', ROOT / 'sdk/java-guest/tools/feasibility.py',
         ROOT / 'tools/java_guest/coroutine_patch.py', ROOT / 'tools/java_guest/compiler.py',
         ROOT / 'tools/qualify_java_checkpoint_context.py', ROOT / 'tools/qualify_java_fibers.py',
@@ -101,7 +104,12 @@ def observed_sources() -> list[Path]:
 
 
 def check_result(mode: str, output: bytes) -> dict:
-    text = output.decode('utf-8')
+    require(mode in MODES, 'java-amplifier-control-mode')
+    require(len(output) <= 512, 'java-amplifier-control-marker')
+    try:
+        text = output.decode('ascii')
+    except UnicodeDecodeError:
+        raise WorkflowError('java-amplifier-control-marker') from None
     expected = re.fullmatch(r'CHECKPOINT_AMPLIFIER_PROBE ' + re.escape(mode)
         + r' PASS generated=(true|false) outputFiles=(\d+) outputBytes=(\d+)\n'
         + r'CHECKPOINT_AMPLIFIER_SPLIT PASS ' + re.escape(mode) + r'\n', text)
@@ -112,6 +120,16 @@ def check_result(mode: str, output: bytes) -> dict:
     require(0 < files < 100000 and 0 < size <= 64 * 1024 * 1024 if generated
         else files == 0 and size == 0, 'java-amplifier-control-output-bound')
     return {'mode': mode, 'generatedC': generated, 'files': files, 'bytes': size}
+
+
+def prepare_plugin_model(model: Path, destination: Path) -> Path:
+    """Enable the test plugin only in a fresh copy of the compiled control model."""
+    shutil.copytree(model, destination)
+    services = destination / 'META-INF/services'
+    services.mkdir(parents=True)
+    descriptor = services / 'org.teavm.vm.spi.TeaVMPlugin'
+    descriptor.write_text('org.teavm.platform.plugin.AmplifierPluginControl\n', encoding='utf-8')
+    return descriptor
 
 
 def qualify(output: Path, read_only_cache: Path | None = None) -> dict:
@@ -143,7 +161,9 @@ def qualify(output: Path, read_only_cache: Path | None = None) -> dict:
         model = output / 'model'
         model.mkdir()
         commands.run('compile-control', javac, '--release', '25', '-proc:none', '-encoding', 'UTF-8',
-            '-cp', tooling, '-d', model, CONTROL, SPLIT)
+            '-cp', tooling, '-d', model, CONTROL, SPLIT, PLUGIN)
+        plugin_model = output / 'plugin-model'
+        report['pluginServiceProvider'] = file_identity(prepare_plugin_model(model, plugin_model))
         corrected = output / 'corrected'
         corrected.mkdir()
         finder = output / 'AsyncMethodFinder.java'
@@ -165,8 +185,9 @@ def qualify(output: Path, read_only_cache: Path | None = None) -> dict:
         selected = [str(patched) if p == str(core[0]) else p for p in jars]
         for mode in MODES:
             inputs = [str(altered) if mode == 'tampered' and p == str(platform[0]) else p for p in selected]
-            result = commands.run('amplifier-' + mode, java, '-Xmx512m', '-cp', model,
-                'AmplifierSplitLauncher', mode, model, os.pathsep.join(inputs))
+            selected_model = plugin_model if mode.startswith('plugin-') else model
+            result = commands.run('amplifier-' + mode, java, '-Xmx512m', '-cp', selected_model,
+                'AmplifierSplitLauncher', mode, selected_model, os.pathsep.join(inputs))
             report['controls'].append(check_result(mode, result))
         after = {p.relative_to(ROOT).as_posix(): file_identity(p) for p in sources}
         require(after == before, 'java-amplifier-source-drift')
@@ -176,6 +197,8 @@ def qualify(output: Path, read_only_cache: Path | None = None) -> dict:
         report.update(status='passed', compilerJars=identities, sourceUnchanged=True)
         return report
     finally:
+        if report['status'] != 'passed':
+            report['status'] = 'failed'
         if commands is not None:
             write_json(output / 'commands.json', commands.records)
         write_json(output / 'result.json', report)

@@ -28,6 +28,29 @@ public final class CheckpointAmplifierProbe {
         static String[] value = StringAmplifier.amplifyArray(new String[] { "bounded" });
         public static void main(String[] args) { if (args.length != 0) value = args; }
     }
+    public static final class InclusiveFixture {
+        static String value = StringAmplifier.amplify("bounded");
+        static int total;
+        static { for (int i = 0; i <= 18; ++i) total += i; }
+        public static void main(String[] args) { if (args.length != total) value = args[0]; }
+    }
+    public static final class InclusiveNearMaxFixture {
+        static String value = StringAmplifier.amplify("bounded");
+        static int total;
+        static { for (int i = Integer.MAX_VALUE - 2; i <= Integer.MAX_VALUE - 1; ++i) total ^= i; }
+        public static void main(String[] args) { if (args.length != total) value = args[0]; }
+    }
+    public static final class InclusiveOverflowFixture {
+        static int total;
+        static { for (int i = Integer.MAX_VALUE - 1; i <= Integer.MAX_VALUE; ++i) total ^= i; }
+        public static void main(String[] args) { if (args.length != total) total = args.length; }
+    }
+    public static final class InclusiveDynamicFixture {
+        static int limit = 18;
+        static int total;
+        static { for (int i = 0; i <= limit; ++i) total += i; }
+        public static void main(String[] args) { if (args.length != total) limit = args.length; }
+    }
     private static void require(boolean value, String code) {
         if (!value) throw new AssertionError(code);
     }
@@ -41,7 +64,9 @@ public final class CheckpointAmplifierProbe {
         require(args.length == 1, "mode");
         String mode = args[0];
         require(List.of("pass", "reorder", "replace", "late", "array", "declaration", "parent", "generator-reorder",
-                "generator-replace", "extra-intrinsic", "extra-generator", "wrong-target", "tampered").contains(mode), "mode-name");
+                "generator-replace", "extra-intrinsic", "extra-generator", "wrong-target", "tampered", "inclusive", "inclusive-near-max",
+                "inclusive-overflow", "inclusive-dynamic", "plugin-neutral", "plugin-intrinsic", "plugin-generator",
+                "plugin-completion-intrinsic", "plugin-completion-generator", "plugin-declaration").contains(mode), "mode-name");
         CTarget target = mode.equals("wrong-target") ? new CTarget(new CNameProvider()) { }
                 : new CTarget(new CNameProvider());
         target.setMinHeapSize(1024 * 1024); target.setMaxHeapSize(4 * 1024 * 1024);
@@ -50,6 +75,7 @@ public final class CheckpointAmplifierProbe {
         builder.setClassLoader(loader).setResourceProvider(new ClasspathResourceProvider(loader));
         builder.setClassSource(new PreOptimizingClassHolderSource(new ClasspathClassHolderSource(
                 builder.getResourceProvider(), refs, builder.getClassLoader())));
+        if (mode.startsWith("plugin-")) AmplifierPluginControl.configure(mode);
         var vm = builder.build(); vm.setOptimizationLevel(TeaVMOptimizationLevel.FULL); vm.installPlugins();
         var intrinsics = CTarget.class.getDeclaredField("intrinsicFactories"); require(intrinsics.trySetAccessible(), "field");
         @SuppressWarnings("unchecked") var factories = (List<IntrinsicFactory>) intrinsics.get(target);
@@ -94,14 +120,24 @@ public final class CheckpointAmplifierProbe {
             public TeaVMProgressFeedback progressReached(int progress) { afterFinder(); return TeaVMProgressFeedback.CONTINUE; }
             public TeaVMProgressFeedback phaseStarted(TeaVMPhase phase, int count) { afterFinder(); return TeaVMProgressFeedback.CONTINUE; }
         });
-        vm.setEntryPoint(mode.equals("array") ? ArrayFixture.class.getName() : Fixture.class.getName());
+        Class<?> fixture;
+        switch (mode) {
+            case "array": fixture = ArrayFixture.class; break;
+            case "inclusive": fixture = InclusiveFixture.class; break;
+            case "inclusive-near-max": fixture = InclusiveNearMaxFixture.class; break;
+            case "inclusive-overflow": fixture = InclusiveOverflowFixture.class; break;
+            case "inclusive-dynamic": fixture = InclusiveDynamicFixture.class; break;
+            default: fixture = Fixture.class; break;
+        }
+        vm.setEntryPoint(fixture.getName());
+        String generatedFixture = "classes/" + fixture.getName().replace('.', '/').replace("$", "@d") + ".c";
         var names = new ArrayList<String>(); long[] total = {0}; String[] fixtureC = {null};
         boolean failed = false;
         try {
             vm.build(name -> {
                 require(names.size() < 100000, "output-count-bound"); names.add(name);
                 return new ByteArrayOutputStream() {
-                    private final boolean retain = name.equals("classes/org/teavm/platform/plugin/CheckpointAmplifierProbe@dFixture.c");
+                    private final boolean retain = name.equals(generatedFixture);
                     @Override public synchronized void write(int value) {
                         require(++total[0] <= 64L * 1024 * 1024, "output-byte-bound");
                         if (retain) { require(size() < 1048576, "fixture-c-bound"); super.write(value); }
@@ -120,14 +156,20 @@ public final class CheckpointAmplifierProbe {
             failed = true;
         }
         boolean expected = List.of("reorder", "replace", "array", "declaration", "parent", "generator-reorder",
-                "generator-replace", "extra-intrinsic", "extra-generator", "wrong-target", "tampered").contains(mode);
+                "generator-replace", "extra-intrinsic", "extra-generator", "wrong-target", "tampered",
+                "inclusive-overflow", "inclusive-dynamic", "plugin-intrinsic", "plugin-generator",
+                "plugin-completion-intrinsic", "plugin-completion-generator", "plugin-declaration").contains(mode);
         require(failed == expected, "verdict-"+mode);
+        if (expected) require(names.isEmpty() && total[0] == 0, "refusal-before-output");
+        if (mode.startsWith("plugin-")) AmplifierPluginControl.verify();
         if (mode.equals("declaration") || mode.equals("parent")) require(mutated[0], "mutation-applied");
         if (!expected) {
             require(vm.getProblemProvider().getSevereProblems().isEmpty(), "diagnostics");
             require(!names.isEmpty() && total[0] > 0, "generated-output");
-            require(fixtureC[0] != null && java.util.regex.Pattern.compile(
-                    "(?s)void\\s+\\w*Fixture__clinit_\\(\\)\\s*\\{\\s*\\w*Fixture_value\\s*=\\s*TEAVM_GET_STRING\\(\\d+\\);\\s*\\}")
+            String identity = mode.startsWith("inclusive")
+                    ? "\\b\\w*Fixture_value\\s*=\\s*TEAVM_GET_STRING\\(\\d+\\);"
+                    : "(?s)void\\s+\\w*Fixture__clinit_\\(\\)\\s*\\{\\s*\\w*Fixture_value\\s*=\\s*TEAVM_GET_STRING\\(\\d+\\);\\s*\\}";
+            require(fixtureC[0] != null && java.util.regex.Pattern.compile(identity)
                     .matcher(fixtureC[0]).find(), "identity-emitted-initializer");
             require(!mode.equals("late") || late[0], "late-observed");
             require(intrinsics.get(target) != factories, "guard-installed");
