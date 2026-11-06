@@ -105,6 +105,42 @@ on:
       - crates/latent-wasmtime/examples/go_runtime_probe.rs
       - wit/**
       - tools/toolchain.toml
+      - Cargo.lock
+      - Cargo.toml
+      - examples/echo-contract/capsule.json
+      - examples/echo-contract/deployment.json
+      - rust-toolchain.toml
+      - sdk/profile/transaction-requirements-v1.json
+      - tools/build_observation.py
+      - tools/build_process.py
+      - tools/build_process_linux.py
+      - tools/build_process_signals.py
+      - tools/build_process_windows.py
+      - tools/build_snapshot.py
+      - tools/dev_workflow/__init__.py
+      - tools/dev_workflow/common.py
+      - tools/dev_workflow/dependencies.py
+      - tools/dev_workflow/paths.py
+      - tools/dev_workflow/project.py
+      - tools/dev_workflow/resource_inputs.py
+      - tools/dev_workflow/snapshot.py
+      - tools/dev_workflow/state.py
+      - tools/dev_workflow/transaction_binding.py
+      - tools/dev_workflow/windows.py
+      - tools/go_generator_authoring.py
+      - tools/guest_api_analysis.py
+      - tools/guest_compatibility.py
+      - tools/guest_compatibility_build.py
+      - tools/guest_compatibility_context.py
+      - tools/guest_compatibility_context_build.py
+      - tools/guest_compiler_capture.py
+      - tools/guest_compiler_edges.py
+      - tools/guest_dependency_inputs.py
+      - tools/guest_emitted_code.py
+      - tools/guest_resources.py
+      - tools/guest_runtime_receipts.py
+      - tools/requirements.lock
+      - tools/stage_runtime_wit.py
       - .github/workflows/go-guest.yml
   push:
     branches: [development]
@@ -211,6 +247,42 @@ on:
       - crates/latent-wasmtime/examples/go_runtime_probe.rs
       - wit/**
       - tools/toolchain.toml
+      - Cargo.lock
+      - Cargo.toml
+      - examples/echo-contract/capsule.json
+      - examples/echo-contract/deployment.json
+      - rust-toolchain.toml
+      - sdk/profile/transaction-requirements-v1.json
+      - tools/build_observation.py
+      - tools/build_process.py
+      - tools/build_process_linux.py
+      - tools/build_process_signals.py
+      - tools/build_process_windows.py
+      - tools/build_snapshot.py
+      - tools/dev_workflow/__init__.py
+      - tools/dev_workflow/common.py
+      - tools/dev_workflow/dependencies.py
+      - tools/dev_workflow/paths.py
+      - tools/dev_workflow/project.py
+      - tools/dev_workflow/resource_inputs.py
+      - tools/dev_workflow/snapshot.py
+      - tools/dev_workflow/state.py
+      - tools/dev_workflow/transaction_binding.py
+      - tools/dev_workflow/windows.py
+      - tools/go_generator_authoring.py
+      - tools/guest_api_analysis.py
+      - tools/guest_compatibility.py
+      - tools/guest_compatibility_build.py
+      - tools/guest_compatibility_context.py
+      - tools/guest_compatibility_context_build.py
+      - tools/guest_compiler_capture.py
+      - tools/guest_compiler_edges.py
+      - tools/guest_dependency_inputs.py
+      - tools/guest_emitted_code.py
+      - tools/guest_resources.py
+      - tools/guest_runtime_receipts.py
+      - tools/requirements.lock
+      - tools/stage_runtime_wit.py
       - .github/workflows/go-guest.yml
   workflow_dispatch:
     inputs:
@@ -259,7 +331,8 @@ jobs:
         shell: bash
         run: |
           git archive --format=tar.gz --output "$RUNNER_TEMP/go-guest-source.tar.gz" HEAD -- \
-            apps sdk/go-guest sdk/rust examples tools crates wit schemas docs .cargo \
+            apps sdk/go-guest sdk/rust sdk/transaction-contract \
+            sdk/profile/transaction-requirements-v1.json examples tools crates wit schemas docs .cargo \
             Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/go-guest.yml
           test "$(stat --format=%s "$RUNNER_TEMP/go-guest-source.tar.gz")" -le 134217728
           git rev-parse HEAD > "$RUNNER_TEMP/go-guest-source.sha"

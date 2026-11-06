@@ -58,6 +58,49 @@ class TypeScriptQualificationTriggerTests(unittest.TestCase):
                 self.assertTrue(any(source == item or source.startswith(item + "/") for item in included), source)
 
 
+class GoQualificationTriggerTests(unittest.TestCase):
+    def test_recipe_and_direct_toolchain_inputs_select_both_events_and_are_archived(self) -> None:
+        from fnmatch import fnmatchcase
+        import shlex
+        from tools.ci_lane_inventory import workflow_model
+        from tools.go_capsule_build import RECIPE
+
+        root = Path(__file__).resolve().parents[2]
+        workflow = workflow_model((root / ".github/workflows/go-guest.yml").read_text(encoding="utf-8"))
+        events = workflow["on"]
+        self.assertEqual(events["push"]["branches"], ["development"])
+        self.assertEqual(set(events["pull_request"]["paths"]), set(events["push"]["paths"]))
+
+        def matches(pattern: str, source: str) -> bool:
+            # '*' stays within a segment; the existing '**' patterns select
+            # an entire directory below their terminal slash.
+            self.assertFalse(pattern.startswith("!"))
+            if pattern.endswith("/**"):
+                return source.startswith(pattern[:-2])
+            pattern_parts, source_parts = pattern.split("/"), source.split("/")
+            return len(pattern_parts) == len(source_parts) and all(
+                fnmatchcase(part, glob) for part, glob in zip(source_parts, pattern_parts))
+
+        inputs = set(RECIPE) | {"Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "tools/requirements.lock"}
+        for event in ("pull_request", "push"):
+            paths = events[event]["paths"]
+            self.assertFalse(any(pattern.startswith("!") for pattern in paths))
+            for source in sorted(inputs):
+                with self.subTest(event=event, source=source):
+                    self.assertTrue(any(matches(pattern, source) for pattern in paths), source)
+            self.assertFalse(any(matches(pattern, "docs/unrelated.md") for pattern in paths))
+
+        step = next(step for step in workflow["jobs"]["upstream-probe"]["steps"]
+                    if step.get("name") == "Capture immutable qualification source inputs")
+        commands = step["run"].replace("\\" + "\n", " ").splitlines()
+        archive = next(line.strip() for line in commands if line.strip().startswith("git archive "))
+        arguments = shlex.split(archive)
+        included = arguments[arguments.index("--") + 1:]
+        for source in sorted(inputs | {"sdk/transaction-contract"}):
+            with self.subTest(archived_source=source):
+                self.assertTrue(any(source == item or source.startswith(item + "/") for item in included), source)
+
+
 class ClassificationTests(unittest.TestCase):
     def test_sparse_selector_keeps_ignore_rules_available_offline(self) -> None:
         # A blob-filtered checkout may not have the root ignore blob locally.
