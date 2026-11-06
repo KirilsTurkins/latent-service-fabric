@@ -16,8 +16,8 @@
     },
     "host-recognition": {
       "path": "crates/latent-core/src/host_profile.rs",
-      "digest": "sha256:825428a54c065b026c826f263284705d673372d3fa38a163de58fe015ddeaf85",
-      "commit": "4a765592e1b9bfcc2c898351d085836bec8da8c4"
+      "digest": "sha256:1daed32fe23ce3a1afac822a6507dc369c794c1f1e55232069333d35551e6aa0",
+      "commit": "9688b46da602f6ec2f0871e6bf9a5d28e466f810"
     },
     "native-surface": {
       "path": "crates/latent-wasmtime/src/surface.rs",
@@ -66,8 +66,8 @@
     },
     "resource-budget": {
       "path": "crates/latent-core/src/budget.rs",
-      "digest": "sha256:698fc76510fa6db23564b3a423ef48bca2efb964fe51d35b395bc89e6d8df6b8",
-      "commit": "17e8e622ecd3307a246196cbb5ca06c0fac37301"
+      "digest": "sha256:0d7625bcd2ba30d0bfd048109cb45d865b51cae43085e624d5173f0e0505f435",
+      "commit": "9688b46da602f6ec2f0871e6bf9a5d28e466f810"
     },
     "publication-identity": {
       "path": "crates/latent-core/src/publication.rs",
