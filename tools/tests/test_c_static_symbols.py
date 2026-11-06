@@ -7,7 +7,7 @@ from tools.application_dependencies import LOCK, MANIFEST, capture, prepare
 from tools.application_dependency_store import DependencyError
 from tools.build_snapshot import canonical, digest
 from tools.c_application_dependencies import archive_members, selected, wasm_object
-from tools.c_static_symbols import MAX_NAME_BYTES, MAX_SYMBOL_BYTES, MAX_SYMBOLS, strong_symbols
+from tools.c_static_symbols import MAX_NAME_BYTES, MAX_SYMBOL_BYTES, MAX_SYMBOLS, defined_symbols, strong_symbols
 from tools.tests.test_c_application_dependencies import archive
 
 
@@ -85,6 +85,23 @@ class StaticSymbolTests(unittest.TestCase):
         rows = [symbol(0, flags, "same") for flags in (0, 1, 2, 0x10, 0x50)]
         rows += [symbol(1, flags, "same") for flags in (1, 2, 3, 0x10)]
         self.assertEqual(strong_symbols(table(rows)), ["same"])
+
+    def test_all_binding_inspection_includes_non_strong_definitions_and_requires_table(self):
+        rows = [symbol(0, 0, "strong"), symbol(0, 1, "weak"), symbol(0, 2, "local"),
+                symbol(1, 3, "common"), symbol(0, 0x50, "undefined")]
+        self.assertEqual(defined_symbols(table(rows)), ["common", "local", "strong", "weak"])
+        self.assertEqual(wasm_object(object_with(rows), include_all_symbols=True)["definedSymbols"],
+                         ["common", "local", "strong", "weak"])
+        self.assertNotIn("definedSymbols", wasm_object(object_with(rows)))
+        with self.assertRaisesRegex(DependencyError, "symbol-table-missing"):
+            defined_symbols(b"")
+
+    def test_tag_section_is_refused_unless_object_inspection_explicitly_selects_it(self):
+        raw = object_with([symbol(0, 0, "ordinary")]) + b"\x0d\x01\x00"
+        with self.assertRaisesRegex(DependencyError, "object-malformed"):
+            wasm_object(raw)
+        self.assertEqual(wasm_object(raw, include_all_symbols=True, allow_exception_tags=True)
+                         ["definedSymbols"], ["ordinary"])
 
     def test_two_strong_definitions_in_one_object_fail(self):
         with self.assertRaisesRegex(DependencyError, "duplicate-strong-symbol"):
