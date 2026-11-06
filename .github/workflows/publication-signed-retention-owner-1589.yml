@@ -1,0 +1,130 @@
+name: Signed publication retention diagnostic owner
+
+on:
+  push:
+    branches:
+      - test/pr1589-signed-retention-a59-20261106
+
+permissions:
+  contents: read
+
+env:
+  RUSTUP_TOOLCHAIN: "1.97.1"
+  CARGO_BUILD_JOBS: "2"
+  CARGO_INCREMENTAL: "0"
+  CARGO_PROFILE_DEV_DEBUG: "0"
+  CARGO_PROFILE_TEST_DEBUG: "0"
+  CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: "true"
+  CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: "true"
+  CARGO_PROFILE_DEV_OVERFLOW_CHECKS: "true"
+  CARGO_PROFILE_TEST_OVERFLOW_CHECKS: "true"
+  CARGO_TERM_COLOR: never
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  focused:
+    name: Immutable disposable signed retention and restore
+    runs-on: ubuntu-24.04
+    timeout-minutes: 80
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+
+      - name: Authenticate exact owner and candidate source
+        id: verify
+        shell: bash
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          owner_dir="$(mktemp -d "$RUNNER_TEMP/lsf-signed-retention-1589.XXXXXXXX")"
+          mkdir -m 700 "$owner_dir/reports" "$owner_dir/scratch" "$owner_dir/target"
+          python3 - <<'PY'
+          import hashlib, os, platform, subprocess
+          from pathlib import Path
+          source = "a59dc230d351c14e5e1b3983f0c516b2b2289218"
+          expected = {
+              ("A", ".github/workflows/publication-signed-retention-owner-1589.yml"),
+              ("A", "tools/ci/publication_signed_retention_owner_1589.py"),
+          }
+          def git(*args):
+              return subprocess.check_output(["git", *args], text=True).strip()
+          assert platform.system() == "Linux" and platform.machine() == "x86_64"
+          assert git("rev-parse", "HEAD") == os.environ["GITHUB_SHA"]
+          assert git("show", "-s", "--format=%P", "HEAD").split() == [source]
+          lines = git("diff", "--name-status", "--no-renames", source, "HEAD").splitlines()
+          assert {tuple(line.split("\t", 1)) for line in lines} == expected
+          assert not git("status", "--porcelain=v1", "--untracked-files=all")
+          helper = Path("tools/ci/publication_signed_retention_owner_1589.py")
+          assert not helper.is_symlink()
+          assert hashlib.sha256(helper.read_bytes()).hexdigest() == "13d597be3b37819bd2394a1c94c9ed4d7f52e9c1446066388fd151c9150fb8a5"
+          assert subprocess.check_output(["rustc", "--version"], text=True).startswith("rustc 1.97.1 ")
+          assert subprocess.check_output(["cargo", "--version"], text=True).startswith("cargo 1.97.1 ")
+          PY
+          cp tools/ci/publication_signed_retention_owner_1589.py "$owner_dir/signed_owner.py"
+          chmod 600 "$owner_dir/signed_owner.py"
+          git checkout --detach a59dc230d351c14e5e1b3983f0c516b2b2289218
+          test "$(git rev-parse HEAD)" = a59dc230d351c14e5e1b3983f0c516b2b2289218
+          test "$(git rev-parse 'HEAD^{tree}')" = c32526ee7d57f70122d0b24984c2f101a8769eb1
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+          python3 -B "$owner_dir/signed_owner.py" check-plan
+          {
+            printf 'SIGNED_HELPER=%s\n' "$owner_dir/signed_owner.py"
+            printf 'SIGNED_REPORTS=%s\n' "$owner_dir/reports"
+            printf 'SIGNED_SCRATCH=%s\n' "$owner_dir/scratch"
+            printf 'CARGO_TARGET_DIR=%s\n' "$owner_dir/target"
+          } >> "$GITHUB_ENV"
+          df -h "$owner_dir"
+
+      - name: Restore registry dependency cache read-only
+        uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: false
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+
+      - name: Confirm disposable target and source
+        shell: bash
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          test -z "$(find "$CARGO_TARGET_DIR" -mindepth 1 -print -quit)"
+          python3 -B "$SIGNED_HELPER" check-plan
+
+      - name: Run bounded signed retention and stopped restore
+        timeout-minutes: 70
+        run: python3 -B "$SIGNED_HELPER" run
+
+      - name: Stage redacted owner report
+        if: always()
+        shell: bash
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          mkdir -p publication-signed-retention-report
+          reports="$(printenv SIGNED_REPORTS || true)"
+          if [[ -n "$reports" && -f "$reports/owner.json" ]]; then
+            cp "$reports/owner.json" publication-signed-retention-report/owner.json
+          else
+            printf '%s\n' 'Owner failed before an authenticated report was created.' > publication-signed-retention-report/setup-failed.txt
+          fi
+
+      - name: Retain redacted owner report
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: pr1589-signed-retention-owner
+          path: publication-signed-retention-report/
+          if-no-files-found: error
+          retention-days: 7
