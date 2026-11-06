@@ -1,0 +1,16 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "java-worker-compiler-${{ github.ref }}-${{ github.sha }}"
+    },
+    "name": "Fixed published Java worker compiler diagnostic",
+    "on": {"push": {"branches": ["fix/java-string-amplifier-20261106"]}},
+    "permissions": {"contents": "read"}
+  },
+  "requiredJobs": ["compiler"],
+  "reviewReason": "Isolate the fixed public worker compiler refusal without changing production gates.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-worker-compiler.yml"
+}
