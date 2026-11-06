@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "latent.java.current-terminal-failure.v1",
+  "passed": false,
+  "nativeSourceCommit": "c6f5902a31897188d7714a2e7f7d76fd35a33776",
+  "conductorSourceCommit": "c6f5902a31897188d7714a2e7f7d76fd35a33776",
+  "compilerSourceCommit": "46597407903231d2914f54358cff94dfc598878b",
+  "failedStage": "actual-http",
+  "failureType": "ValueError",
+  "fixedFailureReason": "host-owned-transaction-response-headers",
+  "measuredCases": [
+    "publish-aggregate",
+    "publish-put-once-legacy-v1",
+    "publish-put-once-compatible-v2",
+    "publish-put-once-writer-v2",
+    "publish-put-once-diagnostics",
+    "namespace-create",
+    "deploy-put-once-legacy-v1-legacy-runtime",
+    "fresh-query-no-command",
+    "deploy-put-once-diagnostics-diagnostic-runtime",
+    "deploy-put-once-legacy-v1-legacy-after-diagnostic",
+    "actual-post-stage-trap",
+    "actual-post-stage-fuel",
+    "actual-post-stage-cancel",
+    "actual-post-stage-memory"
+  ],
+  "receiptSha256": "sha256:6001cf1d4d7c92ede349bdb7027e1491f65e94f7278f888f99f92b84e9bd027a",
+  "evidenceInventorySha256": "sha256:d93d0884d059908a77b5f9ae6dee7a87b567f59b65fd4b6083b9c593875d5aaf",
+  "observedResponse": {
+    "status": 503,
+    "bodyBytes": 0,
+    "operation": "original-result"
+  },
+  "refusalObservation": {
+    "schemaVersion": "latent.java.http-refusal-observation.v1",
+    "requestedService": "examples/transaction-java-aggregate",
+    "observationAvailable": true,
+    "rootCount": 2,
+    "truncated": false,
+    "roots": [
+      {
+        "phase": "running",
+        "terminalState": "completed",
+        "principalKind": "user",
+        "targetMatchesCurrentService": true,
+        "diagnostic": null,
+        "diagnosticIsTerminal": false
+      },
+      {
+        "phase": "running",
+        "terminalState": "completed",
+        "principalKind": "user",
+        "targetMatchesCurrentService": true,
+        "diagnostic": null,
+        "diagnosticIsTerminal": false
+      }
+    ]
+  },
+  "cleanupFailures": [],
+  "signedGuestExecutionQualified": false,
+  "originalResultRecoveryQualified": false,
+  "packagedDistributionQualified": false,
+  "retainedEvidence": "session-owned Docker volume lsf-phase4-387-linux, java-installed-attempt12"
+}

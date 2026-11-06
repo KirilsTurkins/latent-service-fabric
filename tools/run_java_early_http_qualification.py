@@ -30,7 +30,8 @@ EXTRA_COLLECTORS = ('tools/run_java_early_http_qualification.py',
                     'tools/java_transaction_qualification/early_http_inputs.py',
                     'tools/java_transaction_qualification/early_http_campaign.py',
                     'docs/testing/evidence/java-early-http-rebuilt-capture-2026-10-13.json',
-                    'docs/testing/evidence/java-early-http-reconstructed-capture-2026-10-15.json')
+                    'docs/testing/evidence/java-early-http-reconstructed-capture-2026-10-15.json',
+                    'docs/testing/evidence/java-early-http-capture-2026-11-04.json')
 
 
 def selection(path, expected):
@@ -109,6 +110,14 @@ def signing_mode(item):
     packet = read_json(Path(__file__).resolve().parents[1] /
         'docs/testing/evidence/java-early-http-rebuilt-capture-2026-10-13.json')
     report = inputs.digest(read_file(item.directory / 'report.json', 262144))
+    if report == 'sha256:9b1129b3319712decb031a8446437b176c5b12bda19a4b1c9d4b4f493b1118ed':
+        november = read_json(Path(__file__).resolve().parents[1] /
+            'docs/testing/evidence/java-early-http-capture-2026-11-04.json')
+        inputs.require(report == november['materials']['report']['sha256']
+                       and item.compiler_source == november['sourceCommit']
+                       and item.component_digest == november['materials']['component']['sha256'],
+                       'november-early-captured-component-and-source')
+        return 'fixture-sign-november-early-http-input'
     if report == 'sha256:bd40833f7f527f42d5f4a088cbcc093bdcd023060e91fb948f2505f8aaf5d2b7':
         reconstructed = read_json(Path(__file__).resolve().parents[1] /
             'docs/testing/evidence/java-early-http-reconstructed-capture-2026-10-15.json')

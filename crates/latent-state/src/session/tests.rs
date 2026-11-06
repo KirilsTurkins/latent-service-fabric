@@ -120,6 +120,78 @@ fn commit(store: &EmbeddedStore, view: &ReadView, session: StateSession) -> Resu
 }
 
 #[test]
+fn state_payload_descriptor_binds_exact_cell_version_schema_and_bytes() {
+    use crate::payload_references::{
+        validate_state_linked_row, LocalPayloadIdentity, PayloadReference,
+        PreparedPayloadReferences, StatePayloadLink,
+    };
+    use sha2::{Digest, Sha256};
+    let fixture = Fixture::new();
+    fixture.write(&[(b"first", Some(b"shared")), (b"second", Some(b"shared"))]);
+    let first = state_key(&fixture.scope, b"first").unwrap();
+    let second = state_key(&fixture.scope, b"second").unwrap();
+    let view = fixture.store.snapshot().unwrap();
+    let (first_owner, _) = describe_state_payload_owner(&view, &first).unwrap();
+    let (second_owner, _) = describe_state_payload_owner(&view, &second).unwrap();
+    assert_ne!(first_owner.identity, second_owner.identity);
+    assert_eq!(first_owner.format, fixture.scope.state_schema);
+    let physical = LocalPayloadIdentity {
+        tenant: "tenant".into(),
+        provider: "local".into(),
+        provider_epoch: 1,
+        provider_configuration: [3; 32],
+        blob_namespace: "owned".into(),
+        digest: Sha256::digest(b"shared").into(),
+        size: 6,
+        media_type: "application/octet-stream".into(),
+    };
+    let reference = PayloadReference {
+        owner: first_owner,
+        payload: physical,
+    };
+    let link = StatePayloadLink {
+        reference: reference.clone(),
+        cell_key: first.clone(),
+    };
+    let mut plan =
+        PreparedPayloadReferences::prepare(&view, &[(None, Some(reference.clone()))]).unwrap();
+    plan.replace_state_link(&view, None, Some(&link)).unwrap();
+    let mut batch = AtomicBatch::default();
+    plan.append_to(&mut batch).unwrap();
+    drop(view);
+    fixture.store.apply(batch).unwrap();
+    let view = fixture.store.snapshot().unwrap();
+    verify_state_payload_reference(&view, &first, &reference).unwrap();
+    assert!(
+        validate_state_linked_row(&view, &link.row_key().unwrap(), &link.encode().unwrap())
+            .unwrap()
+    );
+    assert!(validate_state_linked_row(
+        &view,
+        &reference.owner_key().unwrap(),
+        &reference.encode().unwrap()
+    )
+    .unwrap());
+    assert_eq!(
+        verify_state_payload_reference(&view, &second, &reference),
+        Err(StoreError::Corrupt)
+    );
+    drop(view);
+    // A raw state-only replacement deliberately leaves the synthetic descriptor
+    // stale; the validator must detect it. This is not production wiring.
+    fixture.write(&[(b"first", Some(b"changed"))]);
+    let view = fixture.store.snapshot().unwrap();
+    assert_eq!(
+        verify_state_payload_reference(&view, &first, &reference),
+        Err(StoreError::Corrupt)
+    );
+    assert_eq!(
+        validate_state_linked_row(&view, &link.row_key().unwrap(), &link.encode().unwrap()),
+        Err(StoreError::Corrupt)
+    );
+}
+
+#[test]
 fn lost_update_has_one_serializable_winner_without_guest_retry() {
     let fixture = Fixture::new();
     fixture.write(&[(b"counter", Some(b"0"))]);

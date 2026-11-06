@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "latent.ci.suite-fragment.v1",
+  "suites": [
+    {
+      "boundary": "runtime",
+      "expectedIgnored": [],
+      "id": "latent-local-blobs.lib.latent-local-blobs",
+      "ignoredLeaves": [],
+      "kind": "lib",
+      "manifest": "crates/latent-local-blobs/Cargo.toml",
+      "mode": "libtest",
+      "package": "latent-local-blobs",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "requiredCases": [
+        "local::tests::capacities::admission_reclamation_preserves_released_objects_and_checkpoint_failure",
+        "local::tests::capacities::empty_objects_cannot_bypass_disk_sidecar_reservations",
+        "local::tests::capacities::object_disk_handle_and_metadata_ceilings_are_independent",
+        "local::tests::capacities::saturated_stages_recover_one_retired_writer_without_growing_the_limit",
+        "local::tests::capacities::stage_and_work_saturation_reject_without_hidden_queues",
+        "local::tests::duplicate_publication_and_tenant_authority_are_independent",
+        "local::tests::durable::bounded_recovery_pages_stay_with_original_view_and_refuse_corruption",
+        "local::tests::durable::different_store_identity_and_unreviewed_orphan_never_authorize_reclamation",
+        "local::tests::durable::equal_bytes_in_two_tenants_have_independent_physical_custody",
+        "local::tests::durable::missing_physical_index_or_primary_is_a_visible_failure_and_preserves_native_content",
+        "local::tests::durable::provider_aliases_and_epochs_share_physical_retention_without_sharing_authority",
+        "local::tests::durable::recovery_checks_actual_required_bytes_and_rejects_foreign_view_or_corruption",
+        "local::tests::durable::response_release_reopen_and_independent_effect_snapshot_owners_keep_actual_bytes",
+        "local::tests::durable::same_label_different_live_engine_cannot_authorize_release",
+        "local::tests::exact_empty_and_ranged_data_survive_reopen",
+        "local::tests::exact_size_and_sequential_writes_reserve_before_staging",
+        "local::tests::failures::cancellation_after_a_physical_write_poisoned_the_writer_but_keeps_stage_charge",
+        "local::tests::failures::cancellation_and_shutdown_keep_running_file_work_until_the_worker_retires",
+        "local::tests::failures::closing_owner_does_not_release_root_lock_until_actual_handles_retire",
+        "local::tests::failures::concurrent_duplicate_seals_reject_promptly_and_explicit_retry_converges",
+        "local::tests::failures::failed_unlink_or_sync_does_not_refund_and_reopens_as_unreferenced",
+        "local::tests::failures::interrupted_stage_is_recovered_with_actual_bytes_and_never_resumed",
+        "local::tests::failures::uncertain_publication_recovers_the_physical_inventory_without_refund",
+        "local::tests::pinned_released_object_is_not_reclaimed_and_drop_does_no_deletion",
+        "local::tests::security::corrupted_or_missing_payload_never_becomes_a_successful_read",
+        "local::tests::security::insecure_roots_and_symlink_ancestors_are_rejected",
+        "local::tests::security::namespace_is_owned_and_unknown_root_inventory_is_never_adopted",
+        "local::tests::security::replacement_cannot_redirect_an_open_reader_or_reclamation",
+        "local::tests::security::unknown_entries_and_replaced_directories_are_preserved"
+      ],
+      "resourceClass": "runtime-bounded",
+      "source": "src/lib.rs",
+      "target": "latent_local_blobs",
+      "timeoutSeconds": 900
+    }
+  ]
+}

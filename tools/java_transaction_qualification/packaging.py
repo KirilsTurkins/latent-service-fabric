@@ -62,7 +62,11 @@ def captured_assets(item, files):
     if 'java-current-http-profile.json' in files:
         require(item.requirements_digest is not None, 'current-marker-requires-signed-effect-requirements')
         assets['java-current-http-profile.json'] = files['java-current-http-profile.json']
-    if item.name in {'forbidden-http', 'forbidden-http-before-stage'}:
+    if item.name == 'put-once-poststage-http-denial':
+        assets['java-poststage-http-denial-input.json'] = files['java-poststage-http-denial-input.json']
+    if item.name == 'put-once-values':
+        assets['transaction-value-inputs.json'] = files['transaction-value-inputs.json']
+    if item.name in {'forbidden-http', 'forbidden-http-before-stage', 'forbidden-child'}:
         require('java-current-http-profile.json' not in files and item.requirements_digest is None
                 and 0 < len(files[SCHEMA_ASSETS[-1]]) <= 262144,
                 'original-forbidden-source-without-effect-marker')
@@ -236,6 +240,46 @@ def _package_items(items, output, contracts_tool, signer, *, timeout, compiler_s
 def current_signing_mode(items):
     actual = {item.name: digest(read_file(item.directory / 'report.json', 262144)) for item in items}
     require(len(items) == 5 and len(actual) == len(items), 'five-distinct-current-capture-reports')
+    current_465 = {
+        'aggregate': 'sha256:9353965f0dc2189a0ae36b589b0a4ae52dccc0d826f26098fd13ccd78032533f',
+        'put-once-legacy-v1': 'sha256:f1c442c80ca34647397a8c4b35bcfca374e120d9804ca5bb3aa5b745dbf66565',
+        'put-once-compatible-v2': 'sha256:8187424efa780ea16023a074defb2547e536d2e787c9dc987eee298509b9352b',
+        'put-once-writer-v2': 'sha256:57496c00a492f21b59c05f488934f7346f043a3d962d2cc89150e63f9fa6a0c3',
+        'put-once-diagnostics': 'sha256:d0982b1063da03148a51985ba7e4c52028f93fb57c7e90e41ad74bee425a651b',
+    }
+    if actual == current_465:
+        packet = decode(read_file(Path(__file__).resolve().parents[2] /
+            'docs/testing/evidence/java-current-http-capture-465-2026-11-04.json'))['captures']
+        require(packet['sourceCommit'] == '46597407903231d2914f54358cff94dfc598878b'
+                and packet['nativeIdempotencyProfile'] ==
+                    'qualified-http-v1:5337619eb24838242cf05797a246bba5e50547f3f12252ed9b81e138ca8a259b',
+                'current-465-custody-source-and-profile')
+        expected = {name: row['materials']['report']['sha256'] for name, row in packet['variants'].items()
+                    if name != 'forbidden-http'}
+        require(actual == expected and all(item.compiler_source == packet['sourceCommit']
+                and item.component_digest == packet['variants'][item.name]['materials']['component']['sha256']
+                for item in items), 'current-465-captured-report-component-and-source')
+        return 'fixture-sign-current-465-java-inputs'
+    november = {
+        'aggregate': 'sha256:9a80526be0697feb6d42311805466579f93405b63cdd6505c34e13e326a3f58e',
+        'put-once-legacy-v1': 'sha256:c63a7797f9bfa9f3d9f22bf614d5deb24f692fb082e8f052195cc2f59233509c',
+        'put-once-compatible-v2': 'sha256:50a10adbe7ad6f1ca9eacc809e93e74cac7f0edf71cae2b6e3d1edac630082a0',
+        'put-once-writer-v2': 'sha256:e71f39a0f8fec3eca968731dc63eec358ba78c3f46a15445cf9d6baecc480526',
+        'put-once-diagnostics': 'sha256:3649f7b4aae727d98702697d7e838e43366f6e99797d6c0a574b322ad63dfece',
+    }
+    if actual == november:
+        packet = decode(read_file(Path(__file__).resolve().parents[2] /
+            'docs/testing/evidence/java-current-http-capture-2026-11-04.json'))['captures']
+        require(packet['sourceCommit'] == 'fccc27dbc52f2dd0db137078f8e7e436a41ebe8a'
+                and packet['nativeIdempotencyProfile'] ==
+                    'qualified-http-v1:5337619eb24838242cf05797a246bba5e50547f3f12252ed9b81e138ca8a259b',
+                'november-current-custody-source-and-profile')
+        expected = {name: row['materials']['report']['sha256'] for name, row in packet['variants'].items()
+                    if name != 'forbidden-http'}
+        require(actual == expected and all(item.compiler_source == packet['sourceCommit']
+                and item.component_digest == packet['variants'][item.name]['materials']['component']['sha256']
+                for item in items), 'november-current-captured-report-component-and-source')
+        return 'fixture-sign-november-current-java-inputs'
     refreshed = {
         'aggregate': 'sha256:57bfdd02d2c68837149b912695d42c623ae9f1e1418526e0f01a9ac68c3f180f',
         'put-once-legacy-v1': 'sha256:a820889c9dee457cb39819f468dcba572019a723babbf5864bd2b73ed73a0ebb',

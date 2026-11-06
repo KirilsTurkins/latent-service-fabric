@@ -16,7 +16,7 @@ except ModuleNotFoundError as error:
 ROOT = Path(__file__).resolve().parents[1]
 FORBIDDEN = {
     "latentd", "latent-node", "latent-wasmtime", "latent-http", "latent-nats",
-    "latent-state", "latent-vault", "latent-secrets", "latent-blobs",
+    "latent-state", "latent-vault", "latent-secrets", "latent-blobs", "latent-local-blobs",
 }
 PACKAGES = ("latent-core", "latent-test-process", "latent-testkit", "latent-admission", "latent-scheduler")
 

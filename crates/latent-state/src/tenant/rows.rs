@@ -15,6 +15,7 @@ pub(super) fn batch_delta(
     for (index, row) in batch.mutations.iter().enumerate() {
         if row.key.family != Family::Namespace
             && row.key.family != Family::State
+            && !crate::payload_references::owns_row(&row.key)
             && !(row.key.family == Family::Maintenance
                 && row.key.key.starts_with(b"state-usage-v1\0"))
         {
@@ -39,6 +40,11 @@ pub(super) fn batch_delta(
                 let contribution = if row.key.family == Family::State {
                     crate::session::tenant_row_usage(tenant, &row.key, value)?
                 } else {
+                    if crate::payload_references::owns_row(&row.key)
+                        && crate::payload_references::row_tenant(&row.key, value)? != tenant.0
+                    {
+                        return Err(StoreError::Corrupt);
+                    }
                     if value.len() > 8192 {
                         return Err(StoreError::Capacity);
                     }

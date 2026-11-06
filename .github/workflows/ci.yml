@@ -59,7 +59,7 @@ jobs:
       fast_packages: ${{ steps.select.outputs.fast_packages }}
       expected_jobs: ${{ steps.select.outputs.expected_jobs }}
     steps:
-      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
           fetch-depth: 0
@@ -98,10 +98,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
           cache: pip
@@ -139,7 +139,7 @@ jobs:
       - name: Retain CI contract diagnostics even on validation failure
         id: contract_evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: ci-contracts-${{ github.sha }}
           path: target/ci/observed-inventory.json
@@ -155,10 +155,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
@@ -186,7 +186,7 @@ jobs:
           python3 tools/ci_fast.py --packages-json "$packages" --output "$RUNNER_TEMP/ci-fast/narrow"
       - name: Retain exact host dependency, discovery and timing receipts
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: ci-host-correctness-${{ github.sha }}
           path: ${{ runner.temp }}/ci-fast/
@@ -204,7 +204,7 @@ jobs:
       matrix:
         lane: [checks, tests, qualification, provider, renderer-public, renderer-angular, publications, angular-t1]
     steps:
-      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
@@ -219,7 +219,7 @@ jobs:
           CARGO_INCREMENTAL: "0"
         run: python3 tools/ci_cargo_cache.py --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/lsf-cargo-cache-identity.json"
       - name: Restore compiled Rust dependencies
-        uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: ${{ inputs.cargo_dependency_cache == 'recipe' && steps.cargo-cache-identity.outputs.prefix || 'lsf-ci-dependencies-v2' }}
           shared-key: host-correctness
@@ -230,7 +230,7 @@ jobs:
           cache-all-crates: false
           cache-on-failure: false
           save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && matrix.lane == 'tests' }}
-      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
           cache: pip
@@ -324,8 +324,41 @@ jobs:
           # this recipe's input selectors, not CARGO_MANIFEST_DIR/library paths.
           python3 tools/aot_test_inputs.py environment --manifest "$RUNNER_TEMP/lsf-aot-test-inputs/manifest.json" | grep '^LSF_AOT_' >> "$GITHUB_ENV"
 
+      - name: Install the pinned stream fixture compiler
+        if: matrix.lane == 'tests'
+        uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
+        with:
+          version: 1.254.0
+      - name: Prepare the fixed native stream component fixture
+        if: matrix.lane == 'tests'
+        id: stream_outer_fixture
+        run: |
+          set -euo pipefail
+          python3 -c 'import tomllib; assert tomllib.load(open("tools/toolchain.toml", "rb"))["contracts"]["wasm-tools"] == "1.254.0"'
+          wasm-tools --version | grep -E '^wasm-tools 1[.]254[.]0([[:space:]]|$)'
+          wat=crates/latent-wasmtime/src/host/native-stream-outers.wat
+          test -f "$wat" && test ! -L "$wat"
+          git cat-file blob "${GITHUB_SHA}:$wat" | cmp - "$wat"
+          fixture_dir="$(mktemp -d "$RUNNER_TEMP/lsf-stream-outers.XXXXXXXX")"
+          wasm-tools parse "$wat" -o "$fixture_dir/native-stream-outers.wasm"
+          python3 - "$fixture_dir/native-stream-outers.wasm" <<'PY'
+          import os
+          from pathlib import Path
+          import sys
+          from tools.qualify_stream_outers import FIXTURE_ENV, WAT, fixture_identity
+
+          assert WAT == 'crates/latent-wasmtime/src/host/native-stream-outers.wat'
+          assert FIXTURE_ENV == 'LSF_TEST_STREAM_OUTERS_COMPONENT'
+          fixture = Path(sys.argv[1])
+          print('Fixed stream component:', fixture_identity(fixture))
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              output.write(f'path={fixture}\n')
+          PY
+
       - name: Run tests
         if: matrix.lane == 'tests'
+        env:
+          LSF_TEST_STREAM_OUTERS_COMPONENT: ${{ steps.stream_outer_fixture.outputs.path }}
         run: |
           set -o pipefail
           workspace_status=0
@@ -356,7 +389,7 @@ jobs:
           python3 tools/test.py run --suite selection.metadata-working-set --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --context ci 2>&1 | tee "$RUNNER_TEMP/metadata-working-set.log"
       - name: Retain metadata working-set inputs and publication/apply/reopen costs
         if: always() && matrix.lane == 'qualification' && steps.metadata-working-set.outcome != '' && steps.metadata-working-set.outcome != 'skipped'
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: metadata-working-set-observations-${{ matrix.lane }}
           path: ${{ runner.temp }}/metadata-working-set.log
@@ -371,7 +404,7 @@ jobs:
           python3 tools/phase3_security.py --profile pr --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --source-commit "$GITHUB_SHA" --output target/phase3-security/pr-receipt.json
       - name: Retain the bounded Phase 3 security receipt
         if: always() && matrix.lane == 'qualification'
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: phase3-security-pr-${{ github.sha }}-${{ matrix.lane }}
           path: target/phase3-security/pr-receipt.json
@@ -379,7 +412,7 @@ jobs:
           retention-days: 14
       - name: Set up the qualified Angular build runtime
         if: (matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular' || matrix.lane == 'publications' || matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'
-        uses: KirilsTurkins/lsf-setup-node@fdae00b14e855eb751452bc70c64dde286270415 # v7.1.0 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
         with:
           node-version: 24.19.0
           cache: npm
@@ -390,7 +423,7 @@ jobs:
         run: python3 -m unittest tools.tests.test_phase3_resource tools.tests.test_phase3_resource_web
       - name: Set up the pinned component composer
         if: (matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular' || matrix.lane == 'publications' || matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'
-        uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
       - name: Prepare immutable browser lane component
@@ -403,7 +436,7 @@ jobs:
           wasm-tools validate "$RUNNER_TEMP/browser-component/application.wasm"
       - name: Retain source-built S3 fixture and failure evidence
         if: always() && steps.s3_fixture.outcome != '' && steps.s3_fixture.outcome != 'skipped'
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: source-built-s3-fixture-${{ github.sha }}-${{ matrix.lane }}
           path: |
@@ -428,7 +461,7 @@ jobs:
           python3 tools/run_ci_lanes.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --renderer "$CI_LANE_RENDERER" --workers "$CI_LANE_WORKERS" --lane "$CI_NATIVE_LANE" --output "$RUNNER_TEMP/ci-lanes"
       - name: Retain bounded CI lane timing and completion receipts
         if: always() && (matrix.lane == 'provider' || ((matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular') && needs.profile.outputs.renderer == 'true')) && steps.integration_lanes.outcome != '' && steps.integration_lanes.outcome != 'skipped'
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: ci-integration-lanes-${{ github.sha }}-${{ matrix.lane }}
           path: ${{ runner.temp }}/ci-lanes/
@@ -436,7 +469,7 @@ jobs:
           retention-days: 14
       - name: Retain bounded browser boundary observations
         if: always() && (matrix.lane == 'renderer-public') && needs.profile.outputs.renderer == 'true' && steps.integration_lanes.outcome != '' && steps.integration_lanes.outcome != 'skipped'
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: browser-boundary-observations-${{ matrix.lane }}
           path: |
@@ -549,7 +582,7 @@ jobs:
           python3 tools/build_angular_package.py --input-root examples/angular-application --toolchain-root examples/renderer-profile --cli "$RUNNER_TEMP/lsf-angular-package-assembler" --target-root "$RUNNER_TEMP/angular-build" --output "$RUNNER_TEMP/angular-build/actual" --cargo-target-dir "$PWD/target" --repository https://example.com/source
       - name: Restore isolated Angular compiler dependencies
         if: (matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'
-        uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v3
           shared-key: angular-release-compiler
@@ -588,7 +621,7 @@ jobs:
           python3 tools/run_angular_t1_workflow.py --cli "$RUNNER_TEMP/angular-t1-bin/latent" --node "$RUNNER_TEMP/angular-t1-bin/latentd" --compiler "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler" --fixture-root "$RUNNER_TEMP/angular-t1-fixture" > "$RUNNER_TEMP/phase2-gate/angular-t1-receipt.json"
       - name: Retain compact Phase 2 gate receipts
         if: always() && (matrix.lane == 'publications' || matrix.lane == 'angular-t1')
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: phase-2-gate-${{ github.sha }}-${{ matrix.lane }}
           path: ${{ runner.temp }}/phase2-gate/*.json
@@ -621,7 +654,7 @@ jobs:
           python3 tools/run_phase3_resource_acceptance.py --revision "$GITHUB_SHA" --output "$RUNNER_TEMP/phase3-resource-matrix" --guest-capsules "$PWD/target/phase3-resource-guests" --angular-build "$RUNNER_TEMP/angular-build/actual" --compiler "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler" --host-condition shared-github-runner
       - name: Retain immutable Phase 3 resource attempts
         if: matrix.lane == 'angular-t1' && always() && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: phase3-resource-${{ github.sha }}-${{ matrix.lane }}
           path: |
@@ -632,7 +665,7 @@ jobs:
 
       - name: Retain the opt-in dependency-cache identity
         if: always() && steps.cargo-cache-identity.outcome == 'success'
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: cargo-dependency-cache-identity-${{ github.sha }}-${{ matrix.lane }}
           path: ${{ runner.temp }}/lsf-cargo-cache-identity.json
@@ -640,7 +673,7 @@ jobs:
           retention-days: 7
       - name: Retain exact workspace test discovery and custom-harness execution
         if: always() && matrix.lane == 'tests'
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: ci-runtime-discovery-${{ github.sha }}-${{ matrix.lane }}
           path: |
@@ -656,7 +689,7 @@ jobs:
 
       - name: Retain attempted renderer ownership diagnostics
         if: always() && (matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular' || matrix.lane == 'publications' || matrix.lane == 'angular-t1') && steps.renderer_preflight.outcome != '' && steps.renderer_preflight.outcome != 'skipped'
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: owned-renderer-${{ github.sha }}-${{ matrix.lane }}
           path: |
@@ -672,12 +705,12 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
-      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - name: Restore compiled Rust dependencies
-        uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: host-correctness
@@ -689,13 +722,13 @@ jobs:
           cache-on-failure: false
           save-if: false
       - name: Receive bounded observed echo inputs
-        uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: phase-2-observed-echo-${{ github.sha }}
           path: target/capsules/echo-provenance
       - name: Fetch pinned disposable registry
         run: docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395
-      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Check owned registry prerequisites before building
@@ -716,7 +749,7 @@ jobs:
       - name: Validate bounded authenticated OCI distribution
         run: python3 tools/run_oci_registry_tests.py --test-manifest "$RUNNER_TEMP/lsf-oci-tests.jsonl" --state-file "$RUNNER_TEMP/lsf-oci-registry.json" --provenance-input target/capsules/echo-provenance --diagnostic-root "$RUNNER_TEMP/owned-oci"
       - name: Receive bounded public web component
-        uses: KirilsTurkins/lsf-download-artifact@f073ba9e3801be93f933866d4c9a748e42157e5f # v8.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: phase-3-web-contract-${{ github.sha }}
           path: target/capsules/web-contract
@@ -728,7 +761,7 @@ jobs:
 
       - name: Retain attempted registry ownership diagnostics
         if: always() && steps.oci_preflight.outcome != '' && steps.oci_preflight.outcome != 'skipped'
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: owned-oci-${{ github.sha }}
           path: |
@@ -745,12 +778,12 @@ jobs:
     # 60m publication + 30m reopen, with build/cleanup/evidence-upload headroom.
     timeout-minutes: 120
     steps:
-      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - name: Restore compiled Rust dependencies
-        uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: host-correctness
@@ -776,7 +809,7 @@ jobs:
           cargo test -p latentd --test catalog_scale --locked production_catalog_100k -- --exact --ignored --nocapture --test-threads=1 2>&1 | tee catalog-scale.log
       - name: Retain catalog acceptance evidence
         if: always() && github.event_name == 'workflow_dispatch' && inputs.run_catalog_scale
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: catalog-scale-${{ github.sha }}
           path: |
@@ -791,14 +824,14 @@ jobs:
     if: needs.profile.outputs.profile == 'full' || needs.profile.outputs.profile == 'fast'
     runs-on: ubuntu-24.04
     steps:
-      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - name: Install the declared minimum supported Rust toolchain
         run: rustup toolchain install 1.95.0 --profile minimal --no-self-update
       - name: Restore compiled Rust dependencies
-        uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: msrv-correctness
@@ -820,7 +853,7 @@ jobs:
         run: python3 tools/ci_fast.py --msrv --packages-json "$CI_FAST_PACKAGES" --output "$RUNNER_TEMP/ci-fast-msrv"
       - name: Retain narrow MSRV timing evidence
         if: always() && needs.profile.outputs.profile == 'fast'
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: ci-host-msrv-${{ github.sha }}
           path: ${{ runner.temp }}/ci-fast-msrv/
@@ -837,10 +870,10 @@ jobs:
       matrix:
         lane: [python, bindings, runtime, standalone, sdk-provider, measurements, optimization]
     steps:
-      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
           cache: pip
@@ -893,7 +926,7 @@ jobs:
         with:
           targets: wasm32-wasip2,wasm32-unknown-unknown
       - name: Restore compiled Rust dependencies
-        uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v3-contract-profiles
           shared-key: ${{ matrix.lane == 'measurements' && 'frozen-collector' || matrix.lane == 'optimization' && 'optimization-smoke' || matrix.lane == 'bindings' && 'host-correctness' || 'host-contracts' }}
@@ -910,10 +943,10 @@ jobs:
           cache-all-crates: false
           cache-on-failure: false
           save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && (matrix.lane == 'standalone' || matrix.lane == 'measurements' || matrix.lane == 'optimization') }}
-      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
-      - uses: KirilsTurkins/lsf-buf-setup-action@7e1d5f1d4a4a7d82b1ff79968166c4f50a66ce57 # v1.50.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-buf-setup-action@483cc1af1999992e503ff1da69b431f7b9f3bae9 # v1.50.0 + upstream changes + LSF security fixes
         with:
           version: 1.72.0
           github_token: ${{ github.token }}
@@ -923,24 +956,24 @@ jobs:
       - name: Install verified guest binding generator
         run: python3 tools/install_guest_bindgen.py "${RUNNER_TEMP}/lsf-guest-tools" >> "${GITHUB_PATH}"
       - name: Set up the Node SDK provider participant
-        uses: KirilsTurkins/lsf-setup-node@fdae00b14e855eb751452bc70c64dde286270415 # v7.1.0 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
         with:
           node-version: 24.19.0
           cache: npm
           cache-dependency-path: sdk/typescript-client/package-lock.json
       - name: Set up the Go SDK provider participant
-        uses: KirilsTurkins/lsf-setup-go@3f9b437aa6b8f8b1f8c7d851365be125c6b21d9e # v7.0.0 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-setup-go@1020042799f722e9ef016bf63106367879587a49 # v7.0.0 + upstream changes + LSF security fixes
         with:
           go-version: 1.27.3
           cache-dependency-path: sdk/go/go.sum
       - name: Set up the Java SDK provider participant
-        uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c # v6.1.0 + upstream changes + LSF security fixes
         with:
           distribution: temurin
           # Exact Temurin runtime 25.0.4.1+1; Adoptium SemVer patch/build encoding.
           java-version: "25.0.4+101.0.LTS"
       - name: Set up the .NET SDK provider participant
-        uses: KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec # v6.0.0 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-setup-dotnet@258c927924210be905f8908a4be714e5d0daffa8 # v6.0.0 + upstream changes + LSF security fixes
         with:
           dotnet-version: 8.0.427
       - name: Validate contracts, echo component, and generated bindings
@@ -950,7 +983,7 @@ jobs:
         run: tools/validate_contracts.sh "$CI_CONTRACT_LANE"
       - name: Retain Python discovery and execution observations
         if: always() && matrix.lane == 'python'
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: python-discovery-${{ github.sha }}
           path: target/ci/python-discovery.json
@@ -958,7 +991,7 @@ jobs:
           retention-days: 7
       - name: Pass bounded observed build inputs to registry verification
         if: matrix.lane == 'runtime'
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: phase-2-observed-echo-${{ github.sha }}
           path: target/capsules/echo-provenance/
@@ -966,7 +999,7 @@ jobs:
           retention-days: 1
       - name: Pass the bounded public web component to registry verification
         if: matrix.lane == 'runtime'
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: phase-3-web-contract-${{ github.sha }}
           path: target/capsules/web-contract/component.wasm
@@ -974,7 +1007,7 @@ jobs:
           retention-days: 1
       - name: Retain bounded conformance and provider diagnostics
         if: always() && (matrix.lane == 'standalone' || matrix.lane == 'sdk-provider')
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: phase-1-bounded-conformance-${{ github.sha }}-${{ matrix.lane }}
           path: |
@@ -985,7 +1018,7 @@ jobs:
           retention-days: 14
       - name: Retain Phase 1 measurement collector smoke diagnostics
         if: always() && matrix.lane == 'measurements'
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: phase-1-measurement-smoke-${{ github.sha }}
           path: target/phase1-measurements/
@@ -1000,7 +1033,7 @@ jobs:
           python3 tools/run_optimization_benchmarks.py --profile smoke
       - name: Retain optimization benchmark smoke evidence
         if: always() && matrix.lane == 'optimization'
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: phase-1-optimization-smoke-${{ github.sha }}
           path: target/optimization-benchmarks/
@@ -1013,7 +1046,7 @@ jobs:
           cat target/capsules/echo/sha256.txt
       - name: Upload echo capsule build evidence
         if: matrix.lane == 'runtime'
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: phase-0-echo-capsule-${{ github.sha }}
           path: |
@@ -1038,35 +1071,35 @@ jobs:
     if: needs.profile.outputs.profile == 'full'
     runs-on: ubuntu-24.04
     steps:
-      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
           toolchain: 1.97.1
           components: rustfmt
-      - uses: KirilsTurkins/lsf-setup-go@3f9b437aa6b8f8b1f8c7d851365be125c6b21d9e # v7.0.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-go@1020042799f722e9ef016bf63106367879587a49 # v7.0.0 + upstream changes + LSF security fixes
         with:
           go-version: 1.27.3
           cache-dependency-path: sdk/go/go.sum
-      - uses: KirilsTurkins/lsf-buf-setup-action@7e1d5f1d4a4a7d82b1ff79968166c4f50a66ce57 # v1.50.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-buf-setup-action@483cc1af1999992e503ff1da69b431f7b9f3bae9 # v1.50.0 + upstream changes + LSF security fixes
         with:
           version: 1.72.0
           github_token: ${{ github.token }}
-      - uses: KirilsTurkins/lsf-setup-node@fdae00b14e855eb751452bc70c64dde286270415 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
         with:
           node-version: 24.19.0
           cache: npm
           cache-dependency-path: sdk/typescript-client/package-lock.json
-      - uses: KirilsTurkins/lsf-setup-java@5d910981b146bc2d4fd97fa349210f3e3d454039 # v6.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c # v6.1.0 + upstream changes + LSF security fixes
         with:
           distribution: temurin
           # Exact Temurin runtime 25.0.4.1+1; Adoptium SemVer patch/build encoding.
           java-version: "25.0.4+101.0.LTS"
-      - uses: KirilsTurkins/lsf-setup-dotnet@f5bcdac7f26977ef44527f837688dd86faf648ec # v6.0.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-dotnet@258c927924210be905f8908a4be714e5d0daffa8 # v6.0.0 + upstream changes + LSF security fixes
         with:
           dotnet-version: 8.0.427
       - uses: KirilsTurkins/lsf-setup-zig@e064b42fa88ad0859d8b54838b44f672ffd5ea7a # v2.2.1 + upstream changes + LSF security fixes
@@ -1118,7 +1151,7 @@ jobs:
           python3 -m unittest tools.tests.test_transaction_client_models
       - name: Retain Java SDK qualification diagnostics
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: java-sdk-qualification-${{ github.sha }}
           path: ${{ runner.temp }}/java-sdk/
@@ -1133,7 +1166,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
-      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
           filter: blob:none

@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "repository": "KirilsTurkins/lsf-upload-artifact",
+  "publishedRevision": "d74a697ce553b389f4219545e07c97fb8542c64f",
+  "publishedTree": "64df5da8b886f3a6b13fe2afde407a694ce9187f",
+  "sourceHead": "73b1877b79981ac2fbd8084701ef38a2c94ba050",
+  "diagnosticHead": "430a8f8913d8f52901016bcff9f50ff38afef58a",
+  "diagnosticTree": "23db126b98a44b9f1565343a19d51cf1193cfda1",
+  "diagnosticOnlyPath": ".github/workflows/lsf-upload-security-owner.yml",
+  "run": 42108047459,
+  "job": 127527998145,
+  "jobConclusion": "success",
+  "node": "24.19.0",
+  "npm": "11.17.0",
+  "jestSuites": 3,
+  "jestTests": 31,
+  "sourceControls": 3,
+  "rebuiltBundlesIdentical": true,
+  "artifactUploadDownloadMatched": true,
+  "artifact": {
+    "id": 13452562766,
+    "bytes": 1086,
+    "sha256": "ae18988d352cd9b71fdf98697d277322d1bbe5c34bfdc401af8c9164cea98801",
+    "members": 5,
+    "crcVerified": true
+  },
+  "markerArtifact": {
+    "id": 13451429090,
+    "bytes": 166,
+    "sha256": "f2d8ee55f0b5cb0e10c64de355026d7500923171a22ec58ffc98b6642308ef43",
+    "crcVerified": true
+  },
+  "bundles": {
+    "dist/upload/index.js": {
+      "bytes": 4677723,
+      "sha256": "f345b0bc958552d1b1a96b9cf9b736bb7902d30015a21c9f80407954e2c66408",
+      "gitBlob": "b8ea4e7e8480039dbab87d14edf3e729e5cdf3f8"
+    },
+    "dist/merge/index.js": {
+      "bytes": 4774992,
+      "sha256": "9991c3e7faca109d7c8aa2f1f8fe7942e66aceb394c6bfe024608a4aae678a3d",
+      "gitBlob": "aa1678747afe96853db0e7dc14632a6a08206280"
+    }
+  }
+}

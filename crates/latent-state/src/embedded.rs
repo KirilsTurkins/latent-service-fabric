@@ -160,7 +160,20 @@ pub struct EmbeddedStore {
     quarantined: AtomicBool,
     reclamation: AtomicBool,
 }
+/// Opaque process-local engine identity. It grants no read or mutation access.
+#[derive(Clone)]
+pub struct StoreBinding(Arc<AtomicUsize>);
+
 impl EmbeddedStore {
+    #[must_use]
+    pub fn binding(&self) -> StoreBinding {
+        StoreBinding(Arc::clone(&self.views))
+    }
+
+    #[must_use]
+    pub fn is_bound_to(&self, binding: &StoreBinding) -> bool {
+        Arc::ptr_eq(&self.views, &binding.0)
+    }
     pub(crate) fn limits(&self) -> StoreLimits {
         self.limits
     }
@@ -561,6 +574,18 @@ pub struct ReadPage {
 }
 
 impl ReadView {
+    /// Preserve this view's process-local engine identity without retaining a
+    /// database read transaction. The token itself confers no access.
+    #[must_use]
+    pub fn binding(&self) -> StoreBinding {
+        StoreBinding(Arc::clone(&self.views))
+    }
+
+    #[must_use]
+    pub fn is_bound_to(&self, binding: &StoreBinding) -> bool {
+        Arc::ptr_eq(&self.views, &binding.0)
+    }
+
     /// The actual shared records table contains no row in any fixed family.
     /// This observes engine state only and establishes no initialization grant.
     pub fn is_empty(&self) -> Result<bool, StoreError> {

@@ -89,7 +89,7 @@ or silent retry that can mask a failed test.
 ## Bounded cache alternatives
 
 There are two dependency-cache variants, using the same pinned
-`Swatinem/rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477` action:
+`KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e` action:
 
 | Variant | Selection | Difference |
 | --- | --- | --- |

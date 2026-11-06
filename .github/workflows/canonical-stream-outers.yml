@@ -39,14 +39,14 @@ jobs:
       CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
       CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
     steps:
-      - uses: KirilsTurkins/lsf-checkout@842365d0a25bf5a868311e4cb89c908bdcab4bb8 # v7.0.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@14de4ddb02861c1e098a1a260a2de7a6b45b68fb # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
-      - uses: KirilsTurkins/lsf-rust-cache@476b290465f7c84db317df6e6a6e2d3c12ea3477 # v2.9.3 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v3-contract-profiles
           shared-key: host-contracts
@@ -62,7 +62,7 @@ jobs:
           cache-all-crates: false
           cache-on-failure: false
           save-if: false
-      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@9244ec9f4725400c84054e3e6ec97514cadddf53 # v1.1.3 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
       - name: Build two exact lib targets and execute four canonical IP controls
@@ -137,7 +137,7 @@ jobs:
           --output "$RUNNER_TEMP/canonical-stream-outers"
       - name: Retain four source-bound canonical IP outcomes
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@5c42799caf30eda69cb2db5da0be2400c47cef16 # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: ${{ github.ref_name == 'feat/sdk-736-unstarted-host-drop-20261029' && 'unstarted-host-drop' || github.ref_name == 'feat/sdk-736-guest-start-memory-20261029' && 'guest-start-memory' || github.ref_name == 'test/sdk-736-host-memory-baseline-20261029' && 'host-memory-baseline' || github.ref_name == 'feat/sdk-736-callback-memory-20261028' && 'callback-memory' || github.ref_name == 'feat/sdk-736-call-result-channel-memory-20261028' && 'call-result-channel-memory' || github.ref_name == 'feat/sdk-736-resource-table-memory-20261028' && 'resource-table-memory' || github.ref_name == 'feat/sdk-736-call-parameter-closure-memory-20261028' && 'call-parameter-closure-memory' || (github.ref_name == 'test/sdk-738-node-bootstrap-custody-20261028' || github.ref_name == 'test/sdk-738-node-capacity-facts-20261029') && 'node-bootstrap-custody' || github.ref_name == 'feat/sdk-745-lift-result-memory-20261028' && 'canonical-lift-result' || 'canonical-ip-format' }}-${{ github.sha }}
           path: |

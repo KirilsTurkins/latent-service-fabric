@@ -76,6 +76,39 @@ std::thread_local! {
     static CUT: RefCell<Option<Cut>> = const { RefCell::new(None) };
     static ARM: RefCell<Option<(Arc<Probe>, usize)>> = const { RefCell::new(None) };
     static REVERSE_ACTIVE: Cell<bool> = const { Cell::new(false) };
+    static DEFERRED_ARM: RefCell<Option<(Arc<Probe>, u8)>> = const { RefCell::new(None) };
+    static DEFERRED_ENTERED: Cell<bool> = const { Cell::new(false) };
+    static DEFERRED_FINISHED: Cell<bool> = const { Cell::new(false) };
+}
+
+// The actual production call observes the real VMLazyThread state. This test
+// hook changes only the already existing counter owner's refusal ordinal.
+pub(super) fn before_deferred_force(is_deferred: bool) {
+    DEFERRED_ARM.with(|arm| {
+        if let Some((probe, mode)) = arm.borrow().as_ref() {
+            assert!(is_deferred, "fixture must enter a real deferred guest call");
+            assert!(*mode <= 2);
+            assert!(!DEFERRED_ENTERED.with(|seen| seen.replace(true)));
+            if *mode == 1 {
+                let next = probe.requests.lock().unwrap().len() + 1;
+                probe.refuse.store(next, SeqCst);
+            }
+        }
+    });
+}
+
+pub(super) fn after_deferred_force() {
+    DEFERRED_ARM.with(|arm| {
+        if let Some((probe, mode)) = arm.borrow().as_ref() {
+            if *mode == 2 {
+                let next = probe.requests.lock().unwrap().len() + 1;
+                probe.refuse.store(next, SeqCst);
+            } else {
+                probe.refuse.store(0, SeqCst);
+            }
+            DEFERRED_FINISHED.with(|finished| finished.set(true));
+        }
+    });
 }
 struct ObserveReverse;
 impl ObserveReverse {
@@ -328,6 +361,26 @@ impl StreamConsumer<()> for Consumer {
         }
     }
 }
+fn deferred_fixture() -> (Engine, Component) {
+    let path = std::env::var_os("LSF_TEST_STREAM_DEFERRED_COMPONENT")
+        .expect("owner-only fixed deferred fixture path required");
+    let meta = std::fs::symlink_metadata(&path).unwrap();
+    assert!(meta.file_type().is_file() && !meta.file_type().is_symlink());
+    assert!(meta.len() > 8 && meta.len() <= 64 * 1024);
+    let bytes = std::fs::read(path).unwrap();
+    assert!(bytes.starts_with(b"\0asm"));
+    let engine = Engine::new(
+        Config::new()
+            .wasm_component_model(true)
+            .wasm_component_model_async(true)
+            .concurrency_support(true)
+            .consume_fuel(true),
+    )
+    .unwrap();
+    let component = Component::new(&engine, bytes).unwrap();
+    (engine, component)
+}
+
 fn fixture() -> (Engine, Component) {
     let path = std::env::var_os(FIXTURE_ENV).expect("owner-only fixed fixture path required");
     let meta = std::fs::symlink_metadata(&path).unwrap();
@@ -416,8 +469,8 @@ async fn waiting_writer(store: &mut Store<()>, instance: Instance) -> StreamRead
     reader
 }
 async fn reverse_refusal_cases(engine: &Engine, component: &Component) {
-    // Queue, task, outer continuation, consumer value/cell and poll factory.
-    for local in 1..=6 {
+    // Preserve all six previous cuts, then refuse the concrete inner future.
+    for local in 1..=7 {
         let probe = Arc::new(Probe::default());
         let (mut store, instance) = setup(engine, component, true, &probe).await;
         let reader = waiting_writer(&mut store, instance).await;
@@ -530,7 +583,9 @@ async fn reverse_positive_cases(engine: &Engine, component: &Component) {
 }
 async fn refusal_cases(write: bool) {
     let (engine, component) = fixture();
-    for local in 1..=3 {
+    // The write path adds an admitted consumer inner future after the three
+    // original queue/task/outer cuts; read remains unchanged.
+    for local in 1..=if write { 4 } else { 3 } {
         let probe = Arc::new(Probe::default());
         let (mut store, instance) = setup(&engine, &component, true, &probe).await;
         let gate = Arc::new(Gate::default());
@@ -1255,6 +1310,236 @@ fn consumer_poll_factory_legacy_and_uncertain_destructor_keep_existing_boundarie
     assert!(reserved > 0);
     assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(factory))).is_err());
     assert_eq!(probe.live.load(SeqCst), reserved);
+}
+
+// These source-private controls account the concrete consumer future's own
+// Box. They do not qualify transitive captures or borrowed accept futures.
+struct ConsumerInnerFutureProbe {
+    probe: Arc<ConsumerCellProbe>,
+    address: Arc<AtomicUsize>,
+    polls: Arc<AtomicUsize>,
+    panic_drop: bool,
+    _padding: [u8; 97],
+    _pinned: core::marker::PhantomPinned,
+}
+
+impl Future for ConsumerInnerFutureProbe {
+    type Output = Result<StreamResult>;
+
+    fn poll(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.as_ref().get_ref();
+        let address = this as *const Self as usize;
+        match this.address.compare_exchange(0, address, SeqCst, SeqCst) {
+            Ok(_) => {}
+            Err(old) => assert_eq!(old, address),
+        }
+        this.polls.fetch_add(1, SeqCst);
+        Poll::Pending
+    }
+}
+
+impl Drop for ConsumerInnerFutureProbe {
+    fn drop(&mut self) {
+        self.probe.value_drops.fetch_add(1, SeqCst);
+        assert!(!self.panic_drop, "consumer-inner-future-drop");
+    }
+}
+
+fn consumer_inner_probe_factory(
+    probe: Arc<ConsumerCellProbe>,
+    calls: Arc<AtomicUsize>,
+    address: Arc<AtomicUsize>,
+    polls: Arc<AtomicUsize>,
+    panic_drop: bool,
+) -> impl Fn() -> ConsumerInnerFutureProbe + Send + Sync + 'static {
+    move || {
+        calls.fetch_add(1, SeqCst);
+        ConsumerInnerFutureProbe {
+            probe: probe.clone(),
+            address: address.clone(),
+            polls: polls.clone(),
+            panic_drop,
+            _padding: [0; 97],
+            _pinned: core::marker::PhantomPinned,
+        }
+    }
+}
+
+fn consumer_inner_layout<F, Fut>(_: &F) -> usize
+where
+    F: Fn() -> Fut,
+{
+    core::alloc::Layout::new::<Fut>().size()
+}
+
+#[test]
+fn consumer_inner_future_exact_admission_pin_and_origin_retirement() {
+    let original = Arc::new(ConsumerCellProbe::default());
+    let foreign = Arc::new(ConsumerCellProbe::default());
+    let _foreign_memory = consumer_cell_memory(&foreign);
+    let calls = Arc::new(AtomicUsize::new(0));
+    let address = Arc::new(AtomicUsize::new(0));
+    let polls = Arc::new(AtomicUsize::new(0));
+    let function = consumer_inner_probe_factory(
+        original.clone(),
+        calls.clone(),
+        address.clone(),
+        polls.clone(),
+        false,
+    );
+    let exact = consumer_inner_layout(&function);
+    assert!(exact > core::mem::size_of::<BoxedConsumerFuture>());
+    let factory =
+        own_typed_consumer_poll_factory(&consumer_cell_memory(&original), function).unwrap();
+    let factory_bytes = original.live.load(SeqCst);
+    original.refuse.store(2, SeqCst);
+    assert!(factory.prepare_consumer().is_err());
+    assert_eq!(calls.load(SeqCst), 0);
+    assert_eq!(polls.load(SeqCst), 0);
+    assert_eq!(original.live.load(SeqCst), factory_bytes);
+    assert_eq!(original.requests.lock().unwrap()[1], exact);
+
+    original.refuse.store(0, SeqCst);
+    original.check_value_drop.store(true, SeqCst);
+    let mut future = factory.prepare_consumer().unwrap();
+    assert_eq!(original.requests.lock().unwrap()[2], exact);
+    assert_eq!(original.live.load(SeqCst), factory_bytes + exact);
+    assert_eq!(calls.load(SeqCst), 1);
+    let mut cx = Context::from_waker(Waker::noop());
+    assert!(Pin::new(&mut future).poll(&mut cx).is_pending());
+    assert!(Pin::new(&mut future).poll(&mut cx).is_pending());
+    assert_eq!(polls.load(SeqCst), 2);
+    assert_ne!(address.load(SeqCst), 0);
+    drop(future);
+    assert_eq!(original.value_drops.load(SeqCst), 1);
+    assert_eq!(original.live.load(SeqCst), factory_bytes);
+    assert!(foreign.requests.lock().unwrap().is_empty());
+    assert_eq!(foreign.live.load(SeqCst), 0);
+    drop(factory);
+    assert_eq!(original.live.load(SeqCst), 0);
+}
+
+#[test]
+fn consumer_inner_future_confirmation_and_uncertain_drop_keep_owner() {
+    for panic_confirmation in [true, false] {
+        let probe = Arc::new(ConsumerCellProbe::default());
+        let calls = Arc::new(AtomicUsize::new(0));
+        let function = consumer_inner_probe_factory(
+            probe.clone(),
+            calls.clone(),
+            Arc::new(AtomicUsize::new(0)),
+            Arc::new(AtomicUsize::new(0)),
+            !panic_confirmation,
+        );
+        let exact = consumer_inner_layout(&function);
+        let factory =
+            own_typed_consumer_poll_factory(&consumer_cell_memory(&probe), function).unwrap();
+        let factory_bytes = probe.live.load(SeqCst);
+        if panic_confirmation {
+            probe.panic_confirmation.store(2, SeqCst);
+            probe.check_value_drop.store(true, SeqCst);
+            assert!(
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    factory.prepare_consumer()
+                }))
+                .is_err()
+            );
+            assert_eq!(probe.value_drops.load(SeqCst), 1);
+            assert_eq!(probe.live.load(SeqCst), factory_bytes);
+            drop(factory);
+            assert_eq!(probe.live.load(SeqCst), 0);
+        } else {
+            let future = factory.prepare_consumer().unwrap();
+            assert_eq!(probe.live.load(SeqCst), factory_bytes + exact);
+            assert!(
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| { drop(future) }))
+                    .is_err()
+            );
+            // Future destructor unwind makes the original future guard uncertain.
+            assert_eq!(probe.live.load(SeqCst), factory_bytes + exact);
+            drop(factory);
+            assert_eq!(probe.live.load(SeqCst), exact);
+        }
+        assert_eq!(calls.load(SeqCst), 1);
+    }
+}
+
+struct ZstConsumerInnerFuture;
+impl Future for ZstConsumerInnerFuture {
+    type Output = Result<StreamResult>;
+    fn poll(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Self::Output> {
+        Poll::Ready(Ok(StreamResult::Completed))
+    }
+}
+
+#[test]
+fn consumer_inner_future_zst_needs_no_backing_reservation() {
+    let probe = Arc::new(ConsumerCellProbe::default());
+    let function = || ZstConsumerInnerFuture;
+    assert_eq!(consumer_inner_layout(&function), 0);
+    let factory = own_typed_consumer_poll_factory(&consumer_cell_memory(&probe), function).unwrap();
+    let count = probe.requests.lock().unwrap().len();
+    let mut future = factory.prepare_consumer().unwrap();
+    assert_eq!(probe.requests.lock().unwrap().len(), count);
+    let mut cx = Context::from_waker(Waker::noop());
+    assert!(Pin::new(&mut future).poll(&mut cx).is_ready());
+    drop(future);
+    drop(factory);
+    assert_eq!(probe.live.load(SeqCst), 0);
+}
+
+#[tokio::test]
+#[ignore = "requires owner-authenticated deferred forwarding component"]
+async fn consumer_inner_future_deferred_replay_refusal_precedes_busy() {
+    let (engine, component) = deferred_fixture();
+    // Refuse replay, refuse the later inner future, then allow both.
+    for mode in [1u8, 2, 0] {
+        let probe = Arc::new(Probe::default());
+        let (mut store, instance) = setup(&engine, &component, true, &probe).await;
+        let gate = Arc::new(Gate::default());
+        gate.ready.store(true, SeqCst);
+        let make = instance
+            .get_typed_func::<(), (StreamReader<u8>,)>(&mut store, "make")
+            .unwrap();
+        let (reader,) = make.call_async(&mut store, ()).await.unwrap();
+        reader.pipe(&mut store, Consumer(gate.clone())).unwrap();
+        DEFERRED_ENTERED.with(|seen| seen.set(false));
+        DEFERRED_FINISHED.with(|finished| finished.set(false));
+        DEFERRED_ARM.with(|arm| *arm.borrow_mut() = Some((probe.clone(), mode)));
+        let result = instance
+            .get_typed_func::<(), (u32,)>(&mut store, "write")
+            .unwrap()
+            .call_async(&mut store, ())
+            .await;
+        DEFERRED_ARM.with(|arm| assert!(arm.borrow_mut().take().is_some()));
+        assert!(
+            DEFERRED_ENTERED.with(Cell::get),
+            "mode {mode}: deferred hook not reached; call outcome: {result:#?}"
+        );
+        if mode != 0 {
+            assert_eq!(DEFERRED_FINISHED.with(Cell::get), mode == 2);
+            let error = result.unwrap_err();
+            assert!(format!("{error:#}").contains(REFUSAL));
+            assert_eq!(gate.polls.load(SeqCst), 0);
+            assert_refused_state(&mut store);
+            drop(error);
+        } else {
+            assert!(DEFERRED_FINISHED.with(Cell::get));
+            assert_eq!(result.unwrap(), (17,));
+            assert_eq!(gate.payload.load(SeqCst), 42);
+        }
+        probe.refuse.store(0, SeqCst);
+        drop(store);
+        gate.release();
+        assert_eq!(probe.live.load(SeqCst), 0);
+        let (mut fresh, instance) = setup(&engine, &component, true, &probe).await;
+        let answer = instance
+            .get_typed_func::<(), (u32,)>(&mut fresh, "answer")
+            .unwrap();
+        assert_eq!(answer.call_async(&mut fresh, ()).await.unwrap(), (42,));
+        drop(fresh);
+        assert_eq!(probe.live.load(SeqCst), 0);
+    }
 }
 
 #[tokio::test]

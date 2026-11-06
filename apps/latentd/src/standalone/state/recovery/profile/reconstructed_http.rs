@@ -16,6 +16,7 @@ pub(super) enum SelectedHttpCustody {
     Historical(HttpCustody),
     Reconstructed,
     Refreshed,
+    November,
 }
 
 impl SelectedHttpCustody {
@@ -27,6 +28,9 @@ impl SelectedHttpCustody {
             return Err(super::super::denied());
         }
         let marker = digest(input.marker);
+        if marker == super::november_http::MARKER {
+            return super::november_http::select(profile, input);
+        }
         if marker == super::refreshed_http::MARKER {
             return super::refreshed_http::select(profile, input);
         }

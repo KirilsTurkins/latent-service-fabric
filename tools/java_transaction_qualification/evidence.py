@@ -142,6 +142,13 @@ class RecordingClient(Client):
         if self.node:
             self.node.drain()
         value = decode(result.stdout, 1048576)
+        if result.returncode not in codes and self.node is not None:
+            # Observe the original node process before cleanup can change its
+            # state. A live process is not evidence that its RPC or store works.
+            status = self.node.owner.process.poll()
+            self.evidence.record(f"cli-{ordinal:03d}-node-owner", {
+                "exited": status is not None, "exitStatus": status,
+                "observedBeforeCleanup": True})
         require(result.returncode in codes,
                 f"cli-exit-call-{ordinal}-status-{result.returncode}-code-{diagnostic_code(value)}"
                 f"-grpc-{diagnostic_grpc(value)}")
