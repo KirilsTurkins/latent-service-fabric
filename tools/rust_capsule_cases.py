@@ -38,16 +38,34 @@ def tutorials(client, targets, result):
 
 
 def faults(client, target, probe, result, population, *, language="rust"):
+    rust_baselines = []
     for ordinal, which in enumerate((0, 1, 0, 2, 0, 3, 0)):
         selected = target
+        baseline_revision = None
         if language == "rust" and which == 3:
             ceiling = target["budget"]["cpuFuel"]
             require(type(ceiling) is int and ceiling > 0, "authoring-fuel-budget")
             selected = {**target, "budget": {**target["budget"], "cpuFuel": min(ceiling, RUST_FAULT_FUEL)}}
+            require(len(rust_baselines) == 3, "authoring-fuel-baseline")
+            for baseline in rust_baselines:
+                data = baseline["response"]["data"]
+                revision = data.get("resolvedRevision")
+                fuel = data["consumption"]["cpuFuel"]
+                require(baseline["processReaped"] is True and type(revision) is dict
+                        and all(type(revision.get(key)) is str and revision[key]
+                                for key in ("publicationId", "releaseDigest", "revisionId"))
+                        and (type(fuel) is int or type(fuel) is str and fuel.isascii() and fuel.isdecimal())
+                        and 0 < int(fuel) <= selected["budget"]["cpuFuel"] // 100,
+                        "authoring-fuel-baseline")
+                if baseline_revision is None:
+                    baseline_revision = revision
+                require(revision == baseline_revision, "authoring-fuel-baseline")
         row = call(client, selected, "recovery", "run", [which], f"authoring-fault-{ordinal}")
         result["invocations"].append(row)
         if which == 0:
             assert_value(client, row, [1])
+            if language == "rust" and ordinal < 5:
+                rust_baselines.append(row)
         else:
             require(row["exitCode"] == 4 and row["response"]["category"] == "platform-failure"
                     and row["response"]["outcomeKnown"], "authoring-fault-not-observed")
@@ -59,6 +77,7 @@ def faults(client, target, probe, result, population, *, language="rust"):
             if language == "rust" and which == 3:
                 details = row["response"]["error"].get("details")
                 require(row["processReaped"] and row["response"]["data"]["terminalState"] == "resource_exhausted"
+                        and row["response"]["data"].get("resolvedRevision") == baseline_revision
                         and type(details) is list
                         and {"kind": "activation.fuel-exhausted", "fields": {"dimension": "cpu-fuel"}} in details
                         and int(row["response"]["data"]["consumption"]["cpuFuel"]) == selected["budget"]["cpuFuel"],

@@ -36,24 +36,34 @@ class RustFaultFuelBudgetTests(unittest.TestCase):
                 code = "guest-trap" if which == 1 else "resource-exhausted"
                 state = code.replace("-", "_")
                 details = [{"kind": "activation.fuel-exhausted", "fields": {"dimension": "cpu-fuel"}}]
-                consumed = budget["cpuFuel"]
+                consumed = 30 if which == 0 else budget["cpuFuel"]
+                revision = {"publicationId": "publication", "releaseDigest": "release", "revisionId": "revision",
+                            "routeGeneration": "18"}
                 if which == 3 and fault == "deadline":
                     code, state = "deadline-exceeded", "deadline_exceeded"
                 if which == 3 and fault == "wrong-dimension":
                     details = [{"kind": "activation.memory-exhausted", "fields": {"dimension": "memory-bytes"}}]
                 if which == 3 and fault == "partial-fuel":
                     consumed -= 1
+                if which == 0 and activation == "authoring-fault-4" and fault == "low-margin":
+                    consumed = 10_001
+                if which == 0 and activation == "authoring-fault-4" and fault == "baseline-revision":
+                    revision["releaseDigest"] = "different-release"
+                if which == 3 and fault == "loop-revision":
+                    revision["releaseDigest"] = "different-release"
                 return {"exitCode": 0 if which == 0 else 4, "decoded": [1] if which == 0 else None,
                         "processReaped": True, "response": {"outcomeKnown": True,
                         "category": "success" if which == 0 else "platform-failure",
-                        "error": {"code": code, "details": details}, "data": {"terminalState": state,
+                        "error": {"code": code, "details": details}, "data": {"terminalState": state, "resolvedRevision": revision,
                         "consumption": {"cpuFuel": str(consumed), "peakMemoryBytes": "1"}}}}
 
             result = {"invocations": [], "samples": []}
             with patch.object(node, "Process"), patch.object(cases, "call", side_effect=invoke), \
                     patch.object(cases, "sample", return_value={}):
                 if fault:
-                    expected = "authoring-fault-classification" if fault == "deadline" else "authoring-fuel-exhaustion-evidence"
+                    expected = ("authoring-fault-classification" if fault == "deadline" else
+                                "authoring-fuel-baseline" if fault in ("low-margin", "baseline-revision") else
+                                "authoring-fuel-exhaustion-evidence")
                     with self.assertRaisesRegex(RuntimeError, expected):
                         cases.faults(client, target, None, result, 1, language=language)
                 else:
@@ -78,7 +88,7 @@ class RustFaultFuelBudgetTests(unittest.TestCase):
                 self.assertTrue(all(budget == original for _, budget in requests))
 
     def test_deadline_other_resource_exhaustion_and_partial_fuel_are_refused(self):
-        for fault in ("deadline", "wrong-dimension", "partial-fuel"):
+        for fault in ("deadline", "wrong-dimension", "partial-fuel", "low-margin", "baseline-revision", "loop-revision"):
             with self.subTest(fault=fault):
                 self.exercise(fault=fault)
 
