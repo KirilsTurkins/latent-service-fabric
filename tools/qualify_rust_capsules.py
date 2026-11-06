@@ -93,7 +93,8 @@ def guide(output: Path, environment: dict[str, str], language="rust"):
     output = fresh(output)
     source = ROOT / f"docs/component-development/{language}-authoring.md"
     before = source.read_bytes()
-    if len(before) > 32768:
+    # The Java guide also documents the bounded activation compiler profiles.
+    if len(before) > (65536 if language == "java" else 32768):
         raise ValueError("authoring guide byte limit")
     blocks = re.findall(r"^```bash\n(.*?)^```$", before.decode().replace("\r\n", "\n"), re.M | re.S)
     if len(blocks) != 6:
