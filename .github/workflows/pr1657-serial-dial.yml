@@ -1,0 +1,126 @@
+name: PR 1657 serialized original HTTP dial candidate
+on:
+  push:
+    branches: ['diag/pr1657-serial-dial-20261106']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      actions: read
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Apply and validate the exact candidate
+        id: prepare
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/dial-candidate"
+          cp .github/pr1657-dial.patch "$RUNNER_TEMP/dial-candidate/input.patch"
+          git fetch --no-tags --depth=1 origin 46156d8dd5f6f2954b175108ce8d2d1a96d11c00
+          git checkout --detach 46156d8dd5f6f2954b175108ce8d2d1a96d11c00
+          git apply --check "$RUNNER_TEMP/dial-candidate/input.patch"
+          git apply "$RUNNER_TEMP/dial-candidate/input.patch"
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B - <<'PY'
+          from pathlib import Path
+          import subprocess
+          from tools.ci_cargo import format_command
+          command = format_command(Path.cwd())
+          assert command[-1] == '--check' and '--all' not in command
+          subprocess.run(command[:-1], check=True)
+          subprocess.run(command, check=True)
+          PY
+          git diff --check
+          python3 -B -m unittest tools.tests.test_rust_thread_http_combined_node tools.tests.test_rust_thread_http_sibling tools.tests.test_native_loader_boundary -v 2>&1 | tee "$RUNNER_TEMP/dial-candidate/python.log"
+          python3 -B tools/validate_foundation.py
+          python3 -B -c 'from tools.ci_coverage import validate; validate()'
+      - name: Retain reviewed formatted source blobs without moving any branch
+        if: steps.prepare.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -B - <<'PY'
+          import hashlib,json,os,subprocess,tarfile,urllib.request
+          from pathlib import Path
+          paths=['crates/latent-capabilities/src/broker/pools/client.rs','crates/latent-capabilities/src/broker/pools/client/admission.rs','crates/latent-capabilities/src/broker/pools/client/admission/serialized_tests.rs','crates/latent-http/src/network.rs','docs/testing/rust-combined-http-diagnostic.md','tools/rust_thread_http_combined_node.py','tools/rust_thread_http_sibling_node.py','tools/tests/test_rust_thread_http_combined_node.py']
+          changed=set(subprocess.check_output(['git','diff','--name-only'],text=True).splitlines())|set(subprocess.check_output(['git','ls-files','--others','--exclude-standard'],text=True).splitlines())
+          assert changed==set(paths),(changed-set(paths),set(paths)-changed)
+          out=Path(os.environ['RUNNER_TEMP'])/'dial-candidate'
+          result=[]
+          with tarfile.open(out/'formatted-source.tar.gz','w:gz') as archive:
+              for path in paths:
+                  data=Path(path).read_bytes()
+                  sha=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+                  request=urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs',data=json.dumps({'content':data.decode(),'encoding':'utf-8'}).encode(),headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Content-Type':'application/json'},method='POST')
+                  with urllib.request.urlopen(request,timeout=30) as response: actual=json.load(response)['sha']
+                  assert actual==sha
+                  result.append({'path':path,'sha':sha,'sha256':hashlib.sha256(data).hexdigest()})
+                  archive.add(path,arcname=path)
+          (out/'blobs.json').write_text(json.dumps(result,indent=2)+'\n')
+          PY
+      - name: Execute strict and serialized admission regressions
+        if: steps.prepare.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked -p latent-capabilities --lib broker::pools::client::admission:: -- --nocapture --test-threads=1 2>&1 | tee "$RUNNER_TEMP/dial-candidate/admission.log"
+          cargo test --locked -p latent-http --lib streaming::tests:: -- --nocapture --test-threads=1 2>&1 | tee "$RUNNER_TEMP/dial-candidate/http.log"
+      - name: Retrieve authenticated original compiler materials
+        if: always() && steps.prepare.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/rust_combined_http_materials.py --output "$RUNNER_TEMP/rust-combined-original"
+      - name: Run the unchanged signed sibling programme with the candidate
+        if: always() && steps.prepare.outcome == 'success'
+        run: python3 -B tools/qualify_rust_thread_http_combined.py --compiler-materials "$RUNNER_TEMP/rust-combined-original" --output "$RUNNER_TEMP/rust-combined-signed" --source-commit 46156d8dd5f6f2954b175108ce8d2d1a96d11c00
+      - name: Strict Clippy for the two changed owned crates
+        if: always() && steps.prepare.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo clippy --locked --no-deps -p latent-capabilities -p latent-http --lib --tests -- -D warnings 2>&1 | tee "$RUNNER_TEMP/dial-candidate/clippy.log"
+      - name: Retain the applied patch and evidence identity
+        if: always()
+        run: git diff --binary --full-index > "$RUNNER_TEMP/dial-candidate/applied.patch"
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        if: always()
+        with:
+          name: pr1657-serial-dial-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/dial-candidate/**
+            ${{ runner.temp }}/rust-combined-signed/**
+            ${{ runner.temp }}/rust-combined-original/retrieval.json
+          retention-days: 3
+          if-no-files-found: error
