@@ -1,0 +1,80 @@
+name: PR 1657 refresh and signed witness investigation
+on:
+  push:
+    branches: ['diag/pr1657-refresh-20261106']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  witness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+      - name: Export exact source deltas for local integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/pr1657-refresh-source"
+          mkdir -p "$out"
+          snapshot=f9c599faf162f639bb5e458f61f2dc4ae131ca2d
+          for sha in "$snapshot" 50e4a3d93c44f99a7d610c0d45a2a6d51bf91974 6994c4c4c7f0bb40aa405d804e47850a2dd60081 3fc286a0218d0a77dbb9c8a51df13eeaaa081dc9 dae9dc51b0e1a3685a04f54836c146b663499a9c; do
+            git fetch --no-tags --depth=1 origin "$sha"
+            git diff --binary --full-index "$snapshot" "$sha" > "$out/$sha.patch"
+            git cat-file commit "$sha" > "$out/$sha.commit"
+            git ls-tree -r "$sha" > "$out/$sha.tree"
+          done
+          cd "$out"
+          sha256sum *.patch *.commit *.tree > SHA256SUMS
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: pr1657-refresh-source
+          path: ${{ runner.temp }}/pr1657-refresh-source/**
+          retention-days: 3
+          if-no-files-found: error
+      - name: Select the exact previously compiled candidate
+        run: git checkout --detach 3fc286a0218d0a77dbb9c8a51df13eeaaa081dc9
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Install locked controller dependencies
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Retrieve authenticated original compiler inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/rust_combined_http_materials.py --output "$RUNNER_TEMP/rust-combined-original"
+      - name: Execute the candidate signed sibling witness
+        run: python3 -B tools/qualify_rust_thread_http_combined.py --compiler-materials "$RUNNER_TEMP/rust-combined-original" --output "$RUNNER_TEMP/rust-combined-signed" --source-commit 3fc286a0218d0a77dbb9c8a51df13eeaaa081dc9
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        if: always()
+        with:
+          name: pr1657-refresh-witness-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/rust-combined-signed/**
+            ${{ runner.temp }}/rust-combined-original/retrieval.json
+          retention-days: 3
+          if-no-files-found: warn
