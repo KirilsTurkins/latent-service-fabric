@@ -38,8 +38,13 @@ controller, process and peer lifetimes remain bounded, and there is no
 invocation retry. An unknown RPC outcome fails even if later evidence appears.
 
 The authenticated fixed graph uses both explicitly admitted child stacks and
-engine-owned HTTP completion fibers. Both draw from the original eight-Native-owner
-ceiling and the same 16 MiB activation ledger. Child admission still requires its
+engine-owned HTTP completion fibers. Both draw from the same finite Native-owner
+ceiling and the same 16 MiB activation ledger. The controller explicitly selects
+12 Native owners for this diagnostic; ordinary fixtures and defaults remain at
+eight. Native counts include guest pool/TLS ownership as well as physical stacks:
+the investigation observed nine simultaneous Native owners with four mapped
+stacks. That observation motivates this finite operator selection, not a universal
+bound or extra guest memory. The receipt records the selected count. Child admission still requires its
 separate native grant and a distinct original Task; accepted child-start capacity
 is not recycled on logical completion. Every actual mapping and its metadata
 remain charged until physical drop, and cached child permits remain charged
@@ -53,6 +58,24 @@ issued the next ordinary request. Physical guest owners and real provider work
 must be observed while the original request is held. A pass also requires
 exact results, zero active provider counters, retired physical guest owners,
 no foreign peer contact, deployment removal and clean node shutdown.
+
+## Concurrent cold HTTP connections
+
+The HTTP invocation path uses `reserve_connection_serialized` for a call's first
+connection reservation. If another accepted call is still dialing the same
+provider client, the second call waits under its existing absolute deadline and
+cancellation owner. It has no connection, socket, dial task, or extra request
+charge during that wait. A successful preceding dial allows a separately charged
+connection; a failed preceding dial retains backoff. Actual capacity exhaustion,
+poisoned ownership and authority loss still fail closed. Only pre-dial admission
+is reconsidered: no request, connection attempt, or protocol work is replayed.
+
+The original immediate and bookkeeping-only admission APIs remain strict;
+deferred and maintenance requests do not select this path. Regression controls
+exercise two independent real sockets, one concurrent dial, capacity refusal,
+original deadline, cancellation, abandoned waits, failed-dial backoff and poison.
+The unchanged signed witness separately requires real sibling HTTP progress
+while the first request's response remains withheld.
 
 ## Stack-boundary review
 
@@ -81,7 +104,10 @@ not a replacement for these behavioral tests or the signed witness.
 actual CLI result, including uncertain outcomes. `rust-thread-http-peer-refusal.json`
 retains the bounded controlled-peer observation when the causal gate refuses;
 `rust-thread-http-terminal.json` retains a completed invocation before its
-causal-order assertions are evaluated. Neither file is a success receipt.
+causal-order assertions are evaluated. `rust-thread-http-terminal-peer.json`
+retains the final scoped peer observation even when no gate became ready. These
+files are observations, not success receipts; recording cannot release gates,
+retry invocation, extend its deadline, or replace the original failure.
 The retained peer data excludes credential values; do not add raw request
 headers or credential files to the artifact.
 

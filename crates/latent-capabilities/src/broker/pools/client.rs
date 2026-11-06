@@ -259,12 +259,7 @@ impl<T: Send + 'static> ProviderClient<T> {
         let limits = owner.quotas.limits()?;
         let mut backoff = bookkeeping(&self.core.backoff)?;
         if backoff.dialing {
-            let error = busy();
-            super::super::http::refusal::observe(
-                super::super::http::refusal::Stage::PoolActiveDial,
-                &error,
-            );
-            return Err(error.into());
+            return Err(ClientAccessError::ActiveDial);
         }
         if backoff.next.is_some_and(|next| next > Instant::now()) {
             return Err(super::super::error(

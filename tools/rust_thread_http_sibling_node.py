@@ -75,6 +75,20 @@ def retain_refused_call(client, node, peer, process, output: Path, deadline):
         pass
 
 
+def retain_terminal_peer(peer, output: Path, offset, *, body_released, original_released):
+    """Record the final controlled-peer state even if no gate ever became ready.
+
+    This is observation only: it neither polls nor releases the peer, retries
+    the call, or changes its verdict. Evidence failure cannot hide that verdict.
+    """
+    try:
+        write_json(output / 'rust-thread-http-terminal-peer.json', {
+            'observation': current(peer.observation(), offset),
+            'bodyReleased': body_released, 'originalHeadersReleased': original_released})
+    except (OSError, TypeError, ValueError, KeyError, WorkflowError):
+        pass
+
+
 def invoke(client, node, target, peer, probe, output: Path, component_digest: str):
     budget = target['budget']
     require(budget['outboundRequests'] == 8 and budget['memoryBytes'] == 16_777_216
@@ -124,6 +138,8 @@ def invoke(client, node, target, peer, probe, output: Path, component_digest: st
         retain_refused_call(client, node, peer, process, output, deadline)
         raise
     finally:
+        retain_terminal_peer(peer, output, offset, body_released=body_released,
+                             original_released=original_released)
         process.close()
     require(body_released and original_released and pending is not None and causal is not None,
             'rust-thread-http-positive-sibling-order-missing')
