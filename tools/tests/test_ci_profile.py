@@ -14,6 +14,50 @@ from unittest.mock import patch
 from tools import ci_profile as profile
 
 
+class TypeScriptQualificationTriggerTests(unittest.TestCase):
+    def test_recipe_and_direct_toolchain_inputs_select_both_events(self) -> None:
+        from fnmatch import fnmatchcase
+        from tools.ci_lane_inventory import workflow_model
+        from tools.typescript_guest.build import RECIPE
+
+        root = Path(__file__).resolve().parents[2]
+        workflow = workflow_model((root / ".github/workflows/typescript-guest.yml").read_text(encoding="utf-8"))
+        events = workflow["on"]
+        self.assertEqual(events["push"]["branches"], ["development"])
+        paths = events["pull_request"]["paths"]
+        self.assertEqual(paths, events["push"]["paths"])
+        self.assertEqual(len(paths), len(set(paths)))
+
+        def matches(pattern: str, source: str) -> bool:
+            # GitHub's '*' matches within a path segment, whereas '**' here
+            # is used only as a terminal directory wildcard.
+            self.assertFalse(pattern.startswith("!"))
+            if pattern.endswith("/**"):
+                return source.startswith(pattern[:-2])
+            pattern_parts, source_parts = pattern.split("/"), source.split("/")
+            return len(pattern_parts) == len(source_parts) and all(
+                fnmatchcase(part, glob) for part, glob in zip(source_parts, pattern_parts))
+
+        inputs = set(RECIPE) | {"Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "tools/requirements.lock"}
+        for source in sorted(inputs):
+            with self.subTest(source=source):
+                self.assertTrue(any(matches(pattern, source) for pattern in paths), source)
+        self.assertFalse(any(matches(pattern, "docs/unrelated.md") for pattern in paths))
+
+        # The retained source evidence must contain the recipe that the
+        # qualification used, as well as its transaction-contract program.
+        import shlex
+        step = next(step for step in workflow["jobs"]["boundary"]["steps"]
+                    if step.get("name") == "Capture immutable qualification source inputs")
+        commands = step["run"].replace("\\" + "\n", " ").splitlines()
+        archive = next(line.strip() for line in commands if line.strip().startswith("git archive "))
+        arguments = shlex.split(archive)
+        included = arguments[arguments.index("--") + 1:]
+        for source in sorted(set(RECIPE) | {"sdk/transaction-contract"}):
+            with self.subTest(archived_source=source):
+                self.assertTrue(any(source == item or source.startswith(item + "/") for item in included), source)
+
+
 class ClassificationTests(unittest.TestCase):
     def test_sparse_selector_keeps_ignore_rules_available_offline(self) -> None:
         # A blob-filtered checkout may not have the root ignore blob locally.
