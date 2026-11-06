@@ -583,9 +583,9 @@ async fn reverse_positive_cases(engine: &Engine, component: &Component) {
 }
 async fn refusal_cases(write: bool) {
     let (engine, component) = fixture();
-    // The write path adds an admitted consumer inner future after the three
-    // original queue/task/outer cuts; read remains unchanged.
-    for local in 1..=if write { 4 } else { 3 } {
+    // Both directions admit their concrete inner future after the original
+    // queue/task/outer cuts and before publishing the guest Busy state.
+    for local in 1..=4 {
         let probe = Arc::new(Probe::default());
         let (mut store, instance) = setup(&engine, &component, true, &probe).await;
         let gate = Arc::new(Gate::default());
@@ -1488,6 +1488,99 @@ fn consumer_inner_future_zst_needs_no_backing_reservation() {
     assert_eq!(probe.live.load(SeqCst), 0);
 }
 
+#[test]
+fn producer_inner_future_exact_admission_pin_and_origin_retirement() {
+    let original = Arc::new(ConsumerCellProbe::default());
+    let foreign = Arc::new(ConsumerCellProbe::default());
+    let _foreign_memory = consumer_cell_memory(&foreign);
+    let calls = Arc::new(AtomicUsize::new(0));
+    let address = Arc::new(AtomicUsize::new(0));
+    let polls = Arc::new(AtomicUsize::new(0));
+    let function = consumer_inner_probe_factory(
+        original.clone(),
+        calls.clone(),
+        address.clone(),
+        polls.clone(),
+        false,
+    );
+    let exact = consumer_inner_layout(&function);
+    let prepared =
+        PreparedTypedProducerFactory::new(&consumer_cell_memory(&original), move |()| function)
+            .unwrap();
+    let factory = prepared.finish_producer(());
+    let factory_bytes = original.live.load(SeqCst);
+    original.refuse.store(2, SeqCst);
+    assert!(factory.prepare_producer().is_err());
+    assert_eq!(calls.load(SeqCst), 0);
+    assert_eq!(polls.load(SeqCst), 0);
+    assert_eq!(original.live.load(SeqCst), factory_bytes);
+    assert_eq!(original.requests.lock().unwrap()[1], exact);
+
+    original.refuse.store(0, SeqCst);
+    original.check_value_drop.store(true, SeqCst);
+    let mut future = factory.prepare_producer().unwrap();
+    assert_eq!(original.requests.lock().unwrap()[2], exact);
+    assert_eq!(original.live.load(SeqCst), factory_bytes + exact);
+    assert_eq!(calls.load(SeqCst), 1);
+    let mut cx = Context::from_waker(Waker::noop());
+    assert!(Pin::new(&mut future).poll(&mut cx).is_pending());
+    assert!(Pin::new(&mut future).poll(&mut cx).is_pending());
+    assert_eq!(polls.load(SeqCst), 2);
+    assert_ne!(address.load(SeqCst), 0);
+    drop(future);
+    assert_eq!(original.value_drops.load(SeqCst), 1);
+    assert_eq!(original.live.load(SeqCst), factory_bytes);
+    assert!(foreign.requests.lock().unwrap().is_empty());
+    assert_eq!(foreign.live.load(SeqCst), 0);
+    drop(factory);
+    assert_eq!(original.live.load(SeqCst), 0);
+}
+
+#[test]
+fn producer_inner_future_confirmation_and_uncertain_drop_keep_owner() {
+    for panic_confirmation in [true, false] {
+        let probe = Arc::new(ConsumerCellProbe::default());
+        let calls = Arc::new(AtomicUsize::new(0));
+        let function = consumer_inner_probe_factory(
+            probe.clone(),
+            calls.clone(),
+            Arc::new(AtomicUsize::new(0)),
+            Arc::new(AtomicUsize::new(0)),
+            !panic_confirmation,
+        );
+        let exact = consumer_inner_layout(&function);
+        let prepared =
+            PreparedTypedProducerFactory::new(&consumer_cell_memory(&probe), move |()| function)
+                .unwrap();
+        let factory = prepared.finish_producer(());
+        let factory_bytes = probe.live.load(SeqCst);
+        if panic_confirmation {
+            probe.panic_confirmation.store(2, SeqCst);
+            probe.check_value_drop.store(true, SeqCst);
+            assert!(
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    factory.prepare_producer()
+                }))
+                .is_err()
+            );
+            assert_eq!(probe.value_drops.load(SeqCst), 1);
+            assert_eq!(probe.live.load(SeqCst), factory_bytes);
+            drop(factory);
+            assert_eq!(probe.live.load(SeqCst), 0);
+        } else {
+            let future = factory.prepare_producer().unwrap();
+            assert_eq!(probe.live.load(SeqCst), factory_bytes + exact);
+            assert!(
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(future))).is_err()
+            );
+            assert_eq!(probe.live.load(SeqCst), factory_bytes + exact);
+            drop(factory);
+            assert_eq!(probe.live.load(SeqCst), exact);
+        }
+        assert_eq!(calls.load(SeqCst), 1);
+    }
+}
+
 #[tokio::test]
 #[ignore = "requires owner-authenticated deferred forwarding component"]
 async fn consumer_inner_future_deferred_replay_refusal_precedes_busy() {
@@ -1551,52 +1644,54 @@ async fn host_accept_refusal_preserves_the_original_transmit_and_can_resume() {
             .concurrency_support(true),
     )
     .unwrap();
-    let probe = Arc::new(Probe::default());
-    let mut store =
-        Store::try_new_with_memory(&engine, (), Arc::new(Memory(probe.clone()))).unwrap();
-    store.run_concurrent(async |_| ()).await.unwrap();
-    let producer = Arc::new(Gate::default());
-    let consumer = Arc::new(Gate::default());
-    producer.ready.store(true, SeqCst);
-    consumer.ready.store(true, SeqCst);
-    let reader = StreamReader::new(&mut store, Producer(producer.clone())).unwrap();
-    let handle = reader.id;
-    let transmit = store
-        .as_context_mut()
-        .0
-        .concurrent_state_mut_already_forced_current_thread()
-        .get_mut(handle)
-        .unwrap()
-        .state;
-    let before = probe.requests.lock().unwrap().len();
-    // queue / task / outer / consumer value / consumer cell / accept factory
-    probe.refuse.store(before + 6, SeqCst);
-    let error = reader
-        .pipe(&mut store, Consumer(consumer.clone()))
-        .unwrap_err();
-    assert!(format!("{error:#}").contains(REFUSAL));
-    assert_eq!(probe.requests.lock().unwrap().len(), before + 6);
-    assert_eq!(producer.polls.load(SeqCst), 0);
-    assert_eq!(consumer.polls.load(SeqCst), 0);
-    let state = store
-        .as_context_mut()
-        .0
-        .concurrent_state_mut_already_forced_current_thread();
-    let retained = state.get_mut(transmit).unwrap();
-    assert!(!retained.done);
-    assert!(matches!(&retained.read, ReadState::Open));
-    assert!(matches!(&retained.write, WriteState::HostReady { .. }));
-    probe.refuse.store(0, SeqCst);
-    // The test recreates the original handle, not a new transmit or producer.
-    StreamReader::<u8>::new_(handle)
-        .pipe(&mut store, Consumer(consumer.clone()))
-        .unwrap();
-    drive(&mut store, &consumer).await.unwrap();
-    assert_eq!(consumer.payload.load(SeqCst), 42);
-    drop(store);
-    producer.release();
-    consumer.release();
-    assert_eq!(probe.live.load(SeqCst), 0);
+    for local in [6, 7] {
+        let probe = Arc::new(Probe::default());
+        let mut store =
+            Store::try_new_with_memory(&engine, (), Arc::new(Memory(probe.clone()))).unwrap();
+        store.run_concurrent(async |_| ()).await.unwrap();
+        let producer = Arc::new(Gate::default());
+        let consumer = Arc::new(Gate::default());
+        producer.ready.store(true, SeqCst);
+        consumer.ready.store(true, SeqCst);
+        let reader = StreamReader::new(&mut store, Producer(producer.clone())).unwrap();
+        let handle = reader.id;
+        let transmit = store
+            .as_context_mut()
+            .0
+            .concurrent_state_mut_already_forced_current_thread()
+            .get_mut(handle)
+            .unwrap()
+            .state;
+        let before = probe.requests.lock().unwrap().len();
+        // queue / task / outer / consumer value / consumer cell / accept / producer future
+        probe.refuse.store(before + local, SeqCst);
+        let error = reader
+            .pipe(&mut store, Consumer(consumer.clone()))
+            .unwrap_err();
+        assert!(format!("{error:#}").contains(REFUSAL));
+        assert_eq!(probe.requests.lock().unwrap().len(), before + local);
+        assert_eq!(producer.polls.load(SeqCst), 0);
+        assert_eq!(consumer.polls.load(SeqCst), 0);
+        let state = store
+            .as_context_mut()
+            .0
+            .concurrent_state_mut_already_forced_current_thread();
+        let retained = state.get_mut(transmit).unwrap();
+        assert!(!retained.done);
+        assert!(matches!(&retained.read, ReadState::Open));
+        assert!(matches!(&retained.write, WriteState::HostReady { .. }));
+        probe.refuse.store(0, SeqCst);
+        // The test recreates the original handle, not a new transmit or producer.
+        StreamReader::<u8>::new_(handle)
+            .pipe(&mut store, Consumer(consumer.clone()))
+            .unwrap();
+        drive(&mut store, &consumer).await.unwrap();
+        assert_eq!(consumer.payload.load(SeqCst), 42);
+        drop(store);
+        producer.release();
+        consumer.release();
+        assert_eq!(probe.live.load(SeqCst), 0);
+    }
 }
 
 // The real host-to-host path uses the same higher-ranked input contract.

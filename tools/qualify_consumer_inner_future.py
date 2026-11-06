@@ -17,6 +17,7 @@ from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, fresh, read_file, write_json
 
 BRANCH = 'feat/sdk-745-consumer-inner-future-20261105'
+PRODUCER_BRANCH = 'feat/sdk-745-producer-inner-future-20261106'
 WORKFLOW = '.github/workflows/consumer-inner-future.yml'
 PRIVATE_NEW = tuple(common.PRIVATE_PREFIX + name for name in (
     'consumer_inner_future_exact_admission_pin_and_origin_retirement',
@@ -29,9 +30,23 @@ PRIVATE_REGRESSION = tuple(common.PRIVATE_PREFIX + name for name in (
 PRIVATE_ORIGINAL = (common.PRIVATE_CASES[0], common.PRIVATE_CASES[2])
 PRIVATE_DEFERRED = (common.PRIVATE_PREFIX +
     'consumer_inner_future_deferred_replay_refusal_precedes_busy',)
+PRODUCER_HELPERS = tuple(common.PRIVATE_PREFIX + name for name in (
+    'producer_inner_future_exact_admission_pin_and_origin_retirement',
+    'producer_inner_future_confirmation_and_uncertain_drop_keep_owner'))
+PRODUCER_HOST = (common.PRIVATE_PREFIX +
+    'host_accept_refusal_preserves_the_original_transmit_and_can_resume',)
+PRODUCER_GUEST = (common.PRIVATE_PREFIX +
+    'actual_stream_guest_read_refusals_precede_busy_and_transmit_mutation',)
+PRODUCER_PRIVATE = (*PRODUCER_HELPERS, *PRODUCER_HOST, *PRODUCER_GUEST)
 PUBLIC = (*common.PUBLIC_CASES, common.PUBLIC_PREFIX +
     'actual_consumer_future_original_budget_refusal_and_retirement',)
-CASES = (*PRIVATE_NEW, *PRIVATE_REGRESSION, *PRIVATE_ORIGINAL, *PRIVATE_DEFERRED, *PUBLIC)
+PRODUCER_PUBLIC = tuple(common.PUBLIC_PREFIX + name for name in (
+    'actual_producer_future_original_budget_guest_read_refusal',
+    'actual_producer_future_second_iteration_refusal_preserves_first_item_and_cleanup',
+    'actual_producer_future_any_roundtrip_and_pending_completion_preserve_custody'))
+CONSUMER_PRIVATE = (*PRIVATE_NEW, *PRIVATE_REGRESSION, *PRIVATE_ORIGINAL, *PRIVATE_DEFERRED)
+CASES = (*CONSUMER_PRIVATE, *PUBLIC)
+PRODUCER_CASES = (*CONSUMER_PRIVATE, *PRODUCER_PRIVATE, *PUBLIC, *PRODUCER_PUBLIC)
 DEFERRED_WAT = 'crates/latent-wasmtime/src/host/native-stream-deferred.wat'
 DEFERRED_ENV = 'LSF_TEST_STREAM_DEFERRED_COMPONENT'
 
@@ -41,8 +56,22 @@ def require(value, reason):
         raise ValueError('consumer-inner-future-' + reason)
 
 
-def case_result(raw, case):
-    require(case in CASES and len(raw) <= artifacts.MAX_OUTPUT_BYTES, 'case-and-output')
+def cases_for(branch):
+    if branch == BRANCH:
+        return CASES
+    if branch == PRODUCER_BRANCH:
+        return PRODUCER_CASES
+    raise ValueError('consumer-inner-future-branch')
+
+
+def case_ignored(case):
+    require(case in PRODUCER_CASES, 'case-and-ignored-selection')
+    return case in (*PRIVATE_ORIGINAL, *PRIVATE_DEFERRED, *PRODUCER_GUEST)
+
+
+def case_result(raw, case, selected=CASES):
+    require(selected in (CASES, PRODUCER_CASES) and case in selected
+        and len(raw) <= artifacts.MAX_OUTPUT_BYTES, 'case-and-output')
     matches = re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$', raw, re.M)
     require(matches == [case.encode()], 'one-exact-success')
     summary = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; '
@@ -51,8 +80,10 @@ def case_result(raw, case):
         and int(summary[0][4]) <= 10000, 'one-executed-no-skip')
     return {'case': case, 'stdout': common.identity(raw), 'passed': 1, 'failed': 0,
         'ignored': 0, 'filteredOut': int(summary[0][4]),
-        'scope': ('private-counter-inline-component' if case in (*PRIVATE_ORIGINAL, *PRIVATE_DEFERRED)
-            else 'private-counter-helper' if case in (*PRIVATE_NEW, *PRIVATE_REGRESSION) else 'public-original-ActivationBudget')}
+        'scope': ('private-counter-inline-component' if case in (*PRIVATE_ORIGINAL, *PRIVATE_DEFERRED, *PRODUCER_GUEST)
+            else 'private-counter-host-pipe' if case in PRODUCER_HOST
+            else 'private-counter-helper' if case in (*PRIVATE_NEW, *PRIVATE_REGRESSION, *PRODUCER_HELPERS)
+            else 'public-original-ActivationBudget')}
 
 
 def inputs():
@@ -62,10 +93,16 @@ def inputs():
 
 
 def qualify(output, revision):
+    branch = os.environ.get('GITHUB_REF_NAME')
     require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
         and os.environ.get('GITHUB_REPOSITORY') == 'KirilsTurkins/latent-service-fabric'
-        and os.environ.get('GITHUB_REF_NAME') == BRANCH and os.environ.get('GITHUB_EVENT_NAME') == 'push',
+        and branch in (BRANCH, PRODUCER_BRANCH) and os.environ.get('GITHUB_EVENT_NAME') == 'push',
         'exact-hosted-push')
+    selected = cases_for(branch)
+    private = (*CONSUMER_PRIVATE, *PRODUCER_PRIVATE) if branch == PRODUCER_BRANCH else CONSUMER_PRIVATE
+    public = (*PUBLIC, *PRODUCER_PUBLIC) if branch == PRODUCER_BRANCH else PUBLIC
+    expected_count = 19 if branch == PRODUCER_BRANCH else 12
+    require(len(selected) == expected_count and len(set(selected)) == expected_count, 'exact-case-selection')
     require(output != ROOT and ROOT not in output.parents and output not in ROOT.parents, 'owned-output')
     output = fresh(output)
     environment = build_environment(output)
@@ -78,8 +115,10 @@ def qualify(output, revision):
     logs = output / 'commands'; logs.mkdir()
     commands = Commands(ROOT, logs, environment, deadline_seconds=2395, command_seconds=895)
     receipt = {'schemaVersion': 'lsf.consumer-inner-future.v1', 'status': 'in-progress',
-        'sourceRevision': revision, 'cases': list(CASES), 'observations': [],
-        'scope': 'consumer poll inner future allocation only; producer, borrowed accept futures, backing buffers and aggregate costs remain unpaid',
+        'sourceRevision': revision, 'cases': list(selected), 'observations': [],
+        'scope': ('consumer and producer poll inner future allocations only; borrowed accept futures, backing buffers and aggregate costs remain unpaid'
+            if branch == PRODUCER_BRANCH else
+            'consumer poll inner future allocation only; producer, borrowed accept futures, backing buffers and aggregate costs remain unpaid'),
         'fullCostModelQualified': False, 'fullRuntimeSuiteExecuted': False,
         'fullVendorSuiteExecuted': False, 'signedGuestExecuted': False,
         'hermetic': False, 'compilerImplicitInputsAttested': False,
@@ -127,14 +166,14 @@ def qualify(output, revision):
                 target=ROOT / 'target', execute=probe)
 
         targets = (
-            ('private', (*PRIVATE_NEW, *PRIVATE_REGRESSION, *PRIVATE_ORIGINAL, *PRIVATE_DEFERRED),
+            ('private', private,
              ('test', '--manifest-path', 'crates/vendor/wasmtime/Cargo.toml', '--locked', '--lib',
               '--no-default-features', '--features', common.FEATURES, '--no-run', '--message-format=json'),
              artifacts.Suite('crates/vendor/wasmtime/Cargo.toml', 'wasmtime', 'src/lib.rs',
-                common.PRIVATE_PREFIX, frozenset((*PRIVATE_NEW, *PRIVATE_REGRESSION, *PRIVATE_ORIGINAL, *PRIVATE_DEFERRED)), True)),
-            ('public', PUBLIC, ('test', '-p', 'latent-wasmtime', '--locked', '--lib', '--no-run',
+                common.PRIVATE_PREFIX, frozenset(private), True)),
+            ('public', public, ('test', '-p', 'latent-wasmtime', '--locked', '--lib', '--no-run',
                 '--message-format=json'), artifacts.Suite('crates/latent-wasmtime/Cargo.toml',
-                'latent_wasmtime', 'src/lib.rs', common.PUBLIC_PREFIX, frozenset(PUBLIC), True)),
+                'latent_wasmtime', 'src/lib.rs', common.PUBLIC_PREFIX, frozenset(public), True)),
         )
         executables = []
         for label, cases, argv, suite in targets:
@@ -158,7 +197,7 @@ def qualify(output, revision):
             for index, case in enumerate(cases):
                 receipt['stage'] = case
                 require(fixtures_bound(), 'fixture-before-case')
-                ignored = ('--ignored',) if case in (*PRIVATE_ORIGINAL, *PRIVATE_DEFERRED) else ()
+                ignored = ('--ignored',) if case_ignored(case) else ()
                 commands.command_seconds = 25
                 listed = commands.run(f'{label}-list-{index}', artifact.executable, case, '--exact', *ignored, '--list')
                 require(len(listed) <= artifacts.MAX_LIST_BYTES, 'list-bound')
@@ -167,10 +206,11 @@ def qualify(output, revision):
                 commands.command_seconds = 55
                 raw = commands.run(f'{label}-case-{index}', artifact.executable, case, '--exact', *ignored,
                     '--show-output', '--test-threads=1')
-                receipt['observations'].append(case_result(raw, case))
+                receipt['observations'].append(case_result(raw, case, selected))
                 require(fixtures_bound(), 'fixture-after-case')
-        require(len(commands.records) == 30 and len(receipt['observations']) == len(CASES) == 12,
-            'two-fixtures-two-builds-twelve-cases')
+        require(len(commands.records) == 6 + 2 * expected_count
+            and len(receipt['observations']) == len(selected) == expected_count,
+            'two-fixtures-two-builds-exact-cases')
         require(time.monotonic() < commands.deadline and inputs() == before and source.verify() == checked, 'final-source')
         for path, bound, label in executables:
             require(file_identity(path, label, 512 * 1024**2) == bound, 'final-executable')
@@ -178,7 +218,7 @@ def qualify(output, revision):
             and [file_identity(tools[name], name) for name in sorted(tools)] == pins, 'final-fixture-and-tools')
         artifacts.require_source(ROOT, revision, environment)
         require(time.monotonic() < commands.deadline, 'final-deadline')
-        receipt.update(status='passed', sourceAfter=before, sourceUnchanged=True, executed=list(CASES), ignored=[])
+        receipt.update(status='passed', sourceAfter=before, sourceUnchanged=True, executed=list(selected), ignored=[])
         write_json(output / 'receipt.json', receipt)
     except BaseException:
         receipt['status'] = 'failed'; write_json(output / 'FAILED.json', receipt); raise

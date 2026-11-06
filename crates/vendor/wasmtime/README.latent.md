@@ -800,3 +800,17 @@ future refusals precede Busy, and successful execution and cleanup remain intact
 This slice does not pay producer futures, borrowed host-to-host accept futures,
 buffers or aggregate activation costs. It does not resolve the pre-existing
 compiled cohort discrepancy and makes no signed-guest qualification claim.
+
+## v35: producer poll inner-future allocation
+
+The paid producer factory reserves the concrete per-call future against the
+original Store owner before constructing or boxing it. Guest reads prepare the
+future after deferred replay and before the handle becomes Busy. Host-to-host
+pipes prepare their first future before replacing the original transmit; each
+later loop iteration separately reserves its own future. The charge remains
+until that actual future is destroyed. The unselected path retains its original
+legacy loop and does not acquire a native-memory reservation.
+
+This slice does not account borrowed host-to-host accept futures, backing
+buffers, transitive captures or aggregate activation costs. It does not resolve
+the existing compiled cohort discrepancy or establish signed guest behavior.
