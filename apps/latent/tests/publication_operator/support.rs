@@ -89,6 +89,19 @@ pub(super) struct Harness {
     server: Option<JoinHandle<Result<(), tonic::transport::Error>>>,
     profile: PathBuf,
 }
+fn compatibility() -> Arc<latent_manifest::RuntimeCompatibilityProfile> {
+    Arc::new(
+        latent_manifest::RuntimeCompatibilityProfile::new(
+            "wasmtime",
+            "48.0.7",
+            "x86_64-unknown-linux-gnu",
+            &["x86_64.sse2"],
+            65536,
+            1000,
+        )
+        .unwrap(),
+    )
+}
 impl Harness {
     pub fn open(root: &Path, records: usize) -> Self {
         let runtime = tokio::runtime::Builder::new_multi_thread()
@@ -123,17 +136,7 @@ impl Harness {
                     artifacts.clone(),
                     DirectoryDeploymentRepositoryConfig::default(),
                     artifacts.lifecycle_authority(),
-                    Arc::new(
-                        latent_manifest::RuntimeCompatibilityProfile::new(
-                            "wasmtime",
-                            "48.0.7",
-                            "x86_64-unknown-linux-gnu",
-                            &["x86_64.sse2"],
-                            65536,
-                            1000,
-                        )
-                        .unwrap(),
-                    ),
+                    compatibility(),
                 ))
                 .unwrap(),
         );

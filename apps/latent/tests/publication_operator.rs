@@ -1,11 +1,41 @@
 //! Real CLI subprocesses over authenticated tonic and native publication/control/audit files.
 //! No guest execution, external service, prepared binary, or model substitutes for these calls.
 #![cfg(unix)]
-#[path = "standalone_cli/process.rs"]
+#[path = "standalone_cli/process/common.rs"]
 mod process;
 #[path = "publication_operator/support.rs"]
 mod support;
 use support::Harness;
+fn assert_lookup_and_reopen(h: Harness, root: &std::path::Path, receipt: &serde_json::Value) {
+    assert_ne!(
+        h.run(
+            "caller",
+            &["operation", "--kind", "reclaim", "--operation-id", "delete"]
+        )
+        .code,
+        Some(0)
+    );
+    let foreign = h
+        .run(
+            "foreign",
+            &["operation", "--kind", "reclaim", "--operation-id", "delete"],
+        )
+        .json(0, "success");
+    assert!(foreign["data"]["receipt"].is_null());
+    assert_eq!(foreign["data"]["automaticReplay"], false);
+    drop(h);
+    let h = Harness::open(root, 128);
+    let found = h.call(&["operation", "--kind", "reclaim", "--operation-id", "delete"]);
+    assert_eq!(&found["data"]["receipt"], receipt);
+    assert_eq!(h.audit.snapshot().retained_records, 10);
+    assert_eq!(
+        h.artifacts
+            .publication_capacity_snapshot()
+            .unwrap()
+            .release_directories,
+        0
+    );
+}
 #[test]
 fn native_cli_pins_deletes_reclaims_and_queries_original_receipts_after_reopen() {
     let root = tempfile::tempdir().unwrap();
@@ -103,34 +133,7 @@ fn native_cli_pins_deletes_reclaims_and_queries_original_receipts_after_reopen()
     ]);
     assert_eq!(replay["data"]["replay"], true);
     assert_eq!(h.audit.snapshot().retained_records, 10);
-    assert_ne!(
-        h.run(
-            "caller",
-            &["operation", "--kind", "reclaim", "--operation-id", "delete"]
-        )
-        .code,
-        Some(0)
-    );
-    let foreign = h
-        .run(
-            "foreign",
-            &["operation", "--kind", "reclaim", "--operation-id", "delete"],
-        )
-        .json(0, "success");
-    assert!(foreign["data"]["receipt"].is_null());
-    assert_eq!(foreign["data"]["automaticReplay"], false);
-    drop(h);
-    let h = Harness::open(root.path(), 128);
-    let found = h.call(&["operation", "--kind", "reclaim", "--operation-id", "delete"]);
-    assert_eq!(found["data"]["receipt"], reclaim["data"]["receipt"]);
-    assert_eq!(h.audit.snapshot().retained_records, 10);
-    assert_eq!(
-        h.artifacts
-            .publication_capacity_snapshot()
-            .unwrap()
-            .release_directories,
-        0
-    );
+    assert_lookup_and_reopen(h, root.path(), &reclaim["data"]["receipt"]);
 }
 #[test]
 fn native_cli_audit_capacity_refuses_mutation_and_preserves_pinned_catalog() {

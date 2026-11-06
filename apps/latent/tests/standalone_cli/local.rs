@@ -166,3 +166,20 @@ fn named_pipe_inputs_fail_before_open_or_network_dispatch() {
     assert_eq!(value["error"]["code"], "input-read-failed");
     assert_eq!(value["requestDispatched"], false);
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn standalone_process_observes_start_and_reaps_signaled_child() {
+    let mut command = Command::new("sh");
+    command.args([
+        "-c",
+        "printf '%s\\n' '{\"event\":\"ready\"}'; exec sleep 30",
+    ]);
+    let mut process = Process::spawn(command, WATCHDOG);
+    assert_eq!(process.started()["event"], "ready");
+    process.signal("-TERM");
+    let output = process.wait();
+    assert!(output.code.is_none());
+    assert!(output.stdout.contains("\"event\":\"ready\""));
+    assert!(output.stderr.is_empty());
+}
