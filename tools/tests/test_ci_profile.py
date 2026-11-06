@@ -84,6 +84,7 @@ class GoQualificationTriggerTests(unittest.TestCase):
         inputs = set(RECIPE) | {"Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "tools/requirements.lock"}
         for event in ("pull_request", "push"):
             paths = events[event]["paths"]
+            self.assertFalse(any(pattern.startswith("!") for pattern in paths))
             for source in sorted(inputs):
                 with self.subTest(event=event, source=source):
                     self.assertTrue(any(matches(pattern, source) for pattern in paths), source)
