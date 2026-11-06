@@ -150,7 +150,9 @@ class ReleaseLifecycleSchemaTests(unittest.TestCase):
                          {"PublishRelease", "GetRelease", "ListReleases", "GetReleaseLifecycle",
                           "GetReleaseOperation", "ChangeReleaseLifecycle", "RenewReleaseEvidence",
                           "PublishWebPackage", "GetWebPublication", "GetWebOperation",
-                          "ChangeWebLifecycle", "RenewWebEvidence", "PrepareWebPublication", "PrepareRelease"})
+                          "ChangeWebLifecycle", "RenewWebEvidence", "PrepareWebPublication", "PrepareRelease",
+                          "GetPublicationRetention", "MaintainPublications", "AssessPublicationReclamation",
+                          "GetPublicationMaintenanceOperation"})
         self.assertEqual({item["name"]: item["number"] for item in message(source, "PrepareReleaseRequest")["field"]},
                          {"publication": 1, "lifecycle_generation": 2, "maximum_wait_millis": 3})
         self.assertEqual({item["name"]: item["number"] for item in message(source, "PrepareReleaseResponse")["field"]},

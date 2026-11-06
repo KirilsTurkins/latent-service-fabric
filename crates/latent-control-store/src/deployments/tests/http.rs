@@ -33,6 +33,7 @@ use std::any::Any;
 use std::collections::BTreeMap;
 use std::sync::{atomic::Ordering, Arc};
 
+mod deletion;
 mod recovery;
 mod selection;
 mod target_inspection;

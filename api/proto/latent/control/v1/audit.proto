@@ -196,6 +196,12 @@ enum AuditControlAction {
   AUDIT_CONTROL_ACTION_PAYLOAD_PURGE = 29;
   AUDIT_CONTROL_ACTION_COMMAND_FLOOR_RELEASE = 30;
   AUDIT_CONTROL_ACTION_COMMAND_CANCEL = 31;
+  // Exact batch identity is bound by request_digest and preview_receipt_digest;
+  // these are publication-catalog operations, not business-state payload purge.
+  AUDIT_CONTROL_ACTION_PUBLICATION_PIN = 32;
+  AUDIT_CONTROL_ACTION_PUBLICATION_UNPIN = 33;
+  AUDIT_CONTROL_ACTION_PUBLICATION_DELETE = 34;
+  AUDIT_CONTROL_ACTION_PUBLICATION_RECLAIM = 35;
 }
 
 enum AuditCapabilityResourceClass {

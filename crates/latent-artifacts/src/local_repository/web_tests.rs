@@ -358,3 +358,50 @@ fn web_reclamation_removes_an_orphan_without_erasing_current_content_or_its_rece
 
 #[path = "web_tests/staging.rs"]
 mod staging;
+
+#[test]
+fn retired_web_publication_keeps_exact_reader_reference_through_eligibility_clones() {
+    let root = TempRoot::new();
+    let repo = open(&root);
+    let reference = publish(&repo).unwrap().receipt.publication;
+    let read = repo.read_web_asset(&reference, "/index.html").unwrap();
+    let copied = read.selection().eligibility().clone();
+    let charge = repo.web_read_snapshot().unwrap().retained_bytes;
+    assert!(charge > latent_core::PublicationId::TEXT_BYTES + 256);
+    revoke(&repo, &reference).unwrap();
+    let selection = repo
+        .publication_retention_snapshot(
+            &reference.scope,
+            std::slice::from_ref(&reference),
+            std::time::Duration::from_secs(10),
+        )
+        .unwrap();
+    let request = PublicationDeletionRequest {
+        scope: reference.scope.clone(),
+        actor: context("unused", 0).actor,
+        operation_id: "delete-original".into(),
+        expected_catalog_fence: selection.catalog_fence,
+        targets: selection
+            .selections
+            .into_iter()
+            .map(|value| value.target)
+            .collect(),
+    };
+    drop(read);
+    assert_eq!(
+        repo.inspect_publication_deletion(&request, std::time::Duration::from_secs(10))
+            .unwrap_err()
+            .message,
+        "publication-deletion-readers-active"
+    );
+    assert_eq!(repo.web_read_snapshot().unwrap().retained_bytes, charge);
+    drop(copied);
+    assert_eq!(
+        repo.inspect_publication_deletion(&request, std::time::Duration::from_secs(10))
+            .unwrap_err()
+            .message,
+        "publication-deletion-reference-authority-unavailable"
+    );
+    assert_eq!(repo.web_read_snapshot().unwrap().retained_bytes, 0);
+    assert!(repo.select_web_publication(&reference).is_err());
+}

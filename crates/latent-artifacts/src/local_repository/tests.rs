@@ -20,6 +20,8 @@ mod lock_release;
 mod owned_preparation;
 #[path = "preparation_tests.rs"]
 mod preparation;
+#[path = "publication_read_tests.rs"]
+mod publication_reads;
 #[cfg(unix)]
 #[path = "publication_tests.rs"]
 mod publications;

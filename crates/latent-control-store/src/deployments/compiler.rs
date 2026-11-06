@@ -44,6 +44,7 @@ pub(super) struct CompiledCatalog {
     pub generation: RouteGeneration,
     pub generated_at_unix_millis: u64,
     pub records: Box<[Arc<RevisionRecord>]>,
+    pub publication_references: Box<[RecordIndex]>,
     pub paging_index: DeploymentIndex,
     pub eligibility: Box<[ReleaseUseEligibility]>,
     pub local_releases: usize,
@@ -834,6 +835,21 @@ async fn compile_catalog_inner(
         for (deployment, record) in deployments.values_mut().zip(records.iter()) {
             *deployment = Arc::clone(&record.deployment);
         }
+        // Reserve the maximum index allocation before constructing it. Charge
+        // every record slot, including unresolved (legacy/custom) records.
+        charge(
+            &mut metadata_budget,
+            records
+                .len()
+                .checked_mul(std::mem::size_of::<RecordIndex>())
+                .ok_or_else(|| {
+                    error(
+                        PlatformErrorCode::ResourceExhausted,
+                        "publication-reference-index-limit",
+                    )
+                })?,
+        )?;
+        let publication_references = super::publication_deletion::reference_index(&records)?;
         let packed = packing::assemble(&records, compatible, work)?;
         let paging_index = DeploymentIndex::build(&records, &versions, config, metadata_budget)?;
         charge(&mut metadata_budget, paging_index.retained_bytes())?;
@@ -844,6 +860,7 @@ async fn compile_catalog_inner(
             generation,
             generated_at_unix_millis,
             records,
+            publication_references,
             paging_index,
             eligibility: eligibility.into_boxed_slice(),
             local_releases,

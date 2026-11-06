@@ -177,6 +177,38 @@ class SelectionTests(unittest.TestCase):
                 discovery.validate_cases(suite, discovered, skipped, data['selections'])
 
 
+    def test_publication_safety_cases_are_required_without_freezing_ordinary_discovery(self):
+        owners = (
+            'latent-audit.lib.latent-audit',
+            'latent.lib.latent',
+            'latent-control-store.lib.latent-control-store',
+            'latent-wire.lib.latent-wire',
+            'latent-wire.test.management-service',
+            'latent-artifacts.lib.latent-artifacts',
+            'latent.test.publication-operator',
+            'latent-artifacts.test.publication-retention',
+        )
+        data = registry.load()
+        suites = {row['id']: row for row in data['suites']}
+        for owner in owners:
+            suite = suites[owner]
+            required = frozenset(suite.get('requiredCases', ()))
+            ignored = frozenset(suite['expectedIgnored'])
+            self.assertTrue(required, owner)
+            self.assertFalse(required & ignored, owner)
+            available = (required | ignored | frozenset(suite.get('caseFixtures', {}))
+                         | frozenset(suite.get('nestedCases', ())))
+            discovery.validate_cases(suite, available, ignored, {})
+            discovery.validate_cases(suite, available | {'ordinary::new_case'}, ignored, {})
+            for omitted in required:
+                with self.subTest(owner=owner, omitted=omitted), \
+                        self.assertRaisesRegex(ValueError, 'missing-required-case'):
+                    discovery.validate_cases(suite, available - {omitted}, ignored, {})
+            with self.subTest(owner=owner, ignored=True), \
+                    self.assertRaisesRegex(ValueError, 'unexpectedly-ignored-case'):
+                discovery.validate_cases(suite, available, ignored | {next(iter(required))}, {})
+
+
 class ArtifactTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)

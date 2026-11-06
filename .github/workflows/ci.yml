@@ -518,7 +518,7 @@ jobs:
           python3 tools/run_framework_sites.py --cli "$RUNNER_TEMP/lsf-angular-package-assembler" --node "${RUNNER_TEMP}/static-site/latentd" --fixture "$framework_root/fixture" --chrome "$(command -v google-chrome)" > "${RUNNER_TEMP}/phase2-gate/framework-sites.json"
       - name: Validate bounded Phase 2 delivery and resource workflows
         if: matrix.lane == 'publications'
-        timeout-minutes: 10
+        timeout-minutes: 15
         shell: bash
         run: |
           python3 -m unittest tools.tests.test_ci_rust_artifacts tools.tests.test_phase2_resource_binaries
@@ -538,6 +538,7 @@ jobs:
           python3 tools/run_phase2_offline_workflow.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/inputs" --source-commit "${GITHUB_SHA}" > "${RUNNER_TEMP}/phase2-gate/offline-receipt.json"
           LSF_OPERATOR_FIXTURE_ROOT="${fixture_root}/publication-inputs" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite publication-fixture
           python3 tools/run_publication_workflow.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/publication-inputs" --source-commit "${GITHUB_SHA}" > "${RUNNER_TEMP}/phase2-gate/publication-receipt.json"
+          python3 -B tools/run_publication_retention_signed.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/publication-inputs" --source-commit "${GITHUB_SHA}" > "${RUNNER_TEMP}/phase2-gate/publication-retention-signed-receipt.json"
           # Keep the frozen 512 MiB executable-hash limit without modifying
           # Cargo's debug artifacts or their hard-linked copies. Hash and run
           # these same runtime-only copies, never the unstripped originals.

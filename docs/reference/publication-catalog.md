@@ -59,6 +59,9 @@ Retained successful operation receipts preserve their exact publication associat
 Replay after coexistence or restart returns that captured publication and the
 original historical result, even if fresh component selection is now ambiguous.
 Replay does not restore current eligibility to a revoked or retired publication.
+After confirmed capsule payload reclamation, publication replay explicitly refuses
+with `publication-payload-reclaimed-query-original-operation`; query the retained
+original operation instead. A receipt cannot recreate reclaimed payloads.
 
 ## Persistence and resource ownership
 
@@ -71,6 +74,8 @@ The catalog root contains:
 | `lifecycle/records/<publication hex>.json` | Independently mutable lifecycle state with monotonic generations |
 | `lifecycle/receipts/` | Bounded operation ring with exact publication associations |
 | `lifecycle/evidence/` | Independently selected immutable evidence revisions |
+| `lifecycle/retention/` | Bounded pins, tombstones, capsule/web cleanup intent/head and original-operation receipts |
+| `LIFECYCLE_MODE` | Reader compatibility fence, promoted before accepting new retention/deletion/cleanup authority |
 | `.tmp/` | Owned publication/reclamation staging |
 
 The node places this catalog root at `<dataDirectory>/releases`. Its publications
@@ -92,8 +97,10 @@ including revoked/retired history, keeps its content pin. A live preparation
 source therefore cannot lose committed bytes through this maintenance operation.
 Directory unlink and parent synchronization precede refunds. An indeterminate
 write or reclamation failure requires reopening; it cannot refund a live owner.
-Unknown incomplete directories require offline inspection and repair. This
-implementation does not offer deletion of committed historical payloads.
+Unknown incomplete directories require offline inspection and repair. This orphan
+operation never deletes committed historical payloads. The separate trusted-host
+publication reclamation protocol below requires prior durable visibility removal and
+fresh native reference/reader checks; it is not an expansion of orphan cleanup.
 
 The authenticated node inventory exposes a fixed `publication-catalog` topology
 row with actual usage and limits. Use the [capacity and maintenance guide](../operations/publication-retention.md)
@@ -130,3 +137,40 @@ empty catalogs and current lifecycle interruption recovery. Policy integration u
 real publisher and builder signatures with corrected embedded inventories and
 identical packages in two tenants. These are functional tests, with no guest
 invocations or 100k load campaign.
+
+## Retention pins, tombstones and payload reclamation
+
+The native repository has [bounded durable retention and deletion owners](publication-retention-pins.md)
+for issue #662. Pins are independent of execution and serving eligibility;
+clearing one does not reclaim content. `tombstone_publications` durably removes
+visibility and eligibility but retains payloads and their charges.
+
+The separate trusted-host `reclaim_tombstoned_publications` continues an exact
+retained capsule/web deletion operation with a fresh catalog fence. It commits bounded cleanup
+authority before unlink, preserves shared blobs until their last committed
+reference is removed, and synchronizes parent directories before capacity
+refunds. Compact protected identities and original-operation receipts allow
+reopen to continue recognized partial cleanup without restoring old visibility
+or requiring already-removed payload files. Unsupported older readers and
+corrupt or downgraded cleanup authority are rejected before cleanup.
+
+The capsule-only API remains available with its original target restriction.
+Web cleanup retains negative identities and independently verified history and
+evidence; the v2 cleanup marker rejects older readers. HTTP recovery refuses
+older control snapshots that reference tombstoned web payloads without rejecting
+ordinary retained revoked/retired references. Independent lifecycle/evidence
+history compaction remains separate. Authenticated management/CLI and finite
+audit integration are described below. Follow the operator deletion and complete
+stopped-backup workflows; do not call the trusted-host API with a no-op audit callback or remove
+catalog directories manually. The retention guide records the exact limits,
+recovery/restore requirements, native test scope and remaining work.
+
+## Authenticated operator maintenance
+
+Use [publication deletion](../operations/publication-deletion.md) through the
+four typed publication-maintenance RPCs and `latent release retention` commands.
+Mutations derive scope/actor from authentication, require durable finite audit,
+preflight complete response capacity and then recheck native authority. Snapshot,
+assessment and original-operation lookup are bounded read-only calls. Deletion
+and reclamation remain distinct stages; UNKNOWN is never automatic replay
+permission. Independent evidence/lifecycle/web history compaction remains separate.

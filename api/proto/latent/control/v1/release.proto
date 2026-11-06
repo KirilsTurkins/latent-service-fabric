@@ -319,6 +319,11 @@ message ListReleasesResponse {
 }
 
 service ReleaseService {
+  // Administrator-only, exact tenant selections; mutations require durable audit.
+  rpc GetPublicationRetention(GetPublicationRetentionRequest) returns (GetPublicationRetentionResponse);
+  rpc MaintainPublications(MaintainPublicationsRequest) returns (MaintainPublicationsResponse);
+  rpc AssessPublicationReclamation(AssessPublicationReclamationRequest) returns (AssessPublicationReclamationResponse);
+  rpc GetPublicationMaintenanceOperation(GetPublicationMaintenanceOperationRequest) returns (GetPublicationMaintenanceOperationResponse);
   // Phase 1 standalone: supported.
   rpc PublishRelease(PublishReleaseRequest) returns (PublishReleaseResponse);
   // Phase 1 standalone: supported.
@@ -467,4 +472,118 @@ message PrepareReleaseResponse {
   uint64 lifecycle_generation = 2;
   string component_digest = 3;
   bool prepared = 4;
+}
+
+// Bounded tenant publication maintenance. These operations do not retire an
+// active publication, alter trust/evidence retention, or authorize rollback.
+enum PublicationMaintenanceKind {
+  PUBLICATION_MAINTENANCE_KIND_UNSPECIFIED = 0;
+  PUBLICATION_MAINTENANCE_KIND_PIN = 1;
+  PUBLICATION_MAINTENANCE_KIND_UNPIN = 2;
+  PUBLICATION_MAINTENANCE_KIND_DELETE = 3;
+  PUBLICATION_MAINTENANCE_KIND_RECLAIM = 4;
+}
+
+message PublicationMaintenanceTarget {
+  PublicationRef publication = 1;
+  uint64 expected_generation = 2;
+}
+
+// Exactly 1..32 targets in strictly increasing publication-ID order. The
+// original selection is immutable, including its operation ID and 32-byte fence.
+message PublicationMaintenanceSelection {
+  string operation_id = 1;
+  bytes catalog_fence = 2;
+  repeated PublicationMaintenanceTarget targets = 3;
+}
+
+message PublicationMaintenanceCommand {
+  PublicationMaintenanceKind kind = 1;
+  // For RECLAIM this is the exact original DELETE selection, not a new ID.
+  PublicationMaintenanceSelection selection = 2;
+  // RECLAIM only: fresh 32-byte fence returned by reclamation assessment.
+  bytes reclamation_catalog_fence = 3;
+  // RECLAIM only: 1..1024 observations and 1..1073741824 hashed bytes, covering
+  // both validation passes together. Other kinds require these fields to be zero.
+  uint32 maximum_files = 4;
+  uint64 maximum_bytes_hashed = 5;
+}
+
+message GetPublicationRetentionRequest {
+  repeated PublicationRef publications = 1;
+  // 1..30000, additionally clamped to the original authenticated deadline.
+  uint64 maximum_wait_millis = 2;
+}
+message PublicationRetentionPinRecord {
+  uint64 pinned_generation = 1;
+  ReleaseActor actor = 2;
+  string operation_id = 3;
+}
+message PublicationRetentionEntry {
+  PublicationMaintenanceTarget target = 1;
+  optional PublicationRetentionPinRecord pin = 2;
+}
+message GetPublicationRetentionResponse {
+  string tenant = 1;
+  bytes catalog_fence = 2;
+  repeated PublicationRetentionEntry entries = 3;
+}
+
+message MaintainPublicationsRequest {
+  PublicationMaintenanceCommand command = 1;
+  uint64 maximum_wait_millis = 2;
+}
+// Logical namespace charges, not allocated disk blocks. Hard-linked namespace
+// bytes must not be summed and represented as physical storage savings.
+message PublicationReclamationAccounting {
+  uint32 publications = 1;
+  uint32 publication_files = 2;
+  uint64 publication_file_bytes = 3;
+  uint32 selected_blobs = 4;
+  uint32 last_reference_blobs = 5;
+  uint64 last_reference_blob_bytes = 6;
+  uint32 shared_blobs_retained = 7;
+  uint64 shared_blob_bytes_retained = 8;
+  uint64 bytes_hashed = 9;
+}
+message PublicationMaintenanceOperationReceipt {
+  string tenant = 1;
+  ReleaseActor actor = 2;
+  PublicationMaintenanceCommand command = 3;
+  // PIN, UNPIN and DELETE only; zero for RECLAIM.
+  uint64 revision = 4;
+  // DELETE/RECLAIM native control-store revision; zero is a valid revision.
+  uint64 reference_revision = 5;
+  // Present only for confirmed RECLAIM. DELETE establishes visibility removal
+  // alone and must never be reported as refunded capacity.
+  optional PublicationReclamationAccounting reclaimed = 6;
+}
+message MaintainPublicationsResponse {
+  PublicationMaintenanceOperationReceipt receipt = 1;
+  bool replay = 2;
+  // Mandatory. A committed catalog operation and audit durability are distinct.
+  AuditAck audit_ack = 3;
+}
+message AssessPublicationReclamationRequest {
+  PublicationMaintenanceSelection deletion = 1;
+  uint32 maximum_files = 2;
+  uint64 maximum_bytes_hashed = 3;
+  uint64 maximum_wait_millis = 4;
+}
+message AssessPublicationReclamationResponse {
+  string tenant = 1;
+  PublicationMaintenanceSelection deletion = 2;
+  bytes catalog_fence = 3;
+  uint64 reference_revision = 4;
+  PublicationReclamationAccounting potential = 5;
+}
+message GetPublicationMaintenanceOperationRequest {
+  PublicationMaintenanceKind kind = 1;
+  string operation_id = 2;
+}
+message GetPublicationMaintenanceOperationResponse {
+  string tenant = 1;
+  ReleaseOperationLookupDisposition disposition = 2;
+  optional PublicationMaintenanceOperationReceipt receipt = 3;
+  // UNKNOWN includes eviction and never permits automatic replay/replacement.
 }

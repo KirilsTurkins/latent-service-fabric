@@ -12,7 +12,10 @@ pub mod package;
 mod preparation;
 mod preparation_fingerprint;
 mod publication;
+mod publication_deletion;
 mod publication_management;
+mod publication_reclamation;
+mod publication_retention;
 mod raw_cache;
 mod retained_package;
 mod selected_transaction_asset;
@@ -22,7 +25,27 @@ mod verified_metadata;
 pub use lifecycle::DevelopmentTestArtifact;
 pub mod web;
 pub use publication::PublicationRef;
+pub use publication_deletion::{
+    PublicationDeletionAssessment, PublicationDeletionLookup, PublicationDeletionReceipt,
+    PublicationDeletionRequest, PublicationDeletionResult, PublicationDeletionStage,
+    PublicationReferenceAuthority, MAX_PUBLICATION_DELETION_RECEIPTS, MAX_PUBLICATION_TOMBSTONES,
+};
 pub use publication_management::PublicationOperationReceipt;
+pub use publication_reclamation::{
+    PublicationReclamationAssessment, PublicationReclamationContent, PublicationReclamationLimits,
+    PublicationReclamationLookup, PublicationReclamationReceipt, PublicationReclamationRequest,
+    PublicationReclamationResult, MAX_PUBLICATION_RECLAMATION_BYTES,
+    MAX_PUBLICATION_RECLAMATION_FILES,
+};
+#[cfg(feature = "development-test-host")]
+pub use publication_retention::DevelopmentRetentionFault;
+pub use publication_retention::{
+    PublicationRetentionAction, PublicationRetentionFence, PublicationRetentionLookup,
+    PublicationRetentionPin, PublicationRetentionReceipt, PublicationRetentionRequest,
+    PublicationRetentionResult, PublicationRetentionSelection, PublicationRetentionSnapshot,
+    PublicationRetentionTarget, MAX_PUBLICATION_RETENTION_BATCH, MAX_PUBLICATION_RETENTION_PINS,
+    MAX_PUBLICATION_RETENTION_RECEIPTS,
+};
 pub use retained_package::{RetainedPackageParts, RetainedPackageSource};
 mod selected_transaction_layers;
 pub use selected_transaction_asset::{
@@ -32,8 +55,10 @@ pub use selected_transaction_asset::{
 pub use selected_transaction_layers::SelectedTransactionLayers;
 
 pub use audit::{
-    reconcile_release_audit, AuditedAdmissionAuthority, ReleaseAuditAck, ReleaseAuditGuard,
-    ReleaseAuditStatus, WebAuditGuard,
+    reconcile_publication_maintenance_audit, reconcile_release_audit, AuditedAdmissionAuthority,
+    PublicationAuditGuard, PublicationMaintenanceOutcome, PublicationMaintenanceReceipt,
+    PublicationMaintenanceRequest, PublicationMaintenanceResult, ReleaseAuditAck,
+    ReleaseAuditGuard, ReleaseAuditStatus, WebAuditGuard,
 };
 pub use historical_execution::{
     HistoricalExecutionSnapshot, HistoricalExecutionState, HistoricalReleaseDenial,
@@ -238,6 +263,16 @@ pub trait ArtifactRepository: Send + Sync {
         &self,
         _reference: &PublicationRef,
     ) -> Result<web::WebSelection, PlatformError> {
+        Err(unsupported_catalog_query())
+    }
+
+    /// Validate a retained exact web association during control-store recovery.
+    /// Revoked/retired payloads remain valid negative references; tombstoned or
+    /// absent publications do not. This creates no serving grant or read lease.
+    fn check_retained_web_publication(
+        &self,
+        _reference: &PublicationRef,
+    ) -> Result<(), PlatformError> {
         Err(unsupported_catalog_query())
     }
 

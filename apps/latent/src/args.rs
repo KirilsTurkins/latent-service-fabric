@@ -8,6 +8,7 @@ pub mod phase3;
 pub mod phase4;
 pub mod policy;
 pub mod release;
+pub mod retention;
 pub mod rollout;
 pub mod web;
 pub use package::{PackageCommand, PackagePullArgs, PackagePushArgs};

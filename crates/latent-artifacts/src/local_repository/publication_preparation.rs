@@ -153,6 +153,7 @@ impl DirectoryArtifactRepository {
         requested: ArtifactPreparationReadLimits,
         control: Option<crate::preparation::read_wait::ReadControl<'_>>,
     ) -> Result<CapsuleArtifact, PlatformError> {
+        let _read = self.read_owners.read()?;
         add(&self.verification_statistics.full_fetch_attempts, 1);
         let reference = self.selected_publication(component, publication)?;
         if let Some(control) = &control {
@@ -246,6 +247,7 @@ impl DirectoryArtifactRepository {
         publication: Option<&PublicationId>,
         control: bool,
     ) -> Result<HistoricalExecutionSnapshot, PlatformError> {
+        let _read = self.read_owners.read()?;
         let reference = self.selected_publication(component, publication)?;
         add(&self.verification_statistics.metadata_fetch_attempts, 1);
         if self.is_web_publication(&reference)? {
