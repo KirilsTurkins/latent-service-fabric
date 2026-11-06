@@ -15,6 +15,11 @@ def unwrap_tooling_gate(test, job):
 
 
 def restore_java_pre_tooling_view(test, workflow):
+    # Authenticate and invert the development-push route before comparing a
+    # historical pull-request-only workflow; do not relax its path filters.
+    events = workflow['on'] if 'on' in workflow else workflow[True]
+    test.assertEqual(events.pop('push'), events['pull_request'])
+    test.assertEqual(events['pull_request']['branches'], ['development'])
     jobs = workflow['jobs']
     for name in ('compiler-component', 'dependency-ingestion', 'http-public-spi', 'public-fiber-assembly'):
         unwrap_tooling_gate(test, jobs[name])
