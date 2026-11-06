@@ -2286,7 +2286,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         var dateInfo = dependency.getMethod(date);
         boolean dateRequired = dateInfo != null && (dateInfo.isUsed() || dateInfo.isCalled());
         java.nio.file.Path dateIndex = index.resolveSibling("date-init-required-v1.txt");
-        byte[] dateBytes = (dateRequired ? "required\n" : "unused\n")
+        byte[] dateBytes = (dateRequired ? "required\\n" : "unused\\n")
                 .getBytes(java.nio.charset.StandardCharsets.US_ASCII);
         java.nio.file.Files.write(dateIndex, dateBytes, java.nio.file.StandardOpenOption.CREATE_NEW,
                 java.nio.file.StandardOpenOption.WRITE);

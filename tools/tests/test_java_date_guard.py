@@ -3,7 +3,7 @@ import hashlib
 import unittest
 from unittest.mock import patch
 
-from tools.java_guest import date_guard
+from tools.java_guest import coroutine_patch, date_guard
 from tools.java_guest.enum_guard import _directives
 
 
@@ -18,6 +18,11 @@ def fixture(call=True):
 
 
 class DateGuardTests(unittest.TestCase):
+    def test_java_marker_literals_are_emitted_without_physical_newlines(self):
+        self.assertIn('dateRequired ? "required\\n" : "unused\\n"', coroutine_patch.CHECKPOINT_VALIDATION)
+        self.assertNotIn('"required\n"', coroutine_patch.CHECKPOINT_VALIDATION)
+        self.assertNotIn('"unused\n"', coroutine_patch.CHECKPOINT_VALIDATION)
+
     def guard(self, raw, expected, required=True):
         with patch.object(date_guard, 'DATE_BLOCK_SHA256', expected):
             return date_guard.seal(raw, _directives(raw, set()), required=required)
