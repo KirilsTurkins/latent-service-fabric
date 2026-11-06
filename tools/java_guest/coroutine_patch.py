@@ -1917,6 +1917,8 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                 return "3fc8c6aecaccc62681b45f33e0c3c8070eac14707665055fe882cd5b39a90491";
             case "org.teavm.classlib.java.lang.TNumber":
                 return "d3c14bbc5392ffdd2af74f74db3ec585e18a50983dc6fa1a2b667776b4bf3fbb";
+            case "org.teavm.platform.plugin.StringAmplifier":
+                return "bdb0f392efb06dee5ef4edcdfa5ccca5f8fa5be90a1b96d839ce1de8973ca267";
             case "org.teavm.runtime.Fiber":
                 return "88c9972155df3fad727253caf68f7359534a0639386571b2eb5680fa17fee605";
             case "org.teavm.classlib.java.lang.TStackTraceElement":
@@ -2454,6 +2456,298 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                     || identity.equals("210799a37dfb44936170e5977630dfa62f69e87f378f5c2936fedf8565f208c4"));
     }
 
+    // The platform emitter for this one method is an identity operation. This
+    // receipt is private to a finder; platform bytes are read at most once.
+    private boolean progressAmplifierArchiveAttempted;
+    private boolean progressAmplifierArchiveAccepted;
+    private Object progressAmplifierTarget;
+    private Object progressAmplifierIntrinsics;
+    private Object progressAmplifierGenerators;
+
+    private boolean progressAmplifierArchive(Class<?> platform) throws Exception {
+        if (progressAmplifierArchiveAttempted) return progressAmplifierArchiveAccepted;
+        progressAmplifierArchiveAttempted = true;
+        java.nio.file.Path jar = java.nio.file.Path.of(platform.getProtectionDomain()
+                .getCodeSource().getLocation().toURI()).toRealPath();
+        if (!java.nio.file.Files.isRegularFile(jar, java.nio.file.LinkOption.NOFOLLOW_LINKS)
+                || java.nio.file.Files.size(jar) != 101636) return false;
+        byte[] bytes;
+        try (java.io.InputStream input = java.nio.file.Files.newInputStream(jar)) {
+            bytes = input.readNBytes(101637);
+        }
+        if (bytes.length != 101636) return false;
+        byte[] digest = progressDigest().digest(bytes);
+        StringBuilder hex = new StringBuilder(64);
+        for (byte value : digest) {
+            hex.append(Character.forDigit((value >>> 4) & 15, 16));
+            hex.append(Character.forDigit(value & 15, 16));
+        }
+        progressAmplifierArchiveAccepted = hex.toString().equals(
+                "999d369ab15aa83c17987d048ba59560759169891de7e13a5a1c2bd93dd060a8");
+        return progressAmplifierArchiveAccepted;
+    }
+
+    // Recreate only the pinned platform plugin's registration on strict inert
+    // host proxies. Its reviewed constructors allocate local objects only; this
+    // neither installs onto the active VM nor runs any intrinsic/generator.
+    private boolean canonicalAmplifierFactories(Class<?> platform,
+            java.util.List<?> actualIntrinsics, java.util.List<?> actualGenerators) throws Exception {
+        Class<?> host = org.teavm.vm.spi.TeaVMHost.class;
+        Class<?> cHost = org.teavm.backend.c.TeaVMCHost.class;
+        ClassLoader loader = platform.getClassLoader();
+        if (Class.forName(host.getName(), false, loader) != host
+                || Class.forName(cHost.getName(), false, loader) != cHost
+                || Class.forName(org.teavm.model.ClassHolderTransformer.class.getName(), false, loader)
+                        != org.teavm.model.ClassHolderTransformer.class) return false;
+        String[] expectedTransformers = { "org.teavm.platform.plugin.MetadataProviderTransformer",
+                "org.teavm.platform.plugin.StringAmplifierTransformer",
+                "org.teavm.platform.plugin.ResourceLowLevelTransformer" };
+        Class<?>[] transformers = new Class<?>[expectedTransformers.length];
+        java.nio.file.Path jar = java.nio.file.Path.of(platform.getProtectionDomain()
+                .getCodeSource().getLocation().toURI()).toRealPath();
+        for (int index = 0; index < expectedTransformers.length; ++index) {
+            Class<?> type = progressHostClass(expectedTransformers[index]);
+            if (type == null || type.getClassLoader() != loader
+                    || !jar.equals(java.nio.file.Path.of(type.getProtectionDomain()
+                            .getCodeSource().getLocation().toURI()).toRealPath())) return false;
+            transformers[index] = type;
+        }
+        java.util.List<Object> sampledIntrinsics = new java.util.ArrayList<>();
+        java.util.List<Object> sampledGenerators = new java.util.ArrayList<>();
+        int[] seen = { 0 };
+        Object inertHost = java.lang.reflect.Proxy.newProxyInstance(loader, new Class<?>[] { host },
+                (proxy, member, args) -> {
+                    if (member.getDeclaringClass() != host || !member.getName().equals("add")
+                            || member.getParameterCount() != 1
+                            || member.getParameterTypes()[0] != org.teavm.model.ClassHolderTransformer.class
+                            || args == null || args.length != 1 || args[0] == null
+                            || seen[0] >= transformers.length || args[0].getClass() != transformers[seen[0]]) {
+                        throw new IllegalStateException("java-checkpoint-nonsuspendable-progress-741");
+                    }
+                    ++seen[0];
+                    return null;
+                });
+        Object inertC = java.lang.reflect.Proxy.newProxyInstance(loader, new Class<?>[] { cHost },
+                (proxy, member, args) -> {
+                    if (member.getDeclaringClass() != cHost || member.getParameterCount() != 1
+                            || args == null || args.length != 1 || args[0] == null) {
+                        throw new IllegalStateException("java-checkpoint-nonsuspendable-progress-741");
+                    }
+                    if (member.getName().equals("addIntrinsic") && sampledIntrinsics.size() < 2) {
+                        sampledIntrinsics.add(args[0]);
+                    } else if (member.getName().equals("addGenerator") && sampledGenerators.isEmpty()) {
+                        sampledGenerators.add(args[0]);
+                    } else {
+                        throw new IllegalStateException("java-checkpoint-nonsuspendable-progress-741");
+                    }
+                    return null;
+                });
+        Object plugin = platform.getConstructor().newInstance();
+        java.lang.reflect.Method install = platform.getDeclaredMethod("installC", host, cHost);
+        if (!install.trySetAccessible()) return false;
+        install.invoke(plugin, inertHost, inertC);
+        return seen[0] == 3 && sampledIntrinsics.size() == 2 && sampledGenerators.size() == 1
+                && sampledIntrinsics.get(0).getClass() == actualIntrinsics.get(0).getClass()
+                && sampledIntrinsics.get(1).getClass() == actualIntrinsics.get(1).getClass()
+                && sampledGenerators.get(0).getClass() == actualGenerators.get(0).getClass();
+    }
+
+    private boolean progressStringAmplifierPrimitive(MethodReader method) {
+        String owner = "org.teavm.platform.plugin.StringAmplifier";
+        org.teavm.model.ValueType string = org.teavm.model.ValueType.object("java.lang.String");
+        MethodReference exact = new MethodReference(owner, "amplify", string, string);
+        if (!method.getReference().equals(exact) || !method.hasModifier(ElementModifier.NATIVE)
+                || !method.hasModifier(ElementModifier.STATIC) || method.getProgram() != null
+                || method.getAnnotations().get("org.teavm.interop.Unmanaged") == null
+                || method.getAnnotations().get("org.teavm.interop.Intrinsified") == null) return false;
+        try {
+            if (!pinnedStringInfoCompiler() || !pinnedProgressPlatformMethod(exact, owner, true)) return false;
+            Class<?> analyzer = progressHostClass("org.teavm.dependency.DependencyAnalyzer");
+            Class<?> vmClass = progressHostClass("org.teavm.vm.TeaVM");
+            Class<?> targetClass = progressHostClass("org.teavm.backend.c.CTarget");
+            Class<?> traitsClass = progressHostClass("org.teavm.model.lowlevel.Characteristics");
+            Class<?> platform = progressHostClass("org.teavm.platform.plugin.PlatformPlugin");
+            Class<?> identity = progressHostClass("org.teavm.platform.plugin.PlatformPlugin$1");
+            Class<?> resource = progressHostClass("org.teavm.platform.plugin.ResourceReadCIntrinsic");
+            Class<?> amplifier = progressHostClass(owner);
+            Class<?> metadata = progressHostClass("org.teavm.platform.plugin.MetadataCIntrinsic");
+            Class<?> jcl = progressHostClass("org.teavm.classlib.impl.JCLPlugin");
+            Class<?> timezone = progressHostClass("org.teavm.classlib.impl.tz.DateTimeZoneProviderIntrinsic");
+            Class<?> serviceFactory = progressHostClass("org.teavm.classlib.impl.ServiceLoaderCSupport");
+            Class<?> serviceGenerator = progressHostClass("org.teavm.classlib.impl.ServiceLoaderCSupport$ServiceLoaderIntrinsic");
+            Class<?> classlib = progressClasslibType("org.teavm.classlib.impl.PlatformMarkerSupport");
+            if (analyzer == null || vmClass == null || targetClass == null || traitsClass == null
+                    || platform == null || identity == null || resource == null || amplifier == null || metadata == null
+                    || jcl == null || timezone == null || serviceFactory == null || serviceGenerator == null
+                    || classlib == null || platform.getClassLoader() == null
+                    || !progressAmplifierArchive(platform)) return false;
+            java.nio.file.Path jar = java.nio.file.Path.of(platform.getProtectionDomain()
+                    .getCodeSource().getLocation().toURI()).toRealPath();
+            for (Class<?> type : new Class<?>[] { identity, resource, amplifier, metadata }) {
+                if (type.getClassLoader() != platform.getClassLoader()
+                        || !jar.equals(java.nio.file.Path.of(type.getProtectionDomain()
+                                .getCodeSource().getLocation().toURI()).toRealPath())) return false;
+            }
+            java.nio.file.Path classlibJar = java.nio.file.Path.of(classlib.getProtectionDomain()
+                    .getCodeSource().getLocation().toURI()).toRealPath();
+            for (Class<?> type : new Class<?>[] { jcl, timezone, serviceFactory, serviceGenerator }) {
+                if (type.getClassLoader() != classlib.getClassLoader()
+                        || !classlibJar.equals(java.nio.file.Path.of(type.getProtectionDomain()
+                                .getCodeSource().getLocation().toURI()).toRealPath())) return false;
+            }
+            java.lang.reflect.Field services = analyzer.getDeclaredField("services");
+            java.lang.reflect.Field targetField = vmClass.getDeclaredField("target");
+            java.lang.reflect.Field traitsField = targetClass.getDeclaredField("characteristics");
+            java.lang.reflect.Field intrinsicField = targetClass.getDeclaredField("intrinsicFactories");
+            java.lang.reflect.Field generatorField = targetClass.getDeclaredField("generatorFactories");
+            java.lang.reflect.Field controllerField = targetClass.getDeclaredField("controller");
+            if (!services.trySetAccessible() || !targetField.trySetAccessible() || !traitsField.trySetAccessible()
+                    || !intrinsicField.trySetAccessible() || !generatorField.trySetAccessible()
+                    || !controllerField.trySetAccessible()) return false;
+            Object vm = services.get(dependency);
+            Object target = targetField.get(vm);
+            Object rawController = controllerField.get(target);
+            Object rawTraits = traitsField.get(target);
+            if (vm == null || vm.getClass() != vmClass || target == null || target.getClass() != targetClass
+                    || rawTraits == null || rawTraits.getClass() != traitsClass
+                    || !(rawController instanceof org.teavm.vm.TeaVMTargetController)) return false;
+            org.teavm.vm.TeaVMTargetController controller = (org.teavm.vm.TeaVMTargetController) rawController;
+            org.teavm.model.ClassReaderSource source = dependency.getClassSource();
+            if (controller.getDependencyInfo() != dependency || controller.getServices() != vm
+                    || controller.getUnprocessedClassSource() != source
+                    || Class.forName(platform.getName(), false, controller.getClassLoader()) != platform
+                    || ((org.teavm.model.lowlevel.Characteristics) rawTraits).isFunction(owner)) return false;
+            ClassReader actual = source.get(owner), root = source.get("java.lang.Object");
+            java.util.Optional<Boolean> resourceParent = source.isSuperType("org.teavm.platform.metadata.Resource", owner);
+            if (actual == null || root == null || root.getParent() != null || !resourceParent.isPresent()
+                    || resourceParent.get()) return false;
+            org.teavm.model.ClassHolder declaration = progressMetadata(actual);
+            if (progressAmplifierTarget != null) {
+                return progressAmplifierTarget == target && intrinsicField.get(target) == progressAmplifierIntrinsics
+                        && generatorField.get(target) == progressAmplifierGenerators;
+            }
+            Object rawIntrinsics = intrinsicField.get(target), rawGenerators = generatorField.get(target);
+            if (rawIntrinsics == null || rawIntrinsics.getClass() != java.util.ArrayList.class
+                    || rawGenerators == null || rawGenerators.getClass() != java.util.ArrayList.class) return false;
+            java.util.List<?> originals = (java.util.List<?>) rawIntrinsics;
+            java.util.List<?> generators = (java.util.List<?>) rawGenerators;
+            if (originals.size() != 3 || generators.size() != 2) return false;
+            Object metadataFactory = generators.get(0), service = generators.get(1);
+            Class<?> metadataLambda = metadataFactory.getClass();
+            java.lang.reflect.Field[] metadataFields = metadataLambda.getDeclaredFields();
+            if (metadataLambda.getNestHost() != platform || metadataLambda.getClassLoader() != platform.getClassLoader()
+                    || metadataFields.length != 1 || metadataFields[0].getType() != metadata
+                    || !java.lang.reflect.Modifier.isFinal(metadataFields[0].getModifiers())
+                    || !metadataFields[0].trySetAccessible() || metadataFields[0].get(metadataFactory) == null
+                    || metadataFields[0].get(metadataFactory).getClass() != metadata
+                    || service == null || service.getClass() != serviceFactory) return false;
+            Object metadataInstance = metadataFields[0].get(metadataFactory);
+            for (int index = 0; index < originals.size(); ++index) {
+                Object factory = originals.get(index);
+                if (!(factory instanceof org.teavm.backend.c.intrinsic.IntrinsicFactory)) return false;
+                Class<?> type = factory.getClass();
+                if (index < 2 && (type.getNestHost() != platform || type.getClassLoader() != platform.getClassLoader())
+                        || index == 2 && (type.getNestHost() != jcl || type.getClassLoader() != jcl.getClassLoader())) return false;
+                java.lang.reflect.Field[] fields = type.getDeclaredFields();
+                if (index != 1 && fields.length != 0 || index == 1 && (fields.length != 1
+                        || fields[0].getType() != platform || !java.lang.reflect.Modifier.isFinal(fields[0].getModifiers())
+                        || !fields[0].trySetAccessible() || fields[0].get(factory) == null
+                        || fields[0].get(factory).getClass() != platform)) return false;
+            }
+            if (!canonicalAmplifierFactories(platform, originals, generators)) return false;
+            java.lang.reflect.Field resourceSource = resource.getDeclaredField("classSource");
+            if (!resourceSource.trySetAccessible()) return false;
+            java.util.List<org.teavm.backend.c.intrinsic.Intrinsic> made =
+                    new java.util.ArrayList<>(java.util.Collections.nCopies(originals.size(), null));
+            java.util.List<org.teavm.backend.c.intrinsic.IntrinsicFactory> guarded = new java.util.ArrayList<>();
+            int[] next = { 0 };
+            for (int index = 0; index < originals.size(); ++index) {
+                final int position = index;
+                org.teavm.backend.c.intrinsic.IntrinsicFactory original =
+                        (org.teavm.backend.c.intrinsic.IntrinsicFactory) originals.get(index);
+                guarded.add(context -> {
+                    if (next[0] != position || context.getClassSource() != source || context.getServices() != vm) {
+                        throw checkpointRefusal("java-checkpoint-nonsuspendable-progress-741");
+                    }
+                    org.teavm.backend.c.intrinsic.Intrinsic created = original.createIntrinsic(context);
+                    if (created == null) throw checkpointRefusal("java-checkpoint-nonsuspendable-progress-741");
+                    made.set(position, created);
+                    ++next[0];
+                    return created;
+                });
+            }
+            java.util.List<org.teavm.backend.c.generators.GeneratorFactory> guardedGenerators = new java.util.ArrayList<>();
+            java.util.List<org.teavm.backend.c.generators.Generator> madeGenerators =
+                    new java.util.ArrayList<>(java.util.Collections.nCopies(generators.size(), null));
+            int[] nextGenerator = { 0 };
+            for (int index = 0; index < generators.size(); ++index) {
+                Object value = generators.get(index);
+                if (!(value instanceof org.teavm.backend.c.generators.GeneratorFactory)) return false;
+                final int position = index;
+                org.teavm.backend.c.generators.GeneratorFactory original =
+                        (org.teavm.backend.c.generators.GeneratorFactory) value;
+                guardedGenerators.add(context -> {
+                    if (nextGenerator[0] != position || context.getClassSource() != source || context.getServices() != vm) {
+                        throw checkpointRefusal("java-checkpoint-nonsuspendable-progress-741");
+                    }
+                    org.teavm.backend.c.generators.Generator created = original.createGenerator(context);
+                    if (created == null) throw checkpointRefusal("java-checkpoint-nonsuspendable-progress-741");
+                    madeGenerators.set(position, created);
+                    ++nextGenerator[0];
+                    return created;
+                });
+            }
+            Object[] frozen = new Object[2];
+            guardedGenerators.add(context -> {
+                try {
+                    ClassReader current = source.get(owner);
+                    java.util.Optional<Boolean> relation = source.isSuperType("org.teavm.platform.metadata.Resource", owner);
+                    if (next[0] != made.size() || nextGenerator[0] != madeGenerators.size()
+                            || madeGenerators.get(0) != metadataInstance
+                            || madeGenerators.get(1).getClass() != serviceGenerator
+                            || intrinsicField.get(target) != frozen[0]
+                            || generatorField.get(target) != frozen[1] || context.getClassSource() != source
+                            || context.getServices() != vm || targetField.get(vm) != target
+                            || traitsField.get(target) != rawTraits || controllerField.get(target) != controller
+                            || ((org.teavm.model.lowlevel.Characteristics) rawTraits).isFunction(owner)
+                            || current == null || !sameProgressMetadata(declaration, current)
+                            || !relation.isPresent() || relation.get()
+                            || made.get(0).getClass() != resource || resourceSource.get(made.get(0)) != source
+                            || made.get(0).canHandle(exact) || made.get(1).getClass() != identity
+                            || !made.get(1).canHandle(exact) || made.get(2).getClass() != timezone) {
+                        throw checkpointRefusal("java-checkpoint-nonsuspendable-progress-741");
+                    }
+                } catch (Exception unavailable) {
+                    throw checkpointRefusal("java-checkpoint-nonsuspendable-progress-741");
+                }
+                // A trailing never-matching generator preserves the original list's selection.
+                return (org.teavm.backend.c.generators.Generator) java.lang.reflect.Proxy.newProxyInstance(
+                        targetClass.getClassLoader(), new Class<?>[] { org.teavm.backend.c.generators.Generator.class },
+                        (proxy, member, arguments) -> {
+                            if (member.getDeclaringClass() == org.teavm.backend.c.generators.Generator.class
+                                    && member.getName().equals("canHandle") && member.getParameterCount() == 1) return false;
+                            throw new IllegalStateException("java-checkpoint-nonsuspendable-progress-741");
+                        });
+            });
+            frozen[0] = java.util.Collections.unmodifiableList(guarded);
+            frozen[1] = java.util.Collections.unmodifiableList(guardedGenerators);
+            try {
+                intrinsicField.set(target, frozen[0]);
+                generatorField.set(target, frozen[1]);
+            } catch (Exception unavailable) {
+                intrinsicField.set(target, rawIntrinsics);
+                generatorField.set(target, rawGenerators);
+                return false;
+            }
+            progressAmplifierTarget = target;
+            progressAmplifierIntrinsics = frozen[0];
+            progressAmplifierGenerators = frozen[1];
+            return true;
+        } catch (Exception unavailable) {
+            return false;
+        }
+    }
+
     private boolean progressStringInfoPrimitive(MethodReader method) {
         String owner = "org.teavm.runtime.StringInfo";
         MethodReference getter = new MethodReference(owner, "getStringObject",
@@ -2496,7 +2790,8 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
     }
 
     private boolean progressNativePrimitive(MethodReader method) {
-        if (progressClassMetadataPrimitive(method) || progressStringInfoPrimitive(method)) {
+        if (progressClassMetadataPrimitive(method) || progressStringInfoPrimitive(method)
+                || progressStringAmplifierPrimitive(method)) {
             return true;
         }
         // These exact C operations are bounded word operations, not a general
