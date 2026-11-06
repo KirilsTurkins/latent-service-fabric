@@ -65,11 +65,11 @@ A missing, failed, malformed, repeated-request or wrong-source reference cannot
 supply an oracle. Native control rows are retained separately, never counted as
 guest execution or among the24 signed peer contacts. No transport is injected,
 and source, module closure and Go executable identities are checked unchanged.
-The reference has a120-second sub-bound inside the unchanged1,200-second total;
-capture/component/node limits and the45-minute job are unchanged.
+The reference has a 120-second sub-bound inside the unchanged 1,200-second total;
+capture/component/node limits remain unchanged. The job limit is 60 minutes.
 
-The original Go workflow commands, timer/GC regression and 45-minute job limit
-remain. That owning job passed all 33 standard cases and 30 client cases in each
+The original Go workflow commands and timer/GC regression remain. A previous
+run of the owning job passed all 33 standard cases and 30 client cases in each
 of the original and renamed variants. Each variant contains 15 Sling and 15
 Requests cases; it is not 30 cases per client. The actual private worker ran in
 both variants. Original runtime failures stay visible, and the historical

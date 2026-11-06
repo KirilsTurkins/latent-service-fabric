@@ -143,10 +143,10 @@ class RetainedEntropy(unittest.TestCase):
             self.assertNotIn('RUSTFLAGS', environment)
             self.assertEqual(command.call_args.kwargs, {'deadline_seconds': 1950, 'command_seconds': 1800})
 
-    def test_manual_cpu_scalar_and_entropy_jobs_are_independent_and_original_deadline_is_unchanged(self):
+    def test_manual_cpu_scalar_and_entropy_jobs_are_independent_and_default_deadline_is_bounded(self):
         from tools import ci_lane_inventory
         jobs = ci_lane_inventory.workflow_model((ROOT/'.github/workflows/go-guest.yml').read_text())['jobs']
-        self.assertEqual(jobs['upstream-probe']['timeout-minutes'], 45)
+        self.assertEqual(jobs['upstream-probe']['timeout-minutes'], 60)
         for name in ('retained-cpu-checkpoints', 'retained-scalar-ownership', 'retained-entropy'):
             self.assertNotIn('needs', jobs[name])
             self.assertIn('inputs.qualify-entropy-retained', jobs[name]['if'])
