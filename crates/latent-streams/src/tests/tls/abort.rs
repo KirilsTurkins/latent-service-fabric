@@ -19,7 +19,10 @@ use tokio::{
 };
 use tokio_rustls::server::TlsStream;
 
-fn versions() -> [(&'static rustls::SupportedProtocolVersion, rustls::ProtocolVersion); 2] {
+fn versions() -> [(
+    &'static rustls::SupportedProtocolVersion,
+    rustls::ProtocolVersion,
+); 2] {
     [
         (&rustls::version::TLS12, rustls::ProtocolVersion::TLSv1_2),
         (&rustls::version::TLS13, rustls::ProtocolVersion::TLSv1_3),
