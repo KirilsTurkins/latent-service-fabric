@@ -135,6 +135,7 @@ def seal(preprocessed: bytes, checked: bytes, *, required: bool) -> tuple[bytes,
     if word_count(other, 'teavm_date_init') == 0:
         need(not required and word_count(view, 'meth_ju_Date__clinit_') == 0, 'missing-required-call')
         return cleaned, None
+    need(required, 'unobserved-call')
     need(other.count(DATE_JAVA_CALLER) == 1
          and word_count(other.replace(DATE_JAVA_CALLER, '', 1), 'teavm_date_init') == 0,
          'java-caller')

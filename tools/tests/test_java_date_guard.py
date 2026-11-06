@@ -28,6 +28,8 @@ class DateGuardTests(unittest.TestCase):
         self.assertIsNotNone(receipt)
         self.assertEqual(result.count(date_guard.FINITE_INIT), 1)
         self.assertNotIn(date_guard.DATE_INIT, result)
+        with self.assertRaisesRegex(ValueError, 'unobserved-call'):
+            self.guard(raw, expected, required=False)
         raw, expected = fixture(call=False)
         self.assertEqual(self.guard(raw, expected, required=False), (raw, None))
         with self.assertRaisesRegex(ValueError, 'missing-required-call'):
