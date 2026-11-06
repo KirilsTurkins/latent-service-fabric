@@ -13,8 +13,8 @@ import urllib.request
 import zipfile
 
 REPOSITORY = 'KirilsTurkins/latent-service-fabric'
-SOURCE = '00d6ecd48187c292e2d7b9fdc401c8698d3df896'
-RUN = 42287769427
+SOURCE = '480f9f15ed0e01e7283e862c1cb79312c298320b'
+RUN = 42290639079
 LIMIT = 16 * 1024 * 1024
 TOKEN = os.environ['GH_TOKEN']
 
@@ -48,6 +48,22 @@ def public(value, depth=0):
     return {key: public(item, depth + 1) for key, item in value.items()
             if not any(word in key.lower() for word in
                 ('credential', 'secret', 'authorization', 'headers', 'environment', 'argv', 'startup', 'signing', 'commands', 'materials', 'compilerprojection'))}
+
+
+def select(name, value):
+    if name in ('result.json', 'FAILED.json', 'witness.json', 'native-origin.json'):
+        keys = ('schemaVersion', 'status', 'sourceRevision', 'stage', 'errorCategory',
+                'runtimeLimits', 'observationLimits', 'actualSignedSiblingProgress',
+                'acceptedPeerRequests', 'normalBuilderQualified', 'normalRustBuilderRouteOpened',
+                'full689Qualified', 'full743Qualified', 'physicalVerificationWorkBoundQualified',
+                'hostOptimization', 'sourceVerifierOptimization', 'hostDebugAssertions',
+                'hostOverflowChecks', 'nodeShutdown', 'cleanup')
+        return {key: value[key] for key in keys if key in value}
+    if name == 'rust-thread-http-sibling.json':
+        keys = ('status', 'component', 'selectedRevision', 'invocation', 'independentPools',
+                'applicationYieldInserted', 'providerUsage', 'peer')
+        return {key: value[key] for key in keys if key in value}
+    return value
 
 
 def main():
@@ -84,9 +100,12 @@ def main():
     assert digest == selected['digest']
     summary = {'run': RUN, 'source': SOURCE, 'originalConclusion': run['conclusion'],
                'artifact': selected['id'], 'bytes': len(data), 'digest': digest, 'records': {}}
-    wanted = {'result.json', 'FAILED.json', 'witness.json', 'rust-thread-http-sibling.json',
+    wanted = {'result.json', 'FAILED.json', 'witness.json', 'native-origin.json',
+              'rust-thread-http-sibling.json', 'rust-thread-http-pending.json',
+              'rust-thread-http-sibling-before-release.json',
               'rust-thread-http-terminal.json', 'rust-thread-http-peer-refusal.json',
-              'examples-peer-final.json', 'foreign-peer-final.json', 'rust-combined-native-denied.json'}
+              'retirement-native-denied.json', 'examples-peer-final.json',
+              'foreign-peer-final.json', 'rust-combined-native-denied.json'}
     with zipfile.ZipFile(io.BytesIO(data)) as archive:
         members = archive.infolist()
         assert 0 < len(members) <= 512
@@ -104,13 +123,11 @@ def main():
             path = PurePosixPath(row.filename)
             if path.name not in wanted or 'commands' in path.parts or 'signed' in path.parts:
                 continue
-            assert row.file_size <= 2 * 1024 * 1024
+            assert row.file_size <= 4 * 1024 * 1024
             value = json.loads(archive.read(row))
-            if path.name in ('result.json', 'FAILED.json'):
-                value = {key: value[key] for key in ('schemaVersion', 'status', 'sourceRevision', 'stage', 'errorCategory', 'nativeGrantRefusal', 'runtimeLimits', 'witness', 'cleanup') if key in value}
-            summary['records'][row.filename] = public(value)
+            summary['records'][row.filename] = public(select(path.name, value))
     encoded = json.dumps(summary, indent=2, sort_keys=True)
-    assert len(encoded.encode()) <= 256 * 1024, 'bounded summary'
+    assert len(encoded.encode()) <= 512 * 1024, 'bounded summary'
     destination = Path(os.environ['RUNNER_TEMP']) / 'pr1657-witness-inspection.json'
     destination.write_text(encoded + '\n', encoding='utf-8')
     print('WITNESS_INSPECTION_BEGIN\n' + encoded + '\nWITNESS_INSPECTION_END')
