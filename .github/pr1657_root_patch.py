@@ -4,7 +4,7 @@ root=Path.cwd()
 # Source literals only; neither private error text nor guest inputs are exported.
 rows=[]
 seen=set()
-for base in ('crates/vendor/wasmtime/src/runtime/component','crates/latent-wasmtime/src/host', 'crates/latent-wasmtime/src/native_stacks.rs', 'crates/latent-wasmtime/src/native_tables.rs'):
+for base in ('crates/vendor/wasmtime/src/runtime','crates/latent-wasmtime/src/host', 'crates/latent-wasmtime/src/native_stacks.rs', 'crates/latent-wasmtime/src/native_tables.rs'):
  p=root/base
  for path in sorted(p.rglob('*.rs')) if p.is_dir() else [p]:
   text=path.read_text()
@@ -42,7 +42,7 @@ code='''
                 bytes.zeroize();
                 let flags = u8::from(error.is::<wasmtime::Trap>())
                     | (u8::from(error.is::<latent_core::BudgetError>()) << 1)
-                    | (u8::from(error.is::<latent_core::PlatformError>()) << 2)
+                    | (u8::from(error.is::<crate::host::capabilities::HostCapabilityFailure>()) << 2)
                     | (u8::from(error.is::<wasmtime::WasmtimeBug>()) << 3)
                     | (u8::from(error.is::<wasmtime::component::ResourceTableError>()) << 4)
                     | (u8::from(error.is::<std::io::Error>()) << 5);
