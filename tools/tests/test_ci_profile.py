@@ -488,6 +488,13 @@ class GitHistoryTests(unittest.TestCase):
         result = profile.classify_event("push", {"before": self.base, "after": head}, self.repo)
         self.assertEqual((result.profile, result.changed_files), ("full", 2))
 
+    def test_java_source_push_keeps_normal_qualification_selected(self) -> None:
+        self.write("sdk/java-guest/runtime/Thread.java", "class Thread {}\n")
+        head = self.commit()
+        result = profile.classify_event("push", {"before": self.base, "after": head}, self.repo)
+        self.assertEqual((result.profile, result.changed_files), ("full", 1))
+        self.assertNotEqual(result.reason, "isolated-tooling:documentation-validator-tests")
+
     def test_rename_from_code_to_documentation_includes_deleted_source(self) -> None:
         self.write("src/original.rs", "same bytes\n")
         base = self.commit()
