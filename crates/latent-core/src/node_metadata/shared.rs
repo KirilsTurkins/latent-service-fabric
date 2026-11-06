@@ -9,7 +9,7 @@ use std::{
 struct Charge(NodeMetadataReservation);
 
 /// No Weak/raw billing Arc or guard can escape. Every final clone uses
-/// into_inner, so the actual billing Arc is freed before its affine refund.
+/// `into_inner`, so the actual billing Arc is freed before its affine refund.
 #[derive(Default)]
 pub struct NodeMetadataLease(Option<Arc<Charge>>);
 

@@ -136,6 +136,12 @@ impl fmt::Debug for ResultPayload {
     }
 }
 
+impl From<ResultPayload> for Bytes {
+    fn from(payload: ResultPayload) -> Self {
+        payload.into_bytes()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -229,11 +235,5 @@ mod tests {
         assert_eq!(result, b"same-value");
         assert_eq!(result.capacity(), 512);
         assert_eq!(result.as_slice(), b"same-value");
-    }
-}
-
-impl From<ResultPayload> for Bytes {
-    fn from(payload: ResultPayload) -> Self {
-        payload.into_bytes()
     }
 }
