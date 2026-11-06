@@ -207,7 +207,8 @@ class GoRuntimeCosts(unittest.TestCase):
         import hashlib
         selected.update(workflowSha256=hashlib.sha256((owner.ROOT / owner.WORKFLOW).read_bytes()).hexdigest(),
                         sourceComparison={'consumerHead': 'c' * 40, 'relevantChangedFiles': 0,
-                                          'comparisonFiles': 2, 'comparisonFileLimit': 299})
+                                          'comparisonFiles': 2, 'comparisonFileLimit': 299,
+                                          'comparisonCommits': 1, 'comparisonCommitLimit': 100})
         with patch.object(owner, 'current_head', return_value='c' * 40):
             self.assertEqual(owner.validate_receipt(selected), selected)
         self.assertEqual((selected['runId'], selected['jobId'], selected['artifactId']), (42, 43, 44))
@@ -267,6 +268,8 @@ class GoRuntimeCosts(unittest.TestCase):
         producer, consumer = 'a' * 40, 'b' * 40
         comparison = {'status': 'ahead', 'base_commit': {'sha': producer},
                       'merge_base_commit': {'sha': producer},
+                      'ahead_by': 1, 'behind_by': 0, 'total_commits': 1,
+                      'commits': [{'sha': consumer}],
                       'files': [{'filename': 'tools/go_runtime_cost_probe.py'},
                                 {'filename': 'docs/development/go-runtime-costs.md'}]}
         raw = (owner.ROOT / owner.WORKFLOW).read_bytes()
@@ -290,6 +293,18 @@ class GoRuntimeCosts(unittest.TestCase):
             owner.validate_comparison(dict(comparison, merge_base_commit={'sha': consumer}), producer, consumer)
         with self.assertRaisesRegex(RuntimeError, 'nonancestor-comparison'):
             owner.validate_comparison(dict(comparison, files=[{'filename': 'docs/x'}] * 300), producer, consumer)
+        for bad in (dict(comparison, commits=[{'sha': 'c' * 40}]),
+                    dict(comparison, ahead_by=2, total_commits=2),
+                    dict(comparison, ahead_by=101, total_commits=101, commits=[{'sha': consumer}] * 100),
+                    dict(comparison, behind_by=1)):
+            with self.subTest(bad=bad), self.assertRaisesRegex(RuntimeError, 'nonancestor-comparison'):
+                owner.validate_comparison(bad, producer, consumer)
+        identical = {'status': 'identical', 'base_commit': {'sha': producer},
+                     'merge_base_commit': {'sha': producer}, 'ahead_by': 0, 'behind_by': 0,
+                     'total_commits': 0, 'commits': [], 'files': []}
+        self.assertEqual(owner.validate_comparison(identical, producer, producer)['consumerHead'], producer)
+        with self.assertRaisesRegex(RuntimeError, 'nonancestor-comparison'):
+            owner.validate_comparison(identical, producer, consumer)
         recipe['content'] = base64.b64encode(b'changed').decode('ascii')
         recipe['size'] = len(b'changed')
         with patch.object(owner, 'current_head', return_value=consumer), \

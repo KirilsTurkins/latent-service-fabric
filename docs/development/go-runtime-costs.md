@@ -32,7 +32,8 @@ Tracked changes and ordinary or ignored untracked files in the relevant source
 paths are refused. The independently recorded
 normal source inventory and five binary identities must also match the current
 checkout before any restored binary is enabled. The comparison rejects a
-non-ancestor or a 300-file API result rather than assuming a complete diff.
+non-ancestor, more than 100 commits, an incomplete commit page, or a 300-file
+API result rather than assuming a complete diff.
 These checks do not attest implicit compiler inputs or create new signed
 measurements. The earlier signed observations remain attributed to their
 original historical producer.

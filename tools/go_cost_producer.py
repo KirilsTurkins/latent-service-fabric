@@ -114,9 +114,21 @@ def relevant(path):
 
 def validate_comparison(comparison, producer_head, consumer_head):
     files = comparison.get('files')
-    require(comparison.get('status') in ('ahead', 'identical')
-            and comparison.get('base_commit', {}).get('sha') == producer_head
+    commits = comparison.get('commits')
+    ahead = comparison.get('ahead_by')
+    behind = comparison.get('behind_by')
+    total = comparison.get('total_commits')
+    require(comparison.get('base_commit', {}).get('sha') == producer_head
             and comparison.get('merge_base_commit', {}).get('sha') == producer_head
+            and type(ahead) is int and type(behind) is int and type(total) is int
+            and behind == 0 and 0 <= ahead == total <= 100
+            and type(commits) is list and len(commits) == total
+            and all(type(commit) is dict and type(commit.get('sha')) is str
+                    and SHA.fullmatch(commit['sha']) for commit in commits)
+            and ((comparison.get('status') == 'identical' and producer_head == consumer_head
+                  and total == 0)
+                 or (comparison.get('status') == 'ahead' and producer_head != consumer_head
+                     and total > 0 and commits[-1]['sha'] == consumer_head))
             and type(files) is list and len(files) < 300,
             'Go-cost-producer-incomplete-or-nonancestor-comparison')
     for row in files:
@@ -124,7 +136,8 @@ def validate_comparison(comparison, producer_head, consumer_head):
         if 'previous_filename' in row:
             require(not relevant(row['previous_filename']), 'Go-cost-producer-source-renamed')
     return {'consumerHead': consumer_head, 'relevantChangedFiles': 0,
-            'comparisonFiles': len(files), 'comparisonFileLimit': 299}
+            'comparisonFiles': len(files), 'comparisonFileLimit': 299,
+            'comparisonCommits': total, 'comparisonCommitLimit': 100}
 
 
 def current_head():
@@ -198,14 +211,20 @@ def validate_receipt(value):
             and type(value['artifactDigest']) is str and DIGEST.fullmatch(value['artifactDigest'])
             and value['workflowSha256'] == hashlib.sha256((ROOT / WORKFLOW).read_bytes()).hexdigest()
             and type(value['sourceComparison']) is dict
-            and set(value['sourceComparison']) == {'consumerHead', 'relevantChangedFiles', 'comparisonFiles', 'comparisonFileLimit'}
+            and set(value['sourceComparison']) == {'consumerHead', 'relevantChangedFiles', 'comparisonFiles',
+                                                   'comparisonFileLimit', 'comparisonCommits', 'comparisonCommitLimit'}
             and type(value['sourceComparison']['consumerHead']) is str
             and SHA.fullmatch(value['sourceComparison']['consumerHead'])
             and value['sourceComparison']['consumerHead'] == current_head()
             and value['sourceComparison']['relevantChangedFiles'] == 0
             and type(value['sourceComparison']['comparisonFiles']) is int
             and 0 <= value['sourceComparison']['comparisonFiles'] <= 299
-            and value['sourceComparison']['comparisonFileLimit'] == 299,
+            and value['sourceComparison']['comparisonFileLimit'] == 299
+            and type(value['sourceComparison']['comparisonCommits']) is int
+            and 0 <= value['sourceComparison']['comparisonCommits'] <= 100
+            and value['sourceComparison']['comparisonCommitLimit'] == 100
+            and ((value['headSha'] == value['sourceComparison']['consumerHead'])
+                 == (value['sourceComparison']['comparisonCommits'] == 0)),
             'Go-cost-producer-receipt')
     return value
 
