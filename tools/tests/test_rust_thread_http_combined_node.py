@@ -14,6 +14,37 @@ def descriptors():
 
 
 class CombinedGrantControls(unittest.TestCase):
+    def test_diagnostic_native_count_does_not_change_other_runtime_limits(self):
+        import copy
+        import json
+        from pathlib import Path
+        import tempfile
+
+        baseline = {'securityProfile': 'local-experimental-v1', 'cache': {'sourceBytes': 1},
+            'providers': {'activationRuntime': {'limits': copy.deepcopy(node.http.RUNTIME_LIMITS),
+                           'identity': {'service': 'activation'}}, 'bindings': [{} for _ in range(6)]}}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'node.json'
+            path.write_text(json.dumps(baseline))
+            with patch.object(node.http, 'configuration', return_value=path):
+                self.assertEqual(node.configure(directory, object(), object(), object()), path)
+            value = json.loads(path.read_bytes())
+            limits = value['providers']['activationRuntime']['limits']
+            self.assertEqual(limits, {**node.http.RUNTIME_LIMITS, 'nativeOwners': 12})
+            self.assertEqual(node.http.RUNTIME_LIMITS['nativeOwners'], 8)
+            self.assertEqual(node.COMBINED_NATIVE_OWNERS, 12)
+            self.assertTrue(value['providers']['activationRuntime']['nativeThreads'])
+            self.assertEqual(value['engine']['threadingProfile'], node.PROFILE)
+            self.assertEqual(value['providers']['bindings'][-1]['contract'], node.NATIVE)
+            # An already-widened baseline is not silently accepted as original.
+            baseline['providers']['activationRuntime']['limits']['nativeOwners'] = 13
+            path.write_text(json.dumps(baseline))
+            before = path.read_bytes()
+            with patch.object(node.http, 'configuration', return_value=path):
+                with self.assertRaisesRegex(WorkflowError, 'rust-combined-explicit-local-profile'):
+                    node.configure(directory, object(), object(), object())
+            self.assertEqual(path.read_bytes(), before)
+
     def test_only_diagnostic_source_verifier_build_is_optimized(self):
         from unittest.mock import Mock
         from tools import qualify_rust_thread_http_combined as qualification
@@ -47,7 +78,7 @@ class CombinedGrantControls(unittest.TestCase):
                                   'responseBytesWritten': 0, 'closeReason': 'remote-write-half-ended'}],
                     'events': []}
         peer = SimpleNamespace(gates=lambda: [], poll=Mock(), release=Mock(),
-                               observation=Mock(side_effect=[{'acceptedConnections': 0}, observed]),
+                               observation=Mock(side_effect=[{'acceptedConnections': 0}, observed, observed]),
                                origin=lambda: {'scheme': 'http', 'host': '127.0.0.1', 'port': 1234})
         terminal = {'exitCode': 4, 'decoded': None, 'processReaped': True,
                     'response': {'category': 'platform-failure'}}
@@ -55,7 +86,7 @@ class CombinedGrantControls(unittest.TestCase):
             with self.subTest(terminal_failure=result_error), tempfile.TemporaryDirectory() as directory:
                 process = SimpleNamespace(owner=SimpleNamespace(exited=Mock(side_effect=[False, False, True])),
                                           drain=Mock(), close=Mock())
-                peer.observation = Mock(side_effect=[{'acceptedConnections': 0}, observed])
+                peer.observation = Mock(side_effect=[{'acceptedConnections': 0}, observed, observed])
                 with patch.object(sibling, 'selected_revision', return_value={'releaseDigest': digest}), \
                         patch.object(sibling, 'start_call', return_value=process) as start, \
                         patch.object(sibling, 'finish_call', return_value=terminal, side_effect=result_error) as finish:
@@ -144,7 +175,8 @@ class CombinedGrantControls(unittest.TestCase):
         digest = 'sha256:' + '2' * 64
         target = {'budget': {'outboundRequests': 8, 'memoryBytes': 16_777_216,
                              'cpuFuel': 1_000_000_000, 'wallTimeLimitMillis': 5000}}
-        peer = SimpleNamespace(gates=lambda: [], observation=lambda: {'acceptedConnections': 0},
+        peer = SimpleNamespace(gates=lambda: [], observation=lambda: {'acceptedConnections': 0,
+                               'requests': [], 'events': []},
                                origin=lambda: {'scheme': 'http', 'host': '127.0.0.1', 'port': 1234})
         process = SimpleNamespace(owner=SimpleNamespace(exited=lambda: True), close=lambda: None)
         terminal = {'exitCode': 4, 'decoded': None, 'processReaped': True,
@@ -158,6 +190,32 @@ class CombinedGrantControls(unittest.TestCase):
                                peer, object(), Path(directory), digest)
             retained = json.loads((Path(directory) / 'rust-thread-http-terminal.json').read_bytes())
             self.assertEqual(retained, terminal)
+            peer_state = json.loads((Path(directory) / 'rust-thread-http-terminal-peer.json').read_bytes())
+            self.assertEqual(peer_state, {'observation': {'acceptedConnections': 0,
+                'requests': [], 'events': []}, 'bodyReleased': False, 'originalHeadersReleased': False})
+
+    def test_terminal_peer_evidence_is_scoped_and_never_releases_or_polls(self):
+        import json
+        from pathlib import Path
+        import tempfile
+        from unittest.mock import Mock
+        from tools import rust_thread_http_sibling_node as sibling
+        observation = {'acceptedConnections': 3,
+                       'requests': [{'request': 1}, {'request': 3}],
+                       'events': [{'request': 1}, {'request': 3}]}
+        peer = SimpleNamespace(observation=Mock(return_value=observation), poll=Mock(), release=Mock())
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            sibling.retain_terminal_peer(peer, output, 2, body_released=True, original_released=False)
+            result = json.loads((output / 'rust-thread-http-terminal-peer.json').read_bytes())
+            self.assertEqual(result['observation']['requests'], [{'request': 3}])
+            self.assertEqual(result['observation']['events'], [{'request': 3}])
+            self.assertTrue(result['bodyReleased'])
+            self.assertFalse(result['originalHeadersReleased'])
+            with patch.object(sibling, 'write_json', side_effect=OSError('evidence-write')):
+                sibling.retain_terminal_peer(peer, output, 2, body_released=False, original_released=False)
+        peer.poll.assert_not_called()
+        peer.release.assert_not_called()
 
 
 if __name__ == '__main__':

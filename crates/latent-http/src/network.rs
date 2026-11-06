@@ -267,7 +267,7 @@ async fn reserve_for(
 ) -> Result<ConnectionReservation<Network>, HttpError> {
     Ok(match scope {
         crate::protocol::ProtocolScope::Invocation(call) => {
-            client.reserve_connection_wait(call).await?
+            client.reserve_connection_serialized(call).await?
         }
         crate::protocol::ProtocolScope::Maintenance(request) => {
             client.reserve_maintenance_connection(request)?

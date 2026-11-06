@@ -32,6 +32,11 @@ from tools.resource_tenant_node import require_denied_before_guest
 from tools.standard_http.observations import require_zero_contact
 from tools.standard_http.peer import Peer
 
+# Native counts include the guest pools/TLS owners AND their physical host
+# stacks. Two independent pools plus concurrent HTTP completion need more than
+# the ordinary single-client fixture's eight owners. This is an explicit finite
+# operator selection for the diagnostic only, not a signed guest-budget change.
+COMBINED_NATIVE_OWNERS = 12
 NATIVE = 'latent:runtime-native/threads@0.1.0'
 PROVIDERS = (
     ('clockMonotonic', http.CLOCK, ['now-nanos'], 'activation-monotonic-v1', 'clock'),
@@ -63,6 +68,7 @@ def configure(directory, releases, peers, credentials):
     providers = value['providers']
     activation = providers['activationRuntime']
     activation['nativeThreads'] = True
+    activation['limits']['nativeOwners'] = COMBINED_NATIVE_OWNERS
     providers['bindings'].append({'name': 'native-examples', 'tenant': 'examples',
         'consumerService': http.SERVICE, 'providerService': activation['identity']['service'],
         'contract': NATIVE, 'providerBinding': 'native-examples-installed'})
@@ -124,7 +130,7 @@ def run(artifact: Path, native: dict, output: Path) -> dict:
     record = {'schemaVersion': 'latent.rust.combined-http.signed-witness.v1', 'status': 'incomplete',
         'component': component, 'compilerProjection': projection, 'nativeProducts': before,
         'full743Qualified': False, 'full689Qualified': False, 'physicalVerificationWorkBoundQualified': False,
-        'normalRustBuilderRouteOpened': False}
+        'normalRustBuilderRouteOpened': False, 'diagnosticNativeOwnerLimit': COMBINED_NATIVE_OWNERS}
     stage = 'new-neutral-packaging-and-signing'
     try:
         signed = output / 'signed'
