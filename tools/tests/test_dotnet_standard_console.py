@@ -303,7 +303,13 @@ class StandardConsole(unittest.TestCase):
         self.assertEqual(wrapper['on']['push']['branches'], ['development'])
         paths = wrapper['on']['push']['paths']
         self.assertEqual(paths, original['on']['pull_request']['paths'])
-        self.assertEqual(wrapper['permissions'], {'contents': 'read'})
+        self.assertEqual(wrapper['permissions'], {'contents': 'read', 'actions': 'read'})
+        levels = {'none': 0, 'read': 1, 'write': 2}
+        for job, config in original['jobs'].items():
+            permissions = config.get('permissions', original['permissions'])
+            for scope, access in permissions.items():
+                with self.subTest(job=job, permission=scope):
+                    self.assertGreaterEqual(levels[wrapper['permissions'].get(scope, 'none')], levels[access])
         self.assertEqual(wrapper['jobs'], {'qualify': {'uses': '$/.github/workflows/dotnet-guest.yml'}})
         self.assertTrue(wrapper['concurrency']['cancel-in-progress'])
         self.assertNotEqual(wrapper['concurrency']['group'], original['concurrency']['group'])
