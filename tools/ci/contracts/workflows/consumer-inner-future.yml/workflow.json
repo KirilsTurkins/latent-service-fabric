@@ -9,7 +9,8 @@
     "on": {
       "push": {
         "branches": [
-          "feat/sdk-745-consumer-inner-future-20261105"
+          "feat/sdk-745-consumer-inner-future-20261105",
+          "feat/sdk-745-producer-inner-future-20261106"
         ],
         "paths": [
           ".github/workflows/consumer-inner-future.yml",
@@ -34,7 +35,7 @@
   "requiredJobs": [
     "ownership"
   ],
-  "reviewReason": "Limit native consumer-factory checks to the dedicated push branch.",
+  "reviewReason": "Limit native consumer and producer future checks to their dedicated push branches.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/consumer-inner-future.yml"
 }

@@ -13,19 +13,19 @@ import time
 
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from tools import go_runtime_cost_fixture as fixture, go_runtime_cost_probe as oracle
+from tools import go_cost_producer as producer_selection, go_runtime_cost_fixture as fixture, go_runtime_cost_probe as oracle
 from tools import qualify_go_node_stop as original
 from tools.build_observation import build_environment
 from tools.build_process_signals import owned_cancellation
 from tools.phase2_operator_process import require, stopped_record
 from tools.phase2_operator_scenario import connect, stop
 from tools.phase3_resource_identity import file_identity
-from tools.qualify_sdk_scratch import build_component, package_identity
+from tools.qualify_sdk_scratch import build_component, package_identity, prepared
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_node import RecordingClient, assert_value, call, deploy, selected_revision
 from tools.rust_capsule_project import ROOT, fresh, inventory, read_file, read_json, snapshot, write_json
 
-HELPERS = (*original.HELPERS, 'tools/qualify_go_runtime_costs.py',
+HELPERS = (*original.HELPERS, 'tools/qualify_go_runtime_costs.py', 'tools/go_cost_producer.py',
            'tools/go_runtime_cost_fixture.py', 'tools/go_runtime_cost_probe.py')
 CASES = {'go-component-async-v1': [('baseline', 'baseline')],
          'go-component-activation-v5': [('baseline', 'baseline'), ('live-stack-GC', 'stack-gc'),
@@ -198,9 +198,12 @@ def qualify(output, normal, producer):
         'helpers': {name: file_identity(ROOT / name) for name in HELPERS}}
     stage = 'original-normal-products'
     try:
-        record['producer'] = original.validate_producer(read_json(producer))
-        binaries, _companions, inherited, compatibility = original.prepared(normal)
+        record['producer'] = producer_selection.validate_receipt(read_json(producer))
+        binaries, _companions, inherited = prepared(normal, 'go')
         require(inherited['originalInvocations'] == 27, 'Go-cost-original-normal27')
+        compatibility = {'mode': 'exact-current-recorded-go-source-closure',
+                         'producerHead': record['producer']['headSha'],
+                         'implicitCompilerInputsAttested': False}
         record.update(inherited=inherited, sourceCompatibility=compatibility)
         stage = 'ordinary-recursive-stack-placement-reference'
         record['stackPlacementReference'] = stack_placement_reference(output / 'stack-placement')
@@ -231,8 +234,8 @@ def qualify(output, normal, producer):
                 'package': package, 'programme': observed, 'commands': commands.records,
                 'component': file_identity(artifact / 'component.wasm', 64 * 1024 * 1024)})
         stage = 'final-integrity'
-        after = original.prepared(normal)
-        require(after[2] == inherited and after[3] == compatibility
+        after = prepared(normal, 'go')
+        require(after[2] == inherited
                 and fixture_sources[0] == fixture_sources[1]
                 and record['helpers'] == {name: file_identity(ROOT / name) for name in HELPERS},
                 'Go-cost-observed-inputs-changed')
