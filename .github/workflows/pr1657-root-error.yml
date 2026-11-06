@@ -1,0 +1,87 @@
+name: PR 1657 closed runtime root diagnostic
+on:
+  push:
+    branches: ['diag/pr1657-root-error-20261106']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Apply and retain an explicit diagnostic-only source patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B .github/pr1657_root_patch.py
+          git diff --binary > "$RUNNER_TEMP/rust-combined-root/diagnostic-source.patch"
+          git rev-parse HEAD > "$RUNNER_TEMP/rust-combined-root/base-commit.txt"
+      - name: Retrieve authenticated original compiler inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/rust_combined_http_materials.py --output "$RUNNER_TEMP/rust-combined-original"
+      - name: Observe the original failing signed call without changing its gates
+        env:
+          SOURCE: ${{ github.sha }}
+        run: python3 -B tools/qualify_rust_thread_http_combined.py --compiler-materials "$RUNNER_TEMP/rust-combined-original" --output "$RUNNER_TEMP/rust-combined-signed" --source-commit "$SOURCE"
+      - name: Retain exact diagnostic native products for local reproduction
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json, os, tarfile
+          root = Path('target/debug')
+          out = Path(os.environ['RUNNER_TEMP']) / 'rust-combined-root'
+          paths = ['latent', 'latentd', 'examples/package', 'examples/capsule_contracts', 'examples/capsule_authoring']
+          if all((root / path).is_file() for path in paths):
+              assert sum((root / path).stat().st_size for path in paths) < 1073741824
+              records = []
+              with tarfile.open(out / 'native-products.tar.gz', 'w:gz') as archive:
+                  for path in paths:
+                      file = root / path
+                      with file.open('rb') as stream:
+                          digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+                      records.append({'path': path, 'bytes': file.stat().st_size, 'sha256': digest})
+                      archive.add(file, arcname=path)
+              (out / 'native-products.json').write_text(json.dumps(records, indent=2) + '\n')
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        if: always()
+        with:
+          name: pr1657-closed-root-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/rust-combined-root/**
+            ${{ runner.temp }}/rust-combined-signed/**
+            ${{ runner.temp }}/rust-combined-original/retrieval.json
+          if-no-files-found: error
+          retention-days: 2
+          compression-level: 0
