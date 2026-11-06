@@ -71,7 +71,7 @@ fn packed(total: usize, fixed: usize) -> u64 {
 }
 fn unpack(usage: u64) -> (usize, usize) {
     (
-        (usage & u64::from(u32::MAX)) as usize,
+        u32::try_from(usage & u64::from(u32::MAX)).expect("masked usage fits in u32") as usize,
         (usage >> 32) as usize,
     )
 }

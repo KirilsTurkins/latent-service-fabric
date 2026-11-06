@@ -554,7 +554,7 @@ pub enum BudgetError {
 
 impl BudgetError {
     /// Project a refusal observed at an actual `reserve_host_memory` boundary.
-    /// The caller supplies the allocation origin; ordinary MemoryBytes errors
+    /// The caller supplies the allocation origin; ordinary `MemoryBytes` errors
     /// must keep using `to_platform_error` without guessing native versus guest.
     #[must_use]
     pub fn to_host_memory_error(&self) -> PlatformError {
