@@ -37,6 +37,16 @@ preparation or skipped to satisfy the deadline. The overall
 controller, process and peer lifetimes remain bounded, and there is no
 invocation retry. An unknown RPC outcome fails even if later evidence appears.
 
+The authenticated fixed graph uses both explicitly admitted child stacks and
+engine-owned HTTP completion fibers. Both draw from the original eight-Native-owner
+ceiling and the same 16 MiB activation ledger. Child admission still requires its
+separate native grant and a distinct original Task; accepted child-start capacity
+is not recycled on logical completion. Every actual mapping and its metadata
+remain charged until physical drop, and cached child permits remain charged
+until Store destruction. Other native-thread profiles keep refusing unadmitted
+stack creation; a configuration name or package inspection cannot select this
+combined path without the immutable final-graph proof.
+
 The original HTTP response headers stay withheld until the independent
 sibling has consumed its partial body, parsed its first JSON response, and
 issued the next ordinary request. Physical guest owners and real provider work
