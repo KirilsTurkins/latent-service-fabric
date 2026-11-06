@@ -30,14 +30,18 @@ EXTRA_MATERIALS = ('tools/rust_thread_http_combined_package.py', 'tools/rust_thr
     'tools/rust_combined_diagnostic_envelope.py', 'tools/rust_original_delta.py')
 
 
-# Only this diagnostic build opts into optimized source-proof code. Debug
-# assertions and overflow checks remain enabled by the owner environment.
+# Only this diagnostic build optimizes host preparation as well as the
+# source verifier. Cold compilation still consumes the original guest deadline.
+# Debug assertions and overflow checks stay enabled by the owner environment;
+# no source proof, runtime admission, or guest compiler setting is changed.
+HOST_OPTIMIZATION = 'profile.dev.opt-level=1'
 VERIFIER_OPTIMIZATION = 'profile.dev.package.latent-component-threading.opt-level=3'
 
 
 def build_native(commands):
     commands.run('build-current-feature-selected-host', 'cargo',
-        '--config', ROOT / '.cargo/managed-guest.toml', '--config', VERIFIER_OPTIMIZATION,
+        '--config', ROOT / '.cargo/managed-guest.toml',
+        '--config', HOST_OPTIMIZATION, '--config', VERIFIER_OPTIMIZATION,
         'build', '--locked', '-p', 'latent', '-p', 'latentd', '--bins',
         '-p', 'latent-packaging', '--example', 'package', '--example', 'capsule_contracts',
         '-p', 'latent-policy', '--example', 'capsule_authoring', '--features',
@@ -74,7 +78,7 @@ def qualify(compiler: Path, output: Path, revision: str) -> dict:
                 and extras == {name: file_identity(ROOT / name, 4 * 1024 * 1024) for name in EXTRA_MATERIALS},
                 'rust-combined-host-build-source-unchanged')
         record.update(compiler=version, nativeProducts=identities,
-            sourceVerifierOptimization=3, hostDebugAssertions=True, hostOverflowChecks=True,
+            hostOptimization=1, sourceVerifierOptimization=3, hostDebugAssertions=True, hostOverflowChecks=True,
             nativeBuildFeature='latentd/development-rust-http-combined,latent-packaging/development-rust-http-combined')
         write_json(output / 'native-origin.json', record)
         stage = 'assemble-explicit-retained-compiler-projection'

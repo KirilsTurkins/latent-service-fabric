@@ -29,9 +29,13 @@ Provider policy ceilings are unchanged. The diagnostic controller alone uses
 a finite 120,000 ms invocation RPC wait to include cold proof/compilation and
 terminal result delivery. This is not extra guest execution time: cold
 preparation still consumes the original activation deadline. The diagnostic
-build additionally optimizes `latent-component-threading` at level 3, alongside
-the existing managed-guest compiler/parser optimizations, while preserving
-host debug assertions and overflow checks. It still independently recomputes
+build selects host optimization level 1 for cold preparation and keeps
+`latent-component-threading` at level 3, alongside the existing managed-guest
+compiler/parser optimizations. Host debug assertions and overflow checks remain
+enabled. This is a diagnostic build choice, not a change to ordinary profiles,
+Wasmtime guest optimization, or any preparation/activation deadline. The native
+origin receipt records both host and verifier optimization levels. The host
+still independently recomputes
 the same source and final graph proof; no proof is cached outside its owned
 preparation or skipped to satisfy the deadline. The overall
 controller, process and peer lifetimes remain bounded, and there is no
