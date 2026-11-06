@@ -55,6 +55,26 @@ def decision_with_failure_evidence(observation, gates, output: Path, *, body_rel
         raise
 
 
+
+def retain_refused_call(client, node, peer, process, output: Path, deadline):
+    """Observe the existing call after a refusal without releasing gates or retrying.
+
+    The original guest deadline remains authoritative. Only a bounded terminal
+    observation is attempted; its failure cannot replace the causal refusal.
+    """
+    try:
+        deadline = min(deadline, client.deadline, time.monotonic() + 6)
+        while not process.owner.exited():
+            require(time.monotonic() < deadline, 'rust-thread-http-refusal-observation-deadline')
+            process.drain()
+            node.drain()
+            peer.poll(.005)
+        row = finish_call(client, process)
+        write_json(output / 'rust-thread-http-terminal.json', row)
+    except (OSError, TypeError, ValueError, WorkflowError):
+        pass
+
+
 def invoke(client, node, target, peer, probe, output: Path, component_digest: str):
     budget = target['budget']
     require(budget['outboundRequests'] == 8 and budget['memoryBytes'] == 16_777_216
@@ -100,6 +120,9 @@ def invoke(client, node, target, peer, probe, output: Path, component_digest: st
                     original_released = True
         row = finish_call(client, process)
         write_json(output / 'rust-thread-http-terminal.json', row)
+    except WorkflowError:
+        retain_refused_call(client, node, peer, process, output, deadline)
+        raise
     finally:
         process.close()
     require(body_released and original_released and pending is not None and causal is not None,

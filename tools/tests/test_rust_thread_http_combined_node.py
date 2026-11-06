@@ -31,6 +31,59 @@ class CombinedGrantControls(unittest.TestCase):
         self.assertEqual(argv[argv.index('--features') + 1],
                          'latentd/development-rust-http-combined,latent-packaging/development-rust-http-combined')
 
+    def test_peer_refusal_keeps_the_original_error_and_the_existing_call_result(self):
+        import json
+        from pathlib import Path
+        import tempfile
+        import time
+        from unittest.mock import Mock
+        from tools import rust_thread_http_sibling_node as sibling
+
+        digest = 'sha256:' + '2' * 64
+        target = {'budget': {'outboundRequests': 8, 'memoryBytes': 16_777_216,
+                             'cpuFuel': 1_000_000_000, 'wallTimeLimitMillis': 5000}}
+        observed = {'generation': 'a' * 32, 'failure': None, 'acceptedConnections': 1,
+                    'requests': [{'request': 1, 'role': 'primary', 'state': 'closed',
+                                  'responseBytesWritten': 0, 'closeReason': 'remote-write-half-ended'}],
+                    'events': []}
+        peer = SimpleNamespace(gates=lambda: [], poll=Mock(), release=Mock(),
+                               observation=Mock(side_effect=[{'acceptedConnections': 0}, observed]),
+                               origin=lambda: {'scheme': 'http', 'host': '127.0.0.1', 'port': 1234})
+        terminal = {'exitCode': 4, 'decoded': None, 'processReaped': True,
+                    'response': {'category': 'platform-failure'}}
+        for result_error in (None, WorkflowError('terminal-observation-failed')):
+            with self.subTest(terminal_failure=result_error), tempfile.TemporaryDirectory() as directory:
+                process = SimpleNamespace(owner=SimpleNamespace(exited=Mock(side_effect=[False, False, True])),
+                                          drain=Mock(), close=Mock())
+                peer.observation = Mock(side_effect=[{'acceptedConnections': 0}, observed])
+                with patch.object(sibling, 'selected_revision', return_value={'releaseDigest': digest}), \
+                        patch.object(sibling, 'start_call', return_value=process) as start, \
+                        patch.object(sibling, 'finish_call', return_value=terminal, side_effect=result_error) as finish:
+                    with self.assertRaisesRegex(WorkflowError, '^rust-thread-http-peer-request-shape$'):
+                        sibling.invoke(SimpleNamespace(deadline=time.monotonic() + 10),
+                                       SimpleNamespace(drain=Mock()), target, peer, object(), Path(directory), digest)
+                start.assert_called_once()
+                finish.assert_called_once()
+                process.close.assert_called_once()
+                peer.release.assert_not_called()
+                self.assertTrue((Path(directory) / 'rust-thread-http-peer-refusal.json').is_file())
+                if result_error is None:
+                    self.assertEqual(json.loads((Path(directory) / 'rust-thread-http-terminal.json').read_bytes()), terminal)
+
+    def test_refusal_observation_does_not_extend_the_original_deadline(self):
+        from pathlib import Path
+        from unittest.mock import Mock
+        from tools import rust_thread_http_sibling_node as sibling
+        process = SimpleNamespace(owner=SimpleNamespace(exited=lambda: False), drain=Mock())
+        node, peer = SimpleNamespace(drain=Mock()), SimpleNamespace(poll=Mock(), release=Mock())
+        with patch.object(sibling.time, 'monotonic', return_value=100), \
+                patch.object(sibling, 'finish_call') as finish:
+            sibling.retain_refused_call(SimpleNamespace(deadline=110), node, peer, process, Path('unused'), 99)
+        finish.assert_not_called()
+        process.drain.assert_not_called()
+        peer.poll.assert_not_called()
+        peer.release.assert_not_called()
+
     def test_transport_wait_is_separate_from_the_original_guest_budget(self):
         import json
         from pathlib import Path
