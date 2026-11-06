@@ -64,8 +64,10 @@ original fc9b44a6 Wasmtime48.0.7 producer, with exact current native-source equa
 Four original public WIT layers omitted by the artifact glob were recovered from
 the same authenticated package blobs and checked against package-inputs.json.
 
-The existing sixteen-case task programme retains its cases, order, commands and
-limits; its exact port assertion now recognizes the selected finite mode. Its
-historical passes keep their original source attribution. CPU preemption,
+At finite-wait integration, the sixteen-case task programme retained its cases,
+order, commands and limits while its port assertion recognized the selected
+finite mode. Its historical passes keep their original source attribution. The
+[current programme](../component-development/dotnet-task-runtime.md) additionally
+selects the pending-cancellation witness. CPU preemption,
 logical threads/Monitor.Wait, full queue/stack/GC accounting and background/late
 work lifecycle remain separate #746 requirements.

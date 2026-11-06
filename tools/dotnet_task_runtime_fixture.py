@@ -18,9 +18,11 @@ from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, snapshot
 
 PACKAGE = 'Outside.Standard.Tasks'
-CASES = ('run', 'when-all', 'thread-pool', 'scheduler', 'error', 'cancel',
+BASELINE_CASES = ('run', 'when-all', 'thread-pool', 'scheduler', 'error', 'cancel',
          'context', 'suppressed-context', 'delay', 'cancel-after', 'nested', 'monitor',
          'timer-periodic-context', 'timer-change', 'timer-dispose', 'timer-self-dispose-drain')
+CASES = BASELINE_CASES + ('cancel-pending',)
+CANCEL_CASE = '        case "cancel-pending": {\n            using var cancellation = new CancellationTokenSource();\n            var token = cancellation.Token;\n            var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);\n            var running = Task.Run(async () => {\n                Stage = "cancel-pending-delay";\n                var delay = Task.Delay(10000, token);\n                Incomplete(delay);\n                entered.SetResult(true);\n                await delay.ConfigureAwait(false);\n                throw new Exception("pending cancellation ignored");\n            }, token);\n            Stage = "cancel-pending-enter";\n            entered.Task.GetAwaiter().GetResult();\n            Incomplete(running);\n            Stage = "cancel-pending-cancel";\n            cancellation.Cancel();\n            try { running.GetAwaiter().GetResult(); throw new Exception("running task did not cancel"); }\n            catch (OperationCanceledException error) {\n                if (error.CancellationToken != token || !running.IsCanceled)\n                    throw new Exception("pending cancellation identity or state changed");\n            }\n            break;\n        }\n'
 LIBRARY_SOURCE = r'''using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -216,6 +218,22 @@ public static class Library {
 '''
 
 
+def with_pending_cancel(source: str) -> str:
+    marker = '        case "context":\n'
+    require(type(source) is str and source.count(marker) == 1
+            and 'case "cancel-pending"' not in source,
+            'dotnet-task-pending-cancel-source')
+    return source.replace(marker, CANCEL_CASE + marker)
+
+
+def selected_fixture(monitor_cancel: bool = False):
+    require(type(monitor_cancel) is bool, 'dotnet-task-closed-fixture-selection')
+    if monitor_cancel:
+        from tools import dotnet_monitor_cancel_fixture as witness
+        return witness.library_source(LIBRARY_SOURCE), witness.CASES
+    return with_pending_cancel(LIBRARY_SOURCE), CASES
+
+
 def expected(mode):
     require(mode in CASES, 'dotnet-task-unknown-case')
     return 'ordinary-tasks:' + mode + '|fresh=1'
@@ -236,12 +254,7 @@ def declare(project: Path):
 
 
 def prepare(output: Path, outside: Path, tools: Path, *, monitor_cancel: bool = False):
-    require(type(monitor_cancel) is bool, 'dotnet-task-closed-fixture-selection')
-    if monitor_cancel:
-        from tools import dotnet_monitor_cancel_fixture as witness
-        library_source, cases = witness.library_source(LIBRARY_SOURCE), witness.CASES
-    else:
-        library_source, cases = LIBRARY_SOURCE, CASES
+    library_source, cases = selected_fixture(monitor_cancel)
     project = create(output, 'greeting')
     declare(project)
     outside.mkdir(mode=0o700)
