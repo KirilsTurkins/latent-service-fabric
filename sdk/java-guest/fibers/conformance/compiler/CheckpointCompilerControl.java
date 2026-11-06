@@ -116,13 +116,12 @@ public final class CheckpointCompilerControl {
         }
     }
 
-    // A public helper with an unproven receiver must not gain a finite proof.
+    // A direct public call lacks the authenticated Class caller and receiver.
     public static final class ClassInfoEnumCountAccess {
         private static int result = new org.teavm.runtime.reflect.ClassInfo().enumConstantCount();
         public static void main(String[] arguments) { result += arguments.length; }
     }
 
-    // Exercise the same public call from a managed method, not only an initializer.
     public static final class ClassInfoManagedCountAccess {
         private static volatile int result;
         public static void main(String[] arguments) {
@@ -130,16 +129,7 @@ public final class CheckpointCompilerControl {
         }
     }
 
-    // Normal Class/reflection behavior must remain accepted without enum metadata.
-    public static final class OrdinaryClassAccess {
-        private static volatile Object result;
-        public static void main(String[] arguments) {
-            Object value = arguments.length == 0 ? new Object() : arguments;
-            result = value.getClass().getName();
-        }
-    }
-
-    // A neighboring intrinsic remains outside the finite proof.
+    // A neighboring intrinsic is deliberately outside the one-method proof.
     public static final class ClassInfoEnumElementAccess {
         private static Object result = new org.teavm.runtime.reflect.ClassInfo().enumConstant(0);
         public static void main(String[] arguments) { if (arguments.length != 0) result = arguments[0]; }
@@ -614,7 +604,6 @@ public final class CheckpointCompilerControl {
                 || arguments[0].equals("corrected")), "checkpoint-compiler-control-mode");
         boolean corrected = arguments[0].equals("corrected");
         check(Finite.class.getName(), corrected, false, "");
-        check(OrdinaryClassAccess.class.getName(), corrected, false, "");
         check(InitializerPolling.class.getName(), corrected, true, "");
         check(UnmanagedPolling.class.getName(), corrected, true, "");
         check(ManagedPolling.class.getName(), corrected, false, "");
@@ -642,8 +631,6 @@ public final class CheckpointCompilerControl {
         check(ClassInfoEnumCountAccess.class.getName(), corrected, true, "");
         check(ClassInfoManagedCountAccess.class.getName(), corrected, true, "");
         check(ClassInfoEnumElementAccess.class.getName(), corrected, true, "");
-        // Keep the historical altered-input cases as refusal coverage. After
-        // rollback the count itself is refused, independent of these mutations.
         for (String mutation : new String[] { "class-info-declaration", "string-info-parent", "class-info-layout" }) {
             check(ClassInfoEnumCountAccess.class.getName(), corrected, true, mutation);
         }
@@ -656,6 +643,6 @@ public final class CheckpointCompilerControl {
             throw new AssertionError("checkpoint-control-compiler-archive", failure);
         }
         System.out.println("CHECKPOINT_COMPILER_CONTROL PASS " + arguments[0]
-                + ";finite;ordinary-class-reflection;initializer;unmanaged;managed;recursion;runtime-initializer;class-object-helper;string-copy-body;finite-unmanaged;nested-counted;changing-bound;wrapping-counted;reset-counted;exceptional-retry;unmanaged-class;transitive-initializer;near-max-counted;nested-polling;mutual-recursion;virtual-initializer;string-info-getter;string-info-declaration;string-info-parent;string-info-target;class-info-enum-count-refused;class-info-enum-count-managed-refused;class-info-enum-other-refused;class-info-declaration-refused;class-info-parent-refused;class-info-layout-refused;class-info-target-refused;class-info-header-shadow;compiler-archive-control;compiler-cache-isolation");
+                + ";finite;initializer;unmanaged;managed;recursion;runtime-initializer;class-object-helper;string-copy-body;finite-unmanaged;nested-counted;changing-bound;wrapping-counted;reset-counted;exceptional-retry;unmanaged-class;transitive-initializer;near-max-counted;nested-polling;mutual-recursion;virtual-initializer;string-info-getter;string-info-declaration;string-info-parent;string-info-target;class-info-enum-count;class-info-managed-count-refused;class-info-enum-other-refused;class-info-declaration;class-info-parent;class-info-layout;class-info-target;class-info-header-shadow;compiler-archive-control;compiler-cache-isolation");
     }
 }

@@ -319,6 +319,15 @@ ASYNC_AFTER = '''    private boolean findAsyncMethods() {
 CHECKPOINT_FIND_BEFORE = '''        this.classSource = classSource;
         hasAsyncMethods = findAsyncMethods();'''
 CHECKPOINT_FIND_AFTER = '''        this.classSource = classSource;
+        if (System.getProperty("latent.java.enum-guard-index.v1") != null) {
+            try {
+                if (!pinnedClassInfoCompiler() || !captureGuardedEnums()) {
+                    throw checkpointRefusal("java-checkpoint-unresolved-741");
+                }
+            } catch (Exception unavailable) {
+                throw checkpointRefusal("java-checkpoint-unresolved-741");
+            }
+        }
         validateCheckpointCallers();
         validateNonsuspendableProgress();
         hasAsyncMethods = findAsyncMethods();'''
@@ -1778,6 +1787,8 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         switch (name) {
             case "org.teavm.classlib.java.lang.TObject":
                 return "dc3ef8b117975faf357bd6c9cdb772df390e914c8f3d82f1265af0b752c61651";
+            case "org.teavm.classlib.java.lang.TClass":
+                return "3fc8c6aecaccc62681b45f33e0c3c8070eac14707665055fe882cd5b39a90491";
             case "org.teavm.classlib.java.lang.TStackTraceElement":
                 return "9ba416fd3d6ab3503eb37b937fa1155ffdfc64012de17573e733ef6af20b74f9";
             case "org.teavm.classlib.java.lang.TInteger":
@@ -1825,7 +1836,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         return true;
     }
 
-    private final java.util.Map<MethodReference, Boolean> progressPlatformProofs = new java.util.HashMap<>();
+    private final java.util.Map<java.util.List<Object>, Boolean> progressPlatformProofs = new java.util.HashMap<>();
 
     private boolean progressPlatformConstructor(MethodReference reference) throws Exception {
         String donor;
@@ -1845,7 +1856,10 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
 
     private boolean pinnedProgressPlatformMethod(MethodReference reference, String donor,
             boolean completeDeclaration) throws Exception {
-        Boolean cached = progressPlatformProofs.get(reference);
+        // A method-only proof cannot satisfy a later complete-declaration proof
+        // or one against a different classlib donor.
+        java.util.List<Object> proofKey = java.util.List.of(reference, donor, completeDeclaration);
+        Boolean cached = progressPlatformProofs.get(proofKey);
         if (cached != null) {
             return cached;
         }
@@ -1912,7 +1926,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                         && sameProgressBody(expected.getProgram(), actual.getProgram());
             }
         }
-        progressPlatformProofs.put(reference, result);
+        progressPlatformProofs.put(proofKey, result);
         return result;
     }
 
@@ -1929,7 +1943,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         org.teavm.model.ValueType info = org.teavm.model.ValueType.object(owner);
         org.teavm.model.MethodDescriptor shape;
         switch (method.getName()) {
-            case "modifiers": case "primitiveKind": case "superinterfaceCount":
+            case "modifiers": case "primitiveKind": case "superinterfaceCount": case "enumConstantCount":
                 shape = new org.teavm.model.MethodDescriptor(method.getName(), integer);
                 break;
             case "itemType": case "declaringClass": case "enclosingClass": case "parent":
@@ -1941,6 +1955,10 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                 break;
             case "superinterface":
                 shape = new org.teavm.model.MethodDescriptor(method.getName(), integer, info);
+                break;
+            case "enumConstant":
+                shape = new org.teavm.model.MethodDescriptor(method.getName(), integer,
+                        org.teavm.model.ValueType.object("java.lang.Object"));
                 break;
             case "arrayLength":
                 shape = new org.teavm.model.MethodDescriptor(method.getName(),
@@ -1961,6 +1979,17 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         if (!method.getDescriptor().equals(shape)) {
             return false;
         }
+        if (method.getName().equals("enumConstantCount") || method.getName().equals("enumConstant")) {
+            try {
+                // Both original native helpers trust an unchecked receiver.
+                // Only the source-bound, guarded build may admit them; every
+                // other caller and an absent/ambiguous compiler index refuse.
+                return pinnedClassMetadataMethod(method) && pinnedClassInfoCompiler()
+                        && guardedEnumCallers(method) && captureGuardedEnums();
+            } catch (Exception unavailable) {
+                return false;
+            }
+        }
         return pinnedClassMetadataMethod(method);
     }
 
@@ -1979,6 +2008,136 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         return target != null && pinnedFiniteIntrinsicCompiler("org.teavm.runtime.reflect.ClassInfo",
                 "org.teavm.backend.c.intrinsic.reflection.ClassInfoIntrinsic")
                 && pinnedClassInfoResource(target.getClassLoader());
+    }
+
+    private boolean guardedEnumCallers(MethodReader method) throws Exception {
+        String index = System.getProperty("latent.java.enum-guard-index.v1");
+        Class<?> precise = progressHostClass("org.teavm.dependency.PreciseDependencyAnalyzer");
+        if (index == null || index.isEmpty() || index.length() > 4096 || precise == null
+                || dependency.getClass() != precise || !dependency.isPrecise()
+                || dependency.getCallGraph() != callGraph) {
+            return false;
+        }
+        MethodReference reference = method.getReference();
+        var info = dependency.getMethod(reference);
+        CallGraphNode node = callGraph.getNode(reference);
+        if (info == null || info.isMissing() || !info.isUsed() || info.isCalled()
+                || !reference.equals(info.getReference()) || node == null || node.getGraph() != callGraph
+                || !reference.equals(node.getMethod())) {
+            return false;
+        }
+        MethodReference callerRef = new MethodReference("java.lang.Class", "getEnumConstants",
+                org.teavm.model.ValueType.arrayOf(org.teavm.model.ValueType.object("java.lang.Object")));
+        int sites = 0, edges = 0;
+        for (CallSite site : node.getCallerCallSites()) {
+            if (site == null || ++sites > 65536) return false;
+            int targets = 0, callers = 0;
+            for (CallGraphNode target : site.getCalledMethods()) {
+                if (++edges > 262144 || target == null || target.getGraph() != callGraph
+                        || !reference.equals(target.getMethod())) return false;
+                ++targets;
+            }
+            for (CallGraphNode caller : site.getCallers()) {
+                if (++edges > 262144 || caller == null || caller.getGraph() != callGraph
+                        || !callerRef.equals(caller.getMethod()) || !caller.getCallSites().contains(site)
+                        || site.getLocations(caller) == null) return false;
+                ++callers;
+            }
+            if (targets != 1 || callers == 0) return false;
+        }
+        return sites != 0 && pinnedProgressPlatformMethod(callerRef,
+                "org.teavm.classlib.java.lang.TClass", true);
+    }
+
+    private boolean guardedEnumIndexCaptured;
+
+    private boolean captureGuardedEnums() throws Exception {
+        if (guardedEnumIndexCaptured) return true;
+        String selected = System.getProperty("latent.java.enum-guard-index.v1");
+        if (selected == null || selected.isEmpty() || selected.length() > 4096) return false;
+        java.nio.file.Path index = java.nio.file.Path.of(selected);
+        if (!index.isAbsolute() || index.getParent() == null || index.getFileName() == null
+                || !index.getFileName().toString().equals("enum-index-v1.tsv")
+                || !index.getParent().getFileName().toString().equals("compiler-patch")
+                || java.nio.file.Files.isSymbolicLink(index.getParent())) return false;
+        Class<?> adapter = progressHostClass("org.teavm.vm.TeaVM$ListableClassReaderSourceAdapter");
+        Class<?> analyzer = progressHostClass("org.teavm.dependency.DependencyAnalyzer");
+        Class<?> vmClass = progressHostClass("org.teavm.vm.TeaVM");
+        Class<?> targetClass = progressHostClass("org.teavm.backend.c.CTarget");
+        Class<?> namesClass = progressHostClass("org.teavm.backend.c.generate.CNameProvider");
+        if (adapter == null || classSource.getClass() != adapter || analyzer == null || vmClass == null
+                || targetClass == null || namesClass == null) return false;
+        java.lang.reflect.Field adapterSource = adapter.getDeclaredField("classSource");
+        java.lang.reflect.Field services = analyzer.getDeclaredField("services");
+        java.lang.reflect.Field vmTarget = vmClass.getDeclaredField("target");
+        java.lang.reflect.Field nameField = targetClass.getDeclaredField("rawNameProvider");
+        java.lang.reflect.Field traitsField = targetClass.getDeclaredField("characteristics");
+        java.lang.reflect.Field incremental = targetClass.getDeclaredField("incremental");
+        java.lang.reflect.Field obfuscated = targetClass.getDeclaredField("obfuscated");
+        for (java.lang.reflect.Field field : new java.lang.reflect.Field[] {
+                adapterSource, services, vmTarget, nameField, traitsField, incremental, obfuscated }) {
+            if (!field.trySetAccessible()) return false;
+        }
+        if (adapterSource.get(classSource) != dependency.getClassSource()) return false;
+        Object vm = services.get(dependency);
+        if (vm == null || vm.getClass() != vmClass) return false;
+        Object target = vmTarget.get(vm);
+        if (target == null || target.getClass() != targetClass || incremental.getBoolean(target)
+                || obfuscated.getBoolean(target)) return false;
+        Object rawNames = nameField.get(target);
+        Object rawTraits = traitsField.get(target);
+        if (rawNames == null || rawNames.getClass() != namesClass
+                || !(rawTraits instanceof org.teavm.model.lowlevel.Characteristics)) return false;
+        var names = (org.teavm.backend.c.generate.CNameProvider) rawNames;
+        var traits = (org.teavm.model.lowlevel.Characteristics) rawTraits;
+        java.util.Set<String> expectedClasses = new java.util.HashSet<>();
+        int observedClasses = 0;
+        for (String name : dependency.getReachableClasses()) {
+            if (name == null || ++observedClasses > 65536) return false;
+            if (dependency.getClassSource().get(name) != null) expectedClasses.add(name);
+        }
+        if (!expectedClasses.equals(classSource.getClassNames())) return false;
+        java.util.TreeMap<String, java.util.List<String>> rows = new java.util.TreeMap<>();
+        java.util.Set<String> allFields = new java.util.HashSet<>();
+        int total = 0;
+        for (String className : new java.util.TreeSet<>(expectedClasses)) {
+            ClassReader cls = classSource.get(className);
+            if (cls == null) return false;
+            if (traits.isReflectionSpecial(className) || !cls.hasModifier(ElementModifier.ENUM)) continue;
+            var type = org.teavm.model.ValueType.object(className);
+            if (!org.teavm.backend.c.generate.ClassGenerator.needsVirtualTable(traits, type)) continue;
+            if (cls.getParent() == null) return false;
+            String parent = names.forClassInstance(org.teavm.model.ValueType.object(cls.getParent()));
+            String symbol = names.forClassInstance(type);
+            if (!guardedEnumIdentifier(parent) || !guardedEnumIdentifier(symbol)) return false;
+            java.util.List<String> fields = new java.util.ArrayList<>();
+            fields.add(parent);
+            for (var field : cls.getFields()) {
+                if (!field.hasModifier(ElementModifier.ENUM)) continue;
+                if (!field.hasModifier(ElementModifier.STATIC) || !field.getType().equals(type)
+                        || fields.size() > 256 || ++total > 4096) return false;
+                String name = names.forStaticField(field.getReference());
+                if (!guardedEnumIdentifier(name) || !allFields.add(name)) return false;
+                fields.add(name);
+            }
+            if (rows.put(symbol, fields) != null || rows.size() > 256) return false;
+        }
+        StringBuilder output = new StringBuilder("lsf-teavm-enum-index-v1\\n");
+        for (var row : rows.entrySet()) {
+            output.append(row.getKey());
+            for (String field : row.getValue()) output.append('\\t').append(field);
+            output.append('\\n');
+        }
+        byte[] bytes = output.toString().getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+        if (bytes.length > 1048576) return false;
+        java.nio.file.Files.write(index, bytes, java.nio.file.StandardOpenOption.CREATE_NEW,
+                java.nio.file.StandardOpenOption.WRITE);
+        guardedEnumIndexCaptured = true;
+        return true;
+    }
+
+    private static boolean guardedEnumIdentifier(String name) {
+        return name != null && name.length() <= 1024 && name.matches("[A-Za-z_][A-Za-z0-9_]*");
     }
 
     private static boolean pinnedClassInfoResource(ClassLoader loader) throws Exception {
@@ -2517,6 +2676,9 @@ def stage(compiler, project: Path, destination: Path) -> dict:
     observe_copy_cost = getattr(compiler, '_observe_public_copy_cost', False)
     if type(observe_copy_cost) is not bool:
         raise ValueError('coroutine-copy-observer-selection')
+    guarded_enum = getattr(compiler, '_guarded_enum_compile', False)
+    if type(guarded_enum) is not bool:
+        raise ValueError('guarded-enum-compiler-selection')
     if observe_copy_cost:
         from tools.java_guest.public_wineh import public_sources
         public_sources(compiler.directory.parent)
@@ -2631,6 +2793,7 @@ tasks.named('generateC') {
             if (classHash != expected) throw new GradleException('coroutine-patch-loaded-class-bytes')
             loadedClasses[name] = classHash
         }
+        __ENUM_GUARD_INDEX__
         __COPY_COST_OBSERVER__
         file('compiler-patch/loaded.json').text = groovy.json.JsonOutput.toJson([
             schemaVersion: 'latent.java.coroutine-compiler-load.v1',
@@ -2647,6 +2810,15 @@ tasks.named('generateC') {
         observer_hook += ("\n        System.setProperty('" + COPY_OBSERVER_PROPERTY + "', '"
                           + COPY_OBSERVER_TOKEN + "');")
     script = script.replace('__COPY_COST_OBSERVER__', observer_hook)
+    enum_hook = ("if (System.getProperty('latent.java.enum-guard-index.v1') != null) "
+                 "throw new GradleException('guarded-enum-ambient-selection');")
+    if guarded_enum:
+        enum_hook += ("\n        def enumIndex = file('compiler-patch/enum-index-v1.tsv')"
+                      "\n        if (java.nio.file.Files.exists(enumIndex.toPath(), "
+                      "java.nio.file.LinkOption.NOFOLLOW_LINKS)) "
+                      "throw new GradleException('guarded-enum-index-preexisting');"
+                      "\n        System.setProperty('latent.java.enum-guard-index.v1', enumIndex.canonicalPath);")
+    script = script.replace('__ENUM_GUARD_INDEX__', enum_hook)
     build.write_bytes(script.encode('utf-8'))
     receipt.update(schemaVersion='latent.java.coroutine-compiler-patch.v1',
         upstreamSourceSha256=UPSTREAM_SHA256, correctedSourceSha256=hashlib.sha256(corrected).hexdigest(),

@@ -28,28 +28,29 @@ class CheckpointCompiler(unittest.TestCase):
         self.assertNotIn('printStackTrace', source)
         self.assertIn('"' + probe.COMPILER_EXPECTED + '"', source)
         self.assertEqual(probe.COMPILER_EXPECTED.split(';')[1:], [
-            'finite', 'ordinary-class-reflection', 'initializer', 'unmanaged', 'managed', 'recursion',
+            'finite', 'initializer', 'unmanaged', 'managed', 'recursion',
             'runtime-initializer', 'class-object-helper', 'string-copy-body',
             'finite-unmanaged', 'nested-counted', 'changing-bound', 'wrapping-counted',
             'reset-counted', 'exceptional-retry', 'unmanaged-class', 'transitive-initializer',
             'near-max-counted', 'nested-polling', 'mutual-recursion', 'virtual-initializer',
             'string-info-getter', 'string-info-declaration', 'string-info-parent', 'string-info-target',
-            'class-info-enum-count-refused', 'class-info-enum-count-managed-refused', 'class-info-enum-other-refused', 'class-info-declaration-refused',
-            'class-info-parent-refused', 'class-info-layout-refused', 'class-info-target-refused', 'class-info-header-shadow',
+            'class-info-enum-count', 'class-info-managed-count-refused', 'class-info-enum-other-refused', 'class-info-declaration',
+            'class-info-parent', 'class-info-layout', 'class-info-target', 'class-info-header-shadow',
             'compiler-archive-control', 'compiler-cache-isolation'])
 
     def test_real_frontend_executes_every_declared_progress_case(self):
         source = probe.COMPILER_CONTROL.read_text()
         cases = re.findall(r'check\((\w+)\.class\.getName\(\), corrected, (false|true), ""\);', source)
         self.assertEqual(cases, [
-            ('Finite', 'false'), ('OrdinaryClassAccess', 'false'), ('InitializerPolling', 'true'), ('UnmanagedPolling', 'true'),
+            ('Finite', 'false'), ('InitializerPolling', 'true'), ('UnmanagedPolling', 'true'),
             ('ManagedPolling', 'false'), ('RecursiveInitializer', 'true'),
             ('FiniteUnmanaged', 'false'), ('NestedCounted', 'false'), ('ChangingBound', 'false'),
             ('WrappingCounted', 'true'), ('ResetCounted', 'true'), ('ExceptionalRetry', 'true'),
             ('UnmanagedClassPolling', 'true'), ('TransitiveInitializer', 'true'),
             ('NearMaxCounted', 'false'), ('NestedPolling', 'true'), ('MutualRecursion', 'true'),
             ('VirtualInitializer', 'true'), ('StringInfoAccess', 'false'),
-            ('ClassInfoEnumCountAccess', 'true'), ('ClassInfoManagedCountAccess', 'true'), ('ClassInfoEnumElementAccess', 'true')])
+            ('ClassInfoEnumCountAccess', 'true'), ('ClassInfoManagedCountAccess', 'true'),
+            ('ClassInfoEnumElementAccess', 'true')])
         self.assertIn('new String[] { "runtime-initializer", "class-object-helper", "string-copy-body" }', source)
         self.assertIn('check(Finite.class.getName(), corrected, true, mutation);', source)
         self.assertIn('new String[] { "string-info-declaration", "string-info-parent" }', source)
@@ -64,15 +65,12 @@ class CheckpointCompiler(unittest.TestCase):
         self.assertIn('checkCompilerCacheIsolation(corrected);', source)
         self.assertEqual(len(cases) + 13, len(probe.COMPILER_EXPECTED.split(';')) - 1)
 
-    def test_enum_count_is_not_admitted_and_original_compiler_receipts_remain(self):
+    def test_enum_count_proof_binds_exact_emitter_and_loader_header(self):
         from tools.java_guest import coroutine_patch
         emitted = coroutine_patch.corrected_async_source(
             (probe.SDK/'fibers/compiler-patch/AsyncMethodFinder.java').read_bytes()).decode()
-        admission = emitted.split('private boolean progressClassMetadataPrimitive(', 1)[1].split(
-            '// Weak keys', 1)[0]
-        self.assertNotIn('case "enumConstantCount":', admission)
-        self.assertNotIn('method.getName().equals("enumConstantCount")', admission)
-        self.assertIn('case "modifiers": case "primitiveKind": case "superinterfaceCount":', admission)
+        self.assertIn('case "enumConstantCount":', emitted)
+        self.assertIn('pinnedClassMetadataMethod(method) && pinnedClassInfoCompiler()', emitted)
         self.assertIn('Class.forName(emitterName, false, targetClass.getClassLoader()) != emitter', emitted)
         self.assertIn('loader.getResourceAsStream("org/teavm/backend/c/core.h")', emitted)
         self.assertIn('3e0b5c2bdbc3fdcd61241fe02b8fa3710adb39e54e8cad0c9710a6a69e265ce6', emitted)

@@ -1,4 +1,4 @@
-name: Java ClassInfo enum-count rollback compiler qualification
+name: Java ClassInfo guarded enum compiler qualification
 on:
   push:
     branches: ['fix/java-classinfo-enum-count-20261105', 'fix/java-classinfo-enum-element-20261105']
