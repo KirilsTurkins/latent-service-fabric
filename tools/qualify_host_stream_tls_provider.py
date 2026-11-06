@@ -31,6 +31,16 @@ ACCOUNTING_CASES = frozenset("tests::tls::" + name for name in (
     "current_maximum_valid_chain_roots_and_stapled_extension_retire_actual_owners",
     "retained_trust_configuration_refunds_only_after_the_last_physical_owner",
 ))
+ABORT_CASES = frozenset("tests::sockets::" + name for name in (
+    "abort_both_wakes_read_and_keeps_the_held_write_owner_until_drop",
+    "abort_both_is_available_after_the_send_half_was_closed",
+    "abort_both_unpolled_reserves_control_and_blocks_new_send_without_dispatch",
+    "abort_both_cancels_an_accepted_send_shutdown_owner",
+)) | frozenset("tests::tls::abort::" + name for name in (
+    "abort_both_wakes_tls_waiters_and_retains_held_write",
+    "abort_both_unpolled_tls_control_releases_slot_without_dispatch",
+    "abort_both_after_tls_peer_close_notify_retires_original_owner",
+))
 KERNEL_CASE = 'tests::kernel::current_linux_pressure_and_active_close_distinguish_kernel_tail_from_fd_refund'
 KERNEL_RETIREMENT_CASES = frozenset(('tests::kernel::current_linux_kernel_tail_keeps_original_leases_quarantined', 'tests::kernel::current_linux_failed_connect_quarantines_original_dial_and_native_charge', 'tests::kernel::current_linux_cancelled_dns_quarantines_original_scope_and_native_charge', 'tests::kernel::current_unqualified_kernel_profile_refuses_normal_install_without_allocation'))
 NATIVE_CLOSE_CASES = frozenset('kernel::native::tests::' + name for name in (
@@ -44,7 +54,7 @@ NODE_CASES = frozenset('kernel::native::node_bootstrap::controls::' + name for n
     'node_postopen_refusal_retains_original_whole_escrow',
     'node_abandoned_waiter_keeps_custody_after_real_worker_returns',
 ))
-REQUIRED_CASES = (TLS_CASES | ACCOUNTING_CASES | KERNEL_RETIREMENT_CASES | NATIVE_CLOSE_CASES |
+REQUIRED_CASES = (TLS_CASES | ACCOUNTING_CASES | ABORT_CASES | KERNEL_RETIREMENT_CASES | NATIVE_CLOSE_CASES |
                   NODE_CASES | {DENIAL, KERNEL_CASE,
                   'tests::tls::protected_root_replacement_digest_and_link_denials_precede_contact',
                   'tests::unimplemented_host_tls_is_never_silently_replaced_with_tcp',
@@ -188,8 +198,8 @@ def main() -> int:
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--source-commit", default=os.environ.get("GITHUB_SHA"))
     args = parser.parse_args()
-    qualify(provider.ROOT, args.output, args.source_commit)
-    print("Actual bounded TLS provider: 47 cases passed; accounting remains unqualified")
+    receipt = qualify(provider.ROOT, args.output, args.source_commit)
+    print(f"Actual bounded TLS provider: {len(receipt['cases'])} cases passed; accounting remains unqualified")
     return 0
 
 
