@@ -1,26 +1,26 @@
 {
   "definition": {
-    "env": {"PYTHONDONTWRITEBYTECODE": "1"},
-    "name": "Original published worker inputs and compiler refusal",
+    "env": {"CARGO_BUILD_JOBS": "2", "CARGO_INCREMENTAL": "0", "CARGO_PROFILE_DEV_DEBUG": "0", "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true", "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true", "CARGO_PROFILE_TEST_DEBUG": "0", "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true", "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true", "PYTHONDONTWRITEBYTECODE": "1"},
+    "name": "Unchanged published workers through the maintained signed node",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 25,
     "steps": [
       {"uses": "KirilsTurkins/lsf-checkout", "with": {"persist-credentials": false}},
       {"uses": "KirilsTurkins/lsf-setup-python", "with": {"python-version": "3.13.5"}},
       {"uses": "KirilsTurkins/lsf-setup-java", "with": {"distribution": "temurin", "java-version": "25.0.4+101.0.LTS"}},
+      {"uses": "dtolnay/rust-toolchain"},
+      {"uses": "KirilsTurkins/lsf-rust-cache", "with": {"cache-all-crates": false, "cache-bin": false, "cache-on-failure": false, "cache-targets": true, "cache-workspace-crates": false, "key": "ubuntu-24.04", "prefix-key": "lsf-ci-dependencies-v2", "save-if": false, "shared-key": "host-correctness"}},
       {"uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup", "with": {"version": "1.254.0"}},
-      {
-        "name": "Install the original pinned frontend prerequisites",
-        "env": {"GH_TOKEN": "${{ github.token }}"},
-        "run": "set -euo pipefail\npython3 -m pip install --requirement tools/requirements.lock\ncurl --fail --location --retry 3 --max-time 180 https://services.gradle.org/distributions/gradle-9.1.0-bin.zip -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check --strict\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ncurl --fail --location --max-time 180 https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n"
-      },
-      {"name": "Observe the fixed public Java-to-C refusal without signed execution", "run": "python3 -B tools/diagnose_java_worker_compiler.py --output \"$RUNNER_TEMP/java-worker-compiler\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\""},
-      {"name": "Retain only checked public inputs and diagnostic observations", "if": "always()", "uses": "KirilsTurkins/lsf-upload-artifact", "with": {"name": "java-worker-compiler-${{ github.sha }}", "retention-days": 3, "if-no-files-found": "warn", "path": "${{ runner.temp }}/java-worker-compiler/retained/"}}
-    ]
+      {"env": {"GH_TOKEN": "${{ github.token }}"}, "name": "Install the normal pinned compiler product", "run": "set -euo pipefail\npython3 -m pip install --requirement tools/requirements.lock\ncurl --fail --location --retry 3 --max-time 180 https://services.gradle.org/distributions/gradle-9.1.0-bin.zip -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check --strict\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ncompiler_root=$(mktemp -d /tmp/latent-java-worker.XXXXXXXX)\ntimeout --signal=TERM --kill-after=5 1195 python3 -B tools/java_guest/compiler_profile_distribution.py stage --root \"$compiler_root\" --output \"$RUNNER_TEMP/java-normal-compiler-product.json\" > \"$RUNNER_TEMP/java-normal-compiler-path.txt\"\ncompiler_sdk=$(cat \"$RUNNER_TEMP/java-normal-compiler-path.txt\")\ntest \"$compiler_sdk\" = \"$compiler_root/work/installed/wasi-sdk\"\nprintf 'LSF_JAVA_WASI_SDK=%s\\n' \"$compiler_sdk\" >> \"$GITHUB_ENV\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n"},
+      {"name": "Compile the unchanged public libraries with the production compiler", "run": "python3 -B tools/qualify_java_fibers.py --fixture worker-libraries --output \"$RUNNER_TEMP/java-worker-libraries\" --wasi-sdk \"$LSF_JAVA_WASI_SDK\""},
+      {"env": {"LSF_GUEST_SDK_LANGUAGE": "java", "LSF_JAVA_WORKER_LIBRARIES_FIXTURE": "${{ runner.temp }}/java-worker-libraries"}, "name": "Execute original signed worker-library qualification", "run": "set -euo pipefail\ncargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::signed_java_published_libraries_use_unchanged_default_workers -- --ignored --exact --nocapture 2>&1 | tee \"$RUNNER_TEMP/java-worker-libraries/signed-runtime.log\"\n"},
+      {"if": "always()", "name": "Retain checked public products and bounded compiler observations", "run": "python3 -B - <<'PY'\nimport os\nfrom pathlib import Path\nfrom tools.qualify_java_published_workers import retain\nfrom tools.rust_capsule_project import read_file, write_json\ntemporary = Path(os.environ['RUNNER_TEMP'])\nprepared = temporary / 'java-worker-libraries'\noutput = temporary / 'java-worker-retained'\noutput.mkdir()\nreport = retain(prepared, output)\nfor name in ('signed-runtime.log',):\n    source = prepared / name\n    if source.is_file():\n        (output / name).write_bytes(read_file(source, 16 * 1024 * 1024))\nwrite_json(output / 'retained.json', {'revision': os.environ['GITHUB_SHA'], 'files': report})\nPY\n"},
+      {"if": "always()", "name": "Upload public evidence without keys or compiler caches", "uses": "KirilsTurkins/lsf-upload-artifact", "with": {"if-no-files-found": "warn", "name": "java-worker-qualification-${{ github.sha }}", "path": "${{ runner.temp }}/java-worker-retained/", "retention-days": 3}}
+    ],
+    "timeout-minutes": 45
   },
   "jobId": "compiler",
   "kind": "job",
-  "reviewReason": "Use pinned tools and retain only the two checked public libraries and compiler observations; no signed execution.",
+  "reviewReason": "Replace the temporary observation-only refusal diagnostic with the unchanged production compiler and signed worker-library qualification; no bypasses or new mandatory repository-wide lane.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-worker-compiler.yml"
 }

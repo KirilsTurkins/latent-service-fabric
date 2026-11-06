@@ -63,6 +63,7 @@ public final class RuntimePlugin implements TeaVMPlugin {
         normalizeOwnedTimerReferences(cls);
         TimeUnitMethods.transform(cls, context);
         ThrowableInitialization.transform(cls);
+        BoundedMathInitialization.transform(cls);
         MonitorContinuations.transform(cls);
         SleepContinuations.transform(cls);
         WaitContinuations.transform(cls);

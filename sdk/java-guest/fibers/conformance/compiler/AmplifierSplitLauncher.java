@@ -28,7 +28,9 @@ public final class AmplifierSplitLauncher {
             }
             Thread.currentThread().setContextClassLoader(child);
             try {
-                Class<?> probe = Class.forName("org.teavm.platform.plugin.CheckpointAmplifierProbe", true, child);
+                Class<?> probe = Class.forName(mode.startsWith("worker-")
+                        ? "dev.latent.guest.runtime.compiler.WorkerCompilerControl"
+                        : "org.teavm.platform.plugin.CheckpointAmplifierProbe", true, child);
                 if (probe.getClassLoader() != child) throw new AssertionError("split-probe-loader");
                 probe.getMethod("main", String[].class).invoke(null, (Object) new String[] { mode });
             } catch (java.lang.reflect.InvocationTargetException failure) {

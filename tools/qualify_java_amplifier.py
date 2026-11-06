@@ -35,6 +35,9 @@ SDK = ROOT / 'sdk/java-guest'
 CONTROL = SDK / 'fibers/conformance/compiler/CheckpointAmplifierProbe.java'
 SPLIT = SDK / 'fibers/conformance/compiler/AmplifierSplitLauncher.java'
 PLUGIN = SDK / 'fibers/conformance/compiler/AmplifierPluginControl.java'
+WORKER = SDK / 'fibers/conformance/compiler/WorkerCompilerControl.java'
+MATH = SDK / 'fibers/compiler/dev/latent/guest/runtime/compiler/BoundedMathInitialization.java'
+MATH_REFERENCE = SDK / 'fibers/conformance/compiler/MathInitializationReference.java'
 FINDER = SDK / 'fibers/compiler-patch/AsyncMethodFinder.java'
 LOCK = SDK / 'feasibility/dependencies.lock.json'
 VERIFICATION = SDK / 'feasibility/gradle/verification-metadata.xml'
@@ -45,8 +48,16 @@ MODES = ('pass', 'reorder', 'replace', 'late', 'array', 'declaration', 'parent',
     'generator-reorder', 'generator-replace', 'extra-intrinsic', 'extra-generator',
     'wrong-target', 'tampered', 'inclusive', 'inclusive-near-max', 'inclusive-overflow',
     'inclusive-dynamic', 'plugin-neutral', 'plugin-intrinsic', 'plugin-generator',
-    'plugin-completion-intrinsic', 'plugin-completion-generator', 'plugin-declaration')
-POSITIVE = frozenset(('pass', 'late', 'inclusive', 'inclusive-near-max', 'plugin-neutral'))
+    'plugin-completion-intrinsic', 'plugin-completion-generator', 'plugin-declaration',
+    'worker-descending', 'worker-descending-inclusive', 'worker-descending-zero',
+    'worker-descending-overflow', 'worker-descending-dynamic', 'worker-descending-stalled',
+    'worker-field', 'worker-field-alias', 'worker-field-call', 'worker-field-bypass',
+    'worker-field-volatile', 'worker-resource', 'worker-resource-declaration', 'worker-resource-parent',
+    'worker-locale', 'worker-locale-declaration', 'worker-locale-provider', 'worker-locale-late-provider',
+    'worker-math', 'worker-math-mutated')
+POSITIVE = frozenset(('pass', 'late', 'inclusive', 'inclusive-near-max', 'plugin-neutral',
+    'worker-descending', 'worker-descending-inclusive', 'worker-descending-zero', 'worker-field',
+    'worker-resource', 'worker-locale', 'worker-math'))
 
 
 def alter_emitter(source: Path, destination: Path) -> dict:
@@ -83,7 +94,7 @@ def alter_emitter(source: Path, destination: Path) -> dict:
 
 
 def observed_sources() -> list[Path]:
-    paths = (CONTROL, SPLIT, PLUGIN, FINDER, LOCK, VERIFICATION, ROOT / 'tools/toolchain.toml',
+    paths = (CONTROL, SPLIT, PLUGIN, WORKER, MATH, MATH_REFERENCE, FINDER, LOCK, VERIFICATION, ROOT / 'tools/toolchain.toml',
         ROOT / 'sdk/java-guest/tools/dependencies.py', ROOT / 'sdk/java-guest/tools/feasibility.py',
         ROOT / 'tools/java_guest/coroutine_patch.py', ROOT / 'tools/java_guest/compiler.py',
         ROOT / 'tools/qualify_java_checkpoint_context.py', ROOT / 'tools/qualify_java_fibers.py',
@@ -161,7 +172,13 @@ def qualify(output: Path, read_only_cache: Path | None = None) -> dict:
         model = output / 'model'
         model.mkdir()
         commands.run('compile-control', javac, '--release', '25', '-proc:none', '-encoding', 'UTF-8',
-            '-cp', tooling, '-d', model, CONTROL, SPLIT, PLUGIN)
+            '-cp', tooling, '-d', model, CONTROL, SPLIT, PLUGIN, WORKER, MATH, MATH_REFERENCE)
+        reference = commands.run('math-initializer-reference', java, '-Xmx256m',
+            '-cp', str(model) + os.pathsep + tooling,
+            'dev.latent.guest.runtime.compiler.MathInitializationReference')
+        require(reference == b'MATH_INITIALIZER_REFERENCE PASS 64\n', 'java-amplifier-math-reference')
+        report['mathInitializerReference'] = {'scope': 'jvm-only-pinned-jcl-and-jdk-arithmetic',
+            'valuesChecked': 64, 'passed': True}
         plugin_model = output / 'plugin-model'
         report['pluginServiceProvider'] = file_identity(prepare_plugin_model(model, plugin_model))
         corrected = output / 'corrected'
