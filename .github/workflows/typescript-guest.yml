@@ -491,7 +491,7 @@ jobs:
           # Retain every input used below, including the pinned compiler lock.
           # Historical benchmark archives are not inputs to this runtime lane.
           git archive --format=tar.gz --output "$RUNNER_TEMP/typescript-guest-source.tar.gz" HEAD -- \
-            apps sdk/typescript-guest sdk/rust examples tools crates wit schemas docs .cargo \
+            apps sdk/typescript-guest sdk/rust sdk/transaction-contract sdk/profile/transaction-requirements-v1.json examples tools crates wit schemas docs .cargo \
             Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/typescript-guest.yml
           test "$(stat --format=%s "$RUNNER_TEMP/typescript-guest-source.tar.gz")" -le 134217728
           git rev-parse HEAD > "$RUNNER_TEMP/typescript-guest-source.sha"

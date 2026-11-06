@@ -44,6 +44,19 @@ class TypeScriptQualificationTriggerTests(unittest.TestCase):
                 self.assertTrue(any(matches(pattern, source) for pattern in paths), source)
         self.assertFalse(any(matches(pattern, "docs/unrelated.md") for pattern in paths))
 
+        # The retained source evidence must contain the recipe that the
+        # qualification used, as well as its transaction-contract program.
+        import shlex
+        step = next(step for step in workflow["jobs"]["boundary"]["steps"]
+                    if step.get("name") == "Capture immutable qualification source inputs")
+        commands = step["run"].replace("\\" + "\n", " ").splitlines()
+        archive = next(line.strip() for line in commands if line.strip().startswith("git archive "))
+        arguments = shlex.split(archive)
+        included = arguments[arguments.index("--") + 1:]
+        for source in sorted(set(RECIPE) | {"sdk/transaction-contract"}):
+            with self.subTest(archived_source=source):
+                self.assertTrue(any(source == item or source.startswith(item + "/") for item in included), source)
+
 
 class ClassificationTests(unittest.TestCase):
     def test_sparse_selector_keeps_ignore_rules_available_offline(self) -> None:
