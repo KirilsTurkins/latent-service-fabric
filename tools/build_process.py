@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from collections.abc import Mapping, Sequence
@@ -167,7 +168,52 @@ def run_bounded_result(command: Sequence[str], cwd: str | Path, env: Mapping[str
         return _run_owned(argv, cwd, env, timeout_seconds, max_output_bytes, cancellation, check=False)
 
 
-def _run_owned(argv, cwd, env, timeout_seconds, max_output_bytes, cancellation, *, check=True):
+def run_bounded_input_result(command: Sequence[str], cwd: str | Path, env: Mapping[str, str],
+                             timeout_seconds: float, max_output_bytes: int, payload: bytes,
+                             *, max_input_bytes: int) -> subprocess.CompletedProcess[bytes]:
+    """Run an owned command with exact bounded bytes on an already-open stdin.
+
+    The private temporary handle is populated, verified and rewound before the
+    owned child is started; no pathname is passed to the child. Existing
+    deadline, output-capture, cancellation and descendant-cleanup rules apply.
+    """
+    if (type(payload) is not bytes or type(max_input_bytes) is not int
+            or not 0 < max_input_bytes <= MAX_OUTPUT_BYTES or len(payload) > max_input_bytes):
+        raise BuildProcessError("command-input-limit")
+    argv = _validate(command, cwd, env, timeout_seconds, max_output_bytes)
+    if __package__:
+        from .build_process_signals import owned_cancellation
+    else:
+        from build_process_signals import owned_cancellation
+    deadline = time.monotonic() + timeout_seconds
+    with tempfile.TemporaryFile(mode="w+b") as source, owned_cancellation() as cancellation:
+        view = memoryview(payload)
+        for start in range(0, len(payload), _CHUNK_BYTES):
+            cancellation.check()
+            if time.monotonic() >= deadline:
+                raise BuildProcessError("command-deadline")
+            chunk = view[start:start + _CHUNK_BYTES]
+            if source.write(chunk) != len(chunk):
+                raise BuildProcessError("command-input-write")
+        source.flush()
+        source.seek(0)
+        for start in range(0, len(payload), _CHUNK_BYTES):
+            cancellation.check()
+            if time.monotonic() >= deadline:
+                raise BuildProcessError("command-deadline")
+            if source.read(min(_CHUNK_BYTES, len(payload) - start)) != view[start:start + _CHUNK_BYTES]:
+                raise BuildProcessError("command-input-drift")
+        if source.read(1):
+            raise BuildProcessError("command-input-drift")
+        source.seek(0)
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise BuildProcessError("command-deadline")
+        return _run_owned(argv, cwd, env, remaining, max_output_bytes, cancellation,
+                          check=False, stdin=source)
+
+
+def _run_owned(argv, cwd, env, timeout_seconds, max_output_bytes, cancellation, *, check=True, stdin=None):
     owner = None
     failure = None
     captured = None
@@ -176,7 +222,10 @@ def _run_owned(argv, cwd, env, timeout_seconds, max_output_bytes, cancellation, 
     try:
         with cancellation.defer():
             owner = _new_owner()
-            owner.spawn(argv, cwd, dict(env), deadline)
+            if stdin is None:
+                owner.spawn(argv, cwd, dict(env), deadline)
+            else:
+                owner.spawn(argv, cwd, dict(env), deadline, stdin=stdin)
         captured = _capture(owner, deadline, max_output_bytes, cancellation)
         status = owner.process.returncode
         if check and status != 0:

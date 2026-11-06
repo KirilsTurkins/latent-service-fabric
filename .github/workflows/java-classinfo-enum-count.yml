@@ -1,11 +1,11 @@
-name: Java ClassInfo finite enum-count compiler qualification
+name: Java ClassInfo guarded enum compiler qualification
 on:
   push:
-    branches: ['fix/java-classinfo-enum-count-20261105']
+    branches: ['fix/java-classinfo-enum-count-20261105', 'fix/java-classinfo-enum-element-20261105']
 permissions:
   contents: read
 concurrency:
-  group: java-classinfo-enum-count-${{ github.ref }}
+  group: java-classinfo-enum-count-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: false
 jobs:
   compiler-context:

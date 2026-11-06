@@ -116,10 +116,17 @@ public final class CheckpointCompilerControl {
         }
     }
 
-    // Exact finite helper identified by the public-fiber compiler refusal.
+    // A direct public call lacks the authenticated Class caller and receiver.
     public static final class ClassInfoEnumCountAccess {
         private static int result = new org.teavm.runtime.reflect.ClassInfo().enumConstantCount();
         public static void main(String[] arguments) { result += arguments.length; }
+    }
+
+    public static final class ClassInfoManagedCountAccess {
+        private static volatile int result;
+        public static void main(String[] arguments) {
+            result = new org.teavm.runtime.reflect.ClassInfo().enumConstantCount();
+        }
     }
 
     // A neighboring intrinsic is deliberately outside the one-method proof.
@@ -138,6 +145,19 @@ public final class CheckpointCompilerControl {
         public static void main(String[] arguments) {
             ready = arguments.length != 0;
         }
+    }
+
+    public static final class NumberOverridePolling {
+        private static volatile boolean ready;
+        private static int result;
+        private static final class PollingNumber extends Number {
+            @Override public int intValue() { while (!ready) {} return 1; }
+            @Override public long longValue() { return 1; }
+            @Override public float floatValue() { return 1; }
+            @Override public double doubleValue() { return 1; }
+        }
+        static { Number value = new PollingNumber(); result = value.intValue(); }
+        public static void main(String[] arguments) { result += arguments.length; }
     }
 
     public static final class UnmanagedPolling {
@@ -592,12 +612,80 @@ public final class CheckpointCompilerControl {
         check(Finite.class.getName(), mode.equals("corrected"), true, "");
     }
 
+    private static void checkIntegerValueField(boolean corrected) throws Exception {
+        if (!corrected) return;
+        var finder = new org.teavm.model.util.AsyncMethodFinder(null, null);
+        var check = finder.getClass().getDeclaredMethod("sameProgressIntegerValueField",
+                org.teavm.model.ClassReader.class, org.teavm.model.ClassReader.class);
+        require(check.trySetAccessible(), "checkpoint-control-integer-field-access");
+        var expected = new ClassHolder("java.lang.Integer");
+        var actual = new ClassHolder("java.lang.Integer");
+        var first = new org.teavm.model.FieldHolder("value");
+        var second = new org.teavm.model.FieldHolder("value");
+        first.setType(ValueType.INTEGER); second.setType(ValueType.INTEGER);
+        first.setLevel(org.teavm.model.AccessLevel.PRIVATE); second.setLevel(org.teavm.model.AccessLevel.PRIVATE);
+        expected.addField(first); actual.addField(second);
+        require(Boolean.TRUE.equals(check.invoke(finder, expected, actual)), "checkpoint-control-integer-field-original");
+        second.setType(ValueType.LONG);
+        require(Boolean.FALSE.equals(check.invoke(finder, expected, actual)), "checkpoint-control-integer-field-type");
+        second.setType(ValueType.INTEGER); second.getModifiers().add(ElementModifier.STATIC);
+        require(Boolean.FALSE.equals(check.invoke(finder, expected, actual)), "checkpoint-control-integer-field-static");
+        second.getModifiers().remove(ElementModifier.STATIC); second.setLevel(org.teavm.model.AccessLevel.PUBLIC);
+        require(Boolean.FALSE.equals(check.invoke(finder, expected, actual)), "checkpoint-control-integer-field-visibility");
+        actual.removeField(second);
+        require(Boolean.FALSE.equals(check.invoke(finder, expected, actual)), "checkpoint-control-integer-field-missing");
+    }
+
+    private static org.teavm.model.MutableClassHolderSource integerHierarchy() {
+        var source = new org.teavm.model.MutableClassHolderSource();
+        var object = new ClassHolder("java.lang.Object"); object.setParent(null);
+        var number = new ClassHolder("java.lang.Number"); number.setParent(object.getName());
+        var integer = new ClassHolder("java.lang.Integer"); integer.setParent(number.getName());
+        source.putClassHolder(object); source.putClassHolder(number); source.putClassHolder(integer);
+        return source;
+    }
+
+    private static void checkIntegerHierarchy(boolean corrected) throws Exception {
+        if (!corrected) return;
+        var check = org.teavm.model.util.AsyncMethodFinder.class.getDeclaredMethod("closedIntegerHierarchy",
+                org.teavm.model.ListableClassReaderSource.class);
+        require(check.trySetAccessible(), "checkpoint-control-integer-hierarchy-access");
+        var source = integerHierarchy();
+        var other = new ClassHolder("example.OtherNumber"); other.setParent("java.lang.Number");
+        source.putClassHolder(other);
+        require(Boolean.TRUE.equals(check.invoke(null, source)), "checkpoint-control-integer-hierarchy-original");
+        var child = new ClassHolder("example.IntegerChild"); child.setParent("java.lang.Integer");
+        source.putClassHolder(child);
+        require(Boolean.FALSE.equals(check.invoke(null, source)), "checkpoint-control-integer-hierarchy-subclass");
+        source = integerHierarchy();
+        var missing = new ClassHolder("example.MissingParent"); missing.setParent("example.Unknown");
+        source.putClassHolder(missing);
+        require(Boolean.FALSE.equals(check.invoke(null, source)), "checkpoint-control-integer-hierarchy-missing");
+        source = integerHierarchy();
+        var cycleA = new ClassHolder("example.CycleA"); cycleA.setParent("example.CycleB");
+        var cycleB = new ClassHolder("example.CycleB"); cycleB.setParent("example.CycleA");
+        source.putClassHolder(cycleA); source.putClassHolder(cycleB);
+        require(Boolean.FALSE.equals(check.invoke(null, source)), "checkpoint-control-integer-hierarchy-cycle");
+        source = integerHierarchy();
+        String parent = "java.lang.Object";
+        for (int index = 0; index < 600; ++index) {
+            var link = new ClassHolder("example.Chain" + index); link.setParent(parent);
+            source.putClassHolder(link); parent = link.getName();
+        }
+        for (int index = 0; index < 600; ++index) {
+            var leaf = new ClassHolder("example.Leaf" + index); leaf.setParent(parent);
+            source.putClassHolder(leaf);
+        }
+        require(Boolean.FALSE.equals(check.invoke(null, source)), "checkpoint-control-integer-hierarchy-total-work");
+    }
+
     public static void main(String[] arguments) {
         require(arguments.length == 1 && (arguments[0].equals("original")
                 || arguments[0].equals("corrected")), "checkpoint-compiler-control-mode");
         boolean corrected = arguments[0].equals("corrected");
         check(Finite.class.getName(), corrected, false, "");
         check(InitializerPolling.class.getName(), corrected, true, "");
+        check(NumberOverridePolling.class.getName(), corrected, true, "");
         check(UnmanagedPolling.class.getName(), corrected, true, "");
         check(ManagedPolling.class.getName(), corrected, false, "");
         check(RecursiveInitializer.class.getName(), corrected, true, "");
@@ -621,7 +709,8 @@ public final class CheckpointCompilerControl {
             check(StringInfoAccess.class.getName(), corrected, true, mutation);
         }
         check(StringInfoAccess.class.getName(), corrected, true, "", true);
-        check(ClassInfoEnumCountAccess.class.getName(), corrected, false, "");
+        check(ClassInfoEnumCountAccess.class.getName(), corrected, true, "");
+        check(ClassInfoManagedCountAccess.class.getName(), corrected, true, "");
         check(ClassInfoEnumElementAccess.class.getName(), corrected, true, "");
         for (String mutation : new String[] { "class-info-declaration", "string-info-parent", "class-info-layout" }) {
             check(ClassInfoEnumCountAccess.class.getName(), corrected, true, mutation);
@@ -631,10 +720,12 @@ public final class CheckpointCompilerControl {
             checkClassInfoHeader(corrected);
             checkCompilerArchive(corrected);
             checkCompilerCacheIsolation(corrected);
+            checkIntegerValueField(corrected);
+            checkIntegerHierarchy(corrected);
         } catch (Exception failure) {
             throw new AssertionError("checkpoint-control-compiler-archive", failure);
         }
         System.out.println("CHECKPOINT_COMPILER_CONTROL PASS " + arguments[0]
-                + ";finite;initializer;unmanaged;managed;recursion;runtime-initializer;class-object-helper;string-copy-body;finite-unmanaged;nested-counted;changing-bound;wrapping-counted;reset-counted;exceptional-retry;unmanaged-class;transitive-initializer;near-max-counted;nested-polling;mutual-recursion;virtual-initializer;string-info-getter;string-info-declaration;string-info-parent;string-info-target;class-info-enum-count;class-info-enum-other-refused;class-info-declaration;class-info-parent;class-info-layout;class-info-target;class-info-header-shadow;compiler-archive-control;compiler-cache-isolation");
+                + ";finite;initializer;unmanaged;managed;recursion;runtime-initializer;class-object-helper;string-copy-body;finite-unmanaged;nested-counted;changing-bound;wrapping-counted;reset-counted;exceptional-retry;unmanaged-class;transitive-initializer;near-max-counted;nested-polling;mutual-recursion;virtual-initializer;string-info-getter;string-info-declaration;string-info-parent;string-info-target;class-info-enum-count;class-info-managed-count-refused;class-info-enum-other-refused;class-info-declaration;class-info-parent;class-info-layout;class-info-target;class-info-header-shadow;compiler-archive-control;compiler-cache-isolation;number-override-refused;integer-field-identity;integer-hierarchy-bounds");
     }
 }

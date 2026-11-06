@@ -125,11 +125,14 @@ def refusal(error: Exception) -> str:
     return 'unavailable'
 
 
-def run(compiler, generated: Path, selected: tuple[str, ...], *arguments) -> str:
+def run(compiler, generated: Path, selected: tuple[str, ...], *arguments,
+        input_bytes: bytes | None = None) -> str:
     """Observe only failed clang; the original exception and command stay intact."""
     selection(selected)
     try:
-        return compiler.run('c-to-wasm', 'clang', *arguments)
+        if input_bytes is None:
+            return compiler.run('c-to-wasm', 'clang', *arguments)
+        return compiler.run('c-to-wasm', 'clang', *arguments, input_bytes=input_bytes)
     except Exception:
         if selected:
             try:
