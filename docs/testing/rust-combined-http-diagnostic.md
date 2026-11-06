@@ -54,6 +54,27 @@ must be observed while the original request is held. A pass also requires
 exact results, zero active provider counters, retired physical guest owners,
 no foreign peer contact, deployment removal and clean node shutdown.
 
+## Stack-boundary review
+
+The combined selection does not change `mmap`, guard-page protection, `munmap`,
+or failed-unmapping quarantine. The allocator's only change is the
+feature-gated safe `combined` module. The worker implementation changes its
+profile description, not its allocation or refund operations. The new selector
+checks the prepared component's immutable proof before creating the context,
+then passes the same activation budget and runtime ledger to both admission
+paths. Child starts retain their distinct Task requirement and total-start bound;
+worker mappings retain a live parent and prepay their original Native, memory,
+and metadata charges. Refund still follows successful unmapping, and cached
+child permits still require the Store-drop fence.
+
+`tools/native_loader_boundary.py` records these reviewed source identities,
+including the combined selector, without adding an unsafe allowance. Its mutation
+controls reject removed or substituted proofs, substituted ledgers, expanded
+limits, and added unsafe code. Native regressions separately execute proof
+refusals, shared-limit admission, allocation rollback, duplicate child starts,
+actual nested engine fibers, and physical retirement. The source tripwire is
+not a replacement for these behavioral tests or the signed witness.
+
 ## Read failures without treating them as passes
 
 `FAILED.json` records the failing stage. The `controls` directory retains the
