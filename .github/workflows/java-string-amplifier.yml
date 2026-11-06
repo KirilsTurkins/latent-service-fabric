@@ -1,0 +1,42 @@
+name: Java string amplifier compiler control
+on:
+  push:
+    branches: ['fix/java-string-amplifier-20261106']
+permissions:
+  contents: read
+concurrency:
+  group: java-string-amplifier-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: false
+jobs:
+  compiler:
+    name: Pinned split-loader C frontend and intrinsic refusal controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c # v6.1.0 + upstream changes + LSF security fixes
+        with:
+          distribution: temurin
+          java-version: 25.0.4+101.0.LTS
+      - name: Compile the fixed split-loader control and refusal cases
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B tools/qualify_java_amplifier.py --output "$RUNNER_TEMP/java-amplifier"
+      - name: Retain bounded compiler controls without guest execution
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: java-amplifier-${{ github.sha }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/java-amplifier/result.json
+            ${{ runner.temp }}/java-amplifier/commands.json
+            ${{ runner.temp }}/java-amplifier/commands/logs/**

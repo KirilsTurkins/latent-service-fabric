@@ -825,12 +825,15 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             }
         }
         org.teavm.model.instructions.BranchingCondition condition = branch.getCondition();
-        if (!(consequentInside && condition == org.teavm.model.instructions.BranchingCondition.LESS
+        boolean strict = consequentInside && condition == org.teavm.model.instructions.BranchingCondition.LESS
                 || alternativeInside
-                && condition == org.teavm.model.instructions.BranchingCondition.GREATER_OR_EQUAL)) {
+                && condition == org.teavm.model.instructions.BranchingCondition.GREATER_OR_EQUAL;
+        boolean inclusive = alternativeInside
+                && condition == org.teavm.model.instructions.BranchingCondition.GREATER;
+        if (!strict && !inclusive) {
             return false;
         }
-        // Pinned ProgramParser translates IF_ICMP{LT,GE} to signed INT
+        // Pinned ProgramParser translates IF_ICMP{LT,GE,GT} to signed INT
         // COMPARE_GREATER followed by a unary branch, not a subtraction.
         org.teavm.model.Instruction comparison = definitions[branch.getOperand().getIndex()];
         if (!(comparison instanceof org.teavm.model.instructions.BinaryInstruction)) {
@@ -842,6 +845,21 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
                 || compare.getOperandType() != org.teavm.model.instructions.NumericOperandType.INT
                 || compare.getBasicBlock() != head) {
             return false;
+        }
+        if (inclusive) {
+            org.teavm.model.Instruction bound = definitions[compare.getSecondOperand().getIndex()];
+            if (!(bound instanceof org.teavm.model.instructions.IntegerConstantInstruction)
+                    || bound.getBasicBlock() != head
+                    || ((org.teavm.model.instructions.IntegerConstantInstruction) bound).getConstant()
+                            == Integer.MAX_VALUE) {
+                return false;
+            }
+            boolean boundBeforeCompare = false;
+            for (org.teavm.model.Instruction instruction : head) {
+                if (instruction == compare) break;
+                if (instruction == bound) boundBeforeCompare = true;
+            }
+            if (!boundBeforeCompare) return false;
         }
         int induction = compare.getFirstOperand().getIndex();
         for (org.teavm.model.Phi phi : head.getPhis()) {
@@ -896,7 +914,8 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
             // The head dominates a reducible natural loop. Every backedge now
             // carries i+1. The long rank Integer.MAX_VALUE-i decreases on every
             // cycle, even for a changing signed limit. Its strict test requires
-            // i<limit<=Integer.MAX_VALUE, so a traversed backedge cannot wrap.
+            // i<limit<=Integer.MAX_VALUE, or the inclusive case checks a
+            // constant limit below Integer.MAX_VALUE. Neither can wrap on +1.
             return true;
         }
         return false;
