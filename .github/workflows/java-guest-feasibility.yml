@@ -21,6 +21,25 @@ on:
       - 'docs/component-development/java-httpserver.md'
       - '.github/workflows/java-guest-feasibility.yml'
       - 'wit/platform/**'
+  push:
+    branches: [development]
+    paths:
+      - 'sdk/java-guest/**'
+      - 'examples/java-http-request/**'
+      - 'examples/java-david-webb/**'
+      - 'examples/java-http-composition/**'
+      - 'examples/java-transaction-schema/**'
+      - 'contracts/state/application-aggregate-*.schema.json'
+      - 'sdk/transaction-contract/**'
+      - 'tools/**'
+      - 'apps/**'
+      - 'crates/**'
+      - 'schemas/**'
+      - 'Cargo.*'
+      - 'docs/component-development/java-authoring.md'
+      - 'docs/component-development/java-httpserver.md'
+      - '.github/workflows/java-guest-feasibility.yml'
+      - 'wit/platform/**'
   workflow_dispatch:
     inputs:
       qualify-scratch-refusals:
