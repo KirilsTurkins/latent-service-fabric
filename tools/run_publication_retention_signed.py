@@ -8,6 +8,8 @@ compaction qualification.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import os
 from pathlib import Path
 import re
@@ -46,6 +48,13 @@ COLLECTORS = (
 def collector_identity(cancellation, deadline):
     root = Path(__file__).resolve().parents[1]
     return {name: file_digest(root / name, 262144, cancellation, deadline) for name in COLLECTORS}
+
+
+def fixture_identity(entries):
+    require(isinstance(entries, dict) and 0 < len(entries) <= 512, "fixture-identity-count")
+    encoded = json.dumps(entries, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    require(len(encoded) <= 262144, "fixture-identity-bytes")
+    return {"files": len(entries), "sha256": "sha256:" + hashlib.sha256(encoded).hexdigest()}
 
 
 def selected(client, publication):
@@ -204,6 +213,7 @@ def run(args):
         metadata = read_json(fixture / "fixture.json")
         require(metadata.get("publicationWorkflow") is True, "wrong-fixture-profile")
         original_fixture = inventory(fixture)
+        fixture_record = fixture_identity(original_fixture)
         with owned_cancellation() as cancellation:
             with tempfile.TemporaryDirectory(prefix="lsf-signed-publication-retention-") as temporary:
                 work = Path(temporary).resolve(strict=True)
@@ -319,6 +329,7 @@ def run(args):
                     require(collector_identity(cancellation, deadline) == collectors, "collector-identity-changed")
                     result = {"schemaVersion": "latent.publication.signed-retention.v1", "passed": True,
                               "identities": identities, "collectorIdentities": collectors,
+                              "fixtureInventory": fixture_record,
                               "publications": {"retained": blue, "reclaimed": green},
                               "pinReceipt": pin_receipt, "deletionReceipt": deletion,
                               "reclamationReceipt": reclamation, "restoredPin": restored_pin,
@@ -348,9 +359,9 @@ def main():
     parser.add_argument("--cli", type=Path, required=True)
     parser.add_argument("--node", type=Path, required=True)
     parser.add_argument("--fixture-root", type=Path, required=True)
-    parser.add_argument("--source-commit")
+    parser.add_argument("--source-commit", required=True)
     args = parser.parse_args()
-    require(args.source_commit is None or re.fullmatch(r"[0-9a-f]{40}", args.source_commit), "source-commit")
+    require(re.fullmatch(r"[0-9a-f]{40}", args.source_commit) is not None, "source-commit")
     print(run(args))
 
 

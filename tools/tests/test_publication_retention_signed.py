@@ -14,7 +14,7 @@ import unittest
 
 from tools.phase2_operator_process import WorkflowError
 from tools.run_publication_retention_signed import (
-    assert_hidden, audit_attempts, checked_receipt, copy_stopped_installation, lookup, selected,
+    assert_hidden, audit_attempts, checked_receipt, copy_stopped_installation, fixture_identity, lookup, selected,
 )
 
 PUBLICATION = "publication:sha256:" + "1" * 64
@@ -42,6 +42,15 @@ class Reply:
 
 
 class ControlTests(unittest.TestCase):
+    def test_fixture_identity_is_order_independent_bounded_and_changes_with_content(self):
+        original = {"a": "sha256:first", "b": "sha256:second"}
+        self.assertEqual(fixture_identity(original), fixture_identity(dict(reversed(list(original.items())))))
+        self.assertNotEqual(fixture_identity(original), fixture_identity({**original, "b": "sha256:changed"}))
+        with self.assertRaises(WorkflowError):
+            fixture_identity({})
+        with self.assertRaises(WorkflowError):
+            fixture_identity({str(i): "digest" for i in range(513)})
+
     def test_snapshot_requires_one_exact_tenant_publication_generation_and_fence(self):
         data = {"tenant": "tests", "catalogFence": FENCE, "entries": [{"target": TARGET, "pin": None}]}
         client = Reply({"data": data})
