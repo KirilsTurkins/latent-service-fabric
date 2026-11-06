@@ -2270,22 +2270,23 @@ impl TransmitOrigin {
     }
 }
 
-// The producer's original erased inner future remains unqualified. The
-// consumer path separately owns its admitted inner and outer allocations.
-type PipeCompletionArgs = (
-    TransmitKind,
-    TableId<TransmitState>,
-    Option<Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>>>,
-);
+// Consumer and producer pipe continuations each retain their separately
+// admitted inner future and their already-admitted outer allocation.
 type ConsumerCompletionArgs = (
     TransmitKind,
     TableId<TransmitState>,
     Option<OwnedConsumerFuture>,
 );
+type ProducerPipeArgs = (
+    TransmitKind,
+    TableId<TransmitState>,
+    Option<OwnedProducerFuture>,
+);
 type ProducerCompletionArgs = (
     TransmitKind,
     TableId<TransmitState>,
     Option<ProducerPollFactory>,
+    Option<OwnedProducerFuture>,
 );
 
 async fn complete_pipe_from_guest((kind, id, future): ConsumerCompletionArgs) -> Result<()> {
@@ -2305,7 +2306,7 @@ async fn complete_pipe_from_guest((kind, id, future): ConsumerCompletionArgs) ->
     })
 }
 
-async fn complete_pipe_to_guest((kind, id, future): PipeCompletionArgs) -> Result<()> {
+async fn complete_pipe_to_guest((kind, id, future): ProducerPipeArgs) -> Result<()> {
     let future = future.expect("prepared stream completion requires its original inner future");
     let stream_state = future.await?;
     tls::get(|store| {
@@ -2322,9 +2323,13 @@ async fn complete_pipe_to_guest((kind, id, future): PipeCompletionArgs) -> Resul
     })
 }
 
-async fn complete_host_producer((kind, id, produce): ProducerCompletionArgs) -> Result<()> {
+async fn complete_host_producer(
+    (kind, id, produce, first_future): ProducerCompletionArgs,
+) -> Result<()> {
     let produce = produce.expect("prepared host producer requires its original factory");
+    let first_future = first_future.expect("prepared host producer requires its first future");
     let future = async move {
+        let mut first_future = Some(first_future);
         loop {
             if tls::get(|store| {
                 crate::error::Ok(matches!(
@@ -2335,7 +2340,11 @@ async fn complete_host_producer((kind, id, produce): ProducerCompletionArgs) -> 
                 break Ok(());
             }
 
-            match produce.invoke_producer().await? {
+            let future = match first_future.take() {
+                Some(future) => future,
+                None => produce.prepare_producer()?,
+            };
+            match future.await? {
                 StreamResult::Completed | StreamResult::Cancelled => {}
                 StreamResult::Dropped => break Ok(()),
             }
@@ -2352,10 +2361,6 @@ async fn complete_host_producer((kind, id, produce): ProducerCompletionArgs) -> 
 
     future.await
 }
-
-type PollStream = Box<
-    dyn Fn() -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>> + Send + Sync,
->;
 
 type TryInto = Box<dyn Fn(TypeId) -> Option<Box<dyn Any>> + Send + Sync>;
 
@@ -2800,7 +2805,7 @@ impl<T> StoreContextMut<'_, T> {
         let producer = Arc::new(LockedState::new((Box::pin(producer), P::Buffer::default())));
         let id = state.get_mut(read)?.state;
         let mut dropped = false;
-        let produce = ProducerPollFactory::legacy(Box::new({
+        let produce = ProducerPollFactory::legacy(Box::new(LegacyProducerFactory({
             let producer = producer.clone();
             move || {
                 let producer = producer.clone();
@@ -2959,7 +2964,7 @@ impl<T> StoreContextMut<'_, T> {
                 }
                 .boxed()
             }
-        }));
+        })));
         let try_into = ProducerConversionFactory::legacy(Box::new(move |ty| {
             let (mine, buffer) = producer.try_lock().ok()?.take()?;
             match P::try_into(mine, ty) {
@@ -2993,25 +2998,27 @@ impl<T> StoreContextMut<'_, T> {
     {
         let state = self.0.concurrent_state_mut_already_forced_current_thread();
         let prepared = prepare_producer_cell::<T, P, Policy>(&state.queue_memory)?;
-        let prepared_produce = PreparedProducerFactory::new(
+        let prepared_produce = PreparedTypedProducerFactory::new(
             &state.queue_memory,
             move |(id, producer): (TableId<TransmitState>, AccountedProducerCell<P, P::Buffer>)| {
                 let mut dropped = false;
                 move || {
                     let producer = producer.clone();
                     async move {
-                    // Any later guest realloc work is scheduled only with this
-                    // pre-funded node, reserved before the producer is polled.
-                    let worker_slot = if <P::Item as func::ComponentType>::MAY_REQUIRE_REALLOC {
-                        Some(tls::get(|store| store.concurrent_state_mut()?.prepare_queue_slot())?)
-                    } else {
-                        None
-                    };
-                    let mut state = producer.take()?;
-                    let (mine, buffer) = &mut *state;
+                        // Any later guest realloc work is scheduled only with this
+                        // pre-funded node, reserved before the producer is polled.
+                        let worker_slot = if <P::Item as func::ComponentType>::MAY_REQUIRE_REALLOC {
+                            Some(tls::get(|store| {
+                                store.concurrent_state_mut()?.prepare_queue_slot()
+                            })?)
+                        } else {
+                            None
+                        };
+                        let mut state = producer.take()?;
+                        let (mine, buffer) = &mut *state;
 
-                    let (result, cancelled) = if buffer.remaining().is_empty() {
-                        future::poll_fn(|cx| {
+                        let (result, cancelled) = if buffer.remaining().is_empty() {
+                            future::poll_fn(|cx| {
                             tls::get(|store| {
                                 let transmit = store.concurrent_state_mut()?.get_mut(id)?;
 
@@ -3090,69 +3097,75 @@ impl<T> StoreContextMut<'_, T> {
                             })?
                         })
                             .await?
-                    } else {
-                        (StreamResult::Completed, false)
-                    };
-
-                    let (guest_offset, host_offset, count) = tls::get(|store| {
-                        let transmit = store.concurrent_state_mut()?.get_mut(id)?;
-                        let (count, host_offset) = match &transmit.read {
-                            &ReadState::GuestReady { count, .. } => (count.as_u32(), 0),
-                            &ReadState::HostToHost { limit, .. } => (1, limit),
-                            _ => bail_bug!("invalid read state"),
-                        };
-                        let guest_offset = match &transmit.write {
-                            &WriteState::HostReady { guest_offset, .. } => guest_offset,
-                            _ => bail_bug!("invalid write state"),
-                        };
-                        Ok((guest_offset, host_offset, count))
-                    })?;
-
-                    match result {
-                        StreamResult::Completed => {
-                            if count > 1
-                                && buffer.remaining().is_empty()
-                                && guest_offset == 0
-                                && host_offset == 0
-                            {
-                                bail!(
-                                    "StreamProducer::poll_produce returned StreamResult::Completed \
-                                     without producing any items"
-                                );
-                            }
-                        }
-                        StreamResult::Cancelled => {
-                            if !cancelled {
-                                bail!(
-                                    "StreamProducer::poll_produce returned StreamResult::Cancelled \
-                                     without being given a `finish` parameter value of true"
-                                );
-                            }
-                        }
-                        StreamResult::Dropped => {
-                            dropped = true;
-                        }
-                    }
-
-                    let write_buffer = !buffer.remaining().is_empty() || host_offset > 0;
-
-                    drop(state);
-
-                    if write_buffer {
-                        write::<T, Pin<Box<P>>, P::Item, P::Buffer, _>(token, id, producer.clone(), kind, worker_slot).await?;
-                    }
-
-                    Ok(if dropped {
-                        if producer.with(|p| p.1.remaining().is_empty())?  {
-                            StreamResult::Dropped
                         } else {
-                            StreamResult::Completed
+                            (StreamResult::Completed, false)
+                        };
+
+                        let (guest_offset, host_offset, count) = tls::get(|store| {
+                            let transmit = store.concurrent_state_mut()?.get_mut(id)?;
+                            let (count, host_offset) = match &transmit.read {
+                                &ReadState::GuestReady { count, .. } => (count.as_u32(), 0),
+                                &ReadState::HostToHost { limit, .. } => (1, limit),
+                                _ => bail_bug!("invalid read state"),
+                            };
+                            let guest_offset = match &transmit.write {
+                                &WriteState::HostReady { guest_offset, .. } => guest_offset,
+                                _ => bail_bug!("invalid write state"),
+                            };
+                            Ok((guest_offset, host_offset, count))
+                        })?;
+
+                        match result {
+                            StreamResult::Completed => {
+                                if count > 1
+                                    && buffer.remaining().is_empty()
+                                    && guest_offset == 0
+                                    && host_offset == 0
+                                {
+                                    bail!(
+                                        "StreamProducer::poll_produce returned StreamResult::Completed \
+                                     without producing any items"
+                                    );
+                                }
+                            }
+                            StreamResult::Cancelled => {
+                                if !cancelled {
+                                    bail!(
+                                        "StreamProducer::poll_produce returned StreamResult::Cancelled \
+                                     without being given a `finish` parameter value of true"
+                                    );
+                                }
+                            }
+                            StreamResult::Dropped => {
+                                dropped = true;
+                            }
                         }
-                    } else {
-                        result
-                    })
-                }
-                .boxed()
+
+                        let write_buffer = !buffer.remaining().is_empty() || host_offset > 0;
+
+                        drop(state);
+
+                        if write_buffer {
+                            write::<T, Pin<Box<P>>, P::Item, P::Buffer, _>(
+                                token,
+                                id,
+                                producer.clone(),
+                                kind,
+                                worker_slot,
+                            )
+                            .await?;
+                        }
+
+                        Ok(if dropped {
+                            if producer.with(|p| p.1.remaining().is_empty())? {
+                                StreamResult::Dropped
+                            } else {
+                                StreamResult::Completed
+                            }
+                        } else {
+                            result
+                        })
+                    }
                 }
             },
         )?;
@@ -3241,7 +3254,7 @@ impl<T> StoreContextMut<'_, T> {
         {
             Some(PreparedFuture::new(
                 &state.queue_memory,
-                (kind, id, None),
+                (kind, id, None, None),
                 complete_host_producer,
             )?)
         } else {
@@ -3426,12 +3439,25 @@ impl<T> StoreContextMut<'_, T> {
                     let consume = consume_with_buffer.clone();
                     async move { consume(Some(input.get_mut::<C::Item>()?)).await }.boxed()
                 })?;
+                // Reserve the first paid producer future while the original
+                // producer still occupies the transmit. A refusal leaves that
+                // state untouched; later loop iterations reserve separately.
+                let first_future = if paid_host_producer.is_some() {
+                    let WriteState::HostReady { produce, .. } = &transmit.write else {
+                        bail_bug!("expected preflight host producer");
+                    };
+                    Some(produce.prepare_producer()?)
+                } else {
+                    None
+                };
                 let WriteState::HostReady { produce, .. } = mem::replace(
                     &mut transmit.write,
                     WriteState::HostReady {
-                        produce: ProducerPollFactory::legacy(Box::new(|| {
-                            Box::pin(async { bail_bug!("unexpected invocation of `produce`") })
-                        })),
+                        produce: ProducerPollFactory::legacy(Box::new(LegacyProducerFactory(
+                            || -> BoxedProducerFuture {
+                                Box::pin(async { bail_bug!("unexpected invocation of `produce`") })
+                            },
+                        ))),
                         try_into: ProducerConversionFactory::legacy(Box::new(|_| None)),
                         guest_offset: ItemCount::ZERO,
                         cancel: false,
@@ -3449,6 +3475,7 @@ impl<T> StoreContextMut<'_, T> {
 
                 if let Some(mut prepared) = paid_host_producer {
                     prepared.args_mut().2 = Some(produce);
+                    prepared.args_mut().3 = first_future;
                     state.push_host_future(
                         queue_slot.expect("prepared consumer node"),
                         prepared.finish(),
@@ -3819,13 +3846,12 @@ impl Instance {
         guest_offset: ItemCount,
         cancel: bool,
         queue_slot: super::FutureWorkSlot,
-        mut prepared: PreparedFuture<PipeCompletionArgs, Factory, Output>,
+        mut prepared: PreparedFuture<ProducerPipeArgs, Factory, Output>,
     ) -> Result<ReturnCode>
     where
-        Factory: FnOnce(PipeCompletionArgs) -> Output,
+        Factory: FnOnce(ProducerPipeArgs) -> Output,
         Output: Future<Output = Result<()>> + Send + 'static,
     {
-        prepared.args_mut().2 = Some(produce.invoke_producer());
         store.concurrent_state_mut()?.get_mut(transmit_id)?.write = WriteState::HostReady {
             produce,
             try_into,
@@ -4505,7 +4531,7 @@ impl Instance {
         self.check_bounds(store.0, options, ty, address, count.as_usize())?;
         // Some-only staging before Busy, mem::replace or GuestReady publication.
         // None retains the original helper and its allocation/poll order below.
-        let paid_outer = if store.0.native_memory().is_some() {
+        let mut paid_outer = if store.0.native_memory().is_some() {
             let rep = {
                 let (rep, state) = self.id().get_mut(store.0).get_mut_by_index(ty, handle)?;
                 let TransmitLocalState::Read { done } = *state else {
@@ -4570,6 +4596,18 @@ impl Instance {
         } else {
             None
         };
+
+        // Complete deferred replay before the new inner admission and before
+        // setting the guest handle Busy; never poll the producer here.
+        if let Some((_, prepared)) = &mut paid_outer {
+            store.0.current_guest_thread()?;
+            let id = prepared.args_mut().1;
+            let state = store.0.concurrent_state_mut_already_forced_current_thread();
+            let WriteState::HostReady { produce, .. } = &state.get_mut(id)?.write else {
+                bail_bug!("expected preflight host producer");
+            };
+            prepared.args_mut().2 = Some(produce.prepare_producer()?);
+        }
 
         let (rep, state) = self.id().get_mut(store.0).get_mut_by_index(ty, handle)?;
         let TransmitLocalState::Read { done } = *state else {
@@ -5768,9 +5806,7 @@ fn allow_intra_component_read_write(ty: Option<&InterfaceType>) -> bool {
 
 // The producer factory allocations are distinct from their returned futures and
 // transitive captures. Only their concrete closure backing is owned here.
-type ProducerPollFactory = ProducerFactory<
-    dyn Fn() -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>> + Send + Sync,
->;
+type ProducerPollFactory = ProducerFactory<dyn ProducerFutureFactory>;
 type ConsumerPollFactory = ProducerFactory<dyn ConsumerFactory>;
 type HostAccept = Box<
     dyn for<'a> Fn(
@@ -5795,6 +5831,7 @@ struct PreparedProducerFactory<Args, Builder, Function> {
     _output: PhantomData<fn(Args) -> Function>,
 }
 
+#[cfg(test)]
 impl<Args, Builder, Function> PreparedProducerFactory<Args, Builder, Function>
 where
     Builder: FnOnce(Args) -> Function,
@@ -5828,7 +5865,8 @@ where
             allocation,
             ..
         } = self;
-        let function: PollStream = Box::new(builder(args));
+        let function: Box<dyn ProducerFutureFactory> =
+            Box::new(LegacyProducerFactory(builder(args)));
         ProducerFactory::from_parts(function, allocation)
     }
 }
@@ -5879,10 +5917,151 @@ impl<Function: ?Sized> ProducerFactory<Function> {
 }
 
 impl ProducerPollFactory {
-    fn invoke_producer(
-        &self,
-    ) -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>> {
-        (self.function)()
+    fn invoke_producer(&self) -> BoxedProducerFuture {
+        self.function.invoke_legacy()
+    }
+
+    fn prepare_producer(&self) -> Result<OwnedProducerFuture> {
+        self.function.prepare_paid()
+    }
+}
+
+type BoxedProducerFuture = Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>>;
+
+trait ProducerFutureFactory: Send + Sync {
+    fn invoke_legacy(&self) -> BoxedProducerFuture;
+    fn prepare_paid(&self) -> Result<OwnedProducerFuture>;
+}
+
+#[repr(transparent)]
+struct LegacyProducerFactory<F>(F);
+
+impl<F> ProducerFutureFactory for LegacyProducerFactory<F>
+where
+    F: Fn() -> BoxedProducerFuture + Send + Sync + 'static,
+{
+    fn invoke_legacy(&self) -> BoxedProducerFuture {
+        (self.0)()
+    }
+
+    fn prepare_paid(&self) -> Result<OwnedProducerFuture> {
+        bail_bug!("legacy producer has no admitted future")
+    }
+}
+
+struct TypedProducerFactory<F, Fut> {
+    function: F,
+    memory: crate::runtime::native_memory::Memory,
+    _future: PhantomData<fn() -> Fut>,
+}
+
+impl<F, Fut> ProducerFutureFactory for TypedProducerFactory<F, Fut>
+where
+    F: Fn() -> Fut + Send + Sync + 'static,
+    Fut: Future<Output = Result<StreamResult>> + Send + 'static,
+{
+    fn invoke_legacy(&self) -> BoxedProducerFuture {
+        panic!("paid producer future requires admission")
+    }
+
+    fn prepare_paid(&self) -> Result<OwnedProducerFuture> {
+        let allocation = crate::runtime::native_memory::reserve(
+            &self.memory,
+            core::alloc::Layout::new::<Fut>().size(),
+        )?;
+        let future: BoxedProducerFuture = Box::pin((self.function)());
+        Ok(OwnedProducerFuture::from_parts(future, allocation))
+    }
+}
+
+struct OwnedProducerFuture {
+    future: ManuallyDrop<BoxedProducerFuture>,
+    allocation: ManuallyDrop<Option<Box<dyn crate::NativeAllocation>>>,
+}
+
+impl Unpin for OwnedProducerFuture {}
+
+impl OwnedProducerFuture {
+    fn from_parts(
+        future: BoxedProducerFuture,
+        allocation: Option<Box<dyn crate::NativeAllocation>>,
+    ) -> Self {
+        let mut owner = Self {
+            future: ManuallyDrop::new(future),
+            allocation: ManuallyDrop::new(allocation),
+        };
+        if let Some(allocation) = owner.allocation.as_mut() {
+            allocation.allocated();
+        }
+        owner
+    }
+
+    fn as_mut(&mut self) -> Pin<&mut Self> {
+        Pin::new(self)
+    }
+}
+
+impl Future for OwnedProducerFuture {
+    type Output = Result<StreamResult>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        self.get_mut().future.as_mut().poll(cx)
+    }
+}
+
+impl Drop for OwnedProducerFuture {
+    fn drop(&mut self) {
+        // Destruction and deallocation precede the original guard refund.
+        unsafe {
+            ManuallyDrop::drop(&mut self.future);
+            ManuallyDrop::drop(&mut self.allocation);
+        }
+    }
+}
+
+struct PreparedTypedProducerFactory<Args, Builder, Function, Fut> {
+    builder: Builder,
+    memory: crate::runtime::native_memory::Memory,
+    allocation: Option<Box<dyn crate::NativeAllocation>>,
+    _output: PhantomData<fn(Args) -> (Function, Fut)>,
+}
+
+impl<Args, Builder, Function, Fut> PreparedTypedProducerFactory<Args, Builder, Function, Fut>
+where
+    Builder: FnOnce(Args) -> Function,
+    Function: Fn() -> Fut + Send + Sync + 'static,
+    Fut: Future<Output = Result<StreamResult>> + Send + 'static,
+{
+    fn new(memory: &crate::runtime::native_memory::Memory, builder: Builder) -> Result<Self> {
+        if memory.is_none() {
+            bail_bug!("typed producer requires its original memory");
+        }
+        let allocation = crate::runtime::native_memory::reserve(
+            memory,
+            core::alloc::Layout::new::<TypedProducerFactory<Function, Fut>>().size(),
+        )?;
+        Ok(Self {
+            builder,
+            memory: memory.clone(),
+            allocation,
+            _output: PhantomData,
+        })
+    }
+
+    fn finish_producer(self, args: Args) -> ProducerPollFactory {
+        let Self {
+            builder,
+            memory,
+            allocation,
+            ..
+        } = self;
+        let wrapper = TypedProducerFactory {
+            function: builder(args),
+            memory,
+            _future: PhantomData::<fn() -> Fut>,
+        };
+        let function: Box<dyn ProducerFutureFactory> = Box::new(wrapper);
+        ProducerFactory::from_parts(function, allocation)
     }
 }
 
