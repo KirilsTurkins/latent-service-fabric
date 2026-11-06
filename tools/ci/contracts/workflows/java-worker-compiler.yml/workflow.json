@@ -1,0 +1,13 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {"cancel-in-progress": false, "group": "java-worker-compiler-${{ github.ref }}-${{ github.sha }}"},
+    "name": "Focused published Java worker qualification",
+    "on": {"push": {"branches": ["fix/java-string-amplifier-20261106"]}},
+    "permissions": {"contents": "read"}
+  },
+  "requiredJobs": ["compiler"],
+  "reviewReason": "Replace the temporary observation-only refusal diagnostic with the unchanged production compiler and signed worker-library qualification; no bypasses or new mandatory repository-wide lane.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-worker-compiler.yml"
+}

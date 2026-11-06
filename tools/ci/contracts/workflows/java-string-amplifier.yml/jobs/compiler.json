@@ -1,0 +1,51 @@
+{
+  "definition": {
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "Pinned split-loader C frontend and intrinsic refusal controls",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-java",
+        "with": {
+          "distribution": "temurin",
+          "java-version": "25.0.4+101.0.LTS"
+        }
+      },
+      {
+        "name": "Compile the fixed split-loader control and refusal cases",
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_java_amplifier -v\npython3 -B tools/qualify_java_amplifier.py --output \"$RUNNER_TEMP/java-amplifier\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded compiler controls without guest execution",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "java-amplifier-${{ github.sha }}",
+          "path": "${{ runner.temp }}/java-amplifier/result.json\n${{ runner.temp }}/java-amplifier/commands.json\n${{ runner.temp }}/java-amplifier/commands/logs/**\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 15
+  },
+  "jobId": "compiler",
+  "kind": "job",
+  "reviewReason": "Retain the locked compiler emitter controls, negative cases and bounded observations.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-string-amplifier.yml"
+}
