@@ -23,7 +23,7 @@ jobs:
       - name: Observe the original gates and bounded native demand
         run: |
           python3 -m pip install --requirement tools/requirements.lock
-          python3 -B .github/pr1657_peer_observation.py
+          python3 -B .github/pr1657_peer_refusal.py
       - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
         if: always()
         with:
