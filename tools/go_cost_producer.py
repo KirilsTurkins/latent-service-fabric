@@ -27,7 +27,7 @@ SHA = re.compile(r'[0-9a-f]{40}\Z')
 DIGEST = re.compile(r'sha256:[0-9a-f]{64}\Z')
 RELEVANT_PREFIXES = ('apps/', 'crates/', 'examples/', 'sdk/',
                      'wit/', 'schemas/', '.cargo/', 'tools/')
-RELEVANT_FILES = (WORKFLOW, 'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml',
+RELEVANT_FILES = (WORKFLOW, 'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', 'LICENSE', 'NOTICE',
                   'docs/component-development/go-authoring.md')
 # These are downstream consumer controls, not inputs to the normal Go producer.
 CONSUMER_ONLY = frozenset(('tools/go_cost_producer.py', 'tools/qualify_go_runtime_costs.py',

@@ -264,7 +264,10 @@ class GoRuntimeCosts(unittest.TestCase):
 
     def test_producer_source_and_workflow_are_bound_to_consumer_before_download(self):
         import base64
+        from tools.go_capsule_build import RECIPE
         owner = reference.producer_selection
+        self.assertTrue(RECIPE)
+        self.assertEqual([path for path in RECIPE if not owner.relevant(path)], [])
         producer, consumer = 'a' * 40, 'b' * 40
         comparison = {'status': 'ahead', 'base_commit': {'sha': producer},
                       'merge_base_commit': {'sha': producer},
@@ -286,7 +289,10 @@ class GoRuntimeCosts(unittest.TestCase):
         self.assertEqual(selected['sourceComparison']['consumerHead'], consumer)
         self.assertEqual(selected['sourceComparison']['relevantChangedFiles'], 0)
         for row in ({'filename': 'tools/requirements.lock'}, {'filename': 'crates/latent-core/src/budget.rs'},
-                    {'filename': 'docs/other.md', 'previous_filename': owner.WORKFLOW}):
+                    {'filename': 'LICENSE'}, {'filename': 'NOTICE'},
+                    {'filename': 'docs/other.md', 'previous_filename': owner.WORKFLOW},
+                    {'filename': 'docs/other.md', 'previous_filename': 'LICENSE'},
+                    {'filename': 'docs/other.md', 'previous_filename': 'NOTICE'}):
             with self.subTest(row=row), self.assertRaisesRegex(RuntimeError, 'Go-cost-producer-source-'):
                 owner.validate_comparison(dict(comparison, files=[row]), producer, consumer)
         with self.assertRaisesRegex(RuntimeError, 'nonancestor-comparison'):
@@ -320,11 +326,16 @@ class GoRuntimeCosts(unittest.TestCase):
                 result = owner.current_head()
             self.assertEqual(command.call_count, 4)
             self.assertIn('--ignored', command.call_args_list[3].args[0])
+            for path in ('LICENSE', 'NOTICE'):
+                self.assertIn(path, command.call_args_list[2].args[0])
+                self.assertIn(path, command.call_args_list[3].args[0])
             return result
         self.assertEqual(inspect(untracked=b'tools/go_cost_producer.py\0'), 'a' * 40)
         for field, value in (('changes', b'tools/ci/contracts/python/other.json\0'),
                              ('untracked', b'tools/untracked-helper.py\0'),
-                             ('ignored', b'tools/__pycache__/unexpected.pyc\0')):
+                             ('ignored', b'tools/__pycache__/unexpected.pyc\0'),
+                             *((field, path.encode() + b'\0') for field in ('changes', 'untracked', 'ignored')
+                               for path in ('LICENSE', 'NOTICE'))):
             with self.subTest(field=field), self.assertRaisesRegex(RuntimeError, 'Go-cost-producer-un'):
                 inspect(**{field: value})
 
