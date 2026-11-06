@@ -8,6 +8,35 @@ consumer's exact historical-source guard, with no host rebuild or normal27
 repeat. The exact f54b862fa9ad592832909c28e337223698222e9c lane passed all six
 real signed cases; its scope and measurements are recorded below.
 
+## Running the current reference
+
+The `Actual Go live stack and GC reference` workflow accepts an optional
+`normal_producer_run` input. Leave it blank to select the most recent
+successful development push of the maintained `Go guest qualification` with
+a retained upstream artifact. Or provide the ID of a completed successful
+development run of that workflow, including a manually dispatched run. If no
+current retained producer exists, run `Go guest qualification` on
+`development`, wait for its complete successful result, then dispatch this
+reference with that run ID. Selection never turns a failed or skipped owner
+into a successful producer, and it does not fall back when the selected
+producer's source is stale.
+
+Before restoring the normal products, the workflow checks the original
+qualification and retention steps, the artifact's run, repository, ID, size
+and SHA-256, and the exact producer workflow recipe at the run's commit. The
+pinned downloader fails if the downloaded archive's digest differs. A bounded
+commit comparison rejects changes to the normal producer's application,
+runtime, SDK, example, schema, WIT, workspace and tool source; only the
+downstream cost controls and their own CI contract records are separate.
+Tracked changes and ordinary or ignored untracked files in the relevant source
+paths are refused. The independently recorded
+normal source inventory and five binary identities must also match the current
+checkout before any restored binary is enabled. The comparison rejects a
+non-ancestor or a 300-file API result rather than assuming a complete diff.
+These checks do not attest implicit compiler inputs or create new signed
+measurements. The earlier signed observations remain attributed to their
+original historical producer.
+
 The default-profile baseline and the managed-profile baseline expose bounded
 `runtime.MemStats` and goroutine counts from actual fresh invocations. The
 managed stack case keeps two ordinary goroutine stacks live across recursive
