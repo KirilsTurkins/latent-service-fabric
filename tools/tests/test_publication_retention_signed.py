@@ -11,10 +11,12 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest import mock
 
 from tools.phase2_operator_process import WorkflowError
 from tools.run_publication_retention_signed import (
-    assert_hidden, audit_attempts, checked_receipt, copy_stopped_installation, fixture_identity, lookup, selected,
+    BoundedClient, Client, assert_hidden, audit_attempts, checked_receipt, copy_stopped_installation,
+    fixture_identity, lookup, selected,
 )
 
 PUBLICATION = "publication:sha256:" + "1" * 64
@@ -42,6 +44,17 @@ class Reply:
 
 
 class ControlTests(unittest.TestCase):
+    def test_cli_call_limit_is_checked_before_spawning_the_next_process(self):
+        client = object.__new__(BoundedClient)
+        client.calls = 63
+        with mock.patch.object(Client, "call", return_value={"ok": True}) as execute:
+            self.assertEqual(client.call("node", "get", "test"), {"ok": True})
+            self.assertEqual(execute.call_count, 1)
+            client.calls = 64
+            with self.assertRaisesRegex(WorkflowError, "signed-retention-call-limit"):
+                client.call("node", "get", "test")
+            self.assertEqual(execute.call_count, 1)
+
     def test_fixture_identity_is_order_independent_bounded_and_changes_with_content(self):
         original = {"a": "sha256:first", "b": "sha256:second"}
         self.assertEqual(fixture_identity(original), fixture_identity(dict(reversed(list(original.items())))))

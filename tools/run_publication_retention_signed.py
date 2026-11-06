@@ -36,6 +36,7 @@ MAX_FILES = 4096
 MAX_ENTRIES = 8192
 MAX_COPY_BYTES = 256 * 1024 * 1024
 DEADLINE_SECONDS = 240
+MAX_CLI_CALLS = 64
 COLLECTORS = (
     "tools/run_publication_retention_signed.py", "tools/run_publication_workflow.py",
     "tools/run_phase2_operator_workflow.py", "tools/phase2_operator_process.py",
@@ -55,6 +56,12 @@ def fixture_identity(entries):
     encoded = json.dumps(entries, sort_keys=True, separators=(",", ":")).encode("utf-8")
     require(len(encoded) <= 262144, "fixture-identity-bytes")
     return {"files": len(entries), "sha256": "sha256:" + hashlib.sha256(encoded).hexdigest()}
+
+
+class BoundedClient(Client):
+    def call(self, *arguments, **options):
+        require(self.calls < MAX_CLI_CALLS, "signed-retention-call-limit")
+        return super().call(*arguments, **options)
 
 
 def selected(client, publication):
@@ -220,7 +227,7 @@ def run(args):
                 directory = work / "node"
                 directory.mkdir(mode=0o700)
                 deadline = time.monotonic() + DEADLINE_SECONDS
-                client = Client(args.cli.resolve(strict=True), work, cancellation, deadline)
+                client = BoundedClient(args.cli.resolve(strict=True), work, cancellation, deadline)
                 identities = build_identity(args, cancellation, deadline)
                 collectors = collector_identity(cancellation, deadline)
                 config = configure_node(directory, fixture, TENANT)
@@ -246,7 +253,10 @@ def run(args):
                                              "--catalog-fence", fence, "--target", blue["id"] + "=" + target["expectedGeneration"])
                     pin_receipt = checked_receipt(pin_result, "pin", "retention-updated", "pin-blue", fence, target)
                     _, _, pinned_blue = selected(client, blue["id"])
-                    require(isinstance(pinned_blue, dict) and pinned_blue.get("operationId") == "pin-blue",
+                    require(isinstance(pinned_blue, dict) and pinned_blue.get("operationId") == "pin-blue"
+                            and pinned_blue.get("pinnedGeneration") == target["expectedGeneration"]
+                            and isinstance(pinned_blue.get("actor"), dict)
+                            and pinned_blue["actor"].get("subject") == ACTOR,
                             "blue-pin-not-retained")
                     generation = record(client, green)["generation"]
                     retired = client.call("release", "retire", "--publication", green["id"],
@@ -276,6 +286,8 @@ def run(args):
                                             "--maximum-bytes-hashed", "67108864", "--maximum-wait-ms", "10000")
                     reclamation = checked_receipt(reclaimed, "reclaim", "namespaces-reclaimed", "delete-green", fence, target)
                     require(reclamation["command"].get("reclamationCatalogFence") == current
+                            and reclamation["command"].get("maximumFiles") == 1024
+                            and reclamation["command"].get("maximumBytesHashed") == "67108864"
                             and isinstance(reclamation.get("reclaimed"), dict)
                             and reclamation["reclaimed"].get("physicalDiskBlocksFreed") is None
                             and reclamation["reclaimed"].get("sharedBlobsRetained", 0) > 0,
@@ -320,7 +332,7 @@ def run(args):
                     stop(client, node)
                     shutdown.append(stopped_record(node))
                     node = None
-                    require(client.calls <= 64 and time.monotonic() < deadline, "signed-retention-budget")
+                    require(client.calls <= MAX_CLI_CALLS and time.monotonic() < deadline, "signed-retention-budget")
                     require(inventory(fixture) == original_fixture, "signed-fixture-mutated")
                     require(tree_inventory(directory, client, maximum_bytes=MAX_COPY_BYTES,
                                            maximum_entries=MAX_ENTRIES) == original_node_inventory,
