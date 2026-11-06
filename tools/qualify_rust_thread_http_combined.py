@@ -30,6 +30,20 @@ EXTRA_MATERIALS = ('tools/rust_thread_http_combined_package.py', 'tools/rust_thr
     'tools/rust_combined_diagnostic_envelope.py', 'tools/rust_original_delta.py')
 
 
+# Only this diagnostic build opts into optimized source-proof code. Debug
+# assertions and overflow checks remain enabled by the owner environment.
+VERIFIER_OPTIMIZATION = 'profile.dev.package.latent-component-threading.opt-level=3'
+
+
+def build_native(commands):
+    commands.run('build-current-feature-selected-host', 'cargo',
+        '--config', ROOT / '.cargo/managed-guest.toml', '--config', VERIFIER_OPTIMIZATION,
+        'build', '--locked', '-p', 'latent', '-p', 'latentd', '--bins',
+        '-p', 'latent-packaging', '--example', 'package', '--example', 'capsule_contracts',
+        '-p', 'latent-policy', '--example', 'capsule_authoring', '--features',
+        'latentd/development-rust-http-combined,latent-packaging/development-rust-http-combined')
+
+
 def qualify(compiler: Path, output: Path, revision: str) -> dict:
     require(sys.platform == 'linux' and re.fullmatch('[0-9a-f]{40}', revision) is not None,
             'rust-combined-linux-exact-source-required')
@@ -53,16 +67,14 @@ def qualify(compiler: Path, output: Path, revision: str) -> dict:
         version = commands.run('rust-version', 'rustc', '--version').decode().strip()
         require(version.startswith('rustc 1.97.1 ('), 'rust-combined-pinned-host-compiler')
         stage = 'build-current-feature-selected-host'
-        commands.run(stage, 'cargo', '--config', ROOT / '.cargo/managed-guest.toml', 'build', '--locked',
-            '-p', 'latent', '-p', 'latentd', '--bins', '-p', 'latent-packaging', '--example', 'package',
-            '--example', 'capsule_contracts', '-p', 'latent-policy', '--example', 'capsule_authoring',
-            '--features', 'latentd/development-rust-http-combined,latent-packaging/development-rust-http-combined')
+        build_native(commands)
         native = {name: target / 'debug' / relative for name, relative in PRODUCTS.items()}
         identities = {name: file_identity(path, 512 * 1024 * 1024) for name, path in native.items()}
         require(source == source_identity(ROOT) and common == host_materials(ROOT)
                 and extras == {name: file_identity(ROOT / name, 4 * 1024 * 1024) for name in EXTRA_MATERIALS},
                 'rust-combined-host-build-source-unchanged')
         record.update(compiler=version, nativeProducts=identities,
+            sourceVerifierOptimization=3, hostDebugAssertions=True, hostOverflowChecks=True,
             nativeBuildFeature='latentd/development-rust-http-combined,latent-packaging/development-rust-http-combined')
         write_json(output / 'native-origin.json', record)
         stage = 'assemble-explicit-retained-compiler-projection'

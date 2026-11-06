@@ -14,6 +14,23 @@ def descriptors():
 
 
 class CombinedGrantControls(unittest.TestCase):
+    def test_only_diagnostic_source_verifier_build_is_optimized(self):
+        from unittest.mock import Mock
+        from tools import qualify_rust_thread_http_combined as qualification
+
+        commands = Mock()
+        qualification.build_native(commands)
+        commands.run.assert_called_once()
+        argv = commands.run.call_args.args
+        self.assertEqual(argv[:2], ('build-current-feature-selected-host', 'cargo'))
+        configurations = [argv[index + 1] for index, word in enumerate(argv) if word == '--config']
+        self.assertEqual(configurations, [qualification.ROOT / '.cargo/managed-guest.toml',
+                         'profile.dev.package.latent-component-threading.opt-level=3'])
+        self.assertIn('--locked', argv)
+        self.assertNotIn('--release', argv)
+        self.assertEqual(argv[argv.index('--features') + 1],
+                         'latentd/development-rust-http-combined,latent-packaging/development-rust-http-combined')
+
     def test_transport_wait_is_separate_from_the_original_guest_budget(self):
         import json
         from pathlib import Path

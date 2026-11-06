@@ -27,7 +27,13 @@ The guest budget remains 5,000 ms, 16 MiB, 1,000,000,000 fuel and eight outbound
 requests; the successful programme must consume exactly four requests.
 Provider policy ceilings are unchanged. The diagnostic controller alone uses
 a finite 120,000 ms invocation RPC wait to include cold proof/compilation and
-terminal result delivery. This is not extra guest execution time. The overall
+terminal result delivery. This is not extra guest execution time: cold
+preparation still consumes the original activation deadline. The diagnostic
+build additionally optimizes `latent-component-threading` at level 3, alongside
+the existing managed-guest compiler/parser optimizations, while preserving
+host debug assertions and overflow checks. It still independently recomputes
+the same source and final graph proof; no proof is cached outside its owned
+preparation or skipped to satisfy the deadline. The overall
 controller, process and peer lifetimes remain bounded, and there is no
 invocation retry. An unknown RPC outcome fails even if later evidence appears.
 
