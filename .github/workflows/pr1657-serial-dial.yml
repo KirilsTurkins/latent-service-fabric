@@ -39,24 +39,10 @@ jobs:
           cache-on-failure: false
           save-if: false
       - name: Add closed numeric host progress observations only
-        shell: bash
         run: |
-          set -euo pipefail
           mkdir -p "$RUNNER_TEMP/progress"
           python3 -m pip install --requirement tools/requirements.lock
-          python3 - <<'PY'
-          from pathlib import Path
-          def replace(path, old, new):
-              p = Path(path); data = p.read_text(); assert data.count(old) == 1, (path, old)
-              p.write_text(data.replace(old, new))
-          path = 'crates/latent-wasmtime/src/host/streaming_http/body.rs'
-          replace(path, 'let rep = source.rep();', 'let rep = source.rep();\n                eprintln!("LSF1657 read-begin {} {}", rep, maximum);')
-          replace(path, 'let result = value.read(maximum as usize).await;', 'let result = value.read(maximum as usize).await;\n                        eprintln!("LSF1657 read-ready {} {}", rep, u32::from(result.is_ok()));')
-          replace(path, 'let chunk = pending.reservation.rep();', 'let chunk = pending.reservation.rep();\n                        eprintln!("LSF1657 read-return {} {}", rep, chunk);')
-          replace(path, 'checkpoint(&mut store)?;\n                    let result = store\n', 'checkpoint(&mut store)?;\n                    eprintln!("LSF1657 chunk-bytes {}", value.rep());\n                    let result = store\n')
-          path = 'tools/rust_thread_http_sibling_node.py'
-          replace(path, '        process.close()\n', '        node.drain()\n        import re\n        trace = [line.decode("ascii") for line in bytes(node.buffers[1]).splitlines()\n                 if re.fullmatch(rb"LSF1657 [a-z-]+ [0-9]+(?: [0-9]+)?", line)]\n        require(len(trace) <= 256, "closed-progress-observation-bound")\n        write_json(output / "http-progress.json", trace)\n        process.close()\n')
-          PY
+          python3 -B .github/pr1657_progress.py
           git diff --binary --full-index > "$RUNNER_TEMP/progress/diagnostic.patch"
       - name: Retrieve authenticated original compiler materials
         env:
