@@ -1,0 +1,72 @@
+{
+  "formatVersion": 1,
+  "schemaVersion": "latent.java.poststage-http-capture-custody.v1",
+  "scope": "Clean compiler capture for staged state and deferred intent followed by forbidden immediate HTTP; no execution claim",
+  "captures": {
+    "formatVersion": 1,
+    "sourceCommit": "a1b0b7c7190610dca57171db2c31abb636935925",
+    "sourceTree": "b2cfa7bec53262e2cf5362e4f2562fe4e83f587f",
+    "nativeIdempotencyProfile": "qualified-http-v1:5337619eb24838242cf05797a246bba5e50547f3f12252ed9b81e138ca8a259b",
+    "variants": {
+      "put-once-poststage-http-denial": {
+        "materials": {
+          "component": {
+            "sha256": "sha256:61a1dd33ea823f5b4a27cf209906af9b2fcb50a2c14adc9cabe84359b2406194",
+            "bytes": 1058138
+          },
+          "report": {
+            "sha256": "sha256:b9f72a537bcca3b382fb290f6ec4ce0ba58b5e8e201c1edcbb2b01c853c43f67",
+            "bytes": 86736
+          },
+          "compilerInputs": {
+            "sha256": "sha256:281a0b32d7b8a1821fad5fe1f59bae659df0af80e42b69b51c2d5c7004e7b098",
+            "bytes": 2912106
+          },
+          "sourceInputs": {
+            "sha256": "sha256:dff9622b08afb169549ef1cba09023450ca2e194ed9aa448a4bf259c0e028d57",
+            "bytes": 41422
+          },
+          "sourceArchive": {
+            "sha256": "sha256:99d894da33a70e907445415122c2f43926bc98a28d1d354e42bfe19f987baa9a",
+            "bytes": 216914
+          },
+          "recipeInputs": {
+            "sha256": "sha256:074865d00f55977e819748e387937ab8ea988c13bc4c570ca022e32239b6402e",
+            "bytes": 11210
+          },
+          "companion": {
+            "sha256": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d",
+            "bytes": 959
+          },
+          "capsuleSource": {
+            "sha256": "sha256:492d21667f098f4d0a2879e4dfe473543d667884b2cf28073b4b5914e2543b04",
+            "bytes": 4601
+          },
+          "currentHttpMarker": {
+            "sha256": "sha256:fc1d027365f876578c95296cf57e2a3467c2a5a9358544251462e472a6a094e2",
+            "bytes": 176
+          },
+          "requirements": {
+            "sha256": "sha256:17166184306ac8a81d3d0e13256afc64550403b1a6fe18e02386035dd9a7ffb8",
+            "bytes": 787
+          },
+          "applicationSchemaInputs": {
+            "sha256": "sha256:e4d0e234295fb4b9c1ec931721f3bd32a28d784ac563d032e2a620804c5deb62",
+            "bytes": 512
+          },
+          "poststageDeclaration": {
+            "sha256": "sha256:462971666047cb6b3e0e530b661d18062f59542f1aaff0aa23c10f389e3b857e",
+            "bytes": 645
+          }
+        },
+        "nativeEffectProfile": "current-v2-http",
+        "nativeEffectOperation": "http"
+      }
+    }
+  },
+  "selectionDigest": "sha256:6121e0afefa8b9ea1e0630e7b4c05dcc8652d41208bfeab1eb087ca78796968c",
+  "signingQualified": false,
+  "executionQualified": false,
+  "postStageRollbackQualified": false,
+  "packagedDistributionQualified": false
+}

@@ -215,6 +215,14 @@ offsets, so it cannot recurse through error-string construction again. Changed
 bodies or declarations do not receive this input-specific argument, and other
 Java callees still require their ordinary transitive proof.
 
+ClassInfo.enumConstantCount and ClassInfo.enumConstant are admitted only for
+the authenticated enum-reflection call path when the guarded activation compiler
+captures the compiler index. The generated C is preprocessed, checked against
+that index, and sealed with receiver and index checks before linking. Direct or
+otherwise unproven calls are refused. Other previously admitted metadata helpers
+retain their existing valid-input assumptions; this guard does not establish their
+receiver or index safety.
+
 The finite runtime families have these arguments under the existing owned
 C/OWN_GC ABI and valid heap/metadata invariants:
 

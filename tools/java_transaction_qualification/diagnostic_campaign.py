@@ -1,9 +1,9 @@
 """Observe post-stage failures on the existing command/HTTP/node owners.
 
 Running, request loss, charged counters and process exit are never staging or
-abort evidence. A case needs the original host's captured-intent witness,
-terminal accounting AND durable server-issued abort fence. Controlled crash
-qualification remains separate from this source-only collector.
+abort evidence. Terminal cases need the original host's captured-intent witness,
+terminal accounting AND durable server-issued abort fence. The controlled
+precommit crash preserves an unknown outcome rather than inventing abort proof.
 """
 from __future__ import annotations
 
@@ -33,6 +33,13 @@ STAGING_FIELDS = {"schemaVersion", "activationSerial", "commandId", "attemptId",
 def stage_write_bytes(operation):
     require(operation in {"put-once", "http"}, "explicit-captured-intent-operation")
     return STAGE_WRITE_BYTES - len("put-once") + len(operation)
+
+
+def same_pending_after_crash(before, after):
+    """Compare only original stable identity; a restarted clock may change horizons."""
+    require(all(before[name] == after[name] for name in
+                ('key', 'commandId', 'attemptId', 'fingerprintSha256', 'source')),
+            'crashed-original-command-identity-changed')
 
 
 def unsigned(value):
@@ -382,6 +389,56 @@ class DiagnosticCampaign:
                 "transportStatus": observed["status"], "terminal": terminal, "command": record, "result": result,
                 "beforeQuery": before_value, "afterQuery": after_value,
                 "beforeRecipient": before_recipient, "afterRecipient": after_recipient}
+
+    def crash_before_commit(self, selector):
+        from .campaign import command_input, precondition
+        c = self.campaign
+        _, before_value = c.query(0)
+        before_recipient = c.recipient_observation()
+        before_roots = roots(self.client)
+        key = 'java-post-stage-crash'
+        pending = PendingHttp(c, original_key=key, body=command_input(int(selector)),
+                              condition=precondition(before_value))
+        try:
+            until = min(self.client.deadline, time.monotonic() + 10)
+            for _ in range(8):
+                added = roots(self.client) - before_roots
+                require(len(added) <= 1, 'unambiguous-original-crash-root')
+                if added:
+                    identity = added.pop()
+                    break
+                require(pending.thread.is_alive() and time.monotonic() < until,
+                        'original-command-not-running-for-crash')
+                time.sleep(0.05)
+            else:
+                raise ValueError('original-crash-root-not-observed')
+            before = self.original_attempt(pending, key, until)
+            live = self.live_staging(pending, identity, before, until)
+            c.node.crash()
+        finally:
+            pending.close()
+        lifecycle.admission_lease_interval(self.client)
+        c.node.start(c.full_path, current_session='diagnostic-after-crash')
+        after_roots = roots(self.client)
+        with lifecycle.as_user(self.client):
+            observed = self.client.call('transaction', 'lookup', *lifecycle.namespace_arguments(self.publication),
+                '--operation', 'update', '--client-key', key)
+        require(read_observer.kind(observed, 'transaction lookup') == 'success'
+                and observed['outcomeKnown'] is False and set(observed['data']) == {'command'},
+                'crashed-original-outcome-remains-unknown')
+        after = read_observer.pending_claim(observed['data']['command'], self.publication,
+                                             self.input.item.component_digest, key)
+        same_pending_after_crash(before, after)
+        require(roots(self.client) == after_roots, 'restart-and-lookup-must-not-run-a-guest')
+        _, after_value = c.query(0)
+        after_recipient = c.recipient_observation()
+        unchanged(before_value, after_value, before_recipient, after_recipient, current_http=True)
+        self.client.evidence.passed('actual-precommit-crash-recovery', {
+            'originalClientKey': key, 'originalActivationId': identity, 'originalPending': before,
+            'originalStagingWitness': live, 'recoveredPending': after,
+            'beforeQuery': before_value, 'afterQuery': after_value,
+            'beforeRecipient': before_recipient, 'afterRecipient': after_recipient,
+            'automaticRetry': False, 'crashBeforeCommitQualified': True})
 
     def execute(self):
         c = self.campaign

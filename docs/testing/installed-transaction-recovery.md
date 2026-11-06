@@ -193,6 +193,19 @@ control uses the existing authenticated node operator, original owner epoch and
 revision, durable audit and immutable receipt lookup. Logical pause alone cannot
 satisfy the physical drain required before backup.
 
+The separate `tools/run_java_precommit_crash_qualification.py` uses seven bounded
+node sessions in its own disposable installation. It observes a staged pending
+attempt, kills and positively reaps the original node, and checks the same
+unknown command identity after restart without retry. Keeping that unresolved
+attempt separate lets the terminal migration programme retain its normal
+quiescence requirements.
+
+The current disposable conductor declares a 30-second state startup reservation,
+within the node's supported range, covering catalog opening as well as protected
+store startup. Earlier runs used five seconds and retain their original
+configuration and outcomes; this setting does not extend invocation deadlines
+or prove the cause of an earlier startup refusal.
+
 ## Collector observations and uncertainty
 
 Dispatcher mutation and receipt lookup retain the original operation, action,

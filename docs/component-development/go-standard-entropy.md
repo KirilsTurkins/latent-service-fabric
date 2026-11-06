@@ -54,8 +54,8 @@ completed call has the existing physical-owner sample; node shutdown must be
 clean and reaped. No random payload is exported in a receipt.
 
 The Go workflow appends source controls and this single greeting build/campaign
-after normal captured-library qualification. Existing commands, the 45-minute
-job limit, invocation budgets and runtime selection remain unchanged. Actual
+after normal captured-library qualification. Existing commands, invocation budgets
+and runtime selection remain unchanged. The job limit is 60 minutes. Actual
 component results for the retained lane passed. Concurrent Reader use, cancellation callbacks,
 fresh cross-tenant execution, strict transactional facility behavior and the
 remaining six-language resource/clock/entropy matrix remain separate #681/#736
@@ -108,7 +108,7 @@ new normal 27-call programme against the current host, then captures and builds
 only the current entropy greeting offline and requires all 43 outcomes. Its
 receipt distinguishes historical compiler/CLI source, current native host
 source and the fresh component source. Pending jobs establish no acceptance.
-The original complete 45-minute workflow remains mandatory and unchanged.
+The original complete workflow remains mandatory; its job limit is 60 minutes.
 
 ## Retained signed observation
 

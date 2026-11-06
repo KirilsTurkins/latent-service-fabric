@@ -73,3 +73,30 @@ Representative source tests (not a complete coverage inventory):
 - [Standalone management services](../../docs/reference/management-services.md)
 - [Workspace package index](../README.md)
 - [Architecture index](../../ARCHITECTURE.md)
+
+## Publication reference exclusion
+
+`bind_publication_reference_authority` attaches this actual `Arc`-owned native
+control store to the matching artifact lifecycle owner. The standalone composes
+this binding at startup. Read-only assessment and durable tombstone commit hold the native writer
+and current catalog while checking a budgeted deployment inverse index, stored
+HTTP targets, and retained rollout base/candidate targets. Missing, foreign,
+dropped or unconfirmed owners fail closed; reference absence is not deletion
+permission. Tombstones remove visibility without unlinking content or refunding
+capacity. The separate native capsule/web reclamation stage holds the same actual
+writer/current revision through rechecking, durable cleanup intent, physical
+unlink/synchronization and completion receipt. HTTP recovery validates retained
+static-web publication identities without creating a serving grant: terminal
+negative references remain valid, but a mismatched older control snapshot cannot
+reintroduce a tombstoned or reclaimed target. The authenticated management/CLI
+adapter now requires finite durable audit for publication mutations; see the
+[operator workflow](../../docs/operations/publication-deletion.md). Independent
+history compaction and full signed public-workflow qualification remain separate.
+Native tests also refuse an older control catalog that references tombstoned
+history. See the [retention and assessment contract](../../docs/reference/publication-retention-pins.md).
+
+The bound native publication-reference owner also guards the read-only
+`inspect_publication_reclamation` assessment of a retained original tombstone
+operation. Its writer/current revision remain held while selected publication
+files and canonical blobs are verified. This does not authorize content unlink
+or change the control store's deployment, HTTP-trigger or rollout retention.

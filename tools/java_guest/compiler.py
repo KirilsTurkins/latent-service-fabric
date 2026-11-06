@@ -2,6 +2,7 @@
 from __future__ import annotations
 import json
 import importlib.util
+import hashlib
 import math
 import os
 import re
@@ -13,7 +14,7 @@ import time
 import tomllib
 
 from tools.build_observation import build_environment, file_identity
-from tools.build_process import BuildProcessError, run_bounded_result
+from tools.build_process import BuildProcessError, run_bounded_result, run_bounded_input_result
 from tools.java_guest.bindings import generate
 from tools.java_guest.surface import surface as wit_surface, matches as matching_wit_surface
 from tools.java_guest.sdk import install as install_sdk
@@ -211,7 +212,8 @@ class Compiler:
         from tools.java_guest.lock import verify
         self.binding_digest = verify(self.run, self.sdk, self.platform, self.directory / "sdk-reference")
 
-    def run(self, stage: str, tool: str, *arguments, cwd: Path | None = None) -> str:
+    def run(self, stage: str, tool: str, *arguments, cwd: Path | None = None,
+            input_bytes: bytes | None = None) -> str:
         if getattr(self, '_parent_deadline', None) is not None:
             self.deadline = min(self.deadline, self._parent_deadline - 5)
         remaining = self.deadline - time.monotonic()
@@ -222,9 +224,14 @@ class Compiler:
         exit_code = None
         failure = None
         try:
-            result = run_bounded_result(argv, cwd or self.directory, self.environment,
-                                 timeout_seconds=min(remaining, 595 if getattr(self, '_parent_deadline', None) is not None else 600),
-                                 max_output_bytes=4 * 1024 * 1024)
+            timeout = min(remaining, 595 if getattr(self, '_parent_deadline', None) is not None else 600)
+            if input_bytes is None:
+                result = run_bounded_result(argv, cwd or self.directory, self.environment,
+                                            timeout_seconds=timeout, max_output_bytes=4 * 1024 * 1024)
+            else:
+                result = run_bounded_input_result(argv, cwd or self.directory, self.environment,
+                    timeout_seconds=timeout, max_output_bytes=4 * 1024 * 1024,
+                    payload=input_bytes, max_input_bytes=16 * 1024 * 1024)
             exit_code = result.returncode
             log = result.stdout + b"\n" + result.stderr
             self.retained_bytes += len(log)
@@ -240,11 +247,51 @@ class Compiler:
         finally:
             record = {"stage": stage, "command": argv, "exitCode": exit_code,
                       "seconds": round(time.monotonic() - started, 6)}
+            if input_bytes is not None:
+                record['inputBytes'] = len(input_bytes)
+                record['inputSha256'] = hashlib.sha256(input_bytes).hexdigest()
             if failure is not None: record["processFailure"] = failure
             self.records.append(record)
             # __init__ can fail before the caller receives the Compiler. Keep
             # each command's bounded exit/cleanup record beside its log anyway.
             write_json(self.directory / (str(len(self.records) - 1) + "-" + stage + ".command.json"), record)
+
+    def capture_preprocessed(self, *arguments, cwd: Path | None = None) -> bytes:
+        """Capture C preprocessor output as bounded source, not diagnostic log."""
+        if getattr(self, '_parent_deadline', None) is not None:
+            self.deadline = min(self.deadline, self._parent_deadline - 5)
+        remaining = self.deadline - time.monotonic()
+        if remaining <= 0: raise ValueError("Java build deadline exceeded")
+        argv = [str(self.paths['clang']), *map(str, arguments)]
+        started = time.monotonic()
+        exit_code = None
+        failure = None
+        output = None
+        try:
+            result = run_bounded_result(argv, cwd or self.directory, self.environment,
+                timeout_seconds=min(remaining, 595 if getattr(self, '_parent_deadline', None) is not None else 600),
+                max_output_bytes=16 * 1024 * 1024)
+            exit_code = result.returncode
+            self.retained_bytes += len(result.stderr)
+            if self.retained_bytes > 16 * 1024 * 1024:
+                raise ValueError("Java build diagnostic retention exceeded 16 MiB")
+            (self.directory / (str(len(self.records)) + "-c-preprocess.log")).write_bytes(result.stderr)
+            if result.returncode:
+                raise ValueError("Java compiler stage failed: c-preprocess; see retained log")
+            output = result.stdout
+            return output
+        except BuildProcessError as error:
+            failure = error.reason
+            raise
+        finally:
+            record = {"stage": "c-preprocess", "command": argv, "exitCode": exit_code,
+                      "seconds": round(time.monotonic() - started, 6)}
+            if output is not None:
+                record['sourceBytes'] = len(output)
+                record['sourceSha256'] = hashlib.sha256(output).hexdigest()
+            if failure is not None: record["processFailure"] = failure
+            self.records.append(record)
+            write_json(self.directory / (str(len(self.records) - 1) + "-c-preprocess.command.json"), record)
 
     def prepare_method_analysis(self, project, destination, origin_sources, application_source_names, *, required):
         """Original strict activation inputs; passive-only failures stay unknown.
@@ -294,6 +341,10 @@ class Compiler:
         c_failure_context.selection(failure_contexts)
         if type(activation_profile) is not bool:
             raise ValueError("Java activation profile requires an explicit boolean selection")
+        if activation_profile and type(self) is not Compiler:
+            # The separately frozen diagnostic compiler variants authenticate
+            # the original all.c command and are not qualified for sealed C.
+            raise ValueError("guarded Java enum lowering is not qualified for diagnostic compiler variants")
         if type(fiber_io_profile) is not bool or fiber_io_profile and not activation_profile:
             raise ValueError("Java fiber I/O requires an explicit activation profile")
         if type(server_profile) is not bool or server_bridge is not None and not server_profile:
@@ -470,6 +521,7 @@ class Compiler:
                 "sourceOriginDigest": digest(canonical(origins)),
                 "checkpointClassIndexDigest": digest(index), "checkpointClasses": index.decode("utf-8").splitlines(),
             })
+            self._guarded_enum_compile = True
             coroutine_profile = coroutine_patch.stage(self, project, destination)
         compiler_log = c_failure_context.teavm(self, project, failure_contexts)
         if method_queries is not None:
@@ -486,7 +538,12 @@ class Compiler:
         adapt = source_module(self.sdk / "tools/teavm_platform.py").adapt
         adaptation = adapt(generated)
         core, component = destination / "core.wasm", destination / "component.wasm"
-        c_failure_context.run(self, generated, failure_contexts, "-target", "wasm32-wasip1", "-std=c11", "-O2",
+        enum_guard_receipt = None
+        if activation_profile:
+            from tools.java_guest.enum_guard import run as guarded_c_run
+            enum_guard_receipt = guarded_c_run(self, generated, failure_contexts, destination, core)
+        else:
+            c_failure_context.run(self, generated, failure_contexts, "-target", "wasm32-wasip1", "-std=c11", "-O2",
                  *(["-DLSF_JAVA_ACTIVATION_PROFILE=1"] if activation_profile else []),
                  "-DLSF_TEAVM_WASM=1", "-DTEAVM_CUSTOM_LOG=1", "-mllvm", "-wasm-enable-sjlj", "-lsetjmp",
                  "-mllvm", "-wasm-use-legacy-eh=false", "-mexec-model=reactor", "-Wl,--no-entry",
@@ -513,6 +570,8 @@ class Compiler:
             details['wasiCompilerProfile'] = json.loads(self.wasi_compiler_profile)
         if coroutine_profile is not None:
             details['coroutineCompiler'] = coroutine_profile
+        if enum_guard_receipt is not None:
+            details['enumGuard'] = enum_guard_receipt
         if http_phase_record is not None:
             details['httpPhaseAdapter'] = http_phase_record
         if resource_profile is not None:

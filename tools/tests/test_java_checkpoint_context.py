@@ -28,7 +28,12 @@ class CheckpointContext(unittest.TestCase):
         self.assertEqual(len(coroutine_patch.ASYNC_CLASSES), 3)
         self.assertNotIn('asyncMethods', coroutine_patch.CHECKPOINT_VALIDATION.split('MethodReference checkpoint', 1)[1])
         self.assertIn('pending.size() == 65536', fixed)
-        self.assertEqual(fixed.count('++edges > 262144'), 2)
+        checkpoint = fixed.split('private void validateCheckpointCallers()', 1)[1].split(
+            'private boolean pinnedFiberEntry(', 1)[0]
+        guarded = fixed.split('private boolean guardedEnumCallers(', 1)[1].split(
+            'private boolean guardedEnumIndexCaptured', 1)[0]
+        self.assertEqual(checkpoint.count('++edges > 262144'), 2)
+        self.assertEqual(guarded.count('++edges > 262144'), 2)
         self.assertIn('method.getLevel() == org.teavm.model.AccessLevel.PRIVATE', fixed)
         self.assertIn('!method.hasModifier(ElementModifier.STATIC)', fixed)
         self.assertIn('!pinnedFiberEntry(method)', fixed)

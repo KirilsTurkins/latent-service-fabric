@@ -7,6 +7,7 @@ pub(crate) struct RecoveryContext(Value);
 impl RecoveryContext {
     pub(crate) fn from_operation(operation: &Operation, tenant: &str) -> Self {
         let selected = match operation {
+            Operation::PublicationMaintenance(value) => value.recovery(),
             Operation::Web(value) => value.recovery(),
             Operation::Trigger(value) => value.recovery(),
             Operation::Policy(value) => value.recovery(),

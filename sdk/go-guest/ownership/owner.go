@@ -43,8 +43,14 @@ func (o Owner[T]) Close(drop func(T)) {
 	if o.cell == nil {
 		panic("lsf: zero owner")
 	}
-	if o.cell.state.Load() == 2 {
-		return
+	if !o.cell.state.CompareAndSwap(0, 2) {
+		if o.cell.state.Load() == 2 {
+			return
+		}
+		panic("lsf: owner busy or consumed")
 	}
-	drop(o.Take())
+	value := o.cell.value
+	var empty T
+	o.cell.value = empty
+	drop(value)
 }

@@ -42,6 +42,20 @@ class CurrentJavaHttpInputs(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     authored_project(language, VARIANT, root / ('refused-' + language))
 
+            from tools.java_transaction_poststage_http import VARIANT as POSTSTAGE
+            profile = 'qualified-http-v1:' + 'a' * 64
+            later = authored_project('java', POSTSTAGE, root / 'poststage', java_current_http_profile=profile)
+            later_files = snapshot(later)
+            later_source = later_files[SOURCE]
+            later_call = later_source.index(b'Bindings.LatentHttpClient.send(')
+            self.assertLess(later_source.index(b'command.put(KEY'), later_call)
+            self.assertLess(later_source.index(b'.stage(command)'), later_call)
+            self.assertIn(HTTP_REQUIREMENTS, later_files)
+            self.assertIn(CURRENT_HTTP_PROFILE, later_files)
+            self.assertIs(read_json(later / 'java-poststage-http-denial-input.json')['postStageRollbackQualified'], False)
+            with self.assertRaises(ValueError):
+                authored_project('java', POSTSTAGE, root / 'missing-profile')
+
     def test_early_http_compiler_selection_is_exclusive_before_creating_output(self):
         from tools.compile_transaction_guests import compile_guests
         with tempfile.TemporaryDirectory() as temporary:
@@ -52,6 +66,13 @@ class CurrentJavaHttpInputs(unittest.TestCase):
                                      ('java', {'java_current_http_profile': 'qualified-http-v1:' + 'a' * 64})):
                 with self.assertRaises(ValueError):
                     compile_guests(language, output, java_early_http_denial=True, **options)
+                self.assertFalse(output.exists())
+            profile = 'qualified-http-v1:' + 'a' * 64
+            for language, options in (('java', {}), ('rust', {'java_current_http_profile': profile}),
+                                      ('java', {'java_current_http_profile': profile, 'java_schema_put_once': True}),
+                                      ('java', {'java_current_http_profile': profile, 'java_early_http_denial': True})):
+                with self.assertRaises(ValueError):
+                    compile_guests(language, output, java_poststage_http_denial=True, **options)
                 self.assertFalse(output.exists())
 
     def test_current_selection_changes_transport_operation_without_rewriting_legacy_custody(self):

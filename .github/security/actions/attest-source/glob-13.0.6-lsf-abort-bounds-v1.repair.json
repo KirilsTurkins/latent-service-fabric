@@ -1,0 +1,117 @@
+{
+  "schema": 1,
+  "profile": "glob-13.0.6-lsf-abort-bounds-v1",
+  "name": "glob",
+  "version": "13.0.6",
+  "upstreamIntegrity": "sha512-Wjlyrolmm8uDpm/ogGyXZXb1Z+Ca2B8NbJwqBVg0axK9GbBeoS7yGV6vjXnYdGm6X53iehEuxxbyiKp8QmN4Vw==",
+  "files": [
+    {
+      "path": "dist/commonjs/walker.js",
+      "beforeSha256": "1138ced9d5429681a1740af32d13391a38184a3376d1d9d56eea64b7a43274a1",
+      "afterSha256": "4eca6e1f2fd9c9ef7469977a12c7e9bd6503bc7a9257ccdc8e79b346ec34fccd",
+      "edits": [
+        {
+          "before": "onResume(fn) {\n        if (this.signal?.aborted)\n            return;\n",
+          "after": "onResume(fn) {\n",
+          "count": 1
+        },
+        {
+          "before": "if (this.signal?.aborted)\n            cb();",
+          "after": "if (this.signal?.aborted)\n            return cb();",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "path": "dist/esm/walker.js",
+      "beforeSha256": "3e15af549ecc74d8691982d571168fd4b0e38b494c2cbb3edcfb8f97d4036ac6",
+      "afterSha256": "8afedbdf3bb2bddaf37ee3ef4b393b76a5a99c80ef12aaedd2160a77c2effadb",
+      "edits": [
+        {
+          "before": "onResume(fn) {\n        if (this.signal?.aborted)\n            return;\n",
+          "after": "onResume(fn) {\n",
+          "count": 1
+        },
+        {
+          "before": "if (this.signal?.aborted)\n            cb();",
+          "after": "if (this.signal?.aborted)\n            return cb();",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "path": "dist/commonjs/index.min.js",
+      "beforeSha256": "3178e109aa75b45d6970a51a718f01e5b5b8f87150563ee6cb4c0e75ec215617",
+      "afterSha256": "b509a4ab2ebfe14bb205629fa63cf72ca7ea55d20b59e32d7acb56a8a3ced9ee",
+      "edits": [
+        {
+          "before": "firstPhasePreProcess(t){let e=!1;",
+          "after": "firstPhasePreProcess(t){const{braceExpandMax:cap=1e5}=this.options;let e=!1;",
+          "count": 1
+        },
+        {
+          "before": "||!l||l===\".\"||l===\"..\")continue;",
+          "after": "||!l||l===\".\"||l===\"..\"||t.length>=cap)continue;",
+          "count": 1
+        },
+        {
+          "before": "secondPhasePreProcess(t){for(",
+          "after": "secondPhasePreProcess(t){if(t.length>1000)return t;for(",
+          "count": 1
+        },
+        {
+          "before": "this.signal?.aborted&&s(),this.walkCB2",
+          "after": "if(this.signal?.aborted)return s();this.walkCB2",
+          "count": 2
+        },
+        {
+          "before": "if(this.signal?.aborted&&i(),this.paused)",
+          "after": "if(this.signal?.aborted)return i();if(this.paused)",
+          "count": 2
+        },
+        {
+          "before": "onResume(t){this.signal?.aborted||(this.paused?this.#t.push(t):t())}",
+          "after": "onResume(t){this.paused?this.#t.push(t):t()}",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "path": "dist/esm/index.min.js",
+      "beforeSha256": "9eff492e16fdf9ea47a5f3c3d64784f9238b607f95a278101eb5a4e882f6ea85",
+      "afterSha256": "dadead1a307f8d61ec91b37a29d999ad87de37098dd0fa17e6e65517774d4e99",
+      "edits": [
+        {
+          "before": "firstPhasePreProcess(t){let e=!1;",
+          "after": "firstPhasePreProcess(t){const{braceExpandMax:cap=1e5}=this.options;let e=!1;",
+          "count": 1
+        },
+        {
+          "before": "||!l||l===\".\"||l===\"..\")continue;",
+          "after": "||!l||l===\".\"||l===\"..\"||t.length>=cap)continue;",
+          "count": 1
+        },
+        {
+          "before": "secondPhasePreProcess(t){for(",
+          "after": "secondPhasePreProcess(t){if(t.length>1000)return t;for(",
+          "count": 1
+        },
+        {
+          "before": "this.signal?.aborted&&s(),this.walkCB2",
+          "after": "if(this.signal?.aborted)return s();this.walkCB2",
+          "count": 2
+        },
+        {
+          "before": "if(this.signal?.aborted&&i(),this.paused)",
+          "after": "if(this.signal?.aborted)return i();if(this.paused)",
+          "count": 2
+        },
+        {
+          "before": "onResume(t){this.signal?.aborted||(this.paused?this.#t.push(t):t())}",
+          "after": "onResume(t){this.paused?this.#t.push(t):t()}",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

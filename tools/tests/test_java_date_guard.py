@@ -1,0 +1,95 @@
+"""Source-binding controls for the experimental finite Date initializer."""
+import hashlib
+import unittest
+from unittest.mock import patch
+
+from tools import java_capsule_build, qualify_java_fibers
+from tools.java_guest import coroutine_patch, date_guard
+from tools.java_guest.enum_guard import _date_graph, _directives
+
+
+def fixture(call=True):
+    block = (b'static time_t teavm_epochStart;\nstatic struct tm teavm_epochStartTm;\n'
+             + date_guard.DATE_INIT + b'\nchar* teavm_date_format(int64_t time) { return 0; }')
+    source = (b'typedef long long time_t;\n' + date_guard.TM_DECLARATION + b'\n'
+              b'struct tm *localtime_r (const time_t *restrict, struct tm *restrict);\n'
+              b'time_t timegm(struct tm *);\nextern void teavm_date_init();\n' + block + b'\n'
+              + (date_guard.DATE_JAVA_CALLER.encode() + b'\n' if call else b''))
+    return source, hashlib.sha256(block).hexdigest()
+
+
+class DateGuardTests(unittest.TestCase):
+    def test_both_graph_selections_record_the_exact_marker_digest(self):
+        for selected in ('required', 'unused'):
+            raw = (selected + '\n').encode()
+            self.assertEqual(_date_graph(raw), {'selection': selected,
+                             'sha256': hashlib.sha256(raw).hexdigest()})
+        for raw in (b'', b'required', b'required\nunused\n'):
+            with self.subTest(raw=raw), self.assertRaises(ValueError):
+                _date_graph(raw)
+
+    def test_recipe_captures_each_date_guard_and_detects_input_drift(self):
+        names = ('tools/java_guest/date_guard.py', 'tools/java_guest/date_link_guard.py',
+                 'tools/c_application_dependencies.py', 'tools/c_static_symbols.py')
+        self.assertTrue(set(names).issubset(java_capsule_build.RECIPE))
+        before = qualify_java_fibers.recipe_inputs()
+        original = qualify_java_fibers.read_file
+        for name in names:
+            selected = qualify_java_fibers.ROOT / name
+            def drift(path):
+                data = original(path)
+                return data + b'\n' if path == selected else data
+            with self.subTest(path=name), patch.object(qualify_java_fibers, 'read_file', side_effect=drift):
+                after = qualify_java_fibers.recipe_inputs()
+                self.assertNotEqual(before, after)
+                self.assertEqual([key for key in before if before[key] != after[key]], [name])
+
+    def test_java_marker_literals_are_emitted_without_physical_newlines(self):
+        self.assertIn('dateRequired ? "required\\n" : "unused\\n"', coroutine_patch.CHECKPOINT_VALIDATION)
+        self.assertNotIn('"required\n"', coroutine_patch.CHECKPOINT_VALIDATION)
+        self.assertNotIn('"unused\n"', coroutine_patch.CHECKPOINT_VALIDATION)
+
+    def guard(self, raw, expected, required=True):
+        with patch.object(date_guard, 'DATE_BLOCK_SHA256', expected):
+            return date_guard.seal(raw, _directives(raw, set()), required=required)
+
+    def test_exact_source_is_replaced_and_unused_source_is_unchanged(self):
+        raw, expected = fixture()
+        result, receipt = self.guard(raw, expected)
+        self.assertIsNotNone(receipt)
+        self.assertEqual(result.count(date_guard.FINITE_INIT), 1)
+        self.assertNotIn(date_guard.DATE_INIT, result)
+        with self.assertRaisesRegex(ValueError, 'unobserved-call'):
+            self.guard(raw, expected, required=False)
+        raw, expected = fixture(call=False)
+        self.assertEqual(self.guard(raw, expected, required=False), (raw, None))
+        with self.assertRaisesRegex(ValueError, 'missing-required-call'):
+            self.guard(raw, expected)
+        raw += b'#define timegm unrelated\n'
+        self.assertEqual(self.guard(raw, expected, required=False), (_directives(raw, set()), None))
+
+    def test_changed_block_abi_and_extra_native_definitions_refuse(self):
+        raw, expected = fixture()
+        cases = [raw.replace(b'.tm_year = 70', b'.tm_year = 71'),
+                 raw.replace(b'int __tm_nsec;', b'long long __tm_nsec;'),
+                 raw + b'static long long timegm(void* p) { return 1; }\n',
+                 raw + b'const char __utc[] = "other";\n',
+                 raw + b'long long __tm_to_secs(void* p) { return 1; }\n',
+                 raw + b'void another_caller(void) { teavm_date_init(); }\n',
+                 raw.replace(date_guard.DATE_JAVA_CALLER.encode(),
+                             date_guard.DATE_JAVA_CALLER.encode().replace(b'teavm_date_init();', b'unchecked_init();')),
+                 raw + b'long __stack_pointer;\n', raw + b'__attribute__((weakref("timegm"))) int x;\n']
+        for changed in cases:
+            with self.subTest(changed=changed[-80:]), self.assertRaises(ValueError):
+                self.guard(changed, expected)
+
+    def test_protected_macro_and_unbound_checked_bytes_refuse(self):
+        raw, expected = fixture()
+        with self.assertRaises(ValueError):
+            self.guard(b'#define timegm malicious\n' + raw, expected)
+        with patch.object(date_guard, 'DATE_BLOCK_SHA256', expected), self.assertRaises(ValueError):
+            date_guard.seal(raw, raw + b' ', required=True)
+
+
+if __name__ == '__main__':
+    unittest.main()

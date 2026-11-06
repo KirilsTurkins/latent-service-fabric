@@ -48,10 +48,10 @@ class Reader:
         return value
 
 
-def strong_symbols(linking: bytes) -> list[str]:
-    """Inspect symbols, including unused archive members; final linking still validates code."""
+def _defined_symbols(linking: bytes, *, require_table: bool) -> tuple[list[str], list[str]]:
+    """Inspect the bounded symbol table without assuming every definition is strong."""
     section = Reader(linking)
-    symbols, found = set(), False
+    symbols, all_symbols, found = set(), set(), False
     while section.offset < len(linking):
         kind, length = section.byte(), section.unsigned()
         end = section.offset + length
@@ -93,11 +93,25 @@ def strong_symbols(linking: bytes) -> list[str]:
                                 table.unsigned()
                 else:
                     table.unsigned()  # section index; never an external definition
-                if name is not None and binding == 0 and not undefined:
-                    if name in symbols:
-                        raise DependencyError("c-static-archive-duplicate-strong-symbol")
-                    symbols.add(name)
+                if name is not None and not undefined:
+                    all_symbols.add(name)
+                    if binding == 0:
+                        if name in symbols:
+                            raise DependencyError("c-static-archive-duplicate-strong-symbol")
+                        symbols.add(name)
             if table.offset != len(table.data):
                 raise DependencyError("c-wasm-symbol-table-malformed")
         section.offset = end
-    return sorted(symbols)
+    if require_table and not found:
+        raise DependencyError("c-wasm-symbol-table-missing")
+    return sorted(symbols), sorted(all_symbols)
+
+
+def strong_symbols(linking: bytes) -> list[str]:
+    """Inspect symbols, including unused archive members; final linking still validates code."""
+    return _defined_symbols(linking, require_table=False)[0]
+
+
+def defined_symbols(linking: bytes) -> list[str]:
+    """Return strong, weak, local and common definitions, refusing an absent table."""
+    return _defined_symbols(linking, require_table=True)[1]

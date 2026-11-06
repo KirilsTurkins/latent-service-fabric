@@ -81,6 +81,24 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             &args[3..],
         );
     }
+    if args.len() == 4 && args[0] == "fixture-sign-java-child-input" {
+        return authoring::sign_child(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("child fixture source must be UTF-8")?,
+            &args[3..],
+        );
+    }
+    if args.len() == 4 && args[0] == "fixture-sign-java-values-input" {
+        return authoring::sign_values_java(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("values fixture source must be UTF-8")?,
+            &args[3..],
+        );
+    }
     if args.len() == 8 && args[0] == "fixture-sign-native-memory-current-java-inputs" {
         return authoring::sign_native_memory_current_java(
             std::path::Path::new(&args[1]),
@@ -108,11 +126,47 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             &args[3..],
         );
     }
+    if args.len() == 4 && args[0] == "fixture-sign-november-early-http-input" {
+        return authoring::sign_november_early_http(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("November early fixture source must be UTF-8")?,
+            &args[3..],
+        );
+    }
+    if args.len() == 4 && args[0] == "fixture-sign-poststage-http-java-input" {
+        return authoring::sign_poststage_http_java(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("poststage fixture source must be UTF-8")?,
+            &args[3..],
+        );
+    }
     if args.len() == 8 && args[0] == "fixture-sign-reconstructed-current-java-inputs" {
         return sign_reconstructed_current(&args);
     }
     if args.len() == 8 && args[0] == "fixture-sign-refreshed-current-java-inputs" {
         return sign_refreshed_current(&args);
+    }
+    if args.len() == 8 && args[0] == "fixture-sign-current-465-java-inputs" {
+        return authoring::sign_current_465_java(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("current fixture source must be UTF-8")?,
+            &args[3..],
+        );
+    }
+    if args.len() == 8 && args[0] == "fixture-sign-november-current-java-inputs" {
+        return authoring::sign_november_current_java(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("November fixture source must be UTF-8")?,
+            &args[3..],
+        );
     }
     if args.len() < 3
         || !matches!(args[0].to_str(), Some("demo-sign" | "demo-sign-separated"))

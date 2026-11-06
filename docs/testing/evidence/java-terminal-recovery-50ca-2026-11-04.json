@@ -1,0 +1,168 @@
+{
+  "formatVersion": 1,
+  "schemaVersion": "latent.java.current-terminal-evidence.v1",
+  "scope": "Source-bound signed Java terminal recovery; not full milestone or packaged qualification",
+  "nativeSourceCommit": "50caadce1f7e7deced1f88fb95edc688a8d09ee9",
+  "nativeSourceTree": "b16ed12ae48ecbb7794afa7642849c73dce1abc6",
+  "conductorSourceCommit": "46597407903231d2914f54358cff94dfc598878b",
+  "compilerSourceCommit": "fccc27dbc52f2dd0db137078f8e7e436a41ebe8a",
+  "trust": "ephemeral-native-package-test-only",
+  "passed": true,
+  "signedGuestExecutionQualified": true,
+  "packagedDistributionQualified": false,
+  "receiptSha256": "sha256:7562db3d06d12c45831fdc4e5389d729676ba6239210691bd653b12fab98b371",
+  "evidenceInventorySha256": "sha256:c258657485ba668b98e9b2a1678526952fe2bcf5a73d8b4801e230d4cd9cc6ac",
+  "nativeTools": {
+    "cli": {
+      "name": "cli",
+      "digest": "sha256:36c631ea1fc2cfa535853bdc7cf404f8e524d6b3956ab40dede321618b87656e",
+      "size": 79050960
+    },
+    "node": {
+      "name": "node",
+      "digest": "sha256:7eaa0ea2ac4fe360dd68719b6de9cd850bb98f49380d9329fe90b62d3fd21509",
+      "size": 201664440
+    },
+    "aot_compiler": {
+      "name": "aot_compiler",
+      "digest": "sha256:30a15d602e6df12d3b10b89ebf8c1572c0250a7b8e13feb1951ad4279226b365",
+      "size": 51868160
+    },
+    "contracts_tool": {
+      "name": "contracts_tool",
+      "digest": "sha256:2594f4ed39ca3d6fb4ec5c00dfde536bcd33427ee6f38a36b7549b9362e31176",
+      "size": 14847848
+    },
+    "signer": {
+      "name": "signer",
+      "digest": "sha256:6541e22f0be104fdedcbc2ff7007e3ff386bb5aa1109fe4f616e7bc1ad09fc5c",
+      "size": 29861920
+    },
+    "recovery_helper": {
+      "name": "recovery_helper",
+      "digest": "sha256:d819d8dbd72f55859e05cf4a5db775030fea7e07013ac4091d1c14241f296be9",
+      "size": 206421696
+    }
+  },
+  "measuredCases": [
+    "publish-aggregate",
+    "publish-put-once-legacy-v1",
+    "publish-put-once-compatible-v2",
+    "publish-put-once-writer-v2",
+    "publish-put-once-diagnostics",
+    "namespace-create",
+    "deploy-put-once-legacy-v1-legacy-runtime",
+    "fresh-query-no-command",
+    "deploy-put-once-diagnostics-diagnostic-runtime",
+    "deploy-put-once-legacy-v1-legacy-after-diagnostic",
+    "actual-post-stage-trap",
+    "actual-post-stage-fuel",
+    "actual-post-stage-cancel",
+    "actual-post-stage-memory",
+    "lost-response-after-commit",
+    "canonical-duplicate-original",
+    "changed-input-same-id",
+    "declared-rejection-after-change",
+    "stale-original-key-version",
+    "result-isolation-caller",
+    "command-isolation-caller",
+    "result-isolation-tenant",
+    "command-isolation-tenant",
+    "isolation-preserves-durable-rows",
+    "current-result-read-revocation",
+    "explicit-current-read-restoration",
+    "bounded-native-scan",
+    "deploy-put-once-compatible-v2-compatible-runtime",
+    "compatible-original-commit",
+    "compatible-original-rejection",
+    "ambiguous-provider-acceptance",
+    "crash-restart-original-recovery",
+    "deploy-put-once-legacy-v1-cancellation-legacy-runtime",
+    "deploy-put-once-compatible-v2-cancellation-compatible-runtime",
+    "cancellation-after-commit",
+    "fresh-java-invocations",
+    "actual-wide-java-value-before-schema",
+    "java-schema-quiesce",
+    "deploy-put-once-writer-v2-writer-runtime",
+    "schema-refuses-stale-query-minimum",
+    "schema-original-commit",
+    "schema-original-rejection",
+    "actual-java-schema-migration",
+    "java-restore-quiesce",
+    "restored-current-authority-mutations",
+    "restore-refuses-stale-query-minimum",
+    "restore-original-commit",
+    "restore-original-rejection",
+    "actual-java-terminal-history-restore",
+    "actual-physical-retirement"
+  ],
+  "nativeRecoveryReports": [
+    {
+      "name": "native-recovery-01-report.json",
+      "sha256": "sha256:bbbad7ef94aa2a499f3c9e4a9a9284c7f12db2bbfc6c271c60b9fba0c92bc4a7",
+      "action": "inspect-namespace"
+    },
+    {
+      "name": "native-recovery-02-report.json",
+      "sha256": "sha256:686a1a120b6c5de31a5dd2bc5f7cefde41f1fe767e6a20fa4bd2a562869d87f9",
+      "action": "snapshot"
+    },
+    {
+      "name": "native-recovery-03-report.json",
+      "sha256": "sha256:5aa355a09e3f752f055cf58b9d9fd9ea75fa5af6c34a7555ac1532f733cb85be",
+      "action": "stage-migration"
+    },
+    {
+      "name": "native-recovery-04-report.json",
+      "sha256": "sha256:aec9a9f3246c71b112a485fb58d24cd4f40be27ce81a9965ad2f788ce8a0f102",
+      "action": "complete-migration"
+    },
+    {
+      "name": "native-recovery-05-report.json",
+      "sha256": "sha256:169f8d8ddef8d258650c3be965b626d7297a36a8042d6aab3212e7c434a750f5",
+      "action": "inspect-namespace"
+    },
+    {
+      "name": "native-recovery-06-report.json",
+      "sha256": "sha256:5b8eb7b4fa71531e9b5fe1d6c35e0dabcee77f89cb2c362aedd22ae3c7c63488",
+      "action": "snapshot"
+    },
+    {
+      "name": "native-recovery-07-report.json",
+      "sha256": "sha256:1fa69c8049ec5855de2a88ae8f828f0cce0f7ba385907d352ac8d8b6272a9051",
+      "action": "resume-migration"
+    },
+    {
+      "name": "native-recovery-08-report.json",
+      "sha256": "sha256:21ddfa51dfc4383e5b9fed33f41c6beda911c791299f120fefba7f345c6f8f70",
+      "action": "inspect-restore"
+    },
+    {
+      "name": "native-recovery-09-report.json",
+      "sha256": "sha256:c140a660ffd3d10faadb0b7a1b4eabc09d4a8afc62442a8a89f1b97d592b5db7",
+      "action": "restore"
+    },
+    {
+      "name": "native-recovery-10-report.json",
+      "sha256": "sha256:8230e2b5e40b9601ea1e3de9033805965c6905ac299d4706898a22aa0c95376b",
+      "action": "review"
+    },
+    {
+      "name": "native-recovery-11-report.json",
+      "sha256": "sha256:ab19e188127d84a8cc6e977ecbdbe74a37ecee6303c3de844a6bb0544d0515d8",
+      "action": "inspect-namespace"
+    },
+    {
+      "name": "native-recovery-12-report.json",
+      "sha256": "sha256:d14c2c7d12adbdbe80987fb026eac6325984f26fd9e3248de467144af34e16a4",
+      "action": "resume-restored-migration"
+    }
+  ],
+  "remainingScenarios": [
+    "crash-before-commit",
+    "pending-effect-restore-reconciliation",
+    "full-retention-horizon-expiry",
+    "authenticated-clean-host-packaged-distribution"
+  ],
+  "retainedEvidence": "session-owned Docker volume lsf-phase4-387-linux, java-installed-attempt10"
+}

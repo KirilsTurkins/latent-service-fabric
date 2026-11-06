@@ -3,6 +3,7 @@ mod audit;
 mod capability;
 mod common;
 mod deployment;
+mod maintenance;
 mod release;
 mod rollout;
 mod trigger;

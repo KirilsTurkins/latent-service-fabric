@@ -209,9 +209,15 @@ impl DirectoryArtifactRepository {
             id,
             scope: receipt.scope.clone(),
         };
+        if self.is_reclaimed_publication(&reference.id)? {
+            return Err(error(
+                PlatformErrorCode::NotFound,
+                "publication-payload-reclaimed-query-original-operation",
+            ));
+        }
         let index = self.index.read().map_err(lock_error)?;
         let entry = index
-            .exact(&reference)?
+            .historical_entry(&reference)
             .ok_or_else(|| corrupt("operation-publication-missing"))?;
         if receipt.component_digest.as_ref() != Some(&entry.value.descriptor.release_digest) {
             return Err(corrupt("operation-publication-association"));

@@ -5,14 +5,19 @@ mod inputs;
 mod policy;
 mod resource_neutral;
 
+pub(super) use current_java::sign_current_465_java;
+pub(super) use current_java::sign_november_current_java;
+pub(super) use current_java::sign_poststage_http_java;
 pub(super) use current_java::sign_reconstructed_current_java;
 pub(super) use current_java::sign_refreshed_current_java;
+pub(super) use current_java::sign_values_java;
 pub(super) use current_java::{
     sign_current_java, sign_current_java_with_negative, sign_fresh_http_current_java,
     sign_native_memory_current_java, sign_rebuilt_current_java,
 };
 pub(super) use early_http::{
-    sign_early_http, sign_rebuilt_early_http, sign_reconstructed_early_http,
+    sign_child, sign_early_http, sign_november_early_http, sign_rebuilt_early_http,
+    sign_reconstructed_early_http,
 };
 pub(super) use freshness::check_stale_proofs;
 

@@ -15,3 +15,6 @@ mod rollouts;
 mod support;
 #[path = "management_service/triggers.rs"]
 mod triggers;
+
+#[path = "management_service/maintenance.rs"]
+mod maintenance;

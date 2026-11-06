@@ -19,10 +19,11 @@ use crate::input::{self, MAXIMUM_CONTRACT_BYTES, MAXIMUM_MANIFEST_BYTES};
 use crate::operation::Operation;
 use crate::output::Outcome;
 
-use super::invalid_manifest;
+use super::{invalid_manifest, retention::prepare as prepare_retention};
 
 pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, Failure> {
     match command {
+        Command::Release(ReleaseCommand::Retention(command)) => prepare_retention(command, config),
         Command::Activation(command) => activation(command),
         Command::Web(command) => super::web::prepare(command, config),
         Command::Trigger(command) => super::triggers::prepare(command, config),

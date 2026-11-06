@@ -96,6 +96,9 @@ impl Cli {
 
 fn release(command: &ReleaseCommand) -> Result<(), Failure> {
     match command {
+        ReleaseCommand::Retention(command) => {
+            crate::management::retention::validate_arguments(command)
+        }
         ReleaseCommand::Publish(args) => {
             optional(args.operation.operation_id.as_deref(), 128)?;
             if args.operation.operation_id.is_some() != args.operation.expected_generation.is_some()

@@ -1,6 +1,73 @@
 --- a/Cargo.lock
 +++ b/Cargo.lock
-@@ -1516,5 +1516,5 @@
+@@ -639,5 +639,5 @@
+ name = "futures-channel"
+-version = "0.3.31"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "2dff15bf788c671c1934e366d07e30c1814a8ef514e1af724a602e8a2fbe1b10"
++version = "0.3.34"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "b1f9e3d69d39e4862ffed03ed071a76f9a13ba1d9109d355b0f0aa6b15e393c4"
+ dependencies = [
+@@ -649,5 +649,5 @@
+ name = "futures-core"
+-version = "0.3.31"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "05f29059c0c2090612e8d742178b0580d2dc940c837851ad723096f87af6663e"
++version = "0.3.34"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "92d699e522242e69e3003b94ecc1f960f3a5e015aa7c5d7486e65ad01dd94f5e"
+ 
+@@ -655,5 +655,5 @@
+ name = "futures-io"
+-version = "0.3.31"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "9e5c1b78ca4aae1ac06c48a526a655760685149f0d465d21f37abfe57ce075c6"
++version = "0.3.34"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "53c0fa8157de1303bfffdaa1cc2a673bfffb60102f76b0ef4441659124373fed"
+ 
+@@ -661,5 +661,5 @@
+ name = "futures-sink"
+-version = "0.3.31"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "e575fab7d1e0dcb8d0c7bcf9a63ee213816ab51902e6d244a95819acacf1d4f7"
++version = "0.3.34"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "1944426bf7d03f1d14f708785e4b33efd750b36d48a157b836b3efc15ede8e1d"
+ 
+@@ -667,5 +667,5 @@
+ name = "futures-task"
+-version = "0.3.31"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "f90f7dce0722e95104fcb095585910c0977252f286e354b5e3bd38902cd99988"
++version = "0.3.34"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "cd417de3d1d015fc3bfd2b1ea46dfc7bab72ef86f1cc7cc9c78e728b34a6d1fd"
+ 
+@@ -673,5 +673,5 @@
+ name = "futures-util"
+-version = "0.3.31"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "9fa08315bb612088cc391249efdc3bc77536f16c91f6cf495e6fbe85b20a4a81"
++version = "0.3.34"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "0d50a92467f8ba5dd6e3ee5d4bd04d73ab2e4e1c44474a0674821dfce14b79bc"
+ dependencies = [
+@@ -684,3 +684,2 @@
+  "pin-project-lite",
+- "pin-utils",
+  "slab",
+@@ -1020,8 +1019,2 @@
+ checksum = "bda66fc9667c18cb2758a2ac84d1167245054bcf85d5d1aaa6923f45801bdd02"
+-
+-[[package]]
+-name = "pin-utils"
+-version = "0.1.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
+ 
+@@ -1516,5 +1509,5 @@
  name = "tokio"
 -version = "1.51.1"
 -source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9,12 +76,12 @@
 +source = "registry+https://github.com/rust-lang/crates.io-index"
 +checksum = "a13e32eacd0222f9658be2ccbd83b718bfd9bfb0d54b5921913c184cb86124a5"
  dependencies = [
-@@ -1867,4 +1867,2 @@
+@@ -1867,4 +1860,2 @@
  version = "48.0.8"
 -source = "registry+https://github.com/rust-lang/crates.io-index"
 -checksum = "bc15ec65327e0dc659da1c15658e94a3d4ad3a2ed75a35a320c84af5984b13c2"
  dependencies = [
-@@ -2340,5 +2338,5 @@
+@@ -2340,5 +2331,5 @@
  name = "zstd"
 -version = "0.13.0"
 -source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -23,7 +90,7 @@
 +source = "registry+https://github.com/rust-lang/crates.io-index"
 +checksum = "db3ae9bf90af6e40197bef767eeefc46ad6397420fe873830bd85e5fbbfb3c70"
  dependencies = [
-@@ -2349,5 +2347,5 @@
+@@ -2349,5 +2340,5 @@
  name = "zstd-safe"
 -version = "7.0.0"
 -source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -32,7 +99,7 @@
 +source = "registry+https://github.com/rust-lang/crates.io-index"
 +checksum = "ded520f16b29e1a9b771c722221b2b0a0398c2316d9bb3c42b458a5414d7434b"
  dependencies = [
-@@ -2358,5 +2356,5 @@
+@@ -2358,5 +2349,5 @@
  name = "zstd-sys"
 -version = "2.0.9+zstd.1.5.5"
 -source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4675,16 +4742,21 @@
 -            match try_into(TypeId::of::<V>()) {
 +            match try_into.invoke_conversion(TypeId::of::<V>()) {
                  Some(result) => {
-@@ -2257,2 +2270,80 @@
+@@ -2257,2 +2270,85 @@
      }
 +}
 +
-+// These are the original erased INNER futures/factories, not new allocations.
-+// Only each named completion's concrete OUTER future Layout is prepaid here.
++// The producer's original erased inner future remains unqualified. The
++// consumer path separately owns its admitted inner and outer allocations.
 +type PipeCompletionArgs = (
 +    TransmitKind,
 +    TableId<TransmitState>,
 +    Option<Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>>>,
++);
++type ConsumerCompletionArgs = (
++    TransmitKind,
++    TableId<TransmitState>,
++    Option<OwnedConsumerFuture>,
 +);
 +type ProducerCompletionArgs = (
 +    TransmitKind,
@@ -4692,7 +4764,7 @@
 +    Option<ProducerPollFactory>,
 +);
 +
-+async fn complete_pipe_from_guest((kind, id, future): PipeCompletionArgs) -> Result<()> {
++async fn complete_pipe_from_guest((kind, id, future): ConsumerCompletionArgs) -> Result<()> {
 +    let future = future.expect("prepared stream completion requires its original inner future");
 +    let stream_state = future.await?;
 +    tls::get(|store| {
@@ -4756,32 +4828,49 @@
 +
 +    future.await
  }
-@@ -2282,4 +2373,4 @@
+@@ -2282,4 +2378,4 @@
      HostReady {
 -        produce: PollStream,
 -        try_into: TryInto,
 +        produce: ProducerPollFactory,
 +        try_into: ProducerConversionFactory,
          guest_offset: ItemCount,
-@@ -2420,2 +2511,3 @@
+@@ -2321,3 +2417,3 @@
+     HostReady {
+-        consume: PollStream,
++        consume: ConsumerPollFactory,
+         guest_offset: ItemCount,
+@@ -2328,10 +2424,3 @@
+     HostToHost {
+-        accept: Box<
+-            dyn for<'a> Fn(
+-                    &'a mut UntypedWriteBuffer<'a>,
+-                )
+-                    -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'a>>
+-                + Send
+-                + Sync,
+-        >,
++        accept: HostAcceptFactory,
+         buffer: Vec<u8>,
+@@ -2420,2 +2509,3 @@
          &mut self,
 +        queue_slot: super::FutureWorkSlot,
          kind: TransmitKind,
-@@ -2441,3 +2533,3 @@
+@@ -2441,3 +2531,3 @@
          self.concurrent_state_mut_already_forced_current_thread()
 -            .push_future(future.boxed());
 +            .push_future(queue_slot, future.boxed());
      }
-@@ -2446,2 +2538,3 @@
+@@ -2446,2 +2536,3 @@
          &mut self,
 +        queue_slot: super::FutureWorkSlot,
          kind: TransmitKind,
-@@ -2467,3 +2560,3 @@
+@@ -2467,3 +2558,3 @@
          self.concurrent_state_mut_already_forced_current_thread()
 -            .push_future(future.boxed());
 +            .push_future(queue_slot, future.boxed());
      }
-@@ -2666,2 +2759,41 @@
+@@ -2666,2 +2757,41 @@
          let state = self.0.concurrent_state_mut()?;
 +        // Preserve the original single current-thread force before storage
 +        // selection. Neither helper forces it again or keeps a factory Memory.
@@ -4823,12 +4912,12 @@
 +    {
 +        let state = self.0.concurrent_state_mut_already_forced_current_thread();
          let (_, read) = state.new_transmit(TransmitOrigin::Host {
-@@ -2672,3 +2804,3 @@
+@@ -2672,3 +2802,3 @@
          let mut dropped = false;
 -        let produce = Box::new({
 +        let produce = ProducerPollFactory::legacy(Box::new({
              let producer = producer.clone();
-@@ -2677,2 +2809,9 @@
+@@ -2677,2 +2807,9 @@
                  async move {
 +                    // Any later guest realloc work is scheduled only with this
 +                    // pre-funded node, reserved before the producer is polled.
@@ -4838,24 +4927,24 @@
 +                        None
 +                    };
                      let mut state = producer.take()?;
-@@ -2809,3 +2948,3 @@
+@@ -2809,3 +2946,3 @@
                      if write_buffer {
 -                        write(token, id, producer.clone(), kind).await?;
 +                        write::<T, Pin<Box<P>>, P::Item, P::Buffer, _>(token, id, producer.clone(), kind, worker_slot).await?;
                      }
-@@ -2824,4 +2963,4 @@
+@@ -2824,4 +2961,4 @@
              }
 -        });
 -        let try_into = Box::new(move |ty| {
 +        }));
 +        let try_into = ProducerConversionFactory::legacy(Box::new(move |ty| {
              let (mine, buffer) = producer.try_lock().ok()?.take()?;
-@@ -2834,3 +2973,3 @@
+@@ -2834,3 +2971,3 @@
              }
 -        });
 +        }));
          state.get_mut(id)?.write = WriteState::HostReady {
-@@ -2845,2 +2984,201 @@
+@@ -2845,2 +2982,201 @@
  
 +    fn new_transmit_accounted<P, Policy>(
 +        mut self,
@@ -5057,7 +5146,7 @@
 +    }
 +
      fn set_consumer<C: StreamConsumer<T>>(
-@@ -2853,5 +3191,67 @@
+@@ -2853,5 +3189,68 @@
          let state = self.0.concurrent_state_mut()?;
 +        // Force the original current thread exactly once, at its original point.
 +        // No user code/effect intervenes before the nonfallible helper reborrow.
@@ -5122,16 +5211,77 @@
 +        // The original v17 queue/task/outer admissions precede these two.
 +        // Stage BOTH exact consumer backing owners before allocating either.
 +        let consumer_backing = Storage::prepare(&state.queue_memory)?;
++        let factory_memory = state.queue_memory.clone();
          let transmit = state.get_mut(id)?;
 -        let consumer = Arc::new(LockedState::new(Box::pin(consumer)));
 +        let consumer = Storage::create(consumer_backing, consumer);
          let consume_with_buffer = {
-@@ -2981,3 +3381,17 @@
+@@ -2956,8 +3355,26 @@
+         };
+-        let consume = {
++        // Paid HostToHost retains its separate accept factory instead of a
++        // transient poll factory. None preserves the literal original path.
++        let consume = if factory_memory.is_none()
++            || matches!(
++                &transmit.write,
++                WriteState::Open | WriteState::GuestReady { .. }
++            ) {
+             let consume = consume_with_buffer.clone();
+-            Box::new(move || {
+-                let consume = consume.clone();
+-                async move { consume(None).await }.boxed()
+-            })
++            if factory_memory.is_none() {
++                Some(own_consumer_poll_factory(&factory_memory, move || {
++                    let consume = consume.clone();
++                    async move { consume(None).await }.boxed()
++                })?)
++            } else {
++                Some(own_typed_consumer_poll_factory(
++                    &factory_memory,
++                    move || {
++                        let consume = consume.clone();
++                        async move { consume(None).await }
++                    },
++                )?)
++            }
++        } else {
++            None
+         };
+@@ -2966,2 +3383,18 @@
+             WriteState::Open => {
++                transmit.read = ReadState::HostReady {
++                    consume: consume.expect("prepared consumer poll factory"),
++                    guest_offset: ItemCount::ZERO,
++                    cancel: false,
++                    cancel_waker: None,
++                };
++            }
++            &WriteState::GuestReady { .. } => {
++                let consume = consume.expect("prepared consumer poll factory");
++                // For the paid path the concrete future is admitted and boxed
++                // before publishing any change to the original transmit.
++                let (paid_future, legacy_future) = if paid_from_guest.is_some() {
++                    (Some(consume.prepare_consumer()?), None)
++                } else {
++                    (None, Some(consume.invoke_consumer()))
++                };
+                 transmit.read = ReadState::HostReady {
+@@ -2972,14 +3405,25 @@
                  };
+-            }
+-            &WriteState::GuestReady { .. } => {
+-                let future = consume();
+-                transmit.read = ReadState::HostReady {
+-                    consume,
+-                    guest_offset: ItemCount::ZERO,
+-                    cancel: false,
+-                    cancel_waker: None,
+-                };
 -                self.0.pipe_from_guest(kind, id, future);
 +                if let Some(mut prepared) = paid_from_guest {
 +                    // This original branch queues without an initial inline poll.
-+                    prepared.args_mut().2 = Some(future);
++                    prepared.args_mut().2 = Some(paid_future.expect("prepared consumer future"));
 +                    state.push_host_future(
 +                        queue_slot.expect("prepared consumer node"),
 +                        prepared.finish(),
@@ -5141,11 +5291,19 @@
 +                        queue_slot.expect("prepared consumer node"),
 +                        kind,
 +                        id,
-+                        future,
++                        legacy_future.expect("legacy consumer future"),
 +                    );
 +                }
              }
-@@ -2987,6 +3401,6 @@
+             WriteState::HostReady { .. } => {
++                // The producer remains untouched if its accept-factory
++                // admission fails. The same guard follows the retained Box.
++                let accept = own_host_accept_factory(&factory_memory, move |input| {
++                    let consume = consume_with_buffer.clone();
++                    async move { consume(Some(input.get_mut::<C::Item>()?)).await }.boxed()
++                })?;
+                 let WriteState::HostReady { produce, .. } = mem::replace(
+@@ -2987,6 +3431,6 @@
                      WriteState::HostReady {
 -                        produce: Box::new(|| {
 +                        produce: ProducerPollFactory::legacy(Box::new(|| {
@@ -5155,7 +5313,15 @@
 +                        })),
 +                        try_into: ProducerConversionFactory::legacy(Box::new(|_| None)),
                          guest_offset: ItemCount::ZERO,
-@@ -3008,29 +3422,40 @@
+@@ -3000,6 +3444,3 @@
+                 transmit.read = ReadState::HostToHost {
+-                    accept: Box::new(move |input| {
+-                        let consume = consume_with_buffer.clone();
+-                        async move { consume(Some(input.get_mut::<C::Item>()?)).await }.boxed()
+-                    }),
++                    accept,
+                     buffer: Vec::new(),
+@@ -3008,29 +3449,40 @@
  
 -                let future = async move {
 -                    loop {
@@ -5220,7 +5386,7 @@
 -
 -                state.push_future(Box::pin(future));
              }
-@@ -3045,7 +3470,14 @@
+@@ -3045,7 +3497,14 @@
  
 -async fn write<D: 'static, P: Send + 'static, T: func::Lower + 'static, B: WriteBuffer<T>>(
 +async fn write<
@@ -5237,7 +5403,7 @@
      kind: TransmitKind,
 +    worker_slot: Option<super::QueueSlot<WorkItem>>,
  ) -> Result<()> {
-@@ -3117,10 +3549,13 @@
+@@ -3117,10 +3576,13 @@
                      tls::get(move |store| {
 -                        store
 -                            .concurrent_state_mut()?
@@ -5259,29 +5425,50 @@
 +                            )),
 +                        );
                          crate::error::Ok(())
-@@ -3223,2 +3658,3 @@
+@@ -3179,3 +3641,5 @@
+                 let mut slice_buffer = SliceBuffer::new(buffer, position, limit);
+-                state = accept(&mut UntypedWriteBuffer::new(&mut slice_buffer)).await?;
++                state = accept
++                    .invoke_accept(&mut UntypedWriteBuffer::new(&mut slice_buffer))
++                    .await?;
+                 (buffer, position, _) = slice_buffer.into_parts();
+@@ -3188,3 +3652,5 @@
+                 while !(matches!(state, StreamResult::Dropped) || buffer.remaining().is_empty()) {
+-                    state = accept(&mut UntypedWriteBuffer::new(buffer)).await?;
++                    state = accept
++                        .invoke_accept(&mut UntypedWriteBuffer::new(buffer))
++                        .await?;
+                 }
+@@ -3219,3 +3685,3 @@
+         transmit_id: TableId<TransmitState>,
+-        consume: PollStream,
++        consume: ConsumerPollFactory,
+         guest_offset: ItemCount,
+@@ -3223,3 +3689,4 @@
      ) -> Result<ReturnCode> {
+-        let mut future = consume();
 +        let queue_slot = store.concurrent_state_mut()?.prepare_future_slot()?;
-         let mut future = consume();
-@@ -3244,3 +3680,3 @@
++        let mut future = consume.invoke_consumer();
+         store.concurrent_state_mut()?.get_mut(transmit_id)?.read = ReadState::HostReady {
+@@ -3244,3 +3711,3 @@
              Poll::Pending => {
 -                store.pipe_from_guest(kind, transmit_id, future);
 +                store.pipe_from_guest(queue_slot, kind, transmit_id, future);
                  ReturnCode::Blocked
-@@ -3257,4 +3693,4 @@
+@@ -3257,4 +3724,4 @@
          transmit_id: TableId<TransmitState>,
 -        produce: PollStream,
 -        try_into: TryInto,
 +        produce: ProducerPollFactory,
 +        try_into: ProducerConversionFactory,
          guest_offset: ItemCount,
-@@ -3262,3 +3698,4 @@
+@@ -3262,3 +3729,4 @@
      ) -> Result<ReturnCode> {
 -        let mut future = produce();
 +        let queue_slot = store.concurrent_state_mut()?.prepare_future_slot()?;
 +        let mut future = produce.invoke_producer();
          store.concurrent_state_mut()?.get_mut(transmit_id)?.write = WriteState::HostReady {
-@@ -3284,3 +3721,109 @@
+@@ -3284,3 +3752,108 @@
              Poll::Pending => {
 -                store.pipe_to_guest(kind, transmit_id, future);
 +                store.pipe_to_guest(queue_slot, kind, transmit_id, future);
@@ -5297,17 +5484,16 @@
 +        store: &mut dyn VMStore,
 +        kind: TransmitKind,
 +        transmit_id: TableId<TransmitState>,
-+        consume: PollStream,
++        consume: ConsumerPollFactory,
 +        guest_offset: ItemCount,
 +        cancel: bool,
 +        queue_slot: super::FutureWorkSlot,
-+        mut prepared: PreparedFuture<PipeCompletionArgs, Factory, Output>,
++        mut prepared: PreparedFuture<ConsumerCompletionArgs, Factory, Output>,
 +    ) -> Result<ReturnCode>
 +    where
-+        Factory: FnOnce(PipeCompletionArgs) -> Output,
++        Factory: FnOnce(ConsumerCompletionArgs) -> Output,
 +        Output: Future<Output = Result<()>> + Send + 'static,
 +    {
-+        prepared.args_mut().2 = Some(consume());
 +        store.concurrent_state_mut()?.get_mut(transmit_id)?.read = ReadState::HostReady {
 +            consume,
 +            guest_offset,
@@ -5392,11 +5578,11 @@
 +                    .concurrent_state_mut_already_forced_current_thread()
 +                    .push_host_future(queue_slot, prepared.finish());
                  ReturnCode::Blocked
-@@ -3576,2 +4119,69 @@
+@@ -3576,2 +4149,93 @@
          self.check_bounds(store.0, options, ty, address, count.as_usize())?;
 +        // Some-only staging before Busy, mem::replace or GuestReady publication.
 +        // None retains the original helper and its allocation/poll order below.
-+        let paid_outer = if store.0.native_memory().is_some() {
++        let mut paid_outer = if store.0.native_memory().is_some() {
 +            let rep = {
 +                let (rep, state) = self.id().get_mut(store.0).get_mut_by_index(ty, handle)?;
 +                let TransmitLocalState::Write { done } = *state else {
@@ -5461,8 +5647,32 @@
 +            None
 +        };
 +
++        // Complete deferred replay before the new inner admission and before
++        // setting the guest handle Busy.
++        if let Some((_, prepared)) = &mut paid_outer {
++            #[cfg(test)]
++            stream_outer_tests::before_deferred_force(
++                store
++                    .0
++                    .vm_store_context_mut()
++                    .current_thread_mut()
++                    .is_deferred(),
++            );
++            store.0.current_thread()?;
++            #[cfg(test)]
++            stream_outer_tests::after_deferred_force();
++            let id = prepared.args_mut().1;
++            let state = store.0.concurrent_state_mut_already_forced_current_thread();
++            let ReadState::HostReady { consume, .. } = &state.get_mut(id)?.read else {
++                bail_bug!("expected preflight host consumer");
++            };
++            // The private factory clones its cell and constructs an unpolled
++            // future. The original consumer callback remains at the old poll.
++            prepared.args_mut().2 = Some(consume.prepare_consumer()?);
++        }
++
          let (rep, state) = self.id().get_mut(store.0).get_mut_by_index(ty, handle)?;
-@@ -3761,10 +4371,23 @@
+@@ -3761,10 +4425,23 @@
                  set_guest_ready(concurrent_state)?;
 -                self.consume(
 -                    store.0,
@@ -5494,7 +5704,7 @@
 +                    )?
 +                }
              }
-@@ -3828,2 +4451,70 @@
+@@ -3828,2 +4505,70 @@
          self.check_bounds(store.0, options, ty, address, count.as_usize())?;
 +        // Some-only staging before Busy, mem::replace or GuestReady publication.
 +        // None retains the original helper and its allocation/poll order below.
@@ -5565,7 +5775,7 @@
 +        };
 +
          let (rep, state) = self.id().get_mut(store.0).get_mut_by_index(ty, handle)?;
-@@ -3994,11 +4685,25 @@
+@@ -3994,11 +4739,25 @@
  
 -                let code = self.produce(
 -                    store.0,
@@ -5600,12 +5810,27 @@
 +                    )?
 +                };
  
-@@ -5009,2 +5714,607 @@
+@@ -5009,2 +5768,795 @@
  
 +// The producer factory allocations are distinct from their returned futures and
 +// transitive captures. Only their concrete closure backing is owned here.
 +type ProducerPollFactory = ProducerFactory<
 +    dyn Fn() -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>> + Send + Sync,
++>;
++type ConsumerPollFactory = ProducerFactory<dyn ConsumerFactory>;
++type HostAccept = Box<
++    dyn for<'a> Fn(
++            &'a mut UntypedWriteBuffer<'a>,
++        ) -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'a>>
++        + Send
++        + Sync,
++>;
++type HostAcceptFactory = ProducerFactory<
++    dyn for<'a> Fn(
++            &'a mut UntypedWriteBuffer<'a>,
++        ) -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'a>>
++        + Send
++        + Sync,
 +>;
 +type ProducerConversionFactory =
 +    ProducerFactory<dyn Fn(TypeId) -> Option<Box<dyn Any>> + Send + Sync>;
@@ -5705,6 +5930,179 @@
 +    ) -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>> {
 +        (self.function)()
 +    }
++}
++
++// A single erased factory allocation retains the original source budget and
++// exposes the concrete, not the erased-pointer, layout of its inner future.
++type BoxedConsumerFuture = Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'static>>;
++
++trait ConsumerFactory: Send + Sync {
++    fn invoke_legacy(&self) -> BoxedConsumerFuture;
++    fn prepare_paid(&self) -> Result<OwnedConsumerFuture>;
++}
++
++#[repr(transparent)]
++struct LegacyConsumerFactory<F>(F);
++
++impl<F> ConsumerFactory for LegacyConsumerFactory<F>
++where
++    F: Fn() -> BoxedConsumerFuture + Send + Sync + 'static,
++{
++    fn invoke_legacy(&self) -> BoxedConsumerFuture {
++        (self.0)()
++    }
++
++    fn prepare_paid(&self) -> Result<OwnedConsumerFuture> {
++        bail_bug!("legacy consumer has no admitted future")
++    }
++}
++
++struct TypedConsumerFactory<F, Fut> {
++    function: F,
++    memory: crate::runtime::native_memory::Memory,
++    _future: PhantomData<fn() -> Fut>,
++}
++
++impl<F, Fut> ConsumerFactory for TypedConsumerFactory<F, Fut>
++where
++    F: Fn() -> Fut + Send + Sync + 'static,
++    Fut: Future<Output = Result<StreamResult>> + Send + 'static,
++{
++    fn invoke_legacy(&self) -> BoxedConsumerFuture {
++        panic!("paid consumer future requires admission")
++    }
++
++    fn prepare_paid(&self) -> Result<OwnedConsumerFuture> {
++        // Admission precedes factory invocation, boxing and any user poll.
++        let allocation = crate::runtime::native_memory::reserve(
++            &self.memory,
++            core::alloc::Layout::new::<Fut>().size(),
++        )?;
++        let future: BoxedConsumerFuture = Box::pin((self.function)());
++        Ok(OwnedConsumerFuture::from_parts(future, allocation))
++    }
++}
++
++struct OwnedConsumerFuture {
++    future: ManuallyDrop<BoxedConsumerFuture>,
++    allocation: ManuallyDrop<Option<Box<dyn crate::NativeAllocation>>>,
++}
++
++// Pinning protects the boxed future's allocation, not this inline owner.
++impl Unpin for OwnedConsumerFuture {}
++
++impl OwnedConsumerFuture {
++    fn from_parts(
++        future: BoxedConsumerFuture,
++        allocation: Option<Box<dyn crate::NativeAllocation>>,
++    ) -> Self {
++        let mut owner = Self {
++            future: ManuallyDrop::new(future),
++            allocation: ManuallyDrop::new(allocation),
++        };
++        if let Some(allocation) = owner.allocation.as_mut() {
++            allocation.allocated();
++        }
++        owner
++    }
++
++    fn as_mut(&mut self) -> Pin<&mut Self> {
++        Pin::new(self)
++    }
++}
++
++impl Future for OwnedConsumerFuture {
++    type Output = Result<StreamResult>;
++
++    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
++        self.get_mut().future.as_mut().poll(cx)
++    }
++}
++
++impl Drop for OwnedConsumerFuture {
++    fn drop(&mut self) {
++        // Retain the same charge on uncertain destructor unwind.
++        unsafe {
++            ManuallyDrop::drop(&mut self.future);
++            ManuallyDrop::drop(&mut self.allocation);
++        }
++    }
++}
++
++impl ConsumerPollFactory {
++    fn invoke_consumer(&self) -> BoxedConsumerFuture {
++        self.function.invoke_legacy()
++    }
++
++    fn prepare_consumer(&self) -> Result<OwnedConsumerFuture> {
++        self.function.prepare_paid()
++    }
++}
++
++fn own_consumer_poll_factory<F>(
++    memory: &crate::runtime::native_memory::Memory,
++    function: F,
++) -> Result<ConsumerPollFactory>
++where
++    F: Fn() -> BoxedConsumerFuture + Send + Sync + 'static,
++{
++    // The transparent wrapper keeps the literal prior closure allocation.
++    let allocation =
++        crate::runtime::native_memory::reserve(memory, core::alloc::Layout::new::<F>().size())?;
++    let function: Box<dyn ConsumerFactory> = Box::new(LegacyConsumerFactory(function));
++    Ok(ProducerFactory::from_parts(function, allocation))
++}
++
++fn own_typed_consumer_poll_factory<F, Fut>(
++    memory: &crate::runtime::native_memory::Memory,
++    function: F,
++) -> Result<ConsumerPollFactory>
++where
++    F: Fn() -> Fut + Send + Sync + 'static,
++    Fut: Future<Output = Result<StreamResult>> + Send + 'static,
++{
++    if memory.is_none() {
++        bail_bug!("typed consumer requires its original memory");
++    }
++    let wrapper = TypedConsumerFactory {
++        function,
++        memory: memory.clone(),
++        _future: PhantomData::<fn() -> Fut>,
++    };
++    let allocation = crate::runtime::native_memory::reserve(
++        memory,
++        core::alloc::Layout::new::<TypedConsumerFactory<F, Fut>>().size(),
++    )?;
++    let function: Box<dyn ConsumerFactory> = Box::new(wrapper);
++    Ok(ProducerFactory::from_parts(function, allocation))
++}
++
++impl HostAcceptFactory {
++    fn invoke_accept<'a>(
++        &self,
++        input: &'a mut UntypedWriteBuffer<'a>,
++    ) -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'a>> {
++        (self.function)(input)
++    }
++}
++
++fn own_host_accept_factory<F>(
++    memory: &crate::runtime::native_memory::Memory,
++    function: F,
++) -> Result<HostAcceptFactory>
++where
++    F: for<'a> Fn(
++            &'a mut UntypedWriteBuffer<'a>,
++        ) -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'a>>
++        + Send
++        + Sync
++        + 'static,
++{
++    // The concrete capture remains stack-owned until its own admission.
++    let allocation =
++        crate::runtime::native_memory::reserve(memory, core::alloc::Layout::new::<F>().size())?;
++    let function: HostAccept = Box::new(function);
++    Ok(ProducerFactory::from_parts(function, allocation))
 +}
 +
 +impl ProducerConversionFactory {
@@ -6210,7 +6608,7 @@
  /// Helper structure to manage moving a `T` in/out of an interior `Mutex` which
 --- a/src/runtime/component/concurrent/futures_and_streams/stream_outer_tests.rs
 +++ b/src/runtime/component/concurrent/futures_and_streams/stream_outer_tests.rs
-@@ -0,0 +1,1364 @@
+@@ -0,0 +1,1888 @@
 +//! OWNER-ONLY canonical-entry controls. This counter owner is NOT ActivationBudget.
 +use super::*;
 +use crate::component::{Component, Linker};
@@ -6289,6 +6687,39 @@
 +    static CUT: RefCell<Option<Cut>> = const { RefCell::new(None) };
 +    static ARM: RefCell<Option<(Arc<Probe>, usize)>> = const { RefCell::new(None) };
 +    static REVERSE_ACTIVE: Cell<bool> = const { Cell::new(false) };
++    static DEFERRED_ARM: RefCell<Option<(Arc<Probe>, u8)>> = const { RefCell::new(None) };
++    static DEFERRED_ENTERED: Cell<bool> = const { Cell::new(false) };
++    static DEFERRED_FINISHED: Cell<bool> = const { Cell::new(false) };
++}
++
++// The actual production call observes the real VMLazyThread state. This test
++// hook changes only the already existing counter owner's refusal ordinal.
++pub(super) fn before_deferred_force(is_deferred: bool) {
++    DEFERRED_ARM.with(|arm| {
++        if let Some((probe, mode)) = arm.borrow().as_ref() {
++            assert!(is_deferred, "fixture must enter a real deferred guest call");
++            assert!(*mode <= 2);
++            assert!(!DEFERRED_ENTERED.with(|seen| seen.replace(true)));
++            if *mode == 1 {
++                let next = probe.requests.lock().unwrap().len() + 1;
++                probe.refuse.store(next, SeqCst);
++            }
++        }
++    });
++}
++
++pub(super) fn after_deferred_force() {
++    DEFERRED_ARM.with(|arm| {
++        if let Some((probe, mode)) = arm.borrow().as_ref() {
++            if *mode == 2 {
++                let next = probe.requests.lock().unwrap().len() + 1;
++                probe.refuse.store(next, SeqCst);
++            } else {
++                probe.refuse.store(0, SeqCst);
++            }
++            DEFERRED_FINISHED.with(|finished| finished.set(true));
++        }
++    });
 +}
 +struct ObserveReverse;
 +impl ObserveReverse {
@@ -6541,6 +6972,26 @@
 +        }
 +    }
 +}
++fn deferred_fixture() -> (Engine, Component) {
++    let path = std::env::var_os("LSF_TEST_STREAM_DEFERRED_COMPONENT")
++        .expect("owner-only fixed deferred fixture path required");
++    let meta = std::fs::symlink_metadata(&path).unwrap();
++    assert!(meta.file_type().is_file() && !meta.file_type().is_symlink());
++    assert!(meta.len() > 8 && meta.len() <= 64 * 1024);
++    let bytes = std::fs::read(path).unwrap();
++    assert!(bytes.starts_with(b"\0asm"));
++    let engine = Engine::new(
++        Config::new()
++            .wasm_component_model(true)
++            .wasm_component_model_async(true)
++            .concurrency_support(true)
++            .consume_fuel(true),
++    )
++    .unwrap();
++    let component = Component::new(&engine, bytes).unwrap();
++    (engine, component)
++}
++
 +fn fixture() -> (Engine, Component) {
 +    let path = std::env::var_os(FIXTURE_ENV).expect("owner-only fixed fixture path required");
 +    let meta = std::fs::symlink_metadata(&path).unwrap();
@@ -6629,7 +7080,8 @@
 +    reader
 +}
 +async fn reverse_refusal_cases(engine: &Engine, component: &Component) {
-+    for local in 1..=3 {
++    // Preserve all six previous cuts, then refuse the concrete inner future.
++    for local in 1..=7 {
 +        let probe = Arc::new(Probe::default());
 +        let (mut store, instance) = setup(engine, component, true, &probe).await;
 +        let reader = waiting_writer(&mut store, instance).await;
@@ -6742,7 +7194,9 @@
 +}
 +async fn refusal_cases(write: bool) {
 +    let (engine, component) = fixture();
-+    for local in 1..=3 {
++    // The write path adds an admitted consumer inner future after the three
++    // original queue/task/outer cuts; read remains unchanged.
++    for local in 1..=if write { 4 } else { 3 } {
 +        let probe = Arc::new(Probe::default());
 +        let (mut store, instance) = setup(&engine, &component, true, &probe).await;
 +        let gate = Arc::new(Gate::default());
@@ -7391,6 +7845,474 @@
 +    _: &PreparedProducerFactory<A, B, F>,
 +) -> core::alloc::Layout {
 +    core::alloc::Layout::new::<F>()
++}
++
++#[test]
++fn consumer_poll_factory_admits_exact_capture_before_publication_and_releases_after_drop() {
++    for refuse in [true, false] {
++        let probe = Arc::new(ConsumerCellProbe::default());
++        let trace = Arc::new(Mutex::new(Vec::new()));
++        probe.refuse.store(if refuse { 1 } else { 0 }, SeqCst);
++        probe.check_value_drop.store(true, SeqCst);
++        let capture = producer_factory_capture(&probe, &trace, "consumer", false, false);
++        let function = move || capture.produce();
++        let expected = core::mem::size_of_val(&function);
++        assert!(expected > 0);
++        let result = own_consumer_poll_factory(&consumer_cell_memory(&probe), function);
++        assert_eq!(*probe.requests.lock().unwrap(), [expected]);
++        if refuse {
++            assert!(result.is_err());
++            assert_eq!(probe.confirmations.load(SeqCst), 0);
++            assert_eq!(probe.value_drops.load(SeqCst), 1);
++            assert_eq!(probe.live.load(SeqCst), 0);
++            assert_eq!(*trace.lock().unwrap(), ["consumer"]);
++        } else {
++            let factory = result.unwrap();
++            assert_eq!(probe.confirmations.load(SeqCst), 1);
++            assert_eq!(probe.live.load(SeqCst), expected);
++            let future = factory.invoke_consumer();
++            assert_eq!(probe.live.load(SeqCst), expected);
++            drop(future); // The returned future is a distinct, unqualified owner.
++            assert_eq!(probe.live.load(SeqCst), expected);
++            drop(factory);
++            assert_eq!(probe.value_drops.load(SeqCst), 1);
++            assert_eq!(probe.live.load(SeqCst), 0);
++            assert_eq!(*trace.lock().unwrap(), ["call", "consumer"]);
++        }
++    }
++}
++
++#[test]
++fn consumer_poll_factory_confirmation_unwind_drops_capture_before_original_guard() {
++    let probe = Arc::new(ConsumerCellProbe::default());
++    let trace = Arc::new(Mutex::new(Vec::new()));
++    probe.panic_confirmation.store(1, SeqCst);
++    probe.check_value_drop.store(true, SeqCst);
++    let capture = producer_factory_capture(&probe, &trace, "consumer", false, false);
++    assert!(
++        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
++            own_consumer_poll_factory(&consumer_cell_memory(&probe), move || capture.produce())
++        }))
++        .is_err()
++    );
++    assert_eq!(probe.value_drops.load(SeqCst), 1);
++    assert_eq!(probe.live.load(SeqCst), 0);
++    assert_eq!(*trace.lock().unwrap(), ["consumer"]);
++}
++
++#[test]
++fn consumer_poll_factory_legacy_and_uncertain_destructor_keep_existing_boundaries() {
++    let probe = Arc::new(ConsumerCellProbe::default());
++    let trace = Arc::new(Mutex::new(Vec::new()));
++    let capture = producer_factory_capture(&probe, &trace, "legacy", false, false);
++    let legacy = own_consumer_poll_factory(&None, move || capture.produce()).unwrap();
++    drop(legacy.invoke_consumer());
++    drop(legacy);
++    assert!(probe.requests.lock().unwrap().is_empty());
++    assert_eq!(*trace.lock().unwrap(), ["call", "legacy"]);
++
++    let probe = Arc::new(ConsumerCellProbe::default());
++    let trace = Arc::new(Mutex::new(Vec::new()));
++    let capture = producer_factory_capture(&probe, &trace, "uncertain", false, true);
++    let factory =
++        own_consumer_poll_factory(&consumer_cell_memory(&probe), move || capture.produce())
++            .unwrap();
++    let reserved = probe.live.load(SeqCst);
++    assert!(reserved > 0);
++    assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(factory))).is_err());
++    assert_eq!(probe.live.load(SeqCst), reserved);
++}
++
++// These source-private controls account the concrete consumer future's own
++// Box. They do not qualify transitive captures or borrowed accept futures.
++struct ConsumerInnerFutureProbe {
++    probe: Arc<ConsumerCellProbe>,
++    address: Arc<AtomicUsize>,
++    polls: Arc<AtomicUsize>,
++    panic_drop: bool,
++    _padding: [u8; 97],
++    _pinned: core::marker::PhantomPinned,
++}
++
++impl Future for ConsumerInnerFutureProbe {
++    type Output = Result<StreamResult>;
++
++    fn poll(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Self::Output> {
++        let this = self.as_ref().get_ref();
++        let address = this as *const Self as usize;
++        match this.address.compare_exchange(0, address, SeqCst, SeqCst) {
++            Ok(_) => {}
++            Err(old) => assert_eq!(old, address),
++        }
++        this.polls.fetch_add(1, SeqCst);
++        Poll::Pending
++    }
++}
++
++impl Drop for ConsumerInnerFutureProbe {
++    fn drop(&mut self) {
++        self.probe.value_drops.fetch_add(1, SeqCst);
++        assert!(!self.panic_drop, "consumer-inner-future-drop");
++    }
++}
++
++fn consumer_inner_probe_factory(
++    probe: Arc<ConsumerCellProbe>,
++    calls: Arc<AtomicUsize>,
++    address: Arc<AtomicUsize>,
++    polls: Arc<AtomicUsize>,
++    panic_drop: bool,
++) -> impl Fn() -> ConsumerInnerFutureProbe + Send + Sync + 'static {
++    move || {
++        calls.fetch_add(1, SeqCst);
++        ConsumerInnerFutureProbe {
++            probe: probe.clone(),
++            address: address.clone(),
++            polls: polls.clone(),
++            panic_drop,
++            _padding: [0; 97],
++            _pinned: core::marker::PhantomPinned,
++        }
++    }
++}
++
++fn consumer_inner_layout<F, Fut>(_: &F) -> usize
++where
++    F: Fn() -> Fut,
++{
++    core::alloc::Layout::new::<Fut>().size()
++}
++
++#[test]
++fn consumer_inner_future_exact_admission_pin_and_origin_retirement() {
++    let original = Arc::new(ConsumerCellProbe::default());
++    let foreign = Arc::new(ConsumerCellProbe::default());
++    let _foreign_memory = consumer_cell_memory(&foreign);
++    let calls = Arc::new(AtomicUsize::new(0));
++    let address = Arc::new(AtomicUsize::new(0));
++    let polls = Arc::new(AtomicUsize::new(0));
++    let function = consumer_inner_probe_factory(
++        original.clone(),
++        calls.clone(),
++        address.clone(),
++        polls.clone(),
++        false,
++    );
++    let exact = consumer_inner_layout(&function);
++    assert!(exact > core::mem::size_of::<BoxedConsumerFuture>());
++    let factory =
++        own_typed_consumer_poll_factory(&consumer_cell_memory(&original), function).unwrap();
++    let factory_bytes = original.live.load(SeqCst);
++    original.refuse.store(2, SeqCst);
++    assert!(factory.prepare_consumer().is_err());
++    assert_eq!(calls.load(SeqCst), 0);
++    assert_eq!(polls.load(SeqCst), 0);
++    assert_eq!(original.live.load(SeqCst), factory_bytes);
++    assert_eq!(original.requests.lock().unwrap()[1], exact);
++
++    original.refuse.store(0, SeqCst);
++    original.check_value_drop.store(true, SeqCst);
++    let mut future = factory.prepare_consumer().unwrap();
++    assert_eq!(original.requests.lock().unwrap()[2], exact);
++    assert_eq!(original.live.load(SeqCst), factory_bytes + exact);
++    assert_eq!(calls.load(SeqCst), 1);
++    let mut cx = Context::from_waker(Waker::noop());
++    assert!(Pin::new(&mut future).poll(&mut cx).is_pending());
++    assert!(Pin::new(&mut future).poll(&mut cx).is_pending());
++    assert_eq!(polls.load(SeqCst), 2);
++    assert_ne!(address.load(SeqCst), 0);
++    drop(future);
++    assert_eq!(original.value_drops.load(SeqCst), 1);
++    assert_eq!(original.live.load(SeqCst), factory_bytes);
++    assert!(foreign.requests.lock().unwrap().is_empty());
++    assert_eq!(foreign.live.load(SeqCst), 0);
++    drop(factory);
++    assert_eq!(original.live.load(SeqCst), 0);
++}
++
++#[test]
++fn consumer_inner_future_confirmation_and_uncertain_drop_keep_owner() {
++    for panic_confirmation in [true, false] {
++        let probe = Arc::new(ConsumerCellProbe::default());
++        let calls = Arc::new(AtomicUsize::new(0));
++        let function = consumer_inner_probe_factory(
++            probe.clone(),
++            calls.clone(),
++            Arc::new(AtomicUsize::new(0)),
++            Arc::new(AtomicUsize::new(0)),
++            !panic_confirmation,
++        );
++        let exact = consumer_inner_layout(&function);
++        let factory =
++            own_typed_consumer_poll_factory(&consumer_cell_memory(&probe), function).unwrap();
++        let factory_bytes = probe.live.load(SeqCst);
++        if panic_confirmation {
++            probe.panic_confirmation.store(2, SeqCst);
++            probe.check_value_drop.store(true, SeqCst);
++            assert!(
++                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
++                    factory.prepare_consumer()
++                }))
++                .is_err()
++            );
++            assert_eq!(probe.value_drops.load(SeqCst), 1);
++            assert_eq!(probe.live.load(SeqCst), factory_bytes);
++            drop(factory);
++            assert_eq!(probe.live.load(SeqCst), 0);
++        } else {
++            let future = factory.prepare_consumer().unwrap();
++            assert_eq!(probe.live.load(SeqCst), factory_bytes + exact);
++            assert!(
++                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| { drop(future) }))
++                    .is_err()
++            );
++            // Future destructor unwind makes the original future guard uncertain.
++            assert_eq!(probe.live.load(SeqCst), factory_bytes + exact);
++            drop(factory);
++            assert_eq!(probe.live.load(SeqCst), exact);
++        }
++        assert_eq!(calls.load(SeqCst), 1);
++    }
++}
++
++struct ZstConsumerInnerFuture;
++impl Future for ZstConsumerInnerFuture {
++    type Output = Result<StreamResult>;
++    fn poll(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Self::Output> {
++        Poll::Ready(Ok(StreamResult::Completed))
++    }
++}
++
++#[test]
++fn consumer_inner_future_zst_needs_no_backing_reservation() {
++    let probe = Arc::new(ConsumerCellProbe::default());
++    let function = || ZstConsumerInnerFuture;
++    assert_eq!(consumer_inner_layout(&function), 0);
++    let factory = own_typed_consumer_poll_factory(&consumer_cell_memory(&probe), function).unwrap();
++    let count = probe.requests.lock().unwrap().len();
++    let mut future = factory.prepare_consumer().unwrap();
++    assert_eq!(probe.requests.lock().unwrap().len(), count);
++    let mut cx = Context::from_waker(Waker::noop());
++    assert!(Pin::new(&mut future).poll(&mut cx).is_ready());
++    drop(future);
++    drop(factory);
++    assert_eq!(probe.live.load(SeqCst), 0);
++}
++
++#[tokio::test]
++#[ignore = "requires owner-authenticated deferred forwarding component"]
++async fn consumer_inner_future_deferred_replay_refusal_precedes_busy() {
++    let (engine, component) = deferred_fixture();
++    // Refuse replay, refuse the later inner future, then allow both.
++    for mode in [1u8, 2, 0] {
++        let probe = Arc::new(Probe::default());
++        let (mut store, instance) = setup(&engine, &component, true, &probe).await;
++        let gate = Arc::new(Gate::default());
++        gate.ready.store(true, SeqCst);
++        let make = instance
++            .get_typed_func::<(), (StreamReader<u8>,)>(&mut store, "make")
++            .unwrap();
++        let (reader,) = make.call_async(&mut store, ()).await.unwrap();
++        reader.pipe(&mut store, Consumer(gate.clone())).unwrap();
++        DEFERRED_ENTERED.with(|seen| seen.set(false));
++        DEFERRED_FINISHED.with(|finished| finished.set(false));
++        DEFERRED_ARM.with(|arm| *arm.borrow_mut() = Some((probe.clone(), mode)));
++        let result = instance
++            .get_typed_func::<(), (u32,)>(&mut store, "write")
++            .unwrap()
++            .call_async(&mut store, ())
++            .await;
++        DEFERRED_ARM.with(|arm| assert!(arm.borrow_mut().take().is_some()));
++        assert!(
++            DEFERRED_ENTERED.with(Cell::get),
++            "mode {mode}: deferred hook not reached; call outcome: {result:#?}"
++        );
++        if mode != 0 {
++            assert_eq!(DEFERRED_FINISHED.with(Cell::get), mode == 2);
++            let error = result.unwrap_err();
++            assert!(format!("{error:#}").contains(REFUSAL));
++            assert_eq!(gate.polls.load(SeqCst), 0);
++            assert_refused_state(&mut store);
++            drop(error);
++        } else {
++            assert!(DEFERRED_FINISHED.with(Cell::get));
++            assert_eq!(result.unwrap(), (17,));
++            assert_eq!(gate.payload.load(SeqCst), 42);
++        }
++        probe.refuse.store(0, SeqCst);
++        drop(store);
++        gate.release();
++        assert_eq!(probe.live.load(SeqCst), 0);
++        let (mut fresh, instance) = setup(&engine, &component, true, &probe).await;
++        let answer = instance
++            .get_typed_func::<(), (u32,)>(&mut fresh, "answer")
++            .unwrap();
++        assert_eq!(answer.call_async(&mut fresh, ()).await.unwrap(), (42,));
++        drop(fresh);
++        assert_eq!(probe.live.load(SeqCst), 0);
++    }
++}
++
++#[tokio::test]
++async fn host_accept_refusal_preserves_the_original_transmit_and_can_resume() {
++    let engine = Engine::new(
++        Config::new()
++            .wasm_component_model(true)
++            .wasm_component_model_async(true)
++            .concurrency_support(true),
++    )
++    .unwrap();
++    let probe = Arc::new(Probe::default());
++    let mut store =
++        Store::try_new_with_memory(&engine, (), Arc::new(Memory(probe.clone()))).unwrap();
++    store.run_concurrent(async |_| ()).await.unwrap();
++    let producer = Arc::new(Gate::default());
++    let consumer = Arc::new(Gate::default());
++    producer.ready.store(true, SeqCst);
++    consumer.ready.store(true, SeqCst);
++    let reader = StreamReader::new(&mut store, Producer(producer.clone())).unwrap();
++    let handle = reader.id;
++    let transmit = store
++        .as_context_mut()
++        .0
++        .concurrent_state_mut_already_forced_current_thread()
++        .get_mut(handle)
++        .unwrap()
++        .state;
++    let before = probe.requests.lock().unwrap().len();
++    // queue / task / outer / consumer value / consumer cell / accept factory
++    probe.refuse.store(before + 6, SeqCst);
++    let error = reader
++        .pipe(&mut store, Consumer(consumer.clone()))
++        .unwrap_err();
++    assert!(format!("{error:#}").contains(REFUSAL));
++    assert_eq!(probe.requests.lock().unwrap().len(), before + 6);
++    assert_eq!(producer.polls.load(SeqCst), 0);
++    assert_eq!(consumer.polls.load(SeqCst), 0);
++    let state = store
++        .as_context_mut()
++        .0
++        .concurrent_state_mut_already_forced_current_thread();
++    let retained = state.get_mut(transmit).unwrap();
++    assert!(!retained.done);
++    assert!(matches!(&retained.read, ReadState::Open));
++    assert!(matches!(&retained.write, WriteState::HostReady { .. }));
++    probe.refuse.store(0, SeqCst);
++    // The test recreates the original handle, not a new transmit or producer.
++    StreamReader::<u8>::new_(handle)
++        .pipe(&mut store, Consumer(consumer.clone()))
++        .unwrap();
++    drive(&mut store, &consumer).await.unwrap();
++    assert_eq!(consumer.payload.load(SeqCst), 42);
++    drop(store);
++    producer.release();
++    consumer.release();
++    assert_eq!(probe.live.load(SeqCst), 0);
++}
++
++// The real host-to-host path uses the same higher-ranked input contract.
++fn host_accept_capture(
++    capture: ProducerFactoryCapture,
++) -> impl for<'a> Fn(
++    &'a mut UntypedWriteBuffer<'a>,
++) -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'a>>
+++ Send
+++ Sync
+++ 'static {
++    move |_| capture.produce()
++}
++
++#[test]
++fn host_accept_factory_admits_before_invocation_and_releases_after_drop() {
++    for refuse in [true, false] {
++        let probe = Arc::new(ConsumerCellProbe::default());
++        let trace = Arc::new(Mutex::new(Vec::new()));
++        probe.refuse.store(if refuse { 1 } else { 0 }, SeqCst);
++        probe.check_value_drop.store(true, SeqCst);
++        let function = host_accept_capture(producer_factory_capture(
++            &probe,
++            &trace,
++            "host-accept",
++            false,
++            false,
++        ));
++        let expected = core::mem::size_of_val(&function);
++        assert!(expected > 0);
++        let result = own_host_accept_factory(&consumer_cell_memory(&probe), function);
++        assert_eq!(*probe.requests.lock().unwrap(), [expected]);
++        if refuse {
++            assert!(result.is_err());
++            assert_eq!(probe.confirmations.load(SeqCst), 0);
++            assert_eq!(probe.value_drops.load(SeqCst), 1);
++            assert_eq!(probe.live.load(SeqCst), 0);
++            assert_eq!(*trace.lock().unwrap(), ["host-accept"]);
++        } else {
++            let factory = result.unwrap();
++            assert_eq!(probe.confirmations.load(SeqCst), 1);
++            assert_eq!(probe.live.load(SeqCst), expected);
++            let mut buffer = SliceBuffer::new(vec![42], 0, 1);
++            let mut untyped = UntypedWriteBuffer::new(&mut buffer);
++            let future = factory.invoke_accept(&mut untyped);
++            assert_eq!(probe.live.load(SeqCst), expected);
++            drop(future); // The returned future has a separate, unqualified cost.
++            assert_eq!(probe.live.load(SeqCst), expected);
++            drop(factory);
++            assert_eq!(probe.value_drops.load(SeqCst), 1);
++            assert_eq!(probe.live.load(SeqCst), 0);
++            assert_eq!(*trace.lock().unwrap(), ["call", "host-accept"]);
++        }
++    }
++}
++
++#[test]
++fn host_accept_factory_confirmation_unwind_and_uncertain_drop_preserve_ownership() {
++    let probe = Arc::new(ConsumerCellProbe::default());
++    let trace = Arc::new(Mutex::new(Vec::new()));
++    probe.panic_confirmation.store(1, SeqCst);
++    probe.check_value_drop.store(true, SeqCst);
++    let function = host_accept_capture(producer_factory_capture(
++        &probe, &trace, "confirm", false, false,
++    ));
++    assert!(
++        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
++            own_host_accept_factory(&consumer_cell_memory(&probe), function)
++        }))
++        .is_err()
++    );
++    assert_eq!(probe.value_drops.load(SeqCst), 1);
++    assert_eq!(probe.live.load(SeqCst), 0);
++    assert_eq!(*trace.lock().unwrap(), ["confirm"]);
++
++    let probe = Arc::new(ConsumerCellProbe::default());
++    let trace = Arc::new(Mutex::new(Vec::new()));
++    let function = host_accept_capture(producer_factory_capture(
++        &probe,
++        &trace,
++        "uncertain",
++        false,
++        true,
++    ));
++    let factory = own_host_accept_factory(&consumer_cell_memory(&probe), function).unwrap();
++    let reserved = probe.live.load(SeqCst);
++    assert!(reserved > 0);
++    assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(factory))).is_err());
++    assert_eq!(probe.live.load(SeqCst), reserved);
++}
++
++#[test]
++fn host_accept_factory_none_keeps_literal_box_and_no_reservation() {
++    let probe = Arc::new(ConsumerCellProbe::default());
++    let trace = Arc::new(Mutex::new(Vec::new()));
++    let function = host_accept_capture(producer_factory_capture(
++        &probe, &trace, "legacy", false, false,
++    ));
++    let factory = own_host_accept_factory(&None, function).unwrap();
++    let mut buffer = SliceBuffer::new(vec![42], 0, 1);
++    let mut untyped = UntypedWriteBuffer::new(&mut buffer);
++    drop(factory.invoke_accept(&mut untyped));
++    drop(factory);
++    assert!(probe.requests.lock().unwrap().is_empty());
++    assert_eq!(*trace.lock().unwrap(), ["call", "legacy"]);
 +}
 +
 +#[test]

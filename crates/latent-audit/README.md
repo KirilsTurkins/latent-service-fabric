@@ -76,3 +76,7 @@ Representative source tests (not a complete coverage inventory):
 - [Dispatcher management contract](../../docs/development/dispatcher-management-contract.md)
 - [Workspace package index](../README.md)
 - [Architecture index](../../ARCHITECTURE.md)
+
+## Publication maintenance records
+
+Distinct pin, unpin, delete and reclaim actions require a bounded preview-receipt digest and reserve attempt/outcome capacity. Committed conclusions must match the preview digest and replay flag. Complete batch authority is hashed by the native artifact owner; no fake single-target identity is stored.

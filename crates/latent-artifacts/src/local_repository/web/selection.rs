@@ -20,6 +20,7 @@ impl DirectoryArtifactRepository {
         reference: &PublicationRef,
         payload_bytes: usize,
     ) -> Result<WebSelection, PlatformError> {
+        let epoch = self.web.epoch.read()?;
         self.web.epoch.check()?;
         let state = self.web.state.try_read().map_err(|_| busy())?;
         let entry = state.entry(reference)?;
@@ -32,10 +33,10 @@ impl DirectoryArtifactRepository {
             .checked_add(payload_bytes)
             .and_then(|n| n.checked_add(4096))
             .ok_or_else(capacity)?;
-        let permit = self.web.reads.reserve(bytes)?;
+        let permit = self.web.reads.reserve_publication(bytes, &reference.id)?;
         let token = WebUseEligibility::new(
             reference.clone(),
-            Arc::clone(&entry.layout),
+            Arc::clone(entry.layout()?),
             Arc::clone(grant),
             Arc::clone(&self.web.epoch),
             Arc::clone(&entry.generation),
@@ -43,6 +44,7 @@ impl DirectoryArtifactRepository {
             Arc::clone(&permit),
         )?;
         drop(state);
+        drop(epoch);
         token.check_current(reference.scope.tenant().ok_or_else(denied)?)?;
         Ok(WebSelection {
             eligibility: token,
@@ -57,7 +59,7 @@ impl DirectoryArtifactRepository {
         let state = self.web.state.try_read().map_err(|_| busy())?;
         let entry = state.entry(reference)?;
         let record = entry.record.clone();
-        let renderer = entry.layout.manifest().renderer.clone();
+        let renderer = entry.layout()?.manifest().renderer.clone();
         drop(state);
         let (eligibility, eligibility_reason) = match record.state {
             ReleaseLifecycleState::Revoked => (Live::Denied, Reason::Revoked),
@@ -94,7 +96,7 @@ impl DirectoryArtifactRepository {
         let state = self.web.state.try_read().map_err(|_| busy())?;
         let asset = state
             .entry(reference)?
-            .layout
+            .layout()?
             .asset(path)
             .ok_or_else(|| error(PlatformErrorCode::NotFound, "web-public-asset-not-found"))?;
         let size = usize::try_from(asset.size).map_err(|_| capacity())?;
@@ -116,7 +118,7 @@ impl DirectoryArtifactRepository {
         let state = self.web.state.try_read().map_err(|_| busy())?;
         let renderer = state
             .entry(reference)?
-            .layout
+            .layout()?
             .manifest()
             .renderer
             .as_ref()

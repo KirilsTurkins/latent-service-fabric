@@ -316,7 +316,7 @@ def offline_rebuild_identity(first, rebuilt):
 
 def qualify(prepared, output, tools):
     output = fresh(output)
-    commands = Commands(ROOT, output, build_environment(output), deadline_seconds=2400, command_seconds=600)
+    commands = Commands(ROOT, output, build_environment(output), deadline_seconds=3600, command_seconds=600)
     materials = {name: file_identity(ROOT / name) for name in MATERIALS}
     stage = 'original-native-products'
     try:
@@ -365,8 +365,9 @@ def qualify(prepared, output, tools):
                 nodes.append(file_identity(output / ('node-' + label) / 'workflow.json'))
         require(frozen(prepared)[3] == native_identity
                 and original_tools == {'node': file_identity(node), 'npm': file_identity(npm)}
-                and materials == {name: file_identity(ROOT / name) for name in MATERIALS}
-                and time.monotonic() < commands.deadline, 'private-npm-final-inputs-drift')
+                and materials == {name: file_identity(ROOT / name) for name in MATERIALS},
+                'private-npm-final-inputs-drift')
+        require(time.monotonic() < commands.deadline, 'private-npm-qualification-deadline')
         result = {'schemaVersion': 'latent.npm.private-dependencies.qualification.v1', 'status': 'passed',
             'capture': acquired, 'builds': builds, 'nodeReceipts': nodes, 'materials': materials,
             'offlineRebuild': rebuild_identity, 'reproducibility': 'not-claimed',

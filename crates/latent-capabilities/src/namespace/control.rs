@@ -21,7 +21,7 @@ use latent_state::{
 };
 pub use retained::{
     PreparedRetainedNamespaceControl, RetainedNamespaceControlFence,
-    RetainedNamespaceControlRequest,
+    RetainedNamespaceControlRequest, RetainedPreparationError,
 };
 
 pub struct NamespaceControl;

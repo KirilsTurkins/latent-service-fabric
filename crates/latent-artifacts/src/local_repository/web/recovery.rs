@@ -9,9 +9,10 @@ use crate::package::artifact_blob_digest;
 impl DirectoryArtifactRepository {
     pub(in crate::local_repository) fn initialize_web(&self) -> Result<(), PlatformError> {
         let enabled = self.web_enabled()?;
+        let cleaned = self.cleanup_web_identities()?;
         let root = self.web_path();
         if !root.try_exists().map_err(io_error)? {
-            return if enabled {
+            return if enabled || !cleaned.is_empty() {
                 Err(corrupt("web-lifecycle-history-missing"))
             } else {
                 Ok(())
@@ -51,6 +52,14 @@ impl DirectoryArtifactRepository {
             let id: PublicationId = format!("publication:sha256:{hex}")
                 .parse()
                 .map_err(|_| corrupt("web-directory-name"))?;
+            if cleaned
+                .binary_search_by(|i| i.record.publication.id.cmp(&id))
+                .is_ok()
+            {
+                self.check_web_cleanup_path(&id, &entry.path())?;
+                writer.release_directories -= 1;
+                continue;
+            }
             let stored = storage::Stored::read(
                 &entry.path(),
                 self.web_authority()?.limits,
@@ -69,7 +78,17 @@ impl DirectoryArtifactRepository {
         }
         let mut retained = state.retained_bytes()?;
         for disk in recovered.rows {
-            let entry = self.recover_web_entry(disk)?;
+            let entry = if let Ok(n) = cleaned
+                .binary_search_by(|i| i.record.publication.id.cmp(&disk.record.publication.id))
+            {
+                let identity = &cleaned[n];
+                if identity.record != disk.record || identity.completion != disk.completion {
+                    return Err(corrupt("web-cleanup-retained-row-changed"));
+                }
+                identity.entry()
+            } else {
+                self.recover_web_entry(disk)?
+            };
             retained = retained
                 .checked_add(entry.retained_bytes()?)
                 .ok_or_else(capacity)?;
@@ -77,14 +96,19 @@ impl DirectoryArtifactRepository {
                 .entries
                 .insert(entry.record.publication.id.clone(), entry);
             self.index.read().map_err(lock_error)?.check_web(
-                state.entries.len(),
+                state.payload_entries(),
                 retained,
                 self.config,
             )?;
         }
+        for identity in &cleaned {
+            if !state.entries.contains_key(&identity.record.publication.id) {
+                return Err(corrupt("web-cleanup-retained-row-missing"));
+            }
+        }
         self.recover_web_evidence(&mut state)?;
         self.index.write().map_err(lock_error)?.replace_web(
-            state.entries.len(),
+            state.payload_entries(),
             state.retained_bytes()?,
             self.config,
         )?;
@@ -215,11 +239,12 @@ impl DirectoryArtifactRepository {
             original
         };
         Ok(Entry {
+            deleted: false,
             projection: super::projection::Projection::new(&disk.record.publication, &layout)?,
             generation: Arc::new(WebGeneration::new(disk.record.generation)),
             record: disk.record,
             completion: disk.completion,
-            layout: Arc::new(layout),
+            layout: Some(Arc::new(layout)),
             grant,
         })
     }

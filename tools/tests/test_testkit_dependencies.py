@@ -99,6 +99,11 @@ class TestkitDependencyTests(unittest.TestCase):
                     subject.check_selected(package, output)
         subject.check_selected("latent-core", "latent-core v0.0.0\ntokio v1.53.1\n")
 
+    def test_selected_graph_rejects_the_local_blob_owner(self):
+        for package in subject.PACKAGES:
+            with self.subTest(package=package), self.assertRaisesRegex(RuntimeError, "latent-local-blobs"):
+                subject.check_selected(package, f"{package} v0.0.0\nlatent-local-blobs v0.0.0\n")
+
     def test_selected_checks_include_test_dependencies(self):
         for package in subject.PACKAGES:
             command = subject.cargo_command(package)

@@ -34,22 +34,25 @@ class CheckpointCompiler(unittest.TestCase):
             'reset-counted', 'exceptional-retry', 'unmanaged-class', 'transitive-initializer',
             'near-max-counted', 'nested-polling', 'mutual-recursion', 'virtual-initializer',
             'string-info-getter', 'string-info-declaration', 'string-info-parent', 'string-info-target',
-            'class-info-enum-count', 'class-info-enum-other-refused', 'class-info-declaration',
+            'class-info-enum-count', 'class-info-managed-count-refused', 'class-info-enum-other-refused', 'class-info-declaration',
             'class-info-parent', 'class-info-layout', 'class-info-target', 'class-info-header-shadow',
-            'compiler-archive-control', 'compiler-cache-isolation'])
+            'compiler-archive-control', 'compiler-cache-isolation', 'number-override-refused',
+            'integer-field-identity', 'integer-hierarchy-bounds'])
 
     def test_real_frontend_executes_every_declared_progress_case(self):
         source = probe.COMPILER_CONTROL.read_text()
         cases = re.findall(r'check\((\w+)\.class\.getName\(\), corrected, (false|true), ""\);', source)
         self.assertEqual(cases, [
-            ('Finite', 'false'), ('InitializerPolling', 'true'), ('UnmanagedPolling', 'true'),
+            ('Finite', 'false'), ('InitializerPolling', 'true'), ('NumberOverridePolling', 'true'),
+            ('UnmanagedPolling', 'true'),
             ('ManagedPolling', 'false'), ('RecursiveInitializer', 'true'),
             ('FiniteUnmanaged', 'false'), ('NestedCounted', 'false'), ('ChangingBound', 'false'),
             ('WrappingCounted', 'true'), ('ResetCounted', 'true'), ('ExceptionalRetry', 'true'),
             ('UnmanagedClassPolling', 'true'), ('TransitiveInitializer', 'true'),
             ('NearMaxCounted', 'false'), ('NestedPolling', 'true'), ('MutualRecursion', 'true'),
             ('VirtualInitializer', 'true'), ('StringInfoAccess', 'false'),
-            ('ClassInfoEnumCountAccess', 'false'), ('ClassInfoEnumElementAccess', 'true')])
+            ('ClassInfoEnumCountAccess', 'true'), ('ClassInfoManagedCountAccess', 'true'),
+            ('ClassInfoEnumElementAccess', 'true')])
         self.assertIn('new String[] { "runtime-initializer", "class-object-helper", "string-copy-body" }', source)
         self.assertIn('check(Finite.class.getName(), corrected, true, mutation);', source)
         self.assertIn('new String[] { "string-info-declaration", "string-info-parent" }', source)
@@ -62,7 +65,9 @@ class CheckpointCompiler(unittest.TestCase):
         self.assertIn('checkpoint-control-class-info-shadow-header-refused', source)
         self.assertIn('checkCompilerArchive(corrected);', source)
         self.assertIn('checkCompilerCacheIsolation(corrected);', source)
-        self.assertEqual(len(cases) + 13, len(probe.COMPILER_EXPECTED.split(';')) - 1)
+        self.assertIn('checkIntegerValueField(corrected);', source)
+        self.assertIn('checkIntegerHierarchy(corrected);', source)
+        self.assertEqual(len(cases) + 15, len(probe.COMPILER_EXPECTED.split(';')) - 1)
 
     def test_enum_count_proof_binds_exact_emitter_and_loader_header(self):
         from tools.java_guest import coroutine_patch

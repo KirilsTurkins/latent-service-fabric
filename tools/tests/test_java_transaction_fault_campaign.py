@@ -217,6 +217,18 @@ class DiagnosticInputOracle(unittest.TestCase):
 
 
 class RollbackOracle(unittest.TestCase):
+    def test_precommit_crash_requires_the_same_original_identity(self):
+        original = {'key': {'clientKey': 'original'}, 'commandId': 'one', 'attemptId': '1',
+                    'fingerprintSha256': 'fingerprint', 'source': {'publicationId': 'original'},
+                    'retention': {'remainingRecoveryMillis': '10'}}
+        recovered = copy.deepcopy(original)
+        recovered['retention']['remainingRecoveryMillis'] = '9'
+        campaign.same_pending_after_crash(original, recovered)
+        for field in ('key', 'commandId', 'attemptId', 'fingerprintSha256', 'source'):
+            changed = copy.deepcopy(recovered)
+            changed[field] = None
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'crashed-original-command-identity-changed'):
+                campaign.same_pending_after_crash(original, changed)
     def test_original_attempt_lookup_can_wait_for_claim_without_retrying_mutation_or_renewing_time(self):
         from tools.tests.java_read_observer_fixtures import pending_claim, reply
         calls = []

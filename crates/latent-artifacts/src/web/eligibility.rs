@@ -42,7 +42,7 @@ impl WebEpoch {
             Err(unavailable("web-catalog-reopen-required"))
         }
     }
-    fn read(&self) -> Result<RwLockReadGuard<'_, ()>, PlatformError> {
+    pub(crate) fn read(&self) -> Result<RwLockReadGuard<'_, ()>, PlatformError> {
         let guard = self
             .fence
             .try_read()

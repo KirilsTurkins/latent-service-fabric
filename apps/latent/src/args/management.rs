@@ -10,6 +10,9 @@ pub enum ValidateCommand {
 
 #[derive(Subcommand)]
 pub enum ReleaseCommand {
+    /// Exact publication pins, deletion, bounded cleanup and original-operation recovery.
+    #[command(subcommand)]
+    Retention(super::retention::RetentionCommand),
     Publish(PublishArgs),
     Get(PublicationArgs),
     List(ServicePageArgs),
