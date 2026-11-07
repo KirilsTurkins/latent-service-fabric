@@ -1,0 +1,116 @@
+name: PR 1657 package-aware formatting and strict lint
+on:
+  push:
+    branches: ['diag/pr1657-format-lint-20261107']
+permissions:
+  contents: write
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+      CARGO_TERM_COLOR: never
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          components: rustfmt,clippy
+          targets: wasm32-unknown-unknown,wasm32-wasip2
+      - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Format only the three identified owned files using their package edition
+        run: |
+          set -euo pipefail
+          git checkout --detach a8dea35261e951f7bd3076f9129bd57aa3bc82ca
+          mkdir -p "$RUNNER_TEMP/pr1657-format-lint"
+          python3 -m pip install --requirement tools/requirements.lock
+          rustfmt --edition 2021 crates/latent-packaging/src/semantics/wasm/tests.rs crates/latent-wasmtime/src/component_threading.rs tools/toolchain-smoke/examples/rust_http_pump_control.rs
+          git diff --check
+          git diff --binary > "$RUNNER_TEMP/pr1657-format-lint/source.patch"
+          python3 -B - <<'PY'
+          import hashlib, subprocess
+          from pathlib import Path
+          expected = {
+              'crates/latent-packaging/src/semantics/wasm/tests.rs': '595436a6d493f25d5b1c984655c5856e065164eb',
+              'crates/latent-wasmtime/src/component_threading.rs': 'df031efc62253a58c42ebe7d3e57cab3b559c649',
+              'tools/toolchain-smoke/examples/rust_http_pump_control.rs': '6cf82baf3f849a366f2cb5d36ddd6dae58cba825',
+          }
+          changed = subprocess.check_output(['git','diff','--name-only']).decode().splitlines()
+          assert set(changed) == set(expected)
+          for name, sha in expected.items():
+              data = Path(name).read_bytes()
+              assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest() == sha
+          print('Only the reviewed package-aware formatting corrections are present.')
+          PY
+          python3 tools/ci_cargo.py run format 2>&1 | tee "$RUNNER_TEMP/pr1657-format-lint/format.log"
+      - name: Validate maintained source controls
+        run: |
+          set -euo pipefail
+          python3 -B -m unittest tools.tests.test_rust_thread_http_combined_node tools.tests.test_rust_thread_http_sibling tools.tests.test_rust_combined_diagnostic_envelope tools.tests.test_rust_wasi_http_profile tools.tests.test_rust_wasi_http_inputs_prepared tools.tests.test_ci_suite_fragments tools.tests.test_native_loader_boundary -v 2>&1 | tee "$RUNNER_TEMP/pr1657-format-lint/python.log"
+          python3 -B -c 'from tools.ci_coverage import validate; validate()' 2>&1 | tee "$RUNNER_TEMP/pr1657-format-lint/contracts.log"
+      - name: Execute the unchanged strict workspace lint recipe
+        run: |
+          set -euo pipefail
+          python3 tools/ci_cargo.py run clippy 2>&1 | tee "$RUNNER_TEMP/pr1657-format-lint/clippy.log"
+      - name: Store reviewed source objects without moving any branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -B - <<'PY'
+          import base64, hashlib, json, os, subprocess, urllib.request
+          from pathlib import Path
+          parent = 'a8dea35261e951f7bd3076f9129bd57aa3bc82ca'
+          assert subprocess.check_output(['git','rev-parse','HEAD']).decode().strip() == parent
+          names = subprocess.check_output(['git','diff','--name-only']).decode().splitlines()
+          assert set(names) == {'crates/latent-packaging/src/semantics/wasm/tests.rs','crates/latent-wasmtime/src/component_threading.rs','tools/toolchain-smoke/examples/rust_http_pump_control.rs'}
+          def post(kind, body):
+              req = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/'+kind, data=json.dumps(body).encode(), headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'}, method='POST')
+              with urllib.request.urlopen(req, timeout=60) as response:
+                  return json.load(response)
+          entries = []
+          for name in names:
+              data = Path(name).read_bytes()
+              expected = hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+              blob = post('blobs', {'encoding':'base64','content':base64.b64encode(data).decode()})
+              assert blob['sha'] == expected
+              entries.append({'path':name,'mode':'100644','type':'blob','sha':expected})
+          subprocess.run(['git','add','--',*names], check=True)
+          expected_tree = subprocess.check_output(['git','write-tree']).decode().strip()
+          tree = post('trees', {'base_tree':'e0c6f49b97e0ce9c7648c2f62a779d6d22ed5aa7','tree':entries})
+          assert tree['sha'] == expected_tree
+          result = {'parent':parent,'tree':tree['sha'],'files':entries,'strictLintPassed':True,'branchUpdated':False}
+          Path(os.environ['RUNNER_TEMP'],'pr1657-format-lint','candidate.json').write_text(json.dumps(result,indent=2)+'\n')
+          print(json.dumps(result))
+          PY
+      - name: Retain bounded source and actual validator outputs
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: pr1657-format-lint-${{ github.sha }}
+          path: ${{ runner.temp }}/pr1657-format-lint/**
+          if-no-files-found: error
+          retention-days: 7
