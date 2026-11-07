@@ -22,11 +22,30 @@ public class Timer implements Activation.ManagedPool {
         final long period;
         long next;
         Activation.Lease queued;
+        boolean invoking;
+        boolean withdrawn;
         Entry(TimerTask task, long next, long period, Activation.Lease queued) {
             this.task = task; this.next = next; this.period = period; this.queued = queued;
         }
         void release() {
-            if (queued != null) { queued.close(); queued = null; }
+            Activation.Lease held = queued;
+            if (held == null) return;
+            // Mark the only settlement attempt before the host call. A lost
+            // acknowledgement retains this exact lease and poisons the Store.
+            queued = null;
+            try { held.close(); }
+            catch (Throwable uncertain) {
+                Activation.fenceUncertainQueuedWorkSettlement(held);
+                throw uncertain;
+            }
+        }
+        void withdraw() {
+            withdrawn = true;
+            if (!invoking) release();
+        }
+        void returned() {
+            invoking = false;
+            if (withdrawn) release();
         }
     }
 
@@ -108,7 +127,16 @@ public class Timer implements Activation.ManagedPool {
                     pendingWork++;
                 } catch (Throwable error) {
                     if (entry != null) queue.remove(entry);
-                    queued.close();
+                    try {
+                        if (entry != null) entry.withdraw();
+                        else {
+                            try { queued.close(); }
+                            catch (Throwable uncertain) {
+                                Activation.fenceUncertainQueuedWorkSettlement(queued);
+                                throw uncertain;
+                            }
+                        }
+                    } catch (Throwable uncertain) { /* retain original admission error */ }
                     throw error;
                 }
             }
@@ -126,12 +154,12 @@ public class Timer implements Activation.ManagedPool {
         while (!queue.isEmpty()) {
             Entry entry = queue.remove(queue.size() - 1);
             synchronized (entry.task) { entry.task.timer = null; }
-            entry.release();
-            pendingWork--;
+            entry.withdraw(); pendingWork--;
         }
     }
 
     private void work() {
+        Throwable primary = null;
         try {
             while (true) {
                 Entry entry;
@@ -146,17 +174,20 @@ public class Timer implements Activation.ManagedPool {
                     synchronized (entry.task) {
                         if (entry.task.state == TimerTask.CANCELLED) {
                             entry.task.timer = null;
-                            queue.remove(index); entry.release(); pendingWork--; continue;
+                            queue.remove(index);
+                            entry.withdraw(); pendingWork--;
+                            continue;
                         }
                         long now = System.currentTimeMillis();
                         remaining = entry.next - now;
                         if (remaining <= 0) {
+                            entry.invoking = true;
                             pendingWork++;
                             entry.task.lastScheduled = entry.period < 0 ? now : entry.next;
                             if (entry.period == 0) {
                                 queue.remove(index); entry.task.state = TimerTask.EXECUTED;
                                 entry.task.timer = null;
-                                entry.release(); pendingWork--;
+                                entry.withdraw(); pendingWork--;
                             } else {
                                 long step = entry.period < 0 ? -entry.period : entry.period;
                                 long base = entry.period < 0 ? now : entry.next;
@@ -169,16 +200,35 @@ public class Timer implements Activation.ManagedPool {
                         continue;
                     }
                 }
+                Throwable callbackFailure = null;
                 try { entry.task.run(); }
-                finally { synchronized (lock) { pendingWork--; } }
+                catch (Throwable error) { callbackFailure = error; throw error; }
+                finally {
+                    synchronized (lock) {
+                        try { entry.returned(); pendingWork--; }
+                        catch (Throwable uncertain) {
+                            if (callbackFailure == null) throw uncertain;
+                        }
+                    }
+                }
                 Activation.checkpoint();
             }
+        } catch (Throwable error) {
+            primary = error;
+            throw error;
         } finally {
             synchronized (lock) {
                 cancelled = true;
-                clearQueue();
-                if (owner != null) { owner.close(); owner = null; Activation.unmanageRetired(this); }
-                lock.notifyAll();
+                try {
+                    clearQueue();
+                    if (pendingWork != 0) Activation.fenceUncertainResultSettlement();
+                    else if (owner != null) { owner.close(); owner = null; Activation.unmanageRetired(this); }
+                } catch (Throwable cleanupFailure) {
+                    // The Timer still owns any unretired pool or queue entries.
+                    // Never allow completion after an uncertain cleanup.
+                    Activation.fenceUncertainResultSettlement();
+                    if (primary == null) throw cleanupFailure;
+                } finally { lock.notifyAll(); }
             }
         }
     }
@@ -186,8 +236,7 @@ public class Timer implements Activation.ManagedPool {
     public void cancel() {
         synchronized (lock) {
             cancelled = true;
-            clearQueue();
-            lock.notifyAll();
+            try { clearQueue(); } finally { lock.notifyAll(); }
         }
     }
 
@@ -202,7 +251,9 @@ public class Timer implements Activation.ManagedPool {
                     if (entry.task.state != TimerTask.CANCELLED) continue;
                     entry.task.timer = null;
                 }
-                queue.remove(i); entry.release(); pendingWork--; removed++;
+                queue.remove(i);
+                entry.withdraw(); pendingWork--;
+                removed++;
             }
             if (removed != 0) lock.notifyAll();
             return removed;
