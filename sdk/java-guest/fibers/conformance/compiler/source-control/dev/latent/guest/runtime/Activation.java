@@ -13,6 +13,7 @@ public final class Activation {
     public static String denyNext;
     public static volatile boolean poisoned;
     public static void fenceUncertainResultSettlement() { poisoned = true; }
+    public static void fenceUncertainQueuedWorkSettlement(Lease owner) { poisoned = true; }
 
     public static synchronized Executor defaultAsyncExecutor(Supplier<Executor> factory) {
         if (pool == null) pool = factory.get();
@@ -33,6 +34,7 @@ public final class Activation {
         }
     }
     public static synchronized Lease owner(Bindings.LatentRuntimeActivationOwnerKind kind) {
+        if (poisoned) throw new IllegalStateException("activation-runtime-poisoned-store");
         if (kind.name().equals(denyNext)) {
             denyNext = null;
             throw new IllegalStateException("source-control-admission-denied");

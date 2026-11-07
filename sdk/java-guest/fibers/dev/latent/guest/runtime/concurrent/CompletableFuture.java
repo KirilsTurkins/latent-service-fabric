@@ -135,9 +135,21 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
             this.body = body;
             this.inputShortcut = inputShortcut;
             queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
-            try {
-                if (!destination.accept(this, evenIfCompleted)) { queued.close(); queued = null; finished = true; }
-            } catch (Throwable error) { queued.close(); queued = null; throw error; }
+            boolean accepted;
+            try { accepted = destination.accept(this, evenIfCompleted); }
+            catch (Throwable error) {
+                // Preserve the acceptance error, but keep an uncertain queue
+                // owner rooted and poison the activation if rollback fails.
+                try { queued.close(); queued = null; }
+                catch (Throwable uncertain) { Activation.fenceUncertainQueuedWorkSettlement(queued); }
+                throw error;
+            }
+            if (!accepted) {
+                try { queued.close(); }
+                catch (Throwable uncertain) { Activation.fenceUncertainQueuedWorkSettlement(queued); throw uncertain; }
+                queued = null;
+                finished = true;
+            }
         }
         void install() {
             try {
