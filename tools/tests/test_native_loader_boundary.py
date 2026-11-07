@@ -214,6 +214,28 @@ rustix = { version = "=1.1.5", features = ["fs"] }
                 self.write(boundary.NATIVE_STACK_WORKER, source.replace(before, after))
                 self.assertTrue(boundary.validate(self.root))
 
+    def test_combined_selection_requires_the_exact_proof_and_shared_original_ledgers(self) -> None:
+        source = (Path(__file__).resolve().parents[2] / boundary.NATIVE_STACK_COMBINED).read_text(encoding="utf-8")
+        self.write(boundary.NATIVE_STACK_COMBINED, source)
+        self.assertEqual(boundary.validate(self.root), [])
+        for before, after in (
+            ('proof.check_before_instantiation(descriptor)?;', ''),
+            ('Authentication::RustCombinedHttpVerified(_)', 'Authentication::RustSyncVerified(_)'),
+            ('maximum_native.saturating_sub(1)', '8191'),
+            ('Some(maximum_native)', 'Some(8192)'),
+            ('            runtime,', '            unrelated_runtime,'),
+            ('use super::*;', 'use super::*;\n#[allow(unsafe_code)] unsafe fn extra() {}'),
+        ):
+            with self.subTest(change=before):
+                self.assertIn(before, source)
+                self.write(boundary.NATIVE_STACK_COMBINED, source.replace(before, after))
+                errors = boundary.validate(self.root)
+                self.assertTrue(any("combined stack selection changed" in error for error in errors))
+                if 'unsafe fn' in after:
+                    self.assertTrue(any("unreviewed unsafe" in error for error in errors))
+        self.write(boundary.NATIVE_STACK_COMBINED, source)
+        self.assertEqual(boundary.validate(self.root), [])
+
     def test_allowance_cannot_expand_to_module_or_another_function(self) -> None:
         self.write(boundary.LOADER, self.loader.replace(
             "fn deserialize_authenticated(", "fn unrelated() {}\nfn deserialize_authenticated("))

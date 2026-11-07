@@ -172,10 +172,14 @@ pub(crate) fn split_unverified(input: &[u8]) -> Result<(&[u8], &[u8]), &'static 
 mod tests {
     use super::*;
     use sha2::Digest;
-    const BASE: &[u8] = include_bytes!("rust_catalogue/combined-final-component.wasm");
-    const ORIGINAL: &[u8] = include_bytes!("rust_catalogue/combined-original-core.wasm");
-    const PREVIEW: &[u8] = include_bytes!("rust_catalogue/combined-preview-component.wasm");
-    const DELTA: &[u8] = include_bytes!("rust_catalogue/combined-original-delta.bin");
+    const BASE: &[u8] =
+        include_bytes!("rust_catalogue/combined-corrected-v1/combined-final-component.wasm");
+    const ORIGINAL: &[u8] =
+        include_bytes!("rust_catalogue/combined-corrected-v1/combined-original-core.wasm");
+    const PREVIEW: &[u8] =
+        include_bytes!("rust_catalogue/combined-corrected-v1/combined-preview-component.wasm");
+    const DELTA: &[u8] =
+        include_bytes!("rust_catalogue/combined-corrected-v1/combined-original-delta.bin");
 
     fn delta(len: u32, count: u32, body: &[u8]) -> Vec<u8> {
         let mut result = MAGIC.to_vec();

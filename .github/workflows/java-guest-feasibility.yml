@@ -170,7 +170,7 @@ jobs:
     if: ${{ needs.tooling-selection.outputs.reason != 'isolated-tooling:documentation-validator-tests' && ((github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_assembly) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_derived_llvm) && (github.event_name != 'workflow_dispatch' || !inputs.public_fiber_private_scalar_llvm)) }}
     name: Actual Java sources, SDK ownership and enforced node
     runs-on: ubuntu-24.04
-    timeout-minutes: 55
+    timeout-minutes: 75
     permissions:
       contents: read
       actions: read

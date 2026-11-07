@@ -7,6 +7,11 @@ license.workspace = true
 authors.workspace = true
 description = "Deterministic bounded packaging and inspection of supplied component and asset bytes."
 
+[features]
+# Exact retained graph recognition for an explicitly built diagnostic only.
+# This grants no authority and does not select a runtime or bypass its proof.
+development-rust-http-combined = ["latent-component-threading/rust-http-combined-preview-diagnostic"]
+
 [lints]
 workspace = true
 
