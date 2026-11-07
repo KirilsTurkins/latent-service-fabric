@@ -260,7 +260,7 @@ public static partial class ManagedWorkRuntime
     }
 
     private static Record Admit(object item, Task? completion, Record? parent,
-        out bool created, bool activate, Queued? admission, bool independentInner = false)
+        out bool created, bool activate, Queued? admission, bool independentInner)
     {
         var activation = root;
         if (!installed || activation is null || !activation.Active)
@@ -379,7 +379,7 @@ public static partial class ManagedWorkRuntime
         if (promise.IsCompleted) return;
         var owner = Find(outer);
         if (owner is { Active: false } or { Result: true }) throw new InvalidOperationException("managed-work-owner-retired");
-        if (owner is null) owner = Admit(promise, promise, Parent(), out _, true, null);
+        if (owner is null) owner = Admit(promise, promise, Parent(), out _, true, null, false);
         else
         {
             owner.Outer = outer;
@@ -513,7 +513,7 @@ public static partial class ManagedWorkRuntime
                             var parent = captured ?? Parent();
                             if (closing && (parent is null || parent.Root))
                                 throw new InvalidOperationException("managed-work-independent-admission-closed");
-                            owner = Admit(item, null, parent, out created, false, pending);
+                            owner = Admit(item, null, parent, out created, false, pending, false);
                         }
                     }
                 }

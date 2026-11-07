@@ -172,7 +172,12 @@ internal sealed class ManagedWorkCopy
                     && (method.HasBody || (original.IsInterface && method.IsAbstract))
                     && method.Overrides.Count == 0 && method.CustomAttributes.All(CompilerAnnotation)
                     && method.MethodReturnType.CustomAttributes.All(CompilerAnnotation)
-                    && method.Parameters.All(parameter => !parameter.HasMarshalInfo && parameter.CustomAttributes.All(CompilerAnnotation)));
+                    // Parameter constants are not copied below. Reject them
+                    // (including an orphaned HasDefault flag) and optional
+                    // parameters instead of emitting incomplete metadata.
+                    && method.Parameters.All(parameter => !parameter.HasMarshalInfo && !parameter.IsOptional
+                        && !parameter.HasConstant && (parameter.Attributes & ParameterAttributes.HasDefault) == 0
+                        && parameter.CustomAttributes.All(CompilerAnnotation)));
                 var result = new MethodDefinition(method.Name, method.Attributes, Type(method.ReturnType))
                 {
                     ImplAttributes = method.ImplAttributes,

@@ -377,6 +377,11 @@ def verify_timer_driver(dotnet: Path, tools: Path, output: Path) -> dict:
     commands.run('driver-control-build', dotnet, 'build', source/'Control.csproj', '-c', 'Release',
         '--output', output/'bin', '--artifacts-path', output/'artifacts',
         '-p:LsfCecilPath='+str(cecil), '-nodeReuse:false')
+    guard = commands.run('driver-control-parameter-guard', dotnet, output/'bin/Control.dll',
+        'parameter-guard', original, tools/'http-errors/HttpErrors.dll')
+    require(len(guard) <= 1024 and json.loads(guard) == {
+        'optional': True, 'constant': True, 'orphanDefault': True, 'guestQualified': False},
+        'managed-work-copy-parameter-guard')
     assembly = output/'derived-CoreLib.dll'
     commands.run('driver-control-current-normal-rewrite', dotnet, tools/'http-errors/HttpErrors.dll',
         '--managed-task-wait', original, assembly, output/'rewrite.json')
