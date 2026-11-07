@@ -117,11 +117,19 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
             // A returned ScheduledFuture is also a Runnable. A caller may
             // start it while the pool is concurrently withdrawing its copy.
             beginInvocation();
-            try { super.run(); } finally { endInvocation(); }
+            try {
+                // Like the JDK scheduled task, a wrapper cannot start its
+                // callback after shutdownNow or activation retirement.
+                if (interrupting || retiring) cancel(false);
+                else super.run();
+            } finally { endInvocation(); }
         }
         boolean invoke() {
             beginInvocation();
             try {
+                // A worker can dequeue just before shutdownNow and reach this
+                // boundary afterwards. Do not start that callback either.
+                if (interrupting || retiring) { cancel(false); return false; }
                 if (period != 0) return runAndReset();
                 super.run();
                 return false;
