@@ -33,6 +33,7 @@ public static partial class ManagedWorkRuntime
         var existing = FindTimer(item);
         if (existing is not null)
         {
+            if (existing.Mutation < 0) throw new InvalidOperationException("managed-timer-settlement-uncertain");
             if (existing.Mutation == int.MaxValue) throw new InvalidOperationException("managed-timer-mutation-limit");
             existing.Mutation++;
             return;
@@ -54,6 +55,7 @@ public static partial class ManagedWorkRuntime
     {
         if (!installed) return;
         var timer = FindTimer(item) ?? throw new InvalidOperationException("managed-timer-change-owner");
+        if (timer.Mutation < 0) throw new InvalidOperationException("managed-timer-settlement-uncertain");
         if (timer.Mutation == 0) throw new InvalidOperationException("managed-timer-change-state");
         timer.Mutation--;
         TryRetireTimer(timer);
@@ -68,6 +70,7 @@ public static partial class ManagedWorkRuntime
     {
         if (!installed) return;
         var timer = FindTimer(item) ?? throw new InvalidOperationException("managed-timer-accepted-owner");
+        if (timer.Mutation < 0) throw new InvalidOperationException("managed-timer-settlement-uncertain");
         if (timer.Accepted == int.MaxValue) throw new InvalidOperationException("managed-timer-callback-limit");
         // The exact producer calls this before its one-shot DeleteTimer and
         // before either the inline Fire or original ThreadPool queue insertion.
@@ -78,6 +81,7 @@ public static partial class ManagedWorkRuntime
     {
         if (!installed) return null;
         var timer = FindTimer(item) ?? throw new InvalidOperationException("managed-timer-dispatch-owner");
+        if (timer.Mutation < 0) throw new InvalidOperationException("managed-timer-settlement-uncertain");
         if (timer.Accepted == 0 || timer.Running == int.MaxValue)
             throw new InvalidOperationException("managed-timer-dispatch-state");
         timer.Accepted--; timer.Running++;
@@ -89,24 +93,35 @@ public static partial class ManagedWorkRuntime
     public static void TimerLeave(object item, object? previous)
     {
         if (!installed) return;
-        var timer = FindTimer(item) ?? throw new InvalidOperationException("managed-timer-return-owner");
-        if (timer.Running == 0) throw new InvalidOperationException("managed-timer-return-state");
-        timer.Running--;
-        // The original callback-running field remains nonzero if an original
-        // callback threw before its decrement. That failure never becomes an
-        // apparently successful timer return or a refunded owner here.
-        TryRetireTimer(timer);
-        current!.Value = (Record?)previous;
+        try
+        {
+            var timer = FindTimer(item) ?? throw new InvalidOperationException("managed-timer-return-owner");
+            if (timer.Mutation < 0) throw new InvalidOperationException("managed-timer-settlement-uncertain");
+            if (timer.Running == 0) throw new InvalidOperationException("managed-timer-return-state");
+            timer.Running--;
+            // The original callback-running field remains nonzero if an original
+            // callback threw before its decrement. That failure never becomes an
+            // apparently successful timer return or a refunded owner here.
+            TryRetireTimer(timer);
+        }
+        finally { current!.Value = (Record?)previous; }
     }
 
     private static void TryRetireTimer(TimerOwner timer)
     {
+        if (timer.Mutation < 0) throw new InvalidOperationException("managed-timer-settlement-uncertain");
         if (timer.Mutation != 0 || timer.Accepted != 0 || timer.Running != 0
             || TimerScheduled(timer.Timer) || TimerCallbacks(timer.Timer) != 0
             || HasRequired(timer.Owner)) return;
         foreach (var work in queued!) if (work is not null && ReferenceEquals(work.Owner, timer.Owner)) return;
-        settle!(timer.Owner.Token.Generation, timer.Owner.Token.Id);
+        // Mutation counts are nonnegative during normal operation. Reserve
+        // -1 for an attempted settlement: a trap can occur after the host
+        // settled, so retain the owner but never submit its token again.
+        timer.Mutation = -1;
+        // Captured execution contexts must no longer admit descendants using
+        // this token; the timer record still retains its physical custody.
         timer.Owner.Active = false;
+        settle!(timer.Owner.Token.Generation, timer.Owner.Token.Id);
         for (int i = 0; i < MaximumRecords; i++)
             if (ReferenceEquals(timers![i], timer)) { timers[i] = null; return; }
         throw new InvalidOperationException("managed-timer-missing-record");
