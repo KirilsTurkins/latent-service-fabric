@@ -21,7 +21,7 @@ public final class Activation {
     private static boolean closing;
     private static boolean retiringPools;
     private static boolean iteratingPoolRetirement;
-    private static boolean poisoned;
+    private static volatile boolean poisoned;
     private static Work failedStarts;
     private static Address result;
     private static Throwable failure;
@@ -207,6 +207,13 @@ public final class Activation {
     public static Lease owner(Bindings.LatentRuntimeActivationOwnerKind kind) {
         if (!entered) throw new IllegalStateException("activation-runtime-entry-required");
         return new Lease(register(kind));
+    }
+
+    /** No current or later invocation may succeed after an unknown Result settlement. */
+    public static void fenceUncertainResultSettlement() { poisoned = true; }
+
+    private static void requireHealthyCompletion() {
+        if (poisoned) throw new IllegalStateException("activation-runtime-result-settlement-uncertain");
     }
 
     private static final class TimerLease extends Lease {
@@ -471,6 +478,7 @@ public final class Activation {
                 if (delay != 0 && pending()) waitFor(delay < 0 ? -1 : delay);
             }
             if (failure != null) throw new IllegalStateException("activation-runtime-root-failure", failure);
+            requireHealthyCompletion();
             var settled = Bindings.LatentRuntimeActivation.settle(root.token);
             if (settled.isError()) throw new IllegalStateException("activation-runtime-root-settle-" + settled.error());
             root.complete = true;
@@ -483,7 +491,7 @@ public final class Activation {
     }
 
     private static void finishInvocation() {
-        if (failedStarts != null) {
+        if (failedStarts != null || poisoned) {
             // The host must destroy this Store; retain every original reference
             // and reject re-entry while registration settlement is uncertain.
             poisoned = true;

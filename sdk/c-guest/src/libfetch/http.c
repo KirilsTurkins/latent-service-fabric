@@ -205,7 +205,8 @@ static bool content_length(const latent_http_streaming_list_header_t *headers, s
 
 static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
                      const char *method, const char *content_type, const char *body) {
-    if ((stat && strcmp(method, "GET")) || fetchAuthMethod || fetchDebug || fetchTimeout < 0) { unsupported(); return NULL; }
+    if ((stat && strcmp(method, "GET") && strcmp(method, "HEAD")) ||
+        fetchAuthMethod || fetchDebug || fetchTimeout < 0) { unsupported(); return NULL; }
     if (flags) for (const char *flag = flags; *flag; ++flag)
         if (*flag != 'A') { unsupported(); return NULL; }
     latent_http_streaming_method_t operation;
@@ -311,7 +312,16 @@ FILE *fetchReqHTTP(struct url *url, const char *method, const char *flags, const
     return request(url, NULL, flags, method, type, body);
 }
 FILE *fetchPutHTTP(struct url *url, const char *flags) { (void)url; (void)flags; unsupported(); return NULL; }
-int fetchStatHTTP(struct url *url, struct url_stat *stat, const char *flags) { (void)url; (void)stat; (void)flags; unsupported(); return -1; }
+int fetchStatHTTP(struct url *url, struct url_stat *stat, const char *flags) {
+    struct url_stat result;
+    FILE *file = request(url, stat ? &result : NULL, flags, "HEAD", NULL, NULL);
+    if (!file) return -1;
+    /* The returned body is a real provider owner even for HEAD. Preserve an
+     * abort failure and only publish metadata after it has been closed. */
+    if (fclose(file) != 0) return -1;
+    if (stat) *stat = result;
+    return 0;
+}
 struct url_ent *fetchListHTTP(struct url *url, const char *flags) { (void)url; (void)flags; unsupported(); return NULL; }
 
 /* The genuine frontend routes non-HTTP schemes here; no ambient filesystem,
