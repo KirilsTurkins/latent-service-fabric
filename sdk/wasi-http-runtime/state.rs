@@ -327,9 +327,13 @@ impl Exchange {
 }
 
 impl pump::Progress for Exchange {
+    fn pending(&self) -> bool {
+        !self.cancelled.get() && (self.work.borrow().is_some() || self.request.borrow().is_some())
+    }
+
     fn progress(&self, context: &mut Context<'_>) {
-        // Bound immediate metadata/body state transitions per poll; canonical
-        // waits suspend the caller while the node keeps the original owners.
+        // Bound immediate transitions per driver poll. Pending canonical imports
+        // register the real driver waker; no callback blocks a sibling export.
         for _ in 0..4 {
             if self.cancelled.get() || self.failure.get().is_some() {
                 return;
@@ -351,6 +355,9 @@ impl pump::Progress for Exchange {
                 }
             }
         }
+        // Four immediate completions may leave further real work (for example
+        // draining a body). Reschedule that bounded work, never invent readiness.
+        context.waker().wake_by_ref();
     }
 }
 impl Drop for Exchange {

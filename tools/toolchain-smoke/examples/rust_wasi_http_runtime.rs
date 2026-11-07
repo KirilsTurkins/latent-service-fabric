@@ -24,16 +24,16 @@ mod request_options;
 #[path = "../../../sdk/wasi-http-runtime/state.rs"]
 mod state;
 
-// These exact shared owners, cap and readiness machinery are not a second
-// provider, runtime budget, cache or executor. The existing .NET source/output
-// stays unchanged; each selected component has only this one instance.
+// Preserve the original authority owners and finite resource cap. Rust async
+// exports use a callback-safe readiness driver; the CLR's blocking pump and
+// its independently qualified source remain unchanged.
 #[path = "../../../sdk/dotnet-guest/runtime/http/owner.rs"]
 mod owner;
-#[path = "../../../sdk/dotnet-guest/runtime/http/pump.rs"]
+#[path = "../../../sdk/wasi-http-runtime/pump.rs"]
 mod pump;
 #[path = "../../../sdk/dotnet-guest/runtime/http/quota.rs"]
 mod quota;
-#[path = "../../../sdk/dotnet-guest/runtime/http/timer.rs"]
+#[path = "../../../sdk/wasi-http-runtime/timer.rs"]
 mod timer;
 
 use error::HttpError;
@@ -50,7 +50,7 @@ impl io::streams::Guest for StandardRuntime {
 impl io::poll::Guest for StandardRuntime {
     type Pollable = poll::Pollable;
     async fn poll(inputs: Vec<io::poll::PollableBorrow<'_>>) -> Vec<u32> {
-        poll::Pollable::poll(inputs)
+        poll::Pollable::poll(inputs).await
     }
 }
 impl monotonic_clock::Guest for StandardRuntime {
@@ -72,7 +72,7 @@ impl monotonic_clock::Guest for StandardRuntime {
 }
 impl exports::latent::rust_http_retirement::owner::Guest for StandardRuntime {
     async fn drain() {
-        pump::Pump::current().drain_retired();
+        pump::Pump::current().drain_retired().await;
     }
 }
 export!(StandardRuntime);
