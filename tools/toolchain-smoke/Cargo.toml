@@ -56,6 +56,10 @@ test = false
 bench = false
 doc = false
 
+[features]
+# Selected only by the standard HTTP adapter recipe, not other smoke products.
+rust-wasi-http-cooperative = ["wit-bindgen/async-spawn", "wit-bindgen/inter-task-wakeup"]
+
 [dependencies]
 latent-component-bindings = { path = "../../crates/latent-component-bindings" }
 latent-optimization-workloads = { path = "../optimization-workloads" }
@@ -304,6 +308,22 @@ doc = false
 name = "dotnet-managed-http-logging-runtime"
 path = "examples/dotnet_managed_http_logging_runtime.rs"
 crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
+name = "rust-http-pump-probe"
+path = "examples/rust_http_pump_probe.rs"
+crate-type = ["cdylib"]
+required-features = ["rust-wasi-http-cooperative"]
+test = false
+bench = false
+doc = false
+
+[[example]]
+name = "rust-http-pump-control"
+path = "examples/rust_http_pump_control.rs"
 test = false
 bench = false
 doc = false

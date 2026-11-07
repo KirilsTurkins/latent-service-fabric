@@ -150,7 +150,7 @@ impl io::streams::GuestInputStream for Input {
             interest: Interest::Read,
             parent: None,
         });
-        pump::Pump::current().poll(&[source]);
+        pump::Pump::current().poll(&[source]).await;
         self.read(length)
     }
     fn subscribe(&self) -> io::poll::Pollable {
@@ -222,7 +222,7 @@ impl io::streams::GuestOutputStream for Output {
                     interest: Interest::Write,
                     parent: None,
                 });
-                pump::Pump::current().poll(&[source]);
+                pump::Pump::current().poll(&[source]).await;
                 permit = self.check_write()?;
             }
             let count = permit.min((contents.len() - position) as u64) as usize;
@@ -286,7 +286,7 @@ impl io::streams::GuestOutputStream for Output {
                 interest: Interest::Write,
                 parent: None,
             });
-            pump::Pump::current().poll(&[ready]);
+            pump::Pump::current().poll(&[ready]).await;
             permit = self.check_write()?.min(length);
         }
         let bytes = source.get::<Input>().blocking_read(permit).await?;
@@ -344,7 +344,7 @@ impl io::streams::GuestOutputStream for Output {
                 interest: Interest::Write,
                 parent: None,
             });
-            pump::Pump::current().poll(&[source]);
+            pump::Pump::current().poll(&[source]).await;
         }
         self.flush()
     }

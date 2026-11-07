@@ -168,13 +168,14 @@ pub(super) fn derive(
     }
     providers.validate_http_streaming_installations()?;
     if let Some(runtime) = &providers.activation_runtime {
-        if runtime.native_threads
-            && !matches!(
-                config.engine.threading_profile,
-                super::model::EngineThreadingProfile::CContext144SyncCooperativeV1
-                    | super::model::EngineThreadingProfile::RustContext40SyncCooperativeV1
-            )
-        {
+        let native_profile = match config.engine.threading_profile {
+            super::model::EngineThreadingProfile::CContext144SyncCooperativeV1
+            | super::model::EngineThreadingProfile::RustContext40SyncCooperativeV1 => true,
+            #[cfg(feature = "development-rust-http-combined")]
+            super::model::EngineThreadingProfile::RustContext40CombinedHttpDiagnosticV1 => true,
+            _ => false,
+        };
+        if runtime.native_threads && !native_profile {
             return Err(invalid("providers.activationRuntime.nativeThreads.profile"));
         }
         if config.security_profile != latent_wasmtime::ExecutionIsolationProfile::LocalExperimental

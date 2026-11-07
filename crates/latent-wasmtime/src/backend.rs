@@ -637,9 +637,7 @@ impl WasmtimeBackend {
             accounting,
             capabilities,
             ownership.transaction,
-            runtime.surface.hostcall_fuel,
-            #[cfg(feature = "rust-thread-trap-diagnostic")]
-            crate::rust_thread_fault::scheduler_observer(&runtime.threading),
+            &runtime,
         )?);
         *native_stack_observer = store
             .data()
@@ -847,10 +845,7 @@ impl WasmtimeBackend {
         accounting: InvocationAccounting,
         capabilities: Option<latent_capabilities::broker::CapabilitySession>,
         mut transaction: transaction_access::GuestAccess,
-        hostcall_fuel: usize,
-        #[cfg(feature = "rust-thread-trap-diagnostic")] scheduler_observer: Option<
-            fn(&wasmtime::AsyncDeadlockSnapshot),
-        >,
+        runtime: &PreparedRuntime,
     ) -> Result<Store<HostState>, PlatformError> {
         let effective_memory = request
             .budget
@@ -915,6 +910,12 @@ impl WasmtimeBackend {
                     0
                 },
                 !self.config.owned_native_threads,
+                #[cfg(feature = "development-rust-http-combined")]
+                matches!(
+                    runtime.threading,
+                    crate::component_threading::Authentication::RustCombinedHttpVerified(_)
+                )
+                .then_some((&runtime.threading, &runtime.descriptor)),
             )?;
             // Native admission was charged before the first engine counter is
             // installed. Its original fuel is never copied into a fresh allowance.
@@ -935,7 +936,7 @@ impl WasmtimeBackend {
             #[cfg(feature = "rust-thread-trap-diagnostic")]
             let memory = crate::native_tables::binding_with_observer(
                 host_state.accounting.budget(),
-                scheduler_observer,
+                crate::rust_thread_fault::scheduler_observer(&runtime.threading),
             )
             .map_err(native_store_error)?;
             Store::try_new_with_memory_binding(&self.engine, host_state, memory)
@@ -943,7 +944,7 @@ impl WasmtimeBackend {
         } else {
             Store::new(&self.engine, host_state)
         };
-        store.set_hostcall_fuel(hostcall_fuel);
+        store.set_hostcall_fuel(runtime.surface.hostcall_fuel);
         store.limiter(|state| &mut state.limiter);
         store.set_fuel(initial_fuel).map_err(|error| {
             platform_error(

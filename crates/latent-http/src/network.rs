@@ -267,7 +267,9 @@ async fn reserve_for(
 ) -> Result<ConnectionReservation<Network>, HttpError> {
     Ok(match scope {
         crate::protocol::ProtocolScope::Invocation(call) => {
-            client.reserve_connection_wait(call).await?
+            // Only pre-dial setup is serialized. Once the other connection
+            // exists, its pending headers/body do not own the setup slot.
+            client.reserve_http_connection_wait(call).await?
         }
         crate::protocol::ProtocolScope::Maintenance(request) => {
             client.reserve_maintenance_connection(request)?

@@ -279,11 +279,19 @@ impl WasmtimeConfig {
         {
             return Err(invalid_config());
         }
-        if matches!(
-            self.native_thread_profile,
+        let sync_context = match self.native_thread_profile {
             NativeThreadProfile::CContext144SyncCooperativeV1
-                | NativeThreadProfile::RustContext40SyncCooperativeV1
-        ) && self.angular_renderer
+            | NativeThreadProfile::RustContext40SyncCooperativeV1 => true,
+            #[cfg(feature = "development-rust-http-combined")]
+            NativeThreadProfile::RustContext40CombinedHttpDiagnosticV1 => true,
+            _ => false,
+        };
+        if sync_context && self.angular_renderer {
+            return Err(invalid_config());
+        }
+        #[cfg(feature = "development-rust-http-combined")]
+        if self.native_thread_profile == NativeThreadProfile::RustContext40CombinedHttpDiagnosticV1
+            && self.execution_isolation_profile != ExecutionIsolationProfile::LocalExperimental
         {
             return Err(invalid_config());
         }

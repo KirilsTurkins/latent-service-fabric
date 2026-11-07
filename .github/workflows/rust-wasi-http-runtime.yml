@@ -2,12 +2,17 @@ name: Rust standard WASI HTTP backend
 
 on:
   push:
-    branches: ['feat/rust-wasi-http-profile-20261021']
+    branches: ['feat/rust-wasi-http-profile-20261021', 'diag/rust-http-combined-host-20261105']
     paths:
       - '.github/workflows/rust-wasi-http-runtime.yml'
       - 'sdk/wasi-http-runtime/**'
       - 'tools/rust_wasi_http_inputs.py'
       - 'tools/toolchain-smoke/examples/rust_wasi_http_runtime.rs'
+      - 'tools/toolchain-smoke/examples/rust_http_pump_probe.rs'
+      - 'tools/toolchain-smoke/examples/rust_http_pump_control.rs'
+      - 'tools/toolchain-smoke/Cargo.toml'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
   workflow_dispatch:
 
 permissions:
@@ -21,11 +26,14 @@ jobs:
   standard-backend:
     name: Compile exact standard WASI backend and bounded resource controls
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     env:
       PYTHONDONTWRITEBYTECODE: '1'
       CARGO_BUILD_JOBS: '2'
       CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
     steps:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
@@ -57,14 +65,36 @@ jobs:
       - name: Execute only the actual bounded options and fields implementation controls
         shell: bash
         run: |
+          set -euo pipefail
           rustc --edition=2021 --test tools/fixtures/wasi-http-request-options/control.rs -o "$RUNNER_TEMP/rust-http-resource-controls"
           "$RUNNER_TEMP/rust-http-resource-controls" --test-threads=1 | tee "$RUNNER_TEMP/rust-http-resource-controls.txt"
+      - name: Execute callback-safe readiness, cancellation and bounded waiter controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustc --edition=2021 --test sdk/wasi-http-runtime/pump.rs -o "$RUNNER_TEMP/rust-http-pump-controls"
+          "$RUNNER_TEMP/rust-http-pump-controls" | tee "$RUNNER_TEMP/rust-http-pump-controls.txt"
+      - name: Verify completed EOF retirement and pending cancellation ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustc --edition=2021 -D warnings --test sdk/wasi-http-runtime/retirement.rs -o "$RUNNER_TEMP/rust-http-retirement-controls"
+          "$RUNNER_TEMP/rust-http-retirement-controls" --test-threads=1 | tee "$RUNNER_TEMP/rust-http-retirement-controls.txt"
       - name: Acquire only locked SDK compiler sources before offline compilation
         run: cargo fetch --locked --target wasm32-unknown-unknown --target x86_64-unknown-linux-gnu
       - name: Compile and authenticate only the selected WASI backend
         run: >-
           python3 -B tools/rust_wasi_http_inputs.py
           --output "$RUNNER_TEMP/rust-http-runtime"
+      - name: Execute the actual compiled guest with independently held imports
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo build --locked --offline -p latent-toolchain-smoke --target wasm32-unknown-unknown --example rust-http-pump-probe --features rust-wasi-http-cooperative --release
+          wasm-tools component new target/wasm32-unknown-unknown/release/examples/rust_http_pump_probe.wasm -o "$RUNNER_TEMP/rust-http-pump-probe.wasm"
+          wasm-tools validate --features all "$RUNNER_TEMP/rust-http-pump-probe.wasm"
+          cargo --config .cargo/managed-guest.toml --config profile.dev.opt-level=1 run --locked --offline -p latent-toolchain-smoke --example rust-http-pump-control -- "$RUNNER_TEMP/rust-http-pump-probe.wasm" 2>&1 | tee "$RUNNER_TEMP/rust-http-pump-guest.txt"
+          cargo --config .cargo/managed-guest.toml --config profile.dev.opt-level=1 run --locked --offline -p latent-toolchain-smoke --example rust-http-pump-control -- "$RUNNER_TEMP/rust-http-pump-probe.wasm" --native-profile 2>&1 | tee "$RUNNER_TEMP/rust-http-pump-native-guest.txt"
       - name: Retain bounded compiler observations without build cache or signer credentials
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
@@ -82,5 +112,10 @@ jobs:
             ${{ runner.temp }}/rust-http-runtime/component-composer/wac
             ${{ runner.temp }}/rust-http-runtime/logs/*.stdout.txt
             ${{ runner.temp }}/rust-http-runtime/logs/*.stderr.txt
+            ${{ runner.temp }}/rust-http-pump-controls.txt
+            ${{ runner.temp }}/rust-http-retirement-controls.txt
+            ${{ runner.temp }}/rust-http-pump-native-guest.txt
+            ${{ runner.temp }}/rust-http-pump-guest.txt
+            ${{ runner.temp }}/rust-http-pump-probe.wasm
           if-no-files-found: warn
           retention-days: 3

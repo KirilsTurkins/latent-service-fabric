@@ -82,13 +82,18 @@ unsafe impl wasmtime::MemoryCreator for RefusingCreator {
 # admission retains distinct prepaid original Task tokens. Ordinary async workers
 # admit their own original Native/memory owners under a live mapped parent;
 # parents retire only after successful munmap, with failed unmapping quarantined.
-# Bind all three sources; child/worker state receives no unsafe allowance.
+# The fixed combined diagnostic checks its final-byte proof before selecting
+# both paths; no raw mapping, child-admission or physical-retirement operation
+# changes. Bind all four sources; child/worker/combined state gets no unsafe
+# allowance. See docs/testing/rust-combined-http-diagnostic.md.
 NATIVE_STACK = f"{CRATE}/src/native_stacks.rs"
 NATIVE_STACK_CHILD = f"{CRATE}/src/native_stacks/children.rs"
 NATIVE_STACK_WORKER = f"{CRATE}/src/native_stacks/workers.rs"
+NATIVE_STACK_COMBINED = f"{CRATE}/src/native_stacks/combined.rs"
 NATIVE_STACK_CHILD_SHA256 = "d1814527adf59a2ca9c94f7b5dd9fbcd32b3c02d265863856a62ca3ada73a9a4"
-NATIVE_STACK_SHA256 = "baee4644bcb751ce7bb922df61c155e1ebde96ddcf1353c205df968704123244"
-NATIVE_STACK_WORKER_SHA256 = "8b42a5a426bb83b462f44dec140118326de19487f88e628f0c210cd442cad791"
+NATIVE_STACK_SHA256 = "3aecb4465665fcf7ff4a389e5f28cab5f22c0e56fea7cefe9f2886afadbf413e"
+NATIVE_STACK_WORKER_SHA256 = "dba9018a5401e807dac8b9853e9a327c566054d700b519eff2788b2289a19bb9"
+NATIVE_STACK_COMBINED_SHA256 = "b616094bea5e9f6b7dfd31573378800b2a5563b38c5b7a43a701cca2ff099b83"
 ALLOW = '''#[allow(
     unsafe_code,
     reason = "the sole native loader accepts only a private proof over authenticated immutable bytes"
@@ -194,6 +199,10 @@ def validate(root: Path) -> list[str]:
             if hashlib.sha256(source.encode("utf-8")).hexdigest() != NATIVE_STACK_WORKER_SHA256:
                 errors.append("audited native worker admission/retirement changed; review live parents, original limits and post-munmap release")
             # No unsafe allowance is granted to ordinary worker admission.
+        elif relative == NATIVE_STACK_COMBINED:
+            if hashlib.sha256(source.encode("utf-8")).hexdigest() != NATIVE_STACK_COMBINED_SHA256:
+                errors.append("audited combined stack selection changed; review immutable proof and shared original ledgers")
+            # Proof-gated selection is safe Rust, not another unsafe exception.
         if unsafe.search(source) or lowered.search(source):
             errors.append(f"unreviewed unsafe code or allowance in {relative}")
     return errors

@@ -62,6 +62,50 @@ fn canonical_creator_with_unverified_c_payload_never_opens_descriptive_threading
 }
 
 #[test]
+fn combined_creator_recognition_is_explicit_and_fixed() {
+    use std::borrow::Cow;
+    use wasm_encoder::{CustomSection, Section};
+
+    const FINAL: &[u8] = include_bytes!(
+        "../../../../latent-component-threading/src/rust_catalogue/combined-corrected-v1/combined-final-component.wasm"
+    );
+    const DELTA: &[u8] = include_bytes!(
+        "../../../../latent-component-threading/src/rust_catalogue/combined-corrected-v1/combined-original-delta.bin"
+    );
+    let mut wrapped = FINAL.to_vec();
+    let section = CustomSection {
+        name: Cow::Borrowed("latent-rust-original-delta-v1"),
+        data: Cow::Borrowed(DELTA),
+    };
+    wrapped.push(section.id());
+    section.encode(&mut wrapped);
+    let result = validate(&wrapped, SemanticLimits::default());
+    #[cfg(feature = "development-rust-http-combined")]
+    if latent_component_threading::rust_component::COMBINED_DIAGNOSTIC_CATALOGUE_AVAILABLE {
+        assert!(result.is_ok(), "{result:?}");
+    } else {
+        assert_eq!(
+            result.unwrap_err().message,
+            "unverified-native-thread-component"
+        );
+    }
+    #[cfg(not(feature = "development-rust-http-combined"))]
+    assert_eq!(
+        result.unwrap_err().message,
+        "unverified-native-thread-component"
+    );
+
+    // Altered reconstruction material never enables the threading parser.
+    *wrapped.last_mut().unwrap() ^= 1;
+    assert_eq!(
+        validate(&wrapped, SemanticLimits::default())
+            .unwrap_err()
+            .message,
+        "unverified-native-thread-component"
+    );
+}
+
+#[test]
 fn nonblocking_subtask_cancellation_keeps_other_more_async_operations_closed() {
     use wasm_encoder::{CanonicalFunctionSection, ComponentTypeSection};
     let mut canonical = CanonicalFunctionSection::new();

@@ -37,7 +37,7 @@ impl Pollable {
         };
         Self::new(Timer::new(delay))
     }
-    pub fn poll(inputs: Vec<io::poll::PollableBorrow<'_>>) -> Vec<u32> {
+    pub async fn poll(inputs: Vec<io::poll::PollableBorrow<'_>>) -> Vec<u32> {
         assert!(
             !inputs.is_empty() && inputs.len() <= 64,
             "WASI poll input limit"
@@ -46,9 +46,9 @@ impl Pollable {
             .iter()
             .map(|resource| resource.get::<Self>().source.clone())
             .collect();
-        Self::wait(&sources)
+        Self::wait(&sources).await
     }
-    fn wait(sources: &[Rc<dyn Readiness>]) -> Vec<u32> {
+    async fn wait(sources: &[Rc<dyn Readiness>]) -> Vec<u32> {
         // Closed streams require no runtime grant or canonical allocation.
         // This also allows an unadmitted upload's initial writable window.
         let ready: Vec<_> = sources
@@ -60,7 +60,7 @@ impl Pollable {
         if !ready.is_empty() {
             return ready;
         }
-        pump::Pump::current().poll(sources)
+        pump::Pump::current().poll(sources).await
     }
 }
 impl io::poll::GuestPollable for Pollable {
@@ -69,6 +69,6 @@ impl io::poll::GuestPollable for Pollable {
         self.source.ready()
     }
     async fn block(&self) {
-        Self::wait(&[self.source.clone()]);
+        Self::wait(&[self.source.clone()]).await;
     }
 }
