@@ -140,14 +140,35 @@ class TwoCaseObservation(unittest.TestCase):
 
 
 class FixtureSelection(unittest.TestCase):
-    def test_original_cases_and_source_stay_unchanged_without_opt_in(self):
+    def test_normal_adds_only_the_original_pending_cancellation_case(self):
+        import hashlib
         from tools import dotnet_task_runtime_fixture as normal, dotnet_monitor_cancel_fixture as witness
-        self.assertEqual(normal.CASES, qualify.ORIGINAL_CASES)
-        combined = witness.library_source(normal.LIBRARY_SOURCE)
+        self.assertEqual(normal.BASELINE_CASES, qualify.ORIGINAL_CASES)
+        selected, cases = normal.selected_fixture()
+        self.assertEqual(cases, qualify.ORIGINAL_CASES + ('cancel-pending',))
+        self.assertEqual(selected.count(normal.CANCEL_CASE), 1)
+        self.assertEqual(selected.replace(normal.CANCEL_CASE, ''), normal.LIBRARY_SOURCE)
+        # Bound to the exact case exercised in signed run 41938149935.
+        self.assertEqual(hashlib.sha256(normal.CANCEL_CASE.encode('utf-8')).hexdigest(),
+                         'ada64239da0bb113775364d771d48c230aad0e8e138be2c56d20a143558bff54')
+        self.assertNotIn('case "monitor-wait"', selected)
+        self.assertEqual(normal.CANCEL_CASE, witness.CANCEL_CASE)
+        with self.assertRaises(WorkflowError):
+            normal.selected_fixture(1)
+        with self.assertRaises(WorkflowError):
+            normal.with_pending_cancel(selected)
+
+    def test_monitor_opt_in_preserves_both_original_cases(self):
+        import hashlib
+        from tools import dotnet_task_runtime_fixture as normal, dotnet_monitor_cancel_fixture as witness
+        combined, cases = normal.selected_fixture(True)
         self.assertEqual(combined.replace(witness.CANCEL_CASE, '').replace(witness.MONITOR_CASE, ''), normal.LIBRARY_SOURCE)
+        self.assertEqual(cases, ('cancel-pending', 'monitor-wait'))
         self.assertEqual(witness.CASES, ('cancel-pending', 'monitor-wait'))
         self.assertNotIn('case "cancel-pending"', normal.LIBRARY_SOURCE)
         self.assertNotIn('case "monitor-wait"', normal.LIBRARY_SOURCE)
+        self.assertEqual(hashlib.sha256(witness.MONITOR_CASE.encode('utf-8')).hexdigest(),
+                         'd5630232e015d1064cfd881bed03b56d35ba1e4b9e4df92005447483acc43fd2')
         with self.assertRaises(WorkflowError):
             witness.library_source(normal.LIBRARY_SOURCE + '        case "cancel-pending":\n')
 

@@ -21,7 +21,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     private final long origin = System.nanoTime();
     private final ArrayList<Task<?>> queue = new ArrayList<>();
     private final ArrayList<Thread> workers = new ArrayList<>();
-    private Activation.Lease owner;
+    private volatile Activation.Lease owner;
     private boolean shutdown;
     private volatile boolean interrupting;
     private boolean continuePeriodic;
@@ -131,13 +131,53 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         }
     }
 
+    // TeaVM retains a completed Thread's Runnable; do not let that target
+    // retain an otherwise retired executor through the thread identity ledger.
+    private static final class Worker {
+        private volatile ScheduledThreadPoolExecutor pool;
+        private volatile Thread thread;
+        Worker(ScheduledThreadPoolExecutor pool) { this.pool = pool; }
+        void prepare(Thread thread) { this.thread = thread; }
+        void run() {
+            ScheduledThreadPoolExecutor current = pool;
+            Thread expected = thread;
+            if (current == null || expected == null || expected != Thread.currentThread()
+                    || !Activation.runningManaged(expected, current)) return;
+            try { current.work(); } finally { clear(); }
+        }
+        void clear() { pool = null; thread = null; }
+    }
+
     private void startWorker() {
-        Thread thread = factory.newThread(this::work);
-        if (thread == null || thread.isAlive())
-            throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
-        workers.add(thread);
-        try { Activation.startManaged(thread); }
-        catch (Throwable error) { workers.remove(thread); throw error; }
+        Worker worker = new Worker(this);
+        Thread thread = null;
+        int addedAt = -1;
+        try {
+            thread = factory.newThread(worker::run);
+            if (thread == null || thread.isAlive())
+                throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
+            if (Activation.alive(thread)) throw new IllegalThreadStateException();
+            addedAt = workers.size();
+            workers.add(thread);
+            worker.prepare(thread);
+        } catch (Throwable error) {
+            // Admission has not started, so the retained target cannot own a
+            // managed worker. Preserve any pre-existing worker identity.
+            worker.clear();
+            if (addedAt >= 0 && addedAt < workers.size() && workers.get(addedAt) == thread)
+                workers.remove(addedAt);
+            throw error;
+        }
+        try { Activation.startManaged(thread, this); }
+        catch (Throwable error) {
+            // Accepted or rollback-uncertain work keeps both its thread and its
+            // target for root interruption and eventual physical settlement.
+            if (!Activation.ownsManaged(thread, this)) {
+                removeWorker(thread);
+                worker.clear();
+            }
+            throw error;
+        }
     }
 
     private int first() {
@@ -148,6 +188,12 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         }
         return first;
     }
+    private void removeWorker(Thread thread) {
+        for (int index = 0; index < workers.size(); index++) {
+            if (workers.get(index) == thread) { workers.remove(index); return; }
+        }
+    }
+
     private void work() {
         Thread current = Thread.currentThread();
         try {
@@ -193,7 +239,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
             }
         } finally {
             synchronized (this) {
-                workers.remove(current);
+                removeWorker(current);
                 if (!queue.isEmpty() && !interrupting && !retiring) startWorker();
                 settleIfTerminated();
                 notifyAll();
@@ -261,8 +307,10 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     private void settleIfTerminated() {
         if ((shutdown || retiring) && pendingWork == 0 && workers.isEmpty() && owner != null) {
             owner.close(); owner = null;
+            Activation.unmanageRetired(this);
         }
     }
+    @Override public boolean isRetired() { return owner == null; }
     @Override public synchronized boolean isShutdown() { return shutdown || retiring; }
     @Override public synchronized boolean isTerminated() { return (shutdown || retiring) && owner == null; }
     @Override public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {

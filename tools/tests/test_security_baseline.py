@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import redirect_stdout
 from dataclasses import replace
 from datetime import date, datetime, timedelta, timezone
 from email.utils import format_datetime
@@ -10,6 +11,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+import urllib.error
 from unittest.mock import patch
 import zipfile
 
@@ -127,6 +129,62 @@ class SecurityFixtureTests(unittest.TestCase):
                 security_advisories.query_osv(packages, lambda payload: (response, format_datetime(observed, usegmt=True)))
         with self.assertRaises(OSError):
             security_advisories.query_osv(packages, lambda payload: (_ for _ in ()).throw(OSError("offline")))
+
+    def test_osv_transport_failures_are_specific_redacted_and_fail_closed(self) -> None:
+        failures = (
+            (urllib.error.HTTPError("https://example.invalid/private", 503, "private response", {}, None),
+             "osv-http-error"),
+            (urllib.error.URLError("private network detail"), "osv-transport-unavailable"),
+            (TimeoutError("private timeout detail"), "osv-transport-unavailable"),
+        )
+        for failure, expected in failures:
+            with self.subTest(expected=expected), patch("tools.security_advisories.urllib.request.urlopen", side_effect=failure) as send:
+                with self.assertRaises(SecurityError) as caught:
+                    security_advisories.osv_transport(b'{}')
+                self.assertEqual(str(caught.exception), expected)
+                send.assert_called_once()
+
+    def test_osv_malformed_date_and_json_are_not_unavailable_or_empty_results(self) -> None:
+        packages = [Package("npm", "fixture", "1.0.0", "sdk/package-lock.json")]
+        now = format_datetime(datetime.now(timezone.utc), usegmt=True)
+        for response, date_header, expected in ((b'{"results":[{}]}', "invalid date", "invalid-osv-date"),
+                                                (b'not json', now, "invalid-osv-json")):
+            with self.subTest(expected=expected), self.assertRaisesRegex(SecurityError, "^" + expected + "$"):
+                security_advisories.query_osv(packages, lambda payload: (response, date_header))
+        for advisory in ({"modified": "2026-09-19T00:00:00Z"}, {"id": 1, "modified": "2026-09-19T00:00:00Z"}):
+            response = json.dumps({"results": [{"vulns": [advisory]}]}).encode()
+            with self.subTest(advisory=advisory), self.assertRaisesRegex(SecurityError, "^invalid-osv-advisory$"):
+                security_advisories.query_osv(packages, lambda payload: (response, now))
+
+    def test_dependency_source_failures_report_the_phase_without_private_details(self) -> None:
+        for failure, expected in ((OSError("private inventory path"), "dependency-inventory-unavailable"),
+                                  (ValueError("private manifest text"), "dependency-inventory-invalid")):
+            with self.subTest(expected=expected), patch("tools.security_advisories.inventory", side_effect=failure):
+                with self.assertRaises(SecurityError) as caught:
+                    security_advisories.dependencies(self.root)
+                self.assertEqual(str(caught.exception), expected)
+        package = Package("npm", "fixture", "1.0.0", "sdk/package-lock.json")
+        with patch("tools.security_advisories.inventory", return_value=([package], [])), \
+             patch("tools.security_advisories.query_osv", return_value=([], [])), \
+             patch("tools.security_npm_sources.verify_sources", side_effect=OSError("private repair path")):
+            with self.assertRaises(SecurityError) as caught:
+                security_advisories.dependencies(self.root)
+            self.assertEqual(str(caught.exception), "dependency-repair-source-unavailable")
+
+    def test_advisory_http_failure_remains_a_redacted_failed_scan(self) -> None:
+        from tools import security_scan
+        package = Package("npm", "private-fixture", "1.0.0", "sdk/private-lock.json")
+        error = urllib.error.HTTPError("https://example.invalid/private", 503, "private response", {}, None)
+        arguments = ["security_scan.py", "dependencies", "--repo", str(self.root),
+                     "--tools", str(self.root), "--scratch", str(self.root)]
+        output = io.StringIO()
+        with patch.object(sys, "argv", arguments), patch("tools.security_scan.load_exceptions", return_value=[]), \
+             patch("tools.security_advisories.inventory", return_value=([package], [])), \
+             patch("tools.security_advisories.urllib.request.urlopen", side_effect=error), redirect_stdout(output):
+            self.assertEqual(security_scan.main(), 2)
+        self.assertEqual(json.loads(output.getvalue()), {"schema": 1, "mode": "dependencies",
+                                                        "status": "error", "code": "osv-http-error"})
+        self.assertNotIn("private", output.getvalue())
 
     def test_current_manifest_inventory_covers_guest_client_and_build_locks(self) -> None:
         packages, records = inventory(ROOT)

@@ -269,6 +269,88 @@ class StandardConsole(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'native-tuple-mismatch'): inherited(root)
 
 
+    def test_development_workflow_matches_pull_request_inputs_and_preserves_diagnostic_pushes(self):
+        import re
+        import shlex
+        from tools.ci_lane_inventory import workflow_model
+        from tools.dotnet_guest.build import RECIPE
+        from tools.rust_capsule_project import ROOT
+
+        def matches(path, pattern):
+            pieces = []
+            index = 0
+            while index < len(pattern):
+                if pattern[index:index + 2] == '**':
+                    pieces.append('.*'); index += 2
+                elif pattern[index] == '*':
+                    pieces.append('[^/]*'); index += 1
+                elif pattern[index] == '?':
+                    pieces.append('[^/]'); index += 1
+                else:
+                    pieces.append(re.escape(pattern[index])); index += 1
+            return re.fullmatch(''.join(pieces), path) is not None
+
+        original = workflow_model((ROOT / '.github/workflows/dotnet-guest.yml').read_text(encoding='utf-8'))
+        wrapper = workflow_model((ROOT / '.github/workflows/dotnet-guest-development.yml').read_text(encoding='utf-8'))
+        diagnostic_branches = [
+            'test/sdk-dotnet-root-return-20261027',
+            'test/sdk-dotnet-join-cause-20261027',
+            'feat/sdk-dotnet-prefetched-readiness-review-20261028',
+        ]
+        self.assertEqual(original['on']['push'], {'branches': diagnostic_branches})
+        self.assertIn('workflow_dispatch', original['on'])
+        self.assertIn('workflow_call', original['on'])
+        self.assertEqual(wrapper['on']['push']['branches'], ['development'])
+        paths = wrapper['on']['push']['paths']
+        self.assertEqual(paths, original['on']['pull_request']['paths'])
+        self.assertEqual(wrapper['permissions'], {'contents': 'read', 'actions': 'read'})
+        levels = {'none': 0, 'read': 1, 'write': 2}
+        for job, config in original['jobs'].items():
+            permissions = config.get('permissions', original['permissions'])
+            for scope, access in permissions.items():
+                with self.subTest(job=job, permission=scope):
+                    self.assertGreaterEqual(levels[wrapper['permissions'].get(scope, 'none')], levels[access])
+        self.assertEqual(wrapper['jobs'], {'qualify': {'uses': '$/.github/workflows/dotnet-guest.yml'}})
+        self.assertTrue(wrapper['concurrency']['cancel-in-progress'])
+        self.assertNotEqual(wrapper['concurrency']['group'], original['concurrency']['group'])
+        self.assertFalse(any(pattern.startswith('!') for pattern in paths))
+
+        direct = (
+            'Cargo.lock', 'Cargo.toml', 'rust-toolchain.toml',
+            'tools/install_guest_bindgen.py', 'tools/qualify_dotnet_closed_filesystem.py',
+            'tools/qualify_dotnet_published_tasks.py', 'tools/qualify_dotnet_resources.py',
+            'tools/qualify_sdk_scratch.py', 'tools/requirements.lock', 'tools/stage_runtime_wit.py',
+            'tools/tests/test_build_provenance_schemas.py', 'tools/tests/test_captured_compiler_isolation.py',
+            'tools/tests/test_dotnet_closed_filesystem.py', 'tools/tests/test_dotnet_closed_io.py',
+            'tools/tests/test_dotnet_filesystem_qualification.py', 'tools/tests/test_dotnet_filesystem_runtime.py',
+            'tools/tests/test_dotnet_published_tasks.py', 'tools/tests/test_dotnet_resources.py',
+            'tools/tests/test_dotnet_task_wait.py', 'tools/tests/test_sdk_scratch_fixture.py',
+            'tools/tests/test_sdk_scratch_probe.py', 'tools/tests/test_sdk_scratch_qualification.py',
+            '.github/workflows/dotnet-guest.yml', '.github/workflows/dotnet-guest-development.yml',
+            'tools/tests/test_dotnet_standard_console.py', 'tools/ci_lane_inventory.py',
+        )
+        for path in set(RECIPE) | set(direct):
+            with self.subTest(path=path):
+                self.assertTrue(any(matches(path, pattern) for pattern in paths))
+        for path in ('docs/reference/unrelated.md', 'website/src/unrelated.ts', 'README.md'):
+            with self.subTest(unrelated=path):
+                self.assertFalse(any(matches(path, pattern) for pattern in paths))
+
+        for branch in diagnostic_branches:
+            self.assertIn("github.ref != 'refs/heads/" + branch + "'", original['jobs']['toolchain']['if'])
+            self.assertIn("github.ref == 'refs/heads/" + branch + "'", original['jobs']['root-return']['if'])
+
+        capture = next(step for step in original['jobs']['toolchain']['steps']
+            if step.get('name') == 'Capture immutable qualification source inputs')
+        archive = shlex.split(capture['run'].replace('\\\n', ' ').splitlines()[0])
+        self.assertEqual(archive[:2], ['git', 'archive'])
+        archived_inputs = archive[archive.index('--') + 1:]
+        self.assertIn('sdk/transaction-contract', archived_inputs)
+        for path in RECIPE:
+            with self.subTest(archived_recipe=path):
+                self.assertTrue(any(path == item or path.startswith(item.rstrip('/') + '/')
+                    for item in archived_inputs))
+
     def test_late_workflow_preserves_all_programmes_and_authenticates_before_mode_restore(self):
         from tools.ci_lane_inventory import workflow_model
         from tools.rust_capsule_project import ROOT

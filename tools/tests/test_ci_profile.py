@@ -14,6 +14,164 @@ from unittest.mock import patch
 from tools import ci_profile as profile
 
 
+class TypeScriptQualificationTriggerTests(unittest.TestCase):
+    def test_recipe_and_direct_toolchain_inputs_select_both_events(self) -> None:
+        from fnmatch import fnmatchcase
+        from tools.ci_lane_inventory import workflow_model
+        from tools.typescript_guest.build import RECIPE
+
+        root = Path(__file__).resolve().parents[2]
+        workflow = workflow_model((root / ".github/workflows/typescript-guest.yml").read_text(encoding="utf-8"))
+        events = workflow["on"]
+        self.assertEqual(events["push"]["branches"], ["development"])
+        paths = events["pull_request"]["paths"]
+        self.assertEqual(paths, events["push"]["paths"])
+        self.assertEqual(len(paths), len(set(paths)))
+
+        def matches(pattern: str, source: str) -> bool:
+            # GitHub's '*' matches within a path segment, whereas '**' here
+            # is used only as a terminal directory wildcard.
+            self.assertFalse(pattern.startswith("!"))
+            if pattern.endswith("/**"):
+                return source.startswith(pattern[:-2])
+            pattern_parts, source_parts = pattern.split("/"), source.split("/")
+            return len(pattern_parts) == len(source_parts) and all(
+                fnmatchcase(part, glob) for part, glob in zip(source_parts, pattern_parts))
+
+        inputs = set(RECIPE) | {"Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "tools/requirements.lock"}
+        for source in sorted(inputs):
+            with self.subTest(source=source):
+                self.assertTrue(any(matches(pattern, source) for pattern in paths), source)
+        self.assertFalse(any(matches(pattern, "docs/unrelated.md") for pattern in paths))
+
+        # The retained source evidence must contain the recipe that the
+        # qualification used, as well as its transaction-contract program.
+        import shlex
+        step = next(step for step in workflow["jobs"]["boundary"]["steps"]
+                    if step.get("name") == "Capture immutable qualification source inputs")
+        commands = step["run"].replace("\\" + "\n", " ").splitlines()
+        archive = next(line.strip() for line in commands if line.strip().startswith("git archive "))
+        arguments = shlex.split(archive)
+        included = arguments[arguments.index("--") + 1:]
+        for source in sorted(set(RECIPE) | {"sdk/transaction-contract"}):
+            with self.subTest(archived_source=source):
+                self.assertTrue(any(source == item or source.startswith(item + "/") for item in included), source)
+
+
+class GoQualificationTriggerTests(unittest.TestCase):
+    def test_recipe_and_direct_toolchain_inputs_select_both_events_and_are_archived(self) -> None:
+        from fnmatch import fnmatchcase
+        import shlex
+        from tools.ci_lane_inventory import workflow_model
+        from tools.go_capsule_build import RECIPE
+
+        root = Path(__file__).resolve().parents[2]
+        workflow = workflow_model((root / ".github/workflows/go-guest.yml").read_text(encoding="utf-8"))
+        events = workflow["on"]
+        self.assertEqual(events["push"]["branches"], ["development"])
+        self.assertEqual(set(events["pull_request"]["paths"]), set(events["push"]["paths"]))
+
+        def matches(pattern: str, source: str) -> bool:
+            # '*' stays within a segment; the existing '**' patterns select
+            # an entire directory below their terminal slash.
+            self.assertFalse(pattern.startswith("!"))
+            if pattern.endswith("/**"):
+                return source.startswith(pattern[:-2])
+            pattern_parts, source_parts = pattern.split("/"), source.split("/")
+            return len(pattern_parts) == len(source_parts) and all(
+                fnmatchcase(part, glob) for part, glob in zip(source_parts, pattern_parts))
+
+        inputs = set(RECIPE) | {"Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "tools/requirements.lock"}
+        for event in ("pull_request", "push"):
+            paths = events[event]["paths"]
+            self.assertFalse(any(pattern.startswith("!") for pattern in paths))
+            for source in sorted(inputs):
+                with self.subTest(event=event, source=source):
+                    self.assertTrue(any(matches(pattern, source) for pattern in paths), source)
+            self.assertFalse(any(matches(pattern, "docs/unrelated.md") for pattern in paths))
+
+        step = next(step for step in workflow["jobs"]["upstream-probe"]["steps"]
+                    if step.get("name") == "Capture immutable qualification source inputs")
+        commands = step["run"].replace("\\" + "\n", " ").splitlines()
+        archive = next(line.strip() for line in commands if line.strip().startswith("git archive "))
+        arguments = shlex.split(archive)
+        included = arguments[arguments.index("--") + 1:]
+        for source in sorted(inputs | {"sdk/transaction-contract"}):
+            with self.subTest(archived_source=source):
+                self.assertTrue(any(source == item or source.startswith(item + "/") for item in included), source)
+
+
+class CQualificationTriggerTests(unittest.TestCase):
+    def test_c_and_rust_build_inputs_select_both_events(self) -> None:
+        from fnmatch import fnmatchcase
+        from tools import build_guest_capsules, c_capsule_build, c_capsule_project
+        from tools.ci_lane_inventory import workflow_model
+
+        root = Path(__file__).resolve().parents[2]
+        workflow = workflow_model((root / ".github/workflows/c-guest-authoring.yml").read_text(encoding="utf-8"))
+        events = workflow["on"]
+        self.assertIn("development", events["push"]["branches"])
+        paths = events["pull_request"]["paths"]
+        self.assertEqual(paths, events["push"]["paths"])
+        self.assertEqual(len(paths), len(set(paths)))
+
+        def matches(pattern: str, source: str) -> bool:
+            self.assertFalse(pattern.startswith("!"))
+            if pattern.endswith("/**"):
+                return source.startswith(pattern[:-2])
+            pattern_parts, source_parts = pattern.split("/"), source.split("/")
+            return len(pattern_parts) == len(source_parts) and all(
+                fnmatchcase(part, glob) for part, glob in zip(source_parts, pattern_parts))
+
+        # The same job compiles standalone authored C projects and the signed
+        # C and Rust guests, and separately compiles the transaction contract.
+        inputs = set(c_capsule_build.RECIPE) | set(c_capsule_project.authoring_inputs(root))
+        inputs.update(json.loads(build_guest_capsules.source_inputs()))
+        for directory in ("sdk/profile", "sdk/transaction-contract"):
+            inputs.update(path.relative_to(root).as_posix()
+                          for path in (root / directory).rglob("*") if path.is_file())
+        for source in sorted(inputs):
+            with self.subTest(source=source):
+                self.assertTrue(any(matches(pattern, source) for pattern in paths), source)
+        self.assertFalse(any(matches(pattern, "docs/unrelated.md") for pattern in paths))
+
+
+class RustQualificationTriggerTests(unittest.TestCase):
+    def test_rust_project_and_combined_guest_inputs_select_both_events(self) -> None:
+        from fnmatch import fnmatchcase
+        from tools import build_guest_capsules, rust_capsule_build, rust_capsule_project
+        from tools.ci_lane_inventory import workflow_model
+
+        root = Path(__file__).resolve().parents[2]
+        workflow = workflow_model((root / ".github/workflows/rust-capsule-authoring.yml").read_text(encoding="utf-8"))
+        events = workflow["on"]
+        self.assertEqual(events["push"]["branches"], ["development"])
+        paths = events["pull_request"]["paths"]
+        self.assertEqual(paths, events["push"]["paths"])
+        self.assertEqual(len(paths), len(set(paths)))
+
+        def matches(pattern: str, source: str) -> bool:
+            self.assertFalse(pattern.startswith("!"))
+            if pattern.endswith("/**"):
+                return source.startswith(pattern[:-2])
+            pattern_parts, source_parts = pattern.split("/"), source.split("/")
+            return len(pattern_parts) == len(source_parts) and all(
+                fnmatchcase(part, glob) for part, glob in zip(source_parts, pattern_parts))
+
+        # Standalone projects copy these SDK sources and root files; their
+        # qualification also builds the combined signed Rust and C guests.
+        inputs = set(rust_capsule_build.selected_recipe(root))
+        inputs.update(json.loads(build_guest_capsules.source_inputs()))
+        inputs.update({"Cargo.toml", "rust-toolchain.toml", "LICENSE", "NOTICE"})
+        for directory in (*rust_capsule_project.SDK_DIRECTORIES, "sdk/profile", "sdk/transaction-contract"):
+            inputs.update(path.relative_to(root).as_posix()
+                          for path in (root / directory).rglob("*") if path.is_file())
+        for source in sorted(inputs):
+            with self.subTest(source=source):
+                self.assertTrue(any(matches(pattern, source) for pattern in paths), source)
+        self.assertFalse(any(matches(pattern, "docs/unrelated.md") for pattern in paths))
+
+
 class ClassificationTests(unittest.TestCase):
     def test_sparse_selector_keeps_ignore_rules_available_offline(self) -> None:
         # A blob-filtered checkout may not have the root ignore blob locally.
@@ -456,6 +614,13 @@ class GitHistoryTests(unittest.TestCase):
         head = self.commit()
         result = profile.classify_event("push", {"before": self.base, "after": head}, self.repo)
         self.assertEqual((result.profile, result.changed_files), ("full", 2))
+
+    def test_java_source_push_keeps_normal_qualification_selected(self) -> None:
+        self.write("sdk/java-guest/runtime/Thread.java", "class Thread {}\n")
+        head = self.commit()
+        result = profile.classify_event("push", {"before": self.base, "after": head}, self.repo)
+        self.assertEqual((result.profile, result.changed_files), ("full", 1))
+        self.assertNotEqual(result.reason, "isolated-tooling:documentation-validator-tests")
 
     def test_rename_from_code_to_documentation_includes_deleted_source(self) -> None:
         self.write("src/original.rs", "same bytes\n")

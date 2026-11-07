@@ -57,8 +57,9 @@ def qualify(native_directory, tools_directory, output, *, expected_head):
     require(sys.platform == 'linux' and sys.version_info >= (3, 13), 'monitor-cancel-linux-python313')
     require(type(expected_head) is str and len(expected_head) == 40
         and all(c in '0123456789abcdef' for c in expected_head), 'monitor-cancel-exact-source')
-    require(fixture.CASES == ORIGINAL_CASES and witness.CASES == node.MODES,
-        'monitor-cancel-original-and-two-new-cases')
+    require(fixture.BASELINE_CASES == ORIGINAL_CASES
+        and fixture.CASES == ORIGINAL_CASES + ('cancel-pending',) and witness.CASES == node.MODES,
+        'monitor-cancel-exact-baseline-and-witness-cases')
     native_directory, tools_directory = (Path(path).resolve(strict=True) for path in (native_directory, tools_directory))
     output = Path(output).absolute()
     require(output != ROOT and ROOT not in output.parents and output not in ROOT.parents

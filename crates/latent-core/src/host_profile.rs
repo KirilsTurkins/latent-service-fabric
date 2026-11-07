@@ -457,9 +457,7 @@ mod tests {
             .unwrap();
         assert_eq!(native.binding, HostInterfaceBinding::Provider);
         assert!(native.resource_types().is_empty());
-        for (operation, asynchronous) in [("start", false)] {
-            assert_eq!(native.operation_is_asynchronous(operation), asynchronous);
-        }
+        assert!(!native.operation_is_asynchronous("start"));
         assert!(PHASE3_HOST_ABI_V5.interface(native.interface).is_none());
         assert!(PHASE3_HOST_ABI_V6
             .interface("latent:runtime-native/threads@0.2.0")

@@ -110,6 +110,28 @@ def service_grant(client, node, publications, *, generation=0, trigger_only=Fals
     return result["generation"]
 
 
+def observe_trigger_audit_capacity(client, applied):
+    """Retain one later node snapshot; it cannot explain or reverse a refusal."""
+    error = applied.get("error")
+    if (applied.get("category") != "platform-failure" or not isinstance(error, dict)
+            or error.get("code") != "resource-exhausted"):
+        return
+    details = error.get("details")
+    if not isinstance(details, list) or not any(
+            isinstance(detail, dict) and detail.get("kind") == "audit-journal"
+            and isinstance(detail.get("fields"), dict)
+            and detail["fields"].get("reason") == "audit-capacity" for detail in details):
+        return
+    try:
+        # RecordingClient retains this bounded read next to the original apply
+        # and lookup. Counters may already have drained; this is not a retry or
+        # an observation of the instant at which admission was refused.
+        client.call("node", "get", NODE_ID, codes=(0, 2, 3, 4, 5, 6, 130), timeout=2)
+    except Exception:
+        # Observation failure must never replace the original failed check.
+        pass
+
+
 def route(client, host, publication, *, path="/api", function="handle"):
     snapshot = client.call("route", "get")["data"]["snapshot"]
     rows = [row for row in snapshot["services"] if row["service"] == ADAPTER and row["revisions"]]
@@ -133,6 +155,7 @@ def route(client, host, publication, *, path="/api", function="handle"):
             "--expected-generation", state["trigger"]["generation"] if state["trigger"] else 0,
             "--expected-state-version", state["stateVersion"], codes=(0, 2, 4, 5, 6))
         recovered = client.call("trigger", "operation", operation)
+        observe_trigger_audit_capacity(client, applied)
         require(applied["category"] == "success" and applied["outcomeKnown"]
             and recovered["outcomeKnown"] and recovered["data"]["receipt"] == applied["data"]["receipt"],
             "java-http-original-trigger-operation-recovery")
