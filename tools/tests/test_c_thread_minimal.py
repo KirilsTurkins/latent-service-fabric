@@ -20,8 +20,28 @@ def before_exit_trap(raw):
   raise AssertionError('closed-file-original-abi-source')
  return original
 
+def before_range(path, raw):
+ import hashlib,json
+ inverse=(ROOT/'tools/tests/fixtures/c-libfetch-range/inverse.json').read_bytes()
+ if hashlib.sha256(inverse).hexdigest() != 'fad42989a1ffd18242a5de1e5f8027a0040827e4b392616ee643892de2ddb68c':
+  raise AssertionError('libfetch-range-inverse-identity')
+ entry=json.loads(inverse)[path.rsplit('/', 1)[-1]]
+ if hashlib.sha256(raw).hexdigest() != entry['source_sha256']:
+  raise AssertionError('libfetch-range-exact-source')
+ lines=raw.decode('utf-8').splitlines(keepends=True)
+ previous=len(lines)
+ for start,end,original in reversed(entry['hunks']):
+  if not 0 <= start <= end <= previous: raise AssertionError('libfetch-range-inverse-order')
+  lines[start:end]=original.splitlines(keepends=True)
+  previous=start
+ result=''.join(lines).encode('utf-8')
+ if hashlib.sha256(result).hexdigest() != entry['previous_sha256']:
+  raise AssertionError('libfetch-range-prior-source')
+ return result
+
 def before_head_stat(path, raw):
  import hashlib
+ raw = before_range(path, raw)
  changes = {
   'http.c': ('6d762b7001e35c32582a5a5e7bb3c4be2313ebaa6522d20ae298bd9ce29f6d6f', (
    (b'    if ((stat && strcmp(method, "GET")) || fetchAuthMethod || fetchDebug || fetchTimeout < 0) { unsupported(); return NULL; }',
