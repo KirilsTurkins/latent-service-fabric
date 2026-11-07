@@ -131,6 +131,10 @@ pub(crate) fn prepare_native_stack(
     size: usize,
     maximum_children: usize,
     async_workers: bool,
+    #[cfg(feature = "development-rust-http-combined")] combined: Option<(
+        &crate::component_threading::Authentication,
+        &latent_executor::PreparedComponent,
+    )>,
 ) -> Result<Arc<crate::native_stacks::StackContext>, PlatformError> {
     let budget = state.accounting.budget().clone();
     let maximum_native = state.runtime_limits.map(|limits| limits.native_owners);
@@ -140,6 +144,26 @@ pub(crate) fn prepare_native_stack(
             PlatformErrorCode::Internal,
             "native-stack-context-already-created",
         ));
+    }
+    #[cfg(feature = "development-rust-http-combined")]
+    if let Some((proof, descriptor)) = combined {
+        let maximum = maximum_native.expect("initialized original runtime limits") as usize;
+        if async_workers || maximum_children != maximum.saturating_sub(1) {
+            return Err(failure(
+                PlatformErrorCode::Internal,
+                "native-stack-profile-conflict",
+            ));
+        }
+        let context = crate::native_stacks::StackContext::with_combined_http(
+            budget,
+            table.runtime.clone(),
+            size,
+            maximum,
+            proof,
+            descriptor,
+        )?;
+        table.native_stacks = Some(Arc::clone(&context));
+        return Ok(context);
     }
     let context = if async_workers {
         if maximum_children != 0 {

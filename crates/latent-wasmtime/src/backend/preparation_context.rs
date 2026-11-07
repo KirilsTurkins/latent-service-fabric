@@ -369,6 +369,10 @@ impl PreparationContext {
                 crate::NativeThreadProfile::CContext144SyncCooperativeV1
                 | crate::NativeThreadProfile::RustContext40SyncCooperativeV1,
             ) => manifest.execution.threading == ThreadingModel::Cooperative,
+            #[cfg(feature = "development-rust-http-combined")]
+            Some(crate::NativeThreadProfile::RustContext40CombinedHttpDiagnosticV1) => {
+                manifest.execution.threading == ThreadingModel::Cooperative
+            }
             _ => matches!(
                 manifest.execution.threading,
                 ThreadingModel::SingleThreaded | ThreadingModel::Reentrant

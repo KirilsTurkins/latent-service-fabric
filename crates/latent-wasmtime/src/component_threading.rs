@@ -9,6 +9,13 @@ use latent_executor::PreparedComponent;
 pub(crate) const PROFILE: &str = "rust-context40-sole-consumer-one-task-start-v1";
 pub(crate) const C_PROFILE: &str = "c-context144-sync-cooperative-v1";
 pub(crate) const RUST_SYNC_PROFILE: &str = "rust-context40-sync-cooperative-v1";
+#[cfg(feature = "development-rust-http-combined")]
+pub(crate) const RUST_COMBINED_HTTP_PROFILE: &str = "rust-context40-combined-http-diagnostic-v1";
+// A distinct, conservative experimental reservation from the existing original
+// preparation owner. Physical high-water and adversarial bounds are not yet
+// qualified; this number must not be promoted as a production cost proof.
+#[cfg(feature = "development-rust-http-combined")]
+pub(crate) const RUST_COMBINED_HTTP_WORK_BYTES: usize = 96 * 1024 * 1024;
 pub(crate) const METADATA: &str = "component-thread-authentication";
 
 #[derive(Debug)]
@@ -17,6 +24,8 @@ pub(crate) enum Authentication {
     Verified([u8; 32]),
     CVerified([u8; 32]),
     RustSyncVerified([u8; 32]),
+    #[cfg(feature = "development-rust-http-combined")]
+    RustCombinedHttpVerified([u8; 32]),
 }
 
 impl Authentication {
@@ -58,6 +67,15 @@ impl Authentication {
                 .map_err(|_| invalid())?;
             return Ok(Self::RustSyncVerified(receipt.component_digest));
         }
+        #[cfg(feature = "development-rust-http-combined")]
+        if profile == crate::NativeThreadProfile::RustContext40CombinedHttpDiagnosticV1 {
+            let receipt =
+                latent_component_threading::rust_component::verify_embedded_combined_diagnostic(
+                    bytes,
+                )
+                .map_err(|_| invalid())?;
+            return Ok(Self::RustCombinedHttpVerified(receipt.wrapped_digest));
+        }
         let receipt =
             latent_component_threading::verify_component_routing(bytes).map_err(|_| invalid())?;
         Ok(Self::Verified(receipt.component_digest))
@@ -69,6 +87,8 @@ impl Authentication {
             Self::Verified(_) | Self::CVerified(_) | Self::RustSyncVerified(_) => {
                 std::mem::size_of::<Self>()
             }
+            #[cfg(feature = "development-rust-http-combined")]
+            Self::RustCombinedHttpVerified(_) => std::mem::size_of::<Self>(),
         }
     }
 
@@ -127,6 +147,19 @@ impl Authentication {
                     Err(invalid())
                 }
             }
+            #[cfg(feature = "development-rust-http-combined")]
+            (
+                Self::RustCombinedHttpVerified(digest),
+                Some(crate::NativeThreadProfile::RustContext40CombinedHttpDiagnosticV1),
+                Some(profile),
+            ) if profile == RUST_COMBINED_HTTP_PROFILE => {
+                let expected = format!("sha256:{:x}", latent_core::digest::HexDigest(digest));
+                if descriptor.metadata.get("component-digest") == Some(&expected) {
+                    Ok(())
+                } else {
+                    Err(invalid())
+                }
+            }
             _ => Err(invalid()),
         }
     }
@@ -146,6 +179,10 @@ impl Authentication {
             Some(C_PROFILE) => Some(crate::NativeThreadProfile::CContext144SyncCooperativeV1),
             Some(RUST_SYNC_PROFILE) => {
                 Some(crate::NativeThreadProfile::RustContext40SyncCooperativeV1)
+            }
+            #[cfg(feature = "development-rust-http-combined")]
+            Some(RUST_COMBINED_HTTP_PROFILE) => {
+                Some(crate::NativeThreadProfile::RustContext40CombinedHttpDiagnosticV1)
             }
             _ => return Err(invalid()),
         };
@@ -219,6 +256,160 @@ mod tests {
                 ),
             ]),
         }
+    }
+
+    #[cfg(feature = "development-rust-http-combined")]
+    #[test]
+    fn combined_http_diagnostic_requires_its_distinct_prepaid_profile() {
+        let selected = Some(crate::NativeThreadProfile::RustContext40CombinedHttpDiagnosticV1);
+        let work = RUST_COMBINED_HTTP_WORK_BYTES;
+        assert_eq!(work, 96 * 1024 * 1024);
+        for prepaid in [0, work - 1] {
+            assert_eq!(
+                Authentication::verify_profile(selected, b"invalid", prepaid)
+                    .unwrap_err()
+                    .code,
+                PlatformErrorCode::ResourceExhausted
+            );
+        }
+        assert_eq!(
+            Authentication::verify_profile(selected, b"invalid", work)
+                .unwrap_err()
+                .code,
+            PlatformErrorCode::CorruptArtifact
+        );
+        let mut ordinary = descriptor();
+        ordinary
+            .metadata
+            .insert(METADATA.into(), RUST_SYNC_PROFILE.into());
+        assert!(Authentication::RustCombinedHttpVerified([0x11; 32])
+            .check_before_instantiation(&ordinary)
+            .is_err());
+    }
+
+    #[cfg(feature = "development-rust-http-combined")]
+    #[test]
+    fn combined_http_diagnostic_requires_explicit_original_cache_capacity() {
+        use crate::cache::{PrepareAccess, PreparedCache};
+        use std::sync::Arc;
+        let mut config = crate::WasmtimeConfig::default();
+        let sample_component_bytes = 1_629_518usize;
+        let work = RUST_COMBINED_HTTP_WORK_BYTES;
+        let default = Arc::new(PreparedCache::<u8>::new(config.cache_limits()).unwrap());
+        assert!(default
+            .begin_with_verification("too-small".into(), sample_component_bytes, 1, work)
+            .is_err());
+        assert_eq!(default.snapshot().preparing_source_bytes, 0);
+        // Test explicit capacity only; the diagnostic profile does not enlarge
+        // the configured node cache or create a second owner.
+        config.prepared_cache_maximum_source_bytes = work + sample_component_bytes;
+        let funded = Arc::new(PreparedCache::<u8>::new(config.cache_limits()).unwrap());
+        let PrepareAccess::Compile(reservation) = funded
+            .begin_with_verification("funded".into(), sample_component_bytes, 1, work)
+            .unwrap()
+        else {
+            panic!("fresh preparation required")
+        };
+        assert_eq!(reservation.verification_bytes(), work);
+        assert_eq!(
+            funded.snapshot().preparing_source_bytes,
+            work + sample_component_bytes
+        );
+        drop(reservation);
+        assert_eq!(funded.snapshot().preparing_source_bytes, 0);
+    }
+
+    #[cfg(all(
+        feature = "development-rust-http-combined",
+        target_os = "linux",
+        target_arch = "x86_64"
+    ))]
+    #[test]
+    fn combined_http_diagnostic_authenticates_wrapped_final_graph_before_reuse() {
+        use sha2::{Digest, Sha256};
+        use std::borrow::Cow;
+        use wasm_encoder::{CustomSection, Encode, Section};
+        const BASE: &[u8] = include_bytes!(
+            "../../latent-component-threading/src/rust_catalogue/combined-corrected-v1/combined-final-component.wasm"
+        );
+        const DELTA: &[u8] = include_bytes!(
+            "../../latent-component-threading/src/rust_catalogue/combined-corrected-v1/combined-original-delta.bin"
+        );
+        let mut wrapped = BASE.to_vec();
+        let section = CustomSection {
+            name: Cow::Borrowed("latent-rust-original-delta-v1"),
+            data: Cow::Borrowed(DELTA),
+        };
+        wrapped.push(section.id());
+        section.encode(&mut wrapped);
+        let selected = Some(crate::NativeThreadProfile::RustContext40CombinedHttpDiagnosticV1);
+        let result =
+            Authentication::verify_profile(selected, &wrapped, RUST_COMBINED_HTTP_WORK_BYTES);
+        if !latent_component_threading::rust_component::COMBINED_DIAGNOSTIC_CATALOGUE_AVAILABLE {
+            assert_eq!(result.unwrap_err().code, PlatformErrorCode::CorruptArtifact);
+            println!("COMBINED_HTTP_CATALOGUE=legacy-refused");
+            return;
+        }
+        println!("COMBINED_HTTP_CATALOGUE=current");
+        let proof = result.unwrap();
+        assert_eq!(
+            Authentication::verify_profile(
+                Some(crate::NativeThreadProfile::RustContext40SyncCooperativeV1),
+                &wrapped,
+                latent_component_threading::rust_component::RUST_VERIFICATION_WORK_BYTES,
+            )
+            .unwrap_err()
+            .code,
+            PlatformErrorCode::CorruptArtifact
+        );
+        let mut original = descriptor();
+        original
+            .metadata
+            .insert(METADATA.into(), RUST_COMBINED_HTTP_PROFILE.into());
+        let digest: [u8; 32] = Sha256::digest(&wrapped).into();
+        original.metadata.insert(
+            "component-digest".into(),
+            format!("sha256:{:x}", latent_core::digest::HexDigest(&digest)),
+        );
+        proof.check_profile(selected, &original).unwrap();
+        proof.check_before_instantiation(&original).unwrap();
+        // Use the actual selected Wasmtime settings after authentication. This
+        // proves compilation only, not instantiation or a signed guest result.
+        let config = crate::WasmtimeConfig {
+            owned_native_threads: true,
+            owned_native_stacks: true,
+            native_thread_profile:
+                crate::NativeThreadProfile::RustContext40CombinedHttpDiagnosticV1,
+            activation_runtime: Some(latent_core::activation_runtime::RuntimeLimits {
+                tasks: 8,
+                executors: 2,
+                queued_work: 8,
+                waits: 16,
+                timers: 8,
+                results: 8,
+                native_owners: 8,
+            }),
+            ..crate::WasmtimeConfig::default()
+        };
+        let engine = config.runtime_engine().unwrap();
+        wasmtime::component::Component::new(&engine, &wrapped).unwrap();
+        assert!(proof
+            .check_profile(
+                Some(crate::NativeThreadProfile::RustContext40SyncCooperativeV1),
+                &original
+            )
+            .is_err());
+        original
+            .metadata
+            .insert("component-digest".into(), "sha256:forged".into());
+        assert!(proof.check_before_instantiation(&original).is_err());
+        wrapped[8] ^= 1;
+        assert_eq!(
+            Authentication::verify_profile(selected, &wrapped, RUST_COMBINED_HTTP_WORK_BYTES)
+                .unwrap_err()
+                .code,
+            PlatformErrorCode::CorruptArtifact
+        );
     }
 
     #[test]

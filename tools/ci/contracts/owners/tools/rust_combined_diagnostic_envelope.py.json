@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "owner",
+  "reviewReason": "Qualify only the opt-in original-owner host proof, fixed engine compilation, and node profile; no signed execution or physical work bound claim.",
+  "path": "tools/rust_combined_diagnostic_envelope.py",
+  "sha256": "b6c6f893ea99426e4fa2a91390d9f70948bf859ee53ba10361f50a9cac0c5c6d",
+  "reviewBoundary": "committed-fingerprint"
+}
