@@ -17,6 +17,8 @@ public final class Activation {
     public static int denyCloseAfter;
     public static String loseCloseAckNext;
     public static int loseCloseAckAfter;
+    public static String closeObservationKind;
+    public static Runnable closeObservation;
     public static volatile boolean poisoned;
     private static Lease lastFailedLease;
     public static boolean retainFailedStart;
@@ -31,6 +33,10 @@ public final class Activation {
                 closeAttempts[kind]++;
                 attempts++;
                 if (closed || owners[kind] <= 0) throw new AssertionError("source-duplicate-owner-retirement");
+                if (Bindings.LatentRuntimeActivationOwnerKind.values()[kind].name().equals(closeObservationKind)) {
+                    Runnable observation = closeObservation; closeObservation = null; closeObservationKind = null;
+                    if (observation != null) observation.run();
+                }
                 if (Bindings.LatentRuntimeActivationOwnerKind.values()[kind].name().equals(loseCloseAckNext)) {
                     if (loseCloseAckAfter > 0) loseCloseAckAfter--;
                     else {

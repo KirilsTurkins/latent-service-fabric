@@ -11,6 +11,8 @@ public final class Activation {
     private static int queued;
     private static int results;
     public static String denyNext;
+    public static volatile boolean poisoned;
+    public static void fenceUncertainResultSettlement() { poisoned = true; }
 
     public static synchronized Executor defaultAsyncExecutor(Supplier<Executor> factory) {
         if (pool == null) pool = factory.get();

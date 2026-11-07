@@ -280,8 +280,8 @@ def completable_model_control(compiler: Compiler, output: Path) -> dict:
     compiler.run("completable-model-compile", "javac", "-proc:none", "--release", "25", "-cp", classpath,
                  "-d", output, *sources)
     expected = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;canonical-api-and-helper-identities;"
-        "resolved-reference-closure;unsupported-no-fallback;actual-coroutine-monitors=28;owned-callback-bodies=30;"
-        "bodies=188;actual-generated-callbacks=23;application-identity")
+        "resolved-reference-closure;unsupported-no-fallback;result-settlement-fence;"
+        "actual-coroutine-monitors=28;owned-callback-bodies=31;bodies=189;actual-generated-callbacks=23;application-identity")
     observed = compiler.run("completable-model-control", "java", "-Xmx256m", "-cp",
                             str(output) + os.pathsep + classpath,
                             "dev.latent.guest.runtime.compiler.CompletableFutureModelControl").strip()
@@ -292,8 +292,8 @@ def completable_model_control(compiler: Compiler, output: Path) -> dict:
     if fields != ("COMPLETABLE_FUTURE_FIELD_MODEL_CONTROL PASS declared-and-inherited-types;"
                   "closed-read-write-references;absent-no-fallback;models=6"):
         raise ValueError("Java CompletableFuture field model control did not complete")
-    return {"status": "actual-locked-classlib-model-passed", "modelFingerprintVersion": 3, "modelMethodBodies": 188,
-            "coroutineMonitorBodies": 28, "ownedCallbackBodies": 30, "actualGeneratedCallbacks": 23,
+    return {"status": "actual-locked-classlib-model-passed", "modelFingerprintVersion": 4, "modelMethodBodies": 189,
+            "coroutineMonitorBodies": 28, "ownedCallbackBodies": 31, "actualGeneratedCallbacks": 23,
             "jarDigests": identities,
             "fieldReferences": "actual-declared-and-inherited-types-passed",
             "portOrApplicationClassesInitialized": False, "actualGuestBindingsUsed": False}
@@ -371,7 +371,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     ports = sorted((compiler.sdk / 'fibers/dev/latent/guest/runtime/concurrent').glob('*.java'))
     controls = [private / name for name in ('ScheduledOwnerControl.java', 'ScheduledCompletableOwnerControl.java',
         'ScheduledPeriodicOwnerControl.java', 'ScheduledPeriodicRollbackSettlementControl.java',
-        'ScheduledFutureResultSettlementControl.java',
+        'ScheduledFutureResultSettlementControl.java', 'CompletableFutureResultSettlementControl.java',
         'dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
     reference = private / 'ScheduledStoppedReferenceControl.java'
     periodic_reference = private / 'ScheduledPeriodicReferenceControl.java'
@@ -436,6 +436,13 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
             'ScheduledFutureResultSettlementControl', mode).strip()
         if result != 'SCHEDULED_FUTURE_RESULT_SETTLEMENT PASS ' + mode:
             raise ValueError('Java future result settlement control did not complete')
+    for mode in ('refused-direct', 'unknown-direct', 'refused-multiple', 'unknown-multiple',
+                 'refused-rollback', 'unknown-rollback', 'refused-running', 'unknown-running',
+                 'completed-success', 'pending-replay', 'existing-action', 'reentrant-settlement'):
+        result = compiler.run('completable-result-settlement-' + mode, 'java', '-Xmx256m', '-cp', output,
+            'CompletableFutureResultSettlementControl', mode).strip()
+        if result != 'COMPLETABLE_RESULT_SETTLEMENT PASS ' + mode:
+            raise ValueError('Java CompletableFuture result settlement control did not complete')
     result = compiler.run('scheduled-periodic-source-control', 'java', '-Xmx256m', '-cp', output,
         'ScheduledPeriodicReferenceControl').strip()
     if result != expected_periodic: raise ValueError('Java periodic scheduled source differs from reference')
