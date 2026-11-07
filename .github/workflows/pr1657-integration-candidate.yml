@@ -1,0 +1,41 @@
+name: PR 1657 development merge inspection
+on:
+  push:
+    branches: ['diag/pr1657-integrate-20261107']
+permissions:
+  contents: read
+jobs:
+  integrate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+          fetch-depth: 100
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
+        with:
+          python-version: 3.13.5
+      - name: Inspect a pinned development merge in a disposable worktree
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=100 origin 2279e1d488c65a09593c0fd0d4977d82ff08db7a
+          git worktree add --detach "$RUNNER_TEMP/pr1657-integration" 480f9f15ed0e01e7283e862c1cb79312c298320b
+          cd "$RUNNER_TEMP/pr1657-integration"
+          git -c user.name='LSF integration control' -c user.email='integration-control@localhost' merge --no-commit --no-ff 2279e1d488c65a09593c0fd0d4977d82ff08db7a
+          git diff --check --cached
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B tools/ci_coverage.py
+          mkdir "$RUNNER_TEMP/pr1657-integration-proof"
+          git write-tree > "$RUNNER_TEMP/pr1657-integration-proof/tree.txt"
+          git diff --cached --binary 480f9f15ed0e01e7283e862c1cb79312c298320b > "$RUNNER_TEMP/pr1657-integration-proof/merge.patch"
+          git diff --cached --raw --no-abbrev 480f9f15ed0e01e7283e862c1cb79312c298320b > "$RUNNER_TEMP/pr1657-integration-proof/blobs.txt"
+          git diff --cached --name-only -z 480f9f15ed0e01e7283e862c1cb79312c298320b | tar --null -T - -czf "$RUNNER_TEMP/pr1657-integration-proof/changed-source.tar.gz"
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        if: always()
+        with:
+          name: pr1657-integration-${{ github.sha }}
+          path: ${{ runner.temp }}/pr1657-integration-proof/**
+          if-no-files-found: warn
+          retention-days: 3
+          compression-level: 6
