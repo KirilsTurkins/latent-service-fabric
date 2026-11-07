@@ -1,0 +1,45 @@
+name: PR 1657 synchronous readiness regression diagnosis
+on:
+  push:
+    branches: ['diag/pr1657-sync-pump-probe-20261107']
+permissions:
+  contents: read
+jobs:
+  control:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          targets: wasm32-unknown-unknown
+          components: rustfmt
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce
+        with:
+          version: 1.254.0
+      - name: Prepare explicit synchronous-observation regression without changing pump
+        run: python3 -B .github/pr1657_sync_pump_probe.py
+      - name: Compile actual guest and execute synchronous observation with two held imports
+        run: |
+          set -euo pipefail
+          cargo build --locked -p latent-toolchain-smoke --target wasm32-unknown-unknown --example rust-http-pump-probe --features rust-wasi-http-cooperative --release
+          wasm-tools component new target/wasm32-unknown-unknown/release/examples/rust_http_pump_probe.wasm -o "$RUNNER_TEMP/pr1657-sync-pump/probe.wasm"
+          wasm-tools validate --features all "$RUNNER_TEMP/pr1657-sync-pump/probe.wasm"
+          cargo --config .cargo/managed-guest.toml --config profile.dev.opt-level=1 run --locked -p latent-toolchain-smoke --example rust-http-pump-control -- "$RUNNER_TEMP/pr1657-sync-pump/probe.wasm" 2>&1 | tee "$RUNNER_TEMP/pr1657-sync-pump/ordinary.txt"
+          cargo --config .cargo/managed-guest.toml --config profile.dev.opt-level=1 run --locked -p latent-toolchain-smoke --example rust-http-pump-control -- "$RUNNER_TEMP/pr1657-sync-pump/probe.wasm" --native-profile 2>&1 | tee "$RUNNER_TEMP/pr1657-sync-pump/native-profile.txt"
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        if: always()
+        with:
+          name: pr1657-sync-pump-${{ github.sha }}
+          path: ${{ runner.temp }}/pr1657-sync-pump/**
+          if-no-files-found: warn
+          retention-days: 3
+          compression-level: 6
