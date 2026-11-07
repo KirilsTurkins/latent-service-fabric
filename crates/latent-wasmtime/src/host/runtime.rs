@@ -17,7 +17,10 @@ use std::{
     sync::Arc,
     time::{Duration, Instant},
 };
-use wasmtime::{component::Linker, AsContextMut};
+use wasmtime::{
+    component::{Accessor, InlineConcurrentHost, Linker},
+    AsContextMut,
+};
 
 mod fixed_result;
 pub(super) use fixed_result::Completion;
@@ -461,84 +464,106 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
         drop(timer);
         Ok(())
     });
-    linker.instance(CAPABILITY)?.func_wrap_concurrent(
-        "timer-next",
-        |access, (timer,): (wit::Token,)| {
-            Box::pin(async move {
-                let started = Instant::now();
-                let PreparedWait {
-                    result: prepared,
-                    failed_call,
-                } = access.with(|mut access| {
-                    let mut store = access.as_context_mut();
-                    super::service::checkpoint(&mut store)?;
-                    let prepared = prepare_timer_next(store.data_mut(), token(timer));
-                    super::service::synchronize(&mut store)?;
-                    Ok::<_, wasmtime::Error>(prepared)
-                })?;
-                let (result, call) = match prepared {
-                    Ok(mut wait) => {
-                        let result = wait.run().await;
-                        let _ = wait
-                            .call
-                            .record_provider_outcome(AuditProviderOutcome::HostCompleted);
-                        (result.map_err(convert), Some(wait.call))
-                    }
-                    Err(error) => completed_failure(error, failed_call),
-                };
-                access.with(|mut access| {
-                    let mut store = access.as_context_mut();
-                    super::service::checkpoint(&mut store)?;
-                    super::service::synchronize(&mut store)?;
-                    store.data_mut().record_host_call(started);
-                    Ok((Completion::new(result, call),))
-                })
-            })
-        },
-    )?;
+    linker
+        .instance(CAPABILITY)?
+        .func_wrap_concurrent_inline("timer-next", TimerNext)?;
     for operation in ["wait-for", "wait-until"] {
-        linker.instance(CAPABILITY)?.func_wrap_concurrent(
-            operation,
-            move |access, (value, continuation): (u64, Option<wit::Token>)| {
-                Box::pin(async move {
-                    let started = Instant::now();
-                    let PreparedWait {
-                        result: prepared,
-                        failed_call,
-                    } = access.with(|mut access| {
-                        let mut store = access.as_context_mut();
-                        super::service::checkpoint(&mut store)?;
-                        let prepared = prepare_wait(
-                            store.data_mut(),
-                            operation,
-                            value,
-                            continuation.map(token),
-                        );
-                        super::service::synchronize(&mut store)?;
-                        Ok::<_, wasmtime::Error>(prepared)
-                    })?;
-                    let (result, call) = match prepared {
-                        Ok(mut wait) => {
-                            let result = wait.run().await;
-                            let _ = wait
-                                .call
-                                .record_provider_outcome(AuditProviderOutcome::HostCompleted);
-                            (result.map(|_| ()).map_err(convert), Some(wait.call))
-                        }
-                        Err(error) => completed_failure(error, failed_call),
-                    };
-                    access.with(|mut access| {
-                        let mut store = access.as_context_mut();
-                        super::service::checkpoint(&mut store)?;
-                        super::service::synchronize(&mut store)?;
-                        store.data_mut().record_host_call(started);
-                        Ok((Completion::new(result, call),))
-                    })
-                })
-            },
-        )?;
+        linker
+            .instance(CAPABILITY)?
+            .func_wrap_concurrent_inline(operation, RuntimeWait { operation })?;
     }
     Ok(())
+}
+
+struct TimerNext;
+impl InlineConcurrentHost<HostState, (wit::Token,), (Completion<Result<u64, wit::Error>>,)>
+    for TimerNext
+{
+    async fn invoke<'a>(
+        &'a self,
+        access: &'a Accessor<HostState>,
+        (timer,): (wit::Token,),
+    ) -> wasmtime::Result<(Completion<Result<u64, wit::Error>>,)> {
+        let started = Instant::now();
+        let PreparedWait {
+            result: prepared,
+            failed_call,
+        } = access.with(|mut access| {
+            let mut store = access.as_context_mut();
+            super::service::checkpoint(&mut store)?;
+            let prepared = prepare_timer_next(store.data_mut(), token(timer));
+            super::service::synchronize(&mut store)?;
+            Ok::<_, wasmtime::Error>(prepared)
+        })?;
+        let (result, call) = match prepared {
+            Ok(mut wait) => {
+                let result = wait.run().await;
+                let _ = wait
+                    .call
+                    .record_provider_outcome(AuditProviderOutcome::HostCompleted);
+                (result.map_err(convert), Some(wait.call))
+            }
+            Err(error) => completed_failure(error, failed_call),
+        };
+        access.with(|mut access| {
+            let mut store = access.as_context_mut();
+            super::service::checkpoint(&mut store)?;
+            super::service::synchronize(&mut store)?;
+            store.data_mut().record_host_call(started);
+            Ok((Completion::new(result, call),))
+        })
+    }
+}
+
+struct RuntimeWait {
+    operation: &'static str,
+}
+impl
+    InlineConcurrentHost<
+        HostState,
+        (u64, Option<wit::Token>),
+        (Completion<Result<(), wit::Error>>,),
+    > for RuntimeWait
+{
+    async fn invoke<'a>(
+        &'a self,
+        access: &'a Accessor<HostState>,
+        (value, continuation): (u64, Option<wit::Token>),
+    ) -> wasmtime::Result<(Completion<Result<(), wit::Error>>,)> {
+        let started = Instant::now();
+        let PreparedWait {
+            result: prepared,
+            failed_call,
+        } = access.with(|mut access| {
+            let mut store = access.as_context_mut();
+            super::service::checkpoint(&mut store)?;
+            let prepared = prepare_wait(
+                store.data_mut(),
+                self.operation,
+                value,
+                continuation.map(token),
+            );
+            super::service::synchronize(&mut store)?;
+            Ok::<_, wasmtime::Error>(prepared)
+        })?;
+        let (result, call) = match prepared {
+            Ok(mut wait) => {
+                let result = wait.run().await;
+                let _ = wait
+                    .call
+                    .record_provider_outcome(AuditProviderOutcome::HostCompleted);
+                (result.map(|_| ()).map_err(convert), Some(wait.call))
+            }
+            Err(error) => completed_failure(error, failed_call),
+        };
+        access.with(|mut access| {
+            let mut store = access.as_context_mut();
+            super::service::checkpoint(&mut store)?;
+            super::service::synchronize(&mut store)?;
+            store.data_mut().record_host_call(started);
+            Ok((Completion::new(result, call),))
+        })
+    }
 }
 
 struct WaitingTimer {
