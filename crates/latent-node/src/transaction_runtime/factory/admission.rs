@@ -416,13 +416,18 @@ impl NativeTransactionAdmission {
                     .map_err(|_| AtomicError::PermissionDenied)
                 };
                 let first_attempt = retry.is_none();
-                let prepared = if let Some(retry) = retry {
+                let mut retained_input = Some(input);
+                let prepared = if let Some(retry) = retry.as_ref() {
                     authorize(CommandAccess::Admit, None).and_then(|()| {
-                        super::retry::check_association(&view, &input, &retry)?;
-                        PreparedAdmission::retry(&view, &input, &retry.request, time, &authorize)
+                        let input = retained_input.as_ref().ok_or(AtomicError::Invalid)?;
+                        super::retry::check_association(&view, input, retry)?;
+                        PreparedAdmission::retry(&view, input, &retry.request, time, &authorize)
                     })
                 } else {
-                    PreparedAdmission::prepare(&view, input, time, &authorize)
+                    match retained_input.take() {
+                        Some(input) => PreparedAdmission::prepare(&view, input, time, &authorize),
+                        None => Err(AtomicError::Invalid),
+                    }
                 };
                 let prepared = observation::atomic(Phase::PendingPreparation, prepared);
                 // A CAS loser may take one fresh view to inspect the winning
@@ -466,10 +471,32 @@ impl NativeTransactionAdmission {
                                         PendingPublication::Existing(record)
                                     }
                                 })
-                        } else {
+                        } else if let (Some(retry), Some(input)) =
+                            (retry.as_ref(), retained_input.as_ref())
+                        {
                             prepared
-                                .publish(store, final_accept)
-                                .map(PendingPublication::New)
+                                .publish_retry_or_existing(
+                                    store,
+                                    input,
+                                    &retry.request,
+                                    || {
+                                        retained_role.with_current(|now| {
+                                            Ok(super::super::command_role::command_time(now))
+                                        })
+                                    },
+                                    final_accept,
+                                    &authorize,
+                                )
+                                .map(|result| match result {
+                                    PublishedAdmission::New(claim) => {
+                                        PendingPublication::New(claim)
+                                    }
+                                    PublishedAdmission::Existing(record) => {
+                                        PendingPublication::Existing(record)
+                                    }
+                                })
+                        } else {
+                            Err(AtomicError::Invalid)
                         }
                     }
                     Ok(AdmissionDecision::Existing(record)) => {
