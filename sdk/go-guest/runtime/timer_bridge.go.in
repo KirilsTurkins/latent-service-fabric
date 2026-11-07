@@ -105,27 +105,48 @@ func lsfMaybeWakeTimerDrain() {
     }
 }
 
+// The host accepts at most 8192 owners across all kinds. Bound repeated
+// inventory rescans even if a timer slot is continually retired and reused.
+const lsfTimerDrainPassLimit = 8193
+
 func lsfStopIdleChannelTimers() {
     lsfSweepCollectedTimers()
-    for index := range lsfTimerSlots {
-        slot := &lsfTimerSlots[index]
-        if slot.token[1] == 0 { continue }
-        pointer := internal_weak_runtime_makeStrongFromWeak(slot.weak)
-        if pointer == nil {
-            // GC can clear a weak reference after the preceding sweep. Retire
-            // that exact host token and wait for physical readiness retirement,
-            // just as the sweep does; collection is not an ownership failure.
-            token := slot.token
-            lsfStopTimerSlot(uint32(index + 1), token)
+    for pass := 0; pass < lsfTimerDrainPassLimit; pass++ {
+        found := false
+        for index := range lsfTimerSlots {
+            slot := lsfTimerSlots[index]
+            if slot.token[1] == 0 { continue }
+            found = true
+            pointer := internal_weak_runtime_makeStrongFromWeak(slot.weak)
+            // Conversion can park; never use its result for a replacement.
+            // A later pass must observe the replacement under its own token.
+            if lsfTimerSlots[index].token != slot.token { continue }
+            if pointer == nil {
+                // GC can clear the weak reference after the preceding sweep.
+                lsfStopTimerSlot(uint32(index + 1), slot.token)
+                lsfActivationTimerFence(slot.token[0], slot.token[1])
+                continue
+            }
+            t := (*timer)(pointer)
+            if t.lsfToken != slot.token || t.lsfSlot != uint32(index + 1) {
+                lsfFail("LSF idle timer identity mismatch")
+            }
+            if !t.isChan { lsfFail("LSF callback timer remains during result seal") }
+            t.stop()
+            // Go's stop changes timer state, not this LSF owner identity.
+            if lsfTimerSlots[index].token != slot.token || t.lsfToken != slot.token || t.lsfSlot != uint32(index + 1) {
+                lsfFail("LSF idle timer identity changed during stop")
+            }
+            token := lsfRetireTimer(t)
+            if token != slot.token { lsfFail("LSF idle timer retirement changed identity") }
             lsfActivationTimerFence(token[0], token[1])
-            continue
+            KeepAlive(t)
         }
-        t := (*timer)(pointer)
-        if !t.isChan { lsfFail("LSF callback timer remains during result seal") }
-        t.stop()
-        token := lsfRetireTimer(t)
-        lsfActivationTimerFence(token[0], token[1])
-        KeepAlive(t)
+        if !found { return }
+    }
+    // A final successful pass need not fail just because it exhausted the cap.
+    for _, slot := range lsfTimerSlots {
+        if slot.token[1] != 0 { lsfFail("LSF idle timer drain did not settle") }
     }
 }
 

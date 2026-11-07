@@ -43,11 +43,13 @@ Compiler and signed failure stdout/stderr remain bounded and retained.
 
 Local controls verify source selection and strict evidence parsing; they do
 not themselves qualify a guest. An additional host-only Go control executes
-the actual collected-timer sweep with a deliberately parked weak conversion.
-It checks retirement and reuse of the original slot, including slice growth,
-and verifies that the sweep does not retire or fence a replacement token. This
-control simulates the GC scheduling boundary and host retirement; it is not a
-signed guest, a real GC pause, or physical-limit qualification. The actual
+the actual collected-timer sweep and idle drain with a deliberately parked weak
+conversion. It checks stop and reset of the old timer, slot reuse and growth,
+and repeated scanning when a completed fence permits an earlier slot to be
+reused. The drain traps after 8,193 passes if the inventory cannot settle; its
+work remains charged to the original activation budget. The control simulates
+the GC scheduling boundary and host retirement; it is not a signed guest, a
+real GC pause, or physical-limit qualification. The actual
 [37cf run 39369515637](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39369515637),
 job 118453969321, passed all 43 signed outcomes and all 17 fresh native modes.
 Libtest reports one passed, zero failed/ignored and 50 filtered cases (11.72 s).
