@@ -54,6 +54,8 @@ public static partial class ManagedWorkRuntime
         internal Record Owner = null!;
         internal bool Observed;
         internal bool Transport;
+        // 1: Result admission in flight; 2: unknown or failed acknowledgement.
+        internal byte ResultTransition;
     }
 
     private static Func<int, ulong, ulong, (ulong Generation, ulong Id)>? reserve;
@@ -72,6 +74,8 @@ public static partial class ManagedWorkRuntime
     // Erased by the compiler unless the source-control fixture supplies it.
     static partial void QueueAllocationControl();
     static partial void RecordAllocationControl();
+    static partial void RequiredResultPublishedControl();
+    static partial void RequiredResultReservedControl();
 
     public static void Install(
         Func<int, ulong, ulong, (ulong Generation, ulong Id)> register,
@@ -123,9 +127,17 @@ public static partial class ManagedWorkRuntime
     private static Record? Find(object item)
     {
         if (records is null) return null;
+        Record? match = null;
         foreach (var owner in records)
             if (owner is not null && (ReferenceEquals(owner.Primary, item)
-                || ReferenceEquals(owner.Outer, item) || ReferenceEquals(owner.Inner, item))) return owner;
+                || ReferenceEquals(owner.Outer, item) || ReferenceEquals(owner.Inner, item)))
+            {
+                // A completed fault can also be an alias of its live parent.
+                // Its exact Result owner must govern observation and admission.
+                if (owner.Result && ReferenceEquals(owner.Primary, item)) return owner;
+                match ??= owner;
+            }
+        if (match is not null) return match;
         if (FindTimer(item) is { } timer) return timer.Owner;
         if (required is not null)
             foreach (var pending in required)
@@ -560,6 +572,9 @@ public static partial class ManagedWorkRuntime
         {
             var pending = required![i];
             if (pending is null || !ReferenceEquals(pending.Owner, owner)) continue;
+            if (pending.ResultTransition == 2)
+                throw new InvalidOperationException("managed-work-required-result-uncertain");
+            if (pending.ResultTransition == 1) { found = true; continue; }
             if (pending.Task.IsCompleted) CompletedRequired(i);
             else found = true;
         }
@@ -569,18 +584,79 @@ public static partial class ManagedWorkRuntime
     private static void CompletedRequired(int index)
     {
         var pending = required![index]!;
-        if (pending.Task.IsFaulted && !pending.Observed && !pending.Transport)
+        if (pending.ResultTransition != 0)
+            throw new InvalidOperationException("managed-work-required-result-uncertain");
+        if (!pending.Task.IsFaulted || pending.Observed || pending.Transport)
         {
-            int slot = FreeRecord();
-            var token = Reserve(ResultKind, pending.Owner);
-            try
-            {
-                records![slot] = new Record { Primary = pending.Task, Completion = pending.Task,
-                    Token = token, Active = true, Result = true };
-            }
-            catch { settle!(token.Generation, token.Id); throw; }
+            required[index] = null;
+            return;
         }
-        required[index] = null;
+        var activation = root;
+        if (!installed || activation is null || !activation.Active)
+            throw new InvalidOperationException("managed-work-finalization-uncertain");
+        if (admissions == int.MaxValue) throw new InvalidOperationException("managed-work-admission-in-progress");
+        admissions++;
+        pending.ResultTransition = 1;
+        Record? result = null;
+        int slot = -1;
+        bool dispatched = false;
+        try
+        {
+            RecordAllocationControl();
+            result = new Record { Primary = pending.Task, Completion = pending.Task,
+                Result = true, ResultTransition = 1 };
+            if (!installed || !ReferenceEquals(root, activation) || !activation.Active
+                || !ReferenceEquals(required![index], pending))
+                throw new InvalidOperationException("managed-work-activation-changed");
+            if (!pending.Owner.Active || pending.Owner.Result)
+                throw new InvalidOperationException("managed-work-required-parent-retired");
+            if (pending.Observed || pending.Transport) { required[index] = null; return; }
+            slot = FreeRecord();
+            records![slot] = result;
+            RequiredResultPublishedControl();
+            if (!ReferenceEquals(records[slot], result) || !ReferenceEquals(required[index], pending))
+                throw new InvalidOperationException("managed-work-activation-changed");
+            if (!pending.Owner.Active || pending.Owner.Result)
+                throw new InvalidOperationException("managed-work-required-parent-retired");
+            if (pending.Observed || pending.Transport)
+            { records[slot] = null; required[index] = null; return; }
+            dispatched = true;
+            var token = reserve!(ResultKind, pending.Owner.Token.Generation, pending.Owner.Token.Id);
+            result.Token = token;
+            if (token == default)
+            {
+                // The selected bridge returned the explicit WIT refusal.
+                dispatched = false;
+                throw new InvalidOperationException("managed-work-admission-refused");
+            }
+            if (token.Generation == 0 || token.Id == 0)
+                throw new InvalidOperationException("managed-work-reservation-token");
+            RequiredResultReservedControl();
+            if (pending.Observed || pending.Transport)
+            {
+                settle!(token.Generation, token.Id);
+                records[slot] = null; required[index] = null;
+                return;
+            }
+            required[index] = null;
+            result.ResultTransition = 0;
+            result.Active = true;
+        }
+        catch
+        {
+            if (dispatched)
+            {
+                pending.ResultTransition = 2;
+                if (result is not null) result.ResultTransition = 2;
+            }
+            else
+            {
+                if (slot >= 0 && ReferenceEquals(records![slot], result)) records[slot] = null;
+                pending.ResultTransition = 0;
+            }
+            throw;
+        }
+        finally { admissions--; }
     }
 
     private static void Finish(Record owner)

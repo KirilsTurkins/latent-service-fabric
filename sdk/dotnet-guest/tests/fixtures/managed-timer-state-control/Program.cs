@@ -6,7 +6,7 @@ internal static class TimerControl
     internal sealed class State { internal bool Scheduled; internal int Callbacks; }
     internal static readonly Queue<Action> Work = new();
     internal static Action? TimerAllocationCallback;
-    private static Action? TimerReserveCallback;
+    private static Action? TimerReserveCallback, RequiredResultReserveCallback;
     private static readonly Dictionary<ulong, int> Owners = new();
     private static readonly int[] Limits = [8, 1, 1, 8, 8, 2, 8, 1];
     private static ulong sequence = uint.MaxValue;
@@ -15,10 +15,13 @@ internal static class TimerControl
     private static int admissions;
     private static bool unknownQueueReservation;
     private static bool unknownTimerReservation, malformedTimerReservation, malformedTimerGeneration;
+    private static bool unknownRequiredResult;
     private static ulong unknownQueueToken;
     private static ulong unknownTimerToken;
+    private static ulong unknownRequiredResultToken;
     private static readonly InvalidOperationException UnknownQueueError = new("control-timer-queue-reservation-unknown");
     private static readonly InvalidOperationException UnknownTimerError = new("control-timer-reservation-unknown");
+    private static readonly InvalidOperationException UnknownRequiredResultError = new("control-required-result-unknown");
     private static ulong failingSettlement;
     private static bool failAfterSettlement;
     private static int timerSettlementAttempts;
@@ -40,7 +43,7 @@ internal static class TimerControl
         {
             if (kind == 5 && TimerReserveCallback is { } callback)
             { TimerReserveCallback = null; callback(); }
-            if (kind is 0 or 3 or 5) return default;
+            if (kind is 0 or 3 or 5 or 6) return default;
             throw new InvalidOperationException("control-ledger-capacity");
         }
         admissions++; ulong key = checked(++sequence); Owners.Add(key, kind);
@@ -49,6 +52,10 @@ internal static class TimerControl
         if (kind == 5 && unknownTimerReservation) { unknownTimerToken = key; throw UnknownTimerError; }
         if (kind == 5 && malformedTimerReservation)
         { unknownTimerToken = key; return malformedTimerGeneration ? (0UL, key) : (19UL, 0UL); }
+        if (kind == 6 && RequiredResultReserveCallback is { } result)
+        { RequiredResultReserveCallback = null; result(); }
+        if (kind == 6 && unknownRequiredResult)
+        { unknownRequiredResultToken = key; throw UnknownRequiredResultError; }
         if (kind == 3 && unknownQueueReservation) { unknownQueueToken = key; throw UnknownQueueError; }
         return (19, key);
     }
@@ -365,6 +372,56 @@ internal static class TimerControl
         Need(Count(5) == 0 && !child.Scheduled && ManagedWorkRuntime.TimerMutationForControl(child) == -3);
         Finish();
     }
+    private static void RequiredTimerResultFailureControl(int mode)
+    {
+        var timer = Arm(); ManagedWorkRuntime.TimerAccepted(timer); Disarm(timer);
+        var pending = new TaskCompletionSource<int>();
+        if (mode == 0) unknownRequiredResult = true;
+        else RequiredResultReserveCallback = () =>
+        {
+            ManagedWorkRuntime.Observed(pending.Task);
+            failingSettlement = Owners.Single(entry => entry.Value == 6).Key;
+            failAfterSettlement = mode == 2;
+        };
+        Exception? received = null;
+        try
+        {
+            Fire(timer, () =>
+            {
+                ManagedWorkRuntime.CreatedAsync(pending.Task);
+                pending.SetException(new ArgumentException("control-required-timer-fault"));
+            });
+        }
+        catch (Exception error) { received = error; }
+        Need(mode == 0 ? ReferenceEquals(received, UnknownRequiredResultError)
+            : received is InvalidOperationException && received.Message == "control-timer-settlement-failed");
+        ManagedWorkRuntime.Observed(pending.Task);
+        Refuses(() => ManagedWorkRuntime.TimerDeleted(timer), "managed-work-required-result-uncertain");
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-required-result-uncertain");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+        Need(Count(5) == 1 && ManagedWorkRuntime.TimerMutationForControl(timer) == 0
+            && Count(6) == (mode == 2 ? 0 : 1)
+            && (mode != 0 || Owners.ContainsKey(unknownRequiredResultToken))
+            && timerSettlementAttempts == (mode == 0 ? 0 : 1));
+    }
+    private static void RequiredTimerResultObservedControl()
+    {
+        var timer = Arm(); ManagedWorkRuntime.TimerAccepted(timer); Disarm(timer);
+        var pending = new TaskCompletionSource<int>();
+        RequiredResultReserveCallback = () =>
+        {
+            ManagedWorkRuntime.Observed(pending.Task);
+            ManagedWorkRuntime.TimerDeleted(timer);
+            Need(Count(5) == 1 && Count(6) == 1);
+            Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-admission-in-progress");
+        };
+        Fire(timer, () =>
+        {
+            ManagedWorkRuntime.CreatedAsync(pending.Task);
+            pending.SetException(new ArgumentException("control-observed-required-timer-fault"));
+        });
+        Need(Count(5) == 0 && Count(6) == 0); Finish();
+    }
     private static void Run(string name)
     {
         if (name == "native-storage-refusal-rolls-back-root")
@@ -404,6 +461,10 @@ internal static class TimerControl
             case "timer-pending-peer-failure-blocks-commit": PendingPeerFailureControl(); break;
             case "timer-pre-ticket-refusal-rolls-back-current": PreTicketTimerRefusalControl(); break;
             case "timer-pre-ticket-unknown-retains-current": PreTicketTimerUnknownControl(); break;
+            case "timer-required-result-unknown-retains-parent": RequiredTimerResultFailureControl(0); break;
+            case "timer-required-result-observed-before-parent-retirement": RequiredTimerResultObservedControl(); break;
+            case "timer-required-result-settlement-refusal-retains-parent": RequiredTimerResultFailureControl(1); break;
+            case "timer-required-result-settlement-unknown-retains-parent": RequiredTimerResultFailureControl(2); break;
             case "timer-reservation-unknown-retains-custody": TimerReservationFailureControl("unknown"); break;
             case "timer-reservation-malformed-generation-retains-custody": TimerReservationFailureControl("generation"); break;
             case "timer-reservation-malformed-id-retains-custody": TimerReservationFailureControl("id"); break;

@@ -575,7 +575,7 @@ def current_managed_port(artifact):
     port = read_json(artifact / 'task-wait-port.json', 128 * 1024)
     managed_work.validate_rewrite(port.get('managedAcceptedWork'))
     require(port.get('profile') == task_wait.PROFILE
-        and port['managedAcceptedWork']['patch'] == 'latent.dotnet.managed-accepted-work.v8'
+        and port['managedAcceptedWork']['patch'] == 'latent.dotnet.managed-accepted-work.v9'
         and type(port.get('generatedHelperCount')) is int and port['generatedHelperCount'] == 96
         and port.get('completion') == 'actual-task-only'
         and port.get('finiteAndCancellableWaits') == 'original-Task-WhenAny-Delay'

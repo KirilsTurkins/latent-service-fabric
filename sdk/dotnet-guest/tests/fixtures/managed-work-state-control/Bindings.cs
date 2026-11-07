@@ -8,6 +8,16 @@ namespace Lsf.CompilerOwned;
 // ledger. Those have separate exact metadata and signed-execution gates.
 public static partial class ManagedWorkRuntime
 {
+    static partial void RequiredResultPublishedControl()
+    {
+        if (global::StateControl.RequiredPublishedCallback is { } callback)
+        { global::StateControl.RequiredPublishedCallback = null; callback(); }
+    }
+    static partial void RequiredResultReservedControl()
+    {
+        if (global::StateControl.RequiredReservedCallback is { } callback)
+        { global::StateControl.RequiredReservedCallback = null; callback(); }
+    }
     static partial void QueueAllocationControl()
     {
         if (global::StateControl.QueueAllocationCallback is { } callback)
