@@ -406,7 +406,19 @@ impl Fixture {
             .unwrap()
             .await;
         assert!(retired.clean && retired.snapshot.physically_retired());
-        assert!(store.reap_retired_threads().unwrap() > 0);
+        let mut joined = 0;
+        loop {
+            joined += store.reap_retired_threads().unwrap();
+            if store.pending_thread_joins().unwrap() == 0 {
+                break;
+            }
+            assert!(
+                std::time::Instant::now() < cutoff,
+                "native thread join cutoff"
+            );
+            tokio::time::sleep(std::time::Duration::from_millis(1)).await;
+        }
+        assert!(joined > 0);
         assert_eq!(native.snapshot().unwrap().recovery.slots, 1);
         drop(store);
         drop(codecs);
