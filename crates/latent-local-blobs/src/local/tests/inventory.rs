@@ -50,6 +50,10 @@ fn publish_release_and_physical_reclamation_invalidate_old_cursors() {
     let owner = store(root.path());
     let first = put(&owner, b"first");
     let mut before_publish = LocalReferenceInventory::begin(&owner, &scope()).unwrap();
+    let first_page = before_publish.next_page(&owner, 1, &|| Ok(())).unwrap();
+    assert!(!first_page.complete);
+    assert_eq!(first_page.references(), std::slice::from_ref(&first));
+    drop(first_page);
     let second = put(&owner, b"second");
     assert!(matches!(
         before_publish.next_page(&owner, 1, &|| Ok(())),
