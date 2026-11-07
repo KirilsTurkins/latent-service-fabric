@@ -1,6 +1,7 @@
 """Source/data controls for the unqualified combined Rust HTTP witness."""
 from pathlib import Path
 import copy
+import json
 import tempfile
 import unittest
 
@@ -88,13 +89,46 @@ class RustThreadHttpSiblingTests(unittest.TestCase):
             self.assertEqual((outside[0] / 'src/lib.rs').read_bytes(), fixture.http.LIBRARY.encode())
             self.assertEqual((outside[1] / 'src/lib.rs').read_bytes(),
                              fixture.http.LIBRARY.encode() + fixture.SIBLING.encode())
+            # The pinned Golem Response::read takes its body on every call.
+            # Keep the consuming bytes() path, not read_to_end's repeated reads.
+            sibling = (outside[1] / 'src/lib.rs').read_text().split(
+                'pub fn thread_http_sibling(endpoint: &str)', 1)[1]
+            self.assertIn('response.bytes().map_err', sibling)
+            self.assertNotIn('response.read_to_end(', sibling)
+            self.assertLess(sibling.index('response.bytes()'), sibling.index('body.len() != 4109'))
+            self.assertLess(sibling.index('body.len() != 4109'), sibling.index('drop(body);'))
+            self.assertLess(sibling.index('drop(body);'), sibling.index('request("golem", "repeat"'))
             self.assertEqual(len(specs), 2)
             self.assertEqual(source.count('applicationTransportInjected'), 0)
 
+    def test_peer_refusal_retains_bounded_observation_without_masking_refusal(self):
+        from tools import rust_thread_http_sibling_node as node
+        observation = {'generation': 'a' * 32, 'failure': None,
+                       'requests': [{'request': 1, 'role': 'secondary', 'state': 'accepted'}],
+                       'events': []}
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            with self.assertRaisesRegex(WorkflowError, 'rust-thread-http-peer-request-shape'):
+                node.decision_with_failure_evidence(observation, [], output, body_released=False)
+            path = output / 'rust-thread-http-peer-refusal.json'
+            self.assertEqual(json.loads(path.read_bytes()),
+                             {'observation': observation, 'bodyReleased': False})
+            before = path.read_bytes()
+            with self.assertRaisesRegex(WorkflowError, 'rust-thread-http-peer-request-shape'):
+                node.decision_with_failure_evidence(observation, [], output, body_released=False)
+            self.assertEqual(path.read_bytes(), before)
+
     def test_only_release_body_when_both_real_http_gates_are_held(self):
+        accepted = {'generation': 'a' * 32, 'failure': None,
+                    'requests': [{'request': 1, 'role': 'primary', 'state': 'accepted'}],
+                    'events': []}
+        self.assertIsNone(witness.decision(accepted, [], body_released=False))
         value = self.observation()
         original, sibling = Gate('a' * 32, 1, 'headers'), Gate('a' * 32, 2, 'body')
         self.assertIsNone(witness.decision(value, [original], body_released=False))
+        self.assertEqual(witness.decision(value, [original, sibling], body_released=False),
+                         {'action': 'release-sibling-body', 'gate': sibling})
+        value['requests'].append({'request': 3, 'role': 'primary', 'state': 'accepted'})
         self.assertEqual(witness.decision(value, [original, sibling], body_released=False),
                          {'action': 'release-sibling-body', 'gate': sibling})
         for changed in ('generation', 'bytes', 'phase'):
@@ -201,3 +235,73 @@ class RustThreadHttpSiblingTests(unittest.TestCase):
         self.assertEqual(state['releases'], [partial, held])
         self.assertEqual(result['status'], 'passed')
         self.assertFalse(result['applicationYieldInserted'])
+
+    def test_native_grant_refusal_requires_known_terminal_zero_work(self):
+        from tools.resource_tenant_node import require_denied_before_guest
+
+        counters = ('cpuFuel', 'peakMemoryBytes', 'childCalls', 'outboundRequests',
+                    'logBytes', 'effectCount', 'stateReadBytes', 'stateWriteBytes',
+                    'blobReadBytes', 'blobWriteBytes')
+        denied = {'exitCode': 4, 'processReaped': True, 'response': {
+            'schemaVersion': 'latent.cli.result.v1', 'command': 'invoke',
+            'outcomeKnown': True, 'requestDispatched': True, 'category': 'platform-failure',
+            'error': {'code': 'permission-denied'},
+            'data': {'terminalState': 'rejected', 'consumption': dict.fromkeys(counters, '0')}}}
+        for zero in (0, '0'):
+            row = copy.deepcopy(denied)
+            row['response']['data']['consumption'] = dict.fromkeys(counters, zero)
+            before = copy.deepcopy(row)
+            require_denied_before_guest(row)
+            self.assertEqual(row, before)
+
+        # The retained signed witness returned this result shape. It has no
+        # terminalState or consumption; neither may be fabricated or dereferenced.
+        unknown = {'exitCode': 5, 'processReaped': True, 'response': {
+            'schemaVersion': 'latent.cli.result.v1', 'command': 'invoke',
+            'outcomeKnown': False, 'requestDispatched': True, 'category': 'transport-failure',
+            'data': {'activationId': 'rust-combined-native-denied'},
+            'error': {'code': 'rpc-failed', 'grpcCode': 'cancelled'}}}
+        for certainty in (False, None, 0, 'true'):
+            for data in (unknown['response']['data'], None, {}):
+                row = copy.deepcopy(unknown)
+                row['response'].update(outcomeKnown=certainty, data=data)
+                before = copy.deepcopy(row)
+                with self.subTest(certainty=certainty, data=data), self.assertRaisesRegex(
+                        WorkflowError, 'resource-tenant-invocation-outcome-unknown'):
+                    require_denied_before_guest(row)
+                self.assertEqual(row, before)
+        row = copy.deepcopy(unknown)
+        del row['response']['outcomeKnown']
+        with self.assertRaisesRegex(WorkflowError, 'resource-tenant-invocation-outcome-unknown'):
+            require_denied_before_guest(row)
+
+        for key in counters:
+            for invalid in (1, '1', -1, '-1', False, 0.0, 0.5, '00', '0.0', None, [], {}):
+                row = copy.deepcopy(denied)
+                row['response']['data']['consumption'][key] = invalid
+                with self.subTest(counter=key, value=invalid), self.assertRaises(WorkflowError):
+                    require_denied_before_guest(row)
+            row = copy.deepcopy(denied)
+            del row['response']['data']['consumption'][key]
+            with self.subTest(missing=key), self.assertRaises(WorkflowError):
+                require_denied_before_guest(row)
+
+        for path, value in (
+                (('exitCode',), 0), (('exitCode',), '4'), (('exitCode',), 4.0),
+                (('processReaped',), False), (('processReaped',), 1),
+                (('response', 'requestDispatched'), False),
+                (('response', 'category'), 'success'),
+                (('response', 'error'), None), (('response', 'error', 'code'), 'guest-trap'),
+                (('response', 'data'), None), (('response', 'data', 'terminalState'), 'completed'),
+                (('response', 'data', 'consumption'), None)):
+            row = copy.deepcopy(denied)
+            target = row
+            for part in path[:-1]:
+                target = target[part]
+            target[path[-1]] = value
+            with self.subTest(path=path, value=value), self.assertRaises(WorkflowError):
+                require_denied_before_guest(row)
+        for row in (None, [], {}, {'response': None}, {'response': []}):
+            with self.subTest(row=row), self.assertRaisesRegex(
+                    WorkflowError, 'resource-tenant-invocation-result-shape'):
+                require_denied_before_guest(row)

@@ -21,21 +21,30 @@ modules. This directory is not an independent Cargo workspace.
 | [types.rs](types.rs), [fields.rs](fields.rs) | Typed HTTP resources, methods and bounded header fields. |
 | [state.rs](state.rs) | One owned exchange: upload, response, body, EOF, drain, trailers and retained results. |
 | [io.rs](io.rs) | Standard stream operations and views over that exchange. |
-| [poll.rs](poll.rs) | Pollable readiness and timers using the shared activation pump. |
+| [poll.rs](poll.rs), [pump.rs](pump.rs), [timer.rs](timer.rs) | Callback-safe readiness, bounded waiters and original timer futures. |
+| [retirement.rs](retirement.rs) | Physical resource and buffer destruction before owner settlement, including EOF and deferred cancellation. |
 | [request_options.rs](request_options.rs) | Selected request phase/deadline options; no replacement root deadline. |
 | [error.rs](error.rs) | Bounded resources preserving typed host failure categories. |
 | [limits.rs](limits.rs) | The selected profile's chunk, body and header bounds. |
 | [wit/](wit) | Exact exported standard interfaces and imported LSF authority. |
 
 The adapter reuses the original .NET HTTP runtime's
-[Owner](../dotnet-guest/runtime/http/owner.rs),
-[Pump](../dotnet-guest/runtime/http/pump.rs),
-[quota](../dotnet-guest/runtime/http/quota.rs) and
-[timer](../dotnet-guest/runtime/http/timer.rs) sources. Each selected component has
-one instance of those owners; this does not introduce another provider, budget,
-executor or connection cache. Futures, resources and buffers retain their original
-owners through actual retirement. EOF and trailer observation remain explicit;
-dropping a result waiter is not proof that pending work stopped.
+[Owner](../dotnet-guest/runtime/http/owner.rs) and
+[quota](../dotnet-guest/runtime/http/quota.rs) sources. Rust's separate
+[pump](pump.rs) returns pending from async exports instead of blocking an
+entered component instance; its [timer](timer.rs) retains the original accepted
+clock future. The .NET pump and timer are unchanged. These guest scheduling
+changes add no provider, budget, socket authority or connection cache.
+
+Futures, resources and buffers retain their original owners through actual
+retirement. Dropping an exchange with observed EOF, no pending canonical future
+and no upload destroys its body and buffered data before settling its Task.
+Completed sequential requests therefore do not consume Task capacity until an
+unrelated held request permits root cleanup. Pending cancellation still retains
+the same future, resources, buffers, owner and quota slot until async-root drain;
+logical cancellation never proves physical work stopped. Native retirement and
+actual compiled sequential-sibling controls are maintained in
+[the backend workflow](../../.github/workflows/rust-wasi-http-runtime.yml).
 
 ## Producer and consumer identities
 

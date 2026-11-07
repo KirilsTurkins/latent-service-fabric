@@ -112,6 +112,10 @@ impl WasmtimeConfig {
                     super::NativeThreadProfile::RustContext40SyncCooperativeV1 => {
                         "sync-cooperative-rust-abi-v1"
                     }
+                    #[cfg(feature = "development-rust-http-combined")]
+                    super::NativeThreadProfile::RustContext40CombinedHttpDiagnosticV1 => {
+                        "sync-cooperative-rust-abi-v1"
+                    }
                 }
                 .into(),
             );

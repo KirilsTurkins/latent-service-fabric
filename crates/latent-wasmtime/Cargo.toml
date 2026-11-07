@@ -19,6 +19,8 @@ development-test-host = ["latent-artifacts/development-test-host", "latent-polic
 java-guest-diagnostic = []
 # Explicit developer artifact only; ordinary products emit no numeric trace.
 rust-thread-trap-diagnostic = ["latent-component-threading/rust-thread-diagnostic-legacy"]
+# Experimental host only; ordinary builds cannot select this proof route.
+development-rust-http-combined = ["latent-component-threading/rust-http-combined-preview-diagnostic"]
 java-checkpoint-gc-trap-diagnostic = []
 
 [lints.rust]

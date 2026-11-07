@@ -1,5 +1,7 @@
 //! Engine-owned async fibers share the original Native and memory ceilings.
-//! This path is selected only while canonical thread creation stays disabled.
+//! Ordinary profiles keep canonical thread creation disabled on this path.
+//! The fixed combined diagnostic additionally requires its immutable graph proof;
+//! its explicit child starts still use the original conservative admission.
 use super::*;
 use latent_core::activation_runtime::RuntimeToken;
 
@@ -39,7 +41,9 @@ impl StackContext {
             .copied()
             .ok_or_else(|| wasmtime::Error::msg("native-worker-live-parent-required"))?;
         // The current poll belongs to this exact activation. No caller supplies
-        // a parent or capacity, and no guest C thread can reach this profile.
+        // a parent or capacity. Ordinary guest C profiles cannot reach this path.
+        // The fixed combined graph cannot create a child without its separately
+        // granted pre-start call, even when an engine worker uses this path.
         let owner = self
             .runtime
             .register(OwnerKind::Native, Some(parent))

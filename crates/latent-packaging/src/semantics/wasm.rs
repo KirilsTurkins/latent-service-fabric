@@ -49,15 +49,29 @@ fn validate_prechecked(component: &[u8], limits: SemanticLimits) -> Result<()> {
     let mut features = WasmFeatures::default() | WasmFeatures::CM_MORE_ASYNC_BUILTINS;
     if budget.native_creator {
         // Descriptive inspection never enables an Engine or installs a port.
-        // Recognize this syntax only after the same final-byte graph proof
-        // required again by runtime compilation, native loading and reuse.
-        latent_component_threading::verify_component_routing(component)
+        // Recognize this syntax only after an existing graph proof or the
+        // explicitly built diagnostic's fixed host-owned image match. Runtime
+        // compilation, native loading and reuse still require their proof.
+        let verified = latent_component_threading::verify_component_routing(component)
             .map(|_| ())
             .or_else(|_| {
                 latent_component_threading::c_preimage::verify_embedded_c_original_core(component)
                     .map(|_| ())
-            })
-            .map_err(|_| invalid("unverified-native-thread-component"))?;
+            });
+        // The opt-in diagnostic recognizes only an exact host-owned graph and
+        // delta, with no allocation or execution authority. The selected host
+        // independently admits work and recomputes the complete source proof.
+        #[cfg(feature = "development-rust-http-combined")]
+        let verified = verified.or_else(|_| {
+            if latent_component_threading::rust_component::matches_fixed_combined_diagnostic(
+                component,
+            ) {
+                Ok(())
+            } else {
+                Err("rust-combined-fixed-material-required")
+            }
+        });
+        verified.map_err(|_| invalid("unverified-native-thread-component"))?;
         features |= WasmFeatures::CM_THREADING | WasmFeatures::CM_ASYNC_STACKFUL;
     }
     let mut validator = Validator::new_with_features(features);
