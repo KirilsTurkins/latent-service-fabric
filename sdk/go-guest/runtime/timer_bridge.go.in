@@ -29,14 +29,40 @@ func lsfReserveTimer(when, period int64) [2]uint64 {
 
 func lsfInstallTimer(t *timer, token [2]uint64) {
     weak := internal_weak_runtime_registerWeakPointer(unsafe.Pointer(t))
+    var candidate []lsfTimerSlot
+    for !lsfPublishTimer(t, token, weak, candidate) {
+        // Allocation may park for GC. A resumed installer must recheck the
+        // current inventory rather than publish the old slice header.
+        current := len(lsfTimerSlots)
+        if current >= 8192 { lsfFail("LSF timer inventory capacity exhausted") }
+        capacity := current * 2
+        if capacity == 0 { capacity = 1 }
+        if capacity > 8192 { capacity = 8192 }
+        candidate = make([]lsfTimerSlot, capacity)
+    }
+}
+
+// Selection, copy and publication do not allocate or park. The wasm profile
+// runs one scheduler thread; any work that can park happens before this helper.
+//go:nosplit
+func lsfPublishTimer(t *timer, token [2]uint64, weak unsafe.Pointer, candidate []lsfTimerSlot) bool {
     slot := len(lsfTimerSlots)
     for index := range lsfTimerSlots {
         if lsfTimerSlots[index].token[1] == 0 { slot = index; break }
     }
-    if slot == len(lsfTimerSlots) { lsfTimerSlots = append(lsfTimerSlots, lsfTimerSlot{}) }
+    if slot == len(lsfTimerSlots) {
+        if slot < cap(lsfTimerSlots) {
+            lsfTimerSlots = lsfTimerSlots[:slot + 1]
+        } else {
+            if slot >= len(candidate) { return false }
+            copy(candidate, lsfTimerSlots)
+            lsfTimerSlots = candidate[:slot + 1]
+        }
+    }
     lsfTimerSlots[slot] = lsfTimerSlot{token, weak, !t.isChan}
     t.lsfToken, t.lsfSlot = token, uint32(slot + 1)
     if !t.isChan { lsfTimerCallbacks++ }
+    return true
 }
 
 // This runs on ordinary Go stacks. Weak-to-strong conversion may cooperate
