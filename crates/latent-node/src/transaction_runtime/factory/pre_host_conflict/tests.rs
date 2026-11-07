@@ -36,6 +36,22 @@ fn stale_precondition(admission: &NativeTransactionAdmission) {
     });
 }
 
+fn select_original_retry(admission: &NativeTransactionAdmission, aborted: &CommandRecord) {
+    let mut state = admission.state.lock().unwrap();
+    let State::Fresh(Some(selection)) = &mut *state else {
+        panic!("original fresh selection absent");
+    };
+    selection.retry = Some(crate::transaction_runtime::TransactionRetrySelection {
+        request: latent_commit::atomic::RetryRequest {
+            request_id: "original-retry".into(),
+            expected_abort: aborted.abort_proof().unwrap(),
+        },
+        command: aborted.id(),
+        attempt: aborted.attempt(),
+        transaction: aborted.transaction_id(),
+    });
+}
+
 async fn failed_opening(fixture: &Fixture, key: &str) -> Opening {
     let (seed, envelope, budget) = fixture.invocation(false, "seed");
     let host = seed.admit(&envelope, &budget).await.unwrap();
@@ -515,6 +531,89 @@ async fn canonical_original_replay_keeps_the_old_stale_precondition_and_retained
     assert_eq!(fixture.rows(Family::State).await, 1);
     assert_eq!(fixture.rows(Family::Outbox).await, 0);
     drop((completion, replay, opening));
+    fixture.shutdown().await;
+}
+
+#[tokio::test]
+async fn explicit_retry_replays_one_native_pending_attempt_without_opening_another_host() {
+    let fixture = Fixture::new().await;
+    let opening = failed_opening(&fixture, "native-explicit-retry").await;
+    opening
+        .admission
+        .complete(
+            opening.outcome.clone(),
+            fixture.commit_control(&opening.envelope, &opening.budget),
+        )
+        .await;
+    let original_completion = opening.admission.take_owned_completion().unwrap().unwrap();
+    let TransactionCompletionResult::Command(CommandCompletionDisposition::Durable {
+        command: aborted,
+        ..
+    }) = &original_completion.result
+    else {
+        panic!("original durable abort absent");
+    };
+    assert!(aborted.abort_proof().is_some());
+
+    let (owner, owner_envelope, owner_budget) = fixture.invocation(false, "native-explicit-retry");
+    stale_precondition(&owner);
+    select_original_retry(&owner, aborted);
+    assert_eq!(
+        owner
+            .admit(&owner_envelope, &owner_budget)
+            .await
+            .err()
+            .unwrap()
+            .code,
+        PlatformErrorCode::StateConflict
+    );
+    let attempts_before = fixture.rows(Family::Attempt).await;
+    let outbox_before = fixture.rows(Family::Outbox).await;
+    let (duplicate, duplicate_envelope, duplicate_budget) =
+        fixture.invocation(false, "native-explicit-retry");
+    stale_precondition(&duplicate);
+    select_original_retry(&duplicate, aborted);
+    assert_eq!(
+        duplicate
+            .admit(&duplicate_envelope, &duplicate_budget)
+            .await
+            .err()
+            .unwrap()
+            .code,
+        PlatformErrorCode::AlreadyExists
+    );
+    let TransactionAdmissionResult::Existing { command, .. } =
+        duplicate.take_result().unwrap().unwrap()
+    else {
+        panic!("duplicate retry did not observe the original pending attempt");
+    };
+    assert_eq!(command.id(), aborted.id());
+    assert_eq!(command.attempt(), aborted.attempt() + 1);
+    assert_eq!(command.outcome(), latent_commit::atomic::Outcome::Pending);
+    assert_eq!(fixture.rows(Family::Attempt).await, attempts_before);
+    assert_eq!(fixture.rows(Family::Outbox).await, outbox_before);
+
+    let consumption = owner_budget
+        .finalize_at(None, Instant::now())
+        .consumption()
+        .clone();
+    let failure = failure_for_platform_error(
+        super::super::error(PlatformErrorCode::StateConflict, "original retry conflict"),
+        consumption,
+    );
+    owner
+        .complete(
+            failure,
+            fixture.commit_control(&owner_envelope, &owner_budget),
+        )
+        .await;
+    drop((
+        owner.take_owned_completion().unwrap(),
+        duplicate,
+        owner,
+        original_completion,
+        opening,
+    ));
     fixture.shutdown().await;
 }
 

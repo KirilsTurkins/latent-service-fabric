@@ -162,6 +162,16 @@ fn original_lcm3_lct1_retry_receipt_replays_without_a_retention_index_or_implici
     assert!(receipts.rows[0].1.starts_with(b"LCT\0\x01"));
     let usage_key = writer::usage_row_key("tenant", "aggregate", 1).unwrap();
     let original_usage = before.get(&usage_key).unwrap();
+    assert!(matches!(
+        PreparedAdmission::retry(&before, &request_input, &retry, time(104), |access, _| {
+            if access == CommandAccess::Replay {
+                Err(AtomicError::PermissionDenied)
+            } else {
+                Ok(())
+            }
+        }),
+        Err(AtomicError::PermissionDenied)
+    ));
     let AdmissionDecision::Existing(replayed) =
         PreparedAdmission::retry(&before, &request_input, &retry, time(104), permission).unwrap()
     else {
