@@ -202,10 +202,19 @@ QUEUE_WITNESS_REWRITE_RECEIPT = {**QUEUE_FENCE_REWRITE_RECEIPT,
     'queueInsertionWitness': 'before-original-local-push-or-global-enqueue-call'}
 
 
+# Task and queued-work reservation now retain provisional custody unless the
+# selected bridge has reported the original typed WIT refusal explicitly.
+PROVISIONAL_RESERVATION_REWRITE_RECEIPT = {**QUEUE_WITNESS_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v6',
+    'reservationAdmission': 'provisional-task-and-queue-explicit-wit-refusal'}
+
+
 def validate_rewrite(value: dict) -> None:
     if type(value) is not dict:
         raise ValueError('dotnet-managed-work-rewrite-receipt')
-    expected_receipt = (QUEUE_WITNESS_REWRITE_RECEIPT if value.get('patch') == QUEUE_WITNESS_REWRITE_RECEIPT['patch']
+    expected_receipt = (PROVISIONAL_RESERVATION_REWRITE_RECEIPT
+        if value.get('patch') == PROVISIONAL_RESERVATION_REWRITE_RECEIPT['patch']
+        else QUEUE_WITNESS_REWRITE_RECEIPT if value.get('patch') == QUEUE_WITNESS_REWRITE_RECEIPT['patch']
         else QUEUE_FENCE_REWRITE_RECEIPT if value.get('patch') == QUEUE_FENCE_REWRITE_RECEIPT['patch']
         else PREFETCH_REWRITE_RECEIPT if value.get('patch') == PREFETCH_REWRITE_RECEIPT['patch']
         else TIMER_REWRITE_RECEIPT if value.get('patch') == TIMER_REWRITE_RECEIPT['patch'] else REWRITE_RECEIPT)
