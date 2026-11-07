@@ -12,6 +12,8 @@ public static partial class ManagedWorkRuntime
         return null;
     }
 
+    internal static int TimerAcceptedForControl(object item) => FindTimer(item)?.Accepted ?? -1;
+
     private static partial bool TimerScheduled(object item) => ((TimerControl.State)item).Scheduled;
     private static partial int TimerCallbacks(object item) => ((TimerControl.State)item).Callbacks;
     private static partial object? ContextValue(ExecutionContext? context) => null;

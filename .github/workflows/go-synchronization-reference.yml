@@ -8,7 +8,7 @@ on:
         type: choice
         required: true
         default: synchronization
-        options: [synchronization, admission, queued, managed-timers]
+        options: [synchronization, admission, queued, managed-timers, task-saturation]
   push:
     branches: ['feat/go-runtime-retirement-20261020', 'feat/go-runtime-admission-20261020', 'feat/go-runtime-queued-ownership-20261020', 'feat/go-v5-standard-timers-20261020']
 
@@ -57,6 +57,9 @@ jobs:
         run: python3 -m unittest tools.tests.test_go_queued -v
       - name: Check exact managed-v5 standard timer and GC evidence controls
         run: python3 -m unittest tools.tests.test_go_managed_timers -v
+      - name: Check original Task16 saturation evidence controls
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'task-saturation'
+        run: python3 -m unittest tools.tests.test_go_task_saturation -v
       - name: Install captured compiler namespace
         run: |
           sudo apt-get update
@@ -100,6 +103,12 @@ jobs:
       - name: Run all forty-three original timer outcomes under managed-v5 ownership
         if: env.LSF_GO_REFERENCE_CAMPAIGN == 'managed-timers'
         run: python3 tools/qualify_go_synchronization.py --campaign managed-timers --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-managed-timers" --output "$RUNNER_TEMP/go-managed-timers-result"
+      - name: Compile ordinary Task saturation with actual v5 and native reference
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'task-saturation'
+        run: python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-task-saturation" --runtime-profile go-component-activation-v5 --fixture task-saturation
+      - name: Require original Task16 refusal and fresh signed retirement
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'task-saturation'
+        run: python3 tools/qualify_go_synchronization.py --campaign task-saturation --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-task-saturation" --output "$RUNNER_TEMP/go-task-saturation-result"
       - name: Retain bounded actual results and compiler source identities
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
@@ -130,5 +139,12 @@ jobs:
             ${{ runner.temp }}/go-managed-timers-result/receipt.json
             ${{ runner.temp }}/go-managed-timers-result/signed.stdout.log
             ${{ runner.temp }}/go-managed-timers-result/signed.stderr.log
+            ${{ runner.temp }}/go-task-saturation/GO-ACTIVATION-COMPILE.json
+            ${{ runner.temp }}/go-task-saturation/GO-ACTIVATION-FAILED.json
+            ${{ runner.temp }}/go-task-saturation/src/
+            ${{ runner.temp }}/go-task-saturation/wit/
+            ${{ runner.temp }}/go-task-saturation/build/component.wasm
+            ${{ runner.temp }}/go-task-saturation/logs/
+            ${{ runner.temp }}/go-task-saturation-result/
           if-no-files-found: warn
           retention-days: 7
