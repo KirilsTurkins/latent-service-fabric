@@ -247,7 +247,7 @@ fn missing_physical_index_or_primary_is_a_visible_failure_and_preserves_native_c
             })
             .unwrap();
         let view = state.snapshot().unwrap();
-        let mut audit = LocalReferenceAudit::begin(&owner, &view, &scope()).unwrap();
+        let mut audit = LocalReferenceAudit::begin(&owner, &view, &scope(), &|| Ok(())).unwrap();
         assert!(matches!(
             audit.next_page(&owner, &view, 4, &|| Ok(())),
             Err(LocalBlobError::Corrupt)
@@ -313,7 +313,7 @@ fn bounded_audit_distinguishes_durable_owner_from_unreviewed_reference() {
     update(&state, &[(None, Some(link))]);
     drop(pin);
     let view = state.snapshot().unwrap();
-    let mut audit = LocalReferenceAudit::begin(&owner, &view, &scope()).unwrap();
+    let mut audit = LocalReferenceAudit::begin(&owner, &view, &scope(), &|| Ok(())).unwrap();
     let mut seen = Vec::new();
     loop {
         let page = audit.next_page(&owner, &view, 1, &|| Ok(())).unwrap();
@@ -350,11 +350,11 @@ fn audit_rejects_rebound_view_and_local_mutation_after_a_page() {
     let other_view = state.snapshot().unwrap();
     let foreign_view = other.snapshot().unwrap();
     assert!(matches!(
-        LocalReferenceAudit::begin(&owner, &foreign_view, &scope()),
+        LocalReferenceAudit::begin(&owner, &foreign_view, &scope(), &|| Ok(())),
         Err(LocalBlobError::PermissionDenied)
     ));
     assert_eq!(owner.inner.work.load(Ordering::Acquire), 0);
-    let mut rebound = LocalReferenceAudit::begin(&owner, &view, &scope()).unwrap();
+    let mut rebound = LocalReferenceAudit::begin(&owner, &view, &scope(), &|| Ok(())).unwrap();
     assert!(matches!(
         rebound.next_page(&owner, &other_view, 1, &|| Ok(())),
         Err(LocalBlobError::Invalid)
@@ -364,7 +364,7 @@ fn audit_rejects_rebound_view_and_local_mutation_after_a_page() {
         Err(LocalBlobError::Invalid)
     ));
     drop(rebound);
-    let mut audit = LocalReferenceAudit::begin(&owner, &view, &scope()).unwrap();
+    let mut audit = LocalReferenceAudit::begin(&owner, &view, &scope(), &|| Ok(())).unwrap();
     let page = audit.next_page(&owner, &view, 1, &|| Ok(())).unwrap();
     assert!(!page.complete());
     drop(page);
@@ -391,7 +391,7 @@ fn historical_audit_cannot_authorize_reclamation_after_a_new_owner_commits() {
         .capture_durable_reference(&scope(), &blob, &|| Ok(()))
         .unwrap();
     let view = state.snapshot().unwrap();
-    let mut audit = LocalReferenceAudit::begin(&owner, &view, &scope()).unwrap();
+    let mut audit = LocalReferenceAudit::begin(&owner, &view, &scope(), &|| Ok(())).unwrap();
     let link = reference(&pin, PayloadOwnerKind::Effect, 2, "local-a", 1);
     update(&state, &[(None, Some(link))]);
     drop(pin);
@@ -422,7 +422,7 @@ fn audit_fails_closed_when_checkpoint_panics_or_mutates_the_local_inventory() {
         LocalBlobStore::open_durable(blob_root.path(), "private", limits(), &state).unwrap();
     put(&owner, b"one");
     let view = state.snapshot().unwrap();
-    let mut panic_audit = LocalReferenceAudit::begin(&owner, &view, &scope()).unwrap();
+    let mut panic_audit = LocalReferenceAudit::begin(&owner, &view, &scope(), &|| Ok(())).unwrap();
     let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         let _ = panic_audit.next_page(&owner, &view, 4, &|| panic!("test interruption"));
     }));
@@ -432,7 +432,8 @@ fn audit_fails_closed_when_checkpoint_panics_or_mutates_the_local_inventory() {
         Err(LocalBlobError::Invalid)
     ));
     drop(panic_audit);
-    let mut mutation_audit = LocalReferenceAudit::begin(&owner, &view, &scope()).unwrap();
+    let mut mutation_audit =
+        LocalReferenceAudit::begin(&owner, &view, &scope(), &|| Ok(())).unwrap();
     let calls = std::cell::Cell::new(0);
     let checkpoint = || {
         calls.set(calls.get() + 1);
@@ -467,7 +468,7 @@ fn audit_reports_zero_owner_head_without_converting_it_to_deletion_authority() {
     update(&state, &[(Some(link), None)]);
     // The real provisional pin is still live even though the head is zero.
     let view = state.snapshot().unwrap();
-    let mut audit = LocalReferenceAudit::begin(&owner, &view, &scope()).unwrap();
+    let mut audit = LocalReferenceAudit::begin(&owner, &view, &scope(), &|| Ok(())).unwrap();
     let page = audit.next_page(&owner, &view, 4, &|| Ok(())).unwrap();
     assert_eq!(
         page.entries().collect::<Vec<_>>(),
@@ -514,7 +515,7 @@ fn expired_state_view_invalidates_the_audit_without_a_page() {
         LocalBlobStore::open_durable(blob_root.path(), "private", limits(), &state).unwrap();
     put(&owner, b"one");
     let view = state.snapshot().unwrap();
-    let mut audit = LocalReferenceAudit::begin(&owner, &view, &scope()).unwrap();
+    let mut audit = LocalReferenceAudit::begin(&owner, &view, &scope(), &|| Ok(())).unwrap();
     let calls = std::cell::Cell::new(0);
     let checkpoint = || {
         calls.set(calls.get() + 1);
@@ -531,6 +532,43 @@ fn expired_state_view_invalidates_the_audit_without_a_page() {
         audit.next_page(&owner, &view, 4, &|| Ok(())),
         Err(LocalBlobError::Invalid)
     ));
+}
+
+#[test]
+fn audit_setup_rechecks_the_original_checkpoint_and_returns_work() {
+    let state_root = temporary_root();
+    let blob_root = temporary_root();
+    let state = database(state_root.path(), true, "audit-setup");
+    let owner =
+        LocalBlobStore::open_durable(blob_root.path(), "private", limits(), &state).unwrap();
+    let view = state.snapshot().unwrap();
+    let calls = std::cell::Cell::new(0);
+    let expire = || {
+        calls.set(calls.get() + 1);
+        if calls.get() == 4 {
+            Err(LocalBlobError::DeadlineExceeded)
+        } else {
+            Ok(())
+        }
+    };
+    assert!(matches!(
+        LocalReferenceAudit::begin(&owner, &view, &scope(), &expire),
+        Err(LocalBlobError::DeadlineExceeded)
+    ));
+    assert_eq!(owner.inner.work.load(Ordering::Acquire), 0);
+    let calls = std::cell::Cell::new(0);
+    let mutate = || {
+        calls.set(calls.get() + 1);
+        if calls.get() == 4 {
+            put(&owner, b"new");
+        }
+        Ok(())
+    };
+    assert!(matches!(
+        LocalReferenceAudit::begin(&owner, &view, &scope(), &mutate),
+        Err(LocalBlobError::Busy)
+    ));
+    assert_eq!(owner.inner.work.load(Ordering::Acquire), 0);
 }
 
 #[test]

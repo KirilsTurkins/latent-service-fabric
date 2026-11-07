@@ -95,11 +95,19 @@ pub struct LocalReferenceAudit {
     invalid: bool,
 }
 impl LocalReferenceAudit {
-    pub fn begin(store: &LocalBlobStore, view: &ReadView, scope: &TenantId) -> Result<Self> {
+    pub fn begin(
+        store: &LocalBlobStore,
+        view: &ReadView,
+        scope: &TenantId,
+        checkpoint: &dyn Fn() -> Result<()>,
+    ) -> Result<Self> {
         // Reserve the cursor before inspecting any durable state, then reuse
         // the actual root, configuration and live-engine checks.
-        let inventory = LocalReferenceInventory::begin(store, scope)?;
+        let inventory = LocalReferenceInventory::begin(store, scope, checkpoint)?;
         drop(RequiredBlobInventory::begin(store, view)?);
+        checkpoint()?;
+        let _ = view.is_empty().map_err(storage)?;
+        inventory.ensure_current(store)?;
         Ok(Self {
             inventory,
             view: view.identity(),

@@ -48,8 +48,13 @@ impl LocalReferenceInventory {
         Ok(())
     }
 
-    pub fn begin(store: &LocalBlobStore, scope: &TenantId) -> Result<Self> {
+    pub fn begin(
+        store: &LocalBlobStore,
+        scope: &TenantId,
+        checkpoint: &dyn Fn() -> Result<()>,
+    ) -> Result<Self> {
         tenant(scope)?;
+        checkpoint()?;
         store.inner.check()?;
         // A cursor and its first retained page each require a work slot. Do
         // not admit a cursor that can never make progress under this limit.
@@ -57,6 +62,7 @@ impl LocalReferenceInventory {
             return Err(LocalBlobError::Capacity);
         }
         let work = store.inner.work()?;
+        checkpoint()?;
         let generation = {
             let state = store.inner.state()?;
             if store.inner.publishing.load(Ordering::Acquire) {
@@ -64,13 +70,16 @@ impl LocalReferenceInventory {
             }
             state.inventory_generation
         };
-        Ok(Self {
+        checkpoint()?;
+        let inventory = Self {
             work,
             tenant: scope.clone(),
             generation,
             after: None,
             complete: false,
-        })
+        };
+        inventory.ensure_current(store)?;
+        Ok(inventory)
     }
 
     /// Visit at most 64 physical entries per call, including entries for other

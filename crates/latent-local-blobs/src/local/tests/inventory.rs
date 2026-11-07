@@ -14,7 +14,7 @@ fn pages_are_tenant_scoped_bounded_and_bound_to_the_original_owner() {
         .unwrap();
     writer.write(0, b"bob", &|| Ok(())).unwrap();
     writer.seal(&|| Ok(())).unwrap();
-    let mut inventory = LocalReferenceInventory::begin(&owner, &scope()).unwrap();
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
     assert!(matches!(
         inventory.next_page(&other, 1, &|| Ok(())),
         Err(LocalBlobError::Invalid)
@@ -49,7 +49,7 @@ fn publish_release_and_physical_reclamation_invalidate_old_cursors() {
     let root = temporary_root();
     let owner = store(root.path());
     let first = put(&owner, b"first");
-    let mut before_publish = LocalReferenceInventory::begin(&owner, &scope()).unwrap();
+    let mut before_publish = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
     let first_page = before_publish.next_page(&owner, 1, &|| Ok(())).unwrap();
     assert!(!first_page.complete);
     assert_eq!(first_page.references(), std::slice::from_ref(&first));
@@ -59,7 +59,7 @@ fn publish_release_and_physical_reclamation_invalidate_old_cursors() {
         before_publish.next_page(&owner, 1, &|| Ok(())),
         Err(LocalBlobError::Busy)
     ));
-    let mut before_release = LocalReferenceInventory::begin(&owner, &scope()).unwrap();
+    let mut before_release = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
     owner
         .release_reference(&scope(), &first, &|| Ok(()))
         .unwrap();
@@ -67,13 +67,13 @@ fn publish_release_and_physical_reclamation_invalidate_old_cursors() {
         before_release.next_page(&owner, 1, &|| Ok(())),
         Err(LocalBlobError::Busy)
     ));
-    let mut before_reclaim = LocalReferenceInventory::begin(&owner, &scope()).unwrap();
+    let mut before_reclaim = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
     assert_eq!(owner.reclaim(1, &|| Ok(())).unwrap().objects, 1);
     assert!(matches!(
         before_reclaim.next_page(&owner, 1, &|| Ok(())),
         Err(LocalBlobError::Busy)
     ));
-    let mut fresh = LocalReferenceInventory::begin(&owner, &scope()).unwrap();
+    let mut fresh = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
     let page = fresh.next_page(&owner, 4, &|| Ok(())).unwrap();
     assert!(page.complete);
     assert_eq!(page.references(), &[second]);
@@ -85,22 +85,22 @@ fn cursor_uses_bounded_work_and_refuses_in_progress_publication() {
     let mut bounded = limits();
     bounded.maximum_work = 2;
     let owner = LocalBlobStore::open(root.path(), "private", bounded).unwrap();
-    let mut inventory = LocalReferenceInventory::begin(&owner, &scope()).unwrap();
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
     let page = inventory.next_page(&owner, 1, &|| Ok(())).unwrap();
     assert!(matches!(
-        LocalReferenceInventory::begin(&owner, &scope()),
+        LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())),
         Err(LocalBlobError::Capacity)
     ));
     drop(inventory);
-    assert!(LocalReferenceInventory::begin(&owner, &scope()).is_ok());
+    assert!(LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).is_ok());
     drop(page);
     let publication = owner.inner.publication().unwrap();
     assert!(matches!(
-        LocalReferenceInventory::begin(&owner, &scope()),
+        LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())),
         Err(LocalBlobError::Busy)
     ));
     drop(publication);
-    inventory = LocalReferenceInventory::begin(&owner, &scope()).unwrap();
+    inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
     let publication = owner.inner.publication().unwrap();
     assert!(matches!(
         inventory.next_page(&owner, 1, &|| Ok(())),
@@ -117,7 +117,7 @@ fn a_single_work_slot_cannot_be_occupied_by_an_unusable_cursor() {
     bounded.maximum_work = 1;
     let owner = LocalBlobStore::open(root.path(), "private", bounded).unwrap();
     assert!(matches!(
-        LocalReferenceInventory::begin(&owner, &scope()),
+        LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())),
         Err(LocalBlobError::Capacity)
     ));
     // The refused inventory does not consume the slot needed by real work.
@@ -127,7 +127,7 @@ fn a_single_work_slot_cannot_be_occupied_by_an_unusable_cursor() {
     drop(reader);
     owner.close();
     assert!(matches!(
-        LocalReferenceInventory::begin(&owner, &scope()),
+        LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())),
         Err(LocalBlobError::Closed)
     ));
 }
@@ -185,7 +185,7 @@ fn sealed_uncommitted_reference_is_discoverable_after_reopen_but_not_deletable()
     drop(owner);
     let reopened =
         LocalBlobStore::open_durable(blob_root.path(), "private", limits(), &state).unwrap();
-    let mut inventory = LocalReferenceInventory::begin(&reopened, &scope()).unwrap();
+    let mut inventory = LocalReferenceInventory::begin(&reopened, &scope(), &|| Ok(())).unwrap();
     let page = inventory.next_page(&reopened, 4, &|| Ok(())).unwrap();
     assert!(page.complete);
     assert_eq!(page.references(), std::slice::from_ref(&blob));
@@ -221,7 +221,7 @@ fn exhausted_generation_refuses_mutation_without_releasing_the_reference() {
         writer.seal(&|| Ok(())),
         Err(LocalBlobError::Capacity)
     ));
-    let mut inventory = LocalReferenceInventory::begin(&owner, &scope()).unwrap();
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
     let page = inventory.next_page(&owner, 4, &|| Ok(())).unwrap();
     assert_eq!(page.references(), &[blob]);
 }
@@ -231,7 +231,7 @@ fn failed_checkpoint_does_not_advance_the_inventory() {
     let root = temporary_root();
     let owner = store(root.path());
     let blob = put(&owner, b"one");
-    let mut inventory = LocalReferenceInventory::begin(&owner, &scope()).unwrap();
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
     let calls = std::cell::Cell::new(0);
     let checkpoint = || {
         calls.set(calls.get() + 1);
@@ -257,7 +257,7 @@ fn mutation_during_checkpoint_cannot_publish_a_stale_completed_page() {
     let root = temporary_root();
     let owner = store(root.path());
     put(&owner, b"one");
-    let mut inventory = LocalReferenceInventory::begin(&owner, &scope()).unwrap();
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
     let calls = std::cell::Cell::new(0);
     let checkpoint = || {
         calls.set(calls.get() + 1);
@@ -270,7 +270,7 @@ fn mutation_during_checkpoint_cannot_publish_a_stale_completed_page() {
         inventory.next_page(&owner, 4, &checkpoint),
         Err(LocalBlobError::Busy)
     ));
-    let mut fresh = LocalReferenceInventory::begin(&owner, &scope()).unwrap();
+    let mut fresh = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
     let page = fresh.next_page(&owner, 4, &|| Ok(())).unwrap();
     assert!(page.complete);
     assert_eq!(page.references().len(), 2);
@@ -281,7 +281,7 @@ fn duplicate_seal_without_inventory_change_preserves_the_cursor() {
     let root = temporary_root();
     let owner = store(root.path());
     let blob = put(&owner, b"same");
-    let mut inventory = LocalReferenceInventory::begin(&owner, &scope()).unwrap();
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
     assert_eq!(put(&owner, b"same"), blob);
     let page = inventory.next_page(&owner, 4, &|| Ok(())).unwrap();
     assert!(page.complete);
@@ -293,7 +293,7 @@ fn owner_close_during_checkpoint_cannot_publish_a_page() {
     let root = temporary_root();
     let owner = store(root.path());
     put(&owner, b"one");
-    let mut inventory = LocalReferenceInventory::begin(&owner, &scope()).unwrap();
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
     let calls = std::cell::Cell::new(0);
     let checkpoint = || {
         calls.set(calls.get() + 1);
@@ -306,4 +306,47 @@ fn owner_close_during_checkpoint_cannot_publish_a_page() {
         inventory.next_page(&owner, 4, &checkpoint),
         Err(LocalBlobError::Closed)
     ));
+}
+
+#[test]
+fn inventory_setup_honors_checkpoint_and_drops_its_work_on_failure() {
+    let root = temporary_root();
+    let owner = store(root.path());
+    let calls = std::cell::Cell::new(0);
+    let expire = || {
+        calls.set(calls.get() + 1);
+        if calls.get() == 2 {
+            Err(LocalBlobError::DeadlineExceeded)
+        } else {
+            Ok(())
+        }
+    };
+    assert!(matches!(
+        LocalReferenceInventory::begin(&owner, &scope(), &expire),
+        Err(LocalBlobError::DeadlineExceeded)
+    ));
+    assert_eq!(owner.inner.work.load(Ordering::Acquire), 0);
+    let calls = std::cell::Cell::new(0);
+    let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _ = LocalReferenceInventory::begin(&owner, &scope(), &|| {
+            calls.set(calls.get() + 1);
+            assert_ne!(calls.get(), 2, "test interruption");
+            Ok(())
+        });
+    }));
+    assert!(panic.is_err());
+    assert_eq!(owner.inner.work.load(Ordering::Acquire), 0);
+    let calls = std::cell::Cell::new(0);
+    let mutate = || {
+        calls.set(calls.get() + 1);
+        if calls.get() == 3 {
+            put(&owner, b"new");
+        }
+        Ok(())
+    };
+    assert!(matches!(
+        LocalReferenceInventory::begin(&owner, &scope(), &mutate),
+        Err(LocalBlobError::Busy)
+    ));
+    assert_eq!(owner.inner.work.load(Ordering::Acquire), 0);
 }

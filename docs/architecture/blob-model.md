@@ -59,6 +59,7 @@ slot; pages visit at most 64 physical entries and become stale after publication
 release or reclamation changes. The host must authorize the tenant separately.
 Starting an inventory requires capacity for both its cursor and a page; a
 single-slot configuration refuses the cursor without consuming that slot.
+Setup and each page honor the caller's original checkpoint before returning.
 Pagination observations remain host-internal because page boundaries can reflect
 entries owned by other tenants.
 This inventory describes references only; it does not reverify payload bytes.
