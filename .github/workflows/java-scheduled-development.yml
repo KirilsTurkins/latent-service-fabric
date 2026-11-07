@@ -1,0 +1,40 @@
+name: Development Java scheduled component qualification
+on:
+  push:
+    branches: ['development']
+    paths:
+      - '.github/workflows/java-scheduled-development.yml'
+      - '.github/workflows/java-scheduled-library.yml'
+      - 'tools/qualify_java_scheduled_library.py'
+      - 'tools/qualify_java_retained_fibers.py'
+      - 'tools/qualify_java_fibers.py'
+      - 'tools/java_fiber_library_inputs.py'
+      - 'tools/java_dependency_resolution.py'
+      - 'tools/java_registry_tls.py'
+      - 'sdk/java-guest/fibers/**'
+      - 'tools/qualify_java_published_workers.py'
+      - 'tools/java_guest/compiler.py'
+      - 'tools/java_guest/compiler_profile_distribution.py'
+      - 'tools/tests/test_java_scheduled_library.py'
+      - 'crates/latent-wasmtime/tests/local_service/runtime.rs'
+      - 'crates/latent-core/src/activation_runtime.rs'
+      - 'crates/latent-core/src/activation_runtime/**'
+      - 'crates/latent-wasmtime/src/**'
+      - 'crates/latent-wasmtime/tests/local_service/**'
+      - 'crates/latent-wasmtime/tests/local_service.rs'
+      - 'crates/latent-activation/src/**'
+      - 'crates/latent-executor/src/**'
+      - 'crates/latent-node/src/**'
+      - 'crates/latent-scheduler/src/**'
+      - 'wit/platform/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.cargo/managed-guest.toml'
+      - 'tools/toolchain.toml'
+      - 'tools/data/java-compiler-profile.json'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  scheduled-library:
+    uses: ./.github/workflows/java-scheduled-library.yml
