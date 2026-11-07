@@ -29,8 +29,12 @@ def historical_cache_selection(steps):
 
 
 def original_compiler_parent(test, parent):
-    """Invert only the reviewed sealed-profile/cache setup before old comparisons."""
+    """Invert only reviewed current changes before historical comparisons."""
     parent = copy.deepcopy(parent)
+    # Keep the old workflow fingerprints while requiring the reviewed current
+    # finite timeout exactly; no command or other deadline is normalized.
+    test.assertEqual(parent['timeout-minutes'], 75)
+    parent['timeout-minutes'] = 55
     test.assertEqual(parent.pop('permissions'), {'contents': 'read', 'actions': 'read'})
     steps = parent['steps']
     index = next(i for i, step in enumerate(steps) if step.get('name') == 'Install pinned compiler tools')
