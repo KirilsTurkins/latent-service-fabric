@@ -20,11 +20,8 @@ FIXTURE = 'sdk/dotnet-guest/tests/fixtures/managed-work-state-control'
 SOURCES = (FIXTURE+'/Control.csproj', FIXTURE+'/Program.cs', FIXTURE+'/Bindings.cs',
     'sdk/dotnet-guest/tools/http-errors/ManagedWorkRuntime.cs',
     'sdk/dotnet-guest/tools/http-errors/ManagedWorkTimers.cs', 'sdk/dotnet-guest/global.json')
-SETTLEMENT_CASES = (
-    'enqueue-failure-settlement-refusal-retains-owner',
-    'dequeue-settlement-refusal-retains-owner')
+SETTLEMENT_CASES = ('dequeue-settlement-refusal-retains-owner',)
 QUEUE_SETTLEMENT_CASES = (
-    'queue-rollback-refusal-prevents-retry', 'queue-rollback-unknown-prevents-retry',
     'queue-dequeue-refusal-prevents-retry', 'queue-dequeue-unknown-prevents-retry')
 OWNER_SETTLEMENT_CASES = (
     'task-settlement-refusal-revokes-context',
@@ -43,7 +40,7 @@ ROOT_SETTLEMENT_CASES = (
     'storage-and-context-clear-fail-fences-finalization')
 CASES = (
     'native-task-admission', 'unwrap-inner-actual-completion', 'queued-admission-rollback',
-    'enqueue-failure-releases-both', 'continuation-failure-before-acceptance',
+    'enqueue-failure-retains-uncertain-owners', 'continuation-failure-before-acceptance',
     'local-pop-releases-queue-only', 'join-real-required-task', 'callback-retains-async-void-task',
     'live-descendant-during-closing', 'closing-rejects-independent',
     'unobserved-original-fault-result', 'observed-fault-does-not-become-unhandled',
@@ -121,6 +118,7 @@ TIMER_CASES = (
     'one-shot-delete-is-not-callback-return', 'multiple-queued-callbacks-retain-one-timer',
     'disposed-queued-callback-retires-after-cancelled-fire', 'callback-required-task-survives-return',
     'live-timer-descendant-during-closing', 'callback-throw-never-refunds-original-running-owner',
+    'timer-queue-fault-before-insertion-retains-owners', 'timer-queue-fault-after-insertion-retains-owners',
     'timer-queue-refusal-fences-readmission', 'timer-queue-unknown-fences-readmission',
     'timer-settlement-refusal-restores-context', 'timer-settlement-refusal-prevents-retry',
     'timer-settlement-unknown-outcome-prevents-retry',

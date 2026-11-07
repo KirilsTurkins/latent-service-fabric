@@ -122,11 +122,15 @@ Include `<fetch.h>` and use `fetchGetURL(url, "A")`, then ordinary `fread`,
 `ferror` and `fclose` on the returned read-only `FILE *`. The URL parser and
 parsed-URL GET entrypoints accept optional `url_stat`: a validated Content-Length
 is reported as its size; absent length remains `-1`, and unknown timestamps are
-`0`. This does not enable standalone Stat, range or conditional requests.
+`0`. Standalone `fetchStat`/`fetchStatURL` use an independently authorized
+HEAD and close the response body before returning metadata. They require a
+HEAD grant; a GET grant does not imply one. This does not enable range or
+conditional requests. The HEAD mapping has source-level controls and has not
+yet been qualified by a signed C component.
 `fetchReqHTTP` supports bounded string request bodies for its declared HTTP
 methods. Only the empty flags string or `A` is supported. HTTP/HTTPS transport
 and TLS validation belong to the typed provider; socket and OpenSSL APIs are
-not exposed. FTP/file schemes, redirects, standalone stat/list/range/conditional
+not exposed. FTP/file schemes, redirects, list/range/conditional
 options, authentication callbacks, proxy configuration and writable FILE streams
 refuse explicitly. Independent sharing of one FILE across threads is not qualified.
 
