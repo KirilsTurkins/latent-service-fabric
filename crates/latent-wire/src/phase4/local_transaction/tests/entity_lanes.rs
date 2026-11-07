@@ -579,6 +579,95 @@ async fn cold_entity_progresses_while_hot_owner_reports_conservative_conflict() 
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 #[ignore = "Requires the maintained compiled Rust transaction guest"]
+async fn shared_owner_cannot_extend_the_original_deadline() {
+    let f = Fixture::with_concurrent_commands(true).await;
+    authorize_entity(&f, "hot");
+    let adapter = f.adapter();
+    let holder = tokio::spawn(async move {
+        adapter
+            .invoke_command(context("alice").request(entity_command("deadline-holder", 1)))
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(5), f.backend.imports.entered.notified())
+        .await
+        .unwrap();
+    let adapter = f.adapter();
+    let now = latent_core::ClockSample::system_now();
+    let original_context = context("alice").with_transport_deadline_at(
+        now.unix_millis() + 3000,
+        now.monotonic() + Duration::from_secs(3),
+    );
+    let original = tokio::spawn(async move {
+        adapter
+            .invoke_command(original_context.request(entity_command("deadline-shared", 1)))
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(2), async {
+        while f
+            .owners
+            .as_ref()
+            .unwrap()
+            .entity_lanes_snapshot()
+            .unwrap()
+            .queued
+            != 1
+        {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    let adapter = f.adapter();
+    let duplicate = tokio::spawn(async move {
+        adapter
+            .invoke_command(context("alice").request(entity_command("deadline-shared", 1)))
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(2), async {
+        while f
+            .owners
+            .as_ref()
+            .unwrap()
+            .entity_duplicate_waiter_count()
+            .unwrap()
+            != 1
+        {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    original.abort();
+    assert!(original.await.is_err_and(|error| error.is_cancelled()));
+    let duplicate = tokio::time::timeout(Duration::from_secs(6), duplicate)
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(matches!(duplicate, Err(error) if error.code() == tonic::Code::Unavailable));
+    assert_eq!(f.executions(), 1);
+    assert_eq!(
+        f.owners
+            .as_ref()
+            .unwrap()
+            .entity_lanes_snapshot()
+            .unwrap()
+            .queued,
+        0
+    );
+    f.backend.imports.release.notify_one();
+    let holder = tokio::time::timeout(Duration::from_secs(10), holder)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap()
+        .into_inner();
+    success(&holder);
+    assert_eq!(f.rows(Family::Command).await, 1);
+    f.shutdown().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "Requires the maintained compiled Rust transaction guest"]
 async fn departed_duplicate_does_not_keep_disconnected_owner_alive() {
     let f = Fixture::with_concurrent_commands(true).await;
     authorize_entity(&f, "hot");
