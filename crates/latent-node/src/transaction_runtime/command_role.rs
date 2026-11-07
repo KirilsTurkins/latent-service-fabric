@@ -41,6 +41,13 @@ impl CommandRole {
         *slot = Some(lane);
         Ok(())
     }
+
+    pub(super) fn retain_lane(&self) -> Result<Option<super::entity_queue::Physical>, AtomicError> {
+        self.lane
+            .lock()
+            .map(|lane| lane.clone())
+            .map_err(|_| AtomicError::RecoveryRequired)
+    }
     pub fn with_current<T>(
         &self,
         action: impl FnOnce(EffectTime) -> Result<T, AtomicError>,

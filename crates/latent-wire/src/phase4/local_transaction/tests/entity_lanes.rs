@@ -166,3 +166,109 @@ async fn actual_entity_guest_serializes_before_cell_and_replays_in_progress_dupl
     );
     f.shutdown().await;
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "Requires the maintained compiled Rust transaction guest"]
+async fn trapped_entity_retains_its_lane_until_the_actual_abort_writer_finishes() {
+    use latent_state::store_io::StoreIoKind;
+    use std::sync::{Condvar, Mutex};
+
+    let f = Fixture::with_concurrent_commands(true).await;
+    authorize_entity(&f, "hot");
+    f.backend
+        .imports
+        .fail_stage_once
+        .store(true, Ordering::SeqCst);
+    let first_adapter = f.adapter();
+    let first = tokio::spawn(async move {
+        first_adapter
+            .invoke_command(context("alice").request(entity_command("trap-first", 1)))
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(5), f.backend.imports.entered.notified())
+        .await
+        .unwrap();
+    let second_adapter = f.adapter();
+    let second = tokio::spawn(async move {
+        second_adapter
+            .invoke_command(context("alice").request(entity_command("trap-second", 1)))
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while f
+            .owners
+            .as_ref()
+            .unwrap()
+            .entity_lanes_snapshot()
+            .unwrap()
+            .queued
+            != 1
+        {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+
+    let gate = Arc::new((Mutex::new(false), Condvar::new()));
+    let held = Arc::clone(&gate);
+    let (entered, entered_rx) = tokio::sync::oneshot::channel();
+    let worker = f
+        .store
+        .with_store(StoreIoKind::RecoveryWrite, 64, move |_| {
+            entered.send(()).unwrap();
+            let lock = held.0.lock().unwrap();
+            let (lock, timeout) = held
+                .1
+                .wait_timeout_while(lock, Duration::from_secs(10), |released| !*released)
+                .unwrap();
+            assert!(*lock && !timeout.timed_out());
+            Ok(())
+        })
+        .unwrap();
+    tokio::time::timeout(Duration::from_secs(5), entered_rx)
+        .await
+        .unwrap()
+        .unwrap();
+    f.backend.imports.release.notify_one();
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while !f.store.snapshot().is_ok_and(|snapshot| snapshot.queued > 0) {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    let lanes = f.owners.as_ref().unwrap().entity_lanes_snapshot().unwrap();
+    assert_eq!((lanes.active, lanes.queued), (1, 1));
+    assert_eq!(f.executions(), 1);
+    assert!(!second.is_finished());
+    *gate.0.lock().unwrap() = true;
+    gate.1.notify_all();
+    worker.await.unwrap().unwrap();
+    let first = tokio::time::timeout(Duration::from_secs(10), first)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap()
+        .into_inner();
+    assert!(matches!(first.invocation.unwrap().result,
+        Some(i::invoke_response::Result::PlatformFailure(ref failure)) if failure.code == "guest-trap"));
+    let second = tokio::time::timeout(Duration::from_secs(10), second)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap()
+        .into_inner();
+    success(&second);
+    assert_eq!(f.executions(), 2);
+    assert_eq!(
+        f.owners
+            .as_ref()
+            .unwrap()
+            .entity_lanes_snapshot()
+            .unwrap()
+            .keys,
+        0
+    );
+    f.shutdown().await;
+}
