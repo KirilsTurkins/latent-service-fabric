@@ -642,6 +642,18 @@ fn physical_retirement_required_before_durable_abort_and_concurrent_explicit_ret
     .unwrap() else {
         panic!()
     };
+    let AdmissionDecision::New(stale_clock) =
+        PreparedAdmission::retry(&view, &input("retry"), &request(), time(102), permission)
+            .unwrap()
+    else {
+        panic!()
+    };
+    let AdmissionDecision::New(unknown_clock) =
+        PreparedAdmission::retry(&view, &input("retry"), &request(), time(102), permission)
+            .unwrap()
+    else {
+        panic!()
+    };
     assert!(matches!(
         wrong_request.publish_retry_or_existing(
             &store,
@@ -669,6 +681,31 @@ fn physical_retirement_required_before_durable_abort_and_concurrent_explicit_ret
     ));
     let owner = one.publish(&store, || Ok(())).unwrap();
     assert_eq!(owner.record().attempt(), 2);
+    assert!(matches!(
+        stale_clock.publish_retry_or_existing(
+            &store,
+            &input("retry"),
+            &request(),
+            || Ok(time(101)),
+            || panic!("a duplicate must fail before acceptance"),
+            permission,
+        ),
+        Err(AtomicError::RecoveryRequired)
+    ));
+    assert!(matches!(
+        unknown_clock.publish_retry_or_existing(
+            &store,
+            &input("retry"),
+            &request(),
+            || Ok(CommandTime {
+                unix_millis: 102,
+                continuity_proven: false
+            }),
+            || panic!("a duplicate must fail before acceptance"),
+            permission,
+        ),
+        Err(AtomicError::RecoveryRequired)
+    ));
     assert!(matches!(
         other.publish_retry_or_existing(
             &store,
