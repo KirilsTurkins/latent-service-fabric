@@ -488,11 +488,10 @@ internal static class StateControl
     {
         var item = new ContextItem(() =>
         {
-            Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
-            Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-queue");
+            Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-admission-in-progress");
+            Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-admission-in-progress");
         });
-        Refuses(() => Enqueue(item), "managed-work-independent-admission-closed");
-        Need(Count(0) == 1 && Count(3) == 0);
+        Enqueue(item); ManagedWorkRuntime.Dequeue(item); ManagedWorkRuntime.CallbackCompleted(item); Finish();
     }
     private static void DormantOwnerRefusalControl()
     {
@@ -577,10 +576,45 @@ internal static class StateControl
     }
     private static void RecordAllocationClosingControl()
     {
-        RecordAllocationCallback = ManagedWorkRuntime.JoinAcceptedWork;
-        Refuses(() => ManagedWorkRuntime.Schedule(Pending().Task), "managed-work-independent-admission-closed");
-        Need(Count(0) == 1 && Count(3) == 0);
-        ManagedWorkRuntime.FinishedPhysicalDrain(); Need(Owners.Count == 0);
+        RecordAllocationCallback = () =>
+        {
+            Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-admission-in-progress");
+            Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-admission-in-progress");
+        };
+        var pending = Pending(); ManagedWorkRuntime.Schedule(pending.Task);
+        Complete(pending); Finish();
+    }
+    private static void AllocationFinalizationControl(string operation)
+    {
+        ulong originalRoot = context.Item2;
+        bool admissionFenced = false;
+        void Reenter()
+        {
+            try
+            {
+                ManagedWorkRuntime.JoinAcceptedWork();
+                ManagedWorkRuntime.FinishedPhysicalDrain();
+                closing = false; Begin(); // A fresh activation must not replace the original.
+            }
+            catch (InvalidOperationException error) when (error.Message == "managed-work-admission-in-progress")
+            { admissionFenced = true; }
+            Need(admissionFenced && context.Item2 == originalRoot);
+            Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-admission-in-progress");
+            Refuses(Begin, "managed-work-installation");
+        }
+        if (operation == "queue")
+        {
+            object item = new(); QueueAllocationCallback = Reenter;
+            Enqueue(item); ManagedWorkRuntime.Dequeue(item); ManagedWorkRuntime.CallbackCompleted(item);
+        }
+        else
+        {
+            var promise = Pending(); var outer = Pending(); RecordAllocationCallback = Reenter;
+            if (operation == "schedule") ManagedWorkRuntime.Schedule(promise.Task);
+            else ManagedWorkRuntime.Unwrap(promise.Task, outer.Task);
+            Complete(promise);
+        }
+        Need(admissionFenced && context.Item2 == originalRoot); Finish();
     }
     private static void PreTicketMalformedReservationControl(bool queue, bool generation)
     {
@@ -712,6 +746,9 @@ internal static class StateControl
             case "record-allocation-retired-parent-is-fenced": RecordAllocationParentControl(false); break;
             case "record-allocation-result-parent-is-fenced": RecordAllocationParentControl(true); break;
             case "record-allocation-closing-root-is-fenced": RecordAllocationClosingControl(); break;
+            case "queue-allocation-finalization-is-fenced": AllocationFinalizationControl("queue"); break;
+            case "schedule-allocation-finalization-is-fenced": AllocationFinalizationControl("schedule"); break;
+            case "unwrap-allocation-finalization-is-fenced": AllocationFinalizationControl("unwrap"); break;
             case "pre-ticket-queue-malformed-generation-fences-drain": PreTicketMalformedReservationControl(true, true); break;
             case "pre-ticket-queue-malformed-id-fences-drain": PreTicketMalformedReservationControl(true, false); break;
             case "pre-ticket-task-malformed-generation-fences-drain": PreTicketMalformedReservationControl(false, true); break;

@@ -60,6 +60,8 @@ CASES = (
     'record-allocation-preserves-other-task', 'record-allocation-fences-result-owner',
     'schedule-allocation-reuses-same-task', 'record-allocation-retired-parent-is-fenced',
     'record-allocation-result-parent-is-fenced', 'record-allocation-closing-root-is-fenced',
+    'queue-allocation-finalization-is-fenced', 'schedule-allocation-finalization-is-fenced',
+    'unwrap-allocation-finalization-is-fenced',
     'pre-ticket-owner-rollback-refusal-preserves-error', 'pre-ticket-owner-rollback-unknown-preserves-error',
     'pre-ticket-queue-malformed-generation-fences-drain', 'pre-ticket-queue-malformed-id-fences-drain',
     'pre-ticket-task-malformed-generation-fences-drain', 'pre-ticket-task-malformed-id-fences-drain',

@@ -147,7 +147,7 @@ class ManagedWorkContractTests(unittest.TestCase):
             changed = copy.deepcopy(current); changed[field] = replacement
             with self.subTest(field=field, replacement=replacement), self.assertRaises(ValueError):
                 task_wait.validate_receipt(changed, finite=True, managed=True, aggregate=True)
-        for field in ('readiness', 'readinessControls', 'queueInsertionWitness', 'reservationAdmission'):
+        for field in ('readiness', 'readinessControls', 'queueInsertionWitness', 'reservationAdmission', 'admissionFinalization'):
             changed = copy.deepcopy(current); changed['managedAcceptedWork'][field] = 'unproved'
             with self.subTest(field=field), self.assertRaises(ValueError):
                 task_wait.validate_receipt(changed, finite=True, managed=True, aggregate=True)

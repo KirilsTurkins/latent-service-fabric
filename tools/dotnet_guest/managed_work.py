@@ -206,7 +206,8 @@ QUEUE_WITNESS_REWRITE_RECEIPT = {**QUEUE_FENCE_REWRITE_RECEIPT,
 # selected bridge has reported the original typed WIT refusal explicitly.
 PROVISIONAL_RESERVATION_REWRITE_RECEIPT = {**QUEUE_WITNESS_REWRITE_RECEIPT,
     'patch': 'latent.dotnet.managed-accepted-work.v6',
-    'reservationAdmission': 'provisional-task-and-queue-explicit-wit-refusal'}
+    'reservationAdmission': 'provisional-task-and-queue-explicit-wit-refusal',
+    'admissionFinalization': 'in-flight-count-before-allocation-and-join-drain-fence'}
 
 
 def validate_rewrite(value: dict) -> None:

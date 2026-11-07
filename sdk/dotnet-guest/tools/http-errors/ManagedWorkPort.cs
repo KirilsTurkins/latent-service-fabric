@@ -41,6 +41,7 @@ internal static class ManagedWorkPort
             queueAdmission = "per-call-pre-insertion-queue-rollback-otherwise-retain-matching-owners",
             queueInsertionWitness = "before-original-local-push-or-global-enqueue-call",
             reservationAdmission = "provisional-task-and-queue-explicit-wit-refusal",
+            admissionFinalization = "in-flight-count-before-allocation-and-join-drain-fence",
             completion = "after-original-finish-continuations",
             context = "private-key-original-immutable-map-original-notifications",
             contextSourceTypes = contextTypes,
