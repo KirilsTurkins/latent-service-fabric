@@ -1,1 +1,39 @@
-{"kind":"workflow","policy":{"concurrency":{"cancel-in-progress":false,"group":"rust-wasi-http-runtime-${{ github.ref }}"},"name":"Rust standard WASI HTTP backend","on":{"push":{"branches":["feat/rust-wasi-http-profile-20261021"],"paths":[".github/workflows/rust-wasi-http-runtime.yml","sdk/wasi-http-runtime/**","tools/rust_wasi_http_inputs.py","tools/toolchain-smoke/examples/rust_wasi_http_runtime.rs"]},"workflow_dispatch":null},"permissions":{"contents":"read"}},"requiredJobs":["standard-backend"],"reviewReason":"One bounded selected backend-only compiler job; no host engine, guest application, signing or runtime qualification. Existing workflows and required commands unchanged.","schemaVersion":"latent.ci.contracts.v1","workflow":".github/workflows/rust-wasi-http-runtime.yml"}
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "rust-wasi-http-runtime-${{ github.ref }}"
+    },
+    "name": "Rust standard WASI HTTP backend",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/rust-wasi-http-profile-20261021",
+          "diag/rust-http-combined-host-20261105"
+        ],
+        "paths": [
+          ".github/workflows/rust-wasi-http-runtime.yml",
+          "sdk/wasi-http-runtime/**",
+          "tools/rust_wasi_http_inputs.py",
+          "tools/toolchain-smoke/examples/rust_wasi_http_runtime.rs",
+          "tools/toolchain-smoke/examples/rust_http_pump_probe.rs",
+          "tools/toolchain-smoke/examples/rust_http_pump_control.rs",
+          "tools/toolchain-smoke/Cargo.toml",
+          "Cargo.toml",
+          "Cargo.lock"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "standard-backend"
+  ],
+  "reviewReason": "Compile and authenticate the selected HTTP adapter and execute its bounded callback, sibling and cancellation regressions; this does not qualify the signed application.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-wasi-http-runtime.yml"
+}
