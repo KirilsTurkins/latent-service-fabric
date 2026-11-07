@@ -194,10 +194,19 @@ QUEUE_FENCE_REWRITE_RECEIPT = {**PREFETCH_REWRITE_RECEIPT,
     'queueAdmission': 'before-original-enqueue-fault-retains-matching-owners'}
 
 
+# The v5 producer ties the definite pre-insertion queue rollback to one record;
+# task owners remain charged, and an attempted insertion fences matching records.
+QUEUE_WITNESS_REWRITE_RECEIPT = {**QUEUE_FENCE_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v5',
+    'queueAdmission': 'per-call-pre-insertion-queue-rollback-otherwise-retain-matching-owners',
+    'queueInsertionWitness': 'before-original-local-push-or-global-enqueue-call'}
+
+
 def validate_rewrite(value: dict) -> None:
     if type(value) is not dict:
         raise ValueError('dotnet-managed-work-rewrite-receipt')
-    expected_receipt = (QUEUE_FENCE_REWRITE_RECEIPT if value.get('patch') == QUEUE_FENCE_REWRITE_RECEIPT['patch']
+    expected_receipt = (QUEUE_WITNESS_REWRITE_RECEIPT if value.get('patch') == QUEUE_WITNESS_REWRITE_RECEIPT['patch']
+        else QUEUE_FENCE_REWRITE_RECEIPT if value.get('patch') == QUEUE_FENCE_REWRITE_RECEIPT['patch']
         else PREFETCH_REWRITE_RECEIPT if value.get('patch') == PREFETCH_REWRITE_RECEIPT['patch']
         else TIMER_REWRITE_RECEIPT if value.get('patch') == TIMER_REWRITE_RECEIPT['patch'] else REWRITE_RECEIPT)
     if (set(value) != set(expected_receipt)
