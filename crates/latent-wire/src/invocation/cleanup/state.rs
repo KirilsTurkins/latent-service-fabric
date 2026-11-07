@@ -280,7 +280,9 @@ impl CleanupSlot {
                     observed_at: handoff.into_std(),
                     slot: slot as u64,
                     generation,
-                    cause: DeadlineDiagnosticDecision::Accepted,
+                    // This records the transport cause, not cancellation of
+                    // the still-sponsored activation's execution authority.
+                    cause: DeadlineDiagnosticDecision::Cancelled,
                 },
             );
         }
