@@ -51,7 +51,7 @@ class ManagedTimerContractTests(unittest.TestCase):
 
     def test_producer_ports_are_explicit_and_each_causal_state_has_a_control(self):
         self.assertEqual(len(TIMER_CASES), len(set(TIMER_CASES)))
-        self.assertEqual(len(TIMER_CASES), 28)
+        self.assertEqual(len(TIMER_CASES), 37)
         source = (ROOT/'sdk/dotnet-guest/tests/fixtures/managed-timer-state-control/Program.cs').read_text(encoding='utf8')
         for name in TIMER_CASES:
             self.assertEqual(source.count('"'+name+'"'), 1)
