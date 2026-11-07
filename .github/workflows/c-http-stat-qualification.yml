@@ -12,6 +12,7 @@
         "tools/c_libfetch_stat_control.py",
         "tools/tests/test_c_http_stat_qualification.py",
         "tools/tests/fixtures/c-libfetch-stat/**",
+        "tools/tests/fixtures/c-libfetch-range/**",
         "tools/c_thread_runtime_node.py",
         "sdk/c-guest/runtime-fixtures/libfetch/stat-probe.c",
         "sdk/c-guest/src/libfetch/http.c"

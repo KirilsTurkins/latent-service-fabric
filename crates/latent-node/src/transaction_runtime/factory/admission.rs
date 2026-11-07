@@ -84,7 +84,7 @@ fn entity_queue_error(failure: super::super::entity_queue::QueueError) -> Platfo
             (Code::ResourceExhausted, "entity-queue-backpressure")
         }
         QueueError::DuplicateCapacity => (Code::ResourceExhausted, "entity-duplicate-backpressure"),
-        QueueError::OriginalSourceChanged => (Code::Unavailable, "entity-original-owner-ended"),
+        QueueError::OriginalOwnerEnded => (Code::Unavailable, "entity-original-owner-ended"),
         _ => (Code::Unavailable, "entity-queue-unavailable"),
     };
     error(code, message)
@@ -372,10 +372,17 @@ impl NativeTransactionAdmission {
         let current_retention = Arc::clone(&retained);
         let current = Arc::new(move || current_retention.check_current().is_ok());
         let retained_bytes = retained.total_native_bytes()?;
-        let command = probe.map(|probe| (probe.identity, probe.fingerprint, selected_source));
+        let command = probe.map(|probe| {
+            (
+                probe.identity,
+                probe.fingerprint,
+                selected_source,
+                self.shared_owner.clone(),
+            )
+        });
         let wait = async {
             let mut duplicate_authorized = false;
-            let mut first_source = None;
+            let mut first_owner = None;
             loop {
                 // Each waiter and its queue objects are prepaid from the
                 // original ingress; reacquire after the authorization read.
@@ -398,25 +405,27 @@ impl NativeTransactionAdmission {
                         deadline,
                         current.clone(),
                         permit,
-                        command,
+                        command.clone(),
                         duplicate_authorized,
-                        first_source,
+                        first_owner,
                     )
                     .await;
-                if let Err(super::super::entity_queue::QueueError::DuplicateNeedsAuthorization(
+                if let Err(super::super::entity_queue::QueueError::DuplicateNeedsAuthorization {
                     source,
-                )) = &result
+                    owner,
+                }) = &result
                 {
                     let source = *source;
+                    let owner = *owner;
                     self.authorize_entity_duplicate(selection, envelope, budget)
                         .await?;
-                    first_source = Some(source);
+                    first_owner = Some((owner, source));
                     duplicate_authorized = true;
                     continue;
                 }
                 if matches!(
                     result,
-                    Err(super::super::entity_queue::QueueError::OriginalSourceChanged)
+                    Err(super::super::entity_queue::QueueError::OriginalOwnerEnded)
                 ) {
                     // Recover a durable claim if it became visible just before
                     // the original lane retired; otherwise refuse takeover.

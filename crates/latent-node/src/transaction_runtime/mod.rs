@@ -11,6 +11,7 @@ mod initialization;
 mod io;
 mod observation;
 mod response;
+mod shared_owner;
 mod staging;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod tests;
@@ -28,6 +29,7 @@ pub use factory::{
     TransactionOutcomeValidator, TransactionRetrySelection, TransactionSelection,
 };
 pub use response::{OwnedTransactionCompletion, TransactionResponseAuthority};
+pub use shared_owner::SharedCommandOwner;
 
 use latent_commit::atomic::{
     AdmittedCommand, CapturedIntent, CommandTime, IntentCaptureContext, PhysicalAttemptWork,

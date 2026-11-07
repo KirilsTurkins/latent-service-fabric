@@ -1,6 +1,9 @@
 //! Cooperative bridge from accepted commands to the existing scheduler.
 use std::collections::BTreeMap;
-use std::sync::{Arc, Mutex};
+use std::sync::{
+    atomic::{AtomicU64, Ordering},
+    Arc, Mutex,
+};
 use std::task::{Wake, Waker};
 use std::time::{Duration, Instant};
 
@@ -31,9 +34,9 @@ pub(super) enum QueueError {
     Expired,
     Unavailable,
     DuplicateConflict,
-    DuplicateNeedsAuthorization([u8; 32]),
+    DuplicateNeedsAuthorization { source: [u8; 32], owner: u64 },
     DuplicateCapacity,
-    OriginalSourceChanged,
+    OriginalOwnerEnded,
 }
 
 type CommandIdentity = latent_commit::atomic::Identity;
@@ -43,11 +46,14 @@ type DuplicateWaiters = Arc<Mutex<BTreeMap<EntityScope, usize>>>;
 struct CommandEntry {
     fingerprint: CommandIdentity,
     source: [u8; 32],
+    generation: u64,
+    owner: Option<Arc<super::SharedCommandOwner>>,
 }
 
 struct DuplicateWaiter {
     waiters: DuplicateWaiters,
     scope: EntityScope,
+    _sponsor: Option<super::shared_owner::SharedCommandWaiter>,
 }
 impl Drop for DuplicateWaiter {
     fn drop(&mut self) {
@@ -107,6 +113,7 @@ pub(super) struct EntityQueue {
     clock: Arc<dyn ActivationClock>,
     commands: Commands,
     maximum_commands: usize,
+    next_command_generation: AtomicU64,
     duplicate_waiters: DuplicateWaiters,
     maximum_entity_waiters: usize,
 }
@@ -149,6 +156,7 @@ impl EntityQueue {
             clock,
             commands: Arc::new(Mutex::new(BTreeMap::new())),
             maximum_commands: maximum_turn.saturating_mul(2),
+            next_command_generation: AtomicU64::new(1),
             duplicate_waiters: Arc::new(Mutex::new(BTreeMap::new())),
             maximum_entity_waiters,
         })
@@ -200,9 +208,14 @@ impl EntityQueue {
         deadline: Instant,
         current: Arc<dyn Fn() -> bool + Send + Sync>,
         permit: NativeBufferPermit,
-        command: Option<(CommandIdentity, CommandIdentity, [u8; 32])>,
+        command: Option<(
+            CommandIdentity,
+            CommandIdentity,
+            [u8; 32],
+            Option<Arc<super::SharedCommandOwner>>,
+        )>,
         duplicate_authorized: bool,
-        mut first_source: Option<[u8; 32]>,
+        mut first_owner: Option<(u64, [u8; 32])>,
     ) -> Result<Physical, QueueError> {
         // Cover the queue's own objects and the lane's bounded copies before
         // building the channel or inserting the request. The trusted caller
@@ -231,67 +244,92 @@ impl EntityQueue {
             return Err(QueueError::Unavailable);
         }
         let mut changes = self.signal.subscribe();
+        let mut duplicate_waiter = None;
         let registration = loop {
-            let Some((identity, fingerprint, source)) = &command else {
+            let Some((identity, fingerprint, source, owner)) = &command else {
                 break None;
             };
-            let next = {
+            let (next, sponsor) = {
                 let mut commands = self.commands.lock().map_err(|_| QueueError::Unavailable)?;
                 if let Some(existing) = commands.get(identity) {
                     if !duplicate_authorized {
-                        return Err(QueueError::DuplicateNeedsAuthorization(existing.source));
+                        return Err(QueueError::DuplicateNeedsAuthorization {
+                            source: existing.source,
+                            owner: existing.generation,
+                        });
                     }
-                    if first_source.is_some_and(|first| first != existing.source) {
-                        return Err(QueueError::OriginalSourceChanged);
+                    if first_owner
+                        .is_some_and(|first| first != (existing.generation, existing.source))
+                    {
+                        return Err(QueueError::OriginalOwnerEnded);
                     }
                     if existing.fingerprint != *fingerprint {
                         return Err(QueueError::DuplicateConflict);
                     }
-                    first_source = Some(existing.source);
-                    None
+                    first_owner = Some((existing.generation, existing.source));
+                    (None, existing.owner.clone())
                 } else {
-                    if first_source.is_some_and(|first| first != *source) {
-                        return Err(QueueError::OriginalSourceChanged);
+                    if first_owner.is_some() {
+                        return Err(QueueError::OriginalOwnerEnded);
                     }
                     if commands.len() >= self.maximum_commands {
                         return Err(QueueError::Unavailable);
                     }
+                    let generation = self
+                        .next_command_generation
+                        .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
+                            value.checked_add(1)
+                        })
+                        .map_err(|_| QueueError::Unavailable)?;
                     let entry = Arc::new(CommandEntry {
                         fingerprint: *fingerprint,
                         source: *source,
+                        generation,
+                        owner: owner.clone(),
                     });
                     commands.insert(*identity, Arc::clone(&entry));
-                    Some(Arc::new(CommandRegistration {
-                        commands: Arc::clone(&self.commands),
-                        identity: *identity,
-                        entry,
-                        signal: self.signal.clone(),
-                    }))
+                    (
+                        Some(Arc::new(CommandRegistration {
+                            commands: Arc::clone(&self.commands),
+                            identity: *identity,
+                            entry,
+                            signal: self.signal.clone(),
+                        })),
+                        None,
+                    )
                 }
             };
             if let Some(next) = next {
+                drop(duplicate_waiter.take());
                 break Some(next);
             }
-            let waiter = {
+            if duplicate_waiter.is_none() {
                 let mut waiters = self
                     .duplicate_waiters
                     .lock()
                     .map_err(|_| QueueError::Unavailable)?;
-                let count = waiters.entry(scope.clone()).or_default();
-                if *count >= self.maximum_entity_waiters {
+                if waiters.get(&scope).copied().unwrap_or(0) >= self.maximum_entity_waiters {
                     return Err(QueueError::DuplicateCapacity);
                 }
-                *count += 1;
-                DuplicateWaiter {
+                let sponsor = match sponsor {
+                    Some(owner) => Some(
+                        owner
+                            .try_subscribe()
+                            .ok_or(QueueError::OriginalOwnerEnded)?,
+                    ),
+                    None => None,
+                };
+                *waiters.entry(scope.clone()).or_default() += 1;
+                duplicate_waiter = Some(DuplicateWaiter {
                     waiters: Arc::clone(&self.duplicate_waiters),
                     scope: scope.clone(),
-                }
-            };
+                    _sponsor: sponsor,
+                });
+            }
             tokio::select! {
                 result = changes.changed() => if result.is_err() { return Err(QueueError::Unavailable); },
                 () = wait_until(deadline, self.clock.as_ref()) => return Err(QueueError::Expired),
             }
-            drop(waiter);
         };
         let (send, mut receive) = oneshot::channel();
         let pending = Arc::new(Pending {

@@ -200,6 +200,7 @@ pub struct NativeTransactionAdmission {
     ingress: Mutex<Option<NativeReservation>>,
     validator: Option<Arc<dyn TransactionOutcomeValidator>>,
     cancellation_abort: Mutex<Option<Arc<super::cancellation::CancellationAbortSlot>>>,
+    shared_owner: Option<Arc<super::SharedCommandOwner>>,
 }
 impl NativeTransactionAdmission {
     pub fn new(
@@ -218,6 +219,7 @@ impl NativeTransactionAdmission {
             ingress: Mutex::new(None),
             validator: None,
             cancellation_abort: Mutex::new(None),
+            shared_owner: None,
         })
     }
 
@@ -233,6 +235,14 @@ impl NativeTransactionAdmission {
         let mut admission = Self::new(owners, installation, selection)?;
         admission.ingress = Mutex::new(Some(native));
         Ok(admission)
+    }
+
+    /// Bind the already-reserved transport owner for an authenticated command.
+    /// This adds no deadline, execution authority, worker, or native reservation.
+    #[must_use]
+    pub fn with_shared_command_owner(mut self, owner: Arc<super::SharedCommandOwner>) -> Self {
+        self.shared_owner = Some(owner);
+        self
     }
 
     /// Require typed prepared input and validate the promised result before
