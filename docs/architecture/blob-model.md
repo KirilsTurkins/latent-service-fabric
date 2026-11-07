@@ -57,6 +57,8 @@ The local provider also exposes a tenant-scoped, bounded reference inventory for
 trusted recovery owners. Each cursor and returned page retains a native work
 slot; pages visit at most 64 physical entries and become stale after publication,
 release or reclamation changes. The host must authorize the tenant separately.
+Pagination observations remain host-internal because page boundaries can reflect
+entries owned by other tenants.
 This inventory describes references only: an absent reference or a completed
 walk grants neither blob access nor permission to reclaim an orphan. A future
 reconciliation owner must still establish current durable closure and physical

@@ -23,6 +23,8 @@ impl LocalReferencePage {
 /// A bounded physical inventory bound to its original local owner, tenant and
 /// mutation generation. The trusted host must authorize the tenant separately.
 /// Holding it consumes an existing native work slot; it grants no blob access.
+/// Page boundaries can reflect other tenants' entries, so neither the cursor
+/// nor its pagination observations may be exposed to an untrusted caller.
 pub struct LocalReferenceInventory {
     work: Work,
     tenant: TenantId,
