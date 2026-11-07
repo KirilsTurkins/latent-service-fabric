@@ -1,5 +1,5 @@
 {
-  "name": "C ordinary HTTP Stat qualification",
+  "name": "C ordinary HTTP Stat and Range qualification",
   "on": {
     "workflow_dispatch": null,
     "push": {
@@ -14,6 +14,7 @@
         "tools/tests/fixtures/c-libfetch-stat/**",
         "tools/tests/fixtures/c-libfetch-range/**",
         "tools/c_thread_runtime_node.py",
+        "tools/standard_http/**",
         "sdk/c-guest/runtime-fixtures/libfetch/stat-probe.c",
         "sdk/c-guest/src/libfetch/http.c"
       ]
@@ -38,7 +39,7 @@
   },
   "jobs": {
     "ordinary-stat": {
-      "name": "Four signed ordinary C HEAD metadata cells",
+      "name": "Seven signed ordinary C HEAD and Range cells",
       "runs-on": "ubuntu-24.04",
       "timeout-minutes": 25,
       "steps": [
@@ -96,7 +97,7 @@
           "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/guest-tools\"\necho \"$RUNNER_TEMP/guest-tools\" >> \"$GITHUB_PATH\"\nsudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
         },
         {
-          "name": "Build fresh ordinary products and execute four signed libfetch Stat cells",
+          "name": "Build fresh ordinary products and execute seven signed libfetch HEAD and Range cells",
           "run": "python3 -B -m unittest tools.tests.test_c_http_stat_qualification\npython3 -B tools/c_libfetch_stat_control.py\npython3 -B tools/c_http_stat_qualification.py --zig \"$(command -v zig)\" --wit-bindgen \"$(command -v wit-bindgen)\" --wasm-tools \"$(command -v wasm-tools)\" --output \"$RUNNER_TEMP/c-http-stat\""
         },
         {
