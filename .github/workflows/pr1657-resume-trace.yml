@@ -1,0 +1,82 @@
+name: PR 1657 completion delivery diagnosis
+on:
+  push:
+    branches: ['diag/pr1657-resume-20261107']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  trace:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          save-if: false
+      - name: Install bounded source-explicit diagnostic
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B .github/pr1657_resume_trace.py
+      - name: Retrieve original compiler material
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/rust_combined_http_materials.py --output "$RUNNER_TEMP/rust-combined-original"
+      - name: Execute the unchanged signed programme
+        run: python3 -B tools/qualify_rust_thread_http_combined.py --compiler-materials "$RUNNER_TEMP/rust-combined-original" --output "$RUNNER_TEMP/rust-combined-signed" --source-commit "$(git rev-parse HEAD)"
+      - name: Retain bounded scheduler and HTTP observations
+        if: always()
+        run: |
+          python3 -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP']) / 'rust-combined-signed'
+          for name in ('node/resume-stage-trace.json', 'node/completion-stage-trace.json', 'node/rust-thread-http-terminal.json'):
+              path = root / name
+              if path.is_file():
+                  assert path.stat().st_size < 256 * 1024
+                  value = json.loads(path.read_bytes())
+                  if name.endswith('terminal.json'):
+                      response = value.get('response', {})
+                      data = response.get('data', {})
+                      value = {'exitCode': value.get('exitCode'), 'outcomeKnown': response.get('outcomeKnown'), 'terminalState': data.get('terminalState'), 'consumption': data.get('consumption')}
+                  print(name + '\n' + json.dumps(value, indent=2))
+          failure = root / 'FAILED.json'
+          if failure.is_file():
+              result = json.loads(failure.read_bytes())
+              print('failure-stage', result.get('stage'))
+              if result.get('stage') == 'build-current-feature-selected-host':
+                  for path in sorted((root / 'commands').glob('*stderr*')):
+                      text = path.read_text(errors='replace')
+                      print(text[-24000:])
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        if: always()
+        with:
+          name: pr1657-resume-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/pr1657-completion-trace/**
+            ${{ runner.temp }}/rust-combined-signed/**
+          retention-days: 3
+          if-no-files-found: error
+          compression-level: 6
