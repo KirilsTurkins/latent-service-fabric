@@ -258,6 +258,8 @@ public static partial class ManagedWorkRuntime
         }
         if (index < 0) throw new InvalidOperationException("managed-work-queue-record-limit");
         var owner = Find(item);
+        if (owner is { Timer: true, Active: false })
+            throw new InvalidOperationException("managed-timer-settlement-uncertain");
         bool created = false;
         if (owner is null)
         {
