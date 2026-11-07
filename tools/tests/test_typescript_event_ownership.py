@@ -162,6 +162,17 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
         changed_dispatch = changed_dispatch.replace(
             b'  if (!invoked) return false; // preserve the original pending exception\n', b'', 1)
         self.assertEqual(changed_dispatch, original_dispatch)
+        invoke_start = b'bool EventTarget::invoke_listeners('
+        invoke_end = b'// https://dom.spec.whatwg.org/#concept-event-listener-inner-invoke'
+        original_invoke = before[name][before[name].index(invoke_start):before[name].index(invoke_end)]
+        changed_invoke = derived[name][derived[name].index(invoke_start):derived[name].index(invoke_end)]
+        addition = (b'  // The owner outlives the rooted vector and its backing allocation.\n'
+                    b'  lsf::typescript::activation::NativeObjectFrameLease clone_owner;\n')
+        admission = (b'  if (list->length() > list_clone.capacity() &&\n'
+                     b'      !lsf::typescript::activation::admit_native_object(cx, clone_owner.lease())) return false;\n')
+        self.assertEqual(changed_invoke.count(addition), 1)
+        self.assertEqual(changed_invoke.count(admission), 1)
+        self.assertEqual(changed_invoke.replace(addition, b'', 1).replace(admission, b'', 1), original_invoke)
         abort = (FIXTURES/'original-abort-signal.cpp').read_bytes()
         begin = b'bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason)'
         ending = b'JSObject *AbortSignal::create('
@@ -174,6 +185,8 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
         self.assertFalse(receipt['supportedAsyncProfile'])
         self.assertFalse(receipt['signedLSFComponentQualified'])
         self.assertEqual(receipt['nativeGraphRetirement'], 'destructor-then-collection-end-then-safe-host-ack')
+        self.assertEqual(receipt['dispatchCloneRetirement'], 'frame-destructor-then-safe-host-ack')
+        self.assertEqual(receipt['dispatchCloneOwner'], 'one-original-native-count-not-byte-accurate')
 
     def test_global_listener_graph_is_lazy_and_not_frozen_during_compiler_snapshot(self):
         derived, _ = derive()
@@ -226,6 +239,30 @@ class EventPublicationControls(unittest.TestCase):
         result = subprocess.run(args, capture_output=True, timeout=60)
         if result.returncode or len(result.stdout) + len(result.stderr) > 65536:
             raise AssertionError((result.stdout + result.stderr)[:65536].decode(errors='replace'))
+
+        invoke_start = b'bool EventTarget::invoke_listeners('
+        invoke_end = b'// https://dom.spec.whatwg.org/#concept-event-listener-inner-invoke'
+        template = (root/'tools/tests/fixtures/typescript_event_clone_ownership.cpp').read_bytes()
+        marker = b'// INSERT_EMITTED_INVOKE_LISTENERS'
+        if template.count(marker) != 1:
+            raise AssertionError('unique invoke-listeners insertion point required')
+        original = originals()['StarlingMonkey/builtins/web/event/event-target.cpp']
+        for label, input_source in (('clone_selected', selected), ('clone_original', original)):
+            emitted = input_source[input_source.index(invoke_start):input_source.index(invoke_end)]
+            clone_source = output/(label+'.cpp')
+            clone_source.write_bytes(template.replace(marker, emitted))
+            binary = output/(label+'.exe' if os.name == 'nt' else label)
+            if Path(compiler).stem.lower() == 'cl':
+                args = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX',
+                        '/I'+str(root/'sdk/typescript-guest/activation'), str(clone_source),
+                        '/Fe:'+str(binary), '/Fo:'+str(output/(label+'.obj'))]
+            else:
+                args = [compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror',
+                        '-I'+str(root/'sdk/typescript-guest/activation'), str(clone_source), '-o', str(binary)]
+            result = subprocess.run(args, capture_output=True, timeout=60)
+            if result.returncode or len(result.stdout) + len(result.stderr) > 65536:
+                raise AssertionError((result.stdout + result.stderr)[:65536].decode(errors='replace'))
+            setattr(cls, label+'_binary', binary)
         if not cls.binary.is_file() or cls.binary.stat().st_size > 4*1024**2:
             raise AssertionError('finite event publication control required')
         inner = selected.index(b'bool EventTarget::inner_invoke(')
@@ -319,6 +356,23 @@ class EventPublicationControls(unittest.TestCase):
                     self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
                     self.assertEqual(json.loads(result.stdout),
                                      {'case': case, 'passed': True, 'engineQualified': False})
+
+    def test_dispatch_clone_owns_each_heap_frame_and_retains_original_failure(self):
+        for case in ('inline', 'heap', 'refusal', 'reserve-failure', 'nested', 'nested-refusal',
+                     'repeated', 'gc-object-not-retired', 'callback-failure', 'ack-refusal'):
+            with self.subTest(case=case):
+                result = subprocess.run([str(self.clone_selected_binary), case], capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
+                self.assertEqual(json.loads(result.stdout),
+                                 {'case': case, 'passed': True, 'engineQualified': False})
+
+    def test_pinned_original_reproduces_unowned_heap_clone_and_nested_refusal_gap(self):
+        for case in ('heap', 'refusal', 'nested-refusal'):
+            with self.subTest(case=case):
+                result = subprocess.run([str(self.clone_original_binary), case], capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 1, (result.stdout + result.stderr)[:65536])
+                self.assertEqual(json.loads(result.stdout),
+                                 {'case': case, 'passed': False, 'engineQualified': False})
 
 
 if __name__ == '__main__':

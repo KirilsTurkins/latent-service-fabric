@@ -179,6 +179,17 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
   }
 ''', 'listener-and-abort-publication-after-admission')
     source = replace_once(source,
+        b'  auto *list = listeners(target);\n'
+        b'  JS::RootedVector<ListenerRef> list_clone(cx);\n'
+        b'  if (!list_clone.reserve(list->length())) {\n',
+        b'  auto *list = listeners(target);\n'
+        b'  // The owner outlives the rooted vector and its backing allocation.\n'
+        b'  lsf::typescript::activation::NativeObjectFrameLease clone_owner;\n'
+        b'  JS::RootedVector<ListenerRef> list_clone(cx);\n'
+        b'  if (list->length() > list_clone.capacity() &&\n'
+        b'      !lsf::typescript::activation::admit_native_object(cx, clone_owner.lease())) return false;\n'
+        b'  if (!list_clone.reserve(list->length())) {\n', 'dispatch-clone-owner-before-vector-growth')
+    source = replace_once(source,
         b'    if (Event::has_flag(event, EventFlag::StopImmediatePropagation)) {\n'
         b'      return true;\n'
         b'    }\n',
@@ -349,5 +360,8 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         'checkedTimeoutSourceSha256':hashlib.sha256(timeout_source).hexdigest(),
         'derivedSource':identity(result),'nativeGraphAdmission':'before-physical-allocation',
         'nativeGraphRetirement':'destructor-then-collection-end-then-safe-host-ack',
+        'dispatchCloneAdmission':'before-backing-vector-growth',
+        'dispatchCloneRetirement':'frame-destructor-then-safe-host-ack',
+        'dispatchCloneOwner':'one-original-native-count-not-byte-accurate',
         'hostImportsDuringGC':False,'originalAPIAndListenerAlgorithmsRetained':True,
         'snapshotMutableGraphs':'denied','supportedAsyncProfile':False,'signedLSFComponentQualified':False}

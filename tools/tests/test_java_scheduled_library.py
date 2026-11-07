@@ -98,6 +98,58 @@ class ScheduledLibraryOwnership(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'exclusive-fixture-selector'):
                 owner.qualify(Path('absent'), revision)
 
+        # Both routes reach their unchanged owned-output boundary only for the
+        # exact push, workflow path and commit; reject mixed or stale identities.
+        environment.pop('LSF_JAVA_WORKER_LIBRARIES_FIXTURE')
+        for branch, workflow in ((owner.BRANCH, owner.WORKFLOW),
+                                 (owner.DEVELOPMENT_BRANCH, owner.DEVELOPMENT_WORKFLOW)):
+            selected = {**environment, 'GITHUB_REF_NAME': branch,
+                'GITHUB_WORKFLOW_REF': owner.identities.REPOSITORY + '/' + workflow + '@refs/heads/' + branch}
+            with self.subTest(branch=branch), patch.dict(os.environ, selected, clear=True), \
+                    patch.object(owner.sys, 'platform', 'linux'), \
+                    patch.object(owner, 'fresh', side_effect=RuntimeError('identity accepted')) as fresh:
+                with self.assertRaisesRegex(RuntimeError, 'identity accepted'):
+                    owner.qualify(Path('absent'), revision)
+                fresh.assert_called_once()
+        development = {**environment, 'GITHUB_REF_NAME': owner.DEVELOPMENT_BRANCH,
+            'GITHUB_WORKFLOW_REF': owner.identities.REPOSITORY + '/' + owner.DEVELOPMENT_WORKFLOW
+                + '@refs/heads/' + owner.DEVELOPMENT_BRANCH}
+        for key, value in (('GITHUB_EVENT_NAME', 'pull_request'), ('GITHUB_REPOSITORY', 'elsewhere/repo'),
+                           ('GITHUB_REF_NAME', 'release'), ('GITHUB_SHA', 'b' * 40),
+                           ('GITHUB_WORKFLOW_SHA', 'b' * 40), ('GITHUB_WORKSPACE', 'elsewhere'),
+                           ('GITHUB_WORKFLOW_REF', owner.identities.REPOSITORY + '/' + owner.WORKFLOW
+                               + '@refs/heads/' + owner.DEVELOPMENT_BRANCH)):
+            with self.subTest(key=key), patch.dict(os.environ, {**development, key: value}, clear=True), \
+                    patch.object(owner.sys, 'platform', 'linux'), \
+                    patch.object(owner, 'fresh', side_effect=AssertionError('output opened')):
+                with self.assertRaisesRegex(ValueError, 'fixed-hosted-push'):
+                    owner.qualify(Path('absent'), revision)
+
+        from tools import ci_lane_inventory as lanes
+        caller = lanes.structural_workflow(lanes.workflow_model(
+            (owner.ROOT / owner.DEVELOPMENT_WORKFLOW).read_text(encoding='utf-8')))
+        called = lanes.structural_workflow(lanes.workflow_model(
+            (owner.ROOT / owner.WORKFLOW).read_text(encoding='utf-8')))
+        self.assertEqual(caller['on']['push']['branches'], ['development'])
+        self.assertEqual(set(caller['on']['push']['paths']), set(called['on']['push']['paths']) | {
+            owner.DEVELOPMENT_WORKFLOW,
+            'crates/latent-core/src/activation_runtime.rs', 'crates/latent-core/src/activation_runtime/**',
+            'crates/latent-wasmtime/src/**', 'crates/latent-wasmtime/tests/local_service/**',
+            'crates/latent-wasmtime/tests/local_service.rs', 'crates/latent-activation/src/**',
+            'crates/latent-executor/src/**', 'crates/latent-node/src/**', 'crates/latent-scheduler/src/**',
+            'wit/platform/**', 'Cargo.toml', 'Cargo.lock', '.cargo/managed-guest.toml',
+            'tools/toolchain.toml', 'tools/data/java-compiler-profile.json'})
+        self.assertEqual(caller['permissions'], {'contents': 'read', 'actions': 'read'})
+        self.assertEqual(caller['jobs'], {'scheduled-library': {'uses': './' + owner.WORKFLOW}})
+        self.assertIn('workflow_call', called['on'])
+        self.assertEqual(called['on']['push']['branches'], [owner.BRANCH, owner.SHUTDOWN_BRANCH, owner.FUTURE_BRANCH])
+        job = called['jobs']['scheduled-library']
+        self.assertIn(owner.DEVELOPMENT_WORKFLOW + '@refs/heads/development', job['if'])
+        self.assertEqual(job['timeout-minutes'],
+            "${{ (github.ref_name == '" + owner.BRANCH + "' || github.ref_name == 'development') && 45 || 25 }}")
+        self.assertEqual([step['if'] for step in job['steps'] if step.get('name', '').startswith('Capture and compile')],
+            ["github.ref_name == '" + owner.BRANCH + "' || github.ref_name == 'development'"])
+
 
 class TaskShutdownNowOwnership(unittest.TestCase):
     def test_four_actual_calls_require_current_ids_strict_budgets_and_physical_idle(self):
@@ -175,7 +227,7 @@ class TaskShutdownNowSourceCapture(unittest.TestCase):
                          (16384, 4 * 1024**2, 128 * 1024**2))
         native = [f'tools/capture-{index:04d}.py' for index in range(100)]
         supplemental = set(owner.observed.EXTRA_SOURCES) | {owner.workers.WORKFLOW, owner.WORKFLOW,
-            'sdk/java-guest/fibers/conformance/scheduled-library/Capsule.java'}
+            owner.DEVELOPMENT_WORKFLOW, 'sdk/java-guest/fibers/conformance/scheduled-library/Capsule.java'}
         calls, changed = [], {}
         allowed = {*native, *supplemental, owner.observed.WORKFLOW}
         def command(stage, *argv, max_output_bytes):
@@ -199,7 +251,7 @@ class TaskShutdownNowSourceCapture(unittest.TestCase):
             before = owner.shutdown_sources(commands)
             self.assertEqual(set(before['native']), set(native))
             self.assertEqual(set(before['supplementary']), supplemental)
-            self.assertEqual((len(before['native']), len(before['supplementary']), len(calls)), (100, 17, 1))
+            self.assertEqual((len(before['native']), len(before['supplementary']), len(calls)), (100, 18, 1))
             self.assertEqual(owner.shutdown_sources(commands, before['native']), before)
             self.assertEqual(len(calls), 1)
             for capture, workflow in ((owner.workers.sources, owner.workers.WORKFLOW),

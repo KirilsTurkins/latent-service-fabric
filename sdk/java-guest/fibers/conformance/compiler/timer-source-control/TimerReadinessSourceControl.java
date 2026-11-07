@@ -206,6 +206,63 @@ public final class TimerReadinessSourceControl {
         set("poisoned", false); set("entered", true);
         pool.retire();
     }
+    private static void uncertainQueuedOwnersPoison() throws Exception {
+        int original = owners(), count = 16;
+        Activation.Lease[] leases = new Activation.Lease[count];
+        for (int i = 0; i < count; i++)
+            leases[i] = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
+        require(owners() == original + count, "queued-retention-admitted-before-failure");
+        var ready = new java.util.concurrent.CountDownLatch(count);
+        var start = new java.util.concurrent.CountDownLatch(1);
+        Thread[] workers = new Thread[count];
+        for (int i = 0; i < count; i++) {
+            Activation.Lease lease = leases[i];
+            workers[i] = new Thread(() -> {
+                ready.countDown();
+                try { start.await(); } catch (InterruptedException error) { throw new AssertionError(error); }
+                Activation.fenceUncertainQueuedWorkSettlement(lease);
+            });
+            workers[i].start();
+        }
+        require(ready.await(5, java.util.concurrent.TimeUnit.SECONDS), "queued-retention-ready");
+        start.countDown();
+        for (Thread worker : workers) { worker.join(5000); require(!worker.isAlive(), "queued-retention-joined"); }
+        @SuppressWarnings("unchecked") AtomicReference<Activation.Lease> head =
+            (AtomicReference<Activation.Lease>)get("failedQueuedOwners");
+        var next = field(Activation.Lease.class, "nextFailedQueued");
+        var seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<Activation.Lease, Boolean>());
+        for (Activation.Lease cursor = head.get(); cursor != null; cursor = (Activation.Lease)next.get(cursor))
+            require(seen.add(cursor) && seen.size() <= count, "queued-retention-distinct-acyclic");
+        for (Activation.Lease lease : leases) require(seen.contains(lease), "queued-retention-original-owner-rooted");
+        require(seen.size() == count && (boolean)get("poisoned"), "queued-retention-all-preexisting-owners");
+        for (int i = 0; i < 8; i++) {
+            try { Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork); throw new AssertionError("queued-owner-after-poison"); }
+            catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-runtime-poisoned-store"), "queued-admission-refused"); }
+        }
+        try { Activation.starting(new Thread()); throw new AssertionError("task-owner-after-poison"); }
+        catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-runtime-poisoned-store"), "task-admission-refused"); }
+        try { Activation.timer(1); throw new AssertionError("timer-owner-after-poison"); }
+        catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-runtime-poisoned-store"), "timer-admission-refused"); }
+        try { Activation.waitFor(1); throw new AssertionError("wait-owner-after-poison"); }
+        catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-runtime-poisoned-store"), "wait-admission-refused"); }
+        require(owners() == original + count && head.get() != null, "poison-does-not-admit-or-settle-owners");
+        var completion = Activation.class.getDeclaredMethod("requireHealthyCompletion"); completion.setAccessible(true);
+        try { completion.invoke(null); throw new AssertionError("uncertain-queued-completed"); }
+        catch (java.lang.reflect.InvocationTargetException expected) {
+            require(expected.getCause() instanceof IllegalStateException
+                && expected.getCause().getMessage().equals("activation-runtime-owner-settlement-uncertain"), "uncertain-queued-completion-refused");
+        }
+        var finish = Activation.class.getDeclaredMethod("finishInvocation"); finish.setAccessible(true); finish.invoke(null);
+        require(!(boolean)get("entered") && head.get() != null && owners() == original + count,
+            "uncertain-queued-store-retains-owners");
+        try { Activation.invoke(0, null, 0); throw new AssertionError("uncertain-queued-store-reentered"); }
+        catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-runtime-poisoned-store"), "uncertain-queued-reentry-refused"); }
+        // Private source-control teardown simulates destroying the poisoned Store.
+        head.set(null);
+        for (Activation.Lease lease : leases) lease.close();
+        set("poisoned", false); set("entered", true);
+        require(owners() == original, "queued-retention-control-cleanup");
+    }
     private static void uncertainResultPoisons() throws Exception {
         Object root = get("root"), threads = get("threads"), pools = get("pools");
         int originalOwners = owners();
@@ -216,7 +273,7 @@ public final class TimerReadinessSourceControl {
         try { completion.invoke(null); throw new AssertionError("uncertain-result-completed"); }
         catch (java.lang.reflect.InvocationTargetException expected) {
             require(expected.getCause() instanceof IllegalStateException
-                && expected.getCause().getMessage().equals("activation-runtime-result-settlement-uncertain"), "uncertain-result-completion-refused");
+                && expected.getCause().getMessage().equals("activation-runtime-owner-settlement-uncertain"), "uncertain-result-completion-refused");
         }
         var finish = Activation.class.getDeclaredMethod("finishInvocation"); finish.setAccessible(true); finish.invoke(null);
         require((boolean)get("poisoned") && !(boolean)get("entered") && get("root") == root
@@ -339,9 +396,10 @@ public final class TimerReadinessSourceControl {
         require(Monitors.absoluteSleepDeadline(Long.MAX_VALUE - 1, 2) == Long.MAX_VALUE, "pure-saturation-preserved");
         managedStartRollback();
         poolRetirement();
+        uncertainQueuedOwnersPoison();
         uncertainResultPoisons();
         failedStartedWorkerPoisons();
         failedInsertionsAndPoison();
-        System.out.println("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence");
+        System.out.println("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence");
     }
 }

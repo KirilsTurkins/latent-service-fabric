@@ -48,6 +48,7 @@ def source_domains(commands, selection, names=None):
         'workers': set(EXTRA_SOURCES) | {'.github/workflows/java-published-workers.yml'},
         'scheduled': set(EXTRA_SOURCES) | {'.github/workflows/java-published-workers.yml',
             '.github/workflows/java-scheduled-library.yml',
+            '.github/workflows/java-scheduled-development.yml',
             'sdk/java-guest/fibers/conformance/scheduled-library/Capsule.java'},
     }
     need(selection in domains, 'source-domain')
@@ -66,7 +67,7 @@ def source_domains(commands, selection, names=None):
         any(name == root or name.startswith(root + '/') for root in SOURCE_ALLOWLIST)
         for name in names), 'native-source-count-or-root')
     supplemental = domains[selection]
-    need(len(supplemental) == (17 if selection == 'scheduled' else 15)
+    need(len(supplemental) == (18 if selection == 'scheduled' else 15)
         and not names.intersection(supplemental), 'fixed-supplement')
     def capture(selected, maximum, label):
         result, total = {}, 0

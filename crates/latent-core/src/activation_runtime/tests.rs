@@ -79,6 +79,46 @@ fn lazy_path_allocates_no_records_and_accepted_owners_share_finite_limits() {
 }
 
 #[test]
+fn record_backing_and_bookkeeping_are_reserved_before_owner_admission() {
+    let runtime = runtime();
+    let budget = runtime.inner.budget.clone();
+    let original = budget.host_memory_bytes();
+    let count = runtime.inner.limits.total();
+    let bytes = (std::alloc::Layout::array::<Option<Record>>(count)
+        .unwrap()
+        .size()
+        + SLAB_ALLOCATION_BOOKKEEPING) as u64;
+    let remaining = budget.remaining_at(Instant::now()).memory_bytes;
+    // Leave enough for the record layout alone, but one byte less than the
+    // complete modelled backing and its allocator bookkeeping.
+    let padding = budget.reserve_host_memory(remaining - bytes + 1).unwrap();
+    let reserved = budget.host_memory_bytes();
+    let reservations = budget.outstanding_reservations();
+    let failure = runtime.register(OwnerKind::Task, None).unwrap_err();
+    assert_eq!(failure.code, PlatformErrorCode::ResourceExhausted);
+    assert_eq!(budget.host_memory_bytes(), reserved);
+    assert_eq!(budget.outstanding_reservations(), reservations);
+    let state = runtime.inner.state.lock().unwrap();
+    assert!(state.slab.is_none());
+    assert_eq!(state.owners, [0; 7]);
+    drop(state);
+
+    drop(padding);
+    let owner = runtime.register(OwnerKind::Task, None).unwrap();
+    assert_eq!(budget.host_memory_bytes(), original + bytes);
+    let state = runtime.inner.state.lock().unwrap();
+    let slab = state.slab.as_ref().unwrap();
+    assert_eq!(slab.records.capacity(), count);
+    drop(state);
+    drop(owner);
+    assert_eq!(budget.host_memory_bytes(), original + bytes);
+    runtime.retire().unwrap();
+    assert_eq!(budget.host_memory_bytes(), original);
+    drop(runtime);
+    assert_eq!(budget.host_memory_bytes(), 0);
+}
+
+#[test]
 fn actual_owner_refusals_name_only_the_original_bucket_without_refunding_live_owners() {
     use crate::diagnostic::{ActivationDiagnostic, DiagnosticReason as R};
     for (kind, reason) in [

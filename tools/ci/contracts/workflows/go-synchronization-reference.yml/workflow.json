@@ -31,7 +31,8 @@
 "synchronization",
 "admission",
 "queued",
-"managed-timers"
+"managed-timers",
+"task-saturation"
 ],
 "required":true,
 "type":"choice"

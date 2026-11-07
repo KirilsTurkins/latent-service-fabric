@@ -232,3 +232,114 @@ fn default_materialization_wait_delegates_once_without_timer_or_replaying_failur
         assert_eq!(backend.drops.load(Ordering::Relaxed), 1);
     }
 }
+
+fn owned_budget(memory: u64) -> ActivationBudget {
+    use latent_core::{BudgetProfile, ClockSample, EffectiveActivationBudget, ResourceBudget};
+    let limits = ResourceBudget {
+        cpu_fuel: 1_000_000,
+        memory_bytes: memory,
+        wall_time_limit_millis: Some(30_000),
+        child_calls: 0,
+        outbound_requests: 0,
+        state_read_bytes: 0,
+        state_write_bytes: 0,
+        blob_read_bytes: 0,
+        blob_write_bytes: 0,
+        log_bytes: 0,
+        effect_count: 0,
+    };
+    let grant = EffectiveActivationBudget::admit_profile_at(
+        BudgetProfile::Phase3,
+        &limits,
+        &limits,
+        &limits,
+        None,
+        ClockSample::new(1000, Instant::now()),
+    )
+    .unwrap();
+    ActivationBudget::with_profile(grant, BudgetProfile::Phase3).unwrap()
+}
+
+struct PendingOwned {
+    budget: ActivationBudget,
+    drops: Arc<AtomicUsize>,
+}
+
+impl Future for PendingOwned {
+    type Output = ();
+    fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<()> {
+        Poll::Pending
+    }
+}
+
+impl Drop for PendingOwned {
+    fn drop(&mut self) {
+        assert_eq!(
+            self.budget.host_memory_bytes(),
+            (std::mem::size_of::<Self>() + BOX_ALLOCATION_BOOKKEEPING) as u64
+        );
+        self.drops.fetch_add(1, Ordering::SeqCst);
+    }
+}
+
+#[test]
+fn owned_wait_reserves_complete_backing_before_factory_and_through_drop() {
+    let bytes = (std::mem::size_of::<PendingOwned>() + BOX_ALLOCATION_BOOKKEEPING) as u64;
+    let refused = owned_budget(bytes - 1);
+    let calls = AtomicUsize::new(0);
+    let drops = Arc::new(AtomicUsize::new(0));
+    let result = OwnedPreparationWait::try_boxed(&refused, || {
+        calls.fetch_add(1, Ordering::SeqCst);
+        PendingOwned {
+            budget: refused.clone(),
+            drops: Arc::clone(&drops),
+        }
+    });
+    assert!(matches!(result, Err(error) if error.code == PlatformErrorCode::ResourceExhausted));
+    assert_eq!(calls.load(Ordering::SeqCst), 0);
+    assert_eq!(drops.load(Ordering::SeqCst), 0);
+    assert_eq!(refused.host_memory_bytes(), 0);
+    assert_eq!(refused.outstanding_reservations(), 0);
+
+    let budget = owned_budget(bytes);
+    let mut wait = OwnedPreparationWait::try_boxed(&budget, || PendingOwned {
+        budget: budget.clone(),
+        drops: Arc::clone(&drops),
+    })
+    .unwrap();
+    assert_eq!(budget.host_memory_bytes(), bytes);
+    assert!(Pin::new(&mut wait)
+        .poll(&mut Context::from_waker(Waker::noop()))
+        .is_pending());
+    drop(wait);
+    assert_eq!(drops.load(Ordering::SeqCst), 1);
+    assert_eq!(budget.host_memory_bytes(), 0);
+    assert_eq!(budget.outstanding_reservations(), 0);
+    assert_eq!(budget.snapshot_at(Instant::now()).peak_memory_bytes, bytes);
+}
+
+#[test]
+fn owned_wait_keeps_the_existing_zero_sized_behavior() {
+    struct Zero;
+    impl Future for Zero {
+        type Output = ();
+        fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<()> {
+            Poll::Ready(())
+        }
+    }
+    assert_eq!(std::mem::size_of::<Zero>(), 0);
+    let budget = owned_budget(1);
+    let full = budget.reserve_host_memory(1).unwrap();
+    let mut wait = OwnedPreparationWait::try_boxed(&budget, || Zero).unwrap();
+    assert_eq!(budget.host_memory_bytes(), 1);
+    assert_eq!(budget.outstanding_reservations(), 2);
+    assert!(Pin::new(&mut wait)
+        .poll(&mut Context::from_waker(Waker::noop()))
+        .is_ready());
+    drop(wait);
+    assert_eq!(budget.host_memory_bytes(), 1);
+    assert_eq!(budget.outstanding_reservations(), 1);
+    drop(full);
+    assert_eq!(budget.host_memory_bytes(), 0);
+    assert_eq!(budget.outstanding_reservations(), 0);
+}
