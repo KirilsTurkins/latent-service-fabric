@@ -223,10 +223,20 @@ TIMER_RESERVATION_REWRITE_RECEIPT = {**RESULT_TRANSITION_REWRITE_RECEIPT,
     'timerReservation': 'provisional-timer-explicit-wit-refusal-and-unknown-custody'}
 
 
+# Required continuations retain their parent and provisional Result through
+# reservation, observation and a single settlement attempt.
+REQUIRED_RESULT_REWRITE_RECEIPT = {**TIMER_RESERVATION_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v9',
+    'requiredResultReservation': 'in-flight-required-and-provisional-result-with-observation',
+    'resultLookup': 'exact-result-primary-before-parent-alias'}
+
+
 def validate_rewrite(value: dict) -> None:
     if type(value) is not dict:
         raise ValueError('dotnet-managed-work-rewrite-receipt')
-    expected_receipt = (TIMER_RESERVATION_REWRITE_RECEIPT
+    expected_receipt = (REQUIRED_RESULT_REWRITE_RECEIPT
+        if value.get('patch') == REQUIRED_RESULT_REWRITE_RECEIPT['patch']
+        else TIMER_RESERVATION_REWRITE_RECEIPT
         if value.get('patch') == TIMER_RESERVATION_REWRITE_RECEIPT['patch']
         else RESULT_TRANSITION_REWRITE_RECEIPT
         if value.get('patch') == RESULT_TRANSITION_REWRITE_RECEIPT['patch']
