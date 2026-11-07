@@ -90,3 +90,58 @@ fn runtime_table_refusals_release_original_reservation_before_publication() {
         bytes - std::mem::size_of::<Table>() as u64
     );
 }
+
+#[test]
+fn plain_elapsed_wait_refuses_when_runtime_cancel_wins_after_live_check() {
+    let runtime = ActivationRuntime::new(budget(1_000_000), limits(1)).unwrap();
+    let owner = runtime.register(OwnerKind::Timer, None).unwrap();
+    let before = runtime.snapshot();
+    let (checked_tx, checked_rx) = std::sync::mpsc::sync_channel(0);
+    let (resume_tx, resume_rx) = std::sync::mpsc::sync_channel(0);
+    let worker_runtime = runtime.clone();
+    let worker = std::thread::spawn(move || {
+        worker_runtime.check_live().unwrap();
+        checked_tx.send(()).unwrap();
+        resume_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+        complete_elapsed_wait(&worker_runtime, None, Instant::now())
+    });
+    checked_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+    runtime.cancel();
+    resume_tx.send(()).unwrap();
+    assert_eq!(
+        worker.join().unwrap().unwrap_err().code,
+        PlatformErrorCode::Cancelled
+    );
+    let after = runtime.snapshot();
+    assert_eq!(after.phase, RuntimePhase::Cancelling);
+    assert_eq!(after.owners, before.owners);
+    assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
+    drop(owner);
+    runtime.retire().unwrap();
+}
+
+#[test]
+fn admitted_plain_wait_can_complete_during_closing_and_draining() {
+    for draining in [false, true] {
+        let runtime = ActivationRuntime::new(budget(1_000_000), limits(1)).unwrap();
+        let owner = runtime.register(OwnerKind::Timer, None).unwrap();
+        runtime.close();
+        if draining {
+            runtime.begin_drain();
+        }
+        assert_eq!(
+            complete_elapsed_wait(&runtime, None, Instant::now()).unwrap(),
+            0
+        );
+        assert_eq!(
+            runtime.snapshot().phase,
+            if draining {
+                RuntimePhase::Draining
+            } else {
+                RuntimePhase::Closing
+            }
+        );
+        drop(owner);
+        runtime.retire().unwrap();
+    }
+}

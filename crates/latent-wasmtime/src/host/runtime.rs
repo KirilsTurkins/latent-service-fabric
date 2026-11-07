@@ -691,6 +691,22 @@ fn prepare_timer_next(state: &mut HostState, token: RuntimeToken) -> PreparedWai
         failed_call: call,
     }
 }
+fn complete_elapsed_wait(
+    runtime: &ActivationRuntime,
+    timer: Option<&mut TimerWait>,
+    now: Instant,
+) -> Result<u64, PlatformError> {
+    match timer {
+        Some(timer) => timer.complete(now),
+        None => {
+            // Plain waits have no schedule commit. A final phase observation
+            // orders their elapsed success against runtime cancellation.
+            runtime.check_live()?;
+            Ok(0)
+        }
+    }
+}
+
 impl WaitingTimer {
     async fn run(&mut self) -> Result<u64, PlatformError> {
         loop {
@@ -759,10 +775,7 @@ impl WaitingTimer {
                 ));
             }
             if now >= self.requested {
-                return self
-                    .timer_wait
-                    .as_mut()
-                    .map_or(Ok(0), |timer| timer.complete(now));
+                return complete_elapsed_wait(&self.runtime, self.timer_wait.as_mut(), now);
             }
             let next = self
                 .requested
