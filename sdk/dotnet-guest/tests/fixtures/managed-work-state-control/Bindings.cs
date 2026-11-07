@@ -8,6 +8,18 @@ namespace Lsf.CompilerOwned;
 // ledger. Those have separate exact metadata and signed-execution gates.
 public static partial class ManagedWorkRuntime
 {
+    static partial void QueueAllocationControl()
+    {
+        if (global::StateControl.QueueAllocationCallback is { } callback)
+        { global::StateControl.QueueAllocationCallback = null; callback(); }
+        if (global::StateControl.FailQueueAllocation) throw global::StateControl.QueueAllocationFailure;
+    }
+    static partial void RecordAllocationControl()
+    {
+        if (global::StateControl.RecordAllocationCallback is { } callback)
+        { global::StateControl.RecordAllocationCallback = null; callback(); }
+    }
+
     // Read-only test-port observation; this member is never copied into CoreLib.
     internal static (ulong Generation, ulong Id)? QueuedTokenForControl(object item)
     {

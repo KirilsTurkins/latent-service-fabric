@@ -360,6 +360,50 @@ AbortSignal.prototype.addEventListener=add;AbortSignal.prototype.removeEventList
                 str(root), str(fetch.ROOT/'tools/typescript_guest/fetch.mjs')], capture_output=True, text=True, timeout=20)
             self.assertEqual(completed.returncode, 0, completed.stderr)
 
+    def test_large_event_clone_cases_require_real_repeated_and_nested_dispatch(self):
+        self.assertEqual(fetch.EVENT_CLONE_VECTORS, (
+            ('event-clone-repeated', 20, 'event-clone:repeated:12:40'),
+            ('event-clone-nested', 21, 'event-clone:nested:12:ordered')))
+        self.assertEqual(fetch.OWNER_LIMITS['nativeOwners'], 64)
+        node = shutil.which('node')
+        self.assertIsNotNone(node, 'The pinned Node reference host is required')
+        script = r"""
+import assert from 'node:assert/strict';
+import {readFile, writeFile} from 'node:fs/promises';
+import {stripTypeScriptTypes} from 'node:module';
+import {pathToFileURL} from 'node:url';
+const [fixture, output] = process.argv.slice(2);
+let contacts=0, added=0, dispatched=0, depth=0, maxDepth=0;
+globalThis.fetch=()=>{contacts++;throw new Error('unexpected-network');};
+for (const name of ['default-client','main']) {
+  const source=stripTypeScriptTypes(await readFile(fixture+'/'+name+'.ts','utf8'));
+  await writeFile(output+'/'+name+'.mjs',source.replace("'./default-client.js'","'./default-client.mjs'"));
+}
+const {api}=await import(pathToFileURL(output+'/main.mjs'));
+const add=EventTarget.prototype.addEventListener, dispatch=EventTarget.prototype.dispatchEvent;
+EventTarget.prototype.addEventListener=function(...args){added++;return add.apply(this,args);};
+EventTarget.prototype.dispatchEvent=function(...args){
+  dispatched++;depth++;maxDepth=Math.max(maxDepth,depth);
+  try{return dispatch.apply(this,args);}finally{depth--;}
+};
+assert.equal(await api.run(20,''),'event-clone:repeated:12:40');
+assert.deepEqual([added,dispatched,maxDepth,contacts],[12,40,1,0]);
+added=dispatched=maxDepth=0;
+assert.equal(await api.run(21,''),'event-clone:nested:12:ordered');
+assert.deepEqual([added,dispatched,maxDepth,contacts],[12,2,2,0]);
+EventTarget.prototype.dispatchEvent=()=>true;
+await assert.rejects(api.run(20,''),/event-clone-repeated-count/);
+await assert.rejects(api.run(21,''),/event-clone-nested-dispatch/);
+EventTarget.prototype.dispatchEvent=dispatch;
+EventTarget.prototype.addEventListener=add;
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root/'control.mjs').write_text(script, encoding='utf-8')
+            completed = subprocess.run([node, str(root/'control.mjs'), str(fetch.ROOT/fetch.FIXTURE), str(root)],
+                capture_output=True, text=True, timeout=20)
+            self.assertEqual(completed.returncode, 0, completed.stdout+completed.stderr)
+
     def test_closed_guest_diagnostics_cannot_replace_signed_success(self):
         for stage in ('request', 'fetch', 'body-before', 'body-json', 'body-after', 'body-repeat', 'serialize'):
             for kind in ('TypeError', 'RangeError', 'Error', 'other'):

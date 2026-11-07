@@ -17,9 +17,14 @@ from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, fresh, inventory, read_file, snapshot, write_json
 
 FIXTURE = 'sdk/dotnet-guest/tests/fixtures/managed-work-state-control'
+BRIDGE_FIXTURE = FIXTURE+'/ReserveBridgeControl.cs.in'
 SOURCES = (FIXTURE+'/Control.csproj', FIXTURE+'/Program.cs', FIXTURE+'/Bindings.cs',
     'sdk/dotnet-guest/tools/http-errors/ManagedWorkRuntime.cs',
-    'sdk/dotnet-guest/tools/http-errors/ManagedWorkTimers.cs', 'sdk/dotnet-guest/global.json')
+    'sdk/dotnet-guest/tools/http-errors/ManagedWorkTimers.cs', 'sdk/dotnet-guest/global.json',
+    'tools/dotnet_guest/async_exports.py', BRIDGE_FIXTURE)
+BRIDGE_CASES = tuple((kind, mode) for kind in (0, 3)
+    for mode in ('refusal', 'ok', 'zero-both', 'zero-generation', 'zero-id', 'exception')) + (
+    (7, 'refusal'), (7, 'ok'))
 SETTLEMENT_CASES = ('dequeue-settlement-refusal-retains-owner',)
 QUEUE_SETTLEMENT_CASES = (
     'queue-dequeue-refusal-prevents-retry', 'queue-dequeue-unknown-prevents-retry')
@@ -42,6 +47,24 @@ ROOT_SETTLEMENT_CASES = (
     'storage-and-context-clear-fail-fences-finalization')
 CASES = (
     'native-task-admission', 'unwrap-inner-actual-completion', 'queued-admission-rollback',
+    'root-task-refusal-fences-reinstallation', 'root-task-unknown-fences-reinstallation',
+    'root-task-malformed-generation-fences-reinstallation', 'root-task-malformed-id-fences-reinstallation',
+    'pre-ticket-queue-reservation-unknown-fences-drain', 'pre-ticket-task-reservation-unknown-fences-drain',
+    'pre-ticket-borrowed-owner-unknown-fences-drain', 'pre-ticket-queue-allocation-fails-before-owner',
+    'schedule-unknown-reservation-fences-retry', 'unwrap-unknown-reservation-fences-retry',
+    'queue-allocation-reentry-before-scan', 'context-reentry-keeps-other-queued-item',
+    'context-reentry-error-keeps-other-queued-item', 'context-reentry-reuses-scheduled-task',
+    'context-reentry-reuses-unwrapped-task', 'context-reentry-same-item-is-fenced',
+    'context-reentry-result-owner-is-fenced', 'context-reentry-drain-fences-null-owner',
+    'queue-refusal-dormant-owner-fences-entry', 'record-allocation-reuses-same-task',
+    'record-allocation-preserves-other-task', 'record-allocation-fences-result-owner',
+    'schedule-allocation-reuses-same-task', 'record-allocation-retired-parent-is-fenced',
+    'record-allocation-result-parent-is-fenced', 'record-allocation-closing-root-is-fenced',
+    'queue-allocation-finalization-is-fenced', 'schedule-allocation-finalization-is-fenced',
+    'unwrap-allocation-finalization-is-fenced',
+    'pre-ticket-owner-rollback-refusal-preserves-error', 'pre-ticket-owner-rollback-unknown-preserves-error',
+    'pre-ticket-queue-malformed-generation-fences-drain', 'pre-ticket-queue-malformed-id-fences-drain',
+    'pre-ticket-task-malformed-generation-fences-drain', 'pre-ticket-task-malformed-id-fences-drain',
     'enqueue-failure-retains-uncertain-owners', 'enqueue-before-insertion-retains-created-owner',
     'enqueue-before-insertion-keeps-borrowed-owner', 'enqueue-before-insertion-retains-reentrant-work',
     'enqueue-before-insertion-retains-captured-context', 'continuation-failure-before-acceptance',
@@ -57,6 +80,7 @@ CASES = (
 
 
 def verify(dotnet: Path, output: Path) -> dict:
+    from tools.dotnet_guest.async_exports import managed_root_support
     output = fresh(Path(output).absolute())
     source = output/'source'
     for name in SOURCES:
@@ -65,6 +89,26 @@ def verify(dotnet: Path, output: Path) -> dict:
         path.write_bytes(read_file(ROOT/name))
     config = source/'sdk/dotnet-guest/nuget.config'
     config.write_text('<configuration><packageSources><clear/></packageSources></configuration>', encoding='utf8')
+    bridge = source/'bridge-control'; bridge.mkdir()
+    bindings = output/'bridge-bindings'; bindings.mkdir()
+    namespace = 'BridgeControl.wit.Imports.latent.dotnetManagedWork'
+    signatures = ('public static unsafe Result<(ulong, ulong), uint> Reserve(uint kind, ulong parentGeneration, ulong parentId)',
+        'public static unsafe Result<None, uint> Settle(ulong generation, ulong id)',
+        'public static unsafe Result<None, uint> Close()', 'public static unsafe void Context(ulong generation, ulong id)')
+    (bindings/'Test.IOwnerImports.cs').write_text('namespace '+namespace+';\n'+'\n'.join(signatures)+'\n', encoding='utf8')
+    (bindings/'Test.OwnerImportsInterop.cs').write_text('\n'.join(
+        'DllImportAttribute("latent:dotnet-managed-work/owner@0.1.0", EntryPoint = "'+operation+'")'
+        for operation in ('reserve', 'settle', 'close', 'context')), encoding='utf8')
+    support = managed_root_support(bindings)
+    require(support is not None, 'managed-reserve-control-generated-bridge')
+    (bridge/'Support.cs').write_text(support, encoding='utf8')
+    (bridge/'Program.cs').write_bytes(read_file(source/BRIDGE_FIXTURE))
+    (bridge/'global.json').write_bytes(read_file(source/'sdk/dotnet-guest/global.json'))
+    (bridge/'nuget.config').write_bytes(read_file(config))
+    (bridge/'Bridge.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup>'
+        '<TargetFramework>net10.0</TargetFramework><OutputType>Exe</OutputType><ImplicitUsings>enable</ImplicitUsings>'
+        '<Nullable>enable</Nullable><UseSharedCompilation>false</UseSharedCompilation><NuGetAudit>false</NuGetAudit>'
+        '</PropertyGroup></Project>', encoding='utf8')
     before = inventory(snapshot(source))
     project = source/FIXTURE/'Control.csproj'
     commands = Commands(project.parent, output, build_environment(output), deadline_seconds=300, command_seconds=120)
@@ -114,9 +158,19 @@ def verify(dotnet: Path, output: Path) -> dict:
                             contextClearAttempts=1 if is_context_failure else 0, finalizationSuccess=False)
         require(len(raw) <= 1024 and json.loads(raw) == expected, 'managed-work-state-control-result')
         rows.append(expected)
+    commands.run('reserve-bridge-control-build', dotnet, 'build', bridge/'Bridge.csproj', '-c', 'Release',
+        '--output', output/'bridge-bin', '--artifacts-path', output/'bridge-artifacts',
+        '-p:RestoreConfigFile='+str(bridge/'nuget.config'), '-p:NuGetAudit=false', '-nodeReuse:false')
+    bridge_rows = []
+    for kind, mode in BRIDGE_CASES:
+        raw = commands.run('reserve-bridge-'+str(kind)+'-'+mode, dotnet, output/'bridge-bin/Bridge.dll', str(kind), mode)
+        expected = {'control': str(kind)+'-'+mode, 'passed': True, 'actualGeneratedBridge': True,
+            'nativeImport': 'explicit-test-port', 'guestQualified': False}
+        require(len(raw) <= 1024 and json.loads(raw) == expected, 'managed-reserve-bridge-control-result')
+        bridge_rows.append(expected)
     require(inventory(snapshot(source)) == before, 'managed-work-state-control-source-changed')
     value = {'profile': 'dotnet-managed-work-state-controls-v1', 'source': json.loads(before),
-        'cases': rows, 'commands': commands.records, 'guestQualified': False,
+        'cases': rows, 'bridgeCases': bridge_rows, 'commands': commands.records, 'guestQualified': False,
         'productionContextDispatcherAndNativeLedgerQualified': False}
     write_json(output/'state-controls.json', value)
     return value
@@ -129,6 +183,7 @@ TIMER_CASES = (
     'disposed-queued-callback-retires-after-cancelled-fire', 'callback-required-task-survives-return',
     'live-timer-descendant-during-closing', 'callback-throw-never-refunds-original-running-owner',
     'timer-pending-peer-failure-blocks-commit',
+    'timer-pre-ticket-refusal-rolls-back-current', 'timer-pre-ticket-unknown-retains-current',
     'timer-pending-duplicate-preserves-committed-owner', 'timer-pending-admission-blocks-dequeue',
     'timer-rollback-refusal-retains-accepted-owner', 'timer-rollback-unknown-retains-accepted-owner',
     'timer-queue-fault-before-insertion-rolls-back-current', 'timer-queue-fault-during-insertion-retains-owners',

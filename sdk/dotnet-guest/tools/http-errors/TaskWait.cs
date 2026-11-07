@@ -377,7 +377,7 @@ internal static class TaskWait
                 var fields = written.GetTypes().SelectMany(type => type.Fields).Select(field => field.FullName).ToHashSet();
                 var addedFields = module.GetTypes().SelectMany(type => type.Fields).Select(field => field.FullName)
                     .Where(name => !originalFields.Contains(name)).ToHashSet();
-                Require(addedFields.Count == (aggregateSelected ? 56 : managedSelected ? 51 : 5) && fields.Count == originalFields.Count + addedFields.Count &&
+                Require(addedFields.Count == (aggregateSelected ? 57 : managedSelected ? 52 : 5) && fields.Count == originalFields.Count + addedFields.Count &&
                     fields.Except(addedFields).ToHashSet().SetEquals(originalFields) && addedFields.IsSubsetOf(fields));
             }
             Require(FileDigest(original, 8 * 1024 * 1024) == SourceDigest);

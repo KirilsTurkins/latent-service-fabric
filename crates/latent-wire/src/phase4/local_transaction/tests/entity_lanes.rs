@@ -198,6 +198,66 @@ async fn actual_entity_guest_serializes_before_cell_and_replays_in_progress_dupl
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 #[ignore = "Requires the maintained compiled Rust transaction guest"]
+async fn revoked_queued_entity_never_starts_a_guest() {
+    let f = Fixture::with_concurrent_commands(true).await;
+    authorize_entity(&f, "hot");
+    let first_adapter = f.adapter();
+    let first = tokio::spawn(async move {
+        first_adapter
+            .invoke_command(context("alice").request(entity_command("revoke-first", 1)))
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(5), f.backend.imports.entered.notified())
+        .await
+        .unwrap();
+    let second_adapter = f.adapter();
+    let second = tokio::spawn(async move {
+        second_adapter
+            .invoke_command(context("alice").request(entity_command("revoke-queued", 1)))
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while f
+            .owners
+            .as_ref()
+            .unwrap()
+            .entity_lanes_snapshot()
+            .unwrap()
+            .queued
+            != 1
+        {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    policy::revoke(&f.policy);
+    f.backend.imports.release.notify_one();
+    let _first = tokio::time::timeout(Duration::from_secs(10), first)
+        .await
+        .unwrap()
+        .unwrap();
+    let second = tokio::time::timeout(Duration::from_secs(10), second)
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(matches!(second, Err(error) if error.code() == tonic::Code::PermissionDenied));
+    assert_eq!(f.executions(), 1);
+    assert_eq!(f.backend.real.resource_snapshot().stores_created, 1);
+    assert_eq!(
+        f.owners
+            .as_ref()
+            .unwrap()
+            .entity_lanes_snapshot()
+            .unwrap()
+            .keys,
+        0
+    );
+    f.shutdown().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "Requires the maintained compiled Rust transaction guest"]
 async fn trapped_entity_retains_its_lane_until_the_actual_abort_writer_finishes() {
     use latent_state::store_io::StoreIoKind;
     use std::sync::{Condvar, Mutex};

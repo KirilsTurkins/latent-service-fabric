@@ -11,6 +11,9 @@ internal static class TimerControl
     private static bool closing;
     private static (ulong, ulong) context;
     private static int admissions;
+    private static bool unknownQueueReservation;
+    private static ulong unknownQueueToken;
+    private static readonly InvalidOperationException UnknownQueueError = new("control-timer-queue-reservation-unknown");
     private static ulong failingSettlement;
     private static bool failAfterSettlement;
     private static int timerSettlementAttempts;
@@ -28,8 +31,14 @@ internal static class TimerControl
         Need(0 <= kind && kind < Limits.Length);
         if ((generation, id) != (0UL, 0UL)) Need(generation == 19 && Owners.ContainsKey(id));
         if (closing) Need(generation == 19 && Owners.ContainsKey(id));
-        if (Count(kind) >= Limits[kind]) throw new InvalidOperationException("control-ledger-capacity");
-        admissions++; ulong key = checked(++sequence); Owners.Add(key, kind); return (19, key);
+        if (Count(kind) >= Limits[kind])
+        {
+            if (kind is 0 or 3) return default;
+            throw new InvalidOperationException("control-ledger-capacity");
+        }
+        admissions++; ulong key = checked(++sequence); Owners.Add(key, kind);
+        if (kind == 3 && unknownQueueReservation) { unknownQueueToken = key; throw UnknownQueueError; }
+        return (19, key);
     }
     private static void Settle(ulong generation, ulong id)
     {
@@ -218,6 +227,31 @@ internal static class TimerControl
         Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-queue");
         Need(timerSettlementAttempts == 1 && Count(3) == 2);
     }
+    private static void PreTicketTimerRefusalControl()
+    {
+        Limits[3] = 1;
+        var item = Arm(); ManagedWorkRuntime.TimerAccepted(item); Enqueue(item);
+        var original = ManagedWorkRuntime.QueuedTokenForControl(item)
+            ?? throw new InvalidOperationException("timer-control-missing-queue-token");
+        ManagedWorkRuntime.TimerAccepted(item);
+        Refuses(() => Enqueue(item), "managed-work-admission-refused");
+        Need(ManagedWorkRuntime.TimerAcceptedForControl(item) == 1
+            && ManagedWorkRuntime.QueuedTokenForControl(item) == original && Count(3) == 1);
+        Disarm(item); ManagedWorkRuntime.Dequeue(item); Fire(item, () => { }); Finish();
+    }
+    private static void PreTicketTimerUnknownControl()
+    {
+        var item = Arm(); ManagedWorkRuntime.TimerAccepted(item); unknownQueueReservation = true;
+        bool observedOriginal = false;
+        try { ManagedWorkRuntime.Enqueue(item); }
+        catch (InvalidOperationException error) when (ReferenceEquals(error, UnknownQueueError)) { observedOriginal = true; }
+        Need(observedOriginal && unknownQueueToken != 0 && Owners.ContainsKey(unknownQueueToken)
+            && ManagedWorkRuntime.TimerAcceptedForControl(item) == 1 && Count(5) == 1);
+        Refuses(() => ManagedWorkRuntime.Dequeue(item), "managed-work-queue-uncertain");
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-queue");
+        Need(Owners.ContainsKey(unknownQueueToken) && ManagedWorkRuntime.TimerAcceptedForControl(item) == 1);
+    }
     private static void Run(string name)
     {
         if (name == "native-storage-refusal-rolls-back-root")
@@ -253,6 +287,8 @@ internal static class TimerControl
                 Need(Count(5) == 0); Finish(); break;
             }
             case "timer-pending-peer-failure-blocks-commit": PendingPeerFailureControl(); break;
+            case "timer-pre-ticket-refusal-rolls-back-current": PreTicketTimerRefusalControl(); break;
+            case "timer-pre-ticket-unknown-retains-current": PreTicketTimerUnknownControl(); break;
             case "timer-pending-duplicate-preserves-committed-owner": PendingDuplicateControl(); break;
             case "timer-pending-admission-blocks-dequeue": PendingAdmissionControl(); break;
             case "timer-rollback-refusal-retains-accepted-owner": TimerRollbackFailureControl(false); break;

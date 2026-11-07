@@ -330,8 +330,14 @@ internal static class LsfManagedWorkRoot
     private static (ulong, ulong) Reserve(int kind, ulong generation, ulong id)
     {
         var result = OWNER.Reserve(checked((uint)kind), generation, id);
+        // The pinned host never issues zero token fields. Its typed error is
+        // an explicit refusal, while an exception may have an unknown outcome.
+        if (!result.IsOk && (kind == 0 || kind == 3)) return default;
         if (!result.IsOk) throw new global::System.InvalidOperationException("managed-work-admission-refused");
-        return result.AsOk;
+        var token = result.AsOk;
+        if ((kind == 0 || kind == 3) && (token.Item1 == 0 || token.Item2 == 0))
+            throw new global::System.InvalidOperationException("managed-work-reservation-token");
+        return token;
     }
     private static void Settle(ulong generation, ulong id)
     {
