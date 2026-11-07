@@ -17,9 +17,13 @@ from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, fresh, inventory, read_file, snapshot, write_json
 
 FIXTURE = 'sdk/dotnet-guest/tests/fixtures/managed-work-state-control'
+BRIDGE_FIXTURE = FIXTURE+'/ReserveBridgeControl.cs.in'
 SOURCES = (FIXTURE+'/Control.csproj', FIXTURE+'/Program.cs', FIXTURE+'/Bindings.cs',
     'sdk/dotnet-guest/tools/http-errors/ManagedWorkRuntime.cs',
-    'sdk/dotnet-guest/tools/http-errors/ManagedWorkTimers.cs', 'sdk/dotnet-guest/global.json')
+    'sdk/dotnet-guest/tools/http-errors/ManagedWorkTimers.cs', 'sdk/dotnet-guest/global.json',
+    'tools/dotnet_guest/async_exports.py', BRIDGE_FIXTURE)
+BRIDGE_CASES = tuple((kind, mode) for kind in (0, 3, 5, 6, 7)
+    for mode in ('refusal', 'ok', 'zero-both', 'zero-generation', 'zero-id', 'exception'))
 SETTLEMENT_CASES = ('dequeue-settlement-refusal-retains-owner',)
 QUEUE_SETTLEMENT_CASES = (
     'queue-dequeue-refusal-prevents-retry', 'queue-dequeue-unknown-prevents-retry')
@@ -34,14 +38,70 @@ RESULT_SETTLEMENT_CASES = (
     'result-settlement-refusal-prevents-finalization',
     'result-settlement-unknown-prevents-finalization')
 CONVERSION_SETTLEMENT_CASES = (
-    'fault-conversion-refusal-retains-both', 'fault-conversion-unknown-retains-both')
+    'fault-conversion-refusal-retains-both', 'fault-conversion-unknown-retains-both',
+    'fault-dispatch-settlement-refusal-preserves-error', 'fault-dispatch-settlement-unknown-preserves-error')
+OBSERVED_RESULT_SETTLEMENT_CASES = (
+    'observed-result-settlement-refusal-retains-custody', 'observed-result-settlement-unknown-retains-custody')
+REQUIRED_RESULT_SETTLEMENT_CASES = (
+    'required-result-settlement-refusal-retains-custody', 'required-result-settlement-unknown-retains-custody')
 ROOT_SETTLEMENT_CASES = (
     'storage-settlement-refusal-fences-root', 'storage-settlement-unknown-fences-root',
     'root-settlement-refusal-fences-finalization', 'root-settlement-unknown-fences-finalization',
     'root-context-clear-failure-fences-finalization',
     'storage-and-context-clear-fail-fences-finalization')
 CASES = (
+    'startup-preinstall-producers-unchanged', 'startup-native-refusal-settles-root',
+    'startup-pre-root-allocation-failure',
+    'startup-readiness-failure-before-install', 'startup-readiness-failure-before-root',
+    'startup-readiness-failure-after-root-publication',
+    'startup-initial-ready-remains-retryable', 'startup-initial-ready-after-execution-poisons',
+    'startup-initial-readiness-error-after-execution', 'startup-untracked-enter-initial-probe',
+    'startup-readiness-failure-after-root', 'startup-readiness-failure-after-native',
+    'startup-readiness-failure-after-context', 'startup-ready-during-allocation', 'startup-ready-during-root-publication',
+    'startup-ready-during-root-reservation', 'startup-ready-during-native-reservation', 'startup-ready-during-context',
+    'startup-untracked-enter-root', 'startup-untracked-enter-root-publication',
+    'startup-untracked-unwrap-root', 'startup-untracked-inner-native',
+    'startup-untracked-schedule-root', 'startup-untracked-continuation-native',
+    'startup-untracked-created-async-context', 'startup-untracked-required-transport-root',
+    'startup-untracked-continuation-failed-native', 'startup-untracked-observed-context',
+    'startup-untracked-ensure-join-ready-native',
+    'startup-untracked-dequeue-native', 'startup-untracked-pop-context',
+    'startup-untracked-bind-allocation', 'startup-untracked-timer-accepted-root', 'startup-untracked-timer-enter-native',
+    'startup-untracked-timer-deleted-context', 'startup-untracked-enqueue-success-root',
+    'startup-untracked-enqueue-fault-native', 'startup-untracked-timer-changed-context',
+    'startup-untracked-timer-leave-root', 'startup-untracked-exit-native',
+    'startup-untracked-callback-completed-context', 'startup-untracked-completed-allocation',
+    'startup-poisoned-cleanup-preserves-primary',
+    'startup-native-refusal-root-settlement-refused', 'startup-native-refusal-root-settlement-unknown',
+    'startup-native-reservation-unknown', 'startup-native-reservation-malformed-generation',
+    'startup-native-reservation-unknown-after-untracked', 'startup-native-refusal-after-untracked-retains-root',
+    'startup-native-reservation-malformed-zero-both', 'startup-root-reservation-malformed-zero-both',
+    'startup-native-reservation-malformed-id', 'startup-allocation-cleanup-succeeds',
+    'startup-allocation-native-settlement-refused', 'startup-allocation-native-settlement-unknown',
+    'startup-allocation-root-settlement-refused', 'startup-allocation-root-settlement-unknown',
+    'startup-context-failure-before-mutation', 'startup-context-failure-after-mutation',
+    'startup-context-and-clear-failure', 'startup-context-failure-retains-native-child',
+    'startup-context-reentry-fences-producers', 'startup-allocation-reentry-fences-producers',
+    'startup-reservation-reentry-fences-producers',
     'native-task-admission', 'unwrap-inner-actual-completion', 'queued-admission-rollback',
+    'root-task-refusal-fences-reinstallation', 'root-task-unknown-fences-reinstallation',
+    'root-task-malformed-generation-fences-reinstallation', 'root-task-malformed-id-fences-reinstallation',
+    'pre-ticket-queue-reservation-unknown-fences-drain', 'pre-ticket-task-reservation-unknown-fences-drain',
+    'pre-ticket-borrowed-owner-unknown-fences-drain', 'pre-ticket-queue-allocation-fails-before-owner',
+    'schedule-unknown-reservation-fences-retry', 'unwrap-unknown-reservation-fences-retry',
+    'queue-allocation-reentry-before-scan', 'context-reentry-keeps-other-queued-item',
+    'context-reentry-error-keeps-other-queued-item', 'context-reentry-reuses-scheduled-task',
+    'context-reentry-reuses-unwrapped-task', 'context-reentry-same-item-is-fenced',
+    'context-reentry-result-owner-is-fenced', 'context-reentry-drain-fences-null-owner',
+    'queue-refusal-dormant-owner-fences-entry', 'record-allocation-reuses-same-task',
+    'record-allocation-preserves-other-task', 'record-allocation-fences-result-owner',
+    'schedule-allocation-reuses-same-task', 'record-allocation-retired-parent-is-fenced',
+    'record-allocation-result-parent-is-fenced', 'record-allocation-closing-root-is-fenced',
+    'queue-allocation-finalization-is-fenced', 'schedule-allocation-finalization-is-fenced',
+    'unwrap-allocation-finalization-is-fenced',
+    'pre-ticket-owner-rollback-refusal-preserves-error', 'pre-ticket-owner-rollback-unknown-preserves-error',
+    'pre-ticket-queue-malformed-generation-fences-drain', 'pre-ticket-queue-malformed-id-fences-drain',
+    'pre-ticket-task-malformed-generation-fences-drain', 'pre-ticket-task-malformed-id-fences-drain',
     'enqueue-failure-retains-uncertain-owners', 'enqueue-before-insertion-retains-created-owner',
     'enqueue-before-insertion-keeps-borrowed-owner', 'enqueue-before-insertion-retains-reentrant-work',
     'enqueue-before-insertion-retains-captured-context', 'continuation-failure-before-acceptance',
@@ -51,12 +111,30 @@ CASES = (
     'bounded-required-continuations', 'opaque-pending-is-not-quiescent',
     'untracked-startup-refused-before-admission', 'fault-conversion-success-is-idempotent',
     'fault-conversion-at-record-capacity', 'multiple-fault-conversions-retain-distinct-tokens',
+    'result-observed-during-context-clear', 'result-observed-during-reservation',
+    'result-observed-during-task-settlement', 'result-observed-during-result-settlement',
+    'result-reservation-refusal-restores-owner', 'result-reservation-unknown-retains-custody',
+    'result-reservation-malformed-generation-retains-custody', 'result-reservation-malformed-id-retains-custody',
+    'result-context-clear-failure-before-mutation', 'result-context-clear-failure-after-mutation',
+    'result-context-restore-failure-before-mutation', 'result-context-restore-failure-after-mutation',
+    'result-refusal-restore-observation-and-reentry',
+    'required-result-observed-during-allocation', 'required-result-observed-after-publication',
+    'required-result-observed-during-reservation', 'required-result-observed-after-return',
+    'required-result-observed-during-settlement', 'required-result-unknown-retains-custody',
+    'required-result-malformed-generation-retains-custody', 'required-result-malformed-id-retains-custody',
+    'required-result-refusal-restores-pending', 'required-result-slot-reentry-preserves-owner',
+    'required-result-transport-after-publication', 'required-result-transport-during-reservation',
+    'required-result-allocation-failure-preserves-parent',
+    'required-result-active-alias-observation', 'required-result-uncertain-alias-fences-entry',
+    'required-result-ordinary-alias-preserves-parent',
     *SETTLEMENT_CASES, *QUEUE_SETTLEMENT_CASES, *ROLLBACK_SETTLEMENT_CASES,
     *OWNER_SETTLEMENT_CASES, *RESULT_SETTLEMENT_CASES,
-    *CONVERSION_SETTLEMENT_CASES, *ROOT_SETTLEMENT_CASES)
+    *CONVERSION_SETTLEMENT_CASES, *OBSERVED_RESULT_SETTLEMENT_CASES,
+    *REQUIRED_RESULT_SETTLEMENT_CASES, *ROOT_SETTLEMENT_CASES)
 
 
 def verify(dotnet: Path, output: Path) -> dict:
+    from tools.dotnet_guest.async_exports import managed_root_support
     output = fresh(Path(output).absolute())
     source = output/'source'
     for name in SOURCES:
@@ -65,6 +143,26 @@ def verify(dotnet: Path, output: Path) -> dict:
         path.write_bytes(read_file(ROOT/name))
     config = source/'sdk/dotnet-guest/nuget.config'
     config.write_text('<configuration><packageSources><clear/></packageSources></configuration>', encoding='utf8')
+    bridge = source/'bridge-control'; bridge.mkdir()
+    bindings = output/'bridge-bindings'; bindings.mkdir()
+    namespace = 'BridgeControl.wit.Imports.latent.dotnetManagedWork'
+    signatures = ('public static unsafe Result<(ulong, ulong), uint> Reserve(uint kind, ulong parentGeneration, ulong parentId)',
+        'public static unsafe Result<None, uint> Settle(ulong generation, ulong id)',
+        'public static unsafe Result<None, uint> Close()', 'public static unsafe void Context(ulong generation, ulong id)')
+    (bindings/'Test.IOwnerImports.cs').write_text('namespace '+namespace+';\n'+'\n'.join(signatures)+'\n', encoding='utf8')
+    (bindings/'Test.OwnerImportsInterop.cs').write_text('\n'.join(
+        'DllImportAttribute("latent:dotnet-managed-work/owner@0.1.0", EntryPoint = "'+operation+'")'
+        for operation in ('reserve', 'settle', 'close', 'context')), encoding='utf8')
+    support = managed_root_support(bindings)
+    require(support is not None, 'managed-reserve-control-generated-bridge')
+    (bridge/'Support.cs').write_text(support, encoding='utf8')
+    (bridge/'Program.cs').write_bytes(read_file(source/BRIDGE_FIXTURE))
+    (bridge/'global.json').write_bytes(read_file(source/'sdk/dotnet-guest/global.json'))
+    (bridge/'nuget.config').write_bytes(read_file(config))
+    (bridge/'Bridge.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup>'
+        '<TargetFramework>net10.0</TargetFramework><OutputType>Exe</OutputType><ImplicitUsings>enable</ImplicitUsings>'
+        '<Nullable>enable</Nullable><UseSharedCompilation>false</UseSharedCompilation><NuGetAudit>false</NuGetAudit>'
+        '</PropertyGroup></Project>', encoding='utf8')
     before = inventory(snapshot(source))
     project = source/FIXTURE/'Control.csproj'
     commands = Commands(project.parent, output, build_environment(output), deadline_seconds=300, command_seconds=120)
@@ -102,6 +200,12 @@ def verify(dotnet: Path, output: Path) -> dict:
         elif name in CONVERSION_SETTLEMENT_CASES:
             expected.update(settlementRefusals=1, retainedTasks=1 if '-unknown-' in name else 2,
                             retainedQueuedOwners=0, controlDispatches=0, automaticRetries=0, rootSuccess=False)
+        elif name in OBSERVED_RESULT_SETTLEMENT_CASES:
+            expected.update(settlementRefusals=1, retainedTasks=1,
+                            retainedQueuedOwners=0, controlDispatches=0, automaticRetries=0, rootSuccess=False)
+        elif name in REQUIRED_RESULT_SETTLEMENT_CASES:
+            expected.update(settlementRefusals=1, retainedTasks=2,
+                            retainedQueuedOwners=0, controlDispatches=0, automaticRetries=0, rootSuccess=False)
         elif name in ROOT_SETTLEMENT_CASES:
             is_storage = name.startswith('storage-')
             is_unknown = '-unknown-' in name
@@ -114,9 +218,19 @@ def verify(dotnet: Path, output: Path) -> dict:
                             contextClearAttempts=1 if is_context_failure else 0, finalizationSuccess=False)
         require(len(raw) <= 1024 and json.loads(raw) == expected, 'managed-work-state-control-result')
         rows.append(expected)
+    commands.run('reserve-bridge-control-build', dotnet, 'build', bridge/'Bridge.csproj', '-c', 'Release',
+        '--output', output/'bridge-bin', '--artifacts-path', output/'bridge-artifacts',
+        '-p:RestoreConfigFile='+str(bridge/'nuget.config'), '-p:NuGetAudit=false', '-nodeReuse:false')
+    bridge_rows = []
+    for kind, mode in BRIDGE_CASES:
+        raw = commands.run('reserve-bridge-'+str(kind)+'-'+mode, dotnet, output/'bridge-bin/Bridge.dll', str(kind), mode)
+        expected = {'control': str(kind)+'-'+mode, 'passed': True, 'actualGeneratedBridge': True,
+            'nativeImport': 'explicit-test-port', 'guestQualified': False}
+        require(len(raw) <= 1024 and json.loads(raw) == expected, 'managed-reserve-bridge-control-result')
+        bridge_rows.append(expected)
     require(inventory(snapshot(source)) == before, 'managed-work-state-control-source-changed')
     value = {'profile': 'dotnet-managed-work-state-controls-v1', 'source': json.loads(before),
-        'cases': rows, 'commands': commands.records, 'guestQualified': False,
+        'cases': rows, 'bridgeCases': bridge_rows, 'commands': commands.records, 'guestQualified': False,
         'productionContextDispatcherAndNativeLedgerQualified': False}
     write_json(output/'state-controls.json', value)
     return value
@@ -124,11 +238,23 @@ def verify(dotnet: Path, output: Path) -> dict:
 
 TIMER_CASES = (
     'native-storage-refusal-rolls-back-root', 'timer-admission-before-mutation-and-fresh',
+    'timer-reservation-unknown-retains-custody',
+    'timer-reservation-malformed-generation-retains-custody', 'timer-reservation-malformed-id-retains-custody',
+    'timer-reservation-reentry-preserves-distinct-owners',
+    'timer-reservation-refusal-reentry-preserves-custody',
+    'timer-allocation-reentry-reuses-same-owner', 'timer-allocation-reentry-preserves-other-owner',
+    'timer-second-allocation-reentry-preserves-other-owner',
+    'timer-allocation-fences-retired-parent',
     'change-reuses-original-owner', 'failed-change-rolls-back-unused-owner',
     'one-shot-delete-is-not-callback-return', 'multiple-queued-callbacks-retain-one-timer',
     'disposed-queued-callback-retires-after-cancelled-fire', 'callback-required-task-survives-return',
     'live-timer-descendant-during-closing', 'callback-throw-never-refunds-original-running-owner',
     'timer-pending-peer-failure-blocks-commit',
+    'timer-pre-ticket-refusal-rolls-back-current', 'timer-pre-ticket-unknown-retains-current',
+    'timer-required-result-unknown-retains-parent',
+    'timer-required-result-observed-before-parent-retirement',
+    'timer-required-result-settlement-refusal-retains-parent',
+    'timer-required-result-settlement-unknown-retains-parent',
     'timer-pending-duplicate-preserves-committed-owner', 'timer-pending-admission-blocks-dequeue',
     'timer-rollback-refusal-retains-accepted-owner', 'timer-rollback-unknown-retains-accepted-owner',
     'timer-queue-fault-before-insertion-rolls-back-current', 'timer-queue-fault-during-insertion-retains-owners',

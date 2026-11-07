@@ -20,7 +20,7 @@ mod runtime_memory;
 mod runtime_usage;
 pub use descendants::{
     BudgetCancellationProbe, ChildBudgetDelegation, ChildBudgetOwner, DelegationLimits,
-    DescendantBudgetSnapshot,
+    DescendantBudgetSnapshot, DescendantCancellation, OwnedCancellationFuture,
 };
 use host_memory::HostMemoryAccounting;
 pub use host_memory::HostMemoryReservation;

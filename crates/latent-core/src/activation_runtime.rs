@@ -403,12 +403,22 @@ impl ActivationRuntime {
     }
 
     pub fn park(&self, token: RuntimeToken) -> Result<RuntimeWake, PlatformError> {
+        self.park_with_after_live_check(token, || {})
+    }
+
+    fn park_with_after_live_check(
+        &self,
+        token: RuntimeToken,
+        after_check: impl FnOnce(),
+    ) -> Result<RuntimeWake, PlatformError> {
         self.check_live()?;
+        after_check();
         let mut state = self
             .inner
             .state
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let phase = state.phase;
         if token.generation != self.inner.generation {
             return Err(error(PlatformErrorCode::InvalidArgument, "runtime-token"));
         }
@@ -417,6 +427,12 @@ impl ActivationRuntime {
             .as_mut()
             .and_then(|slab| slab.records.iter_mut().flatten().find(|r| r.id == token.id))
             .ok_or_else(|| error(PlatformErrorCode::InvalidArgument, "runtime-token"))?;
+        // Cancellation can win the state lock after check_live returns. Do not
+        // publish a parked owner after that transition; already accepted work
+        // may still park in Closing/Draining until cancellation actually wins.
+        if matches!(phase, RuntimePhase::Cancelling | RuntimePhase::Retired) {
+            return Err(error(PlatformErrorCode::Cancelled, "runtime-retired"));
+        }
         record.parked = true;
         if matches!(state.phase, RuntimePhase::Running) {
             let runnable = state.slab.as_ref().is_some_and(|slab| {
@@ -593,6 +609,10 @@ impl RuntimeWake {
     /// Stale/foreign/retired completion cannot re-enter any activation. A wake
     /// reports readiness only; the language scheduler owns execution ordering.
     pub fn wake(&self) -> bool {
+        self.wake_with_after_live_check(|| {})
+    }
+
+    fn wake_with_after_live_check(&self, after_check: impl FnOnce()) -> bool {
         let Some(inner) = self.inner.upgrade() else {
             return false;
         };
@@ -600,11 +620,13 @@ impl RuntimeWake {
         if runtime.check_live().is_err() {
             return false;
         }
+        after_check();
         let mut state = runtime
             .inner
             .state
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let phase = state.phase;
         let record = state.slab.as_mut().and_then(|slab| {
             slab.records
                 .iter_mut()
@@ -613,6 +635,12 @@ impl RuntimeWake {
         });
         if self.token.generation != runtime.inner.generation || record.is_none() {
             state.stale_wakes = state.stale_wakes.saturating_add(1);
+            return false;
+        }
+        // Keep stale-token accounting above, then fence cancellation that won
+        // the lock after the earlier liveness check. Closing/Draining still
+        // allow already-owned work to receive readiness.
+        if matches!(phase, RuntimePhase::Cancelling | RuntimePhase::Retired) {
             return false;
         }
         record.expect("checked owner").parked = false;

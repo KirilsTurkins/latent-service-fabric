@@ -11,14 +11,16 @@ use latent_capabilities::broker::{
     ProviderCall,
 };
 use latent_core::{
-    ActivationPhase, BudgetProfile, ChildBudgetDelegation, ChildBudgetOwner, IncomingDeadline,
-    Metadata, PlatformError, PlatformErrorCode, ResourceBudget, SpanId, TraceId,
+    ActivationPhase, BudgetProfile, ChildBudgetDelegation, ChildBudgetOwner,
+    DescendantCancellation, IncomingDeadline, Metadata, PlatformError, PlatformErrorCode,
+    ResourceBudget, SpanId, TraceId,
 };
 use latent_routing::ResolvedRevision;
 use latent_scheduler::AdmittedSchedulingRequest;
 use std::sync::{Arc, Weak};
 
 mod budget;
+mod driver;
 mod result;
 
 pub(super) struct ChildAdmission {
@@ -76,7 +78,8 @@ impl LocalServiceInvoker for Invoker {
                 "local service manager retired",
             )
         })?;
-        let (activation, child) = manager.start_child(&call, request, &self.ceiling)?;
+        let (activation, child, watcher, driver) =
+            manager.start_child(&call, request, &self.ceiling, drive_child)?;
         // This witnesses the node's accepted child lifecycle, not guest success
         // or transactional effects. Failed evidence recording remains Unknown;
         // the actual child and call still go through node-owned cleanup.
@@ -86,7 +89,7 @@ impl LocalServiceInvoker for Invoker {
         let (sender, receiver) = tokio::sync::oneshot::channel();
         // This task is bounded by the accepted call, descendant, quota and cell
         // owners. It drives cleanup after receiver loss; no extra worker pool.
-        executor.spawn(drive_child(activation, child, call, sender));
+        executor.spawn(driver.finish(|| drive_child(activation, child, call, watcher, sender)));
         Ok(Box::pin(async move {
             receiver
                 .await
@@ -126,12 +129,30 @@ impl Inner {
             input_media_type: request.input_media_type,
         })
     }
-    fn start_child(
+    fn start_child<F>(
         self: &Arc<Self>,
         call: &ProviderCall,
         request: LocalServiceRequest,
         ceiling: &ResourceBudget,
-    ) -> Result<(ActivationHandle, ChildBudgetOwner), PlatformError> {
+        driver_factory: fn(
+            ActivationHandle,
+            ChildBudgetOwner,
+            ProviderCall,
+            DescendantCancellation,
+            tokio::sync::oneshot::Sender<LocalServiceCompletion>,
+        ) -> F,
+    ) -> Result<
+        (
+            ActivationHandle,
+            ChildBudgetOwner,
+            DescendantCancellation,
+            driver::PreparedDriver<F>,
+        ),
+        PlatformError,
+    >
+    where
+        F: std::future::Future<Output = ()> + Send + 'static,
+    {
         let target = call.local_invocation_target(&request.target)?;
         if call.maximum_output_bytes() < 1024 {
             return Err(error(
@@ -153,8 +174,13 @@ impl Inner {
         eligibility.authorize_tenant(&target.target.tenant)?;
         let parent = call.budget_accounting();
         let sample = self.clock.sample();
-        let grant = budget::share(parent.remaining_at(sample.monotonic())).intersect(ceiling);
         let requested = budget::incoming(sample, call.deadline(), request.deadline_unix_millis)?;
+        // Keep cancellation observation in the caller's original ledger and
+        // reject before delegation, journal admission, or child scheduling.
+        let watcher = parent.prepare_descendant_cancellation_at(sample.monotonic())?;
+        // Reserve the exact spawned driver frame before it or a child exists.
+        let driver = driver::PreparedDriver::for_factory(parent, driver_factory)?;
+        let grant = budget::share(parent.remaining_at(sample.monotonic())).intersect(ceiling);
         let delegation = parent.delegate_at(&grant, ceiling, ceiling, Some(&requested), sample)?;
         let grant = delegation.grant();
         let incoming = IncomingDeadline::new(
@@ -221,6 +247,8 @@ impl Inner {
         Ok((
             self.child_handle(envelope, lifecycle, transport_stop),
             child,
+            watcher,
+            driver,
         ))
     }
     fn child_handle(
@@ -263,11 +291,12 @@ async fn drive_child(
     mut activation: ActivationHandle,
     child: ChildBudgetOwner,
     call: ProviderCall,
+    watcher: DescendantCancellation,
     mut sender: tokio::sync::oneshot::Sender<LocalServiceCompletion>,
 ) {
     let receipt = tokio::select! {
         biased;
-        () = call.budget_accounting().descendant_cancelled() => None,
+        () = watcher => None,
         () = sender.closed() => None,
         receipt = &mut activation => Some(receipt),
     };

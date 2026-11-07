@@ -1,0 +1,69 @@
+{
+  "http.c": {
+    "source_sha256": "c81b948e74babf3edbc97a25473597daf24cba87ce48abda828f2e753c64185d",
+    "previous_sha256": "6d762b7001e35c32582a5a5e7bb3c4be2313ebaa6522d20ae298bd9ce29f6d6f",
+    "hunks": [
+      [
+        158,
+        159,
+        "        url->offset || url->ims_time || !url->doc || url->doc[0] != '/' ||\n"
+      ],
+      [
+        205,
+        264,
+        ""
+      ],
+      [
+        267,
+        271,
+        "        fetchAuthMethod || fetchDebug || fetchTimeout < 0) { unsupported(); return NULL; }\n"
+      ],
+      [
+        295,
+        296,
+        "    latent_http_streaming_header_t headers[] = {\n"
+      ],
+      [
+        299,
+        310,
+        ""
+      ],
+      [
+        311,
+        312,
+        "        .headers = {headers, sizeof(headers) / sizeof(headers[0])},\n"
+      ],
+      [
+        345,
+        353,
+        ""
+      ],
+      [
+        358,
+        358,
+        "    url->length = length;\n"
+      ],
+      [
+        367,
+        374,
+        ""
+      ],
+      [
+        379,
+        380,
+        "        stat->size = known_length ? (off_t)length : (off_t)-1;\n"
+      ]
+    ]
+  },
+  "UPSTREAM.json": {
+    "source_sha256": "5f7795e7318f9e931aa0fef5f8e05368e69d24b26fca22471ec4302bdb245237",
+    "previous_sha256": "6b58f1d1838b48f611120d2437b20f2b07614dbc2cb600f5526369d4809b3088",
+    "hunks": [
+      [
+        114,
+        115,
+        "    \"scope\": \"Optional url_stat on successful HTTP GET and standalone Stat via a separately authorized HEAD request. Range and conditional requests remain unsupported.\"\n"
+      ]
+    ]
+  }
+}

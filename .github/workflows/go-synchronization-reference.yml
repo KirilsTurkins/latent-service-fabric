@@ -56,7 +56,9 @@ jobs:
       - name: Check exact queued-root reservation and original-deadline evidence controls
         run: python3 -m unittest tools.tests.test_go_queued -v
       - name: Check exact managed-v5 standard timer and GC evidence controls
-        run: python3 -m unittest tools.tests.test_go_managed_timers -v
+        run: |
+          command -v go >/dev/null
+          python3 -m unittest tools.tests.test_go_managed_timers -v
       - name: Check original Task16 saturation evidence controls
         if: env.LSF_GO_REFERENCE_CAMPAIGN == 'task-saturation'
         run: python3 -m unittest tools.tests.test_go_task_saturation -v

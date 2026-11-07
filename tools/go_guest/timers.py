@@ -8,14 +8,23 @@ def runtime_sources(goroot, sources, sdk):
     text = sources['runtime/time.go']
     text = replace_once(text, '\tisSending atomic.Int32\n}',
         '\tisSending atomic.Int32\n\tlsfToken [2]uint64\n\tlsfSlot uint32\n}')
+    # time.Timer and time.Ticker expose only the leading c/init fields. Keep
+    # the cooperative gate after the embedded runtime timer so that public
+    # Stop/Reset serialize without making scheduler/g0 callbacks park.
+    text = replace_once(text, '\tinit bool\n\ttimer\n}',
+        '\tinit bool\n\ttimer\n\tlsfGate chan struct{}\n}')
     text = replace_once(text, '\tif lsfActivationActive { lsfFail("LSF Go timer API is not qualified by this profile") }',
         '\tlsfToken := lsfReserveTimer(when, period)')
+    text = replace_once(text, '\tt := new(timeTimer)\n',
+        '\tt := new(timeTimer)\n\tt.lsfGate = make(chan struct{}, 1)\n\tt.lsfGate <- struct{}{}\n')
     text = replace_once(text, '\tt.modify(when, period, f, arg, 0)',
         '\tlsfInstallTimer(&t.timer, lsfToken)\n\tt.modify(when, period, f, arg, 0)')
     text = replace_once(text, '\treturn t.stop()\n}',
+        '\t<-t.lsfGate\n\tdefer func() { t.lsfGate <- struct{}{} }()\n'
         '\tstopped := t.stop()\n\ttoken := lsfRetireTimer(&t.timer)\n'
         '\tlsfActivationTimerFence(token[0], token[1])\n\treturn stopped\n}')
     text = replace_once(text, '\treturn t.reset(when, period)\n}',
+        '\t<-t.lsfGate\n\tdefer func() { t.lsfGate <- struct{}{} }()\n'
         '\tactive := t.stop()\n\ttoken := lsfRetireTimer(&t.timer)\n\tlsfActivationTimerFence(token[0], token[1])\n'
         '\tnewToken := lsfReserveTimer(when, period)\n\tlsfInstallTimer(&t.timer, newToken)\n'
         '\tt.reset(when, period)\n\treturn active\n}')

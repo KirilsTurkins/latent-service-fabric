@@ -176,8 +176,26 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
         abort = (FIXTURES/'original-abort-signal.cpp').read_bytes()
         begin = b'bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason)'
         ending = b'JSObject *AbortSignal::create('
-        self.assertEqual(abort[abort.index(begin):abort.index(ending)],
-                         derived[abort_engine.PATH][derived[abort_engine.PATH].index(begin):derived[abort_engine.PATH].index(ending)])
+        original_abort = abort[abort.index(begin):abort.index(ending)]
+        changed_abort = derived[abort_engine.PATH][derived[abort_engine.PATH].index(begin):derived[abort_engine.PATH].index(ending)]
+        replacement = (b'  // With no newly aborted dependents there is no later abort work to skip.\n'
+                       b'  if (!run_abort_steps(cx, self) && dep_signals_to_abort.empty()) return false;\n')
+        self.assertEqual(changed_abort.count(replacement), 1)
+        reason_check = b'  if (!set_reason(cx, self, reason)) return false;\n'
+        rooted_reason = b'  RootedValue propagated_reason(cx, AbortSignal::reason(self));\n'
+        dependent_reason = b'      if (!set_reason(cx, signal, propagated_reason)) return false;\n'
+        null_check = b'  if (!event) return false;\n'
+        self.assertEqual(changed_abort.count(reason_check), 1)
+        self.assertEqual(changed_abort.count(rooted_reason), 1)
+        self.assertEqual(changed_abort.count(dependent_reason), 1)
+        self.assertLess(changed_abort.index(reason_check), changed_abort.index(rooted_reason))
+        self.assertLess(changed_abort.index(rooted_reason), changed_abort.index(dependent_reason))
+        self.assertEqual(changed_abort.count(null_check), 1)
+        changed_abort = changed_abort.replace(replacement, b'  run_abort_steps(cx, self);\n', 1)
+        changed_abort = changed_abort.replace(rooted_reason, b'', 1)
+        changed_abort = changed_abort.replace(dependent_reason, b'      set_reason(cx, signal, reason);\n', 1)
+        changed_abort = changed_abort.replace(reason_check, b'  set_reason(cx, self, reason);\n', 1)
+        self.assertEqual(changed_abort.replace(null_check, b'', 1), original_abort)
 
     def test_owned_graph_changes_remain_unqualified_and_snapshot_mutation_is_denied(self):
         _, receipt = derive()
@@ -207,6 +225,71 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
                      'tools/typescript_guest/event_engine.py'):
             self.assertIn(name, engine_input_paths())
             self.assertIn(name, RECIPE)
+
+
+class AbortFailureControls(unittest.TestCase):
+    """Run both emitted abort functions against finite doubles, not an engine."""
+    @classmethod
+    def setUpClass(cls):
+        compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++') or shutil.which('cl')
+        if not compiler:
+            if os.name == 'nt':
+                raise unittest.SkipTest('A C++ compiler is required for abort failure controls')
+            raise RuntimeError('C++ compiler is required for abort failure controls')
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.temporary.cleanup)
+        output = Path(cls.temporary.name)
+        template = (Path(__file__).parent/'fixtures/typescript_abort_failure.cpp').read_bytes()
+        abort_start = b'bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason)'
+        steps_start = b'bool AbortSignal::run_abort_steps('
+        steps_end = b'// Set signal\'s abort reason to reason if it is given;'
+        abort_end = b'// https://dom.spec.whatwg.org/#run-the-abort-steps'
+        original = (FIXTURES/'original-abort-signal.cpp').read_bytes()
+        selected = derive()[0][abort_engine.PATH]
+        for label, source in (('selected', selected), ('original', original)):
+            body = source[source.index(abort_start):source.index(abort_end)]
+            steps = source[source.index(steps_start):source.index(steps_end)]
+            fixture = template
+            for marker, code in ((b'// INSERT_EMITTED_ABORT_FUNCTION\n', body),
+                                 (b'// INSERT_EMITTED_ABORT_STEPS_FUNCTION\n', steps)):
+                if fixture.count(marker) != 1:
+                    raise AssertionError('unique emitted abort insertion point required')
+                fixture = fixture.replace(marker, code, 1)
+            source_file = output/(label+'.cpp')
+            source_file.write_bytes(fixture)
+            binary = output/(label+'.exe' if os.name == 'nt' else label)
+            if Path(compiler).stem.lower() == 'cl':
+                args = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX',
+                        str(source_file), '/Fe:'+str(binary), '/Fo:'+str(output/(label+'.obj'))]
+            else:
+                args = [compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror',
+                        str(source_file), '-o', str(binary)]
+            result = subprocess.run(args, capture_output=True, timeout=60)
+            if result.returncode or len(result.stdout) + len(result.stderr) > 65536:
+                raise AssertionError((result.stdout + result.stderr)[:65536].decode(errors='replace'))
+            setattr(cls, label+'_binary', binary)
+
+    def test_failure_preserves_original_exception_and_completed_or_retained_work(self):
+        for case in ('success', 'dispatch-failure', 'event-failure', 'reason-failure',
+                     'algorithm-failure', 'dependent-continuation', 'default-reason',
+                     'explicit-reason', 'already-aborted'):
+            with self.subTest(case=case):
+                result = subprocess.run([str(self.selected_binary), case], capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
+                self.assertEqual(json.loads(result.stdout),
+                                 {'case': case, 'passed': True, 'engineQualified': False})
+
+    def test_pinned_original_reproduces_narrow_failure_boundaries(self):
+        for case in ('dispatch-failure', 'event-failure', 'reason-failure', 'algorithm-failure', 'default-reason'):
+            with self.subTest(case=case):
+                result = subprocess.run([str(self.original_binary), case], capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 1, (result.stdout + result.stderr)[:65536])
+                self.assertEqual(json.loads(result.stdout),
+                                 {'case': case, 'passed': False, 'engineQualified': False})
+        for case in ('success', 'dependent-continuation', 'explicit-reason', 'already-aborted'):
+            with self.subTest(case=case):
+                result = subprocess.run([str(self.original_binary), case], capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
 
 
 class EventPublicationControls(unittest.TestCase):

@@ -12,6 +12,7 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
         raise ValueError('unreviewed-original-AbortSignal-source')
     source = replace_once(raw, b'#include "../timers.h"\n',
         b'#include "../timers.h"\n#include "native_timeout.h"\n#include "native_engine.h"\n'
+        b'#include "native_objects.h"\n'
         b'#include "js/ForOfIterator.h"\n', 'abort-native-include')
     source = replace_once(source,
         b'    JS_SetPendingException(cx, reason);\n  }\n\n  return true;\n}',
@@ -24,7 +25,10 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
         b'  RootedObject self(cx, create_with_signals(cx, args));\n',
         b'''  JS::ForOfIterator iterator(cx);
   if (!iterator.init(args.get(0))) return false;
+  // The vector must be destroyed before its frame's original native owner.
+  lsf::typescript::activation::NativeObjectFrameLease signals_owner;
   JS::RootedValueVector signals(cx);
+  bool signals_owned = false;
   while (true) {
     JS::RootedValue value(cx);
     bool done = false;
@@ -35,6 +39,13 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
                        "contain only AbortSignal objects");
       iterator.closeThrow();
       return false;
+    }
+    if (!signals_owned && signals.length() == signals.capacity()) {
+      if (!lsf::typescript::activation::admit_native_object(cx, signals_owner.lease())) {
+        iterator.closeThrow();
+        return false;
+      }
+      signals_owned = true;
     }
     if (!signals.append(value)) { JS_ReportOutOfMemory(cx); return false; }
   }
@@ -65,6 +76,27 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
         b'  if (!lsf::typescript::activation::start_timeout_nanoseconds(\n'
         b'          cx, handler, JS::HandleValueArray(args), nanos, &timer_id)) {',
         'actual-AbortSignal-native-timer-readiness')
+    source = replace_once(source,
+        b'  set_reason(cx, self, reason);\n',
+        b'  if (!set_reason(cx, self, reason)) return false;\n'
+        b'  RootedValue propagated_reason(cx, AbortSignal::reason(self));\n',
+        'abort-root-reason-before-dependent-mutation')
+    source = replace_once(source,
+        b'      set_reason(cx, signal, reason);\n',
+        b'      if (!set_reason(cx, signal, propagated_reason)) return false;\n',
+        'propagate-root-abort-reason-identity-to-dependents')
+    source = replace_once(source,
+        b'  RootedObject event(cx, Event::create(cx, type_val, JS::NullHandleValue));\n'
+        b'  RootedValue event_val(cx, JS::ObjectValue(*event));\n',
+        b'  RootedObject event(cx, Event::create(cx, type_val, JS::NullHandleValue));\n'
+        b'  if (!event) return false;\n'
+        b'  RootedValue event_val(cx, JS::ObjectValue(*event));\n',
+        'abort-event-allocation-before-dereference')
+    source = replace_once(source,
+        b'  run_abort_steps(cx, self);\n',
+        b'  // With no newly aborted dependents there is no later abort work to skip.\n'
+        b'  if (!run_abort_steps(cx, self) && dep_signals_to_abort.empty()) return false;\n',
+        'preserve-root-abort-error-when-no-dependent-work-remains')
     return source, {'format': 'latent.typescript.abort-timeout-source-derivation.v1',
         'starlingCommit': STARLING_COMMIT, 'originalSource': identity({PATH: raw}),
         'derivedSource': identity({PATH: source}),
@@ -76,6 +108,12 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
         'originalAbortAlgorithmsListenersAndTimeoutReasonRetained': True,
         'throwIfAbortedPreservesOriginalReasonIdentity': True,
         'anyConvertsOneIterableAndChecksSignalInstances': True,
+        'anyHeapVectorOwner': 'one-original-native-count-per-frame-not-byte-accurate',
         'staticAbortReasonOptional': True,
+        'rootAbortFailureWithoutNewDependents': 'propagate-original-failure',
+        'rootReasonAllocationFailure': 'return-before-direct-reason-slot-write',
+        'dependentAbortReason': 'rooted-root-reason-identity',
+        'abortEventAllocationFailure': 'return-after-original-algorithm-cleanup',
+        'dependentAbortAndReasonAllocationFailures': 'not-qualified',
         'timerOrResultOwnerRetirement': 'same-original-host-stop-subtask-drop-acknowledgements',
         'supportedAsyncProfile': False, 'signedLSFComponentQualified': False}

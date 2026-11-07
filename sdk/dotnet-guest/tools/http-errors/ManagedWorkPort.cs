@@ -31,7 +31,7 @@ internal static class ManagedWorkPort
         if (changed.Count != 23 || registry.Count != 58)
             throw new InvalidDataException("managed-work-selected-method-count");
         return (hooks.Changed, new {
-            patch = "latent.dotnet.managed-accepted-work.v5",
+            patch = "latent.dotnet.managed-accepted-work.v10",
             readiness = "original-prefetched-slot-or-counted-queues-and-polls",
             readinessControls = "four-actual-generated-slot-models",
             modifiedOriginalMethods = changed,
@@ -40,6 +40,13 @@ internal static class ManagedWorkPort
             requiredContinuationIdentity = "actual-state-machine-box-before-await-registration",
             queueAdmission = "per-call-pre-insertion-queue-rollback-otherwise-retain-matching-owners",
             queueInsertionWitness = "before-original-local-push-or-global-enqueue-call",
+            reservationAdmission = "provisional-task-and-queue-explicit-wit-refusal",
+            admissionFinalization = "in-flight-count-before-allocation-and-join-drain-fence",
+            resultTransition = "fenced-observation-and-one-attempt-fault-result-settlement",
+            requiredResultReservation = "in-flight-required-and-provisional-result-with-observation",
+            resultLookup = "exact-result-primary-before-parent-alias",
+            startupReservation = "dormant-root-native-refusal-ordered-cleanup-and-context-custody",
+            startupReadiness = "pre-probe-sentinel-and-untracked-dispatch-poison",
             completion = "after-original-finish-continuations",
             context = "private-key-original-immutable-map-original-notifications",
             contextSourceTypes = contextTypes,
@@ -49,6 +56,7 @@ internal static class ManagedWorkPort
             privateRootBridge = "exact-Task-UnsafeAccessor-static-forwarders",
             structuralRecordLimit = 32, structuralQueueLimit = 64, structuralTimerLimit = 32,
             timerAdmission = "original-TimerQueueTimer-before-active-list-mutation",
+            timerReservation = "provisional-timer-explicit-wit-refusal-and-unknown-custody",
             timerRetirement = "original-disarmed-no-accepted-queued-running-or-required-callback",
             timerCallbackContext = "original-ExecutionContext-values-with-private-live-timer-owner",
             authoritativeLimits = "original-activation-owner-ledger",

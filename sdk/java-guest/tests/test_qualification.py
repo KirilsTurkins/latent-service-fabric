@@ -290,6 +290,11 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
         return ("42 42 42 42\nTIMER_SOURCE_CONTROL PASS reference-observables;queue-rollback;"
                 "cancel-drain;idle-finally;no-live-owners\n")
 
+    @staticmethod
+    def active_receipts():
+        return ["TIMER_ACTIVE_OWNER_CONTROL PASS " + case + "\n"
+                for case in fibers.STANDARD_TIMER_ACTIVE_OWNER_CASES]
+
     def test_incomplete_retirement_or_observables_cannot_qualify_source(self):
         for incomplete in ("42 42 42 42", self.receipt().replace(";no-live-owners", ""),
                            self.receipt().replace("42 42 42 42", "42 42 42 41")):
@@ -307,16 +312,25 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
             compiler = self.fixture(root)
             application = compiler.sdk / "fibers/conformance/timers/Capsule.java"
             original = application.read_bytes()
-            compiler.run.side_effect = ["", *([self.receipt()] * 3)]
+            compiler.run.side_effect = ["", *([self.receipt()] * 3), *self.active_receipts()]
             report = fibers.standard_timer_source_control(compiler, root / "control")
             self.assertEqual(application.read_bytes(), original)
             mapped = (root / "control/Capsule.java").read_text()
             self.assertIn("import dev.latent.guest.runtime.util.Timer;", mapped)
             self.assertNotIn("import java.util.Timer;", mapped)
-            self.assertEqual(len(report["sourceInputs"]), 7)
+            self.assertEqual(len(report["sourceInputs"]), 8)
             self.assertEqual(report["iterations"], 3)
             self.assertFalse(report["componentExecutionPerformed"])
             self.assertFalse(report["actualGuestBindingsUsed"])
+
+    def test_active_owner_case_must_return_its_exact_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler = self.fixture(root)
+            compiler.run.side_effect = ["", *([self.receipt()] * 3), "wrong-case\n"]
+            with self.assertRaisesRegex(ValueError, "timer active-owner control did not complete: one-shot-normal"):
+                fibers.standard_timer_source_control(compiler, root / "control")
+            self.assertEqual(compiler.run.call_count, 5)
 
     def test_changed_sdk_bytes_after_completed_runs_invalidate_receipt(self):
         with tempfile.TemporaryDirectory() as directory:

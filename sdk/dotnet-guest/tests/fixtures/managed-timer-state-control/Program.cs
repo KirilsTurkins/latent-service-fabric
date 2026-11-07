@@ -5,12 +5,23 @@ internal static class TimerControl
 {
     internal sealed class State { internal bool Scheduled; internal int Callbacks; }
     internal static readonly Queue<Action> Work = new();
+    internal static Action? TimerAllocationCallback;
+    private static Action? TimerReserveCallback, RequiredResultReserveCallback;
     private static readonly Dictionary<ulong, int> Owners = new();
     private static readonly int[] Limits = [8, 1, 1, 8, 8, 2, 8, 1];
     private static ulong sequence = uint.MaxValue;
     private static bool closing;
     private static (ulong, ulong) context;
     private static int admissions;
+    private static bool unknownQueueReservation;
+    private static bool unknownTimerReservation, malformedTimerReservation, malformedTimerGeneration;
+    private static bool unknownRequiredResult;
+    private static ulong unknownQueueToken;
+    private static ulong unknownTimerToken;
+    private static ulong unknownRequiredResultToken;
+    private static readonly InvalidOperationException UnknownQueueError = new("control-timer-queue-reservation-unknown");
+    private static readonly InvalidOperationException UnknownTimerError = new("control-timer-reservation-unknown");
+    private static readonly InvalidOperationException UnknownRequiredResultError = new("control-required-result-unknown");
     private static ulong failingSettlement;
     private static bool failAfterSettlement;
     private static int timerSettlementAttempts;
@@ -28,8 +39,25 @@ internal static class TimerControl
         Need(0 <= kind && kind < Limits.Length);
         if ((generation, id) != (0UL, 0UL)) Need(generation == 19 && Owners.ContainsKey(id));
         if (closing) Need(generation == 19 && Owners.ContainsKey(id));
-        if (Count(kind) >= Limits[kind]) throw new InvalidOperationException("control-ledger-capacity");
-        admissions++; ulong key = checked(++sequence); Owners.Add(key, kind); return (19, key);
+        if (Count(kind) >= Limits[kind])
+        {
+            if (kind == 5 && TimerReserveCallback is { } callback)
+            { TimerReserveCallback = null; callback(); }
+            if (kind is 0 or 3 or 5 or 6 or 7) return default;
+            throw new InvalidOperationException("control-ledger-capacity");
+        }
+        admissions++; ulong key = checked(++sequence); Owners.Add(key, kind);
+        if (kind == 5 && TimerReserveCallback is { } accepted)
+        { TimerReserveCallback = null; accepted(); }
+        if (kind == 5 && unknownTimerReservation) { unknownTimerToken = key; throw UnknownTimerError; }
+        if (kind == 5 && malformedTimerReservation)
+        { unknownTimerToken = key; return malformedTimerGeneration ? (0UL, key) : (19UL, 0UL); }
+        if (kind == 6 && RequiredResultReserveCallback is { } result)
+        { RequiredResultReserveCallback = null; result(); }
+        if (kind == 6 && unknownRequiredResult)
+        { unknownRequiredResultToken = key; throw UnknownRequiredResultError; }
+        if (kind == 3 && unknownQueueReservation) { unknownQueueToken = key; throw UnknownQueueError; }
+        return (19, key);
     }
     private static void Settle(ulong generation, ulong id)
     {
@@ -218,11 +246,187 @@ internal static class TimerControl
         Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-queue");
         Need(timerSettlementAttempts == 1 && Count(3) == 2);
     }
+    private static void PreTicketTimerRefusalControl()
+    {
+        Limits[3] = 1;
+        var item = Arm(); ManagedWorkRuntime.TimerAccepted(item); Enqueue(item);
+        var original = ManagedWorkRuntime.QueuedTokenForControl(item)
+            ?? throw new InvalidOperationException("timer-control-missing-queue-token");
+        ManagedWorkRuntime.TimerAccepted(item);
+        Refuses(() => Enqueue(item), "managed-work-admission-refused");
+        Need(ManagedWorkRuntime.TimerAcceptedForControl(item) == 1
+            && ManagedWorkRuntime.QueuedTokenForControl(item) == original && Count(3) == 1);
+        Disarm(item); ManagedWorkRuntime.Dequeue(item); Fire(item, () => { }); Finish();
+    }
+    private static void PreTicketTimerUnknownControl()
+    {
+        var item = Arm(); ManagedWorkRuntime.TimerAccepted(item); unknownQueueReservation = true;
+        bool observedOriginal = false;
+        try { ManagedWorkRuntime.Enqueue(item); }
+        catch (InvalidOperationException error) when (ReferenceEquals(error, UnknownQueueError)) { observedOriginal = true; }
+        Need(observedOriginal && unknownQueueToken != 0 && Owners.ContainsKey(unknownQueueToken)
+            && ManagedWorkRuntime.TimerAcceptedForControl(item) == 1 && Count(5) == 1);
+        Refuses(() => ManagedWorkRuntime.Dequeue(item), "managed-work-queue-uncertain");
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-queue");
+        Need(Owners.ContainsKey(unknownQueueToken) && ManagedWorkRuntime.TimerAcceptedForControl(item) == 1);
+    }
+    private static void TimerReservationFailureControl(string mode)
+    {
+        var item = new State();
+        if (mode == "unknown") unknownTimerReservation = true;
+        else { malformedTimerReservation = true; malformedTimerGeneration = mode == "generation"; }
+        Exception? received = null;
+        try { ManagedWorkRuntime.TimerChanging(item); } catch (Exception error) { received = error; }
+        Need(mode == "unknown" ? ReferenceEquals(received, UnknownTimerError)
+            : received is InvalidOperationException && received.Message == "managed-work-reservation-token");
+        Need(unknownTimerToken != 0 && Owners.ContainsKey(unknownTimerToken) && Count(5) == 1
+            && ManagedWorkRuntime.TimerMutationForControl(item) == -2);
+        var retained = ManagedWorkRuntime.TimerTokenForControl(item);
+        Need(retained == (mode == "unknown" ? (0UL, 0UL)
+            : mode == "generation" ? (0UL, unknownTimerToken) : (19UL, 0UL)));
+        Refuses(() => ManagedWorkRuntime.TimerChanging(item), "managed-timer-settlement-uncertain");
+        Refuses(() => ManagedWorkRuntime.TimerChanged(item), "managed-timer-settlement-uncertain");
+        Refuses(() => ManagedWorkRuntime.TimerDeleted(item), "managed-timer-settlement-uncertain");
+        Refuses(() => ManagedWorkRuntime.TimerAccepted(item), "managed-timer-settlement-uncertain");
+        Refuses(() => ManagedWorkRuntime.TimerEnter(item), "managed-timer-settlement-uncertain");
+        Refuses(() => ManagedWorkRuntime.CallbackCompleted(item), "managed-timer-settlement-uncertain");
+        Refuses(() => Enqueue(item), "managed-timer-settlement-uncertain");
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-timer-settlement-uncertain");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-timers");
+        Need(Count(5) == 1 && Owners.ContainsKey(unknownTimerToken)
+            && ManagedWorkRuntime.TimerTokenForControl(item) == retained);
+    }
+    private static void TimerReservationReentryControl()
+    {
+        var first = new State(); var second = new State();
+        TimerReserveCallback = () =>
+        {
+            Need(ManagedWorkRuntime.TimerMutationForControl(first) == -2);
+            Refuses(() => ManagedWorkRuntime.TimerChanging(first), "managed-timer-settlement-uncertain");
+            Refuses(() => ManagedWorkRuntime.TimerAccepted(first), "managed-timer-settlement-uncertain");
+            Refuses(() => ManagedWorkRuntime.TimerEnter(first), "managed-timer-settlement-uncertain");
+            Refuses(() => Enqueue(first), "managed-timer-settlement-uncertain");
+            Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-admission-in-progress");
+            Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-admission-in-progress");
+            ManagedWorkRuntime.TimerChanging(second); second.Scheduled = true; ManagedWorkRuntime.TimerChanged(second);
+        };
+        ManagedWorkRuntime.TimerChanging(first); first.Scheduled = true; ManagedWorkRuntime.TimerChanged(first);
+        Need(Count(5) == 2 && ManagedWorkRuntime.TimerMutationForControl(first) == 0
+            && ManagedWorkRuntime.TimerMutationForControl(second) == 0
+            && ManagedWorkRuntime.TimerTokenForControl(first) != ManagedWorkRuntime.TimerTokenForControl(second));
+        Disarm(first); Disarm(second); Finish();
+    }
+    private static void TimerAllocationReentryControl(bool same)
+    {
+        var first = new State(); var second = same ? first : new State();
+        TimerAllocationCallback = () =>
+        {
+            Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-admission-in-progress");
+            Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-admission-in-progress");
+            ManagedWorkRuntime.TimerChanging(second); second.Scheduled = true; ManagedWorkRuntime.TimerChanged(second);
+        };
+        ManagedWorkRuntime.TimerChanging(first); first.Scheduled = true; ManagedWorkRuntime.TimerChanged(first);
+        Need(Count(5) == (same ? 1 : 2) && ManagedWorkRuntime.TimerMutationForControl(first) == 0
+            && ManagedWorkRuntime.TimerMutationForControl(second) == 0);
+        Disarm(first); if (!same) Disarm(second); Finish();
+    }
+    private static void TimerSecondAllocationReentryControl()
+    {
+        var first = new State(); var second = new State();
+        TimerAllocationCallback = () => TimerAllocationCallback = () =>
+        {
+            Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-admission-in-progress");
+            Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-admission-in-progress");
+            ManagedWorkRuntime.TimerChanging(second); second.Scheduled = true; ManagedWorkRuntime.TimerChanged(second);
+        };
+        ManagedWorkRuntime.TimerChanging(first); first.Scheduled = true; ManagedWorkRuntime.TimerChanged(first);
+        Need(Count(5) == 2 && ManagedWorkRuntime.TimerMutationForControl(first) == 0
+            && ManagedWorkRuntime.TimerMutationForControl(second) == 0);
+        Disarm(first); Disarm(second); Finish();
+    }
+    private static void TimerRefusalReentryControl()
+    {
+        Limits[5] = 1; var first = Arm(); var refused = new State();
+        TimerReserveCallback = () =>
+        {
+            Need(ManagedWorkRuntime.TimerMutationForControl(refused) == -2);
+            Refuses(() => ManagedWorkRuntime.TimerChanging(refused), "managed-timer-settlement-uncertain");
+            Refuses(() => ManagedWorkRuntime.TimerChanged(refused), "managed-timer-settlement-uncertain");
+            Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-admission-in-progress");
+            Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-admission-in-progress");
+            Disarm(first);
+        };
+        Refuses(() => ManagedWorkRuntime.TimerChanging(refused), "managed-work-admission-refused");
+        Need(Count(5) == 0 && ManagedWorkRuntime.TimerMutationForControl(refused) == -3);
+        ManagedWorkRuntime.TimerChanging(refused); refused.Scheduled = true; ManagedWorkRuntime.TimerChanged(refused);
+        Disarm(refused); Finish();
+    }
+    private static void TimerAllocationRetiredParentControl()
+    {
+        var parent = Arm(); ManagedWorkRuntime.TimerAccepted(parent); Disarm(parent);
+        var previous = ManagedWorkRuntime.TimerEnter(parent);
+        var child = new State();
+        TimerAllocationCallback = () => ManagedWorkRuntime.TimerLeave(parent, previous);
+        Refuses(() => ManagedWorkRuntime.TimerChanging(child), "managed-timer-parent-changed");
+        Need(Count(5) == 0 && !child.Scheduled && ManagedWorkRuntime.TimerMutationForControl(child) == -3);
+        Finish();
+    }
+    private static void RequiredTimerResultFailureControl(int mode)
+    {
+        var timer = Arm(); ManagedWorkRuntime.TimerAccepted(timer); Disarm(timer);
+        var pending = new TaskCompletionSource<int>();
+        if (mode == 0) unknownRequiredResult = true;
+        else RequiredResultReserveCallback = () =>
+        {
+            ManagedWorkRuntime.Observed(pending.Task);
+            failingSettlement = Owners.Single(entry => entry.Value == 6).Key;
+            failAfterSettlement = mode == 2;
+        };
+        Exception? received = null;
+        try
+        {
+            Fire(timer, () =>
+            {
+                ManagedWorkRuntime.CreatedAsync(pending.Task);
+                pending.SetException(new ArgumentException("control-required-timer-fault"));
+            });
+        }
+        catch (Exception error) { received = error; }
+        Need(mode == 0 ? ReferenceEquals(received, UnknownRequiredResultError)
+            : received is InvalidOperationException && received.Message == "control-timer-settlement-failed");
+        ManagedWorkRuntime.Observed(pending.Task);
+        Refuses(() => ManagedWorkRuntime.TimerDeleted(timer), "managed-work-required-result-uncertain");
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-required-result-uncertain");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+        Need(Count(5) == 1 && ManagedWorkRuntime.TimerMutationForControl(timer) == 0
+            && Count(6) == (mode == 2 ? 0 : 1)
+            && (mode != 0 || Owners.ContainsKey(unknownRequiredResultToken))
+            && timerSettlementAttempts == (mode == 0 ? 0 : 1));
+    }
+    private static void RequiredTimerResultObservedControl()
+    {
+        var timer = Arm(); ManagedWorkRuntime.TimerAccepted(timer); Disarm(timer);
+        var pending = new TaskCompletionSource<int>();
+        RequiredResultReserveCallback = () =>
+        {
+            ManagedWorkRuntime.Observed(pending.Task);
+            ManagedWorkRuntime.TimerDeleted(timer);
+            Need(Count(5) == 1 && Count(6) == 1);
+            Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-admission-in-progress");
+        };
+        Fire(timer, () =>
+        {
+            ManagedWorkRuntime.CreatedAsync(pending.Task);
+            pending.SetException(new ArgumentException("control-observed-required-timer-fault"));
+        });
+        Need(Count(5) == 0 && Count(6) == 0); Finish();
+    }
     private static void Run(string name)
     {
         if (name == "native-storage-refusal-rolls-back-root")
         {
-            Limits[7] = 0; Refuses(Begin, "control-ledger-capacity");
+            Limits[7] = 0; Refuses(Begin, "managed-work-admission-refused");
             Need(Owners.Count == 0 && admissions == 1); return;
         }
         Begin();
@@ -230,10 +434,12 @@ internal static class TimerControl
         {
             case "timer-admission-before-mutation-and-fresh": {
                 Limits[5] = 1; var first = Arm(); var refused = new State(); int before = admissions;
-                Refuses(() => ManagedWorkRuntime.TimerChanging(refused), "control-ledger-capacity");
-                Need(!refused.Scheduled && Count(5) == 1 && admissions == before);
+                Refuses(() => ManagedWorkRuntime.TimerChanging(refused), "managed-work-admission-refused");
+                Need(!refused.Scheduled && Count(5) == 1 && admissions == before
+                    && ManagedWorkRuntime.TimerMutationForControl(refused) == -3);
                 Disarm(first); Need(Count(5) == 0);
-                var fresh = Arm(); Need(Count(5) == 1); Disarm(fresh); Finish(); break;
+                ManagedWorkRuntime.TimerChanging(refused); refused.Scheduled = true; ManagedWorkRuntime.TimerChanged(refused);
+                Need(Count(5) == 1); Disarm(refused); Finish(); break;
             }
             case "change-reuses-original-owner": {
                 Limits[5] = 1; var item = Arm(); int before = admissions;
@@ -253,6 +459,21 @@ internal static class TimerControl
                 Need(Count(5) == 0); Finish(); break;
             }
             case "timer-pending-peer-failure-blocks-commit": PendingPeerFailureControl(); break;
+            case "timer-pre-ticket-refusal-rolls-back-current": PreTicketTimerRefusalControl(); break;
+            case "timer-pre-ticket-unknown-retains-current": PreTicketTimerUnknownControl(); break;
+            case "timer-required-result-unknown-retains-parent": RequiredTimerResultFailureControl(0); break;
+            case "timer-required-result-observed-before-parent-retirement": RequiredTimerResultObservedControl(); break;
+            case "timer-required-result-settlement-refusal-retains-parent": RequiredTimerResultFailureControl(1); break;
+            case "timer-required-result-settlement-unknown-retains-parent": RequiredTimerResultFailureControl(2); break;
+            case "timer-reservation-unknown-retains-custody": TimerReservationFailureControl("unknown"); break;
+            case "timer-reservation-malformed-generation-retains-custody": TimerReservationFailureControl("generation"); break;
+            case "timer-reservation-malformed-id-retains-custody": TimerReservationFailureControl("id"); break;
+            case "timer-reservation-reentry-preserves-distinct-owners": TimerReservationReentryControl(); break;
+            case "timer-reservation-refusal-reentry-preserves-custody": TimerRefusalReentryControl(); break;
+            case "timer-allocation-reentry-reuses-same-owner": TimerAllocationReentryControl(true); break;
+            case "timer-allocation-reentry-preserves-other-owner": TimerAllocationReentryControl(false); break;
+            case "timer-second-allocation-reentry-preserves-other-owner": TimerSecondAllocationReentryControl(); break;
+            case "timer-allocation-fences-retired-parent": TimerAllocationRetiredParentControl(); break;
             case "timer-pending-duplicate-preserves-committed-owner": PendingDuplicateControl(); break;
             case "timer-pending-admission-blocks-dequeue": PendingAdmissionControl(); break;
             case "timer-rollback-refusal-retains-accepted-owner": TimerRollbackFailureControl(false); break;
