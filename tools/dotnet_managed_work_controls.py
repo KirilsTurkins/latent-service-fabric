@@ -43,6 +43,8 @@ CONVERSION_SETTLEMENT_CASES = (
     'fault-dispatch-settlement-refusal-preserves-error', 'fault-dispatch-settlement-unknown-preserves-error')
 OBSERVED_RESULT_SETTLEMENT_CASES = (
     'observed-result-settlement-refusal-retains-custody', 'observed-result-settlement-unknown-retains-custody')
+REQUIRED_RESULT_SETTLEMENT_CASES = (
+    'required-result-settlement-refusal-retains-custody', 'required-result-settlement-unknown-retains-custody')
 ROOT_SETTLEMENT_CASES = (
     'storage-settlement-refusal-fences-root', 'storage-settlement-unknown-fences-root',
     'root-settlement-refusal-fences-finalization', 'root-settlement-unknown-fences-finalization',
@@ -84,9 +86,19 @@ CASES = (
     'result-context-clear-failure-before-mutation', 'result-context-clear-failure-after-mutation',
     'result-context-restore-failure-before-mutation', 'result-context-restore-failure-after-mutation',
     'result-refusal-restore-observation-and-reentry',
+    'required-result-observed-during-allocation', 'required-result-observed-after-publication',
+    'required-result-observed-during-reservation', 'required-result-observed-after-return',
+    'required-result-observed-during-settlement', 'required-result-unknown-retains-custody',
+    'required-result-malformed-generation-retains-custody', 'required-result-malformed-id-retains-custody',
+    'required-result-refusal-restores-pending', 'required-result-slot-reentry-preserves-owner',
+    'required-result-transport-after-publication', 'required-result-transport-during-reservation',
+    'required-result-allocation-failure-preserves-parent',
+    'required-result-active-alias-observation', 'required-result-uncertain-alias-fences-entry',
+    'required-result-ordinary-alias-preserves-parent',
     *SETTLEMENT_CASES, *QUEUE_SETTLEMENT_CASES, *ROLLBACK_SETTLEMENT_CASES,
     *OWNER_SETTLEMENT_CASES, *RESULT_SETTLEMENT_CASES,
-    *CONVERSION_SETTLEMENT_CASES, *OBSERVED_RESULT_SETTLEMENT_CASES, *ROOT_SETTLEMENT_CASES)
+    *CONVERSION_SETTLEMENT_CASES, *OBSERVED_RESULT_SETTLEMENT_CASES,
+    *REQUIRED_RESULT_SETTLEMENT_CASES, *ROOT_SETTLEMENT_CASES)
 
 
 def verify(dotnet: Path, output: Path) -> dict:
@@ -159,6 +171,9 @@ def verify(dotnet: Path, output: Path) -> dict:
         elif name in OBSERVED_RESULT_SETTLEMENT_CASES:
             expected.update(settlementRefusals=1, retainedTasks=1,
                             retainedQueuedOwners=0, controlDispatches=0, automaticRetries=0, rootSuccess=False)
+        elif name in REQUIRED_RESULT_SETTLEMENT_CASES:
+            expected.update(settlementRefusals=1, retainedTasks=2,
+                            retainedQueuedOwners=0, controlDispatches=0, automaticRetries=0, rootSuccess=False)
         elif name in ROOT_SETTLEMENT_CASES:
             is_storage = name.startswith('storage-')
             is_unknown = '-unknown-' in name
@@ -204,6 +219,10 @@ TIMER_CASES = (
     'live-timer-descendant-during-closing', 'callback-throw-never-refunds-original-running-owner',
     'timer-pending-peer-failure-blocks-commit',
     'timer-pre-ticket-refusal-rolls-back-current', 'timer-pre-ticket-unknown-retains-current',
+    'timer-required-result-unknown-retains-parent',
+    'timer-required-result-observed-before-parent-retirement',
+    'timer-required-result-settlement-refusal-retains-parent',
+    'timer-required-result-settlement-unknown-retains-parent',
     'timer-pending-duplicate-preserves-committed-owner', 'timer-pending-admission-blocks-dequeue',
     'timer-rollback-refusal-retains-accepted-owner', 'timer-rollback-unknown-retains-accepted-owner',
     'timer-queue-fault-before-insertion-rolls-back-current', 'timer-queue-fault-during-insertion-retains-owners',

@@ -8,6 +8,7 @@ internal static class StateControl
     internal static readonly OutOfMemoryException QueueAllocationFailure = new("control-queue-allocation-failed");
     internal static Action? QueueAllocationCallback;
     internal static Action? RecordAllocationCallback;
+    internal static Action? RequiredPublishedCallback, RequiredReservedCallback;
     private static Action? QueueReserveCallback;
     private static Action? ResultReservationCallback, AfterSettlementCallback, AfterContextClearCallback, AfterContextRestoreCallback;
     private static ulong afterSettlementTarget, refuseContextRestore, afterContextRestoreTarget;
@@ -62,6 +63,8 @@ internal static class StateControl
         }
         if (Count(kind) >= Limits[kind])
         {
+            if (kind == 6 && ResultReservationCallback is { } refused)
+            { ResultReservationCallback = null; refused(); }
             if (kind is 0 or 3 or 6) return default;
             throw new InvalidOperationException("control-ledger-capacity");
         }
@@ -198,6 +201,189 @@ internal static class StateControl
         Need(!rootJoinReturned && refusedSettlements == 1 && Count(0) == 1
             && Count(6) == (unknown ? 0 : 1) && Owners.ContainsKey(settlementRefusal) != unknown
             && Count(3) == 0 && Work.Count == 0);
+    }
+    private static (object Callback, TaskCompletionSource<int> Required) RequiredFaultParent()
+    {
+        object callback = new(); Enqueue(callback); ManagedWorkRuntime.Dequeue(callback);
+        var previous = ManagedWorkRuntime.Enter(callback);
+        var pending = Pending(); ManagedWorkRuntime.CreatedAsync(pending.Task);
+        pending.SetException(new ArgumentException("control-required-result-fault"));
+        ManagedWorkRuntime.Exit(previous);
+        return (callback, pending);
+    }
+    private static void RequiredResultObservationControl(string point)
+    {
+        var (callback, pending) = RequiredFaultParent(); int observations = 0;
+        void Observe()
+        {
+            observations++;
+            ManagedWorkRuntime.Observed(pending.Task);
+            if (point != "allocation")
+                Refuses(() => ManagedWorkRuntime.Completed(pending.Task), "managed-work-double-settle");
+            // Recursive completion of the parent must keep it alive and must
+            // not reserve a second Result for this same Required entry.
+            ManagedWorkRuntime.CallbackCompleted(callback);
+            Need(Count(0) == 2);
+            Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-admission-in-progress");
+            Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-admission-in-progress");
+        }
+        if (point == "allocation") RecordAllocationCallback = Observe;
+        else if (point == "published") RequiredPublishedCallback = Observe;
+        else if (point == "reserve") ResultReservationCallback = Observe;
+        else if (point == "returned") RequiredReservedCallback = Observe;
+        else if (point == "settle") ResultReservationCallback = () =>
+        {
+            Observe(); afterSettlementTarget = Owners.Single(entry => entry.Value == 6).Key;
+            AfterSettlementCallback = Observe;
+        };
+        else throw new InvalidOperationException("unknown-required-result-observation");
+        ManagedWorkRuntime.CallbackCompleted(callback);
+        Need(observations == (point == "settle" ? 2 : 1) && Count(0) == 1 && Count(6) == 0
+            && maximumResults == (point is "allocation" or "published" ? 0 : 1));
+        Finish();
+    }
+    private static void RequiredResultUnknownControl(string mode)
+    {
+        var (callback, pending) = RequiredFaultParent();
+        if (mode == "unknown") unknownReservationKind = 6;
+        else { malformedReservationKind = 6; malformedGeneration = mode == "generation"; }
+        Exception? received = null;
+        try { ManagedWorkRuntime.CallbackCompleted(callback); } catch (Exception error) { received = error; }
+        Need(mode == "unknown" ? ReferenceEquals(received, UnknownReservation)
+            : received is InvalidOperationException && received.Message == "managed-work-reservation-token");
+        Need(unknownReservationToken != 0 && Owners.ContainsKey(unknownReservationToken)
+            && Count(0) == 2 && Count(6) == 1);
+        // The parent remains active because it still owns this Required entry.
+        var previous = ManagedWorkRuntime.Enter(callback); ManagedWorkRuntime.Exit(previous);
+        ManagedWorkRuntime.Observed(pending.Task); ManagedWorkRuntime.CallbackCompleted(pending.Task);
+        Refuses(() => ManagedWorkRuntime.Completed(pending.Task), "managed-work-double-settle");
+        Refuses(() => ManagedWorkRuntime.CallbackCompleted(callback), "managed-work-required-result-uncertain");
+        Refuses(() => { ManagedWorkRuntime.JoinAcceptedWork(); rootJoinReturned = true; },
+            "managed-work-required-result-uncertain");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+        Need(!rootJoinReturned && Count(0) == 2 && Count(6) == 1 && Owners.ContainsKey(unknownReservationToken));
+    }
+    private static void RequiredResultRefusalControl()
+    {
+        var (callback, pending) = RequiredFaultParent(); Limits[6] = 0;
+        ResultReservationCallback = () =>
+        {
+            ManagedWorkRuntime.Observed(pending.Task); ManagedWorkRuntime.CallbackCompleted(callback);
+            Refuses(() => ManagedWorkRuntime.Completed(pending.Task), "managed-work-double-settle");
+            Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-admission-in-progress");
+        };
+        Refuses(() => ManagedWorkRuntime.CallbackCompleted(callback), "managed-work-admission-refused");
+        Need(Count(0) == 2 && Count(6) == 0);
+        ManagedWorkRuntime.CallbackCompleted(callback); Finish();
+    }
+    private static void RequiredResultTransportControl(bool afterReservation)
+    {
+        var (callback, pending) = RequiredFaultParent();
+        void Transport()
+        {
+            ManagedWorkRuntime.RequiredTransport(pending.Task);
+            ManagedWorkRuntime.CallbackCompleted(callback);
+            Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-admission-in-progress");
+        }
+        if (afterReservation) ResultReservationCallback = Transport;
+        else RequiredPublishedCallback = Transport;
+        ManagedWorkRuntime.CallbackCompleted(callback);
+        Need(Count(0) == 1 && Count(6) == 0 && maximumResults == (afterReservation ? 1 : 0));
+        Finish();
+    }
+    private static void RequiredResultAllocationFailureControl()
+    {
+        var (callback, pending) = RequiredFaultParent();
+        var original = new OutOfMemoryException("control-required-result-allocation");
+        RecordAllocationCallback = () => throw original;
+        Exception? received = null;
+        try { ManagedWorkRuntime.CallbackCompleted(callback); } catch (Exception error) { received = error; }
+        Need(ReferenceEquals(received, original) && Count(0) == 2 && Count(6) == 0);
+        ManagedWorkRuntime.Observed(pending.Task); ManagedWorkRuntime.CallbackCompleted(callback); Finish();
+    }
+    private static void RequiredResultSlotReentryControl()
+    {
+        var (callback, pending) = RequiredFaultParent(); var other = Pending();
+        ResultReservationCallback = () =>
+        {
+            ManagedWorkRuntime.Schedule(other.Task); ManagedWorkRuntime.CallbackCompleted(callback);
+            Need(Count(0) == 3 && Count(6) == 1);
+        };
+        ManagedWorkRuntime.CallbackCompleted(callback);
+        Need(Count(0) == 2 && Count(6) == 1 && !other.Task.IsCompleted);
+        var previous = ManagedWorkRuntime.Enter(other.Task); ManagedWorkRuntime.Exit(previous);
+        ManagedWorkRuntime.Observed(pending.Task); Complete(other); Finish();
+    }
+    private static (Task Promise, TaskCompletionSource<int> Required,
+        TaskCompletionSource<int> Blocker) RequiredAliasParent()
+    {
+        var outer = new TaskCompletionSource<Task<int>>(); var required = Pending(); var blocker = Pending();
+        var promise = outer.Task.Unwrap();
+        ManagedWorkRuntime.Schedule(outer.Task); ManagedWorkRuntime.Unwrap(promise, outer.Task);
+        ManagedWorkRuntime.Inner(promise, required.Task);
+        var previous = ManagedWorkRuntime.Enter(promise);
+        ManagedWorkRuntime.CreatedAsync(required.Task); ManagedWorkRuntime.CreatedAsync(blocker.Task);
+        required.SetException(new ArgumentException("control-required-alias-fault"));
+        ManagedWorkRuntime.Exit(previous); outer.SetResult(required.Task);
+        ManagedWorkRuntime.Completed(outer.Task); Need(promise.IsFaulted);
+        ManagedWorkRuntime.Observed(promise);
+        return (promise, required, blocker);
+    }
+    private static void RequiredResultActiveAliasControl()
+    {
+        var (promise, required, blocker) = RequiredAliasParent();
+        ManagedWorkRuntime.Completed(promise);
+        Need(Count(0) == 2 && Count(6) == 1 && !blocker.Task.IsCompleted);
+        // The parent promise still resolves to its original live owner.
+        var previous = ManagedWorkRuntime.Enter(promise); ManagedWorkRuntime.Exit(previous);
+        ManagedWorkRuntime.Inner(promise, required.Task); ManagedWorkRuntime.Schedule(promise);
+        ManagedWorkRuntime.Observed(required.Task);
+        Need(Count(6) == 0 && Count(0) == 2);
+        blocker.SetResult(1); ManagedWorkRuntime.Completed(promise); Finish();
+    }
+    private static void RequiredResultUncertainAliasControl()
+    {
+        var (promise, required, blocker) = RequiredAliasParent();
+        unknownReservationKind = 6; Exception? received = null;
+        try { ManagedWorkRuntime.Completed(promise); } catch (Exception error) { received = error; }
+        Need(ReferenceEquals(received, UnknownReservation) && Count(0) == 2 && Count(6) == 1
+            && !blocker.Task.IsCompleted);
+        ManagedWorkRuntime.Observed(required.Task);
+        Refuses(() => Enqueue(required.Task), "managed-work-owner-retired");
+        Refuses(() => ManagedWorkRuntime.Completed(required.Task), "managed-work-double-settle");
+        Refuses(() => ManagedWorkRuntime.Completed(promise), "managed-work-required-result-uncertain");
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-required-result-uncertain");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+        Need(Count(0) == 2 && Count(6) == 1 && Owners.ContainsKey(unknownReservationToken));
+    }
+    private static void RequiredResultOrdinaryAliasControl()
+    {
+        var (promise, required, blocker) = RequiredAliasParent();
+        var previous = ManagedWorkRuntime.Enter(promise); var original = context;
+        ManagedWorkRuntime.Exit(previous);
+        previous = ManagedWorkRuntime.Enter(required.Task); Need(context == original);
+        ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.Schedule(required.Task);
+        Need(Count(0) == 2 && Count(6) == 0);
+        ManagedWorkRuntime.Observed(required.Task); blocker.SetResult(1);
+        ManagedWorkRuntime.Completed(promise); Finish();
+    }
+    private static void RequiredResultSettlementFailureControl(bool unknown)
+    {
+        var (callback, pending) = RequiredFaultParent();
+        ResultReservationCallback = () =>
+        {
+            ManagedWorkRuntime.Observed(pending.Task);
+            settlementRefusal = Owners.Single(entry => entry.Value == 6).Key;
+            settlementUnknown = unknown;
+        };
+        Refuses(() => ManagedWorkRuntime.CallbackCompleted(callback), "managed-work-settlement-refused");
+        ManagedWorkRuntime.Observed(pending.Task); ManagedWorkRuntime.CallbackCompleted(pending.Task);
+        Refuses(() => ManagedWorkRuntime.Completed(pending.Task), "managed-work-double-settle");
+        Refuses(() => ManagedWorkRuntime.CallbackCompleted(callback), "managed-work-required-result-uncertain");
+        Refuses(() => { ManagedWorkRuntime.JoinAcceptedWork(); rootJoinReturned = true; },
+            "managed-work-required-result-uncertain");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+        Need(!rootJoinReturned && refusedSettlements == 1 && Count(0) == 2 && Count(6) == (unknown ? 0 : 1));
     }
     private static void RootSettlementControl(bool storage, bool unknown)
     {
@@ -961,6 +1147,24 @@ internal static class StateControl
             case "callback-settlement-unknown-prevents-retry": OwnerSettlementControl(true, true); break;
             case "result-settlement-refusal-prevents-finalization": ResultSettlementControl(false); break;
             case "result-settlement-unknown-prevents-finalization": ResultSettlementControl(true); break;
+            case "required-result-observed-during-allocation": RequiredResultObservationControl("allocation"); break;
+            case "required-result-observed-after-publication": RequiredResultObservationControl("published"); break;
+            case "required-result-observed-during-reservation": RequiredResultObservationControl("reserve"); break;
+            case "required-result-observed-after-return": RequiredResultObservationControl("returned"); break;
+            case "required-result-observed-during-settlement": RequiredResultObservationControl("settle"); break;
+            case "required-result-unknown-retains-custody": RequiredResultUnknownControl("unknown"); break;
+            case "required-result-malformed-generation-retains-custody": RequiredResultUnknownControl("generation"); break;
+            case "required-result-malformed-id-retains-custody": RequiredResultUnknownControl("id"); break;
+            case "required-result-refusal-restores-pending": RequiredResultRefusalControl(); break;
+            case "required-result-transport-after-publication": RequiredResultTransportControl(false); break;
+            case "required-result-transport-during-reservation": RequiredResultTransportControl(true); break;
+            case "required-result-allocation-failure-preserves-parent": RequiredResultAllocationFailureControl(); break;
+            case "required-result-slot-reentry-preserves-owner": RequiredResultSlotReentryControl(); break;
+            case "required-result-active-alias-observation": RequiredResultActiveAliasControl(); break;
+            case "required-result-uncertain-alias-fences-entry": RequiredResultUncertainAliasControl(); break;
+            case "required-result-ordinary-alias-preserves-parent": RequiredResultOrdinaryAliasControl(); break;
+            case "required-result-settlement-refusal-retains-custody": RequiredResultSettlementFailureControl(false); break;
+            case "required-result-settlement-unknown-retains-custody": RequiredResultSettlementFailureControl(true); break;
             case "fault-conversion-success-is-idempotent": {
                 var pending = Pending(); ManagedWorkRuntime.Schedule(pending.Task);
                 pending.SetException(new ArgumentException("control-converted-result"));
