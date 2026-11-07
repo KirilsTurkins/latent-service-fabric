@@ -1,0 +1,149 @@
+{
+  "schemaVersion": "latent.rust.combined-fixed-graph-origin.v2",
+  "scope": "fixed corrected diagnostic graph; no execution authority or signed qualification from generation",
+  "sourceCommit": "1d81c35ca6b206bafba113b6214de09bc6781bdb",
+  "sourceTree": "1e5d2f29ba8689a526049314a5e1322e5c271a67",
+  "workflowSource": "0c2a0902d46da3bde7453259a88161257b59e042",
+  "workflowPath": ".github/workflows/pr1657-retirement-compiler.yml",
+  "workflowBranch": "diag/pr1657-retirement-compiler-20261107",
+  "run": 42369110799,
+  "job": 128393351609,
+  "jobName": "compiler",
+  "artifact": 13573560784,
+  "producerJobConclusion": "success",
+  "workflowConclusion": "success",
+  "workflowFailureOutsideCompilerJob": null,
+  "archive": {
+    "id": 13573560784,
+    "size_in_bytes": 67919611,
+    "digest": "sha256:ba5b77a22012f22f503839470858383c6847783b7b04abd3614bf680d8c92210"
+  },
+  "artifactName": "pr1657-retirement-compiler-0c2a0902d46da3bde7453259a88161257b59e042",
+  "archiveMembers": 209,
+  "archivePrefix": "rust-http-thread-public/rust-http-thread-combined/",
+  "compilerObservationStatus": "observed-composed-http-thread-source-runtime-unqualified",
+  "catalogueBodySha256": "sha256:eca9883441a2e8ef0b4ea721c53932866d117503382c6e8805cb7d7661fd1b8b",
+  "finalMainOffset": 345252,
+  "finalMainBytes": 918807,
+  "compilerMembers": {
+    "application-source-and-capture.tar.gz": {
+      "bytes": 27868270,
+      "sha256": "sha256:3416c5870ad2887534f0f4311422f5c716dfd1fc65c670cd35c861fd14c12949"
+    },
+    "source-inputs.json": {
+      "bytes": 9472,
+      "sha256": "sha256:1760f2f3e520229c42dfe0884e544fdb7b138b7eb850876e290b759fc6056663"
+    },
+    "raw-core.wasm": {
+      "bytes": 999654,
+      "sha256": "sha256:25ecfa4024c125f3c8829216c8c5211097d9f27a8ae86e8385ecfb6526ebfcca"
+    },
+    "combined-component.wasm": {
+      "bytes": 1306998,
+      "sha256": "sha256:71e0d0bd5cd4be0578eff4ad0ee02dc0d40f3146bc5e373193f3cbc9b8d3fcef"
+    },
+    "observation.json": {
+      "bytes": 366331,
+      "sha256": "sha256:e08b9fcaa846becd5b91a9322e386d2c4a17b2a2462c7afb704c15f18c960756"
+    },
+    "rust-http-composition.json": {
+      "bytes": 5281,
+      "sha256": "sha256:30d2f801c7f8aec59b8d86b2316b9292df3edd58cfe3475a0491bbbc5d95becf"
+    },
+    "recipe-origin.json": {
+      "bytes": 59812,
+      "sha256": "sha256:aed42ed05cb6291ea6af89d6e6ae7b318304453daf8444e32694fb25527cd20b"
+    },
+    "recipe-inputs.json": {
+      "bytes": 34058,
+      "sha256": "sha256:722af2764e49f0bc35cd162c9f409ef19b22bd764ddc46480ab2bacf0ebea8c0"
+    },
+    "rust-http-runtime.json": {
+      "bytes": 4442,
+      "sha256": "sha256:b0331048d0905c709126b2e09ca515c70457548b6c1a420e58446cea3d71cad7"
+    }
+  },
+  "files": {
+    "combined-encoded-producers.bin": {
+      "bytes": 107,
+      "sha256": "sha256:bb8d9b857137a2350f9537225dee84487cf35a2782b8a88917eebf503fdd86ea"
+    },
+    "combined-final-component.wasm": {
+      "bytes": 1306998,
+      "sha256": "sha256:71e0d0bd5cd4be0578eff4ad0ee02dc0d40f3146bc5e373193f3cbc9b8d3fcef"
+    },
+    "combined-final-prefix.bin": {
+      "bytes": 345252,
+      "sha256": "sha256:d1d1613b04732d7c180061bd8f6da1e5b37828328b67efb2a2736b0b846752e1"
+    },
+    "combined-final-suffix.bin": {
+      "bytes": 42939,
+      "sha256": "sha256:d8d78b10105616db6a522ab94b4781280c40088597e3cb218b478107d154b472"
+    },
+    "combined-original-core.wasm": {
+      "bytes": 999654,
+      "sha256": "sha256:25ecfa4024c125f3c8829216c8c5211097d9f27a8ae86e8385ecfb6526ebfcca"
+    },
+    "combined-original-delta.bin": {
+      "bytes": 347334,
+      "sha256": "sha256:28d799ea666e0b9ebec6da00ffd4685358d2007163a4a63505e4368b6b176d5d"
+    },
+    "combined-original-producers.bin": {
+      "bytes": 61,
+      "sha256": "sha256:481d56af9d9f23b7f94c4150f8085f48f9b05f177a0318cad370736cdbc5792f"
+    },
+    "combined-preview-component.wasm": {
+      "bytes": 939282,
+      "sha256": "sha256:1563aaf4cf996d5ffac023a490eb6c647153d0bc3c21d1558eb59233fc13387d"
+    },
+    "combined-preview-shell.bin": {
+      "bytes": 20473,
+      "sha256": "sha256:f00e6359d312815d616f4133ccca2f83d9fe6e738d3eddd2faf4cf94a33040a9"
+    },
+    "combined-wit-0.bin": {
+      "bytes": 2310,
+      "sha256": "sha256:5efa0e739a220e7baa43be00ed445ead6644bd337c50a79940d6eb7965e60ac2"
+    },
+    "combined-wit-1.bin": {
+      "bytes": 7020,
+      "sha256": "sha256:3a5f6af9065352746e968f0387cbe1b115218a1fee0490559897d55340b312b8"
+    },
+    "combined-wit-2.bin": {
+      "bytes": 7093,
+      "sha256": "sha256:2d7466f2a1c376b925f0a227dcd945f229fbec3f55af54e9981903ce2beaf3bb"
+    },
+    "combined-wit-3.bin": {
+      "bytes": 11022,
+      "sha256": "sha256:65922a7a5358ce4cd12ff0e63faf6dc70ac9b7e647fd851f38658f4167e5eb28"
+    },
+    "combined-wit-4.bin": {
+      "bytes": 10911,
+      "sha256": "sha256:924d7637988ebff2892065cdb4c9c780e88681b862fa24d734676629e3077c53"
+    }
+  },
+  "wrapped": {
+    "bytes": 1654366,
+    "sha256": "sha256:ab7c8e29be5745ff29fa5788ab13f3cc2bdde87da5033e41e9f804dcb3d83032"
+  },
+  "historicalCompiler": {
+    "sourceCommit": "7f1a95ef7f2552bb6b0339e3331cf6b25d765127",
+    "run": 41926247914,
+    "artifact": 13371474344,
+    "outcome": "failure",
+    "reclassified": false
+  },
+  "applicationRecompiled": true,
+  "normalRustBuilderRouteOpened": false,
+  "runtimeQualified": false,
+  "previousCorrectedObservation": {
+    "sourceCommit": "27164664b222bc52c88371a2225d147b3f8c020e",
+    "compilerRun": 42364782237,
+    "compilerJobConclusion": "success",
+    "compilerWorkflowConclusion": "failure",
+    "signedRun": 42366341977,
+    "signedConclusion": "failure",
+    "outboundRequests": 3,
+    "terminalState": "deadline_exceeded",
+    "reclassified": false
+  }
+}

@@ -142,12 +142,30 @@ def provider_idle(client, target):
 
 
 def require_denied_before_guest(row):
-    response = row['response'];consumed = response['data']['consumption']
-    require(row['exitCode'] == 4 and row['processReaped'] and response['outcomeKnown'] is True
-        and response['category'] == 'platform-failure' and response['error']['code'] == 'permission-denied'
-        and response['data']['terminalState'] == 'rejected'
-        and all(int(consumed[key]) == 0 for key in ('cpuFuel','peakMemoryBytes','childCalls','outboundRequests',
-            'logBytes','effectCount','stateReadBytes','stateWriteBytes','blobReadBytes','blobWriteBytes')),
+    """Require a terminal permission refusal, never infer one from an RPC loss."""
+    require(type(row) is dict and type(row.get('response')) is dict,
+        'resource-tenant-invocation-result-shape')
+    response = row['response']
+    # Transport failures legitimately have no terminal consumption record.
+    # Check certainty first so their original evidence is not masked by KeyError.
+    require(response.get('outcomeKnown') is True,
+        'resource-tenant-invocation-outcome-unknown')
+    data, error = response.get('data'), response.get('error')
+    require(type(data) is dict and type(error) is dict,
+        'resource-tenant-invocation-result-shape')
+    require(type(row.get('exitCode')) is int and row['exitCode'] == 4
+        and row.get('processReaped') is True and response.get('requestDispatched') is True
+        and response.get('category') == 'platform-failure' and error.get('code') == 'permission-denied'
+        and data.get('terminalState') == 'rejected',
+        'resource-tenant-foreign-grants-not-inherited')
+    consumed = data.get('consumption')
+    require(type(consumed) is dict, 'resource-tenant-invocation-consumption-missing')
+    counters = ('cpuFuel', 'peakMemoryBytes', 'childCalls', 'outboundRequests',
+        'logBytes', 'effectCount', 'stateReadBytes', 'stateWriteBytes', 'blobReadBytes', 'blobWriteBytes')
+    # Missing, boolean, fractional or coerced values are not zero-work proof.
+    # The CLI emits integer counters either as JSON integers or decimal strings.
+    require(all((type(consumed.get(key)) is int and consumed[key] == 0)
+                or (type(consumed.get(key)) is str and consumed[key] == '0') for key in counters),
         'resource-tenant-foreign-grants-not-inherited')
 
 

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "python",
+  "reviewReason": "Cover fixed and malformed diagnostic component framing without runtime qualification.",
+  "module": "tools/tests/test_rust_combined_diagnostic_envelope.py",
+  "cases": [
+    "RustCombinedDiagnosticEnvelope.test_retained_sample_produces_exact_bounded_untrusted_component",
+    "RustCombinedDiagnosticEnvelope.test_truncated_duplicate_noncanonical_and_oversized_inputs_refuse"
+  ],
+  "guards": {
+    "RustCombinedDiagnosticEnvelope.test_retained_sample_produces_exact_bounded_untrusted_component": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2adb777a0225a394df23c1491386ab911c1886e44a1aa186024db48b0017bc31",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "RustCombinedDiagnosticEnvelope.test_truncated_duplicate_noncanonical_and_oversized_inputs_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2adb777a0225a394df23c1491386ab911c1886e44a1aa186024db48b0017bc31",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    }
+  }
+}

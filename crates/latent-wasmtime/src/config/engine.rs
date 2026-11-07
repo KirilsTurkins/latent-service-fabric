@@ -34,6 +34,9 @@ pub enum NativeThreadProfile {
     CContext144SyncCooperativeV1,
     #[serde(rename = "rust-context40-sync-cooperative-v1")]
     RustContext40SyncCooperativeV1,
+    #[cfg(feature = "development-rust-http-combined")]
+    #[serde(rename = "rust-context40-combined-http-diagnostic-v1")]
+    RustContext40CombinedHttpDiagnosticV1,
 }
 impl NativeThreadProfile {
     #[must_use]
@@ -42,6 +45,10 @@ impl NativeThreadProfile {
             Self::RustContext40SoleConsumerOneTaskStartV1 => crate::component_threading::PROFILE,
             Self::CContext144SyncCooperativeV1 => crate::component_threading::C_PROFILE,
             Self::RustContext40SyncCooperativeV1 => crate::component_threading::RUST_SYNC_PROFILE,
+            #[cfg(feature = "development-rust-http-combined")]
+            Self::RustContext40CombinedHttpDiagnosticV1 => {
+                crate::component_threading::RUST_COMBINED_HTTP_PROFILE
+            }
         }
     }
     pub(crate) const fn verification_bytes(self) -> usize {
@@ -52,6 +59,10 @@ impl NativeThreadProfile {
             }
             Self::RustContext40SyncCooperativeV1 => {
                 latent_component_threading::rust_component::RUST_VERIFICATION_WORK_BYTES
+            }
+            #[cfg(feature = "development-rust-http-combined")]
+            Self::RustContext40CombinedHttpDiagnosticV1 => {
+                crate::component_threading::RUST_COMBINED_HTTP_WORK_BYTES
             }
         }
     }
@@ -221,6 +232,29 @@ mod tests {
             NativeThreadProfile::RustContext40SyncCooperativeV1.verification_bytes(),
             48 * 1024 * 1024
         );
+        #[cfg(feature = "development-rust-http-combined")]
+        {
+            config.native_thread_profile =
+                NativeThreadProfile::RustContext40CombinedHttpDiagnosticV1;
+            let diagnostic = CompilerEngineSettings::from_config(&config);
+            diagnostic.validate_compiler().unwrap();
+            if cfg!(all(target_os = "linux", target_arch = "x86_64")) {
+                config.validate().unwrap();
+            } else {
+                assert!(config.validate().is_err());
+            }
+            let mut outside_local = config.clone();
+            outside_local.execution_isolation_profile =
+                crate::ExecutionIsolationProfile::ExternalCapsule;
+            assert!(outside_local.validate().is_err());
+            expected["nativeThreadProfile"] =
+                crate::component_threading::RUST_COMBINED_HTTP_PROFILE.into();
+            assert_eq!(serde_json::to_value(&diagnostic).unwrap(), expected);
+            assert_eq!(
+                NativeThreadProfile::RustContext40CombinedHttpDiagnosticV1.verification_bytes(),
+                96 * 1024 * 1024
+            );
+        }
         config.owned_native_threads = false;
         assert!(config.validate().is_err());
     }

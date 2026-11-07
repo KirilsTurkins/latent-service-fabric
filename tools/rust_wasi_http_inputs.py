@@ -33,7 +33,7 @@ MAX_SOURCE = 4 * 1024 * 1024
 WASM_REPORTS = (b'wasm-tools 1.254.0', b'wasm-tools 1.254.0 (bb58fdf91 2026-07-20)')
 FILES = (ADAPTER, 'raw-runtime.wasm', 'reference.wit.json', 'adapter.wit.json')
 SHARED = tuple('sdk/dotnet-guest/runtime/http/' + name + '.rs'
-    for name in ('owner', 'pump', 'quota', 'timer'))
+    for name in ('owner', 'quota'))
 RECIPE = (
     'tools/rust_wasi_http_inputs.py', 'tools/rust_wasi_http_profile.py',
     'tools/dotnet_guest/internal_io.py',
@@ -234,6 +234,7 @@ def install(directory: Path):
         commands.run('standard-http-runtime-compile', tools['cargo'], 'build', '--quiet',
             '--locked', '--offline', '--manifest-path', ROOT / 'tools/toolchain-smoke/Cargo.toml',
             '-p', 'latent-toolchain-smoke', '--example', EXAMPLE,
+            '--features', 'rust-wasi-http-cooperative',
             '--target', TARGET, '--release', '--target-dir', target)
         raw = read_file(target / TARGET / 'release/examples' / (EXAMPLE.replace('-', '_') + '.wasm'), MAX_BINARY)
         require(raw.startswith(b'\0asm\x01\0\0\0'), 'compiled-core-header')
