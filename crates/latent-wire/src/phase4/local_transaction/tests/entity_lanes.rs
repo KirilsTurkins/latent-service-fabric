@@ -100,6 +100,25 @@ fn command_for_entity(key: &str, delta: u32, entity: &str) -> t::InvokeCommandRe
 async fn actual_entity_guest_serializes_before_cell_and_replays_in_progress_duplicate() {
     let f = Fixture::with_concurrent_commands(true).await;
     authorize_entity(&f, "hot");
+    let forbidden = f
+        .adapter()
+        .invoke_command(context("alice").request(command_for_entity(
+            "forbidden-entity",
+            1,
+            "unapproved",
+        )))
+        .await;
+    assert!(matches!(forbidden, Err(error) if error.code() == tonic::Code::PermissionDenied));
+    assert_eq!(f.executions(), 0);
+    assert_eq!(
+        f.owners
+            .as_ref()
+            .unwrap()
+            .entity_lanes_snapshot()
+            .unwrap()
+            .keys,
+        0
+    );
     let first_adapter = f.adapter();
     let first = tokio::spawn(async move {
         first_adapter
@@ -512,6 +531,93 @@ async fn dropping_a_queued_entity_rpc_cancels_its_real_reservation() {
         .into_inner();
     success(&first);
     drop(first);
+    assert_eq!(
+        f.owners
+            .as_ref()
+            .unwrap()
+            .entity_lanes_snapshot()
+            .unwrap()
+            .keys,
+        0
+    );
+    f.shutdown().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "Requires the maintained compiled Rust transaction guest"]
+async fn active_entity_cancellation_preserves_cleanup_before_the_next_command() {
+    let f = Fixture::with_concurrent_commands(false).await;
+    authorize_entity(&f, "hot");
+    f.install_cancellation_management().await;
+    f.backend
+        .imports
+        .pause_after_stage
+        .store(true, Ordering::SeqCst);
+    let first_adapter = f.adapter();
+    let first = tokio::spawn(async move {
+        first_adapter
+            .invoke_command(context("alice").request(entity_command("active-cancel", 1)))
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(5), f.backend.imports.staged.notified())
+        .await
+        .unwrap();
+    let second_adapter = f.adapter();
+    let second = tokio::spawn(async move {
+        second_adapter
+            .invoke_command(context("alice").request(entity_command("after-cancel", 1)))
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while f
+            .owners
+            .as_ref()
+            .unwrap()
+            .entity_lanes_snapshot()
+            .unwrap()
+            .queued
+            != 1
+        {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    let mut lookup = f.lookup_request("active-cancel");
+    lookup.command.as_mut().unwrap().entity = Some("hot".into());
+    lookup.attempt_id = Some("1".into());
+    let request = t::CancelCommandRequest {
+        command: Some(lookup),
+        reason: "entity cancellation".into(),
+    };
+    let cancelled = f
+        .adapter()
+        .cancel_command(context("alice").request(request))
+        .await
+        .unwrap()
+        .into_inner();
+    assert_eq!(
+        cancelled.disposition,
+        t::CommandCancelDisposition::Requested as i32
+    );
+    f.backend.imports.continue_after_stage.notify_one();
+    let first = tokio::time::timeout(Duration::from_secs(10), first)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap()
+        .into_inner();
+    assert!(matches!(first.invocation.unwrap().result,
+        Some(i::invoke_response::Result::PlatformFailure(ref failure)) if failure.code == "cancelled"));
+    let second = tokio::time::timeout(Duration::from_secs(10), second)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap()
+        .into_inner();
+    success(&second);
+    drop((cancelled, second));
+    assert_eq!(f.executions(), 2);
     assert_eq!(
         f.owners
             .as_ref()
