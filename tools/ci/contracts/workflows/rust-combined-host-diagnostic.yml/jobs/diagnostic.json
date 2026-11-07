@@ -1,7 +1,7 @@
 {
   "schemaVersion": "latent.ci.contracts.v1",
   "kind": "job",
-  "reviewReason": "Retain original strict stack admission and verify fixed-graph child/engine-worker ownership under shared limits.",
+  "reviewReason": "Bind the corrected source-captured graph and retain ordinary refusal, independent grants, finite ownership, compiled sequential progress, physical retirement and original signed witness gates.",
   "workflow": ".github/workflows/rust-combined-host-diagnostic.yml",
   "jobId": "diagnostic",
   "definition": {
@@ -43,7 +43,7 @@
       {
         "name": "Produce the fixed untrusted framed sample",
         "shell": "bash",
-        "run": "set -euo pipefail\nmkdir -p \"$RUNNER_TEMP/rust-combined-host\"\npython3 -B -m unittest tools.tests.test_rust_combined_diagnostic_envelope -v 2>&1 | tee \"$RUNNER_TEMP/rust-combined-host/framing-tests.log\"\nc=crates/latent-component-threading/src/rust_catalogue\npython3 -B tools/rust_combined_diagnostic_envelope.py --original \"$c/combined-original-core.wasm\" --component \"$c/combined-final-component.wasm\" --output \"$RUNNER_TEMP/rust-combined-host/framed.wasm\" | tee \"$RUNNER_TEMP/rust-combined-host/framing.log\"\necho '5634429a97b4a3f0cf8afca2877dbbddbc98f5e4fd7bf59ae6f7f50e780c2e17  '\"$RUNNER_TEMP/rust-combined-host/framed.wasm\" | sha256sum --check --strict\n"
+        "run": "set -euo pipefail\nmkdir -p \"$RUNNER_TEMP/rust-combined-host\"\npython3 -B -m unittest tools.tests.test_rust_combined_diagnostic_envelope -v 2>&1 | tee \"$RUNNER_TEMP/rust-combined-host/framing-tests.log\"\nc=crates/latent-component-threading/src/rust_catalogue/combined-corrected-v1\npython3 -B tools/rust_combined_diagnostic_envelope.py --original \"$c/combined-original-core.wasm\" --component \"$c/combined-final-component.wasm\" --output \"$RUNNER_TEMP/rust-combined-host/framed.wasm\" | tee \"$RUNNER_TEMP/rust-combined-host/framing.log\"\necho 'ab7c8e29be5745ff29fa5788ab13f3cc2bdde87da5033e41e9f804dcb3d83032  '\"$RUNNER_TEMP/rust-combined-host/framed.wasm\" | sha256sum --check --strict\n"
       },
       {
         "name": "Check default refusal and fixed diagnostic inspection",

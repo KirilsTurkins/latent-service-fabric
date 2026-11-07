@@ -1,17 +1,17 @@
 //! Execute the actual compiled Rust pump with two independently held imports.
 //! This is a guest adapter regression, not a signed-node or HTTP qualification.
 use std::{
-    future::{poll_fn, Future},
+    future::{Future, poll_fn},
     sync::{
-        atomic::{AtomicBool, AtomicUsize, Ordering},
         Arc, Mutex,
+        atomic::{AtomicBool, AtomicUsize, Ordering},
     },
     task::{Poll, Waker},
     time::Duration,
 };
 use wasmtime::{
-    component::{Component, Linker},
     Config, Engine, Store,
+    component::{Component, Linker},
 };
 #[derive(Default)]
 struct Gate {
@@ -73,7 +73,7 @@ async fn main() -> wasmtime::Result<()> {
     }
     let engine = Engine::new(&config)?;
     let component = Component::from_file(&engine, path)?;
-    let gates: Arc<[Arc<Gate>; 3]> = Arc::new(std::array::from_fn(|_| Arc::new(Gate::default())));
+    let gates: Arc<[Arc<Gate>; 4]> = Arc::new(std::array::from_fn(|_| Arc::new(Gate::default())));
     let host_gates = gates.clone();
     let mut linker = Linker::<()>::new(&engine);
     linker
@@ -101,6 +101,8 @@ async fn main() -> wasmtime::Result<()> {
             let mut first = Box::pin(run.call_concurrent(access, (0,)));
             let mut second = Box::pin(run.call_concurrent(access, (1,)));
             let mut second_returned = false;
+            let mut third = Box::pin(run.call_concurrent(access, (2,)));
+            let mut third_returned = false;
             let mut observation = Box::pin(poke.call_concurrent(access, ()));
             let mut observed = false;
             poll_fn(|cx| -> Poll<wasmtime::Result<()>> {
@@ -108,11 +110,33 @@ async fn main() -> wasmtime::Result<()> {
                     *gate.controller.lock().unwrap() = Some(cx.waker().clone());
                 }
                 let first_poll = first.as_mut().poll(cx);
-                if second_returned {
+                if third_returned {
                     return first_poll.map(|result| {
                         assert_eq!(result?, (0,));
                         Ok(())
                     });
+                }
+                if second_returned {
+                    assert!(
+                        first_poll.is_pending(),
+                        "original lost its hold before third completion"
+                    );
+                    match third.as_mut().poll(cx) {
+                        Poll::Ready(value) => {
+                            assert_eq!(value?, (2,));
+                            assert!(!gates[0].ready.load(Ordering::SeqCst));
+                            assert_eq!(gates[0].live.load(Ordering::SeqCst), 1);
+                            assert_eq!(gates[2].live.load(Ordering::SeqCst), 0);
+                            third_returned = true;
+                            gates[0].release();
+                        }
+                        Poll::Pending => {
+                            if gates[2].polls.load(Ordering::SeqCst) != 0 {
+                                gates[2].release();
+                            }
+                        }
+                    }
+                    return Poll::Pending;
                 }
                 assert!(
                     first_poll.is_pending(),
@@ -125,7 +149,7 @@ async fn main() -> wasmtime::Result<()> {
                         assert_eq!(gates[0].live.load(Ordering::SeqCst), 1);
                         assert_eq!(gates[1].live.load(Ordering::SeqCst), 0);
                         second_returned = true;
-                        gates[0].release();
+                        cx.waker().wake_by_ref();
                     }
                     Poll::Pending => {
                         if gates[0].polls.load(Ordering::SeqCst) != 0
@@ -150,19 +174,21 @@ async fn main() -> wasmtime::Result<()> {
         }),
     )
     .await???;
-    for gate in &gates[..2] {
+    for gate in &gates[..3] {
         assert_eq!(gate.live.load(Ordering::SeqCst), 0);
         assert_eq!(gate.drops.load(Ordering::SeqCst), 1);
     }
-    tokio::time::timeout(Duration::from_secs(5), retire.call_async(&mut store, (2,))).await??;
-    assert!(!gates[2].ready.load(Ordering::SeqCst));
-    assert_eq!(gates[2].live.load(Ordering::SeqCst), 1);
-    assert_eq!(gates[2].drops.load(Ordering::SeqCst), 0);
+    tokio::time::timeout(Duration::from_secs(5), retire.call_async(&mut store, (3,))).await??;
+    assert!(!gates[3].ready.load(Ordering::SeqCst));
+    assert_eq!(gates[3].live.load(Ordering::SeqCst), 1);
+    assert_eq!(gates[3].drops.load(Ordering::SeqCst), 0);
     tokio::time::timeout(Duration::from_secs(5), drain.call_async(&mut store, ())).await??;
-    assert_eq!(gates[2].live.load(Ordering::SeqCst), 0);
-    assert_eq!(gates[2].drops.load(Ordering::SeqCst), 1);
+    assert_eq!(gates[3].live.load(Ordering::SeqCst), 0);
+    assert_eq!(gates[3].drops.load(Ordering::SeqCst), 1);
     store.assert_concurrent_state_empty();
     assert!(store.get_fuel()? < 1_000_000_000);
-    println!("actual compiled pump: sibling before held release; deferred cancellation; empty engine state");
+    println!(
+        "actual compiled pump: two sequential siblings before held release; deferred cancellation; empty engine state"
+    );
     Ok(())
 }

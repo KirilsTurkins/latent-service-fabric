@@ -1,15 +1,16 @@
 {
   "definition": {
+    "name": "Compile exact standard WASI backend and bounded resource controls",
+    "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 30,
     "env": {
+      "PYTHONDONTWRITEBYTECODE": "1",
       "CARGO_BUILD_JOBS": "2",
       "CARGO_INCREMENTAL": "0",
       "CARGO_PROFILE_DEV_DEBUG": "0",
       "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
-      "PYTHONDONTWRITEBYTECODE": "1"
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true"
     },
-    "name": "Compile exact standard WASI backend and bounded resource controls",
-    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "KirilsTurkins/lsf-checkout",
@@ -32,15 +33,15 @@
       {
         "uses": "KirilsTurkins/lsf-rust-cache",
         "with": {
-          "cache-all-crates": false,
-          "cache-bin": false,
-          "cache-on-failure": false,
-          "cache-targets": true,
-          "cache-workspace-crates": false,
-          "key": "ubuntu-24.04",
           "prefix-key": "lsf-ci-dependencies-v2",
-          "save-if": false,
-          "shared-key": "host-correctness"
+          "shared-key": "host-correctness",
+          "key": "ubuntu-24.04",
+          "cache-targets": true,
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-all-crates": false,
+          "cache-on-failure": false,
+          "save-if": false
         }
       },
       {
@@ -55,13 +56,18 @@
       },
       {
         "name": "Execute only the actual bounded options and fields implementation controls",
-        "run": "set -euo pipefail\nrustc --edition=2021 --test tools/fixtures/wasi-http-request-options/control.rs -o \"$RUNNER_TEMP/rust-http-resource-controls\"\n\"$RUNNER_TEMP/rust-http-resource-controls\" --test-threads=1 | tee \"$RUNNER_TEMP/rust-http-resource-controls.txt\"\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "set -euo pipefail\nrustc --edition=2021 --test tools/fixtures/wasi-http-request-options/control.rs -o \"$RUNNER_TEMP/rust-http-resource-controls\"\n\"$RUNNER_TEMP/rust-http-resource-controls\" --test-threads=1 | tee \"$RUNNER_TEMP/rust-http-resource-controls.txt\"\n"
       },
       {
         "name": "Execute callback-safe readiness, cancellation and bounded waiter controls",
-        "run": "set -euo pipefail\nrustc --edition=2021 --test sdk/wasi-http-runtime/pump.rs -o \"$RUNNER_TEMP/rust-http-pump-controls\"\n\"$RUNNER_TEMP/rust-http-pump-controls\" | tee \"$RUNNER_TEMP/rust-http-pump-controls.txt\"\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "set -euo pipefail\nrustc --edition=2021 --test sdk/wasi-http-runtime/pump.rs -o \"$RUNNER_TEMP/rust-http-pump-controls\"\n\"$RUNNER_TEMP/rust-http-pump-controls\" | tee \"$RUNNER_TEMP/rust-http-pump-controls.txt\"\n"
+      },
+      {
+        "name": "Verify completed EOF retirement and pending cancellation ownership",
+        "shell": "bash",
+        "run": "set -euo pipefail\nrustc --edition=2021 -D warnings --test sdk/wasi-http-runtime/retirement.rs -o \"$RUNNER_TEMP/rust-http-retirement-controls\"\n\"$RUNNER_TEMP/rust-http-retirement-controls\" --test-threads=1 | tee \"$RUNNER_TEMP/rust-http-retirement-controls.txt\"\n"
       },
       {
         "name": "Acquire only locked SDK compiler sources before offline compilation",
@@ -73,26 +79,25 @@
       },
       {
         "name": "Execute the actual compiled guest with independently held imports",
-        "run": "set -euo pipefail\ncargo build --locked --offline -p latent-toolchain-smoke --target wasm32-unknown-unknown --example rust-http-pump-probe --features rust-wasi-http-cooperative --release\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/rust_http_pump_probe.wasm -o \"$RUNNER_TEMP/rust-http-pump-probe.wasm\"\nwasm-tools validate --features all \"$RUNNER_TEMP/rust-http-pump-probe.wasm\"\ncargo --config .cargo/managed-guest.toml --config profile.dev.opt-level=1 run --locked --offline -p latent-toolchain-smoke --example rust-http-pump-control -- \"$RUNNER_TEMP/rust-http-pump-probe.wasm\" 2>&1 | tee \"$RUNNER_TEMP/rust-http-pump-guest.txt\"\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "set -euo pipefail\ncargo build --locked --offline -p latent-toolchain-smoke --target wasm32-unknown-unknown --example rust-http-pump-probe --features rust-wasi-http-cooperative --release\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/rust_http_pump_probe.wasm -o \"$RUNNER_TEMP/rust-http-pump-probe.wasm\"\nwasm-tools validate --features all \"$RUNNER_TEMP/rust-http-pump-probe.wasm\"\ncargo --config .cargo/managed-guest.toml --config profile.dev.opt-level=1 run --locked --offline -p latent-toolchain-smoke --example rust-http-pump-control -- \"$RUNNER_TEMP/rust-http-pump-probe.wasm\" 2>&1 | tee \"$RUNNER_TEMP/rust-http-pump-guest.txt\"\ncargo --config .cargo/managed-guest.toml --config profile.dev.opt-level=1 run --locked --offline -p latent-toolchain-smoke --example rust-http-pump-control -- \"$RUNNER_TEMP/rust-http-pump-probe.wasm\" --native-profile 2>&1 | tee \"$RUNNER_TEMP/rust-http-pump-native-guest.txt\"\n"
       },
       {
-        "if": "always()",
         "name": "Retain bounded compiler observations without build cache or signer credentials",
+        "if": "always()",
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "rust-wasi-http-backend-${{ github.sha }}",
-          "path": "${{ runner.temp }}/rust-http-resource-controls.txt\n${{ runner.temp }}/rust-http-runtime/INSTALL-COMPLETE.json\n${{ runner.temp }}/rust-http-runtime/INSTALL-FAILED.json\n${{ runner.temp }}/rust-http-runtime/source-inputs.json\n${{ runner.temp }}/rust-http-runtime/reference.wit.json\n${{ runner.temp }}/rust-http-runtime/adapter.wit.json\n${{ runner.temp }}/rust-http-runtime/raw-runtime.wasm\n${{ runner.temp }}/rust-http-runtime/rust-wasi-http-runtime.wasm\n${{ runner.temp }}/rust-http-runtime/component-composer/wac\n${{ runner.temp }}/rust-http-runtime/logs/*.stdout.txt\n${{ runner.temp }}/rust-http-runtime/logs/*.stderr.txt\n${{ runner.temp }}/rust-http-pump-controls.txt\n${{ runner.temp }}/rust-http-pump-guest.txt\n${{ runner.temp }}/rust-http-pump-probe.wasm",
+          "path": "${{ runner.temp }}/rust-http-resource-controls.txt\n${{ runner.temp }}/rust-http-runtime/INSTALL-COMPLETE.json\n${{ runner.temp }}/rust-http-runtime/INSTALL-FAILED.json\n${{ runner.temp }}/rust-http-runtime/source-inputs.json\n${{ runner.temp }}/rust-http-runtime/reference.wit.json\n${{ runner.temp }}/rust-http-runtime/adapter.wit.json\n${{ runner.temp }}/rust-http-runtime/raw-runtime.wasm\n${{ runner.temp }}/rust-http-runtime/rust-wasi-http-runtime.wasm\n${{ runner.temp }}/rust-http-runtime/component-composer/wac\n${{ runner.temp }}/rust-http-runtime/logs/*.stdout.txt\n${{ runner.temp }}/rust-http-runtime/logs/*.stderr.txt\n${{ runner.temp }}/rust-http-pump-controls.txt\n${{ runner.temp }}/rust-http-retirement-controls.txt\n${{ runner.temp }}/rust-http-pump-native-guest.txt\n${{ runner.temp }}/rust-http-pump-guest.txt\n${{ runner.temp }}/rust-http-pump-probe.wasm",
+          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ],
-    "timeout-minutes": 30
+    ]
   },
   "jobId": "standard-backend",
   "kind": "job",
-  "reviewReason": "Retain the pinned composer and source-authenticated adapter; execute real guest sibling wakeup, deferred cancellation and empty-engine controls without changing the CLR pump or signed programme gates.",
+  "reviewReason": "Bind the corrected source-captured graph and retain ordinary refusal, independent grants, finite ownership, compiled sequential progress, physical retirement and original signed witness gates.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-wasi-http-runtime.yml"
 }

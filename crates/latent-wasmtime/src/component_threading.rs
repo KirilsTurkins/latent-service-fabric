@@ -282,9 +282,11 @@ mod tests {
         ordinary
             .metadata
             .insert(METADATA.into(), RUST_SYNC_PROFILE.into());
-        assert!(Authentication::RustCombinedHttpVerified([0x11; 32])
-            .check_before_instantiation(&ordinary)
-            .is_err());
+        assert!(
+            Authentication::RustCombinedHttpVerified([0x11; 32])
+                .check_before_instantiation(&ordinary)
+                .is_err()
+        );
     }
 
     #[cfg(feature = "development-rust-http-combined")]
@@ -296,9 +298,11 @@ mod tests {
         let sample_component_bytes = 1_629_518usize;
         let work = RUST_COMBINED_HTTP_WORK_BYTES;
         let default = Arc::new(PreparedCache::<u8>::new(config.cache_limits()).unwrap());
-        assert!(default
-            .begin_with_verification("too-small".into(), sample_component_bytes, 1, work)
-            .is_err());
+        assert!(
+            default
+                .begin_with_verification("too-small".into(), sample_component_bytes, 1, work)
+                .is_err()
+        );
         assert_eq!(default.snapshot().preparing_source_bytes, 0);
         // Test explicit capacity only; the diagnostic profile does not enlarge
         // the configured node cache or create a second owner.
@@ -330,10 +334,10 @@ mod tests {
         use std::borrow::Cow;
         use wasm_encoder::{CustomSection, Encode, Section};
         const BASE: &[u8] = include_bytes!(
-            "../../latent-component-threading/src/rust_catalogue/combined-final-component.wasm"
+            "../../latent-component-threading/src/rust_catalogue/combined-corrected-v1/combined-final-component.wasm"
         );
         const DELTA: &[u8] = include_bytes!(
-            "../../latent-component-threading/src/rust_catalogue/combined-original-delta.bin"
+            "../../latent-component-threading/src/rust_catalogue/combined-corrected-v1/combined-original-delta.bin"
         );
         let mut wrapped = BASE.to_vec();
         let section = CustomSection {
@@ -393,12 +397,14 @@ mod tests {
         };
         let engine = config.runtime_engine().unwrap();
         wasmtime::component::Component::new(&engine, &wrapped).unwrap();
-        assert!(proof
-            .check_profile(
-                Some(crate::NativeThreadProfile::RustContext40SyncCooperativeV1),
-                &original
-            )
-            .is_err());
+        assert!(
+            proof
+                .check_profile(
+                    Some(crate::NativeThreadProfile::RustContext40SyncCooperativeV1),
+                    &original
+                )
+                .is_err()
+        );
         original
             .metadata
             .insert("component-digest".into(), "sha256:forged".into());
@@ -455,12 +461,14 @@ mod tests {
             .unwrap();
         proof.check_before_instantiation(&original).unwrap();
         assert!(proof.check_profile(None, &original).is_err());
-        assert!(proof
-            .check_profile(
-                Some(crate::NativeThreadProfile::RustContext40SoleConsumerOneTaskStartV1),
-                &original
-            )
-            .is_err());
+        assert!(
+            proof
+                .check_profile(
+                    Some(crate::NativeThreadProfile::RustContext40SoleConsumerOneTaskStartV1),
+                    &original
+                )
+                .is_err()
+        );
         original.metadata.insert(METADATA.into(), PROFILE.into());
         assert!(proof.check_before_instantiation(&original).is_err());
         let rust = Authentication::RustSyncVerified([0x11; 32]);
@@ -480,12 +488,14 @@ mod tests {
         ] {
             assert!(rust.check_profile(wrong, &original).is_err());
         }
-        assert!(proof
-            .check_profile(
-                Some(crate::NativeThreadProfile::RustContext40SyncCooperativeV1),
-                &original
-            )
-            .is_err());
+        assert!(
+            proof
+                .check_profile(
+                    Some(crate::NativeThreadProfile::RustContext40SyncCooperativeV1),
+                    &original
+                )
+                .is_err()
+        );
     }
 
     #[test]

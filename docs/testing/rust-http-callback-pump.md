@@ -108,10 +108,41 @@ two JSON requests begin; the buffer is dropped before those requests. The
 two ordinary thread pools, four-request success condition, independent grants,
 5,000 ms deadline, 16 MiB memory limit and peer gates remain unchanged.
 
-This changes the developer fixture source and requires a new source-captured
-application compilation and explicit graph authentication. Neither successful
-pump controls nor a changed generator can qualify the old immutable component.
-The old failed compiler event, application bytes and failed signed observations
-remain intact. Keep the PR draft until the corrected application and adapter
-pass the unchanged signed progress and physical-retirement gates on the final
-head, with independently checked source/build/component lineage.
+The corrected fixture and adapter were compiled together from `27164664` by
+compiler job `128380436039` in run `42364782237`. That job completed source
+capture, isolated application compilation, composition and interface checks;
+its ancillary source-check job failed on an invalid validator command, so that
+whole workflow remains failed. Signed observation `42366341977` passed the old
+panic and reached a third request, but timed out before the fourth. A bounded
+numeric host trace (`42367791040`) observed the third response's body and EOF
+within about 27 ms. These are failed observations, not signed qualification.
+
+The subsequent completed-EOF retirement change below was independently built
+from commit `1d81c35ca6b206bafba113b6214de09bc6781bdb` in successful compiler
+run `42369110799`. The selected `combined-corrected-v1` graph and its original
+source/build lineage are described in the [diagnostic guide](rust-combined-http-diagnostic.md).
+Old compiler bytes and failed signed results remain intact; successful source
+compilation and unit controls cannot substitute for a passing signed witness.
+
+
+## Completed exchange ownership
+
+Completed HTTP exchanges were retaining Task owners until root drain. In a
+held-header programme, this unnecessarily retains capacity needed by a later
+sequential request even though the previous body has reached EOF.
+
+The Rust-specific retirement frame owns the original canonical future, upload,
+body, buffers, activation owner and quota slot in physical-drop order. Observed
+EOF is necessary but insufficient: synchronous retirement also requires no
+pending future and no upload. Resources and buffered data are destroyed before
+the original Task is settled. All other cases remain on the explicit async-root
+retirement queue, without early refund, replacement owner, dial retry or replay.
+An unwinding resource destructor still retains the owner while the remaining
+buffers are destroyed. The .NET implementation is unchanged.
+
+Maintained native controls exercise completed EOF, repeated admission under
+finite capacity, retained pending work and destructor unwind. The compiled guest
+control separately completes two sequential siblings while the original import
+stays held, checks synchronous readiness and deferred cancellation, and requires
+empty engine state under ordinary and native-enabled configurations. Neither
+control is an authenticated signed-node qualification.

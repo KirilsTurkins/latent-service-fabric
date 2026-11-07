@@ -23,7 +23,7 @@ from tools.phase3_resource_os import Probe
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_node import RecordingClient, delete_all, deploy, finish_call, sample, start_call
 from tools.rust_capsule_project import ROOT, fresh, read_json
-from tools.rust_thread_http_combined_package import IMPORTS, PROFILE, SOURCE, RUN, WRAPPED
+from tools.rust_thread_http_combined_package import IMPORTS, PROFILE, SOURCE, RUN, JOB, ARTIFACT, WRAPPED, ORIGIN
 from tools.rust_thread_http_sibling_node import invoke
 from tools.rust_thread_runtime_node import cleanup_owner
 from tools import rust_wasi_http_runtime_node as http
@@ -114,16 +114,28 @@ def grant(client, node, publication, peer):
     return result
 
 
+def require_current_projection(projection: dict, component: dict) -> None:
+    require(projection['componentDigest'] == component['sha256']
+            and component == WRAPPED and projection['selectedHostProfile'] == PROFILE
+            and projection['compilerSource'] == SOURCE and projection['compilerRun'] == RUN
+            and projection['compilerJob'] == JOB and projection['compilerArtifact'] == ARTIFACT
+            and projection['compilerRunConclusion'] == ORIGIN['workflowConclusion']
+            and projection['compilerJobConclusion'] == ORIGIN['producerJobConclusion']
+            and projection['compilerWorkflowSource'] == ORIGIN['workflowSource']
+            and projection['compilerObservationStatus'] == ORIGIN['compilerObservationStatus']
+            and projection['applicationRecompiled'] is True
+            and projection['applicationRecompiledDuringAssembly'] is False
+            and projection['originalCompilerObservationRewritten'] is False
+            and projection['normalRustBuilderRouteOpened'] is False,
+            'rust-combined-current-compiler-projection')
+
+
 def run(artifact: Path, native: dict, output: Path) -> dict:
     output = fresh(output)
     component = file_identity(artifact / 'component.wasm', 2 * 1024 * 1024)
     require(component == WRAPPED, 'rust-combined-exact-retained-component')
     projection = read_json(artifact / 'qualification-projection.json', 64 * 1024)
-    require(projection['componentDigest'] == component['sha256']
-            and projection['selectedHostProfile'] == PROFILE
-            and projection['compilerSource'] == SOURCE and projection['compilerRun'] == RUN
-            and projection['compilerRunConclusion'] == 'failure'
-            and projection['applicationRecompiled'] is False, 'rust-combined-original-compiler-projection')
+    require_current_projection(projection, component)
     before = {name: file_identity(path, 512 * 1024 * 1024) for name, path in native.items()}
     commands = Commands(ROOT, fresh(output / 'commands'), build_environment(output),
                         deadline_seconds=420, command_seconds=60)

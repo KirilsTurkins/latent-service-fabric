@@ -74,6 +74,12 @@ jobs:
           set -euo pipefail
           rustc --edition=2021 --test sdk/wasi-http-runtime/pump.rs -o "$RUNNER_TEMP/rust-http-pump-controls"
           "$RUNNER_TEMP/rust-http-pump-controls" | tee "$RUNNER_TEMP/rust-http-pump-controls.txt"
+      - name: Verify completed EOF retirement and pending cancellation ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustc --edition=2021 -D warnings --test sdk/wasi-http-runtime/retirement.rs -o "$RUNNER_TEMP/rust-http-retirement-controls"
+          "$RUNNER_TEMP/rust-http-retirement-controls" --test-threads=1 | tee "$RUNNER_TEMP/rust-http-retirement-controls.txt"
       - name: Acquire only locked SDK compiler sources before offline compilation
         run: cargo fetch --locked --target wasm32-unknown-unknown --target x86_64-unknown-linux-gnu
       - name: Compile and authenticate only the selected WASI backend
@@ -88,6 +94,7 @@ jobs:
           wasm-tools component new target/wasm32-unknown-unknown/release/examples/rust_http_pump_probe.wasm -o "$RUNNER_TEMP/rust-http-pump-probe.wasm"
           wasm-tools validate --features all "$RUNNER_TEMP/rust-http-pump-probe.wasm"
           cargo --config .cargo/managed-guest.toml --config profile.dev.opt-level=1 run --locked --offline -p latent-toolchain-smoke --example rust-http-pump-control -- "$RUNNER_TEMP/rust-http-pump-probe.wasm" 2>&1 | tee "$RUNNER_TEMP/rust-http-pump-guest.txt"
+          cargo --config .cargo/managed-guest.toml --config profile.dev.opt-level=1 run --locked --offline -p latent-toolchain-smoke --example rust-http-pump-control -- "$RUNNER_TEMP/rust-http-pump-probe.wasm" --native-profile 2>&1 | tee "$RUNNER_TEMP/rust-http-pump-native-guest.txt"
       - name: Retain bounded compiler observations without build cache or signer credentials
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
@@ -106,6 +113,8 @@ jobs:
             ${{ runner.temp }}/rust-http-runtime/logs/*.stdout.txt
             ${{ runner.temp }}/rust-http-runtime/logs/*.stderr.txt
             ${{ runner.temp }}/rust-http-pump-controls.txt
+            ${{ runner.temp }}/rust-http-retirement-controls.txt
+            ${{ runner.temp }}/rust-http-pump-native-guest.txt
             ${{ runner.temp }}/rust-http-pump-guest.txt
             ${{ runner.temp }}/rust-http-pump-probe.wasm
           if-no-files-found: warn

@@ -1,7 +1,9 @@
 # Fixed Rust HTTP/thread diagnostic
 
 This is an opt-in `local-experimental-v1` host for one retained, byte-exact
-Rust HTTP/ThreadPool component. It does not enable the normal Rust builder,
+Rust HTTP/ThreadPool component. The selected image is the separate
+`rust_catalogue/combined-corrected-v1` set, not the historical failed image.
+It does not enable the normal Rust builder,
 qualify arbitrary Rust dependencies, or establish completion of #689 or #743.
 Ordinary binaries still refuse the component and the diagnostic profile.
 
@@ -10,14 +12,47 @@ Ordinary binaries still refuse the component and the diagnostic profile.
 The branch workflow `rust-combined-signed-witness.yml` checks out and records
 its exact source commit, verifies ordinary inspector refusal and explicit
 fixed-image inspection, and retrieves only the authenticated members of the
-original compiler artifact. The original compiler run remains recorded as a
-failure; the diagnostic does not rewrite that result as a successful build.
-The artifact must still be retained by GitHub. An expired or changed artifact
-is an input failure, not permission to substitute another component.
+corrected compiler artifact. `origin.json` binds its run, compiler job, source
+commit/tree, recipe, capture, raw core, composition and framed component.
+Compiler job `128393351609` in run `42369110799` successfully compiled the
+corrected fixture, callback-safe pump and completed-EOF retirement from commit
+`1d81c35ca6b206bafba113b6214de09bc6781bdb`. Both that job and its workflow
+passed. Its 251 recipe inputs match the recorded source. Packaging checks the
+original successful compile/composition commands and exact public surface; it
+does not recompile the application or rewrite its compiler receipt.
+
+The pinned archive is 67,919,611 bytes with SHA-256
+`ba5b77a22012f22f503839470858383c6847783b7b04abd3614bf680d8c92210`.
+Its 209 members passed independent CRC and whole-archive digest inspection.
+The maintained retriever obtains only nine fixed, size- and hash-pinned members
+and records that its archive digest check uses official metadata, not a claim
+that the retriever downloaded the entire archive again. Expired or changed
+artifacts fail; no other compiler run, attempt, graph or source is substituted.
+
+The raw core is 999,654 bytes (SHA-256
+`25ecfa4024c125f3c8829216c8c5211097d9f27a8ae86e8385ecfb6526ebfcca`).
+The final graph is 1,306,998 bytes (SHA-256
+`71e0d0bd5cd4be0578eff4ad0ee02dc0d40f3146bc5e373193f3cbc9b8d3fcef`),
+and its frame is 1,654,366 bytes (SHA-256
+`ab7c8e29be5745ff29fa5788ab13f3cc2bdde87da5033e41e9f804dcb3d83032`).
+These identities grant no authority: the host still independently reconstructs
+the transformed core against the unchanged original object catalogue and
+checks the entire final graph before admitting its execution context.
+
+The historical catalogue and failed compiler event `41926247914` are unchanged.
+The active selector rejects the historical framed image; its accepted set is
+replaced, not widened. Earlier callback, Golem-read and three-request deadline
+failures remain failed observations. In particular, compiler run `42364782237`
+had a successful compiler job but a failed ancillary source-check job; its
+signed observation `42366341977` reached three requests before deadline.
+Neither is relabelled by the separately compiled EOF-retirement correction.
+
+A successful compiler, source verifier or native regression is not signed
+execution qualification. The final host must still pass all requirements below.
 
 The controller builds with
 `latentd/development-rust-http-combined,latent-packaging/development-rust-http-combined`,
-packages and signs the retained component, and starts one explicitly selected
+packages and signs the corrected retained component, and starts one explicitly selected
 `rust-context40-combined-http-diagnostic-v1` node. It first omits the native
 thread grant and requires a known terminal permission refusal, zero guest
 consumption, and no peer contact. It then independently grants the four

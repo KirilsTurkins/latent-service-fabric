@@ -52,9 +52,9 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/rust-combined-host"
           python3 -B -m unittest tools.tests.test_rust_combined_diagnostic_envelope -v 2>&1 | tee "$RUNNER_TEMP/rust-combined-host/framing-tests.log"
-          c=crates/latent-component-threading/src/rust_catalogue
+          c=crates/latent-component-threading/src/rust_catalogue/combined-corrected-v1
           python3 -B tools/rust_combined_diagnostic_envelope.py --original "$c/combined-original-core.wasm" --component "$c/combined-final-component.wasm" --output "$RUNNER_TEMP/rust-combined-host/framed.wasm" | tee "$RUNNER_TEMP/rust-combined-host/framing.log"
-          echo '5634429a97b4a3f0cf8afca2877dbbddbc98f5e4fd7bf59ae6f7f50e780c2e17  '"$RUNNER_TEMP/rust-combined-host/framed.wasm" | sha256sum --check --strict
+          echo 'ab7c8e29be5745ff29fa5788ab13f3cc2bdde87da5033e41e9f804dcb3d83032  '"$RUNNER_TEMP/rust-combined-host/framed.wasm" | sha256sum --check --strict
       - name: Check default refusal and fixed diagnostic inspection
         shell: bash
         run: |

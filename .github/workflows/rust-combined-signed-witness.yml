@@ -69,16 +69,16 @@ jobs:
           cargo test --locked -p latent-packaging --lib --features development-rust-http-combined semantics::wasm::tests::combined_creator_recognition_is_explicit_and_fixed -- --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/rust-combined-inspector/diagnostic.log"
           grep -F 'test semantics::wasm::tests::combined_creator_recognition_is_explicit_and_fixed ... ok' "$RUNNER_TEMP/rust-combined-inspector/default.log"
           grep -F 'test semantics::wasm::tests::combined_creator_recognition_is_explicit_and_fixed ... ok' "$RUNNER_TEMP/rust-combined-inspector/diagnostic.log"
-      - name: Retrieve only the pinned original compiler members
+      - name: Retrieve only the pinned corrected compiler members
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 -B tools/rust_combined_http_materials.py --output "$RUNNER_TEMP/rust-combined-original"
+        run: python3 -B tools/rust_combined_http_materials.py --output "$RUNNER_TEMP/rust-combined-compiler"
       - name: Build the exact host and run the signed sibling programme
         env:
           EXPECTED_HEAD: ${{ github.sha }}
         run: >-
           python3 -B tools/qualify_rust_thread_http_combined.py
-          --compiler-materials "$RUNNER_TEMP/rust-combined-original"
+          --compiler-materials "$RUNNER_TEMP/rust-combined-compiler"
           --output "$RUNNER_TEMP/rust-combined-signed"
           --source-commit "$EXPECTED_HEAD"
       - name: Retain bounded source, signing, actual invocation, and cleanup evidence
@@ -88,7 +88,7 @@ jobs:
           name: rust-combined-signed-${{ github.sha }}
           path: |
             ${{ runner.temp }}/rust-combined-signed/**
-            ${{ runner.temp }}/rust-combined-original/retrieval.json
+            ${{ runner.temp }}/rust-combined-compiler/retrieval.json
             ${{ runner.temp }}/rust-combined-inspector/*.log
           if-no-files-found: warn
           retention-days: 7

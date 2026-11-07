@@ -1,7 +1,7 @@
 use super::*;
 #[path = "../../../tests/fixtures/component.rs"]
 mod fixtures;
-use fixtures::{component, Options};
+use fixtures::{Options, component};
 use latent_core::PlatformErrorCode;
 use wasm_encoder::{Component, Encode, ModuleSection, RawSection};
 mod aliases;
@@ -67,10 +67,10 @@ fn combined_creator_recognition_is_explicit_and_fixed() {
     use wasm_encoder::{CustomSection, Section};
 
     const FINAL: &[u8] = include_bytes!(
-        "../../../../latent-component-threading/src/rust_catalogue/combined-final-component.wasm"
+        "../../../../latent-component-threading/src/rust_catalogue/combined-corrected-v1/combined-final-component.wasm"
     );
     const DELTA: &[u8] = include_bytes!(
-        "../../../../latent-component-threading/src/rust_catalogue/combined-original-delta.bin"
+        "../../../../latent-component-threading/src/rust_catalogue/combined-corrected-v1/combined-original-delta.bin"
     );
     let mut wrapped = FINAL.to_vec();
     let section = CustomSection {
@@ -159,9 +159,11 @@ fn all_core_bodies_are_validated_including_unused_modules() {
     ] {
         let bytes = component(options);
         // Parsing payloads alone does not catch this same-signature stack error.
-        assert!(Parser::new(0)
-            .parse_all(&bytes)
-            .all(|payload| payload.is_ok()));
+        assert!(
+            Parser::new(0)
+                .parse_all(&bytes)
+                .all(|payload| payload.is_ok())
+        );
         assert!(validate(&bytes, SemanticLimits::default()).is_err());
     }
     assert!(validate(&fixtures::core(false).finish(), SemanticLimits::default()).is_err());

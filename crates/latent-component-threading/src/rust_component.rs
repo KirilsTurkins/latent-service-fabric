@@ -31,45 +31,48 @@ const ENCODED_PRODUCERS: &[u8] = include_bytes!("rust_catalogue/encoded-producer
     feature = "rust-http-combined-preview-diagnostic",
     not(feature = "rust-thread-diagnostic-legacy")
 ))]
-const COMBINED_PREVIEW_SHELL: &[u8] = include_bytes!("rust_catalogue/combined-preview-shell.bin");
+const COMBINED_PREVIEW_SHELL: &[u8] =
+    include_bytes!("rust_catalogue/combined-corrected-v1/combined-preview-shell.bin");
 #[cfg(all(
     feature = "rust-http-combined-preview-diagnostic",
     not(feature = "rust-thread-diagnostic-legacy")
 ))]
 const COMBINED_WIT: [&[u8]; 5] = [
-    include_bytes!("rust_catalogue/combined-wit-0.bin"),
-    include_bytes!("rust_catalogue/combined-wit-1.bin"),
-    include_bytes!("rust_catalogue/combined-wit-2.bin"),
-    include_bytes!("rust_catalogue/combined-wit-3.bin"),
-    include_bytes!("rust_catalogue/combined-wit-4.bin"),
+    include_bytes!("rust_catalogue/combined-corrected-v1/combined-wit-0.bin"),
+    include_bytes!("rust_catalogue/combined-corrected-v1/combined-wit-1.bin"),
+    include_bytes!("rust_catalogue/combined-corrected-v1/combined-wit-2.bin"),
+    include_bytes!("rust_catalogue/combined-corrected-v1/combined-wit-3.bin"),
+    include_bytes!("rust_catalogue/combined-corrected-v1/combined-wit-4.bin"),
 ];
 #[cfg(all(
     feature = "rust-http-combined-preview-diagnostic",
     not(feature = "rust-thread-diagnostic-legacy")
 ))]
 const COMBINED_ORIGINAL_PRODUCERS: &[u8] =
-    include_bytes!("rust_catalogue/combined-original-producers.bin");
+    include_bytes!("rust_catalogue/combined-corrected-v1/combined-original-producers.bin");
 #[cfg(all(
     feature = "rust-http-combined-preview-diagnostic",
     not(feature = "rust-thread-diagnostic-legacy")
 ))]
 const COMBINED_ENCODED_PRODUCERS: &[u8] =
-    include_bytes!("rust_catalogue/combined-encoded-producers.bin");
+    include_bytes!("rust_catalogue/combined-corrected-v1/combined-encoded-producers.bin");
 #[cfg(all(
     feature = "rust-http-combined-preview-diagnostic",
     not(feature = "rust-thread-diagnostic-legacy")
 ))]
-const COMBINED_FINAL_PREFIX: &[u8] = include_bytes!("rust_catalogue/combined-final-prefix.bin");
+const COMBINED_FINAL_PREFIX: &[u8] =
+    include_bytes!("rust_catalogue/combined-corrected-v1/combined-final-prefix.bin");
 #[cfg(all(
     feature = "rust-http-combined-preview-diagnostic",
     not(feature = "rust-thread-diagnostic-legacy")
 ))]
-const COMBINED_FINAL_SUFFIX: &[u8] = include_bytes!("rust_catalogue/combined-final-suffix.bin");
+const COMBINED_FINAL_SUFFIX: &[u8] =
+    include_bytes!("rust_catalogue/combined-corrected-v1/combined-final-suffix.bin");
 #[cfg(all(
     feature = "rust-http-combined-preview-diagnostic",
     not(feature = "rust-thread-diagnostic-legacy")
 ))]
-const COMBINED_MAIN_BYTES: usize = 920_667;
+const COMBINED_MAIN_BYTES: usize = 918_807;
 // This diagnostic profile is deliberately limited to one retained graph and
 // its reconstruction material. Comparing borrowed slices before decoding keeps
 // arbitrary inputs out of the allocating source verifier. These immutable
@@ -78,12 +81,14 @@ const COMBINED_MAIN_BYTES: usize = 920_667;
     feature = "rust-http-combined-preview-diagnostic",
     not(feature = "rust-thread-diagnostic-legacy")
 ))]
-const COMBINED_FINAL_IMAGE: &[u8] = include_bytes!("rust_catalogue/combined-final-component.wasm");
+const COMBINED_FINAL_IMAGE: &[u8] =
+    include_bytes!("rust_catalogue/combined-corrected-v1/combined-final-component.wasm");
 #[cfg(all(
     feature = "rust-http-combined-preview-diagnostic",
     not(feature = "rust-thread-diagnostic-legacy")
 ))]
-const COMBINED_ORIGINAL_DELTA: &[u8] = include_bytes!("rust_catalogue/combined-original-delta.bin");
+const COMBINED_ORIGINAL_DELTA: &[u8] =
+    include_bytes!("rust_catalogue/combined-corrected-v1/combined-original-delta.bin");
 
 #[derive(Debug)]
 pub struct RustComponentRoutingReceipt {
@@ -718,9 +723,12 @@ mod tests {
     ))]
     #[test]
     fn rust_combined_graph_recomputes_original_without_enabling_a_runtime() {
-        const ORIGINAL: &[u8] = include_bytes!("rust_catalogue/combined-original-core.wasm");
-        const PREVIEW: &[u8] = include_bytes!("rust_catalogue/combined-preview-component.wasm");
-        const FINAL: &[u8] = include_bytes!("rust_catalogue/combined-final-component.wasm");
+        const ORIGINAL: &[u8] =
+            include_bytes!("rust_catalogue/combined-corrected-v1/combined-original-core.wasm");
+        const PREVIEW: &[u8] =
+            include_bytes!("rust_catalogue/combined-corrected-v1/combined-preview-component.wasm");
+        const FINAL: &[u8] =
+            include_bytes!("rust_catalogue/combined-corrected-v1/combined-final-component.wasm");
         // The separately bounded preview must not widen the original profile.
         assert!(rust_objects::verify(ORIGINAL).is_err());
         let proof = verify_combined_composition(ORIGINAL, PREVIEW, FINAL).unwrap();
@@ -780,6 +788,19 @@ mod tests {
         .unwrap();
         assert!(matches_fixed_combined_diagnostic(&wrapped));
         assert!(verify_embedded_combined_diagnostic(&wrapped).is_ok());
+
+        // Keep the historical failed bytes as evidence, not an alternative
+        // runtime selector after the corrected graph has been selected.
+        let historical = crate::rust_original_delta::attach_unverified(
+            include_bytes!("rust_catalogue/combined-final-component.wasm"),
+            include_bytes!("rust_catalogue/combined-original-delta.bin"),
+        )
+        .unwrap();
+        assert!(!matches_fixed_combined_diagnostic(&historical));
+        assert_eq!(
+            verify_embedded_combined_diagnostic(&historical).unwrap_err(),
+            "rust-combined-fixed-material-required"
+        );
 
         let mut changed_delta = COMBINED_ORIGINAL_DELTA.to_vec();
         *changed_delta.last_mut().unwrap() ^= 1;

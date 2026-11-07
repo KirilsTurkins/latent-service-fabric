@@ -1,8 +1,8 @@
-"""Assemble a signed-test input from one honestly retained combined compiler event.
+"""Package one source-captured corrected combined compiler observation.
 
-The producer failed after successful composition when writing a duplicate
-receipt.  This module preserves that failure and publishes a new, explicitly
-marked packaging observation; it never claims a completed normal Rust build.
+The successful compiler job and workflow are distinct from the historical
+failed compiler and signed execution events. Assembly does not recompile
+an application, open the normal builder, or substitute unreviewed graph bytes.
 """
 from __future__ import annotations
 
@@ -17,18 +17,19 @@ from tools.rust_capsule_build import BUILD_TYPE, package_inputs, selected_recipe
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, read_json, write_json
 from tools import rust_combined_diagnostic_envelope as envelope, rust_original_delta as delta
 
-SOURCE = '7f1a95ef7f2552bb6b0339e3331cf6b25d765127'
-RUN, JOB, ARTIFACT = 41926247914, 126911296919, 13371474344
+CATALOGUE = ROOT / 'crates/latent-component-threading/src/rust_catalogue/combined-corrected-v1'
+ORIGIN = read_json(CATALOGUE / 'origin.json', 64 * 1024)
+SOURCE = ORIGIN['sourceCommit']
+RUN, JOB, ARTIFACT = (ORIGIN[key] for key in ('run', 'job', 'artifact'))
 PROFILE = 'rust-context40-combined-http-diagnostic-v1'
-PINS = {
-    'application-source-and-capture.tar.gz': (27871200, 'bc7438a17b9f61a4e86f473a5d9b8a67ea0bf298c7ff9fd7f1984dbba978048e'),
-    'source-inputs.json': (9472, '64496478141f096d8c12032c543b4896aba416908d1bb01221f47aad90e62626'),
-    'raw-core.wasm': (1001580, '1fbef671a60b24c5a66b55ecb899d3c3d8e9b45d296a61db22cc69babd1aa96e'),
-    'combined-component.wasm': (1281820, '8916f44f9044242b05fe4a438f47082ff7073cfcbf08585b01312c347e338c90'),
-    'FAILED.json': (360266, '0f2277e71f3ec0f01e9bd91138ac7809a526a2925691edb80901f6dfe6a26b12'),
-    'rust-http-composition.json': (5281, '37458ad7939380789d0f4a51697ba547c567e245aaaf61b62d2c30f83260fcc5'),
-}
-WRAPPED = {'bytes': 1629518, 'sha256': 'sha256:5634429a97b4a3f0cf8afca2877dbbddbc98f5e4fd7bf59ae6f7f50e780c2e17'}
+# Fixed host-owned selection, not filenames or hashes supplied by a caller.
+MEMBERS = ('application-source-and-capture.tar.gz', 'source-inputs.json', 'raw-core.wasm',
+           'combined-component.wasm', 'observation.json', 'rust-http-composition.json',
+           'recipe-origin.json', 'recipe-inputs.json', 'rust-http-runtime.json')
+require(set(ORIGIN['compilerMembers']) == set(MEMBERS), 'rust-combined-fixed-compiler-members')
+PINS = {name: (ORIGIN['compilerMembers'][name]['bytes'],
+               ORIGIN['compilerMembers'][name]['sha256'].removeprefix('sha256:')) for name in MEMBERS}
+WRAPPED = ORIGIN['wrapped']
 IMPORTS = ('latent:clock/monotonic@0.1.0', 'latent:http/streaming@0.3.0',
            'latent:runtime-native/threads@0.1.0', 'latent:runtime/activation@0.1.0')
 WALL = 'latent:clock/wall@0.1.0'
@@ -40,18 +41,18 @@ def original_files(artifact: Path) -> tuple[dict[str, bytes], dict]:
         actual = file_identity(artifact / name, 32 * 1024 * 1024)
         require(actual == {'bytes': size, 'sha256': 'sha256:' + sha}, 'rust-http-thread-retained-member')
         identities[name] = actual
-    expected = read_json(artifact / 'source-inputs.json', 16 * 1024)
-    require(type(expected) is dict and len(expected) == 69
-            and all(type(name) is str and name and not PurePosixPath(name).is_absolute()
-                    and all(part not in ('', '.', '..') for part in PurePosixPath(name).parts)
-                    for name in expected), 'rust-http-thread-retained-snapshot-shape')
+    expected = read_json(artifact / 'source-inputs.json', 64 * 1024)
+    require(type(expected) is dict and 0 < len(expected) <= 256,
+            'rust-http-thread-retained-snapshot-shape')
     files, seen, total = {}, set(), 0
     with tarfile.open(artifact / 'application-source-and-capture.tar.gz', 'r:gz') as archive:
         for ordinal, member in enumerate(archive):
-            name = member.name
-            require(ordinal < 10215 and member.isfile() and 0 <= member.size <= 4 * 1024 * 1024
-                    and name not in seen, 'rust-http-thread-retained-archive-shape')
-            seen.add(name)
+            name, path = member.name, PurePosixPath(member.name)
+            require(ordinal < 16_384 and member.isfile() and 0 <= member.size <= 4 * 1024 * 1024
+                    and name and not path.is_absolute() and path.as_posix() == name
+                    and all(part not in ('', '.', '..') for part in path.parts)
+                    and name.casefold() not in seen, 'rust-http-thread-retained-archive-shape')
+            seen.add(name.casefold())
             total += member.size
             require(total <= 128 * 1024 * 1024, 'rust-http-thread-retained-archive-bound')
             if name in expected:
@@ -59,33 +60,61 @@ def original_files(artifact: Path) -> tuple[dict[str, bytes], dict]:
                 require({'size': len(payload), 'digest': digest(payload)} == expected[name],
                         'rust-http-thread-retained-source-identity')
                 files[name] = payload
-    require(len(seen) == 10215 and total == 133730018 and set(files) == set(expected)
-            and inventory(files) == read_file(artifact / 'source-inputs.json', 16 * 1024),
+    require(set(files) == set(expected)
+            and inventory(files) == read_file(artifact / 'source-inputs.json', 64 * 1024),
             'rust-http-thread-complete-retained-source')
     return files, identities
 
 
-def producer(artifact: Path, files: dict[str, bytes]) -> tuple[dict, dict]:
-    failure = read_json(artifact / 'FAILED.json', 512 * 1024)
-    composition = read_json(artifact / 'rust-http-composition.json', 16 * 1024)
-    last = [(item['stage'], item['exitCode']) for item in failure['commands'][-3:]]
-    require(failure['schemaVersion'] == 'latent.rust.http-thread-core-observation.v1'
-            and failure['status'] == 'failed' and failure['stage'] == 'maintained-http-composition-preview'
-            and failure['errorType'] == 'FileExistsError'
-            and failure['reason'].endswith('/rust-http-composition.json\'')
-            and failure['actualApplicationCoreCompiled'] is True and failure['normalBuildComplete'] is False
-            and failure['normalComponentGateRefused'] is True and failure['actualGuestExecuted'] is False
-            and failure['capture']['sourceDigest'] == digest(inventory(files))
-            and failure['originalCore']['digest'] == 'sha256:' + PINS['raw-core.wasm'][1]
-            and last == [('rust-http-exact-composition', 0), ('rust-http-final-validation', 0),
-                         ('rust-http-final-graph', 0)], 'rust-http-thread-original-failure-preserved')
+def validate_producer(observation: dict, composition: dict, recipe: dict,
+                      recipe_inputs: dict, source_inventory: bytes, runtime: bytes) -> None:
+    commands = observation['commands']
+    require(observation['schemaVersion'] == 'latent.rust.http-thread-core-observation.v1'
+            and observation['status'] == ORIGIN['compilerObservationStatus']
+            and observation['stage'] == 'complete'
+            and observation['actualApplicationCoreCompiled'] is True
+            and observation['normalBuildComplete'] is False
+            and observation['normalComponentGateRefused'] is True
+            and observation['actualGuestExecuted'] is False
+            and observation['httpCompositionIncluded'] is True
+            and observation['capture']['sourceDigest'] == digest(source_inventory)
+            and observation['originalCore']['digest'] == 'sha256:' + PINS['raw-core.wasm'][1]
+            and observation['combinedComponent']['digest'] == 'sha256:' + PINS['combined-component.wasm'][1]
+            and observation['retainedOriginalSource']['digest'] == 'sha256:' + PINS['application-source-and-capture.tar.gz'][1]
+            and observation['httpPreparedReceiptDigest'] == digest(runtime)
+            and type(commands) is list and 0 < len(commands) <= 128
+            and all(row['exitCode'] == 0 for row in commands)
+            and sum(row['stage'] == 'compile' for row in commands) == 1
+            and [(row['stage'], row['exitCode']) for row in commands[-4:]] == [
+                ('rust-http-exact-composition', 0), ('rust-http-final-validation', 0),
+                ('rust-http-final-graph', 0), ('combined-component-graph', 0)],
+            'rust-http-thread-completed-compiler-observation')
+    rows = recipe['files']
+    require(recipe['head'] == SOURCE and recipe['tree'] == ORIGIN['sourceTree']
+            and type(rows) is list and 0 < len(rows) <= 256
+            and len({row['path'] for row in rows}) == len(rows)
+            and {row['path']: {'size': row['size'], 'digest': row['digest']} for row in rows} == recipe_inputs,
+            'rust-http-thread-compiler-source-lineage')
     require(composition['selectedComponentDigest'] == 'sha256:' + PINS['combined-component.wasm'][1]
+            and observation['httpComposition'] == {**composition,
+                'diagnosticComposer': observation['diagnosticComposer'], 'diagnosticOnly': True,
+                'diagnosticValidationFeatures': 'cm-threading,cm-async,cm-async-stackful,cm-more-async-builtins'}
             and composition['publicGraphUnchanged'] is True
+            and composition['librarySourceRewritten'] is False
             and composition['signedExecutionQualification'] is False
+            and composition['runtimeReceipt'] == digest(runtime)
             and set(composition['imports']) == set(IMPORTS)
             and composition['exports'] == ['examples:greeting/api@1.0.0'],
             'rust-http-thread-exact-composed-surface')
-    return failure, composition
+
+
+def producer(artifact: Path, files: dict[str, bytes]) -> tuple[dict, dict]:
+    observation = read_json(artifact / 'observation.json', 512 * 1024)
+    composition = read_json(artifact / 'rust-http-composition.json', 16 * 1024)
+    validate_producer(observation, composition, read_json(artifact / 'recipe-origin.json', 128 * 1024),
+                     read_json(artifact / 'recipe-inputs.json', 64 * 1024), inventory(files),
+                     read_file(artifact / 'rust-http-runtime.json', 64 * 1024))
+    return observation, composition
 
 
 def projected_source(files: dict[str, bytes]) -> dict[str, bytes]:
@@ -114,7 +143,7 @@ def prepare(artifact: Path, native: dict, output: Path, commands) -> dict:
     output = fresh(output)
     started = int(time.time())
     files, identities = original_files(artifact)
-    failure, composition = producer(artifact, files)
+    observed, composition = producer(artifact, files)
     source = projected_source(files)
     project = json.loads(files['capsule-project.json'])
     require(project['name'] == 'rust-wasi-http' and project['service'] == 'examples/rust-wasi-http'
@@ -126,15 +155,17 @@ def prepare(artifact: Path, native: dict, output: Path, commands) -> dict:
         'tools/rust_combined_diagnostic_envelope.py', 'tools/rust_original_delta.py',
         'tools/rust_thread_http_sibling_gate.py', 'tools/rust_thread_http_sibling_node.py',
         'tools/rust_thread_http_combined_package.py', 'tools/rust_thread_http_combined_node.py',
-        'tools/rust_combined_http_materials.py', '.github/workflows/rust-combined-signed-witness.yml',
+        'tools/rust_combined_http_materials.py',
+        'crates/latent-component-threading/src/rust_catalogue/combined-corrected-v1/origin.json',
+        '.github/workflows/rust-combined-signed-witness.yml',
         'tools/qualify_rust_thread_http_combined.py')))
     require(len(recipe_names) <= 256, 'rust-http-thread-assembly-recipe-bound')
     recipe = inventory({name: read_file(ROOT / name, 4 * 1024 * 1024) for name in recipe_names})
     (output / 'recipe-inputs.json').write_bytes(recipe)
-    (output / 'source-inputs.json').write_bytes(read_file(artifact / 'source-inputs.json', 16 * 1024))
+    (output / 'source-inputs.json').write_bytes(read_file(artifact / 'source-inputs.json', 64 * 1024))
     (output / 'original-project.json').write_bytes(files['capsule-project.json'])
     (output / 'original-world.wit').write_bytes(files['wit/world.wit'])
-    (output / 'retained-compiler-failure.json').write_bytes(read_file(artifact / 'FAILED.json', 512 * 1024))
+    (output / 'retained-compiler-observation.json').write_bytes(read_file(artifact / 'observation.json', 512 * 1024))
     (output / 'retained-composition.json').write_bytes(read_file(artifact / 'rust-http-composition.json', 16 * 1024))
     write_json(output / 'wit-inputs.json', {'world': project['world'], 'sources': [
         {'path': name, 'content': data.decode()} for name, data in sorted(source.items())
@@ -145,19 +176,22 @@ def prepare(artifact: Path, native: dict, output: Path, commands) -> dict:
     surface = read_json(output / 'surface.json')
     require(set(surface['imports']) == set(IMPORTS)
             and surface['exports'] == composition['exports'], 'rust-http-thread-projected-surface')
-    catalogue = ROOT / 'crates/latent-component-threading/src/rust_catalogue'
-    component = framed(artifact, catalogue)
+    component = framed(artifact, CATALOGUE)
     (output / 'component.wasm').write_bytes(component)
     projection = {'schemaVersion': 'latent.rust.combined-http.diagnostic-projection.v1',
         'compilerSource': SOURCE, 'compilerRun': RUN, 'compilerJob': JOB, 'compilerArtifact': ARTIFACT,
-        'compilerRunConclusion': 'failure', 'compilerFailureStage': failure['stage'],
-        'compilerFailureReason': failure['reason'], 'compositionAndValidationCommandsSucceeded': True,
+        'compilerRunConclusion': ORIGIN['workflowConclusion'],
+        'compilerJobConclusion': ORIGIN['producerJobConclusion'],
+        'compilerWorkflowSource': ORIGIN['workflowSource'],
+        'compilerObservationStatus': observed['status'],
+        'workflowFailureOutsideCompilerJob': ORIGIN['workflowFailureOutsideCompilerJob'],
+        'compositionAndValidationCommandsSucceeded': True,
         'retainedMembers': identities, 'originalSourceDigest': digest(inventory(files)),
         'originalPublicWitDigest': digest(files['wit/world.wit']),
         'projectedPublicWitDigest': digest(source['wit/world.wit']),
         'omittedSourceImportAbsentFromComposedGraph': WALL, 'finalRequiredImports': list(IMPORTS),
         'componentDigest': digest(component), 'selectedHostProfile': PROFILE,
-        'originalLimits': project['limits'], 'applicationRecompiled': False,
+        'originalLimits': project['limits'], 'applicationRecompiled': True, 'applicationRecompiledDuringAssembly': False,
         'originalCompilerObservationRewritten': False, 'normalRustBuilderRouteOpened': False,
         'nativeHostMustRecomputeOriginalGraph': True, 'actualGuestExecuted': False,
         'standardRuntimeQualified': False}
@@ -165,7 +199,7 @@ def prepare(artifact: Path, native: dict, output: Path, commands) -> dict:
     package_inputs(output, project, surface, source, component, threading_model='cooperative',
         additional_assets=(('qualification-projection.json', 'asset', 'application/vnd.latent.rust-thread-projection.v1+json'),
             ('original-project.json', 'asset', 'application/json'), ('original-world.wit', 'asset', 'application/wasm-wit'),
-            ('retained-compiler-failure.json', 'asset', 'application/json'),
+            ('retained-compiler-observation.json', 'asset', 'application/json'),
             ('retained-composition.json', 'asset', 'application/json')))
     package_files = {'package-source.json': read_file(output / 'package-source.json')}
     for layer in read_json(output / 'package-source.json')['layers']:
@@ -182,13 +216,13 @@ def prepare(artifact: Path, native: dict, output: Path, commands) -> dict:
     materials = [{'name': name, 'digest': digest(data), 'size': len(data)} for name, data in (
         ('source-snapshot', read_file(output / 'source-inputs.json')), ('build-recipe', recipe),
         ('toolchain-config', files['rust-toolchain.toml']), ('dependency-lock', files['Cargo.lock']),
-        ('package-inputs', package_inventory), ('retained-compiler-failure', read_file(output / 'retained-compiler-failure.json')),
+        ('package-inputs', package_inventory), ('retained-compiler-observation', read_file(output / 'retained-compiler-observation.json')),
         ('retained-composition', read_file(output / 'retained-composition.json')),
         ('qualification-projection', read_file(output / 'qualification-projection.json')))]
     materials.append({'name': 'retained-source-and-cas-capture',
         'digest': identities['application-source-and-capture.tar.gz']['sha256'],
         'size': identities['application-source-and-capture.tar.gz']['bytes']})
-    retained = [row for row in failure['tools'] if row['name'] in {'cargo', 'rustc', 'wasm-tools', 'wit-bindgen'}]
+    retained = [row for row in observed['tools'] if row['name'] in {'cargo', 'rustc', 'wasm-tools', 'wit-bindgen'}]
     require({row['name'] for row in retained} == {'cargo', 'rustc', 'wasm-tools', 'wit-bindgen'} and len(retained) == 4,
             'rust-http-thread-retained-tool-identities')
     materials.extend(retained)
@@ -210,7 +244,8 @@ def prepare(artifact: Path, native: dict, output: Path, commands) -> dict:
     write_json(output / 'BUILD-COMPLETE.json', {'formatVersion': 1,
         'observationDigest': digest(read_file(output / 'build-observation.json')),
         'sourceDigest': digest(inventory(files)), 'componentDigest': digest(component),
-        'packageAssembled': True, 'applicationRecompiled': False, 'retainedCompilerSource': SOURCE,
-        'originalCompilerRunConclusion': 'failure', 'normalRustBuilderRouteOpened': False,
+        'packageAssembled': True, 'applicationRecompiled': True, 'applicationRecompiledDuringAssembly': False, 'retainedCompilerSource': SOURCE,
+        'compilerRunConclusion': ORIGIN['workflowConclusion'],
+        'compilerJobConclusion': ORIGIN['producerJobConclusion'], 'normalRustBuilderRouteOpened': False,
         'commands': commands.records})
     return projection
