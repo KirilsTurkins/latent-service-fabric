@@ -55,6 +55,14 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         return !retiring && !interrupting && (!shutdown || (task.period == 0 ? executeDelayed : continuePeriodic));
     }
 
+    private static final class RunnableCall<V> implements Callable<V> {
+        final Runnable command;
+        final V result;
+        volatile boolean invoked;
+        RunnableCall(Runnable command, V result) { this.command = Objects.requireNonNull(command); this.result = result; }
+        @Override public V call() { invoked = true; command.run(); return result; }
+    }
+
     private final class Task<V> extends FutureTask<V> implements ScheduledFuture<V> {
         final long order;
         final long period; // positive=fixed rate, negative=fixed delay, zero=once
@@ -63,8 +71,15 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         boolean executing;
         boolean released;
         boolean resultAccepted;
-        Task(Callable<V> callable, long next, long period, long order, Activation.Lease queued) {
+        Runnable action;
+        RunnableCall<?> runnableCall;
+        boolean actionAccepted;
+        boolean futureAccepted;
+        int invocations;
+        Task(Callable<V> callable, Runnable action, long next, long period, long order, Activation.Lease queued) {
             super(callable);
+            this.action = action;
+            this.runnableCall = callable instanceof RunnableCall<?> call ? call : null;
             this.next = next; this.period = period; this.order = order; this.queued = queued;
         }
         @Override public long getDelay(TimeUnit unit) {
@@ -80,17 +95,68 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
             return Long.compare(getDelay(TimeUnit.NANOSECONDS), other.getDelay(TimeUnit.NANOSECONDS));
         }
         private ScheduledThreadPoolExecutor executor() { return ScheduledThreadPoolExecutor.this; }
-        boolean invoke() {
-            if (period != 0) return runAndReset();
-            super.run();
-            return false;
+        @Override synchronized boolean acceptQueueCopy() {
+            if (!super.acceptQueueCopy()) return false;
+            try {
+                if (!futureAccepted && action instanceof FutureTask<?>)
+                    futureAccepted = ((FutureTask<?>)action).acceptQueueCopy();
+                if (!actionAccepted) actionAccepted = CompletableFuture.acceptedByQueue(action);
+                return true;
+            } catch (Throwable error) {
+                super.removeQueueCopy(true);
+                throw error;
+            }
         }
+        @Override synchronized void removeQueueCopy(boolean removed) {
+            super.removeQueueCopy(removed);
+            releaseActionIfIdle();
+        }
+        private synchronized void beginInvocation() { invocations++; }
+        private synchronized void endInvocation() { invocations--; releaseActionIfIdle(); }
+        @Override public void run() {
+            // A returned ScheduledFuture is also a Runnable. A caller may
+            // start it while the pool is concurrently withdrawing its copy.
+            beginInvocation();
+            try { super.run(); } finally { endInvocation(); }
+        }
+        boolean invoke() {
+            beginInvocation();
+            try {
+                if (period != 0) return runAndReset();
+                super.run();
+                return false;
+            } finally { endInvocation(); }
+        }
+        private void releaseActionIfIdle() {
+            // The wrapper itself can be submitted to another managed queue.
+            // Its remaining copies and all entered invocations must retire
+            // before the inner action's last queue claim is withdrawn.
+            boolean complete = isDone();
+            if (invocations == 0 && (complete || released && !hasQueueCopies())) {
+                if (futureAccepted) {
+                    // A FutureTask subclass may return without completing;
+                    // its physical invocation then remains uncertain.
+                    ((FutureTask<?>)action).removeQueueCopy(runnableCall == null || !runnableCall.invoked);
+                    futureAccepted = false;
+                }
+                if (actionAccepted) {
+                    // Action retains any other accepted copy or an opaque
+                    // executor's uncertain ownership.
+                    CompletableFuture.removedFromQueue(action, true, true);
+                    actionAccepted = false;
+                }
+                // FutureTask has cleared its callable on completion. Keep no
+                // additional callback capture in a user-retained future.
+                if (complete) { action = null; runnableCall = null; }
+            }
+        }
+        private synchronized void abandon() { released = true; releaseActionIfIdle(); }
         void release() {
             if (released) return;
             if (resultAccepted) { resultAccepted = false; removeQueueCopy(true); }
             queued.close(); queued = null;
-            released = true;
             pendingWork--;
+            abandon();
         }
         @Override public boolean cancel(boolean interrupt) {
             boolean changed = super.cancel(interrupt);
@@ -98,21 +164,23 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
                 if (!executing && queue.remove(this)) release();
                 ScheduledThreadPoolExecutor.this.notifyAll();
             }
+            synchronized (this) { releaseActionIfIdle(); }
             return changed;
         }
     }
 
-    private synchronized <V> ScheduledFuture<V> add(Callable<V> command, long delay, long period) {
+    private synchronized <V> ScheduledFuture<V> add(Callable<V> command, Runnable action, long delay, long period) {
         Objects.requireNonNull(command);
-        if (shutdown || retiring || Activation.closing() && !Activation.acceptedContinuation())
-            throw new java.util.concurrent.RejectedExecutionException("activation-scheduled-executor-closed");
-        if (sequence == Long.MAX_VALUE) throw new java.util.concurrent.RejectedExecutionException("scheduled-sequence-overflow");
-        Activation.Lease queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
+        Activation.Lease queued = null;
         Task<V> task = null;
         boolean accepted = false;
         boolean installed = false;
         try {
-            task = new Task<>(command, after(delay), period, sequence++, queued);
+            if (shutdown || retiring || Activation.closing() && !Activation.acceptedContinuation())
+                throw new java.util.concurrent.RejectedExecutionException("activation-scheduled-executor-closed");
+            if (sequence == Long.MAX_VALUE) throw new java.util.concurrent.RejectedExecutionException("scheduled-sequence-overflow");
+            queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
+            task = new Task<>(command, action, after(delay), period, sequence++, queued);
             accepted = task.acceptQueueCopy();
             task.resultAccepted = accepted;
             queue.add(task);
@@ -124,8 +192,12 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         } catch (Throwable error) {
             if (!installed || queue.remove(task)) {
                 if (installed) pendingWork--;
-                queued.close();
+                if (queued != null) queued.close();
                 if (accepted) { task.resultAccepted = false; task.removeQueueCopy(true); }
+                if (task != null) task.abandon();
+                // Only the exact SDK implementation witnesses rejection. A
+                // subclass may already have retained the submitted action.
+                if (Executors.isManaged(this)) CompletableFuture.rejectedBeforeAcceptance(action, this);
             }
             throw error;
         }
@@ -248,27 +320,27 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     }
 
     @Override public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-        return schedule(Executors.callable(command, null), delay, unit);
+        return add(new RunnableCall<>(command, null), command, Objects.requireNonNull(unit).toNanos(delay), 0);
     }
     @Override public <V> ScheduledFuture<V> schedule(Callable<V> command, long delay, TimeUnit unit) {
-        return add(command, Objects.requireNonNull(unit).toNanos(delay), 0);
+        return add(command, null, Objects.requireNonNull(unit).toNanos(delay), 0);
     }
     @Override public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
         Objects.requireNonNull(unit);
         if (period <= 0) throw new IllegalArgumentException();
-        return add(Executors.callable(command, null), unit.toNanos(initialDelay), unit.toNanos(period));
+        return add(new RunnableCall<>(command, null), command, unit.toNanos(initialDelay), unit.toNanos(period));
     }
     @Override public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
         Objects.requireNonNull(unit);
         if (delay <= 0) throw new IllegalArgumentException();
-        return add(Executors.callable(command, null), unit.toNanos(initialDelay), -unit.toNanos(delay));
+        return add(new RunnableCall<>(command, null), command, unit.toNanos(initialDelay), -unit.toNanos(delay));
     }
     @Override public void execute(Runnable command) { schedule(command, 0, TimeUnit.NANOSECONDS); }
     @Override public <T> java.util.concurrent.Future<T> submit(Callable<T> command) {
         return schedule(command, 0, TimeUnit.NANOSECONDS);
     }
     @Override public <T> java.util.concurrent.Future<T> submit(Runnable command, T result) {
-        return schedule(Executors.callable(command, result), 0, TimeUnit.NANOSECONDS);
+        return add(new RunnableCall<>(command, result), command, 0, 0);
     }
     @Override public java.util.concurrent.Future<?> submit(Runnable command) { return submit(command, null); }
 
