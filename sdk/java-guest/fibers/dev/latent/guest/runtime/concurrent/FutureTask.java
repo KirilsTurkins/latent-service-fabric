@@ -38,6 +38,7 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
         queueCopies++;
         return true;
     }
+    final synchronized boolean hasQueueCopies() { return queueCopies != 0; }
     synchronized void removeQueueCopy(boolean removed) {
         if (queueCopies <= 0) throw new IllegalStateException("activation-future-queue-copy");
         queueCopies--;
