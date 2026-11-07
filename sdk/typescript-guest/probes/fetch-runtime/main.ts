@@ -1,6 +1,13 @@
 import type * as Contract from '../generated/interfaces/examples-typescript-fetch-api.js';
 import {request, requestReady, promiseReady, requestCopyReady, initialized} from './default-client.js';
 
+// Probe-local declarations for the native globals; no broader DOM API claim.
+declare class Event { constructor(type: string); }
+declare class EventTarget {
+  addEventListener(type: string, listener: () => void): void;
+  dispatchEvent(event: Event): boolean;
+}
+
 // Only pure constructors are snapshotted; native signal owners stay invocation-local.
 const headers = new Headers([['x-direct', 'present']]);
 if (new Response(null, {headers}).headers.get('x-direct') !== 'present' || !initialized) {
