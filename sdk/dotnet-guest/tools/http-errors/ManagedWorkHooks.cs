@@ -340,11 +340,35 @@ internal sealed class ManagedWorkHooks
             && enqueue.Parameters[0].ParameterType.MetadataType == MetadataType.Object && enqueue.Body.ExceptionHandlers.Count == 0);
         var il = enqueue.Body.GetILProcessor();
         var start = enqueue.Body.Instructions[0];
-        Before(enqueue, start, Instruction.Create(OpCodes.Ldarg_1), Instruction.Create(OpCodes.Call, Hook("Enqueue")));
+        var ticket = new VariableDefinition(module.TypeSystem.Object);
+        var insertionStarted = new VariableDefinition(module.TypeSystem.Boolean);
+        enqueue.Body.InitLocals = true;
+        enqueue.Body.Variables.Add(ticket); enqueue.Body.Variables.Add(insertionStarted);
+        var insertions = enqueue.Body.Instructions.Where(instruction => instruction.OpCode == OpCodes.Callvirt
+            && instruction.Operand is MethodReference called && (
+                called.FullName == "System.Void System.Threading.ThreadPoolWorkQueue/WorkStealingQueue::LocalPush(System.Object)"
+                || called.FullName == "System.Void System.Collections.Generic.Queue`1<System.Object>::Enqueue(T)")).ToArray();
+        Need(insertions.Length == (enqueue.Name == "Enqueue" ? 2 : 1)
+            && insertions.Count(instruction => ((MethodReference)instruction.Operand).Name == "LocalPush")
+                == (enqueue.Name == "Enqueue" ? 1 : 0));
+        Before(enqueue, start, Instruction.Create(OpCodes.Ldarg_1), Instruction.Create(OpCodes.Call, Hook("Enqueue")),
+            Instruction.Create(OpCodes.Stloc, ticket));
+        foreach (var insertion in insertions)
+        {
+            Before(enqueue, insertion, Instruction.Create(OpCodes.Ldc_I4_1), Instruction.Create(OpCodes.Stloc, insertionStarted));
+            Need(insertion.Previous.OpCode == OpCodes.Stloc && ReferenceEquals(insertion.Previous.Operand, insertionStarted)
+                && insertion.Previous.Previous.OpCode == OpCodes.Ldc_I4_1
+                && !enqueue.Body.Instructions.Any(instruction => ReferenceEquals(instruction.Operand, insertion)
+                    || instruction.Operand is Instruction[] targets && targets.Contains(insertion)));
+        }
+        Need(enqueue.Body.Instructions.Count(instruction => instruction.OpCode == OpCodes.Stloc
+            && ReferenceEquals(instruction.Operand, insertionStarted)) == insertions.Length);
         var exits = enqueue.Body.Instructions.Where(instruction => instruction.OpCode == OpCodes.Ret).ToArray();
-        var cleanup = Instruction.Create(OpCodes.Ldarg_1); var done = Instruction.Create(OpCodes.Ret);
+        var cleanup = Instruction.Create(OpCodes.Ldloc, ticket); var done = Instruction.Create(OpCodes.Ldloc, ticket);
         foreach (var exit in exits) { exit.OpCode = OpCodes.Leave; exit.Operand = done; }
-        il.Append(cleanup); il.Emit(OpCodes.Call, Hook("EnqueueFailed")); il.Emit(OpCodes.Endfinally); il.Append(done);
+        il.Append(cleanup); il.Emit(OpCodes.Ldloc, insertionStarted);
+        il.Emit(OpCodes.Call, Hook("EnqueueFinalized")); il.Emit(OpCodes.Endfinally);
+        il.Append(done); il.Emit(OpCodes.Ldc_I4_2); il.Emit(OpCodes.Call, Hook("EnqueueFinalized")); il.Emit(OpCodes.Ret);
         enqueue.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Fault) {
             TryStart = start, TryEnd = cleanup, HandlerStart = cleanup, HandlerEnd = done,
         });

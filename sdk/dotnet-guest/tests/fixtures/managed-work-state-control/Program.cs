@@ -78,6 +78,12 @@ internal static class StateControl
         ManagedWorkRuntime.JoinAcceptedWork(); ManagedWorkRuntime.FinishedPhysicalDrain();
         Need(Owners.Count == 0 && context == (0UL, 0UL) && Work.Count == 0);
     }
+    private static object? Enqueue(object item)
+    {
+        var ticket = ManagedWorkRuntime.Enqueue(item);
+        ManagedWorkRuntime.EnqueueFinalized(ticket, 2);
+        return ticket;
+    }
     private static TaskCompletionSource<int> Pending() => new();
     private static void Complete(TaskCompletionSource<int> source)
     {
@@ -87,7 +93,7 @@ internal static class StateControl
     {
         var pending = Pending();
         object item = callback ? new object() : pending.Task;
-        if (callback) { ManagedWorkRuntime.Enqueue(item); ManagedWorkRuntime.Dequeue(item); }
+        if (callback) { Enqueue(item); ManagedWorkRuntime.Dequeue(item); }
         else ManagedWorkRuntime.Schedule(pending.Task);
         var previous = ManagedWorkRuntime.Enter(item);
         var original = context;
@@ -109,7 +115,7 @@ internal static class StateControl
             Need(context == (0UL, 0UL));
         }, null);
         if (!callback) Refuses(CompleteOwner, "managed-work-double-settle");
-        Refuses(() => ManagedWorkRuntime.Enqueue(item), "managed-work-owner-retired");
+        Refuses(() => Enqueue(item), "managed-work-owner-retired");
         Refuses(() => { ManagedWorkRuntime.Enter(item); }, "managed-work-execution-parent");
         Refuses(() => { ManagedWorkRuntime.JoinAcceptedWork(); rootJoinReturned = true; },
             "managed-work-double-settle");
@@ -238,15 +244,15 @@ internal static class StateControl
     private static void QueueSettlementControl(bool unknown)
     {
         Limits[3] = 2;
-        object item = new(); ManagedWorkRuntime.Enqueue(item);
+        object item = new(); var ticket = Enqueue(item);
         var original = ManagedWorkRuntime.QueuedTokenForControl(item)
             ?? throw new InvalidOperationException("missing-original-control-queue-token");
         settlementRefusal = original.Id; settlementUnknown = unknown;
         Refuses(() => ManagedWorkRuntime.Dequeue(item), "managed-work-settlement-refused");
         Refuses(() => ManagedWorkRuntime.Dequeue(item), "managed-work-queue-uncertain");
-        ManagedWorkRuntime.EnqueueFailed(item);
-        Refuses(() => ManagedWorkRuntime.Enqueue(item), "managed-work-queue-uncertain");
-        object other = new(); ManagedWorkRuntime.Enqueue(other);
+        ManagedWorkRuntime.EnqueueFinalized(ticket, 0);
+        Refuses(() => Enqueue(item), "managed-work-queue-uncertain");
+        object other = new(); Enqueue(other);
         ManagedWorkRuntime.Dequeue(other); ManagedWorkRuntime.CallbackCompleted(other);
         Refuses(() => { ManagedWorkRuntime.JoinAcceptedWork(); rootJoinReturned = true; },
             "managed-work-unproven-quiescence");
@@ -254,6 +260,66 @@ internal static class StateControl
         Need(!rootJoinReturned && refusedSettlements == 1 && Count(0) == 2 && Count(3) == (unknown ? 0 : 1)
             && ManagedWorkRuntime.QueuedTokenForControl(item) == original
             && Owners.ContainsKey(original.Id) != unknown && Work.Count == 0);
+    }
+    private static void BeforeInsertionSettlementControl(bool unknown)
+    {
+        object item = new(); var ticket = ManagedWorkRuntime.Enqueue(item);
+        var queueToken = ManagedWorkRuntime.QueuedTokenForControl(item)
+            ?? throw new InvalidOperationException("missing-original-control-queue-token");
+        settlementRefusal = queueToken.Id; settlementUnknown = unknown;
+        bool originalFailure = false;
+        try
+        {
+            try { throw new InvalidOperationException("control-original-enqueue-failure"); }
+            catch { ManagedWorkRuntime.EnqueueFinalized(ticket, 0); throw; }
+        }
+        catch (InvalidOperationException error) when (error.Message == "control-original-enqueue-failure")
+        { originalFailure = true; }
+        Need(originalFailure && refusedSettlements == 1);
+        ManagedWorkRuntime.EnqueueFinalized(ticket, 0);
+        Need(Count(3) == (unknown ? 0 : 1) && Count(0) == 2
+            && ManagedWorkRuntime.QueuedTokenForControl(item) == queueToken);
+        Refuses(() => ManagedWorkRuntime.Dequeue(item), "managed-work-queue-uncertain");
+        Refuses(() => { ManagedWorkRuntime.JoinAcceptedWork(); rootJoinReturned = true; },
+            "managed-work-unproven-quiescence");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+        Need(!rootJoinReturned && refusedSettlements == 1);
+    }
+    private static void BeforeInsertionReentrantControl(bool captured)
+    {
+        Limits[3] = 2;
+        object item = new(); var ticket = ManagedWorkRuntime.Enqueue(item);
+        var previous = ManagedWorkRuntime.Enter(item);
+        ulong owner = context.Item2;
+        var continuation = Pending();
+        var saved = captured ? ExecutionContext.Capture() : null;
+        if (!captured)
+        {
+            ManagedWorkRuntime.CreatedAsync(continuation.Task);
+            Enqueue(continuation.Task);
+        }
+        ManagedWorkRuntime.Exit(previous);
+        ManagedWorkRuntime.EnqueueFinalized(ticket, 0);
+        Need(Count(0) == 2 && Owners.ContainsKey(owner) && Count(3) == (captured ? 0 : 1));
+        if (captured)
+        {
+            Need(saved is not null);
+            ExecutionContext.Run(saved!, _ =>
+            {
+                Need(context == (17UL, owner));
+                ManagedWorkRuntime.CreatedAsync(continuation.Task);
+                Enqueue(continuation.Task);
+            }, null);
+        }
+        Need(Count(3) == 1 && !continuation.Task.IsCompleted);
+        ManagedWorkRuntime.Dequeue(continuation.Task);
+        previous = ManagedWorkRuntime.Enter(continuation.Task);
+        try { Need(context == (17UL, owner) && Owners.ContainsKey(owner)); }
+        finally { ManagedWorkRuntime.Exit(previous); }
+        continuation.SetResult(1);
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+        Need(Count(0) == 2 && Count(3) == 0 && Owners.ContainsKey(owner));
     }
     private static void Run(string name)
     {
@@ -281,8 +347,8 @@ internal static class StateControl
                 Finish(); Need(maximumTasks == 2); break;
             }
             case "queued-admission-rollback": {
-                object first = new(), second = new(); ManagedWorkRuntime.Enqueue(first);
-                Refuses(() => ManagedWorkRuntime.Enqueue(second), "control-ledger-capacity");
+                object first = new(), second = new(); Enqueue(first);
+                Refuses(() => Enqueue(second), "control-ledger-capacity");
                 Need(Count(0) == 2 && Count(3) == 1);
                 ManagedWorkRuntime.Dequeue(first); var previous = ManagedWorkRuntime.Enter(first);
                 try { Need(Count(0) == 2 && Count(3) == 0); }
@@ -290,18 +356,37 @@ internal static class StateControl
                 Finish(); break;
             }
             case "enqueue-failure-retains-uncertain-owners": {
-                object item = new(); ManagedWorkRuntime.Enqueue(item); ManagedWorkRuntime.EnqueueFailed(item);
+                object item = new(); var ticket = ManagedWorkRuntime.Enqueue(item);
+                ManagedWorkRuntime.EnqueueFinalized(ticket, 1);
                 Need(Count(0) == 2 && Count(3) == 1);
                 Refuses(() => ManagedWorkRuntime.Dequeue(item), "managed-work-queue-uncertain");
-                Refuses(() => ManagedWorkRuntime.Enqueue(item), "managed-work-queue-uncertain");
+                Refuses(() => Enqueue(item), "managed-work-queue-uncertain");
                 Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
                 Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
                 Need(Count(0) == 2 && Count(3) == 1); break;
             }
+            case "enqueue-before-insertion-retains-created-owner": {
+                object item = new(); var ticket = ManagedWorkRuntime.Enqueue(item);
+                ManagedWorkRuntime.EnqueueFinalized(ticket, 0);
+                Need(Count(0) == 2 && Count(3) == 0);
+                Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
+                Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners"); break;
+            }
+            case "enqueue-before-insertion-keeps-borrowed-owner": {
+                var actual = Pending(); ManagedWorkRuntime.Schedule(actual.Task);
+                var ticket = ManagedWorkRuntime.Enqueue(actual.Task);
+                ManagedWorkRuntime.EnqueueFinalized(ticket, 0);
+                Need(Count(0) == 2 && Count(3) == 0 && !actual.Task.IsCompleted);
+                Complete(actual); Finish(); break;
+            }
+            case "enqueue-before-insertion-retains-reentrant-work": BeforeInsertionReentrantControl(false); break;
+            case "enqueue-before-insertion-retains-captured-context": BeforeInsertionReentrantControl(true); break;
+            case "queue-before-insertion-refusal-retains-owner": BeforeInsertionSettlementControl(false); break;
+            case "queue-before-insertion-unknown-retains-owner": BeforeInsertionSettlementControl(true); break;
             case "queue-dequeue-refusal-prevents-retry": QueueSettlementControl(false); break;
             case "queue-dequeue-unknown-prevents-retry": QueueSettlementControl(true); break;
             case "dequeue-settlement-refusal-retains-owner": {
-                object item = new(); ManagedWorkRuntime.Enqueue(item);
+                object item = new(); Enqueue(item);
                 var original = ManagedWorkRuntime.QueuedTokenForControl(item)
                     ?? throw new InvalidOperationException("missing-original-control-queue-token");
                 settlementRefusal = original.Id;
@@ -359,7 +444,7 @@ internal static class StateControl
                 Need(Count(0) == 1 && !pending.Task.IsCompleted); Finish(); break;
             }
             case "local-pop-releases-queue-only": {
-                object item = new(); ManagedWorkRuntime.Enqueue(item);
+                object item = new(); Enqueue(item);
                 Need(!ManagedWorkRuntime.Popped(false, item) && Count(3) == 1);
                 Need(ManagedWorkRuntime.Popped(true, item) && Count(3) == 0 && Count(0) == 2);
                 ManagedWorkRuntime.CallbackCompleted(item); Finish(); break;
@@ -371,7 +456,7 @@ internal static class StateControl
                 Finish(); Need(finallyRan && actual.Task.IsCompletedSuccessfully && maximumTasks == 1); break;
             }
             case "callback-retains-async-void-task": {
-                object callback = new(); var actual = Pending(); ManagedWorkRuntime.Enqueue(callback);
+                object callback = new(); var actual = Pending(); Enqueue(callback);
                 ManagedWorkRuntime.Dequeue(callback); var previous = ManagedWorkRuntime.Enter(callback);
                 try { ManagedWorkRuntime.CreatedAsync(actual.Task); }
                 finally { ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.CallbackCompleted(callback); }

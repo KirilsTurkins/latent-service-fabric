@@ -73,7 +73,7 @@ public final class ScheduledFutureResultSettlementControl {
                 try { future.run(); throw new AssertionError("uncertain-result-ran"); }
                 catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-future-result-settlement-uncertain")); }
                 try { next.execute(future); throw new AssertionError("uncertain-result-queued"); }
-                catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-future-result-settlement-uncertain")); }
+                catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-runtime-poisoned-store")); }
                 require(!future.isDone() && calls.get() == 0);
                 resultState(unknown);
             }
@@ -128,18 +128,17 @@ public final class ScheduledFutureResultSettlementControl {
             catch (IllegalStateException error) { caught(error, unknown); }
             require(future.isDone() && future.get() == 42); resultState(unknown);
             try { next.execute(future); throw new AssertionError("uncertain-completed-future-queued"); }
-            catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-future-result-settlement-uncertain")); }
+            catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-runtime-poisoned-store")); }
             require(Activation.count(LatentRuntimeActivationOwnerKind.QueuedWork) == 1);
             // A direct call is only the standard completed no-op: no Result
             // admission, callback execution, or repeated settlement occurs.
             future.run(); resultState(unknown);
             try { scheduled.schedule(future, 1, TimeUnit.DAYS); throw new AssertionError("uncertain-completed-future-scheduled"); }
-            catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-future-result-settlement-uncertain")); }
-            // The wrapper's separate Result settled once; the original
-            // failed owner itself still has exactly one attempt.
-            resultState(unknown, 2);
+            catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-runtime-poisoned-store")); }
+            // Poison prevents admitting a new wrapper or retrying the original owner.
+            resultState(unknown);
             require(pool.shutdownNow().size() == 1);
-            require(Activation.count(LatentRuntimeActivationOwnerKind.QueuedWork) == 0); resultState(unknown, 2);
+            require(Activation.count(LatentRuntimeActivationOwnerKind.QueuedWork) == 0); resultState(unknown);
         } finally {
             release.countDown(); pool.shutdownNow(); next.shutdownNow(); scheduled.shutdownNow();
             require(pool.awaitTermination(5, TimeUnit.SECONDS) && next.awaitTermination(5, TimeUnit.SECONDS)

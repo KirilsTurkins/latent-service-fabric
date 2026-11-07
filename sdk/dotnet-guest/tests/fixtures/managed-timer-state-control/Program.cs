@@ -50,6 +50,12 @@ internal static class TimerControl
         ManagedWorkRuntime.JoinAcceptedWork(); ManagedWorkRuntime.FinishedPhysicalDrain();
         Need(Owners.Count == 0 && context == (0UL, 0UL) && Work.Count == 0);
     }
+    private static object? Enqueue(object item)
+    {
+        var ticket = ManagedWorkRuntime.Enqueue(item);
+        ManagedWorkRuntime.EnqueueFinalized(ticket, 2);
+        return ticket;
+    }
     private static State Arm()
     {
         var item = new State(); ManagedWorkRuntime.TimerChanging(item);
@@ -86,7 +92,7 @@ internal static class TimerControl
                 Need(context == (0UL, 0UL));
                 Refuses(() => ManagedWorkRuntime.Schedule(new Task(() => { })), "managed-work-parent-retired");
             }, null);
-            Refuses(() => ManagedWorkRuntime.Enqueue(item), "managed-timer-settlement-uncertain");
+            Refuses(() => Enqueue(item), "managed-timer-settlement-uncertain");
             Need(context == outer && admissions == before);
         }
         Refuses(() => ManagedWorkRuntime.TimerDeleted(item), "managed-timer-settlement-uncertain");
@@ -101,47 +107,116 @@ internal static class TimerControl
     private static void QueueSettlementControl(bool unknown)
     {
         var item = Arm();
-        for (int i = 0; i < 2; i++) { ManagedWorkRuntime.TimerAccepted(item); ManagedWorkRuntime.Enqueue(item); }
+        ManagedWorkRuntime.TimerAccepted(item); var ticket = Enqueue(item);
+        ManagedWorkRuntime.TimerAccepted(item); Enqueue(item);
         var original = ManagedWorkRuntime.QueuedTokenForControl(item)
             ?? throw new InvalidOperationException("timer-control-missing-queue-token");
         failingSettlement = original.Id; failAfterSettlement = unknown;
         Refuses(() => ManagedWorkRuntime.Dequeue(item), "control-timer-settlement-failed");
-        Refuses(() => ManagedWorkRuntime.Enqueue(item), "managed-work-queue-uncertain");
-        ManagedWorkRuntime.EnqueueFailed(item);
+        Refuses(() => Enqueue(item), "managed-work-queue-uncertain");
+        ManagedWorkRuntime.EnqueueFinalized(ticket, 0);
         Refuses(() => ManagedWorkRuntime.Dequeue(item), "managed-work-queue-uncertain");
         Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
         Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-queue");
         Need(timerSettlementAttempts == 1 && Count(3) == (unknown ? 1 : 2)
             && Count(5) == 1 && ManagedWorkRuntime.QueuedTokenForControl(item) == original);
     }
-    private static void QueueFaultControl(bool afterInsertion)
+    private static void QueueFaultControl(int mode)
     {
         var item = Arm(); var physical = new List<object>();
-        ManagedWorkRuntime.TimerAccepted(item); ManagedWorkRuntime.Enqueue(item); physical.Add(item);
+        ManagedWorkRuntime.TimerAccepted(item); Enqueue(item); physical.Add(item);
         var first = ManagedWorkRuntime.QueuedTokenForControl(item)
             ?? throw new InvalidOperationException("timer-control-missing-queue-token");
-        ManagedWorkRuntime.TimerAccepted(item); ManagedWorkRuntime.Enqueue(item);
+        ManagedWorkRuntime.TimerAccepted(item); var secondTicket = ManagedWorkRuntime.Enqueue(item);
         var second = Owners.Single(entry => entry.Value == 3 && entry.Key != first.Id).Key;
         bool originalFailure = false;
         try
         {
             try
             {
-                if (afterInsertion) physical.Add(item);
+                if (mode == 2) physical.Add(item);
                 throw new InvalidOperationException("control-original-enqueue-failure");
             }
-            catch { ManagedWorkRuntime.EnqueueFailed(item); throw; }
+            catch { ManagedWorkRuntime.EnqueueFinalized(secondTicket, mode != 0 ? 1 : 0); throw; }
         }
         catch (InvalidOperationException error) when (error.Message == "control-original-enqueue-failure")
         { originalFailure = true; }
-        Need(originalFailure && physical.Count == (afterInsertion ? 2 : 1));
-        if (!Owners.ContainsKey(first.Id)) throw new InvalidOperationException("timer-control-original-owner-refunded");
+        Need(originalFailure && physical.Count == (mode == 2 ? 2 : 1) && Owners.ContainsKey(first.Id));
+        if (mode == 0)
+        {
+            Need(Count(3) == 1 && !Owners.ContainsKey(second));
+            Disarm(item); ManagedWorkRuntime.Dequeue(item);
+            var previous = ManagedWorkRuntime.EnterDispatch(item);
+            try { Fire(item, () => Need(Count(5) == 1)); }
+            finally { ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.CallbackCompleted(item); }
+            Need(Count(5) == 0); Finish(); return;
+        }
         Need(Count(3) == 2 && Owners.ContainsKey(second));
         Refuses(() => ManagedWorkRuntime.Dequeue(item), "managed-work-queue-uncertain");
-        Refuses(() => ManagedWorkRuntime.Enqueue(item), "managed-work-queue-uncertain");
+        Refuses(() => Enqueue(item), "managed-work-queue-uncertain");
         Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
         Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-queue");
         Need(Count(3) == 2 && Owners.ContainsKey(first.Id) && Owners.ContainsKey(second));
+    }
+    private static void PendingDuplicateControl()
+    {
+        var filler = Arm(); ManagedWorkRuntime.TimerAccepted(filler); Enqueue(filler);
+        var item = Arm(); ManagedWorkRuntime.TimerAccepted(item); Enqueue(item);
+        var first = ManagedWorkRuntime.QueuedTokenForControl(item)
+            ?? throw new InvalidOperationException("timer-control-missing-queue-token");
+        Disarm(filler); ManagedWorkRuntime.Dequeue(filler); Fire(filler, () => { });
+        ManagedWorkRuntime.TimerAccepted(item); var pending = ManagedWorkRuntime.Enqueue(item);
+        var second = Owners.Single(entry => entry.Value == 3 && entry.Key != first.Id).Key;
+        // The pending admission occupies the earlier free slot, but the
+        // physical dequeue belongs to the older committed occurrence.
+        ManagedWorkRuntime.Dequeue(item);
+        Need(!Owners.ContainsKey(first.Id) && Owners.ContainsKey(second));
+        ManagedWorkRuntime.EnqueueFinalized(pending, 0);
+        Need(!Owners.ContainsKey(second) && ManagedWorkRuntime.TimerAcceptedForControl(item) == 1);
+        Disarm(item); Fire(item, () => Need(Count(5) == 1)); Finish();
+    }
+    private static void PendingAdmissionControl()
+    {
+        var item = Arm(); ManagedWorkRuntime.TimerAccepted(item);
+        var pending = ManagedWorkRuntime.Enqueue(item);
+        Refuses(() => ManagedWorkRuntime.Dequeue(item), "managed-work-queue-admission-pending");
+        ManagedWorkRuntime.EnqueueFinalized(pending, 2);
+        Disarm(item); ManagedWorkRuntime.Dequeue(item); Fire(item, () => { }); Finish();
+    }
+    private static void TimerRollbackFailureControl(bool unknown)
+    {
+        var item = Arm(); ManagedWorkRuntime.TimerAccepted(item);
+        var pending = ManagedWorkRuntime.Enqueue(item);
+        var original = ManagedWorkRuntime.QueuedTokenForControl(item)
+            ?? throw new InvalidOperationException("timer-control-missing-queue-token");
+        failingSettlement = original.Id; failAfterSettlement = unknown;
+        bool originalFailure = false;
+        try
+        {
+            try { throw new InvalidOperationException("control-original-enqueue-failure"); }
+            catch { ManagedWorkRuntime.EnqueueFinalized(pending, 0); throw; }
+        }
+        catch (InvalidOperationException error) when (error.Message == "control-original-enqueue-failure")
+        { originalFailure = true; }
+        Need(originalFailure && timerSettlementAttempts == 1 && ManagedWorkRuntime.TimerAcceptedForControl(item) == 1
+            && Count(3) == (unknown ? 0 : 1) && ManagedWorkRuntime.QueuedTokenForControl(item) == original);
+        Refuses(() => ManagedWorkRuntime.Dequeue(item), "managed-work-queue-uncertain");
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-queue");
+    }
+    private static void PendingPeerFailureControl()
+    {
+        var item = Arm(); ManagedWorkRuntime.TimerAccepted(item); Enqueue(item);
+        var first = ManagedWorkRuntime.QueuedTokenForControl(item)
+            ?? throw new InvalidOperationException("timer-control-missing-queue-token");
+        ManagedWorkRuntime.TimerAccepted(item); var pending = ManagedWorkRuntime.Enqueue(item);
+        failingSettlement = first.Id;
+        Refuses(() => ManagedWorkRuntime.Dequeue(item), "control-timer-settlement-failed");
+        Refuses(() => ManagedWorkRuntime.EnqueueFinalized(pending, 2), "managed-work-queue-uncertain");
+        Refuses(() => ManagedWorkRuntime.Dequeue(item), "managed-work-queue-uncertain");
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-queue");
+        Need(timerSettlementAttempts == 1 && Count(3) == 2);
     }
     private static void Run(string name)
     {
@@ -177,13 +252,19 @@ internal static class TimerControl
                 Need(Count(5) == 1); Fire(item, () => Need(Count(5) == 1 && context.Item2 != 0));
                 Need(Count(5) == 0); Finish(); break;
             }
-            case "timer-queue-fault-before-insertion-retains-owners": QueueFaultControl(false); break;
-            case "timer-queue-fault-after-insertion-retains-owners": QueueFaultControl(true); break;
+            case "timer-pending-peer-failure-blocks-commit": PendingPeerFailureControl(); break;
+            case "timer-pending-duplicate-preserves-committed-owner": PendingDuplicateControl(); break;
+            case "timer-pending-admission-blocks-dequeue": PendingAdmissionControl(); break;
+            case "timer-rollback-refusal-retains-accepted-owner": TimerRollbackFailureControl(false); break;
+            case "timer-rollback-unknown-retains-accepted-owner": TimerRollbackFailureControl(true); break;
+            case "timer-queue-fault-before-insertion-rolls-back-current": QueueFaultControl(0); break;
+            case "timer-queue-fault-during-insertion-retains-owners": QueueFaultControl(1); break;
+            case "timer-queue-fault-after-insertion-retains-owners": QueueFaultControl(2); break;
             case "timer-queue-refusal-fences-readmission": QueueSettlementControl(false); break;
             case "timer-queue-unknown-fences-readmission": QueueSettlementControl(true); break;
             case "multiple-queued-callbacks-retain-one-timer": {
                 var item = Arm();
-                for (int i = 0; i < 2; i++) { ManagedWorkRuntime.TimerAccepted(item); ManagedWorkRuntime.Enqueue(item); }
+                for (int i = 0; i < 2; i++) { ManagedWorkRuntime.TimerAccepted(item); Enqueue(item); }
                 Disarm(item); Need(Count(5) == 1 && Count(3) == 2 && Count(0) == 1);
                 for (int i = 0; i < 2; i++) {
                     ManagedWorkRuntime.Dequeue(item); var previous = ManagedWorkRuntime.EnterDispatch(item);

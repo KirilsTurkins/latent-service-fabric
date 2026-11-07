@@ -64,3 +64,32 @@ fairness, every queue/full-cell profile, late native/provider completion after
 Store destruction, complete aggregate physical costs or low-level net/DNS/TLS.
 It changes no production implementation or global/default quota and does not
 complete #742 or #736.
+
+## Original Task16 saturation reference
+
+The opt-in `task-saturation` campaign selects a separate ordinary Go v5
+component. It starts seven goroutines, waits for each to acknowledge that it
+is live, and keeps those workers owned on a channel. The successful control
+releases and joins them. A second invocation reaches the same barrier and
+attempts an eighth worker; a third repeats the successful control on a fresh
+Store using the same backend and publication. The existing eight prepaid
+maintenance reservations and original Task16/Wait4 profile are unchanged.
+
+The signed harness installs a bounded in-memory test witness implementing the
+production `ActivationDiagnosticSink` interface before its invocations. It
+requires exactly one original broker `RuntimeTaskLimit` observation for tenant
+`tenant-a` and the saturation activation, with the configured bound 16 and
+requested owner count 17. This does not exercise the node's durable diagnostic
+journal. The harness separately requires a guest trap and
+physical user-space retirement before the fresh invocation. The observation
+records a real admission refusal; it does not by itself identify the terminal
+trap's cause. Each invocation must use one new Store, with live Stores,
+component instances, instance reservations and reserved fuel/memory returned
+to zero. The native Go control runs only the successful seven-worker path.
+
+The maintained synchronization reference workflow exposes this campaign via
+its `task-saturation` input and retains its source, component, compiler record,
+signed output and strict receipt. A current-source hosted signed run is still
+required. Source-only checks and the native control are not signed evidence.
+Even a successful bounded run does not establish aggregate stack/GC/native
+costs, the other owner ceilings, kernel final-free or the complete #742 ledger.
