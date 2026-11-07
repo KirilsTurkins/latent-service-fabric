@@ -169,7 +169,7 @@ class RootReturnNormalControls(unittest.TestCase):
         from tools.dotnet_guest import managed_work, task_wait
         from tools.phase2_operator_process import WorkflowError
         port = {'profile': task_wait.PROFILE,
-            'managedAcceptedWork': copy.deepcopy(managed_work.PROVISIONAL_RESERVATION_REWRITE_RECEIPT),
+            'managedAcceptedWork': copy.deepcopy(managed_work.RESULT_TRANSITION_REWRITE_RECEIPT),
             'generatedHelperCount': 96, 'completion': 'actual-task-only',
             'finiteAndCancellableWaits': 'original-Task-WhenAny-Delay',
             'completeOriginalWaitRemainderPreserved': True,

@@ -1,4 +1,5 @@
 //! Cooperative bridge from accepted commands to the existing scheduler.
+use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 use std::task::{Wake, Waker};
 use std::time::{Duration, Instant};
@@ -20,6 +21,7 @@ pub(super) type Physical = Arc<PhysicalLease>;
 pub(super) struct PhysicalLease {
     _lane: EntityPhysicalOwner<Arc<Pending>>,
     _permit: NativeBufferPermit,
+    _command: Option<Arc<CommandRegistration>>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -28,12 +30,52 @@ pub(super) enum QueueError {
     Rejected(EntityRejection),
     Expired,
     Unavailable,
+    DuplicateConflict,
+    DuplicateNeedsAuthorization,
+    DuplicateCapacity,
+}
+
+type CommandIdentity = latent_commit::atomic::Identity;
+type Commands = Arc<Mutex<BTreeMap<CommandIdentity, CommandIdentity>>>;
+type DuplicateWaiters = Arc<Mutex<BTreeMap<EntityScope, usize>>>;
+
+struct DuplicateWaiter {
+    waiters: DuplicateWaiters,
+    scope: EntityScope,
+}
+impl Drop for DuplicateWaiter {
+    fn drop(&mut self) {
+        if let Ok(mut waiters) = self.waiters.lock() {
+            if let Some(count) = waiters.get_mut(&self.scope) {
+                *count -= 1;
+                if *count == 0 {
+                    waiters.remove(&self.scope);
+                }
+            }
+        }
+    }
+}
+
+struct CommandRegistration {
+    commands: Commands,
+    identity: CommandIdentity,
+    signal: watch::Sender<u64>,
+}
+impl Drop for CommandRegistration {
+    fn drop(&mut self) {
+        if let Ok(mut commands) = self.commands.lock() {
+            commands.remove(&self.identity);
+        }
+        self.signal
+            .send_modify(|version| *version = version.wrapping_add(1));
+    }
 }
 
 struct Pending {
     current: Arc<dyn Fn() -> bool + Send + Sync>,
     result: Mutex<Option<oneshot::Sender<Result<Physical, QueueError>>>>,
     permit: Mutex<Option<NativeBufferPermit>>,
+    command: Option<Arc<CommandRegistration>>,
 }
 
 struct Signal(watch::Sender<u64>);
@@ -51,9 +93,20 @@ pub(super) struct EntityQueue {
     waker: Waker,
     maximum_turn: usize,
     clock: Arc<dyn ActivationClock>,
+    commands: Commands,
+    maximum_commands: usize,
+    duplicate_waiters: DuplicateWaiters,
+    maximum_entity_waiters: usize,
 }
 
 impl EntityQueue {
+    pub(super) fn duplicate_waiter_count(&self) -> Result<usize, QueueError> {
+        let waiters = self
+            .duplicate_waiters
+            .lock()
+            .map_err(|_| QueueError::Unavailable)?;
+        Ok(waiters.values().copied().sum())
+    }
     pub(super) fn observe(
         &self,
     ) -> Result<latent_state::entity_lanes::EntityLaneSnapshot, QueueError> {
@@ -70,6 +123,7 @@ impl EntityQueue {
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, QueueError> {
         let maximum_turn = limits.global_queued;
+        let maximum_entity_waiters = limits.entity_queued;
         let lanes = EntityLanes::new(limits).map_err(QueueError::Lane)?;
         let (signal, _) = watch::channel(0);
         let (claims, _) = watch::channel(0);
@@ -81,6 +135,10 @@ impl EntityQueue {
             waker,
             maximum_turn,
             clock,
+            commands: Arc::new(Mutex::new(BTreeMap::new())),
+            maximum_commands: maximum_turn.saturating_mul(2),
+            duplicate_waiters: Arc::new(Mutex::new(BTreeMap::new())),
+            maximum_entity_waiters,
         })
     }
 
@@ -93,6 +151,7 @@ impl EntityQueue {
             .send_modify(|version| *version = version.wrapping_add(1));
     }
 
+    #[cfg(test)]
     pub(super) async fn acquire(
         &self,
         scope: EntityScope,
@@ -101,6 +160,35 @@ impl EntityQueue {
         deadline: Instant,
         current: Arc<dyn Fn() -> bool + Send + Sync>,
         permit: NativeBufferPermit,
+    ) -> Result<Physical, QueueError> {
+        self.acquire_for_command(
+            scope,
+            identity,
+            retained_bytes,
+            deadline,
+            current,
+            permit,
+            None,
+            false,
+        )
+        .await
+    }
+
+    #[expect(
+        clippy::too_many_arguments,
+        clippy::too_many_lines,
+        reason = "Keep the original prepaid owner, duplicate registration, and cooperative dispatch together"
+    )]
+    pub(super) async fn acquire_for_command(
+        &self,
+        scope: EntityScope,
+        identity: Vec<u8>,
+        retained_bytes: u64,
+        deadline: Instant,
+        current: Arc<dyn Fn() -> bool + Send + Sync>,
+        permit: NativeBufferPermit,
+        command: Option<(CommandIdentity, CommandIdentity)>,
+        duplicate_authorized: bool,
     ) -> Result<Physical, QueueError> {
         // Cover the queue's own objects and the lane's bounded copies before
         // building the channel or inserting the request. The trusted caller
@@ -128,11 +216,63 @@ impl EntityQueue {
         if permit.buffer_class() != NativeBufferClass::Request || permit.bytes() < charge {
             return Err(QueueError::Unavailable);
         }
+        let mut changes = self.signal.subscribe();
+        let registration = loop {
+            let Some((identity, fingerprint)) = &command else {
+                break None;
+            };
+            let next = {
+                let mut commands = self.commands.lock().map_err(|_| QueueError::Unavailable)?;
+                if let Some(existing) = commands.get(identity) {
+                    if !duplicate_authorized {
+                        return Err(QueueError::DuplicateNeedsAuthorization);
+                    }
+                    if existing != fingerprint {
+                        return Err(QueueError::DuplicateConflict);
+                    }
+                    None
+                } else {
+                    if commands.len() >= self.maximum_commands {
+                        return Err(QueueError::Unavailable);
+                    }
+                    commands.insert(*identity, *fingerprint);
+                    Some(Arc::new(CommandRegistration {
+                        commands: Arc::clone(&self.commands),
+                        identity: *identity,
+                        signal: self.signal.clone(),
+                    }))
+                }
+            };
+            if let Some(next) = next {
+                break Some(next);
+            }
+            let waiter = {
+                let mut waiters = self
+                    .duplicate_waiters
+                    .lock()
+                    .map_err(|_| QueueError::Unavailable)?;
+                let count = waiters.entry(scope.clone()).or_default();
+                if *count >= self.maximum_entity_waiters {
+                    return Err(QueueError::DuplicateCapacity);
+                }
+                *count += 1;
+                DuplicateWaiter {
+                    waiters: Arc::clone(&self.duplicate_waiters),
+                    scope: scope.clone(),
+                }
+            };
+            tokio::select! {
+                result = changes.changed() => if result.is_err() { return Err(QueueError::Unavailable); },
+                () = wait_until(deadline, self.clock.as_ref()) => return Err(QueueError::Expired),
+            }
+            drop(waiter);
+        };
         let (send, mut receive) = oneshot::channel();
         let pending = Arc::new(Pending {
             current,
             result: Mutex::new(Some(send)),
             permit: Mutex::new(Some(permit)),
+            command: registration,
         });
         let request = EntityLaneRequest::new(
             scope,
@@ -146,7 +286,6 @@ impl EntityQueue {
             .lanes
             .enqueue(request, self.clock.monotonic_now())
             .map_err(|error| QueueError::Lane(error.reason))?;
-        let mut changes = self.signal.subscribe();
         loop {
             let now = self.clock.monotonic_now();
             self.drive(now)?;
@@ -196,6 +335,7 @@ impl EntityQueue {
                     let lease = Arc::new(PhysicalLease {
                         _lane: owner,
                         _permit: permit,
+                        _command: pending.command.clone(),
                     });
                     (pending, Ok(lease))
                 }

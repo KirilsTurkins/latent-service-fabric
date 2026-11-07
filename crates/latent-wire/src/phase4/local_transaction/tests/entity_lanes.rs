@@ -258,6 +258,89 @@ async fn revoked_queued_entity_never_starts_a_guest() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 #[ignore = "Requires the maintained compiled Rust transaction guest"]
+async fn duplicate_of_queued_entity_waits_for_its_original_claim() {
+    let f = Fixture::with_concurrent_commands(true).await;
+    authorize_entity(&f, "hot");
+    let first_adapter = f.adapter();
+    let first = tokio::spawn(async move {
+        first_adapter
+            .invoke_command(context("alice").request(entity_command("queue-owner", 1)))
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(5), f.backend.imports.entered.notified())
+        .await
+        .unwrap();
+    let second_adapter = f.adapter();
+    let second = tokio::spawn(async move {
+        second_adapter
+            .invoke_command(context("alice").request(entity_command("queued-original", 1)))
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while f
+            .owners
+            .as_ref()
+            .unwrap()
+            .entity_lanes_snapshot()
+            .unwrap()
+            .queued
+            != 1
+        {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    let duplicate_adapter = f.adapter();
+    let duplicate = tokio::spawn(async move {
+        duplicate_adapter
+            .invoke_command(context("alice").request(entity_command("queued-original", 1)))
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while f
+            .owners
+            .as_ref()
+            .unwrap()
+            .entity_duplicate_waiter_count()
+            .unwrap()
+            != 1
+        {
+            assert!(!duplicate.is_finished());
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    assert_eq!(f.executions(), 1);
+    f.backend.imports.release.notify_one();
+    success(
+        &tokio::time::timeout(Duration::from_secs(10), first)
+            .await
+            .unwrap()
+            .unwrap()
+            .unwrap()
+            .into_inner(),
+    );
+    let replay = tokio::time::timeout(Duration::from_secs(10), duplicate)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap()
+        .into_inner();
+    assert!(replay.replayed);
+    let _second = tokio::time::timeout(Duration::from_secs(10), second)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
+    assert_eq!(f.executions(), 2);
+    assert_eq!(f.rows(Family::Command).await, 2);
+    f.shutdown().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "Requires the maintained compiled Rust transaction guest"]
 async fn trapped_entity_retains_its_lane_until_the_actual_abort_writer_finishes() {
     use latent_state::store_io::StoreIoKind;
     use std::sync::{Condvar, Mutex};

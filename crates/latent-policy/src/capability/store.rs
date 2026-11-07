@@ -23,8 +23,9 @@ use ownership::{Owner, Stamp};
 pub use ownership::{PolicyRead, PolicyReadLease};
 pub use reads::{PolicyPage, PolicyPageRequest};
 use std::{
+    ops::Deref,
     path::Path,
-    sync::{Arc, Mutex, MutexGuard},
+    sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard},
     time::Instant,
 };
 
@@ -70,6 +71,24 @@ struct State {
     image: Image,
     loaded: Vec<Loaded>,
 }
+
+struct PolicyStateReadGuard<'a> {
+    state: RwLockReadGuard<'a, State>,
+    owner: &'a Owner,
+}
+impl Deref for PolicyStateReadGuard<'_> {
+    type Target = State;
+    fn deref(&self) -> &State {
+        &self.state
+    }
+}
+impl Drop for PolicyStateReadGuard<'_> {
+    fn drop(&mut self) {
+        if std::thread::panicking() {
+            self.owner.poison();
+        }
+    }
+}
 impl State {
     fn persist(&self, bytes: &[u8], revision: u64) -> Result<(), PlatformError> {
         match self.ledger.as_ref() {
@@ -86,7 +105,7 @@ impl State {
 /// existing bounded control runtime. Contention is prompt rejection (zero
 /// internal queue), not a dedicated thread or waiter per policy.
 pub struct PolicyStore {
-    state: Mutex<State>,
+    state: RwLock<State>,
     owner: Arc<Owner>,
     catalog: LifecycleAuthorityHandle,
     limits: PolicyStoreLimits,
@@ -155,7 +174,7 @@ impl PolicyStore {
             })
             .collect::<Result<Vec<_>, PlatformError>>()?;
         Ok(Self {
-            state: Mutex::new(State {
+            state: RwLock::new(State {
                 cursor_key: ledger.cursor_key,
                 ledger: Some(ledger),
                 image,
@@ -178,7 +197,7 @@ impl PolicyStore {
     ) -> Result<Self, PlatformError> {
         limits.validate()?;
         Ok(Self {
-            state: Mutex::new(State {
+            state: RwLock::new(State {
                 ledger: None,
                 cursor_key,
                 image: Image::empty(),
@@ -205,9 +224,18 @@ impl PolicyStore {
     pub fn retire(&self) {
         self.owner.retire();
     }
-    fn lock(&self) -> Result<MutexGuard<'_, State>, PlatformError> {
+    fn lock(&self) -> Result<PolicyStateReadGuard<'_>, PlatformError> {
         self.owner.check()?;
-        let state = self.state.try_lock().map_err(|_| unavailable())?;
+        let state = self.state.try_read().map_err(|_| unavailable())?;
+        self.owner.check()?;
+        Ok(PolicyStateReadGuard {
+            state,
+            owner: &self.owner,
+        })
+    }
+    fn lock_mut(&self) -> Result<RwLockWriteGuard<'_, State>, PlatformError> {
+        self.owner.check()?;
+        let state = self.state.try_write().map_err(|_| unavailable())?;
         self.owner.check()?;
         Ok(state)
     }

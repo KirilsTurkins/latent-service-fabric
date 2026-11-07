@@ -40,6 +40,7 @@ on:
       - tools/tests/test_rust_dependency_watch.py
       - tools/static_api_build.py
       - tools/static_api/**
+      - tools/tests/test_static_api_startup_observation.py
       - examples/static-api/**
       - tools/dev_node_application_probe.py
       - tools/qualify_typescript_dependency_watch.py
@@ -408,6 +409,7 @@ jobs:
       - name: Qualify the static site and TypeScript API in Chromium
         if: matrix.language == 'typescript'
         run: |
+          python -B -m unittest tools.tests.test_static_api_startup_observation
           npm ci --ignore-scripts --no-audit --no-fund --prefix tools/static_api
           node tools/static_api/node_modules/playwright-core/cli.js install --with-deps chromium
           python tools/static_api/ci.py --bin target/dev-tools/source-node/bin --signer target/dev-tools/payload/sdk/bin/capsule-test-signer --build "$RUNNER_TEMP/dev-projects/static-api/build" --browser-tools tools/static_api --output "$RUNNER_TEMP/dev-projects/static-api"

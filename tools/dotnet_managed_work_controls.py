@@ -22,7 +22,7 @@ SOURCES = (FIXTURE+'/Control.csproj', FIXTURE+'/Program.cs', FIXTURE+'/Bindings.
     'sdk/dotnet-guest/tools/http-errors/ManagedWorkRuntime.cs',
     'sdk/dotnet-guest/tools/http-errors/ManagedWorkTimers.cs', 'sdk/dotnet-guest/global.json',
     'tools/dotnet_guest/async_exports.py', BRIDGE_FIXTURE)
-BRIDGE_CASES = tuple((kind, mode) for kind in (0, 3)
+BRIDGE_CASES = tuple((kind, mode) for kind in (0, 3, 6)
     for mode in ('refusal', 'ok', 'zero-both', 'zero-generation', 'zero-id', 'exception')) + (
     (7, 'refusal'), (7, 'ok'))
 SETTLEMENT_CASES = ('dequeue-settlement-refusal-retains-owner',)
@@ -39,7 +39,10 @@ RESULT_SETTLEMENT_CASES = (
     'result-settlement-refusal-prevents-finalization',
     'result-settlement-unknown-prevents-finalization')
 CONVERSION_SETTLEMENT_CASES = (
-    'fault-conversion-refusal-retains-both', 'fault-conversion-unknown-retains-both')
+    'fault-conversion-refusal-retains-both', 'fault-conversion-unknown-retains-both',
+    'fault-dispatch-settlement-refusal-preserves-error', 'fault-dispatch-settlement-unknown-preserves-error')
+OBSERVED_RESULT_SETTLEMENT_CASES = (
+    'observed-result-settlement-refusal-retains-custody', 'observed-result-settlement-unknown-retains-custody')
 ROOT_SETTLEMENT_CASES = (
     'storage-settlement-refusal-fences-root', 'storage-settlement-unknown-fences-root',
     'root-settlement-refusal-fences-finalization', 'root-settlement-unknown-fences-finalization',
@@ -74,9 +77,16 @@ CASES = (
     'bounded-required-continuations', 'opaque-pending-is-not-quiescent',
     'untracked-startup-refused-before-admission', 'fault-conversion-success-is-idempotent',
     'fault-conversion-at-record-capacity', 'multiple-fault-conversions-retain-distinct-tokens',
+    'result-observed-during-context-clear', 'result-observed-during-reservation',
+    'result-observed-during-task-settlement', 'result-observed-during-result-settlement',
+    'result-reservation-refusal-restores-owner', 'result-reservation-unknown-retains-custody',
+    'result-reservation-malformed-generation-retains-custody', 'result-reservation-malformed-id-retains-custody',
+    'result-context-clear-failure-before-mutation', 'result-context-clear-failure-after-mutation',
+    'result-context-restore-failure-before-mutation', 'result-context-restore-failure-after-mutation',
+    'result-refusal-restore-observation-and-reentry',
     *SETTLEMENT_CASES, *QUEUE_SETTLEMENT_CASES, *ROLLBACK_SETTLEMENT_CASES,
     *OWNER_SETTLEMENT_CASES, *RESULT_SETTLEMENT_CASES,
-    *CONVERSION_SETTLEMENT_CASES, *ROOT_SETTLEMENT_CASES)
+    *CONVERSION_SETTLEMENT_CASES, *OBSERVED_RESULT_SETTLEMENT_CASES, *ROOT_SETTLEMENT_CASES)
 
 
 def verify(dotnet: Path, output: Path) -> dict:
@@ -145,6 +155,9 @@ def verify(dotnet: Path, output: Path) -> dict:
                             controlDispatches=0, automaticRetries=0, rootSuccess=False)
         elif name in CONVERSION_SETTLEMENT_CASES:
             expected.update(settlementRefusals=1, retainedTasks=1 if '-unknown-' in name else 2,
+                            retainedQueuedOwners=0, controlDispatches=0, automaticRetries=0, rootSuccess=False)
+        elif name in OBSERVED_RESULT_SETTLEMENT_CASES:
+            expected.update(settlementRefusals=1, retainedTasks=1,
                             retainedQueuedOwners=0, controlDispatches=0, automaticRetries=0, rootSuccess=False)
         elif name in ROOT_SETTLEMENT_CASES:
             is_storage = name.startswith('storage-')

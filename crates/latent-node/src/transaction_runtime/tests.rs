@@ -272,12 +272,13 @@ async fn duplicates_queued_before_the_first_claim_replay_when_that_claim_is_publ
     .unwrap();
     let second = tokio::spawn(async move { two_owner.admit(&two_envelope, &two_budget).await });
     tokio::time::timeout(std::time::Duration::from_secs(5), async {
-        while fixture.owners.lanes.snapshot().queued < 2 {
+        while fixture.owners.lanes.duplicate_waiter_count().unwrap() != 1 {
             tokio::task::yield_now().await;
         }
     })
     .await
     .unwrap();
+    assert_eq!(fixture.owners.lanes.snapshot().queued, 1);
     drop(holder);
     let (first, second) = tokio::time::timeout(std::time::Duration::from_secs(5), async {
         tokio::join!(first, second)

@@ -1,7 +1,7 @@
 //! Invocation-local timer readiness. No background worker or callback is
 //! created. A maintained language scheduler consumes each readiness result.
 use super::shared::Shared;
-use super::{error, ActivationRuntime, OwnerKind, RuntimeOwner, RuntimeToken};
+use super::{error, ActivationRuntime, OwnerKind, RuntimeOwner, RuntimePhase, RuntimeToken};
 use crate::{PlatformError, PlatformErrorCode};
 use std::sync::Mutex;
 use std::time::Duration;
@@ -122,7 +122,16 @@ impl TimerWait {
     /// Fixed-rate recurrence emits at most one readiness result per wait and
     /// coalesces all missed ticks in O(1). There is no unbounded catch-up queue.
     pub fn complete(&mut self, now: Instant) -> Result<u64, PlatformError> {
+        self.complete_with_after_live_check(now, || {})
+    }
+
+    fn complete_with_after_live_check(
+        &mut self,
+        now: Instant,
+        after_check: impl FnOnce(),
+    ) -> Result<u64, PlatformError> {
         self.inner.runtime.check_live()?;
+        after_check();
         let mut schedule = self
             .inner
             .schedule
@@ -130,6 +139,22 @@ impl TimerWait {
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         if schedule.closed || now < self.requested || schedule.next != Some(self.requested) {
             return Err(error(PlatformErrorCode::Cancelled, "runtime-timer-closed"));
+        }
+        // `begin_wait` already takes schedule before runtime state. Hold the
+        // same order through completion so a concurrent runtime cancellation
+        // either wins first or follows this committed readiness observation.
+        let state = self
+            .inner
+            .runtime
+            .inner
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if matches!(
+            state.phase,
+            RuntimePhase::Cancelling | RuntimePhase::Retired
+        ) {
+            return Err(error(PlatformErrorCode::Cancelled, "runtime-retired"));
         }
         let skipped = if let Some(period) = schedule.period_nanos {
             let elapsed = now.duration_since(self.requested).as_nanos();
@@ -147,6 +172,7 @@ impl TimerWait {
             schedule.next = None;
             0
         };
+        drop(state);
         Ok(skipped)
     }
 }
@@ -159,3 +185,6 @@ impl Drop for TimerWait {
             .waiting = false;
     }
 }
+
+#[cfg(test)]
+mod tests;

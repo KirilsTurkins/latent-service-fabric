@@ -9,7 +9,36 @@ use latent_core::{
 use latent_state::{embedded::StoreError, store_io::StoreIoKind};
 use std::sync::Arc;
 
+pub(super) struct ReplayProbe {
+    pub identity: durable::Identity,
+    pub fingerprint: durable::Identity,
+}
+
 impl NativeTransactionAdmission {
+    pub(super) async fn authorize_entity_duplicate(
+        &self,
+        selection: &super::TransactionSelection,
+        envelope: &ActivationEnvelope,
+        budget: &ActivationBudget,
+    ) -> Result<(), PlatformError> {
+        let initial = policy::initial(
+            &self.owners,
+            &self.installation,
+            selection,
+            envelope,
+            budget,
+        )?;
+        let namespace = self
+            .read_namespace(selection, &envelope.target.tenant)
+            .await?;
+        admission::check_view(
+            selection,
+            &namespace,
+            &self.installation.declaration.state_schema,
+        )?;
+        self.seal(initial.before, namespace, envelope, budget, None)?
+            .authorize("read-result", 0, 0, || Ok(()))
+    }
     #[expect(
         clippy::too_many_lines,
         reason = "Keep current authorization, fingerprint validation and the bounded read-only replay together"
@@ -19,7 +48,7 @@ impl NativeTransactionAdmission {
         selection: &super::TransactionSelection,
         envelope: &ActivationEnvelope,
         budget: &ActivationBudget,
-    ) -> Result<(), PlatformError> {
+    ) -> Result<ReplayProbe, PlatformError> {
         let initial = policy::initial(
             &self.owners,
             &self.installation,
@@ -65,6 +94,7 @@ impl NativeTransactionAdmission {
             None,
         )
         .map_err(atomic)?;
+        let identity = durable::command_identity(&key).map_err(atomic)?;
         let auth = Arc::clone(&before);
         let time = Arc::clone(&self.owners.time);
         let policy = self.installation.result_read_policy.clone();
@@ -122,6 +152,9 @@ impl NativeTransactionAdmission {
                 "transaction-already-admitted",
             ));
         }
-        Ok(())
+        Ok(ReplayProbe {
+            identity,
+            fingerprint: expected,
+        })
     }
 }

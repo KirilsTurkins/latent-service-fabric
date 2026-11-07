@@ -67,6 +67,169 @@ async fn queued(queue: &EntityQueue, expected: usize) {
 }
 
 #[tokio::test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "Exercise duplicate ownership, conflict, bounds, and cancellation together"
+)]
+async fn duplicate_waiters_are_authorized_bounded_and_cancel_independently() {
+    let mut bounds = limits();
+    bounds.entity_queued = 1;
+    let queue =
+        Arc::new(EntityQueue::new(bounds, Arc::new(latent_core::SystemActivationClock)).unwrap());
+    let key = CommandIdentity::parse_hex(&"11".repeat(32)).unwrap();
+    let fingerprint = CommandIdentity::parse_hex(&"22".repeat(32)).unwrap();
+    let other = CommandIdentity::parse_hex(&"33".repeat(32)).unwrap();
+    let owner = queue
+        .acquire_for_command(
+            scope("tenant-a", "hot"),
+            vec![1],
+            64,
+            deadline(),
+            Arc::new(|| true),
+            permit(),
+            Some((key, fingerprint)),
+            false,
+        )
+        .await
+        .unwrap();
+    let unauthorized = queue
+        .acquire_for_command(
+            scope("tenant-a", "hot"),
+            vec![2],
+            64,
+            deadline(),
+            Arc::new(|| true),
+            permit(),
+            Some((key, other)),
+            false,
+        )
+        .await;
+    assert!(matches!(
+        unauthorized,
+        Err(QueueError::DuplicateNeedsAuthorization)
+    ));
+    let conflict = queue
+        .acquire_for_command(
+            scope("tenant-a", "hot"),
+            vec![3],
+            64,
+            deadline(),
+            Arc::new(|| true),
+            permit(),
+            Some((key, other)),
+            true,
+        )
+        .await;
+    assert!(matches!(conflict, Err(QueueError::DuplicateConflict)));
+    let waiting_queue = Arc::clone(&queue);
+    let waiter = tokio::spawn(async move {
+        waiting_queue
+            .acquire_for_command(
+                scope("tenant-a", "hot"),
+                vec![4],
+                64,
+                deadline(),
+                Arc::new(|| true),
+                permit(),
+                Some((key, fingerprint)),
+                true,
+            )
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(2), async {
+        while queue.duplicate_waiters.lock().unwrap().is_empty() {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    let excess = queue
+        .acquire_for_command(
+            scope("tenant-a", "hot"),
+            vec![5],
+            64,
+            deadline(),
+            Arc::new(|| true),
+            permit(),
+            Some((key, fingerprint)),
+            true,
+        )
+        .await;
+    assert!(matches!(excess, Err(QueueError::DuplicateCapacity)));
+    let cold = queue
+        .acquire(
+            scope("tenant-a", "cold"),
+            vec![6],
+            64,
+            deadline(),
+            Arc::new(|| true),
+            permit(),
+        )
+        .await
+        .unwrap();
+    waiter.abort();
+    assert!(waiter.await.is_err_and(|error| error.is_cancelled()));
+    assert!(queue.duplicate_waiters.lock().unwrap().is_empty());
+    assert_eq!(queue.commands.lock().unwrap().len(), 1);
+    drop((owner, cold));
+    assert!(queue.commands.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn duplicate_can_become_owner_when_the_unclaimed_owner_retires() {
+    let queue =
+        Arc::new(EntityQueue::new(limits(), Arc::new(latent_core::SystemActivationClock)).unwrap());
+    let key = CommandIdentity::parse_hex(&"44".repeat(32)).unwrap();
+    let fingerprint = CommandIdentity::parse_hex(&"55".repeat(32)).unwrap();
+    let owner = queue
+        .acquire_for_command(
+            scope("tenant-a", "hot"),
+            vec![1],
+            64,
+            deadline(),
+            Arc::new(|| true),
+            permit(),
+            Some((key, fingerprint)),
+            false,
+        )
+        .await
+        .unwrap();
+    let waiting_queue = Arc::clone(&queue);
+    let waiter = tokio::spawn(async move {
+        waiting_queue
+            .acquire_for_command(
+                scope("tenant-a", "hot"),
+                vec![2],
+                64,
+                deadline(),
+                Arc::new(|| true),
+                permit(),
+                Some((key, fingerprint)),
+                true,
+            )
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(2), async {
+        while queue.duplicate_waiters.lock().unwrap().is_empty() {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    drop(owner);
+    let replacement = tokio::time::timeout(Duration::from_secs(2), waiter)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
+    assert_eq!(queue.snapshot().active, 1);
+    assert_eq!(queue.commands.lock().unwrap().len(), 1);
+    drop(replacement);
+    assert!(queue.commands.lock().unwrap().is_empty());
+    assert!(queue.duplicate_waiters.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
 async fn shared_dispatch_preserves_physical_owner_and_allows_cold_key_progress() {
     let queue =
         Arc::new(EntityQueue::new(limits(), Arc::new(latent_core::SystemActivationClock)).unwrap());

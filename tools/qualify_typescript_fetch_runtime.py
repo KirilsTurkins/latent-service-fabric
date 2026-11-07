@@ -49,6 +49,12 @@ OWNER_LIMITS = {'tasks': 16, 'executors': 2, 'queuedWork': 16, 'waits': 8,
                 'timers': 8, 'results': 8, 'nativeOwners': 64}
 EVENT_CLONE_VECTORS = (('event-clone-repeated', 20, 'event-clone:repeated:12:40'),
                        ('event-clone-nested', 21, 'event-clone:nested:12:ordered'))
+ABORT_CLONE_VECTORS = (('abort-clone-normal', 22, 'abort-clone:normal:12'),
+                       ('abort-clone-refusal', 23, 'abort-clone:two-native-register-refusals:recovered'),
+                       ('abort-clone-fresh', 22, 'abort-clone:normal:12'))
+ABORT_ANY_VECTORS = (('abort-any-frames', 24, 'abort-any:80:nested:12:ordered'),
+                     ('abort-any-refusal', 25, 'abort-any:refusal:closed:recovered'),
+                     ('abort-any-fresh', 24, 'abort-any:80:nested:12:ordered'))
 
 
 def project(directory: Path) -> Path:
@@ -267,6 +273,10 @@ def execute(artifact, native, output):
                 ('request-copy-ready', 4, '/conformance/json', 'request-copy-ready', 0),
                 *((name, mode, '/conformance/json', expected, 0)
                   for name, mode, expected in EVENT_CLONE_VECTORS),
+                *((name, mode, '/conformance/json', expected, 0)
+                  for name, mode, expected in ABORT_CLONE_VECTORS),
+                *((name, mode, '/conformance/json', expected, 0)
+                  for name, mode, expected in ABORT_ANY_VECTORS),
                 ('json', 0, '/conformance/json', '1:200:'+json_bytes(DOMAIN).decode()+':used', 1),
                 ('http404', 0, '/conformance/status/404',
                     '1:404:'+json_bytes({'status':404, 'message':'domain-error'}).decode()+':used', 1),

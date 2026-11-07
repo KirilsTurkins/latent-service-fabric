@@ -32,10 +32,20 @@ enum PendingPublication {
     Refused(AtomicError),
 }
 
+struct ClaimNotification<'a>(&'a super::super::entity_queue::EntityQueue);
+impl Drop for ClaimNotification<'_> {
+    fn drop(&mut self) {
+        self.0.claimed();
+    }
+}
+
 fn entity_queue_error(failure: super::super::entity_queue::QueueError) -> PlatformError {
     use super::super::entity_queue::QueueError;
     use latent_core::PlatformErrorCode as Code;
     use latent_state::entity_lanes::{EntityLaneError, EntityRejection};
+    if failure == QueueError::DuplicateConflict {
+        return atomic(AtomicError::Conflict);
+    }
     let (code, message) = match failure {
         QueueError::Expired
         | QueueError::Lane(EntityLaneError::Expired)
@@ -51,6 +61,7 @@ fn entity_queue_error(failure: super::super::entity_queue::QueueError) -> Platfo
         QueueError::Lane(EntityLaneError::Backpressure(_)) => {
             (Code::ResourceExhausted, "entity-queue-backpressure")
         }
+        QueueError::DuplicateCapacity => (Code::ResourceExhausted, "entity-duplicate-backpressure"),
         _ => (Code::Unavailable, "entity-queue-unavailable"),
     };
     error(code, message)
@@ -168,6 +179,7 @@ impl NativeTransactionAdmission {
         let bytes = retention.request_bytes();
         *self.retention.lock().map_err(|_| authorization::denied())? = Some(Arc::clone(&retention));
         let mut claim_changes = None;
+        let mut replay_probe = None;
         if selection.mode == TransactionOperationMode::StrictCommand
             && selection.entity.is_some()
             && selection.retry.is_none()
@@ -176,10 +188,10 @@ impl NativeTransactionAdmission {
             // snapshot and queue registration cannot be missed.
             claim_changes = Some(self.owners.lanes.claim_changes());
             let read = self.replay_existing_entity(&selection, envelope, budget);
-            match control.as_ref() {
+            replay_probe = Some(match control.as_ref() {
                 Some(control) => control.wait(read).await?,
                 None => read.await?,
-            }
+            });
         }
         // Pending command publication updates the namespace generation. Wait
         // before that write, then read and seal a fresh namespace. Duplicates
@@ -191,6 +203,7 @@ impl NativeTransactionAdmission {
                 budget,
                 control.as_ref(),
                 claim_changes,
+                replay_probe,
             )
             .await?
         } else {
@@ -213,6 +226,7 @@ impl NativeTransactionAdmission {
         let mode = selection.mode == TransactionOperationMode::StrictCommand;
         self.retain_response_authority(Arc::clone(&before), !mode)?;
         let scope = selected_scope(&selection, envelope, &source.state_schema);
+        let mut _claim_notification = None;
         let authorization = if mode {
             let role = CommandRole::capture(&self.owners.command).map_err(atomic)?;
             if let Some(lane) = lane {
@@ -256,6 +270,9 @@ impl NativeTransactionAdmission {
                 inbox: None,
                 owner_epoch: epoch,
             };
+            if selection.entity.is_some() {
+                _claim_notification = Some(ClaimNotification(&self.owners.lanes));
+            }
             observation::platform(
                 Phase::PendingPublication,
                 self.publish_pending(
@@ -267,9 +284,6 @@ impl NativeTransactionAdmission {
                 )
                 .await,
             )?;
-            if selection.entity.is_some() {
-                self.owners.lanes.claimed();
-            }
             let after = self
                 .read_namespace(&selection, &envelope.target.tenant)
                 .await?;
@@ -298,6 +312,7 @@ impl NativeTransactionAdmission {
         budget: &ActivationBudget,
         control: Option<&crate::TransactionAdmissionControl>,
         mut claims: Option<tokio::sync::watch::Receiver<u64>>,
+        probe: Option<super::entity_replay::ReplayProbe>,
     ) -> Result<Option<super::super::entity_queue::Physical>, PlatformError> {
         use latent_core::native_capacity::NativeBufferClass;
         use latent_state::entity_lanes::EntityScope;
@@ -306,17 +321,6 @@ impl NativeTransactionAdmission {
             return Ok(None);
         };
         let retained = self.retained_capacity()?;
-        // All accepted identities are bounded by the transaction contract.
-        // This covers their copies, the lane bookkeeping, channel and owner.
-        let permit = retained
-            .native()
-            .reserve_buffer(NativeBufferClass::Request, 16 * 1024)
-            .map_err(|_| {
-                error(
-                    latent_core::PlatformErrorCode::ResourceExhausted,
-                    "entity-queue-capacity",
-                )
-            })?;
         let scope = EntityScope::new(
             envelope.target.tenant.clone(),
             StateNamespaceId(selection.namespace.clone()),
@@ -331,19 +335,46 @@ impl NativeTransactionAdmission {
         let current_retention = Arc::clone(&retained);
         let current = Arc::new(move || current_retention.check_current().is_ok());
         let retained_bytes = retained.total_native_bytes()?;
+        let command = probe.map(|probe| (probe.identity, probe.fingerprint));
         let wait = async {
-            self.owners
-                .lanes
-                .acquire(
-                    scope,
-                    envelope.activation_id.0.as_bytes().to_vec(),
-                    retained_bytes,
-                    deadline,
-                    current,
-                    permit,
-                )
-                .await
-                .map_err(entity_queue_error)
+            let mut duplicate_authorized = false;
+            loop {
+                // Each waiter and its queue objects are prepaid from the
+                // original ingress; reacquire after the authorization read.
+                let permit = retained
+                    .native()
+                    .reserve_buffer(NativeBufferClass::Request, 16 * 1024)
+                    .map_err(|_| {
+                        error(
+                            latent_core::PlatformErrorCode::ResourceExhausted,
+                            "entity-queue-capacity",
+                        )
+                    })?;
+                let result = self
+                    .owners
+                    .lanes
+                    .acquire_for_command(
+                        scope.clone(),
+                        envelope.activation_id.0.as_bytes().to_vec(),
+                        retained_bytes,
+                        deadline,
+                        current.clone(),
+                        permit,
+                        command,
+                        duplicate_authorized,
+                    )
+                    .await;
+                if matches!(
+                    result,
+                    Err(super::super::entity_queue::QueueError::DuplicateNeedsAuthorization)
+                ) {
+                    self.authorize_entity_duplicate(selection, envelope, budget)
+                        .await?;
+                    duplicate_authorized = true;
+                    continue;
+                }
+                break result.map_err(entity_queue_error);
+            }
         };
         tokio::pin!(wait);
         loop {
@@ -372,7 +403,7 @@ impl NativeTransactionAdmission {
             match control {
                 Some(control) => control.wait(read).await?,
                 None => read.await?,
-            }
+            };
         }
     }
 

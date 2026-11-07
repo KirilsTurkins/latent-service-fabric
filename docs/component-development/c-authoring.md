@@ -125,8 +125,10 @@ is reported as its size; absent length remains `-1`, and unknown timestamps are
 `0`. Standalone `fetchStat`/`fetchStatURL` use an independently authorized
 HEAD and close the response body before returning metadata. They require a
 HEAD grant; a GET grant does not imply one. This does not enable range or
-conditional requests. The HEAD mapping has source-level controls and has not
-yet been qualified by a signed C component.
+conditional requests. The [signed C qualification](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/42399974726)
+passed normal HEAD metadata, denial under a GET-only grant with no peer contact,
+HTTP 404 and a fresh successful HEAD on source `ee0b60add5af`. This finite
+local-node result is not a release-publication or complete C runtime qualification.
 `fetchReqHTTP` supports bounded string request bodies for its declared HTTP
 methods. Only the empty flags string or `A` is supported. HTTP/HTTPS transport
 and TLS validation belong to the typed provider; socket and OpenSSL APIs are

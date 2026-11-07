@@ -1,0 +1,1 @@
+{"definition":{"uses":"./.github/workflows/canonical-join-state.yml"},"jobId":"controls","kind":"job","reviewReason":"The development/PR wrapper calls the existing canonical owner with read-only contents and a distinct concurrency group.","schemaVersion":"latent.ci.contracts.v1","workflow":".github/workflows/runtime-sync-ready.yml"}

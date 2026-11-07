@@ -35,6 +35,8 @@ public static partial class ManagedWorkRuntime
         internal bool Result;
         internal bool Observed;
         internal bool CallbackDone;
+        // 1: conversion in flight; 2: uncertain; 3: restoring adapter context.
+        internal byte ResultTransition;
     }
 
     private sealed class Queued
@@ -112,7 +114,7 @@ public static partial class ManagedWorkRuntime
     private static void ContextChanged(AsyncLocalValueChangedArgs<Record?> change)
     {
         var owner = change.CurrentValue;
-        if (owner is not null && owner.Active && !owner.Result)
+        if (owner is not null && ((owner.Active && !owner.Result) || owner.ResultTransition == 3))
             adapterContext!(owner.Token.Generation, owner.Token.Id);
         else
             adapterContext!(0, 0);
@@ -515,6 +517,9 @@ public static partial class ManagedWorkRuntime
         if (!installed) return;
         var owner = Find(item);
         if (owner is { Timer: true }) { TryRetireTimer(FindTimer(owner.Primary)!); return; }
+        // Task completion is handled by Completed, including a failed conversion.
+        // A dormant queue-created owner has no Completion and stays fenced below.
+        if (owner is { Completion: not null }) return;
         if (owner is { Active: false }) throw new InvalidOperationException("managed-work-double-settle");
         if (owner is not null && owner.Completion is null && !owner.Root)
         {
@@ -537,13 +542,14 @@ public static partial class ManagedWorkRuntime
     {
         if (!installed) return;
         var owner = Find(task);
-        if (owner is { Active: false }) throw new InvalidOperationException("managed-work-double-settle");
+        if (owner is { Active: false, ResultTransition: 0 })
+            throw new InvalidOperationException("managed-work-double-settle");
         foreach (var pending in required!)
             if (pending is not null && ReferenceEquals(pending.Task, task)) pending.Observed = true;
         if (owner is not null && ReferenceEquals(owner.Completion, task))
         {
             owner.Observed = true;
-            if (owner.Result) Release(owner);
+            if (owner.Result && owner.ResultTransition == 0) Release(owner);
         }
     }
 
@@ -583,16 +589,71 @@ public static partial class ManagedWorkRuntime
         if (owner.Result) return;
         if (owner.Completion is { } task && task.IsFaulted && !owner.Observed)
         {
-            var result = Reserve(ResultKind, owner);
-            // Keep both tokens reachable until the original Task settlement is
-            // confirmed; a failed or ambiguous acknowledgement is never retried.
-            owner.PendingResult = result;
+            if (admissions == int.MaxValue) throw new InvalidOperationException("managed-work-admission-in-progress");
+            admissions++;
+            owner.ResultTransition = 1;
             owner.Active = false;
-            settle!(owner.Token.Generation, owner.Token.Id);
-            owner.Token = result;
-            owner.PendingResult = default;
-            owner.Result = true;
-            owner.Active = true;
+            try
+            {
+                // Do not leave the native adapter authorized by a logically
+                // retired owner. Keep the managed AsyncLocal so Exit restores
+                // the previous dispatch context in the usual way.
+                if (ReferenceEquals(current!.Value, owner)) adapterContext!(0, 0);
+                if (!owner.Observed)
+                {
+                    var result = reserve!(ResultKind, owner.Token.Generation, owner.Token.Id);
+                    if (result == default)
+                    {
+                        // A typed WIT refusal proves no Result was registered.
+                        // Restore authority only if its adapter update succeeds.
+                        var refusal = new InvalidOperationException("managed-work-admission-refused");
+                        try
+                        {
+                            // Context switches inside the adapter call must
+                            // restore this token even though admission is still
+                            // fenced by the inactive owner.
+                            owner.ResultTransition = 3;
+                            if (ReferenceEquals(current!.Value, owner))
+                                adapterContext!(owner.Token.Generation, owner.Token.Id);
+                            owner.ResultTransition = 0;
+                            owner.Active = true;
+                        }
+                        catch
+                        {
+                            owner.ResultTransition = 2;
+                            try { adapterContext!(0, 0); } catch { }
+                        }
+                        throw refusal;
+                    }
+                    if (result.Generation == 0 || result.Id == 0)
+                        throw new InvalidOperationException("managed-work-reservation-token");
+                    // Keep both tokens reachable until Task settlement is confirmed.
+                    owner.PendingResult = result;
+                }
+                settle!(owner.Token.Generation, owner.Token.Id);
+                if (owner.PendingResult != default)
+                {
+                    owner.Token = owner.PendingResult;
+                    owner.PendingResult = default;
+                    owner.Result = true;
+                    if (!owner.Observed)
+                    {
+                        owner.ResultTransition = 0;
+                        owner.Active = true;
+                        return;
+                    }
+                    settle!(owner.Token.Generation, owner.Token.Id);
+                }
+                for (int i = 1; i < MaximumRecords; i++)
+                    if (ReferenceEquals(records![i], owner)) { records[i] = null; return; }
+                throw new InvalidOperationException("managed-work-missing-record");
+            }
+            catch
+            {
+                if (owner.ResultTransition is 1 or 3) owner.ResultTransition = 2;
+                throw;
+            }
+            finally { admissions--; }
         }
         else Release(owner);
     }
@@ -631,7 +692,9 @@ public static partial class ManagedWorkRuntime
                     else { active = true; pending ??= work.Task; }
                 }
                 var owner = records![i];
-                if (owner is null || owner.Root || owner.Result) continue;
+                if (owner is null || owner.Root) continue;
+                if (owner.ResultTransition != 0) throw new InvalidOperationException("managed-work-double-settle");
+                if (owner.Result) continue;
                 if (owner.Completion is { } task)
                 {
                     if (task.IsCompleted && !HasRequired(owner)) Finish(owner);

@@ -5,6 +5,7 @@ import {request, requestReady, promiseReady, requestCopyReady, initialized} from
 declare class Event { constructor(type: string); }
 declare class EventTarget {
   addEventListener(type: string, listener: () => void): void;
+  removeEventListener(type: string, listener: () => void): void;
   dispatchEvent(event: Event): boolean;
 }
 
@@ -55,6 +56,175 @@ function nestedEventClone(): string {
   return 'event-clone:nested:12:ordered';
 }
 
+function ordinaryAbortClone(): string {
+  const controller = new AbortController();
+  const reason = {kind: 'ordinary-abort'};
+  let calls = 0;
+  for (let index = 0; index < 12; ++index) {
+    controller.signal.addEventListener('abort', () => { ++calls; });
+  }
+  controller.abort(reason);
+  if (!controller.signal.aborted || controller.signal.reason !== reason || calls !== 12)
+    throw new Error('abort-clone-normal-result');
+  return 'abort-clone:normal:12';
+}
+
+function refusedAbortClone(): void {
+  const controller = new AbortController();
+  const reason = {kind: 'refused-abort'};
+  const expected = 'activation-runtime-promise-native-register-denied:2';
+  let calls = 0, fillDenied = false, abortDenied = false;
+  for (let index = 0; index < 12; ++index) {
+    controller.signal.addEventListener('abort', () => { ++calls; });
+  }
+  const filler = new EventTarget();
+  const held: Array<() => void> = [];
+  try {
+    for (let index = 0; index < 128; ++index) {
+      const listener = () => {};
+      try {
+        filler.addEventListener('fill', listener);
+        held.push(listener);
+      } catch (error) {
+        if (!(error instanceof Error) || error.message !== expected) throw error;
+        fillDenied = true;
+        break;
+      }
+    }
+    if (!fillDenied || held.length === 0 || held.length >= 128)
+      throw new Error('abort-clone-fill-boundary-missing');
+    try { controller.abort(reason); }
+    catch (error) {
+      if (!(error instanceof Error) || error.message !== expected) throw error;
+      abortDenied = true;
+    }
+    if (!abortDenied || !controller.signal.aborted || controller.signal.reason !== reason || calls !== 0)
+      throw new Error('abort-clone-failure-not-propagated');
+  } finally {
+    for (const listener of held) filler.removeEventListener('fill', listener);
+  }
+}
+
+function recoveredEventClone(): string {
+  const target = new EventTarget();
+  let calls = 0;
+  for (let index = 0; index < 12; ++index) {
+    target.addEventListener('recovered', () => { ++calls; });
+  }
+  if (!target.dispatchEvent(new Event('recovered')) || calls !== 12)
+    throw new Error('abort-clone-recovery-result');
+  return 'abort-clone:two-native-register-refusals:recovered';
+}
+
+function abortAnyFrames(): string {
+  const source = new AbortController();
+  // Each iteration grows the conversion vector, then exits before creating a
+  // dependent signal. More iterations than the native-owner ceiling require
+  // continued progress without treating return from any() as a host witness.
+  for (let turn = 0; turn < 80; ++turn) {
+    const sentinel = {turn};
+    let next = 0, caught: unknown;
+    function* interrupted(): Generator<AbortSignal> {
+      for (let index = 0; index < 9; ++index) { ++next; yield source.signal; }
+      ++next;
+      throw sentinel;
+    }
+    try { AbortSignal.any(interrupted()); } catch (error) { caught = error; }
+    if (caught !== sentinel || next !== 10) throw new Error('abort-any-interrupted-conversion');
+  }
+
+  const seen: string[] = [];
+  const holder: {signal?: AbortSignal} = {};
+  function* inner(): Generator<AbortSignal> {
+    for (let index = 0; index < 12; ++index) {
+      seen.push(`inner:${index}`);
+      yield source.signal;
+    }
+    seen.push('inner:done');
+  }
+  function* outer(): Generator<AbortSignal> {
+    for (let index = 0; index < 12; ++index) {
+      seen.push(`outer:${index}`);
+      // The outer vector already has nine entries when inner any() starts.
+      if (index === 9) holder.signal = AbortSignal.any(inner());
+      yield source.signal;
+    }
+    seen.push('outer:done');
+  }
+  const result = AbortSignal.any(outer());
+  const nested = holder.signal;
+  const expected = [
+    ...Array.from({length: 10}, (_, index) => `outer:${index}`),
+    ...Array.from({length: 12}, (_, index) => `inner:${index}`),
+    'inner:done', 'outer:10', 'outer:11', 'outer:done',
+  ];
+  if (!nested || result.aborted || nested.aborted || seen.join(',') !== expected.join(','))
+    throw new Error('abort-any-nested-iteration');
+  let outerEvents = 0, innerEvents = 0;
+  result.addEventListener('abort', () => { ++outerEvents; });
+  nested.addEventListener('abort', () => { ++innerEvents; });
+  const reason = {kind: 'nested-any'};
+  source.abort(reason);
+  source.abort({kind: 'ignored'});
+  if (!result.aborted || !nested.aborted || result.reason !== reason || nested.reason !== reason ||
+      outerEvents !== 1 || innerEvents !== 1) throw new Error('abort-any-dependent-state');
+  return 'abort-any:80:nested:12:ordered';
+}
+
+function refusedAbortAnyFrame(): AbortController {
+  const source = new AbortController();
+  const filler = new EventTarget();
+  const held: Array<() => void> = [];
+  const expected = 'activation-runtime-promise-native-register-denied:2';
+  let fillDenied = false;
+  try {
+    for (let index = 0; index < 128; ++index) {
+      const listener = () => {};
+      try { filler.addEventListener('any-fill', listener); held.push(listener); }
+      catch (error) {
+        if (!(error instanceof Error) || error.message !== expected) throw error;
+        fillDenied = true;
+        break;
+      }
+    }
+    if (!fillDenied || held.length === 0 || held.length >= 128)
+      throw new Error('abort-any-fill-boundary-missing');
+
+    const closeSentinel = {kind: 'iterator-return-throws'};
+    let next = 0, closed = 0, caught: unknown;
+    const signals: Iterable<AbortSignal> = {
+      [Symbol.iterator](): Iterator<AbortSignal> {
+        return {
+          next(): IteratorResult<AbortSignal> {
+            ++next;
+            if (next > 12) return {done: true, value: undefined};
+            return {done: false, value: source.signal};
+          },
+          return(): IteratorResult<AbortSignal> {
+            ++closed;
+            throw closeSentinel;
+          },
+        };
+      },
+    };
+    try { AbortSignal.any(signals); } catch (error) { caught = error; }
+    if (!(caught instanceof Error) || caught.message !== expected || next !== 9 || closed !== 1 ||
+        source.signal.aborted) throw new Error('abort-any-refusal-close');
+  } finally {
+    for (const listener of held) filler.removeEventListener('any-fill', listener);
+  }
+  return source;
+}
+
+function recoveredAbortAnyFrame(source: AbortController): string {
+  const result = AbortSignal.any(Array<AbortSignal>(12).fill(source.signal));
+  if (result.aborted) throw new Error('abort-any-recovery-initial-state');
+  const reason = {kind: 'any-recovery'};
+  source.abort(reason);
+  if (!result.aborted || result.reason !== reason) throw new Error('abort-any-recovery-result');
+  return 'abort-any:refusal:closed:recovered';
+}
+
 export const api: typeof Contract = {
   async run(mode, url) {
     if (mode === 1) return 'entered';
@@ -63,6 +233,21 @@ export const api: typeof Contract = {
     if (mode === 4) return await requestCopyReady(url);
     if (mode === 20) return repeatedEventClone();
     if (mode === 21) return nestedEventClone();
+    if (mode === 22) return ordinaryAbortClone();
+    if (mode === 23) {
+      refusedAbortClone();
+      // Normal Promise allocation invokes the existing pressure-GC/checkpoint.
+      await Promise.resolve();
+      return recoveredEventClone();
+    }
+    if (mode === 24) return abortAnyFrames();
+    if (mode === 25) {
+      const source = refusedAbortAnyFrame();
+      // As in the existing abort-clone case, use the ordinary Promise
+      // allocation path to collect and checkpoint unreachable listener owners.
+      await Promise.resolve();
+      return recoveredAbortAnyFrame(source);
+    }
     if (mode !== 0) throw new TypeError('unsupported-fetch-runtime-mode');
     return `${++calls}:${await request(url)}`;
   },

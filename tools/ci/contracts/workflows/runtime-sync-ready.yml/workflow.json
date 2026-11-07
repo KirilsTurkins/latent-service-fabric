@@ -1,0 +1,47 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "runtime-ready-sync-${{ github.ref }}"
+    },
+    "name": "Runtime ready sync callback controls",
+    "on": {
+      "pull_request": {
+        "branches": [
+          "development"
+        ],
+        "paths": [
+          ".github/workflows/runtime-sync-ready.yml",
+          ".github/workflows/canonical-join-state.yml",
+          "crates/latent-wasmtime/src/host/runtime.rs",
+          "crates/vendor/wasmtime/**",
+          "crates/vendor/wasmtime-cache/**",
+          "rust-toolchain.toml"
+        ]
+      },
+      "push": {
+        "branches": [
+          "development"
+        ],
+        "paths": [
+          ".github/workflows/runtime-sync-ready.yml",
+          ".github/workflows/canonical-join-state.yml",
+          "crates/latent-wasmtime/src/host/runtime.rs",
+          "crates/vendor/wasmtime/**",
+          "crates/vendor/wasmtime-cache/**",
+          "rust-toolchain.toml"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "controls"
+  ],
+  "reviewReason": "Only development PRs and pushes touching the ready callback source closure call the existing canonical owner; no release trigger or general engine qualification.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/runtime-sync-ready.yml"
+}

@@ -36,6 +36,15 @@ pub struct TransactionAdmissionOwners {
     pub(super) lanes: super::entity_queue::EntityQueue,
 }
 impl TransactionAdmissionOwners {
+    /// Current number of prepaid duplicate callers waiting for a claim.
+    pub fn entity_duplicate_waiter_count(&self) -> Result<usize, PlatformError> {
+        self.lanes.duplicate_waiter_count().map_err(|_| {
+            error(
+                latent_core::PlatformErrorCode::Unavailable,
+                "entity-queue-unavailable",
+            )
+        })
+    }
     /// Current aggregate lane counts and byte charges. The observation grants
     /// no execution, command, or namespace authority.
     pub fn entity_lanes_snapshot(
@@ -79,10 +88,20 @@ impl TransactionAdmissionOwners {
         let slots = limits.ordinary.slots.min(byte_slots).max(1);
         let tenant_slots = if slots > 2 { slots - 1 } else { slots };
         let tenant_bytes = if slots > 2 { bytes - minimum } else { bytes }
-            .max(limits.ordinary.maximum_reservation_bytes.saturating_add(16 * 1024))
+            .max(
+                limits
+                    .ordinary
+                    .maximum_reservation_bytes
+                    .saturating_add(16 * 1024),
+            )
             .min(bytes);
         let entity_bytes = (bytes / 2)
-            .max(limits.ordinary.maximum_reservation_bytes.saturating_add(16 * 1024))
+            .max(
+                limits
+                    .ordinary
+                    .maximum_reservation_bytes
+                    .saturating_add(16 * 1024),
+            )
             .min(bytes);
         let lanes = super::entity_queue::EntityQueue::new(
             latent_state::entity_lanes::EntityLaneLimits {
