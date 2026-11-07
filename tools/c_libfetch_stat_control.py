@@ -19,6 +19,11 @@ def main() -> None:
             '-Wl,--gc-sections', '-o', str(executable),
         ], check=True, timeout=60)
         subprocess.run([str(executable)], check=True, timeout=10)
+        subprocess.run([
+            'gcc', '-std=gnu11', '-D_GNU_SOURCE', '-fsyntax-only', '-I' + str(fixture),
+            '-I' + str(ROOT / 'sdk/c-guest/include'),
+            str(ROOT / 'sdk/c-guest/runtime-fixtures/libfetch/stat-probe.c'),
+        ], check=True, timeout=30)
 
 
 if __name__ == '__main__':
