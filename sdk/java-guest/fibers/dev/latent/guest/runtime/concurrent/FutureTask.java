@@ -20,6 +20,7 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
     private Activation.Lease owner;
     private int queueCopies;
     private boolean pendingRun;
+    private int internalPhysicalClaims;
 
     public FutureTask(Callable<V> callable) { this.callable = Objects.requireNonNull(callable); }
     public FutureTask(Runnable runnable, V result) {
@@ -45,12 +46,28 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
         if (!removed && !completed && runner == null) pendingRun = true;
         // A completed physical run owns its original finally. A subclass run
         // which leaves its future pending is not proof of harmless idle work.
-        if (removed && queueCopies == 0 && runner == null && !pendingRun && owner != null) {
+        if (removed && queueCopies == 0 && runner == null && !pendingRun && internalPhysicalClaims == 0 && owner != null) {
+            owner.close(); owner = null;
+        }
+    }
+    // Package-internal final operations cannot dispatch into application code
+    // while this future's ownership monitor is held.
+    final synchronized void beginInternalPhysicalClaim() {
+        if (internalPhysicalClaims == Integer.MAX_VALUE)
+            throw new java.util.concurrent.RejectedExecutionException("activation-future-physical-claims");
+        internalPhysicalClaims++;
+    }
+    final synchronized boolean hasInternalPhysicalClaim() { return internalPhysicalClaims != 0; }
+    final synchronized void endInternalPhysicalClaim() {
+        if (internalPhysicalClaims <= 0) throw new IllegalStateException("activation-future-physical-claim");
+        internalPhysicalClaims--;
+        if (runner == null && internalPhysicalClaims == 0 && owner != null
+                && (completed || queueCopies == 0 && !pendingRun)) {
             owner.close(); owner = null;
         }
     }
     private void releaseIfPhysicalComplete() {
-        if (runner == null && completed && owner != null) { owner.close(); owner = null; }
+        if (runner == null && completed && internalPhysicalClaims == 0 && owner != null) { owner.close(); owner = null; }
     }
     @Override public boolean cancel(boolean interrupt) {
         synchronized (this) {
