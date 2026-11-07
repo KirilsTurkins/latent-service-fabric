@@ -42,7 +42,13 @@ missing/reordered observations, changed outcomes and unknown/private fields.
 Compiler and signed failure stdout/stderr remain bounded and retained.
 
 Local controls verify source selection and strict evidence parsing; they do
-not execute a compiler or guest. The actual [37cf run 39369515637](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39369515637),
+not themselves qualify a guest. An additional host-only Go control executes
+the actual collected-timer sweep with a deliberately parked weak conversion.
+It checks retirement and reuse of the original slot, including slice growth,
+and verifies that the sweep does not retire or fence a replacement token. This
+control simulates the GC scheduling boundary and host retirement; it is not a
+signed guest, a real GC pause, or physical-limit qualification. The actual
+[37cf run 39369515637](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39369515637),
 job 118453969321, passed all 43 signed outcomes and all 17 fresh native modes.
 Libtest reports one passed, zero failed/ignored and 50 filtered cases (11.72 s).
 Artifact 12241945138 and the [lossless receipt](../testing/evidence/go-managed-timers-signed-2026-10-20.json)

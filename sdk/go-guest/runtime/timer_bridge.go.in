@@ -43,12 +43,13 @@ func lsfInstallTimer(t *timer, token [2]uint64) {
 // with GC; it must never be moved into a scheduler/g0 callback.
 func lsfSweepCollectedTimers() {
     for index := range lsfTimerSlots {
-        slot := &lsfTimerSlots[index]
-        if slot.token[1] != 0 && internal_weak_runtime_makeStrongFromWeak(slot.weak) == nil {
-            token := slot.token
-            lsfStopTimerSlot(uint32(index + 1), token)
-            lsfActivationTimerFence(token[0], token[1])
-        }
+        // Weak-to-strong conversion may park for GC. A different goroutine can
+        // retire and reuse this slot (or grow the slice) before it resumes.
+        slot := lsfTimerSlots[index]
+        if slot.token[1] == 0 || internal_weak_runtime_makeStrongFromWeak(slot.weak) != nil { continue }
+        if lsfTimerSlots[index].token != slot.token { continue }
+        lsfStopTimerSlot(uint32(index + 1), slot.token)
+        lsfActivationTimerFence(slot.token[0], slot.token[1])
     }
 }
 

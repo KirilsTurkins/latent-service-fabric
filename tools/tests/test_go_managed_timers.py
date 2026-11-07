@@ -1,7 +1,10 @@
 """Actual v5 timer capture selection and fail-closed signed evidence controls."""
 import copy
 import json
+import os
 from pathlib import Path
+import shutil
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -11,6 +14,86 @@ from tools import qualify_go_synchronization as reference
 
 
 NATIVE17 = [0, 1, 2, 3, 5, 6, 18, 19, 20, 9, 11, 12, 13, 14, 15, 16, 17]
+
+
+# This host-only control compiles the actual sweep function from the runtime
+# template. The stubs force the weak conversion to park at the exact boundary;
+# they do not claim a signed component, a real GC pause, or host timer execution.
+SLOT_INTERLEAVING_TEST = r'''package timerowner
+
+import (
+    "testing"
+    "unsafe"
+)
+
+var lsfTimerSlots []lsfTimerSlot
+var conversion func(unsafe.Pointer) unsafe.Pointer
+var retired, fenced [][2]uint64
+
+func internal_weak_runtime_makeStrongFromWeak(p unsafe.Pointer) unsafe.Pointer { return conversion(p) }
+func lsfStopTimerSlot(index uint32, token [2]uint64) {
+    if token[1] == 0 { return }
+    if lsfTimerSlots[index-1].token != token { panic("stale timer slot") }
+    retired = append(retired, token)
+    lsfTimerSlots[index-1] = lsfTimerSlot{}
+}
+func lsfActivationTimerFence(generation, id uint64) {
+    if id != 0 { fenced = append(fenced, [2]uint64{generation, id}) }
+}
+
+func TestReusedSlotDuringWeakConversion(t *testing.T) {
+    for _, mode := range []string{"reuse", "reuse-then-grow", "reuse-grow-reuse"} {
+        t.Run(mode, func(t *testing.T) {
+            old, next, last := [2]uint64{7, 1}, [2]uint64{7, 2}, [2]uint64{7, 4}
+            lsfTimerSlots = make([]lsfTimerSlot, 1, 1)
+            lsfTimerSlots[0].token = old
+            retired, fenced = nil, nil
+            parked, resume, done := make(chan struct{}), make(chan struct{}), make(chan interface{}, 1)
+            conversion = func(unsafe.Pointer) unsafe.Pointer { close(parked); <-resume; return nil }
+            go func() { defer func() { done <- recover() }(); lsfSweepCollectedTimers() }()
+            <-parked
+            // Another goroutine retires the original before publishing a new owner.
+            lsfStopTimerSlot(1, old)
+            lsfActivationTimerFence(old[0], old[1])
+            lsfTimerSlots[0].token = next
+            if mode != "reuse" {
+                lsfTimerSlots = append(lsfTimerSlots, lsfTimerSlot{token:[2]uint64{7, 3}})
+            }
+            expected := next
+            if mode == "reuse-grow-reuse" {
+                lsfStopTimerSlot(1, next)
+                lsfActivationTimerFence(next[0], next[1])
+                lsfTimerSlots[0].token, expected = last, last
+            }
+            retired, fenced = nil, nil
+            close(resume)
+            if p := <-done; p != nil { t.Errorf("unexpected stale-owner trap: %v", p) }
+            if lsfTimerSlots[0].token != expected || len(retired) != 0 || len(fenced) != 0 {
+                t.Errorf("owner=%v retired=%v fenced=%v", lsfTimerSlots[0].token, retired, fenced)
+            }
+        })
+    }
+}
+
+func TestCollectedUnchangedOwnerIsRetiredAndFenced(t *testing.T) {
+    old := [2]uint64{7, 1}
+    lsfTimerSlots = []lsfTimerSlot{{token:old}}
+    retired, fenced = nil, nil
+    conversion = func(unsafe.Pointer) unsafe.Pointer { return nil }
+    lsfSweepCollectedTimers()
+    if len(retired)!=1 || retired[0]!=old || len(fenced)!=1 || fenced[0]!=old { t.Fatal(retired, fenced) }
+}
+
+func TestReachableOwnerIsUntouched(t *testing.T) {
+    old := [2]uint64{7, 1}
+    lsfTimerSlots = []lsfTimerSlot{{token:old}}
+    retired, fenced = nil, nil
+    strong := new(byte)
+    conversion = func(unsafe.Pointer) unsafe.Pointer { return unsafe.Pointer(strong) }
+    lsfSweepCollectedTimers()
+    if lsfTimerSlots[0].token != old || len(retired)!=0 || len(fenced)!=0 { t.Fatal(lsfTimerSlots, retired, fenced) }
+}
+'''
 
 
 class SourceOnlyCompiler:
@@ -53,6 +136,24 @@ def compile_record(folder):
 
 
 class GoManagedTimers(unittest.TestCase):
+    @unittest.skipUnless(shutil.which('go'), 'controlled host interleaving requires Go')
+    def test_collected_timer_sweep_retains_original_identity_across_gc_parking(self):
+        source = (reference.ROOT / 'sdk/go-guest/runtime/timer_bridge.go.in').read_text()
+        declaration = next(line for line in source.splitlines() if line.startswith('type lsfTimerSlot struct '))
+        start = source.index('func lsfSweepCollectedTimers() {')
+        end = source.index('\n}', start) + 2
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'timer.go').write_text('package timerowner\n\nimport "unsafe"\n\n' +
+                                           declaration + '\n\n' + source[start:end] + '\n')
+            (root / 'timer_test.go').write_text(SLOT_INTERLEAVING_TEST)
+            env = dict(os.environ, GO111MODULE='off', GOENV='off', GOFLAGS='', GOWORK='off',
+                       GOTOOLCHAIN='local', GOMAXPROCS='1', GOOS='', GOARCH='', CGO_ENABLED='0')
+            env.pop('GOROOT', None)
+            result = subprocess.run([shutil.which('go'), 'test', '-count=1', '-timeout=45s', '-v', '.'],
+                                    cwd=root, env=env, text=True, capture_output=True, timeout=180)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_v5_timer_compile_records_native_reference_on_the_same_unmodified_timer_source(self):
         source = (reference.ROOT / 'sdk/go-guest/runtime/timers-conformance/main.go').read_bytes()
         native = {'modes': NATIVE17, 'output': 42, 'freshProcessPerMode': True,
