@@ -156,6 +156,32 @@ impl LocalDurablePin {
     }
 }
 impl LocalBlobStore {
+    /// Bind an already-open, uniquely held owner to the initializing engine,
+    /// but only when that root already contains the matching durable mode.
+    /// An ordinary root returns `false` without creating or changing a mode.
+    /// Startup must still verify all required bytes and semantic closure before
+    /// publishing the owner or exposing any store consumer.
+    pub fn bind_existing_durable_for_view(owner: &mut Arc<Self>, view: &ReadView) -> Result<bool> {
+        let Some(mode) = owner.inner.durable.as_ref() else {
+            return Ok(false);
+        };
+        if owner.inner.durable_binding.is_some() {
+            return Err(LocalBlobError::Busy);
+        }
+        let identity = StoreIdentity::inspect(view)
+            .map_err(storage)?
+            .ok_or(LocalBlobError::Corrupt)?;
+        if identity.as_str() != mode.store_identity
+            || owner.configuration_digest()? != mode.configuration_digest
+        {
+            return Err(LocalBlobError::PermissionDenied);
+        }
+        let inner = Arc::get_mut(&mut Arc::get_mut(owner).ok_or(LocalBlobError::Busy)?.inner)
+            .ok_or(LocalBlobError::Busy)?;
+        inner.durable_binding = Some(view.binding());
+        Ok(true)
+    }
+
     /// Check one required catalogue row and its actual local immutable bytes.
     /// The caller separately validates the owner's semantic closure and scans all
     /// required rows. This observation grants no blob-read or deletion right.
