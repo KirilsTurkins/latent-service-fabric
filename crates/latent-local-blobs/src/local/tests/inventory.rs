@@ -133,6 +133,23 @@ fn a_single_work_slot_cannot_be_occupied_by_an_unusable_cursor() {
 }
 
 #[test]
+fn exhausted_generation_never_removes_a_physical_object() {
+    let root = temporary_root();
+    let owner = store(root.path());
+    let blob = put(&owner, b"keep");
+    owner
+        .release_reference(&scope(), &blob, &|| Ok(()))
+        .unwrap();
+    owner.inner.state().unwrap().inventory_generation = u64::MAX;
+    assert_eq!(owner.reclaim(1, &|| Ok(())), Err(LocalBlobError::Capacity));
+    assert_eq!(owner.snapshot().unwrap().objects, 1);
+    drop(owner);
+    let reopened = store(root.path());
+    assert_eq!(reopened.snapshot().unwrap().objects, 1);
+    assert_eq!(reopened.reclaim(1, &|| Ok(())).unwrap().objects, 1);
+}
+
+#[test]
 fn exhausted_generation_refuses_mutation_without_releasing_the_reference() {
     let root = temporary_root();
     let owner = store(root.path());
