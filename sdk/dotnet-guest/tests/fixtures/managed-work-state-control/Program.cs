@@ -16,6 +16,11 @@ internal static class StateControl
     private static int refusedSettlements;
     private static int controlDispatches;
     private static bool rootJoinReturned;
+    private static bool rootSettlementControl;
+    private static bool rootFinalizationReturned;
+    private static bool refuseContextClear, contextThrowsBeforeClear;
+    private static ulong rootIdentifier, storageIdentifier;
+    private static int rootSettlements, storageSettlements, contextClearAttempts;
     private static int Count(int kind) => Owners.Values.Count(value => value == kind);
     private static void Need(bool value)
     {
@@ -40,6 +45,8 @@ internal static class StateControl
     }
     private static void Settle(ulong generation, ulong id)
     {
+        if (id == rootIdentifier) rootSettlements++;
+        if (id == storageIdentifier) storageSettlements++;
         if (id == settlementRefusal)
         {
             Need(generation == 17 && id > uint.MaxValue);
@@ -55,8 +62,17 @@ internal static class StateControl
     {
         Need(Work.Count != 0); controlDispatches++; Work.Dequeue()();
     }
-    private static void Begin() => ManagedWorkRuntime.Install(Reserve, Settle, () => closing = true,
-        (generation, id) => context = (generation, id));
+    private static void Context(ulong generation, ulong id)
+    {
+        if (refuseContextClear && (generation, id) == (0UL, 0UL))
+        {
+            contextClearAttempts++;
+            if (!contextThrowsBeforeClear) context = (generation, id);
+            throw new InvalidOperationException("control-context-clear-failed");
+        }
+        context = (generation, id);
+    }
+    private static void Begin() => ManagedWorkRuntime.Install(Reserve, Settle, () => closing = true, Context);
     private static void Finish()
     {
         ManagedWorkRuntime.JoinAcceptedWork(); ManagedWorkRuntime.FinishedPhysicalDrain();
@@ -120,6 +136,51 @@ internal static class StateControl
         Need(!rootJoinReturned && refusedSettlements == 1 && Count(0) == 1
             && Count(6) == (unknown ? 0 : 1) && Owners.ContainsKey(settlementRefusal) != unknown
             && Count(3) == 0 && Work.Count == 0);
+    }
+    private static void RootSettlementControl(bool storage, bool unknown)
+    {
+        rootSettlementControl = true;
+        rootIdentifier = context.Item2;
+        storageIdentifier = Owners.Single(entry => entry.Value == 7).Key;
+        var captured = ExecutionContext.Capture() ?? throw new InvalidOperationException("control-context");
+        Need(rootIdentifier != 0 && storageIdentifier != rootIdentifier && Count(0) == 1 && Count(7) == 1);
+        ManagedWorkRuntime.JoinAcceptedWork();
+        settlementRefusal = storage ? storageIdentifier : rootIdentifier;
+        settlementUnknown = unknown;
+        Refuses(() => { ManagedWorkRuntime.FinishedPhysicalDrain(); rootFinalizationReturned = true; },
+            "managed-work-settlement-refused");
+        Refuses(() => { ManagedWorkRuntime.FinishedPhysicalDrain(); rootFinalizationReturned = true; },
+            "managed-work-finalization-uncertain");
+        Refuses(Begin, "managed-work-installation");
+        Need(context == (0UL, 0UL));
+        ExecutionContext.Run(captured, _ =>
+        {
+            Need(context == (0UL, 0UL));
+            Refuses(() => ManagedWorkRuntime.Schedule(Pending().Task), "managed-work-independent-admission-closed");
+        }, null);
+        Need(context == (0UL, 0UL) && !rootFinalizationReturned && refusedSettlements == 1
+            && storageSettlements == 1 && rootSettlements == (storage ? 0 : 1)
+            && Owners.ContainsKey(storageIdentifier) == (storage && !unknown)
+            && Owners.ContainsKey(rootIdentifier) == (storage || !unknown)
+            && Count(3) == 0 && Work.Count == 0);
+    }
+    private static void RootContextClearControl(bool failSettlement)
+    {
+        rootSettlementControl = true;
+        rootIdentifier = context.Item2;
+        storageIdentifier = Owners.Single(entry => entry.Value == 7).Key;
+        ManagedWorkRuntime.JoinAcceptedWork();
+        if (failSettlement) settlementRefusal = storageIdentifier;
+        refuseContextClear = true; contextThrowsBeforeClear = failSettlement;
+        Refuses(() => { ManagedWorkRuntime.FinishedPhysicalDrain(); rootFinalizationReturned = true; },
+            failSettlement ? "managed-work-settlement-refused" : "control-context-clear-failed");
+        refuseContextClear = false;
+        Refuses(() => { ManagedWorkRuntime.FinishedPhysicalDrain(); rootFinalizationReturned = true; },
+            "managed-work-finalization-uncertain");
+        Refuses(Begin, "managed-work-installation");
+        Need(!rootFinalizationReturned && context == (failSettlement ? (17UL, rootIdentifier) : (0UL, 0UL))
+            && contextClearAttempts == 1 && rootSettlements == (failSettlement ? 0 : 1) && storageSettlements == 1
+            && refusedSettlements == (failSettlement ? 1 : 0) && Owners.Count == (failSettlement ? 2 : 0));
     }
     private static void Run(string name)
     {
@@ -188,6 +249,12 @@ internal static class StateControl
             case "callback-settlement-unknown-prevents-retry": OwnerSettlementControl(true, true); break;
             case "result-settlement-refusal-prevents-finalization": ResultSettlementControl(false); break;
             case "result-settlement-unknown-prevents-finalization": ResultSettlementControl(true); break;
+            case "storage-settlement-refusal-fences-root": RootSettlementControl(true, false); break;
+            case "storage-settlement-unknown-fences-root": RootSettlementControl(true, true); break;
+            case "root-settlement-refusal-fences-finalization": RootSettlementControl(false, false); break;
+            case "root-settlement-unknown-fences-finalization": RootSettlementControl(false, true); break;
+            case "root-context-clear-failure-fences-finalization": RootContextClearControl(false); break;
+            case "storage-and-context-clear-fail-fences-finalization": RootContextClearControl(true); break;
             case "continuation-failure-before-acceptance": {
                 var pending = Pending(); ManagedWorkRuntime.Continuation(pending.Task);
                 Need(Count(0) == 2); ManagedWorkRuntime.ContinuationFailed(pending.Task);
@@ -259,6 +326,15 @@ internal static class StateControl
     private static void Main(string[] args)
     {
         Need(args.Length == 1); Run(args[0]);
+        if (rootSettlementControl)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(new { control = args[0], passed = true,
+                registryCore = "production-source", nativeLedger = "explicit-test-port", dispatcher = "explicit-test-port",
+                actualClrTasks = true, guestQualified = false, settlementRefusals = refusedSettlements,
+                retainedTasks = Count(0), retainedNativeOwners = Count(7), rootSettlements, storageSettlements,
+                contextClearAttempts, finalizationSuccess = rootFinalizationReturned }));
+            return;
+        }
         if (settlementRefusal != 0)
         {
             Console.WriteLine(JsonSerializer.Serialize(new { control = args[0], passed = true,

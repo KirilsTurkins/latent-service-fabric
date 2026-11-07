@@ -496,6 +496,8 @@ public static partial class ManagedWorkRuntime
     public static void FinishedPhysicalDrain()
     {
         if (!installed || !closing) throw new InvalidOperationException("managed-work-finalization-state");
+        var finalRoot = root ?? throw new InvalidOperationException("managed-work-finalization-state");
+        if (!finalRoot.Active) throw new InvalidOperationException("managed-work-finalization-uncertain");
         foreach (var owner in records!) if (owner is not null && !owner.Root)
             throw new InvalidOperationException("managed-work-finalization-owners");
         foreach (var item in queued!) if (item is not null)
@@ -504,8 +506,21 @@ public static partial class ManagedWorkRuntime
             throw new InvalidOperationException("managed-work-finalization-timers");
         foreach (var item in required!) if (item is not null)
             throw new InvalidOperationException("managed-work-finalization-continuations");
-        settle!(storage.Generation, storage.Id);
-        Release(root!);
+        // Fence the entire terminal sequence before either host call: an
+        // exception may follow settlement of storage, the root, or both.
+        finalRoot.Active = false;
+        try
+        {
+            settle!(storage.Generation, storage.Id);
+            settle!(finalRoot.Token.Generation, finalRoot.Token.Id);
+        }
+        catch
+        {
+            // Clearing the adapter context must not replace the settlement
+            // failure; the inactive root still fences any later finalization.
+            try { current!.Value = null; } catch { }
+            throw;
+        }
         current!.Value = null;
         installed = false;
         records = null; queued = null; required = null; timers = null; current = null; root = null;

@@ -31,6 +31,11 @@ OWNER_SETTLEMENT_CASES = (
 RESULT_SETTLEMENT_CASES = (
     'result-settlement-refusal-prevents-finalization',
     'result-settlement-unknown-prevents-finalization')
+ROOT_SETTLEMENT_CASES = (
+    'storage-settlement-refusal-fences-root', 'storage-settlement-unknown-fences-root',
+    'root-settlement-refusal-fences-finalization', 'root-settlement-unknown-fences-finalization',
+    'root-context-clear-failure-fences-finalization',
+    'storage-and-context-clear-fail-fences-finalization')
 CASES = (
     'native-task-admission', 'unwrap-inner-actual-completion', 'queued-admission-rollback',
     'enqueue-failure-releases-both', 'continuation-failure-before-acceptance',
@@ -39,7 +44,7 @@ CASES = (
     'unobserved-original-fault-result', 'observed-fault-does-not-become-unhandled',
     'bounded-required-continuations', 'opaque-pending-is-not-quiescent',
     'untracked-startup-refused-before-admission', *SETTLEMENT_CASES, *OWNER_SETTLEMENT_CASES,
-    *RESULT_SETTLEMENT_CASES)
+    *RESULT_SETTLEMENT_CASES, *ROOT_SETTLEMENT_CASES)
 
 
 def verify(dotnet: Path, output: Path) -> dict:
@@ -74,6 +79,16 @@ def verify(dotnet: Path, output: Path) -> dict:
         elif name in RESULT_SETTLEMENT_CASES:
             expected.update(settlementRefusals=1, retainedTasks=1, retainedQueuedOwners=0,
                             controlDispatches=0, automaticRetries=0, rootSuccess=False)
+        elif name in ROOT_SETTLEMENT_CASES:
+            is_storage = name.startswith('storage-')
+            is_unknown = '-unknown-' in name
+            is_context_failure = 'context-clear-fail' in name
+            context_only = name == 'root-context-clear-failure-fences-finalization'
+            expected.update(settlementRefusals=0 if context_only else 1,
+                            retainedTasks=0 if context_only or (is_unknown and not is_storage) else 1,
+                            retainedNativeOwners=1 if is_storage and not is_unknown else 0,
+                            rootSettlements=0 if is_storage else 1, storageSettlements=1,
+                            contextClearAttempts=1 if is_context_failure else 0, finalizationSuccess=False)
         require(len(raw) <= 1024 and json.loads(raw) == expected, 'managed-work-state-control-result')
         rows.append(expected)
     require(inventory(snapshot(source)) == before, 'managed-work-state-control-source-changed')
