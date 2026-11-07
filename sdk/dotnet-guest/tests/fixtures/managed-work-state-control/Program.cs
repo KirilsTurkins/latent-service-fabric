@@ -235,20 +235,17 @@ internal static class StateControl
         Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
         Need(!rootJoinReturned && refusedSettlements == 2 && Count(0) == 3 && Count(6) == 2);
     }
-    private static void QueueSettlementControl(bool rollback, bool unknown)
+    private static void QueueSettlementControl(bool unknown)
     {
         Limits[3] = 2;
         object item = new(); ManagedWorkRuntime.Enqueue(item);
         var original = ManagedWorkRuntime.QueuedTokenForControl(item)
             ?? throw new InvalidOperationException("missing-original-control-queue-token");
         settlementRefusal = original.Id; settlementUnknown = unknown;
-        Refuses(() => {
-            if (rollback) ManagedWorkRuntime.EnqueueFailed(item);
-            else ManagedWorkRuntime.Dequeue(item);
-        }, "managed-work-settlement-refused");
-        Refuses(() => ManagedWorkRuntime.Dequeue(item), "managed-work-queue-settlement-uncertain");
-        Refuses(() => ManagedWorkRuntime.EnqueueFailed(item), "managed-work-queue-settlement-uncertain");
-        Refuses(() => ManagedWorkRuntime.Enqueue(item), "managed-work-queue-settlement-uncertain");
+        Refuses(() => ManagedWorkRuntime.Dequeue(item), "managed-work-settlement-refused");
+        Refuses(() => ManagedWorkRuntime.Dequeue(item), "managed-work-queue-uncertain");
+        ManagedWorkRuntime.EnqueueFailed(item);
+        Refuses(() => ManagedWorkRuntime.Enqueue(item), "managed-work-queue-uncertain");
         object other = new(); ManagedWorkRuntime.Enqueue(other);
         ManagedWorkRuntime.Dequeue(other); ManagedWorkRuntime.CallbackCompleted(other);
         Refuses(() => { ManagedWorkRuntime.JoinAcceptedWork(); rootJoinReturned = true; },
@@ -292,25 +289,24 @@ internal static class StateControl
                 finally { ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.CallbackCompleted(first); }
                 Finish(); break;
             }
-            case "enqueue-failure-releases-both": {
+            case "enqueue-failure-retains-uncertain-owners": {
                 object item = new(); ManagedWorkRuntime.Enqueue(item); ManagedWorkRuntime.EnqueueFailed(item);
-                Need(Count(0) == 1 && Count(3) == 0); Finish(); break;
+                Need(Count(0) == 2 && Count(3) == 1);
+                Refuses(() => ManagedWorkRuntime.Dequeue(item), "managed-work-queue-uncertain");
+                Refuses(() => ManagedWorkRuntime.Enqueue(item), "managed-work-queue-uncertain");
+                Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
+                Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+                Need(Count(0) == 2 && Count(3) == 1); break;
             }
-            case "queue-rollback-refusal-prevents-retry": QueueSettlementControl(true, false); break;
-            case "queue-rollback-unknown-prevents-retry": QueueSettlementControl(true, true); break;
-            case "queue-dequeue-refusal-prevents-retry": QueueSettlementControl(false, false); break;
-            case "queue-dequeue-unknown-prevents-retry": QueueSettlementControl(false, true); break;
-            case "enqueue-failure-settlement-refusal-retains-owner":
+            case "queue-dequeue-refusal-prevents-retry": QueueSettlementControl(false); break;
+            case "queue-dequeue-unknown-prevents-retry": QueueSettlementControl(true); break;
             case "dequeue-settlement-refusal-retains-owner": {
                 object item = new(); ManagedWorkRuntime.Enqueue(item);
                 var original = ManagedWorkRuntime.QueuedTokenForControl(item)
                     ?? throw new InvalidOperationException("missing-original-control-queue-token");
                 settlementRefusal = original.Id;
                 Need(Count(0) == 2 && Count(3) == 1 && original.Generation == 17);
-                Refuses(() => {
-                    if (name == "enqueue-failure-settlement-refusal-retains-owner") ManagedWorkRuntime.EnqueueFailed(item);
-                    else ManagedWorkRuntime.Dequeue(item);
-                }, "managed-work-settlement-refused");
+                Refuses(() => ManagedWorkRuntime.Dequeue(item), "managed-work-settlement-refused");
                 if (ManagedWorkRuntime.QueuedTokenForControl(item) != original)
                     throw new InvalidOperationException("managed-work-control-queue-token-lost");
                 Need(Count(0) == 2 && Count(3) == 1 && Owners.ContainsKey(original.Id));

@@ -8,19 +8,44 @@ import java.util.function.Supplier;
 /** Test-only linear observations for actual port source, not the native ledger. */
 public final class Activation {
     private static final int[] owners = new int[3];
+    private static final int[] closeAttempts = new int[3];
     private static final ArrayList<ManagedPool> pools = new ArrayList<>();
     private static final java.util.IdentityHashMap<Thread, ManagedPool> managed = new java.util.IdentityHashMap<>();
     public static String denyNext;
     public static int denyMatchesAfter;
+    public static String denyCloseNext;
+    public static int denyCloseAfter;
+    public static String loseCloseAckNext;
+    public static int loseCloseAckAfter;
+    public static volatile boolean poisoned;
+    private static Lease lastFailedLease;
     public static boolean retainFailedStart;
     public interface ManagedPool { boolean hasPendingWork(); boolean isRetired(); void closeAtRoot(); }
     public static final class Lease implements AutoCloseable {
         private final int kind;
         private boolean closed;
+        private int attempts;
         Lease(int kind) { this.kind = kind; }
         @Override public void close() {
             synchronized (Activation.class) {
+                closeAttempts[kind]++;
+                attempts++;
                 if (closed || owners[kind] <= 0) throw new AssertionError("source-duplicate-owner-retirement");
+                if (Bindings.LatentRuntimeActivationOwnerKind.values()[kind].name().equals(loseCloseAckNext)) {
+                    if (loseCloseAckAfter > 0) loseCloseAckAfter--;
+                    else {
+                        loseCloseAckNext = null; lastFailedLease = this; closed = true; owners[kind]--;
+                        throw new IllegalStateException("source-owner-settlement-ack-unknown");
+                    }
+                }
+                if (Bindings.LatentRuntimeActivationOwnerKind.values()[kind].name().equals(denyCloseNext)) {
+                    if (denyCloseAfter > 0) denyCloseAfter--;
+                    else {
+                        denyCloseNext = null;
+                        lastFailedLease = this;
+                        throw new IllegalStateException("source-owner-settlement-denied");
+                    }
+                }
                 closed = true; owners[kind]--;
             }
         }
@@ -37,6 +62,9 @@ public final class Activation {
         return new Lease(kind.ordinal());
     }
     public static synchronized int count(Bindings.LatentRuntimeActivationOwnerKind kind) { return owners[kind.ordinal()]; }
+    public static synchronized int closeAttempts(Bindings.LatentRuntimeActivationOwnerKind kind) { return closeAttempts[kind.ordinal()]; }
+    public static synchronized int failedLeaseAttempts() { return lastFailedLease == null ? 0 : lastFailedLease.attempts; }
+    public static void fenceUncertainResultSettlement() { poisoned = true; }
     public static synchronized void manage(ManagedPool pool) { pools.add(pool); }
     public static void startManaged(Thread worker, ManagedPool pool) {
         synchronized (Activation.class) {
