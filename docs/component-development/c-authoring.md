@@ -124,15 +124,27 @@ parsed-URL GET entrypoints accept optional `url_stat`: a validated Content-Lengt
 is reported as its size; absent length remains `-1`, and unknown timestamps are
 `0`. Standalone `fetchStat`/`fetchStatURL` use an independently authorized
 HEAD and close the response body before returning metadata. They require a
-HEAD grant; a GET grant does not imply one. This does not enable range or
-conditional requests. The [signed C qualification](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/42399974726)
+HEAD grant; a GET grant does not imply one. The [signed C qualification](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/42399974726)
 passed normal HEAD metadata, denial under a GET-only grant with no peer contact,
 HTTP 404 and a fresh successful HEAD on source `ee0b60add5af`. This finite
 local-node result is not a release-publication or complete C runtime qualification.
+
+For an ordinary GET with a positive `url->offset`, the backend sends a single
+open-ended byte `Range`; the HTTP destination must explicitly allow the `range`
+request header as well as the GET path. A valid 206 must include a single
+well-formed `Content-Range` and matching `Content-Length`. Its actual start and
+body length are reported in the URL, and a known complete size in `url_stat`.
+The start may be earlier than requested; a known complete size must end at the
+last returned byte.
+If the server ignores the request and returns 200, the actual offset is zero.
+Malformed or inconsistent partial responses and 416 are errors, with no retry.
+This finite source-level range path has not yet been qualified in a signed C
+component. Conditional requests remain unsupported.
+
 `fetchReqHTTP` supports bounded string request bodies for its declared HTTP
 methods. Only the empty flags string or `A` is supported. HTTP/HTTPS transport
 and TLS validation belong to the typed provider; socket and OpenSSL APIs are
-not exposed. FTP/file schemes, redirects, list/range/conditional
+not exposed. FTP/file schemes, redirects, list/conditional
 options, authentication callbacks, proxy configuration and writable FILE streams
 refuse explicitly. Independent sharing of one FILE across threads is not qualified.
 
