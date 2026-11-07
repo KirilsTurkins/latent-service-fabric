@@ -10,6 +10,7 @@ using NativeObjectRecords = NativeRetirement<NativeOwner>;
 // A lease is the first data member of its graph wrapper. Its destructor runs
 // after callback strings/vectors/weak sets and merely records physical death.
 using NativeObjectLease = NativeLease<NativeObjectRecords>;
+using NativeObjectFrameLease = NativeFrameLease<NativeObjectRecords>;
 
 bool admit_native_object(JSContext*, NativeObjectLease&);
 

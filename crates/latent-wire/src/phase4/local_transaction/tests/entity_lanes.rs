@@ -3,6 +3,10 @@ use super::*;
 use latent_policy::capability::{MutationRequest, RecordKind};
 
 fn authorize_entity(f: &Fixture, entity: &str) {
+    authorize_entities(f, &[entity]);
+}
+
+fn authorize_entities(f: &Fixture, entities: &[&str]) {
     use latent_effects::authority::{DispatchCeiling, DispatchProfile, EffectRule, EffectScope};
     for id in ["state", "intents"] {
         let deadline = Instant::now() + Duration::from_secs(10);
@@ -23,9 +27,11 @@ fn authorize_entity(f: &Fixture, entity: &str) {
         drop(current);
         for rule in document["rules"].as_array_mut().unwrap() {
             let scopes = rule["resources"]["scopes"].as_array_mut().unwrap();
-            let mut selected = scopes[0].clone();
-            selected["entity"] = entity.into();
-            scopes.push(selected);
+            for entity in entities {
+                let mut selected = scopes[0].clone();
+                selected["entity"] = (*entity).into();
+                scopes.push(selected);
+            }
         }
         let encoded = serde_json::to_vec(&document).unwrap();
         f.policy
@@ -80,8 +86,12 @@ fn authorize_entity(f: &Fixture, entity: &str) {
 }
 
 fn entity_command(key: &str, delta: u32) -> t::InvokeCommandRequest {
+    command_for_entity(key, delta, "hot")
+}
+
+fn command_for_entity(key: &str, delta: u32, entity: &str) -> t::InvokeCommandRequest {
     let mut request = command(key, delta, false);
-    request.command.as_mut().unwrap().entity = Some("hot".into());
+    request.command.as_mut().unwrap().entity = Some(entity.into());
     request
 }
 
@@ -261,6 +271,247 @@ async fn trapped_entity_retains_its_lane_until_the_actual_abort_writer_finishes(
         .into_inner();
     success(&second);
     assert_eq!(f.executions(), 2);
+    assert_eq!(
+        f.owners
+            .as_ref()
+            .unwrap()
+            .entity_lanes_snapshot()
+            .unwrap()
+            .keys,
+        0
+    );
+    f.shutdown().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "Requires the maintained compiled Rust transaction guest"]
+async fn restart_rebuilds_empty_lanes_and_recovers_durable_entity_outcomes() {
+    let mut f = Fixture::new(false).await;
+    authorize_entity(&f, "hot");
+    let original = f
+        .adapter()
+        .invoke_command(context("alice").request(entity_command("restart-original", 1)))
+        .await
+        .unwrap()
+        .into_inner();
+    let body = success(&original);
+    let command_id = original.command.as_ref().unwrap().command_id.clone();
+    drop(original);
+    assert_eq!(
+        f.owners
+            .as_ref()
+            .unwrap()
+            .entity_lanes_snapshot()
+            .unwrap()
+            .keys,
+        0
+    );
+    assert_eq!(f.executions(), 1);
+
+    f.restart().await;
+    assert_eq!(
+        f.owners
+            .as_ref()
+            .unwrap()
+            .entity_lanes_snapshot()
+            .unwrap()
+            .keys,
+        0
+    );
+    let replay = f
+        .adapter()
+        .invoke_command(context("alice").request(entity_command("restart-original", 1)))
+        .await
+        .unwrap()
+        .into_inner();
+    assert!(replay.replayed);
+    assert_eq!(replay.command.as_ref().unwrap().command_id, command_id);
+    assert_eq!(success(&replay), body);
+    assert_eq!(f.executions(), 1);
+    drop(replay);
+    let next = f
+        .adapter()
+        .invoke_command(context("alice").request(entity_command("restart-next", 1)))
+        .await
+        .unwrap()
+        .into_inner();
+    success(&next);
+    drop(next);
+    assert_eq!(f.executions(), 2);
+    assert_eq!(
+        f.owners
+            .as_ref()
+            .unwrap()
+            .entity_lanes_snapshot()
+            .unwrap()
+            .keys,
+        0
+    );
+    f.shutdown().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "Requires the maintained compiled Rust transaction guest"]
+async fn entity_admission_rejects_the_old_incarnation_after_namespace_recreation() {
+    use latent_state::namespace::{NamespaceQuota, NamespaceTransition};
+
+    let f = Fixture::new(false).await;
+    authorize_entity(&f, "hot");
+    f.namespace_transition(NamespaceTransition::Quiesce)
+        .await
+        .unwrap();
+    f.namespace_transition(NamespaceTransition::Retire)
+        .await
+        .unwrap();
+    let old = f
+        .namespace_transition(NamespaceTransition::Destroy)
+        .await
+        .unwrap();
+    let new = f
+        .namespace_transition(NamespaceTransition::Recreate {
+            state_schema: old.state_schema,
+            quota: NamespaceQuota::default(),
+        })
+        .await
+        .unwrap();
+    assert_eq!(new.version.incarnation, 2);
+    f.authorize_incarnation(2);
+    let stale = f
+        .adapter()
+        .invoke_command(context("alice").request(entity_command("old-entity", 1)))
+        .await;
+    assert!(stale.is_err());
+    assert_eq!(f.executions(), 0);
+    assert_eq!(
+        f.owners
+            .as_ref()
+            .unwrap()
+            .entity_lanes_snapshot()
+            .unwrap()
+            .keys,
+        0
+    );
+    let mut current = entity_command("new-entity", 1);
+    current
+        .command
+        .as_mut()
+        .unwrap()
+        .namespace
+        .as_mut()
+        .unwrap()
+        .incarnation = "2".into();
+    let result = f
+        .adapter()
+        .invoke_command(context("alice").request(current))
+        .await
+        .unwrap()
+        .into_inner();
+    success(&result);
+    drop(result);
+    assert_eq!(f.executions(), 1);
+    assert_eq!(
+        f.owners
+            .as_ref()
+            .unwrap()
+            .entity_lanes_snapshot()
+            .unwrap()
+            .keys,
+        0
+    );
+    f.shutdown().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "Requires the maintained compiled Rust transaction guest"]
+async fn distinct_entity_churn_reclaims_all_live_lane_metadata() {
+    let f = Fixture::new(false).await;
+    let entities = [
+        "cold-0", "cold-1", "cold-2", "cold-3", "cold-4", "cold-5", "cold-6", "cold-7",
+    ];
+    authorize_entities(&f, &entities);
+    for entity in entities {
+        let request = command_for_entity(&format!("command-{entity}"), 1, entity);
+        let result = f
+            .adapter()
+            .invoke_command(context("alice").request(request))
+            .await
+            .unwrap()
+            .into_inner();
+        success(&result);
+        drop(result);
+        let snapshot = f.owners.as_ref().unwrap().entity_lanes_snapshot().unwrap();
+        assert_eq!((snapshot.keys, snapshot.queued, snapshot.active), (0, 0, 0));
+        assert_eq!(snapshot.retained_bytes(), 0);
+    }
+    assert_eq!(f.executions(), entities.len() as u64);
+    f.shutdown().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "Requires the maintained compiled Rust transaction guest"]
+async fn dropping_a_queued_entity_rpc_cancels_its_real_reservation() {
+    let f = Fixture::with_concurrent_commands(true).await;
+    authorize_entity(&f, "hot");
+    let first_adapter = f.adapter();
+    let first = tokio::spawn(async move {
+        first_adapter
+            .invoke_command(context("alice").request(entity_command("cancel-owner", 1)))
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(5), f.backend.imports.entered.notified())
+        .await
+        .unwrap();
+    let second_adapter = f.adapter();
+    let second = tokio::spawn(async move {
+        second_adapter
+            .invoke_command(context("alice").request(entity_command("cancel-queued", 1)))
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while f
+            .owners
+            .as_ref()
+            .unwrap()
+            .entity_lanes_snapshot()
+            .unwrap()
+            .queued
+            != 1
+        {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    second.abort();
+    assert!(second.await.is_err_and(|error| error.is_cancelled()));
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while f
+            .owners
+            .as_ref()
+            .unwrap()
+            .entity_lanes_snapshot()
+            .unwrap()
+            .queued
+            != 0
+        {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    let snapshot = f.owners.as_ref().unwrap().entity_lanes_snapshot().unwrap();
+    assert_eq!((snapshot.active, snapshot.queued), (1, 0));
+    assert_eq!(f.executions(), 1);
+    assert_eq!(f.rows(Family::Command).await, 1);
+    f.backend.imports.release.notify_one();
+    let first = tokio::time::timeout(Duration::from_secs(10), first)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap()
+        .into_inner();
+    success(&first);
+    drop(first);
     assert_eq!(
         f.owners
             .as_ref()
