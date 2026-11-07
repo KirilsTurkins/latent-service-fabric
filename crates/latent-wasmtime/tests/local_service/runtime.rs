@@ -1056,6 +1056,9 @@ mod owned_timer {
         time::{Duration, Instant},
     };
 
+    // The same finite per-allocation model used by the owned wait, not RSS.
+    const BOX_ALLOCATION_BOOKKEEPING: u64 = 64;
+
     fn original(memory: u64) -> ActivationBudget {
         let limits = ResourceBudget {
             cpu_fuel: 1_000_000,
@@ -1100,7 +1103,10 @@ mod owned_timer {
             // This actual destructor must run while its complete Box charge is
             // live. The frozen by-value field order supplies the subsequent
             // Box-deallocation-before-reservation-drop source witness.
-            assert_eq!(self.budget.host_memory_bytes(), size_of::<Self>() as u64);
+            assert_eq!(
+                self.budget.host_memory_bytes(),
+                size_of::<Self>() as u64 + BOX_ALLOCATION_BOOKKEEPING
+            );
             self.drops.fetch_add(1, Ordering::SeqCst);
         }
     }
@@ -1145,7 +1151,10 @@ mod owned_timer {
             payload: [42; 32],
         })
         .unwrap();
-        assert_eq!(budget.host_memory_bytes(), size_of::<PendingOwned>() as u64);
+        assert_eq!(
+            budget.host_memory_bytes(),
+            size_of::<PendingOwned>() as u64 + BOX_ALLOCATION_BOOKKEEPING
+        );
         assert!(Pin::new(&mut wait)
             .poll(&mut Context::from_waker(Waker::noop()))
             .is_pending());
@@ -1164,7 +1173,7 @@ mod owned_timer {
             let mut wait = timer.wait_until_owned(deadline, &budget).unwrap();
             assert_eq!(
                 budget.host_memory_bytes(),
-                size_of::<tokio::time::Sleep>() as u64
+                size_of::<tokio::time::Sleep>() as u64 + BOX_ALLOCATION_BOOKKEEPING
             );
             assert!(Pin::new(&mut wait)
                 .poll(&mut Context::from_waker(Waker::noop()))
@@ -1210,7 +1219,7 @@ mod owned_timer {
 
     #[tokio::test(start_paused = true)]
     async fn observed_inner_and_outer_refusals_and_pending_drop_preserve_originals() {
-        let sleep_bytes = size_of::<tokio::time::Sleep>() as u64;
+        let sleep_bytes = size_of::<tokio::time::Sleep>() as u64 + BOX_ALLOCATION_BOOKKEEPING;
         assert!(sleep_bytes > 1);
         for memory in [sleep_bytes - 1, sleep_bytes] {
             let budget = original(memory);
