@@ -1,0 +1,120 @@
+name: PR 1657 completed owner retirement and fresh source compiler
+on:
+  push:
+    branches: ['diag/pr1657-retirement-compiler-20261107']
+permissions:
+  contents: read
+jobs:
+  compiler:
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6
+        with:
+          node-version: 24.19.0
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          targets: wasm32-unknown-unknown
+          components: rustfmt
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce
+        with:
+          version: 1.254.0
+      - uses: KirilsTurkins/lsf-setup-zig@e064b42fa88ad0859d8b54838b44f672ffd5ea7a
+        with:
+          version: '0.16.0'
+      - name: Prepare the isolated compiler and exact clean candidate
+        run: |
+          cp .github/pr1657_retirement_candidate.py "$RUNNER_TEMP/candidate.py"
+          git checkout --detach 27164664b222bc52c88371a2225d147b3f8c020e
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/rust-http-thread-tools"
+          echo "$RUNNER_TEMP/rust-http-thread-tools" >> "$GITHUB_PATH"
+          python3 -B "$RUNNER_TEMP/candidate.py"
+          rustfmt --edition 2021 sdk/wasi-http-runtime/retirement.rs sdk/wasi-http-runtime/state.rs tools/toolchain-smoke/examples/rust_wasi_http_runtime.rs
+          git diff --check
+      - name: Execute actual retirement implementation and unchanged pump controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/pr1657-retirement"
+          rustc --edition=2021 -D warnings --test sdk/wasi-http-runtime/retirement.rs -o "$RUNNER_TEMP/retirement-control"
+          "$RUNNER_TEMP/retirement-control" --test-threads=1 2>&1 | tee "$RUNNER_TEMP/pr1657-retirement/retirement.log"
+          rustc --edition=2021 --test sdk/wasi-http-runtime/pump.rs -o "$RUNNER_TEMP/pump-control"
+          "$RUNNER_TEMP/pump-control" --test-threads=1 2>&1 | tee "$RUNNER_TEMP/pr1657-retirement/pump.log"
+          python3 -B -m unittest tools.tests.test_rust_thread_http_sibling tools.tests.test_rust_thread_http_sibling_compiler tools.tests.test_rust_thread_http_sibling_retention tools.tests.test_rust_wasi_http_inputs_prepared tools.tests.test_rust_wasi_http_profile -v 2>&1 | tee "$RUNNER_TEMP/pr1657-retirement/source-controls.log"
+          python3 -B -c 'from tools.ci_coverage import validate; validate(); print("Maintained CI contracts passed")'
+          git add sdk/wasi-http-runtime/retirement.rs sdk/wasi-http-runtime/state.rs tools/toolchain-smoke/examples/rust_wasi_http_runtime.rs
+          git diff --cached --binary > "$RUNNER_TEMP/pr1657-retirement/source.patch"
+      - name: Store only the tested three-file source commit without moving any branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STORE_TESTED_SOURCE: '1'
+        run: python3 -B "$RUNNER_TEMP/candidate.py"
+      - name: Bind compilation to the stored clean source identity
+        run: |
+          git reset --hard
+          git fetch --depth=1 origin "$EXPECTED_HEAD"
+          git checkout --detach "$EXPECTED_HEAD"
+          test -z "$(git status --porcelain)"
+          git archive --format=tar.gz --output "$RUNNER_TEMP/pr1657-retirement/source.tar.gz" HEAD sdk/wasi-http-runtime/retirement.rs sdk/wasi-http-runtime/state.rs tools/toolchain-smoke/examples/rust_wasi_http_runtime.rs
+      - name: Acquire exact diagnostic-only composer and locked SDK sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/rust-http-thread-composer"
+          curl --fail --location --max-time 180 https://github.com/bytecodealliance/wac/releases/download/v0.11.0/wac-cli-x86_64-unknown-linux-musl --output "$RUNNER_TEMP/rust-http-thread-composer/wac"
+          printf '%s  %s\n' 83259349b630f79a60490322b068e7ad2dba784720b0d467decccc0aecc743b5 "$RUNNER_TEMP/rust-http-thread-composer/wac" | sha256sum --check --strict
+          test "$(stat --format=%s "$RUNNER_TEMP/rust-http-thread-composer/wac")" -eq 22917648
+          chmod 0700 "$RUNNER_TEMP/rust-http-thread-composer/wac"
+          cargo fetch --locked --target wasm32-unknown-unknown --target x86_64-unknown-linux-gnu
+      - name: Build current source-bound owned thread compiler inputs
+        run: >-
+          python3 -B tools/compile_rust_owned_thread_inputs.py --expected-head "$EXPECTED_HEAD"
+          --rust-bin "$(dirname "$(rustup which rustc)")" --output "$RUNNER_TEMP/rust-http-thread-owned"
+      - name: Build source-matched callback-safe adapter with actual EOF retirement
+        run: python3 -B tools/rust_wasi_http_inputs.py --output "$RUNNER_TEMP/rust-http-thread-http"
+      - name: Build current source-bound contracts helper
+        run: >-
+          python3 -B tools/rust_thread_http_sibling_contracts.py --expected-head "$EXPECTED_HEAD"
+          --rust-bin "$(dirname "$(rustup which rustc)")" --output "$RUNNER_TEMP/rust-http-thread-contracts"
+      - name: Capture and compile actual two-pool application with all unchanged limits
+        run: >-
+          python3 -B tools/compile_rust_thread_http_sibling.py --expected-head "$EXPECTED_HEAD"
+          --rust-bin "$(dirname "$(rustup which rustc)")"
+          --owned-sysroot "$RUNNER_TEMP/rust-http-thread-owned/owned-sysroot"
+          --context-tool "$RUNNER_TEMP/rust-http-thread-owned/tool/rust-context"
+          --owned-report "$RUNNER_TEMP/rust-http-thread-owned/report.json"
+          --owned-source "$RUNNER_TEMP/rust-http-thread-owned/source-inputs.json"
+          --http-runtime "$RUNNER_TEMP/rust-http-thread-http"
+          --diagnostic-composer "$RUNNER_TEMP/rust-http-thread-composer/wac"
+          --contracts-tool "$RUNNER_TEMP/rust-http-thread-contracts/capsule_contracts"
+          --contracts-receipt "$RUNNER_TEMP/rust-http-thread-contracts/report.json"
+          --output "$RUNNER_TEMP/rust-http-thread-combined"
+      - name: Admit only bounded public compiler and source observations
+        if: always()
+        run: python3 -B tools/rust_thread_http_sibling_retention.py --root "$RUNNER_TEMP" --output "$RUNNER_TEMP/rust-http-thread-public"
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        if: always()
+        with:
+          name: pr1657-retirement-compiler-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/rust-http-thread-public/**
+            ${{ runner.temp }}/pr1657-retirement/**
+          retention-days: 7
+          if-no-files-found: error
