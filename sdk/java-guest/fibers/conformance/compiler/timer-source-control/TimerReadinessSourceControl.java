@@ -206,6 +206,28 @@ public final class TimerReadinessSourceControl {
         set("poisoned", false); set("entered", true);
         pool.retire();
     }
+    private static void uncertainResultPoisons() throws Exception {
+        Object root = get("root"), threads = get("threads"), pools = get("pools");
+        int originalOwners = owners();
+        int originalThreads = ((Map<?, ?>)threads).size(), originalPools = ((List<?>)pools).size();
+        require(root != null && originalThreads > 0 && !(boolean)get("poisoned"), "initial-result-fence-clear");
+        Activation.fenceUncertainResultSettlement();
+        var completion = Activation.class.getDeclaredMethod("requireHealthyCompletion"); completion.setAccessible(true);
+        try { completion.invoke(null); throw new AssertionError("uncertain-result-completed"); }
+        catch (java.lang.reflect.InvocationTargetException expected) {
+            require(expected.getCause() instanceof IllegalStateException
+                && expected.getCause().getMessage().equals("activation-runtime-result-settlement-uncertain"), "uncertain-result-completion-refused");
+        }
+        var finish = Activation.class.getDeclaredMethod("finishInvocation"); finish.setAccessible(true); finish.invoke(null);
+        require((boolean)get("poisoned") && !(boolean)get("entered") && get("root") == root
+            && get("threads") == threads && ((Map<?, ?>)threads).size() == originalThreads
+            && get("pools") == pools && ((List<?>)pools).size() == originalPools && owners() == originalOwners,
+            "uncertain-result-poisons-and-preserves-store");
+        try { Activation.invoke(0, null, 0); throw new AssertionError("uncertain-result-store-reentered"); }
+        catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-runtime-poisoned-store"), "uncertain-result-reentry-refused"); }
+        // Private control only: simulate a fresh Store for the remaining cases.
+        set("poisoned", false); set("entered", true);
+    }
     private static void failedInsertionsAndPoison() throws Exception {
         set("closing", false); set("retiringPools", false); set("rootComplete", false);
         @SuppressWarnings("unchecked") Map<Thread, Object> threads = (Map<Thread, Object>)get("threads");
@@ -317,8 +339,9 @@ public final class TimerReadinessSourceControl {
         require(Monitors.absoluteSleepDeadline(Long.MAX_VALUE - 1, 2) == Long.MAX_VALUE, "pure-saturation-preserved");
         managedStartRollback();
         poolRetirement();
+        uncertainResultPoisons();
         failedStartedWorkerPoisons();
         failedInsertionsAndPoison();
-        System.out.println("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback");
+        System.out.println("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence");
     }
 }

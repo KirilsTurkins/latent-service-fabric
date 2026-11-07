@@ -42,7 +42,7 @@ public static partial class ManagedWorkRuntime
         internal object Item = null!;
         internal Record Owner = null!;
         internal (ulong Generation, ulong Id) Token;
-        internal bool SettlementAttempted;
+        internal bool Uncertain;
     }
 
     private sealed class Required
@@ -256,8 +256,8 @@ public static partial class ManagedWorkRuntime
         {
             if (queued![i] is { } existing && ReferenceEquals(existing.Item, item))
             {
-                if (existing.SettlementAttempted)
-                    throw new InvalidOperationException("managed-work-queue-settlement-uncertain");
+                if (existing.Uncertain)
+                    throw new InvalidOperationException("managed-work-queue-uncertain");
                 if (FindTimer(item) is null) throw new InvalidOperationException("managed-work-duplicate-enqueue");
             }
             if (index < 0 && queued[i] is null) index = i;
@@ -300,34 +300,26 @@ public static partial class ManagedWorkRuntime
     public static void EnqueueFailed(object item)
     {
         if (!installed) return;
-        foreach (var existing in queued!)
-            if (existing is not null && ReferenceEquals(existing.Item, item) && existing.SettlementAttempted)
-                throw new InvalidOperationException("managed-work-queue-settlement-uncertain");
-        for (int i = 0; i < MaximumQueued; i++)
-            if (queued![i] is { } pending && ReferenceEquals(pending.Item, item))
-            {
-                // The host may have settled before trapping; retain this
-                // exact queue record but never submit its token again.
-                pending.SettlementAttempted = true;
-                settle!(pending.Token.Generation, pending.Token.Id);
-                queued[i] = null;
-                if (pending.Owner.Completion is null && !pending.Owner.Root) Release(pending.Owner);
-                return;
-            }
+        // The original queue can throw after insertion. It passes only the
+        // item to this hook, so duplicate occurrences cannot be distinguished.
+        // Keep all matching owners charged and refuse further use until teardown.
+        foreach (var pending in queued!)
+            if (pending is not null && ReferenceEquals(pending.Item, item))
+                pending.Uncertain = true;
     }
 
     public static void Dequeue(object item)
     {
         if (!installed) return;
         foreach (var existing in queued!)
-            if (existing is not null && ReferenceEquals(existing.Item, item) && existing.SettlementAttempted)
-                throw new InvalidOperationException("managed-work-queue-settlement-uncertain");
+            if (existing is not null && ReferenceEquals(existing.Item, item) && existing.Uncertain)
+                throw new InvalidOperationException("managed-work-queue-uncertain");
         for (int i = 0; i < MaximumQueued; i++)
             if (queued![i] is { } pending && ReferenceEquals(pending.Item, item))
             {
                 // The host may have settled before trapping; retain this
                 // exact queue record but never submit its token again.
-                pending.SettlementAttempted = true;
+                pending.Uncertain = true;
                 settle!(pending.Token.Generation, pending.Token.Id);
                 queued[i] = null;
                 return;
