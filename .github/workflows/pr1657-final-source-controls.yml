@@ -1,0 +1,56 @@
+name: PR 1657 corrected fixture source controls
+on:
+  push:
+    branches: ['diag/pr1657-final-source-20261107']
+permissions:
+  contents: read
+jobs:
+  controls:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
+        with:
+          python-version: 3.13.5
+      - name: Validate exact clean candidate without carrying this diagnostic workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git worktree add --detach "$RUNNER_TEMP/pr1657-final-source" 3297d3946dbbfd60027ceec9c550e228ad70960d
+          cd "$RUNNER_TEMP/pr1657-final-source"
+          mkdir "$RUNNER_TEMP/pr1657-final-proof"
+          python3 -m pip install --requirement tools/requirements.lock
+          git diff --check 5462d84a8797c73c21db1630161714b5521ed470 HEAD
+          python3 -B tools/ci_coverage.py 2>&1 | tee "$RUNNER_TEMP/pr1657-final-proof/contracts.txt"
+          python3 -B - <<'PY' 2>&1 | tee "$RUNNER_TEMP/pr1657-final-proof/python.txt"
+          from pathlib import Path
+          import hashlib, unittest
+          for name, expected in (
+              ('rust_http_pump_control.rs', 'abeaffcdd4ee4a2b695b293b7717db588e0214cd'),
+              ('rust_http_pump_probe.rs', '60e240bb6c336fb93441ed8718f26e1fffd170cd')):
+              value=(Path('tools/toolchain-smoke/examples')/name).read_bytes()
+              assert hashlib.sha1(b'blob '+str(len(value)).encode()+b'\0'+value).hexdigest()==expected
+          names={path.stem for path in Path('tools/tests').glob('test_rust*combined*.py')}
+          names.update(('test_rust_thread_http_sibling','test_rust_wasi_http_profile','test_rust_wasi_http_inputs_prepared'))
+          suite=unittest.defaultTestLoader.loadTestsFromNames(['tools.tests.'+name for name in sorted(names)])
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          if not result.wasSuccessful(): raise SystemExit(1)
+          print('Clean candidate source: 3297d3946dbbfd60027ceec9c550e228ad70960d')
+          print('Compiled probe source equals the successful ordinary/native-profile control artifact.')
+          print('Fixture source tests are not a new application compiler or signed execution result.')
+          PY
+          git rev-parse HEAD HEAD^{tree} > "$RUNNER_TEMP/pr1657-final-proof/source.txt"
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        if: always()
+        with:
+          name: pr1657-final-source-${{ github.sha }}
+          path: ${{ runner.temp }}/pr1657-final-proof/**
+          if-no-files-found: warn
+          retention-days: 3
+          compression-level: 6
