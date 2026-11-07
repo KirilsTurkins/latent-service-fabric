@@ -642,46 +642,66 @@ impl Fixture {
         reservations
     }
     pub async fn drop_duplicate_during_native_lookup(&self) {
-        use std::{
-            future::{poll_fn, Future},
-            sync::{Condvar, Mutex},
-            task::Poll,
-        };
+        use std::sync::{Condvar, Mutex};
         let gate = Arc::new((Mutex::new(false), Condvar::new()));
-        let retained = Arc::clone(&gate);
-        let (entered, entry) = tokio::sync::oneshot::channel();
-        let worker = self
-            .store
-            .with_store(StoreIoKind::Read, 64, move |_store| {
-                entered.send(()).unwrap();
-                let lock = retained.0.lock().unwrap();
-                let (lock, timeout) = retained
-                    .1
-                    .wait_timeout_while(lock, Duration::from_secs(5), |released| !*released)
-                    .unwrap();
-                assert!(*lock && !timeout.timed_out());
-                Ok(())
-            })
-            .unwrap();
-        tokio::time::timeout(Duration::from_secs(5), entry)
-            .await
-            .unwrap()
-            .unwrap();
+        let mut workers = Vec::new();
+        let mut entries = Vec::new();
+        // The protected fixture admits two concurrent ordinary reads. Occupy
+        // both slots before claiming that a duplicate lookup is blocked.
+        for _ in 0..self.config.io.active_reads {
+            let retained = Arc::clone(&gate);
+            let (entered, entry) = tokio::sync::oneshot::channel();
+            workers.push(
+                self.store
+                    .with_store(StoreIoKind::Read, 64, move |_store| {
+                        entered.send(()).unwrap();
+                        let lock = retained.0.lock().unwrap();
+                        let (lock, timeout) = retained
+                            .1
+                            .wait_timeout_while(lock, Duration::from_secs(15), |released| {
+                                !*released
+                            })
+                            .unwrap();
+                        assert!(*lock && !timeout.timed_out());
+                        Ok(())
+                    })
+                    .unwrap(),
+            );
+            entries.push(entry);
+        }
+        for entry in entries {
+            tokio::time::timeout(Duration::from_secs(5), entry)
+                .await
+                .unwrap()
+                .unwrap();
+        }
+        let occupied = self.store.snapshot().unwrap();
+        assert_eq!(occupied.active_reads, self.config.io.active_reads);
+        assert_eq!(occupied.queued, 0);
         let adapter = self.adapter();
         let mut duplicate =
             Box::pin(adapter.invoke_command(context("alice").request(command("same", 1, false))));
-        poll_fn(|cx| {
-            assert!(
-                duplicate.as_mut().poll(cx).is_pending(),
-                "the real native lookup remains blocked"
-            );
-            Poll::Ready(())
+        // Wait until actual storage work is queued, not merely until some
+        // earlier async admission step first returns Pending.
+        tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                tokio::select! {
+                    outcome = duplicate.as_mut() => panic!("duplicate completed before the blocked lookup: {outcome:?}"),
+                    () = tokio::task::yield_now() => {}
+                }
+                if self.store.snapshot().is_ok_and(|snapshot| snapshot.queued > 0) {
+                    break;
+                }
+            }
         })
-        .await;
+        .await
+        .unwrap();
         drop(duplicate);
         *gate.0.lock().unwrap() = true;
-        gate.1.notify_one();
-        worker.await.unwrap().unwrap();
+        gate.1.notify_all();
+        for worker in workers {
+            worker.await.unwrap().unwrap();
+        }
         tokio::time::timeout(Duration::from_secs(5), async {
             while self.quotas.usage().unwrap().active_activations != 1 {
                 tokio::task::yield_now().await;
