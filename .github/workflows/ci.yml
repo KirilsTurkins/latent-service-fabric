@@ -402,6 +402,12 @@ jobs:
           python3 -m unittest tools.tests.test_phase3_security
           mkdir -p target/phase3-security
           python3 tools/phase3_security.py --profile pr --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --source-commit "$GITHUB_SHA" --output target/phase3-security/pr-receipt.json
+      - name: Verify linked local payload recovery and corruption refusal
+        if: matrix.lane == 'qualification'
+        timeout-minutes: 15
+        env:
+          TMPDIR: ${{ runner.temp }}
+        run: python3 tools/qualify_local_payload_recovery.py
       - name: Retain the bounded Phase 3 security receipt
         if: always() && matrix.lane == 'qualification'
         uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes

@@ -20,6 +20,7 @@ impl ProviderRuntime {
         _deployments: &Arc<DirectoryDeploymentRepository>,
         _policies: Arc<PolicyStore>,
         _services: ProviderServices,
+        _state_bootstrap: Option<&mut crate::standalone::state::StateBootstrap>,
     ) -> Result<Self, PlatformError> {
         Err(unsupported())
     }

@@ -81,6 +81,7 @@ impl ProviderRuntime {
         deployments: &Arc<DirectoryDeploymentRepository>,
         policies: Arc<PolicyStore>,
         services: ProviderServices,
+        mut state_bootstrap: Option<&mut crate::standalone::state::StateBootstrap>,
     ) -> Result<Self, PlatformError> {
         let config = settings.providers.as_ref().ok_or_else(unavailable)?;
         let broker = Arc::new(
@@ -275,6 +276,18 @@ impl ProviderRuntime {
                 )
                 .await?;
                 let store = job.wait().await?.map_err(|_| unavailable())?;
+                let store = if let Some(bootstrap) = state_bootstrap.as_deref_mut() {
+                    bootstrap
+                        .open_store_with_local_payloads(
+                            settings.state.as_ref().ok_or_else(unavailable)?,
+                            store,
+                            blob.identity.clone(),
+                            root.clone(),
+                        )
+                        .await?
+                } else {
+                    store
+                };
                 let provider = LocalBlobProvider::install(
                     owner.pools.clone(),
                     &blob.identity.id,

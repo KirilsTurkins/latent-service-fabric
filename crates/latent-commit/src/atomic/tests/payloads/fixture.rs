@@ -41,6 +41,12 @@ impl Fixture {
         Self::with_state_limit(None)
     }
     pub fn with_state_limit(maximum_file_bytes: Option<u64>) -> Self {
+        Self::with_limits(maximum_file_bytes, false)
+    }
+    pub fn for_standalone_recovery() -> Self {
+        Self::with_limits(None, true)
+    }
+    fn with_limits(maximum_file_bytes: Option<u64>, standalone: bool) -> Self {
         let authority = authority::Fixture::new(CapabilityBrokerLimits::default());
         let root = tempfile::tempdir().unwrap();
         let path = root.path().join("state.redb");
@@ -119,9 +125,9 @@ impl Fixture {
         std::fs::create_dir(&blobs).unwrap();
         use std::os::unix::fs::PermissionsExt;
         std::fs::set_permissions(&blobs, std::fs::Permissions::from_mode(0o700)).unwrap();
-        let store = LocalBlobStore::open_durable(
-            &blobs,
-            "private",
+        let limits = if standalone {
+            LocalBlobLimits::default()
+        } else {
             LocalBlobLimits {
                 maximum_objects: 4,
                 maximum_object_bytes: 64,
@@ -131,10 +137,9 @@ impl Fixture {
                 maximum_handles: 8,
                 maximum_chunk_bytes: 8,
                 ..LocalBlobLimits::default()
-            },
-            &state,
-        )
-        .unwrap();
+            }
+        };
+        let store = LocalBlobStore::open_durable(&blobs, "private", limits, &state).unwrap();
         let mut writer = store
             .create(
                 &TenantId("a".into()),

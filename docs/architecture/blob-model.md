@@ -37,3 +37,18 @@ transaction store retained a payload or grant a dispatcher access to it.
 Strict commands reject unreviewed immediate writes; they stage approved intents
 instead. Snapshot/GC must preserve the actual linked payload closure in the
 selected engine, independently of application result expiry or raw-cache eviction.
+
+For an existing qualified local retention root, standalone startup binds the
+same opened blob owner to the initializing state engine. Before publishing the
+provider or state consumers, it checks the linked ownership records, current
+provider identity and epoch, and the actual immutable bytes under the original
+startup deadline. Missing, corrupt, foreign, or unverified required payloads
+refuse startup. An ordinary local root does not acquire durable retention mode
+implicitly, and S3 references are not qualified for this durable path.
+
+The lower-level commit and recovery owners can retain verified local payload
+attachments, but attaching them through the guest transaction runtime remains
+unimplemented. Orphan reconciliation and complete backup/migration closure also
+remain separate work. On Linux, `python3 tools/qualify_local_payload_recovery.py`
+exercises a committed local result attachment across protected startup and
+checks that subsequent physical corruption refuses recovery.

@@ -6,6 +6,94 @@ use fixture::Fixture;
 const CHILD_BOUNDARY: &[u8] = b"PAYLOAD_PROCESS_BOUNDARY";
 const CHILD_TEST: &str = "atomic::tests::payloads::owned_payload_process_child";
 
+/// Producer for the separate standalone protected-startup qualification. The
+/// orchestrator owns and removes the temporary parent after both processes exit.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[ignore = "Requires the standalone linked-payload qualification orchestrator"]
+async fn export_standalone_linked_payload() {
+    use std::io::Write;
+    let report = std::path::PathBuf::from(
+        std::env::var_os("LSF_LINKED_PAYLOAD_REPORT").expect("orchestrator report path"),
+    );
+    assert_eq!(
+        std::fs::canonicalize(report.parent().unwrap()).unwrap(),
+        std::fs::canonicalize(std::env::temp_dir()).unwrap()
+    );
+    let fixture = Fixture::for_standalone_recovery();
+    let claim = fixture.claim("standalone-recovery-proof");
+    let view = fixture.state.snapshot().unwrap();
+    let envelope = CompleteEnvelope::success(
+        &view,
+        claim,
+        None,
+        vec![],
+        value(b"body"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap();
+    let pin = fixture.capture().await;
+    let envelope = envelope
+        .attach_verified_payloads(
+            &view,
+            &fixture.session,
+            vec![PayloadAttachment {
+                target: PayloadAttachmentTarget::Result,
+                payload: pin,
+            }],
+        )
+        .unwrap();
+    drop(view);
+    assert!(matches!(
+        envelope.publish_with_payloads(&fixture.state, |authorities, payloads| {
+            fixture
+                .session
+                .check_liveness()
+                .map_err(|_| AtomicError::PermissionDenied)?;
+            for payload in payloads {
+                if !payload.uses_session(&fixture.session)
+                    || !payload
+                        .matches_provider(&fixture.session)
+                        .map_err(|_| AtomicError::PermissionDenied)?
+                {
+                    return Err(AtomicError::PermissionDenied);
+                }
+            }
+            let _fence = fixture.effects.commit_fence(
+                authorities,
+                EffectTime {
+                    unix_millis: 200,
+                    continuity_proven: true,
+                },
+            )?;
+            Ok(())
+        }),
+        PreparedDisposition::Confirmed { .. }
+    ));
+    let Fixture {
+        authority,
+        provider,
+        state,
+        blob: _,
+        session,
+        effects,
+        _root: root,
+    } = fixture;
+    drop(session);
+    drop(provider);
+    drop(effects);
+    drop(authority);
+    drop(state);
+    let path = root.keep();
+    std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(report)
+        .unwrap()
+        .write_all(path.as_os_str().as_encoded_bytes())
+        .unwrap();
+}
+
 fn stop_at_boundary() -> ! {
     use std::io::Write;
     println!("{}", std::str::from_utf8(CHILD_BOUNDARY).unwrap());
