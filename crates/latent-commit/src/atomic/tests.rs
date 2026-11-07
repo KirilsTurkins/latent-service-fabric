@@ -620,6 +620,22 @@ fn physical_retirement_required_before_durable_abort_and_concurrent_explicit_ret
     ));
     drop(view);
     let view = store.snapshot().unwrap();
+    assert!(matches!(
+        PreparedAdmission::retry(
+            &view,
+            &input("retry"),
+            &request(),
+            time(102),
+            |access, _| {
+                if access == CommandAccess::Replay {
+                    Err(AtomicError::PermissionDenied)
+                } else {
+                    Ok(())
+                }
+            }
+        ),
+        Err(AtomicError::PermissionDenied)
+    ));
     let AdmissionDecision::Existing(existing) =
         PreparedAdmission::retry(&view, &input("retry"), &request(), time(102), permission)
             .unwrap()

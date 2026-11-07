@@ -412,6 +412,7 @@ impl PreparedAdmission {
                 .get(&attempt_row_key(identity, receipt.attempt))?
                 .ok_or(AtomicError::Corrupt)?;
             let record = CommandRecord::decode(&bytes)?;
+            authorize(CommandAccess::Replay, Some(&record))?;
             if record.key != input.key || record.fingerprint != fingerprint {
                 return Err(AtomicError::Corrupt);
             }
