@@ -1,0 +1,103 @@
+name: PR 1657 callback-safe pump candidate
+on:
+  push:
+    branches: ['diag/pr1657-pump-candidate-20261107']
+permissions:
+  contents: write
+jobs:
+  controls:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          targets: wasm32-unknown-unknown
+          components: rustfmt
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce
+        with:
+          version: 1.254.0
+      - name: Prepare exact candidate and run native bounded-state controls
+        run: |
+          set -euo pipefail
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B .github/pr1657_pump_candidate.py
+          python3 -B - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          names=json.loads((Path(os.environ['RUNNER_TEMP'])/'pr1657-pump/files.json').read_text())
+          for name in names:
+              if name.endswith('.rs'):
+                  subprocess.run(['rustfmt', '--edition', '2021', '--config', 'skip_children=true', name],check=True)
+          PY
+          rustc --edition=2021 --test sdk/wasi-http-runtime/pump.rs -o "$RUNNER_TEMP/pr1657-pump/native-controls"
+          "$RUNNER_TEMP/pr1657-pump/native-controls" | tee "$RUNNER_TEMP/pr1657-pump/native-controls.txt"
+          git diff --check
+      - name: Compile actual pump probe and standard adapter
+        run: |
+          set -euo pipefail
+          cargo build --locked -p latent-toolchain-smoke --target wasm32-unknown-unknown --example rust-http-pump-probe --example rust-wasi-http-runtime --features rust-wasi-http-cooperative --release 2>&1 | tee "$RUNNER_TEMP/pr1657-pump/guest-build.txt"
+          wasm-tools component new target/wasm32-unknown-unknown/release/examples/rust_http_pump_probe.wasm -o "$RUNNER_TEMP/pr1657-pump/probe.wasm"
+          wasm-tools validate --features all "$RUNNER_TEMP/pr1657-pump/probe.wasm"
+          wasm-tools component new target/wasm32-unknown-unknown/release/examples/rust_wasi_http_runtime.wasm -o "$RUNNER_TEMP/pr1657-pump/runtime.wasm"
+          wasm-tools validate --features all "$RUNNER_TEMP/pr1657-pump/runtime.wasm"
+      - name: Execute actual compiled guest sibling and cancellation controls
+        run: |
+          set -euo pipefail
+          cargo --config .cargo/managed-guest.toml --config profile.dev.opt-level=1 run --locked -p latent-toolchain-smoke --example rust-http-pump-control -- "$RUNNER_TEMP/pr1657-pump/probe.wasm" 2>&1 | tee "$RUNNER_TEMP/pr1657-pump/compiled-controls.txt"
+      - name: Store only tested source objects without moving a branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -B - <<'PY'
+          from pathlib import Path
+          import json, os, subprocess, urllib.request
+          root=Path(os.environ['RUNNER_TEMP'])/'pr1657-pump'
+          names=json.loads((root/'files.json').read_text())
+          entries=[]
+          for name in names:
+              text=Path(name).read_text()
+              assert len(text.encode()) < 4*1024*1024
+              entries.append({'path':name,'mode':'100644','type':'blob','content':text})
+          body={'base_tree':'8e0b1f258484839bb6d1d202589a43a140e8e863','tree':entries}
+          request=urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/trees', data=json.dumps(body).encode(), headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'], 'Accept':'application/vnd.github+json','Content-Type':'application/json'}, method='POST')
+          with urllib.request.urlopen(request,timeout=60) as response: result=json.load(response)
+          (root/'tested-tree.json').write_text(json.dumps({'sha':result['sha'], 'base':'480f9f15ed0e01e7283e862c1cb79312c298320b','files':names},indent=2)+'\n')
+          print('TESTED_CANDIDATE_TREE',result['sha'])
+          PY
+      - name: Retain exact prepared source and changes
+        if: always()
+        run: |
+          python3 -B - <<'PY'
+          from pathlib import Path
+          import json, os, shutil, subprocess
+          root=Path(os.environ['RUNNER_TEMP'])/'pr1657-pump'
+          root.mkdir(exist_ok=True)
+          path=root/'files.json'
+          if path.is_file():
+              for name in json.loads(path.read_text()):
+                  destination=root/'source'/name
+                  destination.parent.mkdir(parents=True,exist_ok=True)
+                  shutil.copyfile(name,destination)
+          (root/'candidate.patch').write_bytes(subprocess.check_output(['git','diff','--binary']))
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        if: always()
+        with:
+          name: pr1657-pump-${{ github.sha }}
+          path: ${{ runner.temp }}/pr1657-pump/**
+          if-no-files-found: error
+          retention-days: 3
+          compression-level: 6
