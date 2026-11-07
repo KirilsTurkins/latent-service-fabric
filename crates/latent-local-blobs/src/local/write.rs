@@ -212,11 +212,13 @@ impl LocalBlobWriter {
             return Ok(result);
         }
         let mut pending = {
-            let state = inner.state()?;
+            let mut state = inner.state()?;
             if state.objects.len() == inner.limits.maximum_objects {
                 return Err(LocalBlobError::Capacity);
             }
             inner.room(&state, OBJECT_BYTES)?;
+            // Invalidate descriptive inventories before an irreversible publish.
+            state.advance_inventory()?;
             inner.pending_objects.fetch_add(1, Ordering::AcqRel);
             PendingObject {
                 inner: inner.clone(),

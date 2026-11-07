@@ -3,6 +3,7 @@
 //! Public references are data; capability adapters supply current tenant authority.
 mod durable;
 pub(crate) mod fs;
+mod inventory;
 mod model;
 mod read;
 mod reclaim;
@@ -10,6 +11,7 @@ mod recovery;
 mod write;
 
 pub use durable::{LocalDurablePin, RequiredBlobInventory};
+pub use inventory::{LocalReferenceInventory, LocalReferencePage};
 use latent_core::TenantId;
 pub use model::{LocalBlobError, LocalBlobLimits, LocalBlobSnapshot};
 use model::{ReferenceRecord, Result};
@@ -57,12 +59,22 @@ struct Inner {
 #[derive(Default)]
 struct State {
     objects: BTreeMap<String, Arc<Object>>,
+    inventory_generation: u64,
     stages: BTreeMap<u64, Stage>,
     next: u64,
     resident: u64,
     reserved: u64,
     referenced: usize,
     durable_mode: bool,
+}
+impl State {
+    fn advance_inventory(&mut self) -> Result<()> {
+        self.inventory_generation = self
+            .inventory_generation
+            .checked_add(1)
+            .ok_or(LocalBlobError::Capacity)?;
+        Ok(())
+    }
 }
 struct Object {
     record: Option<ReferenceRecord>,

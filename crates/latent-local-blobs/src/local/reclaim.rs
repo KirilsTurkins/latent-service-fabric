@@ -44,10 +44,16 @@ impl LocalBlobStore {
         let key = record.key();
         {
             let mut state = self.inner.state()?;
-            let object = state.objects.get(&key).ok_or(LocalBlobError::NotFound)?;
-            if !object.referenced.swap(false, Ordering::AcqRel) {
+            let object = state
+                .objects
+                .get(&key)
+                .cloned()
+                .ok_or(LocalBlobError::NotFound)?;
+            if !object.referenced.load(Ordering::Acquire) {
                 return Ok(false);
             }
+            state.advance_inventory()?;
+            object.referenced.store(false, Ordering::Release);
             state.referenced -= 1;
         }
         let result = (|| {
@@ -114,6 +120,8 @@ impl LocalBlobStore {
         let mut result = LocalBlobReclamation::default();
         for key in objects {
             checkpoint()?;
+            // A failed physical retirement still invalidates an observation.
+            self.inner.state()?.advance_inventory()?;
             remove(
                 &self.inner.objects,
                 &key,

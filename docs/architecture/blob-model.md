@@ -52,3 +52,12 @@ unimplemented. Orphan reconciliation and complete backup/migration closure also
 remain separate work. On Linux, `python3 tools/qualify_local_payload_recovery.py`
 exercises a committed local result attachment across protected startup and
 checks that subsequent physical corruption refuses recovery.
+
+The local provider also exposes a tenant-scoped, bounded reference inventory for
+trusted recovery owners. Each cursor and returned page retains a native work
+slot; pages visit at most 64 physical entries and become stale after publication,
+release or reclamation changes. The host must authorize the tenant separately.
+This inventory describes references only: an absent reference or a completed
+walk grants neither blob access nor permission to reclaim an orphan. A future
+reconciliation owner must still establish current durable closure and physical
+retirement before any deletion.
