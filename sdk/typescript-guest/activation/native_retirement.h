@@ -50,6 +50,14 @@ public:
     record->physical = false;
   }
 
+  // Only a non-GC native frame may use this after its entire owned body has
+  // unwound. No host call occurs here; the next safe checkpoint acknowledges it.
+  static void frameRetired(Record* record) {
+    if (!record) return;
+    record->physical = false;
+    record->collection_completed = true;
+  }
+
   void collectionCompleted() {
     for (auto* record = records_.get(); record; record = record->next.get())
       if (!record->physical) record->collection_completed = true;
@@ -102,7 +110,10 @@ public:
   }
 };
 
+template<class Records> class NativeFrameLease;
+
 template<class Records> class NativeLease final {
+  friend class NativeFrameLease<Records>;
   typename Records::Record* record_ = nullptr;
 public:
   NativeLease() = default;
@@ -116,6 +127,23 @@ public:
     return true;
   }
   ~NativeLease() { Records::physicallyRetired(record_); }
+};
+
+// Declared before a stack-owned body: C++ destroys the body first, then marks
+// only this non-GC frame retired. Copies and moves cannot duplicate custody.
+template<class Records> class NativeFrameLease final {
+  NativeLease<Records> lease_;
+public:
+  NativeFrameLease() = default;
+  NativeFrameLease(const NativeFrameLease&) = delete;
+  NativeFrameLease& operator=(const NativeFrameLease&) = delete;
+  NativeFrameLease(NativeFrameLease&&) = delete;
+  NativeFrameLease& operator=(NativeFrameLease&&) = delete;
+  NativeLease<Records>& lease() { return lease_; }
+  ~NativeFrameLease() {
+    Records::frameRetired(lease_.record_);
+    lease_.record_ = nullptr;
+  }
 };
 
 template<class Records,class T> struct OwnedNativeContainer final {

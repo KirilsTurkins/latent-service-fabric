@@ -27,7 +27,8 @@ impl PreparationReadWait for CurrentnessReadTimer {
         deadline: Instant,
         budget: &ActivationBudget,
     ) -> Result<OwnedPreparationWait<'a>, PlatformError> {
-        // Only the actual Sleep Box is prepaid here, before Sleep construction.
+        // The Sleep Box and modelled allocation bookkeeping are prepaid before
+        // Sleep construction.
         // Under the pinned traditional timer, TimerEntry/TimerShared are inline
         // and native Drop unregisters before this Box is deallocated. Existing
         // paid caller Wakers retain their own charge. This does not certify
