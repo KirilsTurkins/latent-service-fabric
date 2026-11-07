@@ -22,7 +22,7 @@ internal static class ReserveBridgeControl
             && IOwnerImports.LastGeneration == 17 && IOwnerImports.LastId == 29);
         if (mode == "ok")
             Need(failure is null && value is ValueTuple<ulong, ulong> result && result == (41UL, 59UL));
-        else if (mode == "refusal" && kind is 0 or 3 or 6)
+        else if (mode == "refusal" && kind is 0 or 3 or 5 or 6)
             Need(failure is null && value is ValueTuple<ulong, ulong> result && result == default);
         else if (mode == "refusal")
             Need(failure?.GetType() == typeof(InvalidOperationException)

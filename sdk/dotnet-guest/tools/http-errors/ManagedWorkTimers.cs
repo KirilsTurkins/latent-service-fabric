@@ -18,6 +18,8 @@ public static partial class ManagedWorkRuntime
     // Allocated once beneath the existing native-owned bounded metadata table.
     // Original TimerQueueTimer instances remain owned by their original BCL.
     private static TimerOwner?[]? timers;
+    // Erased by the compiler unless the source-control fixture supplies it.
+    static partial void TimerAllocationControl();
 
     private static TimerOwner? FindTimer(object item)
     {
@@ -38,17 +40,56 @@ public static partial class ManagedWorkRuntime
             existing.Mutation++;
             return;
         }
-        int slot = -1;
-        for (int i = 0; i < MaximumRecords; i++)
-            if (timers![i] is null) { slot = i; break; }
-        if (slot < 0) throw new InvalidOperationException("managed-timer-record-limit");
-        var token = Reserve(TimerKind, Parent());
+        var activation = root;
+        if (activation is null || !activation.Active)
+            throw new InvalidOperationException("managed-work-finalization-uncertain");
+        if (admissions == int.MaxValue) throw new InvalidOperationException("managed-work-admission-in-progress");
+        admissions++;
         try
         {
-            timers![slot] = new TimerOwner { Timer = item, Mutation = 1,
-                Owner = new Record { Primary = item, Token = token, Active = true, Timer = true } };
+            var parent = Parent();
+            TimerAllocationControl();
+            var owner = new Record { Primary = item, Timer = true };
+            TimerAllocationControl();
+            // -2 is a provisional or uncertain admission; -1 is a settlement
+            // attempt. Neither can be used or retired as an ordinary timer.
+            var timer = new TimerOwner { Timer = item, Owner = owner, Mutation = -2 };
+            if (!installed || !ReferenceEquals(root, activation) || !activation.Active)
+                throw new InvalidOperationException("managed-work-activation-changed");
+            if (!ReferenceEquals(current!.Value, parent))
+                throw new InvalidOperationException("managed-timer-parent-changed");
+            if (closing && (parent is null || !parent.Active || parent.Root || parent.Result))
+                throw new InvalidOperationException("managed-work-independent-admission-closed");
+            if (parent is not null && (!parent.Active || parent.Result))
+                throw new InvalidOperationException("managed-work-parent-retired");
+            // Allocation may have admitted the same item or occupied a slot.
+            existing = FindTimer(item);
+            if (existing is not null)
+            {
+                if (existing.Mutation < 0) throw new InvalidOperationException("managed-timer-settlement-uncertain");
+                if (existing.Mutation == int.MaxValue) throw new InvalidOperationException("managed-timer-mutation-limit");
+                existing.Mutation++;
+                return;
+            }
+            int slot = -1;
+            for (int i = 0; i < MaximumRecords; i++)
+                if (timers![i] is null) { slot = i; break; }
+            if (slot < 0) throw new InvalidOperationException("managed-timer-record-limit");
+            timers![slot] = timer;
+            var parentToken = parent?.Token ?? default;
+            var token = reserve!(TimerKind, parentToken.Generation, parentToken.Id);
+            owner.Token = token;
+            if (token == default)
+            {
+                timers[slot] = null; // The selected bridge returned a definite WIT refusal.
+                throw new InvalidOperationException("managed-work-admission-refused");
+            }
+            if (token.Generation == 0 || token.Id == 0)
+                throw new InvalidOperationException("managed-work-reservation-token");
+            timer.Mutation = 1;
+            owner.Active = true;
         }
-        catch { settle!(token.Generation, token.Id); throw; }
+        finally { admissions--; }
     }
 
     public static void TimerChanged(object item)
