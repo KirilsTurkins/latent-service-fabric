@@ -31,6 +31,8 @@ OWNER_SETTLEMENT_CASES = (
 RESULT_SETTLEMENT_CASES = (
     'result-settlement-refusal-prevents-finalization',
     'result-settlement-unknown-prevents-finalization')
+CONVERSION_SETTLEMENT_CASES = (
+    'fault-conversion-refusal-retains-both', 'fault-conversion-unknown-retains-both')
 ROOT_SETTLEMENT_CASES = (
     'storage-settlement-refusal-fences-root', 'storage-settlement-unknown-fences-root',
     'root-settlement-refusal-fences-finalization', 'root-settlement-unknown-fences-finalization',
@@ -43,8 +45,10 @@ CASES = (
     'live-descendant-during-closing', 'closing-rejects-independent',
     'unobserved-original-fault-result', 'observed-fault-does-not-become-unhandled',
     'bounded-required-continuations', 'opaque-pending-is-not-quiescent',
-    'untracked-startup-refused-before-admission', *SETTLEMENT_CASES, *OWNER_SETTLEMENT_CASES,
-    *RESULT_SETTLEMENT_CASES, *ROOT_SETTLEMENT_CASES)
+    'untracked-startup-refused-before-admission', 'fault-conversion-success-is-idempotent',
+    'fault-conversion-at-record-capacity', 'multiple-fault-conversions-retain-distinct-tokens',
+    *SETTLEMENT_CASES, *OWNER_SETTLEMENT_CASES, *RESULT_SETTLEMENT_CASES,
+    *CONVERSION_SETTLEMENT_CASES, *ROOT_SETTLEMENT_CASES)
 
 
 def verify(dotnet: Path, output: Path) -> dict:
@@ -70,7 +74,9 @@ def verify(dotnet: Path, output: Path) -> dict:
         expected = {'control': name, 'passed': True, 'registryCore': 'production-source',
             'nativeLedger': 'explicit-test-port', 'dispatcher': 'explicit-test-port',
             'actualClrTasks': True, 'guestQualified': False}
-        if name in SETTLEMENT_CASES:
+        if name == 'multiple-fault-conversions-retain-distinct-tokens':
+            expected.update(settlementRefusals=2, retainedTasks=3, retainedResults=2, rootSuccess=False)
+        elif name in SETTLEMENT_CASES:
             expected.update(settlementRefusals=1, retainedTasks=2, retainedQueuedOwners=1,
                             controlDispatches=0, automaticRetries=0, rootSuccess=False)
         elif name in OWNER_SETTLEMENT_CASES:
@@ -79,6 +85,9 @@ def verify(dotnet: Path, output: Path) -> dict:
         elif name in RESULT_SETTLEMENT_CASES:
             expected.update(settlementRefusals=1, retainedTasks=1, retainedQueuedOwners=0,
                             controlDispatches=0, automaticRetries=0, rootSuccess=False)
+        elif name in CONVERSION_SETTLEMENT_CASES:
+            expected.update(settlementRefusals=1, retainedTasks=1 if '-unknown-' in name else 2,
+                            retainedQueuedOwners=0, controlDispatches=0, automaticRetries=0, rootSuccess=False)
         elif name in ROOT_SETTLEMENT_CASES:
             is_storage = name.startswith('storage-')
             is_unknown = '-unknown-' in name

@@ -16,6 +16,9 @@ public static partial class ManagedWorkRuntime
         return null;
     }
 
+    internal static (ulong Generation, ulong Id)? PendingResultForControl(object item) =>
+        Find(item)?.PendingResult;
+
     private static partial bool TimerScheduled(object item) => throw new InvalidOperationException("unexpected-control-timer");
     private static partial int TimerCallbacks(object item) => throw new InvalidOperationException("unexpected-control-timer");
     private static partial object? ContextValue(ExecutionContext? context) => null;
