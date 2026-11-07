@@ -404,6 +404,87 @@ EventTarget.prototype.addEventListener=add;
                 capture_output=True, text=True, timeout=20)
             self.assertEqual(completed.returncode, 0, completed.stdout+completed.stderr)
 
+    def test_abort_clone_probe_requires_both_refusals_removal_and_recovered_capacity(self):
+        self.assertEqual(fetch.ABORT_CLONE_VECTORS, (
+            ('abort-clone-normal', 22, 'abort-clone:normal:12'),
+            ('abort-clone-refusal', 23, 'abort-clone:two-native-register-refusals:recovered'),
+            ('abort-clone-fresh', 22, 'abort-clone:normal:12')))
+        self.assertEqual(fetch.OWNER_LIMITS['nativeOwners'], 64)
+        node = shutil.which('node')
+        self.assertIsNotNone(node, 'The pinned Node reference host is required')
+        script = r"""
+import assert from 'node:assert/strict';
+import {readFile, writeFile} from 'node:fs/promises';
+import {stripTypeScriptTypes} from 'node:module';
+import {pathToFileURL} from 'node:url';
+const [fixture, output] = process.argv.slice(2);
+globalThis.fetch=()=>{throw new Error('unexpected-network');};
+for (const name of ['default-client','main']) {
+  const source=stripTypeScriptTypes(await readFile(fixture+'/'+name+'.ts','utf8'));
+  await writeFile(output+'/'+name+'.mjs',source.replace("'./default-client.js'","'./default-client.mjs'"));
+}
+const {api}=await import(pathToFileURL(output+'/main.mjs'));
+const expected='activation-runtime-promise-native-register-denied:2';
+const oldController=globalThis.AbortController;
+const add=EventTarget.prototype.addEventListener, remove=EventTarget.prototype.removeEventListener;
+let held=0, fillDenials=0, abortDenials=0, removed=0, recovered=0, barrier=false;
+let silenceAbort=false, rejectRecovery=false, wrongFill=false;
+EventTarget.prototype.addEventListener=function(type,listener,...options){
+  if(type==='fill') {
+    if(held===4) {fillDenials++;throw new Error(wrongFill ? 'wrong-fill' : expected);}
+    held++;
+  }
+  if(type==='recovered') {
+    if(held!==0 || !barrier || rejectRecovery) throw new Error('recovery-refused');
+    recovered++;
+  }
+  return add.call(this,type,listener,...options);
+};
+EventTarget.prototype.removeEventListener=function(type,listener,...options){
+  const result=remove.call(this,type,listener,...options);
+  if(type==='fill') {
+    held--;removed++;
+    if(held===0) queueMicrotask(()=>{barrier=true;});
+  }
+  return result;
+};
+class FakeSignal extends EventTarget { aborted=false; reason=undefined; }
+class FakeController {
+  signal=new FakeSignal();
+  abort(reason) {
+    this.signal.aborted=true;this.signal.reason=reason;
+    if(held===4) {
+      if(!silenceAbort) {abortDenials++;throw new Error(expected);}
+      return;
+    }
+    this.signal.dispatchEvent(new Event('abort'));
+  }
+}
+globalThis.AbortController=FakeController;
+assert.equal(await api.run(22,''),'abort-clone:normal:12');
+assert.equal(await api.run(23,''),'abort-clone:two-native-register-refusals:recovered');
+assert.deepEqual([held,fillDenials,abortDenials,removed,recovered],[0,1,1,4,12]);
+assert.equal(await api.run(22,''),'abort-clone:normal:12');
+barrier=false;silenceAbort=true;
+await assert.rejects(api.run(23,''),/abort-clone-failure-not-propagated/);
+assert.equal(held,0);
+silenceAbort=false;barrier=false;rejectRecovery=true;
+await assert.rejects(api.run(23,''),/recovery-refused/);
+assert.equal(held,0);
+rejectRecovery=false;barrier=false;wrongFill=true;
+await assert.rejects(api.run(23,''),/wrong-fill/);
+assert.equal(held,0);
+globalThis.AbortController=oldController;
+EventTarget.prototype.addEventListener=add;
+EventTarget.prototype.removeEventListener=remove;
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root/'control.mjs').write_text(script, encoding='utf-8')
+            completed = subprocess.run([node, str(root/'control.mjs'), str(fetch.ROOT/fetch.FIXTURE), str(root)],
+                capture_output=True, text=True, timeout=20)
+            self.assertEqual(completed.returncode, 0, completed.stdout+completed.stderr)
+
     def test_closed_guest_diagnostics_cannot_replace_signed_success(self):
         for stage in ('request', 'fetch', 'body-before', 'body-json', 'body-after', 'body-repeat', 'serialize'):
             for kind in ('TypeError', 'RangeError', 'Error', 'other'):
