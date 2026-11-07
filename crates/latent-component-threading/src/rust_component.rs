@@ -70,6 +70,20 @@ const COMBINED_FINAL_SUFFIX: &[u8] = include_bytes!("rust_catalogue/combined-fin
     not(feature = "rust-thread-diagnostic-legacy")
 ))]
 const COMBINED_MAIN_BYTES: usize = 920_667;
+// This diagnostic profile is deliberately limited to one retained graph and
+// its reconstruction material. Comparing borrowed slices before decoding keeps
+// arbitrary inputs out of the allocating source verifier. These immutable
+// image bytes are shared host data; they are not a physical cost measurement.
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+const COMBINED_FINAL_IMAGE: &[u8] = include_bytes!("rust_catalogue/combined-final-component.wasm");
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+const COMBINED_ORIGINAL_DELTA: &[u8] = include_bytes!("rust_catalogue/combined-original-delta.bin");
 
 #[derive(Debug)]
 pub struct RustComponentRoutingReceipt {
@@ -454,19 +468,53 @@ fn combined_final_main(component: &[u8]) -> Result<&[u8], &'static str> {
 }
 
 /// Authenticated final graph and reconstructed original; not an admission.
-#[cfg(all(
-    feature = "rust-http-combined-preview-diagnostic",
-    not(feature = "rust-thread-diagnostic-legacy")
-))]
+/// Build-time catalogue compatibility only; this grants no runtime authority.
+#[cfg(feature = "rust-http-combined-preview-diagnostic")]
+pub const COMBINED_DIAGNOSTIC_CATALOGUE_AVAILABLE: bool =
+    !cfg!(feature = "rust-thread-diagnostic-legacy");
+
+#[cfg(feature = "rust-http-combined-preview-diagnostic")]
 #[allow(dead_code)]
 #[derive(Debug)]
-pub(super) struct CombinedEmbeddedProof {
+pub struct CombinedEmbeddedProof {
     pub wrapped_digest: [u8; 32],
     pub final_graph_digest: [u8; 32],
     pub original_digest: [u8; 32],
     pub main_digest: [u8; 32],
     pub final_graph_authenticated: bool,
     pub runtime_qualified: bool,
+}
+
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+fn fixed_combined_parts(wrapped: &[u8]) -> Result<(&[u8], &[u8]), &'static str> {
+    let (component, delta) = crate::rust_original_delta::split_unverified(wrapped)?;
+    if component != COMBINED_FINAL_IMAGE || delta != COMBINED_ORIGINAL_DELTA {
+        return Err("rust-combined-fixed-material-required");
+    }
+    Ok((component, delta))
+}
+
+/// A non-allocating identity filter for the one retained diagnostic graph.
+/// This does not establish source provenance, grant authority, or select an
+/// engine: actual execution must still reserve work and recompute the proof.
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    not(feature = "rust-thread-diagnostic-legacy")
+))]
+pub fn matches_fixed_combined_diagnostic(wrapped: &[u8]) -> bool {
+    fixed_combined_parts(wrapped).is_ok()
+}
+
+// The incompatible historic catalogue cannot recognize this fixed graph.
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    feature = "rust-thread-diagnostic-legacy"
+))]
+pub fn matches_fixed_combined_diagnostic(_wrapped: &[u8]) -> bool {
+    false
 }
 
 /// Diagnostic proof of the embedded source and complete fixed final graph.
@@ -477,12 +525,12 @@ pub(super) struct CombinedEmbeddedProof {
     not(feature = "rust-thread-diagnostic-legacy")
 ))]
 #[allow(dead_code)]
-pub(super) fn verify_embedded_combined_diagnostic(
+pub fn verify_embedded_combined_diagnostic(
     wrapped: &[u8],
 ) -> Result<CombinedEmbeddedProof, &'static str> {
-    let (component, delta) = crate::rust_original_delta::split_unverified(wrapped)?;
-    // Check the fixed final envelope before reconstructing attacker-supplied
-    // proof material; the decoder still enforces its own byte/work bounds.
+    // Equality is only a prefilter: the independent source and final-graph
+    // proof below still runs for the accepted fixed material.
+    let (component, delta) = fixed_combined_parts(wrapped)?;
     let main = combined_final_main(component)?;
     let original = crate::rust_original_delta::reconstruct(component, delta)?;
     require_combined_wit(&original)?;
@@ -502,6 +550,18 @@ pub(super) fn verify_embedded_combined_diagnostic(
         final_graph_authenticated: true,
         runtime_qualified: false,
     })
+}
+
+// Cargo may unify the historic catalogue feature through another dependent.
+// It cannot authenticate this graph, so never silently use the wrong catalogue.
+#[cfg(all(
+    feature = "rust-http-combined-preview-diagnostic",
+    feature = "rust-thread-diagnostic-legacy"
+))]
+pub fn verify_embedded_combined_diagnostic(
+    _wrapped: &[u8],
+) -> Result<CombinedEmbeddedProof, &'static str> {
+    Err("rust-combined-legacy-catalogue-incompatible")
 }
 
 /// Source proof only. The host must admit the full work allowance first and
@@ -630,6 +690,18 @@ pub fn verify_embedded_rust_original_core(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(all(
+        feature = "rust-http-combined-preview-diagnostic",
+        feature = "rust-thread-diagnostic-legacy"
+    ))]
+    #[test]
+    fn combined_graph_refuses_the_incompatible_legacy_catalogue() {
+        assert_eq!(
+            verify_embedded_combined_diagnostic(b"untrusted").unwrap_err(),
+            "rust-combined-legacy-catalogue-incompatible"
+        );
+    }
+
     #[cfg(not(feature = "rust-thread-diagnostic-legacy"))]
     const ORIGINAL: &[u8] = include_bytes!("rust_catalogue/catalogue-original-core.wasm");
     #[cfg(feature = "rust-thread-diagnostic-legacy")]
@@ -693,6 +765,43 @@ mod tests {
         changed_preview[start + 12] ^= 1;
         changed_final[COMBINED_FINAL_PREFIX.len() + 12] ^= 1;
         assert!(verify_combined_composition(ORIGINAL, &changed_preview, &changed_final).is_err());
+    }
+
+    #[cfg(all(
+        feature = "rust-http-combined-preview-diagnostic",
+        not(feature = "rust-thread-diagnostic-legacy")
+    ))]
+    #[test]
+    fn combined_embedded_proof_rejects_changed_material_before_reconstruction() {
+        let wrapped = crate::rust_original_delta::attach_unverified(
+            COMBINED_FINAL_IMAGE,
+            COMBINED_ORIGINAL_DELTA,
+        )
+        .unwrap();
+        assert!(matches_fixed_combined_diagnostic(&wrapped));
+        assert!(verify_embedded_combined_diagnostic(&wrapped).is_ok());
+
+        let mut changed_delta = COMBINED_ORIGINAL_DELTA.to_vec();
+        *changed_delta.last_mut().unwrap() ^= 1;
+        let wrapped =
+            crate::rust_original_delta::attach_unverified(COMBINED_FINAL_IMAGE, &changed_delta)
+                .unwrap();
+        assert!(!matches_fixed_combined_diagnostic(&wrapped));
+        assert_eq!(
+            verify_embedded_combined_diagnostic(&wrapped).unwrap_err(),
+            "rust-combined-fixed-material-required"
+        );
+
+        let mut changed_final = COMBINED_FINAL_IMAGE.to_vec();
+        changed_final[COMBINED_FINAL_PREFIX.len() + 8] ^= 1;
+        let wrapped =
+            crate::rust_original_delta::attach_unverified(&changed_final, COMBINED_ORIGINAL_DELTA)
+                .unwrap();
+        assert!(!matches_fixed_combined_diagnostic(&wrapped));
+        assert_eq!(
+            verify_embedded_combined_diagnostic(&wrapped).unwrap_err(),
+            "rust-combined-fixed-material-required"
+        );
     }
 
     #[test]

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "latent.ci.suite-fragment.v1",
+  "suites": [
+    {
+      "boundary": "runtime",
+      "expectedIgnored": [],
+      "id": "latent-toolchain-smoke.example.rust-http-pump-probe",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "tools/toolchain-smoke/Cargo.toml",
+      "mode": "compile-only",
+      "package": "latent-toolchain-smoke",
+      "platforms": ["linux-x86_64"],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/rust_http_pump_probe.rs",
+      "target": "rust-http-pump-probe",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedIgnored": [],
+      "id": "latent-toolchain-smoke.example.rust-http-pump-control",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "tools/toolchain-smoke/Cargo.toml",
+      "mode": "compile-only",
+      "package": "latent-toolchain-smoke",
+      "platforms": ["linux-x86_64"],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/rust_http_pump_control.rs",
+      "target": "rust-http-pump-control",
+      "timeoutSeconds": 900
+    }
+  ]
+}

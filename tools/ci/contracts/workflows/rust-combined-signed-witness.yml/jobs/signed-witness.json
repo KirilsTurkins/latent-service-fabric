@@ -1,0 +1,88 @@
+{
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "Current diagnostic host and signed held-HTTP sibling witness",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "KirilsTurkins/lsf-rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "name": "Install locked controller dependencies and check separate grants",
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_rust_thread_http_combined_node tools.tests.test_rust_thread_http_sibling -v\n"
+      },
+      {
+        "name": "Check default refusal and fixed diagnostic inspection",
+        "run": "set -euo pipefail\nmkdir -p \"$RUNNER_TEMP/rust-combined-inspector\"\ncargo test --locked -p latent-packaging --lib semantics::wasm::tests::combined_creator_recognition_is_explicit_and_fixed -- --exact --nocapture 2>&1 | tee \"$RUNNER_TEMP/rust-combined-inspector/default.log\"\ncargo test --locked -p latent-packaging --lib --features development-rust-http-combined semantics::wasm::tests::combined_creator_recognition_is_explicit_and_fixed -- --exact --nocapture 2>&1 | tee \"$RUNNER_TEMP/rust-combined-inspector/diagnostic.log\"\ngrep -F 'test semantics::wasm::tests::combined_creator_recognition_is_explicit_and_fixed ... ok' \"$RUNNER_TEMP/rust-combined-inspector/default.log\"\ngrep -F 'test semantics::wasm::tests::combined_creator_recognition_is_explicit_and_fixed ... ok' \"$RUNNER_TEMP/rust-combined-inspector/diagnostic.log\"\n",
+        "shell": "bash"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Retrieve only the pinned original compiler members",
+        "run": "python3 -B tools/rust_combined_http_materials.py --output \"$RUNNER_TEMP/rust-combined-original\""
+      },
+      {
+        "env": {
+          "EXPECTED_HEAD": "${{ github.sha }}"
+        },
+        "name": "Build the exact host and run the signed sibling programme",
+        "run": "python3 -B tools/qualify_rust_thread_http_combined.py --compiler-materials \"$RUNNER_TEMP/rust-combined-original\" --output \"$RUNNER_TEMP/rust-combined-signed\" --source-commit \"$EXPECTED_HEAD\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded source, signing, actual invocation, and cleanup evidence",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "rust-combined-signed-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-combined-signed/**\n${{ runner.temp }}/rust-combined-original/retrieval.json\n${{ runner.temp }}/rust-combined-inspector/*.log\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 75
+  },
+  "jobId": "signed-witness",
+  "kind": "job",
+  "reviewReason": "Retain exact compiler provenance, ordinary refusal, independent grants, causal HTTP progress, and physical retirement on the tested source.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-combined-signed-witness.yml"
+}

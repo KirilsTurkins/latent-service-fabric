@@ -146,6 +146,9 @@ pub enum EngineThreadingProfile {
     CContext144SyncCooperativeV1,
     #[serde(rename = "rust-context40-sync-cooperative-v1")]
     RustContext40SyncCooperativeV1,
+    #[cfg(feature = "development-rust-http-combined")]
+    #[serde(rename = "rust-context40-combined-http-diagnostic-v1")]
+    RustContext40CombinedHttpDiagnosticV1,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq)]

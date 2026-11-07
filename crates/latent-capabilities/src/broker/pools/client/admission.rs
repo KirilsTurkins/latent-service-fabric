@@ -1,4 +1,6 @@
-//! Wait only for bookkeeping access, before any socket or dial is allocated.
+//! Pre-dial waits retain the accepted request and allocate no socket.
+//! Ordinary callers wait only for bookkeeping. HTTP may additionally serialize
+//! behind an already admitted dial, never behind response headers or backoff.
 use super::super::DeferredRequest;
 use super::{
     Arc, ConnectionReservation, PlatformError, PoolCall, PooledConnection, ProviderClient,
@@ -9,16 +11,27 @@ use std::time::Duration;
 #[cfg(all(test, target_os = "linux"))]
 mod deferred_tests;
 #[cfg(all(test, target_os = "linux"))]
+mod http_tests;
+#[cfg(all(test, target_os = "linux"))]
 mod tests;
 
 pub(super) enum ClientAccessError {
     Contended,
+    ActiveDial,
     Failed(PlatformError),
 }
 impl ClientAccessError {
     pub(super) fn immediate(self) -> PlatformError {
         match self {
             Self::Contended => super::busy(),
+            Self::ActiveDial => {
+                let error = super::busy();
+                crate::broker::http::refusal::observe(
+                    crate::broker::http::refusal::Stage::PoolActiveDial,
+                    &error,
+                );
+                error
+            }
             Self::Failed(error) => error,
         }
     }
@@ -53,7 +66,38 @@ impl<T: Send + 'static> ProviderClient<T> {
             match self.checkout_owned(Some(call.io.lease()), None) {
                 Ok(value) => return Ok(value),
                 Err(ClientAccessError::Failed(error)) => return Err(error),
+                Err(ClientAccessError::ActiveDial) => {
+                    return Err(ClientAccessError::ActiveDial.immediate());
+                }
                 Err(ClientAccessError::Contended) => {
+                    call.io
+                        .wait_for(tokio::time::sleep(Duration::from_millis(1)))
+                        .await?;
+                }
+            }
+        }
+    }
+
+    /// HTTP connection setup may serialize behind this client's one admitted
+    /// dial. The current request already owns bounded running-request capacity;
+    /// waiting creates no task, socket, connection charge, or fresh deadline.
+    ///
+    /// A successful dial releases its setup slot before response headers are
+    /// awaited. Thus a held response cannot prevent this caller's first dial.
+    /// Capacity, backoff, poisoned bookkeeping, cancellation and revoked
+    /// authority still fail closed. No attempted protocol operation is retried.
+    pub async fn reserve_http_connection_wait(
+        self: &Arc<Self>,
+        call: &PoolCall,
+    ) -> Result<ConnectionReservation<T>, PlatformError> {
+        loop {
+            call.check_client(&self.core)?;
+            match self.reserve_owned(Some(call.io.lease()), None, None) {
+                Ok(value) => return Ok(value),
+                Err(ClientAccessError::Failed(error)) => return Err(error),
+                Err(ClientAccessError::Contended | ClientAccessError::ActiveDial) => {
+                    // This is only unacquired pre-dial admission. Keep the
+                    // same paid future, authority fence and absolute deadline.
                     call.io
                         .wait_for(tokio::time::sleep(Duration::from_millis(1)))
                         .await?;
@@ -74,6 +118,9 @@ impl<T: Send + 'static> ProviderClient<T> {
             match self.reserve_owned(Some(call.io.lease()), None, None) {
                 Ok(value) => return Ok(value),
                 Err(ClientAccessError::Failed(error)) => return Err(error),
+                Err(ClientAccessError::ActiveDial) => {
+                    return Err(ClientAccessError::ActiveDial.immediate());
+                }
                 Err(ClientAccessError::Contended) => {
                     call.io
                         .wait_for(tokio::time::sleep(Duration::from_millis(1)))
@@ -99,6 +146,9 @@ impl<T: Send + 'static> ProviderClient<T> {
             match self.checkout_owned(None, ingress) {
                 Ok(value) => return Ok(value),
                 Err(ClientAccessError::Failed(error)) => return Err(error),
+                Err(ClientAccessError::ActiveDial) => {
+                    return Err(ClientAccessError::ActiveDial.immediate());
+                }
                 Err(ClientAccessError::Contended) => {
                     request
                         .wait_for(tokio::time::sleep(Duration::from_millis(1)))
@@ -121,6 +171,9 @@ impl<T: Send + 'static> ProviderClient<T> {
             match self.reserve_owned(None, maintenance, ingress) {
                 Ok(value) => return Ok(value),
                 Err(ClientAccessError::Failed(error)) => return Err(error),
+                Err(ClientAccessError::ActiveDial) => {
+                    return Err(ClientAccessError::ActiveDial.immediate());
+                }
                 Err(ClientAccessError::Contended) => {
                     request
                         .wait_for(tokio::time::sleep(Duration::from_millis(1)))

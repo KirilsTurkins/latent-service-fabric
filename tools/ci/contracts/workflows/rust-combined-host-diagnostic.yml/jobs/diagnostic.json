@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "job",
+  "reviewReason": "Retain original strict stack admission and verify fixed-graph child/engine-worker ownership under shared limits.",
+  "workflow": ".github/workflows/rust-combined-host-diagnostic.yml",
+  "jobId": "diagnostic",
+  "definition": {
+    "name": "Original-owner admission and fixed combined graph compiler check",
+    "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 45,
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "KirilsTurkins/lsf-rust-cache",
+        "with": {
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "shared-key": "host-correctness",
+          "key": "ubuntu-24.04",
+          "cache-targets": true,
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-all-crates": false,
+          "cache-on-failure": false,
+          "save-if": false
+        }
+      },
+      {
+        "name": "Produce the fixed untrusted framed sample",
+        "shell": "bash",
+        "run": "set -euo pipefail\nmkdir -p \"$RUNNER_TEMP/rust-combined-host\"\npython3 -B -m unittest tools.tests.test_rust_combined_diagnostic_envelope -v 2>&1 | tee \"$RUNNER_TEMP/rust-combined-host/framing-tests.log\"\nc=crates/latent-component-threading/src/rust_catalogue\npython3 -B tools/rust_combined_diagnostic_envelope.py --original \"$c/combined-original-core.wasm\" --component \"$c/combined-final-component.wasm\" --output \"$RUNNER_TEMP/rust-combined-host/framed.wasm\" | tee \"$RUNNER_TEMP/rust-combined-host/framing.log\"\necho '5634429a97b4a3f0cf8afca2877dbbddbc98f5e4fd7bf59ae6f7f50e780c2e17  '\"$RUNNER_TEMP/rust-combined-host/framed.wasm\" | sha256sum --check --strict\n"
+      },
+      {
+        "name": "Check default refusal and fixed diagnostic inspection",
+        "shell": "bash",
+        "run": "set -euo pipefail\ncargo test --locked -p latent-packaging --lib semantics::wasm::tests::combined_creator_recognition_is_explicit_and_fixed -- --exact --nocapture 2>&1 | tee \"$RUNNER_TEMP/rust-combined-host/inspector-default.log\"\ncargo test --locked -p latent-packaging --lib --features development-rust-http-combined semantics::wasm::tests::combined_creator_recognition_is_explicit_and_fixed -- --exact --nocapture 2>&1 | tee \"$RUNNER_TEMP/rust-combined-host/inspector-diagnostic.log\"\ngrep -F 'test semantics::wasm::tests::combined_creator_recognition_is_explicit_and_fixed ... ok' \"$RUNNER_TEMP/rust-combined-host/inspector-default.log\"\ngrep -F 'test semantics::wasm::tests::combined_creator_recognition_is_explicit_and_fixed ... ok' \"$RUNNER_TEMP/rust-combined-host/inspector-diagnostic.log\"\n"
+      },
+      {
+        "name": "Refuse the incompatible historic catalogue",
+        "shell": "bash",
+        "run": "set -euo pipefail\ncargo test --locked -p latent-component-threading --lib --features rust-http-combined-preview-diagnostic,rust-thread-diagnostic-legacy rust_component::tests::combined_graph_refuses_the_incompatible_legacy_catalogue -- --exact --nocapture 2>&1 | tee \"$RUNNER_TEMP/rust-combined-host/legacy.log\"\ngrep -F 'test rust_component::tests::combined_graph_refuses_the_incompatible_legacy_catalogue ... ok' \"$RUNNER_TEMP/rust-combined-host/legacy.log\"\n"
+      },
+      {
+        "name": "Refuse non-catalogue material before source reconstruction",
+        "shell": "bash",
+        "run": "set -euo pipefail\ncargo test --locked -p latent-component-threading --lib --features rust-http-combined-preview-diagnostic --no-run 2>&1 | tee \"$RUNNER_TEMP/rust-combined-host/prefilter-build.log\"\n/usr/bin/time --format 'isolated-process-max-rss-kib=%M' --output \"$RUNNER_TEMP/rust-combined-host/prefilter-rss.log\" cargo test --locked -p latent-component-threading --lib --features rust-http-combined-preview-diagnostic rust_component::tests::combined_embedded_proof_rejects_changed_material_before_reconstruction -- --exact --nocapture --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/rust-combined-host/prefilter.log\"\nif grep -F 'Compiling ' \"$RUNNER_TEMP/rust-combined-host/prefilter.log\"; then exit 1; fi\ngrep -F 'test rust_component::tests::combined_embedded_proof_rejects_changed_material_before_reconstruction ... ok' \"$RUNNER_TEMP/rust-combined-host/prefilter.log\"\ngrep -F 'test result: ok. 1 passed; 0 failed;' \"$RUNNER_TEMP/rust-combined-host/prefilter.log\"\n"
+      },
+      {
+        "name": "Check the selected host proof and actual engine compilation",
+        "shell": "bash",
+        "run": "set -euo pipefail\ncargo test --locked -p latent-wasmtime --lib --features development-rust-http-combined component_threading::tests::combined_http_diagnostic -- --nocapture --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/rust-combined-host/host.log\"\ngrep -F 'COMBINED_HTTP_CATALOGUE=current' \"$RUNNER_TEMP/rust-combined-host/host.log\"\ngrep -F 'test component_threading::tests::combined_http_diagnostic_requires_its_distinct_prepaid_profile ... ok' \"$RUNNER_TEMP/rust-combined-host/host.log\"\ngrep -F 'test component_threading::tests::combined_http_diagnostic_requires_explicit_original_cache_capacity ... ok' \"$RUNNER_TEMP/rust-combined-host/host.log\"\ngrep -F 'test component_threading::tests::combined_http_diagnostic_authenticates_wrapped_final_graph_before_reuse' \"$RUNNER_TEMP/rust-combined-host/host.log\"\ngrep -F 'test result: ok. 3 passed; 0 failed;' \"$RUNNER_TEMP/rust-combined-host/host.log\"\n"
+      },
+      {
+        "name": "Check original stack admission and fixed combined worker ownership",
+        "shell": "bash",
+        "run": "set -euo pipefail\ncargo test --locked -p latent-wasmtime --lib native_stacks:: -- --nocapture --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/rust-combined-host/stacks-ordinary.log\"\ncargo test --locked -p latent-wasmtime --lib --features development-rust-http-combined native_stacks:: -- --nocapture --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/rust-combined-host/stacks-combined.log\"\n"
+      },
+      {
+        "name": "Check diagnostic node selection without raising its budgets",
+        "shell": "bash",
+        "run": "set -euo pipefail\ncargo test --locked -p latentd --lib --features development-rust-http-combined protected_c_profile_reaches_normal_node_settings_without_raising_any_limits -- --nocapture 2>&1 | tee \"$RUNNER_TEMP/rust-combined-host/node.log\"\ngrep -F 'protected_c_profile_reaches_normal_node_settings_without_raising_any_limits ... ok' \"$RUNNER_TEMP/rust-combined-host/node.log\"\n"
+      },
+      {
+        "name": "Retain bounded diagnostic logs including failures",
+        "if": "always()",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "name": "rust-combined-host-diagnostic-${{ github.sha }}",
+          "retention-days": 7,
+          "if-no-files-found": "warn",
+          "path": "${{ runner.temp }}/rust-combined-host/*.log"
+        }
+      }
+    ]
+  }
+}
