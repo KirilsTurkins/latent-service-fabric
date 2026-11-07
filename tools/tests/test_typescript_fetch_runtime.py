@@ -485,6 +485,141 @@ EventTarget.prototype.removeEventListener=remove;
                 capture_output=True, text=True, timeout=20)
             self.assertEqual(completed.returncode, 0, completed.stdout+completed.stderr)
 
+    def test_abort_any_frames_require_interruption_identity_nested_order_and_real_abort(self):
+        self.assertEqual(fetch.ABORT_ANY_VECTORS, (
+            ('abort-any-frames', 24, 'abort-any:80:nested:12:ordered'),
+            ('abort-any-refusal', 25, 'abort-any:refusal:closed:recovered'),
+            ('abort-any-fresh', 24, 'abort-any:80:nested:12:ordered')))
+        self.assertEqual(fetch.OWNER_LIMITS['nativeOwners'], 64)
+        node = shutil.which('node')
+        self.assertIsNotNone(node, 'The pinned Node reference host is required')
+        script = r"""
+import assert from 'node:assert/strict';
+import {readFile, writeFile} from 'node:fs/promises';
+import {stripTypeScriptTypes} from 'node:module';
+import {pathToFileURL} from 'node:url';
+const [fixture, output] = process.argv.slice(2);
+let contacts=0, calls=0, steps=0, depth=0, maxDepth=0;
+globalThis.fetch=()=>{contacts++;throw new Error('unexpected-network');};
+for (const name of ['default-client','main']) {
+  const source=stripTypeScriptTypes(await readFile(fixture+'/'+name+'.ts','utf8'));
+  await writeFile(output+'/'+name+'.mjs',source.replace("'./default-client.js'","'./default-client.mjs'"));
+}
+const {api}=await import(pathToFileURL(output+'/main.mjs'));
+const nativeAny=AbortSignal.any;
+AbortSignal.any=function(input) {
+  calls++;depth++;maxDepth=Math.max(maxDepth,depth);
+  const wrapped={ [Symbol.iterator]() {
+    const original=input[Symbol.iterator]();
+    return { next() {steps++;return original.next();},
+             return(value) {return original.return ? original.return(value) : {done:true,value};} };
+  }};
+  try {return nativeAny.call(this,wrapped);} finally {depth--;}
+};
+assert.equal(await api.run(24,''),'abort-any:80:nested:12:ordered');
+assert.deepEqual([calls,steps,maxDepth,contacts],[82,826,2,0]);
+calls=steps=maxDepth=0;
+assert.equal(await api.run(24,''),'abort-any:80:nested:12:ordered');
+assert.deepEqual([calls,steps,maxDepth,contacts],[82,826,2,0]);
+AbortSignal.any=function(input) {
+  try {return nativeAny.call(this,input);} catch {return new AbortController().signal;}
+};
+await assert.rejects(api.run(24,''),/abort-any-interrupted-conversion/);
+calls=0;
+AbortSignal.any=function(input) {
+  calls++;
+  return nativeAny.call(this,calls===82 ? [] : input);
+};
+await assert.rejects(api.run(24,''),/abort-any-nested-iteration/);
+AbortSignal.any=nativeAny;
+const nativeAbort=AbortController.prototype.abort;
+AbortController.prototype.abort=function() {return nativeAbort.call(this,{wrong:true});};
+await assert.rejects(api.run(24,''),/abort-any-dependent-state/);
+AbortController.prototype.abort=nativeAbort;
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root/'control.mjs').write_text(script, encoding='utf-8')
+            completed = subprocess.run([node, str(root/'control.mjs'), str(fetch.ROOT/fetch.FIXTURE), str(root)],
+                capture_output=True, text=True, timeout=20)
+            self.assertEqual(completed.returncode, 0, completed.stdout+completed.stderr)
+
+    def test_abort_any_refusal_requires_ninth_step_close_original_error_and_recovery(self):
+        node = shutil.which('node')
+        self.assertIsNotNone(node, 'The pinned Node reference host is required')
+        script = r"""
+import assert from 'node:assert/strict';
+import {readFile, writeFile} from 'node:fs/promises';
+import {stripTypeScriptTypes} from 'node:module';
+import {pathToFileURL} from 'node:url';
+const [fixture, output] = process.argv.slice(2);
+globalThis.fetch=()=>{throw new Error('unexpected-network');};
+for (const name of ['default-client','main']) {
+  const source=stripTypeScriptTypes(await readFile(fixture+'/'+name+'.ts','utf8'));
+  await writeFile(output+'/'+name+'.mjs',source.replace("'./default-client.js'","'./default-client.mjs'"));
+}
+const {api}=await import(pathToFileURL(output+'/main.mjs'));
+const nativeAny=AbortSignal.any, add=EventTarget.prototype.addEventListener;
+const remove=EventTarget.prototype.removeEventListener;
+const expected='activation-runtime-promise-native-register-denied:2';
+let held=0, removed=0, denials=0, barrier=false, mode='normal';
+EventTarget.prototype.addEventListener=function(type,listener,...options) {
+  if (type==='any-fill') {
+    if (held===4) throw new Error(expected);
+    held++;
+  }
+  return add.call(this,type,listener,...options);
+};
+EventTarget.prototype.removeEventListener=function(type,listener,...options) {
+  const result=remove.call(this,type,listener,...options);
+  if (type==='any-fill') {
+    held--;removed++;
+    if (held===0) queueMicrotask(()=>{barrier=true;});
+  }
+  return result;
+};
+// Finite reference double: only the signed engine can witness real admission.
+AbortSignal.any=function(signals) {
+  if (held===4) {
+    if (mode==='no-close') {
+      const iterator=signals[Symbol.iterator]();
+      for (let index=0;index<9;index++) iterator.next();
+      throw new Error(expected);
+    }
+    const collected=[];
+    for (const signal of signals) {
+      if (collected.length === (mode==='early' ? 7 : 8)) {
+        denials++;
+        throw new Error(mode==='wrong-error' ? 'wrong-register' : expected);
+      }
+      collected.push(signal);
+    }
+    return nativeAny.call(this,collected);
+  }
+  if (!barrier || mode==='no-recovery') throw new Error('recovery-refused');
+  return nativeAny.call(this,signals);
+};
+assert.equal(await api.run(25,''),'abort-any:refusal:closed:recovered');
+assert.deepEqual([held,removed,denials,barrier],[0,4,1,true]);
+for (const selected of ['no-close','early','wrong-error']) {
+  mode=selected;barrier=false;
+  await assert.rejects(api.run(25,''),/abort-any-refusal-close/);
+  assert.equal(held,0);
+}
+mode='no-recovery';barrier=false;
+await assert.rejects(api.run(25,''),/recovery-refused/);
+assert.equal(held,0);
+AbortSignal.any=nativeAny;
+EventTarget.prototype.addEventListener=add;
+EventTarget.prototype.removeEventListener=remove;
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root/'control.mjs').write_text(script, encoding='utf-8')
+            completed = subprocess.run([node, str(root/'control.mjs'), str(fetch.ROOT/fetch.FIXTURE), str(root)],
+                capture_output=True, text=True, timeout=20)
+            self.assertEqual(completed.returncode, 0, completed.stdout+completed.stderr)
+
     def test_closed_guest_diagnostics_cannot_replace_signed_success(self):
         for stage in ('request', 'fetch', 'body-before', 'body-json', 'body-after', 'body-repeat', 'serialize'):
             for kind in ('TypeError', 'RangeError', 'Error', 'other'):
