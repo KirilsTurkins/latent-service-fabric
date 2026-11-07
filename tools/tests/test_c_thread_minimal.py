@@ -20,6 +20,26 @@ def before_exit_trap(raw):
   raise AssertionError('closed-file-original-abi-source')
  return original
 
+def before_head_stat(path, raw):
+ import hashlib
+ changes = {
+  'http.c': ('6d762b7001e35c32582a5a5e7bb3c4be2313ebaa6522d20ae298bd9ce29f6d6f', (
+   (b'    if ((stat && strcmp(method, "GET")) || fetchAuthMethod || fetchDebug || fetchTimeout < 0) { unsupported(); return NULL; }',
+    b'    if ((stat && strcmp(method, "GET") && strcmp(method, "HEAD")) ||\n        fetchAuthMethod || fetchDebug || fetchTimeout < 0) { unsupported(); return NULL; }'),
+   (b'int fetchStatHTTP(struct url *url, struct url_stat *stat, const char *flags) { (void)url; (void)stat; (void)flags; unsupported(); return -1; }',
+    b'int fetchStatHTTP(struct url *url, struct url_stat *stat, const char *flags) {\n    struct url_stat result;\n    FILE *file = request(url, stat ? &result : NULL, flags, "HEAD", NULL, NULL);\n    if (!file) return -1;\n    /* The returned body is a real provider owner even for HEAD. Preserve an\n     * abort failure and only publish metadata after it has been closed. */\n    if (fclose(file) != 0) return -1;\n    if (stat) *stat = result;\n    return 0;\n}'))),
+  'UPSTREAM.json': ('6b58f1d1838b48f611120d2437b20f2b07614dbc2cb600f5526369d4809b3088', (
+   (b'Only optional url_stat on the existing successful HTTP GET. Standalone Stat, range and conditional requests remain unsupported.',
+    b'Optional url_stat on successful HTTP GET and standalone Stat via a separately authorized HEAD request. Range and conditional requests remain unsupported.'),)),
+ }
+ digest, replacements = changes[path.rsplit('/', 1)[-1]]
+ if hashlib.sha256(raw).hexdigest() != digest:
+  raise AssertionError('libfetch-head-stat-exact-source')
+ for original, current in replacements:
+  if raw.count(current) != 1: raise AssertionError('libfetch-head-stat-exact-addendum')
+  raw = raw.replace(current, original, 1)
+ return raw
+
 class CThreadMinimal(unittest.TestCase):
  def test_minimal_overlay_preserves_every_original_byte_and_full_standard_lifecycle_calls(self):
   raw=(ROOT/(original.FIXTURE+'main.c')).read_bytes();derived=selected.selected_source(raw)
@@ -67,10 +87,12 @@ class CThreadMinimal(unittest.TestCase):
      following = b'int open(const char *path, int flags, ...) {\n'
      self.assertEqual(left[path].count(before + EXIT_TRAP_ADDENDUM + following), 1, path)
     # Compare current fixtures first; invert only the reviewed fatal-process addition.
-    preserved = before_exit_trap(left[path]) if path.endswith('/closed-file-abi.c') else left[path]
+    is_stat = path.endswith('/libfetch/http.c') or path.endswith('/libfetch/UPSTREAM.json')
+    preserved = (before_exit_trap(left[path]) if path.endswith('/closed-file-abi.c') else
+                 before_head_stat(path, left[path]) if is_stat else left[path])
     self.assertEqual(hashlib.sha256(preserved).hexdigest(), expected, path)
     if path in added_sdk:
-     added_sdk[path] = expected
+     added_sdk[path] = hashlib.sha256(left[path]).hexdigest() if is_stat else expected
     else:
      del left[path]; del right[path]
    for path, expected in added_sdk.items():
