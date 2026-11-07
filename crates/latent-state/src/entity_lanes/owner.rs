@@ -53,6 +53,11 @@ impl<T> Drop for Release<T> {
     fn drop(&mut self) {
         if let Ok(mut state) = self.inner.state.lock() {
             state.retire(&self.stamp);
+            let wake = state.dispatcher.take();
+            drop(state);
+            if let Some(wake) = wake {
+                wake.wake();
+            }
         }
     }
 }

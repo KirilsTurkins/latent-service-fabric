@@ -33,6 +33,7 @@ pub use types::{
 };
 
 use std::sync::{Arc, Mutex};
+use std::task::Waker;
 use std::time::Instant;
 
 use latent_core::{StateNamespaceId, TenantId};
@@ -45,6 +46,13 @@ pub struct EntityLanes<T> {
 
 struct Inner<T> {
     state: Mutex<State<T>>,
+}
+
+/// One coherent observation for the existing shared scheduler driver.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct EntityDispatchReadiness {
+    pub ready: bool,
+    pub next_deadline: Option<Instant>,
 }
 
 impl<T> Clone for EntityLanes<T> {
@@ -112,7 +120,78 @@ impl<T> EntityLanes<T> {
             wait_until,
             charge,
         });
+        let wake = state.dispatcher.take();
+        drop(state);
+        if let Some(wake) = wake {
+            wake.wake();
+        }
         Ok(waiter)
+    }
+
+    /// Register the one shared dispatcher and observe eligibility atomically.
+    /// The caller drives `try_start_next` while ready and arms its existing
+    /// shared timer for `next_deadline` when waiting. A later enqueue or actual
+    /// owner retirement wakes this registration; no per-entity task is created.
+    ///
+    /// # Errors
+    /// Returns `Poisoned` if the coherent lane state cannot be observed.
+    pub fn register_dispatch_waker(
+        &self,
+        now: Instant,
+        waker: &Waker,
+    ) -> Result<EntityDispatchReadiness, EntityLaneError> {
+        let candidate = waker.clone();
+        let mut state = self
+            .inner
+            .state
+            .lock()
+            .map_err(|_| EntityLaneError::Poisoned)?;
+        let next_deadline = state
+            .lanes
+            .values()
+            .flat_map(|lane| lane.queue.iter())
+            .map(|queued| queued.wait_until)
+            .min();
+        let expired = next_deadline.is_some_and(|deadline| deadline <= now);
+        let available = state.snapshot(None).active < state.limits.global_active
+            && state.ready.iter().any(|scope| {
+                state.snapshot(Some(scope.tenant())).active < state.limits.tenant_active
+            });
+        let ready = expired || available;
+        let previous = std::mem::replace(
+            &mut state.dispatcher,
+            if ready { None } else { Some(candidate) },
+        );
+        drop(state);
+        drop(previous);
+        Ok(EntityDispatchReadiness {
+            ready,
+            next_deadline,
+        })
+    }
+
+    /// Remove only the matching dispatcher registration during driver shutdown.
+    ///
+    /// # Errors
+    /// Returns `Poisoned` if the coherent lane state cannot be observed.
+    pub fn clear_dispatch_waker(&self, waker: &Waker) -> Result<bool, EntityLaneError> {
+        let mut state = self
+            .inner
+            .state
+            .lock()
+            .map_err(|_| EntityLaneError::Poisoned)?;
+        let registered = state
+            .dispatcher
+            .as_ref()
+            .is_some_and(|registered| registered.will_wake(waker));
+        let removed = if registered {
+            state.dispatcher.take()
+        } else {
+            None
+        };
+        drop(state);
+        drop(removed);
+        Ok(registered)
     }
 
     /// # Errors
