@@ -51,13 +51,17 @@ struct Release<T> {
 
 impl<T> Drop for Release<T> {
     fn drop(&mut self) {
-        if let Ok(mut state) = self.inner.state.lock() {
-            state.retire(&self.stamp);
-            let wake = state.dispatcher.take();
-            drop(state);
-            if let Some(wake) = wake {
-                wake.wake();
+        let wake = match self.inner.state.lock() {
+            Ok(mut state) => {
+                state.retire(&self.stamp);
+                state.dispatcher.take()
             }
+            // A poisoned table cannot prove retirement. Wake the driver so it
+            // observes that failure instead of sleeping indefinitely.
+            Err(poisoned) => poisoned.into_inner().dispatcher.take(),
+        };
+        if let Some(wake) = wake {
+            wake.wake();
         }
     }
 }

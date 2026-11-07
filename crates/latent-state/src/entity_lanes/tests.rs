@@ -145,6 +145,40 @@ fn dispatcher_wake_can_observe_lane_state_without_reentering_its_lock() {
 }
 
 #[test]
+fn poisoned_lane_retirement_wakes_the_dispatcher_to_observe_failure() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Arc;
+    use std::task::{Wake, Waker};
+
+    struct Signal(AtomicUsize);
+    impl Wake for Signal {
+        fn wake(self: Arc<Self>) {
+            self.0.fetch_add(1, Ordering::SeqCst);
+        }
+    }
+    let lanes = EntityLanes::new(limits()).unwrap();
+    let now = Instant::now();
+    let first = enqueue(&lanes, "tenant-a", "order", 1, now);
+    let active = start(&lanes, now);
+    let second = enqueue(&lanes, "tenant-a", "order", 2, now);
+    let signal = Arc::new(Signal(AtomicUsize::new(0)));
+    let waker = Waker::from(Arc::clone(&signal));
+    assert!(!lanes.register_dispatch_waker(now, &waker).unwrap().ready);
+    let poisoned = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _guard = lanes.inner.state.lock().unwrap();
+        panic!("inject lane table poison");
+    }));
+    assert!(poisoned.is_err());
+    drop(active);
+    assert_eq!(signal.0.load(Ordering::SeqCst), 1);
+    assert_eq!(
+        lanes.register_dispatch_waker(now, &waker),
+        Err(EntityLaneError::Poisoned)
+    );
+    drop((first, second));
+}
+
+#[test]
 fn dispatcher_observes_expiry_even_when_global_execution_capacity_is_full() {
     let mut capacity = limits();
     capacity.global_active = 1;
