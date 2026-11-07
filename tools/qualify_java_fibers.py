@@ -166,7 +166,7 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
     timer = compiler.run("timer-readiness-source-control", "java", "-Xmx256m", "-cp",
                          str(timer_output) + os.pathsep + classpath, "TimerReadinessSourceControl").strip()
     if timer != ("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;"
-                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence"):
+                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence"):
         raise ValueError("Java timer readiness source control did not complete")
     return {"status": "actual-locked-classlib-model-passed", "nativeCallbackPairs": 2,
             "pluginOrder": ["runtime", "platform"], "asyncLoweredOwnedPairs": 2,
@@ -372,6 +372,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     controls = [private / name for name in ('ScheduledOwnerControl.java', 'ScheduledCompletableOwnerControl.java',
         'ScheduledPeriodicOwnerControl.java', 'ScheduledPeriodicRollbackSettlementControl.java',
         'ScheduledFutureResultSettlementControl.java', 'CompletableFutureResultSettlementControl.java',
+        'CompletableFutureQueuedRollbackControl.java',
         'dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
     reference = private / 'ScheduledStoppedReferenceControl.java'
     periodic_reference = private / 'ScheduledPeriodicReferenceControl.java'
@@ -443,6 +444,12 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
             'CompletableFutureResultSettlementControl', mode).strip()
         if result != 'COMPLETABLE_RESULT_SETTLEMENT PASS ' + mode:
             raise ValueError('Java CompletableFuture result settlement control did not complete')
+    for mode in ('refused-completed', 'unknown-completed', 'success-completed',
+                 'refused-acceptance', 'unknown-acceptance', 'success-acceptance'):
+        result = compiler.run('completable-queued-rollback-' + mode, 'java', '-Xmx256m', '-cp', output,
+            'CompletableFutureQueuedRollbackControl', mode).strip()
+        if result != 'COMPLETABLE_QUEUED_ROLLBACK PASS ' + mode:
+            raise ValueError('Java CompletableFuture queue rollback control did not complete')
     result = compiler.run('scheduled-periodic-source-control', 'java', '-Xmx256m', '-cp', output,
         'ScheduledPeriodicReferenceControl').strip()
     if result != expected_periodic: raise ValueError('Java periodic scheduled source differs from reference')

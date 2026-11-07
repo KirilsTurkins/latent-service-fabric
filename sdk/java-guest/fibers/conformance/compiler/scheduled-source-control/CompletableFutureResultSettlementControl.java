@@ -32,7 +32,7 @@ public final class CompletableFutureResultSettlementControl {
     }
     private static void reject(CompletableFuture<Integer> future, AtomicInteger calls) {
         try { future.completeAsync(() -> { calls.incrementAndGet(); return 99; }, Runnable::run); throw new AssertionError("uncertain-owner-reused"); }
-        catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-completable-result-settlement-uncertain")); }
+        catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-runtime-poisoned-store")); }
     }
     private static void direct(boolean unknown) {
         var future = new CompletableFuture<Integer>(); AtomicInteger calls = new AtomicInteger();

@@ -23,6 +23,8 @@ public final class Activation {
     private static boolean iteratingPoolRetirement;
     private static volatile boolean poisoned;
     private static Work failedStarts;
+    private static final java.util.concurrent.atomic.AtomicReference<Lease> failedQueuedOwners =
+        new java.util.concurrent.atomic.AtomicReference<>();
     private static Address result;
     private static Throwable failure;
     private static Work root;
@@ -52,6 +54,7 @@ public final class Activation {
     }
 
     private static Bindings.LatentRuntimeActivationToken register(Bindings.LatentRuntimeActivationOwnerKind kind) {
+        requireHealthyAdmission();
         Work parent = lookup(Thread.currentThread());
         var token = Bindings.LatentRuntimeActivation.register(
             kind,
@@ -195,6 +198,7 @@ public final class Activation {
     /** Linear logical ownership; payloads remain in the accounted Java heap. */
     public static class Lease implements AutoCloseable {
         private Bindings.LatentRuntimeActivationToken token;
+        private Lease nextFailedQueued;
         private Lease(Bindings.LatentRuntimeActivationToken token) { this.token = token; }
         @Override public void close() {
             if (token == null) return;
@@ -205,6 +209,7 @@ public final class Activation {
     }
 
     public static Lease owner(Bindings.LatentRuntimeActivationOwnerKind kind) {
+        requireHealthyAdmission();
         if (!entered) throw new IllegalStateException("activation-runtime-entry-required");
         return new Lease(register(kind));
     }
@@ -212,8 +217,24 @@ public final class Activation {
     /** No current or later invocation may succeed after an unknown Result settlement. */
     public static void fenceUncertainResultSettlement() { poisoned = true; }
 
+    /** Keep a failed constructor's admitted owner rooted until Store destruction. */
+    public static void fenceUncertainQueuedWorkSettlement(Lease owner) {
+        poisoned = true;
+        // The lease and list head were allocated before admission. Each failed
+        // constructor links its own lease once; no failure-path allocation or
+        // second settlement is needed, even when acknowledgement was lost.
+        Lease previous;
+        do {
+            previous = failedQueuedOwners.get();
+            owner.nextFailedQueued = previous;
+        } while (!failedQueuedOwners.compareAndSet(previous, owner));
+    }
+
+    private static void requireHealthyAdmission() {
+        if (poisoned) throw new IllegalStateException("activation-runtime-poisoned-store");
+    }
     private static void requireHealthyCompletion() {
-        if (poisoned) throw new IllegalStateException("activation-runtime-result-settlement-uncertain");
+        if (poisoned) throw new IllegalStateException("activation-runtime-owner-settlement-uncertain");
     }
 
     private static final class TimerLease extends Lease {
@@ -240,6 +261,7 @@ public final class Activation {
 
     /** One host-owned timer also accounts the corresponding logical Java wait. */
     public static Lease timer(long deadline) {
+        requireHealthyAdmission();
         Work work = lookup(Thread.currentThread());
         if (!entered || work == null || work.complete || work.timer != null)
             throw new IllegalStateException("activation-runtime-timer-frame");
@@ -398,6 +420,7 @@ public final class Activation {
 
     @Export(name = "lsf_java_runtime_wait")
     public static void waitFor(long millis) {
+        requireHealthyAdmission();
         if (!entered || root == null || root.complete) throw new IllegalStateException("activation-runtime-wait-owner");
         long nanos = millis < 0 || millis > Long.MAX_VALUE / 1_000_000
             ? Long.MAX_VALUE : millis * 1_000_000;
