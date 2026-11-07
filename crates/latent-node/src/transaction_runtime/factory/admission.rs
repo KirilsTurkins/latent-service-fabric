@@ -330,13 +330,14 @@ impl NativeTransactionAdmission {
             .ok_or_else(authorization::denied)?;
         let current_retention = Arc::clone(&retained);
         let current = Arc::new(move || current_retention.check_current().is_ok());
+        let retained_bytes = retained.total_native_bytes()?;
         let wait = async {
             self.owners
                 .lanes
                 .acquire(
                     scope,
                     envelope.activation_id.0.as_bytes().to_vec(),
-                    0,
+                    retained_bytes,
                     deadline,
                     current,
                     permit,

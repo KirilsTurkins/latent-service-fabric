@@ -229,7 +229,9 @@ async fn duplicates_queued_before_the_first_claim_replay_when_that_claim_is_publ
     use latent_core::native_capacity::NativeBufferClass;
     use latent_state::entity_lanes::EntityScope;
 
-    let fixture = Fixture::new().await;
+    let mut limits = latent_core::native_capacity::NativeCapacityLimits::default();
+    limits.ordinary.bytes = 512 * 1024 * 1024;
+    let fixture = Fixture::with_native_limits(limits).await;
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
     let reservation = fixture.owners.reserve_ingress(0, deadline).unwrap();
     let permit = reservation
@@ -343,6 +345,12 @@ async fn cold_entity_admission_progresses_while_the_hot_entity_waits() {
     })
     .await
     .unwrap();
+    let (overflow, overflow_envelope, overflow_budget) =
+        fixture.entity_invocation("hot-overflow", "hot");
+    let rejected = overflow.admit(&overflow_envelope, &overflow_budget).await;
+    assert!(matches!(rejected, Err(error)
+        if error.code == latent_core::PlatformErrorCode::ResourceExhausted
+            && error.message == "entity-queue-backpressure"));
     let (cold, cold_envelope, cold_budget) = fixture.entity_invocation("cold-one", "cold");
     tokio::time::timeout(
         std::time::Duration::from_secs(5),
@@ -353,6 +361,10 @@ async fn cold_entity_admission_progresses_while_the_hot_entity_waits() {
     .unwrap();
     assert!(!waiting.is_finished());
     assert_eq!(fixture.owners.lanes.snapshot().active, 2);
+    assert!(
+        fixture.owners.lanes.snapshot().retained_bytes()
+            >= 3 * super::capacity::minimum_ingress_bytes()
+    );
     let TransactionAdmissionResult::Command {
         claim: cold_claim,
         host: cold_host,
@@ -373,7 +385,7 @@ async fn cold_entity_admission_progresses_while_the_hot_entity_waits() {
         host.retire_command_role().unwrap();
     }
     assert_eq!(fixture.owners.lanes.snapshot().keys, 0);
-    drop((hot, cold, waiting_admission));
+    drop((hot, cold, waiting_admission, overflow));
     fixture.shutdown().await;
 }
 

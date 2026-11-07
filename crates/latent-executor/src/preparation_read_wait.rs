@@ -12,9 +12,14 @@ use latent_core::{
     ActivationBudget, BoxFuture, HostMemoryReservation, PlatformError, PlatformErrorCode,
 };
 
+// The shared native accounting model allows this per nonempty allocation;
+// it is not a measurement or a bound on allocator or process RSS.
+const BOX_ALLOCATION_BOOKKEEPING: usize = 64;
+
 /// One concrete future allocation paid by the original activation. This owns
-/// only the Box layout: transitive allocations and shared executor/driver
-/// infrastructure need their own funding and qualification.
+/// only the Box layout and modelled allocator bookkeeping: transitive
+/// allocations and shared executor/driver infrastructure need their own funding
+/// and qualification.
 ///
 /// Field order is part of the lifetime contract. The complete future and its
 /// heap backing are dropped before the reservation, including cancellation.
@@ -37,7 +42,16 @@ impl<'a> OwnedPreparationWait<'a> {
     where
         F: Future<Output = ()> + Send + 'a,
     {
-        let bytes = u64::try_from(Layout::new::<F>().size()).map_err(|_| PlatformError {
+        let size = Layout::new::<F>().size();
+        // Box does not allocate for a zero-sized future. Preserve the existing
+        // zero-byte reservation behavior for that case.
+        let bytes = (if size == 0 {
+            Some(0)
+        } else {
+            size.checked_add(BOX_ALLOCATION_BOOKKEEPING)
+        })
+        .and_then(|bytes| u64::try_from(bytes).ok())
+        .ok_or_else(|| PlatformError {
             code: PlatformErrorCode::ResourceExhausted,
             message: "owned timer future layout overflow".to_owned(),
             retryable: false,

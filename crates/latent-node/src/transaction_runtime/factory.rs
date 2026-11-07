@@ -73,20 +73,29 @@ impl TransactionAdmissionOwners {
             return Err(authorization::denied());
         }
         let limits = native.limits();
-        let slots = limits.ordinary.slots;
         let bytes = limits.ordinary.bytes;
+        let minimum = super::capacity::minimum_ingress_bytes();
+        let byte_slots = usize::try_from(bytes / minimum).unwrap_or(usize::MAX);
+        let slots = limits.ordinary.slots.min(byte_slots).max(1);
+        let tenant_slots = if slots > 2 { slots - 1 } else { slots };
+        let tenant_bytes = if slots > 2 { bytes - minimum } else { bytes }
+            .max(limits.ordinary.maximum_reservation_bytes.saturating_add(16 * 1024))
+            .min(bytes);
+        let entity_bytes = (bytes / 2)
+            .max(limits.ordinary.maximum_reservation_bytes.saturating_add(16 * 1024))
+            .min(bytes);
         let lanes = super::entity_queue::EntityQueue::new(
             latent_state::entity_lanes::EntityLaneLimits {
                 global_queued: slots,
-                tenant_queued: (slots / 2).max(1),
+                tenant_queued: tenant_slots,
                 entity_queued: (slots / 4).max(1),
                 global_keys: slots,
-                tenant_keys: (slots / 2).max(1),
+                tenant_keys: tenant_slots,
                 global_active: slots,
-                tenant_active: (slots / 2).max(1),
+                tenant_active: tenant_slots,
                 global_bytes: bytes,
-                tenant_bytes: (bytes / 2).max(1),
-                entity_bytes: (bytes / 4).max(1),
+                tenant_bytes,
+                entity_bytes,
                 scope_bytes: 3 * latent_core::transaction_contract::IDENTITY_BYTES,
                 command_identity_bytes: latent_core::transaction_contract::IDENTITY_BYTES,
                 maximum_wait_age: limits.maximum_lifetime,

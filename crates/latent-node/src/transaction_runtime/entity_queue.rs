@@ -122,8 +122,9 @@ impl EntityQueue {
             })
             .and_then(|n| n.checked_add(4096))
             .and_then(|n| u64::try_from(n).ok())
-            .and_then(|n| n.checked_add(retained_bytes))
             .ok_or(QueueError::Unavailable)?;
+        // `retained_bytes` is separately held by the permit's original global
+        // reservation; the subpermit covers these additional lane objects.
         if permit.buffer_class() != NativeBufferClass::Request || permit.bytes() < charge {
             return Err(QueueError::Unavailable);
         }
