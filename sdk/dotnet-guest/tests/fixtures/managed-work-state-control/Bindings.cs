@@ -8,6 +8,16 @@ namespace Lsf.CompilerOwned;
 // ledger. Those have separate exact metadata and signed-execution gates.
 public static partial class ManagedWorkRuntime
 {
+    static partial void StartupAllocationControl()
+    {
+        if (global::StateControl.StartupAllocationCallback is { } callback)
+        { global::StateControl.StartupAllocationCallback = null; callback(); }
+    }
+    static partial void StartupRootPublishedControl()
+    {
+        if (global::StateControl.StartupRootPublishedCallback is { } callback)
+        { global::StateControl.StartupRootPublishedCallback = null; callback(); }
+    }
     static partial void RequiredResultPublishedControl()
     {
         if (global::StateControl.RequiredPublishedCallback is { } callback)
@@ -40,6 +50,9 @@ public static partial class ManagedWorkRuntime
 
     internal static (ulong Generation, ulong Id)? PendingResultForControl(object item) =>
         Find(item)?.PendingResult;
+    internal static ((ulong Generation, ulong Id)? Root, bool RootActive,
+        (ulong Generation, ulong Id) Native, bool Installed) StartupForControl() =>
+        (root?.Token, root?.Active ?? false, storage, installed);
 
     private static partial bool TimerScheduled(object item) => throw new InvalidOperationException("unexpected-control-timer");
     private static partial int TimerCallbacks(object item) => throw new InvalidOperationException("unexpected-control-timer");
@@ -49,7 +62,7 @@ public static partial class ManagedWorkRuntime
     private static partial void BindAsyncContext(Task task) { }
     private static partial bool Maintenance(object item) => false;
     private static partial bool RequiredContinuation(object item) => false;
-    private static partial bool ReadySource() => global::StateControl.Work.Count != 0;
+    private static partial bool ReadySource() => global::StateControl.ReadyForControl();
     private static partial void WaitForCompletion(Task task)
     {
         while (!task.IsCompleted) global::StateControl.Step();

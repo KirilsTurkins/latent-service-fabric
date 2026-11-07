@@ -231,10 +231,19 @@ REQUIRED_RESULT_REWRITE_RECEIPT = {**TIMER_RESERVATION_REWRITE_RECEIPT,
     'resultLookup': 'exact-result-primary-before-parent-alias'}
 
 
+# Startup holds dormant root/Native custody and fences untracked reentry.
+NATIVE_STARTUP_REWRITE_RECEIPT = {**REQUIRED_RESULT_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v10',
+    'startupReservation': 'dormant-root-native-refusal-ordered-cleanup-and-context-custody',
+    'startupReadiness': 'pre-probe-sentinel-and-untracked-dispatch-poison'}
+
+
 def validate_rewrite(value: dict) -> None:
     if type(value) is not dict:
         raise ValueError('dotnet-managed-work-rewrite-receipt')
-    expected_receipt = (REQUIRED_RESULT_REWRITE_RECEIPT
+    expected_receipt = (NATIVE_STARTUP_REWRITE_RECEIPT
+        if value.get('patch') == NATIVE_STARTUP_REWRITE_RECEIPT['patch']
+        else REQUIRED_RESULT_REWRITE_RECEIPT
         if value.get('patch') == REQUIRED_RESULT_REWRITE_RECEIPT['patch']
         else TIMER_RESERVATION_REWRITE_RECEIPT
         if value.get('patch') == TIMER_RESERVATION_REWRITE_RECEIPT['patch']
