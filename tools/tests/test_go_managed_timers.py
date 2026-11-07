@@ -279,6 +279,279 @@ func TestIdleDrainFailsClosedOnEndlessSlotChurn(t *testing.T) {
 }
 '''
 
+# The actual publisher is compiled unchanged. Only the installer's allocation
+# is replaced with an equivalent make plus an optional test pause, modeling the
+# GC-assist suspension allowed at allocation rather than claiming a real pause.
+SLOT_INSTALL_TEST = r'''package timerowner
+
+import (
+    "testing"
+    "unsafe"
+)
+
+var lsfTimerSlots []lsfTimerSlot
+var lsfTimerCallbacks uint32
+var allocationHook func(int, [2]uint64)
+type timer struct { isChan bool; lsfToken [2]uint64; lsfSlot uint32 }
+func lsfFail(message string) { panic(message) }
+func internal_weak_runtime_registerWeakPointer(p unsafe.Pointer) unsafe.Pointer { return p }
+func controlledTimerSlots(size int, token [2]uint64) []lsfTimerSlot {
+    if allocationHook != nil { allocationHook(size, token) }
+    return make([]lsfTimerSlot, size)
+}
+func assertInstalled(t *testing.T, selected *timer, token [2]uint64) {
+    t.Helper()
+    if selected.lsfToken != token || selected.lsfSlot == 0 || int(selected.lsfSlot) > len(lsfTimerSlots) {
+        t.Fatalf("timer identity=%+v slots=%v", selected, lsfTimerSlots)
+    }
+    slot := lsfTimerSlots[selected.lsfSlot-1]
+    if slot.token != token || slot.weak != unsafe.Pointer(selected) || slot.callback == selected.isChan {
+        t.Fatalf("selected slot=%+v timer=%+v", slot, selected)
+    }
+}
+
+func TestInstallRetriesWhenAnotherOwnerPublishesDuringAllocation(t *testing.T) {
+    lsfTimerSlots, lsfTimerCallbacks = nil, 0
+    first, second := &timer{isChan:true}, &timer{isChan:false}
+    firstToken, secondToken := [2]uint64{1,1}, [2]uint64{1,2}
+    parked, resume, done := make(chan struct{}), make(chan struct{}), make(chan struct{})
+    paused := false
+    allocationHook = func(_ int, token [2]uint64) {
+        if token == firstToken && !paused { paused = true; close(parked); <-resume }
+    }
+    defer func(){ allocationHook = nil }()
+    go func(){ lsfInstallTimer(first, firstToken); close(done) }()
+    <-parked
+    lsfInstallTimer(second, secondToken)
+    assertInstalled(t, second, secondToken)
+    close(resume); <-done
+    assertInstalled(t, first, firstToken)
+    assertInstalled(t, second, secondToken)
+    if len(lsfTimerSlots)!=2 || first.lsfSlot==second.lsfSlot || lsfTimerCallbacks!=1 {
+        t.Fatalf("slots=%v first=%+v second=%+v callbacks=%d", lsfTimerSlots, first, second, lsfTimerCallbacks)
+    }
+}
+
+func TestInstallReusesSlotFreedDuringAllocation(t *testing.T) {
+    previous, next := [2]uint64{2,1}, [2]uint64{2,2}
+    existing, selected := &timer{isChan:true}, &timer{isChan:true}
+    lsfTimerSlots = []lsfTimerSlot{{token:previous, weak:unsafe.Pointer(existing)}}
+    lsfTimerCallbacks = 0
+    parked, resume, done := make(chan struct{}), make(chan struct{}), make(chan struct{})
+    allocationHook = func(_ int, token [2]uint64) {
+        if token == next { close(parked); <-resume }
+    }
+    defer func(){ allocationHook = nil }()
+    go func(){ lsfInstallTimer(selected, next); close(done) }()
+    <-parked
+    // Model the existing owner's confirmed retirement before the slot is free.
+    lsfTimerSlots[0] = lsfTimerSlot{}
+    close(resume); <-done
+    assertInstalled(t, selected, next)
+    if len(lsfTimerSlots)!=1 || selected.lsfSlot!=1 { t.Fatalf("unexpected growth: %v", lsfTimerSlots) }
+}
+
+func TestInstallRetriesAfterSeveralConcurrentGrowths(t *testing.T) {
+    lsfTimerSlots, lsfTimerCallbacks = nil, 0
+    a, b, c := &timer{isChan:true}, &timer{isChan:false}, &timer{isChan:false}
+    one, two, three := [2]uint64{3,1}, [2]uint64{3,2}, [2]uint64{3,3}
+    parked, resume, done := make(chan struct{}), make(chan struct{}), make(chan struct{})
+    paused := false
+    allocationHook = func(_ int, token [2]uint64) {
+        if token == one && !paused { paused = true; close(parked); <-resume }
+    }
+    defer func(){ allocationHook = nil }()
+    go func(){ lsfInstallTimer(a, one); close(done) }()
+    <-parked
+    lsfInstallTimer(b, two)
+    lsfInstallTimer(c, three)
+    close(resume); <-done
+    assertInstalled(t, a, one); assertInstalled(t, b, two); assertInstalled(t, c, three)
+    if len(lsfTimerSlots)!=3 || a.lsfSlot==b.lsfSlot || a.lsfSlot==c.lsfSlot || b.lsfSlot==c.lsfSlot || lsfTimerCallbacks!=2 {
+        t.Fatalf("slots=%v callbacks=%d", lsfTimerSlots, lsfTimerCallbacks)
+    }
+}
+
+func TestInstallFailsClosedIfInventoryExceedsHostBound(t *testing.T) {
+    lsfTimerSlots, lsfTimerCallbacks, allocationHook = make([]lsfTimerSlot, 8192), 0, nil
+    for i := range lsfTimerSlots { lsfTimerSlots[i].token = [2]uint64{4, uint64(i+1)} }
+    selected := &timer{isChan:true}
+    var failure interface{}
+    func(){ defer func(){ failure = recover() }(); lsfInstallTimer(selected, [2]uint64{4,8193}) }()
+    if failure != "LSF timer inventory capacity exhausted" || selected.lsfSlot!=0 ||
+        len(lsfTimerSlots)!=8192 || lsfTimerSlots[0].token != [2]uint64{4,1} || lsfTimerSlots[8191].token != [2]uint64{4,8192} {
+        t.Fatalf("failure=%v timer=%+v", failure, selected)
+    }
+}
+'''
+
+# The dispatcher functions are copied from the runtime template. The two
+# injected hooks only pause allocation or channel receive at the indicated
+# boundary; host readiness and physical retirement are controlled stubs.
+READINESS_PUBLICATION_TEST = r'''package timerwait
+
+import (
+    "runtime"
+    "testing"
+    "unsafe"
+)
+
+type unit struct{}
+type stateType struct { timerWaits []*lsfTimerWait; waitableSet uint32 }
+var state *stateType
+const (STATUS_STARTING uint32 = 0; STATUS_STARTED uint32 = 1; STATUS_RETURNED uint32 = 2)
+type allocator struct{}
+func (allocator) Allocate(_ *runtime.Pinner, _, _ int) unsafe.Pointer { return unsafe.Pointer(new([16]byte)) }
+var witRuntime allocator
+var selected [2]uint64
+var status uint32
+var hostStarts int
+var physicalPending bool
+var lastStarted *lsfTimerWait
+var appendHook, receiveHook func()
+var nextHook func(int)
+var nextCalls int
+func lsfNextTimer() (uint64, uint64) {
+    nextCalls++
+    if nextHook != nil { nextHook(nextCalls) }
+    return selected[0], selected[1]
+}
+func lsfTimerNext(_, _ int64, _ unsafe.Pointer) uint32 {
+    hostStarts++
+    lastStarted = state.timerWaits[len(state.timerWaits)-1]
+    physicalPending = status == STATUS_STARTING || status == STATUS_STARTED
+    if physicalPending { return 42<<4 | status }
+    return status
+}
+func waitableSetNew() uint32 { return 7 }
+func waitableJoin(_, _ uint32) {}
+func subtaskDrop(_ uint32) { physicalPending = false }
+func controlledWaitAppend(old []*lsfTimerWait, wait *lsfTimerWait) []*lsfTimerWait {
+    if appendHook != nil { appendHook() }
+    return append(old, wait)
+}
+func controlledFenceReceive(wait *lsfTimerWait) {
+    if receiveHook != nil { receiveHook() }
+    (<-wait.done)
+}
+func reset() {
+    state = &stateType{}
+    selected = [2]uint64{1,1}
+    status, hostStarts, physicalPending, lastStarted = STATUS_STARTED, 0, false, nil
+    appendHook, receiveHook = nil, nil
+    nextHook, nextCalls = nil, 0
+}
+func cancelled(wait *lsfTimerWait) {
+    *(*byte)(wait.result) = 1
+    *(*byte)(unsafe.Add(wait.result, 8)) = 3
+}
+
+func TestStopWhilePublicationAllocatesDoesNotStartAStaleSubtask(t *testing.T) {
+    reset()
+    parked, resume, done := make(chan struct{}), make(chan struct{}), make(chan bool, 1)
+    appendHook = func(){ close(parked); <-resume }
+    go func(){ done <- lsfStartTimerWait() }()
+    <-parked
+    pendingBeforePublication := physicalPending
+    lsfActivationTimerStopped(1,1)
+    selected = [2]uint64{} // The original host timer has been stopped.
+    lsfActivationTimerFence(1,1)
+    close(resume)
+    refreshed := <-done
+    if pendingBeforePublication || hostStarts != 0 || !refreshed || len(state.timerWaits)!=0 {
+        t.Fatalf("pending=%v starts=%d refresh=%v inventory=%d", pendingBeforePublication, hostStarts, refreshed, len(state.timerWaits))
+    }
+}
+
+func TestChangedSelectionIsRetriedBeforeHostAdmission(t *testing.T) {
+    reset()
+    parked, resume, done := make(chan struct{}), make(chan struct{}), make(chan bool, 1)
+    appendHook = func(){ close(parked); <-resume }
+    go func(){ done <- lsfStartTimerWait() }()
+    <-parked
+    selected = [2]uint64{1,2}
+    close(resume)
+    refreshed := <-done
+    if hostStarts!=0 || !refreshed || len(state.timerWaits)!=0 { t.Fatalf("starts=%d refresh=%v inventory=%v", hostStarts, refreshed, state.timerWaits) }
+}
+
+func TestStopAfterPublicationWaitsForUnstartedRecordRetirement(t *testing.T) {
+    reset()
+    parked, resume, started, fenced := make(chan struct{}), make(chan struct{}), make(chan bool,1), make(chan struct{})
+    nextHook = func(call int) { if call==2 { close(parked); <-resume } }
+    go func(){ started <- lsfStartTimerWait() }()
+    <-parked
+    if len(state.timerWaits)!=1 || hostStarts!=0 { t.Fatal("unstarted publication not visible") }
+    lsfActivationTimerStopped(1,1)
+    selected = [2]uint64{}
+    go func(){ lsfActivationTimerFence(1,1); close(fenced) }()
+    runtime.Gosched()
+    select { case <-fenced: t.Fatal("fence returned before the unstarted record retired"); default: }
+    close(resume)
+    if refreshed := <-started; !refreshed { t.Fatal("stale selection did not request refresh") }
+    <-fenced
+    if hostStarts!=0 || physicalPending || len(state.timerWaits)!=0 { t.Fatal("stopped unstarted record leaked") }
+}
+
+func TestStoppedPendingWaitFencesUntilPhysicalSubtaskDrop(t *testing.T) {
+    reset()
+    if lsfStartTimerWait() || !physicalPending || len(state.timerWaits)!=1 { t.Fatal("pending setup") }
+    wait := state.timerWaits[0]
+    lsfActivationTimerStopped(1,1)
+    cancelled(wait)
+    fenced := make(chan struct{})
+    go func(){ lsfActivationTimerFence(1,1); close(fenced) }()
+    runtime.Gosched()
+    select { case <-fenced: t.Fatal("fence returned while subtask remained pending"); default: }
+    if !lsfHandleTimerEvent(42) { t.Fatal("pending event not handled") }
+    <-fenced
+    if physicalPending || len(state.timerWaits)!=0 { t.Fatalf("pending=%v waits=%v", physicalPending, state.timerWaits) }
+}
+
+func TestCompletionBeforeFenceReceiveRemainsVisible(t *testing.T) {
+    reset()
+    lsfStartTimerWait()
+    wait := state.timerWaits[0]
+    lsfActivationTimerStopped(1,1)
+    cancelled(wait)
+    parked, resume, fenced := make(chan struct{}), make(chan struct{}), make(chan struct{})
+    receiveHook = func(){ close(parked); <-resume }
+    go func(){ lsfActivationTimerFence(1,1); close(fenced) }()
+    <-parked
+    if !lsfHandleTimerEvent(42) { t.Fatal("pending event not handled") }
+    close(resume)
+    <-fenced
+    if physicalPending || len(state.timerWaits)!=0 { t.Fatalf("pending=%v waits=%v", physicalPending, state.timerWaits) }
+}
+
+func TestImmediateCompletionRemovesAndClosesWait(t *testing.T) {
+    reset()
+    status = STATUS_RETURNED
+    if !lsfStartTimerWait() || hostStarts!=1 || physicalPending || len(state.timerWaits)!=0 { t.Fatal("synchronous result not retired") }
+    select { case <-lastStarted.done: default: t.Fatal("synchronous completion not visible to fence") }
+}
+
+func TestUnstartedWaitCannotConsumeAnotherSubtaskEvent(t *testing.T) {
+    reset()
+    wait := &lsfTimerWait{token:[2]uint64{1,1}, done:make(chan unit)}
+    state.timerWaits = []*lsfTimerWait{wait}
+    if lsfHandleTimerEvent(0) || len(state.timerWaits)!=1 || state.timerWaits[0]!=wait {
+        t.Fatal("unstarted timer wait consumed an unrelated event")
+    }
+}
+
+func TestUnstoppedReadinessFailureStillTraps(t *testing.T) {
+    reset()
+    lsfStartTimerWait()
+    wait := state.timerWaits[0]
+    *(*byte)(wait.result) = 1
+    *(*byte)(unsafe.Add(wait.result,8)) = 6
+    var failure interface{}
+    func(){ defer func(){ failure=recover() }(); lsfHandleTimerEvent(42) }()
+    if failure != "LSF timer readiness failed or root deadline won" { t.Fatalf("failure=%v", failure) }
+}
+'''
+
 
 class SourceOnlyCompiler:
     def __init__(self, *_args, **_kwargs):
@@ -320,6 +593,57 @@ def compile_record(folder):
 
 
 class GoManagedTimers(unittest.TestCase):
+    @unittest.skipUnless(shutil.which('go'), 'controlled host interleaving requires Go')
+    def test_timer_readiness_is_published_before_host_start_and_fenced_until_drop(self):
+        source = (reference.ROOT / 'sdk/go-guest/runtime/timer_async.go.in').read_text()
+        start = source.index('type lsfTimerWait struct {')
+        declaration = source[start:source.index('\n}', start) + 2]
+        functions = []
+        for name in ('lsfActivationTimerStopped', 'lsfActivationTimerFence', 'lsfCompleteTimerWait',
+                     'lsfRemoveTimerWait', 'lsfHandleTimerEvent', 'lsfStartTimerWait'):
+            start = source.index('func ' + name + '(')
+            functions.append(source[start:source.index('\n}', start) + 2])
+        receive, allocation = '(<-wait.done)', 'append(state.timerWaits, wait)'
+        self.assertEqual(functions[1].count(receive), 1)
+        self.assertEqual(functions[-1].count(allocation), 1)
+        functions[1] = functions[1].replace(receive, 'controlledFenceReceive(wait)')
+        functions[-1] = functions[-1].replace(allocation, 'controlledWaitAppend(state.timerWaits, wait)')
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'wait.go').write_text('package timerwait\n\nimport ("runtime"; "unsafe")\n\n' +
+                                          declaration + '\n\n' + '\n\n'.join(functions) + '\n')
+            (root / 'wait_test.go').write_text(READINESS_PUBLICATION_TEST)
+            env = dict(os.environ, GO111MODULE='off', GOENV='off', GOFLAGS='', GOWORK='off',
+                       GOTOOLCHAIN='local', GOMAXPROCS='1', GOOS='', GOARCH='', CGO_ENABLED='0')
+            env.pop('GOROOT', None)
+            result = subprocess.run([shutil.which('go'), 'test', '-count=1', '-timeout=45s', '-v', '.'],
+                                    cwd=root, env=env, text=True, capture_output=True, timeout=180)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    @unittest.skipUnless(shutil.which('go'), 'controlled host interleaving requires Go')
+    def test_timer_installation_rechecks_inventory_after_allocation_parking(self):
+        source = (reference.ROOT / 'sdk/go-guest/runtime/timer_bridge.go.in').read_text()
+        declaration = next(line for line in source.splitlines() if line.startswith('type lsfTimerSlot struct '))
+        functions = []
+        for signature in ('func lsfInstallTimer(', '//go:nosplit\nfunc lsfPublishTimer('):
+            start = source.index(signature)
+            end = source.index('\n}', start) + 2
+            functions.append(source[start:end])
+        allocation = 'make([]lsfTimerSlot, capacity)'
+        self.assertEqual(functions[0].count(allocation), 1)
+        functions[0] = functions[0].replace(allocation, 'controlledTimerSlots(capacity, token)')
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'timer.go').write_text('package timerowner\n\nimport "unsafe"\n\n' +
+                                           declaration + '\n\n' + '\n\n'.join(functions) + '\n')
+            (root / 'timer_test.go').write_text(SLOT_INSTALL_TEST)
+            env = dict(os.environ, GO111MODULE='off', GOENV='off', GOFLAGS='', GOWORK='off',
+                       GOTOOLCHAIN='local', GOMAXPROCS='1', GOOS='', GOARCH='', CGO_ENABLED='0')
+            env.pop('GOROOT', None)
+            result = subprocess.run([shutil.which('go'), 'test', '-count=1', '-timeout=45s', '-v', '.'],
+                                    cwd=root, env=env, text=True, capture_output=True, timeout=180)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     @unittest.skipUnless(shutil.which('go'), 'controlled host interleaving requires Go')
     def test_collected_timer_sweep_retains_original_identity_across_gc_parking(self):
         source = (reference.ROOT / 'sdk/go-guest/runtime/timer_bridge.go.in').read_text()

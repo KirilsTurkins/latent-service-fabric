@@ -98,6 +98,22 @@ internal static class TimerControl
         Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-timers");
         Need(context == outer && timerSettlementAttempts == 1 && Count(5) == (failAfterSettlement ? 0 : 1));
     }
+    private static void QueueSettlementControl(bool unknown)
+    {
+        var item = Arm();
+        for (int i = 0; i < 2; i++) { ManagedWorkRuntime.TimerAccepted(item); ManagedWorkRuntime.Enqueue(item); }
+        var original = ManagedWorkRuntime.QueuedTokenForControl(item)
+            ?? throw new InvalidOperationException("timer-control-missing-queue-token");
+        failingSettlement = original.Id; failAfterSettlement = unknown;
+        Refuses(() => ManagedWorkRuntime.Dequeue(item), "control-timer-settlement-failed");
+        Refuses(() => ManagedWorkRuntime.Enqueue(item), "managed-work-queue-settlement-uncertain");
+        Refuses(() => ManagedWorkRuntime.EnqueueFailed(item), "managed-work-queue-settlement-uncertain");
+        Refuses(() => ManagedWorkRuntime.Dequeue(item), "managed-work-queue-settlement-uncertain");
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-queue");
+        Need(timerSettlementAttempts == 1 && Count(3) == (unknown ? 1 : 2)
+            && Count(5) == 1 && ManagedWorkRuntime.QueuedTokenForControl(item) == original);
+    }
     private static void Run(string name)
     {
         if (name == "native-storage-refusal-rolls-back-root")
@@ -132,6 +148,8 @@ internal static class TimerControl
                 Need(Count(5) == 1); Fire(item, () => Need(Count(5) == 1 && context.Item2 != 0));
                 Need(Count(5) == 0); Finish(); break;
             }
+            case "timer-queue-refusal-fences-readmission": QueueSettlementControl(false); break;
+            case "timer-queue-unknown-fences-readmission": QueueSettlementControl(true); break;
             case "multiple-queued-callbacks-retain-one-timer": {
                 var item = Arm();
                 for (int i = 0; i < 2; i++) { ManagedWorkRuntime.TimerAccepted(item); ManagedWorkRuntime.Enqueue(item); }
