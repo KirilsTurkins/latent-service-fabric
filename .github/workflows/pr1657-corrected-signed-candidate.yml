@@ -1,0 +1,107 @@
+name: PR 1657 corrected fixed graph proof and signed candidate
+on:
+  push:
+    branches: ['diag/pr1657-corrected-signed-20261107']
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: pr1657-corrected-signed-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          components: rustfmt
+      - name: Retrieve bounded exact compiler artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: timeout 180 gh api repos/KirilsTurkins/latent-service-fabric/actions/artifacts/13570829656/zip > "$RUNNER_TEMP/pr1657-fresh-compiler.zip"
+      - name: Prepare only the reviewed candidate on the clean source parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/pr1657-helpers" "$RUNNER_TEMP/pr1657-candidate"
+          cp .github/pr1657_refresh_*.py "$RUNNER_TEMP/pr1657-helpers/"
+          git checkout --detach 27164664b222bc52c88371a2225d147b3f8c020e
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B "$RUNNER_TEMP/pr1657-helpers/pr1657_refresh_catalogue.py"
+          python3 -B "$RUNNER_TEMP/pr1657-helpers/pr1657_refresh_package.py"
+          python3 -B "$RUNNER_TEMP/pr1657-helpers/pr1657_refresh_controls.py"
+          rustfmt --edition 2024 crates/latent-component-threading/src/rust_component.rs crates/latent-component-threading/src/rust_original_delta.rs crates/latent-packaging/src/semantics/wasm/tests.rs crates/latent-wasmtime/src/component_threading.rs
+          git diff --check
+          python3 -B -m unittest tools.tests.test_rust_thread_http_combined_node tools.tests.test_rust_thread_http_sibling tools.tests.test_rust_combined_diagnostic_envelope tools.tests.test_ci_suite_fragments -v 2>&1 | tee "$RUNNER_TEMP/pr1657-candidate/python.log"
+          python3 -B -c 'from tools.ci_coverage import validate; validate(); print("Complete maintained CI contracts passed")' | tee "$RUNNER_TEMP/pr1657-candidate/contracts.log"
+          git config user.name 'Kirils Turkins'
+          git config user.email 'turkinskirils@gmail.com'
+          git add crates/latent-component-threading/src/rust_component.rs crates/latent-component-threading/src/rust_original_delta.rs crates/latent-component-threading/src/rust_catalogue/combined-corrected-v1 crates/latent-packaging/src/semantics/wasm/tests.rs crates/latent-wasmtime/src/component_threading.rs tools/rust_combined_http_materials.py tools/rust_thread_http_combined_node.py tools/rust_thread_http_combined_package.py tools/tests/test_rust_thread_http_combined_node.py
+          git commit -m 'fix(rust-http): authenticate the source-captured corrected combined graph'
+          git rev-parse HEAD > "$RUNNER_TEMP/pr1657-candidate/commit.txt"
+          git rev-parse HEAD^{tree} > "$RUNNER_TEMP/pr1657-candidate/tree.txt"
+          git diff --binary HEAD^ HEAD > "$RUNNER_TEMP/pr1657-candidate/source.patch"
+          git ls-tree -r HEAD > "$RUNNER_TEMP/pr1657-candidate/source-tree.txt"
+          git archive HEAD crates/latent-component-threading/src/rust_component.rs crates/latent-component-threading/src/rust_original_delta.rs crates/latent-component-threading/src/rust_catalogue/combined-corrected-v1 crates/latent-packaging/src/semantics/wasm/tests.rs crates/latent-wasmtime/src/component_threading.rs tools/rust_combined_http_materials.py tools/rust_thread_http_combined_node.py tools/rust_thread_http_combined_package.py tools/tests/test_rust_thread_http_combined_node.py | gzip -n > "$RUNNER_TEMP/pr1657-candidate/source.tar.gz"
+      - name: Verify fresh material provenance using the maintained retrieval path
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B tools/rust_combined_http_materials.py --output "$RUNNER_TEMP/pr1657-selected-compiler"
+      - name: Recompute original source and final graph proof with rejection controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo --config .cargo/managed-guest.toml --config 'profile.dev.opt-level=1' --config 'profile.test.opt-level=1' --config 'profile.dev.package.latent-component-threading.opt-level=3' test --locked -p latent-component-threading --lib --features rust-http-combined-preview-diagnostic rust_component::tests::combined_ -- --nocapture --test-threads=1 2>&1 | tee "$RUNNER_TEMP/pr1657-candidate/proof.log"
+          grep -F 'test rust_component::tests::combined_embedded_proof_rejects_changed_material_before_reconstruction ... ok' "$RUNNER_TEMP/pr1657-candidate/proof.log"
+      - name: Execute corrected actual signed application with original budgets and causal gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -B tools/qualify_rust_thread_http_combined.py --compiler-materials "$RUNNER_TEMP/pr1657-selected-compiler" --output "$RUNNER_TEMP/pr1657-signed" --source-commit "$(git rev-parse HEAD)"
+      - name: Retain bounded failure stage and terminal state without credentials
+        if: always()
+        shell: bash
+        run: |
+          python3 -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP']) / 'pr1657-signed'
+          for name in ('FAILED.json', 'node/FAILED.json', 'node/rust-thread-http-terminal.json'):
+              p = root / name
+              if p.is_file() and p.stat().st_size < 1024 * 1024:
+                  d = json.loads(p.read_bytes())
+                  if name.endswith('terminal.json'):
+                      q = d.get('response', {})
+                      d = {'exitCode': d.get('exitCode'), 'outcomeKnown': q.get('outcomeKnown'), 'terminalState': q.get('data', {}).get('terminalState'), 'consumption': q.get('data', {}).get('consumption')}
+                  else:
+                      d = {k: d.get(k) for k in ('status', 'stage', 'errorCategory')}
+                  print(name, json.dumps(d))
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        if: always()
+        with:
+          name: pr1657-corrected-signed-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/pr1657-candidate/**
+            ${{ runner.temp }}/pr1657-selected-compiler/retrieval.json
+            ${{ runner.temp }}/pr1657-signed/**
+          if-no-files-found: error
+          retention-days: 7
