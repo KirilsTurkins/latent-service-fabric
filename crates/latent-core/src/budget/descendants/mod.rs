@@ -7,6 +7,7 @@ mod native_retirement_tests;
 mod retirement;
 #[cfg(test)]
 mod tests;
+mod watcher;
 
 use super::{
     AccountingState, ActivationBudget, ActivationBudgetInner, BudgetConsumption, BudgetDimension,
@@ -22,6 +23,7 @@ use std::{
     },
     time::Instant,
 };
+pub use watcher::{DescendantCancellation, OwnedCancellationFuture};
 
 /// A bounded nonblocking probe of the actual execution cancellation owner.
 /// It must not retain this budget or its descendants (which would form a cycle).
@@ -31,6 +33,22 @@ use std::{
 pub trait BudgetCancellationProbe: Send + Sync {
     fn is_cancelled(&self) -> bool;
     fn cancelled(&self) -> crate::BoxFuture<'_, ()>;
+
+    /// Construct an owned, original-ledger-charged cancellation future.
+    ///
+    /// Existing implementations retain their borrowed API. An implementation
+    /// without an owned factory fails closed before child admission. A trusted
+    /// implementation must reserve with OwnedCancellationFuture::new before
+    /// constructing its future or doing any allocation or work.
+    fn cancelled_owned(
+        self: Arc<Self>,
+        _budget: &ActivationBudget,
+    ) -> Result<OwnedCancellationFuture, PlatformError> {
+        Err(failure(
+            PlatformErrorCode::Unavailable,
+            "descendant-owned-cancellation-unavailable",
+        ))
+    }
     fn mark_terminal(&self);
 }
 

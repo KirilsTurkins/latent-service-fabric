@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use latent_core::{ActivationId, BoxFuture};
+use latent_core::{
+    ActivationBudget, ActivationId, BoxFuture, OwnedCancellationFuture, PlatformError,
+};
 use latent_executor::ExecutionCancellationProbe;
 use latent_scheduler::SchedulingCancellation;
 
@@ -71,6 +73,20 @@ impl latent_core::BudgetCancellationProbe for ActivationControl {
     }
     fn cancelled(&self) -> BoxFuture<'_, ()> {
         Box::pin(async move {
+            let mut terminal = self.terminal.as_ref().expect("Phase 3 owner").subscribe();
+            tokio::select! {
+                biased;
+                _ = terminal.wait_for(|stopped| *stopped) => {},
+                () = self.token.cancelled() => {},
+                () = self.transport.disconnect() => {},
+            }
+        })
+    }
+    fn cancelled_owned(
+        self: Arc<Self>,
+        budget: &ActivationBudget,
+    ) -> Result<OwnedCancellationFuture, PlatformError> {
+        OwnedCancellationFuture::new(budget, move || async move {
             let mut terminal = self.terminal.as_ref().expect("Phase 3 owner").subscribe();
             tokio::select! {
                 biased;

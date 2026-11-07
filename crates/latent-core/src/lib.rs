@@ -27,8 +27,9 @@ pub use budget::{
     ActivationBudget, BudgetCancellationProbe, BudgetConsumption, BudgetDimension, BudgetError,
     BudgetFinalization, BudgetProfile, BudgetReservation, BudgetReservationGroup,
     ChildBudgetDelegation, ChildBudgetOwner, ClockSample, DelegationLimits,
-    DescendantBudgetSnapshot, EffectiveActivationBudget, EffectiveDeadline, HostMemoryReservation,
-    IncomingDeadline, ResourceBudget, RuntimeMemoryReservation,
+    DescendantBudgetSnapshot, DescendantCancellation, EffectiveActivationBudget, EffectiveDeadline,
+    HostMemoryReservation, IncomingDeadline, OwnedCancellationFuture, ResourceBudget,
+    RuntimeMemoryReservation,
 };
 pub use clock::{ActivationClock, SystemActivationClock};
 pub use deadline_diagnostic_observer::{
