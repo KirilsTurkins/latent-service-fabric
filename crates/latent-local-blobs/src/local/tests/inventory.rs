@@ -150,6 +150,57 @@ fn exhausted_generation_never_removes_a_physical_object() {
 }
 
 #[test]
+fn sealed_uncommitted_reference_is_discoverable_after_reopen_but_not_deletable() {
+    use latent_state::{
+        embedded::{EmbeddedStore, StoreLimits},
+        store_identity::StoreIdentity,
+    };
+    let state_root = temporary_root();
+    let blob_root = temporary_root();
+    let file = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create_new(true)
+        .open(state_root.path().join("state.redb"))
+        .unwrap();
+    let state = EmbeddedStore::open_file(
+        file,
+        StoreLimits {
+            cache_bytes: 1024 * 1024,
+            ..StoreLimits::default()
+        },
+    )
+    .unwrap();
+    let view = state.snapshot().unwrap();
+    let initial = StoreIdentity::new("inventory-recovery".into())
+        .unwrap()
+        .prepare_initialization(&view)
+        .unwrap()
+        .unwrap();
+    drop(view);
+    state.apply(initial).unwrap();
+    let owner =
+        LocalBlobStore::open_durable(blob_root.path(), "private", limits(), &state).unwrap();
+    let blob = put(&owner, b"orphan");
+    drop(owner);
+    let reopened =
+        LocalBlobStore::open_durable(blob_root.path(), "private", limits(), &state).unwrap();
+    let mut inventory = LocalReferenceInventory::begin(&reopened, &scope()).unwrap();
+    let page = inventory.next_page(&reopened, 4, &|| Ok(())).unwrap();
+    assert!(page.complete);
+    assert_eq!(page.references(), std::slice::from_ref(&blob));
+    drop(page);
+    drop(inventory);
+    assert_eq!(
+        reopened.release_durable_reference(&scope(), &blob, &state, &|| Ok(())),
+        Err(LocalBlobError::Corrupt)
+    );
+    assert_eq!(reopened.reclaim(4, &|| Ok(())).unwrap().objects, 0);
+    let reader = reopened.open_read(&scope(), &blob, &|| Ok(())).unwrap();
+    assert_eq!(read(&reader, 0, 6).unwrap(), b"orphan");
+}
+
+#[test]
 fn exhausted_generation_refuses_mutation_without_releasing_the_reference() {
     let root = temporary_root();
     let owner = store(root.path());
