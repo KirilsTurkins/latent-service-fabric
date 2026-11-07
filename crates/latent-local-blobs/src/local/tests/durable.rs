@@ -590,6 +590,26 @@ fn audit_setup_rechecks_the_original_checkpoint_and_returns_work() {
 }
 
 #[test]
+fn audit_page_retains_its_own_work_after_the_cursor_is_dropped() {
+    let state_root = temporary_root();
+    let blob_root = temporary_root();
+    let state = database(state_root.path(), true, "audit-page-owner");
+    let mut bounded = limits();
+    bounded.maximum_work = 2;
+    let owner = LocalBlobStore::open_durable(blob_root.path(), "private", bounded, &state).unwrap();
+    put(&owner, b"one");
+    let view = state.snapshot().unwrap();
+    let mut audit = LocalReferenceAudit::begin(&owner, &view, &scope(), &|| Ok(())).unwrap();
+    let page = audit.next_page(&owner, &view, 4, &|| Ok(())).unwrap();
+    assert_eq!(owner.snapshot().unwrap().active_work, 2);
+    drop(audit);
+    assert_eq!(owner.snapshot().unwrap().active_work, 1);
+    assert_eq!(page.entries().count(), 1);
+    drop(page);
+    assert_eq!(owner.snapshot().unwrap().active_work, 0);
+}
+
+#[test]
 fn same_label_different_live_engine_cannot_authorize_release() {
     let state_root = temporary_root();
     let other_root = temporary_root();
