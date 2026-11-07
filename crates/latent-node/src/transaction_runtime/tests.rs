@@ -162,7 +162,7 @@ async fn cancelling_queued_entity_admission_removes_its_reservation_before_claim
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
-async fn queued_entity_duplicate_uses_the_durable_replay_path() {
+async fn active_entity_duplicate_uses_the_durable_in_progress_path_without_waiting() {
     let fixture = Fixture::new().await;
     let (first, envelope, budget) = fixture.entity_invocation("duplicate", "hot");
     first.admit(&envelope, &budget).await.unwrap();
@@ -173,16 +173,34 @@ async fn queued_entity_duplicate_uses_the_durable_replay_path() {
     host.acquire(Mode::Command).unwrap();
     let (duplicate, duplicate_envelope, duplicate_budget) =
         fixture.entity_invocation("duplicate", "hot");
-    let queued = Arc::clone(&duplicate);
-    let waiting =
-        tokio::spawn(async move { queued.admit(&duplicate_envelope, &duplicate_budget).await });
-    tokio::time::timeout(std::time::Duration::from_secs(5), async {
-        while fixture.owners.lanes.snapshot().queued < 1 {
-            tokio::task::yield_now().await;
-        }
-    })
+    let result = tokio::time::timeout(
+        std::time::Duration::from_secs(5),
+        duplicate.admit(&duplicate_envelope, &duplicate_budget),
+    )
     .await
     .unwrap();
+    assert!(
+        matches!(result, Err(error) if error.code == latent_core::PlatformErrorCode::AlreadyExists)
+    );
+    let Some(TransactionAdmissionResult::Existing { command, .. }) =
+        duplicate.take_result().unwrap()
+    else {
+        panic!("duplicate did not retain the existing durable command");
+    };
+    assert_eq!(command.outcome(), Outcome::Pending);
+    assert_eq!(fixture.owners.lanes.snapshot().active, 1);
+    assert_eq!(fixture.owners.lanes.snapshot().queued, 0);
+    let (conflicting, mut conflict_envelope, conflict_budget) =
+        fixture.entity_invocation("duplicate", "hot");
+    conflict_envelope.input = b"different".to_vec();
+    let conflict = conflicting
+        .admit(&conflict_envelope, &conflict_budget)
+        .await;
+    assert!(
+        matches!(conflict, Err(error) if error.code == latent_core::PlatformErrorCode::StateConflict)
+    );
+    assert!(conflicting.take_result().unwrap().is_none());
+    assert_eq!(fixture.owners.lanes.snapshot().queued, 0);
     host.finish_guest_access();
     let _ = budget.finalize_at(None, std::time::Instant::now());
     let completion = CommandCompletion::new(
@@ -200,20 +218,9 @@ async fn queued_entity_duplicate_uses_the_durable_replay_path() {
             ..
         }
     ));
-    let result = tokio::time::timeout(std::time::Duration::from_secs(5), waiting)
-        .await
-        .unwrap()
-        .unwrap();
-    assert!(
-        matches!(result, Err(error) if error.code == latent_core::PlatformErrorCode::AlreadyExists)
-    );
-    assert!(matches!(
-        duplicate.take_result().unwrap(),
-        Some(TransactionAdmissionResult::Existing { .. })
-    ));
     assert_eq!(fixture.rows(Family::Command).await, 1);
     assert_eq!(fixture.owners.lanes.snapshot().active, 0);
-    drop((first, duplicate));
+    drop((first, duplicate, conflicting));
     fixture.shutdown().await;
 }
 

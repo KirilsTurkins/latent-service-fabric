@@ -42,7 +42,8 @@ public static partial class ManagedWorkRuntime
         internal object Item = null!;
         internal Record Owner = null!;
         internal (ulong Generation, ulong Id) Token;
-        internal bool Uncertain;
+        // Bit 0 fences uncertainty and bit 2 marks an unfinished enqueue.
+        internal byte State;
     }
 
     private sealed class Required
@@ -248,15 +249,15 @@ public static partial class ManagedWorkRuntime
         throw new InvalidOperationException("managed-work-required-continuation-limit");
     }
 
-    public static void Enqueue(object item)
+    public static object? Enqueue(object item)
     {
-        if (!installed) return;
+        if (!installed) return null;
         int index = -1;
         for (int i = 0; i < MaximumQueued; i++)
         {
             if (queued![i] is { } existing && ReferenceEquals(existing.Item, item))
             {
-                if (existing.Uncertain)
+                if ((existing.State & 1) != 0)
                     throw new InvalidOperationException("managed-work-queue-uncertain");
                 if (FindTimer(item) is null) throw new InvalidOperationException("managed-work-duplicate-enqueue");
             }
@@ -287,7 +288,12 @@ public static partial class ManagedWorkRuntime
         try
         {
             var token = Reserve(QueuedKind, owner);
-            try { queued![index] = new Queued { Item = item, Owner = owner, Token = token }; }
+            try
+            {
+                var pending = new Queued { Item = item, Owner = owner, Token = token, State = 4 };
+                queued![index] = pending;
+                return pending;
+            }
             catch { settle!(token.Generation, token.Id); throw; }
         }
         catch
@@ -297,33 +303,76 @@ public static partial class ManagedWorkRuntime
         }
     }
 
-    public static void EnqueueFailed(object item)
+    public static void EnqueueFinalized(object? ticket, int outcome)
     {
         if (!installed) return;
-        // The original queue can throw after insertion. It passes only the
-        // item to this hook, so duplicate occurrences cannot be distinguished.
-        // Keep all matching owners charged and refuse further use until teardown.
-        foreach (var pending in queued!)
-            if (pending is not null && ReferenceEquals(pending.Item, item))
-                pending.Uncertain = true;
+        var pending = ticket as Queued ?? throw new InvalidOperationException("managed-work-queue-ticket");
+        if (outcome == 1)
+        {
+            // The insertion call may already have published this item, and
+            // duplicate physical occurrences cannot be distinguished.
+            foreach (var existing in queued!)
+                if (existing is not null && ReferenceEquals(existing.Item, pending.Item))
+                    existing.State |= 1;
+            return;
+        }
+        int index = -1;
+        for (int i = 0; i < MaximumQueued; i++)
+            if (ReferenceEquals(queued![i], pending)) { index = i; break; }
+        if (index < 0) throw new InvalidOperationException("managed-work-queue-ticket");
+        if (outcome == 2)
+        {
+            foreach (var existing in queued!)
+                if (existing is not null && ReferenceEquals(existing.Item, pending.Item) && (existing.State & 1) != 0)
+                    throw new InvalidOperationException("managed-work-queue-uncertain");
+            if ((pending.State & 4) == 0) throw new InvalidOperationException("managed-work-queue-ticket");
+            pending.State = (byte)(pending.State & ~4);
+            return;
+        }
+        if (outcome != 0) throw new InvalidOperationException("managed-work-queue-ticket");
+        if ((pending.State & 1) != 0) return;
+        if ((pending.State & 4) == 0) throw new InvalidOperationException("managed-work-queue-ticket");
+        var timer = pending.Owner.Timer ? FindTimer(pending.Item) : null;
+        if (pending.Owner.Timer && (timer is null || timer.Mutation < 0 || timer.Accepted == 0))
+        {
+            pending.State |= 1;
+            return;
+        }
+        pending.State |= 1;
+        try { settle!(pending.Token.Generation, pending.Token.Id); }
+        catch { return; } // Keep the exact owner and preserve the original queue error.
+        queued![index] = null;
+        if (timer is not null)
+        {
+            // Its producer can still be unwinding. Remove only the failed
+            // callback admission; retirement is checked after that boundary.
+            timer.Accepted--;
+        }
+        // The original logging path can invoke user code before insertion.
+        // Even a newly created Task owner may have escaped to that reentrant
+        // code, so retain it rather than guessing that no context or work uses it.
     }
 
     public static void Dequeue(object item)
     {
         if (!installed) return;
         foreach (var existing in queued!)
-            if (existing is not null && ReferenceEquals(existing.Item, item) && existing.Uncertain)
+            if (existing is not null && ReferenceEquals(existing.Item, item) && (existing.State & 1) != 0)
                 throw new InvalidOperationException("managed-work-queue-uncertain");
         for (int i = 0; i < MaximumQueued; i++)
-            if (queued![i] is { } pending && ReferenceEquals(pending.Item, item))
+            if (queued![i] is { } pending && ReferenceEquals(pending.Item, item)
+                && (pending.State & 4) == 0)
             {
                 // The host may have settled before trapping; retain this
                 // exact queue record but never submit its token again.
-                pending.Uncertain = true;
+                pending.State |= 1;
                 settle!(pending.Token.Generation, pending.Token.Id);
                 queued[i] = null;
                 return;
             }
+        foreach (var pending in queued!)
+            if (pending is not null && ReferenceEquals(pending.Item, item) && (pending.State & 4) != 0)
+                throw new InvalidOperationException("managed-work-queue-admission-pending");
         throw new InvalidOperationException("managed-work-unregistered-dequeue");
     }
 

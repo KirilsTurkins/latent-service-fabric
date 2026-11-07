@@ -167,6 +167,13 @@ impl NativeTransactionAdmission {
             observation::platform(Phase::Retention, self.reserve_retention(envelope, budget))?;
         let bytes = retention.request_bytes();
         *self.retention.lock().map_err(|_| authorization::denied())? = Some(Arc::clone(&retention));
+        if selection.mode == TransactionOperationMode::StrictCommand
+            && selection.entity.is_some()
+            && selection.retry.is_none()
+        {
+            self.replay_existing_entity(&selection, envelope, budget)
+                .await?;
+        }
         // Pending command publication updates the namespace generation. Wait
         // before that write, then read and seal a fresh namespace. Duplicates
         // still use the ordinary durable admission/replay path after selection.
@@ -405,7 +412,7 @@ impl NativeTransactionAdmission {
         Ok(host)
     }
 
-    async fn read_namespace(
+    pub(super) async fn read_namespace(
         &self,
         selection: &TransactionSelection,
         tenant: &latent_core::TenantId,
@@ -442,7 +449,7 @@ impl NativeTransactionAdmission {
             })?
             .ok_or_else(authorization::denied)
     }
-    fn seal(
+    pub(super) fn seal(
         &self,
         initial: OwnedPolicyDecision,
         namespace: NamespaceRead,
@@ -717,7 +724,7 @@ fn selected_scope(
         },
     }
 }
-fn check_view(
+pub(super) fn check_view(
     selection: &TransactionSelection,
     namespace: &NamespaceRead,
     schema: &str,

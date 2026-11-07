@@ -2,6 +2,7 @@
 mod abort_recovery;
 mod admission;
 mod completion;
+mod entity_replay;
 mod policy;
 pub(super) mod pre_host_conflict;
 mod replay;
