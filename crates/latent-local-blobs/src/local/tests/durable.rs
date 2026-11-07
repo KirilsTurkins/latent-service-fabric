@@ -208,11 +208,29 @@ fn provider_aliases_and_epochs_share_physical_retention_without_sharing_authorit
     );
     drop(pin);
     update(&state, &[(Some(first), None)]);
+    {
+        let view = state.snapshot().unwrap();
+        let mut audit = LocalReferenceAudit::begin(&owner, &view, &scope(), &|| Ok(())).unwrap();
+        let page = audit.next_page(&owner, &view, 4, &|| Ok(())).unwrap();
+        assert_eq!(
+            page.entries().collect::<Vec<_>>(),
+            vec![(&blob, LocalReferenceDisposition::HasOwners)]
+        );
+    }
     assert_eq!(
         owner.release_durable_reference(&scope(), &blob, &state, &|| Ok(())),
         Err(LocalBlobError::Busy)
     );
     update(&state, &[(Some(second), None)]);
+    {
+        let view = state.snapshot().unwrap();
+        let mut audit = LocalReferenceAudit::begin(&owner, &view, &scope(), &|| Ok(())).unwrap();
+        let page = audit.next_page(&owner, &view, 4, &|| Ok(())).unwrap();
+        assert_eq!(
+            page.entries().collect::<Vec<_>>(),
+            vec![(&blob, LocalReferenceDisposition::ZeroOwners)]
+        );
+    }
     assert!(owner
         .release_durable_reference(&scope(), &blob, &state, &|| Ok(()))
         .unwrap());
