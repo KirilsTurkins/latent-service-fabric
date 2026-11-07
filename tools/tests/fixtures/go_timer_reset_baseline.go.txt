@@ -1,0 +1,93 @@
+package timerreset
+
+import (
+    "fmt"
+    "runtime"
+    "testing"
+    "unsafe"
+)
+
+type unit struct{}
+type lsfTimerSlot struct { token [2]uint64; weak unsafe.Pointer; callback bool }
+type lsfTokenResult struct { tag, padding uint32; generation, id uint64 }
+type lsfUnitResult struct { tag, failure byte }
+type timer struct { isChan bool; lsfToken [2]uint64; lsfSlot uint32; active bool }
+type timeTimer struct { timer; isFake bool }
+type g struct { lsfOwner [2]uint64; bubble *byte }
+type lsfTimerWait struct { token [2]uint64; stopped bool; done chan unit }
+type taskState struct { timerWaits []*lsfTimerWait }
+var state *taskState
+var lsfTimerSlots []lsfTimerSlot
+var lsfTimerCallbacks uint32
+var lsfActivationActive = true
+var currentG = g{lsfOwner: [2]uint64{8,88}}
+var raceenabled = false
+var lastID uint64
+var hostOwners map[[2]uint64]bool
+var retiredOld chan struct{}
+var enteredFence chan struct{}
+
+func getg() *g { return &currentG }
+func nanotime() int64 { return 100 }
+func racerelease(unsafe.Pointer) {}
+func fatal(s string) { panic(s) }
+func lsfFail(s string) { panic(s) }
+func lsfMaybeWakeTimerDrain() {}
+func controlledFenceReceive(wait *lsfTimerWait) { close(enteredFence); <-wait.done }
+func (t *timer) stop() bool { previous := t.active; t.active=false; return previous }
+func (t *timer) reset(_, _ int64) bool { previous := t.active; t.active=true; return previous }
+func internal_weak_runtime_registerWeakPointer(p unsafe.Pointer) unsafe.Pointer { return p }
+func internal_weak_runtime_makeStrongFromWeak(p unsafe.Pointer) unsafe.Pointer { return p }
+func lsfTimerStart(_ int64, _ int32, _ int64, _ int32, _, _ int64, result unsafe.Pointer) {
+    lastID++
+    token := [2]uint64{7,lastID}
+    hostOwners[token]=true
+    *(*lsfTokenResult)(result)=lsfTokenResult{generation:token[0],id:token[1]}
+}
+func lsfTimerStop(generation,id int64,result unsafe.Pointer) {
+    token:=[2]uint64{uint64(generation),uint64(id)}
+    if !hostOwners[token] { panic(fmt.Sprint("unknown original owner ",token)) }
+    delete(hostOwners,token)
+    *(*lsfUnitResult)(result)=lsfUnitResult{}
+    if retiredOld != nil && token==[2]uint64{7,1} { retiredOld<-struct{}{} }
+}
+func fixture() (*timeTimer,*lsfTimerWait) {
+    lsfTimerSlots=nil; lsfTimerCallbacks=0; lastID=1
+    hostOwners=map[[2]uint64]bool{{7,1}:true}
+    old:=&timeTimer{timer:timer{isChan:true,active:true}}
+    lsfInstallTimer(&old.timer,[2]uint64{7,1})
+    wait:=&lsfTimerWait{token:[2]uint64{7,1},done:make(chan unit)}
+    state=&taskState{timerWaits:[]*lsfTimerWait{wait}}
+    enteredFence=make(chan struct{})
+    retiredOld=nil
+    return old,wait
+}
+func liveSlots() [][2]uint64 {
+    var slots [][2]uint64
+    for _,slot:=range lsfTimerSlots { if slot.token[1]!=0 { slots=append(slots,slot.token) } }
+    return slots
+}
+func TestSequentialResetsKeepOneOwner(t *testing.T) {
+    timer,_:=fixture(); state.timerWaits=nil
+    resetTimer(timer,200,0); resetTimer(timer,300,0)
+    if len(hostOwners)!=1 || len(liveSlots())!=1 { t.Fatalf("owners=%v slots=%v",hostOwners,liveSlots()) }
+}
+func TestOverlappingResetsKeepOneOwner(t *testing.T) {
+    runtime.GOMAXPROCS(1)
+    timer,wait:=fixture(); retiredOld=make(chan struct{},1)
+    firstDone:=make(chan bool,1)
+    go func(){ firstDone<-resetTimer(timer,200,0) }()
+    <-enteredFence
+    if !wait.stopped || timer.lsfToken != [2]uint64{} { t.Fatalf("first reset did not reach its pending fence: stopped=%v token=%v",wait.stopped,timer.lsfToken) }
+    select { case <-firstDone: t.Fatal("original wait did not hold the first reset"); default: }
+    secondActive:=resetTimer(timer,300,0)
+    replacement:=timer.lsfToken
+    if !hostOwners[replacement] || len(hostOwners)!=1 { t.Fatalf("second reset owner=%v token=%v",hostOwners,replacement) }
+    close(wait.done)
+    firstActive:=<-firstDone
+    final:=timer.lsfToken
+    slots:=liveSlots()
+    if len(hostOwners)!=1 || len(slots)!=1 || hostOwners[replacement] || final==replacement {
+        t.Fatalf("overlapping resets left hostOwners=%v slots=%v replacement=%v current=%v firstActive=%v secondActive=%v",hostOwners,slots,replacement,final,firstActive,secondActive)
+    }
+}

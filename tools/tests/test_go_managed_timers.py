@@ -10,6 +10,7 @@ import unittest
 from unittest.mock import patch
 
 from tools import qualify_go_activation as activation
+from tools.tests import go_timer_reset_host_controls as reset_controls
 from tools import qualify_go_synchronization as reference
 
 
@@ -593,6 +594,9 @@ def compile_record(folder):
 
 
 class GoManagedTimers(unittest.TestCase):
+    def test_reset_host_double_binds_original_source_and_license(self):
+        reset_controls.assert_source_binding(self)
+
     @unittest.skipUnless(shutil.which('go'), 'controlled host interleaving requires Go')
     def test_timer_readiness_is_published_before_host_start_and_fenced_until_drop(self):
         source = (reference.ROOT / 'sdk/go-guest/runtime/timer_async.go.in').read_text()
@@ -619,6 +623,7 @@ class GoManagedTimers(unittest.TestCase):
             result = subprocess.run([shutil.which('go'), 'test', '-count=1', '-timeout=45s', '-v', '.'],
                                     cwd=root, env=env, text=True, capture_output=True, timeout=180)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        reset_controls.run_host_doubles(self, shutil.which('go'))
 
     @unittest.skipUnless(shutil.which('go'), 'controlled host interleaving requires Go')
     def test_timer_installation_rechecks_inventory_after_allocation_parking(self):

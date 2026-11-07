@@ -45,6 +45,11 @@ on:
       - tools/tests/test_go_synchronization.py
       - tools/tests/test_go_admission.py
       - tools/tests/test_go_managed_timers.py
+      - tools/tests/go_timer_reset_host_controls.py
+      - tools/tests/fixtures/go_runtime_time_go1_27_3.go.txt
+      - tools/tests/fixtures/go_runtime_stack_go1_27_3.LICENSE.txt
+      - tools/tests/fixtures/go_timer_reset_baseline.go.txt
+      - tools/tests/fixtures/go_timer_reset_gate_candidate.go.txt
       - docs/development/go-managed-timers.md
       - tools/tests/test_go_queued.py
       - docs/development/go-runtime-queued-ownership.md
@@ -183,6 +188,11 @@ on:
       - tools/tests/test_go_synchronization.py
       - tools/tests/test_go_admission.py
       - tools/tests/test_go_managed_timers.py
+      - tools/tests/go_timer_reset_host_controls.py
+      - tools/tests/fixtures/go_runtime_time_go1_27_3.go.txt
+      - tools/tests/fixtures/go_runtime_stack_go1_27_3.LICENSE.txt
+      - tools/tests/fixtures/go_timer_reset_baseline.go.txt
+      - tools/tests/fixtures/go_timer_reset_gate_candidate.go.txt
       - docs/development/go-managed-timers.md
       - tools/tests/test_go_queued.py
       - docs/development/go-runtime-queued-ownership.md
@@ -452,6 +462,7 @@ jobs:
           python3 tools/qualify_go_synchronization.py --campaign queued --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-managed-idle" --output "$RUNNER_TEMP/go-queued-result"
       - name: Qualify the full standard timer oracle under current managed-v5 ownership
         run: |
+          command -v go >/dev/null
           python3 -m unittest tools.tests.test_go_managed_timers
           python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-managed-timers" --runtime-profile go-component-activation-v5 --fixture timers
           python3 tools/qualify_go_synchronization.py --campaign managed-timers --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-managed-timers" --output "$RUNNER_TEMP/go-managed-timers-result"
