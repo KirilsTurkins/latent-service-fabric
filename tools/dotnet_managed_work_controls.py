@@ -22,9 +22,8 @@ SOURCES = (FIXTURE+'/Control.csproj', FIXTURE+'/Program.cs', FIXTURE+'/Bindings.
     'sdk/dotnet-guest/tools/http-errors/ManagedWorkRuntime.cs',
     'sdk/dotnet-guest/tools/http-errors/ManagedWorkTimers.cs', 'sdk/dotnet-guest/global.json',
     'tools/dotnet_guest/async_exports.py', BRIDGE_FIXTURE)
-BRIDGE_CASES = tuple((kind, mode) for kind in (0, 3, 5, 6)
-    for mode in ('refusal', 'ok', 'zero-both', 'zero-generation', 'zero-id', 'exception')) + (
-    (7, 'refusal'), (7, 'ok'))
+BRIDGE_CASES = tuple((kind, mode) for kind in (0, 3, 5, 6, 7)
+    for mode in ('refusal', 'ok', 'zero-both', 'zero-generation', 'zero-id', 'exception'))
 SETTLEMENT_CASES = ('dequeue-settlement-refusal-retains-owner',)
 QUEUE_SETTLEMENT_CASES = (
     'queue-dequeue-refusal-prevents-retry', 'queue-dequeue-unknown-prevents-retry')
@@ -51,6 +50,39 @@ ROOT_SETTLEMENT_CASES = (
     'root-context-clear-failure-fences-finalization',
     'storage-and-context-clear-fail-fences-finalization')
 CASES = (
+    'startup-preinstall-producers-unchanged', 'startup-native-refusal-settles-root',
+    'startup-pre-root-allocation-failure',
+    'startup-readiness-failure-before-install', 'startup-readiness-failure-before-root',
+    'startup-readiness-failure-after-root-publication',
+    'startup-initial-ready-remains-retryable', 'startup-initial-ready-after-execution-poisons',
+    'startup-initial-readiness-error-after-execution', 'startup-untracked-enter-initial-probe',
+    'startup-readiness-failure-after-root', 'startup-readiness-failure-after-native',
+    'startup-readiness-failure-after-context', 'startup-ready-during-allocation', 'startup-ready-during-root-publication',
+    'startup-ready-during-root-reservation', 'startup-ready-during-native-reservation', 'startup-ready-during-context',
+    'startup-untracked-enter-root', 'startup-untracked-enter-root-publication',
+    'startup-untracked-unwrap-root', 'startup-untracked-inner-native',
+    'startup-untracked-schedule-root', 'startup-untracked-continuation-native',
+    'startup-untracked-created-async-context', 'startup-untracked-required-transport-root',
+    'startup-untracked-continuation-failed-native', 'startup-untracked-observed-context',
+    'startup-untracked-ensure-join-ready-native',
+    'startup-untracked-dequeue-native', 'startup-untracked-pop-context',
+    'startup-untracked-bind-allocation', 'startup-untracked-timer-accepted-root', 'startup-untracked-timer-enter-native',
+    'startup-untracked-timer-deleted-context', 'startup-untracked-enqueue-success-root',
+    'startup-untracked-enqueue-fault-native', 'startup-untracked-timer-changed-context',
+    'startup-untracked-timer-leave-root', 'startup-untracked-exit-native',
+    'startup-untracked-callback-completed-context', 'startup-untracked-completed-allocation',
+    'startup-poisoned-cleanup-preserves-primary',
+    'startup-native-refusal-root-settlement-refused', 'startup-native-refusal-root-settlement-unknown',
+    'startup-native-reservation-unknown', 'startup-native-reservation-malformed-generation',
+    'startup-native-reservation-unknown-after-untracked', 'startup-native-refusal-after-untracked-retains-root',
+    'startup-native-reservation-malformed-zero-both', 'startup-root-reservation-malformed-zero-both',
+    'startup-native-reservation-malformed-id', 'startup-allocation-cleanup-succeeds',
+    'startup-allocation-native-settlement-refused', 'startup-allocation-native-settlement-unknown',
+    'startup-allocation-root-settlement-refused', 'startup-allocation-root-settlement-unknown',
+    'startup-context-failure-before-mutation', 'startup-context-failure-after-mutation',
+    'startup-context-and-clear-failure', 'startup-context-failure-retains-native-child',
+    'startup-context-reentry-fences-producers', 'startup-allocation-reentry-fences-producers',
+    'startup-reservation-reentry-fences-producers',
     'native-task-admission', 'unwrap-inner-actual-completion', 'queued-admission-rollback',
     'root-task-refusal-fences-reinstallation', 'root-task-unknown-fences-reinstallation',
     'root-task-malformed-generation-fences-reinstallation', 'root-task-malformed-id-fences-reinstallation',

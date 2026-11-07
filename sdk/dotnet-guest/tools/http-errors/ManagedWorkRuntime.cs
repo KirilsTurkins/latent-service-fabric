@@ -70,12 +70,15 @@ public static partial class ManagedWorkRuntime
     private static (ulong Generation, ulong Id) storage;
     private static bool closing;
     private static bool installed;
+    // Nonnegative in-flight count; -1 records untracked startup activity.
     private static int admissions;
     // Erased by the compiler unless the source-control fixture supplies it.
     static partial void QueueAllocationControl();
     static partial void RecordAllocationControl();
     static partial void RequiredResultPublishedControl();
     static partial void RequiredResultReservedControl();
+    static partial void StartupAllocationControl();
+    static partial void StartupRootPublishedControl();
 
     public static void Install(
         Func<int, ulong, ulong, (ulong Generation, ulong Id)> register,
@@ -84,33 +87,105 @@ public static partial class ManagedWorkRuntime
         if (installed || reserve is not null || admissions != 0 || register is null || release is null
             || beginClosing is null || setContext is null)
             throw new InvalidOperationException("managed-work-installation");
-        if (ReadySource()) throw new InvalidOperationException("managed-work-untracked-startup-work");
         reserve = register; settle = release; close = beginClosing; adapterContext = setContext;
-        var rootToken = Reserve(TaskKind, null);
+        bool startupReady;
+        try { startupReady = ReadySource(); }
+        catch
+        {
+            // No host registration has been attempted. A clean probe failure
+            // may retain the original pre-install retry behavior.
+            if (admissions == 0) { reserve = null; settle = null; close = null; adapterContext = null; }
+            throw;
+        }
+        if (startupReady)
+        {
+            if (admissions == 0) { reserve = null; settle = null; close = null; adapterContext = null; }
+            throw new InvalidOperationException("managed-work-untracked-startup-work");
+        }
+        if (admissions != 0) throw new InvalidOperationException("managed-work-untracked-startup-work");
+        StartupAllocationControl();
+        try { startupReady = ReadySource(); } catch { admissions = -1; throw; }
+        if (startupReady || admissions != 0)
+        { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
+        // Publish dormant custody before either host registration. The root
+        // cannot admit managed descendants until context installation returns.
+        var startupRoot = new Record { Primary = new object(), Root = true };
+        root = startupRoot;
+        StartupRootPublishedControl();
+        try { startupReady = ReadySource(); } catch { admissions = -1; throw; }
+        if (startupReady || admissions != 0)
+        { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
+        var rootToken = register(TaskKind, 0, 0);
+        startupRoot.Token = rootToken;
+        if (rootToken == default) throw new InvalidOperationException("managed-work-admission-refused");
+        if (rootToken.Generation == 0 || rootToken.Id == 0)
+            throw new InvalidOperationException("managed-work-reservation-token");
+        try { startupReady = ReadySource(); } catch { admissions = -1; throw; }
+        if (startupReady || admissions != 0)
+        { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
+        bool nativeAbsent = false, nativeKnown = false, contextAttempted = false;
         try
         {
             storage = register(NativeKind, rootToken.Generation, rootToken.Id);
-            try
+            if (storage == default)
             {
-                records = new Record?[MaximumRecords];
-                queued = new Queued?[MaximumQueued];
-                required = new Required?[MaximumRecords];
-                timers = new TimerOwner?[MaximumRecords];
-                root = new Record { Primary = new object(), Token = rootToken, Active = true, Root = true };
-                records[0] = root;
-                current = new AsyncLocal<Record?>(ContextChanged);
-                installed = true;
-                current.Value = root;
+                nativeAbsent = true; // The selected bridge returned the explicit WIT refusal.
+                throw new InvalidOperationException("managed-work-admission-refused");
             }
-            catch
-            {
-                release(storage.Generation, storage.Id);
-                throw;
-            }
+            if (storage.Generation == 0 || storage.Id == 0)
+                throw new InvalidOperationException("managed-work-reservation-token");
+            nativeKnown = true;
+            if (admissions != 0) throw new InvalidOperationException("managed-work-untracked-startup-work");
+            StartupAllocationControl();
+            records = new Record?[MaximumRecords];
+            queued = new Queued?[MaximumQueued];
+            required = new Required?[MaximumRecords];
+            timers = new TimerOwner?[MaximumRecords];
+            records[0] = startupRoot;
+            current = new AsyncLocal<Record?>(ContextChanged);
+            try { startupReady = ReadySource(); } catch { admissions = -1; throw; }
+            if (startupReady || admissions != 0)
+            { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
+            // Reentrant ExecutionContext notifications may restore this token,
+            // but managed producers remain fenced while the root is dormant.
+            startupRoot.ResultTransition = 3;
+            contextAttempted = true;
+            current.Value = startupRoot;
+            try { startupReady = ReadySource(); } catch { admissions = -1; throw; }
+            if (startupReady || admissions != 0)
+            { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
+            startupRoot.ResultTransition = 0;
+            startupRoot.Active = true;
+            installed = true;
         }
         catch
         {
-            release(rootToken.Generation, rootToken.Id);
+            startupRoot.ResultTransition = 0;
+            if (contextAttempted)
+            {
+                // Native work may have escaped under the adapter token. Retain
+                // both owners; an uncertain clear is not a retirement proof.
+                try { adapterContext!(0, 0); } catch { }
+            }
+            else if (admissions != 0)
+            {
+                // An original dispatch or Timer mutation already crossed the
+                // startup boundary. Its physical outcome cannot be inferred.
+            }
+            else if (nativeKnown)
+            {
+                // Root settlement is allowed only after Native acknowledgement.
+                try
+                {
+                    release(storage.Generation, storage.Id);
+                    release(rootToken.Generation, rootToken.Id);
+                }
+                catch { } // Preserve the original startup exception; never retry.
+            }
+            else if (nativeAbsent)
+            {
+                try { release(rootToken.Generation, rootToken.Id); } catch { }
+            }
             throw;
         }
     }
@@ -222,7 +297,11 @@ public static partial class ManagedWorkRuntime
 
     public static void Schedule(Task task)
     {
-        if (!installed) return;
+        if (!installed)
+        {
+            if (reserve is not null) { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
+            return;
+        }
         var existing = Find(task);
         if (existing is { Active: false }) throw new InvalidOperationException("managed-work-owner-retired");
         if (existing is not null || task.IsCompleted) return;
@@ -236,7 +315,7 @@ public static partial class ManagedWorkRuntime
 
     public static void ContinuationFailed(Task task)
     {
-        if (!installed) return;
+        if (!installed) { if (reserve is not null) admissions = -1; return; }
         var owner = Find(task);
         if (owner is { Active: false }) throw new InvalidOperationException("managed-work-double-settle");
         if (owner is null || owner.Root || owner.Result || task.IsCompleted || !ReferenceEquals(owner.Completion, task)) return;
@@ -246,7 +325,11 @@ public static partial class ManagedWorkRuntime
 
     public static void Unwrap(Task promise, Task outer)
     {
-        if (!installed) return;
+        if (!installed)
+        {
+            if (reserve is not null) { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
+            return;
+        }
         if (Find(promise) is { Active: false }) throw new InvalidOperationException("managed-work-owner-retired");
         if (promise.IsCompleted) return;
         var owner = Find(outer);
@@ -262,7 +345,12 @@ public static partial class ManagedWorkRuntime
 
     public static void Inner(Task promise, Task? inner)
     {
-        if (!installed || inner is null) return;
+        if (!installed)
+        {
+            if (reserve is not null) { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
+            return;
+        }
+        if (inner is null) return;
         var owner = Find(promise);
         if (owner is { Active: false } or { Result: true }) throw new InvalidOperationException("managed-work-owner-retired");
         if (owner is not null) owner.Inner = inner;
@@ -281,14 +369,23 @@ public static partial class ManagedWorkRuntime
     // builder task. Every retained box shares the same finite metadata lease.
     public static void CreatedAsync(Task task)
     {
-        if (!installed || task.IsCompleted) return;
+        if (!installed)
+        {
+            if (reserve is not null) { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
+            return;
+        }
+        if (task.IsCompleted) return;
         Remember(task, false);
         BindAsyncContext(task);
     }
 
     private static void Remember(Task task, bool transport)
     {
-        if (!installed) return;
+        if (!installed)
+        {
+            if (reserve is not null) { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
+            return;
+        }
         for (int i = 0; i < MaximumRecords; i++)
             if (required![i] is { } existing && ReferenceEquals(existing.Task, task))
             {
@@ -313,7 +410,11 @@ public static partial class ManagedWorkRuntime
 
     public static object? Enqueue(object item)
     {
-        if (!installed) return null;
+        if (!installed)
+        {
+            if (reserve is not null) throw new InvalidOperationException("managed-work-installation-in-progress");
+            return null;
+        }
         var activation = root;
         if (activation is null || !activation.Active)
             throw new InvalidOperationException("managed-work-finalization-uncertain");
@@ -420,7 +521,15 @@ public static partial class ManagedWorkRuntime
 
     public static void EnqueueFinalized(object? ticket, int outcome)
     {
-        if (!installed) return;
+        if (!installed)
+        {
+            if (reserve is not null)
+            {
+                admissions = -1;
+                if (outcome == 2) throw new InvalidOperationException("managed-work-untracked-startup-work");
+            }
+            return; // A fault handler must preserve its original exception.
+        }
         var pending = ticket as Queued ?? throw new InvalidOperationException("managed-work-queue-ticket");
         if (outcome == 1)
         {
@@ -470,7 +579,11 @@ public static partial class ManagedWorkRuntime
 
     public static void Dequeue(object item)
     {
-        if (!installed) return;
+        if (!installed)
+        {
+            if (reserve is not null) { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
+            return;
+        }
         foreach (var existing in queued!)
             if (existing is not null && ReferenceEquals(existing.Item, item) && (existing.State & 1) != 0)
                 throw new InvalidOperationException("managed-work-queue-uncertain");
@@ -493,13 +606,19 @@ public static partial class ManagedWorkRuntime
 
     public static bool Popped(bool found, object item)
     {
+        if (!installed && reserve is not null && found)
+        { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
         if (installed && found) Dequeue(item);
         return found;
     }
 
     public static object? Enter(object item)
     {
-        if (!installed) return null;
+        if (!installed)
+        {
+            if (reserve is not null) { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
+            return null;
+        }
         var previous = current!.Value;
         var owner = Find(item) ?? WorkContext(item) as Record;
         if (owner is null && Maintenance(item)) owner = root;
@@ -521,12 +640,13 @@ public static partial class ManagedWorkRuntime
 
     public static void Exit(object? previous)
     {
+        if (!installed && reserve is not null) admissions = -1;
         if (installed) current!.Value = (Record?)previous;
     }
 
     public static void CallbackCompleted(object item)
     {
-        if (!installed) return;
+        if (!installed) { if (reserve is not null) admissions = -1; return; }
         var owner = Find(item);
         if (owner is { Timer: true }) { TryRetireTimer(FindTimer(owner.Primary)!); return; }
         // Task completion is handled by Completed, including a failed conversion.
@@ -542,7 +662,7 @@ public static partial class ManagedWorkRuntime
 
     public static void Completed(Task task)
     {
-        if (!installed) return;
+        if (!installed) { if (reserve is not null) admissions = -1; return; }
         var owner = Find(task);
         if (owner is { Active: false }) throw new InvalidOperationException("managed-work-double-settle");
         if (owner is null || owner.Root || owner.Result || !ReferenceEquals(owner.Completion, task)) return;
@@ -552,7 +672,7 @@ public static partial class ManagedWorkRuntime
 
     public static void Observed(Task task)
     {
-        if (!installed) return;
+        if (!installed) { if (reserve is not null) admissions = -1; return; }
         var owner = Find(task);
         if (owner is { Active: false, ResultTransition: 0 })
             throw new InvalidOperationException("managed-work-double-settle");
@@ -801,6 +921,8 @@ public static partial class ManagedWorkRuntime
 
     public static void EnsureJoinReady()
     {
+        if (!installed && reserve is not null)
+        { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
         if (installed && closing && !ReadySource())
             throw new InvalidOperationException("managed-work-unproven-quiescence");
     }
@@ -847,7 +969,11 @@ public static partial class ManagedWorkRuntime
 
     public static ExecutionContext? BindContext(ExecutionContext? original, object item)
     {
-        if (!installed) return original;
+        if (!installed)
+        {
+            if (reserve is not null) { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
+            return original;
+        }
         var owner = Find(item) ?? ContextValue(original) as Record;
         if (owner is null && Maintenance(item)) owner = root;
         if (owner is null || !owner.Active || owner.Result)

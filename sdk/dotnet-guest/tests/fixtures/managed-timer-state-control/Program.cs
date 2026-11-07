@@ -43,7 +43,7 @@ internal static class TimerControl
         {
             if (kind == 5 && TimerReserveCallback is { } callback)
             { TimerReserveCallback = null; callback(); }
-            if (kind is 0 or 3 or 5 or 6) return default;
+            if (kind is 0 or 3 or 5 or 6 or 7) return default;
             throw new InvalidOperationException("control-ledger-capacity");
         }
         admissions++; ulong key = checked(++sequence); Owners.Add(key, kind);
@@ -426,7 +426,7 @@ internal static class TimerControl
     {
         if (name == "native-storage-refusal-rolls-back-root")
         {
-            Limits[7] = 0; Refuses(Begin, "control-ledger-capacity");
+            Limits[7] = 0; Refuses(Begin, "managed-work-admission-refused");
             Need(Owners.Count == 0 && admissions == 1); return;
         }
         Begin();
