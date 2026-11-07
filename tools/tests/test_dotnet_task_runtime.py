@@ -169,7 +169,7 @@ class RootReturnNormalControls(unittest.TestCase):
         from tools.dotnet_guest import managed_work, task_wait
         from tools.phase2_operator_process import WorkflowError
         port = {'profile': task_wait.PROFILE,
-            'managedAcceptedWork': copy.deepcopy(managed_work.TASK_IDENTITY_REWRITE_RECEIPT),
+            'managedAcceptedWork': copy.deepcopy(managed_work.MULTIPLE_UNWRAP_REWRITE_RECEIPT),
             'generatedHelperCount': 96, 'completion': 'actual-task-only',
             'finiteAndCancellableWaits': 'original-Task-WhenAny-Delay',
             'completeOriginalWaitRemainderPreserved': True,
@@ -179,13 +179,14 @@ class RootReturnNormalControls(unittest.TestCase):
             path = artifact / 'task-wait-port.json'
             path.write_text(json.dumps(port))
             self.assertEqual(selected.current_managed_port(artifact), port)
-            for changed in ('dated', 'previous-v3', 'previous-v4', 'previous-v5', 'previous-v10', 'readiness', 'task-identity', 'count', 'bool-count', 'response', 'remainder'):
+            for changed in ('dated', 'previous-v3', 'previous-v4', 'previous-v5', 'previous-v10', 'previous-v11', 'readiness', 'task-identity', 'count', 'bool-count', 'response', 'remainder'):
                 bad = copy.deepcopy(port)
                 if changed == 'dated': bad['managedAcceptedWork'] = copy.deepcopy(managed_work.TIMER_REWRITE_RECEIPT)
                 elif changed == 'previous-v3': bad['managedAcceptedWork'] = copy.deepcopy(managed_work.PREFETCH_REWRITE_RECEIPT)
                 elif changed == 'previous-v4': bad['managedAcceptedWork'] = copy.deepcopy(managed_work.QUEUE_FENCE_REWRITE_RECEIPT)
                 elif changed == 'previous-v5': bad['managedAcceptedWork'] = copy.deepcopy(managed_work.QUEUE_WITNESS_REWRITE_RECEIPT)
                 elif changed == 'previous-v10': bad['managedAcceptedWork'] = copy.deepcopy(managed_work.NATIVE_STARTUP_REWRITE_RECEIPT)
+                elif changed == 'previous-v11': bad['managedAcceptedWork'] = copy.deepcopy(managed_work.TASK_IDENTITY_REWRITE_RECEIPT)
                 elif changed == 'readiness': bad['managedAcceptedWork']['readiness'] = 'unproved'
                 elif changed == 'task-identity': bad['managedAcceptedWork']['taskLookup'] = 'unproved'
                 elif changed == 'count': bad['generatedHelperCount'] = 95

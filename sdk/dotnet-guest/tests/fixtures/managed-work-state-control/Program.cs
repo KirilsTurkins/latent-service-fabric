@@ -619,6 +619,76 @@ internal static class StateControl
         // Retain the uncertain alias and stop without another settlement attempt.
         settlementRefusal = 0;
     }
+
+    private static void MultipleUnwrapFaultControl(string observed)
+    {
+        var failure = new ArgumentException("control-multiple-unwrap-fault");
+        var inner = new TaskCompletionSource<int>();
+        var outer = new Task<Task>(() => inner.Task);
+        ManagedWorkRuntime.Schedule(outer);
+        var first = outer.Unwrap(); ManagedWorkRuntime.Unwrap(first, outer);
+        var second = outer.Unwrap(); ManagedWorkRuntime.Unwrap(second, outer);
+        Need(!ReferenceEquals(first, second) && !first.IsCompleted && !second.IsCompleted);
+        outer.RunSynchronously();
+        ManagedWorkRuntime.Inner(first, inner.Task); ManagedWorkRuntime.Inner(second, inner.Task);
+        ManagedWorkRuntime.Completed(outer);
+        inner.SetException(failure); Need(first.IsFaulted && second.IsFaulted);
+        // The host Tasks are real; registry calls model the selected pinned
+        // Unwrap and FinishStageThree hooks in their completion order.
+        ManagedWorkRuntime.Observed(inner.Task); ManagedWorkRuntime.Completed(first);
+        ManagedWorkRuntime.Observed(inner.Task); ManagedWorkRuntime.Completed(second);
+        if (observed is "first" or "both")
+        {
+            try { first.GetAwaiter().GetResult(); throw new InvalidOperationException("missing-first-fault"); }
+            catch (ArgumentException error) when (ReferenceEquals(error, failure)) { }
+            ManagedWorkRuntime.Observed(first);
+        }
+        if (observed is "second" or "both")
+        {
+            try { second.GetAwaiter().GetResult(); throw new InvalidOperationException("missing-second-fault"); }
+            catch (ArgumentException error) when (ReferenceEquals(error, failure)) { }
+            ManagedWorkRuntime.Observed(second);
+        }
+        AggregateException? received = null;
+        try { ManagedWorkRuntime.JoinAcceptedWork(); } catch (AggregateException error) { received = error; }
+        int expected = observed == "both" ? 0 : observed == "neither" ? 2 : 1;
+        Need((received?.Flatten().InnerExceptions.Count ?? 0) == expected);
+        if (received is not null) Need(received.Flatten().InnerExceptions.All(error => ReferenceEquals(error, failure)));
+        ManagedWorkRuntime.FinishedPhysicalDrain(); Need(Owners.Count == 0 && Work.Count == 0);
+    }
+
+    private static void MultipleUnwrapPendingControl(bool firstFinishes)
+    {
+        // Explicit task ports model the two completion-hook orders; no
+        // scheduler or guest execution is inferred from this control.
+        var outer = new TaskCompletionSource<Task>(); var first = Pending(); var second = Pending();
+        ManagedWorkRuntime.Schedule(outer.Task);
+        ManagedWorkRuntime.Unwrap(first.Task, outer.Task); ManagedWorkRuntime.Unwrap(second.Task, outer.Task);
+        var done = firstFinishes ? first : second; var pending = firstFinishes ? second : first;
+        done.SetResult(1); ManagedWorkRuntime.Completed(done.Task);
+        bool returned = false;
+        Refuses(() => { ManagedWorkRuntime.JoinAcceptedWork(); returned = true; }, "managed-work-unproven-quiescence");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+        Need(!returned && !pending.Task.IsCompleted && Count(0) == 2);
+    }
+
+    private static void MultipleUnwrapCapacityControl()
+    {
+        var source = new TaskCompletionSource<int>(); var outer = new Task<Task>(() => source.Task);
+        ManagedWorkRuntime.Schedule(outer);
+        var first = outer.Unwrap(); ManagedWorkRuntime.Unwrap(first, outer);
+        for (int i = 0; i < 32; i++)
+        {
+            var proxy = outer.Unwrap();
+            Need(!ReferenceEquals(first, proxy));
+            ManagedWorkRuntime.Unwrap(proxy, outer);
+        }
+        var overflow = outer.Unwrap();
+        Refuses(() => ManagedWorkRuntime.Unwrap(overflow, outer), "managed-work-required-continuation-limit");
+        Need(Count(0) == 2 && !outer.IsCompleted && !first.IsCompleted);
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+    }
     private static void RequiredResultSettlementFailureControl(bool unknown)
     {
         var (callback, pending) = RequiredFaultParent();
@@ -1787,6 +1857,13 @@ internal static class StateControl
             case "inner-and-inactive-outer-alias-fenced": InnerAndInactiveOuterAliasControl(); break;
             case "inactive-inner-alias-fences-primary": InactiveInnerAliasWithPrimaryControl(false); break;
             case "inactive-inner-result-transition-fences-primary": InactiveInnerAliasWithPrimaryControl(true); break;
+            case "multiple-unwrap-first-unobserved": MultipleUnwrapFaultControl("second"); break;
+            case "multiple-unwrap-second-unobserved": MultipleUnwrapFaultControl("first"); break;
+            case "multiple-unwrap-both-observed": MultipleUnwrapFaultControl("both"); break;
+            case "multiple-unwrap-neither-observed": MultipleUnwrapFaultControl("neither"); break;
+            case "multiple-unwrap-first-completes-before-pending": MultipleUnwrapPendingControl(true); break;
+            case "multiple-unwrap-second-completes-before-pending": MultipleUnwrapPendingControl(false); break;
+            case "multiple-unwrap-required-capacity": MultipleUnwrapCapacityControl(); break;
             case "required-result-settlement-refusal-retains-custody": RequiredResultSettlementFailureControl(false); break;
             case "required-result-settlement-unknown-retains-custody": RequiredResultSettlementFailureControl(true); break;
             case "fault-conversion-success-is-idempotent": {
