@@ -57,6 +57,8 @@ The local provider also exposes a tenant-scoped, bounded reference inventory for
 trusted recovery owners. Each cursor and returned page retains a native work
 slot; pages visit at most 64 physical entries and become stale after publication,
 release or reclamation changes. The host must authorize the tenant separately.
+Starting an inventory requires capacity for both its cursor and a page; a
+single-slot configuration refuses the cursor without consuming that slot.
 Pagination observations remain host-internal because page boundaries can reflect
 entries owned by other tenants.
 This inventory describes references only: an absent reference or a completed

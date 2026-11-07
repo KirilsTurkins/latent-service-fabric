@@ -111,6 +111,28 @@ fn cursor_uses_bounded_work_and_refuses_in_progress_publication() {
 }
 
 #[test]
+fn a_single_work_slot_cannot_be_occupied_by_an_unusable_cursor() {
+    let root = temporary_root();
+    let mut bounded = limits();
+    bounded.maximum_work = 1;
+    let owner = LocalBlobStore::open(root.path(), "private", bounded).unwrap();
+    assert!(matches!(
+        LocalReferenceInventory::begin(&owner, &scope()),
+        Err(LocalBlobError::Capacity)
+    ));
+    // The refused inventory does not consume the slot needed by real work.
+    let blob = put(&owner, b"ok");
+    let reader = owner.open_read(&scope(), &blob, &|| Ok(())).unwrap();
+    assert_eq!(read(&reader, 0, 2).unwrap(), b"ok");
+    drop(reader);
+    owner.close();
+    assert!(matches!(
+        LocalReferenceInventory::begin(&owner, &scope()),
+        Err(LocalBlobError::Closed)
+    ));
+}
+
+#[test]
 fn exhausted_generation_refuses_mutation_without_releasing_the_reference() {
     let root = temporary_root();
     let owner = store(root.path());

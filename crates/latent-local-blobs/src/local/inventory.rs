@@ -36,6 +36,12 @@ pub struct LocalReferenceInventory {
 impl LocalReferenceInventory {
     pub fn begin(store: &LocalBlobStore, scope: &TenantId) -> Result<Self> {
         tenant(scope)?;
+        store.inner.check()?;
+        // A cursor and its first retained page each require a work slot. Do
+        // not admit a cursor that can never make progress under this limit.
+        if store.inner.limits.maximum_work < 2 {
+            return Err(LocalBlobError::Capacity);
+        }
         let work = store.inner.work()?;
         let generation = {
             let state = store.inner.state()?;
