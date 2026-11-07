@@ -2,8 +2,8 @@
 //! GC acquires the original publication guard before a fresh same-engine view;
 //! each verified provisional pin stays alive through actual commit retirement.
 use super::{
-    model, record, Arc, LocalBlobError, LocalBlobLimits, LocalBlobReader, LocalBlobStore, Ordering,
-    Path, Result, TenantId, RECORD_BYTES,
+    model, record, Arc, LocalBlobError, LocalBlobLimits, LocalBlobReader, LocalBlobStore,
+    LocalReferenceInventory, LocalReferencePage, Ordering, Path, Result, TenantId, RECORD_BYTES,
 };
 use crate::BlobReference;
 use latent_state::{
@@ -52,6 +52,114 @@ pub struct RequiredBlobInventory {
     view: usize,
     after: Option<Vec<u8>>,
     complete: bool,
+}
+
+/// A descriptive observation on one retained state view. None of these values
+/// proves current ownership, byte integrity, or authority to reclaim.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LocalReferenceDisposition {
+    /// The retained view has neither a head nor a physical-owner index.
+    Unreviewed,
+    /// A zero-owner head exists and no physical-owner index was observed.
+    ZeroOwners,
+    /// A positive head and at least one reciprocal physical-owner row exist.
+    HasOwners,
+}
+
+/// Retains the original charged reference page while its observations are used.
+pub struct LocalReferenceAuditPage {
+    page: LocalReferencePage,
+    dispositions: Vec<LocalReferenceDisposition>,
+}
+impl LocalReferenceAuditPage {
+    #[must_use]
+    pub fn complete(&self) -> bool {
+        self.page.complete
+    }
+    pub fn entries(&self) -> impl Iterator<Item = (&BlobReference, LocalReferenceDisposition)> {
+        self.page
+            .references()
+            .iter()
+            .zip(self.dispositions.iter().copied())
+    }
+}
+
+/// Host-internal comparison of local references to one retained state view.
+/// The view can be historical even while valid; results never establish current
+/// ownership. An expired view, changed local generation, error or panic
+/// invalidates progress; restart with fresh owners. Pagination can reveal
+/// aggregate tenant activity. The caller retains and funds the original view.
+pub struct LocalReferenceAudit {
+    inventory: LocalReferenceInventory,
+    view: usize,
+    invalid: bool,
+}
+impl LocalReferenceAudit {
+    pub fn begin(store: &LocalBlobStore, view: &ReadView, scope: &TenantId) -> Result<Self> {
+        // Reuse the actual durable-root, configuration and live-engine checks.
+        drop(RequiredBlobInventory::begin(store, view)?);
+        Ok(Self {
+            inventory: LocalReferenceInventory::begin(store, scope)?,
+            view: view.identity(),
+            invalid: false,
+        })
+    }
+
+    pub fn next_page(
+        &mut self,
+        store: &LocalBlobStore,
+        view: &ReadView,
+        maximum_entries: usize,
+        checkpoint: &dyn Fn() -> Result<()>,
+    ) -> Result<LocalReferenceAuditPage> {
+        if self.invalid {
+            return Err(LocalBlobError::Invalid);
+        }
+        if self.view != view.identity() {
+            self.invalid = true;
+            return Err(LocalBlobError::Invalid);
+        }
+        // Any early return or panic makes the advanced cursor unusable.
+        self.invalid = true;
+        let _ = view.is_empty().map_err(storage)?;
+        let page = self
+            .inventory
+            .next_page(store, maximum_entries, checkpoint)?;
+        let mode = store
+            .inner
+            .durable
+            .as_ref()
+            .ok_or(LocalBlobError::Invalid)?;
+        let mut dispositions = Vec::with_capacity(page.references().len());
+        for reference in page.references() {
+            checkpoint()?;
+            let physical = LocalPayloadIdentity {
+                tenant: reference.tenant.0.clone(),
+                provider: "local-retention-inventory".into(),
+                provider_epoch: 1,
+                provider_configuration: decode_digest(&mode.configuration_digest)?,
+                blob_namespace: store.namespace().into(),
+                digest: decode_digest(&reference.digest.0)?,
+                size: reference.size_bytes,
+                media_type: reference.media_type.clone(),
+            };
+            let required =
+                required_physical_page(view, &physical, None, 1, RECORD_BYTES).map_err(storage)?;
+            let count = physical_owner_count(view, &physical).map_err(storage)?;
+            let disposition = match (count, required.references.is_empty()) {
+                (None, true) => LocalReferenceDisposition::Unreviewed,
+                (Some(0), true) => LocalReferenceDisposition::ZeroOwners,
+                (Some(n), false) if n > 0 => LocalReferenceDisposition::HasOwners,
+                _ => return Err(LocalBlobError::Corrupt),
+            };
+            dispositions.push(disposition);
+        }
+        checkpoint()?;
+        let _ = view.is_empty().map_err(storage)?;
+        self.inventory.ensure_current(store)?;
+        self.invalid = false;
+        Ok(LocalReferenceAuditPage { page, dispositions })
+    }
 }
 impl RequiredBlobInventory {
     pub fn begin(store: &LocalBlobStore, view: &ReadView) -> Result<Self> {

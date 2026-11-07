@@ -34,6 +34,20 @@ pub struct LocalReferenceInventory {
 }
 
 impl LocalReferenceInventory {
+    pub(super) fn ensure_current(&self, store: &LocalBlobStore) -> Result<()> {
+        if !Arc::ptr_eq(&self.work.inner, &store.inner) {
+            return Err(LocalBlobError::PermissionDenied);
+        }
+        store.inner.check()?;
+        let state = store.inner.state()?;
+        if store.inner.publishing.load(Ordering::Acquire)
+            || state.inventory_generation != self.generation
+        {
+            return Err(LocalBlobError::Busy);
+        }
+        Ok(())
+    }
+
     pub fn begin(store: &LocalBlobStore, scope: &TenantId) -> Result<Self> {
         tenant(scope)?;
         store.inner.check()?;

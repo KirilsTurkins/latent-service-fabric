@@ -10,7 +10,10 @@ mod reclaim;
 mod recovery;
 mod write;
 
-pub use durable::{LocalDurablePin, RequiredBlobInventory};
+pub use durable::{
+    LocalDurablePin, LocalReferenceAudit, LocalReferenceAuditPage, LocalReferenceDisposition,
+    RequiredBlobInventory,
+};
 pub use inventory::{LocalReferenceInventory, LocalReferencePage};
 use latent_core::TenantId;
 pub use model::{LocalBlobError, LocalBlobLimits, LocalBlobSnapshot};

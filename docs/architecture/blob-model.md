@@ -66,3 +66,12 @@ An absent reference or a completed walk grants neither blob access nor
 permission to reclaim an orphan. A future
 reconciliation owner must still establish current durable closure and physical
 retirement before any deletion.
+
+A bounded audit can compare those local references with one retained view of
+the same durable engine. It reports a missing head, a zero-owner head, or a
+positive head with an observed reciprocal index; inconsistent observed heads
+and indexes fail the audit. The caller retains and funds the original view,
+and pages retain their work charge. Progress
+is discarded on an expired or different view, local mutation, error, or panic.
+The view may be historical even when valid, and the audit does not verify all
+owners or payload bytes. Its observations never authorize reclamation.
