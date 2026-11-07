@@ -181,3 +181,15 @@ fn mutation_during_checkpoint_cannot_publish_a_stale_completed_page() {
     assert!(page.complete);
     assert_eq!(page.references().len(), 2);
 }
+
+#[test]
+fn duplicate_seal_without_inventory_change_preserves_the_cursor() {
+    let root = temporary_root();
+    let owner = store(root.path());
+    let blob = put(&owner, b"same");
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope()).unwrap();
+    assert_eq!(put(&owner, b"same"), blob);
+    let page = inventory.next_page(&owner, 4, &|| Ok(())).unwrap();
+    assert!(page.complete);
+    assert_eq!(page.references(), &[blob]);
+}
