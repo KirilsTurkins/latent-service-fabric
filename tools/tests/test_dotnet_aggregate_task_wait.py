@@ -78,8 +78,8 @@ class AggregateTaskWaitPortTests(unittest.TestCase):
             self.assertEqual(stage, 'task-wait-rewrite')
             self.assertEqual(arguments[2], '--aggregate-task-wait')
             arguments[-2].write_bytes(b'aggregate-control')
-            from tools.dotnet_guest.managed_work import PROVISIONAL_RESERVATION_REWRITE_RECEIPT
-            current = {**self.receipt(), 'managedAcceptedWork': copy.deepcopy(PROVISIONAL_RESERVATION_REWRITE_RECEIPT),
+            from tools.dotnet_guest.managed_work import RESULT_TRANSITION_REWRITE_RECEIPT
+            current = {**self.receipt(), 'managedAcceptedWork': copy.deepcopy(RESULT_TRANSITION_REWRITE_RECEIPT),
                        'aggregateTaskWait': copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_EXPECTED),
                        'generatedHelperCount': 96, 'outputDigest': digest(b'aggregate-control')}
             write_json(arguments[-1], current)

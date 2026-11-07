@@ -9,6 +9,9 @@ internal static class StateControl
     internal static Action? QueueAllocationCallback;
     internal static Action? RecordAllocationCallback;
     private static Action? QueueReserveCallback;
+    private static Action? ResultReservationCallback, AfterSettlementCallback, AfterContextClearCallback, AfterContextRestoreCallback;
+    private static ulong afterSettlementTarget, refuseContextRestore, afterContextRestoreTarget;
+    private static bool contextThrowsBeforeRestore;
     private static readonly Dictionary<ulong, int> Owners = new();
     private static readonly int[] Limits = [4, 1, 1, 1, 2, 2, 2, 1];
     private static ulong sequence = uint.MaxValue;
@@ -59,12 +62,14 @@ internal static class StateControl
         }
         if (Count(kind) >= Limits[kind])
         {
-            if (kind is 0 or 3) return default;
+            if (kind is 0 or 3 or 6) return default;
             throw new InvalidOperationException("control-ledger-capacity");
         }
         ulong key = checked(++sequence);
         Owners.Add(key, kind);
         maximumTasks = Math.Max(maximumTasks, Count(0)); maximumResults = Math.Max(maximumResults, Count(6));
+        if (kind == 6 && ResultReservationCallback is { } resultCallback)
+        { ResultReservationCallback = null; resultCallback(); }
         if (kind == unknownReservationKind)
         {
             unknownReservationToken = key;
@@ -97,6 +102,8 @@ internal static class StateControl
             throw new InvalidOperationException("managed-work-settlement-refused");
         }
         Need(generation == 17 && id > uint.MaxValue && Owners.Remove(id));
+        if (id == afterSettlementTarget && AfterSettlementCallback is { } callback)
+        { AfterSettlementCallback = null; callback(); }
     }
     internal static void Step()
     {
@@ -110,7 +117,16 @@ internal static class StateControl
             if (!contextThrowsBeforeClear) context = (generation, id);
             throw new InvalidOperationException("control-context-clear-failed");
         }
+        if (refuseContextRestore != 0 && (generation, id) == (17UL, refuseContextRestore))
+        {
+            if (!contextThrowsBeforeRestore) context = (generation, id);
+            throw new InvalidOperationException("control-context-restore-failed");
+        }
         context = (generation, id);
+        if (context == (0UL, 0UL) && AfterContextClearCallback is { } callback)
+        { AfterContextClearCallback = null; callback(); }
+        if (id == afterContextRestoreTarget && AfterContextRestoreCallback is { } restored)
+        { AfterContextRestoreCallback = null; restored(); }
     }
     private static void Begin() => ManagedWorkRuntime.Install(Reserve, Settle, () => closing = true, Context);
     private static void Finish()
@@ -253,6 +269,169 @@ internal static class StateControl
         Need(!rootJoinReturned && refusedSettlements == 1 && Count(6) == 1 && Owners.ContainsKey(result)
             && ManagedWorkRuntime.PendingResultForControl(pending.Task) == (17UL, result)
             && Owners.ContainsKey(original.Item2) != unknown && Count(0) == (unknown ? 1 : 2));
+    }
+    private static void ResultTransitionObservationControl(string point)
+    {
+        var pending = Pending(); ManagedWorkRuntime.Schedule(pending.Task);
+        var previous = ManagedWorkRuntime.Enter(pending.Task);
+        ulong taskToken = context.Item2;
+        pending.SetException(new ArgumentException("control-observed-transition"));
+        int observations = 0;
+        void Observe()
+        {
+            observations++;
+            Need(context == (0UL, 0UL));
+            ManagedWorkRuntime.Observed(pending.Task);
+            Refuses(() => ManagedWorkRuntime.Completed(pending.Task), "managed-work-double-settle");
+            Refuses(() => ManagedWorkRuntime.ContinuationFailed(pending.Task), "managed-work-double-settle");
+            Refuses(() => ManagedWorkRuntime.Schedule(pending.Task), "managed-work-owner-retired");
+            Refuses(() => ManagedWorkRuntime.Schedule(Pending().Task), "managed-work-parent-retired");
+            Refuses(() => ManagedWorkRuntime.Enter(pending.Task), "managed-work-execution-parent");
+            ManagedWorkRuntime.CallbackCompleted(pending.Task);
+            Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-admission-in-progress");
+            Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-admission-in-progress");
+        }
+        if (point == "clear") AfterContextClearCallback = Observe;
+        else if (point == "reservation") ResultReservationCallback = Observe;
+        else if (point == "task-settlement")
+        { afterSettlementTarget = taskToken; AfterSettlementCallback = Observe; }
+        else if (point == "result-settlement")
+        {
+            ResultReservationCallback = () =>
+            {
+                Observe();
+                afterSettlementTarget = Owners.Single(entry => entry.Value == 6).Key;
+                AfterSettlementCallback = Observe;
+            };
+        }
+        else throw new InvalidOperationException("unknown-result-observation-point");
+        ManagedWorkRuntime.Completed(pending.Task);
+        Need(observations == (point == "result-settlement" ? 2 : 1)
+            && Count(0) == 1 && Count(6) == 0 && context == (0UL, 0UL)
+            && maximumResults == (point == "clear" ? 0 : 1));
+        ManagedWorkRuntime.Exit(previous); Finish();
+    }
+    private static void ResultReservationFailureControl(string mode)
+    {
+        var pending = Pending(); ManagedWorkRuntime.Schedule(pending.Task);
+        var previous = ManagedWorkRuntime.Enter(pending.Task);
+        var original = context;
+        pending.SetException(new ArgumentException("control-result-reservation"));
+        if (mode == "refusal") Limits[6] = 0;
+        else if (mode == "unknown") unknownReservationKind = 6;
+        else { malformedReservationKind = 6; malformedGeneration = mode == "generation"; }
+        if (mode == "unknown")
+        {
+            Exception? received = null;
+            try { ManagedWorkRuntime.Completed(pending.Task); }
+            catch (Exception error) { received = error; }
+            Need(ReferenceEquals(received, UnknownReservation));
+        }
+        else Refuses(() => ManagedWorkRuntime.Completed(pending.Task),
+            mode == "refusal" ? "managed-work-admission-refused" : "managed-work-reservation-token");
+        if (mode == "refusal")
+        {
+            Need(context == original && Count(0) == 2 && Count(6) == 0);
+            ManagedWorkRuntime.Exit(previous);
+            ManagedWorkRuntime.Observed(pending.Task); ManagedWorkRuntime.Completed(pending.Task); Finish();
+            return;
+        }
+        Need(context == (0UL, 0UL) && unknownReservationToken != 0
+            && Owners.ContainsKey(unknownReservationToken) && Count(0) == 2 && Count(6) == 1);
+        ManagedWorkRuntime.Observed(pending.Task);
+        ManagedWorkRuntime.CallbackCompleted(pending.Task);
+        Refuses(() => ManagedWorkRuntime.Completed(pending.Task), "managed-work-double-settle");
+        ManagedWorkRuntime.Exit(previous);
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-double-settle");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+        Need(Count(0) == 2 && Count(6) == 1 && Owners.ContainsKey(unknownReservationToken));
+    }
+    private static void ResultContextFailureControl(bool restore, bool before)
+    {
+        var pending = Pending(); ManagedWorkRuntime.Schedule(pending.Task);
+        var previous = ManagedWorkRuntime.Enter(pending.Task);
+        var original = context;
+        pending.SetException(new ArgumentException("control-result-context"));
+        if (restore) { Limits[6] = 0; refuseContextRestore = original.Item2; contextThrowsBeforeRestore = before; }
+        else { refuseContextClear = true; contextThrowsBeforeClear = before; }
+        Refuses(() => ManagedWorkRuntime.Completed(pending.Task),
+            restore ? "managed-work-admission-refused" : "control-context-clear-failed");
+        Need(context == (!restore && before ? original : (0UL, 0UL)) && Count(0) == 2 && Count(6) == 0);
+        refuseContextRestore = 0; refuseContextClear = false;
+        ManagedWorkRuntime.Observed(pending.Task); ManagedWorkRuntime.CallbackCompleted(pending.Task);
+        Refuses(() => ManagedWorkRuntime.Completed(pending.Task), "managed-work-double-settle");
+        ManagedWorkRuntime.Exit(previous);
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-double-settle");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+        Need(Count(0) == 2 && Count(6) == 0 && Owners.ContainsKey(original.Item2));
+    }
+    private static void ResultRefusalRestoreReentryControl()
+    {
+        var pending = Pending(); ManagedWorkRuntime.Schedule(pending.Task);
+        var rootContext = ExecutionContext.Capture() ?? throw new InvalidOperationException("control-root-context");
+        var rootAdapterContext = context;
+        var previous = ManagedWorkRuntime.Enter(pending.Task);
+        var original = context;
+        pending.SetException(new ArgumentException("control-refusal-restoration"));
+        Limits[6] = 0; afterContextRestoreTarget = original.Item2;
+        bool observed = false, nestedContextRestored = false;
+        AfterContextRestoreCallback = () =>
+        {
+            observed = true; Need(context == original);
+            ManagedWorkRuntime.Observed(pending.Task);
+            Refuses(() => ManagedWorkRuntime.Completed(pending.Task), "managed-work-double-settle");
+            Refuses(() => ManagedWorkRuntime.Schedule(Pending().Task), "managed-work-parent-retired");
+            Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-admission-in-progress");
+            Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-admission-in-progress");
+            // A nested execution context can replace native TLS and then
+            // restore the still-inactive Task while this adapter call runs.
+            ExecutionContext.Run(rootContext, _ => Need(context == rootAdapterContext), null);
+            nestedContextRestored = context == original;
+        };
+        Refuses(() => ManagedWorkRuntime.Completed(pending.Task), "managed-work-admission-refused");
+        Need(observed && nestedContextRestored && context == original && Count(0) == 2 && Count(6) == 0);
+        ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.Completed(pending.Task); Finish();
+    }
+    private static void ResultDispatchSettlementFailureControl(bool unknown)
+    {
+        var pending = Pending(); ManagedWorkRuntime.Schedule(pending.Task);
+        var previous = ManagedWorkRuntime.Enter(pending.Task);
+        settlementRefusal = context.Item2; settlementUnknown = unknown;
+        pending.SetException(new ArgumentException("control-dispatch-fault"));
+        Exception? original = null; Exception? received = null;
+        try
+        {
+            try { ManagedWorkRuntime.Completed(pending.Task); }
+            catch (Exception error) { original = error; throw; }
+            finally { ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.CallbackCompleted(pending.Task); }
+        }
+        catch (Exception error) { received = error; }
+        Need(original is not null && ReferenceEquals(received, original)
+            && original.Message == "managed-work-settlement-refused");
+        ManagedWorkRuntime.Observed(pending.Task);
+        Refuses(() => ManagedWorkRuntime.Completed(pending.Task), "managed-work-double-settle");
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-double-settle");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+        Need(refusedSettlements == 1 && Count(6) == 1 && Count(0) == (unknown ? 1 : 2));
+    }
+    private static void ObservedResultSettlementFailureControl(bool unknown)
+    {
+        var pending = Pending(); ManagedWorkRuntime.Schedule(pending.Task);
+        var previous = ManagedWorkRuntime.Enter(pending.Task);
+        pending.SetException(new ArgumentException("control-observed-result-settlement"));
+        ResultReservationCallback = () =>
+        {
+            ManagedWorkRuntime.Observed(pending.Task);
+            settlementRefusal = Owners.Single(entry => entry.Value == 6).Key;
+            settlementUnknown = unknown;
+        };
+        Refuses(() => ManagedWorkRuntime.Completed(pending.Task), "managed-work-settlement-refused");
+        ManagedWorkRuntime.Observed(pending.Task); ManagedWorkRuntime.CallbackCompleted(pending.Task);
+        Refuses(() => ManagedWorkRuntime.Completed(pending.Task), "managed-work-double-settle");
+        ManagedWorkRuntime.Exit(previous);
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-double-settle");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+        Need(refusedSettlements == 1 && Count(0) == 1 && Count(6) == (unknown ? 0 : 1));
     }
     private static void MultipleFaultConversionsControl()
     {
@@ -804,6 +983,23 @@ internal static class StateControl
             case "multiple-fault-conversions-retain-distinct-tokens": MultipleFaultConversionsControl(); break;
             case "fault-conversion-refusal-retains-both": FaultConversionControl(false); break;
             case "fault-conversion-unknown-retains-both": FaultConversionControl(true); break;
+            case "result-observed-during-context-clear": ResultTransitionObservationControl("clear"); break;
+            case "result-observed-during-reservation": ResultTransitionObservationControl("reservation"); break;
+            case "result-observed-during-task-settlement": ResultTransitionObservationControl("task-settlement"); break;
+            case "result-observed-during-result-settlement": ResultTransitionObservationControl("result-settlement"); break;
+            case "result-reservation-refusal-restores-owner": ResultReservationFailureControl("refusal"); break;
+            case "result-reservation-unknown-retains-custody": ResultReservationFailureControl("unknown"); break;
+            case "result-reservation-malformed-generation-retains-custody": ResultReservationFailureControl("generation"); break;
+            case "result-reservation-malformed-id-retains-custody": ResultReservationFailureControl("id"); break;
+            case "result-context-clear-failure-before-mutation": ResultContextFailureControl(false, true); break;
+            case "result-context-clear-failure-after-mutation": ResultContextFailureControl(false, false); break;
+            case "result-context-restore-failure-before-mutation": ResultContextFailureControl(true, true); break;
+            case "result-context-restore-failure-after-mutation": ResultContextFailureControl(true, false); break;
+            case "result-refusal-restore-observation-and-reentry": ResultRefusalRestoreReentryControl(); break;
+            case "fault-dispatch-settlement-refusal-preserves-error": ResultDispatchSettlementFailureControl(false); break;
+            case "fault-dispatch-settlement-unknown-preserves-error": ResultDispatchSettlementFailureControl(true); break;
+            case "observed-result-settlement-refusal-retains-custody": ObservedResultSettlementFailureControl(false); break;
+            case "observed-result-settlement-unknown-retains-custody": ObservedResultSettlementFailureControl(true); break;
             case "storage-settlement-refusal-fences-root": RootSettlementControl(true, false); break;
             case "storage-settlement-unknown-fences-root": RootSettlementControl(true, true); break;
             case "root-settlement-refusal-fences-finalization": RootSettlementControl(false, false); break;

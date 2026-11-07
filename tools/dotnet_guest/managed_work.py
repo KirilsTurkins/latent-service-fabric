@@ -210,10 +210,19 @@ PROVISIONAL_RESERVATION_REWRITE_RECEIPT = {**QUEUE_WITNESS_REWRITE_RECEIPT,
     'admissionFinalization': 'in-flight-count-before-allocation-and-join-drain-fence'}
 
 
+# The ordinary fault-result transition preserves observation and custody across
+# every host acknowledgement; required-continuation conversion is separate.
+RESULT_TRANSITION_REWRITE_RECEIPT = {**PROVISIONAL_RESERVATION_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v7',
+    'resultTransition': 'fenced-observation-and-one-attempt-fault-result-settlement'}
+
+
 def validate_rewrite(value: dict) -> None:
     if type(value) is not dict:
         raise ValueError('dotnet-managed-work-rewrite-receipt')
-    expected_receipt = (PROVISIONAL_RESERVATION_REWRITE_RECEIPT
+    expected_receipt = (RESULT_TRANSITION_REWRITE_RECEIPT
+        if value.get('patch') == RESULT_TRANSITION_REWRITE_RECEIPT['patch']
+        else PROVISIONAL_RESERVATION_REWRITE_RECEIPT
         if value.get('patch') == PROVISIONAL_RESERVATION_REWRITE_RECEIPT['patch']
         else QUEUE_WITNESS_REWRITE_RECEIPT if value.get('patch') == QUEUE_WITNESS_REWRITE_RECEIPT['patch']
         else QUEUE_FENCE_REWRITE_RECEIPT if value.get('patch') == QUEUE_FENCE_REWRITE_RECEIPT['patch']
