@@ -141,8 +141,12 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
         name = 'StarlingMonkey/builtins/web/event/event-target.cpp'
         start = b'bool EventTarget::inner_invoke('
         end = b'JSObject *EventTarget::create('
-        self.assertEqual(before[name][before[name].index(start):before[name].index(end)],
-                         derived[name][derived[name].index(start):derived[name].index(end)])
+        original = before[name][before[name].index(start):before[name].index(end)]
+        changed = derived[name][derived[name].index(start):derived[name].index(end)]
+        previous = b'      return true;\n'
+        replacement = b'      break; // remove already-fired once listeners before returning\n'
+        self.assertEqual(changed.count(replacement), 1)
+        self.assertEqual(changed.replace(replacement, previous, 1), original)
         abort = (FIXTURES/'original-abort-signal.cpp').read_bytes()
         begin = b'bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason)'
         ending = b'JSObject *AbortSignal::create('
@@ -209,6 +213,29 @@ class EventPublicationControls(unittest.TestCase):
             raise AssertionError((result.stdout + result.stderr)[:65536].decode(errors='replace'))
         if not cls.binary.is_file() or cls.binary.stat().st_size > 4*1024**2:
             raise AssertionError('finite event publication control required')
+        inner = selected.index(b'bool EventTarget::inner_invoke(')
+        stop_start = selected.index(b'    if (Event::has_flag(event, EventFlag::StopImmediatePropagation)) {', inner)
+        stop_end = selected.index(b'\n    }', stop_start) + len(b'\n    }')
+        cleanup_start = selected.index(b'  if (listeners_removed) {', stop_end)
+        cleanup_end = selected.index(b'\n  }', cleanup_start) + len(b'\n  }')
+        dispatch = (root/'tools/tests/fixtures/typescript_once_dispatch.cpp').read_bytes()
+        for marker, actual in ((b'      // INSERT_EMITTED_STOP_BLOCK', selected[stop_start:stop_end]),
+                               (b'    // INSERT_EMITTED_CLEANUP_BLOCK', selected[cleanup_start:cleanup_end])):
+            if dispatch.count(marker) != 1:
+                raise AssertionError('unique emitted dispatch insertion point required')
+            dispatch = dispatch.replace(marker, actual)
+        dispatch_source = output/'once_dispatch.cpp'
+        dispatch_source.write_bytes(dispatch)
+        cls.dispatch_binary = output/('once_dispatch.exe' if os.name == 'nt' else 'once_dispatch')
+        if Path(compiler).stem.lower() == 'cl':
+            args = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX', str(dispatch_source),
+                    '/Fe:' + str(cls.dispatch_binary), '/Fo:' + str(output/'once_dispatch.obj')]
+        else:
+            args = [compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror',
+                    str(dispatch_source), '-o', str(cls.dispatch_binary)]
+        result = subprocess.run(args, capture_output=True, timeout=60)
+        if result.returncode or len(result.stdout) + len(result.stderr) > 65536:
+            raise AssertionError((result.stdout + result.stderr)[:65536].decode(errors='replace'))
 
     def test_registration_and_reactivation_failure_boundaries(self):
         for case in (
@@ -222,6 +249,15 @@ class EventPublicationControls(unittest.TestCase):
         ):
             with self.subTest(case=case):
                 result = subprocess.run([str(self.binary), case], capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
+                self.assertEqual(json.loads(result.stdout),
+                                 {'case': case, 'passed': True, 'engineQualified': False})
+
+    def test_once_listener_physically_retires_after_immediate_stop(self):
+        for case in ('once-immediate-stop-retires-listener', 'once-without-stop-cleans-up',
+                     'ordinary-stop-keeps-listeners'):
+            with self.subTest(case=case):
+                result = subprocess.run([str(self.dispatch_binary), case], capture_output=True, timeout=10)
                 self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
                 self.assertEqual(json.loads(result.stdout),
                                  {'case': case, 'passed': True, 'engineQualified': False})
