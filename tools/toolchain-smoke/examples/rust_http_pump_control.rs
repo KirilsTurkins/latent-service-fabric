@@ -65,6 +65,12 @@ async fn main() -> wasmtime::Result<()> {
         .wasm_component_model_async(true)
         .concurrency_support(true)
         .consume_fuel(true);
+    if std::env::args().any(|arg| arg == "--native-profile") {
+        config
+            .wasm_component_model_more_async_builtins(true)
+            .wasm_component_model_threading(true)
+            .wasm_component_model_async_stackful(true);
+    }
     let engine = Engine::new(&config)?;
     let component = Component::from_file(&engine, path)?;
     let gates: Arc<[Arc<Gate>; 3]> = Arc::new(std::array::from_fn(|_| Arc::new(Gate::default())));
@@ -88,12 +94,15 @@ async fn main() -> wasmtime::Result<()> {
     let run = instance.get_typed_func::<(u32,), (u32,)>(&mut store, "run")?;
     let retire = instance.get_typed_func::<(u32,), ()>(&mut store, "retire")?;
     let drain = instance.get_typed_func::<(), ()>(&mut store, "drain")?;
+    let poke = instance.get_typed_func::<(), ()>(&mut store, "poke")?;
     tokio::time::timeout(
         Duration::from_secs(5),
         store.run_concurrent(async |access| {
             let mut first = Box::pin(run.call_concurrent(access, (0,)));
             let mut second = Box::pin(run.call_concurrent(access, (1,)));
             let mut second_returned = false;
+            let mut observation = Box::pin(poke.call_concurrent(access, ()));
+            let mut observed = false;
             poll_fn(|cx| -> Poll<wasmtime::Result<()>> {
                 for gate in gates.iter() {
                     *gate.controller.lock().unwrap() = Some(cx.waker().clone());
@@ -122,6 +131,15 @@ async fn main() -> wasmtime::Result<()> {
                         if gates[0].polls.load(Ordering::SeqCst) != 0
                             && gates[1].polls.load(Ordering::SeqCst) != 0
                         {
+                            if !observed {
+                                match observation.as_mut().poll(cx) {
+                                    Poll::Ready(result) => {
+                                        result?;
+                                        observed = true;
+                                    }
+                                    Poll::Pending => return Poll::Pending,
+                                }
+                            }
                             gates[1].release();
                         }
                     }

@@ -89,6 +89,15 @@ class RustThreadHttpSiblingTests(unittest.TestCase):
             self.assertEqual((outside[0] / 'src/lib.rs').read_bytes(), fixture.http.LIBRARY.encode())
             self.assertEqual((outside[1] / 'src/lib.rs').read_bytes(),
                              fixture.http.LIBRARY.encode() + fixture.SIBLING.encode())
+            # The pinned Golem Response::read takes its body on every call.
+            # Keep the consuming bytes() path, not read_to_end's repeated reads.
+            sibling = (outside[1] / 'src/lib.rs').read_text().split(
+                'pub fn thread_http_sibling(endpoint: &str)', 1)[1]
+            self.assertIn('response.bytes().map_err', sibling)
+            self.assertNotIn('response.read_to_end(', sibling)
+            self.assertLess(sibling.index('response.bytes()'), sibling.index('body.len() != 4109'))
+            self.assertLess(sibling.index('body.len() != 4109'), sibling.index('drop(body);'))
+            self.assertLess(sibling.index('drop(body);'), sibling.index('request("golem", "repeat"'))
             self.assertEqual(len(specs), 2)
             self.assertEqual(source.count('applicationTransportInjected'), 0)
 

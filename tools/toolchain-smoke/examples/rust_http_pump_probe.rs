@@ -9,6 +9,7 @@ wit_bindgen::generate!({
             export run: async func(key: u32) -> u32;
             export retire: async func(key: u32);
             export drain: async func();
+            export poke: func();
         }
     "#,
 });
@@ -76,6 +77,9 @@ impl pump::Readiness for Started {
 }
 struct Control;
 impl Guest for Control {
+    fn poke() {
+        pump::Pump::current().step();
+    }
     async fn run(key: u32) -> u32 {
         let operation = Operation::new(key);
         let source: Rc<dyn pump::Readiness> = operation.clone();
