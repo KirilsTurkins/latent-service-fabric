@@ -31,13 +31,19 @@ pub(super) enum QueueError {
     Expired,
     Unavailable,
     DuplicateConflict,
-    DuplicateNeedsAuthorization,
+    DuplicateNeedsAuthorization([u8; 32]),
     DuplicateCapacity,
+    OriginalSourceChanged,
 }
 
 type CommandIdentity = latent_commit::atomic::Identity;
-type Commands = Arc<Mutex<BTreeMap<CommandIdentity, CommandIdentity>>>;
+type Commands = Arc<Mutex<BTreeMap<CommandIdentity, Arc<CommandEntry>>>>;
 type DuplicateWaiters = Arc<Mutex<BTreeMap<EntityScope, usize>>>;
+
+struct CommandEntry {
+    fingerprint: CommandIdentity,
+    source: [u8; 32],
+}
 
 struct DuplicateWaiter {
     waiters: DuplicateWaiters,
@@ -59,12 +65,18 @@ impl Drop for DuplicateWaiter {
 struct CommandRegistration {
     commands: Commands,
     identity: CommandIdentity,
+    entry: Arc<CommandEntry>,
     signal: watch::Sender<u64>,
 }
 impl Drop for CommandRegistration {
     fn drop(&mut self) {
         if let Ok(mut commands) = self.commands.lock() {
-            commands.remove(&self.identity);
+            if commands
+                .get(&self.identity)
+                .is_some_and(|entry| Arc::ptr_eq(entry, &self.entry))
+            {
+                commands.remove(&self.identity);
+            }
         }
         self.signal
             .send_modify(|version| *version = version.wrapping_add(1));
@@ -170,6 +182,7 @@ impl EntityQueue {
             permit,
             None,
             false,
+            None,
         )
         .await
     }
@@ -187,8 +200,9 @@ impl EntityQueue {
         deadline: Instant,
         current: Arc<dyn Fn() -> bool + Send + Sync>,
         permit: NativeBufferPermit,
-        command: Option<(CommandIdentity, CommandIdentity)>,
+        command: Option<(CommandIdentity, CommandIdentity, [u8; 32])>,
         duplicate_authorized: bool,
+        mut first_source: Option<[u8; 32]>,
     ) -> Result<Physical, QueueError> {
         // Cover the queue's own objects and the lane's bounded copies before
         // building the channel or inserting the request. The trusted caller
@@ -218,27 +232,39 @@ impl EntityQueue {
         }
         let mut changes = self.signal.subscribe();
         let registration = loop {
-            let Some((identity, fingerprint)) = &command else {
+            let Some((identity, fingerprint, source)) = &command else {
                 break None;
             };
             let next = {
                 let mut commands = self.commands.lock().map_err(|_| QueueError::Unavailable)?;
                 if let Some(existing) = commands.get(identity) {
                     if !duplicate_authorized {
-                        return Err(QueueError::DuplicateNeedsAuthorization);
+                        return Err(QueueError::DuplicateNeedsAuthorization(existing.source));
                     }
-                    if existing != fingerprint {
+                    if first_source.is_some_and(|first| first != existing.source) {
+                        return Err(QueueError::OriginalSourceChanged);
+                    }
+                    if existing.fingerprint != *fingerprint {
                         return Err(QueueError::DuplicateConflict);
                     }
+                    first_source = Some(existing.source);
                     None
                 } else {
+                    if first_source.is_some_and(|first| first != *source) {
+                        return Err(QueueError::OriginalSourceChanged);
+                    }
                     if commands.len() >= self.maximum_commands {
                         return Err(QueueError::Unavailable);
                     }
-                    commands.insert(*identity, *fingerprint);
+                    let entry = Arc::new(CommandEntry {
+                        fingerprint: *fingerprint,
+                        source: *source,
+                    });
+                    commands.insert(*identity, Arc::clone(&entry));
                     Some(Arc::new(CommandRegistration {
                         commands: Arc::clone(&self.commands),
                         identity: *identity,
+                        entry,
                         signal: self.signal.clone(),
                     }))
                 }

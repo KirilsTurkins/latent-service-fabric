@@ -32,6 +32,28 @@ enum PendingPublication {
     Refused(AtomicError),
 }
 
+fn source_pin(source: &latent_commit::atomic::SourceIdentity) -> Result<[u8; 32], PlatformError> {
+    use sha2::{Digest, Sha256};
+    source.validate().map_err(atomic)?;
+    let mut hash = Sha256::new();
+    hash.update(b"LSF queued command source v1\0");
+    for value in [
+        &source.publication,
+        &source.revision,
+        &source.release_digest,
+        &source.component_digest,
+        &source.contract_digest,
+        &source.state_schema,
+        &source.input_format,
+        &source.result_format,
+    ] {
+        hash.update((value.len() as u64).to_le_bytes());
+        hash.update(value.as_bytes());
+    }
+    hash.update(source.route_generation.to_le_bytes());
+    Ok(hash.finalize().into())
+}
+
 struct ClaimNotification<'a>(&'a super::super::entity_queue::EntityQueue);
 impl Drop for ClaimNotification<'_> {
     fn drop(&mut self) {
@@ -62,6 +84,7 @@ fn entity_queue_error(failure: super::super::entity_queue::QueueError) -> Platfo
             (Code::ResourceExhausted, "entity-queue-backpressure")
         }
         QueueError::DuplicateCapacity => (Code::ResourceExhausted, "entity-duplicate-backpressure"),
+        QueueError::OriginalSourceChanged => (Code::Unavailable, "entity-original-owner-ended"),
         _ => (Code::Unavailable, "entity-queue-unavailable"),
     };
     error(code, message)
@@ -164,6 +187,14 @@ impl NativeTransactionAdmission {
         // Verify pinned source, mode, finite input and original policy BEFORE
         // any native lookup or durable reservation. DTOs supply no source grant.
         let source = observation::platform(Phase::Source, self.installation.source(envelope))?;
+        let selected_source = if selection.mode == TransactionOperationMode::StrictCommand
+            && selection.entity.is_some()
+            && selection.retry.is_none()
+        {
+            source_pin(&source)?
+        } else {
+            [0; 32]
+        };
         let initial = observation::platform(
             Phase::InitialPolicy,
             policy::initial(
@@ -204,6 +235,7 @@ impl NativeTransactionAdmission {
                 control.as_ref(),
                 claim_changes,
                 replay_probe,
+                selected_source,
             )
             .await?
         } else {
@@ -305,6 +337,10 @@ impl NativeTransactionAdmission {
         )
     }
 
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "Keep the original budget, control, claim observation, and selected source together"
+    )]
     async fn acquire_entity_lane(
         &self,
         selection: &TransactionSelection,
@@ -313,6 +349,7 @@ impl NativeTransactionAdmission {
         control: Option<&crate::TransactionAdmissionControl>,
         mut claims: Option<tokio::sync::watch::Receiver<u64>>,
         probe: Option<super::entity_replay::ReplayProbe>,
+        selected_source: [u8; 32],
     ) -> Result<Option<super::super::entity_queue::Physical>, PlatformError> {
         use latent_core::native_capacity::NativeBufferClass;
         use latent_state::entity_lanes::EntityScope;
@@ -335,9 +372,10 @@ impl NativeTransactionAdmission {
         let current_retention = Arc::clone(&retained);
         let current = Arc::new(move || current_retention.check_current().is_ok());
         let retained_bytes = retained.total_native_bytes()?;
-        let command = probe.map(|probe| (probe.identity, probe.fingerprint));
+        let command = probe.map(|probe| (probe.identity, probe.fingerprint, selected_source));
         let wait = async {
             let mut duplicate_authorized = false;
+            let mut first_source = None;
             loop {
                 // Each waiter and its queue objects are prepaid from the
                 // original ingress; reacquire after the authorization read.
@@ -362,16 +400,28 @@ impl NativeTransactionAdmission {
                         permit,
                         command,
                         duplicate_authorized,
+                        first_source,
                     )
                     .await;
-                if matches!(
-                    result,
-                    Err(super::super::entity_queue::QueueError::DuplicateNeedsAuthorization)
-                ) {
+                if let Err(super::super::entity_queue::QueueError::DuplicateNeedsAuthorization(
+                    source,
+                )) = &result
+                {
+                    let source = *source;
                     self.authorize_entity_duplicate(selection, envelope, budget)
                         .await?;
+                    first_source = Some(source);
                     duplicate_authorized = true;
                     continue;
+                }
+                if matches!(
+                    result,
+                    Err(super::super::entity_queue::QueueError::OriginalSourceChanged)
+                ) {
+                    // Recover a durable claim if it became visible just before
+                    // the original lane retired; otherwise refuse takeover.
+                    self.replay_existing_entity(selection, envelope, budget)
+                        .await?;
                 }
                 break result.map_err(entity_queue_error);
             }

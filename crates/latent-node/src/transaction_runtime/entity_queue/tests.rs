@@ -87,8 +87,9 @@ async fn duplicate_waiters_are_authorized_bounded_and_cancel_independently() {
             deadline(),
             Arc::new(|| true),
             permit(),
-            Some((key, fingerprint)),
+            Some((key, fingerprint, [0; 32])),
             false,
+            None,
         )
         .await
         .unwrap();
@@ -100,13 +101,14 @@ async fn duplicate_waiters_are_authorized_bounded_and_cancel_independently() {
             deadline(),
             Arc::new(|| true),
             permit(),
-            Some((key, other)),
+            Some((key, other, [0; 32])),
             false,
+            None,
         )
         .await;
     assert!(matches!(
         unauthorized,
-        Err(QueueError::DuplicateNeedsAuthorization)
+        Err(QueueError::DuplicateNeedsAuthorization(_))
     ));
     let conflict = queue
         .acquire_for_command(
@@ -116,8 +118,9 @@ async fn duplicate_waiters_are_authorized_bounded_and_cancel_independently() {
             deadline(),
             Arc::new(|| true),
             permit(),
-            Some((key, other)),
+            Some((key, other, [0; 32])),
             true,
+            None,
         )
         .await;
     assert!(matches!(conflict, Err(QueueError::DuplicateConflict)));
@@ -131,8 +134,9 @@ async fn duplicate_waiters_are_authorized_bounded_and_cancel_independently() {
                 deadline(),
                 Arc::new(|| true),
                 permit(),
-                Some((key, fingerprint)),
+                Some((key, fingerprint, [0; 32])),
                 true,
+                None,
             )
             .await
     });
@@ -151,8 +155,9 @@ async fn duplicate_waiters_are_authorized_bounded_and_cancel_independently() {
             deadline(),
             Arc::new(|| true),
             permit(),
-            Some((key, fingerprint)),
+            Some((key, fingerprint, [0; 32])),
             true,
+            None,
         )
         .await;
     assert!(matches!(excess, Err(QueueError::DuplicateCapacity)));
@@ -189,8 +194,9 @@ async fn duplicate_can_become_owner_when_the_unclaimed_owner_retires() {
             deadline(),
             Arc::new(|| true),
             permit(),
-            Some((key, fingerprint)),
+            Some((key, fingerprint, [0; 32])),
             false,
+            None,
         )
         .await
         .unwrap();
@@ -204,8 +210,9 @@ async fn duplicate_can_become_owner_when_the_unclaimed_owner_retires() {
                 deadline(),
                 Arc::new(|| true),
                 permit(),
-                Some((key, fingerprint)),
+                Some((key, fingerprint, [0; 32])),
                 true,
+                None,
             )
             .await
     });
@@ -227,6 +234,60 @@ async fn duplicate_can_become_owner_when_the_unclaimed_owner_retires() {
     drop(replacement);
     assert!(queue.commands.lock().unwrap().is_empty());
     assert!(queue.duplicate_waiters.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn source_pin_survives_owner_loss_during_duplicate_authorization() {
+    let queue = EntityQueue::new(limits(), Arc::new(latent_core::SystemActivationClock)).unwrap();
+    let key = CommandIdentity::parse_hex(&"66".repeat(32)).unwrap();
+    let fingerprint = CommandIdentity::parse_hex(&"77".repeat(32)).unwrap();
+    let owner = queue
+        .acquire_for_command(
+            scope("tenant-a", "hot"),
+            vec![1],
+            64,
+            deadline(),
+            Arc::new(|| true),
+            permit(),
+            Some((key, fingerprint, [1; 32])),
+            false,
+            None,
+        )
+        .await
+        .unwrap();
+    let probe = queue
+        .acquire_for_command(
+            scope("tenant-a", "hot"),
+            vec![2],
+            64,
+            deadline(),
+            Arc::new(|| true),
+            permit(),
+            Some((key, fingerprint, [2; 32])),
+            false,
+            None,
+        )
+        .await;
+    assert!(
+        matches!(probe, Err(QueueError::DuplicateNeedsAuthorization(source)) if source == [1; 32])
+    );
+    drop(owner);
+    let resumed = queue
+        .acquire_for_command(
+            scope("tenant-a", "hot"),
+            vec![2],
+            64,
+            deadline(),
+            Arc::new(|| true),
+            permit(),
+            Some((key, fingerprint, [2; 32])),
+            true,
+            Some([1; 32]),
+        )
+        .await;
+    assert!(matches!(resumed, Err(QueueError::OriginalSourceChanged)));
+    assert!(queue.commands.lock().unwrap().is_empty());
+    assert_eq!(queue.snapshot().active, 0);
 }
 
 #[tokio::test]

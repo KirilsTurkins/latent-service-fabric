@@ -579,6 +579,111 @@ async fn cold_entity_progresses_while_hot_owner_reports_conservative_conflict() 
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 #[ignore = "Requires the maintained compiled Rust transaction guest"]
+async fn queued_duplicate_refuses_new_revision_after_original_waiter_cancels() {
+    let mut f = Fixture::with_concurrent_commands(true).await;
+    authorize_entity(&f, "hot");
+    let holder_adapter = f.adapter();
+    let holder = tokio::spawn(async move {
+        holder_adapter
+            .invoke_command(context("alice").request(entity_command("pin-holder", 1)))
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(5), f.backend.imports.entered.notified())
+        .await
+        .unwrap();
+    let original_adapter = f.adapter();
+    let original = tokio::spawn(async move {
+        original_adapter
+            .invoke_command(context("alice").request(entity_command("pin-surviving", 1)))
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while f
+            .owners
+            .as_ref()
+            .unwrap()
+            .entity_lanes_snapshot()
+            .unwrap()
+            .queued
+            != 1
+        {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    let current = f.apply_compatible_revision().await;
+    let duplicate_adapter = f.adapter();
+    let duplicate = tokio::spawn(async move {
+        duplicate_adapter
+            .invoke_command(context("alice").request(entity_command("pin-surviving", 1)))
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while f
+            .owners
+            .as_ref()
+            .unwrap()
+            .entity_duplicate_waiter_count()
+            .unwrap()
+            != 1
+        {
+            assert!(!duplicate.is_finished());
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    original.abort();
+    assert!(original.await.is_err_and(|error| error.is_cancelled()));
+    let duplicate = tokio::time::timeout(Duration::from_secs(5), duplicate)
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(matches!(duplicate, Err(error) if error.code() == tonic::Code::Unavailable));
+    assert_eq!(f.executions(), 1);
+    f.backend.imports.release.notify_one();
+    let holder = tokio::time::timeout(Duration::from_secs(10), holder)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap()
+        .into_inner();
+    success(&holder);
+    let retry = tokio::time::timeout(
+        Duration::from_secs(10),
+        f.adapter()
+            .invoke_command(context("alice").request(entity_command("pin-surviving", 1))),
+    )
+    .await
+    .unwrap()
+    .unwrap()
+    .into_inner();
+    success(&retry);
+    let first = &holder
+        .command
+        .as_ref()
+        .unwrap()
+        .source
+        .as_ref()
+        .unwrap()
+        .revision_id;
+    let observed = &retry
+        .command
+        .as_ref()
+        .unwrap()
+        .source
+        .as_ref()
+        .unwrap()
+        .revision_id;
+    assert_ne!(first, &current.revision.0);
+    assert_eq!(observed, &current.revision.0);
+    assert_eq!(f.executions(), 2);
+    f.shutdown().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "Requires the maintained compiled Rust transaction guest"]
 async fn trapped_entity_retains_its_lane_until_the_actual_abort_writer_finishes() {
     use latent_state::store_io::StoreIoKind;
     use std::sync::{Condvar, Mutex};
