@@ -12,6 +12,7 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
         raise ValueError('unreviewed-original-AbortSignal-source')
     source = replace_once(raw, b'#include "../timers.h"\n',
         b'#include "../timers.h"\n#include "native_timeout.h"\n#include "native_engine.h"\n'
+        b'#include "native_objects.h"\n'
         b'#include "js/ForOfIterator.h"\n', 'abort-native-include')
     source = replace_once(source,
         b'    JS_SetPendingException(cx, reason);\n  }\n\n  return true;\n}',
@@ -24,7 +25,10 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
         b'  RootedObject self(cx, create_with_signals(cx, args));\n',
         b'''  JS::ForOfIterator iterator(cx);
   if (!iterator.init(args.get(0))) return false;
+  // The vector must be destroyed before its frame's original native owner.
+  lsf::typescript::activation::NativeObjectFrameLease signals_owner;
   JS::RootedValueVector signals(cx);
+  bool signals_owned = false;
   while (true) {
     JS::RootedValue value(cx);
     bool done = false;
@@ -35,6 +39,13 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
                        "contain only AbortSignal objects");
       iterator.closeThrow();
       return false;
+    }
+    if (!signals_owned && signals.length() == signals.capacity()) {
+      if (!lsf::typescript::activation::admit_native_object(cx, signals_owner.lease())) {
+        iterator.closeThrow();
+        return false;
+      }
+      signals_owned = true;
     }
     if (!signals.append(value)) { JS_ReportOutOfMemory(cx); return false; }
   }
@@ -92,6 +103,7 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
         'originalAbortAlgorithmsListenersAndTimeoutReasonRetained': True,
         'throwIfAbortedPreservesOriginalReasonIdentity': True,
         'anyConvertsOneIterableAndChecksSignalInstances': True,
+        'anyHeapVectorOwner': 'one-original-native-count-per-frame-not-byte-accurate',
         'staticAbortReasonOptional': True,
         'rootAbortFailureWithoutNewDependents': 'propagate-original-failure',
         'rootReasonAllocationFailure': 'return-before-direct-reason-slot-write',
