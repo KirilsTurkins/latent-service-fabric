@@ -299,6 +299,14 @@ def completable_model_control(compiler: Compiler, output: Path) -> dict:
             "portOrApplicationClassesInitialized": False, "actualGuestBindingsUsed": False}
 
 
+STANDARD_TIMER_ACTIVE_OWNER_CASES = (
+    "one-shot-normal", "one-shot-error", "external-cancel", "external-purge", "self-cancel", "self-purge",
+    "fixed-rate-reschedule", "fixed-delay-reschedule", "refused", "lost", "callback-refused", "callback-lost",
+    "periodic-callback-refused", "periodic-callback-lost", "cancel-refused", "cancel-lost",
+    "callback-ack", "clear-queue-ack", "cancelled-head-ack", "purge-ack",
+)
+
+
 def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
     """Execute unchanged SDK timer sources with an explicitly private host ledger.
 
@@ -311,7 +319,7 @@ def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
     main = fixture / "timers/Main.java"
     private = fixture / "compiler/standard-timer-control"
     sources = [private / name for name in (
-        "TimerModelMain.java", "dev/latent/generated/Bindings.java",
+        "TimerModelMain.java", "TimerActiveOwnerControl.java", "dev/latent/generated/Bindings.java",
         "dev/latent/guest/runtime/Activation.java")]
     ports = [compiler.sdk / ("fibers/dev/latent/guest/runtime/util/" + name + ".java")
              for name in ("Timer", "TimerTask")]
@@ -334,6 +342,13 @@ def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
                               output, "TimerModelMain")
         if result.strip().splitlines() != expected:
             raise ValueError("Java standard timer source control did not complete")
+    if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
+        raise ValueError("Java timer control inputs changed during execution")
+    for case in STANDARD_TIMER_ACTIVE_OWNER_CASES:
+        result = compiler.run("standard-timer-active-" + case, "java", "-Xmx256m", "-cp",
+                              output, "TimerActiveOwnerControl", case)
+        if result.strip() != "TIMER_ACTIVE_OWNER_CONTROL PASS " + case:
+            raise ValueError("Java timer active-owner control did not complete: " + case)
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError("Java timer control inputs changed during execution")
     return {"status": "SDK-source-controls-passed", "iterations": 3, "modes": [0, 1, 2, 3],
