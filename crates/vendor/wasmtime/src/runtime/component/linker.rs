@@ -512,6 +512,23 @@ impl<T: 'static> LinkerInstance<'_, T> {
         Ok(())
     }
 
+    /// Define a sync-WIT host callback that is guaranteed immediately ready.
+    ///
+    /// Like `func_wrap_async`, this requires an async Store and invokes the
+    /// callback within the same fiber blocking context. Unlike that API it
+    /// does not allocate a per-call future and cannot suspend the fiber.
+    #[cfg(feature = "async")]
+    pub fn func_wrap_ready<Params, Return, F>(&mut self, name: &str, f: F) -> Result<()>
+    where
+        T: Send,
+        F: Fn(StoreContextMut<'_, T>, Params) -> Result<Return> + Send + Sync + 'static,
+        Params: ComponentNamedList + Lift + Send + 'static,
+        Return: ComponentNamedList + Lower + 'static,
+    {
+        self.insert(name, Definition::Func(HostFunc::func_wrap_ready(f)?))?;
+        Ok(())
+    }
+
     /// Defines a new host-provided async function into this [`LinkerInstance`].
     ///
     /// This function is similar to [`Self::func_wrap`] except it takes an async

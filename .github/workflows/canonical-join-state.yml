@@ -12,6 +12,7 @@ on:
       - 'crates/latent-wasmtime/src/host/native_store_tests.rs'
       - 'tools/qualify_canonical_join_state.py'
       - 'tools/host_codec_wasmtime.py'
+  workflow_call:
 permissions:
   contents: read
 concurrency:
@@ -20,6 +21,7 @@ concurrency:
 jobs:
   join-state:
     name: Four remaining actual host controls
+    if: github.event_name == 'push' && github.ref == 'refs/heads/feat/sdk-736-legacy-host-futures-20261026'
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
@@ -76,3 +78,30 @@ jobs:
             ${{ runner.temp }}/canonical-join-state/commands/logs/*.txt
           if-no-files-found: warn
           retention-days: 3
+
+  ready-sync:
+    name: Verify ready sync callback fiber context
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/development'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - name: Run the two locked vendor fiber and lowering controls
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path crates/vendor/wasmtime/Cargo.toml --locked --lib --no-default-features --features std,runtime,component-model-async,cranelift,wat,cache,gc,gc-drc,threads,coredump ready_only_tests:: -- --test-threads=1 | tee "$RUNNER_TEMP/ready-sync.txt"
+          grep -Fx 'test runtime::component::func::host::ready_only_tests::ready_callbacks_match_boxed_fiber_refusal_unwind_reentry_and_lowering ... ok' "$RUNNER_TEMP/ready-sync.txt"
+          grep -Fx 'test runtime::component::func::host::ready_only_tests::ready_callbacks_retain_reply_through_memory_lowering_and_destination_refusal ... ok' "$RUNNER_TEMP/ready-sync.txt"
+          grep -F 'test result: ok. 2 passed; 0 failed; 0 ignored;' "$RUNNER_TEMP/ready-sync.txt"

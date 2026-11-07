@@ -814,3 +814,11 @@ legacy loop and does not acquire a native-memory reservation.
 This slice does not account borrowed host-to-host accept futures, backing
 buffers, transitive captures or aggregate activation costs. It does not resolve
 the existing compiled cohort discrepancy or establish signed guest behavior.
+
+Selected sync-WIT activation-runtime calls now use an immediately ready callback
+registered with the same async-required flag and Wasmtime blocking context as
+their previous boxed one-poll futures. The ready callback is polled on the fiber
+stack and cannot suspend; it removes that per-call future Box only. Its results
+still retain the original call through canonical lowering. Separate async WIT
+imports, callback captures, transitive allocations, allocator/RSS behavior and
+physical cleanup qualification are outside this change.

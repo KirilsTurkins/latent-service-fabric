@@ -339,19 +339,17 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
         ($name:literal, $args:pat, $ty:ty, $execute:expr $(, $register_kind:expr)?) => {
             linker
                 .instance(CAPABILITY)?
-                .func_wrap_async($name, |mut store, $args: $ty| {
-                    Box::new(async move {
-                        super::service::checkpoint(&mut store)?;
-                        #[cfg(feature = "development-test-host")]
-                        {
-                            $(if let Some(observer) = &mut store.data_mut().development_borrow_admission {
-                                observer.prepare_register(owner_kind($register_kind));
-                            })?
-                        }
-                        let result = synchronous(store.data_mut(), $name, $execute);
-                        super::service::synchronize(&mut store)?;
-                        Ok((result,))
-                    })
+                .func_wrap_ready($name, |mut store, $args: $ty| {
+                    super::service::checkpoint(&mut store)?;
+                    #[cfg(feature = "development-test-host")]
+                    {
+                        $(if let Some(observer) = &mut store.data_mut().development_borrow_admission {
+                            observer.prepare_register(owner_kind($register_kind));
+                        })?
+                    }
+                    let result = synchronous(store.data_mut(), $name, $execute);
+                    super::service::synchronize(&mut store)?;
+                    Ok((result,))
                 })?;
         };
     }
@@ -418,39 +416,37 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
             stale_wakes: snapshot.stale_wakes,
         })
     });
-    linker.instance(CAPABILITY)?.func_wrap_async(
+    linker.instance(CAPABILITY)?.func_wrap_ready(
         "timer-start",
         |mut store, (delay, period, continuation): (u64, Option<u64>, Option<wit::Token>)| {
-            Box::new(async move {
-                super::service::checkpoint(&mut store)?;
-                let first = store
-                    .data()
-                    .clock
-                    .monotonic_now()
-                    .checked_add(Duration::from_nanos(delay));
-                let result = synchronous(store.data_mut(), "timer-start", |table| {
-                    let first = first.ok_or_else(|| {
-                        failure(PlatformErrorCode::InvalidArgument, "runtime-timer-range")
-                    })?;
-                    let timer = RuntimeTimer::new(
-                        &table.runtime,
-                        first,
-                        period.map(Duration::from_nanos),
-                        continuation.map(token),
-                    )?;
-                    let value = timer.token();
-                    table.timers.push(timer);
-                    if let Some(observer) = &table.timer_observer {
-                        observer.record(TimerEvent::StartAccepted, table.runtime.snapshot().owners);
-                    }
-                    Ok(wit::Token {
-                        generation: value.generation,
-                        id: value.id,
-                    })
-                });
-                super::service::synchronize(&mut store)?;
-                Ok((result,))
-            })
+            super::service::checkpoint(&mut store)?;
+            let first = store
+                .data()
+                .clock
+                .monotonic_now()
+                .checked_add(Duration::from_nanos(delay));
+            let result = synchronous(store.data_mut(), "timer-start", |table| {
+                let first = first.ok_or_else(|| {
+                    failure(PlatformErrorCode::InvalidArgument, "runtime-timer-range")
+                })?;
+                let timer = RuntimeTimer::new(
+                    &table.runtime,
+                    first,
+                    period.map(Duration::from_nanos),
+                    continuation.map(token),
+                )?;
+                let value = timer.token();
+                table.timers.push(timer);
+                if let Some(observer) = &table.timer_observer {
+                    observer.record(TimerEvent::StartAccepted, table.runtime.snapshot().owners);
+                }
+                Ok(wit::Token {
+                    generation: value.generation,
+                    id: value.id,
+                })
+            });
+            super::service::synchronize(&mut store)?;
+            Ok((result,))
         },
     )?;
     sync!("timer-stop", (timer,), (wit::Token,), |table| {
