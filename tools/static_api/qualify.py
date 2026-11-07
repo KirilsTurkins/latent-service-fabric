@@ -13,7 +13,7 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from tools.build_process_signals import owned_cancellation
-from tools.phase2_operator_process import Client, read_json, require, write_json
+from tools.phase2_operator_process import Client, WorkflowError, read_json, require, write_json
 from tools.phase2_operator_scenario import NODE_ID, TOKEN, connect, stop
 from tools.run_oci_registry_tests import certificates
 from tools.static_api.node import configure, deploy, grants, policy, trigger
@@ -160,6 +160,10 @@ def run(args):
             reason = str(error)
             result['failure'] = reason if re.fullmatch(r'[a-z0-9-]{1,256}', reason) else type(error).__name__
             result['failedCall'] = client.failed_call
+            # Process.line attaches only the closed, validated startup report;
+            # never retain the node's raw stderr or retry its failed startup.
+            if isinstance(error, WorkflowError) and hasattr(error, 'startup_failure'):
+                result['failedNodeStartup'] = error.startup_failure
             raise
         finally:
             node_closed = peer_closed = False
