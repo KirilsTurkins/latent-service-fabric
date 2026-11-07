@@ -528,6 +528,57 @@ async fn conflicting_or_cancelled_queued_duplicate_does_not_change_its_original(
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 #[ignore = "Requires the maintained compiled Rust transaction guest"]
+async fn cold_entity_progresses_while_hot_owner_reports_conservative_conflict() {
+    let f = Fixture::with_concurrent_commands(true).await;
+    authorize_entities(&f, &["hot", "cold"]);
+    let hot_adapter = f.adapter();
+    let hot = tokio::spawn(async move {
+        hot_adapter
+            .invoke_command(context("alice").request(command_for_entity("parallel-hot", 1, "hot")))
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(5), f.backend.imports.entered.notified())
+        .await
+        .unwrap();
+    let cold = tokio::time::timeout(
+        Duration::from_secs(10),
+        f.adapter()
+            .invoke_command(context("alice").request(command_for_entity(
+                "parallel-cold",
+                1,
+                "cold",
+            ))),
+    )
+    .await
+    .unwrap()
+    .unwrap()
+    .into_inner();
+    success(&cold);
+    assert!(!hot.is_finished());
+    f.backend.imports.release.notify_one();
+    let hot = tokio::time::timeout(Duration::from_secs(10), hot)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap()
+        .into_inner();
+    let Some(i::invoke_response::Result::PlatformFailure(failure)) =
+        hot.invocation.as_ref().unwrap().result.as_ref()
+    else {
+        panic!("expected a visible conflict from the original hot command");
+    };
+    assert_eq!(failure.code, "state-conflict");
+    let hot_command = hot.command.as_ref().unwrap();
+    assert_eq!(hot_command.outcome, t::CommandOutcome::Aborted as i32);
+    assert!(!hot_command.application_state_committed);
+    assert_eq!(f.executions(), 2);
+    assert_eq!(f.rows(Family::Command).await, 2);
+    assert_eq!(f.rows(Family::Outbox).await, 1);
+    f.shutdown().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "Requires the maintained compiled Rust transaction guest"]
 async fn trapped_entity_retains_its_lane_until_the_actual_abort_writer_finishes() {
     use latent_state::store_io::StoreIoKind;
     use std::sync::{Condvar, Mutex};
