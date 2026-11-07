@@ -9,6 +9,7 @@ import java.util.function.Supplier;
 public final class Activation {
     private static final int[] owners = new int[3];
     private static final ArrayList<ManagedPool> pools = new ArrayList<>();
+    private static final java.util.IdentityHashMap<Thread, ManagedPool> managed = new java.util.IdentityHashMap<>();
     public static String denyNext;
     public static boolean retainFailedStart;
     public interface ManagedPool { boolean hasPendingWork(); boolean isRetired(); void closeAtRoot(); }
@@ -33,8 +34,27 @@ public final class Activation {
     }
     public static synchronized int count(Bindings.LatentRuntimeActivationOwnerKind kind) { return owners[kind.ordinal()]; }
     public static synchronized void manage(ManagedPool pool) { pools.add(pool); }
-    public static void startManaged(Thread worker, ManagedPool pool) { worker.start(); }
-    public static boolean alive(Thread worker) { return retainFailedStart || worker.isAlive(); }
+    public static void startManaged(Thread worker, ManagedPool pool) {
+        synchronized (Activation.class) {
+            if (managed.containsKey(worker)) throw new IllegalThreadStateException();
+            managed.put(worker, pool);
+        }
+        try { worker.start(); }
+        catch (Throwable error) {
+            synchronized (Activation.class) { if (!retainFailedStart) managed.remove(worker); }
+            throw error;
+        }
+    }
+    public static synchronized boolean ownsManaged(Thread worker, ManagedPool pool) {
+        return managed.get(worker) == pool && (retainFailedStart || worker.isAlive());
+    }
+    public static synchronized boolean runningManaged(Thread worker, ManagedPool pool) {
+        return managed.get(worker) == pool && worker.isAlive();
+    }
+    public static synchronized boolean alive(Thread worker) {
+        return managed.containsKey(worker) && (retainFailedStart || worker.isAlive());
+    }
+    public static synchronized boolean recorded(Thread worker, ManagedPool pool) { return managed.get(worker) == pool; }
     // The separate real-Activation control verifies physical-owner retirement.
     public static void unmanageRetired(ManagedPool pool) { }
     public static boolean closing() { return false; }

@@ -21,6 +21,8 @@ public final class Activation {
     private static boolean closing;
     private static boolean retiringPools;
     private static boolean iteratingPoolRetirement;
+    private static boolean poisoned;
+    private static Work failedStarts;
     private static Address result;
     private static Throwable failure;
     private static Work root;
@@ -36,12 +38,21 @@ public final class Activation {
         boolean prepared;
         boolean managed;
         ManagedPool pool;
+        Thread failedThread;
+        Work nextFailed;
+        boolean rollbackPending;
         TimerLease timer;
         Work(Bindings.LatentRuntimeActivationToken token) { this.token = token; }
     }
 
+    private static Work lookup(Thread thread) {
+        for (Work work = failedStarts; work != null; work = work.nextFailed)
+            if (work.failedThread == thread) return work;
+        return threads.get(thread);
+    }
+
     private static Bindings.LatentRuntimeActivationToken register(Bindings.LatentRuntimeActivationOwnerKind kind) {
-        Work parent = threads.get(Thread.currentThread());
+        Work parent = lookup(Thread.currentThread());
         var token = Bindings.LatentRuntimeActivation.register(
             kind,
             parent == null || parent.complete ? Option.none() : Option.some(parent.token));
@@ -52,44 +63,86 @@ public final class Activation {
     /** Called before TeaVM allocates its event/continuation for Thread.start. */
     public static void starting(Thread thread) {
         if (!entered) throw new IllegalStateException("activation-runtime-entry-required");
-        Work existing = threads.get(thread);
+        Work existing = lookup(thread);
         if (existing != null) {
-            if (existing.prepared) { existing.prepared = false; return; }
+            if (!existing.complete && !existing.rollbackPending && existing.prepared) { existing.prepared = false; return; }
             throw new IllegalThreadStateException();
         }
-        var token = register(Bindings.LatentRuntimeActivationOwnerKind.Task);
-        try { threads.put(thread, new Work(token)); }
-        catch (Throwable error) {
-            Bindings.LatentRuntimeActivation.settle(token);
-            throw error;
-        }
+        // Allocate custody before admission so an OOM cannot lose a new token.
+        Work work = new Work(null);
+        work.token = register(Bindings.LatentRuntimeActivationOwnerKind.Task);
+        try { threads.put(thread, work); }
+        catch (Throwable error) { rollbackInsertion(thread, work); throw error; }
     }
 
     /** SDK-managed workers remain real independently scheduled Java threads. */
     public static void startManaged(Thread thread) { startManaged(thread, null); }
 
     public static void startManaged(Thread thread, ManagedPool pool) {
-        if (thread == null || threads.containsKey(thread)) throw new IllegalThreadStateException();
+        if (thread == null || lookup(thread) != null) throw new IllegalThreadStateException();
         if (pool != null && !containsPool(pool)) throw new IllegalStateException("activation-runtime-pool-entry");
-        Work work = new Work(register(Bindings.LatentRuntimeActivationOwnerKind.ManagedIdleWorker));
+        Work work = new Work(null);
+        work.token = register(Bindings.LatentRuntimeActivationOwnerKind.ManagedIdleWorker);
         work.prepared = true;
         work.managed = true;
         work.pool = pool;
         try { threads.put(thread, work); }
-        catch (Throwable error) { Bindings.LatentRuntimeActivation.settle(work.token); throw error; }
+        catch (Throwable error) { rollbackInsertion(thread, work); throw error; }
         try { thread.start(); }
         catch (Throwable error) {
+            // Keep accepted or rollback-uncertain work through a failed entry.
+            if (!work.complete) retainFailedStart(thread, work);
             // Before the maintained start hook consumes this preparation, no
             // worker has been accepted. Later failures retain uncertain work.
-            if (work.prepared) {
+            if (!work.complete && work.prepared) {
+                work.rollbackPending = true;
                 var settled = Bindings.LatentRuntimeActivation.settle(work.token);
                 if (settled.isError()) throw new IllegalStateException("activation-runtime-start-rollback-" + settled.error(), error);
-                threads.remove(thread);
+                if (threads.get(thread) == work) threads.remove(thread);
                 work.token = null;
                 work.complete = true;
+                work.pool = null;
+                unlinkFailedStart(work);
             }
             throw error;
         }
+    }
+
+    private static void retainFailedStart(Thread thread, Work work) {
+        work.failedThread = thread;
+        work.nextFailed = failedStarts;
+        failedStarts = work;
+    }
+
+    private static void unlinkFailedStart(Work work) {
+        Work previous = null;
+        for (Work current = failedStarts; current != null; current = current.nextFailed) {
+            if (current == work) {
+                if (previous == null) failedStarts = current.nextFailed;
+                else previous.nextFailed = current.nextFailed;
+                break;
+            }
+            previous = current;
+        }
+        work.failedThread = null;
+        work.nextFailed = null;
+        work.rollbackPending = false;
+    }
+
+    // The Work was allocated before map insertion. Link it without allocating
+    // before rollback so denied or throwing settlement cannot lose custody.
+    private static void rollbackInsertion(Thread thread, Work work) {
+        retainFailedStart(thread, work);
+        work.rollbackPending = true;
+        boolean settled = false;
+        try { settled = !Bindings.LatentRuntimeActivation.settle(work.token).isError(); }
+        catch (Throwable ignored) { } // Unknown settlement remains fail-closed.
+        if (!settled) return;
+        work.token = null;
+        work.complete = true;
+        work.pool = null;
+        if (threads.get(thread) == work) threads.remove(thread);
+        unlinkFailedStart(work);
     }
 
     public interface ManagedPool {
@@ -112,6 +165,8 @@ public final class Activation {
     public static void unmanageRetired(ManagedPool pool) {
         if (!pool.isRetired()) return;
         for (Work work : threads.values()) if (work.pool == pool && !work.complete) return;
+        for (Work work = failedStarts; work != null; work = work.nextFailed)
+            if (work.pool == pool && !work.complete) return;
         for (int index = pools.size() - 1; index >= 0; --index) {
             if (pools.get(index) == pool) {
                 // closeAtRoot can retire itself or another pool reentrantly.
@@ -122,7 +177,7 @@ public final class Activation {
     }
 
     public static boolean acceptedContinuation() {
-        Work work = threads.get(Thread.currentThread());
+        Work work = lookup(Thread.currentThread());
         return work != null && work != root && !work.complete;
     }
 
@@ -178,7 +233,7 @@ public final class Activation {
 
     /** One host-owned timer also accounts the corresponding logical Java wait. */
     public static Lease timer(long deadline) {
-        Work work = threads.get(Thread.currentThread());
+        Work work = lookup(Thread.currentThread());
         if (!entered || work == null || work.complete || work.timer != null)
             throw new IllegalStateException("activation-runtime-timer-frame");
         long now = monotonicMillis();
@@ -202,7 +257,7 @@ public final class Activation {
     /** The retained raw TeaVM body schedules the already captured wait deadline. */
     public static long timerDeadline(long otherwise) {
         if (!entered) return otherwise;
-        Work work = threads.get(Thread.currentThread());
+        Work work = lookup(Thread.currentThread());
         return work != null && work.timer != null && work.timer.rawFrame && !work.timer.closing
             ? work.timer.deadline : otherwise;
     }
@@ -210,7 +265,7 @@ public final class Activation {
     public static void beginTimedFrame(Lease lease) {
         if (lease == null) return;
         TimerLease timer = (TimerLease)lease;
-        if (threads.get(Thread.currentThread()) != timer.work || timer.work.timer != timer || timer.closing || timer.rawFrame)
+        if (lookup(Thread.currentThread()) != timer.work || timer.work.timer != timer || timer.closing || timer.rawFrame)
             throw new IllegalStateException("activation-runtime-timer-frame");
         timer.rawFrame = true;
     }
@@ -218,28 +273,41 @@ public final class Activation {
     public static void endTimedFrame(Lease lease) {
         if (lease == null) return;
         TimerLease timer = (TimerLease)lease;
-        if (threads.get(Thread.currentThread()) != timer.work || !timer.rawFrame)
+        if (lookup(Thread.currentThread()) != timer.work || !timer.rawFrame)
             throw new IllegalStateException("activation-runtime-timer-frame");
         timer.rawFrame = false;
     }
 
     /** Runs after the original Thread finally block has restored identity. */
     public static void finished(Thread thread) {
-        Work work = threads.get(thread);
-        if (work == null || work.complete) throw new IllegalStateException("activation-runtime-thread-owner");
+        Work work = lookup(thread);
+        if (work == null || work.complete || work.rollbackPending) throw new IllegalStateException("activation-runtime-thread-owner");
         var settled = Bindings.LatentRuntimeActivation.settle(work.token);
         if (settled.isError()) throw new IllegalStateException("activation-runtime-settle-" + settled.error());
         work.token = null;
         work.complete = true;
         ManagedPool pool = work.pool;
         work.pool = null;
+        if (work.failedThread != null) unlinkFailedStart(work);
         if (pool != null) unmanageRetired(pool);
         synchronized (thread) { thread.notifyAll(); }
     }
 
     public static boolean alive(Thread thread) {
-        Work work = threads.get(thread);
+        Work work = lookup(thread);
         return work != null && !work.complete;
+    }
+
+    /** Ownership can remain uncertain even before the worker may run. */
+    public static boolean ownsManaged(Thread thread, ManagedPool pool) {
+        Work work = lookup(thread);
+        return work != null && !work.complete && work.pool == pool;
+    }
+
+    /** The factory target may enter only its own admitted, started worker. */
+    public static boolean runningManaged(Thread thread, ManagedPool pool) {
+        Work work = lookup(thread);
+        return work != null && !work.complete && !work.prepared && !work.rollbackPending && work.pool == pool;
     }
 
     /** A loop handles spurious notifications and preserves interrupt behavior. */
@@ -279,6 +347,8 @@ public final class Activation {
 
     private static boolean pending() {
         if (!rootComplete) return true;
+        for (Work work = failedStarts; work != null; work = work.nextFailed)
+            if (!work.complete) return true;
         for (Work work : threads.values()) {
             if (work != root && !work.complete) return true;
         }
@@ -301,6 +371,8 @@ public final class Activation {
         for (Work work : threads.values()) {
             if (work != root && !work.managed && !work.complete) return false;
         }
+        for (Work work = failedStarts; work != null; work = work.nextFailed)
+            if (!work.managed && !work.complete) return false;
         for (ManagedPool pool : pools) if (pool.hasPendingWork()) return false;
         retiringPools = true;
         iteratingPoolRetirement = true;
@@ -360,6 +432,7 @@ public final class Activation {
 
     /** Dispatch executes inside a real Fiber; the pump itself owns no logical stack. */
     public static Address invoke(int operation, Address data, int length) {
+        if (poisoned) throw new IllegalStateException("activation-runtime-poisoned-store");
         if (entered) throw new IllegalStateException("activation-runtime-reentrant-entry");
         entered = true;
         // Keep the profile's actual wall-clock operation in its exact imported
@@ -405,16 +478,27 @@ public final class Activation {
             result = null;
             return output;
         } finally {
-            // A trap may bypass Java finally; the host still destroys the entire
-            // Store and keeps the original reservations until physical drop.
-            threads.clear();
-            pools.clear();
-            timers.clear();
-            queueClockCaptured = false;
-            defaultAsyncExecutor = null;
-            root = null;
-            failure = null;
-            entered = false;
+            finishInvocation();
         }
+    }
+
+    private static void finishInvocation() {
+        if (failedStarts != null) {
+            // The host must destroy this Store; retain every original reference
+            // and reject re-entry while registration settlement is uncertain.
+            poisoned = true;
+            entered = false;
+            return;
+        }
+        // A trap may bypass Java finally; the host still destroys the entire
+        // Store and keeps the original reservations until physical drop.
+        threads.clear();
+        pools.clear();
+        timers.clear();
+        queueClockCaptured = false;
+        defaultAsyncExecutor = null;
+        root = null;
+        failure = null;
+        entered = false;
     }
 }

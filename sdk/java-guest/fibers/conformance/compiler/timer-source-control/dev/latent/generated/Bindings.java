@@ -26,7 +26,8 @@ public final class Bindings {
         public static int waits, stops;
         public static long lastNanos;
         public static boolean denyNext, denyStop, denySettle;
-        public static Runnable stopObservation;
+        public static RuntimeException settleFailure;
+        public static Runnable stopObservation, settleObservation;
         public static int timers() { return (int)owners.values().stream().filter(kind -> kind == LatentRuntimeActivationOwnerKind.Timer).count(); }
         public static Reply<LatentRuntimeActivationToken> register(LatentRuntimeActivationOwnerKind kind, Option<LatentRuntimeActivationToken> continuation) {
             if (kind == LatentRuntimeActivationOwnerKind.Timer && timers() >= 2) return new Reply<>(null, Error.ResourceExhausted);
@@ -47,6 +48,9 @@ public final class Bindings {
             return settle(token);
         }
         public static Reply<Void> settle(LatentRuntimeActivationToken token) {
+            Runnable observation = settleObservation; settleObservation = null;
+            if (observation != null) observation.run();
+            if (settleFailure != null) throw settleFailure;
             if (denySettle) return new Reply<>(null, Error.Cancelled);
             return new Reply<>(null, owners.remove(token) == null ? Error.InvalidToken : null);
         }

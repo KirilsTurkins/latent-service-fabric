@@ -39,6 +39,11 @@ public final class TimerReadinessSourceControl {
     private static void managedStartRollback() throws Exception {
         Map<?, ?> threads = (Map<?, ?>)get("threads");
         int original = owners();
+        Thread ordinary = new Thread();
+        Activation.starting(ordinary);
+        require(Activation.alive(ordinary) && owners() == original + 1, "ordinary-start-admitted");
+        Activation.finished(ordinary);
+        require(owners() == original, "ordinary-start-settled");
         var failure = new IllegalThreadStateException("source-start-rejected");
         Thread rejected = new Thread() { @Override public void start() { throw failure; } };
         for (int attempt = 0; attempt < 2; attempt++) {
@@ -49,17 +54,30 @@ public final class TimerReadinessSourceControl {
         Thread uncertain = new Thread() { @Override public void start() { Activation.starting(this); throw failure; } };
         try { Activation.startManaged(uncertain); throw new AssertionError("uncertain-start-succeeded"); }
         catch (IllegalThreadStateException error) { require(error == failure, "uncertain-start-original-error"); }
-        require(threads.containsKey(uncertain) && owners() == original + 1, "accepted-start-keeps-physical-owner");
+        require(threads.containsKey(uncertain) && owners() == original + 1 && get("failedStarts") != null,
+            "accepted-start-keeps-physical-owner");
+        Bindings.LatentRuntimeActivation.denySettle = true;
+        try { denied(() -> Activation.finished(uncertain)); }
+        finally { Bindings.LatentRuntimeActivation.denySettle = false; }
+        require(Activation.alive(uncertain) && get("failedStarts") != null,
+            "failed-physical-settlement-keeps-uncertain-record");
         Activation.finished(uncertain);
-        require(owners() == original, "explicit-source-owner-settlement");
+        require(owners() == original && get("failedStarts") == null,
+            "confirmed-physical-settlement-unlinks-uncertain-record");
 
         Bindings.LatentRuntimeActivation.denySettle = true;
         try { Activation.startManaged(rejected); throw new AssertionError("rollback-denial-succeeded"); }
         catch (IllegalStateException error) { require(error.getCause() == failure, "rollback-denial-preserves-start-cause"); }
         finally { Bindings.LatentRuntimeActivation.denySettle = false; }
         require(threads.containsKey(rejected) && owners() == original + 1, "failed-rollback-retains-original-owner");
-        Activation.finished(rejected);
-        require(owners() == original, "failed-rollback-explicit-source-settlement");
+        denied(() -> Activation.finished(rejected));
+        // Private fake teardown only: production waits for Store destruction.
+        Object failed = threads.get(rejected);
+        var token = (Bindings.LatentRuntimeActivationToken)field(workClass(), "token").get(failed);
+        require(!Bindings.LatentRuntimeActivation.settle(token).isError(), "fake-host-teardown");
+        var unlink = Activation.class.getDeclaredMethod("unlinkFailedStart", workClass()); unlink.setAccessible(true); unlink.invoke(null, failed);
+        ((Map<?, ?>)get("threads")).remove(rejected);
+        require(owners() == original, "failed-rollback-private-fake-teardown");
     }
     private static final class Pool implements Activation.ManagedPool {
         Activation.Lease owner = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Executor);
@@ -108,8 +126,15 @@ public final class TimerReadinessSourceControl {
         require(pools.contains(pool) && Activation.alive(second), "all-physical-workers-must-retire");
         Activation.finished(second);
         require(pools.contains(pool), "failed-rollback-still-retains-pool");
-        Activation.finished(rejected);
-        require(pools.isEmpty(), "last-physical-worker-releases-pool");
+        denied(() -> Activation.finished(rejected));
+        // Private fake teardown, never a production settlement shortcut.
+        Object failed = ((Map<?, ?>)get("threads")).get(rejected);
+        var token = (Bindings.LatentRuntimeActivationToken)field(workClass(), "token").get(failed);
+        require(!Bindings.LatentRuntimeActivation.settle(token).isError(), "fake-host-failed-start-teardown");
+        var unlink = Activation.class.getDeclaredMethod("unlinkFailedStart", workClass()); unlink.setAccessible(true); unlink.invoke(null, failed);
+        ((Map<?, ?>)get("threads")).remove(rejected);
+        Activation.unmanageRetired(pool);
+        require(pools.isEmpty(), "private-fake-teardown-releases-pool");
         require(field(workClass(), "pool").get(((Map<?, ?>)get("threads")).get(first)) == null,
             "finished-work-does-not-retain-pool");
 
@@ -144,6 +169,103 @@ public final class TimerReadinessSourceControl {
         require(pools.isEmpty(), "isolated-control-cleanup");
     }
     private static Class<?> workClass() throws Exception { return Class.forName("dev.latent.guest.runtime.Activation$Work"); }
+    private static Object failedWork(Pool pool) throws Exception {
+        var token = Bindings.LatentRuntimeActivation.register(Bindings.LatentRuntimeActivationOwnerKind.ManagedIdleWorker, Option.none()).value();
+        var constructor = workClass().getDeclaredConstructor(Bindings.LatentRuntimeActivationToken.class); constructor.setAccessible(true);
+        Object work = constructor.newInstance(token);
+        field(workClass(), "managed").set(work, true);
+        field(workClass(), "prepared").set(work, true);
+        field(workClass(), "pool").set(work, pool);
+        return work;
+    }
+    private static Object failedOrdinaryWork() throws Exception {
+        var token = Bindings.LatentRuntimeActivation.register(Bindings.LatentRuntimeActivationOwnerKind.Task, Option.none()).value();
+        var constructor = workClass().getDeclaredConstructor(Bindings.LatentRuntimeActivationToken.class); constructor.setAccessible(true);
+        return constructor.newInstance(token);
+    }
+    private static void rollbackInsertion(Thread thread, Object work) throws Exception {
+        var rollback = Activation.class.getDeclaredMethod("rollbackInsertion", Thread.class, workClass());
+        rollback.setAccessible(true); rollback.invoke(null, thread, work);
+    }
+    private static void failedStartedWorkerPoisons() throws Exception {
+        set("closing", false); set("retiringPools", false); set("rootComplete", false);
+        Pool pool = new Pool(); Activation.manage(pool);
+        var failure = new IllegalThreadStateException("source-accepted-start-failed");
+        Thread thread = new Thread() { @Override public void start() { Activation.starting(this); throw failure; } };
+        try { Activation.startManaged(thread, pool); throw new AssertionError("expected-accepted-start-failure"); }
+        catch (IllegalThreadStateException expected) { require(expected == failure, "accepted-start-original-error"); }
+        var finish = Activation.class.getDeclaredMethod("finishInvocation"); finish.setAccessible(true);
+        finish.invoke(null);
+        require((boolean)get("poisoned") && !(boolean)get("entered") && Activation.alive(thread),
+            "failed-start-poisons-and-preserves-owner");
+        try { Activation.invoke(0, null, 0); throw new AssertionError("failed-start-store-reentered"); }
+        catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-runtime-poisoned-store"), "failed-start-reentry-error"); }
+        // Test-only simulation of physical completion and a fresh Store.
+        Activation.finished(thread);
+        require(get("failedStarts") == null, "physical-completion-unlinks-before-fresh-store");
+        set("poisoned", false); set("entered", true);
+        pool.retire();
+    }
+    private static void failedInsertionsAndPoison() throws Exception {
+        set("closing", false); set("retiringPools", false); set("rootComplete", false);
+        @SuppressWarnings("unchecked") Map<Thread, Object> threads = (Map<Thread, Object>)get("threads");
+        @SuppressWarnings("unchecked") List<Activation.ManagedPool> pools = (List<Activation.ManagedPool>)get("pools");
+        Pool pool = new Pool(); Activation.manage(pool);
+        int original = owners();
+        Thread partial = new Thread(), nested = new Thread();
+        Object recovered = failedWork(pool), denied = failedWork(pool);
+        threads.put(partial, recovered); // Model a put that threw after insertion.
+        Bindings.LatentRuntimeActivation.settleObservation = () -> {
+            Bindings.LatentRuntimeActivation.denySettle = true;
+            try { rollbackInsertion(nested, denied); }
+            catch (Exception error) { throw new IllegalStateException(error); }
+            finally { Bindings.LatentRuntimeActivation.denySettle = false; }
+        };
+        rollbackInsertion(partial, recovered);
+        require(!threads.containsKey(partial) && !Activation.alive(partial)
+            && field(workClass(), "pool").get(recovered) == null && (boolean)field(workClass(), "complete").get(recovered),
+            "confirmed-partial-insertion-releases-pool");
+        require(Activation.alive(nested) && Activation.ownsManaged(nested, pool)
+            && !Activation.runningManaged(nested, pool), "reentrant-denial-retains-exact-other-record");
+        Thread thrown = new Thread(); Object uncertain = failedWork(pool);
+        RuntimeException failure = new RuntimeException("source-settlement-threw");
+        Bindings.LatentRuntimeActivation.settleFailure = failure;
+        try { rollbackInsertion(thrown, uncertain); }
+        finally { Bindings.LatentRuntimeActivation.settleFailure = null; }
+        require(Activation.alive(thrown) && Activation.ownsManaged(thrown, pool), "throwing-settlement-retains-owner");
+        Thread ordinaryDenied = new Thread(), ordinaryThrown = new Thread();
+        Object deniedTask = failedOrdinaryWork(), thrownTask = failedOrdinaryWork();
+        Bindings.LatentRuntimeActivation.denySettle = true;
+        try { rollbackInsertion(ordinaryDenied, deniedTask); }
+        finally { Bindings.LatentRuntimeActivation.denySettle = false; }
+        Bindings.LatentRuntimeActivation.settleFailure = failure;
+        try { rollbackInsertion(ordinaryThrown, thrownTask); }
+        finally { Bindings.LatentRuntimeActivation.settleFailure = null; }
+        require(Activation.alive(ordinaryDenied) && Activation.alive(ordinaryThrown), "ordinary-failed-insertion-retains-both-owners");
+        try { Activation.starting(ordinaryDenied); throw new AssertionError("ordinary-uncertain-start"); }
+        catch (IllegalThreadStateException expected) { }
+        require(owners() == original + 4, "only-confirmed-insertion-owner-settled");
+        try { Activation.startManaged(nested, pool); throw new AssertionError("duplicate-failed-insertion-start"); }
+        catch (IllegalThreadStateException expected) { }
+        try { Activation.starting(thrown); throw new AssertionError("uncertain-insertion-start"); }
+        catch (IllegalThreadStateException expected) { }
+        denied(() -> Activation.finished(nested));
+        pool.retire();
+        require(pools.contains(pool), "failed-insertion-retains-retired-pool");
+        set("rootComplete", true); set("closing", true);
+        var pending = Activation.class.getDeclaredMethod("pending"); pending.setAccessible(true);
+        require((boolean)pending.invoke(null), "unindexed-owner-keeps-activation-pending");
+        var retire = Activation.class.getDeclaredMethod("retireIdlePools"); retire.setAccessible(true);
+        require(!(boolean)retire.invoke(null), "ordinary-unindexed-owner-prevents-pool-retirement");
+        var finish = Activation.class.getDeclaredMethod("finishInvocation"); finish.setAccessible(true);
+        finish.invoke(null);
+        require((boolean)get("poisoned") && !(boolean)get("entered") && pools.contains(pool)
+            && Activation.alive(nested) && Activation.alive(thrown)
+            && Activation.alive(ordinaryDenied) && Activation.alive(ordinaryThrown), "failed-insertion-poisons-and-retains-store");
+        try { Activation.invoke(0, null, 0); throw new AssertionError("poisoned-store-reentered"); }
+        catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-runtime-poisoned-store"), "poisoned-reentry-error"); }
+        require(owners() == original + 3, "poisoned-reentry-does-not-change-host-custody");
+    }
     public static void main(String[] arguments) throws Exception {
         set("entered", true); set("root", work(Thread.currentThread()));
         long deadline = Activation.monotonicMillis() + 200;
@@ -195,6 +317,8 @@ public final class TimerReadinessSourceControl {
         require(Monitors.absoluteSleepDeadline(Long.MAX_VALUE - 1, 2) == Long.MAX_VALUE, "pure-saturation-preserved");
         managedStartRollback();
         poolRetirement();
+        failedStartedWorkerPoisons();
+        failedInsertionsAndPoison();
         System.out.println("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback");
     }
 }
