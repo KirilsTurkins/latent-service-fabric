@@ -16,6 +16,9 @@ mod queued;
 #[path = "go/synchronization.rs"]
 mod synchronization;
 
+#[path = "go/task_saturation.rs"]
+mod task_saturation;
+
 fn checkpoint_component(
     variable: &str,
     profile: &str,
@@ -38,6 +41,10 @@ fn checkpoint_component(
                     "LSF_GO_SYNCHRONIZATION_NO_CHECKPOINT_FIXTURE",
                     "go-component-activation-v1"
                 )
+                | (
+                    "LSF_GO_TASK_SATURATION_FIXTURE",
+                    "go-component-activation-v5"
+                )
         ),
         "only reviewed fixture/profile pairs may select captured Go source"
     );
@@ -50,12 +57,15 @@ fn checkpoint_component(
         "LSF_GO_SYNCHRONIZATION_FIXTURE" | "LSF_GO_SYNCHRONIZATION_NO_CHECKPOINT_FIXTURE"
     );
     let managed_timers = variable == "LSF_GO_MANAGED_TIMER_FIXTURE";
+    let task_saturation = variable == "LSF_GO_TASK_SATURATION_FIXTURE";
     let timers = profile == "go-component-activation-v3" || managed_timers;
     let published = variable == "LSF_GO_PUBLISHED_FIXTURE";
-    let managed = profile == "go-component-activation-v5" && !managed_timers;
+    let managed = profile == "go-component-activation-v5" && !managed_timers && !task_saturation;
     let initializers = profile == "go-component-activation-v4" && !published;
     let expected: &[u8] = if synchronization {
         include_bytes!("../../../../../sdk/go-guest/runtime/synchronization-conformance/main.go")
+    } else if task_saturation {
+        include_bytes!("../../../../../sdk/go-guest/runtime/task-saturation-conformance/main.go")
     } else if managed {
         include_bytes!("../../../../../sdk/go-guest/runtime/managed-idle-conformance/main.go")
     } else if published {
@@ -77,6 +87,8 @@ fn checkpoint_component(
         record["fixture"],
         if synchronization {
             "synchronization"
+        } else if task_saturation {
+            "task-saturation"
         } else if managed {
             "managed-idle"
         } else if published {
@@ -94,11 +106,19 @@ fn checkpoint_component(
         record["sourceDigest"],
         latent_artifacts::package::artifact_blob_digest(&source).as_str()
     );
-    if profile == "go-component-activation-v2" || timers || initializers || published || managed {
+    if profile == "go-component-activation-v2"
+        || timers
+        || initializers
+        || published
+        || managed
+        || task_saturation
+    {
         assert_eq!(
             record["nativeReference"]["modes"],
             if synchronization {
                 serde_json::json!([0, 1, 2, 3, 4, 5, 9])
+            } else if task_saturation {
+                serde_json::json!([0])
             } else if managed {
                 serde_json::json!([0, 1, 2])
             } else if published {
@@ -152,6 +172,14 @@ fn checkpoint_component(
         latent_artifacts::package::artifact_blob_digest(&bytes).as_str()
     );
     let wit = std::fs::read_to_string(prepared.join("wit/world.wit")).unwrap();
+    if task_saturation {
+        assert_eq!(
+            wit.as_bytes(),
+            include_bytes!(
+                "../../../../../sdk/go-guest/runtime/task-saturation-conformance/world.wit"
+            )
+        );
+    }
     (packages::go_activation_runtime(bytes, &wit), source)
 }
 

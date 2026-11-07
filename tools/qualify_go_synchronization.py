@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CASE = 'runtime::go::synchronization::signed_condition_once_rwmutex_and_channel_ordering_retire_original_v5_owners'
 ADMISSION_CASE = 'runtime::go::admission::signed_cross_tenant_cell_saturation_keeps_original_owners_until_cancel_and_trap_retire'
 MANAGED_TIMER_CASE = 'runtime::go::managed_timers::signed_managed_v5_timers_gc_callbacks_and_stop_reset_preserve_original_owners'
+TASK_SATURATION_CASE = 'runtime::go::task_saturation::signed_task16_saturation_reports_original_refusal_and_fresh_retirement'
 TIMER_MODES = [0, 1, 2, 3, 4, 5, 6, 18, 19, 20, 9, 11, 12, 13, 14, 15, 16, 17]
 TIMER_NATIVE_MODES = [mode for mode in TIMER_MODES if mode != 4]
 MANAGED_TIMER_ROWS = [('ordinary', iteration, mode, 'success') for iteration in range(2) for mode in TIMER_MODES]
@@ -149,6 +150,42 @@ def managed_timer_observations(raw: bytes, filtered: int) -> list[dict]:
     return rows
 
 
+def task_saturation_observations(raw: bytes, filtered: int) -> dict:
+    if len(raw) > 2 * 1024 * 1024:
+        raise ValueError('Go-task-saturation-output-bound')
+    names = re.findall(rb'^test ([A-Za-z0-9_:]+) \.\.\. ok$', raw, re.M)
+    totals = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
+    if names != [TASK_SATURATION_CASE.encode()] or totals != [(b'1', b'0', b'0', b'0', str(filtered).encode())]:
+        raise ValueError('Go-task-saturation-exact-signed-case-required')
+    def unique(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError('Go-task-saturation-duplicate-field')
+            value[key] = item
+        return value
+    def decode(marker):
+        return [json.loads(row, object_pairs_hook=unique) for row in re.findall(
+            rb'^' + marker + rb' (.+)$', raw, re.M)]
+    rows = decode(b'GO_TASK_SATURATION_CASE')
+    markers = re.findall(rb'^(GO_TASK_SATURATION_CASE|GO_TASK_SATURATION_REFUSAL) ', raw, re.M)
+    expected = [dict(case=case, outcome=outcome, storesCreated=count, liveStores=0,
+                     liveInstances=0, reservations=0, reservedFuel=0, reservedMemory=0)
+                for case, outcome, count in [('seven-live', 'success', 1),
+                    ('eighth-refused', 'guest-trap', 2), ('fresh-after-refusal', 'success', 3)]]
+    refusal = [dict(tenant='tenant-a', activation='go-task16-saturation', stage='execution',
+                    reason='runtime-task-limit', configuredBound=16, requestedOwners=17,
+                    terminalCauseEstablished=False)]
+    # JSON comparison keeps bools, numbers and unknown fields distinct.
+    def same(left, right):
+        return json.dumps(left, sort_keys=True, separators=(',', ':')) == json.dumps(right, sort_keys=True, separators=(',', ':'))
+    if (markers != [b'GO_TASK_SATURATION_CASE', b'GO_TASK_SATURATION_REFUSAL',
+                    b'GO_TASK_SATURATION_CASE', b'GO_TASK_SATURATION_CASE']
+            or not same(rows, expected) or not same(decode(b'GO_TASK_SATURATION_REFUSAL'), refusal)):
+        raise ValueError('Go-task-saturation-original-refusal-or-retirement-required')
+    return {'cases': rows, 'refusal': refusal[0]}
+
+
 def campaign(campaign: str, fixture: Path, negative: Path | None) -> dict:
     if campaign == 'synchronization' and negative is not None:
         return {'case': CASE, 'fixture': 'synchronization', 'variable': 'LSF_GO_SYNCHRONIZATION_FIXTURE',
@@ -159,6 +196,9 @@ def campaign(campaign: str, fixture: Path, negative: Path | None) -> dict:
                 'inputs': [(fixture, 'go-component-activation-v5')]}
     if campaign == 'managed-timers' and negative is None:
         return {'case': MANAGED_TIMER_CASE, 'fixture': 'timers', 'variable': 'LSF_GO_MANAGED_TIMER_FIXTURE',
+                'inputs': [(fixture, 'go-component-activation-v5')]}
+    if campaign == 'task-saturation' and negative is None:
+        return {'case': TASK_SATURATION_CASE, 'fixture': 'task-saturation', 'variable': 'LSF_GO_TASK_SATURATION_FIXTURE',
                 'inputs': [(fixture, 'go-component-activation-v5')]}
     raise ValueError('Go-runtime-unreviewed-campaign-or-negative')
 
@@ -173,11 +213,17 @@ def source_snapshot(root: Path) -> dict:
               'crates/latent-wasmtime/tests/local_service/runtime/go/admission.rs',
               'crates/latent-wasmtime/tests/local_service/runtime/go/queued.rs',
               'crates/latent-wasmtime/tests/local_service/runtime/go/managed_timers.rs',
+              'crates/latent-wasmtime/tests/local_service/runtime/go/task_saturation.rs',
               'crates/latent-wasmtime/tests/local_service/fixture.rs',
               'crates/latent-wasmtime/tests/guest_sdk/runtime.rs',
               'crates/latent-wasmtime/tests/local_service/packages.rs',
               'crates/latent-wasmtime/tests/local_service/component.rs',
-              'tools/ci/suites.json', 'tools/qualify_go_activation.py', 'tools/qualify_go_synchronization.py')}
+              'crates/latent-core/src/activation_runtime.rs',
+              'crates/latent-capabilities/src/broker.rs', 'crates/latent-capabilities/src/broker/session.rs',
+              'crates/latent-wasmtime/src/host/runtime.rs', 'wit/platform/activation-runtime/package.wit',
+              '.github/workflows/go-synchronization-reference.yml', 'tools/ci/suites.json',
+              'tools/tests/test_go_task_saturation.py', 'tools/stage_runtime_wit.py',
+              'tools/qualify_go_activation.py', 'tools/qualify_go_synchronization.py')}
     if len(files) > 1024:
         raise ValueError('Go-synchronization-source-count')
     rows = {}
@@ -193,17 +239,20 @@ def compile_identity(path: Path, root: Path, profile: str, fixture: str = 'synch
     if len(raw) > 512 * 1024:
         raise ValueError('Go-synchronization-compiler-receipt-bound')
     record = json.loads(raw)
-    if (fixture not in {'synchronization', 'managed-idle', 'timers'}
-            or (fixture in {'managed-idle', 'timers'} and profile != 'go-component-activation-v5')):
+    if (fixture not in {'synchronization', 'managed-idle', 'timers', 'task-saturation'}
+            or (fixture in {'managed-idle', 'timers', 'task-saturation'} and profile != 'go-component-activation-v5')):
         raise ValueError('Go-runtime-unreviewed-source-profile')
     folder = {'synchronization': 'synchronization-conformance', 'managed-idle': 'managed-idle-conformance',
-              'timers': 'timers-conformance'}[fixture]
+              'timers': 'timers-conformance', 'task-saturation': 'task-saturation-conformance'}[fixture]
     source = (root / 'sdk/go-guest/runtime' / folder / 'main.go').read_bytes()
     if (record['profile'] != profile or record['fixture'] != fixture
             or record['sourceDigest'] != 'sha256:' + digest(source) or record['sourceUnchanged'] is not True
             or record['ordinarySource'] is not True or record['signedExecution'] != 'not-run'
             or (path / 'src/main.go').read_bytes() != source):
         raise ValueError('Go-synchronization-compiler-source-or-profile')
+    if (fixture == 'task-saturation' and (path / 'wit/world.wit').read_bytes()
+            != (root / 'sdk/go-guest/runtime/task-saturation-conformance/world.wit').read_bytes()):
+        raise ValueError('Go-task-saturation-compiler-world')
     component = path / 'build/component.wasm'
     if component.is_symlink() or component.stat().st_size > 16 * 1024 * 1024:
         raise ValueError('Go-synchronization-component-bound')
@@ -211,7 +260,8 @@ def compile_identity(path: Path, root: Path, profile: str, fixture: str = 'synch
         raise ValueError('Go-synchronization-component-identity')
     if profile == 'go-component-activation-v5':
         native = record['nativeReference']
-        expected_modes = {'synchronization': NATIVE_MODES, 'managed-idle': [0, 1, 2], 'timers': TIMER_NATIVE_MODES}[fixture]
+        expected_modes = {'synchronization': NATIVE_MODES, 'managed-idle': [0, 1, 2], 'timers': TIMER_NATIVE_MODES,
+                          'task-saturation': [0]}[fixture]
         if (native['modes'] != expected_modes or native['output'] != 42
                 or native['freshProcessPerMode'] is not True or native['sourceDigest'] != record['sourceDigest']):
             raise ValueError('Go-synchronization-native-reference')
@@ -281,8 +331,10 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
     if result.returncode:
         raise ValueError('Go-synchronization-signed-command-failed')
     parser = {'synchronization': observations, 'admission': admission_observations,
-              'queued': queued_observations, 'managed-timers': managed_timer_observations}[programme]
-    rows = parser(result.output, len(available) - 1)
+              'queued': queued_observations, 'managed-timers': managed_timer_observations,
+              'task-saturation': task_saturation_observations}[programme]
+    observed = parser(result.output, len(available) - 1)
+    rows = observed['cases'] if programme == 'task-saturation' else observed
     after = source_snapshot(root)
     after_material = {profile: compile_identity(path, root, profile, plan['fixture']) for path, profile in plan['inputs']}
     clean_source()
@@ -291,10 +343,12 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
     receipt = {'schemaVersion': {'synchronization': 'lsf.go-synchronization-reference.v1',
                                  'admission': 'lsf.go-admission-reference.v1',
                                  'queued': 'lsf.go-queued-reference.v1',
-                                 'managed-timers': 'lsf.go-managed-timers-reference.v1'}[programme], 'sourceRevision': revision,
+                                 'managed-timers': 'lsf.go-managed-timers-reference.v1',
+                                 'task-saturation': 'lsf.go-task-saturation-reference.v1'}[programme], 'sourceRevision': revision,
                'sourceBefore': before, 'sourceAfter': after, 'compilerInputsBefore': material,
                'compilerInputsAfter': after_material, 'case': plan['case'], 'signedCases': rows,
-               'signedInvocations': {'synchronization': len(rows), 'admission': 8, 'queued': 20, 'managed-timers': len(rows)}[programme], 'guestTaskCeiling': 16,
+               'signedInvocations': {'synchronization': len(rows), 'admission': 8, 'queued': 20,
+                                     'managed-timers': len(rows), 'task-saturation': 3}[programme], 'guestTaskCeiling': 16,
                'managedCapacity': 8, 'waitCeiling': 4, 'newRuntimeProfile': False,
                'kernelTlsOrCrossTenantQualified': False, 'fullGoRuntimeQualified': False}
     if programme == 'synchronization':
@@ -313,10 +367,14 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
                             'queuedCancellationBeforeStore': 2, 'queuedDeadlineBeforeStore': 2,
                             'rootDeadlineIncludesQueueWaiting': True,
                             'aggregateCpuAndMemoryCeilingsUnchanged': True})
-    else:
+    elif programme == 'managed-timers':
         receipt.update({'timerCeiling': 2, 'signedObservationCount': 43,
                         'nativeReferenceModes': TIMER_NATIVE_MODES,
                         'relabelsLegacyV3Evidence': False, 'fullTimerRaceMatrixQualified': False})
+    else:
+        receipt.update({'originalTaskLimitObservation': observed['refusal'], 'liveApplicationWorkersBeforeRefusal': 7,
+                        'terminalCauseEstablishedByObservation': False,
+                        'fullAggregateGoCostsQualified': False, 'kernelRetirementQualified': False})
     raw = (json.dumps(receipt, indent=2) + '\n').encode()
     if len(raw) > 262144:
         raise ValueError('Go-synchronization-receipt-bound')
@@ -328,7 +386,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--fixture', type=Path, required=True)
     parser.add_argument('--no-checkpoints', type=Path)
-    parser.add_argument('--campaign', choices=('synchronization', 'admission', 'queued', 'managed-timers'), default='synchronization')
+    parser.add_argument('--campaign', choices=('synchronization', 'admission', 'queued', 'managed-timers', 'task-saturation'), default='synchronization')
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--source-commit', default=os.environ.get('GITHUB_SHA'))
     args = parser.parse_args()
