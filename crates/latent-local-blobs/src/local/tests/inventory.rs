@@ -350,3 +350,90 @@ fn inventory_setup_honors_checkpoint_and_drops_its_work_on_failure() {
     ));
     assert_eq!(owner.inner.work.load(Ordering::Acquire), 0);
 }
+
+#[test]
+fn actual_paused_seal_blocks_inventory_then_invalidates_its_cursor() {
+    let root = temporary_root();
+    let owner = store(root.path());
+    put(&owner, b"one");
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    let mut writer = owner
+        .create(&scope(), "text/plain", Some(3), &|| Ok(()))
+        .unwrap();
+    writer.write(0, b"two", &|| Ok(())).unwrap();
+    let (entered, observed) = std::sync::mpsc::channel();
+    let (release, blocked) = std::sync::mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        let once = AtomicBool::new(false);
+        writer.seal(&|| {
+            if !once.swap(true, Ordering::AcqRel) {
+                entered.send(()).unwrap();
+                blocked
+                    .recv_timeout(std::time::Duration::from_secs(5))
+                    .unwrap();
+            }
+            Ok(())
+        })
+    });
+    observed
+        .recv_timeout(std::time::Duration::from_secs(5))
+        .unwrap();
+    assert!(matches!(
+        inventory.next_page(&owner, 4, &|| Ok(())),
+        Err(LocalBlobError::Busy)
+    ));
+    release.send(()).unwrap();
+    let published = worker.join().unwrap().unwrap();
+    assert!(matches!(
+        inventory.next_page(&owner, 4, &|| Ok(())),
+        Err(LocalBlobError::Busy)
+    ));
+    let mut fresh = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    let page = fresh.next_page(&owner, 4, &|| Ok(())).unwrap();
+    assert!(page.references().contains(&published));
+}
+
+#[test]
+fn actual_paused_reclamation_blocks_inventory_then_invalidates_its_cursor() {
+    let root = temporary_root();
+    let owner = store(root.path());
+    let blob = put(&owner, b"old");
+    owner
+        .release_reference(&scope(), &blob, &|| Ok(()))
+        .unwrap();
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    let (entered, observed) = std::sync::mpsc::channel();
+    let (release, blocked) = std::sync::mpsc::channel();
+    let worker_owner = owner.clone();
+    let worker = std::thread::spawn(move || {
+        let once = AtomicBool::new(false);
+        worker_owner.reclaim(1, &|| {
+            if !once.swap(true, Ordering::AcqRel) {
+                entered.send(()).unwrap();
+                blocked
+                    .recv_timeout(std::time::Duration::from_secs(5))
+                    .unwrap();
+            }
+            Ok(())
+        })
+    });
+    observed
+        .recv_timeout(std::time::Duration::from_secs(5))
+        .unwrap();
+    assert!(matches!(
+        inventory.next_page(&owner, 4, &|| Ok(())),
+        Err(LocalBlobError::Busy)
+    ));
+    release.send(()).unwrap();
+    assert_eq!(worker.join().unwrap().unwrap().objects, 1);
+    assert!(matches!(
+        inventory.next_page(&owner, 4, &|| Ok(())),
+        Err(LocalBlobError::Busy)
+    ));
+    let mut fresh = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    assert!(fresh
+        .next_page(&owner, 4, &|| Ok(()))
+        .unwrap()
+        .references()
+        .is_empty());
+}
