@@ -97,6 +97,7 @@ impl LocalReferenceInventory {
             (references, after, visited < maximum_entries)
         };
         checkpoint()?;
+        store.inner.check()?;
         {
             let state = store.inner.state()?;
             if store.inner.publishing.load(Ordering::Acquire)

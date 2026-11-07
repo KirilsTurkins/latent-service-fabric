@@ -197,3 +197,23 @@ fn duplicate_seal_without_inventory_change_preserves_the_cursor() {
     assert!(page.complete);
     assert_eq!(page.references(), &[blob]);
 }
+
+#[test]
+fn owner_close_during_checkpoint_cannot_publish_a_page() {
+    let root = temporary_root();
+    let owner = store(root.path());
+    put(&owner, b"one");
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope()).unwrap();
+    let calls = std::cell::Cell::new(0);
+    let checkpoint = || {
+        calls.set(calls.get() + 1);
+        if calls.get() == 2 {
+            owner.close();
+        }
+        Ok(())
+    };
+    assert!(matches!(
+        inventory.next_page(&owner, 4, &checkpoint),
+        Err(LocalBlobError::Closed)
+    ));
+}
