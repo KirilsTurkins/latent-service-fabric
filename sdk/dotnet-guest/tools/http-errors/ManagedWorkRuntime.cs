@@ -258,8 +258,9 @@ public static partial class ManagedWorkRuntime
         }
         if (index < 0) throw new InvalidOperationException("managed-work-queue-record-limit");
         var owner = Find(item);
-        if (owner is { Timer: true, Active: false })
-            throw new InvalidOperationException("managed-timer-settlement-uncertain");
+        if (owner is { Active: false })
+            throw new InvalidOperationException(owner.Timer
+                ? "managed-timer-settlement-uncertain" : "managed-work-owner-retired");
         bool created = false;
         if (owner is null)
         {
@@ -429,6 +430,9 @@ public static partial class ManagedWorkRuntime
     {
         if (!owner.Active) throw new InvalidOperationException("managed-work-double-settle");
         if (owner.Timer) { TryRetireTimer(FindTimer(owner.Primary)!); return; }
+        // For non-root owners, revoke logical use before settlement. The host
+        // may settle and then trap, so retain the record and token on failure.
+        if (!owner.Root) owner.Active = false;
         settle!(owner.Token.Generation, owner.Token.Id);
         owner.Active = false;
         for (int i = 1; i < MaximumRecords; i++)
