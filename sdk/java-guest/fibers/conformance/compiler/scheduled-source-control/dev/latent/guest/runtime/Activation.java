@@ -11,6 +11,7 @@ public final class Activation {
     private static final ArrayList<ManagedPool> pools = new ArrayList<>();
     private static final java.util.IdentityHashMap<Thread, ManagedPool> managed = new java.util.IdentityHashMap<>();
     public static String denyNext;
+    public static int denyMatchesAfter;
     public static boolean retainFailedStart;
     public interface ManagedPool { boolean hasPendingWork(); boolean isRetired(); void closeAtRoot(); }
     public static final class Lease implements AutoCloseable {
@@ -26,8 +27,11 @@ public final class Activation {
     }
     public static synchronized Lease owner(Bindings.LatentRuntimeActivationOwnerKind kind) {
         if (kind.name().equals(denyNext)) {
-            denyNext = null;
-            throw new IllegalStateException("source-owner-admission-denied");
+            if (denyMatchesAfter > 0) denyMatchesAfter--;
+            else {
+                denyNext = null;
+                throw new IllegalStateException("source-owner-admission-denied");
+            }
         }
         owners[kind.ordinal()]++;
         return new Lease(kind.ordinal());

@@ -369,19 +369,44 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     """Real port source with a private host ledger, never injected guest bindings."""
     private = compiler.sdk / 'fibers/conformance/compiler/scheduled-source-control'
     ports = sorted((compiler.sdk / 'fibers/dev/latent/guest/runtime/concurrent').glob('*.java'))
-    controls = [private / name for name in ('ScheduledOwnerControl.java',
+    controls = [private / name for name in ('ScheduledOwnerControl.java', 'ScheduledCompletableOwnerControl.java',
         'dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
-    inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path)) for path in (*ports, *controls)}
+    reference = private / 'ScheduledStoppedReferenceControl.java'
+    inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path)) for path in (*ports, *controls, reference)}
     output.mkdir()
+    jdk_output = output / 'reference-jdk'
+    jdk_output.mkdir()
+    compiler.run('scheduled-stopped-reference-compile', 'javac', '-proc:none', '--release', '25',
+        '-d', jdk_output, reference)
+    expected_stopped = ('SCHEDULED_STOPPED_REFERENCE PASS delayed;fixed-rate;fixed-delay;nested;future;'
+        'running;shutdown;shutdown-policy;physical-runner')
+    result = compiler.run('scheduled-stopped-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
+        'ScheduledStoppedReferenceControl').strip()
+    if result != expected_stopped: raise ValueError('Java stopped scheduled reference did not complete')
+    text = read_file(reference).decode('utf-8')
+    for name in ('CompletableFuture', 'FutureTask', 'ScheduledThreadPoolExecutor'):
+        original = 'import java.util.concurrent.' + name + ';'
+        if text.count(original) != 1: raise ValueError('Java stopped scheduled source import is ambiguous')
+        text = text.replace(original, 'import dev.latent.guest.runtime.concurrent.' + name + ';')
+    selected = output / 'ScheduledStoppedReferenceControl.java'
+    selected.write_bytes(text.encode('utf-8'))
     compiler.run('scheduled-source-compile', 'javac', '-proc:none', '--release', '25',
-        '-d', output, *ports, *controls)
+        '-d', output, *ports, *controls, selected)
     result = compiler.run('scheduled-source-control', 'java', '-Xmx256m', '-cp', output, 'ScheduledOwnerControl').strip()
     expected = ('SCHEDULED_OWNER_CONTROL PASS preadmission;actual-result;running-cancel-held;periodic-nonoverlap;'
         'original-error-suppresses-repeat;timed-wait-cancel-and-interrupt;shutdown-policy;factory-rollback;all-retired')
     if result != expected: raise ValueError('Java scheduled source control did not complete')
+    result = compiler.run('scheduled-completable-owner-control', 'java', '-Xmx256m', '-cp', output,
+        'ScheduledCompletableOwnerControl').strip()
+    if result != ('SCHEDULED_COMPLETABLE_OWNER PASS rejection;inner-admission-rollback;withdrawal;action-replay;opaque;subclass;copies;'
+                  'wrapper-copies;failed-readmission;cancelled-capture;deferred-future;in-flight-wrapper;stopped-worker'):
+        raise ValueError('Java scheduled CompletableFuture source control did not complete')
+    result = compiler.run('scheduled-stopped-source-control', 'java', '-Xmx256m', '-cp', output,
+        'ScheduledStoppedReferenceControl').strip()
+    if result != expected_stopped: raise ValueError('Java stopped scheduled source differs from reference')
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError('Java scheduled source control inputs changed')
-    return {'status': 'SDK-source-controls-passed', 'sourceInputs': inputs,
+    return {'status': 'SDK-source-controls-passed', 'referenceJdk': 'matched-stopped-state-observables', 'sourceInputs': inputs,
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 
@@ -400,13 +425,13 @@ def scheduled_model_control(compiler: Compiler, output: Path) -> dict:
         '-d', output, *sources)
     result = compiler.run('scheduled-model-control', 'java', '-Xmx256m', '-cp',
         str(output) + os.pathsep + classpath, 'dev.latent.guest.runtime.compiler.ScheduledModelControl').strip()
-    if result != ('SCHEDULED_MODEL_CONTROL PASS standard-APIs;private-task;canonical-fields-and-methods;'
-                  'ordinary-constructor;no-fallback;constructed-identities=5;actual-generated-callbacks=3;models=8'):
+    if result != ('SCHEDULED_MODEL_CONTROL PASS standard-APIs;private-task-and-call;canonical-fields-and-methods;'
+                  'ordinary-constructor;no-fallback;constructed-identities=6;actual-generated-callbacks=3;models=9'):
         raise ValueError('Java scheduled model control did not complete')
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError('Java scheduled model inputs changed')
-    return {'status': 'actual-locked-classlib-model-passed', 'models': 8,
-        'constructedIdentities': 5, 'actualGeneratedCallbacks': 3,
+    return {'status': 'actual-locked-classlib-model-passed', 'models': 9,
+        'constructedIdentities': 6, 'actualGeneratedCallbacks': 3,
         'jarDigests': identities, 'sourceInputs': inputs,
         'portOrApplicationClassesInitialized': False, 'actualGuestBindingsUsed': False}
 
@@ -584,6 +609,8 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
             report['scheduledSource'] = scheduled_source_control(compiler, output / 'scheduled-source')
         else:
             report["completableSource"] = completable_source_control(compiler, output / "completable-source")
+            if fixture == 'threads':
+                report['scheduledSource'] = scheduled_source_control(compiler, output / 'scheduled-source')
         if fixture == 'shutdown-now':
             report['shutdownNowSource'] = shutdown_now_source_control(compiler, output / 'shutdown-now-source')
         if fixture == "timers":
