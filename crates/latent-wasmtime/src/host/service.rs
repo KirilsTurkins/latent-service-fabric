@@ -10,7 +10,10 @@ use latent_core::{
 };
 use latent_routing::InvocationTarget;
 use std::{sync::Arc, time::Instant};
-use wasmtime::{component::Linker, AsContextMut, StoreContextMut};
+use wasmtime::{
+    component::{Accessor, InlineConcurrentHost, Linker},
+    AsContextMut, StoreContextMut,
+};
 mod outcome;
 #[cfg(feature = "development-local-service-fixture")]
 pub(super) mod refusal;
@@ -25,116 +28,125 @@ pub(crate) fn install(
 ) -> wasmtime::Result<()> {
     linker
         .instance(SERVICE_INVOCATION_CAPABILITY)?
-        .func_wrap_concurrent(
-            "call",
-            move |access,
-                  (target, payload, media_type, options): (
-                wit::Target,
-                Vec<u8>,
-                String,
-                wit::CallOptions,
-            )| {
-                let invoker = invoker.clone();
-                Box::pin(async move {
-                    let started = Instant::now();
-                    let invocation = access.with(|mut access| {
-                        let mut store = access.as_context_mut();
-                        checkpoint(&mut store)?;
-                        let invocation = start(store.data(), target, payload, media_type, options);
-                        // Failed setup also settles any provisional reservation.
-                        synchronize(&mut store)?;
-                        Ok::<_, wasmtime::Error>(invocation)
-                    })?;
+        .func_wrap_concurrent_inline("call", ServiceCall { invoker })?;
+    Ok(())
+}
+
+struct ServiceCall {
+    invoker: Arc<dyn LocalServiceInvoker>,
+}
+impl
+    InlineConcurrentHost<
+        HostState,
+        (wit::Target, Vec<u8>, String, wit::CallOptions),
+        (wit::InvocationOutcome,),
+    > for ServiceCall
+{
+    fn invoke<'a>(
+        &'a self,
+        access: &'a Accessor<HostState>,
+        (target, payload, media_type, options): (wit::Target, Vec<u8>, String, wit::CallOptions),
+    ) -> impl std::future::Future<Output = wasmtime::Result<(wit::InvocationOutcome,)>> + Send + 'a
+    {
+        let invoker = self.invoker.clone();
+        async move {
+            let started = Instant::now();
+            let invocation = access.with(|mut access| {
+                let mut store = access.as_context_mut();
+                checkpoint(&mut store)?;
+                let invocation = start(store.data(), target, payload, media_type, options);
+                // Failed setup also settles any provisional reservation.
+                synchronize(&mut store)?;
+                Ok::<_, wasmtime::Error>(invocation)
+            })?;
+            #[cfg(feature = "development-local-service-fixture")]
+            let mut refusal_stage = refusal::Stage::Setup;
+            let mut completion = match invocation {
+                Ok((dispatch, request)) => {
                     #[cfg(feature = "development-local-service-fixture")]
-                    let mut refusal_stage = refusal::Stage::Setup;
-                    let mut completion = match invocation {
-                        Ok((dispatch, request)) => {
-                            #[cfg(feature = "development-local-service-fixture")]
-                            {
-                                refusal_stage = refusal::Stage::BrokerDispatch;
-                            }
-                            let admitted = dispatch
-                                .dispatch(|call| {
-                                    access.with(|mut access| {
-                                        let mut store = access.as_context_mut();
-                                        checkpoint(&mut store)?;
-                                        #[cfg(feature = "development-local-service-fixture")]
-                                        {
-                                            refusal_stage = refusal::Stage::ChildStart;
-                                        }
-                                        let admitted = invoker.start(call, request);
-                                        // Child admission reserves the original ledger before
-                                        // the async guest can resume. Reflect that reservation
-                                        // in native fuel without charging it as guest work.
-                                        synchronize(&mut store)?;
-                                        Ok::<_, wasmtime::Error>(admitted)
-                                    })
-                                })
-                                .await;
-                            match admitted {
-                                Ok(admitted) => match admitted? {
-                                    Ok(invocation) => {
-                                        #[cfg(feature = "development-local-service-fixture")]
-                                        {
-                                            refusal_stage = refusal::Stage::ChildCompletion;
-                                        }
-                                        invocation.await
-                                    }
-                                    Err(failure) => Err(failure),
-                                },
-                                Err(failure) => Err(failure),
-                            }
-                        }
-                        Err(failure) => Err(failure),
-                    };
-                    if let Ok(completion) = &mut completion {
-                        completion.call.finish_audit().await;
+                    {
+                        refusal_stage = refusal::Stage::BrokerDispatch;
                     }
-                    access.with(|mut access| {
-                        let mut store = access.as_context_mut();
-                        checkpoint(&mut store)?;
-                        let result = match completion {
-                            Ok(completion) => {
-                                store.data_mut().capabilities.prepare_lowering()?;
-                                let LocalServiceCompletion {
-                                    outcome: result,
-                                    call,
-                                    child,
-                                } = completion;
-                                let result = outcome::convert(result);
-                                // Parent output capacity was reserved before child
-                                // admission and remains owned through Store drop.
-                                store.data_mut().capabilities.retain_lowering(call);
-                                drop(child);
-                                result
-                            }
-                            Err(failure) => {
+                    let admitted = dispatch
+                        .dispatch(|call| {
+                            access.with(|mut access| {
+                                let mut store = access.as_context_mut();
+                                checkpoint(&mut store)?;
                                 #[cfg(feature = "development-local-service-fixture")]
                                 {
-                                    let state = store.data_mut();
-                                    if state.local_service_refusals.pending() {
-                                        if let Some(record) = state.local_service_refusals.capture(
-                                            &state.context.activation_id.0,
-                                            refusal_stage,
-                                            &failure,
-                                            state.accounting.budget(),
-                                            state.clock.monotonic_now(),
-                                        ) {
-                                            refusal::emit(&record);
-                                        }
-                                    }
+                                    refusal_stage = refusal::Stage::ChildStart;
                                 }
-                                outcome::rejected(&failure)
+                                let admitted = invoker.start(call, request);
+                                // Child admission reserves the original ledger before
+                                // the async guest can resume. Reflect that reservation
+                                // in native fuel without charging it as guest work.
+                                synchronize(&mut store)?;
+                                Ok::<_, wasmtime::Error>(admitted)
+                            })
+                        })
+                        .await;
+                    match admitted {
+                        Ok(admitted) => match admitted? {
+                            Ok(invocation) => {
+                                #[cfg(feature = "development-local-service-fixture")]
+                                {
+                                    refusal_stage = refusal::Stage::ChildCompletion;
+                                }
+                                invocation.await
                             }
-                        };
-                        synchronize(&mut store)?;
-                        store.data_mut().record_host_call(started);
-                        Ok((result,))
-                    })
-                })
-            },
-        )?;
-    Ok(())
+                            Err(failure) => Err(failure),
+                        },
+                        Err(failure) => Err(failure),
+                    }
+                }
+                Err(failure) => Err(failure),
+            };
+            if let Ok(completion) = &mut completion {
+                completion.call.finish_audit().await;
+            }
+            access.with(|mut access| {
+                let mut store = access.as_context_mut();
+                checkpoint(&mut store)?;
+                let result = match completion {
+                    Ok(completion) => {
+                        store.data_mut().capabilities.prepare_lowering()?;
+                        let LocalServiceCompletion {
+                            outcome: result,
+                            call,
+                            child,
+                        } = completion;
+                        let result = outcome::convert(result);
+                        // Parent output capacity was reserved before child
+                        // admission and remains owned through Store drop.
+                        store.data_mut().capabilities.retain_lowering(call);
+                        drop(child);
+                        result
+                    }
+                    Err(failure) => {
+                        #[cfg(feature = "development-local-service-fixture")]
+                        {
+                            let state = store.data_mut();
+                            if state.local_service_refusals.pending() {
+                                if let Some(record) = state.local_service_refusals.capture(
+                                    &state.context.activation_id.0,
+                                    refusal_stage,
+                                    &failure,
+                                    state.accounting.budget(),
+                                    state.clock.monotonic_now(),
+                                ) {
+                                    refusal::emit(&record);
+                                }
+                            }
+                        }
+                        outcome::rejected(&failure)
+                    }
+                };
+                synchronize(&mut store)?;
+                store.data_mut().record_host_call(started);
+                Ok((result,))
+            })
+        }
+    }
 }
 
 fn start(
