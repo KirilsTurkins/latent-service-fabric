@@ -3,14 +3,17 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
+import http.client
 import json
 from pathlib import Path
 import re
+import subprocess
 import time
 import tomllib
+import urllib.error
 import urllib.request
 
-from tools.security_common import POLICY, decode_json, digest, read_file, require, run, tracked_paths
+from tools.security_common import POLICY, SecurityError, decode_json, digest, read_file, require, run, tracked_paths
 from tools.security_findings import Finding, finding
 from tools.security_install import verify_tool
 from tools.security_inventory import Package, inventory
@@ -107,14 +110,21 @@ def osv_transport(payload: bytes) -> tuple[bytes, str]:
         "Content-Type": "application/json", "User-Agent": "lsf-security-baseline/1",
     }, method="POST")
     started = time.monotonic()
-    with urllib.request.urlopen(request, timeout=20) as response:
-        require(response.status == 200 and response.url == OSV_URL, "osv-unavailable")
-        content = bytearray()
-        while chunk := response.read1(65536):
-            content.extend(chunk)
-            require(len(content) <= 8 * 1024 * 1024, "osv-response-size-limit")
-            require(time.monotonic() - started <= 30, "osv-response-deadline")
-        return bytes(content), response.headers.get("Date", "")
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            require(response.status == 200 and response.url == OSV_URL, "osv-unavailable")
+            content = bytearray()
+            while chunk := response.read1(65536):
+                content.extend(chunk)
+                require(len(content) <= 8 * 1024 * 1024, "osv-response-size-limit")
+                require(time.monotonic() - started <= 30, "osv-response-deadline")
+            return bytes(content), response.headers.get("Date", "")
+    except urllib.error.HTTPError:
+        raise SecurityError("osv-http-error") from None
+    except (OSError, http.client.HTTPException):
+        # Never emit an exception, response body, package coordinate or URL
+        # supplied by the network in a security job's logs.
+        raise SecurityError("osv-transport-unavailable") from None
 
 
 def query_osv(packages: list[Package], transport=osv_transport) -> tuple[list[Finding], list[dict]]:
@@ -134,10 +144,16 @@ def query_osv(packages: list[Package], transport=osv_transport) -> tuple[list[Fi
         request = json.dumps({"queries": queries}, separators=(",", ":")).encode()
         response, header_date = transport(request)
         now = datetime.now(timezone.utc)
-        observed = parsedate_to_datetime(header_date)
+        try:
+            observed = parsedate_to_datetime(header_date)
+        except (TypeError, ValueError, OverflowError):
+            raise SecurityError("invalid-osv-date") from None
         require(observed.tzinfo is not None and abs((now - observed).total_seconds()) <= 3600,
                 "stale-osv-response")
-        document = decode_json(response)
+        try:
+            document = decode_json(response)
+        except (TypeError, ValueError):
+            raise SecurityError("invalid-osv-json") from None
         require(isinstance(document, dict) and isinstance(document.get("results"), list), "invalid-osv-result")
         require(len(document["results"]) == len(batch), "incomplete-osv-result")
         advisories = []
@@ -147,7 +163,9 @@ def query_osv(packages: list[Package], transport=osv_transport) -> tuple[list[Fi
             vulnerabilities = result.get("vulns", [])
             require(isinstance(vulnerabilities, list), "invalid-osv-findings")
             for vulnerability in vulnerabilities:
-                require(isinstance(vulnerability, dict) and "modified" in vulnerability, "invalid-osv-advisory")
+                require(isinstance(vulnerability, dict) and isinstance(vulnerability.get("id"), str)
+                        and isinstance(vulnerability.get("modified"), str),
+                        "invalid-osv-advisory")
                 advisories.append({"package": package.public(), "id": vulnerability["id"],
                                    "modified": vulnerability["modified"]})
                 findings.append(finding("osv", vulnerability["id"], package.path,
@@ -161,7 +179,12 @@ def query_osv(packages: list[Package], transport=osv_transport) -> tuple[list[Fi
 def dependencies(repo: Path) -> tuple[list[Finding], dict]:
     from tools.security_npm_sources import resolve_findings, verify_sources
 
-    packages, records = inventory(repo)
+    try:
+        packages, records = inventory(repo)
+    except (OSError, subprocess.SubprocessError):
+        raise SecurityError("dependency-inventory-unavailable") from None
+    except (ValueError, KeyError, TypeError, RecursionError):
+        raise SecurityError("dependency-inventory-invalid") from None
     action_prefix = ".github/security/actions/"
     findings, observations = query_osv([item for item in packages if not item.path.startswith(action_prefix)])
     # Keep the existing per-graph count and deadline limits while extending
@@ -170,9 +193,14 @@ def dependencies(repo: Path) -> tuple[list[Finding], dict]:
         current, receipts = query_osv([item for item in packages if item.path == path])
         findings.extend(current)
         observations.extend(receipts)
-    configuration = decode_json(read_file(POLICY, "inventory.json"))
-    repairs = verify_sources(repo, packages, configuration)
-    remaining, remediated = resolve_findings(findings, observations, repairs)
+    try:
+        configuration = decode_json(read_file(POLICY, "inventory.json"))
+        repairs = verify_sources(repo, packages, configuration)
+        remaining, remediated = resolve_findings(findings, observations, repairs)
+    except (OSError, subprocess.SubprocessError):
+        raise SecurityError("dependency-repair-source-unavailable") from None
+    except (ValueError, KeyError, TypeError, RecursionError):
+        raise SecurityError("dependency-repair-source-invalid") from None
     return remaining, {"manifests": records, "packages": len(packages), "osv_observations": observations,
                        "osv_finding_count": len(findings), "source_repairs": repairs,
                        "source_remediated_findings": [item.public() for item in remediated]}
