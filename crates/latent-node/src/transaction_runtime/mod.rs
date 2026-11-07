@@ -4,6 +4,7 @@ pub(crate) mod cancellation;
 mod capacity;
 mod command_role;
 mod completion;
+mod entity_queue;
 mod factory;
 mod host;
 mod initialization;

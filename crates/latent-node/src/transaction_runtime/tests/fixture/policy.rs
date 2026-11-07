@@ -45,7 +45,11 @@ pub(super) fn create(
     let caller = CallerScope::derive(&principal(), &RecoverySelection::OriginalCaller).unwrap();
     let document = json!({"formatVersion":1,"tenant":"a","rules":[{
         "id":"alice","effect":"allow","principals":[{"kind":"user","subject":"alice"}],"services":["a/echo"],"publications":[publication.publication().as_str()],"capability":STATE_CONTRACT,"operations":OPERATIONS,
-        "resources":{"kind":"state","scopes":[{"namespace":"orders","incarnation":1,"entity":null,"recoveryKind":caller.kind,"recoveryScope":caller.scope,"resultPolicy":"visibility-v1"}]},
+        "resources":{"kind":"state","scopes":[
+            {"namespace":"orders","incarnation":1,"entity":null,"recoveryKind":caller.kind,"recoveryScope":caller.scope,"resultPolicy":"visibility-v1"},
+            {"namespace":"orders","incarnation":1,"entity":"hot","recoveryKind":caller.kind,"recoveryScope":caller.scope,"resultPolicy":"visibility-v1"},
+            {"namespace":"orders","incarnation":1,"entity":"cold","recoveryKind":caller.kind,"recoveryScope":caller.scope,"resultPolicy":"visibility-v1"}
+        ]},
         "ceiling":{"operations":256,"inputBytes":2_097_152,"outputBytes":2_097_152,"wallTimeMillis":10_000}
     }]});
     let digest = format!("sha256:{}", "2".repeat(64));

@@ -32,8 +32,22 @@ pub struct TransactionAdmissionOwners {
     time: Arc<dyn CommandTimeSource>,
     command: CommandAdmissionSource,
     native: NativeCapacityOwner,
+    pub(super) lanes: super::entity_queue::EntityQueue,
 }
 impl TransactionAdmissionOwners {
+    /// Current aggregate lane counts and byte charges. The observation grants
+    /// no execution, command, or namespace authority.
+    pub fn entity_lanes_snapshot(
+        &self,
+    ) -> Result<latent_state::entity_lanes::EntityLaneSnapshot, PlatformError> {
+        self.lanes.observe().map_err(|_| {
+            error(
+                latent_core::PlatformErrorCode::Unavailable,
+                "entity-queue-unavailable",
+            )
+        })
+    }
+
     /// Prepay the original global slot and finite physical byte envelope before
     /// transport dispatch returns a future or starts the activation manager.
     /// The affine reservation must be transferred into the same admission.
@@ -57,6 +71,28 @@ impl TransactionAdmissionOwners {
         if !command.uses_store(&store) || !store.uses_native_capacity(&native) {
             return Err(authorization::denied());
         }
+        let limits = native.limits();
+        let slots = limits.ordinary.slots;
+        let bytes = limits.ordinary.bytes;
+        let lanes = super::entity_queue::EntityQueue::new(
+            latent_state::entity_lanes::EntityLaneLimits {
+                global_queued: slots,
+                tenant_queued: (slots / 2).max(1),
+                entity_queued: (slots / 4).max(1),
+                global_keys: slots,
+                tenant_keys: (slots / 2).max(1),
+                global_active: slots,
+                tenant_active: (slots / 2).max(1),
+                global_bytes: bytes,
+                tenant_bytes: (bytes / 2).max(1),
+                entity_bytes: (bytes / 4).max(1),
+                scope_bytes: 3 * latent_core::transaction_contract::IDENTITY_BYTES,
+                command_identity_bytes: latent_core::transaction_contract::IDENTITY_BYTES,
+                maximum_wait_age: limits.maximum_lifetime,
+            },
+            native.clock(),
+        )
+        .map_err(|_| authorization::denied())?;
         Ok(Self {
             store,
             namespaces,
@@ -65,6 +101,7 @@ impl TransactionAdmissionOwners {
             time: Arc::new(super::command_role::CommandClock(command.clone())),
             command,
             native,
+            lanes,
         })
     }
 }

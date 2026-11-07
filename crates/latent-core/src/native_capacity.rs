@@ -83,6 +83,17 @@ impl NativeCapacityOwner {
         Arc::ptr_eq(&self.0, &other.0)
     }
 
+    /// Immutable limits and the original clock of this exact capacity owner.
+    #[must_use]
+    pub fn limits(&self) -> NativeCapacityLimits {
+        self.0.limits
+    }
+
+    #[must_use]
+    pub fn clock(&self) -> Arc<dyn ActivationClock> {
+        Arc::clone(&self.0.clock)
+    }
+
     pub fn reserve(
         &self,
         class: NativeAdmissionClass,

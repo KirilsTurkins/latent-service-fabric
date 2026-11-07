@@ -77,6 +77,18 @@ impl Fixture {
             .unwrap();
         crate::TransactionCommitControl::for_native_test(registration, budget)
     }
+    pub fn admission_control(
+        &self,
+        envelope: &ActivationEnvelope,
+        budget: &ActivationBudget,
+    ) -> crate::TransactionAdmissionControl {
+        let registrations = self.registrations.lock().unwrap();
+        let registration = registrations
+            .iter()
+            .find(|entry| entry.activation_id() == &envelope.activation_id)
+            .unwrap();
+        crate::TransactionAdmissionControl::for_native_test(registration, budget)
+    }
     pub fn invocation(
         &self,
         query: bool,
@@ -125,7 +137,19 @@ impl Fixture {
         ActivationEnvelope,
         ActivationBudget,
     ) {
-        self.invocation_config_with_grants(query, key, minimum, native, (0, 0))
+        self.invocation_config_with_grants(query, key, minimum, native, (0, 0), None)
+    }
+
+    pub fn entity_invocation(
+        &self,
+        key: &str,
+        entity: &str,
+    ) -> (
+        Arc<NativeTransactionAdmission>,
+        ActivationEnvelope,
+        ActivationBudget,
+    ) {
+        self.invocation_config_with_grants(false, key, None, None, (0, 0), Some(entity))
     }
 
     pub fn invocation_with_external_grants(
@@ -138,7 +162,14 @@ impl Fixture {
         ActivationEnvelope,
         ActivationBudget,
     ) {
-        self.invocation_config_with_grants(false, key, None, None, (child_calls, outbound_requests))
+        self.invocation_config_with_grants(
+            false,
+            key,
+            None,
+            None,
+            (child_calls, outbound_requests),
+            None,
+        )
     }
 
     fn invocation_config_with_grants(
@@ -148,6 +179,7 @@ impl Fixture {
         minimum: Option<Vec<u8>>,
         native: Option<latent_core::native_capacity::NativeReservation>,
         external: (u32, u32),
+        entity: Option<&str>,
     ) -> (
         Arc<NativeTransactionAdmission>,
         ActivationEnvelope,
@@ -222,7 +254,7 @@ impl Fixture {
         let selection = TransactionSelection {
             namespace: "orders".into(),
             incarnation: 1,
-            entity: None,
+            entity: entity.map(str::to_owned),
             operation: function.into(),
             mode: if query {
                 TransactionOperationMode::FreshQuery

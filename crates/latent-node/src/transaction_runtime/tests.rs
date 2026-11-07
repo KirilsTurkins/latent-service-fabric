@@ -18,6 +18,308 @@ use latent_core::{BudgetConsumption, DeclaredError, Metadata};
 use latent_executor::transaction::{Mode, StateFailure, TransactionHost};
 use latent_state::embedded::Family;
 
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn entity_admission_waits_for_commit_before_opening_the_next_snapshot() {
+    let fixture = Fixture::new().await;
+    let (first, first_envelope, first_budget) = fixture.entity_invocation("first", "hot");
+    first.admit(&first_envelope, &first_budget).await.unwrap();
+    let TransactionAdmissionResult::Command { claim, host } = first.take_result().unwrap().unwrap()
+    else {
+        panic!("first command host absent");
+    };
+    host.acquire(Mode::Command).unwrap();
+    host.put(b"counter".to_vec(), value(b"committed"))
+        .await
+        .unwrap();
+
+    let (second, second_envelope, second_budget) = fixture.entity_invocation("second", "hot");
+    let queued_admission = Arc::clone(&second);
+    let queued_envelope = second_envelope.clone();
+    let queued_budget = second_budget.clone();
+    let waiting = tokio::spawn(async move {
+        queued_admission
+            .admit(&queued_envelope, &queued_budget)
+            .await
+    });
+    tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        while fixture.owners.lanes.snapshot().queued < 1 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    assert!(!waiting.is_finished());
+
+    host.finish_guest_access();
+    let _ = first_budget.finalize_at(None, std::time::Instant::now());
+    let completion = CommandCompletion::new(
+        claim,
+        host,
+        fixture.effects.clone(),
+        fixture.time.clone(),
+        fixture.commit_control(&first_envelope, &first_budget),
+    )
+    .unwrap();
+    let first_result = Box::pin(completion.finish(success(b"ok"))).await;
+    match &first_result {
+        CommandCompletionDisposition::Durable {
+            cleanup_failure: None,
+            ..
+        } => {}
+        CommandCompletionDisposition::Durable {
+            cleanup_failure, ..
+        } => {
+            waiting.abort();
+            panic!("first command cleanup failed: {cleanup_failure:?}");
+        }
+        CommandCompletionDisposition::Retired { reason, .. } => {
+            waiting.abort();
+            panic!("first command retired: {reason:?}");
+        }
+        CommandCompletionDisposition::RecoveryRequired {
+            cleanup_failure, ..
+        } => {
+            waiting.abort();
+            panic!("first command needs recovery: {cleanup_failure:?}");
+        }
+    }
+
+    tokio::time::timeout(std::time::Duration::from_secs(5), waiting)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
+    let TransactionAdmissionResult::Command { claim, host } =
+        second.take_result().unwrap().unwrap()
+    else {
+        panic!("second command host absent");
+    };
+    host.acquire(Mode::Command).unwrap();
+    assert_eq!(
+        host.read(b"counter".to_vec())
+            .await
+            .unwrap()
+            .unwrap()
+            .value
+            .bytes,
+        b"committed"
+    );
+    let retirement = claim.retirement();
+    host.finish_guest_access();
+    host.retire().await.unwrap();
+    drop(claim);
+    assert!(retirement.proven_noncommit().is_ok());
+    host.retire_command_role().unwrap();
+    drop((first, second, host));
+    fixture.shutdown().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn cancelling_queued_entity_admission_removes_its_reservation_before_claim() {
+    let fixture = Fixture::new().await;
+    let (first, first_envelope, first_budget) = fixture.entity_invocation("first-cancel", "hot");
+    first.admit(&first_envelope, &first_budget).await.unwrap();
+    let TransactionAdmissionResult::Command { claim, host } = first.take_result().unwrap().unwrap()
+    else {
+        panic!("first command host absent");
+    };
+    let (second, envelope, budget) = fixture.entity_invocation("second-cancel", "hot");
+    let control = fixture.admission_control(&envelope, &budget);
+    let queued_admission = Arc::clone(&second);
+    let queued_envelope = envelope.clone();
+    let queued_budget = budget.clone();
+    let waiting = tokio::spawn(async move {
+        queued_admission
+            .admit_controlled(&queued_envelope, &queued_budget, control)
+            .await
+    });
+    tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        while fixture.owners.lanes.snapshot().queued < 1 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    fixture.cancel_original(&envelope);
+    let outcome = tokio::time::timeout(std::time::Duration::from_secs(5), waiting)
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(
+        matches!(outcome, Err(error) if error.code == latent_core::PlatformErrorCode::Cancelled)
+    );
+    assert_eq!(fixture.owners.lanes.snapshot().queued, 0);
+    assert_eq!(fixture.owners.lanes.snapshot().active, 1);
+    assert_eq!(fixture.rows(Family::Command).await, 1);
+    let retirement = claim.retirement();
+    host.finish_guest_access();
+    host.retire().await.unwrap();
+    drop(claim);
+    assert!(retirement.proven_noncommit().is_ok());
+    host.retire_command_role().unwrap();
+    drop((first, second, host));
+    fixture.shutdown().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn queued_entity_duplicate_uses_the_durable_replay_path() {
+    let fixture = Fixture::new().await;
+    let (first, envelope, budget) = fixture.entity_invocation("duplicate", "hot");
+    first.admit(&envelope, &budget).await.unwrap();
+    let TransactionAdmissionResult::Command { claim, host } = first.take_result().unwrap().unwrap()
+    else {
+        panic!("first command host absent");
+    };
+    host.acquire(Mode::Command).unwrap();
+    let (duplicate, duplicate_envelope, duplicate_budget) =
+        fixture.entity_invocation("duplicate", "hot");
+    let queued = Arc::clone(&duplicate);
+    let waiting =
+        tokio::spawn(async move { queued.admit(&duplicate_envelope, &duplicate_budget).await });
+    tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        while fixture.owners.lanes.snapshot().queued < 1 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    host.finish_guest_access();
+    let _ = budget.finalize_at(None, std::time::Instant::now());
+    let completion = CommandCompletion::new(
+        claim,
+        host,
+        fixture.effects.clone(),
+        fixture.time.clone(),
+        fixture.commit_control(&envelope, &budget),
+    )
+    .unwrap();
+    assert!(matches!(
+        Box::pin(completion.finish(success(b"ok"))).await,
+        CommandCompletionDisposition::Durable {
+            cleanup_failure: None,
+            ..
+        }
+    ));
+    let result = tokio::time::timeout(std::time::Duration::from_secs(5), waiting)
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(
+        matches!(result, Err(error) if error.code == latent_core::PlatformErrorCode::AlreadyExists)
+    );
+    assert!(matches!(
+        duplicate.take_result().unwrap(),
+        Some(TransactionAdmissionResult::Existing { .. })
+    ));
+    assert_eq!(fixture.rows(Family::Command).await, 1);
+    assert_eq!(fixture.owners.lanes.snapshot().active, 0);
+    drop((first, duplicate));
+    fixture.shutdown().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn cold_entity_admission_progresses_while_the_hot_entity_waits() {
+    let fixture = Fixture::new().await;
+    let (hot, hot_envelope, hot_budget) = fixture.entity_invocation("hot-one", "hot");
+    hot.admit(&hot_envelope, &hot_budget).await.unwrap();
+    let TransactionAdmissionResult::Command {
+        claim: hot_claim,
+        host: hot_host,
+    } = hot.take_result().unwrap().unwrap()
+    else {
+        panic!("hot command host absent");
+    };
+    let (waiting_admission, waiting_envelope, waiting_budget) =
+        fixture.entity_invocation("hot-two", "hot");
+    let control = fixture.admission_control(&waiting_envelope, &waiting_budget);
+    let waiting_owner = Arc::clone(&waiting_admission);
+    let queued_envelope = waiting_envelope.clone();
+    let waiting = tokio::spawn(async move {
+        waiting_owner
+            .admit_controlled(&queued_envelope, &waiting_budget, control)
+            .await
+    });
+    tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        while fixture.owners.lanes.snapshot().queued < 1 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    let (cold, cold_envelope, cold_budget) = fixture.entity_invocation("cold-one", "cold");
+    tokio::time::timeout(
+        std::time::Duration::from_secs(5),
+        cold.admit(&cold_envelope, &cold_budget),
+    )
+    .await
+    .unwrap()
+    .unwrap();
+    assert!(!waiting.is_finished());
+    assert_eq!(fixture.owners.lanes.snapshot().active, 2);
+    let TransactionAdmissionResult::Command {
+        claim: cold_claim,
+        host: cold_host,
+    } = cold.take_result().unwrap().unwrap()
+    else {
+        panic!("cold command host absent");
+    };
+    fixture.cancel_original(&waiting_envelope);
+    assert!(
+        matches!(waiting.await.unwrap(), Err(error) if error.code == latent_core::PlatformErrorCode::Cancelled)
+    );
+    for (claim, host) in [(hot_claim, hot_host), (cold_claim, cold_host)] {
+        let retirement = claim.retirement();
+        host.finish_guest_access();
+        host.retire().await.unwrap();
+        drop(claim);
+        assert!(retirement.proven_noncommit().is_ok());
+        host.retire_command_role().unwrap();
+    }
+    assert_eq!(fixture.owners.lanes.snapshot().keys, 0);
+    drop((hot, cold, waiting_admission));
+    fixture.shutdown().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn policy_revoked_while_entity_is_queued_refuses_claim_and_guest_host() {
+    let fixture = Fixture::new().await;
+    let (first, first_envelope, first_budget) = fixture.entity_invocation("revoke-first", "hot");
+    first.admit(&first_envelope, &first_budget).await.unwrap();
+    let TransactionAdmissionResult::Command { claim, host } = first.take_result().unwrap().unwrap()
+    else {
+        panic!("first command host absent");
+    };
+    let (second, envelope, budget) = fixture.entity_invocation("revoke-second", "hot");
+    let queued = Arc::clone(&second);
+    let waiting = tokio::spawn(async move { queued.admit(&envelope, &budget).await });
+    tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        while fixture.owners.lanes.snapshot().queued < 1 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    fixture.revoke();
+    let retirement = claim.retirement();
+    host.finish_guest_access();
+    host.retire().await.unwrap();
+    drop(claim);
+    assert!(retirement.proven_noncommit().is_ok());
+    host.retire_command_role().unwrap();
+    assert!(
+        tokio::time::timeout(std::time::Duration::from_secs(5), waiting)
+            .await
+            .unwrap()
+            .unwrap()
+            .is_err()
+    );
+    assert_eq!(fixture.rows(Family::Command).await, 1);
+    assert!(second.take_result().unwrap().is_none());
+    assert_eq!(fixture.owners.lanes.snapshot().keys, 0);
+    drop((first, second, host));
+    fixture.shutdown().await;
+}
+
 #[tokio::test]
 async fn native_admission_persists_pending_before_host_and_success_commits_once() {
     let fixture = Fixture::new().await;

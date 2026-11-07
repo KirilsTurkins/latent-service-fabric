@@ -1,10 +1,10 @@
 //! Bounded, invocation-local entity execution eligibility.
 //!
-//! The caller supplies a trusted tenant/namespace/incarnation/entity scope and a
-//! durably claimed command attempt. This module neither grants that authority
-//! nor supplies durable deduplication. The opaque payload retains the accepted
-//! publication/schema pin unchanged while queued. Admission and final commit
-//! must use the host's current namespace/publication authority.
+//! The caller supplies a trusted tenant/namespace/incarnation/entity scope and
+//! an original accepted command invocation. This module neither grants that
+//! authority nor supplies durable deduplication. The opaque payload retains the
+//! accepted publication/schema pin unchanged while queued. Durable admission,
+//! replay and final commit must use the host's current authority.
 //!
 //! Drive `try_start_next` from the existing scheduler before acquiring a guest
 //! cell. There are no entity workers or timers. Monotonic wait limits are checked
@@ -75,7 +75,8 @@ impl<T> EntityLanes<T> {
         })
     }
 
-    /// Submit an already authorized, durably claimed command attempt.
+    /// Submit an already authorized original command invocation. The caller
+    /// must use durable admission and replay before starting guest work.
     ///
     /// The host charges payload allocations before constructing the request.
     /// `retained_bytes` accounts for its owned payload; this owner also charges

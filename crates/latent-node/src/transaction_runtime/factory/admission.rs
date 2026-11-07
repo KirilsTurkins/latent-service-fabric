@@ -32,6 +32,30 @@ enum PendingPublication {
     Refused(AtomicError),
 }
 
+fn entity_queue_error(failure: super::super::entity_queue::QueueError) -> PlatformError {
+    use super::super::entity_queue::QueueError;
+    use latent_core::PlatformErrorCode as Code;
+    use latent_state::entity_lanes::{EntityLaneError, EntityRejection};
+    let (code, message) = match failure {
+        QueueError::Expired
+        | QueueError::Lane(EntityLaneError::Expired)
+        | QueueError::Rejected(EntityRejection::WaitExpired) => {
+            (Code::DeadlineExceeded, "entity-queue-expired")
+        }
+        QueueError::Rejected(EntityRejection::AuthorityChanged) => {
+            (Code::PermissionDenied, "entity-queue-authority-changed")
+        }
+        QueueError::Rejected(EntityRejection::CancelledBeforeExecution) => {
+            (Code::Cancelled, "entity-queue-cancelled")
+        }
+        QueueError::Lane(EntityLaneError::Backpressure(_)) => {
+            (Code::ResourceExhausted, "entity-queue-backpressure")
+        }
+        _ => (Code::Unavailable, "entity-queue-unavailable"),
+    };
+    error(code, message)
+}
+
 impl crate::TransactionActivationAdmission for NativeTransactionAdmission {
     fn original_command_cancellation(
         &self,
@@ -86,7 +110,16 @@ impl crate::TransactionActivationAdmission for NativeTransactionAdmission {
         envelope: &'a ActivationEnvelope,
         budget: &'a ActivationBudget,
     ) -> BoxFuture<'a, Result<Arc<dyn TransactionHost>, PlatformError>> {
-        Box::pin(async move { self.admit_native(envelope, budget).await })
+        Box::pin(async move { self.admit_native(envelope, budget, None).await })
+    }
+
+    fn admit_controlled<'a>(
+        &'a self,
+        envelope: &'a ActivationEnvelope,
+        budget: &'a ActivationBudget,
+        control: crate::TransactionAdmissionControl,
+    ) -> BoxFuture<'a, Result<Arc<dyn TransactionHost>, PlatformError>> {
+        Box::pin(async move { self.admit_native(envelope, budget, Some(control)).await })
     }
 
     fn complete(
@@ -98,10 +131,15 @@ impl crate::TransactionActivationAdmission for NativeTransactionAdmission {
     }
 }
 impl NativeTransactionAdmission {
+    #[expect(
+        clippy::too_many_lines,
+        reason = "Keep the original source, capacity, queue and durable admission fences in their execution order"
+    )]
     async fn admit_native(
         &self,
         envelope: &ActivationEnvelope,
         budget: &ActivationBudget,
+        control: Option<crate::TransactionAdmissionControl>,
     ) -> Result<Arc<dyn TransactionHost>, PlatformError> {
         let mut selection = {
             let mut state = self.state.lock().map_err(|_| authorization::denied())?;
@@ -129,6 +167,15 @@ impl NativeTransactionAdmission {
             observation::platform(Phase::Retention, self.reserve_retention(envelope, budget))?;
         let bytes = retention.request_bytes();
         *self.retention.lock().map_err(|_| authorization::denied())? = Some(Arc::clone(&retention));
+        // Pending command publication updates the namespace generation. Wait
+        // before that write, then read and seal a fresh namespace. Duplicates
+        // still use the ordinary durable admission/replay path after selection.
+        let lane = if selection.mode == TransactionOperationMode::StrictCommand {
+            self.acquire_entity_lane(&selection, envelope, budget, control.as_ref())
+                .await?
+        } else {
+            None
+        };
         let namespace = observation::platform(
             Phase::NamespaceRead,
             self.read_namespace(&selection, &envelope.target.tenant)
@@ -148,6 +195,9 @@ impl NativeTransactionAdmission {
         let scope = selected_scope(&selection, envelope, &source.state_schema);
         let authorization = if mode {
             let role = CommandRole::capture(&self.owners.command).map_err(atomic)?;
+            if let Some(lane) = lane {
+                role.bind_lane(lane).map_err(atomic)?;
+            }
             let epoch = role.epoch();
             *self.state.lock().map_err(|_| authorization::denied())? = State::Pending {
                 claim: None,
@@ -200,10 +250,12 @@ impl NativeTransactionAdmission {
             let after = self
                 .read_namespace(&selection, &envelope.target.tenant)
                 .await?;
-            observation::platform(
+            let authorization = observation::platform(
                 Phase::FinalSeal,
                 self.seal(initial.after, after, envelope, budget, Some(role)),
-            )?
+            )?;
+            authorization.authorize("info", 0, 0, || Ok(()))?;
+            authorization
         } else {
             drop(initial.after);
             before
@@ -214,6 +266,65 @@ impl NativeTransactionAdmission {
             self.open_host(envelope, selection, scope, authorization)
                 .await,
         )
+    }
+
+    async fn acquire_entity_lane(
+        &self,
+        selection: &TransactionSelection,
+        envelope: &ActivationEnvelope,
+        budget: &ActivationBudget,
+        control: Option<&crate::TransactionAdmissionControl>,
+    ) -> Result<Option<super::super::entity_queue::Physical>, PlatformError> {
+        use latent_core::native_capacity::NativeBufferClass;
+        use latent_state::entity_lanes::EntityScope;
+
+        let Some(entity) = selection.entity.as_ref() else {
+            return Ok(None);
+        };
+        let retained = self.retained_capacity()?;
+        // All accepted identities are bounded by the transaction contract.
+        // This covers their copies, the lane bookkeeping, channel and owner.
+        let permit = retained
+            .native()
+            .reserve_buffer(NativeBufferClass::Request, 16 * 1024)
+            .map_err(|_| {
+                error(
+                    latent_core::PlatformErrorCode::ResourceExhausted,
+                    "entity-queue-capacity",
+                )
+            })?;
+        let scope = EntityScope::new(
+            envelope.target.tenant.clone(),
+            StateNamespaceId(selection.namespace.clone()),
+            selection.incarnation,
+            latent_core::EntityKey(entity.clone()),
+        )
+        .map_err(|_| authorization::denied())?;
+        let deadline = budget
+            .deadline()
+            .monotonic()
+            .ok_or_else(authorization::denied)?;
+        let current_retention = Arc::clone(&retained);
+        let current = Arc::new(move || current_retention.check_current().is_ok());
+        let wait = async {
+            self.owners
+                .lanes
+                .acquire(
+                    scope,
+                    envelope.activation_id.0.as_bytes().to_vec(),
+                    0,
+                    deadline,
+                    current,
+                    permit,
+                )
+                .await
+                .map_err(entity_queue_error)
+        };
+        let lane = match control {
+            Some(control) => control.wait(wait).await?,
+            None => wait.await?,
+        };
+        Ok(Some(lane))
     }
 
     async fn open_host(
