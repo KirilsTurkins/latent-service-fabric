@@ -29,6 +29,14 @@ public final class TimerModelMain {
         new Timer("idle-root-retirement", true);
         Activation.cleanup();
         if (Activation.owners() != 0) throw new AssertionError("unretired-source-owners");
+        // Exercise the actual retained Timer target after its underlying timer
+        // has retired, as the pinned Thread implementation retains that target.
+        Class<?> workerClass = Class.forName("dev.latent.guest.runtime.util.Timer$Worker");
+        var constructor = workerClass.getDeclaredConstructor(Timer.class); constructor.setAccessible(true);
+        Runnable retained = (Runnable)constructor.newInstance(cancelled); retained.run();
+        var timerField = workerClass.getDeclaredField("timer"); timerField.setAccessible(true);
+        if (timerField.get(retained) != null) throw new AssertionError("retired-target-retains-timer");
+        retained.run();
         try { cancelled.schedule(new TimerTask() { public void run() { } }, 0); throw new AssertionError("root-closed-admission"); }
         catch (IllegalStateException expected) { }
         System.out.println("TIMER_SOURCE_CONTROL PASS reference-observables;queue-rollback;cancel-drain;idle-finally;no-live-owners");
