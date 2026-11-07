@@ -46,6 +46,7 @@ static int printf(const char *text,...) {
 static struct lsf_c_thread root,child,*active;
 static unsigned live,admissions,returns,parks,wakes,suspends,resumes,capacity;
 static unsigned released,freed;
+static unsigned cancelled_suspend;
 static void (*on_park)(void),(*on_suspend)(void),(*on_admit)(void);
 static pthread_mutex_t mutex;
 static pthread_cond_t condition;
@@ -79,28 +80,28 @@ static void park(struct lsf_c_token token) {
     if (on_park) { void (*function)(void)=on_park;on_park=NULL;callback(function); }
 }
 static void wake(struct lsf_c_token token) { require(token.id);++wakes; }
+#define RECORD_LIMIT 32u
 #include "synchronization.c"
 uint32_t __lsf_c_sync_suspend(void) {
     ++suspends;require(on_suspend!=NULL);
-    void (*function)(void)=on_suspend;on_suspend=NULL;callback(function);return 0;
+    void (*function)(void)=on_suspend;on_suspend=NULL;callback(function);return cancelled_suspend;
 }
 void __lsf_c_sync_resume_later(uint32_t index) {
-    require(index==root.canonical_id);++resumes;
+    require(index==root.canonical_id || index==child.canonical_id);++resumes;
 }
-#define RECORD_LIMIT 32u
 static void free(void *allocation) { require(allocation!=NULL);++freed; }
 /* The runner extracts these actual unchanged functions from threads.c. */
 #include "c-join-reference-body.h"
 
 #define CHECK(value) do { if (!(value)) { printf("FAIL:%s:%d\n",__func__,__LINE__);return 1; } } while (0)
 static void reset(void) {
-    root=(struct lsf_c_thread){.canonical_id=11,.phase=LSF_C_RUNNING};root.root=&root;
+    root=(struct lsf_c_thread){.canonical_id=11,.phase=LSF_C_RUNNING,.low=4096,.high=1048576};root.root=&root;
     child=(struct lsf_c_thread){.canonical_id=12,.root=&root,.task={1,1000},
         .context_owner={1,1001},.result_owner={1,1002},.api=LSF_C_PTHREAD,
         .phase=LSF_C_RUNNING,.high=65536,.stack_allocation=&mutex,.tls_allocation=&condition};
     root.next=&child;
     active=&root;live=admissions=returns=parks=wakes=suspends=resumes=0;
-    capacity=1;on_park=on_suspend=on_admit=NULL;observed=0;source_errno=37;released=freed=0;
+    capacity=1;on_park=on_suspend=on_admit=NULL;observed=0;source_errno=37;released=freed=cancelled_suspend=0;
     memset(&mutex,0,sizeof(mutex));memset(&condition,0,sizeof(condition));
 }
 static void child_unlock(void) { require(pthread_mutex_unlock(&mutex)==0); }
@@ -174,6 +175,61 @@ static int condition_refusal_retains_lock_and_c11_uses_public_layout(void) {
     CHECK(cnd_signal(&signal)==thrd_success && cnd_broadcast(&signal)==thrd_success);
     cnd_destroy(&signal);CHECK(source_errno==37);return 0;
 }
+static int once_calls,once_word;
+static struct sync_once *once_owner;
+static void once_initialize(void) { ++once_calls; }
+static void finish_once_from_port(void) {
+    struct lsf_c_thread *saved=active;active=&root;sync_once_complete(once_owner);active=saved;
+}
+static void prepare_running_once(struct sync_once *state) {
+    *state=(struct sync_once){.owner=&root,.control=&once_word};
+    once_owner=state;sync_once_write(&once_word,(uint32_t)(uintptr_t)state);
+    child.task=(struct lsf_c_token){1,21};active=&child;
+}
+static int once_no_child_and_mixed_public_apis(void) {
+    reset();once_word=PTHREAD_ONCE_INIT;once_calls=0;
+    CHECK(pthread_once(&once_word,once_initialize)==0);
+    call_once((once_flag *)&once_word,once_initialize);
+    CHECK(__pthread_once(&once_word,once_initialize)==0);
+    CHECK(once_word==1 && once_calls==1 && !admissions && !root.task.id && source_errno==37);
+    return 0;
+}
+static int once_completion_during_wait_admission(void) {
+    reset();struct sync_once state;prepare_running_once(&state);on_admit=finish_once_from_port;
+    CHECK(pthread_once(&once_word,once_initialize)==0);
+    CHECK(once_word==1 && admissions==1 && returns==1 && !live && !parks && !suspends);
+    return 0;
+}
+static int once_notification_during_park(void) {
+    reset();struct sync_once state;prepare_running_once(&state);on_park=finish_once_from_port;
+    CHECK(pthread_once(&once_word,once_initialize)==0);
+    CHECK(once_word==1 && admissions==1 && returns==1 && !live && parks==1 && wakes==1 && !suspends);
+    return 0;
+}
+static int once_notification_after_suspend(void) {
+    reset();struct sync_once state;prepare_running_once(&state);on_suspend=finish_once_from_port;
+    call_once((once_flag *)&once_word,once_initialize);
+    CHECK(once_word==1 && admissions==1 && returns==1 && !live && parks==1 && wakes==1 && suspends==1 && resumes==1);
+    return 0;
+}
+static int once_wakes_two_original_wait_owners(void) {
+    reset();capacity=2;struct sync_once state;prepare_running_once(&state);
+    struct sync_wait first,second;CHECK(sync_begin(&first)==0);active=&root;CHECK(sync_begin(&second)==0);
+    first.linked=second.linked=1;first.next=&second;state.head=&first;state.tail=&second;
+    sync_once_complete(&state);
+    CHECK(once_word==1 && first.notified && second.notified && !first.linked && !second.linked);
+    sync_end(&second);active=&child;sync_end(&first);
+    CHECK(admissions==2 && returns==2 && !live);return 0;
+}
+static int once_malformed_control_and_wait_refusal(void) {
+    reset();once_word=4;CHECK(pthread_once(&once_word,once_initialize)==EINVAL && !admissions);
+    sync_once_write(&once_word,UINT32_C(0x80000004));
+    CHECK(sync_once_read(&once_word)==UINT32_C(0x80000004));
+    CHECK(pthread_once(&once_word,once_initialize)==EINVAL && !admissions);
+    struct sync_once state;prepare_running_once(&state);capacity=0;
+    CHECK(pthread_once(&once_word,once_initialize)==EAGAIN && !live && !parks && !suspends);
+    CHECK(sync_once_read(&once_word)==(uint32_t)(uintptr_t)&state && !state.head && source_errno==37);return 0;
+}
 static void completed_child_port(void) {
     require(active==&child && live==1 && root.waiting_for==&child && child.joiner);
     struct sync_wait *wait=(struct sync_wait *)(uintptr_t)child.joiner;
@@ -225,10 +281,13 @@ static int reference_cases(void) {
         condition_refusal_retains_lock_and_c11_uses_public_layout,
         join_suspends_until_deferred_completion,join_completion_during_park_does_not_suspend,
         join_rechecks_exclusive_claim_after_admission,join_rechecks_cycles_after_admission,
-        join_wait_refusal_cannot_publish_or_release};
+        join_wait_refusal_cannot_publish_or_release,once_no_child_and_mixed_public_apis,
+        once_completion_during_wait_admission,once_notification_during_park,
+        once_notification_after_suspend,once_wakes_two_original_wait_owners,
+        once_malformed_control_and_wait_refusal};
     for (unsigned index=0;index<sizeof(cases)/sizeof(cases[0]);++index) {
         case_index=index+1;if (cases[index]()) return (int)index+1;
     }
-    printf("PASS:13 serialized production-source cases; no engine/ledger qualification\n");return 0;
+    printf("PASS:19 serialized production-source cases; no engine/ledger qualification\n");return 0;
 }
 void lsf_test_entry(void) { ExitProcess((unsigned)reference_cases()); }

@@ -29,6 +29,7 @@ SYNC_SYMBOLS = ('pthread_mutex_init', 'pthread_mutex_lock', 'pthread_mutex_trylo
     'mtx_init', 'mtx_lock', 'mtx_trylock', 'mtx_unlock', 'mtx_destroy', 'mtx_timedlock',
     'cnd_init', 'cnd_destroy', 'cnd_wait', 'cnd_signal', 'cnd_broadcast', 'cnd_timedwait')
 YIELD_SYMBOLS = ('thrd_yield',)
+ONCE_SYMBOLS = ('pthread_once', '__pthread_once', 'call_once')
 TIME_SYMBOLS = ('nanosleep', 'thrd_sleep')
 LIBC = {
     'lib/libc/include/wasm-wasi-musl/pthread.h': '21b1fd90de05919d0718109f16fa1408a0750dcf65f63cc661c506f07e8e1ca1',
@@ -36,6 +37,8 @@ LIBC = {
     'lib/libc/musl/src/thread/pthread_setspecific.c': 'e588f3345a6c8d636fae1b0832827474c74c171fa3dd7861b2a3e5cbe87b5520',
     'lib/libc/musl/src/thread/pthread_getspecific.c': '5b0e9479040a4a891d021daf202dfab5def79233ec948558eaa3c36fd0203cf7',
     'lib/libc/musl/src/thread/tss_set.c': '2dbc898eadabcd478ce8028a0b450e47f02f454d5d66de220805dbd45adcce23',
+    'lib/libc/musl/src/thread/call_once.c': '2ba2643224915d7d26bc5623076aa1117b9e52cabf376f09c586597bcd58990b',
+    'lib/libc/wasi/thread-stub/pthread_once.c': '727368ff6c4f6ba8240080ac8786ac16efc7d2ed5db391108b9744901da8f520',
     'lib/libc/wasi/libc-top-half/musl/src/thread/pthread_key_create.c':
         '96b57e03ae683118bcb004b08b6d42db8990d4abf3731781ec3bfd65d0b0b4ba',
     'lib/libc/include/wasm-wasi-musl/errno.h': '844d1aa7a14734acde284e3109db63e29511540f6c9ccfefe46e455fd5b3ab40',
@@ -43,6 +46,30 @@ LIBC = {
     'lib/libc/wasi/libc-bottom-half/cloudlibc/src/libc/errno/errno.c': 'eeecab4885f9dba3df77a2c81c1960f1f84779a2b16f0b2aceb1d83af1d47aa3',
     'lib/libc/wasi/libc-bottom-half/sources/__errno_location.c': 'fb6d59a8ca5b99dc0799db259a7b35e7403818469f6cbf6a6ec1178fec98f702',
 }
+# These names are part of already published compiler material receipts. Do not
+# renumber them when adding another independently identified libc input.
+LEGACY_LIBC_PATHS = (
+    'lib/libc/include/generic-musl/threads.h',
+    'lib/libc/include/wasm-wasi-musl/__errno.h',
+    'lib/libc/include/wasm-wasi-musl/errno.h',
+    'lib/libc/include/wasm-wasi-musl/pthread.h',
+    'lib/libc/musl/src/thread/pthread_getspecific.c',
+    'lib/libc/musl/src/thread/pthread_setspecific.c',
+    'lib/libc/musl/src/thread/tss_set.c',
+    'lib/libc/wasi/libc-bottom-half/cloudlibc/src/libc/errno/errno.c',
+    'lib/libc/wasi/libc-bottom-half/sources/__errno_location.c',
+    'lib/libc/wasi/libc-top-half/musl/src/thread/pthread_key_create.c',
+)
+ONCE_LIBC_PATHS = ('lib/libc/musl/src/thread/call_once.c',
+                   'lib/libc/wasi/thread-stub/pthread_once.c')
+LIBC_MATERIAL_NAMES = {
+    **{path: 'c-threading-libc-' + str(index) for index, path in enumerate(LEGACY_LIBC_PATHS)},
+    **{path: 'c-threading-once-libc-' + str(index) for index, path in enumerate(ONCE_LIBC_PATHS)},
+}
+if (len(LIBC_MATERIAL_NAMES) != len(LEGACY_LIBC_PATHS) + len(ONCE_LIBC_PATHS)
+        or set(LIBC_MATERIAL_NAMES) != set(LIBC)
+        or len(set(LIBC_MATERIAL_NAMES.values())) != len(LIBC_MATERIAL_NAMES)):
+    raise ValueError('c-threading-unique-libc-material-labels')
 CLOCK_LIBC = {
     'lib/libc/include/wasm-wasi-musl/time.h': '2ea91196e2b6268feabec85041a9bda6381800b470451a6bcff9445510c93546',
     'lib/libc/include/wasm-wasi-musl/__header_time.h': '03fe8f66a5ffa0b448a96e9a0f19bde5e8cd5923c024d4e927b16f6d8d9c14c9',
@@ -59,7 +86,7 @@ CLOCK_LIBC = {
 def linked_defines(defines, *, timed_clock=False):
     if type(timed_clock) is not bool:
         raise ValueError('c-threading-timed-clock-selection')
-    symbols = (*TLS_SYMBOLS, *YIELD_SYMBOLS, *SYNC_SYMBOLS, *(TIME_SYMBOLS if timed_clock else ()))
+    symbols = (*TLS_SYMBOLS, *YIELD_SYMBOLS, *ONCE_SYMBOLS, *SYNC_SYMBOLS, *(TIME_SYMBOLS if timed_clock else ()))
     reserved_symbols = symbols
     reserved = {'LSF_C_LINKED_LIBC', 'LSF_C_TIMED_CLOCK', *reserved_symbols,
                 *('__lsf_c_' + name for name in reserved_symbols)}
@@ -85,9 +112,9 @@ def libc_inputs(zig):
 
 
 def libc_material_name(path):
-    if path not in LIBC:
+    if path not in LIBC or path not in LIBC_MATERIAL_NAMES:
         raise ValueError('c-threading-original-libc-material-path')
-    return 'c-threading-libc-' + str(sorted(LIBC).index(path))
+    return LIBC_MATERIAL_NAMES[path]
 
 
 def clock_libc_inputs(zig):

@@ -60,7 +60,9 @@
     "cnd_signal",
     "cnd_broadcast",
     "cnd_destroy",
-    "thrd_yield"
+    "thrd_yield",
+    "pthread_once",
+    "call_once"
   ],
   "finiteBoundary": {
     "attributes": "NULL/default only; non-NULL returns ENOTSUP before admission",
@@ -75,7 +77,8 @@
     "stackBytes": 65536,
     "templateExtentMaximum": 1048576,
     "tlsOverAlignment": "must be rejected until authenticated bootstrap supports it",
-    "yield": "One untargeted canonical thread.yield; preserve errno/current C context, no C registry scan or promotion of host-pending threads; scheduler eligibility and original runtime budgets remain authoritative."
+    "yield": "One untargeted canonical thread.yield; preserve errno/current C context, no C registry scan or promotion of host-pending threads; scheduler eligibility and original runtime budgets remain authoritative.",
+    "once": "source implementation: shared pthread/C11 once state on the admitted initializer stack; waiters retain original Wait owners. Recursive initialization parks and exit/cancellation unwind is unsupported; signed execution remains unqualified."
   },
   "creation": {
     "workerRunsInline": false,

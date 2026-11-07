@@ -29,4 +29,4 @@ try {
 }
 process.stdout.write(output);
 assert.equal(status, 0, `serialized C source control exit ${status}`);
-assert.equal(output, 'PASS:13 serialized production-source cases; no engine/ledger qualification\n');
+assert.equal(output, 'PASS:19 serialized production-source cases; no engine/ledger qualification\n');
