@@ -76,7 +76,9 @@ TIMER_CASES = (
     'disposed-queued-callback-retires-after-cancelled-fire', 'callback-required-task-survives-return',
     'live-timer-descendant-during-closing', 'callback-throw-never-refunds-original-running-owner',
     'timer-settlement-refusal-restores-context', 'timer-settlement-refusal-prevents-retry',
-    'timer-settlement-unknown-outcome-prevents-retry', 'timer-structural-bound-before-ledger')
+    'timer-settlement-unknown-outcome-prevents-retry',
+    'timer-settlement-refusal-revokes-captured-context',
+    'timer-settlement-unknown-outcome-revokes-captured-context', 'timer-structural-bound-before-ledger')
 
 TIMER_WAIT_CASES = (
     'accepted_wait_can_start_after_closing_and_parent_return',

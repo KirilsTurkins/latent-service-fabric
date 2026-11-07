@@ -118,8 +118,10 @@ public static partial class ManagedWorkRuntime
         // -1 for an attempted settlement: a trap can occur after the host
         // settled, so retain the owner but never submit its token again.
         timer.Mutation = -1;
-        settle!(timer.Owner.Token.Generation, timer.Owner.Token.Id);
+        // Captured execution contexts must no longer admit descendants using
+        // this token; the timer record still retains its physical custody.
         timer.Owner.Active = false;
+        settle!(timer.Owner.Token.Generation, timer.Owner.Token.Id);
         for (int i = 0; i < MaximumRecords; i++)
             if (ReferenceEquals(timers![i], timer)) { timers[i] = null; return; }
         throw new InvalidOperationException("managed-timer-missing-record");

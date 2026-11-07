@@ -68,14 +68,26 @@ internal static class TimerControl
         var item = Arm(); ManagedWorkRuntime.TimerAccepted(item); Disarm(item);
         var outer = context;
         var previous = ManagedWorkRuntime.TimerEnter(item);
+        var captured = ExecutionContext.Capture() ?? throw new InvalidOperationException("timer-control-context");
         failingSettlement = context.Item2;
         Need(failingSettlement != 0 && context != outer && Count(5) == 1);
-        failAfterSettlement = mode == 2;
+        failAfterSettlement = mode == 2 || mode == 4;
         Refuses(() => ManagedWorkRuntime.TimerLeave(item, previous), "control-timer-settlement-failed");
         if (mode == 0)
         {
             Need(context == outer && Count(5) == 1 && timerSettlementAttempts == 1);
             return;
+        }
+        if (mode >= 3)
+        {
+            int before = admissions;
+            ExecutionContext.Run(captured, _ =>
+            {
+                Need(context == (0UL, 0UL));
+                Refuses(() => ManagedWorkRuntime.Schedule(new Task(() => { })), "managed-work-parent-retired");
+            }, null);
+            Refuses(() => ManagedWorkRuntime.Enqueue(item), "managed-timer-settlement-uncertain");
+            Need(context == outer && admissions == before);
         }
         Refuses(() => ManagedWorkRuntime.TimerDeleted(item), "managed-timer-settlement-uncertain");
         Refuses(() => ManagedWorkRuntime.TimerChanging(item), "managed-timer-settlement-uncertain");
@@ -169,6 +181,8 @@ internal static class TimerControl
             case "timer-settlement-refusal-restores-context": SettlementControl(0); break;
             case "timer-settlement-refusal-prevents-retry": SettlementControl(1); break;
             case "timer-settlement-unknown-outcome-prevents-retry": SettlementControl(2); break;
+            case "timer-settlement-refusal-revokes-captured-context": SettlementControl(3); break;
+            case "timer-settlement-unknown-outcome-revokes-captured-context": SettlementControl(4); break;
             case "timer-structural-bound-before-ledger": {
                 Limits[5] = 32; var items = Enumerable.Range(0, 32).Select(_ => Arm()).ToArray();
                 int before = admissions; Refuses(() => Arm(), "managed-timer-record-limit");
