@@ -65,6 +65,22 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
         b'  if (!lsf::typescript::activation::start_timeout_nanoseconds(\n'
         b'          cx, handler, JS::HandleValueArray(args), nanos, &timer_id)) {',
         'actual-AbortSignal-native-timer-readiness')
+    source = replace_once(source,
+        b'  set_reason(cx, self, reason);\n',
+        b'  if (!set_reason(cx, self, reason)) return false;\n',
+        'abort-root-reason-before-dependent-mutation')
+    source = replace_once(source,
+        b'  RootedObject event(cx, Event::create(cx, type_val, JS::NullHandleValue));\n'
+        b'  RootedValue event_val(cx, JS::ObjectValue(*event));\n',
+        b'  RootedObject event(cx, Event::create(cx, type_val, JS::NullHandleValue));\n'
+        b'  if (!event) return false;\n'
+        b'  RootedValue event_val(cx, JS::ObjectValue(*event));\n',
+        'abort-event-allocation-before-dereference')
+    source = replace_once(source,
+        b'  run_abort_steps(cx, self);\n',
+        b'  // With no newly aborted dependents there is no later abort work to skip.\n'
+        b'  if (!run_abort_steps(cx, self) && dep_signals_to_abort.empty()) return false;\n',
+        'preserve-root-abort-error-when-no-dependent-work-remains')
     return source, {'format': 'latent.typescript.abort-timeout-source-derivation.v1',
         'starlingCommit': STARLING_COMMIT, 'originalSource': identity({PATH: raw}),
         'derivedSource': identity({PATH: source}),
@@ -77,5 +93,9 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
         'throwIfAbortedPreservesOriginalReasonIdentity': True,
         'anyConvertsOneIterableAndChecksSignalInstances': True,
         'staticAbortReasonOptional': True,
+        'rootAbortFailureWithoutNewDependents': 'propagate-original-failure',
+        'rootReasonAllocationFailure': 'return-before-direct-reason-slot-write',
+        'abortEventAllocationFailure': 'return-after-original-algorithm-cleanup',
+        'dependentAbortAndReasonAllocationFailures': 'not-qualified',
         'timerOrResultOwnerRetirement': 'same-original-host-stop-subtask-drop-acknowledgements',
         'supportedAsyncProfile': False, 'signedLSFComponentQualified': False}
