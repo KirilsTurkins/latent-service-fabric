@@ -1,7 +1,10 @@
 """Actual v5 timer capture selection and fail-closed signed evidence controls."""
 import copy
 import json
+import os
 from pathlib import Path
+import shutil
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -11,6 +14,270 @@ from tools import qualify_go_synchronization as reference
 
 
 NATIVE17 = [0, 1, 2, 3, 5, 6, 18, 19, 20, 9, 11, 12, 13, 14, 15, 16, 17]
+
+
+# These host-only controls compile the actual sweep, retirement and idle-drain
+# functions from the runtime template. The stubs force weak conversion to park;
+# they do not claim a signed component, real GC pause, or host timer execution.
+SLOT_INTERLEAVING_TEST = r'''package timerowner
+
+import (
+    "testing"
+    "unsafe"
+)
+
+var lsfTimerSlots []lsfTimerSlot
+var conversion func(unsafe.Pointer) unsafe.Pointer
+var retired, fenced [][2]uint64
+var stopHook func(*timer)
+var fenceHook func([2]uint64)
+
+type timer struct {
+    isChan bool
+    lsfToken [2]uint64
+    lsfSlot uint32
+    stops int
+}
+func (t *timer) stop() bool { t.stops++; if stopHook != nil { stopHook(t) }; return true }
+func lsfFail(message string) { panic(message) }
+func KeepAlive(*timer) {}
+
+func internal_weak_runtime_makeStrongFromWeak(p unsafe.Pointer) unsafe.Pointer { return conversion(p) }
+func lsfStopTimerSlot(index uint32, token [2]uint64) {
+    if token[1] == 0 { return }
+    if lsfTimerSlots[index-1].token != token { panic("stale timer slot") }
+    retired = append(retired, token)
+    lsfTimerSlots[index-1] = lsfTimerSlot{}
+}
+func lsfActivationTimerFence(generation, id uint64) {
+    if id != 0 {
+        token := [2]uint64{generation, id}
+        fenced = append(fenced, token)
+        if fenceHook != nil { fenceHook(token) }
+    }
+}
+
+func TestReusedSlotDuringWeakConversion(t *testing.T) {
+    for _, mode := range []string{"reuse", "reuse-then-grow", "reuse-grow-reuse"} {
+        t.Run(mode, func(t *testing.T) {
+            old, next, last := [2]uint64{7, 1}, [2]uint64{7, 2}, [2]uint64{7, 4}
+            lsfTimerSlots = make([]lsfTimerSlot, 1, 1)
+            lsfTimerSlots[0].token = old
+            retired, fenced = nil, nil
+            parked, resume, done := make(chan struct{}), make(chan struct{}), make(chan interface{}, 1)
+            conversion = func(unsafe.Pointer) unsafe.Pointer { close(parked); <-resume; return nil }
+            go func() { defer func() { done <- recover() }(); lsfSweepCollectedTimers() }()
+            <-parked
+            // Another goroutine retires the original before publishing a new owner.
+            lsfStopTimerSlot(1, old)
+            lsfActivationTimerFence(old[0], old[1])
+            lsfTimerSlots[0].token = next
+            if mode != "reuse" {
+                lsfTimerSlots = append(lsfTimerSlots, lsfTimerSlot{token:[2]uint64{7, 3}})
+            }
+            expected := next
+            if mode == "reuse-grow-reuse" {
+                lsfStopTimerSlot(1, next)
+                lsfActivationTimerFence(next[0], next[1])
+                lsfTimerSlots[0].token, expected = last, last
+            }
+            retired, fenced = nil, nil
+            close(resume)
+            if p := <-done; p != nil { t.Errorf("unexpected stale-owner trap: %v", p) }
+            if lsfTimerSlots[0].token != expected || len(retired) != 0 || len(fenced) != 0 {
+                t.Errorf("owner=%v retired=%v fenced=%v", lsfTimerSlots[0].token, retired, fenced)
+            }
+        })
+    }
+}
+
+func TestCollectedUnchangedOwnerIsRetiredAndFenced(t *testing.T) {
+    old := [2]uint64{7, 1}
+    lsfTimerSlots = []lsfTimerSlot{{token:old}}
+    retired, fenced = nil, nil
+    conversion = func(unsafe.Pointer) unsafe.Pointer { return nil }
+    lsfSweepCollectedTimers()
+    if len(retired)!=1 || retired[0]!=old || len(fenced)!=1 || fenced[0]!=old { t.Fatal(retired, fenced) }
+}
+
+func TestReachableOwnerIsUntouched(t *testing.T) {
+    old := [2]uint64{7, 1}
+    lsfTimerSlots = []lsfTimerSlot{{token:old}}
+    retired, fenced = nil, nil
+    strong := new(byte)
+    conversion = func(unsafe.Pointer) unsafe.Pointer { return unsafe.Pointer(strong) }
+    lsfSweepCollectedTimers()
+    if lsfTimerSlots[0].token != old || len(retired)!=0 || len(fenced)!=0 { t.Fatal(lsfTimerSlots, retired, fenced) }
+}
+
+func TestIdleDrainRechecksWeakConversionAfterRetirementAndReuse(t *testing.T) {
+    for _, mode := range []string{"nil-reuse", "nil-reuse-grow", "nil-reuse-grow-reuse",
+        "strong-stop-replace", "strong-reset-same", "strong-reset-grow", "strong-reset-relocate"} {
+        t.Run(mode, func(t *testing.T) {
+            oldToken, newToken := [2]uint64{7, 1}, [2]uint64{7, 2}
+            old := &timer{isChan:true, lsfToken:oldToken, lsfSlot:1}
+            lsfTimerSlots = []lsfTimerSlot{{token:oldToken, weak:unsafe.Pointer(old)}}
+            lsfTimerSlots = append(make([]lsfTimerSlot, 0, 1), lsfTimerSlots...)
+            retired, fenced, stopHook = nil, nil, nil
+            parked, resume, done := make(chan struct{}), make(chan struct{}), make(chan interface{}, 1)
+            calls := 0
+            observed := map[[2]uint64]int{}
+            conversion = func(p unsafe.Pointer) unsafe.Pointer {
+                calls++
+                if calls == 1 { return p } // The preceding sweep sees a live timer.
+                if calls == 2 {
+                    close(parked); <-resume
+                    if mode[:3] == "nil" { return nil }
+                    return p
+                }
+                current := (*timer)(p)
+                observed[current.lsfToken]++
+                return p
+            }
+            go func() { defer func() { done <- recover() }(); lsfStopIdleChannelTimers() }()
+            <-parked
+            // The original owner is retired before another owner reuses it.
+            lsfRetireTimer(old)
+            lsfActivationTimerFence(oldToken[0], oldToken[1])
+            replacement := &timer{isChan:true, lsfToken:newToken, lsfSlot:1}
+            if mode == "strong-reset-same" || mode == "strong-reset-grow" || mode == "strong-reset-relocate" {
+                replacement = old
+                replacement.lsfToken, replacement.lsfSlot = newToken, 1
+            }
+            lsfTimerSlots[0] = lsfTimerSlot{token:newToken, weak:unsafe.Pointer(replacement)}
+            survivors := map[[2]uint64]*timer{newToken:replacement}
+            if mode == "nil-reuse-grow" || mode == "nil-reuse-grow-reuse" || mode == "strong-reset-grow" {
+                otherToken := [2]uint64{7, 3}
+                other := &timer{isChan:true, lsfToken:otherToken, lsfSlot:2}
+                lsfTimerSlots = append(lsfTimerSlots, lsfTimerSlot{token:otherToken, weak:unsafe.Pointer(other)})
+                survivors[otherToken] = other
+            }
+            if mode == "nil-reuse-grow-reuse" {
+                lsfRetireTimer(replacement)
+                lastToken := [2]uint64{7, 4}
+                replacement = &timer{isChan:true, lsfToken:lastToken, lsfSlot:1}
+                lsfTimerSlots[0] = lsfTimerSlot{token:lastToken, weak:unsafe.Pointer(replacement)}
+                delete(survivors, newToken)
+                survivors[lastToken] = replacement
+            }
+            if mode == "strong-reset-relocate" {
+                otherToken := [2]uint64{7, 3}
+                other := &timer{isChan:true, lsfToken:otherToken, lsfSlot:1}
+                lsfTimerSlots[0] = lsfTimerSlot{token:otherToken, weak:unsafe.Pointer(other)}
+                replacement.lsfSlot = 2
+                lsfTimerSlots = append(lsfTimerSlots, lsfTimerSlot{token:newToken, weak:unsafe.Pointer(replacement)})
+                survivors[otherToken] = other
+            }
+            retired, fenced = nil, nil
+            close(resume)
+            if p := <-done; p != nil { t.Errorf("unexpected drain failure: %v", p) }
+            for token, selected := range survivors {
+                if observed[token] == 0 || selected.stops != 1 {
+                    t.Errorf("replacement %v was not re-observed then stopped: conversions=%v stops=%d", token, observed, selected.stops)
+                }
+            }
+            if mode == "strong-stop-replace" && old.stops != 0 { t.Errorf("stopped old timer after its owner retired") }
+            for _, slot := range lsfTimerSlots {
+                if slot.token[1] != 0 { t.Errorf("owner remained after drain: %v", slot.token) }
+            }
+            if len(retired) != len(survivors) || len(fenced) != len(survivors) {
+                t.Errorf("retired=%v fenced=%v survivors=%v", retired, fenced, survivors)
+            }
+        })
+    }
+}
+
+func TestIdleDrainNormalCollectedReachableAndCallbackCases(t *testing.T) {
+    for _, kind := range []string{"collected", "reachable", "callback"} {
+        t.Run(kind, func(t *testing.T) {
+            token := [2]uint64{9, 1}
+            current := &timer{isChan:kind!="callback", lsfToken:token, lsfSlot:1}
+            lsfTimerSlots = []lsfTimerSlot{{token:token, weak:unsafe.Pointer(current)}}
+            retired, fenced, stopHook = nil, nil, nil
+            calls := 0
+            conversion = func(p unsafe.Pointer) unsafe.Pointer {
+                calls++
+                if kind == "collected" && calls > 1 { return nil }
+                return p
+            }
+            var failure interface{}
+            func() { defer func(){ failure = recover() }(); lsfStopIdleChannelTimers() }()
+            if kind == "callback" {
+                if failure != "LSF callback timer remains during result seal" || current.stops != 0 || lsfTimerSlots[0].token != token {
+                    t.Fatalf("callback failure=%v timer=%+v slots=%v", failure, current, lsfTimerSlots)
+                }
+                return
+            }
+            wantStops := 0
+            if kind == "reachable" { wantStops = 1 }
+            if failure != nil || current.stops != wantStops || len(retired)!=1 || retired[0]!=token || len(fenced)!=1 || fenced[0]!=token {
+                t.Fatalf("failure=%v stops=%d retired=%v fenced=%v", failure, current.stops, retired, fenced)
+            }
+        })
+    }
+}
+
+func TestIdleDrainRevisitsEarlierSlotReusedDuringLaterFence(t *testing.T) {
+    first, second, replacement := [2]uint64{10, 1}, [2]uint64{10, 2}, [2]uint64{10, 3}
+    a := &timer{isChan:true, lsfToken:first, lsfSlot:1}
+    b := &timer{isChan:true, lsfToken:second, lsfSlot:2}
+    c := &timer{isChan:true, lsfToken:replacement, lsfSlot:1}
+    lsfTimerSlots = []lsfTimerSlot{{token:first, weak:unsafe.Pointer(a)}, {token:second, weak:unsafe.Pointer(b)}}
+    retired, fenced, stopHook = nil, nil, nil
+    conversion = func(p unsafe.Pointer) unsafe.Pointer { return p }
+    fenceHook = func(token [2]uint64) {
+        if token == second { lsfTimerSlots[0] = lsfTimerSlot{token:replacement, weak:unsafe.Pointer(c)} }
+    }
+    defer func(){ fenceHook = nil }()
+    lsfStopIdleChannelTimers()
+    if a.stops != 1 || b.stops != 1 || c.stops != 1 || len(retired) != 3 || len(fenced) != 3 || lsfTimerSlots[0].token[1] != 0 {
+        t.Fatalf("stops=%d,%d,%d retired=%v fenced=%v slot=%v", a.stops, b.stops, c.stops, retired, fenced, lsfTimerSlots[0].token)
+    }
+}
+
+func TestIdleDrainFailsClosedOnUnexpectedStopIdentityChange(t *testing.T) {
+    old, next := [2]uint64{11, 1}, [2]uint64{11, 2}
+    current := &timer{isChan:true, lsfToken:old, lsfSlot:1}
+    lsfTimerSlots = []lsfTimerSlot{{token:old, weak:unsafe.Pointer(current)}}
+    retired, fenced = nil, nil
+    conversion = func(p unsafe.Pointer) unsafe.Pointer { return p }
+    stopHook = func(t *timer) {
+        lsfStopTimerSlot(1, old)
+        t.lsfToken = next
+        lsfTimerSlots[0] = lsfTimerSlot{token:next, weak:unsafe.Pointer(t)}
+        retired = nil
+    }
+    var failure interface{}
+    func() { defer func(){ failure = recover() }(); lsfStopIdleChannelTimers() }()
+    stopHook = nil
+    if failure != "LSF idle timer identity changed during stop" || lsfTimerSlots[0].token != next || len(retired)!=0 || len(fenced)!=0 {
+        t.Fatalf("failure=%v slot=%v retired=%v fenced=%v", failure, lsfTimerSlots[0].token, retired, fenced)
+    }
+}
+
+func TestIdleDrainFailsClosedOnEndlessSlotChurn(t *testing.T) {
+    token := [2]uint64{13, 1}
+    current := &timer{isChan:true, lsfToken:token, lsfSlot:1}
+    lsfTimerSlots = []lsfTimerSlot{{token:token, weak:unsafe.Pointer(current)}}
+    retired, fenced, stopHook = nil, nil, nil
+    calls := 0
+    conversion = func(p unsafe.Pointer) unsafe.Pointer {
+        calls++
+        if calls == 1 { return p }
+        old := current.lsfToken
+        lsfStopTimerSlot(1, old)
+        lsfActivationTimerFence(old[0], old[1])
+        current.lsfToken = [2]uint64{old[0], old[1]+1}
+        lsfTimerSlots[0] = lsfTimerSlot{token:current.lsfToken, weak:p}
+        return nil
+    }
+    var failure interface{}
+    func() { defer func(){ failure = recover() }(); lsfStopIdleChannelTimers() }()
+    if failure != "LSF idle timer drain did not settle" || calls != 8194 || lsfTimerSlots[0].token != current.lsfToken || current.stops != 0 {
+        t.Fatalf("failure=%v calls=%d slot=%v current=%+v", failure, calls, lsfTimerSlots[0].token, current)
+    }
+}
+'''
 
 
 class SourceOnlyCompiler:
@@ -53,6 +320,28 @@ def compile_record(folder):
 
 
 class GoManagedTimers(unittest.TestCase):
+    @unittest.skipUnless(shutil.which('go'), 'controlled host interleaving requires Go')
+    def test_collected_timer_sweep_retains_original_identity_across_gc_parking(self):
+        source = (reference.ROOT / 'sdk/go-guest/runtime/timer_bridge.go.in').read_text()
+        declaration = next(line for line in source.splitlines() if line.startswith('type lsfTimerSlot struct '))
+        functions = []
+        for name in ('lsfSweepCollectedTimers', 'lsfRetireTimer', 'lsfStopIdleChannelTimers'):
+            start = source.index('func ' + name + '(')
+            end = source.index('\n}', start) + 2
+            functions.append(source[start:end])
+        constants = '\n'.join(line for line in source.splitlines() if line.startswith('const lsfTimerDrainPassLimit '))
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'timer.go').write_text('package timerowner\n\nimport "unsafe"\n\n' +
+                                           declaration + '\n' + constants + '\n\n' + '\n\n'.join(functions) + '\n')
+            (root / 'timer_test.go').write_text(SLOT_INTERLEAVING_TEST)
+            env = dict(os.environ, GO111MODULE='off', GOENV='off', GOFLAGS='', GOWORK='off',
+                       GOTOOLCHAIN='local', GOMAXPROCS='1', GOOS='', GOARCH='', CGO_ENABLED='0')
+            env.pop('GOROOT', None)
+            result = subprocess.run([shutil.which('go'), 'test', '-count=1', '-timeout=45s', '-v', '.'],
+                                    cwd=root, env=env, text=True, capture_output=True, timeout=180)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_v5_timer_compile_records_native_reference_on_the_same_unmodified_timer_source(self):
         source = (reference.ROOT / 'sdk/go-guest/runtime/timers-conformance/main.go').read_bytes()
         native = {'modes': NATIVE17, 'output': 42, 'freshProcessPerMode': True,

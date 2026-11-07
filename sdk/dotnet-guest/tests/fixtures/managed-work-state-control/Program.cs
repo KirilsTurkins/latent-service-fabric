@@ -12,6 +12,7 @@ internal static class StateControl
     private static int maximumTasks;
     private static int maximumResults;
     private static ulong settlementRefusal;
+    private static bool settlementUnknown;
     private static int refusedSettlements;
     private static int controlDispatches;
     private static bool rootJoinReturned;
@@ -41,9 +42,11 @@ internal static class StateControl
     {
         if (id == settlementRefusal)
         {
-            // Model the real bridge's typed Err BEFORE any native-owner mutation.
-            Need(generation == 17 && id > uint.MaxValue && Owners.ContainsKey(id));
+            Need(generation == 17 && id > uint.MaxValue);
             refusedSettlements++;
+            // A refusal retains the token; an ambiguous trap may follow removal.
+            if (settlementUnknown) Need(Owners.Remove(id));
+            else Need(Owners.ContainsKey(id));
             throw new InvalidOperationException("managed-work-settlement-refused");
         }
         Need(generation == 17 && id > uint.MaxValue && Owners.Remove(id));
@@ -63,6 +66,60 @@ internal static class StateControl
     private static void Complete(TaskCompletionSource<int> source)
     {
         source.SetResult(1); ManagedWorkRuntime.Completed(source.Task);
+    }
+    private static void OwnerSettlementControl(bool callback, bool unknown)
+    {
+        var pending = Pending();
+        object item = callback ? new object() : pending.Task;
+        if (callback) { ManagedWorkRuntime.Enqueue(item); ManagedWorkRuntime.Dequeue(item); }
+        else ManagedWorkRuntime.Schedule(pending.Task);
+        var previous = ManagedWorkRuntime.Enter(item);
+        var original = context;
+        var captured = ExecutionContext.Capture() ?? throw new InvalidOperationException("control-context");
+        ManagedWorkRuntime.Exit(previous);
+        Need(original.Item1 == 17 && Owners.ContainsKey(original.Item2) && Count(0) == 2);
+        settlementRefusal = original.Item2; settlementUnknown = unknown;
+        if (!callback) pending.SetResult(1);
+        void CompleteOwner()
+        {
+            if (callback) ManagedWorkRuntime.CallbackCompleted(item);
+            else ManagedWorkRuntime.Completed(pending.Task);
+        }
+        Refuses(CompleteOwner, "managed-work-settlement-refused");
+        if (callback) Refuses(CompleteOwner, "managed-work-double-settle");
+        ExecutionContext.Run(captured, _ =>
+        {
+            Refuses(() => ManagedWorkRuntime.Schedule(Pending().Task), "managed-work-parent-retired");
+            Need(context == (0UL, 0UL));
+        }, null);
+        if (!callback) Refuses(CompleteOwner, "managed-work-double-settle");
+        Refuses(() => ManagedWorkRuntime.Enqueue(item), "managed-work-owner-retired");
+        Refuses(() => { ManagedWorkRuntime.Enter(item); }, "managed-work-execution-parent");
+        Refuses(() => { ManagedWorkRuntime.JoinAcceptedWork(); rootJoinReturned = true; },
+            "managed-work-double-settle");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+        Need(refusedSettlements == 1 && Count(0) == (unknown ? 1 : 2)
+            && Count(3) == 0 && Owners.ContainsKey(original.Item2) != unknown
+            && context.Item1 == 17 && context.Item2 != original.Item2 && Work.Count == 0);
+    }
+    private static void ResultSettlementControl(bool unknown)
+    {
+        var pending = Pending(); ManagedWorkRuntime.Schedule(pending.Task);
+        var originalError = new ArgumentException("control-original-fault");
+        pending.SetException(originalError); ManagedWorkRuntime.Completed(pending.Task);
+        Need(Count(0) == 1 && Count(6) == 1);
+        settlementRefusal = Owners.Single(entry => entry.Value == 6).Key;
+        settlementUnknown = unknown;
+        Refuses(() => ManagedWorkRuntime.Observed(pending.Task), "managed-work-settlement-refused");
+        Refuses(() => ManagedWorkRuntime.Observed(pending.Task), "managed-work-double-settle");
+        AggregateException? received = null;
+        try { ManagedWorkRuntime.JoinAcceptedWork(); rootJoinReturned = true; }
+        catch (AggregateException error) { received = error; }
+        Need(received is not null && ReferenceEquals(received.InnerException, originalError));
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+        Need(!rootJoinReturned && refusedSettlements == 1 && Count(0) == 1
+            && Count(6) == (unknown ? 0 : 1) && Owners.ContainsKey(settlementRefusal) != unknown
+            && Count(3) == 0 && Work.Count == 0);
     }
     private static void Run(string name)
     {
@@ -125,6 +182,12 @@ internal static class StateControl
                     && Count(0) == 2 && Count(3) == 1);
                 break;
             }
+            case "task-settlement-refusal-revokes-context": OwnerSettlementControl(false, false); break;
+            case "task-settlement-unknown-revokes-context": OwnerSettlementControl(false, true); break;
+            case "callback-settlement-refusal-prevents-retry": OwnerSettlementControl(true, false); break;
+            case "callback-settlement-unknown-prevents-retry": OwnerSettlementControl(true, true); break;
+            case "result-settlement-refusal-prevents-finalization": ResultSettlementControl(false); break;
+            case "result-settlement-unknown-prevents-finalization": ResultSettlementControl(true); break;
             case "continuation-failure-before-acceptance": {
                 var pending = Pending(); ManagedWorkRuntime.Continuation(pending.Task);
                 Need(Count(0) == 2); ManagedWorkRuntime.ContinuationFailed(pending.Task);
