@@ -348,6 +348,73 @@ impl PreparedAdmission {
             Err(error) => Err(fenced_error(error)),
         }
     }
+
+    /// Publish an explicit retry or recover the same retry's winning receipt.
+    /// Only a definite engine CAS conflict permits a fresh authorized read.
+    pub fn publish_retry_or_existing(
+        self,
+        store: &EmbeddedStore,
+        input: &AdmissionInput,
+        request: &RetryRequest,
+        current_time: impl FnOnce() -> Result<CommandTime, AtomicError>,
+        final_accept: impl FnOnce() -> Result<(), AtomicError>,
+        mut authorize: impl FnMut(CommandAccess, Option<&CommandRecord>) -> Result<(), AtomicError>,
+    ) -> Result<PublishedAdmission, AtomicError> {
+        if self.record.attempt <= 1
+            || self.record.key != input.key
+            || self.record.fingerprint != fingerprint(&input.fingerprint, input.inbox.as_ref())?
+        {
+            return Err(AtomicError::Invalid);
+        }
+        id(&request.request_id)?;
+        let retry_id = Identity::derive(
+            b"lsf-command-retry-v1\0",
+            &[&self.record.id.0, request.request_id.as_bytes()],
+        );
+        let retry_key =
+            super::record::row_key(Family::Maintenance, b"command-retry-v1\0", retry_id, None);
+        let receipt_bytes = self
+            .batch
+            .mutations
+            .iter()
+            .find(|row| row.key == retry_key)
+            .and_then(|row| row.value.as_deref())
+            .ok_or(AtomicError::Invalid)?;
+        let receipt = super::retry_receipt::RetryReceipt::decode(receipt_bytes)?;
+        receipt.validate_key(&retry_key)?;
+        if receipt.attempt != self.record.attempt
+            || receipt.abort_proof != request.expected_abort
+            || receipt.fingerprint != self.record.fingerprint
+        {
+            return Err(AtomicError::Invalid);
+        }
+        let expected = self.record.encode()?;
+        match store.apply_fenced(self.batch, final_accept) {
+            Ok(()) => {
+                let physical =
+                    super::ownership::AttemptState::new(self.record.clone(), expected.clone());
+                Ok(PublishedAdmission::New(AdmittedCommand {
+                    record: self.record,
+                    expected,
+                    physical,
+                    #[cfg(target_os = "linux")]
+                    payload_session: None,
+                }))
+            }
+            Err(FencedStoreError::Store(latent_state::embedded::StoreError::Conflict)) => {
+                let view = store.snapshot()?;
+                match Self::retry(&view, input, request, current_time()?, &mut authorize)? {
+                    AdmissionDecision::Existing(record)
+                        if record.attempt == self.record.attempt =>
+                    {
+                        Ok(PublishedAdmission::Existing(record))
+                    }
+                    _ => Err(AtomicError::Conflict),
+                }
+            }
+            Err(error) => Err(fenced_error(error)),
+        }
+    }
 }
 impl AdmittedCommand {
     #[must_use]

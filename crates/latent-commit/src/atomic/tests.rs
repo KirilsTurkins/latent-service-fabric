@@ -610,13 +610,103 @@ fn physical_retirement_required_before_durable_abort_and_concurrent_explicit_ret
     else {
         panic!()
     };
+    let AdmissionDecision::New(denied) =
+        PreparedAdmission::retry(&view, &input("retry"), &request(), time(102), permission)
+            .unwrap()
+    else {
+        panic!()
+    };
+    let AdmissionDecision::New(fenced) =
+        PreparedAdmission::retry(&view, &input("retry"), &request(), time(102), permission)
+            .unwrap()
+    else {
+        panic!()
+    };
+    let AdmissionDecision::New(wrong_request) =
+        PreparedAdmission::retry(&view, &input("retry"), &request(), time(102), permission)
+            .unwrap()
+    else {
+        panic!()
+    };
+    let other_request = RetryRequest {
+        request_id: "other-retry".into(),
+        expected_abort: proof,
+    };
+    let AdmissionDecision::New(other) = PreparedAdmission::retry(
+        &view,
+        &input("retry"),
+        &other_request,
+        time(102),
+        permission,
+    )
+    .unwrap() else {
+        panic!()
+    };
+    assert!(matches!(
+        wrong_request.publish_retry_or_existing(
+            &store,
+            &input("retry"),
+            &RetryRequest {
+                request_id: "different-retry".into(),
+                expected_abort: proof,
+            },
+            || panic!("a different retry must not inspect a winner"),
+            || panic!("a different retry must not publish"),
+            permission,
+        ),
+        Err(AtomicError::Invalid)
+    ));
+    assert!(matches!(
+        fenced.publish_retry_or_existing(
+            &store,
+            &input("retry"),
+            &request(),
+            || panic!("a failed final fence must not read a winner"),
+            || Err(AtomicError::PermissionDenied),
+            permission,
+        ),
+        Err(AtomicError::PermissionDenied)
+    ));
     let owner = one.publish(&store, || Ok(())).unwrap();
     assert_eq!(owner.record().attempt(), 2);
     assert!(matches!(
-        two.publish(&store, || panic!(
-            "duplicate retry must fail before acceptance"
-        )),
-        Err(AtomicError::Conflict)
+        other.publish_retry_or_existing(
+            &store,
+            &input("retry"),
+            &other_request,
+            || Ok(time(102)),
+            || panic!("a competing retry must fail before acceptance"),
+            permission,
+        ),
+        Err(AtomicError::RecoveryRequired)
+    ));
+    assert!(matches!(
+        two.publish_retry_or_existing(
+            &store,
+            &input("retry"),
+            &request(),
+            || Ok(time(102)),
+            || panic!("duplicate retry must fail before acceptance"),
+            permission,
+        ),
+        Ok(PublishedAdmission::Existing(record)) if record.attempt() == 2
+    ));
+    assert!(matches!(
+        denied.publish_retry_or_existing(
+            &store,
+            &input("retry"),
+            &request(),
+            || Ok(time(102)),
+            || panic!("duplicate retry must fail before acceptance"),
+            |access, _| {
+                if access == CommandAccess::Replay {
+                    Err(AtomicError::PermissionDenied)
+                } else {
+                    Ok(())
+                }
+            },
+        ),
+        Err(AtomicError::PermissionDenied)
     ));
     drop(view);
     let view = store.snapshot().unwrap();
