@@ -20,9 +20,9 @@ FIXTURE = 'sdk/dotnet-guest/tests/fixtures/managed-work-state-control'
 SOURCES = (FIXTURE+'/Control.csproj', FIXTURE+'/Program.cs', FIXTURE+'/Bindings.cs',
     'sdk/dotnet-guest/tools/http-errors/ManagedWorkRuntime.cs',
     'sdk/dotnet-guest/tools/http-errors/ManagedWorkTimers.cs', 'sdk/dotnet-guest/global.json')
-SETTLEMENT_CASES = (
-    'enqueue-failure-settlement-refusal-retains-owner',
-    'dequeue-settlement-refusal-retains-owner')
+SETTLEMENT_CASES = ('dequeue-settlement-refusal-retains-owner',)
+QUEUE_SETTLEMENT_CASES = (
+    'queue-dequeue-refusal-prevents-retry', 'queue-dequeue-unknown-prevents-retry')
 OWNER_SETTLEMENT_CASES = (
     'task-settlement-refusal-revokes-context',
     'task-settlement-unknown-revokes-context',
@@ -31,15 +31,24 @@ OWNER_SETTLEMENT_CASES = (
 RESULT_SETTLEMENT_CASES = (
     'result-settlement-refusal-prevents-finalization',
     'result-settlement-unknown-prevents-finalization')
+CONVERSION_SETTLEMENT_CASES = (
+    'fault-conversion-refusal-retains-both', 'fault-conversion-unknown-retains-both')
+ROOT_SETTLEMENT_CASES = (
+    'storage-settlement-refusal-fences-root', 'storage-settlement-unknown-fences-root',
+    'root-settlement-refusal-fences-finalization', 'root-settlement-unknown-fences-finalization',
+    'root-context-clear-failure-fences-finalization',
+    'storage-and-context-clear-fail-fences-finalization')
 CASES = (
     'native-task-admission', 'unwrap-inner-actual-completion', 'queued-admission-rollback',
-    'enqueue-failure-releases-both', 'continuation-failure-before-acceptance',
+    'enqueue-failure-retains-uncertain-owners', 'continuation-failure-before-acceptance',
     'local-pop-releases-queue-only', 'join-real-required-task', 'callback-retains-async-void-task',
     'live-descendant-during-closing', 'closing-rejects-independent',
     'unobserved-original-fault-result', 'observed-fault-does-not-become-unhandled',
     'bounded-required-continuations', 'opaque-pending-is-not-quiescent',
-    'untracked-startup-refused-before-admission', *SETTLEMENT_CASES, *OWNER_SETTLEMENT_CASES,
-    *RESULT_SETTLEMENT_CASES)
+    'untracked-startup-refused-before-admission', 'fault-conversion-success-is-idempotent',
+    'fault-conversion-at-record-capacity', 'multiple-fault-conversions-retain-distinct-tokens',
+    *SETTLEMENT_CASES, *QUEUE_SETTLEMENT_CASES, *OWNER_SETTLEMENT_CASES, *RESULT_SETTLEMENT_CASES,
+    *CONVERSION_SETTLEMENT_CASES, *ROOT_SETTLEMENT_CASES)
 
 
 def verify(dotnet: Path, output: Path) -> dict:
@@ -65,8 +74,14 @@ def verify(dotnet: Path, output: Path) -> dict:
         expected = {'control': name, 'passed': True, 'registryCore': 'production-source',
             'nativeLedger': 'explicit-test-port', 'dispatcher': 'explicit-test-port',
             'actualClrTasks': True, 'guestQualified': False}
-        if name in SETTLEMENT_CASES:
+        if name == 'multiple-fault-conversions-retain-distinct-tokens':
+            expected.update(settlementRefusals=2, retainedTasks=3, retainedResults=2, rootSuccess=False)
+        elif name in SETTLEMENT_CASES:
             expected.update(settlementRefusals=1, retainedTasks=2, retainedQueuedOwners=1,
+                            controlDispatches=0, automaticRetries=0, rootSuccess=False)
+        elif name in QUEUE_SETTLEMENT_CASES:
+            expected.update(settlementRefusals=1, retainedTasks=2,
+                            retainedQueuedOwners=0 if '-unknown-' in name else 1,
                             controlDispatches=0, automaticRetries=0, rootSuccess=False)
         elif name in OWNER_SETTLEMENT_CASES:
             expected.update(settlementRefusals=1, retainedTasks=1 if '-unknown-' in name else 2,
@@ -74,6 +89,19 @@ def verify(dotnet: Path, output: Path) -> dict:
         elif name in RESULT_SETTLEMENT_CASES:
             expected.update(settlementRefusals=1, retainedTasks=1, retainedQueuedOwners=0,
                             controlDispatches=0, automaticRetries=0, rootSuccess=False)
+        elif name in CONVERSION_SETTLEMENT_CASES:
+            expected.update(settlementRefusals=1, retainedTasks=1 if '-unknown-' in name else 2,
+                            retainedQueuedOwners=0, controlDispatches=0, automaticRetries=0, rootSuccess=False)
+        elif name in ROOT_SETTLEMENT_CASES:
+            is_storage = name.startswith('storage-')
+            is_unknown = '-unknown-' in name
+            is_context_failure = 'context-clear-fail' in name
+            context_only = name == 'root-context-clear-failure-fences-finalization'
+            expected.update(settlementRefusals=0 if context_only else 1,
+                            retainedTasks=0 if context_only or (is_unknown and not is_storage) else 1,
+                            retainedNativeOwners=1 if is_storage and not is_unknown else 0,
+                            rootSettlements=0 if is_storage else 1, storageSettlements=1,
+                            contextClearAttempts=1 if is_context_failure else 0, finalizationSuccess=False)
         require(len(raw) <= 1024 and json.loads(raw) == expected, 'managed-work-state-control-result')
         rows.append(expected)
     require(inventory(snapshot(source)) == before, 'managed-work-state-control-source-changed')
@@ -90,6 +118,8 @@ TIMER_CASES = (
     'one-shot-delete-is-not-callback-return', 'multiple-queued-callbacks-retain-one-timer',
     'disposed-queued-callback-retires-after-cancelled-fire', 'callback-required-task-survives-return',
     'live-timer-descendant-during-closing', 'callback-throw-never-refunds-original-running-owner',
+    'timer-queue-fault-before-insertion-retains-owners', 'timer-queue-fault-after-insertion-retains-owners',
+    'timer-queue-refusal-fences-readmission', 'timer-queue-unknown-fences-readmission',
     'timer-settlement-refusal-restores-context', 'timer-settlement-refusal-prevents-retry',
     'timer-settlement-unknown-outcome-prevents-retry',
     'timer-settlement-refusal-revokes-captured-context',

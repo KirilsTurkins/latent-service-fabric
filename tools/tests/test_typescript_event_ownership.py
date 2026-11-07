@@ -141,8 +141,27 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
         name = 'StarlingMonkey/builtins/web/event/event-target.cpp'
         start = b'bool EventTarget::inner_invoke('
         end = b'JSObject *EventTarget::create('
-        self.assertEqual(before[name][before[name].index(start):before[name].index(end)],
-                         derived[name][derived[name].index(start):derived[name].index(end)])
+        original = before[name][before[name].index(start):before[name].index(end)]
+        changed = derived[name][derived[name].index(start):derived[name].index(end)]
+        previous = b'      return true;\n'
+        replacement = b'      break; // remove already-fired once listeners before returning\n'
+        self.assertEqual(changed.count(replacement), 1)
+        changed = changed.replace(replacement, previous, 1)
+        changed = changed.replace(b'  bool listeners_removed = false;\n  bool invocation_failed = false;\n',
+                                  b'  bool listeners_removed = false;\n', 1)
+        changed = changed.replace(b'        invocation_failed = true;\n        break;\n',
+                                  b'        return false;\n', 1)
+        changed = changed.replace(b'  return !invocation_failed;\n', b'  return true;\n', 1)
+        self.assertEqual(changed, original)
+        dispatch_start = b'bool EventTarget::dispatch(JSContext *cx'
+        dispatch_end = b'bool EventTarget::invoke_listeners('
+        original_dispatch = before[name][before[name].index(dispatch_start):before[name].index(dispatch_end)]
+        changed_dispatch = derived[name][derived[name].index(dispatch_start):derived[name].index(dispatch_end)]
+        changed_dispatch = changed_dispatch.replace(b'  const bool invoked = invoke_listeners(cx, target, event);\n',
+            b'  if (!invoke_listeners(cx, target, event)) {\n    return false;\n  }\n', 1)
+        changed_dispatch = changed_dispatch.replace(
+            b'  if (!invoked) return false; // preserve the original pending exception\n', b'', 1)
+        self.assertEqual(changed_dispatch, original_dispatch)
         abort = (FIXTURES/'original-abort-signal.cpp').read_bytes()
         begin = b'bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason)'
         ending = b'JSObject *AbortSignal::create('
@@ -209,6 +228,60 @@ class EventPublicationControls(unittest.TestCase):
             raise AssertionError((result.stdout + result.stderr)[:65536].decode(errors='replace'))
         if not cls.binary.is_file() or cls.binary.stat().st_size > 4*1024**2:
             raise AssertionError('finite event publication control required')
+        inner = selected.index(b'bool EventTarget::inner_invoke(')
+        stop_start = selected.index(b'    if (Event::has_flag(event, EventFlag::StopImmediatePropagation)) {', inner)
+        stop_end = selected.index(b'\n    }', stop_start) + len(b'\n    }')
+        cleanup_start = selected.index(b'  if (listeners_removed) {', stop_end)
+        cleanup_end = selected.index(b'\n  }', cleanup_start) + len(b'\n  }')
+        getter_start = selected.index(b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn)) {', inner)
+        getter_end = selected.index(b'\n      }', getter_start) + len(b'\n      }')
+        failure_flag = (b'    bool invocation_failed = false;' if
+                        b'  bool invocation_failed = false;' in selected[inner:stop_start] else b'')
+        return_start = selected.index(b'  return ', cleanup_end)
+        return_end = selected.index(b'\n', return_start)
+        dispatch = (root/'tools/tests/fixtures/typescript_once_dispatch.cpp').read_bytes()
+        for marker, actual in ((b'      // INSERT_EMITTED_STOP_BLOCK', selected[stop_start:stop_end]),
+                               (b'    // INSERT_EMITTED_CLEANUP_BLOCK', selected[cleanup_start:cleanup_end]),
+                               (b'    // INSERT_FAILURE_FLAG', failure_flag),
+                               (b'        // INSERT_EMITTED_GETTER_BLOCK', selected[getter_start:getter_end]),
+                               (b'    // INSERT_EMITTED_INNER_RETURN', selected[return_start:return_end])):
+            if dispatch.count(marker) != 1:
+                raise AssertionError('unique emitted dispatch insertion point required')
+            dispatch = dispatch.replace(marker, actual)
+        dispatch_source = output/'once_dispatch.cpp'
+        dispatch_source.write_bytes(dispatch)
+        cls.dispatch_binary = output/('once_dispatch.exe' if os.name == 'nt' else 'once_dispatch')
+        if Path(compiler).stem.lower() == 'cl':
+            args = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX', str(dispatch_source),
+                    '/Fe:' + str(cls.dispatch_binary), '/Fo:' + str(output/'once_dispatch.obj')]
+        else:
+            args = [compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror',
+                    str(dispatch_source), '-o', str(cls.dispatch_binary)]
+        result = subprocess.run(args, capture_output=True, timeout=60)
+        if result.returncode or len(result.stdout) + len(result.stderr) > 65536:
+            raise AssertionError((result.stdout + result.stderr)[:65536].decode(errors='replace'))
+        dispatch_function = selected.index(b'bool EventTarget::dispatch(JSContext *cx')
+        completion_start = selected.index(b'  // 7. Set event\'s eventPhase attribute to NONE.', dispatch_function)
+        invoked_start = selected.rfind(b'  const bool invoked = ', dispatch_function, completion_start)
+        if invoked_start < 0:
+            invoked_start = selected.index(b'  if (!invoke_listeners(cx, target, event)) {', dispatch_function)
+        completion_end = selected.index(b'\n}', completion_start)
+        event_fixture = (root/'tools/tests/fixtures/typescript_event_dispatch_error.cpp').read_bytes()
+        event_marker = b'  // INSERT_EMITTED_DISPATCH_COMPLETION'
+        if event_fixture.count(event_marker) != 1:
+            raise AssertionError('unique dispatch completion insertion point required')
+        event_source = output/'event_error_dispatch.cpp'
+        event_source.write_bytes(event_fixture.replace(event_marker, selected[invoked_start:completion_end]))
+        cls.event_binary = output/('event_error_dispatch.exe' if os.name == 'nt' else 'event_error_dispatch')
+        if Path(compiler).stem.lower() == 'cl':
+            args = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX', str(event_source),
+                    '/Fe:' + str(cls.event_binary), '/Fo:' + str(output/'event_error_dispatch.obj')]
+        else:
+            args = [compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror',
+                    str(event_source), '-o', str(cls.event_binary)]
+        result = subprocess.run(args, capture_output=True, timeout=60)
+        if result.returncode or len(result.stdout) + len(result.stderr) > 65536:
+            raise AssertionError((result.stdout + result.stderr)[:65536].decode(errors='replace'))
 
     def test_registration_and_reactivation_failure_boundaries(self):
         for case in (
@@ -225,6 +298,27 @@ class EventPublicationControls(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
                 self.assertEqual(json.loads(result.stdout),
                                  {'case': case, 'passed': True, 'engineQualified': False})
+
+    def test_once_listener_physically_retires_after_immediate_stop(self):
+        for case in ('once-immediate-stop-retires-listener', 'once-without-stop-cleans-up',
+                     'ordinary-stop-keeps-listeners'):
+            with self.subTest(case=case):
+                result = subprocess.run([str(self.dispatch_binary), case], capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
+                self.assertEqual(json.loads(result.stdout),
+                                 {'case': case, 'passed': True, 'engineQualified': False})
+
+    def test_listener_lookup_error_runs_retirement_and_dispatch_cleanup(self):
+        for binary, cases in (
+                (self.dispatch_binary, ('once-getter-failure-retires-listener',)),
+                (self.event_binary, ('lookup-error-resets-dispatch', 'success-resets-dispatch',
+                                     'success-preserves-canceled-result'))):
+            for case in cases:
+                with self.subTest(case=case):
+                    result = subprocess.run([str(binary), case], capture_output=True, timeout=10)
+                    self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
+                    self.assertEqual(json.loads(result.stdout),
+                                     {'case': case, 'passed': True, 'engineQualified': False})
 
 
 if __name__ == '__main__':

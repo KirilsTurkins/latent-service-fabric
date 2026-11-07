@@ -98,6 +98,51 @@ internal static class TimerControl
         Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-timers");
         Need(context == outer && timerSettlementAttempts == 1 && Count(5) == (failAfterSettlement ? 0 : 1));
     }
+    private static void QueueSettlementControl(bool unknown)
+    {
+        var item = Arm();
+        for (int i = 0; i < 2; i++) { ManagedWorkRuntime.TimerAccepted(item); ManagedWorkRuntime.Enqueue(item); }
+        var original = ManagedWorkRuntime.QueuedTokenForControl(item)
+            ?? throw new InvalidOperationException("timer-control-missing-queue-token");
+        failingSettlement = original.Id; failAfterSettlement = unknown;
+        Refuses(() => ManagedWorkRuntime.Dequeue(item), "control-timer-settlement-failed");
+        Refuses(() => ManagedWorkRuntime.Enqueue(item), "managed-work-queue-uncertain");
+        ManagedWorkRuntime.EnqueueFailed(item);
+        Refuses(() => ManagedWorkRuntime.Dequeue(item), "managed-work-queue-uncertain");
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-queue");
+        Need(timerSettlementAttempts == 1 && Count(3) == (unknown ? 1 : 2)
+            && Count(5) == 1 && ManagedWorkRuntime.QueuedTokenForControl(item) == original);
+    }
+    private static void QueueFaultControl(bool afterInsertion)
+    {
+        var item = Arm(); var physical = new List<object>();
+        ManagedWorkRuntime.TimerAccepted(item); ManagedWorkRuntime.Enqueue(item); physical.Add(item);
+        var first = ManagedWorkRuntime.QueuedTokenForControl(item)
+            ?? throw new InvalidOperationException("timer-control-missing-queue-token");
+        ManagedWorkRuntime.TimerAccepted(item); ManagedWorkRuntime.Enqueue(item);
+        var second = Owners.Single(entry => entry.Value == 3 && entry.Key != first.Id).Key;
+        bool originalFailure = false;
+        try
+        {
+            try
+            {
+                if (afterInsertion) physical.Add(item);
+                throw new InvalidOperationException("control-original-enqueue-failure");
+            }
+            catch { ManagedWorkRuntime.EnqueueFailed(item); throw; }
+        }
+        catch (InvalidOperationException error) when (error.Message == "control-original-enqueue-failure")
+        { originalFailure = true; }
+        Need(originalFailure && physical.Count == (afterInsertion ? 2 : 1));
+        if (!Owners.ContainsKey(first.Id)) throw new InvalidOperationException("timer-control-original-owner-refunded");
+        Need(Count(3) == 2 && Owners.ContainsKey(second));
+        Refuses(() => ManagedWorkRuntime.Dequeue(item), "managed-work-queue-uncertain");
+        Refuses(() => ManagedWorkRuntime.Enqueue(item), "managed-work-queue-uncertain");
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-queue");
+        Need(Count(3) == 2 && Owners.ContainsKey(first.Id) && Owners.ContainsKey(second));
+    }
     private static void Run(string name)
     {
         if (name == "native-storage-refusal-rolls-back-root")
@@ -132,6 +177,10 @@ internal static class TimerControl
                 Need(Count(5) == 1); Fire(item, () => Need(Count(5) == 1 && context.Item2 != 0));
                 Need(Count(5) == 0); Finish(); break;
             }
+            case "timer-queue-fault-before-insertion-retains-owners": QueueFaultControl(false); break;
+            case "timer-queue-fault-after-insertion-retains-owners": QueueFaultControl(true); break;
+            case "timer-queue-refusal-fences-readmission": QueueSettlementControl(false); break;
+            case "timer-queue-unknown-fences-readmission": QueueSettlementControl(true); break;
             case "multiple-queued-callbacks-retain-one-timer": {
                 var item = Arm();
                 for (int i = 0; i < 2; i++) { ManagedWorkRuntime.TimerAccepted(item); ManagedWorkRuntime.Enqueue(item); }

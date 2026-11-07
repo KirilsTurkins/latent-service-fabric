@@ -5,6 +5,13 @@ namespace Lsf.CompilerOwned;
 // replacement or qualification of the original CoreLib producer/native ledger.
 public static partial class ManagedWorkRuntime
 {
+    internal static (ulong Generation, ulong Id)? QueuedTokenForControl(object item)
+    {
+        foreach (var pending in queued!)
+            if (pending is not null && ReferenceEquals(pending.Item, item)) return pending.Token;
+        return null;
+    }
+
     private static partial bool TimerScheduled(object item) => ((TimerControl.State)item).Scheduled;
     private static partial int TimerCallbacks(object item) => ((TimerControl.State)item).Callbacks;
     private static partial object? ContextValue(ExecutionContext? context) => null;

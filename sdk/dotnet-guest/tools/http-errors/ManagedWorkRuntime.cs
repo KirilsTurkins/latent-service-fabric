@@ -28,6 +28,7 @@ public static partial class ManagedWorkRuntime
         internal Task? Outer;
         internal Task? Inner;
         internal (ulong Generation, ulong Id) Token;
+        internal (ulong Generation, ulong Id) PendingResult;
         internal bool Active;
         internal bool Root;
         internal bool Timer;
@@ -41,6 +42,7 @@ public static partial class ManagedWorkRuntime
         internal object Item = null!;
         internal Record Owner = null!;
         internal (ulong Generation, ulong Id) Token;
+        internal bool Uncertain;
     }
 
     private sealed class Required
@@ -252,8 +254,12 @@ public static partial class ManagedWorkRuntime
         int index = -1;
         for (int i = 0; i < MaximumQueued; i++)
         {
-            if (queued![i] is not null && ReferenceEquals(queued[i]!.Item, item) && FindTimer(item) is null)
-                throw new InvalidOperationException("managed-work-duplicate-enqueue");
+            if (queued![i] is { } existing && ReferenceEquals(existing.Item, item))
+            {
+                if (existing.Uncertain)
+                    throw new InvalidOperationException("managed-work-queue-uncertain");
+                if (FindTimer(item) is null) throw new InvalidOperationException("managed-work-duplicate-enqueue");
+            }
             if (index < 0 && queued[i] is null) index = i;
         }
         if (index < 0) throw new InvalidOperationException("managed-work-queue-record-limit");
@@ -294,26 +300,26 @@ public static partial class ManagedWorkRuntime
     public static void EnqueueFailed(object item)
     {
         if (!installed) return;
-        for (int i = 0; i < MaximumQueued; i++)
-            if (queued![i] is { } pending && ReferenceEquals(pending.Item, item))
-            {
-                // A refused acknowledgement must retain this exact queued owner.
-                // Retention after a terminal trap is not permission to retry it.
-                settle!(pending.Token.Generation, pending.Token.Id);
-                queued[i] = null;
-                if (pending.Owner.Completion is null && !pending.Owner.Root) Release(pending.Owner);
-                return;
-            }
+        // The original queue can throw after insertion. It passes only the
+        // item to this hook, so duplicate occurrences cannot be distinguished.
+        // Keep all matching owners charged and refuse further use until teardown.
+        foreach (var pending in queued!)
+            if (pending is not null && ReferenceEquals(pending.Item, item))
+                pending.Uncertain = true;
     }
 
     public static void Dequeue(object item)
     {
         if (!installed) return;
+        foreach (var existing in queued!)
+            if (existing is not null && ReferenceEquals(existing.Item, item) && existing.Uncertain)
+                throw new InvalidOperationException("managed-work-queue-uncertain");
         for (int i = 0; i < MaximumQueued; i++)
             if (queued![i] is { } pending && ReferenceEquals(pending.Item, item))
             {
-                // A refused acknowledgement must retain this exact queued owner.
-                // Retention after a terminal trap is not permission to retry it.
+                // The host may have settled before trapping; retain this
+                // exact queue record but never submit its token again.
+                pending.Uncertain = true;
                 settle!(pending.Token.Generation, pending.Token.Id);
                 queued[i] = null;
                 return;
@@ -416,12 +422,20 @@ public static partial class ManagedWorkRuntime
 
     private static void Finish(Record owner)
     {
+        if (!owner.Active) throw new InvalidOperationException("managed-work-double-settle");
+        if (owner.Result) return;
         if (owner.Completion is { } task && task.IsFaulted && !owner.Observed)
         {
             var result = Reserve(ResultKind, owner);
+            // Keep both tokens reachable until the original Task settlement is
+            // confirmed; a failed or ambiguous acknowledgement is never retried.
+            owner.PendingResult = result;
+            owner.Active = false;
             settle!(owner.Token.Generation, owner.Token.Id);
             owner.Token = result;
+            owner.PendingResult = default;
             owner.Result = true;
+            owner.Active = true;
         }
         else Release(owner);
     }
@@ -496,6 +510,8 @@ public static partial class ManagedWorkRuntime
     public static void FinishedPhysicalDrain()
     {
         if (!installed || !closing) throw new InvalidOperationException("managed-work-finalization-state");
+        var finalRoot = root ?? throw new InvalidOperationException("managed-work-finalization-state");
+        if (!finalRoot.Active) throw new InvalidOperationException("managed-work-finalization-uncertain");
         foreach (var owner in records!) if (owner is not null && !owner.Root)
             throw new InvalidOperationException("managed-work-finalization-owners");
         foreach (var item in queued!) if (item is not null)
@@ -504,8 +520,21 @@ public static partial class ManagedWorkRuntime
             throw new InvalidOperationException("managed-work-finalization-timers");
         foreach (var item in required!) if (item is not null)
             throw new InvalidOperationException("managed-work-finalization-continuations");
-        settle!(storage.Generation, storage.Id);
-        Release(root!);
+        // Fence the entire terminal sequence before either host call: an
+        // exception may follow settlement of storage, the root, or both.
+        finalRoot.Active = false;
+        try
+        {
+            settle!(storage.Generation, storage.Id);
+            settle!(finalRoot.Token.Generation, finalRoot.Token.Id);
+        }
+        catch
+        {
+            // Clearing the adapter context must not replace the settlement
+            // failure; the inactive root still fences any later finalization.
+            try { current!.Value = null; } catch { }
+            throw;
+        }
         current!.Value = null;
         installed = false;
         records = null; queued = null; required = null; timers = null; current = null; root = null;
