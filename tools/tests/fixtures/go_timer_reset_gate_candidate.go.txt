@@ -11,8 +11,10 @@ type unit struct{}
 type lsfTimerSlot struct { token [2]uint64; weak unsafe.Pointer; callback bool }
 type lsfTokenResult struct { tag, padding uint32; generation, id uint64 }
 type lsfUnitResult struct { tag, failure byte }
-type timer struct { isChan bool; lsfToken [2]uint64; lsfSlot uint32; lsfGate chan struct{}; active bool; period int64 }
-type timeTimer struct { timer; isFake bool }
+type mutex struct{}
+type hchan struct { timer *timer; dataqsiz uint }
+type timer struct { isChan bool; lsfToken [2]uint64; lsfSlot uint32; active bool; period int64; sendLock mutex }
+type timeTimer struct { c unsafe.Pointer; init bool; timer; isFake bool; lsfGate chan struct{} }
 type g struct { lsfOwner [2]uint64; bubble *byte }
 type lsfTimerWait struct { token [2]uint64; stopped bool; done chan unit }
 type taskState struct { timerWaits []*lsfTimerWait }
@@ -28,13 +30,23 @@ var hostOwners map[[2]uint64]bool
 var retiredOld chan struct{}
 var enteredFence chan struct{}
 var resetHook func(*timer)
+var fixtureChannel *hchan
+var denyTimerAdmission bool
+const lockRankTimerSend = 0
 func getg() *g { return &currentG }
 func nanotime() int64 { return 100 }
 func racerelease(unsafe.Pointer) {}
 func fatal(s string) { panic(s) }
+func throw(s string) { panic(s) }
 func lsfFail(s string) { panic(s) }
 func lsfMaybeWakeTimerDrain() {}
 func controlledFenceReceive(wait *lsfTimerWait) { close(enteredFence); <-wait.done }
+func lockInit(*mutex, int) {}
+func (t *timer) init(func(any, uintptr, int64), any) {}
+func (t *timer) trace(string) {}
+func (t *timer) modify(when, period int64, _ func(any, uintptr, int64), _ any, _ uintptr) bool {
+    return t.reset(when, period)
+}
 func (t *timer) stop() bool { previous := t.active; t.active=false; return previous }
 func (t *timer) reset(_, period int64) bool {
     previous:=t.active; t.active=true; t.period=period
@@ -43,6 +55,7 @@ func (t *timer) reset(_, period int64) bool {
 func internal_weak_runtime_registerWeakPointer(p unsafe.Pointer) unsafe.Pointer { return p }
 func internal_weak_runtime_makeStrongFromWeak(p unsafe.Pointer) unsafe.Pointer { return p }
 func lsfTimerStart(_ int64, _ int32, _ int64, _ int32, _, _ int64, result unsafe.Pointer) {
+    if denyTimerAdmission { *(*lsfTokenResult)(result)=lsfTokenResult{tag:1};return }
     lastID++;token:=[2]uint64{7,lastID};hostOwners[token]=true
     *(*lsfTokenResult)(result)=lsfTokenResult{generation:token[0],id:token[1]}
 }
@@ -53,10 +66,10 @@ func lsfTimerStop(generation,id int64,result unsafe.Pointer) {
     if retiredOld!=nil && token==[2]uint64{7,1} { retiredOld<-struct{}{} }
 }
 func fixture() (*timeTimer,*lsfTimerWait) {
-    runtime.GOMAXPROCS(1);lsfTimerSlots=nil;lsfTimerCallbacks=0;lastID=1;resetHook=nil
-    hostOwners=map[[2]uint64]bool{{7,1}:true}
-    current:=&timeTimer{timer:timer{isChan:true,active:true,lsfGate:make(chan struct{},1)}}
-    current.lsfGate<-struct{}{};lsfInstallTimer(&current.timer,[2]uint64{7,1})
+    runtime.GOMAXPROCS(1);lsfTimerSlots=nil;lsfTimerCallbacks=0;lastID=0;resetHook=nil;denyTimerAdmission=false
+    hostOwners=map[[2]uint64]bool{}
+    fixtureChannel=&hchan{dataqsiz:1}
+    current:=newTimer(200,0,nil,nil,fixtureChannel)
     wait:=&lsfTimerWait{token:[2]uint64{7,1},done:make(chan unit)}
     state=&taskState{timerWaits:[]*lsfTimerWait{wait}};enteredFence=make(chan struct{});retiredOld=make(chan struct{},1)
     return current,wait
@@ -78,6 +91,22 @@ func expectOwners(t *testing.T,current *timeTimer,count int,active bool) {
     t.Helper();slots:=0;for _,slot:=range lsfTimerSlots { if slot.token[1]!=0 { slots++ } }
     if len(hostOwners)!=count || slots!=count || current.active!=active || (count==1 && !hostOwners[current.lsfToken]) {
         t.Fatalf("owners=%v slots=%d token=%v active=%v",hostOwners,slots,current.lsfToken,current.active)
+    }
+}
+func TestNewTimerConstructsAndPublishesSeededGate(t *testing.T) {
+    current,_:=fixture()
+    if !current.init || fixtureChannel.timer != &current.timer || cap(current.lsfGate)!=1 || len(current.lsfGate)!=1 {
+        t.Fatal("newTimer did not return the published timer with one gate token")
+    }
+    expectOwners(t,current,1,true)
+}
+func TestNewTimerAdmissionFailureDoesNotPublish(t *testing.T) {
+    lsfTimerSlots=nil;lsfTimerCallbacks=0;hostOwners=map[[2]uint64]bool{};denyTimerAdmission=true
+    defer func(){denyTimerAdmission=false}()
+    channel:=&hchan{dataqsiz:1};var caught any
+    func(){defer func(){caught=recover()}();newTimer(200,0,nil,nil,channel)}()
+    if caught!="LSF timer admission denied" || channel.timer!=nil || len(hostOwners)!=0 || len(lsfTimerSlots)!=0 {
+        t.Fatalf("admission=%v timer=%v owners=%v slots=%v",caught,channel.timer,hostOwners,lsfTimerSlots)
     }
 }
 func TestResetResetSerializesAndKeepsBothTrue(t *testing.T) {

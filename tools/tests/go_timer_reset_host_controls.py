@@ -74,12 +74,26 @@ def host_source(candidate):
     time_source = emitted_time_source()
     bridge = (ROOT / 'sdk/go-guest/runtime/timer_bridge.go.in').read_text(encoding='utf-8')
     async_source = (ROOT / 'sdk/go-guest/runtime/timer_async.go.in').read_text(encoding='utf-8')
-    names = ('resetTimer', 'stopTimer') if candidate else ('resetTimer',)
+    names = ('newTimer', 'resetTimer', 'stopTimer') if candidate else ('resetTimer',)
     functions = [extract(time_source, name) for name in names]
     if candidate:
-        # This is an injected model, not shipped timer code. The fixture seeds
-        # its channel directly; real newTimer publication is not exercised.
-        for index, word in enumerate(('active', 'stopped')):
+        # Inject the proposed construction into the real transformed newTimer,
+        # before it publishes the timer to its channel or owner inventory. This
+        # is still a host model and does not alter the compiled guest runtime.
+        constructor = functions[0]
+        allocation = '\tt := new(timeTimer)'
+        if constructor.count(allocation) != 1:
+            raise ValueError('go-timer-host-control-constructor-allocation-drift')
+        gate = '\tt.lsfGate = make(chan struct{}, 1)\n\tt.lsfGate <- struct{}{}'
+        constructor = constructor.replace(allocation, allocation + '\n' + gate)
+        if not (constructor.index('\tlsfToken := lsfReserveTimer(when, period)')
+                < constructor.index(allocation) < constructor.index(gate)
+                < constructor.index('\tc.timer = &t.timer')
+                < constructor.index('\tlsfInstallTimer(&t.timer, lsfToken)')
+                < constructor.index('\tt.init = true')):
+            raise ValueError('go-timer-host-control-constructor-order-drift')
+        functions[0] = constructor
+        for index, word in enumerate(('active', 'stopped'), start=1):
             original = '\t' + word + ' := t.stop()'
             if functions[index].count(original) != 1:
                 raise ValueError('go-timer-host-control-gate-injection-drift')
@@ -112,6 +126,8 @@ def assert_source_binding(case):
     candidate = host_source(True)
     case.assertNotIn('<-t.lsfGate', baseline)
     case.assertEqual(candidate.count('<-t.lsfGate'), 2)
+    case.assertEqual(candidate.count('t.lsfGate = make(chan struct{}, 1)'), 1)
+    case.assertIn('func newTimer(', candidate)
     case.assertIn('controlledFenceReceive(wait)', baseline)
     case.assertIn('controlledFenceReceive(wait)', candidate)
 
@@ -143,7 +159,9 @@ def run_host_doubles(case, go):
             print('Go timer host double: expected baseline duplicate-owner defect reproduced', flush=True)
         else:
             case.assertEqual(result.returncode, 0, output)
-            for name in ('TestResetResetSerializesAndKeepsBothTrue',
+            for name in ('TestNewTimerConstructsAndPublishesSeededGate',
+                         'TestNewTimerAdmissionFailureDoesNotPublish',
+                         'TestResetResetSerializesAndKeepsBothTrue',
                          'TestResetStopSerializesAndLeavesStopped',
                          'TestStopResetSerializesAndReturnsFalseForReset',
                          'TestStopStopSerializesAndSecondIsFalse',
