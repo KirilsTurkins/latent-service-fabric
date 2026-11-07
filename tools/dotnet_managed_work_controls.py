@@ -22,7 +22,7 @@ SOURCES = (FIXTURE+'/Control.csproj', FIXTURE+'/Program.cs', FIXTURE+'/Bindings.
     'sdk/dotnet-guest/tools/http-errors/ManagedWorkRuntime.cs',
     'sdk/dotnet-guest/tools/http-errors/ManagedWorkTimers.cs', 'sdk/dotnet-guest/global.json',
     'tools/dotnet_guest/async_exports.py', BRIDGE_FIXTURE)
-BRIDGE_CASES = tuple((kind, mode) for kind in (0, 3, 6)
+BRIDGE_CASES = tuple((kind, mode) for kind in (0, 3, 5, 6)
     for mode in ('refusal', 'ok', 'zero-both', 'zero-generation', 'zero-id', 'exception')) + (
     (7, 'refusal'), (7, 'ok'))
 SETTLEMENT_CASES = ('dequeue-settlement-refusal-retains-owner',)
@@ -191,6 +191,13 @@ def verify(dotnet: Path, output: Path) -> dict:
 
 TIMER_CASES = (
     'native-storage-refusal-rolls-back-root', 'timer-admission-before-mutation-and-fresh',
+    'timer-reservation-unknown-retains-custody',
+    'timer-reservation-malformed-generation-retains-custody', 'timer-reservation-malformed-id-retains-custody',
+    'timer-reservation-reentry-preserves-distinct-owners',
+    'timer-reservation-refusal-reentry-preserves-custody',
+    'timer-allocation-reentry-reuses-same-owner', 'timer-allocation-reentry-preserves-other-owner',
+    'timer-second-allocation-reentry-preserves-other-owner',
+    'timer-allocation-fences-retired-parent',
     'change-reuses-original-owner', 'failed-change-rolls-back-unused-owner',
     'one-shot-delete-is-not-callback-return', 'multiple-queued-callbacks-retain-one-timer',
     'disposed-queued-callback-retires-after-cancelled-fire', 'callback-required-task-survives-return',

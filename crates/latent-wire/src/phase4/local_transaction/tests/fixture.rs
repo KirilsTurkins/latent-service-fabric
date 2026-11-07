@@ -743,12 +743,16 @@ impl Fixture {
         self.wire().await;
     }
     pub async fn deploy_compatible_revision(&mut self) -> latent_routing::ResolvedRevision {
+        let resolved = self.apply_compatible_revision().await;
+        self.restart().await;
+        resolved
+    }
+    pub(super) async fn apply_compatible_revision(&mut self) -> latent_routing::ResolvedRevision {
         // A transport ceiling is mutable and changes the actual deployment
         // revision while preserving the command's immutable business inputs.
         self.deployment.resources.cpu_fuel -= 1;
         self.routes.apply(self.deployment.clone()).await.unwrap();
-        let resolved = self
-            .routes
+        self.routes
             .pin()
             .unwrap()
             .resolve(
@@ -761,9 +765,7 @@ impl Fixture {
                 },
                 Some("rollout-probe"),
             )
-            .unwrap();
-        self.restart().await;
-        resolved
+            .unwrap()
     }
     pub async fn namespace_transition(
         &self,

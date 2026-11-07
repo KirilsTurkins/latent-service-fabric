@@ -225,6 +225,33 @@ function recoveredAbortAnyFrame(source: AbortController): string {
   return 'abort-any:refusal:closed:recovered';
 }
 
+function abortDefaultReason(): string {
+  for (let turn = 0; turn < 2; ++turn) {
+    const source = new AbortController();
+    const first = AbortSignal.any([source.signal]);
+    const second = AbortSignal.any([source.signal]);
+    let firstEvents = 0, secondEvents = 0;
+    let firstObserved: unknown, secondObserved: unknown;
+    first.addEventListener('abort', () => { ++firstEvents; firstObserved = first.reason; });
+    second.addEventListener('abort', () => { ++secondEvents; secondObserved = second.reason; });
+    if (turn === 0) source.abort(); else source.abort(undefined);
+    const reason = source.signal.reason;
+    source.abort({kind: 'ignored-second-abort'});
+    const alreadyAborted = AbortSignal.any([source.signal]);
+    if (!reason || typeof reason !== 'object' || reason.name !== 'AbortError' ||
+        !first.aborted || !second.aborted || !alreadyAborted.aborted ||
+        first.reason !== reason || second.reason !== reason || alreadyAborted.reason !== reason ||
+        firstObserved !== reason || secondObserved !== reason || firstEvents !== 1 || secondEvents !== 1)
+      throw new Error('abort-default-reason-identity');
+    for (const signal of [source.signal, first, second, alreadyAborted]) {
+      let caught: unknown;
+      try { signal.throwIfAborted(); } catch (error) { caught = error; }
+      if (caught !== reason) throw new Error('abort-default-thrown-reason');
+    }
+  }
+  return 'abort-default:shared:2:thrown';
+}
+
 export const api: typeof Contract = {
   async run(mode, url) {
     if (mode === 1) return 'entered';
@@ -248,6 +275,7 @@ export const api: typeof Contract = {
       await Promise.resolve();
       return recoveredAbortAnyFrame(source);
     }
+    if (mode === 26) return abortDefaultReason();
     if (mode !== 0) throw new TypeError('unsupported-fetch-runtime-mode');
     return `${++calls}:${await request(url)}`;
   },

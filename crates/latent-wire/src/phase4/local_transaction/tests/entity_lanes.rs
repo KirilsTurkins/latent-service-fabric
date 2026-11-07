@@ -341,6 +341,79 @@ async fn duplicate_of_queued_entity_waits_for_its_original_claim() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 #[ignore = "Requires the maintained compiled Rust transaction guest"]
+async fn queued_entity_keeps_its_original_revision_after_compatible_route_change() {
+    let mut f = Fixture::with_concurrent_commands(true).await;
+    authorize_entity(&f, "hot");
+    let first_adapter = f.adapter();
+    let first = tokio::spawn(async move {
+        first_adapter
+            .invoke_command(context("alice").request(entity_command("pin-owner", 1)))
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(5), f.backend.imports.entered.notified())
+        .await
+        .unwrap();
+    let queued_adapter = f.adapter();
+    let queued = tokio::spawn(async move {
+        queued_adapter
+            .invoke_command(context("alice").request(entity_command("pin-queued", 1)))
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while f
+            .owners
+            .as_ref()
+            .unwrap()
+            .entity_lanes_snapshot()
+            .unwrap()
+            .queued
+            != 1
+        {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    let current = f.apply_compatible_revision().await;
+    f.backend.imports.release.notify_one();
+    let first = tokio::time::timeout(Duration::from_secs(10), first)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap()
+        .into_inner();
+    success(&first);
+    let queued = tokio::time::timeout(Duration::from_secs(10), queued)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap()
+        .into_inner();
+    success(&queued);
+    let original = &first
+        .command
+        .as_ref()
+        .unwrap()
+        .source
+        .as_ref()
+        .unwrap()
+        .revision_id;
+    let pinned = &queued
+        .command
+        .as_ref()
+        .unwrap()
+        .source
+        .as_ref()
+        .unwrap()
+        .revision_id;
+    assert_eq!(pinned, original);
+    assert_ne!(pinned, &current.revision.0);
+    assert_eq!(f.executions(), 2);
+    f.shutdown().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "Requires the maintained compiled Rust transaction guest"]
 async fn trapped_entity_retains_its_lane_until_the_actual_abort_writer_finishes() {
     use latent_state::store_io::StoreIoKind;
     use std::sync::{Condvar, Mutex};

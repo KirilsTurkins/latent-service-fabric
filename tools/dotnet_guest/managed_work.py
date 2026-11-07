@@ -217,10 +217,18 @@ RESULT_TRANSITION_REWRITE_RECEIPT = {**PROVISIONAL_RESERVATION_REWRITE_RECEIPT,
     'resultTransition': 'fenced-observation-and-one-attempt-fault-result-settlement'}
 
 
+# Timer reservation publishes bounded inactive custody before calling the host.
+TIMER_RESERVATION_REWRITE_RECEIPT = {**RESULT_TRANSITION_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v8',
+    'timerReservation': 'provisional-timer-explicit-wit-refusal-and-unknown-custody'}
+
+
 def validate_rewrite(value: dict) -> None:
     if type(value) is not dict:
         raise ValueError('dotnet-managed-work-rewrite-receipt')
-    expected_receipt = (RESULT_TRANSITION_REWRITE_RECEIPT
+    expected_receipt = (TIMER_RESERVATION_REWRITE_RECEIPT
+        if value.get('patch') == TIMER_RESERVATION_REWRITE_RECEIPT['patch']
+        else RESULT_TRANSITION_REWRITE_RECEIPT
         if value.get('patch') == RESULT_TRANSITION_REWRITE_RECEIPT['patch']
         else PROVISIONAL_RESERVATION_REWRITE_RECEIPT
         if value.get('patch') == PROVISIONAL_RESERVATION_REWRITE_RECEIPT['patch']

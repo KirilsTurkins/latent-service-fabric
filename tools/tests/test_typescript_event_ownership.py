@@ -182,10 +182,18 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
                        b'  if (!run_abort_steps(cx, self) && dep_signals_to_abort.empty()) return false;\n')
         self.assertEqual(changed_abort.count(replacement), 1)
         reason_check = b'  if (!set_reason(cx, self, reason)) return false;\n'
+        rooted_reason = b'  RootedValue propagated_reason(cx, AbortSignal::reason(self));\n'
+        dependent_reason = b'      if (!set_reason(cx, signal, propagated_reason)) return false;\n'
         null_check = b'  if (!event) return false;\n'
         self.assertEqual(changed_abort.count(reason_check), 1)
+        self.assertEqual(changed_abort.count(rooted_reason), 1)
+        self.assertEqual(changed_abort.count(dependent_reason), 1)
+        self.assertLess(changed_abort.index(reason_check), changed_abort.index(rooted_reason))
+        self.assertLess(changed_abort.index(rooted_reason), changed_abort.index(dependent_reason))
         self.assertEqual(changed_abort.count(null_check), 1)
         changed_abort = changed_abort.replace(replacement, b'  run_abort_steps(cx, self);\n', 1)
+        changed_abort = changed_abort.replace(rooted_reason, b'', 1)
+        changed_abort = changed_abort.replace(dependent_reason, b'      set_reason(cx, signal, reason);\n', 1)
         changed_abort = changed_abort.replace(reason_check, b'  set_reason(cx, self, reason);\n', 1)
         self.assertEqual(changed_abort.replace(null_check, b'', 1), original_abort)
 
@@ -263,7 +271,8 @@ class AbortFailureControls(unittest.TestCase):
 
     def test_failure_preserves_original_exception_and_completed_or_retained_work(self):
         for case in ('success', 'dispatch-failure', 'event-failure', 'reason-failure',
-                     'algorithm-failure', 'dependent-continuation', 'already-aborted'):
+                     'algorithm-failure', 'dependent-continuation', 'default-reason',
+                     'explicit-reason', 'already-aborted'):
             with self.subTest(case=case):
                 result = subprocess.run([str(self.selected_binary), case], capture_output=True, timeout=10)
                 self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
@@ -271,13 +280,13 @@ class AbortFailureControls(unittest.TestCase):
                                  {'case': case, 'passed': True, 'engineQualified': False})
 
     def test_pinned_original_reproduces_narrow_failure_boundaries(self):
-        for case in ('dispatch-failure', 'event-failure', 'reason-failure', 'algorithm-failure'):
+        for case in ('dispatch-failure', 'event-failure', 'reason-failure', 'algorithm-failure', 'default-reason'):
             with self.subTest(case=case):
                 result = subprocess.run([str(self.original_binary), case], capture_output=True, timeout=10)
                 self.assertEqual(result.returncode, 1, (result.stdout + result.stderr)[:65536])
                 self.assertEqual(json.loads(result.stdout),
                                  {'case': case, 'passed': False, 'engineQualified': False})
-        for case in ('success', 'dependent-continuation', 'already-aborted'):
+        for case in ('success', 'dependent-continuation', 'explicit-reason', 'already-aborted'):
             with self.subTest(case=case):
                 result = subprocess.run([str(self.original_binary), case], capture_output=True, timeout=10)
                 self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])

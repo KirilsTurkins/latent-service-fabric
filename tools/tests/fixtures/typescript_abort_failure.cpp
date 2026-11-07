@@ -11,6 +11,7 @@ struct State {
   std::vector<int> order;
   int destroyed = 0, dispatches = 0, null_dereferences = 0;
   int fail_algorithm = 0, fail_dispatch = 0;
+  int next_default_reason = 100, default_reasons = 0;
   bool fail_reason = false, fail_event = false;
 };
 static State state;
@@ -32,6 +33,7 @@ struct WeakIndexSet {
 };
 struct Signal {
   int id = 0;
+  int reason = 0;
   bool aborted = false;
   WeakIndexSet dependents;
   std::vector<std::unique_ptr<Algorithm>> algorithms;
@@ -49,8 +51,10 @@ struct RootedObject {
   }
 };
 struct RootedValue {
+  int value = 0;
   explicit RootedValue(JSContext*) {}
-  RootedValue(JSContext*, int) {}
+  RootedValue(JSContext*, int selected) : value(selected) {}
+  operator int() const { return value; }
 };
 namespace JS {
 struct RootedObjectVector {
@@ -85,11 +89,14 @@ struct AbortSignal {
   static int abort_type_atom;
   static bool is_instance(Signal* signal) { return signal != nullptr; }
   static bool is_aborted(Signal* signal) { return signal->aborted; }
-  static bool set_reason(JSContext* cx, Signal* signal, int) {
+  static bool set_reason(JSContext* cx, Signal* signal, int reason) {
     if (state.fail_reason) { cx->pending = 101; return false; }
+    if (!reason) { reason = ++state.next_default_reason; ++state.default_reasons; }
+    signal->reason = reason;
     signal->aborted = true;
     return true;
   }
+  static int reason(Signal* signal) { return signal->reason; }
   static WeakIndexSet* dependent_signals(Signal* signal) { return &signal->dependents; }
   static std::vector<std::unique_ptr<Algorithm>>* algorithms(Signal* signal) {
     return &signal->algorithms;
@@ -116,12 +123,13 @@ int main(int argc, char** argv) {
   if (!std::strcmp(selected, "algorithm-failure")) state.fail_algorithm = 12;
   if (!std::strcmp(selected, "dispatch-failure") || !std::strcmp(selected, "dependent-continuation"))
     state.fail_dispatch = 1;
-  if (!std::strcmp(selected, "dependent-continuation")) {
+  if (!std::strcmp(selected, "dependent-continuation") || !std::strcmp(selected, "default-reason") ||
+      !std::strcmp(selected, "explicit-reason")) {
     add(first, 21); add(first, 22); add(second, 31);
     root.dependents.values = {&first, &second};
   }
   JSContext cx;
-  const bool result = AbortSignal::abort(&cx, &root, 1);
+  const bool result = AbortSignal::abort(&cx, &root, !std::strcmp(selected, "default-reason") ? 0 : 1);
   bool passed = false;
   const std::vector<int> root_work{11, 12, 13};
   if (!std::strcmp(selected, "success"))
@@ -143,6 +151,12 @@ int main(int argc, char** argv) {
     passed = result && root.aborted && first.aborted && second.aborted &&
              state.order == std::vector<int>({11, 12, 13, 101, 21, 22, 102, 31, 103}) &&
              state.destroyed == 6 && state.dispatches == 3 && cx.pending == 404;
+  else if (!std::strcmp(selected, "default-reason") || !std::strcmp(selected, "explicit-reason"))
+    passed = result && root.aborted && first.aborted && second.aborted && root.reason != 0 &&
+             first.reason == root.reason && second.reason == root.reason &&
+             state.default_reasons == (!std::strcmp(selected, "default-reason") ? 1 : 0) &&
+             state.order == std::vector<int>({11, 12, 13, 101, 21, 22, 102, 31, 103}) &&
+             state.destroyed == 6 && state.dispatches == 3 && !cx.pending;
   else if (!std::strcmp(selected, "already-aborted"))
     passed = result && root.aborted && state.order.empty() && !state.destroyed &&
              root.algorithms.size() == 3 && !state.dispatches && !cx.pending;
