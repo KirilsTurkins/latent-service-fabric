@@ -75,3 +75,11 @@ timers install, grow the inventory or release a slot. It checks that all live
 tokens retain distinct slots and callback counts. A separate million-attempt
 host GC stress did not reproduce the original lost-slot interleaving. Neither
 control is a signed-guest or actual-GC-park result for the revised source.
+
+Timer readiness publishes its wait record before starting `timer-next` and
+rechecks the selected timer after allocation. A stopped or superseded timer
+therefore cannot create an untracked host subtask. All fence callers observe
+one durable completion channel, which is closed only after an actual pending
+subtask is dropped or the unstarted wait is abandoned. Host-only controls
+exercise the allocation and completion interleavings using simulated host
+readiness; signed guest execution of this revised path remains unqualified.
