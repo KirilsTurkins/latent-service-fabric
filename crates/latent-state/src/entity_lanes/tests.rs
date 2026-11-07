@@ -205,6 +205,25 @@ fn dispatcher_observes_expiry_even_when_global_execution_capacity_is_full() {
     assert_empty(&lanes);
 }
 
+#[test]
+fn dispatcher_readiness_does_not_let_a_hot_tenant_hide_another_tenant() {
+    let mut capacity = limits();
+    capacity.tenant_active = 1;
+    let lanes = EntityLanes::new(capacity).unwrap();
+    let now = Instant::now();
+    let first = enqueue(&lanes, "tenant-a", "first", 1, now);
+    let active = start(&lanes, now);
+    let blocked = enqueue(&lanes, "tenant-a", "second", 2, now);
+    let waker = std::task::Waker::noop();
+    assert!(!lanes.register_dispatch_waker(now, waker).unwrap().ready);
+    let other = enqueue(&lanes, "tenant-b", "third", 3, now);
+    assert!(lanes.register_dispatch_waker(now, waker).unwrap().ready);
+    let cold = start(&lanes, now);
+    assert_eq!(cold.request().scope().tenant().0, "tenant-b");
+    drop((first, blocked, other, active, cold));
+    assert_empty(&lanes);
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct Command {
     publication: &'static str,

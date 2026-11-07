@@ -23,6 +23,9 @@ SOURCES = (FIXTURE+'/Control.csproj', FIXTURE+'/Program.cs', FIXTURE+'/Bindings.
 SETTLEMENT_CASES = (
     'enqueue-failure-settlement-refusal-retains-owner',
     'dequeue-settlement-refusal-retains-owner')
+QUEUE_SETTLEMENT_CASES = (
+    'queue-rollback-refusal-prevents-retry', 'queue-rollback-unknown-prevents-retry',
+    'queue-dequeue-refusal-prevents-retry', 'queue-dequeue-unknown-prevents-retry')
 OWNER_SETTLEMENT_CASES = (
     'task-settlement-refusal-revokes-context',
     'task-settlement-unknown-revokes-context',
@@ -47,7 +50,7 @@ CASES = (
     'bounded-required-continuations', 'opaque-pending-is-not-quiescent',
     'untracked-startup-refused-before-admission', 'fault-conversion-success-is-idempotent',
     'fault-conversion-at-record-capacity', 'multiple-fault-conversions-retain-distinct-tokens',
-    *SETTLEMENT_CASES, *OWNER_SETTLEMENT_CASES, *RESULT_SETTLEMENT_CASES,
+    *SETTLEMENT_CASES, *QUEUE_SETTLEMENT_CASES, *OWNER_SETTLEMENT_CASES, *RESULT_SETTLEMENT_CASES,
     *CONVERSION_SETTLEMENT_CASES, *ROOT_SETTLEMENT_CASES)
 
 
@@ -78,6 +81,10 @@ def verify(dotnet: Path, output: Path) -> dict:
             expected.update(settlementRefusals=2, retainedTasks=3, retainedResults=2, rootSuccess=False)
         elif name in SETTLEMENT_CASES:
             expected.update(settlementRefusals=1, retainedTasks=2, retainedQueuedOwners=1,
+                            controlDispatches=0, automaticRetries=0, rootSuccess=False)
+        elif name in QUEUE_SETTLEMENT_CASES:
+            expected.update(settlementRefusals=1, retainedTasks=2,
+                            retainedQueuedOwners=0 if '-unknown-' in name else 1,
                             controlDispatches=0, automaticRetries=0, rootSuccess=False)
         elif name in OWNER_SETTLEMENT_CASES:
             expected.update(settlementRefusals=1, retainedTasks=1 if '-unknown-' in name else 2,
@@ -114,6 +121,7 @@ TIMER_CASES = (
     'one-shot-delete-is-not-callback-return', 'multiple-queued-callbacks-retain-one-timer',
     'disposed-queued-callback-retires-after-cancelled-fire', 'callback-required-task-survives-return',
     'live-timer-descendant-during-closing', 'callback-throw-never-refunds-original-running-owner',
+    'timer-queue-refusal-fences-readmission', 'timer-queue-unknown-fences-readmission',
     'timer-settlement-refusal-restores-context', 'timer-settlement-refusal-prevents-retry',
     'timer-settlement-unknown-outcome-prevents-retry',
     'timer-settlement-refusal-revokes-captured-context',

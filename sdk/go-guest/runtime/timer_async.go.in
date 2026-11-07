@@ -4,7 +4,8 @@ type lsfTimerWait struct {
     result unsafe.Pointer
     pinner runtime.Pinner
     stopped bool
-    fences []chan unit
+    started bool
+    done chan unit
 }
 
 //go:linkname lsfNextTimer runtime.lsfNextTimer
@@ -31,9 +32,8 @@ func lsfActivationTimerFence(generation, id uint64) {
     if id == 0 || state == nil { return }
     for _, wait := range state.timerWaits {
         if wait.token == [2]uint64{generation, id} {
-            fence := make(chan unit)
-            wait.fences = append(wait.fences, fence)
-            (<-fence)
+            // Completion is durable even if it wins before this receive.
+            (<-wait.done)
             return
         }
     }
@@ -46,15 +46,29 @@ func lsfCompleteTimerWait(wait *lsfTimerWait) {
         panic("LSF timer readiness failed or root deadline won")
     }
     wait.pinner.Unpin()
-    for _, fence := range wait.fences { close(fence) }
+    close(wait.done)
+}
+
+// Only the dispatcher mutates this inventory. The removed backing-array entry
+// must not keep an already retired wait and its result reachable.
+func lsfRemoveTimerWait(wait *lsfTimerWait) {
+    for index, candidate := range state.timerWaits {
+        if candidate != wait { continue }
+        copy(state.timerWaits[index:], state.timerWaits[index + 1:])
+        last := len(state.timerWaits) - 1
+        state.timerWaits[last] = nil
+        state.timerWaits = state.timerWaits[:last]
+        return
+    }
+    panic("LSF timer wait inventory lost")
 }
 
 func lsfHandleTimerEvent(event uint32) bool {
-    for index, wait := range state.timerWaits {
-        if wait.subtask != event { continue }
+    for _, wait := range state.timerWaits {
+        if !wait.started || wait.subtask != event { continue }
         waitableJoin(event, 0)
         subtaskDrop(event)
-        state.timerWaits = append(state.timerWaits[:index], state.timerWaits[index + 1:]...)
+        lsfRemoveTimerWait(wait)
         lsfCompleteTimerWait(wait)
         return true
     }
@@ -70,17 +84,29 @@ func lsfStartTimerWait() bool {
     for _, wait := range state.timerWaits {
         if wait.token == [2]uint64{generation, id} { return false }
     }
-    wait := &lsfTimerWait{token: [2]uint64{generation, id}}
+    wait := &lsfTimerWait{token: [2]uint64{generation, id}, done: make(chan unit)}
     wait.result = witRuntime.Allocate(&wait.pinner, 16, 8)
+    // Publish before starting the host subtask. Allocation and slice growth can
+    // park, so recheck the selected timer after they finish; a stop before this
+    // publication has no physical next owner to fence.
+    state.timerWaits = append(state.timerWaits, wait)
+    selectedGeneration, selectedID := lsfNextTimer()
+    if wait.stopped || selectedGeneration != generation || selectedID != id {
+        lsfRemoveTimerWait(wait)
+        wait.pinner.Unpin()
+        close(wait.done)
+        return true
+    }
     status := lsfTimerNext(int64(generation), int64(id), wait.result)
     wait.subtask = status >> 4
     switch status & 15 {
     case STATUS_STARTING, STATUS_STARTED:
+        wait.started = true
         if state.waitableSet == 0 { state.waitableSet = waitableSetNew() }
         waitableJoin(wait.subtask, state.waitableSet)
-        state.timerWaits = append(state.timerWaits, wait)
         return false
     case STATUS_RETURNED:
+        lsfRemoveTimerWait(wait)
         lsfCompleteTimerWait(wait)
         return true
     default:
