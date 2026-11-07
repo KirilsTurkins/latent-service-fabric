@@ -92,7 +92,9 @@ public final class ScheduledCompletableOwnerControl {
         List<Runnable> returned = pool.shutdownNow();
         require(returned.size() == 1 && !result.isDone() && calls.get() == 0);
         release.countDown(); terminated(pool); held(0, 0);
-        require(!result.isDone() && calls.get() == 0);
+        returned.get(0).run();
+        require(((java.util.concurrent.Future<?>)returned.get(0)).isCancelled() && !result.isDone() && calls.get() == 0);
+        held(0, 0); clearedCallback(returned.get(0));
         Activation.idle();
     }
     private static void opaqueWithdrawal() throws Exception {
@@ -107,6 +109,8 @@ public final class ScheduledCompletableOwnerControl {
         List<Runnable> returned = pool.shutdownNow();
         require(returned.size() == 1 && !result.isDone());
         release.countDown(); terminated(pool); held(1, 1);
+        returned.get(0).run();
+        require(((java.util.concurrent.Future<?>)returned.get(0)).isCancelled() && !result.isDone()); held(1, 1);
         saved.get().run();
         require(result.join() == 42 && calls.get() == 1); held(0, 0);
         Activation.idle();
@@ -121,6 +125,8 @@ public final class ScheduledCompletableOwnerControl {
         List<Runnable> returned = pool.shutdownNow();
         require(returned.size() == 1 && !result.isDone());
         release.countDown(); terminated(pool); held(1, 1);
+        returned.get(0).run();
+        require(((java.util.concurrent.Future<?>)returned.get(0)).isCancelled() && !result.isDone()); held(1, 1);
         retained.run();
         require(result.join() == 42 && calls.get() == 1); held(0, 0);
         Activation.idle();
@@ -239,15 +245,32 @@ public final class ScheduledCompletableOwnerControl {
         var future = pool.schedule(original.action, 1, TimeUnit.DAYS);
         timedWait(worker.get());
         Thread caller = new Thread((Runnable)future); caller.start(); await(entered);
-        require(pool.shutdownNow().size() == 1); terminated(pool); held(1, 2);
+        var returned = pool.shutdownNow();
+        require(returned.size() == 1 && returned.get(0) == future); terminated(pool); held(1, 2);
+        returned.get(0).run(); require(future.isCancelled()); held(1, 2);
         release.countDown(); caller.join(5000); require(!caller.isAlive());
         require(original.result.join() == 42 && original.calls.get() == 1); held(0, 0); clearedCallback(future);
         Activation.idle();
     }
+    private static void stoppedWorkerBoundary() throws Exception {
+        for (String mode : new String[]{"once", "fixed", "delay"}) {
+            var pool = new ScheduledThreadPoolExecutor(1);
+            AtomicInteger calls = new AtomicInteger();
+            Runnable callback = calls::incrementAndGet;
+            var future = mode.equals("once") ? pool.schedule(callback, 1, TimeUnit.DAYS)
+                : mode.equals("fixed") ? pool.scheduleAtFixedRate(callback, 1, 1, TimeUnit.DAYS)
+                : pool.scheduleWithFixedDelay(callback, 1, 1, TimeUnit.DAYS);
+            require(pool.shutdownNow().size() == 1); terminated(pool); held(0, 0);
+            var invoke = future.getClass().getDeclaredMethod("invoke"); invoke.setAccessible(true);
+            require(Boolean.FALSE.equals(invoke.invoke(future)));
+            require(future.isCancelled() && calls.get() == 0); held(0, 0); clearedCallback(future);
+            Activation.idle();
+        }
+    }
     public static void main(String[] arguments) throws Exception {
         rejection(); directWithdrawal(); opaqueWithdrawal(); subclassWithdrawal(); copies(); wrapperCopies();
         failedReadmission(); cancelledWrapper(); deferredFuture();
-        inFlightWrapper();
-        System.out.println("SCHEDULED_COMPLETABLE_OWNER PASS rejection;inner-admission-rollback;withdrawal;action-replay;opaque;subclass;copies;wrapper-copies;failed-readmission;cancelled-capture;deferred-future;in-flight-wrapper");
+        inFlightWrapper(); stoppedWorkerBoundary();
+        System.out.println("SCHEDULED_COMPLETABLE_OWNER PASS rejection;inner-admission-rollback;withdrawal;action-replay;opaque;subclass;copies;wrapper-copies;failed-readmission;cancelled-capture;deferred-future;in-flight-wrapper;stopped-worker");
     }
 }
