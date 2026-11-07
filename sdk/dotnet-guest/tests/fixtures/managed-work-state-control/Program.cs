@@ -421,6 +421,204 @@ internal static class StateControl
         ManagedWorkRuntime.Observed(required.Task); blocker.SetResult(1);
         ManagedWorkRuntime.Completed(promise); Finish();
     }
+
+    // The registry calls below model the order of the injected pinned-CoreLib
+    // hooks; the Tasks and Unwrap continuation are the real host CLR objects.
+    private static void IndependentInnerFaultControl()
+    {
+        var failure = new ArgumentException("control-independent-inner-fault");
+        var inner = new Task(() => throw failure);
+        var outer = new Task<Task>(() => inner);
+        ManagedWorkRuntime.Schedule(outer);
+        var promise = outer.Unwrap();
+        ManagedWorkRuntime.Unwrap(promise, outer);
+        ManagedWorkRuntime.Schedule(inner);
+        Need(Count(0) == 3);
+        outer.RunSynchronously();
+        ManagedWorkRuntime.Inner(promise, inner);
+        ManagedWorkRuntime.Completed(outer);
+        inner.RunSynchronously();
+        Need(inner.IsFaulted && promise.IsFaulted);
+        // Unwrap's pinned TrySetFromTask observes the original inner fault
+        // before the promise's FinishStageThree completes.
+        ManagedWorkRuntime.Observed(inner);
+        ManagedWorkRuntime.Completed(promise);
+        ManagedWorkRuntime.Completed(inner);
+        try { promise.GetAwaiter().GetResult(); throw new InvalidOperationException("missing-task-fault"); }
+        catch (ArgumentException error) when (ReferenceEquals(error, failure)) { }
+        ManagedWorkRuntime.Observed(promise);
+        Finish();
+    }
+
+    private static void InnerScheduledAfterAliasControl()
+    {
+        var inner = new Task(() => { });
+        var outer = new Task<Task>(() => inner);
+        ManagedWorkRuntime.Schedule(outer);
+        var promise = outer.Unwrap();
+        ManagedWorkRuntime.Unwrap(promise, outer);
+        outer.RunSynchronously();
+        ManagedWorkRuntime.Inner(promise, inner);
+        ManagedWorkRuntime.Completed(outer);
+        ManagedWorkRuntime.Schedule(inner);
+        Need(Count(0) == 3);
+        inner.RunSynchronously();
+        ManagedWorkRuntime.Completed(promise);
+        ManagedWorkRuntime.Completed(inner);
+        Finish();
+    }
+
+    private static void IndependentInnerCapacityControl()
+    {
+        Limits[0] = 3;
+        var inner = new Task(() => { });
+        var outer = new Task<Task>(() => inner);
+        ManagedWorkRuntime.Schedule(outer);
+        var promise = outer.Unwrap();
+        ManagedWorkRuntime.Unwrap(promise, outer);
+        ManagedWorkRuntime.Schedule(inner);
+        var pending = Pending();
+        var previous = ManagedWorkRuntime.Enter(promise);
+        ManagedWorkRuntime.CreatedAsync(pending.Task);
+        ManagedWorkRuntime.Exit(previous);
+        outer.RunSynchronously(); ManagedWorkRuntime.Inner(promise, inner); ManagedWorkRuntime.Completed(outer);
+        previous = ManagedWorkRuntime.Enter(promise); var parentToken = context; ManagedWorkRuntime.Exit(previous);
+        previous = ManagedWorkRuntime.Enter(inner); var innerToken = context; ManagedWorkRuntime.Exit(previous);
+        Need(innerToken != parentToken);
+        Enqueue(inner);
+        Need(ManagedWorkRuntime.QueuedOwnerForControl(inner) == innerToken);
+        ManagedWorkRuntime.Dequeue(inner);
+        previous = ManagedWorkRuntime.EnterDispatch(inner); Need(context == innerToken); ManagedWorkRuntime.Exit(previous);
+        inner.RunSynchronously(); ManagedWorkRuntime.Completed(promise); ManagedWorkRuntime.Completed(inner);
+        Need(Count(0) == 2 && !pending.Task.IsCompleted);
+        var later = new Task(() => { }); ManagedWorkRuntime.Schedule(later);
+        later.RunSynchronously(); ManagedWorkRuntime.Completed(later);
+        pending.SetResult(1); ManagedWorkRuntime.Completed(promise); Finish();
+    }
+
+    private static void SharedIndependentInnerControl(bool late)
+    {
+        var failure = new ArgumentException("control-shared-inner-fault");
+        var inner = new Task(() => throw failure);
+        var first = new Task<Task>(() => inner);
+        var second = new Task<Task>(() => inner);
+        ManagedWorkRuntime.Schedule(first); var a = first.Unwrap(); ManagedWorkRuntime.Unwrap(a, first);
+        ManagedWorkRuntime.Schedule(second); var b = second.Unwrap(); ManagedWorkRuntime.Unwrap(b, second);
+        if (!late) ManagedWorkRuntime.Schedule(inner);
+        first.RunSynchronously(); ManagedWorkRuntime.Inner(a, inner); ManagedWorkRuntime.Completed(first);
+        second.RunSynchronously(); ManagedWorkRuntime.Inner(b, inner); ManagedWorkRuntime.Completed(second);
+        if (late) ManagedWorkRuntime.Schedule(inner);
+        Need(Count(0) == 4);
+        inner.RunSynchronously(); Need(inner.IsFaulted && a.IsFaulted && b.IsFaulted);
+        // Each original Unwrap observes the same inner exception.
+        ManagedWorkRuntime.Observed(inner); ManagedWorkRuntime.Observed(inner);
+        ManagedWorkRuntime.Completed(a); ManagedWorkRuntime.Completed(b); ManagedWorkRuntime.Completed(inner);
+        try { a.GetAwaiter().GetResult(); throw new InvalidOperationException("missing-first-task-fault"); }
+        catch (ArgumentException error) when (ReferenceEquals(error, failure)) { }
+        ManagedWorkRuntime.Observed(a);
+        try { b.GetAwaiter().GetResult(); throw new InvalidOperationException("missing-second-task-fault"); }
+        catch (ArgumentException error) when (ReferenceEquals(error, failure)) { }
+        ManagedWorkRuntime.Observed(b); Finish();
+    }
+
+    private static void IndependentInnerReentryControl()
+    {
+        var inner = new Task(() => { }); var outer = new Task<Task>(() => inner);
+        ManagedWorkRuntime.Schedule(outer); var promise = outer.Unwrap(); ManagedWorkRuntime.Unwrap(promise, outer);
+        outer.RunSynchronously(); ManagedWorkRuntime.Inner(promise, inner); ManagedWorkRuntime.Completed(outer);
+        RecordAllocationCallback = () => ManagedWorkRuntime.Schedule(inner);
+        ManagedWorkRuntime.Schedule(inner); Need(Count(0) == 3);
+        inner.RunSynchronously(); ManagedWorkRuntime.Completed(promise); ManagedWorkRuntime.Completed(inner); Finish();
+    }
+
+    private static void IndependentInnerRefusalControl(bool unknown)
+    {
+        var inner = new Task(() => { }); var outer = new Task<Task>(() => inner);
+        ManagedWorkRuntime.Schedule(outer); var promise = outer.Unwrap(); ManagedWorkRuntime.Unwrap(promise, outer);
+        outer.RunSynchronously(); ManagedWorkRuntime.Inner(promise, inner); ManagedWorkRuntime.Completed(outer);
+        if (unknown) unknownReservationKind = 0; else Limits[0] = 2;
+        if (unknown)
+        {
+            Exception? error = null; try { ManagedWorkRuntime.Schedule(inner); } catch (Exception caught) { error = caught; }
+            Need(ReferenceEquals(error, UnknownReservation) && Count(0) == 3 && Owners.ContainsKey(unknownReservationToken));
+            Refuses(() => ManagedWorkRuntime.Schedule(inner), "managed-work-owner-retired");
+            Refuses(() => Enqueue(inner), "managed-work-owner-retired");
+            Refuses(() => { ManagedWorkRuntime.Enter(inner); }, "managed-work-execution-parent");
+            return;
+        }
+        Refuses(() => ManagedWorkRuntime.Schedule(inner), "managed-work-admission-refused");
+        Need(Count(0) == 2 && !inner.IsCompleted && !promise.IsCompleted);
+        // Only the registry admission was invoked; no actual Task.Start was
+        // attempted before this model retry.
+        Limits[0] = 3; ManagedWorkRuntime.Schedule(inner);
+        inner.RunSynchronously(); ManagedWorkRuntime.Completed(promise); ManagedWorkRuntime.Completed(inner); Finish();
+    }
+
+    private static void InnerAndOuterAliasControl(bool reentrant)
+    {
+        var shared = new Task<Task>(() => Task.CompletedTask);
+        var first = new Task<Task>(() => shared);
+        ManagedWorkRuntime.Schedule(first); var a = first.Unwrap(); ManagedWorkRuntime.Unwrap(a, first);
+        first.RunSynchronously(); ManagedWorkRuntime.Inner(a, shared); ManagedWorkRuntime.Completed(first);
+        Task? b = null;
+        void AdmitAndUnwrap()
+        {
+            ManagedWorkRuntime.Schedule(shared);
+            b = shared.Unwrap(); ManagedWorkRuntime.Unwrap(b, shared);
+        }
+        if (reentrant)
+        {
+            RecordAllocationCallback = AdmitAndUnwrap;
+            ManagedWorkRuntime.Schedule(shared);
+        }
+        else
+        {
+            AdmitAndUnwrap();
+            ManagedWorkRuntime.Schedule(shared);
+        }
+        Need(Count(0) == 3 && b is not null);
+        shared.RunSynchronously();
+        ManagedWorkRuntime.Inner(b!, Task.CompletedTask);
+        ManagedWorkRuntime.Completed(a); ManagedWorkRuntime.Completed(b!); ManagedWorkRuntime.Completed(shared);
+        Finish();
+    }
+
+    private static void InnerAndInactiveOuterAliasControl()
+    {
+        var shared = new Task<Task>(() => throw new ArgumentException("control-inactive-outer-fault"));
+        var first = new Task<Task>(() => shared);
+        ManagedWorkRuntime.Schedule(first); var a = first.Unwrap(); ManagedWorkRuntime.Unwrap(a, first);
+        first.RunSynchronously(); ManagedWorkRuntime.Inner(a, shared); ManagedWorkRuntime.Completed(first);
+        ManagedWorkRuntime.Schedule(shared); var b = shared.Unwrap(); ManagedWorkRuntime.Unwrap(b, shared);
+        var previous = ManagedWorkRuntime.Enter(b); settlementRefusal = context.Item2; ManagedWorkRuntime.Exit(previous);
+        shared.RunSynchronously(); Need(a.IsFaulted && b.IsFaulted);
+        Refuses(() => ManagedWorkRuntime.Completed(b), "managed-work-settlement-refused");
+        Refuses(() => ManagedWorkRuntime.Schedule(shared), "managed-work-owner-retired");
+        Need(refusedSettlements == 1 && Count(0) == 3 && Count(6) == 1);
+        // The control terminates with the uncertain owner retained, without retry.
+        settlementRefusal = 0;
+    }
+
+    private static void InactiveInnerAliasWithPrimaryControl(bool fault)
+    {
+        var inner = new Task(() => { if (fault) throw new ArgumentException("control-inactive-inner-fault"); });
+        var outer = new Task<Task>(() => inner);
+        ManagedWorkRuntime.Schedule(outer); var promise = outer.Unwrap(); ManagedWorkRuntime.Unwrap(promise, outer);
+        ManagedWorkRuntime.Schedule(inner);
+        outer.RunSynchronously(); ManagedWorkRuntime.Inner(promise, inner); ManagedWorkRuntime.Completed(outer);
+        var previous = ManagedWorkRuntime.Enter(promise); settlementRefusal = context.Item2; ManagedWorkRuntime.Exit(previous);
+        inner.RunSynchronously();
+        if (fault) ManagedWorkRuntime.Observed(inner); // The original Unwrap observes its source fault.
+        Refuses(() => ManagedWorkRuntime.Completed(promise), "managed-work-settlement-refused");
+        Refuses(() => ManagedWorkRuntime.Schedule(inner), "managed-work-owner-retired");
+        Refuses(() => Enqueue(inner), "managed-work-owner-retired");
+        Refuses(() => { ManagedWorkRuntime.Enter(inner); }, "managed-work-execution-parent");
+        Refuses(() => ManagedWorkRuntime.Observed(inner), "managed-work-double-settle");
+        Refuses(() => ManagedWorkRuntime.Completed(inner), "managed-work-double-settle");
+        Need(refusedSettlements == 1 && Count(0) == 3 && Count(6) == (fault ? 1 : 0));
+        // Retain the uncertain alias and stop without another settlement attempt.
+        settlementRefusal = 0;
+    }
     private static void RequiredResultSettlementFailureControl(bool unknown)
     {
         var (callback, pending) = RequiredFaultParent();
@@ -1576,6 +1774,19 @@ internal static class StateControl
             case "required-result-active-alias-observation": RequiredResultActiveAliasControl(); break;
             case "required-result-uncertain-alias-fences-entry": RequiredResultUncertainAliasControl(); break;
             case "required-result-ordinary-alias-preserves-parent": RequiredResultOrdinaryAliasControl(); break;
+            case "independent-inner-observed-fault": IndependentInnerFaultControl(); break;
+            case "inner-scheduled-after-alias": InnerScheduledAfterAliasControl(); break;
+            case "independent-inner-releases-capacity": IndependentInnerCapacityControl(); break;
+            case "shared-inner-scheduled-before-alias": SharedIndependentInnerControl(false); break;
+            case "shared-inner-scheduled-after-alias": SharedIndependentInnerControl(true); break;
+            case "independent-inner-reentrant-admission": IndependentInnerReentryControl(); break;
+            case "independent-inner-admission-refusal": IndependentInnerRefusalControl(false); break;
+            case "independent-inner-admission-unknown": IndependentInnerRefusalControl(true); break;
+            case "inner-and-outer-alias-no-duplicate": InnerAndOuterAliasControl(false); break;
+            case "inner-and-outer-alias-reentrant-no-duplicate": InnerAndOuterAliasControl(true); break;
+            case "inner-and-inactive-outer-alias-fenced": InnerAndInactiveOuterAliasControl(); break;
+            case "inactive-inner-alias-fences-primary": InactiveInnerAliasWithPrimaryControl(false); break;
+            case "inactive-inner-result-transition-fences-primary": InactiveInnerAliasWithPrimaryControl(true); break;
             case "required-result-settlement-refusal-retains-custody": RequiredResultSettlementFailureControl(false); break;
             case "required-result-settlement-unknown-retains-custody": RequiredResultSettlementFailureControl(true); break;
             case "fault-conversion-success-is-idempotent": {
