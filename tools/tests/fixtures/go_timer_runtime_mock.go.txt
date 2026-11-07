@@ -1,0 +1,131 @@
+package main
+
+import (
+    "runtime"
+    "time"
+    _ "unsafe"
+    "go.bytecodealliance.org/pkg/wit/async"
+)
+
+//go:wasmimport fixture [async-lower]wait
+func fixtureWait() uint32
+
+//go:wasmimport fixture observe
+func observe(kind, value uint32)
+
+//go:linkname activationFinish runtime.lsfActivationFinish
+func activationFinish()
+
+func boolValue(value bool) uint32 {
+    if value { return 1 }
+    return 0
+}
+
+func resetPair(channelTimer bool) {
+    var timer *time.Timer
+    stopped := make(chan struct{})
+    if channelTimer {
+        timer = time.NewTimer(10 * time.Millisecond)
+        go func() {
+            select {
+            case <-timer.C: observe(6, 1)
+            case <-stopped:
+            }
+        }()
+    } else {
+        timer = time.AfterFunc(10 * time.Millisecond, func() { observe(30, 1) })
+    }
+    async.SubtaskWait(fixtureWait())
+    started := make(chan struct{})
+    done := make(chan struct{}, 2)
+    go func() {
+        close(started)
+        result := timer.Reset(time.Hour)
+        observe(1, boolValue(result))
+        done <- struct{}{}
+    }()
+    <-started
+    go func() {
+        if channelTimer {
+            result := timer.Reset(2 * time.Hour)
+            observe(2, boolValue(result))
+        } else {
+            result := timer.Stop()
+            observe(2, boolValue(result))
+        }
+        done <- struct{}{}
+    }()
+    <-done
+    <-done
+    if channelTimer {
+        result := timer.Stop()
+        observe(3, boolValue(result))
+        close(stopped)
+    }
+}
+
+func afterFunc() {
+    completed := make(chan struct{})
+    var timer *time.Timer
+    timer = time.AfterFunc(10 * time.Millisecond, func() {
+        observe(10, 1)
+        result := timer.Reset(time.Hour)
+        observe(11, boolValue(result))
+        close(completed)
+    })
+    <-completed
+    result := timer.Stop()
+    observe(12, boolValue(result))
+}
+
+func channelFire() {
+    timer := time.NewTimer(10 * time.Millisecond)
+    <-timer.C
+    observe(20, 1)
+    result := timer.Reset(time.Hour)
+    observe(21, boolValue(result))
+    result = timer.Stop()
+    observe(22, boolValue(result))
+}
+
+func idleDrain() {
+    timer := time.NewTimer(10 * time.Millisecond)
+    stopWatcher := make(chan struct{})
+    watcherDone := make(chan struct{})
+    go func() {
+        select {
+        case <-timer.C: observe(46, 1)
+        case <-stopWatcher:
+        }
+        close(watcherDone)
+    }()
+    async.SubtaskWait(fixtureWait())
+    close(stopWatcher)
+    <-watcherDone
+    observe(40, 1)
+    activationFinish()
+    observe(41, 1)
+    runtime.KeepAlive(timer)
+}
+
+//go:wasmexport begin
+func begin(mode uint32) uint32 {
+    return async.Run(func() {
+        switch mode {
+        case 1: resetPair(true)
+        case 2: afterFunc()
+        case 3: channelFire()
+        case 4: resetPair(false)
+        case 5: idleDrain()
+        case 6: resetPair(true)
+        default: panic("unknown mode")
+        }
+    })
+}
+
+//go:wasmexport resume
+func resume(event, id, status uint32) uint32 {
+    return async.Callback(event, id, status)
+}
+
+func main() {}

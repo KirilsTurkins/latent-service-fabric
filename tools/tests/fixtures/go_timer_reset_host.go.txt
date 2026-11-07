@@ -1,0 +1,144 @@
+package timergate
+
+import (
+    "fmt"
+    "runtime"
+    "testing"
+    "unsafe"
+)
+
+type unit struct{}
+type lsfTimerSlot struct { token [2]uint64; weak unsafe.Pointer; callback bool }
+type lsfTokenResult struct { tag, padding uint32; generation, id uint64 }
+type lsfUnitResult struct { tag, failure byte }
+type mutex struct{}
+type hchan struct { timer *timer; dataqsiz uint }
+type timer struct { isChan bool; lsfToken [2]uint64; lsfSlot uint32; active bool; period int64; sendLock mutex }
+type timeTimer struct { c unsafe.Pointer; init bool; timer; isFake bool; lsfGate chan struct{} }
+type g struct { lsfOwner [2]uint64; bubble *byte }
+type lsfTimerWait struct { token [2]uint64; stopped bool; done chan unit }
+type taskState struct { timerWaits []*lsfTimerWait }
+var state *taskState
+var lsfTimerSlots []lsfTimerSlot
+var lsfTimerCallbacks uint32
+var lsfTimerParent [2]uint64
+var lsfActivationActive = true
+var currentG = g{lsfOwner: [2]uint64{8,88}}
+var raceenabled = false
+var lastID uint64
+var hostOwners map[[2]uint64]bool
+var retiredOld chan struct{}
+var enteredFence chan struct{}
+var resetHook func(*timer)
+var fixtureChannel *hchan
+var denyTimerAdmission bool
+const lockRankTimerSend = 0
+func getg() *g { return &currentG }
+func nanotime() int64 { return 100 }
+func racerelease(unsafe.Pointer) {}
+func fatal(s string) { panic(s) }
+func throw(s string) { panic(s) }
+func lsfFail(s string) { panic(s) }
+func lsfMaybeWakeTimerDrain() {}
+func controlledFenceReceive(wait *lsfTimerWait) { close(enteredFence); <-wait.done }
+func lockInit(*mutex, int) {}
+func (t *timer) init(func(any, uintptr, int64), any) {}
+func (t *timer) trace(string) {}
+func (t *timer) modify(when, period int64, _ func(any, uintptr, int64), _ any, _ uintptr) bool {
+    return t.reset(when, period)
+}
+func (t *timer) stop() bool { previous := t.active; t.active=false; return previous }
+func (t *timer) reset(_, period int64) bool {
+    previous:=t.active; t.active=true; t.period=period
+    hook:=resetHook;resetHook=nil;if hook!=nil { hook(t) };return previous
+}
+func internal_weak_runtime_registerWeakPointer(p unsafe.Pointer) unsafe.Pointer { return p }
+func internal_weak_runtime_makeStrongFromWeak(p unsafe.Pointer) unsafe.Pointer { return p }
+func lsfTimerStart(_ int64, _ int32, _ int64, _ int32, _, _ int64, result unsafe.Pointer) {
+    if denyTimerAdmission { *(*lsfTokenResult)(result)=lsfTokenResult{tag:1};return }
+    lastID++;token:=[2]uint64{7,lastID};hostOwners[token]=true
+    *(*lsfTokenResult)(result)=lsfTokenResult{generation:token[0],id:token[1]}
+}
+func lsfTimerStop(generation,id int64,result unsafe.Pointer) {
+    token:=[2]uint64{uint64(generation),uint64(id)}
+    if !hostOwners[token] { panic(fmt.Sprint("unknown original owner ",token)) }
+    delete(hostOwners,token);*(*lsfUnitResult)(result)=lsfUnitResult{}
+    if retiredOld!=nil && token==[2]uint64{7,1} { retiredOld<-struct{}{} }
+}
+func fixture() (*timeTimer,*lsfTimerWait) {
+    runtime.GOMAXPROCS(1);lsfTimerSlots=nil;lsfTimerCallbacks=0;lastID=0;resetHook=nil;denyTimerAdmission=false
+    hostOwners=map[[2]uint64]bool{}
+    fixtureChannel=&hchan{dataqsiz:1}
+    current:=newTimer(200,0,nil,nil,fixtureChannel)
+    wait:=&lsfTimerWait{token:[2]uint64{7,1},done:make(chan unit)}
+    state=&taskState{timerWaits:[]*lsfTimerWait{wait}};enteredFence=make(chan struct{});retiredOld=make(chan struct{},1)
+    return current,wait
+}
+func startFirst(t *testing.T,current *timeTimer,wait *lsfTimerWait,operation string) <-chan bool {
+    t.Helper();done:=make(chan bool,1)
+    go func(){ if operation=="reset" { done<-resetTimer(current,200,0) } else { done<-stopTimer(current) } }()
+    <-enteredFence
+    if !wait.stopped || current.lsfToken != [2]uint64{} { t.Fatal("first operation did not reach old-token fence") }
+    select { case <-done:t.Fatal("first operation escaped the old-token fence");default: }
+    return done
+}
+func startSecond(t *testing.T,current *timeTimer,operation string) <-chan bool {
+    t.Helper();started:=make(chan struct{});done:=make(chan bool,1)
+    go func(){ close(started);if operation=="reset" { done<-resetTimer(current,300,0) } else { done<-stopTimer(current) } }()
+    <-started;runtime.Gosched();select { case <-done:t.Fatal("second operation escaped held gate");default: };return done
+}
+func expectOwners(t *testing.T,current *timeTimer,count int,active bool) {
+    t.Helper();slots:=0;for _,slot:=range lsfTimerSlots { if slot.token[1]!=0 { slots++ } }
+    if len(hostOwners)!=count || slots!=count || current.active!=active || (count==1 && !hostOwners[current.lsfToken]) {
+        t.Fatalf("owners=%v slots=%d token=%v active=%v",hostOwners,slots,current.lsfToken,current.active)
+    }
+}
+func TestNewTimerConstructsAndPublishesSeededGate(t *testing.T) {
+    current,_:=fixture()
+    if !current.init || fixtureChannel.timer != &current.timer || cap(current.lsfGate)!=1 || len(current.lsfGate)!=1 {
+        t.Fatal("newTimer did not return the published timer with one gate token")
+    }
+    expectOwners(t,current,1,true)
+}
+func TestNewTimerAdmissionFailureDoesNotPublish(t *testing.T) {
+    lsfTimerSlots=nil;lsfTimerCallbacks=0;hostOwners=map[[2]uint64]bool{};denyTimerAdmission=true
+    defer func(){denyTimerAdmission=false}()
+    channel:=&hchan{dataqsiz:1};var caught any
+    func(){defer func(){caught=recover()}();newTimer(200,0,nil,nil,channel)}()
+    if caught!="LSF timer admission denied" || channel.timer!=nil || len(hostOwners)!=0 || len(lsfTimerSlots)!=0 {
+        t.Fatalf("admission=%v timer=%v owners=%v slots=%v",caught,channel.timer,hostOwners,lsfTimerSlots)
+    }
+}
+func TestResetResetSerializesAndKeepsBothTrue(t *testing.T) {
+    current,wait:=fixture();first:=startFirst(t,current,wait,"reset");second:=startSecond(t,current,"reset")
+    close(wait.done);a,b:=<-first,<-second;if !a || !b { t.Fatalf("first=%v second=%v",a,b) };expectOwners(t,current,1,true)
+}
+func TestResetStopSerializesAndLeavesStopped(t *testing.T) {
+    current,wait:=fixture();first:=startFirst(t,current,wait,"reset");second:=startSecond(t,current,"stop")
+    close(wait.done);a,b:=<-first,<-second;if !a || !b { t.Fatalf("reset=%v stop=%v",a,b) };expectOwners(t,current,0,false)
+}
+func TestStopResetSerializesAndReturnsFalseForReset(t *testing.T) {
+    current,wait:=fixture();first:=startFirst(t,current,wait,"stop");second:=startSecond(t,current,"reset")
+    close(wait.done);a,b:=<-first,<-second;if !a || b { t.Fatalf("stop=%v reset=%v",a,b) };expectOwners(t,current,1,true)
+}
+func TestStopStopSerializesAndSecondIsFalse(t *testing.T) {
+    current,wait:=fixture();first:=startFirst(t,current,wait,"stop");second:=startSecond(t,current,"stop")
+    close(wait.done);a,b:=<-first,<-second;if !a || b { t.Fatalf("first=%v second=%v",a,b) };expectOwners(t,current,0,false)
+}
+func TestOneShotCallbackMayRetireWithoutTakingGate(t *testing.T) {
+    current,wait:=fixture();installed:=make(chan struct{},1);resume:=make(chan struct{})
+    resetHook=func(*timer){ installed<-struct{}{};<-resume }
+    first:=startFirst(t,current,wait,"reset");close(wait.done);<-installed
+    second:=startSecond(t,current,"reset")
+    current.active=false // Simulate Go's one-shot when=0 before invoking the g0 callback.
+    lsfBeforeTimerCallback(&current.timer);lsfAfterTimerCallback(&current.timer)
+    expectOwners(t,current,0,false);close(resume)
+    a,b:=<-first,<-second;if !a || b { t.Fatalf("first=%v second=%v",a,b) };expectOwners(t,current,1,true)
+}
+func TestRecoverablePanicReleasesGateForFollowingStop(t *testing.T) {
+    current,wait:=fixture();resetHook=func(*timer){panic("modeled panic")};done:=make(chan interface{},1)
+    go func(){defer func(){done<-recover()}();resetTimer(current,200,0)}()
+    <-enteredFence;close(wait.done)
+    if result:=<-done;result!="modeled panic" { t.Fatal(result) }
+    if !stopTimer(current) { t.Fatal("remaining model timer was not active") };expectOwners(t,current,0,false)
+}
