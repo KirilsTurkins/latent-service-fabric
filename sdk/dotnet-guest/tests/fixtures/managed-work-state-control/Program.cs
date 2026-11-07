@@ -235,6 +235,29 @@ internal static class StateControl
         Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
         Need(!rootJoinReturned && refusedSettlements == 2 && Count(0) == 3 && Count(6) == 2);
     }
+    private static void QueueSettlementControl(bool rollback, bool unknown)
+    {
+        Limits[3] = 2;
+        object item = new(); ManagedWorkRuntime.Enqueue(item);
+        var original = ManagedWorkRuntime.QueuedTokenForControl(item)
+            ?? throw new InvalidOperationException("missing-original-control-queue-token");
+        settlementRefusal = original.Id; settlementUnknown = unknown;
+        Refuses(() => {
+            if (rollback) ManagedWorkRuntime.EnqueueFailed(item);
+            else ManagedWorkRuntime.Dequeue(item);
+        }, "managed-work-settlement-refused");
+        Refuses(() => ManagedWorkRuntime.Dequeue(item), "managed-work-queue-settlement-uncertain");
+        Refuses(() => ManagedWorkRuntime.EnqueueFailed(item), "managed-work-queue-settlement-uncertain");
+        Refuses(() => ManagedWorkRuntime.Enqueue(item), "managed-work-queue-settlement-uncertain");
+        object other = new(); ManagedWorkRuntime.Enqueue(other);
+        ManagedWorkRuntime.Dequeue(other); ManagedWorkRuntime.CallbackCompleted(other);
+        Refuses(() => { ManagedWorkRuntime.JoinAcceptedWork(); rootJoinReturned = true; },
+            "managed-work-unproven-quiescence");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+        Need(!rootJoinReturned && refusedSettlements == 1 && Count(0) == 2 && Count(3) == (unknown ? 0 : 1)
+            && ManagedWorkRuntime.QueuedTokenForControl(item) == original
+            && Owners.ContainsKey(original.Id) != unknown && Work.Count == 0);
+    }
     private static void Run(string name)
     {
         if (name == "untracked-startup-refused-before-admission")
@@ -273,6 +296,10 @@ internal static class StateControl
                 object item = new(); ManagedWorkRuntime.Enqueue(item); ManagedWorkRuntime.EnqueueFailed(item);
                 Need(Count(0) == 1 && Count(3) == 0); Finish(); break;
             }
+            case "queue-rollback-refusal-prevents-retry": QueueSettlementControl(true, false); break;
+            case "queue-rollback-unknown-prevents-retry": QueueSettlementControl(true, true); break;
+            case "queue-dequeue-refusal-prevents-retry": QueueSettlementControl(false, false); break;
+            case "queue-dequeue-unknown-prevents-retry": QueueSettlementControl(false, true); break;
             case "enqueue-failure-settlement-refusal-retains-owner":
             case "dequeue-settlement-refusal-retains-owner": {
                 object item = new(); ManagedWorkRuntime.Enqueue(item);

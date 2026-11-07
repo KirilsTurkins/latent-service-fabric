@@ -42,6 +42,7 @@ public static partial class ManagedWorkRuntime
         internal object Item = null!;
         internal Record Owner = null!;
         internal (ulong Generation, ulong Id) Token;
+        internal bool SettlementAttempted;
     }
 
     private sealed class Required
@@ -253,8 +254,12 @@ public static partial class ManagedWorkRuntime
         int index = -1;
         for (int i = 0; i < MaximumQueued; i++)
         {
-            if (queued![i] is not null && ReferenceEquals(queued[i]!.Item, item) && FindTimer(item) is null)
-                throw new InvalidOperationException("managed-work-duplicate-enqueue");
+            if (queued![i] is { } existing && ReferenceEquals(existing.Item, item))
+            {
+                if (existing.SettlementAttempted)
+                    throw new InvalidOperationException("managed-work-queue-settlement-uncertain");
+                if (FindTimer(item) is null) throw new InvalidOperationException("managed-work-duplicate-enqueue");
+            }
             if (index < 0 && queued[i] is null) index = i;
         }
         if (index < 0) throw new InvalidOperationException("managed-work-queue-record-limit");
@@ -295,11 +300,15 @@ public static partial class ManagedWorkRuntime
     public static void EnqueueFailed(object item)
     {
         if (!installed) return;
+        foreach (var existing in queued!)
+            if (existing is not null && ReferenceEquals(existing.Item, item) && existing.SettlementAttempted)
+                throw new InvalidOperationException("managed-work-queue-settlement-uncertain");
         for (int i = 0; i < MaximumQueued; i++)
             if (queued![i] is { } pending && ReferenceEquals(pending.Item, item))
             {
-                // A refused acknowledgement must retain this exact queued owner.
-                // Retention after a terminal trap is not permission to retry it.
+                // The host may have settled before trapping; retain this
+                // exact queue record but never submit its token again.
+                pending.SettlementAttempted = true;
                 settle!(pending.Token.Generation, pending.Token.Id);
                 queued[i] = null;
                 if (pending.Owner.Completion is null && !pending.Owner.Root) Release(pending.Owner);
@@ -310,11 +319,15 @@ public static partial class ManagedWorkRuntime
     public static void Dequeue(object item)
     {
         if (!installed) return;
+        foreach (var existing in queued!)
+            if (existing is not null && ReferenceEquals(existing.Item, item) && existing.SettlementAttempted)
+                throw new InvalidOperationException("managed-work-queue-settlement-uncertain");
         for (int i = 0; i < MaximumQueued; i++)
             if (queued![i] is { } pending && ReferenceEquals(pending.Item, item))
             {
-                // A refused acknowledgement must retain this exact queued owner.
-                // Retention after a terminal trap is not permission to retry it.
+                // The host may have settled before trapping; retain this
+                // exact queue record but never submit its token again.
+                pending.SettlementAttempted = true;
                 settle!(pending.Token.Generation, pending.Token.Id);
                 queued[i] = null;
                 return;
