@@ -31,7 +31,7 @@ internal static class ManagedWorkPort
         if (changed.Count != 23 || registry.Count != 58)
             throw new InvalidDataException("managed-work-selected-method-count");
         return (hooks.Changed, new {
-            patch = "latent.dotnet.managed-accepted-work.v11",
+            patch = "latent.dotnet.managed-accepted-work.v12",
             readiness = "original-prefetched-slot-or-counted-queues-and-polls",
             readinessControls = "four-actual-generated-slot-models",
             modifiedOriginalMethods = changed,
@@ -47,6 +47,7 @@ internal static class ManagedWorkPort
             resultLookup = "exact-result-primary-before-parent-alias",
             taskLookup = "inactive-alias-fence-then-task-primary-otherwise-original-order",
             innerTaskAdmission = "independent-schedule-admits-inner-only-alias",
+            unwrapMultiplicity = "same-outer-additional-proxies-retained-as-required",
             startupReservation = "dormant-root-native-refusal-ordered-cleanup-and-context-custody",
             startupReadiness = "pre-probe-sentinel-and-untracked-dispatch-poison",
             completion = "after-original-finish-continuations",

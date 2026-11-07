@@ -380,6 +380,12 @@ public static partial class ManagedWorkRuntime
         var owner = Find(outer);
         if (owner is { Active: false } or { Result: true }) throw new InvalidOperationException("managed-work-owner-retired");
         if (owner is null) owner = Admit(promise, promise, Parent(), out _, true, null, false);
+        else if (ReferenceEquals(owner.Outer, outer) && !ReferenceEquals(owner.Primary, outer))
+        {
+            // A second proxy over the same original outer is a distinct
+            // required continuation, not a replacement for the first.
+            Remember(promise, false, owner);
+        }
         else
         {
             owner.Outer = outer;
@@ -405,7 +411,7 @@ public static partial class ManagedWorkRuntime
     // still reported by the original request future. This adds no success path.
     public static void RequiredTransport(Task task)
     {
-        Remember(task, true);
+        Remember(task, true, null);
     }
 
     // A state-machine box is an actual required continuation of its current
@@ -420,11 +426,11 @@ public static partial class ManagedWorkRuntime
             return;
         }
         if (task.IsCompleted) return;
-        Remember(task, false);
+        Remember(task, false, null);
         BindAsyncContext(task);
     }
 
-    private static void Remember(Task task, bool transport)
+    private static void Remember(Task task, bool transport, Record? ownerOverride)
     {
         if (!installed)
         {
@@ -438,7 +444,7 @@ public static partial class ManagedWorkRuntime
                 return;
             }
         if (task.IsCompleted) return;
-        var owner = current!.Value;
+        var owner = ownerOverride ?? current!.Value;
         if (owner is null || !owner.Active || owner.Result)
             throw new InvalidOperationException("managed-work-transport-parent");
         if (ReferenceEquals(owner.Completion, task)) return;
