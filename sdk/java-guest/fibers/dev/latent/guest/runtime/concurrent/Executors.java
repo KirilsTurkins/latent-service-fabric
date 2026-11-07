@@ -9,7 +9,12 @@ import java.util.concurrent.ThreadFactory;
 public final class Executors {
     private static int nextPool;
     private Executors() { }
-    static boolean isManaged(java.util.concurrent.Executor executor) { return executor instanceof ManagedExecutor; }
+    static boolean isManaged(java.util.concurrent.Executor executor) {
+        // A scheduled-executor subclass may override execute and retain or
+        // forward the action independently of the queue we can observe.
+        return executor instanceof ManagedExecutor
+            || executor != null && executor.getClass() == ScheduledThreadPoolExecutor.class;
+    }
     public static ExecutorService newFixedThreadPool(int threads) { return newFixedThreadPool(threads, defaultThreadFactory()); }
     public static ExecutorService newFixedThreadPool(int threads, ThreadFactory factory) { return new ManagedExecutor(threads, factory); }
     public static ExecutorService newSingleThreadExecutor() { return newFixedThreadPool(1); }

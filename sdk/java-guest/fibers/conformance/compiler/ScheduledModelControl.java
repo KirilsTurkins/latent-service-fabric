@@ -19,10 +19,11 @@ import org.teavm.parsing.substitution.DefaultSubstituteClassNameMapping;
 public final class ScheduledModelControl {
     private static final String STANDARD = RuntimeSubstitution.STANDARD;
     private static final String TASK = RuntimeSubstitution.SDK + "ScheduledThreadPoolExecutor$Task";
+    private static final String RUNNABLE_CALL = RuntimeSubstitution.SDK + "ScheduledThreadPoolExecutor$RunnableCall";
     private static final String MANAGED = RuntimeSubstitution.SDK + "ManagedExecutor";
     private static void require(boolean value, String why) { if (!value) throw new AssertionError(why); }
     private static boolean owned(String name) {
-        return name.equals(TASK) || name.equals(MANAGED) || name.startsWith(STANDARD)
+        return name.equals(TASK) || name.equals(RUNNABLE_CALL) || name.equals(MANAGED) || name.startsWith(STANDARD)
             && RuntimeSubstitution.API.contains(name.substring(STANDARD.length()));
     }
     private static void canonical(ValueType type) {
@@ -55,8 +56,9 @@ public final class ScheduledModelControl {
         String[] before = {STANDARD + "Executors$callable$lambda$_13_0",
             STANDARD + "ScheduledThreadPoolExecutor$startWorker$lambda$_6_0",
             RuntimeSubstitution.SDK + "ManagedExecutor$startWorker$lambda$_6_0",
-            STANDARD + "ScheduledThreadPoolExecutor$Task", STANDARD + "Executors$1"};
-        String[] expected = {before[0], before[1], before[2], TASK, RuntimeSubstitution.SDK + "Executors$1"};
+            STANDARD + "ScheduledThreadPoolExecutor$Task", STANDARD + "Executors$1",
+            STANDARD + "ScheduledThreadPoolExecutor$RunnableCall"};
+        String[] expected = {before[0], before[1], before[2], TASK, RuntimeSubstitution.SDK + "Executors$1", RUNNABLE_CALL};
         ClassHolder carrier = ModelUtils.copyClass(original);
         MethodHolder method = new MethodHolder("constructedCallbackIdentityControl", ValueType.VOID);
         method.getModifiers().add(ElementModifier.STATIC);
@@ -73,7 +75,7 @@ public final class ScheduledModelControl {
         for (Instruction instruction : method.getProgram().basicBlockAt(0))
             if (instruction instanceof ConstructInstruction construct)
                 require(construct.getType().equals(expected[count++]), "actual-observed-construction-identity");
-        require(count == 5, "complete-observed-construction-identity");
+        require(count == 6, "complete-observed-construction-identity");
     }
     private static void generatedCallback(ClassHolder owner, String methodName, ClassReaderSource source) throws Exception {
         var collector = new LambdaEmitterControlContext(source);
@@ -123,6 +125,9 @@ public final class ScheduledModelControl {
         require(task != null && task.getName().equals(TASK), "missing-private-scheduled-task"); models.add(task);
         ClassHolder managed = source.get(MANAGED);
         require(managed != null, "missing-SDK-origin-worker-model"); models.add(managed);
+        ClassHolder runnableCall = source.get(RUNNABLE_CALL);
+        require(runnableCall != null && runnableCall.getName().equals(RUNNABLE_CALL), "missing-private-runnable-call");
+        models.add(runnableCall);
         ClassHolderTransformerContext context = new ClassHolderTransformerContext() {
             public ClassHierarchy getHierarchy() { return new ClassHierarchy(source); }
             public org.teavm.diagnostics.Diagnostics getDiagnostics() { throw new AssertionError("diagnostics"); }
@@ -171,6 +176,6 @@ public final class ScheduledModelControl {
         require(method(source, STANDARD + "ScheduledThreadPoolExecutor",
             new MethodDescriptor("unsupportedControlMember", ValueType.VOID), new HashSet<>()) == null,
             "unsupported-has-no-original-fallback");
-        System.out.println("SCHEDULED_MODEL_CONTROL PASS standard-APIs;private-task;canonical-fields-and-methods;ordinary-constructor;no-fallback;constructed-identities=5;actual-generated-callbacks=3;models=8");
+        System.out.println("SCHEDULED_MODEL_CONTROL PASS standard-APIs;private-task-and-call;canonical-fields-and-methods;ordinary-constructor;no-fallback;constructed-identities=6;actual-generated-callbacks=3;models=9");
     }
 }
