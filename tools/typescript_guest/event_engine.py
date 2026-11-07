@@ -185,6 +185,29 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         b'    if (Event::has_flag(event, EventFlag::StopImmediatePropagation)) {\n'
         b'      break; // remove already-fired once listeners before returning\n'
         b'    }\n', 'finish-once-listener-retirement-after-immediate-stop')
+    source = replace_once(source, b'  bool listeners_removed = false;\n',
+        b'  bool listeners_removed = false;\n  bool invocation_failed = false;\n',
+        'retain-once-listener-cleanup-on-callback-lookup-error')
+    source = replace_once(source,
+        b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn)) {\n'
+        b'        return false;\n'
+        b'      }\n',
+        b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn)) {\n'
+        b'        invocation_failed = true;\n'
+        b'        break;\n'
+        b'      }\n', 'finish-once-listener-retirement-after-callback-lookup-error')
+    source = replace_once(source, b'  return true;\n}\n\nJSObject *EventTarget::create(',
+        b'  return !invocation_failed;\n}\n\nJSObject *EventTarget::create(',
+        'preserve-callback-lookup-failure-after-retirement')
+    source = replace_once(source,
+        b'  if (!invoke_listeners(cx, target, event)) {\n    return false;\n  }\n',
+        b'  const bool invoked = invoke_listeners(cx, target, event);\n',
+        'restore-dispatch-state-after-listener-error')
+    source = replace_once(source,
+        b'  rval.setBoolean(!Event::has_flag(event, EventFlag::Canceled));\n',
+        b'  if (!invoked) return false; // preserve the original pending exception\n'
+        b'  rval.setBoolean(!Event::has_flag(event, EventFlag::Canceled));\n',
+        'return-original-listener-error-after-dispatch-cleanup')
     # All three original list construction sites use exactly the same wrapper.
     for function, failing in [('create', b'nullptr'), ('init', b'false'), ('constructor', b'false')]:
         start = source.index(b'EventTarget::'+function.encode()+b'(')
