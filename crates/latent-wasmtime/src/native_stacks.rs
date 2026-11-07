@@ -20,6 +20,8 @@ use latent_core::{ActivationBudget, HostMemoryReservation, PlatformError, Platfo
 pub(crate) const CHILD_METADATA_ESCROW: usize = 8192;
 
 mod children;
+#[cfg(feature = "development-rust-http-combined")]
+mod combined;
 mod workers;
 
 thread_local! {

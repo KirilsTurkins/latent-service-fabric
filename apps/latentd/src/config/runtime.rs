@@ -132,6 +132,10 @@ fn install_stack_accounting(
         super::model::EngineThreadingProfile::RustContext40SyncCooperativeV1 => {
             Some(latent_wasmtime::NativeThreadProfile::RustContext40SyncCooperativeV1)
         }
+        #[cfg(feature = "development-rust-http-combined")]
+        super::model::EngineThreadingProfile::RustContext40CombinedHttpDiagnosticV1 => {
+            Some(latent_wasmtime::NativeThreadProfile::RustContext40CombinedHttpDiagnosticV1)
+        }
     };
     if let Some(selected) = selected {
         let installation = config

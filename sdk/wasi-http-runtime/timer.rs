@@ -1,0 +1,77 @@
+//! Real activation-owned timer readiness for the callback-safe Rust driver.
+use super::{latent::runtime::activation as runtime, owner::Owner, pump, quota::Slot};
+use std::{
+    cell::{Cell, RefCell},
+    future::Future,
+    pin::Pin,
+    rc::Rc,
+    task::{Context, Poll},
+};
+
+type Work = Pin<Box<dyn Future<Output = Result<(), runtime::Error>>>>;
+pub struct Timer {
+    work: RefCell<Option<Work>>,
+    elapsed: Cell<bool>,
+    failure: Cell<Option<runtime::Error>>,
+    owner: Option<Owner>,
+    slot: Option<Slot>,
+}
+impl Timer {
+    pub fn new(nanos: u64) -> Rc<Self> {
+        let slot = Slot::new();
+        let owner = Owner::new(runtime::OwnerKind::Wait)
+            .expect("activation timer authority or capacity unavailable");
+        // The actual host wait is admitted on this lazy future's first poll.
+        // Its creating managed callback may already have returned by then;
+        // retain the admitted Wait owner as the continuation until actual drop.
+        let continuation = Some(owner.token());
+        let timer = Rc::new(Self {
+            work: RefCell::new(Some(Box::pin(runtime::wait_for(nanos, continuation)))),
+            elapsed: Cell::new(false),
+            failure: Cell::new(None),
+            owner: Some(owner),
+            slot: Some(slot),
+        });
+        let operation: Rc<dyn pump::Progress> = timer.clone();
+        pump::Pump::track(&operation);
+        timer
+    }
+}
+impl pump::Progress for Timer {
+    fn pending(&self) -> bool {
+        self.work.borrow().is_some()
+    }
+
+    fn progress(&self, context: &mut Context<'_>) {
+        let Some(mut work) = self.work.borrow_mut().take() else {
+            return;
+        };
+        match work.as_mut().poll(context) {
+            Poll::Pending => *self.work.borrow_mut() = Some(work),
+            Poll::Ready(Ok(())) => self.elapsed.set(true),
+            Poll::Ready(Err(error)) => self.failure.set(Some(error)),
+        }
+    }
+}
+impl pump::Readiness for Timer {
+    fn ready(&self) -> bool {
+        assert!(
+            self.failure.get().is_none(),
+            "activation timer did not elapse"
+        );
+        self.elapsed.get()
+    }
+}
+impl Drop for Timer {
+    fn drop(&mut self) {
+        if let Some(work) = self.work.get_mut().take() {
+            let owner = self.owner.take();
+            let slot = self.slot.take();
+            pump::Pump::retire(move || {
+                drop(work);
+                drop(owner);
+                drop(slot);
+            });
+        }
+    }
+}

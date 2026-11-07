@@ -1,0 +1,3049 @@
+{
+  "observation": {
+    "schemaVersion": "latent.rust.http-thread-core-observation.v1",
+    "status": "observed-composed-http-thread-source-runtime-unqualified",
+    "stage": "complete",
+    "actualApplicationCoreCompiled": true,
+    "normalBuildComplete": false,
+    "normalComponentGateRefused": true,
+    "actualGuestExecuted": false,
+    "httpCompositionIncluded": true,
+    "originalCore": {
+      "name": "original-core",
+      "digest": "sha256:25ecfa4024c125f3c8829216c8c5211097d9f27a8ae86e8385ecfb6526ebfcca",
+      "size": 999654
+    },
+    "combinedComponent": {
+      "name": "unadmitted-http-thread-component",
+      "digest": "sha256:71e0d0bd5cd4be0578eff4ad0ee02dc0d40f3146bc5e373193f3cbc9b8d3fcef",
+      "size": 1306998
+    },
+    "retainedOriginalSource": {
+      "name": "application-source-and-capture.tar.gz",
+      "digest": "sha256:3416c5870ad2887534f0f4311422f5c716dfd1fc65c670cd35c861fd14c12949",
+      "size": 27868270
+    },
+    "httpPreparedReceiptDigest": "sha256:b0331048d0905c709126b2e09ca515c70457548b6c1a420e58446cea3d71cad7",
+    "httpComposition": {
+      "schemaVersion": "latent.rust.http.exact-composition.v1",
+      "profile": "rust-wasi-http-0.2.12-v1",
+      "originalComponentDigest": "sha256:1563aaf4cf996d5ffac023a490eb6c647153d0bc3c21d1558eb59233fc13387d",
+      "selectedComponentDigest": "sha256:71e0d0bd5cd4be0578eff4ad0ee02dc0d40f3146bc5e373193f3cbc9b8d3fcef",
+      "root": {
+        "schemaVersion": "latent.rust.http.compiler-root-source.v1",
+        "name": "lsf-owned-http-root-8fdb2e96023ed499",
+        "files": {
+          "Cargo.lock": {
+            "digest": "sha256:48c0f8497defb795cab3f720f8a1885ca9e852fbf5e297ef45bd9d190f9df203",
+            "size": 8078
+          },
+          "Cargo.toml": {
+            "digest": "sha256:ba816dab9cef139e317f35d6cebe8839382c5cfd9b9961764db662ccb9e83bb0",
+            "size": 231
+          },
+          "src/lib.rs": {
+            "digest": "sha256:8fdb2e96023ed4995b551149cdca85c80882416651e634d861dc66196b1768f6",
+            "size": 480
+          },
+          "wit/world.wit": {
+            "digest": "sha256:1b30d07ab5004691dde7fb992b2375d1687ee84f017d21da4fce9e84db04066c",
+            "size": 6854
+          }
+        },
+        "originalCapturedCargoLock": "sha256:17f6580e3e3f276633216112d7412f927ff242470cc5dc031145ebf75d253feb",
+        "calls": [
+          {
+            "interface": "examples:greeting/api@1.0.0",
+            "function": "greet",
+            "asyncPublic": true,
+            "drainBeforeReturningValueOrError": true
+          }
+        ],
+        "publicResultPreserved": true,
+        "applicationSourceRewritten": false,
+        "rustBindingsAsync": false,
+        "publicContractKindsPreserved": true,
+        "privateCallingConvention": "sync-core-to-async-component-projection",
+        "executionQualification": false,
+        "lockNormalization": {
+          "projectedLockDigest": "sha256:59fbf0bc050c9dfe22136a4c07a5ca876256a3346e891594e5ecb3c896e16027",
+          "normalizedLockDigest": "sha256:48c0f8497defb795cab3f720f8a1885ca9e852fbf5e297ef45bd9d190f9df203",
+          "originalPackageCount": 34,
+          "normalizedPackageCount": 34,
+          "removedDependencyEdges": 5,
+          "newPackageIdentities": 0,
+          "changedPackageSourceOrChecksums": 0,
+          "newDependencyEdges": 0,
+          "networkResolution": false,
+          "buildScriptsExecuted": false,
+          "compilation": false
+        }
+      },
+      "compilerRootOutputs": "sha256:3926cdd5b8233476744c162075ed0221ac96109c78eb279f766d2661cd539411",
+      "internalIo": {
+        "schemaVersion": "latent.rust.http.private-projection.v1",
+        "root": false,
+        "functions": {
+          "wasi:io/poll@0.2.12": [
+            "[method]pollable.block",
+            "poll"
+          ],
+          "wasi:io/streams@0.2.12": [
+            "[method]input-stream.blocking-read",
+            "[method]output-stream.blocking-write-and-flush"
+          ]
+        },
+        "originalDigest": "sha256:1563aaf4cf996d5ffac023a490eb6c647153d0bc3c21d1558eb59233fc13387d",
+        "selectedDigest": "sha256:b921621130ac60a77800a677d10804a420a1dea5f12151add8d2e0cc0b194c48",
+        "adapterDigest": "sha256:5e528f44dd8c68b01a9e7048c4b571ee38305fa7343ef07e9506bff6c43a3104",
+        "coreBytesUnchanged": true,
+        "publicApplicationGraphUnchanged": true,
+        "cores": [
+          {
+            "sha256": "sha256:362ea6ce72591b6e5be4eac79ee07dbfaa5be928c1c3ba1dde3bb50454c125b3",
+            "bytes": 918807
+          },
+          {
+            "sha256": "sha256:6dddd6673d14ddcae445a10f7e312eff94929b44e253155330754959a303245c",
+            "bytes": 747
+          },
+          {
+            "sha256": "sha256:9fa3129a3fe5a2fe66961d16c33c0601f3aa45cdfd9162169d9eb242f62a11e1",
+            "bytes": 358
+          }
+        ],
+        "runtimeQualification": false
+      },
+      "privateDrain": {
+        "schemaVersion": "latent.rust.http.private-projection.v1",
+        "root": true,
+        "functions": {
+          "latent:rust-http-retirement/owner@0.1.0": [
+            "drain"
+          ]
+        },
+        "originalDigest": "sha256:99e016611f60c74907f1e1fb255c925c76e4b690cb459d807afd374ce12d2f94",
+        "selectedDigest": "sha256:1104d901b56103a8be828e07da77e0b975cf6f12d762c4a25cf67354ca10aa0f",
+        "adapterDigest": "sha256:5e528f44dd8c68b01a9e7048c4b571ee38305fa7343ef07e9506bff6c43a3104",
+        "coreBytesUnchanged": true,
+        "publicApplicationGraphUnchanged": true,
+        "cores": [
+          {
+            "sha256": "sha256:3cf4eb7e9405d723db5eabab0003e54a9cc86c4ff9cde5ed96f9050fb384d023",
+            "bytes": 19554
+          },
+          {
+            "sha256": "sha256:e34e81533f21920e7cfe26c8a600f4d7aeee4caa6b333f58cae6c0202c083b91",
+            "bytes": 112
+          },
+          {
+            "sha256": "sha256:26facadcd605ab2afd65892c43f7ff72788ae481669e4fcbcd94cc3afa640700",
+            "bytes": 98
+          }
+        ],
+        "runtimeQualification": false
+      },
+      "source": "sha256:cafdfff4e8ff6bc6dd94393a2f6eb9f2111d177fa3ff6621f0bc9cfe3fb44124",
+      "originalCoreModulesRetained": 3,
+      "publicGraphUnchanged": true,
+      "imports": [
+        "latent:clock/monotonic@0.1.0",
+        "latent:http/streaming@0.3.0",
+        "latent:runtime-native/threads@0.1.0",
+        "latent:runtime/activation@0.1.0"
+      ],
+      "explicitAsyncPublicContract": [
+        {
+          "interface": "examples:greeting/api@1.0.0",
+          "function": "greet",
+          "kind": "async-freestanding"
+        }
+      ],
+      "compilerRootRustBindingsAsync": false,
+      "forwardingRootApplicationImportsExact": true,
+      "exports": [
+        "examples:greeting/api@1.0.0"
+      ],
+      "runtimeReceipt": "sha256:b0331048d0905c709126b2e09ca515c70457548b6c1a420e58446cea3d71cad7",
+      "librarySourceRewritten": false,
+      "signedExecutionQualification": false,
+      "diagnosticComposer": {
+        "name": "diagnostic-composer",
+        "digest": "sha256:83259349b630f79a60490322b068e7ad2dba784720b0d467decccc0aecc743b5",
+        "size": 22917648
+      },
+      "diagnosticOnly": true,
+      "diagnosticValidationFeatures": "cm-threading,cm-async,cm-async-stackful,cm-more-async-builtins"
+    },
+    "diagnosticComposer": {
+      "name": "diagnostic-composer",
+      "digest": "sha256:83259349b630f79a60490322b068e7ad2dba784720b0d467decccc0aecc743b5",
+      "size": 22917648
+    },
+    "capture": {
+      "sourceDigest": "sha256:1760f2f3e520229c42dfe0884e544fdb7b138b7eb850876e290b759fc6056663"
+    },
+    "commands": [
+      {
+        "stage": "capture-original-application",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-thread-diagnostic-composer-version",
+        "exitCode": 0
+      },
+      {
+        "stage": "zig-version",
+        "exitCode": 0
+      },
+      {
+        "stage": "bindgen-version",
+        "exitCode": 0
+      },
+      {
+        "stage": "sdk-bindings",
+        "exitCode": 0
+      },
+      {
+        "stage": "compile",
+        "exitCode": 0
+      },
+      {
+        "stage": "validate-original-core",
+        "exitCode": 0
+      },
+      {
+        "stage": "original-source-wit-graph",
+        "exitCode": 0
+      },
+      {
+        "stage": "original-emitted-wit-graph",
+        "exitCode": 0
+      },
+      {
+        "stage": "ordinary-owned-core",
+        "exitCode": 0
+      },
+      {
+        "stage": "validate-derived-core",
+        "exitCode": 0
+      },
+      {
+        "stage": "preview-component-encode",
+        "exitCode": 0
+      },
+      {
+        "stage": "validate-preview-component",
+        "exitCode": 0
+      },
+      {
+        "stage": "preview-component-graph",
+        "exitCode": 0
+      },
+      {
+        "stage": "http-thread-contracts",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-original-graph",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-original-canonical-wit",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-projection-original-wit",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-projection-adapter-wit",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-projection-unbundle",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-projection-print",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-projection-encode",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-projection-validate",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-projection-selected-wit",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-compiler-root-normalize-lock",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-compiler-root-compile",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-compiler-root-component",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-compiler-root-graph",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-projection-original-wit",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-projection-adapter-wit",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-projection-unbundle",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-projection-print",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-projection-encode",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-projection-validate",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-projection-selected-wit",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-exact-composition",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-final-validation",
+        "exitCode": 0
+      },
+      {
+        "stage": "rust-http-final-graph",
+        "exitCode": 0
+      },
+      {
+        "stage": "combined-component-graph",
+        "exitCode": 0
+      }
+    ]
+  },
+  "composition": {
+    "schemaVersion": "latent.rust.http.exact-composition.v1",
+    "profile": "rust-wasi-http-0.2.12-v1",
+    "originalComponentDigest": "sha256:1563aaf4cf996d5ffac023a490eb6c647153d0bc3c21d1558eb59233fc13387d",
+    "selectedComponentDigest": "sha256:71e0d0bd5cd4be0578eff4ad0ee02dc0d40f3146bc5e373193f3cbc9b8d3fcef",
+    "root": {
+      "schemaVersion": "latent.rust.http.compiler-root-source.v1",
+      "name": "lsf-owned-http-root-8fdb2e96023ed499",
+      "files": {
+        "Cargo.lock": {
+          "digest": "sha256:48c0f8497defb795cab3f720f8a1885ca9e852fbf5e297ef45bd9d190f9df203",
+          "size": 8078
+        },
+        "Cargo.toml": {
+          "digest": "sha256:ba816dab9cef139e317f35d6cebe8839382c5cfd9b9961764db662ccb9e83bb0",
+          "size": 231
+        },
+        "src/lib.rs": {
+          "digest": "sha256:8fdb2e96023ed4995b551149cdca85c80882416651e634d861dc66196b1768f6",
+          "size": 480
+        },
+        "wit/world.wit": {
+          "digest": "sha256:1b30d07ab5004691dde7fb992b2375d1687ee84f017d21da4fce9e84db04066c",
+          "size": 6854
+        }
+      },
+      "originalCapturedCargoLock": "sha256:17f6580e3e3f276633216112d7412f927ff242470cc5dc031145ebf75d253feb",
+      "calls": [
+        {
+          "interface": "examples:greeting/api@1.0.0",
+          "function": "greet",
+          "asyncPublic": true,
+          "drainBeforeReturningValueOrError": true
+        }
+      ],
+      "publicResultPreserved": true,
+      "applicationSourceRewritten": false,
+      "rustBindingsAsync": false,
+      "publicContractKindsPreserved": true,
+      "privateCallingConvention": "sync-core-to-async-component-projection",
+      "executionQualification": false,
+      "lockNormalization": {
+        "projectedLockDigest": "sha256:59fbf0bc050c9dfe22136a4c07a5ca876256a3346e891594e5ecb3c896e16027",
+        "normalizedLockDigest": "sha256:48c0f8497defb795cab3f720f8a1885ca9e852fbf5e297ef45bd9d190f9df203",
+        "originalPackageCount": 34,
+        "normalizedPackageCount": 34,
+        "removedDependencyEdges": 5,
+        "newPackageIdentities": 0,
+        "changedPackageSourceOrChecksums": 0,
+        "newDependencyEdges": 0,
+        "networkResolution": false,
+        "buildScriptsExecuted": false,
+        "compilation": false
+      }
+    },
+    "compilerRootOutputs": "sha256:3926cdd5b8233476744c162075ed0221ac96109c78eb279f766d2661cd539411",
+    "internalIo": {
+      "schemaVersion": "latent.rust.http.private-projection.v1",
+      "root": false,
+      "functions": {
+        "wasi:io/poll@0.2.12": [
+          "[method]pollable.block",
+          "poll"
+        ],
+        "wasi:io/streams@0.2.12": [
+          "[method]input-stream.blocking-read",
+          "[method]output-stream.blocking-write-and-flush"
+        ]
+      },
+      "originalDigest": "sha256:1563aaf4cf996d5ffac023a490eb6c647153d0bc3c21d1558eb59233fc13387d",
+      "selectedDigest": "sha256:b921621130ac60a77800a677d10804a420a1dea5f12151add8d2e0cc0b194c48",
+      "adapterDigest": "sha256:5e528f44dd8c68b01a9e7048c4b571ee38305fa7343ef07e9506bff6c43a3104",
+      "coreBytesUnchanged": true,
+      "publicApplicationGraphUnchanged": true,
+      "cores": [
+        {
+          "sha256": "sha256:362ea6ce72591b6e5be4eac79ee07dbfaa5be928c1c3ba1dde3bb50454c125b3",
+          "bytes": 918807
+        },
+        {
+          "sha256": "sha256:6dddd6673d14ddcae445a10f7e312eff94929b44e253155330754959a303245c",
+          "bytes": 747
+        },
+        {
+          "sha256": "sha256:9fa3129a3fe5a2fe66961d16c33c0601f3aa45cdfd9162169d9eb242f62a11e1",
+          "bytes": 358
+        }
+      ],
+      "runtimeQualification": false
+    },
+    "privateDrain": {
+      "schemaVersion": "latent.rust.http.private-projection.v1",
+      "root": true,
+      "functions": {
+        "latent:rust-http-retirement/owner@0.1.0": [
+          "drain"
+        ]
+      },
+      "originalDigest": "sha256:99e016611f60c74907f1e1fb255c925c76e4b690cb459d807afd374ce12d2f94",
+      "selectedDigest": "sha256:1104d901b56103a8be828e07da77e0b975cf6f12d762c4a25cf67354ca10aa0f",
+      "adapterDigest": "sha256:5e528f44dd8c68b01a9e7048c4b571ee38305fa7343ef07e9506bff6c43a3104",
+      "coreBytesUnchanged": true,
+      "publicApplicationGraphUnchanged": true,
+      "cores": [
+        {
+          "sha256": "sha256:3cf4eb7e9405d723db5eabab0003e54a9cc86c4ff9cde5ed96f9050fb384d023",
+          "bytes": 19554
+        },
+        {
+          "sha256": "sha256:e34e81533f21920e7cfe26c8a600f4d7aeee4caa6b333f58cae6c0202c083b91",
+          "bytes": 112
+        },
+        {
+          "sha256": "sha256:26facadcd605ab2afd65892c43f7ff72788ae481669e4fcbcd94cc3afa640700",
+          "bytes": 98
+        }
+      ],
+      "runtimeQualification": false
+    },
+    "source": "sha256:cafdfff4e8ff6bc6dd94393a2f6eb9f2111d177fa3ff6621f0bc9cfe3fb44124",
+    "originalCoreModulesRetained": 3,
+    "publicGraphUnchanged": true,
+    "imports": [
+      "latent:clock/monotonic@0.1.0",
+      "latent:http/streaming@0.3.0",
+      "latent:runtime-native/threads@0.1.0",
+      "latent:runtime/activation@0.1.0"
+    ],
+    "explicitAsyncPublicContract": [
+      {
+        "interface": "examples:greeting/api@1.0.0",
+        "function": "greet",
+        "kind": "async-freestanding"
+      }
+    ],
+    "compilerRootRustBindingsAsync": false,
+    "forwardingRootApplicationImportsExact": true,
+    "exports": [
+      "examples:greeting/api@1.0.0"
+    ],
+    "runtimeReceipt": "sha256:b0331048d0905c709126b2e09ca515c70457548b6c1a420e58446cea3d71cad7",
+    "librarySourceRewritten": false,
+    "signedExecutionQualification": false
+  },
+  "recipe": {
+    "head": "1d81c35ca6b206bafba113b6214de09bc6781bdb",
+    "tree": "1e5d2f29ba8689a526049314a5e1322e5c271a67",
+    "files": [
+      {
+        "path": ".cargo/config.toml",
+        "gitBlob": "4a6a1abdd612113aea698f0f51e28cb675ea8ead",
+        "digest": "sha256:aabd2af12e26033cb8de9b63841b54574718406e4479b47e41bc0d92fc6f14e0",
+        "size": 51
+      },
+      {
+        "path": ".cargo/managed-guest.toml",
+        "gitBlob": "ebb6342d22d9161d2fd9494c832bbba3d54f3fda",
+        "digest": "sha256:199eb2f4f23ccbc2b2e363afb3b0f82099567c7f46d22b86ba8131b19484c48a",
+        "size": 652
+      },
+      {
+        "path": ".github/workflows/rust-http-thread-composition-diagnostic.yml",
+        "gitBlob": "05388672fe6be38121a3ed2a272f67b448177ee2",
+        "digest": "sha256:988349ad6f42632cd4b21893dc90311556c190e7eb92ec45ea93cf668093b915",
+        "size": 6847
+      },
+      {
+        "path": "Cargo.lock",
+        "gitBlob": "7366ceadfc467c1f260d97e88e6b23e851aa206d",
+        "digest": "sha256:bc3385fd8ed9cf87593f5a1f3f6723f145d68bbc5bc94623f8b7094b0d176cd1",
+        "size": 113561
+      },
+      {
+        "path": "Cargo.toml",
+        "gitBlob": "8af488e1b8e74f03fb854c7e6bb5d14a184a97df",
+        "digest": "sha256:212044df16710a654303e1d6afdb731eb86a74e2fce146c278945f3d1aec4a97",
+        "size": 4047
+      },
+      {
+        "path": "LICENSE",
+        "gitBlob": "d9a10c0d8e868ebf8da0b3dc95bb0be634c34bfe",
+        "digest": "sha256:a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+        "size": 10173
+      },
+      {
+        "path": "NOTICE",
+        "gitBlob": "8ab913ee3a4bf414633f3d4c9391d64de8b822e2",
+        "digest": "sha256:d04951eb398e0229e800c1b9d627d0c5174691c7c3a56d2f34129e4c95585ede",
+        "size": 6424
+      },
+      {
+        "path": "crates/latent-component-bindings/Cargo.toml",
+        "gitBlob": "4dc114303dab8a832048bb990b4fe1c4f75e7bcf",
+        "digest": "sha256:81659bd7dadac16fdf5df3ca97ca762f75ed725975e78b0d6ba79f0462c7826d",
+        "size": 537
+      },
+      {
+        "path": "crates/latent-component-bindings/README.md",
+        "gitBlob": "8f11951433c7515449f3936fe18bc682c9ec2154",
+        "digest": "sha256:7987450b6a26a81b14e0a18cc0b30cc8ea22dc6b5d313d10f30fc3258375da49",
+        "size": 3787
+      },
+      {
+        "path": "crates/latent-component-bindings/build.rs",
+        "gitBlob": "2cfef10b6a323e6766e2d4343a679fb896be29f3",
+        "digest": "sha256:947b787bdcc7e5f9dc521f5fb10513bff84b90831e90757b8f4d6d80e65e280e",
+        "size": 15668
+      },
+      {
+        "path": "crates/latent-component-bindings/src/lib.rs",
+        "gitBlob": "a3775f2854d753323e3cdcc7c67fbba161ac5783",
+        "digest": "sha256:96ac1322c8b8100b2fe913b31df3979e89f9cf93460cc4c6b482756d5b92db22",
+        "size": 3698
+      },
+      {
+        "path": "crates/latent-component-threading/src/rust_catalogue/adapted-wit-metadata.bin",
+        "gitBlob": "8286a9df63106edbbfc47d8572087a3e2911c324",
+        "digest": "sha256:14bae97e29b1064d917330e77a459d068214ae6857d5fe6ff2298bdbecc7b826",
+        "size": 1420
+      },
+      {
+        "path": "crates/latent-component-threading/src/rust_catalogue/original-wit-metadata.bin",
+        "gitBlob": "a96e30c73f8b481d5f73bc4798166327244b053c",
+        "digest": "sha256:d46e07b3b6b15e7b6d2f9bef3d1ab0fe1fc2baeb886e77eba09c76f6b3df58a3",
+        "size": 1420
+      },
+      {
+        "path": "crates/vendor/bytes/CHANGELOG.md",
+        "gitBlob": "fa388d7021f3658c1a999e8f105d808cbd82a766",
+        "digest": "sha256:0c4407c0700f0d64663f5c07579ac734e70b5febcbd491fb53367232e22ab820",
+        "size": 12646
+      },
+      {
+        "path": "crates/vendor/bytes/Cargo.toml",
+        "gitBlob": "3a407170dc36ad7f83b2fd26e18f9d7bb24de130",
+        "digest": "sha256:989921f4afccdec4c5076d4ded65428b22ff42899475eeff847e7bd2cc68ace6",
+        "size": 2601
+      },
+      {
+        "path": "crates/vendor/bytes/Cargo.toml.orig",
+        "gitBlob": "3fe8583699d0931dea46239b2659c93bf41d6b55",
+        "digest": "sha256:4fc0d14d77a47a1fac1fbb445890db63e67360535c940dd47ffd69badc30cdc6",
+        "size": 1407
+      },
+      {
+        "path": "crates/vendor/bytes/LICENSE",
+        "gitBlob": "58fb29a12384e4a5f41a97bcfc7f6f9b2016903d",
+        "digest": "sha256:45f522cacecb1023856e46df79ca625dfc550c94910078bd8aec6e02880b3d42",
+        "size": 1055
+      },
+      {
+        "path": "crates/vendor/bytes/PHYSICAL-RETIREMENT.md",
+        "gitBlob": "0e4b42721689c691850822ce056dbe57324c195b",
+        "digest": "sha256:55a96c57290f9f460e5477421bad0cd4a0435b7fb5d41206a156033e34ba2bf6",
+        "size": 1958
+      },
+      {
+        "path": "crates/vendor/bytes/README.md",
+        "gitBlob": "90d631c97fce70e2469494cdb645740ed7ce7579",
+        "digest": "sha256:275ac7bc295e3cc659d28f05261645ac5bd6286476afe2ee3c1ed719f7b6df02",
+        "size": 1878
+      },
+      {
+        "path": "crates/vendor/bytes/SECURITY.md",
+        "gitBlob": "b74a831cb3b85e626e4b4125829c2fbf8de8dbd4",
+        "digest": "sha256:a3335079977c2f13bad59e323fdc1056bdae5adfe55f18d15ac2c930d741828c",
+        "size": 348
+      },
+      {
+        "path": "crates/vendor/bytes/UPSTREAM.json",
+        "gitBlob": "c6782607444958b5328d05ddaf895969ef078259",
+        "digest": "sha256:4998d6526aa21969ea021d4f781fa36ebaf64b2e7ceeea67daee0f4b51b6c2d3",
+        "size": 5439
+      },
+      {
+        "path": "crates/vendor/bytes/clippy.toml",
+        "gitBlob": "5cccb362c14214d49481646949047565c12a3208",
+        "digest": "sha256:583b79f56f20c85fb7820fcfa97985e03a4b41da31c8bbe6c03b721d3df5e800",
+        "size": 14
+      },
+      {
+        "path": "crates/vendor/bytes/src/buf/buf_impl.rs",
+        "gitBlob": "6508567b4f425797d64d12030b4491a5fd3c7916",
+        "digest": "sha256:f1095872bba7c9d5170207750f4ebe4fa61c4e35a282569491c2ee8ea2dc6714",
+        "size": 86641
+      },
+      {
+        "path": "crates/vendor/bytes/src/buf/buf_mut.rs",
+        "gitBlob": "3154dfeca8e258c4405834cfd7fc49b0ee8970e6",
+        "digest": "sha256:c76d0a846cf6e2c42af7acf0bbedc49a30ce3b9185392835c6a6f8b06a128b9e",
+        "size": 44275
+      },
+      {
+        "path": "crates/vendor/bytes/src/buf/chain.rs",
+        "gitBlob": "c8bc36de96d21f1d8911fb95f6d8a2c8b5f8863e",
+        "digest": "sha256:27ff0a6fce049c51a24d45003b9741b655c28330b48af23ad1514587760b0c93",
+        "size": 5505
+      },
+      {
+        "path": "crates/vendor/bytes/src/buf/iter.rs",
+        "gitBlob": "74f9b991eaf66f322cca94528fb8150d4a261090",
+        "digest": "sha256:d4dca5b7f9b1cb441f22ac1862e28b10086721879163a810955aefb5cd7f3e58",
+        "size": 2925
+      },
+      {
+        "path": "crates/vendor/bytes/src/buf/limit.rs",
+        "gitBlob": "b422be538333d342bee7e29cc9f4aef1f4503a95",
+        "digest": "sha256:e005ba140b70f68654877c96b981a220477e415ff5c92438c1b0cb9bc866d872",
+        "size": 1951
+      },
+      {
+        "path": "crates/vendor/bytes/src/buf/mod.rs",
+        "gitBlob": "1bf0a47e8d04582ad0887d8a091eddb0d806aa43",
+        "digest": "sha256:3f60295316d44b510b942abb31a0d975ae488bd4b52c87f5252d73f88f82715a",
+        "size": 1135
+      },
+      {
+        "path": "crates/vendor/bytes/src/buf/reader.rs",
+        "gitBlob": "5214949587da046c4c58ad5e9edc71dfaa35da48",
+        "digest": "sha256:cda8bc221a1de06c7395d5c6e80f8a5924198eafbc2decc0909082ce8781d789",
+        "size": 1908
+      },
+      {
+        "path": "crates/vendor/bytes/src/buf/take.rs",
+        "gitBlob": "d8621f3f35b866f487bcbe3954f8538caa08c37d",
+        "digest": "sha256:443766677fae38b398271693ed6134c7cc14949cdb9fce299c44dd55ecf84fb3",
+        "size": 4845
+      },
+      {
+        "path": "crates/vendor/bytes/src/buf/uninit_slice.rs",
+        "gitBlob": "aea096ae69d56ff8a0b8e6bf39c5300e6ea5bced",
+        "digest": "sha256:52629b93ff7a08db45fc69395580b34fa3609fd9309ea01f86e58488b02b08a3",
+        "size": 7348
+      },
+      {
+        "path": "crates/vendor/bytes/src/buf/vec_deque.rs",
+        "gitBlob": "55d5636b199594db2921cf0e09cf383f9d324ae9",
+        "digest": "sha256:baac165527d1bdfc3bb259380bb4722e70c3f11e8a901e8bab6e4f951b060711",
+        "size": 815
+      },
+      {
+        "path": "crates/vendor/bytes/src/buf/writer.rs",
+        "gitBlob": "e72348f40f638675e51f7d6c9e0415f951ad1f1b",
+        "digest": "sha256:b137608cb40944a5c3e061a73087c5a48e50048dae002d0334a23cf4d3547065",
+        "size": 2036
+      },
+      {
+        "path": "crates/vendor/bytes/src/bytes.rs",
+        "gitBlob": "c875744e2a4b25145df86ed6238fa930c1d521fe",
+        "digest": "sha256:8868b252f0c21802d2e01cdcee98b218e36e6830ec105b2902a42e7a6ecc9831",
+        "size": 52468
+      },
+      {
+        "path": "crates/vendor/bytes/src/bytes_mut.rs",
+        "gitBlob": "b983bd1a802af68f24f605180d40dbbc6242e5ce",
+        "digest": "sha256:48bf55ffb1e3062082cae343c223e063104e3eee0a18f291a72942026062adbd",
+        "size": 62221
+      },
+      {
+        "path": "crates/vendor/bytes/src/fmt/debug.rs",
+        "gitBlob": "82d0aa5e3bee15993a1c095b80271aca9dc9f8cf",
+        "digest": "sha256:4d217b8f43e489925bb6904010df617efc63b50a3cc1ab126eec54b43b66eb3e",
+        "size": 1329
+      },
+      {
+        "path": "crates/vendor/bytes/src/fmt/hex.rs",
+        "gitBlob": "1203b419880bced46512ce6e8d6c3e6df5f915a3",
+        "digest": "sha256:54c05ab7d95d7381e499079d63773fabd2672f3c4929b56b02ab87d4495902b5",
+        "size": 595
+      },
+      {
+        "path": "crates/vendor/bytes/src/fmt/mod.rs",
+        "gitBlob": "b8a0eafafd077d625eb9ee4d399681f8c0b49053",
+        "digest": "sha256:b38222dcfff70eb3ffb6ce305b95f3fcfd9fa68cca85693eb2ed01d3da7ddb88",
+        "size": 340
+      },
+      {
+        "path": "crates/vendor/bytes/src/lib.rs",
+        "gitBlob": "1916b604327f0ca61a87218dcba054960f02aeb9",
+        "digest": "sha256:053fc1b7e028cd1ccab019ea695f3e620129ef26a5b3f80a747b402a9871dfbf",
+        "size": 6183
+      },
+      {
+        "path": "crates/vendor/bytes/src/loom.rs",
+        "gitBlob": "c809290923a46e5679fabd2dd0037305472c1dd6",
+        "digest": "sha256:7c89f9f5f900d5b9b7c43d08d467957933eba90d5dcff1b38cf9a7e48494a577",
+        "size": 941
+      },
+      {
+        "path": "crates/vendor/bytes/src/serde.rs",
+        "gitBlob": "0a5bd144a960ac4d8eb771da7eea36094e088375",
+        "digest": "sha256:3ecd7e828cd4c2b7db93c807cb1548fad209e674df493edf7cda69a7b04d405d",
+        "size": 2591
+      },
+      {
+        "path": "crates/vendor/bytes/tests/test_buf.rs",
+        "gitBlob": "1520df897ed0c788306be8d5b82014530f9c1020",
+        "digest": "sha256:941b6ac1c547aa522a1576fefa3da98edc7636f1f322feebc5768701199caa83",
+        "size": 16117
+      },
+      {
+        "path": "crates/vendor/bytes/tests/test_buf_mut.rs",
+        "gitBlob": "f1bd3b0a0f14860a6b280b604fc4e5b4ce1b0d4e",
+        "digest": "sha256:1f28f3d125e98b81a813a414a89a8c9b5d45369b10dda187a68614ff285c820e",
+        "size": 6865
+      },
+      {
+        "path": "crates/vendor/bytes/tests/test_bytes.rs",
+        "gitBlob": "80835f6429487aecb64b262a5b961c3619da9e52",
+        "digest": "sha256:2b102b8c04cd45076940691d11ae3962c6e31f32ae8f283bcbcf0b8e93c46545",
+        "size": 44823
+      },
+      {
+        "path": "crates/vendor/bytes/tests/test_bytes_odd_alloc.rs",
+        "gitBlob": "4758dc2f9e6281b97e1befd2f7586c17c1d90818",
+        "digest": "sha256:ad5df84a35038359413199762c65017989d905e6e965a7b863beaa9962a7e1e8",
+        "size": 3920
+      },
+      {
+        "path": "crates/vendor/bytes/tests/test_bytes_vec_alloc.rs",
+        "gitBlob": "9c7601717c4cd732b3c8685e5b0e71cec77fa62c",
+        "digest": "sha256:5a0e77cab12b32374b2822df8d9a6479afe68b55c1cba1511ebf4199be532caa",
+        "size": 4129
+      },
+      {
+        "path": "crates/vendor/bytes/tests/test_chain.rs",
+        "gitBlob": "e809f44f1f4a8169ace178ce9c2f9a1097c6291c",
+        "digest": "sha256:1784287560d45e0225b2cd9d24498264031c36f42cebb7e92108e11641d1cce0",
+        "size": 4663
+      },
+      {
+        "path": "crates/vendor/bytes/tests/test_debug.rs",
+        "gitBlob": "08d2f254e81964cc5cd162a2bd9118ca8a4513a8",
+        "digest": "sha256:13299107172809e8cbbd823964ac9450cd0d6b6de79f2e6a2e0f44b9225a0593",
+        "size": 1351
+      },
+      {
+        "path": "crates/vendor/bytes/tests/test_iter.rs",
+        "gitBlob": "bad901860e5f608c1eaca5da7052ef134d5d4583",
+        "digest": "sha256:665e1837c1294d7695ffa352a666ce8673fb46fa603164556524e87d5517a6cb",
+        "size": 434
+      },
+      {
+        "path": "crates/vendor/bytes/tests/test_limit.rs",
+        "gitBlob": "dc40cc5f0e9e4121165a2913d7eea0a4c729ba67",
+        "digest": "sha256:6c5801f1e94f0abb2b4994aa1ade8e36464f26bf9e13e3dcac02d0f2f6f08ed5",
+        "size": 1865
+      },
+      {
+        "path": "crates/vendor/bytes/tests/test_owner_retirement.rs",
+        "gitBlob": "011497a82def475c49cc542e2ca67ba2fc467e49",
+        "digest": "sha256:66f36dfe3b5f82fcf4ef6db0b6b6454e94719af8a0db2a93cd1e7856cdae8b42",
+        "size": 6621
+      },
+      {
+        "path": "crates/vendor/bytes/tests/test_reader.rs",
+        "gitBlob": "19a16324ee9f4b4483bddb19a7771e1f64773d9d",
+        "digest": "sha256:050b872d89376b3b83841839b4334066d8357b01aaf3783a180aac25a5550f3d",
+        "size": 944
+      },
+      {
+        "path": "crates/vendor/bytes/tests/test_serde.rs",
+        "gitBlob": "cf4aeffa78542677cf8f737d6ede0af9def92bad",
+        "digest": "sha256:2691f891796ba259de0ecf926de05c514f4912cc5fcd3e6a1591efbcd23ed4d0",
+        "size": 528
+      },
+      {
+        "path": "crates/vendor/bytes/tests/test_take.rs",
+        "gitBlob": "0c0159be1defc615af2c0ea104724390df667575",
+        "digest": "sha256:fb34700a8ed75b3c6937a4dee0bffadb64f7c7f735bd9faa8730eb96a9e9b651",
+        "size": 2330
+      },
+      {
+        "path": "crates/vendor/wasmtime/README.latent.md",
+        "gitBlob": "781d3116f6e82f394f0cd72fd76aefc49c90a7b5",
+        "digest": "sha256:daf274e143798e7a1f0abb1cff2df4f1bb949da2fedca1afd28d2c119707ce71",
+        "size": 53875
+      },
+      {
+        "path": "crates/vendor/wasmtime/UPSTREAM.latent.json",
+        "gitBlob": "15a4c90d620cef95893b482a1ababfec7bd46a1d",
+        "digest": "sha256:ffe28ed7747fbcfbd011b881d66088934c2a32342bd553b3c770caa272fb8c22",
+        "size": 49685
+      },
+      {
+        "path": "crates/vendor/wasmtime/latent-dynamic-memory.patch",
+        "gitBlob": "11797a801cf561921c4a9c9bb5a1b30993ee6642",
+        "digest": "sha256:14bf31fcbdbe29ebd640a365bc1781c99eee40546cce4ff86749d4aad47290c7",
+        "size": 713446
+      },
+      {
+        "path": "examples/echo-contract/wit/echo.wit",
+        "gitBlob": "035bb3870b6ba35522be0ba3de92fd7f660616ba",
+        "digest": "sha256:5a36463c6f335b2fa8a3c169242f7d01bacd9dd33589b439ecc869e89ca293c6",
+        "size": 302
+      },
+      {
+        "path": "rust-toolchain.toml",
+        "gitBlob": "3ffe268a428b7d214311785bb37fc0ee6ea9c336",
+        "digest": "sha256:7527c74e92bfb75a72d184650b0a06c3d645f43536541007782abf9618f26bcc",
+        "size": 140
+      },
+      {
+        "path": "sdk/dotnet-guest/component-composer.json",
+        "gitBlob": "66cad13549cf7c42858a3bc6caf3a64efbadd130",
+        "digest": "sha256:c1433fe6fddb8ee5cdb3c0fbb3ea2a091371100233b3ae127245684a236851f7",
+        "size": 377
+      },
+      {
+        "path": "sdk/dotnet-guest/runtime/http/owner.rs",
+        "gitBlob": "e75e6b097b9ebb6791a937898cd812f48fc1782e",
+        "digest": "sha256:b544c2decde7e3a26088fcfc161dc800bef9c56045471f1402c16dfea28817e6",
+        "size": 1042
+      },
+      {
+        "path": "sdk/dotnet-guest/runtime/http/quota.rs",
+        "gitBlob": "7f9a1cbe1025202967765ef268e4cc57f0bd41d3",
+        "digest": "sha256:7d46db93bb1750d0878eacb852aa6b72a510d057d4911e487f674b5be84ca74a",
+        "size": 681
+      },
+      {
+        "path": "sdk/profile/transaction-requirements-v1.json",
+        "gitBlob": "5afb4ef6b2e198d86e3545e2bb05fd179cafff29",
+        "digest": "sha256:065dd85161eee6c5edb0537b2e65399ea4876b9b18ae226728e7158b1d32986f",
+        "size": 9418
+      },
+      {
+        "path": "sdk/rust-guest/Cargo.toml",
+        "gitBlob": "9c50953e146f6e0c2134fd88a5b60313cf00eb6d",
+        "digest": "sha256:cbeb8203d5fe307384bf93d92c30a2605b00fe9b52a8723218f0103b1a55b740",
+        "size": 672
+      },
+      {
+        "path": "sdk/rust-guest/README.md",
+        "gitBlob": "7791d3fec9006c7acc2229cf3dc39e5b9907b855",
+        "digest": "sha256:1aca705b40a162bfc3cad2331fad0dee9978d8e0aea247897e6e72e24c9dbb97",
+        "size": 5362
+      },
+      {
+        "path": "sdk/rust-guest/src/bindings.rs",
+        "gitBlob": "d53e05c8571e9a76dd521bb6ecc76b191215cae7",
+        "digest": "sha256:6873a0cca0ee329b2c05e2bce2cd4754e2668f9c145b723954cbf99e8ca753e7",
+        "size": 961
+      },
+      {
+        "path": "sdk/rust-guest/src/blob.rs",
+        "gitBlob": "8804b3b0f69f1c597953019ad6b2e79202951453",
+        "digest": "sha256:e272a7406a0af2cdc90190b2035e3d8425bd2d6efdb29a3ffcf8ba708d678711",
+        "size": 2002
+      },
+      {
+        "path": "sdk/rust-guest/src/http.rs",
+        "gitBlob": "fb80adb02374daa2b046500ca03361ccc523b28d",
+        "digest": "sha256:86f1bb5d1acf5931c30291a22bde7349990acf1fe5ecf49bab4cee421cae7043",
+        "size": 338
+      },
+      {
+        "path": "sdk/rust-guest/src/intents.rs",
+        "gitBlob": "3178e6b5beb4b662944eb22f5a38a8a09f70226a",
+        "digest": "sha256:07990f9f5db64fac05bea6d222e28a4bb8880656b6dc537d8bc374762b9b84c5",
+        "size": 861
+      },
+      {
+        "path": "sdk/rust-guest/src/lib.rs",
+        "gitBlob": "0e8d0b968c048ad525fab17c0312de40bd33a376",
+        "digest": "sha256:07eb1aed3350eaf098d4588f96bddf116ab1d8cf096390768f477d89757baf42",
+        "size": 1058
+      },
+      {
+        "path": "sdk/rust-guest/src/secrets.rs",
+        "gitBlob": "f4629c152f4b4946757c0761239db99c48adeaef",
+        "digest": "sha256:948c0177d00c4a514cd8e6990d46165a43ea7c81b1db52b8b70514ac3a37badf",
+        "size": 1107
+      },
+      {
+        "path": "sdk/rust-guest/src/state.rs",
+        "gitBlob": "35fc4ca8d31dd731fdc29b60104c7db2689b8d91",
+        "digest": "sha256:8a50eb251b0e340004d608f3681aef438e1d6334b54231bed58a172859aee09e",
+        "size": 3161
+      },
+      {
+        "path": "sdk/rust-guest/src/streaming.rs",
+        "gitBlob": "a7a3784b67226e0fac9a8de435e224be589c4b5e",
+        "digest": "sha256:2dcad18f68916438166c5b68149ddd3a8d0c7233c34c1955de869e691070cf30",
+        "size": 2205
+      },
+      {
+        "path": "sdk/rust-standard-runtime/activation-abi.json",
+        "gitBlob": "49a9e8a9fc1e1077818b3b185c3108da578ec3df",
+        "digest": "sha256:78daf134676c77bb7a805a251b3344ad9e6358f587d1b0edcb2a0646e0e6ac50",
+        "size": 1238
+      },
+      {
+        "path": "sdk/rust-standard-runtime/clock.rs",
+        "gitBlob": "57f717969f171c5dc002b43a4f12108c0de3c7ce",
+        "digest": "sha256:12f62eb651f6c7cb653a9a7e0aba635e5b47cf3a2646ef4f57df9d513c62a071",
+        "size": 2347
+      },
+      {
+        "path": "sdk/rust-standard-runtime/condvar.rs",
+        "gitBlob": "c837d22ce7b6d06a6291859ccb586b8afe9a2609",
+        "digest": "sha256:3ed8dc8c38ea6bd8024cc16e9cd4e1ad48a926b241fb6b5fc98640d67bd12ed4",
+        "size": 1509
+      },
+      {
+        "path": "sdk/rust-standard-runtime/entropy-getrandom-03.json",
+        "gitBlob": "83b61d6a6e073c272c7939550d79db70a999a402",
+        "digest": "sha256:6bfc187447ceb857008ed6b20ddc1679ff068a4983b6d2bf2ac7348d2b3cd018",
+        "size": 900
+      },
+      {
+        "path": "sdk/rust-standard-runtime/entropy_core.rs",
+        "gitBlob": "bd6c5a06f10f42a2740187e104639da5a2651ba3",
+        "digest": "sha256:d6bac09e9c28fab6a80a7bd16b3ea39153aa12a4ba4fb43d93e7ade8c6b468d4",
+        "size": 1600
+      },
+      {
+        "path": "sdk/rust-standard-runtime/entropy_getrandom_03.rs",
+        "gitBlob": "232b753d4bbb74997c7c5616ef66ce1f8b136b6c",
+        "digest": "sha256:963db4b367321c596a6c79f026787f8995d7f5e4f2d3031627fbd6029654faec",
+        "size": 902
+      },
+      {
+        "path": "sdk/rust-standard-runtime/entropy_std.rs",
+        "gitBlob": "481fafe95094c2d36631addadcf0d456ab8b1a34",
+        "digest": "sha256:384c39c2a5dd5447fdbebe20fa70cf8f3ef11ddc95a32efe8476776a3330be77",
+        "size": 515
+      },
+      {
+        "path": "sdk/rust-standard-runtime/executor_bridge.rs",
+        "gitBlob": "97bb26433d4c58e963d0aa55c0a8840da31fbab2",
+        "digest": "sha256:36f17e1d73ed59cb774896dffe48b8747fbf74de4f1764c29deb813eba864a1f",
+        "size": 6284
+      },
+      {
+        "path": "sdk/rust-standard-runtime/executor_control.rs",
+        "gitBlob": "50a192548e7bf548675f013df8b4ee0b7cf8af74",
+        "digest": "sha256:250128773788c6efeb6f8e2d1409f2f119fac5ec3bfd8d2df709e563595d1ddd",
+        "size": 16748
+      },
+      {
+        "path": "sdk/rust-standard-runtime/executor_lifecycle.rs",
+        "gitBlob": "d5c0c56b429c7e4a6b5f064144ca078f4b7e7f1d",
+        "digest": "sha256:738d6c3f5b1deb07e5d0ec9988db0b585e4d4d113a007419f3e1649dab9d53c9",
+        "size": 18258
+      },
+      {
+        "path": "sdk/rust-standard-runtime/executor_root.rs",
+        "gitBlob": "c47d0e55847f732cc2945200f77c803f81481188",
+        "digest": "sha256:1b9ecfe164d62cb3446cd578691f85b1df20c803e6613c5e69c0ce4dfbb970b4",
+        "size": 18235
+      },
+      {
+        "path": "sdk/rust-standard-runtime/executor_worker.rs",
+        "gitBlob": "b959e74d88694cbc9bf313fd95a6c66c81149fa4",
+        "digest": "sha256:b34436fc69b8c2015600b4098caad618aba64aa89970346754a4b69e15a8e207",
+        "size": 3171
+      },
+      {
+        "path": "sdk/rust-standard-runtime/futures_pool_link.rs",
+        "gitBlob": "405c5903d8cb287ddc4abf1c91b3a9a72b71514b",
+        "digest": "sha256:2d7ba8e37b289c15a7b616909a48fc12040d3ece7a5d536bc4a06029519cbf76",
+        "size": 6474
+      },
+      {
+        "path": "sdk/rust-standard-runtime/futures_thread_pool.rs",
+        "gitBlob": "fb0aa804393dc4c13717872529d34bef2a00b0e0",
+        "digest": "sha256:2fa4a07991cbcafaf84f2b9ff6393815e2aa39446d02f41ce63de173b5d4681d",
+        "size": 19787
+      },
+      {
+        "path": "sdk/rust-standard-runtime/mutex.rs",
+        "gitBlob": "899ba2c00292e0b166f8f866730b495981c21ccf",
+        "digest": "sha256:f644c9d6356c12e9467354267b34fd66353dd9c659b812b849a391545c690090",
+        "size": 2172
+      },
+      {
+        "path": "sdk/rust-standard-runtime/once.rs",
+        "gitBlob": "ff4e78537d9d5aa4afa44d6d6de907ac6ebafb32",
+        "digest": "sha256:17db07a52ec88ba8932e34129c5cd207eea3f751f80e77dc3536dd6201f72189",
+        "size": 4757
+      },
+      {
+        "path": "sdk/rust-standard-runtime/parker.rs",
+        "gitBlob": "4afa3aa2bdb80a452ffd7457c41363886547a4ba",
+        "digest": "sha256:6c92c544f2c6c2c40c5dca4a6b2d18428dbfa87e5e279572a0cfdabb4c23143d",
+        "size": 1480
+      },
+      {
+        "path": "sdk/rust-standard-runtime/runtime_owner.rs",
+        "gitBlob": "7f39c774c38ac8e6ecce5cd7a223392eb1694536",
+        "digest": "sha256:3a2ac7c3161b98fd7ec6dc5e9f818912c0d5c11487523c832e816cb35719a328",
+        "size": 9174
+      },
+      {
+        "path": "sdk/rust-standard-runtime/rwlock.rs",
+        "gitBlob": "7e3d0b2373f6c816c4744500d7aa31e122d5ff31",
+        "digest": "sha256:036eefebefd81e27930ba1d04f4c13b9360b461acdf76b31ca9507c9c98a1ef9",
+        "size": 3488
+      },
+      {
+        "path": "sdk/rust-standard-runtime/stdio_closed.rs",
+        "gitBlob": "053d742efa8ec33b5489344e2df48100dfe2f91f",
+        "digest": "sha256:bffe2b477c450098fed9584f34e725232f5dcbdfc655e27851f9b1fd8354f37c",
+        "size": 1794
+      },
+      {
+        "path": "sdk/rust-standard-runtime/stdio_logging.rs",
+        "gitBlob": "8ca5bd4e2e8419e3e084a41313d9e4d463987ecc",
+        "digest": "sha256:b89538d84aa980c5908a2b7a4d422ceca31deaae00de5fd2fdc82d1d8b89f62e",
+        "size": 3493
+      },
+      {
+        "path": "sdk/rust-standard-runtime/thread-abi.json",
+        "gitBlob": "f0993f1bc435937e1df99616f4a714c627033a4d",
+        "digest": "sha256:c6ba59a724ef1c4079ddad6aaeec6765872933a0e328639263fa77434c4156c6",
+        "size": 3540
+      },
+      {
+        "path": "sdk/rust-standard-runtime/thread.rs",
+        "gitBlob": "084e0afc625664ba82573e59a2e4a0175d64e0cc",
+        "digest": "sha256:618d1c586aaf1cd6c82fa9d2c35f54ff73bd7efb2373c1fc4d78121cba091b41",
+        "size": 2698
+      },
+      {
+        "path": "sdk/rust-standard-runtime/thread_registry.rs",
+        "gitBlob": "5037be0799f69a689981e4d1af469a1561a86762",
+        "digest": "sha256:7d90bc21cc1b75dc2d6ce0f5ea80314a74918a4160ca9f69f8654b73e7a01ea7",
+        "size": 14093
+      },
+      {
+        "path": "sdk/rust-standard-runtime/thread_runtime.rs",
+        "gitBlob": "8153d319fd99802ae5ffc7574ea0dec49196b6cf",
+        "digest": "sha256:6a3fd4bca0929a4c7f4015fc47ddbba0ccfc729f7a54c3c30dae2608088af633",
+        "size": 16587
+      },
+      {
+        "path": "sdk/rust-standard-runtime/thread_start.rs",
+        "gitBlob": "00de22e68d0c7dc67e4d3f5faf41cdd3e9c94258",
+        "digest": "sha256:0ebbf1d20176723b40af1f4b60e7601e4facccf5120faadfe0efdc8ff932092b",
+        "size": 1898
+      },
+      {
+        "path": "sdk/rust-standard-runtime/thread_tls.rs",
+        "gitBlob": "8f5fdf1facca844acba9ebe37cfa095dbd1f93f5",
+        "digest": "sha256:93598b39d22e46ef83f83cef754627ae05a0da86bee0d152b9baae75e1263dd6",
+        "size": 36355
+      },
+      {
+        "path": "sdk/rust-standard-runtime/thread_wait.rs",
+        "gitBlob": "7813cd10beba5640d5d707125808768f3bf38d55",
+        "digest": "sha256:0d8525adaca292879a07a55e94848ab12bf334937ef4718c0e5a70a15efbc6c2",
+        "size": 7431
+      },
+      {
+        "path": "sdk/rust-standard-runtime/thread_wait_driver.rs",
+        "gitBlob": "d3963bbac4c8e32abbb0751693c3ac4f2bee5220",
+        "digest": "sha256:0c789e73877e9a87ccdc49cd211f6b85ecb6daeb61da02f00dbd12c44e98c55f",
+        "size": 12598
+      },
+      {
+        "path": "sdk/rust-standard-runtime/thread_wait_registry.rs",
+        "gitBlob": "b0780211c7c492d981fbda433cb53762e106e135",
+        "digest": "sha256:d45df9d4f1adc0fdd35488b133ff194ea434e5fae95b0c8bd4c5e009c35f569f",
+        "size": 10910
+      },
+      {
+        "path": "sdk/rust-standard-runtime/tls.rs",
+        "gitBlob": "9422cc14f4c2e41415382dc71ee0699c1f7e6ad0",
+        "digest": "sha256:b198ed15262ba83c837936955349ebf9faddff71a20e88ae3b4052dbc3dce540",
+        "size": 24994
+      },
+      {
+        "path": "sdk/rust-standard-stdio/Cargo.toml",
+        "gitBlob": "e598d488ad22493bab0169697bd7dacda603b01b",
+        "digest": "sha256:78c8851da50565be17c998bec34ff64ee2ac010fc0680257acc98150842afb0f",
+        "size": 640
+      },
+      {
+        "path": "sdk/rust-standard-stdio/README.md",
+        "gitBlob": "27020347443172f22a63490f4f28e6f85edf33c2",
+        "digest": "sha256:fc8b2e9f9bc94007fce0a97eae243bbf2e2874655ad8c5195003152513039c32",
+        "size": 2989
+      },
+      {
+        "path": "sdk/rust-standard-stdio/src/lib.rs",
+        "gitBlob": "dae9e65ab4bc762a71e4b95290a612e03126952b",
+        "digest": "sha256:e62d4a4f666199e96d10908125c7a8181657ead199942b2cc5049476a1ba0731",
+        "size": 1594
+      },
+      {
+        "path": "sdk/wasi-http-runtime/README.md",
+        "gitBlob": "8c74aa0bb4d629ee4a53c25c53aa0db05ee9dff3",
+        "digest": "sha256:79e598d8d539beed3820da9bcef688a1dca65937d4cbcda0ea7868e9256e7f1f",
+        "size": 4089
+      },
+      {
+        "path": "sdk/wasi-http-runtime/error.rs",
+        "gitBlob": "79cc3494a55bdd23087f1ebc5a3b56dad369953a",
+        "digest": "sha256:fc84c7c03cbfdf23be80fd8f134598e6b07d83f056a6709b008f9c0ff5b19987",
+        "size": 1582
+      },
+      {
+        "path": "sdk/wasi-http-runtime/fields.rs",
+        "gitBlob": "d128ace4fe88db39c4319d67f63e661908eb8b47",
+        "digest": "sha256:8b2138835be7705b337f087271b54b54a8fb25234046c73445cd143f097413ac",
+        "size": 10125
+      },
+      {
+        "path": "sdk/wasi-http-runtime/io.rs",
+        "gitBlob": "cdbdc92478f1fef8eb1e1d4735f614489244be87",
+        "digest": "sha256:4125ee5fca3c143996a5a161263789bdca7396b52c9e48856b68dbbf4fcd73c1",
+        "size": 12961
+      },
+      {
+        "path": "sdk/wasi-http-runtime/limits.rs",
+        "gitBlob": "d3423a7985b574045c34bf323b7ef909800ab668",
+        "digest": "sha256:52f76827d13979cbb1163271dbcf4f5b5b95fde3fe7eaa182eaeb5b02a87b5f4",
+        "size": 315
+      },
+      {
+        "path": "sdk/wasi-http-runtime/poll.rs",
+        "gitBlob": "2720928ce445c0953f55716e6300d46188ec8433",
+        "digest": "sha256:a09b0009a46aa03c1588c47f869354eaf278afe0b387b420b9acb08e60b7416a",
+        "size": 2098
+      },
+      {
+        "path": "sdk/wasi-http-runtime/pump.rs",
+        "gitBlob": "6c82eb972fad7b65346f6537202da15e1afc4243",
+        "digest": "sha256:9da8cc897b16655953f831613c7d5b548917eab0be02440dc9cc4a395755219f",
+        "size": 8018
+      },
+      {
+        "path": "sdk/wasi-http-runtime/pump_tests.rs",
+        "gitBlob": "fe1d62d8068fbef5f7cde3b795fa4cbf06d32a8a",
+        "digest": "sha256:916c345c1b50969052d14973b8209735ae74c0c883ede44bb1eaf7818a0b85fe",
+        "size": 6880
+      },
+      {
+        "path": "sdk/wasi-http-runtime/request_options.rs",
+        "gitBlob": "2168abc5232069a4230c378ce8269994149a3c37",
+        "digest": "sha256:447b0b0b3aba90d0f1df00914c08f15ef090ed7198938669ece2e5219e40a7f6",
+        "size": 6367
+      },
+      {
+        "path": "sdk/wasi-http-runtime/retirement.rs",
+        "gitBlob": "34da2ee78fc015df2e1ba2dbc6fa57c9f4a306d6",
+        "digest": "sha256:16bb44807ac397a4e55b8102520f4d8b9f26ff76a7fb7801fc7e31c97c20d811",
+        "size": 6310
+      },
+      {
+        "path": "sdk/wasi-http-runtime/state.rs",
+        "gitBlob": "b50696aab5ca74ca4ddd5de44beca799c901b756",
+        "digest": "sha256:a3bbaaa33e8235b417a457021260c4721ae3de00f4e89737e9106af1a863c009",
+        "size": 14133
+      },
+      {
+        "path": "sdk/wasi-http-runtime/timer.rs",
+        "gitBlob": "3deec1b2739fcb3a70e9dea9a5a9fd7bbf5d3bd6",
+        "digest": "sha256:2b25f4a72cea80ec1028978c27dcb5ab82d979a2e31183aefe0d2429ad6f137f",
+        "size": 2497
+      },
+      {
+        "path": "sdk/wasi-http-runtime/types.rs",
+        "gitBlob": "0e95e34ab96fab23bb4ece96ee8b56d9b6f4148c",
+        "digest": "sha256:ae6c69ce364f8404645962233b0a88eaf5500dfd78386a010ec392d434a6c3ff",
+        "size": 23104
+      },
+      {
+        "path": "sdk/wasi-http-runtime/upstream-source.json",
+        "gitBlob": "47650197878d0077ca65cec61e2d03809ace7082",
+        "digest": "sha256:bb3622c15a1a922135cce945d1f87877289a9920ff585f60c9b7cfe2419c3212",
+        "size": 4364
+      },
+      {
+        "path": "sdk/wasi-http-runtime/upstream/Cargo.toml",
+        "gitBlob": "c6b80683ca23c96a08f6b2df09ee63ea3f82556c",
+        "digest": "sha256:a4cf47d49115ca7543113c3c4c136e0cdd3dfff344eefa0f64ee8c5200e99fa9",
+        "size": 2088
+      },
+      {
+        "path": "sdk/wasi-http-runtime/upstream/Cargo.toml.orig",
+        "gitBlob": "06b410c91dbf162c1a8abe85d42022adb1cbbcb9",
+        "digest": "sha256:aa14745493958ffab15632d9fd1298f404029e88919a364c54f323cbb1a7c959",
+        "size": 1086
+      },
+      {
+        "path": "sdk/wasi-http-runtime/upstream/LICENSE-APACHE",
+        "gitBlob": "16fe87b06e802f094b3fbb0894b137bca2b16ef1",
+        "digest": "sha256:a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+        "size": 10847
+      },
+      {
+        "path": "sdk/wasi-http-runtime/upstream/LICENSE-MIT",
+        "gitBlob": "31aa79387f27e730e33d871925e152e35e428031",
+        "digest": "sha256:23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+        "size": 1023
+      },
+      {
+        "path": "sdk/wasi-http-runtime/upstream/wit/deps/io.wit",
+        "gitBlob": "543cbfc62cfa3712628dc0adad54318a3f82cd48",
+        "digest": "sha256:96e206d00076fa0480df32c5bcf255a3fa4862805ac2f6b8537a781cce54f433",
+        "size": 13648
+      },
+      {
+        "path": "sdk/wasi-http-runtime/upstream/wit/wasi-crate.wit",
+        "gitBlob": "7ff44fe8eb8777b2ef0ae0ecbf86915e2b13493e",
+        "digest": "sha256:561b9308e635f442fcfbe3c4e783d0b4f2110f4c7bdadc8775170e2e119f7453",
+        "size": 19
+      },
+      {
+        "path": "sdk/wasi-http-runtime/wit/deps/activation.wit",
+        "gitBlob": "e0e7cb52e45c12d0ec1251a778f4c4ac380685a5",
+        "digest": "sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946",
+        "size": 2539
+      },
+      {
+        "path": "sdk/wasi-http-runtime/wit/deps/cli.wit",
+        "gitBlob": "07b0437d2962f58003204422a51305bd4f1c6b6c",
+        "digest": "sha256:fb6ac5d23fcaf3d231142a3c2f9bb1e9bc1fe5af6f1f329f6b1a5555ce0d3873",
+        "size": 6843
+      },
+      {
+        "path": "sdk/wasi-http-runtime/wit/deps/clocks.wit",
+        "gitBlob": "06b7d8b2579e4d1aae4b0a8a90b61adc001236f7",
+        "digest": "sha256:6ed8aa65bb8cbe224a0b2cbac9fc1b3bd25bdb17eda5ae0d23c983ed31c447cc",
+        "size": 5867
+      },
+      {
+        "path": "sdk/wasi-http-runtime/wit/deps/filesystem.wit",
+        "gitBlob": "5bf8f0aafe69cc53eee958851243c6f6f708f544",
+        "digest": "sha256:e675f261017bf9b4fa7df5b9701023fe0249ede71021ac1bf978748e62edcda8",
+        "size": 24592
+      },
+      {
+        "path": "sdk/wasi-http-runtime/wit/deps/http.wit",
+        "gitBlob": "7de544730cd0401cc71da2e6bccc44c9037977b6",
+        "digest": "sha256:4bbd58f509700a6637385611f183c5bd5984d81feef85e29dfdc05ebd283045a",
+        "size": 31611
+      },
+      {
+        "path": "sdk/wasi-http-runtime/wit/deps/io.wit",
+        "gitBlob": "3aad017c7b435281552fd9cfcb0bac5774769364",
+        "digest": "sha256:1b7eec23b69fa18124b447b75e45f67b07f0625fa1eb66247c770524a57ea1d0",
+        "size": 13696
+      },
+      {
+        "path": "sdk/wasi-http-runtime/wit/deps/latent-clock.wit",
+        "gitBlob": "1de0ae5c25c607f0f0f28a4abeb8b12e9f1ad7f2",
+        "digest": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+        "size": 139
+      },
+      {
+        "path": "sdk/wasi-http-runtime/wit/deps/lsf-http.wit",
+        "gitBlob": "9fbfabb626d59704ca37091b86d38a2c0a510a7c",
+        "digest": "sha256:6fcae4b3123ec3ce0b32a4e65390630be3bde40ee74b50d7b732150b6bb6147d",
+        "size": 2915
+      },
+      {
+        "path": "sdk/wasi-http-runtime/wit/deps/random.wit",
+        "gitBlob": "5b4b2522b9546ced03aa559c0c68c4b5c41e5fc6",
+        "digest": "sha256:48578c40213d5cab6650980905fa146a0be8c39c4433ee5e7e00637b87dbe08f",
+        "size": 3349
+      },
+      {
+        "path": "sdk/wasi-http-runtime/wit/deps/retirement.wit",
+        "gitBlob": "6d00f2bb2c7f4b8f64b6687aa5af4346468cc9f3",
+        "digest": "sha256:c06fedbd6fb993344cb2cffb1813c2cfcc8108cd759dd1a2c0879c29d07a0255",
+        "size": 159
+      },
+      {
+        "path": "sdk/wasi-http-runtime/wit/deps/sockets.wit",
+        "gitBlob": "1ac69d2dce618d359aab3490a11bed18efa40d29",
+        "digest": "sha256:ad38dbf3b0bbdf34c0f2b608edcbfee04d71b443a63faff1f5e0053c3f84b377",
+        "size": 46200
+      },
+      {
+        "path": "sdk/wasi-http-runtime/wit/world.wit",
+        "gitBlob": "54b0d5a4e2f8a5d681a28657ac550f8615abaa6d",
+        "digest": "sha256:89156cd32e1fb74b598ee3fc3f941d4c63fd18728e0354c4da2f476a64604a32",
+        "size": 616
+      },
+      {
+        "path": "tools/application_dependencies.py",
+        "gitBlob": "a75d98fa27e486da82dbece2f8f1c3e6545be932",
+        "digest": "sha256:4582e588d2c28a87c3c1c8acdd713d3f22fb3c65764e450e483ffb15dae33e5f",
+        "size": 28732
+      },
+      {
+        "path": "tools/application_dependency_approval.py",
+        "gitBlob": "c421fc15734ebabfea0fd288785ee40b9f0ddc86",
+        "digest": "sha256:70126c2b142a74f4fe169ceff32642008b843d668c66b7c5addac66dc1e14209",
+        "size": 1996
+      },
+      {
+        "path": "tools/application_dependency_store.py",
+        "gitBlob": "8eaa2f6065d126b10f2729c0d5404b96a06e3348",
+        "digest": "sha256:ac8bd16090cbbd2a3696bd21fd269bbba7abfd9357049ed002f3bb4975e931ed",
+        "size": 12139
+      },
+      {
+        "path": "tools/application_dependency_tools.py",
+        "gitBlob": "05325c8af9405b9b2033a8e6b346961727bc8b21",
+        "digest": "sha256:4b4b26044e185269feed5344cd333a0dbffec76927b7ca9ad779fefb33aa94f9",
+        "size": 5192
+      },
+      {
+        "path": "tools/build_observation.py",
+        "gitBlob": "9383dcfae63a94477e1f074c1391e45926e005e7",
+        "digest": "sha256:49ed72767a609870ac9166b9466b94c38347efe1fc66d6a3176087c988da661c",
+        "size": 8696
+      },
+      {
+        "path": "tools/build_process.py",
+        "gitBlob": "0dc0dd54c792dcfba81a2ac13d8cafca12321009",
+        "digest": "sha256:347799bcc908b3a772fdf9bac6f32883ba0e3464983087513f0de16e3b37fd2c",
+        "size": 11965
+      },
+      {
+        "path": "tools/build_process_linux.py",
+        "gitBlob": "65b0faf54ab667588ca4c0fe3385ada0dc348099",
+        "digest": "sha256:e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce",
+        "size": 3853
+      },
+      {
+        "path": "tools/build_process_signals.py",
+        "gitBlob": "8855febfeeaf087a7bd28fcda4bbba24ab8f6c8e",
+        "digest": "sha256:96dddca07cc20b77b0b6b93a3524c047877a4fcdd7442fe8c635024ade13cdb2",
+        "size": 3012
+      },
+      {
+        "path": "tools/build_process_windows.py",
+        "gitBlob": "117cf5ce92c6ef76a07b299cf7f7d6cb6b1b0d97",
+        "digest": "sha256:3de6d1a259112579d0da53b90614233fd27d57daf3cf75582d9ac774f13b31fd",
+        "size": 7409
+      },
+      {
+        "path": "tools/build_snapshot.py",
+        "gitBlob": "53357c0aeeb9a3e819ec2b4b9ba5c9b19a7bd63d",
+        "digest": "sha256:8d5d3bfa3242384b0dd89670c428b65e2c20f9093e60fa3f9245774df984bc6b",
+        "size": 27079
+      },
+      {
+        "path": "tools/captured_compiler_isolation.py",
+        "gitBlob": "5b15f797dca837fed1f38cf9dfb2b6e7ddbe12af",
+        "digest": "sha256:d653599333a5b7b644231fc163ac12dd29165ce1e175955995ed96d65a494a03",
+        "size": 19919
+      },
+      {
+        "path": "tools/cargo_native_authoring.py",
+        "gitBlob": "e664359132ace3d4230f55a2e27f837851c20849",
+        "digest": "sha256:1e88209b9e9bcb13d874862d988697c0e869bc172ba652d4a93efb64a2a2b5dd",
+        "size": 24842
+      },
+      {
+        "path": "tools/compile_rust_owned_thread_inputs.py",
+        "gitBlob": "64eea0d6974f1f2ca609ce68cf88af7bcc90f883",
+        "digest": "sha256:cfeb19cacd54f101547f7e9b5668261b0430fb9286f01e9f2ff15a353bb8c7d3",
+        "size": 17239
+      },
+      {
+        "path": "tools/compile_rust_thread_http_sibling.py",
+        "gitBlob": "18f52789e6cdb56bdfb85e926b515cf1f56da177",
+        "digest": "sha256:7ae4d4ae271d431b7694d798dcde3093c7fd86a80a68454d65ff46acb2246998",
+        "size": 43685
+      },
+      {
+        "path": "tools/dev_workflow/__init__.py",
+        "gitBlob": "e6cca56e8cc4933850002f8d99f494dc0041e679",
+        "digest": "sha256:83994d5549a6b1de4ef471c2e8fa9db700b731807f8e9b806c71b9bcf594eaf2",
+        "size": 98
+      },
+      {
+        "path": "tools/dev_workflow/common.py",
+        "gitBlob": "58650cad87427b52d5e2cfd043242e0b0e3e1caa",
+        "digest": "sha256:f398999c39fc80606ca3ec0d47db5a9e32debe96367a87a9aa72b70089f13a28",
+        "size": 3129
+      },
+      {
+        "path": "tools/dev_workflow/dependencies.py",
+        "gitBlob": "3693678f1705dd38fbecdb68654783404f429856",
+        "digest": "sha256:6c2b1e343e05d10b43fead70d017193dedd6d0a7bde7db0a4c110d3d51a67b7b",
+        "size": 6022
+      },
+      {
+        "path": "tools/dev_workflow/executable_approval.py",
+        "gitBlob": "3912ef7d0e375287f5e83c63f48d4fe90dd37da0",
+        "digest": "sha256:b17c95c45264e006fce9ad319aacb2c57fb305a9ea12fe92de3b3fa6c64d6a47",
+        "size": 1920
+      },
+      {
+        "path": "tools/dev_workflow/paths.py",
+        "gitBlob": "1af055bcdaf167adac040aa438e93a3a66602bb3",
+        "digest": "sha256:6758044322e58c687c73d8302c0fab82a07d9680ed647a3a52f2a34f60d0da59",
+        "size": 6758
+      },
+      {
+        "path": "tools/dev_workflow/project.py",
+        "gitBlob": "cdc8efcdc72d75120a3e8b141b70a9e18abd6672",
+        "digest": "sha256:0867f8ded6f515b2ed6fb3a76d78fed77141bcfcce931227aa201930d2e19137",
+        "size": 7395
+      },
+      {
+        "path": "tools/dev_workflow/resource_inputs.py",
+        "gitBlob": "a5a598971096d8f57d4accebc740e22d8aae7ff5",
+        "digest": "sha256:aa847812a09cd13558277a8d4a07888f96ee70375651a7f7802b7102c9090aaf",
+        "size": 2645
+      },
+      {
+        "path": "tools/dev_workflow/snapshot.py",
+        "gitBlob": "a61f897e1a42cc2fb19a37b8055b41729cbc14d3",
+        "digest": "sha256:c8c3967d3a067c19748e657889362f694683445e61c2ee1fd9ff4e3d5a39acbe",
+        "size": 7519
+      },
+      {
+        "path": "tools/dev_workflow/state.py",
+        "gitBlob": "4a9ffe50f8ba9c01ee502f512d08911f90afa057",
+        "digest": "sha256:19ae59fbd3b94e9ddff4565a4da98ff04308448e7f660ecadb20f123d2f3626e",
+        "size": 3683
+      },
+      {
+        "path": "tools/dev_workflow/transaction_binding.py",
+        "gitBlob": "cc3abbdf9cf1e49e732873dc70ff45e99045ba48",
+        "digest": "sha256:d758bd2b904f9ff53d61398afe4910230d457afc1f14748080a3930f06cf38aa",
+        "size": 3588
+      },
+      {
+        "path": "tools/dev_workflow/windows.py",
+        "gitBlob": "5b254171907a375a69cfe0f90771d9485ad1bcab",
+        "digest": "sha256:88f584e03e560395027f5d59a8358dbf57ce3daf64c68d56f5af2a98cee5f473",
+        "size": 6584
+      },
+      {
+        "path": "tools/dotnet_guest/composer.py",
+        "gitBlob": "f9aecaaf9a16f1c10f70ea134954c7155c312715",
+        "digest": "sha256:e6d1c9e1ba1a0712425efe69aa3f515e359b7640224c779bb538660837578596",
+        "size": 9103
+      },
+      {
+        "path": "tools/dotnet_guest/internal_io.py",
+        "gitBlob": "6d0efe524d4e39d5275c78202a3b120bd296c41f",
+        "digest": "sha256:e59192c316a2a7be67dedba27ab29845a08225910f070d05c7746377a68048fd",
+        "size": 17531
+      },
+      {
+        "path": "tools/guest_api_analysis.py",
+        "gitBlob": "686b72250d2db48f79dddc00c737f1b7a3fb49f7",
+        "digest": "sha256:ae9f6636d7a03abe43fdc82ce830392453b93705c3852b38e15d453ba978e215",
+        "size": 71586
+      },
+      {
+        "path": "tools/guest_authoring_frontend.py",
+        "gitBlob": "87d24579076d0e5b28e217a59d8d54343753d92c",
+        "digest": "sha256:50fb4567e172a9a8b8b72ce4b964912f980d1406979267b5d59e3545fad869c7",
+        "size": 9578
+      },
+      {
+        "path": "tools/guest_compatibility.py",
+        "gitBlob": "9a9f66f696f732a4ad81581c1e80b20a09786900",
+        "digest": "sha256:b73d27e9576d4ffdeb40e12a9b47761114ea0e768efe19643b847fc4d2a5d7f4",
+        "size": 17575
+      },
+      {
+        "path": "tools/guest_compatibility_build.py",
+        "gitBlob": "36a426ddad81b9924dcb094f22689747d120e6d7",
+        "digest": "sha256:a86ff6bb501b53138c08908860620f459e3be204569fdbc09e19504219cb398c",
+        "size": 18900
+      },
+      {
+        "path": "tools/guest_compatibility_context.py",
+        "gitBlob": "1aab54df96c751c6f4dd03403b481fb82e2ba29b",
+        "digest": "sha256:c2548301abccdf55e08e44ed08b7c1d43f95cf4fa3ffdf02f5fe6be015d94da5",
+        "size": 12830
+      },
+      {
+        "path": "tools/guest_compatibility_context_build.py",
+        "gitBlob": "b9a5020c14c8d05ef3d7c3162cc2778b2af96a68",
+        "digest": "sha256:af0ac2c0ce48d1d8dce99777068027ae16acc4a7f9f72722ba6bed0453cce302",
+        "size": 19569
+      },
+      {
+        "path": "tools/guest_compiler_capture.py",
+        "gitBlob": "26c1fbcaf81aee9d58e962e768e1abb457ab722c",
+        "digest": "sha256:d6eed9c3618a2d039cc7654f51aca0c184159eaac7911eb3350a0494759b1adf",
+        "size": 23593
+      },
+      {
+        "path": "tools/guest_compiler_edges.py",
+        "gitBlob": "2a13542194aa535fc2f38131a4c59a926ca4b521",
+        "digest": "sha256:167de6a71b90f4c2de95440d0578160b3cd5eccce6163ee087c461f0ad436ed8",
+        "size": 19180
+      },
+      {
+        "path": "tools/guest_dependency_inputs.py",
+        "gitBlob": "33becc052b578455bfab1e2e12c865e19c0f3d42",
+        "digest": "sha256:0d12177e8343aaa7a051d8baa19e15b0fa122b7ea26cb7aa92dead89e980baca",
+        "size": 10044
+      },
+      {
+        "path": "tools/guest_emitted_code.py",
+        "gitBlob": "944ee6c41c77434677b9b80945305d98b7e641ca",
+        "digest": "sha256:d647d9512d3405666b1d896e67c8e3cc74c35f12d0682d73529e0f6327fbcaae",
+        "size": 22393
+      },
+      {
+        "path": "tools/guest_resources.py",
+        "gitBlob": "569ba3264307b0c287ce02c55ecf35a8375fede8",
+        "digest": "sha256:558e9c937b9b7113fe5f51d035c4f56695cc8a3db30b0f378c7d926e76111814",
+        "size": 18098
+      },
+      {
+        "path": "tools/guest_runtime_receipts.py",
+        "gitBlob": "d9b8fde40b208b166b2b01825359809b13f51deb",
+        "digest": "sha256:a6010a4c1a767779eec5a6bef7907cd12f6f95ce91dc9c32d18283f08436672e",
+        "size": 12540
+      },
+      {
+        "path": "tools/host_codec_wasmtime.py",
+        "gitBlob": "c0d2604251ba0a19ca77abf76afc0ad89ab51335",
+        "digest": "sha256:31da047c2fbb849a9d260043f9d492a1c5c813d22fde5176110b486e100f24ea",
+        "size": 20029
+      },
+      {
+        "path": "tools/install_guest_bindgen.py",
+        "gitBlob": "d05cbb68338277f44fe61f15ec361816f6364549",
+        "digest": "sha256:5b44bb8ee33f2d0b2466afa6a38b990fb1358fbd9818061b392ef960b535eca1",
+        "size": 2641
+      },
+      {
+        "path": "tools/result_owner_bytes.py",
+        "gitBlob": "2ef78687768c7cc383a4d857e7f82c4f8f75aaaa",
+        "digest": "sha256:20e8fd6169ca1363d851971e7070cfa63cea8d3cfc63b3db1be00c3e57d458a2",
+        "size": 4877
+      },
+      {
+        "path": "tools/rust_application_dependencies.py",
+        "gitBlob": "05df891578ec8952f0eeb2aea4b1aca8a25fdf30",
+        "digest": "sha256:26d83a81d8bd370d2df229b1c0c087e2017ad7daed59cb6966017fd24f7c0b67",
+        "size": 50240
+      },
+      {
+        "path": "tools/rust_capsule.lock",
+        "gitBlob": "6da694bda22c09a215205fa783907e473aa2bf05",
+        "digest": "sha256:2e4f0734a564f6c12b141d1145109a994f7afc9d99b5d4921054d5820c9967ec",
+        "size": 33219
+      },
+      {
+        "path": "tools/rust_capsule.py",
+        "gitBlob": "1d7aa59b38898922b942d688a454d78348c2da60",
+        "digest": "sha256:81d3a07c2fefc68a1e076a5b1d8f46fe3b5269473346db2a1170101047635a23",
+        "size": 12251
+      },
+      {
+        "path": "tools/rust_capsule_build.py",
+        "gitBlob": "458dcf033508598d179d6c91b3ccb861f8216fe8",
+        "digest": "sha256:05807a5b4dc0659f5de357f47ea37c0a02fcf03bfd567de276a3dcb4996b7f31",
+        "size": 51844
+      },
+      {
+        "path": "tools/rust_capsule_project.py",
+        "gitBlob": "1907acb0f4632577b8f4b44b69c26b24048ac36e",
+        "digest": "sha256:584331e9da177b9443738916047a2a7bb076b86de6348105baa04514ede0be36",
+        "size": 20476
+      },
+      {
+        "path": "tools/rust_dependency_authoring.py",
+        "gitBlob": "d3a694f2258081646e1498981dee0c7351bcd5d0",
+        "digest": "sha256:932d87618c1d392144518cf7aeacaedba7afd428bf577f6d21c2164a64963d2c",
+        "size": 13496
+      },
+      {
+        "path": "tools/rust_owned_thread_component.py",
+        "gitBlob": "63b6e7a0f3740724775456a7f80d5f01732568d8",
+        "digest": "sha256:8411953e4076b9bd985c7ec05a38152d88265aae7c244c709c761309b92fa4f6",
+        "size": 3173
+      },
+      {
+        "path": "tools/rust_owned_thread_fixture.py",
+        "gitBlob": "d74126fd3f28606095b94af56a4effac3a9b73b3",
+        "digest": "sha256:e2340a53e147b37f6af973a023d8c846052491ea6fc02701aa75be612bc3596b",
+        "size": 4284
+      },
+      {
+        "path": "tools/rust_standard_clock_profile.py",
+        "gitBlob": "fb03e3760849c1b38841f92b8e824a14d95da5b7",
+        "digest": "sha256:c6990912703d9057446781654cf775961c60f4618f0baddb903e4bb028c300b2",
+        "size": 6194
+      },
+      {
+        "path": "tools/rust_standard_entropy_profile.py",
+        "gitBlob": "33d5b2525724d33fdff48c6b234316dc010477be",
+        "digest": "sha256:aeb72ddbbd5cd894ba00413c576d34a1d62a1e5725ec841a6feb9648fbde97ef",
+        "size": 7712
+      },
+      {
+        "path": "tools/rust_standard_logging_inputs.py",
+        "gitBlob": "f446e8e924938fad9b3b746fb885d70c16c42d3b",
+        "digest": "sha256:f0b5b121b0dcaaa901b5c1e16dc092b4183029fccb4ca5f15e89bb470353dc99",
+        "size": 10485
+      },
+      {
+        "path": "tools/rust_standard_logging_profile.py",
+        "gitBlob": "c331d94b612d974ad2ff0d9f192bd95a08e45a7e",
+        "digest": "sha256:cb142e8a3abe648293c3ffa0aa23bad842a3c5c730b7e3fe08093c021f04083e",
+        "size": 2324
+      },
+      {
+        "path": "tools/rust_standard_sysroot_build.py",
+        "gitBlob": "acb341c2735a6de772a9ad19a5778d570dc88340",
+        "digest": "sha256:ac0bb0bb756e2716d5c9f9855d83be6fbd3fea0362e17499c7793e3ea9b09e80",
+        "size": 12829
+      },
+      {
+        "path": "tools/rust_standard_sysroot_source.py",
+        "gitBlob": "d81e9709d6fe9a42714c8dd8787f7c6b3ee00617",
+        "digest": "sha256:838ce7b8a6725acc48d7db3db4c0e27f15e3df55d1f986989f54ed8cc15698f1",
+        "size": 8060
+      },
+      {
+        "path": "tools/rust_standard_thread_capture.py",
+        "gitBlob": "1911bb8c3d1c8e78622feafff1760e770d458a5d",
+        "digest": "sha256:be2897b6b8e288b59571b23064c4fe29040bd00e5d27b8cd176efdbeb1ef454c",
+        "size": 5963
+      },
+      {
+        "path": "tools/rust_standard_thread_profile.py",
+        "gitBlob": "1393ccac727312810104d5995c326676abb9c150",
+        "digest": "sha256:b9954c2ffd14f5ca10d713b787a295365db8864af3226e9f31040f66114875c3",
+        "size": 10785
+      },
+      {
+        "path": "tools/rust_standard_tls_profile.py",
+        "gitBlob": "85549c58b17d297c269866fa1505d9c6ce1d0f3a",
+        "digest": "sha256:3516930f236ea581a4aee54f3866a11d9a6b032e9934334ef318e22cc41329f8",
+        "size": 10018
+      },
+      {
+        "path": "tools/rust_thread_callback_paths.py",
+        "gitBlob": "5d9d9190a682667456c29b3628a43d311f7b5e41",
+        "digest": "sha256:3814a92179ee98f7e38b79a30e3be690907841b30a1aafdaf617786eacc2a8f3",
+        "size": 27343
+      },
+      {
+        "path": "tools/rust_thread_canonical_results.py",
+        "gitBlob": "4a42e641b049fe02df8c21930131cdaa66ce2e41",
+        "digest": "sha256:97848b6e7cbcf3ce834826a59aadee09690c6ec34298ddccbcb401411eb9800b",
+        "size": 17741
+      },
+      {
+        "path": "tools/rust_thread_http_sibling_contracts.py",
+        "gitBlob": "e36d392021a06dd57491b6b668f9980f970b3e78",
+        "digest": "sha256:aad4ccf8e7360c8c748dd855bb82b784baec7eb9aaf79add56d417ba1d17e790",
+        "size": 5147
+      },
+      {
+        "path": "tools/rust_thread_http_sibling_fixture.py",
+        "gitBlob": "8379788de78ae695466734d1082a9a90893f1e61",
+        "digest": "sha256:d2d361569f70b5e8559e7f3fbe284ca7037e5f9f28cab608f81668d3d53678c2",
+        "size": 7723
+      },
+      {
+        "path": "tools/rust_thread_object_graph.py",
+        "gitBlob": "ba98ebcc8d9e65d5d9648fb7c8c326af7e261dbc",
+        "digest": "sha256:cdc472190007828c5b03d8b5271bb7935b8148884a4198d3764a212fcd1b80d0",
+        "size": 42010
+      },
+      {
+        "path": "tools/rust_wasi_http_compose.py",
+        "gitBlob": "f3064fabce05f826a5edbe8360654e3b549cb87c",
+        "digest": "sha256:39a6196f15be3b0953a6927ebd834739c98d718c03147c5766ec99defcada6cd",
+        "size": 13253
+      },
+      {
+        "path": "tools/rust_wasi_http_fixture.py",
+        "gitBlob": "de90062b5c4c7eb25663fc2bb34979cd94166e38",
+        "digest": "sha256:de70a418cea9667940119b2b15a949cdf80c7680af39abdbb449dd2f2106adfc",
+        "size": 6298
+      },
+      {
+        "path": "tools/rust_wasi_http_inputs.py",
+        "gitBlob": "67b3c942595d7179f547509234216f9dc782a908",
+        "digest": "sha256:cc84cfc7e5d4a0a5655165f1580324a7ac88283434465857dc019587d4ed4d9b",
+        "size": 15746
+      },
+      {
+        "path": "tools/rust_wasi_http_io.py",
+        "gitBlob": "4797b0d4b7249d28510efd44fa2ed83f413144bd",
+        "digest": "sha256:52fda0d3dca42a839f0bec72ab6b893263d3d0fc2052c8ad3aca360ac255d718",
+        "size": 6153
+      },
+      {
+        "path": "tools/rust_wasi_http_profile.py",
+        "gitBlob": "6b1d93487a714d4909c5dbfbbefa87a889500995",
+        "digest": "sha256:c4a1775f70d4aa16903610c0eb62f9c0c5d79d1bfaf924927055880cebfb511d",
+        "size": 15335
+      },
+      {
+        "path": "tools/rust_wasi_http_root.py",
+        "gitBlob": "6f893a9dfab83f038f23762b315e2a32daabedb2",
+        "digest": "sha256:e58ac0ee75f0970ad9a225bed320ff467d21100ebc70370dee2c95334b4daf27",
+        "size": 25290
+      },
+      {
+        "path": "tools/rust_wasi_http_runtime_fixture.py",
+        "gitBlob": "af07382f583c1040f86dbe9c016df24deacad133",
+        "digest": "sha256:6ee77b119cd6af2f70b317075c5f9dbdc83e35dc0f87ef17944b01de5511301f",
+        "size": 16757
+      },
+      {
+        "path": "tools/security_common.py",
+        "gitBlob": "53f56695b00c76c97ca64b24c899f7e6a1cd4cc1",
+        "digest": "sha256:8bf12b6c17c4e757d51460f7dbbbafa53aa41ca19476c6c8ad9e200bdafe970e",
+        "size": 5814
+      },
+      {
+        "path": "tools/stage_runtime_wit.py",
+        "gitBlob": "c4aecc39d488b04dd2d5aa787355693663ff1f37",
+        "digest": "sha256:a44bcfc7054c8a63a43e3b9ad6428e7d4ac1bb551420020bc29015c9333b9828",
+        "size": 4194
+      },
+      {
+        "path": "tools/toolchain-smoke/Cargo.toml",
+        "gitBlob": "ba5cd6f23e28776299b1b98fb4851929e89b2330",
+        "digest": "sha256:3090c4959097a2237e5bce9b36a73023535f7b2aef7660d157fd31e9fb8c493a",
+        "size": 6873
+      },
+      {
+        "path": "tools/toolchain-smoke/examples/rust_wasi_http_runtime.rs",
+        "gitBlob": "b8b8b060e963670771e4527a52ab799acbbd3de3",
+        "digest": "sha256:31d6a0807c8da591d59e063d05901472c523d351d9b1c7925a7bfb38d3163aa3",
+        "size": 2665
+      },
+      {
+        "path": "tools/toolchain-smoke/examples/tutorial_greeting/component.rs",
+        "gitBlob": "e2895ef8af709e4b364b191c3d2c1fad064bb957",
+        "digest": "sha256:fec18f05746c81aa6f8e28f76fa63db9f8a54d246c9ea7f323b9a8ce43abbbd8",
+        "size": 1056
+      },
+      {
+        "path": "tools/toolchain-smoke/examples/tutorial_greeting/world.wit",
+        "gitBlob": "34bc3f6324907433294206f6978056f9fe8efaf4",
+        "digest": "sha256:dc4d575fa5de96fc4507900381628c1807f41bd4f8d53f8504e3e13b28dc6b5e",
+        "size": 144
+      },
+      {
+        "path": "tools/toolchain.toml",
+        "gitBlob": "0d465d1f93e2ec9666d2ed6b01fd0f5de21e8e50",
+        "digest": "sha256:2c9b863cdde4c6b47447639fd53f21bc4dfcb2682d5d528ab159affaefdfea1a",
+        "size": 1150
+      },
+      {
+        "path": "tools/transaction_guest_project.py",
+        "gitBlob": "3fe49b56040e6d448d858ae69ebcc01ec4c89515",
+        "digest": "sha256:8f70d19a6181e3d078d42944d0957f5512ab7a4b426befaffbb73b2cec874f39",
+        "size": 10287
+      },
+      {
+        "path": "wit/host-abi-phase3-v4.json",
+        "gitBlob": "baeab3e663fcc66ce38ebe727eb902881923aa61",
+        "digest": "sha256:3cfbd9bf55248f972d53598cc71ceccf068aa9234de4e1fce488d458271a937d",
+        "size": 4523
+      },
+      {
+        "path": "wit/host-abi-phase4-v1.json",
+        "gitBlob": "00db06628918e231c8b51aebf843ff8a8c6829f4",
+        "digest": "sha256:0b5bc9368b6f456ebc785a80a4625adf19e572ce268d0b017906838e49f2f9b0",
+        "size": 2559
+      },
+      {
+        "path": "wit/platform/activation-runtime/package.wit",
+        "gitBlob": "e0e7cb52e45c12d0ec1251a778f4c4ac380685a5",
+        "digest": "sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946",
+        "size": 2539
+      },
+      {
+        "path": "wit/platform/blob-v2/package.wit",
+        "gitBlob": "df39b9143ac3715201b97bc55a2176be2f701706",
+        "digest": "sha256:d1744403a7882fbe8bf99808ac28c26d271eb1fb26fbac2519f1c7b2840d0dcb",
+        "size": 1406
+      },
+      {
+        "path": "wit/platform/blob/package.wit",
+        "gitBlob": "f769ca47abcde218a0969dc89a874a7e3f34688f",
+        "digest": "sha256:e73a86a069223567fd782ef0e20d83a8f25a1353d39b6d2c174c31bbfb936210",
+        "size": 867
+      },
+      {
+        "path": "wit/platform/clock/package.wit",
+        "gitBlob": "1de0ae5c25c607f0f0f28a4abeb8b12e9f1ad7f2",
+        "digest": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+        "size": 139
+      },
+      {
+        "path": "wit/platform/context/package.wit",
+        "gitBlob": "74711d8e7bee3b16b3b79670b5c114c808953caf",
+        "digest": "sha256:9b5d08ce6d4f698ea43b17aaf879e196e2e8d64610fabc2b626ad40560daadc1",
+        "size": 1409
+      },
+      {
+        "path": "wit/platform/events-v2/package.wit",
+        "gitBlob": "ec33e744a858e509e3b7081fa3543e9db30ba9e4",
+        "digest": "sha256:645d6373dd55afeaaa400bd27f35e55dbb9c99a9599013d8419e90b02fb911d3",
+        "size": 1299
+      },
+      {
+        "path": "wit/platform/events/package.wit",
+        "gitBlob": "69bb0eb76928008cf0d62bbff8f4f92e424b7327",
+        "digest": "sha256:b599d127622a47c4d763df29ca5d0907f083566645a5d882d593701f39db68c1",
+        "size": 572
+      },
+      {
+        "path": "wit/platform/http-phases/package.wit",
+        "gitBlob": "d7604063ede14cdc6a7fddc04c723472c23166ea",
+        "digest": "sha256:d823cf020ad4e11f789e2026dd604a040a7b5911166bad0076a2bc8d7068cb50",
+        "size": 2068
+      },
+      {
+        "path": "wit/platform/http-v2/package.wit",
+        "gitBlob": "ab98f74ddb029074d05a225696aef81e25bcbece",
+        "digest": "sha256:2728b8d0458a441a7dab01dde896f1cc87c453382a6f5ce35bd86718f5e6fa9d",
+        "size": 1296
+      },
+      {
+        "path": "wit/platform/http-v3/package.wit",
+        "gitBlob": "9fbfabb626d59704ca37091b86d38a2c0a510a7c",
+        "digest": "sha256:6fcae4b3123ec3ce0b32a4e65390630be3bde40ee74b50d7b732150b6bb6147d",
+        "size": 2915
+      },
+      {
+        "path": "wit/platform/http/package.wit",
+        "gitBlob": "76afc2797a1f69f938f489604cae23cd50205427",
+        "digest": "sha256:6ae7533f6e81d6364601a12d5f533ee60342eb6ba2e897e545e10743b4e92945",
+        "size": 997
+      },
+      {
+        "path": "wit/platform/intents/package.wit",
+        "gitBlob": "79d632f43834ab920afc629573339613d68c451a",
+        "digest": "sha256:182a2a982c470a4bd8603fba8d3e2e54e93a167dda2501de02c77b10066ea636",
+        "size": 1142
+      },
+      {
+        "path": "wit/platform/invocation/package.wit",
+        "gitBlob": "f9163c7b0d2f1a0c9d0806a0d906a2215e6a24dc",
+        "digest": "sha256:2e9f13a01c9cf90834c53ff38f408e8e23f39cc29cbd7bc5b47d796159f61b67",
+        "size": 1914
+      },
+      {
+        "path": "wit/platform/log/package.wit",
+        "gitBlob": "ed24669e990f3d35ced55352362d29b06460cbbc",
+        "digest": "sha256:071bf3e49c5fd64a2ce32e9d5326eb1add1629231f8c6110421c81b6cdf3ea0e",
+        "size": 418
+      },
+      {
+        "path": "wit/platform/native-runtime/package.wit",
+        "gitBlob": "2a7114f5fdd81be63250d53be5e881c57d60bea3",
+        "digest": "sha256:2433ec06c033be01474fd5bf3275c921622eb6720aac344f1307736d09325eb6",
+        "size": 633
+      },
+      {
+        "path": "wit/platform/network/package.wit",
+        "gitBlob": "2213fb5ac8625ead7ffe1120a7a5aad45b453af3",
+        "digest": "sha256:735538103dd7ec76609a0bd998d7fcc745dc3127795dcb0171c0de4ee7a8cbb9",
+        "size": 1960
+      },
+      {
+        "path": "wit/platform/random/package.wit",
+        "gitBlob": "65f3a6a16bfafdeebe2e69662a0226b593a3d46f",
+        "digest": "sha256:c8ceca00269182f27c785fe17bd42eb4776bcde96828e5b5f2786aa15dbedc60",
+        "size": 272
+      },
+      {
+        "path": "wit/platform/runtime-phase3-activation/world.wit",
+        "gitBlob": "484554a2c10c69c22c98d9dbe260142427965e18",
+        "digest": "sha256:a4b3289087fe02249252c7e15a745a08e772d743eafd3337eedf3f9e6972aa2e",
+        "size": 636
+      },
+      {
+        "path": "wit/platform/runtime-phase3-blobs/world.wit",
+        "gitBlob": "874f40f7844f3d469c65eac31835103b0ec2f8d6",
+        "digest": "sha256:5a509dd87892ee54828c17d0189c034bf892afa6e47701834bd42db095244cfc",
+        "size": 551
+      },
+      {
+        "path": "wit/platform/runtime-phase3-http-phases/world.wit",
+        "gitBlob": "5cb21a09ff0da0726b29637f242ac13d9f9b4edf",
+        "digest": "sha256:1156028e552b3355c965d4cbc876b6f4aeb52d083f9740248942667f752d2cc5",
+        "size": 727
+      },
+      {
+        "path": "wit/platform/runtime-phase3-native/world.wit",
+        "gitBlob": "e66bed5ddef8407047060f21ecf3c3a2a0ec071c",
+        "digest": "sha256:4c562d2a3b2b4f0cd159f4c9b26e88ff84d32c717f5d5ee9f6aad75435d69b9f",
+        "size": 684
+      },
+      {
+        "path": "wit/platform/runtime-phase3-streaming/world.wit",
+        "gitBlob": "3de9fbab31d66734ec0af40fefde83e989b9a8f5",
+        "digest": "sha256:240f3e0864a5f683cacef9f70868e1d4450ab466bd7473b639e788cedbdfef7c",
+        "size": 516
+      },
+      {
+        "path": "wit/platform/runtime-phase3/world.wit",
+        "gitBlob": "1c3ae7991d8b40c1e61da1e3dba864c9270939dc",
+        "digest": "sha256:09dae5ca8c10761c4c8a32411942c00564884b146bebb4069fa125e8d02ec8e0",
+        "size": 704
+      },
+      {
+        "path": "wit/platform/runtime-phase4/world.wit",
+        "gitBlob": "993350f443d2ef9101f24ba3199330e086fc6f44",
+        "digest": "sha256:7369b62d5beef0ea0ed999c06ca768b46dd23c1d9bce81718b4bddb02cd34fb3",
+        "size": 402
+      },
+      {
+        "path": "wit/platform/runtime/world.wit",
+        "gitBlob": "07ab2ea27f302e7f3cc2f6b48f99fbb30ca618df",
+        "digest": "sha256:2e4da1942366ab63344cc4b959b75acb0afe933ab67b1d4cc819a15982b3e048",
+        "size": 558
+      },
+      {
+        "path": "wit/platform/secrets/package.wit",
+        "gitBlob": "7fba00150425dffc4b7b862a9c95b285ca100312",
+        "digest": "sha256:4e0593c21ac5e3051500717fcf347cf7e23821816a9fc15945c68e93cee4ee54",
+        "size": 407
+      },
+      {
+        "path": "wit/platform/state/package.wit",
+        "gitBlob": "75bed6e75933f03e69b17bff8b9520e0a097c8c2",
+        "digest": "sha256:56b0a1304a9987395e0ea3f07e3dde4cbae5e70e5c9837ffcc6ae3b3cb9b7f25",
+        "size": 3134
+      },
+      {
+        "path": "wit/platform/telemetry/package.wit",
+        "gitBlob": "35033225db1cdd0473be69b25b22e4a39839b60b",
+        "digest": "sha256:c79721b703eca86c55ab04ddcb37cbc7965287db64880c0a0bb555b92baaadc6",
+        "size": 505
+      },
+      {
+        "path": "wit/platform/timer/package.wit",
+        "gitBlob": "d803dd22dedc8f17c7079ca732d6e9c0dc4164ef",
+        "digest": "sha256:3c35d5a9078315848f86144e0f8f65cb7a4f8da1a54905098d4ff9c6e227090e",
+        "size": 610
+      },
+      {
+        "path": "wit/platform/web-http/package.wit",
+        "gitBlob": "04cbce7fabf9eacd00f8ea2d151b0e877e6a7f5f",
+        "digest": "sha256:92bc3b8ca3cb5c0ec76b012d695ea6ddf962a1534eeac297dfe7b27125dc5450",
+        "size": 181
+      },
+      {
+        "path": "wit/platform/web/package.wit",
+        "gitBlob": "3545b1f3b33fde2a0b1afc0b3f6f386c5db3b346",
+        "digest": "sha256:3ad4d3e122c839115891ba9b69c9b790245a64ecb00690e23270623ac94b1450",
+        "size": 1858
+      }
+    ],
+    "totalBytes": 3063598
+  },
+  "recipeInputs": {
+    ".cargo/config.toml": {
+      "digest": "sha256:aabd2af12e26033cb8de9b63841b54574718406e4479b47e41bc0d92fc6f14e0",
+      "size": 51
+    },
+    ".cargo/managed-guest.toml": {
+      "digest": "sha256:199eb2f4f23ccbc2b2e363afb3b0f82099567c7f46d22b86ba8131b19484c48a",
+      "size": 652
+    },
+    ".github/workflows/rust-http-thread-composition-diagnostic.yml": {
+      "digest": "sha256:988349ad6f42632cd4b21893dc90311556c190e7eb92ec45ea93cf668093b915",
+      "size": 6847
+    },
+    "Cargo.lock": {
+      "digest": "sha256:bc3385fd8ed9cf87593f5a1f3f6723f145d68bbc5bc94623f8b7094b0d176cd1",
+      "size": 113561
+    },
+    "Cargo.toml": {
+      "digest": "sha256:212044df16710a654303e1d6afdb731eb86a74e2fce146c278945f3d1aec4a97",
+      "size": 4047
+    },
+    "LICENSE": {
+      "digest": "sha256:a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "size": 10173
+    },
+    "NOTICE": {
+      "digest": "sha256:d04951eb398e0229e800c1b9d627d0c5174691c7c3a56d2f34129e4c95585ede",
+      "size": 6424
+    },
+    "crates/latent-component-bindings/Cargo.toml": {
+      "digest": "sha256:81659bd7dadac16fdf5df3ca97ca762f75ed725975e78b0d6ba79f0462c7826d",
+      "size": 537
+    },
+    "crates/latent-component-bindings/README.md": {
+      "digest": "sha256:7987450b6a26a81b14e0a18cc0b30cc8ea22dc6b5d313d10f30fc3258375da49",
+      "size": 3787
+    },
+    "crates/latent-component-bindings/build.rs": {
+      "digest": "sha256:947b787bdcc7e5f9dc521f5fb10513bff84b90831e90757b8f4d6d80e65e280e",
+      "size": 15668
+    },
+    "crates/latent-component-bindings/src/lib.rs": {
+      "digest": "sha256:96ac1322c8b8100b2fe913b31df3979e89f9cf93460cc4c6b482756d5b92db22",
+      "size": 3698
+    },
+    "crates/latent-component-threading/src/rust_catalogue/adapted-wit-metadata.bin": {
+      "digest": "sha256:14bae97e29b1064d917330e77a459d068214ae6857d5fe6ff2298bdbecc7b826",
+      "size": 1420
+    },
+    "crates/latent-component-threading/src/rust_catalogue/original-wit-metadata.bin": {
+      "digest": "sha256:d46e07b3b6b15e7b6d2f9bef3d1ab0fe1fc2baeb886e77eba09c76f6b3df58a3",
+      "size": 1420
+    },
+    "crates/vendor/bytes/CHANGELOG.md": {
+      "digest": "sha256:0c4407c0700f0d64663f5c07579ac734e70b5febcbd491fb53367232e22ab820",
+      "size": 12646
+    },
+    "crates/vendor/bytes/Cargo.toml": {
+      "digest": "sha256:989921f4afccdec4c5076d4ded65428b22ff42899475eeff847e7bd2cc68ace6",
+      "size": 2601
+    },
+    "crates/vendor/bytes/Cargo.toml.orig": {
+      "digest": "sha256:4fc0d14d77a47a1fac1fbb445890db63e67360535c940dd47ffd69badc30cdc6",
+      "size": 1407
+    },
+    "crates/vendor/bytes/LICENSE": {
+      "digest": "sha256:45f522cacecb1023856e46df79ca625dfc550c94910078bd8aec6e02880b3d42",
+      "size": 1055
+    },
+    "crates/vendor/bytes/PHYSICAL-RETIREMENT.md": {
+      "digest": "sha256:55a96c57290f9f460e5477421bad0cd4a0435b7fb5d41206a156033e34ba2bf6",
+      "size": 1958
+    },
+    "crates/vendor/bytes/README.md": {
+      "digest": "sha256:275ac7bc295e3cc659d28f05261645ac5bd6286476afe2ee3c1ed719f7b6df02",
+      "size": 1878
+    },
+    "crates/vendor/bytes/SECURITY.md": {
+      "digest": "sha256:a3335079977c2f13bad59e323fdc1056bdae5adfe55f18d15ac2c930d741828c",
+      "size": 348
+    },
+    "crates/vendor/bytes/UPSTREAM.json": {
+      "digest": "sha256:4998d6526aa21969ea021d4f781fa36ebaf64b2e7ceeea67daee0f4b51b6c2d3",
+      "size": 5439
+    },
+    "crates/vendor/bytes/clippy.toml": {
+      "digest": "sha256:583b79f56f20c85fb7820fcfa97985e03a4b41da31c8bbe6c03b721d3df5e800",
+      "size": 14
+    },
+    "crates/vendor/bytes/src/buf/buf_impl.rs": {
+      "digest": "sha256:f1095872bba7c9d5170207750f4ebe4fa61c4e35a282569491c2ee8ea2dc6714",
+      "size": 86641
+    },
+    "crates/vendor/bytes/src/buf/buf_mut.rs": {
+      "digest": "sha256:c76d0a846cf6e2c42af7acf0bbedc49a30ce3b9185392835c6a6f8b06a128b9e",
+      "size": 44275
+    },
+    "crates/vendor/bytes/src/buf/chain.rs": {
+      "digest": "sha256:27ff0a6fce049c51a24d45003b9741b655c28330b48af23ad1514587760b0c93",
+      "size": 5505
+    },
+    "crates/vendor/bytes/src/buf/iter.rs": {
+      "digest": "sha256:d4dca5b7f9b1cb441f22ac1862e28b10086721879163a810955aefb5cd7f3e58",
+      "size": 2925
+    },
+    "crates/vendor/bytes/src/buf/limit.rs": {
+      "digest": "sha256:e005ba140b70f68654877c96b981a220477e415ff5c92438c1b0cb9bc866d872",
+      "size": 1951
+    },
+    "crates/vendor/bytes/src/buf/mod.rs": {
+      "digest": "sha256:3f60295316d44b510b942abb31a0d975ae488bd4b52c87f5252d73f88f82715a",
+      "size": 1135
+    },
+    "crates/vendor/bytes/src/buf/reader.rs": {
+      "digest": "sha256:cda8bc221a1de06c7395d5c6e80f8a5924198eafbc2decc0909082ce8781d789",
+      "size": 1908
+    },
+    "crates/vendor/bytes/src/buf/take.rs": {
+      "digest": "sha256:443766677fae38b398271693ed6134c7cc14949cdb9fce299c44dd55ecf84fb3",
+      "size": 4845
+    },
+    "crates/vendor/bytes/src/buf/uninit_slice.rs": {
+      "digest": "sha256:52629b93ff7a08db45fc69395580b34fa3609fd9309ea01f86e58488b02b08a3",
+      "size": 7348
+    },
+    "crates/vendor/bytes/src/buf/vec_deque.rs": {
+      "digest": "sha256:baac165527d1bdfc3bb259380bb4722e70c3f11e8a901e8bab6e4f951b060711",
+      "size": 815
+    },
+    "crates/vendor/bytes/src/buf/writer.rs": {
+      "digest": "sha256:b137608cb40944a5c3e061a73087c5a48e50048dae002d0334a23cf4d3547065",
+      "size": 2036
+    },
+    "crates/vendor/bytes/src/bytes.rs": {
+      "digest": "sha256:8868b252f0c21802d2e01cdcee98b218e36e6830ec105b2902a42e7a6ecc9831",
+      "size": 52468
+    },
+    "crates/vendor/bytes/src/bytes_mut.rs": {
+      "digest": "sha256:48bf55ffb1e3062082cae343c223e063104e3eee0a18f291a72942026062adbd",
+      "size": 62221
+    },
+    "crates/vendor/bytes/src/fmt/debug.rs": {
+      "digest": "sha256:4d217b8f43e489925bb6904010df617efc63b50a3cc1ab126eec54b43b66eb3e",
+      "size": 1329
+    },
+    "crates/vendor/bytes/src/fmt/hex.rs": {
+      "digest": "sha256:54c05ab7d95d7381e499079d63773fabd2672f3c4929b56b02ab87d4495902b5",
+      "size": 595
+    },
+    "crates/vendor/bytes/src/fmt/mod.rs": {
+      "digest": "sha256:b38222dcfff70eb3ffb6ce305b95f3fcfd9fa68cca85693eb2ed01d3da7ddb88",
+      "size": 340
+    },
+    "crates/vendor/bytes/src/lib.rs": {
+      "digest": "sha256:053fc1b7e028cd1ccab019ea695f3e620129ef26a5b3f80a747b402a9871dfbf",
+      "size": 6183
+    },
+    "crates/vendor/bytes/src/loom.rs": {
+      "digest": "sha256:7c89f9f5f900d5b9b7c43d08d467957933eba90d5dcff1b38cf9a7e48494a577",
+      "size": 941
+    },
+    "crates/vendor/bytes/src/serde.rs": {
+      "digest": "sha256:3ecd7e828cd4c2b7db93c807cb1548fad209e674df493edf7cda69a7b04d405d",
+      "size": 2591
+    },
+    "crates/vendor/bytes/tests/test_buf.rs": {
+      "digest": "sha256:941b6ac1c547aa522a1576fefa3da98edc7636f1f322feebc5768701199caa83",
+      "size": 16117
+    },
+    "crates/vendor/bytes/tests/test_buf_mut.rs": {
+      "digest": "sha256:1f28f3d125e98b81a813a414a89a8c9b5d45369b10dda187a68614ff285c820e",
+      "size": 6865
+    },
+    "crates/vendor/bytes/tests/test_bytes.rs": {
+      "digest": "sha256:2b102b8c04cd45076940691d11ae3962c6e31f32ae8f283bcbcf0b8e93c46545",
+      "size": 44823
+    },
+    "crates/vendor/bytes/tests/test_bytes_odd_alloc.rs": {
+      "digest": "sha256:ad5df84a35038359413199762c65017989d905e6e965a7b863beaa9962a7e1e8",
+      "size": 3920
+    },
+    "crates/vendor/bytes/tests/test_bytes_vec_alloc.rs": {
+      "digest": "sha256:5a0e77cab12b32374b2822df8d9a6479afe68b55c1cba1511ebf4199be532caa",
+      "size": 4129
+    },
+    "crates/vendor/bytes/tests/test_chain.rs": {
+      "digest": "sha256:1784287560d45e0225b2cd9d24498264031c36f42cebb7e92108e11641d1cce0",
+      "size": 4663
+    },
+    "crates/vendor/bytes/tests/test_debug.rs": {
+      "digest": "sha256:13299107172809e8cbbd823964ac9450cd0d6b6de79f2e6a2e0f44b9225a0593",
+      "size": 1351
+    },
+    "crates/vendor/bytes/tests/test_iter.rs": {
+      "digest": "sha256:665e1837c1294d7695ffa352a666ce8673fb46fa603164556524e87d5517a6cb",
+      "size": 434
+    },
+    "crates/vendor/bytes/tests/test_limit.rs": {
+      "digest": "sha256:6c5801f1e94f0abb2b4994aa1ade8e36464f26bf9e13e3dcac02d0f2f6f08ed5",
+      "size": 1865
+    },
+    "crates/vendor/bytes/tests/test_owner_retirement.rs": {
+      "digest": "sha256:66f36dfe3b5f82fcf4ef6db0b6b6454e94719af8a0db2a93cd1e7856cdae8b42",
+      "size": 6621
+    },
+    "crates/vendor/bytes/tests/test_reader.rs": {
+      "digest": "sha256:050b872d89376b3b83841839b4334066d8357b01aaf3783a180aac25a5550f3d",
+      "size": 944
+    },
+    "crates/vendor/bytes/tests/test_serde.rs": {
+      "digest": "sha256:2691f891796ba259de0ecf926de05c514f4912cc5fcd3e6a1591efbcd23ed4d0",
+      "size": 528
+    },
+    "crates/vendor/bytes/tests/test_take.rs": {
+      "digest": "sha256:fb34700a8ed75b3c6937a4dee0bffadb64f7c7f735bd9faa8730eb96a9e9b651",
+      "size": 2330
+    },
+    "crates/vendor/wasmtime/README.latent.md": {
+      "digest": "sha256:daf274e143798e7a1f0abb1cff2df4f1bb949da2fedca1afd28d2c119707ce71",
+      "size": 53875
+    },
+    "crates/vendor/wasmtime/UPSTREAM.latent.json": {
+      "digest": "sha256:ffe28ed7747fbcfbd011b881d66088934c2a32342bd553b3c770caa272fb8c22",
+      "size": 49685
+    },
+    "crates/vendor/wasmtime/latent-dynamic-memory.patch": {
+      "digest": "sha256:14bf31fcbdbe29ebd640a365bc1781c99eee40546cce4ff86749d4aad47290c7",
+      "size": 713446
+    },
+    "examples/echo-contract/wit/echo.wit": {
+      "digest": "sha256:5a36463c6f335b2fa8a3c169242f7d01bacd9dd33589b439ecc869e89ca293c6",
+      "size": 302
+    },
+    "rust-toolchain.toml": {
+      "digest": "sha256:7527c74e92bfb75a72d184650b0a06c3d645f43536541007782abf9618f26bcc",
+      "size": 140
+    },
+    "sdk/dotnet-guest/component-composer.json": {
+      "digest": "sha256:c1433fe6fddb8ee5cdb3c0fbb3ea2a091371100233b3ae127245684a236851f7",
+      "size": 377
+    },
+    "sdk/dotnet-guest/runtime/http/owner.rs": {
+      "digest": "sha256:b544c2decde7e3a26088fcfc161dc800bef9c56045471f1402c16dfea28817e6",
+      "size": 1042
+    },
+    "sdk/dotnet-guest/runtime/http/quota.rs": {
+      "digest": "sha256:7d46db93bb1750d0878eacb852aa6b72a510d057d4911e487f674b5be84ca74a",
+      "size": 681
+    },
+    "sdk/profile/transaction-requirements-v1.json": {
+      "digest": "sha256:065dd85161eee6c5edb0537b2e65399ea4876b9b18ae226728e7158b1d32986f",
+      "size": 9418
+    },
+    "sdk/rust-guest/Cargo.toml": {
+      "digest": "sha256:cbeb8203d5fe307384bf93d92c30a2605b00fe9b52a8723218f0103b1a55b740",
+      "size": 672
+    },
+    "sdk/rust-guest/README.md": {
+      "digest": "sha256:1aca705b40a162bfc3cad2331fad0dee9978d8e0aea247897e6e72e24c9dbb97",
+      "size": 5362
+    },
+    "sdk/rust-guest/src/bindings.rs": {
+      "digest": "sha256:6873a0cca0ee329b2c05e2bce2cd4754e2668f9c145b723954cbf99e8ca753e7",
+      "size": 961
+    },
+    "sdk/rust-guest/src/blob.rs": {
+      "digest": "sha256:e272a7406a0af2cdc90190b2035e3d8425bd2d6efdb29a3ffcf8ba708d678711",
+      "size": 2002
+    },
+    "sdk/rust-guest/src/http.rs": {
+      "digest": "sha256:86f1bb5d1acf5931c30291a22bde7349990acf1fe5ecf49bab4cee421cae7043",
+      "size": 338
+    },
+    "sdk/rust-guest/src/intents.rs": {
+      "digest": "sha256:07990f9f5db64fac05bea6d222e28a4bb8880656b6dc537d8bc374762b9b84c5",
+      "size": 861
+    },
+    "sdk/rust-guest/src/lib.rs": {
+      "digest": "sha256:07eb1aed3350eaf098d4588f96bddf116ab1d8cf096390768f477d89757baf42",
+      "size": 1058
+    },
+    "sdk/rust-guest/src/secrets.rs": {
+      "digest": "sha256:948c0177d00c4a514cd8e6990d46165a43ea7c81b1db52b8b70514ac3a37badf",
+      "size": 1107
+    },
+    "sdk/rust-guest/src/state.rs": {
+      "digest": "sha256:8a50eb251b0e340004d608f3681aef438e1d6334b54231bed58a172859aee09e",
+      "size": 3161
+    },
+    "sdk/rust-guest/src/streaming.rs": {
+      "digest": "sha256:2dcad18f68916438166c5b68149ddd3a8d0c7233c34c1955de869e691070cf30",
+      "size": 2205
+    },
+    "sdk/rust-standard-runtime/activation-abi.json": {
+      "digest": "sha256:78daf134676c77bb7a805a251b3344ad9e6358f587d1b0edcb2a0646e0e6ac50",
+      "size": 1238
+    },
+    "sdk/rust-standard-runtime/clock.rs": {
+      "digest": "sha256:12f62eb651f6c7cb653a9a7e0aba635e5b47cf3a2646ef4f57df9d513c62a071",
+      "size": 2347
+    },
+    "sdk/rust-standard-runtime/condvar.rs": {
+      "digest": "sha256:3ed8dc8c38ea6bd8024cc16e9cd4e1ad48a926b241fb6b5fc98640d67bd12ed4",
+      "size": 1509
+    },
+    "sdk/rust-standard-runtime/entropy-getrandom-03.json": {
+      "digest": "sha256:6bfc187447ceb857008ed6b20ddc1679ff068a4983b6d2bf2ac7348d2b3cd018",
+      "size": 900
+    },
+    "sdk/rust-standard-runtime/entropy_core.rs": {
+      "digest": "sha256:d6bac09e9c28fab6a80a7bd16b3ea39153aa12a4ba4fb43d93e7ade8c6b468d4",
+      "size": 1600
+    },
+    "sdk/rust-standard-runtime/entropy_getrandom_03.rs": {
+      "digest": "sha256:963db4b367321c596a6c79f026787f8995d7f5e4f2d3031627fbd6029654faec",
+      "size": 902
+    },
+    "sdk/rust-standard-runtime/entropy_std.rs": {
+      "digest": "sha256:384c39c2a5dd5447fdbebe20fa70cf8f3ef11ddc95a32efe8476776a3330be77",
+      "size": 515
+    },
+    "sdk/rust-standard-runtime/executor_bridge.rs": {
+      "digest": "sha256:36f17e1d73ed59cb774896dffe48b8747fbf74de4f1764c29deb813eba864a1f",
+      "size": 6284
+    },
+    "sdk/rust-standard-runtime/executor_control.rs": {
+      "digest": "sha256:250128773788c6efeb6f8e2d1409f2f119fac5ec3bfd8d2df709e563595d1ddd",
+      "size": 16748
+    },
+    "sdk/rust-standard-runtime/executor_lifecycle.rs": {
+      "digest": "sha256:738d6c3f5b1deb07e5d0ec9988db0b585e4d4d113a007419f3e1649dab9d53c9",
+      "size": 18258
+    },
+    "sdk/rust-standard-runtime/executor_root.rs": {
+      "digest": "sha256:1b9ecfe164d62cb3446cd578691f85b1df20c803e6613c5e69c0ce4dfbb970b4",
+      "size": 18235
+    },
+    "sdk/rust-standard-runtime/executor_worker.rs": {
+      "digest": "sha256:b34436fc69b8c2015600b4098caad618aba64aa89970346754a4b69e15a8e207",
+      "size": 3171
+    },
+    "sdk/rust-standard-runtime/futures_pool_link.rs": {
+      "digest": "sha256:2d7ba8e37b289c15a7b616909a48fc12040d3ece7a5d536bc4a06029519cbf76",
+      "size": 6474
+    },
+    "sdk/rust-standard-runtime/futures_thread_pool.rs": {
+      "digest": "sha256:2fa4a07991cbcafaf84f2b9ff6393815e2aa39446d02f41ce63de173b5d4681d",
+      "size": 19787
+    },
+    "sdk/rust-standard-runtime/mutex.rs": {
+      "digest": "sha256:f644c9d6356c12e9467354267b34fd66353dd9c659b812b849a391545c690090",
+      "size": 2172
+    },
+    "sdk/rust-standard-runtime/once.rs": {
+      "digest": "sha256:17db07a52ec88ba8932e34129c5cd207eea3f751f80e77dc3536dd6201f72189",
+      "size": 4757
+    },
+    "sdk/rust-standard-runtime/parker.rs": {
+      "digest": "sha256:6c92c544f2c6c2c40c5dca4a6b2d18428dbfa87e5e279572a0cfdabb4c23143d",
+      "size": 1480
+    },
+    "sdk/rust-standard-runtime/runtime_owner.rs": {
+      "digest": "sha256:3a2ac7c3161b98fd7ec6dc5e9f818912c0d5c11487523c832e816cb35719a328",
+      "size": 9174
+    },
+    "sdk/rust-standard-runtime/rwlock.rs": {
+      "digest": "sha256:036eefebefd81e27930ba1d04f4c13b9360b461acdf76b31ca9507c9c98a1ef9",
+      "size": 3488
+    },
+    "sdk/rust-standard-runtime/stdio_closed.rs": {
+      "digest": "sha256:bffe2b477c450098fed9584f34e725232f5dcbdfc655e27851f9b1fd8354f37c",
+      "size": 1794
+    },
+    "sdk/rust-standard-runtime/stdio_logging.rs": {
+      "digest": "sha256:b89538d84aa980c5908a2b7a4d422ceca31deaae00de5fd2fdc82d1d8b89f62e",
+      "size": 3493
+    },
+    "sdk/rust-standard-runtime/thread-abi.json": {
+      "digest": "sha256:c6ba59a724ef1c4079ddad6aaeec6765872933a0e328639263fa77434c4156c6",
+      "size": 3540
+    },
+    "sdk/rust-standard-runtime/thread.rs": {
+      "digest": "sha256:618d1c586aaf1cd6c82fa9d2c35f54ff73bd7efb2373c1fc4d78121cba091b41",
+      "size": 2698
+    },
+    "sdk/rust-standard-runtime/thread_registry.rs": {
+      "digest": "sha256:7d90bc21cc1b75dc2d6ce0f5ea80314a74918a4160ca9f69f8654b73e7a01ea7",
+      "size": 14093
+    },
+    "sdk/rust-standard-runtime/thread_runtime.rs": {
+      "digest": "sha256:6a3fd4bca0929a4c7f4015fc47ddbba0ccfc729f7a54c3c30dae2608088af633",
+      "size": 16587
+    },
+    "sdk/rust-standard-runtime/thread_start.rs": {
+      "digest": "sha256:0ebbf1d20176723b40af1f4b60e7601e4facccf5120faadfe0efdc8ff932092b",
+      "size": 1898
+    },
+    "sdk/rust-standard-runtime/thread_tls.rs": {
+      "digest": "sha256:93598b39d22e46ef83f83cef754627ae05a0da86bee0d152b9baae75e1263dd6",
+      "size": 36355
+    },
+    "sdk/rust-standard-runtime/thread_wait.rs": {
+      "digest": "sha256:0d8525adaca292879a07a55e94848ab12bf334937ef4718c0e5a70a15efbc6c2",
+      "size": 7431
+    },
+    "sdk/rust-standard-runtime/thread_wait_driver.rs": {
+      "digest": "sha256:0c789e73877e9a87ccdc49cd211f6b85ecb6daeb61da02f00dbd12c44e98c55f",
+      "size": 12598
+    },
+    "sdk/rust-standard-runtime/thread_wait_registry.rs": {
+      "digest": "sha256:d45df9d4f1adc0fdd35488b133ff194ea434e5fae95b0c8bd4c5e009c35f569f",
+      "size": 10910
+    },
+    "sdk/rust-standard-runtime/tls.rs": {
+      "digest": "sha256:b198ed15262ba83c837936955349ebf9faddff71a20e88ae3b4052dbc3dce540",
+      "size": 24994
+    },
+    "sdk/rust-standard-stdio/Cargo.toml": {
+      "digest": "sha256:78c8851da50565be17c998bec34ff64ee2ac010fc0680257acc98150842afb0f",
+      "size": 640
+    },
+    "sdk/rust-standard-stdio/README.md": {
+      "digest": "sha256:fc8b2e9f9bc94007fce0a97eae243bbf2e2874655ad8c5195003152513039c32",
+      "size": 2989
+    },
+    "sdk/rust-standard-stdio/src/lib.rs": {
+      "digest": "sha256:e62d4a4f666199e96d10908125c7a8181657ead199942b2cc5049476a1ba0731",
+      "size": 1594
+    },
+    "sdk/wasi-http-runtime/README.md": {
+      "digest": "sha256:79e598d8d539beed3820da9bcef688a1dca65937d4cbcda0ea7868e9256e7f1f",
+      "size": 4089
+    },
+    "sdk/wasi-http-runtime/error.rs": {
+      "digest": "sha256:fc84c7c03cbfdf23be80fd8f134598e6b07d83f056a6709b008f9c0ff5b19987",
+      "size": 1582
+    },
+    "sdk/wasi-http-runtime/fields.rs": {
+      "digest": "sha256:8b2138835be7705b337f087271b54b54a8fb25234046c73445cd143f097413ac",
+      "size": 10125
+    },
+    "sdk/wasi-http-runtime/io.rs": {
+      "digest": "sha256:4125ee5fca3c143996a5a161263789bdca7396b52c9e48856b68dbbf4fcd73c1",
+      "size": 12961
+    },
+    "sdk/wasi-http-runtime/limits.rs": {
+      "digest": "sha256:52f76827d13979cbb1163271dbcf4f5b5b95fde3fe7eaa182eaeb5b02a87b5f4",
+      "size": 315
+    },
+    "sdk/wasi-http-runtime/poll.rs": {
+      "digest": "sha256:a09b0009a46aa03c1588c47f869354eaf278afe0b387b420b9acb08e60b7416a",
+      "size": 2098
+    },
+    "sdk/wasi-http-runtime/pump.rs": {
+      "digest": "sha256:9da8cc897b16655953f831613c7d5b548917eab0be02440dc9cc4a395755219f",
+      "size": 8018
+    },
+    "sdk/wasi-http-runtime/pump_tests.rs": {
+      "digest": "sha256:916c345c1b50969052d14973b8209735ae74c0c883ede44bb1eaf7818a0b85fe",
+      "size": 6880
+    },
+    "sdk/wasi-http-runtime/request_options.rs": {
+      "digest": "sha256:447b0b0b3aba90d0f1df00914c08f15ef090ed7198938669ece2e5219e40a7f6",
+      "size": 6367
+    },
+    "sdk/wasi-http-runtime/retirement.rs": {
+      "digest": "sha256:16bb44807ac397a4e55b8102520f4d8b9f26ff76a7fb7801fc7e31c97c20d811",
+      "size": 6310
+    },
+    "sdk/wasi-http-runtime/state.rs": {
+      "digest": "sha256:a3bbaaa33e8235b417a457021260c4721ae3de00f4e89737e9106af1a863c009",
+      "size": 14133
+    },
+    "sdk/wasi-http-runtime/timer.rs": {
+      "digest": "sha256:2b25f4a72cea80ec1028978c27dcb5ab82d979a2e31183aefe0d2429ad6f137f",
+      "size": 2497
+    },
+    "sdk/wasi-http-runtime/types.rs": {
+      "digest": "sha256:ae6c69ce364f8404645962233b0a88eaf5500dfd78386a010ec392d434a6c3ff",
+      "size": 23104
+    },
+    "sdk/wasi-http-runtime/upstream-source.json": {
+      "digest": "sha256:bb3622c15a1a922135cce945d1f87877289a9920ff585f60c9b7cfe2419c3212",
+      "size": 4364
+    },
+    "sdk/wasi-http-runtime/upstream/Cargo.toml": {
+      "digest": "sha256:a4cf47d49115ca7543113c3c4c136e0cdd3dfff344eefa0f64ee8c5200e99fa9",
+      "size": 2088
+    },
+    "sdk/wasi-http-runtime/upstream/Cargo.toml.orig": {
+      "digest": "sha256:aa14745493958ffab15632d9fd1298f404029e88919a364c54f323cbb1a7c959",
+      "size": 1086
+    },
+    "sdk/wasi-http-runtime/upstream/LICENSE-APACHE": {
+      "digest": "sha256:a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "size": 10847
+    },
+    "sdk/wasi-http-runtime/upstream/LICENSE-MIT": {
+      "digest": "sha256:23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "size": 1023
+    },
+    "sdk/wasi-http-runtime/upstream/wit/deps/io.wit": {
+      "digest": "sha256:96e206d00076fa0480df32c5bcf255a3fa4862805ac2f6b8537a781cce54f433",
+      "size": 13648
+    },
+    "sdk/wasi-http-runtime/upstream/wit/wasi-crate.wit": {
+      "digest": "sha256:561b9308e635f442fcfbe3c4e783d0b4f2110f4c7bdadc8775170e2e119f7453",
+      "size": 19
+    },
+    "sdk/wasi-http-runtime/wit/deps/activation.wit": {
+      "digest": "sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946",
+      "size": 2539
+    },
+    "sdk/wasi-http-runtime/wit/deps/cli.wit": {
+      "digest": "sha256:fb6ac5d23fcaf3d231142a3c2f9bb1e9bc1fe5af6f1f329f6b1a5555ce0d3873",
+      "size": 6843
+    },
+    "sdk/wasi-http-runtime/wit/deps/clocks.wit": {
+      "digest": "sha256:6ed8aa65bb8cbe224a0b2cbac9fc1b3bd25bdb17eda5ae0d23c983ed31c447cc",
+      "size": 5867
+    },
+    "sdk/wasi-http-runtime/wit/deps/filesystem.wit": {
+      "digest": "sha256:e675f261017bf9b4fa7df5b9701023fe0249ede71021ac1bf978748e62edcda8",
+      "size": 24592
+    },
+    "sdk/wasi-http-runtime/wit/deps/http.wit": {
+      "digest": "sha256:4bbd58f509700a6637385611f183c5bd5984d81feef85e29dfdc05ebd283045a",
+      "size": 31611
+    },
+    "sdk/wasi-http-runtime/wit/deps/io.wit": {
+      "digest": "sha256:1b7eec23b69fa18124b447b75e45f67b07f0625fa1eb66247c770524a57ea1d0",
+      "size": 13696
+    },
+    "sdk/wasi-http-runtime/wit/deps/latent-clock.wit": {
+      "digest": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+      "size": 139
+    },
+    "sdk/wasi-http-runtime/wit/deps/lsf-http.wit": {
+      "digest": "sha256:6fcae4b3123ec3ce0b32a4e65390630be3bde40ee74b50d7b732150b6bb6147d",
+      "size": 2915
+    },
+    "sdk/wasi-http-runtime/wit/deps/random.wit": {
+      "digest": "sha256:48578c40213d5cab6650980905fa146a0be8c39c4433ee5e7e00637b87dbe08f",
+      "size": 3349
+    },
+    "sdk/wasi-http-runtime/wit/deps/retirement.wit": {
+      "digest": "sha256:c06fedbd6fb993344cb2cffb1813c2cfcc8108cd759dd1a2c0879c29d07a0255",
+      "size": 159
+    },
+    "sdk/wasi-http-runtime/wit/deps/sockets.wit": {
+      "digest": "sha256:ad38dbf3b0bbdf34c0f2b608edcbfee04d71b443a63faff1f5e0053c3f84b377",
+      "size": 46200
+    },
+    "sdk/wasi-http-runtime/wit/world.wit": {
+      "digest": "sha256:89156cd32e1fb74b598ee3fc3f941d4c63fd18728e0354c4da2f476a64604a32",
+      "size": 616
+    },
+    "tools/application_dependencies.py": {
+      "digest": "sha256:4582e588d2c28a87c3c1c8acdd713d3f22fb3c65764e450e483ffb15dae33e5f",
+      "size": 28732
+    },
+    "tools/application_dependency_approval.py": {
+      "digest": "sha256:70126c2b142a74f4fe169ceff32642008b843d668c66b7c5addac66dc1e14209",
+      "size": 1996
+    },
+    "tools/application_dependency_store.py": {
+      "digest": "sha256:ac8bd16090cbbd2a3696bd21fd269bbba7abfd9357049ed002f3bb4975e931ed",
+      "size": 12139
+    },
+    "tools/application_dependency_tools.py": {
+      "digest": "sha256:4b4b26044e185269feed5344cd333a0dbffec76927b7ca9ad779fefb33aa94f9",
+      "size": 5192
+    },
+    "tools/build_observation.py": {
+      "digest": "sha256:49ed72767a609870ac9166b9466b94c38347efe1fc66d6a3176087c988da661c",
+      "size": 8696
+    },
+    "tools/build_process.py": {
+      "digest": "sha256:347799bcc908b3a772fdf9bac6f32883ba0e3464983087513f0de16e3b37fd2c",
+      "size": 11965
+    },
+    "tools/build_process_linux.py": {
+      "digest": "sha256:e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce",
+      "size": 3853
+    },
+    "tools/build_process_signals.py": {
+      "digest": "sha256:96dddca07cc20b77b0b6b93a3524c047877a4fcdd7442fe8c635024ade13cdb2",
+      "size": 3012
+    },
+    "tools/build_process_windows.py": {
+      "digest": "sha256:3de6d1a259112579d0da53b90614233fd27d57daf3cf75582d9ac774f13b31fd",
+      "size": 7409
+    },
+    "tools/build_snapshot.py": {
+      "digest": "sha256:8d5d3bfa3242384b0dd89670c428b65e2c20f9093e60fa3f9245774df984bc6b",
+      "size": 27079
+    },
+    "tools/captured_compiler_isolation.py": {
+      "digest": "sha256:d653599333a5b7b644231fc163ac12dd29165ce1e175955995ed96d65a494a03",
+      "size": 19919
+    },
+    "tools/cargo_native_authoring.py": {
+      "digest": "sha256:1e88209b9e9bcb13d874862d988697c0e869bc172ba652d4a93efb64a2a2b5dd",
+      "size": 24842
+    },
+    "tools/compile_rust_owned_thread_inputs.py": {
+      "digest": "sha256:cfeb19cacd54f101547f7e9b5668261b0430fb9286f01e9f2ff15a353bb8c7d3",
+      "size": 17239
+    },
+    "tools/compile_rust_thread_http_sibling.py": {
+      "digest": "sha256:7ae4d4ae271d431b7694d798dcde3093c7fd86a80a68454d65ff46acb2246998",
+      "size": 43685
+    },
+    "tools/dev_workflow/__init__.py": {
+      "digest": "sha256:83994d5549a6b1de4ef471c2e8fa9db700b731807f8e9b806c71b9bcf594eaf2",
+      "size": 98
+    },
+    "tools/dev_workflow/common.py": {
+      "digest": "sha256:f398999c39fc80606ca3ec0d47db5a9e32debe96367a87a9aa72b70089f13a28",
+      "size": 3129
+    },
+    "tools/dev_workflow/dependencies.py": {
+      "digest": "sha256:6c2b1e343e05d10b43fead70d017193dedd6d0a7bde7db0a4c110d3d51a67b7b",
+      "size": 6022
+    },
+    "tools/dev_workflow/executable_approval.py": {
+      "digest": "sha256:b17c95c45264e006fce9ad319aacb2c57fb305a9ea12fe92de3b3fa6c64d6a47",
+      "size": 1920
+    },
+    "tools/dev_workflow/paths.py": {
+      "digest": "sha256:6758044322e58c687c73d8302c0fab82a07d9680ed647a3a52f2a34f60d0da59",
+      "size": 6758
+    },
+    "tools/dev_workflow/project.py": {
+      "digest": "sha256:0867f8ded6f515b2ed6fb3a76d78fed77141bcfcce931227aa201930d2e19137",
+      "size": 7395
+    },
+    "tools/dev_workflow/resource_inputs.py": {
+      "digest": "sha256:aa847812a09cd13558277a8d4a07888f96ee70375651a7f7802b7102c9090aaf",
+      "size": 2645
+    },
+    "tools/dev_workflow/snapshot.py": {
+      "digest": "sha256:c8c3967d3a067c19748e657889362f694683445e61c2ee1fd9ff4e3d5a39acbe",
+      "size": 7519
+    },
+    "tools/dev_workflow/state.py": {
+      "digest": "sha256:19ae59fbd3b94e9ddff4565a4da98ff04308448e7f660ecadb20f123d2f3626e",
+      "size": 3683
+    },
+    "tools/dev_workflow/transaction_binding.py": {
+      "digest": "sha256:d758bd2b904f9ff53d61398afe4910230d457afc1f14748080a3930f06cf38aa",
+      "size": 3588
+    },
+    "tools/dev_workflow/windows.py": {
+      "digest": "sha256:88f584e03e560395027f5d59a8358dbf57ce3daf64c68d56f5af2a98cee5f473",
+      "size": 6584
+    },
+    "tools/dotnet_guest/composer.py": {
+      "digest": "sha256:e6d1c9e1ba1a0712425efe69aa3f515e359b7640224c779bb538660837578596",
+      "size": 9103
+    },
+    "tools/dotnet_guest/internal_io.py": {
+      "digest": "sha256:e59192c316a2a7be67dedba27ab29845a08225910f070d05c7746377a68048fd",
+      "size": 17531
+    },
+    "tools/guest_api_analysis.py": {
+      "digest": "sha256:ae9f6636d7a03abe43fdc82ce830392453b93705c3852b38e15d453ba978e215",
+      "size": 71586
+    },
+    "tools/guest_authoring_frontend.py": {
+      "digest": "sha256:50fb4567e172a9a8b8b72ce4b964912f980d1406979267b5d59e3545fad869c7",
+      "size": 9578
+    },
+    "tools/guest_compatibility.py": {
+      "digest": "sha256:b73d27e9576d4ffdeb40e12a9b47761114ea0e768efe19643b847fc4d2a5d7f4",
+      "size": 17575
+    },
+    "tools/guest_compatibility_build.py": {
+      "digest": "sha256:a86ff6bb501b53138c08908860620f459e3be204569fdbc09e19504219cb398c",
+      "size": 18900
+    },
+    "tools/guest_compatibility_context.py": {
+      "digest": "sha256:c2548301abccdf55e08e44ed08b7c1d43f95cf4fa3ffdf02f5fe6be015d94da5",
+      "size": 12830
+    },
+    "tools/guest_compatibility_context_build.py": {
+      "digest": "sha256:af0ac2c0ce48d1d8dce99777068027ae16acc4a7f9f72722ba6bed0453cce302",
+      "size": 19569
+    },
+    "tools/guest_compiler_capture.py": {
+      "digest": "sha256:d6eed9c3618a2d039cc7654f51aca0c184159eaac7911eb3350a0494759b1adf",
+      "size": 23593
+    },
+    "tools/guest_compiler_edges.py": {
+      "digest": "sha256:167de6a71b90f4c2de95440d0578160b3cd5eccce6163ee087c461f0ad436ed8",
+      "size": 19180
+    },
+    "tools/guest_dependency_inputs.py": {
+      "digest": "sha256:0d12177e8343aaa7a051d8baa19e15b0fa122b7ea26cb7aa92dead89e980baca",
+      "size": 10044
+    },
+    "tools/guest_emitted_code.py": {
+      "digest": "sha256:d647d9512d3405666b1d896e67c8e3cc74c35f12d0682d73529e0f6327fbcaae",
+      "size": 22393
+    },
+    "tools/guest_resources.py": {
+      "digest": "sha256:558e9c937b9b7113fe5f51d035c4f56695cc8a3db30b0f378c7d926e76111814",
+      "size": 18098
+    },
+    "tools/guest_runtime_receipts.py": {
+      "digest": "sha256:a6010a4c1a767779eec5a6bef7907cd12f6f95ce91dc9c32d18283f08436672e",
+      "size": 12540
+    },
+    "tools/host_codec_wasmtime.py": {
+      "digest": "sha256:31da047c2fbb849a9d260043f9d492a1c5c813d22fde5176110b486e100f24ea",
+      "size": 20029
+    },
+    "tools/install_guest_bindgen.py": {
+      "digest": "sha256:5b44bb8ee33f2d0b2466afa6a38b990fb1358fbd9818061b392ef960b535eca1",
+      "size": 2641
+    },
+    "tools/result_owner_bytes.py": {
+      "digest": "sha256:20e8fd6169ca1363d851971e7070cfa63cea8d3cfc63b3db1be00c3e57d458a2",
+      "size": 4877
+    },
+    "tools/rust_application_dependencies.py": {
+      "digest": "sha256:26d83a81d8bd370d2df229b1c0c087e2017ad7daed59cb6966017fd24f7c0b67",
+      "size": 50240
+    },
+    "tools/rust_capsule.lock": {
+      "digest": "sha256:2e4f0734a564f6c12b141d1145109a994f7afc9d99b5d4921054d5820c9967ec",
+      "size": 33219
+    },
+    "tools/rust_capsule.py": {
+      "digest": "sha256:81d3a07c2fefc68a1e076a5b1d8f46fe3b5269473346db2a1170101047635a23",
+      "size": 12251
+    },
+    "tools/rust_capsule_build.py": {
+      "digest": "sha256:05807a5b4dc0659f5de357f47ea37c0a02fcf03bfd567de276a3dcb4996b7f31",
+      "size": 51844
+    },
+    "tools/rust_capsule_project.py": {
+      "digest": "sha256:584331e9da177b9443738916047a2a7bb076b86de6348105baa04514ede0be36",
+      "size": 20476
+    },
+    "tools/rust_dependency_authoring.py": {
+      "digest": "sha256:932d87618c1d392144518cf7aeacaedba7afd428bf577f6d21c2164a64963d2c",
+      "size": 13496
+    },
+    "tools/rust_owned_thread_component.py": {
+      "digest": "sha256:8411953e4076b9bd985c7ec05a38152d88265aae7c244c709c761309b92fa4f6",
+      "size": 3173
+    },
+    "tools/rust_owned_thread_fixture.py": {
+      "digest": "sha256:e2340a53e147b37f6af973a023d8c846052491ea6fc02701aa75be612bc3596b",
+      "size": 4284
+    },
+    "tools/rust_standard_clock_profile.py": {
+      "digest": "sha256:c6990912703d9057446781654cf775961c60f4618f0baddb903e4bb028c300b2",
+      "size": 6194
+    },
+    "tools/rust_standard_entropy_profile.py": {
+      "digest": "sha256:aeb72ddbbd5cd894ba00413c576d34a1d62a1e5725ec841a6feb9648fbde97ef",
+      "size": 7712
+    },
+    "tools/rust_standard_logging_inputs.py": {
+      "digest": "sha256:f0b5b121b0dcaaa901b5c1e16dc092b4183029fccb4ca5f15e89bb470353dc99",
+      "size": 10485
+    },
+    "tools/rust_standard_logging_profile.py": {
+      "digest": "sha256:cb142e8a3abe648293c3ffa0aa23bad842a3c5c730b7e3fe08093c021f04083e",
+      "size": 2324
+    },
+    "tools/rust_standard_sysroot_build.py": {
+      "digest": "sha256:ac0bb0bb756e2716d5c9f9855d83be6fbd3fea0362e17499c7793e3ea9b09e80",
+      "size": 12829
+    },
+    "tools/rust_standard_sysroot_source.py": {
+      "digest": "sha256:838ce7b8a6725acc48d7db3db4c0e27f15e3df55d1f986989f54ed8cc15698f1",
+      "size": 8060
+    },
+    "tools/rust_standard_thread_capture.py": {
+      "digest": "sha256:be2897b6b8e288b59571b23064c4fe29040bd00e5d27b8cd176efdbeb1ef454c",
+      "size": 5963
+    },
+    "tools/rust_standard_thread_profile.py": {
+      "digest": "sha256:b9954c2ffd14f5ca10d713b787a295365db8864af3226e9f31040f66114875c3",
+      "size": 10785
+    },
+    "tools/rust_standard_tls_profile.py": {
+      "digest": "sha256:3516930f236ea581a4aee54f3866a11d9a6b032e9934334ef318e22cc41329f8",
+      "size": 10018
+    },
+    "tools/rust_thread_callback_paths.py": {
+      "digest": "sha256:3814a92179ee98f7e38b79a30e3be690907841b30a1aafdaf617786eacc2a8f3",
+      "size": 27343
+    },
+    "tools/rust_thread_canonical_results.py": {
+      "digest": "sha256:97848b6e7cbcf3ce834826a59aadee09690c6ec34298ddccbcb401411eb9800b",
+      "size": 17741
+    },
+    "tools/rust_thread_http_sibling_contracts.py": {
+      "digest": "sha256:aad4ccf8e7360c8c748dd855bb82b784baec7eb9aaf79add56d417ba1d17e790",
+      "size": 5147
+    },
+    "tools/rust_thread_http_sibling_fixture.py": {
+      "digest": "sha256:d2d361569f70b5e8559e7f3fbe284ca7037e5f9f28cab608f81668d3d53678c2",
+      "size": 7723
+    },
+    "tools/rust_thread_object_graph.py": {
+      "digest": "sha256:cdc472190007828c5b03d8b5271bb7935b8148884a4198d3764a212fcd1b80d0",
+      "size": 42010
+    },
+    "tools/rust_wasi_http_compose.py": {
+      "digest": "sha256:39a6196f15be3b0953a6927ebd834739c98d718c03147c5766ec99defcada6cd",
+      "size": 13253
+    },
+    "tools/rust_wasi_http_fixture.py": {
+      "digest": "sha256:de70a418cea9667940119b2b15a949cdf80c7680af39abdbb449dd2f2106adfc",
+      "size": 6298
+    },
+    "tools/rust_wasi_http_inputs.py": {
+      "digest": "sha256:cc84cfc7e5d4a0a5655165f1580324a7ac88283434465857dc019587d4ed4d9b",
+      "size": 15746
+    },
+    "tools/rust_wasi_http_io.py": {
+      "digest": "sha256:52fda0d3dca42a839f0bec72ab6b893263d3d0fc2052c8ad3aca360ac255d718",
+      "size": 6153
+    },
+    "tools/rust_wasi_http_profile.py": {
+      "digest": "sha256:c4a1775f70d4aa16903610c0eb62f9c0c5d79d1bfaf924927055880cebfb511d",
+      "size": 15335
+    },
+    "tools/rust_wasi_http_root.py": {
+      "digest": "sha256:e58ac0ee75f0970ad9a225bed320ff467d21100ebc70370dee2c95334b4daf27",
+      "size": 25290
+    },
+    "tools/rust_wasi_http_runtime_fixture.py": {
+      "digest": "sha256:6ee77b119cd6af2f70b317075c5f9dbdc83e35dc0f87ef17944b01de5511301f",
+      "size": 16757
+    },
+    "tools/security_common.py": {
+      "digest": "sha256:8bf12b6c17c4e757d51460f7dbbbafa53aa41ca19476c6c8ad9e200bdafe970e",
+      "size": 5814
+    },
+    "tools/stage_runtime_wit.py": {
+      "digest": "sha256:a44bcfc7054c8a63a43e3b9ad6428e7d4ac1bb551420020bc29015c9333b9828",
+      "size": 4194
+    },
+    "tools/toolchain-smoke/Cargo.toml": {
+      "digest": "sha256:3090c4959097a2237e5bce9b36a73023535f7b2aef7660d157fd31e9fb8c493a",
+      "size": 6873
+    },
+    "tools/toolchain-smoke/examples/rust_wasi_http_runtime.rs": {
+      "digest": "sha256:31d6a0807c8da591d59e063d05901472c523d351d9b1c7925a7bfb38d3163aa3",
+      "size": 2665
+    },
+    "tools/toolchain-smoke/examples/tutorial_greeting/component.rs": {
+      "digest": "sha256:fec18f05746c81aa6f8e28f76fa63db9f8a54d246c9ea7f323b9a8ce43abbbd8",
+      "size": 1056
+    },
+    "tools/toolchain-smoke/examples/tutorial_greeting/world.wit": {
+      "digest": "sha256:dc4d575fa5de96fc4507900381628c1807f41bd4f8d53f8504e3e13b28dc6b5e",
+      "size": 144
+    },
+    "tools/toolchain.toml": {
+      "digest": "sha256:2c9b863cdde4c6b47447639fd53f21bc4dfcb2682d5d528ab159affaefdfea1a",
+      "size": 1150
+    },
+    "tools/transaction_guest_project.py": {
+      "digest": "sha256:8f70d19a6181e3d078d42944d0957f5512ab7a4b426befaffbb73b2cec874f39",
+      "size": 10287
+    },
+    "wit/host-abi-phase3-v4.json": {
+      "digest": "sha256:3cfbd9bf55248f972d53598cc71ceccf068aa9234de4e1fce488d458271a937d",
+      "size": 4523
+    },
+    "wit/host-abi-phase4-v1.json": {
+      "digest": "sha256:0b5bc9368b6f456ebc785a80a4625adf19e572ce268d0b017906838e49f2f9b0",
+      "size": 2559
+    },
+    "wit/platform/activation-runtime/package.wit": {
+      "digest": "sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946",
+      "size": 2539
+    },
+    "wit/platform/blob-v2/package.wit": {
+      "digest": "sha256:d1744403a7882fbe8bf99808ac28c26d271eb1fb26fbac2519f1c7b2840d0dcb",
+      "size": 1406
+    },
+    "wit/platform/blob/package.wit": {
+      "digest": "sha256:e73a86a069223567fd782ef0e20d83a8f25a1353d39b6d2c174c31bbfb936210",
+      "size": 867
+    },
+    "wit/platform/clock/package.wit": {
+      "digest": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+      "size": 139
+    },
+    "wit/platform/context/package.wit": {
+      "digest": "sha256:9b5d08ce6d4f698ea43b17aaf879e196e2e8d64610fabc2b626ad40560daadc1",
+      "size": 1409
+    },
+    "wit/platform/events-v2/package.wit": {
+      "digest": "sha256:645d6373dd55afeaaa400bd27f35e55dbb9c99a9599013d8419e90b02fb911d3",
+      "size": 1299
+    },
+    "wit/platform/events/package.wit": {
+      "digest": "sha256:b599d127622a47c4d763df29ca5d0907f083566645a5d882d593701f39db68c1",
+      "size": 572
+    },
+    "wit/platform/http-phases/package.wit": {
+      "digest": "sha256:d823cf020ad4e11f789e2026dd604a040a7b5911166bad0076a2bc8d7068cb50",
+      "size": 2068
+    },
+    "wit/platform/http-v2/package.wit": {
+      "digest": "sha256:2728b8d0458a441a7dab01dde896f1cc87c453382a6f5ce35bd86718f5e6fa9d",
+      "size": 1296
+    },
+    "wit/platform/http-v3/package.wit": {
+      "digest": "sha256:6fcae4b3123ec3ce0b32a4e65390630be3bde40ee74b50d7b732150b6bb6147d",
+      "size": 2915
+    },
+    "wit/platform/http/package.wit": {
+      "digest": "sha256:6ae7533f6e81d6364601a12d5f533ee60342eb6ba2e897e545e10743b4e92945",
+      "size": 997
+    },
+    "wit/platform/intents/package.wit": {
+      "digest": "sha256:182a2a982c470a4bd8603fba8d3e2e54e93a167dda2501de02c77b10066ea636",
+      "size": 1142
+    },
+    "wit/platform/invocation/package.wit": {
+      "digest": "sha256:2e9f13a01c9cf90834c53ff38f408e8e23f39cc29cbd7bc5b47d796159f61b67",
+      "size": 1914
+    },
+    "wit/platform/log/package.wit": {
+      "digest": "sha256:071bf3e49c5fd64a2ce32e9d5326eb1add1629231f8c6110421c81b6cdf3ea0e",
+      "size": 418
+    },
+    "wit/platform/native-runtime/package.wit": {
+      "digest": "sha256:2433ec06c033be01474fd5bf3275c921622eb6720aac344f1307736d09325eb6",
+      "size": 633
+    },
+    "wit/platform/network/package.wit": {
+      "digest": "sha256:735538103dd7ec76609a0bd998d7fcc745dc3127795dcb0171c0de4ee7a8cbb9",
+      "size": 1960
+    },
+    "wit/platform/random/package.wit": {
+      "digest": "sha256:c8ceca00269182f27c785fe17bd42eb4776bcde96828e5b5f2786aa15dbedc60",
+      "size": 272
+    },
+    "wit/platform/runtime-phase3-activation/world.wit": {
+      "digest": "sha256:a4b3289087fe02249252c7e15a745a08e772d743eafd3337eedf3f9e6972aa2e",
+      "size": 636
+    },
+    "wit/platform/runtime-phase3-blobs/world.wit": {
+      "digest": "sha256:5a509dd87892ee54828c17d0189c034bf892afa6e47701834bd42db095244cfc",
+      "size": 551
+    },
+    "wit/platform/runtime-phase3-http-phases/world.wit": {
+      "digest": "sha256:1156028e552b3355c965d4cbc876b6f4aeb52d083f9740248942667f752d2cc5",
+      "size": 727
+    },
+    "wit/platform/runtime-phase3-native/world.wit": {
+      "digest": "sha256:4c562d2a3b2b4f0cd159f4c9b26e88ff84d32c717f5d5ee9f6aad75435d69b9f",
+      "size": 684
+    },
+    "wit/platform/runtime-phase3-streaming/world.wit": {
+      "digest": "sha256:240f3e0864a5f683cacef9f70868e1d4450ab466bd7473b639e788cedbdfef7c",
+      "size": 516
+    },
+    "wit/platform/runtime-phase3/world.wit": {
+      "digest": "sha256:09dae5ca8c10761c4c8a32411942c00564884b146bebb4069fa125e8d02ec8e0",
+      "size": 704
+    },
+    "wit/platform/runtime-phase4/world.wit": {
+      "digest": "sha256:7369b62d5beef0ea0ed999c06ca768b46dd23c1d9bce81718b4bddb02cd34fb3",
+      "size": 402
+    },
+    "wit/platform/runtime/world.wit": {
+      "digest": "sha256:2e4da1942366ab63344cc4b959b75acb0afe933ab67b1d4cc819a15982b3e048",
+      "size": 558
+    },
+    "wit/platform/secrets/package.wit": {
+      "digest": "sha256:4e0593c21ac5e3051500717fcf347cf7e23821816a9fc15945c68e93cee4ee54",
+      "size": 407
+    },
+    "wit/platform/state/package.wit": {
+      "digest": "sha256:56b0a1304a9987395e0ea3f07e3dde4cbae5e70e5c9837ffcc6ae3b3cb9b7f25",
+      "size": 3134
+    },
+    "wit/platform/telemetry/package.wit": {
+      "digest": "sha256:c79721b703eca86c55ab04ddcb37cbc7965287db64880c0a0bb555b92baaadc6",
+      "size": 505
+    },
+    "wit/platform/timer/package.wit": {
+      "digest": "sha256:3c35d5a9078315848f86144e0f8f65cb7a4f8da1a54905098d4ff9c6e227090e",
+      "size": 610
+    },
+    "wit/platform/web-http/package.wit": {
+      "digest": "sha256:92bc3b8ca3cb5c0ec76b012d695ea6ddf962a1534eeac297dfe7b27125dc5450",
+      "size": 181
+    },
+    "wit/platform/web/package.wit": {
+      "digest": "sha256:3ad4d3e122c839115891ba9b69c9b790245a64ecb00690e23270623ac94b1450",
+      "size": 1858
+    }
+  },
+  "sourceInventoryUtf8": "{\".gitignore\":{\"digest\":\"sha256:306fd52e74fca6746e12acc750f232de15e71da917756a1270d74c91f5eb7368\",\"size\":9},\"Cargo.lock\":{\"digest\":\"sha256:17f6580e3e3f276633216112d7412f927ff242470cc5dc031145ebf75d253feb\",\"size\":48738},\"Cargo.toml\":{\"digest\":\"sha256:71bcecc998287fbaf8ddb50372ebae3e00b1d89699aac7325e07e6affe9ae40e\",\"size\":2803},\"README.md\":{\"digest\":\"sha256:63cdbddff8de1f7127bcc71324675687496448a0a3cb68ee596c207cd15cafb1\",\"size\":279},\"capsule-project.json\":{\"digest\":\"sha256:8ee4403d442c352558a158307de76126fd228c4f7dadc3300d161c811538c0df\",\"size\":431},\"cargo-resolved.lock.json\":{\"digest\":\"sha256:69acc8495a7b7857f89e7ae0dcbfebebb6223ea117b83e3d65bd823e06934748\",\"size\":211508},\"latent.dependencies.json\":{\"digest\":\"sha256:9153312b1664494b8205db72281ade43ebbcf3cb96a32fa22eab670d3ac6e491\",\"size\":463732},\"latent.dependencies.lock.json\":{\"digest\":\"sha256:f27c43acbcd992f2e3c09a6b3d02e9a12faa201cdbd2afb47fda5f42eb6fcf07\",\"size\":2289858},\"rust-toolchain.toml\":{\"digest\":\"sha256:7527c74e92bfb75a72d184650b0a06c3d645f43536541007782abf9618f26bcc\",\"size\":140},\"sdk-lock.json\":{\"digest\":\"sha256:34e12ed8809cf92c1d21124cd4a7897844df1cb86c9173ac7b15bf7241aaba1f\",\"size\":10738},\"src/lib.rs\":{\"digest\":\"sha256:e3e13f2cc1afd7ed6fa9497e34b00edc95988030160f69952f821b7ae7e68ff9\",\"size\":3037},\"vendor/lsf/Cargo.toml\":{\"digest\":\"sha256:33840c8817f95156b60f8516682d0eb55d54d3253762478501cb3b9a41c4dfef\",\"size\":2248},\"vendor/lsf/LICENSE\":{\"digest\":\"sha256:a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9\",\"size\":10173},\"vendor/lsf/NOTICE\":{\"digest\":\"sha256:d04951eb398e0229e800c1b9d627d0c5174691c7c3a56d2f34129e4c95585ede\",\"size\":6424},\"vendor/lsf/crates/latent-component-bindings/Cargo.toml\":{\"digest\":\"sha256:81659bd7dadac16fdf5df3ca97ca762f75ed725975e78b0d6ba79f0462c7826d\",\"size\":537},\"vendor/lsf/crates/latent-component-bindings/README.md\":{\"digest\":\"sha256:7987450b6a26a81b14e0a18cc0b30cc8ea22dc6b5d313d10f30fc3258375da49\",\"size\":3787},\"vendor/lsf/crates/latent-component-bindings/build.rs\":{\"digest\":\"sha256:947b787bdcc7e5f9dc521f5fb10513bff84b90831e90757b8f4d6d80e65e280e\",\"size\":15668},\"vendor/lsf/crates/latent-component-bindings/src/lib.rs\":{\"digest\":\"sha256:96ac1322c8b8100b2fe913b31df3979e89f9cf93460cc4c6b482756d5b92db22\",\"size\":3698},\"vendor/lsf/examples/echo-contract/wit/echo.wit\":{\"digest\":\"sha256:5a36463c6f335b2fa8a3c169242f7d01bacd9dd33589b439ecc869e89ca293c6\",\"size\":302},\"vendor/lsf/rust-toolchain.toml\":{\"digest\":\"sha256:7527c74e92bfb75a72d184650b0a06c3d645f43536541007782abf9618f26bcc\",\"size\":140},\"vendor/lsf/sdk/rust-guest/Cargo.toml\":{\"digest\":\"sha256:cbeb8203d5fe307384bf93d92c30a2605b00fe9b52a8723218f0103b1a55b740\",\"size\":672},\"vendor/lsf/sdk/rust-guest/README.md\":{\"digest\":\"sha256:1aca705b40a162bfc3cad2331fad0dee9978d8e0aea247897e6e72e24c9dbb97\",\"size\":5362},\"vendor/lsf/sdk/rust-guest/src/bindings.rs\":{\"digest\":\"sha256:6873a0cca0ee329b2c05e2bce2cd4754e2668f9c145b723954cbf99e8ca753e7\",\"size\":961},\"vendor/lsf/sdk/rust-guest/src/blob.rs\":{\"digest\":\"sha256:e272a7406a0af2cdc90190b2035e3d8425bd2d6efdb29a3ffcf8ba708d678711\",\"size\":2002},\"vendor/lsf/sdk/rust-guest/src/http.rs\":{\"digest\":\"sha256:86f1bb5d1acf5931c30291a22bde7349990acf1fe5ecf49bab4cee421cae7043\",\"size\":338},\"vendor/lsf/sdk/rust-guest/src/intents.rs\":{\"digest\":\"sha256:07990f9f5db64fac05bea6d222e28a4bb8880656b6dc537d8bc374762b9b84c5\",\"size\":861},\"vendor/lsf/sdk/rust-guest/src/lib.rs\":{\"digest\":\"sha256:07eb1aed3350eaf098d4588f96bddf116ab1d8cf096390768f477d89757baf42\",\"size\":1058},\"vendor/lsf/sdk/rust-guest/src/secrets.rs\":{\"digest\":\"sha256:948c0177d00c4a514cd8e6990d46165a43ea7c81b1db52b8b70514ac3a37badf\",\"size\":1107},\"vendor/lsf/sdk/rust-guest/src/state.rs\":{\"digest\":\"sha256:8a50eb251b0e340004d608f3681aef438e1d6334b54231bed58a172859aee09e\",\"size\":3161},\"vendor/lsf/sdk/rust-guest/src/streaming.rs\":{\"digest\":\"sha256:2dcad18f68916438166c5b68149ddd3a8d0c7233c34c1955de869e691070cf30\",\"size\":2205},\"vendor/lsf/sdk/rust-standard-stdio/Cargo.toml\":{\"digest\":\"sha256:78c8851da50565be17c998bec34ff64ee2ac010fc0680257acc98150842afb0f\",\"size\":640},\"vendor/lsf/sdk/rust-standard-stdio/README.md\":{\"digest\":\"sha256:fc8b2e9f9bc94007fce0a97eae243bbf2e2874655ad8c5195003152513039c32\",\"size\":2989},\"vendor/lsf/sdk/rust-standard-stdio/src/lib.rs\":{\"digest\":\"sha256:e62d4a4f666199e96d10908125c7a8181657ead199942b2cc5049476a1ba0731\",\"size\":1594},\"vendor/lsf/wit/platform/activation-runtime/package.wit\":{\"digest\":\"sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946\",\"size\":2539},\"vendor/lsf/wit/platform/blob-v2/package.wit\":{\"digest\":\"sha256:d1744403a7882fbe8bf99808ac28c26d271eb1fb26fbac2519f1c7b2840d0dcb\",\"size\":1406},\"vendor/lsf/wit/platform/blob/package.wit\":{\"digest\":\"sha256:e73a86a069223567fd782ef0e20d83a8f25a1353d39b6d2c174c31bbfb936210\",\"size\":867},\"vendor/lsf/wit/platform/clock/package.wit\":{\"digest\":\"sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea\",\"size\":139},\"vendor/lsf/wit/platform/context/package.wit\":{\"digest\":\"sha256:9b5d08ce6d4f698ea43b17aaf879e196e2e8d64610fabc2b626ad40560daadc1\",\"size\":1409},\"vendor/lsf/wit/platform/events-v2/package.wit\":{\"digest\":\"sha256:645d6373dd55afeaaa400bd27f35e55dbb9c99a9599013d8419e90b02fb911d3\",\"size\":1299},\"vendor/lsf/wit/platform/events/package.wit\":{\"digest\":\"sha256:b599d127622a47c4d763df29ca5d0907f083566645a5d882d593701f39db68c1\",\"size\":572},\"vendor/lsf/wit/platform/http-phases/package.wit\":{\"digest\":\"sha256:d823cf020ad4e11f789e2026dd604a040a7b5911166bad0076a2bc8d7068cb50\",\"size\":2068},\"vendor/lsf/wit/platform/http-v2/package.wit\":{\"digest\":\"sha256:2728b8d0458a441a7dab01dde896f1cc87c453382a6f5ce35bd86718f5e6fa9d\",\"size\":1296},\"vendor/lsf/wit/platform/http-v3/package.wit\":{\"digest\":\"sha256:6fcae4b3123ec3ce0b32a4e65390630be3bde40ee74b50d7b732150b6bb6147d\",\"size\":2915},\"vendor/lsf/wit/platform/http/package.wit\":{\"digest\":\"sha256:6ae7533f6e81d6364601a12d5f533ee60342eb6ba2e897e545e10743b4e92945\",\"size\":997},\"vendor/lsf/wit/platform/intents/package.wit\":{\"digest\":\"sha256:182a2a982c470a4bd8603fba8d3e2e54e93a167dda2501de02c77b10066ea636\",\"size\":1142},\"vendor/lsf/wit/platform/invocation/package.wit\":{\"digest\":\"sha256:2e9f13a01c9cf90834c53ff38f408e8e23f39cc29cbd7bc5b47d796159f61b67\",\"size\":1914},\"vendor/lsf/wit/platform/log/package.wit\":{\"digest\":\"sha256:071bf3e49c5fd64a2ce32e9d5326eb1add1629231f8c6110421c81b6cdf3ea0e\",\"size\":418},\"vendor/lsf/wit/platform/native-runtime/package.wit\":{\"digest\":\"sha256:2433ec06c033be01474fd5bf3275c921622eb6720aac344f1307736d09325eb6\",\"size\":633},\"vendor/lsf/wit/platform/network/package.wit\":{\"digest\":\"sha256:735538103dd7ec76609a0bd998d7fcc745dc3127795dcb0171c0de4ee7a8cbb9\",\"size\":1960},\"vendor/lsf/wit/platform/random/package.wit\":{\"digest\":\"sha256:c8ceca00269182f27c785fe17bd42eb4776bcde96828e5b5f2786aa15dbedc60\",\"size\":272},\"vendor/lsf/wit/platform/runtime-phase3-activation/world.wit\":{\"digest\":\"sha256:a4b3289087fe02249252c7e15a745a08e772d743eafd3337eedf3f9e6972aa2e\",\"size\":636},\"vendor/lsf/wit/platform/runtime-phase3-blobs/world.wit\":{\"digest\":\"sha256:5a509dd87892ee54828c17d0189c034bf892afa6e47701834bd42db095244cfc\",\"size\":551},\"vendor/lsf/wit/platform/runtime-phase3-http-phases/world.wit\":{\"digest\":\"sha256:1156028e552b3355c965d4cbc876b6f4aeb52d083f9740248942667f752d2cc5\",\"size\":727},\"vendor/lsf/wit/platform/runtime-phase3-native/world.wit\":{\"digest\":\"sha256:4c562d2a3b2b4f0cd159f4c9b26e88ff84d32c717f5d5ee9f6aad75435d69b9f\",\"size\":684},\"vendor/lsf/wit/platform/runtime-phase3-streaming/world.wit\":{\"digest\":\"sha256:240f3e0864a5f683cacef9f70868e1d4450ab466bd7473b639e788cedbdfef7c\",\"size\":516},\"vendor/lsf/wit/platform/runtime-phase3/world.wit\":{\"digest\":\"sha256:09dae5ca8c10761c4c8a32411942c00564884b146bebb4069fa125e8d02ec8e0\",\"size\":704},\"vendor/lsf/wit/platform/runtime-phase4/world.wit\":{\"digest\":\"sha256:7369b62d5beef0ea0ed999c06ca768b46dd23c1d9bce81718b4bddb02cd34fb3\",\"size\":402},\"vendor/lsf/wit/platform/runtime/world.wit\":{\"digest\":\"sha256:2e4da1942366ab63344cc4b959b75acb0afe933ab67b1d4cc819a15982b3e048\",\"size\":558},\"vendor/lsf/wit/platform/secrets/package.wit\":{\"digest\":\"sha256:4e0593c21ac5e3051500717fcf347cf7e23821816a9fc15945c68e93cee4ee54\",\"size\":407},\"vendor/lsf/wit/platform/state/package.wit\":{\"digest\":\"sha256:56b0a1304a9987395e0ea3f07e3dde4cbae5e70e5c9837ffcc6ae3b3cb9b7f25\",\"size\":3134},\"vendor/lsf/wit/platform/telemetry/package.wit\":{\"digest\":\"sha256:c79721b703eca86c55ab04ddcb37cbc7965287db64880c0a0bb555b92baaadc6\",\"size\":505},\"vendor/lsf/wit/platform/timer/package.wit\":{\"digest\":\"sha256:3c35d5a9078315848f86144e0f8f65cb7a4f8da1a54905098d4ff9c6e227090e\",\"size\":610},\"vendor/lsf/wit/platform/web-http/package.wit\":{\"digest\":\"sha256:92bc3b8ca3cb5c0ec76b012d695ea6ddf962a1534eeac297dfe7b27125dc5450\",\"size\":181},\"vendor/lsf/wit/platform/web/package.wit\":{\"digest\":\"sha256:3ad4d3e122c839115891ba9b69c9b790245a64ecb00690e23270623ac94b1450\",\"size\":1858},\"wit/deps/clock-monotonic/package.wit\":{\"digest\":\"sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea\",\"size\":139},\"wit/deps/http/package.wit\":{\"digest\":\"sha256:6fcae4b3123ec3ce0b32a4e65390630be3bde40ee74b50d7b732150b6bb6147d\",\"size\":2915},\"wit/deps/native-runtime/package.wit\":{\"digest\":\"sha256:2433ec06c033be01474fd5bf3275c921622eb6720aac344f1307736d09325eb6\",\"size\":633},\"wit/deps/runtime/package.wit\":{\"digest\":\"sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946\",\"size\":2539},\"wit/world.wit\":{\"digest\":\"sha256:d8ce2029bcbb16a71f82398a1a727a83986b57a3c54a25a1415d78aa7ab83731\",\"size\":359}}",
+  "runtimeUtf8": "{\n  \"schemaVersion\": \"latent.rust.wasi-http.prepared-adapter.v1\",\n  \"profile\": \"rust-wasi-http-0.2.12-v1\",\n  \"target\": \"wasm32-unknown-unknown\",\n  \"rust\": \"1.97.1\",\n  \"rustCommit\": \"8bab26f4f68e0e26f0bb7960be334d5b520ea452\",\n  \"wasmTools\": \"1.254.0\",\n  \"sourceDigest\": \"sha256:175a9694dd3c281d96a26f9cbc39ce5fe2f27325dc7729dafce073b57cd33921\",\n  \"sourceRows\": 163,\n  \"tools\": {\n    \"cargo\": {\n      \"name\": \"cargo\",\n      \"digest\": \"sha256:828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953\",\n      \"size\": 42839824\n    },\n    \"rustc\": {\n      \"name\": \"rustc\",\n      \"digest\": \"sha256:d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea\",\n      \"size\": 645000\n    },\n    \"wasm-tools\": {\n      \"name\": \"wasm-tools\",\n      \"digest\": \"sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6\",\n      \"size\": 20231696\n    },\n    \"component-composer\": {\n      \"name\": \"component-composer\",\n      \"digest\": \"sha256:250c11762916ba733c7d22b62487580f21270ec9dde4f13460ea69d300e25406\",\n      \"size\": 21726840\n    }\n  },\n  \"files\": {\n    \"rust-wasi-http-runtime.wasm\": {\n      \"name\": \"rust-wasi-http-runtime.wasm\",\n      \"digest\": \"sha256:5e528f44dd8c68b01a9e7048c4b571ee38305fa7343ef07e9506bff6c43a3104\",\n      \"size\": 337293\n    },\n    \"raw-runtime.wasm\": {\n      \"name\": \"raw-runtime.wasm\",\n      \"digest\": \"sha256:3aaf2c042577ad3bb7a78f91f5ae7fd1a9af84f87db111b1cdce590168087554\",\n      \"size\": 293598\n    },\n    \"reference.wit.json\": {\n      \"name\": \"reference.wit.json\",\n      \"digest\": \"sha256:70ba9a773ac08092722dfe539e74ef5d6149ab830534cf0e4d2feabdf549a650\",\n      \"size\": 310606\n    },\n    \"adapter.wit.json\": {\n      \"name\": \"adapter.wit.json\",\n      \"digest\": \"sha256:ea54f0a87ad07bb7294050cfd3f6611c8900c8b34d85cbce8d58df49fc1738e9\",\n      \"size\": 62301\n    }\n  },\n  \"composerSelection\": {\n    \"formatVersion\": 1,\n    \"version\": \"0.10.1\",\n    \"target\": \"x86_64-unknown-linux-musl\",\n    \"size\": 21726840,\n    \"digest\": \"sha256:250c11762916ba733c7d22b62487580f21270ec9dde4f13460ea69d300e25406\",\n    \"url\": \"https://github.com/bytecodealliance/wac/releases/download/v0.10.1/wac-cli-x86_64-unknown-linux-musl\",\n    \"upstreamFix\": \"https://github.com/bytecodealliance/wac/pull/205\"\n  },\n  \"graphValidation\": {\n    \"imports\": [\n      \"latent:clock/monotonic@0.1.0\",\n      \"latent:http/streaming@0.3.0\",\n      \"latent:runtime/activation@0.1.0\"\n    ],\n    \"exports\": [\n      \"latent:rust-http-retirement/owner@0.1.0\",\n      \"wasi:clocks/monotonic-clock@0.2.12\",\n      \"wasi:http/outgoing-handler@0.2.12\",\n      \"wasi:http/types@0.2.12\",\n      \"wasi:io/error@0.2.12\",\n      \"wasi:io/poll@0.2.12\",\n      \"wasi:io/streams@0.2.12\"\n    ],\n    \"wholeOriginalTypesCompared\": true,\n    \"exactCallingConventions\": true,\n    \"wholeOriginalExportSurfaceCompared\": true,\n    \"emittedImportsAreExactSubsets\": true\n  },\n  \"cores\": [\n    {\n      \"digest\": \"sha256:28971bf7ea6be55e21f5389a5351bcf1d9413e21d1c4c07ab8643e7e7c724b63\",\n      \"size\": 285115\n    },\n    {\n      \"digest\": \"sha256:c51f3edeaf2ae46eb6c64e5e612f75d7083d3e4fae942d0fbe59b604f9056f8f\",\n      \"size\": 787\n    },\n    {\n      \"digest\": \"sha256:4089409098cfc0317bc70802d1da993057790cc5c867de7ea99fac101f22da5a\",\n      \"size\": 405\n    }\n  ],\n  \"commands\": [\n    {\n      \"stage\": \"runtime-rustc-version\",\n      \"exitCode\": 0,\n      \"seconds\": 0.013581\n    },\n    {\n      \"stage\": \"runtime-cargo-version\",\n      \"exitCode\": 0,\n      \"seconds\": 0.013202\n    },\n    {\n      \"stage\": \"runtime-wasm-tools-version\",\n      \"exitCode\": 0,\n      \"seconds\": 0.013251\n    },\n    {\n      \"stage\": \"component-composer-version\",\n      \"exitCode\": 0,\n      \"seconds\": 0.01348\n    },\n    {\n      \"stage\": \"standard-http-runtime-compile\",\n      \"exitCode\": 0,\n      \"seconds\": 16.324135\n    },\n    {\n      \"stage\": \"standard-http-runtime-component\",\n      \"exitCode\": 0,\n      \"seconds\": 0.013315\n    },\n    {\n      \"stage\": \"standard-http-runtime-validate\",\n      \"exitCode\": 0,\n      \"seconds\": 0.013238\n    },\n    {\n      \"stage\": \"standard-http-reference-wit\",\n      \"exitCode\": 0,\n      \"seconds\": 0.023697\n    },\n    {\n      \"stage\": \"standard-http-adapter-wit\",\n      \"exitCode\": 0,\n      \"seconds\": 0.013274\n    }\n  ],\n  \"qualification\": \"compiled-adapter-only\",\n  \"authority\": \"none\",\n  \"signedQualification\": false,\n  \"publisherAuthentication\": false,\n  \"hermetic\": false,\n  \"identity\": \"sha256:4ee8487007f4962caf20bbf06638c056e2165ac8688f058bfe021b0287733a08\"\n}\n",
+  "scope": "Semantic regression projection of pinned original compiler inputs; not execution evidence",
+  "fullInputDigests": {
+    "application-source-and-capture.tar.gz": {
+      "bytes": 27868270,
+      "sha256": "sha256:3416c5870ad2887534f0f4311422f5c716dfd1fc65c670cd35c861fd14c12949"
+    },
+    "source-inputs.json": {
+      "bytes": 9472,
+      "sha256": "sha256:1760f2f3e520229c42dfe0884e544fdb7b138b7eb850876e290b759fc6056663"
+    },
+    "raw-core.wasm": {
+      "bytes": 999654,
+      "sha256": "sha256:25ecfa4024c125f3c8829216c8c5211097d9f27a8ae86e8385ecfb6526ebfcca"
+    },
+    "combined-component.wasm": {
+      "bytes": 1306998,
+      "sha256": "sha256:71e0d0bd5cd4be0578eff4ad0ee02dc0d40f3146bc5e373193f3cbc9b8d3fcef"
+    },
+    "observation.json": {
+      "bytes": 366331,
+      "sha256": "sha256:e08b9fcaa846becd5b91a9322e386d2c4a17b2a2462c7afb704c15f18c960756"
+    },
+    "rust-http-composition.json": {
+      "bytes": 5281,
+      "sha256": "sha256:30d2f801c7f8aec59b8d86b2316b9292df3edd58cfe3475a0491bbbc5d95becf"
+    },
+    "recipe-origin.json": {
+      "bytes": 59812,
+      "sha256": "sha256:aed42ed05cb6291ea6af89d6e6ae7b318304453daf8444e32694fb25527cd20b"
+    },
+    "recipe-inputs.json": {
+      "bytes": 34058,
+      "sha256": "sha256:722af2764e49f0bc35cd162c9f409ef19b22bd764ddc46480ab2bacf0ebea8c0"
+    },
+    "rust-http-runtime.json": {
+      "bytes": 4442,
+      "sha256": "sha256:b0331048d0905c709126b2e09ca515c70457548b6c1a420e58446cea3d71cad7"
+    }
+  }
+}

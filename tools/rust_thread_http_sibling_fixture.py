@@ -24,15 +24,17 @@ SIBLING = r'''
 pub fn thread_http_sibling(endpoint: &str) -> Result<String, String> {
     let partial = format!("{endpoint}/conformance/body/partial");
     let client = golem_wasi_http::Client::new();
-    let mut response = client.get(partial.as_str()).send().map_err(|e| e.to_string())?;
+    let response = client.get(partial.as_str()).send().map_err(|e| e.to_string())?;
     if response.status().as_u16() != 200 { return Err("sibling partial status".into()); }
-    let mut body = Vec::new();
-    response.read_to_end(&mut body).map_err(|e| e.to_string())?;
+    // Golem 0.2.0's Read implementation takes its body on each call, so
+    // read_to_end panics on a subsequent read. Its consuming bytes() API
+    // retains the original stream through all chunks and actual EOF.
+    let body = response.bytes().map_err(|e| e.to_string())?;
     if body.len() != 4109 || !body.starts_with(b"first-second-")
         || !body[13..].iter().all(|byte| *byte == b'x') {
         return Err("sibling partial body".into());
     }
-    drop(response);
+    drop(body);
     // The second JSON request is issued only after the first was received,
     // decoded and checked by the unchanged ordinary Golem client path.
     request("golem", "repeat", &format!("{endpoint}/conformance/json"))
