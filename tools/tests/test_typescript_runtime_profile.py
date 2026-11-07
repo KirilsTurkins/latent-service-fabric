@@ -397,8 +397,11 @@ class TypeScriptAbortSourceTests(unittest.TestCase):
         after, _ = derive_abort_timeout(raw)
         first = b'bool AbortSignal::run_abort_steps('
         boundary = b'JSObject *AbortSignal::create_with_timeout('
-        self.assertEqual(raw[raw.index(first):raw.index(boundary)],
-                         after[after.index(first):after.index(boundary)])
+        original = raw[raw.index(first):raw.index(boundary)]
+        changed = after[after.index(first):after.index(boundary)]
+        null_check = b'  if (!event) return false;\n'
+        self.assertEqual(changed.count(null_check), 1)
+        self.assertEqual(changed.replace(null_check, b'', 1), original)
         following = b'// https://dom.spec.whatwg.org/#dom-abortsignal-any'
         self.assertEqual(raw[raw.index(following, raw.index(boundary)):],
                          after[after.index(following, after.index(boundary)):])
@@ -409,6 +412,21 @@ class TypeScriptAbortSourceTests(unittest.TestCase):
         raw = (FIXTURES/'original-abort-signal.cpp').read_bytes()
         with self.assertRaisesRegex(ValueError, 'unreviewed-original-AbortSignal-source'):
             derive_abort_timeout(raw+b'changed')
+
+    def test_undefined_root_reason_failure_precedes_its_direct_slot_write(self):
+        from tools.typescript_guest.abort_engine import derive_abort_timeout
+        raw = (FIXTURES/'original-abort-signal.cpp').read_bytes()
+        after, receipt = derive_abort_timeout(raw)
+        start = after.index(b'bool AbortSignal::set_reason(')
+        end = after.index(b'JSObject *AbortSignal::create(', start)
+        body = after[start:end]
+        allocation = body.index(b'DOMException::create(cx, "AbortError", "AbortError")')
+        failure = body.index(b'if (!exception) {\n      return false;\n    }', allocation)
+        slot = body.index(b'SetReservedSlot(self, std::to_underlying(Slots::Reason)', failure)
+        self.assertLess(allocation, failure)
+        self.assertLess(failure, slot)
+        self.assertEqual(receipt['rootReasonAllocationFailure'], 'return-before-direct-reason-slot-write')
+        self.assertEqual(receipt['dependentAbortAndReasonAllocationFailures'], 'not-qualified')
 
     def test_abort_recipe_and_native_sources_are_closed_compiler_inputs(self):
         from tools.typescript_guest.activation_engine import NATIVE_SOURCES, PREIMAGES, engine_input_paths
