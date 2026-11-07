@@ -23,6 +23,14 @@ SOURCES = (FIXTURE+'/Control.csproj', FIXTURE+'/Program.cs', FIXTURE+'/Bindings.
 SETTLEMENT_CASES = (
     'enqueue-failure-settlement-refusal-retains-owner',
     'dequeue-settlement-refusal-retains-owner')
+OWNER_SETTLEMENT_CASES = (
+    'task-settlement-refusal-revokes-context',
+    'task-settlement-unknown-revokes-context',
+    'callback-settlement-refusal-prevents-retry',
+    'callback-settlement-unknown-prevents-retry')
+RESULT_SETTLEMENT_CASES = (
+    'result-settlement-refusal-prevents-finalization',
+    'result-settlement-unknown-prevents-finalization')
 CASES = (
     'native-task-admission', 'unwrap-inner-actual-completion', 'queued-admission-rollback',
     'enqueue-failure-releases-both', 'continuation-failure-before-acceptance',
@@ -30,7 +38,8 @@ CASES = (
     'live-descendant-during-closing', 'closing-rejects-independent',
     'unobserved-original-fault-result', 'observed-fault-does-not-become-unhandled',
     'bounded-required-continuations', 'opaque-pending-is-not-quiescent',
-    'untracked-startup-refused-before-admission', *SETTLEMENT_CASES)
+    'untracked-startup-refused-before-admission', *SETTLEMENT_CASES, *OWNER_SETTLEMENT_CASES,
+    *RESULT_SETTLEMENT_CASES)
 
 
 def verify(dotnet: Path, output: Path) -> dict:
@@ -58,6 +67,12 @@ def verify(dotnet: Path, output: Path) -> dict:
             'actualClrTasks': True, 'guestQualified': False}
         if name in SETTLEMENT_CASES:
             expected.update(settlementRefusals=1, retainedTasks=2, retainedQueuedOwners=1,
+                            controlDispatches=0, automaticRetries=0, rootSuccess=False)
+        elif name in OWNER_SETTLEMENT_CASES:
+            expected.update(settlementRefusals=1, retainedTasks=1 if '-unknown-' in name else 2,
+                            retainedQueuedOwners=0, controlDispatches=0, automaticRetries=0, rootSuccess=False)
+        elif name in RESULT_SETTLEMENT_CASES:
+            expected.update(settlementRefusals=1, retainedTasks=1, retainedQueuedOwners=0,
                             controlDispatches=0, automaticRetries=0, rootSuccess=False)
         require(len(raw) <= 1024 and json.loads(raw) == expected, 'managed-work-state-control-result')
         rows.append(expected)
