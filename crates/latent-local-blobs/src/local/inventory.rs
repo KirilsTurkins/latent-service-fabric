@@ -79,7 +79,9 @@ impl LocalReferenceInventory {
             let mut entries = state.objects.range::<String, _>((lower, Unbounded));
             let mut references = Vec::with_capacity(maximum_entries);
             let mut after = self.after.clone();
+            let mut visited = 0;
             for (key, object) in entries.by_ref().take(maximum_entries) {
+                visited += 1;
                 after = Some(key.clone());
                 if object.referenced.load(Ordering::Acquire) {
                     let record = object.record.as_ref().ok_or(LocalBlobError::Corrupt)?;
@@ -88,7 +90,9 @@ impl LocalReferenceInventory {
                     }
                 }
             }
-            (references, after, entries.next().is_none())
+            // An exactly full page may need one final empty call; never inspect
+            // an extra physical entry beyond the caller's bound.
+            (references, after, visited < maximum_entries)
         };
         checkpoint()?;
         {

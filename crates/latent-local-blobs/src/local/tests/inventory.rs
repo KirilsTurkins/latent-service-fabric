@@ -34,7 +34,7 @@ fn pages_are_tenant_scoped_bounded_and_bound_to_the_original_owner() {
             break;
         }
     }
-    assert_eq!(pages, 3);
+    assert_eq!(pages, 4); // The final empty page proves an exactly full traversal ended.
     assert_eq!(found.len(), 2);
     assert!(found.contains(&first));
     assert!(found.contains(&second));
@@ -152,8 +152,10 @@ fn failed_checkpoint_does_not_advance_the_inventory() {
         Err(LocalBlobError::DeadlineExceeded)
     ));
     let page = inventory.next_page(&owner, 1, &|| Ok(())).unwrap();
-    assert!(page.complete);
+    assert!(!page.complete);
     assert_eq!(page.references(), &[blob]);
+    drop(page);
+    assert!(inventory.next_page(&owner, 1, &|| Ok(())).unwrap().complete);
 }
 
 #[test]
