@@ -173,8 +173,8 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
                 if (futureAccepted) {
                     // A FutureTask subclass may return without completing;
                     // its physical invocation then remains uncertain.
-                    ((FutureTask<?>)action).removeQueueCopy(runnableCall == null || !runnableCall.invoked);
                     futureAccepted = false;
+                    ((FutureTask<?>)action).removeQueueCopy(runnableCall == null || !runnableCall.invoked);
                 }
                 if (actionAccepted) {
                     // Action retains any other accepted copy or an opaque
