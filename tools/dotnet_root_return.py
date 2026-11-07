@@ -575,7 +575,7 @@ def current_managed_port(artifact):
     port = read_json(artifact / 'task-wait-port.json', 128 * 1024)
     managed_work.validate_rewrite(port.get('managedAcceptedWork'))
     require(port.get('profile') == task_wait.PROFILE
-        and port['managedAcceptedWork']['patch'] == 'latent.dotnet.managed-accepted-work.v3'
+        and port['managedAcceptedWork']['patch'] == 'latent.dotnet.managed-accepted-work.v4'
         and type(port.get('generatedHelperCount')) is int and port['generatedHelperCount'] == 96
         and port.get('completion') == 'actual-task-only'
         and port.get('finiteAndCancellableWaits') == 'original-Task-WhenAny-Delay'
@@ -583,7 +583,7 @@ def current_managed_port(artifact):
         and type(port.get('nativeAotReferenceBinding')) is dict
         and type(port['nativeAotReferenceBinding'].get('responseFiles')) is list
         and len(port['nativeAotReferenceBinding']['responseFiles']) == 1,
-        'root-return-current-v3-normal-corelib-binding')
+        'root-return-current-v4-normal-corelib-binding')
     return port
 
 

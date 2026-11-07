@@ -187,10 +187,18 @@ PREFETCH_REWRITE_RECEIPT = {**TIMER_REWRITE_RECEIPT,
     'readinessControls': 'four-actual-generated-slot-models'}
 
 
+# The previous profiles remain historical identities. The current producer
+# retains every matching queue owner when original enqueue insertion is unknown.
+QUEUE_FENCE_REWRITE_RECEIPT = {**PREFETCH_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v4',
+    'queueAdmission': 'before-original-enqueue-fault-retains-matching-owners'}
+
+
 def validate_rewrite(value: dict) -> None:
     if type(value) is not dict:
         raise ValueError('dotnet-managed-work-rewrite-receipt')
-    expected_receipt = (PREFETCH_REWRITE_RECEIPT if value.get('patch') == PREFETCH_REWRITE_RECEIPT['patch']
+    expected_receipt = (QUEUE_FENCE_REWRITE_RECEIPT if value.get('patch') == QUEUE_FENCE_REWRITE_RECEIPT['patch']
+        else PREFETCH_REWRITE_RECEIPT if value.get('patch') == PREFETCH_REWRITE_RECEIPT['patch']
         else TIMER_REWRITE_RECEIPT if value.get('patch') == TIMER_REWRITE_RECEIPT['patch'] else REWRITE_RECEIPT)
     if (set(value) != set(expected_receipt)
             or any(type(value.get(key)) is not type(expected) or value[key] != expected
