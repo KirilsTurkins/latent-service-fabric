@@ -21,6 +21,8 @@ mod limits;
 mod poll;
 #[path = "../../../sdk/wasi-http-runtime/request_options.rs"]
 mod request_options;
+#[path = "../../../sdk/wasi-http-runtime/retirement.rs"]
+mod retirement;
 #[path = "../../../sdk/wasi-http-runtime/state.rs"]
 mod state;
 

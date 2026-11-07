@@ -174,21 +174,26 @@ impl Exchange {
         if self.cancelled.replace(true) {
             return;
         }
-        // Keep the exact pinned future and every original owner alive. A sync
-        // resource destructor cannot perform its potentially blocking cancel.
-        // Only the private async drain may drop it, before root task-return.
+        // Pending canonical work still needs explicit async-root cancellation.
+        // Completed EOF resources retire before admitting the next request;
+        // their Task must not remain charged until an unrelated held call ends.
         if self.admitted.get() {
-            let work = self.work.borrow_mut().take();
-            let upload = self.upload.borrow_mut().take();
-            let body = self.body.borrow_mut().take();
-            let owner = self.owner.borrow_mut().take();
-            let slot = self.slot.borrow_mut().take();
-            pump::Pump::retire(move || {
-                drop(work);
-                drop(upload);
-                drop(body);
-                drop(owner);
-                drop(slot);
+            let retirement = super::retirement::Retirement::new(
+                self.work.borrow_mut().take(),
+                self.upload.borrow_mut().take(),
+                self.body.borrow_mut().take(),
+                (
+                    self.request.borrow_mut().take(),
+                    self.queued.borrow_mut().take(),
+                    self.input.borrow_mut().take(),
+                    self.response.borrow_mut().take(),
+                    self.trailers.borrow_mut().take(),
+                ),
+                self.owner.borrow_mut().take(),
+                self.slot.borrow_mut().take(),
+            );
+            retirement.retire(self.eof.get(), |retirement| {
+                pump::Pump::retire(move || drop(retirement));
             });
         }
     }
