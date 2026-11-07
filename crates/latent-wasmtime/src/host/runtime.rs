@@ -25,8 +25,25 @@ use fixed_result::FixedValue;
 mod positive_timer_observer;
 use positive_timer_observer::{Event as TimerEvent, Observer as TimerObserver};
 
+#[cfg(test)]
+mod tests;
+
 pub(crate) const CAPABILITY: &str = "latent:runtime/activation@0.1.0";
 const STOP_OBSERVATION: Duration = Duration::from_millis(10);
+// Per-allocation bookkeeping in the existing native accounting model; this is
+// not a measurement or a bound on process RSS.
+const BACKING_ALLOCATION_BOOKKEEPING: usize = 64;
+
+fn backing_bytes<T>(count: usize) -> Option<u64> {
+    if count == 0 || std::mem::size_of::<T>() == 0 {
+        return Some(0);
+    }
+    std::alloc::Layout::array::<T>(count)
+        .ok()?
+        .size()
+        .checked_add(BACKING_ALLOCATION_BOOKKEEPING)
+        .and_then(|bytes| u64::try_from(bytes).ok())
+}
 
 /// Guards are held with actual Store-owned logical work. Tokens alone cannot
 /// remove an owner, mint another activation, or establish native retirement.
@@ -36,7 +53,8 @@ pub(crate) struct Table {
     runtime: ActivationRuntime,
     pub(crate) native_stacks: Option<Arc<crate::native_stacks::StackContext>>,
     timer_observer: Option<TimerObserver>,
-    _allocation: HostMemoryReservation,
+    // All actual Vec backings and the other owned fields drop before refund.
+    allocation: HostMemoryReservation,
 }
 impl Table {
     fn new(
@@ -44,39 +62,64 @@ impl Table {
         limits: RuntimeLimits,
         timer_observer: Option<TimerObserver>,
     ) -> Result<Self, PlatformError> {
-        let bytes = limits.total() as u64 * std::mem::size_of::<RuntimeOwner>() as u64
-            + u64::from(limits.timers) * std::mem::size_of::<RuntimeTimer>() as u64
-            + std::mem::size_of::<Self>() as u64
-            + 64;
+        // Validated runtime limits cap total at 8192. Both Vec backings are
+        // independently prepaid before either is allocated; a zero timer limit
+        // leaves its Vec unallocated.
+        let owner_count = limits.total();
+        let timer_count = limits.timers as usize;
+        let (owner_bytes, backings_bytes, bytes) = (|| {
+            let owner_bytes = backing_bytes::<RuntimeOwner>(owner_count)?;
+            let timer_bytes = backing_bytes::<RuntimeTimer>(timer_count)?;
+            let backings = owner_bytes.checked_add(timer_bytes)?;
+            let bytes = backings.checked_add(u64::try_from(std::mem::size_of::<Self>()).ok()?)?;
+            Some((owner_bytes, backings, bytes))
+        })()
+        .ok_or_else(|| {
+            failure(
+                PlatformErrorCode::ResourceExhausted,
+                "runtime-table-allocation",
+            )
+        })?;
         let mut allocation = budget
             .reserve_host_memory(bytes)
             .map_err(|e| e.to_host_memory_error())?;
         let mut owners = Vec::new();
-        owners.try_reserve_exact(limits.total()).map_err(|_| {
+        owners.try_reserve_exact(owner_count).map_err(|_| {
             failure(
                 PlatformErrorCode::ResourceExhausted,
                 "runtime-owner-allocation",
             )
         })?;
+        // Confirm each backing as it physically appears, even if a later
+        // allocation fails. Unused envelope capacity stays reserved.
+        allocation.confirm_bytes(owner_bytes);
         let mut timers = Vec::new();
-        timers
-            .try_reserve_exact(limits.timers as usize)
-            .map_err(|_| {
-                failure(
-                    PlatformErrorCode::ResourceExhausted,
-                    "runtime-timer-allocation",
-                )
-            })?;
+        timers.try_reserve_exact(timer_count).map_err(|_| {
+            failure(
+                PlatformErrorCode::ResourceExhausted,
+                "runtime-timer-allocation",
+            )
+        })?;
+        allocation.confirm_bytes(backings_bytes);
+        // Pinned Global RawVec preserves the requested exact capacities.
+        // No owner is published under an unexpected backing-size contract.
+        if owners.capacity() != owner_count || timers.capacity() != timer_count {
+            return Err(failure(
+                PlatformErrorCode::ResourceExhausted,
+                "runtime-table-capacity",
+            ));
+        }
         let runtime = ActivationRuntime::new(budget, limits)?;
-        allocation.confirm();
-        Ok(Self {
+        let mut table = Self {
             owners,
             timers,
             runtime,
             native_stacks: None,
             timer_observer,
-            _allocation: allocation,
-        })
+            allocation,
+        };
+        table.allocation.confirm();
+        Ok(table)
     }
     pub(crate) fn finalize(&mut self) -> Result<(), PlatformError> {
         self.runtime.begin_drain();

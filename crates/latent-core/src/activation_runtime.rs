@@ -160,6 +160,9 @@ struct Slab {
     // Drop the real records/allocation before releasing its native charge.
     _allocation: HostMemoryReservation,
 }
+// The repository's native allocation model reserves this much bookkeeping for
+// each backing allocation. It is a finite allowance, not an RSS measurement.
+const SLAB_ALLOCATION_BOOKKEEPING: usize = 64;
 #[derive(Debug, Clone, Copy)]
 struct Record {
     id: u64,
@@ -321,7 +324,16 @@ impl ActivationRuntime {
             .map_err(|failure| failure.to_platform_error())?;
         if state.slab.is_none() {
             let count = self.inner.limits.total();
-            let bytes = count as u64 * std::mem::size_of::<Option<Record>>() as u64;
+            let bytes = std::alloc::Layout::array::<Option<Record>>(count)
+                .ok()
+                .and_then(|layout| layout.size().checked_add(SLAB_ALLOCATION_BOOKKEEPING))
+                .and_then(|bytes| u64::try_from(bytes).ok())
+                .ok_or_else(|| {
+                    error(
+                        PlatformErrorCode::ResourceExhausted,
+                        "runtime-record-allocation",
+                    )
+                })?;
             let mut allocation = self
                 .inner
                 .budget
@@ -334,8 +346,16 @@ impl ActivationRuntime {
                     "runtime-record-allocation",
                 )
             })?;
-            records.resize(count, None);
             allocation.confirm();
+            // The pinned Global RawVec requests and records exactly `count`.
+            // Refuse a changed allocator contract before publishing owners.
+            if records.capacity() != count {
+                return Err(error(
+                    PlatformErrorCode::ResourceExhausted,
+                    "runtime-record-capacity",
+                ));
+            }
+            records.resize(count, None);
             state.slab = Some(Slab {
                 records,
                 _allocation: allocation,
