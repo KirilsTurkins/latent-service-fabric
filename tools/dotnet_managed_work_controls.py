@@ -23,6 +23,8 @@ SOURCES = (FIXTURE+'/Control.csproj', FIXTURE+'/Program.cs', FIXTURE+'/Bindings.
 SETTLEMENT_CASES = ('dequeue-settlement-refusal-retains-owner',)
 QUEUE_SETTLEMENT_CASES = (
     'queue-dequeue-refusal-prevents-retry', 'queue-dequeue-unknown-prevents-retry')
+ROLLBACK_SETTLEMENT_CASES = (
+    'queue-before-insertion-refusal-retains-owner', 'queue-before-insertion-unknown-retains-owner')
 OWNER_SETTLEMENT_CASES = (
     'task-settlement-refusal-revokes-context',
     'task-settlement-unknown-revokes-context',
@@ -40,14 +42,17 @@ ROOT_SETTLEMENT_CASES = (
     'storage-and-context-clear-fail-fences-finalization')
 CASES = (
     'native-task-admission', 'unwrap-inner-actual-completion', 'queued-admission-rollback',
-    'enqueue-failure-retains-uncertain-owners', 'continuation-failure-before-acceptance',
+    'enqueue-failure-retains-uncertain-owners', 'enqueue-before-insertion-retains-created-owner',
+    'enqueue-before-insertion-keeps-borrowed-owner', 'enqueue-before-insertion-retains-reentrant-work',
+    'enqueue-before-insertion-retains-captured-context', 'continuation-failure-before-acceptance',
     'local-pop-releases-queue-only', 'join-real-required-task', 'callback-retains-async-void-task',
     'live-descendant-during-closing', 'closing-rejects-independent',
     'unobserved-original-fault-result', 'observed-fault-does-not-become-unhandled',
     'bounded-required-continuations', 'opaque-pending-is-not-quiescent',
     'untracked-startup-refused-before-admission', 'fault-conversion-success-is-idempotent',
     'fault-conversion-at-record-capacity', 'multiple-fault-conversions-retain-distinct-tokens',
-    *SETTLEMENT_CASES, *QUEUE_SETTLEMENT_CASES, *OWNER_SETTLEMENT_CASES, *RESULT_SETTLEMENT_CASES,
+    *SETTLEMENT_CASES, *QUEUE_SETTLEMENT_CASES, *ROLLBACK_SETTLEMENT_CASES,
+    *OWNER_SETTLEMENT_CASES, *RESULT_SETTLEMENT_CASES,
     *CONVERSION_SETTLEMENT_CASES, *ROOT_SETTLEMENT_CASES)
 
 
@@ -82,6 +87,11 @@ def verify(dotnet: Path, output: Path) -> dict:
         elif name in QUEUE_SETTLEMENT_CASES:
             expected.update(settlementRefusals=1, retainedTasks=2,
                             retainedQueuedOwners=0 if '-unknown-' in name else 1,
+                            controlDispatches=0, automaticRetries=0, rootSuccess=False)
+        elif name in ROLLBACK_SETTLEMENT_CASES:
+            unknown = '-unknown-' in name
+            expected.update(settlementRefusals=1, retainedTasks=2,
+                            retainedQueuedOwners=0 if unknown else 1,
                             controlDispatches=0, automaticRetries=0, rootSuccess=False)
         elif name in OWNER_SETTLEMENT_CASES:
             expected.update(settlementRefusals=1, retainedTasks=1 if '-unknown-' in name else 2,
@@ -118,7 +128,11 @@ TIMER_CASES = (
     'one-shot-delete-is-not-callback-return', 'multiple-queued-callbacks-retain-one-timer',
     'disposed-queued-callback-retires-after-cancelled-fire', 'callback-required-task-survives-return',
     'live-timer-descendant-during-closing', 'callback-throw-never-refunds-original-running-owner',
-    'timer-queue-fault-before-insertion-retains-owners', 'timer-queue-fault-after-insertion-retains-owners',
+    'timer-pending-peer-failure-blocks-commit',
+    'timer-pending-duplicate-preserves-committed-owner', 'timer-pending-admission-blocks-dequeue',
+    'timer-rollback-refusal-retains-accepted-owner', 'timer-rollback-unknown-retains-accepted-owner',
+    'timer-queue-fault-before-insertion-rolls-back-current', 'timer-queue-fault-during-insertion-retains-owners',
+    'timer-queue-fault-after-insertion-retains-owners',
     'timer-queue-refusal-fences-readmission', 'timer-queue-unknown-fences-readmission',
     'timer-settlement-refusal-restores-context', 'timer-settlement-refusal-prevents-retry',
     'timer-settlement-unknown-outcome-prevents-retry',
