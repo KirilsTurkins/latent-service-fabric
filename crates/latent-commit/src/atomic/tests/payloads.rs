@@ -1123,6 +1123,13 @@ async fn response_expiry_keeps_real_shared_effect_blobs_until_reviewed_purge() {
         .unwrap();
     drop(view);
     publish_payload_envelope(&fixture, envelope);
+    // The original physical reader remains live while the response expires
+    // and both independent effects go through reviewed terminal handling.
+    let reader = fixture
+        .provider
+        .store()
+        .open_read(&TenantId("a".into()), &fixture.blob, &|| Ok(()))
+        .unwrap();
     let effect_clock = |now| EffectTime {
         unix_millis: now,
         continuity_proven: true,
@@ -1297,6 +1304,28 @@ async fn response_expiry_keeps_real_shared_effect_blobs_until_reviewed_purge() {
             &|| Ok(())
         )
         .unwrap());
+    assert_eq!(
+        fixture
+            .provider
+            .store()
+            .reclaim(1, &|| Ok(()))
+            .unwrap()
+            .objects,
+        0
+    );
+    let mut bytes = [0; 4];
+    reader
+        .read(
+            &latent_blobs::BlobRange {
+                offset: 0,
+                length: 4,
+            },
+            &mut bytes,
+            &|| Ok(()),
+        )
+        .unwrap();
+    assert_eq!(&bytes, b"body");
+    drop(reader);
     assert_eq!(
         fixture
             .provider
