@@ -66,17 +66,21 @@ public static partial class ManagedWorkRuntime
     private static (ulong Generation, ulong Id) storage;
     private static bool closing;
     private static bool installed;
+    private static int admissions;
+    // Erased by the compiler unless the source-control fixture supplies it.
+    static partial void QueueAllocationControl();
+    static partial void RecordAllocationControl();
 
     public static void Install(
         Func<int, ulong, ulong, (ulong Generation, ulong Id)> register,
         Action<ulong, ulong> release, Action beginClosing, Action<ulong, ulong> setContext)
     {
-        if (installed || reserve is not null || register is null || release is null
+        if (installed || reserve is not null || admissions != 0 || register is null || release is null
             || beginClosing is null || setContext is null)
             throw new InvalidOperationException("managed-work-installation");
         if (ReadySource()) throw new InvalidOperationException("managed-work-untracked-startup-work");
         reserve = register; settle = release; close = beginClosing; adapterContext = setContext;
-        var rootToken = register(TaskKind, 0, 0);
+        var rootToken = Reserve(TaskKind, null);
         try
         {
             storage = register(NativeKind, rootToken.Generation, rootToken.Id);
@@ -140,7 +144,11 @@ public static partial class ManagedWorkRuntime
     private static (ulong Generation, ulong Id) Reserve(int kind, Record? parent)
     {
         var token = parent?.Token ?? default;
-        return reserve!(kind, token.Generation, token.Id);
+        var result = reserve!(kind, token.Generation, token.Id);
+        if (result == default) throw new InvalidOperationException("managed-work-admission-refused");
+        if (result.Generation == 0 || result.Id == 0)
+            throw new InvalidOperationException("managed-work-reservation-token");
+        return result;
     }
 
     private static int FreeRecord()
@@ -149,27 +157,62 @@ public static partial class ManagedWorkRuntime
         throw new InvalidOperationException("managed-work-record-limit");
     }
 
-    private static Record Admit(object item, Task? completion, Record? parent)
+    private static Record Admit(object item, Task? completion, Record? parent,
+        out bool created, bool activate, Queued? admission)
     {
-        int index = FreeRecord();
-        var token = Reserve(TaskKind, parent);
+        var activation = root;
+        if (!installed || activation is null || !activation.Active)
+            throw new InvalidOperationException("managed-work-finalization-uncertain");
+        if (admissions == int.MaxValue) throw new InvalidOperationException("managed-work-admission-in-progress");
+        admissions++;
         try
         {
-            var owner = new Record { Primary = item, Completion = completion, Token = token, Active = true };
+            created = false;
+            // Allocation may reenter and fill a slot or admit this same item.
+            RecordAllocationControl();
+            var owner = new Record { Primary = item, Completion = completion };
+            if (!installed || !ReferenceEquals(root, activation) || !activation.Active)
+                throw new InvalidOperationException("managed-work-activation-changed");
+            var existing = Find(item);
+            if (existing is { Active: false } or { Result: true })
+                throw new InvalidOperationException("managed-work-owner-retired");
+            if (existing is not null) return existing;
+            // The allocation may also have closed the root or retired/converted
+            // the originally captured parent before registration begins.
+            if (closing && (parent is null || !parent.Active || parent.Root || parent.Result))
+                throw new InvalidOperationException("managed-work-independent-admission-closed");
+            if (parent is not null && (!parent.Active || parent.Result))
+                throw new InvalidOperationException("managed-work-parent-retired");
+            int index = FreeRecord();
+            // The existing bounded table retains a provisional inactive owner
+            // even if registration mutated the host and then failed to return.
             records![index] = owner;
+            if (admission is not null) admission.Owner = owner;
+            var parentToken = parent?.Token ?? default;
+            var token = reserve!(TaskKind, parentToken.Generation, parentToken.Id);
+            owner.Token = token;
+            if (token == default)
+            {
+                records[index] = null; // The selected bridge returned a definite WIT refusal.
+                if (admission is not null) admission.Owner = null!;
+                throw new InvalidOperationException("managed-work-admission-refused");
+            }
+            if (token.Generation == 0 || token.Id == 0)
+                throw new InvalidOperationException("managed-work-reservation-token");
+            owner.Active = activate;
+            created = true;
             return owner;
         }
-        catch
-        {
-            settle!(token.Generation, token.Id);
-            throw;
-        }
+        finally { admissions--; }
     }
 
     public static void Schedule(Task task)
     {
-        if (!installed || Find(task) is not null || task.IsCompleted) return;
-        Admit(task, task, Parent());
+        if (!installed) return;
+        var existing = Find(task);
+        if (existing is { Active: false }) throw new InvalidOperationException("managed-work-owner-retired");
+        if (existing is not null || task.IsCompleted) return;
+        Admit(task, task, Parent(), out _, true, null);
     }
 
     public static void Continuation(Task task)
@@ -181,6 +224,7 @@ public static partial class ManagedWorkRuntime
     {
         if (!installed) return;
         var owner = Find(task);
+        if (owner is { Active: false }) throw new InvalidOperationException("managed-work-double-settle");
         if (owner is null || owner.Root || owner.Result || task.IsCompleted || !ReferenceEquals(owner.Completion, task)) return;
         foreach (var item in queued!) if (item is not null && ReferenceEquals(item.Owner, owner)) return;
         if (!HasRequired(owner)) Release(owner);
@@ -188,9 +232,12 @@ public static partial class ManagedWorkRuntime
 
     public static void Unwrap(Task promise, Task outer)
     {
-        if (!installed || promise.IsCompleted) return;
+        if (!installed) return;
+        if (Find(promise) is { Active: false }) throw new InvalidOperationException("managed-work-owner-retired");
+        if (promise.IsCompleted) return;
         var owner = Find(outer);
-        if (owner is null) owner = Admit(promise, promise, Parent());
+        if (owner is { Active: false } or { Result: true }) throw new InvalidOperationException("managed-work-owner-retired");
+        if (owner is null) owner = Admit(promise, promise, Parent(), out _, true, null);
         else
         {
             owner.Outer = outer;
@@ -203,6 +250,7 @@ public static partial class ManagedWorkRuntime
     {
         if (!installed || inner is null) return;
         var owner = Find(promise);
+        if (owner is { Active: false } or { Result: true }) throw new InvalidOperationException("managed-work-owner-retired");
         if (owner is not null) owner.Inner = inner;
     }
 
@@ -252,55 +300,108 @@ public static partial class ManagedWorkRuntime
     public static object? Enqueue(object item)
     {
         if (!installed) return null;
-        int index = -1;
-        for (int i = 0; i < MaximumQueued; i++)
-        {
-            if (queued![i] is { } existing && ReferenceEquals(existing.Item, item))
-            {
-                if ((existing.State & 1) != 0)
-                    throw new InvalidOperationException("managed-work-queue-uncertain");
-                if (FindTimer(item) is null) throw new InvalidOperationException("managed-work-duplicate-enqueue");
-            }
-            if (index < 0 && queued[i] is null) index = i;
-        }
-        if (index < 0) throw new InvalidOperationException("managed-work-queue-record-limit");
-        var owner = Find(item);
-        if (owner is { Active: false })
-            throw new InvalidOperationException(owner.Timer
-                ? "managed-timer-settlement-uncertain" : "managed-work-owner-retired");
-        bool created = false;
-        if (owner is null)
-        {
-            var captured = WorkContext(item) as Record;
-            if (captured is not null && (!captured.Active || captured.Result))
-                throw new InvalidOperationException("managed-work-captured-parent-retired");
-            if (Maintenance(item)) owner = root!;
-            else if (RequiredContinuation(item) && captured is not null) owner = captured;
-            else
-            {
-                var parent = captured ?? Parent();
-                if (closing && (parent is null || parent.Root))
-                    throw new InvalidOperationException("managed-work-independent-admission-closed");
-                owner = Admit(item, null, parent);
-                created = true;
-            }
-        }
+        var activation = root;
+        if (activation is null || !activation.Active)
+            throw new InvalidOperationException("managed-work-finalization-uncertain");
+        if (admissions == int.MaxValue) throw new InvalidOperationException("managed-work-admission-in-progress");
+        admissions++;
         try
         {
-            var token = Reserve(QueuedKind, owner);
+            // Allocation can run finalizers. Scan only after it, then reserve the
+            // selected slot before any user-supplied captured-context accessor.
+            QueueAllocationControl();
+            var pending = new Queued { Item = item, State = 5 };
+            if (!installed || !ReferenceEquals(root, activation) || !activation.Active)
+                throw new InvalidOperationException("managed-work-activation-changed");
+            int index = -1;
+            for (int i = 0; i < MaximumQueued; i++)
+            {
+                if (queued![i] is { } existing && ReferenceEquals(existing.Item, item))
+                {
+                    if ((existing.State & 1) != 0)
+                        throw new InvalidOperationException("managed-work-queue-uncertain");
+                    if (FindTimer(item) is null) throw new InvalidOperationException("managed-work-duplicate-enqueue");
+                }
+                if (index < 0 && queued[i] is null) index = i;
+            }
+            if (index < 0) throw new InvalidOperationException("managed-work-queue-record-limit");
+            queued![index] = pending;
             try
             {
-                var pending = new Queued { Item = item, Owner = owner, Token = token, State = 4 };
-                queued![index] = pending;
+                var owner = Find(item);
+                if (owner is { Active: false } or { Result: true })
+                    throw new InvalidOperationException(owner.Timer
+                        ? "managed-timer-settlement-uncertain" : "managed-work-owner-retired");
+                bool created = false;
+                if (owner is null)
+                {
+                    var captured = WorkContext(item) as Record;
+                    if (captured is not null && (!captured.Active || captured.Result))
+                        throw new InvalidOperationException("managed-work-captured-parent-retired");
+                    // The captured-context accessor can reenter Schedule/Unwrap
+                    // without using this queue, so its result invalidates Find.
+                    owner = Find(item);
+                    if (owner is { Active: false } or { Result: true })
+                        throw new InvalidOperationException(owner.Timer
+                            ? "managed-timer-settlement-uncertain" : "managed-work-owner-retired");
+                    if (owner is null)
+                    {
+                        if (Maintenance(item)) owner = root!;
+                        else if (RequiredContinuation(item) && captured is not null) owner = captured;
+                        else
+                        {
+                            var parent = captured ?? Parent();
+                            if (closing && (parent is null || parent.Root))
+                                throw new InvalidOperationException("managed-work-independent-admission-closed");
+                            owner = Admit(item, null, parent, out created, false, pending);
+                        }
+                    }
+                }
+                if (!created && (!owner.Active || owner.Result))
+                    throw new InvalidOperationException(owner.Timer
+                        ? "managed-timer-settlement-uncertain" : "managed-work-owner-retired");
+                pending.Owner = owner;
+                var queueToken = reserve!(QueuedKind, owner.Token.Generation, owner.Token.Id);
+                pending.Token = queueToken;
+                if (queueToken == default)
+                {
+                    var timer = owner.Timer ? FindTimer(item) : null;
+                    if (timer is not null && timer.Mutation >= 0 && timer.Accepted > 0)
+                    {
+                        timer.Accepted--; queued[index] = null;
+                    }
+                    else if (!owner.Timer && !created) queued[index] = null;
+                    else if (created && !owner.Active)
+                    {
+                        // This owner has never been logically active. Settle it
+                        // once; keep both records if that outcome is uncertain.
+                        int slot = -1;
+                        for (int i = 1; i < MaximumRecords; i++)
+                            if (ReferenceEquals(records![i], owner)) { slot = i; break; }
+                        if (slot >= 0)
+                            try
+                            {
+                                settle!(owner.Token.Generation, owner.Token.Id);
+                                if (ReferenceEquals(records![slot], owner) && ReferenceEquals(queued[index], pending))
+                                { records[slot] = null; queued[index] = null; }
+                            }
+                            catch { } // Retain the inactive owner and original refusal.
+                    }
+                    throw new InvalidOperationException("managed-work-admission-refused");
+                }
+                if (queueToken.Generation == 0 || queueToken.Id == 0)
+                    throw new InvalidOperationException("managed-work-reservation-token");
+                if (created) owner.Active = true;
+                pending.State = 4;
                 return pending;
             }
-            catch { settle!(token.Generation, token.Id); throw; }
+            catch
+            {
+                if (pending.Owner is null && ReferenceEquals(queued[index], pending)) queued[index] = null;
+                throw;
+            }
         }
-        catch
-        {
-            if (created) Release(owner);
-            throw;
-        }
+        finally { admissions--; }
     }
 
     public static void EnqueueFinalized(object? ticket, int outcome)
@@ -396,7 +497,11 @@ public static partial class ManagedWorkRuntime
 
     public static object? EnterDispatch(object item)
     {
-        if (installed && item is Task task && task.IsCompleted) return current!.Value;
+        if (installed && item is Task task && task.IsCompleted)
+        {
+            if (Find(item) is { Active: false }) throw new InvalidOperationException("managed-work-execution-parent");
+            return current!.Value;
+        }
         return Enter(item);
     }
 
@@ -410,6 +515,7 @@ public static partial class ManagedWorkRuntime
         if (!installed) return;
         var owner = Find(item);
         if (owner is { Timer: true }) { TryRetireTimer(FindTimer(owner.Primary)!); return; }
+        if (owner is { Active: false }) throw new InvalidOperationException("managed-work-double-settle");
         if (owner is not null && owner.Completion is null && !owner.Root)
         {
             owner.CallbackDone = true;
@@ -421,6 +527,7 @@ public static partial class ManagedWorkRuntime
     {
         if (!installed) return;
         var owner = Find(task);
+        if (owner is { Active: false }) throw new InvalidOperationException("managed-work-double-settle");
         if (owner is null || owner.Root || owner.Result || !ReferenceEquals(owner.Completion, task)) return;
         if (HasRequired(owner)) return;
         Finish(owner);
@@ -429,9 +536,10 @@ public static partial class ManagedWorkRuntime
     public static void Observed(Task task)
     {
         if (!installed) return;
+        var owner = Find(task);
+        if (owner is { Active: false }) throw new InvalidOperationException("managed-work-double-settle");
         foreach (var pending in required!)
             if (pending is not null && ReferenceEquals(pending.Task, task)) pending.Observed = true;
-        var owner = Find(task);
         if (owner is not null && ReferenceEquals(owner.Completion, task))
         {
             owner.Observed = true;
@@ -505,7 +613,9 @@ public static partial class ManagedWorkRuntime
 
     public static void JoinAcceptedWork()
     {
-        if (!installed || closing) throw new InvalidOperationException("managed-work-closing-state");
+        if (!installed) throw new InvalidOperationException("managed-work-closing-state");
+        if (admissions != 0) throw new InvalidOperationException("managed-work-admission-in-progress");
+        if (closing) throw new InvalidOperationException("managed-work-closing-state");
         closing = true;
         close!();
         for (;;)
@@ -558,7 +668,9 @@ public static partial class ManagedWorkRuntime
 
     public static void FinishedPhysicalDrain()
     {
-        if (!installed || !closing) throw new InvalidOperationException("managed-work-finalization-state");
+        if (!installed) throw new InvalidOperationException("managed-work-finalization-state");
+        if (admissions != 0) throw new InvalidOperationException("managed-work-admission-in-progress");
+        if (!closing) throw new InvalidOperationException("managed-work-finalization-state");
         var finalRoot = root ?? throw new InvalidOperationException("managed-work-finalization-state");
         if (!finalRoot.Active) throw new InvalidOperationException("managed-work-finalization-uncertain");
         foreach (var owner in records!) if (owner is not null && !owner.Root)

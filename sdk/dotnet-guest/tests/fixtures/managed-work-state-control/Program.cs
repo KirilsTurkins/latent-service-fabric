@@ -4,6 +4,11 @@ using System.Text.Json;
 internal static class StateControl
 {
     internal static readonly Queue<Action> Work = new();
+    internal static bool FailQueueAllocation;
+    internal static readonly OutOfMemoryException QueueAllocationFailure = new("control-queue-allocation-failed");
+    internal static Action? QueueAllocationCallback;
+    internal static Action? RecordAllocationCallback;
+    private static Action? QueueReserveCallback;
     private static readonly Dictionary<ulong, int> Owners = new();
     private static readonly int[] Limits = [4, 1, 1, 1, 2, 2, 2, 1];
     private static ulong sequence = uint.MaxValue;
@@ -14,6 +19,14 @@ internal static class StateControl
     private static ulong settlementRefusal;
     private static bool settlementUnknown;
     private static int refusedSettlements;
+    private static int unknownReservationKind = -1;
+    private static ulong unknownReservationToken;
+    private static int malformedReservationKind = -1;
+    private static bool malformedGeneration;
+    private static readonly InvalidOperationException UnknownReservation = new("control-original-reservation-unknown");
+    private static bool failOwnerRollback, unknownOwnerRollback;
+    private static ulong rollbackOwner;
+    private static int ownerRollbackAttempts;
     private static int controlDispatches;
     private static bool rootJoinReturned;
     private static bool rootSettlementControl, multipleConversionControl;
@@ -37,16 +50,43 @@ internal static class StateControl
         Need(0 <= kind && kind < Limits.Length);
         if ((generation, id) != (0UL, 0UL)) Need(generation == 17 && Owners.ContainsKey(id));
         if (closing) Need(generation == 17 && Owners.ContainsKey(id));
-        if (Count(kind) >= Limits[kind]) throw new InvalidOperationException("control-ledger-capacity");
+        if (kind == 3 && QueueReserveCallback is { } callback)
+        { QueueReserveCallback = null; callback(); }
+        if (kind == 3 && failOwnerRollback)
+        {
+            rollbackOwner = Owners.Single(entry => entry.Value == 0 && entry.Key != context.Item2).Key;
+            return default; // Explicit selected-bridge WIT refusal.
+        }
+        if (Count(kind) >= Limits[kind])
+        {
+            if (kind is 0 or 3) return default;
+            throw new InvalidOperationException("control-ledger-capacity");
+        }
         ulong key = checked(++sequence);
         Owners.Add(key, kind);
         maximumTasks = Math.Max(maximumTasks, Count(0)); maximumResults = Math.Max(maximumResults, Count(6));
+        if (kind == unknownReservationKind)
+        {
+            unknownReservationToken = key;
+            throw UnknownReservation;
+        }
+        if (kind == malformedReservationKind)
+        {
+            unknownReservationToken = key;
+            return malformedGeneration ? (0UL, key) : (17UL, 0UL);
+        }
         return (17, key);
     }
     private static void Settle(ulong generation, ulong id)
     {
         if (id == rootIdentifier) rootSettlements++;
         if (id == storageIdentifier) storageSettlements++;
+        if (failOwnerRollback && id == rollbackOwner)
+        {
+            ownerRollbackAttempts++;
+            if (unknownOwnerRollback) Need(Owners.Remove(id));
+            throw new InvalidOperationException("control-owner-rollback-failed");
+        }
         if (id == settlementRefusal)
         {
             Need(generation == 17 && id > uint.MaxValue);
@@ -321,6 +361,274 @@ internal static class StateControl
         Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
         Need(Count(0) == 2 && Count(3) == 0 && Owners.ContainsKey(owner));
     }
+    private static void PreTicketUnknownReservationControl(bool queue)
+    {
+        unknownReservationKind = queue ? 3 : 0;
+        bool observedOriginal = false;
+        try { ManagedWorkRuntime.Enqueue(new object()); }
+        catch (InvalidOperationException error) when (ReferenceEquals(error, UnknownReservation)) { observedOriginal = true; }
+        Need(observedOriginal && unknownReservationToken != 0 && Owners.ContainsKey(unknownReservationToken));
+        try { ManagedWorkRuntime.JoinAcceptedWork(); rootJoinReturned = true; }
+        catch (InvalidOperationException) { }
+        Need(!rootJoinReturned);
+        try { ManagedWorkRuntime.FinishedPhysicalDrain(); rootFinalizationReturned = true; }
+        catch (InvalidOperationException) { }
+        Need(!rootFinalizationReturned && Owners.ContainsKey(unknownReservationToken));
+    }
+    private static void PreTicketRollbackFailureControl(bool unknown)
+    {
+        failOwnerRollback = true; unknownOwnerRollback = unknown;
+        Refuses(() => ManagedWorkRuntime.Enqueue(new object()), "managed-work-admission-refused");
+        try { ManagedWorkRuntime.JoinAcceptedWork(); rootJoinReturned = true; }
+        catch (InvalidOperationException) { }
+        Need(!rootJoinReturned && !rootFinalizationReturned && ownerRollbackAttempts == 1);
+    }
+    private static void PreTicketBorrowedOwnerControl()
+    {
+        var source = Pending(); ManagedWorkRuntime.Schedule(source.Task);
+        unknownReservationKind = 3;
+        bool observedOriginal = false;
+        try { ManagedWorkRuntime.Enqueue(source.Task); }
+        catch (InvalidOperationException error) when (ReferenceEquals(error, UnknownReservation)) { observedOriginal = true; }
+        Need(observedOriginal && Owners.ContainsKey(unknownReservationToken));
+        source.SetResult(1); ManagedWorkRuntime.Completed(source.Task);
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-queue");
+        Need(Owners.ContainsKey(unknownReservationToken));
+    }
+    private static void TaskAdmissionUnknownControl(bool unwrap)
+    {
+        var promise = Pending(); var outer = Pending();
+        unknownReservationKind = 0;
+        bool observedOriginal = false;
+        try
+        {
+            if (unwrap) ManagedWorkRuntime.Unwrap(promise.Task, outer.Task);
+            else ManagedWorkRuntime.Schedule(promise.Task);
+        }
+        catch (InvalidOperationException error) when (ReferenceEquals(error, UnknownReservation)) { observedOriginal = true; }
+        Need(observedOriginal && unknownReservationToken != 0 && Owners.ContainsKey(unknownReservationToken));
+        Refuses(() => ManagedWorkRuntime.Schedule(promise.Task), "managed-work-owner-retired");
+        Refuses(() => ManagedWorkRuntime.Unwrap(promise.Task, outer.Task), "managed-work-owner-retired");
+        Refuses(() => ManagedWorkRuntime.Inner(promise.Task, outer.Task), "managed-work-owner-retired");
+        Refuses(() => ManagedWorkRuntime.Enqueue(promise.Task), "managed-work-owner-retired");
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+        Need(Owners.ContainsKey(unknownReservationToken));
+    }
+    private static void PreTicketAllocationFailureControl()
+    {
+        FailQueueAllocation = true;
+        bool observedOriginal = false;
+        try { ManagedWorkRuntime.Enqueue(new object()); }
+        catch (OutOfMemoryException error) when (ReferenceEquals(error, QueueAllocationFailure)) { observedOriginal = true; }
+        Need(observedOriginal && Count(0) == 1 && Count(3) == 0);
+        Finish();
+    }
+    private sealed class ContextItem(Action callback) : ManagedWorkRuntime.ContextSource
+    {
+        public ExecutionContext? CapturedContext() { callback(); return null; }
+    }
+    private sealed class ContextTask(Action<ContextTask> callback, bool fault = false)
+        : Task(() => { if (fault) throw new InvalidOperationException("control-reentrant-task-fault"); }), ManagedWorkRuntime.ContextSource
+    {
+        public ExecutionContext? CapturedContext() { callback(this); return null; }
+    }
+    private static void ContextReentryQueueControl(bool failure)
+    {
+        Limits[3] = 2; object other = new();
+        var original = new InvalidOperationException("control-original-context-failure");
+        var item = new ContextItem(() => { Enqueue(other); if (failure) throw original; });
+        if (failure)
+        {
+            bool observedOriginal = false;
+            try { Enqueue(item); }
+            catch (InvalidOperationException error) when (ReferenceEquals(error, original)) { observedOriginal = true; }
+            Need(observedOriginal && Count(3) == 1 && ManagedWorkRuntime.QueuedTokenForControl(item) is null);
+        }
+        else
+        {
+            Enqueue(item);
+            Need(Count(3) == 2 && ManagedWorkRuntime.QueuedTokenForControl(item) is { } current
+                && ManagedWorkRuntime.QueuedTokenForControl(other) is { } nested && current != nested);
+            ManagedWorkRuntime.Dequeue(item); ManagedWorkRuntime.CallbackCompleted(item);
+        }
+        ManagedWorkRuntime.Dequeue(other); ManagedWorkRuntime.CallbackCompleted(other); Finish();
+    }
+    private static void ContextReentryTaskControl(bool unwrap)
+    {
+        var outer = Pending();
+        var task = new ContextTask(item =>
+        {
+            if (unwrap) ManagedWorkRuntime.Unwrap(item, outer.Task);
+            else ManagedWorkRuntime.Schedule(item);
+        });
+        Enqueue(task);
+        Need(Count(0) == 2 && Count(3) == 1);
+        ManagedWorkRuntime.Dequeue(task); task.RunSynchronously(); ManagedWorkRuntime.Completed(task); Finish();
+    }
+    private static void ContextReentrySameItemControl()
+    {
+        ContextItem? item = null;
+        item = new ContextItem(() => Refuses(() => Enqueue(item!), "managed-work-queue-uncertain"));
+        Enqueue(item); Need(Count(3) == 1);
+        ManagedWorkRuntime.Dequeue(item); ManagedWorkRuntime.CallbackCompleted(item); Finish();
+    }
+    private static void ContextReentryResultControl()
+    {
+        var task = new ContextTask(item =>
+        {
+            ManagedWorkRuntime.Schedule(item); item.RunSynchronously(); ManagedWorkRuntime.Completed(item);
+        }, fault: true);
+        Refuses(() => Enqueue(task), "managed-work-owner-retired");
+        Need(Count(0) == 1 && Count(6) == 1 && Count(3) == 0);
+        ManagedWorkRuntime.Observed(task); Finish();
+    }
+    private static void ContextReentryDrainControl()
+    {
+        var item = new ContextItem(() =>
+        {
+            Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-admission-in-progress");
+            Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-admission-in-progress");
+        });
+        Enqueue(item); ManagedWorkRuntime.Dequeue(item); ManagedWorkRuntime.CallbackCompleted(item); Finish();
+    }
+    private static void DormantOwnerRefusalControl()
+    {
+        Limits[3] = 0;
+        Task item = Task.FromResult(9); var outer = Pending();
+        QueueReserveCallback = () =>
+        {
+            Refuses(() => ManagedWorkRuntime.Schedule(item), "managed-work-owner-retired");
+            Refuses(() => ManagedWorkRuntime.Unwrap(item, outer.Task), "managed-work-owner-retired");
+            Refuses(() => ManagedWorkRuntime.Inner(item, outer.Task), "managed-work-owner-retired");
+            Refuses(() => ManagedWorkRuntime.Enter(item), "managed-work-execution-parent");
+            Refuses(() => ManagedWorkRuntime.EnterDispatch(item), "managed-work-execution-parent");
+            Refuses(() => ManagedWorkRuntime.BindContext(ExecutionContext.Capture(), item), "managed-work-context-owner");
+            Refuses(() => ManagedWorkRuntime.ContinuationFailed(item), "managed-work-double-settle");
+            Refuses(() => ManagedWorkRuntime.Completed(item), "managed-work-double-settle");
+            Refuses(() => ManagedWorkRuntime.Observed(item), "managed-work-double-settle");
+            Refuses(() => ManagedWorkRuntime.CallbackCompleted(item), "managed-work-double-settle");
+            Refuses(() => ManagedWorkRuntime.Dequeue(item), "managed-work-queue-uncertain");
+        };
+        Refuses(() => Enqueue(item), "managed-work-admission-refused");
+        Need(Count(0) == 1 && Count(3) == 0); Finish();
+    }
+    private static void QueueAllocationReentryControl()
+    {
+        object item = new();
+        QueueAllocationCallback = () => Enqueue(item);
+        Refuses(() => Enqueue(item), "managed-work-duplicate-enqueue");
+        Need(Count(0) == 2 && Count(3) == 1);
+        ManagedWorkRuntime.Dequeue(item); ManagedWorkRuntime.CallbackCompleted(item); Finish();
+    }
+    private static void RecordAllocationReentryControl(bool sameItem, bool result)
+    {
+        Task item = new(() => { if (result) throw new InvalidOperationException("control-record-reentry-fault"); });
+        var other = Pending();
+        RecordAllocationCallback = () =>
+        {
+            if (sameItem || result) ManagedWorkRuntime.Schedule(item);
+            else ManagedWorkRuntime.Schedule(other.Task);
+            if (result) { item.RunSynchronously(); ManagedWorkRuntime.Completed(item); }
+        };
+        if (result)
+        {
+            Refuses(() => Enqueue(item), "managed-work-owner-retired");
+            Need(Count(0) == 1 && Count(6) == 1 && Count(3) == 0);
+            ManagedWorkRuntime.Observed(item); Finish(); return;
+        }
+        Enqueue(item);
+        Need(Count(0) == (sameItem ? 2 : 3) && Count(3) == 1);
+        ManagedWorkRuntime.Dequeue(item); item.RunSynchronously();
+        if (sameItem) ManagedWorkRuntime.Completed(item); else ManagedWorkRuntime.CallbackCompleted(item);
+        if (!sameItem) Complete(other);
+        Finish();
+    }
+    private static void ScheduleAllocationReentryControl()
+    {
+        Task item = new(() => { });
+        RecordAllocationCallback = () => ManagedWorkRuntime.Schedule(item);
+        ManagedWorkRuntime.Schedule(item); Need(Count(0) == 2);
+        item.RunSynchronously(); ManagedWorkRuntime.Completed(item); Finish();
+    }
+    private static void RecordAllocationParentControl(bool result)
+    {
+        var pending = Pending(); object parentItem;
+        if (result)
+        {
+            ManagedWorkRuntime.Schedule(pending.Task); parentItem = pending.Task;
+        }
+        else
+        {
+            parentItem = new object(); Enqueue(parentItem); ManagedWorkRuntime.Dequeue(parentItem);
+        }
+        var previous = ManagedWorkRuntime.Enter(parentItem);
+        RecordAllocationCallback = () =>
+        {
+            if (result) { pending.SetException(new ArgumentException("control-parent-fault")); ManagedWorkRuntime.Completed(pending.Task); }
+            else ManagedWorkRuntime.CallbackCompleted(parentItem);
+        };
+        Refuses(() => ManagedWorkRuntime.Schedule(Pending().Task), "managed-work-parent-retired");
+        ManagedWorkRuntime.Exit(previous);
+        if (result) ManagedWorkRuntime.Observed(pending.Task);
+        Need(Count(0) == 1 && Count(6) == 0); Finish();
+    }
+    private static void RecordAllocationClosingControl()
+    {
+        RecordAllocationCallback = () =>
+        {
+            Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-admission-in-progress");
+            Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-admission-in-progress");
+        };
+        var pending = Pending(); ManagedWorkRuntime.Schedule(pending.Task);
+        Complete(pending); Finish();
+    }
+    private static void AllocationFinalizationControl(string operation)
+    {
+        ulong originalRoot = context.Item2;
+        bool admissionFenced = false;
+        void Reenter()
+        {
+            try
+            {
+                ManagedWorkRuntime.JoinAcceptedWork();
+                ManagedWorkRuntime.FinishedPhysicalDrain();
+                closing = false; Begin(); // A fresh activation must not replace the original.
+            }
+            catch (InvalidOperationException error) when (error.Message == "managed-work-admission-in-progress")
+            { admissionFenced = true; }
+            Need(admissionFenced && context.Item2 == originalRoot);
+            Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-admission-in-progress");
+            Refuses(Begin, "managed-work-installation");
+        }
+        if (operation == "queue")
+        {
+            object item = new(); QueueAllocationCallback = Reenter;
+            Enqueue(item); ManagedWorkRuntime.Dequeue(item); ManagedWorkRuntime.CallbackCompleted(item);
+        }
+        else
+        {
+            var promise = Pending(); var outer = Pending(); RecordAllocationCallback = Reenter;
+            if (operation == "schedule") ManagedWorkRuntime.Schedule(promise.Task);
+            else ManagedWorkRuntime.Unwrap(promise.Task, outer.Task);
+            Complete(promise);
+        }
+        Need(admissionFenced && context.Item2 == originalRoot); Finish();
+    }
+    private static void PreTicketMalformedReservationControl(bool queue, bool generation)
+    {
+        malformedReservationKind = queue ? 3 : 0;
+        malformedGeneration = generation;
+        Refuses(() => ManagedWorkRuntime.Enqueue(new object()), "managed-work-reservation-token");
+        Need(unknownReservationToken != 0 && Owners.ContainsKey(unknownReservationToken));
+        try { ManagedWorkRuntime.JoinAcceptedWork(); rootJoinReturned = true; }
+        catch (InvalidOperationException) { }
+        Need(!rootJoinReturned);
+        try { ManagedWorkRuntime.FinishedPhysicalDrain(); rootFinalizationReturned = true; }
+        catch (InvalidOperationException) { }
+        Need(!rootFinalizationReturned && Owners.ContainsKey(unknownReservationToken));
+    }
     private static void Run(string name)
     {
         if (name == "untracked-startup-refused-before-admission")
@@ -328,13 +636,44 @@ internal static class StateControl
             Work.Enqueue(() => { }); Refuses(Begin, "managed-work-untracked-startup-work");
             Need(Owners.Count == 0); return;
         }
+        if (name == "root-task-refusal-fences-reinstallation")
+        {
+            Limits[0] = 0;
+            Refuses(Begin, "managed-work-admission-refused");
+            Need(Owners.Count == 0 && Count(7) == 0);
+            Refuses(Begin, "managed-work-installation");
+            Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-state");
+            return;
+        }
+        if (name == "root-task-unknown-fences-reinstallation")
+        {
+            unknownReservationKind = 0;
+            bool observedOriginal = false;
+            try { Begin(); }
+            catch (InvalidOperationException error) when (ReferenceEquals(error, UnknownReservation)) { observedOriginal = true; }
+            Need(observedOriginal && unknownReservationToken != 0
+                && Owners.ContainsKey(unknownReservationToken) && Count(7) == 0);
+            Refuses(Begin, "managed-work-installation");
+            Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-state");
+            return;
+        }
+        if (name is "root-task-malformed-generation-fences-reinstallation" or "root-task-malformed-id-fences-reinstallation")
+        {
+            malformedReservationKind = 0;
+            malformedGeneration = name.Contains("generation");
+            Refuses(Begin, "managed-work-reservation-token");
+            Need(unknownReservationToken != 0 && Owners.ContainsKey(unknownReservationToken) && Count(7) == 0);
+            Refuses(Begin, "managed-work-installation");
+            Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-state");
+            return;
+        }
         Begin();
         switch (name)
         {
             case "native-task-admission": {
                 Limits[0] = 2;
                 var first = Pending(); ManagedWorkRuntime.Schedule(first.Task);
-                Refuses(() => ManagedWorkRuntime.Schedule(Pending().Task), "control-ledger-capacity");
+                Refuses(() => ManagedWorkRuntime.Schedule(Pending().Task), "managed-work-admission-refused");
                 Need(Count(0) == 2); Complete(first); Finish(); break;
             }
             case "unwrap-inner-actual-completion": {
@@ -348,11 +687,13 @@ internal static class StateControl
             }
             case "queued-admission-rollback": {
                 object first = new(), second = new(); Enqueue(first);
-                Refuses(() => Enqueue(second), "control-ledger-capacity");
+                Refuses(() => Enqueue(second), "managed-work-admission-refused");
                 Need(Count(0) == 2 && Count(3) == 1);
                 ManagedWorkRuntime.Dequeue(first); var previous = ManagedWorkRuntime.Enter(first);
                 try { Need(Count(0) == 2 && Count(3) == 0); }
                 finally { ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.CallbackCompleted(first); }
+                object fresh = new(); Enqueue(fresh); ManagedWorkRuntime.Dequeue(fresh);
+                ManagedWorkRuntime.CallbackCompleted(fresh);
                 Finish(); break;
             }
             case "enqueue-failure-retains-uncertain-owners": {
@@ -381,6 +722,37 @@ internal static class StateControl
             }
             case "enqueue-before-insertion-retains-reentrant-work": BeforeInsertionReentrantControl(false); break;
             case "enqueue-before-insertion-retains-captured-context": BeforeInsertionReentrantControl(true); break;
+            case "pre-ticket-queue-reservation-unknown-fences-drain": PreTicketUnknownReservationControl(true); break;
+            case "pre-ticket-task-reservation-unknown-fences-drain": PreTicketUnknownReservationControl(false); break;
+            case "pre-ticket-borrowed-owner-unknown-fences-drain": PreTicketBorrowedOwnerControl(); break;
+            case "schedule-unknown-reservation-fences-retry": TaskAdmissionUnknownControl(false); break;
+            case "unwrap-unknown-reservation-fences-retry": TaskAdmissionUnknownControl(true); break;
+            case "pre-ticket-owner-rollback-refusal-preserves-error": PreTicketRollbackFailureControl(false); break;
+            case "pre-ticket-owner-rollback-unknown-preserves-error": PreTicketRollbackFailureControl(true); break;
+            case "pre-ticket-queue-allocation-fails-before-owner": PreTicketAllocationFailureControl(); break;
+            case "queue-allocation-reentry-before-scan": QueueAllocationReentryControl(); break;
+            case "context-reentry-keeps-other-queued-item": ContextReentryQueueControl(false); break;
+            case "context-reentry-error-keeps-other-queued-item": ContextReentryQueueControl(true); break;
+            case "context-reentry-reuses-scheduled-task": ContextReentryTaskControl(false); break;
+            case "context-reentry-reuses-unwrapped-task": ContextReentryTaskControl(true); break;
+            case "context-reentry-same-item-is-fenced": ContextReentrySameItemControl(); break;
+            case "context-reentry-result-owner-is-fenced": ContextReentryResultControl(); break;
+            case "context-reentry-drain-fences-null-owner": ContextReentryDrainControl(); break;
+            case "queue-refusal-dormant-owner-fences-entry": DormantOwnerRefusalControl(); break;
+            case "record-allocation-reuses-same-task": RecordAllocationReentryControl(true, false); break;
+            case "record-allocation-preserves-other-task": RecordAllocationReentryControl(false, false); break;
+            case "record-allocation-fences-result-owner": RecordAllocationReentryControl(false, true); break;
+            case "schedule-allocation-reuses-same-task": ScheduleAllocationReentryControl(); break;
+            case "record-allocation-retired-parent-is-fenced": RecordAllocationParentControl(false); break;
+            case "record-allocation-result-parent-is-fenced": RecordAllocationParentControl(true); break;
+            case "record-allocation-closing-root-is-fenced": RecordAllocationClosingControl(); break;
+            case "queue-allocation-finalization-is-fenced": AllocationFinalizationControl("queue"); break;
+            case "schedule-allocation-finalization-is-fenced": AllocationFinalizationControl("schedule"); break;
+            case "unwrap-allocation-finalization-is-fenced": AllocationFinalizationControl("unwrap"); break;
+            case "pre-ticket-queue-malformed-generation-fences-drain": PreTicketMalformedReservationControl(true, true); break;
+            case "pre-ticket-queue-malformed-id-fences-drain": PreTicketMalformedReservationControl(true, false); break;
+            case "pre-ticket-task-malformed-generation-fences-drain": PreTicketMalformedReservationControl(false, true); break;
+            case "pre-ticket-task-malformed-id-fences-drain": PreTicketMalformedReservationControl(false, false); break;
             case "queue-before-insertion-refusal-retains-owner": BeforeInsertionSettlementControl(false); break;
             case "queue-before-insertion-unknown-retains-owner": BeforeInsertionSettlementControl(true); break;
             case "queue-dequeue-refusal-prevents-retry": QueueSettlementControl(false); break;
