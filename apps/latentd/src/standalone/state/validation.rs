@@ -84,11 +84,16 @@ pub(super) fn validate(
         tenant::INSTALLED_GLOBAL_ALLOWANCE,
         original.original_deadline(),
     )?;
-    latent_commit::atomic::validate_view_observed(view, foreign_row, |view, key, bytes| {
-        live(original)?;
-        reject_unverified_payload(key, bytes)?;
-        census.observe(key, bytes, contribution(view, key, bytes)?)
-    })?;
+    latent_commit::atomic::validate_view_observed_with_checkpoint(
+        view,
+        foreign_row,
+        |view, key, bytes| {
+            live(original)?;
+            reject_unverified_payload(key, bytes)?;
+            census.observe(key, bytes, contribution(view, key, bytes)?)
+        },
+        || live(original),
+    )?;
     census.finish()?;
     live(original)?;
     DispatchCatalog::validate_view(view)?;
@@ -109,26 +114,31 @@ fn validate_global_bootstrap(
     }
     let mut rows = 0_u64;
     let mut bytes = 0_u64;
-    latent_commit::atomic::validate_view_observed(view, foreign_row, |view, key, value| {
-        live(original)?;
-        reject_unverified_payload(key, value)?;
-        if !matches!(
-            contribution(view, key, value)?,
-            TenantCensusContribution::Global
-        ) {
-            return Err(StoreError::UnsupportedFormat);
-        }
-        rows = rows.checked_add(1).ok_or(StoreError::Capacity)?;
-        bytes = bytes
-            .checked_add(tenant::row_charge(key, value)?)
-            .ok_or(StoreError::Capacity)?;
-        if rows > tenant::INSTALLED_GLOBAL_ALLOWANCE.rows
-            || bytes > tenant::INSTALLED_GLOBAL_ALLOWANCE.bytes
-        {
-            return Err(StoreError::Capacity);
-        }
-        Ok(())
-    })?;
+    latent_commit::atomic::validate_view_observed_with_checkpoint(
+        view,
+        foreign_row,
+        |view, key, value| {
+            live(original)?;
+            reject_unverified_payload(key, value)?;
+            if !matches!(
+                contribution(view, key, value)?,
+                TenantCensusContribution::Global
+            ) {
+                return Err(StoreError::UnsupportedFormat);
+            }
+            rows = rows.checked_add(1).ok_or(StoreError::Capacity)?;
+            bytes = bytes
+                .checked_add(tenant::row_charge(key, value)?)
+                .ok_or(StoreError::Capacity)?;
+            if rows > tenant::INSTALLED_GLOBAL_ALLOWANCE.rows
+                || bytes > tenant::INSTALLED_GLOBAL_ALLOWANCE.bytes
+            {
+                return Err(StoreError::Capacity);
+            }
+            Ok(())
+        },
+        || live(original),
+    )?;
     live(original)?;
     DispatchCatalog::validate_view(view)?;
     live(original)
