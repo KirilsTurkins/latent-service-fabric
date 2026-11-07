@@ -11,6 +11,9 @@ internal static class TimerControl
     private static bool closing;
     private static (ulong, ulong) context;
     private static int admissions;
+    private static ulong failingSettlement;
+    private static bool failAfterSettlement;
+    private static int timerSettlementAttempts;
     private static int Count(int kind) => Owners.Values.Count(value => value == kind);
     private static void Need(bool value)
     { if (!value) throw new InvalidOperationException("timer-control-assertion"); }
@@ -29,7 +32,16 @@ internal static class TimerControl
         admissions++; ulong key = checked(++sequence); Owners.Add(key, kind); return (19, key);
     }
     private static void Settle(ulong generation, ulong id)
-    { Need(generation == 19 && id > uint.MaxValue && Owners.Remove(id)); }
+    {
+        Need(generation == 19 && id > uint.MaxValue);
+        if (id == failingSettlement)
+        {
+            timerSettlementAttempts++;
+            if (failAfterSettlement) Need(Owners.Remove(id));
+            throw new InvalidOperationException("control-timer-settlement-failed");
+        }
+        Need(Owners.Remove(id));
+    }
     internal static void Step() { Need(Work.Count != 0); Work.Dequeue()(); }
     private static void Begin() => ManagedWorkRuntime.Install(Reserve, Settle,
         () => closing = true, (generation, id) => context = (generation, id));
@@ -50,6 +62,29 @@ internal static class TimerControl
         var previous = ManagedWorkRuntime.TimerEnter(item);
         try { item.Callbacks++; callback(); item.Callbacks--; }
         finally { ManagedWorkRuntime.TimerLeave(item, previous); }
+    }
+    private static void SettlementControl(int mode)
+    {
+        var item = Arm(); ManagedWorkRuntime.TimerAccepted(item); Disarm(item);
+        var outer = context;
+        var previous = ManagedWorkRuntime.TimerEnter(item);
+        failingSettlement = context.Item2;
+        Need(failingSettlement != 0 && context != outer && Count(5) == 1);
+        failAfterSettlement = mode == 2;
+        Refuses(() => ManagedWorkRuntime.TimerLeave(item, previous), "control-timer-settlement-failed");
+        if (mode == 0)
+        {
+            Need(context == outer && Count(5) == 1 && timerSettlementAttempts == 1);
+            return;
+        }
+        Refuses(() => ManagedWorkRuntime.TimerDeleted(item), "managed-timer-settlement-uncertain");
+        Refuses(() => ManagedWorkRuntime.TimerChanging(item), "managed-timer-settlement-uncertain");
+        Refuses(() => ManagedWorkRuntime.TimerChanged(item), "managed-timer-settlement-uncertain");
+        Refuses(() => ManagedWorkRuntime.TimerAccepted(item), "managed-timer-settlement-uncertain");
+        Refuses(() => { ManagedWorkRuntime.TimerEnter(item); }, "managed-timer-settlement-uncertain");
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-timer-settlement-uncertain");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-timers");
+        Need(context == outer && timerSettlementAttempts == 1 && Count(5) == (failAfterSettlement ? 0 : 1));
     }
     private static void Run(string name)
     {
@@ -131,6 +166,9 @@ internal static class TimerControl
                 Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
                 Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-timers"); break;
             }
+            case "timer-settlement-refusal-restores-context": SettlementControl(0); break;
+            case "timer-settlement-refusal-prevents-retry": SettlementControl(1); break;
+            case "timer-settlement-unknown-outcome-prevents-retry": SettlementControl(2); break;
             case "timer-structural-bound-before-ledger": {
                 Limits[5] = 32; var items = Enumerable.Range(0, 32).Select(_ => Arm()).ToArray();
                 int before = admissions; Refuses(() => Arm(), "managed-timer-record-limit");
