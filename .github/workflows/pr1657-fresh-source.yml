@@ -1,0 +1,153 @@
+name: PR 1657 fresh corrected combined compiler
+on:
+  push:
+    branches: ['diag/pr1657-fresh-source-20261107']
+permissions:
+  contents: read
+concurrency:
+  group: pr1657-fresh-source-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: 27164664b222bc52c88371a2225d147b3f8c020e
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
+        with:
+          python-version: 3.13.5
+      - name: Retain exact tracked source without benchmark datasets or credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/pr1657-source"
+          git rev-parse HEAD > "$RUNNER_TEMP/pr1657-source/commit.txt"
+          git ls-tree -r HEAD > "$RUNNER_TEMP/pr1657-source/tree.txt"
+          python3 - <<'PY'
+          import os, subprocess
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP']) / 'pr1657-source'
+          names = subprocess.check_output(['git', 'ls-tree', '--name-only', 'HEAD']).decode().splitlines()
+          names = [name for name in names if name != 'benchmarks']
+          subprocess.run(['git', 'archive', '--format=tar.gz', '-o', str(root / 'source.tar.gz'), 'HEAD', *names], check=True)
+          assert (root / 'source.tar.gz').stat().st_size <= 64 * 1024 * 1024
+          PY
+      - name: Validate registered targets and maintained source contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_fragments tools.tests.test_ci_suite_discovery tools.tests.test_rust_thread_http_sibling -v 2>&1 | tee "$RUNNER_TEMP/pr1657-source/controls.txt"
+          python3 -B tools/ci_contracts.py validate --root . 2>&1 | tee "$RUNNER_TEMP/pr1657-source/contracts.txt"
+          git diff --check
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        if: always()
+        with:
+          name: pr1657-source-27164664
+          path: ${{ runner.temp }}/pr1657-source/**
+          retention-days: 7
+          if-no-files-found: error
+  compiler:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      EXPECTED_HEAD: 27164664b222bc52c88371a2225d147b3f8c020e
+      PYTHONDONTWRITEBYTECODE: '1'
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: 27164664b222bc52c88371a2225d147b3f8c020e
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6
+        with:
+          node-version: 24.19.0
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce
+        with:
+          version: 1.254.0
+      - uses: KirilsTurkins/lsf-setup-zig@e064b42fa88ad0859d8b54838b44f672ffd5ea7a
+        with:
+          version: '0.16.0'
+      - name: Prepare the existing compiler isolation and binding tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/rust-http-thread-tools"
+          echo "$RUNNER_TEMP/rust-http-thread-tools" >> "$GITHUB_PATH"
+      - name: Validate unchanged causal and source provenance controls
+        run: >-
+          python3 -B -m unittest tools.tests.test_rust_thread_http_sibling
+          tools.tests.test_rust_thread_http_sibling_compiler
+          tools.tests.test_rust_thread_http_sibling_retention
+          tools.tests.test_rust_wasi_http_bindgen -v
+      - name: Acquire exact diagnostic-only composer
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/rust-http-thread-composer"
+          curl --fail --location --max-time 180 https://github.com/bytecodealliance/wac/releases/download/v0.11.0/wac-cli-x86_64-unknown-linux-musl --output "$RUNNER_TEMP/rust-http-thread-composer/wac"
+          printf '%s  %s\n' 83259349b630f79a60490322b068e7ad2dba784720b0d467decccc0aecc743b5 "$RUNNER_TEMP/rust-http-thread-composer/wac" | sha256sum --check --strict
+          test "$(stat --format=%s "$RUNNER_TEMP/rust-http-thread-composer/wac")" -eq 22917648
+          chmod 0700 "$RUNNER_TEMP/rust-http-thread-composer/wac"
+      - name: Acquire locked SDK compiler inputs
+        run: cargo fetch --locked --target wasm32-unknown-unknown --target x86_64-unknown-linux-gnu
+      - name: Build current source-bound owned thread compiler inputs
+        run: >-
+          python3 -B tools/compile_rust_owned_thread_inputs.py
+          --expected-head "$EXPECTED_HEAD" --rust-bin "$(dirname "$(rustup which rustc)")"
+          --output "$RUNNER_TEMP/rust-http-thread-owned"
+      - name: Build current corrected callback-safe HTTP backend
+        run: python3 -B tools/rust_wasi_http_inputs.py --output "$RUNNER_TEMP/rust-http-thread-http"
+      - name: Build current source-bound contracts helper
+        run: >-
+          python3 -B tools/rust_thread_http_sibling_contracts.py
+          --expected-head "$EXPECTED_HEAD" --rust-bin "$(dirname "$(rustup which rustc)")"
+          --output "$RUNNER_TEMP/rust-http-thread-contracts"
+      - name: Capture and compile corrected actual application and combined graph
+        run: >-
+          python3 -B tools/compile_rust_thread_http_sibling.py
+          --expected-head "$EXPECTED_HEAD" --rust-bin "$(dirname "$(rustup which rustc)")"
+          --owned-sysroot "$RUNNER_TEMP/rust-http-thread-owned/owned-sysroot"
+          --context-tool "$RUNNER_TEMP/rust-http-thread-owned/tool/rust-context"
+          --owned-report "$RUNNER_TEMP/rust-http-thread-owned/report.json"
+          --owned-source "$RUNNER_TEMP/rust-http-thread-owned/source-inputs.json"
+          --http-runtime "$RUNNER_TEMP/rust-http-thread-http"
+          --diagnostic-composer "$RUNNER_TEMP/rust-http-thread-composer/wac"
+          --contracts-tool "$RUNNER_TEMP/rust-http-thread-contracts/capsule_contracts"
+          --contracts-receipt "$RUNNER_TEMP/rust-http-thread-contracts/report.json"
+          --output "$RUNNER_TEMP/rust-http-thread-combined"
+      - name: Admit only bounded public compiler and source observations
+        if: always()
+        run: >-
+          python3 -B tools/rust_thread_http_sibling_retention.py
+          --root "$RUNNER_TEMP" --output "$RUNNER_TEMP/rust-http-thread-public"
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        if: always()
+        with:
+          name: pr1657-fresh-compiler-27164664
+          path: ${{ runner.temp }}/rust-http-thread-public/**
+          retention-days: 7
+          if-no-files-found: error
