@@ -620,6 +620,59 @@ EventTarget.prototype.removeEventListener=remove;
                 capture_output=True, text=True, timeout=20)
             self.assertEqual(completed.returncode, 0, completed.stdout+completed.stderr)
 
+    def test_default_abort_reason_is_shared_and_thrown_by_each_dependent(self):
+        self.assertEqual(fetch.ABORT_DEFAULT_VECTORS, (
+            ('abort-default-reason', 26, 'abort-default:shared:2:thrown'),
+            ('abort-default-fresh', 26, 'abort-default:shared:2:thrown')))
+        node = shutil.which('node')
+        self.assertIsNotNone(node, 'The pinned Node reference host is required')
+        script = r"""
+import assert from 'node:assert/strict';
+import {readFile, writeFile} from 'node:fs/promises';
+import {stripTypeScriptTypes} from 'node:module';
+import {pathToFileURL} from 'node:url';
+const [fixture, output] = process.argv.slice(2);
+globalThis.fetch=()=>{throw new Error('unexpected-network');};
+for (const name of ['default-client','main']) {
+  const source=stripTypeScriptTypes(await readFile(fixture+'/'+name+'.ts','utf8'));
+  await writeFile(output+'/'+name+'.mjs',source.replace("'./default-client.js'","'./default-client.mjs'"));
+}
+const {api}=await import(pathToFileURL(output+'/main.mjs'));
+const nativeAbort=AbortController.prototype.abort, nativeAny=AbortSignal.any;
+const nativeThrow=AbortSignal.prototype.throwIfAborted, add=AbortSignal.prototype.addEventListener;
+let called=[];
+AbortController.prototype.abort=function(...args) {
+  called.push(args.length===0 ? 'omitted' : args[0]===undefined ? 'undefined' : 'ignored');
+  return nativeAbort.apply(this,args);
+};
+assert.equal(await api.run(26,''),'abort-default:shared:2:thrown');
+assert.deepEqual(called,['omitted','ignored','undefined','ignored']);
+called=[];
+assert.equal(await api.run(26,''),'abort-default:shared:2:thrown');
+assert.deepEqual(called,['omitted','ignored','undefined','ignored']);
+AbortController.prototype.abort=nativeAbort;
+AbortSignal.any=function(signals) {
+  const child=nativeAny.call(this,signals), wrong=new Error('other reason');
+  wrong.name='AbortError';
+  Object.defineProperty(child,'reason',{get(){return child.aborted ? wrong : undefined;}});
+  return child;
+};
+await assert.rejects(api.run(26,''),/abort-default-reason-identity/);
+AbortSignal.any=nativeAny;
+AbortSignal.prototype.throwIfAborted=function() {if(this.aborted) throw new Error('other');};
+await assert.rejects(api.run(26,''),/abort-default-thrown-reason/);
+AbortSignal.prototype.throwIfAborted=nativeThrow;
+AbortSignal.prototype.addEventListener=function() {};
+await assert.rejects(api.run(26,''),/abort-default-reason-identity/);
+AbortSignal.prototype.addEventListener=add;
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root/'control.mjs').write_text(script, encoding='utf-8')
+            completed = subprocess.run([node, str(root/'control.mjs'), str(fetch.ROOT/fetch.FIXTURE), str(root)],
+                capture_output=True, text=True, timeout=20)
+            self.assertEqual(completed.returncode, 0, completed.stdout+completed.stderr)
+
     def test_closed_guest_diagnostics_cannot_replace_signed_success(self):
         for stage in ('request', 'fetch', 'body-before', 'body-json', 'body-after', 'body-repeat', 'serialize'):
             for kind in ('TypeError', 'RangeError', 'Error', 'other'):

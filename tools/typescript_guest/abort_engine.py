@@ -78,8 +78,13 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
         'actual-AbortSignal-native-timer-readiness')
     source = replace_once(source,
         b'  set_reason(cx, self, reason);\n',
-        b'  if (!set_reason(cx, self, reason)) return false;\n',
+        b'  if (!set_reason(cx, self, reason)) return false;\n'
+        b'  RootedValue propagated_reason(cx, AbortSignal::reason(self));\n',
         'abort-root-reason-before-dependent-mutation')
+    source = replace_once(source,
+        b'      set_reason(cx, signal, reason);\n',
+        b'      if (!set_reason(cx, signal, propagated_reason)) return false;\n',
+        'propagate-root-abort-reason-identity-to-dependents')
     source = replace_once(source,
         b'  RootedObject event(cx, Event::create(cx, type_val, JS::NullHandleValue));\n'
         b'  RootedValue event_val(cx, JS::ObjectValue(*event));\n',
@@ -107,6 +112,7 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
         'staticAbortReasonOptional': True,
         'rootAbortFailureWithoutNewDependents': 'propagate-original-failure',
         'rootReasonAllocationFailure': 'return-before-direct-reason-slot-write',
+        'dependentAbortReason': 'rooted-root-reason-identity',
         'abortEventAllocationFailure': 'return-after-original-algorithm-cleanup',
         'dependentAbortAndReasonAllocationFailures': 'not-qualified',
         'timerOrResultOwnerRetirement': 'same-original-host-stop-subtask-drop-acknowledgements',
