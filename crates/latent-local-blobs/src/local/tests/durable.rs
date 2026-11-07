@@ -353,6 +353,7 @@ fn audit_rejects_rebound_view_and_local_mutation_after_a_page() {
         LocalReferenceAudit::begin(&owner, &foreign_view, &scope()),
         Err(LocalBlobError::PermissionDenied)
     ));
+    assert_eq!(owner.inner.work.load(Ordering::Acquire), 0);
     let mut rebound = LocalReferenceAudit::begin(&owner, &view, &scope()).unwrap();
     assert!(matches!(
         rebound.next_page(&owner, &other_view, 1, &|| Ok(())),

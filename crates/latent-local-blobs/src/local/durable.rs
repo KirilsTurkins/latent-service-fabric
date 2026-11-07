@@ -96,10 +96,12 @@ pub struct LocalReferenceAudit {
 }
 impl LocalReferenceAudit {
     pub fn begin(store: &LocalBlobStore, view: &ReadView, scope: &TenantId) -> Result<Self> {
-        // Reuse the actual durable-root, configuration and live-engine checks.
+        // Reserve the cursor before inspecting any durable state, then reuse
+        // the actual root, configuration and live-engine checks.
+        let inventory = LocalReferenceInventory::begin(store, scope)?;
         drop(RequiredBlobInventory::begin(store, view)?);
         Ok(Self {
-            inventory: LocalReferenceInventory::begin(store, scope)?,
+            inventory,
             view: view.identity(),
             invalid: false,
         })
