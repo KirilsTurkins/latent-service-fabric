@@ -48,7 +48,9 @@ signed observation `42366341977` reached three requests before deadline.
 Neither is relabelled by the separately compiled EOF-retirement correction.
 
 A successful compiler, source verifier or native regression is not signed
-execution qualification. The final host must still pass all requirements below.
+execution qualification. The separately observed [signed result](#observed-signed-result)
+passed the requirements below on its recorded source; each changed host still
+requires its own maintained witness.
 
 The controller builds with
 `latentd/development-rust-http-combined,latent-packaging/development-rust-http-combined`,
@@ -83,8 +85,8 @@ concurrent HTTP completion fibers. This is a change to this diagnostic's host
 capacity, not a successful qualification under the earlier eight-owner ceiling.
 The ordinary HTTP fixture remains at eight; no ordinary default is changed.
 The witness records the selected runtime limits alongside the configuration
-identity. A complete signed run is still required to establish that this
-provisioning suffices; it is not a general or certified minimum-owner bound.
+identity. The [recorded signed run](#observed-signed-result) passed with this explicit
+provisioning; it is not a general or certified minimum-owner bound.
 
 All actual owners still share the same runtime Native ceiling and 16 MiB
 activation ledger. Child admission still requires its separate native grant
@@ -149,3 +151,40 @@ fixed-byte refusal, actual engine compilation and node selection. Those
 checks are not a substitute for the signed witness. Its process RSS sample
 is an observation, not proof of an adversarial memory ceiling. The 96 MiB
 verification-work reservation remains provisional and diagnostic-only.
+
+
+## Observed signed result
+
+The maintained [signed workflow run 42371909980](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/42371909980)
+passed on published source `a8dea35261e951f7bd3076f9129bd57aa3bc82ca`.
+Both the outer programme and node witness report `passed` and
+`actualSignedSiblingProgress: true`. This is separate from the earlier
+same-tree preparation run `42371647596` and its local test commit.
+
+The granted invocation returned the exact Waki/Golem result and consumed four
+outbound requests, 1,161,924 fuel, 12,564,711 peak memory bytes and 57,957
+microseconds of activation time. Those are observations, not new thresholds.
+The original 5,000 ms, 16 MiB and one-billion-fuel guest limits remain unchanged.
+The sibling's first JSON response completed before its second JSON request,
+while the original response headers were still withheld. The native-grant
+negative control returned a known permission refusal with zero guest fuel,
+memory and outbound work; its cold preparation time was still accounted.
+
+The controlled peer recorded four accepted requests, all connections closed
+and no foreign contact. The final witness checked guest physical retirement,
+zero active provider work, deployment removal and reaped clean node shutdown.
+The selected host still used eight Tasks and the diagnostic-only ten Native
+owners described above. This is not an eight-Native-owner qualification.
+
+The retained [artifact 13574646336](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/42371909980/artifacts/13574646336)
+is 1,943,808 bytes, with SHA-256
+`ff6408af14052e6c4c07485b59b66d48a93e4e9673b6e33a2e0b4a47b2bb510f`;
+all 162 ZIP members passed CRC inspection. Its original records are
+`rust-combined-signed/witness.json` and
+`rust-combined-signed/node/witness.json`. Artifact retention is finite, and
+these historical identities do not turn a later missing artifact into a pass.
+
+Normal builder support, arbitrary dependency support, full #689/#743
+qualification and a universal physical verification-memory bound remain
+explicitly unqualified. General CI and a future head's signed execution are
+separate gates; this observation does not certify untested source.

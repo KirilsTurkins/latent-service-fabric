@@ -1,7 +1,7 @@
 use super::*;
 #[path = "../../../tests/fixtures/component.rs"]
 mod fixtures;
-use fixtures::{Options, component};
+use fixtures::{component, Options};
 use latent_core::PlatformErrorCode;
 use wasm_encoder::{Component, Encode, ModuleSection, RawSection};
 mod aliases;
@@ -159,11 +159,9 @@ fn all_core_bodies_are_validated_including_unused_modules() {
     ] {
         let bytes = component(options);
         // Parsing payloads alone does not catch this same-signature stack error.
-        assert!(
-            Parser::new(0)
-                .parse_all(&bytes)
-                .all(|payload| payload.is_ok())
-        );
+        assert!(Parser::new(0)
+            .parse_all(&bytes)
+            .all(|payload| payload.is_ok()));
         assert!(validate(&bytes, SemanticLimits::default()).is_err());
     }
     assert!(validate(&fixtures::core(false).finish(), SemanticLimits::default()).is_err());

@@ -1,17 +1,17 @@
 //! Execute the actual compiled Rust pump with two independently held imports.
 //! This is a guest adapter regression, not a signed-node or HTTP qualification.
 use std::{
-    future::{Future, poll_fn},
+    future::{poll_fn, Future},
     sync::{
-        Arc, Mutex,
         atomic::{AtomicBool, AtomicUsize, Ordering},
+        Arc, Mutex,
     },
     task::{Poll, Waker},
     time::Duration,
 };
 use wasmtime::{
-    Config, Engine, Store,
     component::{Component, Linker},
+    Config, Engine, Store,
 };
 #[derive(Default)]
 struct Gate {
