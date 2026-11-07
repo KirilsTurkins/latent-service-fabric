@@ -101,10 +101,13 @@ class GoHttpContextTests(unittest.TestCase):
     def test_collected_timer_drain_retires_exact_slot_before_original_fence(self):
         source = (runtime.ROOT / 'sdk/go-guest/runtime/timer_bridge.go.in').read_text()
         drain = re.search(r'(?ms)^func lsfStopIdleChannelTimers\(\) \{.*?^\}', source)[0]
-        collected = re.search(r'(?ms)^        if pointer == nil \{.*?^        \}', drain)[0]
-        self.assertIn('token := slot.token', collected)
-        self.assertIn('lsfStopTimerSlot(uint32(index + 1), token)', collected)
-        self.assertIn('lsfActivationTimerFence(token[0], token[1])', collected)
+        collected = re.search(r'(?ms)^            if pointer == nil \{.*?^            \}', drain)[0]
+        self.assertIn('slot := lsfTimerSlots[index]', drain)
+        recheck = 'if lsfTimerSlots[index].token != slot.token { continue }'
+        self.assertLess(drain.index('internal_weak_runtime_makeStrongFromWeak(slot.weak)'), drain.index(recheck))
+        self.assertLess(drain.index(recheck), drain.index('if pointer == nil'))
+        self.assertIn('lsfStopTimerSlot(uint32(index + 1), slot.token)', collected)
+        self.assertIn('lsfActivationTimerFence(slot.token[0], slot.token[1])', collected)
         self.assertLess(collected.index('lsfStopTimerSlot('), collected.index('lsfActivationTimerFence('))
         self.assertLess(collected.index('lsfActivationTimerFence('), collected.index('continue'))
         self.assertNotIn('lsfFail(', collected)
