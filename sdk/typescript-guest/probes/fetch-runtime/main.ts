@@ -5,6 +5,7 @@ import {request, requestReady, promiseReady, requestCopyReady, initialized} from
 declare class Event { constructor(type: string); }
 declare class EventTarget {
   addEventListener(type: string, listener: () => void): void;
+  removeEventListener(type: string, listener: () => void): void;
   dispatchEvent(event: Event): boolean;
 }
 
@@ -55,6 +56,66 @@ function nestedEventClone(): string {
   return 'event-clone:nested:12:ordered';
 }
 
+function ordinaryAbortClone(): string {
+  const controller = new AbortController();
+  const reason = {kind: 'ordinary-abort'};
+  let calls = 0;
+  for (let index = 0; index < 12; ++index) {
+    controller.signal.addEventListener('abort', () => { ++calls; });
+  }
+  controller.abort(reason);
+  if (!controller.signal.aborted || controller.signal.reason !== reason || calls !== 12)
+    throw new Error('abort-clone-normal-result');
+  return 'abort-clone:normal:12';
+}
+
+function refusedAbortClone(): void {
+  const controller = new AbortController();
+  const reason = {kind: 'refused-abort'};
+  const expected = 'activation-runtime-promise-native-register-denied:2';
+  let calls = 0, fillDenied = false, abortDenied = false;
+  for (let index = 0; index < 12; ++index) {
+    controller.signal.addEventListener('abort', () => { ++calls; });
+  }
+  const filler = new EventTarget();
+  const held: Array<() => void> = [];
+  try {
+    for (let index = 0; index < 128; ++index) {
+      const listener = () => {};
+      try {
+        filler.addEventListener('fill', listener);
+        held.push(listener);
+      } catch (error) {
+        if (!(error instanceof Error) || error.message !== expected) throw error;
+        fillDenied = true;
+        break;
+      }
+    }
+    if (!fillDenied || held.length === 0 || held.length >= 128)
+      throw new Error('abort-clone-fill-boundary-missing');
+    try { controller.abort(reason); }
+    catch (error) {
+      if (!(error instanceof Error) || error.message !== expected) throw error;
+      abortDenied = true;
+    }
+    if (!abortDenied || !controller.signal.aborted || controller.signal.reason !== reason || calls !== 0)
+      throw new Error('abort-clone-failure-not-propagated');
+  } finally {
+    for (const listener of held) filler.removeEventListener('fill', listener);
+  }
+}
+
+function recoveredEventClone(): string {
+  const target = new EventTarget();
+  let calls = 0;
+  for (let index = 0; index < 12; ++index) {
+    target.addEventListener('recovered', () => { ++calls; });
+  }
+  if (!target.dispatchEvent(new Event('recovered')) || calls !== 12)
+    throw new Error('abort-clone-recovery-result');
+  return 'abort-clone:two-native-register-refusals:recovered';
+}
+
 export const api: typeof Contract = {
   async run(mode, url) {
     if (mode === 1) return 'entered';
@@ -63,6 +124,13 @@ export const api: typeof Contract = {
     if (mode === 4) return await requestCopyReady(url);
     if (mode === 20) return repeatedEventClone();
     if (mode === 21) return nestedEventClone();
+    if (mode === 22) return ordinaryAbortClone();
+    if (mode === 23) {
+      refusedAbortClone();
+      // Normal Promise allocation invokes the existing pressure-GC/checkpoint.
+      await Promise.resolve();
+      return recoveredEventClone();
+    }
     if (mode !== 0) throw new TypeError('unsupported-fetch-runtime-mode');
     return `${++calls}:${await request(url)}`;
   },
