@@ -59,7 +59,7 @@ fn row(case: &str, outcome: &str, created: u64) {
 }
 
 #[tokio::test]
-#[ignore = "requires captured ordinary v5 Go Task16 fixture and original diagnostic journal"]
+#[ignore = "requires captured ordinary v5 Go Task16 fixture and broker diagnostic witness"]
 async fn signed_task16_saturation_reports_original_refusal_and_fresh_retirement() {
     assert_eq!(std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(), Ok("go"));
     let root = tempfile::tempdir().unwrap();
