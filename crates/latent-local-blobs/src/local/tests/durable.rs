@@ -139,13 +139,21 @@ fn reopening_binds_the_same_unique_durable_owner_without_recreating_its_mode() {
     let view = state.snapshot().unwrap();
     assert!(!LocalBlobStore::bind_existing_durable_for_view(&mut ordinary, &view).unwrap());
     assert!(!blob_root.path().join("DURABLE.json").exists());
+    drop(view);
     drop(ordinary);
     let owner =
         LocalBlobStore::open_durable(blob_root.path(), "private", limits(), &state).unwrap();
     let blob = put(&owner, b"retained");
+    let original_pin = owner
+        .capture_durable_reference(&scope(), &blob, &|| Ok(()))
+        .unwrap();
+    let required = reference(&original_pin, PayloadOwnerKind::Result, 9, "local", 1);
+    update(&state, &[(None, Some(required))]);
+    drop(original_pin);
     drop(owner);
     let mut owner = LocalBlobStore::open(blob_root.path(), "private", limits()).unwrap();
     let original = Arc::as_ptr(&owner);
+    let view = state.snapshot().unwrap();
     let other_view = other.snapshot().unwrap();
     assert_eq!(
         LocalBlobStore::bind_existing_durable_for_view(&mut owner, &other_view),
@@ -159,6 +167,13 @@ fn reopening_binds_the_same_unique_durable_owner_without_recreating_its_mode() {
     drop(alias);
     assert!(LocalBlobStore::bind_existing_durable_for_view(&mut owner, &view).unwrap());
     assert_eq!(Arc::as_ptr(&owner), original);
+    let mut inventory = RequiredBlobInventory::begin(&owner, &view).unwrap();
+    assert_eq!(
+        inventory
+            .next_page(&owner, &view, 1, 1024, &|| Ok(()))
+            .unwrap(),
+        (1, true)
+    );
     let pin = owner
         .capture_durable_reference(&scope(), &blob, &|| Ok(()))
         .unwrap();
