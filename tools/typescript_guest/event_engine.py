@@ -94,25 +94,90 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         b'  if (slot.isNullOrUndefined()) return nullptr;\n'
         b'  auto *owned = static_cast<OwnedListenerList *>(slot.toPrivate());\n'
         b'  auto *list = &owned->value;\n', 'original-list-view-inside-physical-wrapper')
-    source = replace_once(source, b'    auto listener = mozilla::MakeRefPtr<EventListener>();\n',
-        b'    lsf::typescript::activation::NativeObjectLease accepted;\n'
-        b'    if (!lsf::typescript::activation::admit_native_object(cx, accepted)) return false;\n'
-        b'    RefPtr<EventListener> listener = js_new<EventListener>(std::move(accepted));\n'
-        b'    if (!listener) { JS_ReportOutOfMemory(cx); return false; }\n', 'listener-admit-before-record-allocation')
-    source = replace_once(source, b'    list->append(listener);\n',
-        b'    if (!list->append(listener)) { JS_ReportOutOfMemory(cx); return false; }\n', 'listener-append-actual-allocation-result')
     source = replace_once(source,
-        b'    auto terminator = js::MakeUnique<Terminator>(cx, self, type_val, callback_val, opts_val);\n'
-        b'    RootedObject signal(cx, &signal_val.toObject());\n'
-        b'    AbortSignal::add_algorithm(signal, std::move(terminator));\n',
-        b'    lsf::typescript::activation::NativeObjectLease accepted;\n'
-        b'    if (!lsf::typescript::activation::admit_native_object(cx, accepted)) return false;\n'
-        b'    auto terminator = js::MakeUnique<Terminator>(\n'
-        b'        std::move(accepted), cx, self, type_val, callback_val, opts_val);\n'
-        b'    if (!terminator) { JS_ReportOutOfMemory(cx); return false; }\n'
-        b'    RootedObject signal(cx, &signal_val.toObject());\n'
-        b'    if (!AbortSignal::add_algorithm(signal, std::move(terminator))) return false;\n',
-        'abort-listener-terminator-before-capture-allocation')
+        b'''  if (it == list->end()) {
+    auto listener = mozilla::MakeRefPtr<EventListener>();
+    listener->callback = callback_val;
+    listener->signal = signal_val;
+    listener->type = type;
+    listener->passive = passive;
+    listener->capture = capture;
+    listener->once = once;
+    listener->removed = false;
+
+    list->append(listener);
+  } else if((*it)->removed) {
+    // if existing listener was marked for removal, then move it to the end of the list
+    // and update its removed flag. This is done to ensure the order of listeners. We only
+    // update listener's properties that are not check for listener equality.
+    (*it)->signal = signal_val;
+    (*it)->passive = passive;
+    (*it)->once = once;
+    (*it)->removed = false;
+
+    list->erase(it);
+    list->append(*it);
+  }
+
+  // - If listener's signal is not null, then add the following abort steps to it:
+  //  Remove an event listener with eventTarget and listener.
+  if (signal_val.isObject() && AbortSignal::is_instance(signal_val)) {
+    auto terminator = js::MakeUnique<Terminator>(cx, self, type_val, callback_val, opts_val);
+    RootedObject signal(cx, &signal_val.toObject());
+    AbortSignal::add_algorithm(signal, std::move(terminator));
+  }
+''',
+        b'''  const bool new_listener = it == list->end();
+  RefPtr<EventListener> staged;
+  if (new_listener) {
+    lsf::typescript::activation::NativeObjectLease accepted;
+    if (!lsf::typescript::activation::admit_native_object(cx, accepted)) return false;
+    staged = js_new<EventListener>(std::move(accepted));
+    if (!staged) { JS_ReportOutOfMemory(cx); return false; }
+    staged->type = type;
+    staged->passive = passive;
+    staged->capture = capture;
+    staged->once = once;
+    staged->removed = false;
+    // No fallible listener-vector growth can follow abort registration.
+    if (!list->reserve(list->length() + 1)) { JS_ReportOutOfMemory(cx); return false; }
+  } else if ((*it)->removed) {
+    // Retain the actual element before erase invalidates its iterator.
+    staged = *it;
+  }
+
+  if (signal_val.isObject() && AbortSignal::is_instance(signal_val)) {
+    RootedObject signal(cx, &signal_val.toObject());
+    // Converting the event type may have run script after the earlier check.
+    if (AbortSignal::is_aborted(signal)) return true;
+    lsf::typescript::activation::NativeObjectLease accepted;
+    if (!lsf::typescript::activation::admit_native_object(cx, accepted)) return false;
+    auto terminator = js::MakeUnique<Terminator>(
+        std::move(accepted), cx, self, type_val, callback_val, opts_val);
+    if (!terminator) { JS_ReportOutOfMemory(cx); return false; }
+    if (!AbortSignal::add_algorithm(signal, std::move(terminator))) {
+      JS_ReportOutOfMemory(cx);
+      return false;
+    }
+  }
+
+  // All fallible admission and allocation has succeeded. Erasing one existing
+  // element leaves enough vector capacity for its infallible re-insertion.
+  if (new_listener) {
+    // Handle values stay rooted until the record is attached to the traced
+    // listener vector; do not leave untraced Heap edges across admission.
+    staged->callback = callback_val;
+    staged->signal = signal_val;
+    list->infallibleAppend(staged);
+  } else if (staged) {
+    staged->signal = signal_val;
+    staged->passive = passive;
+    staged->once = once;
+    staged->removed = false;
+    list->erase(it);
+    list->infallibleAppend(staged);
+  }
+''', 'listener-and-abort-publication-after-admission')
     # All three original list construction sites use exactly the same wrapper.
     for function, failing in [('create', b'nullptr'), ('init', b'false'), ('constructor', b'false')]:
         start = source.index(b'EventTarget::'+function.encode()+b'(')
