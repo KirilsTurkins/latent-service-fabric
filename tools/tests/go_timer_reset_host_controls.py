@@ -1,9 +1,7 @@
-"""Known Go timer Reset defect and a separate cooperative-gate host model.
+"""Exercise the production Go timer overlay with controlled host doubles.
 
-These host doubles compile selected emitted functions with stub timer/host calls.
-They do not execute a component, real timer provider, GC or g0 callback. The
-baseline is intentionally expected to reproduce the known duplicate owner; a
-future production fix must replace that expectation with the corrected contract.
+These controls compile selected emitted functions with stub timer/host calls.
+They do not execute a component, real timer provider, GC or g0 callback.
 """
 import hashlib
 import os
@@ -19,8 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / 'tools/tests/fixtures'
 TIME_SOURCE = FIXTURES / 'go_runtime_time_go1_27_3.go.txt'
 GO_LICENSE = FIXTURES / 'go_runtime_stack_go1_27_3.LICENSE.txt'
-BASELINE = FIXTURES / 'go_timer_reset_baseline.go.txt'
-CANDIDATE = FIXTURES / 'go_timer_reset_gate_candidate.go.txt'
+CONTROL = FIXTURES / 'go_timer_reset_host.go.txt'
 TIME_SHA256 = 'cf2ae4e953a3315c226499f553a8e8e1529d27ceac166b4fb75e8d7b3a4fa682'
 LICENSE_SHA256 = '911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad'
 
@@ -70,39 +67,32 @@ def extract(source, name):
     return source[start:source.index('\n}', start) + 2]
 
 
-def host_source(candidate):
+def host_source():
     time_source = emitted_time_source()
     bridge = (ROOT / 'sdk/go-guest/runtime/timer_bridge.go.in').read_text(encoding='utf-8')
     async_source = (ROOT / 'sdk/go-guest/runtime/timer_async.go.in').read_text(encoding='utf-8')
-    names = ('newTimer', 'resetTimer', 'stopTimer') if candidate else ('resetTimer',)
+    layout = ('type timeTimer struct {\n\tc    unsafe.Pointer // <-chan time.Time\n'
+              '\tinit bool\n\ttimer\n\tlsfGate chan struct{}\n}')
+    if time_source.count(layout) != 1:
+        raise ValueError('go-timer-host-control-layout-drift')
+    names = ('newTimer', 'resetTimer', 'stopTimer')
     functions = [extract(time_source, name) for name in names]
-    if candidate:
-        # Inject the proposed construction into the real transformed newTimer,
-        # before it publishes the timer to its channel or owner inventory. This
-        # is still a host model and does not alter the compiled guest runtime.
-        constructor = functions[0]
-        allocation = '\tt := new(timeTimer)'
-        if constructor.count(allocation) != 1:
-            raise ValueError('go-timer-host-control-constructor-allocation-drift')
-        gate = '\tt.lsfGate = make(chan struct{}, 1)\n\tt.lsfGate <- struct{}{}'
-        constructor = constructor.replace(allocation, allocation + '\n' + gate)
-        if not (constructor.index('\tlsfToken := lsfReserveTimer(when, period)')
-                < constructor.index(allocation) < constructor.index(gate)
-                < constructor.index('\tc.timer = &t.timer')
-                < constructor.index('\tlsfInstallTimer(&t.timer, lsfToken)')
-                < constructor.index('\tt.init = true')):
-            raise ValueError('go-timer-host-control-constructor-order-drift')
-        functions[0] = constructor
-        for index, word in enumerate(('active', 'stopped'), start=1):
-            original = '\t' + word + ' := t.stop()'
-            if functions[index].count(original) != 1:
-                raise ValueError('go-timer-host-control-gate-injection-drift')
-            gated = '\t<-t.lsfGate\n\tdefer func() { t.lsfGate <- struct{}{} }()\n' + original
-            functions[index] = functions[index].replace(original, gated)
+    constructor = functions[0]
+    gate = '\tt.lsfGate = make(chan struct{}, 1)\n\tt.lsfGate <- struct{}{}'
+    if not (constructor.index('\tlsfToken := lsfReserveTimer(when, period)')
+            < constructor.index('\tt := new(timeTimer)') < constructor.index(gate)
+            < constructor.index('\tc.timer = &t.timer')
+            < constructor.index('\tlsfInstallTimer(&t.timer, lsfToken)')
+            < constructor.index('\tt.init = true')):
+        raise ValueError('go-timer-host-control-constructor-order-drift')
+    for index, word in enumerate(('active', 'stopped'), start=1):
+        guarded = ('\t<-t.lsfGate\n\tdefer func() { t.lsfGate <- struct{}{} }()\n'
+                   '\t' + word + ' := t.stop()')
+        if functions[index].count(guarded) != 1:
+            raise ValueError('go-timer-host-control-gate-drift')
     bridge_names = ['lsfReserveTimer', 'lsfInstallTimer', 'lsfPublishTimer',
                     'lsfSweepCollectedTimers', 'lsfStopTimerSlot', 'lsfRetireTimer']
-    if candidate:
-        bridge_names += ['lsfBeforeTimerCallback', 'lsfAfterTimerCallback']
+    bridge_names += ['lsfBeforeTimerCallback', 'lsfAfterTimerCallback']
     functions.extend(extract(bridge, name) for name in bridge_names)
     functions.extend(extract(async_source, name)
                      for name in ('lsfActivationTimerStopped', 'lsfActivationTimerFence'))
@@ -112,8 +102,7 @@ def host_source(candidate):
     # The seam signals entry, then performs the same real channel receive. It
     # creates a deterministic overlap rather than claiming a real host wait.
     functions[-1] = functions[-1].replace(original_receive, 'controlledFenceReceive(wait)')
-    package = 'timergate' if candidate else 'timerreset'
-    return 'package ' + package + '\n\nimport "unsafe"\n\n' + '\n\n'.join(functions) + '\n'
+    return 'package timergate\n\nimport "unsafe"\n\n' + '\n\n'.join(functions) + '\n'
 
 
 def assert_source_binding(case):
@@ -122,14 +111,11 @@ def assert_source_binding(case):
     for altered, license_input in ((source + b'\n', license_bytes), (source, license_bytes + b'\n')):
         with case.assertRaisesRegex(ValueError, 'upstream-or-license-drift'):
             checked_time_source(altered, license_input)
-    baseline = host_source(False)
-    candidate = host_source(True)
-    case.assertNotIn('<-t.lsfGate', baseline)
-    case.assertEqual(candidate.count('<-t.lsfGate'), 2)
-    case.assertEqual(candidate.count('t.lsfGate = make(chan struct{}, 1)'), 1)
-    case.assertIn('func newTimer(', candidate)
-    case.assertIn('controlledFenceReceive(wait)', baseline)
-    case.assertIn('controlledFenceReceive(wait)', candidate)
+    source = host_source()
+    case.assertEqual(source.count('<-t.lsfGate'), 2)
+    case.assertEqual(source.count('t.lsfGate = make(chan struct{}, 1)'), 1)
+    case.assertIn('func newTimer(', source)
+    case.assertIn('controlledFenceReceive(wait)', source)
 
 
 def run_host_doubles(case, go):
@@ -140,32 +126,21 @@ def run_host_doubles(case, go):
                GOTOOLCHAIN='local', GOMAXPROCS='1', GOOS='', GOARCH='',
                CGO_ENABLED='0', GOPROXY='off')
     env.pop('GOROOT', None)
-    for candidate in (False, True):
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            (root / 'timer.go').write_text(host_source(candidate), encoding='utf-8')
-            (root / 'timer_test.go').write_bytes((CANDIDATE if candidate else BASELINE).read_bytes())
-            result = subprocess.run([go, 'test', '-count=1', '-timeout=30s', '-v', '.'],
-                                    cwd=root, env=env, text=True, capture_output=True, timeout=180)
-        output = result.stdout + result.stderr
-        if not candidate:
-            case.assertNotEqual(result.returncode, 0,
-                                'known baseline defect did not reproduce; review the production change')
-            for expected in ('--- PASS: TestSequentialResetsKeepOneOwner',
-                             '--- FAIL: TestOverlappingResetsKeepOneOwner',
-                             'slots=[[7 2] [7 3]]', 'replacement=[7 2] current=[7 3]',
-                             'firstActive=true secondActive=false'):
-                case.assertIn(expected, output)
-            print('Go timer host double: expected baseline duplicate-owner defect reproduced', flush=True)
-        else:
-            case.assertEqual(result.returncode, 0, output)
-            for name in ('TestNewTimerConstructsAndPublishesSeededGate',
-                         'TestNewTimerAdmissionFailureDoesNotPublish',
-                         'TestResetResetSerializesAndKeepsBothTrue',
-                         'TestResetStopSerializesAndLeavesStopped',
-                         'TestStopResetSerializesAndReturnsFalseForReset',
-                         'TestStopStopSerializesAndSecondIsFalse',
-                         'TestOneShotCallbackMayRetireWithoutTakingGate',
-                         'TestRecoverablePanicReleasesGateForFollowingStop'):
-                case.assertIn('--- PASS: ' + name, output)
-            print('Go timer host double: unshipped gate model passed; no guest or g0 claim', flush=True)
+    with tempfile.TemporaryDirectory() as temporary:
+        root = Path(temporary)
+        (root / 'timer.go').write_text(host_source(), encoding='utf-8')
+        (root / 'timer_test.go').write_bytes(CONTROL.read_bytes())
+        result = subprocess.run([go, 'test', '-count=1', '-timeout=30s', '-v', '.'],
+                                cwd=root, env=env, text=True, capture_output=True, timeout=180)
+    output = result.stdout + result.stderr
+    case.assertEqual(result.returncode, 0, output)
+    for name in ('TestNewTimerConstructsAndPublishesSeededGate',
+                 'TestNewTimerAdmissionFailureDoesNotPublish',
+                 'TestResetResetSerializesAndKeepsBothTrue',
+                 'TestResetStopSerializesAndLeavesStopped',
+                 'TestStopResetSerializesAndReturnsFalseForReset',
+                 'TestStopStopSerializesAndSecondIsFalse',
+                 'TestOneShotCallbackMayRetireWithoutTakingGate',
+                 'TestRecoverablePanicReleasesGateForFollowingStop'):
+        case.assertIn('--- PASS: ' + name, output)
+    print('Go timer host double: production-source interleavings passed', flush=True)

@@ -84,9 +84,11 @@ class GoQualificationTriggerTests(unittest.TestCase):
         inputs = set(RECIPE) | {"Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "tools/requirements.lock"}
         # The maintained timer host doubles and their pinned upstream source and
         # license are directly read by the Go qualification owner.
-        from tools.tests.go_timer_reset_host_controls import TIME_SOURCE, GO_LICENSE, BASELINE, CANDIDATE
-        inputs |= {"tools/tests/go_timer_reset_host_controls.py"}
-        inputs |= {path.relative_to(root).as_posix() for path in (TIME_SOURCE, GO_LICENSE, BASELINE, CANDIDATE)}
+        from tools.tests.go_timer_reset_host_controls import TIME_SOURCE, GO_LICENSE, CONTROL
+        inputs |= {"tools/tests/go_timer_reset_host_controls.py", "tools/go_timer_runtime_control.py",
+                   "tools/tests/fixtures/go_timer_runtime_mock.go.txt",
+                   "tools/tests/fixtures/go_timer_runtime_mock_host.js"}
+        inputs |= {path.relative_to(root).as_posix() for path in (TIME_SOURCE, GO_LICENSE, CONTROL)}
         for event in ("pull_request", "push"):
             paths = events[event]["paths"]
             self.assertFalse(any(pattern.startswith("!") for pattern in paths))

@@ -1,5 +1,6 @@
 """Actual v5 timer capture selection and fail-closed signed evidence controls."""
 import copy
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -596,6 +597,19 @@ def compile_record(folder):
 class GoManagedTimers(unittest.TestCase):
     def test_reset_host_double_binds_original_source_and_license(self):
         reset_controls.assert_source_binding(self)
+        # The authenticated old emitted source must fail the current contract;
+        # a historical reproduction is not a passing production expectation.
+        current = reset_controls.emitted_time_source()
+        field = '\ttimer\n\tlsfGate chan struct{}\n}'
+        construction = '\tt.lsfGate = make(chan struct{}, 1)\n\tt.lsfGate <- struct{}{}\n'
+        guard = '\t<-t.lsfGate\n\tdefer func() { t.lsfGate <- struct{}{} }()\n'
+        self.assertEqual((current.count(field), current.count(construction), current.count(guard)), (1, 1, 2))
+        historical = current.replace(field, '\ttimer\n}', 1).replace(construction, '', 1).replace(guard, '')
+        self.assertEqual(hashlib.sha256(historical.encode()).hexdigest(),
+                         '170c358003de722daf30448bbf9fba7c83ca92ef4f693fb9d9f14f54fe553123')
+        with patch.object(reset_controls, 'emitted_time_source', return_value=historical):
+            with self.assertRaisesRegex(ValueError, 'layout-drift'):
+                reset_controls.host_source()
 
     @unittest.skipUnless(shutil.which('go'), 'controlled host interleaving requires Go')
     def test_timer_readiness_is_published_before_host_start_and_fenced_until_drop(self):

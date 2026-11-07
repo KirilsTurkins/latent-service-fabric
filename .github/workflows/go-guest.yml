@@ -48,8 +48,10 @@ on:
       - tools/tests/go_timer_reset_host_controls.py
       - tools/tests/fixtures/go_runtime_time_go1_27_3.go.txt
       - tools/tests/fixtures/go_runtime_stack_go1_27_3.LICENSE.txt
-      - tools/tests/fixtures/go_timer_reset_baseline.go.txt
-      - tools/tests/fixtures/go_timer_reset_gate_candidate.go.txt
+      - tools/tests/fixtures/go_timer_reset_host.go.txt
+      - tools/go_timer_runtime_control.py
+      - tools/tests/fixtures/go_timer_runtime_mock.go.txt
+      - tools/tests/fixtures/go_timer_runtime_mock_host.js
       - docs/development/go-managed-timers.md
       - tools/tests/test_go_queued.py
       - docs/development/go-runtime-queued-ownership.md
@@ -191,8 +193,10 @@ on:
       - tools/tests/go_timer_reset_host_controls.py
       - tools/tests/fixtures/go_runtime_time_go1_27_3.go.txt
       - tools/tests/fixtures/go_runtime_stack_go1_27_3.LICENSE.txt
-      - tools/tests/fixtures/go_timer_reset_baseline.go.txt
-      - tools/tests/fixtures/go_timer_reset_gate_candidate.go.txt
+      - tools/tests/fixtures/go_timer_reset_host.go.txt
+      - tools/go_timer_runtime_control.py
+      - tools/tests/fixtures/go_timer_runtime_mock.go.txt
+      - tools/tests/fixtures/go_timer_runtime_mock_host.js
       - docs/development/go-managed-timers.md
       - tools/tests/test_go_queued.py
       - docs/development/go-runtime-queued-ownership.md
@@ -466,6 +470,10 @@ jobs:
           python3 -m unittest tools.tests.test_go_managed_timers
           python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-managed-timers" --runtime-profile go-component-activation-v5 --fixture timers
           python3 tools/qualify_go_synchronization.py --campaign managed-timers --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-managed-timers" --output "$RUNNER_TEMP/go-managed-timers-result"
+      - name: Check Go timer runtime interleavings with a mock host
+        run: |
+          command -v node >/dev/null
+          python3 tools/go_timer_runtime_control.py --go "$RUNNER_TEMP/go-guest-tools/go-async/bin/go" --vendor "$RUNNER_TEMP/go-managed-timers/build/module/vendor" --cache "$RUNNER_TEMP/go-managed-timers/compiler/cache" --output "$RUNNER_TEMP/go-timer-runtime-control" --source-commit "${{ github.sha }}"
       - name: Qualify ordinary Go synchronization and original v5 waiter retirement
         run: |
           python3 -m unittest tools.tests.test_go_synchronization
@@ -713,6 +721,9 @@ jobs:
             ${{ runner.temp }}/go-managed-timers-result/receipt.json
             ${{ runner.temp }}/go-managed-timers-result/signed.stdout.log
             ${{ runner.temp }}/go-managed-timers-result/signed.stderr.log
+            ${{ runner.temp }}/go-timer-runtime-control/receipt.json
+            ${{ runner.temp }}/go-timer-runtime-control/*.log
+            ${{ runner.temp }}/go-timer-runtime-control/timer-control.wasm
             ${{ runner.temp }}/go-synchronization-result/receipt.json
             ${{ runner.temp }}/go-synchronization-result/signed.stdout.log
             ${{ runner.temp }}/go-synchronization-result/signed.stderr.log
