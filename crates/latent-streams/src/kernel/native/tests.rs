@@ -533,12 +533,23 @@ async fn cleanup_panic_keeps_original_connection_after_lost_unit_result() {
     .await
     .unwrap();
     let link = receive.await.unwrap();
-    let connection = owner.connection.take().unwrap();
-    let job = match fixture.pools.cleanup_blocking_quarantined(connection, |_| {
-        panic!("physical close interrupted before descriptor take")
-    }) {
-        Ok(job) => job,
-        Err(_) => panic!("admitted exact cleanup"),
+    let mut connection = owner.connection.take().unwrap();
+    let admission_deadline = Instant::now() + Duration::from_secs(5);
+    let job = loop {
+        match fixture.pools.cleanup_blocking_quarantined(connection, |_| {
+            panic!("physical close interrupted before descriptor take")
+        }) {
+            Ok(job) => break job,
+            Err((reason, returned))
+                if is_snapshot_busy(&reason) && Instant::now() < admission_deadline =>
+            {
+                // A contended bookkeeping lock is not admission. Keep the exact
+                // returned connection and try again without closing or refunding it.
+                connection = returned;
+                tokio::time::sleep(Duration::from_millis(1)).await;
+            }
+            Err((reason, _)) => panic!("admitted exact cleanup: {reason:?}"),
+        }
     };
     assert!(job.wait().await.is_err());
     quarantined(&fixture.pools).await;
