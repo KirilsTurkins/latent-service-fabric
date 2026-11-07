@@ -304,6 +304,7 @@ jobs:
         if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031'
         run: |
           python3 -m unittest tools.tests.test_c_standard_facilities
+          python3 -B tools/c_libfetch_stat_control.py
           python3 tools/qualify_c_standard_facilities.py --build-native --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-standard-facilities"
       - name: Execute ordinary bounded stdio through the same frozen default products
         if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031'
