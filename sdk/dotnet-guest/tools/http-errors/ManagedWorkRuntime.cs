@@ -28,6 +28,7 @@ public static partial class ManagedWorkRuntime
         internal Task? Outer;
         internal Task? Inner;
         internal (ulong Generation, ulong Id) Token;
+        internal (ulong Generation, ulong Id) PendingResult;
         internal bool Active;
         internal bool Root;
         internal bool Timer;
@@ -416,12 +417,20 @@ public static partial class ManagedWorkRuntime
 
     private static void Finish(Record owner)
     {
+        if (!owner.Active) throw new InvalidOperationException("managed-work-double-settle");
+        if (owner.Result) return;
         if (owner.Completion is { } task && task.IsFaulted && !owner.Observed)
         {
             var result = Reserve(ResultKind, owner);
+            // Keep both tokens reachable until the original Task settlement is
+            // confirmed; a failed or ambiguous acknowledgement is never retried.
+            owner.PendingResult = result;
+            owner.Active = false;
             settle!(owner.Token.Generation, owner.Token.Id);
             owner.Token = result;
+            owner.PendingResult = default;
             owner.Result = true;
+            owner.Active = true;
         }
         else Release(owner);
     }
