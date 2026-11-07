@@ -23,6 +23,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     private final ArrayList<Action> dependents = new ArrayList<>();
     private final ArrayList<Action> accepted = new ArrayList<>();
     private Activation.Lease resultOwner;
+    private boolean resultSettlementAttempted;
 
     public CompletableFuture() { }
 
@@ -48,20 +49,35 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     public <U> CompletableFuture<U> newIncompleteFuture() { return new CompletableFuture<>(); }
 
     private synchronized boolean accept(Action action, boolean evenIfCompleted) {
+        if (resultSettlementAttempted)
+            throw new IllegalStateException("activation-completable-result-settlement-uncertain");
         if (completed && !evenIfCompleted) return false;
         if (resultOwner == null) resultOwner = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Result);
         try { accepted.add(action); }
         catch (Throwable error) {
-            if (accepted.isEmpty()) { resultOwner.close(); resultOwner = null; }
+            if (accepted.isEmpty()) {
+                // Keep the original acceptance error if rollback itself is
+                // refused or its acknowledgement is unknown.
+                try { settleResultOnce(); } catch (Throwable uncertain) { throw error; }
+            }
             throw error;
         }
         return true;
     }
     private synchronized void retired(Action action) {
         if (!accepted.remove(action)) throw new IllegalStateException("activation-future-callback-owner");
-        if (accepted.isEmpty() && resultOwner != null) {
-            resultOwner.close();
-            resultOwner = null;
+        if (accepted.isEmpty() && resultOwner != null) settleResultOnce();
+    }
+    private void settleResultOnce() {
+        if (resultOwner == null || resultSettlementAttempted) return;
+        // The host may have settled even if its acknowledgement was lost.
+        // Fence the call first and keep the original owner on any failure.
+        resultSettlementAttempted = true;
+        try {
+            resultOwner.close(); resultOwner = null; resultSettlementAttempted = false;
+        } catch (Throwable error) {
+            Activation.fenceUncertainResultSettlement();
+            throw error;
         }
     }
     private void subscribe(Action action) {
