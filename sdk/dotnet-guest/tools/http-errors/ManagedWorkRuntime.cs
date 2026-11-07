@@ -203,6 +203,8 @@ public static partial class ManagedWorkRuntime
     {
         if (records is null) return null;
         Record? match = null;
+        Record? taskPrimary = null;
+        Record? inactiveTaskAlias = null;
         foreach (var owner in records)
             if (owner is not null && (ReferenceEquals(owner.Primary, item)
                 || ReferenceEquals(owner.Outer, item) || ReferenceEquals(owner.Inner, item)))
@@ -210,8 +212,19 @@ public static partial class ManagedWorkRuntime
                 // A completed fault can also be an alias of its live parent.
                 // Its exact Result owner must govern observation and admission.
                 if (owner.Result && ReferenceEquals(owner.Primary, item)) return owner;
+                // An independently scheduled Task can also be another
+                // Unwrap owner's Inner. Its own original owner takes priority
+                // for dispatch, completion and observation, subject to the
+                // inactive-alias fence below.
+                if (item is Task && ReferenceEquals(owner.Primary, item)) taskPrimary ??= owner;
+                if (item is Task && !owner.Active && !ReferenceEquals(owner.Primary, item))
+                    inactiveTaskAlias ??= owner;
                 match ??= owner;
             }
+        // An unresolved alias is still physical custody of the same Task.
+        // Keep it fenced even when another active Task owner also exists.
+        if (inactiveTaskAlias is not null) return inactiveTaskAlias;
+        if (taskPrimary is not null) return taskPrimary;
         if (match is not null) return match;
         if (FindTimer(item) is { } timer) return timer.Owner;
         if (required is not null)
@@ -247,7 +260,7 @@ public static partial class ManagedWorkRuntime
     }
 
     private static Record Admit(object item, Task? completion, Record? parent,
-        out bool created, bool activate, Queued? admission)
+        out bool created, bool activate, Queued? admission, bool independentInner = false)
     {
         var activation = root;
         if (!installed || activation is null || !activation.Active)
@@ -265,6 +278,24 @@ public static partial class ManagedWorkRuntime
             var existing = Find(item);
             if (existing is { Active: false } or { Result: true })
                 throw new InvalidOperationException("managed-work-owner-retired");
+            if (independentInner && existing is not null && ReferenceEquals(existing.Inner, item)
+                && !ReferenceEquals(existing.Primary, item) && !ReferenceEquals(existing.Outer, item))
+            {
+                // Allocation can reenter and publish a separate Primary or
+                // Outer after an earlier Inner alias. Check every match before
+                // treating the item as independently unowned.
+                Record? alreadyAdmitted = null;
+                foreach (var candidate in records!)
+                {
+                    if (candidate is null || (!ReferenceEquals(candidate.Primary, item)
+                        && !ReferenceEquals(candidate.Outer, item) && !ReferenceEquals(candidate.Inner, item))) continue;
+                    if (!candidate.Active || candidate.Result)
+                        throw new InvalidOperationException("managed-work-owner-retired");
+                    if (ReferenceEquals(candidate.Primary, item) || ReferenceEquals(candidate.Outer, item))
+                        alreadyAdmitted ??= candidate;
+                }
+                existing = alreadyAdmitted;
+            }
             if (existing is not null) return existing;
             // The allocation may also have closed the root or retired/converted
             // the originally captured parent before registration begins.
@@ -304,8 +335,22 @@ public static partial class ManagedWorkRuntime
         }
         var existing = Find(task);
         if (existing is { Active: false }) throw new InvalidOperationException("managed-work-owner-retired");
-        if (existing is not null || task.IsCompleted) return;
-        Admit(task, task, Parent(), out _, true, null);
+        bool innerOnly = existing is { Result: false } && ReferenceEquals(existing.Inner, task)
+            && !ReferenceEquals(existing.Primary, task) && !ReferenceEquals(existing.Outer, task);
+        if (innerOnly)
+            foreach (var candidate in records!)
+            {
+                if (candidate is null || (!ReferenceEquals(candidate.Primary, task)
+                    && !ReferenceEquals(candidate.Outer, task) && !ReferenceEquals(candidate.Inner, task))) continue;
+                if (!candidate.Active) throw new InvalidOperationException("managed-work-owner-retired");
+                if (candidate.Result || ReferenceEquals(candidate.Primary, task) || ReferenceEquals(candidate.Outer, task))
+                    innerOnly = false;
+            }
+        if (task.IsCompleted) return;
+        if (existing is not null && !innerOnly) return;
+        // An Inner-only alias is not an admission for this independently
+        // scheduled Task. Recheck after allocation in case of reentry.
+        Admit(task, task, Parent(), out _, true, null, independentInner: true);
     }
 
     public static void Continuation(Task task)
@@ -674,7 +719,7 @@ public static partial class ManagedWorkRuntime
     {
         if (!installed) { if (reserve is not null) admissions = -1; return; }
         var owner = Find(task);
-        if (owner is { Active: false, ResultTransition: 0 })
+        if (owner is { Active: false } && (owner.ResultTransition == 0 || !ReferenceEquals(owner.Completion, task)))
             throw new InvalidOperationException("managed-work-double-settle");
         foreach (var pending in required!)
             if (pending is not null && ReferenceEquals(pending.Task, task)) pending.Observed = true;
