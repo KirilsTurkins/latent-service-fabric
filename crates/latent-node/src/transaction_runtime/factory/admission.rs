@@ -167,19 +167,32 @@ impl NativeTransactionAdmission {
             observation::platform(Phase::Retention, self.reserve_retention(envelope, budget))?;
         let bytes = retention.request_bytes();
         *self.retention.lock().map_err(|_| authorization::denied())? = Some(Arc::clone(&retention));
+        let mut claim_changes = None;
         if selection.mode == TransactionOperationMode::StrictCommand
             && selection.entity.is_some()
             && selection.retry.is_none()
         {
-            self.replay_existing_entity(&selection, envelope, budget)
-                .await?;
+            // Subscribe before the lookup so a claim published between the
+            // snapshot and queue registration cannot be missed.
+            claim_changes = Some(self.owners.lanes.claim_changes());
+            let read = self.replay_existing_entity(&selection, envelope, budget);
+            match control.as_ref() {
+                Some(control) => control.wait(read).await?,
+                None => read.await?,
+            }
         }
         // Pending command publication updates the namespace generation. Wait
         // before that write, then read and seal a fresh namespace. Duplicates
         // still use the ordinary durable admission/replay path after selection.
         let lane = if selection.mode == TransactionOperationMode::StrictCommand {
-            self.acquire_entity_lane(&selection, envelope, budget, control.as_ref())
-                .await?
+            self.acquire_entity_lane(
+                &selection,
+                envelope,
+                budget,
+                control.as_ref(),
+                claim_changes,
+            )
+            .await?
         } else {
             None
         };
@@ -254,6 +267,9 @@ impl NativeTransactionAdmission {
                 )
                 .await,
             )?;
+            if selection.entity.is_some() {
+                self.owners.lanes.claimed();
+            }
             let after = self
                 .read_namespace(&selection, &envelope.target.tenant)
                 .await?;
@@ -281,6 +297,7 @@ impl NativeTransactionAdmission {
         envelope: &ActivationEnvelope,
         budget: &ActivationBudget,
         control: Option<&crate::TransactionAdmissionControl>,
+        mut claims: Option<tokio::sync::watch::Receiver<u64>>,
     ) -> Result<Option<super::super::entity_queue::Physical>, PlatformError> {
         use latent_core::native_capacity::NativeBufferClass;
         use latent_state::entity_lanes::EntityScope;
@@ -327,11 +344,35 @@ impl NativeTransactionAdmission {
                 .await
                 .map_err(entity_queue_error)
         };
-        let lane = match control {
-            Some(control) => control.wait(wait).await?,
-            None => wait.await?,
-        };
-        Ok(Some(lane))
+        tokio::pin!(wait);
+        loop {
+            let next = async {
+                if let Some(changes) = claims.as_mut() {
+                    tokio::select! {
+                        result = &mut wait => result.map(Some),
+                        changed = changes.changed() => changed
+                            .map(|()| None)
+                            .map_err(|_| error(latent_core::PlatformErrorCode::Unavailable, "entity-queue-unavailable")),
+                    }
+                } else {
+                    (&mut wait).await.map(Some)
+                }
+            };
+            let next = match control {
+                Some(control) => control.wait(next).await?,
+                None => next.await?,
+            };
+            if let Some(lane) = next {
+                return Ok(Some(lane));
+            }
+            // The read job keeps its own physical owner after waiter loss. A
+            // cancellation or a duplicate result drops the queued reservation.
+            let read = self.replay_existing_entity(selection, envelope, budget);
+            match control {
+                Some(control) => control.wait(read).await?,
+                None => read.await?,
+            }
+        }
     }
 
     async fn open_host(

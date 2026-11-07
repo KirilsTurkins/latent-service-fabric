@@ -90,12 +90,13 @@ pub(super) struct Fixture {
     catalog: Arc<DirectoryArtifactRepository>,
     routes: Arc<DirectoryDeploymentRepository>,
     installation: Arc<TransactionInstallation>,
+    pub owners: Option<Arc<TransactionAdmissionOwners>>,
     deployment: latent_manifest::DeploymentManifest,
-    publication: latent_artifacts::ReleaseUseEligibility,
+    pub(super) publication: latent_artifacts::ReleaseUseEligibility,
     namespaces: Arc<NamespaceCatalog>,
     recovery: latent_capabilities::namespace::RecoverySelection,
     native: latent_core::native_capacity::NativeCapacityOwner,
-    effects: EffectAuthorityOwner,
+    pub(super) effects: EffectAuthorityOwner,
     dispatcher: Option<DispatcherOwner>,
     cleanup: Option<ActivationCleanupOwner>,
     config: ProtectedStoreConfig,
@@ -429,6 +430,7 @@ impl Fixture {
             catalog,
             routes,
             installation,
+            owners: None,
             deployment,
             publication,
             namespaces,
@@ -466,6 +468,7 @@ impl Fixture {
             )
             .unwrap(),
         );
+        self.owners = Some(Arc::clone(&owners));
         let cleanup = ActivationCleanupOwner::start(
             8,
             Duration::from_millis(100),

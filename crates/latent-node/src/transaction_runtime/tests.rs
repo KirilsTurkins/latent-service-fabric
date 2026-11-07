@@ -225,6 +225,96 @@ async fn active_entity_duplicate_uses_the_durable_in_progress_path_without_waiti
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn duplicates_queued_before_the_first_claim_replay_when_that_claim_is_published() {
+    use latent_core::native_capacity::NativeBufferClass;
+    use latent_state::entity_lanes::EntityScope;
+
+    let fixture = Fixture::new().await;
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    let reservation = fixture.owners.reserve_ingress(0, deadline).unwrap();
+    let permit = reservation
+        .reserve_buffer(NativeBufferClass::Request, 16 * 1024)
+        .unwrap();
+    let scope = EntityScope::new(
+        latent_core::TenantId("a".into()),
+        latent_core::StateNamespaceId("orders".into()),
+        1,
+        latent_core::EntityKey("hot".into()),
+    )
+    .unwrap();
+    let holder = fixture
+        .owners
+        .lanes
+        .acquire(
+            scope,
+            b"test-holder".to_vec(),
+            0,
+            deadline,
+            Arc::new(|| true),
+            permit,
+        )
+        .await
+        .unwrap();
+    drop(reservation);
+    let (one, one_envelope, one_budget) = fixture.entity_invocation("simultaneous", "hot");
+    let (two, two_envelope, two_budget) = fixture.entity_invocation("simultaneous", "hot");
+    let one_owner = Arc::clone(&one);
+    let two_owner = Arc::clone(&two);
+    let first = tokio::spawn(async move { one_owner.admit(&one_envelope, &one_budget).await });
+    tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        while fixture.owners.lanes.snapshot().queued < 1 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    let second = tokio::spawn(async move { two_owner.admit(&two_envelope, &two_budget).await });
+    tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        while fixture.owners.lanes.snapshot().queued < 2 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    drop(holder);
+    let (first, second) = tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        tokio::join!(first, second)
+    })
+    .await
+    .unwrap();
+    let first = first.unwrap();
+    let second = second.unwrap();
+    let (winner, replay) = match (&first, &second) {
+        (Ok(_), Err(error)) if error.code == latent_core::PlatformErrorCode::AlreadyExists => {
+            (&one, &two)
+        }
+        (Err(error), Ok(_)) if error.code == latent_core::PlatformErrorCode::AlreadyExists => {
+            (&two, &one)
+        }
+        _ => panic!("simultaneous duplicates did not resolve to one owner and one replay"),
+    };
+    let Some(TransactionAdmissionResult::Existing { command, .. }) = replay.take_result().unwrap()
+    else {
+        panic!("duplicate did not retain the existing command");
+    };
+    assert_eq!(command.outcome(), Outcome::Pending);
+    let Some(TransactionAdmissionResult::Command { claim, host }) = winner.take_result().unwrap()
+    else {
+        panic!("winning command host absent");
+    };
+    assert_eq!(fixture.rows(Family::Command).await, 1);
+    assert_eq!(fixture.owners.lanes.snapshot().queued, 0);
+    let retirement = claim.retirement();
+    host.finish_guest_access();
+    host.retire().await.unwrap();
+    drop(claim);
+    assert!(retirement.proven_noncommit().is_ok());
+    host.retire_command_role().unwrap();
+    drop((first, second, host, one, two));
+    fixture.shutdown().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn cold_entity_admission_progresses_while_the_hot_entity_waits() {
     let fixture = Fixture::new().await;
     let (hot, hot_envelope, hot_budget) = fixture.entity_invocation("hot-one", "hot");

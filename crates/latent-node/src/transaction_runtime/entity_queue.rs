@@ -47,6 +47,7 @@ impl Wake for Signal {
 pub(super) struct EntityQueue {
     lanes: EntityLanes<Arc<Pending>>,
     signal: watch::Sender<u64>,
+    claims: watch::Sender<u64>,
     waker: Waker,
     maximum_turn: usize,
     clock: Arc<dyn ActivationClock>,
@@ -71,14 +72,25 @@ impl EntityQueue {
         let maximum_turn = limits.global_queued;
         let lanes = EntityLanes::new(limits).map_err(QueueError::Lane)?;
         let (signal, _) = watch::channel(0);
+        let (claims, _) = watch::channel(0);
         let waker = Waker::from(Arc::new(Signal(signal.clone())));
         Ok(Self {
             lanes,
             signal,
+            claims,
             waker,
             maximum_turn,
             clock,
         })
+    }
+
+    pub(super) fn claim_changes(&self) -> watch::Receiver<u64> {
+        self.claims.subscribe()
+    }
+
+    pub(super) fn claimed(&self) {
+        self.claims
+            .send_modify(|version| *version = version.wrapping_add(1));
     }
 
     pub(super) async fn acquire(
