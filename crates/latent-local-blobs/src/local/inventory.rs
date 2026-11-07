@@ -5,7 +5,7 @@ use std::ops::Bound::{Excluded, Unbounded};
 
 /// One page of references belonging to the requested tenant. `complete` says
 /// only that this exact in-memory generation was traversed, not that any object
-/// is an orphan or can be deleted.
+/// is intact, is an orphan or can be deleted.
 pub struct LocalReferencePage {
     references: Vec<BlobReference>,
     pub complete: bool,

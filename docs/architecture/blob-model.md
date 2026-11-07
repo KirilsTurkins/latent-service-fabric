@@ -61,7 +61,8 @@ Starting an inventory requires capacity for both its cursor and a page; a
 single-slot configuration refuses the cursor without consuming that slot.
 Pagination observations remain host-internal because page boundaries can reflect
 entries owned by other tenants.
-This inventory describes references only: an absent reference or a completed
-walk grants neither blob access nor permission to reclaim an orphan. A future
+This inventory describes references only; it does not reverify payload bytes.
+An absent reference or a completed walk grants neither blob access nor
+permission to reclaim an orphan. A future
 reconciliation owner must still establish current durable closure and physical
 retirement before any deletion.
