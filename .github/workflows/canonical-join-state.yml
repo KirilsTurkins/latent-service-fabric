@@ -105,3 +105,12 @@ jobs:
           grep -Fx 'test runtime::component::func::host::ready_only_tests::ready_callbacks_match_boxed_fiber_refusal_unwind_reentry_and_lowering ... ok' "$RUNNER_TEMP/ready-sync.txt"
           grep -Fx 'test runtime::component::func::host::ready_only_tests::ready_callbacks_retain_reply_through_memory_lowering_and_destination_refusal ... ok' "$RUNNER_TEMP/ready-sync.txt"
           grep -F 'test result: ok. 2 passed; 0 failed; 0 ignored;' "$RUNNER_TEMP/ready-sync.txt"
+      - name: Run the four locked inline concurrent callback controls
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path crates/vendor/wasmtime/Cargo.toml --locked --lib --no-default-features --features std,runtime,component-model-async,cranelift,wat,cache,gc,gc-drc,threads,coredump inline_future_tests:: -- --test-threads=1 | tee "$RUNNER_TEMP/inline-future.txt"
+          grep -Fx 'test runtime::component::concurrent::inline_future_tests::real_inline_cancel_and_destructor_panic_preserve_physical_first_refund ... ok' "$RUNNER_TEMP/inline-future.txt"
+          grep -Fx 'test runtime::component::concurrent::inline_future_tests::real_inline_cancellation_cannot_credit_a_different_live_store ... ok' "$RUNNER_TEMP/inline-future.txt"
+          grep -Fx 'test runtime::component::concurrent::inline_future_tests::real_inline_component_prepays_exact_containing_box_and_preserves_result ... ok' "$RUNNER_TEMP/inline-future.txt"
+          grep -Fx 'test runtime::component::concurrent::inline_future_tests::real_inline_refuses_at_original_outer_admission_before_callback ... ok' "$RUNNER_TEMP/inline-future.txt"
+          grep -F 'test result: ok. 4 passed; 0 failed; 0 ignored;' "$RUNNER_TEMP/inline-future.txt"

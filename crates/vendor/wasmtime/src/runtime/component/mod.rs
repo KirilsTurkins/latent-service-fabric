@@ -123,9 +123,9 @@ pub use self::component::{Component, ComponentExportIndex, ExportLookup};
 pub use self::concurrent::{
     Access, Accessor, AccessorTask, AsAccessor, Destination, DirectDestination, DirectSource,
     ErrorContext, FuncCallConcurrent, FutureAny, FutureConsumer, FutureProducer, FutureReader,
-    GuardedFutureReader, GuardedStreamReader, GuestTaskId, JoinHandle, ReadBuffer, Source,
-    StreamAny, StreamConsumer, StreamProducer, StreamReader, StreamResult, TypedFuncCallConcurrent,
-    VMComponentAsyncStore, VecBuffer, WriteBuffer,
+    GuardedFutureReader, GuardedStreamReader, GuestTaskId, InlineConcurrentHost, JoinHandle,
+    ReadBuffer, Source, StreamAny, StreamConsumer, StreamProducer, StreamReader, StreamResult,
+    TypedFuncCallConcurrent, VMComponentAsyncStore, VecBuffer, WriteBuffer,
 };
 pub use self::func::{
     ComponentNamedList, ComponentType, Func, HostOutput, Lift, Lower, TypedFunc, WasmList, WasmStr,

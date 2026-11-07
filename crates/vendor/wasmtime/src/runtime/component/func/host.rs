@@ -1,7 +1,7 @@
 //! Implementation of calling Rust-defined functions from components.
 
 #[cfg(feature = "component-model-async")]
-use crate::component::concurrent::{self, Accessor, Status};
+use crate::component::concurrent::{self, Accessor, InlineConcurrentHost, Status};
 use crate::component::func::{LiftContext, LowerContext};
 use crate::component::matching::InstanceType;
 use crate::component::storage::{slice_to_storage, slice_to_storage_mut};
@@ -304,6 +304,25 @@ impl HostFunc {
                     memory,
                     store.wrap_call(move |accessor| func(accessor, params)),
                 )
+            }),
+        )
+    }
+
+    /// Admit the full concrete wrapper, including the inline callback state.
+    #[cfg(feature = "component-model-async")]
+    pub(crate) fn func_wrap_concurrent_inline<T, F, P, R>(func: F) -> Result<Arc<HostFunc>>
+    where
+        T: 'static,
+        F: InlineConcurrentHost<T, P, R>,
+        P: ComponentNamedList + Lift + 'static,
+        R: ComponentNamedList + Lower + 'static,
+    {
+        let func = Arc::new(func);
+        Self::new(
+            Asyncness::Yes,
+            StaticHostFn::<_, true>::new(move |store, params| {
+                let memory = store.0.native_memory();
+                HostResult::future(memory, store.wrap_inline_call(func.clone(), params))
             }),
         )
     }

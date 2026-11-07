@@ -98,6 +98,9 @@ use wasmtime_environ::{NUM_COMPONENT_CONTEXT_SLOTS, Trap};
 #[cfg(feature = "gc")]
 use wasmtime_unwinder::Unwind;
 
+#[cfg(all(test, feature = "std", feature = "cranelift", feature = "wat"))]
+mod inline_future_tests;
+
 pub use abort::JoinHandle;
 pub use func::{FuncCallConcurrent, TypedFuncCallConcurrent};
 pub use future_stream_any::{FutureAny, StreamAny};
@@ -357,6 +360,18 @@ where
 {
     token: StoreToken<T>,
     get_data: fn(&mut T) -> D::Data<'_>,
+}
+
+/// A concurrent host callback whose concrete future stays inline in the
+/// engine's already-admitted host future rather than allocating another Box.
+/// Captured or transitive allocations still need their own native owners.
+pub trait InlineConcurrentHost<T: 'static, P: 'static, R: 'static>: Send + Sync + 'static {
+    /// Construct the callback future without an additional erased Box.
+    fn invoke<'a>(
+        &'a self,
+        accessor: &'a Accessor<T>,
+        params: P,
+    ) -> impl Future<Output = Result<R>> + Send + 'a;
 }
 
 /// A helper trait to take any type of accessor-with-data in functions.
@@ -1677,6 +1692,25 @@ impl<T> StoreContextMut<'_, T> {
         async move {
             let mut accessor = Accessor::new(token);
             closure(&mut accessor).await
+        }
+    }
+
+    /// Embed the concrete callback state inside the already-owned host future.
+    pub(crate) fn wrap_inline_call<F, P, R>(
+        self,
+        callback: alloc::sync::Arc<F>,
+        params: P,
+    ) -> impl Future<Output = Result<R>> + 'static
+    where
+        T: 'static,
+        F: InlineConcurrentHost<T, P, R>,
+        P: Send + Sync + 'static,
+        R: Send + Sync + 'static,
+    {
+        let token = StoreToken::new(self);
+        async move {
+            let accessor = Accessor::new(token);
+            callback.invoke(&accessor, params).await
         }
     }
 
@@ -8150,7 +8184,6 @@ mod call_parameter_closure_memory_tests {
         drop(store);
         assert_eq!(state.active.load(Ordering::SeqCst), 0);
     }
-
 
     #[cfg(feature = "wat")]
     mod unstarted_host_drop_tests {
