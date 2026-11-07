@@ -72,7 +72,7 @@ class CThreadingProfile(unittest.TestCase):
         self.assertEqual(threading.TLS_SYMBOLS, expected)
         self.assertEqual(threading.linked_defines(('OWNED=7',)),
                          ('OWNED=7', 'LSF_C_LINKED_LIBC=1',
-                          *(name + '=__lsf_c_' + name for name in (*expected, *threading.YIELD_SYMBOLS, *threading.SYNC_SYMBOLS))))
+                          *(name + '=__lsf_c_' + name for name in (*expected, *threading.YIELD_SYMBOLS, *threading.ONCE_SYMBOLS, *threading.SYNC_SYMBOLS))))
         self.assertEqual(threading.YIELD_SYMBOLS, ('thrd_yield',))
         for name in ('LSF_C_LINKED_LIBC', *expected, *threading.YIELD_SYMBOLS,
                      *('__lsf_c_' + item for item in (*expected, *threading.YIELD_SYMBOLS))):
@@ -89,6 +89,13 @@ class CThreadingProfile(unittest.TestCase):
         self.assertNotIn('--allow-multiple-definition', selected)
         self.assertIn('"-Wl,-z,stack-size=65536"', selected)
         self.assertIn("= '-Wl,-z,stack-size=135168'", selected)
+
+    def test_once_aliases_are_closed_and_keep_one_private_owner(self):
+        expected = ('pthread_once', '__pthread_once', 'call_once')
+        self.assertEqual(threading.ONCE_SYMBOLS, expected)
+        for name in (*expected, *('__lsf_c_' + item for item in expected)):
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'compiler-owned'):
+                threading.linked_defines((name + '=foreign',))
 
     def test_selected_sync_symbols_are_closed_and_cannot_override_original_libc(self):
         expected = ('pthread_mutex_init', 'pthread_mutex_lock', 'pthread_mutex_trylock',
@@ -140,7 +147,8 @@ class CThreadingProfile(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'clock-material-path'):
                     threading.clock_libc_material_name('foreign.h')
         self.assertEqual({threading.libc_material_name(name) for name in threading.LIBC},
-                         {'c-threading-libc-' + str(index) for index in range(len(threading.LIBC))})
+                         {'c-threading-libc-' + str(index) for index in range(10)} |
+                         {'c-threading-once-libc-' + str(index) for index in range(2)})
 
     def test_installed_recipe_ships_optional_helper_and_exact_runtime_without_default_selection(self):
         from tools import dev_tool_distribution
@@ -234,8 +242,10 @@ class CThreadingProfile(unittest.TestCase):
         from tools.c_guest.compiler import Compiler
         from tools.build_observation import file_identity
         names=sorted(threading.LIBC)
-        self.assertEqual([threading.libc_material_name(name) for name in names],
+        self.assertEqual([threading.libc_material_name(name) for name in threading.LEGACY_LIBC_PATHS],
                          ['c-threading-libc-'+str(i) for i in range(10)])
+        self.assertEqual([threading.libc_material_name(name) for name in threading.ONCE_LIBC_PATHS],
+                         ['c-threading-once-libc-0','c-threading-once-libc-1'])
         with self.assertRaisesRegex(ValueError,'original-libc-material-path'):
             threading.libc_material_name('lib/unknown/errno.c')
         with tempfile.TemporaryDirectory() as temporary:

@@ -362,6 +362,101 @@ int cnd_timedwait(cnd_t *restrict object,mtx_t *restrict mutex,const struct time
 #endif
 }
 
+/* The pinned pthread_once_t and once_flag are the same memory32 int. A
+ * running initializer publishes a record on its already-admitted C stack;
+ * 0 and 1 retain the original libc's initial and completed representations.
+ * Waiters use their existing charged Wait and stack, never a fabricated
+ * successful result or an unowned process-global condition variable. */
+_Static_assert(_Generic((pthread_once_t *)0,once_flag *:1,default:0),
+               "unsupported pthread/C11 once ABI");
+_Static_assert(sizeof(pthread_once_t)==sizeof(uint32_t),"unsupported once word ABI");
+struct sync_once {
+    struct lsf_c_thread *owner;
+    int *control;
+    struct sync_wait *head,*tail;
+};
+static uint32_t sync_once_read(const int *control) {
+    uint32_t value;memcpy(&value,control,sizeof(value));return value;
+}
+static void sync_once_write(int *control,uint32_t value) {
+    memcpy(control,&value,sizeof(value));
+}
+static struct sync_once *sync_once_find(int *control,uint32_t address) {
+    if (address<=1) return NULL;
+    if (address%_Alignof(struct sync_once)) return NULL;
+    struct lsf_c_thread *thread=current()->root;unsigned visited=0;
+    while (thread) {
+        require(++visited<=RECORD_LIMIT+1u);
+        if (thread->phase==LSF_C_RUNNING && address>=thread->low &&
+            (uint64_t)address+sizeof(struct sync_once)<=thread->high) {
+            struct sync_once *state=(struct sync_once *)(uintptr_t)address;
+            return state->owner==thread && state->control==control?state:NULL;
+        }
+        thread=thread->next;
+    }
+    return NULL;
+}
+static void sync_once_complete(struct sync_once *state) {
+    require(current()==state->owner && sync_once_read(state->control)==(uint32_t)(uintptr_t)state);
+    __atomic_signal_fence(__ATOMIC_RELEASE);
+    sync_once_write(state->control,1);
+    while (state->head) {
+        struct sync_wait *node=state->head;state->head=node->next;
+        if (!state->head) state->tail=NULL;
+        require(node->linked);node->linked=0;node->next=NULL;
+        /* These are untimed Waits. Notification can only mark or
+         * resume-later; it cannot switch inline or retain node. */
+        sync_notify(node);
+    }
+}
+static int sync_once(int *control,void (*initialize)(void)) {
+    if (!control || !initialize) return EINVAL;
+    for (;;) {
+        uint32_t value=sync_once_read(control);
+        if (value==1) { __atomic_signal_fence(__ATOMIC_ACQUIRE);return 0; }
+        struct lsf_c_thread *caller=current();
+        if (value==0) {
+            struct sync_once state={.owner=caller,.control=control};
+            uint32_t address=(uint32_t)(uintptr_t)&state;
+            require(address>1 && address%_Alignof(struct sync_once)==0 && address>=caller->low &&
+                    (uint64_t)address+sizeof(state)<=caller->high);
+            sync_once_write(control,address);
+            initialize();
+            sync_once_complete(&state);
+            return 0;
+        }
+        if (!sync_once_find(control,value)) return EINVAL;
+        struct sync_wait node;int error=sync_begin(&node);
+        if (error) return error;
+        /* Admission can await. The original initializer might have finished
+         * and its stack record disappeared while this caller was away. */
+        value=sync_once_read(control);
+        if (value==1) {
+            sync_end(&node);__atomic_signal_fence(__ATOMIC_ACQUIRE);return 0;
+        }
+        if (value==0) { sync_end(&node);continue; }
+        struct sync_once *state=sync_once_find(control,value);
+        if (!state) { sync_end(&node);return EINVAL; }
+        node.linked=1;node.next=NULL;
+        if (state->tail) state->tail->next=&node;else state->head=&node;
+        state->tail=&node;
+        /* Recursing on the initializing thread parks as well: it cannot
+         * return success before the outer initializer has returned. */
+        sync_await(&node);
+        require(!node.linked && sync_once_read(control)==1);
+        sync_end(&node);__atomic_signal_fence(__ATOMIC_ACQUIRE);return 0;
+    }
+}
+int __pthread_once(pthread_once_t *control,void (*initialize)(void)) {
+    int saved=errno,error=sync_once(control,initialize);errno=saved;return error;
+}
+int pthread_once(pthread_once_t *control,void (*initialize)(void)) {
+    return __pthread_once(control,initialize);
+}
+void call_once(once_flag *control,void (*initialize)(void)) {
+    int saved=errno,error=sync_once(control,initialize);errno=saved;require(error==0);
+}
+
 #if LSF_C_TIMED_CLOCK
 /* Timed waits use the real timer-next host await, never manual promotion of a
  * canonical thread whose engine host future is still live. A signal closes

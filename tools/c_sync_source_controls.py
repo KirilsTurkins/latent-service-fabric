@@ -25,6 +25,7 @@ HEADERS = {
     'libc/include/wasm-wasi-musl/wasi/api.h': {'bytes': 56969, 'sha256': '8cf2859277ea2fc984780a00048686955805fd8a00c7be1d8f916105becf0174'},
 }
 SOURCES = ('tools/c_sync_source_controls.py', FIXTURE + 'c', FIXTURE + 'cjs',
+    'tools/tests/fixtures/c-once-jspi.c', 'tools/tests/fixtures/c-once-jspi.cjs',
     'sdk/c-guest/runtime/threads.c', 'sdk/c-guest/runtime/synchronization.c',
     'sdk/c-guest/runtime/thread-abi.h', 'tools/qualify_c_context_lowering.py',
     'crates/latent-component-threading/src/c_lifecycle.rs',
@@ -50,6 +51,10 @@ def public_abi(headers):
     for name in ('pthread_mutex_t', 'pthread_cond_t', 'pthread_mutexattr_t',
             'pthread_condattr_t', 'mtx_t', 'cnd_t'):
         parts.append(one(r'^typedef struct .* ' + name + r';$', types) + '\n')
+    parts.append(one(r'^typedef int pthread_once_t;$', types) + '\n')
+    parts.append(one(r'^typedef int once_flag;$', c11) + '\n')
+    parts.append(one(r'^#define PTHREAD_ONCE_INIT 0$', pthread) + '\n')
+    parts.append(one(r'^#define ONCE_FLAG_INIT 0$', c11) + '\n')
     # C, not C++, selects the original opaque pointer pthread_t declaration.
     parts.append(one(r'^typedef struct __pthread \* pthread_t;$', types) + '\n')
     for name in ('PTHREAD_MUTEX_NORMAL', 'PTHREAD_MUTEX_RECURSIVE', 'PTHREAD_MUTEX_ERRORCHECK'):
@@ -65,8 +70,8 @@ def run(output, zig, node):
     before = {name: identity(ROOT / name, 1024 * 1024) for name in SOURCES}
     tools = {name: identity(path) for name, path in (('zig', zig), ('node', node))}
     report = {'schemaVersion': 'latent.c.serialized-sync-source-controls.v1', 'status': 'failed',
-        'source': before, 'tools': tools, 'commands': [], 'cases': 13,
-        'canonicalAndBrokerPorts': 'explicit-serialized-doubles',
+        'source': before, 'tools': tools, 'commands': [], 'cases': 19,
+        'canonicalAndBrokerPorts': 'explicit-serialized-and-jspi-doubles',
         'actualGuestExecuted': False, 'actualCanonicalWaitExecuted': False,
         'actualOriginalLedgerExecuted': False, 'signedQualification': False}
     environment = build_environment(output)
@@ -123,10 +128,23 @@ def run(output, zig, node):
             '-Wl,--max-memory=4194304', '-I', output, '-I', runtime,
             ROOT / (FIXTURE + 'c'), '-o', output / 'reference.wasm'])
         stdout = command([node, '--max-old-space-size=64', ROOT / (FIXTURE + 'cjs'), output / 'reference.wasm'])
-        require(stdout == b'PASS:13 serialized production-source cases; no engine/ledger qualification\n',
+        require(stdout == b'PASS:19 serialized production-source cases; no engine/ledger qualification\n',
             'c-sync-exact-source-control-result')
+        exports = ('__stack_pointer', 'setup', 'set_scenario', 'root_pointer', 'first_pointer',
+            'second_pointer', 'start_root', 'start_first', 'start_second', 'read_flag',
+            'read_init', 'read_finished', 'read_live', 'read_admitted', 'read_settled',
+            'read_parked', 'read_woken')
+        command([zig, *flags, '-fno-builtin', '-fno-stack-protector', '-nostdlib',
+            '-Wl,--no-entry', '-Wl,--import-memory', '-Wl,--initial-memory=4194304',
+            '-Wl,--max-memory=4194304', '-Wl,-z,stack-size=65536',
+            *('-Wl,--export=' + name for name in exports), '-I', output, '-I', runtime,
+            ROOT / 'tools/tests/fixtures/c-once-jspi.c', '-o', output / 'once-jspi.wasm'])
+        stdout = command([node, '--max-old-space-size=64', '--experimental-wasm-jspi',
+            ROOT / 'tools/tests/fixtures/c-once-jspi.cjs', output / 'once-jspi.wasm'])
+        require(stdout == b'actual once source: one initializer, two suspended mixed-API waiters, two settled Wait doubles; recursion and initializer traps retained; JSPI test ports only\n',
+            'c-once-jspi-source-control-result')
         report['outputs'] = {name: identity(output / name, 1024 * 1024) for name in
-            ('threads.o', 'reference.wasm', abi.name, body.name)}
+            ('threads.o', 'reference.wasm', 'once-jspi.wasm', abi.name, body.name)}
         require(header_ids == {name: identity(lib / name, 1024 * 1024) for name in HEADERS},
             'c-sync-header-input-changed')
         require(before == {name: identity(ROOT / name, 1024 * 1024) for name in SOURCES},

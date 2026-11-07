@@ -16,7 +16,10 @@
         "tools/c_thread_runtime_node.py",
         "tools/standard_http/**",
         "sdk/c-guest/runtime-fixtures/libfetch/stat-probe.c",
-        "sdk/c-guest/src/libfetch/http.c"
+        "sdk/c-guest/src/libfetch/http.c",
+        "sdk/c-guest/runtime/**",
+        "tools/c_guest/threading.py",
+        "crates/latent-component-threading/**"
       ]
     }
   },
