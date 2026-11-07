@@ -178,6 +178,13 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
     list->infallibleAppend(staged);
   }
 ''', 'listener-and-abort-publication-after-admission')
+    source = replace_once(source,
+        b'    if (Event::has_flag(event, EventFlag::StopImmediatePropagation)) {\n'
+        b'      return true;\n'
+        b'    }\n',
+        b'    if (Event::has_flag(event, EventFlag::StopImmediatePropagation)) {\n'
+        b'      break; // remove already-fired once listeners before returning\n'
+        b'    }\n', 'finish-once-listener-retirement-after-immediate-stop')
     # All three original list construction sites use exactly the same wrapper.
     for function, failing in [('create', b'nullptr'), ('init', b'false'), ('constructor', b'false')]:
         start = source.index(b'EventTarget::'+function.encode()+b'(')
