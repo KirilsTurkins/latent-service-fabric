@@ -28,14 +28,18 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
         Objects.requireNonNull(runnable);
         this.callable = () -> { runnable.run(); return result; };
     }
-    synchronized boolean accept() {
+    private void requireCertainResultOwner() {
         if (resultSettlementAttempted)
             throw new IllegalStateException("activation-future-result-settlement-uncertain");
+    }
+    synchronized boolean accept() {
+        requireCertainResultOwner();
         if (completed || owner != null) return false;
         owner = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Result);
         return true;
     }
     synchronized boolean acceptQueueCopy() {
+        requireCertainResultOwner();
         if (completed) return false;
         if (queueCopies == Integer.MAX_VALUE) throw new java.util.concurrent.RejectedExecutionException("activation-future-queue-copies");
         accept();

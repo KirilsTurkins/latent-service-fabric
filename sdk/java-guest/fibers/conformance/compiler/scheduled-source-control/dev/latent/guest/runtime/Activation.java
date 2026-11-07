@@ -18,20 +18,23 @@ public final class Activation {
     public static String loseCloseAckNext;
     public static int loseCloseAckAfter;
     public static volatile boolean poisoned;
+    private static Lease lastFailedLease;
     public static boolean retainFailedStart;
     public interface ManagedPool { boolean hasPendingWork(); boolean isRetired(); void closeAtRoot(); }
     public static final class Lease implements AutoCloseable {
         private final int kind;
         private boolean closed;
+        private int attempts;
         Lease(int kind) { this.kind = kind; }
         @Override public void close() {
             synchronized (Activation.class) {
                 closeAttempts[kind]++;
+                attempts++;
                 if (closed || owners[kind] <= 0) throw new AssertionError("source-duplicate-owner-retirement");
                 if (Bindings.LatentRuntimeActivationOwnerKind.values()[kind].name().equals(loseCloseAckNext)) {
                     if (loseCloseAckAfter > 0) loseCloseAckAfter--;
                     else {
-                        loseCloseAckNext = null; closed = true; owners[kind]--;
+                        loseCloseAckNext = null; lastFailedLease = this; closed = true; owners[kind]--;
                         throw new IllegalStateException("source-owner-settlement-ack-unknown");
                     }
                 }
@@ -39,6 +42,7 @@ public final class Activation {
                     if (denyCloseAfter > 0) denyCloseAfter--;
                     else {
                         denyCloseNext = null;
+                        lastFailedLease = this;
                         throw new IllegalStateException("source-owner-settlement-denied");
                     }
                 }
@@ -59,6 +63,7 @@ public final class Activation {
     }
     public static synchronized int count(Bindings.LatentRuntimeActivationOwnerKind kind) { return owners[kind.ordinal()]; }
     public static synchronized int closeAttempts(Bindings.LatentRuntimeActivationOwnerKind kind) { return closeAttempts[kind.ordinal()]; }
+    public static synchronized int failedLeaseAttempts() { return lastFailedLease == null ? 0 : lastFailedLease.attempts; }
     public static void fenceUncertainResultSettlement() { poisoned = true; }
     public static synchronized void manage(ManagedPool pool) { pools.add(pool); }
     public static void startManaged(Thread worker, ManagedPool pool) {

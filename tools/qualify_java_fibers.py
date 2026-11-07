@@ -430,7 +430,8 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         if result != 'SCHEDULED_PERIODIC_ROLLBACK_SETTLEMENT PASS ' + mode:
             raise ValueError('Java periodic rollback settlement control did not complete')
     for mode in ('refused-claim', 'unknown-claim', 'refused-readmit', 'unknown-readmit', 'success-readmit',
-                 'refused-notify', 'unknown-notify', 'refused-nested', 'unknown-nested'):
+                 'refused-notify', 'unknown-notify', 'refused-nested', 'unknown-nested',
+                 'refused-completed', 'unknown-completed', 'success-completed'):
         result = compiler.run('scheduled-future-result-settlement-' + mode, 'java', '-Xmx256m', '-cp', output,
             'ScheduledFutureResultSettlementControl', mode).strip()
         if result != 'SCHEDULED_FUTURE_RESULT_SETTLEMENT PASS ' + mode:
