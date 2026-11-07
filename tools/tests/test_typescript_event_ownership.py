@@ -1,6 +1,11 @@
 """Exact original-source graph lifecycle derivation; not engine qualification."""
 from pathlib import Path
 import hashlib
+import json
+import os
+import shutil
+import subprocess
+import tempfile
 import unittest
 from tools.typescript_guest import event_engine as events, abort_engine
 
@@ -15,6 +20,13 @@ def originals():
 def derive():
     source, _ = abort_engine.derive_abort_timeout((FIXTURES/'original-abort-signal.cpp').read_bytes())
     return events.derive_event_ownership(originals(), source)
+
+
+def emitted_listener_body(source):
+    function = source.index(b'bool EventTarget::add_listener(')
+    start = source.index(b'  auto *it = std::find_if(', function)
+    end = source.index(b'\n  return true;\n}\n\n// https://dom.spec.whatwg.org/#dom-eventtarget-removeeventlistener', start)
+    return source[start:end]
 
 
 class TypeScriptEventOwnershipTests(unittest.TestCase):
@@ -64,8 +76,11 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
         self.assertLess(source.rindex(b'admit_native_object(cx, accepted)', 0, listener), listener)
         terminator = source.index(b'js::MakeUnique<Terminator>(')
         self.assertLess(source.rindex(b'admit_native_object(cx, accepted)', 0, terminator), terminator)
-        self.assertIn(b'if (!AbortSignal::add_algorithm(signal, std::move(terminator))) return false;', source)
-        self.assertIn(b'if (!list->append(listener))', source)
+        self.assertIn(b'if (!AbortSignal::add_algorithm(signal, std::move(terminator))) {', source)
+        self.assertLess(source.index(b'if (!list->reserve(list->length() + 1))'), terminator)
+        self.assertLess(terminator, source.index(b'list->infallibleAppend(staged);', terminator))
+        self.assertLess(source.index(b'if (!AbortSignal::add_algorithm(signal, std::move(terminator)))'),
+                        source.index(b'staged->callback = callback_val;'))
 
     def test_all_original_abort_subclasses_transfer_ownership_and_keep_callback_bodies(self):
         before = originals()
@@ -160,6 +175,56 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
                      'tools/typescript_guest/event_engine.py'):
             self.assertIn(name, engine_input_paths())
             self.assertIn(name, RECIPE)
+
+
+class EventPublicationControls(unittest.TestCase):
+    """Execute emitted C++ with finite doubles, not a signed-engine witness."""
+    @classmethod
+    def setUpClass(cls):
+        compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++') or shutil.which('cl')
+        if not compiler:
+            if os.name == 'nt':
+                raise unittest.SkipTest('A C++ compiler is required for event publication controls')
+            raise RuntimeError('C++ compiler is required for event publication controls')
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.temporary.cleanup)
+        output = Path(cls.temporary.name)
+        root = Path(__file__).resolve().parents[2]
+        template = (root/'tools/tests/fixtures/typescript_event_publication.cpp').read_bytes()
+        marker = b'  // INSERT_EMITTED_EVENT_BODY'
+        if template.count(marker) != 1:
+            raise AssertionError('unique production-body insertion point required')
+        selected = derive()[0]['StarlingMonkey/builtins/web/event/event-target.cpp']
+        source = output/'event_publication.cpp'
+        source.write_bytes(template.replace(marker, emitted_listener_body(selected)))
+        cls.binary = output/('event_publication.exe' if os.name == 'nt' else 'event_publication')
+        if Path(compiler).stem.lower() == 'cl':
+            args = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX',
+                    str(source), '/Fe:' + str(cls.binary), '/Fo:' + str(output/'event_publication.obj')]
+        else:
+            args = [compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror',
+                    str(source), '-o', str(cls.binary)]
+        result = subprocess.run(args, capture_output=True, timeout=60)
+        if result.returncode or len(result.stdout) + len(result.stderr) > 65536:
+            raise AssertionError((result.stdout + result.stderr)[:65536].decode(errors='replace'))
+        if not cls.binary.is_file() or cls.binary.stat().st_size > 4*1024**2:
+            raise AssertionError('finite event publication control required')
+
+    def test_registration_and_reactivation_failure_boundaries(self):
+        for case in (
+            'native-refusal-before-listener-publication',
+            'algorithm-refusal-before-listener-publication',
+            'vector-refusal-before-algorithm-publication',
+            'successful-registration-retains-both-owners',
+            'once-listener-reinserted-after-original-neighbor',
+            'reactivation-refusal-keeps-existing-listener',
+            'signal-aborted-during-type-conversion',
+        ):
+            with self.subTest(case=case):
+                result = subprocess.run([str(self.binary), case], capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
+                self.assertEqual(json.loads(result.stdout),
+                                 {'case': case, 'passed': True, 'engineQualified': False})
 
 
 if __name__ == '__main__':
