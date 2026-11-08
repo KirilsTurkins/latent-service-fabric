@@ -34,6 +34,7 @@ from tools.sdk_provider_scenario import start_provider
 
 SELF = 'tools/qualify_c_once_runtime.py'
 SOURCE = 'tools/fixtures/c-once-runtime/main.c'
+ROOT_DRAIN_SOURCE = 'tools/fixtures/c-once-runtime/root-drain.h'
 WORKFLOW = '.github/workflows/c-once-runtime.yml'
 WORLD = fixture.FIXTURE + 'world.wit'
 
@@ -54,10 +55,22 @@ def witness(value):
         'canonicalPollPendingClaimed': False, 'automaticCpuFairnessClaimed': False}
 
 
+def root_drain_witness(value, mode):
+    require(mode in ('pre', 'late') and value == mode + ':2:3:3:1',
+            'c-root-drain-exact-ordered-witness')
+    return {'ordering': 'application-join-before-root' if mode == 'pre' else 'application-join-after-root-observer',
+        'waitsBeforeRoot': 2, 'waitsWithRootObserver': 3, 'waitsAfterApplicationJoin': 3,
+        'applicationJoinCompleted': True, 'targetResultPreserved': True,
+        'resultBytesUpdatedAfterRootReturn': True, 'hostObservedOriginalOwners': True,
+        'canonicalPollPendingClaimed': False, 'automaticCpuFairnessClaimed': False,
+        'kernelNativeFinalFreeProved': False}
+
+
 def prepare(directory):
     project = c_capsule_project.create(directory, 'greeting', name='c-thread-runtime',
                                         threading_profile=fixture.PROFILE)
     (project / 'src/main.c').write_bytes(read_file(ROOT / SOURCE, 65536))
+    (project / 'src/root-drain.h').write_bytes(read_file(ROOT / ROOT_DRAIN_SOURCE, 65536))
     (project / 'wit/world.wit').write_bytes(read_file(ROOT / WORLD, 65536))
     config = json.loads(read_file(project / 'capsule-project.json'))
     config['world'] = fixture.WORLD
@@ -71,7 +84,7 @@ def prepare(directory):
 
 def inputs(capture=None):
     rows = materials()
-    for name in (SELF, SOURCE, WORKFLOW, WORLD, 'tools/qualify_java_server_lifecycle.py',
+    for name in (SELF, SOURCE, ROOT_DRAIN_SOURCE, WORKFLOW, WORLD, 'tools/qualify_java_server_lifecycle.py',
                  'tools/qualify_java_server_lifecycle_suite.py', 'tools/toolchain.toml',
                  'tools/requirements.lock', 'tools/tests/test_c_once_runtime.py'):
         rows[name] = file_identity(ROOT / name, 4 * 1024**2)
@@ -86,9 +99,10 @@ def inputs(capture=None):
     return dict(sorted(rows.items()))
 
 
-def invoke(client, probe, target, output, activation):
+def invoke(client, probe, target, output, activation, mode='once'):
+    require(mode in ('once', 'pre', 'late'), 'c-once-unreviewed-activation-mode')
     revision = owner.selected_revision(client, target)
-    process = owner.start_call(client, target, owner.SERVICE, 'greet', ['once'], activation)
+    process = owner.start_call(client, target, owner.SERVICE, 'greet', [mode], activation)
     failed = False
     try:
         row = owner.finish_call(client, process)
@@ -106,7 +120,8 @@ def invoke(client, probe, target, output, activation):
                     ('outboundRequests', 'stateReadBytes', 'stateWriteBytes', 'blobReadBytes',
                      'blobWriteBytes', 'logBytes', 'effectCount', 'childCalls')),
                 'c-once-original-envelope-and-no-other-authority')
-        checked = witness(row['decoded'][0]['ok'])
+        checked = (witness(row['decoded'][0]['ok']) if mode == 'once'
+                   else root_drain_witness(row['decoded'][0]['ok'], mode))
         observed = owner.retire(client, probe, target, output, activation)
         require(observed['physicalOwnersAfter'] == 0 and observed['activeProviderCountersAfter'] == 0,
                 'c-once-post-call-counters')
@@ -131,7 +146,7 @@ def run_node(artifact, native, output, deadline):
     commands = Commands(ROOT, fresh(output / 'commands'), build_environment(output),
                         deadline_seconds=300, command_seconds=60)
     commands.deadline = min(commands.deadline, deadline)
-    record = {'schemaVersion': 'latent.c.once.node.v1', 'status': 'incomplete',
+    record = {'schemaVersion': 'latent.c.once-and-root-drain.node.v1', 'status': 'incomplete',
               'component': component, 'native': before, 'full744Qualified': False}
     stage, failed = 'sign', False
     try:
@@ -172,6 +187,9 @@ def run_node(artifact, native, output, deadline):
             stage = 'two-signed-once-activations'
             record['cases'] = [invoke(client, probe, target, output, 'c-once-' + label)
                                for label in ('initial', 'fresh')]
+            stage = 'two-signed-root-drain-activations'
+            record['rootDrainCases'] = [invoke(client, probe, target, output, 'c-root-drain-' + mode, mode)
+                                        for mode in ('pre', 'late')]
             delete_all(client, [target['name']])
             record['afterDeletes'] = sample(client, probe, 'c-once-after-deletes', 0)
             stop(client, node)
@@ -212,10 +230,11 @@ def qualify(args):
     commands.deadline = time.monotonic() + 1315 - elapsed
     commands.environment.update(CARGO_TARGET_DIR=os.environ.get('CARGO_TARGET_DIR', str(ROOT / 'target')),
         CARGO_BUILD_JOBS='2', CARGO_INCREMENTAL='0', CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0')
-    result = {'schemaVersion': 'latent.c.once.qualification.v1', 'status': 'incomplete',
+    result = {'schemaVersion': 'latent.c.once-and-root-drain.qualification.v1', 'status': 'incomplete',
               'full744Qualified': False, 'publisherAuthenticated': False, 'releasePublished': False,
               'limits': {'parentSeconds': 1320, 'commandSeconds': 900, 'cleanupReserveSeconds': 5,
-                         'jobs': 2, 'components': 1, 'activations': 2, 'clientCalls': 384}}
+                         'jobs': 2, 'components': 1, 'activations': 4, 'onceActivations': 2,
+                         'rootDrainActivations': 2, 'clientCalls': 384}}
     stage = 'source'
     try:
         source = source_identity(ROOT)
@@ -244,8 +263,8 @@ def qualify(args):
         result['build'] = build_evidence(artifact, original)
         stage = 'signed-once-witnesses'
         result['node'] = run_node(artifact, native, output / 'node', commands.deadline)
-        require(result['node']['status'] == 'passed' and len(result['node']['cases']) == 2,
-                'c-once-two-signed-outcomes')
+        require(result['node']['status'] == 'passed' and len(result['node']['cases']) == 2
+                and len(result['node']['rootDrainCases']) == 2, 'c-once-and-root-drain-four-signed-outcomes')
         require(helpers == inputs() and source_identity(ROOT) == source
                 and sdk == inventory(c_capsule_project.sdk_inputs(ROOT, threading=True))
                 and original == inventory(snapshot(project)) and result['nativeTuple'] == ordinary_tuple(receipt, native)
