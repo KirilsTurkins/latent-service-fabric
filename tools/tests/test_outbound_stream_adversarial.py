@@ -36,17 +36,38 @@ class AdversarialPeerTests(unittest.TestCase):
         self.peers.append(peer)
         return peer
 
-    def step(self):
+    def step(self, *, read_only=False):
         for key, events in self.selector.select(.002):
-            key.data.event(key, events)
+            if read_only:
+                events &= selectors.EVENT_READ
+            if events:
+                key.data.event(key, events)
         for peer in self.peers:
             peer.check()
 
-    def pump(self, ready):
+    def pump(self, ready, *, read_only=False):
         deadline = time.monotonic() + 3
         while not ready():
             self.assertLess(time.monotonic(), deadline, "watchdog is not a readiness witness")
-            self.step()
+            self.step(read_only=read_only)
+
+    def receive(self, stream, length):
+        stream.setblocking(False)
+        received = bytearray()
+
+        def complete():
+            if len(received) == length:
+                return True
+            try:
+                chunk = stream.recv(length - len(received))
+                self.assertTrue(chunk, "unexpected EOF before the finite response")
+                received.extend(chunk)
+            except BlockingIOError:
+                pass
+            return len(received) == length
+
+        self.pump(complete)
+        return bytes(received)
 
     def client(self, peer):
         stream = socket.create_connection(("127.0.0.1", peer.port), timeout=1)
@@ -179,7 +200,11 @@ class AdversarialPeerTests(unittest.TestCase):
 
     def test_pipelined_prior_replies_must_drain_before_releasing_commit_reply(self):
         peer = self.peer(fragment_bytes=1)
-        self.mutation(peer)
+        stream = self.client(peer)
+        stream.sendall(ENVELOPE + MESSAGE + b".\r\n")
+        # Deliberately withhold write dispatch; TCP packetization cannot decide
+        # whether earlier replies are still queued when the mutation commits.
+        self.pump(lambda: bool(peer.observation()["barriers"]), read_only=True)
         barrier = self.barrier(peer)
         self.assertGreater(barrier["priorReplyBytes"], 0)
         with self.assertRaisesRegex(ValueError, "prior-replies-not-drained"):
@@ -225,7 +250,8 @@ class AdversarialPeerTests(unittest.TestCase):
             stream.recv(1)
         self.release(peer, "reply")
         self.pump(lambda: all(not row["output"] for row in peer.clients.values()))
-        self.assertEqual(stream.recv(4096), b"220 loopback.invalid SMTP\r\n")
+        greeting = b"220 loopback.invalid SMTP\r\n"
+        self.assertEqual(self.receive(stream, len(greeting)), greeting)
 
     def test_watchdog_failure_survives_physical_close_and_repeated_cleanup(self):
         peer = self.peer()
@@ -267,10 +293,55 @@ class AdversarialPeerTests(unittest.TestCase):
                         peer.release(barrier["attempt"], barrier["sequence"], "reply")
                     self.release(peer, "terminate")
                     self.pump(lambda: all(not row["output"] for row in peer.clients.values()))
-                    self.assertEqual(stream.recv(2), b"\r\n")
+                    self.assertEqual(self.receive(stream, 2), b"\r\n")
                 self.assertEqual(peer.observation()["acceptedMutations"], 0)
                 self.assertIsNone(peer.observation()["failure"])
                 peer.close()
+
+    def test_release_enforces_expiry_without_waiting_for_the_next_selector_check(self):
+        peer = self.peer(scenario="greeting")
+        self.client(peer)
+        owned, record = next(iter(peer.clients.items()))
+        barrier = self.barrier(peer)
+        with patch("tools.outbound_stream_adversarial.time.monotonic", return_value=record["idle"]):
+            with self.assertRaisesRegex(ValueError, "expired-outbound-peer-barrier"):
+                peer.release(barrier["attempt"], barrier["sequence"], "reply")
+        observed = peer.observation()
+        self.assertEqual(owned.fileno(), -1)
+        self.assertEqual(observed["releasedBarriers"], 0)
+        self.assertEqual(observed["failure"], "peer-watchdog-expired")
+        self.assertEqual(observed["expiredConnections"], 1)
+
+    def test_two_live_gates_cannot_exchange_their_original_sequence(self):
+        peer = self.peer(scenario="greeting")
+        self.client(peer)
+        self.client(peer)
+        first, second = peer.observation()["barriers"]
+        before = peer.observation()
+        with self.assertRaisesRegex(ValueError, "stale-outbound-peer-barrier"):
+            peer.release(second["attempt"], first["sequence"], "close")
+        self.assertEqual(peer.observation(), before)
+        peer.release(first["attempt"], first["sequence"], "close")
+        self.assertEqual(peer.observation()["barriers"], [second])
+        peer.release(second["attempt"], second["sequence"], "reply")
+        self.assertEqual(peer.observation()["releasedBarriers"], 2)
+        self.assertEqual(peer.observation()["peerDescriptorClosures"], 1)
+
+    def test_failed_reset_syscall_keeps_failure_and_never_records_a_release(self):
+        peer = self.peer(scenario="greeting")
+        self.client(peer)
+        owned = next(iter(peer.clients))
+        barrier = self.barrier(peer)
+        with patch.object(socket.socket, "setsockopt", side_effect=OSError("controlled reset refusal")):
+            with self.assertRaises(OSError):
+                peer.release(barrier["attempt"], barrier["sequence"], "reset")
+        observed = peer.observation()
+        self.assertEqual(owned.fileno(), -1)
+        self.assertEqual(observed["failure"], "peer-control-failed")
+        self.assertEqual(observed["releasedBarriers"], 0)
+        self.assertEqual(observed["peerResets"], 0)
+        self.assertEqual(observed["peerDescriptorClosures"], 1)
+        self.assertNotIn("controlled reset refusal", json.dumps(observed))
 
     def test_gate_releases_do_not_leak_payload_or_credentials_into_events(self):
         peer = self.peer()

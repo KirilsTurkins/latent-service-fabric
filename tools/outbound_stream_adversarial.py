@@ -144,6 +144,12 @@ class GatedSmtpPeer(SmtpPeer):
         barrier = record.get("barrier")
         if not barrier or barrier["sequence"] != sequence or self.failure:
             raise ValueError("stale-outbound-peer-barrier")
+        now = time.monotonic()
+        if now >= min(record["idle"], record["absolute"], self.deadline):
+            # A controller release cannot race ahead of its next check() and
+            # resurrect work after the original connection deadline.
+            self.check(now)
+            raise ValueError("expired-outbound-peer-barrier")
         if record["output"]:
             raise ValueError("outbound-peer-prior-replies-not-drained")
         if ((action == "reply" and barrier["kind"] not in ("greeting", "mutation"))
