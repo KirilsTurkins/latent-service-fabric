@@ -300,6 +300,128 @@ class PeerHalfCloseTests(unittest.TestCase):
         for name in ("guestReadPendingObserved", "providerRetirementObserved", "kernelFinalFreeObserved"):
             self.assertIs(observed[name], False)
 
+    def test_short_and_blocked_writes_keep_only_the_unaccepted_reply_suffix(self):
+        peer = self.peer(fragment_bytes=1024)
+        stream, owned = self.mutation(peer)
+        self.park(peer, stream, owned)
+        record = peer.clients[owned]
+        deadlines = record["idle"], record["absolute"]
+        self.release(peer, "reply")
+        key = self.selector.get_key(owned)
+        send = socket.socket.send
+        accepted = bytearray()
+        calls = []
+        steps = iter((0, "blocked", 3))
+
+        def controlled_send(sock, data, *args):
+            if sock is not owned:
+                return send(sock, data, *args)
+            calls.append(bytes(data))
+            step = next(steps)
+            if step == "blocked":
+                raise BlockingIOError()
+            if step == 0:
+                return 0
+            sent = send(sock, data[:step], *args)
+            accepted.extend(data[:sent])
+            return sent
+
+        # Only write progress is fault-selected; positive bytes use the original
+        # TCP send. This is not a naturally saturated kernel-buffer measurement.
+        with patch.object(socket.socket, "send", controlled_send):
+            for _ in range(2):
+                peer.event(key, selectors.EVENT_WRITE)
+                self.assertEqual(record["output"], MUTATION_REPLY)
+                self.assertEqual(record["mutation_reply_end"], len(MUTATION_REPLY))
+                self.assertEqual(peer.sent_replies, 0)
+                self.assertGreaterEqual(owned.fileno(), 0)
+            peer.event(key, selectors.EVENT_WRITE)
+        self.assertTrue(accepted)
+        self.assertLess(len(accepted), len(MUTATION_REPLY))
+        self.assertEqual(calls, [MUTATION_REPLY] * 3)
+        self.assertEqual(record["output"], MUTATION_REPLY[len(accepted):])
+        self.assertEqual(record["mutation_reply_end"], len(MUTATION_REPLY) - len(accepted))
+        self.assertEqual(peer.sent_replies, 0)
+        self.assertEqual((record["idle"], record["absolute"]), deadlines)
+        wire = self.wire_to_eof(stream)
+        self.assertTrue(wire.endswith(MUTATION_REPLY))
+        self.assertEqual(wire.count(MUTATION_REPLY), 1)
+        observed = peer.observation()
+        self.assertEqual(observed["acceptedConnections"], 1)
+        self.assertEqual(observed["acceptedMutations"], 1)
+        self.assertEqual(observed["sentMutationReplies"], 1)
+        self.assertEqual(observed["peerDescriptorClosures"], 1)
+
+    def test_partial_reply_then_write_failure_never_claims_a_complete_reply(self):
+        peer = self.peer(fragment_bytes=1024)
+        stream, owned = self.mutation(peer)
+        self.park(peer, stream, owned)
+        self.release(peer, "reply")
+        key = self.selector.get_key(owned)
+        send = socket.socket.send
+        accepted = bytearray()
+
+        def controlled_send(sock, data, *args):
+            if sock is not owned:
+                return send(sock, data, *args)
+            if accepted:
+                raise BrokenPipeError("controlled peer failure")
+            sent = send(sock, data[:3], *args)
+            accepted.extend(data[:sent])
+            return sent
+
+        with patch.object(socket.socket, "send", controlled_send):
+            peer.event(key, selectors.EVENT_WRITE)
+            self.assertTrue(accepted)
+            self.assertEqual(peer.sent_replies, 0)
+            peer.event(key, selectors.EVENT_WRITE)
+        observed = peer.observation()
+        self.assertEqual(owned.fileno(), -1)
+        self.assertEqual(observed["acceptedConnections"], 1)
+        self.assertEqual(observed["acceptedMutations"], 1)
+        self.assertEqual(observed["sentMutationReplies"], 0)
+        self.assertEqual(observed["rejectedConnections"], 1)
+        self.assertEqual(observed["peerDescriptorClosures"], 1)
+        wire = self.wire_to_eof(stream)
+        self.assertTrue(wire.endswith(bytes(accepted)))
+        self.assertNotIn(MUTATION_REPLY, wire)
+        self.assertEqual(observed["clientConfirmation"], "not-observed")
+
+    def test_failed_write_rearm_retires_parked_owner_without_successful_release(self):
+        for error in (OSError("controlled registration refusal"), ValueError("closed selector")):
+            with self.subTest(error=type(error).__name__):
+                peer = self.peer()
+                stream, owned = self.mutation(peer)
+                self.park(peer, stream, owned)
+                with patch.object(self.selector, "register", side_effect=error):
+                    with self.assertRaises(type(error)):
+                        self.release(peer, "reply")
+                observed = peer.observation()
+                self.assertEqual(owned.fileno(), -1)
+                self.assertEqual(observed["failure"], "peer-control-failed")
+                self.assertEqual(observed["releasedBarriers"], 0)
+                self.assertEqual(observed["acceptedMutations"], 1)
+                self.assertEqual(observed["sentMutationReplies"], 0)
+                self.assertEqual(observed["peerDescriptorClosures"], 1)
+                self.assertNotIn("released-reply", [row["kind"] for row in observed["events"]])
+                closed = peer.close()
+                self.assertEqual(peer.close(), closed)
+
+    def test_failed_half_close_rearm_keeps_failure_without_false_release(self):
+        peer = self.peer(scenario="greeting")
+        self.client(peer)
+        owned = self.owned(peer)
+        with patch.object(self.selector, "modify", side_effect=OSError("controlled rearm refusal")):
+            with self.assertRaises(OSError):
+                self.release(peer, "half-close")
+        observed = peer.observation()
+        self.assertEqual(owned.fileno(), -1)
+        self.assertEqual(observed["failure"], "peer-control-failed")
+        self.assertEqual(observed["releasedBarriers"], 0)
+        # The actual send shutdown preceded the failed readiness update.
+        self.assertEqual(observed["peerSendHalfCloses"], 1)
+        self.assertEqual(observed["peerDescriptorClosures"], 1)
+
     def test_existing_ungated_peer_eof_policy_is_unchanged(self):
         peer = self.peer(peer_type=SmtpPeer)
         stream = self.client(peer)

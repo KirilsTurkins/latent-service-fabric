@@ -129,6 +129,22 @@ a small override hook; its existing SMTP tests remain unchanged. These are
 peer-fixture controls, not component cross-tenant, parser-memory or kernel
 final-free qualification. A sent reply still does not prove client confirmation.
 
+Release success is recorded only after the original descriptor's required
+readiness registration succeeds. If registering a parked write owner or updating
+read interest fails, the descriptor is closed and `peer-control-failed` is retained;
+no successful release or completed reply is invented. A successful send-shutdown
+syscall remains counted in `peerSendHalfCloses` even if the following readiness
+update fails: an already applied half-close cannot be rolled back by that failure.
+
+The same half-close suite injects zero progress, would-block and short writes
+before returning to ordinary TCP delivery. It verifies that only the unaccepted
+reply suffix remains queued, that reply completion is counted once, and that a
+write error after an accepted prefix preserves the mutation without crediting a
+complete reply. Positive injected-prefix transfers still use the actual socket;
+the selected short/would-block/error outcomes and selector failures are explicit
+test controls, not measurements of naturally exhausted kernel buffers or proof
+of production-provider cleanup.
+
 ## Signed-node regressions and reuse
 
 The added cases exercise the existing encoded guest's terminal trap immediately

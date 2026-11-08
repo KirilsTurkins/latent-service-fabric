@@ -192,14 +192,28 @@ class GatedSmtpPeer(SmtpPeer):
         if ((action == "reply" and barrier["kind"] not in ("greeting", "mutation"))
                 or (action == "terminate" and barrier["kind"] != "unterminated")):
             raise ValueError("outbound-peer-release-kind-mismatch")
-        # A failed syscall cannot be relabelled as a successful control action.
+        # A release succeeds only after its original write/read interest is
+        # usable. In particular, re-registering a parked EOF owner can fail.
         try:
             if action == "reset":
                 stream.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
             elif action == "half-close":
                 stream.shutdown(socket.SHUT_WR)
-        except OSError:
-            self.failure = "peer-control-failed"
+                record["writeClosed"] = True
+                # This syscall is irreversible even if the following selector
+                # update fails. Count it separately from a successful release.
+                self.half_closes += 1
+            elif action in ("reply", "terminate"):
+                reply = b"\r\n" if action == "terminate" else (
+                    GREETING if barrier["kind"] == "greeting" else MUTATION_REPLY)
+                self._reply(record, reply)
+                if barrier["kind"] == "mutation":
+                    record["mutation_reply_end"] = len(record["output"])
+            if action not in ("reset", "close"):
+                record["barrier"] = None
+                self._interest(stream, record)
+        except (OSError, ValueError):
+            self.failure = self.failure or "peer-control-failed"
             self._close_client(stream)
             raise
         record["barrier"] = None
@@ -208,17 +222,6 @@ class GatedSmtpPeer(SmtpPeer):
         if action in ("reset", "close"):
             self.resets += int(action == "reset")
             self._close_client(stream)
-        elif action == "half-close":
-            self.half_closes += 1
-            record["writeClosed"] = True
-            self._interest(stream, record)
-        else:
-            reply = b"\r\n" if action == "terminate" else (
-                GREETING if barrier["kind"] == "greeting" else MUTATION_REPLY)
-            self._reply(record, reply)
-            if barrier["kind"] == "mutation":
-                record["mutation_reply_end"] = len(record["output"])
-            self._interest(stream, record)
 
     def _close_client(self, stream):
         record = self.clients.get(stream)
