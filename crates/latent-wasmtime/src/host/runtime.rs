@@ -56,6 +56,8 @@ pub(crate) struct Table {
     runtime: ActivationRuntime,
     pub(crate) native_stacks: Option<Arc<crate::native_stacks::StackContext>>,
     timer_observer: Option<TimerObserver>,
+    #[cfg(feature = "development-go-timer-overlap")]
+    overlap: Option<crate::development_go_timer_overlap::Observer>,
     // All actual Vec backings and the other owned fields drop before refund.
     allocation: HostMemoryReservation,
 }
@@ -119,6 +121,8 @@ impl Table {
             runtime,
             native_stacks: None,
             timer_observer,
+            #[cfg(feature = "development-go-timer-overlap")]
+            overlap: None,
             allocation,
         };
         table.allocation.confirm();
@@ -138,6 +142,10 @@ impl Drop for Table {
             stacks.cancel_unstarted();
         }
         self.runtime.cancel();
+        #[cfg(feature = "development-go-timer-overlap")]
+        if let Some(observer) = &self.overlap {
+            observer.report();
+        }
     }
 }
 
@@ -150,11 +158,21 @@ fn table(state: &mut HostState) -> Result<&mut Table, PlatformError> {
     })?;
     if state.runtime.is_none() {
         let observer = TimerObserver::for_activation(&state.context.activation_id.0);
-        state.runtime = Some(Table::new(
-            state.accounting.budget().clone(),
-            limits,
-            observer,
-        )?);
+        let created = Table::new(state.accounting.budget().clone(), limits, observer)?;
+        #[cfg(feature = "development-go-timer-overlap")]
+        let created = {
+            let mut created = created;
+            if let Some(case) = crate::development_go_timer_overlap::Observer::select(
+                &state.context.activation_id.0,
+            ) {
+                created.overlap = Some(crate::development_go_timer_overlap::Observer::new(
+                    case,
+                    state.accounting.budget(),
+                )?);
+            }
+            created
+        };
+        state.runtime = Some(created);
     }
     let table = state.runtime.as_mut().expect("initialized table");
     table.runtime.check_live()?;
@@ -361,11 +379,15 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
         (kind, continuation),
         (wit::OwnerKind, Option<wit::Token>),
         |table| {
-            let owner = table
-                .runtime
-                .register(owner_kind(kind), continuation.map(token))?;
+            let kind = owner_kind(kind);
+            let parent = continuation.map(token);
+            let owner = table.runtime.register(kind, parent)?;
             let value = owner.token();
             table.owners.push(owner);
+            #[cfg(feature = "development-go-timer-overlap")]
+            if let Some(observer) = &table.overlap {
+                observer.task(kind, value, parent);
+            }
             Ok(wit::Token {
                 generation: value.generation,
                 id: value.id,
@@ -374,7 +396,12 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
         kind
     );
     sync!("park", (owner,), (wit::Token,), |table| {
-        table.runtime.park(token(owner))?;
+        let owner = token(owner);
+        table.runtime.park(owner)?;
+        #[cfg(feature = "development-go-timer-overlap")]
+        if let Some(observer) = &table.overlap {
+            observer.park(owner, table.runtime.snapshot().owners[3]);
+        }
         Ok(())
     });
     sync!("wake", (owner,), (wit::Token,), |table| {
@@ -432,14 +459,19 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
                 let first = first.ok_or_else(|| {
                     failure(PlatformErrorCode::InvalidArgument, "runtime-timer-range")
                 })?;
+                let parent = continuation.map(token);
                 let timer = RuntimeTimer::new(
                     &table.runtime,
                     first,
                     period.map(Duration::from_nanos),
-                    continuation.map(token),
+                    parent,
                 )?;
                 let value = timer.token();
                 table.timers.push(timer);
+                #[cfg(feature = "development-go-timer-overlap")]
+                if let Some(observer) = &table.overlap {
+                    observer.timer_start(value, parent);
+                }
                 if let Some(observer) = &table.timer_observer {
                     observer.record(TimerEvent::StartAccepted, table.runtime.snapshot().owners);
                 }
@@ -461,6 +493,10 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
             .ok_or_else(|| failure(PlatformErrorCode::InvalidArgument, "runtime-timer-token"))?;
         let timer = table.timers.swap_remove(index);
         timer.close();
+        #[cfg(feature = "development-go-timer-overlap")]
+        if let Some(observer) = &table.overlap {
+            observer.timer_stop(token, table.runtime.snapshot().owners[3]);
+        }
         drop(timer);
         Ok(())
     });
@@ -498,6 +534,10 @@ impl InlineConcurrentHost<HostState, (wit::Token,), (Completion<Result<u64, wit:
         let (result, call) = match prepared {
             Ok(mut wait) => {
                 let result = wait.run().await;
+                #[cfg(feature = "development-go-timer-overlap")]
+                if let Some(overlap) = &mut wait.overlap {
+                    overlap.returned = true;
+                }
                 let _ = wait
                     .call
                     .record_provider_outcome(AuditProviderOutcome::HostCompleted);
@@ -570,6 +610,10 @@ struct WaitingTimer {
     runtime: ActivationRuntime,
     _owner: Option<RuntimeOwner>,
     timer_wait: Option<TimerWait>,
+    // Struct fields drop in declaration order, including after `call` is moved
+    // out. Thus the observer runs after the original TimerWait destruction.
+    #[cfg(feature = "development-go-timer-overlap")]
+    overlap: Option<OverlapCompletion>,
     wait_observer: Option<TimerObserver>,
     wait_observed: bool,
     wait: Arc<dyn PreparationReadWait>,
@@ -577,6 +621,23 @@ struct WaitingTimer {
     stop: Arc<crate::containment::StopControl>,
     requested: Instant,
     call: ProviderCall,
+}
+
+#[cfg(feature = "development-go-timer-overlap")]
+struct OverlapCompletion {
+    observer: crate::development_go_timer_overlap::Observer,
+    token: RuntimeToken,
+    barrier_done: bool,
+    returned: bool,
+}
+
+#[cfg(feature = "development-go-timer-overlap")]
+impl Drop for OverlapCompletion {
+    fn drop(&mut self) {
+        if self.returned {
+            self.observer.next_finished(self.token);
+        }
+    }
 }
 struct PreparedWait {
     result: Result<WaitingTimer, PlatformError>,
@@ -640,6 +701,8 @@ fn prepare_wait(
             runtime,
             _owner: Some(owner),
             timer_wait: None,
+            #[cfg(feature = "development-go-timer-overlap")]
+            overlap: None,
             wait_observer,
             wait_observed: false,
             wait,
@@ -690,6 +753,17 @@ fn prepare_timer_next(state: &mut HostState, token: RuntimeToken) -> PreparedWai
             .find(|timer| timer.token() == token)
             .ok_or_else(|| failure(PlatformErrorCode::InvalidArgument, "runtime-timer-token"))?;
         let timer_wait = timer.begin_wait()?;
+        #[cfg(feature = "development-go-timer-overlap")]
+        let overlap = table.overlap.as_ref().and_then(|observer| {
+            observer
+                .next(token, table.runtime.snapshot().owners[3])
+                .then(|| OverlapCompletion {
+                    observer: observer.clone(),
+                    token,
+                    barrier_done: false,
+                    returned: false,
+                })
+        });
         if let Some(observer) = &table.timer_observer {
             observer.record(TimerEvent::NextEntered, table.runtime.snapshot().owners);
         }
@@ -698,6 +772,8 @@ fn prepare_timer_next(state: &mut HostState, token: RuntimeToken) -> PreparedWai
             runtime: table.runtime.clone(),
             _owner: None,
             timer_wait: Some(timer_wait),
+            #[cfg(feature = "development-go-timer-overlap")]
+            overlap,
             // Existing timer-start/next observations remain byte-identical.
             wait_observer: None,
             wait_observed: false,
@@ -786,6 +862,25 @@ impl WaitingTimer {
                 return Err(error);
             }
             if self.timer_wait.as_ref().is_some_and(TimerWait::is_closed) {
+                #[cfg(feature = "development-go-timer-overlap")]
+                if let Some(overlap) = &mut self.overlap {
+                    if !overlap.barrier_done {
+                        overlap.barrier_done = true;
+                        overlap
+                            .observer
+                            .wait_for_second_park(
+                                overlap.token,
+                                self.wait.as_ref(),
+                                self.call.budget_accounting(),
+                                self.call.deadline(),
+                                self.stop.as_ref(),
+                            )
+                            .await;
+                        // Re-run the original stop, deadline and authority
+                        // checks; the witness never supplies a timer result.
+                        continue;
+                    }
+                }
                 return Err(failure(
                     PlatformErrorCode::Cancelled,
                     "runtime-timer-closed",
@@ -818,6 +913,10 @@ impl WaitingTimer {
                         if let Some(observer) = &self.wait_observer {
                             observer
                                 .record(TimerEvent::WaitPending, self.runtime.snapshot().owners);
+                        }
+                        #[cfg(feature = "development-go-timer-overlap")]
+                        if let Some(overlap) = &self.overlap {
+                            overlap.observer.next_pending(overlap.token);
                         }
                     },
                 )

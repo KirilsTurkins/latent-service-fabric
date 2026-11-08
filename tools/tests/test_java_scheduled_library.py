@@ -140,7 +140,7 @@ class ScheduledLibraryOwnership(unittest.TestCase):
             'wit/platform/**', 'Cargo.toml', 'Cargo.lock', '.cargo/managed-guest.toml',
             'tools/toolchain.toml', 'tools/data/java-compiler-profile.json'})
         self.assertEqual(caller['permissions'], {'contents': 'read', 'actions': 'read'})
-        self.assertEqual(caller['jobs'], {'scheduled-library': {'uses': './' + owner.WORKFLOW}})
+        self.assertEqual(caller['jobs'], {'scheduled-library': {'uses': '$/' + owner.WORKFLOW}})
         self.assertIn('workflow_call', called['on'])
         self.assertEqual(called['on']['push']['branches'], [owner.BRANCH, owner.SHUTDOWN_BRANCH, owner.FUTURE_BRANCH])
         job = called['jobs']['scheduled-library']
