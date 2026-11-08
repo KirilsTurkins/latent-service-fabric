@@ -497,15 +497,27 @@ static int sync_duration(const struct timespec *value,uint64_t *nanos) {
     *nanos=seconds*1000000000u+fraction;return 0;
 }
 static int sync_remaining(uint32_t clock,const struct timespec *deadline,uint64_t *nanos) {
-    uint64_t absolute,now;struct timespec sample;
-    int error=sync_duration(deadline,&absolute);
-    if (error) return error;
+    uint64_t now;struct timespec sample;
+    if (!deadline || deadline->tv_nsec<0 || deadline->tv_nsec>=1000000000) return EINVAL;
     /* The original WASI libc clockid_t is an authenticated pointer, while its
      * pthread condition attribute stores the clock's numeric WASI id. */
     if (clock>1) return ENOTSUP;
     if (clock_gettime(clock==0?CLOCK_REALTIME:CLOCK_MONOTONIC,&sample)!=0) return errno;
-    error=sync_duration(&sample,&now);if (error) return error;
-    *nanos=absolute>now?absolute-now:0;return 0;
+    int error=sync_duration(&sample,&now);if (error) return error;
+    if (deadline->tv_sec<sample.tv_sec ||
+            (deadline->tv_sec==sample.tv_sec && deadline->tv_nsec<=sample.tv_nsec)) {
+        *nanos=0;return 0;
+    }
+    /* Both seconds are nonnegative here. Subtract before multiplying so a
+     * representable remaining interval is not rejected merely because its
+     * absolute timestamp exceeds the Timer's nanosecond representation. */
+    uint64_t seconds=(uint64_t)deadline->tv_sec-(uint64_t)sample.tv_sec;
+    uint64_t fraction;
+    if (deadline->tv_nsec<sample.tv_nsec) {
+        --seconds;fraction=1000000000u+(uint64_t)deadline->tv_nsec-(uint64_t)sample.tv_nsec;
+    } else fraction=(uint64_t)deadline->tv_nsec-(uint64_t)sample.tv_nsec;
+    if (seconds>(UINT64_MAX-fraction)/1000000000u) return EOVERFLOW;
+    *nanos=seconds*1000000000u+fraction;return 0;
 }
 static int sync_await_timer(struct sync_wait *node) {
     require(current()==node->thread && !node->suspended);
