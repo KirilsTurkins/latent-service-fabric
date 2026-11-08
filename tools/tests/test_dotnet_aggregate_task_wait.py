@@ -78,14 +78,14 @@ class AggregateTaskWaitPortTests(unittest.TestCase):
             self.assertEqual(stage, 'task-wait-rewrite')
             self.assertEqual(arguments[2], '--aggregate-task-wait')
             arguments[-2].write_bytes(b'aggregate-control')
-            from tools.dotnet_guest.managed_work import MULTIPLE_UNWRAP_REWRITE_RECEIPT
-            current = {**self.receipt(), 'managedAcceptedWork': copy.deepcopy(MULTIPLE_UNWRAP_REWRITE_RECEIPT),
+            from tools.dotnet_guest.managed_work import DISPATCH_RESET_REWRITE_RECEIPT
+            current = {**self.receipt(), 'managedAcceptedWork': copy.deepcopy(DISPATCH_RESET_REWRITE_RECEIPT),
                        'aggregateTaskWait': copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_EXPECTED),
-                       'generatedHelperCount': 96, 'outputDigest': digest(b'aggregate-control')}
+                       'generatedHelperCount': 105, 'outputDigest': digest(b'aggregate-control')}
             write_json(arguments[-1], current)
         control.run_tool = rewrite
         intermediate = control.prepare(managed=True)
-        self.assertEqual(intermediate.validated_helper_count(), 96)
+        self.assertEqual(intermediate.validated_helper_count(), 105)
         def filesystem(stage, *arguments):
             self.assertEqual(stage, 'closed-filesystem-rewrite')
             original, base, assembly, receipt = arguments[-4:]
@@ -94,7 +94,7 @@ class AggregateTaskWaitPortTests(unittest.TestCase):
             assembly.write_bytes(b'final-filesystem-control')
             value = json.loads((ROOT / 'sdk/dotnet-guest/tests/fixtures/closed-filesystem-rewrite.json').read_bytes())
             value.update(baseDigest=intermediate.identity['digest'], outputDigest=digest(assembly.read_bytes()),
-                         unchangedBaseMethods=44840)
+                         unchangedBaseMethods=44849)
             write_json(receipt, value)
         final = closed_filesystem.prepare(control.sdk, control.tools, control.packages, control.root/'dotnet',
             control.project, control.output, control.evidence, filesystem, task_wait_port=intermediate)

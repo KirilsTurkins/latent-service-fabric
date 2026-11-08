@@ -173,10 +173,10 @@ internal static class TimerControl
         if (mode == 0)
         {
             Need(Count(3) == 1 && !Owners.ContainsKey(second));
-            Disarm(item); ManagedWorkRuntime.Dequeue(item);
-            var previous = ManagedWorkRuntime.EnterDispatch(item);
+            Disarm(item); var dispatch = ManagedWorkRuntime.BeginDispatch(item);
+            var previous = ManagedWorkRuntime.EnterDispatch(item, dispatch);
             try { Fire(item, () => Need(Count(5) == 1)); }
-            finally { ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.CallbackCompleted(item); }
+            finally { ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.DispatchReturned(dispatch); }
             Need(Count(5) == 0); Finish(); return;
         }
         Need(Count(3) == 2 && Owners.ContainsKey(second));
@@ -488,12 +488,35 @@ internal static class TimerControl
                 for (int i = 0; i < 2; i++) { ManagedWorkRuntime.TimerAccepted(item); Enqueue(item); }
                 Disarm(item); Need(Count(5) == 1 && Count(3) == 2 && Count(0) == 1);
                 for (int i = 0; i < 2; i++) {
-                    ManagedWorkRuntime.Dequeue(item); var previous = ManagedWorkRuntime.EnterDispatch(item);
+                    var dispatch = ManagedWorkRuntime.BeginDispatch(item); var previous = ManagedWorkRuntime.EnterDispatch(item, dispatch);
                     try { Fire(item, () => Need(Count(5) == 1)); }
-                    finally { ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.CallbackCompleted(item); }
+                    finally { ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.DispatchReturned(dispatch); }
                     Need(Count(5) == (i == 0 ? 1 : 0));
                 }
                 Finish(); break;
+            }
+            case "running-dispatches-consume-original-queue-slots": {
+                var item = Arm();
+                var frames = new List<(object? Ticket, object? DispatchPrevious, object? TimerPrevious)>();
+                for (int i = 0; i < 64; i++)
+                {
+                    ManagedWorkRuntime.TimerAccepted(item); Enqueue(item);
+                    var ticket = ManagedWorkRuntime.BeginDispatch(item);
+                    var previous = ManagedWorkRuntime.EnterDispatch(item, ticket);
+                    var timerPrevious = ManagedWorkRuntime.TimerEnter(item);
+                    frames.Add((ticket, previous, timerPrevious));
+                }
+                Need(Count(3) == 0 && Count(5) == 1);
+                // This probe has not been accepted by the timer producer.
+                Refuses(() => Enqueue(item), "managed-work-queue-record-limit");
+                for (int i = frames.Count - 1; i >= 0; i--)
+                {
+                    var frame = frames[i];
+                    ManagedWorkRuntime.TimerLeave(item, frame.TimerPrevious);
+                    ManagedWorkRuntime.Exit(frame.DispatchPrevious);
+                    ManagedWorkRuntime.DispatchReturned(frame.Ticket);
+                }
+                Disarm(item); Finish(); break;
             }
             case "disposed-queued-callback-retires-after-cancelled-fire": {
                 var item = Arm(); ManagedWorkRuntime.TimerAccepted(item); Disarm(item);
