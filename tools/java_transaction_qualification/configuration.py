@@ -292,3 +292,51 @@ def current_event_operations(item: ComponentInput, publication: str, provider_in
                                     "dispatchAuthority": {"formatVersion": 1, "mode": "signed-service-integration"}}
         rows.append(row)
     return active_operations(rows, publication, item.component_digest)
+
+
+def with_event_provider(configuration: Configuration, path: Path, *, port: int, ca: Path,
+                        credential: Path, qualification: dict) -> Configuration:
+    """Capture one bounded disposable provider configuration; this grants no authority."""
+    import copy
+    import re
+    require(isinstance(configuration, Configuration) and isinstance(path, Path) and path.is_absolute()
+            and not path.exists() and not path.is_symlink(), "fresh-event-node-configuration")
+    require(type(port) is int and 1 <= port <= 65535, "actual-event-listener-port")
+    require(all(isinstance(item, Path) and item.is_absolute() and item.is_file() and not item.is_symlink()
+                for item in (ca, credential)), "explicit-original-event-tls-and-credential-files")
+    require(re.fullmatch(r"[A-Za-z0-9_.@-]{1,128}", credential.name) is not None
+            and credential.name not in {".", ".."} and not credential.parent.is_symlink(),
+            "protected-event-credential-path")
+    root_bytes = read_file(ca, 65536)
+    require(0 < len(root_bytes) <= 65536 and 0 < len(read_file(credential, 4096)) <= 4096,
+            "bounded-original-event-tls-and-credential")
+    fields = {"formatVersion", "serverVersion", "streamCreated", "maximumMessages", "maximumBytes",
+              "maximumAgeMillis", "maximumMessageBytes"}
+    require(isinstance(qualification, dict) and set(qualification) == fields
+            and type(qualification["formatVersion"]) is int and qualification["formatVersion"] == 1
+            and qualification["serverVersion"] == "2.14.6"
+            and isinstance(qualification["streamCreated"], str)
+            and re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,9})?Z", qualification["streamCreated"])
+            and all(type(qualification[name]) is int for name in
+                    ("maximumMessages", "maximumBytes", "maximumAgeMillis", "maximumMessageBytes"))
+            and qualification["maximumMessages"] == 64 and qualification["maximumBytes"] == 1048576
+            and qualification["maximumAgeMillis"] == 0 and qualification["maximumMessageBytes"] == 65536,
+            "exact-original-event-broker-qualification")
+    value = copy.deepcopy(configuration.value)
+    providers = value.get("providers")
+    require(isinstance(providers, dict) and "events" not in providers, "one-explicit-event-provider")
+    providers["events"] = {
+        "identity": {"id": "events", "tenant": TENANT, "service": "event-host", "epoch": 1},
+        "configuration": {"formatVersion": 1,
+            "endpoint": {"serverName": "127.0.0.1", "peer": f"127.0.0.1:{port}", "allowNonPublicPeer": True},
+            "publicRoots": False, "extraRoots": [list(root_bytes)],
+            "topics": [{"tenant": TENANT, "topic": "updated", "subject": "lsf.deferred.allowed",
+                        "stream": "DURABLE", "duplicateWindowMillis": 30000}],
+            "idempotencyNamespace": "lsf-java-transaction-event", "maximumPayloadBytes": 8192,
+            "timeoutMillis": 5000},
+        "credentialDirectory": str(credential.parent), "credentialReference": "java-event-token",
+        "credentialFile": credential.name,
+        "deferred": [{"topic": "updated", "qualification": copy.deepcopy(qualification)}],
+    }
+    write_json(path, value)
+    return Configuration(path, value, configuration.authority, configuration.recipient_origin)

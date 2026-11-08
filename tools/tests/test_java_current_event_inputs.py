@@ -102,6 +102,39 @@ class CurrentJavaEventInputs(unittest.TestCase):
             with self.assertRaises(ValueError):
                 current_event_operations(reselected, publication, '6' * 64, **args)
 
+    def test_event_provider_configuration_preserves_original_and_rejects_unqualified_broker(self):
+        import copy
+        from tools.java_transaction_qualification.configuration import Configuration, with_event_provider
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            ca, credential = root / 'ca.der', root / 'token'
+            ca.write_bytes(b'public-test-ca')
+            credential.write_bytes(b'private-test-token')
+            original = {'providers': {'formatVersion': 1}, 'state': {'operations': []}}
+            before = copy.deepcopy(original)
+            base = Configuration(root / 'original.json', original, 'localhost:1234', {})
+            qualification = {'formatVersion':1,'serverVersion':'2.14.6','streamCreated':'2026-01-01T00:00:00.123Z',
+                             'maximumMessages':64,'maximumBytes':1048576,'maximumAgeMillis':0,'maximumMessageBytes':65536}
+            selected = with_event_provider(base, root / 'event-node.json', port=4222, ca=ca,
+                                           credential=credential, qualification=qualification)
+            self.assertEqual(original, before)
+            event = selected.value['providers']['events']
+            self.assertEqual(event['configuration']['topics'][0]['tenant'], 'examples')
+            self.assertEqual(event['deferred'][0]['qualification'], qualification)
+            self.assertEqual(event['credentialReference'], 'java-event-token')
+            self.assertNotIn('private-test-token', json.dumps(selected.value))
+            self.assertEqual(read_json(selected.path), selected.value)
+            for index, change in enumerate(({'formatVersion':True}, {'serverVersion':'unknown'},
+                                            {'maximumBytes':1048577}, {'streamCreated':'invalid'})):
+                bad = dict(qualification, **change)
+                target = root / ('invalid-event-' + str(index))
+                with self.assertRaises(ValueError):
+                    with_event_provider(base, target, port=4222, ca=ca, credential=credential, qualification=bad)
+                self.assertFalse(target.exists())
+            with self.assertRaises(ValueError):
+                with_event_provider(selected, root / 'duplicate.json', port=4222, ca=ca,
+                                    credential=credential, qualification=qualification)
+
     def test_observed_event_scope_requires_the_same_signed_provider_and_profile(self):
         import copy
         from tools.java_transaction_qualification.configuration import (current_event_operations, SERVICE, TENANT)
