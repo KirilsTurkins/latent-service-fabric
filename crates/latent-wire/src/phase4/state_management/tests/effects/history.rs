@@ -1,5 +1,6 @@
 use super::fixture::{reader, setup_with_recovery_provider, FixtureEffect};
 use super::*;
+use latent_core::native_capacity::{NativeAdmissionClass, NativeReservationRequest};
 use latent_effects::dispatch::Disposition;
 use latent_rpc::transaction::v1::{self as t, transaction_service_server::TransactionService};
 use std::sync::atomic::Ordering;
@@ -23,6 +24,17 @@ fn request(effect: &FixtureEffect) -> t::ListEffectHistoryRequest {
 async fn history_rpc_reads_original_receipt_with_bounded_current_authority() {
     let mut effect = setup_with_recovery_provider(Disposition::ProviderAcknowledged).await;
     effect.settle_original().await;
+    let native = &effect.fixture.admission.native;
+    let mut ordinary = Vec::new();
+    while let Ok(reservation) = native.reserve(
+        NativeAdmissionClass::Ordinary,
+        NativeReservationRequest::default(),
+        deadline(),
+    ) {
+        ordinary.push(reservation);
+    }
+    assert!(!ordinary.is_empty());
+    let recovery_before = native.snapshot().unwrap().recovery;
     let adapter = crate::phase4::Phase4ServiceAdapter::with_services(
         Arc::new(effect.fixture.backend.clone()),
         crate::management::ManagementLimits::default(),
@@ -53,9 +65,12 @@ async fn history_rpc_reads_original_receipt_with_bounded_current_authority() {
     );
     assert!(receipt.record_version.is_empty());
     assert_eq!(page.page.as_ref().unwrap().returned_count, 1);
+    assert!(native.snapshot().unwrap().recovery.bytes > recovery_before.bytes);
     assert_eq!(effect.rows().await, before);
     drop(response);
     drop(adapter);
+    assert_eq!(native.snapshot().unwrap().recovery, recovery_before);
+    drop(ordinary);
     effect.finish().await;
 }
 
