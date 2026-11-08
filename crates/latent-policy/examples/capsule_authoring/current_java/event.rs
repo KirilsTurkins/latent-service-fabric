@@ -16,6 +16,13 @@ const LIVE_PINS: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../docs/testing/evidence/java-current-event-capture-49ea-2026-11-08.json"
 ));
+const RECOVERY_SOURCE: &str = "e23f1f7b06f7efc104a1ab14b085641e7fe97b8b";
+const RECOVERY_PROFILE: &str =
+    "js-window-v1:39763e09aeadbd6833f00a5ab3b6b29319a485efe699f20dd7d067a90a63b9ca";
+const RECOVERY_PINS: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../docs/testing/evidence/java-current-event-capture-e23-2026-11-08.json"
+));
 
 pub(crate) fn sign_captured_event_java(
     output: &Path,
@@ -37,6 +44,22 @@ pub(crate) fn sign_live_event_java(output: &Path, source: &str, paths: &[OsStrin
     )
 }
 
+pub(crate) fn sign_recovery_event_java(
+    output: &Path,
+    source: &str,
+    paths: &[OsString],
+) -> Result<()> {
+    sign_selected(
+        output,
+        source,
+        paths,
+        &["aggregate"],
+        RECOVERY_PINS,
+        RECOVERY_PROFILE,
+        RECOVERY_SOURCE,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -50,6 +73,16 @@ mod tests {
         let output = root.path().join("absent");
         assert!(sign_captured_event_java(&output, "wrong", &[root.path().into()]).is_err());
         assert!(sign_captured_event_java(&output, SOURCE, &[root.path().into()]).is_err());
+        assert!(!output.exists());
+        let recovery: serde_json::Value = serde_json::from_slice(RECOVERY_PINS).unwrap();
+        assert_eq!(recovery["captures"]["sourceCommit"], RECOVERY_SOURCE);
+        assert_eq!(
+            recovery["captures"]["nativeIdempotencyProfile"],
+            RECOVERY_PROFILE
+        );
+        assert_eq!(recovery["executionQualified"], false);
+        assert!(sign_recovery_event_java(&output, LIVE_SOURCE, &[root.path().into()]).is_err());
+        assert!(sign_recovery_event_java(&output, RECOVERY_SOURCE, &[root.path().into()]).is_err());
         assert!(!output.exists());
         let live: serde_json::Value = serde_json::from_slice(LIVE_PINS).unwrap();
         assert_eq!(live["captures"]["sourceCommit"], LIVE_SOURCE);

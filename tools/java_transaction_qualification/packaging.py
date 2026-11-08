@@ -229,6 +229,8 @@ def package_captured_event(directory: Path, selected, output: Path, contracts_to
                                                       'fixture-sign-captured-event-java-input'),
         '49eaca04be33f71d993e093576343ee89afb0cf0': ('java-current-event-capture-49ea-2026-11-08.json',
                                                       'fixture-sign-live-event-java-input'),
+        'e23f1f7b06f7efc104a1ab14b085641e7fe97b8b': ('java-current-event-capture-e23-2026-11-08.json',
+                                                      'fixture-sign-recovery-event-java-input'),
     }
     require(selected.source_commit in captures, 'closed-event-capture-source')
     packet_name, signing_mode = captures[selected.source_commit]

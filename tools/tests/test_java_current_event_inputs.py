@@ -10,6 +10,19 @@ from tools.transaction_guest_project import CURRENT_EVENT_PROFILE, EVENT_REQUIRE
 
 
 class CurrentJavaEventInputs(unittest.TestCase):
+    def test_local_event_observation_preserves_capture_and_limits(self):
+        evidence = Path(__file__).resolve().parents[2] / 'docs/testing/evidence'
+        capture = read_json(evidence / 'java-current-event-capture-e23-2026-11-08.json')['captures']
+        observed = read_json(evidence / 'java-event-local-observation-e23-2026-11-08.json')
+        self.assertEqual(observed['compilerSourceCommit'], capture['sourceCommit'])
+        self.assertEqual(observed['nativeIdempotencyProfile'], capture['nativeIdempotencyProfile'])
+        self.assertEqual(observed['componentDigest'], capture['variants']['aggregate']['materials']['component']['sha256'])
+        self.assertEqual(observed['trust'], 'ephemeral-native-package-test-only')
+        self.assertTrue(observed['observations']['lostClientResponseRecoveredAfterControlledNodeCrash'])
+        self.assertEqual(observed['observations']['brokerPostRestartMessageCount'], 2)
+        self.assertTrue(any('acknowledgement loss was not injected' in limit for limit in observed['limitations']))
+        self.assertTrue(any('pending-effect revocation' in limit for limit in observed['limitations']))
+
     def test_event_signing_rejects_unpinned_selection_before_creating_output(self):
         from tools.java_transaction_qualification.current_inputs import CurrentSelection
         from tools.java_transaction_qualification.packaging import package_captured_event
