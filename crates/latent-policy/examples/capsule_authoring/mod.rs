@@ -5,6 +5,7 @@ mod inputs;
 mod policy;
 mod resource_neutral;
 
+pub(super) use current_java::sign_captured_event_java;
 pub(super) use current_java::sign_current_465_java;
 pub(super) use current_java::sign_november_current_java;
 pub(super) use current_java::sign_poststage_http_java;

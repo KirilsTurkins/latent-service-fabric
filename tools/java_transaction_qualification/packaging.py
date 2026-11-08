@@ -219,6 +219,47 @@ def package_current(selections, output: Path, contracts_tool: Path, signer: Path
                           compiler_source=items[0].compiler_source)
 
 
+def package_captured_event(directory: Path, selected, output: Path, contracts_tool: Path, signer: Path, *, timeout=600) -> Path:
+    """Sign the independently pinned event capture with disposable fixture trust only."""
+    from .current_inputs import CurrentSelection, load_current
+    require(isinstance(directory, Path) and isinstance(selected, CurrentSelection)
+            and type(timeout) is int and 0 < timeout <= 1800, "explicit-event-capture-and-deadline")
+    packet = decode(read_file(Path(__file__).resolve().parents[2] /
+        'docs/testing/evidence/java-current-event-capture-9a19-2026-11-08.json'))['captures']
+    pins = packet['variants']['aggregate']['materials']
+    require(selected.variant == 'aggregate' and selected.source_commit == packet['sourceCommit']
+            and selected.report_digest == pins['report']['sha256']
+            and selected.component_digest == pins['component']['sha256']
+            and selected.compiler_inputs_digest == pins['compilerInputs']['sha256'],
+            'exact-independent-event-capture-selection')
+    item = load_current(directory, selected)
+    require(item.event_requirements_digest == pins['eventRequirements']['sha256']
+            and item.requirements_digest is None, 'exact-original-event-requirements')
+    output = fresh(output)
+    command = Commands(output, output, build_environment(output), deadline_seconds=timeout,
+                       command_seconds=min(timeout, 600))
+    record = {'passed': False, 'input': item.observation(), 'compiledAgain': False,
+              'signedNodeExecutionQualified': False, 'packagedDistributionQualified': False}
+    try:
+        prepare(item, output / 'aggregate', contracts_tool, signer, command)
+        command.run('event-signing', signer, 'fixture-sign-captured-event-java-input',
+                    output / 'signed', item.compiler_source, output / 'aggregate')
+        releases = decode(read_file(output / 'signed/release-set.json'))
+        require(releases['schemaVersion'] == 'latent.component.signing-fixture.v1'
+                and releases['trust'] == 'ephemeral-native-package-test-only'
+                and len(releases['releases']) == 1
+                and releases['releases'][0]['componentDigest'] == item.component_digest
+                and releases['releases'][0]['name'] == 'java718-aggregate', 'exact-event-signed-package')
+        require(inventory(snapshot(item.directory / 'project')) == read_file(item.directory / 'source-inputs.json', 4*1024*1024)
+                and digest(read_file(item.directory / 'component.wasm')) == item.component_digest,
+                'preserved-event-input-recheck')
+        record['passed'] = True
+        return output / 'signed'
+    finally:
+        record['commands'] = command.records
+        write_json(output / 'package-fixture-receipt.json', record)
+
+
 def _package_items(items, output, contracts_tool, signer, *, timeout, compiler_source=None):
     require(type(timeout) is int and 0 < timeout <= 1800, "original-packaging-deadline")
     output = fresh(output)

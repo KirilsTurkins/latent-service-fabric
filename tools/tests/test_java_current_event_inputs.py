@@ -10,6 +10,23 @@ from tools.transaction_guest_project import CURRENT_EVENT_PROFILE, EVENT_REQUIRE
 
 
 class CurrentJavaEventInputs(unittest.TestCase):
+    def test_event_signing_rejects_unpinned_selection_before_creating_output(self):
+        from tools.java_transaction_qualification.current_inputs import CurrentSelection
+        from tools.java_transaction_qualification.packaging import package_captured_event
+        from dataclasses import replace
+        packet = read_json(Path(__file__).resolve().parents[2] /
+                           'docs/testing/evidence/java-current-event-capture-9a19-2026-11-08.json')['captures']
+        pins = packet['variants']['aggregate']['materials']
+        selected = CurrentSelection(packet['sourceCommit'], 'aggregate', pins['report']['sha256'],
+                                    pins['component']['sha256'], pins['compilerInputs']['sha256'])
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for name in ('source_commit', 'report_digest', 'component_digest', 'compiler_inputs_digest'):
+                bad = replace(selected, **{name: '0' * 40 if name == 'source_commit' else 'sha256:' + '0' * 64})
+                with self.assertRaises(ValueError):
+                    package_captured_event(root, bad, root / 'output', root / 'contracts', root / 'signer')
+                self.assertFalse((root / 'output').exists())
+
     def test_explicit_native_profile_is_carried_without_changing_guest_intent(self):
         profile = 'js-window-v1:' + 'a' * 64
         with tempfile.TemporaryDirectory() as temporary:
