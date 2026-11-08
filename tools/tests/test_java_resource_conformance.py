@@ -199,6 +199,8 @@ class JavaResourceConformance(unittest.TestCase):
 
     def test_original_shared_runner_ast_is_preserved_after_only_new_selector_guard_and_branch(self):
         current = ast.parse(read_file(ROOT/'tools/run_rust_capsule_workflow.py').decode())
+        from tools.tests.qualification_selection import project_dotnet_reset_witness
+        current = project_dotnet_reset_witness(self, current)
         class Project(ast.NodeTransformer):
             def visit_FunctionDef(self,node):
                 if node.name == 'run':
