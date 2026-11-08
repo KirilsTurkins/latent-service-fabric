@@ -348,9 +348,12 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
     size_t partial_length = length;
     bool valid_range = true;
     if (status == 206) {
+        /* Subtract after ordering to avoid an overflowing range end. */
         valid_range = operation == LATENT_HTTP_STREAMING_METHOD_GET && requested_offset > 0 && known_length &&
             content_range(&completed.val.ok.headers, &actual_offset, &partial_length, &representation_size) &&
-            actual_offset <= requested_offset && partial_length == length;
+            actual_offset <= requested_offset &&
+            (uint64_t)requested_offset - (uint64_t)actual_offset < (uint64_t)partial_length &&
+            partial_length == length;
     }
     lsf_streaming_metadata_close(&completed.val.ok);
     if (!valid_length) {

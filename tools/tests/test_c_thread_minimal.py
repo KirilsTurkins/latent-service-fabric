@@ -24,14 +24,14 @@ def before_unsolicited_partial(raw):
  import hashlib
  # Reconstruct the exact previously reviewed Range source before applying its
  # historical inverse. Reject partial or unreviewed changes first.
- if hashlib.sha256(raw).hexdigest() != '08bb8b02911837f779f91057b805d4212fba101cb2453ba5b8ead116f8533658':
+ if hashlib.sha256(raw).hexdigest() != 'b3bc3ee9c9299b56f92d8b768da82ca062cd2087796e770d78c7aee53bddb41c':
   raise AssertionError('libfetch-unsolicited-partial-exact-source')
  changes = (
   (b'                     const char *method, const char *content_type, const char *body) {\n    if ((stat', b'                     const char *method, const char *content_type, const char *body) {\n    const off_t requested_offset = url ? url->offset : 0;\n    if ((stat'),
   (b'(url && (url->offset < 0 || (url->offset > 0 && strcmp(method, "GET")))))', b'(url && (requested_offset < 0 || (requested_offset > 0 && strcmp(method, "GET")))))'),
   (b'    if (url->offset > 0) {\n        int written = snprintf(range_value, sizeof(range_value), "bytes=%lld-", (long long)url->offset);', b'    if (requested_offset > 0) {\n        int written = snprintf(range_value, sizeof(range_value), "bytes=%lld-", (long long)requested_offset);'),
-  (b'        valid_range = operation == LATENT_HTTP_STREAMING_METHOD_GET && known_length &&', b'        valid_range = operation == LATENT_HTTP_STREAMING_METHOD_GET && requested_offset > 0 && known_length &&'),
-  (b'            actual_offset <= url->offset && partial_length == length;', b'            actual_offset <= requested_offset && partial_length == length;'),
+  (b'        valid_range = operation == LATENT_HTTP_STREAMING_METHOD_GET && known_length &&', b'        /* Subtract after ordering to avoid an overflowing range end. */\n        valid_range = operation == LATENT_HTTP_STREAMING_METHOD_GET && requested_offset > 0 && known_length &&'),
+  (b'            actual_offset <= url->offset && partial_length == length;', b'            actual_offset <= requested_offset &&\n            (uint64_t)requested_offset - (uint64_t)actual_offset < (uint64_t)partial_length &&\n            partial_length == length;'),
  )
  for previous, current in reversed(changes):
   if raw.count(current) != 1:
@@ -88,7 +88,7 @@ class CThreadMinimal(unittest.TestCase):
   raw=(ROOT/'sdk/c-guest/src/libfetch/http.c').read_bytes()
   self.assertEqual(hashlib.sha256(before_unsolicited_partial(raw)).hexdigest(),
                    'c81b948e74babf3edbc97a25473597daf24cba87ce48abda828f2e753c64185d')
-  for altered in (raw+b'\n',raw.replace(b'requested_offset > 0 && known_length',b'requested_offset >= 0 && known_length')):
+  for altered in (raw+b'\n',raw.replace(b'requested_offset > 0 && known_length',b'requested_offset >= 0 && known_length'),raw.replace(b'actual_offset < (uint64_t)partial_length',b'actual_offset <= (uint64_t)partial_length')):
    with self.assertRaisesRegex(AssertionError,'libfetch-unsolicited-partial-exact-source'):
     before_unsolicited_partial(altered)
  def test_minimal_overlay_preserves_every_original_byte_and_full_standard_lifecycle_calls(self):

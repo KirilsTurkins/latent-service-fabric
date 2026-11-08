@@ -1,6 +1,7 @@
 /* Real maintained libfetch frontend/backend; HTTP ports are explicit doubles. */
 #include <assert.h>
 #include <errno.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <fetch.h>
@@ -102,6 +103,22 @@ int main(void) {
     content_range="bytes 10-99/*"; content_length="90"; succeeds(10,10,90,-1);
     reset(); expected_range="bytes=10-"; status=206;
     content_range="bytes 5-99/100"; content_length="95"; succeeds(10,5,95,100);
+    /* The returned interval may start earlier, but it must include byte 10. */
+    reset(); expected_range="bytes=10-"; status=206;
+    content_range="bytes 5-10/11"; content_length="6"; payload="fghijk"; succeeds(10,5,6,11);
+    reset(); expected_range="bytes=10-"; status=206;
+    content_range="bytes 0-3/*"; content_length="4"; payload="abcd"; refuses(10);
+    reset(); expected_range="bytes=10-"; status=206;
+    content_range="bytes 0-3/4"; content_length="4"; payload="abcd"; refuses(10);
+    reset(); expected_range="bytes=10-"; status=206;
+    content_range="bytes 5-9/*"; content_length="5"; payload="fghij"; refuses(10);
+    /* Near the signed offset limit, validate by subtraction rather than addition. */
+    reset(); expected_range="bytes=9223372036854775807-"; status=206;
+    content_range="bytes 9223372036854775806-9223372036854775807/*";
+    content_length="2"; payload="xy"; succeeds((off_t)INT64_MAX,(off_t)(INT64_MAX-1),2,-1);
+    reset(); expected_range="bytes=9223372036854775807-"; status=206;
+    content_range="bytes 9223372036854775805-9223372036854775806/*";
+    content_length="2"; payload="xy"; refuses((off_t)INT64_MAX);
     reset(); expected_range="bytes=10-"; status=206;
     content_range="bytes 11-99/100"; content_length="89"; refuses(10);
     reset(); expected_range="bytes=10-"; status=206;
