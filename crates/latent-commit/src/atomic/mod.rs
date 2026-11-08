@@ -28,6 +28,7 @@ pub use retention::{
 };
 pub use validation::{
     durable_row_format, validate_linked_row, validate_row, validate_view, validate_view_observed,
+    validate_view_observed_with_checkpoint,
 };
 pub use writer::{
     inspect, AdmissionDecision, AdmittedCommand, CompleteEnvelope, EnvelopeNamespaceExpectation,
