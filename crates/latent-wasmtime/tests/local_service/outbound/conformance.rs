@@ -29,8 +29,7 @@ async fn exchange(
         match read {
             Ok(_) => {}
             Err(error)
-                if reply.is_none()
-                    && error.kind() == std::io::ErrorKind::ConnectionReset => {}
+                if reply.is_none() && error.kind() == std::io::ErrorKind::ConnectionReset => {}
             Err(error) => panic!("unexpected peer read failure: {error}"),
         }
         if let Some(reply) = reply {
@@ -38,7 +37,10 @@ async fn exchange(
             socket.write_all(reply).await.unwrap();
             socket.shutdown().await.unwrap();
         } else {
-            assert!(input.is_empty(), "rejected operation sent application bytes");
+            assert!(
+                input.is_empty(),
+                "rejected operation sent application bytes"
+            );
         }
     };
     // Both futures are owned by this scope. Failure drops them together; no
@@ -89,7 +91,12 @@ async fn signed_wrong_kind_chunk_and_consumed_handle_traps_retire_original_owner
         .await;
         assert_eq!(failure(receipt).code, PlatformErrorCode::GuestTrap);
         idle(&fixture).await;
-        fresh(&fixture, &listener, &format!("fresh-after-resource-trap-{mode}")).await;
+        fresh(
+            &fixture,
+            &listener,
+            &format!("fresh-after-resource-trap-{mode}"),
+        )
+        .await;
     }
     assert_eq!(fixture.backend.resource_snapshot().stores_created, 4);
     fixture.streams.take().unwrap().shutdown().await;
@@ -105,7 +112,10 @@ async fn signed_oversized_write_is_rejected_without_payload_and_fresh_work_succe
         panic!("oversized input must be a catchable typed stream error");
     };
     // The encoded guest returns the actual WIT error discriminant (invalid-input).
-    assert_eq!(serde_json::from_slice::<Vec<u32>>(&result.output).unwrap(), [0]);
+    assert_eq!(
+        serde_json::from_slice::<Vec<u32>>(&result.output).unwrap(),
+        [0]
+    );
     assert_eq!(result.consumption.outbound_requests, 1);
     drop(result);
     idle(&fixture).await;
@@ -119,7 +129,12 @@ async fn signed_partial_frames_and_eof_do_not_invent_bytes_or_reuse_stream_state
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let root = tempfile::tempdir().unwrap();
     let mut fixture = configured(root.path(), listener.local_addr().unwrap().port()).await;
-    for reply in [b"".as_slice(), b"P".as_slice(), b"PO".as_slice(), b"PON".as_slice()] {
+    for reply in [
+        b"".as_slice(),
+        b"P".as_slice(),
+        b"PO".as_slice(),
+        b"PON".as_slice(),
+    ] {
         let receipt = exchange(
             &fixture,
             &listener,
@@ -138,7 +153,12 @@ async fn signed_partial_frames_and_eof_do_not_invent_bytes_or_reuse_stream_state
         assert_eq!(result.consumption.outbound_requests, 1);
         drop(result);
         idle(&fixture).await;
-        fresh(&fixture, &listener, &format!("fresh-after-partial-{}", reply.len())).await;
+        fresh(
+            &fixture,
+            &listener,
+            &format!("fresh-after-partial-{}", reply.len()),
+        )
+        .await;
     }
     assert_eq!(fixture.backend.resource_snapshot().stores_created, 8);
     fixture.streams.take().unwrap().shutdown().await;
