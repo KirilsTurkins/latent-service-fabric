@@ -238,6 +238,8 @@ class EmbeddedResources(unittest.TestCase):
     def test_original_runner_ast_is_preserved_except_default_false_guard_and_one_probe(self):
         source = (ROOT/'tools/run_rust_capsule_workflow.py').read_text(encoding='utf-8')
         tree = ast.parse(source)
+        from tools.tests.qualification_selection import project_dotnet_reset_witness
+        tree = project_dotnet_reset_witness(self, tree)
         function = next(node for node in tree.body if isinstance(node,ast.FunctionDef) and node.name == 'run')
         self.assertEqual(function.args.kwonlyargs[-1].arg,'embedded_resource_conformance')
         self.assertFalse(function.args.kw_defaults[-1].value)
@@ -251,6 +253,20 @@ class EmbeddedResources(unittest.TestCase):
         tree = Projection().visit(tree)
         actual = hashlib.sha256(ast.dump(tree,include_attributes=False).encode()).hexdigest()
         self.assertEqual(actual,'2170a595bdc3c57118cc1fc102bd58b39b49ce4aa13a10dea72da6e80925da8c')
+
+    def test_reset_witness_projection_rejects_changed_guard_default_and_probe(self):
+        from tools.tests.qualification_selection import project_dotnet_reset_witness
+        source = (ROOT/'tools/run_rust_capsule_workflow.py').read_text(encoding='utf-8')
+        changes = (
+            source.replace('dotnet_task_reset_witness=False', 'dotnet_task_reset_witness=True', 1),
+            source.replace("'authoring-dotnet-reset-witness-selection'", "'changed-reset-guard'", 1),
+            source.replace('reset_notification=dotnet_task_reset_witness', 'reset_notification=False', 1),
+        )
+        for changed in changes:
+            with self.subTest(changed=changed[-80:]):
+                self.assertNotEqual(changed, source)
+                with self.assertRaises(AssertionError):
+                    project_dotnet_reset_witness(self, ast.parse(changed))
 
 
 if __name__ == '__main__': unittest.main()
