@@ -23,6 +23,39 @@ role="img" aria-labelledby="title description">
 <rect id="shape" width="10" height="10"/>{extra}</svg>'''
 
 
+class CompatibilityEvidenceTests(unittest.TestCase):
+    def test_completion_ledger_preserves_the_final_import_inspector_scope(self) -> None:
+        evidence = validator.ROOT / "docs/testing/evidence"
+        ledger = json.loads((evidence / "sdk-compatibility-completion-2026-10-25.json").read_text(encoding="utf-8"))
+        controls = ledger["requiredExtraControls"]
+        self.assertNotIn("actualUnknownImportRuntime", controls)
+        projected = controls["finalImportInspector"]
+        self.assertEqual(projected["evidence"], "docs/testing/evidence/six-language-final-import-controls-2026-10-21.json")
+        receipt = json.loads((evidence / "six-language-final-import-controls-2026-10-21.json").read_text(encoding="utf-8"))
+        self.assertEqual(projected["scope"], receipt["scope"])
+        self.assertEqual(projected["scope"], "final-component-inspector-only")
+        for key in ("guestComponentsCompiled", "packagesSigned", "guestInvocations"):
+            with self.subTest(counter=key):
+                self.assertIs(type(receipt[key]), int)
+                self.assertIs(type(projected[key]), int)
+                self.assertEqual(projected[key], receipt[key])
+                self.assertEqual(projected[key], 0)
+        self.assertIs(receipt["runtimeQualification"], False)
+        self.assertIs(projected["runtimeQualification"], False)
+        self.assertIs(projected["freshInstanceRuntimeEvidence"], False)
+        self.assertEqual(projected["unknownImport"], "rejected-by-inspector-with-link-phase-finding")
+        cases = receipt["cases"]
+        self.assertEqual({row["language"] for row in cases}, {"c", "rust", "go", "java", "dotnet", "typescript"})
+        self.assertEqual(len(cases), 6)
+        for row in cases:
+            with self.subTest(language=row["language"]):
+                self.assertIs(row["originalInspectionPassed"], True)
+                self.assertEqual(row["runtimeOutcome"], "not-executed")
+                self.assertTrue(any(finding.get("classification") == "unknown-import"
+                    and finding.get("phase") == "link" and finding.get("evidence") == "final-component"
+                    for finding in row["refusal"]["findings"]))
+
+
 class DocumentationValidationTests(unittest.TestCase):
     def test_application_examples_follow_actual_frontend_and_language_owners(self) -> None:
         documents = {name: (validator.ROOT / name).read_text(encoding="utf-8") for name in validator.APPLICATION_GUIDES}
