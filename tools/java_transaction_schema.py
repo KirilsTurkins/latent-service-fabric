@@ -12,7 +12,8 @@ if __package__ in {None, ""}:
 
 from tools.java_capsule_project import create as author
 from tools.rust_capsule_project import ROOT, digest, read_file, read_json
-from tools.transaction_guest_project import (CURRENT_HTTP_PROFILE, HTTP_BODY, HTTP_REQUIREMENTS, TEMPLATE,
+from tools.transaction_guest_project import (CURRENT_EVENT_PROFILE, CURRENT_HTTP_PROFILE, EVENT_REQUIREMENTS,
+                                            HTTP_BODY, HTTP_REQUIREMENTS, TEMPLATE, current_java_event_requirements,
                                             current_java_http_requirements, put_once_requirements)
 from tools.transaction_guest_variants import replace_once
 
@@ -82,7 +83,7 @@ def source_variant(original: str, variant: str) -> str:
 
 
 def create(directory: Path, variant: str, name: str = "transaction-java-aggregate", *, effect: str = "event",
-           http_profile: str | None = None) -> Path:
+           http_profile: str | None = None, event_profile: str | None = None) -> Path:
     if variant not in VARIANTS:
         raise ValueError("unknown Java transaction schema variant")
     if effect not in EFFECTS:
@@ -93,6 +94,11 @@ def create(directory: Path, variant: str, name: str = "transaction-java-aggregat
         import re
         if not isinstance(http_profile, str) or re.fullmatch(r"qualified-http-v1:[0-9a-f]{64}", http_profile) is None:
             raise ValueError("explicit native current HTTP profile required")
+    if event_profile is not None:
+        import re
+        if (effect != "event" or not isinstance(event_profile, str)
+                or re.fullmatch(r"js-window-v1:[0-9a-f]{64}", event_profile) is None):
+            raise ValueError("explicit native event profile requires the event effect")
     schema = definitions()
     original, world, recipe = recovery_recipe()
     source = source_variant(original.decode(), variant).encode()
@@ -130,6 +136,12 @@ def create(directory: Path, variant: str, name: str = "transaction-java-aggregat
                 "schemaVersion": "latent.java.current-http-source-input.v1",
                 "idempotencyProfile": http_profile}, indent=2).encode() + b"\n")
         (project / HTTP_REQUIREMENTS).write_bytes(json.dumps(requirements, indent=2).encode() + b"\n")
+    if event_profile is not None:
+        requirements = current_java_event_requirements(owner, read_file(project / "transaction-binding.json"), event_profile)
+        (project / CURRENT_EVENT_PROFILE).write_bytes(json.dumps({
+            "schemaVersion": "latent.java.current-event-source-input.v1",
+            "idempotencyProfile": event_profile}, indent=2).encode() + b"\n")
+        (project / EVENT_REQUIREMENTS).write_bytes(json.dumps(requirements, indent=2).encode() + b"\n")
     (project / "state-schema.json").write_bytes(schema[writer])
     captured = project / "schemas"
     captured.mkdir()
@@ -150,8 +162,9 @@ def main() -> None:
     parser.add_argument("--name", default="transaction-java-aggregate")
     parser.add_argument("--effect", choices=EFFECTS, default="event")
     parser.add_argument("--http-profile", help="Exact constructor-derived current native HTTP profile; no grant")
+    parser.add_argument("--event-profile", help="Exact constructor-derived current native event profile; no grant")
     args = parser.parse_args()
-    print(create(args.project, args.variant, args.name, effect=args.effect, http_profile=args.http_profile))
+    print(create(args.project, args.variant, args.name, effect=args.effect, http_profile=args.http_profile, event_profile=args.event_profile))
 
 
 if __name__ == "__main__":
