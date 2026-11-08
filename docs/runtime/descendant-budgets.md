@@ -4,6 +4,8 @@ Capability accounting applies to RPC validation, request normalization,
 admission, the original activation ledger and managed Wasmtime execution.
 The default remains the [basic execution profile](resource-budgets.md). This accounting
 foundation does not install providers or authorize a guest to call a service.
+Development's explicit Phase 4 profile extends the same ledger with state and
+intent counters; it requires the separately installed transaction runtime.
 The [local invocation adapter](local-service-invocation.md) supplies the execution path.
 
 ## Configuration and enforcement
@@ -32,6 +34,36 @@ execution policy. Each operation also requires its own capability authorization.
 Request metadata cannot select a profile. Unmanaged executor calls still use the
 basic profile; managed execution must carry the exact admitted ledger.
 
+The source [budget profile](../../crates/latent-core/src/budget/profile.rs) and
+[node derivation](../../apps/latentd/src/config/budgets.rs) distinguish:
+
+| Node selection | Additional supported counters |
+| --- | --- |
+| `phase1` (default) | None beyond basic execution accounting. |
+| `phase3` | Child calls, outbound requests and blob read/write bytes. Nonzero state/effect requests are rejected. |
+| `phase4` | The Phase 3 counters plus state read/write bytes and staged effect count. |
+
+For an explicitly configured Development transaction node, the `budgetProfile`
+value must include all three transaction ceilings, even when a ceiling is zero:
+
+```json
+{
+  "mode": "phase4",
+  "maximumStateReadBytes": 1048576,
+  "maximumStateWriteBytes": 1048576,
+  "maximumEffectCount": 16
+}
+```
+
+This is one configuration member, not a complete node document. State read/write
+ceilings are at most 1 GiB each and effect count at most 128; effective grants
+still intersect request, deployment and node limits. The mode requires matching
+`state` configuration, transaction engine/manifest selection, enforced supply-chain,
+durable audit and capability policies. The
+[installed runtime guide](../development/installed-transaction-rpc.md) owns those
+prerequisites. It does not enable state imports on a stateless deployment or
+allow immediate irreversible operations in a strict command.
+
 | Dimension | Capability accounting contract |
 | --- | --- |
 | CPU fuel, log bytes | Additive across the activation and descendants. |
@@ -40,7 +72,7 @@ basic profile; managed execution must carry the exact admitted ledger.
 | Blob read/write bytes | Additive independently metered byte counters. |
 | Memory | The parent's own observed peak plus full simultaneous child memory reservations must fit the parent grant. Actual observed child peaks propagate to aggregate telemetry. |
 | Wall time | An absolute monotonic deadline. A child may shorten it and cannot extend or reanchor it. |
-| State bytes, effects | Nonzero requests and consumption remain unsupported. |
+| State bytes, effects | Unsupported by Phase 3; Phase 4 meters accepted state work and intent staging on the original ledger. These counters do not measure remote effect completion. |
 
 Depth defaults to 8 and is capped at 16; the root has depth zero. Global live
 descendant frames default to 64 and are capped at 256. Live children per parent
@@ -50,6 +82,14 @@ retained by live descendants. They are separate from node admission and fixed
 cell capacity. No root owns a background task.
 
 ## Sealed delegation and retirement
+
+State work charges the session's actual read/write accounting deltas. Intent
+staging atomically reserves one effect and its bounded state-write charge before
+publishing the captured intent. That charge includes value/identity metadata and
+the host staging allowance, so payload length alone is insufficient. A discarded
+transaction does not make already consumed execution work free or establish
+remote rollback. See the [state host](../../crates/latent-node/src/transaction_runtime/host.rs)
+and [state I/O accounting](../../crates/latent-node/src/transaction_runtime/io.rs).
 
 `ActivationBudget::delegate_at` reserves against the original parent ledger
 before normal child admission. It intersects requested capacity with parent

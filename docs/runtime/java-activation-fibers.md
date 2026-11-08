@@ -15,6 +15,20 @@ The complete unchanged-library matrix and ordinary installed-node qualification
 remain open in #741 and #736; earlier observations below retain their source and
 completion boundaries.
 
+Later Development source includes ordinary scheduled executors, nested owner
+withdrawal and stopped-wrapper cancellation. Each manually repeated occurrence
+keeps its own accepted owner; ambiguous queue acknowledgement, result conversion
+or settlement cannot refund it by assumption. The
+[scheduled development workflow](../../.github/workflows/java-scheduled-development.yml)
+has its own current-source build/execution owner. These additions do not relabel
+the older 24-call receipt as current combined-source qualification.
+
+Progress analysis now rejects nonsuspendable polling without a finite proof;
+bounded intrinsic selection and inclusive-loop handling preserve their exact
+source constraints. [Parked-continuation GC](../testing/java-checkpoint-gc.md)
+remains a separate diagnostic track with failed signed attempts, not established
+collection support for arbitrary parked Java graphs.
+
 The SDK-owned TeaVM compiler plugin reserves a shared-runtime task owner before
 `Thread.start` queues its event. Actual thread completion settles that owner.
 The original TeaVM continuation transformation saves GC roots and restores

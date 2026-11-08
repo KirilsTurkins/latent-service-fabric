@@ -90,6 +90,14 @@ not a substitute implementation of those providers.
 
 ## Ownership, concurrency and cancellation
 
+The selected timer bridge publishes the original wait owner before starting
+provider readiness. Concurrent Stop/Reset calls serialize through that owner;
+the next operation cannot replace pending physical readiness or settle its token
+twice. Callback and weak timer-inventory retirement retain their original
+generation. See [Go activation](../../docs/runtime/go-activation.md) and
+[timer qualification](../../docs/development/go-managed-timers.md); the newer
+instrumented overlap programme is separate from the historical 43-case run.
+
 The base profile is Linux x86-64 compilation to single-threaded Wasm with
 the exact patched Go compiler, ordinary Go source and the reviewed dependency
 graph. The examples exercise typed functions, generics, strings, slices,

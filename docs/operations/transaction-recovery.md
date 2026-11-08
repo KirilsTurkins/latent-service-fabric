@@ -57,6 +57,13 @@ Lookup always requires current result-read authority. A namespace ID, retained
 receipt or old publication is not a credential. Revocation or unavailable history
 can prevent reading a result without proving that it never committed.
 
+An explicit retry racing another identical retry may return that attempt's
+original pending or terminal association after a definite claim conflict. It
+still requires current result-read authority as well as command admission;
+permission to submit does not imply permission to receive a retained result.
+This bounded lookup neither starts another guest nor retries uncertain storage
+I/O. Keep the original command, abort fence, retry request and fingerprint.
+
 ## Inspect the commit and effect separately
 
 When an actual commit receipt or effect ID was returned, read it explicitly:

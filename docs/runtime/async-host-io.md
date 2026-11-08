@@ -37,6 +37,27 @@ The call, its staged inputs, buffers and streams retain the running slot and
 activation ownership until their actual destruction. There is no unbounded
 cleanup queue, filesystem I/O in a destructor or automatic transfer to a worker.
 
+## Future and callback backing
+
+The future itself can allocate before its first poll. Selected accounted paths
+therefore prepare the actual typed future/factory backing through the original
+admission before boxing, copying input, publishing queue state or dispatching
+effects. Producer and consumer poll futures, stream accept factories, buffered
+HTTP/blob/local-call callbacks and timer callbacks retain their own reservations;
+charging only the eventual payload would miss that storage.
+
+Completion closures, shared cells, task/ready-queue nodes and result channels
+also have physical owners. Captured values and weak allocations can outlive a
+returned result or Store. Their charge releases when the allocation actually
+retires, while accepted blocking work keeps its original I/O owner. A synchronous
+callback that needs no heap future can run directly in its original fiber context;
+that does not transfer its authority or waive the callback's other costs.
+
+These are selected paths in the maintained engine and broker, not a claim that
+every Rust future or fixed node allocation uses an activation ledger. See
+[engine memory profiles](wasmtime.md#selected-continuation-and-memory-profiles)
+and [resource budgets](resource-budgets.md).
+
 ## Deadlines, cancellation and waiting
 
 `admit_until` can narrow the Store deadline using an operation timeout converted

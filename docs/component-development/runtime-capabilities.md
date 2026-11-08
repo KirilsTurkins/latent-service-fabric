@@ -68,6 +68,16 @@ including Buffer/net modules, finite managed waits and closed C/Rust cooperative
 profiles. Those records retain their own source and evidence; this navigation
 does not change a row's status or its machine-readable source binding.
 
+Current navigation also includes [C libfetch GET/HEAD/Range](c-authoring.md#ordinary-libfetch-http-profile),
+[Java scheduled ownership](../runtime/java-activation-fibers.md),
+[Go timer serialization](../development/go-managed-timers.md),
+[.NET unwrap/queue custody](../testing/dotnet-managed-closing.md),
+[TypeScript event/abort ownership](../../sdk/typescript-guest/README.md#qualification)
+and [Rust composed-source diagnostics](../testing/rust-thread-development-integration.md).
+Source implementation, a prepared signed owner and an executed source-bound
+programme are different evidence stages. These links leave all v1 rows and
+their JSON digests unchanged.
+
 Limits above identify selected test/runtime profiles, not universal defaults or minimum library requirements. Execution budgets, admission charges, provider quotas, physical owners and static bounds remain distinct. Cancellation, handle disposal and a reaped caller cannot prove worker drain or external rollback. Root deadline and uncertain mutation remain failures with their original status.
 
 Update this document and the JSON together when source or evidence changes. Retain old source-specific receipts, record new source identities, and keep incomplete API/lifecycle combinations visible. Package observations belong in the [versioned compatibility catalogue](../compatibility-catalogue/README.md); proposed ports belong to their implementation tickets. This matrix supplies no six-runtime completion certificate.

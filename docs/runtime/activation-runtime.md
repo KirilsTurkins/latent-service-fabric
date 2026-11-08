@@ -42,6 +42,12 @@ pinned generated ABI, including both memory and flat lowering, and rejects an
 upstream binding that requires guest allocation. Pending host futures and owned
 stream/list/string resources retain their existing physical owners.
 
+Park, wake and timer completion arbitrate against the original cancellation
+state. A concurrent stop cannot become a successful elapsed wait or revive a
+retired owner. Runtime arenas, timer-state backing and selected timer/poll
+futures are preadmitted before allocation; callbacks keep their original
+reservation while physically active. See [host-I/O backing](async-host-io.md#future-and-callback-backing).
+
 Parking records readiness without running guest code. A wake is valid only for
 the original generation and a still-live owner. A weak wake does not keep the
 Store or budget alive. The maintained language scheduler must choose a runnable

@@ -118,7 +118,7 @@ ownership. They do not grant authority, qualify all pthread/std::thread/executor
 APIs, capture a durable continuation or enable arbitrary shared-memory Wasm
 threads. Language qualification remains specific to its source/profile.
 
-The workspace uses a [maintained Wasmtime 48.0.7 source package](../../crates/vendor/wasmtime/README.latent.md),
+The workspace uses a [maintained Wasmtime 48.0.8 source package](../../crates/vendor/wasmtime/README.latent.md),
 not an interchangeable registry package with the same version string. Its
 selected `DynamicValueMemory` / `Func::call_async_with_memory` and native-memory
 hooks preadmit actual allocation layouts on ordinary accounted paths. The exact
@@ -127,6 +127,10 @@ older prepared or AOT entry cannot certify the changed implementation.
 
 Selected accounting covers value lifting/encoding, table and Store backing,
 registries, FuncRefs, resource metadata, context/host futures and reply owners.
+It also admits the selected outer poll futures, producer/consumer factories,
+completion closures, call-result channels and callback backing before their
+allocation or publication. See [host-I/O admission](async-host-io.md#future-and-callback-backing)
+for the distinction between future storage and its eventual payload.
 Retained output bytes use the separately maintained bytes owner path. Growth
 reserves old and replacement allocations while both exist. Values, headers,
 weak backing and returned frames keep their original charge until the actual
