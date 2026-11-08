@@ -145,10 +145,6 @@ fn protobuf_decoded_single_reason_keeps_bounded_allocation_and_closed_semantics(
 }
 
 #[test]
-#[expect(
-    clippy::too_many_lines,
-    reason = "Keep the complete fixed-counter projection and unavailable response in one owner fixture"
-)]
 fn usage_reports_only_fixed_owner_counters_and_preserves_unavailable() {
     let usage = proto::CapabilityResourceUsage {
         scope: "node".into(),
@@ -212,6 +208,10 @@ fn usage_reports_only_fixed_owner_counters_and_preserves_unavailable() {
     let mut wrong = usage;
     wrong.counters.insert("credential_file".into(), 0);
     assert!(projection::checked(&wrong, 4096).is_err());
+}
+
+#[test]
+fn stream_usage_preserves_quarantine_and_unavailable_observations() {
     let mut streams = proto::CapabilityResourceUsage {
         scope: "node".into(),
         counters: HashMap::from([

@@ -1,6 +1,6 @@
 {
   "definition": {
-    "if": "github.ref_name != 'feat/kernel-native-constructor-vm-20261024' && github.ref_name != 'feat/kernel-native-close-20261024' && github.ref_name != 'feat/sdk-738-q35-node-boot-20261029' && github.ref_name != 'feat/sdk-738-q35-pci-identity-20261104' && github.ref_name != 'feat/sdk-738-q35-node-pci-prefix-20261104' && github.ref_name != 'feat/sdk-738-q35-pci-setup-20261104' && github.ref_name != 'feat/sdk-738-q35-pci-fixup-20261104' && github.ref_name != 'feat/sdk-738-q35-pci-intx-20261105'",
+    "if": "github.ref_name != 'feat/kernel-native-constructor-vm-20261024' && github.ref_name != 'feat/kernel-native-close-20261024' && github.ref_name != 'feat/sdk-738-q35-node-boot-20261029' && github.ref_name != 'feat/sdk-738-q35-pci-identity-20261104' && github.ref_name != 'feat/sdk-738-q35-node-pci-prefix-20261104' && github.ref_name != 'feat/sdk-738-q35-pci-setup-20261104' && github.ref_name != 'feat/sdk-738-q35-pci-fixup-20261104' && github.ref_name != 'feat/sdk-738-q35-pci-intx-20261105' && github.ref_name != 'feat/sdk-738-q35-bar3-20261108'",
     "name": "Thirteen actual descriptor and original node quota controls",
     "runs-on": "ubuntu-24.04",
     "steps": [

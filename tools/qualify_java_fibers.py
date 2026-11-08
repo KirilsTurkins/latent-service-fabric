@@ -378,8 +378,13 @@ def standard_timer_model_control(compiler: Compiler, output: Path) -> dict:
         compiler.sdk / "fibers/conformance/compiler/StandardTimerCompilerGraphControl.java"]
     sources += [compiler.sdk / ("fibers/dev/latent/guest/runtime/util/" + name + ".java")
                 for name in ("Timer", "TimerTask")]
-    sources += [compiler.sdk / ("fibers/conformance/compiler/standard-timer-control/" + name)
-                for name in ("dev/latent/generated/Bindings.java", "dev/latent/guest/runtime/Activation.java")]
+    # Compile the graph against the real guest Activation. The separate host
+    # source control retains its Thread.getState worker-wait witness.
+    sources += [compiler.sdk / ("fibers/dev/latent/guest/runtime/" + name + ".java")
+                for name in ("Activation", "HostCalls")]
+    sources += [compiler.sdk / ("runtime/dev/latent/guest/" + name + ".java")
+                for name in ("Option", "Unsigned64")]
+    sources.append(compiler.sdk / "fibers/conformance/compiler/timer-source-control/dev/latent/generated/Bindings.java")
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path)) for path in sources}
     compiler.run("standard-timer-model-compile", "javac", "-proc:none", "--release", "25", "-cp", classpath,
                  "-d", output, *sources)

@@ -22,35 +22,71 @@ mod task_saturation;
 #[path = "go/timer_overlap.rs"]
 mod timer_overlap;
 
+fn timer_overlap_fixture(variable: &str, profile: &str) -> bool {
+    matches!(
+        (variable, profile),
+        ("LSF_GO_TIMER_OVERLAP_FIXTURE", "go-component-activation-v5")
+            | (
+                "LSF_GO_V7_TIMER_OVERLAP_FIXTURE",
+                "go-component-activation-v7"
+            )
+    )
+}
+
+#[test]
+fn timer_overlap_fixture_requires_the_exact_variable_and_profile() {
+    assert!(timer_overlap_fixture(
+        "LSF_GO_TIMER_OVERLAP_FIXTURE",
+        "go-component-activation-v5"
+    ));
+    assert!(timer_overlap_fixture(
+        "LSF_GO_V7_TIMER_OVERLAP_FIXTURE",
+        "go-component-activation-v7"
+    ));
+    assert!(!timer_overlap_fixture(
+        "LSF_GO_TIMER_OVERLAP_FIXTURE",
+        "go-component-activation-v7"
+    ));
+    assert!(!timer_overlap_fixture(
+        "LSF_GO_V7_TIMER_OVERLAP_FIXTURE",
+        "go-component-activation-v5"
+    ));
+    assert!(!timer_overlap_fixture(
+        "unknown",
+        "go-component-activation-v7"
+    ));
+}
+
 fn checkpoint_component(
     variable: &str,
     profile: &str,
 ) -> (latent_packaging::PackageBundle, Vec<u8>) {
+    let timer_overlap = timer_overlap_fixture(variable, profile);
     assert!(
-        matches!(
-            (variable, profile),
-            ("LSF_GO_CHECKPOINT_FIXTURE", "go-component-activation-v2")
-                | ("LSF_GO_NO_CHECKPOINT_FIXTURE", "go-component-activation-v1")
-                | ("LSF_GO_TIMER_FIXTURE", "go-component-activation-v3")
-                | ("LSF_GO_MANAGED_TIMER_FIXTURE", "go-component-activation-v5")
-                | ("LSF_GO_V7_TIMER_FIXTURE", "go-component-activation-v7")
-                | ("LSF_GO_INITIALIZER_FIXTURE", "go-component-activation-v4")
-                | ("LSF_GO_PUBLISHED_FIXTURE", "go-component-activation-v4")
-                | ("LSF_GO_MANAGED_IDLE_FIXTURE", "go-component-activation-v5")
-                | (
-                    "LSF_GO_SYNCHRONIZATION_FIXTURE",
-                    "go-component-activation-v5"
-                )
-                | (
-                    "LSF_GO_SYNCHRONIZATION_NO_CHECKPOINT_FIXTURE",
-                    "go-component-activation-v1"
-                )
-                | (
-                    "LSF_GO_TASK_SATURATION_FIXTURE",
-                    "go-component-activation-v5"
-                )
-                | ("LSF_GO_TIMER_OVERLAP_FIXTURE", "go-component-activation-v5")
-        ),
+        timer_overlap
+            || matches!(
+                (variable, profile),
+                ("LSF_GO_CHECKPOINT_FIXTURE", "go-component-activation-v2")
+                    | ("LSF_GO_NO_CHECKPOINT_FIXTURE", "go-component-activation-v1")
+                    | ("LSF_GO_TIMER_FIXTURE", "go-component-activation-v3")
+                    | ("LSF_GO_MANAGED_TIMER_FIXTURE", "go-component-activation-v5")
+                    | ("LSF_GO_V7_TIMER_FIXTURE", "go-component-activation-v7")
+                    | ("LSF_GO_INITIALIZER_FIXTURE", "go-component-activation-v4")
+                    | ("LSF_GO_PUBLISHED_FIXTURE", "go-component-activation-v4")
+                    | ("LSF_GO_MANAGED_IDLE_FIXTURE", "go-component-activation-v5")
+                    | (
+                        "LSF_GO_SYNCHRONIZATION_FIXTURE",
+                        "go-component-activation-v5"
+                    )
+                    | (
+                        "LSF_GO_SYNCHRONIZATION_NO_CHECKPOINT_FIXTURE",
+                        "go-component-activation-v1"
+                    )
+                    | (
+                        "LSF_GO_TASK_SATURATION_FIXTURE",
+                        "go-component-activation-v5"
+                    )
+            ),
         "only reviewed fixture/profile pairs may select captured Go source"
     );
     let prepared = std::path::PathBuf::from(
@@ -66,7 +102,6 @@ fn checkpoint_component(
         "LSF_GO_MANAGED_TIMER_FIXTURE" | "LSF_GO_V7_TIMER_FIXTURE"
     );
     let task_saturation = variable == "LSF_GO_TASK_SATURATION_FIXTURE";
-    let timer_overlap = variable == "LSF_GO_TIMER_OVERLAP_FIXTURE";
     let timers = profile == "go-component-activation-v3" || managed_timers;
     let published = variable == "LSF_GO_PUBLISHED_FIXTURE";
     let managed = profile == "go-component-activation-v5"
