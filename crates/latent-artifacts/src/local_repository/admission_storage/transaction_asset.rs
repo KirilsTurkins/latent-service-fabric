@@ -21,6 +21,7 @@ type TransactionAssets = (
     TransactionBinding,
     ArtifactBlobDigest,
     Option<(ArtifactBlobDigest, Vec<u8>)>,
+    Option<(ArtifactBlobDigest, Vec<u8>)>,
 );
 
 impl StoredAdmission {
@@ -113,6 +114,7 @@ impl StoredAdmission {
         }
         let mut companion = None;
         let mut http_requirements = None;
+        let mut event_requirements = None;
         for (layer, stored) in layout.config().layers.iter().zip(&self.layers) {
             check()?;
             if layer.path != stored.path
@@ -185,6 +187,16 @@ impl StoredAdmission {
                     let bytes = read_blob(directory, &stored.blob, 8192)?;
                     http_requirements = Some((layer.digest.clone(), bytes));
                 }
+                LayerRole::Asset if layer.path == "deferred-event-requirements.json" => {
+                    if event_requirements.is_some()
+                        || layer.media_type != "application/json"
+                        || layer.size > 8192
+                    {
+                        return Err(resource_exhausted("transaction-event-requirements-shape"));
+                    }
+                    let bytes = read_blob(directory, &stored.blob, 8192)?;
+                    event_requirements = Some((layer.digest.clone(), bytes));
+                }
                 LayerRole::Renderer => return Err(corrupt("transaction-asset-renderer")),
                 LayerRole::WitLock | LayerRole::Asset => {}
             }
@@ -215,6 +227,6 @@ impl StoredAdmission {
         }
         let (declaration, digest) =
             companion.ok_or_else(|| corrupt("transaction-asset-companion-missing"))?;
-        Ok((declaration, digest, http_requirements))
+        Ok((declaration, digest, http_requirements, event_requirements))
     }
 }

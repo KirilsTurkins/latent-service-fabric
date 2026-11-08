@@ -206,6 +206,10 @@ CI execution or establish a product regression.
 Standalone state startup includes the qualified event adapters from its existing
 provider owner in the shared dispatcher, using the same protected startup clock
 as deferred HTTP. This installs no event-operation authority by itself.
+The selected signed transaction package can also retain a separate
+`deferred-event-requirements.json` asset of at most 8,192 bytes. Its digest and
+bytes establish package provenance only; an event decoder and current policy
+must still establish the operation and dispatch authority.
 
 This native campaign executes trusted fixture source labels directly through
 the captured-intent writer. Actual verified guest component identities and

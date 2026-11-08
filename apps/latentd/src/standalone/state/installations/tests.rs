@@ -115,7 +115,7 @@ impl Setup {
         executable: bool,
         compact: bool,
     ) -> Self {
-        Self::configured_installation(document, executable, compact, None).await
+        Self::configured_installation(document, executable, compact, None, false).await
     }
 
     #[expect(
@@ -127,12 +127,16 @@ impl Setup {
         executable: bool,
         compact: bool,
         deferred: Option<&startup::HttpFixture>,
+        event_document: bool,
     ) -> Self {
         let mut fixture = KernelFixture::new();
         let companion = deferred.map_or_else(declaration, |_| startup::declaration());
         let deferred_configuration =
             deferred.map(|deferred| deferred.configuration(document.as_deref().unwrap()));
         let signed = match document {
+            Some(document) if event_document => {
+                signed::Fixture::transactional_with_event_companion(companion.clone(), document)
+            }
             Some(document) if deferred.is_some() => {
                 signed::Fixture::transactional_deferred_http_with_companion(
                     companion.clone(),
@@ -420,10 +424,14 @@ fn operator() -> latent_core::InvocationPrincipal {
 }
 
 #[tokio::test]
-async fn signed_http_document_capture_keeps_original_native_owner_and_refuses_oversize() {
-    for size in [8192, 8193] {
+async fn signed_effect_documents_keep_original_native_owner_and_refuse_oversize() {
+    for (event, size) in [(false, 8192), (false, 8193), (true, 8192), (true, 8193)] {
         let bytes = vec![b' '; size];
-        let setup = Setup::with_http_document(Some(bytes.clone())).await;
+        let setup = if event {
+            Setup::configured_installation(Some(bytes.clone()), false, false, None, true).await
+        } else {
+            Setup::with_http_document(Some(bytes.clone())).await
+        };
         let original = Arc::new(
             setup
                 .kernel
@@ -469,7 +477,13 @@ async fn signed_http_document_capture_keeps_original_native_owner_and_refuses_ov
         if size == 8192 {
             let captured = captured.unwrap();
             assert!(captured.get().is_from_reservation(&original));
-            let (digest, actual) = captured.get().deferred_http_requirements().unwrap();
+            let (digest, actual) = if event {
+                assert!(captured.get().deferred_http_requirements().is_none());
+                captured.get().deferred_event_requirements().unwrap()
+            } else {
+                assert!(captured.get().deferred_event_requirements().is_none());
+                captured.get().deferred_http_requirements().unwrap()
+            };
             assert_eq!(actual, bytes);
             assert_eq!(
                 *digest,
