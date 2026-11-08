@@ -147,3 +147,43 @@ pub(super) fn revoke(policy: &PolicyStore) {
         )
         .unwrap();
 }
+
+pub(super) fn revoke_result_only(policy: &PolicyStore) {
+    let deadline = Instant::now() + Duration::from_secs(10);
+    let current = policy
+        .get(
+            publication::TENANT,
+            RecordKind::Policy,
+            "state",
+            64 * 1024,
+            deadline,
+        )
+        .unwrap();
+    let expected = current.value().as_ref().unwrap().revision;
+    let mut document: serde_json::Value =
+        serde_json::from_str(current.value().as_ref().unwrap().document.as_ref().unwrap()).unwrap();
+    drop(current);
+    for rule in document["rules"].as_array_mut().unwrap() {
+        let operations = rule["operations"].as_array_mut().unwrap();
+        assert!(operations.iter().any(|op| op.as_str() == Some("commit")));
+        assert!(operations
+            .iter()
+            .any(|op| op.as_str() == Some("read-result")));
+        operations.retain(|op| op.as_str() != Some("read-result"));
+    }
+    policy
+        .mutate(
+            MutationRequest {
+                tenant: publication::TENANT,
+                actor: "compiled-guest-test-operator",
+                kind: RecordKind::Policy,
+                id: "state",
+                operation_id: "revoke-result-only",
+                expected_revision: expected,
+                document: Some(&serde_json::to_vec(&document).unwrap()),
+            },
+            deadline,
+            |_| Ok(()),
+        )
+        .unwrap();
+}

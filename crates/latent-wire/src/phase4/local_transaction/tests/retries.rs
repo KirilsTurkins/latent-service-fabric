@@ -139,6 +139,15 @@ async fn actual_guest_durable_conflict_abort_allows_one_explicit_retry_and_prese
     assert_eq!(f.executions(), 3);
     drop(historical);
     drop(recovery);
+    policy::revoke_result_only(&f.policy);
+    let denied_result = f
+        .adapter()
+        .invoke_command(context("alice").request(retry("conflicted", &fence, "retry-original")))
+        .await
+        .unwrap_err();
+    assert_eq!(denied_result.code(), tonic::Code::PermissionDenied);
+    assert_eq!(f.executions(), 3);
+    assert_eq!(f.rows(Family::Outbox).await, 2);
     policy::revoke(&f.policy);
     let denied = f
         .adapter()
