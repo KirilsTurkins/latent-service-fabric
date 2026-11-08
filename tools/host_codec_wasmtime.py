@@ -26,8 +26,8 @@ POSTIMAGES = {
         "bytes": 11138
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "038f94d414b5e90bf3de254ce7f90aebc7412c502ed55d44b65a1517f78423aa",
-        "bytes": 750166
+        "sha256": "74aa8a16cac43a375ecf86822c3e9710f16aca89b7472db0f41ec12bc1a57372",
+        "bytes": 750182
     },
     "README.latent.md": {
         "sha256": "772bd0dde546d02bbfe510e9688d5a0e88c30ec3c6d23ed589648f7d987f420d",
