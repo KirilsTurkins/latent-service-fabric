@@ -42,7 +42,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
             root = Path(temporary)
             self.fixture(root)
             directory = root / source.PROVIDER
-            for name in ('Cargo.toml', 'LICENSE', 'src/runtime/component/values.rs',
+            for name in ('Cargo.toml', 'LICENSE', 'src/runtime/vm/cow.rs', 'src/runtime/component/values.rs',
                          'src/runtime/component/dynamic_memory.rs', 'UPSTREAM.latent.json',
                          'src/runtime/component/concurrent/call_future.rs',
                          'src/runtime/component/concurrent/worker_function.rs',

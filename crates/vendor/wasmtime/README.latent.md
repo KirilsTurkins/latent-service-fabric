@@ -4,8 +4,9 @@ This is the complete crates.io Wasmtime 48.0.8 package, licensed under
 Apache-2.0 WITH LLVM-exception (see the unmodified LICENSE). The original
 archive checksum and all 250 original file identities are recorded in
 UPSTREAM.latent.json. `latent-dynamic-memory.patch` applies to that exact
-original package; it contains 36 changed upstream files and 24 added
-source/license files. Other Wasmtime packages use the matching 48.0.8 locked
+original package; it contains 37 changed upstream files and 24 added
+source/license files. The COW test module requires the pooling allocator
+feature; this test-only gate does not change the production runtime. Other Wasmtime packages use the matching 48.0.8 locked
 registry versions. The standalone development lock selects Tokio 1.51.6 for
 RUSTSEC-2026-0386; the immutable upstream inventory retains its original lock
 identity. This dependency-only lock correction changes no Wasmtime runtime source.
