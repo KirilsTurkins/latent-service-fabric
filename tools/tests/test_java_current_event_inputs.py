@@ -65,6 +65,43 @@ class CurrentJavaEventInputs(unittest.TestCase):
             with self.assertRaises(ValueError):
                 authored_project('java', 'forbidden-http', root / 'wrong', java_current_event_profile=profile)
 
+    def test_node_configuration_pins_only_the_selected_event_operation(self):
+        from tools.java_transaction_qualification.configuration import current_event_operations
+        from tools.java_transaction_qualification.inputs import ComponentInput, digest
+        profile = 'js-window-v1:' + 'a' * 64
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            project = create(root / 'project', 'legacy-v1', event_profile=profile)
+            files = snapshot(project)
+            item = ComponentInput('aggregate', root, 'sha256:' + '1' * 64,
+                digest(files['transaction-binding.json']), 'sha256:' + '2' * 64, '3' * 40,
+                'sha256:' + '4' * 64, None, digest(files[EVENT_REQUIREMENTS]))
+            args = dict(provider_id='events', credential_reference='event-secret',
+                        staging_binding='event-stage', staging_policy='stage',
+                        dispatch_binding='event-dispatch', dispatch_policy='dispatch')
+            publication = 'publication:sha256:' + '5' * 64
+            rows = current_event_operations(item, publication, '6' * 64, **args)
+            self.assertEqual([row['function'] for row in rows], ['update', 'query', 'scan'])
+            self.assertEqual(rows[0]['deferredEvent']['requirementsDigest'], item.event_requirements_digest)
+            self.assertEqual(rows[0]['deferredEvent']['providerIncarnation'], '6' * 64)
+            self.assertEqual(rows[0]['deferredEvent']['dispatchAuthority']['mode'], 'signed-service-integration')
+            self.assertNotIn('deferredEvent', rows[1])
+            self.assertNotIn('deferredEvent', rows[2])
+            with self.assertRaises(ValueError):
+                current_event_operations(item, publication, 'BAD', **args)
+            for identity in ('', 'x' * 257, 'bad\u0085identity'):
+                with self.assertRaises(ValueError):
+                    current_event_operations(item, publication, '6' * 64, **{**args, 'provider_id': identity})
+            changed = json.loads(files[EVENT_REQUIREMENTS])
+            changed['binding'] = 'other-event'
+            (project / EVENT_REQUIREMENTS).write_text(json.dumps(changed), encoding='utf-8')
+            with self.assertRaises(ValueError):
+                current_event_operations(item, publication, '6' * 64, **args)
+            from dataclasses import replace
+            reselected = replace(item, event_requirements_digest=digest(read_file(project / EVENT_REQUIREMENTS)))
+            with self.assertRaises(ValueError):
+                current_event_operations(reselected, publication, '6' * 64, **args)
+
     def test_packaging_refuses_changed_identity_missing_marker_and_ambiguous_effects(self):
         profile = 'js-window-v1:' + 'b' * 64
         with tempfile.TemporaryDirectory() as temporary:

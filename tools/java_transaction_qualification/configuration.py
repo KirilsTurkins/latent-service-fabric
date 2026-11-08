@@ -245,3 +245,50 @@ def active_operations(operations: list[dict], publication: str, component_digest
                     and row["deployment"] == DEPLOYMENT and row["incarnation"] == 1
                     for row in selected), "exact-one-current-runtime-operation-set")
     return copy.deepcopy(selected)
+
+
+def current_event_operations(item: ComponentInput, publication: str, provider_incarnation: str, *,
+                             provider_id: str, credential_reference: str,
+                             staging_binding: str, staging_policy: str,
+                             dispatch_binding: str, dispatch_policy: str) -> list[dict]:
+    """Select exact captured event inputs; these constraints do not grant authority."""
+    import re
+    import unicodedata
+    from tools.transaction_guest_project import CURRENT_EVENT_PROFILE, EVENT_REQUIREMENTS, current_java_event_requirements
+    require(item.name == "aggregate" and item.requirements_digest is None
+            and isinstance(item.event_requirements_digest, str)
+            and re.fullmatch(r"sha256:[0-9a-f]{64}", item.event_requirements_digest)
+            and re.fullmatch(r"sha256:[0-9a-f]{64}", item.component_digest or "")
+            and re.fullmatch(r"publication:sha256:[0-9a-f]{64}", publication or "")
+            and re.fullmatch(r"[0-9a-f]{64}", provider_incarnation or ""),
+            "explicit-current-event-component-and-provider")
+    for identity in (provider_id, credential_reference, staging_binding, staging_policy, dispatch_binding, dispatch_policy):
+        require(isinstance(identity, str) and 0 < len(identity.encode("utf-8")) <= 256
+                and not any(unicodedata.category(ch) == "Cc" for ch in identity), "bounded-event-owner-identity")
+    project = item.directory / "project"
+    companion = read_file(project / "transaction-binding.json", 128 * 1024)
+    requirements = read_file(project / EVENT_REQUIREMENTS, 8192)
+    marker = decode(read_file(project / CURRENT_EVENT_PROFILE, 8192), 8192)
+    require(digest(companion) == item.companion_digest and digest(requirements) == item.event_requirements_digest
+            and isinstance(marker, dict) and set(marker) == {"schemaVersion", "idempotencyProfile"}
+            and marker["schemaVersion"] == "latent.java.current-event-source-input.v1",
+            "exact-current-event-captured-inputs")
+    descriptor = decode(read_file(project / "capsule-project.json", 128 * 1024))
+    expected = current_java_event_requirements(descriptor, companion, marker["idempotencyProfile"])
+    require(decode(requirements, 8192) == expected and expected["capsule"] == SERVICE
+            and expected["namespace"] == NAMESPACE and expected["deployment"] == DEPLOYMENT
+            and expected["stateBinding"] == DEPLOYMENT, "exact-current-event-operation-scope")
+    rows = []
+    for name in ("update", "query", "scan"):
+        row = {"tenant": TENANT, "componentDigest": item.component_digest, "publication": publication,
+               "contract": CONTRACT, "function": name, "deployment": DEPLOYMENT, "route": DEPLOYMENT,
+               "binding": DEPLOYMENT, "companionDigest": item.companion_digest, "incarnation": 1,
+               "resultPolicy": RESULT_POLICY, "statePolicies": [STATE_POLICY]}
+        if name == "update":
+            row["deferredEvent"] = {"requirementsDigest": item.event_requirements_digest, "providerId": provider_id,
+                                    "providerIncarnation": provider_incarnation, "credentialReference": credential_reference,
+                                    "stagingBinding": staging_binding, "stagingPolicies": [staging_policy],
+                                    "dispatchBinding": dispatch_binding, "dispatchPolicies": [dispatch_policy],
+                                    "dispatchAuthority": {"formatVersion": 1, "mode": "signed-service-integration"}}
+        rows.append(row)
+    return active_operations(rows, publication, item.component_digest)
