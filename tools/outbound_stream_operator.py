@@ -461,15 +461,17 @@ class StreamOperator:
             "resources": {"kind": "stream", "endpoints": [copy.deepcopy(self.owner["endpoint"])]},
             "requireAudit": True, "ceiling": dict(CEILING)}]}
 
+    def _binding(self):
+        provider = self.owner["provider"]
+        return {"formatVersion": 1, "tenant": self.owner["tenant"], "capability": CAPABILITY,
+                "providerProfile": PROFILE, "configurationDigest": provider["configurationDigest"],
+                "configurationEpoch": int(provider["configurationEpoch"]),
+                "restriction": {"operations": list(OPERATIONS)}}
+
     def grant(self):
         with state.lock(self.root, "stream-operator.lock"):
             self._owned()
-            provider = self.owner["provider"]
-            self._apply("provider-binding", self.owner["bindingId"], {
-                "formatVersion": 1, "tenant": self.owner["tenant"], "capability": CAPABILITY,
-                "providerProfile": PROFILE, "configurationDigest": provider["configurationDigest"],
-                "configurationEpoch": int(provider["configurationEpoch"]),
-                "restriction": {"operations": list(OPERATIONS)}})
+            self._apply("provider-binding", self.owner["bindingId"], self._binding())
             self._apply("policy", self.owner["policyId"], self._policy("allow"))
             return {"capability": CAPABILITY, "policy": self.owner["policyId"]}
 
@@ -528,8 +530,46 @@ class StreamOperator:
             return {"provider": replacement, "executionPermission": False,
                     "outcome": "descriptor-adopted-binding-grant-still-required"}
 
-    def adopt_client(self, replacement):
-        """Authenticate one token-only replacement; never replay a mutation."""
+    def _pending_client_operation(self, pending):
+        """Accept only this owner's original bounded stream-policy intent."""
+        members(pending, {"id", "kind", "intent", "requestDigest", "node", "tenant", "state"})
+        intent = members(pending["intent"], {"policyId", "recordKind", "document", "expectedGeneration"})
+        require(pending["kind"] == "policy" and pending["node"] == self.owner["node"]
+                and pending["tenant"] == self.owner["tenant"] and pending["state"] == "prepared"
+                and isinstance(pending["id"], str) and re.fullmatch(r"dev-[0-9a-f]{32}", pending["id"])
+                and pending["requestDigest"] == digest(encode(intent)),
+                "stream-operator-pending-operation-scope")
+        generation = intent["expectedGeneration"]
+        require(type(generation) is str and re.fullmatch(r"0|[1-9][0-9]{0,19}", generation)
+                and int(generation) <= 18446744073709551615,
+                "stream-operator-pending-operation-generation")
+        if intent["recordKind"] == "provider-binding":
+            record_id, documents = self.owner["bindingId"], (self._binding(),)
+        else:
+            require(intent["recordKind"] == "policy", "stream-operator-pending-operation-scope")
+            record_id = self.owner["policyId"]
+            documents = (self._policy("allow"), self._policy("deny"))
+        require(intent["policyId"] == record_id
+                and any(encode(intent["document"]) == encode(document) for document in documents),
+                "stream-operator-pending-operation-scope")
+        return intent["recordKind"] + ":" + record_id
+
+    def adopt_client(self, replacement, *, preserve_pending=False):
+        """Authenticate a token-only handoff, optionally retaining a verified intent.
+
+        The explicit pending path observes the original receipt without settling
+        it. A separate recover must still confirm it using the adopted client.
+        """
+        require(type(preserve_pending) is bool, "stream-operator-pending-adoption-option")
+        try:
+            return self._adopt_client(replacement, preserve_pending=preserve_pending)
+        except (DevError, OSError) as error:
+            if not preserve_pending:
+                raise
+            code = error.code if isinstance(error, DevError) else "stream-operator-file-unavailable-or-unsafe"
+            raise DevError(code, uncertain=True) from None
+
+    def _adopt_client(self, replacement, *, preserve_pending):
         with state.lock(self.root, "stream-operator.lock"):
             names = ("stream-operator-owner.json", "operations.json", "stream-policy-receipts.json")
 
@@ -539,8 +579,13 @@ class StreamOperator:
 
             before = snapshot()
             self._owned()
-            require(self.journal.read()["pending"] is None,
-                    "recover-original-operation-before-client-adoption")
+            pending = self.journal.read()["pending"]
+            if preserve_pending:
+                require(pending is not None, "stream-operator-pending-adoption-requires-operation")
+                pending_key = self._pending_client_operation(pending)
+            else:
+                require(pending is None, "recover-original-operation-before-client-adoption")
+                pending_key = None
             require(Path(replacement.binary).absolute() == Path(self.client.binary).absolute()
                     and Path(replacement.directory).absolute() == Path(self.client.directory).absolute()
                     and replacement.deadline == self.client.deadline
@@ -553,17 +598,42 @@ class StreamOperator:
             require(old == new and old_token != new_token, "stream-operator-client-token-only-replacement")
             records = self._records()
             for kind, field in (("provider-binding", "bindingId"), ("policy", "policyId")):
-                previous = records.get(kind + ":" + self.owner[field])
+                key = kind + ":" + self.owner[field]
+                if preserve_pending and key not in records:
+                    # A first binding may be uncertain before either receipt is
+                    # retained. A pending policy still requires its owned binding.
+                    require(key == pending_key or pending["intent"]["recordKind"] == "provider-binding"
+                            and kind == "policy", "stream-operator-no-owned-grant")
+                    continue
+                previous = records.get(key)
                 require(isinstance(previous, dict) and isinstance(previous.get("receipt"), dict)
                         and isinstance(previous.get("document"), dict)
                         and all(stamp in previous["receipt"] for stamp in STAMP_FIELDS),
                         "stream-operator-no-owned-grant")
 
-            def read(*arguments):
+            if preserve_pending:
+                previous = records.get(pending_key)
+                if previous is None:
+                    require(pending["intent"]["expectedGeneration"] == "0",
+                            "stream-operator-pending-operation-precondition")
+                elif previous["receipt"].get("operationId") == pending["id"]:
+                    # A crash may retain the confirmed local receipt before
+                    # Journal.finish clears pending. Validate, but do not settle.
+                    policy_operations.confirm(pending, {"data": {"receipt": previous["receipt"],
+                        "policy": {**previous["receipt"], "document": previous["document"]}}})
+                else:
+                    require(previous["receipt"].get("generation") == pending["intent"]["expectedGeneration"],
+                            "stream-operator-pending-operation-precondition")
+
+            def read(*arguments, absent=False):
                 observed = replacement.call(*arguments)
                 require(isinstance(observed, dict) and type(observed.get("outcomeKnown")) is bool
                         and isinstance(observed.get("category"), str) and isinstance(observed.get("data"), dict),
                         "stream-operator-client-observation-unavailable")
+                if absent:
+                    require(observed["outcomeKnown"] and observed["category"] == "not-found",
+                            "stream-operator-policy-not-owned")
+                    return None
                 return successful(observed)
 
             observed = read("node", "get", self.owner["node"])
@@ -571,12 +641,26 @@ class StreamOperator:
             require(isinstance(inventory, dict) and isinstance(inventory.get("node"), dict)
                     and inventory["node"].get("id") == self.owner["node"],
                     "stream-operator-client-node-changed")
+            if preserve_pending:
+                receipt_data = read("policy", "operation", "--operation-id", pending["id"])
+                require(receipt_data.get("mutationOutcome") != "unknown"
+                        and isinstance(receipt_data.get("receipt"), dict),
+                        "original-operation-unknown-or-expired-no-replay")
             for kind, field in (("provider-binding", "bindingId"), ("policy", "policyId")):
-                observed = read("policy", "--kind", kind, "get", "--id", self.owner[field])
+                key = kind + ":" + self.owner[field]
+                absent = preserve_pending and key != pending_key and key not in records
+                observed = read("policy", "--kind", kind, "get", "--id", self.owner[field], absent=absent)
+                if absent:
+                    continue
                 current = observed.get("policy")
-                previous = records[kind + ":" + self.owner[field]]
-                require(_same_owned_policy(current, previous),
-                        "stream-operator-policy-changed")
+                if key == pending_key:
+                    # Verify the exact receipt and complete original document;
+                    # do not call Journal.finish or release its pending intent.
+                    policy_operations.confirm(pending, {"data": {
+                        "receipt": receipt_data["receipt"], "policy": current}})
+                else:
+                    require(_same_owned_policy(current, records[key]),
+                            "stream-operator-policy-changed")
             self._owned()
             require(snapshot() == before, "stream-operator-client-adoption-state-changed")
             require(_private_read(self.client.config) == original and _private_read(replacement.config) == candidate,
@@ -584,6 +668,9 @@ class StreamOperator:
             owner = {**self.owner, "clientConfigurationDigest": digest(candidate)}
             state.atomic(self.root, "stream-operator-owner.json", owner)
             self.owner, self.client = owner, replacement
+            if preserve_pending:
+                return {"executionPermission": False, "recoveryRequired": True,
+                        "outcome": "client-token-adopted-original-operation-pending"}
             return {"executionPermission": False, "outcome": "client-token-adopted-original-grants-retained"}
 
     def inspect(self, deployment):
@@ -627,6 +714,8 @@ def main(argv=None):
     parser.add_argument("--deployment")
     parser.add_argument("--provider-record", type=Path)
     parser.add_argument("--replacement-client-config", type=Path)
+    parser.add_argument("--preserve-pending", action="store_true",
+                        help="adopt-client only: verify the original receipt and retain pending recovery")
     parser.add_argument("--node", type=Path)
     parser.add_argument("--base-config", type=Path)
     parser.add_argument("--installation-record", type=Path)
@@ -637,6 +726,8 @@ def main(argv=None):
     try:
         require((args.command == "adopt-client") == (args.replacement_client_config is not None),
                 "stream-operator-replacement-client-only-for-adoption")
+        require(not args.preserve_pending or args.command == "adopt-client",
+                "stream-operator-preserve-pending-only-for-client-adoption")
         preparing = args.command in {"prepare", "prepare-rotation"}
         rotating = args.command == "prepare-rotation"
         policy_arguments = (args.cli, args.client_config, args.state_dir, args.specification)
@@ -681,7 +772,7 @@ def main(argv=None):
             elif args.command == "adopt-client":
                 replacement = Client(client.binary, args.replacement_client_config.absolute(), root,
                                      deadline=client.deadline)
-                result = operator.adopt_client(replacement)
+                result = operator.adopt_client(replacement, preserve_pending=args.preserve_pending)
             else:
                 result = getattr(operator, args.command)()
         print(json.dumps({"schemaVersion": "latent.outbound-stream.operator.result.v1",
@@ -691,7 +782,8 @@ def main(argv=None):
         error = failure if isinstance(failure, DevError) else DevError("stream-operator-file-unavailable-or-unsafe")
         print(json.dumps({"schemaVersion": "latent.outbound-stream.operator.result.v1",
                          "command": args.command, "status": "failed", "code": error.code,
-                         "uncertain": error.uncertain}), file=sys.stderr)
+                         "uncertain": error.uncertain or (args.command == "adopt-client" and args.preserve_pending)}),
+              file=sys.stderr)
         return 1
 
 

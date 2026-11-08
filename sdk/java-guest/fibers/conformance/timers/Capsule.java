@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Consumer;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.FutureTask;
 
 /** Ordinary standard APIs; only the reference process owns explicit final cleanup. */
 public final class Capsule {
@@ -52,7 +54,119 @@ public final class Capsule {
         throw new IllegalStateException("timer-missing-native-error");
     }
 
+    /** Same ordinary-API scenario in the reference JDK and signed timer component. */
+    private static final class InterruptFailureProbe {
+        final Object gate = new Object();
+        final boolean deliver, interrupt;
+        final Throwable interruptFailure;
+        final Throwable doneFailure;
+        boolean entered, release, getterStarted, getterFinished, getterCancelled, interrupted;
+        int doneCalls, finallyCalls, interruptCalls;
+        Throwable workerFailure, getterFailure;
+
+        InterruptFailureProbe(int mode) {
+            interrupt = mode != 7;
+            deliver = interrupt && (mode == 6 || (mode & 1) != 0);
+            interruptFailure = mode >= 6 ? null : mode < 2 || mode == 4
+                    ? new SecurityException("interrupt-refused") : new AssertionError("interrupt-error");
+            doneFailure = mode == 4 || mode == 5 ? new AssertionError("done-failed") : null;
+        }
+        static void raise(Throwable error) {
+            if (error instanceof RuntimeException runtime) throw runtime;
+            throw (Error) error;
+        }
+        int call() {
+            synchronized (gate) {
+                entered = true; gate.notifyAll();
+                try {
+                    while (!release) {
+                        try { gate.wait(); }
+                        catch (InterruptedException expected) { interrupted = true; }
+                    }
+                    interrupted |= Thread.interrupted();
+                    return 42;
+                } finally { finallyCalls++; }
+            }
+        }
+        void completed() {
+            synchronized (gate) {
+                doneCalls++;
+                // A real sibling must obtain the cancelled result while done()
+                // is still running. No Thread.getState or private guest ledger.
+                while (!getterFinished) {
+                    try { gate.wait(); }
+                    catch (InterruptedException error) { throw new IllegalStateException(error); }
+                }
+            }
+            if (doneFailure != null) raise(doneFailure);
+        }
+        void run() throws InterruptedException {
+            FutureTask<Integer> future = new FutureTask<>(this::call) {
+                @Override protected void done() { completed(); }
+            };
+            Thread worker = new Thread(() -> {
+                try { future.run(); }
+                catch (Throwable error) { synchronized (gate) { workerFailure = error; } }
+            }) {
+                @Override public void interrupt() {
+                    interruptCalls++;
+                    if (deliver) super.interrupt();
+                    if (interruptFailure != null) raise(interruptFailure);
+                }
+            };
+            Thread getter = new Thread(() -> {
+                synchronized (gate) { getterStarted = true; gate.notifyAll(); }
+                try {
+                    future.get();
+                    synchronized (gate) { getterFailure = new IllegalStateException("cancelled-get-returned"); }
+                } catch (CancellationException expected) {
+                    synchronized (gate) { getterCancelled = true; }
+                } catch (Throwable error) {
+                    synchronized (gate) { getterFailure = error; }
+                } finally {
+                    synchronized (gate) { getterFinished = true; gate.notifyAll(); }
+                }
+            });
+            worker.start();
+            try {
+                synchronized (gate) { while (!entered) gate.wait(); }
+                getter.start();
+                synchronized (gate) { while (!getterStarted) gate.wait(); }
+                Throwable observed = null;
+                boolean cancelled = false;
+                try { cancelled = future.cancel(interrupt); }
+                catch (Throwable error) { observed = error; }
+                Throwable expected = doneFailure != null ? doneFailure : interruptFailure;
+                require(observed == expected && cancelled == (expected == null));
+                require(future.isDone() && future.isCancelled() && !future.cancel(true));
+                require(future.state() == java.util.concurrent.Future.State.CANCELLED);
+                synchronized (gate) {
+                    require(doneCalls == 1 && getterFinished && getterCancelled && getterFailure == null);
+                    require(finallyCalls == 0 && worker.isAlive());
+                }
+            } finally {
+                synchronized (gate) { release = true; gate.notifyAll(); }
+                // The reference process owns an outer timeout; the signed path
+                // keeps its original activation deadline, fuel and owner limits.
+                // Failure cleanup must not leave an old unnotified getter alive.
+                if (getter.isAlive()) getter.interrupt();
+                worker.join(); getter.join();
+            }
+            synchronized (gate) {
+                require(workerFailure == null && finallyCalls == 1 && interrupted == deliver);
+                require(doneCalls == 1 && interruptCalls == (interrupt ? 1 : 0));
+            }
+        }
+    }
+
     public Long run(Long mode) {
+        if (mode < 0 || mode > 3) throw new IllegalArgumentException();
+        try {
+            // Finish and join both probe threads before creating timer workers.
+            // Keep the existing signed modes and activation resource ceilings.
+            for (int scenario = mode.intValue() * 2; scenario < mode.intValue() * 2 + 2; scenario++)
+                new InterruptFailureProbe(scenario).run();
+        } catch (InterruptedException error) { throw new IllegalStateException(error); }
         if (mode == 0) return basic();
         if (mode == 1) return recurring();
         if (mode == 2) return acceptedAfterRoot();

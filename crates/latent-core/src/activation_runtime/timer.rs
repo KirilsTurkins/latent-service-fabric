@@ -130,7 +130,7 @@ impl TimerWait {
         now: Instant,
         after_check: impl FnOnce(),
     ) -> Result<u64, PlatformError> {
-        self.complete_with_hooks(now, after_check, || {})
+        self.complete_with_hooks(now, after_check, || {}, || {})
     }
 
     fn complete_with_hooks(
@@ -138,7 +138,29 @@ impl TimerWait {
         now: Instant,
         after_check: impl FnOnce(),
         after_commit_check: impl FnOnce(),
+        after_publication_check: impl FnOnce(),
     ) -> Result<u64, PlatformError> {
+        self.complete_with_publication_hooks(
+            now,
+            after_check,
+            after_commit_check,
+            after_publication_check,
+            || {},
+            || {},
+        )
+    }
+
+    fn complete_with_publication_hooks(
+        &mut self,
+        now: Instant,
+        after_check: impl FnOnce(),
+        after_commit_check: impl FnOnce(),
+        after_publication_check: impl FnOnce(),
+        after_tentative_write: impl FnOnce(),
+        after_commit: impl FnOnce(),
+    ) -> Result<u64, PlatformError> {
+        #[cfg(not(test))]
+        let _unused_test_hooks = (after_publication_check, after_tentative_write, after_commit);
         self.inner.runtime.check_live()?;
         after_check();
         let mut schedule = self
@@ -185,7 +207,28 @@ impl TimerWait {
         // after both locks and range validation, before publishing the schedule.
         self.inner.runtime.check_commit_ledger_locked(&mut state)?;
         after_commit_check();
+        // Same-ledger finalization uses the accounting lock and releases it
+        // before terminal signalling. Keep schedule -> runtime -> accounting
+        // order through the final observation and the schedule write. This
+        // leaves external probes and deadline passage independent. The RMW
+        // also checks the bounded original ancestor flags.
+        let publication = self.inner.runtime.inner.budget.runtime_publication_guard();
+        self.inner.runtime.check_commit_ledger_locked(&mut state)?;
+        #[cfg(test)]
+        after_publication_check();
         schedule.next = next;
+        #[cfg(test)]
+        after_tentative_write();
+        // The schedule mutex keeps this tentative write hidden. The RMW
+        // orders it with closure of the original ledger and its ancestors.
+        if !publication.commit_while_open() {
+            schedule.next = Some(self.requested);
+            state.phase = RuntimePhase::Cancelling;
+            return Err(error(PlatformErrorCode::Cancelled, "runtime-cancelled"));
+        }
+        #[cfg(test)]
+        after_commit();
+        drop(publication);
         drop(state);
         Ok(skipped)
     }

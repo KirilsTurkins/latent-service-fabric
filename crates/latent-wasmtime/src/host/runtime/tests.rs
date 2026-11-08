@@ -98,12 +98,13 @@ fn plain_elapsed_wait_refuses_when_runtime_cancel_wins_after_live_check() {
     let before = runtime.snapshot();
     let (checked_tx, checked_rx) = std::sync::mpsc::sync_channel(0);
     let (resume_tx, resume_rx) = std::sync::mpsc::sync_channel(0);
+    let token = owner.token();
     let worker_runtime = runtime.clone();
     let worker = std::thread::spawn(move || {
         worker_runtime.check_live().unwrap();
         checked_tx.send(()).unwrap();
         resume_rx.recv_timeout(Duration::from_secs(5)).unwrap();
-        complete_elapsed_wait(&worker_runtime, None, Instant::now())
+        complete_elapsed_wait(&worker_runtime, None, Some(token), Instant::now())
     });
     checked_rx.recv_timeout(Duration::from_secs(5)).unwrap();
     runtime.cancel();
@@ -130,7 +131,7 @@ fn admitted_plain_wait_can_complete_during_closing_and_draining() {
             runtime.begin_drain();
         }
         assert_eq!(
-            complete_elapsed_wait(&runtime, None, Instant::now()).unwrap(),
+            complete_elapsed_wait(&runtime, None, Some(owner.token()), Instant::now()).unwrap(),
             0
         );
         assert_eq!(
@@ -144,4 +145,69 @@ fn admitted_plain_wait_can_complete_during_closing_and_draining() {
         drop(owner);
         runtime.retire().unwrap();
     }
+}
+#[test]
+fn plain_elapsed_wait_refuses_same_ledger_cancellation_during_probe() {
+    use std::sync::{
+        atomic::{AtomicBool, Ordering},
+        mpsc, Mutex,
+    };
+
+    // This test-only pause models preemption after the ledger flag load.
+    // Real cancellation probes remain bounded and nonblocking.
+    struct PausingProbe {
+        armed: AtomicBool,
+        entered: mpsc::Sender<()>,
+        resume: Mutex<mpsc::Receiver<()>>,
+    }
+    impl BudgetCancellationProbe for PausingProbe {
+        fn is_cancelled(&self) -> bool {
+            if self.armed.swap(false, Ordering::AcqRel) {
+                self.entered.send(()).unwrap();
+                self.resume
+                    .lock()
+                    .unwrap()
+                    .recv_timeout(Duration::from_secs(3))
+                    .unwrap();
+            }
+            false
+        }
+        fn cancelled(&self) -> latent_core::BoxFuture<'_, ()> {
+            Box::pin(std::future::pending())
+        }
+        fn mark_terminal(&self) {}
+    }
+    let (entered_tx, entered_rx) = mpsc::channel();
+    let (resume_tx, resume_rx) = mpsc::channel();
+    let probe = Arc::new(PausingProbe {
+        armed: AtomicBool::new(false),
+        entered: entered_tx,
+        resume: Mutex::new(resume_rx),
+    });
+    let budget = crate::host::native_table_tests::budget(1_000_000);
+    budget
+        .enable_descendants(DelegationLimits::default(), probe.clone())
+        .unwrap();
+    let runtime = ActivationRuntime::new(budget.clone(), limits(1)).unwrap();
+    let owner = runtime.register(OwnerKind::Timer, None).unwrap();
+    let before = runtime.snapshot();
+    let token = owner.token();
+    let worker_runtime = runtime.clone();
+    probe.armed.store(true, Ordering::Release);
+    let worker = std::thread::spawn(move || {
+        complete_elapsed_wait(&worker_runtime, None, Some(token), Instant::now())
+    });
+    entered_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+    budget.cancel_descendants().unwrap();
+    assert!(budget.descendant_is_cancelled());
+    resume_tx.send(()).unwrap();
+    let result = worker.join().unwrap();
+    let after = runtime.snapshot();
+    assert_eq!(after.owners, before.owners);
+    assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
+    drop(owner);
+    runtime.retire().unwrap();
+    drop(runtime);
+    assert_eq!(budget.host_memory_bytes(), 0);
+    assert_eq!(result.unwrap_err().code, PlatformErrorCode::Cancelled);
 }
