@@ -667,6 +667,67 @@ impl ActivationRuntime {
         Ok(())
     }
 
+    /// Commit elapsed readiness for an already-admitted plain wait. This does
+    /// not dispatch guest work or settle its retained timer owner.
+    pub fn commit_elapsed_timer_readiness(&self, token: RuntimeToken) -> Result<(), PlatformError> {
+        self.commit_elapsed_timer_readiness_with_hooks(
+            token,
+            #[cfg(test)]
+            |_| {},
+        )
+    }
+
+    fn commit_elapsed_timer_readiness_with_hooks(
+        &self,
+        token: RuntimeToken,
+        #[cfg(test)] mut hook: impl FnMut(ReadinessStep),
+    ) -> Result<(), PlatformError> {
+        // External cancellation probes run only before taking these locks.
+        self.check_live()?;
+        let mut state = self
+            .inner
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if matches!(
+            state.phase,
+            RuntimePhase::Cancelling | RuntimePhase::Retired
+        ) {
+            return Err(error(PlatformErrorCode::Cancelled, "runtime-retired"));
+        }
+        if !self
+            .record(&state, token)
+            .is_some_and(|record| record.kind == OwnerKind::Timer)
+        {
+            return Err(error(PlatformErrorCode::InvalidArgument, "runtime-token"));
+        }
+        self.check_commit_ledger_locked(&mut state)?;
+        #[cfg(test)]
+        hook(ReadinessStep::Checked);
+        // Order this owner-bound readiness with same-ledger finalization and
+        // the atomic closure flags of the bounded original ancestry. Neither
+        // independent external probes nor later wall-clock passage is fenced.
+        let publication = self.inner.budget.runtime_publication_guard();
+        if let Err(failure) = self.check_commit_ledger_locked(&mut state) {
+            drop(publication);
+            drop(state);
+            return Err(failure);
+        }
+        #[cfg(test)]
+        hook(ReadinessStep::Guarded);
+        if !publication.commit_while_open() {
+            state.phase = RuntimePhase::Cancelling;
+            drop(publication);
+            drop(state);
+            return Err(error(PlatformErrorCode::Cancelled, "runtime-cancelled"));
+        }
+        #[cfg(test)]
+        hook(ReadinessStep::Committed);
+        drop(publication);
+        drop(state);
+        Ok(())
+    }
+
     pub fn check_live(&self) -> Result<(), PlatformError> {
         if self.inner.budget.finalized().is_some() || self.inner.budget.descendant_is_cancelled() {
             self.cancel();

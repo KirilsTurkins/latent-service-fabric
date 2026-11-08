@@ -301,6 +301,9 @@ CONTROLS = (('original-host-memory',
   'activation_runtime::tests::deadline_expiring_after_the_live_check_does_not_admit_owners',
   'activation_runtime::tests::deadline_expiring_after_the_live_check_fences_park_and_wake',
   'activation_runtime::tests::external_probe_cancellation_is_not_a_ledger_terminal_signal',
+  'activation_runtime::tests::elapsed_plain_timer_requires_a_live_timer_owner_and_preserves_drain',
+  'activation_runtime::tests::elapsed_plain_timer_orders_original_and_ancestor_cancellation_with_commit',
+  'activation_runtime::tests::elapsed_plain_timer_finalization_orders_before_or_after_commit',
   'activation_runtime::tests::finalization_during_admission_refuses_without_releasing_allocated_slab',
   'activation_runtime::tests::original_cancellation_after_the_live_check_does_not_admit_owners',
   'activation_runtime::tests::park_phase_accounts_for_tasks_and_non_task_owners',
@@ -491,7 +494,7 @@ def qualify(output: Path, revision: str) -> dict:
     require(sys.platform == 'linux', 'host-codec-linux-owner-required')
     names = [name for _,_,_,cases in CONTROLS for name in cases]
     require(len(CONTROLS) == 44 and len({row[0] for row in CONTROLS}) == 44
-            and len(names) == len(set(names)) == 251, 'host-codec-control-inventory')
+            and len(names) == len(set(names)) == 254, 'host-codec-control-inventory')
     output = fresh(output)
     codec_wasmtime.verify(ROOT)
     result_bytes.verify(ROOT)
@@ -530,7 +533,7 @@ def qualify(output: Path, revision: str) -> dict:
             products[name] = identity
         record = {'schemaVersion':'latent.host-codec.native-products.v1','status':'passed',
             'sourceRevision':revision,'source':before,'materials':inputs,'compiler':compiler,
-            'products':products,'commands':stages.records,'controlCount':251,'nativeCohort':NATIVE_COHORT,
+            'products':products,'commands':stages.records,'controlCount':254,'nativeCohort':NATIVE_COHORT,
             'wasmtimeAllocationCohort':codec_wasmtime.COHORT,
             'controls':{stage:list(names) for stage,_,_,names in CONTROLS},
             'profile':'normal-managed-guest-default-features','signedQualification':False,

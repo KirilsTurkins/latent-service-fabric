@@ -209,8 +209,8 @@ def native_evidence(prepared: Path):
         and record['wasmtimeAllocationCohort'] == producer.codec_wasmtime.COHORT
         and record['scope'] == _scope() and record['controls'] == controls
         and len(producer.CONTROLS) == len(controls) == 44
-        and type(record['controlCount']) is int and record['controlCount'] == 251
-        and len(names) == len(set(names)) == 251
+        and type(record['controlCount']) is int and record['controlCount'] == 254
+        and len(names) == len(set(names)) == 254
         and record['signedQualification'] is False and record['guestJavaScriptEngineCompiled'] is False
         and record['guestSourceCompiled'] is False and record['historicalReceiptRewritten'] is False
         and type(record['compiler']) is str and re.fullmatch(r'rustc 1\.97\.1 \([^\r\n]{1,100}\)', record['compiler']),

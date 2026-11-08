@@ -146,7 +146,7 @@ class CurrentTimedProducts(unittest.TestCase):
         self.assertEqual(observed, {'controls': 177, 'materials': 148})
         controls = {stage: (package, needle, list(cases))
                     for stage, package, needle, cases in producer.CONTROLS}
-        self.assertEqual(sum(len(row[2]) for row in controls.values()), 251)
+        self.assertEqual(sum(len(row[2]) for row in controls.values()), 254)
         stage = next(stage for stage in controls if stage == 'actual-runtime-timer-strong-weak-owner')
         damaged = list(producer.CONTROLS)
         index = next(index for index, row in enumerate(damaged) if row[0] == stage)
@@ -212,7 +212,7 @@ class CurrentTimedProducts(unittest.TestCase):
             record = {'schemaVersion': 'latent.host-codec.native-products.v1', 'status': 'passed',
                 'sourceRevision': head, 'source': source, 'materials': materials,
                 'compiler': 'rustc 1.97.1 (test release)', 'products': binaries, 'commands': [],
-                'controlCount': 251, 'nativeCohort': producer.NATIVE_COHORT,
+                'controlCount': 254, 'nativeCohort': producer.NATIVE_COHORT,
                 'wasmtimeAllocationCohort': producer.codec_wasmtime.COHORT,
                 'controls': {stage: list(cases) for stage, _, _, cases in producer.CONTROLS},
                 'profile': 'normal-managed-guest-default-features', 'signedQualification': False,
