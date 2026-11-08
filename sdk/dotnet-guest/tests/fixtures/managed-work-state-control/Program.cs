@@ -2165,6 +2165,135 @@ internal static class StateControl
         Begin();
         switch (name)
         {
+            case "inline-pop-false-preserves-normal-dequeue": {
+                var task = new Task(() => { });
+                ManagedWorkRuntime.Schedule(task); Enqueue(task);
+                var token = ManagedWorkRuntime.QueuedTokenForControl(task);
+                var ticket = ManagedWorkRuntime.InlineQueued(task, true);
+                Need(ticket is not null && !ManagedWorkRuntime.Popped(false, task));
+                ManagedWorkRuntime.InlineQueueFinished(ticket, true);
+                Need(ManagedWorkRuntime.QueuedTokenForControl(task) == token && Count(3) == 1);
+                Need(ManagedWorkRuntime.Popped(true, task) && Count(3) == 0);
+                var previous = ManagedWorkRuntime.Enter(task);
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task);
+                ManagedWorkRuntime.Exit(previous); Need(Count(0) == 1); Finish(); break;
+            }
+            case "inline-pop-exception-retains-frame": {
+                var task = new Task(() => { }); ManagedWorkRuntime.Schedule(task); Enqueue(task);
+                var ticket = ManagedWorkRuntime.InlineQueued(task, true);
+                Need(ticket is not null && ManagedWorkRuntime.Popped(true, task));
+                var previous = ManagedWorkRuntime.Enter(task);
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task);
+                ManagedWorkRuntime.Exit(previous);
+                var original = new InvalidOperationException("inline-original-exception");
+                try { try { throw original; } finally { ManagedWorkRuntime.InlineQueueFinished(ticket, false); } }
+                catch (InvalidOperationException caught) when (ReferenceEquals(caught, original)) { }
+                Work.Enqueue(() => throw new InvalidOperationException("must-not-dispatch-uncertain-inline"));
+                Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-inline-uncertain");
+                Need(Work.Count == 1 && controlDispatches == 0 && Count(0) == 2 && Count(3) == 0); break;
+            }
+            case "inline-pop-ack-refused":
+            case "inline-pop-ack-unknown": {
+                var task = new Task(() => { }); ManagedWorkRuntime.Schedule(task); Enqueue(task);
+                var token = ManagedWorkRuntime.QueuedTokenForControl(task)!.Value;
+                var ticket = ManagedWorkRuntime.InlineQueued(task, true); Need(ticket is not null);
+                settlementRefusal = token.Id; settlementUnknown = name.EndsWith("unknown");
+                Refuses(() => ManagedWorkRuntime.Popped(true, task), "managed-work-settlement-refused");
+                ManagedWorkRuntime.InlineQueueFinished(ticket, false);
+                Refuses(() => ManagedWorkRuntime.Popped(true, task), "managed-work-queue-uncertain");
+                Need(refusedSettlements == 1 && Count(3) == (settlementUnknown ? 0 : 1)
+                    && ManagedWorkRuntime.QueuedTokenForControl(task) == token);
+                break;
+            }
+            case "inline-pop-owner-settlement-refused":
+            case "inline-pop-owner-settlement-unknown": {
+                var task = new Task(() => { }); ManagedWorkRuntime.Schedule(task); Enqueue(task);
+                var ticket = ManagedWorkRuntime.InlineQueued(task, true); Need(ticket is not null);
+                Need(ManagedWorkRuntime.Popped(true, task));
+                var previous = ManagedWorkRuntime.Enter(task); settlementRefusal = context.Item2;
+                settlementUnknown = name.EndsWith("unknown");
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task); ManagedWorkRuntime.Exit(previous);
+                Refuses(() => ManagedWorkRuntime.InlineQueueFinished(ticket, true), "managed-work-settlement-refused");
+                Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-double-settle");
+                Need(refusedSettlements == 1 && Count(0) == (settlementUnknown ? 1 : 2)); break;
+            }
+            case "inline-pop-reentrant-fences-same-task": {
+                var task = new Task(() => { }); ManagedWorkRuntime.Schedule(task); Enqueue(task);
+                var token = ManagedWorkRuntime.QueuedTokenForControl(task)!.Value;
+                var ticket = ManagedWorkRuntime.InlineQueued(task, true); Need(ticket is not null);
+                afterSettlementTarget = token.Id;
+                AfterSettlementCallback = () => {
+                    Need(ManagedWorkRuntime.InlineQueued(task, true) is null);
+                    Refuses(() => ManagedWorkRuntime.Popped(true, task), "managed-work-queue-uncertain");
+                };
+                Need(ManagedWorkRuntime.Popped(true, task));
+                var previous = ManagedWorkRuntime.Enter(task);
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task); ManagedWorkRuntime.Exit(previous);
+                Need(Count(0) == 2); ManagedWorkRuntime.InlineQueueFinished(ticket, true);
+                Need(Count(0) == 1); Finish(); break;
+            }
+            case "inline-pop-reentrant-normal-dequeue": {
+                var task = new Task(() => { }); ManagedWorkRuntime.Schedule(task); Enqueue(task);
+                var ticket = ManagedWorkRuntime.InlineQueued(task, true); Need(ticket is not null);
+                // A same-task ordinary dequeue reenters after claim, before the
+                // scheduler's own pop returns false. Its exact record is held.
+                Need(ManagedWorkRuntime.Popped(true, task));
+                Need(!ManagedWorkRuntime.Popped(false, task));
+                ManagedWorkRuntime.InlineQueueFinished(ticket, true);
+                Need(Count(3) == 0 && Count(0) == 2 && !task.IsCompleted);
+                var previous = ManagedWorkRuntime.Enter(task);
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task); ManagedWorkRuntime.Exit(previous);
+                Need(Count(0) == 1); Finish(); break;
+            }
+            case "inline-pop-reset-fenced-retains-uncertainty": {
+                Limits[0] = 3; Limits[3] = 2;
+                var outer = new Task(() => { }); var later = new Task(() => { });
+                ManagedWorkRuntime.Schedule(outer); ManagedWorkRuntime.Schedule(later);
+                Enqueue(outer); Enqueue(later);
+                var dispatch = ManagedWorkRuntime.BeginDispatch(outer);
+                var previous = ManagedWorkRuntime.EnterDispatch(outer, dispatch);
+                ManagedWorkRuntime.ResetStarting(dispatch);
+                Need(ManagedWorkRuntime.InlineQueued(later, true) is null);
+                Need(!ManagedWorkRuntime.Popped(false, later) && Count(3) == 1);
+                Refuses(() => ManagedWorkRuntime.Popped(true, later), "managed-work-reset-context-unavailable");
+                Need(Count(3) == 1);
+                Refuses(() => ManagedWorkRuntime.Popped(true, later), "managed-work-reset-context-unavailable");
+                ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.ResetReady(dispatch);
+                ManagedWorkRuntime.ResetFinished(dispatch); ManagedWorkRuntime.DispatchReturned(dispatch);
+                Refuses(() => ManagedWorkRuntime.Popped(true, later), "managed-work-queue-uncertain");
+                Work.Enqueue(() => throw new InvalidOperationException("must-not-dispatch-uncertain-pop"));
+                Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-inline-uncertain");
+                Need(Work.Count == 1 && controlDispatches == 0 && Count(3) == 1); break;
+            }
+            case "inline-pop-required-continuation-keeps-parent-frame": {
+                Limits[3] = 2;
+                object callback = new(); Enqueue(callback);
+                Need(ManagedWorkRuntime.Popped(true, callback));
+                var parent = ManagedWorkRuntime.Enter(callback);
+                var task = new Task(() => { });
+                ManagedWorkRuntime.CreatedAsync(task); Enqueue(task);
+                var ticket = ManagedWorkRuntime.InlineQueued(task, true);
+                Need(ticket is not null && ManagedWorkRuntime.Popped(true, task));
+                var previous = ManagedWorkRuntime.Enter(task);
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task); ManagedWorkRuntime.Exit(previous);
+                ManagedWorkRuntime.InlineQueueFinished(ticket, true);
+                Need(Count(0) == 2 && !ManagedWorkRuntime.CallbackDoneForControl(callback));
+                ManagedWorkRuntime.Exit(parent); ManagedWorkRuntime.CallbackCompleted(callback);
+                Need(Count(0) == 1); Finish(); break;
+            }
+            case "inline-pop-original-owner-must-survive-frame": {
+                Limits[0] = 2;
+                var task = new Task(() => { });
+                ManagedWorkRuntime.Schedule(task); Enqueue(task);
+                var ticket = ManagedWorkRuntime.InlineQueued(task, true);
+                Need(ticket is not null && ManagedWorkRuntime.Popped(true, task));
+                var previous = ManagedWorkRuntime.Enter(task);
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task);
+                Need(Count(0) == 2 && Count(3) == 0);
+                ManagedWorkRuntime.Exit(previous);
+                ManagedWorkRuntime.InlineQueueFinished(ticket, true);
+                Need(Count(0) == 1); Finish(); break;
+            }
             case "native-task-admission": {
                 Limits[0] = 2;
                 var first = Pending(); ManagedWorkRuntime.Schedule(first.Task);

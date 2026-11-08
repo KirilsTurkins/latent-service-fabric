@@ -280,6 +280,48 @@ internal sealed class ManagedWorkHooks
             Before(pop, exit, Instruction.Create(OpCodes.Ldarg_0), Instruction.Create(OpCodes.Call, Hook("Popped")));
         changed.Add(pop);
 
+        // LocalFindAndPop is also used by TryDequeue. Claim an existing
+        // queue record only around the authenticated scheduler inline call.
+        var scheduler = Type("System.Threading.Tasks.ThreadPoolTaskScheduler");
+        var inline = scheduler.Methods.Single(method => method.Name == "TryExecuteTaskInline");
+        var taskType = Type("System.Threading.Tasks.Task");
+        Need(!inline.IsStatic && inline.ReturnType.MetadataType == MetadataType.Boolean
+            && inline.Parameters.Count == 2 && inline.Parameters[0].ParameterType.FullName == taskType.FullName
+            && inline.Parameters[1].ParameterType.MetadataType == MetadataType.Boolean
+            && inline.Body.ExceptionHandlers.Count == 1
+            && inline.Body.ExceptionHandlers[0].HandlerType == ExceptionHandlerType.Finally);
+        var inlinePop = inline.Body.Instructions.Where(instruction => instruction.Operand is MethodReference method
+            && method.FullName == "System.Boolean System.Threading.ThreadPool::TryPopCustomWorkItem(System.Object)").ToArray();
+        var inlineExecute = inline.Body.Instructions.Where(instruction => instruction.Operand is MethodReference method
+            && method.FullName == "System.Void System.Threading.Tasks.Task::ExecuteEntryUnsafe(System.Threading.Thread)").ToArray();
+        var inlineReturns = inline.Body.Instructions.Where(instruction => instruction.OpCode == OpCodes.Ret).ToArray();
+        Need(inlinePop.Length == 1 && inlineExecute.Length == 1 && inlineReturns.Length == 2);
+        var inlineStart = inline.Body.Instructions[0];
+        var inlineTicket = new VariableDefinition(module.TypeSystem.Object);
+        var inlineReturned = new VariableDefinition(module.TypeSystem.Boolean);
+        var inlineResult = new VariableDefinition(module.TypeSystem.Boolean);
+        inline.Body.InitLocals = true;
+        inline.Body.Variables.Add(inlineTicket); inline.Body.Variables.Add(inlineReturned); inline.Body.Variables.Add(inlineResult);
+        Before(inline, inlineStart, Instruction.Create(OpCodes.Ldarg_1), Instruction.Create(OpCodes.Ldarg_2),
+            Instruction.Create(OpCodes.Call, Hook("InlineQueued")), Instruction.Create(OpCodes.Stloc, inlineTicket));
+        var inlineIl = inline.Body.GetILProcessor();
+        var inlineCleanup = Instruction.Create(OpCodes.Ldloc, inlineTicket);
+        var inlineDone = Instruction.Create(OpCodes.Ldloc, inlineResult);
+        foreach (var exit in inlineReturns)
+        {
+            exit.OpCode = OpCodes.Stloc; exit.Operand = inlineResult;
+            var yes = Instruction.Create(OpCodes.Ldc_I4_1); var saved = Instruction.Create(OpCodes.Stloc, inlineReturned);
+            var leave = Instruction.Create(OpCodes.Leave, inlineDone);
+            inlineIl.InsertAfter(exit, yes); inlineIl.InsertAfter(yes, saved); inlineIl.InsertAfter(saved, leave);
+        }
+        inlineIl.Append(inlineCleanup); inlineIl.Emit(OpCodes.Ldloc, inlineReturned);
+        inlineIl.Emit(OpCodes.Call, Hook("InlineQueueFinished")); inlineIl.Emit(OpCodes.Endfinally);
+        inlineIl.Append(inlineDone); inlineIl.Emit(OpCodes.Ret);
+        inline.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Finally) {
+            TryStart = inlineStart, TryEnd = inlineCleanup, HandlerStart = inlineCleanup, HandlerEnd = inlineDone,
+        });
+        changed.Add(inline);
+
         var dispatch = queue.Methods.Single(method => method.Name == "Dispatch");
         var workItem = queue.Methods.Single(method => method.Name == "DispatchWorkItem");
         var tracked = queue.Methods.Single(method => method.Name == "DispatchWorkItemWithWorkerTracking");

@@ -265,10 +265,22 @@ DISPATCH_RESET_REWRITE_RECEIPT = {**MULTIPLE_UNWRAP_REWRITE_RECEIPT,
     'resetNative': 'private-fenced-state-refuses-new-owner-registration'}
 
 
+# Inline scheduler execution retains the original queue record through its finally.
+INLINE_POP_REWRITE_RECEIPT = {**DISPATCH_RESET_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v14',
+    'modifiedOriginalMethods': {
+        **DISPATCH_RESET_REWRITE_RECEIPT['modifiedOriginalMethods'],
+        'System.Boolean System.Threading.Tasks.ThreadPoolTaskScheduler::TryExecuteTaskInline(System.Threading.Tasks.Task,System.Boolean)': '00d7e6a49e214c1f213418410e20fa0e04cd20cadb9a638ac56007ea715d1a46'},
+    'copiedRegistryMethods': 69,
+    'inlinePopCustody': 'original-queue-record-through-inline-scheduler-finally'}
+
+
 def validate_rewrite(value: dict) -> None:
     if type(value) is not dict:
         raise ValueError('dotnet-managed-work-rewrite-receipt')
-    expected_receipt = (DISPATCH_RESET_REWRITE_RECEIPT
+    expected_receipt = (INLINE_POP_REWRITE_RECEIPT
+        if value.get('patch') == INLINE_POP_REWRITE_RECEIPT['patch']
+        else DISPATCH_RESET_REWRITE_RECEIPT
         if value.get('patch') == DISPATCH_RESET_REWRITE_RECEIPT['patch']
         else MULTIPLE_UNWRAP_REWRITE_RECEIPT
         if value.get('patch') == MULTIPLE_UNWRAP_REWRITE_RECEIPT['patch']

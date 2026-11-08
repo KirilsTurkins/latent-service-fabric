@@ -55,6 +55,9 @@ public static partial class ManagedWorkRuntime
         return null;
     }
 
+    internal static bool CallbackDoneForControl(object item) =>
+        Find(item)?.CallbackDone ?? throw new InvalidOperationException("control-owner-missing");
+
     internal static (ulong Generation, ulong Id)? PendingResultForControl(object item) =>
         Find(item)?.PendingResult;
     internal static ((ulong Generation, ulong Id)? Root, bool RootActive,
