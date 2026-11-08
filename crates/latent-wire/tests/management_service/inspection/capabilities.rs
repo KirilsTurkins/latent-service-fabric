@@ -19,9 +19,12 @@ async fn quarantine_diagnostic_is_only_returned_to_the_node_operator() {
         },
         ActivationCapabilityRuntime, CapabilitySession,
     };
-    use std::sync::Arc;
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    };
 
-    struct Observed;
+    struct Observed(AtomicUsize);
     impl OutboundStreamInvoker for Observed {
         fn start(
             &self,
@@ -36,7 +39,7 @@ async fn quarantine_diagnostic_is_only_returned_to_the_node_operator() {
             Ok(Some(StreamNodeUsage {
                 owners: 3,
                 connections: 2,
-                quarantined_connections: Some(2),
+                quarantined_connections: Some(self.0.load(Ordering::Acquire)),
                 ..Default::default()
             }))
         }
@@ -48,9 +51,8 @@ async fn quarantine_diagnostic_is_only_returned_to_the_node_operator() {
         harness.capability_broker.as_ref().unwrap().clone(),
         harness.deployments.clone(),
     );
-    runtime
-        .install_outbound_streams(Arc::new(Observed))
-        .unwrap();
+    let observed = Arc::new(Observed(AtomicUsize::new(2)));
+    runtime.install_outbound_streams(observed.clone()).unwrap();
     let mut client =
         proto::capability_service_client::CapabilityServiceClient::new(harness.channel.clone());
     for identity in ["alice", "caller", "bob"] {
@@ -74,6 +76,17 @@ async fn quarantine_diagnostic_is_only_returned_to_the_node_operator() {
     assert_eq!(node.counters["stream_owners"], 3);
     assert_eq!(node.counters["stream_connections"], 2);
     assert!(!node.counters.contains_key("stream_quarantined_connections"));
+    observed.0.store(3, Ordering::Release);
+    let inconsistent = client
+        .list_capabilities(request("operator", list("local", true)))
+        .await
+        .unwrap()
+        .into_inner()
+        .node_usage
+        .unwrap();
+    assert!(inconsistent.stream_quarantined_connections.is_none());
+    assert_eq!(inconsistent.counters["stream_owners"], 3);
+    assert_eq!(inconsistent.counters["stream_connections"], 2);
 }
 
 #[cfg(target_os = "linux")]

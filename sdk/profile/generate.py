@@ -302,7 +302,13 @@ def dotnet_models(profile, messages, enums):
             values = ", ".join([pascal(field["name"]) for field in retained] + ["null"] * len(omitted))
             output += ["{", "    /// <summary>Constructs the previous shape with the new observations absent.</summary>"]
             output += [f'    /// <param name="{pascal(field["name"])}">The original {field["name"]} value.</param>' for field in retained]
-            output += [f"    public {name}({arguments}) : this({values}) {{ }}", "}"]
+            output += [f"    public {name}({arguments}) : this({values}) {{ }}", "",
+                       "    /// <summary>Deconstructs the original fields.</summary>"]
+            output += [f'    /// <param name="{pascal(field["name"])}">The original {field["name"]} value.</param>' for field in retained]
+            outputs = ", ".join(f"out {type_name(field, 'dotnet', enums)} {pascal(field['name'])}" for field in retained)
+            output += [f"    public void Deconstruct({outputs})", "    {"]
+            output += [f"        {pascal(field['name'])} = this.{pascal(field['name'])};" for field in retained]
+            output += ["    }", "}"]
         output += [""]
     output += ["/// <summary>A fully owned unary response and independent recovery metadata.</summary>",
                '/// <typeparam name="Response">The response model.</typeparam>',

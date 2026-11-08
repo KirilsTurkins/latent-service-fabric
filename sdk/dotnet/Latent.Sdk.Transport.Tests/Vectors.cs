@@ -56,6 +56,11 @@ internal static partial class Program
         Check(retainedWire.HasStreamQuarantinedConnections, "retained count lost presence");
         Check(((Profile.CapabilityResourceUsage)ProfileCodec.FromWire(retainedWire, typeof(Profile.CapabilityResourceUsage)))
             .StreamQuarantinedConnections == 1, "retained count changed during decoding");
+        var (scope, counters, unavailable) = retained;
+        Check(scope == "node" && counters["stream_owners"] == 2 && unavailable.Count == 0,
+            "three-field deconstruction changed");
+        var (_, _, _, quarantine) = retained;
+        Check(quarantine == 1, "four-field deconstruction lost the observation");
         Check(count == 64, "not all shared protobuf fixtures executed");
         Console.WriteLine($"PASS SharedVectors: {count} authoritative protobuf cases");
     }

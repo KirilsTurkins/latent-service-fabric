@@ -151,8 +151,9 @@ across them. This count is
 already included in `stream_owners` and `stream_connections`; do not add it
 again. It reports
 retained connection slots, not bytes or proof of kernel retirement. The field
-is absent when the node has no retained stream observation or uses an older
-protocol; absence is not zero. An observed zero is the string `"0"`.
+is absent when the node has no valid retained quarantine observation or uses
+an older protocol; absence is not zero. An inconsistent custom observation is
+omitted without changing the original totals. An observed zero is `"0"`.
 The local `stream-control` status also reports `quarantinedConnections`.
 
 Each mutation records its original intent and operation identity in protected

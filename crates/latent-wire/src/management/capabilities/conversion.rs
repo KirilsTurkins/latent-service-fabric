@@ -230,6 +230,7 @@ fn stream_usage(
     // map: older clients can ignore its tag, and missing observations stay absent.
     result.stream_quarantined_connections = usage
         .quarantined_connections
+        .filter(|&count| count <= usage.owners && count <= usage.connections)
         .and_then(|count| u64::try_from(count).ok());
     for (name, count) in [
         ("stream_configuration_epoch", usage.configuration_epoch),
@@ -368,5 +369,22 @@ mod tests {
         assert_eq!(observed.stream_quarantined_connections, Some(2));
         assert_eq!(observed.counters["stream_owners"], 4);
         assert_eq!(observed.counters["stream_connections"], 3);
+        // A custom invoker's inconsistent observation is omitted rather than
+        // projected as zero or allowed to change the original totals.
+        for (owners, connections) in [(1, 3), (4, 1)] {
+            usage.streams = Some(latent_capabilities::broker::network::StreamNodeUsage {
+                owners,
+                connections,
+                quarantined_connections: Some(2),
+                ..Default::default()
+            });
+            let inconsistent = node_usage(&usage);
+            assert!(inconsistent.stream_quarantined_connections.is_none());
+            assert_eq!(inconsistent.counters["stream_owners"], owners as u64);
+            assert_eq!(
+                inconsistent.counters["stream_connections"],
+                connections as u64
+            );
+        }
     }
 }
