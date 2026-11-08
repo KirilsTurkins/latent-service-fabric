@@ -109,6 +109,100 @@ class StreamRotation(unittest.TestCase):
         if os.name == "posix":
             self.assertEqual(self.output.stat().st_mode & 0o777, 0o600)
 
+    def test_changed_protected_sources_before_candidate_creation_are_refused(self):
+        construct = stream.rotate_configuration
+        for selected in (self.base, self.record):
+            for replacement in (False, True):
+                with self.subTest(source=selected.name, replacement=replacement):
+                    original = selected.read_bytes()
+                    changed_value = json.loads(original)
+                    if selected == self.base:
+                        changed_value["providers"]["outboundStreams"]["identity"]["epoch"] = 2
+                    else:
+                        changed_value["newEpoch"] = 3
+                    changed_bytes = encode(changed_value)
+
+                    def changed(*args, **kwargs):
+                        result = construct(*args, **kwargs)
+                        if replacement:
+                            alternate = self.root / "replacement.json"
+                            paths.write_new(alternate, changed_bytes)
+                            os.replace(alternate, selected)
+                        else:
+                            selected.write_bytes(changed_bytes)
+                        return result
+
+                    try:
+                        with patch.object(stream, "rotate_configuration", side_effect=changed), \
+                                patch("tools.dev_workflow.process.run", return_value=subprocess.CompletedProcess([], 0, b"", b"")) as run:
+                            with self.assertRaisesRegex(DevError, "preparation-input-changed"):
+                                self.prepare(development_profile=True)
+                        run.assert_not_called()
+                        self.assertFalse(self.output.exists())
+                        self.assertEqual(selected.read_bytes(), changed_bytes)
+                    finally:
+                        selected.write_bytes(original)
+                        self.output.unlink(missing_ok=True)
+
+    def test_changed_protected_sources_during_check_retain_candidate_without_success(self):
+        response = subprocess.CompletedProcess([], 0, b"PRIVATE-NODE-OUTPUT", b"PRIVATE-NODE-ERROR")
+        for selected in (self.base, self.record):
+            for replacement in (False, True):
+                with self.subTest(source=selected.name, replacement=replacement):
+                    original = selected.read_bytes()
+                    changed_value = json.loads(original)
+                    if selected == self.base:
+                        changed_value["providers"]["outboundStreams"]["identity"]["epoch"] = 2
+                    else:
+                        changed_value["newEpoch"] = 3
+                    changed_bytes = encode(changed_value)
+                    checked_candidate = []
+
+                    def changed(*args, **kwargs):
+                        checked_candidate.append(self.output.read_bytes())
+                        if replacement:
+                            alternate = self.root / "replacement.json"
+                            paths.write_new(alternate, changed_bytes)
+                            os.replace(alternate, selected)
+                        else:
+                            selected.write_bytes(changed_bytes)
+                        return response
+
+                    try:
+                        with patch("tools.dev_workflow.process.run", side_effect=changed) as run:
+                            with self.assertRaisesRegex(DevError, "preparation-input-changed") as failure:
+                                self.prepare(development_profile=True)
+                        self.assertEqual(run.call_count, 1)
+                        self.assertEqual(self.output.read_bytes(), checked_candidate[0])
+                        self.assertEqual(selected.read_bytes(), changed_bytes)
+                        self.assertNotIn("PRIVATE", str(failure.exception))
+                    finally:
+                        selected.write_bytes(original)
+                        self.output.unlink(missing_ok=True)
+
+    def test_cli_redacts_source_disappearance_after_check(self):
+        arguments = ["prepare-rotation", "--node", str(self.node), "--base-config", str(self.base),
+                     "--rotation-record", str(self.record), "--output", str(self.output),
+                     "--development-profile"]
+        output, error = io.StringIO(), io.StringIO()
+
+        def remove_during_check(*args, **kwargs):
+            self.record.unlink()
+            return subprocess.CompletedProcess([], 0, b"PRIVATE-NODE-OUTPUT", b"PRIVATE-NODE-ERROR")
+
+        with patch("tools.dev_workflow.process.run", side_effect=remove_during_check) as run:
+            with redirect_stdout(output), redirect_stderr(error):
+                self.assertEqual(stream.main(arguments), 1)
+        self.assertEqual(run.call_count, 1)
+        self.assertEqual(output.getvalue(), "")
+        self.assertEqual(json.loads(error.getvalue()), {
+            "schemaVersion": "latent.outbound-stream.operator.result.v1", "command": "prepare-rotation",
+            "status": "failed", "code": ("windows-protected-open-failed" if os.name == "nt"
+                                         else "stream-operator-file-unavailable-or-unsafe"), "uncertain": False})
+        self.assertNotIn("PRIVATE", error.getvalue())
+        self.assertNotIn(str(self.root), error.getvalue())
+        self.assertTrue(self.output.is_file())
+
     def test_refusal_or_unknown_check_retains_candidate_without_fallback_or_live_input_replacement(self):
         before = self.base.read_bytes(), self.record.read_bytes()
         response = subprocess.CompletedProcess([], 2, b"", b"PRIVATE-NODE-ERROR")
