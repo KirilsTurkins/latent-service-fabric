@@ -63,7 +63,12 @@ interrupted check returns failure and retains the file for private owner
 review; retrying requires a separately named new output. The command invokes
 no provider mutation or grant RPC. It bounds the check to 30 seconds and 64 KiB
 per output stream through the existing process owner, rechecks the prepared
-bytes afterwards, and emits no node output or input paths. It binds the selected
+bytes afterwards, and emits no node output or input paths. It also reopens the
+protected base and installation record and compares their original bytes before
+creating the candidate and after the check. A changed or unavailable source
+fails the command; a candidate already created stays private for owner review.
+These local snapshots do not lock either file, detect transient changes between
+checks, or establish the live node's current configuration. It binds the selected
 node executable (at most 256 MiB) by its actual SHA-256 and byte size before and
 after that one check; a changed executable fails explicitly. This executable
 identity does not attest its source, version, publisher or installation. An accepted check
@@ -232,7 +237,9 @@ latent-dev stream-operator prepare-rotation \
 Only epoch and limits change in the candidate; all other configuration fields,
 credentials, destinations, DNS/address constraints and bindings stay exact.
 The command uses the same protected-input, create-only output, selected-binary
-identity, bounded `check-config` and redacted failure rules as initial preparation.
+identity, bounded `check-config`, source snapshot rechecks and redacted failure
+rules as initial preparation. The rechecked sources are the base and rotation
+record; this local fence does not lock them or observe the live provider.
 A refused or uncertain check retains the private candidate. It never replaces
 the live file, sends a signal, rotates sessions or changes grants.
 `expectedEpoch` checks only the supplied file; it does not observe the live
