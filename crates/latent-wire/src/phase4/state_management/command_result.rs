@@ -61,6 +61,7 @@ pub(super) fn handles(request: &contract::Request) -> bool {
         contract::Request::LookupCommand(_)
             | contract::Request::LookupCommit(_)
             | contract::Request::GetEffect(_)
+            | contract::Request::ListEffectHistory(_)
             | contract::Request::CancelCommand(_)
     )
 }
@@ -198,6 +199,13 @@ fn selector(request: &contract::Request) -> Result<&t::CommandSelector, Platform
         contract::Request::LookupCommand(value) => value.command.as_ref().ok_or_else(invalid),
         contract::Request::LookupCommit(value) => value.command.as_ref().ok_or_else(invalid),
         contract::Request::GetEffect(value) => value.command.as_ref().ok_or_else(invalid),
+        contract::Request::ListEffectHistory(value) => value
+            .effect
+            .as_ref()
+            .ok_or_else(invalid)?
+            .command
+            .as_ref()
+            .ok_or_else(invalid),
         contract::Request::CancelCommand(value) => value
             .command
             .as_ref()
@@ -212,7 +220,9 @@ fn selector(request: &contract::Request) -> Result<&t::CommandSelector, Platform
 fn operation(request: &contract::Request) -> &'static str {
     match request {
         contract::Request::CancelCommand(_) => "cancel-command",
-        contract::Request::GetEffect(_) => "inspect-effect",
+        contract::Request::GetEffect(_) | contract::Request::ListEffectHistory(_) => {
+            "inspect-effect"
+        }
         _ => "read-result",
     }
 }
@@ -295,6 +305,9 @@ fn lookup(
     });
     let response = match request {
         contract::Request::GetEffect(value) => effect::response(&view, &record, value, time)?,
+        contract::Request::ListEffectHistory(value) => {
+            effect::history(&view, &record, value, time)?
+        }
         contract::Request::CancelCommand(value) => {
             cancellation::response(value, &record, &owner, pending)?
         }
