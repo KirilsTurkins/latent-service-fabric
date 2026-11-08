@@ -35,7 +35,7 @@ async fn real_deferred_current_policy_denial_blocks_before_provider_work() {
             assert_eq!(topic, "updated");
             assert_eq!(grant.scope().tenant, "tests");
             self.0.fetch_add(1, Ordering::AcqRel);
-            Err(latent_nats::EventError::PermissionDenied)
+            Err(latent_nats::EventError::Unavailable)
         }
     }
     let authorization = Arc::new(Denied(std::sync::atomic::AtomicUsize::new(0)));
@@ -83,6 +83,10 @@ async fn real_deferred_policy_change_after_qualification_blocks_publication() {
 #[ignore = "requires tools/run_nats_deferred_tests.py owned pinned real JetStream"]
 async fn real_deferred_atomic_state_result_payload_and_broker_receipt_agree() {
     let fixture = Fixture::new(config(), reset()).await;
+    assert!(fixture
+        .adapter
+        .provider_reference()
+        .same_installation(&fixture.publisher.reference()));
     let effect = fixture.commit("success").await;
     assert_eq!(control("info")["state"]["messages"], 0);
     fixture.owner.as_ref().unwrap().resume().unwrap();

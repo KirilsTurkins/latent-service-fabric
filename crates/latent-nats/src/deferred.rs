@@ -28,7 +28,8 @@ use std::{io, sync::Arc};
 pub const NATS_DEFERRED_PROFILE: &str = "nats-jetstream-effect-v1";
 
 /// The installed node checks the current publication and policy for this
-/// original grant and logical topic. The callback performs no network I/O.
+/// original grant and logical topic. The callback performs no network I/O;
+/// any error blocks the effect rather than granting a provider retry.
 pub trait DeferredEventAuthorization: Send + Sync {
     fn check_current(&self, grant: &DispatchGrant, topic: &str) -> Result<(), EventError>;
 }

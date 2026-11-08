@@ -46,16 +46,17 @@ fn declaration() -> Vec<u8> {
 async fn mixed_effect_installations_reject_duplicate_dispatch_profiles_at_startup() {
     let fixture = KernelFixture::new();
     let provider = startup::HttpFixture::new().await;
-    let mut installed = provider.installation();
+    let installed = provider.installation();
     // Reuse the actual installed adapter in both classes. If either class is
     // dropped during startup, the dispatcher's duplicate-profile fence would
     // incorrectly admit the configuration.
-    installed.events.push(installed.adapters[0].clone());
+    let duplicate = Arc::clone(&installed.adapters[0])
+        as Arc<dyn latent_effects::runtime::DeferredEffectAdapter>;
     let result = StateKernel::start(
         fixture.bootstrap(),
         &fixture.settings,
         fixture.authority.clone(),
-        installed.dispatcher_adapters(),
+        installed.dispatcher_adapters_with_events(std::iter::once(duplicate)),
         &installed.clock,
         tokio::runtime::Handle::current(),
     )

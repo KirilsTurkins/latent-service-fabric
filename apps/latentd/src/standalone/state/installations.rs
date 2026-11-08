@@ -50,7 +50,7 @@ pub(in crate::standalone) struct InstalledStateServices {
 pub(in crate::standalone) struct InstalledHttpEffects {
     pub(super) clock: Arc<super::AdapterClock>,
     pub(super) adapters: Vec<Arc<latent_http::deferred::HttpEffectAdapter>>,
-    pub(super) events: Vec<Arc<dyn latent_effects::runtime::DeferredEffectAdapter>>,
+    pub(super) events: Vec<Arc<latent_nats::deferred::JetStreamEffectAdapter>>,
     registry: Arc<http::DispatchRegistry>,
 }
 impl InstalledHttpEffects {
@@ -87,7 +87,7 @@ impl InstalledHttpEffects {
             {
                 let provider = provider.ok_or_else(super::unavailable)?;
                 installed.events =
-                    provider.deferred_event_adapters(events, installed.clock.clone())?;
+                    provider.typed_deferred_event_adapters(events, installed.clock.clone())?;
             }
             #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
             {
@@ -101,11 +101,23 @@ impl InstalledHttpEffects {
     pub(super) fn dispatcher_adapters(
         &self,
     ) -> Vec<Arc<dyn latent_effects::runtime::DeferredEffectAdapter>> {
+        self.dispatcher_adapters_with_events(
+            self.events
+                .iter()
+                .cloned()
+                .map(|adapter| adapter as Arc<dyn latent_effects::runtime::DeferredEffectAdapter>),
+        )
+    }
+
+    fn dispatcher_adapters_with_events(
+        &self,
+        events: impl Iterator<Item = Arc<dyn latent_effects::runtime::DeferredEffectAdapter>>,
+    ) -> Vec<Arc<dyn latent_effects::runtime::DeferredEffectAdapter>> {
         self.adapters
             .iter()
             .cloned()
             .map(|adapter| adapter as Arc<dyn latent_effects::runtime::DeferredEffectAdapter>)
-            .chain(self.events.iter().cloned())
+            .chain(events)
             .collect()
     }
 }

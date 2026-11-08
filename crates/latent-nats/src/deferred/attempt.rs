@@ -55,10 +55,12 @@ impl AcceptedPublish {
     ) -> crate::Result<PublishReceipt> {
         self.request.checkpoint()?;
         if let Some(authorization) = &self.authorization {
-            authorization.check_current(
-                self.request.grant(),
-                &self.inner.config.topics[self.row].topic,
-            )?;
+            authorization
+                .check_current(
+                    self.request.grant(),
+                    &self.inner.config.topics[self.row].topic,
+                )
+                .map_err(|_| EventError::PermissionDenied)?;
         }
         self.request
             .grant()
@@ -106,10 +108,12 @@ impl AcceptedPublish {
             .check_current(self.time.observe())
             .map_err(|_| EventError::PermissionDenied)?;
         if let Some(authorization) = &self.authorization {
-            authorization.check_current(
-                self.request.grant(),
-                &self.inner.config.topics[self.row].topic,
-            )?;
+            authorization
+                .check_current(
+                    self.request.grant(),
+                    &self.inner.config.topics[self.row].topic,
+                )
+                .map_err(|_| EventError::PermissionDenied)?;
         }
         let receipt = protocol::publish(
             connection.resource(),
