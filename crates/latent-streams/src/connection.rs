@@ -1605,7 +1605,6 @@ mod read_witness_tests {
             assert_eq!(fixture.provider.usage().unwrap().read_admissions, 3);
             drop(fourth);
             stream.close().await.unwrap();
-            drop(stream);
             drop(connection);
             peer.await.unwrap();
             drop(session);
