@@ -867,6 +867,7 @@ impl From<control::CapabilityResourceUsage> for model::CapabilityResourceUsage {
             scope: value.scope,
             counters: value.counters.into_iter().collect(),
             unavailable: value.unavailable,
+            stream_quarantined_connections: value.stream_quarantined_connections,
         }
     }
 }
@@ -877,6 +878,7 @@ impl From<model::CapabilityResourceUsage> for control::CapabilityResourceUsage {
             scope: value.scope,
             counters: value.counters.into_iter().collect(),
             unavailable: value.unavailable,
+            stream_quarantined_connections: value.stream_quarantined_connections,
         }
     }
 }

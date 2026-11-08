@@ -45,7 +45,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
         c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False,
         captured_git_component=False, c_standard_combined=False, c_compiled_resources=False, rust_compatibility=False,
         captured_rust_matrix=False, dotnet_reflection=False, captured_dotnet_private=False, captured_npm_private=False, approved_typescript_generator=False, standard_typescript_console=False,
-        go_standard_logging=False, rust_standard_stdio=False, rust_standard_entropy=False, dotnet_standard_logging=False, captured_go_private=False, approved_go_generator=False, go_standard_entropy=False, dotnet_standard_entropy=False, dotnet_reflection_boundaries=False, standard_typescript_entropy=False, dotnet_task_runtime=False, standard_typescript_clocks=False, standard_scratch_refusal=False, dotnet_published_tasks=False, dotnet_scratch_task_runtime=False, java_resource_conformance=False, embedded_resource_conformance=False):
+        go_standard_logging=False, rust_standard_stdio=False, rust_standard_entropy=False, dotnet_standard_logging=False, captured_go_private=False, approved_go_generator=False, go_standard_entropy=False, dotnet_standard_entropy=False, dotnet_reflection_boundaries=False, standard_typescript_entropy=False, dotnet_task_runtime=False, standard_typescript_clocks=False, standard_scratch_refusal=False, dotnet_published_tasks=False, dotnet_scratch_task_runtime=False, java_resource_conformance=False, embedded_resource_conformance=False, dotnet_task_reset_witness=False):
+    require(type(dotnet_task_reset_witness) is bool and (not dotnet_task_reset_witness or dotnet_task_runtime is True),
+            'authoring-dotnet-reset-witness-selection')
     require(type(embedded_resource_conformance) is bool and (not embedded_resource_conformance or
         language in {"go", "rust", "typescript"} and not standard_scratch_refusal), "embedded-resource-selector")
     require(type(java_resource_conformance) is bool and (not java_resource_conformance or
@@ -325,7 +327,8 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                         probe_published_tasks(client, targets['greeting'], probe, result, len(names))
                     if dotnet_task_runtime:
                         from tools.dotnet_task_runtime_probe import probe as probe_managed_tasks
-                        probe_managed_tasks(client, targets['greeting'], probe, result, len(names))
+                        probe_managed_tasks(client, targets['greeting'], probe, result, len(names),
+                                            reset_notification=dotnet_task_reset_witness)
                     if dotnet_standard_entropy:
                         from tools.dotnet_standard_entropy_probe import probe as probe_secure_entropy
                         probe_secure_entropy(client, targets['greeting'], probe, result, len(names))

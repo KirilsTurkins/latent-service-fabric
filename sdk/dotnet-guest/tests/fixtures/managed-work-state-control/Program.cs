@@ -11,7 +11,7 @@ internal static class StateControl
     internal static Action? RequiredPublishedCallback, RequiredReservedCallback;
     internal static Action? StartupAllocationCallback, StartupRootPublishedCallback;
     private static Action? QueueReserveCallback;
-    private static Action? ResultReservationCallback, AfterSettlementCallback, AfterContextClearCallback, AfterContextRestoreCallback;
+    private static Action? ResultReservationCallback, AfterSettlementCallback, AfterContextClearCallback, AfterContextRestoreCallback, AfterContextFenceCallback;
     private static ulong afterSettlementTarget, refuseContextRestore, afterContextRestoreTarget;
     private static bool contextThrowsBeforeRestore;
     private static readonly Dictionary<ulong, int> Owners = new();
@@ -47,7 +47,9 @@ internal static class StateControl
     private static bool rootJoinReturned;
     private static bool rootSettlementControl, multipleConversionControl;
     private static bool rootFinalizationReturned;
-    private static bool refuseContextClear, contextThrowsBeforeClear;
+    private static bool captureTaskParent;
+    private static (ulong, ulong) capturedTaskParent;
+    private static bool refuseContextClear, contextThrowsBeforeClear, refuseContextFence, contextFenceThrowsAfter;
     private static ulong rootIdentifier, storageIdentifier;
     private static int rootSettlements, storageSettlements, contextClearAttempts;
     private static int Count(int kind) => Owners.Values.Count(value => value == kind);
@@ -64,6 +66,8 @@ internal static class StateControl
     private static (ulong, ulong) Reserve(int kind, ulong generation, ulong id)
     {
         Need(0 <= kind && kind < Limits.Length);
+        if (context == (0UL, 1UL)) return default; // The selected Rust bridge refuses before the host call.
+        if (kind == 0 && captureTaskParent) capturedTaskParent = (generation, id);
         if ((generation, id) != (0UL, 0UL)) Need(generation == 17 && Owners.ContainsKey(id));
         if (closing) Need(generation == 17 && Owners.ContainsKey(id));
         if (kind == 3 && QueueReserveCallback is { } callback)
@@ -154,6 +158,8 @@ internal static class StateControl
     }
     private static void Context(ulong generation, ulong id)
     {
+        if ((generation, id) == (0UL, 1UL) && refuseContextFence && !contextFenceThrowsAfter)
+            throw new InvalidOperationException("control-context-fence-failed");
         if (startupInspect && generation == 17 && id == startupRoot)
         {
             if (startupContextFailure && startupContextBefore) throw StartupContextError;
@@ -180,6 +186,10 @@ internal static class StateControl
             throw new InvalidOperationException("control-context-restore-failed");
         }
         context = (generation, id);
+        if (context == (0UL, 1UL) && refuseContextFence && contextFenceThrowsAfter)
+            throw new InvalidOperationException("control-context-fence-failed");
+        if (context == (0UL, 1UL) && AfterContextFenceCallback is { } fenced)
+        { AfterContextFenceCallback = null; fenced(); }
         if (context == (0UL, 0UL) && AfterContextClearCallback is { } callback)
         { AfterContextClearCallback = null; callback(); }
         if (id == afterContextRestoreTarget && AfterContextRestoreCallback is { } restored)
@@ -487,8 +497,9 @@ internal static class StateControl
         Need(innerToken != parentToken);
         Enqueue(inner);
         Need(ManagedWorkRuntime.QueuedOwnerForControl(inner) == innerToken);
-        ManagedWorkRuntime.Dequeue(inner);
-        previous = ManagedWorkRuntime.EnterDispatch(inner); Need(context == innerToken); ManagedWorkRuntime.Exit(previous);
+        var dispatch = ManagedWorkRuntime.BeginDispatch(inner);
+        previous = ManagedWorkRuntime.EnterDispatch(inner, dispatch); Need(context == innerToken);
+        ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.DispatchReturned(dispatch);
         inner.RunSynchronously(); ManagedWorkRuntime.Completed(promise); ManagedWorkRuntime.Completed(inner);
         Need(Count(0) == 2 && !pending.Task.IsCompleted);
         var later = new Task(() => { }); ManagedWorkRuntime.Schedule(later);
@@ -688,6 +699,444 @@ internal static class StateControl
         Need(Count(0) == 2 && !outer.IsCompleted && !first.IsCompleted);
         Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
         Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+    }
+
+    private static void SuccessfulUnwrapCapacityControl()
+    {
+        Limits[0] = 2;
+        var outer = new Task<Task>(() => Task.CompletedTask);
+        ManagedWorkRuntime.Schedule(outer);
+        var promise = outer.Unwrap(); ManagedWorkRuntime.Unwrap(promise, outer);
+        var later = new Task(() => { });
+        var rootContext = ExecutionContext.Capture() ?? throw new InvalidOperationException("missing-root-context");
+        var rootToken = context;
+        bool inlineObserved = false;
+        _ = promise.ContinueWith(_ => {
+            Refuses(() => ManagedWorkRuntime.Schedule(later), "managed-work-admission-refused");
+            Refuses(() => Enqueue(outer), "managed-work-duplicate-enqueue");
+            inlineObserved = true;
+        }, TaskContinuationOptions.ExecuteSynchronously);
+        Enqueue(outer);
+        var queuedToken = ManagedWorkRuntime.QueuedTokenForControl(outer)!.Value;
+        var ticket = ManagedWorkRuntime.BeginDispatch(outer);
+        Need(!Owners.ContainsKey(queuedToken.Id) && Count(3) == 0);
+        Refuses(() => { ManagedWorkRuntime.BeginDispatch(outer); }, "managed-work-unregistered-dequeue");
+        var previous = ManagedWorkRuntime.EnterDispatch(outer, ticket);
+        try
+        {
+            var dispatchToken = context;
+            ExecutionContext.Run(rootContext, _ => Need(context == rootToken), null);
+            Need(context == dispatchToken && context != rootToken);
+            var invocation = ManagedWorkRuntime.Enter(outer);
+            try { outer.RunSynchronously(); }
+            finally { ManagedWorkRuntime.Exit(invocation); }
+            ManagedWorkRuntime.Inner(promise, Task.CompletedTask);
+            // The pinned success path calls FinishContinuations directly, so
+            // FinishStageThree sees only the original outer Task.
+            ManagedWorkRuntime.Completed(outer);
+            Need(promise.IsCompletedSuccessfully && inlineObserved && Count(0) == 2);
+            Refuses(() => ManagedWorkRuntime.Schedule(later), "managed-work-admission-refused");
+        }
+        finally
+        {
+            bool exitReentered = false;
+            AfterContextFenceCallback = () => {
+                Refuses(() => ManagedWorkRuntime.Schedule(later), "managed-work-reset-context-unavailable");
+                exitReentered = true;
+            };
+            ManagedWorkRuntime.ResetStarting(ticket);
+            ManagedWorkRuntime.Exit(previous);
+            Need(exitReentered && Count(0) == 2);
+            ManagedWorkRuntime.ResetReady(ticket);
+            ManagedWorkRuntime.ResetFinished(ticket);
+            ManagedWorkRuntime.DispatchReturned(ticket);
+        }
+        Need(Count(0) == 1);
+        ManagedWorkRuntime.Schedule(later);
+        later.RunSynchronously(); ManagedWorkRuntime.Completed(later); Finish();
+    }
+
+    private static void InlinePopRetainsUnwrapControl()
+    {
+        Limits[0] = 2;
+        var outer = new Task<Task>(() => Task.CompletedTask);
+        ManagedWorkRuntime.Schedule(outer); var promise = outer.Unwrap(); ManagedWorkRuntime.Unwrap(promise, outer);
+        Enqueue(outer); Need(ManagedWorkRuntime.Popped(true, outer));
+        var previous = ManagedWorkRuntime.Enter(outer);
+        try { outer.RunSynchronously(); ManagedWorkRuntime.Inner(promise, Task.CompletedTask); ManagedWorkRuntime.Completed(outer); }
+        finally { ManagedWorkRuntime.Exit(previous); }
+        Need(promise.IsCompletedSuccessfully && Count(0) == 2 && Count(3) == 0);
+        Refuses(() => ManagedWorkRuntime.Schedule(new Task(() => { })), "managed-work-admission-refused");
+        Finish(); // Inline pop has no dispatch-return witness; Join retains its old behavior.
+    }
+
+    // Model both placements around the host CLR's actual thread-pool context
+    // reset. The pinned WASI dispatcher has the same reset call after Execute.
+    private static void DispatchContextResetControl(bool early)
+    {
+        Limits[0] = 2;
+        var originalContext = ExecutionContext.Capture() ?? throw new InvalidOperationException("missing-root-context");
+        var outer = new Task<Task>(() => Task.CompletedTask);
+        ManagedWorkRuntime.Schedule(outer);
+        var promise = outer.Unwrap(); ManagedWorkRuntime.Unwrap(promise, outer);
+        var later = new Task(() => { });
+        bool notified = false, admitted = false;
+        string? refusal = null;
+        var marker = new AsyncLocal<int>(change => {
+            if (!change.ThreadContextChanged || change.PreviousValue != 1 || change.CurrentValue != 0) return;
+            notified = true;
+            try { ManagedWorkRuntime.Schedule(later); admitted = true; }
+            catch (InvalidOperationException error) { refusal = error.Message; }
+        });
+        Enqueue(outer); var ticket = ManagedWorkRuntime.BeginDispatch(outer);
+        var previous = ManagedWorkRuntime.EnterDispatch(outer, ticket);
+        outer.RunSynchronously(); ManagedWorkRuntime.Inner(promise, Task.CompletedTask);
+        ManagedWorkRuntime.Completed(outer); marker.Value = 1;
+        if (!early) ManagedWorkRuntime.ResetStarting(ticket);
+        ManagedWorkRuntime.Exit(previous);
+        if (!early) ManagedWorkRuntime.ResetReady(ticket);
+        if (early) ManagedWorkRuntime.DispatchReturned(ticket);
+        var reset = typeof(ExecutionContext).GetMethod("ResetThreadPoolThread",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static,
+            null, [typeof(Thread)], null) ?? throw new InvalidOperationException("missing-host-context-reset");
+        reset.Invoke(null, [Thread.CurrentThread]);
+        Need(notified && (early ? admitted && refusal is null
+            : !admitted && refusal == "managed-work-reset-context-unavailable"));
+        if (!early) { ManagedWorkRuntime.ResetFinished(ticket); ManagedWorkRuntime.DispatchReturned(ticket); }
+        ExecutionContext.Run(originalContext, _ => {
+            if (!early) ManagedWorkRuntime.Schedule(later);
+            later.RunSynchronously(); ManagedWorkRuntime.Completed(later); Finish();
+        }, null);
+    }
+
+    private static void DispatchNestedResetControl()
+    {
+        Limits[0] = 3; Limits[3] = 2;
+        var originalContext = ExecutionContext.Capture() ?? throw new InvalidOperationException("missing-root-context");
+        var outer = new Task<Task>(() => Task.CompletedTask);
+        ManagedWorkRuntime.Schedule(outer);
+        var promise = outer.Unwrap(); ManagedWorkRuntime.Unwrap(promise, outer);
+        var inner = new Task(() => { }); ManagedWorkRuntime.Schedule(inner);
+        Enqueue(outer); Enqueue(inner);
+        var reset = typeof(ExecutionContext).GetMethod("ResetThreadPoolThread",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static,
+            null, [typeof(Thread)], null) ?? throw new InvalidOperationException("missing-host-context-reset");
+        bool outerSeen = false, innerSeen = false, outerRetained = false;
+        object? ticket = null;
+        Exception? notificationError = null;
+        var innerMarker = new AsyncLocal<int>(change => {
+            if (change.ThreadContextChanged && change.PreviousValue == 1 && change.CurrentValue == 0)
+                innerSeen = Count(0) == 3;
+        });
+        var outerMarker = new AsyncLocal<int>(change => {
+            if (!change.ThreadContextChanged || change.PreviousValue != 1 || change.CurrentValue != 0) return;
+            try
+            {
+                outerSeen = Count(0) == 3;
+                var innerTicket = ManagedWorkRuntime.BeginDispatch(inner);
+                var innerPrevious = ManagedWorkRuntime.EnterDispatch(inner, innerTicket);
+                inner.RunSynchronously(); ManagedWorkRuntime.Completed(inner); innerMarker.Value = 1;
+                ManagedWorkRuntime.ResetStarting(innerTicket);
+                ManagedWorkRuntime.Exit(innerPrevious);
+                ManagedWorkRuntime.ResetReady(innerTicket);
+                reset.Invoke(null, [Thread.CurrentThread]);
+                Refuses(() => ManagedWorkRuntime.ResetFinished(ticket), "managed-work-reset-ticket");
+                ManagedWorkRuntime.ResetFinished(innerTicket);
+                ManagedWorkRuntime.DispatchReturned(innerTicket);
+                outerRetained = Count(0) == 2 && context == (0UL, 1UL);
+            }
+            catch (Exception error) { notificationError = error; }
+        });
+        ticket = ManagedWorkRuntime.BeginDispatch(outer);
+        var previous = ManagedWorkRuntime.EnterDispatch(outer, ticket);
+        outer.RunSynchronously(); ManagedWorkRuntime.Inner(promise, Task.CompletedTask);
+        ManagedWorkRuntime.Completed(outer); outerMarker.Value = 1;
+        ManagedWorkRuntime.ResetStarting(ticket);
+        ManagedWorkRuntime.Exit(previous);
+        ManagedWorkRuntime.ResetReady(ticket);
+        reset.Invoke(null, [Thread.CurrentThread]);
+        Need(notificationError is null && outerSeen && innerSeen && outerRetained && Count(0) == 2);
+        ManagedWorkRuntime.ResetFinished(ticket); ManagedWorkRuntime.DispatchReturned(ticket);
+        ExecutionContext.Run(originalContext, _ => { Need(Count(0) == 1); Finish(); }, null);
+    }
+
+    private static void DispatchResetTransitionFenceControl()
+    {
+        Limits[0] = 3; Limits[3] = 2;
+        var outer = new Task<Task>(() => Task.CompletedTask);
+        ManagedWorkRuntime.Schedule(outer); var promise = outer.Unwrap(); ManagedWorkRuntime.Unwrap(promise, outer);
+        var inner = new Task(() => { }); ManagedWorkRuntime.Schedule(inner);
+        Enqueue(outer); Enqueue(inner);
+        var innerToken = ManagedWorkRuntime.QueuedTokenForControl(inner)!.Value;
+        var ticket = ManagedWorkRuntime.BeginDispatch(outer);
+        var previous = ManagedWorkRuntime.EnterDispatch(outer, ticket);
+        outer.RunSynchronously(); ManagedWorkRuntime.Inner(promise, Task.CompletedTask); ManagedWorkRuntime.Completed(outer);
+        bool observed = false;
+        AfterContextFenceCallback = () => {
+            Refuses(() => { ManagedWorkRuntime.BeginDispatch(inner); }, "managed-work-reset-context-unavailable");
+            Refuses(() => { ManagedWorkRuntime.Enter(inner); }, "managed-work-reset-context-unavailable");
+            Need(Owners.ContainsKey(innerToken.Id) && ManagedWorkRuntime.QueuedTokenForControl(inner) == innerToken);
+            observed = true;
+        };
+        ManagedWorkRuntime.ResetStarting(ticket); ManagedWorkRuntime.Exit(previous);
+        ManagedWorkRuntime.ResetReady(ticket); ManagedWorkRuntime.ResetFinished(ticket); ManagedWorkRuntime.DispatchReturned(ticket);
+        Need(observed && Count(0) == 2 && Count(3) == 1);
+        var innerTicket = ManagedWorkRuntime.BeginDispatch(inner);
+        previous = ManagedWorkRuntime.EnterDispatch(inner, innerTicket);
+        inner.RunSynchronously(); ManagedWorkRuntime.Completed(inner);
+        ManagedWorkRuntime.ResetStarting(innerTicket); ManagedWorkRuntime.Exit(previous);
+        ManagedWorkRuntime.ResetReady(innerTicket); ManagedWorkRuntime.ResetFinished(innerTicket); ManagedWorkRuntime.DispatchReturned(innerTicket);
+        Finish();
+    }
+
+    // A null reset context refuses; an explicitly restored root remains usable.
+    private static void DispatchResetAttributionControl(bool explicitRoot)
+    {
+        Limits[0] = 3;
+        var originalContext = ExecutionContext.Capture() ?? throw new InvalidOperationException("missing-root-context");
+        var rootContext = context;
+        var outer = new Task<Task>(() => Task.CompletedTask);
+        ManagedWorkRuntime.Schedule(outer);
+        var promise = outer.Unwrap(); ManagedWorkRuntime.Unwrap(promise, outer);
+        var later = new Task(() => { });
+        bool notified = false, sawFence = false;
+        Exception? notificationError = null;
+        var marker = new AsyncLocal<int>(change => {
+            if (!change.ThreadContextChanged || change.PreviousValue != 1 || change.CurrentValue != 0) return;
+            try
+            {
+                sawFence = context == (0UL, 1UL);
+                captureTaskParent = true;
+                if (explicitRoot) ExecutionContext.Run(originalContext, _ => ManagedWorkRuntime.Schedule(later), null);
+                else Refuses(() => ManagedWorkRuntime.Schedule(later), "managed-work-reset-context-unavailable");
+                captureTaskParent = false; notified = true;
+            }
+            catch (Exception error) { notificationError = error; }
+        });
+        Enqueue(outer); var ticket = ManagedWorkRuntime.BeginDispatch(outer);
+        var previous = ManagedWorkRuntime.EnterDispatch(outer, ticket);
+        var dispatchContext = context;
+        outer.RunSynchronously(); ManagedWorkRuntime.Inner(promise, Task.CompletedTask);
+        ManagedWorkRuntime.Completed(outer); marker.Value = 1;
+        ManagedWorkRuntime.ResetStarting(ticket);
+        ManagedWorkRuntime.Exit(previous);
+        ManagedWorkRuntime.ResetReady(ticket);
+        var reset = typeof(ExecutionContext).GetMethod("ResetThreadPoolThread",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static,
+            null, [typeof(Thread)], null) ?? throw new InvalidOperationException("missing-host-context-reset");
+        reset.Invoke(null, [Thread.CurrentThread]);
+        Need(notified && sawFence && notificationError is null && dispatchContext != rootContext
+            && capturedTaskParent == (explicitRoot ? rootContext : (0UL, 0UL)));
+        ManagedWorkRuntime.ResetFinished(ticket); ManagedWorkRuntime.DispatchReturned(ticket);
+        ExecutionContext.Run(originalContext, _ => {
+            if (explicitRoot) { later.RunSynchronously(); ManagedWorkRuntime.Completed(later); }
+            Finish();
+        }, null);
+    }
+
+    private static void DispatchBoundaryExceptionControl(bool duringReset)
+    {
+        var outer = new Task<Task>(() => Task.CompletedTask);
+        ManagedWorkRuntime.Schedule(outer);
+        var promise = outer.Unwrap(); ManagedWorkRuntime.Unwrap(promise, outer);
+        Enqueue(outer); var token = ManagedWorkRuntime.QueuedTokenForControl(outer);
+        var ticket = ManagedWorkRuntime.BeginDispatch(outer);
+        var previous = ManagedWorkRuntime.EnterDispatch(outer, ticket);
+        var failure = new InvalidOperationException("control-dispatch-boundary-failure");
+        Exception? received = null;
+        try
+        {
+            try
+            {
+                if (!duringReset) throw failure;
+                outer.RunSynchronously(); ManagedWorkRuntime.Inner(promise, Task.CompletedTask);
+                ManagedWorkRuntime.Completed(outer);
+            }
+            finally { ManagedWorkRuntime.ResetStarting(ticket); ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.ResetReady(ticket); }
+            throw failure; // Models a reset that fails before the return hook.
+        }
+        catch (Exception error) { received = error; }
+        Need(ReferenceEquals(received, failure) && Count(0) == 2 && Count(3) == 0
+            && ManagedWorkRuntime.QueuedTokenForControl(outer) == token);
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+    }
+
+    private static void DispatchThrowingResetChild()
+    {
+        var outer = new Task<Task>(() => Task.CompletedTask);
+        ManagedWorkRuntime.Schedule(outer);
+        var promise = outer.Unwrap(); ManagedWorkRuntime.Unwrap(promise, outer);
+        Enqueue(outer); var token = ManagedWorkRuntime.QueuedTokenForControl(outer);
+        var ticket = ManagedWorkRuntime.BeginDispatch(outer);
+        var previous = ManagedWorkRuntime.EnterDispatch(outer, ticket);
+        var marker = new AsyncLocal<int>(change => {
+            if (!change.ThreadContextChanged || change.PreviousValue != 1 || change.CurrentValue != 0) return;
+            Console.WriteLine(Count(0) == 2 && Count(3) == 0 && context == (0UL, 1UL)
+                && ManagedWorkRuntime.QueuedTokenForControl(outer) == token ? "reset-owner-retained" : "reset-owner-lost");
+            Console.Out.Flush();
+            throw new InvalidOperationException("control-reset-callback-threw");
+        });
+        outer.RunSynchronously(); ManagedWorkRuntime.Inner(promise, Task.CompletedTask);
+        ManagedWorkRuntime.Completed(outer); marker.Value = 1;
+        ManagedWorkRuntime.ResetStarting(ticket); ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.ResetReady(ticket);
+        var reset = typeof(ExecutionContext).GetMethod("ResetThreadPoolThread",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static,
+            null, [typeof(Thread)], null) ?? throw new InvalidOperationException("missing-host-context-reset");
+        reset.Invoke(null, [Thread.CurrentThread]);
+        ManagedWorkRuntime.DispatchReturned(ticket);
+        throw new InvalidOperationException("reset-notification-did-not-terminate");
+    }
+
+    private static void DispatchThrowingResetControl()
+    {
+        var executable = Environment.ProcessPath ?? throw new InvalidOperationException("missing-host-executable");
+        var start = new System.Diagnostics.ProcessStartInfo {
+            FileName = OperatingSystem.IsWindows() ? executable : "/bin/sh",
+            UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true,
+        };
+        if (!OperatingSystem.IsWindows())
+        {
+            start.ArgumentList.Add("-c"); start.ArgumentList.Add("ulimit -c 0; exec \"$@\"");
+            start.ArgumentList.Add("managed-reset-control"); start.ArgumentList.Add(executable);
+        }
+        if (string.Equals(Path.GetFileNameWithoutExtension(executable), "dotnet", StringComparison.OrdinalIgnoreCase))
+            start.ArgumentList.Add(typeof(StateControl).Assembly.Location);
+        start.ArgumentList.Add("dispatch-reset-throwing-child");
+        start.Environment["COMPlus_DbgEnableMiniDump"] = "0";
+        start.Environment["DOTNET_DbgEnableMiniDump"] = "0";
+        using var process = System.Diagnostics.Process.Start(start) ?? throw new InvalidOperationException("reset-child-start");
+        var output = process.StandardOutput.ReadToEndAsync();
+        var error = process.StandardError.ReadToEndAsync();
+        if (!process.WaitForExit(15000)) { process.Kill(true); throw new InvalidOperationException("reset-child-timeout"); }
+        Need(process.ExitCode != 0 && output.GetAwaiter().GetResult().Trim() == "reset-owner-retained"
+            && error.GetAwaiter().GetResult().Contains("control-reset-callback-threw", StringComparison.Ordinal));
+    }
+
+    private static void DispatchQueueAckControl(bool unknown)
+    {
+        var task = Pending(); ManagedWorkRuntime.Schedule(task.Task); Enqueue(task.Task);
+        var token = ManagedWorkRuntime.QueuedTokenForControl(task.Task)!.Value;
+        settlementRefusal = token.Id; settlementUnknown = unknown;
+        Refuses(() => { ManagedWorkRuntime.BeginDispatch(task.Task); }, "managed-work-settlement-refused");
+        Refuses(() => { ManagedWorkRuntime.BeginDispatch(task.Task); }, "managed-work-queue-uncertain");
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
+        Need(refusedSettlements == 1 && Count(3) == (unknown ? 0 : 1)
+            && ManagedWorkRuntime.QueuedTokenForControl(task.Task) == token);
+        settlementRefusal = 0; // Keep the exact uncertain custody; make no further attempt.
+    }
+
+    private static void DispatchOwnerAckControl(bool unknown)
+    {
+        var outer = new Task<Task>(() => Task.CompletedTask);
+        ManagedWorkRuntime.Schedule(outer); var promise = outer.Unwrap(); ManagedWorkRuntime.Unwrap(promise, outer);
+        var previous = ManagedWorkRuntime.Enter(promise); settlementRefusal = context.Item2;
+        settlementUnknown = unknown; ManagedWorkRuntime.Exit(previous);
+        Enqueue(outer); var ticket = ManagedWorkRuntime.BeginDispatch(outer);
+        previous = ManagedWorkRuntime.EnterDispatch(outer, ticket);
+        try { outer.RunSynchronously(); ManagedWorkRuntime.Inner(promise, Task.CompletedTask); ManagedWorkRuntime.Completed(outer); }
+        finally { ManagedWorkRuntime.Exit(previous); }
+        Refuses(() => ManagedWorkRuntime.DispatchReturned(ticket), "managed-work-settlement-refused");
+        Refuses(() => ManagedWorkRuntime.DispatchReturned(ticket), "managed-work-dispatch-ticket");
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-double-settle");
+        Need(refusedSettlements == 1 && Count(0) == (unknown ? 1 : 2) && Count(3) == 0);
+        settlementRefusal = 0;
+    }
+
+    private static void DispatchIdentityChangeControl()
+    {
+        var outer = new Task<Task>(() => Task.CompletedTask);
+        ManagedWorkRuntime.Schedule(outer); var promise = outer.Unwrap(); ManagedWorkRuntime.Unwrap(promise, outer);
+        Enqueue(outer); var ticket = ManagedWorkRuntime.BeginDispatch(outer);
+        var nestedOuter = new TaskCompletionSource<Task>(); var nestedPromise = Pending();
+        ManagedWorkRuntime.Inner(promise, nestedOuter.Task);
+        ManagedWorkRuntime.Unwrap(nestedPromise.Task, nestedOuter.Task);
+        Refuses(() => { ManagedWorkRuntime.EnterDispatch(outer, ticket); }, "managed-work-running-owner-changed");
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+        Need(!outer.IsCompleted && Count(0) == 2 && Count(3) == 0);
+    }
+
+    private static void DispatchExitFailureControl()
+    {
+        var outer = new Task<Task>(() => Task.CompletedTask);
+        ManagedWorkRuntime.Schedule(outer); var promise = outer.Unwrap(); ManagedWorkRuntime.Unwrap(promise, outer);
+        Enqueue(outer); var ticket = ManagedWorkRuntime.BeginDispatch(outer);
+        var previous = ManagedWorkRuntime.EnterDispatch(outer, ticket);
+        outer.RunSynchronously(); ManagedWorkRuntime.Inner(promise, Task.CompletedTask); ManagedWorkRuntime.Completed(outer);
+        ManagedWorkRuntime.ResetStarting(ticket);
+        refuseContextFence = true;
+        Refuses(() => ManagedWorkRuntime.Exit(previous), "control-context-fence-failed");
+        // The real dispatch finally does not call DispatchReturned after a
+        // failed Exit; its exact acknowledged queue record remains retained.
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+        Need(Count(0) == 2 && Count(3) == 0);
+    }
+
+    private static void DispatchResetContextFailureControl(bool finish, bool after)
+    {
+        var outer = new Task<Task>(() => Task.CompletedTask);
+        ManagedWorkRuntime.Schedule(outer); var promise = outer.Unwrap(); ManagedWorkRuntime.Unwrap(promise, outer);
+        Enqueue(outer); var ticket = ManagedWorkRuntime.BeginDispatch(outer);
+        var rootToken = context;
+        var previous = ManagedWorkRuntime.EnterDispatch(outer, ticket);
+        if (finish)
+        {
+            ManagedWorkRuntime.ResetStarting(ticket); ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.ResetReady(ticket);
+            refuseContextRestore = rootToken.Item2; contextThrowsBeforeRestore = !after;
+            Refuses(() => ManagedWorkRuntime.ResetFinished(ticket), "control-context-restore-failed");
+            refuseContextRestore = 0;
+            Refuses(() => ManagedWorkRuntime.ResetFinished(ticket), "managed-work-reset-ticket");
+        }
+        else
+        {
+            refuseContextFence = true; contextFenceThrowsAfter = after;
+            Refuses(() => ManagedWorkRuntime.ResetStarting(ticket), "control-context-fence-failed");
+            refuseContextFence = false;
+            Refuses(() => ManagedWorkRuntime.ResetStarting(ticket), "managed-work-reset-context-unavailable");
+        }
+        Refuses(() => ManagedWorkRuntime.Schedule(new Task(() => { })), "managed-work-reset-context-unavailable");
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+        Need(Count(0) == 2 && Count(3) == 0);
+    }
+
+    private static void DispatchDirectTaskControl(bool fault)
+    {
+        var failure = new ArgumentException("control-dispatch-task-fault");
+        var task = new Task(() => { if (fault) throw failure; });
+        ManagedWorkRuntime.Schedule(task); Enqueue(task);
+        var ticket = ManagedWorkRuntime.BeginDispatch(task);
+        var previous = ManagedWorkRuntime.EnterDispatch(task, ticket);
+        try
+        {
+            task.RunSynchronously(); ManagedWorkRuntime.Completed(task);
+            Need(task.IsCompleted && Count(0) == 2 && Count(6) == 0);
+            if (fault) { _ = task.Exception; ManagedWorkRuntime.Observed(task); }
+        }
+        finally { ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.DispatchReturned(ticket); }
+        Need(Count(0) == 1 && Count(6) == 0); Finish();
+    }
+
+    private static void DispatchQueuedSiblingControl()
+    {
+        var source = new TaskCompletionSource<int>(); var outer = new Task<Task>(() => source.Task);
+        ManagedWorkRuntime.Schedule(outer); var promise = outer.Unwrap(); ManagedWorkRuntime.Unwrap(promise, outer);
+        Enqueue(outer); var first = ManagedWorkRuntime.BeginDispatch(outer);
+        var previous = ManagedWorkRuntime.EnterDispatch(outer, first);
+        try
+        {
+            Enqueue(promise);
+            outer.RunSynchronously(); ManagedWorkRuntime.Inner(promise, source.Task); ManagedWorkRuntime.Completed(outer);
+            source.SetResult(1); Need(promise.IsCompletedSuccessfully);
+        }
+        finally { ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.DispatchReturned(first); }
+        Need(Count(0) == 2 && Count(3) == 1);
+        var second = ManagedWorkRuntime.BeginDispatch(promise);
+        previous = ManagedWorkRuntime.EnterDispatch(promise, second);
+        ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.DispatchReturned(second);
+        Need(Count(0) == 1 && Count(3) == 0); Finish();
     }
     private static void RequiredResultSettlementFailureControl(bool unknown)
     {
@@ -1080,7 +1529,7 @@ internal static class StateControl
         Need(observedOriginal && Owners.ContainsKey(unknownReservationToken));
         source.SetResult(1); ManagedWorkRuntime.Completed(source.Task);
         Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
-        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-queue");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
         Need(Owners.ContainsKey(unknownReservationToken));
     }
     private static void TaskAdmissionUnknownControl(bool unwrap)
@@ -1190,7 +1639,7 @@ internal static class StateControl
             Refuses(() => ManagedWorkRuntime.Unwrap(item, outer.Task), "managed-work-owner-retired");
             Refuses(() => ManagedWorkRuntime.Inner(item, outer.Task), "managed-work-owner-retired");
             Refuses(() => ManagedWorkRuntime.Enter(item), "managed-work-execution-parent");
-            Refuses(() => ManagedWorkRuntime.EnterDispatch(item), "managed-work-execution-parent");
+            Refuses(() => ManagedWorkRuntime.EnterDispatch(item, null), "managed-work-dispatch-ticket");
             Refuses(() => ManagedWorkRuntime.BindContext(ExecutionContext.Capture(), item), "managed-work-context-owner");
             Refuses(() => ManagedWorkRuntime.ContinuationFailed(item), "managed-work-double-settle");
             Refuses(() => ManagedWorkRuntime.Completed(item), "managed-work-double-settle");
@@ -1716,6 +2165,135 @@ internal static class StateControl
         Begin();
         switch (name)
         {
+            case "inline-pop-false-preserves-normal-dequeue": {
+                var task = new Task(() => { });
+                ManagedWorkRuntime.Schedule(task); Enqueue(task);
+                var token = ManagedWorkRuntime.QueuedTokenForControl(task);
+                var ticket = ManagedWorkRuntime.InlineQueued(task, true);
+                Need(ticket is not null && !ManagedWorkRuntime.Popped(false, task));
+                ManagedWorkRuntime.InlineQueueFinished(ticket, true);
+                Need(ManagedWorkRuntime.QueuedTokenForControl(task) == token && Count(3) == 1);
+                Need(ManagedWorkRuntime.Popped(true, task) && Count(3) == 0);
+                var previous = ManagedWorkRuntime.Enter(task);
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task);
+                ManagedWorkRuntime.Exit(previous); Need(Count(0) == 1); Finish(); break;
+            }
+            case "inline-pop-exception-retains-frame": {
+                var task = new Task(() => { }); ManagedWorkRuntime.Schedule(task); Enqueue(task);
+                var ticket = ManagedWorkRuntime.InlineQueued(task, true);
+                Need(ticket is not null && ManagedWorkRuntime.Popped(true, task));
+                var previous = ManagedWorkRuntime.Enter(task);
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task);
+                ManagedWorkRuntime.Exit(previous);
+                var original = new InvalidOperationException("inline-original-exception");
+                try { try { throw original; } finally { ManagedWorkRuntime.InlineQueueFinished(ticket, false); } }
+                catch (InvalidOperationException caught) when (ReferenceEquals(caught, original)) { }
+                Work.Enqueue(() => throw new InvalidOperationException("must-not-dispatch-uncertain-inline"));
+                Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-inline-uncertain");
+                Need(Work.Count == 1 && controlDispatches == 0 && Count(0) == 2 && Count(3) == 0); break;
+            }
+            case "inline-pop-ack-refused":
+            case "inline-pop-ack-unknown": {
+                var task = new Task(() => { }); ManagedWorkRuntime.Schedule(task); Enqueue(task);
+                var token = ManagedWorkRuntime.QueuedTokenForControl(task)!.Value;
+                var ticket = ManagedWorkRuntime.InlineQueued(task, true); Need(ticket is not null);
+                settlementRefusal = token.Id; settlementUnknown = name.EndsWith("unknown");
+                Refuses(() => ManagedWorkRuntime.Popped(true, task), "managed-work-settlement-refused");
+                ManagedWorkRuntime.InlineQueueFinished(ticket, false);
+                Refuses(() => ManagedWorkRuntime.Popped(true, task), "managed-work-queue-uncertain");
+                Need(refusedSettlements == 1 && Count(3) == (settlementUnknown ? 0 : 1)
+                    && ManagedWorkRuntime.QueuedTokenForControl(task) == token);
+                break;
+            }
+            case "inline-pop-owner-settlement-refused":
+            case "inline-pop-owner-settlement-unknown": {
+                var task = new Task(() => { }); ManagedWorkRuntime.Schedule(task); Enqueue(task);
+                var ticket = ManagedWorkRuntime.InlineQueued(task, true); Need(ticket is not null);
+                Need(ManagedWorkRuntime.Popped(true, task));
+                var previous = ManagedWorkRuntime.Enter(task); settlementRefusal = context.Item2;
+                settlementUnknown = name.EndsWith("unknown");
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task); ManagedWorkRuntime.Exit(previous);
+                Refuses(() => ManagedWorkRuntime.InlineQueueFinished(ticket, true), "managed-work-settlement-refused");
+                Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-double-settle");
+                Need(refusedSettlements == 1 && Count(0) == (settlementUnknown ? 1 : 2)); break;
+            }
+            case "inline-pop-reentrant-fences-same-task": {
+                var task = new Task(() => { }); ManagedWorkRuntime.Schedule(task); Enqueue(task);
+                var token = ManagedWorkRuntime.QueuedTokenForControl(task)!.Value;
+                var ticket = ManagedWorkRuntime.InlineQueued(task, true); Need(ticket is not null);
+                afterSettlementTarget = token.Id;
+                AfterSettlementCallback = () => {
+                    Need(ManagedWorkRuntime.InlineQueued(task, true) is null);
+                    Refuses(() => ManagedWorkRuntime.Popped(true, task), "managed-work-queue-uncertain");
+                };
+                Need(ManagedWorkRuntime.Popped(true, task));
+                var previous = ManagedWorkRuntime.Enter(task);
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task); ManagedWorkRuntime.Exit(previous);
+                Need(Count(0) == 2); ManagedWorkRuntime.InlineQueueFinished(ticket, true);
+                Need(Count(0) == 1); Finish(); break;
+            }
+            case "inline-pop-reentrant-normal-dequeue": {
+                var task = new Task(() => { }); ManagedWorkRuntime.Schedule(task); Enqueue(task);
+                var ticket = ManagedWorkRuntime.InlineQueued(task, true); Need(ticket is not null);
+                // A same-task ordinary dequeue reenters after claim, before the
+                // scheduler's own pop returns false. Its exact record is held.
+                Need(ManagedWorkRuntime.Popped(true, task));
+                Need(!ManagedWorkRuntime.Popped(false, task));
+                ManagedWorkRuntime.InlineQueueFinished(ticket, true);
+                Need(Count(3) == 0 && Count(0) == 2 && !task.IsCompleted);
+                var previous = ManagedWorkRuntime.Enter(task);
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task); ManagedWorkRuntime.Exit(previous);
+                Need(Count(0) == 1); Finish(); break;
+            }
+            case "inline-pop-reset-fenced-retains-uncertainty": {
+                Limits[0] = 3; Limits[3] = 2;
+                var outer = new Task(() => { }); var later = new Task(() => { });
+                ManagedWorkRuntime.Schedule(outer); ManagedWorkRuntime.Schedule(later);
+                Enqueue(outer); Enqueue(later);
+                var dispatch = ManagedWorkRuntime.BeginDispatch(outer);
+                var previous = ManagedWorkRuntime.EnterDispatch(outer, dispatch);
+                ManagedWorkRuntime.ResetStarting(dispatch);
+                Need(ManagedWorkRuntime.InlineQueued(later, true) is null);
+                Need(!ManagedWorkRuntime.Popped(false, later) && Count(3) == 1);
+                Refuses(() => ManagedWorkRuntime.Popped(true, later), "managed-work-reset-context-unavailable");
+                Need(Count(3) == 1);
+                Refuses(() => ManagedWorkRuntime.Popped(true, later), "managed-work-reset-context-unavailable");
+                ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.ResetReady(dispatch);
+                ManagedWorkRuntime.ResetFinished(dispatch); ManagedWorkRuntime.DispatchReturned(dispatch);
+                Refuses(() => ManagedWorkRuntime.Popped(true, later), "managed-work-queue-uncertain");
+                Work.Enqueue(() => throw new InvalidOperationException("must-not-dispatch-uncertain-pop"));
+                Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-inline-uncertain");
+                Need(Work.Count == 1 && controlDispatches == 0 && Count(3) == 1); break;
+            }
+            case "inline-pop-required-continuation-keeps-parent-frame": {
+                Limits[3] = 2;
+                object callback = new(); Enqueue(callback);
+                Need(ManagedWorkRuntime.Popped(true, callback));
+                var parent = ManagedWorkRuntime.Enter(callback);
+                var task = new Task(() => { });
+                ManagedWorkRuntime.CreatedAsync(task); Enqueue(task);
+                var ticket = ManagedWorkRuntime.InlineQueued(task, true);
+                Need(ticket is not null && ManagedWorkRuntime.Popped(true, task));
+                var previous = ManagedWorkRuntime.Enter(task);
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task); ManagedWorkRuntime.Exit(previous);
+                ManagedWorkRuntime.InlineQueueFinished(ticket, true);
+                Need(Count(0) == 2 && !ManagedWorkRuntime.CallbackDoneForControl(callback));
+                ManagedWorkRuntime.Exit(parent); ManagedWorkRuntime.CallbackCompleted(callback);
+                Need(Count(0) == 1); Finish(); break;
+            }
+            case "inline-pop-original-owner-must-survive-frame": {
+                Limits[0] = 2;
+                var task = new Task(() => { });
+                ManagedWorkRuntime.Schedule(task); Enqueue(task);
+                var ticket = ManagedWorkRuntime.InlineQueued(task, true);
+                Need(ticket is not null && ManagedWorkRuntime.Popped(true, task));
+                var previous = ManagedWorkRuntime.Enter(task);
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task);
+                Need(Count(0) == 2 && Count(3) == 0);
+                ManagedWorkRuntime.Exit(previous);
+                ManagedWorkRuntime.InlineQueueFinished(ticket, true);
+                Need(Count(0) == 1); Finish(); break;
+            }
             case "native-task-admission": {
                 Limits[0] = 2;
                 var first = Pending(); ManagedWorkRuntime.Schedule(first.Task);
@@ -1864,6 +2442,31 @@ internal static class StateControl
             case "multiple-unwrap-first-completes-before-pending": MultipleUnwrapPendingControl(true); break;
             case "multiple-unwrap-second-completes-before-pending": MultipleUnwrapPendingControl(false); break;
             case "multiple-unwrap-required-capacity": MultipleUnwrapCapacityControl(); break;
+            case "successful-unwrap-releases-capacity": SuccessfulUnwrapCapacityControl(); break;
+            case "inline-pop-retains-unwrap-owner": InlinePopRetainsUnwrapControl(); break;
+            case "dispatch-reset-early-exposes-capacity": DispatchContextResetControl(true); break;
+            case "dispatch-reset-retains-owner": DispatchContextResetControl(false); break;
+            case "dispatch-reset-nested-frame-identity": DispatchNestedResetControl(); break;
+            case "dispatch-reset-transition-preserves-queued-work": DispatchResetTransitionFenceControl(); break;
+            case "dispatch-reset-null-context-refused": DispatchResetAttributionControl(false); break;
+            case "dispatch-reset-explicit-root-context": DispatchResetAttributionControl(true); break;
+            case "dispatch-execute-throw-retains-owner": DispatchBoundaryExceptionControl(false); break;
+            case "dispatch-reset-throw-retains-owner": DispatchBoundaryExceptionControl(true); break;
+            case "dispatch-reset-throwing-notification": DispatchThrowingResetControl(); break;
+            case "dispatch-reset-throwing-child": DispatchThrowingResetChild(); break;
+            case "dispatch-queue-ack-refused": DispatchQueueAckControl(false); break;
+            case "dispatch-queue-ack-unknown": DispatchQueueAckControl(true); break;
+            case "dispatch-owner-ack-refused": DispatchOwnerAckControl(false); break;
+            case "dispatch-owner-ack-unknown": DispatchOwnerAckControl(true); break;
+            case "dispatch-identity-change-fences-frame": DispatchIdentityChangeControl(); break;
+            case "dispatch-exit-failure-retains-frame": DispatchExitFailureControl(); break;
+            case "dispatch-reset-entry-failure-before": DispatchResetContextFailureControl(false, false); break;
+            case "dispatch-reset-entry-failure-after": DispatchResetContextFailureControl(false, true); break;
+            case "dispatch-reset-return-failure-before": DispatchResetContextFailureControl(true, false); break;
+            case "dispatch-reset-return-failure-after": DispatchResetContextFailureControl(true, true); break;
+            case "dispatch-direct-task-success": DispatchDirectTaskControl(false); break;
+            case "dispatch-direct-task-observed-fault": DispatchDirectTaskControl(true); break;
+            case "dispatch-queued-sibling-retains-owner": DispatchQueuedSiblingControl(); break;
             case "required-result-settlement-refusal-retains-custody": RequiredResultSettlementFailureControl(false); break;
             case "required-result-settlement-unknown-retains-custody": RequiredResultSettlementFailureControl(true); break;
             case "fault-conversion-success-is-idempotent": {

@@ -33,6 +33,7 @@ fn checkpoint_component(
                 | ("LSF_GO_NO_CHECKPOINT_FIXTURE", "go-component-activation-v1")
                 | ("LSF_GO_TIMER_FIXTURE", "go-component-activation-v3")
                 | ("LSF_GO_MANAGED_TIMER_FIXTURE", "go-component-activation-v5")
+                | ("LSF_GO_V7_TIMER_FIXTURE", "go-component-activation-v7")
                 | ("LSF_GO_INITIALIZER_FIXTURE", "go-component-activation-v4")
                 | ("LSF_GO_PUBLISHED_FIXTURE", "go-component-activation-v4")
                 | ("LSF_GO_MANAGED_IDLE_FIXTURE", "go-component-activation-v5")
@@ -60,7 +61,10 @@ fn checkpoint_component(
         variable,
         "LSF_GO_SYNCHRONIZATION_FIXTURE" | "LSF_GO_SYNCHRONIZATION_NO_CHECKPOINT_FIXTURE"
     );
-    let managed_timers = variable == "LSF_GO_MANAGED_TIMER_FIXTURE";
+    let managed_timers = matches!(
+        variable,
+        "LSF_GO_MANAGED_TIMER_FIXTURE" | "LSF_GO_V7_TIMER_FIXTURE"
+    );
     let task_saturation = variable == "LSF_GO_TASK_SATURATION_FIXTURE";
     let timer_overlap = variable == "LSF_GO_TIMER_OVERLAP_FIXTURE";
     let timers = profile == "go-component-activation-v3" || managed_timers;
@@ -210,6 +214,12 @@ fn checkpoint_component(
             include_bytes!(
                 "../../../../../sdk/go-guest/runtime/timer-overlap-conformance/world.wit"
             )
+        );
+    }
+    if variable == "LSF_GO_V7_TIMER_FIXTURE" {
+        assert_eq!(
+            wit.as_bytes(),
+            include_bytes!("../../../../../sdk/go-guest/runtime/timers-conformance/world.wit")
         );
     }
     (packages::go_activation_runtime(bytes, &wit), source)
@@ -437,6 +447,11 @@ async fn prepare_owned_fixture(
         RuntimeLimits {
             tasks,
             waits: 4,
+            queued_work: if profile == "go-component-activation-v7" {
+                16
+            } else {
+                limits().queued_work
+            },
             ..limits()
         },
     )

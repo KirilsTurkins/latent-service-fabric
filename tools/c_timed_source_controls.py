@@ -1,4 +1,4 @@
-"""Bounded real-C broadcast interleaving with explicit serialized host doubles."""
+"""Bounded real-C timed-wait controls with explicit serialized host doubles."""
 from __future__ import annotations
 import argparse
 import json
@@ -17,7 +17,13 @@ from tools.dev_workflow.common import require
 SOURCES = ('tools/c_timed_source_controls.py', 'tools/tests/fixtures/c-timed-broadcast-source.c',
     'tools/tests/fixtures/c-timed-broadcast-source.cjs', 'sdk/c-guest/runtime/thread-abi.h',
     'sdk/c-guest/runtime/synchronization.c', 'tools/c_guest/threading.py',
-    'tools/build_observation.py', 'tools/rust_capsule_build.py')
+    'tools/build_observation.py', 'tools/rust_capsule_build.py',
+    'tools/tests/fixtures/c-timed-deadline-source.c',
+    'tools/tests/fixtures/c-timed-deadline-source.cjs')
+
+DEADLINE_CASES = ('mutex_fast', 'mutex_expired', 'mutex_invalid', 'condition_expired',
+    'condition_invalid', 'future_relative', 'future_overflow', 'clock_failure',
+    'c11_expired', 'duration_boundaries')
 
 
 def run(output, zig, node):
@@ -39,15 +45,18 @@ def run(output, zig, node):
         for family in ('wasm-wasi-musl', 'generic-musl'):
             args += ['-isystem', zig.parent / 'lib/libc/include' / family]
         args += ['-D' + define for define in threading.linked_defines((), timed_clock=True)]
-        args += [ROOT / SOURCES[1], '-o', output / 'broadcast.wasm']
-        commands.run('compile-real-source-control', zig, *args)
+        commands.run('compile-real-source-control', zig, *args, ROOT / SOURCES[1], '-o', output / 'broadcast.wasm')
         result = commands.run('serialized-interleaving', node, ROOT / SOURCES[2], output / 'broadcast.wasm')
         require(result == b'PASS timed-broadcast-expiry-reclaim-new-wave\n', 'c-timed-source-exact-outcome')
+        commands.run('compile-deadline-source-control', zig, *args, ROOT / SOURCES[8], '-o', output / 'deadline.wasm')
+        result = commands.run('serialized-deadline-controls', node, ROOT / SOURCES[9], output / 'deadline.wasm')
+        expected = ''.join('PASS ' + name + '\n' for name in DEADLINE_CASES).encode()
+        require(result == expected, 'c-timed-deadline-source-exact-outcome')
         require(inputs == {name: file_identity(ROOT / name, name, 1024 * 1024) for name in SOURCES}
             and tools == {name: file_identity(path, name) for name, path in (('zig', zig), ('node', node))},
             'c-timed-source-final-identity')
         record.update(status='passed', commands=commands.records,
-            cases=['timed-broadcast-expiry-reclaim-new-wave'])
+            cases=['timed-broadcast-expiry-reclaim-new-wave', *DEADLINE_CASES])
         write_json(output / 'source-controls.json', record)
         return record
     except BaseException:

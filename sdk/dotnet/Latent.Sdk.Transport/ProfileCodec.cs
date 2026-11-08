@@ -99,9 +99,14 @@ internal static class ProfileCodec
 
     internal static object FromWire(IMessage message, Type type)
     {
-        ConstructorInfo constructor = type.GetConstructors().Single();
-        ParameterInfo[] parameters = constructor.GetParameters();
         var fields = message.Descriptor.Fields.InFieldNumberOrder().ToDictionary(PropertyName);
+        ConstructorInfo constructor = type.GetConstructors().Single(candidate =>
+        {
+            ParameterInfo[] selected = candidate.GetParameters();
+            return selected.Length == fields.Count && selected.All(parameter =>
+                parameter.Name is not null && fields.ContainsKey(parameter.Name));
+        });
+        ParameterInfo[] parameters = constructor.GetParameters();
         var arguments = new object?[parameters.Length];
         for (int index = 0; index < parameters.Length; index++)
         {
