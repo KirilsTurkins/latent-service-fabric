@@ -141,6 +141,18 @@ class JavaTransactionDiagnosticTests(unittest.TestCase):
 
 
 class CommittedQueryQualification(unittest.TestCase):
+    def test_unavailable_response_keeps_its_platform_status_and_observation(self):
+        campaign = Campaign.__new__(Campaign)
+        campaign.client = Mock()
+        campaign.service = "examples/transaction-java-aggregate"
+        observed = {"status": 503, "body": b"", "headers": []}
+        with patch("tools.java_transaction_qualification.campaign.http.response",
+                   side_effect=ValueError("missing-success-headers")), \
+                patch("tools.java_transaction_qualification.refusal_observation.observe") as record:
+            with self.assertRaisesRegex(ValueError, "actual-http-transaction-unavailable"):
+                campaign.result(observed)
+        record.assert_called_once_with(campaign.client, service=campaign.service)
+
     def test_reuses_the_acknowledged_view_and_rejects_new_command_rows(self):
         baseline = {"commandCount": "1", "generation": "3", "encodedStateBytes": "75"}
         for change in (None, "commandCount", "generation", "encodedStateBytes"):

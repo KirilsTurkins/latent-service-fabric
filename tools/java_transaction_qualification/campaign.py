@@ -88,10 +88,12 @@ class Campaign:
         require("body" in observed, "response-loss-cannot-supply-application-result")
         try:
             return http.response(observed["status"], observed["body"], observed["headers"])
-        except ValueError:
+        except ValueError as error:
             if observed.get("status") in {400, 401, 403, 404, 405, 502, 503}:
                 from .refusal_observation import observe
                 observe(self.client, service=self.service)
+            if observed.get("status") == 503:
+                raise ValueError("actual-http-transaction-unavailable") from error
             raise
 
     def query(self, count, *, minimum=None, original_key=None):
