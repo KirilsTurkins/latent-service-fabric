@@ -1,5 +1,6 @@
 name: Unchanged published Java scheduled semaphore through the normal signed node
 on:
+  workflow_call:
   push:
     branches: ['feat/java-scheduled-executor-20261026', 'feat/java-cf-shutdown-now-20261028', 'feat/java-future-queue-20261028']
     paths:
@@ -24,9 +25,16 @@ concurrency:
   cancel-in-progress: false
 jobs:
   scheduled-library:
+    if: >-
+      github.event_name == 'push' &&
+      (github.ref_name == 'feat/java-scheduled-executor-20261026' ||
+       github.ref_name == 'feat/java-cf-shutdown-now-20261028' ||
+       github.ref_name == 'feat/java-future-queue-20261028' ||
+       (github.ref_name == 'development' &&
+        github.workflow_ref == 'KirilsTurkins/latent-service-fabric/.github/workflows/java-scheduled-development.yml@refs/heads/development'))
     name: One ordinary scheduled component and sixteen signed calls
     runs-on: ubuntu-24.04
-    timeout-minutes: ${{ github.ref_name != 'feat/java-scheduled-executor-20261026' && 25 || 45 }}
+    timeout-minutes: ${{ (github.ref_name == 'feat/java-scheduled-executor-20261026' || github.ref_name == 'development') && 45 || 25 }}
     env:
       CARGO_BUILD_JOBS: '2'
       CARGO_INCREMENTAL: '0'
@@ -77,7 +85,7 @@ jobs:
           path: ${{ runner.temp }}/compiler-archives/java-prepared
           key: java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}
       - name: Capture and compile the ordinary semaphore then run only sixteen signed calls
-        if: github.ref_name == 'feat/java-scheduled-executor-20261026'
+        if: github.ref_name == 'feat/java-scheduled-executor-20261026' || github.ref_name == 'development'
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-

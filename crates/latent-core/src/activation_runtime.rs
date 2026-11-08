@@ -160,6 +160,9 @@ struct Slab {
     // Drop the real records/allocation before releasing its native charge.
     _allocation: HostMemoryReservation,
 }
+// The repository's native allocation model reserves this much bookkeeping for
+// each backing allocation. It is a finite allowance, not an RSS measurement.
+const SLAB_ALLOCATION_BOOKKEEPING: usize = 64;
 #[derive(Debug, Clone, Copy)]
 struct Record {
     id: u64,
@@ -321,7 +324,16 @@ impl ActivationRuntime {
             .map_err(|failure| failure.to_platform_error())?;
         if state.slab.is_none() {
             let count = self.inner.limits.total();
-            let bytes = count as u64 * std::mem::size_of::<Option<Record>>() as u64;
+            let bytes = std::alloc::Layout::array::<Option<Record>>(count)
+                .ok()
+                .and_then(|layout| layout.size().checked_add(SLAB_ALLOCATION_BOOKKEEPING))
+                .and_then(|bytes| u64::try_from(bytes).ok())
+                .ok_or_else(|| {
+                    error(
+                        PlatformErrorCode::ResourceExhausted,
+                        "runtime-record-allocation",
+                    )
+                })?;
             let mut allocation = self
                 .inner
                 .budget
@@ -334,8 +346,16 @@ impl ActivationRuntime {
                     "runtime-record-allocation",
                 )
             })?;
-            records.resize(count, None);
             allocation.confirm();
+            // The pinned Global RawVec requests and records exactly `count`.
+            // Refuse a changed allocator contract before publishing owners.
+            if records.capacity() != count {
+                return Err(error(
+                    PlatformErrorCode::ResourceExhausted,
+                    "runtime-record-capacity",
+                ));
+            }
+            records.resize(count, None);
             state.slab = Some(Slab {
                 records,
                 _allocation: allocation,
@@ -383,12 +403,22 @@ impl ActivationRuntime {
     }
 
     pub fn park(&self, token: RuntimeToken) -> Result<RuntimeWake, PlatformError> {
+        self.park_with_after_live_check(token, || {})
+    }
+
+    fn park_with_after_live_check(
+        &self,
+        token: RuntimeToken,
+        after_check: impl FnOnce(),
+    ) -> Result<RuntimeWake, PlatformError> {
         self.check_live()?;
+        after_check();
         let mut state = self
             .inner
             .state
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let phase = state.phase;
         if token.generation != self.inner.generation {
             return Err(error(PlatformErrorCode::InvalidArgument, "runtime-token"));
         }
@@ -397,6 +427,12 @@ impl ActivationRuntime {
             .as_mut()
             .and_then(|slab| slab.records.iter_mut().flatten().find(|r| r.id == token.id))
             .ok_or_else(|| error(PlatformErrorCode::InvalidArgument, "runtime-token"))?;
+        // Cancellation can win the state lock after check_live returns. Do not
+        // publish a parked owner after that transition; already accepted work
+        // may still park in Closing/Draining until cancellation actually wins.
+        if matches!(phase, RuntimePhase::Cancelling | RuntimePhase::Retired) {
+            return Err(error(PlatformErrorCode::Cancelled, "runtime-retired"));
+        }
         record.parked = true;
         if matches!(state.phase, RuntimePhase::Running) {
             let runnable = state.slab.as_ref().is_some_and(|slab| {
@@ -573,6 +609,10 @@ impl RuntimeWake {
     /// Stale/foreign/retired completion cannot re-enter any activation. A wake
     /// reports readiness only; the language scheduler owns execution ordering.
     pub fn wake(&self) -> bool {
+        self.wake_with_after_live_check(|| {})
+    }
+
+    fn wake_with_after_live_check(&self, after_check: impl FnOnce()) -> bool {
         let Some(inner) = self.inner.upgrade() else {
             return false;
         };
@@ -580,11 +620,13 @@ impl RuntimeWake {
         if runtime.check_live().is_err() {
             return false;
         }
+        after_check();
         let mut state = runtime
             .inner
             .state
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let phase = state.phase;
         let record = state.slab.as_mut().and_then(|slab| {
             slab.records
                 .iter_mut()
@@ -593,6 +635,12 @@ impl RuntimeWake {
         });
         if self.token.generation != runtime.inner.generation || record.is_none() {
             state.stale_wakes = state.stale_wakes.saturating_add(1);
+            return false;
+        }
+        // Keep stale-token accounting above, then fence cancellation that won
+        // the lock after the earlier liveness check. Closing/Draining still
+        // allow already-owned work to receive readiness.
+        if matches!(phase, RuntimePhase::Cancelling | RuntimePhase::Retired) {
             return false;
         }
         record.expect("checked owner").parked = false;

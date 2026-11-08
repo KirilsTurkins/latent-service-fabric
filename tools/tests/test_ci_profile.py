@@ -82,6 +82,13 @@ class GoQualificationTriggerTests(unittest.TestCase):
                 fnmatchcase(part, glob) for part, glob in zip(source_parts, pattern_parts))
 
         inputs = set(RECIPE) | {"Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "tools/requirements.lock"}
+        # The maintained timer host doubles and their pinned upstream source and
+        # license are directly read by the Go qualification owner.
+        from tools.tests.go_timer_reset_host_controls import TIME_SOURCE, GO_LICENSE, CONTROL
+        inputs |= {"tools/tests/go_timer_reset_host_controls.py", "tools/go_timer_runtime_control.py",
+                   "tools/tests/fixtures/go_timer_runtime_mock.go.txt",
+                   "tools/tests/fixtures/go_timer_runtime_mock_host.js"}
+        inputs |= {path.relative_to(root).as_posix() for path in (TIME_SOURCE, GO_LICENSE, CONTROL)}
         for event in ("pull_request", "push"):
             paths = events[event]["paths"]
             self.assertFalse(any(pattern.startswith("!") for pattern in paths))
@@ -89,6 +96,19 @@ class GoQualificationTriggerTests(unittest.TestCase):
                 with self.subTest(event=event, source=source):
                     self.assertTrue(any(matches(pattern, source) for pattern in paths), source)
             self.assertFalse(any(matches(pattern, "docs/unrelated.md") for pattern in paths))
+
+        # Both designated Go owners must actually run the existing guarded
+        # timer host control; unrelated Python matrices keep its existing skip.
+        for source, job, name in (
+                (".github/workflows/go-guest.yml", "upstream-probe",
+                 "Qualify the full standard timer oracle under current managed-v5 ownership"),
+                (".github/workflows/go-synchronization-reference.yml", "synchronization",
+                 "Check exact managed-v5 standard timer and GC evidence controls")):
+            owner = workflow_model((root / source).read_text(encoding="utf-8"))
+            selected = next(step for step in owner["jobs"][job]["steps"] if step.get("name") == name)
+            lines = selected["run"].splitlines()
+            self.assertEqual(lines[0], "command -v go >/dev/null")
+            self.assertIn("python3 -m unittest tools.tests.test_go_managed_timers", lines[1])
 
         step = next(step for step in workflow["jobs"]["upstream-probe"]["steps"]
                     if step.get("name") == "Capture immutable qualification source inputs")

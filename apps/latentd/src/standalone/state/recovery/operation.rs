@@ -102,7 +102,10 @@ pub(in crate::standalone) async fn recover(
         .map_err(|_| super::super::unavailable())?
         .await;
     let joined = if retirement.snapshot.physically_retired() {
-        store.reap_retired_threads().ok()
+        super::super::store::join_retired_workers(&store, cutoff)
+            .await
+            .ok()
+            .flatten()
     } else {
         None
     };

@@ -5,6 +5,30 @@ using System.Text.Json;
 internal static class Program
 {
     internal static void Need(bool value) { if (!value) throw new InvalidOperationException("driver-queue-control"); }
+    private static void ParameterGuard(string original, string rewriter)
+    {
+        var copier = System.Reflection.Assembly.LoadFrom(rewriter).GetType("ManagedWorkCopy")
+            ?? throw new InvalidOperationException("missing-managed-work-copier");
+        var constructor = copier.GetConstructors(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).Single();
+        var copy = copier.GetMethod("Copy", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        foreach (var variant in new[] { "optional", "constant", "orphan-default" })
+        {
+            using var target = ModuleDefinition.ReadModule(original);
+            using var source = ModuleDefinition.ReadModule(rewriter);
+            var parameter = source.GetTypes().Single(type => type.FullName == "Lsf.CompilerOwned.ManagedWorkRuntime")
+                .Methods.Single(method => method.Name == "Admit").Parameters.Single(item => item.Name == "independentInner");
+            Need(!parameter.IsOptional && !parameter.HasConstant && (parameter.Attributes & ParameterAttributes.HasDefault) == 0);
+            if (variant == "optional") parameter.IsOptional = true;
+            else if (variant == "constant") parameter.Constant = false;
+            else parameter.Attributes |= ParameterAttributes.HasDefault;
+            bool refused = false;
+            try { copy.Invoke(constructor.Invoke(new object[] { target }), new object[] { source }); }
+            catch (System.Reflection.TargetInvocationException error)
+                when (error.InnerException is InvalidDataException { Message: "managed-work-closed-copy" }) { refused = true; }
+            Need(refused);
+        }
+        Console.WriteLine(JsonSerializer.Serialize(new { optional = true, constant = true, orphanDefault = true, guestQualified = false }));
+    }
     private static void Graft(string source, string rewriter, string output, string mode)
     {
         using var from = ModuleDefinition.ReadModule(source);
@@ -108,6 +132,7 @@ internal static class Program
 
     private static void Main(string[] args)
     {
+        if (args is ["parameter-guard", var guardOriginal, var guardRewriter]) { ParameterGuard(guardOriginal, guardRewriter); return; }
         if (args is ["graft", var source, var rewriter, var output, var variant]) { Graft(source, rewriter, output, variant); return; }
         Need(args.Length == 2 && args[0] == "execute"); string mode = args[1];
         Queue.Active = 1; Queue.SetNextTimer(200, 100);

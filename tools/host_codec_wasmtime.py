@@ -12,8 +12,8 @@ from tools.rust_capsule_project import ROOT, read_file
 PROVIDER = "crates/vendor/wasmtime"
 NAME = "wasmtime"
 VERSION = "48.0.8"
-COHORT = "wasmtime-48.0.8-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v30-authenticated-bounded-root-suspension-upstream-security-v31-consumer-poll-factory-v32-host-accept-factory-v33-consumer-inner-future-v34-producer-inner-future-v35"
-RECORD_SHA256 = "ffe28ed7747fbcfbd011b881d66088934c2a32342bd553b3c770caa272fb8c22"
+COHORT = "wasmtime-48.0.8-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v30-authenticated-bounded-root-suspension-upstream-security-v31-consumer-poll-factory-v32-host-accept-factory-v33-consumer-inner-future-v34-producer-inner-future-v35-sync-ready-callback-v36-inline-runtime-futures-v37"
+RECORD_SHA256 = "c6d6db619250817c516677c710dd6f7d852371a1b21a9795d2817889a792d628"
 # Explicit reviewed postimages; the remaining original files use the immutable
 # registry inventory. Changing a claimed record or patch cannot authorize bytes.
 POSTIMAGES = {
@@ -26,12 +26,12 @@ POSTIMAGES = {
         "bytes": 11138
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "14bf31fcbdbe29ebd640a365bc1781c99eee40546cce4ff86749d4aad47290c7",
-        "bytes": 713446
+        "sha256": "291b0a3f854eb6c8bd32bfa52c179f09826b5421f54362539a948b85a4dc8860",
+        "bytes": 749938
     },
     "README.latent.md": {
-        "sha256": "daf274e143798e7a1f0abb1cff2df4f1bb949da2fedca1afd28d2c119707ce71",
-        "bytes": 53875
+        "sha256": "08013c6d84b67aeee5d90e1a53942e7b26e34ae27842b23db8c76735c0e573ad",
+        "bytes": 55157
     },
     "src/runtime/component/concurrent/abort.rs": {
         "sha256": "3e15b4c7493da1e268efdc3979cda4d8db628a7a1bfef308f8d04250d53600ef",
@@ -97,6 +97,10 @@ POSTIMAGES = {
         "sha256": "ebc37f82291509b19c1444fc912f27d88dadc90b2d1d166ef725eea017bdcabe",
         "bytes": 12181
     },
+    "src/runtime/component/concurrent/inline_future_tests.rs": {
+        "sha256": "7e43524326ae99495d1c5436dc66349cb44297b39dccb5f75e7d89da932d28d2",
+        "bytes": 13644
+    },
     "src/runtime/component/concurrent/pending_future.rs": {
         "sha256": "3daf6c6252f684830bc40b86065096b65e50d2a40fceb8db97c76a6e6a614164",
         "bytes": 13771
@@ -114,16 +118,16 @@ POSTIMAGES = {
         "bytes": 13734
     },
     "src/runtime/component/concurrent.rs": {
-        "sha256": "1cd5588fec242be3ccee9265edb8b70176e3a9942e73208a957de7e3c2ec9b7e",
-        "bytes": 333764
+        "sha256": "a3091e7907104533241a0f0c4f5e3ef961ccc1a209a3bd53ccc93445a9968c2d",
+        "bytes": 334979
     },
     "src/runtime/component/dynamic_memory.rs": {
         "sha256": "70ab7ecf2fba9a29be46f4750e28ef404acc991d36d708939b022bce1872d57d",
         "bytes": 7317
     },
     "src/runtime/component/func/host.rs": {
-        "sha256": "e5f91e592d1f8f58744cbfacb9b56c88edbaf9ac4f804eb88e288d97f698a0be",
-        "bytes": 37004
+        "sha256": "565be85a100d3ffc8436eae8f54b380ef35833d5b11bebebbf372cd851aa8400",
+        "bytes": 53876
     },
     "src/runtime/component/func/options.rs": {
         "sha256": "e3ad26a2f114ba5b904e6425894a26eabab49f85a876c94ab5490f95987e05c1",
@@ -142,16 +146,16 @@ POSTIMAGES = {
         "bytes": 47912
     },
     "src/runtime/component/linker.rs": {
-        "sha256": "9b0f1d69b58b637a17c61f9adf00008fd0cc211d4206c76d3970b255766aed58",
-        "bytes": 40717
+        "sha256": "64cfd587747010f281df5192cd50ac8f052ee256e7df9ec100840f8d791f8e75",
+        "bytes": 42444
     },
     "src/runtime/component/matching.rs": {
         "sha256": "6f7a6165a8efe819f49de8e6f95d8b6b28dba5c4eaee400f0af70d74a3017f4f",
         "bytes": 9471
     },
     "src/runtime/component/mod.rs": {
-        "sha256": "7b1638361986f877095c083ba6b68847b5b83fe2a0903cd4091c5ecdb75427d9",
-        "bytes": 33065
+        "sha256": "48135237bcb4edfb88212665c55395f1a907ddc61255eb2da6906519a7732256",
+        "bytes": 33087
     },
     "src/runtime/component/resource_table.rs": {
         "sha256": "488174f61d1af70d63012f28cafa305a2558e5d383d947a4abc5420dcc15cc74",
@@ -359,7 +363,7 @@ def verify(root: Path = ROOT) -> dict:
                 for row in record["originalFiles"]}
     require(len(record["originalFiles"]) == len(original) == 250, "original-file-set")
     expected = {**original, **POSTIMAGES, "UPSTREAM.latent.json": identity(raw)}
-    require(len(expected) == 276, "maintained-file-set")
+    require(len(expected) == 277, "maintained-file-set")
     actual, total = {}, 0
     for ordinal, path in enumerate(source.rglob("*")):
         require(ordinal < 1024 and not path.is_symlink(), "source-tree-bound-or-link")

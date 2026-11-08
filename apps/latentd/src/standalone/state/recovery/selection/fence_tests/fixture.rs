@@ -406,7 +406,7 @@ impl Fixture {
             .unwrap()
             .await;
         assert!(retired.clean && retired.snapshot.physically_retired());
-        assert!(store.reap_retired_threads().unwrap() > 0);
+        crate::standalone::state::recovery::join_test_workers(&store, cutoff).await;
         assert_eq!(native.snapshot().unwrap().recovery.slots, 1);
         drop(store);
         drop(codecs);

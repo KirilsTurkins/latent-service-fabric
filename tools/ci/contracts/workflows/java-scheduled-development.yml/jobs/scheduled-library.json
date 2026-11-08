@@ -1,0 +1,1 @@
+{"definition":{"uses":"$/.github/workflows/java-scheduled-library.yml"},"jobId":"scheduled-library","kind":"job","reviewReason":"Select the existing signed scheduled component owner only for explicit development workflow and fixture changes.","schemaVersion":"latent.ci.contracts.v1","workflow":".github/workflows/java-scheduled-development.yml"}

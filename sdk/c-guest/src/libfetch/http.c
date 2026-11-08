@@ -156,7 +156,7 @@ static int response_close(void *object) {
 static char *request_url(const struct url *url) {
     if (!url || (strcmp(url->scheme, SCHEME_HTTP) && strcmp(url->scheme, SCHEME_HTTPS)) ||
         !url->host[0] || url->user[0] || url->pwd[0] || url->netrcfd != -1 ||
-        url->offset || url->ims_time || !url->doc || url->doc[0] != '/' ||
+        url->ims_time || !url->doc || url->doc[0] != '/' ||
         url->port < 0 || url->port > 65535) {
         unsupported(); return NULL;
     }
@@ -203,9 +203,72 @@ static bool content_length(const latent_http_streaming_list_header_t *headers, s
     return true;
 }
 
+/* A resumed GET accepts one bounded byte range, never a multipart response.
+ * Parse without temporary allocation and reject values outside the selected
+ * wasm32 size_t / signed 64-bit off_t representation. */
+static bool range_number(const uint8_t **cursor, const uint8_t *end, uint64_t *number) {
+    if (*cursor == end || **cursor < '0' || **cursor > '9') return false;
+    uint64_t value = 0;
+    do {
+        uint8_t digit = **cursor - '0';
+        if (value > (UINT64_MAX - digit) / 10) return false;
+        value = value * 10 + digit;
+        ++*cursor;
+    } while (*cursor != end && **cursor >= '0' && **cursor <= '9');
+    *number = value;
+    return true;
+}
+
+static bool content_range(const latent_http_streaming_list_header_t *headers,
+                          off_t *first, size_t *length, off_t *total) {
+    bool found = false;
+    for (size_t i = 0; i < headers->len; ++i) {
+        const latent_http_streaming_header_t *header = &headers->ptr[i];
+        static const char name[] = "content-range";
+        if (header->name.len != sizeof(name) - 1) continue;
+        bool match = true;
+        for (size_t at = 0; at < sizeof(name) - 1; ++at) {
+            uint8_t value = header->name.ptr[at];
+            if (value >= 'A' && value <= 'Z') value += 'a' - 'A';
+            if (value != (uint8_t)name[at]) match = false;
+        }
+        if (!match) continue;
+        if (found || header->value.len < 8) return false;
+        found = true;
+        const uint8_t *cursor = header->value.ptr, *end = cursor + header->value.len;
+        for (size_t at = 0; at < 5; ++at) {
+            uint8_t value = cursor[at];
+            if (value >= 'A' && value <= 'Z') value += 'a' - 'A';
+            if (value != (uint8_t)"bytes"[at]) return false;
+        }
+        if (cursor[5] != ' ') return false;
+        cursor += 6;
+        uint64_t start, last, complete;
+        if (!range_number(&cursor, end, &start) || cursor == end || *cursor++ != '-'
+            || !range_number(&cursor, end, &last) || cursor == end || *cursor++ != '/'
+            || start > last || last > INT64_MAX || last - start >= SIZE_MAX) return false;
+        if (cursor != end && *cursor == '*') {
+            ++cursor;
+            *total = (off_t)-1;
+        } else {
+            if (!range_number(&cursor, end, &complete) || complete > INT64_MAX
+                || complete != last + 1) return false;
+            *total = (off_t)complete;
+        }
+        if (cursor != end) return false;
+        *first = (off_t)start;
+        *length = (size_t)(last - start + 1);
+    }
+    return found;
+}
+
 static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
                      const char *method, const char *content_type, const char *body) {
-    if ((stat && strcmp(method, "GET")) || fetchAuthMethod || fetchDebug || fetchTimeout < 0) { unsupported(); return NULL; }
+    if ((stat && strcmp(method, "GET") && strcmp(method, "HEAD")) ||
+        fetchAuthMethod || fetchDebug || fetchTimeout < 0 ||
+        (url && (url->offset < 0 || (url->offset > 0 && strcmp(method, "GET"))))) {
+        unsupported(); return NULL;
+    }
     if (flags) for (const char *flag = flags; *flag; ++flag)
         if (*flag != 'A') { unsupported(); return NULL; }
     latent_http_streaming_method_t operation;
@@ -230,12 +293,23 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
     FILE *file = fopencookie(stream, "rb", functions);
     if (!file) { const int error = errno; free(stream); free(target); errno = error; fetch_syserr(); return NULL; }
     /* All guest-owned FILE backing exists before the first external effect. */
-    latent_http_streaming_header_t headers[] = {
+    latent_http_streaming_header_t headers[3] = {
         {.name = LSF_LITERAL("accept"), .value = LSF_LITERAL("*/*")},
         {.name = LSF_LITERAL("user-agent"), .value = LSF_LITERAL(_LIBFETCH_VER)},
     };
+    size_t header_count = 2;
+    char range_value[32];
+    if (url->offset > 0) {
+        int written = snprintf(range_value, sizeof(range_value), "bytes=%lld-", (long long)url->offset);
+        if (written < 0 || (size_t)written >= sizeof(range_value)) {
+            free(target);
+            failure(FETCH_PROTO, EOVERFLOW, "HTTP range offset is unrepresentable"); goto fail_file;
+        }
+        headers[header_count++] = (latent_http_streaming_header_t){
+            .name = LSF_LITERAL("range"), .value = {(uint8_t *)range_value, (size_t)written}};
+    }
     latent_http_streaming_request_t metadata = {.method = operation,
-        .headers = {headers, sizeof(headers) / sizeof(headers[0])},
+        .headers = {headers, header_count},
         .url = {(uint8_t *)target, strlen(target)}, .body_length = {true, body_length},
         .timeout_millis = {fetchTimeout != 0, (uint64_t)fetchTimeout * 1000}};
     if (content_type) {
@@ -269,12 +343,19 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
     size_t length;
     bool known_length;
     const bool valid_length = content_length(&completed.val.ok.headers, &length, &known_length);
+    off_t actual_offset = 0, representation_size = known_length ? (off_t)length : (off_t)-1;
+    size_t partial_length = length;
+    bool valid_range = true;
+    if (status == 206) {
+        valid_range = operation == LATENT_HTTP_STREAMING_METHOD_GET && known_length &&
+            content_range(&completed.val.ok.headers, &actual_offset, &partial_length, &representation_size) &&
+            actual_offset <= url->offset && partial_length == length;
+    }
     lsf_streaming_metadata_close(&completed.val.ok);
     if (!valid_length) {
         failure(FETCH_PROTO, EOVERFLOW, "HTTP content length is invalid or unrepresentable");
         goto fail_file;
     }
-    url->length = length;
     if (status < 200 || status >= 300) {
         if (status >= 300 && status < 400) failure(FETCH_MOVED, ENOTSUP, "HTTP redirects are outside this profile");
         else if (status == 401 || status == 403) failure(FETCH_AUTH, EACCES, "HTTP authentication refused");
@@ -284,12 +365,19 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
                  status >= 300 && status < 400 ? ": redirects unsupported" : ": request failed");
         goto fail_file;
     }
+    if (!valid_range) {
+        failure(FETCH_PROTO, EIO, "Invalid or inconsistent HTTP content range");
+        goto fail_file;
+    }
+    /* Servers may ignore Range and return 200; tell the caller its real start. */
+    url->offset = actual_offset;
+    url->length = partial_length;
     if (stat) {
         /* Selected wasm32 WASI size_t is 32-bit and off_t is signed 64-bit.
          * Keep a valid maximum-size header distinct from missing length.
          * This profile does not interpret Last-Modified; both times are the
          * original unknown sentinel, never a fabricated local clock value. */
-        stat->size = known_length ? (off_t)length : (off_t)-1;
+        stat->size = representation_size;
         stat->atime = stat->mtime = 0;
     }
     return file;
@@ -311,7 +399,16 @@ FILE *fetchReqHTTP(struct url *url, const char *method, const char *flags, const
     return request(url, NULL, flags, method, type, body);
 }
 FILE *fetchPutHTTP(struct url *url, const char *flags) { (void)url; (void)flags; unsupported(); return NULL; }
-int fetchStatHTTP(struct url *url, struct url_stat *stat, const char *flags) { (void)url; (void)stat; (void)flags; unsupported(); return -1; }
+int fetchStatHTTP(struct url *url, struct url_stat *stat, const char *flags) {
+    struct url_stat result;
+    FILE *file = request(url, stat ? &result : NULL, flags, "HEAD", NULL, NULL);
+    if (!file) return -1;
+    /* The returned body is a real provider owner even for HEAD. Preserve an
+     * abort failure and only publish metadata after it has been closed. */
+    if (fclose(file) != 0) return -1;
+    if (stat) *stat = result;
+    return 0;
+}
 struct url_ent *fetchListHTTP(struct url *url, const char *flags) { (void)url; (void)flags; unsupported(); return NULL; }
 
 /* The genuine frontend routes non-HTTP schemes here; no ambient filesystem,

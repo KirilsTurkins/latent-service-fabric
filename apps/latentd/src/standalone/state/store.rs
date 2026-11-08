@@ -9,6 +9,34 @@ use super::{bootstrap::StateBootstrap, validation};
 use crate::config::state::{StateSettings, STARTUP_VALIDATOR_BYTES};
 use crate::standalone::startup_observation::{record, record_platform, Stage};
 
+/// Observe the original worker handles until they actually exit, without
+/// extending the caller's existing shutdown cutoff.
+pub(super) async fn join_retired_workers(
+    store: &ProtectedStoreOwner,
+    deadline: std::time::Instant,
+) -> Result<Option<usize>, latent_state::protected_store::ProtectedStoreError> {
+    let mut joined = 0;
+    loop {
+        if std::time::Instant::now() >= deadline {
+            return Ok(None);
+        }
+        joined += store.reap_retired_threads()?;
+        if store.pending_thread_joins()? == 0 {
+            return Ok((std::time::Instant::now() < deadline).then_some(joined));
+        }
+        let now = std::time::Instant::now();
+        if now >= deadline {
+            return Ok(None);
+        }
+        tokio::time::sleep_until(
+            (now + std::time::Duration::from_millis(1))
+                .min(deadline)
+                .into(),
+        )
+        .await;
+    }
+}
+
 /// This guard is private to one startup future. Losing that future closes the
 /// original global owner and quarantines accepted native initialization, while
 /// the lower fixed worker continues to own its actual descriptors and buffers.

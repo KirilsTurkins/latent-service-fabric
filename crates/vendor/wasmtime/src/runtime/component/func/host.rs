@@ -1,7 +1,7 @@
 //! Implementation of calling Rust-defined functions from components.
 
 #[cfg(feature = "component-model-async")]
-use crate::component::concurrent::{self, Accessor, Status};
+use crate::component::concurrent::{self, Accessor, InlineConcurrentHost, Status};
 use crate::component::func::{LiftContext, LowerContext};
 use crate::component::matching::InstanceType;
 use crate::component::storage::{slice_to_storage, slice_to_storage_mut};
@@ -207,6 +207,30 @@ impl HostFunc {
         )
     }
 
+    /// Stack-only, immediately-ready counterpart of `func_wrap_async`.
+    #[cfg(feature = "async")]
+    pub(crate) fn func_wrap_ready<T, F, P, R>(func: F) -> Result<Arc<HostFunc>>
+    where
+        T: Send + 'static,
+        F: Fn(StoreContextMut<'_, T>, P) -> Result<R> + Send + Sync + 'static,
+        P: ComponentNamedList + Lift + Send + 'static,
+        R: ComponentNamedList + Lower + 'static,
+    {
+        Self::new(
+            Asyncness::Yes,
+            StaticHostFn::<_, false>::new(move |store, params| {
+                HostResult::Done(store.with_blocking(|store, cx| {
+                    let mut args = Some((store, params));
+                    let future = core::future::poll_fn(|_| {
+                        let (store, params) = args.take().expect("ready callback polled twice");
+                        core::task::Poll::Ready(func(store, params))
+                    });
+                    cx.block_on(future).and_then(|result| result)
+                }))
+            }),
+        )
+    }
+
     /// Equivalent for `Linker::func_wrap_async`
     #[cfg(feature = "async")]
     pub(crate) fn func_wrap_async<T, F, P, R>(func: F) -> Result<Arc<HostFunc>>
@@ -280,6 +304,25 @@ impl HostFunc {
                     memory,
                     store.wrap_call(move |accessor| func(accessor, params)),
                 )
+            }),
+        )
+    }
+
+    /// Admit the full concrete wrapper, including the inline callback state.
+    #[cfg(feature = "component-model-async")]
+    pub(crate) fn func_wrap_concurrent_inline<T, F, P, R>(func: F) -> Result<Arc<HostFunc>>
+    where
+        T: 'static,
+        F: InlineConcurrentHost<T, P, R>,
+        P: ComponentNamedList + Lift + 'static,
+        R: ComponentNamedList + Lower + 'static,
+    {
+        let func = Arc::new(func);
+        Self::new(
+            Asyncness::Yes,
+            StaticHostFn::<_, true>::new(move |store, params| {
+                let memory = store.0.native_memory();
+                HostResult::future(memory, store.wrap_inline_call(func.clone(), params))
             }),
         )
     }
@@ -997,4 +1040,386 @@ pub(crate) fn validate_inbounds_dynamic(
         bail!("pointer out of bounds")
     }
     Ok(ptr)
+}
+
+#[cfg(all(
+    test,
+    feature = "std",
+    feature = "component-model-async",
+    feature = "cranelift",
+    feature = "wat"
+))]
+mod ready_only_tests {
+    use super::*;
+    use crate::component::{Component, ComponentType, Linker, TypedFunc};
+    use crate::{Config, Engine, Store};
+    use core::mem::MaybeUninit;
+    use futures::FutureExt;
+    use std::panic::AssertUnwindSafe;
+    use std::sync::{Arc, Mutex};
+
+    const COMPONENT: &str = r#"(component
+      (type $host-type (func (param "arg" u32) (result u32)))
+      (import "handle" (func $handle (type $host-type)))
+      (core func $handle-core (canon lower (func $handle)))
+      (core module $guest
+        (import "host" "handle" (func $handle (param i32) (result i32)))
+        (func (export "run") (param i32) (result i32) local.get 0 call $handle)
+        (func (export "noop") (result i32) i32.const 7))
+      (core instance $host (export "handle" (func $handle-core)))
+      (core instance $guest (instantiate $guest (with "host" (instance $host))))
+      (alias core export $guest "run" (core func $run))
+      (alias core export $guest "noop" (core func $noop))
+      (func (export "run") (param "arg" u32) (result u32) (canon lift (core func $run)))
+      (func (export "noop") (result u32) (canon lift (core func $noop)))
+    )"#;
+
+    type Events = Arc<Mutex<Vec<&'static str>>>;
+    struct Data {
+        events: Events,
+        nested: Option<TypedFunc<(), (u32,)>>,
+    }
+    struct Scope(Events);
+    impl Drop for Scope {
+        fn drop(&mut self) {
+            self.0.lock().unwrap().push("body-drop");
+        }
+    }
+    struct Guarded {
+        value: u32,
+        events: Events,
+    }
+    impl Drop for Guarded {
+        fn drop(&mut self) {
+            self.events.lock().unwrap().push("reply-drop");
+        }
+    }
+    // SAFETY: this closed test type forwards exactly u32's canonical ABI,
+    // typecheck and lowering; the test-only event owner is never encoded.
+    unsafe impl ComponentType for Guarded {
+        type Lower = <u32 as ComponentType>::Lower;
+        const ABI: CanonicalAbiInfo = <u32 as ComponentType>::ABI;
+        const IS_RUST_UNIT_TYPE: bool = <u32 as ComponentType>::IS_RUST_UNIT_TYPE;
+        const MAY_REQUIRE_REALLOC: bool = <u32 as ComponentType>::MAY_REQUIRE_REALLOC;
+        fn typecheck(ty: &InterfaceType, types: &InstanceType<'_>) -> Result<()> {
+            <u32 as ComponentType>::typecheck(ty, types)
+        }
+    }
+    // SAFETY: each implementation delegates to the existing u32 lowering
+    // without touching the destination or changing its canonical layout.
+    unsafe impl Lower for Guarded {
+        fn linear_lower_to_flat<T>(
+            &self,
+            cx: &mut LowerContext<'_, T>,
+            ty: InterfaceType,
+            dst: &mut MaybeUninit<Self::Lower>,
+        ) -> Result<()> {
+            self.events.lock().unwrap().push("lower-live");
+            self.value.linear_lower_to_flat(cx, ty, dst)
+        }
+        fn linear_lower_to_memory<T>(
+            &self,
+            cx: &mut LowerContext<'_, T>,
+            ty: InterfaceType,
+            offset: usize,
+        ) -> Result<()> {
+            self.events.lock().unwrap().push("lower-live");
+            self.value.linear_lower_to_memory(cx, ty, offset)
+        }
+    }
+    fn prepare(mut store: StoreContextMut<'_, Data>, arg: u32) -> Result<Events> {
+        let events = store.data().events.clone();
+        events.lock().unwrap().push("body-enter");
+        let _scope = Scope(events.clone());
+        // This is the exact field tested by Wasmtime's blocking gate. It is
+        // absent for the duration of the existing boxed callback's poll.
+        assert!(!store.0.can_block());
+        events.lock().unwrap().push("blocking-context-held");
+        let nested = store.data().nested.unwrap();
+        let error = nested.call(&mut store, ()).unwrap_err();
+        assert!(error.to_string().contains("requires that `*_async`"));
+        events.lock().unwrap().push("reentry-denied");
+        match arg {
+            1 => return Err(crate::Error::msg("ready-test-refused")),
+            2 => panic!("ready-test-panic"),
+            _ => {}
+        }
+        Ok(events)
+    }
+    fn execute(store: StoreContextMut<'_, Data>, arg: u32) -> Result<(Guarded,)> {
+        Ok((Guarded {
+            value: 42,
+            events: prepare(store, arg)?,
+        },))
+    }
+    async fn exercise(ready: bool, concurrent: bool, arg: u32) -> (String, Vec<&'static str>) {
+        let mut config = Config::new();
+        config
+            .wasm_component_model(true)
+            .wasm_component_model_async(concurrent)
+            .concurrency_support(concurrent);
+        let engine = Engine::new(&config).unwrap();
+        let component = Component::new(&engine, COMPONENT).unwrap();
+        let mut linker = Linker::<Data>::new(&engine);
+        if ready {
+            linker
+                .root()
+                .func_wrap_ready("handle", |store, (arg,): (u32,)| execute(store, arg))
+                .unwrap();
+        } else {
+            linker
+                .root()
+                .func_wrap_async("handle", |store, (arg,): (u32,)| {
+                    Box::new(async move { execute(store, arg) })
+                })
+                .unwrap();
+        }
+        let events = Arc::new(Mutex::new(Vec::new()));
+        let mut store = Store::new(
+            &engine,
+            Data {
+                events: events.clone(),
+                nested: None,
+            },
+        );
+        let instance = linker
+            .instantiate_async(&mut store, &component)
+            .await
+            .unwrap();
+        let nested = instance
+            .get_typed_func::<(), (u32,)>(&mut store, "noop")
+            .unwrap();
+        store.data_mut().nested = Some(nested);
+        let run = instance
+            .get_typed_func::<(u32,), (u32,)>(&mut store, "run")
+            .unwrap();
+        let outcome = AssertUnwindSafe(run.call_async(&mut store, (arg,)))
+            .catch_unwind()
+            .await;
+        let status = match outcome {
+            Ok(Ok((value,))) => format!("ok:{value}"),
+            Ok(Err(error)) => {
+                assert!(
+                    error
+                        .chain()
+                        .any(|cause| cause.to_string().contains("ready-test-refused"))
+                );
+                "refused".to_owned()
+            }
+            Err(_) => "panic".to_owned(),
+        };
+        // Either completion or unwind must have restored the context and left
+        // this Store outside any running fiber.
+        assert!(!store.as_context_mut().0.can_block());
+        let events = events.lock().unwrap().clone();
+        (status, events)
+    }
+    #[tokio::test]
+    async fn ready_callbacks_match_boxed_fiber_refusal_unwind_reentry_and_lowering() {
+        for concurrent in [false, true] {
+            for arg in [0, 1, 2] {
+                let boxed = exercise(false, concurrent, arg).await;
+                let ready = exercise(true, concurrent, arg).await;
+                assert_eq!(ready, boxed, "concurrent={concurrent}, arg={arg}");
+                let expected = match arg {
+                    0 => (
+                        "ok:42",
+                        vec![
+                            "body-enter",
+                            "blocking-context-held",
+                            "reentry-denied",
+                            "body-drop",
+                            "lower-live",
+                            "reply-drop",
+                        ],
+                    ),
+                    1 => (
+                        "refused",
+                        vec![
+                            "body-enter",
+                            "blocking-context-held",
+                            "reentry-denied",
+                            "body-drop",
+                        ],
+                    ),
+                    2 => (
+                        "panic",
+                        vec![
+                            "body-enter",
+                            "blocking-context-held",
+                            "reentry-denied",
+                            "body-drop",
+                        ],
+                    ),
+                    _ => unreachable!(),
+                };
+                assert_eq!(ready.0, expected.0);
+                assert_eq!(ready.1, expected.1);
+            }
+        }
+    }
+    const MEMORY_COMPONENT: &str = r#"(component
+  (type $host-type (func (param "arg" u32) (result (tuple u32 u32))))
+  (import "handle" (func $handle (type $host-type)))
+  (core module $mem (memory (export "memory") 1))
+  (core instance $mem-inst (instantiate $mem))
+  (alias core export $mem-inst "memory" (core memory $memory))
+  (core func $handle-core (canon lower (func $handle) (memory $memory)))
+  (core module $guest
+    (import "host" "memory" (memory 1))
+    (import "host" "handle" (func $handle (param i32 i32)))
+    (func (export "run") (param i32) (result i32)
+      local.get 0 i32.const 0 call $handle i32.const 0)
+    (func (export "noop") (result i32) i32.const 7)
+    (func (export "bad") (param i32) (result i32) local.get 0 i32.const 65535 call $handle i32.const 0))
+  (core instance $host
+    (export "memory" (memory $memory))
+    (export "handle" (func $handle-core)))
+  (core instance $guest (instantiate $guest (with "host" (instance $host))))
+  (alias core export $guest "run" (core func $run))
+  (alias core export $guest "noop" (core func $noop))
+  (alias core export $guest "bad" (core func $bad))
+  (func (export "run") (param "arg" u32) (result (tuple u32 u32)) (canon lift (core func $run) (memory $memory)))
+  (func (export "noop") (result u32) (canon lift (core func $noop)))
+  (func (export "bad") (param "arg" u32) (result (tuple u32 u32)) (canon lift (core func $bad) (memory $memory)))
+)"#;
+
+    struct GuardedPair {
+        value: (u32, u32),
+        events: Events,
+    }
+    impl Drop for GuardedPair {
+        fn drop(&mut self) {
+            self.events.lock().unwrap().push("reply-drop");
+        }
+    }
+    // SAFETY: this test wrapper uses the existing pair's canonical ABI and
+    // delegates type checking and both lowering paths without modifying data.
+    unsafe impl ComponentType for GuardedPair {
+        type Lower = <(u32, u32) as ComponentType>::Lower;
+        const ABI: CanonicalAbiInfo = <(u32, u32) as ComponentType>::ABI;
+        const IS_RUST_UNIT_TYPE: bool = <(u32, u32) as ComponentType>::IS_RUST_UNIT_TYPE;
+        const MAY_REQUIRE_REALLOC: bool = <(u32, u32) as ComponentType>::MAY_REQUIRE_REALLOC;
+        fn typecheck(ty: &InterfaceType, types: &InstanceType<'_>) -> Result<()> {
+            <(u32, u32) as ComponentType>::typecheck(ty, types)
+        }
+    }
+    // SAFETY: the value and destination are forwarded to the tuple's Lower.
+    unsafe impl Lower for GuardedPair {
+        fn linear_lower_to_flat<T>(
+            &self,
+            cx: &mut LowerContext<'_, T>,
+            ty: InterfaceType,
+            dst: &mut MaybeUninit<Self::Lower>,
+        ) -> Result<()> {
+            self.events.lock().unwrap().push("lower-flat-live");
+            self.value.linear_lower_to_flat(cx, ty, dst)
+        }
+        fn linear_lower_to_memory<T>(
+            &self,
+            cx: &mut LowerContext<'_, T>,
+            ty: InterfaceType,
+            offset: usize,
+        ) -> Result<()> {
+            self.events.lock().unwrap().push("lower-memory-live");
+            self.value.linear_lower_to_memory(cx, ty, offset)
+        }
+    }
+    fn execute_pair(store: StoreContextMut<'_, Data>, arg: u32) -> Result<(GuardedPair,)> {
+        Ok((GuardedPair {
+            value: (42, 43),
+            events: prepare(store, arg)?,
+        },))
+    }
+    async fn memory_exercise(
+        ready: bool,
+        concurrent: bool,
+        bad: bool,
+    ) -> (String, Vec<&'static str>) {
+        let mut config = Config::new();
+        config
+            .wasm_component_model(true)
+            .wasm_component_model_async(concurrent)
+            .concurrency_support(concurrent);
+        let engine = Engine::new(&config).unwrap();
+        let component = Component::new(&engine, MEMORY_COMPONENT).unwrap();
+        let mut linker = Linker::<Data>::new(&engine);
+        if ready {
+            linker
+                .root()
+                .func_wrap_ready("handle", |store, (arg,): (u32,)| execute_pair(store, arg))
+                .unwrap();
+        } else {
+            linker
+                .root()
+                .func_wrap_async("handle", |store, (arg,): (u32,)| {
+                    Box::new(async move { execute_pair(store, arg) })
+                })
+                .unwrap();
+        }
+        let events = Arc::new(Mutex::new(Vec::new()));
+        let mut store = Store::new(
+            &engine,
+            Data {
+                events: events.clone(),
+                nested: None,
+            },
+        );
+        let instance = linker
+            .instantiate_async(&mut store, &component)
+            .await
+            .unwrap();
+        store.data_mut().nested = Some(
+            instance
+                .get_typed_func::<(), (u32,)>(&mut store, "noop")
+                .unwrap(),
+        );
+        let func = instance
+            .get_typed_func::<(u32,), ((u32, u32),)>(&mut store, if bad { "bad" } else { "run" })
+            .unwrap();
+        let result = func.call_async(&mut store, (0,)).await;
+        let status = match result {
+            Ok(((first, second),)) => format!("ok:{first},{second}"),
+            Err(_) => "destination-refused".to_owned(),
+        };
+        assert!(!store.as_context_mut().0.can_block());
+        let events = events.lock().unwrap().clone();
+        (status, events)
+    }
+    #[tokio::test]
+    async fn ready_callbacks_retain_reply_through_memory_lowering_and_destination_refusal() {
+        for concurrent in [false, true] {
+            for bad in [false, true] {
+                let boxed = memory_exercise(false, concurrent, bad).await;
+                let ready = memory_exercise(true, concurrent, bad).await;
+                assert_eq!(ready, boxed, "concurrent={concurrent}, bad={bad}");
+                if bad {
+                    assert_eq!(ready.0, "destination-refused");
+                    assert_eq!(
+                        ready.1,
+                        [
+                            "body-enter",
+                            "blocking-context-held",
+                            "reentry-denied",
+                            "body-drop",
+                            "reply-drop"
+                        ]
+                    );
+                } else {
+                    assert_eq!(ready.0, "ok:42,43");
+                    assert_eq!(
+                        ready.1,
+                        [
+                            "body-enter",
+                            "blocking-context-held",
+                            "reentry-denied",
+                            "body-drop",
+                            "lower-memory-live",
+                            "reply-drop"
+                        ]
+                    );
+                }
+            }
+        }
+    }
 }

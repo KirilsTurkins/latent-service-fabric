@@ -27,7 +27,9 @@ from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, fresh, read_file, write_json
 
 BRANCH = 'feat/java-scheduled-executor-20261026'
+DEVELOPMENT_BRANCH = 'development'
 WORKFLOW = '.github/workflows/java-scheduled-library.yml'
+DEVELOPMENT_WORKFLOW = '.github/workflows/java-scheduled-development.yml'
 CASE = observed.WORKER_CASE
 GRADLE_SHA = workers.GRADLE_SHA
 java_sources = workers.java_sources
@@ -78,15 +80,17 @@ def observations(raw, filtered=51):
 
 
 def qualify(output, revision):
+    branch = os.environ.get('GITHUB_REF_NAME')
+    workflow = WORKFLOW if branch == BRANCH else DEVELOPMENT_WORKFLOW
     need(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
         and os.environ.get('GITHUB_REPOSITORY') == identities.REPOSITORY
-        and os.environ.get('GITHUB_REF_NAME') == BRANCH
+        and branch in {BRANCH, DEVELOPMENT_BRANCH}
         and os.environ.get('GITHUB_EVENT_NAME') == 'push'
         and os.environ.get('GITHUB_SHA') == revision
         and os.environ.get('GITHUB_WORKFLOW_SHA') == revision
         and os.environ.get('GITHUB_WORKSPACE') == str(ROOT)
         and os.environ.get('GITHUB_WORKFLOW_REF') == identities.REPOSITORY + '/'
-            + WORKFLOW + '@refs/heads/' + BRANCH, 'fixed-hosted-push')
+            + workflow + '@refs/heads/' + branch, 'fixed-hosted-push')
     need('LSF_JAVA_WORKER_LIBRARIES_FIXTURE' not in os.environ, 'exclusive-fixture-selector')
     need(output != ROOT and ROOT not in output.parents and output not in ROOT.parents, 'owned-output')
     output = fresh(output)

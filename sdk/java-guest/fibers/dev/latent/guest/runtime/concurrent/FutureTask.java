@@ -18,38 +18,75 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
     private boolean cancelled;
     private Thread runner;
     private Activation.Lease owner;
+    private boolean resultSettlementAttempted;
     private int queueCopies;
     private boolean pendingRun;
+    private int internalPhysicalClaims;
 
     public FutureTask(Callable<V> callable) { this.callable = Objects.requireNonNull(callable); }
     public FutureTask(Runnable runnable, V result) {
         Objects.requireNonNull(runnable);
         this.callable = () -> { runnable.run(); return result; };
     }
+    private void requireCertainResultOwner() {
+        if (resultSettlementAttempted)
+            throw new IllegalStateException("activation-future-result-settlement-uncertain");
+    }
     synchronized boolean accept() {
+        requireCertainResultOwner();
         if (completed || owner != null) return false;
         owner = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Result);
         return true;
     }
     synchronized boolean acceptQueueCopy() {
+        requireCertainResultOwner();
         if (completed) return false;
         if (queueCopies == Integer.MAX_VALUE) throw new java.util.concurrent.RejectedExecutionException("activation-future-queue-copies");
         accept();
         queueCopies++;
         return true;
     }
+    final synchronized boolean hasQueueCopies() { return queueCopies != 0; }
     synchronized void removeQueueCopy(boolean removed) {
         if (queueCopies <= 0) throw new IllegalStateException("activation-future-queue-copy");
         queueCopies--;
         if (!removed && !completed && runner == null) pendingRun = true;
         // A completed physical run owns its original finally. A subclass run
         // which leaves its future pending is not proof of harmless idle work.
-        if (removed && queueCopies == 0 && runner == null && !pendingRun && owner != null) {
-            owner.close(); owner = null;
+        if (removed && queueCopies == 0 && runner == null && !pendingRun && internalPhysicalClaims == 0 && owner != null) {
+            settleResultOnce();
+        }
+    }
+    // Package-internal final operations cannot dispatch into application code
+    // while this future's ownership monitor is held.
+    final synchronized void beginInternalPhysicalClaim() {
+        if (internalPhysicalClaims == Integer.MAX_VALUE)
+            throw new java.util.concurrent.RejectedExecutionException("activation-future-physical-claims");
+        internalPhysicalClaims++;
+    }
+    final synchronized boolean hasInternalPhysicalClaim() { return internalPhysicalClaims != 0; }
+    final synchronized void endInternalPhysicalClaim() {
+        if (internalPhysicalClaims <= 0) throw new IllegalStateException("activation-future-physical-claim");
+        internalPhysicalClaims--;
+        if (runner == null && internalPhysicalClaims == 0 && owner != null
+                && (completed || queueCopies == 0 && !pendingRun)) {
+            settleResultOnce();
+        }
+    }
+    private void settleResultOnce() {
+        if (owner == null || resultSettlementAttempted) return;
+        // The host may have settled even when its acknowledgement is lost.
+        // Mark before the call, retain the owner on failure, and never retry it.
+        resultSettlementAttempted = true;
+        try {
+            owner.close(); owner = null; resultSettlementAttempted = false;
+        } catch (Throwable error) {
+            Activation.fenceUncertainResultSettlement();
+            throw error;
         }
     }
     private void releaseIfPhysicalComplete() {
-        if (runner == null && completed && owner != null) { owner.close(); owner = null; }
+        if (runner == null && completed && internalPhysicalClaims == 0 && owner != null) settleResultOnce();
     }
     @Override public boolean cancel(boolean interrupt) {
         synchronized (this) {
@@ -57,8 +94,8 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
             cancelled = completed = true;
             if (interrupt && runner != null) runner.interrupt();
             if (runner == null) callable = null;
-            releaseIfPhysicalComplete();
             notifyAll();
+            releaseIfPhysicalComplete();
         }
         done();
         return true;
@@ -104,8 +141,8 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
             if (completed) return;
             value = result;
             completed = true;
-            releaseIfPhysicalComplete();
             notifyAll();
+            releaseIfPhysicalComplete();
         }
         done();
     }
@@ -115,8 +152,8 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
             if (completed) return;
             failure = error;
             completed = true;
-            releaseIfPhysicalComplete();
             notifyAll();
+            releaseIfPhysicalComplete();
         }
         done();
     }

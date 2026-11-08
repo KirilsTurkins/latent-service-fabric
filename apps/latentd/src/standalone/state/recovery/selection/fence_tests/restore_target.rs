@@ -191,7 +191,7 @@ impl Target {
             .unwrap()
             .await;
         assert!(retired.clean && retired.snapshot.physically_retired());
-        assert!(self.store.reap_retired_threads().unwrap() > 0);
+        crate::standalone::state::recovery::join_test_workers(&self.store, until).await;
         drop(self.store);
         drop(self.original);
         drop(self.root);

@@ -229,6 +229,102 @@ struct Padding {
     _owner: Box<dyn wasmtime::NativeAllocation>,
 }
 
+struct InlineWait {
+    gate: Arc<Gate>,
+    entered: Arc<AtomicBool>,
+}
+impl wasmtime::component::InlineConcurrentHost<Data, (), (u32,)> for InlineWait {
+    async fn invoke<'a>(
+        &'a self,
+        _: &'a wasmtime::component::Accessor<Data>,
+        (): (),
+    ) -> wasmtime::Result<(u32,)> {
+        self.entered.store(true, Ordering::SeqCst);
+        self.gate.wait().await?;
+        Ok((42,))
+    }
+}
+
+#[tokio::test]
+async fn actual_inline_host_future_refuses_on_original_budget_before_dispatch_and_reuses_it() {
+    let engine = engine();
+    let component = Component::new(&engine, COMPONENT).unwrap();
+    let original = budget(MIB);
+    let observed = Arc::new(Observations::default());
+    let gate = Arc::new(Gate::default());
+    let entered = Arc::new(AtomicBool::new(false));
+    let mut linker = Linker::<Data>::new(&engine);
+    linker
+        .root()
+        .func_wrap_concurrent_inline(
+            "wait",
+            InlineWait {
+                gate: gate.clone(),
+                entered: entered.clone(),
+            },
+        )
+        .unwrap();
+    let mut first = store(&engine, &original, &observed).unwrap();
+    let (_, function) = instance(&linker, &component, &mut first).await;
+    warm_call(&mut first, &function, &gate, &observed).await;
+    entered.store(false, Ordering::SeqCst);
+    let before = requests(&observed).len();
+    let warm_layout = requests(&observed)[before - WARM_REQUESTS + CALLBACK];
+    let padding = Arc::new(Mutex::new(None::<Padding>));
+    let consumed = Arc::new(AtomicU64::new(0));
+    let requested = Arc::new(AtomicU64::new(0));
+    let kept = padding.clone();
+    let kept_consumed = consumed.clone();
+    let kept_requested = requested.clone();
+    let invocation = original.clone();
+    // The same original outer admission that warmed above must now refuse
+    // before invoking the concrete inline callback or dispatching its wait.
+    observed.before_request(before + CALLBACK + 1, move |bytes| {
+        assert_eq!(bytes, warm_layout);
+        let request = bytes as u64 + OWNER;
+        let bytes = MIB - invocation.host_memory_bytes() - request + 1 - OWNER;
+        let mut owner = crate::native_tables::reserve(&invocation, bytes as usize)
+            .unwrap()
+            .unwrap();
+        let allocation = vec![0u8; bytes as usize];
+        assert_eq!(allocation.capacity(), bytes as usize);
+        owner.allocated();
+        *kept.lock().unwrap() = Some(Padding {
+            _bytes: allocation,
+            _owner: owner,
+        });
+        kept_consumed.store(invocation.host_memory_bytes(), Ordering::SeqCst);
+        kept_requested.store(request, Ordering::SeqCst);
+    });
+    let error = function.call_async(&mut first, ()).await.unwrap_err();
+    denial(
+        &error,
+        MIB,
+        consumed.load(Ordering::SeqCst),
+        requested.load(Ordering::SeqCst),
+    );
+    assert_eq!(
+        consumed.load(Ordering::SeqCst) + requested.load(Ordering::SeqCst),
+        MIB + 1
+    );
+    assert!(!entered.load(Ordering::SeqCst));
+    assert_eq!(gate.polls.load(Ordering::SeqCst), 0);
+    assert_eq!(requests(&observed).len(), before + CALLBACK + 1);
+    drop(error);
+    drop(padding.lock().unwrap().take());
+    drop(first);
+    assert_eq!(original.host_memory_bytes(), 0);
+    assert_eq!(original.outstanding_reservations(), 0);
+    let mut fresh = store(&engine, &original, &observed).unwrap();
+    let (_, function) = instance(&linker, &component, &mut fresh).await;
+    gate.finish();
+    assert_eq!(function.call_async(&mut fresh, ()).await.unwrap(), (42,));
+    assert!(entered.load(Ordering::SeqCst));
+    drop(fresh);
+    assert_eq!(original.host_memory_bytes(), 0);
+    assert_eq!(original.outstanding_reservations(), 0);
+}
+
 #[tokio::test]
 async fn actual_host_future_refusal_preserves_original_error_and_fresh_budget_reuse() {
     let engine = engine();

@@ -308,11 +308,13 @@ impl StateKernel {
             .drain_async(deadline, tokio::time::sleep_until(deadline.into()))
             .map_err(|_| super::unavailable())?
             .await;
-        if store.snapshot.physically_retired() {
-            owner
-                .reap_retired_threads()
-                .map_err(|_| super::unavailable())?;
-        }
+        let joined = if store.snapshot.physically_retired() {
+            super::store::join_retired_workers(&owner, deadline)
+                .await
+                .map_err(|_| super::unavailable())?
+        } else {
+            None
+        };
         // Release the startup shell only after the actual store report. A live
         // engine or namespace holder still owns the same lease independently.
         drop(namespaces);
@@ -322,7 +324,7 @@ impl StateKernel {
             .map_err(|_| super::unavailable())?
             .await;
         Ok(StateShutdownReport {
-            clean: store.clean && native.clean && namespace_owners == 0,
+            clean: store.clean && joined.is_some() && native.clean && namespace_owners == 0,
             store,
             native,
             namespace_owners,

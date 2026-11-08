@@ -79,6 +79,46 @@ fn lazy_path_allocates_no_records_and_accepted_owners_share_finite_limits() {
 }
 
 #[test]
+fn record_backing_and_bookkeeping_are_reserved_before_owner_admission() {
+    let runtime = runtime();
+    let budget = runtime.inner.budget.clone();
+    let original = budget.host_memory_bytes();
+    let count = runtime.inner.limits.total();
+    let bytes = (std::alloc::Layout::array::<Option<Record>>(count)
+        .unwrap()
+        .size()
+        + SLAB_ALLOCATION_BOOKKEEPING) as u64;
+    let remaining = budget.remaining_at(Instant::now()).memory_bytes;
+    // Leave enough for the record layout alone, but one byte less than the
+    // complete modelled backing and its allocator bookkeeping.
+    let padding = budget.reserve_host_memory(remaining - bytes + 1).unwrap();
+    let reserved = budget.host_memory_bytes();
+    let reservations = budget.outstanding_reservations();
+    let failure = runtime.register(OwnerKind::Task, None).unwrap_err();
+    assert_eq!(failure.code, PlatformErrorCode::ResourceExhausted);
+    assert_eq!(budget.host_memory_bytes(), reserved);
+    assert_eq!(budget.outstanding_reservations(), reservations);
+    let state = runtime.inner.state.lock().unwrap();
+    assert!(state.slab.is_none());
+    assert_eq!(state.owners, [0; 7]);
+    drop(state);
+
+    drop(padding);
+    let owner = runtime.register(OwnerKind::Task, None).unwrap();
+    assert_eq!(budget.host_memory_bytes(), original + bytes);
+    let state = runtime.inner.state.lock().unwrap();
+    let slab = state.slab.as_ref().unwrap();
+    assert_eq!(slab.records.capacity(), count);
+    drop(state);
+    drop(owner);
+    assert_eq!(budget.host_memory_bytes(), original + bytes);
+    runtime.retire().unwrap();
+    assert_eq!(budget.host_memory_bytes(), original);
+    drop(runtime);
+    assert_eq!(budget.host_memory_bytes(), 0);
+}
+
+#[test]
 fn actual_owner_refusals_name_only_the_original_bucket_without_refunding_live_owners() {
     use crate::diagnostic::{ActivationDiagnostic, DiagnosticReason as R};
     for (kind, reason) in [
@@ -264,6 +304,124 @@ fn waking_a_parked_thread_leaves_runnable_sibling_and_fences_reused_slots() {
     drop(second);
     drop(replacement);
     runtime.retire().unwrap();
+}
+
+// Pause immediately after the same successful liveness check used by the
+// public method, then let the cancelling thread win the mutation lock.
+#[test]
+fn park_refuses_when_cancel_wins_after_the_live_check() {
+    let runtime = runtime();
+    let owner = runtime.register(OwnerKind::Task, None).unwrap();
+    let token = owner.token();
+    let before = runtime.snapshot();
+    let (checked_tx, checked_rx) = std::sync::mpsc::sync_channel(0);
+    let (resume_tx, resume_rx) = std::sync::mpsc::sync_channel(0);
+    let worker_runtime = runtime.clone();
+    let worker = std::thread::spawn(move || {
+        worker_runtime.park_with_after_live_check(token, || {
+            checked_tx.send(()).unwrap();
+            resume_rx
+                .recv_timeout(std::time::Duration::from_secs(5))
+                .unwrap();
+        })
+    });
+    checked_rx
+        .recv_timeout(std::time::Duration::from_secs(5))
+        .unwrap();
+    runtime.cancel();
+    resume_tx.send(()).unwrap();
+    let error = worker.join().unwrap().unwrap_err();
+    assert_eq!(error.code, PlatformErrorCode::Cancelled);
+    let after = runtime.snapshot();
+    assert_eq!(after.phase, RuntimePhase::Cancelling);
+    assert_eq!(after.parked_tasks, 0);
+    assert_eq!(after.owners, before.owners);
+    assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
+    drop(owner);
+    runtime.retire().unwrap();
+}
+
+#[test]
+fn wake_refuses_when_cancel_wins_after_the_live_check() {
+    let runtime = runtime();
+    let owner = runtime.register(OwnerKind::Task, None).unwrap();
+    let wake = runtime.park(owner.token()).unwrap();
+    let before = runtime.snapshot();
+    let (checked_tx, checked_rx) = std::sync::mpsc::sync_channel(0);
+    let (resume_tx, resume_rx) = std::sync::mpsc::sync_channel(0);
+    let worker = std::thread::spawn(move || {
+        wake.wake_with_after_live_check(|| {
+            checked_tx.send(()).unwrap();
+            resume_rx
+                .recv_timeout(std::time::Duration::from_secs(5))
+                .unwrap();
+        })
+    });
+    checked_rx
+        .recv_timeout(std::time::Duration::from_secs(5))
+        .unwrap();
+    runtime.cancel();
+    resume_tx.send(()).unwrap();
+    assert!(!worker.join().unwrap());
+    let after = runtime.snapshot();
+    assert_eq!(after.phase, RuntimePhase::Cancelling);
+    assert_eq!(after.parked_tasks, 1);
+    assert_eq!(after.owners, before.owners);
+    assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
+    assert_eq!(after.stale_wakes, before.stale_wakes);
+    drop(owner);
+    runtime.retire().unwrap();
+}
+
+#[test]
+fn stale_wake_is_still_counted_when_owner_settles_before_cancellation() {
+    let runtime = runtime();
+    let owner = runtime.register(OwnerKind::Task, None).unwrap();
+    let wake = runtime.park(owner.token()).unwrap();
+    let (checked_tx, checked_rx) = std::sync::mpsc::sync_channel(0);
+    let (resume_tx, resume_rx) = std::sync::mpsc::sync_channel(0);
+    let worker = std::thread::spawn(move || {
+        wake.wake_with_after_live_check(|| {
+            checked_tx.send(()).unwrap();
+            resume_rx
+                .recv_timeout(std::time::Duration::from_secs(5))
+                .unwrap();
+        })
+    });
+    checked_rx
+        .recv_timeout(std::time::Duration::from_secs(5))
+        .unwrap();
+    drop(owner);
+    runtime.cancel();
+    resume_tx.send(()).unwrap();
+    assert!(!worker.join().unwrap());
+    assert_eq!(runtime.snapshot().stale_wakes, 1);
+    runtime.retire().unwrap();
+}
+
+#[test]
+fn accepted_work_may_park_and_wake_during_closing_and_draining() {
+    for draining in [false, true] {
+        let runtime = runtime();
+        let owner = runtime.register(OwnerKind::Task, None).unwrap();
+        runtime.close();
+        if draining {
+            runtime.begin_drain();
+        }
+        let phase = if draining {
+            RuntimePhase::Draining
+        } else {
+            RuntimePhase::Closing
+        };
+        let wake = runtime.park(owner.token()).unwrap();
+        assert_eq!(runtime.snapshot().parked_tasks, 1);
+        assert!(wake.wake());
+        let snapshot = runtime.snapshot();
+        assert_eq!(snapshot.phase, phase);
+        assert_eq!(snapshot.parked_tasks, 0);
+        drop(owner);
+        runtime.retire().unwrap();
+    }
 }
 
 #[test]

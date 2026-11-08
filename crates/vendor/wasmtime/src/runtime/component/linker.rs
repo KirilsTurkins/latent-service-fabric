@@ -1,5 +1,5 @@
 #[cfg(feature = "component-model-async")]
-use crate::component::concurrent::Accessor;
+use crate::component::concurrent::{Accessor, InlineConcurrentHost};
 use crate::component::func::HostFunc;
 use crate::component::instance::RuntimeImport;
 use crate::component::matching::{InstanceType, TypeChecker};
@@ -512,6 +512,23 @@ impl<T: 'static> LinkerInstance<'_, T> {
         Ok(())
     }
 
+    /// Define a sync-WIT host callback that is guaranteed immediately ready.
+    ///
+    /// Like `func_wrap_async`, this requires an async Store and invokes the
+    /// callback within the same fiber blocking context. Unlike that API it
+    /// does not allocate a per-call future and cannot suspend the fiber.
+    #[cfg(feature = "async")]
+    pub fn func_wrap_ready<Params, Return, F>(&mut self, name: &str, f: F) -> Result<()>
+    where
+        T: Send,
+        F: Fn(StoreContextMut<'_, T>, Params) -> Result<Return> + Send + Sync + 'static,
+        Params: ComponentNamedList + Lift + Send + 'static,
+        Return: ComponentNamedList + Lower + 'static,
+    {
+        self.insert(name, Definition::Func(HostFunc::func_wrap_ready(f)?))?;
+        Ok(())
+    }
+
     /// Defines a new host-provided async function into this [`LinkerInstance`].
     ///
     /// This function is similar to [`Self::func_wrap`] except it takes an async
@@ -645,6 +662,29 @@ impl<T: 'static> LinkerInstance<'_, T> {
             bail!("concurrent host functions require `Config::concurrency_support`");
         }
         self.insert(name, Definition::Func(HostFunc::func_wrap_concurrent(f)?))?;
+        Ok(())
+    }
+
+    /// Define a concurrent host function whose concrete callback future is
+    /// included in the original admitted engine future allocation.
+    ///
+    /// This replaces only the callback's otherwise separate future Box.
+    /// Captured and transitive allocations require their own owners.
+    #[cfg(feature = "component-model-async")]
+    pub fn func_wrap_concurrent_inline<Params, Return, F>(&mut self, name: &str, f: F) -> Result<()>
+    where
+        T: 'static,
+        F: InlineConcurrentHost<T, Params, Return>,
+        Params: ComponentNamedList + Lift + 'static,
+        Return: ComponentNamedList + Lower + 'static,
+    {
+        if !self.engine.tunables().concurrency_support {
+            bail!("concurrent host functions require `Config::concurrency_support`");
+        }
+        self.insert(
+            name,
+            Definition::Func(HostFunc::func_wrap_concurrent_inline(f)?),
+        )?;
         Ok(())
     }
 

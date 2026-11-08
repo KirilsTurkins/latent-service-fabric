@@ -187,10 +187,90 @@ PREFETCH_REWRITE_RECEIPT = {**TIMER_REWRITE_RECEIPT,
     'readinessControls': 'four-actual-generated-slot-models'}
 
 
+# The previous profiles remain historical identities. The current producer
+# retains every matching queue owner when original enqueue insertion is unknown.
+QUEUE_FENCE_REWRITE_RECEIPT = {**PREFETCH_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v4',
+    'queueAdmission': 'before-original-enqueue-fault-retains-matching-owners'}
+
+
+# The v5 producer ties the definite pre-insertion queue rollback to one record;
+# task owners remain charged, and an attempted insertion fences matching records.
+QUEUE_WITNESS_REWRITE_RECEIPT = {**QUEUE_FENCE_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v5',
+    'queueAdmission': 'per-call-pre-insertion-queue-rollback-otherwise-retain-matching-owners',
+    'queueInsertionWitness': 'before-original-local-push-or-global-enqueue-call'}
+
+
+# Task and queued-work reservation now retain provisional custody unless the
+# selected bridge has reported the original typed WIT refusal explicitly.
+PROVISIONAL_RESERVATION_REWRITE_RECEIPT = {**QUEUE_WITNESS_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v6',
+    'reservationAdmission': 'provisional-task-and-queue-explicit-wit-refusal',
+    'admissionFinalization': 'in-flight-count-before-allocation-and-join-drain-fence'}
+
+
+# The ordinary fault-result transition preserves observation and custody across
+# every host acknowledgement; required-continuation conversion is separate.
+RESULT_TRANSITION_REWRITE_RECEIPT = {**PROVISIONAL_RESERVATION_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v7',
+    'resultTransition': 'fenced-observation-and-one-attempt-fault-result-settlement'}
+
+
+# Timer reservation publishes bounded inactive custody before calling the host.
+TIMER_RESERVATION_REWRITE_RECEIPT = {**RESULT_TRANSITION_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v8',
+    'timerReservation': 'provisional-timer-explicit-wit-refusal-and-unknown-custody'}
+
+
+# Required continuations retain their parent and provisional Result through
+# reservation, observation and a single settlement attempt.
+REQUIRED_RESULT_REWRITE_RECEIPT = {**TIMER_RESERVATION_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v9',
+    'requiredResultReservation': 'in-flight-required-and-provisional-result-with-observation',
+    'resultLookup': 'exact-result-primary-before-parent-alias'}
+
+
+# Startup holds dormant root/Native custody and fences untracked reentry.
+NATIVE_STARTUP_REWRITE_RECEIPT = {**REQUIRED_RESULT_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v10',
+    'startupReservation': 'dormant-root-native-refusal-ordered-cleanup-and-context-custody',
+    'startupReadiness': 'pre-probe-sentinel-and-untracked-dispatch-poison'}
+
+
+# An independently scheduled inner Task owns its own admission and identity.
+TASK_IDENTITY_REWRITE_RECEIPT = {**NATIVE_STARTUP_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v11',
+    'taskLookup': 'inactive-alias-fence-then-task-primary-otherwise-original-order',
+    'innerTaskAdmission': 'independent-schedule-admits-inner-only-alias'}
+
+
+# Distinct additional proxies over one outer remain required work.
+MULTIPLE_UNWRAP_REWRITE_RECEIPT = {**TASK_IDENTITY_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v12',
+    'unwrapMultiplicity': 'same-outer-additional-proxies-retained-as-required'}
+
+
 def validate_rewrite(value: dict) -> None:
     if type(value) is not dict:
         raise ValueError('dotnet-managed-work-rewrite-receipt')
-    expected_receipt = (PREFETCH_REWRITE_RECEIPT if value.get('patch') == PREFETCH_REWRITE_RECEIPT['patch']
+    expected_receipt = (MULTIPLE_UNWRAP_REWRITE_RECEIPT
+        if value.get('patch') == MULTIPLE_UNWRAP_REWRITE_RECEIPT['patch']
+        else TASK_IDENTITY_REWRITE_RECEIPT
+        if value.get('patch') == TASK_IDENTITY_REWRITE_RECEIPT['patch']
+        else NATIVE_STARTUP_REWRITE_RECEIPT
+        if value.get('patch') == NATIVE_STARTUP_REWRITE_RECEIPT['patch']
+        else REQUIRED_RESULT_REWRITE_RECEIPT
+        if value.get('patch') == REQUIRED_RESULT_REWRITE_RECEIPT['patch']
+        else TIMER_RESERVATION_REWRITE_RECEIPT
+        if value.get('patch') == TIMER_RESERVATION_REWRITE_RECEIPT['patch']
+        else RESULT_TRANSITION_REWRITE_RECEIPT
+        if value.get('patch') == RESULT_TRANSITION_REWRITE_RECEIPT['patch']
+        else PROVISIONAL_RESERVATION_REWRITE_RECEIPT
+        if value.get('patch') == PROVISIONAL_RESERVATION_REWRITE_RECEIPT['patch']
+        else QUEUE_WITNESS_REWRITE_RECEIPT if value.get('patch') == QUEUE_WITNESS_REWRITE_RECEIPT['patch']
+        else QUEUE_FENCE_REWRITE_RECEIPT if value.get('patch') == QUEUE_FENCE_REWRITE_RECEIPT['patch']
+        else PREFETCH_REWRITE_RECEIPT if value.get('patch') == PREFETCH_REWRITE_RECEIPT['patch']
         else TIMER_REWRITE_RECEIPT if value.get('patch') == TIMER_REWRITE_RECEIPT['patch'] else REWRITE_RECEIPT)
     if (set(value) != set(expected_receipt)
             or any(type(value.get(key)) is not type(expected) or value[key] != expected

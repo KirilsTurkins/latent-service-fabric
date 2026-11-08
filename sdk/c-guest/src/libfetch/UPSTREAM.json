@@ -112,7 +112,7 @@
   "getMetadata": {
     "size": "Validated Content-Length, or signed off_t -1 if absent. No buffering/replay to invent length.",
     "atimeAndMtime": "0: unknown; Last-Modified is not interpreted, and no local clock authority is acquired.",
-    "scope": "Only optional url_stat on the existing successful HTTP GET. Standalone Stat, range and conditional requests remain unsupported."
+    "scope": "Optional url_stat on successful HTTP GET and standalone Stat via a separately authorized HEAD request. A positive GET offset uses a single bounded byte Range with validated partial-response metadata; conditional requests remain unsupported."
   },
   "unsupportedFileABI": {
     "source": "src/closed-file-abi.c",

@@ -42,6 +42,8 @@ on:
       - 'tools/c_sync_source_controls.py'
       - 'tools/tests/fixtures/c-sync-reference.c'
       - 'tools/tests/fixtures/c-sync-reference.cjs'
+      - 'tools/tests/fixtures/c-once-jspi.c'
+      - 'tools/tests/fixtures/c-once-jspi.cjs'
       - 'docs/testing/evidence/c-thread-native-rustfmt-2026-10-21.json'
       - 'tools/tests/test_c_threading_profile.py'
       - 'tools/tests/test_c_threading_compatibility.py'
@@ -102,7 +104,10 @@ jobs:
       - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
-      - name: Compile production synchronization source and execute thirteen serialized source controls
+      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          node-version: 24.19.0
+      - name: Exercise production synchronization source with bounded test ports
         run: >-
           python3 -B tools/c_sync_source_controls.py
           --zig "$(command -v zig)" --node "$(command -v node)"

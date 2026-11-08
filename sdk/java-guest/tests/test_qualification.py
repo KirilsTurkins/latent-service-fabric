@@ -194,7 +194,7 @@ class WaitFrameModelIntegrity(unittest.TestCase):
                 ("QUEUE_HEAP_CONTROL PASS actual-original-regression;actual-corrected-order;"
                  "up;down;ties;root;single-child;signed-min;last;singleton;empty;missing;repeat;model;preimage-negative;repeat-negative;donor-body-negative;donor-layout-negative;donor-node-negative\n"), "",
                 ("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;"
-                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback\n")]
+                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence\n")]
             report = fibers.wait_frame_model_control(compiler, root / "model")
             self.assertEqual(report["nativeCallbackPairs"], 2)
             self.assertEqual(report["pluginOrder"], ["runtime", "platform"])
@@ -290,6 +290,11 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
         return ("42 42 42 42\nTIMER_SOURCE_CONTROL PASS reference-observables;queue-rollback;"
                 "cancel-drain;idle-finally;no-live-owners\n")
 
+    @staticmethod
+    def active_receipts():
+        return ["TIMER_ACTIVE_OWNER_CONTROL PASS " + case + "\n"
+                for case in fibers.STANDARD_TIMER_ACTIVE_OWNER_CASES]
+
     def test_incomplete_retirement_or_observables_cannot_qualify_source(self):
         for incomplete in ("42 42 42 42", self.receipt().replace(";no-live-owners", ""),
                            self.receipt().replace("42 42 42 42", "42 42 42 41")):
@@ -307,16 +312,25 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
             compiler = self.fixture(root)
             application = compiler.sdk / "fibers/conformance/timers/Capsule.java"
             original = application.read_bytes()
-            compiler.run.side_effect = ["", *([self.receipt()] * 3)]
+            compiler.run.side_effect = ["", *([self.receipt()] * 3), *self.active_receipts()]
             report = fibers.standard_timer_source_control(compiler, root / "control")
             self.assertEqual(application.read_bytes(), original)
             mapped = (root / "control/Capsule.java").read_text()
             self.assertIn("import dev.latent.guest.runtime.util.Timer;", mapped)
             self.assertNotIn("import java.util.Timer;", mapped)
-            self.assertEqual(len(report["sourceInputs"]), 7)
+            self.assertEqual(len(report["sourceInputs"]), 8)
             self.assertEqual(report["iterations"], 3)
             self.assertFalse(report["componentExecutionPerformed"])
             self.assertFalse(report["actualGuestBindingsUsed"])
+
+    def test_active_owner_case_must_return_its_exact_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler = self.fixture(root)
+            compiler.run.side_effect = ["", *([self.receipt()] * 3), "wrong-case\n"]
+            with self.assertRaisesRegex(ValueError, "timer active-owner control did not complete: one-shot-normal"):
+                fibers.standard_timer_source_control(compiler, root / "control")
+            self.assertEqual(compiler.run.call_count, 5)
 
     def test_changed_sdk_bytes_after_completed_runs_invalidate_receipt(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -548,14 +562,15 @@ class CompletableModelIntegrity(unittest.TestCase):
     def test_reviewed_executor_model_requires_exact_body_and_original_closure_fingerprints(self):
         reviewed = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;"
             "canonical-api-and-helper-identities;resolved-reference-closure;unsupported-no-fallback;"
-            "actual-coroutine-monitors=28;owned-callback-bodies=30;bodies=188;"
+            "result-settlement-fence;actual-coroutine-monitors=28;owned-callback-bodies=31;bodies=189;"
             "actual-generated-callbacks=23;application-identity")
         fields = ("COMPLETABLE_FUTURE_FIELD_MODEL_CONTROL PASS declared-and-inherited-types;"
             "closed-read-write-references;absent-no-fallback;models=6")
-        variants = [reviewed, reviewed.replace("bodies=188;", "bodies=187;"),
-            reviewed.replace("bodies=188;", "bodies=189;"),
+        variants = [reviewed, reviewed.replace("bodies=189;", "bodies=188;"),
+            reviewed.replace("bodies=189;", "bodies=190;"),
             reviewed.replace("actual-coroutine-monitors=28;", "actual-coroutine-monitors=27;"),
-            reviewed.replace("owned-callback-bodies=30;", "owned-callback-bodies=29;"),
+            reviewed.replace("owned-callback-bodies=31;", "owned-callback-bodies=30;"),
+            reviewed.replace("result-settlement-fence;", ""),
             reviewed.replace("actual-generated-callbacks=23;", "actual-generated-callbacks=24;"),
             reviewed.replace("actual-generated-callbacks=23;", ""),
             reviewed.replace("resolved-reference-closure;", ""),
@@ -567,10 +582,10 @@ class CompletableModelIntegrity(unittest.TestCase):
                 compiler.run.side_effect = ["", observed, fields]
                 if observed == reviewed:
                     report = fibers.completable_model_control(compiler, root / "model")
-                    self.assertEqual(report["modelFingerprintVersion"], 3)
-                    self.assertEqual(report["modelMethodBodies"], 188)
+                    self.assertEqual(report["modelFingerprintVersion"], 4)
+                    self.assertEqual(report["modelMethodBodies"], 189)
                     self.assertEqual(report["coroutineMonitorBodies"], 28)
-                    self.assertEqual(report["ownedCallbackBodies"], 30)
+                    self.assertEqual(report["ownedCallbackBodies"], 31)
                     self.assertEqual(report["actualGeneratedCallbacks"], 23)
                     self.assertEqual(report["fieldReferences"], "actual-declared-and-inherited-types-passed")
                     self.assertEqual(compiler.run.call_args.args[-1],
@@ -583,7 +598,7 @@ class CompletableModelIntegrity(unittest.TestCase):
     def test_valid_original_model_cannot_qualify_partial_or_changed_field_closure(self):
         reviewed = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;"
             "canonical-api-and-helper-identities;resolved-reference-closure;unsupported-no-fallback;"
-            "actual-coroutine-monitors=28;owned-callback-bodies=30;bodies=188;"
+            "result-settlement-fence;actual-coroutine-monitors=28;owned-callback-bodies=31;bodies=189;"
             "actual-generated-callbacks=23;application-identity")
         fields = ("COMPLETABLE_FUTURE_FIELD_MODEL_CONTROL PASS declared-and-inherited-types;"
             "closed-read-write-references;absent-no-fallback;models=6")

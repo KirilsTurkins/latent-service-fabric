@@ -8,6 +8,83 @@ use std::{
 
 mod trace;
 
+thread_local! {
+    static EXIT_GATE: std::cell::RefCell<Option<ExitGate>> = const { std::cell::RefCell::new(None) };
+}
+
+struct ExitGate {
+    entered: std::sync::mpsc::Sender<()>,
+    gate: Arc<Gate>,
+}
+
+impl Drop for ExitGate {
+    fn drop(&mut self) {
+        let _ = self.entered.send(());
+        let held = self.gate.release.lock().unwrap();
+        let _ = self.gate.wake.wait_timeout_while(
+            held,
+            std::time::Duration::from_secs(10),
+            |released| !*released,
+        );
+    }
+}
+
+struct ReleaseExit(Arc<Gate>);
+
+impl Drop for ReleaseExit {
+    fn drop(&mut self) {
+        *self.0.release.lock().unwrap() = true;
+        self.0.wake.notify_all();
+    }
+}
+
+#[tokio::test]
+async fn actual_worker_exit_must_be_joined_before_clean_retirement() {
+    let (_root, settings, mut bootstrap) = fixture();
+    let store = bootstrap.open_store(&settings).await.unwrap();
+    let gate = Arc::new(Gate {
+        release: Mutex::new(false),
+        wake: Condvar::new(),
+    });
+    let release = ReleaseExit(Arc::clone(&gate));
+    let (entered, observed) = std::sync::mpsc::channel();
+    store
+        .with_store_retaining(StoreIoKind::Read, 0, bootstrap.original(), move |_| {
+            EXIT_GATE.with(|slot| *slot.borrow_mut() = Some(ExitGate { entered, gate }));
+            Ok(())
+        })
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap();
+    store.close();
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    let retired = store
+        .drain_async(deadline, tokio::time::sleep_until(deadline.into()))
+        .unwrap()
+        .await;
+    assert!(retired.snapshot.physically_retired());
+    tokio::time::timeout(std::time::Duration::from_secs(2), async {
+        while observed.try_recv().is_err() {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    let cutoff = std::time::Instant::now() + std::time::Duration::from_millis(20);
+    assert!(join_retired_workers(&store, cutoff)
+        .await
+        .unwrap()
+        .is_none());
+    assert!(store.pending_thread_joins().unwrap() > 0);
+    drop(release);
+    assert!(join_retired_workers(&store, deadline)
+        .await
+        .unwrap()
+        .is_some());
+    assert_eq!(store.pending_thread_joins().unwrap(), 0);
+}
+
 fn fixture() -> (tempfile::TempDir, StateSettings, StateBootstrap) {
     let root = tempfile::tempdir().unwrap();
     let settings = super::super::bootstrap::tests::settings(root.path());

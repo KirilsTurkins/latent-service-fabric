@@ -321,3 +321,20 @@ void __lsf_c_root_finish(struct lsf_c_thread *root) {
      * stack/metadata owners remain charged independently through StoreDrop.
      */
 }
+
+#if defined(LSF_C_LINKED_LIBC) && LSF_C_LINKED_LIBC
+/* Captured C sources use private names; original libc objects still use their
+ * ordinary names. Strong forwarders keep both surfaces on one once state. */
+#undef __pthread_once
+#undef pthread_once
+#undef call_once
+int __pthread_once(pthread_once_t *control,void (*initialize)(void)) {
+    return __lsf_c___pthread_once(control,initialize);
+}
+int pthread_once(pthread_once_t *control,void (*initialize)(void)) {
+    return __lsf_c_pthread_once(control,initialize);
+}
+void call_once(once_flag *control,void (*initialize)(void)) {
+    __lsf_c_call_once(control,initialize);
+}
+#endif

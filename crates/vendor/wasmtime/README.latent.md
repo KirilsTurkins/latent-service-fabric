@@ -4,7 +4,7 @@ This is the complete crates.io Wasmtime 48.0.8 package, licensed under
 Apache-2.0 WITH LLVM-exception (see the unmodified LICENSE). The original
 archive checksum and all 250 original file identities are recorded in
 UPSTREAM.latent.json. `latent-dynamic-memory.patch` applies to that exact
-original package; it contains 36 changed upstream files and 23 added
+original package; it contains 36 changed upstream files and 24 added
 source/license files. Other Wasmtime packages use the matching 48.0.8 locked
 registry versions. The standalone development lock selects Tokio 1.51.6 for
 RUSTSEC-2026-0386; the immutable upstream inventory retains its original lock
@@ -814,3 +814,25 @@ legacy loop and does not acquire a native-memory reservation.
 This slice does not account borrowed host-to-host accept futures, backing
 buffers, transitive captures or aggregate activation costs. It does not resolve
 the existing compiled cohort discrepancy or establish signed guest behavior.
+
+Selected sync-WIT activation-runtime calls now use an immediately ready callback
+registered with the same async-required flag and Wasmtime blocking context as
+their previous boxed one-poll futures. The ready callback is polled on the fiber
+stack and cannot suspend; it removes that per-call future Box only. Its results
+still retain the original call through canonical lowering. Separate async WIT
+imports, callback captures, transitive allocations, allocator/RSS behavior and
+physical cleanup qualification are outside this change.
+
+## v37: inline concurrent runtime timer callbacks
+
+The activation runtime's `timer-next`, `wait-for`, and `wait-until` imports
+retain their concrete callback futures inside the engine's existing prepaid
+host-future Box. The existing callback checkpoint, authority, wait, result
+lowering and cancellation sequence remains in place. The larger original
+admission can refuse for memory before later callback checks; no provider work
+is dispatched when that admission fails.
+
+This pays that one concrete heap Box under the original accounting model. It
+does not bound stack usage, transitive captures, allocator behavior, RSS, other
+concurrent host imports, or complete activation cost. Signed guest and hosted
+qualification remain separate evidence.

@@ -157,6 +157,14 @@ jobs:
       - uses: KirilsTurkins/lsf-setup-zig@e064b42fa88ad0859d8b54838b44f672ffd5ea7a # v2.2.1 + upstream changes + LSF security fixes
         with:
           version: '0.16.0'
+      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          node-version: 24.19.0
+      - name: Exercise ordinary synchronization source with bounded test ports
+        run: >-
+          python3 -B tools/c_sync_source_controls.py
+          --zig "$(command -v zig)" --node "$(command -v node)"
+          --output "$RUNNER_TEMP/c-sync-source"
       - name: Install pinned validation and bindings
         run: |
           python3 -m pip install --requirement tools/requirements.lock
@@ -239,6 +247,8 @@ jobs:
             ${{ runner.temp }}/c-capsule-authoring/guide/projects/results/**
             ${{ runner.temp }}/c-application-library/**
             ${{ runner.temp }}/c-dependency-controls/**
+            ${{ runner.temp }}/c-sync-source/*.json
+            ${{ runner.temp }}/c-sync-source/*.txt
           if-no-files-found: warn
           retention-days: 7
 
@@ -304,6 +314,7 @@ jobs:
         if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031'
         run: |
           python3 -m unittest tools.tests.test_c_standard_facilities
+          python3 -B tools/c_libfetch_stat_control.py
           python3 tools/qualify_c_standard_facilities.py --build-native --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-standard-facilities"
       - name: Execute ordinary bounded stdio through the same frozen default products
         if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031'

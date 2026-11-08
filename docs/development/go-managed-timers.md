@@ -42,7 +42,15 @@ missing/reordered observations, changed outcomes and unknown/private fields.
 Compiler and signed failure stdout/stderr remain bounded and retained.
 
 Local controls verify source selection and strict evidence parsing; they do
-not execute a compiler or guest. The actual [37cf run 39369515637](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39369515637),
+not themselves qualify a guest. An additional host-only Go control executes
+the actual collected-timer sweep and idle drain with a deliberately parked weak
+conversion. It checks stop and reset of the old timer, slot reuse and growth,
+and repeated scanning when a completed fence permits an earlier slot to be
+reused. The drain traps after 8,193 passes if the inventory cannot settle; its
+work remains charged to the original activation budget. The control simulates
+the GC scheduling boundary and host retirement; it is not a signed guest, a
+real GC pause, or physical-limit qualification. The actual
+[37cf run 39369515637](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39369515637),
 job 118453969321, passed all 43 signed outcomes and all 17 fresh native modes.
 Libtest reports one passed, zero failed/ignored and 50 filtered cases (11.72 s).
 Artifact 12241945138 and the [lossless receipt](../testing/evidence/go-managed-timers-signed-2026-10-20.json)
@@ -59,3 +67,19 @@ its original 50 filtered count and tested revision. No repeat guest execution
 is claimed for the later test/documentation composition. Even a pass does not complete arbitrary timer
 races, aggregate cost/fairness, node stop or low-level kernel/TLS qualification.
 Both issues remain open and historical v3 evidence is not relabeled as v5.
+
+Timer installation allocates replacement inventory separately from its
+non-suspending publication step, which rechecks the current slots after any GC
+pause. A host-only control forces allocation to pause while other admitted
+timers install, grow the inventory or release a slot. It checks that all live
+tokens retain distinct slots and callback counts. A separate million-attempt
+host GC stress did not reproduce the original lost-slot interleaving. Neither
+control is a signed-guest or actual-GC-park result for the revised source.
+
+Timer readiness publishes its wait record before starting `timer-next` and
+rechecks the selected timer after allocation. A stopped or superseded timer
+therefore cannot create an untracked host subtask. All fence callers observe
+one durable completion channel, which is closed only after an actual pending
+subtask is dropped or the unstarted wait is abandoned. Host-only controls
+exercise the allocation and completion interleavings using simulated host
+readiness; signed guest execution of this revised path remains unqualified.

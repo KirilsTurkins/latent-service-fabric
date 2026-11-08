@@ -17,7 +17,10 @@ use std::{
     sync::Arc,
     time::{Duration, Instant},
 };
-use wasmtime::{component::Linker, AsContextMut};
+use wasmtime::{
+    component::{Accessor, InlineConcurrentHost, Linker},
+    AsContextMut,
+};
 
 mod fixed_result;
 pub(super) use fixed_result::Completion;
@@ -25,8 +28,25 @@ use fixed_result::FixedValue;
 mod positive_timer_observer;
 use positive_timer_observer::{Event as TimerEvent, Observer as TimerObserver};
 
+#[cfg(test)]
+mod tests;
+
 pub(crate) const CAPABILITY: &str = "latent:runtime/activation@0.1.0";
 const STOP_OBSERVATION: Duration = Duration::from_millis(10);
+// Per-allocation bookkeeping in the existing native accounting model; this is
+// not a measurement or a bound on process RSS.
+const BACKING_ALLOCATION_BOOKKEEPING: usize = 64;
+
+fn backing_bytes<T>(count: usize) -> Option<u64> {
+    if count == 0 || std::mem::size_of::<T>() == 0 {
+        return Some(0);
+    }
+    std::alloc::Layout::array::<T>(count)
+        .ok()?
+        .size()
+        .checked_add(BACKING_ALLOCATION_BOOKKEEPING)
+        .and_then(|bytes| u64::try_from(bytes).ok())
+}
 
 /// Guards are held with actual Store-owned logical work. Tokens alone cannot
 /// remove an owner, mint another activation, or establish native retirement.
@@ -36,7 +56,8 @@ pub(crate) struct Table {
     runtime: ActivationRuntime,
     pub(crate) native_stacks: Option<Arc<crate::native_stacks::StackContext>>,
     timer_observer: Option<TimerObserver>,
-    _allocation: HostMemoryReservation,
+    // All actual Vec backings and the other owned fields drop before refund.
+    allocation: HostMemoryReservation,
 }
 impl Table {
     fn new(
@@ -44,39 +65,64 @@ impl Table {
         limits: RuntimeLimits,
         timer_observer: Option<TimerObserver>,
     ) -> Result<Self, PlatformError> {
-        let bytes = limits.total() as u64 * std::mem::size_of::<RuntimeOwner>() as u64
-            + u64::from(limits.timers) * std::mem::size_of::<RuntimeTimer>() as u64
-            + std::mem::size_of::<Self>() as u64
-            + 64;
+        // Validated runtime limits cap total at 8192. Both Vec backings are
+        // independently prepaid before either is allocated; a zero timer limit
+        // leaves its Vec unallocated.
+        let owner_count = limits.total();
+        let timer_count = limits.timers as usize;
+        let (owner_bytes, backings_bytes, bytes) = (|| {
+            let owner_bytes = backing_bytes::<RuntimeOwner>(owner_count)?;
+            let timer_bytes = backing_bytes::<RuntimeTimer>(timer_count)?;
+            let backings = owner_bytes.checked_add(timer_bytes)?;
+            let bytes = backings.checked_add(u64::try_from(std::mem::size_of::<Self>()).ok()?)?;
+            Some((owner_bytes, backings, bytes))
+        })()
+        .ok_or_else(|| {
+            failure(
+                PlatformErrorCode::ResourceExhausted,
+                "runtime-table-allocation",
+            )
+        })?;
         let mut allocation = budget
             .reserve_host_memory(bytes)
             .map_err(|e| e.to_host_memory_error())?;
         let mut owners = Vec::new();
-        owners.try_reserve_exact(limits.total()).map_err(|_| {
+        owners.try_reserve_exact(owner_count).map_err(|_| {
             failure(
                 PlatformErrorCode::ResourceExhausted,
                 "runtime-owner-allocation",
             )
         })?;
+        // Confirm each backing as it physically appears, even if a later
+        // allocation fails. Unused envelope capacity stays reserved.
+        allocation.confirm_bytes(owner_bytes);
         let mut timers = Vec::new();
-        timers
-            .try_reserve_exact(limits.timers as usize)
-            .map_err(|_| {
-                failure(
-                    PlatformErrorCode::ResourceExhausted,
-                    "runtime-timer-allocation",
-                )
-            })?;
+        timers.try_reserve_exact(timer_count).map_err(|_| {
+            failure(
+                PlatformErrorCode::ResourceExhausted,
+                "runtime-timer-allocation",
+            )
+        })?;
+        allocation.confirm_bytes(backings_bytes);
+        // Pinned Global RawVec preserves the requested exact capacities.
+        // No owner is published under an unexpected backing-size contract.
+        if owners.capacity() != owner_count || timers.capacity() != timer_count {
+            return Err(failure(
+                PlatformErrorCode::ResourceExhausted,
+                "runtime-table-capacity",
+            ));
+        }
         let runtime = ActivationRuntime::new(budget, limits)?;
-        allocation.confirm();
-        Ok(Self {
+        let mut table = Self {
             owners,
             timers,
             runtime,
             native_stacks: None,
             timer_observer,
-            _allocation: allocation,
-        })
+            allocation,
+        };
+        table.allocation.confirm();
+        Ok(table)
     }
     pub(crate) fn finalize(&mut self) -> Result<(), PlatformError> {
         self.runtime.begin_drain();
@@ -131,6 +177,10 @@ pub(crate) fn prepare_native_stack(
     size: usize,
     maximum_children: usize,
     async_workers: bool,
+    #[cfg(feature = "development-rust-http-combined")] combined: Option<(
+        &crate::component_threading::Authentication,
+        &latent_executor::PreparedComponent,
+    )>,
 ) -> Result<Arc<crate::native_stacks::StackContext>, PlatformError> {
     let budget = state.accounting.budget().clone();
     let maximum_native = state.runtime_limits.map(|limits| limits.native_owners);
@@ -140,6 +190,26 @@ pub(crate) fn prepare_native_stack(
             PlatformErrorCode::Internal,
             "native-stack-context-already-created",
         ));
+    }
+    #[cfg(feature = "development-rust-http-combined")]
+    if let Some((proof, descriptor)) = combined {
+        let maximum = maximum_native.expect("initialized original runtime limits") as usize;
+        if async_workers || maximum_children != maximum.saturating_sub(1) {
+            return Err(failure(
+                PlatformErrorCode::Internal,
+                "native-stack-profile-conflict",
+            ));
+        }
+        let context = crate::native_stacks::StackContext::with_combined_http(
+            budget,
+            table.runtime.clone(),
+            size,
+            maximum,
+            proof,
+            descriptor,
+        )?;
+        table.native_stacks = Some(Arc::clone(&context));
+        return Ok(context);
     }
     let context = if async_workers {
         if maximum_children != 0 {
@@ -272,19 +342,17 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
         ($name:literal, $args:pat, $ty:ty, $execute:expr $(, $register_kind:expr)?) => {
             linker
                 .instance(CAPABILITY)?
-                .func_wrap_async($name, |mut store, $args: $ty| {
-                    Box::new(async move {
-                        super::service::checkpoint(&mut store)?;
-                        #[cfg(feature = "development-test-host")]
-                        {
-                            $(if let Some(observer) = &mut store.data_mut().development_borrow_admission {
-                                observer.prepare_register(owner_kind($register_kind));
-                            })?
-                        }
-                        let result = synchronous(store.data_mut(), $name, $execute);
-                        super::service::synchronize(&mut store)?;
-                        Ok((result,))
-                    })
+                .func_wrap_ready($name, |mut store, $args: $ty| {
+                    super::service::checkpoint(&mut store)?;
+                    #[cfg(feature = "development-test-host")]
+                    {
+                        $(if let Some(observer) = &mut store.data_mut().development_borrow_admission {
+                            observer.prepare_register(owner_kind($register_kind));
+                        })?
+                    }
+                    let result = synchronous(store.data_mut(), $name, $execute);
+                    super::service::synchronize(&mut store)?;
+                    Ok((result,))
                 })?;
         };
     }
@@ -351,39 +419,37 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
             stale_wakes: snapshot.stale_wakes,
         })
     });
-    linker.instance(CAPABILITY)?.func_wrap_async(
+    linker.instance(CAPABILITY)?.func_wrap_ready(
         "timer-start",
         |mut store, (delay, period, continuation): (u64, Option<u64>, Option<wit::Token>)| {
-            Box::new(async move {
-                super::service::checkpoint(&mut store)?;
-                let first = store
-                    .data()
-                    .clock
-                    .monotonic_now()
-                    .checked_add(Duration::from_nanos(delay));
-                let result = synchronous(store.data_mut(), "timer-start", |table| {
-                    let first = first.ok_or_else(|| {
-                        failure(PlatformErrorCode::InvalidArgument, "runtime-timer-range")
-                    })?;
-                    let timer = RuntimeTimer::new(
-                        &table.runtime,
-                        first,
-                        period.map(Duration::from_nanos),
-                        continuation.map(token),
-                    )?;
-                    let value = timer.token();
-                    table.timers.push(timer);
-                    if let Some(observer) = &table.timer_observer {
-                        observer.record(TimerEvent::StartAccepted, table.runtime.snapshot().owners);
-                    }
-                    Ok(wit::Token {
-                        generation: value.generation,
-                        id: value.id,
-                    })
-                });
-                super::service::synchronize(&mut store)?;
-                Ok((result,))
-            })
+            super::service::checkpoint(&mut store)?;
+            let first = store
+                .data()
+                .clock
+                .monotonic_now()
+                .checked_add(Duration::from_nanos(delay));
+            let result = synchronous(store.data_mut(), "timer-start", |table| {
+                let first = first.ok_or_else(|| {
+                    failure(PlatformErrorCode::InvalidArgument, "runtime-timer-range")
+                })?;
+                let timer = RuntimeTimer::new(
+                    &table.runtime,
+                    first,
+                    period.map(Duration::from_nanos),
+                    continuation.map(token),
+                )?;
+                let value = timer.token();
+                table.timers.push(timer);
+                if let Some(observer) = &table.timer_observer {
+                    observer.record(TimerEvent::StartAccepted, table.runtime.snapshot().owners);
+                }
+                Ok(wit::Token {
+                    generation: value.generation,
+                    id: value.id,
+                })
+            });
+            super::service::synchronize(&mut store)?;
+            Ok((result,))
         },
     )?;
     sync!("timer-stop", (timer,), (wit::Token,), |table| {
@@ -398,84 +464,106 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
         drop(timer);
         Ok(())
     });
-    linker.instance(CAPABILITY)?.func_wrap_concurrent(
-        "timer-next",
-        |access, (timer,): (wit::Token,)| {
-            Box::pin(async move {
-                let started = Instant::now();
-                let PreparedWait {
-                    result: prepared,
-                    failed_call,
-                } = access.with(|mut access| {
-                    let mut store = access.as_context_mut();
-                    super::service::checkpoint(&mut store)?;
-                    let prepared = prepare_timer_next(store.data_mut(), token(timer));
-                    super::service::synchronize(&mut store)?;
-                    Ok::<_, wasmtime::Error>(prepared)
-                })?;
-                let (result, call) = match prepared {
-                    Ok(mut wait) => {
-                        let result = wait.run().await;
-                        let _ = wait
-                            .call
-                            .record_provider_outcome(AuditProviderOutcome::HostCompleted);
-                        (result.map_err(convert), Some(wait.call))
-                    }
-                    Err(error) => completed_failure(error, failed_call),
-                };
-                access.with(|mut access| {
-                    let mut store = access.as_context_mut();
-                    super::service::checkpoint(&mut store)?;
-                    super::service::synchronize(&mut store)?;
-                    store.data_mut().record_host_call(started);
-                    Ok((Completion::new(result, call),))
-                })
-            })
-        },
-    )?;
+    linker
+        .instance(CAPABILITY)?
+        .func_wrap_concurrent_inline("timer-next", TimerNext)?;
     for operation in ["wait-for", "wait-until"] {
-        linker.instance(CAPABILITY)?.func_wrap_concurrent(
-            operation,
-            move |access, (value, continuation): (u64, Option<wit::Token>)| {
-                Box::pin(async move {
-                    let started = Instant::now();
-                    let PreparedWait {
-                        result: prepared,
-                        failed_call,
-                    } = access.with(|mut access| {
-                        let mut store = access.as_context_mut();
-                        super::service::checkpoint(&mut store)?;
-                        let prepared = prepare_wait(
-                            store.data_mut(),
-                            operation,
-                            value,
-                            continuation.map(token),
-                        );
-                        super::service::synchronize(&mut store)?;
-                        Ok::<_, wasmtime::Error>(prepared)
-                    })?;
-                    let (result, call) = match prepared {
-                        Ok(mut wait) => {
-                            let result = wait.run().await;
-                            let _ = wait
-                                .call
-                                .record_provider_outcome(AuditProviderOutcome::HostCompleted);
-                            (result.map(|_| ()).map_err(convert), Some(wait.call))
-                        }
-                        Err(error) => completed_failure(error, failed_call),
-                    };
-                    access.with(|mut access| {
-                        let mut store = access.as_context_mut();
-                        super::service::checkpoint(&mut store)?;
-                        super::service::synchronize(&mut store)?;
-                        store.data_mut().record_host_call(started);
-                        Ok((Completion::new(result, call),))
-                    })
-                })
-            },
-        )?;
+        linker
+            .instance(CAPABILITY)?
+            .func_wrap_concurrent_inline(operation, RuntimeWait { operation })?;
     }
     Ok(())
+}
+
+struct TimerNext;
+impl InlineConcurrentHost<HostState, (wit::Token,), (Completion<Result<u64, wit::Error>>,)>
+    for TimerNext
+{
+    async fn invoke<'a>(
+        &'a self,
+        access: &'a Accessor<HostState>,
+        (timer,): (wit::Token,),
+    ) -> wasmtime::Result<(Completion<Result<u64, wit::Error>>,)> {
+        let started = Instant::now();
+        let PreparedWait {
+            result: prepared,
+            failed_call,
+        } = access.with(|mut access| {
+            let mut store = access.as_context_mut();
+            super::service::checkpoint(&mut store)?;
+            let prepared = prepare_timer_next(store.data_mut(), token(timer));
+            super::service::synchronize(&mut store)?;
+            Ok::<_, wasmtime::Error>(prepared)
+        })?;
+        let (result, call) = match prepared {
+            Ok(mut wait) => {
+                let result = wait.run().await;
+                let _ = wait
+                    .call
+                    .record_provider_outcome(AuditProviderOutcome::HostCompleted);
+                (result.map_err(convert), Some(wait.call))
+            }
+            Err(error) => completed_failure(error, failed_call),
+        };
+        access.with(|mut access| {
+            let mut store = access.as_context_mut();
+            super::service::checkpoint(&mut store)?;
+            super::service::synchronize(&mut store)?;
+            store.data_mut().record_host_call(started);
+            Ok((Completion::new(result, call),))
+        })
+    }
+}
+
+struct RuntimeWait {
+    operation: &'static str,
+}
+impl
+    InlineConcurrentHost<
+        HostState,
+        (u64, Option<wit::Token>),
+        (Completion<Result<(), wit::Error>>,),
+    > for RuntimeWait
+{
+    async fn invoke<'a>(
+        &'a self,
+        access: &'a Accessor<HostState>,
+        (value, continuation): (u64, Option<wit::Token>),
+    ) -> wasmtime::Result<(Completion<Result<(), wit::Error>>,)> {
+        let started = Instant::now();
+        let PreparedWait {
+            result: prepared,
+            failed_call,
+        } = access.with(|mut access| {
+            let mut store = access.as_context_mut();
+            super::service::checkpoint(&mut store)?;
+            let prepared = prepare_wait(
+                store.data_mut(),
+                self.operation,
+                value,
+                continuation.map(token),
+            );
+            super::service::synchronize(&mut store)?;
+            Ok::<_, wasmtime::Error>(prepared)
+        })?;
+        let (result, call) = match prepared {
+            Ok(mut wait) => {
+                let result = wait.run().await;
+                let _ = wait
+                    .call
+                    .record_provider_outcome(AuditProviderOutcome::HostCompleted);
+                (result.map(|_| ()).map_err(convert), Some(wait.call))
+            }
+            Err(error) => completed_failure(error, failed_call),
+        };
+        access.with(|mut access| {
+            let mut store = access.as_context_mut();
+            super::service::checkpoint(&mut store)?;
+            super::service::synchronize(&mut store)?;
+            store.data_mut().record_host_call(started);
+            Ok((Completion::new(result, call),))
+        })
+    }
 }
 
 struct WaitingTimer {
@@ -628,6 +716,22 @@ fn prepare_timer_next(state: &mut HostState, token: RuntimeToken) -> PreparedWai
         failed_call: call,
     }
 }
+fn complete_elapsed_wait(
+    runtime: &ActivationRuntime,
+    timer: Option<&mut TimerWait>,
+    now: Instant,
+) -> Result<u64, PlatformError> {
+    match timer {
+        Some(timer) => timer.complete(now),
+        None => {
+            // Plain waits have no schedule commit. A final phase observation
+            // orders their elapsed success against runtime cancellation.
+            runtime.check_live()?;
+            Ok(0)
+        }
+    }
+}
+
 impl WaitingTimer {
     async fn run(&mut self) -> Result<u64, PlatformError> {
         loop {
@@ -696,10 +800,7 @@ impl WaitingTimer {
                 ));
             }
             if now >= self.requested {
-                return self
-                    .timer_wait
-                    .as_mut()
-                    .map_or(Ok(0), |timer| timer.complete(now));
+                return complete_elapsed_wait(&self.runtime, self.timer_wait.as_mut(), now);
             }
             let next = self
                 .requested
