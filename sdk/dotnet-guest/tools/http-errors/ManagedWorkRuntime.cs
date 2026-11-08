@@ -46,7 +46,9 @@ public static partial class ManagedWorkRuntime
         internal (ulong Generation, ulong Id) Token;
         internal Queued? ResetPrevious;
         // Bit 0 fences uncertainty, bit 2 marks an unfinished enqueue, bit 3
-        // retains the dispatch, and bits 4/5 hold reset/entering-reset custody.
+        // retains the dispatch, bits 4/5 hold reset/entering-reset custody,
+        // bit 6 marks an inline scheduler claim before its exact pop,
+        // and bit 7 marks an unresolved inline or reset-fenced pop.
         internal byte State;
     }
 
@@ -653,9 +655,10 @@ public static partial class ManagedWorkRuntime
             {
                 // The host may have settled before trapping; retain this
                 // exact queue record but never submit its token again.
+                bool retainInline = (pending.State & 64) != 0;
                 pending.State |= 1;
                 settle!(pending.Token.Generation, pending.Token.Id);
-                if (retainDispatch)
+                if (retainDispatch || retainInline)
                 {
                     pending.State = 8;
                     return pending;
@@ -667,6 +670,63 @@ public static partial class ManagedWorkRuntime
             if (pending is not null && ReferenceEquals(pending.Item, item) && (pending.State & 4) != 0)
                 throw new InvalidOperationException("managed-work-queue-admission-pending");
         throw new InvalidOperationException("managed-work-unregistered-dequeue");
+    }
+
+    // The pinned scheduler calls this only for its own inline attempt. The
+    // ordinary TryDequeue path never sets the marker and keeps its old pop.
+    public static object? InlineQueued(Task task, bool previouslyQueued)
+    {
+        if (!installed || !previouslyQueued) return null;
+        if (resetTop is not null && (resetTop.State & 33) != 0) return null;
+        foreach (var existing in queued!)
+            if (existing is not null && ReferenceEquals(existing.Item, task)
+                && (existing.State & 65) != 0) return null;
+        foreach (var pending in queued!)
+            if (pending is not null && ReferenceEquals(pending.Item, task)
+                && pending.State == 0)
+            {
+                pending.State = 64;
+                return pending;
+            }
+        return null;
+    }
+
+    // Called in an outer finally after the original scheduler body and its
+    // progress-notification finally. A failed pop/body retains uncertain work.
+    public static void InlineQueueFinished(object? ticket, bool returned)
+    {
+        if (ticket is null) return;
+        var pending = ticket as Queued ?? throw new InvalidOperationException("managed-work-inline-ticket");
+        int index = -1;
+        for (int i = 0; i < MaximumQueued; i++)
+            if (ReferenceEquals(queued![i], pending)) { index = i; break; }
+        if (index < 0)
+        {
+            if (!returned) return; // Never mask the original scheduler failure.
+            throw new InvalidOperationException("managed-work-inline-ticket");
+        }
+        if (pending.State == 64)
+        {
+            pending.State = returned ? (byte)0 : (byte)193;
+            return;
+        }
+        if (pending.State == 8 && returned)
+        {
+            var owner = pending.Owner;
+            queued![index] = null;
+            // An inline Task can be a required continuation owned by another
+            // callback. Its return is not that callback's completion.
+            if (owner.Completion is not null && (ReferenceEquals(owner.Outer, pending.Item)
+                || ReferenceEquals(owner.Completion, pending.Item))) owner.CallbackDone = true;
+            if (owner.Active && !owner.Root && !owner.Timer && !owner.Result && owner.CallbackDone
+                && owner.Completion is { IsCompleted: true } && !HasQueuedOwner(owner) && !HasRequired(owner)
+                && owner.Active && !HasQueuedOwner(owner))
+                Finish(owner);
+            return;
+        }
+        // Preserve the original exception and the exact unresolved record.
+        if (!returned) { pending.State |= 129; return; }
+        throw new InvalidOperationException("managed-work-inline-ticket");
     }
 
     public static void Dequeue(object item) => TakeQueue(item, false);
@@ -692,6 +752,14 @@ public static partial class ManagedWorkRuntime
     {
         if (!installed && reserve is not null && found)
         { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
+        if (installed && found && resetTop is not null && (resetTop.State & 33) != 0)
+        {
+            // The original local pop already removed an occurrence. No
+            // matching record can safely be settled or matched again.
+            foreach (var pending in queued!)
+                if (pending is not null && ReferenceEquals(pending.Item, item)) pending.State |= 129;
+            throw new InvalidOperationException("managed-work-reset-context-unavailable");
+        }
         if (installed && found) Dequeue(item);
         return found;
     }
@@ -1045,6 +1113,9 @@ public static partial class ManagedWorkRuntime
         close!();
         for (;;)
         {
+            foreach (var uncertain in queued!)
+                if (uncertain is not null && (uncertain.State & 128) != 0)
+                    throw new InvalidOperationException("managed-work-inline-uncertain");
             Task? pending = null;
             bool active = false;
             for (int i = 0; i < MaximumRecords; i++)
@@ -1091,8 +1162,13 @@ public static partial class ManagedWorkRuntime
     {
         if (!installed && reserve is not null)
         { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
-        if (installed && closing && !ReadySource())
-            throw new InvalidOperationException("managed-work-unproven-quiescence");
+        if (installed && closing)
+        {
+            foreach (var uncertain in queued!)
+                if (uncertain is not null && (uncertain.State & 128) != 0)
+                    throw new InvalidOperationException("managed-work-inline-uncertain");
+            if (!ReadySource()) throw new InvalidOperationException("managed-work-unproven-quiescence");
+        }
     }
 
     public static void FinishedPhysicalDrain()
