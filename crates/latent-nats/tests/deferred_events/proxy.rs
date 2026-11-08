@@ -1,7 +1,7 @@
 //! Owned finite TLS proxy; faults occur around an actual broker acknowledgement.
 use super::support::WATCHDOG;
 use latent_nats::NatsConfig;
-use rcgen::{BasicConstraints, CertificateParams, IsCa, KeyPair};
+use rcgen::{BasicConstraints, CertificateParams, DnType, IsCa, KeyPair};
 use std::io;
 use std::sync::atomic::AtomicUsize;
 use std::{
@@ -34,13 +34,20 @@ pub fn identity() -> (TlsAcceptor, Vec<u8>) {
     let ca_key = KeyPair::generate().unwrap();
     let mut params = CertificateParams::new(vec![]).unwrap();
     params.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
+    params
+        .distinguished_name
+        .push(DnType::CommonName, "lsf-fixture-ca");
+    let issuer_params = params.clone();
     let ca = params.self_signed(&ca_key).unwrap();
     let server_key = KeyPair::generate().unwrap();
     let mut params = CertificateParams::new(vec![]).unwrap();
     params
+        .distinguished_name
+        .push(DnType::CommonName, "lsf-fixture-proxy");
+    params
         .subject_alt_names
         .push(rcgen::SanType::IpAddress("127.0.0.1".parse().unwrap()));
-    let issuer = rcgen::Issuer::new(CertificateParams::new(vec![]).unwrap(), &ca_key);
+    let issuer = rcgen::Issuer::new(issuer_params, &ca_key);
     let cert = params.signed_by(&server_key, &issuer).unwrap();
     let tls = rustls::ServerConfig::builder_with_provider(Arc::new(
         rustls::crypto::ring::default_provider(),
