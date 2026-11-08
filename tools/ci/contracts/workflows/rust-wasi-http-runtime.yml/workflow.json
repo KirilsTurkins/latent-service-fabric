@@ -10,11 +10,14 @@
       "push": {
         "branches": [
           "feat/rust-wasi-http-profile-20261021",
-          "diag/rust-http-combined-host-20261105"
+          "diag/rust-http-combined-host-20261105",
+          "fix/rust-http-finish-length-20261108"
         ],
         "paths": [
           ".github/workflows/rust-wasi-http-runtime.yml",
           "sdk/wasi-http-runtime/**",
+          "tools/fixtures/wasi-http-request-options/**",
+          "tools/rust_wasi_http_finish_control.py",
           "tools/rust_wasi_http_inputs.py",
           "tools/toolchain-smoke/examples/rust_wasi_http_runtime.rs",
           "tools/toolchain-smoke/examples/rust_http_pump_probe.rs",
@@ -33,7 +36,7 @@
   "requiredJobs": [
     "standard-backend"
   ],
-  "reviewReason": "Compile and authenticate the selected HTTP adapter and execute its bounded callback, sibling and cancellation regressions; this does not qualify the signed application.",
+  "reviewReason": "Compile and authenticate the selected HTTP adapter and execute its bounded callback, sibling, cancellation and body-length regressions; this does not qualify the signed application.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-wasi-http-runtime.yml"
 }
