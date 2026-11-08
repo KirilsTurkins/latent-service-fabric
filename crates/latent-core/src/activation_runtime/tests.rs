@@ -2240,3 +2240,183 @@ fn immediate_wait_settlement_alone_is_not_a_terminal_readiness_fence() {
     drop(current);
     runtime.retire().unwrap();
 }
+
+#[test]
+fn elapsed_plain_timer_requires_a_live_timer_owner_and_preserves_drain() {
+    let runtime = runtime();
+    let timer = runtime.register(OwnerKind::Timer, None).unwrap();
+    let task = runtime.register(OwnerKind::Task, None).unwrap();
+    let snapshot = runtime.snapshot();
+    assert_eq!(
+        runtime
+            .commit_elapsed_timer_readiness(task.token())
+            .unwrap_err()
+            .code,
+        PlatformErrorCode::InvalidArgument
+    );
+    runtime.close();
+    runtime.begin_drain();
+    runtime
+        .commit_elapsed_timer_readiness(timer.token())
+        .unwrap();
+    assert_eq!(runtime.snapshot().phase, RuntimePhase::Draining);
+    assert_eq!(runtime.snapshot().owners, snapshot.owners);
+    let stale = timer.token();
+    drop(timer);
+    assert_eq!(
+        runtime
+            .commit_elapsed_timer_readiness(stale)
+            .unwrap_err()
+            .code,
+        PlatformErrorCode::InvalidArgument
+    );
+    drop(task);
+    runtime.retire().unwrap();
+}
+
+#[test]
+fn elapsed_plain_timer_orders_original_and_ancestor_cancellation_with_commit() {
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    for ancestor in [false, true] {
+        for close_first in [false, true] {
+            let (parent, child, runtime) = if ancestor {
+                let (parent, child, runtime) = child_runtime();
+                (Some(parent), Some(child), runtime)
+            } else {
+                (None, None, runtime())
+            };
+            let owner = runtime.register(OwnerKind::Timer, None).unwrap();
+            let token = owner.token();
+            let before = runtime.snapshot();
+            let budget = runtime.inner.budget.clone();
+            let closing = parent.as_ref().unwrap_or(&budget).clone();
+            let worker_runtime = runtime.clone();
+            let (held_tx, held_rx) = mpsc::sync_channel(0);
+            let (resume_tx, resume_rx) = mpsc::sync_channel(0);
+            let worker = std::thread::spawn(move || {
+                worker_runtime.commit_elapsed_timer_readiness_with_hooks(token, |step| {
+                    let target = if close_first {
+                        ReadinessStep::Guarded
+                    } else {
+                        ReadinessStep::Committed
+                    };
+                    if step == target {
+                        held_tx.send(()).unwrap();
+                        resume_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+                    }
+                })
+            });
+            held_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+            let guarded = budget.test_accounting_is_locked();
+            let (done_tx, done_rx) = mpsc::sync_channel(0);
+            let closer = std::thread::spawn(move || {
+                closing.cancel_descendants().unwrap();
+                done_tx.send(()).unwrap();
+            });
+            let closed_before_resume = done_rx.recv_timeout(Duration::from_secs(3)).is_ok();
+            resume_tx.send(()).unwrap();
+            let result = worker.join().unwrap();
+            if !closed_before_resume {
+                done_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+            }
+            closer.join().unwrap();
+            assert!(guarded && closed_before_resume);
+            if close_first {
+                assert_eq!(result.unwrap_err().code, PlatformErrorCode::Cancelled);
+            } else {
+                result.unwrap();
+            }
+            let after = runtime.snapshot();
+            assert_eq!(after.owners, before.owners);
+            assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
+            drop(owner);
+            runtime.retire().unwrap();
+            drop(runtime);
+            if let Some(child) = child {
+                drop(budget);
+                let _ = child.finish(None, Instant::now());
+                assert_eq!(
+                    parent
+                        .unwrap()
+                        .descendant_snapshot()
+                        .unwrap()
+                        .live_descendants,
+                    0
+                );
+            } else {
+                assert_eq!(budget.host_memory_bytes(), 0);
+            }
+        }
+    }
+}
+
+#[test]
+fn elapsed_plain_timer_finalization_orders_before_or_after_commit() {
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    for close_first in [false, true] {
+        let runtime = runtime();
+        let budget = runtime.inner.budget.clone();
+        let owner = runtime.register(OwnerKind::Timer, None).unwrap();
+        let token = owner.token();
+        let before = runtime.snapshot();
+        let worker_runtime = runtime.clone();
+        let (held_tx, held_rx) = mpsc::sync_channel(0);
+        let (resume_tx, resume_rx) = mpsc::sync_channel(0);
+        let worker = std::thread::spawn(move || {
+            worker_runtime.commit_elapsed_timer_readiness_with_hooks(token, |step| {
+                let target = if close_first {
+                    ReadinessStep::Checked
+                } else {
+                    ReadinessStep::Committed
+                };
+                if step == target {
+                    held_tx.send(()).unwrap();
+                    resume_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+                }
+            })
+        });
+        held_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+        let close_budget = budget.clone();
+        let (started_tx, started_rx) = mpsc::sync_channel(0);
+        let (done_tx, done_rx) = mpsc::sync_channel(0);
+        let closer = std::thread::spawn(move || {
+            started_tx.send(()).unwrap();
+            let terminal = close_budget.finalize_at(None, Instant::now());
+            done_tx
+                .send(terminal.consumption().peak_memory_bytes)
+                .unwrap();
+        });
+        started_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+        let early = done_rx.recv_timeout(if close_first {
+            Duration::from_secs(3)
+        } else {
+            Duration::from_millis(100)
+        });
+        let before_resume = early.is_ok();
+        resume_tx.send(()).unwrap();
+        let result = worker.join().unwrap();
+        let terminal_peak = match early {
+            Ok(peak) => peak,
+            Err(_) => done_rx.recv_timeout(Duration::from_secs(3)).unwrap(),
+        };
+        closer.join().unwrap();
+        assert_eq!(before_resume, close_first);
+        if close_first {
+            assert_eq!(result.unwrap_err().code, PlatformErrorCode::Cancelled);
+        } else {
+            result.unwrap();
+        }
+        let after = runtime.snapshot();
+        assert_eq!(after.owners, before.owners);
+        assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
+        assert!(terminal_peak >= before.host_memory_bytes);
+        drop(owner);
+        runtime.retire().unwrap();
+        drop(runtime);
+        assert_eq!(budget.host_memory_bytes(), 0);
+    }
+}
