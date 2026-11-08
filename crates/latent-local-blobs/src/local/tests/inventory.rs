@@ -1,6 +1,39 @@
 use super::*;
 
 #[test]
+fn reclamation_resumes_across_a_real_inventory_of_live_objects() {
+    let root = temporary_root();
+    let mut bounded = limits();
+    bounded.maximum_objects = 70;
+    bounded.maximum_disk_bytes = 4 * 1024 * 1024;
+    bounded.maximum_metadata_bytes = 1024 * 1024;
+    let owner = LocalBlobStore::open(root.path(), "private", bounded).unwrap();
+    for number in 0..70 {
+        put(&owner, format!("{number:03}").as_bytes());
+    }
+    let last = {
+        let state = owner.inner.state().unwrap();
+        state
+            .objects
+            .last_key_value()
+            .unwrap()
+            .1
+            .record
+            .as_ref()
+            .unwrap()
+            .reference()
+    };
+    owner
+        .release_reference(&scope(), &last, &|| Ok(()))
+        .unwrap();
+
+    assert_eq!(owner.reclaim(1, &|| Ok(())).unwrap().objects, 0);
+    assert_eq!(owner.reclaim(1, &|| Ok(())).unwrap().objects, 0);
+    assert_eq!(owner.reclaim(1, &|| Ok(())).unwrap().objects, 1);
+    assert_eq!(owner.snapshot().unwrap().objects, 69);
+}
+
+#[test]
 fn bounded_reclamation_alternates_between_objects_and_retired_stages() {
     let root = temporary_root();
     let owner = store(root.path());
