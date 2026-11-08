@@ -51,6 +51,15 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         catch (Throwable error) { owner.close(); owner = null; throw error; }
     }
 
+    /** Preserve the admitted lease and fence completion if settlement is uncertain. */
+    private static void closeQueued(Activation.Lease queued) {
+        try { queued.close(); }
+        catch (Throwable uncertain) {
+            Activation.fenceUncertainQueuedWorkSettlement(queued);
+            throw uncertain;
+        }
+    }
+
     @Override public synchronized void execute(Runnable command) {
         Objects.requireNonNull(command);
         Activation.Lease queued = null;
@@ -74,7 +83,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         } catch (Throwable error) {
             if (!installed || queue.remove(item)) {
                 if (installed) pendingWork--;
-                if (queued != null) queued.close();
+                if (queued != null) closeQueued(queued);
                 if (acceptedResult) future.removeQueueCopy(true);
                 CompletableFuture.removedFromQueue(command, acceptedAction, true);
                 CompletableFuture.rejectedBeforeAcceptance(command, this);
@@ -157,7 +166,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
                     if (queue.isEmpty()) return;
                     item = queue.removeFirst();
                     running++;
-                    item.queued.close();
+                    closeQueued(item.queued);
                 }
                 if (!interrupting) Thread.interrupted();
                 try { item.command.run(); }
@@ -206,7 +215,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         shutdown = interrupting = true;
         List<Runnable> pending = new ArrayList<>(queue.size());
         while (!queue.isEmpty()) {
-            Item item = queue.removeFirst(); pendingWork--; pending.add(item.command); item.queued.close();
+            Item item = queue.removeFirst(); pendingWork--; pending.add(item.command); closeQueued(item.queued);
             if (item.futureAccepted) ((FutureTask<?>)item.command).removeQueueCopy(true);
             CompletableFuture.removedFromQueue(item.command, item.actionAccepted, true);
         }
