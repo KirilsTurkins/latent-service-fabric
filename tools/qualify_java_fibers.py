@@ -388,6 +388,36 @@ def standard_timer_model_control(compiler: Compiler, output: Path) -> dict:
             "sourceInputs": inputs, "portOrApplicationClassesInitialized": False, "actualGuestBindingsUsed": False}
 
 
+FUTURE_CANCEL_INTERRUPT_CASES = (
+    'before-runtime', 'after-runtime', 'before-error', 'after-error',
+    'before-runtime-done-error', 'after-error-done-error', 'normal', 'no-interrupt',
+    'pending', 'completed', 'failed',
+)
+FUTURE_CANCEL_SETTLEMENT_CASES = ('refused', 'lost-ack')
+
+
+def future_cancel_interrupt_control(compiler: Compiler, classes: Path) -> dict:
+    """Fresh JDK/source processes; never a signed component execution receipt."""
+    executed = {}
+    main = 'dev.latent.guest.runtime.concurrent.FutureTaskInterruptFailureControl'
+    for implementation in ('jdk', 'source'):
+        modes = FUTURE_CANCEL_INTERRUPT_CASES
+        if implementation == 'source':
+            modes += FUTURE_CANCEL_SETTLEMENT_CASES
+        executed[implementation] = []
+        for mode in modes:
+            # Reuse the compiler's owned process runner and original deadline.
+            # A fresh JVM keeps the deliberately poisoned source ledgers apart.
+            result = compiler.run('future-cancel-interrupt-' + implementation + '-' + mode,
+                'java', '-Xmx256m', '-cp', classes, main, implementation, mode).strip()
+            if result != 'future-cancel-interrupt ' + implementation + ' ' + mode + ' passed':
+                raise ValueError('Java future cancellation control did not complete: '
+                    + implementation + ' ' + mode)
+            executed[implementation].append(mode)
+    return {'status': 'JDK-and-SDK-source-controls-passed', 'cases': executed,
+        'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
+
+
 def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     """Real port source with a private host ledger, never injected guest bindings."""
     private = compiler.sdk / 'fibers/conformance/compiler/scheduled-source-control'
@@ -396,7 +426,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'ScheduledPeriodicOwnerControl.java', 'ScheduledPeriodicRollbackSettlementControl.java',
         'ScheduledFutureResultSettlementControl.java', 'CompletableFutureResultSettlementControl.java',
         'CompletableFutureQueuedRollbackControl.java', 'ManagedExecutorQueuedSettlementControl.java',
-        'ScheduledQueuedSettlementControl.java',
+        'ScheduledQueuedSettlementControl.java', 'FutureTaskInterruptFailureControl.java',
         'dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
     reference = private / 'ScheduledStoppedReferenceControl.java'
     periodic_reference = private / 'ScheduledPeriodicReferenceControl.java'
@@ -432,6 +462,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'import dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor;').encode('utf-8'))
     compiler.run('scheduled-source-compile', 'javac', '-proc:none', '--release', '25',
         '-d', output, *ports, *controls, selected, selected_periodic)
+    interrupt_control = future_cancel_interrupt_control(compiler, output)
     result = compiler.run('scheduled-source-control', 'java', '-Xmx256m', '-cp', output, 'ScheduledOwnerControl').strip()
     expected = ('SCHEDULED_OWNER_CONTROL PASS preadmission;actual-result;running-cancel-held;periodic-nonoverlap;'
         'original-error-suppresses-repeat;timed-wait-cancel-and-interrupt;shutdown-policy;factory-rollback;all-retired')
@@ -492,6 +523,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError('Java scheduled source control inputs changed')
     return {'status': 'SDK-source-controls-passed', 'referenceJdk': 'matched-stopped-and-periodic-observables', 'sourceInputs': inputs,
+        'futureCancelInterrupt': interrupt_control,
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 
