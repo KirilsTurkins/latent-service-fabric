@@ -274,6 +274,11 @@ impl Fixture {
         request
     }
     pub fn claim(&self, key: &str) -> AdmittedCommand {
+        let mut claim = self.claim_unbound(key);
+        claim.bind_payload_session(&self.session).unwrap();
+        claim
+    }
+    pub fn claim_unbound(&self, key: &str) -> AdmittedCommand {
         let view = self.state.snapshot().unwrap();
         let AdmissionDecision::New(prepared) =
             PreparedAdmission::prepare(&view, self.input(key), time(100), |_, _| Ok(())).unwrap()
@@ -281,9 +286,7 @@ impl Fixture {
             panic!("new physical claim");
         };
         drop(view);
-        let mut claim = prepared.publish(&self.state, || Ok(())).unwrap();
-        claim.bind_payload_session(&self.session).unwrap();
-        claim
+        prepared.publish(&self.state, || Ok(())).unwrap()
     }
     pub async fn capture(&self) -> CapturedLocalPayload {
         self.capture_blob(&self.blob).await

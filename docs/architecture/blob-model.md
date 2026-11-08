@@ -46,6 +46,12 @@ startup deadline. Missing, corrupt, foreign, or unverified required payloads
 refuse startup. An ordinary local root does not acquire durable retention mode
 implicitly, and S3 references are not qualified for this durable path.
 
+On Linux, replacing or deleting a state cell that already owns a retained local
+payload removes that cell's old reference in the same fenced state commit. A
+refused or conflicted commit retains the old owner. Physical readers and other
+durable owners continue to pin the bytes; removal of the state link alone does
+not delete the blob or grant access to it.
+
 The lower-level commit and recovery owners can retain verified local payload
 attachments, but attaching them through the guest transaction runtime remains
 unimplemented. Orphan reconciliation and complete backup/migration closure also
