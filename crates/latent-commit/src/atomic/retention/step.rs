@@ -41,6 +41,25 @@ impl ResultMaintenanceOwner {
         })?;
         let mut progress = MaintenanceProgress::anchor(clock, generation);
         if let Some(previous) = previous {
+            if clock.boot == previous.boot {
+                // Re-anchoring the same process must not renew the one-second
+                // clock tolerance. Preserve the original reference even after
+                // a long idle period; a new boot still requires host review.
+                let elapsed = clock
+                    .monotonic_millis
+                    .checked_sub(previous.anchor_monotonic_millis);
+                let wall = clock
+                    .time
+                    .unix_millis
+                    .checked_sub(previous.anchor_unix_millis);
+                if clock.monotonic_millis < previous.monotonic_millis
+                    || !matches!((elapsed, wall), (Some(e), Some(w)) if e.abs_diff(w) <= 1_000)
+                {
+                    return Err(AtomicError::RecoveryRequired);
+                }
+                progress.anchor_unix_millis = previous.anchor_unix_millis;
+                progress.anchor_monotonic_millis = previous.anchor_monotonic_millis;
+            }
             progress.visited = previous.visited;
             progress.retired = previous.retired;
             progress.reclaimed_bytes = previous.reclaimed_bytes;

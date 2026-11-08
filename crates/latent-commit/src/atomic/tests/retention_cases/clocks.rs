@@ -134,3 +134,54 @@ fn boot_recovery_requires_exact_authorized_anchor_and_does_not_extend_original_h
     assert_eq!(protected.result_expires, 1100);
     assert_eq!(protected.identity_expires, 2100);
 }
+
+#[test]
+fn same_boot_reanchor_cannot_renew_cumulative_drift_tolerance() {
+    let (_dir, store, effects) = setup();
+    let record = completed(&store, &effects, "reanchor-clock-drift");
+    let owner = ResultMaintenanceOwner::default();
+    owner
+        .anchor(&store, None, observation(100, 0), maintenance)
+        .unwrap();
+    let body = result_bytes(&store, &record);
+    let first = owner
+        .step(&store, observation(1000, 0), maintenance)
+        .unwrap();
+    let reanchored = owner
+        .anchor(
+            &store,
+            Some(first.generation),
+            observation(1000, 0),
+            maintenance,
+        )
+        .unwrap();
+    assert_eq!(
+        owner.step(&store, observation(1900, 0), maintenance),
+        Err(AtomicError::RecoveryRequired)
+    );
+    assert_eq!(
+        owner.anchor(
+            &store,
+            Some(reanchored.generation),
+            observation(1900, 0),
+            maintenance
+        ),
+        Err(AtomicError::RecoveryRequired)
+    );
+    assert_eq!(result_bytes(&store, &record), body);
+    assert_eq!(reanchored.anchor_unix_millis, 100);
+    assert_eq!(reanchored.anchor_monotonic_millis, 0);
+    let resumed = owner
+        .anchor(
+            &store,
+            Some(reanchored.generation),
+            observation(70_100, 70_000),
+            maintenance,
+        )
+        .unwrap();
+    assert_eq!(resumed.anchor_unix_millis, 100);
+    owner
+        .step(&store, observation(70_101, 70_001), maintenance)
+        .unwrap();
+    assert!(result_bytes(&store, &record).starts_with(b"LCE\0\x01"));
+}
