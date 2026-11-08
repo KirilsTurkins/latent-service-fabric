@@ -137,6 +137,116 @@ def compact(text: str) -> str:
     return re.sub(r"\s+", "", re.sub(r"(?m)//[^\n]*", "", text))
 
 
+def rust_code_for_unsafe_scan(source: str) -> str:
+    # This is a lexical tripwire, not a Rust parser or macro expander. Keep code
+    # tokens while replacing comments and literal contents with whitespace, so
+    # comments cannot split `unsafe` / `allow` from the tokens we inspect.
+    masked = list(source)
+    size = len(source)
+
+    def hide(start: int, end: int) -> None:
+        for index in range(start, end):
+            if source[index] not in "\r\n":
+                masked[index] = " "
+
+    index = 0
+    while index < size:
+        start = index
+        if source.startswith("//", index):
+            end = source.find("\n", index + 2)
+            index = size if end < 0 else end
+            hide(start, index)
+            continue
+        if source.startswith("/*", index):
+            index += 2
+            depth = 1
+            while index < size and depth:
+                if source.startswith("/*", index):
+                    depth += 1
+                    index += 2
+                elif source.startswith("*/", index):
+                    depth -= 1
+                    index += 2
+                else:
+                    index += 1
+            if depth:
+                raise ValueError("unterminated Rust block comment")
+            hide(start, index)
+            continue
+        if source[index] == "r":
+            quote = index + 1
+            while quote < size and source[quote] == "#":
+                quote += 1
+            if quote < size and source[quote] == '"':
+                closing = '"' + source[index + 1:quote]
+                end = source.find(closing, quote + 1)
+                if end < 0:
+                    raise ValueError("unterminated Rust raw string")
+                index = end + len(closing)
+                hide(start, index)
+                continue
+        if source[index] == '"':
+            index += 1
+            while index < size and source[index] != '"':
+                if source[index] == "\\":
+                    index += 1
+                index += 1
+            if index >= size:
+                raise ValueError("unterminated Rust string")
+            index += 1
+            hide(start, index)
+            continue
+        if source[index] == "'" and index + 1 < size:
+            # Distinguish a character literal from a lifetime such as `'a`.
+            end = index + 2
+            if source[index + 1] == "\\":
+                if index + 2 >= size:
+                    raise ValueError("unterminated Rust character")
+                escape = source[index + 2]
+                end = index + 3
+                if escape == "x":
+                    end += 2
+                elif escape == "u" and end < size and source[end] == "{":
+                    close = source.find("}", end + 1)
+                    if close < 0:
+                        raise ValueError("unterminated Rust character")
+                    end = close + 1
+            if end < size and source[end] == "'":
+                index = end + 1
+                hide(start, index)
+                continue
+        index += 1
+    return "".join(masked)
+
+
+def has_unreviewed_rust(code: str) -> bool:
+    # The input already has comments and literal contents masked. Square
+    # delimiters can themselves occur inside an attribute's token trees;
+    # examine the complete outer attribute rather than stopping at its first ].
+    unsafe = re.compile(r"(?<!r#)\bunsafe\s*(?:\{|fn\b|impl\b|trait\b|extern\b)")
+    attribute_start = re.compile(r"#\s*!?\s*\[")
+    unsafe_attribute = re.compile(r"(?<!r#)\bunsafe\s*\(")
+    lowered = re.compile(r"\b(?:allow|expect)\s*\([^)]*\bunsafe_code\b", re.S)
+    unreviewed = bool(unsafe.search(code))
+    offset = 0
+    while match := attribute_start.search(code, offset):
+        start = match.end()
+        offset = start
+        depth = 1
+        while offset < len(code) and depth:
+            if code[offset] == "[":
+                depth += 1
+            elif code[offset] == "]":
+                depth -= 1
+            offset += 1
+        if depth:
+            raise ValueError("unterminated Rust attribute")
+        attribute = code[start:offset - 1]
+        if unsafe_attribute.search(attribute) or lowered.search(attribute):
+            unreviewed = True
+    return unreviewed
+
+
 def validate(root: Path) -> list[str]:
     errors: list[str] = []
     workspace = tomllib.loads((root / "Cargo.toml").read_text(encoding="utf-8"))["workspace"]
@@ -179,8 +289,8 @@ def validate(root: Path) -> list[str]:
         errors.append("audited deserialize function changed; review its proof and copied-load safety")
     if start >= 0 and not loader[:start].rstrip().endswith(ALLOW):
         errors.append("unsafe allowance must apply only to the private deserialize function")
-    unsafe = re.compile(r"\bunsafe\s*(?:\{|fn\b|impl\b|trait\b|extern\b)")
-    lowered = re.compile(r"#\s*!?\s*\[\s*(?:allow|expect)\s*\([^]]*\bunsafe_code\b", re.S)
+    unsafe = re.compile(r"(?<!r#)\bunsafe\s*(?:\{|fn\b|impl\b|trait\b|extern\b)")
+    lowered = re.compile(r"#\s*!?\s*\[[^]]*\b(?:allow|expect)\s*\([^]]*\bunsafe_code\b", re.S)
     for path in (root / CRATE).rglob("*.rs"):
         source = path.read_text(encoding="utf-8")
         relative = path.relative_to(root).as_posix()
@@ -235,8 +345,12 @@ def validate(root: Path) -> list[str]:
             if hashlib.sha256(source.encode("utf-8")).hexdigest() != NATIVE_STACK_COMBINED_SHA256:
                 errors.append("audited combined stack selection changed; review immutable proof and shared original ledgers")
             # Proof-gated selection is safe Rust, not another unsafe exception.
-        if unsafe.search(source) or lowered.search(source):
-            errors.append(f"unreviewed unsafe code or allowance in {relative}")
+        try:
+            code = rust_code_for_unsafe_scan(source)
+            if has_unreviewed_rust(code):
+                errors.append(f"unreviewed unsafe code or allowance in {relative}")
+        except ValueError:
+            errors.append(f"unreadable Rust comments, literals or attributes in {relative}")
     return errors
 
 
@@ -283,12 +397,14 @@ def validate_guest(root: Path) -> list[str]:
         errors.append("Angular unsafe allowance must apply only to the generated wasm guest ABI")
     if compact(abi) != compact(GUEST_ABI):
         errors.append("Angular ABI module must contain only the reviewed generator and export")
-    unsafe = re.compile(r"\bunsafe\s*(?:\{|fn\b|impl\b|trait\b|extern\b)")
-    lowered = re.compile(r"#\s*!?\s*\[\s*(?:allow|expect)\s*\([^]]*\bunsafe_code\b", re.S)
     for path in (crate / "src").rglob("*.rs"):
         source = path.read_text(encoding="utf-8")
         if path.name == "lib.rs":
             source = source.replace(GUEST_ALLOW, "", 1)
-        if unsafe.search(source) or lowered.search(source):
-            errors.append(f"unreviewed handwritten unsafe code in {path.relative_to(root).as_posix()}")
+        try:
+            code = rust_code_for_unsafe_scan(source)
+            if has_unreviewed_rust(code):
+                errors.append(f"unreviewed handwritten unsafe code in {path.relative_to(root).as_posix()}")
+        except ValueError:
+            errors.append(f"unreadable Rust comments, literals or attributes in {path.relative_to(root).as_posix()}")
     return errors
