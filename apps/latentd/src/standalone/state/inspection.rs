@@ -173,6 +173,45 @@ impl latent_effects::runtime::EffectTimeSource for UnadmittedTime {
     }
 }
 
+/// Descriptive metadata from the installed provider; this grants no authority.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConfiguredEventEffectInspection {
+    pub schema_version: &'static str,
+    pub adapters: Vec<ConfiguredEventEffectProfile>,
+    #[serde(skip)]
+    pub(in crate::standalone) response: latent_core::native_capacity::NativeBufferPermit,
+}
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConfiguredEventEffectProfile {
+    pub configuration_digest: String,
+    pub configuration_epoch: u64,
+    pub profile: latent_effects::authority::DispatchProfile,
+}
+impl ConfiguredEventEffectInspection {
+    pub fn encode(
+        self,
+    ) -> Result<latent_core::native_capacity::NativeBuffer<Vec<u8>>, PlatformError> {
+        let encoded = serde_json::to_vec(&self).map_err(|_| super::unavailable())?;
+        if encoded.len() > 256 * 1024 {
+            return Err(super::unavailable());
+        }
+        Ok(self.response.attach(encoded))
+    }
+}
+pub(in crate::standalone) fn configured_event(
+    adapter: &latent_nats::deferred::JetStreamEffectAdapter,
+) -> ConfiguredEventEffectProfile {
+    use latent_effects::runtime::DeferredEffectAdapter;
+    let reference = adapter.provider_reference();
+    ConfiguredEventEffectProfile {
+        configuration_digest: reference.configuration_digest().into(),
+        configuration_epoch: reference.configuration_epoch(),
+        profile: adapter.profile().clone(),
+    }
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfiguredHttpEffectInspection {

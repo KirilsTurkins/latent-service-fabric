@@ -154,6 +154,114 @@ async fn warm_configured_http_inspector_retires_after_graph_drop() {
 }
 
 #[tokio::test]
+async fn warm_configured_event_inspector_retires_after_graph_drop() {
+    let directory = TempDir::new().unwrap();
+    let settings = fixture::warm(&directory).await;
+    let until = Instant::now() + settings.shutdown_grace();
+    arm();
+    let result = Box::pin(StandaloneNode::inspect_configured_event_effects(
+        settings,
+        tokio::runtime::Handle::current(),
+    ))
+    .await;
+    let probe = take();
+    probe.finish(until).await;
+    if result.is_err() {
+        assert!(probe.native.snapshot().unwrap().physically_retired());
+    }
+    let report = result.expect("warm configured event inspection must retire its graph");
+    assert_eq!(
+        report.schema_version,
+        "latent.configured-event-effect-inspection.v1"
+    );
+    assert!(report.adapters.is_empty());
+    let encoded = report.encode().unwrap();
+    assert_eq!(encoded.reserved_bytes(), 1024 * 1024);
+    let wire: serde_json::Value = serde_json::from_slice(encoded.get()).unwrap();
+    assert_eq!(wire["adapters"], serde_json::json!([]));
+    drop(encoded);
+    assert!(probe.native.snapshot().unwrap().physically_retired());
+}
+
+fn install_event_fixture(settings: &mut NodeSettings, directory: &TempDir) {
+    use std::os::unix::fs::PermissionsExt;
+    let secret_dir = directory.path().join("event-secrets");
+    std::fs::create_dir(&secret_dir).unwrap();
+    std::fs::set_permissions(&secret_dir, std::fs::Permissions::from_mode(0o700)).unwrap();
+    let secret = secret_dir.join("token");
+    std::fs::write(&secret, b"public-test-event-credential").unwrap();
+    std::fs::set_permissions(&secret, std::fs::Permissions::from_mode(0o600)).unwrap();
+    settings.providers.as_mut().unwrap().events = Some(serde_json::from_value(serde_json::json!({
+        "identity":{"id":"events","tenant":"tests","service":"event-host","epoch":1},
+        "configuration":{"formatVersion":1,"endpoint":{"serverName":"localhost","peer":"127.0.0.1:4222","allowNonPublicPeer":true},
+            "publicRoots":true,"extraRoots":[],"topics":[{"tenant":"tests","topic":"updated","subject":"lsf.allowed","stream":"DURABLE","duplicateWindowMillis":30000}],
+            "idempotencyNamespace":"fixture","maximumPayloadBytes":8192,"timeoutMillis":5000},
+        "credentialDirectory":secret_dir,"credentialReference":"event-secret","credentialFile":"token",
+        "deferred":[{"topic":"updated","qualification":{"formatVersion":1,"serverVersion":"2.14.6",
+            "streamCreated":"2026-01-01T00:00:00Z","maximumMessages":1000,"maximumBytes":1_000_000,
+            "maximumAgeMillis":60000,"maximumMessageBytes":16384}}]
+    })).unwrap());
+}
+
+#[tokio::test]
+async fn configured_event_inspector_uses_real_installed_provider_and_retires_it() {
+    let directory = TempDir::new().unwrap();
+    let mut settings = fixture::warm(&directory).await;
+    install_event_fixture(&mut settings, &directory);
+    let until = Instant::now() + settings.shutdown_grace();
+    arm();
+    let result = Box::pin(StandaloneNode::inspect_configured_event_effects(
+        settings,
+        tokio::runtime::Handle::current(),
+    ))
+    .await;
+    let probe = take();
+    probe.finish(until).await;
+    let report = result.expect("configured provider inspection must succeed");
+    assert_eq!(report.adapters.len(), 1);
+    let row = &report.adapters[0];
+    assert_eq!(row.profile.provider, "events");
+    assert_eq!(row.profile.destination, "updated");
+    assert!(row.profile.idempotency_profile.starts_with("js-window-v1:"));
+    assert!(row.configuration_digest.starts_with("sha256:"));
+    assert_eq!(row.configuration_epoch, 1);
+    let encoded = report.encode().unwrap();
+    let wire = std::str::from_utf8(encoded.get()).unwrap();
+    assert!(!wire.contains("public-test-event-credential"));
+    assert!(!wire.contains("event-secret"));
+    drop(encoded);
+    assert!(probe.native.snapshot().unwrap().physically_retired());
+}
+
+#[tokio::test]
+async fn invalid_event_profile_retires_the_original_inspection_graph() {
+    let directory = TempDir::new().unwrap();
+    let mut settings = fixture::warm(&directory).await;
+    install_event_fixture(&mut settings, &directory);
+    settings
+        .providers
+        .as_mut()
+        .unwrap()
+        .events
+        .as_mut()
+        .unwrap()
+        .deferred[0]
+        .qualification
+        .maximum_message_bytes = 1;
+    let until = Instant::now() + settings.shutdown_grace();
+    arm();
+    let result = Box::pin(StandaloneNode::inspect_configured_event_effects(
+        settings,
+        tokio::runtime::Handle::current(),
+    ))
+    .await;
+    let probe = take();
+    probe.finish(until).await;
+    assert!(result.is_err());
+    assert!(probe.native.snapshot().unwrap().physically_retired());
+}
+
+#[tokio::test]
 async fn warm_transaction_host_inspector_retires_after_graph_drop() {
     let directory = TempDir::new().unwrap();
     let settings = fixture::warm(&directory).await;

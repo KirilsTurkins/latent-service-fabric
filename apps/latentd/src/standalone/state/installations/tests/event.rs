@@ -260,6 +260,28 @@ impl EventFixture {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn configured_event_inspection_keeps_original_provider_identity_without_credentials() {
+    let event = EventFixture::new().await;
+    let adapter = event.adapter(Arc::new(AdapterClock::default()));
+    let reference = adapter.provider_reference();
+    let inspected = super::super::super::inspection::configured_event(&adapter);
+    assert_eq!(
+        inspected.configuration_digest,
+        reference.configuration_digest()
+    );
+    assert_eq!(
+        inspected.configuration_epoch,
+        reference.configuration_epoch()
+    );
+    assert_eq!(inspected.profile, *adapter.profile());
+    let wire = serde_json::to_string(&inspected).unwrap();
+    assert!(!wire.contains("fixture-secret"));
+    assert!(!wire.contains("event-secret"));
+    drop(adapter);
+    event.finish().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn signed_event_rule_installs_only_for_current_namespace_and_original_provider() {
     let event = EventFixture::new().await;
     let mut setup = Setup::configured_installation(

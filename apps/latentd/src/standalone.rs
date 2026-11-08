@@ -53,8 +53,8 @@ pub use rollouts::RolloutShutdownReport;
 pub use shutdown::ShutdownReport;
 pub(crate) use startup_observation::observe_startup;
 pub use startup_observation::StartupFailureReport;
-pub use state::ConfiguredHttpEffectInspection;
 pub use state::StateRetirementReport;
+pub use state::{ConfiguredEventEffectInspection, ConfiguredHttpEffectInspection};
 pub use state::{
     NativeDeferredEffectHostInspection, NativeHttpCallerInspection, NativeTransactionHostInspection,
 };

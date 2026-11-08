@@ -69,6 +69,67 @@ impl StandaloneNode {
         Ok(report)
     }
 
+    /// Inspect only the installed event provider profile; this does not grant dispatch.
+    pub async fn inspect_configured_event_effects(
+        settings: NodeSettings,
+        control_runtime: tokio::runtime::Handle,
+    ) -> Result<state::ConfiguredEventEffectInspection, PlatformError> {
+        use latent_core::native_capacity::{
+            NativeAdmissionClass, NativeBufferClass, NativeReservationRequest,
+        };
+        let catalogs = Catalogs::open_with_control(&settings, &control_runtime).await?;
+        let report = (|| {
+            let bootstrap = catalogs.state.as_ref().ok_or_else(super::mode_error)?;
+            let original = Arc::new(
+                bootstrap
+                    .native
+                    .reserve(
+                        NativeAdmissionClass::Recovery,
+                        NativeReservationRequest {
+                            response_bytes: 1024 * 1024,
+                            ..NativeReservationRequest::default()
+                        },
+                        bootstrap.deadline,
+                    )
+                    .map_err(|_| super::mode_error())?,
+            );
+            let response = original
+                .reserve_buffer(NativeBufferClass::Response, 1024 * 1024)
+                .map_err(|_| super::mode_error())?;
+            #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+            retirement::observe_inspection(&catalogs, &response);
+            let adapters = match (
+                catalogs.providers.as_deref(),
+                settings
+                    .providers
+                    .as_ref()
+                    .and_then(|providers| providers.events.as_ref()),
+            ) {
+                (Some(provider), Some(events)) => provider.typed_deferred_event_adapters(
+                    events,
+                    Arc::new(state::inspection::UnadmittedTime),
+                )?,
+                (_, None) => Vec::new(),
+                _ => return Err(super::mode_error()),
+            };
+            let rows = adapters
+                .iter()
+                .map(|adapter| state::inspection::configured_event(adapter))
+                .collect();
+            drop(adapters);
+            let report = state::ConfiguredEventEffectInspection {
+                schema_version: "latent.configured-event-effect-inspection.v1",
+                adapters: rows,
+                response,
+            };
+            Ok::<_, PlatformError>(report)
+        })();
+        if !catalogs.retire_recovery(&settings).await {
+            return Err(super::mode_error());
+        }
+        report
+    }
+
     #[expect(
         clippy::too_many_lines,
         reason = "Signed capture and actual ordered catalog retirement keep their original owners in one visible scope"
