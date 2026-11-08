@@ -1,4 +1,4 @@
-use super::{consumer::Ack, driver::stopped, TriggerBinding, TriggerTerminal};
+use super::{consumer::Ack, driver::stopped, InboxDelivery, TriggerBinding, TriggerTerminal};
 use crate::EventError;
 use latent_activation::{ActivationOutcome, ActivationRequest, TraceContext};
 use latent_core::ClockSample;
@@ -6,33 +6,50 @@ use latent_core::{
     ActivationId, ContractId, FunctionId, IncomingDeadline, InvocationPrincipal, Metadata,
     PlatformErrorCode, PrincipalKind, ServiceId, SpanId, TenantId, TraceId,
 };
+use latent_node::transaction_runtime::{NativeTransactionAdmission, OwnedTransactionCompletion};
 use latent_node::{
     ActivationTransportInterruption, InboundActivationReservation, LocalActivationManager,
 };
 use latent_routing::InvocationTarget;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 use tokio::sync::watch;
 
 pub(super) async fn execute(
     mut reservation: InboundActivationReservation,
     payload: &[u8],
     stop: &mut watch::Receiver<bool>,
-) -> (TriggerTerminal, Ack, bool) {
+    transaction: Option<(&InboxDelivery, Arc<NativeTransactionAdmission>)>,
+) -> (
+    TriggerTerminal,
+    Ack,
+    bool,
+    Option<OwnedTransactionCompletion>,
+) {
     reservation.input_buffer()[..payload.len()].copy_from_slice(payload);
     let Ok(mut activation) = reservation.start(payload.len()) else {
-        return (TriggerTerminal::Rejected, Ack::Retry, false);
+        return if transaction.is_some() {
+            (TriggerTerminal::RecoveryRequired, Ack::Hold, false, None)
+        } else {
+            (TriggerTerminal::Rejected, Ack::Retry, false, None)
+        };
     };
     let receipt = tokio::select! {
         biased;
         ()=stopped(stop)=>{
             let cleanup = activation.interrupt_for_cleanup(ActivationTransportInterruption::Disconnected);
             let _ = tokio::time::timeout(Duration::from_secs(3), cleanup).await;
-            return (TriggerTerminal::Cancelled, Ack::Retry, true);
+            return (TriggerTerminal::Cancelled, Ack::Retry, true, None);
         },
         receipt=&mut activation=>receipt,
     };
-    let (terminal, ack) = outcome(&receipt.outcome);
-    (terminal, ack, false)
+    if let Some((delivery, admission)) = transaction {
+        let completion = admission.take_owned_completion().ok().flatten();
+        let (terminal, ack, retained) = transaction_outcome(completion, delivery);
+        (terminal, ack, false, retained)
+    } else {
+        let (terminal, ack) = outcome(&receipt.outcome);
+        (terminal, ack, false, None)
+    }
 }
 pub(super) fn root_request(
     binding: &TriggerBinding,
@@ -67,8 +84,15 @@ pub(super) fn root_request(
         },
         idempotency_key: None,
         retry_attempt: 0,
-        budget: binding.budget.budget(),
-        metadata: Metadata::from([("trigger.id".into(), binding.id.clone())]),
+        budget: binding.activation_budget(),
+        // Display names are not part of the durable input identity. Including
+        // them in transaction metadata would change the command fingerprint on
+        // a compatible trigger rename and prevent recovery of a redelivery.
+        metadata: if binding.transaction.is_some() {
+            Metadata::new()
+        } else {
+            Metadata::from([("trigger.id".into(), binding.id.clone())])
+        },
         input: Vec::new(),
         input_media_type: "application/vnd.latent.wit-values.v1+json".into(),
     }
@@ -91,6 +115,46 @@ pub(super) fn outcome(outcome: &ActivationOutcome) -> (TriggerTerminal, Ack) {
             _ => (TriggerTerminal::Failed, Ack::Retry),
         },
     }
+}
+
+pub(super) fn transaction_outcome(
+    completion: Option<OwnedTransactionCompletion>,
+    delivery: &InboxDelivery,
+) -> (TriggerTerminal, Ack, Option<OwnedTransactionCompletion>) {
+    use latent_node::transaction_runtime::{
+        CommandCompletionDisposition, TransactionCompletionResult,
+    };
+    let Some(completion) = completion else {
+        return (TriggerTerminal::RecoveryRequired, Ack::Hold, None);
+    };
+    let record = match &completion.result {
+        TransactionCompletionResult::Command(CommandCompletionDisposition::Durable {
+            command,
+            cleanup_failure: None,
+            ..
+        })
+        | TransactionCompletionResult::Existing {
+            command,
+            result: Ok(_),
+            ..
+        } => Some(command),
+        _ => None,
+    };
+    let terminal = record
+        .filter(|record| delivery.matches(record))
+        .and_then(|record| match record.outcome() {
+            latent_commit::atomic::Outcome::Committed => Some(TriggerTerminal::Succeeded),
+            latent_commit::atomic::Outcome::Rejected => Some(TriggerTerminal::DeclaredFailure),
+            latent_commit::atomic::Outcome::Pending | latent_commit::atomic::Outcome::Aborted => {
+                None
+            }
+        });
+    if let Some(terminal) = terminal {
+        if completion.authority.with_current(&mut || {}).is_ok() {
+            return (terminal, Ack::Success, Some(completion));
+        }
+    }
+    (TriggerTerminal::RecoveryRequired, Ack::Hold, None)
 }
 
 impl super::NatsTriggers {
