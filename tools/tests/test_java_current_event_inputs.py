@@ -129,8 +129,10 @@ class CurrentJavaEventInputs(unittest.TestCase):
                 'configurationDigest':'sha256:'+'a'*64,'configurationEpoch':1,'dispatchSubject':subject,
                 'dispatchRecoveryKind':'service-integration','dispatchRecoveryScope':'observed-scope',
                 'resultPolicy':'java-original-result-v1'}
+            caller = {'subject':'java-transaction-alice','ownerKind':'user','tenant':TENANT,'service':None,
+                      'recoveryKind':'original-caller','recoveryScope':'original-caller-scope'}
             host = {'schemaVersion':'latent.transaction-host-inspection.v1','configuredProviders':[provider],
-                'configuredHttpCallers':[],'configuredTransportCallers':[],'stateProviderProfile':'state',
+                'configuredHttpCallers':[caller],'configuredTransportCallers':[caller],'stateProviderProfile':'state',
                 'stateConfigurationDigest':'sha256:'+'7'*64,'stateConfigurationEpoch':1,
                 'deferredHttp':[],'deferredEvent':[effect]}
             selected = {'provider':'events','destination':'updated','adapter':'nats-jetstream-effect-v1',
@@ -139,6 +141,18 @@ class CurrentJavaEventInputs(unittest.TestCase):
                        'adapters':[{'configurationDigest':'sha256:'+'6'*64,'configurationEpoch':1,'profile':selected}]}
             observed = ObservedEventHost.read(host, preview, operations, files[EVENT_REQUIREMENTS])
             self.assertEqual(observed.profile['destination'], 'updated')
+            from tools.java_transaction_qualification.event_hosts import policy_documents
+            proposals = policy_documents(observed, operations[0])
+            self.assertEqual(proposals['bindings']['event-stage']['capability'], 'latent:intents/staging@0.1.0')
+            self.assertEqual(proposals['bindings']['event-dispatch']['capability'], 'latent:events/publisher@0.2.0')
+            self.assertEqual(proposals['policies']['dispatch']['rules'][0]['resources']['subjects'], ['updated'])
+            self.assertEqual([grant['capability'] for grant in proposals['deploymentGrants']], ['latent:intents/staging@0.1.0'])
+            with self.assertRaises(TypeError):
+                observed.profile['destination'] = 'other'
+            changed_operation = copy.deepcopy(operations[0])
+            changed_operation['deferredEvent']['dispatchPolicies'] = ['other']
+            with self.assertRaises(ValueError):
+                policy_documents(observed, changed_operation)
             for surface, field in [('host','publication'), ('host','dispatchSubject'), ('host','configurationDigest'),
                                    ('preview','configurationDigest'), ('preview','configurationEpoch')]:
                 bad_host, bad_preview = copy.deepcopy(host), copy.deepcopy(preview)
@@ -146,6 +160,14 @@ class CurrentJavaEventInputs(unittest.TestCase):
                 target[field] = 'wrong'
                 with self.assertRaises(ValueError):
                     ObservedEventHost.read(bad_host, bad_preview, operations, files[EVENT_REQUIREMENTS])
+            bad_host = copy.deepcopy(host)
+            bad_host['configuredTransportCallers'][0] = {**bad_host['configuredTransportCallers'][0], 'recoveryScope': 'different-caller'}
+            with self.assertRaises(ValueError):
+                ObservedEventHost.read(bad_host, preview, operations, files[EVENT_REQUIREMENTS])
+            bad_host = copy.deepcopy(host)
+            bad_host['configuredProviders'][0]['service'] = 'bad\u0085service'
+            with self.assertRaises(ValueError):
+                ObservedEventHost.read(bad_host, preview, operations, files[EVENT_REQUIREMENTS])
             bad = copy.deepcopy(preview)
             bad['adapters'][0]['profile']['destination'] = ''
             with self.assertRaises(ValueError):
@@ -156,6 +178,13 @@ class CurrentJavaEventInputs(unittest.TestCase):
                 ObservedEventHost.read(host, bad, operations, files[EVENT_REQUIREMENTS])
             with self.assertRaises(ValueError):
                 ObservedEventHost.read(host, preview, operations, files[EVENT_REQUIREMENTS] + b' ')
+            changed = json.loads(files[EVENT_REQUIREMENTS])
+            changed['ceiling']['maximum_attempts'] = True
+            raw = json.dumps(changed).encode()
+            reselected = copy.deepcopy(operations)
+            reselected[0]['deferredEvent']['requirementsDigest'] = digest(raw)
+            with self.assertRaises(ValueError):
+                ObservedEventHost.read(host, preview, reselected, raw)
 
     def test_packaging_refuses_changed_identity_missing_marker_and_ambiguous_effects(self):
         profile = 'js-window-v1:' + 'b' * 64
