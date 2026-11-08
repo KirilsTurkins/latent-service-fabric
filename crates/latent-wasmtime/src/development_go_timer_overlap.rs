@@ -1,6 +1,6 @@
 //! Closed, activation-owned witness for the signed Go timer overlap fixture.
 //!
-//! Fixed-capacity state holds at most four Task tokens and three timer tokens.
+//! Fixed-capacity state holds at most four Task tokens and four timer tokens.
 //! Both Arc backings are prepaid on the original activation, and their charge
 //! survives every detached wait clone. The optional barrier uses an already
 //! budget-owned provider wait as its finite timeout and invents no result.
@@ -22,7 +22,8 @@ const MAX_TASKS: usize = 4;
 const BARRIER_LIMIT: Duration = Duration::from_secs(2);
 const STOP_OBSERVATION: Duration = Duration::from_millis(10);
 const ALLOCATION_BOOKKEEPING: usize = 64;
-const PREFIX: &str = "LSF-GO-TIMER-OVERLAP-V1";
+const GC_MARKER_PERIOD_NANOS: u64 = 37 * 60 * 1_000_000_000;
+const PREFIX: &str = "LSF-GO-TIMER-OVERLAP-V2";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Case {
@@ -41,6 +42,10 @@ impl Case {
             Self::GcResetReset => "go-timer-overlap-gc-reset-reset",
             Self::GcResetStop => "go-timer-overlap-gc-reset-stop",
         }
+    }
+
+    const fn requires_gc(self) -> bool {
+        matches!(self, Self::GcResetReset | Self::GcResetStop)
     }
 }
 
@@ -66,6 +71,8 @@ struct State {
     next_finished: bool,
     target_stopped: bool,
     markers: [Marker; 2],
+    gc_marker: Option<RuntimeToken>,
+    gc_marker_stopped: bool,
 }
 
 impl State {
@@ -88,6 +95,8 @@ impl State {
                 stopped: false,
                 parked: false,
             }; 2],
+            gc_marker: None,
+            gc_marker_stopped: false,
         }
     }
 
@@ -108,8 +117,37 @@ impl State {
         self.task_count += 1;
     }
 
-    fn timer_start(&mut self, token: RuntimeToken, parent: Option<RuntimeToken>) {
+    fn timer_start(
+        &mut self,
+        token: RuntimeToken,
+        parent: Option<RuntimeToken>,
+        period: Option<u64>,
+    ) {
         if self.markers[1].parked {
+            return;
+        }
+        if self.case.is_some_and(Case::requires_gc) && self.markers[1].stopped {
+            if self.gc_marker.is_some()
+                || parent != self.markers[1].task
+                || period != Some(GC_MARKER_PERIOD_NANOS)
+                || !self.next_live
+                || !self.next_pending
+                || !self.target_stopped
+                || !self.markers[0].parked
+                || Some(token) == self.target
+                || self
+                    .markers
+                    .iter()
+                    .any(|marker| marker.timer == Some(token))
+            {
+                self.invalid = true;
+            } else {
+                self.gc_marker = Some(token);
+            }
+            return;
+        }
+        if period.is_some() {
+            self.invalid = true;
             return;
         }
         if !self.next_seen {
@@ -184,6 +222,11 @@ impl State {
                 self.invalid = true;
             }
             self.markers[1].stopped = true;
+        } else if Some(token) == self.gc_marker {
+            if self.gc_marker_stopped || !self.next_live || !self.next_pending || waits == 0 {
+                self.invalid = true;
+            }
+            self.gc_marker_stopped = true;
         } else {
             self.invalid = true;
         }
@@ -202,6 +245,15 @@ impl State {
                     self.invalid = true;
                 }
                 continue;
+            }
+            // Collection may park this worker before the post-GC marker.
+            // That park must neither satisfy the witness nor release the wait.
+            if index == 1
+                && self.case.is_some_and(Case::requires_gc)
+                && self.markers[1].stopped
+                && !self.gc_marker_stopped
+            {
+                return false;
             }
             if !self.markers[index].stopped
                 || !self.target_stopped
@@ -241,6 +293,7 @@ impl State {
                 && self.next_pending
                 && self.next_finished
                 && self.target_stopped
+                && (!self.case.is_some_and(Case::requires_gc) || self.gc_marker_stopped)
                 && self
                     .markers
                     .iter()
@@ -252,6 +305,7 @@ impl State {
             next_pending: self.next_pending,
             target_stopped: self.target_stopped,
             first_parked: self.markers[0].parked,
+            gc_marker_stopped: self.gc_marker_stopped,
             second_parked: self.markers[1].parked,
             next_finished: self.next_finished,
         }
@@ -268,6 +322,7 @@ pub struct Snapshot {
     pub next_pending: bool,
     pub target_stopped: bool,
     pub first_parked: bool,
+    pub gc_marker_stopped: bool,
     pub second_parked: bool,
     pub next_finished: bool,
 }
@@ -375,8 +430,13 @@ impl Observer {
     pub(crate) fn task(&self, kind: OwnerKind, token: RuntimeToken, parent: Option<RuntimeToken>) {
         self.apply(|state| state.task(kind, token, parent));
     }
-    pub(crate) fn timer_start(&self, token: RuntimeToken, parent: Option<RuntimeToken>) {
-        self.apply(|state| state.timer_start(token, parent));
+    pub(crate) fn timer_start(
+        &self,
+        token: RuntimeToken,
+        parent: Option<RuntimeToken>,
+        period: Option<u64>,
+    ) {
+        self.apply(|state| state.timer_start(token, parent, period));
     }
     pub(crate) fn next(&self, token: RuntimeToken, waits: u32) -> bool {
         let mut accepted = false;
@@ -472,7 +532,7 @@ impl Observer {
         // Fixed fields and labels only. A failed write produces no evidence.
         let _ = writeln!(
             std::io::stderr().lock(),
-            "{PREFIX}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}",
+            "{PREFIX}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}",
             case.activation(),
             u8::from(snapshot.complete),
             u8::from(snapshot.invalid),
@@ -482,6 +542,7 @@ impl Observer {
             u8::from(snapshot.next_pending),
             u8::from(snapshot.target_stopped),
             u8::from(snapshot.first_parked),
+            u8::from(snapshot.gc_marker_stopped),
             u8::from(snapshot.second_parked),
             u8::from(snapshot.next_finished),
             bytes
@@ -606,17 +667,17 @@ mod tests {
             ..State::new()
         };
         state.task(OwnerKind::Task, token(1), None);
-        state.timer_start(token(10), Some(token(1)));
+        state.timer_start(token(10), Some(token(1)), None);
         state.task(OwnerKind::Task, token(2), Some(token(1)));
         state.next(token(10), 1);
         state.next_pending(token(10));
         state.task(OwnerKind::Task, token(3), Some(token(1)));
-        state.timer_start(token(11), Some(token(3)));
+        state.timer_start(token(11), Some(token(3)), None);
         state.timer_stop(token(11), 1);
         state.timer_stop(token(10), 1);
         assert!(!state.park(token(3), 1));
         state.task(OwnerKind::Task, token(4), Some(token(1)));
-        state.timer_start(token(12), Some(token(4)));
+        state.timer_start(token(12), Some(token(4)), None);
         state.timer_stop(token(12), 1);
         state
     }
@@ -638,6 +699,7 @@ mod tests {
                 next_pending: true,
                 target_stopped: true,
                 first_parked: true,
+                gc_marker_stopped: false,
                 second_parked: true,
                 next_finished: true,
             }
@@ -651,15 +713,33 @@ mod tests {
             let mut state = before_second_park();
             state.case = Some(case);
             assert!(state.next_live && state.next_pending && state.markers[0].parked);
+            // GC itself can park the second worker. It must not count as
+            // the later timer-operation park or release the provider wait.
+            assert!(!state.park(token(4), 1));
+            assert!(!state.invalid && !state.snapshot().second_parked);
+            state.timer_start(token(13), Some(token(4)), Some(GC_MARKER_PERIOD_NANOS));
+            state.timer_stop(token(13), 1);
             assert!(state.park(token(4), 1));
             state.next_finished(token(10));
             assert!(state.snapshot().complete);
+            assert!(state.snapshot().gc_marker_stopped);
+
+            let mut missing = before_second_park();
+            missing.case = Some(case);
+            assert!(!missing.park(token(4), 1));
+            missing.next_finished(token(10));
+            assert!(!missing.snapshot().complete && missing.invalid);
+
+            let mut wrong_marker = before_second_park();
+            wrong_marker.case = Some(case);
+            wrong_marker.timer_start(token(13), Some(token(4)), None);
+            assert!(wrong_marker.invalid);
 
             let mut early = before_second_park();
             early.case = Some(case);
             early.markers[0].parked = false;
             early.markers[1] = Marker::default();
-            early.timer_start(token(12), Some(token(4)));
+            early.timer_start(token(12), Some(token(4)), None);
             assert!(early.invalid);
         }
     }
@@ -671,7 +751,7 @@ mod tests {
             ..State::new()
         };
         wrong_next.task(OwnerKind::Task, token(1), None);
-        wrong_next.timer_start(token(10), Some(token(1)));
+        wrong_next.timer_start(token(10), Some(token(1)), None);
         wrong_next.next(token(99), 1);
         assert!(wrong_next.invalid);
 

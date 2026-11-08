@@ -57,6 +57,10 @@ func Run(which uint32) uint32 {
 			if before.NumGC == after.NumGC {
 				panic("forced collection did not complete")
 			}
+			// Its distinctive periodic owner is observed by the host only
+			// after GC returns. A park inside GC cannot release the wait.
+			collected := time.NewTicker(37 * time.Minute)
+			collected.Stop()
 		}
 		markers <- struct{}{}
 		if which%2 == 0 {

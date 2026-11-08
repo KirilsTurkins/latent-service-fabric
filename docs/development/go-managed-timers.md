@@ -74,9 +74,11 @@ The separate timer-overlap owner retains the original Reset/Reset and
 Reset/Stop cells and adds one forced-collection version of each. In those cells,
 the second worker first stops its marker timer; the host witness accepts that
 marker only after the first worker has parked while the original provider wait
-is pending. The worker calls `runtime.GC` and checks that `NumGC` changed before
-it attempts its own timer operation. The host retains the original provider
-wait until the second worker parks and requires its physical retirement, so a
+is pending. The worker calls `runtime.GC`, checks that `NumGC` changed, then
+starts and stops a ticker with a distinctive period before its timer operation.
+The host ignores parks during collection and requires that post-GC marker from
+the same worker before accepting its second park. It retains the original
+provider wait until that park and requires physical wait retirement, so a
 passing signed cell establishes a collection between those observed events.
 The native reference cells only compare ordinary Go return behavior; the
 host witness establishes the guest ordering. A fresh activation follows the
