@@ -206,7 +206,10 @@ public:
     record->timer_live = true;
     if (!record->arguments.initCapacity(arguments.length())) {
       JS_ReportOutOfMemory(cx);
-      (void)stop(cx, *record); (void)collect(cx);
+      // A refused stop retains the original timer and capture record. Close
+      // timer admission until cancellation can retire that exact ownership.
+      if (!stop(cx, *record)) { stopped_ = true; return false; }
+      if (!collect(cx)) stopped_ = true;
       return false;
     }
     for (size_t index = 0; index < arguments.length(); ++index)
