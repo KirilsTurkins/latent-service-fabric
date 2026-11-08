@@ -83,9 +83,11 @@ def validate_receipt(value: dict, *, finite: bool = False, managed: bool = False
             'latent.dotnet.managed-accepted-work.v5', 'latent.dotnet.managed-accepted-work.v6',
             'latent.dotnet.managed-accepted-work.v7', 'latent.dotnet.managed-accepted-work.v8',
             'latent.dotnet.managed-accepted-work.v9', 'latent.dotnet.managed-accepted-work.v10',
-            'latent.dotnet.managed-accepted-work.v11', 'latent.dotnet.managed-accepted-work.v12')
+            'latent.dotnet.managed-accepted-work.v11', 'latent.dotnet.managed-accepted-work.v12',
+            'latent.dotnet.managed-accepted-work.v13')
         timers = prefetched or value['managedAcceptedWork']['patch'] == 'latent.dotnet.managed-accepted-work.v2'
-        fixed.update(generatedHelperCount=(91 if timers else 77) + int(prefetched), unchangedOriginalMethods=44719 if timers else 44723,
+        reset_dispatch = value['managedAcceptedWork']['patch'] == 'latent.dotnet.managed-accepted-work.v13'
+        fixed.update(generatedHelperCount=(91 if timers else 77) + int(prefetched) + 9*int(reset_dispatch), unchangedOriginalMethods=44719 if timers else 44723,
             managedAcceptedWork=value['managedAcceptedWork'])
     if aggregate:
         from tools.dotnet_guest import aggregate_task_wait
@@ -93,9 +95,12 @@ def validate_receipt(value: dict, *, finite: bool = False, managed: bool = False
             TIMER_REWRITE_RECEIPT, PREFETCH_REWRITE_RECEIPT, QUEUE_FENCE_REWRITE_RECEIPT,
             QUEUE_WITNESS_REWRITE_RECEIPT, PROVISIONAL_RESERVATION_REWRITE_RECEIPT,
             RESULT_TRANSITION_REWRITE_RECEIPT, TIMER_RESERVATION_REWRITE_RECEIPT, REQUIRED_RESULT_REWRITE_RECEIPT,
-            NATIVE_STARTUP_REWRITE_RECEIPT, TASK_IDENTITY_REWRITE_RECEIPT, MULTIPLE_UNWRAP_REWRITE_RECEIPT)
+            NATIVE_STARTUP_REWRITE_RECEIPT, TASK_IDENTITY_REWRITE_RECEIPT, MULTIPLE_UNWRAP_REWRITE_RECEIPT,
+            DISPATCH_RESET_REWRITE_RECEIPT)
         aggregate_task_wait.validate(value.get('aggregateTaskWait'))
-        expected_managed = (MULTIPLE_UNWRAP_REWRITE_RECEIPT
+        expected_managed = (DISPATCH_RESET_REWRITE_RECEIPT
+            if value['managedAcceptedWork']['patch'] == DISPATCH_RESET_REWRITE_RECEIPT['patch']
+            else MULTIPLE_UNWRAP_REWRITE_RECEIPT
             if value['managedAcceptedWork']['patch'] == MULTIPLE_UNWRAP_REWRITE_RECEIPT['patch']
             else TASK_IDENTITY_REWRITE_RECEIPT
             if value['managedAcceptedWork']['patch'] == TASK_IDENTITY_REWRITE_RECEIPT['patch']
@@ -118,7 +123,7 @@ def validate_receipt(value: dict, *, finite: bool = False, managed: bool = False
                 or type(value.get('outputDigest')) is not str
                 or re.fullmatch(r'sha256:[0-9a-f]{64}', value['outputDigest']) is None):
             raise ValueError('task-wait-aggregate-managed-and-output-identities')
-        fixed.update(generatedHelperCount=95 + int(prefetched), unchangedOriginalMethods=44709,
+        fixed.update(generatedHelperCount=95 + int(prefetched) + 9*int(reset_dispatch), unchangedOriginalMethods=44709,
             timerDriverScheduledToFire='positive-batch-detachment-before-original-enumerator',
             aggregateTaskWait=value['aggregateTaskWait'])
     bodies = value.get('timerDriverOriginalBodies')
@@ -144,7 +149,7 @@ def validate_receipt(value: dict, *, finite: bool = False, managed: bool = False
 def validate_current_receipt(value: dict, *, finite: bool = False,
                              managed: bool = False, aggregate: bool = False) -> None:
     validate_receipt(value, finite=finite, managed=managed, aggregate=aggregate)
-    if managed and value['managedAcceptedWork']['patch'] != 'latent.dotnet.managed-accepted-work.v12':
+    if managed and value['managedAcceptedWork']['patch'] != 'latent.dotnet.managed-accepted-work.v13':
         raise ValueError('task-wait-current-managed-readiness-required')
     if aggregate and value['aggregateTaskWait']['patch'] != 'latent.dotnet.wait-all.v3':
         raise ValueError('task-wait-current-prefetched-poll-required')

@@ -138,6 +138,20 @@ CASES = (
     'multiple-unwrap-both-observed', 'multiple-unwrap-neither-observed',
     'multiple-unwrap-first-completes-before-pending', 'multiple-unwrap-second-completes-before-pending',
     'multiple-unwrap-required-capacity',
+    'successful-unwrap-releases-capacity', 'inline-pop-retains-unwrap-owner',
+    'dispatch-reset-early-exposes-capacity', 'dispatch-reset-retains-owner',
+    'dispatch-reset-nested-frame-identity', 'dispatch-reset-transition-preserves-queued-work',
+    'dispatch-reset-null-context-refused',
+    'dispatch-reset-explicit-root-context', 'dispatch-execute-throw-retains-owner',
+    'dispatch-reset-throw-retains-owner', 'dispatch-reset-throwing-notification',
+    'dispatch-queue-ack-refused', 'dispatch-queue-ack-unknown',
+    'dispatch-owner-ack-refused', 'dispatch-owner-ack-unknown',
+    'dispatch-identity-change-fences-frame',
+    'dispatch-exit-failure-retains-frame',
+    'dispatch-reset-entry-failure-before', 'dispatch-reset-entry-failure-after',
+    'dispatch-reset-return-failure-before', 'dispatch-reset-return-failure-after',
+    'dispatch-direct-task-success', 'dispatch-direct-task-observed-fault',
+    'dispatch-queued-sibling-retains-owner',
     *SETTLEMENT_CASES, *QUEUE_SETTLEMENT_CASES, *ROLLBACK_SETTLEMENT_CASES,
     *OWNER_SETTLEMENT_CASES, *RESULT_SETTLEMENT_CASES,
     *CONVERSION_SETTLEMENT_CASES, *OBSERVED_RESULT_SETTLEMENT_CASES,
@@ -258,6 +272,7 @@ TIMER_CASES = (
     'timer-allocation-fences-retired-parent',
     'change-reuses-original-owner', 'failed-change-rolls-back-unused-owner',
     'one-shot-delete-is-not-callback-return', 'multiple-queued-callbacks-retain-one-timer',
+    'running-dispatches-consume-original-queue-slots',
     'disposed-queued-callback-retires-after-cancelled-fire', 'callback-required-task-survives-return',
     'live-timer-descendant-during-closing', 'callback-throw-never-refunds-original-running-owner',
     'timer-pending-peer-failure-blocks-commit',
@@ -282,14 +297,15 @@ TIMER_WAIT_CASES = (
     'dropping_before_first_poll_releases_the_original_wait',
     'invalid_constructor_parent_is_still_refused_without_leak',
     'invalid_explicit_wait_token_is_never_ambiently_replaced',
-    'later_ambient_task_cannot_reparent_an_already_owned_wait')
+    'later_ambient_task_cannot_reparent_an_already_owned_wait',
+    'reset_fence_refuses_managed_and_native_before_registration')
 
 
 def verify_timer_wait(output: Path) -> dict:
     """Compile the actual Rust Timer/Owner source with closed dependency ports."""
     output = fresh(Path(output).absolute())
     fixture = 'tools/fixtures/dotnet-timer-wait-control.rs'
-    names = (fixture, 'sdk/dotnet-guest/runtime/http/owner.rs',
+    names = (fixture, 'sdk/dotnet-guest/runtime/http/owner.rs', 'sdk/dotnet-guest/runtime/http/managed.rs',
         'sdk/dotnet-guest/runtime/http/timer.rs')
     source = output/'source'
     for name in names:
@@ -305,7 +321,7 @@ def verify_timer_wait(output: Path) -> dict:
     executable = output/('timer-wait-control.exe' if sys.platform == 'win32' else 'timer-wait-control')
     commands.run('timer-wait-source-compile', rustc, '--edition=2021', '--test', source/fixture, '-o', executable)
     raw = commands.run('timer-wait-source-execute', executable, '--test-threads=1')
-    require(len(raw) <= 16384 and b'test result: ok. 6 passed; 0 failed; 0 ignored;' in raw,
+    require(len(raw) <= 16384 and b'test result: ok. 7 passed; 0 failed; 0 ignored;' in raw,
         'timer-wait-source-control-summary')
     rows = []
     for name in TIMER_WAIT_CASES:
