@@ -26,18 +26,26 @@ async fn retired(f: &Fixture, case: &str, mode: u32, outcome: &str, created: u64
 #[tokio::test]
 #[ignore = "requires captured ordinary v5 Go source and the bounded development timer witness"]
 async fn signed_overlapping_public_timer_operations_retire_the_original_wait() {
+    run_overlap("LSF_GO_TIMER_OVERLAP_FIXTURE", "go-component-activation-v5").await;
+}
+
+#[tokio::test]
+#[ignore = "requires captured ordinary v7 Go source and the bounded development timer witness"]
+async fn signed_v7_overlapping_public_timer_operations_retire_the_original_wait() {
+    run_overlap(
+        "LSF_GO_V7_TIMER_OVERLAP_FIXTURE",
+        "go-component-activation-v7",
+    )
+    .await;
+}
+
+async fn run_overlap(variable: &str, profile: &str) {
     assert!(cfg!(feature = "development-go-timer-overlap"));
     assert_eq!(std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(), Ok("go"));
     let root = tempfile::tempdir().unwrap();
     // The existing Task16 / Wait4 / Timer2 profile and request budget are not
     // enlarged for this independently selected witness.
-    let f = prepare_owned_fixture(
-        root.path(),
-        "LSF_GO_TIMER_OVERLAP_FIXTURE",
-        "go-component-activation-v5",
-        16,
-    )
-    .await;
+    let f = prepare_owned_fixture(root.path(), variable, profile, 16).await;
     let mut publication = None;
     for (case, id, mode, created) in [
         ("reset-reset", "go-timer-overlap-reset-reset", 0, 1),
