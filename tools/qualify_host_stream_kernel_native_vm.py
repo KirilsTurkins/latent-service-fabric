@@ -262,9 +262,34 @@ def qualify(output, revision):
         write_json(output/'commands.json',commands.records)
 
 
+NODE_LINK_SCRIPT = 'tools/q35_node_no_stapsdt.ld'
+NODE_LINK_SCRIPT_SHA256 = '4e2cee750ba96802c133a6ce7e045f919708a09fc7cf67f5a60215c26269f763'
 NODE_RECIPE = (*RECIPE,'tools/qualify_host_stream_kernel_stream_objects.py',
     'tools/qualify_host_stream_kernel_objects.py','tools/requirements.lock',
-    'tools/tests/fixtures/q35-bar3.c')
+    'tools/tests/fixtures/q35-bar3.c',NODE_LINK_SCRIPT)
+
+
+def node_link_script(root,source_inputs):
+    """Capture exactly the reviewed non-allocated USDT-note discard script."""
+    raw = read_file(root/NODE_LINK_SCRIPT,1024)
+    identity = native.identity(raw)
+    native.require(identity['sha256'] == NODE_LINK_SCRIPT_SHA256 and
+        source_inputs.get(NODE_LINK_SCRIPT) == {'digest':'sha256:'+NODE_LINK_SCRIPT_SHA256,
+            'size':identity['bytes']}, 'node-link-script-source-identity')
+    return raw
+
+
+def node_example_arguments(cargo,link_script=None):
+    """The optional linker flags apply only to this selected final example."""
+    if link_script is not None:
+        native.require(isinstance(link_script,Path) and link_script.is_absolute() and
+            ',' not in str(link_script) and '\n' not in str(link_script) and '\r' not in str(link_script),
+            'node-link-script-path')
+    args = (cargo,'rustc' if link_script is not None else 'build','--locked','-j2','-p','latent-streams',
+        '--example','kernel_constructor_vm','--features','development-outbound','--release',
+        '--target',TARGET,'--message-format=json')
+    return args if link_script is None else (*args,'--','-Clink-arg=-Wl,--no-eh-frame-hdr',
+        '-Clink-arg=-Wl,-T,'+str(link_script))
 
 
 def node_source_inputs(root,listed):
@@ -596,6 +621,7 @@ def qualify_node(output,revision):
         native.require(run('source-head','git','-c','core.fsmonitor=false','rev-parse','HEAD',seconds=15).decode().strip() == revision,'node-source-head')
         listed = run('source-path-inventory','git','-c','core.fsmonitor=false','ls-files','-z',seconds=30)
         before = node_source_inputs(ROOT,listed)
+        link_script_raw = node_link_script(ROOT,before) if bar3 else None
         physical,capacity_raw = c.capacity_capture(ROOT)
         boot_raw = native.node_capture(ROOT)
         prefix_raw = native.node_prefix_capture(ROOT) if prefix else {}
@@ -880,13 +906,30 @@ def qualify_node(output,revision):
             LSF_Q35_QUALIFICATION_SOURCE_SHA256=source_hash,LSF_Q35_QUALIFICATION_CONFIG_SHA256=config_hash)
         if prefix:
             environment['LSF_Q35_PREFIX_PROFILE'] = native.SETUP_PROFILE if setup else native.PREFIX_PROFILE
-        cargo_raw = run('build-node-native-example',tools['cargo'],'build','--locked','-j2','-p','latent-streams',
-            '--example','kernel_constructor_vm','--features','development-outbound','--release',
-            '--target',TARGET,'--message-format=json')
+        link_script = None
+        if bar3:
+            # The measured image had only 1,056 bytes below the unchanged 3 MiB limit;
+            # the actual size remains enforced on every build.  Discarding the
+            # non-allocated .note.stapsdt removes USDT probe discovery for this child.
+            # The script does not discard .eh_frame; host C unwind controls are not
+            # guest or Rust lifecycle qualification and this profile aborts on panic.
+            link_script = private/'q35-node-no-stapsdt.ld'
+            native.require(not link_script.exists(),'node-link-script-private-fresh')
+            link_script.write_bytes(link_script_raw)
+            native.require(read_file(link_script,1024) == link_script_raw,'node-link-script-private-identity')
+            receipt['nativeLink'] = {'source':NODE_LINK_SCRIPT,'script':native.identity(link_script_raw),
+                'finalExampleOnly':True,'ehFrameHeaderSuppressionRequested':True,
+                'requestedDiscardedSection':'.note.stapsdt',
+                'unwindFrameDiscardRequested':False,'hostControlsAreGuestQualification':False}
+        cargo_raw = run('build-node-native-example',*node_example_arguments(tools['cargo'],link_script))
+        if bar3:
+            native.require(read_file(link_script,1024) == link_script_raw and
+                node_link_script(ROOT,before) == link_script_raw,'node-link-script-after-build')
         executable = cargo_product(cargo_raw,ROOT,private/'native-target')
         retain_native_candidate(executable,output,receipt)
         child = keep('native-init',executable,native.MAX_NATIVE_INIT)
         receipt['nativeInit'] = native.native_elf(child)
+        if bar3:receipt['nativeLink']['fileHeadroomBytes'] = native.MAX_NATIVE_INIT-len(child)
         source = native.node_supervisor(boot_raw,read_file(ROOT/native.ORIGINAL,64*1024))
         # The actual command owner wraps this existing compile helper too.
         class Shared:
@@ -957,6 +1000,8 @@ def qualify_node(output,revision):
             (not fixup or native.node_fixup_capture(ROOT) == fixup_raw) and
             (not intx or native.node_intx_capture(ROOT) == intx_raw) and
             (not bar3 or native.node_bar3_capture(ROOT) == bar3_raw),'node-all-source-unchanged')
+        if bar3:
+            native.require(read_file(link_script,1024) == link_script_raw,'node-link-script-private-unchanged')
         if intx:
             native.require(all(native.identity(read_file(qemu_source/name,4*1024**2)) == row['after']
                 for name,row in qemu_derivatives.items()),'node-qemu-derived-source-stable')

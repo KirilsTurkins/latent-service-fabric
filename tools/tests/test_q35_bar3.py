@@ -80,6 +80,49 @@ class Q35Bar3Observation(unittest.TestCase):
                 owner.node_bar3_serial(bad)
 
 
+class Q35Bar3LinkProfile(unittest.TestCase):
+    def test_only_exact_inventoried_discard_script_is_admitted(self):
+        programme = prior.programme
+        script = (Path(__file__).resolve().parents[2]/programme.NODE_LINK_SCRIPT).read_bytes()
+        identity = owner.identity(script)
+        captured = {programme.NODE_LINK_SCRIPT:{'digest':'sha256:'+identity['sha256'],
+                                                'size':identity['bytes']}}
+        self.assertIn(programme.NODE_LINK_SCRIPT,programme.NODE_RECIPE)
+        self.assertEqual(identity['sha256'],programme.NODE_LINK_SCRIPT_SHA256)
+        with tempfile.TemporaryDirectory() as root:
+            root = Path(root)
+            local = root/programme.NODE_LINK_SCRIPT
+            local.parent.mkdir(parents=True)
+            local.write_bytes(script)
+            self.assertEqual(programme.node_link_script(root,captured),script)
+            with self.assertRaisesRegex(ValueError,'node-link-script-source-identity'):
+                programme.node_link_script(root,{})
+            local.write_bytes(script+b'\n')
+            forged = {programme.NODE_LINK_SCRIPT:{'digest':'sha256:'+owner.identity(local.read_bytes())['sha256'],
+                                                  'size':local.stat().st_size}}
+            with self.assertRaisesRegex(ValueError,'node-link-script-source-identity'):
+                programme.node_link_script(root,forged)
+
+    def test_modified_link_options_belong_only_to_selected_final_example(self):
+        programme = prior.programme
+        original = programme.node_example_arguments('/usr/bin/cargo')
+        self.assertEqual(original[1],'build')
+        self.assertNotIn('--',original)
+        self.assertEqual(programme.FLAGS,('-Ctarget-feature=+crt-static',
+            '-Crelocation-model=static','-Clink-arg=-no-pie'))
+        with tempfile.TemporaryDirectory() as root:
+            script = Path(root)/'q35-node-no-stapsdt.ld'
+            selected = programme.node_example_arguments('/usr/bin/cargo',script)
+            self.assertEqual(selected[1],'rustc')
+            self.assertEqual(selected[2:len(original)],original[2:])
+            self.assertEqual(selected[len(original):],('--','-Clink-arg=-Wl,--no-eh-frame-hdr',
+                '-Clink-arg=-Wl,-T,'+str(script)))
+            with self.assertRaisesRegex(ValueError,'node-link-script-path'):
+                programme.node_example_arguments('/usr/bin/cargo',Path(root)/'bad,name.ld')
+            with self.assertRaisesRegex(ValueError,'node-link-script-path'):
+                programme.node_example_arguments('/usr/bin/cargo',Path('relative.ld'))
+
+
 class Q35RejectedNativeEvidence(unittest.TestCase):
     def test_oversized_candidate_is_retained_but_never_admitted(self):
         with tempfile.TemporaryDirectory() as root:
