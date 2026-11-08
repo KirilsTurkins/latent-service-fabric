@@ -81,7 +81,7 @@ fn configured_deferred_events_require_the_original_installed_provider() {
         "credentialDirectory":"private-events", "credentialReference":"peer", "credentialFile":"token",
         "deferred":[{"topic":"updated", "qualification":{
             "formatVersion":1, "serverVersion":"2.14.6", "streamCreated":"2026-01-01T00:00:00Z",
-            "maximumMessages":1000, "maximumBytes":1000000,
+            "maximumMessages":1000, "maximumBytes":1_000_000,
             "maximumAgeMillis":60000, "maximumMessageBytes":8192
         }}]
     }))

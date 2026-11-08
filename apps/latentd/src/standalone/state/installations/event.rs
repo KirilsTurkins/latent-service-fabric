@@ -131,6 +131,10 @@ pub(in crate::standalone::state) fn recovery_profile(
     clippy::too_many_arguments,
     reason = "Keep the original signed, policy, provider and native owners explicit"
 )]
+#[expect(
+    clippy::too_many_lines,
+    reason = "Keep signed capture, current policy and original namespace acceptance in one visible seal"
+)]
 pub(super) fn install(
     asset: &SelectedTransactionAsset,
     operation: &OperationSettings,

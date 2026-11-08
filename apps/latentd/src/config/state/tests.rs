@@ -198,9 +198,8 @@ fn deferred_event_requires_explicit_signed_authority_and_unambiguous_pins() {
     ] {
         let mut changed = wire.clone();
         changed["operations"][0]["deferredEvent"]["dispatchAuthority"] = bad;
-        match serde_json::from_value::<StateConfig>(changed) {
-            Ok(config) => assert!(derive(&config, &data()).is_err()),
-            Err(_) => (),
+        if let Ok(config) = serde_json::from_value::<StateConfig>(changed) {
+            assert!(derive(&config, &data()).is_err());
         }
     }
     let mut duplicate = wire.clone();

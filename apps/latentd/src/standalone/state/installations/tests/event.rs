@@ -7,7 +7,11 @@ use latent_capabilities::broker::{
     ActivationCapabilityBroker, CapabilityBrokerLimits,
 };
 use latent_core::SystemActivationClock;
-use latent_effects::runtime::DeferredEffectAdapter;
+use latent_effects::{
+    authority::{CommitLink, EffectScope},
+    runtime::DeferredEffectAdapter,
+};
+use latent_nats::deferred::DeferredEventAuthorization;
 use latent_nats::{
     deferred::JetStreamQualification, NatsConfig, NatsCredential, NatsEndpoint, NatsPublisher,
     TopicMapping,
@@ -26,6 +30,10 @@ pub(super) struct EventFixture {
     publisher: NatsPublisher,
 }
 impl EventFixture {
+    #[expect(
+        clippy::too_many_lines,
+        reason = "The real provider retains its broker, protected credential and pools until physical shutdown"
+    )]
     async fn new() -> Self {
         let root = tempfile::tempdir().unwrap();
         let catalog = Arc::new(
@@ -303,8 +311,6 @@ async fn signed_event_rule_installs_only_for_current_namespace_and_original_prov
     drop(before_namespace);
     let installed = startup::installed(&setup).await;
     assert_eq!(installed.installations.len(), 1);
-    use latent_effects::authority::{CommitLink, EffectScope};
-    use latent_nats::deferred::DeferredEventAuthorization;
     let operation = &setup.fixture.settings.operations[0];
     let scope = EffectScope {
         tenant: operation.tenant.0.clone(),
