@@ -10,7 +10,6 @@ import argparse
 import json
 import os
 from pathlib import Path
-import re
 import subprocess
 import sys
 import time
@@ -23,29 +22,14 @@ from tools import ci_suite_inventory as registry
 from tools.go_capsule_build import RECIPE as BUILD_RECIPE
 from tools.go_guest.activation import MANAGED_PROFILE
 from tools.go_guest.compiler import Compiler
+from tools.go_network_read_barrier import CASE, EXPECTED, SCHEMA_VERSION, outcomes
 from tools.owned_test_process import ProcessFailure, run_owned
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, snapshot
 from tools.stage_runtime_wit import stage
 from tools.test_run import redact
 
-CASE = 'signed_ordinary_go_declared_tcp_preserves_refusals_io_and_cancelled_owner_retirement'
 SUITE = 'latent-wasmtime.test.go_outbound_streams'
-EXPECTED = (
-    ('unsupported-network', 0, 'unsupported-network', 0),
-    ('standalone-dns', 1, 'unsupported-standalone-dns', 0),
-    ('pre-cancelled', 2, 'cancelled-before-connect', 0),
-    ('expired', 3, 'expired-before-connect', 0),
-    ('resolver-replaced', 5, 'unsupported-custom-default-resolver', 0),
-    ('resolver-prefer-go', 6, 'unsupported-custom-default-resolver', 0),
-    ('resolver-strict', 7, 'unsupported-custom-default-resolver', 0),
-    ('resolver-dial', 8, 'unsupported-custom-default-resolver', 0),
-    ('ordinary-tcp', 4, 'ordinary-tcp-exchange', 1),
-    ('half-close-eof', 9, 'ordinary-half-close-eof', 1),
-    ('fragmented-read', 4, 'ordinary-tcp-exchange', 1),
-    ('cancel-pending-read', 4, 'cancelled', 1),
-    ('fresh-after-cancel', 4, 'ordinary-tcp-exchange', 1),
-)
 
 
 def encoded(value: dict) -> bytes:
@@ -79,60 +63,6 @@ def source_inputs(root: Path) -> dict:
     return result
 
 
-def outcomes(raw: bytes, filtered: int = 0) -> dict:
-    if not isinstance(raw, bytes) or len(raw) > 1024 * 1024:
-        raise ValueError('Go-network-runtime-output-bound')
-    passed = re.findall(rb'^test ([A-Za-z0-9_:]+) \.\.\. ok$', raw, re.M)
-    totals = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
-    if passed != [CASE.encode()] or totals != [(b'1', b'0', b'0', b'0', str(filtered).encode())]:
-        raise ValueError('Go-network-runtime-exact-native-case-required')
-    def unique(pairs):
-        result = {}
-        for key, value in pairs:
-            if key in result:
-                raise ValueError('Go-network-runtime-duplicate-observation-field')
-            result[key] = value
-        return result
-    def decode(row):
-        return json.loads(row, object_pairs_hook=unique)
-    def same(actual, expected):
-        # Python considers True == 1 and 0.0 == 0; the closed wire evidence does not.
-        return json.dumps(actual, sort_keys=True) == json.dumps(expected, sort_keys=True)
-    kinds = re.findall(rb'^GO_NETWORK_([A-Z_]+) ', raw, re.M)
-    wanted_kinds = []
-    for label, _, _, _ in EXPECTED:
-        if label in ('fragmented-read', 'cancel-pending-read'):
-            wanted_kinds.append(b'READ_EDGE')
-        wanted_kinds.extend((b'OWNER', b'CASE'))
-    wanted_kinds.append(b'COMPLETE')
-    if kinds != wanted_kinds:
-        raise ValueError('Go-network-runtime-exact-event-order-required')
-    rows = [decode(row) for row in re.findall(rb'^GO_NETWORK_CASE (.+)$', raw, re.M)]
-    wanted = [dict(zip(('case', 'mode', 'result', 'contacts'), row)) for row in EXPECTED]
-    if not same(rows, wanted):
-        raise ValueError('Go-network-runtime-exact-ordinary-observations-required')
-    owners = [decode(row) for row in re.findall(rb'^GO_NETWORK_OWNER (.+)$', raw, re.M)]
-    wanted_owners = [{'case': row[0], 'stores': 0, 'instances': 0, 'streamOwners': 0,
-                      'ioOwners': 0, 'kernelRetirementQualified': False} for row in EXPECTED]
-    if not same(owners, wanted_owners):
-        raise ValueError('Go-network-runtime-exact-user-owner-retirement-required')
-    edges = [decode(row) for row in re.findall(rb'^GO_NETWORK_READ_EDGE (.+)$', raw, re.M)]
-    expected_edges = [{'case': label, 'constructedReads': 2, 'retiredReadDeliveredBytes': 1,
-        'deliveredReadBytes': 1, 'pendingReads': 1, 'pendingOperations': 1, 'ioCalls': 1,
-        'streamOwners': 1, 'connections': 1, 'retiredGenerations': 0,
-        'quarantinedConnections': 0, 'providerStopped': False, 'currentGenerationRetired': False,
-        'liveStores': 1, 'activeActivations': 1}
-        for label in ('fragmented-read', 'cancel-pending-read')]
-    if not same(edges, expected_edges):
-        raise ValueError('Go-network-runtime-constructed-read-owner-required')
-    complete = [decode(row) for row in re.findall(rb'^GO_NETWORK_COMPLETE (.+)$', raw, re.M)]
-    if not same(complete, [{'cases': 13, 'contacts': 5, 'cleanLogicalProviderStop': True,
-                     'kernelRetirementQualified': False, 'normalProviderInstalled': False}]):
-        raise ValueError('Go-network-runtime-completion-or-kernel-claim')
-    return {'cases': rows, 'readEdges': edges,
-            'userSpaceOwners': owners, 'completion': complete[0]}
-
-
 def qualify(root: Path, output: Path, revision: str) -> dict:
     environment = dict(os.environ, CARGO_BUILD_JOBS='2', CARGO_INCREMENTAL='0',
                        CARGO_TARGET_DIR=str(root / 'target'), LSF_GUEST_SDK_LANGUAGE='go')
@@ -143,7 +73,7 @@ def qualify(root: Path, output: Path, revision: str) -> dict:
     before = source_inputs(root)
     inputs = encoded(before)
     (output / 'native-inputs.json').write_bytes(inputs)
-    record = {'schemaVersion': 'latent.go.network.runtime.v1', 'sourceRevision': revision,
+    record = {'schemaVersion': SCHEMA_VERSION, 'sourceRevision': revision,
               'status': 'in-progress', 'sourceDigest': digest(inputs), 'normalProviderInstalled': False,
               'kernelAccountingQualified': False, 'fullGoNetworkingQualified': False,
               'readWitnessFeature': 'development-go-network-read-witness'}

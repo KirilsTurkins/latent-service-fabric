@@ -215,7 +215,7 @@ class ProbeIntegration(unittest.TestCase):
                               "import os, pathlib, sys\n"
                               "pathlib.Path(" + repr(str(marker)) + ").write_text(str(os.getpid()))\n"
                               "sys.stdout.write(" + repr(json.dumps(response) + "\n") + ")\n"
-                              "sys.exit(3)\n", encoding="utf-8")
+                              "sys.exit(4)\n", encoding="utf-8")
             binary.chmod(0o700)
             result = Client(binary, root / "config.json", root).call("invoke", timeout=5)
             with self.assertRaises(ChildProcessError):

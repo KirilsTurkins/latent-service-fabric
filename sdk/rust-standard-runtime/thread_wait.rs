@@ -156,6 +156,22 @@ impl Drop for WaitQueue {
     }
 }
 
+/// Sleep can never return spuriously. If the requested duration exceeds the
+/// host's u64-nanosecond timer range, wait for each bounded chunk in sequence.
+/// Every chunk retains the ordinary Wait/Timer and terminal-check path.
+pub(crate) fn sleep(mut duration: Duration) {
+    let queue = WaitQueue::new();
+    let maximum = Duration::from_nanos(u64::MAX);
+    while !duration.is_zero() {
+        let chunk = duration.min(maximum);
+        assert!(
+            !queue.prepare(Some(chunk)).wait(),
+            "sleep had a non-timer wake"
+        );
+        duration -= chunk;
+    }
+}
+
 pub(crate) struct Wait<'a> {
     queue: &'a WaitQueue,
     pointer: *mut Node,

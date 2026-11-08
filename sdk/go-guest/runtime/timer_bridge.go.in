@@ -104,7 +104,9 @@ func lsfStopTimerSlot(index uint32, token [2]uint64) {
 func lsfRetireTimer(t *timer) [2]uint64 {
     token := t.lsfToken
     if token[1] != 0 {
-        lsfStopTimerSlot(t.lsfSlot, token)
+        // An expired one-shot has already stopped its slot on g0, but retains
+        // its old token as an identity until public Stop/Reset can fence it.
+        if t.lsfSlot != 0 { lsfStopTimerSlot(t.lsfSlot, token) }
         t.lsfToken, t.lsfSlot = [2]uint64{}, 0
     }
     return token
@@ -119,7 +121,12 @@ func lsfBeforeTimerCallback(t *timer) {
 //go:nosplit
 func lsfAfterTimerCallback(t *timer) {
     lsfTimerParent = [2]uint64{}
-    if t.period == 0 { lsfRetireTimer(t) }
+    if t.period == 0 && t.lsfToken[1] != 0 {
+        // g0 cannot wait for an outstanding timer-next. Retain its identity
+        // for a later public Stop/Reset, even after the slot is reusable.
+        lsfStopTimerSlot(t.lsfSlot, t.lsfToken)
+        t.lsfSlot = 0
+    }
 }
 
 //go:nosplit

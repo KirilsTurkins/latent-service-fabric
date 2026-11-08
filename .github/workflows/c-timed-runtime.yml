@@ -2,7 +2,7 @@ name: Ordinary C timed waits and sleep
 
 on:
   push:
-    branches: ['feat/c-owned-timers-20261022']
+    branches: ['feat/c-owned-timers-20261022', 'fix/c-timed-current-native-20261108']
     paths:
       - '.github/workflows/c-timed-runtime.yml'
       - 'tools/qualify_c_timed_runtime.py'
@@ -12,6 +12,141 @@ on:
       - 'tools/tests/fixtures/c-timed-deadline-source.*'
       - 'tools/fixtures/c-thread-runtime/timing.h'
       - 'sdk/c-guest/runtime/synchronization.c'
+      - '.cargo/config.toml'
+      - '.cargo/managed-guest.toml'
+      - 'Cargo.lock'
+      - 'Cargo.toml'
+      - 'rust-toolchain.toml'
+      - 'api/proto/**'
+      - 'apps/**'
+      - 'crates/**'
+      - 'examples/echo-contract/wit/**'
+      - 'schemas/**'
+      - 'sdk/c-guest/**'
+      - 'sdk/rust/**'
+      - 'tools/optimization-workloads/**'
+      - 'wit/**'
+      - '.github/workflows/c-thread-runtime.yml'
+      - '.github/workflows/host-codec-memory.yml'
+      - 'examples/echo-contract/capsule.json'
+      - 'examples/echo-contract/deployment.json'
+      - 'examples/package-format/capsule/config.json'
+      - 'examples/package-format/capsule/manifest.json'
+      - 'sdk/profile/transaction-requirements-v1.json'
+      - 'tools/application_dependencies.py'
+      - 'tools/application_dependency_approval.py'
+      - 'tools/application_dependency_store.py'
+      - 'tools/application_dependency_tools.py'
+      - 'tools/build_observation.py'
+      - 'tools/build_process.py'
+      - 'tools/build_process_linux.py'
+      - 'tools/build_process_signals.py'
+      - 'tools/build_process_windows.py'
+      - 'tools/build_snapshot.py'
+      - 'tools/c_application_dependencies.py'
+      - 'tools/c_capsule.py'
+      - 'tools/c_capsule_build.py'
+      - 'tools/c_capsule_project.py'
+      - 'tools/c_dependency_authoring.py'
+      - 'tools/c_generator_authoring.py'
+      - 'tools/c_guest/__init__.py'
+      - 'tools/c_guest/bindings.py'
+      - 'tools/c_guest/closed_filesystem.py'
+      - 'tools/c_guest/compiler.py'
+      - 'tools/c_guest/language.py'
+      - 'tools/c_guest/standard_facilities.py'
+      - 'tools/c_guest/threading.py'
+      - 'tools/c_guest/threading_compatibility.py'
+      - 'tools/c_resource_inputs.py'
+      - 'tools/c_static_archive_build.py'
+      - 'tools/c_static_symbols.py'
+      - 'tools/c_thread_linear_memory_native_source.py'
+      - 'tools/c_thread_runtime_fixture.py'
+      - 'tools/c_thread_runtime_node.py'
+      - 'tools/c_timed_current_products.py'
+      - 'tools/captured_compiler_isolation.py'
+      - 'tools/dev_workflow/__init__.py'
+      - 'tools/dev_workflow/client.py'
+      - 'tools/dev_workflow/common.py'
+      - 'tools/dev_workflow/dependencies.py'
+      - 'tools/dev_workflow/paths.py'
+      - 'tools/dev_workflow/process.py'
+      - 'tools/dev_workflow/project.py'
+      - 'tools/dev_workflow/resource_inputs.py'
+      - 'tools/dev_workflow/snapshot.py'
+      - 'tools/dev_workflow/state.py'
+      - 'tools/dev_workflow/transaction_binding.py'
+      - 'tools/dev_workflow/windows.py'
+      - 'tools/fixtures/c-thread-runtime/main.c'
+      - 'tools/fixtures/c-thread-runtime/synchronization.h'
+      - 'tools/fixtures/c-thread-runtime/world.wit'
+      - 'tools/guest_api_analysis.py'
+      - 'tools/guest_authoring_frontend.py'
+      - 'tools/guest_compatibility.py'
+      - 'tools/guest_compatibility_build.py'
+      - 'tools/guest_compatibility_context.py'
+      - 'tools/guest_compatibility_context_build.py'
+      - 'tools/guest_compiler_capture.py'
+      - 'tools/guest_compiler_edges.py'
+      - 'tools/guest_dependency_inputs.py'
+      - 'tools/guest_emitted_code.py'
+      - 'tools/guest_resources.py'
+      - 'tools/guest_runtime_profiles.py'
+      - 'tools/guest_runtime_receipts.py'
+      - 'tools/host_codec_linear_memory_native_products.py'
+      - 'tools/host_codec_linear_memory_native_products_reader.py'
+      - 'tools/host_codec_native_products.py'
+      - 'tools/host_codec_native_products_reader.py'
+      - 'tools/host_codec_owned_reply_native_products.py'
+      - 'tools/host_codec_owned_reply_native_products_reader.py'
+      - 'tools/host_codec_retirement_native_products.py'
+      - 'tools/host_codec_wasmtime.py'
+      - 'tools/install_guest_bindgen.py'
+      - 'tools/java_control_refusal_diagnostic.py'
+      - 'tools/java_replay_materials.py'
+      - 'tools/java_server_lifecycle.py'
+      - 'tools/java_server_lifecycle_peer.py'
+      - 'tools/java_server_node.py'
+      - 'tools/java_server_tenants.py'
+      - 'tools/native_runtime/__init__.py'
+      - 'tools/native_runtime/common.py'
+      - 'tools/native_runtime/files.py'
+      - 'tools/native_runtime/verify.py'
+      - 'tools/phase2_operator_canary.py'
+      - 'tools/phase2_operator_process.py'
+      - 'tools/phase2_operator_scenario.py'
+      - 'tools/phase3_management_scenario.py'
+      - 'tools/phase3_resource_identity.py'
+      - 'tools/phase3_resource_os.py'
+      - 'tools/phase3_resource_profile.py'
+      - 'tools/qualify_c_thread_runtime.py'
+      - 'tools/qualify_host_codec_native.py'
+      - 'tools/qualify_resource_tenants.py'
+      - 'tools/qualify_sdk_scratch.py'
+      - 'tools/requirements.lock'
+      - 'tools/resource_tenant_inputs.py'
+      - 'tools/resource_tenant_node.py'
+      - 'tools/result_owner_bytes.py'
+      - 'tools/run_rust_capsule_workflow.py'
+      - 'tools/rust_capsule_build.py'
+      - 'tools/rust_capsule_cases.py'
+      - 'tools/rust_capsule_node.py'
+      - 'tools/rust_capsule_project.py'
+      - 'tools/sdk_native_products_reader.py'
+      - 'tools/sdk_provider_http_fixture.py'
+      - 'tools/sdk_provider_scenario.py'
+      - 'tools/sdk_scratch_fixture.py'
+      - 'tools/security_common.py'
+      - 'tools/server_routes.py'
+      - 'tools/server_source.py'
+      - 'tools/stage_runtime_wit.py'
+      - 'tools/tests/test_c_threading_profile.py'
+      - 'tools/tests/test_c_timed_current_products.py'
+      - 'tools/tests/test_c_timed_runtime.py'
+      - 'tools/tests/test_host_codec_native.py'
+      - 'tools/tests/test_host_codec_retirement_native_products.py'
+      - 'tools/toolchain.toml'
+      - 'tools/transaction_guest_project.py'
   workflow_dispatch:
 
 permissions:
@@ -36,6 +171,19 @@ jobs:
       - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - name: Restore compiled Rust dependencies
+        uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
       - name: Fetch exact frozen source and unchanged reader test models
         run: |
           git fetch --no-tags --depth=1 origin f6251df89851de98cb869784d095ad5cc2e5b385
@@ -56,11 +204,7 @@ jobs:
       - name: Verify source and adverse fixed-product controls
         run: |
           python3 -m pip install --requirement tools/requirements.lock
-          python3 -B -m unittest tools.tests.test_c_timed_runtime tools.tests.test_c_threading_profile tools.tests.test_host_codec_retirement_native_products -v
-      - name: Authenticate five verified native products
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: python3 -B tools/host_codec_retirement_native_products.py --output "$RUNNER_TEMP/c-thread-native"
+          python3 -B -m unittest tools.tests.test_c_timed_runtime tools.tests.test_c_threading_profile tools.tests.test_host_codec_retirement_native_products tools.tests.test_host_codec_native tools.tests.test_c_timed_current_products -v
       - uses: KirilsTurkins/lsf-setup-zig@e064b42fa88ad0859d8b54838b44f672ffd5ea7a # v2.2.1 + upstream changes + LSF security fixes
         with:
           version: '0.16.0'
@@ -79,8 +223,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes bubblewrap
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
-      - name: Compile one ordinary C project and execute original twenty plus sixteen timer cases
-        run: python3 -B tools/qualify_c_timed_runtime.py --prepared "$RUNNER_TEMP/c-thread-native" --output "$RUNNER_TEMP/c-thread-runtime"
+      - name: Build current native products and execute all thirty-six C lifecycle and timer cases
+        run: >-
+          python3 -B tools/qualify_c_timed_runtime.py
+          --produce-current "$RUNNER_TEMP/c-thread-native" --source-commit "${{ github.sha }}"
+          --output "$RUNNER_TEMP/c-thread-runtime"
       - name: Retain bounded public build, invocation and cleanup evidence
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
@@ -105,4 +252,14 @@ jobs:
             ${{ runner.temp }}/c-timed-source/*.json
             ${{ runner.temp }}/c-timed-source/*.wasm
             ${{ runner.temp }}/c-timed-source/logs/*.txt
+            ${{ runner.temp }}/c-thread-native/*.json
+            ${{ runner.temp }}/c-thread-native/logs/*.txt
+          retention-days: 7
+      - name: Retain the five verified and size-bounded native products
+        if: success()
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: c-timed-native-products-${{ github.sha }}
+          path: ${{ runner.temp }}/c-thread-native/native-binaries/**
+          if-no-files-found: error
           retention-days: 7

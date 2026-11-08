@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 import unittest
 
-from tools import qualify_go_network_runtime as runtime
+from tools import go_network_read_barrier as runtime
 
 ROOT = Path(__file__).resolve().parents[2]
 
