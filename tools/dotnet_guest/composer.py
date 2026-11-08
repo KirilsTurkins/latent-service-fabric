@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import sys
 import time
+import urllib.error
 import urllib.request
 
 from tools.build_observation import file_identity
@@ -15,6 +17,7 @@ VERSION = '0.10.1'
 SIZE = 21726840
 DIGEST = 'sha256:250c11762916ba733c7d22b62487580f21270ec9dde4f13460ea69d300e25406'
 URL = 'https://github.com/bytecodealliance/wac/releases/download/v0.10.1/wac-cli-x86_64-unknown-linux-musl'
+ASSET_URL = 'https://api.github.com/repos/bytecodealliance/wac/releases/assets/449500271'
 
 
 def selection(sdk: Path) -> dict:
@@ -35,15 +38,50 @@ def observed(directory: Path, sdk: Path) -> Path:
     return binary
 
 
+def download() -> bytes:
+    deadline = time.monotonic() + 180
+
+    def read(request):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise ValueError('component composer fetch bound exceeded')
+        data = bytearray()
+        with urllib.request.urlopen(request, timeout=min(30, remaining)) as response:
+            while True:
+                block = response.read(65536)
+                if time.monotonic() > deadline:
+                    raise ValueError('component composer fetch bound exceeded')
+                if not block:
+                    break
+                data.extend(block)
+                if len(data) > SIZE:
+                    raise ValueError('component composer fetch bound exceeded')
+        return bytes(data)
+
+    request = urllib.request.Request(URL, headers={'User-Agent': 'LSF-SDK-tool-fetch'})
+    try:
+        return read(request)
+    except urllib.error.HTTPError as error:
+        if error.code != 504:
+            raise
+        error.close()
+        reason = 'HTTP 504'
+    except TimeoutError:
+        # A partial primary response is closed and discarded before retrying.
+        reason = 'timeout'
+    print(f'component composer download encountered {reason}; trying pinned release asset API',
+          file=sys.stderr)
+    fallback = urllib.request.Request(ASSET_URL, headers={
+        'Accept': 'application/octet-stream',
+        'User-Agent': 'LSF-SDK-tool-fetch',
+        'X-GitHub-Api-Version': '2022-11-28',
+    })
+    return read(fallback)
+
+
 def install(directory: Path, sdk: Path, commands) -> Path:
     pin = selection(sdk)
-    started, data = time.monotonic(), bytearray()
-    request = urllib.request.Request(pin['url'], headers={'User-Agent': 'LSF-SDK-tool-fetch'})
-    with urllib.request.urlopen(request, timeout=30) as response:
-        while block := response.read(65536):
-            data.extend(block)
-            if len(data) > SIZE or time.monotonic() - started > 180:
-                raise ValueError('component composer fetch bound exceeded')
+    data = download()
     if len(data) != SIZE or digest(data) != pin['digest']:
         raise ValueError('component composer download identity mismatch')
     output = directory / 'component-composer'
