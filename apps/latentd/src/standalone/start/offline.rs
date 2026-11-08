@@ -248,6 +248,10 @@ impl StandaloneNode {
                     .providers
                     .as_ref()
                     .and_then(|providers| providers.http.as_ref()),
+                events: settings
+                    .providers
+                    .as_ref()
+                    .and_then(|providers| providers.events.as_ref()),
             },
             bootstrap,
         )

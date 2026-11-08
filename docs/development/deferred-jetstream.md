@@ -208,11 +208,15 @@ provider owner in the shared dispatcher, using the same protected startup clock
 as deferred HTTP. This installs no event-operation authority by itself.
 The selected signed transaction package can also retain a separate
 `deferred-event-requirements.json` asset of at most 8,192 bytes. Its digest and
-bytes establish package provenance only; an event decoder and current policy
-must still establish the operation and dispatch authority.
-The deferred adapter can retain a trusted current-authorization callback and
-consult it before provider work and again before publication. Standalone event
-policy installation does not yet bind this callback.
+bytes establish package provenance; the standalone installation also requires
+an explicit signed-service-integration configuration, matching provider and
+credential identity, a current namespace selection and current staging and
+dispatch policies. The installed adapter consults the current dispatch policy
+before provider work and again before publication. Event and deferred HTTP
+configuration cannot yet be combined on the same installed operation.
+The signed-package fixture verifies the installation with the actual protected
+provider owner; it does not execute a guest or connect to a broker. Maintained
+authoring tooling for the signed event requirements remains to be qualified.
 
 This native campaign executes trusted fixture source labels directly through
 the captured-intent writer. Actual verified guest component identities and

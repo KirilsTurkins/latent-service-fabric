@@ -127,6 +127,21 @@ impl Fixture {
             TransactionShape::Standard,
         )
     }
+    pub fn transactional_deferred_event_with_companion(
+        bytes: Vec<u8>,
+        event_document: Vec<u8>,
+    ) -> Self {
+        Self::configured_http_shape(
+            "builder-a",
+            true,
+            None,
+            true,
+            Some((bytes, false)),
+            Some(("deferred-event-requirements.json", event_document)),
+            false,
+            TransactionShape::DeferredHttp,
+        )
+    }
     pub fn transactional_executable_with_companion(bytes: Vec<u8>) -> Self {
         Self::configured_http(
             "builder-a",

@@ -1,4 +1,5 @@
 //! Installed targets are captured by the original protected recovery worker.
+pub(in crate::standalone::state) mod event;
 pub(in crate::standalone::state) mod http;
 pub(in crate::standalone::state) mod policy;
 mod selection;
@@ -52,6 +53,7 @@ pub(in crate::standalone) struct InstalledHttpEffects {
     pub(super) adapters: Vec<Arc<latent_http::deferred::HttpEffectAdapter>>,
     pub(super) events: Vec<Arc<latent_nats::deferred::JetStreamEffectAdapter>>,
     registry: Arc<http::DispatchRegistry>,
+    event_registry: Arc<event::DispatchRegistry>,
 }
 impl InstalledHttpEffects {
     pub(in crate::standalone) fn empty() -> Self {
@@ -60,6 +62,7 @@ impl InstalledHttpEffects {
             adapters: Vec::new(),
             events: Vec::new(),
             registry: Arc::new(http::DispatchRegistry::new()),
+            event_registry: Arc::new(event::DispatchRegistry::new()),
         }
     }
     pub(in crate::standalone) fn new(
@@ -86,8 +89,16 @@ impl InstalledHttpEffects {
             #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
             {
                 let provider = provider.ok_or_else(super::unavailable)?;
-                installed.events =
-                    provider.typed_deferred_event_adapters(events, installed.clock.clone())?;
+                installed.events = provider
+                    .typed_deferred_event_adapters(events, installed.clock.clone())?
+                    .into_iter()
+                    .map(|adapter| {
+                        let adapter = Arc::try_unwrap(adapter).map_err(|_| super::unavailable())?;
+                        Ok(Arc::new(
+                            adapter.with_authorization(installed.event_registry.clone()),
+                        ))
+                    })
+                    .collect::<Result<Vec<_>, PlatformError>>()?;
             }
             #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
             {
@@ -192,7 +203,7 @@ pub(super) async fn load(
         )
         .await?;
         if let Some(installation) = installation {
-            http_rules |= operation.deferred_http.is_some();
+            http_rules |= operation.deferred_http.is_some() || operation.deferred_event.is_some();
             installations.push(Arc::new(installation));
         }
         if let Some(existing) = bindings.iter().find(|existing| {
@@ -331,6 +342,8 @@ async fn capture(
     let policy = Arc::clone(policy);
     let adapters = services.http.adapters.clone();
     let registry = Arc::clone(&services.http.registry);
+    let event_adapters = services.http.events.clone();
+    let event_registry = Arc::clone(&services.http.event_registry);
     let authority = effects.command_admission_source().effect_authority();
     let recovery = recovery.clone();
     let job = kernel
@@ -394,19 +407,35 @@ async fn capture(
                 } else {
                     None
                 };
-                let intents = http::install(
-                    asset.get(),
-                    &operation,
-                    &deployment.manifest,
-                    &adapters,
-                    &policy,
-                    &authority,
-                    selected.as_ref(),
-                    &worker_original,
-                    deadline,
-                    &registry,
-                    Arc::clone(&metadata_memory),
-                )?;
+                let intents = if operation.deferred_event.is_some() {
+                    event::install(
+                        asset.get(),
+                        &operation,
+                        &deployment.manifest,
+                        &event_adapters,
+                        &policy,
+                        &authority,
+                        selected.as_ref(),
+                        &worker_original,
+                        deadline,
+                        &event_registry,
+                        Arc::clone(&metadata_memory),
+                    )?
+                } else {
+                    http::install(
+                        asset.get(),
+                        &operation,
+                        &deployment.manifest,
+                        &adapters,
+                        &policy,
+                        &authority,
+                        selected.as_ref(),
+                        &worker_original,
+                        deadline,
+                        &registry,
+                        Arc::clone(&metadata_memory),
+                    )?
+                };
                 asset.get().with_current(&mut |_| Ok(()))?;
                 let (asset, capture_memory) = asset.into_parts();
                 let (metadata, declaration, publication, _digest, _original) = asset.into_parts();

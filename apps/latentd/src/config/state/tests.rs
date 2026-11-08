@@ -181,3 +181,41 @@ fn checkpoint_paths_and_original_startup_duration_remain_bounded_and_separate() 
     assert!(settings.dispatcher.start_paused);
     assert!(!settings.dispatcher.start_in_restore_review);
 }
+
+#[test]
+fn deferred_event_requires_explicit_signed_authority_and_unambiguous_pins() {
+    let event = serde_json::json!({"requirementsDigest":format!("sha256:{}", "d".repeat(64)),
+        "providerId":"events","providerIncarnation":"e".repeat(64),"credentialReference":"event-secret",
+        "stagingBinding":"intent-stage","stagingPolicies":["stage"],"dispatchBinding":"intent-dispatch",
+        "dispatchPolicies":["dispatch"],"dispatchAuthority":{"formatVersion":1,"mode":"signed-service-integration"}});
+    let mut wire = input();
+    wire["operations"][0]["deferredEvent"] = event;
+    assert!(derive(&serde_json::from_value(wire.clone()).unwrap(), &data()).is_ok());
+    for bad in [
+        serde_json::Value::Null,
+        serde_json::json!({"formatVersion":1,"mode":"original-caller"}),
+        serde_json::json!({"formatVersion":1,"mode":"signed-service-integration","grant":true}),
+    ] {
+        let mut changed = wire.clone();
+        changed["operations"][0]["deferredEvent"]["dispatchAuthority"] = bad;
+        match serde_json::from_value::<StateConfig>(changed) {
+            Ok(config) => assert!(derive(&config, &data()).is_err()),
+            Err(_) => (),
+        }
+    }
+    let mut duplicate = wire.clone();
+    duplicate["operations"][0]["deferredEvent"]["dispatchPolicies"] =
+        serde_json::json!(["dispatch", "dispatch"]);
+    assert!(derive(&serde_json::from_value(duplicate).unwrap(), &data()).is_err());
+    let mut both = wire.clone();
+    both["operations"][0]["deferredHttp"] = wire["operations"][0]["deferredEvent"].clone();
+    assert!(derive(&serde_json::from_value(both).unwrap(), &data()).is_err());
+    let mut omitted = wire.clone();
+    omitted["operations"][0]["deferredEvent"]
+        .as_object_mut()
+        .unwrap()
+        .remove("dispatchAuthority");
+    assert!(serde_json::from_value::<StateConfig>(omitted).is_err());
+    wire["operations"][0]["deferredEvent"] = serde_json::Value::Null;
+    assert!(serde_json::from_value::<StateConfig>(wire).is_err());
+}
