@@ -12,10 +12,6 @@ import org.teavm.vm.*;
 
 /** The actual locked dependency analyzer and C emitter must retain accepted work. */
 public final class StandardTimerCompilerGraphControl {
-    public static void main(String[] args) throws Exception {
-        run();
-        System.out.println("STANDARD_TIMER_COMPILER_GRAPH_CONTROL PASS actual-c-dependency-worker-and-callback");
-    }
     private static void require(boolean value, String reason) {
         if (!value) throw new AssertionError(reason);
     }
