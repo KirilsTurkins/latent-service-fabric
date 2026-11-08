@@ -8,9 +8,9 @@ on:
         type: choice
         required: true
         default: synchronization
-        options: [synchronization, admission, queued, managed-timers, task-saturation]
+        options: [synchronization, admission, queued, managed-timers, task-saturation, timer-overlap, timer-overlap-v7]
   push:
-    branches: ['feat/go-runtime-retirement-20261020', 'feat/go-runtime-admission-20261020', 'feat/go-runtime-queued-ownership-20261020', 'feat/go-v5-standard-timers-20261020']
+    branches: ['feat/go-runtime-retirement-20261020', 'feat/go-runtime-admission-20261020', 'feat/go-runtime-queued-ownership-20261020', 'feat/go-v5-standard-timers-20261020', 'feat/go-v7-timer-overlap-20261108']
 
 permissions:
   contents: read
@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  LSF_GO_REFERENCE_CAMPAIGN: ${{ inputs.campaign || (github.ref_name == 'feat/go-v5-standard-timers-20261020' && 'managed-timers' || github.ref_name == 'feat/go-runtime-queued-ownership-20261020' && 'queued' || github.ref_name == 'feat/go-runtime-admission-20261020' && 'admission' || 'synchronization') }}
+  LSF_GO_REFERENCE_CAMPAIGN: ${{ inputs.campaign || (github.ref_name == 'feat/go-v7-timer-overlap-20261108' && 'timer-overlap-v7' || github.ref_name == 'feat/go-v5-standard-timers-20261020' && 'managed-timers' || github.ref_name == 'feat/go-runtime-queued-ownership-20261020' && 'queued' || github.ref_name == 'feat/go-runtime-admission-20261020' && 'admission' || 'synchronization') }}
   CARGO_BUILD_JOBS: '2'
   CARGO_INCREMENTAL: '0'
   CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
@@ -62,6 +62,9 @@ jobs:
       - name: Check original Task16 saturation evidence controls
         if: env.LSF_GO_REFERENCE_CAMPAIGN == 'task-saturation'
         run: python3 -m unittest tools.tests.test_go_task_saturation -v
+      - name: Check exact Go timer overlap evidence controls
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'timer-overlap' || env.LSF_GO_REFERENCE_CAMPAIGN == 'timer-overlap-v7'
+        run: python3 -m unittest tools.tests.test_go_timer_overlap -v
       - name: Install captured compiler namespace
         run: |
           sudo apt-get update
@@ -111,6 +114,18 @@ jobs:
       - name: Require original Task16 refusal and fresh signed retirement
         if: env.LSF_GO_REFERENCE_CAMPAIGN == 'task-saturation'
         run: python3 tools/qualify_go_synchronization.py --campaign task-saturation --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-task-saturation" --output "$RUNNER_TEMP/go-task-saturation-result"
+      - name: Compile unchanged Go timer overlap fixture under v5
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'timer-overlap'
+        run: python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-timer-overlap-v5" --runtime-profile go-component-activation-v5 --fixture timer-overlap
+      - name: Require original v5 timer overlap and retirement witnesses
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'timer-overlap'
+        run: python3 tools/qualify_go_synchronization.py --campaign timer-overlap --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-timer-overlap-v5" --output "$RUNNER_TEMP/go-timer-overlap-v5-result"
+      - name: Compile unchanged Go timer overlap fixture under v7
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'timer-overlap-v7'
+        run: python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-timer-overlap-v7" --runtime-profile go-component-activation-v7 --fixture timer-overlap
+      - name: Require original v7 timer overlap and retirement witnesses
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'timer-overlap-v7'
+        run: python3 tools/qualify_go_synchronization.py --campaign timer-overlap-v7 --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-timer-overlap-v7" --output "$RUNNER_TEMP/go-timer-overlap-v7-result"
       - name: Retain bounded actual results and compiler source identities
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
@@ -148,5 +163,19 @@ jobs:
             ${{ runner.temp }}/go-task-saturation/build/component.wasm
             ${{ runner.temp }}/go-task-saturation/logs/
             ${{ runner.temp }}/go-task-saturation-result/
+            ${{ runner.temp }}/go-timer-overlap-v5/GO-ACTIVATION-COMPILE.json
+            ${{ runner.temp }}/go-timer-overlap-v5/GO-ACTIVATION-FAILED.json
+            ${{ runner.temp }}/go-timer-overlap-v5/src/
+            ${{ runner.temp }}/go-timer-overlap-v5/wit/
+            ${{ runner.temp }}/go-timer-overlap-v5/build/component.wasm
+            ${{ runner.temp }}/go-timer-overlap-v5/logs/
+            ${{ runner.temp }}/go-timer-overlap-v5-result/
+            ${{ runner.temp }}/go-timer-overlap-v7/GO-ACTIVATION-COMPILE.json
+            ${{ runner.temp }}/go-timer-overlap-v7/GO-ACTIVATION-FAILED.json
+            ${{ runner.temp }}/go-timer-overlap-v7/src/
+            ${{ runner.temp }}/go-timer-overlap-v7/wit/
+            ${{ runner.temp }}/go-timer-overlap-v7/build/component.wasm
+            ${{ runner.temp }}/go-timer-overlap-v7/logs/
+            ${{ runner.temp }}/go-timer-overlap-v7-result/
           if-no-files-found: warn
           retention-days: 7
