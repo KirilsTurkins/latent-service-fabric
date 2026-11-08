@@ -10,12 +10,13 @@ from tools import qualify_go_synchronization as reference
 
 
 def cases():
-    return [dict(case=case, mode=mode, outcome='success', storesCreated=count,
+    return [dict(case=case, mode=mode, outcome=outcome, storesCreated=count,
                  liveStores=0, liveInstances=0, reservations=0,
                  reservedFuel=0, reservedMemory=0, pendingProviderWaits=0)
-            for case, mode, count in [('reset-reset', 0, 1), ('reset-stop', 1, 2),
-                                      ('gc-reset-reset', 2, 3), ('gc-reset-stop', 3, 4),
-                                      ('fresh', 0, 5)]]
+            for case, mode, outcome, count in [('reset-reset', 0, 'success', 1),
+                ('reset-stop', 1, 'success', 2), ('gc-reset-reset', 2, 'success', 3),
+                ('gc-reset-stop', 3, 'success', 4), ('cancel-reset-reset', 0, 'cancelled', 5),
+                ('deadline-reset-stop', 1, 'deadline-exceeded', 6), ('fresh', 0, 'success', 7)]]
 
 
 def stdout(rows=None, filtered=53):
@@ -26,42 +27,50 @@ def stdout(rows=None, filtered=53):
 
 
 def stderr():
-    return (b'LSF-GO-TIMER-OVERLAP-V3|go-timer-overlap-reset-reset|1|0|0|4|1|1|1|1|0|0|1|1|512\n'
-            b'LSF-GO-TIMER-OVERLAP-V3|go-timer-overlap-reset-stop|1|0|0|4|1|1|1|1|0|0|1|1|512\n'
-            b'LSF-GO-TIMER-OVERLAP-V3|go-timer-overlap-gc-reset-reset|1|0|0|4|1|1|1|1|1|1|1|1|512\n'
-            b'LSF-GO-TIMER-OVERLAP-V3|go-timer-overlap-gc-reset-stop|1|0|0|4|1|1|1|1|1|1|1|1|512\n')
+    names = ('reset-reset', 'reset-stop', 'gc-reset-reset', 'gc-reset-stop',
+             'cancel-reset-reset', 'deadline-reset-stop')
+    lines = []
+    for index, name in enumerate(names):
+        gc, stop = int(index in (2, 3)), int(index in (4, 5))
+        lines.append(f'LSF-GO-TIMER-OVERLAP-V4|go-timer-overlap-{name}|1|0|0|4|1|1|1|1|{gc}|{gc}|1|{stop}|{1-stop}|512')
+        lines.append(f'LSF-GO-TIMER-WAIT-DROP-V1|go-timer-overlap-{name}|{1-stop}')
+    return ('\n'.join(lines) + '\n').encode()
 
 
 class GoTimerOverlap(unittest.TestCase):
-    def test_exact_source_bound_signed_retirements_and_four_complete_witnesses(self):
+    def test_exact_source_bound_signed_retirements_and_six_complete_witnesses(self):
         result = reference.timer_overlap_observations(stdout(), stderr(), 53)
         self.assertEqual(result['cases'], cases())
-        self.assertEqual(result['witnesses'], [
-            {'activation': 'go-timer-overlap-reset-reset', 'postGcMarkerStopped': False, 'handshakeParkObserved': False, 'modeledWitnessBytes': 512},
-            {'activation': 'go-timer-overlap-reset-stop', 'postGcMarkerStopped': False, 'handshakeParkObserved': False, 'modeledWitnessBytes': 512},
-            {'activation': 'go-timer-overlap-gc-reset-reset', 'postGcMarkerStopped': True, 'handshakeParkObserved': True, 'modeledWitnessBytes': 512},
-            {'activation': 'go-timer-overlap-gc-reset-stop', 'postGcMarkerStopped': True, 'handshakeParkObserved': True, 'modeledWitnessBytes': 512},
-        ])
+        self.assertEqual(len(result['witnesses']), 6)
+        self.assertEqual([w['bothParkedBeforeRootStop'] for w in result['witnesses']],
+                         [False, False, False, False, True, True])
+        self.assertEqual([w['handshakeParkObserved'] for w in result['witnesses']],
+                         [False, False, True, True, False, False])
+        self.assertEqual([w['returned'] for w in result['physicalWaitDrops']],
+                         [True, True, True, True, False, False])
         for rows in (cases()[:-1], list(reversed(cases())), cases() + cases()[:1]):
             with self.subTest(rows=rows), self.assertRaisesRegex(ValueError, 'signed-retirement'):
                 reference.timer_overlap_observations(stdout(rows), stderr(), 53)
 
     def test_incomplete_wrong_order_and_ambiguous_witnesses_fail_closed(self):
         raw = stderr()
-        plain = b'|1|0|0|4|1|1|1|1|0|0|1|1|512'
+        plain = b'|1|0|0|4|1|1|1|1|0|0|1|0|1|512'
         changes = [raw.splitlines(keepends=True)[0], raw + raw.splitlines(keepends=True)[0],
                    b''.join(reversed(raw.splitlines(keepends=True))),
                    raw.replace(b'go-timer-overlap-gc-reset-stop|1|0|0|4',
                                b'go-timer-overlap-gc-reset-stop|0|0|0|4'),
-                   raw.replace(b'go-timer-overlap-gc-reset-stop|1|0|0|4|1|1|1|1|1|1|1|1|512',
-                               b'go-timer-overlap-gc-reset-stop|1|0|0|4|1|1|1|1|0|1|1|1|512'),
-                   raw.replace(b'go-timer-overlap-gc-reset-stop|1|0|0|4|1|1|1|1|1|1|1|1|512',
-                               b'go-timer-overlap-gc-reset-stop|1|0|0|4|1|1|1|1|1|0|1|1|512'),
-                   raw.replace(plain, b'|0|0|0|4|1|1|1|1|0|0|1|1|512', 1),
-                   raw.replace(plain, b'|1|0|1|4|1|1|1|1|0|0|1|1|512', 1),
-                   raw.replace(plain, b'|1|0|0|5|1|1|1|1|0|0|1|1|512', 1),
-                   raw.replace(plain, b'|1|0|0|4|1|0|1|1|0|0|1|1|512', 1),
-                   raw.replace(b'OVERLAP-V3', b'OVERLAP-V2'),
+                   raw.replace(b'go-timer-overlap-gc-reset-stop|1|0|0|4|1|1|1|1|1|1|1|0|1|512',
+                               b'go-timer-overlap-gc-reset-stop|1|0|0|4|1|1|1|1|0|1|1|0|1|512'),
+                   raw.replace(b'go-timer-overlap-cancel-reset-reset|1|0|0|4|1|1|1|1|0|0|1|1|0|512',
+                               b'go-timer-overlap-cancel-reset-reset|1|0|0|4|1|1|1|1|0|0|1|0|0|512'),
+                   raw.replace(b'LSF-GO-TIMER-WAIT-DROP-V1|go-timer-overlap-cancel-reset-reset|0\n', b''),
+                   raw.replace(b'LSF-GO-TIMER-WAIT-DROP-V1|go-timer-overlap-reset-reset|1',
+                               b'LSF-GO-TIMER-WAIT-DROP-V1|go-timer-overlap-reset-reset|0'),
+                   raw.replace(plain, b'|0|0|0|4|1|1|1|1|0|0|1|0|1|512', 1),
+                   raw.replace(plain, b'|1|0|1|4|1|1|1|1|0|0|1|0|1|512', 1),
+                   raw.replace(plain, b'|1|0|0|5|1|1|1|1|0|0|1|0|1|512', 1),
+                   raw.replace(plain, b'|1|0|0|4|1|0|1|1|0|0|1|0|1|512', 1),
+                   raw.replace(b'OVERLAP-V4', b'OVERLAP-V3'),
                    raw.replace(b'|512\n', b'|0\n', 1), raw.replace(b'|512\n', b'|513\n', 1)]
         for changed in changes:
             self.assertNotEqual(changed, raw)

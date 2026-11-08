@@ -204,33 +204,49 @@ def timer_overlap_observations(raw: bytes, diagnostic: bytes, filtered: int) -> 
         return value
     rows = [json.loads(value, object_pairs_hook=unique) for value in
             re.findall(rb'^GO_TIMER_OVERLAP_CASE (.+)$', raw, re.M)]
-    expected = [dict(case=case, mode=mode, outcome='success', storesCreated=count,
+    expected = [dict(case=case, mode=mode, outcome=outcome, storesCreated=count,
                      liveStores=0, liveInstances=0, reservations=0,
                      reservedFuel=0, reservedMemory=0, pendingProviderWaits=0)
-                for case, mode, count in [('reset-reset', 0, 1), ('reset-stop', 1, 2),
-                                          ('gc-reset-reset', 2, 3), ('gc-reset-stop', 3, 4),
-                                          ('fresh', 0, 5)]]
+                for case, mode, outcome, count in [('reset-reset', 0, 'success', 1),
+                    ('reset-stop', 1, 'success', 2), ('gc-reset-reset', 2, 'success', 3),
+                    ('gc-reset-stop', 3, 'success', 4), ('cancel-reset-reset', 0, 'cancelled', 5),
+                    ('deadline-reset-stop', 1, 'deadline-exceeded', 6), ('fresh', 0, 'success', 7)]]
     if json.dumps(rows, sort_keys=True, separators=(',', ':')) != json.dumps(expected, sort_keys=True, separators=(',', ':')):
         raise ValueError('Go-timer-overlap-signed-retirement-required')
-    prefix = b'LSF-GO-TIMER-OVERLAP-V3|'
-    records = re.findall(rb'^LSF-GO-TIMER-OVERLAP-V3\|([^\r\n]+)$', diagnostic, re.M)
-    if diagnostic.count(prefix) != 4 or len(records) != 4:
+    prefix = b'LSF-GO-TIMER-OVERLAP-V4|'
+    records = re.findall(rb'^LSF-GO-TIMER-OVERLAP-V4\|([^\r\n]+)$', diagnostic, re.M)
+    if diagnostic.count(prefix) != 6 or len(records) != 6:
         raise ValueError('Go-timer-overlap-exact-witnesses-required')
     observed = []
-    for case, record in zip(('go-timer-overlap-reset-reset', 'go-timer-overlap-reset-stop',
-                             'go-timer-overlap-gc-reset-reset', 'go-timer-overlap-gc-reset-stop'), records):
+    names = ('go-timer-overlap-reset-reset', 'go-timer-overlap-reset-stop',
+             'go-timer-overlap-gc-reset-reset', 'go-timer-overlap-gc-reset-stop',
+             'go-timer-overlap-cancel-reset-reset', 'go-timer-overlap-deadline-reset-stop')
+    for case, record in zip(names, records):
         fields = record.split(b'|')
         gc_case = '-gc-' in case
-        if len(fields) != 14 or fields[:13] != [case.encode(), b'1', b'0', b'0', b'4', b'1', b'1', b'1', b'1',
-                                               b'1' if gc_case else b'0', b'1' if gc_case else b'0', b'1', b'1']:
+        stop_case = '-cancel-' in case or '-deadline-' in case
+        expected_head = [case.encode(), b'1', b'0', b'0', b'4', b'1', b'1', b'1', b'1',
+                         b'1' if gc_case else b'0', b'1' if gc_case else b'0', b'1',
+                         b'1' if stop_case else b'0']
+        if (len(fields) != 15 or fields[:13] != expected_head
+                or fields[13] not in ((b'0', b'1') if stop_case else (b'1',))):
             raise ValueError('Go-timer-overlap-causal-witness-required')
-        if not re.fullmatch(rb'[1-9][0-9]{0,3}', fields[13]):
+        if not re.fullmatch(rb'[1-9][0-9]{0,3}', fields[14]):
             raise ValueError('Go-timer-overlap-witness-budget')
         observed.append({'activation': case, 'postGcMarkerStopped': gc_case, 'handshakeParkObserved': gc_case,
-                         'modeledWitnessBytes': int(fields[13])})
+                         'bothParkedBeforeRootStop': stop_case,
+                         'returnedBeforeStoreReport': fields[13] == b'1', 'modeledWitnessBytes': int(fields[14])})
     if len({item['modeledWitnessBytes'] for item in observed}) != 1:
         raise ValueError('Go-timer-overlap-inconsistent-layout')
-    return {'cases': rows, 'witnesses': observed}
+    drop_prefix = b'LSF-GO-TIMER-WAIT-DROP-V1|'
+    drops = re.findall(rb'^LSF-GO-TIMER-WAIT-DROP-V1\|([^\r\n|]+)\|([01])$', diagnostic, re.M)
+    if diagnostic.count(drop_prefix) != len(names) or len(drops) != len(names):
+        raise ValueError('Go-timer-overlap-physical-wait-drops-required')
+    drop_map = {name.decode(): returned == b'1' for name, returned in drops}
+    if len(drop_map) != len(names) or set(drop_map) != set(names) or not all(drop_map[name] for name in names[:4]):
+        raise ValueError('Go-timer-overlap-physical-wait-drops-required')
+    return {'cases': rows, 'witnesses': observed,
+            'physicalWaitDrops': [{'activation': name, 'returned': drop_map[name]} for name in names]}
 
 
 def campaign(campaign: str, fixture: Path, negative: Path | None) -> dict:
@@ -404,11 +420,11 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
                                  'queued': 'lsf.go-queued-reference.v1',
                                  'managed-timers': 'lsf.go-managed-timers-reference.v1',
                                  'task-saturation': 'lsf.go-task-saturation-reference.v1',
-                                 'timer-overlap': 'lsf.go-timer-overlap-reference.v3'}[programme], 'sourceRevision': revision,
+                                 'timer-overlap': 'lsf.go-timer-overlap-reference.v4'}[programme], 'sourceRevision': revision,
                'sourceBefore': before, 'sourceAfter': after, 'compilerInputsBefore': material,
                'compilerInputsAfter': after_material, 'case': plan['case'], 'signedCases': rows,
                'signedInvocations': {'synchronization': len(rows), 'admission': 8, 'queued': 20,
-                                     'managed-timers': len(rows), 'task-saturation': 3, 'timer-overlap': 5}[programme], 'guestTaskCeiling': 16,
+                                     'managed-timers': len(rows), 'task-saturation': 3, 'timer-overlap': 7}[programme], 'guestTaskCeiling': 16,
                'managedCapacity': 8, 'waitCeiling': 4, 'newRuntimeProfile': False,
                'kernelTlsOrCrossTenantQualified': False, 'fullGoRuntimeQualified': False}
     if programme == 'synchronization':
@@ -436,7 +452,8 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
                         'terminalCauseEstablishedByObservation': False,
                         'fullAggregateGoCostsQualified': False, 'kernelRetirementQualified': False})
     else:
-        receipt.update({'originalTimerOverlapWitnesses': observed['witnesses'], 'timerCeiling': 2,
+        receipt.update({'originalTimerOverlapWitnesses': observed['witnesses'],
+                        'physicalTimerWaitDrops': observed['physicalWaitDrops'], 'timerCeiling': 2,
                         'developmentWitnessOnly': True, 'fullTimerRaceMatrixQualified': False,
                         'fullAggregateGoCostsQualified': False, 'kernelRetirementQualified': False})
     raw = (json.dumps(receipt, indent=2) + '\n').encode()

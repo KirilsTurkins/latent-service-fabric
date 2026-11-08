@@ -24,7 +24,8 @@ const STOP_OBSERVATION: Duration = Duration::from_millis(10);
 const ALLOCATION_BOOKKEEPING: usize = 64;
 const GC_MARKER_PERIOD_NANOS: u64 = 37 * 60 * 1_000_000_000;
 const ROOT_MARKER_PERIOD_NANOS: u64 = 41 * 60 * 1_000_000_000;
-const PREFIX: &str = "LSF-GO-TIMER-OVERLAP-V3";
+const PREFIX: &str = "LSF-GO-TIMER-OVERLAP-V4";
+const DROP_PREFIX: &str = "LSF-GO-TIMER-WAIT-DROP-V1";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Case {
@@ -32,6 +33,8 @@ pub(crate) enum Case {
     ResetStop,
     GcResetReset,
     GcResetStop,
+    CancelResetReset,
+    DeadlineResetStop,
 }
 
 impl Case {
@@ -42,11 +45,17 @@ impl Case {
             Self::ResetStop => "go-timer-overlap-reset-stop",
             Self::GcResetReset => "go-timer-overlap-gc-reset-reset",
             Self::GcResetStop => "go-timer-overlap-gc-reset-stop",
+            Self::CancelResetReset => "go-timer-overlap-cancel-reset-reset",
+            Self::DeadlineResetStop => "go-timer-overlap-deadline-reset-stop",
         }
     }
 
     const fn requires_gc(self) -> bool {
         matches!(self, Self::GcResetReset | Self::GcResetStop)
+    }
+
+    const fn hold_for_root_stop(self) -> bool {
+        matches!(self, Self::CancelResetReset | Self::DeadlineResetStop)
     }
 }
 
@@ -76,6 +85,7 @@ struct State {
     gc_marker_stopped: bool,
     second_waiting: bool,
     handshake_confirmed: bool,
+    ready_before_stop: bool,
 }
 
 impl State {
@@ -102,6 +112,7 @@ impl State {
             gc_marker_stopped: false,
             second_waiting: false,
             handshake_confirmed: false,
+            ready_before_stop: false,
         }
     }
 
@@ -316,7 +327,8 @@ impl State {
                 && self.task_count == MAX_TASKS
                 && self.next_seen
                 && self.next_pending
-                && self.next_finished
+                && (self.next_finished
+                    || (self.case.is_some_and(Case::hold_for_root_stop) && self.ready_before_stop))
                 && self.target_stopped
                 && (!self.case.is_some_and(Case::requires_gc) || self.gc_marker_stopped)
                 && (!self.case.is_some_and(Case::requires_gc) || self.handshake_confirmed)
@@ -333,6 +345,7 @@ impl State {
             first_parked: self.markers[0].parked,
             gc_marker_stopped: self.gc_marker_stopped,
             handshake_confirmed: self.handshake_confirmed,
+            ready_before_stop: self.ready_before_stop,
             second_parked: self.markers[1].parked,
             next_finished: self.next_finished,
         }
@@ -351,6 +364,7 @@ pub struct Snapshot {
     pub first_parked: bool,
     pub gc_marker_stopped: bool,
     pub handshake_confirmed: bool,
+    pub ready_before_stop: bool,
     pub second_parked: bool,
     pub next_finished: bool,
 }
@@ -409,6 +423,8 @@ impl Observer {
             Case::ResetStop,
             Case::GcResetReset,
             Case::GcResetStop,
+            Case::CancelResetReset,
+            Case::DeadlineResetStop,
         ]
         .into_iter()
         .find(|case| case.activation() == activation)
@@ -491,10 +507,47 @@ impl Observer {
         self.apply(|state| state.next_finished(token));
     }
 
-    fn barrier_state(&self, token: RuntimeToken) -> Option<bool> {
-        let state = self.inner.state.lock().ok()?;
+    pub(crate) fn report_wait_drop(&self, token: RuntimeToken, returned: bool) {
+        let Ok(mut state) = self.inner.state.lock() else {
+            return;
+        };
+        if state.target != Some(token) || !state.next_pending {
+            state.invalid = true;
+            return;
+        }
+        let Some(case) = state.case else {
+            state.invalid = true;
+            return;
+        };
+        // OverlapCompletion is dropped after the original TimerWait field.
+        // A missing or duplicate record cannot qualify the owner.
+        let _ = writeln!(
+            std::io::stderr().lock(),
+            "{DROP_PREFIX}|{}|{}",
+            case.activation(),
+            u8::from(returned)
+        );
+    }
+
+    fn barrier_state(
+        &self,
+        token: RuntimeToken,
+        stop: &crate::containment::StopControl,
+    ) -> Option<bool> {
+        let mut state = self.inner.state.lock().ok()?;
         if state.target != Some(token) || state.invalid {
             return None;
+        }
+        if state.markers[1].parked && state.case.is_some_and(Case::hold_for_root_stop) {
+            if !state.ready_before_stop {
+                if stop.observe().is_some() {
+                    state.invalid = true;
+                    return None;
+                }
+                state.ready_before_stop = true;
+            }
+            // Preserve the original owner until the actual root stop wins.
+            return Some(false);
         }
         Some(state.markers[1].parked)
     }
@@ -507,7 +560,7 @@ impl Observer {
         deadline: Instant,
         stop: &crate::containment::StopControl,
     ) {
-        if self.barrier_state(token) != Some(false) {
+        if self.barrier_state(token, stop) != Some(false) {
             return;
         }
         let now = provider.now();
@@ -520,10 +573,15 @@ impl Observer {
             // borrow is held here. In particular, a dropped Store or cancelled
             // activation must not wait for the full diagnostic timeout.
             if stop.observe().is_some() {
-                self.apply(|state| state.invalid = true);
+                self.apply(|state| {
+                    if !state.case.is_some_and(Case::hold_for_root_stop) || !state.ready_before_stop
+                    {
+                        state.invalid = true;
+                    }
+                });
                 return;
             }
-            if self.barrier_state(token) != Some(false) {
+            if self.barrier_state(token, stop) != Some(false) {
                 return;
             }
             let now = provider.now();
@@ -537,7 +595,7 @@ impl Observer {
                 return;
             };
             let notified = self.inner.parked.notified();
-            if self.barrier_state(token) != Some(false) {
+            if self.barrier_state(token, stop) != Some(false) {
                 return;
             }
             tokio::select! {
@@ -563,7 +621,7 @@ impl Observer {
         // Fixed fields and labels only. A failed write produces no evidence.
         let _ = writeln!(
             std::io::stderr().lock(),
-            "{PREFIX}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}",
+            "{PREFIX}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}",
             case.activation(),
             u8::from(snapshot.complete),
             u8::from(snapshot.invalid),
@@ -576,6 +634,7 @@ impl Observer {
             u8::from(snapshot.gc_marker_stopped),
             u8::from(snapshot.handshake_confirmed),
             u8::from(snapshot.second_parked),
+            u8::from(snapshot.ready_before_stop),
             u8::from(snapshot.next_finished),
             bytes
         );
@@ -733,6 +792,7 @@ mod tests {
                 first_parked: true,
                 gc_marker_stopped: false,
                 handshake_confirmed: false,
+                ready_before_stop: false,
                 second_parked: true,
                 next_finished: true,
             }
@@ -959,6 +1019,49 @@ mod tests {
             drop(observer);
             assert_eq!(budget.host_memory_bytes(), 0);
             assert_eq!(budget.outstanding_reservations(), 0);
+        }
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn root_stop_cases_hold_both_parked_tasks_until_the_original_stop() {
+        for case in [Case::CancelResetReset, Case::DeadlineResetStop] {
+            assert_eq!(Observer::select(case.activation()), Some(case));
+            let budget = budget(8192);
+            let observer = Observer::new(case, &budget).unwrap();
+            observer.apply(|state| {
+                *state = before_second_park();
+                state.case = Some(case);
+                assert!(state.park(token(4), 1));
+            });
+            let stop = crate::containment::StopControl::new(None, None);
+            let provider = TestWait;
+            let deadline = provider.now() + Duration::from_secs(5);
+            let mut barrier = Box::pin(observer.wait_for_second_park(
+                token(10),
+                &provider,
+                &budget,
+                deadline,
+                &stop,
+            ));
+            let mut context = Context::from_waker(Waker::noop());
+            assert!(barrier.as_mut().poll(&mut context).is_pending());
+            let before = observer.inner.state.lock().unwrap().snapshot();
+            assert!(before.ready_before_stop && before.second_parked && !before.invalid);
+            stop.cancel_for_revocation();
+            tokio::time::advance(STOP_OBSERVATION).await;
+            barrier.await;
+            assert!(observer.inner.state.lock().unwrap().snapshot().complete);
+
+            let early = Observer::new(case, &budget).unwrap();
+            early.apply(|state| {
+                *state = before_second_park();
+                state.case = Some(case);
+            });
+            early
+                .wait_for_second_park(token(10), &provider, &budget, deadline, &stop)
+                .await;
+            let snapshot = early.inner.state.lock().unwrap().snapshot();
+            assert!(snapshot.invalid && !snapshot.ready_before_stop && !snapshot.complete);
         }
     }
 
