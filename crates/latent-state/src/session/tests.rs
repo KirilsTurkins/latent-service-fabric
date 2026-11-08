@@ -459,6 +459,56 @@ fn byte_limited_pages_require_continuation_and_never_omit_an_entry() {
 }
 
 #[test]
+fn query_keeps_one_multi_key_view_across_a_later_atomic_commit_and_pages() {
+    let fixture = Fixture::new();
+    fixture.write(&[(b"p/a", Some(b"old-a")), (b"p/b", Some(b"old-b"))]);
+    let mut scope = fixture.scope.clone();
+    scope.mode = StateMode::Query;
+    let (view, mut query) = fixture.in_scope(scope.clone(), SessionLimits::default());
+    let first = query.scan(&view, b"p/", None, 1, 1000, allow).unwrap();
+    assert_eq!(first.entries[0].key, b"p/a");
+    assert_eq!(first.entries[0].value.value.bytes, b"old-a");
+
+    // A real atomic writer completes while the original query view is open.
+    fixture.write(&[(b"p/a", Some(b"new-a")), (b"p/b", Some(b"new-b"))]);
+    assert_eq!(
+        query
+            .get(&view, b"p/b", allow)
+            .unwrap()
+            .unwrap()
+            .value
+            .bytes,
+        b"old-b"
+    );
+    let second = query
+        .scan(&view, b"p/", first.continuation.as_ref(), 1, 1000, allow)
+        .unwrap();
+    assert_eq!(second.entries[0].key, b"p/b");
+    assert_eq!(second.entries[0].value.value.bytes, b"old-b");
+    assert!(second.continuation.is_none());
+
+    let (fresh_view, mut fresh) = fixture.in_scope(scope, SessionLimits::default());
+    assert_eq!(
+        fresh
+            .get(&fresh_view, b"p/a", allow)
+            .unwrap()
+            .unwrap()
+            .value
+            .bytes,
+        b"new-a"
+    );
+    assert_eq!(
+        fresh
+            .get(&fresh_view, b"p/b", allow)
+            .unwrap()
+            .unwrap()
+            .value
+            .bytes,
+        b"new-b"
+    );
+}
+
+#[test]
 fn read_only_queries_allocate_no_command_result_outbox_or_state_version() {
     let fixture = Fixture::new();
     fixture.write(&[(b"a", Some(b"1")), (b"b", Some(b"2"))]);
@@ -623,6 +673,40 @@ fn attempted_overwrites_reads_and_open_cursors_remain_bounded() {
     );
     session.get(&view, b"a", allow).unwrap();
     assert_eq!(session.get(&view, b"a", allow), Err(StateError::Limit));
+}
+
+#[test]
+fn expired_query_cursor_cannot_reopen_a_view_and_fresh_query_still_succeeds() {
+    let fixture = Fixture::new();
+    fixture.write(&[(b"p/a", Some(b"a")), (b"p/b", Some(b"b"))]);
+    let mut scope = fixture.scope.clone();
+    scope.mode = StateMode::Query;
+    let (view, mut query) = fixture.in_scope(scope.clone(), SessionLimits::default());
+    let first = query.scan(&view, b"p/", None, 1, 1000, allow).unwrap();
+    let cursor = first.continuation.unwrap();
+    query.opened -= Duration::from_secs(31);
+    assert_eq!(
+        query.scan(&view, b"p/", Some(&cursor), 1, 1000, allow),
+        Err(StateError::Expired)
+    );
+    query.close().unwrap();
+    assert_eq!(fixture.store.live_views(), 1);
+
+    let (fresh_view, mut fresh) = fixture.in_scope(scope, SessionLimits::default());
+    assert_eq!(
+        fresh.scan(&fresh_view, b"p/", Some(&cursor), 1, 1000, allow),
+        Err(StateError::InvalidCursor)
+    );
+    let page = fresh
+        .scan(&fresh_view, b"p/", None, 2, 1000, allow)
+        .unwrap();
+    assert_eq!(page.entries.len(), 2);
+    assert!(page.continuation.is_none());
+    drop(view);
+    assert_eq!(fixture.store.live_views(), 1);
+    fresh.close().unwrap();
+    drop(fresh_view);
+    assert_eq!(fixture.store.live_views(), 0);
 }
 
 #[test]

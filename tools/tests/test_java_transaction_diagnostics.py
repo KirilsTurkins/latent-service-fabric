@@ -2,11 +2,14 @@
 import json
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
+from unittest.mock import Mock, call, patch
 
 from tools.java_capsule_project import validate
 from tools.java_transaction_diagnostics import HELPER, SELECTORS, create, source_variant
 from tools.java_transaction_schema import SOURCE, create as create_schema
+from tools.java_transaction_qualification.campaign import Campaign
 from tools.rust_capsule_project import digest, snapshot
 from tools.transaction_guest_project import HTTP_REQUIREMENTS
 
@@ -135,6 +138,29 @@ class JavaTransactionDiagnosticTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "unknown controlled"):
                 create_variant(root / "wrong-language", "c", "forbidden-child")
             self.assertFalse((root / "wrong-language").exists())
+
+
+class CommittedQueryQualification(unittest.TestCase):
+    def test_reuses_the_acknowledged_view_and_rejects_new_command_rows(self):
+        baseline = {"commandCount": "1", "generation": "3", "encodedStateBytes": "75"}
+        for change in (None, "commandCount", "generation", "encodedStateBytes"):
+            with self.subTest(change=change):
+                campaign = Campaign.__new__(Campaign)
+                campaign.client = SimpleNamespace(evidence=Mock())
+                campaign.query = Mock(return_value=({"state-view": "view"}, {"count": "1"}))
+                after = dict(baseline)
+                if change:
+                    after[change] = "999"
+                with patch("tools.java_transaction_qualification.campaign.lifecycle.inspect_namespace",
+                           side_effect=[baseline, after]):
+                    if change is None:
+                        campaign.queries_after_commit("publication", {"state-view": "committed"}, 1)
+                        campaign.client.evidence.passed.assert_called_once()
+                    else:
+                        with self.assertRaises(ValueError):
+                            campaign.queries_after_commit("publication", {"state-view": "committed"}, 1)
+                        campaign.client.evidence.passed.assert_not_called()
+                self.assertEqual(campaign.query.call_args_list, [call(1, minimum="committed")] * 3)
 
 
 if __name__ == "__main__":

@@ -100,12 +100,32 @@ class Campaign:
         require(result["count"] == str(count), "actual-fresh-java-aggregate-value")
         return value, result
 
+    def queries_after_commit(self, publication, committed, count, *, case="committed-minimum-view-queries"):
+        """Read through the ordinary HTTP path using the acknowledged view."""
+        minimum = committed["state-view"]
+        require(isinstance(minimum, str) and minimum, "committed-minimum-view-required")
+        before = lifecycle.inspect_namespace(self.client, publication)
+        queries = [self.query(count, minimum=minimum)[0] for _ in range(3)]
+        after = lifecycle.inspect_namespace(self.client, publication)
+        require(before["commandCount"] == after["commandCount"],
+                "committed-fresh-queries-create-no-command-rows")
+        require(before["generation"] == after["generation"]
+                and before["encodedStateBytes"] == after["encodedStateBytes"],
+                "committed-fresh-queries-do-not-change-state")
+        self.client.evidence.passed(case, {
+            "committedView": minimum, "before": before, "after": after, "queries": queries})
+
     def original(self, key):
         observed = self.socket("result", original_key=key)
         if observed.get("status") == 503:
             from .refusal_observation import observe_original_result
             observe_original_result(self, key)
         return self.result(observed)
+
+    def query_isolation(self):
+        for subject in (cfg.BOB, cfg.FOREIGN):
+            self.refusal("query-isolation-" + ("caller" if subject == cfg.BOB else "tenant"),
+                         self.socket("query", subject=subject), {403})
 
     def refusal(self, name, observed, statuses):
         bodies = {403: {b"", b"Forbidden\n"}, 409: {b"", b"Conflict\n"}}
@@ -209,7 +229,7 @@ class Campaign:
         self.refusal("changed-input-same-id", self.socket("command", original_key=key,
             body=command_input(2), condition=condition), {409})
         http.replay(value, self.original(key))
-        self.query(1)
+        self.queries_after_commit(publication, value, 1)
 
     def _rejection(self, publication):
         _, current = self.query(1)
@@ -247,6 +267,7 @@ class Campaign:
         else:
             self.refusal("stale-original-key-version", stale, {409})
         before = lifecycle.inspect_namespace(self.client, publication)
+        self.query_isolation()
         for subject in (cfg.BOB, cfg.FOREIGN):
             self.refusal("result-isolation-" + ("caller" if subject == cfg.BOB else "tenant"),
                          self.socket("result", original_key="java-original-1", subject=subject), {403})
@@ -331,7 +352,7 @@ class Campaign:
         self.node.start(self.full_path, **({'current_session': 'compatible-after-crash'}
                         if getattr(self.node, 'current_publication_program', False) else {}))
         http.replay(committed, self.original(key))
-        self.query(4)
+        self.queries_after_commit(publication, committed, 4, case="restarted-minimum-view-queries")
         if getattr(self.peer, 'current_http', False) and getattr(self.node, 'current_program', None) == 'terminal':
             from .effect_reconciliation import reconcile
             reconcile(self, publication, key, committed, actual)

@@ -1,0 +1,527 @@
+{
+  "schemaVersion": "latent.phase4.query-committed-freshness-local-observation.v1",
+  "qualification": "Temporary combined source and experimental signed Java guest; local observation only, not merged-source, installed-distribution or hosted qualification.",
+  "integrationSource": {
+    "schemaVersion": "latent.phase4.integration-source.v1",
+    "baseSource": "aa47593fce1130d9578eb952722e7b3939bc22de",
+    "historySource": "4b8cddb22ac3f67dd68587f6cd8c2518d3383a68",
+    "coreSource": "64b81e819e36f95d0f1280e728562fa49b842dee",
+    "description": "Temporary explicit source combination for local integration only; not a merged commit",
+    "overlays": {
+      "crates/latent-core/src/activation_runtime.rs": {
+        "sha256": "sha256:c14be16aeccc026944e6bc60f2d91ec4dfdda3517f66f13a6b12ce4f412c5a2e",
+        "bytes": 26947
+      },
+      "crates/latent-core/src/activation_runtime/tests.rs": {
+        "sha256": "sha256:d32b9843962163f19ed318d3c856b840bdbe3c003fc3f4d805af6e0c9f036d9f",
+        "bytes": 44725
+      },
+      "crates/latent-core/src/budget.rs": {
+        "sha256": "sha256:14c7b687bab34a11b937c731c602620247dedf14e131d48e68bb7587315a2ece",
+        "bytes": 69645
+      },
+      "crates/latent-wire/src/phase4/state_management.rs": {
+        "sha256": "sha256:c335fb113fe88383158e07a334aa9fc5af68e9f10f1b5acc5269860e3dbc43b9",
+        "bytes": 26197
+      },
+      "crates/latent-wire/src/phase4/state_management/command_result.rs": {
+        "sha256": "sha256:3bca68771d5f1a52882e96c400b51482e60d9aed931d57da373d04e5c3bd2b89",
+        "bytes": 14407
+      },
+      "crates/latent-wire/src/phase4/state_management/command_result/audit.rs": {
+        "sha256": "sha256:82d5732780b06614f7b520897b5c787a4c224e6dd115c20caf9b95c9d6fbb6bd",
+        "bytes": 2854
+      },
+      "crates/latent-wire/src/phase4/state_management/command_result/effect.rs": {
+        "sha256": "sha256:cca08f06d001b7a2ec030a1e46aa23ba9035484e358e7cc051f74a77e7962b26",
+        "bytes": 9522
+      },
+      "crates/latent-wire/src/phase4/state_management/recovery_bindings.rs": {
+        "sha256": "sha256:cb84c727be4d54700e287849d2debeca01dd927c0cea1f1c45860f737d4d90a3",
+        "bytes": 4119
+      }
+    },
+    "binaries": {
+      "deferred_event_fault_proxy": {
+        "sha256": "sha256:5a39cc6dbf3444bb7d06c43004f29383852d1b372d14d17bdc39dfde43cf13c0",
+        "bytes": 11930720
+      },
+      "latent": {
+        "sha256": "sha256:0177ad1be1302f753977597b008d22752d32078c1c21bbb56b8c003e9eebdb7d",
+        "bytes": 79680400
+      },
+      "latent-aot-compiler": {
+        "sha256": "sha256:0db8951c27ac7de4e48c1234f6c9bf0ad289268a57eee5d61bb589e6f93a029a",
+        "bytes": 51833424
+      },
+      "latentd": {
+        "sha256": "sha256:80af0dd96cb5e004e1927724a2db7e9c4c46fbe4ff34b1b70ed1b75492b9f1e1",
+        "bytes": 205466152
+      }
+    }
+  },
+  "candidateOverlay": {
+    "apps/latentd/src/standalone.rs": {
+      "sha256": "sha256:21b58780fc62c11b6755a50021bc75f0a7220f8b5d7c92eb605064acb6dae6fb",
+      "bytes": 6209
+    },
+    "apps/latentd/src/standalone/shutdown.rs": {
+      "sha256": "sha256:1b185829323176d205367fc0c2cd6ffd5d832b0a4200b49af1d610408b1db063",
+      "bytes": 20925
+    },
+    "crates/latent-policy/src/supply_chain.rs": {
+      "sha256": "sha256:79399beb06340d3c12bd401d609519b01b3cfd73eb35d5a03f7548f32156d6fc",
+      "bytes": 27358
+    },
+    "crates/latent-policy/src/supply_chain/tests/clock_source.rs": {
+      "sha256": "sha256:da84c6cc99b7f8132869c0ec7e35baf6c009143ffa766e8e40bd2c5c054cb550",
+      "bytes": 15556
+    }
+  },
+  "nativeNodeBinary": {
+    "sha256": "sha256:42f9f92c9b4c91fb2dffd9c5e4b13037d15979552e262d296cdec24f0caa9b16",
+    "bytes": 205466928
+  },
+  "guestSourceCommit": "aa47593fce1130d9578eb952722e7b3939bc22de",
+  "scenario": {
+    "commandDisposition": "committed",
+    "minimumViewWasCommittedView": true,
+    "sameNodeQueryCount": 3,
+    "sameNodeValues": [
+      "1",
+      "1",
+      "1"
+    ],
+    "sameNodeCommandRowsBefore": "1",
+    "sameNodeCommandRowsAfter": "1",
+    "restartQueryValue": "1",
+    "restartCommandRowsBefore": "1",
+    "restartCommandRowsAfter": "1",
+    "originalCommandReplayMatched": true,
+    "brokerMessages": 1,
+    "originalNodeCleanAndReaped": true,
+    "restartedNodeCleanAndReaped": true
+  },
+  "evidence": {
+    "committed-result.json": {
+      "sha256": "sha256:2cdc845ec46f2cadcf0455f3f203cda0e35c2a0299a77a08de269e5ed0580a2c",
+      "bytes": 959
+    },
+    "queries-before-restart.json": {
+      "sha256": "sha256:ad49a09f1ff9496a7180c696baf976064aa1aa9eda3ab0841662643948b8fd6a",
+      "bytes": 2294
+    },
+    "query-after-restart.json": {
+      "sha256": "sha256:ee2c456bd19d9e57b9f5cbc66d0124eccaf0be8da8a2b0c4c8ab4d8abb61d8b7",
+      "bytes": 2039
+    },
+    "recovered-result.json": {
+      "sha256": "sha256:2cdc845ec46f2cadcf0455f3f203cda0e35c2a0299a77a08de269e5ed0580a2c",
+      "bytes": 959
+    },
+    "recovered-effect.json": {
+      "sha256": "sha256:a2ededaab34e62dac23f476fe329795aca54283be10f5da6cf4a15ffb2ec6206",
+      "bytes": 1156
+    },
+    "broker-observation.json": {
+      "sha256": "sha256:fbc5e4fb30d58680de31fdaa39a071b651dda687b90306b916face235cb9d463",
+      "bytes": 304
+    },
+    "evidence/node-4-stopped.json": {
+      "sha256": "sha256:a045b7bb62bec70296b744bedc390371a6150d3a67c594666027a367d843d34f",
+      "bytes": 4191
+    },
+    "restart-evidence/node-1-stopped.json": {
+      "sha256": "sha256:161304a58cfd14a404e624656979e75b24890a71c7b8f6733b925f76afd8a51a",
+      "bytes": 4181
+    }
+  },
+  "limits": [
+    "This observes one Java component through HTTP, not six guest or client profiles.",
+    "Command-row counts are observed; this does not independently prove the absence of every possible durable outbox or audit write.",
+    "No concurrent multi-key writer or malicious-guest control is claimed."
+  ],
+  "proposedHelperLiveRun": {
+    "qualificationSource": {
+      "sha256": "sha256:de8363a5ab76f6d8737dcecc5a88b527ff1f52dfff5be75175475362b88c9bb5",
+      "bytes": 23172
+    },
+    "experimentScript": {
+      "sha256": "sha256:1305cc82fa1719f24792296e8469f4a31e317bffd882e0939d321a2ab29551de",
+      "bytes": 9507
+    },
+    "preRestart": {
+      "queries": 3,
+      "commandRowsBefore": "1",
+      "commandRowsAfter": "1",
+      "generationBefore": "3",
+      "generationAfter": "3",
+      "stateBytesBefore": "75",
+      "stateBytesAfter": "75",
+      "passed": true
+    },
+    "postRestart": {
+      "queries": 3,
+      "commandRowsBefore": "1",
+      "commandRowsAfter": "1",
+      "generationBefore": "3",
+      "generationAfter": "3",
+      "stateBytesBefore": "75",
+      "stateBytesAfter": "75",
+      "passed": true
+    },
+    "originalNodeCleanAndReaped": true,
+    "restartedNodeCleanAndReaped": true,
+    "brokerMessages": 1,
+    "evidence": {
+      "evidence/case-committed-minimum-view-queries.json": {
+        "sha256": "sha256:25d46870d95918cc9fce2f0c369fe40560aa53a096994b055cd85a00a0c04eca",
+        "bytes": 5060
+      },
+      "restart-evidence/case-restarted-minimum-view-queries.json": {
+        "sha256": "sha256:25d46870d95918cc9fce2f0c369fe40560aa53a096994b055cd85a00a0c04eca",
+        "bytes": 5060
+      },
+      "evidence/node-4-stopped.json": {
+        "sha256": "sha256:7d04f00034089b79f6eff673c0e723c6a13c0c53a0a0699a095b775677590c7b",
+        "bytes": 4191
+      },
+      "restart-evidence/node-1-stopped.json": {
+        "sha256": "sha256:41c985eddfd75f18154f3e0290af5d6e10c65befb9601bb3c5ed35367f8ccffb",
+        "bytes": 4182
+      },
+      "broker-observation.json": {
+        "sha256": "sha256:fbc5e4fb30d58680de31fdaa39a071b651dda687b90306b916face235cb9d463",
+        "bytes": 304
+      },
+      "recovered-effect.json": {
+        "sha256": "sha256:32e236a2c184924c3836a815ca4db37e0078139ddb82eb84d84e67aea0a60efa",
+        "bytes": 1156
+      }
+    },
+    "sourceCaveat": "The proposed Python helper was overlaid after guest compilation onto the explicitly documented temporary source; other runtime sources and signer remain experimental."
+  },
+  "isolationAndRestartFailure": {
+    "qualificationSource": {
+      "sha256": "sha256:e9d2a3b924a3509bfd9750f58cfb892d43a9ffa62b301635ff26f87d4f8a8f90",
+      "bytes": 23447
+    },
+    "experimentScript": {
+      "sha256": "sha256:81858b9a6d76f01f00612b8892c76da6d77a97cd5d253547f4823d017389caf6",
+      "bytes": 9548
+    },
+    "sameTenantDeniedStatus": 403,
+    "foreignTenantDeniedStatus": 403,
+    "applicationDataDisclosed": false,
+    "preRestartThreeQueriesPassed": true,
+    "postRestartQueryStatuses": [
+      200,
+      200,
+      503
+    ],
+    "failure": "host-owned-transaction-response-headers",
+    "actualThirdResponse": "503 with empty body",
+    "rootCause": "unclassified",
+    "boundedHistoryObservation": {
+      "schemaVersion": "latent.java.http-refusal-observation.v1",
+      "requestedService": "examples/transaction-java-aggregate",
+      "observationAvailable": true,
+      "rootCount": 3,
+      "truncated": false,
+      "roots": [
+        {
+          "phase": "running",
+          "terminalState": "completed",
+          "principalKind": "user",
+          "targetMatchesCurrentService": true,
+          "diagnostic": null,
+          "diagnosticIsTerminal": false
+        },
+        {
+          "phase": "running",
+          "terminalState": "completed",
+          "principalKind": "user",
+          "targetMatchesCurrentService": true,
+          "diagnostic": null,
+          "diagnosticIsTerminal": false
+        },
+        {
+          "phase": "running",
+          "terminalState": "completed",
+          "principalKind": "user",
+          "targetMatchesCurrentService": true,
+          "diagnostic": null,
+          "diagnosticIsTerminal": false
+        }
+      ]
+    },
+    "originalNodeCleanAndReaped": true,
+    "restartedNodeCleanAndReaped": true,
+    "brokerMessages": 1,
+    "evidence": {
+      "evidence/case-query-isolation-caller.json": {
+        "sha256": "sha256:fdfb5c69fdb8ef4f4c444ce0b9da15e18c2d75516d078c26d2aa8beb55649f75",
+        "bytes": 97
+      },
+      "evidence/case-query-isolation-tenant.json": {
+        "sha256": "sha256:55b2d234ff96f2fc4214c6c87124ff5a78109f1e4080598a718c2671c09b45f2",
+        "bytes": 96
+      },
+      "evidence/case-committed-minimum-view-queries.json": {
+        "sha256": "sha256:5d8b046a9c8a4b523845a1eb86626123a1b25c96b21be80e02b3a9ec85245f09",
+        "bytes": 5060
+      },
+      "restart-evidence/http-009-response.json": {
+        "sha256": "sha256:e50116a23323f0ed1b54b6d002b716c6b0c52df377d37943eeb34f3ce090202a",
+        "bytes": 723
+      },
+      "restart-evidence/http-010-response.json": {
+        "sha256": "sha256:e50116a23323f0ed1b54b6d002b716c6b0c52df377d37943eeb34f3ce090202a",
+        "bytes": 723
+      },
+      "restart-evidence/http-011-response.json": {
+        "sha256": "sha256:fe7cfc56b33318829a93d0fb0a97bc49545d490c8ef977768358e56c193d2973",
+        "bytes": 846
+      },
+      "restart-evidence/http-refusal-stage-observation.json": {
+        "sha256": "sha256:d6a410c0dba1ba8bc7d0a6b0570fbb689833a17bab522edcd39403cdba28e7e1",
+        "bytes": 645
+      },
+      "evidence/node-4-stopped.json": {
+        "sha256": "sha256:e08bf3681b40000e1c13dd5dd5031df57781d78a1092caf7ae005464aaba74fc",
+        "bytes": 4191
+      },
+      "restart-evidence/node-1-stopped.json": {
+        "sha256": "sha256:405e28d33f3c1227666ab2db7947715f3ab30517abafbca196210c79630cb483",
+        "bytes": 4191
+      },
+      "broker-observation.json": {
+        "sha256": "sha256:fbc5e4fb30d58680de31fdaa39a071b651dda687b90306b916face235cb9d463",
+        "bytes": 304
+      }
+    },
+    "sourceCaveat": "Experimental Python overlay, runtime source combination, and signer; no merged-head qualification."
+  },
+  "diagnosticRepeat": {
+    "qualificationSource": {
+      "sha256": "sha256:e9d2a3b924a3509bfd9750f58cfb892d43a9ffa62b301635ff26f87d4f8a8f90",
+      "bytes": 23447
+    },
+    "diagnosticNodeBinary": {
+      "sha256": "sha256:e9bfb24c9d1c6a5a92be2c9f2ca2550434bc1dde8aa60de248d3a7921592b8c0",
+      "bytes": 205482544
+    },
+    "temporaryDiagnosticPatch": "HTTP platform refusal logging enabled locally",
+    "experimentScript": {
+      "sha256": "sha256:381227b45bcc53b8c34367110853c46eca864a1611f6f7de1b03ca6ca93517d7",
+      "bytes": 6255
+    },
+    "dispatcherPaused": true,
+    "unauthorizedQueryStatuses": [
+      403,
+      403
+    ],
+    "successfulRestartQueryBatches": 10,
+    "successfulRestartQueries": 30,
+    "eachBatchPreservedCommandRowsGenerationAndStateBytes": true,
+    "brokerMessages": 0,
+    "originalNodeCleanAndReaped": true,
+    "restartedNodeCleanAndReaped": true,
+    "batchEvidence": [
+      {
+        "sha256": "sha256:4b50bde314351f13204860ba24c746b51bb811b8cec736bd6b2a0b8137ffce0a",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:4b50bde314351f13204860ba24c746b51bb811b8cec736bd6b2a0b8137ffce0a",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:4b50bde314351f13204860ba24c746b51bb811b8cec736bd6b2a0b8137ffce0a",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:4b50bde314351f13204860ba24c746b51bb811b8cec736bd6b2a0b8137ffce0a",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:4b50bde314351f13204860ba24c746b51bb811b8cec736bd6b2a0b8137ffce0a",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:4b50bde314351f13204860ba24c746b51bb811b8cec736bd6b2a0b8137ffce0a",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:4b50bde314351f13204860ba24c746b51bb811b8cec736bd6b2a0b8137ffce0a",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:4b50bde314351f13204860ba24c746b51bb811b8cec736bd6b2a0b8137ffce0a",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:4b50bde314351f13204860ba24c746b51bb811b8cec736bd6b2a0b8137ffce0a",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:4b50bde314351f13204860ba24c746b51bb811b8cec736bd6b2a0b8137ffce0a",
+        "bytes": 5060
+      }
+    ],
+    "limits": "The earlier 503 was not reproduced under these different conditions; its cause remains unclassified."
+  },
+  "diagnosticPreconditionFailure": {
+    "diagnosticNodeBinary": {
+      "sha256": "sha256:e9bfb24c9d1c6a5a92be2c9f2ca2550434bc1dde8aa60de248d3a7921592b8c0",
+      "bytes": 205482544
+    },
+    "effectDisposition": "EFFECT_DISPOSITION_DISPATCHING",
+    "effectAttempt": 2,
+    "expectedAttempt": 1,
+    "queryDiagnosticReached": false,
+    "effectEvidence": {
+      "sha256": "sha256:6deb60691b7ae31d8c8cfd9c424426b848b75a74e01854382cb8f416b61a9a8f",
+      "bytes": 1220
+    },
+    "brokerMessages": 1
+  },
+  "diagnosticActiveRepeat": {
+    "qualificationSource": {
+      "sha256": "sha256:e9d2a3b924a3509bfd9750f58cfb892d43a9ffa62b301635ff26f87d4f8a8f90",
+      "bytes": 23447
+    },
+    "diagnosticNodeBinary": {
+      "sha256": "sha256:e9bfb24c9d1c6a5a92be2c9f2ca2550434bc1dde8aa60de248d3a7921592b8c0",
+      "bytes": 205482544
+    },
+    "temporaryDiagnosticPatch": "HTTP platform refusal logging enabled locally",
+    "experimentScript": {
+      "sha256": "sha256:bece0c96d4a9772ba0566e26e9fd0a0166ddbb924ab73ea805a621bbea6ea640",
+      "bytes": 6860
+    },
+    "physicalOwnersBeforeQueries": "1",
+    "activeJobsBeforeQueries": "1",
+    "ackHeldBeforeQueries": true,
+    "successfulRestartQueryBatches": 10,
+    "successfulRestartQueries": 30,
+    "eachBatchPreservedCommandRowsGenerationAndStateBytes": true,
+    "brokerMessages": 1,
+    "originalNodeCleanAndReaped": true,
+    "restartedNodeCleanAndReaped": true,
+    "batchEvidence": [
+      {
+        "sha256": "sha256:fc75c0a1d2b89d0aa16e457583fadb6e9252b5a29c2e716c655ae95e6f7ac6eb",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:fc75c0a1d2b89d0aa16e457583fadb6e9252b5a29c2e716c655ae95e6f7ac6eb",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:fc75c0a1d2b89d0aa16e457583fadb6e9252b5a29c2e716c655ae95e6f7ac6eb",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:fc75c0a1d2b89d0aa16e457583fadb6e9252b5a29c2e716c655ae95e6f7ac6eb",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:fc75c0a1d2b89d0aa16e457583fadb6e9252b5a29c2e716c655ae95e6f7ac6eb",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:fc75c0a1d2b89d0aa16e457583fadb6e9252b5a29c2e716c655ae95e6f7ac6eb",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:fc75c0a1d2b89d0aa16e457583fadb6e9252b5a29c2e716c655ae95e6f7ac6eb",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:fc75c0a1d2b89d0aa16e457583fadb6e9252b5a29c2e716c655ae95e6f7ac6eb",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:fc75c0a1d2b89d0aa16e457583fadb6e9252b5a29c2e716c655ae95e6f7ac6eb",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:fc75c0a1d2b89d0aa16e457583fadb6e9252b5a29c2e716c655ae95e6f7ac6eb",
+        "bytes": 5060
+      }
+    ],
+    "limits": "An effect owner was observed before reads, not continuously throughout all reads; the earlier 503 did not recur and its cause remains unclassified."
+  },
+  "diagnosticRestartRetryRepeat": {
+    "qualificationSource": {
+      "sha256": "sha256:e9d2a3b924a3509bfd9750f58cfb892d43a9ffa62b301635ff26f87d4f8a8f90",
+      "bytes": 23447
+    },
+    "diagnosticNodeBinary": {
+      "sha256": "sha256:e9bfb24c9d1c6a5a92be2c9f2ca2550434bc1dde8aa60de248d3a7921592b8c0",
+      "bytes": 205482544
+    },
+    "temporaryDiagnosticPatch": "HTTP platform refusal logging enabled locally",
+    "experimentScript": {
+      "sha256": "sha256:9f04a6c71fe1683045b48ed47c2c8defaee41fcd6746891245bd59c694cf1d17",
+      "bytes": 9677
+    },
+    "successfulRestartQueryBatches": 10,
+    "successfulRestartQueries": 30,
+    "eachBatchPreservedCommandRowsGenerationAndStateBytes": true,
+    "recoveredEffectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "recoveredAttempt": 2,
+    "brokerDuplicateAcknowledged": true,
+    "brokerMessages": 1,
+    "originalNodeCleanAndReaped": true,
+    "restartedNodeCleanAndReaped": true,
+    "batchEvidence": [
+      {
+        "sha256": "sha256:4a0d6c1808cf7c77d27cb10ef030b7a6a7ebc29354c41e1c312a27b79b455773",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:010f55227c7dd4d7b7a210e097d2537cc72ea1807316e60f3b9e0a0f8afd95bc",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:010f55227c7dd4d7b7a210e097d2537cc72ea1807316e60f3b9e0a0f8afd95bc",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:010f55227c7dd4d7b7a210e097d2537cc72ea1807316e60f3b9e0a0f8afd95bc",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:010f55227c7dd4d7b7a210e097d2537cc72ea1807316e60f3b9e0a0f8afd95bc",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:010f55227c7dd4d7b7a210e097d2537cc72ea1807316e60f3b9e0a0f8afd95bc",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:010f55227c7dd4d7b7a210e097d2537cc72ea1807316e60f3b9e0a0f8afd95bc",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:010f55227c7dd4d7b7a210e097d2537cc72ea1807316e60f3b9e0a0f8afd95bc",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:010f55227c7dd4d7b7a210e097d2537cc72ea1807316e60f3b9e0a0f8afd95bc",
+        "bytes": 5060
+      },
+      {
+        "sha256": "sha256:010f55227c7dd4d7b7a210e097d2537cc72ea1807316e60f3b9e0a0f8afd95bc",
+        "bytes": 5060
+      }
+    ],
+    "limits": "The earlier 503 did not recur and its cause remains unclassified; this is experimental combined source and signer."
+  },
+  "experimentScript": {
+    "sha256": "sha256:4c940c30b99b0962d79244a5d4b77eaf3bf05eab432cbf9207dbf68d4be78894",
+    "bytes": 10296
+  }
+}
