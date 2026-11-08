@@ -16,6 +16,9 @@ impl Parker {
     pub unsafe fn park_timeout(self: Pin<&Self>, timeout: Duration) { self.park_inner(Some(timeout)); }
     fn park_inner(self: Pin<&Self>, timeout: Option<Duration>) {
         if self.notified.replace(false) { compiler_fence(Ordering::Acquire); return; }
+        // A shorter real wait is a valid spurious return for park_timeout.
+        // Keep the normal Wait/Timer/park/wake path and original ledger.
+        let timeout = timeout.map(|duration| duration.min(Duration::from_nanos(u64::MAX)));
         let wait = self.waiters.prepare(timeout);
         // prepare can call the admitted host bridge. Preserve unpark which
         // arrived before publication without turning it into a second permit.
