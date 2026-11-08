@@ -169,15 +169,41 @@ impl Project for proto::CapabilityResourceUsage {
                 return Err(invalid_response());
             }
         }
-        if self.scope == "tenant" && (self.counters.len() != 10 || !self.unavailable.is_empty()) {
+        if let Some(quarantined) = self.stream_quarantined_connections {
+            if self.scope != "node"
+                || self
+                    .unavailable
+                    .iter()
+                    .any(|value| value == "outbound-streams-no-retained-observation")
+                || self
+                    .counters
+                    .get("stream_owners")
+                    .is_none_or(|owners| quarantined > *owners)
+                || self
+                    .counters
+                    .get("stream_connections")
+                    .is_none_or(|connections| quarantined > *connections)
+            {
+                return Err(invalid_response());
+            }
+        }
+        if self.scope == "tenant"
+            && (self.counters.len() != 10
+                || !self.unavailable.is_empty()
+                || self.stream_quarantined_connections.is_some())
+        {
             return Err(invalid_response());
         }
         Ok(())
     }
     fn project(self) -> Value {
-        json!({"scope":self.scope,"counters":self.counters.into_iter()
+        let mut result = json!({"scope":self.scope,"counters":self.counters.into_iter()
             .map(|(key,value)| (key,value.to_string())).collect::<std::collections::BTreeMap<_,_>>(),
-            "unavailable":self.unavailable})
+            "unavailable":self.unavailable});
+        if let Some(count) = self.stream_quarantined_connections {
+            result["streamQuarantinedConnections"] = json!(count.to_string());
+        }
+        result
     }
 }
 

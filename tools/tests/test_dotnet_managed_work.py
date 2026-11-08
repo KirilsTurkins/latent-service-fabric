@@ -112,16 +112,26 @@ class ManagedWorkContractTests(unittest.TestCase):
         old = json.loads((ROOT / 'sdk/dotnet-guest/tests/fixtures/aggregate-task-wait-v2-controlled.json').read_text())
         task_wait.validate_receipt(old, finite=True, managed=True, aggregate=True)
         current = copy.deepcopy(old)
-        current['managedAcceptedWork'] = copy.deepcopy(work.MULTIPLE_UNWRAP_REWRITE_RECEIPT)
-        current['generatedHelperCount'] = 96
+        current['managedAcceptedWork'] = copy.deepcopy(work.INLINE_POP_REWRITE_RECEIPT)
+        current['generatedHelperCount'] = 107
+        current['unchangedOriginalMethods'] = 44708
         current['aggregateTaskWait'] = copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_EXPECTED)
         task_wait.validate_current_receipt(current, finite=True, managed=True, aggregate=True)
+        dispatch_reset = copy.deepcopy(current)
+        dispatch_reset['managedAcceptedWork'] = copy.deepcopy(work.DISPATCH_RESET_REWRITE_RECEIPT)
+        dispatch_reset['generatedHelperCount'] = 105
+        dispatch_reset['unchangedOriginalMethods'] = 44709
+        task_wait.validate_receipt(dispatch_reset, finite=True, managed=True, aggregate=True)
+        with self.assertRaisesRegex(ValueError, 'current-managed-readiness-required'):
+            task_wait.validate_current_receipt(dispatch_reset, finite=True, managed=True, aggregate=True)
         previous = copy.deepcopy(current)
+        previous['generatedHelperCount'] = 96
+        previous['unchangedOriginalMethods'] = 44709
         for previous_receipt in (work.PREFETCH_REWRITE_RECEIPT, work.QUEUE_FENCE_REWRITE_RECEIPT,
                                  work.QUEUE_WITNESS_REWRITE_RECEIPT, work.PROVISIONAL_RESERVATION_REWRITE_RECEIPT,
                                  work.RESULT_TRANSITION_REWRITE_RECEIPT, work.TIMER_RESERVATION_REWRITE_RECEIPT,
                                  work.REQUIRED_RESULT_REWRITE_RECEIPT, work.NATIVE_STARTUP_REWRITE_RECEIPT,
-                                 work.TASK_IDENTITY_REWRITE_RECEIPT):
+                                 work.TASK_IDENTITY_REWRITE_RECEIPT, work.MULTIPLE_UNWRAP_REWRITE_RECEIPT):
             previous['managedAcceptedWork'] = copy.deepcopy(previous_receipt)
             task_wait.validate_receipt(previous, finite=True, managed=True, aggregate=True)
             with self.assertRaisesRegex(ValueError, 'current-managed-readiness-required'):
@@ -146,11 +156,11 @@ class ManagedWorkContractTests(unittest.TestCase):
                 task_wait.validate_current_receipt(changed, finite=True, managed=True, aggregate=True)
         with self.assertRaisesRegex(ValueError, 'current-managed-readiness-required'):
             task_wait.validate_current_receipt(old, finite=True, managed=True, aggregate=True)
-        for field, replacement in (('generatedHelperCount', 95), ('generatedHelperCount', 97)):
+        for field, replacement in (('generatedHelperCount', 96), ('generatedHelperCount', 105), ('generatedHelperCount', 106), ('generatedHelperCount', 108)):
             changed = copy.deepcopy(current); changed[field] = replacement
             with self.subTest(field=field, replacement=replacement), self.assertRaises(ValueError):
                 task_wait.validate_receipt(changed, finite=True, managed=True, aggregate=True)
-        for field in ('readiness', 'readinessControls', 'queueInsertionWitness', 'reservationAdmission', 'admissionFinalization', 'resultTransition', 'timerReservation', 'requiredResultReservation', 'resultLookup', 'startupReservation', 'startupReadiness', 'taskLookup', 'innerTaskAdmission', 'unwrapMultiplicity'):
+        for field in ('readiness', 'readinessControls', 'queueInsertionWitness', 'reservationAdmission', 'admissionFinalization', 'resultTransition', 'timerReservation', 'requiredResultReservation', 'resultLookup', 'startupReservation', 'startupReadiness', 'taskLookup', 'innerTaskAdmission', 'unwrapMultiplicity', 'dispatchCustody', 'dispatchCapacity', 'inlinePopCustody', 'resetContext', 'resetNative'):
             changed = copy.deepcopy(current); changed['managedAcceptedWork'][field] = 'unproved'
             with self.subTest(field=field), self.assertRaises(ValueError):
                 task_wait.validate_receipt(changed, finite=True, managed=True, aggregate=True)
@@ -175,14 +185,15 @@ class ManagedWorkContractTests(unittest.TestCase):
             self.assertEqual(arguments[2], '--aggregate-task-wait')
             arguments[-2].write_bytes(b'explicit-managed-tool-control')
             value = json.loads((ROOT / 'sdk/dotnet-guest/tests/fixtures/aggregate-task-wait-v2-controlled.json').read_text())
-            value['managedAcceptedWork'] = copy.deepcopy(work.MULTIPLE_UNWRAP_REWRITE_RECEIPT)
-            value['generatedHelperCount'] = 96
+            value['managedAcceptedWork'] = copy.deepcopy(work.INLINE_POP_REWRITE_RECEIPT)
+            value['generatedHelperCount'] = 107
+            value['unchangedOriginalMethods'] = 44708
             value['aggregateTaskWait'] = copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_EXPECTED)
             value['outputDigest'] = digest(b'explicit-managed-tool-control')
             write_json(arguments[-1], value)
         control.run_tool = run
         port = control.prepare(managed=True); control.references(port)
-        self.assertEqual(port.validated_helper_count(),96)
+        self.assertEqual(port.validated_helper_count(),107)
         self.assertEqual(port.finish(control.project,control.evidence)['selection']['requiredDeclarations'],sorted(DECLARED))
 
     def test_required_content_task_keeps_original_transport_error_channel(self):

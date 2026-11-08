@@ -2032,6 +2032,9 @@ func TestSharedProfileVectors(tester *testing.T) {
 		if !((*value.TenantUsage).Unavailable[0] == "fixture-owner-unavailable") {
 			tester.Fatal("redacted-capability-provider-inspection.tenant_usage.unavailable.0")
 		}
+		if !(!((*value.TenantUsage).StreamQuarantinedConnections != nil)) {
+			tester.Fatal("redacted-capability-provider-inspection.tenant_usage.stream_quarantined_connections.presence")
+		}
 		if !(!(value.NodeUsage != nil)) {
 			tester.Fatal("redacted-capability-provider-inspection.node_usage.presence")
 		}
@@ -2071,8 +2074,95 @@ func TestSharedProfileVectors(tester *testing.T) {
 		if !((*value.NodeUsage).Unavailable[1] == "audit-owner-not-configured") {
 			tester.Fatal("missing-provider-plan-not-zero-usage.node_usage.unavailable.1")
 		}
+		if !(!((*value.NodeUsage).StreamQuarantinedConnections != nil)) {
+			tester.Fatal("missing-provider-plan-not-zero-usage.node_usage.stream_quarantined_connections.presence")
+		}
 		if !(value.State == "binding-plan-unavailable") {
 			tester.Fatal("missing-provider-plan-not-zero-usage.state")
+		}
+	}
+	{
+		value := ListCapabilitiesResponse{Capabilities: []CapabilityDescriptor{}, NodeUsage: fixturePointer(CapabilityResourceUsage{Scope: "node", Counters: map[string]uint64{"stream_owners": uint64(0), "stream_connections": uint64(0)}, Unavailable: []string{}, StreamQuarantinedConnections: fixturePointer(uint64(0))}), State: "binding-plan-unavailable"}
+		if !(len(value.Capabilities) == 0) {
+			tester.Fatal("observed-stream-quarantine-zero.capabilities.count")
+		}
+		if !(!(value.Page != nil)) {
+			tester.Fatal("observed-stream-quarantine-zero.page.presence")
+		}
+		if !(!(value.Revision != nil)) {
+			tester.Fatal("observed-stream-quarantine-zero.revision.presence")
+		}
+		if !(!(value.TenantUsage != nil)) {
+			tester.Fatal("observed-stream-quarantine-zero.tenant_usage.presence")
+		}
+		if !(value.NodeUsage != nil) {
+			tester.Fatal("observed-stream-quarantine-zero.node_usage.presence")
+		}
+		if !((*value.NodeUsage).Scope == "node") {
+			tester.Fatal("observed-stream-quarantine-zero.node_usage.scope")
+		}
+		if !(len((*value.NodeUsage).Counters) == 2) {
+			tester.Fatal("observed-stream-quarantine-zero.node_usage.counters.count")
+		}
+		if !((*value.NodeUsage).Counters["stream_owners"] == uint64(0)) {
+			tester.Fatal("observed-stream-quarantine-zero.node_usage.counters.0")
+		}
+		if !((*value.NodeUsage).Counters["stream_connections"] == uint64(0)) {
+			tester.Fatal("observed-stream-quarantine-zero.node_usage.counters.1")
+		}
+		if !(len((*value.NodeUsage).Unavailable) == 0) {
+			tester.Fatal("observed-stream-quarantine-zero.node_usage.unavailable.count")
+		}
+		if !((*value.NodeUsage).StreamQuarantinedConnections != nil) {
+			tester.Fatal("observed-stream-quarantine-zero.node_usage.stream_quarantined_connections.presence")
+		}
+		if !((*(*value.NodeUsage).StreamQuarantinedConnections) == uint64(0)) {
+			tester.Fatal("observed-stream-quarantine-zero.node_usage.stream_quarantined_connections")
+		}
+		if !(value.State == "binding-plan-unavailable") {
+			tester.Fatal("observed-stream-quarantine-zero.state")
+		}
+	}
+	{
+		value := ListCapabilitiesResponse{Capabilities: []CapabilityDescriptor{}, NodeUsage: fixturePointer(CapabilityResourceUsage{Scope: "node", Counters: map[string]uint64{"stream_owners": uint64(3), "stream_connections": uint64(2)}, Unavailable: []string{}, StreamQuarantinedConnections: fixturePointer(uint64(1))}), State: "binding-plan-unavailable"}
+		if !(len(value.Capabilities) == 0) {
+			tester.Fatal("observed-stream-quarantine-retained.capabilities.count")
+		}
+		if !(!(value.Page != nil)) {
+			tester.Fatal("observed-stream-quarantine-retained.page.presence")
+		}
+		if !(!(value.Revision != nil)) {
+			tester.Fatal("observed-stream-quarantine-retained.revision.presence")
+		}
+		if !(!(value.TenantUsage != nil)) {
+			tester.Fatal("observed-stream-quarantine-retained.tenant_usage.presence")
+		}
+		if !(value.NodeUsage != nil) {
+			tester.Fatal("observed-stream-quarantine-retained.node_usage.presence")
+		}
+		if !((*value.NodeUsage).Scope == "node") {
+			tester.Fatal("observed-stream-quarantine-retained.node_usage.scope")
+		}
+		if !(len((*value.NodeUsage).Counters) == 2) {
+			tester.Fatal("observed-stream-quarantine-retained.node_usage.counters.count")
+		}
+		if !((*value.NodeUsage).Counters["stream_owners"] == uint64(3)) {
+			tester.Fatal("observed-stream-quarantine-retained.node_usage.counters.0")
+		}
+		if !((*value.NodeUsage).Counters["stream_connections"] == uint64(2)) {
+			tester.Fatal("observed-stream-quarantine-retained.node_usage.counters.1")
+		}
+		if !(len((*value.NodeUsage).Unavailable) == 0) {
+			tester.Fatal("observed-stream-quarantine-retained.node_usage.unavailable.count")
+		}
+		if !((*value.NodeUsage).StreamQuarantinedConnections != nil) {
+			tester.Fatal("observed-stream-quarantine-retained.node_usage.stream_quarantined_connections.presence")
+		}
+		if !((*(*value.NodeUsage).StreamQuarantinedConnections) == uint64(1)) {
+			tester.Fatal("observed-stream-quarantine-retained.node_usage.stream_quarantined_connections")
+		}
+		if !(value.State == "binding-plan-unavailable") {
+			tester.Fatal("observed-stream-quarantine-retained.state")
 		}
 	}
 	{

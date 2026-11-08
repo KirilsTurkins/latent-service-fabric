@@ -22,7 +22,42 @@ BASELINE_CASES = ('run', 'when-all', 'thread-pool', 'scheduler', 'error', 'cance
          'context', 'suppressed-context', 'delay', 'cancel-after', 'nested', 'monitor',
          'timer-periodic-context', 'timer-change', 'timer-dispose', 'timer-self-dispose-drain')
 CASES = BASELINE_CASES + ('cancel-pending',)
+RESET_NOTIFICATION_MODE = 'reset-notification-refusal'
+QUALIFICATION_CASES = CASES + (RESET_NOTIFICATION_MODE,)
 CANCEL_CASE = '        case "cancel-pending": {\n            using var cancellation = new CancellationTokenSource();\n            var token = cancellation.Token;\n            var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);\n            var running = Task.Run(async () => {\n                Stage = "cancel-pending-delay";\n                var delay = Task.Delay(10000, token);\n                Incomplete(delay);\n                entered.SetResult(true);\n                await delay.ConfigureAwait(false);\n                throw new Exception("pending cancellation ignored");\n            }, token);\n            Stage = "cancel-pending-enter";\n            entered.Task.GetAwaiter().GetResult();\n            Incomplete(running);\n            Stage = "cancel-pending-cancel";\n            cancellation.Cancel();\n            try { running.GetAwaiter().GetResult(); throw new Exception("running task did not cancel"); }\n            catch (OperationCanceledException error) {\n                if (error.CancellationToken != token || !running.IsCanceled)\n                    throw new Exception("pending cancellation identity or state changed");\n            }\n            break;\n        }\n'
+RESET_NOTIFICATION_CASE = r'''        case "reset-notification-refusal": {
+            Stage = "reset-notification-setup";
+            var completion = new TaskCompletionSource<int>();
+            int notifications = 0, outcome = 0;
+            bool callbackLeaving = false;
+            Task? unexpected = null;
+            var marker = new AsyncLocal<int>(change => {
+                if (!change.ThreadContextChanged || change.PreviousValue != 1 || change.CurrentValue != 0) return;
+                notifications++;
+                if (!callbackLeaving) { outcome = -1; return; }
+                try { unexpected = Task.Run(() => { }); outcome = -2; }
+                catch (TaskSchedulerException error) {
+                    outcome = error.InnerException is InvalidOperationException refusal
+                        && refusal.Message == "managed-work-reset-context-unavailable" ? 1 : -3;
+                }
+                catch (Exception) { outcome = -4; }
+            });
+            if (!ThreadPool.UnsafeQueueUserWorkItem(_ => {
+                // Queue the reporter while this owner is live, before reset fences admission.
+                if (!ThreadPool.UnsafeQueueUserWorkItem(_ => completion.SetResult(outcome), null)) {
+                    completion.SetResult(-5); return;
+                }
+                marker.Value = 1;
+                callbackLeaving = true;
+            }, null)) throw new Exception("reset witness callback rejected");
+            Stage = "reset-notification-join";
+            int observed = completion.Task.GetAwaiter().GetResult();
+            if (unexpected is not null) unexpected.GetAwaiter().GetResult();
+            if (observed != 1 || notifications != 1)
+                throw new Exception("reset notification was not refused exactly once");
+            break;
+        }
+'''
 LIBRARY_SOURCE = r'''using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -226,16 +261,23 @@ def with_pending_cancel(source: str) -> str:
     return source.replace(marker, CANCEL_CASE + marker)
 
 
-def selected_fixture(monitor_cancel: bool = False):
-    require(type(monitor_cancel) is bool, 'dotnet-task-closed-fixture-selection')
+def selected_fixture(monitor_cancel: bool = False, *, reset_notification: bool = False):
+    require(type(monitor_cancel) is bool and type(reset_notification) is bool
+            and not (monitor_cancel and reset_notification), 'dotnet-task-closed-fixture-selection')
     if monitor_cancel:
         from tools import dotnet_monitor_cancel_fixture as witness
         return witness.library_source(LIBRARY_SOURCE), witness.CASES
-    return with_pending_cancel(LIBRARY_SOURCE), CASES
+    source = with_pending_cancel(LIBRARY_SOURCE)
+    if reset_notification:
+        marker = '        case "context":\n'
+        require(source.count(marker) == 1 and 'case "reset-notification-refusal"' not in source,
+                'dotnet-task-reset-notification-source')
+        return source.replace(marker, RESET_NOTIFICATION_CASE + marker), QUALIFICATION_CASES
+    return source, CASES
 
 
 def expected(mode):
-    require(mode in CASES, 'dotnet-task-unknown-case')
+    require(mode in QUALIFICATION_CASES, 'dotnet-task-unknown-case')
     return 'ordinary-tasks:' + mode + '|fresh=1'
 
 
@@ -253,8 +295,9 @@ def declare(project: Path):
     entropy_grants.declare(project)
 
 
-def prepare(output: Path, outside: Path, tools: Path, *, monitor_cancel: bool = False):
-    library_source, cases = selected_fixture(monitor_cancel)
+def prepare(output: Path, outside: Path, tools: Path, *, monitor_cancel: bool = False,
+            reset_notification: bool = False):
+    library_source, cases = selected_fixture(monitor_cancel, reset_notification=reset_notification)
     project = create(output, 'greeting')
     declare(project)
     outside.mkdir(mode=0o700)

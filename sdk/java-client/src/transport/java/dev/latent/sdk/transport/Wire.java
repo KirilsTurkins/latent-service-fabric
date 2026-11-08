@@ -646,6 +646,7 @@ public final class Wire {
         result.setScope(value.scope());
         result.putAllCounters(value.counters());
         for (var item : value.unavailable()) result.addUnavailable(item);
+        if (value.streamQuarantinedConnections().isPresent()) result.setStreamQuarantinedConnections(value.streamQuarantinedConnections().get());
         return result.build();
     }
 
@@ -653,7 +654,8 @@ public final class Wire {
         return new Management.CapabilityResourceUsage(
                 value.getScope(),
                 Map.copyOf(value.getCountersMap()),
-                value.getUnavailableList().stream().map(item -> item).toList());
+                value.getUnavailableList().stream().map(item -> item).toList(),
+                value.hasStreamQuarantinedConnections() ? Optional.of(value.getStreamQuarantinedConnections()) : Optional.empty());
     }
 
     public static latent.control.v1.Release.PublicationRef toWire(Management.PublicationRef value) {

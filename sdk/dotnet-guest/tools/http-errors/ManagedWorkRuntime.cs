@@ -44,7 +44,11 @@ public static partial class ManagedWorkRuntime
         internal object Item = null!;
         internal Record Owner = null!;
         internal (ulong Generation, ulong Id) Token;
-        // Bit 0 fences uncertainty and bit 2 marks an unfinished enqueue.
+        internal Queued? ResetPrevious;
+        // Bit 0 fences uncertainty, bit 2 marks an unfinished enqueue, bit 3
+        // retains the dispatch, bits 4/5 hold reset/entering-reset custody,
+        // bit 6 marks an inline scheduler claim before its exact pop,
+        // and bit 7 marks an unresolved inline or reset-fenced pop.
         internal byte State;
     }
 
@@ -66,6 +70,7 @@ public static partial class ManagedWorkRuntime
     private static Queued?[]? queued;
     private static Required?[]? required;
     private static AsyncLocal<Record?>? current;
+    private static Queued? resetTop;
     private static Record? root;
     private static (ulong Generation, ulong Id) storage;
     private static bool closing;
@@ -193,7 +198,9 @@ public static partial class ManagedWorkRuntime
     private static void ContextChanged(AsyncLocalValueChangedArgs<Record?> change)
     {
         var owner = change.CurrentValue;
-        if (owner is not null && ((owner.Active && !owner.Result) || owner.ResultTransition == 3))
+        if (resetTop is not null && ((resetTop.State & 33) != 0 || owner is null || !owner.Active || owner.Result))
+            adapterContext!(0, 1); // Private bridge fence, never a runtime token.
+        else if (owner is not null && ((owner.Active && !owner.Result) || owner.ResultTransition == 3))
             adapterContext!(owner.Token.Generation, owner.Token.Id);
         else
             adapterContext!(0, 0);
@@ -236,6 +243,8 @@ public static partial class ManagedWorkRuntime
     private static Record? Parent()
     {
         var owner = current!.Value;
+        if (resetTop is not null && ((resetTop.State & 33) != 0 || owner is null))
+            throw new InvalidOperationException("managed-work-reset-context-unavailable");
         if (closing && (owner is null || !owner.Active || owner.Root || owner.Result))
             throw new InvalidOperationException("managed-work-independent-admission-closed");
         if (owner is not null && (!owner.Active || owner.Result))
@@ -628,26 +637,34 @@ public static partial class ManagedWorkRuntime
         // code, so retain it rather than guessing that no context or work uses it.
     }
 
-    public static void Dequeue(object item)
+    private static object? TakeQueue(object item, bool retainDispatch)
     {
         if (!installed)
         {
             if (reserve is not null) { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
-            return;
+            return null;
         }
+        if (resetTop is not null && (resetTop.State & 33) != 0)
+            throw new InvalidOperationException("managed-work-reset-context-unavailable");
         foreach (var existing in queued!)
             if (existing is not null && ReferenceEquals(existing.Item, item) && (existing.State & 1) != 0)
                 throw new InvalidOperationException("managed-work-queue-uncertain");
         for (int i = 0; i < MaximumQueued; i++)
             if (queued![i] is { } pending && ReferenceEquals(pending.Item, item)
-                && (pending.State & 4) == 0)
+                && (pending.State & 12) == 0)
             {
                 // The host may have settled before trapping; retain this
                 // exact queue record but never submit its token again.
+                bool retainInline = (pending.State & 64) != 0;
                 pending.State |= 1;
                 settle!(pending.Token.Generation, pending.Token.Id);
+                if (retainDispatch || retainInline)
+                {
+                    pending.State = 8;
+                    return pending;
+                }
                 queued[i] = null;
-                return;
+                return null;
             }
         foreach (var pending in queued!)
             if (pending is not null && ReferenceEquals(pending.Item, item) && (pending.State & 4) != 0)
@@ -655,10 +672,94 @@ public static partial class ManagedWorkRuntime
         throw new InvalidOperationException("managed-work-unregistered-dequeue");
     }
 
+    // The pinned scheduler calls this only for its own inline attempt. The
+    // ordinary TryDequeue path never sets the marker and keeps its old pop.
+    public static object? InlineQueued(Task task, bool previouslyQueued)
+    {
+        if (!installed || !previouslyQueued) return null;
+        if (resetTop is not null && (resetTop.State & 33) != 0) return null;
+        foreach (var existing in queued!)
+            if (existing is not null && ReferenceEquals(existing.Item, task)
+                && (existing.State & 65) != 0) return null;
+        foreach (var pending in queued!)
+            if (pending is not null && ReferenceEquals(pending.Item, task)
+                && pending.State == 0)
+            {
+                pending.State = 64;
+                return pending;
+            }
+        return null;
+    }
+
+    // Called in an outer finally after the original scheduler body and its
+    // progress-notification finally. A failed pop/body retains uncertain work.
+    public static void InlineQueueFinished(object? ticket, bool returned)
+    {
+        if (ticket is null) return;
+        var pending = ticket as Queued ?? throw new InvalidOperationException("managed-work-inline-ticket");
+        int index = -1;
+        for (int i = 0; i < MaximumQueued; i++)
+            if (ReferenceEquals(queued![i], pending)) { index = i; break; }
+        if (index < 0)
+        {
+            if (!returned) return; // Never mask the original scheduler failure.
+            throw new InvalidOperationException("managed-work-inline-ticket");
+        }
+        if (pending.State == 64)
+        {
+            pending.State = returned ? (byte)0 : (byte)193;
+            return;
+        }
+        if (pending.State == 8 && returned)
+        {
+            var owner = pending.Owner;
+            queued![index] = null;
+            // An inline Task can be a required continuation owned by another
+            // callback. Its return is not that callback's completion.
+            if (owner.Completion is not null && (ReferenceEquals(owner.Outer, pending.Item)
+                || ReferenceEquals(owner.Completion, pending.Item))) owner.CallbackDone = true;
+            if (owner.Active && !owner.Root && !owner.Timer && !owner.Result && owner.CallbackDone
+                && owner.Completion is { IsCompleted: true } && !HasQueuedOwner(owner) && !HasRequired(owner)
+                && owner.Active && !HasQueuedOwner(owner))
+                Finish(owner);
+            return;
+        }
+        // Preserve the original exception and the exact unresolved record.
+        if (!returned) { pending.State |= 129; return; }
+        throw new InvalidOperationException("managed-work-inline-ticket");
+    }
+
+    public static void Dequeue(object item) => TakeQueue(item, false);
+
+    public static object? BeginDispatch(object item) => TakeQueue(item, true);
+
+    private static bool HasQueuedOwner(Record owner)
+    {
+        foreach (var pending in queued!)
+            if (pending is not null && ReferenceEquals(pending.Owner, owner)) return true;
+        return false;
+    }
+
+    private static void CheckRunningOwner(object item, Record? owner)
+    {
+        foreach (var pending in queued!)
+            if (pending is not null && (pending.State & 8) != 0 && ReferenceEquals(pending.Item, item)
+                && !ReferenceEquals(pending.Owner, owner))
+                throw new InvalidOperationException("managed-work-running-owner-changed");
+    }
+
     public static bool Popped(bool found, object item)
     {
         if (!installed && reserve is not null && found)
         { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
+        if (installed && found && resetTop is not null && (resetTop.State & 33) != 0)
+        {
+            // The original local pop already removed an occurrence. No
+            // matching record can safely be settled or matched again.
+            foreach (var pending in queued!)
+                if (pending is not null && ReferenceEquals(pending.Item, item)) pending.State |= 129;
+            throw new InvalidOperationException("managed-work-reset-context-unavailable");
+        }
         if (installed && found) Dequeue(item);
         return found;
     }
@@ -670,23 +771,40 @@ public static partial class ManagedWorkRuntime
             if (reserve is not null) { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
             return null;
         }
+        if (resetTop is not null && (resetTop.State & 33) != 0)
+            throw new InvalidOperationException("managed-work-reset-context-unavailable");
         var previous = current!.Value;
         var owner = Find(item) ?? WorkContext(item) as Record;
         if (owner is null && Maintenance(item)) owner = root;
+        CheckRunningOwner(item, owner);
         if (owner is null || !owner.Active || owner.Result)
             throw new InvalidOperationException("managed-work-execution-parent");
         current.Value = owner;
         return previous;
     }
 
-    public static object? EnterDispatch(object item)
+    public static object? EnterDispatch(object item, object? ticket)
     {
-        if (installed && item is Task task && task.IsCompleted)
+        if (!installed)
         {
-            if (Find(item) is { Active: false }) throw new InvalidOperationException("managed-work-execution-parent");
-            return current!.Value;
+            if (reserve is not null) { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
+            return null;
         }
-        return Enter(item);
+        if (resetTop is not null && (resetTop.State & 33) != 0)
+            throw new InvalidOperationException("managed-work-reset-context-unavailable");
+        var pending = ticket as Queued ?? throw new InvalidOperationException("managed-work-dispatch-ticket");
+        bool found = false;
+        foreach (var candidate in queued!) if (ReferenceEquals(candidate, pending)) { found = true; break; }
+        if (!found || pending.State != 8 || !ReferenceEquals(pending.Item, item))
+            throw new InvalidOperationException("managed-work-dispatch-ticket");
+        var owner = Find(item) ?? WorkContext(item) as Record;
+        if (owner is null && Maintenance(item)) owner = root;
+        CheckRunningOwner(item, owner);
+        if (owner is null || !owner.Active || owner.Result || !ReferenceEquals(owner, pending.Owner))
+            throw new InvalidOperationException("managed-work-execution-parent");
+        var previous = current!.Value;
+        if (item is not Task task || !task.IsCompleted) current.Value = owner;
+        return previous;
     }
 
     public static void Exit(object? previous)
@@ -695,10 +813,55 @@ public static partial class ManagedWorkRuntime
         if (installed) current!.Value = (Record?)previous;
     }
 
+    public static void ResetStarting(object? ticket)
+    {
+        if (!installed) { if (reserve is not null) admissions = -1; return; }
+        if (resetTop is not null && (resetTop.State & 33) != 0)
+            throw new InvalidOperationException("managed-work-reset-context-unavailable");
+        var pending = ticket as Queued ?? throw new InvalidOperationException("managed-work-dispatch-ticket");
+        bool found = false;
+        foreach (var candidate in queued!) if (ReferenceEquals(candidate, pending)) { found = true; break; }
+        if (!found || pending.State != 8) throw new InvalidOperationException("managed-work-dispatch-ticket");
+        // Link only already-admitted queue records; no allocation on this path.
+        pending.ResetPrevious = resetTop; pending.State = 57; resetTop = pending;
+        adapterContext!(0, 1);
+        pending.State = 56;
+    }
+
+    public static void ResetReady(object? ticket)
+    {
+        if (!installed) { if (reserve is not null) admissions = -1; return; }
+        var pending = ticket as Queued;
+        if (pending is null || !ReferenceEquals(resetTop, pending) || pending.State != 56)
+            throw new InvalidOperationException("managed-work-reset-ticket");
+        pending.State = 24;
+    }
+
+    public static void ResetFinished(object? ticket)
+    {
+        if (!installed) { if (reserve is not null) admissions = -1; return; }
+        var pending = ticket as Queued;
+        if (pending is null || !ReferenceEquals(resetTop, pending) || pending.State != 24)
+            throw new InvalidOperationException("managed-work-reset-ticket");
+        var owner = current!.Value;
+        // Context acknowledgement may be ambiguous; poison this exact frame
+        // before the call and never let a second return clear it on failure.
+        pending.State = 25;
+        if (owner is not null && owner.Active && !owner.Result)
+            adapterContext!(owner.Token.Generation, owner.Token.Id);
+        else if (pending.ResetPrevious is not null) adapterContext!(0, 1);
+        else adapterContext!(0, 0);
+        resetTop = pending.ResetPrevious; pending.ResetPrevious = null; pending.State = 8;
+    }
+
     public static void CallbackCompleted(object item)
     {
         if (!installed) { if (reserve is not null) admissions = -1; return; }
-        var owner = Find(item);
+        CompleteCallback(Find(item));
+    }
+
+    private static void CompleteCallback(Record? owner)
+    {
         if (owner is { Timer: true }) { TryRetireTimer(FindTimer(owner.Primary)!); return; }
         // Task completion is handled by Completed, including a failed conversion.
         // A dormant queue-created owner has no Completion and stays fenced below.
@@ -707,8 +870,29 @@ public static partial class ManagedWorkRuntime
         if (owner is not null && owner.Completion is null && !owner.Root)
         {
             owner.CallbackDone = true;
-            if (!HasRequired(owner)) Release(owner);
+            if (!HasQueuedOwner(owner) && !HasRequired(owner) && !HasQueuedOwner(owner)) Release(owner);
         }
+    }
+
+    public static void DispatchReturned(object? ticket)
+    {
+        if (!installed) { if (reserve is not null) admissions = -1; return; }
+        var pending = ticket as Queued ?? throw new InvalidOperationException("managed-work-dispatch-ticket");
+        int index = -1;
+        for (int i = 0; i < MaximumQueued; i++)
+            if (ReferenceEquals(queued![i], pending)) { index = i; break; }
+        if (index < 0 || pending.State != 8) throw new InvalidOperationException("managed-work-dispatch-ticket");
+        var owner = pending.Owner;
+        // The original Execute, Exit and thread-pool context reset returned.
+        // Its Queue token was already acknowledged; only this claim ends.
+        queued![index] = null;
+        if (owner.Completion is not null && (ReferenceEquals(owner.Outer, pending.Item)
+            || ReferenceEquals(owner.Completion, pending.Item))) owner.CallbackDone = true;
+        CompleteCallback(owner);
+        if (owner.Active && !owner.Root && !owner.Timer && !owner.Result && owner.CallbackDone
+            && owner.Completion is { IsCompleted: true } && !HasQueuedOwner(owner) && !HasRequired(owner)
+            && owner.Active && !HasQueuedOwner(owner))
+            Finish(owner);
     }
 
     public static void Completed(Task task)
@@ -717,7 +901,8 @@ public static partial class ManagedWorkRuntime
         var owner = Find(task);
         if (owner is { Active: false }) throw new InvalidOperationException("managed-work-double-settle");
         if (owner is null || owner.Root || owner.Result || !ReferenceEquals(owner.Completion, task)) return;
-        if (HasRequired(owner)) return;
+        CheckRunningOwner(task, owner);
+        if (HasQueuedOwner(owner) || HasRequired(owner) || HasQueuedOwner(owner)) return;
         Finish(owner);
     }
 
@@ -928,6 +1113,9 @@ public static partial class ManagedWorkRuntime
         close!();
         for (;;)
         {
+            foreach (var uncertain in queued!)
+                if (uncertain is not null && (uncertain.State & 128) != 0)
+                    throw new InvalidOperationException("managed-work-inline-uncertain");
             Task? pending = null;
             bool active = false;
             for (int i = 0; i < MaximumRecords; i++)
@@ -944,10 +1132,10 @@ public static partial class ManagedWorkRuntime
                 if (owner.Result) continue;
                 if (owner.Completion is { } task)
                 {
-                    if (task.IsCompleted && !HasRequired(owner)) Finish(owner);
+                    if (task.IsCompleted && !HasQueuedOwner(owner) && !HasRequired(owner) && !HasQueuedOwner(owner)) Finish(owner);
                     else { active = true; if (!task.IsCompleted) pending ??= task; }
                 }
-                else if (owner.CallbackDone && !HasRequired(owner)) Release(owner);
+                else if (owner.CallbackDone && !HasQueuedOwner(owner) && !HasRequired(owner) && !HasQueuedOwner(owner)) Release(owner);
                 else active = true;
             }
             bool queuedWork = false;
@@ -974,8 +1162,13 @@ public static partial class ManagedWorkRuntime
     {
         if (!installed && reserve is not null)
         { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
-        if (installed && closing && !ReadySource())
-            throw new InvalidOperationException("managed-work-unproven-quiescence");
+        if (installed && closing)
+        {
+            foreach (var uncertain in queued!)
+                if (uncertain is not null && (uncertain.State & 128) != 0)
+                    throw new InvalidOperationException("managed-work-inline-uncertain");
+            if (!ReadySource()) throw new InvalidOperationException("managed-work-unproven-quiescence");
+        }
     }
 
     public static void FinishedPhysicalDrain()
@@ -1027,6 +1220,7 @@ public static partial class ManagedWorkRuntime
         }
         var owner = Find(item) ?? ContextValue(original) as Record;
         if (owner is null && Maintenance(item)) owner = root;
+        CheckRunningOwner(item, owner);
         if (owner is null || !owner.Active || owner.Result)
             throw new InvalidOperationException("managed-work-context-owner");
         return ContextWithOwner(original, owner);

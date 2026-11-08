@@ -714,6 +714,72 @@ class GoManagedTimers(unittest.TestCase):
             self.assertEqual(record['profile'], 'go-component-activation-v3')
             self.assertEqual(record['nativeReference']['modes'], NATIVE17)
 
+    def test_v7_timer_compile_uses_the_same_unchanged_native_reference(self):
+        source = (reference.ROOT / 'sdk/go-guest/runtime/timers-conformance/main.go').read_bytes()
+        native = {'modes': NATIVE17, 'output': 42, 'freshProcessPerMode': True,
+                  'sourceDigest': 'sha256:' + reference.digest(source)}
+        with tempfile.TemporaryDirectory() as temporary, \
+                patch.object(activation, 'Compiler', SourceOnlyCompiler), \
+                patch.object(activation, 'stage'), \
+                patch.object(activation, 'fixture_reference', return_value=native) as observe:
+            folder = Path(temporary) / 'capture'
+            record = activation.compile_fixture(folder, runtime_profile='go-component-activation-v7', fixture='timers')
+            self.assertEqual(record['profile'], 'go-component-activation-v7')
+            self.assertEqual(record['nativeReference'], native)
+            self.assertEqual((folder / 'src/main.go').read_bytes(), source)
+            self.assertEqual(record['signedExecution'], 'not-run')
+            observe.assert_called_once()
+
+    def test_v7_identity_requires_v7_source_world_and_all_native_modes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            folder = Path(temporary)
+            record = compile_record(folder)
+            record['profile'] = 'go-component-activation-v7'
+            (folder / 'wit').mkdir()
+            wit = folder / 'wit/world.wit'
+            original = (reference.ROOT / 'sdk/go-guest/runtime/timers-conformance/world.wit').read_bytes()
+            wit.write_bytes(original)
+            path = folder / 'GO-ACTIVATION-COMPILE.json'
+            path.write_bytes(json.dumps(record).encode())
+            actual = reference.compile_identity(folder, reference.ROOT, record['profile'], 'timers')
+            self.assertEqual(actual['profile'], 'go-component-activation-v7')
+            for mutation in ('profile', 'native', 'world'):
+                candidate = copy.deepcopy(record)
+                if mutation == 'profile':
+                    candidate['profile'] = 'go-component-activation-v5'
+                elif mutation == 'native':
+                    candidate['nativeReference']['modes'] = NATIVE17[:-1]
+                else:
+                    wit.write_bytes(original + b'\n')
+                path.write_bytes(json.dumps(candidate).encode())
+                with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                    reference.compile_identity(folder, reference.ROOT, record['profile'], 'timers')
+                wit.write_bytes(original)
+
+    def test_v7_campaign_cannot_relabel_the_v5_case_or_omit_outcomes(self):
+        fixture = Path('owned-v7-timer-capture')
+        self.assertEqual(reference.campaign('managed-v7-timers', fixture, None),
+                         {'case': reference.V7_TIMER_CASE, 'fixture': 'timers',
+                          'variable': 'LSF_GO_V7_TIMER_FIXTURE', 'inputs': [(fixture, 'go-component-activation-v7')]})
+        raw = output(rows()).replace(reference.MANAGED_TIMER_CASE.encode(), reference.V7_TIMER_CASE.encode())
+        self.assertEqual(reference.managed_timer_observations(raw, 50, reference.V7_TIMER_CASE), rows())
+        with self.assertRaisesRegex(ValueError, 'exact-signed-case'):
+            reference.managed_timer_observations(output(rows()), 50, reference.V7_TIMER_CASE)
+        with self.assertRaisesRegex(ValueError, 'exact-signed-case'):
+            reference.managed_timer_observations(raw, 50, reference.MANAGED_TIMER_CASE)
+        missing = output(rows()[:-1]).replace(reference.MANAGED_TIMER_CASE.encode(), reference.V7_TIMER_CASE.encode())
+        with self.assertRaisesRegex(ValueError, 'missing-or-extra'):
+            reference.managed_timer_observations(missing, 50, reference.V7_TIMER_CASE)
+        with self.assertRaisesRegex(ValueError, 'unreviewed-campaign'):
+            reference.campaign('managed-v7-timers', fixture, Path('legacy-v5'))
+
+    def test_v7_case_is_an_additional_exact_ignored_inventory_entry(self):
+        suites = json.loads((reference.ROOT / 'tools/ci/suites.json').read_bytes())['suites']
+        suite, = [entry for entry in suites if entry['id'] == 'latent-wasmtime.test.local-service']
+        self.assertEqual(suite['expectedIgnored'].count(reference.MANAGED_TIMER_CASE), 1)
+        self.assertEqual(suite['expectedIgnored'].count(reference.V7_TIMER_CASE), 1)
+        self.assertEqual(suite['ignoredLeaves'].count(reference.V7_TIMER_CASE.rsplit('::', 1)[-1]), 1)
+
     def test_exact_v5_timer_source_profile_and_all_seventeen_native_modes_are_required(self):
         self.assertEqual(reference.TIMER_NATIVE_MODES, NATIVE17)
         with tempfile.TemporaryDirectory() as temporary:
