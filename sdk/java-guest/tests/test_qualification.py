@@ -421,10 +421,20 @@ class StandardTimerModelIntegrity(unittest.TestCase):
             for name in ("fibers/compiler", "fibers/dev/latent/guest/runtime/util",
                          "fibers/conformance/compiler"):
                 shutil.copytree(fibers.ROOT / "sdk/java-guest" / name, compiler.sdk / name)
+            for name in ("fibers/dev/latent/guest/runtime/Activation.java",
+                         "fibers/dev/latent/guest/runtime/HostCalls.java",
+                         "runtime/dev/latent/guest/Option.java", "runtime/dev/latent/guest/Unsigned64.java"):
+                destination = compiler.sdk / name
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(fibers.ROOT / "sdk/java-guest" / name, destination)
             compiler.run.side_effect = ["", "STANDARD_TIMER_MODEL_CONTROL PASS models=3"]
             with self.assertRaisesRegex(ValueError, "timer model control did not complete"):
                 fibers.standard_timer_model_control(compiler, root / "model")
             self.assertEqual(compiler.run.call_count, 2)
+            sources = compiler.run.call_args_list[0].args
+            self.assertIn(compiler.sdk / "fibers/dev/latent/guest/runtime/Activation.java", sources)
+            self.assertIn(compiler.sdk / "fibers/conformance/compiler/timer-source-control/dev/latent/generated/Bindings.java", sources)
+            self.assertNotIn(compiler.sdk / "fibers/conformance/compiler/standard-timer-control/dev/latent/guest/runtime/Activation.java", sources)
 
 
 class CompletableSourceIntegrity(unittest.TestCase):

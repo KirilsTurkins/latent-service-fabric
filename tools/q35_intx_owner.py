@@ -8,6 +8,7 @@ import time
 from tools import build_process
 
 EVENTS = ('pci_cfg_read', 'pci_cfg_write', 'pci_route_irq', 'x86_gsi_interrupt')
+BAR3_EVENTS = ('pci_update_mappings_add', 'pci_update_mappings_del')
 MAX_LOG = 4 * 1024**2
 
 
@@ -16,10 +17,15 @@ def require(value, reason):
         raise ValueError('q35-intx-owner-' + reason)
 
 
-def trace_argv(boot):
+def events(bar3=False):
+    require(type(bar3) is bool, 'bar3-selection')
+    return EVENTS + (BAR3_EVENTS if bar3 else ())
+
+
+def trace_argv(boot, *, bar3=False):
     require(type(boot) is tuple and boot and all(type(part) is str for part in boot), 'boot-argv')
     require('-trace' not in boot and '-D' not in boot, 'unmodified-trace-argv')
-    return boot + tuple(part for event in EVENTS for part in ('-trace', 'enable='+event))
+    return boot + tuple(part for event in events(bar3) for part in ('-trace', 'enable='+event))
 
 
 def probe_loss(commands, argv):

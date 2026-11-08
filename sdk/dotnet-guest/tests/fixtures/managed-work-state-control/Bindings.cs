@@ -57,6 +57,8 @@ public static partial class ManagedWorkRuntime
 
     internal static bool CallbackDoneForControl(object item) =>
         Find(item)?.CallbackDone ?? throw new InvalidOperationException("control-owner-missing");
+    internal static object? OwnerObjectForControl(object item) => Find(item);
+    internal static object? CurrentOwnerForControl() => current?.Value;
 
     internal static (ulong Generation, ulong Id)? PendingResultForControl(object item) =>
         Find(item)?.PendingResult;
@@ -66,11 +68,14 @@ public static partial class ManagedWorkRuntime
 
     private static partial bool TimerScheduled(object item) => throw new InvalidOperationException("unexpected-control-timer");
     private static partial int TimerCallbacks(object item) => throw new InvalidOperationException("unexpected-control-timer");
-    private static partial object? ContextValue(ExecutionContext? context) => null;
+    private static partial object? ContextValue(ExecutionContext? context) =>
+        context is null ? null : global::StateControl.ContextOwnerForControl;
+    private static partial object? InlineContinuationContext(Task task) =>
+        global::StateControl.InlineContinuationForControl ? global::StateControl.ContextOwnerForControl : task;
     private static partial ExecutionContext ContextWithOwner(ExecutionContext? context, object owner) =>
         context ?? ExecutionContext.Capture() ?? throw new InvalidOperationException("control-context");
     private static partial void BindAsyncContext(Task task) { }
-    private static partial bool Maintenance(object item) => false;
+    private static partial bool Maintenance(object item) => global::StateControl.IsMaintenanceForControl(item);
     private static partial bool RequiredContinuation(object item) => false;
     private static partial bool ReadySource() => global::StateControl.ReadyForControl();
     private static partial void WaitForCompletion(Task task)

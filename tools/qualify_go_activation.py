@@ -82,8 +82,8 @@ def compile_fixture(output: Path, *, offline_cache: Path | None = None, runtime_
         raise ValueError('Go-synchronization-requires-v5-or-exact-no-checkpoint-control')
     if fixture == 'task-saturation' and runtime_profile != 'go-component-activation-v5':
         raise ValueError('Go-task-saturation-requires-v5')
-    if fixture == 'timer-overlap' and runtime_profile != 'go-component-activation-v5':
-        raise ValueError('Go-timer-overlap-requires-v5')
+    if fixture == 'timer-overlap' and runtime_profile not in {'go-component-activation-v5', 'go-component-activation-v7'}:
+        raise ValueError('Go-timer-overlap-requires-v5-or-v7')
     output.mkdir(parents=True, exist_ok=False)
     if fixture not in {'ordinary', 'checkpoints', 'timers', 'initializers', 'managed-idle', 'synchronization', 'task-saturation', 'timer-overlap'}:
         raise ValueError('unsupported-Go-activation-fixture')

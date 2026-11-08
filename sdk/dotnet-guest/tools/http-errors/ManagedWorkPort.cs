@@ -28,10 +28,10 @@ internal static class ManagedWorkPort
         }
         var changed = hooks.Changed.ToDictionary(method => method.FullName,
             method => originalBodies[method.DeclaringType.FullName + "#" + method.DeclaringType.Methods.IndexOf(method)]);
-        if (changed.Count != 24 || registry.Count != 69)
+        if (changed.Count != 24 || registry.Count != 70)
             throw new InvalidDataException("managed-work-selected-method-count");
         return (hooks.Changed, new {
-            patch = "latent.dotnet.managed-accepted-work.v14",
+            patch = "latent.dotnet.managed-accepted-work.v15",
             readiness = "original-prefetched-slot-or-counted-queues-and-polls",
             readinessControls = "four-actual-generated-slot-models",
             modifiedOriginalMethods = changed,
@@ -51,6 +51,7 @@ internal static class ManagedWorkPort
             dispatchCustody = "original-queue-record-through-execute-and-thread-reset",
             dispatchCapacity = "64-shared-queued-and-running-records",
             inlinePopCustody = "original-queue-record-through-inline-scheduler-finally",
+            inlinePrimaryCustody = "sealed-continuation-root-context-and-original-task-owner-only",
             resetContext = "null-context-refused-explicit-live-context-preserved",
             resetNative = "private-fenced-state-refuses-new-owner-registration",
             startupReservation = "dormant-root-native-refusal-ordered-cleanup-and-context-custody",
