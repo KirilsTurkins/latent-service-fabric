@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import shutil
 from pathlib import Path
 import sys
 
@@ -36,6 +37,8 @@ def fixture_reference(output, commands, compiler, source, fixture):
         # Native execution checks public return values; only the signed host
         # witness establishes that the operations actually overlapped.
         modes = [0, 1, 2, 3]
+    elif fixture == 'timer-fired':
+        modes = [0, 1]
     elif fixture == 'synchronization':
         # Native main does not implement the component's accepted-work drain.
         # The parked/late-root/cancellation cases retain signed-only assertions.
@@ -84,12 +87,14 @@ def compile_fixture(output: Path, *, offline_cache: Path | None = None, runtime_
         raise ValueError('Go-task-saturation-requires-v5')
     if fixture == 'timer-overlap' and runtime_profile not in {'go-component-activation-v5', 'go-component-activation-v7'}:
         raise ValueError('Go-timer-overlap-requires-v5-or-v7')
+    if fixture == 'timer-fired' and runtime_profile != 'go-component-activation-v7':
+        raise ValueError('Go-fired-timer-requires-v7')
     output.mkdir(parents=True, exist_ok=False)
-    if fixture not in {'ordinary', 'checkpoints', 'timers', 'initializers', 'managed-idle', 'synchronization', 'task-saturation', 'timer-overlap'}:
+    if fixture not in {'ordinary', 'checkpoints', 'timers', 'initializers', 'managed-idle', 'synchronization', 'task-saturation', 'timer-overlap', 'timer-fired'}:
         raise ValueError('unsupported-Go-activation-fixture')
     if fixture == 'managed-idle' and runtime_profile != 'go-component-activation-v5':
         raise ValueError('Go-managed-idle-fixture-requires-v5')
-    original = ROOT / 'sdk/go-guest/runtime' / {'ordinary': 'conformance', 'checkpoints': 'checkpoints-conformance', 'timers': 'timers-conformance', 'initializers': 'initializers-conformance', 'managed-idle': 'managed-idle-conformance', 'synchronization': 'synchronization-conformance', 'task-saturation': 'task-saturation-conformance', 'timer-overlap': 'timer-overlap-conformance'}[fixture]
+    original = ROOT / 'sdk/go-guest/runtime' / {'ordinary': 'conformance', 'checkpoints': 'checkpoints-conformance', 'timers': 'timers-conformance', 'initializers': 'initializers-conformance', 'managed-idle': 'managed-idle-conformance', 'synchronization': 'synchronization-conformance', 'task-saturation': 'task-saturation-conformance', 'timer-overlap': 'timer-overlap-conformance', 'timer-fired': 'timer-fired-conformance'}[fixture]
     source = (original / 'main.go').read_bytes()
     (output / 'src').mkdir()
     (output / 'src/main.go').write_bytes(source)
@@ -98,7 +103,21 @@ def compile_fixture(output: Path, *, offline_cache: Path | None = None, runtime_
     stage(output / 'wit', original)
     # stage copies only WIT; Go source remains separately captured above.
     commands = Commands(output, output, dict(os.environ))
-    compiler = Compiler(output / 'compiler', ROOT / 'sdk/go-guest', commands, offline_cache=offline_cache,
+    sdk = ROOT / 'sdk/go-guest'
+    diagnostic = None
+    if fixture == 'timer-fired':
+        from tools.go_guest.fired_timer_witness import derive
+        sdk_copy = output / 'diagnostic-sdk'
+        shutil.copytree(sdk, sdk_copy)
+        timer = sdk_copy / 'runtime/timer_async.go.in'
+        original_timer = (sdk / 'runtime/timer_async.go.in').read_bytes()
+        derived_timer = derive(original_timer)
+        timer.write_bytes(derived_timer)
+        diagnostic = {'kind': 'selected-stop-token-fence-observe-v2',
+                      'originalTimerAsyncDigest': digest(original_timer),
+                      'derivedTimerAsyncDigest': digest(derived_timer)}
+        sdk = sdk_copy
+    compiler = Compiler(output / 'compiler', sdk, commands, offline_cache=offline_cache,
                         runtime_profile=runtime_profile)
     try:
         component, bindings = compiler.compile(output / 'src', output / 'wit', 'tests:caller/service@1.0.0',
@@ -114,6 +133,8 @@ def compile_fixture(output: Path, *, offline_cache: Path | None = None, runtime_
                   'tools': compiler.materials, 'transformations': transformations,
                   'sourceUnchanged': source == (original / 'main.go').read_bytes(),
                   'ordinarySource': True, 'signedExecution': 'not-run', 'qualification': 'compile-only'}
+        if diagnostic is not None:
+            record['diagnosticRuntime'] = diagnostic
         if not record['sourceUnchanged']:
             raise ValueError('Go-activation-source-changed')
         if fixture == 'checkpoints' and runtime_profile == 'go-component-activation-v2':
@@ -127,7 +148,7 @@ def compile_fixture(output: Path, *, offline_cache: Path | None = None, runtime_
             record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)
         if fixture == 'task-saturation':
             record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)
-        if fixture == 'timer-overlap':
+        if fixture in {'timer-overlap', 'timer-fired'}:
             record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)
         if fixture == 'synchronization' and runtime_profile == 'go-component-activation-v5':
             record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)
@@ -143,7 +164,7 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--offline-cache', type=Path)
     parser.add_argument('--runtime-profile', choices=sorted(PROFILES), default=PROFILE)
-    parser.add_argument('--fixture', choices=('ordinary', 'checkpoints', 'timers', 'initializers', 'managed-idle', 'synchronization', 'task-saturation', 'timer-overlap'), default='ordinary')
+    parser.add_argument('--fixture', choices=('ordinary', 'checkpoints', 'timers', 'initializers', 'managed-idle', 'synchronization', 'task-saturation', 'timer-overlap', 'timer-fired'), default='ordinary')
     args = parser.parse_args()
     print(json.dumps(compile_fixture(args.output, offline_cache=args.offline_cache,
         runtime_profile=args.runtime_profile, fixture=args.fixture)))
