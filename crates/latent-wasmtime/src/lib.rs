@@ -20,6 +20,8 @@ mod host;
 mod invocation_input_observer;
 #[cfg(feature = "java-checkpoint-gc-trap-diagnostic")]
 mod java_checkpoint_gc_fault;
+#[cfg(feature = "development-go-timer-overlap")]
+mod development_go_timer_overlap;
 mod native_stacks;
 mod native_tables;
 mod phase0;
