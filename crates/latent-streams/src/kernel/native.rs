@@ -103,9 +103,11 @@ struct Attempt {
 impl Drop for Attempt {
     fn drop(&mut self) {
         if self.entered {
-            // This guard lives in the physical blocking job once entered. A
-            // panic, error, deadline or lost result cannot drop its quota. An
-            // unsuccessful open can itself have entered the kernel constructor.
+            // The entered guard stays in the physical blocking job. Error
+            // return or panic unwinding reaches this quarantine; a deadline or
+            // lost waiter does not cancel the job. panic=abort terminates the
+            // process without unwinding, so no post-abort quarantine is implied.
+            // An unsuccessful open can itself have entered the kernel constructor.
             let mut resource = self.resource.take().expect("prepaid original backing");
             drop(resource.descriptor.take());
             if let Some(observation) = resource.retirement.as_mut() {
@@ -1224,7 +1226,8 @@ pub(crate) mod node_bootstrap {
                 value
                     .backing
                     .checkpoint(&physical_pools, &value.installed)?;
-                attempt.entered = true; // BEFORE open, including failed open/panic.
+                // Arm before a failed open; panic=abort does not unwind this guard.
+                attempt.entered = true;
                 value.descriptor = Some(open()?);
                 value.attachment = Some(initialize(
                     value.descriptor.as_mut().expect("actual fd"),

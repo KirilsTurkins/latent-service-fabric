@@ -42,6 +42,7 @@ EXPECTED = (
     ('resolver-dial', 8, 'unsupported-custom-default-resolver', 0),
     ('ordinary-tcp', 4, 'ordinary-tcp-exchange', 1),
     ('half-close-eof', 9, 'ordinary-half-close-eof', 1),
+    ('fragmented-read', 4, 'ordinary-tcp-exchange', 1),
     ('cancel-pending-read', 4, 'cancelled', 1),
     ('fresh-after-cancel', 4, 'ordinary-tcp-exchange', 1),
 )
@@ -97,6 +98,15 @@ def outcomes(raw: bytes, filtered: int = 0) -> dict:
     def same(actual, expected):
         # Python considers True == 1 and 0.0 == 0; the closed wire evidence does not.
         return json.dumps(actual, sort_keys=True) == json.dumps(expected, sort_keys=True)
+    kinds = re.findall(rb'^GO_NETWORK_([A-Z_]+) ', raw, re.M)
+    wanted_kinds = []
+    for label, _, _, _ in EXPECTED:
+        if label in ('fragmented-read', 'cancel-pending-read'):
+            wanted_kinds.append(b'READ_EDGE')
+        wanted_kinds.extend((b'OWNER', b'CASE'))
+    wanted_kinds.append(b'COMPLETE')
+    if kinds != wanted_kinds:
+        raise ValueError('Go-network-runtime-exact-event-order-required')
     rows = [decode(row) for row in re.findall(rb'^GO_NETWORK_CASE (.+)$', raw, re.M)]
     wanted = [dict(zip(('case', 'mode', 'result', 'contacts'), row)) for row in EXPECTED]
     if not same(rows, wanted):
@@ -106,11 +116,21 @@ def outcomes(raw: bytes, filtered: int = 0) -> dict:
                       'ioOwners': 0, 'kernelRetirementQualified': False} for row in EXPECTED]
     if not same(owners, wanted_owners):
         raise ValueError('Go-network-runtime-exact-user-owner-retirement-required')
+    edges = [decode(row) for row in re.findall(rb'^GO_NETWORK_READ_EDGE (.+)$', raw, re.M)]
+    expected_edges = [{'case': label, 'constructedReads': 2, 'retiredReadDeliveredBytes': 1,
+        'deliveredReadBytes': 1, 'pendingReads': 1, 'pendingOperations': 1, 'ioCalls': 1,
+        'streamOwners': 1, 'connections': 1, 'retiredGenerations': 0,
+        'quarantinedConnections': 0, 'providerStopped': False, 'currentGenerationRetired': False,
+        'liveStores': 1, 'activeActivations': 1}
+        for label in ('fragmented-read', 'cancel-pending-read')]
+    if not same(edges, expected_edges):
+        raise ValueError('Go-network-runtime-constructed-read-owner-required')
     complete = [decode(row) for row in re.findall(rb'^GO_NETWORK_COMPLETE (.+)$', raw, re.M)]
-    if not same(complete, [{'cases': 12, 'contacts': 4, 'cleanLogicalProviderStop': True,
+    if not same(complete, [{'cases': 13, 'contacts': 5, 'cleanLogicalProviderStop': True,
                      'kernelRetirementQualified': False, 'normalProviderInstalled': False}]):
         raise ValueError('Go-network-runtime-completion-or-kernel-claim')
-    return {'cases': rows, 'userSpaceOwners': owners, 'completion': complete[0]}
+    return {'cases': rows, 'readEdges': edges,
+            'userSpaceOwners': owners, 'completion': complete[0]}
 
 
 def qualify(root: Path, output: Path, revision: str) -> dict:
@@ -125,7 +145,8 @@ def qualify(root: Path, output: Path, revision: str) -> dict:
     (output / 'native-inputs.json').write_bytes(inputs)
     record = {'schemaVersion': 'latent.go.network.runtime.v1', 'sourceRevision': revision,
               'status': 'in-progress', 'sourceDigest': digest(inputs), 'normalProviderInstalled': False,
-              'kernelAccountingQualified': False, 'fullGoNetworkingQualified': False}
+              'kernelAccountingQualified': False, 'fullGoNetworkingQualified': False,
+              'readWitnessFeature': 'development-go-network-read-witness'}
     deadline = time.monotonic() + 1800
 
     def command(args: list[str], name: str, timeout: int, maximum: int):
@@ -175,7 +196,7 @@ def qualify(root: Path, output: Path, revision: str) -> dict:
         if not compiler_version.startswith('rustc 1.97.1 '):
             raise ValueError('Go-network-runtime-rust-compiler')
         command(['cargo', 'test', '--locked', '-p', 'latent-wasmtime', '--test', 'go_outbound_streams',
-                 '--no-run', '--message-format=json'], 'cargo', 1200, 16 * 1024 * 1024)
+                 '--features', 'development-go-network-read-witness', '--no-run', '--message-format=json'], 'cargo', 1200, 16 * 1024 * 1024)
         suite, = [row for row in registry.load(root / 'tools/ci/suites.json')['suites'] if row['id'] == SUITE]
         if CASE not in suite['expectedIgnored']:
             raise ValueError('Go-network-runtime-suite-contract')

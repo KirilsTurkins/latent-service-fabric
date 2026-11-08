@@ -56,10 +56,10 @@ def witness(value):
 
 
 def root_drain_witness(value, mode):
-    require(mode in ('pre', 'late') and value == mode + ':2:3:3:1',
+    require(mode in ('pre', 'late') and value == mode + ':3:3:3:1',
             'c-root-drain-exact-ordered-witness')
     return {'ordering': 'application-join-before-root' if mode == 'pre' else 'application-join-after-root-observer',
-        'waitsBeforeRoot': 2, 'waitsWithRootObserver': 3, 'waitsAfterApplicationJoin': 3,
+        'waitsBeforeRoot': 3, 'waitsWithRootObserver': 3, 'waitsAfterApplicationJoin': 3,
         'applicationJoinCompleted': True, 'targetResultPreserved': True,
         'resultBytesUpdatedAfterRootReturn': True, 'hostObservedOriginalOwners': True,
         'canonicalPollPendingClaimed': False, 'automaticCpuFairnessClaimed': False,

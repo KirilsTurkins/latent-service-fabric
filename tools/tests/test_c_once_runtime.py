@@ -28,20 +28,20 @@ class OnceRuntimeControls(unittest.TestCase):
 
     def test_root_drain_requires_both_exact_host_barriers_and_joined_result(self):
         for mode in ('pre', 'late'):
-            observed = once.root_drain_witness(mode + ':2:3:3:1', mode)
-            self.assertEqual(observed['waitsBeforeRoot'], 2)
+            observed = once.root_drain_witness(mode + ':3:3:3:1', mode)
+            self.assertEqual(observed['waitsBeforeRoot'], 3)
             self.assertEqual(observed['waitsWithRootObserver'], 3)
             self.assertTrue(observed['applicationJoinCompleted'])
             self.assertTrue(observed['resultBytesUpdatedAfterRootReturn'])
             self.assertFalse(observed['canonicalPollPendingClaimed'])
             self.assertFalse(observed['kernelNativeFinalFreeProved'])
-            for suffix in (':1:3:3:1', ':2:2:3:1', ':2:3:2:1', ':2:3:3:0', ':02:3:3:1'):
+            for suffix in (':2:3:3:1', ':3:2:3:1', ':3:3:2:1', ':3:3:3:0', ':03:3:3:1'):
                 with self.subTest(mode=mode, suffix=suffix), self.assertRaises(WorkflowError):
                     once.root_drain_witness(mode + suffix, mode)
         with self.assertRaises(WorkflowError):
-            once.root_drain_witness('pre:2:3:3:1', 'late')
+            once.root_drain_witness('pre:3:3:3:1', 'late')
         with self.assertRaises(WorkflowError):
-            once.root_drain_witness('pre:2:3:3:1', 'unknown')
+            once.root_drain_witness('pre:3:3:3:1', 'unknown')
 
     def test_combined_component_keeps_original_envelope_and_exact_fixture(self):
         with tempfile.TemporaryDirectory() as temporary:
