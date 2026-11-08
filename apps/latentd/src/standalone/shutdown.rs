@@ -4,7 +4,7 @@ use latent_wasmtime::PreparationCompilerSnapshot;
 use latent_wire::invocation::ActivationCleanupSnapshot;
 use serde::Serialize;
 
-use super::{Duration, PlatformError, PlatformErrorCode, StandaloneNode, error, transport};
+use super::{error, transport, Duration, PlatformError, PlatformErrorCode, StandaloneNode};
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]

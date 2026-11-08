@@ -5,13 +5,13 @@ use rcgen::{BasicConstraints, CertificateParams, DnType, IsCa, KeyPair};
 use std::io;
 use std::sync::atomic::AtomicUsize;
 use std::{
-    sync::{Arc, atomic::Ordering},
+    sync::{atomic::Ordering, Arc},
     time::Duration,
 };
 use tokio::{
     io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, BufReader},
     net::{TcpListener, TcpStream},
-    sync::{Notify, oneshot},
+    sync::{oneshot, Notify},
 };
 use tokio_rustls::{TlsAcceptor, TlsConnector};
 pub const HEALTHY: usize = 0;

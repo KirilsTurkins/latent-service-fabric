@@ -20,8 +20,8 @@ mod telemetry;
 pub mod transport;
 
 use std::net::SocketAddr;
-use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
+use std::sync::Arc;
 use std::time::Duration;
 
 use latent_admission::LocalQuotaProvider;
@@ -51,8 +51,8 @@ pub use providers::StreamControlStatus;
 pub use providers::{ProviderDescriptor, ProviderShutdownReport};
 pub use rollouts::RolloutShutdownReport;
 pub use shutdown::ShutdownReport;
-pub use startup_observation::StartupFailureReport;
 pub(crate) use startup_observation::observe_startup;
+pub use startup_observation::StartupFailureReport;
 pub use state::StateRetirementReport;
 pub use state::{ConfiguredEventEffectInspection, ConfiguredHttpEffectInspection};
 pub use state::{
