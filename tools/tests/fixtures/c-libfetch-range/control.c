@@ -8,8 +8,10 @@
 
 static const char *expected_range, *content_range, *content_length;
 static const char *payload;
+static struct url *rewrite_url;
+static off_t offset_after_open;
 static size_t position, chunk_length;
-static int status, opens, aborts;
+static int status, opens, aborts, reads;
 static bool duplicate_range, denied;
 
 bool latent_http_streaming_open(const latent_http_streaming_request_t *request, int *out, http_error *error) {
@@ -38,6 +40,7 @@ static void header(latent_http_streaming_header_t *out, const char *name, const 
 }
 bool latent_http_streaming_finish(int upload, response *out, http_error *error) {
     (void)error; assert(upload == 17);
+    if (rewrite_url) rewrite_url->offset = offset_after_open;
     out->status = status; out->body = 23;
     size_t count = (content_range != NULL) + (content_length != NULL) + duplicate_range;
     out->headers.ptr = calloc(count ? count : 1, sizeof(*out->headers.ptr));
@@ -49,7 +52,7 @@ bool latent_http_streaming_finish(int upload, response *out, http_error *error) 
     return true;
 }
 bool latent_http_streaming_read(int body, uint32_t max, optional_chunk *out, http_error *error) {
-    (void)error; assert(body == 23);
+    (void)error; assert(body == 23); reads++;
     size_t left = payload ? strlen(payload) - position : 0;
     chunk_length = left < max ? left : max;
     out->is_some = chunk_length != 0; out->val = 31; return true;
@@ -66,7 +69,8 @@ bool latent_http_streaming_abort_body(int body, http_error *error) {
 static void reset(void) {
     expected_range = content_range = content_length = NULL;
     payload = NULL; position = chunk_length = 0;
-    status = 200; opens = aborts = 0; duplicate_range = denied = false; errno = 0;
+    rewrite_url = NULL; offset_after_open = 0;
+    status = 200; opens = aborts = reads = 0; duplicate_range = denied = false; errno = 0;
 }
 static struct url *url(off_t offset) {
     struct url *u = fetchParseURL("https://example.test/item");
@@ -87,7 +91,7 @@ static void succeeds(off_t requested, off_t actual, size_t partial, off_t size) 
 static void refuses(off_t requested) {
     struct url *u = url(requested); struct url_stat st;
     FILE *f = fetchXGet(u, &st, "A");
-    assert(!f && fetchLastErrCode == FETCH_PROTO && opens == 1 && aborts == 1);
+    assert(!f && fetchLastErrCode == FETCH_PROTO && opens == 1 && aborts == 1 && reads == 0);
     assert(u->offset == requested); fetchFreeURL(u);
 }
 int main(void) {
@@ -107,6 +111,23 @@ int main(void) {
     reset(); expected_range="bytes=10-"; status=206;
     content_range="bytes 10-99/100"; refuses(10);
     reset(); status=206; content_range="bytes 10-99/100"; content_length="90"; refuses(0);
+    /* A server cannot turn an ordinary full GET into a partial success. */
+    reset(); status=206; content_range="bytes 0-3/*"; content_length="4"; payload="abcd"; refuses(0);
+    reset(); status=206; content_range="bytes 0-3/4"; content_length="4"; payload="abcd"; refuses(0);
+    /* The offset sent in the request, not a later URL mutation, controls 206. */
+    reset(); status=206; content_range="bytes 0-3/*"; content_length="4"; payload="abcd";
+    struct url *changed=url(0); rewrite_url=changed; offset_after_open=10;
+    struct url_stat changed_stat; FILE *changed_file=fetchXGet(changed, &changed_stat, "A");
+    assert(!changed_file && fetchLastErrCode==FETCH_PROTO && opens==1 && aborts==1 && reads==0);
+    assert(changed->offset==10); fetchFreeURL(changed);
+    reset(); expected_range="bytes=10-"; status=206;
+    content_range="bytes 10-13/14"; content_length="4"; payload="klmn";
+    changed=url(10); rewrite_url=changed; offset_after_open=0;
+    changed_file=fetchXGet(changed, &changed_stat, "A");
+    assert(changed_file && changed->offset==10 && changed->length==4 && changed_stat.size==14);
+    char changed_bytes[4]; assert(fread(changed_bytes, 1, sizeof(changed_bytes), changed_file)==4);
+    assert(!memcmp(changed_bytes, "klmn", 4));
+    assert(opens==1 && fclose(changed_file)==0 && aborts==1); fetchFreeURL(changed);
     reset(); expected_range="bytes=10-"; status=206;
     content_range="bytes 10-18446744073709551616/100"; content_length="90"; refuses(10);
     reset(); expected_range="bytes=10-"; status=206;

@@ -20,8 +20,30 @@ def before_exit_trap(raw):
   raise AssertionError('closed-file-original-abi-source')
  return original
 
+def before_unsolicited_partial(raw):
+ import hashlib
+ # Reconstruct the exact previously reviewed Range source before applying its
+ # historical inverse. Reject partial or unreviewed changes first.
+ if hashlib.sha256(raw).hexdigest() != '08bb8b02911837f779f91057b805d4212fba101cb2453ba5b8ead116f8533658':
+  raise AssertionError('libfetch-unsolicited-partial-exact-source')
+ changes = (
+  (b'                     const char *method, const char *content_type, const char *body) {\n    if ((stat', b'                     const char *method, const char *content_type, const char *body) {\n    const off_t requested_offset = url ? url->offset : 0;\n    if ((stat'),
+  (b'(url && (url->offset < 0 || (url->offset > 0 && strcmp(method, "GET")))))', b'(url && (requested_offset < 0 || (requested_offset > 0 && strcmp(method, "GET")))))'),
+  (b'    if (url->offset > 0) {\n        int written = snprintf(range_value, sizeof(range_value), "bytes=%lld-", (long long)url->offset);', b'    if (requested_offset > 0) {\n        int written = snprintf(range_value, sizeof(range_value), "bytes=%lld-", (long long)requested_offset);'),
+  (b'        valid_range = operation == LATENT_HTTP_STREAMING_METHOD_GET && known_length &&', b'        valid_range = operation == LATENT_HTTP_STREAMING_METHOD_GET && requested_offset > 0 && known_length &&'),
+  (b'            actual_offset <= url->offset && partial_length == length;', b'            actual_offset <= requested_offset && partial_length == length;'),
+ )
+ for previous, current in reversed(changes):
+  if raw.count(current) != 1:
+   raise AssertionError('libfetch-unsolicited-partial-exact-addendum')
+  raw = raw.replace(current, previous, 1)
+ if hashlib.sha256(raw).hexdigest() != 'c81b948e74babf3edbc97a25473597daf24cba87ce48abda828f2e753c64185d':
+  raise AssertionError('libfetch-unsolicited-partial-prior-source')
+ return raw
+
 def before_range(path, raw):
  import hashlib,json
+ if path.rsplit('/', 1)[-1] == 'http.c': raw = before_unsolicited_partial(raw)
  inverse=(ROOT/'tools/tests/fixtures/c-libfetch-range/inverse.json').read_bytes()
  if hashlib.sha256(inverse).hexdigest() != 'fad42989a1ffd18242a5de1e5f8027a0040827e4b392616ee643892de2ddb68c':
   raise AssertionError('libfetch-range-inverse-identity')
@@ -61,6 +83,14 @@ def before_head_stat(path, raw):
  return raw
 
 class CThreadMinimal(unittest.TestCase):
+ def test_unsolicited_partial_inverse_requires_exact_reviewed_source(self):
+  import hashlib
+  raw=(ROOT/'sdk/c-guest/src/libfetch/http.c').read_bytes()
+  self.assertEqual(hashlib.sha256(before_unsolicited_partial(raw)).hexdigest(),
+                   'c81b948e74babf3edbc97a25473597daf24cba87ce48abda828f2e753c64185d')
+  for altered in (raw+b'\n',raw.replace(b'requested_offset > 0 && known_length',b'requested_offset >= 0 && known_length')):
+   with self.assertRaisesRegex(AssertionError,'libfetch-unsolicited-partial-exact-source'):
+    before_unsolicited_partial(altered)
  def test_minimal_overlay_preserves_every_original_byte_and_full_standard_lifecycle_calls(self):
   raw=(ROOT/(original.FIXTURE+'main.c')).read_bytes();derived=selected.selected_source(raw)
   self.assertEqual(derived.replace(selected.FUNCTIONS,b'',1).replace(selected.CASES,b'',1),raw)
