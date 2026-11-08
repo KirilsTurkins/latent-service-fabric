@@ -329,3 +329,51 @@ fn forged_quota_padding_and_mixed_reservation_formats_fail_coherent_startup() {
     assert_eq!(view.get(&quota).unwrap(), Some(original));
     validate_view(&view, foreign_codec).unwrap();
 }
+
+#[test]
+fn namespace_review_reanchors_cannot_renew_same_boot_drift_tolerance() {
+    let (_dir, store, effects) = setup();
+    let record = completed(&store, &effects, "review-reanchor-drift");
+    let owner = ResultMaintenanceOwner::default();
+    let first = owner
+        .anchor_review(
+            &store,
+            &record.key,
+            None,
+            observation(2100, 0),
+            clock_permission,
+        )
+        .unwrap();
+    let second = owner
+        .anchor_review(
+            &store,
+            &record.key,
+            Some(first.generation),
+            observation(3000, 0),
+            clock_permission,
+        )
+        .unwrap();
+    let before = super::adversarial::checkpoint(&store, &record);
+    assert_eq!(
+        owner.anchor_review(
+            &store,
+            &record.key,
+            Some(second.generation),
+            observation(3900, 0),
+            clock_permission
+        ),
+        Err(AtomicError::RecoveryRequired)
+    );
+    assert_eq!(super::adversarial::checkpoint(&store, &record), before);
+    assert_eq!(second.anchor_unix_millis, 2100);
+    let resumed = owner
+        .anchor_review(
+            &store,
+            &record.key,
+            Some(second.generation),
+            observation(72_100, 70_000),
+            clock_permission,
+        )
+        .unwrap();
+    assert_eq!(resumed.anchor_unix_millis, 2100);
+}

@@ -45,12 +45,7 @@ impl ResultMaintenanceOwner {
             clock.time.check(previous.unix_millis)?;
             previous.generation.checked_add(1).ok_or(AtomicError::Limit)
         })?;
-        let mut progress = MaintenanceProgress::anchor(clock, generation);
-        if let Some(previous) = usage.review_clock.take() {
-            progress.visited = previous.visited;
-            progress.retired = previous.retired;
-            progress.reclaimed_bytes = previous.reclaimed_bytes;
-        }
+        let progress = MaintenanceProgress::reanchor(clock, generation, usage.review_clock.take())?;
         usage.review_clock = Some(progress.clone());
         plan.replace(usage_key, old, Some(usage.encode()?))?;
         drop(view);
