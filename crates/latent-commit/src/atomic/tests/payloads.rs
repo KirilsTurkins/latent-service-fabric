@@ -27,7 +27,12 @@ async fn export_standalone_linked_payload() {
         &view,
         claim,
         Some(state),
-        vec![],
+        vec![StagedIntent {
+            binding: "approved-event".into(),
+            operation: "event".into(),
+            payload: value(b"body"),
+            expires_at_millis: None,
+        }],
         value(b"body"),
         &fixture.effects,
         time(200),
@@ -35,6 +40,7 @@ async fn export_standalone_linked_payload() {
     .unwrap();
     let result_pin = fixture.capture().await;
     let state_pin = fixture.capture().await;
+    let effect_pin = fixture.capture().await;
     let envelope = envelope
         .attach_verified_payloads(
             &view,
@@ -47,6 +53,10 @@ async fn export_standalone_linked_payload() {
                 PayloadAttachment {
                     target: PayloadAttachmentTarget::State(b"attached".to_vec()),
                     payload: state_pin,
+                },
+                PayloadAttachment {
+                    target: PayloadAttachmentTarget::Effect(0),
+                    payload: effect_pin,
                 },
             ],
         )
