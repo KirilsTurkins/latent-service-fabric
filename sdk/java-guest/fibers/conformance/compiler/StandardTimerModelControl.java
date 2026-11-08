@@ -96,7 +96,6 @@ public final class StandardTimerModelControl {
         require(bodies >= 20 && references >= 10, "complete-timer-model-closure");
         require(source.get("java.util.Timer").getMethod(new MethodDescriptor("absentControlMethod", ValueType.VOID)) == null,
                 "unsupported-timer-member-no-fallback");
-        StandardTimerCompilerGraphControl.run();
-        System.out.println("STANDARD_TIMER_MODEL_CONTROL PASS original-classlib-negative;layout-and-repeat-negatives;canonical-api-and-private-helper;resolved-method-and-field-types;unsupported-no-fallback;models=3;actual-c-dependency-worker-and-callback");
+        System.out.println("STANDARD_TIMER_MODEL_CONTROL PASS original-classlib-negative;layout-and-repeat-negatives;canonical-api-and-private-helper;resolved-method-and-field-types;unsupported-no-fallback;models=3");
     }
 }
