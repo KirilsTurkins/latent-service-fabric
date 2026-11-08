@@ -19,16 +19,44 @@ No instance fields, explicit allocation sites, capability grants, runtime import
 or heap limits are added. Compiled continuation layout and physical guest memory
 cost have not been measured.
 
+## Qualification owner
+
+`tools/qualify_java_fibers.py` runs this matrix inside
+`scheduled_source_control`, after compiling the actual concurrency ports and
+private control sources with the existing `--release 25` recipe. This is part of
+the ordinary thread-fixture preparation in Java guest-authoring CI and the
+scheduled-library preparation. It does not require a new workflow or an
+application-supplied executor.
+
+Each selected mode uses the compiler's existing owned process runner, original
+deadline and bounded JVM heap. The source-only refused/lost-acknowledgement cases
+run in separate processes so poisoned test ledgers cannot contaminate later
+cases. Missing, skipped, wrong-mode or duplicate success output fails the owner;
+a process error is propagated without retry. The new control is included in the
+owner's before/after source identities alongside the ports and private ledger.
+
+The returned `futureCancelInterrupt` record lists the completed JDK and SDK-source
+cases and explicitly sets `componentExecutionPerformed` and
+`actualGuestBindingsUsed` to `false`. A failure prevents successful preparation;
+a successful source receipt does not stand in for the later compiler/model or
+signed-node results. All existing scheduled/reference controls remain selected.
+
+`tools/tests/test_java_future_cancel_interrupt.py` checks command selection,
+receipt boundaries, malformed or missing output, process-error propagation,
+missing control source, and integration into the existing owner. These Python
+tests inspect the owner; they are not Java execution evidence.
+
 ## Host/source control
 
-Run from the repository root with a fresh output directory. The two files under
+Run from the repository root with the pinned JDK 25 and a fresh output directory.
+The two files under
 `scheduled-source-control/dev` are the existing test-only ledger and vocabulary;
 they must never be compiled into a guest component.
 
 ```sh
 OUT="$(mktemp -d)"
 CONTROL=sdk/java-guest/fibers/conformance/compiler/scheduled-source-control
-javac -d "$OUT" \
+javac -proc:none --release 25 -d "$OUT" \
   sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/FutureTask.java \
   "$CONTROL/dev/latent/generated/Bindings.java" \
   "$CONTROL/dev/latent/guest/runtime/Activation.java" \
@@ -38,11 +66,11 @@ for implementation in source jdk; do
   for mode in before-runtime after-runtime before-error after-error \
       before-runtime-done-error after-error-done-error normal no-interrupt \
       pending completed failed; do
-    java -cp "$OUT" "$CLASS" "$implementation" "$mode" || exit 1
+    java -Xmx256m -cp "$OUT" "$CLASS" "$implementation" "$mode" || exit 1
   done
 done
 for mode in refused lost-ack; do
-  java -cp "$OUT" "$CLASS" source "$mode" || exit 1
+  java -Xmx256m -cp "$OUT" "$CLASS" source "$mode" || exit 1
 done
 rm -rf "$OUT"
 ```
@@ -73,8 +101,14 @@ exceptional-interrupt cases; the corrected source and reference controls passed.
 This is not the repository's pinned JDK 25 run, the TeaVM compiler/model check,
 a signed/admitted component run, or a physical guest memory measurement.
 
-The control is explicitly runnable but has not been wired into the existing
-hosted qualification owner in this patch. Full owner/contract integration and
-signed regression execution remain required before treating this change as
-qualified. The issue's checkpoint, aggregate-accounting, networking and full
-qualification requirements remain open.
+The integrated owner also passed a local run of all 83 compile/run commands,
+including this 24-case matrix and the existing scheduled source/JDK controls.
+That run used OpenJDK 21.0.12.1 with an explicitly recorded local adapter changing
+only the requested javac release from 25 to 21. The repository recipe remains
+`--release 25`; the local adapter is not part of the implementation or CI.
+
+Owner integration does not establish a pinned JDK 25 or signed TeaVM result.
+Current-head hosted compiler/model and signed regression execution remain
+required, and these precise exceptional-interrupt scenarios have only
+host/source evidence. The issue's checkpoint, aggregate-accounting, networking
+and full qualification requirements remain open.
