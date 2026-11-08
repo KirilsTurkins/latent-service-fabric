@@ -99,6 +99,14 @@ copies are erased. Ambient entropy remains denied.
 
 ## Runtime and evidence
 
+The selected [managed closing path](../../docs/testing/dotnet-managed-closing.md)
+retains independently scheduled Tasks across unwrap aliases and tracks repeated
+unwrap promises as required work. Ambiguous queue/result/settlement outcomes and
+active Timer callbacks retain their original custody rather than rolling back
+by assumption. The finite Task.Wait/WaitAll and signed mixed-content programmes
+keep separate source identities; none qualifies general CLR threading or every
+combination of the newer owner transitions.
+
 The closed WASI adapter denies ambient files, sockets, wall time and entropy.
 NativeAOT GC monotonic time is routed through
 `latent:clock/monotonic@0.1.0`, declared in WIT and separately granted by

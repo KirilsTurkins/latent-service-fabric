@@ -133,7 +133,7 @@ fn checkpoint_component(
             } else if task_saturation {
                 serde_json::json!([0])
             } else if timer_overlap {
-                serde_json::json!([0, 1])
+                serde_json::json!([0, 1, 2, 3])
             } else if managed {
                 serde_json::json!([0, 1, 2])
             } else if published {
@@ -148,8 +148,10 @@ fn checkpoint_component(
         );
         if timer_overlap {
             assert!(
-                record["nativeReference"]["outputs"] == serde_json::json!([42, 42])
-                    || record["nativeReference"]["outputs"] == serde_json::json!([42, 43])
+                record["nativeReference"]["outputs"] == serde_json::json!([42, 42, 42, 42])
+                    || record["nativeReference"]["outputs"] == serde_json::json!([42, 43, 42, 42])
+                    || record["nativeReference"]["outputs"] == serde_json::json!([42, 42, 42, 43])
+                    || record["nativeReference"]["outputs"] == serde_json::json!([42, 43, 42, 43])
             );
         } else {
             assert_eq!(record["nativeReference"]["output"], 42);

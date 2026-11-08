@@ -2,7 +2,7 @@
 
 ## Current Development selection
 
-The workspace and `tools/toolchain.toml` currently pin Wasmtime **48.0.7**.
+The workspace and `tools/toolchain.toml` currently pin Wasmtime **48.0.8**.
 The main package is now the [maintained source cohort](../runtime/wasmtime.md#selected-continuation-and-memory-profiles)
 with selected allocation hooks; its upstream version alone is not its complete
 compatibility or security-review identity.
@@ -10,6 +10,14 @@ Use [the toolchain table](toolchain.md#selected-versions) and committed Cargo lo
 for the complete compiler/runtime selection. The records below describe their
 original sources and advisory databases; they are not a current scan or approval
 for a later engine.
+
+The current patch selection comes from the maintained
+[source manifest](../../crates/vendor/wasmtime/UPSTREAM.latent.json) and
+[LSF patch description](../../crates/vendor/wasmtime/README.latent.md).
+Native reuse follows the source-bound [product reader](../../tools/sdk_native_products_reader.py).
+Each product retains its producer source and byte identities; a matching engine
+version does not make an older product current-checkout qualification. The
+48.0.7 upgrade analysis below remains a dated record.
 
 Rebuild the node and isolated compiler from the same lock, approve the actual
 new compiler digest, and regenerate native/renderer artifacts whose compatibility

@@ -188,7 +188,7 @@ def task_saturation_observations(raw: bytes, filtered: int) -> dict:
 
 
 def timer_overlap_observations(raw: bytes, diagnostic: bytes, filtered: int) -> dict:
-    """Require the real case, original-owner retirement, and both witnesses."""
+    """Require every real case, original-owner retirement, and each witness."""
     if len(raw) > 2 * 1024 * 1024 or len(diagnostic) > 2 * 1024 * 1024:
         raise ValueError('Go-timer-overlap-output-bound')
     names = re.findall(rb'^test ([A-Za-z0-9_:]+) \.\.\. ok$', raw, re.M)
@@ -207,22 +207,28 @@ def timer_overlap_observations(raw: bytes, diagnostic: bytes, filtered: int) -> 
     expected = [dict(case=case, mode=mode, outcome='success', storesCreated=count,
                      liveStores=0, liveInstances=0, reservations=0,
                      reservedFuel=0, reservedMemory=0, pendingProviderWaits=0)
-                for case, mode, count in [('reset-reset', 0, 1), ('reset-stop', 1, 2), ('fresh', 0, 3)]]
+                for case, mode, count in [('reset-reset', 0, 1), ('reset-stop', 1, 2),
+                                          ('gc-reset-reset', 2, 3), ('gc-reset-stop', 3, 4),
+                                          ('fresh', 0, 5)]]
     if json.dumps(rows, sort_keys=True, separators=(',', ':')) != json.dumps(expected, sort_keys=True, separators=(',', ':')):
         raise ValueError('Go-timer-overlap-signed-retirement-required')
-    prefix = b'LSF-GO-TIMER-OVERLAP-V1|'
-    records = re.findall(rb'^LSF-GO-TIMER-OVERLAP-V1\|([^\r\n]+)$', diagnostic, re.M)
-    if diagnostic.count(prefix) != 2 or len(records) != 2:
+    prefix = b'LSF-GO-TIMER-OVERLAP-V3|'
+    records = re.findall(rb'^LSF-GO-TIMER-OVERLAP-V3\|([^\r\n]+)$', diagnostic, re.M)
+    if diagnostic.count(prefix) != 4 or len(records) != 4:
         raise ValueError('Go-timer-overlap-exact-witnesses-required')
     observed = []
-    for case, record in zip(('go-timer-overlap-reset-reset', 'go-timer-overlap-reset-stop'), records):
+    for case, record in zip(('go-timer-overlap-reset-reset', 'go-timer-overlap-reset-stop',
+                             'go-timer-overlap-gc-reset-reset', 'go-timer-overlap-gc-reset-stop'), records):
         fields = record.split(b'|')
-        if len(fields) != 12 or fields[:11] != [case.encode(), b'1', b'0', b'0', b'4', b'1', b'1', b'1', b'1', b'1', b'1']:
+        gc_case = '-gc-' in case
+        if len(fields) != 14 or fields[:13] != [case.encode(), b'1', b'0', b'0', b'4', b'1', b'1', b'1', b'1',
+                                               b'1' if gc_case else b'0', b'1' if gc_case else b'0', b'1', b'1']:
             raise ValueError('Go-timer-overlap-causal-witness-required')
-        if not re.fullmatch(rb'[1-9][0-9]{0,3}', fields[11]):
+        if not re.fullmatch(rb'[1-9][0-9]{0,3}', fields[13]):
             raise ValueError('Go-timer-overlap-witness-budget')
-        observed.append({'activation': case, 'modeledWitnessBytes': int(fields[11])})
-    if observed[0]['modeledWitnessBytes'] != observed[1]['modeledWitnessBytes']:
+        observed.append({'activation': case, 'postGcMarkerStopped': gc_case, 'handshakeParkObserved': gc_case,
+                         'modeledWitnessBytes': int(fields[13])})
+    if len({item['modeledWitnessBytes'] for item in observed}) != 1:
         raise ValueError('Go-timer-overlap-inconsistent-layout')
     return {'cases': rows, 'witnesses': observed}
 
@@ -309,8 +315,9 @@ def compile_identity(path: Path, root: Path, profile: str, fixture: str = 'synch
     if profile == 'go-component-activation-v5':
         native = record['nativeReference']
         expected_modes = {'synchronization': NATIVE_MODES, 'managed-idle': [0, 1, 2], 'timers': TIMER_NATIVE_MODES,
-                          'task-saturation': [0], 'timer-overlap': [0, 1]}[fixture]
-        native_outputs = (native.get('outputs') in ([42, 42], [42, 43])
+                          'task-saturation': [0], 'timer-overlap': [0, 1, 2, 3]}[fixture]
+        native_outputs = (native.get('outputs') in ([42, 42, 42, 42], [42, 43, 42, 42],
+                                                    [42, 42, 42, 43], [42, 43, 42, 43])
                           if fixture == 'timer-overlap' else native.get('output') == 42)
         if (native['modes'] != expected_modes or not native_outputs
                 or native['freshProcessPerMode'] is not True or native['sourceDigest'] != record['sourceDigest']):
@@ -397,11 +404,11 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
                                  'queued': 'lsf.go-queued-reference.v1',
                                  'managed-timers': 'lsf.go-managed-timers-reference.v1',
                                  'task-saturation': 'lsf.go-task-saturation-reference.v1',
-                                 'timer-overlap': 'lsf.go-timer-overlap-reference.v1'}[programme], 'sourceRevision': revision,
+                                 'timer-overlap': 'lsf.go-timer-overlap-reference.v3'}[programme], 'sourceRevision': revision,
                'sourceBefore': before, 'sourceAfter': after, 'compilerInputsBefore': material,
                'compilerInputsAfter': after_material, 'case': plan['case'], 'signedCases': rows,
                'signedInvocations': {'synchronization': len(rows), 'admission': 8, 'queued': 20,
-                                     'managed-timers': len(rows), 'task-saturation': 3, 'timer-overlap': 3}[programme], 'guestTaskCeiling': 16,
+                                     'managed-timers': len(rows), 'task-saturation': 3, 'timer-overlap': 5}[programme], 'guestTaskCeiling': 16,
                'managedCapacity': 8, 'waitCeiling': 4, 'newRuntimeProfile': False,
                'kernelTlsOrCrossTenantQualified': False, 'fullGoRuntimeQualified': False}
     if programme == 'synchronization':

@@ -114,6 +114,16 @@ budget; the wrapper cannot extend that grant or retry a deadline failure.
 
 ## Qualification
 
+The maintained [EventTarget port](../../tools/typescript_guest/event_engine.py)
+keeps listener publication private until abort admission succeeds, owns dispatch
+clone frames, and restores dispatch/once-listener state through exceptions and
+immediate stop. The [AbortSignal port](../../tools/typescript_guest/abort_engine.py)
+retains conversion/`any` frames, preserves the root default reason and completes
+dependent cleanup even when abort handling fails. These source paths share the
+original activation's limits; they are separate from a claim of complete browser
+or Node API compatibility. Follow the existing signed runtime controls and their
+actual source identities for execution evidence.
+
 After the guide's prerequisites, run from the checkout:
 
 ```sh

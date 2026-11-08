@@ -164,6 +164,16 @@ native contract. JVM checks alone are not signed-node or browser proof.
 
 ## Execution and memory boundaries
 
+The opt-in [Java fiber profile](../../docs/runtime/java-activation-fibers.md)
+includes ordinary scheduled executors as well as thread/future ownership.
+Nested executor withdrawal, stopped wrappers, repeated occurrences and ambiguous
+queue/result settlement keep their original owners until confirmed retirement.
+Compiler progress checks distinguish suspendable checkpoints from finite
+nonsuspendable loops; source that cannot establish bounded progress is rejected.
+GC roots across parked continuations have a separate
+[diagnostic/qualification track](../../docs/testing/java-checkpoint-gc.md), whose
+failed signed attempts must not be described as successful collection support.
+
 An operator must enable `engine.javaGuest: true`. It installs a separately
 identified bounded engine/cache/AOT profile, rejects pooling and mixed renderer
 profiles, and does not raise operator limits. Other nodes keep exceptions and

@@ -10,8 +10,11 @@ The durable opener binds the actual live engine, not just its persisted label;
 an ordinary opener preserves the release fence but cannot mint durable pins or
 approve release until the trusted durable opener binds a store. After restart,
 the host must select and validate the intended store before binding it.
-This library port is not yet installed in the transaction coordinator; S3
-references do not acquire this local retention guarantee.
+The transaction coordinator has a trusted library attachment path for verified
+local payloads through [latent-local-blobs](../latent-local-blobs/README.md).
+That crate owns the original local implementation and affine captured session;
+this facade re-exports its types. S3 references do not acquire the local retention
+guarantee, and this does not install a guest reference-dispatch path.
 Standalone startup rejects required durable payload references until its
 physical blob inventory is installed; logical records alone cannot prove bytes
 are present.
@@ -23,7 +26,7 @@ are present.
 | [src/lib.rs](src/lib.rs) | BlobReference/range/write/lease models and generic storage/transfer ports. |
 | [src/local.rs](../latent-local-blobs/src/local.rs) | Bounded synchronous immutable storage under one privately owned root. |
 | [src/local/durable.rs](../latent-local-blobs/src/local/durable.rs) | Opt-in local retention pins and state-backed release checks. |
-| [src/local/fs.rs](src/local/fs.rs) | Descriptor-relative no-follow operations and inode/type checks. |
+| [local filesystem owner](../latent-local-blobs/src/local/fs.rs) | Descriptor-relative no-follow operations and inode/type checks; the private S3 filesystem helper retains a checked identical copy. |
 | [src/provider.rs](../latent-local-blobs/src/provider.rs) | Broker integration and owned chunks on bounded blocking/I/O resources. |
 | [src/s3.rs](src/s3.rs) | HTTPS, explicit peers, SigV4, versioned bucket and finite multipart staging. |
 | [src/s3/inventory.rs](src/s3/inventory.rs) | Durable upload receipts that precede network mutations and survive uncertain replies. |
@@ -42,7 +45,7 @@ Local primitives are synchronous and belong on an existing bounded blocking owne
 
 ## Dependencies and build
 
-Direct workspace dependencies: [latent-core](../latent-core/README.md), [latent-capabilities](../latent-capabilities/README.md), [latent-policy](../latent-policy/README.md), [latent-state](../latent-state/README.md).
+Direct workspace dependencies: [latent-local-blobs](../latent-local-blobs/README.md), [latent-core](../latent-core/README.md), [latent-capabilities](../latent-capabilities/README.md), [latent-policy](../latent-policy/README.md). Linux additionally selects [latent-state](../latent-state/README.md) and the HTTP dependency below.
 
 Consumers with normal workspace dependency edges include [latentd](../../apps/latentd/README.md). Optional features still gate the selected graph; target-specific and test edges are also declared in the manifests.
 
@@ -66,6 +69,8 @@ python3 tools/test.py explain --suite latent-blobs.lib.latent-blobs
 
 Use `list --output json` to find the remaining package targets. Follow the suite's recipe, platform and prerequisites for preparation, discovery and execution; a registration or compile-only check is not a passing execution/qualification result.
 
+The local cases below belong to `latent-local-blobs`; prepare and run that
+package's registered selection separately from the facade/S3 suite above.
 Representative source tests (not a complete coverage inventory):
 
 - [`exact_empty_and_ranged_data_survive_reopen`](../latent-local-blobs/src/local/tests.rs)

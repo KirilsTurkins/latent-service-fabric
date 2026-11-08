@@ -4,10 +4,14 @@ Concrete protected transactional storage foundation. A redb-backed `EmbeddedStor
 
 The generic `StateBackend`/entity lease ports remain available, but they do not describe the full implementation. This crate does not expose an arbitrary persistent language heap, userfault pager or durable workflow runtime.
 
-Payload-reference plans are a data-only foundation: they do not pin blob files,
-authorize reads, install startup validation or make the commit coordinator use
-the rows. Production retention requires the physical pin and atomic-envelope
-integration before these records can protect referenced bytes.
+Payload-reference plans describe independent logical owners and reciprocal
+indexes; they cannot pin a file or authorize a read. The consuming
+[local-blob owner](../latent-local-blobs/README.md) now supplies physical pins and
+a coherent inventory port, while `latent-commit` can attach verified local
+payloads to its atomic envelope. Standalone startup still refuses required
+payload-reference rows until the complete physical inventory is installed.
+State/snapshot ownership and the full retention/GC/recovery campaign remain
+separate integration and qualification work.
 
 ## Responsibilities and architecture
 

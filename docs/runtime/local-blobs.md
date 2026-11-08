@@ -1,6 +1,7 @@
 # Durable bounded local immutable blobs
 
-`latent-blobs` implements the Linux `linux-immutable-blobs-v1` provider for
+`latent-local-blobs` owns the Linux `linux-immutable-blobs-v1` provider, re-exported
+through `latent-blobs`, for
 `latent:blob/blob@0.2.0`. The [V4 host profile](host-abi-profile.md) and
 [ADR-0033](../../adr/0033-use-scoped-durable-local-blobs-with-owned-chunks.md)
 select its exact async ABI. The legacy 0.1 interface remains recognized without
@@ -136,11 +137,28 @@ uses the same durable deletion and checkpoint rules, preserves all published
 objects (including released ones), and does not raise any stage, disk or work
 limit. If every stage remains active, admission still reports capacity.
 
+## Optional state-bound payload custody
+
+The [local-blob package](../../crates/latent-local-blobs/README.md) also provides
+trusted durable openers, verified provisional pins and bounded required-file
+inventory against one actual state engine/view. The original capability session
+owns `CapturedLocalPayload`; a reference DTO, tenant label or persisted engine ID
+cannot mint it. Release takes a fresh matching view under the publication guard
+and refuses live durable references or provisional pins.
+
+The command coordinator can attach these captured owners to its atomic envelope,
+checking the existing inline result/effect bytes. This does not replace the
+guest blob ABI with reference dispatch. Standalone startup currently rejects
+required payload-reference rows because the complete physical inventory is not
+installed there. Ordinary guest blobs, S3, command payloads, state links and
+snapshots retain their separate availability and acceptance boundaries.
+
 ## Validation
 
 Run on Linux:
 
 ```sh
+cargo test -p latent-local-blobs --lib --locked
 cargo test -p latent-blobs --lib --locked
 cargo test -p latent-capabilities --lib --locked
 cargo test -p latent-wasmtime --test local_blobs --locked

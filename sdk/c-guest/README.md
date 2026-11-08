@@ -50,6 +50,15 @@ and current capability grants.
 
 ## Owners and asynchronous calls
 
+Development's [libfetch profile](../../docs/component-development/c-authoring.md#ordinary-libfetch-http-profile)
+provides separately authorized GET/HEAD and bounded resume-offset handling; the
+typed host provider owns transport/TLS. The cooperative runtime also preserves
+pthread/C11 once initialization across an owned wait, using the original context
+as the initializer and waking contenders only after publication. See
+[C runtime context](../../docs/development/c-runtime-context.md) for source and
+the separate signed contention owner. Neither path supplies general POSIX or
+unqualified native thread support.
+
 `include/lsf/ownership.h` defines an explicit bounded scope (32 entries plus a
 caller-selected byte limit). Allocation, adoption, detach and release have
 separate ownership meanings. Close runs remaining cleanup in reverse order;

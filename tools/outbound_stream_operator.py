@@ -225,12 +225,15 @@ def prepare_configuration(base_config, installation_record, output, node, *, dev
     node_identity = paths.digest_file(node.parent, node.name, 256 * 1024 * 1024)
     require(node_identity[1] > 0, "stream-operator-node-binary-empty")
     paths.private_root(output.parent)
-    selected = decode(_private_read(installation_record), 65536, maximum_items=4096)
+    installation_bytes = _private_read(installation_record)
+    selected = decode(installation_bytes, 65536, maximum_items=4096)
     members(selected, {"installation", "bindings"})
-    settings = decode(_private_read(base_config), 65536, maximum_items=4096)
+    base_bytes = _private_read(base_config)
+    settings = decode(base_bytes, 65536, maximum_items=4096)
     raw = encode(configure(settings, selected["installation"], selected["bindings"],
                            development_profile=True))
-    return _write_and_check_configuration(output, node, node_identity, raw)
+    inputs = ((installation_record, installation_bytes), (base_config, base_bytes))
+    return _write_and_check_configuration(output, node, node_identity, raw, inputs)
 
 
 def prepare_rotation_configuration(base_config, rotation_record, output, node, *, development_profile=False):
@@ -241,15 +244,24 @@ def prepare_rotation_configuration(base_config, rotation_record, output, node, *
     node_identity = paths.digest_file(node.parent, node.name, 256 * 1024 * 1024)
     require(node_identity[1] > 0, "stream-operator-node-binary-empty")
     paths.private_root(output.parent)
-    rotation = decode(_private_read(rotation_record), 65536, maximum_items=4096)
-    settings = decode(_private_read(base_config), 65536, maximum_items=4096)
+    rotation_bytes = _private_read(rotation_record)
+    rotation = decode(rotation_bytes, 65536, maximum_items=4096)
+    base_bytes = _private_read(base_config)
+    settings = decode(base_bytes, 65536, maximum_items=4096)
     raw = encode(rotate_configuration(settings, rotation, development_profile=True))
-    result = _write_and_check_configuration(output, node, node_identity, raw)
+    inputs = ((rotation_record, rotation_bytes), (base_config, base_bytes))
+    result = _write_and_check_configuration(output, node, node_identity, raw, inputs)
     return {**result, "outcome": "prepared-rotation-configuration-check-accepted"}
 
 
-def _write_and_check_configuration(output, node, node_identity, raw):
+def _same_preparation_inputs(inputs):
+    for path, original in inputs:
+        require(_private_read(path) == original, "stream-operator-preparation-input-changed")
+
+
+def _write_and_check_configuration(output, node, node_identity, raw, inputs):
     from tools.dev_workflow import process
+    _same_preparation_inputs(inputs)
     try:
         paths.write_new(output, raw)
     except OSError:
@@ -261,6 +273,7 @@ def _write_and_check_configuration(output, node, node_identity, raw):
     require(paths.digest_file(node.parent, node.name, 256 * 1024 * 1024) == node_identity,
             "stream-operator-node-binary-changed")
     require(_private_read(output) == raw, "stream-operator-prepared-configuration-changed")
+    _same_preparation_inputs(inputs)
     require(result.returncode == 0, "stream-operator-node-check-rejected-prepared-file-retained")
     return {"outcome": "prepared-configuration-check-accepted", "configurationDigest": digest(raw),
             "nodeBinary": {"sha256": node_identity[0], "size": node_identity[1]},
