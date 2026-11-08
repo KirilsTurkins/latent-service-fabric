@@ -51,7 +51,7 @@ async fn quarantine_is_observed_once_across_current_and_retired_generations() {
     assert_eq!(combined.usage.owners, 2);
     assert_eq!(combined.usage.connections, 2);
     let observed = lifecycle.inspect_node_usage().unwrap().unwrap();
-    assert_eq!(observed.quarantined_connections, 2);
+    assert_eq!(observed.quarantined_connections, Some(2));
     assert_eq!(observed.owners, 2);
     assert_eq!(observed.connections, 2);
     assert_eq!(

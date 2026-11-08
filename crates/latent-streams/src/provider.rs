@@ -659,7 +659,7 @@ impl OutboundStreamInvoker for StreamProvider {
                 stopped: usage.retired,
                 owners: usage.owners,
                 connections: usage.connections,
-                quarantined_connections,
+                quarantined_connections: Some(quarantined_connections),
                 pending_operations: usage.pending_operations,
                 retained_chunks: usage.retained_chunks,
                 live_accepted_write_bytes: usage.accepted_write_bytes,

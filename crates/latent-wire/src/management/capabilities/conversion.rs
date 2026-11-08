@@ -228,7 +228,9 @@ fn stream_usage(
     };
     // This optional protobuf field is deliberately outside the fixed counter
     // map: older clients can ignore its tag, and missing observations stay absent.
-    result.stream_quarantined_connections = u64::try_from(usage.quarantined_connections).ok();
+    result.stream_quarantined_connections = usage
+        .quarantined_connections
+        .and_then(|count| u64::try_from(count).ok());
     for (name, count) in [
         ("stream_configuration_epoch", usage.configuration_epoch),
         (
@@ -351,10 +353,15 @@ mod tests {
             .keys()
             .any(|key| key.starts_with("stream_")));
         assert!(retired.stream_quarantined_connections.is_none());
+        // A custom or older invoker may provide aggregate usage without a
+        // quarantine observation; the wire must not fabricate zero for it.
+        usage.streams = Some(Default::default());
+        let partial = node_usage(&usage);
+        assert!(partial.stream_quarantined_connections.is_none());
         usage.streams = Some(latent_capabilities::broker::network::StreamNodeUsage {
             owners: 4,
             connections: 3,
-            quarantined_connections: 2,
+            quarantined_connections: Some(2),
             ..Default::default()
         });
         let observed = node_usage(&usage);

@@ -313,7 +313,7 @@ impl OutboundStreamInvoker for StreamLifecycle {
                 stopped: status.stopped,
                 owners: status.usage.owners,
                 connections: status.usage.connections,
-                quarantined_connections: status.quarantined_connections,
+                quarantined_connections: Some(status.quarantined_connections),
                 pending_operations: status.usage.pending_operations,
                 retained_chunks: status.usage.retained_chunks,
                 maintenance_owners: status.maintenance_owners,
