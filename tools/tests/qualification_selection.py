@@ -7,6 +7,34 @@ PREFIX = "${{ needs.tooling-selection.outputs.reason != 'isolated-tooling:docume
 SUFFIX = ") }}"
 
 
+def project_dotnet_reset_witness(test, tree):
+    """Invert only the independently checked default-false .NET reset witness."""
+    import ast
+    functions = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == 'run']
+    test.assertEqual(len(functions), 1)
+    run = functions[0]
+    argument, default = run.args.kwonlyargs.pop(), run.args.kw_defaults.pop()
+    test.assertEqual(argument.arg, 'dotnet_task_reset_witness')
+    test.assertIsInstance(default, ast.Constant)
+    test.assertIs(default.value, False)
+    guard = run.body.pop(0)
+    expected = ast.parse("require(type(dotnet_task_reset_witness) is bool and "
+        "(not dotnet_task_reset_witness or dotnet_task_runtime is True), "
+        "'authoring-dotnet-reset-witness-selection')").body[0]
+    test.assertEqual(ast.dump(guard, include_attributes=False), ast.dump(expected, include_attributes=False))
+    calls = [node for node in ast.walk(run) if isinstance(node, ast.Call)
+             and isinstance(node.func, ast.Name) and node.func.id == 'probe_managed_tasks']
+    test.assertEqual(len(calls), 1)
+    matches = [item for item in calls[0].keywords if item.arg == 'reset_notification']
+    test.assertEqual(len(matches), 1)
+    test.assertIsInstance(matches[0].value, ast.Name)
+    test.assertEqual(matches[0].value.id, 'dotnet_task_reset_witness')
+    calls[0].keywords.remove(matches[0])
+    test.assertFalse(any(isinstance(node, ast.Name) and node.id == 'dotnet_task_reset_witness'
+                         for node in ast.walk(run)))
+    return tree
+
+
 def unwrap_tooling_gate(test, job):
     test.assertEqual(job.pop('needs'), 'tooling-selection')
     expression = job['if']
