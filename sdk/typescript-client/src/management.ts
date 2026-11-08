@@ -376,6 +376,7 @@ export interface CapabilityResourceUsage {
   readonly scope: string;
   readonly counters: Readonly<Record<string, bigint>>;
   readonly unavailable: readonly string[];
+  readonly streamQuarantinedConnections?: bigint;
 }
 
 export interface ListCapabilitiesResponse {

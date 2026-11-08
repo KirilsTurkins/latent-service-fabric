@@ -436,6 +436,7 @@ pub struct CapabilityResourceUsage {
     pub scope: String,
     pub counters: BTreeMap<String, u64>,
     pub unavailable: Vec<String>,
+    pub stream_quarantined_connections: Option<u64>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
