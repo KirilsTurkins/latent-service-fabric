@@ -275,10 +275,19 @@ INLINE_POP_REWRITE_RECEIPT = {**DISPATCH_RESET_REWRITE_RECEIPT,
     'inlinePopCustody': 'original-queue-record-through-inline-scheduler-finally'}
 
 
+# The selected sealed root-context continuation retains its existing Task owner.
+INLINE_PRIMARY_REWRITE_RECEIPT = {**INLINE_POP_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v15',
+    'copiedRegistryMethods': 70,
+    'inlinePrimaryCustody': 'sealed-continuation-root-context-and-original-task-owner-only'}
+
+
 def validate_rewrite(value: dict) -> None:
     if type(value) is not dict:
         raise ValueError('dotnet-managed-work-rewrite-receipt')
-    expected_receipt = (INLINE_POP_REWRITE_RECEIPT
+    expected_receipt = (INLINE_PRIMARY_REWRITE_RECEIPT
+        if value.get('patch') == INLINE_PRIMARY_REWRITE_RECEIPT['patch']
+        else INLINE_POP_REWRITE_RECEIPT
         if value.get('patch') == INLINE_POP_REWRITE_RECEIPT['patch']
         else DISPATCH_RESET_REWRITE_RECEIPT
         if value.get('patch') == DISPATCH_RESET_REWRITE_RECEIPT['patch']
