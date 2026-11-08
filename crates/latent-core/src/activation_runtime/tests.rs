@@ -308,8 +308,8 @@ fn same_ledger_finalization_waits_for_owner_publication() {
 
 #[test]
 fn cancellation_after_the_last_probe_can_precede_owner_publication() {
-    // This guard orders finalization only: cancellation remains an atomic,
-    // nonblocking signal and is not serialized by the accounting mutex.
+    // This guard orders finalization only. The atomic closed-flag store does
+    // not take the accounting mutex; this control uses a no-op terminal probe.
     use std::sync::mpsc;
     use std::time::Duration;
 

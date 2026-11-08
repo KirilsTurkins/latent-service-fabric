@@ -130,7 +130,7 @@ impl TimerWait {
         now: Instant,
         after_check: impl FnOnce(),
     ) -> Result<u64, PlatformError> {
-        self.complete_with_hooks(now, after_check, || {})
+        self.complete_with_hooks(now, after_check, || {}, || {})
     }
 
     fn complete_with_hooks(
@@ -138,6 +138,7 @@ impl TimerWait {
         now: Instant,
         after_check: impl FnOnce(),
         after_commit_check: impl FnOnce(),
+        _after_publication_check: impl FnOnce(),
     ) -> Result<u64, PlatformError> {
         self.inner.runtime.check_live()?;
         after_check();
@@ -185,7 +186,17 @@ impl TimerWait {
         // after both locks and range validation, before publishing the schedule.
         self.inner.runtime.check_commit_ledger_locked(&mut state)?;
         after_commit_check();
+        // Same-ledger finalization uses the accounting lock and releases it
+        // before terminal signalling. Keep schedule -> runtime -> accounting
+        // order through the final observation and the schedule write. This
+        // does not serialize cancellation, ancestor closure, external probes,
+        // or passage of the monotonic deadline.
+        let publication = self.inner.runtime.inner.budget.runtime_publication_guard();
+        self.inner.runtime.check_commit_ledger_locked(&mut state)?;
+        #[cfg(test)]
+        _after_publication_check();
         schedule.next = next;
+        drop(publication);
         drop(state);
         Ok(skipped)
     }
