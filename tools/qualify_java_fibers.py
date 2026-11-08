@@ -358,17 +358,6 @@ def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
             "sourceInputs": inputs, "componentExecutionPerformed": False, "actualGuestBindingsUsed": False}
 
 
-def timer_graph_ledger(raw: str) -> str:
-    """Remove only private JVM start-failure instrumentation from the graph ledger."""
-    start = '    public static void startManaged(Thread worker, ManagedPool pool) {'
-    end = '    public static boolean alive(Thread worker) {'
-    if raw.count(start) != 1 or raw.count(end) != 1 or raw.index(start) >= raw.index(end):
-        raise ValueError('Java timer graph ledger start boundary changed')
-    return (raw[:raw.index(start)] +
-            '    public static void startManaged(Thread worker, ManagedPool pool) { worker.start(); }\n' +
-            raw[raw.index(end):])
-
-
 def standard_timer_model_control(compiler: Compiler, output: Path) -> dict:
     """Resolve substituted standard APIs against actual verified TeaVM models."""
     classpath, identities = locked_model_classpath(compiler, include_platform=True, include_dependency_analysis=True)
@@ -391,26 +380,8 @@ def standard_timer_model_control(compiler: Compiler, output: Path) -> dict:
     result = compiler.run("standard-timer-model-control", "java", "-Xmx256m", "-cp",
         str(output) + os.pathsep + classpath, "dev.latent.guest.runtime.compiler.StandardTimerModelControl").strip()
     if result != ("STANDARD_TIMER_MODEL_CONTROL PASS original-classlib-negative;layout-and-repeat-negatives;canonical-api-and-private-helper;"
-                  "resolved-method-and-field-types;unsupported-no-fallback;models=3"):
+                  "resolved-method-and-field-types;unsupported-no-fallback;models=3;actual-c-dependency-worker-and-callback"):
         raise ValueError("Java standard timer model control did not complete")
-    # The host-only ledger injects start failures and observes JVM thread state;
-    # TeaVM deliberately has no Thread.getState. Compile a separate graph-only
-    # ledger with just that host instrumentation replaced by worker.start().
-    # The original timer, substitution, dependency analyzer and C emitter stay
-    # unchanged, and the complete original ledger was already run above.
-    ledger = sources[-1]
-    raw = read_file(ledger, 262144).decode('utf-8')
-    graph_source = output / 'graph-source/dev/latent/guest/runtime/Activation.java'
-    graph_source.parent.mkdir(parents=True)
-    graph_source.write_text(timer_graph_ledger(raw), encoding='utf-8')
-    graph_output = output / 'graph-classes'
-    graph_output.mkdir()
-    compiler.run('standard-timer-graph-compile', 'javac', '-proc:none', '--release', '25', '-cp', classpath,
-                 '-d', graph_output, *sources[:-1], graph_source)
-    graph = compiler.run('standard-timer-graph-control', 'java', '-Xmx256m', '-cp',
-        str(graph_output) + os.pathsep + classpath, 'dev.latent.guest.runtime.compiler.StandardTimerCompilerGraphControl').strip()
-    if graph != 'STANDARD_TIMER_COMPILER_GRAPH_CONTROL PASS actual-c-dependency-worker-and-callback':
-        raise ValueError('Java standard timer compiler graph control did not complete')
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError("Java timer model control inputs changed during execution")
     return {"status": "actual-locked-classlib-model-passed", "models": 3, "jarDigests": identities,
