@@ -323,11 +323,15 @@ async fn body_phase_timeout_closes_io_while_prior_chunks_keep_their_original_cha
         .await
         .unwrap();
     let mut body = upload.finish_with_read_timeout(Some(1000)).await.unwrap();
-    let chunk = body.read_with_timeout(4, Some(500)).await.unwrap().unwrap();
+    let chunk = body
+        .read_with_timeout(4096, Some(500))
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(chunk.bytes(), b"abcd");
     for _ in 0..2 {
         assert!(matches!(
-            body.read_with_timeout(4, Some(100)).await,
+            body.read_with_timeout(4096, Some(100)).await,
             Err(Phase::ReadTimeout {
                 external_completion_uncertain: false
             })
@@ -343,7 +347,7 @@ async fn body_phase_timeout_closes_io_while_prior_chunks_keep_their_original_cha
     assert_eq!(chunk.bytes(), b"abcd");
     control.probe.0.store(true, Ordering::Release);
     assert!(matches!(
-        body.read_with_timeout(4, Some(100)).await,
+        body.read_with_timeout(4096, Some(100)).await,
         Err(Phase::Http(Stream::Http(HttpError::Cancelled)))
     ));
     drop(body);
