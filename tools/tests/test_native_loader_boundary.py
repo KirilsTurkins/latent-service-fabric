@@ -145,6 +145,37 @@ rustix = { version = "=1.1.5", features = ["fs"] }
         self.write(f"{boundary.CRATE}/src/copied_creator.rs", boundary.REFUSING_CREATOR_IMPL)
         self.assertTrue(any("copied_creator.rs" in error for error in boundary.validate(self.root)))
 
+    def test_go_overlap_allocator_exception_is_exact_test_only_and_not_transferable(self) -> None:
+        source = (Path(__file__).resolve().parents[2] / boundary.GO_OVERLAP_TEST).read_text(encoding="utf-8")
+        self.write(boundary.GO_OVERLAP_TEST, source)
+        self.assertEqual(boundary.validate(self.root), [])
+        marker = boundary.GO_OVERLAP_TEST_MARKER
+        for name, changed in (
+            ("alloc", source.replace("unsafe { System.alloc(layout) }", "std::ptr::null_mut()", 1)),
+            ("dealloc", source.replace("unsafe { System.dealloc(pointer, layout) };", "", 1)),
+            ("cfg", source.replace(marker, "mod tests {\n", 1)),
+            ("commented cfg", source.replace(marker, "//" + marker, 1)),
+            ("global allocator", source.replace("#[global_allocator]", "", 1)),
+            ("duplicate allocator", source.replace("    pub(super) fn record_before_refund() {",
+                boundary.GO_OVERLAP_TEST_ALLOCATOR + "\n    pub(super) fn record_before_refund() {", 1)),
+            ("allowance scope", source.replace(
+                '#[allow(unsafe_code, reason = "test-only exact allocator-release observation")]',
+                '#![allow(unsafe_code)]', 1)),
+        ):
+            with self.subTest(change=name):
+                self.assertNotEqual(changed, source)
+                self.write(boundary.GO_OVERLAP_TEST, changed)
+                errors = boundary.validate(self.root)
+                self.assertTrue(any("Go overlap test allocator changed" in error for error in errors))
+                self.assertTrue(any("unreviewed unsafe code or allowance" in error for error in errors))
+        for addition in ("unsafe fn extra() {}\n", "#[allow(unsafe_code)] fn extra() {}\n"):
+            with self.subTest(outside_test_module=addition):
+                self.write(boundary.GO_OVERLAP_TEST, source.replace(marker, addition + marker, 1))
+                self.assertTrue(any("unreviewed unsafe code or allowance" in error for error in boundary.validate(self.root)))
+        self.write(boundary.GO_OVERLAP_TEST, source)
+        self.write(f"{boundary.CRATE}/src/copied_allocator.rs", boundary.GO_OVERLAP_TEST_ALLOCATOR)
+        self.assertTrue(any("copied_allocator.rs" in error for error in boundary.validate(self.root)))
+
     def test_native_stack_exception_binds_guard_original_admission_and_physical_retirement(self) -> None:
         source = (Path(__file__).resolve().parents[2] / boundary.NATIVE_STACK).read_text(encoding="utf-8")
         self.write(boundary.NATIVE_STACK, source)
