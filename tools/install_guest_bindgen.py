@@ -60,6 +60,7 @@ def download_archive() -> bytes:
     except urllib.error.HTTPError as error:
         if error.code != 504:
             raise
+        error.close()
         print("wit-bindgen release download returned HTTP 504; trying pinned release asset API",
               file=sys.stderr)
         request = urllib.request.Request(ASSET_URL, headers={

@@ -174,6 +174,25 @@ class GeneratorArchive(unittest.TestCase):
                     install.download_archive()
                 self.assertEqual(fetch.call_count, 1)
 
+    def test_gateway_response_is_closed_before_opening_asset(self):
+        body = io.BytesIO(b'gateway failure')
+        failure = urllib.error.HTTPError(install.URL, 504, 'gateway timeout', {}, body)
+
+        def open_response(request, *, timeout):
+            self.assertGreater(timeout, 0)
+            if request == install.URL:
+                self.assertFalse(body.closed)
+                raise failure
+            self.assertEqual(request.full_url, install.ASSET_URL)
+            self.assertTrue(body.closed)
+            return io.BytesIO(b'asset')
+
+        with patch.object(install.urllib.request, 'urlopen', side_effect=open_response) as fetch, \
+             contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(install.download_archive(), b'asset')
+        self.assertTrue(body.closed)
+        self.assertEqual(fetch.call_count, 2)
+
     def test_fallback_failure_is_not_retried(self):
         errors = [urllib.error.HTTPError(install.URL, 504, 'gateway timeout', {}, None),
                   urllib.error.HTTPError(install.ASSET_URL, 503, 'unavailable', {}, None)]
