@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from tools import qualify_dotnet_finite_waits as qualification
-from tools.dotnet_guest.managed_work import INLINE_POP_REWRITE_RECEIPT
+from tools.dotnet_guest.managed_work import INLINE_PRIMARY_REWRITE_RECEIPT
 from tools.phase2_operator_process import WorkflowError
 from tools.rust_capsule_project import ROOT
 from tools.tests import test_dotnet_finite_wait_programme as fixtures
@@ -25,20 +25,20 @@ class CurrentAggregateFilesystemChain(unittest.TestCase):
             extras = {'profile', 'frameworkInput', 'tool', 'derived', 'sourceCaptureDigest',
                 'targetsDigest', 'nativeAotReferenceBinding', 'selection'}
             controlled.update({key: before[key] for key in extras})
-            controlled.update(outputDigest=before['outputDigest'], generatedHelperCount=107,
-                unchangedOriginalMethods=44708, managedAcceptedWork=copy.deepcopy(INLINE_POP_REWRITE_RECEIPT))
+            controlled.update(outputDigest=before['outputDigest'], generatedHelperCount=108,
+                unchangedOriginalMethods=44708, managedAcceptedWork=copy.deepcopy(INLINE_PRIMARY_REWRITE_RECEIPT))
             docs['task-wait-port.json'] = controlled
-            docs['closed-filesystem-port.json']['unchangedBaseMethods'] = 44851
+            docs['closed-filesystem-port.json']['unchangedBaseMethods'] = 44852
             docs['runtime-profile.json']['profile'] = 'runtime-managed'
             selection = docs['compiler-patches.json']['patches'][0]['selection']
-            selection.update(generatedHelperCount=107, aggregateTaskWait=controlled['aggregateTaskWait'])
+            selection.update(generatedHelperCount=108, aggregateTaskWait=controlled['aggregateTaskWait'])
             def publish(values):
                 for name, value in values.items():
                     (root / name).write_bytes((json.dumps(value) + '\n').encode('utf-8'))
                 refresh()
             publish(docs)
             qualification.build_evidence(root, aggregate=True)
-            for changed in (44850, 44852, True):
+            for changed in (44851, 44853, True):
                 wrong = copy.deepcopy(docs)
                 wrong['closed-filesystem-port.json']['unchangedBaseMethods'] = changed
                 publish(wrong)

@@ -127,6 +127,25 @@ def cargo_product(raw, root, target):
     return found[0]
 
 
+def retain_native_candidate(executable, output, receipt):
+    """Record bounded rejection evidence without changing the image allowance."""
+    candidate = executable.lstat()
+    regular = stat.S_ISREG(candidate.st_mode)
+    receipt['nativeCandidate'] = {'bytes':candidate.st_size,'mode':candidate.st_mode,
+        'fileType':stat.S_IFMT(candidate.st_mode),'regularFile':regular,
+        'symlink':stat.S_ISLNK(candidate.st_mode),'maximumAdmittedBytes':native.MAX_NATIVE_INIT}
+    if regular and native.MAX_NATIVE_INIT < candidate.st_size <= MAX_REJECTED_NATIVE:
+        rejected = read_file(executable,MAX_REJECTED_NATIVE)
+        forensic = output/'native-init.rejected.elf'
+        native.require(forensic.parent == output, 'native-forensic-owned-output')
+        with forensic.open('xb') as saved:
+            saved.write(rejected)
+        forensic.chmod(0o600)
+        receipt['rejectedNativeProduct'] = {**native.identity(rejected),
+            'path':forensic.name,'maximumForensicBytes':MAX_REJECTED_NATIVE,
+            'admitted':False,'executable':False,'executed':False,'includedInVm':False}
+
+
 def qualify(output, revision):
     native.require(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
         and os.environ.get('GITHUB_REPOSITORY') == 'KirilsTurkins/latent-service-fabric'
@@ -180,19 +199,7 @@ def qualify(output, revision):
             '-p','latent-streams','--example','kernel_constructor_vm','--features','development-outbound',
             '--release','--target',TARGET,'--message-format=json')
         executable = cargo_product(inventory,ROOT,output/'native-target')
-        candidate = executable.lstat()
-        regular = stat.S_ISREG(candidate.st_mode)
-        receipt['nativeCandidate'] = {'bytes':candidate.st_size,'mode':candidate.st_mode,
-            'fileType':stat.S_IFMT(candidate.st_mode),'regularFile':regular,
-            'symlink':stat.S_ISLNK(candidate.st_mode),'maximumAdmittedBytes':native.MAX_NATIVE_INIT}
-        if regular and native.MAX_NATIVE_INIT < candidate.st_size <= MAX_REJECTED_NATIVE:
-            rejected = read_file(executable,MAX_REJECTED_NATIVE)
-            forensic = output/'native-init.rejected.elf'
-            forensic.write_bytes(rejected)
-            forensic.chmod(0o600)
-            receipt['rejectedNativeProduct'] = {**native.identity(rejected),
-                'path':forensic.name,'maximumForensicBytes':MAX_REJECTED_NATIVE,
-                'admitted':False,'executable':False,'executed':False,'includedInVm':False}
+        retain_native_candidate(executable,output,receipt)
         child_raw = read_file(executable,native.MAX_NATIVE_INIT)
         receipt['nativeInit'] = native.native_elf(child_raw)
         native_init = output/'native-init';native_init.write_bytes(child_raw)
@@ -255,8 +262,34 @@ def qualify(output, revision):
         write_json(output/'commands.json',commands.records)
 
 
+NODE_LINK_SCRIPT = 'tools/q35_node_no_stapsdt.ld'
+NODE_LINK_SCRIPT_SHA256 = '4e2cee750ba96802c133a6ce7e045f919708a09fc7cf67f5a60215c26269f763'
 NODE_RECIPE = (*RECIPE,'tools/qualify_host_stream_kernel_stream_objects.py',
-    'tools/qualify_host_stream_kernel_objects.py','tools/requirements.lock')
+    'tools/qualify_host_stream_kernel_objects.py','tools/requirements.lock',
+    'tools/tests/fixtures/q35-bar3.c',NODE_LINK_SCRIPT)
+
+
+def node_link_script(root,source_inputs):
+    """Capture exactly the reviewed non-allocated USDT-note discard script."""
+    raw = read_file(root/NODE_LINK_SCRIPT,1024)
+    identity = native.identity(raw)
+    native.require(identity['sha256'] == NODE_LINK_SCRIPT_SHA256 and
+        source_inputs.get(NODE_LINK_SCRIPT) == {'digest':'sha256:'+NODE_LINK_SCRIPT_SHA256,
+            'size':identity['bytes']}, 'node-link-script-source-identity')
+    return raw
+
+
+def node_example_arguments(cargo,link_script=None):
+    """The optional linker flags apply only to this selected final example."""
+    if link_script is not None:
+        native.require(isinstance(link_script,Path) and link_script.is_absolute() and
+            ',' not in str(link_script) and '\n' not in str(link_script) and '\r' not in str(link_script),
+            'node-link-script-path')
+    args = (cargo,'rustc' if link_script is not None else 'build','--locked','-j2','-p','latent-streams',
+        '--example','kernel_constructor_vm','--features','development-outbound','--release',
+        '--target',TARGET,'--message-format=json')
+    return args if link_script is None else (*args,'--','-Clink-arg=-Wl,--no-eh-frame-hdr',
+        '-Clink-arg=-Wl,-T,'+str(link_script))
 
 
 def node_source_inputs(root,listed):
@@ -527,10 +560,11 @@ def qualify_node(output,revision):
         os.environ.get('GITHUB_REPOSITORY') == 'KirilsTurkins/latent-service-fabric' and
         os.environ.get('GITHUB_REF_NAME') in native.NODE_BRANCHES and
         os.environ.get('GITHUB_EVENT_NAME') == 'push','node-one-hosted-push')
-    intx = os.environ.get('GITHUB_REF_NAME') == native.NODE_INTX_BRANCH
-    fixup = os.environ.get('GITHUB_REF_NAME') in (native.NODE_FIXUP_BRANCH,native.NODE_INTX_BRANCH)
-    setup = os.environ.get('GITHUB_REF_NAME') in (native.NODE_SETUP_BRANCH,native.NODE_FIXUP_BRANCH,native.NODE_INTX_BRANCH)
-    prefix = os.environ.get('GITHUB_REF_NAME') in (native.NODE_PREFIX_BRANCH,native.NODE_SETUP_BRANCH,native.NODE_FIXUP_BRANCH,native.NODE_INTX_BRANCH)
+    bar3 = os.environ.get('GITHUB_REF_NAME') == native.NODE_BAR3_BRANCH
+    intx = os.environ.get('GITHUB_REF_NAME') in (native.NODE_INTX_BRANCH,native.NODE_BAR3_BRANCH)
+    fixup = os.environ.get('GITHUB_REF_NAME') in (native.NODE_FIXUP_BRANCH,native.NODE_INTX_BRANCH,native.NODE_BAR3_BRANCH)
+    setup = os.environ.get('GITHUB_REF_NAME') in (native.NODE_SETUP_BRANCH,native.NODE_FIXUP_BRANCH,native.NODE_INTX_BRANCH,native.NODE_BAR3_BRANCH)
+    prefix = os.environ.get('GITHUB_REF_NAME') in (native.NODE_PREFIX_BRANCH,native.NODE_SETUP_BRANCH,native.NODE_FIXUP_BRANCH,native.NODE_INTX_BRANCH,native.NODE_BAR3_BRANCH)
     started = float(os.environ.get('LSF_Q35_STARTED_MONOTONIC','nan'))
     now = time.monotonic()
     native.require(math.isfinite(started) and 0 < started <= now and now-started < 1315,
@@ -587,16 +621,18 @@ def qualify_node(output,revision):
         native.require(run('source-head','git','-c','core.fsmonitor=false','rev-parse','HEAD',seconds=15).decode().strip() == revision,'node-source-head')
         listed = run('source-path-inventory','git','-c','core.fsmonitor=false','ls-files','-z',seconds=30)
         before = node_source_inputs(ROOT,listed)
+        link_script_raw = node_link_script(ROOT,before) if bar3 else None
         physical,capacity_raw = c.capacity_capture(ROOT)
         boot_raw = native.node_capture(ROOT)
         prefix_raw = native.node_prefix_capture(ROOT) if prefix else {}
         setup_raw = native.node_setup_capture(ROOT) if setup else {}
         fixup_raw = native.node_fixup_capture(ROOT) if fixup else {}
         intx_raw = native.node_intx_capture(ROOT) if intx else {}
-        groups = (boot_raw,prefix_raw,setup_raw,fixup_raw,intx_raw)
+        bar3_raw = native.node_bar3_capture(ROOT) if bar3 else {}
+        groups = (boot_raw,prefix_raw,setup_raw,fixup_raw,intx_raw,bar3_raw)
         native.require(all(set(a).isdisjoint(b) for i,a in enumerate(groups) for b in groups[i+1:]),
             'node-research-captures-disjoint')
-        extra_raw = {**boot_raw,**prefix_raw,**setup_raw,**fixup_raw,**intx_raw}
+        extra_raw = {**boot_raw,**prefix_raw,**setup_raw,**fixup_raw,**intx_raw,**bar3_raw}
         native.require(set(physical).isdisjoint(extra_raw) and set(boot_raw).isdisjoint(prefix_raw) and
             len(physical)+len(extra_raw) <= c.MAX_ENTRIES and
             sum(r['bytes'] for r in physical.values())+sum(map(len,extra_raw.values())) <= c.MAX_SOURCE,
@@ -624,7 +660,7 @@ def qualify_node(output,revision):
             b'Python 3.13.5','node-pinned-owner-python')
         run('locked-python-dependencies',owner_python,'-m','pip','install',
             '--requirement',ROOT/'tools/requirements.lock',seconds=180)
-        if os.environ.get('GITHUB_REF_NAME') in (native.NODE_IDENTITY_BRANCH,native.NODE_PREFIX_BRANCH,native.NODE_SETUP_BRANCH,native.NODE_FIXUP_BRANCH,native.NODE_INTX_BRANCH):
+        if os.environ.get('GITHUB_REF_NAME') in (native.NODE_IDENTITY_BRANCH,native.NODE_PREFIX_BRANCH,native.NODE_SETUP_BRANCH,native.NODE_FIXUP_BRANCH,native.NODE_INTX_BRANCH,native.NODE_BAR3_BRANCH):
             run('node-q35-pci-identity-refusal-controls',owner_python,'-B','-m','unittest',
                 'tools.tests.test_kernel_native_constructor_vm.Q35NodeBootSourceControls',
                 '-v',seconds=30)
@@ -662,6 +698,14 @@ def qualify_node(output,revision):
         tools = {n:Path(shutil.which(n) or '').absolute() for n in ('gcc','make','curl','gpg','ninja','sh','tar')}
         tools.update(python=Path('/usr/bin/python3'),rustc=sysroot/'bin/rustc',cargo=sysroot/'bin/cargo')
         native.require(sysroot.is_absolute() and all(p.is_file() for p in tools.values()),'node-normal-tools')
+        if bar3:
+            bar3_control = private/'bar3-control'
+            run('node-q35-bar3-fault-control-compile',tools['gcc'],'-std=c11','-Wall','-Wextra','-Werror',
+                ROOT/'tools/tests/fixtures/q35-bar3.c','-o',bar3_control,seconds=30)
+            result = run('node-q35-bar3-fault-control-run',bar3_control,seconds=10)
+            native.require(result == b'q35 BAR3 custody fault controls passed\n', 'node-bar3-fault-control-result')
+            run('node-q35-bar3-fault-and-trace-controls',owner_python,'-B','-m','unittest',
+                'tools.tests.test_q35_bar3','-v',seconds=30)
         for name,path in tools.items():
             tool_pins[name] = {'path':str(path),'target':str(path.resolve()),
                 **native.identity(read_file(path.resolve(),256*1024**2))}
@@ -732,13 +776,16 @@ def qualify_node(output,revision):
         if intx:
             values,intx_stage = native.node_intx_compose(values,intx_raw)
             stages.append(intx_stage)
+        if bar3:
+            values,bar3_stage = native.node_bar3_compose(values,bar3_raw)
+            stages.append(bar3_stage)
         for name,value in values.items():
             target = tree/name; target.parent.mkdir(parents=True,exist_ok=True); target.write_bytes(value)
         derived_rows = {n:c.identity(r) for n,r in sorted(values.items())}
         write_json(output/'derived-inputs.json',derived_rows)
         write_json(output/'projection-proof.json',{'stages':stages,'prior485':rows485,
             'nativePrimary':{n:c.identity(r) for n,r in capacity_native.items()},
-            'researchUtf8':{n:r.decode('utf8') for n,r in {**capacity_raw,**boot_raw,**prefix_raw,**setup_raw,**fixup_raw,**intx_raw}.items()},
+            'researchUtf8':{n:r.decode('utf8') for n,r in {**capacity_raw,**boot_raw,**prefix_raw,**setup_raw,**fixup_raw,**intx_raw,**bar3_raw}.items()},
             'kbuildBeforeUtf8':{n:r.decode('utf8') for n,r in kbuild.items()}})
         # The only requested new config is the immutable built-in entry. Resolve
         # and record all actual values; never guess NR_CPUS equals topology.
@@ -751,6 +798,8 @@ def qualify_node(output,revision):
             requested += b'CONFIG_LSF_STREAM_NODE_PCI_FIXUP=y\n'
         if intx:
             requested += b'CONFIG_LSF_STREAM_NODE_PCI_INTX=y\n'
+        if bar3:
+            requested += b'CONFIG_LSF_STREAM_NODE_PCI_BAR3=y\n'
         (build/'.config').write_bytes(selected+requested)
         run('boot-selected-olddefconfig',*common,'olddefconfig',root=tree)
         config = c.read(build/'.config',c.MAX_DOCUMENT)
@@ -758,7 +807,8 @@ def qualify_node(output,revision):
             (not prefix or b'CONFIG_LSF_STREAM_NODE_PCI_PREFIX=y\n' in config) and
             (not setup or b'CONFIG_LSF_STREAM_NODE_PCI_SETUP=y\n' in config) and
             (not fixup or b'CONFIG_LSF_STREAM_NODE_PCI_FIXUP=y\n' in config) and
-            (not intx or b'CONFIG_LSF_STREAM_NODE_PCI_INTX=y\n' in config),'node-boot-config-selected')
+            (not intx or b'CONFIG_LSF_STREAM_NODE_PCI_INTX=y\n' in config) and
+            (not bar3 or b'CONFIG_LSF_STREAM_NODE_PCI_BAR3=y\n' in config),'node-boot-config-selected')
         old_values,new_values = objects.configuration(selected),objects.configuration(config)
         reviewed = {'CONFIG_LSF_STREAM_NODE_BOOTSTRAP'}
         if prefix:
@@ -769,6 +819,8 @@ def qualify_node(output,revision):
             reviewed.add('CONFIG_LSF_STREAM_NODE_PCI_FIXUP')
         if intx:
             reviewed.add('CONFIG_LSF_STREAM_NODE_PCI_INTX')
+        if bar3:
+            reviewed.add('CONFIG_LSF_STREAM_NODE_PCI_BAR3')
         native.require({k:v for k,v in new_values.items() if k not in reviewed} ==
             {k:v for k,v in old_values.items() if k not in reviewed},
             'node-only-reviewed-config-addition')
@@ -810,10 +862,18 @@ def qualify_node(output,revision):
                 derived,proof = native.node_intx_module(intx_raw,script).transform(original)
                 native.require(proof['originalSourceInverseExact'] is True and
                     proof['qemuExecuted'] is False,'node-qemu-derivation-inverse')
+                extra_proof = None
+                if bar3 and name == 'hw/virtio/virtio-pci.c':
+                    derived,extra_proof = native.node_intx_module(bar3_raw,native.BAR3_QEMU).transform(derived)
+                    native.require(extra_proof['originalSourceInverseExact'] is True and
+                        extra_proof['qemuExecuted'] is False and extra_proof['fullBarSizing'] is False,
+                        'node-bar3-qemu-derivation-inverse')
                 target.write_bytes(derived)
                 native.require(read_file(target,4*1024**2) == derived,'node-qemu-derivation-written')
                 qemu_derivatives[name] = {'before':native.identity(original),
                     'after':native.identity(derived),'proof':proof}
+                if extra_proof is not None:
+                    qemu_derivatives[name]['bar3Proof'] = extra_proof
         qemu_build = private/'qemu-build'; qemu_build.mkdir()
         run('qemu-fixed-configure',tools['sh'],qemu_source/'configure','--python='+str(tools['python']),'--target-list=x86_64-softmmu',
             '--enable-kvm','--disable-tcg','--disable-rust','--disable-download',
@@ -846,12 +906,30 @@ def qualify_node(output,revision):
             LSF_Q35_QUALIFICATION_SOURCE_SHA256=source_hash,LSF_Q35_QUALIFICATION_CONFIG_SHA256=config_hash)
         if prefix:
             environment['LSF_Q35_PREFIX_PROFILE'] = native.SETUP_PROFILE if setup else native.PREFIX_PROFILE
-        cargo_raw = run('build-node-native-example',tools['cargo'],'build','--locked','-j2','-p','latent-streams',
-            '--example','kernel_constructor_vm','--features','development-outbound','--release',
-            '--target',TARGET,'--message-format=json')
+        link_script = None
+        if bar3:
+            # The measured image had only 1,056 bytes below the unchanged 3 MiB limit;
+            # the actual size remains enforced on every build.  Discarding the
+            # non-allocated .note.stapsdt removes USDT probe discovery for this child.
+            # The script does not discard .eh_frame; host C unwind controls are not
+            # guest or Rust lifecycle qualification and this profile aborts on panic.
+            link_script = private/'q35-node-no-stapsdt.ld'
+            native.require(not link_script.exists(),'node-link-script-private-fresh')
+            link_script.write_bytes(link_script_raw)
+            native.require(read_file(link_script,1024) == link_script_raw,'node-link-script-private-identity')
+            receipt['nativeLink'] = {'source':NODE_LINK_SCRIPT,'script':native.identity(link_script_raw),
+                'finalExampleOnly':True,'ehFrameHeaderSuppressionRequested':True,
+                'requestedDiscardedSection':'.note.stapsdt',
+                'unwindFrameDiscardRequested':False,'hostControlsAreGuestQualification':False}
+        cargo_raw = run('build-node-native-example',*node_example_arguments(tools['cargo'],link_script))
+        if bar3:
+            native.require(read_file(link_script,1024) == link_script_raw and
+                node_link_script(ROOT,before) == link_script_raw,'node-link-script-after-build')
         executable = cargo_product(cargo_raw,ROOT,private/'native-target')
+        retain_native_candidate(executable,output,receipt)
         child = keep('native-init',executable,native.MAX_NATIVE_INIT)
         receipt['nativeInit'] = native.native_elf(child)
+        if bar3:receipt['nativeLink']['fileHeadroomBytes'] = native.MAX_NATIVE_INIT-len(child)
         source = native.node_supervisor(boot_raw,read_file(ROOT/native.ORIGINAL,64*1024))
         # The actual command owner wraps this existing compile helper too.
         class Shared:
@@ -869,7 +947,7 @@ def qualify_node(output,revision):
         boot_args = native.node_boot_argv(qemu,output/'node-bzImage',cpio,firmware)
         if intx:
             from tools import q35_intx_owner, q35_intx_trace
-            boot_args = q35_intx_owner.trace_argv(boot_args)
+            boot_args = q35_intx_owner.trace_argv(boot_args, bar3=bar3)
             node_kvm_observe(run,receipt,'before-trace',require_open=True)
             stage = 'qemu-trace-loss-refusal'
             commands.root = ROOT
@@ -892,7 +970,8 @@ def qualify_node(output,revision):
                     stage = failed_stage
             raise
         native.require(len(serial) <= image.MAX_SERIAL,'node-serial-channel-bound')
-        receipt['observations'] = (native.node_intx_serial(serial) if intx else
+        receipt['observations'] = (native.node_bar3_serial(serial) if bar3 else
+            native.node_intx_serial(serial) if intx else
             native.node_fixup_serial(serial) if fixup else
             native.node_setup_serial(serial) if setup else
             native.node_prefix_serial(serial) if prefix else native.node_serial(serial))
@@ -901,11 +980,15 @@ def qualify_node(output,revision):
             trace_path = commands.output/'logs'/f'{vm_log_index:02d}-one-real-q35-kvm-node-prepare.stderr.txt'
             trace = read_file(trace_path,4*1024**2)
             fact = receipt['observations']['pciIntx']
-            trace_observed = q35_intx_trace.inspect(trace,fact['originalCommand'],fact['pin'],fact['line'])
+            if bar3:
+                from tools import q35_bar3_trace
+                trace_observed = q35_bar3_trace.inspect(trace,fact['originalCommand'],fact['pin'],fact['line'])
+            else:
+                trace_observed = q35_intx_trace.inspect(trace,fact['originalCommand'],fact['pin'],fact['line'])
             native.require(receipt['traceLossControl']['actualExit'] == 74 and
                 commands.records[vm_log_index]['descendantsCleaned'] is True,
                 'node-trace-loss-control-and-retirement')
-            receipt['pciTrace'] = {'raw':native.identity(trace),'events':list(q35_intx_owner.EVENTS),
+            receipt['pciTrace'] = {'raw':native.identity(trace),'events':list(q35_intx_owner.events(bar3)),
                 'sinkFailureControl':receipt['traceLossControl'], 'observation':trace_observed}
         # Exact source/tool/image identities still hold AFTER the actual VM.
         after = node_source_inputs(ROOT,run('source-path-inventory-after','git','-c','core.fsmonitor=false','ls-files','-z',seconds=30))
@@ -915,7 +998,10 @@ def qualify_node(output,revision):
             (not prefix or native.node_prefix_capture(ROOT) == prefix_raw) and
             (not setup or native.node_setup_capture(ROOT) == setup_raw) and
             (not fixup or native.node_fixup_capture(ROOT) == fixup_raw) and
-            (not intx or native.node_intx_capture(ROOT) == intx_raw),'node-all-source-unchanged')
+            (not intx or native.node_intx_capture(ROOT) == intx_raw) and
+            (not bar3 or native.node_bar3_capture(ROOT) == bar3_raw),'node-all-source-unchanged')
+        if bar3:
+            native.require(read_file(link_script,1024) == link_script_raw,'node-link-script-private-unchanged')
         if intx:
             native.require(all(native.identity(read_file(qemu_source/name,4*1024**2)) == row['after']
                 for name,row in qemu_derivatives.items()),'node-qemu-derived-source-stable')

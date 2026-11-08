@@ -176,6 +176,8 @@ enum AdmissionStep {
     ChargedFuel,
     PreparedSlot,
     CheckedBeforePublication,
+    #[cfg(test)]
+    HoldingPublicationGuard,
 }
 
 /// This affine owner must remain with actual logical work/native ownership.
@@ -436,6 +438,14 @@ impl ActivationRuntime {
         // the physical allocation remains prepaid until retirement.
         self.check_commit_ledger_locked(state)?;
         hook(AdmissionStep::CheckedBeforePublication);
+        // Same-ledger finalization takes this accounting lock before closing.
+        // Hold it through the owner write, with no production callback or
+        // budget-locking operation here. Explicit cancellation, ancestor
+        // closure, external probes and clock passage remain independent.
+        let _publication = self.inner.budget.runtime_publication_guard();
+        self.check_commit_ledger_locked(state)?;
+        #[cfg(test)]
+        hook(AdmissionStep::HoldingPublicationGuard);
         state.slab.as_mut().expect("reserved slab").records[slot] = Some(Record {
             id: token.id,
             kind,
