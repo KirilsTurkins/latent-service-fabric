@@ -1098,6 +1098,334 @@ fn waking_a_parked_thread_leaves_runnable_sibling_and_fences_reused_slots() {
     runtime.retire().unwrap();
 }
 
+#[test]
+fn same_ledger_closure_after_readiness_check_refuses_park_and_wake() {
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    let mut outcomes = Vec::new();
+    for finalize in [false, true] {
+        for park in [false, true] {
+            let runtime = runtime();
+            let owner = runtime.register(OwnerKind::Task, None).unwrap();
+            let token = owner.token();
+            let wake = if park {
+                None
+            } else {
+                Some(runtime.park(token).unwrap())
+            };
+            let before = runtime.snapshot();
+            let budget = runtime.inner.budget.clone();
+            let worker_runtime = runtime.clone();
+            let (checked_tx, checked_rx) = mpsc::sync_channel(0);
+            let (resume_tx, resume_rx) = mpsc::sync_channel(0);
+            let worker = std::thread::spawn(move || {
+                let hook = |step| {
+                    if step == ReadinessStep::Checked {
+                        checked_tx.send(()).unwrap();
+                        resume_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+                    }
+                };
+                if park {
+                    worker_runtime.park_with_hooks(token, || {}, hook).is_ok()
+                } else {
+                    wake.unwrap().wake_with_hooks(|| {}, hook)
+                }
+            });
+            checked_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+            let close_budget = budget.clone();
+            let (done_tx, done_rx) = mpsc::sync_channel(0);
+            let closer = std::thread::spawn(move || {
+                if finalize {
+                    let _ = close_budget.finalize_at(None, Instant::now());
+                } else {
+                    close_budget.cancel_descendants().unwrap();
+                }
+                done_tx.send(()).unwrap();
+            });
+            let terminal_received = done_rx.recv_timeout(Duration::from_secs(3));
+            let closed_before_resume = terminal_received.is_ok();
+            resume_tx.send(()).unwrap();
+            let published = worker.join().unwrap();
+            if !closed_before_resume {
+                done_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+            }
+            closer.join().unwrap();
+            let after = runtime.snapshot();
+            outcomes.push((
+                park,
+                finalize,
+                closed_before_resume,
+                published,
+                before,
+                after,
+            ));
+            drop(owner);
+            runtime.retire().unwrap();
+            drop(runtime);
+            assert_eq!(budget.host_memory_bytes(), 0);
+        }
+    }
+    for (park, finalize, closed, published, before, after) in outcomes {
+        assert!(closed, "closure must complete before publication resumes");
+        assert!(
+            !published,
+            "park={park} finalize={finalize} published after closure"
+        );
+        assert_eq!(after.phase, RuntimePhase::Cancelling);
+        assert_eq!(after.parked_tasks, before.parked_tasks);
+        assert_eq!(after.owners, before.owners);
+        assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
+        assert_eq!(after.stale_wakes, before.stale_wakes);
+    }
+}
+
+#[test]
+fn same_ledger_cancellation_restores_hidden_park_and_wake() {
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    for park in [false, true] {
+        for already_set in [false, true] {
+            let runtime = runtime();
+            let owner = runtime.register(OwnerKind::Task, None).unwrap();
+            let token = owner.token();
+            let wake = if !park || already_set {
+                let wake = runtime.park(token).unwrap();
+                if !park && already_set {
+                    assert!(wake.wake());
+                }
+                Some(wake)
+            } else {
+                None
+            };
+            let before = runtime.snapshot();
+            let budget = runtime.inner.budget.clone();
+            let worker_runtime = runtime.clone();
+            let (held_tx, held_rx) = mpsc::sync_channel(0);
+            let (resume_tx, resume_rx) = mpsc::sync_channel(0);
+            let worker = std::thread::spawn(move || {
+                let hook = |step| {
+                    if step == ReadinessStep::Tentative {
+                        held_tx.send(()).unwrap();
+                        resume_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+                    }
+                };
+                if park {
+                    worker_runtime.park_with_hooks(token, || {}, hook).is_ok()
+                } else {
+                    wake.unwrap().wake_with_hooks(|| {}, hook)
+                }
+            });
+            held_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+            let hidden = matches!(
+                runtime.inner.state.try_lock(),
+                Err(std::sync::TryLockError::WouldBlock)
+            );
+            let guarded = budget.test_accounting_is_locked();
+            let close_budget = budget.clone();
+            let (done_tx, done_rx) = mpsc::sync_channel(0);
+            let closer = std::thread::spawn(move || {
+                close_budget.cancel_descendants().unwrap();
+                done_tx.send(()).unwrap();
+            });
+            let cancelled = done_rx.recv_timeout(Duration::from_secs(3));
+            let signalled = cancelled.is_ok();
+            resume_tx.send(()).unwrap();
+            let result = worker.join().unwrap();
+            if !signalled {
+                done_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+            }
+            closer.join().unwrap();
+            assert!(hidden && guarded && signalled);
+            assert!(!result, "park={park} already_set={already_set}");
+            let after = runtime.snapshot();
+            assert_eq!(after.phase, RuntimePhase::Cancelling);
+            assert_eq!(after.parked_tasks, before.parked_tasks);
+            assert_eq!(after.owners, before.owners);
+            assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
+            assert_eq!(after.stale_wakes, before.stale_wakes);
+            drop(owner);
+            runtime.retire().unwrap();
+            drop(runtime);
+            assert_eq!(budget.host_memory_bytes(), 0);
+        }
+    }
+}
+
+#[test]
+fn same_ledger_finalization_waits_for_tentative_park_and_wake() {
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    for park in [false, true] {
+        let runtime = runtime();
+        let owner = runtime.register(OwnerKind::Task, None).unwrap();
+        let token = owner.token();
+        let wake = if park {
+            None
+        } else {
+            Some(runtime.park(token).unwrap())
+        };
+        let before = runtime.snapshot();
+        let budget = runtime.inner.budget.clone();
+        let worker_runtime = runtime.clone();
+        let (held_tx, held_rx) = mpsc::sync_channel(0);
+        let (resume_tx, resume_rx) = mpsc::sync_channel(0);
+        let worker = std::thread::spawn(move || {
+            let hook = |step| {
+                if step == ReadinessStep::Tentative {
+                    held_tx.send(()).unwrap();
+                    resume_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+                }
+            };
+            if park {
+                worker_runtime.park_with_hooks(token, || {}, hook).is_ok()
+            } else {
+                wake.unwrap().wake_with_hooks(|| {}, hook)
+            }
+        });
+        held_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+        let hidden = matches!(
+            runtime.inner.state.try_lock(),
+            Err(std::sync::TryLockError::WouldBlock)
+        );
+        let guarded = budget.test_accounting_is_locked();
+        let close_budget = budget.clone();
+        let (started_tx, started_rx) = mpsc::sync_channel(0);
+        let (done_tx, done_rx) = mpsc::sync_channel(0);
+        let closer = std::thread::spawn(move || {
+            started_tx.send(()).unwrap();
+            let terminal = close_budget.finalize_at(None, Instant::now());
+            done_tx
+                .send(terminal.consumption().peak_memory_bytes)
+                .unwrap();
+        });
+        started_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+        let early = done_rx.recv_timeout(Duration::from_millis(100));
+        let finalized_early = early.is_ok();
+        resume_tx.send(()).unwrap();
+        let result = worker.join().unwrap();
+        let terminal_peak = match early {
+            Ok(peak) => peak,
+            Err(_) => done_rx.recv_timeout(Duration::from_secs(3)).unwrap(),
+        };
+        closer.join().unwrap();
+        assert!(hidden && guarded && !finalized_early && result);
+        let after = runtime.snapshot();
+        assert_eq!(after.parked_tasks, u32::from(park));
+        assert_eq!(after.owners, before.owners);
+        assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
+        assert_eq!(after.stale_wakes, before.stale_wakes);
+        assert!(terminal_peak >= before.host_memory_bytes);
+        drop(owner);
+        runtime.retire().unwrap();
+        drop(runtime);
+        assert_eq!(budget.host_memory_bytes(), 0);
+    }
+}
+
+#[test]
+fn same_ledger_cancellation_after_park_and_wake_commit_keeps_owner() {
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    struct Probe(mpsc::Sender<std::thread::ThreadId>);
+    impl crate::BudgetCancellationProbe for Probe {
+        fn is_cancelled(&self) -> bool {
+            false
+        }
+        fn cancelled(&self) -> crate::BoxFuture<'_, ()> {
+            Box::pin(std::future::pending())
+        }
+        fn mark_terminal(&self) {
+            self.0.send(std::thread::current().id()).unwrap();
+        }
+    }
+
+    for park in [false, true] {
+        let (signal_tx, signal_rx) = mpsc::channel();
+        let runtime = runtime_with_probe(Arc::new(Probe(signal_tx)));
+        let owner = runtime.register(OwnerKind::Task, None).unwrap();
+        let token = owner.token();
+        let wake = if park {
+            None
+        } else {
+            Some(runtime.park(token).unwrap())
+        };
+        let before = runtime.snapshot();
+        let budget = runtime.inner.budget.clone();
+        let worker_runtime = runtime.clone();
+        let (held_tx, held_rx) = mpsc::sync_channel(0);
+        let (resume_tx, resume_rx) = mpsc::sync_channel(0);
+        let worker = std::thread::spawn(move || {
+            let hook = |step| {
+                if step == ReadinessStep::Committed {
+                    held_tx.send(()).unwrap();
+                    resume_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+                }
+            };
+            if park {
+                worker_runtime.park_with_hooks(token, || {}, hook).is_ok()
+            } else {
+                wake.unwrap().wake_with_hooks(|| {}, hook)
+            }
+        });
+        held_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+        let hidden = matches!(
+            runtime.inner.state.try_lock(),
+            Err(std::sync::TryLockError::WouldBlock)
+        );
+        let guarded = budget.test_accounting_is_locked();
+        let close_budget = budget.clone();
+        let (done_tx, done_rx) = mpsc::sync_channel(0);
+        let closer = std::thread::spawn(move || {
+            let thread = std::thread::current().id();
+            close_budget.cancel_descendants().unwrap();
+            done_tx.send(thread).unwrap();
+        });
+        let cancel_thread = done_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+        let signal_thread = signal_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+        resume_tx.send(()).unwrap();
+        let result = worker.join().unwrap();
+        closer.join().unwrap();
+        assert!(hidden && guarded && result);
+        assert_eq!(signal_thread, cancel_thread);
+        let after = runtime.snapshot();
+        assert_eq!(after.parked_tasks, u32::from(park));
+        assert_eq!(after.owners, before.owners);
+        assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
+        assert_eq!(after.stale_wakes, before.stale_wakes);
+        drop(owner);
+        runtime.retire().unwrap();
+        drop(runtime);
+        assert_eq!(budget.host_memory_bytes(), 0);
+    }
+}
+
+#[test]
+fn park_phase_accounts_for_tasks_and_non_task_owners() {
+    let runtime = runtime();
+    let task = runtime.register(OwnerKind::Task, None).unwrap();
+    let worker = runtime
+        .register(OwnerKind::ManagedIdleWorker, None)
+        .unwrap();
+    let wait = runtime.register(OwnerKind::Wait, None).unwrap();
+    let non_task_wake = runtime.park(wait.token()).unwrap();
+    assert_eq!(runtime.snapshot().phase, RuntimePhase::Running);
+    let task_wake = runtime.park(task.token()).unwrap();
+    assert_eq!(runtime.snapshot().phase, RuntimePhase::Running);
+    let worker_wake = runtime.park(worker.token()).unwrap();
+    assert_eq!(runtime.snapshot().phase, RuntimePhase::Waiting);
+    assert!(task_wake.wake());
+    assert_eq!(runtime.snapshot().phase, RuntimePhase::Running);
+    let task_wake_again = runtime.park(task.token()).unwrap();
+    assert_eq!(runtime.snapshot().phase, RuntimePhase::Waiting);
+    drop((task_wake_again, worker_wake, task_wake, non_task_wake));
+    drop((wait, worker, task));
+    runtime.retire().unwrap();
+}
+
 // Pause immediately after the same successful liveness check used by the
 // public method, then let the cancelling thread win the mutation lock.
 #[test]
