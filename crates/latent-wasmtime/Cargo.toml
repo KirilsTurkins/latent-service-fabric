@@ -16,6 +16,8 @@ development-local-service-fixture = []
 development-test-host = ["latent-artifacts/development-test-host", "latent-policy/development-test-host", "development-clock-fixture"]
 # Bounded activation-owned witness for the explicit signed Go overlap fixture.
 development-go-timer-overlap = ["dep:tokio"]
+# Selected only by the signed Go TCP read-order owner.
+development-go-network-read-witness = ["latent-streams/development-read-witness"]
 
 # Retains the standalone compiler diagnostic; node installation is separately explicit.
 java-guest-diagnostic = []

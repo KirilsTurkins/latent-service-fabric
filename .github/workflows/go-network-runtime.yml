@@ -3,7 +3,7 @@ name: Execute the declared Go TCP component
 on:
   workflow_dispatch:
   push:
-    branches: ['feat/go-standard-tcp-runtime-20261020']
+    branches: ['feat/go-standard-tcp-runtime-20261020', 'feat/go-network-read-order-20261108']
 
 permissions:
   contents: read
