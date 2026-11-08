@@ -165,11 +165,12 @@ impl NativeTransactionAdmission {
         mut self,
         identity: latent_commit::atomic::InboxIdentity,
     ) -> Result<Self, PlatformError> {
-        identity.validate().map_err(atomic)?;
+        let expected_key = identity.command_key().map_err(atomic)?;
         let valid = match self.state.get_mut() {
             Ok(State::Fresh(Some(selection))) => {
                 selection.mode == latent_manifest::TransactionOperationMode::StrictCommand
                     && selection.retry.is_none()
+                    && selection.client_key.as_deref() == Some(expected_key.as_str())
             }
             _ => false,
         };

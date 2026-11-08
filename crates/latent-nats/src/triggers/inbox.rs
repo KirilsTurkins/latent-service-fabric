@@ -154,28 +154,27 @@ fn capture(
             &incarnation,
         ],
     );
-    let sequence_bytes = sequence.to_le_bytes();
-    let client = identity(
-        b"lsf-jetstream-input-command-v1\0",
-        &[&scope.bytes(), &sequence_bytes],
-    );
     let payload_digest = Identity::parse_hex(&format!(
         "{:x}",
         latent_core::digest::HexDigest(Sha256::digest(payload))
     ))
     .map_err(|_| EventError::InvalidEvent)?;
+    let identity = InboxIdentity {
+        provider: provider.into(),
+        binding: scope.hex(),
+        message: sequence.to_string(),
+        payload_digest,
+    };
+    let client_id = identity
+        .command_key()
+        .map_err(|_| EventError::InvalidEvent)?;
     Ok(InboxDelivery {
         tenant: binding.tenant.clone(),
         namespace: selected.namespace.clone(),
         incarnation: selected.incarnation,
         processing_scope: selected.processing_scope.clone(),
-        client_id: format!("inbox-{}", client.hex()),
-        identity: InboxIdentity {
-            provider: provider.into(),
-            binding: scope.hex(),
-            message: sequence.to_string(),
-            payload_digest,
-        },
+        client_id,
+        identity,
     })
 }
 

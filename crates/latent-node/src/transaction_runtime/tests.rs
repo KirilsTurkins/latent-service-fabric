@@ -34,7 +34,7 @@ async fn trusted_inbox_admission_commits_the_original_input_and_recovers_duplica
         ))
         .unwrap(),
     };
-    let (first, mut envelope, budget) = fixture.invocation(false, "inbox-key");
+    let (first, mut envelope, budget) = fixture.invocation(false, &identity.command_key().unwrap());
     envelope.principal.kind = latent_core::PrincipalKind::Trigger;
     let first = Arc::new(
         Arc::try_unwrap(first)
@@ -64,7 +64,8 @@ async fn trusted_inbox_admission_commits_the_original_input_and_recovers_duplica
     assert_eq!(fixture.rows(Family::Inbox).await, 1);
     drop((guest, original, first, envelope, budget));
 
-    let (replay, mut envelope, budget) = fixture.invocation(false, "inbox-key");
+    let (replay, mut envelope, budget) =
+        fixture.invocation(false, &identity.command_key().unwrap());
     envelope.principal.kind = latent_core::PrincipalKind::Trigger;
     let replay = Arc::new(
         Arc::try_unwrap(replay)
@@ -109,7 +110,7 @@ async fn trusted_inbox_refuses_wrong_principal_payload_and_query_mode_before_sto
         ))
         .unwrap(),
     };
-    let (ordinary, envelope, budget) = fixture.invocation(false, "inbox-user");
+    let (ordinary, envelope, budget) = fixture.invocation(false, &identity.command_key().unwrap());
     let ordinary = Arc::try_unwrap(ordinary)
         .ok()
         .unwrap()
@@ -121,7 +122,8 @@ async fn trusted_inbox_refuses_wrong_principal_payload_and_query_mode_before_sto
     );
     drop((ordinary, envelope, budget));
 
-    let (changed, mut envelope, budget) = fixture.invocation(false, "inbox-changed");
+    let (changed, mut envelope, budget) =
+        fixture.invocation(false, &identity.command_key().unwrap());
     envelope.principal.kind = latent_core::PrincipalKind::Trigger;
     envelope.input = b"different".to_vec();
     let changed = Arc::try_unwrap(changed)
@@ -134,6 +136,14 @@ async fn trusted_inbox_refuses_wrong_principal_payload_and_query_mode_before_sto
         latent_core::PlatformErrorCode::PermissionDenied
     );
     drop((changed, envelope, budget));
+
+    let (wrong_key, envelope, budget) = fixture.invocation(false, "different-command-key");
+    assert!(Arc::try_unwrap(wrong_key)
+        .ok()
+        .unwrap()
+        .with_trusted_inbox(identity.clone())
+        .is_err());
+    drop((envelope, budget));
 
     let (query, envelope, budget) = fixture.invocation(true, "ignored");
     assert!(Arc::try_unwrap(query)
