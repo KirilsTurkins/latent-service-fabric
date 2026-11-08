@@ -126,9 +126,11 @@ class PreparedInputsTests(unittest.TestCase):
 
     def test_wrong_profile_and_missing_role_are_rejected(self):
         path = self.prepare()
-        self.rewrite(path, lambda data: data.update(profile="release"))
-        with self.assertRaisesRegex(inputs.InputError, "profile"):
-            inputs.validate(self.repo, path)
+        for stale_profile in ("release", "debug-all-features-v8"):
+            with self.subTest(profile=stale_profile):
+                self.rewrite(path, lambda data: data.update(profile=stale_profile))
+                with self.assertRaisesRegex(inputs.InputError, "profile"):
+                    inputs.validate(self.repo, path)
         self.rewrite(path, lambda data: data.update(profile=inputs.PROFILE))
         self.rewrite(path, lambda data: data["entries"].pop("compiler"))
         with self.assertRaisesRegex(inputs.InputError, "roles"):
@@ -204,7 +206,10 @@ class PreparedInputsTests(unittest.TestCase):
         for previous in (["aot-test-timings"],
                          ["aot-test-timings", "development-test-host", "java-guest-diagnostic"],
                          ["aot-test-timings", "development-clock-fixture", "development-test-host",
-                          "java-guest-diagnostic"]):
+                          "java-guest-diagnostic"],
+                         ["aot-test-timings", "development-clock-fixture", "development-local-service-fixture",
+                          "development-rust-http-combined", "development-test-host", "java-checkpoint-gc-trap-diagnostic",
+                          "java-guest-diagnostic", "rust-thread-trap-diagnostic"]):
             with self.subTest(features=previous):
                 for record in self.records[:-1]:
                     record["features"] = previous
