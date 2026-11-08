@@ -173,29 +173,16 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
         self.assertEqual(changed_invoke.count(addition), 1)
         self.assertEqual(changed_invoke.count(admission), 1)
         self.assertEqual(changed_invoke.replace(addition, b'', 1).replace(admission, b'', 1), original_invoke)
+        # Event ownership must preserve the separately derived abort algorithm.
+        # Its fan-out and error behavior are exercised below, not certified by
+        # reversing a historical implementation back into the upstream bug.
         abort = (FIXTURES/'original-abort-signal.cpp').read_bytes()
+        selected_abort, _ = abort_engine.derive_abort_timeout(abort)
         begin = b'bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason)'
         ending = b'JSObject *AbortSignal::create('
-        original_abort = abort[abort.index(begin):abort.index(ending)]
+        before_event = selected_abort[selected_abort.index(begin):selected_abort.index(ending)]
         changed_abort = derived[abort_engine.PATH][derived[abort_engine.PATH].index(begin):derived[abort_engine.PATH].index(ending)]
-        replacement = (b'  // With no newly aborted dependents there is no later abort work to skip.\n'
-                       b'  if (!run_abort_steps(cx, self) && dep_signals_to_abort.empty()) return false;\n')
-        self.assertEqual(changed_abort.count(replacement), 1)
-        reason_check = b'  if (!set_reason(cx, self, reason)) return false;\n'
-        rooted_reason = b'  RootedValue propagated_reason(cx, AbortSignal::reason(self));\n'
-        dependent_reason = b'      if (!set_reason(cx, signal, propagated_reason)) return false;\n'
-        null_check = b'  if (!event) return false;\n'
-        self.assertEqual(changed_abort.count(reason_check), 1)
-        self.assertEqual(changed_abort.count(rooted_reason), 1)
-        self.assertEqual(changed_abort.count(dependent_reason), 1)
-        self.assertLess(changed_abort.index(reason_check), changed_abort.index(rooted_reason))
-        self.assertLess(changed_abort.index(rooted_reason), changed_abort.index(dependent_reason))
-        self.assertEqual(changed_abort.count(null_check), 1)
-        changed_abort = changed_abort.replace(replacement, b'  run_abort_steps(cx, self);\n', 1)
-        changed_abort = changed_abort.replace(rooted_reason, b'', 1)
-        changed_abort = changed_abort.replace(dependent_reason, b'      set_reason(cx, signal, reason);\n', 1)
-        changed_abort = changed_abort.replace(reason_check, b'  set_reason(cx, self, reason);\n', 1)
-        self.assertEqual(changed_abort.replace(null_check, b'', 1), original_abort)
+        self.assertEqual(changed_abort, before_event)
 
     def test_owned_graph_changes_remain_unqualified_and_snapshot_mutation_is_denied(self):
         _, receipt = derive()
@@ -205,6 +192,12 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
         self.assertEqual(receipt['nativeGraphRetirement'], 'destructor-then-collection-end-then-safe-host-ack')
         self.assertEqual(receipt['dispatchCloneRetirement'], 'frame-destructor-then-safe-host-ack')
         self.assertEqual(receipt['dispatchCloneOwner'], 'one-original-native-count-not-byte-accurate')
+        _, abort_receipt = abort_engine.derive_abort_timeout((FIXTURES/'original-abort-signal.cpp').read_bytes())
+        self.assertEqual(abort_receipt['dependentFanoutAdmission'], 'before-vector-growth-and-reason-publication')
+        self.assertEqual(abort_receipt['dependentFanoutOwner'], 'one-original-native-count-per-heap-frame-not-byte-accurate')
+        self.assertEqual(abort_receipt['dependentFanoutRetirement'], 'frame-unwind-then-safe-host-ack')
+        self.assertFalse(abort_receipt['supportedAsyncProfile'])
+        self.assertFalse(abort_receipt['signedLSFComponentQualified'])
 
     def test_global_listener_graph_is_lazy_and_not_frozen_during_compiler_snapshot(self):
         derived, _ = derive()
@@ -239,6 +232,8 @@ class AbortFailureControls(unittest.TestCase):
         cls.temporary = tempfile.TemporaryDirectory()
         cls.addClassCleanup(cls.temporary.cleanup)
         output = Path(cls.temporary.name)
+        root = Path(__file__).resolve().parents[2]
+        include = root/'sdk/typescript-guest/activation'
         template = (Path(__file__).parent/'fixtures/typescript_abort_failure.cpp').read_bytes()
         abort_start = b'bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason)'
         steps_start = b'bool AbortSignal::run_abort_steps('
@@ -259,10 +254,10 @@ class AbortFailureControls(unittest.TestCase):
             source_file.write_bytes(fixture)
             binary = output/(label+'.exe' if os.name == 'nt' else label)
             if Path(compiler).stem.lower() == 'cl':
-                args = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX',
+                args = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX', '/I'+str(include),
                         str(source_file), '/Fe:'+str(binary), '/Fo:'+str(output/(label+'.obj'))]
             else:
-                args = [compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror',
+                args = [compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror', '-I'+str(include),
                         str(source_file), '-o', str(binary)]
             result = subprocess.run(args, capture_output=True, timeout=60)
             if result.returncode or len(result.stdout) + len(result.stderr) > 65536:
@@ -272,7 +267,12 @@ class AbortFailureControls(unittest.TestCase):
     def test_failure_preserves_original_exception_and_completed_or_retained_work(self):
         for case in ('success', 'dispatch-failure', 'event-failure', 'reason-failure',
                      'algorithm-failure', 'dependent-continuation', 'default-reason',
-                     'explicit-reason', 'already-aborted'):
+                     'explicit-reason', 'already-aborted', 'fanout-inline', 'fanout-heap',
+                     'fanout-all-aborted', 'fanout-refusal', 'fanout-reserve-failure',
+                     'fanout-recovery', 'fanout-nested', 'fanout-nested-refusal',
+                     'fanout-ack-refusal', 'fanout-repeated', 'fanout-first-error',
+                     'fanout-dependent-error', 'fanout-trap', 'fanout-error-then-trap',
+                     'fanout-success-with-error', 'fanout-default-reentry'):
             with self.subTest(case=case):
                 result = subprocess.run([str(self.selected_binary), case], capture_output=True, timeout=10)
                 self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
@@ -280,13 +280,16 @@ class AbortFailureControls(unittest.TestCase):
                                  {'case': case, 'passed': True, 'engineQualified': False})
 
     def test_pinned_original_reproduces_narrow_failure_boundaries(self):
-        for case in ('dispatch-failure', 'event-failure', 'reason-failure', 'algorithm-failure', 'default-reason'):
+        for case in ('dispatch-failure', 'event-failure', 'reason-failure', 'algorithm-failure',
+                     'default-reason', 'dependent-continuation', 'fanout-heap', 'fanout-refusal',
+                     'fanout-reserve-failure', 'fanout-nested-refusal', 'fanout-first-error',
+                     'fanout-dependent-error', 'fanout-trap', 'fanout-default-reentry'):
             with self.subTest(case=case):
                 result = subprocess.run([str(self.original_binary), case], capture_output=True, timeout=10)
                 self.assertEqual(result.returncode, 1, (result.stdout + result.stderr)[:65536])
                 self.assertEqual(json.loads(result.stdout),
                                  {'case': case, 'passed': False, 'engineQualified': False})
-        for case in ('success', 'dependent-continuation', 'explicit-reason', 'already-aborted'):
+        for case in ('success', 'explicit-reason', 'already-aborted', 'fanout-inline', 'fanout-all-aborted'):
             with self.subTest(case=case):
                 result = subprocess.run([str(self.original_binary), case], capture_output=True, timeout=10)
                 self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])

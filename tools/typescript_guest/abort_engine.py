@@ -13,7 +13,8 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
     source = replace_once(raw, b'#include "../timers.h"\n',
         b'#include "../timers.h"\n#include "native_timeout.h"\n#include "native_engine.h"\n'
         b'#include "native_objects.h"\n'
-        b'#include "js/ForOfIterator.h"\n', 'abort-native-include')
+        b'#include "js/ForOfIterator.h"\n#include "js/Exception.h"\n'
+        b'#include "mozilla/Maybe.h"\n', 'abort-native-include')
     source = replace_once(source,
         b'    JS_SetPendingException(cx, reason);\n  }\n\n  return true;\n}',
         b'    JS_SetPendingException(cx, reason);\n    return false;\n  }\n\n  return true;\n}',
@@ -76,15 +77,82 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
         b'  if (!lsf::typescript::activation::start_timeout_nanoseconds(\n'
         b'          cx, handler, JS::HandleValueArray(args), nanos, &timer_id)) {',
         'actual-AbortSignal-native-timer-readiness')
-    source = replace_once(source,
-        b'  set_reason(cx, self, reason);\n',
-        b'  if (!set_reason(cx, self, reason)) return false;\n'
-        b'  RootedValue propagated_reason(cx, AbortSignal::reason(self));\n',
-        'abort-root-reason-before-dependent-mutation')
-    source = replace_once(source,
-        b'      set_reason(cx, signal, reason);\n',
-        b'      if (!set_reason(cx, signal, propagated_reason)) return false;\n',
-        'propagate-root-abort-reason-identity-to-dependents')
+    abort_start = raw.index(b'bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason) {')
+    abort_end = raw.index(b'// https://dom.spec.whatwg.org/#run-the-abort-steps', abort_start)
+    source = replace_once(source, raw[abort_start:abort_end],
+        b'''bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason) {
+  MOZ_ASSERT(is_instance(self));
+  if (is_aborted(self)) return true;
+
+  // Default-error construction can re-enter JS through the pinned factory.
+  // Do not overwrite a nested abort, repeat its steps, or keep weak iterators
+  // across that construction. The eventual reason remains rooted throughout.
+  RootedValue propagated_reason(cx, reason);
+  if (propagated_reason.isUndefined()) {
+    RootedObject exception(cx, dom_exception::DOMException::create(cx, "AbortError", "AbortError"));
+    if (!exception) return false;
+    propagated_reason.setObject(*exception);
+    if (is_aborted(self)) return true;
+  }
+
+  // Stage the entire fan-out before publishing any abort reason. Admission and
+  // reservation cannot leave an aborted signal whose steps were never run.
+  // Declare custody first so the rooted vector and backing die before its owner.
+  lsf::typescript::activation::NativeObjectFrameLease dependents_owner;
+  JS::RootedObjectVector dep_signals_to_abort(cx);
+  auto *dep_signals = dependent_signals(self);
+  size_t pending_dependents = 0;
+  for (auto const &sig : dep_signals->items()) {
+    if (!is_aborted(sig)) ++pending_dependents;
+  }
+  if (pending_dependents > dep_signals_to_abort.capacity()) {
+    if (!lsf::typescript::activation::admit_native_object(cx, dependents_owner.lease())) return false;
+    if (!dep_signals_to_abort.reserve(pending_dependents)) {
+      JS_ReportOutOfMemory(cx);
+      return false;
+    }
+  }
+  for (auto const &sig : dep_signals->items()) {
+    RootedObject signal(cx, sig);
+    if (!is_aborted(signal)) dep_signals_to_abort.infallibleAppend(signal);
+  }
+
+  // The normalized reason is non-undefined: these slot writes cannot allocate
+  // or execute JS. Every dependent is already aborted when the root steps run.
+  if (!set_reason(cx, self, propagated_reason)) return false;
+  for (auto &sig : dep_signals_to_abort) {
+    RootedObject signal(cx, sig);
+    if (!set_reason(cx, signal, propagated_reason)) return false;
+  }
+
+  // Finish accepted dependent work without running JS with a pending exception.
+  // Keep the first catchable failure and its original stack in one rooted frame.
+  // An uncatchable failure fences further work and must not be hidden by it.
+  mozilla::Maybe<JS::AutoSaveExceptionState> first_failure;
+  auto run_steps = [&](HandleObject signal) {
+    const bool succeeded = run_abort_steps(cx, signal);
+    if (succeeded && !JS_IsExceptionPending(cx)) return true;
+    if (!JS_IsExceptionPending(cx)) {
+      if (first_failure) first_failure->drop();
+      return false;
+    }
+    if (!first_failure) first_failure.emplace(cx);
+    else JS_ClearPendingException(cx);
+    return true;
+  };
+  if (!run_steps(self)) return false;
+  for (auto &sig : dep_signals_to_abort) {
+    RootedObject signal(cx, sig);
+    if (!run_steps(signal)) return false;
+  }
+  if (first_failure) {
+    first_failure->restore();
+    return false;
+  }
+  return true;
+}
+
+''', 'admitted-fanout-before-abort-publication-and-preserved-first-failure')
     source = replace_once(source,
         b'  RootedObject event(cx, Event::create(cx, type_val, JS::NullHandleValue));\n'
         b'  RootedValue event_val(cx, JS::ObjectValue(*event));\n',
@@ -92,11 +160,6 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
         b'  if (!event) return false;\n'
         b'  RootedValue event_val(cx, JS::ObjectValue(*event));\n',
         'abort-event-allocation-before-dereference')
-    source = replace_once(source,
-        b'  run_abort_steps(cx, self);\n',
-        b'  // With no newly aborted dependents there is no later abort work to skip.\n'
-        b'  if (!run_abort_steps(cx, self) && dep_signals_to_abort.empty()) return false;\n',
-        'preserve-root-abort-error-when-no-dependent-work-remains')
     return source, {'format': 'latent.typescript.abort-timeout-source-derivation.v1',
         'starlingCommit': STARLING_COMMIT, 'originalSource': identity({PATH: raw}),
         'derivedSource': identity({PATH: source}),
@@ -114,6 +177,12 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
         'rootAbortFailureWithoutNewDependents': 'propagate-original-failure',
         'rootReasonAllocationFailure': 'return-before-direct-reason-slot-write',
         'dependentAbortReason': 'rooted-root-reason-identity',
+        'dependentFanoutAdmission': 'before-vector-growth-and-reason-publication',
+        'dependentFanoutOwner': 'one-original-native-count-per-heap-frame-not-byte-accurate',
+        'dependentFanoutRetirement': 'frame-unwind-then-safe-host-ack',
+        'defaultReasonReentrancy': 'first-completed-abort-wins',
+        'catchableAbortStepFailure': 'drain-dependents-then-restore-first-exception-and-stack',
+        'uncatchableAbortStepFailure': 'fence-without-restoring-earlier-catchable-failure',
         'abortEventAllocationFailure': 'return-after-original-algorithm-cleanup',
         'dependentAbortAndReasonAllocationFailures': 'not-qualified',
         'timerOrResultOwnerRetirement': 'same-original-host-stop-subtask-drop-acknowledgements',

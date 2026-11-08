@@ -58,6 +58,11 @@ ABORT_ANY_VECTORS = (('abort-any-frames', 24, 'abort-any:80:nested:12:ordered'),
 ABORT_DEFAULT_VECTORS = (('abort-default-reason', 26, 'abort-default:shared:2:thrown'),
                          ('abort-default-fresh', 26, 'abort-default:shared:2:thrown'))
 
+ABORT_FANOUT_VECTORS = (('abort-fanout', 27, 'abort-fanout:9:ordered'),
+                        ('abort-fanout-refusal', 28, 'abort-fanout:refusal:unchanged:recovered'),
+                        ('abort-fanout-default-reentry', 29, 'abort-fanout:default-reentry:first-wins'),
+                        ('abort-fanout-fresh', 27, 'abort-fanout:9:ordered'))
+
 
 def project(directory: Path) -> Path:
     app = compiler_project(directory)
@@ -281,6 +286,8 @@ def execute(artifact, native, output):
                   for name, mode, expected in ABORT_ANY_VECTORS),
                 *((name, mode, '/conformance/json', expected, 0)
                   for name, mode, expected in ABORT_DEFAULT_VECTORS),
+                *((name, mode, '/conformance/json', expected, 0)
+                  for name, mode, expected in ABORT_FANOUT_VECTORS),
                 ('json', 0, '/conformance/json', '1:200:'+json_bytes(DOMAIN).decode()+':used', 1),
                 ('http404', 0, '/conformance/status/404',
                     '1:404:'+json_bytes({'status':404, 'message':'domain-error'}).decode()+':used', 1),
