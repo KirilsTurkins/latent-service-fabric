@@ -81,6 +81,14 @@ final class FixtureCodecTest {
                 rejected++;
             }
         }
+        var legacy = new Management.CapabilityResourceUsage("node", Map.of("stream_owners", 2L, "stream_connections", 2L), List.of());
+        var absent = Wire.toWire(legacy);
+        if (absent.hasStreamQuarantinedConnections() || Wire.fromWire(absent).streamQuarantinedConnections().isPresent())
+            throw new AssertionError("legacy constructor must keep quarantine absent");
+        var zero = new Management.CapabilityResourceUsage(legacy.scope(), legacy.counters(), legacy.unavailable(), Optional.of(0L));
+        var zeroWire = Wire.toWire(zero);
+        if (!zeroWire.hasStreamQuarantinedConnections() || !Wire.fromWire(zeroWire).streamQuarantinedConnections().equals(Optional.of(0L)))
+            throw new AssertionError("observed zero must retain presence");
         if (count != 63 || rejected != 1) throw new AssertionError("incomplete shared protobuf cases " + count + "/" + rejected);
         System.out.println("Java shared protobuf cases: " + count + "; contradictory oneof rejected: " + rejected);
     }

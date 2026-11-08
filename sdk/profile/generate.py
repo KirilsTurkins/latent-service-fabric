@@ -107,6 +107,12 @@ def read_contract():
                 raise ValueError("unknown field type " + kind)
             if kind in messages and not field.get("required") and not field.get("repeated"):
                 field["optional"] = True
+    for name, omitted in profile.get("legacy_constructors", {}).items():
+        fields = messages.get(name)
+        if (not isinstance(omitted, list) or not omitted or not fields
+                or [field["name"] for field in fields[-len(omitted):]] != omitted
+                or not all(field.get("optional") for field in fields[-len(omitted):])):
+            raise ValueError("legacy constructor must omit only declared trailing optional fields: " + name)
     ordered = {}
 
     def visit(name):
@@ -245,8 +251,14 @@ def java_models(profile, messages, enums):
         output += [f"        public static final {name} {label} = new {name}({number});" for label, number in values.items()]
         output += ["    }", ""]
     for name, fields in messages.items():
+        omitted = profile.get("legacy_constructors", {}).get(name, [])
         output += [f"    public record {name}("]
-        output += [f"            {type_name(field, 'java', enums)} {camel(field['name'])}{',' if position < len(fields) - 1 else ') { }'}" for position, field in enumerate(fields)]
+        output += [f"            {type_name(field, 'java', enums)} {camel(field['name'])}{',' if position < len(fields) - 1 else (') {' if omitted else ') { }')}" for position, field in enumerate(fields)]
+        if omitted:
+            retained = fields[:-len(omitted)]
+            arguments = ", ".join(f"{type_name(field, 'java', enums)} {camel(field['name'])}" for field in retained)
+            values = ", ".join([camel(field["name"]) for field in retained] + ["Optional.empty()"] * len(omitted))
+            output += [f"        public {name}({arguments}) {{", f"            this({values});", "        }", "    }"]
         output += [""]
     output += ["    public record ClientResponse<Response>(Response value, ResponseMetadata metadata) { }", "", "    public interface ClientProfile {"]
     for operation in profile["operations"]:
@@ -281,8 +293,16 @@ def dotnet_models(profile, messages, enums):
     for name, fields in messages.items():
         output += [f"/// <summary>Transport-neutral {name}; see the shared client profile for authority and lifetime rules.</summary>"]
         output += [f'/// <param name="{pascal(field["name"])}">The exact {field["name"]} value with preserved presence.</param>' for field in fields]
+        omitted = profile.get("legacy_constructors", {}).get(name, [])
         output += [f"public sealed record {name}("]
-        output += [f"    {type_name(field, 'dotnet', enums)} {pascal(field['name'])}{',' if position < len(fields) - 1 else ');'}" for position, field in enumerate(fields)]
+        output += [f"    {type_name(field, 'dotnet', enums)} {pascal(field['name'])}{',' if position < len(fields) - 1 else (')' if omitted else ');')}" for position, field in enumerate(fields)]
+        if omitted:
+            retained = fields[:-len(omitted)]
+            arguments = ", ".join(f"{type_name(field, 'dotnet', enums)} {pascal(field['name'])}" for field in retained)
+            values = ", ".join([pascal(field["name"]) for field in retained] + ["null"] * len(omitted))
+            output += ["{", "    /// <summary>Constructs the previous shape with the new observations absent.</summary>"]
+            output += [f'    /// <param name="{pascal(field["name"])}">The original {field["name"]} value.</param>' for field in retained]
+            output += [f"    public {name}({arguments}) : this({values}) {{ }}", "}"]
         output += [""]
     output += ["/// <summary>A fully owned unary response and independent recovery metadata.</summary>",
                '/// <typeparam name="Response">The response model.</typeparam>',

@@ -40,6 +40,22 @@ internal static partial class Program
             catch (Exception failure) { throw new InvalidOperationException("shared fixture failed: " + scenario.GetProperty("name").GetString(), failure); }
             count++;
         }
+        var legacy = new Profile.CapabilityResourceUsage("node", new Dictionary<string, ulong>
+            { ["stream_owners"] = 2, ["stream_connections"] = 2 }, Array.Empty<string>());
+        var absent = (Latent.Control.V1.CapabilityResourceUsage)ProfileCodec.ToWire(legacy, new Latent.Control.V1.CapabilityResourceUsage());
+        Check(!absent.HasStreamQuarantinedConnections, "legacy constructor manufactured zero");
+        Check(((Profile.CapabilityResourceUsage)ProfileCodec.FromWire(absent, typeof(Profile.CapabilityResourceUsage)))
+            .StreamQuarantinedConnections is null, "older payload lost absence");
+        var zero = legacy with { StreamQuarantinedConnections = 0 };
+        var zeroWire = (Latent.Control.V1.CapabilityResourceUsage)ProfileCodec.ToWire(zero, new Latent.Control.V1.CapabilityResourceUsage());
+        Check(zeroWire.HasStreamQuarantinedConnections, "observed zero lost presence");
+        Check(((Profile.CapabilityResourceUsage)ProfileCodec.FromWire(zeroWire, typeof(Profile.CapabilityResourceUsage)))
+            .StreamQuarantinedConnections == 0, "observed zero changed during decoding");
+        var retained = legacy with { StreamQuarantinedConnections = 1 };
+        var retainedWire = (Latent.Control.V1.CapabilityResourceUsage)ProfileCodec.ToWire(retained, new Latent.Control.V1.CapabilityResourceUsage());
+        Check(retainedWire.HasStreamQuarantinedConnections, "retained count lost presence");
+        Check(((Profile.CapabilityResourceUsage)ProfileCodec.FromWire(retainedWire, typeof(Profile.CapabilityResourceUsage)))
+            .StreamQuarantinedConnections == 1, "retained count changed during decoding");
         Check(count == 64, "not all shared protobuf fixtures executed");
         Console.WriteLine($"PASS SharedVectors: {count} authoritative protobuf cases");
     }
@@ -70,7 +86,9 @@ internal static partial class Program
             return result;
         }
         if (missing) return null;
-        ConstructorInfo constructor = target.GetConstructors().Single();
+        ConstructorInfo[] constructors = target.GetConstructors();
+        int arity = constructors.Max(candidate => candidate.GetParameters().Length);
+        ConstructorInfo constructor = constructors.Single(candidate => candidate.GetParameters().Length == arity);
         object?[] values = constructor.GetParameters().Select(parameter =>
         {
             string name = JsonNamingPolicy.SnakeCaseLower.ConvertName(parameter.Name!);

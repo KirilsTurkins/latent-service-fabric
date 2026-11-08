@@ -343,7 +343,11 @@ public final class Management {
             String scope,
             Map<String, Long> counters,
             List<String> unavailable,
-            Optional<Long> streamQuarantinedConnections) { }
+            Optional<Long> streamQuarantinedConnections) {
+        public CapabilityResourceUsage(String scope, Map<String, Long> counters, List<String> unavailable) {
+            this(scope, counters, unavailable, Optional.empty());
+        }
+    }
 
     public record ListCapabilitiesResponse(
             List<CapabilityDescriptor> capabilities,

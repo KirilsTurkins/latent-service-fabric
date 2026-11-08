@@ -638,7 +638,14 @@ public sealed record CapabilityResourceUsage(
     string Scope,
     IReadOnlyDictionary<string, ulong> Counters,
     IReadOnlyList<string> Unavailable,
-    ulong? StreamQuarantinedConnections);
+    ulong? StreamQuarantinedConnections)
+{
+    /// <summary>Constructs the previous shape with the new observations absent.</summary>
+    /// <param name="Scope">The original scope value.</param>
+    /// <param name="Counters">The original counters value.</param>
+    /// <param name="Unavailable">The original unavailable value.</param>
+    public CapabilityResourceUsage(string Scope, IReadOnlyDictionary<string, ulong> Counters, IReadOnlyList<string> Unavailable) : this(Scope, Counters, Unavailable, null) { }
+}
 
 /// <summary>Transport-neutral ListCapabilitiesResponse; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="Capabilities">The exact capabilities value with preserved presence.</param>
