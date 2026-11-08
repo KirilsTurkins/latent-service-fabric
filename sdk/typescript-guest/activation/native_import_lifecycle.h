@@ -107,6 +107,7 @@ public:
     if (phase_ == Phase::Retired || phase_ == Phase::Retiring) return true;
     if (phase_ == Phase::Empty || phase_ == Phase::Lifting) return invalid(cx);
     cancelled_ = true;
+    if (subtask_.uncertain()) return invalid(cx);
     if (subtask_.physical()) {
       if (!subtask_.cancel(cx)) return false;
       if (subtask_.pending()) { phase_ = Phase::Pending; return true; }
@@ -129,7 +130,7 @@ public:
     return true;
   }
   bool physicalRetirementAcknowledged(JSContext* cx) {
-    if (phase_ != Phase::Retiring || subtask_.physical()) return invalid(cx);
+    if (phase_ != Phase::Retiring || subtask_.unresolved()) return invalid(cx);
     if (rollback_pending_) {
       if (!accounting_.rollback(cx, work_, native_, result_)) return false;
       rollback_pending_ = false;
@@ -140,7 +141,7 @@ public:
     return true;
   }
   bool releaseAfterPhysicalDestruction(JSContext* cx, Retirement& retirement) {
-    if ((phase_ != Phase::Retiring && phase_ != Phase::Retired) || subtask_.physical() || rollback_pending_ ||
+    if ((phase_ != Phase::Retiring && phase_ != Phase::Retired) || subtask_.unresolved() || rollback_pending_ ||
         work_.task_live || work_.queued_live) return invalid(cx);
     retirement = {native_, result_};
     native_ = {}; result_ = {};
@@ -149,6 +150,7 @@ public:
   }
   Phase phase() const { return phase_; }
   bool hasPhysicalSubtask() const { return subtask_.physical(); }
+  bool hasUncertainSubtask() const { return subtask_.uncertain(); }
   bool hasReturnedResult() const { return subtask_.resultReady(); }
   bool resultMayBeRead() const { return phase_ == Phase::Lifting && !cancelled_; }
 };

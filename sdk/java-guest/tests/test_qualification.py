@@ -320,6 +320,10 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
             self.assertNotIn("import java.util.Timer;", mapped)
             self.assertEqual(len(report["sourceInputs"]), 8)
             self.assertEqual(report["iterations"], 3)
+            self.assertEqual(fibers.STANDARD_TIMER_ACTIVE_OWNER_CASES[-11:], (
+                "manage-before", "manage-close-refused", "manage-close-lost",
+                "start-before", "start-uncertain", "start-accepted", "start-close-refused", "start-close-lost",
+                "start-finished-ok", "start-finished-refused", "start-finished-lost"))
             self.assertFalse(report["componentExecutionPerformed"])
             self.assertFalse(report["actualGuestBindingsUsed"])
 

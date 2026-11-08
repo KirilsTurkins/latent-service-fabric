@@ -2,22 +2,42 @@
 use super::latent::runtime::activation as runtime;
 use std::cell::Cell;
 
-thread_local! {
-    static CONTINUATION: Cell<Option<runtime::Token>> = const { Cell::new(None) };
+#[derive(Clone, Copy)]
+enum Continuation {
+    None,
+    Fenced,
+    Owned(runtime::Token),
 }
 
-pub fn continuation() -> Option<runtime::Token> {
-    CONTINUATION.with(Cell::get)
+thread_local! {
+    static CONTINUATION: Cell<Continuation> = const { Cell::new(Continuation::None) };
+}
+
+pub fn continuation() -> Result<Option<runtime::Token>, runtime::Error> {
+    match CONTINUATION.with(Cell::get) {
+        Continuation::None => Ok(None),
+        Continuation::Fenced => Err(runtime::Error::InvalidState),
+        Continuation::Owned(token) => Ok(Some(token)),
+    }
 }
 
 pub fn set_continuation(owner: Option<runtime::Token>) {
-    CONTINUATION.with(|current| current.set(owner));
+    CONTINUATION.with(|current| {
+        current.set(match owner {
+            Some(token) => Continuation::Owned(token),
+            None => Continuation::None,
+        })
+    });
+}
+
+pub fn fence_continuation() {
+    CONTINUATION.with(|current| current.set(Continuation::Fenced));
 }
 
 pub struct Owner(runtime::Token);
 impl Owner {
     pub fn new(kind: runtime::OwnerKind) -> Result<Self, runtime::Error> {
-        runtime::register(kind, continuation()).map(Self)
+        runtime::register(kind, continuation()?).map(Self)
     }
 
     pub(crate) fn token(&self) -> runtime::Token {

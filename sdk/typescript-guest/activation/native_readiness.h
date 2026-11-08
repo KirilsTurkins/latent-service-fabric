@@ -16,6 +16,9 @@ class Subtask final {
   jobs_subtask_t handle_ = 0;
   jobs_subtask_state_t state_ = JOBS_SUBTASK_RETURNED;
   bool live_ = false;
+  // A malformed start response is not proof of a live host subtask, but
+  // neither does it prove that the host never acquired the result buffer.
+  bool uncertain_ = false;
   bool joined_ = false;
   bool cancel_requested_ = false;
   ReadinessSet* owner_set_ = nullptr;
@@ -41,10 +44,17 @@ public:
   Subtask& operator=(const Subtask&) = delete;
 
   bool started(JSContext* cx, jobs_subtask_status_t status) {
-    if (live_) return invalid(cx);
-    state_ = JOBS_SUBTASK_STATE(status);
-    handle_ = JOBS_SUBTASK_HANDLE(status);
-    if (!known(state_) || (!returned(state_) && !handle_)) return invalid(cx);
+    if (live_ || uncertain_) return invalid(cx);
+    const auto state = JOBS_SUBTASK_STATE(status);
+    const auto handle = JOBS_SUBTASK_HANDLE(status);
+    if (!known(state) || (!returned(state) && !handle)) {
+      // The host call already returned. Keep this result/capture owner in an
+      // unresolved state without guessing a handle or issuing another call.
+      uncertain_ = true;
+      return invalid(cx);
+    }
+    state_ = state;
+    handle_ = handle;
     live_ = true;
     joined_ = false;
     cancel_requested_ = false;
@@ -70,6 +80,7 @@ public:
     return true;
   }
   bool cancel(JSContext* cx) {
+    if (uncertain_) return invalid(cx);
     if (!live_) return true;
     if (returned(state_)) return true;
     if (cancel_requested_) return true;
@@ -96,6 +107,8 @@ public:
   }
   bool pending() const { return live_ && !returned(state_); }
   bool physical() const { return live_; }
+  bool uncertain() const { return uncertain_; }
+  bool unresolved() const { return live_ || uncertain_; }
   bool matches(const jobs_event_t& event) const {
     return live_ && joined_ && handle_ && event.event == JOBS_EVENT_SUBTASK && event.waitable == handle_;
   }
@@ -143,6 +156,7 @@ public:
     return true;
   }
   bool join(JSContext* cx, Subtask& subtask) {
+    if (subtask.uncertain()) return Subtask::invalid(cx);
     if (!subtask.pending()) return subtask.physical();
     if (subtask.owner_set_ || !initialize(cx) || !subtask.join(cx, set_)) return false;
     // Intrusive registration allocates no container. The stable subtask/result
@@ -196,6 +210,7 @@ public:
 };
 
 inline bool Subtask::drop(JSContext* cx) {
+  if (uncertain_) return invalid(cx);
   if (!live_) return true;
   if (!returned(state_)) return invalid(cx);
   // Remove the actual waitable from dispatch first. Neither unjoin nor a

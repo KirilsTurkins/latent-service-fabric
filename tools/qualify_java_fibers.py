@@ -304,6 +304,9 @@ STANDARD_TIMER_ACTIVE_OWNER_CASES = (
     "fixed-rate-reschedule", "fixed-delay-reschedule", "refused", "lost", "callback-refused", "callback-lost",
     "periodic-callback-refused", "periodic-callback-lost", "cancel-refused", "cancel-lost",
     "callback-ack", "clear-queue-ack", "cancelled-head-ack", "purge-ack",
+    "manage-before", "manage-close-refused", "manage-close-lost",
+    "start-before", "start-uncertain", "start-accepted", "start-close-refused", "start-close-lost",
+    "start-finished-ok", "start-finished-refused", "start-finished-lost",
 )
 
 
@@ -388,6 +391,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'ScheduledPeriodicOwnerControl.java', 'ScheduledPeriodicRollbackSettlementControl.java',
         'ScheduledFutureResultSettlementControl.java', 'CompletableFutureResultSettlementControl.java',
         'CompletableFutureQueuedRollbackControl.java', 'ManagedExecutorQueuedSettlementControl.java',
+        'ScheduledQueuedSettlementControl.java',
         'dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
     reference = private / 'ScheduledStoppedReferenceControl.java'
     periodic_reference = private / 'ScheduledPeriodicReferenceControl.java'
@@ -438,6 +442,12 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
                 'java', '-Xmx256m', '-cp', output, 'ManagedExecutorQueuedSettlementControl', path, fault).strip()
             if result != 'MANAGED_EXECUTOR_QUEUED_SETTLEMENT PASS ' + path + ' ' + fault:
                 raise ValueError('Java managed executor queued settlement control did not complete')
+    for path in ('preentry', 'insert-before', 'insert-after', 'requeue', 'cancel', 'reentry-model'):
+        for fault in ('denied', 'lost'):
+            result = compiler.run('scheduled-queued-settlement-' + path + '-' + fault,
+                'java', '-Xmx256m', '-cp', output, 'ScheduledQueuedSettlementControl', path, fault).strip()
+            if result != 'SCHEDULED_QUEUED_SETTLEMENT PASS ' + path + ' ' + fault:
+                raise ValueError('Java scheduled queued settlement control did not complete')
     result = compiler.run('scheduled-stopped-source-control', 'java', '-Xmx256m', '-cp', output,
         'ScheduledStoppedReferenceControl').strip()
     if result != expected_stopped: raise ValueError('Java stopped scheduled source differs from reference')

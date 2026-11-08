@@ -391,9 +391,10 @@ type CapabilityInspectionRevision struct {
 }
 
 type CapabilityResourceUsage struct {
-	Scope       string
-	Counters    map[string]uint64
-	Unavailable []string
+	Scope                        string
+	Counters                     map[string]uint64
+	Unavailable                  []string
+	StreamQuarantinedConnections *uint64
 }
 
 type ListCapabilitiesResponse struct {

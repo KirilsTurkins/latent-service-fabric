@@ -1216,6 +1216,12 @@ impl ActivationBudget {
     fn lock_state(&self) -> MutexGuard<'_, AccountingState> {
         self.inner.lock_state()
     }
+
+    #[cfg(test)]
+    pub(crate) fn with_test_accounting_lock<T>(&self, action: impl FnOnce() -> T) -> T {
+        let _state = self.lock_state();
+        action()
+    }
 }
 
 impl Clone for ActivationBudget {

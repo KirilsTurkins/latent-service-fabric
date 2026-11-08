@@ -12,11 +12,20 @@ public final class Activation {
     private static int queued, executors, queuedAttempts;
     private static volatile boolean closing;
     private static boolean poisoned;
-    private static Lease failedQueued, lastFailedQueued;
+    private static Lease failedQueued, lastFailedQueued, lastFailedExecutor;
     public static volatile String failQueuedSettlement;
     public static volatile CountDownLatch queuedSettlementEntered, queuedSettlementRelease;
     public static volatile Runnable onQueuedSettlement;
     public static String denyNext;
+    public static String failManagedStart;
+    public static boolean failManage;
+    public static String failExecutorSettlement;
+    public static IllegalStateException startFailure;
+    public static volatile Thread lastWorker, retainedStart;
+    public static volatile ManagedPool lastPool;
+    public static volatile CountDownLatch executorSettlementEntered, executorSettlementRelease;
+    private static int executorAttempts, failedOwnerLinks;
+    public static volatile Throwable lastWorkerFailure;
 
     public interface ManagedPool {
         boolean hasPendingWork();
@@ -29,7 +38,25 @@ public final class Activation {
         private boolean hostSettled;
         Lease(Bindings.LatentRuntimeActivationOwnerKind kind) { this.kind = kind; }
         @Override public void close() {
+            if (kind == Bindings.LatentRuntimeActivationOwnerKind.Executor
+                    && Thread.currentThread() == lastWorker && executorSettlementEntered != null) {
+                executorSettlementEntered.countDown();
+                try {
+                    if (!executorSettlementRelease.await(4, TimeUnit.SECONDS))
+                        throw new AssertionError("executor-settlement-release-timeout");
+                } catch (InterruptedException error) { throw new AssertionError(error); }
+            }
             synchronized (Activation.class) {
+                if (kind == Bindings.LatentRuntimeActivationOwnerKind.Executor) {
+                    executorAttempts++;
+                    if (hostSettled) throw new AssertionError("duplicate-host-settlement");
+                    if (failExecutorSettlement != null) {
+                        String selected = failExecutorSettlement; failExecutorSettlement = null;
+                        lastFailedExecutor = this;
+                        if (selected.equals("lost")) { hostSettled = true; executors--; }
+                        throw new IllegalStateException("source-executor-settlement-" + selected);
+                    }
+                }
                 if (closed) throw new AssertionError("duplicate-source-owner-retirement");
                 if (kind == Bindings.LatentRuntimeActivationOwnerKind.QueuedWork) {
                     queuedAttempts++;
@@ -67,9 +94,40 @@ public final class Activation {
         else executors++;
         return new Lease(kind);
     }
-    public static synchronized void manage(ManagedPool pool) { pools.add(pool); }
-    public static synchronized void startManaged(Thread worker, ManagedPool pool) { workers.add(worker); worker.start(); }
-    public static boolean alive(Thread worker) { return worker.isAlive(); }
+    public static synchronized void manage(ManagedPool pool) {
+        lastPool = pool;
+        if (failManage) { failManage = false; throw startFailure; }
+        pools.add(pool);
+    }
+    public static synchronized boolean poolRegistered(ManagedPool pool) { return pools.contains(pool); }
+    public static void startManaged(Thread worker, ManagedPool pool) {
+        lastWorker = worker;
+        String failure = failManagedStart; failManagedStart = null;
+        if ("before".equals(failure)) throw startFailure;
+        synchronized (Activation.class) { workers.add(worker); }
+        if ("uncertain".equals(failure)) { retainedStart = worker; throw startFailure; }
+        if (failure != null && failure.startsWith("finished-"))
+            worker.setUncaughtExceptionHandler((thread, error) -> lastWorkerFailure = error);
+        worker.start();
+        if ("accepted".equals(failure) || failure != null && failure.startsWith("finished-")) {
+            long end = System.nanoTime() + 4_000_000_000L;
+            while (worker.getState() != Thread.State.WAITING && System.nanoTime() < end) {
+                try { Thread.sleep(1); } catch (InterruptedException error) { throw new AssertionError(error); }
+            }
+            if (worker.getState() != Thread.State.WAITING) throw new AssertionError("source-worker-not-waiting");
+            if (failure.startsWith("finished-")) {
+                pool.closeAtRoot();
+                try { worker.join(5000); } catch (InterruptedException error) { throw new AssertionError(error); }
+                if (worker.isAlive() || (failure.equals("finished-ok") ? lastWorkerFailure != null : lastWorkerFailure == null))
+                    throw new AssertionError("source-worker-cleanup-missing");
+            }
+            throw startFailure;
+        }
+    }
+    public static boolean alive(Thread worker) { return worker == retainedStart || worker.isAlive(); }
+    public static synchronized int executorAttempts() { return executorAttempts; }
+    public static synchronized int failedOwnerLinks() { return failedOwnerLinks; }
+    public static synchronized int executors() { return executors; }
     // The separate real-Activation control verifies physical-owner retirement.
     public static void unmanageRetired(ManagedPool pool) { }
     public static boolean closing() { return closing; }
@@ -81,9 +139,12 @@ public final class Activation {
     public static synchronized boolean retainedFailedQueued() {
         return failedQueued != null && failedQueued == lastFailedQueued;
     }
+    public static synchronized boolean retainedFailedExecutor() {
+        return failedQueued != null && failedQueued == lastFailedExecutor;
+    }
     public static synchronized void fenceUncertainQueuedWorkSettlement(Lease owner) {
         if (failedQueued != null) throw new AssertionError("duplicate-failed-owner");
-        poisoned = true; failedQueued = owner;
+        poisoned = true; failedQueued = owner; failedOwnerLinks++;
     }
     public static synchronized void fenceUncertainResultSettlement() { poisoned = true; }
     public static synchronized boolean retireIfIdle(ManagedPool pool) {

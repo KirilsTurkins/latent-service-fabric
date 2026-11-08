@@ -125,3 +125,18 @@ negative. That result predates the PR's CI fixes and merge; it is not an
 exact-head qualification of current Development, a full race matrix or an RSS
 bound. Instrumented observer backing and the actual future storage remain
 separately charged to the original activation.
+
+## Root stop during overlapping timer operations
+
+The signed overlap owner also exercises a root cancellation while two Reset
+calls overlap, and the original root deadline while Reset and Stop overlap. The
+development witness retains the original timer-next owner until the real root
+stop and requires both callers to be parked before that stop is observed. A
+separate fixed record is emitted only after the original TimerWait physically
+drops. Each case requires the expected cancellation or deadline outcome and idle
+Store, provider and quota observations; a fresh activation follows. The
+original Task16, Wait4 and Timer2 limits remain.
+
+This specifies a bounded, instrumented qualification, not a claim that it has
+executed, that every cancellation interleaving is covered, or that process RSS
+and kernel final-free have been measured.

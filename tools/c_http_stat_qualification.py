@@ -32,7 +32,8 @@ from tools.standard_http.peer import Peer
 from tools.standard_http.vectors import DOMAIN, head, json_bytes
 from tools.static_api.node import policy
 
-CASES = ('normal', 'denied', 'not-found', 'fresh', 'range', 'range-ignored', 'range-denied')
+CASES = ('normal', 'denied', 'not-found', 'fresh', 'range', 'range-ignored', 'range-denied',
+         'range-unsolicited', 'range-before')
 PROBE = 'sdk/c-guest/runtime-fixtures/libfetch/stat-probe.c'
 SELF = 'tools/c_http_stat_qualification.py'
 WORKFLOW = '.github/workflows/c-http-stat-qualification.yml'
@@ -47,26 +48,50 @@ def partial_response(request):
     return head(206, len(body) - 5, headers=((b'Content-Range', value),)) + body[5:]
 
 
+def invalid_partial_response(request, *, unsolicited):
+    require(request.method == b'GET', 'c-invalid-partial-method')
+    if unsolicited:
+        require(b'range' not in request.headers, 'c-unsolicited-request-has-range')
+        value = b'bytes 0-3/*'
+    else:
+        require(request.headers.get(b'range') == b'bytes=5-', 'c-before-exact-range-request')
+        value = b'bytes 0-3/4'
+    return head(206, 4, headers=((b'Content-Range', value),)) + b'abcd'
+
+
 class RangePeer(Peer):
-    """Extend the existing authenticated peer with one fixed single range."""
+    """Serve the selected valid and invalid ranges on existing fixture paths."""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.range_requests = 0
+        self.unsolicited_requests = 0
+        self.early_range_requests = 0
 
     def _start_request(self, stream, record):
         super()._start_request(stream, record)
         if record.parser.method == b'GET':
-            require(record.parser.headers.get(b'range') == b'bytes=5-', 'c-range-exact-request')
-            self.range_requests += 1
+            if record.vector.identity == 'domain-json' and b'range' not in record.parser.headers:
+                self.unsolicited_requests += 1
+            else:
+                require(record.parser.headers.get(b'range') == b'bytes=5-', 'c-range-exact-request')
+                self.range_requests += 1
+                if record.vector.identity == 'method-bytes':
+                    self.early_range_requests += 1
 
     def _complete_request(self, stream, record):
-        if record.vector.identity != 'domain-json' or record.parser.method != b'GET':
+        if record.parser.method != b'GET' or record.vector.identity not in ('domain-json', 'method-bytes'):
             return super()._complete_request(stream, record)
         body = record.parser.body
         record.observation.update(state='request-complete', bodyBytes=len(body),
                                   bodySha256='sha256:' + hashlib.sha256(body).hexdigest())
         self._event('request-complete', record, bodyBytes=len(body))
-        record.output, record.suffix = partial_response(record.parser), b''
+        if record.vector.identity == 'method-bytes':
+            output = invalid_partial_response(record.parser, unsolicited=False)
+        elif b'range' not in record.parser.headers:
+            output = invalid_partial_response(record.parser, unsolicited=True)
+        else:
+            output = partial_response(record.parser)
+        record.output, record.suffix = output, b''
         record.phase = 'sending'
         self._set_events(stream, record, selectors.EVENT_READ | selectors.EVENT_WRITE)
 
@@ -100,7 +125,8 @@ def install(client, node, target, origin):
 def cell(client, probe, target, peer, output, case):
     vectors = {'normal': 'domain-json', 'denied': 'method-bytes',
                'not-found': 'http-404', 'fresh': 'domain-json', 'range': 'domain-json',
-               'range-ignored': 'response-boundary', 'range-denied': 'http-404'}
+               'range-ignored': 'response-boundary', 'range-denied': 'http-404',
+               'range-unsolicited': 'domain-json', 'range-before': 'method-bytes'}
     require(case in CASES, 'c-stat-closed-case-set')
     before, revision = peer.observation(), owner.selected_revision(client, target)
     validate(before)
@@ -131,6 +157,8 @@ def cell(client, probe, target, peer, output, case):
             'range': range_result(5, len(domain), domain[5:]),
             'range-ignored': range_result(0, 8192, b'x' * 8192),
             'range-denied': (3, [{'err': 'permission-denied'}]),
+            'range-unsolicited': (3, [{'err': 'invalid-content-range'}]),
+            'range-before': (3, [{'err': 'invalid-content-range'}]),
         }
         require(type(row['exitCode']) is int and (row['exitCode'], row['decoded']) == expected[case],
                 'c-stat-exact-ordinary-result')
@@ -221,11 +249,14 @@ def run_node(artifact, native, output, deadline):
             grants = install(client, node, target, peer.origin())
             target = deploy(client, source / 'deployment.json', target['publication'],
                             generation=str(target['generation']), grants=grants)
-            stage = 'seven-signed-head-and-range-cells'
+            stage = 'nine-signed-head-and-range-cells'
             record['cases'] = [cell(client, probe, target, peer, output, case) for case in CASES]
-            require(peer.observation()['startedRequests'] == 5 and peer.range_requests == 2,
-                    'c-stat-five-contacts-two-exact-ranges-no-denied-contact')
+            require(peer.observation()['startedRequests'] == 7 and peer.range_requests == 3
+                    and peer.unsolicited_requests == 1 and peer.early_range_requests == 1,
+                    'c-stat-seven-contacts-three-ranges-one-unsolicited-one-early')
             record['exactRangeRequests'] = peer.range_requests
+            record['unsolicitedRequests'] = peer.unsolicited_requests
+            record['earlyRangeRequests'] = peer.early_range_requests
             delete_all(client, [target['name']])
             record['afterDeletes'] = sample(client, probe, 'c-stat-after-deletes', 0)
             stop(client, node); record['nodeShutdown'] = stopped_record(node)
@@ -272,7 +303,7 @@ def qualify(args):
               'full690Qualified': False, 'fullCCostModelQualified': False,
               'publisherAuthenticated': False, 'releasePublished': False,
               'limits': {'parentSeconds': 1320, 'commandSeconds': 900, 'cleanupReserveSeconds': 5,
-                         'jobs': 2, 'components': 1, 'cells': 7, 'clientCalls': 384}}
+                         'jobs': 2, 'components': 1, 'cells': 9, 'clientCalls': 384}}
     stage = 'source'
     def source_inputs(capture=False):
         rows = http_sources(commands, output, capture=capture, runtime_profile=FETCH_PROFILE)
@@ -309,10 +340,10 @@ def qualify(args):
         c_capsule_build.build(project, artifact, native['capsule_contracts'], native['package'],
             'https://github.com/KirilsTurkins/latent-service-fabric', installed=installed, _deadline=commands.deadline)
         result['build'] = http_build_evidence(artifact, original, runtime_profile=FETCH_PROFILE)
-        stage = 'seven-signed-head-and-range-cells'
+        stage = 'nine-signed-head-and-range-cells'
         result['node'] = run_node(artifact, native, output / 'node', commands.deadline)
         require(result['node']['status'] == 'passed'
-                and [row['case'] for row in result['node']['cases']] == list(CASES), 'c-stat-exact-seven-outcomes')
+                and [row['case'] for row in result['node']['cases']] == list(CASES), 'c-stat-exact-nine-outcomes')
         require(helpers == source_inputs() and source_identity(ROOT) == source
                 and sdk == inventory(c_capsule_project.sdk_inputs(ROOT, threading=True))
                 and original == inventory(snapshot(project))

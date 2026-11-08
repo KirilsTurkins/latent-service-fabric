@@ -788,6 +788,7 @@ function rejects(action: () => unknown): void {
     check(value.tenantUsage!.counters["calls"]! == 0n, "redacted-capability-provider-inspection.tenant_usage.counters.1");
     check(value.tenantUsage!.unavailable.length == 1, "redacted-capability-provider-inspection.tenant_usage.unavailable.count");
     check(value.tenantUsage!.unavailable[0]! == "fixture-owner-unavailable", "redacted-capability-provider-inspection.tenant_usage.unavailable.0");
+    check(!(value.tenantUsage!.streamQuarantinedConnections !== undefined), "redacted-capability-provider-inspection.tenant_usage.stream_quarantined_connections.presence");
     check(!(value.nodeUsage !== undefined), "redacted-capability-provider-inspection.node_usage.presence");
     check(value.state == "sampled", "redacted-capability-provider-inspection.state");
 }
@@ -803,7 +804,40 @@ function rejects(action: () => unknown): void {
     check(value.nodeUsage!.unavailable.length == 2, "missing-provider-plan-not-zero-usage.node_usage.unavailable.count");
     check(value.nodeUsage!.unavailable[0]! == "provider-pools-no-retained-owner", "missing-provider-plan-not-zero-usage.node_usage.unavailable.0");
     check(value.nodeUsage!.unavailable[1]! == "audit-owner-not-configured", "missing-provider-plan-not-zero-usage.node_usage.unavailable.1");
+    check(!(value.nodeUsage!.streamQuarantinedConnections !== undefined), "missing-provider-plan-not-zero-usage.node_usage.stream_quarantined_connections.presence");
     check(value.state == "binding-plan-unavailable", "missing-provider-plan-not-zero-usage.state");
+}
+{
+    const value: Profile.ListCapabilitiesResponse = {capabilities: [], nodeUsage: {scope: "node", counters: {"stream_owners": 0n, "stream_connections": 0n}, unavailable: [], streamQuarantinedConnections: 0n}, state: "binding-plan-unavailable"};
+    check(value.capabilities.length == 0, "observed-stream-quarantine-zero.capabilities.count");
+    check(!(value.page !== undefined), "observed-stream-quarantine-zero.page.presence");
+    check(!(value.revision !== undefined), "observed-stream-quarantine-zero.revision.presence");
+    check(!(value.tenantUsage !== undefined), "observed-stream-quarantine-zero.tenant_usage.presence");
+    check(value.nodeUsage !== undefined, "observed-stream-quarantine-zero.node_usage.presence");
+    check(value.nodeUsage!.scope == "node", "observed-stream-quarantine-zero.node_usage.scope");
+    check(Object.keys(value.nodeUsage!.counters).length == 2, "observed-stream-quarantine-zero.node_usage.counters.count");
+    check(value.nodeUsage!.counters["stream_owners"]! == 0n, "observed-stream-quarantine-zero.node_usage.counters.0");
+    check(value.nodeUsage!.counters["stream_connections"]! == 0n, "observed-stream-quarantine-zero.node_usage.counters.1");
+    check(value.nodeUsage!.unavailable.length == 0, "observed-stream-quarantine-zero.node_usage.unavailable.count");
+    check(value.nodeUsage!.streamQuarantinedConnections !== undefined, "observed-stream-quarantine-zero.node_usage.stream_quarantined_connections.presence");
+    check(value.nodeUsage!.streamQuarantinedConnections! == 0n, "observed-stream-quarantine-zero.node_usage.stream_quarantined_connections");
+    check(value.state == "binding-plan-unavailable", "observed-stream-quarantine-zero.state");
+}
+{
+    const value: Profile.ListCapabilitiesResponse = {capabilities: [], nodeUsage: {scope: "node", counters: {"stream_owners": 3n, "stream_connections": 2n}, unavailable: [], streamQuarantinedConnections: 1n}, state: "binding-plan-unavailable"};
+    check(value.capabilities.length == 0, "observed-stream-quarantine-retained.capabilities.count");
+    check(!(value.page !== undefined), "observed-stream-quarantine-retained.page.presence");
+    check(!(value.revision !== undefined), "observed-stream-quarantine-retained.revision.presence");
+    check(!(value.tenantUsage !== undefined), "observed-stream-quarantine-retained.tenant_usage.presence");
+    check(value.nodeUsage !== undefined, "observed-stream-quarantine-retained.node_usage.presence");
+    check(value.nodeUsage!.scope == "node", "observed-stream-quarantine-retained.node_usage.scope");
+    check(Object.keys(value.nodeUsage!.counters).length == 2, "observed-stream-quarantine-retained.node_usage.counters.count");
+    check(value.nodeUsage!.counters["stream_owners"]! == 3n, "observed-stream-quarantine-retained.node_usage.counters.0");
+    check(value.nodeUsage!.counters["stream_connections"]! == 2n, "observed-stream-quarantine-retained.node_usage.counters.1");
+    check(value.nodeUsage!.unavailable.length == 0, "observed-stream-quarantine-retained.node_usage.unavailable.count");
+    check(value.nodeUsage!.streamQuarantinedConnections !== undefined, "observed-stream-quarantine-retained.node_usage.stream_quarantined_connections.presence");
+    check(value.nodeUsage!.streamQuarantinedConnections! == 1n, "observed-stream-quarantine-retained.node_usage.stream_quarantined_connections");
+    check(value.state == "binding-plan-unavailable", "observed-stream-quarantine-retained.state");
 }
 {
     const value: Profile.CapabilityInspectionCeiling = {operations: 0, inputBytes: 18446744073709551615n, outputBytes: 0n, wallTimeMillis: 18446744073709551615n};
@@ -1289,4 +1323,4 @@ rejects(() => Profile.formatU64Decimal(9007199254740992 as unknown as bigint));
 rejects(() => Profile.parseU64Decimal(1 as unknown as string));
 rejects(() => Profile.formatU64Decimal(-1n));
 rejects(() => Profile.formatU64Decimal(18446744073709551616n));
-console.log("shared profile vectors: 78");
+console.log("shared profile vectors: 80");

@@ -733,3 +733,19 @@ and the .NET generated-protocol lock follows the changed release definition.
 These protocol additions grant no maintenance authority: authenticated tenant
 scope, exact selection and fences, durable audit admission and native reference
 checks remain required.
+
+
+## Optional outbound-stream quarantine observation
+
+`CapabilityResourceUsage.stream_quarantined_connections` is an additive
+optional `uint64` at field 4. Node-authorized diagnostics may report the sampled
+count already included in stream owner and connection totals. Absent means no
+observation, including an older node; present zero is an actual sampled zero.
+Tenant usage never carries the field. Existing protobuf decoders discard the
+unknown tag, and the fixed counter map retains exactly its previous keys, so
+older closed-map CLI validation continues to accept the response. The six
+profile models preserve field presence; no new permission or readiness follows.
+
+The pinned Buf 1.72.0 descriptor contract and generated client profiles include
+this single optional field and its synthetic presence oneof. Existing field
+numbers, RPC signatures and counter keys are unchanged.
