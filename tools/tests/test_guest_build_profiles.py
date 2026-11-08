@@ -193,6 +193,52 @@ class GeneratorArchive(unittest.TestCase):
         self.assertTrue(body.closed)
         self.assertEqual(fetch.call_count, 2)
 
+    def test_primary_open_timeout_uses_the_pinned_asset(self):
+        fallback = io.BytesIO(b'asset')
+        with patch.object(install.urllib.request, 'urlopen', side_effect=[TimeoutError('open timed out'), fallback]) as fetch, \
+             contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(install.download_archive(), b'asset')
+        self.assertEqual(fetch.call_count, 2)
+        self.assertEqual(fetch.call_args_list[1].args[0].full_url, install.ASSET_URL)
+        self.assertTrue(fallback.closed)
+
+    def test_partial_read_timeout_closes_and_discards_primary_before_fallback(self):
+        class PartialThenTimeout(io.BytesIO):
+            def __init__(self):
+                super().__init__(b'partial')
+                self.calls = 0
+            def read(self, size=-1):
+                self.calls += 1
+                if self.calls > 1:
+                    raise TimeoutError('read timed out')
+                return super().read(size)
+
+        primary, fallback = PartialThenTimeout(), io.BytesIO(b'asset')
+        def open_response(request, *, timeout):
+            self.assertGreater(timeout, 0)
+            if request == install.URL:
+                return primary
+            self.assertEqual(request.full_url, install.ASSET_URL)
+            self.assertTrue(primary.closed)
+            return fallback
+        with patch.object(install.urllib.request, 'urlopen', side_effect=open_response) as fetch, \
+             contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(install.download_archive(), b'asset')
+        self.assertEqual(fetch.call_count, 2)
+        self.assertTrue(primary.closed and fallback.closed)
+
+    def test_fallback_read_timeout_is_not_retried(self):
+        class ReadTimeout(io.BytesIO):
+            def read(self, size=-1):
+                raise TimeoutError('fallback read timed out')
+        fallback = ReadTimeout()
+        with patch.object(install.urllib.request, 'urlopen', side_effect=[TimeoutError('primary timed out'), fallback]) as fetch, \
+             contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaisesRegex(TimeoutError, 'fallback read timed out'):
+                install.download_archive()
+        self.assertEqual(fetch.call_count, 2)
+        self.assertTrue(fallback.closed)
+
     def test_fallback_failure_is_not_retried(self):
         errors = [urllib.error.HTTPError(install.URL, 504, 'gateway timeout', {}, None),
                   urllib.error.HTTPError(install.ASSET_URL, 503, 'unavailable', {}, None)]
