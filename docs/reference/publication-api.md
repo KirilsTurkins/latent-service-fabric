@@ -6,6 +6,28 @@ digest still identifies executable bytes. A package digest identifies immutable
 package content, and a publication reference identifies its catalog association.
 None of these identifiers is an execution grant.
 
+## Development publication maintenance
+
+The [ReleaseService definition](../../api/proto/latent/control/v1/release.proto)
+also exposes four implemented publication-maintenance methods:
+
+| RPC | Operation |
+| --- | --- |
+| `GetPublicationRetention` | Read an authorized bounded target snapshot and its exact catalog fence. |
+| `MaintainPublications` | Explicit pin/unpin, visibility deletion or physical reclamation with original actor/operation/target identities and the required fences. |
+| `AssessPublicationReclamation` | Read-only bounded assessment of the original deletion selection; its potential accounting is not a deletion grant or measured freed blocks. |
+| `GetPublicationMaintenanceOperation` | Recover the original scoped operation kind/ID without inventing another mutation. |
+
+The [wire adapter](../../crates/latent-wire/src/management/release/maintenance.rs) and CLI
+compose these with current authorization, required durable audit and bounded
+response preflight. Generated clients alone do not supply those owners. Exact
+receipt replay still requires mutation audit capacity. Visibility removal,
+physical byte retirement and audit acknowledgement remain separate facts; an
+unknown/uncertain lookup is no nonexecution proof. Follow
+[the deletion workflow](../operations/publication-deletion.md) for actual commands,
+retained request fields and recovery, and
+[the native contract](publication-retention-pins.md) for format and capacity bounds.
+
 ## Release requests and results
 
 `PublicationRef` contains an exact `publication:sha256:` ID and its tenant.

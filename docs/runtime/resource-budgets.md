@@ -3,6 +3,8 @@
 This page describes basic execution accounting, the default budget profile. The
 [capability profile and conserved descendant budgets](descendant-budgets.md) add
 child/outbound/blob counters while preserving the defaults documented here.
+The same guide distinguishes explicit Phase 4 state/intent accounting from the
+Phase 3 profile; neither is selected by a caller-supplied amount.
 
 ## Budget representation
 

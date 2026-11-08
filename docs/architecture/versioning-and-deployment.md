@@ -219,6 +219,14 @@ under declared saturation. [Fixed migration](fixed-aggregate-offline-migration.m
 has an explicit stage, completion and separately authorized resume; generic
 namespace resume cannot replace its original checkpoint and review.
 
+A compatible engine dependency upgrade can still change the installed provider
+configuration identity. Current redb 4.4.0 selects a different digest from 4.3.0;
+old signed state-provider bindings require deliberate reissuance under current
+authority. This is separate from the retained `records-v1` decoder identifier and
+does not imply that business rows were migrated. See
+[installed state bindings](../development/installed-transaction-rpc.md) and
+[engine formats](../development/shared-state-store-owner.md#readiness-and-formats).
+
 ## Derived artifacts
 
 AOT images are cache derivatives. Their authenticated identity binds the exact
