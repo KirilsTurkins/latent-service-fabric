@@ -13,7 +13,7 @@ from tools.build_observation import build_environment
 from tools.dotnet_guest.build import build
 from tools.dotnet_guest.compiler import runtime_inputs
 from tools.dotnet_guest.task_wait import PROFILE
-from tools.dotnet_task_runtime_fixture import CASES, prepare
+from tools.dotnet_task_runtime_fixture import QUALIFICATION_CASES, RESET_NOTIFICATION_MODE, expected, prepare, selected_fixture
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
 from tools.qualify_dotnet_standard_console import inherited
@@ -25,6 +25,27 @@ HELPERS = ('tools/dotnet_task_runtime_fixture.py', 'tools/dotnet_task_runtime_pr
     'tools/qualify_dotnet_task_runtime.py', 'tools/run_rust_capsule_workflow.py',
     'tools/dotnet_guest/task_wait.py', 'tools/dotnet_guest/async_exports.py',
     'tools/dotnet_guest/compiler.py', 'tools/dotnet_guest/entropy_grants.py')
+
+
+def require_reset_notification_receipt(captured, observed):
+    cases = observed.get('dotnetTaskRuntime', {}).get('cases')
+    library, selected = selected_fixture(reset_notification=True)
+    require(selected == QUALIFICATION_CASES and captured.get('cases') == list(QUALIFICATION_CASES)
+            and captured.get('originalFiles', {}).get('Library.cs') == digest(library.encode('utf-8'))
+            and type(cases) is list
+            and all(type(row) is dict for row in cases)
+            and [row.get('mode') for row in cases] == list(QUALIFICATION_CASES),
+            'dotnet-tasks-exact-case-inventory')
+    witness = cases[-1]
+    invocation = witness.get('invocation')
+    retirement = witness.get('retirement')
+    require(type(invocation) is dict and invocation.get('processReaped') is True
+            and invocation.get('exitCode') == 0
+            and invocation.get('decoded') == [{'ok': expected(RESET_NOTIFICATION_MODE)}]
+            and invocation.get('response', {}).get('outcomeKnown') is True
+            and type(retirement) is dict
+            and retirement.get('phase') == 'dotnet-ordinary-tasks-' + RESET_NOTIFICATION_MODE + '-retired',
+            'dotnet-tasks-reset-notification-receipt')
 
 
 def qualify(output: Path, tools: Path, native_qualification: Path):
@@ -52,7 +73,8 @@ def qualify(output: Path, tools: Path, native_qualification: Path):
         binaries, companions, baseline = inherited(native_qualification)
         record['inherited'] = baseline
         stage = 'outside-library-and-normal-capture'
-        application, captured = prepare(output / 'project', output / 'outside', tools)
+        application, captured = prepare(output / 'project', output / 'outside', tools,
+                                        reset_notification=True)
         record['captured'] = captured
         require(captured['originalLibraryAndFeedRemoved'], 'dotnet-tasks-originals-must-be-unavailable')
         before = inventory(snapshot(application))
@@ -75,12 +97,13 @@ def qualify(output: Path, tools: Path, native_qualification: Path):
         commands.run('demo-sign', binaries['capsule_authoring'], 'demo-sign', output / 'releases', *builds)
         stage = 'signed-node'
         observed = run(binaries['latent'], binaries['latentd'], output / 'releases', output / 'node',
-                       language='dotnet', dotnet_task_runtime=True)
+                       language='dotnet', dotnet_task_runtime=True, dotnet_task_reset_witness=True)
         require(observed['status'] == 'passed'
-                and len(observed['dotnetTaskRuntime']['cases']) == len(CASES)
+                and len(observed['dotnetTaskRuntime']['cases']) == len(QUALIFICATION_CASES)
                 and observed['dotnetTaskRuntimeAuthority']['denied']['response']['outcomeKnown']
                 and observed['nodeShutdown']['reaped'] and observed['nodeShutdown']['record']['clean'],
                 'dotnet-tasks-original-and-new-signed-gates-required')
+        require_reset_notification_receipt(captured, observed)
         fields = ('schemaVersion', 'status', 'scope', 'limits', 'invocations', 'samples', 'providerIdle',
                   'dotnetTaskRuntimeAuthority', 'dotnetTaskRuntime', 'runtimeGrantDenied',
                   'nodeShutdown', 'peerShutdown', 'cliCalls')

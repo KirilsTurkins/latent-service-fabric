@@ -1,7 +1,7 @@
 """Explicit activation authority and ordinary managed-queue retirement controls."""
 from tools.dotnet_guest import entropy_grants
 from tools.dotnet_guest.runtime import ACTIVATION, CLOCK, RANDOM, WALL
-from tools.dotnet_task_runtime_fixture import CASES, expected
+from tools.dotnet_task_runtime_fixture import CASES, QUALIFICATION_CASES, expected
 from tools.phase2_operator_process import require, write_json
 
 OPERATIONS = ['register', 'park', 'wake', 'settle', 'close', 'observe', 'wait-for',
@@ -106,10 +106,11 @@ def grant(client, node, fixture, targets, publications, result):
         'providerTaskLimit': 8, 'providerTimerLimit': 8}
 
 
-def probe(client, target, accounting, result, population):
+def probe(client, target, accounting, result, population, *, reset_notification=False):
     from tools.rust_capsule_node import assert_value, call, provider_idle, sample
+    require(type(reset_notification) is bool, 'dotnet-tasks-reset-notification-selection')
     rows = []
-    for mode in CASES:
+    for mode in QUALIFICATION_CASES if reset_notification else CASES:
         label = 'dotnet-ordinary-tasks-' + mode
         row = call(client, target, 'greeting', 'greet', ['task:' + mode], label)
         assert_value(client, row, [{'ok': expected(mode)}])

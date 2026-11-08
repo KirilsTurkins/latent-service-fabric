@@ -30,7 +30,9 @@ MATERIALS = ('tools/qualify_c_timed_runtime.py', 'tools/c_timed_runtime_fixture.
     'tools/guest_runtime_profiles.py', '.github/workflows/c-timed-runtime.yml',
     fixture.FIXTURE + 'timing.h', 'tools/c_timed_source_controls.py',
     'tools/tests/fixtures/c-timed-broadcast-source.c',
-    'tools/tests/fixtures/c-timed-broadcast-source.cjs')
+    'tools/tests/fixtures/c-timed-broadcast-source.cjs',
+    'tools/tests/fixtures/c-timed-deadline-source.c',
+    'tools/tests/fixtures/c-timed-deadline-source.cjs')
 
 
 def materials():

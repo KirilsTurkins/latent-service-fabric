@@ -219,6 +219,118 @@ public final class TimerActiveOwnerControl {
         require(!earlyRetirement.get() && Activation.owners() == 0, "inflight-retirement");
     }
 
+    private static void failedStart(String mode) throws Exception {
+        Activation.failManagedStart = mode;
+        IllegalStateException original = new IllegalStateException("source-start-" + mode);
+        Activation.startFailure = original;
+        CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
+        if (mode.equals("accepted")) {
+            Activation.executorSettlementEntered = entered;
+            Activation.executorSettlementRelease = release;
+        }
+        try {
+            try { new Timer("failed-start-" + mode, true); throw new AssertionError("start-succeeded"); }
+            catch (IllegalStateException actual) { require(actual == original, "start-error-replaced"); }
+            Activation.ManagedPool pool = Activation.lastPool;
+            require(pool != null, "failed-start-pool-missing");
+            if (mode.equals("before")) {
+                require(pool.isRetired() && Activation.executors() == 0 && Activation.executorAttempts() == 1,
+                        "confirmed-start-refusal-must-retire-executor");
+            } else if (mode.equals("uncertain")) {
+                require(!pool.isRetired() && Activation.executors() == 1 && Activation.executorAttempts() == 0,
+                        "uncertain-start-must-retain-executor");
+                require(Activation.alive(Activation.lastWorker), "uncertain-start-owner-missing");
+            } else {
+                require(!pool.isRetired() && Activation.executors() == 1, "accepted-start-must-retain-executor");
+                await(entered, "accepted-worker-not-woken-for-retirement");
+                require(Activation.lastWorker.isAlive(), "accepted-worker-retired-before-settlement");
+                release.countDown();
+                Activation.joinWorkers();
+                require(pool.isRetired() && Activation.executors() == 0 && Activation.executorAttempts() == 1,
+                        "accepted-worker-must-retire-executor-once");
+            }
+        } finally {
+            release.countDown();
+            if (mode.equals("accepted") && Activation.lastWorker != null) {
+                Activation.lastWorker.interrupt();
+                Activation.lastWorker.join(5000);
+            }
+        }
+    }
+
+    private static void failedManage(String settlement) {
+        Activation.failManage = true;
+        IllegalStateException original = new IllegalStateException("source-manage-refused");
+        Activation.startFailure = original;
+        if (!settlement.equals("ok")) Activation.failExecutorSettlement = settlement;
+        try { new Timer("failed-manage", true); throw new AssertionError("manage-succeeded"); }
+        catch (IllegalStateException actual) { require(actual == original, "manage-error-replaced"); }
+        Activation.ManagedPool pool = Activation.lastPool;
+        require(pool != null && !Activation.poolRegistered(pool), "refused-pool-was-registered");
+        if (settlement.equals("ok")) {
+            require(pool.isRetired() && Activation.executors() == 0 && Activation.executorAttempts() == 1,
+                    "unregistered-pool-owner-not-retired");
+        } else {
+            require(!pool.isRetired() && Activation.poisoned() && Activation.retainedFailedExecutor()
+                    && Activation.failedOwnerLinks() == 1 && Activation.executorAttempts() == 1
+                    && Activation.executors() == (settlement.equals("lost") ? 0 : 1),
+                    "unregistered-pool-failed-owner-not-rooted");
+            pool.closeAtRoot(); pool.closeAtRoot();
+            require(Activation.failedOwnerLinks() == 1 && Activation.executorAttempts() == 1,
+                    "unregistered-pool-settlement-retried");
+        }
+    }
+
+    private static void failedStartSettlement(boolean lost) {
+        Activation.failManagedStart = "before";
+        IllegalStateException original = new IllegalStateException("source-start-before");
+        Activation.startFailure = original;
+        Activation.failExecutorSettlement = lost ? "lost" : "refused";
+        try { new Timer("failed-start-settlement", true); throw new AssertionError("start-succeeded"); }
+        catch (IllegalStateException actual) { require(actual == original, "start-error-replaced-by-settlement"); }
+        Activation.ManagedPool pool = Activation.lastPool;
+        require(pool != null && !pool.isRetired(), "uncertain-executor-owner-cleared");
+        require(Activation.poisoned() && Activation.retainedFailedExecutor() && Activation.failedOwnerLinks() == 1,
+                "failed-executor-not-rooted-once");
+        require(Activation.executorAttempts() == 1 && Activation.executors() == (lost ? 0 : 1),
+                "executor-settlement-retried-or-refunded");
+        pool.closeAtRoot(); pool.closeAtRoot();
+        try { Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Executor);
+              throw new AssertionError("poisoned-admission-accepted"); }
+        catch (IllegalStateException expected) { }
+        require(Activation.executorAttempts() == 1, "executor-settlement-retried-after-poison");
+    }
+
+    private static void completedWorkerBeforeStartFailure() {
+        Activation.failManagedStart = "finished-ok";
+        IllegalStateException original = new IllegalStateException("source-start-after-completed-worker");
+        Activation.startFailure = original;
+        try { new Timer("failed-start-completed-worker", true); throw new AssertionError("start-succeeded"); }
+        catch (IllegalStateException actual) { require(actual == original, "start-error-replaced-after-completion"); }
+        Activation.ManagedPool pool = Activation.lastPool;
+        require(pool != null && pool.isRetired() && Activation.executors() == 0
+                && Activation.executorAttempts() == 1 && !Activation.poisoned(),
+                "completed-worker-owner-not-settled-once");
+    }
+
+    private static void failedStartAfterWorkerSettlement(boolean lost) {
+        Activation.failManagedStart = lost ? "finished-lost" : "finished-refused";
+        IllegalStateException original = new IllegalStateException("source-start-after-worker");
+        Activation.startFailure = original;
+        Activation.failExecutorSettlement = lost ? "lost" : "refused";
+        try { new Timer("failed-start-finished-worker", true); throw new AssertionError("start-succeeded"); }
+        catch (IllegalStateException actual) { require(actual == original, "start-error-replaced-after-worker"); }
+        Activation.ManagedPool pool = Activation.lastPool;
+        require(pool != null && !pool.isRetired(), "failed-worker-executor-owner-cleared");
+        require(Activation.poisoned() && Activation.retainedFailedExecutor() && Activation.failedOwnerLinks() == 1,
+                "failed-worker-executor-not-rooted-once");
+        require(Activation.executorAttempts() == 1 && Activation.executors() == (lost ? 0 : 1),
+                "failed-worker-executor-settlement-retried");
+        pool.closeAtRoot(); pool.closeAtRoot();
+        require(Activation.executorAttempts() == 1 && Activation.failedOwnerLinks() == 1,
+                "failed-worker-settlement-retried-after-poison");
+    }
+
     public static void main(String[] args) throws Exception {
         require(args.length == 1, "case-required");
         String mode = args[0];
@@ -232,6 +344,17 @@ public final class TimerActiveOwnerControl {
             case "cancel-refused" -> failedQueuedCancellation(false);
             case "cancel-lost" -> failedQueuedCancellation(true);
             case "callback-ack", "clear-queue-ack", "cancelled-head-ack", "purge-ack" -> settlementInFlight(mode);
+            case "manage-before" -> failedManage("ok");
+            case "manage-close-refused" -> failedManage("refused");
+            case "manage-close-lost" -> failedManage("lost");
+            case "start-before" -> failedStart("before");
+            case "start-uncertain" -> failedStart("uncertain");
+            case "start-accepted" -> failedStart("accepted");
+            case "start-close-refused" -> failedStartSettlement(false);
+            case "start-close-lost" -> failedStartSettlement(true);
+            case "start-finished-ok" -> completedWorkerBeforeStartFailure();
+            case "start-finished-refused" -> failedStartAfterWorkerSettlement(false);
+            case "start-finished-lost" -> failedStartAfterWorkerSettlement(true);
             default -> throw new AssertionError("unknown-case");
         }
         System.out.println("TIMER_ACTIVE_OWNER_CONTROL PASS " + mode);

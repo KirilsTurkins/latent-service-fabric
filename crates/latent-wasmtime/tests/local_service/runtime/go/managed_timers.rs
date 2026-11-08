@@ -8,22 +8,34 @@ fn observed(case: &str, iteration: u32, mode: u32, outcome: &str) {
     );
 }
 
+async fn timer_idle(f: &Fixture, check_provider: bool) {
+    f.idle().await;
+    if check_provider {
+        assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
+    }
+}
+
 #[tokio::test]
 #[ignore = "requires the pinned ordinary Go timer source and explicit managed v5 profile"]
+async fn signed_managed_v5_timers_gc_callbacks_and_stop_reset_preserve_original_owners() {
+    run_managed_timers("LSF_GO_MANAGED_TIMER_FIXTURE", "go-component-activation-v5").await;
+}
+
+#[tokio::test]
+#[ignore = "requires the pinned ordinary Go timer source and explicit v7 profile"]
+async fn signed_managed_v7_timers_gc_callbacks_and_stop_reset_preserve_original_owners() {
+    run_managed_timers("LSF_GO_V7_TIMER_FIXTURE", "go-component-activation-v7").await;
+}
+
 #[expect(
     clippy::too_many_lines,
     reason = "retain the complete original timer oracle and physical barriers in one scenario"
 )]
-async fn signed_managed_v5_timers_gc_callbacks_and_stop_reset_preserve_original_owners() {
+async fn run_managed_timers(variable: &str, profile: &str) {
     assert_eq!(std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(), Ok("go"));
     let root = tempfile::tempdir().unwrap();
-    let f = prepare_owned_fixture(
-        root.path(),
-        "LSF_GO_MANAGED_TIMER_FIXTURE",
-        "go-component-activation-v5",
-        16,
-    )
-    .await;
+    let f = prepare_owned_fixture(root.path(), variable, profile, 16).await;
+    let check_v7_provider = profile == "go-component-activation-v7";
     let modes = [
         0, 1, 2, 3, 4, 5, 6, 18, 19, 20, 9, 11, 12, 13, 14, 15, 16, 17,
     ];
@@ -49,11 +61,10 @@ async fn signed_managed_v5_timers_gc_callbacks_and_stop_reset_preserve_original_
                 );
             }
             eprintln!(
-                "go-component-activation-v5 iteration={iteration} mode={mode} consumption={:?}",
+                "{profile} iteration={iteration} mode={mode} consumption={:?}",
                 receipt.consumption
             );
-            f.idle().await;
-            assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
+            timer_idle(&f, true).await;
             observed("ordinary", iteration, mode, "success");
         }
         // Consume and reconcile every observation before the next finite batch.
@@ -92,7 +103,7 @@ async fn signed_managed_v5_timers_gc_callbacks_and_stop_reset_preserve_original_
             .code,
             PlatformErrorCode::GuestTrap
         );
-        f.idle().await;
+        timer_idle(&f, check_v7_provider).await;
         observed(
             if mode == 8 {
                 "timer-capacity"
@@ -112,7 +123,7 @@ async fn signed_managed_v5_timers_gc_callbacks_and_stop_reset_preserve_original_
             ),
             42
         );
-        f.idle().await;
+        timer_idle(&f, check_v7_provider).await;
         observed(
             if mode == 8 {
                 "fresh-after-timer-capacity"
@@ -131,7 +142,7 @@ async fn signed_managed_v5_timers_gc_callbacks_and_stop_reset_preserve_original_
         .cancel_for(&TenantId("tenant-a".into()), &id, "go-timer-cancel")
         .unwrap();
     assert_eq!(failure(invocation.await).code, PlatformErrorCode::Cancelled);
-    f.idle().await;
+    timer_idle(&f, check_v7_provider).await;
     observed("cancel-original-root", 0, 7, "cancelled");
     let mut deadline = f.request("go-timer-original-root-deadline", 7);
     deadline.budget.wall_time_limit_millis = Some(100);
@@ -139,7 +150,7 @@ async fn signed_managed_v5_timers_gc_callbacks_and_stop_reset_preserve_original_
         failure(f.manager.start(deadline).unwrap().await).code,
         PlatformErrorCode::DeadlineExceeded
     );
-    f.idle().await;
+    timer_idle(&f, check_v7_provider).await;
     observed("deadline-original-root", 0, 7, "deadline-exceeded");
     assert_eq!(
         value(
@@ -150,6 +161,6 @@ async fn signed_managed_v5_timers_gc_callbacks_and_stop_reset_preserve_original_
         ),
         42
     );
-    f.idle().await;
+    timer_idle(&f, check_v7_provider).await;
     observed("fresh-after-cancel-deadline", 0, 0, "success");
 }

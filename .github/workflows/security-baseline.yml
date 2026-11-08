@@ -132,6 +132,8 @@ jobs:
         run: |
           python3 -m pip install --only-binary=:all: --no-deps --require-hashes --requirement controls/.github/security/requirements.txt
       - name: Install digest-pinned offline workflow scanner
+        env:
+          GH_TOKEN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && github.token || '' }}
         run: python3 controls/tools/security_install.py --tool zizmor --destination "$RUNNER_TEMP/security-tools"
       - name: Apply reviewed source, workflow and action-pin rules
         run: python3 controls/tools/security_scan.py static --repo source --tools "$RUNNER_TEMP/security-tools" --scratch "$RUNNER_TEMP/security-scan"
@@ -158,7 +160,10 @@ jobs:
         run: |
           python3 tools/security_install.py --tool cargo-audit --destination "$RUNNER_TEMP/security-tools"
           python3 tools/security_install.py --tool gitleaks --destination "$RUNNER_TEMP/security-tools"
-          python3 tools/security_install.py --tool zizmor --destination "$RUNNER_TEMP/security-tools"
+      - name: Install reviewed zizmor canary scanner
+        env:
+          GH_TOKEN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && github.token || '' }}
+        run: python3 tools/security_install.py --tool zizmor --destination "$RUNNER_TEMP/security-tools"
       - name: Prove harmless real-scanner pass and fail behavior
         run: python3 tools/security_selftest.py --tools "$RUNNER_TEMP/security-tools" --scratch "$RUNNER_TEMP/security-canaries"
 

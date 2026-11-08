@@ -304,6 +304,9 @@ STANDARD_TIMER_ACTIVE_OWNER_CASES = (
     "fixed-rate-reschedule", "fixed-delay-reschedule", "refused", "lost", "callback-refused", "callback-lost",
     "periodic-callback-refused", "periodic-callback-lost", "cancel-refused", "cancel-lost",
     "callback-ack", "clear-queue-ack", "cancelled-head-ack", "purge-ack",
+    "manage-before", "manage-close-refused", "manage-close-lost",
+    "start-before", "start-uncertain", "start-accepted", "start-close-refused", "start-close-lost",
+    "start-finished-ok", "start-finished-refused", "start-finished-lost",
 )
 
 

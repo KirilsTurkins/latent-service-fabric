@@ -251,10 +251,26 @@ MULTIPLE_UNWRAP_REWRITE_RECEIPT = {**TASK_IDENTITY_REWRITE_RECEIPT,
     'unwrapMultiplicity': 'same-outer-additional-proxies-retained-as-required'}
 
 
+# The original queued record stays in its bounded slot through thread reset.
+DISPATCH_RESET_REWRITE_RECEIPT = {**MULTIPLE_UNWRAP_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v13',
+    'modifiedOriginalMethods': {
+        **{name: value for name, value in MULTIPLE_UNWRAP_REWRITE_RECEIPT['modifiedOriginalMethods'].items()
+           if name != 'System.Void System.Threading.ThreadPoolWorkQueue::DispatchWorkItem(System.Object,System.Threading.Thread)'},
+        'System.Boolean System.Threading.ThreadPoolWorkQueue::Dispatch()': '2ac54c867cf82a96f8103aedb108834d8618346215480ec9e6409befb6a0f6a5'},
+    'copiedRegistryMethods': 67,
+    'dispatchCustody': 'original-queue-record-through-execute-and-thread-reset',
+    'dispatchCapacity': '64-shared-queued-and-running-records',
+    'resetContext': 'null-context-refused-explicit-live-context-preserved',
+    'resetNative': 'private-fenced-state-refuses-new-owner-registration'}
+
+
 def validate_rewrite(value: dict) -> None:
     if type(value) is not dict:
         raise ValueError('dotnet-managed-work-rewrite-receipt')
-    expected_receipt = (MULTIPLE_UNWRAP_REWRITE_RECEIPT
+    expected_receipt = (DISPATCH_RESET_REWRITE_RECEIPT
+        if value.get('patch') == DISPATCH_RESET_REWRITE_RECEIPT['patch']
+        else MULTIPLE_UNWRAP_REWRITE_RECEIPT
         if value.get('patch') == MULTIPLE_UNWRAP_REWRITE_RECEIPT['patch']
         else TASK_IDENTITY_REWRITE_RECEIPT
         if value.get('patch') == TASK_IDENTITY_REWRITE_RECEIPT['patch']
