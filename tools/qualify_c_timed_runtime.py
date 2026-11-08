@@ -23,10 +23,14 @@ from tools.c_guest.threading_compatibility import RECIPE as COMPATIBILITY_RECIPE
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity, source_identity
 from tools.qualify_sdk_scratch import package_identity
-from tools.rust_capsule_project import ROOT, fresh, inventory, read_file, read_json, snapshot, write_json
+from tools.rust_capsule_project import ROOT, checked_path, fresh, inventory, read_file, read_json, snapshot, write_json
 
 MATERIALS = ('tools/qualify_c_timed_runtime.py', 'tools/c_timed_runtime_fixture.py',
     'tools/c_timed_runtime_node.py', 'tools/host_codec_retirement_native_products.py',
+    'tools/c_timed_current_products.py', 'tools/qualify_host_codec_native.py',
+    'tools/host_codec_wasmtime.py', 'tools/result_owner_bytes.py',
+    'tools/phase3_resource_identity.py', 'tools/java_replay_materials.py',
+    'tools/tests/test_c_timed_current_products.py',
     'tools/guest_runtime_profiles.py', '.github/workflows/c-timed-runtime.yml',
     fixture.FIXTURE + 'timing.h', 'tools/c_timed_source_controls.py',
     'tools/tests/fixtures/c-timed-broadcast-source.c',
@@ -99,23 +103,33 @@ def build_evidence(artifact, source):
             'package': package_identity(artifact, marker)}
 
 
-def qualify(prepared, output):
+def _qualify(prepared, output, *, current=False):
+    require(type(current) is bool, 'c-timed-explicit-current-product-selection')
     require(sys.platform == 'linux' and sys.version_info >= (3, 13) and os.geteuid() != 0,
             'c-thread-unprivileged-linux-python313')
-    from tools import host_codec_retirement_native_products as products
+    if current:
+        from tools import c_timed_current_products as products
+        native_evidence = products.native_evidence
+    else:
+        from tools import host_codec_retirement_native_products as products
+        native_evidence = lambda path: original.native_evidence(products, path)
     output = output.absolute()
     require(output != ROOT and output not in ROOT.parents and ROOT not in output.parents,
             'c-thread-output-outside-checkout')
     output = fresh(output)
-    stage = 'authenticate-current-frozen-native-products'
+    stage = 'authenticate-current-source-native-products' if current else 'authenticate-current-frozen-native-products'
     record = {'schemaVersion': 'latent.c.thread-runtime.qualification.v1',
               'status': 'incomplete', 'profile': PROFILE, 'full744Qualified': False,
               'clockRuntimeProfile': timed.standard_facilities.PROFILE,
-              'nativeProductsRebuilt': False, 'otherLanguageComponentsRebuilt': False}
+              'nativeProductsRebuilt': current, 'otherLanguageComponentsRebuilt': False}
+    if current:
+        record['nativeProductsCurrentSourceVerified'] = False
     started = time.monotonic()
     try:
-        before, source_proof, native = original.native_evidence(products, prepared)
-        record.update(producer={'source': products.SOURCE, 'receipt': before},
+        before, source_proof, native = native_evidence(prepared)
+        if current:
+            record['nativeProductsCurrentSourceVerified'] = True
+        record.update(producer={'source': before['compiledSource'], 'receipt': before},
                       consumerNativeSource=source_proof['consumerNativeSource'],
                       nativeSourceCompatibility=source_proof, materials=materials())
         stage = 'normal-selected-c-application'
@@ -136,7 +150,7 @@ def qualify(prepared, output):
         stage = 'unchanged-source-tools-products-and-original-build'
         require(time.monotonic() - started <= 1100
                 and source_identity(ROOT) == source_proof['consumerNativeSource']
-                and original.native_evidence(products, prepared) == (before, source_proof, native)
+                and native_evidence(prepared) == (before, source_proof, native)
                 and materials() == record['materials']
                 and inventory(snapshot(application)) == source
                 and build_evidence(artifact, source) == record['build'], 'c-thread-final-source-product-and-build-fence')
@@ -152,9 +166,49 @@ def qualify(prepared, output):
         raise
 
 
+def qualify(prepared, output):
+    """Keep the historical authenticated frozen-product route unchanged."""
+    return _qualify(prepared, output)
+
+
+def qualify_current(prepared, output, revision):
+    """Produce and consume the current-source products in one owner process."""
+    require(sys.platform == 'linux' and sys.version_info >= (3, 13) and os.geteuid() != 0,
+            'c-thread-unprivileged-linux-python313')
+    from tools import c_timed_current_products as current
+    from tools import qualify_host_codec_native as producer
+    prepared, output = checked_path(prepared), checked_path(output)
+    for path in (prepared, output):
+        require(path != ROOT and path not in ROOT.parents and ROOT not in path.parents,
+                'c-thread-output-outside-checkout')
+        require(not path.exists(), 'c-thread-output-must-be-fresh')
+    require(prepared != output and prepared not in output.parents and output not in prepared.parents,
+            'c-thread-independent-output-directories')
+    head, _ = current.current_source()
+    require(revision == head, 'c-thread-current-expected-revision')
+    inputs, owner_inputs = producer.materials(ROOT), materials()
+    require(all(name not in inputs or inputs[name] == identity for name, identity in owner_inputs.items()),
+            'c-thread-current-material-overlap')
+    current.committed_materials(head, inputs | owner_inputs)
+    current.historical_coverage(inputs)
+    producer.qualify(prepared, head)
+    return _qualify(prepared, output, current=True)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--prepared', required=True, type=Path)
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--prepared', type=Path)
+    group.add_argument('--produce-current', type=Path)
+    parser.add_argument('--source-commit')
     parser.add_argument('--output', required=True, type=Path)
     args = parser.parse_args()
-    print(json.dumps({'status': qualify(args.prepared, args.output)['status']}))
+    if args.produce_current is not None:
+        if args.source_commit is None:
+            parser.error('--produce-current requires --source-commit')
+        result = qualify_current(args.produce_current, args.output, args.source_commit)
+    else:
+        if args.source_commit is not None:
+            parser.error('--source-commit requires --produce-current')
+        result = qualify(args.prepared, args.output)
+    print(json.dumps({'status': result['status']}))

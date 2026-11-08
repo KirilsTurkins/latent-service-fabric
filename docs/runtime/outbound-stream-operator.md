@@ -185,8 +185,8 @@ latent-dev stream-operator adopt-client \
 ```
 
 The same default/single profile, endpoint, tenant, timeouts, limits and all other
-profiles must remain exact. Adoption requires no pending original operation and
-both confirmed owned grant receipts. Using only the replacement credentials,
+profiles must remain exact. By default, adoption requires no pending original
+operation and both confirmed owned grant receipts. Using only the replacement credentials,
 the selected CLI reads the exact node and both original policy records; their
 full documents and stamps must match. Node inspection requires administrator
 credentials with the existing trusted node-operator claim, as does usage
@@ -200,6 +200,66 @@ matches that owner. No token or file path is copied into state or public output.
 Adoption sends no grant mutation, replays no pending request and grants no new
 authority. It neither revokes the old token nor rotates TLS credentials or a
 live stream provider; those remain separate administrator/node-owner actions.
+
+## Recovery after management-token expiry
+
+An expired or revoked management bearer can prevent receipt recovery while an
+original grant or revocation is still pending. The development-source frontend
+adds an explicit `adopt-client --preserve-pending` path for this situation.
+Older published toolkits may not support this flag. From this source checkout,
+use the same protected specification, state and original client file, plus a
+separate token-only replacement that has the required administrator and
+node-operator authority:
+
+```sh
+python3.13 -m tools.outbound_stream_operator adopt-client \
+  --cli /path/to/latent --client-config /private/client/original.json \
+  --replacement-client-config /private/client/replacement.json \
+  --state-dir /private/operator/state --specification /private/operator/stream.json \
+  --preserve-pending
+```
+
+This path requires an existing pending stream-policy intent. It validates the
+original operation identity, tenant, node, request digest, complete destination
+and publication scope, and retained generation precondition. Using only the
+replacement credentials, it makes at most four read-only requests: the exact
+node, the original operation receipt, the owned binding and the owned policy.
+The receipt and current affected record must confirm the complete original
+intent. The other owned record must remain exact. During a first binding grant,
+a policy without a retained receipt must be affirmatively not found; an
+unavailable read or a foreign existing record is not absence. A first policy
+grant still requires its previously confirmed binding. A receipt already saved
+before a local settlement crash is validated without settling it again.
+
+The existing 90-second client deadline, per-call process/output bounds and
+protected-file checks are unchanged. Inputs, owner, journal and retained
+receipts are rechecked before one atomic credential-digest update. The command
+neither changes the journal nor copies a new receipt into it. Success reports
+`recoveryRequired: true` and `executionPermission: false`; grants, revocation
+and provider adoption remain blocked by the original pending operation.
+
+Use the replacement file for a separate recovery command:
+
+```sh
+python3.13 -m tools.outbound_stream_operator recover \
+  --cli /path/to/latent --client-config /private/client/replacement.json \
+  --state-dir /private/operator/state --specification /private/operator/stream.json
+```
+
+Recovery reads and validates the original receipt and current policy again.
+The earlier handoff observation is not cached authority or an atomic remote
+snapshot. Only confirmed recovery settles local metadata; it never resubmits
+the mutation. Unknown, expired, malformed or changed receipts remain unresolved.
+Pending-handoff failures report `uncertain: true`, including failures before
+owner construction. A local write/durability failure may leave the digest
+update visible: retain both private client files and inspect which one matches
+the retained owner before recovery. Never delete or rewrite the journal to
+make an uncertain request retryable. No bearer is revoked by this command, and
+TLS credentials, live stream rotation, provider readiness and production gates
+remain separate. The focused tests use explicit protocol doubles and private
+filesystem state; they are not standalone-node or packaged qualification.
+
+## Provider rotation and drain
 
 Provider-descriptor adoption likewise rechecks the original client and exact
 owner, journal and receipt bytes immediately before its local write, after the
