@@ -99,7 +99,7 @@ the exact signed publication selected for the consumer:
     "configurationEpoch": "1"
   },
   "consumer": "examples/mail",
-  "publication": "publication-v1:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "publication": "publication-v1:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "principal": {"kind": "administrator", "subject": "workflow-operator"},
   "destination": {"host": "127.0.0.1", "port": 32123, "transport": "tcp"},
   "bindingId": "stream-installed",
