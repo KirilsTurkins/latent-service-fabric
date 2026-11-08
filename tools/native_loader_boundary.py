@@ -75,6 +75,31 @@ unsafe impl wasmtime::MemoryCreator for RefusingCreator {
         Err("native-linear-original-creator-refusal".into())
     }
 }'''
+# Exact test-only allocator for the Go overlap physical-release observation.
+# Authenticate the entire source, including the cfg(test) module, then strip
+# only the reviewed item; every other unsafe site remains subject to the scan.
+GO_OVERLAP_TEST = f"{CRATE}/src/development_go_timer_overlap.rs"
+GO_OVERLAP_TEST_MARKER = '#[cfg(test)]\nmod tests {\n'
+GO_OVERLAP_TEST_SHA256 = "bab2eaa593d4301fd638fd631776cb91cf8808103cbdb067ae54ee150216abf6"
+GO_OVERLAP_TEST_ALLOCATOR = '''    #[allow(unsafe_code, reason = "test-only exact allocator-release observation")]
+    unsafe impl GlobalAlloc for WatchingAllocator {
+        unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+            unsafe { System.alloc(layout) }
+        }
+        unsafe fn dealloc(&self, pointer: *mut u8, layout: Layout) {
+            unsafe { System.dealloc(pointer, layout) };
+            let _ = WATCH.try_with(|cell| {
+                let mut watch = cell.get();
+                if pointer as usize == watch.payload {
+                    watch.payload_freed = true;
+                }
+                if pointer as usize == watch.billing {
+                    watch.billing_freed = true;
+                }
+                cell.set(watch);
+            });
+        }
+    }'''
 # This third exception only allocates and unmaps guarded activation stacks through
 # Wasmtime's pinned public StackCreator interface. Original activation Native
 # and memory admission precede mapping; actual successful munmap precedes refund.
@@ -186,6 +211,13 @@ def validate(root: Path) -> list[str]:
                 errors.append("audited refusing memory creator test changed; review its sole always-error trait item")
             else:
                 source = source.replace(REFUSING_CREATOR_IMPL, "", 1)
+        elif relative == GO_OVERLAP_TEST:
+            if (source.count(GO_OVERLAP_TEST_MARKER) != 1
+                    or hashlib.sha256(source.encode("utf-8")).hexdigest() != GO_OVERLAP_TEST_SHA256
+                    or source.count(GO_OVERLAP_TEST_ALLOCATOR) != 1):
+                errors.append("audited Go overlap test allocator changed; review its cfg(test) scope and physical release witness")
+            else:
+                source = source.replace(GO_OVERLAP_TEST_ALLOCATOR, "", 1)
         elif relative == NATIVE_STACK:
             if hashlib.sha256(source.encode("utf-8")).hexdigest() != NATIVE_STACK_SHA256:
                 errors.append("audited native-stack allocator changed; review original admission and physical unmapping")
