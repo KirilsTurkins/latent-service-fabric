@@ -103,9 +103,11 @@ struct Attempt {
 impl Drop for Attempt {
     fn drop(&mut self) {
         if self.entered {
-            // This guard lives in the physical blocking job once entered. A
-            // panic, error, deadline or lost result cannot drop its quota. An
-            // unsuccessful open can itself have entered the kernel constructor.
+            // The entered guard stays in the physical blocking job. Error
+            // return or panic unwinding reaches this quarantine; a deadline or
+            // lost waiter does not cancel the job. panic=abort terminates the
+            // process without unwinding, so no post-abort quarantine is implied.
+            // An unsuccessful open can itself have entered the kernel constructor.
             let mut resource = self.resource.take().expect("prepaid original backing");
             drop(resource.descriptor.take());
             if let Some(observation) = resource.retirement.as_mut() {
@@ -1224,7 +1226,8 @@ pub(crate) mod node_bootstrap {
                 value
                     .backing
                     .checkpoint(&physical_pools, &value.installed)?;
-                attempt.entered = true; // BEFORE open, including failed open/panic.
+                // Arm before a failed open; panic=abort does not unwind this guard.
+                attempt.entered = true;
                 value.descriptor = Some(open()?);
                 value.attachment = Some(initialize(
                     value.descriptor.as_mut().expect("actual fd"),
@@ -1586,6 +1589,8 @@ pub(crate) mod node_bootstrap {
 
         #[tokio::test]
         async fn node_abandoned_waiter_keeps_custody_after_real_worker_returns() {
+            use std::os::fd::AsRawFd;
+
             let fixture = Fixture::new(config());
             let before = snapshot(&fixture.pools).await;
             let prepared = fixture
@@ -1594,6 +1599,7 @@ pub(crate) mod node_bootstrap {
                 .unwrap();
             let directory = tempfile::tempdir().unwrap();
             let path = directory.path().join("node-cancelled-observer");
+            let original = path.clone();
             let (entered_send, entered_receive) = tokio::sync::oneshot::channel();
             let (release_send, release_receive) = std::sync::mpsc::channel();
             let pools = Arc::clone(&fixture.pools);
@@ -1608,7 +1614,9 @@ pub(crate) mod node_bootstrap {
                     move || {
                         let file =
                             File::create(path).map_err(|_| error(StreamErrorCode::IoFailed))?;
-                        entered_send.send(()).unwrap();
+                        entered_send
+                            .send(format!("/proc/self/fd/{}", file.as_raw_fd()))
+                            .unwrap();
                         release_receive
                             .recv_timeout(Duration::from_secs(5))
                             .unwrap();
@@ -1621,14 +1629,22 @@ pub(crate) mod node_bootstrap {
                 )
                 .await
             });
-            tokio::time::timeout(Duration::from_secs(5), entered_receive)
+            let descriptor = tokio::time::timeout(Duration::from_secs(5), entered_receive)
                 .await
                 .unwrap()
                 .unwrap();
             observer.abort();
             assert!(matches!(observer.await, Err(failure) if failure.is_cancelled()));
+            // The open closure is still blocked on release. Observe the real
+            // descriptor and original pool owners after the waiter disappears.
+            let running = snapshot(&fixture.pools).await;
+            assert_eq!(std::fs::read_link(&descriptor).unwrap(), original);
+            assert!(running.metadata_bytes >= before.metadata_bytes + 1024 * 1024);
+            assert_eq!(running.connections, before.connections + 1);
+            assert_eq!(running.failed_cleanup, before.failed_cleanup);
             release_send.send(()).unwrap();
             let held = retained(&fixture.pools).await;
+            assert_ne!(std::fs::read_link(descriptor).ok(), Some(original));
             assert!(held.metadata_bytes >= before.metadata_bytes + 1024 * 1024);
             assert_eq!(held.connections, before.connections + 1);
         }

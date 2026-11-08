@@ -117,7 +117,9 @@ def start(binary, root, cancellation, deadline):
                    root, process.environment(root), cancellation, maximum=262144)
     try:
         record = node.line(min(deadline, time.monotonic() + 15))
-        require(record.get("event") == "started" and isinstance(record.get("endpoint"), str)
+        ready = record.get("ready")
+        require(type(ready) is bool and record.get("event") == ("ready" if ready else "started")
+                and isinstance(record.get("endpoint"), str)
                 and re.fullmatch(r"127\.0\.0\.1:[1-9][0-9]{0,4}", record["endpoint"])
                 and not record.get("providers"), "credential-scenario-node-startup")
         return node, record["endpoint"]

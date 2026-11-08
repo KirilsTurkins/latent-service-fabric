@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from tools import outbound_stream_credential_scenario as scenario
 from tools.dev_workflow.common import DevError
@@ -111,6 +111,26 @@ class CredentialScenario(unittest.TestCase):
                     scenario.run_case("first-binding", Path("node"), Path("cli"), root, None, 123.0)
                 native.assert_not_called()
             self.assertEqual(marker.read_text(), "original")
+
+    def test_start_accepts_both_actual_readiness_events_and_rejects_mismatch(self):
+        endpoint = "127.0.0.1:31415"
+        for ready, event in ((False, "started"), (True, "ready")):
+            with self.subTest(ready=ready):
+                child = Mock()
+                child.line.return_value = {"event": event, "ready": ready, "endpoint": endpoint}
+                with patch.object(scenario, "Process", return_value=child):
+                    observed, actual = scenario.start(Path("node"), Path("private"), None, 1e20)
+                self.assertIs(observed, child)
+                self.assertEqual(actual, endpoint)
+                child.close.assert_not_called()
+        for ready, event in ((True, "started"), (False, "ready"), (None, "started"), (1, "ready")):
+            with self.subTest(ready=ready, event=event):
+                child = Mock()
+                child.line.return_value = {"event": event, "ready": ready, "endpoint": endpoint}
+                with patch.object(scenario, "Process", return_value=child):
+                    with self.assertRaisesRegex(DevError, "credential-scenario-node-startup"):
+                        scenario.start(Path("node"), Path("private"), None, 1e20)
+                child.close.assert_called_once()
 
     def test_failure_output_never_copies_exception_text_paths_or_credentials(self):
         output = io.StringIO()

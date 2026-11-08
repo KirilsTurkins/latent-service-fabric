@@ -98,6 +98,15 @@ foreign tenant's receipt lookup returned `not-found` with `outcomeKnown: false`,
 whereas the removed bearer returned a typed `unauthenticated` platform error.
 Neither is relabelled as a successful recovery or a definite mutation rollback.
 
+A separate [ready-node follow-up](evidence/stream-credential-handoff-ready-2026-11-08.json)
+used the same authenticated older native binaries with the revised controller.
+All three cases and six clean stops passed with `ready: true` at both inspections.
+The original controller rejected the node's valid `ready` startup event before
+management checks; the revised controller accepts `ready` and `started` only
+when each agrees with the boolean readiness field. The source and binary
+identities, local environment, negative result and limits are recorded separately.
+This does not qualify an installed stream provider or signed guest.
+
 The additional controller unit tests use explicit protocol doubles to check
 response-loss selection, failure preservation, finite calls, readiness typing,
 new-directory protection and public-error redaction. Run them separately:
