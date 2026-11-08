@@ -185,6 +185,14 @@ class CurrentJavaEventInputs(unittest.TestCase):
                 'configuredHttpCallers':[caller],'configuredTransportCallers':[caller],'stateProviderProfile':'state',
                 'stateConfigurationDigest':'sha256:'+'7'*64,'stateConfigurationEpoch':1,
                 'deferredHttp':[],'deferredEvent':[effect]}
+            operator = {'subject':'workflow-operator','ownerKind':'administrator','tenant':TENANT,'service':None,
+                        'recoveryKind':'original-caller','recoveryScope':'original-operator-scope'}
+            host['configuredTransportCallers'].append(operator)
+            for name, contract in [('clockMonotonic', 'latent:clock/monotonic@0.1.0'),
+                                   ('clockWall', 'latent:clock/wall@0.1.0'), ('http', 'latent:http/client@0.2.0')]:
+                host['configuredProviders'].append({'id':name,'tenant':TENANT,'service':'runtime-host',
+                    'capability':contract,'profile':'observed-provider','configurationDigest':'sha256:'+'8'*64,
+                    'configurationEpoch':'1'})
             selected = {'provider':'events','destination':'updated','adapter':'nats-jetstream-effect-v1',
                 'intent_format':1,'payload_format':'nats-event-value-v1','idempotency_profile':profile}
             preview = {'schemaVersion':'latent.configured-event-effect-inspection.v1',
@@ -218,6 +226,15 @@ class CurrentJavaEventInputs(unittest.TestCase):
             self.assertEqual(proposals['bindings']['event-dispatch']['capability'], 'latent:events/publisher@0.2.0')
             self.assertEqual(proposals['policies']['dispatch']['rules'][0]['resources']['subjects'], ['updated'])
             self.assertEqual([grant['capability'] for grant in proposals['deploymentGrants']], ['latent:intents/staging@0.1.0'])
+            from tools.java_transaction_qualification.event_hosts import complete_policy_documents
+            complete = complete_policy_documents(observed, host, operations[0])
+            self.assertEqual({grant['capability'] for grant in complete['deploymentGrants']}, {
+                'latent:intents/staging@0.1.0', 'latent:state/key-value@0.2.0',
+                'latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0'})
+            changed_host = copy.deepcopy(host)
+            changed_host['stateConfigurationDigest'] = 'sha256:' + '9' * 64
+            with self.assertRaises(ValueError):
+                complete_policy_documents(observed, changed_host, operations[0])
             from tools.java_transaction_qualification import policies
             class Client:
                 def __init__(self, directory):

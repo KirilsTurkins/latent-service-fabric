@@ -9,6 +9,13 @@ const PINS: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../docs/testing/evidence/java-current-event-capture-9a19-2026-11-08.json"
 ));
+const LIVE_SOURCE: &str = "49eaca04be33f71d993e093576343ee89afb0cf0";
+const LIVE_PROFILE: &str =
+    "js-window-v1:3444a7838fbf3990b9426fb34268c0c9954ebc96cdb465fbc4a500f6f8aadf74";
+const LIVE_PINS: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../docs/testing/evidence/java-current-event-capture-49ea-2026-11-08.json"
+));
 
 pub(crate) fn sign_captured_event_java(
     output: &Path,
@@ -16,6 +23,18 @@ pub(crate) fn sign_captured_event_java(
     paths: &[OsString],
 ) -> Result<()> {
     sign_selected(output, source, paths, &["aggregate"], PINS, PROFILE, SOURCE)
+}
+
+pub(crate) fn sign_live_event_java(output: &Path, source: &str, paths: &[OsString]) -> Result<()> {
+    sign_selected(
+        output,
+        source,
+        paths,
+        &["aggregate"],
+        LIVE_PINS,
+        LIVE_PROFILE,
+        LIVE_SOURCE,
+    )
 }
 
 #[cfg(test)]
@@ -31,6 +50,13 @@ mod tests {
         let output = root.path().join("absent");
         assert!(sign_captured_event_java(&output, "wrong", &[root.path().into()]).is_err());
         assert!(sign_captured_event_java(&output, SOURCE, &[root.path().into()]).is_err());
+        assert!(!output.exists());
+        let live: serde_json::Value = serde_json::from_slice(LIVE_PINS).unwrap();
+        assert_eq!(live["captures"]["sourceCommit"], LIVE_SOURCE);
+        assert_eq!(live["captures"]["nativeIdempotencyProfile"], LIVE_PROFILE);
+        assert_eq!(live["executionQualified"], false);
+        assert!(sign_live_event_java(&output, SOURCE, &[root.path().into()]).is_err());
+        assert!(sign_live_event_java(&output, LIVE_SOURCE, &[root.path().into()]).is_err());
         assert!(!output.exists());
     }
 }

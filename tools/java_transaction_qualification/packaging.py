@@ -224,8 +224,15 @@ def package_captured_event(directory: Path, selected, output: Path, contracts_to
     from .current_inputs import CurrentSelection, load_current
     require(isinstance(directory, Path) and isinstance(selected, CurrentSelection)
             and type(timeout) is int and 0 < timeout <= 1800, "explicit-event-capture-and-deadline")
-    packet = decode(read_file(Path(__file__).resolve().parents[2] /
-        'docs/testing/evidence/java-current-event-capture-9a19-2026-11-08.json'))['captures']
+    captures = {
+        '9a19b0239ae66f88ec2b2f51013f7b60c3d3c71f': ('java-current-event-capture-9a19-2026-11-08.json',
+                                                      'fixture-sign-captured-event-java-input'),
+        '49eaca04be33f71d993e093576343ee89afb0cf0': ('java-current-event-capture-49ea-2026-11-08.json',
+                                                      'fixture-sign-live-event-java-input'),
+    }
+    require(selected.source_commit in captures, 'closed-event-capture-source')
+    packet_name, signing_mode = captures[selected.source_commit]
+    packet = decode(read_file(Path(__file__).resolve().parents[2] / 'docs/testing/evidence' / packet_name))['captures']
     pins = packet['variants']['aggregate']['materials']
     require(selected.variant == 'aggregate' and selected.source_commit == packet['sourceCommit']
             and selected.report_digest == pins['report']['sha256']
@@ -242,7 +249,7 @@ def package_captured_event(directory: Path, selected, output: Path, contracts_to
               'signedNodeExecutionQualified': False, 'packagedDistributionQualified': False}
     try:
         prepare(item, output / 'aggregate', contracts_tool, signer, command)
-        command.run('event-signing', signer, 'fixture-sign-captured-event-java-input',
+        command.run('event-signing', signer, signing_mode,
                     output / 'signed', item.compiler_source, output / 'aggregate')
         releases = decode(read_file(output / 'signed/release-set.json'))
         require(releases['schemaVersion'] == 'latent.component.signing-fixture.v1'

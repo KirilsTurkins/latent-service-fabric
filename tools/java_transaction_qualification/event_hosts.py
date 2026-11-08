@@ -67,6 +67,7 @@ class ObservedEventHost:
     profile: Mapping[str, object]
     alice: Mapping[str, object]
     operation_digest: str
+    host_digest: str
 
     @classmethod
     def read(cls, host: dict, preview: dict, operations: list[dict], requirements: bytes):
@@ -204,7 +205,59 @@ class ObservedEventHost:
                 and selected_profile.configuration_epoch == provider_epoch,
                 "same-unique-event-provider-selection")
         return cls(MappingProxyType(dict(provider)), MappingProxyType(dict(effect)),
-                   MappingProxyType(dict(profile)), MappingProxyType(dict(alice)), _operation_digest(operation))
+                   MappingProxyType(dict(profile)), MappingProxyType(dict(alice)), _operation_digest(operation),
+                   _host_digest(host))
+
+
+def _host_digest(host: dict) -> str:
+    raw = json.dumps(host, sort_keys=True, separators=(',', ':'), ensure_ascii=False, allow_nan=False).encode()
+    require(len(raw) <= 262144, 'bounded-event-host-observation')
+    return hashlib.sha256(raw).hexdigest()
+
+
+def complete_policy_documents(observed: ObservedEventHost, host: dict, operation: dict) -> dict:
+    """Propose state, clock, and event rules for one unchanged native observation."""
+    from .configuration import CLOCKS, OPERATOR
+    from .policies import (DATA_OPERATIONS, MANAGEMENT_OPERATIONS, RECOVERY_OPERATIONS,
+                           STATE_CONTRACT, _caller, binding, rule, scope)
+    require(isinstance(host, dict) and _host_digest(host) == observed.host_digest,
+            'same-original-event-host-observation')
+    publication = operation['publication']
+    proposals = policy_documents(observed, operation)
+    operator = _caller(host['configuredTransportCallers'], OPERATOR, 'administrator')
+    rows = host['configuredProviders']
+    require(isinstance(rows, list) and len(rows) == 4, 'exact-event-clock-http-provider-set')
+    clocks = {}
+    for name, (capability, clock_operation) in CLOCKS.items():
+        selected = [row for row in rows if isinstance(row, dict) and row.get('id') == name]
+        require(len(selected) == 1 and set(selected[0]) == PROVIDER_FIELDS
+                and selected[0]['tenant'] == TENANT and selected[0]['service'] == 'runtime-host'
+                and selected[0]['capability'] == capability, 'exact-observed-clock-provider')
+        clocks[name] = selected[0]
+    proposals['bindings']['transaction-java-aggregate'] = binding(
+        STATE_CONTRACT, host['stateProviderProfile'], host['stateConfigurationDigest'],
+        host['stateConfigurationEpoch'], [])
+    state_rules = []
+    for caller, operations in ((observed.alice, DATA_OPERATIONS + ['inspect-effect', 'cancel-command']),
+                               (operator, MANAGEMENT_OPERATIONS)):
+        state_rules.append(rule(caller['ownerKind'], caller['ownerKind'], caller['subject'], [publication],
+            STATE_CONTRACT, operations, {'kind': 'state', 'scopes': [scope(caller)]}))
+    state_rules.append(rule('native-recovery', 'administrator', operator['subject'], [publication],
+        STATE_CONTRACT, RECOVERY_OPERATIONS, {'kind': 'state', 'scopes': [scope(operator)]},
+        input_bytes=64 * 1024 * 1024, output_bytes=64 * 1024 * 1024, calls=1, wall=60000))
+    proposals['policies'][STATE_POLICY] = {'formatVersion': 1, 'tenant': TENANT, 'rules': state_rules}
+    proposals['deploymentGrants'].append({'capability': STATE_CONTRACT, 'policy': STATE_POLICY,
+                                         'operations': list(DATA_OPERATIONS)})
+    for name, (capability, clock_operation) in CLOCKS.items():
+        descriptor = clocks[name]
+        policy_name = {'clockMonotonic': 'clock-monotonic', 'clockWall': 'clock-wall'}[name]
+        proposals['bindings'][policy_name + '-installed'] = binding(capability, descriptor['profile'],
+            descriptor['configurationDigest'], epoch(descriptor['configurationEpoch'], decimal=True), [clock_operation])
+        proposals['policies'][policy_name + '-allow'] = {'formatVersion': 1, 'tenant': TENANT, 'rules': [
+            rule('clock', 'user', ALICE, [publication], capability, [clock_operation], {'kind': 'clock'},
+                 input_bytes=0, output_bytes=32768, calls=4096, wall=120000)]}
+        proposals['deploymentGrants'].append({'capability': capability, 'policy': policy_name + '-allow'})
+    return proposals
 
 
 def _operation_digest(operation: dict) -> str:

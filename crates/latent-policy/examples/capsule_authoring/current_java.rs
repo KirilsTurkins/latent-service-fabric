@@ -3,6 +3,7 @@ mod native_memory;
 pub(crate) use native_memory::sign_native_memory_current_java;
 mod event;
 pub(crate) use event::sign_captured_event_java;
+pub(crate) use event::sign_live_event_java;
 mod november;
 pub(crate) use november::sign_current_465_java;
 pub(crate) use november::sign_november_current_java;
