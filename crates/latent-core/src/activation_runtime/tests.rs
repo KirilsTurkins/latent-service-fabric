@@ -225,29 +225,126 @@ fn finalization_during_admission_refuses_without_releasing_allocated_slab() {
 }
 
 #[test]
-fn finalization_after_the_last_probe_can_precede_owner_publication() {
-    // Known boundary: the original budget terminal transition does not take
-    // the runtime state lock. Keep this causal control until they are joined
-    // by a shared admission/terminal handshake.
+fn same_ledger_finalization_before_owner_commit_refuses_publication() {
+    use std::sync::mpsc;
+    use std::time::Duration;
+
     let runtime = runtime();
     let budget = runtime.inner.budget.clone();
-    let mut reserved_at_terminal = 0;
-    let mut state = runtime.inner.state.lock().unwrap();
-    let owner = runtime
-        .register_locked_with_hook(&mut state, OwnerKind::Task, None, |step| {
+    let worker_runtime = runtime.clone();
+    let (checked_tx, checked_rx) = mpsc::sync_channel(0);
+    let (release_tx, release_rx) = mpsc::sync_channel(0);
+    let worker = std::thread::spawn(move || {
+        let mut state = worker_runtime.inner.state.lock().unwrap();
+        worker_runtime.register_locked_with_hook(&mut state, OwnerKind::Task, None, |step| {
             if step == AdmissionStep::CheckedBeforePublication {
-                reserved_at_terminal = budget.host_memory_bytes();
-                let terminal = budget.finalize_at(None, Instant::now());
-                assert!(terminal.consumption().peak_memory_bytes >= reserved_at_terminal);
+                checked_tx.send(()).unwrap();
+                release_rx.recv_timeout(Duration::from_secs(5)).unwrap();
             }
         })
-        .unwrap();
-    drop(state);
-    assert!(budget.finalized().is_some());
+    });
+    checked_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+    let reserved_at_terminal = budget.host_memory_bytes();
+    let terminal = budget.finalize_at(None, Instant::now());
+    assert!(terminal.consumption().peak_memory_bytes >= reserved_at_terminal);
+    release_tx.send(()).unwrap();
+    let failure = worker.join().unwrap().unwrap_err();
+    assert_eq!(failure.code, PlatformErrorCode::Cancelled);
+    assert_eq!(runtime.snapshot().owners[0], 0);
+    assert_eq!(budget.host_memory_bytes(), reserved_at_terminal);
+    runtime.retire().unwrap();
+    drop(runtime);
+    assert_eq!(budget.host_memory_bytes(), 0);
+}
+
+#[test]
+fn same_ledger_finalization_waits_for_owner_publication() {
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    let runtime = runtime();
+    let budget = runtime.inner.budget.clone();
+    let worker_runtime = runtime.clone();
+    let (held_tx, held_rx) = mpsc::sync_channel(0);
+    let (release_tx, release_rx) = mpsc::sync_channel(0);
+    let worker = std::thread::spawn(move || {
+        let mut state = worker_runtime.inner.state.lock().unwrap();
+        worker_runtime.register_locked_with_hook(&mut state, OwnerKind::Task, None, |step| {
+            if step == AdmissionStep::HoldingPublicationGuard {
+                held_tx.send(()).unwrap();
+                release_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+            }
+        })
+    });
+    held_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+    let close_budget = budget.clone();
+    let (observed_tx, observed_rx) = mpsc::sync_channel(0);
+    let (done_tx, done_rx) = mpsc::sync_channel(0);
+    let closer = std::thread::spawn(move || {
+        observed_tx
+            .send(close_budget.test_accounting_is_locked())
+            .unwrap();
+        let _ = close_budget.finalize_at(None, Instant::now());
+        done_tx.send(()).unwrap();
+    });
+    let observed_locked = observed_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+    let early = done_rx.recv_timeout(Duration::from_millis(100));
+    let finished_early = early.is_ok();
+    // Release the worker before asserting, including on a failed control.
+    release_tx.send(()).unwrap();
+    let owner = worker.join().unwrap().unwrap();
+    if !finished_early {
+        done_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+    }
+    closer.join().unwrap();
+    assert!(observed_locked);
+    assert!(matches!(early, Err(mpsc::RecvTimeoutError::Timeout)));
     assert_eq!(runtime.snapshot().owners[0], 1);
-    assert_eq!(budget.host_memory_bytes(), reserved_at_terminal);
     drop(owner);
-    assert_eq!(budget.host_memory_bytes(), reserved_at_terminal);
+    runtime.retire().unwrap();
+    drop(runtime);
+    assert_eq!(budget.host_memory_bytes(), 0);
+}
+
+#[test]
+fn cancellation_after_the_last_probe_can_precede_owner_publication() {
+    // This guard orders finalization only: cancellation remains an atomic,
+    // nonblocking signal and is not serialized by the accounting mutex.
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    let runtime = runtime();
+    let budget = runtime.inner.budget.clone();
+    let worker_runtime = runtime.clone();
+    let (held_tx, held_rx) = mpsc::sync_channel(0);
+    let (release_tx, release_rx) = mpsc::sync_channel(0);
+    let worker = std::thread::spawn(move || {
+        let mut state = worker_runtime.inner.state.lock().unwrap();
+        worker_runtime.register_locked_with_hook(&mut state, OwnerKind::Task, None, |step| {
+            if step == AdmissionStep::HoldingPublicationGuard {
+                held_tx.send(()).unwrap();
+                release_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+            }
+        })
+    });
+    held_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+    let close_budget = budget.clone();
+    let (done_tx, done_rx) = mpsc::sync_channel(0);
+    let closer = std::thread::spawn(move || {
+        close_budget.cancel_descendants().unwrap();
+        done_tx.send(()).unwrap();
+    });
+    let cancellation = done_rx.recv_timeout(Duration::from_secs(3));
+    let was_nonblocking = cancellation.is_ok();
+    release_tx.send(()).unwrap();
+    let owner = worker.join().unwrap().unwrap();
+    if !was_nonblocking {
+        done_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+    }
+    closer.join().unwrap();
+    assert!(was_nonblocking);
+    assert_eq!(runtime.snapshot().owners[0], 1);
+    drop(owner);
     runtime.retire().unwrap();
     drop(runtime);
     assert_eq!(budget.host_memory_bytes(), 0);

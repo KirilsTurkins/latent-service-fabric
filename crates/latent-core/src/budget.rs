@@ -790,6 +790,13 @@ struct ActivationBudgetInner {
     state: Mutex<AccountingState>,
 }
 
+// Serializes a runtime's final owner-record write with the *same* original
+// ledger's finalization. It does not serialize cancellation, ancestor closure,
+// external cancellation probes or passage of the monotonic deadline.
+pub(crate) struct RuntimePublicationGuard<'a> {
+    _state: MutexGuard<'a, AccountingState>,
+}
+
 #[derive(Debug, Default)]
 struct AccountingState {
     consumption: BudgetConsumption,
@@ -1215,6 +1222,23 @@ impl ActivationBudget {
 
     fn lock_state(&self) -> MutexGuard<'_, AccountingState> {
         self.inner.lock_state()
+    }
+
+    // Callers must already hold their runtime mutation lock and must not call
+    // any budget-locking method, probe, callback or destructor while held.
+    pub(crate) fn runtime_publication_guard(&self) -> RuntimePublicationGuard<'_> {
+        RuntimePublicationGuard {
+            _state: self.lock_state(),
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_accounting_is_locked(&self) -> bool {
+        match self.inner.state.try_lock() {
+            Ok(_) => false,
+            Err(std::sync::TryLockError::WouldBlock) => true,
+            Err(std::sync::TryLockError::Poisoned(_)) => panic!("poisoned test accounting lock"),
+        }
     }
 
     #[cfg(test)]
