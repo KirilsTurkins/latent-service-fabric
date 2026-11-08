@@ -26,9 +26,10 @@ HEADERS = {
 }
 SOURCES = ('tools/c_sync_source_controls.py', FIXTURE + 'c', FIXTURE + 'cjs',
     'tools/tests/fixtures/c-once-jspi.c', 'tools/tests/fixtures/c-once-jspi.cjs',
+    'tools/tests/fixtures/c-root-drain-jspi.c', 'tools/tests/fixtures/c-root-drain-jspi.cjs',
     'sdk/c-guest/runtime/threads.c', 'sdk/c-guest/runtime/synchronization.c',
     'sdk/c-guest/runtime/thread-abi.h', 'tools/qualify_c_context_lowering.py',
-    'crates/latent-component-threading/src/c_lifecycle.rs',
+    'crates/latent-component-threading/src/c_lifecycle.rs', 'crates/latent-component-threading/src/c_root.rs',
     'crates/vendor/wasmtime/src/runtime/component/concurrent.rs',
     'crates/vendor/wasmtime/src/runtime/vm/component/libcalls.rs',
     'tools/build_observation.py', 'tools/build_process.py',
@@ -114,6 +115,10 @@ def run(output, zig, node):
         join = original[original.index('static int join_claim('):original.index('int pthread_join(')]
         body = output / 'c-join-reference-body.h'
         body.write_bytes((find + join).encode())
+        lifecycle = original[original.index('__attribute__((export_name("__lsf_c_thread_body")))'):
+            original.index('#if defined(LSF_C_LINKED_LIBC)')]
+        drain_body = output / 'c-root-drain-reference-body.h'
+        drain_body.write_bytes((find + join + lifecycle).encode())
         flags = ['cc', '-target', 'wasm32-wasi', '-std=c17', '-O2', '-Wall', '-Wextra', '-Werror']
         runtime = ROOT / 'sdk/c-guest/runtime'
         wasi = [part for family in ('wasm-wasi-musl', 'generic-musl') for part in
@@ -143,8 +148,24 @@ def run(output, zig, node):
             ROOT / 'tools/tests/fixtures/c-once-jspi.cjs', output / 'once-jspi.wasm'])
         require(stdout == b'actual once source: one initializer, two suspended mixed-API waiters, two settled Wait doubles; recursion and initializer traps retained; JSPI test ports only\n',
             'c-once-jspi-source-control-result')
+        drain_exports = ('__stack_pointer', 'setup', 'root_pointer', 'first_pointer', 'second_pointer',
+            'start_root', 'start_first', 'start_second', 'read_live', 'read_peak', 'read_admitted',
+            'read_settled', 'read_released', 'read_freed', 'read_parked', 'read_woken', 'read_tls',
+            'read_first_phase', 'read_second_phase', 'read_second_claimed', 'read_second_joined',
+            'read_root_observer')
+        command([zig, *flags, '-fno-builtin', '-fno-stack-protector', '-nostdlib',
+            '-Wl,--no-entry', '-Wl,--import-memory', '-Wl,--initial-memory=4194304',
+            '-Wl,--max-memory=4194304', '-Wl,-z,stack-size=65536',
+            *('-Wl,--export=' + name for name in drain_exports), '-I', output, '-I', runtime,
+            ROOT / 'tools/tests/fixtures/c-root-drain-jspi.c', '-o', output / 'root-drain-jspi.wasm'])
+        stdout = command([node, '--max-old-space-size=64', '--experimental-wasm-jspi',
+            ROOT / 'tools/tests/fixtures/c-root-drain-jspi.cjs', output / 'root-drain-jspi.wasm'])
+        require(stdout == b'PASS root drain: existing and later joins, admission and park races, cancellation custody; JSPI test ports only\n',
+            'c-root-drain-jspi-source-control-result')
+        report['rootDrainScenarios'] = 5
         report['outputs'] = {name: identity(output / name, 1024 * 1024) for name in
-            ('threads.o', 'reference.wasm', 'once-jspi.wasm', abi.name, body.name)}
+            ('threads.o', 'reference.wasm', 'once-jspi.wasm', 'root-drain-jspi.wasm',
+             abi.name, body.name, drain_body.name)}
         require(header_ids == {name: identity(lib / name, 1024 * 1024) for name in HEADERS},
             'c-sync-header-input-changed')
         require(before == {name: identity(ROOT / name, 1024 * 1024) for name in SOURCES},
