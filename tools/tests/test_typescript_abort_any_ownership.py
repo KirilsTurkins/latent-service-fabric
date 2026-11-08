@@ -46,11 +46,16 @@ class AbortAnySourceTests(unittest.TestCase):
                      b'    }\n')
         self.assertLess(selected.index(declaration), selected.index(b'  JS::RootedValueVector signals(cx);'))
         self.assertLess(selected.index(admission), selected.index(b'    if (!signals.append(value))'))
+        fixed = b'    if (!signals.append(value)) { JS_ReportOutOfMemory(cx); iterator.closeThrow(); return false; }\n'
+        original = b'    if (!signals.append(value)) { JS_ReportOutOfMemory(cx); return false; }\n'
+        self.assertEqual(selected.count(fixed), 1)
+        selected = selected.replace(fixed, original, 1)
         for change in (declaration, owned, admission):
             self.assertEqual(selected.count(change), 1)
             selected = selected.replace(change, b'', 1)
         self.assertEqual(selected, previous)
         self.assertEqual(receipt['anyHeapVectorOwner'], 'one-original-native-count-per-frame-not-byte-accurate')
+        self.assertEqual(receipt['anyAllocationFailure'], 'close-iterator-preserving-original-exception')
         self.assertFalse(receipt['signedLSFComponentQualified'])
 
 
@@ -68,7 +73,12 @@ class AbortAnyOwnershipControls(unittest.TestCase):
         if template.count(marker) != 1:
             raise AssertionError('unique emitted abort-any insertion point required')
         selected, previous, _ = selected_and_previous()
-        for label, function in (('selected', selected), ('previous', previous)):
+        fixed = b'if (!signals.append(value)) { JS_ReportOutOfMemory(cx); iterator.closeThrow(); return false; }'
+        original = b'if (!signals.append(value)) { JS_ReportOutOfMemory(cx); return false; }'
+        if selected.count(fixed) != 1:
+            raise AssertionError('unique selected allocation-failure close required')
+        pre_fix = selected.replace(fixed, original, 1)
+        for label, function in (('selected', selected), ('previous', previous), ('pre_fix', pre_fix)):
             source = output/(label+'.cpp')
             source.write_bytes(template.replace(marker, function, 1))
             binary = output/(label+'.exe' if os.name == 'nt' else label)
@@ -93,7 +103,7 @@ class AbortAnyOwnershipControls(unittest.TestCase):
     def test_owned_conversion_closes_and_retains_each_frame(self):
         for case in ('inline', 'heap', 'growth', 'refusal', 'uncatchable', 'invalid', 'invalid-grown',
                      'nested', 'nested-refusal', 'return-reentry', 'allocation-failure-first',
-                     'allocation-failure', 'repeated', 'gc-object'):
+                     'allocation-failure', 'allocation-failure-return', 'repeated', 'gc-object'):
             with self.subTest(case=case):
                 self.check_case(self.selected_binary, case, True)
 
@@ -104,6 +114,11 @@ class AbortAnyOwnershipControls(unittest.TestCase):
         for case in ('inline', 'invalid'):
             with self.subTest(case=case):
                 self.check_case(self.previous_binary, case, True)
+
+    def test_previous_selected_conversion_leaves_iterator_open_on_allocation_failure(self):
+        for case in ('allocation-failure-first', 'allocation-failure', 'allocation-failure-return'):
+            with self.subTest(case=case):
+                self.check_case(self.pre_fix_binary, case, False)
 
 
 if __name__ == '__main__':
