@@ -19090,3 +19090,8 @@
 +    assert_eq!(first_state.factory_dropped.load(SeqCst), 1);
 +    assert_eq!(second_state.factory_dropped.load(SeqCst), 1);
 +}
+--- a/src/runtime/vm/cow.rs
++++ b/src/runtime/vm/cow.rs
+@@ -775 +775 @@ impl MemoryImageSlot {
+-#[cfg(all(test, target_os = "linux", not(miri)))]
++#[cfg(all(test, target_os = "linux", not(miri), feature = "pooling-allocator"))]
