@@ -32,8 +32,6 @@ async fn requested_read_maximum_is_limited_by_the_original_provider_window() {
             .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 8\r\nConnection: close\r\n\r\nabcdefgh")
             .await
             .unwrap();
-        let mut byte = [0];
-        let _ = stream.read(&mut byte).await;
     });
     let f = fixture(port, 1);
     let (session, _) = f.session(5000);
