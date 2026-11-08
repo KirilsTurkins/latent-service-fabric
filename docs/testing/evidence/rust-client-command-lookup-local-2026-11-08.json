@@ -1,0 +1,108 @@
+﻿{
+    "description":  "Experimental separate-node Rust SDK lookup against combined unmerged source and a disposable test signer",
+    "observation":  {
+                        "after":  {
+                                      "commandCount":  "1",
+                                      "encodedStateBytes":  "75",
+                                      "engineProfile":  "protected-redb-immediate-ext4-v1",
+                                      "engineProfileDigest":  "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+                                      "generation":  "3",
+                                      "namespacePolicyDigest":  "sha256:8c9bb3aa458fc93b85433c839c349a522469ecd6713b547cf19fc08be5950905",
+                                      "pendingEffectCount":  "0",
+                                      "quota":  {
+                                                    "effectBytes":  "8388608",
+                                                    "effectRows":  "4096",
+                                                    "payloadBytes":  "8388608",
+                                                    "recoveryBytes":  "1048576",
+                                                    "resultBytes":  "8388608",
+                                                    "resultRows":  "4096",
+                                                    "stateBytes":  "8388608",
+                                                    "stateKeys":  "4096"
+                                                },
+                                      "retainedFormats":  [
+
+                                                          ],
+                                      "status":  "NAMESPACE_STATUS_ACTIVE",
+                                      "view":  {
+                                                   "namespace":  {
+                                                                     "incarnation":  "1",
+                                                                     "namespace":  "transactional-aggregate",
+                                                                     "tenant":  "examples"
+                                                                 },
+                                                   "stateSchema":  "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+                                                   "version":  {
+                                                                   "data":  "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAAAMAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+                                                                   "encoding":  "base64"
+                                                               }
+                                               }
+                                  },
+                        "attemptId":  "1",
+                        "before":  {
+                                       "commandCount":  "1",
+                                       "encodedStateBytes":  "75",
+                                       "engineProfile":  "protected-redb-immediate-ext4-v1",
+                                       "engineProfileDigest":  "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+                                       "generation":  "3",
+                                       "namespacePolicyDigest":  "sha256:8c9bb3aa458fc93b85433c839c349a522469ecd6713b547cf19fc08be5950905",
+                                       "pendingEffectCount":  "0",
+                                       "quota":  {
+                                                     "effectBytes":  "8388608",
+                                                     "effectRows":  "4096",
+                                                     "payloadBytes":  "8388608",
+                                                     "recoveryBytes":  "1048576",
+                                                     "resultBytes":  "8388608",
+                                                     "resultRows":  "4096",
+                                                     "stateBytes":  "8388608",
+                                                     "stateKeys":  "4096"
+                                                 },
+                                       "retainedFormats":  [
+
+                                                           ],
+                                       "status":  "NAMESPACE_STATUS_ACTIVE",
+                                       "view":  {
+                                                    "namespace":  {
+                                                                      "incarnation":  "1",
+                                                                      "namespace":  "transactional-aggregate",
+                                                                      "tenant":  "examples"
+                                                                  },
+                                                    "stateSchema":  "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+                                                    "version":  {
+                                                                    "data":  "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAAAMAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+                                                                    "encoding":  "base64"
+                                                                }
+                                                }
+                                   },
+                        "brokerMessages":  1,
+                        "capturePinsSha256":  "sha256:840b4e4fc6d96c4ee5f8e352aec240cd9c7e3a2123bdbde99784461a63c865c0",
+                        "cliSha256":  "sha256:e1179de07a96719f3161f7748dbb14496151bf8b193253bf7b7a9fc819f4cec7",
+                        "commandId":  "9519180718750dc809725b7a546608e0bf15552ea311c3ac8300c1ee847c89fb",
+                        "effectAttempt":  1,
+                        "effectDisposition":  "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+                        "guestSha256":  "sha256:396784dda4174f84d3a6cb8c211dca9ad706fb826d613e5892b8140f815ad7f5",
+                        "integrationGitCommit":  "5aa6592da0fe2196db68d35510be6751597a77e5",
+                        "lookups":  2,
+                        "nodeSha256":  "sha256:48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+                        "probeSha256":  "sha256:5bb12e3a7b7e4ec8ee2bd27cef28f4c96bad55270e6ca887c98001d8191a4a0b",
+                        "publication":  "publication:sha256:1a9d7e9b9fbcc98f15e728c46b2bc9af064657ff14cd7edea20b7fcb3d3d9438",
+                        "qualification":  "experimental unmerged integration with disposable signer; not hosted or distribution qualification",
+                        "sdkTestSha256":  "sha256:77f2c05fedc9a25f435d3d52f0f05d925766f8da2a8b4c86ca61821eda13fabc",
+                        "syntheticArchiveGitCommit":  "631cf036f8c78f79a5be2a1c419dca074c2fedae",
+                        "testSignerSha256":  "sha256:97e6654cd7d3824b40bc118c5b9abdc0582d12b1f763733f23995263cb523bbf",
+                        "verifiedMergeSourceBlobs":  13749
+                    },
+    "rustClientTestLogSha256":  "sha256:9cba4f5d8d4ca99f94272a887d011de197d6c760bc09cd36ca29ed64a1350eeb",
+    "experimentScriptSha256":  "sha256:26afa437634417f92bdc1dbf7689542ed513ae114998e91b859c4794458ca400",
+    "packagingHelperSha256":  "sha256:cfd3708c1bc0cbb3292ff61e6643e5ec514668256296a499979b9f53899dde01",
+    "brokerWrapperSha256":  "sha256:d192541997d35d58fd56aad67dcc023e2ec7a635b571e1ef0ce79e94ee226863",
+    "clientTest":  "One live Rust SDK test passed, checking two stable committed-command lookups and client owner retirement",
+    "nodeShutdown":  {
+                         "effectsPhysicallyRetired":  true,
+                         "reaped":  true,
+                         "clean":  true,
+                         "activeActivations":  0,
+                         "liveStores":  0
+                     },
+    "brokerFixtureRemoved":  true,
+    "previousAttempt":  "A previous experiment observed POLICY_BLOCKED with a mismatched username/password broker fixture; the token-auth fixture succeeded. The earlier cause was not definitively isolated.",
+    "limitations":  "Combined unmerged source and disposable signer; not current hosted CI, installed distribution, six-client coverage, or crash/replay qualification."
+}
