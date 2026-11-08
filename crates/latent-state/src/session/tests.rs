@@ -676,6 +676,31 @@ fn attempted_overwrites_reads_and_open_cursors_remain_bounded() {
 }
 
 #[test]
+fn query_continuation_rechecks_current_authorization_before_reading() {
+    let fixture = Fixture::new();
+    fixture.write(&[(b"p/a", Some(b"a")), (b"p/b", Some(b"b"))]);
+    let mut scope = fixture.scope.clone();
+    scope.mode = StateMode::Query;
+    let (view, mut query) = fixture.in_scope(scope, SessionLimits::default());
+    let first = query.scan(&view, b"p/", None, 1, 1000, allow).unwrap();
+    let cursor = first.continuation.unwrap();
+    let denied = |_: &StateScope, _: StateAccess| Err(StateError::PermissionDenied);
+    assert_eq!(
+        query.scan(&view, b"p/", Some(&cursor), 1, 1000, denied),
+        Err(StateError::PermissionDenied)
+    );
+    let second = query
+        .scan(&view, b"p/", Some(&cursor), 1, 1000, allow)
+        .unwrap();
+    assert_eq!(second.entries.len(), 1);
+    assert_eq!(second.entries[0].key, b"p/b");
+    assert!(second.continuation.is_none());
+    query.close().unwrap();
+    drop(view);
+    assert_eq!(fixture.store.live_views(), 0);
+}
+
+#[test]
 fn expired_query_cursor_cannot_reopen_a_view_and_fresh_query_still_succeeds() {
     let fixture = Fixture::new();
     fixture.write(&[(b"p/a", Some(b"a")), (b"p/b", Some(b"b"))]);
