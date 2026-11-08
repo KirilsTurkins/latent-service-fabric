@@ -643,6 +643,36 @@ async fn ordinary_state_replacement_retires_only_its_old_payload_after_commit() 
     .reconcile_replaced_state_payloads(&view)
     .unwrap();
     drop(view);
+    // A concurrent accepted command advances the namespace and usage fences.
+    // The stale replacement must not retire the old payload owner.
+    drop(fixture.claim_unbound("ordinary-detach-competing"));
+    let claim = match envelope.publish(&fixture.state, |_| Ok(())) {
+        PreparedDisposition::KnownNotCommitted {
+            command,
+            reason: AtomicError::Conflict,
+        } => *command,
+        _ => panic!("expected stale replacement conflict"),
+    };
+    let view = fixture.state.snapshot().unwrap();
+    assert!(
+        latent_state::session::retained_state_payload_reference(&view, &cell_key)
+            .unwrap()
+            .is_some()
+    );
+    let state = state_mutation(&view, Some(b"new"));
+    let envelope = CompleteEnvelope::success_captured(
+        &view,
+        claim,
+        Some(state),
+        vec![],
+        value(b"ok"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap()
+    .reconcile_replaced_state_payloads(&view)
+    .unwrap();
+    drop(view);
     let claim = match envelope.publish(&fixture.state, |_| Err(AtomicError::PermissionDenied)) {
         PreparedDisposition::KnownNotCommitted {
             command,
