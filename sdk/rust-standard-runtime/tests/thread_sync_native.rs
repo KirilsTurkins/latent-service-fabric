@@ -27,6 +27,7 @@ pub mod sys {
                     next: Cell<u64>,
                     live: RefCell<BTreeMap<Token, Option<*mut Node>>>,
                     timers: RefCell<BTreeSet<Token>>,
+                    last_timeout: Cell<Option<Duration>>,
                     on_admit: RefCell<Option<Box<dyn FnOnce()>>>,
                     on_wait: RefCell<Option<Box<dyn FnOnce()>>>,
                     on_wake: RefCell<Option<Box<dyn FnOnce()>>>,
@@ -35,6 +36,11 @@ pub mod sys {
                 pub struct WaitLease(Token);
                 impl WaitLease {
                     pub fn admit(timeout: Option<Duration>) -> Self {
+                        if let Some(duration) = timeout {
+                            u64::try_from(duration.as_nanos())
+                                .expect("std timeout exceeds the supported monotonic range");
+                            PORTS.with(|p| p.last_timeout.set(Some(duration)));
+                        }
                         let token = PORTS.with(|p| {
                             let id = p.next.get() + 1; p.next.set(id);
                             let token = Token(id);
@@ -59,6 +65,7 @@ pub mod sys {
                 pub fn current_index() -> u32 { PORTS.with(|p| p.index.get()) }
                 pub fn index(index: u32) { PORTS.with(|p| p.index.set(index)); }
                 pub fn live() -> usize { PORTS.with(|p| p.live.borrow().len()) }
+                pub fn last_timeout() -> Option<Duration> { PORTS.with(|p| p.last_timeout.get()) }
                 pub fn on_admit(f: impl FnOnce() + 'static) { PORTS.with(|p| *p.on_admit.borrow_mut() = Some(Box::new(f))); }
                 pub fn on_wait(f: impl FnOnce() + 'static) { PORTS.with(|p| *p.on_wait.borrow_mut() = Some(Box::new(f))); }
                 pub fn on_wake(f: impl FnOnce() + 'static) { PORTS.with(|p| *p.on_wake.borrow_mut() = Some(Box::new(f))); }
@@ -218,4 +225,57 @@ fn missing_readiness_refuses_without_turning_cancellation_into_elapsed_success()
         queue.prepare(Some(time::Duration::from_nanos(1))).wait();
     }));
     assert!(result.is_err()); assert!(queue.is_empty()); assert_eq!(runtime::live(), 0);
+}
+
+#[test]
+fn parker_timeout_above_host_range_uses_a_real_bounded_timer() {
+    let mut allocation = Box::<parker::Parker>::new_uninit();
+    unsafe { parker::Parker::new_in_place(allocation.as_mut_ptr()); }
+    let parker: &'static parker::Parker = Box::leak(unsafe { allocation.assume_init() });
+    let pinned = unsafe { pin::Pin::new_unchecked(parker) };
+    runtime::index(1); runtime::on_wait(runtime::expire_one_live_timer);
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        unsafe { pinned.park_timeout(time::Duration::MAX); }
+    }));
+    assert!(result.is_ok(), "large park timeout should not overflow conversion");
+    assert_eq!(runtime::last_timeout(), Some(time::Duration::from_nanos(u64::MAX)));
+    assert_eq!(runtime::live(), 0);
+}
+
+#[test]
+fn condvar_timeout_above_host_range_does_not_claim_requested_time_elapsed() {
+    let mutex = mutex::Mutex::new(); let condvar = condvar::Condvar::new();
+    runtime::index(1); mutex.lock(); runtime::on_wait(runtime::expire_one_live_timer);
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        unsafe { condvar.wait_timeout(&mutex, time::Duration::MAX) }
+    }));
+    assert!(!mutex.try_lock(), "original mutex must be held after the wait");
+    unsafe { mutex.unlock(); }
+    assert!(result.is_ok(), "large condvar timeout should not overflow conversion");
+    assert!(result.unwrap(), "capped readiness is a permitted spurious return, not full elapsed time");
+    assert_eq!(runtime::last_timeout(), Some(time::Duration::from_nanos(u64::MAX)));
+    assert_eq!(runtime::live(), 0);
+}
+
+#[test]
+fn condvar_timeout_at_exact_host_range_reports_real_elapsed_readiness() {
+    let mutex = mutex::Mutex::new(); let condvar = condvar::Condvar::new();
+    runtime::index(1); mutex.lock(); runtime::on_wait(runtime::expire_one_live_timer);
+    assert!(!unsafe { condvar.wait_timeout(&mutex, time::Duration::from_nanos(u64::MAX)) });
+    assert!(!mutex.try_lock()); unsafe { mutex.unlock(); }
+    assert_eq!(runtime::live(), 0);
+}
+
+#[test]
+fn large_timeout_never_fabricates_a_wake_without_timer_readiness() {
+    let mut allocation = Box::<parker::Parker>::new_uninit();
+    unsafe { parker::Parker::new_in_place(allocation.as_mut_ptr()); }
+    let parker: &'static parker::Parker = Box::leak(unsafe { allocation.assume_init() });
+    let pinned = unsafe { pin::Pin::new_unchecked(parker) };
+    runtime::index(1);
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        unsafe { pinned.park_timeout(time::Duration::MAX); }
+    }));
+    assert!(result.is_err(), "missing readiness is not a spurious successful timer");
+    assert_eq!(runtime::live(), 0);
 }

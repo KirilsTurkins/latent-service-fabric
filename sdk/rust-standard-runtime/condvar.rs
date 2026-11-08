@@ -22,13 +22,18 @@ impl Condvar {
         let previous = self.mutex.get();
         assert!(previous.is_null() || previous == address, "condvar used with a different mutex");
         self.mutex.set(address);
+        // Host timers take u64 nanoseconds. A shorter bounded wait may return
+        // spuriously, but must not claim the caller's full duration elapsed.
+        let maximum = Duration::from_nanos(u64::MAX);
+        let capped = timeout.is_some_and(|duration| duration > maximum);
+        let timeout = timeout.map(|duration| duration.min(maximum));
         // Enqueue before releasing the mutex. A notification between unlock and
         // the actual park sets this waiter's state; it is not an elapsed timer.
         let wait = self.waiters.prepare(timeout);
         unsafe { mutex.unlock(); }
         let notified = wait.wait();
         mutex.lock();
-        // Pinned std interprets false only as an observed elapsed timeout.
-        notified
+        // Pinned std interprets false only as the requested timeout elapsed.
+        notified || capped
     }
 }
