@@ -63,8 +63,8 @@ def conversion(name, module, fields, messages, enums):
         output += ["        Ok(Self {" if fallible else "        Self {"]
         for field in ordinary:
             if module == "invocation" and name in {"Success", "DeclaredError"} and field["name"] == "payload":
-                # latent-rpc binds these messages to an independently owned
-                # Bytes payload; the public SDK retains its own Vec owner.
+                # latent-rpc binds these messages to an owned ResultPayload;
+                # the public SDK retains its own separate Vec owner.
                 if direction == "model" and name == "Success":
                     output += ["            // The client profile owns a separate controller response buffer;",
                                "            // tonic's maximum_response bounds it. Keep the source through copy."]
