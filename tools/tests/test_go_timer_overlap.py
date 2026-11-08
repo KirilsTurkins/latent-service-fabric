@@ -26,10 +26,10 @@ def stdout(rows=None, filtered=53):
 
 
 def stderr():
-    return (b'LSF-GO-TIMER-OVERLAP-V2|go-timer-overlap-reset-reset|1|0|0|4|1|1|1|1|0|1|1|512\n'
-            b'LSF-GO-TIMER-OVERLAP-V2|go-timer-overlap-reset-stop|1|0|0|4|1|1|1|1|0|1|1|512\n'
-            b'LSF-GO-TIMER-OVERLAP-V2|go-timer-overlap-gc-reset-reset|1|0|0|4|1|1|1|1|1|1|1|512\n'
-            b'LSF-GO-TIMER-OVERLAP-V2|go-timer-overlap-gc-reset-stop|1|0|0|4|1|1|1|1|1|1|1|512\n')
+    return (b'LSF-GO-TIMER-OVERLAP-V3|go-timer-overlap-reset-reset|1|0|0|4|1|1|1|1|0|0|1|1|512\n'
+            b'LSF-GO-TIMER-OVERLAP-V3|go-timer-overlap-reset-stop|1|0|0|4|1|1|1|1|0|0|1|1|512\n'
+            b'LSF-GO-TIMER-OVERLAP-V3|go-timer-overlap-gc-reset-reset|1|0|0|4|1|1|1|1|1|1|1|1|512\n'
+            b'LSF-GO-TIMER-OVERLAP-V3|go-timer-overlap-gc-reset-stop|1|0|0|4|1|1|1|1|1|1|1|1|512\n')
 
 
 class GoTimerOverlap(unittest.TestCase):
@@ -37,10 +37,10 @@ class GoTimerOverlap(unittest.TestCase):
         result = reference.timer_overlap_observations(stdout(), stderr(), 53)
         self.assertEqual(result['cases'], cases())
         self.assertEqual(result['witnesses'], [
-            {'activation': 'go-timer-overlap-reset-reset', 'postGcMarkerStopped': False, 'modeledWitnessBytes': 512},
-            {'activation': 'go-timer-overlap-reset-stop', 'postGcMarkerStopped': False, 'modeledWitnessBytes': 512},
-            {'activation': 'go-timer-overlap-gc-reset-reset', 'postGcMarkerStopped': True, 'modeledWitnessBytes': 512},
-            {'activation': 'go-timer-overlap-gc-reset-stop', 'postGcMarkerStopped': True, 'modeledWitnessBytes': 512},
+            {'activation': 'go-timer-overlap-reset-reset', 'postGcMarkerStopped': False, 'handshakeParkObserved': False, 'modeledWitnessBytes': 512},
+            {'activation': 'go-timer-overlap-reset-stop', 'postGcMarkerStopped': False, 'handshakeParkObserved': False, 'modeledWitnessBytes': 512},
+            {'activation': 'go-timer-overlap-gc-reset-reset', 'postGcMarkerStopped': True, 'handshakeParkObserved': True, 'modeledWitnessBytes': 512},
+            {'activation': 'go-timer-overlap-gc-reset-stop', 'postGcMarkerStopped': True, 'handshakeParkObserved': True, 'modeledWitnessBytes': 512},
         ])
         for rows in (cases()[:-1], list(reversed(cases())), cases() + cases()[:1]):
             with self.subTest(rows=rows), self.assertRaisesRegex(ValueError, 'signed-retirement'):
@@ -48,18 +48,20 @@ class GoTimerOverlap(unittest.TestCase):
 
     def test_incomplete_wrong_order_and_ambiguous_witnesses_fail_closed(self):
         raw = stderr()
-        plain = b'|1|0|0|4|1|1|1|1|0|1|1|512'
+        plain = b'|1|0|0|4|1|1|1|1|0|0|1|1|512'
         changes = [raw.splitlines(keepends=True)[0], raw + raw.splitlines(keepends=True)[0],
                    b''.join(reversed(raw.splitlines(keepends=True))),
                    raw.replace(b'go-timer-overlap-gc-reset-stop|1|0|0|4',
                                b'go-timer-overlap-gc-reset-stop|0|0|0|4'),
-                   raw.replace(b'go-timer-overlap-gc-reset-stop|1|0|0|4|1|1|1|1|1|1|1|512',
-                               b'go-timer-overlap-gc-reset-stop|1|0|0|4|1|1|1|1|0|1|1|512'),
-                   raw.replace(plain, b'|0|0|0|4|1|1|1|1|0|1|1|512', 1),
-                   raw.replace(plain, b'|1|0|1|4|1|1|1|1|0|1|1|512', 1),
-                   raw.replace(plain, b'|1|0|0|5|1|1|1|1|0|1|1|512', 1),
-                   raw.replace(plain, b'|1|0|0|4|1|0|1|1|0|1|1|512', 1),
-                   raw.replace(b'OVERLAP-V2', b'OVERLAP-V1'),
+                   raw.replace(b'go-timer-overlap-gc-reset-stop|1|0|0|4|1|1|1|1|1|1|1|1|512',
+                               b'go-timer-overlap-gc-reset-stop|1|0|0|4|1|1|1|1|0|1|1|1|512'),
+                   raw.replace(b'go-timer-overlap-gc-reset-stop|1|0|0|4|1|1|1|1|1|1|1|1|512',
+                               b'go-timer-overlap-gc-reset-stop|1|0|0|4|1|1|1|1|1|0|1|1|512'),
+                   raw.replace(plain, b'|0|0|0|4|1|1|1|1|0|0|1|1|512', 1),
+                   raw.replace(plain, b'|1|0|1|4|1|1|1|1|0|0|1|1|512', 1),
+                   raw.replace(plain, b'|1|0|0|5|1|1|1|1|0|0|1|1|512', 1),
+                   raw.replace(plain, b'|1|0|0|4|1|0|1|1|0|0|1|1|512', 1),
+                   raw.replace(b'OVERLAP-V3', b'OVERLAP-V2'),
                    raw.replace(b'|512\n', b'|0\n', 1), raw.replace(b'|512\n', b'|513\n', 1)]
         for changed in changes:
             self.assertNotEqual(changed, raw)

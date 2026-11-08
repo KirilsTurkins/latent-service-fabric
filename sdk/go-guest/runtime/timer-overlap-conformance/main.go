@@ -32,6 +32,7 @@ func Run(which uint32) uint32 {
 	time.Sleep(50 * time.Millisecond)
 	markers := make(chan struct{}, 2)
 	results := make(chan result, 2)
+	continueSecond := make(chan struct{}, 1)
 	go func() {
 		marker := time.NewTimer(time.Hour)
 		if !marker.Stop() {
@@ -63,6 +64,12 @@ func Run(which uint32) uint32 {
 			collected.Stop()
 		}
 		markers <- struct{}{}
+		if which >= 2 {
+			// The root observes this only after the GC marker's Stop has
+			// returned, then admits a distinct root-owned marker before
+			// allowing this worker to reach the target operation.
+			<-continueSecond
+		}
 		if which%2 == 0 {
 			results <- result{2, target.Reset(time.Hour)}
 		} else {
@@ -70,6 +77,11 @@ func Run(which uint32) uint32 {
 		}
 	}()
 	<-markers
+	var releaseMarker *time.Ticker
+	if which >= 2 {
+		releaseMarker = time.NewTicker(41 * time.Minute)
+		continueSecond <- struct{}{}
+	}
 	one, two := <-results, <-results
 	if one.worker == two.worker {
 		panic("duplicate worker result")
@@ -92,6 +104,9 @@ func Run(which uint32) uint32 {
 	}
 	close(release)
 	<-watcherDone
+	if releaseMarker != nil {
+		releaseMarker.Stop()
+	}
 	if which%2 == 1 && !one.active {
 		return 43
 	}

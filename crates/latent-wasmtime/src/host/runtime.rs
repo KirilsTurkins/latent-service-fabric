@@ -405,7 +405,12 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
         Ok(())
     });
     sync!("wake", (owner,), (wit::Token,), |table| {
-        if table.runtime.wake(token(owner)) {
+        let owner = token(owner);
+        if table.runtime.wake(owner) {
+            #[cfg(feature = "development-go-timer-overlap")]
+            if let Some(observer) = &table.overlap {
+                observer.wake(owner);
+            }
             Ok(())
         } else {
             Err(failure(PlatformErrorCode::InvalidArgument, "runtime-token"))

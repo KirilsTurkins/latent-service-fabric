@@ -1,6 +1,6 @@
 //! Closed, activation-owned witness for the signed Go timer overlap fixture.
 //!
-//! Fixed-capacity state holds at most four Task tokens and four timer tokens.
+//! Fixed-capacity state holds at most four Task tokens and five timer tokens.
 //! Both Arc backings are prepaid on the original activation, and their charge
 //! survives every detached wait clone. The optional barrier uses an already
 //! budget-owned provider wait as its finite timeout and invents no result.
@@ -23,7 +23,8 @@ const BARRIER_LIMIT: Duration = Duration::from_secs(2);
 const STOP_OBSERVATION: Duration = Duration::from_millis(10);
 const ALLOCATION_BOOKKEEPING: usize = 64;
 const GC_MARKER_PERIOD_NANOS: u64 = 37 * 60 * 1_000_000_000;
-const PREFIX: &str = "LSF-GO-TIMER-OVERLAP-V2";
+const ROOT_MARKER_PERIOD_NANOS: u64 = 41 * 60 * 1_000_000_000;
+const PREFIX: &str = "LSF-GO-TIMER-OVERLAP-V3";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Case {
@@ -73,6 +74,8 @@ struct State {
     markers: [Marker; 2],
     gc_marker: Option<RuntimeToken>,
     gc_marker_stopped: bool,
+    second_waiting: bool,
+    handshake_confirmed: bool,
 }
 
 impl State {
@@ -97,6 +100,8 @@ impl State {
             }; 2],
             gc_marker: None,
             gc_marker_stopped: false,
+            second_waiting: false,
+            handshake_confirmed: false,
         }
     }
 
@@ -127,10 +132,7 @@ impl State {
             return;
         }
         if self.case.is_some_and(Case::requires_gc) && self.markers[1].stopped {
-            if self.gc_marker.is_some()
-                || parent != self.markers[1].task
-                || period != Some(GC_MARKER_PERIOD_NANOS)
-                || !self.next_live
+            if !self.next_live
                 || !self.next_pending
                 || !self.target_stopped
                 || !self.markers[0].parked
@@ -141,8 +143,24 @@ impl State {
                     .any(|marker| marker.timer == Some(token))
             {
                 self.invalid = true;
-            } else {
+            } else if self.gc_marker.is_none()
+                && parent == self.markers[1].task
+                && period == Some(GC_MARKER_PERIOD_NANOS)
+            {
                 self.gc_marker = Some(token);
+            } else if self.gc_marker_stopped
+                && !self.handshake_confirmed
+                && self.second_waiting
+                && parent == self.tasks[0]
+                && period == Some(ROOT_MARKER_PERIOD_NANOS)
+                && Some(token) != self.gc_marker
+            {
+                // The root can emit this marker only after the worker's
+                // GC-marker Stop returned and it signalled the root. A live
+                // park at this point is therefore the handshake receive.
+                self.handshake_confirmed = true;
+            } else {
+                self.invalid = true;
             }
             return;
         }
@@ -246,13 +264,14 @@ impl State {
                 }
                 continue;
             }
-            // Collection may park this worker before the post-GC marker.
-            // That park must neither satisfy the witness nor release the wait.
+            // Collection, its marker's fence, and the handshake can all park.
+            // Only a park after the root confirmed the live handshake counts.
             if index == 1
                 && self.case.is_some_and(Case::requires_gc)
                 && self.markers[1].stopped
-                && !self.gc_marker_stopped
+                && !self.handshake_confirmed
             {
+                self.second_waiting = true;
                 return false;
             }
             if !self.markers[index].stopped
@@ -270,6 +289,12 @@ impl State {
             return index == 1;
         }
         false
+    }
+
+    fn wake(&mut self, task: RuntimeToken) {
+        if self.markers[1].task == Some(task) {
+            self.second_waiting = false;
+        }
     }
 
     fn next_finished(&mut self, token: RuntimeToken) {
@@ -294,6 +319,7 @@ impl State {
                 && self.next_finished
                 && self.target_stopped
                 && (!self.case.is_some_and(Case::requires_gc) || self.gc_marker_stopped)
+                && (!self.case.is_some_and(Case::requires_gc) || self.handshake_confirmed)
                 && self
                     .markers
                     .iter()
@@ -306,6 +332,7 @@ impl State {
             target_stopped: self.target_stopped,
             first_parked: self.markers[0].parked,
             gc_marker_stopped: self.gc_marker_stopped,
+            handshake_confirmed: self.handshake_confirmed,
             second_parked: self.markers[1].parked,
             next_finished: self.next_finished,
         }
@@ -323,6 +350,7 @@ pub struct Snapshot {
     pub target_stopped: bool,
     pub first_parked: bool,
     pub gc_marker_stopped: bool,
+    pub handshake_confirmed: bool,
     pub second_parked: bool,
     pub next_finished: bool,
 }
@@ -456,6 +484,9 @@ impl Observer {
             self.inner.parked.notify_one();
         }
     }
+    pub(crate) fn wake(&self, token: RuntimeToken) {
+        self.apply(|state| state.wake(token));
+    }
     pub(crate) fn next_finished(&self, token: RuntimeToken) {
         self.apply(|state| state.next_finished(token));
     }
@@ -532,7 +563,7 @@ impl Observer {
         // Fixed fields and labels only. A failed write produces no evidence.
         let _ = writeln!(
             std::io::stderr().lock(),
-            "{PREFIX}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}",
+            "{PREFIX}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}",
             case.activation(),
             u8::from(snapshot.complete),
             u8::from(snapshot.invalid),
@@ -543,6 +574,7 @@ impl Observer {
             u8::from(snapshot.target_stopped),
             u8::from(snapshot.first_parked),
             u8::from(snapshot.gc_marker_stopped),
+            u8::from(snapshot.handshake_confirmed),
             u8::from(snapshot.second_parked),
             u8::from(snapshot.next_finished),
             bytes
@@ -700,6 +732,7 @@ mod tests {
                 target_stopped: true,
                 first_parked: true,
                 gc_marker_stopped: false,
+                handshake_confirmed: false,
                 second_parked: true,
                 next_finished: true,
             }
@@ -717,12 +750,33 @@ mod tests {
             // the later timer-operation park or release the provider wait.
             assert!(!state.park(token(4), 1));
             assert!(!state.invalid && !state.snapshot().second_parked);
+            state.wake(token(4));
             state.timer_start(token(13), Some(token(4)), Some(GC_MARKER_PERIOD_NANOS));
             state.timer_stop(token(13), 1);
+            // The GC marker's Stop can itself fence an unpublished wait.
+            // Its park and wake cannot be mistaken for the handshake.
+            assert!(!state.park(token(4), 1));
+            state.wake(token(4));
+            assert!(!state.park(token(4), 1));
+            state.timer_start(token(14), Some(token(1)), Some(ROOT_MARKER_PERIOD_NANOS));
+            assert!(state.snapshot().handshake_confirmed);
+            state.wake(token(4));
             assert!(state.park(token(4), 1));
             state.next_finished(token(10));
             assert!(state.snapshot().complete);
             assert!(state.snapshot().gc_marker_stopped);
+
+            // If the root marker arrives before the worker has actually
+            // parked on the release channel, fail closed. A later handshake
+            // park must never be reinterpreted as the timer operation.
+            let mut root_too_early = before_second_park();
+            root_too_early.case = Some(case);
+            root_too_early.timer_start(token(13), Some(token(4)), Some(GC_MARKER_PERIOD_NANOS));
+            root_too_early.timer_stop(token(13), 1);
+            assert!(!root_too_early.park(token(4), 1));
+            root_too_early.wake(token(4));
+            root_too_early.timer_start(token(14), Some(token(1)), Some(ROOT_MARKER_PERIOD_NANOS));
+            assert!(root_too_early.invalid);
 
             let mut missing = before_second_park();
             missing.case = Some(case);
@@ -734,6 +788,14 @@ mod tests {
             wrong_marker.case = Some(case);
             wrong_marker.timer_start(token(13), Some(token(4)), None);
             assert!(wrong_marker.invalid);
+
+            // An admitted provider wait on the post-GC marker is not the
+            // original wait and makes the witness invalid, even if it parks.
+            let mut marker_wait = before_second_park();
+            marker_wait.case = Some(case);
+            marker_wait.timer_start(token(13), Some(token(4)), Some(GC_MARKER_PERIOD_NANOS));
+            assert!(!marker_wait.next(token(13), 2));
+            assert!(marker_wait.invalid);
 
             let mut early = before_second_park();
             early.case = Some(case);

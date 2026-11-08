@@ -75,11 +75,15 @@ Reset/Stop cells and adds one forced-collection version of each. In those cells,
 the second worker first stops its marker timer; the host witness accepts that
 marker only after the first worker has parked while the original provider wait
 is pending. The worker calls `runtime.GC`, checks that `NumGC` changed, then
-starts and stops a ticker with a distinctive period before its timer operation.
-The host ignores parks during collection and requires that post-GC marker from
-the same worker before accepting its second park. It retains the original
-provider wait until that park and requires physical wait retirement, so a
-passing signed cell establishes a collection between those observed events.
+starts and stops a ticker with a distinctive period. After that Stop returns,
+the worker signals the root and parks on a release channel. The root creates a
+second distinctive ticker before it releases the worker. The host tracks park
+and wake transitions and accepts the root marker only while the second worker
+is already parked. It ignores earlier parks, including a possible GC-marker
+fence, and accepts a later park only after that observed handshake. The host
+retains the original provider wait until then and requires physical wait
+retirement. A passing signed cell establishes a collection between those
+observed events.
 The native reference cells only compare ordinary Go return behavior; the
 host witness establishes the guest ordering. A fresh activation follows the
 four selected cells. Task16, Wait4, Timer2 and the activation budgets stay

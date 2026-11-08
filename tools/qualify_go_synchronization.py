@@ -212,8 +212,8 @@ def timer_overlap_observations(raw: bytes, diagnostic: bytes, filtered: int) -> 
                                           ('fresh', 0, 5)]]
     if json.dumps(rows, sort_keys=True, separators=(',', ':')) != json.dumps(expected, sort_keys=True, separators=(',', ':')):
         raise ValueError('Go-timer-overlap-signed-retirement-required')
-    prefix = b'LSF-GO-TIMER-OVERLAP-V2|'
-    records = re.findall(rb'^LSF-GO-TIMER-OVERLAP-V2\|([^\r\n]+)$', diagnostic, re.M)
+    prefix = b'LSF-GO-TIMER-OVERLAP-V3|'
+    records = re.findall(rb'^LSF-GO-TIMER-OVERLAP-V3\|([^\r\n]+)$', diagnostic, re.M)
     if diagnostic.count(prefix) != 4 or len(records) != 4:
         raise ValueError('Go-timer-overlap-exact-witnesses-required')
     observed = []
@@ -221,12 +221,13 @@ def timer_overlap_observations(raw: bytes, diagnostic: bytes, filtered: int) -> 
                              'go-timer-overlap-gc-reset-reset', 'go-timer-overlap-gc-reset-stop'), records):
         fields = record.split(b'|')
         gc_case = '-gc-' in case
-        if len(fields) != 13 or fields[:12] != [case.encode(), b'1', b'0', b'0', b'4', b'1', b'1', b'1', b'1',
-                                               b'1' if gc_case else b'0', b'1', b'1']:
+        if len(fields) != 14 or fields[:13] != [case.encode(), b'1', b'0', b'0', b'4', b'1', b'1', b'1', b'1',
+                                               b'1' if gc_case else b'0', b'1' if gc_case else b'0', b'1', b'1']:
             raise ValueError('Go-timer-overlap-causal-witness-required')
-        if not re.fullmatch(rb'[1-9][0-9]{0,3}', fields[12]):
+        if not re.fullmatch(rb'[1-9][0-9]{0,3}', fields[13]):
             raise ValueError('Go-timer-overlap-witness-budget')
-        observed.append({'activation': case, 'postGcMarkerStopped': gc_case, 'modeledWitnessBytes': int(fields[12])})
+        observed.append({'activation': case, 'postGcMarkerStopped': gc_case, 'handshakeParkObserved': gc_case,
+                         'modeledWitnessBytes': int(fields[13])})
     if len({item['modeledWitnessBytes'] for item in observed}) != 1:
         raise ValueError('Go-timer-overlap-inconsistent-layout')
     return {'cases': rows, 'witnesses': observed}
@@ -403,7 +404,7 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
                                  'queued': 'lsf.go-queued-reference.v1',
                                  'managed-timers': 'lsf.go-managed-timers-reference.v1',
                                  'task-saturation': 'lsf.go-task-saturation-reference.v1',
-                                 'timer-overlap': 'lsf.go-timer-overlap-reference.v2'}[programme], 'sourceRevision': revision,
+                                 'timer-overlap': 'lsf.go-timer-overlap-reference.v3'}[programme], 'sourceRevision': revision,
                'sourceBefore': before, 'sourceAfter': after, 'compilerInputsBefore': material,
                'compilerInputsAfter': after_material, 'case': plan['case'], 'signedCases': rows,
                'signedInvocations': {'synchronization': len(rows), 'admission': 8, 'queued': 20,
