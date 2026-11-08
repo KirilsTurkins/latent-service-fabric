@@ -35,7 +35,13 @@ JAVA_EARLY_HTTP_VARIANT = 'forbidden-http-before-stage'
 JAVA_POSTSTAGE_HTTP_VARIANT = 'put-once-poststage-http-denial'
 
 
-def authored_project(language: str, variant: str, output: Path, *, java_current_http_profile: str | None = None) -> Path:
+def authored_project(language: str, variant: str, output: Path, *, java_current_http_profile: str | None = None,
+                     java_current_event_profile: str | None = None) -> Path:
+    if java_current_event_profile is not None:
+        if language != "java" or variant != "aggregate" or java_current_http_profile is not None:
+            raise ValueError("current event profile requires the exclusive Java aggregate")
+        from tools.java_transaction_schema import create
+        return create(output, "legacy-v1", event_profile=java_current_event_profile)
     if java_current_http_profile is not None and language != "java":
         raise ValueError("current HTTP source profile requires explicit Java compilation")
     if variant == JAVA_EARLY_HTTP_VARIANT:
@@ -189,7 +195,7 @@ def compile_project(language: str, work: Path, output: Path, command: Commands,
 def compile_guests(language: str, output: Path, *, tools: Path | None = None, wasi_sdk: Path | None = None,
                    java_schema_put_once: bool = False, java_post_stage_diagnostic: bool = False,
                    java_state_acceptance: bool = False, java_current_http_profile: str | None = None,
-                   java_read_only_cache: Path | None = None, java_early_http_denial: bool = False,
+                   java_current_event_profile: str | None = None, java_read_only_cache: Path | None = None, java_early_http_denial: bool = False,
                    java_poststage_http_denial: bool = False) -> None:
     if type(java_poststage_http_denial) is not bool or (java_poststage_http_denial and
             (language != 'java' or java_schema_put_once or java_post_stage_diagnostic
@@ -213,13 +219,20 @@ def compile_guests(language: str, output: Path, *, tools: Path | None = None, wa
                 or not isinstance(java_current_http_profile, str)
                 or re.fullmatch(r"qualified-http-v1:[0-9a-f]{64}", java_current_http_profile) is None):
             raise ValueError("current HTTP profile requires a bounded explicit Java schema, diagnostic or value selection")
+    if java_current_event_profile is not None:
+        import re
+        if (language != "java" or java_schema_put_once or java_post_stage_diagnostic or java_state_acceptance
+                or java_early_http_denial or java_poststage_http_denial or java_current_http_profile is not None
+                or not isinstance(java_current_event_profile, str)
+                or re.fullmatch(r"js-window-v1:[0-9a-f]{64}", java_current_event_profile) is None):
+            raise ValueError("current event profile requires the exclusive explicit Java aggregate")
     if java_read_only_cache is not None and (
             language != "java" or not isinstance(java_read_only_cache, Path)
             or not java_read_only_cache.is_absolute() or not java_read_only_cache.is_dir()
             or java_read_only_cache.is_symlink()):
         raise ValueError("read-only Java cache requires an existing explicit absolute directory and Java compiler")
     output = fresh(output)
-    variants = ((JAVA_POSTSTAGE_HTTP_VARIANT,) if java_poststage_http_denial else (JAVA_EARLY_HTTP_VARIANT,) if java_early_http_denial else JAVA_ACCEPTANCE_VARIANTS if java_state_acceptance else (JAVA_DIAGNOSTIC_VARIANT,) if java_post_stage_diagnostic
+    variants = (("aggregate",) if java_current_event_profile is not None else (JAVA_POSTSTAGE_HTTP_VARIANT,) if java_poststage_http_denial else (JAVA_EARLY_HTTP_VARIANT,) if java_early_http_denial else JAVA_ACCEPTANCE_VARIANTS if java_state_acceptance else (JAVA_DIAGNOSTIC_VARIANT,) if java_post_stage_diagnostic
                 else (*VARIANTS, *JAVA_SCHEMA_VARIANTS) if java_schema_put_once else VARIANTS)
     for variant in variants:
         if variant == "result-boundary" and language != "rust":
@@ -231,13 +244,20 @@ def compile_guests(language: str, output: Path, *, tools: Path | None = None, wa
             "world": WORLD, "hostAbiDigest": json.loads(read_file(ROOT / "wit/host-abi-phase4-v1.json"))["digest"]}
         command = None
         try:
-            work = authored_project(language, variant, current / "project", **(
-                {} if java_current_http_profile is None else {"java_current_http_profile": java_current_http_profile}))
+            profile_selection = ({"java_current_event_profile": java_current_event_profile}
+                                 if java_current_event_profile is not None else
+                                 {} if java_current_http_profile is None else
+                                 {"java_current_http_profile": java_current_http_profile})
+            work = authored_project(language, variant, current / "project", **profile_selection)
             captured = snapshot(work)
             source = inventory(captured)
             (current / "source-inputs.json").write_bytes(source)
             report["sourceDigest"] = digest(source)
-            from tools.transaction_guest_project import CURRENT_HTTP_PROFILE
+            from tools.transaction_guest_project import CURRENT_EVENT_PROFILE, CURRENT_HTTP_PROFILE, EVENT_REQUIREMENTS
+            if CURRENT_EVENT_PROFILE in captured:
+                report.update(nativeEffectProfile="current-v1-event", nativeEffectOperation="event",
+                              currentEventProfileInputDigest=digest(captured[CURRENT_EVENT_PROFILE]),
+                              deferredEventRequirementsDigest=digest(captured[EVENT_REQUIREMENTS]))
             if CURRENT_HTTP_PROFILE in captured:
                 report.update(nativeEffectProfile="current-v2-http", nativeEffectOperation="http",
                               currentHttpProfileInputDigest=digest(captured[CURRENT_HTTP_PROFILE]))
@@ -253,6 +273,12 @@ def compile_guests(language: str, output: Path, *, tools: Path | None = None, wa
                               effect="current-http" if CURRENT_HTTP_PROFILE in captured else "put-once",
                               applicationSchemaInputDigest=digest(captured["application-schema-inputs.json"]),
                               deferredHttpRequirementsDigest=digest(captured["deferred-http-requirements.json"]))
+            if CURRENT_EVENT_PROFILE in captured:
+                recipe += ("tools/java_transaction_schema.py", "examples/java-transaction-schema/AggregateCodec.java",
+                           "contracts/state/application-aggregate-v1.schema.json",
+                           "contracts/state/application-aggregate-v2.schema.json")
+                report.update(applicationVariant="legacy-v1", effect="event",
+                              applicationSchemaInputDigest=digest(captured["application-schema-inputs.json"]))
             if variant == JAVA_DIAGNOSTIC_VARIANT:
                 recipe += ("tools/java_transaction_diagnostics.py", "examples/java-transaction-schema/TransactionDiagnostics.java")
                 report["diagnosticInputDigest"] = digest(captured["transaction-diagnostic-inputs.json"])
@@ -332,6 +358,8 @@ def main() -> None:
                         help='compile only typed HTTP denial after state/intent staging; no execution claim')
     parser.add_argument("--java-current-http-profile",
                         help="exact constructor-derived native HTTP profile for fresh Java captures; never an approval")
+    parser.add_argument("--java-current-event-profile",
+                        help="exact constructor-derived native event profile for the Java aggregate; never an approval")
     parser.add_argument("--java-read-only-cache", type=Path,
                         help="existing pinned Java compiler cache; verify through the current read-only cache owner")
     arguments = parser.parse_args()
@@ -340,6 +368,7 @@ def main() -> None:
                    java_post_stage_diagnostic=arguments.java_post_stage_diagnostic,
                    java_state_acceptance=arguments.java_state_acceptance,
                    java_current_http_profile=arguments.java_current_http_profile,
+                   java_current_event_profile=arguments.java_current_event_profile,
                    java_read_only_cache=arguments.java_read_only_cache,
                    java_early_http_denial=arguments.java_early_http_denial,
                    java_poststage_http_denial=arguments.java_poststage_http_denial)

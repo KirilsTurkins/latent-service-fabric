@@ -42,10 +42,20 @@ def schema_assets(files):
         require(CURRENT_HTTP_PROFILE in files and 0 < len(files[CURRENT_HTTP_PROFILE]) <= 8192,
                 "signed-current-http-profile-marker-required")
         marker = decode(files[CURRENT_HTTP_PROFILE], 8192)
-        require(set(marker) == {"schemaVersion", "idempotencyProfile"}
+        require(isinstance(marker, dict) and set(marker) == {"schemaVersion", "idempotencyProfile"}
                 and marker["schemaVersion"] == "latent.java.current-http-source-input.v1",
                 "closed-signed-current-http-marker")
         selected[CURRENT_HTTP_PROFILE] = files[CURRENT_HTTP_PROFILE]
+    from tools.transaction_guest_project import CURRENT_EVENT_PROFILE, EVENT_REQUIREMENTS
+    if CURRENT_EVENT_PROFILE in files or EVENT_REQUIREMENTS in files:
+        require(declaration.get("effect") == "event" and CURRENT_EVENT_PROFILE in files
+                and EVENT_REQUIREMENTS in files and 0 < len(files[CURRENT_EVENT_PROFILE]) <= 8192,
+                "signed-current-event-profile-marker-required")
+        marker = decode(files[CURRENT_EVENT_PROFILE], 8192)
+        require(isinstance(marker, dict) and set(marker) == {"schemaVersion", "idempotencyProfile"}
+                and marker["schemaVersion"] == "latent.java.current-event-source-input.v1",
+                "closed-signed-current-event-marker")
+        selected[CURRENT_EVENT_PROFILE] = files[CURRENT_EVENT_PROFILE]
     if declaration["variant"] != "legacy-v1":
         require(CODEC_ASSET in files and 0 < len(files[CODEC_ASSET]) <= 262144,
                 "original-compatible-reader-codec-required")
@@ -59,6 +69,19 @@ def captured_assets(item, files):
     assets.update(schema_assets(files))
     if item.requirements_digest:
         assets['deferred-http-requirements.json'] = files['deferred-http-requirements.json']
+    from tools.transaction_guest_project import CURRENT_EVENT_PROFILE, EVENT_REQUIREMENTS, current_java_event_requirements
+    if getattr(item, "event_requirements_digest", None) is not None:
+        require(CURRENT_EVENT_PROFILE in files and EVENT_REQUIREMENTS in files
+                and "transaction-binding.json" in files and "capsule-project.json" in files
+                and digest(files[EVENT_REQUIREMENTS]) == item.event_requirements_digest,
+                "current-marker-requires-exact-signed-event-requirements")
+        marker = decode(files[CURRENT_EVENT_PROFILE], 8192)
+        expected = current_java_event_requirements(decode(files["capsule-project.json"]),
+                                                   files["transaction-binding.json"], marker["idempotencyProfile"])
+        require(decode(files[EVENT_REQUIREMENTS], 8192) == expected, "signed-event-requirements-drift")
+        assets[EVENT_REQUIREMENTS] = files[EVENT_REQUIREMENTS]
+    elif CURRENT_EVENT_PROFILE in files or EVENT_REQUIREMENTS in files:
+        raise ValueError("unselected-current-event-requirements")
     if 'java-current-http-profile.json' in files:
         require(item.requirements_digest is not None, 'current-marker-requires-signed-effect-requirements')
         assets['java-current-http-profile.json'] = files['java-current-http-profile.json']

@@ -53,6 +53,49 @@ class CurrentJavaInputs(unittest.TestCase):
         self.assertFalse(report["signedNodeExecutionQualified"])
         self.assertEqual(files, before)
 
+    def test_current_event_requires_exact_signed_source_marker_and_report(self):
+        import tempfile
+        from pathlib import Path
+        from tools.java_transaction_schema import create
+        from tools.rust_capsule_project import snapshot
+        from tools.transaction_guest_project import CURRENT_EVENT_PROFILE, EVENT_REQUIREMENTS
+        with tempfile.TemporaryDirectory() as temporary:
+            project = snapshot(create(Path(temporary) / "event", "legacy-v1",
+                                      event_profile="js-window-v1:" + "a" * 64))
+            files, selected = fixture()
+            files = {key: value for key, value in files.items() if not key.startswith("project/")}
+            files.update({"project/" + key: value for key, value in project.items()})
+            archive = io.BytesIO()
+            with gzip.GzipFile(fileobj=archive, mode="wb", mtime=0) as compressed:
+                with tarfile.open(fileobj=compressed, mode="w") as captured:
+                    for name, raw in project.items():
+                        entry = tarfile.TarInfo(name)
+                        entry.size = len(raw)
+                        captured.addfile(entry, io.BytesIO(raw))
+            files["source-inputs.json"] = inventory(project)
+            files["source.tar.gz"] = archive.getvalue()
+            report = json.loads(files["report.json"])
+            report.update(sourceDigest=digest(files["source-inputs.json"]), sourceArchiveDigest=digest(files["source.tar.gz"]),
+                          companionDigest=digest(project["transaction-binding.json"]),
+                          hostAbiDigest=json.loads(project["transaction-profile.json"])["hostAbiDigest"],
+                          nativeEffectProfile="current-v1-event",
+                          nativeEffectOperation="event", currentEventProfileInputDigest=digest(project[CURRENT_EVENT_PROFILE]),
+                          deferredEventRequirementsDigest=digest(project[EVENT_REQUIREMENTS]))
+            files["report.json"] = encoded(report)
+            selected = replace(selected, report_digest=digest(files["report.json"]))
+            self.assertEqual(current.validate_materials(files, selected)["nativeEffectOperation"], "event")
+            for field in ("currentEventProfileInputDigest", "deferredEventRequirementsDigest", "nativeEffectOperation"):
+                bad = dict(files)
+                changed = dict(report)
+                changed[field] = None
+                bad["report.json"] = encoded(changed)
+                with self.assertRaises(ValueError):
+                    current.validate_materials(bad, replace(selected, report_digest=digest(bad["report.json"])))
+            bad = dict(files)
+            del bad["project/" + CURRENT_EVENT_PROFILE]
+            with self.assertRaises(ValueError):
+                current.validate_materials(bad, selected)
+
     def test_changed_component_report_source_or_tool_closure_refuses(self):
         for name in ("component.wasm", "report.json", "source-inputs.json", "source.tar.gz", "recipe-inputs.json", "compiler-inputs.json", "project/transaction-binding.json"):
             files, selected = fixture()
