@@ -215,6 +215,7 @@ jobs:
           bindir="$RUNNER_TEMP/dotnet-wasm-tools-bin"
           mkdir "$bindir"
           timeout 90s gh api -H 'Accept: application/octet-stream' repos/bytecodealliance/wasm-tools/releases/assets/483720667 | head -c 5862465 > "$archive"
+          unset GH_TOKEN
           test "$(stat --format=%s "$archive")" = 5862464
           printf '%s  %s\n' d0efb16c9c859137b7ab3e99151c299cd47caee106ed4594561002f7a04945bd "$archive" | sha256sum --check --strict
           tar -xOzf "$archive" wasm-tools-1.254.0-x86_64-linux/wasm-tools > "$bindir/wasm-tools"
