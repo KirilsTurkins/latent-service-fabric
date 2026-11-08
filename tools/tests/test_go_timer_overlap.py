@@ -4,9 +4,11 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from tools import qualify_go_activation as activation
 from tools import qualify_go_synchronization as reference
+from tools import ci_lane_inventory as lanes
 
 
 def cases():
@@ -38,6 +40,92 @@ def stderr():
 
 
 class GoTimerOverlap(unittest.TestCase):
+    def test_v7_overlap_campaign_requires_its_own_signed_case_and_complete_witness(self):
+        fixture = Path('owned-v7-overlap')
+        self.assertEqual(reference.campaign('timer-overlap-v7', fixture, None),
+            {'case': reference.V7_TIMER_OVERLAP_CASE, 'fixture': 'timer-overlap',
+             'variable': 'LSF_GO_V7_TIMER_OVERLAP_FIXTURE', 'inputs': [(fixture, 'go-component-activation-v7')]})
+        raw = stdout().replace(reference.TIMER_OVERLAP_CASE.encode(), reference.V7_TIMER_OVERLAP_CASE.encode())
+        self.assertEqual(reference.timer_overlap_observations(raw, stderr(), 53, reference.V7_TIMER_OVERLAP_CASE)['cases'], cases())
+        for wrong, case in ((stdout(), reference.V7_TIMER_OVERLAP_CASE), (raw, reference.TIMER_OVERLAP_CASE)):
+            with self.assertRaisesRegex(ValueError, 'exact-signed-case'):
+                reference.timer_overlap_observations(wrong, stderr(), 53, case)
+        with self.assertRaisesRegex(ValueError, 'causal-witness'):
+            reference.timer_overlap_observations(raw, stderr().replace(b'|1|0|0|4', b'|0|0|0|4', 1), 53,
+                                                 reference.V7_TIMER_OVERLAP_CASE)
+        with self.assertRaisesRegex(ValueError, 'unreviewed-campaign'):
+            reference.campaign('timer-overlap-v7', fixture, Path('v5-receipt'))
+
+    def test_v7_overlap_requires_its_own_profile_source_and_native_reference(self):
+        class SourceOnlyCompiler:
+            def __init__(self, *_args, **_kwargs): self.materials = []
+            def compile(self, _source, _wit, _world, output, **_kwargs):
+                (output / 'runtime-overlay').mkdir(parents=True)
+                (output / 'runtime-overlay/overlay.json').write_bytes(b'{"Replace":{}}')
+                component = output / 'component.wasm'
+                component.write_bytes(b'unit-test-only')
+                return component, {}
+        original = reference.ROOT / 'sdk/go-guest/runtime/timer-overlap-conformance'
+        source, world = (original / 'main.go').read_bytes(), (original / 'world.wit').read_bytes()
+        native = {'modes': [0, 1, 2, 3], 'outputs': [42, 43, 42, 43], 'freshProcessPerMode': True,
+                  'sourceDigest': 'sha256:' + reference.digest(source)}
+        with tempfile.TemporaryDirectory() as temporary, patch.object(activation, 'ROOT', reference.ROOT), \
+                patch.object(activation, 'Compiler', SourceOnlyCompiler), patch.object(activation, 'stage'), \
+                patch.object(activation, 'fixture_reference', return_value=native) as observe:
+            folder = Path(temporary) / 'capture'
+            record = activation.compile_fixture(folder, runtime_profile='go-component-activation-v7', fixture='timer-overlap')
+            self.assertEqual(record['profile'], 'go-component-activation-v7')
+            self.assertEqual(record['nativeReference'], native)
+            self.assertEqual(record['signedExecution'], 'not-run')
+            observe.assert_called_once()
+            (folder / 'wit').mkdir(exist_ok=True)
+            (folder / 'wit/world.wit').write_bytes(world)
+            self.assertEqual(reference.compile_identity(folder, reference.ROOT, record['profile'], 'timer-overlap')['profile'], record['profile'])
+            with self.assertRaisesRegex(ValueError, 'source-or-profile'):
+                reference.compile_identity(folder, reference.ROOT, 'go-component-activation-v5', 'timer-overlap')
+            (folder / 'wit/world.wit').write_bytes(world + b'\n')
+            with self.assertRaisesRegex(ValueError, 'compiler-world'):
+                reference.compile_identity(folder, reference.ROOT, record['profile'], 'timer-overlap')
+
+    def test_v7_overlap_is_an_additional_exact_ignored_inventory_case(self):
+        suite, = [s for s in json.loads((reference.ROOT / 'tools/ci/suites.json').read_bytes())['suites']
+                  if s['id'] == 'latent-wasmtime.test.local-service']
+        self.assertEqual(suite['expectedIgnored'].count(reference.TIMER_OVERLAP_CASE), 1)
+        self.assertEqual(suite['expectedIgnored'].count(reference.V7_TIMER_OVERLAP_CASE), 1)
+        self.assertEqual(suite['ignoredLeaves'].count(reference.V7_TIMER_OVERLAP_CASE.rsplit('::', 1)[-1]), 1)
+
+    def test_workflow_binds_each_overlap_profile_to_its_own_fixture_and_receipts(self):
+        path = reference.ROOT / '.github/workflows/go-synchronization-reference.yml'
+        model = lanes.structural_workflow(lanes.workflow_model(path.read_text(encoding='utf8')))
+        choices = model['on']['workflow_dispatch']['inputs']['campaign']['options']
+        self.assertTrue({'synchronization', 'admission', 'queued', 'managed-timers', 'task-saturation',
+                         'timer-overlap', 'timer-overlap-v7'} <= set(choices))
+        branch = 'feat/go-v7-timer-overlap-20261108'
+        self.assertIn(branch, model['on']['push']['branches'])
+        self.assertIn("github.ref_name == '" + branch + "' && 'timer-overlap-v7'", model['env']['LSF_GO_REFERENCE_CAMPAIGN'])
+        job = model['jobs']['synchronization']
+        steps = {step['name']: step for step in job['steps'] if 'name' in step}
+        for version in ('v5', 'v7'):
+            campaign = 'timer-overlap' if version == 'v5' else 'timer-overlap-v7'
+            condition = "env.LSF_GO_REFERENCE_CAMPAIGN == '" + campaign + "'"
+            compile_step = steps['Compile unchanged Go timer overlap fixture under ' + version]
+            signed_step = steps['Require original ' + version + ' timer overlap and retirement witnesses']
+            fixture = '$RUNNER_TEMP/go-timer-overlap-' + version
+            self.assertEqual(compile_step['if'], condition)
+            self.assertEqual(signed_step['if'], condition)
+            self.assertIn('--runtime-profile go-component-activation-' + version + ' --fixture timer-overlap', compile_step['run'])
+            self.assertIn('--output "' + fixture + '"', compile_step['run'])
+            self.assertIn('--campaign ' + campaign + ' --source-commit "${{ github.sha }}"', signed_step['run'])
+            self.assertIn('--fixture "' + fixture + '"', signed_step['run'])
+            retained = steps['Retain bounded actual results and compiler source identities']['with']['path']
+            for suffix in ('/src/', '/wit/', '/build/component.wasm', '/GO-ACTIVATION-COMPILE.json', '-result/'):
+                self.assertIn('go-timer-overlap-' + version + suffix, retained)
+        contract = reference.ROOT / 'tools/ci/contracts/workflows/go-synchronization-reference.yml'
+        policy = json.loads((contract / 'workflow.json').read_bytes())
+        definition = json.loads((contract / 'jobs/synchronization.json').read_bytes())
+        self.assertEqual(policy['policy'], {key: value for key, value in model.items() if key != 'jobs'})
+        self.assertEqual(definition['definition'], job)
+
     def test_exact_source_bound_signed_retirements_and_six_complete_witnesses(self):
         result = reference.timer_overlap_observations(stdout(), stderr(), 53)
         self.assertEqual(result['cases'], cases())
@@ -81,7 +169,7 @@ class GoTimerOverlap(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'duplicate-field'):
             reference.timer_overlap_observations(stdout().replace(b'"mode": 0', b'"mode": 0, "mode": 0', 1), raw, 53)
 
-    def test_only_exact_v5_fixture_source_world_and_native_reference_are_admitted(self):
+    def test_v5_fixture_source_world_and_native_reference_are_admitted(self):
         fixture = Path('fixture')
         self.assertEqual(reference.campaign('timer-overlap', fixture, None),
                          {'case': reference.TIMER_OVERLAP_CASE, 'fixture': 'timer-overlap',

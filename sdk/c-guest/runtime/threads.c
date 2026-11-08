@@ -298,6 +298,12 @@ void __lsf_c_thread_body(struct lsf_c_thread *thread) {
      * stackless entry validates restored SP, marks FRAMES_EXITED and detaches.
      */
     if (thread->joiner) sync_notify((struct sync_wait *)(uintptr_t)thread->joiner);
+    struct sync_wait *drain=thread->root->drain_wait;
+    if (drain) {
+        /* The observer is unlinked before the deferred resume. A later child
+         * can exit before the root runs, but cannot notify this Wait twice. */
+        thread->root->drain_wait=NULL;sync_notify(drain);
+    }
     /* resume-later only enqueues the waiter: it cannot switch inline. There
      * is no awaiting host call or user callback after this notification,
      * through the actual C epilogue and fixed stackless entry. Join must still
@@ -305,9 +311,32 @@ void __lsf_c_thread_body(struct lsf_c_thread *thread) {
      */
 }
 
+static int root_has_live_children(struct lsf_c_thread *root) {
+    unsigned visited=0;
+    for (struct lsf_c_thread *thread=root->next;thread!=NULL;thread=thread->next) {
+        require(++visited<=RECORD_LIMIT);
+        if (thread->phase!=LSF_C_FRAMES_EXITED) return 1;
+    }
+    return 0;
+}
+
 void __lsf_c_root_finish(struct lsf_c_thread *root) {
     require(current()==root && root->api==LSF_C_ROOT && !root->closing);
     root->closing=1;
+    /* Existing children retain exclusive application joins while they run.
+     * Observe their actual exit without claiming any application target. */
+    if (root_has_live_children(root)) {
+        struct sync_wait wait;require(sync_begin(&wait)==0);
+        while (root_has_live_children(root)) {
+            require(!root->drain_wait && !wait.notified && !wait.linked);
+            root->drain_wait=&wait;
+            sync_await(&wait);
+            require(!root->drain_wait && wait.notified);
+            wait.notified=0;
+        }
+        /* Release this observer before the ordinary per-child join Wait. */
+        sync_end(&wait);
+    }
     for (struct lsf_c_thread *thread=root->next;thread!=NULL;thread=thread->next) {
         if (!thread->joined) {
             struct lsf_c_thread *joined=NULL;

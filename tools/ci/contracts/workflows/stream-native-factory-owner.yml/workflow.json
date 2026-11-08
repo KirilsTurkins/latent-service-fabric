@@ -17,7 +17,8 @@
           "feat/sdk-738-q35-node-pci-prefix-20261104",
           "feat/sdk-738-q35-pci-setup-20261104",
           "feat/sdk-738-q35-pci-fixup-20261104",
-          "feat/sdk-738-q35-pci-intx-20261105"
+          "feat/sdk-738-q35-pci-intx-20261105",
+          "feat/sdk-738-q35-bar3-20261108"
         ],
         "paths": [
           ".github/workflows/stream-native-factory-owner.yml",
@@ -46,8 +47,13 @@
           "research/standard-outbound/linux-6.12-lineage/node-pci-setup/**",
           "research/standard-outbound/linux-6.12-lineage/node-pci-fixup/**",
           "research/standard-outbound/linux-6.12-lineage/node-pci-intx/**",
+          "research/standard-outbound/linux-6.12-lineage/node-pci-bar3/**",
           "tools/q35_intx_owner.py",
-          "tools/q35_intx_trace.py"
+          "tools/q35_intx_trace.py",
+          "tools/q35_bar3_trace.py",
+          "tools/q35_node_no_stapsdt.ld",
+          "tools/tests/test_q35_bar3.py",
+          "tools/tests/fixtures/q35-bar3.c"
         ]
       },
       "workflow_dispatch": null

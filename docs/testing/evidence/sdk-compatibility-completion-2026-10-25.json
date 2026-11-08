@@ -299,9 +299,15 @@
       "readerControl": "tools/tests/test_guest_compatibility.py::test_denial_resource_and_uncertainty_remain_distinct",
       "scope": "Pure classification distinguishes deadline-exceeded, cancelled and external uncertainty. Original outcomes whose worker drain is unproven remain unproven; no retirement or cause is certified by these reader controls."
     },
-    "actualUnknownImportRuntime": {
+    "finalImportInspector": {
       "evidence": "docs/testing/evidence/six-language-final-import-controls-2026-10-21.json",
-      "scope": "Original six-language signed unknown-import/refusal and fresh-instance evidence at its dated source/profile; no new execution or current arbitrary-library support inferred."
+      "scope": "final-component-inspector-only",
+      "unknownImport": "rejected-by-inspector-with-link-phase-finding",
+      "guestComponentsCompiled": 0,
+      "packagesSigned": 0,
+      "guestInvocations": 0,
+      "runtimeQualification": false,
+      "freshInstanceRuntimeEvidence": false
     }
   }
 }

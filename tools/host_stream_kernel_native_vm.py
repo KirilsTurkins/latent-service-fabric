@@ -206,7 +206,8 @@ NODE_PREFIX_BRANCH = 'feat/sdk-738-q35-node-pci-prefix-20261104'
 NODE_SETUP_BRANCH = 'feat/sdk-738-q35-pci-setup-20261104'
 NODE_FIXUP_BRANCH = 'feat/sdk-738-q35-pci-fixup-20261104'
 NODE_INTX_BRANCH = 'feat/sdk-738-q35-pci-intx-20261105'
-NODE_BRANCHES = (NODE_BRANCH, NODE_IDENTITY_BRANCH, NODE_PREFIX_BRANCH, NODE_SETUP_BRANCH, NODE_FIXUP_BRANCH, NODE_INTX_BRANCH)
+NODE_BAR3_BRANCH = 'feat/sdk-738-q35-bar3-20261108'
+NODE_BRANCHES = (NODE_BRANCH, NODE_IDENTITY_BRANCH, NODE_PREFIX_BRANCH, NODE_SETUP_BRANCH, NODE_FIXUP_BRANCH, NODE_INTX_BRANCH, NODE_BAR3_BRANCH)
 PREFIX_ROOT = 'research/standard-outbound/linux-6.12-lineage/'
 PREFIX_BRIDGE = PREFIX_ROOT+'node-constructor-bridge/projector.py'
 PREFIX_PROJECTOR = PREFIX_ROOT+'node-pci-prefix/projector.py'
@@ -225,6 +226,11 @@ INTX_FACTORY = INTX_ROOT+'factory-node-pci-intx.c'
 INTX_PROBE = INTX_ROOT+'probe-intx-helpers.c'
 INTX_SINK = INTX_ROOT+'qemu_trace_sink.py'
 INTX_VIRTIO = INTX_ROOT+'qemu_virtio_guard.py'
+BAR3_ROOT = PREFIX_ROOT+'node-pci-bar3/'
+BAR3_PROJECTOR = BAR3_ROOT+'projector.py'
+BAR3_FACTORY = BAR3_ROOT+'factory-node-pci-bar3.c'
+BAR3_PROBE = BAR3_ROOT+'probe-bar3.c'
+BAR3_QEMU = BAR3_ROOT+'qemu_bar3_guard.py'
 NODE_ROOT = 'research/standard-outbound/linux-6.12-lineage/node-boot/'
 NODE_PROJECTOR = NODE_ROOT+'projector.py'
 NODE_MATERIALS = ('factory-node-boot.c','Kconfig.fragment','Makefile.fragment')
@@ -511,7 +517,8 @@ def node_intx_module(captured, name):
     import importlib.abc
     import importlib.util
     from pathlib import Path
-    require(name in captured and name in (INTX_PROJECTOR, INTX_SINK, INTX_VIRTIO),
+    require(name in captured and name in (INTX_PROJECTOR, INTX_SINK, INTX_VIRTIO,
+        BAR3_PROJECTOR, BAR3_QEMU),
         'intx-captured-module')
     path = str((ROOT/name).resolve())
     module_name = '_lsf_q35_intx_' + name.rsplit('/', 1)[-1].removesuffix('.py')
@@ -546,17 +553,45 @@ def node_intx_compose(values, captured):
     return result, row
 
 
-def node_intx_serial(raw):
+def node_bar3_capture(root):
+    import stat
+    result = {}
+    for name in (BAR3_PROJECTOR, BAR3_FACTORY, BAR3_PROBE, BAR3_QEMU):
+        path = root/name
+        require(stat.S_ISREG(path.lstat().st_mode) and not path.is_symlink(), 'bar3-source-kind')
+        raw = read_file(path, 4*1024**2)
+        raw.decode('utf8', 'strict')
+        require(b'\r' not in raw, 'bar3-source-LF')
+        result[name] = raw
+    return result
+
+
+def node_bar3_compose(values, captured):
+    require(set(captured) == {BAR3_PROJECTOR, BAR3_FACTORY, BAR3_PROBE, BAR3_QEMU},
+        'bar3-captured-set')
+    stage = node_intx_module(captured, BAR3_PROJECTOR)
+    result, row = stage.transform(values, captured[BAR3_FACTORY], captured[BAR3_PROBE])
+    require(len(result) == 494 and sum(map(len, result.values())) <= 16*1024**2 and
+        row['originalBodiesInverseExact'] is True and row['defaultOff'] is True and
+        all(row[k] is False for k in ('fullBarSizing', 'nodeFundingQualified',
+            'nodeRetirementQualified', 'irqEnabled', 'tcpEnabled', 'consumerInstalled',
+            'actualExecutionObserved')), 'bar3-projection-authority')
+    return result, row
+
+
+def node_intx_serial(raw, *, bar3=False):
+    require(type(bar3) is bool, 'intx-bar3-selection')
     observed = node_setup_serial(raw)
     fixups = [line for line in raw.splitlines() if b'LSFQ35PCIFIXUP1' in line]
     intxs = [line for line in raw.splitlines() if b'LSFQ35PCIINTX1' in line]
     setup = [line for line in raw.splitlines() if b'LSFQ35PCISETUP1' in line]
     acks = [line for line in raw.splitlines() if b'LSFNODESETUP1' in line]
+    probe = b'1' if bar3 else b'0'
     fixup_pattern = (rb'\[\s*[0-9]+\.[0-9]{6}\] LSFQ35PCIFIXUP1 '
-        rb'entries=([0-9]{1,3}) matches=0 dispatcher=1 intxCheck=1 barProbe=0 registered=0')
+        rb'entries=([0-9]{1,3}) matches=0 dispatcher=1 intxCheck=1 barProbe='+probe+rb' registered=0')
     intx_pattern = (rb'\[\s*[0-9]+\.[0-9]{6}\] LSFQ35PCIINTX1 '
         rb'command=([0-9a-f]{4}) pin=([0-9]{1,3}) line=([0-9]{1,3}) '
-        rb'restored=1 barProbe=0 registered=0')
+        rb'restored=1 barProbe='+probe+rb' registered=0')
     require(len(fixups) == len(intxs) == len(setup) == len(acks) == 1, 'intx-one-observation')
     fm, im = re.fullmatch(fixup_pattern, fixups[0]), re.fullmatch(intx_pattern, intxs[0])
     require(fm is not None and im is not None and 1 <= int(fm[1]) <= 512, 'intx-marker-grammar')
@@ -566,11 +601,25 @@ def node_intx_serial(raw):
     require(raw.index(setup[0]) < raw.index(fixups[0]) < raw.index(intxs[0]) < raw.index(acks[0]),
         'intx-observation-order')
     observed['pciEarlyFixup'] = {'linkedEntries':int(fm[1]), 'matchingCallbacks':0,
-        'originalDispatcherReached':True, 'intxMaskCheckReached':True, 'barProbeReached':False,
+        'originalDispatcherReached':True, 'intxMaskCheckReached':True, 'barProbeReached':bar3,
         'registered':False, 'callbacksQualified':False}
     observed['pciIntx'] = {'originalCommand':command, 'busMasterEnabled':False, 'pin':pin, 'line':line,
         'savedCommandRestored':True, 'irqFundingQualified':False,
         'sharedInterruptCustodyQualified':False, 'physicalBankRetired':False}
+    return observed
+
+
+def node_bar3_serial(raw):
+    observed = node_intx_serial(raw, bar3=True)
+    rows = [line for line in raw.splitlines() if b'LSFQ35PCIBAR3' in line]
+    intxs = [line for line in raw.splitlines() if b'LSFQ35PCIINTX1' in line]
+    acks = [line for line in raw.splitlines() if b'LSFNODESETUP1' in line]
+    marker = (rb'\[\s*[0-9]+\.[0-9]{6}\] LSFQ35PCIBAR3 '
+        rb'saved=00000000 restored=1 fullSizing=0 registered=0')
+    require(len(rows) == len(intxs) == len(acks) == 1 and re.fullmatch(marker, rows[0]) and
+        raw.index(intxs[0]) < raw.index(rows[0]) < raw.index(acks[0]), 'bar3-exact-observation')
+    observed['pciBar3'] = {'savedWord':0, 'savedWordRestored':True,
+        'fullBarSizing':False, 'physicalBankRetired':False}
     return observed
 
 

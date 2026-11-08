@@ -29,7 +29,8 @@
     "runningPhase": 2,
     "framesExitedPhase": 5,
     "recordBytes": 144,
-    "waitingForOffset": 136
+    "waitingForOffset": 136,
+    "rootDrainObserverOffset": 140
   },
   "ordinaryApis": [
     "pthread_create",
