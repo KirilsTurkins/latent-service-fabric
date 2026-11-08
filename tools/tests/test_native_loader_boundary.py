@@ -145,6 +145,24 @@ rustix = { version = "=1.1.5", features = ["fs"] }
         self.write(f"{boundary.CRATE}/src/copied_creator.rs", boundary.REFUSING_CREATOR_IMPL)
         self.assertTrue(any("copied_creator.rs" in error for error in boundary.validate(self.root)))
 
+    def test_go_timer_allocator_exception_remains_exact_and_test_only(self) -> None:
+        source = (Path(__file__).resolve().parents[2] / boundary.GO_TIMER_TEST).read_text(encoding="utf-8")
+        self.write(boundary.GO_TIMER_TEST, source)
+        self.assertEqual(boundary.validate(self.root), [])
+        for changed in (
+            source.replace('#[cfg(test)]\nmod tests {', 'mod tests {'),
+            source.replace('System.dealloc(pointer, layout)', 'other.dealloc(pointer, layout)'),
+            source + '\nunsafe fn extra() {}\n',
+            source + '\n#[allow(unsafe_code)] fn extra() {}\n',
+        ):
+            with self.subTest(change=changed[-120:]):
+                self.assertNotEqual(changed, source)
+                self.write(boundary.GO_TIMER_TEST, changed)
+                self.assertTrue(boundary.validate(self.root))
+        self.write(boundary.GO_TIMER_TEST, source)
+        self.write(f"{boundary.CRATE}/src/copied_timer_allocator.rs", source)
+        self.assertTrue(any('copied_timer_allocator.rs' in error for error in boundary.validate(self.root)))
+
     def test_native_stack_exception_binds_guard_original_admission_and_physical_retirement(self) -> None:
         source = (Path(__file__).resolve().parents[2] / boundary.NATIVE_STACK).read_text(encoding="utf-8")
         self.write(boundary.NATIVE_STACK, source)

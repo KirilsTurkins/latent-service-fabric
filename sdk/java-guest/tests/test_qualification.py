@@ -362,6 +362,20 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
 
 
 class StandardTimerModelIntegrity(unittest.TestCase):
+    def test_graph_ledger_excludes_only_the_host_start_failure_instrumentation(self):
+        source = (fibers.ROOT / 'sdk/java-guest/fibers/conformance/compiler/standard-timer-control/'
+                  'dev/latent/guest/runtime/Activation.java').read_text(encoding='utf-8')
+        start = '    public static void startManaged(Thread worker, ManagedPool pool) {'
+        end = '    public static boolean alive(Thread worker) {'
+        graph = fibers.timer_graph_ledger(source)
+        self.assertEqual(graph, source[:source.index(start)] +
+                         '    public static void startManaged(Thread worker, ManagedPool pool) { worker.start(); }\n' +
+                         source[source.index(end):])
+        self.assertNotIn('worker.getState()', graph)
+        for changed in (source.replace(start, ''), source.replace(end, ''), source + start):
+            with self.assertRaisesRegex(ValueError, 'ledger start boundary changed'):
+                fibers.timer_graph_ledger(changed)
+
     @staticmethod
     def fixture(root):
         import xml.etree.ElementTree as ET
