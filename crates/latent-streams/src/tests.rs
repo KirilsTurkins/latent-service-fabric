@@ -17,6 +17,8 @@ mod lifecycle;
 #[cfg(unix)]
 mod maintenance;
 #[cfg(unix)]
+mod read_progress;
+#[cfg(unix)]
 mod sockets;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod tls;

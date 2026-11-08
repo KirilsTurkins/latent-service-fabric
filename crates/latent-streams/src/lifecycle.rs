@@ -254,6 +254,7 @@ impl StreamLifecycle {
             #[cfg(any(test, feature = "development-outbound"))]
             {
                 usage.input_budget_bytes += u.input_budget_bytes;
+                usage.read_progress.merge(u.read_progress)?;
             }
             usage.delivered_read_bytes += u.delivered_read_bytes;
         }

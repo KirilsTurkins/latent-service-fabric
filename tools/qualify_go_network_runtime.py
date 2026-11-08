@@ -23,6 +23,7 @@ from tools import ci_suite_inventory as registry
 from tools.go_capsule_build import RECIPE as BUILD_RECIPE
 from tools.go_guest.activation import MANAGED_PROFILE
 from tools.go_guest.compiler import Compiler
+from tools.go_network_read_barrier import read_barrier
 from tools.owned_test_process import ProcessFailure, run_owned
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, snapshot
@@ -110,7 +111,8 @@ def outcomes(raw: bytes, filtered: int = 0) -> dict:
     if not same(complete, [{'cases': 12, 'contacts': 4, 'cleanLogicalProviderStop': True,
                      'kernelRetirementQualified': False, 'normalProviderInstalled': False}]):
         raise ValueError('Go-network-runtime-completion-or-kernel-claim')
-    return {'cases': rows, 'userSpaceOwners': owners, 'completion': complete[0]}
+    return {'cases': rows, 'userSpaceOwners': owners, 'completion': complete[0],
+            'readBarrier': read_barrier(raw)}
 
 
 def qualify(root: Path, output: Path, revision: str) -> dict:
@@ -123,7 +125,7 @@ def qualify(root: Path, output: Path, revision: str) -> dict:
     before = source_inputs(root)
     inputs = encoded(before)
     (output / 'native-inputs.json').write_bytes(inputs)
-    record = {'schemaVersion': 'latent.go.network.runtime.v1', 'sourceRevision': revision,
+    record = {'schemaVersion': 'latent.go.network.runtime.v2', 'sourceRevision': revision,
               'status': 'in-progress', 'sourceDigest': digest(inputs), 'normalProviderInstalled': False,
               'kernelAccountingQualified': False, 'fullGoNetworkingQualified': False}
     deadline = time.monotonic() + 1800

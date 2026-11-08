@@ -6,6 +6,7 @@ import re
 import unittest
 
 from tools import qualify_go_network_runtime as runtime
+from tools.go_network_read_barrier import EXPECTED as READ_BARRIER
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -17,6 +18,7 @@ class GoNetworkRuntimeTests(unittest.TestCase):
             result.append(('GO_NETWORK_OWNER', {'case': label, 'stores': 0, 'instances': 0,
                 'streamOwners': 0, 'ioOwners': 0, 'kernelRetirementQualified': False}))
             result.append(('GO_NETWORK_CASE', {'case': label, 'mode': mode, 'result': output, 'contacts': contacts}))
+        result.append(('GO_NETWORK_READ_BARRIER', dict(READ_BARRIER)))
         result.append(('GO_NETWORK_COMPLETE', {'cases': 12, 'contacts': 4, 'cleanLogicalProviderStop': True,
             'kernelRetirementQualified': False, 'normalProviderInstalled': False}))
         return result
@@ -36,6 +38,7 @@ class GoNetworkRuntimeTests(unittest.TestCase):
         self.assertEqual(len(record['cases']), 12)
         self.assertEqual(sum(row['contacts'] for row in record['cases']), 4)
         self.assertEqual(len(record['userSpaceOwners']), 12)
+        self.assertEqual(record['readBarrier'], READ_BARRIER)
         self.assertIs(record['completion']['kernelRetirementQualified'], False)
         self.assertIs(record['completion']['normalProviderInstalled'], False)
 
@@ -83,6 +86,17 @@ class GoNetworkRuntimeTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 runtime.outcomes(raw)
 
+    def test_complete_cases_without_the_original_read_witness_cannot_pass(self):
+        rows = [(kind, row) for kind, row in self.rows() if kind != 'GO_NETWORK_READ_BARRIER']
+        with self.assertRaisesRegex(ValueError, 'read-barrier'):
+            runtime.outcomes(self.output(rows))
+        for key, value in (('readAdmissions', 1), ('readReleases', 0), ('releasedReadBytes', 0)):
+            rows = self.rows()
+            witness = next(row for kind, row in rows if kind == 'GO_NETWORK_READ_BARRIER')
+            witness[key] = value
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, 'read-barrier'):
+                runtime.outcomes(self.output(rows))
+
     def test_original_guarded_modes_are_unchanged_and_new_mode_uses_ordinary_half_close_eof(self):
         source = (ROOT / 'sdk/go-guest/runtime/network-conformance/main.go').read_bytes()
         self.assertIn(b'\tcase 9:\n', source)
@@ -106,6 +120,9 @@ class GoNetworkRuntimeTests(unittest.TestCase):
         self.assertEqual(source.count('compiler.compile('), 1)
         native = re.sub(r'\s+', ' ', (ROOT / 'crates/latent-wasmtime/tests/go_outbound_streams.rs').read_text())
         for owner in ('usage.delivered_read_bytes == 1', 'usage.pending_operations == 1',
+                      'usage.read_progress.admitted() == 2', 'usage.read_progress.released() == 1',
+                      'usage.read_progress.released_bytes() == 1', 'usage.read_progress.pending() == 1',
+                      'usage.owners == 1', 'usage.connections == 1', 'GO_NETWORK_READ_BARRIER',
                       'CancelDisposition::Accepted', 'active_activations, 1',
                       'tasks: 16', 'waits: 4', 'timers: 2', 'native_owners: 2'):
             self.assertIn(owner, native)

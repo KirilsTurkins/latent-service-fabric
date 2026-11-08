@@ -309,7 +309,7 @@ async fn signed_ordinary_go_declared_tcp_preserves_refusals_io_and_cancelled_own
     let mut invocation = Box::pin(f.manager.start(request(&f, &id.0, 4, port)).unwrap());
     tokio::select! { result = &mut invocation => panic!("read did not remain pending: {:?}",result.outcome), _ = received => {} }
     let barrier = Instant::now() + Duration::from_secs(2);
-    loop {
+    let (usage, io_calls) = loop {
         let usage = f
             .streams
             .as_ref()
@@ -318,11 +318,21 @@ async fn signed_ordinary_go_declared_tcp_preserves_refusals_io_and_cancelled_own
             .status()
             .unwrap()
             .usage;
-        if usage.delivered_read_bytes == 1
+        let io_calls = f.streams.as_ref().unwrap().io.snapshot().calls;
+        // Bytes/pending alone can describe the FIRST read finishing audit.
+        // Isolate the original connection, observe its first guard's release
+        // with the short byte, then a distinct second admitted read guard.
+        if usage.owners == 1
+            && usage.connections == 1
+            && usage.delivered_read_bytes == 1
+            && usage.read_progress.admitted() == 2
+            && usage.read_progress.released() == 1
+            && usage.read_progress.released_bytes() == 1
+            && usage.read_progress.pending() == 1
             && usage.pending_operations == 1
-            && f.streams.as_ref().unwrap().io.snapshot().calls == 1
+            && io_calls == 1
         {
-            break;
+            break (usage, io_calls);
         }
         assert!(
             Instant::now() < barrier,
@@ -332,7 +342,22 @@ async fn signed_ordinary_go_declared_tcp_preserves_refusals_io_and_cancelled_own
             result = &mut invocation => panic!("pending read completed before cancellation: {:?}",result.outcome),
             () = tokio::task::yield_now() => (),
         }
-    }
+    };
+    println!(
+        "GO_NETWORK_READ_BARRIER {}",
+        json!({
+            "case": "cancel-pending-read",
+            "owners": usage.owners,
+            "connections": usage.connections,
+            "readAdmissions": usage.read_progress.admitted(),
+            "readReleases": usage.read_progress.released(),
+            "pendingReads": usage.read_progress.pending(),
+            "releasedReadBytes": usage.read_progress.released_bytes(),
+            "deliveredReadBytes": usage.delivered_read_bytes,
+            "pendingOperations": usage.pending_operations,
+            "ioCalls": io_calls,
+        })
+    );
     assert_eq!(f.backend.resource_snapshot().live_stores, 1);
     assert_eq!(f.streams.as_ref().unwrap().io.snapshot().calls, 1);
     assert_eq!(

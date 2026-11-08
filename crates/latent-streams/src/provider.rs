@@ -613,6 +613,7 @@ impl StreamProvider {
                 #[cfg(any(test, feature = "development-outbound"))]
                 {
                     result.input_budget_bytes += usage.input_budget_bytes;
+                    result.read_progress.merge(usage.read_progress)?;
                 }
                 result.delivered_read_bytes += usage.delivered_read_bytes;
             }

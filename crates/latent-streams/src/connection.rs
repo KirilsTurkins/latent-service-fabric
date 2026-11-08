@@ -303,6 +303,8 @@ struct State {
     write_shut: bool,
     accepted_write: u64,
     delivered_read: u64,
+    #[cfg(any(test, feature = "development-outbound"))]
+    read_progress: crate::StreamReadProgress,
     attempted_write: bool,
     last_progress: Instant,
 }
@@ -407,6 +409,8 @@ pub(crate) async fn connect(
             write_shut: false,
             accepted_write: 0,
             delivered_read: 0,
+            #[cfg(any(test, feature = "development-outbound"))]
+            read_progress: crate::StreamReadProgress::default(),
             attempted_write: false,
             last_progress: Instant::now(),
         }),
@@ -848,6 +852,10 @@ impl Connection {
                 .as_ref()
                 .expect("live socket transport"),
         );
+        #[cfg(any(test, feature = "development-outbound"))]
+        if direction == 0 {
+            state.read_progress.admit()?;
+        }
         state.pending += 1;
         state.busy[direction] = true;
         Ok(Pending {
@@ -900,6 +908,11 @@ impl Connection {
                 .state
                 .lock()
                 .unwrap_or_else(std::sync::PoisonError::into_inner);
+            #[cfg(any(test, feature = "development-outbound"))]
+            if direction == 0 {
+                let delivered = state.delivered_read;
+                state.read_progress.release(delivered);
+            }
             state.pending -= 1;
             state.busy[direction] = false;
         }
@@ -985,6 +998,8 @@ impl Connection {
             retained_chunks: self.transfer.outstanding_chunks(),
             #[cfg(any(test, feature = "development-outbound"))]
             input_budget_bytes: self.transfer.accepted_input_bytes(),
+            #[cfg(any(test, feature = "development-outbound"))]
+            read_progress: state.read_progress,
             accepted_write_bytes: state.accepted_write,
             delivered_read_bytes: state.delivered_read,
             retired: false,

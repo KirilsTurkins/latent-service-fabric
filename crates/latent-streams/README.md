@@ -44,6 +44,44 @@ TCP supports send-only shutdown. TLS send-only shutdown and receive-only shutdow
 remain unsupported. TLS `shutdown(Both)` does not send a close-notify record; it
 can also retire a connection after the peer has sent its own close-notify.
 
+### Original read-guard observations
+
+Qualification builds expose `StreamUsage.read_progress` through the existing
+provider/lifecycle snapshots. Its fixed-size state shares the original connection
+mutex and checked prepaid owner envelope; it adds no queue, executor, activation
+budget, guest operation or serialized operator field. Normal builds omit it.
+`admitted()` counts original read guards, `released()` counts their releases, and
+`released_bytes()` samples cumulative delivered bytes at that release boundary.
+Admission and release include unpolled reads and failures of later buffer/window
+admission. They do not by themselves establish transport dispatch or success.
+
+The [real TCP controls](src/tests/read_progress.rs) hold future peer bytes until
+an actual short-read result, distinguish read/write and overlapping guards,
+exercise failed window admission, retain results after revocation, and observe
+original read guards across provider rotation. These controls remain part of the
+complete registered library suite, with no new ignored cases. Counter overflow
+refuses admission/observation instead of wrapping or partially publishing a sum.
+
+The [signed ordinary Go harness](../latent-wasmtime/tests/go_outbound_streams.rs)
+isolates one original connection and requires two admissions, one release, one
+pending read, and one byte already observed at the first release. This excludes
+the earlier ambiguous tuple of one delivered byte and one pending operation,
+which could still describe the first read finishing audit. The unchanged Go
+`io.ReadFull` source supplies the next read, not an injected transport. The
+[source-bound controller](../../tools/qualify_go_network_runtime.py) now emits
+`latent.go.network.runtime.v2` and requires one closed typed
+`GO_NETWORK_READ_BARRIER` record; missing/duplicate/old witnesses cannot pass.
+Historical receipts retain their original schema and evidence scope.
+
+Snapshots sum currently retained owners, including retired generations, and
+forget their counters when those owners disappear. They are not process-wide
+history or identities: a qualification must isolate its intended original owner.
+Read-guard release does not refund retained chunks, the original IoCall, the
+connection, activation, or unproved kernel tails. These diagnostics neither
+qualify production/kernel/TLS retirement nor open any installation gate. Fresh
+source-matched native execution is required before claiming the new controls
+passed; source presence and parser tests alone are insufficient.
+
 ## Integration boundaries
 
 ADR-0061's bounded design was accepted on October 16, 2026; production

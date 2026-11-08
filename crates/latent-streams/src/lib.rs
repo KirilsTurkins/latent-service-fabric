@@ -8,6 +8,8 @@ mod kernel;
 mod lifecycle;
 mod maintenance;
 mod provider;
+#[cfg(any(test, feature = "development-outbound"))]
+mod read_progress;
 mod tls;
 mod transport;
 
@@ -21,6 +23,8 @@ pub use maintenance::{StreamMaintenance, StreamMaintenanceStop};
 pub use provider::StreamProvider;
 #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
 pub use provider::{NodeCapacityFacts, NodeCapacityQualification};
+#[cfg(any(test, feature = "development-outbound"))]
+pub use read_progress::StreamReadProgress;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -34,6 +38,11 @@ pub struct StreamUsage {
     /// Development observation only; this adds no owner, counter or authority.
     #[cfg(any(test, feature = "development-outbound"))]
     pub input_budget_bytes: u64,
+    /// Original read-guard progress; never authority or a physical refund proof.
+    /// Development-only observations do not extend serialized operator status.
+    #[cfg(any(test, feature = "development-outbound"))]
+    #[serde(skip)]
+    pub read_progress: StreamReadProgress,
     pub delivered_read_bytes: u64,
     pub retired: bool,
 }
