@@ -957,6 +957,12 @@
         "type": "string",
         "number": 3,
         "repeated": true
+      },
+      {
+        "name": "stream_quarantined_connections",
+        "type": "uint64",
+        "number": 4,
+        "optional": true
       }
     ],
     "ListCapabilitiesResponse": [

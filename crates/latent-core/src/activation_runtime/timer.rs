@@ -130,6 +130,15 @@ impl TimerWait {
         now: Instant,
         after_check: impl FnOnce(),
     ) -> Result<u64, PlatformError> {
+        self.complete_with_hooks(now, after_check, || {})
+    }
+
+    fn complete_with_hooks(
+        &mut self,
+        now: Instant,
+        after_check: impl FnOnce(),
+        after_commit_check: impl FnOnce(),
+    ) -> Result<u64, PlatformError> {
         self.inner.runtime.check_live()?;
         after_check();
         let mut schedule = self
@@ -143,7 +152,7 @@ impl TimerWait {
         // `begin_wait` already takes schedule before runtime state. Hold the
         // same order through completion so a concurrent runtime cancellation
         // either wins first or follows this committed readiness observation.
-        let state = self
+        let mut state = self
             .inner
             .runtime
             .inner
@@ -156,22 +165,27 @@ impl TimerWait {
         ) {
             return Err(error(PlatformErrorCode::Cancelled, "runtime-retired"));
         }
-        let skipped = if let Some(period) = schedule.period_nanos {
+        let (next, skipped) = if let Some(period) = schedule.period_nanos {
             let elapsed = now.duration_since(self.requested).as_nanos();
             let skipped = u64::try_from(elapsed / u128::from(period)).unwrap_or(u64::MAX);
             let remaining = period
                 - u64::try_from(elapsed % u128::from(period)).expect("remainder bounded by period");
-            schedule.next = Some(
+            let next = Some(
                 now.checked_add(Duration::from_nanos(remaining))
                     .ok_or_else(|| {
                         error(PlatformErrorCode::InvalidArgument, "runtime-timer-range")
                     })?,
             );
-            skipped
+            (next, skipped)
         } else {
-            schedule.next = None;
-            0
+            (None, 0)
         };
+        // `now` represents timer readiness sampled by the provider, not the
+        // current root deadline. Recheck the original ledger and deadline
+        // after both locks and range validation, before publishing the schedule.
+        self.inner.runtime.check_commit_ledger_locked(&mut state)?;
+        after_commit_check();
+        schedule.next = next;
         drop(state);
         Ok(skipped)
     }

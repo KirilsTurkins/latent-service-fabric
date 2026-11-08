@@ -84,6 +84,18 @@ test("provider usage maps retain full-width unsigned counters and reject lossy i
   }
 });
 
+test("stream quarantine preserves absent, observed zero and retained counts on the wire", () => {
+  const schema = method("listCapabilities").output;
+  for (const count of [undefined, 0n, 2n]) {
+    const nodeUsage = { scope: "node", counters: { stream_owners: 2n, stream_connections: 2n }, unavailable: [] };
+    if (count !== undefined) nodeUsage.streamQuarantinedConnections = count;
+    const decoded = decode(schema, encode(schema, { nodeUsage }, 65536), 65536);
+    assert.equal(decoded.nodeUsage.streamQuarantinedConnections, count);
+    assert.equal(decoded.nodeUsage.counters.stream_owners, 2n);
+    assert.equal(decoded.nodeUsage.counters.stream_connections, 2n);
+  }
+});
+
 test("packed repeated target reasons retain unknown numbers and share bounded segment accounting", () => {
   const schema = registry.getMessage("latent.control.v1.TargetCandidate");
   const field = schema.field.reasons.number;

@@ -264,9 +264,10 @@ static bool content_range(const latent_http_streaming_list_header_t *headers,
 
 static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
                      const char *method, const char *content_type, const char *body) {
+    const off_t requested_offset = url ? url->offset : 0;
     if ((stat && strcmp(method, "GET") && strcmp(method, "HEAD")) ||
         fetchAuthMethod || fetchDebug || fetchTimeout < 0 ||
-        (url && (url->offset < 0 || (url->offset > 0 && strcmp(method, "GET"))))) {
+        (url && (requested_offset < 0 || (requested_offset > 0 && strcmp(method, "GET"))))) {
         unsupported(); return NULL;
     }
     if (flags) for (const char *flag = flags; *flag; ++flag)
@@ -299,8 +300,8 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
     };
     size_t header_count = 2;
     char range_value[32];
-    if (url->offset > 0) {
-        int written = snprintf(range_value, sizeof(range_value), "bytes=%lld-", (long long)url->offset);
+    if (requested_offset > 0) {
+        int written = snprintf(range_value, sizeof(range_value), "bytes=%lld-", (long long)requested_offset);
         if (written < 0 || (size_t)written >= sizeof(range_value)) {
             free(target);
             failure(FETCH_PROTO, EOVERFLOW, "HTTP range offset is unrepresentable"); goto fail_file;
@@ -347,9 +348,12 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
     size_t partial_length = length;
     bool valid_range = true;
     if (status == 206) {
-        valid_range = operation == LATENT_HTTP_STREAMING_METHOD_GET && known_length &&
+        /* Subtract after ordering to avoid an overflowing range end. */
+        valid_range = operation == LATENT_HTTP_STREAMING_METHOD_GET && requested_offset > 0 && known_length &&
             content_range(&completed.val.ok.headers, &actual_offset, &partial_length, &representation_size) &&
-            actual_offset <= url->offset && partial_length == length;
+            actual_offset <= requested_offset &&
+            (uint64_t)requested_offset - (uint64_t)actual_offset < (uint64_t)partial_length &&
+            partial_length == length;
     }
     lsf_streaming_metadata_close(&completed.val.ok);
     if (!valid_length) {

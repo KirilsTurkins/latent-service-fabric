@@ -8,6 +8,7 @@
     "api/proto/latent/control/v1/release.proto": ["PublicationRef"],
     "api/proto/latent/control/v1/node.proto": ["DiagnosticStage", "DiagnosticReason", "DiagnosticProfile", "ActivationDiagnostic", "TransactionStagingWitness", "ActivationTreeNode", "InspectActivationTreeRequest", "InspectActivationTreeResponse", "TargetObservationState", "TargetReason", "TargetPreparationState", "InspectHttpTargetRequest", "TargetDependency", "TargetDependencyRevision", "PreparedTargetExport", "TargetPreparation", "TargetCandidate", "InspectedHttpBinding", "InspectHttpTargetResponse"]
   },
+  "legacy_constructors": {"CapabilityResourceUsage": ["stream_quarantined_connections"]},
   "operations": [
     {"name": "Invoke", "service": "latent.invocation.v1.InvocationService", "request": "InvokeRequest", "response": "InvokeResponse", "recovery": "activation_id"},
     {"name": "Cancel", "service": "latent.invocation.v1.InvocationService", "request": "CancelRequest", "response": "CancelResponse", "recovery": "activation_id"},

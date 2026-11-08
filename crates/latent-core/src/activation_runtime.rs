@@ -170,6 +170,14 @@ struct Record {
     parked: bool,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum AdmissionStep {
+    CheckedBeforeAccounting,
+    ChargedFuel,
+    PreparedSlot,
+    CheckedBeforePublication,
+}
+
 /// This affine owner must remain with actual logical work/native ownership.
 /// A detached provider keeps its own owner, independently of a dropped waiter.
 #[derive(Debug)]
@@ -230,7 +238,17 @@ impl ActivationRuntime {
         kind: OwnerKind,
         continuation: Option<RuntimeToken>,
     ) -> Result<RuntimeOwner, PlatformError> {
+        self.register_after_live_check(kind, continuation, || {})
+    }
+
+    fn register_after_live_check(
+        &self,
+        kind: OwnerKind,
+        continuation: Option<RuntimeToken>,
+        after_check: impl FnOnce(),
+    ) -> Result<RuntimeOwner, PlatformError> {
         self.check_live()?;
+        after_check();
         let mut state = self
             .inner
             .state
@@ -252,7 +270,17 @@ impl ActivationRuntime {
         kind: OwnerKind,
         continuation: RuntimeToken,
     ) -> Result<RuntimeOwner, PlatformError> {
+        self.register_from_task_after_live_check(kind, continuation, || {})
+    }
+
+    fn register_from_task_after_live_check(
+        &self,
+        kind: OwnerKind,
+        continuation: RuntimeToken,
+        after_check: impl FnOnce(),
+    ) -> Result<RuntimeOwner, PlatformError> {
         self.check_live()?;
+        after_check();
         let mut state = self
             .inner
             .state
@@ -280,6 +308,16 @@ impl ActivationRuntime {
         state: &mut State,
         kind: OwnerKind,
         continuation: Option<RuntimeToken>,
+    ) -> Result<RuntimeOwner, PlatformError> {
+        self.register_locked_with_hook(state, kind, continuation, |_| {})
+    }
+
+    fn register_locked_with_hook(
+        &self,
+        state: &mut State,
+        kind: OwnerKind,
+        continuation: Option<RuntimeToken>,
+        mut hook: impl FnMut(AdmissionStep),
     ) -> Result<RuntimeOwner, PlatformError> {
         let inherited = match continuation {
             Some(token) if self.record(state, token).is_some() => true,
@@ -317,11 +355,24 @@ impl ActivationRuntime {
                 "runtime-token-exhausted",
             )
         })?;
+        // Preserve the existing token, phase and capacity error precedence.
+        // Then recheck before doing any new accounting/allocation: the first
+        // liveness check preceded this lock and the original ledger may have
+        // closed or reached its deadline while this operation waited.
+        self.check_commit_ledger_locked(state)?;
+        hook(AdmissionStep::CheckedBeforeAccounting);
         // Scanning is bounded and charged on the original fuel ledger.
         self.inner
             .budget
             .consume_cpu_fuel(100 + self.inner.limits.total() as u64)
-            .map_err(|failure| failure.to_platform_error())?;
+            .map_err(|failure| match failure {
+                crate::BudgetError::AccountingFinalized => {
+                    state.phase = RuntimePhase::Cancelling;
+                    error(PlatformErrorCode::Cancelled, "runtime-cancelled")
+                }
+                other => other.to_platform_error(),
+            })?;
+        hook(AdmissionStep::ChargedFuel);
         if state.slab.is_none() {
             let count = self.inner.limits.total();
             let bytes = std::alloc::Layout::array::<Option<Record>>(count)
@@ -334,11 +385,17 @@ impl ActivationRuntime {
                         "runtime-record-allocation",
                     )
                 })?;
-            let mut allocation = self
-                .inner
-                .budget
-                .reserve_host_memory(bytes)
-                .map_err(|failure| failure.to_host_memory_error())?;
+            let mut allocation =
+                self.inner
+                    .budget
+                    .reserve_host_memory(bytes)
+                    .map_err(|failure| match failure {
+                        crate::BudgetError::AccountingFinalized => {
+                            state.phase = RuntimePhase::Cancelling;
+                            error(PlatformErrorCode::Cancelled, "runtime-cancelled")
+                        }
+                        other => other.to_host_memory_error(),
+                    })?;
             let mut records = Vec::new();
             records.try_reserve_exact(count).map_err(|_| {
                 error(
@@ -367,13 +424,19 @@ impl ActivationRuntime {
         };
         let slot = state
             .slab
-            .as_mut()
+            .as_ref()
             .expect("reserved slab")
             .records
-            .iter_mut()
-            .find(|slot| slot.is_none())
+            .iter()
+            .position(|slot| slot.is_none())
             .ok_or_else(|| error(PlatformErrorCode::ResourceExhausted, "runtime-record-limit"))?;
-        *slot = Some(Record {
+        hook(AdmissionStep::PreparedSlot);
+        // A first admission can also have spent time reserving/allocating the
+        // bounded slab, or scanning it. Recheck ledger closure and deadline;
+        // the physical allocation remains prepaid until retirement.
+        self.check_commit_ledger_locked(state)?;
+        hook(AdmissionStep::CheckedBeforePublication);
+        state.slab.as_mut().expect("reserved slab").records[slot] = Some(Record {
             id: token.id,
             kind,
             parked: false,
@@ -422,10 +485,14 @@ impl ActivationRuntime {
         if token.generation != self.inner.generation {
             return Err(error(PlatformErrorCode::InvalidArgument, "runtime-token"));
         }
-        let record = state
+        let slot = state
             .slab
-            .as_mut()
-            .and_then(|slab| slab.records.iter_mut().flatten().find(|r| r.id == token.id))
+            .as_ref()
+            .and_then(|slab| {
+                slab.records
+                    .iter()
+                    .position(|r| r.is_some_and(|r| r.id == token.id))
+            })
             .ok_or_else(|| error(PlatformErrorCode::InvalidArgument, "runtime-token"))?;
         // Cancellation can win the state lock after check_live returns. Do not
         // publish a parked owner after that transition; already accepted work
@@ -433,7 +500,11 @@ impl ActivationRuntime {
         if matches!(phase, RuntimePhase::Cancelling | RuntimePhase::Retired) {
             return Err(error(PlatformErrorCode::Cancelled, "runtime-retired"));
         }
-        record.parked = true;
+        self.check_commit_ledger_locked(&mut state)?;
+        state.slab.as_mut().expect("checked slab").records[slot]
+            .as_mut()
+            .expect("checked owner")
+            .parked = true;
         if matches!(state.phase, RuntimePhase::Running) {
             let runnable = state.slab.as_ref().is_some_and(|slab| {
                 slab.records
@@ -540,6 +611,35 @@ impl ActivationRuntime {
         Ok(())
     }
 
+    // Called while the mutation lock is held, immediately before publication.
+    // The immutable deadline and original/ancestor ledger atomic flags take no
+    // locks. Do not call an external cancellation probe here: even the shipped
+    // node probe takes a lifecycle mutex whose ordering is not guaranteed here.
+    // This is an observation, not a handshake with a concurrent terminal event.
+    fn check_commit_ledger(&self) -> Result<(), PlatformError> {
+        if self.inner.budget.descendant_ledger_is_closed() {
+            return Err(error(PlatformErrorCode::Cancelled, "runtime-cancelled"));
+        }
+        self.inner
+            .budget
+            .check_deadline_at(Instant::now())
+            .map_err(|failure| failure.to_platform_error())
+    }
+
+    fn check_commit_ledger_locked(&self, state: &mut State) -> Result<(), PlatformError> {
+        let result = self.check_commit_ledger();
+        if result
+            .as_ref()
+            .is_err_and(|failure| failure.code == PlatformErrorCode::Cancelled)
+            && state.phase != RuntimePhase::Retired
+        {
+            // The original/ancestor ledger owns terminal signalling. Do not
+            // invoke that callback here: callers may hold other native locks.
+            state.phase = RuntimePhase::Cancelling;
+        }
+        result
+    }
+
     #[must_use]
     pub fn snapshot(&self) -> RuntimeSnapshot {
         let state = self
@@ -627,13 +727,12 @@ impl RuntimeWake {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         let phase = state.phase;
-        let record = state.slab.as_mut().and_then(|slab| {
+        let slot = state.slab.as_ref().and_then(|slab| {
             slab.records
-                .iter_mut()
-                .flatten()
-                .find(|r| r.id == self.token.id)
+                .iter()
+                .position(|r| r.is_some_and(|r| r.id == self.token.id))
         });
-        if self.token.generation != runtime.inner.generation || record.is_none() {
+        if self.token.generation != runtime.inner.generation || slot.is_none() {
             state.stale_wakes = state.stale_wakes.saturating_add(1);
             return false;
         }
@@ -643,7 +742,13 @@ impl RuntimeWake {
         if matches!(phase, RuntimePhase::Cancelling | RuntimePhase::Retired) {
             return false;
         }
-        record.expect("checked owner").parked = false;
+        if runtime.check_commit_ledger_locked(&mut state).is_err() {
+            return false;
+        }
+        state.slab.as_mut().expect("checked slab").records[slot.expect("checked slot")]
+            .as_mut()
+            .expect("checked owner")
+            .parked = false;
         if state.phase == RuntimePhase::Waiting {
             state.phase = RuntimePhase::Running;
         }

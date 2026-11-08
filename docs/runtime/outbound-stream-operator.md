@@ -63,7 +63,12 @@ interrupted check returns failure and retains the file for private owner
 review; retrying requires a separately named new output. The command invokes
 no provider mutation or grant RPC. It bounds the check to 30 seconds and 64 KiB
 per output stream through the existing process owner, rechecks the prepared
-bytes afterwards, and emits no node output or input paths. It binds the selected
+bytes afterwards, and emits no node output or input paths. It also reopens the
+protected base and installation record and compares their original bytes before
+creating the candidate and after the check. A changed or unavailable source
+fails the command; a candidate already created stays private for owner review.
+These local snapshots do not lock either file, detect transient changes between
+checks, or establish the live node's current configuration. It binds the selected
 node executable (at most 256 MiB) by its actual SHA-256 and byte size before and
 after that one check; a changed executable fails explicitly. This executable
 identity does not attest its source, version, publisher or installation. An accepted check
@@ -136,6 +141,20 @@ changed/revoked/unavailable states remain descriptive diagnostics, even when
 they differ from the saved provider descriptor. Empty results and unavailable
 counters remain unavailable; inspection grants no execution permission or
 readiness and changes no local owner or remote grant.
+
+For a retained stream observation, the authenticated node-operator usage result
+includes optional `nodeUsage.streamQuarantinedConnections` as a decimal string.
+It counts original quarantined connections across the current and up to eight
+retired provider generations using checked addition, which refuses overflow.
+The bounded scan samples generations separately and is not an atomic view
+across them. This count is
+already included in `stream_owners` and `stream_connections`; do not add it
+again. It reports
+retained connection slots, not bytes or proof of kernel retirement. The field
+is absent when the node has no valid retained quarantine observation or uses
+an older protocol; absence is not zero. An inconsistent custom observation is
+omitted without changing the original totals. An observed zero is `"0"`.
+The local `stream-control` status also reports `quarantinedConnections`.
 
 Each mutation records its original intent and operation identity in protected
 state before dispatch. An uncertain response or transport exception retains
@@ -232,7 +251,9 @@ latent-dev stream-operator prepare-rotation \
 Only epoch and limits change in the candidate; all other configuration fields,
 credentials, destinations, DNS/address constraints and bindings stay exact.
 The command uses the same protected-input, create-only output, selected-binary
-identity, bounded `check-config` and redacted failure rules as initial preparation.
+identity, bounded `check-config`, source snapshot rechecks and redacted failure
+rules as initial preparation. The rechecked sources are the base and rotation
+record; this local fence does not lock them or observe the live provider.
 A refused or uncertain check retains the private candidate. It never replaces
 the live file, sends a signal, rotates sessions or changes grants.
 `expectedEpoch` checks only the supplied file; it does not observe the live

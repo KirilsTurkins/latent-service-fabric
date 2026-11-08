@@ -62,7 +62,16 @@ def conversion(name, module, fields, messages, enums):
                 output += ["            _ => return Err(super::RpcFailure::local(super::FailureKind::InvalidRequest)),", "        };"]
         output += ["        Ok(Self {" if fallible else "        Self {"]
         for field in ordinary:
-            output += [f"            {field['name']}: {converted(field, 'value.' + field['name'], direction, messages, enums)},"]
+            if module == "invocation" and name in {"Success", "DeclaredError"} and field["name"] == "payload":
+                # latent-rpc binds these messages to an owned ResultPayload;
+                # the public SDK retains its own separate Vec owner.
+                if direction == "model" and name == "Success":
+                    output += ["            // The client profile owns a separate controller response buffer;",
+                               "            // tonic's maximum_response bounds it. Keep the source through copy."]
+                expression = "value.payload.to_vec()" if direction == "model" else "value.payload.into()"
+            else:
+                expression = converted(field, 'value.' + field['name'], direction, messages, enums)
+            output += [f"            {field['name']}: {expression},"]
         if grouped:
             output += ["            " + (group if direction == "wire" else ", ".join(members)) + ","]
         output += ["        })" if fallible else "        }", "    }", "}", ""]
