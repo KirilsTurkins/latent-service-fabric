@@ -23,11 +23,12 @@ def require(value, reason):
     if not value:
         raise ValueError('q35-intx-trace-'+reason)
 
-def inspect(raw, command, pin, line):
+def inspect(raw, command, pin, line, *, bar3=False):
     require(type(raw) is bytes and 0 < len(raw) <= MAX_TRACE and raw.endswith(b'\n'), 'bounded-complete-lines')
     require(type(command) is int and command == 0x0103 and
             type(pin) is int and 1 <= pin <= 4 and type(line) is int and 0 <= line <= 0xff,
             'guest-observation-shape')
+    require(type(bar3) is bool, 'bar3-selection')
     lowered = raw.lower()
     require(b'trace event ' not in lowered and b'trace-event ' not in lowered,
             'trace-configuration-warning')
@@ -84,7 +85,8 @@ def inspect(raw, command, pin, line):
                 (b'read', command ^ 0x400), (b'write', command), (b'read', command),
                 (b'read', command))
     require(tuple((e[1], e[7]) for _, e in command_rows) == expected, 'exact-command-sequence')
-    require([e[6] for e in selected if e[1] == b'write'] == [4, 4], 'no-other-selected-writes')
+    expected_writes = [4, 4, 0x1c, 0x1c] if bar3 else [4, 4]
+    require([e[6] for e in selected if e[1] == b'write'] == expected_writes, 'no-other-selected-writes')
     for offset, expected_value in ((0x3d, pin), (0x3c, line)):
         reads = [e[7] for e in selected if e[1] == b'read' and e[6] == offset]
         require(len(reads) >= 3 and all(value == expected_value for value in reads), 'original-pin-line')
