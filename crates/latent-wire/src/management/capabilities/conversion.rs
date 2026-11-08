@@ -73,6 +73,7 @@ pub(super) fn tenant_usage(value: domain::TenantUsage) -> proto::CapabilityResou
     proto::CapabilityResourceUsage {
         scope: "tenant".into(),
         unavailable: Vec::new(),
+        stream_quarantined_connections: None,
         counters: HashMap::from([
             ("sessions".into(), value.sessions as u64),
             (
@@ -225,6 +226,9 @@ fn stream_usage(
             .push("outbound-streams-no-retained-observation".into());
         return;
     };
+    // This optional protobuf field is deliberately outside the fixed counter
+    // map: older clients can ignore its tag, and missing observations stay absent.
+    result.stream_quarantined_connections = u64::try_from(usage.quarantined_connections).ok();
     for (name, count) in [
         ("stream_configuration_epoch", usage.configuration_epoch),
         (
@@ -346,5 +350,16 @@ mod tests {
             .counters
             .keys()
             .any(|key| key.starts_with("stream_")));
+        assert!(retired.stream_quarantined_connections.is_none());
+        usage.streams = Some(latent_capabilities::broker::network::StreamNodeUsage {
+            owners: 4,
+            connections: 3,
+            quarantined_connections: 2,
+            ..Default::default()
+        });
+        let observed = node_usage(&usage);
+        assert_eq!(observed.stream_quarantined_connections, Some(2));
+        assert_eq!(observed.counters["stream_owners"], 4);
+        assert_eq!(observed.counters["stream_connections"], 3);
     }
 }

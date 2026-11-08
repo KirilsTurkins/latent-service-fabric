@@ -308,9 +308,7 @@ impl TryFrom<model::InvokeResponse> for invocation::InvokeResponse {
 impl From<invocation::Success> for model::Success {
     fn from(value: invocation::Success) -> Self {
         Self {
-            // The client profile owns a separate controller response buffer;
-            // tonic's maximum_response bounds it. Keep the source through copy.
-            payload: value.payload.to_vec(),
+            payload: value.payload,
             media_type: value.media_type,
             committed_state_version: value.committed_state_version,
             effect_ids: value.effect_ids,
@@ -322,7 +320,7 @@ impl From<invocation::Success> for model::Success {
 impl From<model::Success> for invocation::Success {
     fn from(value: model::Success) -> Self {
         Self {
-            payload: value.payload.into(),
+            payload: value.payload,
             media_type: value.media_type,
             committed_state_version: value.committed_state_version,
             effect_ids: value.effect_ids,
@@ -336,7 +334,7 @@ impl From<invocation::DeclaredError> for model::DeclaredError {
         Self {
             code: value.code,
             message: value.message,
-            payload: value.payload.to_vec(),
+            payload: value.payload,
             media_type: value.media_type,
             metadata: value.metadata.into_iter().collect(),
         }
@@ -348,7 +346,7 @@ impl From<model::DeclaredError> for invocation::DeclaredError {
         Self {
             code: value.code,
             message: value.message,
-            payload: value.payload.into(),
+            payload: value.payload,
             media_type: value.media_type,
             metadata: value.metadata.into_iter().collect(),
         }
@@ -867,6 +865,7 @@ impl From<control::CapabilityResourceUsage> for model::CapabilityResourceUsage {
             scope: value.scope,
             counters: value.counters.into_iter().collect(),
             unavailable: value.unavailable,
+            stream_quarantined_connections: value.stream_quarantined_connections,
         }
     }
 }
@@ -877,6 +876,7 @@ impl From<model::CapabilityResourceUsage> for control::CapabilityResourceUsage {
             scope: value.scope,
             counters: value.counters.into_iter().collect(),
             unavailable: value.unavailable,
+            stream_quarantined_connections: value.stream_quarantined_connections,
         }
     }
 }

@@ -941,6 +941,7 @@ static void profile_vectors(void) {
         assert((value.tenant_usage.unavailable_count == 1) && "redacted-capability-provider-inspection.tenant_usage.unavailable.count");
         assert((value.tenant_usage.unavailable[0].length == 25) && "redacted-capability-provider-inspection.tenant_usage.unavailable.0.length");
         assert((memcmp(value.tenant_usage.unavailable[0].data, "fixture-owner-unavailable", 25) == 0) && "redacted-capability-provider-inspection.tenant_usage.unavailable.0");
+        assert((!(value.tenant_usage.has_stream_quarantined_connections)) && "redacted-capability-provider-inspection.tenant_usage.stream_quarantined_connections.presence");
         assert((!(value.has_node_usage)) && "redacted-capability-provider-inspection.node_usage.presence");
         assert((value.state.length == 7) && "redacted-capability-provider-inspection.state.length");
         assert((memcmp(value.state.data, "sampled", 7) == 0) && "redacted-capability-provider-inspection.state");
@@ -960,8 +961,53 @@ static void profile_vectors(void) {
         assert((memcmp(value.node_usage.unavailable[0].data, "provider-pools-no-retained-owner", 32) == 0) && "missing-provider-plan-not-zero-usage.node_usage.unavailable.0");
         assert((value.node_usage.unavailable[1].length == 26) && "missing-provider-plan-not-zero-usage.node_usage.unavailable.1.length");
         assert((memcmp(value.node_usage.unavailable[1].data, "audit-owner-not-configured", 26) == 0) && "missing-provider-plan-not-zero-usage.node_usage.unavailable.1");
+        assert((!(value.node_usage.has_stream_quarantined_connections)) && "missing-provider-plan-not-zero-usage.node_usage.stream_quarantined_connections.presence");
         assert((value.state.length == 24) && "missing-provider-plan-not-zero-usage.state.length");
         assert((memcmp(value.state.data, "binding-plan-unavailable", 24) == 0) && "missing-provider-plan-not-zero-usage.state");
+    }
+    {
+        latent_profile_list_capabilities_response value = (latent_profile_list_capabilities_response){.capabilities = NULL, .capabilities_count = 0, .has_node_usage = true, .node_usage = (latent_profile_capability_resource_usage){.scope = PROFILE_TEXT("node"), .counters = (const latent_profile_counter[]){{.key = PROFILE_TEXT("stream_owners"), .value = UINT64_C(0)}, {.key = PROFILE_TEXT("stream_connections"), .value = UINT64_C(0)}}, .counters_count = 2, .unavailable = NULL, .unavailable_count = 0, .has_stream_quarantined_connections = true, .stream_quarantined_connections = UINT64_C(0)}, .state = PROFILE_TEXT("binding-plan-unavailable")};
+        assert((value.capabilities_count == 0) && "observed-stream-quarantine-zero.capabilities.count");
+        assert((!(value.has_page)) && "observed-stream-quarantine-zero.page.presence");
+        assert((!(value.has_revision)) && "observed-stream-quarantine-zero.revision.presence");
+        assert((!(value.has_tenant_usage)) && "observed-stream-quarantine-zero.tenant_usage.presence");
+        assert((value.has_node_usage) && "observed-stream-quarantine-zero.node_usage.presence");
+        assert((value.node_usage.scope.length == 4) && "observed-stream-quarantine-zero.node_usage.scope.length");
+        assert((memcmp(value.node_usage.scope.data, "node", 4) == 0) && "observed-stream-quarantine-zero.node_usage.scope");
+        assert((value.node_usage.counters_count == 2) && "observed-stream-quarantine-zero.node_usage.counters.count");
+        assert((value.node_usage.counters[0].key.length == 13) && "observed-stream-quarantine-zero.node_usage.counters.key.length");
+        assert((memcmp(value.node_usage.counters[0].key.data, "stream_owners", 13) == 0) && "observed-stream-quarantine-zero.node_usage.counters.key");
+        assert((value.node_usage.counters[0].value == UINT64_C(0)) && "observed-stream-quarantine-zero.node_usage.counters.0");
+        assert((value.node_usage.counters[1].key.length == 18) && "observed-stream-quarantine-zero.node_usage.counters.key.length");
+        assert((memcmp(value.node_usage.counters[1].key.data, "stream_connections", 18) == 0) && "observed-stream-quarantine-zero.node_usage.counters.key");
+        assert((value.node_usage.counters[1].value == UINT64_C(0)) && "observed-stream-quarantine-zero.node_usage.counters.1");
+        assert((value.node_usage.unavailable_count == 0) && "observed-stream-quarantine-zero.node_usage.unavailable.count");
+        assert((value.node_usage.has_stream_quarantined_connections) && "observed-stream-quarantine-zero.node_usage.stream_quarantined_connections.presence");
+        assert((value.node_usage.stream_quarantined_connections == UINT64_C(0)) && "observed-stream-quarantine-zero.node_usage.stream_quarantined_connections");
+        assert((value.state.length == 24) && "observed-stream-quarantine-zero.state.length");
+        assert((memcmp(value.state.data, "binding-plan-unavailable", 24) == 0) && "observed-stream-quarantine-zero.state");
+    }
+    {
+        latent_profile_list_capabilities_response value = (latent_profile_list_capabilities_response){.capabilities = NULL, .capabilities_count = 0, .has_node_usage = true, .node_usage = (latent_profile_capability_resource_usage){.scope = PROFILE_TEXT("node"), .counters = (const latent_profile_counter[]){{.key = PROFILE_TEXT("stream_owners"), .value = UINT64_C(3)}, {.key = PROFILE_TEXT("stream_connections"), .value = UINT64_C(2)}}, .counters_count = 2, .unavailable = NULL, .unavailable_count = 0, .has_stream_quarantined_connections = true, .stream_quarantined_connections = UINT64_C(1)}, .state = PROFILE_TEXT("binding-plan-unavailable")};
+        assert((value.capabilities_count == 0) && "observed-stream-quarantine-retained.capabilities.count");
+        assert((!(value.has_page)) && "observed-stream-quarantine-retained.page.presence");
+        assert((!(value.has_revision)) && "observed-stream-quarantine-retained.revision.presence");
+        assert((!(value.has_tenant_usage)) && "observed-stream-quarantine-retained.tenant_usage.presence");
+        assert((value.has_node_usage) && "observed-stream-quarantine-retained.node_usage.presence");
+        assert((value.node_usage.scope.length == 4) && "observed-stream-quarantine-retained.node_usage.scope.length");
+        assert((memcmp(value.node_usage.scope.data, "node", 4) == 0) && "observed-stream-quarantine-retained.node_usage.scope");
+        assert((value.node_usage.counters_count == 2) && "observed-stream-quarantine-retained.node_usage.counters.count");
+        assert((value.node_usage.counters[0].key.length == 13) && "observed-stream-quarantine-retained.node_usage.counters.key.length");
+        assert((memcmp(value.node_usage.counters[0].key.data, "stream_owners", 13) == 0) && "observed-stream-quarantine-retained.node_usage.counters.key");
+        assert((value.node_usage.counters[0].value == UINT64_C(3)) && "observed-stream-quarantine-retained.node_usage.counters.0");
+        assert((value.node_usage.counters[1].key.length == 18) && "observed-stream-quarantine-retained.node_usage.counters.key.length");
+        assert((memcmp(value.node_usage.counters[1].key.data, "stream_connections", 18) == 0) && "observed-stream-quarantine-retained.node_usage.counters.key");
+        assert((value.node_usage.counters[1].value == UINT64_C(2)) && "observed-stream-quarantine-retained.node_usage.counters.1");
+        assert((value.node_usage.unavailable_count == 0) && "observed-stream-quarantine-retained.node_usage.unavailable.count");
+        assert((value.node_usage.has_stream_quarantined_connections) && "observed-stream-quarantine-retained.node_usage.stream_quarantined_connections.presence");
+        assert((value.node_usage.stream_quarantined_connections == UINT64_C(1)) && "observed-stream-quarantine-retained.node_usage.stream_quarantined_connections");
+        assert((value.state.length == 24) && "observed-stream-quarantine-retained.state.length");
+        assert((memcmp(value.state.data, "binding-plan-unavailable", 24) == 0) && "observed-stream-quarantine-retained.state");
     }
     {
         latent_profile_capability_inspection_ceiling value = (latent_profile_capability_inspection_ceiling){.operations = 0U, .input_bytes = UINT64_C(18446744073709551615), .output_bytes = UINT64_C(0), .wall_time_millis = UINT64_C(18446744073709551615)};

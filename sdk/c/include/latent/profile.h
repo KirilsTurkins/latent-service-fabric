@@ -429,6 +429,8 @@ typedef struct latent_profile_capability_resource_usage {
     size_t counters_count;
     const latent_string * unavailable;
     size_t unavailable_count;
+    bool has_stream_quarantined_connections;
+    uint64_t stream_quarantined_connections;
 } latent_profile_capability_resource_usage;
 
 typedef struct latent_profile_list_capabilities_response {

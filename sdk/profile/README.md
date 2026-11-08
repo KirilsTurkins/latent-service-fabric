@@ -91,7 +91,10 @@ digest/epoch and sampled state. `revision` preserves deployment, revision,
 component, optional publication, route generation and catalog transaction.
 Counters and `unavailable` remain separate; an absent owner is not zero usage.
 `include_node_usage` requests an additional server-authorized view; it is not a
-node-operator claim.
+node-operator claim. `CapabilityResourceUsage.stream_quarantined_connections`
+is an optional, node-only sampled count already included in stream owners and
+connections. A missing field means the server or retained observation did not
+supply it; clients must preserve that absence rather than manufacture zero.
 
 The authoritative `ListCapabilitiesResponse` has **no effective grant-ceiling
 field**. Do not invent one or populate it with zeros. Inspect referenced records

@@ -633,10 +633,12 @@ public sealed record CapabilityInspectionRevision(
 /// <param name="Scope">The exact scope value with preserved presence.</param>
 /// <param name="Counters">The exact counters value with preserved presence.</param>
 /// <param name="Unavailable">The exact unavailable value with preserved presence.</param>
+/// <param name="StreamQuarantinedConnections">The exact stream_quarantined_connections value with preserved presence.</param>
 public sealed record CapabilityResourceUsage(
     string Scope,
     IReadOnlyDictionary<string, ulong> Counters,
-    IReadOnlyList<string> Unavailable);
+    IReadOnlyList<string> Unavailable,
+    ulong? StreamQuarantinedConnections);
 
 /// <summary>Transport-neutral ListCapabilitiesResponse; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="Capabilities">The exact capabilities value with preserved presence.</param>

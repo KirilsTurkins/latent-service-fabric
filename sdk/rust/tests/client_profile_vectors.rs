@@ -3215,7 +3215,7 @@ fn shared_profile_vectors() {
         );
     }
     {
-        let value = ListCapabilitiesResponse{capabilities: vec![CapabilityDescriptor{id: "latent:secrets/reader@0.1.0".into(), contract: "latent:secrets/reader@0.1.0".into(), provider: "local-secrets-v1".into(), operations: vec!["read".into()], attributes: BTreeMap::from([]), inspection: Some(CapabilityBindingInspection{definition_digest: Some(String::new()), provider_binding: Some(CapabilityInspectionPolicy{id: "binding-a".into(), revision: 18_446_744_073_709_551_615_u64, digest: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into()}), policies: vec![CapabilityInspectionPolicy{id: "policy-a".into(), revision: 9_223_372_036_854_775_808_u64, digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into()}], provider_profile: "local-secrets-v1".into(), provider_configuration_digest: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into(), provider_configuration_epoch: 18_446_744_073_709_551_615_u64, state: "provider-configuration-changed".into()})}, CapabilityDescriptor{id: "future-capability".into(), contract: "future-contract".into(), provider: "future-provider".into(), operations: vec![], attributes: BTreeMap::from([("descriptive".into(), "not-authority".into())]), ..Default::default()}], page: Some(PageResponse{next_page_token: Some("opaque-capability-cursor".into())}), revision: Some(CapabilityInspectionRevision{deployment_id: "deployment-a".into(), revision_id: "revision-a".into(), component_digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(), publication_id: Some("publication:sha256:1111111111111111111111111111111111111111111111111111111111111111".into()), route_generation: 18_446_744_073_709_551_615_u64, catalog_transaction: 9_223_372_036_854_775_808_u64}), tenant_usage: Some(CapabilityResourceUsage{scope: "tenant".into(), counters: BTreeMap::from([("sessions".into(), 18_446_744_073_709_551_615_u64), ("calls".into(), 0_u64)]), unavailable: vec!["fixture-owner-unavailable".into()]}), state: "sampled".into(), ..Default::default()};
+        let value = ListCapabilitiesResponse{capabilities: vec![CapabilityDescriptor{id: "latent:secrets/reader@0.1.0".into(), contract: "latent:secrets/reader@0.1.0".into(), provider: "local-secrets-v1".into(), operations: vec!["read".into()], attributes: BTreeMap::from([]), inspection: Some(CapabilityBindingInspection{definition_digest: Some(String::new()), provider_binding: Some(CapabilityInspectionPolicy{id: "binding-a".into(), revision: 18_446_744_073_709_551_615_u64, digest: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into()}), policies: vec![CapabilityInspectionPolicy{id: "policy-a".into(), revision: 9_223_372_036_854_775_808_u64, digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into()}], provider_profile: "local-secrets-v1".into(), provider_configuration_digest: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into(), provider_configuration_epoch: 18_446_744_073_709_551_615_u64, state: "provider-configuration-changed".into()})}, CapabilityDescriptor{id: "future-capability".into(), contract: "future-contract".into(), provider: "future-provider".into(), operations: vec![], attributes: BTreeMap::from([("descriptive".into(), "not-authority".into())]), ..Default::default()}], page: Some(PageResponse{next_page_token: Some("opaque-capability-cursor".into())}), revision: Some(CapabilityInspectionRevision{deployment_id: "deployment-a".into(), revision_id: "revision-a".into(), component_digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(), publication_id: Some("publication:sha256:1111111111111111111111111111111111111111111111111111111111111111".into()), route_generation: 18_446_744_073_709_551_615_u64, catalog_transaction: 9_223_372_036_854_775_808_u64}), tenant_usage: Some(CapabilityResourceUsage{scope: "tenant".into(), counters: BTreeMap::from([("sessions".into(), 18_446_744_073_709_551_615_u64), ("calls".into(), 0_u64)]), unavailable: vec!["fixture-owner-unavailable".into()], ..Default::default()}), state: "sampled".into(), ..Default::default()};
         assert_eq!(
             value.capabilities.len(),
             2,
@@ -3446,6 +3446,7 @@ fn shared_profile_vectors() {
             "fixture-owner-unavailable",
             "redacted-capability-provider-inspection.tenant_usage.unavailable.0"
         );
+        assert!(value.tenant_usage.as_ref().unwrap().stream_quarantined_connections.is_none(), "redacted-capability-provider-inspection.tenant_usage.stream_quarantined_connections.presence");
         assert!(
             value.node_usage.is_none(),
             "redacted-capability-provider-inspection.node_usage.presence"
@@ -3465,6 +3466,7 @@ fn shared_profile_vectors() {
                     "provider-pools-no-retained-owner".into(),
                     "audit-owner-not-configured".into(),
                 ],
+                ..Default::default()
             }),
             state: "binding-plan-unavailable".into(),
             ..Default::default()
@@ -3515,9 +3517,172 @@ fn shared_profile_vectors() {
             "audit-owner-not-configured",
             "missing-provider-plan-not-zero-usage.node_usage.unavailable.1"
         );
+        assert!(value.node_usage.as_ref().unwrap().stream_quarantined_connections.is_none(), "missing-provider-plan-not-zero-usage.node_usage.stream_quarantined_connections.presence");
         assert_eq!(
             value.state, "binding-plan-unavailable",
             "missing-provider-plan-not-zero-usage.state"
+        );
+    }
+    {
+        let value = ListCapabilitiesResponse {
+            capabilities: vec![],
+            node_usage: Some(CapabilityResourceUsage {
+                scope: "node".into(),
+                counters: BTreeMap::from([
+                    ("stream_owners".into(), 0_u64),
+                    ("stream_connections".into(), 0_u64),
+                ]),
+                unavailable: vec![],
+                stream_quarantined_connections: Some(0_u64),
+            }),
+            state: "binding-plan-unavailable".into(),
+            ..Default::default()
+        };
+        assert_eq!(
+            value.capabilities.len(),
+            0,
+            "observed-stream-quarantine-zero.capabilities.count"
+        );
+        assert!(
+            value.page.is_none(),
+            "observed-stream-quarantine-zero.page.presence"
+        );
+        assert!(
+            value.revision.is_none(),
+            "observed-stream-quarantine-zero.revision.presence"
+        );
+        assert!(
+            value.tenant_usage.is_none(),
+            "observed-stream-quarantine-zero.tenant_usage.presence"
+        );
+        assert!(
+            value.node_usage.is_some(),
+            "observed-stream-quarantine-zero.node_usage.presence"
+        );
+        assert_eq!(
+            value.node_usage.as_ref().unwrap().scope,
+            "node",
+            "observed-stream-quarantine-zero.node_usage.scope"
+        );
+        assert_eq!(
+            value.node_usage.as_ref().unwrap().counters.len(),
+            2,
+            "observed-stream-quarantine-zero.node_usage.counters.count"
+        );
+        assert_eq!(
+            value.node_usage.as_ref().unwrap().counters["stream_owners"],
+            0_u64,
+            "observed-stream-quarantine-zero.node_usage.counters.0"
+        );
+        assert_eq!(
+            value.node_usage.as_ref().unwrap().counters["stream_connections"],
+            0_u64,
+            "observed-stream-quarantine-zero.node_usage.counters.1"
+        );
+        assert_eq!(
+            value.node_usage.as_ref().unwrap().unavailable.len(),
+            0,
+            "observed-stream-quarantine-zero.node_usage.unavailable.count"
+        );
+        assert!(
+            value
+                .node_usage
+                .as_ref()
+                .unwrap()
+                .stream_quarantined_connections
+                .is_some(),
+            "observed-stream-quarantine-zero.node_usage.stream_quarantined_connections.presence"
+        );
+        assert_eq!(
+            value
+                .node_usage
+                .as_ref()
+                .unwrap()
+                .stream_quarantined_connections
+                .unwrap(),
+            0_u64,
+            "observed-stream-quarantine-zero.node_usage.stream_quarantined_connections"
+        );
+        assert_eq!(
+            value.state, "binding-plan-unavailable",
+            "observed-stream-quarantine-zero.state"
+        );
+    }
+    {
+        let value = ListCapabilitiesResponse {
+            capabilities: vec![],
+            node_usage: Some(CapabilityResourceUsage {
+                scope: "node".into(),
+                counters: BTreeMap::from([
+                    ("stream_owners".into(), 3_u64),
+                    ("stream_connections".into(), 2_u64),
+                ]),
+                unavailable: vec![],
+                stream_quarantined_connections: Some(1_u64),
+            }),
+            state: "binding-plan-unavailable".into(),
+            ..Default::default()
+        };
+        assert_eq!(
+            value.capabilities.len(),
+            0,
+            "observed-stream-quarantine-retained.capabilities.count"
+        );
+        assert!(
+            value.page.is_none(),
+            "observed-stream-quarantine-retained.page.presence"
+        );
+        assert!(
+            value.revision.is_none(),
+            "observed-stream-quarantine-retained.revision.presence"
+        );
+        assert!(
+            value.tenant_usage.is_none(),
+            "observed-stream-quarantine-retained.tenant_usage.presence"
+        );
+        assert!(
+            value.node_usage.is_some(),
+            "observed-stream-quarantine-retained.node_usage.presence"
+        );
+        assert_eq!(
+            value.node_usage.as_ref().unwrap().scope,
+            "node",
+            "observed-stream-quarantine-retained.node_usage.scope"
+        );
+        assert_eq!(
+            value.node_usage.as_ref().unwrap().counters.len(),
+            2,
+            "observed-stream-quarantine-retained.node_usage.counters.count"
+        );
+        assert_eq!(
+            value.node_usage.as_ref().unwrap().counters["stream_owners"],
+            3_u64,
+            "observed-stream-quarantine-retained.node_usage.counters.0"
+        );
+        assert_eq!(
+            value.node_usage.as_ref().unwrap().counters["stream_connections"],
+            2_u64,
+            "observed-stream-quarantine-retained.node_usage.counters.1"
+        );
+        assert_eq!(
+            value.node_usage.as_ref().unwrap().unavailable.len(),
+            0,
+            "observed-stream-quarantine-retained.node_usage.unavailable.count"
+        );
+        assert!(value.node_usage.as_ref().unwrap().stream_quarantined_connections.is_some(), "observed-stream-quarantine-retained.node_usage.stream_quarantined_connections.presence");
+        assert_eq!(
+            value
+                .node_usage
+                .as_ref()
+                .unwrap()
+                .stream_quarantined_connections
+                .unwrap(),
+            1_u64,
+            "observed-stream-quarantine-retained.node_usage.stream_quarantined_connections"
+        );
+        assert_eq!(
+            value.state, "binding-plan-unavailable",
+            "observed-stream-quarantine-retained.state"
         );
     }
     {

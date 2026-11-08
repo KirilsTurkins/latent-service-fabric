@@ -591,6 +591,12 @@ impl StreamProvider {
         }
     }
     pub fn usage(&self) -> Result<crate::StreamUsage, StreamError> {
+        self.usage_with_quarantine().map(|(usage, _)| usage)
+    }
+
+    // Read quarantine once so the separate diagnostic and included totals use
+    // the same observation. This changes no owner or capacity accounting.
+    pub(crate) fn usage_with_quarantine(&self) -> Result<(crate::StreamUsage, usize), StreamError> {
         let mut result = crate::StreamUsage {
             retired: self.inner.installed.is_retired(),
             ..Default::default()
@@ -614,7 +620,7 @@ impl StreamProvider {
         let quarantined = self.inner.installed.quarantined_connections();
         result.owners += quarantined;
         result.connections += quarantined;
-        Ok(result)
+        Ok((result, quarantined))
     }
 
     pub(crate) fn maintenance_step(&self, now: Instant) {
@@ -644,13 +650,16 @@ impl OutboundStreamInvoker for StreamProvider {
         Option<latent_capabilities::broker::network::StreamNodeUsage>,
         latent_core::PlatformError,
     > {
-        let usage = self.usage().map_err(crate::inspection_unavailable)?;
+        let (usage, quarantined_connections) = self
+            .usage_with_quarantine()
+            .map_err(crate::inspection_unavailable)?;
         Ok(Some(
             latent_capabilities::broker::network::StreamNodeUsage {
                 configuration_epoch: self.reference().configuration_epoch(),
                 stopped: usage.retired,
                 owners: usage.owners,
                 connections: usage.connections,
+                quarantined_connections,
                 pending_operations: usage.pending_operations,
                 retained_chunks: usage.retained_chunks,
                 live_accepted_write_bytes: usage.accepted_write_bytes,

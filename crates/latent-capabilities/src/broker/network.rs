@@ -119,6 +119,8 @@ pub struct StreamNodeUsage {
     pub stopped: bool,
     pub owners: usize,
     pub connections: usize,
+    /// Retained quarantines already included in owners and connections.
+    pub quarantined_connections: usize,
     pub pending_operations: usize,
     pub retained_chunks: usize,
     pub maintenance_owners: usize,

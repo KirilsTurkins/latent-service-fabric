@@ -167,6 +167,7 @@ fn usage_reports_only_fixed_owner_counters_and_preserves_unavailable() {
             ),
         ]),
         unavailable: vec!["provider-io-no-retained-pool-owner".into()],
+        stream_quarantined_connections: None,
     };
     projection::checked(&usage, 4096).unwrap();
     let data = usage.clone().project();
@@ -222,14 +223,26 @@ fn usage_reports_only_fixed_owner_counters_and_preserves_unavailable() {
             ("stream_live_delivered_read_bytes".into(), 5),
         ]),
         unavailable: vec![],
+        stream_quarantined_connections: Some(1),
     };
     let decoded =
         proto::CapabilityResourceUsage::decode(streams.encode_to_vec().as_slice()).unwrap();
     projection::checked(&decoded, 4096).unwrap();
     assert_eq!(
+        decoded.clone().project()["streamQuarantinedConnections"],
+        "1"
+    );
+    assert_eq!(
         decoded.project()["counters"]["stream_live_accepted_write_bytes"],
         u64::MAX.to_string()
     );
+    let mut impossible = streams.clone();
+    impossible.stream_quarantined_connections = Some(2);
+    assert!(projection::checked(&impossible, 4096).is_err());
+    let mut tenant = streams.clone();
+    tenant.scope = "tenant".into();
+    assert!(projection::checked(&tenant, 4096).is_err());
+    streams.stream_quarantined_connections = None;
     streams.counters.insert("stream_credential_file".into(), 0);
     assert!(projection::checked(&streams, 4096).is_err());
     streams.counters.clear();
@@ -241,4 +254,50 @@ fn usage_reports_only_fixed_owner_counters_and_preserves_unavailable() {
     );
     streams.unavailable = vec!["outbound-streams-raw-provider-error".into()];
     assert!(projection::checked(&streams, 4096).is_err());
+}
+
+// Simulates the protobuf shape of an older client/server, whose decoder knows
+// only the original three tags. It discards unknown fields without changing the
+// closed counter map or treating an absent observation as zero.
+#[derive(Clone, PartialEq, Message)]
+struct LegacyResourceUsage {
+    #[prost(string, tag = "1")]
+    scope: String,
+    #[prost(map = "string, uint64", tag = "2")]
+    counters: HashMap<String, u64>,
+    #[prost(string, repeated, tag = "3")]
+    unavailable: Vec<String>,
+}
+
+#[test]
+fn quarantine_presence_survives_new_wire_and_is_ignored_by_legacy_wire() {
+    let newest = proto::CapabilityResourceUsage {
+        scope: "node".into(),
+        counters: HashMap::from([
+            ("stream_owners".into(), 3),
+            ("stream_connections".into(), 2),
+        ]),
+        unavailable: vec![],
+        stream_quarantined_connections: Some(1),
+    };
+    let new_roundtrip =
+        proto::CapabilityResourceUsage::decode(newest.encode_to_vec().as_slice()).unwrap();
+    assert_eq!(new_roundtrip.stream_quarantined_connections, Some(1));
+    projection::checked(&new_roundtrip, 4096).unwrap();
+    let old = LegacyResourceUsage::decode(newest.encode_to_vec().as_slice()).unwrap();
+    assert_eq!(old.counters, newest.counters);
+    assert!(!old.counters.contains_key("stream_quarantined_connections"));
+    let old_response =
+        proto::CapabilityResourceUsage::decode(old.encode_to_vec().as_slice()).unwrap();
+    assert_eq!(old_response.stream_quarantined_connections, None);
+    projection::checked(&old_response, 4096).unwrap();
+    assert!(old_response
+        .project()
+        .get("streamQuarantinedConnections")
+        .is_none());
+    let zero = proto::CapabilityResourceUsage {
+        stream_quarantined_connections: Some(0),
+        ..newest
+    };
+    assert_eq!(zero.project()["streamQuarantinedConnections"], "0");
 }

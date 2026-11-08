@@ -142,6 +142,19 @@ they differ from the saved provider descriptor. Empty results and unavailable
 counters remain unavailable; inspection grants no execution permission or
 readiness and changes no local owner or remote grant.
 
+For a retained stream observation, the authenticated node-operator usage result
+includes optional `nodeUsage.streamQuarantinedConnections` as a decimal string.
+It counts original quarantined connections across the current and up to eight
+retired provider generations using checked addition, which refuses overflow.
+The bounded scan samples generations separately and is not an atomic view
+across them. This count is
+already included in `stream_owners` and `stream_connections`; do not add it
+again. It reports
+retained connection slots, not bytes or proof of kernel retirement. The field
+is absent when the node has no retained stream observation or uses an older
+protocol; absence is not zero. An observed zero is the string `"0"`.
+The local `stream-control` status also reports `quarantinedConnections`.
+
 Each mutation records its original intent and operation identity in protected
 state before dispatch. An uncertain response or transport exception retains
 that intent and prevents subsequent mutations. `recover` reads the original

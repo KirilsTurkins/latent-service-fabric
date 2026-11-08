@@ -19,7 +19,17 @@ use std::{
     time::Instant,
 };
 
+#[cfg(all(test, unix))]
+#[path = "tests/quarantine_usage.rs"]
+mod quarantine_usage_tests;
+
 const MAX_RETIRED: usize = 8;
+
+fn sum_quarantined(total: usize, next: usize) -> Result<usize, StreamError> {
+    total
+        .checked_add(next)
+        .ok_or_else(|| StreamError::new(StreamErrorCode::Exhausted))
+}
 struct State {
     current: StreamProvider,
     retired: [Option<StreamProvider>; MAX_RETIRED],
@@ -42,6 +52,8 @@ pub struct StreamStatus {
     pub configuration_digest: String,
     pub configuration_epoch: u64,
     pub retired_generations: usize,
+    /// Already included in `usage.owners` and `usage.connections`.
+    pub quarantined_connections: usize,
     pub usage: StreamUsage,
     pub stopped: bool,
     pub current_generation_retired: bool,
@@ -230,9 +242,10 @@ impl StreamLifecycle {
     pub fn status(&self) -> Result<StreamStatus, StreamError> {
         let state = self.state.try_lock().map_err(crate::snapshot_lock_error)?;
         let reference = state.current.reference();
-        let mut usage = state.current.usage()?;
+        let (mut usage, mut quarantined_connections) = state.current.usage_with_quarantine()?;
         for retired in state.retired.iter().flatten() {
-            let u = retired.usage()?;
+            let (u, quarantined) = retired.usage_with_quarantine()?;
+            quarantined_connections = sum_quarantined(quarantined_connections, quarantined)?;
             usage.owners += u.owners;
             usage.connections += u.connections;
             usage.pending_operations += u.pending_operations;
@@ -249,6 +262,7 @@ impl StreamLifecycle {
             configuration_digest: reference.configuration_digest().into(),
             configuration_epoch: reference.configuration_epoch(),
             retired_generations: state.retired.iter().filter(|p| p.is_some()).count(),
+            quarantined_connections,
             usage,
             stopped: state.stopped,
             current_generation_retired: state.current.inner.installed.is_retired(),
@@ -299,6 +313,7 @@ impl OutboundStreamInvoker for StreamLifecycle {
                 stopped: status.stopped,
                 owners: status.usage.owners,
                 connections: status.usage.connections,
+                quarantined_connections: status.quarantined_connections,
                 pending_operations: status.usage.pending_operations,
                 retained_chunks: status.usage.retained_chunks,
                 maintenance_owners: status.maintenance_owners,

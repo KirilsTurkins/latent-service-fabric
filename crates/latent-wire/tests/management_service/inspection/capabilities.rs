@@ -55,6 +55,7 @@ async fn stream_diagnostics_are_operator_scoped_and_keep_actual_maintenance_visi
         .counters
         .keys()
         .any(|key| key.starts_with("stream_")));
+    assert!(unconfigured.stream_quarantined_connections.is_none());
     assert!(!broker.inspect_node_usage().unwrap().streams_configured);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let configuration = serde_json::from_value(serde_json::json!({
@@ -103,6 +104,7 @@ async fn stream_diagnostics_are_operator_scoped_and_keep_actual_maintenance_visi
     assert_eq!(node.counters["stream_configuration_epoch"], 1);
     assert_eq!(node.counters["stream_maintenance_owners"], 1);
     assert_eq!(node.counters["stream_owners"], 0);
+    assert_eq!(node.stream_quarantined_connections, Some(0));
     assert_eq!(node.counters["stream_stopped"], 0);
     assert_eq!(
         node.counters
@@ -133,6 +135,7 @@ async fn stream_diagnostics_are_operator_scoped_and_keep_actual_maintenance_visi
     assert_eq!(stopped.counters["stream_stopped"], 1);
     assert_eq!(stopped.counters["stream_maintenance_owners"], 0);
     assert_eq!(stopped.counters["stream_connections"], 0);
+    assert_eq!(stopped.stream_quarantined_connections, Some(0));
     drop(stop);
     drop(runtime);
     drop(owner);
@@ -148,6 +151,7 @@ async fn stream_diagnostics_are_operator_scoped_and_keep_actual_maintenance_visi
         .unavailable
         .contains(&"outbound-streams-no-retained-observation".into()));
     assert!(!gone.counters.contains_key("stream_connections"));
+    assert!(gone.stream_quarantined_connections.is_none());
     drop(client);
     let snapshot = pools.snapshot().unwrap();
     assert_eq!(snapshot.connections, 0);

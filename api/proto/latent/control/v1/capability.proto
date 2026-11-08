@@ -96,6 +96,9 @@ message CapabilityResourceUsage {
   map<string, uint64> counters = 2;
   // Missing owners are explicit, never represented by fabricated zeroes.
   repeated string unavailable = 3;
+  // Node-operator-only instantaneous count already included in stream owners
+  // and connections. Absence means no observation, not zero.
+  optional uint64 stream_quarantined_connections = 4;
 }
 
 service CapabilityService {
