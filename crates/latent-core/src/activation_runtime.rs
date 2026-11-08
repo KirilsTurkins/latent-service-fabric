@@ -178,6 +178,10 @@ enum AdmissionStep {
     CheckedBeforePublication,
     #[cfg(test)]
     HoldingPublicationGuard,
+    #[cfg(test)]
+    TentativePublication,
+    #[cfg(test)]
+    CommittedPublication,
 }
 
 /// This affine owner must remain with actual logical work/native ownership.
@@ -440,9 +444,9 @@ impl ActivationRuntime {
         hook(AdmissionStep::CheckedBeforePublication);
         // Same-ledger finalization takes this accounting lock before closing.
         // Hold it through the owner write, with no production callback or
-        // budget-locking operation here. Explicit cancellation, ancestor
-        // closure, external probes and clock passage remain independent.
-        let _publication = self.inner.budget.runtime_publication_guard();
+        // budget-locking operation here. Ancestor closure, external probes
+        // and clock passage remain independent.
+        let publication = self.inner.budget.runtime_publication_guard();
         self.check_commit_ledger_locked(state)?;
         #[cfg(test)]
         hook(AdmissionStep::HoldingPublicationGuard);
@@ -456,6 +460,20 @@ impl ActivationRuntime {
         if matches!(state.phase, RuntimePhase::Waiting) {
             state.phase = RuntimePhase::Running;
         }
+        #[cfg(test)]
+        hook(AdmissionStep::TentativePublication);
+        // The state lock keeps these tentative writes hidden. If the original
+        // ledger closed first, restore the slot, identifier and owner count
+        // without releasing the prepaid slab; no RuntimeOwner exists yet.
+        if !publication.commit_while_open() {
+            state.slab.as_mut().expect("reserved slab").records[slot] = None;
+            state.next_id = token.id;
+            state.owners[index] -= 1;
+            state.phase = RuntimePhase::Cancelling;
+            return Err(error(PlatformErrorCode::Cancelled, "runtime-cancelled"));
+        }
+        #[cfg(test)]
+        hook(AdmissionStep::CommittedPublication);
         Ok(RuntimeOwner {
             inner: self.inner.clone(),
             token,

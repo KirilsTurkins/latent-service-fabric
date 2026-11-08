@@ -231,7 +231,7 @@ fn same_ledger_finalization_waits_for_timer_publication() {
 }
 
 #[test]
-fn cancellation_after_the_last_probe_can_precede_timer_publication() {
+fn same_ledger_cancellation_before_timer_write_refuses_readiness() {
     // The atomic closed-flag store does not take the accounting mutex. This
     // control uses a no-op terminal probe.
     let runtime = runtime();
@@ -269,13 +269,166 @@ fn cancellation_after_the_last_probe_can_precede_timer_publication() {
     }
     closer.join().unwrap();
     assert!(was_nonblocking);
-    assert_eq!(result.unwrap(), 0);
-    assert_eq!(timer.inner.schedule.lock().unwrap().next, None);
+    assert_eq!(result.unwrap_err().code, PlatformErrorCode::Cancelled);
+    assert_eq!(timer.inner.schedule.lock().unwrap().next, Some(first));
     drop(wait);
     drop(timer);
     runtime.retire().unwrap();
     drop(runtime);
     assert_eq!(budget.host_memory_bytes(), 0);
+}
+
+#[test]
+fn same_ledger_cancellation_rolls_back_hidden_timer_write() {
+    for period in [None, Some(Duration::from_millis(1))] {
+        let runtime = runtime();
+        let first = Instant::now();
+        let timer = RuntimeTimer::new(&runtime, first, period, None).unwrap();
+        let mut wait = timer.begin_wait().unwrap();
+        let before = runtime.snapshot();
+        let budget = runtime.inner.budget.clone();
+        let (held_tx, held_rx) = mpsc::sync_channel(0);
+        let (resume_tx, resume_rx) = mpsc::sync_channel(0);
+        let worker = std::thread::spawn(move || {
+            let result = wait.complete_with_publication_hooks(
+                first,
+                || {},
+                || {},
+                || {},
+                || {
+                    held_tx.send(()).unwrap();
+                    resume_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+                },
+                || {},
+            );
+            (result, wait)
+        });
+        held_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+        let schedule_hidden = matches!(
+            timer.inner.schedule.try_lock(),
+            Err(std::sync::TryLockError::WouldBlock)
+        );
+        let state_hidden = matches!(
+            runtime.inner.state.try_lock(),
+            Err(std::sync::TryLockError::WouldBlock)
+        );
+        let accounting_held = budget.test_accounting_is_locked();
+        let close_budget = budget.clone();
+        let (done_tx, done_rx) = mpsc::sync_channel(0);
+        let closer = std::thread::spawn(move || {
+            close_budget.cancel_descendants().unwrap();
+            done_tx.send(()).unwrap();
+        });
+        let cancelled = done_rx.recv_timeout(Duration::from_secs(3));
+        let signalled = cancelled.is_ok();
+        resume_tx.send(()).unwrap();
+        let (result, wait) = worker.join().unwrap();
+        if !signalled {
+            done_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+        }
+        closer.join().unwrap();
+        assert!(schedule_hidden && state_hidden && accounting_held && signalled);
+        assert_eq!(result.unwrap_err().code, PlatformErrorCode::Cancelled);
+        let schedule = timer.inner.schedule.lock().unwrap();
+        assert_eq!(schedule.next, Some(first));
+        assert!(schedule.waiting);
+        drop(schedule);
+        let after = runtime.snapshot();
+        assert_eq!(after.phase, super::super::RuntimePhase::Cancelling);
+        assert_eq!(after.owners, before.owners);
+        assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
+        drop(wait);
+        drop(timer);
+        runtime.retire().unwrap();
+        drop(runtime);
+        assert_eq!(budget.host_memory_bytes(), 0);
+    }
+}
+
+#[test]
+fn same_ledger_cancellation_after_timer_commit_keeps_readiness_charged() {
+    for period in [None, Some(Duration::from_millis(1))] {
+        let runtime = runtime();
+        let first = Instant::now();
+        let timer = RuntimeTimer::new(&runtime, first, period, None).unwrap();
+        let mut wait = timer.begin_wait().unwrap();
+        let before = runtime.snapshot();
+        let budget = runtime.inner.budget.clone();
+        let (held_tx, held_rx) = mpsc::sync_channel(0);
+        let (resume_tx, resume_rx) = mpsc::sync_channel(0);
+        let worker = std::thread::spawn(move || {
+            let result = wait.complete_with_publication_hooks(
+                first,
+                || {},
+                || {},
+                || {},
+                || {},
+                || {
+                    held_tx.send(()).unwrap();
+                    resume_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+                },
+            );
+            (result, wait)
+        });
+        held_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+        let schedule_hidden = matches!(
+            timer.inner.schedule.try_lock(),
+            Err(std::sync::TryLockError::WouldBlock)
+        );
+        let state_hidden = matches!(
+            runtime.inner.state.try_lock(),
+            Err(std::sync::TryLockError::WouldBlock)
+        );
+        let accounting_held = budget.test_accounting_is_locked();
+        let close_budget = budget.clone();
+        let (done_tx, done_rx) = mpsc::sync_channel(0);
+        let closer = std::thread::spawn(move || {
+            close_budget.cancel_descendants().unwrap();
+            done_tx.send(()).unwrap();
+        });
+        let cancelled = done_rx.recv_timeout(Duration::from_secs(3));
+        let signalled = cancelled.is_ok();
+        let finalize_budget = budget.clone();
+        let (started_tx, started_rx) = mpsc::sync_channel(0);
+        let (final_tx, final_rx) = mpsc::sync_channel(0);
+        let finalizer = std::thread::spawn(move || {
+            started_tx.send(()).unwrap();
+            let terminal = finalize_budget.finalize_at(None, Instant::now());
+            final_tx
+                .send(terminal.consumption().peak_memory_bytes)
+                .unwrap();
+        });
+        started_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+        let early = final_rx.recv_timeout(Duration::from_millis(100));
+        let finalized_early = early.is_ok();
+        resume_tx.send(()).unwrap();
+        let (result, wait) = worker.join().unwrap();
+        if !signalled {
+            done_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+        }
+        let terminal_peak = match early {
+            Ok(peak) => peak,
+            Err(_) => final_rx.recv_timeout(Duration::from_secs(3)).unwrap(),
+        };
+        closer.join().unwrap();
+        finalizer.join().unwrap();
+        assert!(schedule_hidden && state_hidden && accounting_held && signalled);
+        assert!(!finalized_early);
+        assert_eq!(result.unwrap(), 0);
+        assert_eq!(
+            timer.inner.schedule.lock().unwrap().next,
+            period.map(|period| first + period)
+        );
+        let after = runtime.snapshot();
+        assert_eq!(after.owners, before.owners);
+        assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
+        assert!(terminal_peak >= before.host_memory_bytes);
+        drop(wait);
+        drop(timer);
+        runtime.retire().unwrap();
+        drop(runtime);
+        assert_eq!(budget.host_memory_bytes(), 0);
+    }
 }
 
 #[test]
