@@ -127,6 +127,10 @@ class GoNetworkReadBarrierTests(unittest.TestCase):
     def test_extra_failed_native_case_or_second_summary_cannot_be_hidden(self):
         raw = self.sample.output()
         for extra in (b'test other_case ... FAILED\n', b'test other_case ... ignored\n',
+                      b'test other-case ... FAILED\n', b'test other/path.rs ... ignored\n',
+                      b'test  ... FAILED\n', b'test\tother ... FAILED\n',
+                      b' test other ... FAILED\n', b'test\n',
+                      b' test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.0s\n',
                       b'test result: FAILED. 0 passed; 1 failed;\n',
                       raw[raw.index(b'test result:'):]):
             with self.subTest(extra=extra), self.assertRaises(ValueError):

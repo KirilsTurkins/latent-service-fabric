@@ -64,12 +64,18 @@ def outcomes(raw: bytes, filtered: int = 0) -> dict:
         raise ValueError('Go-network-runtime-output-bound')
     if type(filtered) is not int or filtered < 0:
         raise ValueError('Go-network-runtime-invalid-filtered-count')
-    tests = re.findall(rb'^test ([A-Za-z0-9_:]+) \.\.\. ([^\r\n]+)$', raw, re.M)
-    totals = re.findall(rb'^test result: ([^\r\n]+)$', raw, re.M)
-    summary = re.compile(rb'ok\. 1 passed; 0 failed; 0 ignored; 0 measured; '
+    # Inspect every test-prefixed line, including malformed names and leading
+    # whitespace. A regex matching only valid identifiers would silently drop
+    # an unexpected failed or ignored case from an otherwise valid transcript.
+    candidates = []
+    for line in raw.split(b'\n'):
+        stripped = line.lstrip(b' \t')
+        if stripped == b'test' or stripped.startswith((b'test ', b'test\t')):
+            candidates.append(line)
+    summary = re.compile(rb'test result: ok\. 1 passed; 0 failed; 0 ignored; 0 measured; '
                          + str(filtered).encode() + rb' filtered out; finished in [0-9]+(?:\.[0-9]+)?s')
-    if (tests != [(CASE.encode(), b'ok')] or len(totals) != 1
-            or summary.fullmatch(totals[0]) is None):
+    if (len(candidates) != 2 or candidates[0] != b'test ' + CASE.encode() + b' ... ok'
+            or summary.fullmatch(candidates[1]) is None):
         raise ValueError('Go-network-runtime-exact-native-case-required')
 
     # Inspect every reserved-prefix line, not just well-formed regex matches.
