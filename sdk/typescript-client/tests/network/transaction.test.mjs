@@ -340,3 +340,28 @@ test("wrong profile selection fails before opening a connection and keeps the or
     assert.equal(fixture.state.connections, 0); assert.equal(fixture.state.calls.length, 0);
   } finally { await fixture.stop(); }
 });
+
+test("invoke accepts one inline body only when it matches its durable commit", () => {
+  const original = inspected(true);
+  const success = { ...original.success, committedStateVersion: "03" };
+  const { success: _duplicated, ...inline } = original;
+  inline.retention = { recordFormat: "command-v4", recordVersion: 4, requiredRecordIds: ["command-id"], payloadAvailable: true };
+  const invocation = { activationId: "activation-original", revisionId: source.revisionId, releaseDigest: source.componentDigest,
+    routeGeneration: source.routeGeneration, publicationId: source.publicationId, consumption: {}, success };
+  const response = { command: inline, invocation };
+  validateResponse("invokeCommand", command, response, "tests");
+  assert.throws(() => validateResponse("invokeCommand", command, { ...response, invocation: { ...invocation,
+    success: { ...success, committedStateVersion: "04" } } }, "tests"));
+  assert.throws(() => validateResponse("invokeCommand", command, { ...response, invocation: { ...invocation,
+    success: { ...success, effectIds: ["other-effect"] } } }, "tests"));
+  assert.throws(() => validateResponse("lookupCommand", lookup, { command: inline }, "tests"));
+  assert.throws(() => validateResponse("invokeCommand", command, { ...response, command: { ...inline,
+    retention: { ...inline.retention, payloadAvailable: false } } }, "tests"));
+  const rejected = inspected();
+  const { businessRejection, ...inlineRejection } = rejected;
+  inlineRejection.retention = inline.retention;
+  const rejectedResponse = { command: inlineRejection, invocation: { ...invocation, success: undefined, declaredError: businessRejection } };
+  validateResponse("invokeCommand", command, rejectedResponse, "tests");
+  assert.throws(() => validateResponse("invokeCommand", command, { ...rejectedResponse,
+    invocation: { ...invocation, declaredError: undefined } }, "tests"));
+});

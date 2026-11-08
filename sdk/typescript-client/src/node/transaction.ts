@@ -268,7 +268,7 @@ function resultBody(raw: unknown, kind: "success" | "businessRejection" | "techn
   if (kind === "businessRejection") { id(value.code); text(value.message, 4096, false); }
   else { if (value.committedStateVersion !== undefined) id(value.committedStateVersion); for (const idValue of array(value.effectIds)) id(idValue); }
 }
-function command(raw: unknown, selector: unknown, tenant: string): RecordValue {
+function command(raw: unknown, selector: unknown, tenant: string, inline?: RecordValue): RecordValue {
   const value = object(raw), key = object(value.key), requested = object(selector);
   namespace(key.namespace, tenant); identityValue(key.recoveryScope); identityValue(key.operation); identityValue(key.clientKey);
   if (key.entity !== undefined) identityValue(key.entity);
@@ -298,10 +298,13 @@ function command(raw: unknown, selector: unknown, tenant: string): RecordValue {
     for (const key of ["commandId", "attemptId"]) same(object(value.provenAbort)[key], value[key]);
   }
   const omitted = results.length === 0 && value.retention !== undefined && object(value.retention).payloadAvailable === false;
+  const inlinePayload = results.length === 0 && value.retention !== undefined && object(value.retention).payloadAvailable === true;
+  const inlineSuccess = inlinePayload && inline?.success !== undefined;
+  const inlineRejection = inlinePayload && inline?.declaredError !== undefined;
   const committed = value.applicationStateCommitted === true, durable = value.metadataDurable === true;
   switch (value.outcome) {
-    case 2: if (!durable || !committed || value.commit === undefined || value.provenAbort !== undefined || !(value.success !== undefined || omitted)) throw new ShapeError(); break;
-    case 3: if (!durable || committed || value.commit !== undefined || value.provenAbort !== undefined || !(value.businessRejection !== undefined || omitted)) throw new ShapeError(); break;
+    case 2: if (!durable || !committed || value.commit === undefined || value.provenAbort !== undefined || !(value.success !== undefined || omitted || inlineSuccess)) throw new ShapeError(); break;
+    case 3: if (!durable || committed || value.commit !== undefined || value.provenAbort !== undefined || !(value.businessRejection !== undefined || omitted || inlineRejection)) throw new ShapeError(); break;
     case 4: if (!durable || committed || value.commit !== undefined || value.provenAbort === undefined || value.success !== undefined || value.businessRejection !== undefined) throw new ShapeError(); break;
     case 7: if (!durable || value.provenAbort !== undefined || results.length !== 0 || committed !== (value.commit !== undefined)) throw new ShapeError(); break;
     default: if (committed || value.commit !== undefined || value.provenAbort !== undefined || results.length !== 0) throw new ShapeError();
@@ -358,12 +361,23 @@ export function validateResponse(operation: Operation, original: unknown, value:
   const requested = object(original);
   switch (operation) {
     case "invokeCommand": {
-      const inspected = command(value.command, requested.command, tenant);
-      linkedInvocation(value.invocation, inspected.source, tenant, requested.invocation ?? {});
       const invoked = object(value.invocation);
+      const inspected = command(value.command, requested.command, tenant, invoked);
+      linkedInvocation(value.invocation, inspected.source, tenant, requested.invocation ?? {});
+      const retained = ["success", "businessRejection", "technicalFailure"].filter((key) => inspected[key] !== undefined);
       for (const [left, right] of [["success", "success"], ["businessRejection", "declaredError"], ["technicalFailure", "platformFailure"]])
         if (inspected[left!] !== undefined) same(inspected[left!], invoked[right!]);
-      if (inspected.success === undefined && inspected.businessRejection === undefined && inspected.technicalFailure === undefined && invoked.platformFailure === undefined) throw new ShapeError();
+      if (retained.length === 0 && invoked.platformFailure === undefined) {
+        const available = inspected.retention !== undefined && object(inspected.retention).payloadAvailable === true;
+        if (!available || !((inspected.outcome === 2 && invoked.success !== undefined)
+          || (inspected.outcome === 3 && invoked.declaredError !== undefined))) throw new ShapeError();
+      }
+      if (invoked.success !== undefined) {
+        const success = object(invoked.success), commit = object(inspected.commit);
+        same(success.effectIds, commit.effectIds);
+        if (typeof success.committedStateVersion !== "string"
+          || success.committedStateVersion !== Buffer.from(commit.committedVersion as Uint8Array).toString("hex")) throw new ShapeError();
+      }
       break;
     }
     case "lookupCommand": { const inspected = command(value.command, requested.command, tenant); if (requested.attemptId !== undefined) same(inspected.attemptId, requested.attemptId); break; }
