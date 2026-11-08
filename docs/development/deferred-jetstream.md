@@ -193,7 +193,11 @@ The fixture stream has file storage, one replica, 64 messages/1 MiB, discard-new
 a 30-second duplicate window, and delete/purge denied. The runner owns one
 256 MiB, one-CPU broker with 64 process slots, bounded storage/logs, TLS and
 explicit credentials. Its immutable container identity and random ownership
-label gate cleanup. No external account or ambient credential is used.
+label gate cleanup. No external account or ambient credential is used. The
+optional `--standalone-token` campaign uses an isolated broker with one public
+test token to exercise the standalone provider's existing token-credential
+path. That token is broker-wide inside the disposable fixture; it does not
+establish a production broker authorization policy.
 
 A first success fixture used its pre-Pending admission snapshot for completion;
 the real OCC engine correctly rejected the newly published command row. The

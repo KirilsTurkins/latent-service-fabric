@@ -55,6 +55,15 @@ use std::{
 
 pub const WATCHDOG: Duration = Duration::from_secs(20);
 
+fn standalone_token_auth() -> bool {
+    match std::env::var("LSF_NATS_TEST_TOKEN_AUTH") {
+        Ok(value) if value == "1" => true,
+        Ok(value) if value == "0" => false,
+        Err(std::env::VarError::NotPresent) => false,
+        _ => panic!("invalid deferred NATS fixture authentication mode"),
+    }
+}
+
 pub fn control(operation: &str) -> serde_json::Value {
     let output = std::process::Command::new("python3")
         .args([
@@ -308,7 +317,12 @@ async fn install_protected_credentials(
                     provider_id: "events".into(),
                     destination: config.endpoint.credential_destination(),
                 },
-                media_type: "application/octet-stream".into(),
+                media_type: if standalone_token_auth() {
+                    "text/plain"
+                } else {
+                    "application/octet-stream"
+                }
+                .into(),
                 version: "1".into(),
                 expires_at_unix_millis: None,
             }],
@@ -415,7 +429,11 @@ impl Fixture {
             0,
             config,
             vec![NatsCredential {
-                username: Some("publisher".into()),
+                username: if standalone_token_auth() {
+                    None
+                } else {
+                    Some("publisher".into())
+                },
                 secret: credential,
             }],
         )
