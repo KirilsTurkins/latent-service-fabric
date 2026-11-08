@@ -50,6 +50,7 @@ pub(in crate::standalone) struct InstalledStateServices {
 pub(in crate::standalone) struct InstalledHttpEffects {
     pub(super) clock: Arc<super::AdapterClock>,
     pub(super) adapters: Vec<Arc<latent_http::deferred::HttpEffectAdapter>>,
+    pub(super) events: Vec<Arc<dyn latent_effects::runtime::DeferredEffectAdapter>>,
     registry: Arc<http::DispatchRegistry>,
 }
 impl InstalledHttpEffects {
@@ -57,12 +58,14 @@ impl InstalledHttpEffects {
         Self {
             clock: Arc::new(super::AdapterClock::default()),
             adapters: Vec::new(),
+            events: Vec::new(),
             registry: Arc::new(http::DispatchRegistry::new()),
         }
     }
     pub(in crate::standalone) fn new(
         provider: Option<&crate::standalone::providers::ProviderRuntime>,
         installation: Option<&crate::config::HttpInstallation>,
+        events: Option<&crate::config::providers::EventInstallation>,
     ) -> Result<Self, PlatformError> {
         let mut installed = Self::empty();
         if let Some(installation) = installation {
@@ -79,7 +82,31 @@ impl InstalledHttpEffects {
                 })
                 .collect::<Result<Vec<_>, PlatformError>>()?;
         }
+        if let Some(events) = events.filter(|events| !events.deferred.is_empty()) {
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            {
+                let provider = provider.ok_or_else(super::unavailable)?;
+                installed.events =
+                    provider.deferred_event_adapters(events, installed.clock.clone())?;
+            }
+            #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+            {
+                let _ = events;
+                return Err(super::unavailable());
+            }
+        }
         Ok(installed)
+    }
+
+    pub(super) fn dispatcher_adapters(
+        &self,
+    ) -> Vec<Arc<dyn latent_effects::runtime::DeferredEffectAdapter>> {
+        self.adapters
+            .iter()
+            .cloned()
+            .map(|adapter| adapter as Arc<dyn latent_effects::runtime::DeferredEffectAdapter>)
+            .chain(self.events.iter().cloned())
+            .collect()
     }
 }
 

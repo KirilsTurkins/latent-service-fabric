@@ -203,6 +203,10 @@ historical immediate-campaign build that exceeded its finite fixture lifetime
 remain unsuccessful evidence. They do not replace required immediate/trigger
 CI execution or establish a product regression.
 
+Standalone state startup includes the qualified event adapters from its existing
+provider owner in the shared dispatcher, using the same protected startup clock
+as deferred HTTP. This installs no event-operation authority by itself.
+
 This native campaign executes trusted fixture source labels directly through
 the captured-intent writer. Actual verified guest component identities and
 ordinary standalone node delivery, rejection and recovery qualification remain

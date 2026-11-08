@@ -42,6 +42,52 @@ fn declaration() -> Vec<u8> {
             {"operation":"uninstalled","mode":"fresh-query","inputFormat":"lsf-wit-values-v1","resultFormat":"lsf-wit-values-v1"}]})).unwrap()
 }
 
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn mixed_effect_installations_reject_duplicate_dispatch_profiles_at_startup() {
+    let fixture = KernelFixture::new();
+    let provider = startup::HttpFixture::new().await;
+    let mut installed = provider.installation();
+    // Reuse the actual installed adapter in both classes. If either class is
+    // dropped during startup, the dispatcher's duplicate-profile fence would
+    // incorrectly admit the configuration.
+    installed.events.push(installed.adapters[0].clone());
+    let result = StateKernel::start(
+        fixture.bootstrap(),
+        &fixture.settings,
+        fixture.authority.clone(),
+        installed.dispatcher_adapters(),
+        &installed.clock,
+        tokio::runtime::Handle::current(),
+    )
+    .await;
+    assert!(result.is_err());
+    drop(installed);
+    provider.finish().await;
+}
+
+#[test]
+fn configured_deferred_events_require_the_original_installed_provider() {
+    let events: crate::config::providers::EventInstallation = serde_json::from_value(json!({
+        "identity": {"id":"events", "tenant":"tests", "service":"event-host", "epoch":1},
+        "configuration": {
+            "formatVersion":1,
+            "endpoint":{"serverName":"localhost", "peer":"127.0.0.1:4222", "allowNonPublicPeer":true},
+            "publicRoots":false, "extraRoots":[[1]],
+            "topics":[{"tenant":"tests", "topic":"updated", "subject":"events.updated", "stream":"EVENTS", "duplicateWindowMillis":30000}],
+            "idempotencyNamespace":"test", "maximumPayloadBytes":8192, "timeoutMillis":1000
+        },
+        "credentialDirectory":"private-events", "credentialReference":"peer", "credentialFile":"token",
+        "deferred":[{"topic":"updated", "qualification":{
+            "formatVersion":1, "serverVersion":"2.14.6", "streamCreated":"2026-01-01T00:00:00Z",
+            "maximumMessages":1000, "maximumBytes":1000000,
+            "maximumAgeMillis":60000, "maximumMessageBytes":8192
+        }}]
+    }))
+    .unwrap();
+    assert!(super::InstalledHttpEffects::new(None, None, Some(&events)).is_err());
+    assert!(super::InstalledHttpEffects::new(None, None, None).is_ok());
+}
+
 pub(in crate::standalone::state) struct Setup {
     pub(in crate::standalone::state) fixture: KernelFixture,
     pub(in crate::standalone::state) services: InstalledStateServices,
@@ -301,6 +347,7 @@ impl Setup {
             http: super::super::InstalledHttpEffects {
                 clock: Arc::clone(&self.services.http.clock),
                 adapters: self.services.http.adapters.clone(),
+                events: self.services.http.events.clone(),
                 registry: Arc::clone(&self.services.http.registry),
             },
         }
