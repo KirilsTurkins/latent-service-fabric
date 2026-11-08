@@ -1,0 +1,111 @@
+﻿{
+    "description":  "Experimental three-client lookup; Go probe built and run with race instrumentation",
+    "probeCommit":  "ceb8443dd3f6",
+    "observation":  {
+                        "after":  {
+                                      "commandCount":  "1",
+                                      "encodedStateBytes":  "75",
+                                      "engineProfile":  "protected-redb-immediate-ext4-v1",
+                                      "engineProfileDigest":  "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+                                      "generation":  "3",
+                                      "namespacePolicyDigest":  "sha256:6f4aa9ad3e3c868c68d72cdfa173777bc8ea199ec48a3c9fad9c6ce4956e860c",
+                                      "pendingEffectCount":  "0",
+                                      "quota":  {
+                                                    "effectBytes":  "8388608",
+                                                    "effectRows":  "4096",
+                                                    "payloadBytes":  "8388608",
+                                                    "recoveryBytes":  "1048576",
+                                                    "resultBytes":  "8388608",
+                                                    "resultRows":  "4096",
+                                                    "stateBytes":  "8388608",
+                                                    "stateKeys":  "4096"
+                                                },
+                                      "retainedFormats":  [
+
+                                                          ],
+                                      "status":  "NAMESPACE_STATUS_ACTIVE",
+                                      "view":  {
+                                                   "namespace":  {
+                                                                     "incarnation":  "1",
+                                                                     "namespace":  "transactional-aggregate",
+                                                                     "tenant":  "examples"
+                                                                 },
+                                                   "stateSchema":  "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+                                                   "version":  {
+                                                                   "data":  "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAAAMAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+                                                                   "encoding":  "base64"
+                                                               }
+                                               }
+                                  },
+                        "attemptId":  "1",
+                        "before":  {
+                                       "commandCount":  "1",
+                                       "encodedStateBytes":  "75",
+                                       "engineProfile":  "protected-redb-immediate-ext4-v1",
+                                       "engineProfileDigest":  "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+                                       "generation":  "3",
+                                       "namespacePolicyDigest":  "sha256:6f4aa9ad3e3c868c68d72cdfa173777bc8ea199ec48a3c9fad9c6ce4956e860c",
+                                       "pendingEffectCount":  "0",
+                                       "quota":  {
+                                                     "effectBytes":  "8388608",
+                                                     "effectRows":  "4096",
+                                                     "payloadBytes":  "8388608",
+                                                     "recoveryBytes":  "1048576",
+                                                     "resultBytes":  "8388608",
+                                                     "resultRows":  "4096",
+                                                     "stateBytes":  "8388608",
+                                                     "stateKeys":  "4096"
+                                                 },
+                                       "retainedFormats":  [
+
+                                                           ],
+                                       "status":  "NAMESPACE_STATUS_ACTIVE",
+                                       "view":  {
+                                                    "namespace":  {
+                                                                      "incarnation":  "1",
+                                                                      "namespace":  "transactional-aggregate",
+                                                                      "tenant":  "examples"
+                                                                  },
+                                                    "stateSchema":  "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+                                                    "version":  {
+                                                                    "data":  "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAAAMAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+                                                                    "encoding":  "base64"
+                                                                }
+                                                }
+                                   },
+                        "brokerMessages":  1,
+                        "capturePinsSha256":  "sha256:61fa713fc68689f5537d08bab9f7125be29f676510b00852851fe55032ce50e9",
+                        "cliSha256":  "sha256:e1179de07a96719f3161f7748dbb14496151bf8b193253bf7b7a9fc819f4cec7",
+                        "commandId":  "9519180718750dc809725b7a546608e0bf15552ea311c3ac8300c1ee847c89fb",
+                        "effectAttempt":  1,
+                        "effectDisposition":  "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+                        "goLookups":  2,
+                        "goProbeBinarySha256":  "sha256:e16b1b12d587f8c906bad32ee96afad7d71fb6b27d68c1b3e14bead57e889e8e",
+                        "goProbeSourceSha256":  "sha256:9b46c683afdc8f29af17d9ac24a129e55a2a309a27d6c525766d811b40eddcbc",
+                        "guestSha256":  "sha256:396784dda4174f84d3a6cb8c211dca9ad706fb826d613e5892b8140f815ad7f5",
+                        "integrationGitCommit":  "5aa6592da0fe2196db68d35510be6751597a77e5",
+                        "nodeJsSha256":  "sha256:bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+                        "nodeSha256":  "sha256:48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+                        "probeSha256":  "sha256:5bb12e3a7b7e4ec8ee2bd27cef28f4c96bad55270e6ca887c98001d8191a4a0b",
+                        "publication":  "publication:sha256:17fc683e151c6f314c59e24c2ea7ba7a17ce5245f1d25e45d294f3d8fa2110de",
+                        "qualification":  "experimental unmerged integration with disposable signer; not hosted or distribution qualification",
+                        "rustLookups":  2,
+                        "sdkTestSha256":  "sha256:77f2c05fedc9a25f435d3d52f0f05d925766f8da2a8b4c86ca61821eda13fabc",
+                        "syntheticArchiveGitCommit":  "631cf036f8c78f79a5be2a1c419dca074c2fedae",
+                        "testSignerSha256":  "sha256:d866696542160ed6e651e1ba232684ed91fadb7b7f31a6b3cc18d1d74395d44c",
+                        "typescriptLookups":  2,
+                        "typescriptProbeSha256":  "sha256:204d4b2e462f9f4a1426aae5be601a2929f6c2839a145b404567764261945dc3",
+                        "verifiedMergeSourceBlobs":  13749
+                    },
+    "goTestLogSha256":  "sha256:7b4f19295b30b3b03da9c8263170e4d5bcd4faad7b64c452b87c1e9a53449269",
+    "experimentScriptSha256":  "sha256:816bf6b551c6bc4aa4d6dc1928d395ce2c0c46c54eefba6078e1399ffcab7b51",
+    "nodeShutdown":  {
+                         "effectsPhysicallyRetired":  true,
+                         "reaped":  true,
+                         "clean":  true,
+                         "activeActivations":  0,
+                         "liveStores":  0
+                     },
+    "brokerFixtureRemoved":  true,
+    "limitations":  "Combined unmerged source and disposable signer; not hosted CI, installed distribution, complete client matrix, cancellation, crash, or replay qualification."
+}
