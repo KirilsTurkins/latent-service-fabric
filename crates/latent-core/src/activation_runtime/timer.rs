@@ -210,8 +210,8 @@ impl TimerWait {
         // Same-ledger finalization uses the accounting lock and releases it
         // before terminal signalling. Keep schedule -> runtime -> accounting
         // order through the final observation and the schedule write. This
-        // leaves ancestor closure, external probes and deadline passage
-        // independent.
+        // leaves external probes and deadline passage independent. The RMW
+        // also checks the bounded original ancestor flags.
         let publication = self.inner.runtime.inner.budget.runtime_publication_guard();
         self.inner.runtime.check_commit_ledger_locked(&mut state)?;
         #[cfg(test)]
@@ -220,7 +220,7 @@ impl TimerWait {
         #[cfg(test)]
         after_tentative_write();
         // The schedule mutex keeps this tentative write hidden. The RMW
-        // orders it with cancellation of this same original ledger.
+        // orders it with closure of the original ledger and its ancestors.
         if !publication.commit_while_open() {
             schedule.next = Some(self.requested);
             state.phase = RuntimePhase::Cancelling;

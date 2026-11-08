@@ -527,6 +527,243 @@ fn same_ledger_cancellation_after_owner_commit_keeps_owner_charged() {
 }
 
 #[test]
+fn ancestor_closure_before_owner_park_wake_commit_refuses_publication() {
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    #[derive(Clone, Copy, Debug)]
+    enum Operation {
+        Owner,
+        Park,
+        Wake,
+    }
+    let mut outcomes = Vec::new();
+    for finalize in [false, true] {
+        for operation in [Operation::Owner, Operation::Park, Operation::Wake] {
+            let (parent, child, runtime) = child_runtime();
+            let owner = runtime.register(OwnerKind::Task, None).unwrap();
+            let token = owner.token();
+            let wake = if matches!(operation, Operation::Wake) {
+                Some(runtime.park(token).unwrap())
+            } else {
+                None
+            };
+            let before = runtime.snapshot();
+            let worker_runtime = runtime.clone();
+            let (held_tx, held_rx) = mpsc::sync_channel(0);
+            let (resume_tx, resume_rx) = mpsc::sync_channel(0);
+            let worker = std::thread::spawn(move || match operation {
+                Operation::Owner => {
+                    let mut state = worker_runtime.inner.state.lock().unwrap();
+                    let result = worker_runtime.register_locked_with_hook(
+                        &mut state,
+                        OwnerKind::Native,
+                        Some(token),
+                        |step| {
+                            if step == AdmissionStep::TentativePublication {
+                                held_tx.send(()).unwrap();
+                                resume_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+                            }
+                        },
+                    );
+                    drop(state);
+                    result.is_ok()
+                }
+                Operation::Park | Operation::Wake => {
+                    let hook = |step| {
+                        if step == ReadinessStep::Tentative {
+                            held_tx.send(()).unwrap();
+                            resume_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+                        }
+                    };
+                    if matches!(operation, Operation::Park) {
+                        worker_runtime.park_with_hooks(token, || {}, hook).is_ok()
+                    } else {
+                        wake.unwrap().wake_with_hooks(|| {}, hook)
+                    }
+                }
+            });
+            held_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+            let close_parent = parent.clone();
+            let (done_tx, done_rx) = mpsc::sync_channel(0);
+            let closer = std::thread::spawn(move || {
+                if finalize {
+                    let _ = close_parent.finalize_at(None, Instant::now());
+                } else {
+                    close_parent.cancel_descendants().unwrap();
+                }
+                done_tx.send(()).unwrap();
+            });
+            let terminal_received = done_rx.recv_timeout(Duration::from_secs(3));
+            let completed = terminal_received.is_ok();
+            resume_tx.send(()).unwrap();
+            let published = worker.join().unwrap();
+            if !completed {
+                done_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+            }
+            closer.join().unwrap();
+            let after = runtime.snapshot();
+            outcomes.push((operation, finalize, completed, published, before, after));
+            drop(owner);
+            runtime.retire().unwrap();
+            drop(runtime);
+            let _ = child.finish(None, Instant::now());
+            assert_eq!(parent.descendant_snapshot().unwrap().live_descendants, 0);
+        }
+    }
+    for (operation, finalize, completed, published, before, after) in outcomes {
+        assert!(completed);
+        assert!(
+            !published,
+            "{operation:?} finalize={finalize} published after ancestor closure"
+        );
+        assert_eq!(after.phase, RuntimePhase::Cancelling);
+        assert_eq!(after.owners, before.owners);
+        assert_eq!(after.parked_tasks, before.parked_tasks);
+        assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
+        assert_eq!(after.stale_wakes, before.stale_wakes);
+    }
+}
+
+#[test]
+fn ancestor_closure_after_owner_commit_keeps_original_capacity() {
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    struct Probe(mpsc::Sender<std::thread::ThreadId>);
+    impl crate::BudgetCancellationProbe for Probe {
+        fn is_cancelled(&self) -> bool {
+            false
+        }
+        fn cancelled(&self) -> crate::BoxFuture<'_, ()> {
+            Box::pin(std::future::pending())
+        }
+        fn mark_terminal(&self) {
+            self.0.send(std::thread::current().id()).unwrap();
+        }
+    }
+
+    for finalize in [false, true] {
+        let (signal_tx, signal_rx) = mpsc::channel();
+        let (parent, child, runtime) =
+            child_runtime_with_probes(Arc::new(Probe(signal_tx)), Arc::new(Signal));
+        let task = runtime.register(OwnerKind::Task, None).unwrap();
+        let token = task.token();
+        let before = runtime.snapshot();
+        let reserved = parent.descendant_snapshot().unwrap().reserved_memory_bytes;
+        let worker_runtime = runtime.clone();
+        let (held_tx, held_rx) = mpsc::sync_channel(0);
+        let (resume_tx, resume_rx) = mpsc::sync_channel(0);
+        let worker = std::thread::spawn(move || {
+            let mut state = worker_runtime.inner.state.lock().unwrap();
+            worker_runtime.register_locked_with_hook(
+                &mut state,
+                OwnerKind::Native,
+                Some(token),
+                |step| {
+                    if step == AdmissionStep::CommittedPublication {
+                        held_tx.send(()).unwrap();
+                        resume_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+                    }
+                },
+            )
+        });
+        held_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+        let hidden = matches!(
+            runtime.inner.state.try_lock(),
+            Err(std::sync::TryLockError::WouldBlock)
+        );
+        let guarded = child.accounting().test_accounting_is_locked();
+        let close_parent = parent.clone();
+        let (done_tx, done_rx) = mpsc::sync_channel(0);
+        let closer = std::thread::spawn(move || {
+            let thread = std::thread::current().id();
+            if finalize {
+                let _ = close_parent.finalize_at(None, Instant::now());
+            } else {
+                close_parent.cancel_descendants().unwrap();
+            }
+            done_tx.send(thread).unwrap();
+        });
+        let terminal_received = done_rx.recv_timeout(Duration::from_secs(3));
+        let completed = terminal_received.is_ok();
+        let signal = signal_rx.recv_timeout(Duration::from_secs(3));
+        resume_tx.send(()).unwrap();
+        let accepted = worker.join().unwrap().unwrap();
+        let close_thread = match terminal_received {
+            Ok(thread) => thread,
+            Err(_) => done_rx.recv_timeout(Duration::from_secs(3)).unwrap(),
+        };
+        closer.join().unwrap();
+        assert!(hidden && guarded && completed);
+        assert_eq!(signal.unwrap(), close_thread);
+        let after = runtime.snapshot();
+        assert_eq!(after.owners[6], before.owners[6] + 1);
+        assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
+        assert_eq!(
+            parent.descendant_snapshot().unwrap().reserved_memory_bytes,
+            reserved
+        );
+        drop(accepted);
+        drop(task);
+        runtime.retire().unwrap();
+        drop(runtime);
+        let _ = child.finish(None, Instant::now());
+        assert_eq!(parent.descendant_snapshot().unwrap().live_descendants, 0);
+        assert_eq!(
+            parent.descendant_snapshot().unwrap().reserved_memory_bytes,
+            0
+        );
+    }
+}
+
+#[test]
+fn ancestor_accounting_lock_does_not_block_prepaid_owner_publication() {
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    let (parent, child, runtime) = child_runtime();
+    let task = runtime.register(OwnerKind::Task, None).unwrap();
+    let token = task.token();
+    let locked_parent = parent.clone();
+    let (held_tx, held_rx) = mpsc::sync_channel(0);
+    let (release_tx, release_rx) = mpsc::sync_channel(0);
+    let holder = std::thread::spawn(move || {
+        locked_parent.with_test_accounting_lock(|| {
+            held_tx.send(()).unwrap();
+            release_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+        });
+    });
+    held_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+    let worker_runtime = runtime.clone();
+    let (done_tx, done_rx) = mpsc::sync_channel(0);
+    let worker = std::thread::spawn(move || {
+        done_tx
+            .send(worker_runtime.register(OwnerKind::Native, Some(token)))
+            .unwrap();
+    });
+    let early = done_rx.recv_timeout(Duration::from_secs(3));
+    let finished_while_locked = early.is_ok();
+    release_tx.send(()).unwrap();
+    let accepted = match early {
+        Ok(result) => result.unwrap(),
+        Err(_) => done_rx
+            .recv_timeout(Duration::from_secs(3))
+            .unwrap()
+            .unwrap(),
+    };
+    holder.join().unwrap();
+    worker.join().unwrap();
+    assert!(finished_while_locked);
+    drop(accepted);
+    drop(task);
+    runtime.retire().unwrap();
+    drop(runtime);
+    let _ = child.finish(None, Instant::now());
+    assert_eq!(parent.descendant_snapshot().unwrap().live_descendants, 0);
+}
+
+#[test]
 fn external_probe_cancellation_is_not_a_ledger_terminal_signal() {
     use std::sync::atomic::{AtomicBool, Ordering};
 

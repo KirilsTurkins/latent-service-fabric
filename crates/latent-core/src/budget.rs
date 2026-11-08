@@ -791,22 +791,23 @@ struct ActivationBudgetInner {
 }
 
 // Serializes runtime publication with the *same* original ledger's finalization.
-// The closed-flag RMW also orders it with explicit same-ledger cancellation.
-// Ancestor closure, external probes and deadline passage remain independent.
+// Closed-flag RMWs order it with closure along the bounded original ancestry.
+// External probes and deadline passage remain independent.
 pub(crate) struct RuntimePublicationGuard<'a> {
     _state: MutexGuard<'a, AccountingState>,
-    closed: &'a std::sync::atomic::AtomicBool,
+    original: &'a ActivationBudgetInner,
 }
 
 impl RuntimePublicationGuard<'_> {
     // Called after the tentative write, while its runtime mutation lock and
-    // this accounting guard are held. The RMW shares the closed flag's atomic
-    // modification order with cancellation's nonblocking store. A failed RMW
-    // requires the caller to undo its still-hidden write before unlocking.
+    // this accounting guard are held. Each ancestor's RMW shares its atomic
+    // modification order with that ledger's nonblocking closure store. A
+    // failed RMW requires the caller to undo its hidden write before unlocking.
     pub(crate) fn commit_while_open(&self) -> bool {
-        self.closed
-            .compare_exchange(false, false, Ordering::AcqRel, Ordering::Acquire)
-            .is_ok()
+        self.original.commit_ancestry_while_open(
+            #[cfg(test)]
+            |_| {},
+        )
     }
 }
 
@@ -1242,7 +1243,7 @@ impl ActivationBudget {
     pub(crate) fn runtime_publication_guard(&self) -> RuntimePublicationGuard<'_> {
         RuntimePublicationGuard {
             _state: self.lock_state(),
-            closed: &self.inner.closed,
+            original: &self.inner,
         }
     }
 
