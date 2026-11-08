@@ -97,6 +97,23 @@ impl From<StateShutdownReport> for StateRetirementReport {
 }
 
 impl StandaloneStateRuntime {
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(in crate::standalone) fn inbox_factory(
+        &self,
+        config: &latent_nats::triggers::TriggerConfig,
+    ) -> Result<Arc<dyn latent_nats::triggers::InboxAdmissionFactory>, PlatformError> {
+        let owners = Arc::clone(self.admission.as_ref().ok_or_else(super::unavailable)?);
+        if self.installations.is_empty() {
+            return Err(super::unavailable());
+        }
+        let factory = super::inbox::InboxFactory {
+            owners,
+            installations: self.installations.clone(),
+        };
+        factory.check_configuration(config)?;
+        Ok(Arc::new(factory))
+    }
+
     pub(in crate::standalone) async fn start(
         bootstrap: StateBootstrap,
         settings: &StateSettings,

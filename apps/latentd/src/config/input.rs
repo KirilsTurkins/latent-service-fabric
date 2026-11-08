@@ -35,6 +35,14 @@ fn load_inner(
         "configurationFileProtection",
     )?;
     let mut config = decode(&bytes)?;
+    if let Some(triggers) = &mut config.transactional_triggers {
+        super::triggers::anchor(
+            triggers,
+            absolute
+                .parent()
+                .ok_or_else(|| invalid("configurationPath"))?,
+        )?;
+    }
     if let Some(providers) = &mut config.providers {
         super::providers::anchor(
             providers,

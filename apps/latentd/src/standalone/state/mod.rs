@@ -4,6 +4,8 @@
 mod bootstrap;
 mod clock;
 mod configuration;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod inbox;
 pub(in crate::standalone) mod inspection;
 mod installations;
 pub use inspection::ConfiguredHttpEffectInspection;
