@@ -7,6 +7,55 @@ import {serveBuiltSite, validateBuiltSite} from '../lib/built-site.mjs';
 import {generatedDirectory} from '../lib/prepare.mjs';
 import {repositoryRoot, websiteRoot} from '../lib/repository.mjs';
 
+// The local index can approach 16 MiB. Give its first parse a finite, separate
+// allowance under shared-runner load without changing the result assertion.
+const DEVELOPMENT_SEARCH_TIMEOUT_MS = 30_000;
+const SEARCH_DIAGNOSTIC_TIMEOUT_MS = 2_000;
+const MAX_SEARCH_REQUESTS = 4;
+
+function watchSearchRequests(page) {
+  const observation = {requests: [], additionalRequests: false};
+  const watched = new WeakMap();
+  page.on('request', request => {
+    if (!new URL(request.url()).pathname.endsWith('/search-index.json')) return;
+    if (observation.requests.length === MAX_SEARCH_REQUESTS) { observation.additionalRequests = true; return; }
+    const entry = {state: 'pending', status: null, durationMs: null, started: Date.now()};
+    observation.requests.push(entry);
+    watched.set(request, entry);
+  });
+  page.on('response', response => { const entry = watched.get(response.request()); if (entry) entry.status = response.status(); });
+  page.on('requestfinished', request => {
+    const entry = watched.get(request);
+    if (entry) { entry.state = 'finished'; entry.durationMs = Date.now() - entry.started; }
+  });
+  page.on('requestfailed', request => {
+    const entry = watched.get(request);
+    if (entry) { entry.state = 'failed'; entry.durationMs = Date.now() - entry.started; entry.error = (request.failure()?.errorText ?? '').slice(0, 128); }
+  });
+  return observation;
+}
+
+async function waitForDevelopmentSearch(page, observation, errors) {
+  try {
+    await page.getByRole('status').getByText(/results? in development\./).waitFor({timeout: DEVELOPMENT_SEARCH_TIMEOUT_MS});
+  } catch (error) {
+    let timer;
+    const state = await Promise.race([
+      page.evaluate(() => ({
+        path: location.pathname + location.search,
+        input: document.querySelector('#documentation-query')?.value?.slice(0, 128) ?? null,
+        status: document.querySelector('[role="status"]')?.textContent?.slice(0, 512) ?? null,
+      })).catch(failure => ({captureError: String(failure).slice(0, 256)})),
+      new Promise(resolve => { timer = setTimeout(() => resolve({captureError: 'page state timed out'}), SEARCH_DIAGNOSTIC_TIMEOUT_MS); }),
+    ]);
+    clearTimeout(timer);
+    const requests = observation.requests.map(({started, ...request}) => ({...request, elapsedMs: Date.now() - started}));
+    console.error('Development search wait failed:', JSON.stringify({state, requests,
+      additionalRequests: observation.additionalRequests, browserErrors: errors.slice(-4).map(value => value.slice(0, 256))}));
+    throw error;
+  }
+}
+
 const output = generatedDirectory('.generated/discovery-review');
 const results = [];
 const browser = await chromium.launch({headless: true, timeout: 15000});
@@ -24,6 +73,7 @@ try {
         return route.continue();
       });
       const page = await context.newPage();
+      const searchObservation = watchSearchRequests(page);
       page.setDefaultTimeout(15000);
       page.on('pageerror', error => errors.push(error.message));
       page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
@@ -74,7 +124,7 @@ try {
       await page.waitForURL(url => url.pathname.endsWith('/search/'));
       await page.getByLabel('Search terms', {exact: true}).fill('publication');
       await page.getByRole('button', {name: 'Search', exact: true}).click();
-      await page.getByRole('status').getByText(/results? in development\./).waitFor();
+      await waitForDevelopmentSearch(page, searchObservation, errors);
       assert.equal(new URL(page.url()).searchParams.get('q'), 'publication');
       await page.getByLabel('Documentation version', {exact: true}).selectOption('0.1.0-alpha.3');
       await page.getByRole('status').getByText(/results? in 0\.1\.0-alpha\.3\./).waitFor();
