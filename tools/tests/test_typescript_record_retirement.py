@@ -75,5 +75,49 @@ class RecordRetirementTests(unittest.TestCase):
         self.control('job-cancel-partial-ack-retains-owner')
 
 
+class TimerSetupRetirementTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++')
+        if compiler is None:
+            if os.name == 'nt':
+                raise unittest.SkipTest('Set LSF_TYPESCRIPT_RECORD_CXX for the finite C++ reference')
+            raise RuntimeError('C++ compiler is required for timer setup controls')
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.temporary.cleanup)
+        output = Path(cls.temporary.name)
+        cls.binary = output / ('timer-setup.exe' if os.name == 'nt' else 'timer-setup')
+        fixture = ROOT/'tools/tests/fixtures/typescript_record_retirement'
+        source = ROOT/'sdk/typescript-guest/activation/tests/timer_setup.cpp'
+        if Path(compiler).stem.lower() == 'cl':
+            args = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX',
+                    '/I' + str(fixture), str(source), '/Fe:' + str(cls.binary),
+                    '/Fo:' + str(output/'timer-setup.obj')]
+        else:
+            args = [compiler, '-std=c++17', '-O0', '-Wall', '-Wextra', '-Werror',
+                    '-I', str(fixture), str(source), '-o', str(cls.binary)]
+        result = subprocess.run(args, capture_output=True, timeout=60)
+        if result.returncode or len(result.stdout) + len(result.stderr) > 65536:
+            raise AssertionError(result.stderr[:65536].decode(errors='replace'))
+        if not cls.binary.is_file() or cls.binary.stat().st_size > 4*1024**2:
+            raise AssertionError('finite timer setup reference output required')
+
+    def control(self, case):
+        result = subprocess.run([str(self.binary), case], capture_output=True, timeout=10)
+        self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
+        self.assertLessEqual(len(result.stdout) + len(result.stderr), 65536)
+        self.assertEqual(json.loads(result.stdout),
+                         {'case': case, 'passed': True, 'engineQualified': False})
+
+    def test_failed_stop_retains_timer_and_closes_new_admission(self):
+        self.control('refused-stop')
+
+    def test_successful_cleanup_allows_new_timer(self):
+        self.control('successful-cleanup')
+
+    def test_failed_native_settlement_retains_owner_and_closes_admission(self):
+        self.control('refused-native-settlement')
+
+
 if __name__ == '__main__':
     unittest.main()
