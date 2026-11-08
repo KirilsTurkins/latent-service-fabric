@@ -83,6 +83,16 @@ impl Fixture {
         Self::with_native_configuration(
             latent_core::native_capacity::NativeCapacityLimits::default(),
             true,
+            false,
+        )
+        .await
+    }
+
+    pub async fn with_trigger() -> Self {
+        Self::with_native_configuration(
+            latent_core::native_capacity::NativeCapacityLimits::default(),
+            false,
+            true,
         )
         .await
     }
@@ -90,12 +100,13 @@ impl Fixture {
     pub async fn with_native_limits(
         limits: latent_core::native_capacity::NativeCapacityLimits,
     ) -> Self {
-        Self::with_native_configuration(limits, false).await
+        Self::with_native_configuration(limits, false, false).await
     }
 
     async fn with_native_configuration(
         limits: latent_core::native_capacity::NativeCapacityLimits,
         enable_staging: bool,
+        trigger: bool,
     ) -> Self {
         let base = std::env::var_os("LATENT_STATE_TEST_ROOT")
             .map_or_else(std::env::temp_dir, PathBuf::from);
@@ -103,7 +114,7 @@ impl Fixture {
         fs::set_permissions(root.path(), fs::Permissions::from_mode(0o700)).unwrap();
         let (catalog, metadata, publication, deployment, declaration) =
             publication::publish(root.path()).await;
-        let (policy, binding) = policy::create(root.path(), &catalog, &publication);
+        let (policy, binding) = policy::create(root.path(), &catalog, &publication, trigger);
         let policy = Arc::new(policy);
         let state_root = root.path().join("state");
         fs::create_dir(&state_root).unwrap();

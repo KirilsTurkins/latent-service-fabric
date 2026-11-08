@@ -35,6 +35,7 @@ pub(super) fn create(
     root: &Path,
     catalog: &DirectoryArtifactRepository,
     publication: &ReleaseUseEligibility,
+    trigger: bool,
 ) -> (PolicyStore, PolicyCallBinding) {
     let policy = PolicyStore::open(
         &root.join("policy"),
@@ -42,9 +43,14 @@ pub(super) fn create(
         catalog.lifecycle_authority(),
     )
     .unwrap();
-    let caller = CallerScope::derive(&principal(), &RecoverySelection::OriginalCaller).unwrap();
+    let mut actor = principal();
+    if trigger {
+        actor.kind = latent_core::PrincipalKind::Trigger;
+    }
+    let caller = CallerScope::derive(&actor, &RecoverySelection::OriginalCaller).unwrap();
+    let principal_kind = if trigger { "trigger" } else { "user" };
     let document = json!({"formatVersion":1,"tenant":"a","rules":[{
-        "id":"alice","effect":"allow","principals":[{"kind":"user","subject":"alice"}],"services":["a/echo"],"publications":[publication.publication().as_str()],"capability":STATE_CONTRACT,"operations":OPERATIONS,
+        "id":"alice","effect":"allow","principals":[{"kind":principal_kind,"subject":"alice"}],"services":["a/echo"],"publications":[publication.publication().as_str()],"capability":STATE_CONTRACT,"operations":OPERATIONS,
         "resources":{"kind":"state","scopes":[{"namespace":"orders","incarnation":1,"entity":null,"recoveryKind":caller.kind,"recoveryScope":caller.scope,"resultPolicy":"visibility-v1"}]},
         "ceiling":{"operations":256,"inputBytes":2_097_152,"outputBytes":2_097_152,"wallTimeMillis":10_000}
     }]});

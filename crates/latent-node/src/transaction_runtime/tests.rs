@@ -18,6 +18,135 @@ use latent_core::{BudgetConsumption, DeclaredError, Metadata};
 use latent_executor::transaction::{Mode, StateFailure, TransactionHost};
 use latent_state::embedded::Family;
 
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn trusted_inbox_admission_commits_the_original_input_and_recovers_duplicate() {
+    use latent_commit::atomic::{Identity, InboxIdentity};
+    use sha2::{Digest, Sha256};
+
+    let fixture = Fixture::with_trigger().await;
+    let identity = InboxIdentity {
+        provider: "input".into(),
+        binding: "scope".into(),
+        message: "42".into(),
+        payload_digest: Identity::parse_hex(&format!(
+            "{:x}",
+            latent_core::digest::HexDigest(Sha256::digest(b"same"))
+        ))
+        .unwrap(),
+    };
+    let (first, mut envelope, budget) = fixture.invocation(false, "inbox-key");
+    envelope.principal.kind = latent_core::PrincipalKind::Trigger;
+    let first = Arc::new(
+        Arc::try_unwrap(first)
+            .ok()
+            .unwrap()
+            .with_trusted_inbox(identity.clone())
+            .unwrap(),
+    );
+    let guest = first.admit(&envelope, &budget).await.unwrap();
+    guest.acquire(Mode::Command).unwrap();
+    guest.finish_guest_access();
+    let _ = budget.finalize_at(None, std::time::Instant::now());
+    first
+        .complete(
+            success(b"original"),
+            fixture.commit_control(&envelope, &budget),
+        )
+        .await;
+    let original = first.take_owned_completion().unwrap().unwrap();
+    let TransactionCompletionResult::Command(CommandCompletionDisposition::Durable {
+        command, ..
+    }) = &original.result
+    else {
+        panic!("input command did not commit");
+    };
+    assert_eq!(command.inbox_identity(), Some(&identity));
+    assert_eq!(fixture.rows(Family::Inbox).await, 1);
+    drop((guest, original, first, envelope, budget));
+
+    let (replay, mut envelope, budget) = fixture.invocation(false, "inbox-key");
+    envelope.principal.kind = latent_core::PrincipalKind::Trigger;
+    let replay = Arc::new(
+        Arc::try_unwrap(replay)
+            .ok()
+            .unwrap()
+            .with_trusted_inbox(identity)
+            .unwrap(),
+    );
+    assert_eq!(
+        replay.admit(&envelope, &budget).await.err().unwrap().code,
+        latent_core::PlatformErrorCode::AlreadyExists
+    );
+    let _ = budget.finalize_at(None, std::time::Instant::now());
+    replay
+        .complete(
+            success(b"not executed"),
+            fixture.commit_control(&envelope, &budget),
+        )
+        .await;
+    assert!(matches!(
+        replay.take_owned_completion().unwrap().unwrap().result,
+        TransactionCompletionResult::Existing { .. }
+    ));
+    assert_eq!(fixture.rows(Family::Inbox).await, 1);
+    drop((replay, envelope, budget));
+    fixture.shutdown().await;
+}
+
+#[tokio::test]
+async fn trusted_inbox_refuses_wrong_principal_payload_and_query_mode_before_storage() {
+    use latent_commit::atomic::{Identity, InboxIdentity};
+    use sha2::{Digest, Sha256};
+
+    let fixture = Fixture::with_trigger().await;
+    let identity = InboxIdentity {
+        provider: "input".into(),
+        binding: "scope".into(),
+        message: "42".into(),
+        payload_digest: Identity::parse_hex(&format!(
+            "{:x}",
+            latent_core::digest::HexDigest(Sha256::digest(b"same"))
+        ))
+        .unwrap(),
+    };
+    let (ordinary, envelope, budget) = fixture.invocation(false, "inbox-user");
+    let ordinary = Arc::try_unwrap(ordinary)
+        .ok()
+        .unwrap()
+        .with_trusted_inbox(identity.clone())
+        .unwrap();
+    assert_eq!(
+        ordinary.admit(&envelope, &budget).await.err().unwrap().code,
+        latent_core::PlatformErrorCode::PermissionDenied
+    );
+    drop((ordinary, envelope, budget));
+
+    let (changed, mut envelope, budget) = fixture.invocation(false, "inbox-changed");
+    envelope.principal.kind = latent_core::PrincipalKind::Trigger;
+    envelope.input = b"different".to_vec();
+    let changed = Arc::try_unwrap(changed)
+        .ok()
+        .unwrap()
+        .with_trusted_inbox(identity.clone())
+        .unwrap();
+    assert_eq!(
+        changed.admit(&envelope, &budget).await.err().unwrap().code,
+        latent_core::PlatformErrorCode::PermissionDenied
+    );
+    drop((changed, envelope, budget));
+
+    let (query, envelope, budget) = fixture.invocation(true, "ignored");
+    assert!(Arc::try_unwrap(query)
+        .ok()
+        .unwrap()
+        .with_trusted_inbox(identity)
+        .is_err());
+    drop((envelope, budget));
+    assert_eq!(fixture.rows(Family::Command).await, 0);
+    assert_eq!(fixture.rows(Family::Inbox).await, 0);
+    fixture.shutdown().await;
+}
+
 #[tokio::test]
 async fn native_admission_persists_pending_before_host_and_success_commits_once() {
     let fixture = Fixture::new().await;
