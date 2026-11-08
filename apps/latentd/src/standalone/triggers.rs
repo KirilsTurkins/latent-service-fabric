@@ -106,7 +106,7 @@ impl TriggerOwner {
         TriggerStatus {
             configuration_epoch: snapshot.configuration_epoch,
             triggers: snapshot.triggers,
-            accepting: *self.accepting.borrow(),
+            accepting: *self.accepting.borrow() && !*self.stop.borrow() && !self.is_finished(),
             active_deliveries: snapshot.active_deliveries,
             pulls: snapshot.pulls,
             executions: snapshot.executions,

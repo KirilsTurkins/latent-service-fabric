@@ -137,3 +137,27 @@ async fn permanent_original_stop_refuses_resume_and_joins_real_poller_without_ne
     );
     assert!(stopped.clean);
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn stopped_poller_never_reports_accepting_after_readiness() {
+    let (_root, node, secret) = owner().await;
+    let original = node.triggers.as_ref().unwrap();
+    assert!(node.resume_transactional_triggers().unwrap().accepting);
+    original.stop.send_replace(true);
+    assert!(!node.transactional_trigger_status().unwrap().accepting);
+    tokio::time::timeout(WATCHDOG, async {
+        while !original.is_finished() {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    assert!(!node.transactional_trigger_status().unwrap().accepting);
+    assert!(node.resume_transactional_triggers().is_err());
+    secret.close();
+    let stopped = tokio::time::timeout(WATCHDOG, node.shutdown())
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(stopped.clean && stopped.triggers.unwrap().joined);
+}
