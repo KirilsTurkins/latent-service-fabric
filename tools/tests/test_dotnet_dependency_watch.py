@@ -334,3 +334,47 @@ class DeliveredCompilerHostPath(unittest.TestCase):
         self.selected['sh'].write_bytes(b'changed-selected-shell')
         with self.assertRaisesRegex(self.isolation.DependencyError, 'compiler-executable-mutated'):
             boundary.check_unchanged()
+
+
+class PublicTestFailure(unittest.TestCase):
+    def test_projection_preserves_only_closed_failure_categories(self):
+        from tools.qualify_dotnet_dependency_watch import public_test_failure
+        secret = '/private/token-secret'
+        event = {'event': 'post-deploy-tests', 'report': {'passed': False,
+            'results': [{'id': secret, 'status': 'failed', 'category': 'platform-failure',
+                'platformCode': 'permission-denied', 'reason': 'ValueError',
+                'outcomeKnown': True, 'targetMatches': False, 'payload': secret, 'error': secret},
+                {'status': secret, 'reason': secret, 'outcomeKnown': 1, 'targetMatches': 'true'}]}}
+        selected = public_test_failure(event)
+        self.assertEqual(selected, {'passed': False, 'results': [
+            {'ordinal': 1, 'status': 'failed', 'category': 'platform-failure',
+             'platformCode': 'permission-denied', 'reason': 'ValueError',
+             'outcomeKnown': True, 'targetMatches': False}, {'ordinal': 2}]})
+        self.assertNotIn(secret, str(selected))
+
+    def test_projection_is_bounded_and_rejects_success_or_malformed_reports(self):
+        from tools.qualify_dotnet_dependency_watch import public_test_failure
+        event = {'event': 'post-deploy-tests', 'report': {'passed': False,
+            'results': [{'status': 'failed'} for _ in range(10)]}}
+        self.assertEqual([row['ordinal'] for row in public_test_failure(event)['results']], list(range(3, 11)))
+        for invalid in (None, {}, {'event': 'post-deploy-tests', 'report': []},
+                        {'event': 'post-deploy-tests', 'report': {'passed': 0}},
+                        {'event': 'post-deploy-tests', 'report': {'passed': True}}):
+            self.assertEqual(public_test_failure(invalid), {})
+        self.assertEqual(public_test_failure({'event': 'post-deploy-tests',
+            'report': {'passed': False, 'results': 'private'}}), {'passed': False, 'results': []})
+
+    def test_actual_failure_path_keeps_original_failure_and_success_adds_no_evidence(self):
+        from tools.qualify_dotnet_dependency_watch import require_test_passed
+        report = {}
+        failure = {'event': 'post-deploy-tests', 'passed': False, 'report': {'passed': False,
+            'results': [{'status': 'failed', 'category': 'transport-failure', 'error': 'private'}]}}
+        with self.assertRaisesRegex(ValueError, '^updated-actual-node-test-failed$'):
+            require_test_passed(failure, 'updated', report)
+        self.assertEqual(report['testFailure'], {'passed': False, 'results': [
+            {'ordinal': 1, 'status': 'failed', 'category': 'transport-failure'}]})
+        success = {}
+        require_test_passed({'passed': True, 'report': {'passed': True}}, 'initial', success)
+        self.assertEqual(success, {})
+        with self.assertRaisesRegex(ValueError, '^updated-actual-node-test-failed$'):
+            require_test_passed({'passed': True, 'report': []}, 'updated', {})

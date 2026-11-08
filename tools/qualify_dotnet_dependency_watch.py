@@ -34,6 +34,52 @@ def write(path: Path, value) -> None:
     path.write_text(json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8')
 
 
+def public_test_failure(event):
+    """Expose bounded failure categories, never test names, payloads or paths."""
+    if not isinstance(event, dict) or event.get('event') != 'post-deploy-tests':
+        return {}
+    report = event.get('report')
+    if not isinstance(report, dict) or report.get('passed') is not False:
+        return {}
+    vocabulary = {
+        'status': {'passed', 'failed', 'not-run', 'unsupported'},
+        'category': {'success', 'declared-error', 'platform-failure', 'transport-failure'},
+        'platformCode': {'cancelled', 'unknown', 'deadline-exceeded', 'unimplemented', 'internal',
+            'unavailable', 'data-loss', 'out-of-range', 'resource-exhausted', 'ok', 'invalid-argument',
+            'not-found', 'already-exists', 'permission-denied', 'unauthenticated',
+            'failed-precondition', 'aborted', 'guest-trap', 'guest-runtime-error',
+            'budget-accounting-failed', 'result-limit-exceeded', 'invalid-component-result'},
+        'reason': {'earlier-adapter-failure', 'earlier-outcome-unknown-no-new-invocation',
+            'test-run-deadline', 'required-scenario-unsupported', 'ValueError', 'OSError', 'KeyboardInterrupt'},
+    }
+    result = {'passed': False, 'results': []}
+    rows = report.get('results')
+    if not isinstance(rows, list):
+        return result
+    start = max(0, len(rows) - 8)
+    for ordinal, row in enumerate(rows[start:], start + 1):
+        if not isinstance(row, dict):
+            continue
+        selected = {'ordinal': ordinal}
+        for key, allowed in vocabulary.items():
+            value = row.get(key)
+            if isinstance(value, str) and value in allowed:
+                selected[key] = value
+        for key in ('outcomeKnown', 'targetMatches'):
+            if type(row.get(key)) is bool:
+                selected[key] = row[key]
+        result['results'].append(selected)
+    return result
+
+
+def require_test_passed(tested, label, report):
+    test_report = tested.get('report')
+    passed = tested.get('passed') is True and isinstance(test_report, dict) and test_report.get('passed') is True
+    if not passed:
+        report['testFailure'] = public_test_failure(tested)
+    require(passed, label + '-actual-node-test-failed')
+
+
 class ShutdownOnce:
     """Fence an external shutdown before dispatch, including uncertain failure."""
     def __init__(self):
@@ -187,8 +233,7 @@ def main() -> int:
     def after_deploy(offset, label):
         offset, deployed = await_event(offset, lambda value: value.get('event') == 'deployed', label)
         offset, tested = await_event(offset, lambda value: value.get('event') == 'post-deploy-tests', label + '-test')
-        require(tested['passed'] is True and tested['report']['passed'] is True,
-                label + '-actual-node-test-failed')
+        require_test_passed(tested, label, report)
         report['stages'].append({'id': label, 'deployment': deployed['deployment'], 'tests': tested['report'],
                                  'build': deployed['build']})
         write(root / 'qualification.json', report)
@@ -362,6 +407,8 @@ def main() -> int:
             stages=[{'id': row['id'], 'passed': row['tests']['passed']} for row in report['stages']])
         if 'failure' in report:
             public['failure'] = report['failure']
+        if report.get('testFailure'):
+            public['testFailure'] = report['testFailure']
         write(root / 'public-qualification.json', public)
 
 
