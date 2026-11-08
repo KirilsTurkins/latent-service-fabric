@@ -180,6 +180,22 @@ fn same_boot_reanchor_cannot_renew_cumulative_drift_tolerance() {
         )
         .unwrap();
     assert_eq!(resumed.anchor_unix_millis, 100);
+    assert_eq!(
+        owner.anchor(
+            &store,
+            Some(resumed.generation),
+            observation(70_101, 69_999),
+            maintenance
+        ),
+        Err(AtomicError::RecoveryRequired)
+    );
+    let persisted = store
+        .snapshot()
+        .unwrap()
+        .get(&MaintenanceProgress::key())
+        .unwrap()
+        .unwrap();
+    assert_eq!(MaintenanceProgress::decode(&persisted).unwrap(), resumed);
     owner
         .step(&store, observation(70_101, 70_001), maintenance)
         .unwrap();
