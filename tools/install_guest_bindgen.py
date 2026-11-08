@@ -49,39 +49,42 @@ def binary(archive: bytes) -> bytes:
 def download_archive() -> bytes:
     deadline = time.monotonic() + 90
 
-    def open_before_deadline(request):
+    def read_before_deadline(request):
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             raise ValueError("wit-bindgen download bound exceeded")
-        return urllib.request.urlopen(request, timeout=min(30, remaining))
+        archive = bytearray()
+        with urllib.request.urlopen(request, timeout=min(30, remaining)) as response:
+            while True:
+                block = response.read(65536)
+                if time.monotonic() > deadline:
+                    raise ValueError("wit-bindgen download bound exceeded")
+                if not block:
+                    break
+                archive.extend(block)
+                if len(archive) > MAX_ARCHIVE:
+                    raise ValueError("wit-bindgen download bound exceeded")
+        return bytes(archive)
 
     try:
-        response = open_before_deadline(URL)
+        return read_before_deadline(URL)
     except urllib.error.HTTPError as error:
         if error.code != 504:
             raise
         error.close()
-        print("wit-bindgen release download returned HTTP 504; trying pinned release asset API",
-              file=sys.stderr)
-        request = urllib.request.Request(ASSET_URL, headers={
-            "Accept": "application/octet-stream",
-            "User-Agent": "latent-service-fabric-ci",
-            "X-GitHub-Api-Version": "2022-11-28",
-        })
-        response = open_before_deadline(request)
-
-    archive = bytearray()
-    with response:
-        while True:
-            block = response.read(65536)
-            if time.monotonic() > deadline:
-                raise ValueError("wit-bindgen download bound exceeded")
-            if not block:
-                break
-            archive.extend(block)
-            if len(archive) > MAX_ARCHIVE:
-                raise ValueError("wit-bindgen download bound exceeded")
-    return bytes(archive)
+        reason = "HTTP 504"
+    except TimeoutError:
+        # The response context has closed and any partially read bytes are
+        # discarded before the fixed asset is fetched under the same deadline.
+        reason = "timeout"
+    print(f"wit-bindgen release download encountered {reason}; trying pinned release asset API",
+          file=sys.stderr)
+    request = urllib.request.Request(ASSET_URL, headers={
+        "Accept": "application/octet-stream",
+        "User-Agent": "latent-service-fabric-ci",
+        "X-GitHub-Api-Version": "2022-11-28",
+    })
+    return read_before_deadline(request)
 
 
 def main() -> None:
