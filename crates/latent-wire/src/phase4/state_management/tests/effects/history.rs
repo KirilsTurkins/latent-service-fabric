@@ -193,7 +193,7 @@ async fn history_pages_preserve_actual_uncertain_and_acknowledged_attempts() {
         .clone()
         .expect("second page");
     let mut continuation = request(&effect);
-    continuation.page.as_mut().unwrap().cursor = Some(cursor);
+    continuation.page.as_mut().unwrap().cursor = Some(cursor.clone());
     let second_response = effect
         .fixture
         .backend
@@ -212,5 +212,19 @@ async fn history_pages_preserve_actual_uncertain_and_acknowledged_attempts() {
     assert!(second.page.as_ref().unwrap().next_cursor.is_none());
     drop(second_response);
     drop(first_response);
+    let (other_command, other_effect) = effect.related_recovery_command().await;
+    let mut foreign_cursor = request(&effect);
+    let target = foreign_cursor.effect.as_mut().unwrap();
+    target.command = Some(other_command);
+    target.effect_id = other_effect;
+    foreign_cursor.page.as_mut().unwrap().cursor = Some(cursor);
+    let error = effect
+        .fixture
+        .backend
+        .execute_state(reader("alice"), foreign_cursor.into())
+        .await
+        .err()
+        .unwrap();
+    assert_eq!(error.code, PlatformErrorCode::InvalidArgument);
     effect.finish().await;
 }

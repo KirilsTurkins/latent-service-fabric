@@ -56,6 +56,31 @@ pub(super) fn mutation(fixture: &Fixture, plan: c::EffectManagementPlan) -> c::M
     }
 }
 impl FixtureEffect {
+    pub async fn related_recovery_command(
+        &self,
+    ) -> (latent_rpc::transaction::v1::CommandSelector, String) {
+        let binding = &self.fixture.backend.0.bindings[0];
+        let authority = EffectAuthorityOwner::new(16, 4, 100).unwrap();
+        authority.publish(rule(binding)).unwrap();
+        let mut input = admission(binding);
+        input.key.client_key = "related-recovery-effect-command".into();
+        input.key.recovery_scope = latent_capabilities::namespace::CallerScope::derive(
+            reader("alice").principal(),
+            &latent_capabilities::namespace::RecoverySelection::OriginalCaller,
+        )
+        .unwrap()
+        .scope;
+        let command = latent_rpc::transaction::v1::CommandSelector {
+            namespace: self.fixture.target().namespace,
+            operation: input.key.operation.clone(),
+            entity: None,
+            client_key: input.key.client_key.clone(),
+            shared_recovery_scope: None,
+        };
+        let (effect, _) = publish(&self.fixture, input, authority).await;
+        (command, effect)
+    }
+
     pub async fn related_command(&self) -> (latent_rpc::transaction::v1::CommandSelector, String) {
         let binding = &self.fixture.backend.0.bindings[0];
         let authority = EffectAuthorityOwner::new(16, 4, 100).unwrap();
