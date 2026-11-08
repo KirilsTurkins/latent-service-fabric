@@ -64,7 +64,17 @@ Read `observation()["barriers"]` and release the original
 stale, mismatched, Boolean and malformed identities, inappropriate actions,
 undrained earlier SMTP replies and expired original deadlines. Calling release
 before the next selector check cannot resurrect an expired connection.
-Releasing a gate does not renew idle or absolute deadlines.
+Releasing a gate does not renew idle or absolute deadlines. `event()` checks
+expiry before accepting, receiving, parsing DATA or sending queued replies. A
+ready key from an earlier selector batch cannot refresh an expired idle deadline,
+commit a late mutation or send a reply after that check has retired its owner.
+Stale keys after teardown are ignored without reopening or recounting descriptors.
+
+The [deadline controls](../../tools/tests/test_outbound_stream_peer_deadlines.py)
+inject clock values at dispatch boundaries while retaining real TCP descriptors.
+They are not measurements of provider scheduling or hard kernel deadlines.
+A queued TCP connection at listener expiry may already have completed its
+handshake; refusing to accept it is not a claim of denial before network contact.
 
 The peer's send half-close retains its read descriptor until client EOF or
 explicit teardown. Reset uses Linux `SO_LINGER`; a failed control syscall is a
@@ -95,6 +105,16 @@ one byte over the 16 KiB window, and zero/one/two/three-byte replies followed by
 EOF. The reply cases exercise the approved TCP send half-close. They assert
 actual returned byte counts rather than inventing a completed protocol frame.
 
+The [canonical guest](../../crates/latent-wasmtime/tests/outbound_streams/component.rs)
+does not execute an unconditional `unreachable` after a wrong-kind borrow or
+consumed-handle close. An unexpected return, including a catchable error, returns
+`4005` or `4006`, which fails the required trap assertion. Setup operation errors
+return `2000 + error-code`; an unexpected write count or repeat chunk
+materialization returns `3000` or `3001`. These diagnostics prevent earlier
+catchable failures from masquerading as a resource rejection. The deliberate
+terminal-trap scenario and the suspended cancellation/revocation scenario retain
+their explicit traps. They are separate from the resource rejection checks.
+
 Each failure/EOF case drops returned payload ownership, checks the original
 node/Store/cancellation/broker/provider owners, then executes a separate fresh
 same-tenant invocation on the existing one-cell fixture. That is a reuse
@@ -108,7 +128,9 @@ fails rather than detaching a peer or treating time elapsed as cleanup.
 From a checkout, run the ordinary Python fixture controls:
 
 ```sh
-python3 -m unittest tools.tests.test_outbound_stream_fixture tools.tests.test_outbound_stream_adversarial -v
+python3 -m unittest tools.tests.test_outbound_stream_fixture \
+  tools.tests.test_outbound_stream_adversarial \
+  tools.tests.test_outbound_stream_peer_deadlines -v
 ```
 
 Use the [local runner](../development/local-tests.md) and its existing

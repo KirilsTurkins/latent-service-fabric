@@ -74,6 +74,10 @@ class GatedSmtpPeer(SmtpPeer):
         self._interest(stream, record)
 
     def event(self, key, events):
+        # A ready selector key can outlive its deadline. Check before accept,
+        # recv (which renews idle time), parsing DATA or sending queued replies.
+        # Keys retired by this check are harmless stale events in SmtpPeer.
+        self.check()
         accepting = key.fileobj is self.listener
         before = set(self.clients) if accepting else set()
         try:
