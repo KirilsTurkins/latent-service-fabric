@@ -28,6 +28,27 @@ use std::{
 };
 use tokio::{io::Interest, net::TcpSocket, sync::Notify};
 
+#[cfg(all(test, unix))]
+#[path = "tests/operation_failures.rs"]
+mod operation_failures;
+
+// A secondary failure can change the reported reason, never erase an already
+// observed effect. Prefixes describe the SAME operation and are not additive.
+fn failed_outcome(mut failure: StreamError, audit: Result<(), StreamError>) -> StreamError {
+    failure.may_have_applied |= failure.accepted_prefix_bytes != 0;
+    match audit {
+        Ok(()) => failure,
+        Err(mut audit_failure) => {
+            audit_failure.accepted_prefix_bytes = audit_failure
+                .accepted_prefix_bytes
+                .max(failure.accepted_prefix_bytes);
+            audit_failure.may_have_applied |=
+                failure.may_have_applied || audit_failure.accepted_prefix_bytes != 0;
+            audit_failure
+        }
+    }
+}
+
 // One accepted readiness/DNS/connect future stays owned by the original IoCall.
 // Only its pinned authority is inspected periodically; network work is never
 // restarted or replayed when a policy or provider publication changes.
@@ -1040,17 +1061,38 @@ impl Connection {
             .await
             .map_err(Into::into)
     }
-    async fn audit(&self, mut call: ProviderCall, success: bool) -> Result<(), StreamError> {
-        call.record_provider_outcome(if success {
-            AuditProviderOutcome::HostCompleted
-        } else {
-            AuditProviderOutcome::Unknown
-        })?;
-        if call.finish_audit().await == CapabilityAuditDurability::OutcomeUnknown {
-            return Err(error(StreamErrorCode::Uncertain)
-                .uncertain(self.observe().application_write_attempted));
+    async fn fail_operation(
+        self: &Arc<Self>,
+        call: ProviderCall,
+        failure: StreamError,
+    ) -> StreamError {
+        self.abort(failure.code);
+        let failure = self.terminal_error(failure);
+        failed_outcome(failure, self.audit(call, false).await)
+    }
+    async fn audit(
+        self: &Arc<Self>,
+        mut call: ProviderCall,
+        success: bool,
+    ) -> Result<(), StreamError> {
+        let result: Result<(), StreamError> = async {
+            call.record_provider_outcome(if success {
+                AuditProviderOutcome::HostCompleted
+            } else {
+                AuditProviderOutcome::Unknown
+            })?;
+            if call.finish_audit().await == CapabilityAuditDurability::OutcomeUnknown {
+                return Err(error(StreamErrorCode::Uncertain));
+            }
+            Ok(())
         }
-        Ok(())
+        .await;
+        result.map_err(|failure| {
+            // Audit loss is terminal even after successful local I/O. Keep the
+            // same physical owner until pending work and retirement finish.
+            self.abort(failure.code);
+            failure.uncertain(self.observe().application_write_attempted)
+        })
     }
 }
 
@@ -1090,9 +1132,7 @@ impl OutboundStream for Handle {
                 let count = match result {
                     Ok(count) => count,
                     Err(failure) => {
-                        connection.abort(failure.code);
-                        connection.audit(call, false).await?;
-                        return Err(connection.terminal_error(failure));
+                        return Err(connection.fail_operation(call, failure).await);
                     }
                 };
                 {
@@ -1183,7 +1223,14 @@ impl OutboundStream for Handle {
                                     }
                                     break Ok(count);
                                 }
-                                Err(error) => break Err(error),
+                                Err(error) => {
+                                    // The post-completion authority fence can
+                                    // replace this error. Keep its observed
+                                    // plaintext prefix outside that future.
+                                    accepted_prefix =
+                                        accepted_prefix.max(error.accepted_prefix_bytes);
+                                    break Err(error);
+                                }
                             }
                         }
                     })
@@ -1192,9 +1239,9 @@ impl OutboundStream for Handle {
                 let count = match result {
                     Ok(count) if count != 0 => count,
                     Ok(_) => {
-                        connection.abort(StreamErrorCode::IoFailed);
-                        connection.audit(call, false).await?;
-                        return Err(error(StreamErrorCode::IoFailed).uncertain(true));
+                        return Err(connection
+                            .fail_operation(call, error(StreamErrorCode::IoFailed).uncertain(true))
+                            .await);
                     }
                     Err(mut failure) => {
                         failure.accepted_prefix_bytes =
@@ -1206,9 +1253,7 @@ impl OutboundStream for Handle {
                                 .unwrap_or_else(std::sync::PoisonError::into_inner)
                                 .accepted_write += u64::from(failure.accepted_prefix_bytes);
                         }
-                        connection.abort(failure.code);
-                        connection.audit(call, false).await?;
-                        return Err(connection.terminal_error(failure));
+                        return Err(connection.fail_operation(call, failure).await);
                     }
                 };
                 {
@@ -1248,7 +1293,7 @@ impl OutboundStream for Handle {
             self.connection
                 .call
                 .prepare_io_future_with(move |pending: Pending| async move {
-                    let call = connection
+                    let mut call = connection
                         .authorize("ready", CapabilityCallCost::new(0))
                         .await?;
                     let selected = match interest {
@@ -1256,32 +1301,43 @@ impl OutboundStream for Handle {
                         StreamInterest::Writable => Interest::WRITABLE,
                         StreamInterest::Either => Interest::READABLE | Interest::WRITABLE,
                     };
-                    if matches!(interest, StreamInterest::Readable | StreamInterest::Either)
-                        && pending.socket.buffered_readable()?
-                    {
-                        connection.audit(call, true).await?;
-                        return Ok(StreamReadiness {
-                            readable: true,
-                            writable: false,
-                        });
-                    }
                     let result = connection
-                        .wait(&pending, call.deadline(), pending.socket.ready(selected))
+                        .wait(&pending, call.deadline(), async {
+                            recheck_provider(&mut call).await?;
+                            // Buffered plaintext is still a completion: it
+                            // must cross the same deadline/currentness fences
+                            // as an external socket readiness observation.
+                            let ready = if matches!(
+                                interest,
+                                StreamInterest::Readable | StreamInterest::Either
+                            ) && pending.socket.buffered_readable()?
+                            {
+                                StreamReadiness {
+                                    readable: true,
+                                    writable: false,
+                                }
+                            } else {
+                                let ready = pending
+                                    .socket
+                                    .ready(selected)
+                                    .await
+                                    .map_err(|_| error(StreamErrorCode::IoFailed))?;
+                                StreamReadiness {
+                                    readable: ready.is_readable() || ready.is_read_closed(),
+                                    writable: ready.is_writable() || ready.is_write_closed(),
+                                }
+                            };
+                            recheck_provider(&mut call).await?;
+                            Ok::<_, StreamError>(ready)
+                        })
                         .await
-                        .and_then(|value| value.map_err(|_| error(StreamErrorCode::IoFailed)));
+                        .and_then(|value| value);
                     match result {
                         Ok(ready) => {
                             connection.audit(call, true).await?;
-                            Ok(StreamReadiness {
-                                readable: ready.is_readable() || ready.is_read_closed(),
-                                writable: ready.is_writable() || ready.is_write_closed(),
-                            })
+                            Ok(ready)
                         }
-                        Err(failure) => {
-                            connection.abort(failure.code);
-                            connection.audit(call, false).await?;
-                            Err(failure.uncertain(connection.observe().application_write_attempted))
-                        }
+                        Err(failure) => Err(connection.fail_operation(call, failure).await),
                     }
                 })?;
         let pending = self.connection.pending(2, timeout)?;
@@ -1314,14 +1370,12 @@ impl OutboundStream for Handle {
                         .await
                         .and_then(|value| value.map_err(Into::into));
                     if let Err(failure) = current {
-                        connection.abort(failure.code);
-                        connection.audit(call, false).await?;
-                        return Err(connection.terminal_error(failure));
+                        return Err(connection.fail_operation(call, failure).await);
                     }
                     if how == StreamShutdown::Both {
                         connection.stop(None);
                     } else {
-                        connection
+                        let result = connection
                             .wait(&pending, call.deadline(), async {
                                 loop {
                                     recheck_provider(&mut call).await?;
@@ -1335,7 +1389,11 @@ impl OutboundStream for Handle {
                                         .map_err(|_| error(StreamErrorCode::IoFailed))?;
                                 }
                             })
-                            .await??;
+                            .await
+                            .and_then(|value| value);
+                        if let Err(failure) = result {
+                            return Err(connection.fail_operation(call, failure).await);
+                        }
                         connection
                             .state
                             .lock()
@@ -1376,8 +1434,9 @@ impl OutboundStream for Handle {
                             .await
                             .is_err()
                         {
-                            return Err(error(StreamErrorCode::Uncertain)
-                                .uncertain(connection.observe().application_write_attempted));
+                            return Err(connection
+                                .fail_operation(call, error(StreamErrorCode::Uncertain))
+                                .await);
                         }
                     }
                     let quarantined = connection
