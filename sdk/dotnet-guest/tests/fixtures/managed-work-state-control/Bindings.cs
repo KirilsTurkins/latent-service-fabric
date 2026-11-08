@@ -48,6 +48,13 @@ public static partial class ManagedWorkRuntime
         return null;
     }
 
+    internal static (ulong Generation, ulong Id)? QueuedOwnerForControl(object item)
+    {
+        foreach (var pending in queued!)
+            if (pending is not null && ReferenceEquals(pending.Item, item)) return pending.Owner.Token;
+        return null;
+    }
+
     internal static (ulong Generation, ulong Id)? PendingResultForControl(object item) =>
         Find(item)?.PendingResult;
     internal static ((ulong Generation, ulong Id)? Root, bool RootActive,

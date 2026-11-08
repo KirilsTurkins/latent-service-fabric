@@ -238,10 +238,27 @@ NATIVE_STARTUP_REWRITE_RECEIPT = {**REQUIRED_RESULT_REWRITE_RECEIPT,
     'startupReadiness': 'pre-probe-sentinel-and-untracked-dispatch-poison'}
 
 
+# An independently scheduled inner Task owns its own admission and identity.
+TASK_IDENTITY_REWRITE_RECEIPT = {**NATIVE_STARTUP_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v11',
+    'taskLookup': 'inactive-alias-fence-then-task-primary-otherwise-original-order',
+    'innerTaskAdmission': 'independent-schedule-admits-inner-only-alias'}
+
+
+# Distinct additional proxies over one outer remain required work.
+MULTIPLE_UNWRAP_REWRITE_RECEIPT = {**TASK_IDENTITY_REWRITE_RECEIPT,
+    'patch': 'latent.dotnet.managed-accepted-work.v12',
+    'unwrapMultiplicity': 'same-outer-additional-proxies-retained-as-required'}
+
+
 def validate_rewrite(value: dict) -> None:
     if type(value) is not dict:
         raise ValueError('dotnet-managed-work-rewrite-receipt')
-    expected_receipt = (NATIVE_STARTUP_REWRITE_RECEIPT
+    expected_receipt = (MULTIPLE_UNWRAP_REWRITE_RECEIPT
+        if value.get('patch') == MULTIPLE_UNWRAP_REWRITE_RECEIPT['patch']
+        else TASK_IDENTITY_REWRITE_RECEIPT
+        if value.get('patch') == TASK_IDENTITY_REWRITE_RECEIPT['patch']
+        else NATIVE_STARTUP_REWRITE_RECEIPT
         if value.get('patch') == NATIVE_STARTUP_REWRITE_RECEIPT['patch']
         else REQUIRED_RESULT_REWRITE_RECEIPT
         if value.get('patch') == REQUIRED_RESULT_REWRITE_RECEIPT['patch']

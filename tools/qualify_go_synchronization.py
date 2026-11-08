@@ -22,6 +22,7 @@ CASE = 'runtime::go::synchronization::signed_condition_once_rwmutex_and_channel_
 ADMISSION_CASE = 'runtime::go::admission::signed_cross_tenant_cell_saturation_keeps_original_owners_until_cancel_and_trap_retire'
 MANAGED_TIMER_CASE = 'runtime::go::managed_timers::signed_managed_v5_timers_gc_callbacks_and_stop_reset_preserve_original_owners'
 TASK_SATURATION_CASE = 'runtime::go::task_saturation::signed_task16_saturation_reports_original_refusal_and_fresh_retirement'
+TIMER_OVERLAP_CASE = 'runtime::go::timer_overlap::signed_overlapping_public_timer_operations_retire_the_original_wait'
 TIMER_MODES = [0, 1, 2, 3, 4, 5, 6, 18, 19, 20, 9, 11, 12, 13, 14, 15, 16, 17]
 TIMER_NATIVE_MODES = [mode for mode in TIMER_MODES if mode != 4]
 MANAGED_TIMER_ROWS = [('ordinary', iteration, mode, 'success') for iteration in range(2) for mode in TIMER_MODES]
@@ -186,6 +187,52 @@ def task_saturation_observations(raw: bytes, filtered: int) -> dict:
     return {'cases': rows, 'refusal': refusal[0]}
 
 
+def timer_overlap_observations(raw: bytes, diagnostic: bytes, filtered: int) -> dict:
+    """Require every real case, original-owner retirement, and each witness."""
+    if len(raw) > 2 * 1024 * 1024 or len(diagnostic) > 2 * 1024 * 1024:
+        raise ValueError('Go-timer-overlap-output-bound')
+    names = re.findall(rb'^test ([A-Za-z0-9_:]+) \.\.\. ok$', raw, re.M)
+    totals = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
+    if names != [TIMER_OVERLAP_CASE.encode()] or totals != [(b'1', b'0', b'0', b'0', str(filtered).encode())]:
+        raise ValueError('Go-timer-overlap-exact-signed-case-required')
+    def unique(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError('Go-timer-overlap-duplicate-field')
+            value[key] = item
+        return value
+    rows = [json.loads(value, object_pairs_hook=unique) for value in
+            re.findall(rb'^GO_TIMER_OVERLAP_CASE (.+)$', raw, re.M)]
+    expected = [dict(case=case, mode=mode, outcome='success', storesCreated=count,
+                     liveStores=0, liveInstances=0, reservations=0,
+                     reservedFuel=0, reservedMemory=0, pendingProviderWaits=0)
+                for case, mode, count in [('reset-reset', 0, 1), ('reset-stop', 1, 2),
+                                          ('gc-reset-reset', 2, 3), ('gc-reset-stop', 3, 4),
+                                          ('fresh', 0, 5)]]
+    if json.dumps(rows, sort_keys=True, separators=(',', ':')) != json.dumps(expected, sort_keys=True, separators=(',', ':')):
+        raise ValueError('Go-timer-overlap-signed-retirement-required')
+    prefix = b'LSF-GO-TIMER-OVERLAP-V3|'
+    records = re.findall(rb'^LSF-GO-TIMER-OVERLAP-V3\|([^\r\n]+)$', diagnostic, re.M)
+    if diagnostic.count(prefix) != 4 or len(records) != 4:
+        raise ValueError('Go-timer-overlap-exact-witnesses-required')
+    observed = []
+    for case, record in zip(('go-timer-overlap-reset-reset', 'go-timer-overlap-reset-stop',
+                             'go-timer-overlap-gc-reset-reset', 'go-timer-overlap-gc-reset-stop'), records):
+        fields = record.split(b'|')
+        gc_case = '-gc-' in case
+        if len(fields) != 14 or fields[:13] != [case.encode(), b'1', b'0', b'0', b'4', b'1', b'1', b'1', b'1',
+                                               b'1' if gc_case else b'0', b'1' if gc_case else b'0', b'1', b'1']:
+            raise ValueError('Go-timer-overlap-causal-witness-required')
+        if not re.fullmatch(rb'[1-9][0-9]{0,3}', fields[13]):
+            raise ValueError('Go-timer-overlap-witness-budget')
+        observed.append({'activation': case, 'postGcMarkerStopped': gc_case, 'handshakeParkObserved': gc_case,
+                         'modeledWitnessBytes': int(fields[13])})
+    if len({item['modeledWitnessBytes'] for item in observed}) != 1:
+        raise ValueError('Go-timer-overlap-inconsistent-layout')
+    return {'cases': rows, 'witnesses': observed}
+
+
 def campaign(campaign: str, fixture: Path, negative: Path | None) -> dict:
     if campaign == 'synchronization' and negative is not None:
         return {'case': CASE, 'fixture': 'synchronization', 'variable': 'LSF_GO_SYNCHRONIZATION_FIXTURE',
@@ -199,6 +246,9 @@ def campaign(campaign: str, fixture: Path, negative: Path | None) -> dict:
                 'inputs': [(fixture, 'go-component-activation-v5')]}
     if campaign == 'task-saturation' and negative is None:
         return {'case': TASK_SATURATION_CASE, 'fixture': 'task-saturation', 'variable': 'LSF_GO_TASK_SATURATION_FIXTURE',
+                'inputs': [(fixture, 'go-component-activation-v5')]}
+    if campaign == 'timer-overlap' and negative is None:
+        return {'case': TIMER_OVERLAP_CASE, 'fixture': 'timer-overlap', 'variable': 'LSF_GO_TIMER_OVERLAP_FIXTURE',
                 'inputs': [(fixture, 'go-component-activation-v5')]}
     raise ValueError('Go-runtime-unreviewed-campaign-or-negative')
 
@@ -214,15 +264,18 @@ def source_snapshot(root: Path) -> dict:
               'crates/latent-wasmtime/tests/local_service/runtime/go/queued.rs',
               'crates/latent-wasmtime/tests/local_service/runtime/go/managed_timers.rs',
               'crates/latent-wasmtime/tests/local_service/runtime/go/task_saturation.rs',
+              'crates/latent-wasmtime/tests/local_service/runtime/go/timer_overlap.rs',
               'crates/latent-wasmtime/tests/local_service/fixture.rs',
               'crates/latent-wasmtime/tests/guest_sdk/runtime.rs',
               'crates/latent-wasmtime/tests/local_service/packages.rs',
               'crates/latent-wasmtime/tests/local_service/component.rs',
               'crates/latent-core/src/activation_runtime.rs',
               'crates/latent-capabilities/src/broker.rs', 'crates/latent-capabilities/src/broker/session.rs',
-              'crates/latent-wasmtime/src/host/runtime.rs', 'wit/platform/activation-runtime/package.wit',
+              'crates/latent-wasmtime/src/host/runtime.rs', 'crates/latent-wasmtime/src/lib.rs',
+              'crates/latent-wasmtime/src/development_go_timer_overlap.rs', 'wit/platform/activation-runtime/package.wit',
+              '.github/workflows/go-guest.yml',
               '.github/workflows/go-synchronization-reference.yml', 'tools/ci/suites.json',
-              'tools/tests/test_go_task_saturation.py', 'tools/stage_runtime_wit.py',
+              'tools/tests/test_go_task_saturation.py', 'tools/tests/test_go_timer_overlap.py', 'tools/stage_runtime_wit.py',
               'tools/qualify_go_activation.py', 'tools/qualify_go_synchronization.py')}
     if len(files) > 1024:
         raise ValueError('Go-synchronization-source-count')
@@ -239,20 +292,21 @@ def compile_identity(path: Path, root: Path, profile: str, fixture: str = 'synch
     if len(raw) > 512 * 1024:
         raise ValueError('Go-synchronization-compiler-receipt-bound')
     record = json.loads(raw)
-    if (fixture not in {'synchronization', 'managed-idle', 'timers', 'task-saturation'}
-            or (fixture in {'managed-idle', 'timers', 'task-saturation'} and profile != 'go-component-activation-v5')):
+    if (fixture not in {'synchronization', 'managed-idle', 'timers', 'task-saturation', 'timer-overlap'}
+            or (fixture in {'managed-idle', 'timers', 'task-saturation', 'timer-overlap'} and profile != 'go-component-activation-v5')):
         raise ValueError('Go-runtime-unreviewed-source-profile')
     folder = {'synchronization': 'synchronization-conformance', 'managed-idle': 'managed-idle-conformance',
-              'timers': 'timers-conformance', 'task-saturation': 'task-saturation-conformance'}[fixture]
+              'timers': 'timers-conformance', 'task-saturation': 'task-saturation-conformance',
+              'timer-overlap': 'timer-overlap-conformance'}[fixture]
     source = (root / 'sdk/go-guest/runtime' / folder / 'main.go').read_bytes()
     if (record['profile'] != profile or record['fixture'] != fixture
             or record['sourceDigest'] != 'sha256:' + digest(source) or record['sourceUnchanged'] is not True
             or record['ordinarySource'] is not True or record['signedExecution'] != 'not-run'
             or (path / 'src/main.go').read_bytes() != source):
         raise ValueError('Go-synchronization-compiler-source-or-profile')
-    if (fixture == 'task-saturation' and (path / 'wit/world.wit').read_bytes()
-            != (root / 'sdk/go-guest/runtime/task-saturation-conformance/world.wit').read_bytes()):
-        raise ValueError('Go-task-saturation-compiler-world')
+    if (fixture in {'task-saturation', 'timer-overlap'} and (path / 'wit/world.wit').read_bytes()
+            != (root / 'sdk/go-guest/runtime' / folder / 'world.wit').read_bytes()):
+        raise ValueError('Go-' + fixture + '-compiler-world')
     component = path / 'build/component.wasm'
     if component.is_symlink() or component.stat().st_size > 16 * 1024 * 1024:
         raise ValueError('Go-synchronization-component-bound')
@@ -261,8 +315,11 @@ def compile_identity(path: Path, root: Path, profile: str, fixture: str = 'synch
     if profile == 'go-component-activation-v5':
         native = record['nativeReference']
         expected_modes = {'synchronization': NATIVE_MODES, 'managed-idle': [0, 1, 2], 'timers': TIMER_NATIVE_MODES,
-                          'task-saturation': [0]}[fixture]
-        if (native['modes'] != expected_modes or native['output'] != 42
+                          'task-saturation': [0], 'timer-overlap': [0, 1, 2, 3]}[fixture]
+        native_outputs = (native.get('outputs') in ([42, 42, 42, 42], [42, 43, 42, 42],
+                                                    [42, 42, 42, 43], [42, 43, 42, 43])
+                          if fixture == 'timer-overlap' else native.get('output') == 42)
+        if (native['modes'] != expected_modes or not native_outputs
                 or native['freshProcessPerMode'] is not True or native['sourceDigest'] != record['sourceDigest']):
             raise ValueError('Go-synchronization-native-reference')
     return {'receiptSha256': digest(raw), 'profile': profile, 'sourceDigest': record['sourceDigest'],
@@ -294,11 +351,12 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
     if plan['case'] not in suite['expectedIgnored'] or suite['timeoutSeconds'] != 900:
         raise ValueError('Go-synchronization-suite-contract')
     output = fresh(output)
+    features = ['--features', 'development-go-timer-overlap'] if programme == 'timer-overlap' else []
     command = ['cargo', '--config', '.cargo/managed-guest.toml', 'test', '--locked', '-p', 'latent-wasmtime',
-               '--test', 'local_service', plan['case'], '--', '--ignored', '--exact', '--show-output']
+               '--test', 'local_service', *features, plan['case'], '--', '--ignored', '--exact', '--show-output']
     deadline = time.monotonic() + 1800
     list_base = ['cargo', '--config', '.cargo/managed-guest.toml', 'test', '--locked',
-                 '-p', 'latent-wasmtime', '--test', 'local_service', '--']
+                 '-p', 'latent-wasmtime', '--test', 'local_service', *features, '--']
     discovered = []
     for label, arguments in (("all", ["--list"]), ("ignored", ["--ignored", "--list"])):
         remaining = deadline - time.monotonic()
@@ -332,9 +390,10 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
         raise ValueError('Go-synchronization-signed-command-failed')
     parser = {'synchronization': observations, 'admission': admission_observations,
               'queued': queued_observations, 'managed-timers': managed_timer_observations,
-              'task-saturation': task_saturation_observations}[programme]
-    observed = parser(result.output, len(available) - 1)
-    rows = observed['cases'] if programme == 'task-saturation' else observed
+              'task-saturation': task_saturation_observations, 'timer-overlap': None}[programme]
+    observed = (timer_overlap_observations(result.output, result.stderr, len(available) - 1)
+                if programme == 'timer-overlap' else parser(result.output, len(available) - 1))
+    rows = observed['cases'] if programme in {'task-saturation', 'timer-overlap'} else observed
     after = source_snapshot(root)
     after_material = {profile: compile_identity(path, root, profile, plan['fixture']) for path, profile in plan['inputs']}
     clean_source()
@@ -344,11 +403,12 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
                                  'admission': 'lsf.go-admission-reference.v1',
                                  'queued': 'lsf.go-queued-reference.v1',
                                  'managed-timers': 'lsf.go-managed-timers-reference.v1',
-                                 'task-saturation': 'lsf.go-task-saturation-reference.v1'}[programme], 'sourceRevision': revision,
+                                 'task-saturation': 'lsf.go-task-saturation-reference.v1',
+                                 'timer-overlap': 'lsf.go-timer-overlap-reference.v3'}[programme], 'sourceRevision': revision,
                'sourceBefore': before, 'sourceAfter': after, 'compilerInputsBefore': material,
                'compilerInputsAfter': after_material, 'case': plan['case'], 'signedCases': rows,
                'signedInvocations': {'synchronization': len(rows), 'admission': 8, 'queued': 20,
-                                     'managed-timers': len(rows), 'task-saturation': 3}[programme], 'guestTaskCeiling': 16,
+                                     'managed-timers': len(rows), 'task-saturation': 3, 'timer-overlap': 5}[programme], 'guestTaskCeiling': 16,
                'managedCapacity': 8, 'waitCeiling': 4, 'newRuntimeProfile': False,
                'kernelTlsOrCrossTenantQualified': False, 'fullGoRuntimeQualified': False}
     if programme == 'synchronization':
@@ -371,9 +431,13 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
         receipt.update({'timerCeiling': 2, 'signedObservationCount': 43,
                         'nativeReferenceModes': TIMER_NATIVE_MODES,
                         'relabelsLegacyV3Evidence': False, 'fullTimerRaceMatrixQualified': False})
-    else:
+    elif programme == 'task-saturation':
         receipt.update({'originalTaskLimitObservation': observed['refusal'], 'liveApplicationWorkersBeforeRefusal': 7,
                         'terminalCauseEstablishedByObservation': False,
+                        'fullAggregateGoCostsQualified': False, 'kernelRetirementQualified': False})
+    else:
+        receipt.update({'originalTimerOverlapWitnesses': observed['witnesses'], 'timerCeiling': 2,
+                        'developmentWitnessOnly': True, 'fullTimerRaceMatrixQualified': False,
                         'fullAggregateGoCostsQualified': False, 'kernelRetirementQualified': False})
     raw = (json.dumps(receipt, indent=2) + '\n').encode()
     if len(raw) > 262144:
@@ -386,7 +450,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--fixture', type=Path, required=True)
     parser.add_argument('--no-checkpoints', type=Path)
-    parser.add_argument('--campaign', choices=('synchronization', 'admission', 'queued', 'managed-timers', 'task-saturation'), default='synchronization')
+    parser.add_argument('--campaign', choices=('synchronization', 'admission', 'queued', 'managed-timers', 'task-saturation', 'timer-overlap'), default='synchronization')
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--source-commit', default=os.environ.get('GITHUB_SHA'))
     args = parser.parse_args()

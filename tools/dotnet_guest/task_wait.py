@@ -82,7 +82,8 @@ def validate_receipt(value: dict, *, finite: bool = False, managed: bool = False
             'latent.dotnet.managed-accepted-work.v3', 'latent.dotnet.managed-accepted-work.v4',
             'latent.dotnet.managed-accepted-work.v5', 'latent.dotnet.managed-accepted-work.v6',
             'latent.dotnet.managed-accepted-work.v7', 'latent.dotnet.managed-accepted-work.v8',
-            'latent.dotnet.managed-accepted-work.v9', 'latent.dotnet.managed-accepted-work.v10')
+            'latent.dotnet.managed-accepted-work.v9', 'latent.dotnet.managed-accepted-work.v10',
+            'latent.dotnet.managed-accepted-work.v11', 'latent.dotnet.managed-accepted-work.v12')
         timers = prefetched or value['managedAcceptedWork']['patch'] == 'latent.dotnet.managed-accepted-work.v2'
         fixed.update(generatedHelperCount=(91 if timers else 77) + int(prefetched), unchangedOriginalMethods=44719 if timers else 44723,
             managedAcceptedWork=value['managedAcceptedWork'])
@@ -92,9 +93,13 @@ def validate_receipt(value: dict, *, finite: bool = False, managed: bool = False
             TIMER_REWRITE_RECEIPT, PREFETCH_REWRITE_RECEIPT, QUEUE_FENCE_REWRITE_RECEIPT,
             QUEUE_WITNESS_REWRITE_RECEIPT, PROVISIONAL_RESERVATION_REWRITE_RECEIPT,
             RESULT_TRANSITION_REWRITE_RECEIPT, TIMER_RESERVATION_REWRITE_RECEIPT, REQUIRED_RESULT_REWRITE_RECEIPT,
-            NATIVE_STARTUP_REWRITE_RECEIPT)
+            NATIVE_STARTUP_REWRITE_RECEIPT, TASK_IDENTITY_REWRITE_RECEIPT, MULTIPLE_UNWRAP_REWRITE_RECEIPT)
         aggregate_task_wait.validate(value.get('aggregateTaskWait'))
-        expected_managed = (NATIVE_STARTUP_REWRITE_RECEIPT
+        expected_managed = (MULTIPLE_UNWRAP_REWRITE_RECEIPT
+            if value['managedAcceptedWork']['patch'] == MULTIPLE_UNWRAP_REWRITE_RECEIPT['patch']
+            else TASK_IDENTITY_REWRITE_RECEIPT
+            if value['managedAcceptedWork']['patch'] == TASK_IDENTITY_REWRITE_RECEIPT['patch']
+            else NATIVE_STARTUP_REWRITE_RECEIPT
             if value['managedAcceptedWork']['patch'] == NATIVE_STARTUP_REWRITE_RECEIPT['patch']
             else REQUIRED_RESULT_REWRITE_RECEIPT
             if value['managedAcceptedWork']['patch'] == REQUIRED_RESULT_REWRITE_RECEIPT['patch']
@@ -139,7 +144,7 @@ def validate_receipt(value: dict, *, finite: bool = False, managed: bool = False
 def validate_current_receipt(value: dict, *, finite: bool = False,
                              managed: bool = False, aggregate: bool = False) -> None:
     validate_receipt(value, finite=finite, managed=managed, aggregate=aggregate)
-    if managed and value['managedAcceptedWork']['patch'] != 'latent.dotnet.managed-accepted-work.v10':
+    if managed and value['managedAcceptedWork']['patch'] != 'latent.dotnet.managed-accepted-work.v12':
         raise ValueError('task-wait-current-managed-readiness-required')
     if aggregate and value['aggregateTaskWait']['patch'] != 'latent.dotnet.wait-all.v3':
         raise ValueError('task-wait-current-prefetched-poll-required')

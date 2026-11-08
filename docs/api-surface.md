@@ -59,7 +59,7 @@ one bounded authenticated loopback listener on Linux.
 | Service | Implemented standalone surface |
 | --- | --- |
 | `InvocationService` | Invoke, Cancel and GetActivation through the local activation owner. |
-| `ReleaseService` | Publish/Get/List, lifecycle status, retained operation lookup, revoke/retire and detached evidence renewal. Package publication uses independent current node admission. |
+| `ReleaseService` | Publish/Get/List, lifecycle status, retained operation lookup, revoke/retire and detached evidence renewal. Development adds retention snapshots, pin/unpin, explicit deletion/assessment/reclamation and original maintenance-operation lookup. Package publication uses independent current node admission; destructive maintenance requires durable audit. |
 | `DeploymentService` | Apply/Get/List/Delete, optional managed operation IDs and exact object/state preconditions, coherent operation snapshots and GetDeploymentOperation. |
 | `RolloutService` | Optional audited Start/Change/Evaluate/Get/List/GetOperation; Change includes manual stages, pause/resume/abort, sealed canary promotion and explicit rollback. |
 | `AuditService` | Optional `QueryPhase2Audit` with typed scope, filters, records, cursors and loss coverage. |
@@ -94,6 +94,7 @@ audit need the trusted node-operator claim; it grants no cross-tenant access.
 | `latent-artifacts` | `ArtifactRepository`, `DirectoryArtifactRepository`, sealed preparation/verified metadata, `ReleaseUseEligibility`, `LifecycleAuthorityHandle`, historical execution snapshots and retained package sources. Managed publication, lifecycle and evidence methods retain bounded outcomes; historical metadata grants no execution. |
 | `latent-artifacts::package` | Exact package, evidence, publisher-signature and builder-provenance formats and bounded associations. |
 | `latent-artifacts` raw cache | `RawArtifactCache`, typed keys, affine write/read/reclaim owners, pins, `RawArtifactBytes`, limits and actual snapshots. Cached bytes are replaceable and authority-free. |
+| `latent-local-blobs` | Original Linux local custody, state-bound provisional pins, `CapturedLocalPayload` and coherent required-file inventory. Re-exported by `latent-blobs`; standalone required-payload startup inventory remains uninstalled. |
 | `latent-packaging` | `build_package`, `inspect_bundle`, bounded directory/evidence I/O, SBOM generation/inspection, `compare_packages`, `PackageComparisonLimits`, sealed checked surfaces and exact-pair breaking allowances. Builds supplied bytes without executing guest/build scripts. |
 | `latent-oci` | `HttpOciRegistry`, scoped registry configuration/credentials, `OciPulledPackage` leases and optional shared raw-cache integration. Transfer success is not admission. |
 | `latent-policy::supply_chain` | `SupplyChainAuthority`, explicit policy/clock configuration, durable floors and current admission grants; `verify_package_once` returns a diagnostic report without durable floors or execution authority. |

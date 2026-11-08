@@ -249,7 +249,7 @@ impl Fixture {
             .await;
         assert!(retired.clean && retired.snapshot.physically_retired());
         assert_eq!(retired.snapshot.accepted, 0);
-        assert!(self.store.reap_retired_threads().unwrap() > 0);
+        crate::standalone::state::recovery::join_test_workers(&self.store, self.cutoff()).await;
         let policy = self.policy.clone();
         let native = self.native.clone();
         drop(self);

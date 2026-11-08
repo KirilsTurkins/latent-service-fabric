@@ -94,6 +94,17 @@ class Prepared:
         require(isinstance(value.get('tools'), dict)
                 and value['tools'].get('rustc') == file_identity(self.rustc, 'rustc'),
                 'rust-standard-runtime-compiler-drift')
+        if has_threads(profile):
+            # The source build recorded the entire compiler distribution, not
+            # just the version-printing rustc binary. Its target libraries,
+            # companion tools and installation metadata must be the same.
+            # This remains a local build assertion, not publisher authority.
+            from tools.captured_compiler_isolation import distribution
+            expected = value.get('compilerDistributionDigest')
+            require(isinstance(expected, str) and re.fullmatch(r'sha256:[0-9a-f]{64}', expected),
+                    'rust-standard-thread-compiler-distribution-drift')
+            require(digest(encode(distribution(self.rustc.parent.parent))) == expected,
+                    'rust-standard-thread-compiler-distribution-drift')
         require(all(isinstance(value.get(name), str) and re.fullmatch(r'sha256:[0-9a-f]{64}', value[name])
                 for name in ('originalInputsDigest', 'selectedInputsDigest')),
                 'rust-standard-runtime-source-identity')

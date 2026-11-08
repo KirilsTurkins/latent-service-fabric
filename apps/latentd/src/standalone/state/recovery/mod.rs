@@ -30,3 +30,23 @@ fn capacity() -> latent_core::PlatformError {
         "native-recovery-capacity",
     )
 }
+
+#[cfg(test)]
+async fn join_test_workers(
+    store: &latent_state::protected_store::ProtectedStoreOwner,
+    cutoff: std::time::Instant,
+) {
+    let mut joined = 0;
+    loop {
+        joined += store.reap_retired_threads().unwrap();
+        if store.pending_thread_joins().unwrap() == 0 {
+            break;
+        }
+        assert!(
+            std::time::Instant::now() < cutoff,
+            "native thread join cutoff"
+        );
+        tokio::time::sleep(std::time::Duration::from_millis(1)).await;
+    }
+    assert!(joined > 0);
+}

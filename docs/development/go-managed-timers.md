@@ -68,6 +68,31 @@ is claimed for the later test/documentation composition. Even a pass does not co
 races, aggregate cost/fairness, node stop or low-level kernel/TLS qualification.
 Both issues remain open and historical v3 evidence is not relabeled as v5.
 
+## Garbage collection during an outstanding timer wait
+
+The separate timer-overlap owner retains the original Reset/Reset and
+Reset/Stop cells and adds one forced-collection version of each. In those cells,
+the second worker first stops its marker timer; the host witness accepts that
+marker only after the first worker has parked while the original provider wait
+is pending. The worker calls `runtime.GC`, checks that `NumGC` changed, then
+starts and stops a ticker with a distinctive period. After that Stop returns,
+the worker signals the root and parks on a release channel. The root creates a
+second distinctive ticker before it releases the worker. The host tracks park
+and wake transitions and accepts the root marker only while the second worker
+is already parked. It ignores earlier parks, including a possible GC-marker
+fence, and accepts a later park only after that observed handshake. The host
+retains the original provider wait until then and requires physical wait
+retirement. A passing signed cell establishes a collection between those
+observed events.
+The native reference cells only compare ordinary Go return behavior; the
+host witness establishes the guest ordering. A fresh activation follows the
+four selected cells. Task16, Wait4, Timer2 and the activation budgets stay
+unchanged. The existing 43-case timer campaign remains a separate owner.
+
+This source specifies the new qualification; it is not a signed result by
+itself. It does not prove every possible GC/timer interleaving, actual process
+RSS, trap quarantine, or the entire #742 timer and physical-cost requirements.
+
 Timer installation allocates replacement inventory separately from its
 non-suspending publication step, which rechecks the current slots after any GC
 pause. A host-only control forces allocation to pause while other admitted
@@ -82,4 +107,21 @@ therefore cannot create an untracked host subtask. All fence callers observe
 one durable completion channel, which is closed only after an actual pending
 subtask is dropped or the unstarted wait is abandoned. Host-only controls
 exercise the allocation and completion interleavings using simulated host
-readiness; signed guest execution of this revised path remains unqualified.
+readiness; they do not themselves establish signed guest execution.
+
+Public Stop/Reset now serialize while the original provider wait retires. The
+[normal Go workflow](../../.github/workflows/go-guest.yml) has a separate
+instrumented overlap owner: it requires the original provider to have polled
+pending, two distinct parked worker tasks, complete generation-tagged witnesses,
+physical next-wait destruction and a fresh activation. It retains Task16, Wait4,
+Timer2 and the original activation limits; the historical 43-case campaign is
+still a separate required result.
+
+The [original overlap review](https://github.com/KirilsTurkins/latent-service-fabric/pull/1791)
+records a local signed Linux run at former head `c702a17297befd8abe1ae79555253b7ef627b368`:
+Reset/Reset, Reset/Stop and a fresh activation completed with Store/instance,
+provider-wait and quota retirement. It also retains the failing old-emitter
+negative. That result predates the PR's CI fixes and merge; it is not an
+exact-head qualification of current Development, a full race matrix or an RSS
+bound. Instrumented observer backing and the actual future storage remain
+separately charged to the original activation.

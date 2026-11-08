@@ -14,6 +14,8 @@ development-clock-fixture = []
 # Explicit disposable local-service observation; absent from ordinary builds.
 development-local-service-fixture = []
 development-test-host = ["latent-artifacts/development-test-host", "latent-policy/development-test-host", "development-clock-fixture"]
+# Bounded activation-owned witness for the explicit signed Go overlap fixture.
+development-go-timer-overlap = ["dep:tokio"]
 
 # Retains the standalone compiler diagnostic; node installation is separately explicit.
 java-guest-diagnostic = []
@@ -46,6 +48,7 @@ path = "tests/aot_sandbox.rs"
 harness = false
 
 [dependencies]
+tokio = { workspace = true, optional = true }
 latent-packaging = { path = "../latent-packaging" }
 blake3.workspace = true
 latent-activation = { path = "../latent-activation" }

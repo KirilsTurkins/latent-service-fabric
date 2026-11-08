@@ -45,6 +45,7 @@ on:
       - tools/tests/test_go_synchronization.py
       - tools/tests/test_go_admission.py
       - tools/tests/test_go_managed_timers.py
+      - tools/tests/test_go_timer_overlap.py
       - tools/tests/go_timer_reset_host_controls.py
       - tools/tests/fixtures/go_runtime_time_go1_27_3.go.txt
       - tools/tests/fixtures/go_runtime_stack_go1_27_3.LICENSE.txt
@@ -190,6 +191,7 @@ on:
       - tools/tests/test_go_synchronization.py
       - tools/tests/test_go_admission.py
       - tools/tests/test_go_managed_timers.py
+      - tools/tests/test_go_timer_overlap.py
       - tools/tests/go_timer_reset_host_controls.py
       - tools/tests/fixtures/go_runtime_time_go1_27_3.go.txt
       - tools/tests/fixtures/go_runtime_stack_go1_27_3.LICENSE.txt
@@ -470,6 +472,12 @@ jobs:
           python3 -m unittest tools.tests.test_go_managed_timers
           python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-managed-timers" --runtime-profile go-component-activation-v5 --fixture timers
           python3 tools/qualify_go_synchronization.py --campaign managed-timers --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-managed-timers" --output "$RUNNER_TEMP/go-managed-timers-result"
+      - name: Qualify signed public timer overlap with the original wait owner
+        run: |
+          python3 -m unittest tools.tests.test_go_timer_overlap
+          cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --features development-go-timer-overlap --lib development_go_timer_overlap::tests -- --nocapture
+          python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-timer-overlap" --runtime-profile go-component-activation-v5 --fixture timer-overlap
+          python3 tools/qualify_go_synchronization.py --campaign timer-overlap --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-timer-overlap" --output "$RUNNER_TEMP/go-timer-overlap-result"
       - name: Check Go timer runtime interleavings with a mock host
         run: |
           command -v node >/dev/null
@@ -721,6 +729,17 @@ jobs:
             ${{ runner.temp }}/go-managed-timers-result/receipt.json
             ${{ runner.temp }}/go-managed-timers-result/signed.stdout.log
             ${{ runner.temp }}/go-managed-timers-result/signed.stderr.log
+            ${{ runner.temp }}/go-timer-overlap/GO-ACTIVATION-*.json
+            ${{ runner.temp }}/go-timer-overlap/src/
+            ${{ runner.temp }}/go-timer-overlap/wit/
+            ${{ runner.temp }}/go-timer-overlap/logs/
+            ${{ runner.temp }}/go-timer-overlap/native-reference/
+            ${{ runner.temp }}/go-timer-overlap/build/component.wasm
+            ${{ runner.temp }}/go-timer-overlap/build/component.wit
+            ${{ runner.temp }}/go-timer-overlap/build/runtime-overlay/
+            ${{ runner.temp }}/go-timer-overlap-result/receipt.json
+            ${{ runner.temp }}/go-timer-overlap-result/signed.stdout.log
+            ${{ runner.temp }}/go-timer-overlap-result/signed.stderr.log
             ${{ runner.temp }}/go-timer-runtime-control/receipt.json
             ${{ runner.temp }}/go-timer-runtime-control/*.log
             ${{ runner.temp }}/go-timer-runtime-control/timer-control.wasm

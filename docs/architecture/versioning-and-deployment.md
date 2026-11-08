@@ -162,6 +162,22 @@ restart creates no successful window from old summaries and does not promote
 automatically. A retained replay returns its original outcome before fresh
 evidence or current generation checks.
 
+## Retire visibility and reclaim publication bytes
+
+Retiring or revoking a publication denies future eligible use; it does not remove
+retained deployment, trigger, rollout, reader or rollback-pin references. Use
+[publication retention](../operations/publication-retention.md) to inspect that
+ownership and [explicit deletion](../operations/publication-deletion.md) for the
+current Development maintenance path.
+
+Visibility removal and physical namespace/blob reclamation are separate audited
+operations. Reclamation retains the original deletion operation, actor, targets
+and catalog fence plus a fresh assessment fence. Required audit capacity applies
+to exact receipt replay too. Uncertain responses require original-operation
+lookup, not a replacement deletion; a logical refund does not measure physical
+disk blocks. Independent evidence, revocation history and business state retain
+their own lifetimes.
+
 ## Coexistence
 
 Multiple implementation and contract versions may coexist. A provider is selected only when the consumer's contract requirement and binding policy are satisfied.
@@ -202,6 +218,14 @@ keeps conservative time anchors and physically usable finite recovery capacity
 under declared saturation. [Fixed migration](fixed-aggregate-offline-migration.md)
 has an explicit stage, completion and separately authorized resume; generic
 namespace resume cannot replace its original checkpoint and review.
+
+A compatible engine dependency upgrade can still change the installed provider
+configuration identity. Current redb 4.4.0 selects a different digest from 4.3.0;
+old signed state-provider bindings require deliberate reissuance under current
+authority. This is separate from the retained `records-v1` decoder identifier and
+does not imply that business rows were migrated. See
+[installed state bindings](../development/installed-transaction-rpc.md) and
+[engine formats](../development/shared-state-store-owner.md#readiness-and-formats).
 
 ## Derived artifacts
 

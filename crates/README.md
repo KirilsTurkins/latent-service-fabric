@@ -1,6 +1,6 @@
 # Workspace package index
 
-The root [Cargo workspace](../Cargo.toml) contains **55 Rust packages**: 43 libraries under `crates/`, three applications, three Rust SDK/compiler-support packages and six tool packages. Every member has a package README linked below. This index covers workspace members; independently built application examples and captured upstream sources retain their own guides and provenance.
+The root [Cargo workspace](../Cargo.toml) contains **56 Rust packages**: 44 libraries under `crates/`, three applications, three Rust SDK/compiler-support packages and six tool packages. Every member has a package README linked below. This index covers workspace members; independently built application examples and captured upstream sources retain their own guides and provenance.
 
 Use [the package architecture walkthrough](../docs/development/workspace-packages.md) for end-to-end flows, ownership boundaries and test selection. Package READMEs map concrete modules, implementation status, lifetimes, dependency/feature gates, source tests and related specifications. The manifest and implementation remain the authority for exact signatures and limits.
 
@@ -55,6 +55,7 @@ An interface trait is not an installed service. In particular, workflows, remote
 | [`latent-stream-factory-native`](latent-stream-factory-native/README.md) | Fixed Linux ioctl/descriptor boundary for the selected trusted stream-factory image; admission and physical retirement remain caller-owned. |
 | [`latent-nats`](latent-nats/README.md) | Shared bounded TLS JetStream publication, explicit pull triggers and a qualified deferred event adapter. |
 | [`latent-blobs`](latent-blobs/README.md) | Immutable large-value storage with staged writers, ranged readers and explicit transfer ownership. |
+| [`latent-local-blobs`](latent-local-blobs/README.md) | Original Linux local-blob custody, capability capture and opt-in state-bound durable pins; also re-exported by `latent-blobs`. |
 | [`latent-ingress`](latent-ingress/README.md) | Protocol adaptation and concrete bounded buffered HTTP application values. |
 | [`latent-wire`](latent-wire/README.md) | Concrete bounded standalone RPC adapters plus general channel/frame interfaces. |
 
@@ -121,7 +122,7 @@ An interface trait is not an installed service. In particular, workflows, remote
 ## Isolated package projects
 
 Two additional tracked Rust packages declare independent workspaces and locks.
-They are outside the root's 55-member build/test selection; their READMEs explain
+They are outside the root's 56-member build/test selection; their READMEs explain
 the consuming qualification or source investigation.
 
 | Package | Responsibility |

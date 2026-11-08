@@ -683,6 +683,9 @@ pub(crate) mod tests {
             out.function(4)
                 .function(self.types)
                 .function(self.types + 1);
+            if (6..=8).contains(&self.variant) {
+                out.function(4);
+            }
             Ok(())
         }
         fn parse_export_section(
@@ -704,6 +707,9 @@ pub(crate) mod tests {
             reencode::utils::parse_code_section(self, out, reader)?;
             let mut init = Function::new([]);
             init.instruction(&Instruction::Call(self.first - 1));
+            if self.variant == 6 {
+                init.instruction(&Instruction::Call(self.first + 3));
+            }
             if self.variant == 4 {
                 init.instruction(&Instruction::GlobalGet(1))
                     .instruction(&Instruction::Drop);
@@ -716,6 +722,9 @@ pub(crate) mod tests {
                 .instruction(&Instruction::I32Const(16))
                 .instruction(&Instruction::I32Sub)
                 .instruction(&Instruction::GlobalSet(0));
+            if self.variant == 7 {
+                alloc.instruction(&Instruction::Call(self.first + 3));
+            }
             match self.variant {
                 1 => {
                     alloc
@@ -761,6 +770,9 @@ pub(crate) mod tests {
                 .instruction(&Instruction::End);
             out.function(&alloc);
             let mut post = Function::new([]);
+            if self.variant == 8 {
+                post.instruction(&Instruction::Call(self.first + 3));
+            }
             if self.variant == 5 {
                 post.instruction(&Instruction::GlobalGet(1))
                     .instruction(&Instruction::Drop);
@@ -769,6 +781,22 @@ pub(crate) mod tests {
                 .instruction(&Instruction::Drop)
                 .instruction(&Instruction::End);
             out.function(&post);
+            if (6..=8).contains(&self.variant) {
+                // A System root reaches an indirect callback through an
+                // intermediate function, as it would through a libc alias.
+                let mut indirect = Function::new([]);
+                indirect
+                    .instruction(&Instruction::I32Const(0))
+                    .instruction(&Instruction::I32Const(0))
+                    .instruction(&Instruction::I32Const(0))
+                    .instruction(&Instruction::CallIndirect {
+                        type_index: 1,
+                        table_index: 0,
+                    })
+                    .instruction(&Instruction::Drop)
+                    .instruction(&Instruction::End);
+                out.function(&indirect);
+            }
             Ok(())
         }
     }
@@ -820,6 +848,19 @@ pub(crate) mod tests {
                 transform_c_canonical_abi(&original, Sha256::digest(&original).into(), "run")
                     .unwrap_err(),
                 error
+            );
+        }
+    }
+
+    #[test]
+    fn c_system_roots_reject_transitive_indirect_initializers() {
+        for variant in [6, 7, 8] {
+            let original = fixture(variant);
+            assert_eq!(
+                transform_c_canonical_abi(&original, Sha256::digest(&original).into(), "run")
+                    .unwrap_err(),
+                "c-abi-system-indirect-or-reference-call",
+                "System root variant {variant}"
             );
         }
     }

@@ -203,6 +203,13 @@ record the exact archive, component, source, limits and unsupported operations.
 Thirteen serialized source controls and a compiled fixture object are separate
 source evidence; they do not qualify canonical scheduling or physical cleanup.
 
+The selected source also shares one initializer state between `pthread_once`
+and C11 `call_once`. An initializer's admitted stack holds the in-progress state;
+competing callers retain their original Wait until completion. A recursive call
+cannot report success, and ordinary exit/cancellation unwind is unsupported.
+The 19 serialized cases and the separate mixed-API interleaving use explicit
+scheduler and broker doubles; they do not constitute a signed guest result.
+
 Timed waits, robust/process-shared mutexes, ordinary exit/cancellation unwind,
 compiled CPU checkpoints, shared-memory atomics and broad library compatibility
 remain required before broader support or issue #744 completion.

@@ -19,6 +19,9 @@ mod synchronization;
 #[path = "go/task_saturation.rs"]
 mod task_saturation;
 
+#[path = "go/timer_overlap.rs"]
+mod timer_overlap;
+
 fn checkpoint_component(
     variable: &str,
     profile: &str,
@@ -45,6 +48,7 @@ fn checkpoint_component(
                     "LSF_GO_TASK_SATURATION_FIXTURE",
                     "go-component-activation-v5"
                 )
+                | ("LSF_GO_TIMER_OVERLAP_FIXTURE", "go-component-activation-v5")
         ),
         "only reviewed fixture/profile pairs may select captured Go source"
     );
@@ -58,14 +62,20 @@ fn checkpoint_component(
     );
     let managed_timers = variable == "LSF_GO_MANAGED_TIMER_FIXTURE";
     let task_saturation = variable == "LSF_GO_TASK_SATURATION_FIXTURE";
+    let timer_overlap = variable == "LSF_GO_TIMER_OVERLAP_FIXTURE";
     let timers = profile == "go-component-activation-v3" || managed_timers;
     let published = variable == "LSF_GO_PUBLISHED_FIXTURE";
-    let managed = profile == "go-component-activation-v5" && !managed_timers && !task_saturation;
+    let managed = profile == "go-component-activation-v5"
+        && !managed_timers
+        && !task_saturation
+        && !timer_overlap;
     let initializers = profile == "go-component-activation-v4" && !published;
     let expected: &[u8] = if synchronization {
         include_bytes!("../../../../../sdk/go-guest/runtime/synchronization-conformance/main.go")
     } else if task_saturation {
         include_bytes!("../../../../../sdk/go-guest/runtime/task-saturation-conformance/main.go")
+    } else if timer_overlap {
+        include_bytes!("../../../../../sdk/go-guest/runtime/timer-overlap-conformance/main.go")
     } else if managed {
         include_bytes!("../../../../../sdk/go-guest/runtime/managed-idle-conformance/main.go")
     } else if published {
@@ -89,6 +99,8 @@ fn checkpoint_component(
             "synchronization"
         } else if task_saturation {
             "task-saturation"
+        } else if timer_overlap {
+            "timer-overlap"
         } else if managed {
             "managed-idle"
         } else if published {
@@ -112,6 +124,7 @@ fn checkpoint_component(
         || published
         || managed
         || task_saturation
+        || timer_overlap
     {
         assert_eq!(
             record["nativeReference"]["modes"],
@@ -119,6 +132,8 @@ fn checkpoint_component(
                 serde_json::json!([0, 1, 2, 3, 4, 5, 9])
             } else if task_saturation {
                 serde_json::json!([0])
+            } else if timer_overlap {
+                serde_json::json!([0, 1, 2, 3])
             } else if managed {
                 serde_json::json!([0, 1, 2])
             } else if published {
@@ -131,7 +146,16 @@ fn checkpoint_component(
                 serde_json::json!([0, 1, 4])
             }
         );
-        assert_eq!(record["nativeReference"]["output"], 42);
+        if timer_overlap {
+            assert!(
+                record["nativeReference"]["outputs"] == serde_json::json!([42, 42, 42, 42])
+                    || record["nativeReference"]["outputs"] == serde_json::json!([42, 43, 42, 42])
+                    || record["nativeReference"]["outputs"] == serde_json::json!([42, 42, 42, 43])
+                    || record["nativeReference"]["outputs"] == serde_json::json!([42, 43, 42, 43])
+            );
+        } else {
+            assert_eq!(record["nativeReference"]["output"], 42);
+        }
         assert_eq!(record["nativeReference"]["freshProcessPerMode"], true);
         assert_eq!(
             record["nativeReference"]["sourceDigest"],
@@ -177,6 +201,14 @@ fn checkpoint_component(
             wit.as_bytes(),
             include_bytes!(
                 "../../../../../sdk/go-guest/runtime/task-saturation-conformance/world.wit"
+            )
+        );
+    }
+    if timer_overlap {
+        assert_eq!(
+            wit.as_bytes(),
+            include_bytes!(
+                "../../../../../sdk/go-guest/runtime/timer-overlap-conformance/world.wit"
             )
         );
     }

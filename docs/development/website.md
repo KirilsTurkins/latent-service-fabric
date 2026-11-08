@@ -55,7 +55,7 @@ The selector parser retains its exact existing `cssesc` 3.0.0 and
 pin tinypool 2.1.2, source-map-js 1.2.2, postcss-selector-parser 7.1.6 and KaTeX
 0.18.2, including transitive copies, for the October 2026 advisory fixes. Current
 website overrides also pin serialize-javascript 7.1.3, launch-editor 2.14.2 and
-follow-redirects 1.16.1. The source/lock and authenticated distribution records
+follow-redirects 1.16.2 and qs 6.16.1. The source/lock and authenticated distribution records
 own the exact graph; older build receipts keep their v4 identity.
 This is not an upstream npm release. The [toolchain instructions](../../website/README.md)
 describe offline inputs and the explicit maintainer-only refresh path.

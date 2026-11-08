@@ -22,7 +22,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
 
     def test_exact_vendor_source_and_original_license_are_required_by_the_ci_graph(self):
         checked = source.verify()
-        self.assertEqual(len(checked['files']), 276)
+        self.assertEqual(len(checked['files']), 277)
         self.assertEqual(checked['nativeCohort'], source.COHORT)
         self.assertEqual(checked['licenseFiles'], {'LICENSE': hashlib.sha256(
             (source.ROOT / source.PROVIDER / 'LICENSE').read_bytes()).hexdigest()})
@@ -54,6 +54,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                          'src/runtime/component/concurrent/futures_and_streams.rs',
                          'src/runtime/component/concurrent/futures_and_streams/stream_outer_tests.rs',
                          'src/runtime/component/concurrent/pending_future.rs',
+                         'src/runtime/component/concurrent/inline_future_tests.rs',
                          'README.latent.md', 'latent-dynamic-memory.patch'):
                 with self.subTest(name=name):
                     target = directory / name
@@ -179,7 +180,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                 registry.workspace(root)
 
     def test_actual_table_hook_sources_and_new_cohort_require_exact_postimages(self):
-        self.assertEqual(source.COHORT, 'wasmtime-48.0.8-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v30-authenticated-bounded-root-suspension-upstream-security-v31-consumer-poll-factory-v32-host-accept-factory-v33-consumer-inner-future-v34-producer-inner-future-v35-sync-ready-callback-v36')
+        self.assertEqual(source.COHORT, 'wasmtime-48.0.8-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v30-authenticated-bounded-root-suspension-upstream-security-v31-consumer-poll-factory-v32-host-accept-factory-v33-consumer-inner-future-v34-producer-inner-future-v35-sync-ready-callback-v36-inline-runtime-futures-v37')
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.fixture(root)
@@ -217,7 +218,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
                         source.verify(root)
                     target.write_bytes(original)
-            self.assertEqual(len(source.verify(root)['files']), 276)
+            self.assertEqual(len(source.verify(root)['files']), 277)
 
     def test_funcrefs_stable_arena_and_directory_sources_cannot_be_substituted(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -234,7 +235,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
                         source.verify(root)
                     target.write_bytes(original)
-            self.assertEqual(len(source.verify(root)['files']), 276)
+            self.assertEqual(len(source.verify(root)['files']), 277)
 
 
     def test_resource_substitution_map_and_escape_ownership_sources_cannot_be_substituted(self):
@@ -256,7 +257,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
                         source.verify(root)
                     target.write_bytes(original)
-            self.assertEqual(len(source.verify(root)['files']), 276)
+            self.assertEqual(len(source.verify(root)['files']), 277)
 
 
     def test_actual_linear_allocator_notifications_cannot_be_substituted(self):
@@ -272,7 +273,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
                         source.verify(root)
                     target.write_bytes(original)
-            self.assertEqual(len(source.verify(root)['files']), 276)
+            self.assertEqual(len(source.verify(root)['files']), 277)
 
 
     def test_per_call_host_future_owner_requires_its_exact_source_postimage(self):
@@ -298,7 +299,7 @@ class PinnedWasmtimeSource(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
                         source.verify(root)
                     target.write_bytes(original)
-            self.assertEqual(len(source.verify(root)['files']), 276)
+            self.assertEqual(len(source.verify(root)['files']), 277)
 
 
     def test_owned_context_reply_lowering_requires_exact_guard_and_public_entrypoint_sources(self):
@@ -318,7 +319,34 @@ class PinnedWasmtimeSource(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
                         source.verify(root)
                     target.write_bytes(original)
-            self.assertEqual(len(source.verify(root)['files']), 276)
+            self.assertEqual(len(source.verify(root)['files']), 277)
+
+
+    def test_copy_on_write_test_gate_requires_exact_postimage_and_original_inverse(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.fixture(root)
+            directory = root / source.PROVIDER
+            target = directory / 'src/runtime/vm/cow.rs'
+            current = target.read_bytes()
+            old = b'#[cfg(all(test, target_os = "linux", not(miri)))]'
+            new = b'#[cfg(all(test, target_os = "linux", not(miri), feature = "pooling-allocator"))]'
+            self.assertEqual(current.count(new), 1)
+            self.assertNotIn(old, current)
+            original = current.replace(new, old, 1)
+            record = json.loads((directory / 'UPSTREAM.latent.json').read_bytes())
+            original_row = next(row for row in record['originalFiles'] if row['path'] == 'src/runtime/vm/cow.rs')
+            self.assertEqual((hashlib.sha256(original).hexdigest(), len(original)),
+                             (original_row['sha256'], original_row['bytes']))
+            patch_bytes = (directory / 'latent-dynamic-memory.patch').read_bytes()
+            self.assertEqual(patch_bytes.count(b'--- a/src/runtime/vm/cow.rs\n'), 1)
+            self.assertIn(b'-' + old + b'\n+' + new + b'\n', patch_bytes)
+            for rejected in (original, current + b'\n// unreviewed\n'):
+                target.write_bytes(rejected)
+                with self.assertRaisesRegex(ValueError, 'host-codec-wasmtime-source-identity'):
+                    source.verify(root)
+            target.write_bytes(current)
+            self.assertEqual(len(source.verify(root)['files']), 277)
 
 
 if __name__ == '__main__':

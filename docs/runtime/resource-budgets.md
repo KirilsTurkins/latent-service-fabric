@@ -3,6 +3,8 @@
 This page describes basic execution accounting, the default budget profile. The
 [capability profile and conserved descendant budgets](descendant-budgets.md) add
 child/outbound/blob counters while preserving the defaults documented here.
+The same guide distinguishes explicit Phase 4 state/intent accounting from the
+Phase 3 profile; neither is selected by a caller-supplied amount.
 
 ## Budget representation
 
@@ -127,6 +129,13 @@ Terminal consumption and physical backing ownership are separate. Selected
 Wasmtime allocations, capability buffers/results, timers, native workers and
 Audit storage retain original memory owners until their actual backing retires;
 a terminal snapshot, dropped waiter or destroyed Store cannot refund them early.
+The selected paths also preadmit scheduler/ready-queue storage, outer poll
+futures, callback/factory captures, resource-table entries, parameter/result
+backing and descendant cancellation drivers. These allocations exist even when
+the application payload is empty. Growth charges both allocations during their
+overlap; dropping a response cannot release a shared or weak backing allocation
+still held elsewhere. [Future admission](async-host-io.md#future-and-callback-backing)
+describes the ordering before allocation and dispatch.
 See [host codec allocation](../testing/host-codec-original-memory.md),
 [capability handles and buffers](../testing/capability-handle-buffer-memory.md),
 [connected Audit memory](../testing/audit-connected-memory.md) and the
@@ -176,8 +185,11 @@ publication and accounting finalization.
 
 ## Unsupported features
 
-This implementation does not provide tenant billing, a distributed quota
-ledger, cluster-wide budgets, durable cancellation or state/effect providers.
+This basic accounting layer does not provide tenant billing, a distributed
+quota ledger, cluster-wide budgets or durable cancellation. Development's
+explicitly installed [state/effect profile](../architecture/state-and-effects.md)
+has separate storage, authority and qualification owners; selecting the basic
+budget does not install it.
 Parent-to-child delegation is available through the explicit capability accounting
 profile; the default basic profile rejects capability counter grants.
 

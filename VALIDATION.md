@@ -115,6 +115,11 @@ profile or acceptance gate has passed at the current head.
 
 A model schedule, compiler capture, controlled peer, portable guest, embedded
 engine and signed live-node/browser programme establish different boundaries.
+Selected [future/callback storage](docs/runtime/async-host-io.md#future-and-callback-backing)
+checks must exercise admission before allocation, first poll, queue publication
+or dispatch. Accounting only the eventual payload misses the future, factory,
+callback and scheduler backing that already exists.
+
 In particular, Phase 4's native/application/packaged gates and the ADR-0062
 [restore identity variance](adr/0062-host-own-serializable-transactions-and-durable-outcomes.md#implementation-status-and-restore-identity)
 remain explicit. Build/discovery or a small engine fixture cannot close them.
@@ -144,6 +149,7 @@ workspace dependency graph. Profiles are:
 | Profile | Selected obligations |
 | --- | --- |
 | `docs` | Approved prose/SVG/known issue forms; docs and website validation |
+| Isolated tooling | One additive self-contained documentation-validator test with a completely resolved consumer graph; the classifier emits the specific docs owner or falls back to full qualification |
 | `website` | Reviewed website/MDX inputs; docs and full website types/unit/build/browser checks |
 | `fast` | An entirely eligible reverse-dependent source closure; docs, website, selected host correctness and selected MSRV checks |
 | `full` | Runtime-sensitive, shared/build/manifest/evidence, unknown or unavailable-history changes; the full job set plus the selected host correctness job |

@@ -151,6 +151,14 @@ occurs on conflict, timeout or restart. Trusted incoming retries are configured
 finite caller actions under the same proof; changed preconditions need a deliberate
 new command rather than silent replacement.
 
+Concurrent first-admission and explicit-retry claims have separate bounded
+winner-recovery paths. Only a definite engine expectation conflict permits a
+fresh lookup; the explicit-retry path must select that same retry request and
+attempt. Both recheck current result-read authority before returning the winner,
+even if command admission remains allowed. Re-observing the protected clock
+does not restart the deadline. Uncertain writes and failed authorization never
+enter this path, and no guest is replayed to resolve contention.
+
 ## Immediate calls and deferred durable intents
 
 Current stateless [HTTP](../runtime/outbound-http.md), [S3 blob](../runtime/s3-blobs.md)
@@ -216,6 +224,13 @@ records the migration/backup/restore handoff.
 
 Retention links command/fingerprint/attempt/commit identity, unresolved effects,
 payloads, inbox protection and required schema/binding/publication metadata.
+The [local-blob custody owner](../../crates/latent-local-blobs/README.md) and
+command-envelope library now support verified local attachments with original
+session/engine bindings and reciprocal ownership rows. They preserve the
+existing inline result/effect representation. Standalone startup still refuses
+required payload-reference rows without its physical inventory, and state/
+snapshot/GC integration retains its separate acceptance requirements. Logical
+catalogue consistency alone cannot establish that the underlying bytes exist.
 Application result bytes can expire while receipt-only recovery and deduplication
 identity remain. Unresolved dependent work prevents unsafe GC. Unknown/expired
 identity is no abort proof. Durable time anchors retain their original clock and

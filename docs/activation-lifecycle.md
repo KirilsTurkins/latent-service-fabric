@@ -211,6 +211,13 @@ The same principle applies to future provider and descendant work: a watchdog
 expiry is evidence that cleanup exceeded its bound, not proof that the underlying
 owner has physically retired.
 
+Cell disposition and admission-quota release are separate from retained memory
+retirement. A result, provider future, callback or native worker can still own
+its original selected memory reservation after Store destruction or terminal
+publication. Only actual backing retirement releases that charge; a cell reuse
+proof does not refund all live result bytes. See
+[physical memory ownership](runtime/resource-budgets.md#accounting).
+
 The trusted `ActivationHandle::interrupt_for_cleanup` port marks
 `ActivationTransportInterruption::Disconnected` or `DeadlineExceeded` and returns
 the same handle for continued polling. It preserves the original invocation,

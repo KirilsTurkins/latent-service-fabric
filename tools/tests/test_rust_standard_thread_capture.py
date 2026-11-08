@@ -124,6 +124,15 @@ class StandardThreadCapture(unittest.TestCase):
             prepared, compiler, value = fixture.prepared(Path(directory))
             original_flags = json.loads(standard.Prepared(prepared, compiler).arguments()[1].split('=', 1)[1])
             self.assertEqual(original_flags, ['--sysroot=' + str(prepared / 'sysroot')])
+            from tools.build_observation import file_identity
+            from tools.captured_compiler_isolation import distribution
+            toolchain = Path(directory) / 'toolchain'
+            selected_compiler = toolchain / 'bin/rustc'
+            selected_compiler.parent.mkdir(parents=True)
+            selected_compiler.write_bytes(compiler.read_bytes())
+            compiler = selected_compiler
+            value['tools']['rustc'] = file_identity(compiler, 'rustc')
+            value['compilerDistributionDigest'] = digest(encode(distribution(toolchain)))
             value.update(profile=std.THREAD_PROFILE, standardStdio='explicit-unsupported-v1',
                 standardThreads=capture.profile.PROFILE, standardThreadSourceSelected=True,
                 standardThreadRuntimeQualified=False,

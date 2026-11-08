@@ -32,6 +32,10 @@ def fixture_reference(output, commands, compiler, source, fixture):
         # Native Go has no managed activation Task ceiling. Only the bounded
         # release/join path is a comparable native observable.
         modes = [0]
+    elif fixture == 'timer-overlap':
+        # Native execution checks public return values; only the signed host
+        # witness establishes that the operations actually overlapped.
+        modes = [0, 1, 2, 3]
     elif fixture == 'synchronization':
         # Native main does not implement the component's accepted-work drain.
         # The parked/late-root/cancellation cases retain signed-only assertions.
@@ -51,14 +55,23 @@ def fixture_reference(output, commands, compiler, source, fixture):
                                  GOPROXY='off', GOSUMDB='off')
     try:
         commands.run(fixture + '-native-build', compiler.paths['go'], 'build', '-o', binary, ordinary, harness)
+        outputs = []
         for mode in modes:
-            if commands.run(fixture + '-native-' + str(mode), binary, str(mode)).strip() != b'42':
+            value = commands.run(fixture + '-native-' + str(mode), binary, str(mode)).strip()
+            allowed = {b'42', b'43'} if fixture == 'timer-overlap' and mode in (1, 3) else {b'42'}
+            if value not in allowed:
                 raise ValueError('Go-native-reference-output')
+            outputs.append(int(value))
     finally:
         commands.environment.clear()
         commands.environment.update(previous)
-    return {'qualification': 'reviewed-fixture-only', 'fixture': fixture, 'modes': modes, 'output': 42,
-            'freshProcessPerMode': True, 'sourceDigest': digest(source), 'binaryDigest': digest(binary.read_bytes())}
+    result = {'qualification': 'reviewed-fixture-only', 'fixture': fixture, 'modes': modes,
+              'freshProcessPerMode': True, 'sourceDigest': digest(source), 'binaryDigest': digest(binary.read_bytes())}
+    if fixture == 'timer-overlap':
+        result['outputs'] = outputs
+    else:
+        result['output'] = 42
+    return result
 
 
 def compile_fixture(output: Path, *, offline_cache: Path | None = None, runtime_profile=PROFILE,
@@ -69,12 +82,14 @@ def compile_fixture(output: Path, *, offline_cache: Path | None = None, runtime_
         raise ValueError('Go-synchronization-requires-v5-or-exact-no-checkpoint-control')
     if fixture == 'task-saturation' and runtime_profile != 'go-component-activation-v5':
         raise ValueError('Go-task-saturation-requires-v5')
+    if fixture == 'timer-overlap' and runtime_profile != 'go-component-activation-v5':
+        raise ValueError('Go-timer-overlap-requires-v5')
     output.mkdir(parents=True, exist_ok=False)
-    if fixture not in {'ordinary', 'checkpoints', 'timers', 'initializers', 'managed-idle', 'synchronization', 'task-saturation'}:
+    if fixture not in {'ordinary', 'checkpoints', 'timers', 'initializers', 'managed-idle', 'synchronization', 'task-saturation', 'timer-overlap'}:
         raise ValueError('unsupported-Go-activation-fixture')
     if fixture == 'managed-idle' and runtime_profile != 'go-component-activation-v5':
         raise ValueError('Go-managed-idle-fixture-requires-v5')
-    original = ROOT / 'sdk/go-guest/runtime' / {'ordinary': 'conformance', 'checkpoints': 'checkpoints-conformance', 'timers': 'timers-conformance', 'initializers': 'initializers-conformance', 'managed-idle': 'managed-idle-conformance', 'synchronization': 'synchronization-conformance', 'task-saturation': 'task-saturation-conformance'}[fixture]
+    original = ROOT / 'sdk/go-guest/runtime' / {'ordinary': 'conformance', 'checkpoints': 'checkpoints-conformance', 'timers': 'timers-conformance', 'initializers': 'initializers-conformance', 'managed-idle': 'managed-idle-conformance', 'synchronization': 'synchronization-conformance', 'task-saturation': 'task-saturation-conformance', 'timer-overlap': 'timer-overlap-conformance'}[fixture]
     source = (original / 'main.go').read_bytes()
     (output / 'src').mkdir()
     (output / 'src/main.go').write_bytes(source)
@@ -111,6 +126,8 @@ def compile_fixture(output: Path, *, offline_cache: Path | None = None, runtime_
             record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)
         if fixture == 'task-saturation':
             record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)
+        if fixture == 'timer-overlap':
+            record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)
         if fixture == 'synchronization' and runtime_profile == 'go-component-activation-v5':
             record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)
         write_json(output / 'GO-ACTIVATION-COMPILE.json', record)
@@ -125,7 +142,7 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--offline-cache', type=Path)
     parser.add_argument('--runtime-profile', choices=sorted(PROFILES), default=PROFILE)
-    parser.add_argument('--fixture', choices=('ordinary', 'checkpoints', 'timers', 'initializers', 'managed-idle', 'synchronization', 'task-saturation'), default='ordinary')
+    parser.add_argument('--fixture', choices=('ordinary', 'checkpoints', 'timers', 'initializers', 'managed-idle', 'synchronization', 'task-saturation', 'timer-overlap'), default='ordinary')
     args = parser.parse_args()
     print(json.dumps(compile_fixture(args.output, offline_cache=args.offline_cache,
         runtime_profile=args.runtime_profile, fixture=args.fixture)))
