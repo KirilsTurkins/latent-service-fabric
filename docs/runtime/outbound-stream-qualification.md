@@ -13,6 +13,13 @@ Execution remains pending wherever no authenticated source-bound receipt is
 linked below. Case presence and earlier count-only narratives do not establish
 current success, ordinary language networking or a released node artifact.
 
+The [shared adversarial conformance guide](../testing/outbound-stream-conformance.md)
+owns the gated SMTP peer and additional signed-node trap/resource/EOF controls.
+Peer mutation/reply/descriptor observations remain distinct from guest scheduling,
+Store/provider retirement and kernel final free. These additions use existing
+Python and local-service test discovery; they do not promote historical receipts,
+qualify the six ordinary language clients or enable production installation.
+
 The maintained `latent-streams` implementation installs exact immutable endpoint,
 address and resolver configuration into the original capability broker, provider
 pools and IoRuntime. TCP payload remains opaque. Host TLS installation explicitly
