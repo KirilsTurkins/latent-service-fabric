@@ -178,6 +178,19 @@ enum AdmissionStep {
     CheckedBeforePublication,
     #[cfg(test)]
     HoldingPublicationGuard,
+    #[cfg(test)]
+    TentativePublication,
+    #[cfg(test)]
+    CommittedPublication,
+}
+
+#[cfg(test)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ReadinessStep {
+    Checked,
+    Guarded,
+    Tentative,
+    Committed,
 }
 
 /// This affine owner must remain with actual logical work/native ownership.
@@ -440,9 +453,9 @@ impl ActivationRuntime {
         hook(AdmissionStep::CheckedBeforePublication);
         // Same-ledger finalization takes this accounting lock before closing.
         // Hold it through the owner write, with no production callback or
-        // budget-locking operation here. Explicit cancellation, ancestor
-        // closure, external probes and clock passage remain independent.
-        let _publication = self.inner.budget.runtime_publication_guard();
+        // budget-locking operation here. External probes and clock passage
+        // remain independent.
+        let publication = self.inner.budget.runtime_publication_guard();
         self.check_commit_ledger_locked(state)?;
         #[cfg(test)]
         hook(AdmissionStep::HoldingPublicationGuard);
@@ -456,6 +469,20 @@ impl ActivationRuntime {
         if matches!(state.phase, RuntimePhase::Waiting) {
             state.phase = RuntimePhase::Running;
         }
+        #[cfg(test)]
+        hook(AdmissionStep::TentativePublication);
+        // The state lock keeps these tentative writes hidden. If the original
+        // ledger or ancestor closed first, restore the identifier and count
+        // without releasing the prepaid slab; no RuntimeOwner exists yet.
+        if !publication.commit_while_open() {
+            state.slab.as_mut().expect("reserved slab").records[slot] = None;
+            state.next_id = token.id;
+            state.owners[index] -= 1;
+            state.phase = RuntimePhase::Cancelling;
+            return Err(error(PlatformErrorCode::Cancelled, "runtime-cancelled"));
+        }
+        #[cfg(test)]
+        hook(AdmissionStep::CommittedPublication);
         Ok(RuntimeOwner {
             inner: self.inner.clone(),
             token,
@@ -484,6 +511,20 @@ impl ActivationRuntime {
         token: RuntimeToken,
         after_check: impl FnOnce(),
     ) -> Result<RuntimeWake, PlatformError> {
+        self.park_with_hooks(
+            token,
+            after_check,
+            #[cfg(test)]
+            |_| {},
+        )
+    }
+
+    fn park_with_hooks(
+        &self,
+        token: RuntimeToken,
+        after_check: impl FnOnce(),
+        #[cfg(test)] mut hook: impl FnMut(ReadinessStep),
+    ) -> Result<RuntimeWake, PlatformError> {
         self.check_live()?;
         after_check();
         let mut state = self
@@ -511,21 +552,47 @@ impl ActivationRuntime {
             return Err(error(PlatformErrorCode::Cancelled, "runtime-retired"));
         }
         self.check_commit_ledger_locked(&mut state)?;
+        #[cfg(test)]
+        hook(ReadinessStep::Checked);
+        // Determine the post-park phase before taking accounting. The runtime
+        // state lock keeps this bounded scan stable until the tentative write.
+        let should_wait = state.phase == RuntimePhase::Running
+            && !state.slab.as_ref().is_some_and(|slab| {
+                slab.records.iter().flatten().any(|record| {
+                    record.kind.index() == 0 && !record.parked && record.id != token.id
+                })
+            });
+        let publication = self.inner.budget.runtime_publication_guard();
+        self.check_commit_ledger_locked(&mut state)?;
+        #[cfg(test)]
+        hook(ReadinessStep::Guarded);
+        let previous_parked = state.slab.as_ref().expect("checked slab").records[slot]
+            .as_ref()
+            .expect("checked owner")
+            .parked;
         state.slab.as_mut().expect("checked slab").records[slot]
             .as_mut()
             .expect("checked owner")
             .parked = true;
-        if matches!(state.phase, RuntimePhase::Running) {
-            let runnable = state.slab.as_ref().is_some_and(|slab| {
-                slab.records
-                    .iter()
-                    .flatten()
-                    .any(|r| r.kind.index() == 0 && !r.parked)
-            });
-            if !runnable {
-                state.phase = RuntimePhase::Waiting;
-            }
+        if should_wait {
+            state.phase = RuntimePhase::Waiting;
         }
+        #[cfg(test)]
+        hook(ReadinessStep::Tentative);
+        // The state mutex hides the provisional park. The ancestry RMWs order
+        // it with closure; on failure retain the existing owner.
+        if !publication.commit_while_open() {
+            state.slab.as_mut().expect("checked slab").records[slot]
+                .as_mut()
+                .expect("checked owner")
+                .parked = previous_parked;
+            state.phase = RuntimePhase::Cancelling;
+            drop(publication);
+            return Err(error(PlatformErrorCode::Cancelled, "runtime-cancelled"));
+        }
+        #[cfg(test)]
+        hook(ReadinessStep::Committed);
+        drop(publication);
         Ok(RuntimeWake {
             inner: self.inner.downgrade(),
             token,
@@ -597,6 +664,67 @@ impl ActivationRuntime {
         }
         state.phase = RuntimePhase::Retired;
         drop(state.slab.take());
+        Ok(())
+    }
+
+    /// Commit elapsed readiness for an already-admitted plain wait. This does
+    /// not dispatch guest work or settle its retained timer owner.
+    pub fn commit_elapsed_timer_readiness(&self, token: RuntimeToken) -> Result<(), PlatformError> {
+        self.commit_elapsed_timer_readiness_with_hooks(
+            token,
+            #[cfg(test)]
+            |_| {},
+        )
+    }
+
+    fn commit_elapsed_timer_readiness_with_hooks(
+        &self,
+        token: RuntimeToken,
+        #[cfg(test)] mut hook: impl FnMut(ReadinessStep),
+    ) -> Result<(), PlatformError> {
+        // External cancellation probes run only before taking these locks.
+        self.check_live()?;
+        let mut state = self
+            .inner
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if matches!(
+            state.phase,
+            RuntimePhase::Cancelling | RuntimePhase::Retired
+        ) {
+            return Err(error(PlatformErrorCode::Cancelled, "runtime-retired"));
+        }
+        if !self
+            .record(&state, token)
+            .is_some_and(|record| record.kind == OwnerKind::Timer)
+        {
+            return Err(error(PlatformErrorCode::InvalidArgument, "runtime-token"));
+        }
+        self.check_commit_ledger_locked(&mut state)?;
+        #[cfg(test)]
+        hook(ReadinessStep::Checked);
+        // Order this owner-bound readiness with same-ledger finalization and
+        // the atomic closure flags of the bounded original ancestry. Neither
+        // independent external probes nor later wall-clock passage is fenced.
+        let publication = self.inner.budget.runtime_publication_guard();
+        if let Err(failure) = self.check_commit_ledger_locked(&mut state) {
+            drop(publication);
+            drop(state);
+            return Err(failure);
+        }
+        #[cfg(test)]
+        hook(ReadinessStep::Guarded);
+        if !publication.commit_while_open() {
+            state.phase = RuntimePhase::Cancelling;
+            drop(publication);
+            drop(state);
+            return Err(error(PlatformErrorCode::Cancelled, "runtime-cancelled"));
+        }
+        #[cfg(test)]
+        hook(ReadinessStep::Committed);
+        drop(publication);
+        drop(state);
         Ok(())
     }
 
@@ -723,6 +851,18 @@ impl RuntimeWake {
     }
 
     fn wake_with_after_live_check(&self, after_check: impl FnOnce()) -> bool {
+        self.wake_with_hooks(
+            after_check,
+            #[cfg(test)]
+            |_| {},
+        )
+    }
+
+    fn wake_with_hooks(
+        &self,
+        after_check: impl FnOnce(),
+        #[cfg(test)] mut hook: impl FnMut(ReadinessStep),
+    ) -> bool {
         let Some(inner) = self.inner.upgrade() else {
             return false;
         };
@@ -755,13 +895,42 @@ impl RuntimeWake {
         if runtime.check_commit_ledger_locked(&mut state).is_err() {
             return false;
         }
-        state.slab.as_mut().expect("checked slab").records[slot.expect("checked slot")]
+        #[cfg(test)]
+        hook(ReadinessStep::Checked);
+        let slot = slot.expect("checked slot");
+        let publication = runtime.inner.budget.runtime_publication_guard();
+        if let Err(failure) = runtime.check_commit_ledger_locked(&mut state) {
+            drop(publication);
+            drop(state);
+            drop(failure);
+            return false;
+        }
+        #[cfg(test)]
+        hook(ReadinessStep::Guarded);
+        let previous_parked = state.slab.as_ref().expect("checked slab").records[slot]
+            .as_ref()
+            .expect("checked owner")
+            .parked;
+        state.slab.as_mut().expect("checked slab").records[slot]
             .as_mut()
             .expect("checked owner")
             .parked = false;
         if state.phase == RuntimePhase::Waiting {
             state.phase = RuntimePhase::Running;
         }
+        #[cfg(test)]
+        hook(ReadinessStep::Tentative);
+        if !publication.commit_while_open() {
+            state.slab.as_mut().expect("checked slab").records[slot]
+                .as_mut()
+                .expect("checked owner")
+                .parked = previous_parked;
+            state.phase = RuntimePhase::Cancelling;
+            return false;
+        }
+        #[cfg(test)]
+        hook(ReadinessStep::Committed);
+        drop(publication);
         true
     }
 }

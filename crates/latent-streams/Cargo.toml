@@ -12,6 +12,8 @@ description = "Gated activation-owned outbound streams with sealed endpoint auth
 # explicitly selected and does not change standalone node defaults.
 default = []
 development-outbound = []
+# Inert per-connection read-edge witness for explicitly selected qualification only.
+development-read-witness = []
 
 [lints]
 workspace = true

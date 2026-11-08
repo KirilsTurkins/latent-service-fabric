@@ -790,11 +790,25 @@ struct ActivationBudgetInner {
     state: Mutex<AccountingState>,
 }
 
-// Serializes a runtime's final owner-record write with the *same* original
-// ledger's finalization. It does not serialize cancellation, ancestor closure,
-// external cancellation probes or passage of the monotonic deadline.
+// Serializes runtime publication with the *same* original ledger's finalization.
+// Closed-flag RMWs order it with closure along the bounded original ancestry.
+// External probes and deadline passage remain independent.
 pub(crate) struct RuntimePublicationGuard<'a> {
     _state: MutexGuard<'a, AccountingState>,
+    original: &'a ActivationBudgetInner,
+}
+
+impl RuntimePublicationGuard<'_> {
+    // Called after the tentative write, while its runtime mutation lock and
+    // this accounting guard are held. Each ancestor's RMW shares its atomic
+    // modification order with that ledger's nonblocking closure store. A
+    // failed RMW requires the caller to undo its hidden write before unlocking.
+    pub(crate) fn commit_while_open(&self) -> bool {
+        self.original.commit_ancestry_while_open(
+            #[cfg(test)]
+            |_| {},
+        )
+    }
 }
 
 #[derive(Debug, Default)]
@@ -1229,6 +1243,7 @@ impl ActivationBudget {
     pub(crate) fn runtime_publication_guard(&self) -> RuntimePublicationGuard<'_> {
         RuntimePublicationGuard {
             _state: self.lock_state(),
+            original: &self.inner,
         }
     }
 

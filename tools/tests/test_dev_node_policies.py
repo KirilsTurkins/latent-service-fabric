@@ -554,7 +554,7 @@ class ScenarioTargets(unittest.TestCase):
         from tools.dev_workflow.client import Client
         response = {"schemaVersion": "latent.cli.result.v1", "category": "transport-failure",
                     "outcomeKnown": False, "data": {}, "error": {"code": "rpc-timeout"}}
-        completed = SimpleNamespace(returncode=4, stdout=common.encode(response))
+        completed = SimpleNamespace(returncode=5, stdout=common.encode(response))
         for language, deadline, expected_rpc, expected_process in (
             ("typescript", 400, "125000", 130), ("typescript", 112, "11000", 12),
             ("rust", 400, "5000", 30),

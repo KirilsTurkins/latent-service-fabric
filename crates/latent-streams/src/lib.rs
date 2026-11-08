@@ -35,6 +35,19 @@ pub struct StreamUsage {
     #[cfg(any(test, feature = "development-outbound"))]
     pub input_budget_bytes: u64,
     pub delivered_read_bytes: u64,
+    /// Saturates at three. Inert, per-live-connection admission observation;
+    /// deliberately excluded from serialized status and from ordinary builds.
+    #[cfg(feature = "development-read-witness")]
+    #[serde(skip)]
+    pub read_admissions: u8,
+    /// Number of currently held read guards, aggregated with a sentinel at two.
+    #[cfg(feature = "development-read-witness")]
+    #[serde(skip)]
+    pub pending_reads: u8,
+    /// Bytes delivered when this connection's last read guard retired.
+    #[cfg(feature = "development-read-witness")]
+    #[serde(skip)]
+    pub retired_read_delivered_bytes: u64,
     pub retired: bool,
 }
 

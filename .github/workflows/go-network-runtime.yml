@@ -3,7 +3,7 @@ name: Execute the declared Go TCP component
 on:
   workflow_dispatch:
   push:
-    branches: ['feat/go-standard-tcp-runtime-20261020']
+    branches: ['feat/go-standard-tcp-runtime-20261020', 'feat/go-network-read-order-20261108', 'feat/sdk-738-bounded-outbound-owners']
 
 permissions:
   contents: read
@@ -27,7 +27,7 @@ jobs:
       - name: Install pinned source controls
         run: python3 -m pip install -r tools/requirements.lock
       - name: Check exact input ownership cancellation and fail-closed selection
-        run: python3 -m unittest tools.tests.test_go_network tools.tests.test_go_network_runtime -v
+        run: python3 -m unittest tools.tests.test_go_network tools.tests.test_go_network_runtime tools.tests.test_go_network_read_barrier -v
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
         with:
