@@ -22,25 +22,33 @@ async fn export_standalone_linked_payload() {
     let fixture = Fixture::for_standalone_recovery();
     let claim = fixture.claim("standalone-recovery-proof");
     let view = fixture.state.snapshot().unwrap();
+    let state = state_mutation(&view, Some(b"body"));
     let envelope = CompleteEnvelope::success(
         &view,
         claim,
-        None,
+        Some(state),
         vec![],
         value(b"body"),
         &fixture.effects,
         time(200),
     )
     .unwrap();
-    let pin = fixture.capture().await;
+    let result_pin = fixture.capture().await;
+    let state_pin = fixture.capture().await;
     let envelope = envelope
         .attach_verified_payloads(
             &view,
             &fixture.session,
-            vec![PayloadAttachment {
-                target: PayloadAttachmentTarget::Result,
-                payload: pin,
-            }],
+            vec![
+                PayloadAttachment {
+                    target: PayloadAttachmentTarget::Result,
+                    payload: result_pin,
+                },
+                PayloadAttachment {
+                    target: PayloadAttachmentTarget::State(b"attached".to_vec()),
+                    payload: state_pin,
+                },
+            ],
         )
         .unwrap();
     drop(view);

@@ -401,27 +401,56 @@ async fn actual_linked_payload_recovers_and_corruption_refuses_startup() {
         .await
         .unwrap();
     let state = Arc::clone(bootstrap.opened_store.as_ref().unwrap());
-    let references = state
-        .with_store(StoreIoKind::Read, 4096, |engine| {
+    let (references, state_link, stored_value, owner_count) = state
+        .with_store(StoreIoKind::Read, 8192, |engine| {
             let view = engine.snapshot()?;
-            Ok(
-                latent_state::payload_references::required_owner_page(&view, None, 2, 2048)?
-                    .references,
-            )
+            let page = latent_state::payload_references::required_owner_page(&view, None, 4, 4096)?;
+            if page.resume.is_some() {
+                return Err(latent_state::embedded::StoreError::Capacity);
+            }
+            let scope = latent_state::session::StateScope {
+                tenant: latent_core::TenantId("a".into()),
+                namespace: latent_core::StateNamespaceId("aggregate".into()),
+                incarnation: 1,
+                state_schema: format!("sha256:{}", "4".repeat(64)),
+                entity: None,
+                mode: latent_state::session::StateMode::Command,
+            };
+            let cell = latent_state::session::state_payload_cell_key(&scope, b"attached")?;
+            let link = latent_state::session::retained_state_payload_reference(&view, &cell)?
+                .ok_or(latent_state::embedded::StoreError::Corrupt)?;
+            let (_, value) = latent_state::session::describe_state_payload_owner(&view, &cell)?;
+            let count = latent_state::payload_references::physical_owner_count(
+                &view,
+                &link.reference.payload,
+            )?;
+            Ok((page.references, link, value, count))
         })
         .unwrap()
         .await
         .unwrap()
         .unwrap();
-    assert_eq!(references.len(), 1);
-    assert_eq!(
-        references[0].owner.kind,
-        latent_state::payload_references::PayloadOwnerKind::Result
-    );
-    assert_eq!(references[0].payload.tenant, "a");
-    assert_eq!(references[0].payload.provider, "payload-local");
-    assert_eq!(references[0].payload.size, 4);
-    let physical = &references[0].payload;
+    assert_eq!(references.len(), 2);
+    let result = references
+        .iter()
+        .find(|reference| {
+            reference.owner.kind == latent_state::payload_references::PayloadOwnerKind::Result
+        })
+        .unwrap();
+    let state_reference = references
+        .iter()
+        .find(|reference| {
+            reference.owner.kind == latent_state::payload_references::PayloadOwnerKind::State
+        })
+        .unwrap();
+    assert_eq!(state_link.reference, *state_reference);
+    assert_eq!(stored_value.bytes, b"body");
+    assert_eq!(owner_count, Some(2));
+    assert_eq!(result.payload, state_reference.payload);
+    assert_eq!(result.payload.tenant, "a");
+    assert_eq!(result.payload.provider, "payload-local");
+    assert_eq!(result.payload.size, 4);
+    let physical = &result.payload;
     let blob = latent_blobs::BlobReference {
         digest: latent_core::BlobDigest(format!(
             "sha256:{:x}",

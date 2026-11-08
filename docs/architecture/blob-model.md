@@ -62,8 +62,8 @@ The lower-level commit and recovery owners can retain verified local payload
 attachments, but attaching them through the guest transaction runtime remains
 unimplemented. Orphan reconciliation and complete backup/migration closure also
 remain separate work. On Linux, `python3 tools/qualify_local_payload_recovery.py`
-exercises a committed local result attachment across protected startup and
-checks that subsequent physical corruption refuses recovery.
+exercises committed local result and state attachments across protected startup
+and checks that subsequent physical corruption refuses recovery.
 
 The local provider also exposes a tenant-scoped, bounded reference inventory for
 trusted recovery owners. Each cursor and returned page retains a native work
