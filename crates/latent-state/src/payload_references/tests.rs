@@ -131,6 +131,42 @@ fn physical_inventory_fences_changed_generation_and_detects_missing_index() {
 }
 
 #[test]
+fn physical_inventory_stops_when_original_checkpoint_expires_between_pages() {
+    let root = tempfile::tempdir().unwrap();
+    let database = store(root.path(), true);
+    for identity in 1..=(MAX_REFERENCE_UPDATES as u8 + 1) {
+        update(
+            &database,
+            None,
+            Some(reference(PayloadOwnerKind::Result, identity)),
+        );
+    }
+    let view = database.snapshot().unwrap();
+    let heads = view
+        .scan_after(
+            Family::PayloadReference,
+            b"immutable-payload-retention-head-v1\0",
+            None,
+            2,
+            2 * MAX_REFERENCE_BYTES,
+        )
+        .unwrap();
+    let (key, bytes) = &heads.rows[0];
+    let mut checkpoints = 0;
+    let result = validate_physical_inventory_head_with_checkpoint(&view, key, bytes, &mut || {
+        checkpoints += 1;
+        if checkpoints == 3 {
+            Err(StoreError::Unavailable)
+        } else {
+            Ok(())
+        }
+    });
+    assert_eq!(result, Err(StoreError::Unavailable));
+    assert_eq!(checkpoints, 3);
+    assert!(validate_physical_inventory_head(&view, key, bytes).unwrap());
+}
+
+#[test]
 fn physical_inventory_rejects_another_engine_with_identical_head() {
     let first_root = tempfile::tempdir().unwrap();
     let other_root = tempfile::tempdir().unwrap();

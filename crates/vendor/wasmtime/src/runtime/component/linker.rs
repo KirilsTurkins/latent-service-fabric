@@ -1,5 +1,5 @@
 #[cfg(feature = "component-model-async")]
-use crate::component::concurrent::Accessor;
+use crate::component::concurrent::{Accessor, InlineConcurrentHost};
 use crate::component::func::HostFunc;
 use crate::component::instance::RuntimeImport;
 use crate::component::matching::{InstanceType, TypeChecker};
@@ -662,6 +662,29 @@ impl<T: 'static> LinkerInstance<'_, T> {
             bail!("concurrent host functions require `Config::concurrency_support`");
         }
         self.insert(name, Definition::Func(HostFunc::func_wrap_concurrent(f)?))?;
+        Ok(())
+    }
+
+    /// Define a concurrent host function whose concrete callback future is
+    /// included in the original admitted engine future allocation.
+    ///
+    /// This replaces only the callback's otherwise separate future Box.
+    /// Captured and transitive allocations require their own owners.
+    #[cfg(feature = "component-model-async")]
+    pub fn func_wrap_concurrent_inline<Params, Return, F>(&mut self, name: &str, f: F) -> Result<()>
+    where
+        T: 'static,
+        F: InlineConcurrentHost<T, Params, Return>,
+        Params: ComponentNamedList + Lift + 'static,
+        Return: ComponentNamedList + Lower + 'static,
+    {
+        if !self.engine.tunables().concurrency_support {
+            bail!("concurrent host functions require `Config::concurrency_support`");
+        }
+        self.insert(
+            name,
+            Definition::Func(HostFunc::func_wrap_concurrent_inline(f)?),
+        )?;
         Ok(())
     }
 

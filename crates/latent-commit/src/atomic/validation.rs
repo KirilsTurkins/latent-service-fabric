@@ -431,8 +431,19 @@ pub fn validate_view(
 /// that same finite walk. The observer owns no view and cannot publish state.
 pub fn validate_view_observed(
     view: &ReadView,
+    foreign: impl FnMut(&ReadView, &RowKey, &[u8]) -> Result<(), StoreError>,
+    observer: impl FnMut(&ReadView, &RowKey, &[u8]) -> Result<(), StoreError>,
+) -> Result<(), StoreError> {
+    validate_view_observed_with_checkpoint(view, foreign, observer, || Ok(()))
+}
+
+/// Preserve the original reservation during both the outer walk and nested
+/// bounded payload inventories, including their final successful page.
+pub fn validate_view_observed_with_checkpoint(
+    view: &ReadView,
     mut foreign: impl FnMut(&ReadView, &RowKey, &[u8]) -> Result<(), StoreError>,
     mut observer: impl FnMut(&ReadView, &RowKey, &[u8]) -> Result<(), StoreError>,
+    mut checkpoint: impl FnMut() -> Result<(), StoreError>,
 ) -> Result<(), StoreError> {
     let mut total = 0usize;
     for family in [
@@ -449,6 +460,7 @@ pub fn validate_view_observed(
     ] {
         let mut resume = None;
         loop {
+            checkpoint()?;
             let page = view.scan_after(family, b"", resume.as_deref(), 128, 2 * 1024 * 1024)?;
             total = total
                 .checked_add(page.rows.len())
@@ -457,9 +469,10 @@ pub fn validate_view_observed(
                 return Err(StoreError::Capacity);
             }
             for (key, bytes) in &page.rows {
+                checkpoint()?;
                 if latent_state::payload_references::owns_row(key) {
-                    if !latent_state::payload_references::validate_physical_inventory_head(
-                        view, key, bytes,
+                    if !latent_state::payload_references::validate_physical_inventory_head_with_checkpoint(
+                        view, key, bytes, &mut checkpoint,
                     )? && !latent_state::payload_references::validate_state_linked_row(
                         view, key, bytes,
                     )? {
@@ -492,7 +505,7 @@ pub fn validate_view_observed(
             }
         }
     }
-    Ok(())
+    checkpoint()
 }
 
 pub(super) fn tenant_for_linked_row(

@@ -25,4 +25,4 @@ concurrency:
   cancel-in-progress: true
 jobs:
   controls:
-    uses: ./.github/workflows/canonical-join-state.yml
+    uses: $/.github/workflows/canonical-join-state.yml

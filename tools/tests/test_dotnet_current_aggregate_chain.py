@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from tools import qualify_dotnet_finite_waits as qualification
-from tools.dotnet_guest.managed_work import REQUIRED_RESULT_REWRITE_RECEIPT
+from tools.dotnet_guest.managed_work import MULTIPLE_UNWRAP_REWRITE_RECEIPT
 from tools.phase2_operator_process import WorkflowError
 from tools.rust_capsule_project import ROOT
 from tools.tests import test_dotnet_finite_wait_programme as fixtures
@@ -26,7 +26,7 @@ class CurrentAggregateFilesystemChain(unittest.TestCase):
                 'targetsDigest', 'nativeAotReferenceBinding', 'selection'}
             controlled.update({key: before[key] for key in extras})
             controlled.update(outputDigest=before['outputDigest'], generatedHelperCount=96,
-                managedAcceptedWork=copy.deepcopy(REQUIRED_RESULT_REWRITE_RECEIPT))
+                managedAcceptedWork=copy.deepcopy(MULTIPLE_UNWRAP_REWRITE_RECEIPT))
             docs['task-wait-port.json'] = controlled
             docs['closed-filesystem-port.json']['unchangedBaseMethods'] = 44840
             docs['runtime-profile.json']['profile'] = 'runtime-managed'

@@ -9,6 +9,7 @@ internal static class StateControl
     internal static Action? QueueAllocationCallback;
     internal static Action? RecordAllocationCallback;
     internal static Action? RequiredPublishedCallback, RequiredReservedCallback;
+    internal static Action? StartupAllocationCallback, StartupRootPublishedCallback;
     private static Action? QueueReserveCallback;
     private static Action? ResultReservationCallback, AfterSettlementCallback, AfterContextClearCallback, AfterContextRestoreCallback;
     private static ulong afterSettlementTarget, refuseContextRestore, afterContextRestoreTarget;
@@ -26,8 +27,19 @@ internal static class StateControl
     private static int unknownReservationKind = -1;
     private static ulong unknownReservationToken;
     private static int malformedReservationKind = -1;
+    private static int bridgeZeroBothKind = -1;
     private static bool malformedGeneration;
     private static readonly InvalidOperationException UnknownReservation = new("control-original-reservation-unknown");
+    private static readonly InvalidOperationException StartupContextError = new("control-startup-context-error");
+    private static readonly InvalidOperationException StartupCleanupError = new("control-startup-cleanup-error");
+    private static readonly OutOfMemoryException StartupAllocationError = new("control-startup-allocation-error");
+    private static readonly InvalidOperationException StartupReadinessError = new("control-startup-readiness-error");
+    private static Action? StartupReserveCallback, StartupContextCallback, StartupReadinessCallback;
+    private static bool startupInspect, startupContextFailure, startupContextBefore, startupClearFailure,
+        startupClearBefore, startupNativeCleanupFailure, startupRootCleanupFailure, startupCleanupAfter;
+    private static ulong startupRoot, startupNative, startupExtra;
+    private static int startupRootAttempts, startupNativeAttempts;
+    private static int readinessCalls, failReadinessAt;
     private static bool failOwnerRollback, unknownOwnerRollback;
     private static ulong rollbackOwner;
     private static int ownerRollbackAttempts;
@@ -65,18 +77,30 @@ internal static class StateControl
         {
             if (kind == 6 && ResultReservationCallback is { } refused)
             { ResultReservationCallback = null; refused(); }
-            if (kind is 0 or 3 or 6) return default;
+            if (startupInspect && kind == 7 && StartupReserveCallback is { } startupRefused)
+            { StartupReserveCallback = null; startupRefused(); }
+            if (kind is 0 or 3 or 6 or 7) return default;
             throw new InvalidOperationException("control-ledger-capacity");
         }
         ulong key = checked(++sequence);
         Owners.Add(key, kind);
+        if (startupInspect && kind == 0 && startupRoot == 0) startupRoot = key;
+        if (startupInspect && kind == 7)
+        { if (startupNative == 0) startupNative = key; else startupExtra = key; }
         maximumTasks = Math.Max(maximumTasks, Count(0)); maximumResults = Math.Max(maximumResults, Count(6));
+        if (startupInspect && StartupReserveCallback is { } startup)
+        { StartupReserveCallback = null; startup(); }
         if (kind == 6 && ResultReservationCallback is { } resultCallback)
         { ResultReservationCallback = null; resultCallback(); }
         if (kind == unknownReservationKind)
         {
             unknownReservationToken = key;
             throw UnknownReservation;
+        }
+        if (kind == bridgeZeroBothKind)
+        {
+            unknownReservationToken = key;
+            throw new InvalidOperationException("managed-work-reservation-token");
         }
         if (kind == malformedReservationKind)
         {
@@ -87,6 +111,14 @@ internal static class StateControl
     }
     private static void Settle(ulong generation, ulong id)
     {
+        if (startupInspect && id == startupRoot) startupRootAttempts++;
+        if (startupInspect && id == startupNative) startupNativeAttempts++;
+        if (startupInspect && ((id == startupRoot && startupRootCleanupFailure)
+            || (id == startupNative && startupNativeCleanupFailure)))
+        {
+            if (startupCleanupAfter) Need(Owners.Remove(id)); else Need(Owners.ContainsKey(id));
+            throw StartupCleanupError;
+        }
         if (id == rootIdentifier) rootSettlements++;
         if (id == storageIdentifier) storageSettlements++;
         if (failOwnerRollback && id == rollbackOwner)
@@ -112,8 +144,30 @@ internal static class StateControl
     {
         Need(Work.Count != 0); controlDispatches++; Work.Dequeue()();
     }
+    internal static bool ReadyForControl()
+    {
+        readinessCalls++;
+        if (readinessCalls == 1 && StartupReadinessCallback is { } callback)
+        { StartupReadinessCallback = null; callback(); }
+        if (readinessCalls == failReadinessAt) throw StartupReadinessError;
+        return Work.Count != 0;
+    }
     private static void Context(ulong generation, ulong id)
     {
+        if (startupInspect && generation == 17 && id == startupRoot)
+        {
+            if (startupContextFailure && startupContextBefore) throw StartupContextError;
+            context = (generation, id);
+            if (StartupContextCallback is { } startupCallback)
+            { StartupContextCallback = null; startupCallback(); }
+            if (startupContextFailure) throw StartupContextError;
+            return;
+        }
+        if (startupInspect && startupClearFailure && (generation, id) == (0UL, 0UL))
+        {
+            if (!startupClearBefore) context = (generation, id);
+            throw StartupCleanupError;
+        }
         if (refuseContextClear && (generation, id) == (0UL, 0UL))
         {
             contextClearAttempts++;
@@ -366,6 +420,274 @@ internal static class StateControl
         Need(Count(0) == 2 && Count(6) == 0);
         ManagedWorkRuntime.Observed(required.Task); blocker.SetResult(1);
         ManagedWorkRuntime.Completed(promise); Finish();
+    }
+
+    // The registry calls below model the order of the injected pinned-CoreLib
+    // hooks; the Tasks and Unwrap continuation are the real host CLR objects.
+    private static void IndependentInnerFaultControl()
+    {
+        var failure = new ArgumentException("control-independent-inner-fault");
+        var inner = new Task(() => throw failure);
+        var outer = new Task<Task>(() => inner);
+        ManagedWorkRuntime.Schedule(outer);
+        var promise = outer.Unwrap();
+        ManagedWorkRuntime.Unwrap(promise, outer);
+        ManagedWorkRuntime.Schedule(inner);
+        Need(Count(0) == 3);
+        outer.RunSynchronously();
+        ManagedWorkRuntime.Inner(promise, inner);
+        ManagedWorkRuntime.Completed(outer);
+        inner.RunSynchronously();
+        Need(inner.IsFaulted && promise.IsFaulted);
+        // Unwrap's pinned TrySetFromTask observes the original inner fault
+        // before the promise's FinishStageThree completes.
+        ManagedWorkRuntime.Observed(inner);
+        ManagedWorkRuntime.Completed(promise);
+        ManagedWorkRuntime.Completed(inner);
+        try { promise.GetAwaiter().GetResult(); throw new InvalidOperationException("missing-task-fault"); }
+        catch (ArgumentException error) when (ReferenceEquals(error, failure)) { }
+        ManagedWorkRuntime.Observed(promise);
+        Finish();
+    }
+
+    private static void InnerScheduledAfterAliasControl()
+    {
+        var inner = new Task(() => { });
+        var outer = new Task<Task>(() => inner);
+        ManagedWorkRuntime.Schedule(outer);
+        var promise = outer.Unwrap();
+        ManagedWorkRuntime.Unwrap(promise, outer);
+        outer.RunSynchronously();
+        ManagedWorkRuntime.Inner(promise, inner);
+        ManagedWorkRuntime.Completed(outer);
+        ManagedWorkRuntime.Schedule(inner);
+        Need(Count(0) == 3);
+        inner.RunSynchronously();
+        ManagedWorkRuntime.Completed(promise);
+        ManagedWorkRuntime.Completed(inner);
+        Finish();
+    }
+
+    private static void IndependentInnerCapacityControl()
+    {
+        Limits[0] = 3;
+        var inner = new Task(() => { });
+        var outer = new Task<Task>(() => inner);
+        ManagedWorkRuntime.Schedule(outer);
+        var promise = outer.Unwrap();
+        ManagedWorkRuntime.Unwrap(promise, outer);
+        ManagedWorkRuntime.Schedule(inner);
+        var pending = Pending();
+        var previous = ManagedWorkRuntime.Enter(promise);
+        ManagedWorkRuntime.CreatedAsync(pending.Task);
+        ManagedWorkRuntime.Exit(previous);
+        outer.RunSynchronously(); ManagedWorkRuntime.Inner(promise, inner); ManagedWorkRuntime.Completed(outer);
+        previous = ManagedWorkRuntime.Enter(promise); var parentToken = context; ManagedWorkRuntime.Exit(previous);
+        previous = ManagedWorkRuntime.Enter(inner); var innerToken = context; ManagedWorkRuntime.Exit(previous);
+        Need(innerToken != parentToken);
+        Enqueue(inner);
+        Need(ManagedWorkRuntime.QueuedOwnerForControl(inner) == innerToken);
+        ManagedWorkRuntime.Dequeue(inner);
+        previous = ManagedWorkRuntime.EnterDispatch(inner); Need(context == innerToken); ManagedWorkRuntime.Exit(previous);
+        inner.RunSynchronously(); ManagedWorkRuntime.Completed(promise); ManagedWorkRuntime.Completed(inner);
+        Need(Count(0) == 2 && !pending.Task.IsCompleted);
+        var later = new Task(() => { }); ManagedWorkRuntime.Schedule(later);
+        later.RunSynchronously(); ManagedWorkRuntime.Completed(later);
+        pending.SetResult(1); ManagedWorkRuntime.Completed(promise); Finish();
+    }
+
+    private static void SharedIndependentInnerControl(bool late)
+    {
+        var failure = new ArgumentException("control-shared-inner-fault");
+        var inner = new Task(() => throw failure);
+        var first = new Task<Task>(() => inner);
+        var second = new Task<Task>(() => inner);
+        ManagedWorkRuntime.Schedule(first); var a = first.Unwrap(); ManagedWorkRuntime.Unwrap(a, first);
+        ManagedWorkRuntime.Schedule(second); var b = second.Unwrap(); ManagedWorkRuntime.Unwrap(b, second);
+        if (!late) ManagedWorkRuntime.Schedule(inner);
+        first.RunSynchronously(); ManagedWorkRuntime.Inner(a, inner); ManagedWorkRuntime.Completed(first);
+        second.RunSynchronously(); ManagedWorkRuntime.Inner(b, inner); ManagedWorkRuntime.Completed(second);
+        if (late) ManagedWorkRuntime.Schedule(inner);
+        Need(Count(0) == 4);
+        inner.RunSynchronously(); Need(inner.IsFaulted && a.IsFaulted && b.IsFaulted);
+        // Each original Unwrap observes the same inner exception.
+        ManagedWorkRuntime.Observed(inner); ManagedWorkRuntime.Observed(inner);
+        ManagedWorkRuntime.Completed(a); ManagedWorkRuntime.Completed(b); ManagedWorkRuntime.Completed(inner);
+        try { a.GetAwaiter().GetResult(); throw new InvalidOperationException("missing-first-task-fault"); }
+        catch (ArgumentException error) when (ReferenceEquals(error, failure)) { }
+        ManagedWorkRuntime.Observed(a);
+        try { b.GetAwaiter().GetResult(); throw new InvalidOperationException("missing-second-task-fault"); }
+        catch (ArgumentException error) when (ReferenceEquals(error, failure)) { }
+        ManagedWorkRuntime.Observed(b); Finish();
+    }
+
+    private static void IndependentInnerReentryControl()
+    {
+        var inner = new Task(() => { }); var outer = new Task<Task>(() => inner);
+        ManagedWorkRuntime.Schedule(outer); var promise = outer.Unwrap(); ManagedWorkRuntime.Unwrap(promise, outer);
+        outer.RunSynchronously(); ManagedWorkRuntime.Inner(promise, inner); ManagedWorkRuntime.Completed(outer);
+        RecordAllocationCallback = () => ManagedWorkRuntime.Schedule(inner);
+        ManagedWorkRuntime.Schedule(inner); Need(Count(0) == 3);
+        inner.RunSynchronously(); ManagedWorkRuntime.Completed(promise); ManagedWorkRuntime.Completed(inner); Finish();
+    }
+
+    private static void IndependentInnerRefusalControl(bool unknown)
+    {
+        var inner = new Task(() => { }); var outer = new Task<Task>(() => inner);
+        ManagedWorkRuntime.Schedule(outer); var promise = outer.Unwrap(); ManagedWorkRuntime.Unwrap(promise, outer);
+        outer.RunSynchronously(); ManagedWorkRuntime.Inner(promise, inner); ManagedWorkRuntime.Completed(outer);
+        if (unknown) unknownReservationKind = 0; else Limits[0] = 2;
+        if (unknown)
+        {
+            Exception? error = null; try { ManagedWorkRuntime.Schedule(inner); } catch (Exception caught) { error = caught; }
+            Need(ReferenceEquals(error, UnknownReservation) && Count(0) == 3 && Owners.ContainsKey(unknownReservationToken));
+            Refuses(() => ManagedWorkRuntime.Schedule(inner), "managed-work-owner-retired");
+            Refuses(() => Enqueue(inner), "managed-work-owner-retired");
+            Refuses(() => { ManagedWorkRuntime.Enter(inner); }, "managed-work-execution-parent");
+            return;
+        }
+        Refuses(() => ManagedWorkRuntime.Schedule(inner), "managed-work-admission-refused");
+        Need(Count(0) == 2 && !inner.IsCompleted && !promise.IsCompleted);
+        // Only the registry admission was invoked; no actual Task.Start was
+        // attempted before this model retry.
+        Limits[0] = 3; ManagedWorkRuntime.Schedule(inner);
+        inner.RunSynchronously(); ManagedWorkRuntime.Completed(promise); ManagedWorkRuntime.Completed(inner); Finish();
+    }
+
+    private static void InnerAndOuterAliasControl(bool reentrant)
+    {
+        var shared = new Task<Task>(() => Task.CompletedTask);
+        var first = new Task<Task>(() => shared);
+        ManagedWorkRuntime.Schedule(first); var a = first.Unwrap(); ManagedWorkRuntime.Unwrap(a, first);
+        first.RunSynchronously(); ManagedWorkRuntime.Inner(a, shared); ManagedWorkRuntime.Completed(first);
+        Task? b = null;
+        void AdmitAndUnwrap()
+        {
+            ManagedWorkRuntime.Schedule(shared);
+            b = shared.Unwrap(); ManagedWorkRuntime.Unwrap(b, shared);
+        }
+        if (reentrant)
+        {
+            RecordAllocationCallback = AdmitAndUnwrap;
+            ManagedWorkRuntime.Schedule(shared);
+        }
+        else
+        {
+            AdmitAndUnwrap();
+            ManagedWorkRuntime.Schedule(shared);
+        }
+        Need(Count(0) == 3 && b is not null);
+        shared.RunSynchronously();
+        ManagedWorkRuntime.Inner(b!, Task.CompletedTask);
+        ManagedWorkRuntime.Completed(a); ManagedWorkRuntime.Completed(b!); ManagedWorkRuntime.Completed(shared);
+        Finish();
+    }
+
+    private static void InnerAndInactiveOuterAliasControl()
+    {
+        var shared = new Task<Task>(() => throw new ArgumentException("control-inactive-outer-fault"));
+        var first = new Task<Task>(() => shared);
+        ManagedWorkRuntime.Schedule(first); var a = first.Unwrap(); ManagedWorkRuntime.Unwrap(a, first);
+        first.RunSynchronously(); ManagedWorkRuntime.Inner(a, shared); ManagedWorkRuntime.Completed(first);
+        ManagedWorkRuntime.Schedule(shared); var b = shared.Unwrap(); ManagedWorkRuntime.Unwrap(b, shared);
+        var previous = ManagedWorkRuntime.Enter(b); settlementRefusal = context.Item2; ManagedWorkRuntime.Exit(previous);
+        shared.RunSynchronously(); Need(a.IsFaulted && b.IsFaulted);
+        Refuses(() => ManagedWorkRuntime.Completed(b), "managed-work-settlement-refused");
+        Refuses(() => ManagedWorkRuntime.Schedule(shared), "managed-work-owner-retired");
+        Need(refusedSettlements == 1 && Count(0) == 3 && Count(6) == 1);
+        // The control terminates with the uncertain owner retained, without retry.
+        settlementRefusal = 0;
+    }
+
+    private static void InactiveInnerAliasWithPrimaryControl(bool fault)
+    {
+        var inner = new Task(() => { if (fault) throw new ArgumentException("control-inactive-inner-fault"); });
+        var outer = new Task<Task>(() => inner);
+        ManagedWorkRuntime.Schedule(outer); var promise = outer.Unwrap(); ManagedWorkRuntime.Unwrap(promise, outer);
+        ManagedWorkRuntime.Schedule(inner);
+        outer.RunSynchronously(); ManagedWorkRuntime.Inner(promise, inner); ManagedWorkRuntime.Completed(outer);
+        var previous = ManagedWorkRuntime.Enter(promise); settlementRefusal = context.Item2; ManagedWorkRuntime.Exit(previous);
+        inner.RunSynchronously();
+        if (fault) ManagedWorkRuntime.Observed(inner); // The original Unwrap observes its source fault.
+        Refuses(() => ManagedWorkRuntime.Completed(promise), "managed-work-settlement-refused");
+        Refuses(() => ManagedWorkRuntime.Schedule(inner), "managed-work-owner-retired");
+        Refuses(() => Enqueue(inner), "managed-work-owner-retired");
+        Refuses(() => { ManagedWorkRuntime.Enter(inner); }, "managed-work-execution-parent");
+        Refuses(() => ManagedWorkRuntime.Observed(inner), "managed-work-double-settle");
+        Refuses(() => ManagedWorkRuntime.Completed(inner), "managed-work-double-settle");
+        Need(refusedSettlements == 1 && Count(0) == 3 && Count(6) == (fault ? 1 : 0));
+        // Retain the uncertain alias and stop without another settlement attempt.
+        settlementRefusal = 0;
+    }
+
+    private static void MultipleUnwrapFaultControl(string observed)
+    {
+        var failure = new ArgumentException("control-multiple-unwrap-fault");
+        var inner = new TaskCompletionSource<int>();
+        var outer = new Task<Task>(() => inner.Task);
+        ManagedWorkRuntime.Schedule(outer);
+        var first = outer.Unwrap(); ManagedWorkRuntime.Unwrap(first, outer);
+        var second = outer.Unwrap(); ManagedWorkRuntime.Unwrap(second, outer);
+        Need(!ReferenceEquals(first, second) && !first.IsCompleted && !second.IsCompleted);
+        outer.RunSynchronously();
+        ManagedWorkRuntime.Inner(first, inner.Task); ManagedWorkRuntime.Inner(second, inner.Task);
+        ManagedWorkRuntime.Completed(outer);
+        inner.SetException(failure); Need(first.IsFaulted && second.IsFaulted);
+        // The host Tasks are real; registry calls model the selected pinned
+        // Unwrap and FinishStageThree hooks in their completion order.
+        ManagedWorkRuntime.Observed(inner.Task); ManagedWorkRuntime.Completed(first);
+        ManagedWorkRuntime.Observed(inner.Task); ManagedWorkRuntime.Completed(second);
+        if (observed is "first" or "both")
+        {
+            try { first.GetAwaiter().GetResult(); throw new InvalidOperationException("missing-first-fault"); }
+            catch (ArgumentException error) when (ReferenceEquals(error, failure)) { }
+            ManagedWorkRuntime.Observed(first);
+        }
+        if (observed is "second" or "both")
+        {
+            try { second.GetAwaiter().GetResult(); throw new InvalidOperationException("missing-second-fault"); }
+            catch (ArgumentException error) when (ReferenceEquals(error, failure)) { }
+            ManagedWorkRuntime.Observed(second);
+        }
+        AggregateException? received = null;
+        try { ManagedWorkRuntime.JoinAcceptedWork(); } catch (AggregateException error) { received = error; }
+        int expected = observed == "both" ? 0 : observed == "neither" ? 2 : 1;
+        Need((received?.Flatten().InnerExceptions.Count ?? 0) == expected);
+        if (received is not null) Need(received.Flatten().InnerExceptions.All(error => ReferenceEquals(error, failure)));
+        ManagedWorkRuntime.FinishedPhysicalDrain(); Need(Owners.Count == 0 && Work.Count == 0);
+    }
+
+    private static void MultipleUnwrapPendingControl(bool firstFinishes)
+    {
+        // Explicit task ports model the two completion-hook orders; no
+        // scheduler or guest execution is inferred from this control.
+        var outer = new TaskCompletionSource<Task>(); var first = Pending(); var second = Pending();
+        ManagedWorkRuntime.Schedule(outer.Task);
+        ManagedWorkRuntime.Unwrap(first.Task, outer.Task); ManagedWorkRuntime.Unwrap(second.Task, outer.Task);
+        var done = firstFinishes ? first : second; var pending = firstFinishes ? second : first;
+        done.SetResult(1); ManagedWorkRuntime.Completed(done.Task);
+        bool returned = false;
+        Refuses(() => { ManagedWorkRuntime.JoinAcceptedWork(); returned = true; }, "managed-work-unproven-quiescence");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
+        Need(!returned && !pending.Task.IsCompleted && Count(0) == 2);
+    }
+
+    private static void MultipleUnwrapCapacityControl()
+    {
+        var source = new TaskCompletionSource<int>(); var outer = new Task<Task>(() => source.Task);
+        ManagedWorkRuntime.Schedule(outer);
+        var first = outer.Unwrap(); ManagedWorkRuntime.Unwrap(first, outer);
+        for (int i = 0; i < 32; i++)
+        {
+            var proxy = outer.Unwrap();
+            Need(!ReferenceEquals(first, proxy));
+            ManagedWorkRuntime.Unwrap(proxy, outer);
+        }
+        var overflow = outer.Unwrap();
+        Refuses(() => ManagedWorkRuntime.Unwrap(overflow, outer), "managed-work-required-continuation-limit");
+        Need(Count(0) == 2 && !outer.IsCompleted && !first.IsCompleted);
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-unproven-quiescence");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-owners");
     }
     private static void RequiredResultSettlementFailureControl(bool unknown)
     {
@@ -994,20 +1316,376 @@ internal static class StateControl
         catch (InvalidOperationException) { }
         Need(!rootFinalizationReturned && Owners.ContainsKey(unknownReservationToken));
     }
+    private static void AssertSafeStartupFenced()
+    {
+        Refuses(Begin, "managed-work-installation");
+        Refuses(() => ManagedWorkRuntime.Enqueue(new object()), "managed-work-installation-in-progress");
+        Refuses(() => ManagedWorkRuntime.TimerChanging(new object()), "managed-work-installation-in-progress");
+        Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-closing-state");
+        Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-state");
+    }
+    private static void AssertStartupFenced()
+    {
+        AssertSafeStartupFenced();
+        Refuses(() => ManagedWorkRuntime.Schedule(Pending().Task), "managed-work-untracked-startup-work");
+        Refuses(() => ManagedWorkRuntime.Continuation(Pending().Task), "managed-work-untracked-startup-work");
+        Refuses(() => ManagedWorkRuntime.Unwrap(Pending().Task, Pending().Task), "managed-work-untracked-startup-work");
+        Refuses(() => ManagedWorkRuntime.Inner(Pending().Task, Pending().Task), "managed-work-untracked-startup-work");
+        Refuses(() => ManagedWorkRuntime.CreatedAsync(Pending().Task), "managed-work-untracked-startup-work");
+        Refuses(() => ManagedWorkRuntime.RequiredTransport(Pending().Task), "managed-work-untracked-startup-work");
+        ManagedWorkRuntime.ContinuationFailed(Pending().Task); ManagedWorkRuntime.Observed(Pending().Task);
+    }
+    private static void StartupPreinstallControl()
+    {
+        ManagedWorkRuntime.Schedule(Pending().Task); ManagedWorkRuntime.Continuation(Pending().Task);
+        ManagedWorkRuntime.Unwrap(Pending().Task, Pending().Task); ManagedWorkRuntime.Inner(Pending().Task, Pending().Task);
+        ManagedWorkRuntime.CreatedAsync(Pending().Task); ManagedWorkRuntime.RequiredTransport(Pending().Task);
+        Need(ManagedWorkRuntime.Enqueue(new object()) is null); ManagedWorkRuntime.TimerChanging(new object());
+        ManagedWorkRuntime.EnqueueFinalized(null, 0); ManagedWorkRuntime.Dequeue(new object());
+        Need(ManagedWorkRuntime.Popped(true, new object()) && ManagedWorkRuntime.Enter(new object()) is null);
+        ManagedWorkRuntime.Exit(null); ManagedWorkRuntime.CallbackCompleted(new object());
+        ManagedWorkRuntime.Completed(Pending().Task); ManagedWorkRuntime.ContinuationFailed(Pending().Task);
+        ManagedWorkRuntime.Observed(Pending().Task); Need(ManagedWorkRuntime.BindContext(null, new object()) is null);
+        ManagedWorkRuntime.TimerAccepted(new object()); Need(ManagedWorkRuntime.TimerEnter(new object()) is null);
+        ManagedWorkRuntime.TimerChanged(new object()); ManagedWorkRuntime.TimerDeleted(new object());
+        ManagedWorkRuntime.TimerLeave(new object(), null); ManagedWorkRuntime.EnsureJoinReady();
+        Need(Owners.Count == 0); Begin(); Finish();
+    }
+    private static void StartupBeforeRootAllocationFailureControl()
+    {
+        startupInspect = true; StartupAllocationCallback = () => throw StartupAllocationError;
+        Exception? received = null; try { Begin(); } catch (Exception error) { received = error; }
+        var state = ManagedWorkRuntime.StartupForControl();
+        Need(ReferenceEquals(received, StartupAllocationError) && state.Root is null && !state.Installed
+            && Owners.Count == 0 && startupRootAttempts == 0 && startupNativeAttempts == 0);
+        AssertStartupFenced();
+    }
+    private static void StartupReadinessFailureControl(int at)
+    {
+        startupInspect = true; failReadinessAt = at;
+        Exception? received = null; try { Begin(); } catch (Exception error) { received = error; }
+        Need(ReferenceEquals(received, StartupReadinessError));
+        if (at == 1)
+        {
+            Need(Owners.Count == 0); failReadinessAt = 0; Begin(); Finish(); return;
+        }
+        Need(Count(0) == (at >= 4 ? 1 : 0) && Count(7) == (at >= 5 ? 1 : 0)
+            && startupRootAttempts == 0 && startupNativeAttempts == 0);
+        AssertStartupFenced();
+    }
+    private static void StartupReadinessReentryControl(string stage)
+    {
+        startupInspect = true; void Ready() => Work.Enqueue(() => { });
+        if (stage == "allocation") StartupAllocationCallback = Ready;
+        else if (stage == "root-publication") StartupRootPublishedCallback = Ready;
+        else if (stage == "root") StartupReserveCallback = Ready;
+        else if (stage == "native") StartupReserveCallback = () => StartupReserveCallback = Ready;
+        else if (stage == "context") StartupContextCallback = Ready;
+        else throw new InvalidOperationException("unknown-startup-readiness-stage");
+        Refuses(Begin, "managed-work-untracked-startup-work");
+        Need(Work.Count == 1 && Count(0) == (stage is "allocation" or "root-publication" ? 0 : 1)
+            && Count(7) == (stage is "native" or "context" ? 1 : 0)
+            && startupRootAttempts == 0 && startupNativeAttempts == 0);
+        AssertStartupFenced();
+    }
+    private static void StartupExecutionReentryControl(string stage, string action)
+    {
+        startupInspect = true; bool inspected = false;
+        void Reenter()
+        {
+            inspected = true;
+            switch (action)
+            {
+                case "schedule": Refuses(() => ManagedWorkRuntime.Schedule(Pending().Task), "managed-work-untracked-startup-work"); break;
+                case "continuation": Refuses(() => ManagedWorkRuntime.Continuation(Pending().Task), "managed-work-untracked-startup-work"); break;
+                case "unwrap": Refuses(() => ManagedWorkRuntime.Unwrap(Pending().Task, Pending().Task), "managed-work-untracked-startup-work"); break;
+                case "inner": Refuses(() => ManagedWorkRuntime.Inner(Pending().Task, Pending().Task), "managed-work-untracked-startup-work"); break;
+                case "created-async": Refuses(() => ManagedWorkRuntime.CreatedAsync(Pending().Task), "managed-work-untracked-startup-work"); break;
+                case "required-transport": Refuses(() => ManagedWorkRuntime.RequiredTransport(Pending().Task), "managed-work-untracked-startup-work"); break;
+                case "continuation-failed": ManagedWorkRuntime.ContinuationFailed(Pending().Task); break;
+                case "observed": ManagedWorkRuntime.Observed(Pending().Task); break;
+                case "ensure-join-ready": Refuses(ManagedWorkRuntime.EnsureJoinReady, "managed-work-untracked-startup-work"); break;
+                case "enter": Refuses(() => ManagedWorkRuntime.Enter(new object()), "managed-work-untracked-startup-work"); break;
+                case "dequeue": Refuses(() => ManagedWorkRuntime.Dequeue(new object()), "managed-work-untracked-startup-work"); break;
+                case "pop": Refuses(() => ManagedWorkRuntime.Popped(true, new object()), "managed-work-untracked-startup-work"); break;
+                case "bind": Refuses(() => ManagedWorkRuntime.BindContext(null, new object()), "managed-work-untracked-startup-work"); break;
+                case "timer-accepted": Refuses(() => ManagedWorkRuntime.TimerAccepted(new object()), "managed-work-untracked-startup-work"); break;
+                case "timer-enter": Refuses(() => ManagedWorkRuntime.TimerEnter(new object()), "managed-work-untracked-startup-work"); break;
+                case "timer-deleted": Refuses(() => ManagedWorkRuntime.TimerDeleted(new object()), "managed-work-untracked-startup-work"); break;
+                case "enqueue-success": Refuses(() => ManagedWorkRuntime.EnqueueFinalized(null, 2), "managed-work-untracked-startup-work"); break;
+                case "enqueue-fault": ManagedWorkRuntime.EnqueueFinalized(null, 0); break;
+                case "timer-changed": ManagedWorkRuntime.TimerChanged(new object()); break;
+                case "timer-leave": ManagedWorkRuntime.TimerLeave(new object(), null); break;
+                case "exit": ManagedWorkRuntime.Exit(null); break;
+                case "callback-completed": ManagedWorkRuntime.CallbackCompleted(new object()); break;
+                case "completed": ManagedWorkRuntime.Completed(Pending().Task); break;
+                default: throw new InvalidOperationException("unknown-startup-execution-action");
+            }
+        }
+        if (stage == "initial") StartupReadinessCallback = Reenter;
+        else if (stage == "allocation") StartupAllocationCallback = Reenter;
+        else if (stage == "root-publication") StartupRootPublishedCallback = Reenter;
+        else if (stage == "root") StartupReserveCallback = Reenter;
+        else if (stage == "native") StartupReserveCallback = () => StartupReserveCallback = Reenter;
+        else if (stage == "context") StartupContextCallback = Reenter;
+        else throw new InvalidOperationException("unknown-startup-execution-stage");
+        Refuses(Begin, "managed-work-untracked-startup-work");
+        Need(inspected && Count(0) == (stage is "initial" or "allocation" or "root-publication" ? 0 : 1)
+            && Count(7) == (stage is "native" or "context" ? 1 : 0)
+            && startupRootAttempts == 0 && startupNativeAttempts == 0);
+        AssertStartupFenced();
+    }
+    private static void StartupInitialReadyControl(bool poison)
+    {
+        startupInspect = true;
+        StartupReadinessCallback = () =>
+        {
+            if (poison) Refuses(() => ManagedWorkRuntime.Enter(new object()), "managed-work-untracked-startup-work");
+            Work.Enqueue(() => { });
+        };
+        Refuses(Begin, "managed-work-untracked-startup-work");
+        Need(Owners.Count == 0 && Work.Count == 1);
+        Work.Dequeue();
+        if (poison) AssertStartupFenced();
+        else { Begin(); Finish(); }
+    }
+    private static void StartupInitialReadinessErrorAfterExecutionControl()
+    {
+        startupInspect = true;
+        StartupReadinessCallback = () =>
+        {
+            Refuses(() => ManagedWorkRuntime.Enter(new object()), "managed-work-untracked-startup-work");
+            throw StartupReadinessError;
+        };
+        Exception? received = null; try { Begin(); } catch (Exception error) { received = error; }
+        Need(ReferenceEquals(received, StartupReadinessError) && Owners.Count == 0);
+        AssertStartupFenced();
+    }
+    private static void StartupPoisonedCleanupPreservesPrimaryControl()
+    {
+        startupInspect = true;
+        StartupAllocationCallback = () => StartupAllocationCallback = () =>
+        {
+            ManagedWorkRuntime.TimerChanged(new object());
+            throw StartupAllocationError;
+        };
+        Exception? received = null; try { Begin(); } catch (Exception error) { received = error; }
+        Need(ReferenceEquals(received, StartupAllocationError) && Count(0) == 1 && Count(7) == 1
+            && startupRootAttempts == 0 && startupNativeAttempts == 0);
+        AssertStartupFenced();
+    }
+    private static void StartupNativeRefusalControl(int mode)
+    {
+        startupInspect = true; Limits[7] = 0;
+        StartupReserveCallback = () => StartupReserveCallback = AssertSafeStartupFenced;
+        startupRootCleanupFailure = mode != 0; startupCleanupAfter = mode == 2;
+        Refuses(Begin, "managed-work-admission-refused");
+        var state = ManagedWorkRuntime.StartupForControl();
+        Need(state.Root == (17UL, startupRoot) && !state.RootActive && !state.Installed
+            && state.Native == (0UL, 0UL) && startupRootAttempts == 1 && startupNativeAttempts == 0
+            && Count(0) == (mode == 1 ? 1 : 0) && Count(7) == 0);
+        AssertStartupFenced(); Need(startupRootAttempts == 1 && startupNativeAttempts == 0);
+    }
+    private static void StartupNativeUnknownControl(string mode)
+    {
+        startupInspect = true;
+        if (mode is "unknown" or "unknown-poison") unknownReservationKind = 7;
+        else if (mode == "zero-both") bridgeZeroBothKind = 7;
+        else { malformedReservationKind = 7; malformedGeneration = mode == "generation"; }
+        if (mode == "unknown-poison")
+            StartupReserveCallback = () => StartupReserveCallback = () =>
+                Refuses(() => ManagedWorkRuntime.Enter(new object()), "managed-work-untracked-startup-work");
+        Exception? received = null; try { Begin(); } catch (Exception error) { received = error; }
+        Need(mode is "unknown" or "unknown-poison" ? ReferenceEquals(received, UnknownReservation)
+            : received is InvalidOperationException && received.Message == "managed-work-reservation-token");
+        var state = ManagedWorkRuntime.StartupForControl();
+        Need(state.Root == (17UL, startupRoot) && !state.RootActive && !state.Installed
+            && state.Native == (mode is "unknown" or "unknown-poison" or "zero-both" ? (0UL, 0UL)
+                : mode == "generation" ? (0UL, startupNative) : (17UL, 0UL))
+            && startupRootAttempts == 0 && startupNativeAttempts == 0
+            && Count(0) == 1 && Count(7) == 1 && Owners.ContainsKey(startupNative));
+        AssertStartupFenced(); Need(startupRootAttempts == 0 && startupNativeAttempts == 0);
+    }
+    private static void StartupNativeRefusalPoisonControl()
+    {
+        startupInspect = true; Limits[7] = 0;
+        StartupReserveCallback = () => StartupReserveCallback = () =>
+            Refuses(() => ManagedWorkRuntime.Enter(new object()), "managed-work-untracked-startup-work");
+        Refuses(Begin, "managed-work-admission-refused");
+        var state = ManagedWorkRuntime.StartupForControl();
+        Need(state.Root == (17UL, startupRoot) && !state.RootActive && !state.Installed
+            && Count(0) == 1 && Count(7) == 0 && startupRootAttempts == 0 && startupNativeAttempts == 0);
+        AssertStartupFenced(); Need(startupRootAttempts == 0 && startupNativeAttempts == 0);
+    }
+    private static void StartupRootZeroBothControl()
+    {
+        startupInspect = true; bridgeZeroBothKind = 0;
+        Refuses(Begin, "managed-work-reservation-token");
+        var state = ManagedWorkRuntime.StartupForControl();
+        Need(state.Root == (0UL, 0UL) && !state.RootActive && !state.Installed
+            && Count(0) == 1 && Count(7) == 0 && Owners.ContainsKey(unknownReservationToken)
+            && startupRootAttempts == 0 && startupNativeAttempts == 0);
+        AssertStartupFenced();
+    }
+    private static void StartupAllocationFailureControl(int mode)
+    {
+        startupInspect = true;
+        startupNativeCleanupFailure = mode is 1 or 2;
+        startupRootCleanupFailure = mode is 3 or 4;
+        startupCleanupAfter = mode is 2 or 4;
+        StartupAllocationCallback = () => StartupAllocationCallback = () => throw StartupAllocationError;
+        Exception? received = null; try { Begin(); } catch (Exception error) { received = error; }
+        var state = ManagedWorkRuntime.StartupForControl();
+        Need(ReferenceEquals(received, StartupAllocationError) && !state.RootActive && !state.Installed
+            && state.Root == (17UL, startupRoot) && state.Native == (17UL, startupNative)
+            && startupNativeAttempts == 1 && startupRootAttempts == (mode is 1 or 2 ? 0 : 1)
+            && Count(7) == (mode == 1 ? 1 : 0) && Count(0) == (mode is 1 or 2 or 3 ? 1 : 0));
+        AssertStartupFenced();
+        Need(startupNativeAttempts == 1 && startupRootAttempts == (mode is 1 or 2 ? 0 : 1));
+    }
+    private static void StartupContextFailureControl(int mode)
+    {
+        var before = ExecutionContext.Capture() ?? throw new InvalidOperationException("control-startup-context");
+        ExecutionContext? captured = null; startupInspect = true; startupContextFailure = true;
+        startupContextBefore = mode == 0; startupClearFailure = mode == 2; startupClearBefore = true;
+        if (mode == 3) Limits[7] = 2;
+        StartupContextCallback = () =>
+        {
+            AssertStartupFenced(); captured = ExecutionContext.Capture();
+            if (mode == 3)
+            {
+                var extra = Reserve(7, 17, startupRoot);
+                Need(extra == (17UL, startupExtra) && startupExtra != 0);
+            }
+        };
+        Exception? received = null; try { Begin(); } catch (Exception error) { received = error; }
+        var state = ManagedWorkRuntime.StartupForControl();
+        Need(ReferenceEquals(received, StartupContextError) && !state.RootActive && !state.Installed
+            && state.Root == (17UL, startupRoot) && state.Native == (17UL, startupNative)
+            && startupRootAttempts == 0 && startupNativeAttempts == 0
+            && Count(0) == 1 && Count(7) == (mode == 3 ? 2 : 1)
+            && context == (mode == 2 ? (17UL, startupRoot) : (0UL, 0UL)));
+        AssertStartupFenced();
+        startupContextFailure = false; startupClearFailure = false;
+        if (captured is not null)
+            ExecutionContext.Run(before, _ => ExecutionContext.Run(captured, _ =>
+            {
+                Need(context == (0UL, 0UL));
+                Refuses(() => ManagedWorkRuntime.Schedule(Pending().Task), "managed-work-untracked-startup-work");
+            }, null), null);
+        Need(startupRootAttempts == 0 && startupNativeAttempts == 0 && Count(0) == 1);
+    }
+    private static void StartupContextReentryControl()
+    {
+        var before = ExecutionContext.Capture() ?? throw new InvalidOperationException("control-startup-context");
+        startupInspect = true; bool invoked = false;
+        StartupContextCallback = () =>
+        {
+            invoked = true; AssertSafeStartupFenced();
+            ExecutionContext.Run(before, _ => Need(context == (0UL, 0UL)), null);
+            Need(context == (17UL, startupRoot));
+        };
+        Begin(); Need(invoked && context == (17UL, startupRoot) && Count(0) == 1 && Count(7) == 1);
+        Finish(); Need(startupRootAttempts == 1 && startupNativeAttempts == 1);
+    }
+    private static void StartupAllocationReentryControl()
+    {
+        startupInspect = true; int calls = 0;
+        StartupAllocationCallback = () =>
+        {
+            calls++; AssertSafeStartupFenced();
+            StartupAllocationCallback = () => { calls++; AssertSafeStartupFenced(); };
+        };
+        Begin(); Need(calls == 2); Finish();
+    }
+    private static void StartupReservationReentryControl()
+    {
+        startupInspect = true; int calls = 0;
+        StartupReserveCallback = () =>
+        {
+            calls++; AssertSafeStartupFenced();
+            StartupReserveCallback = () => { calls++; AssertSafeStartupFenced(); };
+        };
+        Begin(); Need(calls == 2); Finish();
+    }
     private static void Run(string name)
     {
+        if (name == "startup-preinstall-producers-unchanged") { StartupPreinstallControl(); return; }
+        if (name == "startup-pre-root-allocation-failure") { StartupBeforeRootAllocationFailureControl(); return; }
+        if (name == "startup-readiness-failure-before-install") { StartupReadinessFailureControl(1); return; }
+        if (name == "startup-initial-ready-remains-retryable") { StartupInitialReadyControl(false); return; }
+        if (name == "startup-initial-ready-after-execution-poisons") { StartupInitialReadyControl(true); return; }
+        if (name == "startup-initial-readiness-error-after-execution") { StartupInitialReadinessErrorAfterExecutionControl(); return; }
+        if (name == "startup-untracked-enter-initial-probe") { StartupExecutionReentryControl("initial", "enter"); return; }
+        if (name == "startup-readiness-failure-before-root") { StartupReadinessFailureControl(2); return; }
+        if (name == "startup-readiness-failure-after-root-publication") { StartupReadinessFailureControl(3); return; }
+        if (name == "startup-readiness-failure-after-root") { StartupReadinessFailureControl(4); return; }
+        if (name == "startup-readiness-failure-after-native") { StartupReadinessFailureControl(5); return; }
+        if (name == "startup-readiness-failure-after-context") { StartupReadinessFailureControl(6); return; }
+        if (name == "startup-ready-during-allocation") { StartupReadinessReentryControl("allocation"); return; }
+        if (name == "startup-ready-during-root-publication") { StartupReadinessReentryControl("root-publication"); return; }
+        if (name == "startup-ready-during-root-reservation") { StartupReadinessReentryControl("root"); return; }
+        if (name == "startup-ready-during-native-reservation") { StartupReadinessReentryControl("native"); return; }
+        if (name == "startup-ready-during-context") { StartupReadinessReentryControl("context"); return; }
+        if (name == "startup-untracked-enter-root") { StartupExecutionReentryControl("root", "enter"); return; }
+        if (name == "startup-untracked-enter-root-publication") { StartupExecutionReentryControl("root-publication", "enter"); return; }
+        if (name == "startup-untracked-unwrap-root") { StartupExecutionReentryControl("root", "unwrap"); return; }
+        if (name == "startup-untracked-inner-native") { StartupExecutionReentryControl("native", "inner"); return; }
+        if (name == "startup-untracked-schedule-root") { StartupExecutionReentryControl("root", "schedule"); return; }
+        if (name == "startup-untracked-continuation-native") { StartupExecutionReentryControl("native", "continuation"); return; }
+        if (name == "startup-untracked-created-async-context") { StartupExecutionReentryControl("context", "created-async"); return; }
+        if (name == "startup-untracked-required-transport-root") { StartupExecutionReentryControl("root", "required-transport"); return; }
+        if (name == "startup-untracked-continuation-failed-native") { StartupExecutionReentryControl("native", "continuation-failed"); return; }
+        if (name == "startup-untracked-observed-context") { StartupExecutionReentryControl("context", "observed"); return; }
+        if (name == "startup-untracked-ensure-join-ready-native") { StartupExecutionReentryControl("native", "ensure-join-ready"); return; }
+        if (name == "startup-untracked-dequeue-native") { StartupExecutionReentryControl("native", "dequeue"); return; }
+        if (name == "startup-untracked-pop-context") { StartupExecutionReentryControl("context", "pop"); return; }
+        if (name == "startup-untracked-bind-allocation") { StartupExecutionReentryControl("allocation", "bind"); return; }
+        if (name == "startup-untracked-timer-accepted-root") { StartupExecutionReentryControl("root", "timer-accepted"); return; }
+        if (name == "startup-untracked-timer-enter-native") { StartupExecutionReentryControl("native", "timer-enter"); return; }
+        if (name == "startup-untracked-timer-deleted-context") { StartupExecutionReentryControl("context", "timer-deleted"); return; }
+        if (name == "startup-untracked-enqueue-success-root") { StartupExecutionReentryControl("root", "enqueue-success"); return; }
+        if (name == "startup-untracked-enqueue-fault-native") { StartupExecutionReentryControl("native", "enqueue-fault"); return; }
+        if (name == "startup-untracked-timer-changed-context") { StartupExecutionReentryControl("context", "timer-changed"); return; }
+        if (name == "startup-untracked-timer-leave-root") { StartupExecutionReentryControl("root", "timer-leave"); return; }
+        if (name == "startup-untracked-exit-native") { StartupExecutionReentryControl("native", "exit"); return; }
+        if (name == "startup-untracked-callback-completed-context") { StartupExecutionReentryControl("context", "callback-completed"); return; }
+        if (name == "startup-untracked-completed-allocation") { StartupExecutionReentryControl("allocation", "completed"); return; }
+        if (name == "startup-poisoned-cleanup-preserves-primary") { StartupPoisonedCleanupPreservesPrimaryControl(); return; }
+        if (name == "startup-native-refusal-settles-root") { StartupNativeRefusalControl(0); return; }
+        if (name == "startup-native-refusal-root-settlement-refused") { StartupNativeRefusalControl(1); return; }
+        if (name == "startup-native-refusal-root-settlement-unknown") { StartupNativeRefusalControl(2); return; }
+        if (name == "startup-native-reservation-unknown") { StartupNativeUnknownControl("unknown"); return; }
+        if (name == "startup-native-reservation-unknown-after-untracked") { StartupNativeUnknownControl("unknown-poison"); return; }
+        if (name == "startup-native-refusal-after-untracked-retains-root") { StartupNativeRefusalPoisonControl(); return; }
+        if (name == "startup-native-reservation-malformed-zero-both") { StartupNativeUnknownControl("zero-both"); return; }
+        if (name == "startup-root-reservation-malformed-zero-both") { StartupRootZeroBothControl(); return; }
+        if (name == "startup-native-reservation-malformed-generation") { StartupNativeUnknownControl("generation"); return; }
+        if (name == "startup-native-reservation-malformed-id") { StartupNativeUnknownControl("id"); return; }
+        if (name == "startup-allocation-cleanup-succeeds") { StartupAllocationFailureControl(0); return; }
+        if (name == "startup-allocation-native-settlement-refused") { StartupAllocationFailureControl(1); return; }
+        if (name == "startup-allocation-native-settlement-unknown") { StartupAllocationFailureControl(2); return; }
+        if (name == "startup-allocation-root-settlement-refused") { StartupAllocationFailureControl(3); return; }
+        if (name == "startup-allocation-root-settlement-unknown") { StartupAllocationFailureControl(4); return; }
+        if (name == "startup-context-failure-before-mutation") { StartupContextFailureControl(0); return; }
+        if (name == "startup-context-failure-after-mutation") { StartupContextFailureControl(1); return; }
+        if (name == "startup-context-and-clear-failure") { StartupContextFailureControl(2); return; }
+        if (name == "startup-context-failure-retains-native-child") { StartupContextFailureControl(3); return; }
+        if (name == "startup-context-reentry-fences-producers") { StartupContextReentryControl(); return; }
+        if (name == "startup-allocation-reentry-fences-producers") { StartupAllocationReentryControl(); return; }
+        if (name == "startup-reservation-reentry-fences-producers") { StartupReservationReentryControl(); return; }
         if (name == "untracked-startup-refused-before-admission")
         {
             Work.Enqueue(() => { }); Refuses(Begin, "managed-work-untracked-startup-work");
-            Need(Owners.Count == 0); return;
+            Need(Owners.Count == 0); Work.Dequeue(); Begin(); Finish(); return;
         }
         if (name == "root-task-refusal-fences-reinstallation")
         {
             Limits[0] = 0;
             Refuses(Begin, "managed-work-admission-refused");
-            Need(Owners.Count == 0 && Count(7) == 0);
-            Refuses(Begin, "managed-work-installation");
-            Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-state");
+            var state = ManagedWorkRuntime.StartupForControl();
+            Need(Owners.Count == 0 && Count(7) == 0 && state.Root == (0UL, 0UL) && !state.RootActive && !state.Installed);
+            AssertStartupFenced();
             return;
         }
         if (name == "root-task-unknown-fences-reinstallation")
@@ -1018,8 +1696,9 @@ internal static class StateControl
             catch (InvalidOperationException error) when (ReferenceEquals(error, UnknownReservation)) { observedOriginal = true; }
             Need(observedOriginal && unknownReservationToken != 0
                 && Owners.ContainsKey(unknownReservationToken) && Count(7) == 0);
-            Refuses(Begin, "managed-work-installation");
-            Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-state");
+            var state = ManagedWorkRuntime.StartupForControl();
+            Need(state.Root == (0UL, 0UL) && !state.RootActive && !state.Installed);
+            AssertStartupFenced();
             return;
         }
         if (name is "root-task-malformed-generation-fences-reinstallation" or "root-task-malformed-id-fences-reinstallation")
@@ -1028,8 +1707,10 @@ internal static class StateControl
             malformedGeneration = name.Contains("generation");
             Refuses(Begin, "managed-work-reservation-token");
             Need(unknownReservationToken != 0 && Owners.ContainsKey(unknownReservationToken) && Count(7) == 0);
-            Refuses(Begin, "managed-work-installation");
-            Refuses(ManagedWorkRuntime.FinishedPhysicalDrain, "managed-work-finalization-state");
+            var state = ManagedWorkRuntime.StartupForControl();
+            Need(state.Root == (malformedGeneration ? (0UL, unknownReservationToken) : (17UL, 0UL))
+                && !state.RootActive && !state.Installed);
+            AssertStartupFenced();
             return;
         }
         Begin();
@@ -1163,6 +1844,26 @@ internal static class StateControl
             case "required-result-active-alias-observation": RequiredResultActiveAliasControl(); break;
             case "required-result-uncertain-alias-fences-entry": RequiredResultUncertainAliasControl(); break;
             case "required-result-ordinary-alias-preserves-parent": RequiredResultOrdinaryAliasControl(); break;
+            case "independent-inner-observed-fault": IndependentInnerFaultControl(); break;
+            case "inner-scheduled-after-alias": InnerScheduledAfterAliasControl(); break;
+            case "independent-inner-releases-capacity": IndependentInnerCapacityControl(); break;
+            case "shared-inner-scheduled-before-alias": SharedIndependentInnerControl(false); break;
+            case "shared-inner-scheduled-after-alias": SharedIndependentInnerControl(true); break;
+            case "independent-inner-reentrant-admission": IndependentInnerReentryControl(); break;
+            case "independent-inner-admission-refusal": IndependentInnerRefusalControl(false); break;
+            case "independent-inner-admission-unknown": IndependentInnerRefusalControl(true); break;
+            case "inner-and-outer-alias-no-duplicate": InnerAndOuterAliasControl(false); break;
+            case "inner-and-outer-alias-reentrant-no-duplicate": InnerAndOuterAliasControl(true); break;
+            case "inner-and-inactive-outer-alias-fenced": InnerAndInactiveOuterAliasControl(); break;
+            case "inactive-inner-alias-fences-primary": InactiveInnerAliasWithPrimaryControl(false); break;
+            case "inactive-inner-result-transition-fences-primary": InactiveInnerAliasWithPrimaryControl(true); break;
+            case "multiple-unwrap-first-unobserved": MultipleUnwrapFaultControl("second"); break;
+            case "multiple-unwrap-second-unobserved": MultipleUnwrapFaultControl("first"); break;
+            case "multiple-unwrap-both-observed": MultipleUnwrapFaultControl("both"); break;
+            case "multiple-unwrap-neither-observed": MultipleUnwrapFaultControl("neither"); break;
+            case "multiple-unwrap-first-completes-before-pending": MultipleUnwrapPendingControl(true); break;
+            case "multiple-unwrap-second-completes-before-pending": MultipleUnwrapPendingControl(false); break;
+            case "multiple-unwrap-required-capacity": MultipleUnwrapCapacityControl(); break;
             case "required-result-settlement-refusal-retains-custody": RequiredResultSettlementFailureControl(false); break;
             case "required-result-settlement-unknown-retains-custody": RequiredResultSettlementFailureControl(true); break;
             case "fault-conversion-success-is-idempotent": {

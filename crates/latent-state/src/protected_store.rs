@@ -306,6 +306,14 @@ impl ProtectedStoreOwner {
             .map_err(ProtectedStoreError::Io)
     }
 
+    /// Remaining owned OS thread handles, including workers finishing their
+    /// exit epilogue after the physical-worker count reaches zero.
+    pub fn pending_thread_joins(&self) -> Result<usize, ProtectedStoreError> {
+        self.ready
+            .pending_thread_joins()
+            .map_err(ProtectedStoreError::Io)
+    }
+
     fn available(&self) -> Result<(), ProtectedStoreError> {
         self.native_capacity.seal()?;
         self.failure.get().map_or(Ok(()), Err)

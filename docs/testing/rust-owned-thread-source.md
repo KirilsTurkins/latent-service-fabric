@@ -124,6 +124,18 @@ compiler-distribution guards remain: cross-job installation metadata can differ,
 so this joint job builds the selected sysroot with its actual compiler rather
 than claiming automatic artifact reuse.
 
+The THREAD `Prepared` boundary also checks the sysroot receipt's recorded
+`compilerDistributionDigest` against the existing bounded inventory of the
+actual compiler distribution. It repeats that check with the existing prepared
+input rechecks. The inventory binds relative file paths and bytes for companion
+executables, target/sysroot files and installation metadata; it does not bind
+the installation root name, timestamps, file modes or empty directories. It
+does not normalize installation metadata. Independently installed compilers can
+therefore be refused despite identical `rustc` executables. The owner must use
+the exact recorded distribution or rebuild the sysroot with its actual compiler.
+The receipt remains a local builder assertion, not a publisher signature, and
+this check does not open the private-graph, signed-component or runtime gates.
+
 The original normal capture includes the complete native dependency closure,
 including host packages. Its unique source/CAS exceeds 32MiB expanded even
 though the observed partial archive compresses to 6,658,554 bytes. The diagnostic

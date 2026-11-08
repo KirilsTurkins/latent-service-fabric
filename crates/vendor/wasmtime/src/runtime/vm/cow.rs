@@ -772,7 +772,7 @@ impl MemoryImageSlot {
     }
 }
 
-#[cfg(all(test, target_os = "linux", not(miri)))]
+#[cfg(all(test, target_os = "linux", not(miri), feature = "pooling-allocator"))]
 mod test {
     use super::*;
     use crate::runtime::vm::mmap::{AlignedLength, Mmap};

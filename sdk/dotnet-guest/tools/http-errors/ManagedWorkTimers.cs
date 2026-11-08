@@ -31,7 +31,11 @@ public static partial class ManagedWorkRuntime
 
     public static void TimerChanging(object item)
     {
-        if (!installed) return;
+        if (!installed)
+        {
+            if (reserve is not null) throw new InvalidOperationException("managed-work-installation-in-progress");
+            return;
+        }
         var existing = FindTimer(item);
         if (existing is not null)
         {
@@ -94,7 +98,7 @@ public static partial class ManagedWorkRuntime
 
     public static void TimerChanged(object item)
     {
-        if (!installed) return;
+        if (!installed) { if (reserve is not null) admissions = -1; return; }
         var timer = FindTimer(item) ?? throw new InvalidOperationException("managed-timer-change-owner");
         if (timer.Mutation < 0) throw new InvalidOperationException("managed-timer-settlement-uncertain");
         if (timer.Mutation == 0) throw new InvalidOperationException("managed-timer-change-state");
@@ -104,12 +108,18 @@ public static partial class ManagedWorkRuntime
 
     public static void TimerDeleted(object item)
     {
+        if (!installed && reserve is not null)
+        { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
         if (installed && FindTimer(item) is { } timer) TryRetireTimer(timer);
     }
 
     public static void TimerAccepted(object item)
     {
-        if (!installed) return;
+        if (!installed)
+        {
+            if (reserve is not null) { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
+            return;
+        }
         var timer = FindTimer(item) ?? throw new InvalidOperationException("managed-timer-accepted-owner");
         if (timer.Mutation < 0) throw new InvalidOperationException("managed-timer-settlement-uncertain");
         if (timer.Accepted == int.MaxValue) throw new InvalidOperationException("managed-timer-callback-limit");
@@ -120,7 +130,11 @@ public static partial class ManagedWorkRuntime
 
     public static object? TimerEnter(object item)
     {
-        if (!installed) return null;
+        if (!installed)
+        {
+            if (reserve is not null) { admissions = -1; throw new InvalidOperationException("managed-work-untracked-startup-work"); }
+            return null;
+        }
         var timer = FindTimer(item) ?? throw new InvalidOperationException("managed-timer-dispatch-owner");
         if (timer.Mutation < 0) throw new InvalidOperationException("managed-timer-settlement-uncertain");
         if (timer.Accepted == 0 || timer.Running == int.MaxValue)
@@ -133,7 +147,7 @@ public static partial class ManagedWorkRuntime
 
     public static void TimerLeave(object item, object? previous)
     {
-        if (!installed) return;
+        if (!installed) { if (reserve is not null) admissions = -1; return; }
         try
         {
             var timer = FindTimer(item) ?? throw new InvalidOperationException("managed-timer-return-owner");
