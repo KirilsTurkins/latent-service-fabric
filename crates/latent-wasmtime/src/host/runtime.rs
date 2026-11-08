@@ -801,14 +801,15 @@ fn prepare_timer_next(state: &mut HostState, token: RuntimeToken) -> PreparedWai
 fn complete_elapsed_wait(
     runtime: &ActivationRuntime,
     timer: Option<&mut TimerWait>,
+    plain_owner: Option<RuntimeToken>,
     now: Instant,
 ) -> Result<u64, PlatformError> {
     match timer {
         Some(timer) => timer.complete(now),
         None => {
-            // Plain waits have no schedule commit. A final phase observation
-            // orders their elapsed success against runtime cancellation.
-            runtime.check_live()?;
+            let owner = plain_owner
+                .ok_or_else(|| failure(PlatformErrorCode::Internal, "runtime-plain-wait-owner"))?;
+            runtime.commit_elapsed_timer_readiness(owner)?;
             Ok(0)
         }
     }
@@ -901,7 +902,12 @@ impl WaitingTimer {
                 ));
             }
             if now >= self.requested {
-                return complete_elapsed_wait(&self.runtime, self.timer_wait.as_mut(), now);
+                return complete_elapsed_wait(
+                    &self.runtime,
+                    self.timer_wait.as_mut(),
+                    self._owner.as_ref().map(RuntimeOwner::token),
+                    now,
+                );
             }
             let next = self
                 .requested

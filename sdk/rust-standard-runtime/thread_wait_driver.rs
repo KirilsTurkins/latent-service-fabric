@@ -90,6 +90,22 @@ impl WaitLease {
     pub(crate) fn token(&self) -> Token {
         self.wait.token()
     }
+
+    /// Publish already-elapsed zero-timeout readiness for the actual current
+    /// Task. The caller is its actually running canonical thread, not a
+    /// parked frame. The original fenced wake creates no Timer or wait node
+    /// and does not resume another canonical thread.
+    pub(crate) fn immediate_ready(self) {
+        assert!(
+            self.timer.is_none() && !self.registered && !self.node_live
+                && self.reservation.0.is_some(),
+            "immediate readiness requires its unqueued untimed Wait"
+        );
+        assert_eq!(current_index(), self.index, "immediate Wait changed canonical thread");
+        let task = current_task();
+        owner::wake_task(task)
+            .unwrap_or_else(|error| panic!("std Task wake rejected: {:?}", error));
+    }
 }
 impl Drop for WaitLease {
     fn drop(&mut self) {

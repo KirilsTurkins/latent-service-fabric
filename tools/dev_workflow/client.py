@@ -8,6 +8,14 @@ from . import process
 from .common import DevError, decode, require
 
 
+# Native CLI Category::exit_code is a closed, one-to-one result contract.
+CATEGORY_EXIT_CODES = {
+    "success": 0, "local-error": 2, "declared-error": 3,
+    "platform-failure": 4, "transport-failure": 5, "not-found": 6,
+    "interrupted": 130,
+}
+
+
 class Client:
     def __init__(self, binary: Path, config: Path, directory: Path, *, deadline: float | None = None, observer=None):
         self.binary, self.config, self.directory = binary, config, directory
@@ -25,10 +33,11 @@ class Client:
         value, failure = None, None
         try:
             value = decode(result.stdout, 1048576)
-            require(value.get("schemaVersion") == "latent.cli.result.v1"
-                    and type(value.get("outcomeKnown")) is bool and isinstance(value.get("data"), dict),
+            require(isinstance(value, dict) and value.get("schemaVersion") == "latent.cli.result.v1"
+                    and type(value.get("outcomeKnown")) is bool and isinstance(value.get("data"), dict)
+                    and type(value.get("category")) is str and value["category"] in CATEGORY_EXIT_CODES,
                     "operator-response-format")
-            require(result.returncode in {0, 2, 3, 4, 5, 6, 130} and (result.returncode != 0 or value.get("category") == "success"),
+            require(type(result.returncode) is int and result.returncode == CATEGORY_EXIT_CODES[value["category"]],
                     "operator-response-exit-mismatch")
             return value
         except DevError as error:

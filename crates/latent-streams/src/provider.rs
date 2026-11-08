@@ -614,6 +614,20 @@ impl StreamProvider {
                 {
                     result.input_budget_bytes += usage.input_budget_bytes;
                 }
+                #[cfg(feature = "development-read-witness")]
+                {
+                    result.read_admissions = result
+                        .read_admissions
+                        .saturating_add(usage.read_admissions)
+                        .min(3);
+                    result.pending_reads = result
+                        .pending_reads
+                        .saturating_add(usage.pending_reads)
+                        .min(2);
+                    result.retired_read_delivered_bytes = result
+                        .retired_read_delivered_bytes
+                        .saturating_add(usage.retired_read_delivered_bytes);
+                }
                 result.delivered_read_bytes += usage.delivered_read_bytes;
             }
         }

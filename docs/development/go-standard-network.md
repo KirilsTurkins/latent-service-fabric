@@ -91,15 +91,33 @@ binds its real source, WIT and compiler observation. This in-process test packag
 construction is distinct from released standalone authoring/packager and native
 five-product qualification.
 
-Twelve required observations cover the original unsupported/pre-cancelled/expired
-modes, all four custom global resolvers, ordinary ping/pong, send half-close with
-partial reads through EOF, cancellation of a real pending second read and a
-fresh connection afterward. The cancellation barrier requires one delivered byte,
-a live pending operation and the original I/O call before cancellation. Its
-acknowledgement must retain the original activation, Store and socket owner.
-Each completed observation requires zero original user-space owners; peer close
-and those counters never attest final kernel free. The original managed Task16,
-Executor2, Queue2, Wait4, Timer2, Result2 and Native2 limits remain fixed.
+The historical twelve-case run covered the original unsupported/pre-cancelled/expired
+modes, all four custom global resolvers, ordinary ping/pong, send half-close and
+reading through EOF, cancellation after a delivered byte and a fresh connection
+afterward. The peer used multiple writes, but that alone did not prove separate
+or short guest reads because TCP can coalesce them. Its cancellation barrier
+observed one delivered byte, a
+live pending operation and the original I/O call. Those counters alone cannot
+show whether the first read had retired or a second read had begun. The
+historical receipt below remains unchanged and supports only that narrower claim.
+
+The current signed owner explicitly selects `development-go-network-read-witness`
+for the additional fragmented-read case and for the cancellation barrier. The
+sole live connection must report that the guard which delivered the first byte
+retired, a second read future was successfully constructed and its original
+read guard is live. The peer withholds the remaining bytes until the fragmented
+case has observed that state. This witnesses application read ordering, not an
+OS-readiness poll or final kernel free. The feature is absent from ordinary
+builds and records only inert diagnostics within the existing prepaid connection
+allocation. The guest's own one-second connection deadline still applies; the
+host's two-second barrier is a failure ceiling, not a longer guest timeout.
+
+Cancellation acknowledgement must retain the original activation, Store and
+socket owner. Each completed observation requires zero original user-space
+owners; peer close and those counters never attest final kernel free. The
+original managed Task16, Executor2, Queue2, Wait4, Timer2, Result2 and Native2
+limits remain fixed. The added source owner requires its own signed run before
+its thirteen-case observations can be treated as evidence.
 
 The [authenticated runtime observation](../testing/evidence/go-network-runtime-2026-10-20.json)
 records actual source `bc638ac30bd28bbff492b8cd8ea0e91f5317c845`,

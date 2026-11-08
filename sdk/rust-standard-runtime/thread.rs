@@ -55,16 +55,9 @@ pub fn yield_now() {
     runtime::yield_eligible();
 }
 pub fn sleep(duration: Duration) {
-    if duration.is_zero() {
-        return;
-    }
-    let queue = wait::WaitQueue::new();
-    // Only matching admitted timer readiness returns false. Cancellation,
+    // Every bounded chunk uses a matching admitted timer. Cancellation,
     // deadline, provider errors and an unavailable runtime never become sleep.
-    assert!(
-        !queue.prepare(Some(duration)).wait(),
-        "sleep had a non-timer wake"
-    );
+    wait::sleep(duration);
 }
 
 // The source body is preserved at its original table index by the authenticated
