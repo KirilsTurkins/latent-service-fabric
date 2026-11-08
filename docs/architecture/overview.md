@@ -137,6 +137,11 @@ files without executing a guest. The supported
 [Angular renderer](../component-development/angular-build.md) runs inside a
 component activation and supplies server-rendered HTML alongside browser assets.
 This profile does not run a general Node.js server or arbitrary npm middleware.
+Development's [cross-origin asset grants](../operations/cross-origin-static-assets.md)
+authorize eligible non-document files from an exact signed publication under
+HTTPS and explicit caller origins. They are separate from document navigation,
+end-user authentication and capsule API access. Retired publication visibility
+and bytes follow the distinct [audited deletion/reclamation workflow](../operations/publication-deletion.md).
 
 ## Current topology and limits
 

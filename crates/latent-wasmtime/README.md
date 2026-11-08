@@ -24,8 +24,13 @@ This is the implemented Wasm backend, not the native-SFI research backend. Exist
 The workspace selects the maintained [Wasmtime source extension](../vendor/wasmtime/README.latent.md),
 whose exact allocation cohort participates in engine/preparation identity. Its
 selected dynamic/native hooks charge actual Store/table/value/context/future
-backing before allocation. Retained values and byte owners may outlive a Store;
-their charges last through physical deallocation. This is not global allocator,
+backing before allocation. The selected closure also includes outer producer/consumer poll futures,
+factory and completion captures, callback backing, resource-table entries and
+call-result channels. Async storage must be admitted before first poll or queue
+publication, not inferred from the payload eventually returned. See
+[host-I/O backing](../../docs/runtime/async-host-io.md#future-and-callback-backing).
+Retained values and byte owners may outlive a Store; their charges last through
+physical deallocation. This is not global allocator,
 node RSS or complete language/kernel memory accounting. The
 [engine guide](../../docs/runtime/wasmtime.md#selected-continuation-and-memory-profiles)
 separates this boundary from the explicit C/Rust cooperative profiles, whose
@@ -103,4 +108,4 @@ Integration targets: [tests/admission.rs](tests/admission.rs), [tests/angular_bu
 
 Blob chunk bytes now use the same private paid `ChunkBytes` canonical list lowering as networking and streaming HTTP. The reply owns its affine Vec and original blob request through both flat and indirect lowering, including realloc failure. WIT and the pinned `[u8]` ABI remain unchanged; the resource cannot materialize its original allowance twice. This does not fund arbitrary subsequent host-created copies or transitive provider heaps.
 
-Blob `write` lifts the existing zero-copy `WasmList<u8>` descriptor, borrows its slice under actual Store access, and calls the provider’s synchronous prepaid `write_from` bridge. Only the original admission-owned input buffer enters the writer future; neither the Store borrow nor a naked lifted Vec escapes. This adds no vendor/WIT change and preserves networking’s existing prepaid ingress path.
+Blob `write` lifts the existing zero-copy `WasmList<u8>` descriptor, borrows its slice under actual Store access, and calls the providerâ€™s synchronous prepaid `write_from` bridge. Only the original admission-owned input buffer enters the writer future; neither the Store borrow nor a naked lifted Vec escapes. This adds no vendor/WIT change and preserves networkingâ€™s existing prepaid ingress path.

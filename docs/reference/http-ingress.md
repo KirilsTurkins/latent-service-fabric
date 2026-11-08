@@ -109,6 +109,14 @@ application sessions are needed.
 
 ## Ownership and bounds
 
+Development also supports explicit `httpIngress.crossOriginAssets` grants for
+non-document assets from one exact signed publication. Follow the
+[cross-origin asset workflow](../operations/cross-origin-static-assets.md) for
+HTTPS/public-origin prerequisites, exact authority/tenant/publication/origin
+matching, credential omission, preflight and lifecycle rechecks. It is a separate
+opt-in from public document navigation below; omission keeps same-origin policy.
+Neither setting permits cross-origin capsule API calls or authenticates an end user.
+
 Public static sites can opt in to external document links through
 `httpIngress.publicDocumentNavigation`, with entries containing `authority`,
 `tenant` and `mount`. Only existing `public-origins` bindings are eligible.

@@ -25,13 +25,20 @@ It is an operator client, not a node or guest runtime. A successful transport re
 3. Execute the selected local action or one RPC/registry operation; no hidden polling or general automatic replay follows uncertain results.
 4. Validate/associate the response and emit bounded human/JSON output. Recovery retains original operation identities rather than inventing another mutation.
 
+The [publication-maintenance workflow](../../docs/operations/publication-deletion.md)
+uses explicit retention snapshots/pins, deletion assessment, visibility removal,
+physical reclamation and original-operation lookup. It retains separate deletion
+and reclamation fences, required durable audit and original actor/target identity.
+The CLI does not turn an uncertain response into another mutation or report
+logical blob refunds as measured disk blocks freed.
+
 ## Integration boundaries
 
 Completion generation does not load credentials, contact a node or spawn helpers. Transaction retry requires a server-confirmed original disposition, not a gRPC status or dropped future. Registry authority, node credentials and provider credentials are distinct. Use the maintained operator reference for the complete grammar instead of treating module names as stable subcommands.
 
 ## Dependencies and build
 
-Direct workspace dependencies: [latent-activation](../../crates/latent-activation/README.md), [latent-artifacts](../../crates/latent-artifacts/README.md), [latent-control-store](../../crates/latent-control-store/README.md), [latent-core](../../crates/latent-core/README.md), [latent-manifest](../../crates/latent-manifest/README.md), [latent-packaging](../../crates/latent-packaging/README.md), [latent-policy](../../crates/latent-policy/README.md), [latent-oci](../../crates/latent-oci/README.md), [latent-rpc](../../crates/latent-rpc/README.md), [latent-signing](../../crates/latent-signing/README.md), [latent-wire](../../crates/latent-wire/README.md).
+Direct workspace dependencies: [latent-audit](../../crates/latent-audit/README.md), [latent-activation](../../crates/latent-activation/README.md), [latent-artifacts](../../crates/latent-artifacts/README.md), [latent-control-store](../../crates/latent-control-store/README.md), [latent-core](../../crates/latent-core/README.md), [latent-manifest](../../crates/latent-manifest/README.md), [latent-packaging](../../crates/latent-packaging/README.md), [latent-policy](../../crates/latent-policy/README.md), [latent-oci](../../crates/latent-oci/README.md), [latent-rpc](../../crates/latent-rpc/README.md), [latent-signing](../../crates/latent-signing/README.md), [latent-wire](../../crates/latent-wire/README.md).
 
 Use [Cargo.toml](Cargo.toml) for external dependencies, target gates and test/build edges; [the workspace manifest](../../Cargo.toml) and [the toolchain guide](../../docs/development/toolchain.md) own current pins. Dependency presence does not install a runtime service.
 

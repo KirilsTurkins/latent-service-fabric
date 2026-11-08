@@ -16,14 +16,29 @@ NativeAOT reference. The System.Net.Http derivation retains the actual discarded
 `SendContent` Task; its original transport and request-future error channel stay
 authoritative.
 
-An accepted scheduled Task is registered before scheduling. An unwrap promise and
-its actual inner Task share that logical owner until the real promise completes.
+An accepted scheduled Task is registered before scheduling. The original unwrap
+promise retains its completion owner; an independently scheduled inner Task keeps
+its own admission even when another record aliases it. A second unwrap promise
+over the same outer Task becomes distinct required work on the original owner,
+not a replacement for the first promise.
 The original async builder retains its actual state-machine box before registering
 an await continuation. Required continuations of that flow use a bounded private
 table; they do not each become a second independently scheduled native Task.
 Actual queue insertion has separate admission and failure rollback. Queue removal
 does not settle its still-running Task. Unobserved completed failures retain a
 Result owner and the original exception object until join reports the failure.
+
+Current [registry source](../../sdk/dotnet-guest/tools/http-errors/ManagedWorkRuntime.cs)
+also fences uncertain queue insertions/acknowledgements, result conversion,
+startup and owner settlement. Only an affirmatively uninserted item with
+confirmed settlement can roll back; a throwing callback or ambiguous host
+acknowledgement keeps its original tokens and blocks successful finalization.
+Prefetched siblings, required continuation results and active Timer callbacks
+retain custody until their actual owners settle. The
+[timer source](../../sdk/dotnet-guest/tools/http-errors/ManagedWorkTimers.cs)
+keeps provisional timer reservations through cancellation/disposal races.
+These later implementation controls do not turn the original CLR-reference or
+signed programme below into qualification of the current combined source.
 
 The private owner key is added to the original immutable ExecutionContext map.
 The original application AsyncLocal entries and notification arrays remain in

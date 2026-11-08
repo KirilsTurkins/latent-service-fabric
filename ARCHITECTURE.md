@@ -62,6 +62,8 @@ the linked implementation and qualification pages establish availability.
 - [Contracts and bindings](docs/architecture/contracts-and-bindings.md)
 - [Ingress and triggers](docs/architecture/ingress-and-triggers.md)
 - [Static website delivery](docs/component-development/static-sites.md)
+- [Publication-scoped cross-origin static assets](docs/operations/cross-origin-static-assets.md)
+- [Publication retention and explicit payload deletion](docs/operations/publication-deletion.md)
 - [Angular server rendering](docs/component-development/angular-build.md)
 - [Identity and capabilities](docs/architecture/identity-and-capabilities.md)
 - [Blob model](docs/architecture/blob-model.md)
@@ -76,6 +78,7 @@ separate current authority and physical ownership. Engine tests do not establish
 the complete native, application or packaged acceptance gates.
 
 - [State, transactions and durable effects](docs/architecture/state-and-effects.md)
+- [Verified local payload custody and its integration limits](crates/latent-local-blobs/README.md)
 - [Application schema and retained-format compatibility](docs/architecture/application-schema-compatibility.md)
 - [Namespace history, schema and recovery epochs](docs/architecture/namespace-history-epochs.md)
 - [Response retention and reserved recovery capacity](docs/architecture/transaction-retention.md)

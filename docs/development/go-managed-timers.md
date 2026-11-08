@@ -82,4 +82,21 @@ therefore cannot create an untracked host subtask. All fence callers observe
 one durable completion channel, which is closed only after an actual pending
 subtask is dropped or the unstarted wait is abandoned. Host-only controls
 exercise the allocation and completion interleavings using simulated host
-readiness; signed guest execution of this revised path remains unqualified.
+readiness; they do not themselves establish signed guest execution.
+
+Public Stop/Reset now serialize while the original provider wait retires. The
+[normal Go workflow](../../.github/workflows/go-guest.yml) has a separate
+instrumented overlap owner: it requires the original provider to have polled
+pending, two distinct parked worker tasks, complete generation-tagged witnesses,
+physical next-wait destruction and a fresh activation. It retains Task16, Wait4,
+Timer2 and the original activation limits; the historical 43-case campaign is
+still a separate required result.
+
+The [original overlap review](https://github.com/KirilsTurkins/latent-service-fabric/pull/1791)
+records a local signed Linux run at former head `c702a17297befd8abe1ae79555253b7ef627b368`:
+Reset/Reset, Reset/Stop and a fresh activation completed with Store/instance,
+provider-wait and quota retirement. It also retains the failing old-emitter
+negative. That result predates the PR's CI fixes and merge; it is not an
+exact-head qualification of current Development, a full race matrix or an RSS
+bound. Instrumented observer backing and the actual future storage remain
+separately charged to the original activation.

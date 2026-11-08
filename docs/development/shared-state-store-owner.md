@@ -44,8 +44,12 @@ family tags and existing bounded host codecs. Application schema, WIT, command,
 effect and publication identities do not change. Existing coherent readers keep
 their original rows across this metadata-only transition.
 
-The v2 metadata records the exact redb 4.3/immediate-sync/records-v1 decoder
-contract. Operator-tunable cache, row, value, queue and view ceilings retain their
+The v2 metadata retains the exact
+`redb-4.3/immediate/records-v1/families-1-10/raw-key-value` decoder identifier in
+[the format implementation](../../crates/latent-state/src/embedded/format.rs).
+The selected dependency is now redb 4.4.0; its version does not rename that
+persisted layout contract or authorize a data migration. Operator-tunable cache,
+row, value, queue and view ceilings retain their
 existing validation and are checked against the original rows before upgrading.
 No row is copied, transformed, dropped or reinterpreted. On the same fixed
 initialization worker under the exclusive root/database lock, startup first
@@ -200,6 +204,14 @@ releases its waiter registration; the original shutdown deadline remains bound
 and cannot be extended by another waiter. `reap_retired_threads` joins finished OS threads
 without waiting for live workers. No per-tenant pool, timer, store or unbounded
 blocking-task queue is created.
+
+Standalone shutdown and recovery additionally require
+`pending_thread_joins() == 0` on the original owner before reporting clean
+retirement or releasing bootstrap custody. Their bounded join loop keeps the
+existing absolute cutoff, reaps only finished handles and never treats an
+expired waiter or an empty job count as joined threads. A timeout or join failure
+keeps the unclean/quarantine disposition; it cannot authorize another database
+owner. See the [node handoff](../../apps/latentd/src/standalone/state/store.rs).
 
 ## Validation and node handoff
 

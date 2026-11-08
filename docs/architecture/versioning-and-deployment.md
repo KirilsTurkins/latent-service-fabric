@@ -162,6 +162,22 @@ restart creates no successful window from old summaries and does not promote
 automatically. A retained replay returns its original outcome before fresh
 evidence or current generation checks.
 
+## Retire visibility and reclaim publication bytes
+
+Retiring or revoking a publication denies future eligible use; it does not remove
+retained deployment, trigger, rollout, reader or rollback-pin references. Use
+[publication retention](../operations/publication-retention.md) to inspect that
+ownership and [explicit deletion](../operations/publication-deletion.md) for the
+current Development maintenance path.
+
+Visibility removal and physical namespace/blob reclamation are separate audited
+operations. Reclamation retains the original deletion operation, actor, targets
+and catalog fence plus a fresh assessment fence. Required audit capacity applies
+to exact receipt replay too. Uncertain responses require original-operation
+lookup, not a replacement deletion; a logical refund does not measure physical
+disk blocks. Independent evidence, revocation history and business state retain
+their own lifetimes.
+
 ## Coexistence
 
 Multiple implementation and contract versions may coexist. A provider is selected only when the consumer's contract requirement and binding policy are satisfied.

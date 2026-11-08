@@ -138,8 +138,12 @@ The start may be earlier than requested; a known complete size must end at the
 last returned byte.
 If the server ignores the request and returns 200, the actual offset is zero.
 Malformed or inconsistent partial responses and 416 are errors, with no retry.
-This finite source-level range path has not yet been qualified in a signed C
-component. Conditional requests remain unsupported.
+The HEAD receipt above does not qualify signed Range execution. The maintained
+[Stat/Range owner](../../.github/workflows/c-http-stat-qualification.yml) now
+requires seven signed cells: the four HEAD cases plus actual 206, ignored-Range
+200 and a denied alternate path with zero peer contact. Its exact peer-header,
+offset/length/size/checksum assertions must pass before claiming signed Range
+support; adding the owner is not that result. Conditional requests remain unsupported.
 
 `fetchReqHTTP` supports bounded string request bodies for its declared HTTP
 methods. Only the empty flags string or `A` is supported. HTTP/HTTPS transport

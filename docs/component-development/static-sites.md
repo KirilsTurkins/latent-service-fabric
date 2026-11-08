@@ -9,6 +9,12 @@ It covers organization signing, verification, OCI transfer, publication,
 GET/HEAD promotion and rollback without a Rust toolchain. This page explains
 the inventory and routing inputs used by that workflow.
 
+To share eligible scripts, styles or fonts with another browser origin, use
+Development's [publication-scoped cross-origin grants](../operations/cross-origin-static-assets.md).
+Public document navigation alone grants no readable asset access. CORS requires
+the exact admitted publication, explicit HTTPS origins and omitted credentials;
+it does not relax capsule API or document policy.
+
 `tools/static_site.py` captures an explicit finite file map from an existing
 framework build. It writes ordinary `browser-assets` package inputs and a
 `static-site-v1` web manifest. Compilation, package assembly and deployment are
