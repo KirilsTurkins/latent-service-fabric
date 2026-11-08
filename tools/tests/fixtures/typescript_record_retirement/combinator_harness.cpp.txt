@@ -1,0 +1,58 @@
+#include <cstdio>
+#include <cstring>
+#include <cstdint>
+#include <cstddef>
+struct JSContext { bool exception = false; };
+struct JSObject {};
+struct PromiseCombinatorDataHolder : JSObject {};
+struct Value { int tag=0; int data=0; bool isObject() const { return tag==1; } };
+template<class T> struct Handle;
+template<> struct Handle<Value> { Value value; bool isObject() const { return value.isObject(); } operator Value() const { return value; } };
+template<> struct Handle<PromiseCombinatorDataHolder*> { PromiseCombinatorDataHolder* value; PromiseCombinatorDataHolder& operator*() const { return *value; } };
+struct JSFunction : JSObject { Value slot[2]; void setExtendedSlot(int i, Value v) { slot[i]=v; } };
+struct RootedFunction { JSFunction* value; RootedFunction(JSContext*,JSFunction* v):value(v) {} operator bool() const {return value!=nullptr;} operator JSFunction*() const {return value;} JSFunction* operator->() const {return value;} JSFunction* get() const {return value;} };
+using Native = int;
+namespace gc { enum class AllocKind { FUNCTION_EXTENDED }; }
+constexpr int GenericObject=0;
+constexpr int PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc=0;
+constexpr int PromiseCombinatorElementFunctionSlot_Data=1;
+Value NullValue(){return {2,0};} Value Int32Value(uint32_t x){return {3,static_cast<int>(x)};} Value ObjectValue(PromiseCombinatorDataHolder&){return {1,17};}
+struct Hooks { bool (*beforeCapturedAllocate)(JSContext*,void**); void (*allocationFailed)(void*); void (*capturedCreated)(JSContext*,JSObject*,void*); };
+static JSContext* activationPromiseContext=nullptr; static Hooks* activationPromiseHooks=nullptr;
+static int limit=0, admitted=0, created=0, failed=0, allocs=0; static bool fail_native=false; static int owner[16];
+bool before(JSContext* cx,void** out){if(admitted>=limit){cx->exception=true;return false;} *out=&owner[admitted++];return true;}
+void failed_alloc(void*){++failed;} void created_obj(JSContext*,JSObject*,void*){++created;}
+JSFunction* NewNativeFunction(JSContext* cx, Native, int, std::nullptr_t, gc::AllocKind, int){if(fail_native){cx->exception=true;return nullptr;} ++allocs;return new JSFunction;}
+/* LSF_COMBINATOR_TARGET */
+
+int main(int argc,char** argv){
+ if(argc!=2)return 2;
+ static JSContext cx; static Hooks hooks{before,failed_alloc,created_obj}; activationPromiseContext=&cx;
+ PromiseCombinatorDataHolder holder; Handle<PromiseCombinatorDataHolder*> data{&holder}; Handle<Value> ordinary{{0,0}};
+ bool ok=false;
+ if(!std::strcmp(argv[1],"selected-limit")){
+  activationPromiseHooks=&hooks;limit=2;
+  auto* a=NewPromiseCombinatorElementFunction(&cx,0,data,0,ordinary);
+  auto* b=NewPromiseCombinatorElementFunction(&cx,0,data,1,ordinary);
+  auto* c=NewPromiseCombinatorElementFunction(&cx,0,data,2,ordinary);
+  ok=a&&b&&!c&&cx.exception&&admitted==2&&created==2&&allocs==2;
+ }else if(!std::strcmp(argv[1],"unselected-original")){
+  activationPromiseHooks=nullptr;limit=0; auto* a=NewPromiseCombinatorElementFunction(&cx,0,data,7,ordinary);
+  ok=a&&admitted==0&&created==0&&allocs==1&&a->slot[0].tag==3&&a->slot[0].data==7&&a->slot[1].tag==1;
+ }else if(!std::strcmp(argv[1],"allocation-failure")){
+  activationPromiseHooks=&hooks;limit=1;fail_native=true;
+  auto* a=NewPromiseCombinatorElementFunction(&cx,0,data,0,ordinary);
+  ok=!a&&cx.exception&&admitted==1&&failed==1&&created==0&&allocs==0;
+ }else if(!std::strcmp(argv[1],"paired-slots")){
+  activationPromiseHooks=&hooks;limit=1;Handle<Value> prior{{1,44}};
+  auto* a=NewPromiseCombinatorElementFunction(&cx,0,data,7,prior);
+  ok=a&&a->slot[0].tag==1&&a->slot[0].data==44&&a->slot[1].tag==2&&admitted==1&&created==1;
+ }else if(!std::strcmp(argv[1],"paired-refusal")){
+  activationPromiseHooks=&hooks;limit=1;Handle<Value> prior{{1,44}};
+  auto* a=NewPromiseCombinatorElementFunction(&cx,0,data,7,ordinary);
+  auto* b=NewPromiseCombinatorElementFunction(&cx,0,data,7,prior);
+  ok=a&&!b&&cx.exception&&admitted==1&&created==1&&allocs==1&&a->slot[0].data==7;
+ } else return 2;
+ std::printf("{\"case\":\"%s\",\"passed\":%s,\"admitted\":%d,\"created\":%d,\"allocations\":%d,\"engineQualified\":false}\n",argv[1],ok?"true":"false",admitted,created,allocs);
+ return ok?0:1;
+}

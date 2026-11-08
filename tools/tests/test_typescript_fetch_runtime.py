@@ -17,6 +17,20 @@ from tools.standard_http.peer import Peer
 
 
 class TypeScriptFetchRuntimeTests(unittest.TestCase):
+    def test_combinator_vectors_require_retention_denial_close_and_recovery(self):
+        self.assertEqual(fetch.COMBINATOR_VECTORS, (
+            ('combinator-retained', 27, 'combinator:retained:3:ordered'),
+            ('combinator-refusal', 28, 'combinator:native-refusal:closed:recovered'),
+            ('combinator-fresh', 27, 'combinator:retained:3:ordered')))
+        self.assertEqual(fetch.OWNER_LIMITS['nativeOwners'], 64)
+        node = shutil.which('node')
+        self.assertIsNotNone(node, 'The pinned Node reference host is required')
+        control = fetch.ROOT/'tools/tests/fixtures/typescript_record_retirement/combinator_signed_control.mjs'
+        completed = subprocess.run([node, str(control), str(fetch.ROOT/fetch.FIXTURE/'main.ts')],
+                                   capture_output=True, text=True, timeout=20)
+        self.assertEqual(completed.returncode, 0, completed.stdout+completed.stderr)
+        self.assertEqual(completed.stdout.strip(), 'fixture-controls-passed; engine-qualified=false')
+
     def write(self, path, value):
         path.write_text(json.dumps(value)+'\n', encoding='utf-8')
 

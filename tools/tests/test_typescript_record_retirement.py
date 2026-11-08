@@ -1,4 +1,5 @@
 """Compile the actual owner classes; JS doubles establish no engine semantics."""
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -53,6 +54,21 @@ class RecordRetirementTests(unittest.TestCase):
     def test_promise_refused_ack_retains_exact_owner_without_allocation(self):
         self.control('promise-refused-ack-retains-owner')
 
+    def test_captured_callback_stays_charged_until_weak_collection_and_ack(self):
+        self.control('captured-native-retention')
+
+    def test_captured_callback_denial_precedes_tracking_allocation(self):
+        self.control('captured-native-denial')
+
+    def test_live_snapshot_capture_is_fenced_after_collection(self):
+        self.control('snapshot-captured-retained')
+
+    def test_unreachable_snapshot_capture_retires_without_host_ack(self):
+        self.control('snapshot-captured-collected')
+
+    def test_snapshot_live_native_owner_fails_before_ack_and_preserves_exception(self):
+        self.control('snapshot-live-native-owner-denied')
+
     def test_reaction_tracking_allocation_dies_before_refund(self):
         self.control('reaction-ack-after-delete')
 
@@ -73,6 +89,95 @@ class RecordRetirementTests(unittest.TestCase):
 
     def test_cancelled_job_retains_partial_ack_without_replaying_callback(self):
         self.control('job-cancel-partial-ack-retains-owner')
+
+
+class CombinatorFunctionDerivationTests(unittest.TestCase):
+    """Compile the pinned function before/after the real source transformation.
+
+    Native/JS functions are finite doubles; these controls do not execute an
+    actual SpiderMonkey collector or a signed component.
+    """
+    @classmethod
+    def setUpClass(cls):
+        from tools.typescript_guest.promise_engine import instrument_combinator_element_function
+        compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++')
+        if compiler is None:
+            raise RuntimeError('C++ compiler is required for combinator ownership controls')
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.temporary.cleanup)
+        output = Path(cls.temporary.name)
+        fixture = ROOT/'tools/tests/fixtures/typescript_record_retirement'
+        original = (fixture/'combinator_input.cpp.txt').read_bytes()
+        attribution = b'// Pinned Firefox 9dab3d6f643e926a340c391ea30968e940390dec, MPL-2.0.\n'
+        if (not original.startswith(attribution) or
+                hashlib.sha256(original[len(attribution):]).hexdigest() !=
+                '0808a6d564f97bf4c740ba131e3178c450491acf976e5889424a85f6472d4195'):
+            raise AssertionError('pinned original combinator function required')
+        derived = instrument_combinator_element_function(original)
+        harness = (fixture/'combinator_harness.cpp.txt').read_bytes()
+        marker = b'/* LSF_COMBINATOR_TARGET */\n'
+        if harness.count(marker) != 1 or derived == original:
+            raise AssertionError('exact old/new combinator controls required')
+        cls.binaries = {}
+        for label, body in (('old', original), ('new', derived)):
+            source = output/(label+'.cpp')
+            source.write_bytes(harness.replace(marker, body))
+            binary = output/(label+'.exe' if os.name == 'nt' else label)
+            if Path(compiler).stem.lower() == 'cl':
+                args = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX',
+                        str(source), '/Fe:' + str(binary), '/Fo:' + str(output/(label+'.obj'))]
+            else:
+                args = [compiler, '-std=c++17', '-O0', '-Wall', '-Wextra', '-Werror',
+                        str(source), '-o', str(binary)]
+            result = subprocess.run(args, capture_output=True, timeout=60)
+            if result.returncode or len(result.stdout) + len(result.stderr) > 65536:
+                raise AssertionError(result.stderr[:65536].decode(errors='replace'))
+            if not binary.is_file() or binary.stat().st_size > 4*1024**2:
+                raise AssertionError('finite combinator reference output required')
+            cls.binaries[label] = binary
+
+    def control(self, label, case, expected):
+        result = subprocess.run([str(self.binaries[label]), case], capture_output=True, timeout=10)
+        self.assertEqual(result.returncode, 0 if expected else 1,
+                         (result.stdout + result.stderr)[:65536])
+        self.assertLessEqual(len(result.stdout) + len(result.stderr), 65536)
+        value = json.loads(result.stdout)
+        self.assertEqual(value['case'], case)
+        self.assertIs(value['passed'], expected)
+        self.assertIs(value['engineQualified'], False)
+        return value
+
+    def test_old_allows_unowned_closure_new_refuses_before_allocation(self):
+        old = self.control('old', 'selected-limit', False)
+        new = self.control('new', 'selected-limit', True)
+        self.assertEqual((old['admitted'], old['allocations']), (0, 3))
+        self.assertEqual((new['admitted'], new['allocations']), (2, 2))
+
+    def test_failed_native_allocation_retains_its_accepted_owner(self):
+        self.control('old', 'allocation-failure', False)
+        self.control('new', 'allocation-failure', True)
+
+    def test_second_paired_callback_denied_before_allocation_keeps_first(self):
+        old = self.control('old', 'paired-refusal', False)
+        new = self.control('new', 'paired-refusal', True)
+        self.assertEqual((old['admitted'], old['allocations']), (0, 2))
+        self.assertEqual((new['admitted'], new['allocations']), (1, 1))
+
+    def test_snapshot_capture_fence_follows_original_full_gc(self):
+        from tools.typescript_guest.activation_engine import fence_snapshot_captures
+        original = b'    JS::NonIncrementalGC(cx(), JS::GCOptions::Normal, JS::GCReason::API);\n  }\n'
+        derived = fence_snapshot_captures(original)
+        self.assertTrue(derived.startswith(original.splitlines(keepends=True)[0]))
+        self.assertLess(derived.index(b'NonIncrementalGC'),
+                        derived.index(b'snapshot_captured_functions_empty'))
+        self.assertTrue(derived.endswith(b'  }\n'))
+        with self.assertRaises(ValueError):
+            fence_snapshot_captures(original + original)
+
+    def test_original_path_and_paired_slot_semantics_are_preserved(self):
+        self.control('old', 'unselected-original', True)
+        self.control('new', 'unselected-original', True)
+        self.control('new', 'paired-slots', True)
 
 
 class TimerSetupRetirementTests(unittest.TestCase):

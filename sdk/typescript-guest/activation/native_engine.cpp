@@ -107,7 +107,8 @@ const JS::ActivationPromiseHooks promise_hooks{
     before_reaction_allocate, ReactionRecords::allocationFailed,
     ReactionRecords::created, reaction_record,
     before_reaction_allocate, ReactionRecords::allocationFailed,
-    ReactionRecords::created, reaction_record};
+    ReactionRecords::created, reaction_record,
+    before_promise_allocate, PromiseRecords::capturedCreated};
 }
 
 // Called before JS_Init. Firefox147 defaults to a second microtask queue that
@@ -146,6 +147,17 @@ bool snapshot_jobs_empty(JSContext* cx) {
     return false;
   }
   return true;
+}
+
+bool snapshot_captured_functions_empty(JSContext* cx) {
+  // The embedding calls this only after its original full snapshot GC. Weak
+  // edges and collection-end are observed before inspecting or acknowledging.
+  if (!compiler_snapshot_allowed(cx)) {
+    if (!JS_IsExceptionPending(cx))
+      JS_ReportErrorASCII(cx, "activation-runtime-snapshot-capture-phase-invalid");
+    return false;
+  }
+  return promises.snapshotCapturesEmpty(cx, promise_accounting.liveNative());
 }
 
 bool acknowledge_promise_retirement(JSContext* cx) {

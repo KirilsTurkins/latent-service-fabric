@@ -225,6 +225,67 @@ function recoveredAbortAnyFrame(source: AbortController): string {
   return 'abort-any:refusal:closed:recovered';
 }
 
+// A custom capability avoids adding an intrinsic result Promise or a job. Its
+// thenables retain the real Promise.all element callbacks until explicitly run.
+function retainedCombinators(): string {
+  const held: Array<(value: number) => void> = [];
+  const outcome: {state: string, value: unknown} = {state: 'pending', value: undefined};
+  class Collector {
+    constructor(executor: (resolve: (value: unknown) => void, reject: (error: unknown) => void) => void) {
+      executor(value => { outcome.state = 'fulfilled'; outcome.value = value; },
+               error => { outcome.state = 'rejected'; outcome.value = error; });
+    }
+    static resolve(_value: number) {
+      return {then(resolve: (value: number) => void) { held.push(resolve); }};
+    }
+  }
+  const all = Promise.all as unknown as (this: unknown, input: Iterable<number>) => unknown;
+  const result = all.call(Collector, [1, 2, 3]);
+  if (!(result instanceof Collector) || outcome.state !== 'pending' || held.length !== 3)
+    throw new Error('combinator-retained-setup');
+  held[2](3); held[0](1); held[1](2);
+  if (String(outcome.state) !== 'fulfilled' || !Array.isArray(outcome.value) || outcome.value.join(',') !== '1,2,3')
+    throw new Error('combinator-retained-result');
+  return 'combinator:retained:3:ordered';
+}
+
+function refusedCombinators(): void {
+  const held: Array<(value: number) => void> = [];
+  const outcome: {state: string, value: unknown} = {state: 'pending', value: undefined};
+  let next = 0, closed = 0;
+  class Collector {
+    constructor(executor: (resolve: (value: unknown) => void, reject: (error: unknown) => void) => void) {
+      executor(value => { outcome.state = 'fulfilled'; outcome.value = value; },
+               error => { outcome.state = 'rejected'; outcome.value = error; });
+    }
+    static resolve(_value: number) {
+      return {then(resolve: (value: number) => void) { held.push(resolve); }};
+    }
+  }
+  const input: Iterable<number> = {
+    [Symbol.iterator](): Iterator<number> {
+      return {
+        next(): IteratorResult<number> {
+          ++next;
+          return next <= 96 ? {done: false, value: next} : {done: true, value: undefined};
+        },
+        return(): IteratorResult<number> { ++closed; return {done: true, value: undefined}; },
+      };
+    },
+  };
+  const all = Promise.all as unknown as (this: unknown, input: Iterable<number>) => unknown;
+  const expected = 'activation-runtime-promise-native-register-denied:2';
+  try {
+    const result = all.call(Collector, input);
+    if (!(result instanceof Collector) || outcome.state !== 'rejected' ||
+        !(outcome.value instanceof Error) || outcome.value.message !== expected ||
+        held.length === 0 || held.length > 64 || next !== held.length + 1 || closed !== 1)
+      throw new Error('combinator-native-refusal-or-close-missing');
+  } finally {
+    held.length = 0;
+  }
+}
+
 function abortDefaultReason(): string {
   for (let turn = 0; turn < 2; ++turn) {
     const source = new AbortController();
@@ -276,6 +337,16 @@ export const api: typeof Contract = {
       return recoveredAbortAnyFrame(source);
     }
     if (mode === 26) return abortDefaultReason();
+    if (mode === 27) return retainedCombinators();
+    if (mode === 28) {
+      refusedCombinators();
+      // The ordinary Promise allocation path triggers the existing pressure GC
+      // and checkpoint after the deliberately retained callbacks are released.
+      await Promise.resolve();
+      if (retainedCombinators() !== 'combinator:retained:3:ordered')
+        throw new Error('combinator-native-recovery');
+      return 'combinator:native-refusal:closed:recovered';
+    }
     if (mode !== 0) throw new TypeError('unsupported-fetch-runtime-mode');
     return `${++calls}:${await request(url)}`;
   },

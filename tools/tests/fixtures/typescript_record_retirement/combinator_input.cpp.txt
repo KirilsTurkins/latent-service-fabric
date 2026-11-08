@@ -1,0 +1,27 @@
+// Pinned Firefox 9dab3d6f643e926a340c391ea30968e940390dec, MPL-2.0.
+static JSFunction* NewPromiseCombinatorElementFunction(
+    JSContext* cx, Native native,
+    Handle<PromiseCombinatorDataHolder*> dataHolder, uint32_t index,
+    Handle<Value> maybeResolveFunc) {
+  JSFunction* fn = NewNativeFunction(
+      cx, native, 1, nullptr, gc::AllocKind::FUNCTION_EXTENDED, GenericObject);
+  if (!fn) {
+    return nullptr;
+  }
+
+  // See the PromiseCombinatorElementFunctionSlots comment for an explanation of
+  // how these two slots are used.
+  if (maybeResolveFunc.isObject()) {
+    fn->setExtendedSlot(
+        PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc,
+        maybeResolveFunc);
+    fn->setExtendedSlot(PromiseCombinatorElementFunctionSlot_Data, NullValue());
+  } else {
+    fn->setExtendedSlot(
+        PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc,
+        Int32Value(index));
+    fn->setExtendedSlot(PromiseCombinatorElementFunctionSlot_Data,
+                        ObjectValue(*dataHolder));
+  }
+  return fn;
+}
