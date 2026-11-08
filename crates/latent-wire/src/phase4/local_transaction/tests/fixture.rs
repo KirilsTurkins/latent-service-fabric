@@ -137,6 +137,22 @@ impl Fixture {
         .await
     }
 
+    /// Deliberately misdeclare the compiled update operation as a query in this
+    /// trusted-local test fixture. This is not a signed companion assertion.
+    pub async fn with_query_update_mismatch() -> Self {
+        Self::with_guest(
+            false,
+            NamespaceQuota::default(),
+            latent_capabilities::namespace::RecoverySelection::OriginalCaller,
+            &["alice"],
+            4096,
+            "aggregate-query-update",
+            1,
+            latent_core::native_capacity::NativeCapacityLimits::default(),
+        )
+        .await
+    }
+
     pub async fn with_recovery(
         paused: bool,
         quota: NamespaceQuota,
@@ -249,8 +265,18 @@ impl Fixture {
             .lifecycle_authority()
             .install_rejection_observer(effects.rejection_observer())
             .unwrap();
-        let (publication, metadata, deployment, declaration) =
-            publication::publish(&catalog, manifest_profile, variant).await;
+        let mismatch = variant == "aggregate-query-update";
+        let selected = if mismatch { "aggregate" } else { variant };
+        let (publication, metadata, deployment, mut declaration) =
+            publication::publish(&catalog, manifest_profile, selected).await;
+        if mismatch {
+            let operation = declaration
+                .operations
+                .iter_mut()
+                .find(|operation| operation.operation == "update")
+                .expect("original update declaration");
+            operation.mode = latent_manifest::TransactionOperationMode::FreshQuery;
+        }
         let policy = Arc::new(
             PolicyStore::open(
                 &root.path().join("policy"),
@@ -830,6 +856,28 @@ impl Fixture {
             self.executions() + self.backend.imports.queries.load(Ordering::SeqCst)
         );
         eprintln!("actual-guest command-executions={} query-executions={} stores-created={} live-stores={}",self.executions(),self.backend.imports.queries.load(Ordering::SeqCst),runtime.stores_created,runtime.live_stores);
+    }
+
+    pub async fn shutdown_after_wrong_mode(mut self) {
+        self.retire().await;
+        let runtime = self.backend.real.resource_snapshot();
+        assert_eq!(runtime.stores_created, 1);
+        assert_eq!(
+            runtime.live_stores
+                + runtime.live_host_states
+                + runtime.live_component_instances
+                + runtime.active_invocations,
+            0
+        );
+        eprintln!(
+            "actual-guest wrong-mode-command-acquisitions={} stores-created={} live-stores={}",
+            self.backend
+                .imports
+                .wrong_mode_command_acquisitions
+                .load(Ordering::SeqCst),
+            runtime.stores_created,
+            runtime.live_stores
+        );
     }
 }
 struct InspectionOnlyInventory;

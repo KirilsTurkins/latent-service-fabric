@@ -15,6 +15,7 @@ use tokio::sync::Notify;
 pub(super) struct Imports {
     pub commands: AtomicU64,
     pub queries: AtomicU64,
+    pub wrong_mode_command_acquisitions: AtomicU64,
     pub returned_bytes: AtomicU64,
     pub staged_intents: AtomicU64,
     pub platform_failure: std::sync::Mutex<Option<latent_core::PlatformErrorCode>>,
@@ -45,7 +46,14 @@ impl TransactionHost for Host {
         self.inner.budget()
     }
     fn acquire(&self, mode: Mode) -> Result<(), StateFailure> {
-        self.inner.acquire(mode)?;
+        if let Err(error) = self.inner.acquire(mode) {
+            if mode == Mode::Command && error == StateFailure::WrongMode {
+                self.imports
+                    .wrong_mode_command_acquisitions
+                    .fetch_add(1, Ordering::SeqCst);
+            }
+            return Err(error);
+        }
         match mode {
             Mode::Command => &self.imports.commands,
             Mode::Query => &self.imports.queries,

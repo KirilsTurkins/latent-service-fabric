@@ -1,0 +1,137 @@
+{
+  "schemaVersion": "latent.phase4.rust-query-direct-local-observation.v1",
+  "qualification": "Local temporary combined source with a maintained previously compiled Rust guest in a trusted-local catalog; not signed installed-node or hosted qualification.",
+  "integrationSource": {
+    "schemaVersion": "latent.phase4.integration-source.v1",
+    "baseSource": "aa47593fce1130d9578eb952722e7b3939bc22de",
+    "historySource": "4b8cddb22ac3f67dd68587f6cd8c2518d3383a68",
+    "coreSource": "64b81e819e36f95d0f1280e728562fa49b842dee",
+    "description": "Temporary explicit source combination for local integration only; not a merged commit",
+    "overlays": {
+      "crates/latent-core/src/activation_runtime.rs": {
+        "sha256": "sha256:c14be16aeccc026944e6bc60f2d91ec4dfdda3517f66f13a6b12ce4f412c5a2e",
+        "bytes": 26947
+      },
+      "crates/latent-core/src/activation_runtime/tests.rs": {
+        "sha256": "sha256:d32b9843962163f19ed318d3c856b840bdbe3c003fc3f4d805af6e0c9f036d9f",
+        "bytes": 44725
+      },
+      "crates/latent-core/src/budget.rs": {
+        "sha256": "sha256:14c7b687bab34a11b937c731c602620247dedf14e131d48e68bb7587315a2ece",
+        "bytes": 69645
+      },
+      "crates/latent-wire/src/phase4/state_management.rs": {
+        "sha256": "sha256:c335fb113fe88383158e07a334aa9fc5af68e9f10f1b5acc5269860e3dbc43b9",
+        "bytes": 26197
+      },
+      "crates/latent-wire/src/phase4/state_management/command_result.rs": {
+        "sha256": "sha256:3bca68771d5f1a52882e96c400b51482e60d9aed931d57da373d04e5c3bd2b89",
+        "bytes": 14407
+      },
+      "crates/latent-wire/src/phase4/state_management/command_result/audit.rs": {
+        "sha256": "sha256:82d5732780b06614f7b520897b5c787a4c224e6dd115c20caf9b95c9d6fbb6bd",
+        "bytes": 2854
+      },
+      "crates/latent-wire/src/phase4/state_management/command_result/effect.rs": {
+        "sha256": "sha256:cca08f06d001b7a2ec030a1e46aa23ba9035484e358e7cc051f74a77e7962b26",
+        "bytes": 9522
+      },
+      "crates/latent-wire/src/phase4/state_management/recovery_bindings.rs": {
+        "sha256": "sha256:cb84c727be4d54700e287849d2debeca01dd927c0cea1f1c45860f737d4d90a3",
+        "bytes": 4119
+      }
+    },
+    "binaries": {
+      "deferred_event_fault_proxy": {
+        "sha256": "sha256:5a39cc6dbf3444bb7d06c43004f29383852d1b372d14d17bdc39dfde43cf13c0",
+        "bytes": 11930720
+      },
+      "latent": {
+        "sha256": "sha256:0177ad1be1302f753977597b008d22752d32078c1c21bbb56b8c003e9eebdb7d",
+        "bytes": 79680400
+      },
+      "latent-aot-compiler": {
+        "sha256": "sha256:0db8951c27ac7de4e48c1234f6c9bf0ad289268a57eee5d61bb589e6f93a029a",
+        "bytes": 51833424
+      },
+      "latentd": {
+        "sha256": "sha256:80af0dd96cb5e004e1927724a2db7e9c4c46fbe4ff34b1b70ed1b75492b9f1e1",
+        "bytes": 205466152
+      }
+    }
+  },
+  "testSource": {
+    "crates/latent-wire/src/phase4/local_transaction/tests.rs": {
+      "sha256": "sha256:9ea18012cf7fbb49a3b1f1d7bc65dcff555ebe55f1fb68f74d759c79937804ce",
+      "bytes": 8827
+    },
+    "crates/latent-wire/src/phase4/local_transaction/tests/query.rs": {
+      "sha256": "sha256:ac8f8d9dd2bcfe2bfeffa71dc6c28dff027c51e4ca699c86bd5268a4f6794f5a",
+      "bytes": 6063
+    },
+    "crates/latent-wire/src/phase4/local_transaction/tests/backend.rs": {
+      "sha256": "sha256:d79fe61e85eec187deb802db5a7647c22b1008f57c81eb9149c0036817b217a4",
+      "bytes": 9290
+    },
+    "crates/latent-wire/src/phase4/local_transaction/tests/fixture.rs": {
+      "sha256": "sha256:9bf581368f8082780269f2f485af6a1ba667fa105f8206c3cfbd5b1de3ea23c1",
+      "bytes": 36114
+    }
+  },
+  "testBinary": {
+    "sha256": "sha256:c3d8489970ec81ff856d1629e899dbefd606173a5aad1897c2be3ccad2b03345",
+    "bytes": 160344848
+  },
+  "guest": {
+    "sourceRevision": "bfc83174cd43bd15c405f0e4b3ebe1ece014785c",
+    "sourceDigest": "sha256:b3449ea62ee38bca454f6dc1fbc0104a3ed097739a0aa3fa3391bc7995f7989b",
+    "compilerReport": {
+      "sha256": "sha256:24bb61ddb7fa227abffcb9211c271d28fca12bae5c10f6ece0e97f14fb1426b1",
+      "bytes": 3339
+    },
+    "component": {
+      "sha256": "sha256:008dafef287cd33cebb50c6820ce4b83e270a28b153473ce268a08a56fe915ff",
+      "bytes": 108838
+    },
+    "signedNodeExecutionQualified": false
+  },
+  "observation": {
+    "commandExecutions": 1,
+    "queryExecutions": 7,
+    "storesCreated": 8,
+    "liveStoresAfterRetirement": 0,
+    "freshQueriesAfterCommand": 4,
+    "freshQueriesAfterSameProcessReopen": 3,
+    "committedViewUsedAsMinimum": true,
+    "commandAttemptResultAndOutboxRowCountsUnchanged": true,
+    "sameTenantDeniedBeforeGuest": true,
+    "foreignTenantDeniedBeforeGuest": true,
+    "authorizedQueryAfterDenials": true,
+    "alteredScopeViewRejectedBeforeGuest": true,
+    "futureGenerationRejectedAsConflictBeforeGuest": true,
+    "deliberatelyMismatchedTrustedLocalQueryBindingRejectedCommandAcquire": true,
+    "wrongModeAcquisitions": 1,
+    "rejectedGuestStoresCreated": 1,
+    "rejectedGuestStoresRetired": true,
+    "passed": true
+  },
+  "testLog": {
+    "sha256": "sha256:9103bb7e11c8493f7a043de01d606e86b528c75e93cd0bfbe42ea795a38da913",
+    "bytes": 11269
+  },
+  "limits": [
+    "The restart is a same-process owner retirement and store reopen, not an operating-system process crash.",
+    "The guest was installed into a trusted-local test catalog; publisher signatures and installed distributions were not qualified.",
+    "The command-under-query control deliberately modifies a trusted-local declaration; it does not qualify signed companion verification or a separately authored malicious component.",
+    "This observation does not qualify other guest languages or the full query ticket."
+  ],
+  "sharedFixtureSuite": {
+    "passed": 32,
+    "failed": 0,
+    "log": {
+      "sha256": "sha256:7c02730aaff004da75955bb2c93c7a33431b1066cc341ef270be6210be4f747c",
+      "bytes": 27330
+    },
+    "command": "cargo test --offline -p latent-wire --lib phase4::local_transaction::tests:: -- --ignored --test-threads=1 --nocapture"
+  }
+}

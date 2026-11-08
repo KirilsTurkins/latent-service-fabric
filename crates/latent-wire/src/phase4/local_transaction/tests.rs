@@ -9,6 +9,7 @@ mod namespace;
 mod policy;
 mod process_loss;
 mod publication;
+mod query;
 mod recovery;
 mod requests;
 mod result_bounds;
