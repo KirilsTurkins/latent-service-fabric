@@ -89,15 +89,26 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
         if (runner == null && completed && internalPhysicalClaims == 0 && owner != null) settleResultOnce();
     }
     @Override public boolean cancel(boolean interrupt) {
-        synchronized (this) {
-            if (completed) return false;
-            cancelled = completed = true;
-            if (interrupt && runner != null) runner.interrupt();
-            if (runner == null) callable = null;
-            notifyAll();
-            releaseIfPhysicalComplete();
+        boolean notifyCompletion = false;
+        try {
+            synchronized (this) {
+                if (completed) return false;
+                cancelled = completed = true;
+                try {
+                    if (interrupt && runner != null) runner.interrupt();
+                } finally {
+                    // A custom Thread.interrupt() may throw before or after
+                    // delivery. Cancellation still wakes waiters and runs done().
+                    if (runner == null) callable = null;
+                    notifyAll();
+                    releaseIfPhysicalComplete();
+                    // Preserve fail-closed behavior if owner settlement fails.
+                    notifyCompletion = true;
+                }
+            }
+        } finally {
+            if (notifyCompletion) done();
         }
-        done();
         return true;
     }
     @Override public synchronized boolean isCancelled() { return cancelled; }

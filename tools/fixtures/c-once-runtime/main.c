@@ -87,8 +87,13 @@ static void number(char **output, uint64_t value) {
     while (count) *(*output)++ = digits[--count];
 }
 
+#include "root-drain.h"
+
 bool exports_examples_c_thread_runtime_api_greet(probe_string_t *input,
                                                 probe_string_t *result, probe_string_t *error) {
+    if ((input->len == 3 && memcmp(input->ptr, "pre", 3) == 0) ||
+        (input->len == 4 && memcmp(input->ptr, "late", 4) == 0))
+        return root_drain_greet(input, result, error);
     if (input->len != 4 || memcmp(input->ptr, "once", 4) != 0) {
         probe_string_dup(error, "unknown-mode"); probe_string_free(input); return false;
     }

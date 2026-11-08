@@ -19,6 +19,8 @@ use tokio::{
 #[allow(dead_code)]
 mod component;
 use super::runtime::{package, provenance};
+#[path = "outbound/conformance.rs"]
+mod conformance;
 
 fn configuration(port: u16) -> StreamProviderConfig {
     StreamProviderConfig {
@@ -62,6 +64,8 @@ async fn configured(root: &std::path::Path, port: u16) -> Fixture {
         source.extend_from_slice(include_bytes!("component.rs"));
         source.extend_from_slice(include_bytes!("packages.rs"));
         source.extend_from_slice(include_bytes!("outbound/owners.rs"));
+        source.extend_from_slice(include_bytes!("outbound.rs"));
+        source.extend_from_slice(include_bytes!("outbound/conformance.rs"));
         source.extend_from_slice(include_bytes!(
             "../../../../wit/platform/network/package.wit"
         ));

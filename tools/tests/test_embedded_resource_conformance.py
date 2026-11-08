@@ -13,6 +13,7 @@ from unittest.mock import patch
 from tools import embedded_resource_fixture as fixture, embedded_resource_probe as probe
 from tools import qualify_embedded_resources as qualification
 from tools.phase3_resource_profile import ACTIVE_COUNTERS
+from tools.tests.qualification_selection import restore_pre_dotnet_reset
 from tools.rust_capsule_project import ROOT, digest, inventory, read_json, snapshot
 
 
@@ -235,11 +236,36 @@ class EmbeddedResources(unittest.TestCase):
                     self.assertRaisesRegex(RuntimeError,'original-current-normal'):
                 qualification.prepared(directory,'go')
 
+    def test_dotnet_reset_projection_refuses_unreviewed_selector_changes(self):
+        source = (ROOT/'tools/run_rust_capsule_workflow.py').read_text(encoding='utf-8')
+        for mutation in ('argument', 'default', 'guard', 'keyword', 'forward', 'additional-use'):
+            with self.subTest(mutation=mutation):
+                tree = ast.parse(source)
+                function = next(node for node in tree.body
+                                if isinstance(node, ast.FunctionDef) and node.name == 'run')
+                if mutation == 'argument':
+                    function.args.kwonlyargs[-1].arg = 'unreviewed_selector'
+                elif mutation == 'default':
+                    function.args.kw_defaults[-1] = ast.Constant(True)
+                elif mutation == 'guard':
+                    function.body[0].value.args[1] = ast.Constant('different-selection')
+                elif mutation in ('keyword', 'forward'):
+                    call = next(node for node in ast.walk(function)
+                                if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                                and node.func.id == 'probe_managed_tasks')
+                    if mutation == 'keyword':
+                        call.keywords[0].arg = 'unreviewed_keyword'
+                    else:
+                        call.keywords[0].value = ast.Name(id='dotnet_task_runtime', ctx=ast.Load())
+                else:
+                    function.body.append(ast.Expr(value=ast.Name(
+                        id='dotnet_task_reset_witness', ctx=ast.Load())))
+                with self.assertRaises(AssertionError):
+                    restore_pre_dotnet_reset(self, tree)
+
     def test_original_runner_ast_is_preserved_except_default_false_guard_and_one_probe(self):
         source = (ROOT/'tools/run_rust_capsule_workflow.py').read_text(encoding='utf-8')
-        tree = ast.parse(source)
-        from tools.tests.qualification_selection import project_dotnet_reset_witness
-        tree = project_dotnet_reset_witness(self, tree)
+        tree = restore_pre_dotnet_reset(self, ast.parse(source))
         function = next(node for node in tree.body if isinstance(node,ast.FunctionDef) and node.name == 'run')
         self.assertEqual(function.args.kwonlyargs[-1].arg,'embedded_resource_conformance')
         self.assertFalse(function.args.kw_defaults[-1].value)
@@ -253,20 +279,6 @@ class EmbeddedResources(unittest.TestCase):
         tree = Projection().visit(tree)
         actual = hashlib.sha256(ast.dump(tree,include_attributes=False).encode()).hexdigest()
         self.assertEqual(actual,'2170a595bdc3c57118cc1fc102bd58b39b49ce4aa13a10dea72da6e80925da8c')
-
-    def test_reset_witness_projection_rejects_changed_guard_default_and_probe(self):
-        from tools.tests.qualification_selection import project_dotnet_reset_witness
-        source = (ROOT/'tools/run_rust_capsule_workflow.py').read_text(encoding='utf-8')
-        changes = (
-            source.replace('dotnet_task_reset_witness=False', 'dotnet_task_reset_witness=True', 1),
-            source.replace("'authoring-dotnet-reset-witness-selection'", "'changed-reset-guard'", 1),
-            source.replace('reset_notification=dotnet_task_reset_witness', 'reset_notification=False', 1),
-        )
-        for changed in changes:
-            with self.subTest(changed=changed[-80:]):
-                self.assertNotEqual(changed, source)
-                with self.assertRaises(AssertionError):
-                    project_dotnet_reset_witness(self, ast.parse(changed))
 
 
 if __name__ == '__main__': unittest.main()
