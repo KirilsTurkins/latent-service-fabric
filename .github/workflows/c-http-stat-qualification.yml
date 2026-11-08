@@ -84,10 +84,12 @@
           }
         },
         {
-          "uses": "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce", # v1.1.3 + upstream changes + LSF security fixes
-          "with": {
-            "version": "1.254.0"
-          }
+          "name": "Install the verified wasm-tools release asset",
+          "env": {
+            "GH_TOKEN": "${{ github.token }}"
+          },
+          "shell": "bash",
+          "run": "set -euo pipefail\narchive=\"$RUNNER_TEMP/c-http-wasm-tools.tar.gz\"\nbindir=\"$RUNNER_TEMP/c-http-wasm-tools-bin\"\nmkdir \"$bindir\"\ntimeout 90s gh api -H 'Accept: application/octet-stream' repos/bytecodealliance/wasm-tools/releases/assets/483720667 | head -c 5862465 > \"$archive\"\nunset GH_TOKEN\ntest \"$(stat --format=%s \"$archive\")\" = 5862464\nprintf '%s  %s\\n' d0efb16c9c859137b7ab3e99151c299cd47caee106ed4594561002f7a04945bd \"$archive\" | sha256sum --check --strict\ntar -xOzf \"$archive\" wasm-tools-1.254.0-x86_64-linux/wasm-tools > \"$bindir/wasm-tools\"\ntest \"$(stat --format=%s \"$bindir/wasm-tools\")\" = 20231696\nprintf '%s  %s\\n' cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6 \"$bindir/wasm-tools\" | sha256sum --check --strict\nchmod 755 \"$bindir/wasm-tools\"\ntest \"$(\"$bindir/wasm-tools\" --version)\" = 'wasm-tools 1.254.0 (bb58fdf91 2026-07-20)'\nprintf '%s\\n' \"$bindir\" >> \"$GITHUB_PATH\"\n"
         },
         {
           "uses": "KirilsTurkins/lsf-setup-zig@e064b42fa88ad0859d8b54838b44f672ffd5ea7a", # v2.2.1 + upstream changes + LSF security fixes
