@@ -29,6 +29,13 @@ pub mod sys {
                     timers: RefCell<BTreeSet<Token>>,
                     last_timeout: Cell<Option<Duration>>,
                     timed_durations: RefCell<Vec<Duration>>,
+                    refuse_timer: Cell<bool>,
+                    refuse_wait: Cell<bool>,
+                    refuse_immediate: Cell<bool>,
+                    wait_admissions: Cell<usize>,
+                    immediate_calls: Cell<usize>,
+                    on_index: RefCell<Option<Box<dyn FnOnce()>>>,
+                    on_immediate: RefCell<Option<Box<dyn FnOnce()>>>,
                     on_admit: RefCell<Option<Box<dyn FnOnce()>>>,
                     on_wait: RefCell<Option<Box<dyn FnOnce()>>>,
                     on_wake: RefCell<Option<Box<dyn FnOnce()>>>,
@@ -37,7 +44,12 @@ pub mod sys {
                 pub struct WaitLease(Token);
                 impl WaitLease {
                     pub fn admit(timeout: Option<Duration>) -> Self {
+                        PORTS.with(|p| {
+                            p.wait_admissions.set(p.wait_admissions.get() + 1);
+                            assert!(!p.refuse_wait.get(), "port: Wait admission refused");
+                        });
                         if let Some(duration) = timeout {
+                            PORTS.with(|p| assert!(!p.refuse_timer.get(), "port: Timer admission refused"));
                             u64::try_from(duration.as_nanos())
                                 .expect("std timeout exceeds the supported monotonic range");
                             PORTS.with(|p| p.last_timeout.set(Some(duration)));
@@ -57,6 +69,16 @@ pub mod sys {
                         Self(token)
                     }
                     pub fn token(&self) -> Token { self.0 }
+                    pub fn immediate_ready(self) {
+                        let _ = current_index();
+                        PORTS.with(|p| {
+                            assert_eq!(p.live.borrow().get(&self.0), Some(&None));
+                            p.immediate_calls.set(p.immediate_calls.get() + 1);
+                            assert!(!p.refuse_immediate.get(), "port: terminal Task wake refused");
+                        });
+                        let callback = PORTS.with(|p| p.on_immediate.borrow_mut().take());
+                        if let Some(callback) = callback { callback(); }
+                    }
                 }
                 impl Drop for WaitLease {
                     fn drop(&mut self) {
@@ -64,8 +86,19 @@ pub mod sys {
                         PORTS.with(|p| { p.timers.borrow_mut().remove(&self.0); });
                     }
                 }
-                pub fn current_index() -> u32 { PORTS.with(|p| p.index.get()) }
+                pub fn current_index() -> u32 {
+                    let callback = PORTS.with(|p| p.on_index.borrow_mut().take());
+                    if let Some(callback) = callback { callback(); }
+                    PORTS.with(|p| p.index.get())
+                }
                 pub fn index(index: u32) { PORTS.with(|p| p.index.set(index)); }
+                pub fn on_index(f: impl FnOnce() + 'static) { PORTS.with(|p| *p.on_index.borrow_mut() = Some(Box::new(f))); }
+                pub fn on_immediate(f: impl FnOnce() + 'static) { PORTS.with(|p| *p.on_immediate.borrow_mut() = Some(Box::new(f))); }
+                pub fn refuse_timer(value: bool) { PORTS.with(|p| p.refuse_timer.set(value)); }
+                pub fn refuse_wait(value: bool) { PORTS.with(|p| p.refuse_wait.set(value)); }
+                pub fn refuse_immediate(value: bool) { PORTS.with(|p| p.refuse_immediate.set(value)); }
+                pub fn wait_admissions() -> usize { PORTS.with(|p| p.wait_admissions.get()) }
+                pub fn immediate_calls() -> usize { PORTS.with(|p| p.immediate_calls.get()) }
                 pub fn live() -> usize { PORTS.with(|p| p.live.borrow().len()) }
                 pub fn last_timeout() -> Option<Duration> { PORTS.with(|p| p.last_timeout.get()) }
                 pub fn timed_durations() -> Vec<Duration> { PORTS.with(|p| p.timed_durations.borrow().clone()) }
@@ -324,5 +357,121 @@ fn ordinary_short_sleep_uses_one_exact_timer() {
     let duration = time::Duration::from_nanos(1);
     wait::sleep(duration);
     assert_eq!(runtime::timed_durations(), [duration]);
+    assert_eq!(runtime::live(), 0);
+}
+
+#[test]
+fn zero_parker_timeout_publishes_immediate_ready_without_a_timer() {
+    let mut allocation = Box::<parker::Parker>::new_uninit();
+    unsafe { parker::Parker::new_in_place(allocation.as_mut_ptr()); }
+    let parker: &'static parker::Parker = Box::leak(unsafe { allocation.assume_init() });
+    let pinned = unsafe { pin::Pin::new_unchecked(parker) };
+    runtime::index(1); runtime::refuse_timer(true);
+    unsafe { pinned.park_timeout(time::Duration::ZERO); }
+    assert_eq!((runtime::wait_admissions(), runtime::immediate_calls()), (1, 1));
+    assert_eq!(runtime::live(), 0);
+    // An unpark after the zero timeout remains available to the next park.
+    pinned.unpark(); unsafe { pinned.park(); }
+    assert_eq!(runtime::wait_admissions(), 1);
+}
+
+#[test]
+fn zero_parker_consumes_unpark_that_arrives_during_wait_admission() {
+    let mut allocation = Box::<parker::Parker>::new_uninit();
+    unsafe { parker::Parker::new_in_place(allocation.as_mut_ptr()); }
+    let parker: &'static parker::Parker = Box::leak(unsafe { allocation.assume_init() });
+    let pinned = unsafe { pin::Pin::new_unchecked(parker) };
+    runtime::index(1); runtime::refuse_timer(true);
+    runtime::on_admit(move || pinned.unpark());
+    unsafe { pinned.park_timeout(time::Duration::ZERO); }
+    assert_eq!((runtime::wait_admissions(), runtime::immediate_calls()), (1, 0));
+    runtime::refuse_timer(false);
+    let waited = std::rc::Rc::new(cell::Cell::new(false)); let observed = waited.clone();
+    runtime::on_wait(move || { observed.set(true); runtime::expire_one_live_timer(); });
+    unsafe { pinned.park_timeout(time::Duration::from_nanos(1)); }
+    assert!(waited.get(), "admission-time unpark was consumed exactly once");
+    assert_eq!(runtime::live(), 0);
+}
+
+#[test]
+fn zero_parker_preserves_unpark_after_immediate_readiness_begins() {
+    let mut allocation = Box::<parker::Parker>::new_uninit();
+    unsafe { parker::Parker::new_in_place(allocation.as_mut_ptr()); }
+    let parker: &'static parker::Parker = Box::leak(unsafe { allocation.assume_init() });
+    let pinned = unsafe { pin::Pin::new_unchecked(parker) };
+    runtime::index(1); runtime::refuse_timer(true);
+    // Stronger source-port reentry than the selected sync host callback.
+    runtime::on_immediate(move || pinned.unpark());
+    unsafe { pinned.park_timeout(time::Duration::ZERO); pinned.park(); }
+    assert_eq!((runtime::wait_admissions(), runtime::immediate_calls()), (1, 1));
+    assert_eq!(runtime::live(), 0);
+}
+
+#[test]
+fn zero_condvar_timeout_reacquires_a_contended_mutex_without_a_timer() {
+    let mutex: &'static mutex::Mutex = Box::leak(Box::new(mutex::Mutex::new()));
+    let condvar = condvar::Condvar::new();
+    runtime::index(1); mutex.lock(); runtime::refuse_timer(true);
+    let handoff = std::rc::Rc::new(cell::Cell::new(false)); let observed = handoff.clone();
+    // Probe the real Mutex between unlock/relock with stronger source-port
+    // reentry; the ordinary selected host callback itself is synchronous.
+    runtime::on_index(move || {
+        runtime::on_index(move || {
+            runtime::index(2);
+            assert!(mutex.try_lock(), "second identity acquired released mutex");
+            runtime::index(1);
+            runtime::on_wait(move || {
+                runtime::index(2); unsafe { mutex.unlock(); }
+                observed.set(true); runtime::index(1);
+            });
+        });
+    });
+    assert!(!unsafe { condvar.wait_timeout(mutex, time::Duration::ZERO) });
+    assert!(handoff.get(), "caller waited for the actual mutex handoff");
+    assert_eq!((runtime::wait_admissions(), runtime::immediate_calls()), (2, 1));
+    assert!(!mutex.try_lock(), "caller owns the mutex again");
+    unsafe { mutex.unlock(); }
+    assert_eq!(runtime::live(), 0);
+}
+
+#[test]
+fn zero_timeouts_do_not_turn_refused_task_wake_into_success() {
+    let mut allocation = Box::<parker::Parker>::new_uninit();
+    unsafe { parker::Parker::new_in_place(allocation.as_mut_ptr()); }
+    let parker: &'static parker::Parker = Box::leak(unsafe { allocation.assume_init() });
+    let pinned = unsafe { pin::Pin::new_unchecked(parker) };
+    runtime::index(1); runtime::refuse_immediate(true);
+    let parked = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        unsafe { pinned.park_timeout(time::Duration::ZERO); }
+    }));
+    let mutex = mutex::Mutex::new(); let condvar = condvar::Condvar::new(); mutex.lock();
+    let conditional = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        unsafe { condvar.wait_timeout(&mutex, time::Duration::ZERO); }
+    }));
+    runtime::refuse_immediate(false);
+    assert!(parked.is_err() && conditional.is_err());
+    // Native unwinding is only a test port: selected guest panic=abort.
+    assert!(mutex.try_lock()); unsafe { mutex.unlock(); }
+}
+
+#[test]
+fn zero_timeouts_refuse_terminal_wait_admission_before_mutex_release() {
+    let mut allocation = Box::<parker::Parker>::new_uninit();
+    unsafe { parker::Parker::new_in_place(allocation.as_mut_ptr()); }
+    let parker: &'static parker::Parker = Box::leak(unsafe { allocation.assume_init() });
+    let pinned = unsafe { pin::Pin::new_unchecked(parker) };
+    runtime::index(1); runtime::refuse_wait(true);
+    let parked = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        unsafe { pinned.park_timeout(time::Duration::ZERO); }
+    }));
+    let mutex = mutex::Mutex::new(); let condvar = condvar::Condvar::new(); mutex.lock();
+    let conditional = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        unsafe { condvar.wait_timeout(&mutex, time::Duration::ZERO); }
+    }));
+    runtime::refuse_wait(false);
+    assert!(parked.is_err() && conditional.is_err());
+    assert!(!mutex.try_lock(), "refusal precedes actual mutex release");
+    unsafe { mutex.unlock(); }
+    assert_eq!(runtime::immediate_calls(), 0);
     assert_eq!(runtime::live(), 0);
 }

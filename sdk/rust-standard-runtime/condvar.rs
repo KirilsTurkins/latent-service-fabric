@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 use crate::cell::Cell;
 use crate::sys::sync::Mutex;
-use crate::sys::thread::lsf::wait::WaitQueue;
+use crate::sys::thread::lsf::{runtime::WaitLease, wait::WaitQueue};
 use crate::time::Duration;
 
 pub struct Condvar { mutex: Cell<*const Mutex>, waiters: WaitQueue }
@@ -22,6 +22,14 @@ impl Condvar {
         let previous = self.mutex.get();
         assert!(previous.is_null() || previous == address, "condvar used with a different mutex");
         self.mutex.set(address);
+        if timeout.is_some_and(|duration| duration.is_zero()) {
+            let wait = WaitLease::admit(None);
+            unsafe { mutex.unlock(); }
+            wait.immediate_ready();
+            // Reacquisition may itself block on the original mutex.
+            mutex.lock();
+            return false;
+        }
         // Host timers take u64 nanoseconds. A shorter bounded wait may return
         // spuriously, but must not claim the caller's full duration elapsed.
         let maximum = Duration::from_nanos(u64::MAX);

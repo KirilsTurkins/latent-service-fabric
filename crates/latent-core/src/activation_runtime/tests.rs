@@ -2013,3 +2013,230 @@ fn timer_header_refusal_precedes_admission_and_waiter_retains_actual_backing() {
     assert_eq!(budget.host_memory_bytes(), 0);
     assert_eq!(budget.outstanding_reservations(), 0);
 }
+
+#[test]
+fn immediate_ready_wake_on_running_task_preserves_sibling_and_runtime_phase() {
+    for phase in [
+        RuntimePhase::Running,
+        RuntimePhase::Closing,
+        RuntimePhase::Draining,
+    ] {
+        let runtime = runtime();
+        let current = runtime.register(OwnerKind::Task, None).unwrap();
+        let sibling = runtime.register(OwnerKind::Task, None).unwrap();
+        let sibling_wake = runtime.park(sibling.token()).unwrap();
+        match phase {
+            RuntimePhase::Running => {}
+            RuntimePhase::Closing => runtime.close(),
+            RuntimePhase::Draining => runtime.begin_drain(),
+            _ => unreachable!(),
+        }
+        let wait = runtime
+            .register(OwnerKind::Wait, Some(current.token()))
+            .unwrap();
+        let before = runtime.snapshot();
+        assert_eq!(before.phase, phase);
+        assert_eq!(before.parked_tasks, 1);
+        // The current Task has never been parked. Immediate zero-duration
+        // readiness must not mark it parked or make its sibling runnable.
+        assert!(runtime.wake(current.token()));
+        assert_eq!(runtime.snapshot(), before);
+        {
+            let state = runtime.inner.state.lock().unwrap();
+            assert!(!runtime.record(&state, current.token()).unwrap().parked);
+            assert!(runtime.record(&state, sibling.token()).unwrap().parked);
+        }
+        assert!(sibling_wake.wake());
+        drop((wait, sibling, current));
+        runtime.retire().unwrap();
+    }
+}
+
+#[test]
+fn immediate_ready_wake_refuses_ancestor_stop_after_its_live_check() {
+    for finalize in [false, true] {
+        let (parent, child, runtime) = child_runtime();
+        let current = runtime.register(OwnerKind::Task, None).unwrap();
+        let sibling = runtime.register(OwnerKind::Task, None).unwrap();
+        let _sibling_wake = runtime.park(sibling.token()).unwrap();
+        let wait = runtime
+            .register(OwnerKind::Wait, Some(current.token()))
+            .unwrap();
+        let before = runtime.snapshot();
+        let wake = RuntimeWake {
+            inner: runtime.inner.downgrade(),
+            token: current.token(),
+        };
+        assert!(!wake.wake_with_after_live_check(|| {
+            if finalize {
+                let _ = parent.finalize_at(None, Instant::now());
+            } else {
+                parent.cancel_descendants().unwrap();
+            }
+        }));
+        let after = runtime.snapshot();
+        assert_eq!(after.phase, RuntimePhase::Cancelling);
+        assert_eq!(after.owners, before.owners);
+        assert_eq!(after.parked_tasks, before.parked_tasks);
+        assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
+        assert_eq!(after.stale_wakes, before.stale_wakes);
+        drop((wait, sibling, current));
+        runtime.retire().unwrap();
+        // Weak wake handles retain the actual runtime backing until dropped.
+        drop((_sibling_wake, wake));
+        drop(runtime);
+        let _ = child.finish(None, Instant::now());
+        assert_eq!(parent.descendant_snapshot().unwrap().live_descendants, 0);
+    }
+}
+
+#[test]
+fn immediate_ready_wake_refuses_cancellation_at_tentative_publication() {
+    use std::sync::mpsc;
+    use std::time::Duration;
+    let runtime = runtime();
+    let current = runtime.register(OwnerKind::Task, None).unwrap();
+    let sibling = runtime.register(OwnerKind::Task, None).unwrap();
+    let _sibling_wake = runtime.park(sibling.token()).unwrap();
+    let wait = runtime
+        .register(OwnerKind::Wait, Some(current.token()))
+        .unwrap();
+    let before = runtime.snapshot();
+    let wake = RuntimeWake {
+        inner: runtime.inner.downgrade(),
+        token: current.token(),
+    };
+    let budget = runtime.inner.budget.clone();
+    let (held_tx, held_rx) = mpsc::sync_channel(0);
+    let (resume_tx, resume_rx) = mpsc::sync_channel(0);
+    let worker = std::thread::spawn(move || {
+        wake.wake_with_hooks(
+            || {},
+            |step| {
+                if step == ReadinessStep::Tentative {
+                    held_tx.send(()).unwrap();
+                    resume_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+                }
+            },
+        )
+    });
+    held_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+    let hidden = runtime.inner.state.try_lock().is_err();
+    let guarded = budget.test_accounting_is_locked();
+    let close_budget = budget.clone();
+    let (done_tx, done_rx) = mpsc::sync_channel(0);
+    let closer = std::thread::spawn(move || {
+        close_budget.cancel_descendants().unwrap();
+        done_tx.send(()).unwrap();
+    });
+    let signalled = done_rx.recv_timeout(Duration::from_secs(3)).is_ok();
+    resume_tx.send(()).unwrap();
+    let result = worker.join().unwrap();
+    if !signalled {
+        done_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+    }
+    closer.join().unwrap();
+    assert!(hidden && guarded && signalled && !result);
+    let after = runtime.snapshot();
+    assert_eq!(after.phase, RuntimePhase::Cancelling);
+    assert_eq!(after.owners, before.owners);
+    assert_eq!(after.parked_tasks, before.parked_tasks);
+    assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
+    assert_eq!(after.stale_wakes, before.stale_wakes);
+    {
+        let state = runtime.inner.state.lock().unwrap();
+        assert!(!runtime.record(&state, current.token()).unwrap().parked);
+        assert!(runtime.record(&state, sibling.token()).unwrap().parked);
+    }
+    drop((wait, sibling, current));
+    runtime.retire().unwrap();
+}
+
+#[test]
+fn immediate_ready_wake_refuses_deadline_after_initial_live_check() {
+    use std::time::Duration;
+    let limit = ResourceBudget {
+        cpu_fuel: 1_000_000,
+        memory_bytes: 1_000_000,
+        wall_time_limit_millis: Some(2000),
+        child_calls: 0,
+        outbound_requests: 0,
+        state_read_bytes: 0,
+        state_write_bytes: 0,
+        blob_read_bytes: 0,
+        blob_write_bytes: 0,
+        log_bytes: 0,
+        effect_count: 0,
+    };
+    let grant = EffectiveActivationBudget::admit_profile_at(
+        BudgetProfile::Phase3,
+        &limit,
+        &limit,
+        &limit,
+        None,
+        ClockSample::new(1000, Instant::now()),
+    )
+    .unwrap();
+    let budget = ActivationBudget::with_profile(grant, BudgetProfile::Phase3).unwrap();
+    budget
+        .enable_descendants(crate::DelegationLimits::default(), Arc::new(Signal))
+        .unwrap();
+    let runtime = runtime_with_budget(budget);
+    let current = runtime.register(OwnerKind::Task, None).unwrap();
+    let sibling = runtime.register(OwnerKind::Task, None).unwrap();
+    let sibling_wake = runtime.park(sibling.token()).unwrap();
+    let wait = runtime
+        .register(OwnerKind::Wait, Some(current.token()))
+        .unwrap();
+    let before = runtime.snapshot();
+    let deadline = runtime.inner.budget.deadline().monotonic().unwrap();
+    let wake = RuntimeWake {
+        inner: runtime.inner.downgrade(),
+        token: current.token(),
+    };
+    let checked = std::cell::Cell::new(false);
+    assert!(!wake.wake_with_after_live_check(|| {
+        checked.set(true);
+        std::thread::sleep(
+            deadline.saturating_duration_since(Instant::now()) + Duration::from_millis(5),
+        );
+    }));
+    assert!(
+        checked.get(),
+        "deadline must pass after the initial live check"
+    );
+    let after = runtime.snapshot();
+    assert_eq!(
+        after, before,
+        "deadline refusal changes no owners, phase or wake counters"
+    );
+    drop((wait, sibling, current));
+    runtime.retire().unwrap();
+    drop((wake, sibling_wake));
+}
+
+#[test]
+fn immediate_wait_settlement_alone_is_not_a_terminal_readiness_fence() {
+    let runtime = runtime();
+    let current = runtime.register(OwnerKind::Task, None).unwrap();
+    let wait = runtime
+        .register(OwnerKind::Wait, Some(current.token()))
+        .unwrap();
+    let before = runtime.snapshot();
+    // Model the real host settle sequence: table() checks liveness, then the
+    // original RuntimeOwner is removed. Closure can win between those steps.
+    runtime.check_live().unwrap();
+    runtime.inner.budget.cancel_descendants().unwrap();
+    drop(wait);
+    assert_eq!(
+        runtime.snapshot().owners[OwnerKind::Wait.index()],
+        before.owners[OwnerKind::Wait.index()] - 1
+    );
+    assert!(
+        !runtime.wake(current.token()),
+        "fenced wake must reject the already-closed ledger"
+    );
+    assert_eq!(runtime.snapshot().phase, RuntimePhase::Cancelling);
+    drop(current);
+    runtime.retire().unwrap();
+}
