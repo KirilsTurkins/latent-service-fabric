@@ -2,12 +2,16 @@
 from __future__ import annotations
 
 import copy
+import contextlib
 import hashlib
 import io
 import json
 from pathlib import Path
+import sys
 import tarfile
+import tempfile
 import unittest
+import urllib.error
 from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
@@ -132,6 +136,120 @@ class GeneratorArchive(unittest.TestCase):
         with patch.object(install, "ARCHIVE_SHA256", hashlib.sha256(data).hexdigest()), \
                 patch.object(install, "MAX_BINARY", 3), self.assertRaises(ValueError):
             install.binary(data)
+
+    def test_primary_download_succeeds_without_fallback(self):
+        with patch.object(install.urllib.request, 'urlopen', return_value=io.BytesIO(b'primary')) as fetch:
+            self.assertEqual(install.download_archive(), b'primary')
+        self.assertEqual(fetch.call_count, 1)
+        self.assertEqual(fetch.call_args.args[0], install.URL)
+
+    def test_gateway_timeout_uses_only_the_exact_asset_and_original_validation(self):
+        archive = self.archive([tarfile.REGTYPE])
+        failure = urllib.error.HTTPError(install.URL, 504, 'gateway timeout', {}, None)
+        with tempfile.TemporaryDirectory() as temp, \
+             patch.object(install.urllib.request, 'urlopen', side_effect=[failure, io.BytesIO(archive)]) as fetch, \
+             patch.object(install.time, 'monotonic', side_effect=[0, 0, 80, 80, 80]), \
+             patch.object(install.platform, 'system', return_value='Linux'), \
+             patch.object(install.platform, 'machine', return_value='x86_64'), \
+             patch.object(install, 'ARCHIVE_SHA256', hashlib.sha256(archive).hexdigest()), \
+             patch.object(sys, 'argv', ['install_guest_bindgen.py', str(Path(temp)/'out')]), \
+             contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            install.main()
+            self.assertEqual((Path(temp)/'out/wit-bindgen').read_bytes(), b'tool')
+        self.assertEqual(fetch.call_count, 2)
+        self.assertEqual(fetch.call_args_list[0].args[0], install.URL)
+        asset = fetch.call_args_list[1].args[0]
+        self.assertEqual(asset.full_url, install.ASSET_URL)
+        self.assertEqual(asset.get_header('Accept'), 'application/octet-stream')
+        self.assertIsNone(asset.get_header('Authorization'))
+        self.assertEqual(fetch.call_args_list[1].kwargs['timeout'], 10)
+
+    def test_other_http_and_transport_errors_are_not_retried(self):
+        errors = [urllib.error.HTTPError(install.URL, code, 'failure', {}, None)
+                  for code in (400, 403, 404, 429, 500, 502, 503)]
+        errors.append(urllib.error.URLError('unavailable'))
+        for error in errors:
+            with self.subTest(error=error), patch.object(install.urllib.request, 'urlopen', side_effect=error) as fetch:
+                with self.assertRaises(type(error)):
+                    install.download_archive()
+                self.assertEqual(fetch.call_count, 1)
+
+    def test_gateway_response_is_closed_before_opening_asset(self):
+        body = io.BytesIO(b'gateway failure')
+        failure = urllib.error.HTTPError(install.URL, 504, 'gateway timeout', {}, body)
+
+        def open_response(request, *, timeout):
+            self.assertGreater(timeout, 0)
+            if request == install.URL:
+                self.assertFalse(body.closed)
+                raise failure
+            self.assertEqual(request.full_url, install.ASSET_URL)
+            self.assertTrue(body.closed)
+            return io.BytesIO(b'asset')
+
+        with patch.object(install.urllib.request, 'urlopen', side_effect=open_response) as fetch, \
+             contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(install.download_archive(), b'asset')
+        self.assertTrue(body.closed)
+        self.assertEqual(fetch.call_count, 2)
+
+    def test_fallback_failure_is_not_retried(self):
+        errors = [urllib.error.HTTPError(install.URL, 504, 'gateway timeout', {}, None),
+                  urllib.error.HTTPError(install.ASSET_URL, 503, 'unavailable', {}, None)]
+        with patch.object(install.urllib.request, 'urlopen', side_effect=errors) as fetch, \
+             contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(urllib.error.HTTPError) as failure:
+                install.download_archive()
+        self.assertEqual(failure.exception.code, 503)
+        self.assertEqual(fetch.call_count, 2)
+
+    def test_download_size_and_shared_deadline_cover_both_attempts(self):
+        for fallback in (False, True):
+            responses = [io.BytesIO(b'four')]
+            if fallback:
+                responses.insert(0, urllib.error.HTTPError(install.URL, 504, 'gateway timeout', {}, None))
+            with self.subTest(fallback=fallback), patch.object(install, 'MAX_ARCHIVE', 3), \
+                 patch.object(install.urllib.request, 'urlopen', side_effect=responses) as fetch, \
+                 contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaisesRegex(ValueError, 'download bound exceeded'):
+                    install.download_archive()
+                self.assertEqual(fetch.call_count, 2 if fallback else 1)
+        failure = urllib.error.HTTPError(install.URL, 504, 'gateway timeout', {}, None)
+        with patch.object(install.urllib.request, 'urlopen', side_effect=failure) as fetch, \
+             patch.object(install.time, 'monotonic', side_effect=[0, 0, 91]), \
+             contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaisesRegex(ValueError, 'download bound exceeded'):
+                install.download_archive()
+        self.assertEqual(fetch.call_count, 1)
+
+    def test_invalid_download_never_installs_or_retries(self):
+        for fallback in (False, True):
+            responses = [io.BytesIO(b'tampered')]
+            if fallback:
+                responses.insert(0, urllib.error.HTTPError(install.URL, 504, 'gateway timeout', {}, None))
+            with self.subTest(fallback=fallback), tempfile.TemporaryDirectory() as temp, \
+                 patch.object(install.urllib.request, 'urlopen', side_effect=responses) as fetch, \
+                 patch.object(install.platform, 'system', return_value='Linux'), \
+                 patch.object(install.platform, 'machine', return_value='x86_64'), \
+                 patch.object(sys, 'argv', ['install_guest_bindgen.py', str(Path(temp)/'out')]), \
+                 contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaisesRegex(ValueError, 'archive identity mismatch'):
+                    install.main()
+                self.assertFalse((Path(temp)/'out').exists())
+                self.assertEqual(fetch.call_count, 2 if fallback else 1)
+
+        archive = self.archive([tarfile.SYMTYPE])
+        responses = [urllib.error.HTTPError(install.URL, 504, 'gateway timeout', {}, None), io.BytesIO(archive)]
+        with tempfile.TemporaryDirectory() as temp, \
+             patch.object(install.urllib.request, 'urlopen', side_effect=responses), \
+             patch.object(install.platform, 'system', return_value='Linux'), \
+             patch.object(install.platform, 'machine', return_value='x86_64'), \
+             patch.object(install, 'ARCHIVE_SHA256', hashlib.sha256(archive).hexdigest()), \
+             patch.object(sys, 'argv', ['install_guest_bindgen.py', str(Path(temp)/'out')]), \
+             contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaisesRegex(ValueError, 'not a bounded regular file'):
+                install.main()
+            self.assertFalse((Path(temp)/'out').exists())
 
 
 if __name__ == "__main__":
