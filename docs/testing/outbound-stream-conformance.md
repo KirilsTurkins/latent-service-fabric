@@ -54,7 +54,7 @@ command, input-line, message, output and lifetime bounds remain in force.
 
 | Scenario | Deterministic observation | Permitted completion |
 | --- | --- | --- |
-| `greeting` | A connection is accepted, but no greeting bytes are queued. Only read interest remains registered. | Release the ordinary greeting, reset, close or send half-close. |
+| `greeting` | A connection is accepted, but no greeting bytes are queued. Only read interest remains registered until client EOF. | Release the ordinary greeting, reset, close or send half-close. |
 | `mutation` | The bounded DATA parser sees the complete terminator and records the mutation hash. Its final `250` reply is withheld. | Release the reply, or lose it by close/reset/half-close without erasing the mutation. |
 | `oversized-greeting` | Exactly 32 KiB is sent as one greeting line, ending in CRLF. At most 1 KiB of response output is queued at once. | The selected client must enforce its own response/parser bound; transport delivery alone is not a parser test. |
 | `unterminated-greeting` | Exactly 32 KiB is sent without CRLF, then the peer stops producing output and exposes a barrier. | Explicitly terminate the line, reset, close or send half-close. |
@@ -97,6 +97,38 @@ observe its original operation, Store and provider owners before making those
 claims. Do not convert the journal's timestamps into guest suspension or
 no-concurrency overhead measurements.
 
+## Client send half-close and retained replies
+
+The gated peer distinguishes `recv() == b""` from destruction of the whole
+connection. A client may finish sending a complete request and still receive
+the reply. The `client-send-eof` event records that transport boundary; it does
+not prove that the client's process, Store or provider has retired.
+
+After client EOF, previously queued replies still drain in order. A committed
+mutation remains accepted while its final reply is held. An otherwise idle
+held descriptor is temporarily unregistered from the selector: EOF must not
+create a permanent readable event, and an empty output queue must not create
+a writable spin. The descriptor stays in the original connection table and
+counts against its two-connection ceiling. Explicit release rearms only write
+interest; the final drained reply, an explicit close/reset, or the original
+deadline closes the actual descriptor. Neither EOF nor release extends idle
+or absolute lifetime. If both send halves are closed, no read owner remains.
+
+The finite hostile greeting likewise continues after client EOF, with its
+original bounded output window. An unterminated greeting still needs the
+controller's explicit release. Incomplete DATA or a partial terminator at EOF
+never commits. A failed reset or watchdog expiry retains its failure even
+after a parked descriptor is closed. Stale selector keys cannot reread EOF,
+rearm an idle descriptor or count closure twice.
+
+The [half-close controls](../../tools/tests/test_outbound_stream_peer_half_close.py)
+exercise these transitions with real loopback sockets, including capacity
+refusal while two descriptors are parked and fresh independent work after one
+is actually closed. The ungated `SmtpPeer` retains its original EOF policy via
+a small override hook; its existing SMTP tests remain unchanged. These are
+peer-fixture controls, not component cross-tenant, parser-memory or kernel
+final-free qualification. A sent reply still does not prove client confirmation.
+
 ## Signed-node regressions and reuse
 
 The added cases exercise the existing encoded guest's terminal trap immediately
@@ -130,7 +162,8 @@ From a checkout, run the ordinary Python fixture controls:
 ```sh
 python3 -m unittest tools.tests.test_outbound_stream_fixture \
   tools.tests.test_outbound_stream_adversarial \
-  tools.tests.test_outbound_stream_peer_deadlines -v
+  tools.tests.test_outbound_stream_peer_deadlines \
+  tools.tests.test_outbound_stream_peer_half_close -v
 ```
 
 Use the [local runner](../development/local-tests.md) and its existing
