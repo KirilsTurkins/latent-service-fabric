@@ -8,6 +8,74 @@ fn list(id: &str, node: bool) -> proto::ListCapabilitiesRequest {
     }
 }
 
+// The RPC and authentication are real; the stream invoker is an explicit
+// observation double and does not claim native quarantine or retirement.
+#[tokio::test]
+async fn quarantine_diagnostic_is_only_returned_to_the_node_operator() {
+    use latent_capabilities::broker::{
+        network::{
+            OutboundStreamInvoker, StreamConnectRequest, StreamError, StreamErrorCode,
+            StreamInvocation, StreamNodeUsage,
+        },
+        ActivationCapabilityRuntime, CapabilitySession,
+    };
+    use std::sync::Arc;
+
+    struct Observed;
+    impl OutboundStreamInvoker for Observed {
+        fn start(
+            &self,
+            _: &CapabilitySession,
+            _: StreamConnectRequest,
+        ) -> Result<StreamInvocation, StreamError> {
+            Err(StreamError::new(StreamErrorCode::Unsupported))
+        }
+        fn inspect_node_usage(
+            &self,
+        ) -> Result<Option<StreamNodeUsage>, latent_core::PlatformError> {
+            Ok(Some(StreamNodeUsage {
+                owners: 3,
+                connections: 2,
+                quarantined_connections: Some(2),
+                ..Default::default()
+            }))
+        }
+    }
+
+    let harness = Harness::with_capabilities(ManagementLimits::default()).await;
+    seed(&harness, "acme", "alice", "local").await;
+    let runtime = ActivationCapabilityRuntime::new(
+        harness.capability_broker.as_ref().unwrap().clone(),
+        harness.deployments.clone(),
+    );
+    runtime
+        .install_outbound_streams(Arc::new(Observed))
+        .unwrap();
+    let mut client =
+        proto::capability_service_client::CapabilityServiceClient::new(harness.channel.clone());
+    for identity in ["alice", "caller", "bob"] {
+        assert_eq!(
+            client
+                .list_capabilities(request(identity, list("local", true)))
+                .await
+                .unwrap_err()
+                .code(),
+            Code::PermissionDenied
+        );
+    }
+    let node = client
+        .list_capabilities(request("operator", list("local", true)))
+        .await
+        .unwrap()
+        .into_inner()
+        .node_usage
+        .unwrap();
+    assert_eq!(node.stream_quarantined_connections, Some(2));
+    assert_eq!(node.counters["stream_owners"], 3);
+    assert_eq!(node.counters["stream_connections"], 2);
+    assert!(!node.counters.contains_key("stream_quarantined_connections"));
+}
+
 #[cfg(target_os = "linux")]
 #[tokio::test]
 #[expect(
