@@ -102,6 +102,61 @@ class CurrentJavaEventInputs(unittest.TestCase):
             with self.assertRaises(ValueError):
                 current_event_operations(reselected, publication, '6' * 64, **args)
 
+    def test_observed_event_scope_requires_the_same_signed_provider_and_profile(self):
+        import copy
+        from tools.java_transaction_qualification.configuration import (current_event_operations, SERVICE, TENANT)
+        from tools.java_transaction_qualification.event_hosts import ObservedEventHost
+        from tools.java_transaction_qualification.inputs import ComponentInput, digest
+        profile = 'js-window-v1:' + 'a' * 64
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            project = create(root / 'project', 'legacy-v1', event_profile=profile)
+            files = snapshot(project)
+            item = ComponentInput('aggregate', root, 'sha256:' + '1' * 64,
+                digest(files['transaction-binding.json']), 'sha256:' + '2' * 64, '3' * 40,
+                'sha256:' + '4' * 64, None, digest(files[EVENT_REQUIREMENTS]))
+            publication = 'publication:sha256:' + '5' * 64
+            operations = current_event_operations(item, publication, '6' * 64, provider_id='events',
+                credential_reference='event-secret', staging_binding='event-stage', staging_policy='stage',
+                dispatch_binding='event-dispatch', dispatch_policy='dispatch')
+            provider = {'id':'events','tenant':TENANT,'service':'event-host',
+                'capability':'latent:events/publisher@0.2.0','profile':'native-nats-v1',
+                'configurationDigest':'sha256:'+'6'*64,'configurationEpoch':'1'}
+            subject = f'service:{len(TENANT.encode())}:{TENANT}:{len(SERVICE.encode())}:{SERVICE}'
+            effect = {'tenant':TENANT,'service':SERVICE,'publication':publication,'namespace':'transactional-aggregate',
+                'incarnation':1,'logicalBinding':'approved-event','operation':'event','stagingBinding':'event-stage',
+                'dispatchBinding':'event-dispatch','providerProfile':'nats-jetstream-effect-v1',
+                'configurationDigest':'sha256:'+'a'*64,'configurationEpoch':1,'dispatchSubject':subject,
+                'dispatchRecoveryKind':'service-integration','dispatchRecoveryScope':'observed-scope',
+                'resultPolicy':'java-original-result-v1'}
+            host = {'schemaVersion':'latent.transaction-host-inspection.v1','configuredProviders':[provider],
+                'configuredHttpCallers':[],'configuredTransportCallers':[],'stateProviderProfile':'state',
+                'stateConfigurationDigest':'sha256:'+'7'*64,'stateConfigurationEpoch':1,
+                'deferredHttp':[],'deferredEvent':[effect]}
+            selected = {'provider':'events','destination':'updated','adapter':'nats-jetstream-effect-v1',
+                'intent_format':1,'payload_format':'nats-event-value-v1','idempotency_profile':profile}
+            preview = {'schemaVersion':'latent.configured-event-effect-inspection.v1',
+                       'adapters':[{'configurationDigest':'sha256:'+'6'*64,'configurationEpoch':1,'profile':selected}]}
+            observed = ObservedEventHost.read(host, preview, operations, files[EVENT_REQUIREMENTS])
+            self.assertEqual(observed.profile['destination'], 'updated')
+            for surface, field in [('host','publication'), ('host','dispatchSubject'), ('host','configurationDigest'),
+                                   ('preview','configurationDigest'), ('preview','configurationEpoch')]:
+                bad_host, bad_preview = copy.deepcopy(host), copy.deepcopy(preview)
+                target = bad_host['deferredEvent'][0] if surface == 'host' else bad_preview['adapters'][0]
+                target[field] = 'wrong'
+                with self.assertRaises(ValueError):
+                    ObservedEventHost.read(bad_host, bad_preview, operations, files[EVENT_REQUIREMENTS])
+            bad = copy.deepcopy(preview)
+            bad['adapters'][0]['profile']['destination'] = ''
+            with self.assertRaises(ValueError):
+                ObservedEventHost.read(host, bad, operations, files[EVENT_REQUIREMENTS])
+            bad = copy.deepcopy(preview)
+            bad['adapters'][0]['profile']['intent_format'] = True
+            with self.assertRaises(ValueError):
+                ObservedEventHost.read(host, bad, operations, files[EVENT_REQUIREMENTS])
+            with self.assertRaises(ValueError):
+                ObservedEventHost.read(host, preview, operations, files[EVENT_REQUIREMENTS] + b' ')
+
     def test_packaging_refuses_changed_identity_missing_marker_and_ambiguous_effects(self):
         profile = 'js-window-v1:' + 'b' * 64
         with tempfile.TemporaryDirectory() as temporary:
