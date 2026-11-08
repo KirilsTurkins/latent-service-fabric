@@ -15,6 +15,8 @@ Host-owned atomic command completion across state, durable result, outbox and in
 | [src/atomic/ownership.rs](src/atomic/ownership.rs) | Physical executor/commit/cleanup guards and quarantine. |
 | [src/atomic/retention.rs](src/atomic/retention.rs) | Caller-driven bounded retention on the original storage owner. |
 | [src/atomic/validation.rs](src/atomic/validation.rs) | Coherent bounded startup validation of linked rows. |
+| [src/atomic/writer/payloads.rs](src/atomic/writer/payloads.rs) | Original-session binding and verified local payload attachments in one complete envelope. |
+| [src/atomic/payload_links.rs](src/atomic/payload_links.rs) | Reciprocal command/result/effect payload closure checks; unsupported owner classes fail closed. |
 | [src/model/mod.rs](src/model/mod.rs) | Independent protocol reference without engine/provider/clock/RPC implementation. |
 
 ## Execution and ownership
@@ -28,7 +30,22 @@ Host-owned atomic command completion across state, durable result, outbox and in
 If a first-attempt claim loses its storage expectation to a concurrent writer,
 the host may inspect the winning command once under current result-read authority.
 Only an identical key and fingerprint returns that original owner. A fence refusal,
-uncertain write, unrelated conflict or explicit retry does not take this path.
+uncertain write or unrelated conflict does not take this path.
+
+Explicit retry has its own `publish_retry_or_existing` path. A definite engine
+expectation conflict can recover only the same winning retry attempt/request
+after rechecking its original abort association, fingerprint, current admission
+and result-read authority. It re-observes the protected clock without renewing
+the original deadline. It never reruns a guest or treats uncertain I/O as a
+retryable conflict.
+
+The trusted payload API binds an admitted attempt to its original capability
+session once, then `attach_verified_payloads` checks captured local pins against
+that session and the actual engine view. Result/effect attachments must match the
+existing inline bytes and media type; their rows, accounting and reciprocal
+links join the same envelope. Pins survive the actual write. This library path
+does not install standalone physical startup inventory, S3 reference dispatch
+or complete state/snapshot retention qualification.
 
 ## Integration boundaries
 
@@ -36,7 +53,7 @@ The host commits after validated guest completion; guests cannot call a durable 
 
 ## Dependencies and build
 
-Direct workspace dependencies: [latent-core](../latent-core/README.md), [latent-state](../latent-state/README.md), [latent-effects](../latent-effects/README.md).
+Direct workspace dependencies: [latent-core](../latent-core/README.md), [latent-state](../latent-state/README.md), [latent-effects](../latent-effects/README.md). Linux selects [latent-capabilities](../latent-capabilities/README.md) and [latent-local-blobs](../latent-local-blobs/README.md), the latter under the `latent-blobs` dependency alias.
 
 Consumers with normal workspace dependency edges include [latentd](../../apps/latentd/README.md), [latent-wire](../latent-wire/README.md), [latent-node](../latent-node/README.md). Optional features still gate the selected graph; target-specific and test edges are also declared in the manifests.
 

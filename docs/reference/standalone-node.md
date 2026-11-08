@@ -10,9 +10,12 @@ It adds policy/provider-binding management and sealed revision checks; it does n
 install application providers or change dormant-service execution resources.
 
 The optional `budgetProfile` selector enables [capability accounting and descendant
-limits](../runtime/descendant-budgets.md) with `mode: "phase3"`. Its default,
-`mode: "phase1"`, supplies basic execution accounting. Capability counter ceilings
-default to zero and remain separate from grants.
+limits](../runtime/descendant-budgets.md) with `mode: "phase3"`. Development's
+`phase4` additionally requires explicit state-read, state-write and effect-count
+ceilings together with the configured state/transaction authority owners. The
+default `mode: "phase1"` supplies basic execution accounting. Optional Phase 3
+counter ceilings default to zero; Phase 4's three transaction ceilings must be
+present even when zero. All numeric ceilings remain separate from grants.
 
 `latentd serve` runs the standalone node on Linux, with stateless execution by
 default. One process composes

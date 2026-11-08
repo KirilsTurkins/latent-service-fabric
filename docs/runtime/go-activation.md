@@ -2,7 +2,7 @@
 
 `go-component-activation-v1` is an explicit finite compiler profile beneath
 ordinary Go `go`, channels, `select`, `sync.Mutex`, `sync.WaitGroup` and
-`time.Sleep`. It uses the pinned Go 1.27.2 compiler and componentize-go 0.4.3
+`time.Sleep`. Current source uses the pinned Go 1.27.3 compiler and componentize-go 0.4.3
 from the [Go SDK](../../sdk/go-guest/toolchain.lock.json), with authenticated
 runtime and dispatcher source overlays. Application source imports no LSF task
 facade. The existing `go-component-async-v1` default remains separately selected.

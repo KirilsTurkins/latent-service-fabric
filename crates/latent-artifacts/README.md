@@ -13,6 +13,8 @@ Storage integrity, admission evidence and current release eligibility remain sep
 | [src/admission.rs](src/admission.rs) | Sealed admission authority, upload and recheck ports. |
 | [src/lifecycle.rs](src/lifecycle.rs) | Publication/release state, live eligibility, revocation and management preconditions. |
 | [src/publication_retention.rs](src/publication_retention.rs) | Bounded durable negative-only rollback pins and original-operation recovery; not physical history reclamation. |
+| [src/publication_deletion.rs](src/publication_deletion.rs) | Exact audited visibility-removal, assessment and payload-reclamation contracts with separate fences. |
+| [src/local_repository/retention/deletion.rs](src/local_repository/retention/deletion.rs) | Physical repository implementation and last-reference namespace/blob reclamation. |
 | [src/preparation.rs](src/preparation.rs) | Owned source identity and bounded preparation reads. |
 | [src/raw_cache.rs](src/raw_cache.rs) | Finite raw-byte cache, pins, eviction and actual reclamation. |
 | [src/web.rs](src/web.rs) | Componentless web artifact/publication metadata and selection contracts. |
@@ -26,6 +28,14 @@ Storage integrity, admission evidence and current release eligibility remain sep
 4. Release mutations and reclamation obey preconditions, audit and active pins; deleting a logical association does not justify deleting bytes still owned by another publication or reader.
 
 ## Integration boundaries
+
+Development's [explicit deletion workflow](../../docs/operations/publication-deletion.md)
+retains original operation/actor/target identities, current catalog and
+reclamation fences, and durable audit capacity even on exact receipt replay.
+Visibility removal, synchronized payload deletion and audit acknowledgement are
+separate outcomes. Shared blobs remain pinned by other publications; independent
+evidence, lifecycle history and negative identities are not compacted by payload
+cleanup. Unknown or uncertain operation lookup cannot authorize a new mutation.
 
 `latent-packaging` assembles supplied bytes; `latent-signing` verifies cryptographic evidence; `latent-policy` owns current supply-chain admission. This crate stores and binds their results rather than combining those decisions into a hash check. `development-test-host` exposes explicit test authority and is not a production trust bypass. Raw caching is not the authenticated Wasmtime native AOT cache.
 

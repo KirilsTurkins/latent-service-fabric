@@ -13,7 +13,9 @@ def cases():
     return [dict(case=case, mode=mode, outcome='success', storesCreated=count,
                  liveStores=0, liveInstances=0, reservations=0,
                  reservedFuel=0, reservedMemory=0, pendingProviderWaits=0)
-            for case, mode, count in [('reset-reset', 0, 1), ('reset-stop', 1, 2), ('fresh', 0, 3)]]
+            for case, mode, count in [('reset-reset', 0, 1), ('reset-stop', 1, 2),
+                                      ('gc-reset-reset', 2, 3), ('gc-reset-stop', 3, 4),
+                                      ('fresh', 0, 5)]]
 
 
 def stdout(rows=None, filtered=53):
@@ -24,17 +26,21 @@ def stdout(rows=None, filtered=53):
 
 
 def stderr():
-    return (b'LSF-GO-TIMER-OVERLAP-V1|go-timer-overlap-reset-reset|1|0|0|4|1|1|1|1|1|1|512\n'
-            b'LSF-GO-TIMER-OVERLAP-V1|go-timer-overlap-reset-stop|1|0|0|4|1|1|1|1|1|1|512\n')
+    return (b'LSF-GO-TIMER-OVERLAP-V3|go-timer-overlap-reset-reset|1|0|0|4|1|1|1|1|0|0|1|1|512\n'
+            b'LSF-GO-TIMER-OVERLAP-V3|go-timer-overlap-reset-stop|1|0|0|4|1|1|1|1|0|0|1|1|512\n'
+            b'LSF-GO-TIMER-OVERLAP-V3|go-timer-overlap-gc-reset-reset|1|0|0|4|1|1|1|1|1|1|1|1|512\n'
+            b'LSF-GO-TIMER-OVERLAP-V3|go-timer-overlap-gc-reset-stop|1|0|0|4|1|1|1|1|1|1|1|1|512\n')
 
 
 class GoTimerOverlap(unittest.TestCase):
-    def test_exact_source_bound_signed_retirements_and_two_complete_witnesses(self):
+    def test_exact_source_bound_signed_retirements_and_four_complete_witnesses(self):
         result = reference.timer_overlap_observations(stdout(), stderr(), 53)
         self.assertEqual(result['cases'], cases())
         self.assertEqual(result['witnesses'], [
-            {'activation': 'go-timer-overlap-reset-reset', 'modeledWitnessBytes': 512},
-            {'activation': 'go-timer-overlap-reset-stop', 'modeledWitnessBytes': 512},
+            {'activation': 'go-timer-overlap-reset-reset', 'postGcMarkerStopped': False, 'handshakeParkObserved': False, 'modeledWitnessBytes': 512},
+            {'activation': 'go-timer-overlap-reset-stop', 'postGcMarkerStopped': False, 'handshakeParkObserved': False, 'modeledWitnessBytes': 512},
+            {'activation': 'go-timer-overlap-gc-reset-reset', 'postGcMarkerStopped': True, 'handshakeParkObserved': True, 'modeledWitnessBytes': 512},
+            {'activation': 'go-timer-overlap-gc-reset-stop', 'postGcMarkerStopped': True, 'handshakeParkObserved': True, 'modeledWitnessBytes': 512},
         ])
         for rows in (cases()[:-1], list(reversed(cases())), cases() + cases()[:1]):
             with self.subTest(rows=rows), self.assertRaisesRegex(ValueError, 'signed-retirement'):
@@ -42,14 +48,23 @@ class GoTimerOverlap(unittest.TestCase):
 
     def test_incomplete_wrong_order_and_ambiguous_witnesses_fail_closed(self):
         raw = stderr()
+        plain = b'|1|0|0|4|1|1|1|1|0|0|1|1|512'
         changes = [raw.splitlines(keepends=True)[0], raw + raw.splitlines(keepends=True)[0],
                    b''.join(reversed(raw.splitlines(keepends=True))),
-                   raw.replace(b'|1|0|0|4|1|1|1|1|1|1|512', b'|0|0|0|4|1|1|1|1|1|1|512', 1),
-                   raw.replace(b'|1|0|0|4|1|1|1|1|1|1|512', b'|1|0|1|4|1|1|1|1|1|1|512', 1),
-                   raw.replace(b'|1|0|0|4|1|1|1|1|1|1|512', b'|1|0|0|5|1|1|1|1|1|1|512', 1),
-                   raw.replace(b'|1|0|0|4|1|1|1|1|1|1|512', b'|1|0|0|4|1|0|1|1|1|1|512', 1),
+                   raw.replace(b'go-timer-overlap-gc-reset-stop|1|0|0|4',
+                               b'go-timer-overlap-gc-reset-stop|0|0|0|4'),
+                   raw.replace(b'go-timer-overlap-gc-reset-stop|1|0|0|4|1|1|1|1|1|1|1|1|512',
+                               b'go-timer-overlap-gc-reset-stop|1|0|0|4|1|1|1|1|0|1|1|1|512'),
+                   raw.replace(b'go-timer-overlap-gc-reset-stop|1|0|0|4|1|1|1|1|1|1|1|1|512',
+                               b'go-timer-overlap-gc-reset-stop|1|0|0|4|1|1|1|1|1|0|1|1|512'),
+                   raw.replace(plain, b'|0|0|0|4|1|1|1|1|0|0|1|1|512', 1),
+                   raw.replace(plain, b'|1|0|1|4|1|1|1|1|0|0|1|1|512', 1),
+                   raw.replace(plain, b'|1|0|0|5|1|1|1|1|0|0|1|1|512', 1),
+                   raw.replace(plain, b'|1|0|0|4|1|0|1|1|0|0|1|1|512', 1),
+                   raw.replace(b'OVERLAP-V3', b'OVERLAP-V2'),
                    raw.replace(b'|512\n', b'|0\n', 1), raw.replace(b'|512\n', b'|513\n', 1)]
         for changed in changes:
+            self.assertNotEqual(changed, raw)
             with self.subTest(changed=changed), self.assertRaisesRegex(ValueError, 'Go-timer-overlap-'):
                 reference.timer_overlap_observations(stdout(), changed, 53)
         with self.assertRaisesRegex(ValueError, 'exact-signed-case'):
@@ -82,16 +97,20 @@ class GoTimerOverlap(unittest.TestCase):
                       'sourceDigest': 'sha256:' + reference.digest(source), 'sourceUnchanged': True,
                       'ordinarySource': True, 'signedExecution': 'not-run',
                       'componentDigest': 'sha256:' + reference.digest(component), 'bindingDigest': 'sha256:' + 'a' * 64,
-                      'tools': [], 'transformations': [], 'nativeReference': {'modes': [0, 1], 'outputs': [42, 42],
+                      'tools': [], 'transformations': [], 'nativeReference': {'modes': [0, 1, 2, 3], 'outputs': [42, 42, 42, 42],
                       'freshProcessPerMode': True, 'sourceDigest': 'sha256:' + reference.digest(source)}}
             receipt = folder / 'GO-ACTIVATION-COMPILE.json'
             receipt.write_text(json.dumps(record))
             self.assertEqual(reference.compile_identity(folder, reference.ROOT, record['profile'], record['fixture'])['sourceDigest'], record['sourceDigest'])
             changed = copy.deepcopy(record)
-            changed['nativeReference']['outputs'] = [42, 43]
+            changed['nativeReference']['outputs'] = [42, 43, 42, 43]
             receipt.write_text(json.dumps(changed))
             reference.compile_identity(folder, reference.ROOT, record['profile'], record['fixture'])
-            changed['nativeReference']['outputs'] = [43, 42]
+            changed['nativeReference']['outputs'] = [43, 42, 42, 42]
+            receipt.write_text(json.dumps(changed))
+            with self.assertRaisesRegex(ValueError, 'native-reference'):
+                reference.compile_identity(folder, reference.ROOT, record['profile'], record['fixture'])
+            changed['nativeReference']['outputs'] = [42, 42, 43, 42]
             receipt.write_text(json.dumps(changed))
             with self.assertRaisesRegex(ValueError, 'native-reference'):
                 reference.compile_identity(folder, reference.ROOT, record['profile'], record['fixture'])

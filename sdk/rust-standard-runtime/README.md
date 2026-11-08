@@ -7,6 +7,15 @@ logging stdio; later sections describe entropy, TLS and threading work at their
 own source and qualification boundaries. It is not a complete Rust OS platform
 or an automatically selected executor.
 
+Current threading integration binds the owned sysroot to the exact compiler
+distribution and keeps the original ThreadPool retirement campaign separate
+from combined HTTP/thread graph diagnostics. The
+[integration guide](../../docs/testing/rust-thread-development-integration.md)
+and [blocker review](../../docs/testing/rust-thread-integration-blockers.md)
+identify the authenticated component/compiler sources and remaining composed
+runtime proof. A WAC parser result, source-graph receipt or retained old native
+tuple cannot qualify the combined current host.
+
 The original clock PAL implements the `std::time` platform
 calls beneath ordinary `Instant::now` and `SystemTime::now`. It replaces
 the pinned Rust 1.97.1 unsupported time selector with an LSF clock PAL for

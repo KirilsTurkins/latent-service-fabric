@@ -34,6 +34,12 @@ A guest reference identifies its exact SHA-256, size and media type; the current
 Guest blob references, package/cache blobs and [durable effect payloads](state-and-effects.md#incoming-identity-formats-and-linked-retention)
 have separate owners. A tenant-scoped blob reference does not prove that the
 transaction store retained a payload or grant a dispatcher access to it.
+Development's [local custody crate](../../crates/latent-local-blobs/README.md)
+supplies verified physical pins and an actual-engine inventory port. The trusted
+command-envelope API can attach those owners while preserving inline provider
+payloads. Standalone startup still refuses required reference rows until its
+physical inventory is installed; a library port does not establish end-to-end
+payload retention, snapshot support or reference-based provider dispatch.
 Strict commands reject unreviewed immediate writes; they stage approved intents
 instead. Snapshot/GC must preserve the actual linked payload closure in the
 selected engine, independently of application result expiry or raw-cache eviction.

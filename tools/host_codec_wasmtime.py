@@ -26,12 +26,12 @@ POSTIMAGES = {
         "bytes": 11138
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "74aa8a16cac43a375ecf86822c3e9710f16aca89b7472db0f41ec12bc1a57372",
-        "bytes": 750182
+        "sha256": "3e61057bcb435564d34617ff9e29ada7d92f6c4b2480b94d66292f7bc0aaa27e",
+        "bytes": 750161
     },
     "README.latent.md": {
-        "sha256": "772bd0dde546d02bbfe510e9688d5a0e88c30ec3c6d23ed589648f7d987f420d",
-        "bytes": 55277
+        "sha256": "fdf7b2f84c2801cb4bcae484cd1cf72da633a42538c0b6774fd4c4181ef5bf07",
+        "bytes": 55594
     },
     "src/runtime/component/concurrent/abort.rs": {
         "sha256": "3e15b4c7493da1e268efdc3979cda4d8db628a7a1bfef308f8d04250d53600ef",
@@ -229,10 +229,6 @@ POSTIMAGES = {
         "sha256": "c59a92f8560c8449b96e381d117bba996c11a8f290242e98ab8fdab0cf00fa2d",
         "bytes": 106434
     },
-    "src/runtime/vm/cow.rs": {
-        "sha256": "af6601762a2f489d41f8a0f3ae2dc8dceca378f6ab32ae5605f178c143f7bce8",
-        "bytes": 52926
-    },
     "src/runtime/vm/component/resources.rs": {
         "sha256": "6d61eb899bdc31c2ee2a13fc44bd9dc129685e4a1894b4901d3364940f2079a1",
         "bytes": 14681
@@ -240,6 +236,10 @@ POSTIMAGES = {
     "src/runtime/vm/component.rs": {
         "sha256": "1a5ef94428a9356e9e6167ed0317683fe23b2db76c468ba10d2897ba04768682",
         "bytes": 44649
+    },
+    "src/runtime/vm/cow.rs": {
+        "sha256": "af6601762a2f489d41f8a0f3ae2dc8dceca378f6ab32ae5605f178c143f7bce8",
+        "bytes": 52926
     },
     "src/runtime/vm/instance/allocator/pooling/table_pool.rs": {
         "sha256": "70a7ee51b01d163536063a61d7204b6725394679b484b63388344a3d2f6cd734",

@@ -109,6 +109,14 @@ route, media or current publication eligibility checks. See
 
 ### Response headers
 
+The optional Development `cross-origin-assets-v1` path has a separate
+[operator workflow](../operations/cross-origin-static-assets.md). Its exact
+`httpIngress.crossOriginAssets` grant covers only eligible non-document assets
+of one publication under HTTPS/public-origin authority, with credentials omitted.
+Preflight and actual delivery still recheck current publication eligibility.
+It does not open application APIs, HTML/SPA fallbacks, credentialed CORS or opaque
+`no-cors` embedding. The headers below remain the default and denial policy.
+
 Static HTML can additionally use the bounded, signed style identities described
 in [ADR-0052](../../adr/0052-authorize-exact-static-style-identities.md) when the
 host explicitly enables `httpIngress.allowStaticStyleHashes`. The host adds only

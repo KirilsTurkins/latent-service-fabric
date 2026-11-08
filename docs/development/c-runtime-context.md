@@ -133,6 +133,24 @@ This C11 source addition does not select a production thread profile or supply
 thread creation/join, canonical children, charged bootstrap, synchronization,
 checkpoints or signed/native physical retirement. #744 remains open.
 
+## Once initialization across an owned wait
+
+The maintained [synchronization source](../../sdk/c-guest/runtime/synchronization.c)
+implements ordinary `pthread_once`/C11 `call_once` on the pinned common memory32
+once-word ABI. While initialization is in progress, that word identifies the
+original initializer's live stack/context. Contenders validate that owner and
+park through the existing owned-wait path. Completion publishes the initialized
+state before waking them; it cannot run a second initializer or transfer the
+original wait/task authority.
+
+The separate [current-source signed owner](../../.github/workflows/c-once-runtime.yml)
+builds fresh native products and one component, then requires two invocations
+with real parked initializer/contender observations, exactly one initialization,
+bounded resources and a fresh successful activation. Its post-call idle samples
+are distinct from native/kernel final-free proof. A source/component control or
+the older frozen-product reader does not qualify that signed campaign or close
+the full C runtime gate.
+
 ## Ordinary creation and guarded bootstrap source
 
 The next unselected source slice is

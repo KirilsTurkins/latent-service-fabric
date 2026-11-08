@@ -115,6 +115,18 @@ NAPI/page-pool allocation before socket lookup, shared cache/route/deferred
 ownership, complete physical costs and sealed backing final-free still lack
 trusted installation. The actual constructor and normal provider remain closed.
 
+Subsequent Development source experiments cover prepaid class-directory/RCU,
+NETDEV and security/RX backing, q35 MSI/table geometry, and original Node-owned
+bootstrap, PCI setup and INTx restoration. Start with the
+[maintained kernel source](../../research/standard-outbound/linux-6.12-lineage/maintained-source.md),
+[prepaid factory](../../research/standard-outbound/linux-6.12-lineage/prepaid-factory.md)
+and [Node PCI setup](../../research/standard-outbound/linux-6.12-lineage/node-pci-setup/factory-node-pci-setup.c).
+Original bootstrap/native capacity must be admitted before kernel entry; an
+allocating-translation-unit geometry observation cannot issue that authority.
+Compiled object closures, instrumented q35/one-CPU controls and failed probes
+retain their own scope. They do not open the normal provider or establish the
+complete production allocation/final-free proof above.
+
 The finite ss vocabulary is checked against the [primary iproute2 format source](https://github.com/iproute2/iproute2/blob/v6.17.0/misc/ss.c).
 The actual installed tool digest is retained independently; that format reference
 is not an authenticated source binding for the runner kernel or tool binary.

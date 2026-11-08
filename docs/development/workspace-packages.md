@@ -1,7 +1,7 @@
 # Workspace package architecture
 
 Use this guide to find the implementation owner before changing a Rust package.
-The [package index](../../crates/README.md) links all 55 workspace members,
+The [package index](../../crates/README.md) links all 56 workspace members,
 including applications, SDKs and tools outside `crates/`. Each package README
 maps its public surface, modules, execution/ownership flow, dependency and feature
 gates, source tests and related specifications.
@@ -28,6 +28,7 @@ not establish an installed implementation.
 | Structural compatibility | [latent-contracts](../../crates/latent-contracts/README.md) | Full component/WIT inspection in packaging |
 | Package layout, SBOM or supplied-file validation | [latent-packaging](../../crates/latent-packaging/README.md) | Artifact identities, signing and registry transfer |
 | Publication storage and release eligibility | [latent-artifacts](../../crates/latent-artifacts/README.md) | Current supply-chain authority and catalog pins |
+| Local immutable payload custody | [latent-local-blobs](../../crates/latent-local-blobs/README.md) | Original capability session, actual state-engine binding, physical pins and command-envelope integration; `latent-blobs` re-exports these types |
 | Cryptographic evidence or admission policy | [latent-signing](../../crates/latent-signing/README.md), [latent-policy](../../crates/latent-policy/README.md) | Exact subjects, current trust/time and final acceptance fences |
 | Invocation lifecycle or child calls | [latent-node](../../crates/latent-node/README.md) | Admission, scheduler, backend, journal and descendant accounting |
 | Execution, interruption or code reuse | [latent-executor](../../crates/latent-executor/README.md), [latent-wasmtime](../../crates/latent-wasmtime/README.md) | Preparation identity, fresh Store state and cleanup |
@@ -125,7 +126,7 @@ not a substitute for Cargo's complete selected feature graph.
   their explicit fixture/profile. Enabling them is not a production grant or
   replacement for current admission owners.
 
-The workspace selects a maintained Wasmtime 48.0.7 source package with explicit
+The workspace selects a maintained Wasmtime 48.0.8 source package with explicit
 value/native-allocation admission hooks, plus the retained-owner bytes patch.
 The upstream version number alone does not identify those changes. The
 [engine guide](../runtime/wasmtime.md) explains preparation identity and selected
