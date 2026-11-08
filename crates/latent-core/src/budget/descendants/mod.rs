@@ -242,6 +242,27 @@ impl ActivationBudget {
         true
     }
 
+    /// Observe only this original ledger's and its ancestors' terminal flags.
+    /// Unlike `descendant_is_cancelled`, this never calls a cancellation probe
+    /// and is safe while a runtime mutation lock is held. An external probe may
+    /// change independently; this observation does not serialize with it.
+    pub(crate) fn descendant_ledger_is_closed(&self) -> bool {
+        let mut cursor = self.inner.as_ref();
+        for _ in 0..=16 {
+            let Some(lineage) = cursor.lineage.get() else {
+                return true;
+            };
+            if cursor.closed.load(Ordering::Acquire) {
+                return true;
+            }
+            let Some(parent) = &lineage.parent else {
+                return false;
+            };
+            cursor = parent.parent();
+        }
+        true
+    }
+
     /// Observe original cancellation for already-owned completion/response data.
     /// Only this ledger's terminal accounting flag is ignored: the original
     /// deadline, real cancellation probe and every terminal/cancelled ancestor
