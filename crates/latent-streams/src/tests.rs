@@ -16,7 +16,7 @@ mod kernel;
 mod lifecycle;
 #[cfg(unix)]
 mod maintenance;
-#[cfg(unix)]
+#[cfg(all(unix, feature = "development-read-witness"))]
 mod read_progress;
 #[cfg(unix)]
 mod sockets;

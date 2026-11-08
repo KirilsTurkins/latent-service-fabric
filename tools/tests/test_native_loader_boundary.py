@@ -145,6 +145,108 @@ rustix = { version = "=1.1.5", features = ["fs"] }
         self.write(f"{boundary.CRATE}/src/copied_creator.rs", boundary.REFUSING_CREATOR_IMPL)
         self.assertTrue(any("copied_creator.rs" in error for error in boundary.validate(self.root)))
 
+    def test_go_overlap_allocator_exception_is_exact_test_only_and_not_transferable(self) -> None:
+        source = (Path(__file__).resolve().parents[2] / boundary.GO_OVERLAP_TEST).read_text(encoding="utf-8")
+        self.write(boundary.GO_OVERLAP_TEST, source)
+        self.assertEqual(boundary.validate(self.root), [])
+        marker = boundary.GO_OVERLAP_TEST_MARKER
+        for name, changed in (
+            ("alloc", source.replace("unsafe { System.alloc(layout) }", "std::ptr::null_mut()", 1)),
+            ("dealloc", source.replace("unsafe { System.dealloc(pointer, layout) };", "", 1)),
+            ("cfg", source.replace(marker, "mod tests {\n", 1)),
+            ("commented cfg", source.replace(marker, "//" + marker, 1)),
+            ("global allocator", source.replace("#[global_allocator]", "", 1)),
+            ("duplicate allocator", source.replace("    pub(super) fn record_before_refund() {",
+                boundary.GO_OVERLAP_TEST_ALLOCATOR + "\n    pub(super) fn record_before_refund() {", 1)),
+            ("allowance scope", source.replace(
+                '#[allow(unsafe_code, reason = "test-only exact allocator-release observation")]',
+                '#![allow(unsafe_code)]', 1)),
+        ):
+            with self.subTest(change=name):
+                self.assertNotEqual(changed, source)
+                self.write(boundary.GO_OVERLAP_TEST, changed)
+                errors = boundary.validate(self.root)
+                self.assertTrue(any("Go overlap test allocator changed" in error for error in errors))
+                self.assertTrue(any("unreviewed unsafe code or allowance" in error for error in errors))
+        for addition in ("unsafe fn extra() {}\n", "#[allow(unsafe_code)] fn extra() {}\n"):
+            with self.subTest(outside_test_module=addition):
+                self.write(boundary.GO_OVERLAP_TEST, source.replace(marker, addition + marker, 1))
+                self.assertTrue(any("unreviewed unsafe code or allowance" in error for error in boundary.validate(self.root)))
+        self.write(boundary.GO_OVERLAP_TEST, source)
+        self.write(f"{boundary.CRATE}/src/copied_allocator.rs", boundary.GO_OVERLAP_TEST_ALLOCATOR)
+        self.assertTrue(any("copied_allocator.rs" in error for error in boundary.validate(self.root)))
+
+    def test_rust_comments_cannot_split_unsafe_or_lint_allowance_tokens(self) -> None:
+        for source in (
+            "unsafe/**/fn extra() {}\n",
+            'const TEXT: &str = r##"unsafe { // literal }"##; unsafe/**/fn extra() {}\n',
+            'const TEXT: &str = "quote \\" unsafe {"; unsafe/**/fn extra() {}\n',
+            "unsafe/* outer /* nested */ still outer */impl Extra for Other {}\n",
+            "unsafe// comment between tokens\ntrait Extra {}\n",
+            'unsafe/**/extern "C" { fn extra(); }\n',
+            "fn extra() { unsafe/**/{} }\n",
+            "#[allow/**/(unsafe_code)] fn extra() {}\n",
+            "#[r#allow/**/(unsafe_code)] fn extra() {}\n",
+            "#[r#allow(r#unsafe_code)] fn extra() {}\n",
+            "#[cfg_attr(all(), r#expect/**/(r#unsafe_code))] fn extra() {}\n",
+            '#[unsafe(no_mangle)] pub extern "C" fn extra() {}\n',
+            '#[unsafe/**/(no_mangle)] pub extern "C" fn extra() {}\n',
+            '#[cfg_attr(any(), unsafe/**/(export_name = "hidden"))] fn extra() {}\n',
+            "#[expect// reason\n(unsafe_code)] fn extra() {}\n",
+            "#[cfg_attr(any(), allow/**/(unsafe_code))] fn extra() {}\n",
+            "#[cfg_attr(all(), rustfmt::skip[x], allow(unsafe_code))] fn extra() {}\n",
+            "#[cfg_attr(all(), rustfmt::skip[[x]], r#allow(r#unsafe_code))] fn extra() {}\n",
+            '#[cfg_attr(all(), rustfmt::skip[x], unsafe(no_mangle))] pub extern "C" fn extra() {}\n',
+            "#/**/[allow(/* nested /* x */ comment */ unsafe_code)] fn extra() {}\n",
+        ):
+            with self.subTest(source=source):
+                self.write(f"{boundary.CRATE}/src/extra.rs", source)
+                self.assertTrue(any("unreviewed unsafe code or allowance" in error
+                                    for error in boundary.validate(self.root)))
+
+    def test_rust_comments_and_literals_are_not_unsafe_code(self) -> None:
+        safe = r'''
+// unsafe { also not code }
+/* #[allow(unsafe_code)] /* unsafe impl Fake for Fake {} */ still a comment */
+const ONE: &str = "unsafe { #[allow(unsafe_code)] } // not a comment";
+const TWO: &str = r###"quoted \" unsafe /* nested */ #[allow(unsafe_code)]"###;
+const THREE: &[u8] = br#"unsafe//literal\n#[expect(unsafe_code)]"#;
+const QUOTE: char = '"';
+const SLASH: char = '/';
+fn lifetime<'a>(value: &'a str) -> &'a str { value }
+fn r#unsafe() {}
+#[cfg_attr(any(), r#unsafe(foo))]
+#[cfg_attr(any(), rustfmt::skip[[x]], doc = r#"] unsafe(no_mangle) allow(unsafe_code)"#)]
+fn call_raw_identifier() { r#unsafe(); }
+'''
+        self.write(f"{boundary.CRATE}/src/extra.rs", safe)
+        self.assertEqual(boundary.validate(self.root), [])
+        raw_struct = "#[allow(non_camel_case_types)] struct r#unsafe {} fn f() { let _ = r#unsafe {}; }"
+        self.write(f"{boundary.CRATE}/src/extra.rs", raw_struct)
+        self.assertEqual(boundary.validate(self.root), [])
+        self.write(f"{boundary.GUEST}/src/lib.rs", '#![cfg(target_arch = "wasm32")]\n' + boundary.GUEST_ALLOW)
+        self.write(f"{boundary.GUEST}/src/abi.rs", boundary.GUEST_ABI)
+        self.write(f"{boundary.GUEST}/src/extra.rs", safe)
+        self.assertEqual(boundary.validate_guest(self.root), [])
+        for source in (
+            "#[allow/**/(unsafe_code)] unsafe/**/fn extra() {}\n",
+            "#[cfg_attr(all(), rustfmt::skip[x], allow(unsafe_code))] fn extra() {}\n",
+            '#[cfg_attr(all(), rustfmt::skip[x], unsafe(no_mangle))] fn extra() {}\n',
+        ):
+            with self.subTest(guest_source=source):
+                self.write(f"{boundary.GUEST}/src/extra.rs", source)
+                self.assertTrue(any("unreviewed handwritten unsafe" in error
+                                    for error in boundary.validate_guest(self.root)))
+
+    def test_unterminated_rust_comments_and_literals_fail_closed(self) -> None:
+        for source in ('/* nested /* comment */', 'let x = "unterminated', 'let x = r##"unterminated',
+                       '#[cfg_attr(all(), rustfmt::skip[x], allow(unused))',
+                       '#[cfg_attr(any(), rustfmt::skip[[x], doc = "safe")]'):
+            with self.subTest(source=source):
+                self.write(f"{boundary.CRATE}/src/extra.rs", source)
+                self.assertTrue(any("unreadable Rust comments, literals or attributes" in error
+                                    for error in boundary.validate(self.root)))
+
     def test_native_stack_exception_binds_guard_original_admission_and_physical_retirement(self) -> None:
         source = (Path(__file__).resolve().parents[2] / boundary.NATIVE_STACK).read_text(encoding="utf-8")
         self.write(boundary.NATIVE_STACK, source)

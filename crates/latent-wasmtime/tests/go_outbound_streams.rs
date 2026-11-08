@@ -223,6 +223,77 @@ async fn peer_exchange(listener: &TcpListener, half_close: bool) {
     }
 }
 
+#[cfg(feature = "development-go-network-read-witness")]
+async fn peer_fragmented(
+    listener: &TcpListener,
+    prefix_sent: tokio::sync::oneshot::Sender<()>,
+    release: tokio::sync::oneshot::Receiver<()>,
+) {
+    let (mut socket, _) = listener.accept().await.unwrap();
+    let mut request = [0; 4];
+    socket.read_exact(&mut request).await.unwrap();
+    assert_eq!(&request, b"ping");
+    socket.write_all(b"p").await.unwrap();
+    prefix_sent.send(()).unwrap();
+    tokio::time::timeout(Duration::from_secs(3), release)
+        .await
+        .expect("fragment release deadline")
+        .expect("fragment release must come from the owner");
+    socket.write_all(b"ong").await.unwrap();
+    socket.shutdown().await.unwrap();
+    let mut byte = [0];
+    match tokio::time::timeout(Duration::from_secs(2), socket.read(&mut byte))
+        .await
+        .unwrap()
+    {
+        Ok(0) => (),
+        Err(error) if error.kind() == std::io::ErrorKind::ConnectionReset => (),
+        other => panic!("fragmented peer closure required: {other:?}"),
+    }
+}
+
+// This is an inert snapshot of the original provider and activation. The
+// selected feature records successful future construction and the prior
+// same-connection guard retirement; it does not claim OS readiness polling.
+#[cfg(feature = "development-go-network-read-witness")]
+fn read_edge_observed(f: &Fixture, label: &str) -> bool {
+    let streams = f.streams.as_ref().unwrap();
+    let status = streams.lifecycle.status().unwrap();
+    let usage = status.usage;
+    let calls = streams.io.snapshot().calls;
+    let stores = f.backend.resource_snapshot().live_stores;
+    let activations = f.quotas.usage().unwrap().active_activations;
+    if usage.read_admissions != 2
+        || usage.retired_read_delivered_bytes != 1
+        || usage.delivered_read_bytes != 1
+        || usage.pending_reads != 1
+        || usage.pending_operations != 1
+        || usage.owners != 1
+        || usage.connections != 1
+        || status.retired_generations != 0
+        || status.quarantined_connections != 0
+        || status.stopped
+        || status.current_generation_retired
+        || calls != 1
+        || stores != 1
+        || activations != 1
+    {
+        return false;
+    }
+    println!(
+        "GO_NETWORK_READ_EDGE {}",
+        json!({"case":label,"constructedReads":usage.read_admissions,
+            "retiredReadDeliveredBytes":usage.retired_read_delivered_bytes,
+            "deliveredReadBytes":usage.delivered_read_bytes,"pendingReads":usage.pending_reads,
+            "pendingOperations":usage.pending_operations,"ioCalls":calls,"streamOwners":usage.owners,
+            "connections":usage.connections,"retiredGenerations":status.retired_generations,
+            "quarantinedConnections":status.quarantined_connections,"providerStopped":status.stopped,
+            "currentGenerationRetired":status.current_generation_retired,"liveStores":stores,
+            "activeActivations":activations})
+    );
+    true
+}
+
 #[tokio::test]
 #[ignore = "requires a freshly constructed guarded Go net component and explicit go profile"]
 #[expect(
@@ -269,10 +340,16 @@ async fn signed_ordinary_go_declared_tcp_preserves_refusals_io_and_cancelled_own
         );
         observed(label, mode, output, 0);
     }
+    #[cfg(feature = "development-go-network-read-witness")]
+    let (fragment_sent, fragment_received) = tokio::sync::oneshot::channel();
+    #[cfg(feature = "development-go-network-read-witness")]
+    let (fragment_continue, fragment_release) = tokio::sync::oneshot::channel();
     let (sent, received) = tokio::sync::oneshot::channel();
     let peer = tokio::spawn(async move {
         peer_exchange(&listener, false).await;
         peer_exchange(&listener, true).await;
+        #[cfg(feature = "development-go-network-read-witness")]
+        peer_fragmented(&listener, fragment_sent, fragment_release).await;
         let (mut socket, _) = listener.accept().await.unwrap();
         let mut input = [0; 4];
         socket.read_exact(&mut input).await.unwrap();
@@ -305,11 +382,43 @@ async fn signed_ordinary_go_declared_tcp_preserves_refusals_io_and_cancelled_own
         idle(&f, label).await;
         observed(label, mode, output, 1);
     }
+    #[cfg(feature = "development-go-network-read-witness")]
+    {
+        let mut fragmented = Box::pin(
+            f.manager
+                .start(request(&f, "fragmented-read", 4, port))
+                .unwrap(),
+        );
+        tokio::select! {
+            result = &mut fragmented => panic!("fragmented read returned before the prefix: {:?}", result.outcome),
+            result = fragment_received => result.expect("the real peer must send the prefix"),
+        }
+        let fragment_barrier = Instant::now() + Duration::from_secs(2);
+        loop {
+            if read_edge_observed(&f, "fragmented-read") {
+                break;
+            }
+            assert!(
+                Instant::now() < fragment_barrier,
+                "the second constructed read never remained live"
+            );
+            tokio::select! {
+                result = &mut fragmented => panic!("fragmented read completed before release: {:?}", result.outcome),
+                () = tokio::task::yield_now() => (),
+            }
+        }
+        fragment_continue
+            .send(())
+            .expect("the original peer must still be waiting");
+        returned(fragmented.await, "ordinary-tcp-exchange", 1);
+        idle(&f, "fragmented-read").await;
+        observed("fragmented-read", 4, "ordinary-tcp-exchange", 1);
+    }
     let id = ActivationId("go-network-cancel-pending-read".into());
     let mut invocation = Box::pin(f.manager.start(request(&f, &id.0, 4, port)).unwrap());
     tokio::select! { result = &mut invocation => panic!("read did not remain pending: {:?}",result.outcome), _ = received => {} }
     let barrier = Instant::now() + Duration::from_secs(2);
-    let (usage, io_calls) = loop {
+    loop {
         let usage = f
             .streams
             .as_ref()
@@ -318,46 +427,23 @@ async fn signed_ordinary_go_declared_tcp_preserves_refusals_io_and_cancelled_own
             .status()
             .unwrap()
             .usage;
-        let io_calls = f.streams.as_ref().unwrap().io.snapshot().calls;
-        // Bytes/pending alone can describe the FIRST read finishing audit.
-        // Isolate the original connection, observe its first guard's release
-        // with the short byte, then a distinct second admitted read guard.
-        if usage.owners == 1
-            && usage.connections == 1
-            && usage.delivered_read_bytes == 1
-            && usage.read_progress.admitted() == 2
-            && usage.read_progress.released() == 1
-            && usage.read_progress.released_bytes() == 1
-            && usage.read_progress.pending() == 1
+        let ready = usage.delivered_read_bytes == 1
             && usage.pending_operations == 1
-            && io_calls == 1
-        {
-            break (usage, io_calls);
+            && f.streams.as_ref().unwrap().io.snapshot().calls == 1;
+        #[cfg(feature = "development-go-network-read-witness")]
+        let ready = ready && read_edge_observed(&f, "cancel-pending-read");
+        if ready {
+            break;
         }
         assert!(
             Instant::now() < barrier,
-            "the real second read never became pending"
+            "the required live read observation was not reached"
         );
         tokio::select! {
             result = &mut invocation => panic!("pending read completed before cancellation: {:?}",result.outcome),
             () = tokio::task::yield_now() => (),
         }
-    };
-    println!(
-        "GO_NETWORK_READ_BARRIER {}",
-        json!({
-            "case": "cancel-pending-read",
-            "owners": usage.owners,
-            "connections": usage.connections,
-            "readAdmissions": usage.read_progress.admitted(),
-            "readReleases": usage.read_progress.released(),
-            "pendingReads": usage.read_progress.pending(),
-            "releasedReadBytes": usage.read_progress.released_bytes(),
-            "deliveredReadBytes": usage.delivered_read_bytes,
-            "pendingOperations": usage.pending_operations,
-            "ioCalls": io_calls,
-        })
-    );
+    }
     assert_eq!(f.backend.resource_snapshot().live_stores, 1);
     assert_eq!(f.streams.as_ref().unwrap().io.snapshot().calls, 1);
     assert_eq!(
@@ -395,10 +481,20 @@ async fn signed_ordinary_go_declared_tcp_preserves_refusals_io_and_cancelled_own
     idle(&f, "fresh-after-cancel").await;
     observed("fresh-after-cancel", 4, "ordinary-tcp-exchange", 1);
     peer.await.unwrap();
-    assert_eq!(f.backend.resource_snapshot().stores_created, 12);
+    let case_count = if cfg!(feature = "development-go-network-read-witness") {
+        13
+    } else {
+        12
+    };
+    let contact_count = if cfg!(feature = "development-go-network-read-witness") {
+        5
+    } else {
+        4
+    };
+    assert_eq!(f.backend.resource_snapshot().stores_created, case_count);
     f.streams.take().unwrap().shutdown().await;
     println!(
         "GO_NETWORK_COMPLETE {}",
-        json!({"cases":12,"contacts":4,"cleanLogicalProviderStop":true,"kernelRetirementQualified":false,"normalProviderInstalled":false})
+        json!({"cases":case_count,"contacts":contact_count,"cleanLogicalProviderStop":true,"kernelRetirementQualified":false,"normalProviderInstalled":false})
     );
 }

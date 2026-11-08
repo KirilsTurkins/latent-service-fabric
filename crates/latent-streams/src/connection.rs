@@ -303,8 +303,10 @@ struct State {
     write_shut: bool,
     accepted_write: u64,
     delivered_read: u64,
-    #[cfg(any(test, feature = "development-outbound"))]
-    read_progress: crate::StreamReadProgress,
+    #[cfg(feature = "development-read-witness")]
+    read_admissions: u8,
+    #[cfg(feature = "development-read-witness")]
+    retired_read_delivered: u64,
     attempted_write: bool,
     last_progress: Instant,
 }
@@ -409,8 +411,10 @@ pub(crate) async fn connect(
             write_shut: false,
             accepted_write: 0,
             delivered_read: 0,
-            #[cfg(any(test, feature = "development-outbound"))]
-            read_progress: crate::StreamReadProgress::default(),
+            #[cfg(feature = "development-read-witness")]
+            read_admissions: 0,
+            #[cfg(feature = "development-read-witness")]
+            retired_read_delivered: 0,
             attempted_write: false,
             last_progress: Instant::now(),
         }),
@@ -852,10 +856,6 @@ impl Connection {
                 .as_ref()
                 .expect("live socket transport"),
         );
-        #[cfg(any(test, feature = "development-outbound"))]
-        if direction == 0 {
-            state.read_progress.admit()?;
-        }
         state.pending += 1;
         state.busy[direction] = true;
         Ok(Pending {
@@ -908,13 +908,14 @@ impl Connection {
                 .state
                 .lock()
                 .unwrap_or_else(std::sync::PoisonError::into_inner);
-            #[cfg(any(test, feature = "development-outbound"))]
-            if direction == 0 {
-                let delivered = state.delivered_read;
-                state.read_progress.release(delivered);
-            }
             state.pending -= 1;
             state.busy[direction] = false;
+            #[cfg(feature = "development-read-witness")]
+            if direction == 0 {
+                // This guard belongs to the original connection and retires
+                // before another same-direction guard can be admitted.
+                state.retired_read_delivered = state.delivered_read;
+            }
         }
         self.drain_closed();
         self.changed.notify_waiters();
@@ -998,10 +999,14 @@ impl Connection {
             retained_chunks: self.transfer.outstanding_chunks(),
             #[cfg(any(test, feature = "development-outbound"))]
             input_budget_bytes: self.transfer.accepted_input_bytes(),
-            #[cfg(any(test, feature = "development-outbound"))]
-            read_progress: state.read_progress,
             accepted_write_bytes: state.accepted_write,
             delivered_read_bytes: state.delivered_read,
+            #[cfg(feature = "development-read-witness")]
+            read_admissions: state.read_admissions,
+            #[cfg(feature = "development-read-witness")]
+            pending_reads: u8::from(state.busy[0]),
+            #[cfg(feature = "development-read-witness")]
+            retired_read_delivered_bytes: state.retired_read_delivered,
             retired: false,
         })
     }
@@ -1138,7 +1143,20 @@ impl OutboundStream for Handle {
             _connection: Arc::clone(&self.connection),
             _window: window,
         }))?;
-        Ok(prepared.finish((pending, buffer)))
+        let future = prepared.finish((pending, buffer));
+        #[cfg(feature = "development-read-witness")]
+        {
+            let mut state = self
+                .connection
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            // The fully constructed future still owns its original guard and
+            // cannot be polled or dropped before it is returned. Three is a
+            // sentinel: wraparound cannot manufacture a second read.
+            state.read_admissions = state.read_admissions.saturating_add(1).min(3);
+        }
+        Ok(future)
     }
     fn write(
         &self,
@@ -1467,5 +1485,134 @@ impl Connection {
             .parse::<u64>()
             .unwrap();
         [u64::from(local.port()), u64::from(peer.port()), inode]
+    }
+}
+
+#[cfg(all(test, unix, feature = "development-read-witness"))]
+mod read_witness_tests {
+    use super::*;
+    use crate::tests::{config, fixture::Fixture};
+    use latent_capabilities::broker::network::{OutboundStreamInvoker, StreamConnectRequest};
+    use tokio::{io::AsyncWriteExt, net::TcpListener};
+
+    #[tokio::test]
+    async fn first_read_retirement_and_constructed_second_read_are_distinct() {
+        tokio::time::timeout(Duration::from_secs(8), async {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let mut config = config();
+            config.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+            let fixture = Fixture::new(config);
+            let request = StreamConnectRequest {
+                endpoint: fixture.provider.inner.config.destinations[0]
+                    .endpoint
+                    .clone(),
+                timeout_millis: None,
+            };
+            let (release, held) = tokio::sync::oneshot::channel();
+            let peer = tokio::spawn(async move {
+                let (mut socket, _) = listener.accept().await.unwrap();
+                socket.write_all(b"p").await.unwrap();
+                held.await.unwrap();
+                socket.write_all(b"ong").await.unwrap();
+                socket.shutdown().await.unwrap();
+            });
+            let (session, control) = fixture.session(5000);
+            let stream = fixture
+                .provider
+                .start(&session, request)
+                .unwrap()
+                .await
+                .unwrap();
+            let connection = fixture
+                .provider
+                .inner
+                .connections
+                .snapshot(0)
+                .unwrap()
+                .unwrap();
+            let first = stream.read(4, None).unwrap();
+
+            // Synthetic staging reproduces the old ambiguous post-byte snapshot
+            // while the actual first guard remains held. It is not guest evidence.
+            {
+                let mut state = connection.state.lock().unwrap();
+                assert_eq!(state.delivered_read, 0);
+                state.delivered_read = 1;
+            }
+            let staged = fixture.provider.usage().unwrap();
+            assert_eq!(
+                (staged.delivered_read_bytes, staged.pending_operations),
+                (1, 1)
+            );
+            assert_eq!(
+                (
+                    staged.read_admissions,
+                    staged.retired_read_delivered_bytes,
+                    staged.pending_reads
+                ),
+                (1, 0, 1)
+            );
+            connection.state.lock().unwrap().delivered_read = 0;
+
+            let mut first_chunk = first.await.unwrap().unwrap();
+            let first_copy = first_chunk.copy_bytes().unwrap();
+            assert_eq!(first_copy.as_ref(), b"p");
+            drop(first_copy);
+            drop(first_chunk);
+            let after_first = fixture.provider.usage().unwrap();
+            assert_eq!(
+                (
+                    after_first.read_admissions,
+                    after_first.retired_read_delivered_bytes,
+                    after_first.pending_reads
+                ),
+                (1, 1, 0)
+            );
+
+            // A real provisional guard abandoned before future construction
+            // cannot be mistaken for a successfully constructed second read.
+            let provisional = connection.pending(0, None).unwrap();
+            let during_setup = fixture.provider.usage().unwrap();
+            assert_eq!(
+                (
+                    during_setup.read_admissions,
+                    during_setup.retired_read_delivered_bytes,
+                    during_setup.pending_reads
+                ),
+                (1, 1, 1)
+            );
+            drop(provisional);
+            let second = stream.read(4, None).unwrap();
+            let after_second = fixture.provider.usage().unwrap();
+            assert_eq!(
+                (
+                    after_second.read_admissions,
+                    after_second.retired_read_delivered_bytes,
+                    after_second.pending_reads
+                ),
+                (2, 1, 1)
+            );
+            release.send(()).unwrap();
+            let mut second_chunk = second.await.unwrap().unwrap();
+            let bytes = second_chunk.copy_bytes().unwrap();
+            assert!(!bytes.is_empty() && b"ong".starts_with(bytes.as_ref()));
+            drop(bytes);
+            drop(second_chunk);
+            let third = stream.read(1, None).unwrap();
+            assert_eq!(fixture.provider.usage().unwrap().read_admissions, 3);
+            drop(third);
+            let fourth = stream.read(1, None).unwrap();
+            assert_eq!(fixture.provider.usage().unwrap().read_admissions, 3);
+            drop(fourth);
+            stream.close().await.unwrap();
+            drop(connection);
+            peer.await.unwrap();
+            drop(session);
+            fixture.clean().await;
+            drop(fixture);
+            control.assert_native_settled();
+        })
+        .await
+        .expect("bounded read witness control");
     }
 }

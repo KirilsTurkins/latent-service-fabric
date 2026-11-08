@@ -254,7 +254,17 @@ impl StreamLifecycle {
             #[cfg(any(test, feature = "development-outbound"))]
             {
                 usage.input_budget_bytes += u.input_budget_bytes;
-                usage.read_progress.merge(u.read_progress)?;
+            }
+            #[cfg(feature = "development-read-witness")]
+            {
+                usage.read_admissions = usage
+                    .read_admissions
+                    .saturating_add(u.read_admissions)
+                    .min(3);
+                usage.pending_reads = usage.pending_reads.saturating_add(u.pending_reads).min(2);
+                usage.retired_read_delivered_bytes = usage
+                    .retired_read_delivered_bytes
+                    .saturating_add(u.retired_read_delivered_bytes);
             }
             usage.delivered_read_bytes += u.delivered_read_bytes;
         }
