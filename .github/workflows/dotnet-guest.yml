@@ -235,11 +235,14 @@ jobs:
           sudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Install the pinned native compiler and closed runtime
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          curl --fail --location --max-time 180 \
-            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
-            --output "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          set -o pipefail
+          timeout 180s gh api -H 'Accept: application/octet-stream' repos/WebAssembly/wasi-sdk/releases/assets/316597213 | head -c 119441679 > "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          unset GH_TOKEN
+          test "$(stat --format=%s "$RUNNER_TEMP/wasi-sdk.tar.gz")" = 119441678
           printf '%s  %s\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 "$RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
           tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
           python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-authoring-bindgen"
