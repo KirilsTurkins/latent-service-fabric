@@ -139,20 +139,67 @@ class CurrentJavaEventInputs(unittest.TestCase):
                 'intent_format':1,'payload_format':'nats-event-value-v1','idempotency_profile':profile}
             preview = {'schemaVersion':'latent.configured-event-effect-inspection.v1',
                        'adapters':[{'configurationDigest':'sha256:'+'6'*64,'configurationEpoch':1,'profile':selected}]}
+            from tools.java_transaction_qualification.event_hosts import select_profile
+            selected_profile = select_profile(preview, 'events', 'updated')
+            self.assertEqual(selected_profile.idempotency_profile, profile)
+            self.assertEqual(selected_profile.configuration_digest, 'sha256:' + '6' * 64)
+            with self.assertRaises(ValueError):
+                select_profile(preview, 'events', 'other')
+            duplicate = copy.deepcopy(preview)
+            duplicate['adapters'].append(copy.deepcopy(duplicate['adapters'][0]))
+            with self.assertRaises(ValueError):
+                select_profile(duplicate, 'events', 'updated')
             observed = ObservedEventHost.read(host, preview, operations, files[EVENT_REQUIREMENTS])
             self.assertEqual(observed.profile['destination'], 'updated')
+            from unittest.mock import patch
+            from tools.java_transaction_qualification import lifecycle
+            with patch.object(lifecycle, 'native', side_effect=[json.dumps(preview).encode(), json.dumps(host).encode()]) as native, \
+                 patch.object(lifecycle, 'admission_lease_interval') as retire:
+                selected_preview = lifecycle.inspect_event_profile(object(), Path('latentd'), Path('node.json'))
+                actual = lifecycle.inspect_event_host(object(), Path('latentd'), Path('node.json'), operations,
+                                                      files[EVENT_REQUIREMENTS], selected_preview)
+                self.assertEqual(actual.profile['destination'], 'updated')
+                self.assertEqual(native.call_args_list[0].args[3], 'inspect-configured-event-effects')
+                self.assertEqual(native.call_args_list[1].args[3], 'inspect-transaction-hosts')
+                self.assertEqual(retire.call_count, 2)
             from tools.java_transaction_qualification.event_hosts import policy_documents
             proposals = policy_documents(observed, operations[0])
             self.assertEqual(proposals['bindings']['event-stage']['capability'], 'latent:intents/staging@0.1.0')
             self.assertEqual(proposals['bindings']['event-dispatch']['capability'], 'latent:events/publisher@0.2.0')
             self.assertEqual(proposals['policies']['dispatch']['rules'][0]['resources']['subjects'], ['updated'])
             self.assertEqual([grant['capability'] for grant in proposals['deploymentGrants']], ['latent:intents/staging@0.1.0'])
+            from tools.java_transaction_qualification import policies
+            class Client:
+                def __init__(self, directory):
+                    self.directory, self.calls = directory, []
+                def call(self, *arguments):
+                    self.calls.append(arguments)
+                    operation_id = arguments[arguments.index('--operation-id') + 1]
+                    return {'outcomeKnown': True, 'data': {'receipt': {'operationId': operation_id}}}
+            policy_root = root / 'policy-inputs'
+            policy_root.mkdir()
+            client = Client(policy_root)
+            mutations = policies.prepare_mutations(client, proposals)
+            self.assertEqual(len(mutations), 4)
+            original = (policy_root / mutations[-1]['file']).read_bytes()
+            (policy_root / mutations[-1]['file']).write_bytes(original + b' ')
+            with self.assertRaises(ValueError):
+                policies.apply_retained(client, proposals, mutations)
+            self.assertEqual(client.calls, [])
+            (policy_root / mutations[-1]['file']).write_bytes(original)
+            receipts = policies.apply_retained(client, proposals, mutations)
+            self.assertEqual(len(receipts), 4)
+            self.assertEqual(len(client.calls), 4)
             with self.assertRaises(TypeError):
                 observed.profile['destination'] = 'other'
             changed_operation = copy.deepcopy(operations[0])
             changed_operation['deferredEvent']['dispatchPolicies'] = ['other']
             with self.assertRaises(ValueError):
                 policy_documents(observed, changed_operation)
+            oversized = copy.deepcopy(operations[0])
+            oversized['componentDigest'] = 'x' * 100_000
+            with self.assertRaises(ValueError):
+                policy_documents(observed, oversized)
             for surface, field in [('host','publication'), ('host','dispatchSubject'), ('host','configurationDigest'),
                                    ('preview','configurationDigest'), ('preview','configurationEpoch')]:
                 bad_host, bad_preview = copy.deepcopy(host), copy.deepcopy(preview)
@@ -168,6 +215,12 @@ class CurrentJavaEventInputs(unittest.TestCase):
             bad_host['configuredProviders'][0]['service'] = 'bad\u0085service'
             with self.assertRaises(ValueError):
                 ObservedEventHost.read(bad_host, preview, operations, files[EVENT_REQUIREMENTS])
+            ambiguous = copy.deepcopy(preview)
+            duplicate = copy.deepcopy(ambiguous['adapters'][0])
+            duplicate['profile']['idempotency_profile'] = 'js-window-v1:' + 'b' * 64
+            ambiguous['adapters'].append(duplicate)
+            with self.assertRaises(ValueError):
+                ObservedEventHost.read(host, ambiguous, operations, files[EVENT_REQUIREMENTS])
             bad = copy.deepcopy(preview)
             bad['adapters'][0]['profile']['destination'] = ''
             with self.assertRaises(ValueError):

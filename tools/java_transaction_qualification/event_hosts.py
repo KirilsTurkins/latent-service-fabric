@@ -24,6 +24,42 @@ def _identity(value):
 
 
 @dataclass(frozen=True)
+class ConfiguredEventProfile:
+    """Original native provider profile; this selection grants no authority."""
+    provider_id: str
+    topic: str
+    idempotency_profile: str
+    configuration_digest: str
+    configuration_epoch: int
+
+
+def select_profile(preview: dict, provider_id: str, topic: str) -> ConfiguredEventProfile:
+    _identity(provider_id)
+    _identity(topic)
+    require(isinstance(preview, dict) and len(preview) == 2 and set(preview) == {"schemaVersion", "adapters"}
+            and preview["schemaVersion"] == "latent.configured-event-effect-inspection.v1"
+            and isinstance(preview["adapters"], list) and 0 < len(preview["adapters"]) <= 16,
+            "bounded-native-event-profile-preview")
+    matches = [row for row in preview["adapters"] if isinstance(row, dict)
+               and isinstance(row.get("profile"), dict) and row["profile"].get("provider") == provider_id
+               and row["profile"].get("destination") == topic]
+    require(len(matches) == 1 and len(matches[0]) == len(PREVIEW_FIELDS)
+            and len(matches[0]["profile"]) == len(PROFILE_FIELDS)
+            and set(matches[0]) == PREVIEW_FIELDS and set(matches[0]["profile"]) == PROFILE_FIELDS, "single-original-event-profile")
+    row, profile = matches[0], matches[0]["profile"]
+    require(profile["adapter"] == "nats-jetstream-effect-v1"
+            and type(profile["intent_format"]) is int and profile["intent_format"] == 1
+            and profile["payload_format"] == "nats-event-value-v1"
+            and isinstance(profile["idempotency_profile"], str)
+            and re.fullmatch(r"js-window-v1:[0-9a-f]{64}", profile["idempotency_profile"]),
+            "exact-native-event-profile")
+    sha(row["configurationDigest"])
+    version = epoch(row["configurationEpoch"])
+    return ConfiguredEventProfile(provider_id, topic, profile["idempotency_profile"],
+                                  row["configurationDigest"], version)
+
+
+@dataclass(frozen=True)
 class ObservedEventHost:
     """Exact inspection proposal, not a policy decision or publication receipt."""
     provider: Mapping[str, object]
@@ -34,7 +70,8 @@ class ObservedEventHost:
 
     @classmethod
     def read(cls, host: dict, preview: dict, operations: list[dict], requirements: bytes):
-        require(isinstance(host, dict) and set(host) == INSPECTION_FIELDS | {"deferredEvent"}
+        require(isinstance(host, dict) and len(host) == len(INSPECTION_FIELDS) + 1
+                and set(host) == INSPECTION_FIELDS | {"deferredEvent"}
                 and host["schemaVersion"] == "latent.transaction-host-inspection.v1"
                 and host["deferredHttp"] == [], "exact-native-event-host-inspection")
         _identity(host["stateProviderProfile"])
@@ -43,7 +80,7 @@ class ObservedEventHost:
         for name in ("configuredHttpCallers", "configuredTransportCallers"):
             callers = host[name]
             require(isinstance(callers, list) and 0 < len(callers) <= 64
-                    and all(isinstance(row, dict) and set(row) == CALLER_FIELDS
+                    and all(isinstance(row, dict) and len(row) == len(CALLER_FIELDS) and set(row) == CALLER_FIELDS
                             and row["ownerKind"] in {"user", "administrator"}
                             and row["service"] is None and row["recoveryKind"] == "original-caller"
                             for row in callers), "bounded-event-authenticated-callers")
@@ -55,7 +92,7 @@ class ObservedEventHost:
         alice = _caller(host["configuredHttpCallers"], ALICE, "user")
         require(alice == _caller(host["configuredTransportCallers"], ALICE, "user"),
                 "same-event-http-and-transport-caller")
-        require(isinstance(preview, dict) and set(preview) == {"schemaVersion", "adapters"}
+        require(isinstance(preview, dict) and len(preview) == 2 and set(preview) == {"schemaVersion", "adapters"}
                 and preview["schemaVersion"] == "latent.configured-event-effect-inspection.v1"
                 and isinstance(preview["adapters"], list) and 0 < len(preview["adapters"]) <= 16,
                 "bounded-native-event-profile-preview")
@@ -64,7 +101,8 @@ class ObservedEventHost:
                 "exact-selected-event-operations")
         base_fields = {"tenant", "componentDigest", "publication", "contract", "function", "deployment", "route",
                        "binding", "companionDigest", "incarnation", "resultPolicy", "statePolicies"}
-        require(all(set(row) == base_fields | ({"deferredEvent"} if row["function"] == "update" else set())
+        require(all(len(row) == len(base_fields) + int(row["function"] == "update")
+                    and set(row) == base_fields | ({"deferredEvent"} if row["function"] == "update" else set())
                     and row["tenant"] == TENANT and row["contract"] == CONTRACT
                     and row["deployment"] == DEPLOYMENT and row["route"] == DEPLOYMENT and row["binding"] == DEPLOYMENT
                     and type(row["incarnation"]) is int and row["incarnation"] == 1
@@ -82,7 +120,7 @@ class ObservedEventHost:
         require(len(selected) == 1 and selected[0]["function"] == "update", "single-event-command-selection")
         operation = selected[0]
         config = operation["deferredEvent"]
-        require(isinstance(config, dict) and set(config) == {"requirementsDigest", "providerId", "providerIncarnation",
+        require(isinstance(config, dict) and len(config) == 9 and set(config) == {"requirementsDigest", "providerId", "providerIncarnation",
                 "credentialReference", "stagingBinding", "stagingPolicies", "dispatchBinding", "dispatchPolicies", "dispatchAuthority"}
                 and config["dispatchAuthority"] == {"formatVersion": 1, "mode": "signed-service-integration"}
                 and type(config["dispatchAuthority"]["formatVersion"]) is int
@@ -96,7 +134,7 @@ class ObservedEventHost:
             require(isinstance(config[field], list) and len(config[field]) == 1, "single-event-policy-selection")
             _identity(config[field][0])
         document = decode(requirements, 8192)
-        require(isinstance(document, dict) and set(document) == {"formatVersion", "protocol", "capsule", "deployment",
+        require(isinstance(document, dict) and len(document) == 13 and set(document) == {"formatVersion", "protocol", "capsule", "deployment",
                 "stateBinding", "namespace", "companionDigest", "binding", "operation", "adapter", "payloadFormat",
                 "idempotencyProfile", "ceiling"} and type(document.get("formatVersion")) is int
                 and document.get("formatVersion") == 1
@@ -115,7 +153,7 @@ class ObservedEventHost:
                 "exact-event-requirements-profile")
         rows = host["deferredEvent"]
         require(isinstance(rows, list) and len(rows) == 1 and isinstance(rows[0], dict)
-                and set(rows[0]) == EFFECT_FIELDS, "single-signed-event-observation")
+                and len(rows[0]) == len(EFFECT_FIELDS) and set(rows[0]) == EFFECT_FIELDS, "single-signed-event-observation")
         effect = rows[0]
         subject = f"service:{len(TENANT.encode())}:{TENANT}:{len(SERVICE.encode())}:{SERVICE}"
         require(effect["tenant"] == TENANT and effect["service"] == SERVICE
@@ -134,7 +172,8 @@ class ObservedEventHost:
         providers = host["configuredProviders"]
         require(isinstance(providers, list) and len(providers) <= 64, "bounded-native-provider-observations")
         matches = [row for row in providers if isinstance(row, dict) and row.get("id") == config["providerId"]]
-        require(len(matches) == 1 and set(matches[0]) == PROVIDER_FIELDS, "single-original-event-provider")
+        require(len(matches) == 1 and len(matches[0]) == len(PROVIDER_FIELDS)
+                and set(matches[0]) == PROVIDER_FIELDS, "single-original-event-provider")
         provider = matches[0]
         require(provider["tenant"] == TENANT and provider["capability"] == "latent:events/publisher@0.2.0"
                 and provider["configurationDigest"] == "sha256:" + config["providerIncarnation"],
@@ -147,7 +186,8 @@ class ObservedEventHost:
         rows = [row for row in preview["adapters"] if isinstance(row, dict)
                 and isinstance(row.get("profile"), dict)
                 and row["profile"].get("idempotency_profile") == document["idempotencyProfile"]]
-        require(len(rows) == 1 and set(rows[0]) == PREVIEW_FIELDS and set(rows[0]["profile"]) == PROFILE_FIELDS,
+        require(len(rows) == 1 and len(rows[0]) == len(PREVIEW_FIELDS) and len(rows[0]["profile"]) == len(PROFILE_FIELDS)
+                and set(rows[0]) == PREVIEW_FIELDS and set(rows[0]["profile"]) == PROFILE_FIELDS,
                 "single-original-event-adapter-profile")
         row = rows[0]
         profile = row["profile"]
@@ -158,11 +198,38 @@ class ObservedEventHost:
                 and type(profile["intent_format"]) is int and profile["intent_format"] == 1 and profile["payload_format"] == "nats-event-value-v1",
                 "same-installed-event-adapter-owner")
         _identity(profile["destination"])
+        selected_profile = select_profile(preview, config["providerId"], profile["destination"])
+        require(selected_profile.idempotency_profile == document["idempotencyProfile"]
+                and selected_profile.configuration_digest == provider["configurationDigest"]
+                and selected_profile.configuration_epoch == provider_epoch,
+                "same-unique-event-provider-selection")
         return cls(MappingProxyType(dict(provider)), MappingProxyType(dict(effect)),
                    MappingProxyType(dict(profile)), MappingProxyType(dict(alice)), _operation_digest(operation))
 
 
 def _operation_digest(operation: dict) -> str:
+    fields = {"tenant", "componentDigest", "publication", "contract", "function", "deployment", "route", "binding",
+              "companionDigest", "incarnation", "resultPolicy", "statePolicies", "deferredEvent"}
+    require(isinstance(operation, dict) and len(operation) == len(fields) and set(operation) == fields, "closed-event-operation-observation")
+    for field in fields - {"incarnation", "statePolicies", "deferredEvent"}:
+        require(isinstance(operation[field], str) and 0 < len(operation[field]) <= 256,
+                "bounded-event-operation-text")
+    require(type(operation["incarnation"]) is int and operation["incarnation"] == 1
+            and operation["statePolicies"] == [STATE_POLICY], "bounded-event-operation-scope")
+    effect = operation["deferredEvent"]
+    effect_fields = {"requirementsDigest", "providerId", "providerIncarnation", "credentialReference", "stagingBinding",
+                     "stagingPolicies", "dispatchBinding", "dispatchPolicies", "dispatchAuthority"}
+    require(isinstance(effect, dict) and len(effect) == len(effect_fields) and set(effect) == effect_fields
+            and effect["dispatchAuthority"] == {"formatVersion": 1, "mode": "signed-service-integration"}
+            and type(effect["dispatchAuthority"]["formatVersion"]) is int,
+            "closed-event-operation-authority")
+    for field in effect_fields - {"stagingPolicies", "dispatchPolicies", "dispatchAuthority"}:
+        require(isinstance(effect[field], str) and 0 < len(effect[field]) <= 256,
+                "bounded-event-operation-pin")
+    for field in ("stagingPolicies", "dispatchPolicies"):
+        require(isinstance(effect[field], list) and len(effect[field]) == 1
+                and isinstance(effect[field][0], str) and 0 < len(effect[field][0]) <= 256,
+                "bounded-event-operation-policy")
     raw = json.dumps(operation, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode()
     require(len(raw) <= 8192, "bounded-event-operation-observation")
     return hashlib.sha256(raw).hexdigest()

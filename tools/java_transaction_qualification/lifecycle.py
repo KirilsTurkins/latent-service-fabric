@@ -318,6 +318,29 @@ def inspect(client, node: Path, configuration: Path, operations, *, stage="trans
     return observed
 
 
+def inspect_event_profile(client, node: Path, configuration: Path):
+    """Capture the original configured-provider preview, without granting authority."""
+    value = decode(native(client, node, "event-provider-preview", "inspect-configured-event-effects",
+                          "--config", configuration, timeout=120), 262144)
+    require(isinstance(value, dict) and set(value) == {"schemaVersion", "adapters"}
+            and value["schemaVersion"] == "latent.configured-event-effect-inspection.v1"
+            and isinstance(value["adapters"], list) and 0 < len(value["adapters"]) <= 16,
+            "actual-configured-event-profile-preview")
+    admission_lease_interval(client)
+    return value
+
+
+def inspect_event_host(client, node: Path, configuration: Path, operations: list[dict],
+                       requirements: bytes, preview: dict):
+    """Cross-check original native host and provider observations; install nothing."""
+    from .event_hosts import ObservedEventHost
+    value = decode(native(client, node, "event-host-inspection", "inspect-transaction-hosts",
+                          "--config", configuration, timeout=120), 262144)
+    observed = ObservedEventHost.read(value, preview, operations, requirements)
+    admission_lease_interval(client)
+    return observed
+
+
 def namespace_arguments(publication: str):
     require(re.fullmatch(r"publication:sha256:[0-9a-f]{64}", publication), "original-authorization-publication")
     return ("--namespace", cfg.NAMESPACE, "--incarnation", "1", "--authorization-publication", publication)
