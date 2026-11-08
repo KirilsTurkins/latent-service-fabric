@@ -23,7 +23,11 @@ SOURCES = ('tools/c_timed_source_controls.py', 'tools/tests/fixtures/c-timed-bro
 
 DEADLINE_CASES = ('mutex_fast', 'mutex_expired', 'mutex_invalid', 'condition_expired',
     'condition_invalid', 'future_relative', 'future_overflow', 'clock_failure',
-    'c11_expired', 'duration_boundaries')
+    'c11_expired', 'duration_boundaries', 'mutex_next_refused', 'condition_next_refused',
+    'sleep_next_refused', 'c11_next_refused', 'c11_condition_next_refused',
+    'mutex_notification_during_refusal', 'condition_notification_during_refusal',
+    'terminal_cancel', 'terminal_deadline', 'terminal_cancel_after_notification',
+    'refusal_cancel_before_wake', 'refusal_notification_cancel_before_wake')
 
 
 def run(output, zig, node):

@@ -1588,6 +1588,102 @@ fn recurring_timer_coalesces_storms_and_cancelled_waits_keep_physical_ownership(
 }
 
 #[test]
+fn timer_next_refuses_when_the_original_c_wait_uses_the_last_wait_slot() {
+    let seed = runtime();
+    let runtime = ActivationRuntime::new(
+        seed.inner.budget.clone(),
+        RuntimeLimits {
+            waits: 1,
+            ..seed.inner.limits
+        },
+    )
+    .unwrap();
+    drop(seed);
+
+    let task = runtime.register(OwnerKind::Task, None).unwrap();
+    let c_wait = runtime
+        .register(OwnerKind::Wait, Some(task.token()))
+        .unwrap();
+    let timer = RuntimeTimer::new(&runtime, Instant::now(), None, Some(c_wait.token())).unwrap();
+    let wake = runtime.park(task.token()).unwrap();
+    let before = runtime.snapshot();
+    assert_eq!(before.parked_tasks, 1);
+    assert_eq!(before.owners[OwnerKind::Wait.index()], 1);
+    assert_eq!(before.owners[OwnerKind::Timer.index()], 1);
+    assert_eq!(
+        timer.begin_wait().unwrap_err().code,
+        PlatformErrorCode::ResourceExhausted
+    );
+    let after = runtime.snapshot();
+    assert_eq!(after.owners, before.owners);
+    assert_eq!(after.parked_tasks, 1);
+    assert_eq!(after.admission_failures, before.admission_failures + 1);
+    assert!(wake.wake());
+    assert_eq!(runtime.snapshot().parked_tasks, 0);
+
+    timer.close();
+    drop(timer);
+    drop(c_wait);
+    let timer = RuntimeTimer::new(&runtime, Instant::now(), None, Some(task.token())).unwrap();
+    let physical_wait = timer.begin_wait().unwrap();
+    assert_eq!(runtime.snapshot().owners[OwnerKind::Wait.index()], 1);
+    drop(physical_wait);
+    timer.close();
+    drop(timer);
+    drop(task);
+    runtime.retire().unwrap();
+}
+
+#[test]
+fn timer_next_refusal_then_cancellation_preserves_original_wait_custody() {
+    for stopped_before_cancel in [false, true] {
+        let seed = runtime();
+        let runtime = ActivationRuntime::new(
+            seed.inner.budget.clone(),
+            RuntimeLimits {
+                waits: 1,
+                ..seed.inner.limits
+            },
+        )
+        .unwrap();
+        drop(seed);
+        let task = runtime.register(OwnerKind::Task, None).unwrap();
+        let c_wait = runtime
+            .register(OwnerKind::Wait, Some(task.token()))
+            .unwrap();
+        let mut timer =
+            Some(RuntimeTimer::new(&runtime, Instant::now(), None, Some(c_wait.token())).unwrap());
+        let wake = runtime.park(task.token()).unwrap();
+        assert_eq!(
+            timer.as_ref().unwrap().begin_wait().unwrap_err().code,
+            PlatformErrorCode::ResourceExhausted
+        );
+        if stopped_before_cancel {
+            let timer = timer.take().unwrap();
+            timer.close();
+            drop(timer);
+        }
+        let before = runtime.snapshot();
+        assert_eq!(before.owners[OwnerKind::Wait.index()], 1);
+        assert_eq!(
+            before.owners[OwnerKind::Timer.index()],
+            u32::from(!stopped_before_cancel)
+        );
+        runtime.cancel();
+        assert!(!wake.wake());
+        let after = runtime.snapshot();
+        assert_eq!(after.phase, RuntimePhase::Cancelling);
+        assert_eq!(after.parked_tasks, 1);
+        assert_eq!(after.owners, before.owners);
+        assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
+        drop(timer);
+        drop(c_wait);
+        drop(task);
+        runtime.retire().unwrap();
+    }
+}
+
+#[test]
 fn readiness_weak_headers_remain_paid_without_retaining_runtime_payload() {
     let runtime = runtime();
     let budget = runtime.inner.budget.clone();
