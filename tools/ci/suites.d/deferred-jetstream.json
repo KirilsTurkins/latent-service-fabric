@@ -6,11 +6,13 @@
       "expectedIgnored": [
         "campaign::real_deferred_atomic_state_result_payload_and_broker_receipt_agree",
         "campaign::real_deferred_committed_presend_restart_uses_same_payload_and_advanced_physical_epoch",
+        "campaign::real_deferred_current_policy_denial_blocks_before_provider_work",
         "campaign::real_deferred_declared_rejection_and_positive_technical_abort_publish_nothing",
         "campaign::real_deferred_horizon_expiry_revocation_and_recreated_stream_stop_delivery",
         "campaign::real_deferred_live_publication_keeps_actual_root_role_and_buffers_after_shutdown_cutoff",
         "campaign::real_deferred_lost_acknowledgement_retries_exact_id_once_with_one_broker_message",
         "campaign::real_deferred_malformed_and_oversized_replies_preserve_send_uncertainty",
+        "campaign::real_deferred_policy_change_after_qualification_blocks_publication",
         "locks::real_deferred_synchronous_acceptance_respects_opposing_role_and_effect_fences",
         "redrive::real_deferred_redrive_qualification_keeps_original_payload_profile_and_finite_horizon"
       ],
@@ -18,11 +20,13 @@
       "ignoredLeaves": [
         "real_deferred_atomic_state_result_payload_and_broker_receipt_agree",
         "real_deferred_committed_presend_restart_uses_same_payload_and_advanced_physical_epoch",
+        "real_deferred_current_policy_denial_blocks_before_provider_work",
         "real_deferred_declared_rejection_and_positive_technical_abort_publish_nothing",
         "real_deferred_horizon_expiry_revocation_and_recreated_stream_stop_delivery",
         "real_deferred_live_publication_keeps_actual_root_role_and_buffers_after_shutdown_cutoff",
         "real_deferred_lost_acknowledgement_retries_exact_id_once_with_one_broker_message",
         "real_deferred_malformed_and_oversized_replies_preserve_send_uncertainty",
+        "real_deferred_policy_change_after_qualification_blocks_publication",
         "real_deferred_synchronous_acceptance_respects_opposing_role_and_effect_fences",
         "real_deferred_redrive_qualification_keeps_original_payload_profile_and_finite_horizon"
       ],

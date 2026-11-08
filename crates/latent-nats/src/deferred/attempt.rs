@@ -24,6 +24,7 @@ pub(super) struct AcceptedPublish {
     pub row: usize,
     pub credential: usize,
     pub time: Arc<dyn EffectTimeSource>,
+    pub authorization: Option<Arc<dyn super::DeferredEventAuthorization>>,
     pub event: Event,
     pub attempt: AttemptIdentity,
     pub horizon: u64,
@@ -53,6 +54,12 @@ impl AcceptedPublish {
         qualified: &mut bool,
     ) -> crate::Result<PublishReceipt> {
         self.request.checkpoint()?;
+        if let Some(authorization) = &self.authorization {
+            authorization.check_current(
+                self.request.grant(),
+                &self.inner.config.topics[self.row].topic,
+            )?;
+        }
         self.request
             .grant()
             .check_current(self.time.observe())
@@ -98,6 +105,12 @@ impl AcceptedPublish {
             .grant()
             .check_current(self.time.observe())
             .map_err(|_| EventError::PermissionDenied)?;
+        if let Some(authorization) = &self.authorization {
+            authorization.check_current(
+                self.request.grant(),
+                &self.inner.config.topics[self.row].topic,
+            )?;
+        }
         let receipt = protocol::publish(
             connection.resource(),
             &self.request,

@@ -24,6 +24,63 @@ fn reset() -> JetStreamQualification {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "requires tools/run_nats_deferred_tests.py owned pinned real JetStream"]
+async fn real_deferred_current_policy_denial_blocks_before_provider_work() {
+    struct Denied(std::sync::atomic::AtomicUsize);
+    impl latent_nats::deferred::DeferredEventAuthorization for Denied {
+        fn check_current(
+            &self,
+            grant: &latent_effects::authority::DispatchGrant,
+            topic: &str,
+        ) -> Result<(), latent_nats::EventError> {
+            assert_eq!(topic, "updated");
+            assert_eq!(grant.scope().tenant, "tests");
+            self.0.fetch_add(1, Ordering::AcqRel);
+            Err(latent_nats::EventError::PermissionDenied)
+        }
+    }
+    let authorization = Arc::new(Denied(std::sync::atomic::AtomicUsize::new(0)));
+    let fixture = Fixture::with_authorization(config(), reset(), Some(authorization.clone())).await;
+    let effect = fixture.commit("current-policy-denied").await;
+    fixture.owner.as_ref().unwrap().resume().unwrap();
+    fixture.settled(&effect, Disposition::PolicyBlocked).await;
+    assert!(authorization.0.load(Ordering::Acquire) > 0);
+    assert_eq!(fixture.publisher.snapshot().connection_attempts, 0);
+    assert_eq!(control("info")["state"]["messages"], 0);
+    fixture.finish().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[ignore = "requires tools/run_nats_deferred_tests.py owned pinned real JetStream"]
+async fn real_deferred_policy_change_after_qualification_blocks_publication() {
+    struct Changed(std::sync::atomic::AtomicUsize);
+    impl latent_nats::deferred::DeferredEventAuthorization for Changed {
+        fn check_current(
+            &self,
+            grant: &latent_effects::authority::DispatchGrant,
+            topic: &str,
+        ) -> Result<(), latent_nats::EventError> {
+            assert_eq!(topic, "updated");
+            assert_eq!(grant.scope().tenant, "tests");
+            if self.0.fetch_add(1, Ordering::AcqRel) == 0 {
+                Ok(())
+            } else {
+                Err(latent_nats::EventError::PermissionDenied)
+            }
+        }
+    }
+    let authorization = Arc::new(Changed(std::sync::atomic::AtomicUsize::new(0)));
+    let fixture = Fixture::with_authorization(config(), reset(), Some(authorization.clone())).await;
+    let effect = fixture.commit("current-policy-changed").await;
+    fixture.owner.as_ref().unwrap().resume().unwrap();
+    fixture.settled(&effect, Disposition::PolicyBlocked).await;
+    assert_eq!(authorization.0.load(Ordering::Acquire), 2);
+    assert!(fixture.publisher.snapshot().connection_attempts > 0);
+    assert_eq!(control("info")["state"]["messages"], 0);
+    fixture.finish().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[ignore = "requires tools/run_nats_deferred_tests.py owned pinned real JetStream"]
 async fn real_deferred_atomic_state_result_payload_and_broker_receipt_agree() {
     let fixture = Fixture::new(config(), reset()).await;
     let effect = fixture.commit("success").await;

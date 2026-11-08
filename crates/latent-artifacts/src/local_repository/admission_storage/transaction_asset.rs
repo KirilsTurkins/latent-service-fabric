@@ -125,7 +125,7 @@ impl StoredAdmission {
             }
             // StoredAdmission::read streamed every auxiliary blob and the
             // enclosing COMPLETE reader streamed the component before this
-            // structural comparison. Only these three small documents allocate.
+            // structural comparison. Only bounded control documents allocate.
             match layer.role {
                 LayerRole::Component => {
                     if layer.digest.as_str() != metadata.verified_digest().0

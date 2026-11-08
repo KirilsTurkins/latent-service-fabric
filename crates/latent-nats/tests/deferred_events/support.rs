@@ -384,6 +384,14 @@ pub struct Fixture {
 
 impl Fixture {
     pub async fn new(config: NatsConfig, qualification: JetStreamQualification) -> Self {
+        Self::with_authorization(config, qualification, None).await
+    }
+
+    pub async fn with_authorization(
+        config: NatsConfig,
+        qualification: JetStreamQualification,
+        authorization: Option<Arc<dyn latent_nats::deferred::DeferredEventAuthorization>>,
+    ) -> Self {
         let base = std::env::var_os("LATENT_STATE_TEST_ROOT")
             .map_or_else(std::env::temp_dir, PathBuf::from);
         let root = tempfile::tempdir_in(base).unwrap();
@@ -413,11 +421,13 @@ impl Fixture {
         )
         .unwrap();
         let clock = Arc::new(Clock(AtomicU64::new(100)));
-        let adapter = Arc::new(
-            publisher
-                .deferred_adapter("tests", "updated", qualification, clock.clone())
-                .unwrap(),
-        );
+        let mut adapter = publisher
+            .deferred_adapter("tests", "updated", qualification, clock.clone())
+            .unwrap();
+        if let Some(authorization) = authorization {
+            adapter = adapter.with_authorization(authorization);
+        }
+        let adapter = Arc::new(adapter);
         let authority = EffectAuthorityOwner::new(16, 8, 100).unwrap();
         let rule = adapter
             .rule(
