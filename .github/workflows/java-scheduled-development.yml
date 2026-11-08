@@ -37,4 +37,4 @@ permissions:
   actions: read
 jobs:
   scheduled-library:
-    uses: ./.github/workflows/java-scheduled-library.yml
+    uses: $/.github/workflows/java-scheduled-library.yml
