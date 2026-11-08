@@ -190,7 +190,7 @@ internal sealed class ManagedWorkCopy
                 methodNames.Add(method.FullName, result);
             }
         }
-        Need(methods.Count is >= 24 and <= 67 && fields.Count is >= 24 and <= 64);
+        Need(methods.Count is >= 24 and <= 69 && fields.Count is >= 24 and <= 64);
         foreach (var (original, copied) in methods)
         {
             if (!original.HasBody)

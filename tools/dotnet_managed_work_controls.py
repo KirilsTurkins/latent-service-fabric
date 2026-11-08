@@ -27,6 +27,8 @@ BRIDGE_CASES = tuple((kind, mode) for kind in (0, 3, 5, 6, 7)
 SETTLEMENT_CASES = ('dequeue-settlement-refusal-retains-owner',)
 QUEUE_SETTLEMENT_CASES = (
     'queue-dequeue-refusal-prevents-retry', 'queue-dequeue-unknown-prevents-retry')
+INLINE_QUEUE_SETTLEMENT_CASES = ('inline-pop-ack-refused', 'inline-pop-ack-unknown')
+INLINE_OWNER_SETTLEMENT_CASES = ('inline-pop-owner-settlement-refused', 'inline-pop-owner-settlement-unknown')
 ROLLBACK_SETTLEMENT_CASES = (
     'queue-before-insertion-refusal-retains-owner', 'queue-before-insertion-unknown-retains-owner')
 OWNER_SETTLEMENT_CASES = (
@@ -139,6 +141,10 @@ CASES = (
     'multiple-unwrap-first-completes-before-pending', 'multiple-unwrap-second-completes-before-pending',
     'multiple-unwrap-required-capacity',
     'successful-unwrap-releases-capacity', 'inline-pop-retains-unwrap-owner',
+    'inline-pop-original-owner-must-survive-frame', 'inline-pop-false-preserves-normal-dequeue',
+    'inline-pop-exception-retains-frame', *INLINE_QUEUE_SETTLEMENT_CASES, *INLINE_OWNER_SETTLEMENT_CASES,
+    'inline-pop-reentrant-fences-same-task', 'inline-pop-reentrant-normal-dequeue',
+    'inline-pop-reset-fenced-retains-uncertainty', 'inline-pop-required-continuation-keeps-parent-frame',
     'dispatch-reset-early-exposes-capacity', 'dispatch-reset-retains-owner',
     'dispatch-reset-nested-frame-identity', 'dispatch-reset-transition-preserves-queued-work',
     'dispatch-reset-null-context-refused',
@@ -204,6 +210,13 @@ def verify(dotnet: Path, output: Path) -> dict:
             'actualClrTasks': True, 'guestQualified': False}
         if name == 'multiple-fault-conversions-retain-distinct-tokens':
             expected.update(settlementRefusals=2, retainedTasks=3, retainedResults=2, rootSuccess=False)
+        elif name in INLINE_QUEUE_SETTLEMENT_CASES:
+            expected.update(settlementRefusals=1, retainedTasks=2,
+                            retainedQueuedOwners=0 if name.endswith('unknown') else 1,
+                            controlDispatches=0, automaticRetries=0, rootSuccess=False)
+        elif name in INLINE_OWNER_SETTLEMENT_CASES:
+            expected.update(settlementRefusals=1, retainedTasks=1 if name.endswith('unknown') else 2,
+                            retainedQueuedOwners=0, controlDispatches=0, automaticRetries=0, rootSuccess=False)
         elif name in SETTLEMENT_CASES:
             expected.update(settlementRefusals=1, retainedTasks=2, retainedQueuedOwners=1,
                             controlDispatches=0, automaticRetries=0, rootSuccess=False)
