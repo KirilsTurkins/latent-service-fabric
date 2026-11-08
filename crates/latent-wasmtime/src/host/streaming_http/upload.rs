@@ -4,13 +4,36 @@ use super::{
     HostState, HttpError, Instant, Kind, Resource, StreamingHttpInvoker, Value,
 };
 
+use wasmtime::component::{Accessor, InlineConcurrentHost};
+
 pub(super) fn open(
     host: &mut wasmtime::component::LinkerInstance<'_, HostState>,
     invoker: Arc<dyn StreamingHttpInvoker>,
 ) -> wasmtime::Result<()> {
-    host.func_wrap_concurrent("open", move |access, (request,): (wit::Request,)| {
-        let invoker = Arc::clone(&invoker);
-        Box::pin(async move {
+    host.func_wrap_concurrent_inline("open", Open { invoker })?;
+    Ok(())
+}
+
+struct Open {
+    invoker: Arc<dyn StreamingHttpInvoker>,
+}
+impl
+    InlineConcurrentHost<
+        HostState,
+        (wit::Request,),
+        (Result<Resource<wit::Upload>, wit::HttpError>,),
+    > for Open
+{
+    fn invoke<'a>(
+        &'a self,
+        access: &'a Accessor<HostState>,
+        (request,): (wit::Request,),
+    ) -> impl std::future::Future<
+        Output = wasmtime::Result<(Result<Resource<wit::Upload>, wit::HttpError>,)>,
+    > + Send
+           + 'a {
+        let invoker = Arc::clone(&self.invoker);
+        async move {
             let started = Instant::now();
             let opening = access.with(|mut access| {
                 let mut store = access.as_context_mut();
@@ -65,66 +88,92 @@ pub(super) fn open(
                 store.data_mut().record_host_call(started);
                 Ok((result.map_err(convert_error),))
             })
-        })
-    })?;
-    Ok(())
+        }
+    }
 }
 
 pub(super) fn write(
     host: &mut wasmtime::component::LinkerInstance<'_, HostState>,
 ) -> wasmtime::Result<()> {
-    host.func_wrap_concurrent(
-        "write",
-        |access, (target, bytes): (Resource<wit::Upload>, Vec<u8>)| {
-            Box::pin(async move {
-                let started = Instant::now();
-                let rep = target.rep();
-                let upload = access.with(|mut access| {
-                    let mut store = access.as_context_mut();
-                    checkpoint(&mut store)?;
-                    let value =
-                        store
-                            .data_mut()
-                            .capabilities
-                            .streams
-                            .take(rep, Kind::Upload, false);
-                    synchronize(&mut store)?;
-                    Ok::<_, wasmtime::Error>(value)
-                })?;
-                let result = match upload {
-                    Ok(Value::Upload(mut upload)) => {
-                        let result = upload.write(bytes).await;
-                        Ok((upload, result))
-                    }
-                    Ok(_) => return Err(trap(Error::InvalidState)),
-                    Err(error) => Err(error),
-                };
-                access.with(|mut access| {
-                    let mut store = access.as_context_mut();
-                    checkpoint(&mut store)?;
-                    let result = result.and_then(|(upload, result)| {
-                        store.data_mut().capabilities.streams.put(
-                            rep,
-                            Kind::Upload,
-                            Value::Upload(upload),
-                        )?;
-                        result
-                    });
-                    synchronize(&mut store)?;
-                    store.data_mut().record_host_call(started);
-                    Ok((result.map_err(convert_error),))
-                })
-            })
-        },
-    )?;
+    host.func_wrap_concurrent_inline("write", Write)?;
     Ok(())
+}
+
+struct Write;
+impl
+    InlineConcurrentHost<HostState, (Resource<wit::Upload>, Vec<u8>), (Result<(), wit::HttpError>,)>
+    for Write
+{
+    fn invoke<'a>(
+        &'a self,
+        access: &'a Accessor<HostState>,
+        (target, bytes): (Resource<wit::Upload>, Vec<u8>),
+    ) -> impl std::future::Future<Output = wasmtime::Result<(Result<(), wit::HttpError>,)>> + Send + 'a
+    {
+        async move {
+            let started = Instant::now();
+            let rep = target.rep();
+            let upload = access.with(|mut access| {
+                let mut store = access.as_context_mut();
+                checkpoint(&mut store)?;
+                let value = store
+                    .data_mut()
+                    .capabilities
+                    .streams
+                    .take(rep, Kind::Upload, false);
+                synchronize(&mut store)?;
+                Ok::<_, wasmtime::Error>(value)
+            })?;
+            let result = match upload {
+                Ok(Value::Upload(mut upload)) => {
+                    let result = upload.write(bytes).await;
+                    Ok((upload, result))
+                }
+                Ok(_) => return Err(trap(Error::InvalidState)),
+                Err(error) => Err(error),
+            };
+            access.with(|mut access| {
+                let mut store = access.as_context_mut();
+                checkpoint(&mut store)?;
+                let result = result.and_then(|(upload, result)| {
+                    store.data_mut().capabilities.streams.put(
+                        rep,
+                        Kind::Upload,
+                        Value::Upload(upload),
+                    )?;
+                    result
+                });
+                synchronize(&mut store)?;
+                store.data_mut().record_host_call(started);
+                Ok((result.map_err(convert_error),))
+            })
+        }
+    }
 }
 
 pub(super) fn finish(
     host: &mut wasmtime::component::LinkerInstance<'_, HostState>,
 ) -> wasmtime::Result<()> {
-    host.func_wrap_concurrent("finish", |access, (target,): (Resource<wit::Upload>,)| {
-        Box::pin(async move {
+    host.func_wrap_concurrent_inline("finish", Finish)?;
+    Ok(())
+}
+
+struct Finish;
+impl
+    InlineConcurrentHost<
+        HostState,
+        (Resource<wit::Upload>,),
+        (Result<wit::Response, wit::HttpError>,),
+    > for Finish
+{
+    fn invoke<'a>(
+        &'a self,
+        access: &'a Accessor<HostState>,
+        (target,): (Resource<wit::Upload>,),
+    ) -> impl std::future::Future<Output = wasmtime::Result<(Result<wit::Response, wit::HttpError>,)>>
+           + Send
+           + 'a {
+        async move {
             let started = Instant::now();
             let upload = access.with(|mut access| {
                 let mut store = access.as_context_mut();
@@ -176,31 +225,39 @@ pub(super) fn finish(
                 store.data_mut().record_host_call(started);
                 Ok((result.map_err(convert_error),))
             })
-        })
-    })?;
-    Ok(())
+        }
+    }
 }
 
 pub(super) fn abort_upload(
     host: &mut wasmtime::component::LinkerInstance<'_, HostState>,
 ) -> wasmtime::Result<()> {
-    host.func_wrap_concurrent(
-        "abort-upload",
-        |access, (target,): (Resource<wit::Upload>,)| {
-            Box::pin(async move {
-                access.with(|mut access| {
-                    let mut store = access.as_context_mut();
-                    let result = store
-                        .data_mut()
-                        .capabilities
-                        .streams
-                        .remove(target.rep(), Kind::Upload);
-                    checkpoint(&mut store)?;
-                    synchronize(&mut store)?;
-                    Ok((result.map_err(convert_error),))
-                })
-            })
-        },
-    )?;
+    host.func_wrap_concurrent_inline("abort-upload", AbortUpload)?;
     Ok(())
+}
+
+struct AbortUpload;
+impl InlineConcurrentHost<HostState, (Resource<wit::Upload>,), (Result<(), wit::HttpError>,)>
+    for AbortUpload
+{
+    fn invoke<'a>(
+        &'a self,
+        access: &'a Accessor<HostState>,
+        (target,): (Resource<wit::Upload>,),
+    ) -> impl std::future::Future<Output = wasmtime::Result<(Result<(), wit::HttpError>,)>> + Send + 'a
+    {
+        async move {
+            access.with(|mut access| {
+                let mut store = access.as_context_mut();
+                let result = store
+                    .data_mut()
+                    .capabilities
+                    .streams
+                    .remove(target.rep(), Kind::Upload);
+                checkpoint(&mut store)?;
+                synchronize(&mut store)?;
+                Ok((result.map_err(convert_error),))
+            })
+        }
+    }
 }
