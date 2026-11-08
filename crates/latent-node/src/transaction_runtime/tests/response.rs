@@ -169,6 +169,64 @@ async fn original_response_permission_survives_commit_and_freeze_but_not_policy_
 }
 
 #[tokio::test]
+async fn query_view_rechecks_revoked_policy_on_later_reads() {
+    let fixture = Fixture::new().await;
+    let (admission, envelope, budget) = fixture.invocation(true, "query-live-policy-revocation");
+    let guest = admission.admit(&envelope, &budget).await.unwrap();
+    guest.acquire(Mode::Query).unwrap();
+    assert!(guest.read(b"missing".to_vec()).await.unwrap().is_none());
+    fixture.revoke();
+    assert_eq!(
+        guest.read(b"missing".to_vec()).await,
+        Err(StateFailure::PermissionDenied)
+    );
+    let TransactionAdmissionResult::Query { host } = admission.take_result().unwrap().unwrap()
+    else {
+        panic!("query host absent")
+    };
+    host.finish_guest_access();
+    host.retire().await.unwrap();
+    drop((guest, host, admission));
+    assert_eq!(fixture.rows(Family::Command).await, 0);
+    assert_eq!(fixture.rows(Family::Outbox).await, 0);
+    assert!(fixture.native.snapshot().unwrap().physically_retired());
+    fixture.shutdown().await;
+}
+
+#[tokio::test]
+async fn query_response_revocation_denies_delivery_until_its_owner_retires() {
+    let fixture = Fixture::new().await;
+    let (admission, envelope, budget) = fixture.invocation(true, "query-policy-revocation");
+    let guest = admission.admit(&envelope, &budget).await.unwrap();
+    guest.acquire(Mode::Query).unwrap();
+    assert!(guest.read(b"missing".to_vec()).await.unwrap().is_none());
+    guest.finish_guest_access();
+    let _ = budget.finalize_at(None, std::time::Instant::now());
+    let outcome = admission
+        .complete(
+            success(b"query"),
+            fixture.commit_control(&envelope, &budget),
+        )
+        .await;
+    assert!(matches!(outcome, ActivationOutcome::Succeeded(_)));
+    let response = admission.take_owned_completion().unwrap().unwrap();
+    drop((guest, admission));
+    response.authority.with_current(&mut || ()).unwrap();
+    fixture.revoke();
+    assert!(response
+        .authority
+        .with_current(&mut || panic!("revoked query data must not be delivered"))
+        .is_err());
+    assert_eq!(fixture.rows(Family::Command).await, 0);
+    assert_eq!(fixture.rows(Family::Result).await, 0);
+    assert_eq!(fixture.rows(Family::Outbox).await, 0);
+    assert_eq!(fixture.native.snapshot().unwrap().ordinary.slots, 1);
+    drop(response);
+    assert!(fixture.native.snapshot().unwrap().physically_retired());
+    fixture.shutdown().await;
+}
+
+#[tokio::test]
 async fn query_response_keeps_original_read_permission_and_global_frame_charge() {
     let fixture = Fixture::new().await;
     let (admission, envelope, budget) = fixture.invocation(true, "retained-query");
