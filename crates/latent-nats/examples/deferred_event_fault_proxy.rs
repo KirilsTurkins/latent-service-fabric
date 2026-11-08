@@ -90,6 +90,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // sentinel. A finite deadline prevents an abandoned fixture from persisting.
     let mut observed = false;
     let mut released = false;
+    let mut forwarded = false;
     for _ in 0..15000 {
         if output.join("stop").is_file() {
             fixture.close().await;
@@ -100,6 +101,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let name = if hold { "ack-held" } else { "ack-dropped" };
                 fs::OpenOptions::new().write(true).create_new(true).open(output.join(name))?;
                 observed = true;
+            }
+            () = fixture.forwarded.notified(), if hold && !forwarded => {
+                fs::OpenOptions::new().write(true).create_new(true).open(output.join("ack-forwarded"))?;
+                forwarded = true;
             }
             () = tokio::time::sleep(Duration::from_millis(100)) => {}
         }
