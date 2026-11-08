@@ -75,51 +75,13 @@ unsafe impl wasmtime::MemoryCreator for RefusingCreator {
         Err("native-linear-original-creator-refusal".into())
     }
 }'''
-# The existing Go overlap test observes actual deallocation before refund.
-# Bind its entire test-module opening, imports, const thread-local bookkeeping,
-# and sole GlobalAlloc impl. It forwards unchanged pointers/layouts to System;
-# post-deallocation observation uses only Copy integers/bools and Cell, with
-# try_with tolerating thread-local teardown. No allocation, dereference, panic,
-# or owner refund occurs in this observer. The cfg(test) fence is part of the
-# exact exception, not inferred from the filename. All following code is still
-# scanned, and copying this allocator to another path grants no exception.
-TIMER_ALLOCATOR_TEST = f"{CRATE}/src/development_go_timer_overlap.rs"
-TIMER_ALLOCATOR_TEST_PREFIX = '''#[cfg(test)]
-mod tests {
-    use super::*;
-    use latent_core::{BudgetProfile, ClockSample, EffectiveActivationBudget, ResourceBudget};
-    use latent_executor::OwnedPreparationWait;
-    use std::{
-        alloc::{GlobalAlloc, System},
-        cell::Cell,
-        future::Future,
-        task::{Context, Waker},
-    };
-
-    // Test-controller bookkeeping only: an immutable allocator delegates to
-    // System, while each test thread tracks just its two exact Arc pointers.
-    // It is not part of the activation witness or any non-test binary.
-    struct WatchingAllocator;
-    #[derive(Clone, Copy, Default)]
-    struct Watch {
-        payload: usize,
-        billing: usize,
-        payload_freed: bool,
-        billing_freed: bool,
-        before_refund: bool,
-    }
-    thread_local! {
-        static WATCH: Cell<Watch> = const { Cell::new(Watch {
-            payload: 0, billing: 0, payload_freed: false,
-            billing_freed: false, before_refund: false,
-        }) };
-    }
-    #[global_allocator]
-    static ALLOCATOR: WatchingAllocator = WatchingAllocator;
-    // SAFETY: allocation and deallocation are delegated with the unchanged
-    // pointer/layout to System. The observer stores integer addresses only;
-    // it never dereferences or changes the allocator's storage.
-    #[allow(unsafe_code, reason = "test-only exact allocator-release observation")]
+# Exact test-only allocator for the Go overlap physical-release observation.
+# Authenticate the entire source, including the cfg(test) module, then strip
+# only the reviewed item; every other unsafe site remains subject to the scan.
+GO_OVERLAP_TEST = f"{CRATE}/src/development_go_timer_overlap.rs"
+GO_OVERLAP_TEST_MARKER = '#[cfg(test)]\nmod tests {\n'
+GO_OVERLAP_TEST_SHA256 = "bab2eaa593d4301fd638fd631776cb91cf8808103cbdb067ae54ee150216abf6"
+GO_OVERLAP_TEST_ALLOCATOR = '''    #[allow(unsafe_code, reason = "test-only exact allocator-release observation")]
     unsafe impl GlobalAlloc for WatchingAllocator {
         unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
             unsafe { System.alloc(layout) }
@@ -137,8 +99,7 @@ mod tests {
                 cell.set(watch);
             });
         }
-    }
-'''
+    }'''
 # This third exception only allocates and unmaps guarded activation stacks through
 # Wasmtime's pinned public StackCreator interface. Original activation Native
 # and memory admission precede mapping; actual successful munmap precedes refund.
@@ -245,16 +206,18 @@ def validate(root: Path) -> list[str]:
                 errors.append("audited stream-copy lowering changed; review pinned ABI and physical copy ownership")
             else:
                 source = ""
-        elif relative == TIMER_ALLOCATOR_TEST:
-            if source.count(TIMER_ALLOCATOR_TEST_PREFIX) != 1:
-                errors.append("audited timer test allocator changed; review its test-only fence and System delegation")
-            else:
-                source = source.replace(TIMER_ALLOCATOR_TEST_PREFIX, "", 1)
         elif relative == REFUSING_CREATOR_TEST:
             if source.count(REFUSING_CREATOR_IMPL) != 1:
                 errors.append("audited refusing memory creator test changed; review its sole always-error trait item")
             else:
                 source = source.replace(REFUSING_CREATOR_IMPL, "", 1)
+        elif relative == GO_OVERLAP_TEST:
+            if (source.count(GO_OVERLAP_TEST_MARKER) != 1
+                    or hashlib.sha256(source.encode("utf-8")).hexdigest() != GO_OVERLAP_TEST_SHA256
+                    or source.count(GO_OVERLAP_TEST_ALLOCATOR) != 1):
+                errors.append("audited Go overlap test allocator changed; review its cfg(test) scope and physical release witness")
+            else:
+                source = source.replace(GO_OVERLAP_TEST_ALLOCATOR, "", 1)
         elif relative == NATIVE_STACK:
             if hashlib.sha256(source.encode("utf-8")).hexdigest() != NATIVE_STACK_SHA256:
                 errors.append("audited native-stack allocator changed; review original admission and physical unmapping")
