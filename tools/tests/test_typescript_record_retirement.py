@@ -124,9 +124,9 @@ class SubtaskStartUncertaintyTests(unittest.TestCase):
     def setUpClass(cls):
         compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++')
         if compiler is None:
-            if os.name == 'nt':
-                raise unittest.SkipTest('Set LSF_TYPESCRIPT_RECORD_CXX for the finite C++ reference')
-            raise RuntimeError('C++ compiler is required for subtask-start controls')
+            # Reuse the established Windows skip / other-platform failure path.
+            TimerSetupRetirementTests.setUpClass.__func__(cls)
+            raise RuntimeError('compiler selection changed during setup')
         cls.temporary = tempfile.TemporaryDirectory()
         cls.addClassCleanup(cls.temporary.cleanup)
         output = Path(cls.temporary.name)
