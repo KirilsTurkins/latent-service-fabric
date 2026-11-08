@@ -45,7 +45,8 @@ public static partial class ManagedWorkRuntime
         internal Record Owner = null!;
         internal (ulong Generation, ulong Id) Token;
         internal Queued? ResetPrevious;
-        // Bit 0 fences uncertainty, bit 2 marks an unfinished enqueue, bit 3
+        // Bit 0 fences uncertainty, bit 1 identifies a never-queued frame,
+        // bit 2 marks an unfinished enqueue, bit 3
         // retains the dispatch, bits 4/5 hold reset/entering-reset custody,
         // bit 6 marks an inline scheduler claim before its exact pop,
         // and bit 7 marks an unresolved inline or reset-fenced pop.
@@ -645,7 +646,18 @@ public static partial class ManagedWorkRuntime
             return null;
         }
         if (resetTop is not null && (resetTop.State & 33) != 0)
+        {
+            foreach (var pending in queued!)
+                if (pending is not null && ReferenceEquals(pending.Item, item) && (pending.State & 2) != 0)
+                    pending.State |= 129;
             throw new InvalidOperationException("managed-work-reset-context-unavailable");
+        }
+        foreach (var pending in queued!)
+            if (pending is not null && ReferenceEquals(pending.Item, item) && (pending.State & 2) != 0)
+            {
+                pending.State |= 129;
+                throw new InvalidOperationException("managed-work-inline-physical-dequeue");
+            }
         foreach (var existing in queued!)
             if (existing is not null && ReferenceEquals(existing.Item, item) && (existing.State & 1) != 0)
                 throw new InvalidOperationException("managed-work-queue-uncertain");
@@ -676,7 +688,68 @@ public static partial class ManagedWorkRuntime
     // ordinary TryDequeue path never sets the marker and keeps its old pop.
     public static object? InlineQueued(Task task, bool previouslyQueued)
     {
-        if (!installed || !previouslyQueued) return null;
+        if (!installed) return null;
+        if (!previouslyQueued)
+        {
+            if (resetTop is not null && (resetTop.State & 33) != 0) return null;
+            var owner = Find(task);
+            if (owner is null || admissions == int.MaxValue) return null;
+            admissions++;
+            try
+            {
+                Queued? pending = null;
+                // Allocation can reenter; repeat the exact selection afterward.
+                for (int phase = 0; phase < 2; phase++)
+                {
+                    try
+                    {
+                        var activation = root;
+                        if (!installed || resetTop is not null && (resetTop.State & 33) != 0
+                            || activation is null || !activation.Active || !owner.Active
+                            || owner.Root || owner.Timer || owner.Result || owner.ResultTransition != 0 || task.IsCompleted
+                            || !ReferenceEquals(owner.Primary, task) || !ReferenceEquals(owner.Completion, task)
+                            || !ReferenceEquals(current!.Value, activation)) return null;
+                        // The compiler binds this to a nonvirtual base Task getter
+                        // only for the authenticated sealed continuation type.
+                        var captured = InlineContinuationContext(task);
+                        if (captured is not null && !ReferenceEquals(captured, activation) && !ReferenceEquals(captured, owner)) return null;
+                        if (!installed || resetTop is not null && (resetTop.State & 33) != 0
+                            || !ReferenceEquals(root, activation) || !activation.Active || !owner.Active
+                            || owner.Result || owner.ResultTransition != 0 || task.IsCompleted || !ReferenceEquals(current.Value, activation)
+                            || !ReferenceEquals(Find(task), owner) || !ReferenceEquals(owner.Primary, task)
+                            || !ReferenceEquals(owner.Completion, task)) return null;
+                        foreach (var candidate in records!)
+                            if (candidate is not null && !ReferenceEquals(candidate, owner)
+                                && (ReferenceEquals(candidate.Primary, task) || ReferenceEquals(candidate.Outer, task)
+                                    || ReferenceEquals(candidate.Inner, task))) return null;
+                        foreach (var work in required!)
+                            if (work is not null && ReferenceEquals(work.Task, task)) return null;
+                        bool hasSlot = false;
+                        foreach (var work in queued!)
+                        {
+                            if (work is null) hasSlot = true;
+                            else if (ReferenceEquals(work.Item, task)) return null;
+                        }
+                        if (!hasSlot) return null;
+                    }
+                    catch (Exception) { return null; }
+                    if (phase == 0)
+                    {
+                        try
+                        {
+                            QueueAllocationControl();
+                            pending = new Queued { Item = task, Owner = owner, State = 10 };
+                        }
+                        catch (Exception) { return null; }
+                    }
+                    else
+                        for (int i = 0; i < MaximumQueued; i++)
+                            if (queued![i] is null) { queued[i] = pending; return pending; }
+                }
+                return null;
+            }
+            finally { admissions--; }
+        }
         if (resetTop is not null && (resetTop.State & 33) != 0) return null;
         foreach (var existing in queued!)
             if (existing is not null && ReferenceEquals(existing.Item, task)
@@ -708,6 +781,21 @@ public static partial class ManagedWorkRuntime
         if (pending.State == 64)
         {
             pending.State = returned ? (byte)0 : (byte)193;
+            return;
+        }
+        if (pending.State == 10 && returned)
+        {
+            var owner = pending.Owner;
+            if (!owner.Active || owner.Result)
+            {
+                pending.State |= 129;
+                throw new InvalidOperationException("managed-work-inline-owner");
+            }
+            queued![index] = null;
+            if (!ReferenceEquals(current!.Value, owner) && owner.Completion is { IsCompleted: true }
+                && !HasQueuedOwner(owner) && !HasRequired(owner) && owner.Active && !HasQueuedOwner(owner)
+                && !ReferenceEquals(current.Value, owner))
+                Finish(owner);
             return;
         }
         if (pending.State == 8 && returned)
@@ -1227,6 +1315,7 @@ public static partial class ManagedWorkRuntime
     }
 
     private static partial object? ContextValue(ExecutionContext? context);
+    private static partial object? InlineContinuationContext(Task task);
     private static partial ExecutionContext ContextWithOwner(ExecutionContext? context, object owner);
     private static partial void BindAsyncContext(Task task);
     private static partial bool Maintenance(object item);
