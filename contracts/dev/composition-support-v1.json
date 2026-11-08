@@ -66,8 +66,8 @@
     },
     "resource-budget": {
       "path": "crates/latent-core/src/budget.rs",
-      "digest": "sha256:2ad24947f7f6d0fc778b3ef9a62f5a4d8700bce49c0eeb1cf2f731ef305ae0d7",
-      "commit": "d00433696644d95379cece8f5ff7e2e1ac485e5c"
+      "digest": "sha256:6df0c0da3f53970dc5189430330299da4015b3d0a66047bcc3773e4ca257a844",
+      "commit": "4f7e8b891bc9a294cf162969dfb1b03c8f5c8a29"
     },
     "publication-identity": {
       "path": "crates/latent-core/src/publication.rs",
