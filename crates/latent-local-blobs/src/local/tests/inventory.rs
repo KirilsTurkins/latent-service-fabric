@@ -1,6 +1,31 @@
 use super::*;
 
 #[test]
+fn bounded_reclamation_alternates_between_objects_and_retired_stages() {
+    let root = temporary_root();
+    let owner = store(root.path());
+    let first = put(&owner, b"first");
+    let second = put(&owner, b"second");
+    owner
+        .release_reference(&scope(), &first, &|| Ok(()))
+        .unwrap();
+    owner
+        .release_reference(&scope(), &second, &|| Ok(()))
+        .unwrap();
+    let writer = owner
+        .create(&scope(), "text/plain", Some(1), &|| Ok(()))
+        .unwrap();
+    drop(writer);
+
+    let first_turn = owner.reclaim(1, &|| Ok(())).unwrap();
+    assert_eq!((first_turn.objects, first_turn.stages), (1, 0));
+    let second_turn = owner.reclaim(1, &|| Ok(())).unwrap();
+    assert_eq!((second_turn.objects, second_turn.stages), (0, 1));
+    let third_turn = owner.reclaim(1, &|| Ok(())).unwrap();
+    assert_eq!((third_turn.objects, third_turn.stages), (1, 0));
+}
+
+#[test]
 fn pages_are_tenant_scoped_bounded_and_bound_to_the_original_owner() {
     let root = temporary_root();
     let other_root = temporary_root();
