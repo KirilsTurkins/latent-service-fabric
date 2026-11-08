@@ -252,6 +252,19 @@ fn require_ok(body: &mut Function) {
             Instruction::I32Const(RESULT),
             Instruction::I32Load8U(MemArg { align: 0, ..mem(0) }),
             Instruction::If(BlockType::Empty),
+            // Only the suspended cancellation/revocation scenario intentionally
+            // traps on an operation error. Other setup failures must return a
+            // diagnostic, not satisfy the resource-misuse trap assertions.
+            Instruction::LocalGet(0),
+            Instruction::I32Const(2),
+            Instruction::I32Ne,
+            Instruction::If(BlockType::Empty),
+            Instruction::I32Const(2000),
+            Instruction::I32Const(RESULT),
+            Instruction::I32Load8U(MemArg { align: 0, ..mem(4) }),
+            Instruction::I32Add,
+            Instruction::Return,
+            Instruction::End,
             Instruction::Unreachable,
             Instruction::End,
         ],
@@ -383,7 +396,8 @@ fn caller() -> Module {
             Instruction::I32Const(4),
             Instruction::I32Ne,
             Instruction::If(BlockType::Empty),
-            Instruction::Unreachable,
+            Instruction::I32Const(3000),
+            Instruction::Return,
             Instruction::End,
         ],
     );
@@ -444,7 +458,16 @@ fn caller() -> Module {
             Instruction::I32Const(0),
         ],
     );
-    instructions(&mut body, [Instruction::Unreachable, Instruction::End]);
+    // Returning from the wrong-kind borrow is a failed rejection, including
+    // a catchable error. Only the canonical resource trap can pass the test.
+    instructions(
+        &mut body,
+        [
+            Instruction::I32Const(4005),
+            Instruction::Return,
+            Instruction::End,
+        ],
+    );
     call(&mut body, 7, [Instruction::LocalGet(2)]);
     require_ok(&mut body);
     instructions(
@@ -465,7 +488,8 @@ fn caller() -> Module {
             Instruction::I32Load8U(MemArg { align: 0, ..mem(0) }),
             Instruction::I32Eqz,
             Instruction::If(BlockType::Empty),
-            Instruction::Unreachable,
+            Instruction::I32Const(3001),
+            Instruction::Return,
             Instruction::End,
             Instruction::LocalGet(2),
             Instruction::Call(9),
@@ -478,7 +502,15 @@ fn caller() -> Module {
     require_ok(&mut body);
     mode(&mut body, 6);
     call(&mut body, 6, [Instruction::LocalGet(1)]);
-    instructions(&mut body, [Instruction::Unreachable, Instruction::End]);
+    // Never manufacture the expected trap after a stale handle was accepted.
+    instructions(
+        &mut body,
+        [
+            Instruction::I32Const(4006),
+            Instruction::Return,
+            Instruction::End,
+        ],
+    );
     instructions(&mut body, [Instruction::LocalGet(3), Instruction::End]);
     let mut wait = Function::new([(1, ValType::I32)]);
     instructions(

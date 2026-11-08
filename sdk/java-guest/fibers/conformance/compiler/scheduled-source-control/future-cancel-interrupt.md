@@ -1,7 +1,7 @@
 # FutureTask cancellation after an interrupt failure
 
-This is a focused implementation and host/source regression control for #741,
-not complete Java runtime qualification.
+This is a focused implementation, host/source control and signed-component
+regression fixture for #741, not complete Java runtime qualification.
 
 `FutureTask.cancel(true)` publishes the cancelled state before interrupting the
 physical runner. A custom `Thread.interrupt()` can throw before or after delivery.
@@ -15,13 +15,13 @@ The implementation runs cancellation cleanup in a `finally` block and calls
 running task's Result lease with its physical runner until that runner returns.
 It does not retry a refused or uncertain Result settlement, and preserves the
 existing fence and suppression of application completion hooks in that case.
-No instance fields, explicit allocation sites, capability grants, runtime imports
-or heap limits are added. Compiled continuation layout and physical guest memory
-cost have not been measured.
+No runtime instance fields, explicit allocation sites, capability grants, runtime
+imports or heap limits are added. Compiled continuation layout and physical guest
+memory cost have not been measured.
 
 ## Qualification owner
 
-`tools/qualify_java_fibers.py` runs this matrix inside
+`tools/qualify_java_fibers.py` runs the host matrix inside
 `scheduled_source_control`, after compiling the actual concurrency ports and
 private control sources with the existing `--release 25` recipe. This is part of
 the ordinary thread-fixture preparation in Java guest-authoring CI and the
@@ -45,6 +45,45 @@ signed-node results. All existing scheduled/reference controls remain selected.
 receipt boundaries, malformed or missing output, process-error propagation,
 missing control source, and integration into the existing owner. These Python
 tests inspect the owner; they are not Java execution evidence.
+
+## Signed-component regression
+
+The maintained `fibers/conformance/timers/Capsule.java` now exercises cancellation
+before each mode's original timer work. Its four modes each run two scenarios:
+failure before/after interrupt delivery, RuntimeException/Error identity, a
+throwing completion hook, ordinary interruption, and cancellation without
+interruption. A shared monitor controls callable entry and release. The `done()`
+hook waits for a real sibling to observe the cancelled result before it returns
+or throws. The physical callable remains held until the cancellation checks
+finish, then its `finally` and both joined threads are required to complete.
+
+The getter-start signal does not claim that `get()` is already parked: early
+cancellation is a permitted race. The separate host control uses actual
+`Thread.State.WAITING` to establish the already-blocked-getter case. The guest
+fixture uses neither `Thread.getState`, sleeps, yield-count witnesses, nor a
+private ledger. Failure cleanup releases the callable and interrupts an old
+unnotified getter before joining it.
+
+Both probe threads finish before timer workers are created. The original timer
+checks, four-mode schedule, activation deadlines, fuel, memory and owner limits
+remain unchanged. The frozen original thread fixture and retained compiler
+identities are not modified. No new workflow, compiler installation, or test
+selector is required: normal Java guest authoring prepares `--fixture timers`
+and runs `runtime::signed_java_standard_timers_recur_cancel_and_drain_owned_workers`.
+The existing harness compares the actual application bytes and component/source
+digests before admission and checks physical idle counters after each signed call.
+
+Preparation compiles the same ordinary application for the reference JDK and
+TeaVM; no import mapping or host-control binding enters the component. The
+existing Timer source-model owner maps only Timer/TimerTask, so its FutureTask
+calls use the reference JDK. SDK FutureTask behavior is established separately
+by the cancellation source matrix and a host-only mapping of the application
+for local regression checks, not inferred from the Timer ledger.
+
+`tools/tests/test_java_future_cancel_guest.py` verifies identical application
+handoff to both compiler boundaries, refusal of a failed reference result, and
+the existing signed workflow and retained-source paths. These are selection
+tests, not evidence that Java, TeaVM, or a signed component executed.
 
 ## Host/source control
 
@@ -107,8 +146,18 @@ That run used OpenJDK 21.0.12.1 with an explicitly recorded local adapter changi
 only the requested javac release from 25 to 21. The repository recipe remains
 `--release 25`; the local adapter is not part of the implementation or CI.
 
-Owner integration does not establish a pinned JDK 25 or signed TeaVM result.
-Current-head hosted compiler/model and signed regression execution remain
-required, and these precise exceptional-interrupt scenarios have only
-host/source evidence. The issue's checkpoint, aggregate-accounting, networking
-and full qualification requirements remain open.
+An independent PR #1833 observation on head `b05d056` reports all 24 source/JDK
+cases passing on Windows with Temurin `25.0.4.1+1` and verified input blobs. This
+is a host observation, not the Linux workflow's exact JDK build or guest evidence.
+
+The expanded timer application passed three fresh reference-JDK processes and
+three with only its FutureTask import mapped to the actual SDK source. The exact
+original FutureTask source fails the same application before any timer work.
+The existing 24-case cancellation matrix and Timer source-model owner also pass.
+These local runs used OpenJDK 21.0.12.1; the Timer owner's release-25 request was
+explicitly adapted to release 21 locally, without changing the repository recipe.
+
+The selected guest regression still requires current-head TeaVM compilation and
+signed execution. Neither source tests nor workflow-selection tests establish
+that outcome. The issue's checkpoint, aggregate-accounting, physical-cost,
+networking and full qualification requirements remain open.

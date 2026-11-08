@@ -3,7 +3,7 @@ name: Signed current-source C once interleaving
 on:
   workflow_dispatch:
   push:
-    branches: [development]
+    branches: [development, feat/c-root-drain-signed-20261108]
     paths:
       - '.cargo/config.toml'
       - '.github/workflows/c-once-runtime.yml'
@@ -64,6 +64,7 @@ on:
       - 'tools/dev_workflow/transaction_binding.py'
       - 'tools/dev_workflow/windows.py'
       - 'tools/fixtures/c-once-runtime/main.c'
+      - 'tools/fixtures/c-once-runtime/root-drain.h'
       - 'tools/fixtures/c-thread-runtime/main.c'
       - 'tools/fixtures/c-thread-runtime/synchronization.h'
       - 'tools/fixtures/c-thread-runtime/world.wit'
@@ -153,7 +154,7 @@ env:
 
 jobs:
   once:
-    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/development' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/feat/c-root-drain-signed-20261108') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     name: Current-source signed ordinary C once interleaving
     runs-on: ubuntu-24.04
     timeout-minutes: 25
@@ -195,7 +196,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes bubblewrap
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
-      - name: Build current products and qualify two signed once activations
+      - name: Build current products and qualify signed once and root-drain activations
         run: |
           python3 -B -m unittest tools.tests.test_c_once_runtime
           python3 -B tools/qualify_c_once_runtime.py --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-once-runtime"
