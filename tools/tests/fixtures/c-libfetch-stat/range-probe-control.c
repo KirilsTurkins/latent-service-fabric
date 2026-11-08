@@ -6,9 +6,9 @@
 #include <fetch.h>
 #include "lsf/streaming.h"
 
-static int status, aborts;
-static bool deny;
-static const char *payload;
+static int status, aborts, reads;
+static bool deny, expect_range;
+static const char *payload, *reply_range, *reply_length;
 static size_t position, chunk_length;
 
 void probe_string_free(probe_string_t *value) { free(value->ptr); value->ptr = NULL; value->len = 0; }
@@ -27,7 +27,7 @@ bool latent_http_streaming_open(const latent_http_streaming_request_t *request, 
             found = true;
         }
     }
-    assert(found);
+    assert(found == expect_range);
     if (deny) { error->tag = LATENT_HTTP_STREAMING_HTTP_ERROR_PERMISSION_DENIED; return false; }
     *out = 17; return true;
 }
@@ -43,12 +43,12 @@ bool latent_http_streaming_finish(int upload, response *out, http_error *error) 
     (void)error; assert(upload == 17); out->status = status; out->body = 23;
     out->headers.len = status == 206 ? 2 : 1;
     out->headers.ptr = calloc(out->headers.len, sizeof(*out->headers.ptr)); assert(out->headers.ptr);
-    header(&out->headers.ptr[0], "Content-Length", status == 206 ? "5" : "10");
-    if (status == 206) header(&out->headers.ptr[1], "Content-Range", "bytes 5-9/10");
+    header(&out->headers.ptr[0], "Content-Length", reply_length);
+    if (status == 206) header(&out->headers.ptr[1], "Content-Range", reply_range);
     return true;
 }
 bool latent_http_streaming_read(int body, uint32_t maximum, optional_chunk *out, http_error *error) {
-    (void)error; assert(body == 23); size_t left = strlen(payload) - position;
+    (void)error; assert(body == 23); ++reads; size_t left = strlen(payload) - position;
     chunk_length = left < maximum ? left : maximum; out->is_some = chunk_length != 0; out->val = 31;
     return true;
 }
@@ -76,13 +76,19 @@ static void call(const char *mode, const char *expected, bool succeeds) {
 }
 int main(void) {
     char expected[128];
-    status = 206; payload = "fghij"; position = aborts = 0; deny = false;
+    status = 206; payload = "fghij"; position = aborts = reads = 0; deny = false; expect_range = true;
+    reply_length = "5"; reply_range = "bytes 5-9/10";
     snprintf(expected, sizeof(expected), "5:5:10:5:%u", (unsigned)checksum(payload));
     call("range", expected, true); assert(aborts == 1);
-    status = 200; payload = "abcdefghij"; position = aborts = 0;
+    status = 200; payload = "abcdefghij"; position = aborts = reads = 0; reply_length = "10";
     snprintf(expected, sizeof(expected), "0:10:10:10:%u", (unsigned)checksum(payload));
     call("range-ignored", expected, true); assert(aborts == 1);
-    deny = true; position = aborts = 0;
-    call("range-denied", "permission-denied", false); assert(aborts == 0);
+    deny = true; position = aborts = reads = 0;
+    call("range-denied", "permission-denied", false); assert(aborts == 0 && reads == 0);
+    deny = false; status = 206; payload = "abcd"; position = aborts = reads = 0;
+    expect_range = false; reply_length = "4"; reply_range = "bytes 0-3/*";
+    call("range-unsolicited", "invalid-content-range", false); assert(aborts == 1 && reads == 0);
+    position = aborts = reads = 0; expect_range = true; reply_range = "bytes 0-3/4";
+    call("range-before", "invalid-content-range", false); assert(aborts == 1 && reads == 0);
     puts("C signed Range fixture source controls passed (fake HTTP ports)");
 }
