@@ -75,6 +75,20 @@ internal sealed class ManagedWorkHooks
         il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Call, task.Methods.Single(method => method.Name == "get_CapturedContext"));
         il.Emit(OpCodes.Ret);
 
+        // The normal synchronous ContinueWith producer is this exact sealed
+        // CoreLib type. Read the same nonvirtual Task context that its original
+        // ExecuteWithThreadLocal uses; every other Task keeps the old path.
+        var continuationTask = Type("System.Threading.Tasks.ContinuationTaskFromTask");
+        Need(continuationTask.IsSealed && continuationTask.BaseType.FullName == task.FullName);
+        var inlineContext = Hook("InlineContinuationContext");
+        inlineContext.Body = new MethodBody(inlineContext);
+        il = inlineContext.Body.GetILProcessor();
+        var selected = Instruction.Create(OpCodes.Ldarg_0);
+        il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Isinst, continuationTask); il.Emit(OpCodes.Brtrue, selected);
+        il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Ret);
+        il.Append(selected); il.Emit(OpCodes.Call, task.Methods.Single(method => method.Name == "get_CapturedContext"));
+        il.Emit(OpCodes.Call, Hook("ContextValue")); il.Emit(OpCodes.Ret);
+
         var bind = New(task, "LsfBindWorkContext", module.TypeSystem.Void,
             MethodAttributes.Assembly | MethodAttributes.Virtual | MethodAttributes.NewSlot, context);
         il = bind.Body.GetILProcessor();
