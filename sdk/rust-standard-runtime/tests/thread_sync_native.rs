@@ -28,6 +28,7 @@ pub mod sys {
                     live: RefCell<BTreeMap<Token, Option<*mut Node>>>,
                     timers: RefCell<BTreeSet<Token>>,
                     last_timeout: Cell<Option<Duration>>,
+                    timed_durations: RefCell<Vec<Duration>>,
                     on_admit: RefCell<Option<Box<dyn FnOnce()>>>,
                     on_wait: RefCell<Option<Box<dyn FnOnce()>>>,
                     on_wake: RefCell<Option<Box<dyn FnOnce()>>>,
@@ -40,6 +41,7 @@ pub mod sys {
                             u64::try_from(duration.as_nanos())
                                 .expect("std timeout exceeds the supported monotonic range");
                             PORTS.with(|p| p.last_timeout.set(Some(duration)));
+                            PORTS.with(|p| p.timed_durations.borrow_mut().push(duration));
                         }
                         let token = PORTS.with(|p| {
                             let id = p.next.get() + 1; p.next.set(id);
@@ -66,6 +68,7 @@ pub mod sys {
                 pub fn index(index: u32) { PORTS.with(|p| p.index.set(index)); }
                 pub fn live() -> usize { PORTS.with(|p| p.live.borrow().len()) }
                 pub fn last_timeout() -> Option<Duration> { PORTS.with(|p| p.last_timeout.get()) }
+                pub fn timed_durations() -> Vec<Duration> { PORTS.with(|p| p.timed_durations.borrow().clone()) }
                 pub fn on_admit(f: impl FnOnce() + 'static) { PORTS.with(|p| *p.on_admit.borrow_mut() = Some(Box::new(f))); }
                 pub fn on_wait(f: impl FnOnce() + 'static) { PORTS.with(|p| *p.on_wait.borrow_mut() = Some(Box::new(f))); }
                 pub fn on_wake(f: impl FnOnce() + 'static) { PORTS.with(|p| *p.on_wake.borrow_mut() = Some(Box::new(f))); }
@@ -277,5 +280,49 @@ fn large_timeout_never_fabricates_a_wake_without_timer_readiness() {
         unsafe { pinned.park_timeout(time::Duration::MAX); }
     }));
     assert!(result.is_err(), "missing readiness is not a spurious successful timer");
+    assert_eq!(runtime::live(), 0);
+}
+
+#[test]
+fn long_sleep_waits_for_every_real_bounded_timer() {
+    runtime::index(1);
+    let maximum = time::Duration::from_nanos(u64::MAX);
+    runtime::on_wait(|| {
+        runtime::expire_one_live_timer();
+        runtime::on_wait(runtime::expire_one_live_timer);
+        runtime::on_admit(|| assert_eq!(runtime::live(), 1, "prior Wait retired before next admission"));
+    });
+    wait::sleep(maximum + time::Duration::from_nanos(1));
+    assert_eq!(runtime::timed_durations(), [maximum, time::Duration::from_nanos(1)]);
+    assert_eq!(runtime::live(), 0);
+}
+
+#[test]
+fn long_sleep_does_not_return_when_a_later_chunk_lacks_readiness() {
+    runtime::index(1);
+    let maximum = time::Duration::from_nanos(u64::MAX);
+    runtime::on_wait(runtime::expire_one_live_timer);
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        wait::sleep(maximum + time::Duration::from_nanos(1));
+    }));
+    assert!(result.is_err(), "earlier timer readiness must not complete the whole sleep");
+    assert_eq!(runtime::timed_durations(), [maximum, time::Duration::from_nanos(1)]);
+    assert_eq!(runtime::live(), 0);
+}
+
+#[test]
+fn zero_sleep_does_not_admit_a_timer() {
+    runtime::index(1);
+    wait::sleep(time::Duration::ZERO);
+    assert!(runtime::timed_durations().is_empty());
+    assert_eq!(runtime::live(), 0);
+}
+
+#[test]
+fn ordinary_short_sleep_uses_one_exact_timer() {
+    runtime::index(1); runtime::on_wait(runtime::expire_one_live_timer);
+    let duration = time::Duration::from_nanos(1);
+    wait::sleep(duration);
+    assert_eq!(runtime::timed_durations(), [duration]);
     assert_eq!(runtime::live(), 0);
 }

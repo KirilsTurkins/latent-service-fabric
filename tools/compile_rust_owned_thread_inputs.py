@@ -199,11 +199,11 @@ def run(output, rust_bin, expected_head, *, application_diagnostic=False):
         commands.run('native-sync-build', tools['rustc'], '--edition=2024', '--test',
                      ROOT / NATIVE_SYNC_TEST, '-o', native_sync)
         listed = commands.run('native-sync-list', native_sync, '--list')
-        require(sum(line.endswith(b': test') for line in listed.splitlines()) == 12,
+        require(sum(line.endswith(b': test') for line in listed.splitlines()) == 16,
                 'rust-thread-inputs-native-sync-case-closure')
         commands.run('native-sync-run', native_sync, '--test-threads=1')
         summary['nativeWaitControls'] = 11
-        summary['nativeSyncControls'] = 12
+        summary['nativeSyncControls'] = 16
         summary['stage'] = 'native-executor-root-controls'
         native_root = build_output / 'executor-root-native'
         commands.run('native-executor-root-build', tools['rustc'], '--edition=2024', '--test',
