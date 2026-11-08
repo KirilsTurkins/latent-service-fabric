@@ -53,9 +53,21 @@ pub fn validate_physical_inventory_head(
     key: &RowKey,
     bytes: &[u8],
 ) -> Result<bool, StoreError> {
+    validate_physical_inventory_head_with_checkpoint(view, key, bytes, &mut || Ok(()))
+}
+
+/// Validate the reciprocal indexes while honoring the caller's original work
+/// reservation between bounded pages. The callback grants no storage access.
+pub fn validate_physical_inventory_head_with_checkpoint(
+    view: &ReadView,
+    key: &RowKey,
+    bytes: &[u8],
+    checkpoint: &mut dyn FnMut() -> Result<(), StoreError>,
+) -> Result<bool, StoreError> {
     if !is_head(key) {
         return Ok(false);
     }
+    checkpoint()?;
     validate_head(key, bytes)?;
     if view.get_bounded(key, MAX_REFERENCE_BYTES)?.as_deref() != Some(bytes) {
         return Err(StoreError::Corrupt);
@@ -63,12 +75,14 @@ pub fn validate_physical_inventory_head(
     let head = decode(bytes)?;
     let mut inventory = PhysicalInventory::begin(view, &head.payload)?;
     loop {
+        checkpoint()?;
         let (_, complete) = inventory.next_page(
             view,
             super::MAX_REFERENCE_UPDATES,
             super::MAX_REFERENCE_UPDATES * MAX_REFERENCE_BYTES,
         )?;
         if complete {
+            checkpoint()?;
             return Ok(true);
         }
     }
