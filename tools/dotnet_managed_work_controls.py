@@ -29,6 +29,7 @@ QUEUE_SETTLEMENT_CASES = (
     'queue-dequeue-refusal-prevents-retry', 'queue-dequeue-unknown-prevents-retry')
 INLINE_QUEUE_SETTLEMENT_CASES = ('inline-pop-ack-refused', 'inline-pop-ack-unknown')
 INLINE_OWNER_SETTLEMENT_CASES = ('inline-pop-owner-settlement-refused', 'inline-pop-owner-settlement-unknown')
+INLINE_PRIMARY_SETTLEMENT_CASES = ('inline-primary-settlement-refused', 'inline-primary-settlement-unknown')
 ROLLBACK_SETTLEMENT_CASES = (
     'queue-before-insertion-refusal-retains-owner', 'queue-before-insertion-unknown-retains-owner')
 OWNER_SETTLEMENT_CASES = (
@@ -145,6 +146,17 @@ CASES = (
     'inline-pop-exception-retains-frame', *INLINE_QUEUE_SETTLEMENT_CASES, *INLINE_OWNER_SETTLEMENT_CASES,
     'inline-pop-reentrant-fences-same-task', 'inline-pop-reentrant-normal-dequeue',
     'inline-pop-reset-fenced-retains-uncertainty', 'inline-pop-required-continuation-keeps-parent-frame',
+    'inline-primary-owner-retained', 'inline-primary-unowned-falls-back',
+    'inline-primary-reference-continuation-producer', 'inline-primary-real-continuation-host-port',
+    'inline-primary-other-type-falls-back', 'inline-primary-required-owner-falls-back',
+    'inline-primary-foreign-current-falls-back', 'inline-primary-current-task-falls-back',
+    'inline-primary-captured-owner-falls-back', 'inline-primary-captured-root-retained',
+    'inline-primary-captured-context-reentry-falls-back', 'inline-primary-reset-allocation-reentry-falls-back',
+    'inline-primary-current-owner-reentry-retained', 'inline-primary-allocation-failure-falls-back',
+    'inline-primary-full-table-falls-back', 'inline-primary-alias-allocation-reentry-falls-back',
+    'inline-primary-late-alias-keeps-primary', 'inline-primary-completed-task-falls-back',
+    'inline-primary-started-cancellation', 'inline-primary-unexpected-pop-fenced',
+    'inline-primary-exception-retains-frame', *INLINE_PRIMARY_SETTLEMENT_CASES,
     'dispatch-reset-early-exposes-capacity', 'dispatch-reset-retains-owner',
     'dispatch-reset-nested-frame-identity', 'dispatch-reset-transition-preserves-queued-work',
     'dispatch-reset-null-context-refused',
@@ -215,6 +227,9 @@ def verify(dotnet: Path, output: Path) -> dict:
                             retainedQueuedOwners=0 if name.endswith('unknown') else 1,
                             controlDispatches=0, automaticRetries=0, rootSuccess=False)
         elif name in INLINE_OWNER_SETTLEMENT_CASES:
+            expected.update(settlementRefusals=1, retainedTasks=1 if name.endswith('unknown') else 2,
+                            retainedQueuedOwners=0, controlDispatches=0, automaticRetries=0, rootSuccess=False)
+        elif name in INLINE_PRIMARY_SETTLEMENT_CASES:
             expected.update(settlementRefusals=1, retainedTasks=1 if name.endswith('unknown') else 2,
                             retainedQueuedOwners=0, controlDispatches=0, automaticRetries=0, rootSuccess=False)
         elif name in SETTLEMENT_CASES:

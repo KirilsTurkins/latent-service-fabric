@@ -8,6 +8,19 @@ internal static class StateControl
     internal static readonly OutOfMemoryException QueueAllocationFailure = new("control-queue-allocation-failed");
     internal static Action? QueueAllocationCallback;
     internal static Action? RecordAllocationCallback;
+    internal static object? ContextOwnerForControl;
+    internal static bool InlineContinuationForControl = true;
+    private sealed class CapturedControlTask(Action action) : Task(action), ManagedWorkRuntime.ContextSource
+    {
+        public static int VirtualReads;
+        public ExecutionContext? CapturedContext()
+        {
+            VirtualReads++;
+            throw new InvalidOperationException("control-virtual-captured-context-must-not-run");
+        }
+    }
+    private sealed class MaintenanceControl;
+    internal static bool IsMaintenanceForControl(object item) => item is MaintenanceControl;
     internal static Action? RequiredPublishedCallback, RequiredReservedCallback;
     internal static Action? StartupAllocationCallback, StartupRootPublishedCallback;
     private static Action? QueueReserveCallback;
@@ -2165,6 +2178,230 @@ internal static class StateControl
         Begin();
         switch (name)
         {
+            case "inline-primary-owner-retained": {
+                Limits[0] = 2;
+                var task = new Task(() => { }); ManagedWorkRuntime.Continuation(task);
+                var ticket = ManagedWorkRuntime.InlineQueued(task, false);
+                var previous = ManagedWorkRuntime.Enter(task);
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task);
+                int duringFrame = Count(0); ManagedWorkRuntime.Exit(previous);
+                if (duringFrame != 2) throw new InvalidOperationException("inline-control-owner-count=" + duringFrame);
+                Need(ticket is not null && Count(3) == 0);
+                ManagedWorkRuntime.InlineQueueFinished(ticket, true);
+                Need(Count(0) == 1); Finish(); break;
+            }
+            case "inline-primary-unowned-falls-back": {
+                var task = new Task(() => { });
+                Need(ManagedWorkRuntime.InlineQueued(task, false) is null && Count(0) == 1 && Count(3) == 0);
+                Finish(); break;
+            }
+            case "inline-primary-reference-continuation-producer": {
+                bool ran = false;
+                var task = Task.CompletedTask.ContinueWith(_ => { ran = true; }, CancellationToken.None,
+                    TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+                Need(ran && task.IsCompletedSuccessfully
+                    && task.GetType().FullName == "System.Threading.Tasks.ContinuationTaskFromTask");
+                Finish(); break;
+            }
+            case "inline-primary-real-continuation-host-port": {
+                bool ran = false;
+                var antecedent = new TaskCompletionSource();
+                var task = antecedent.Task.ContinueWith(_ => { ran = true; }, CancellationToken.None,
+                    TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+                Need(!task.IsCompleted && task.GetType().FullName == "System.Threading.Tasks.ContinuationTaskFromTask");
+                // The CLR creates and runs the continuation; admission and the
+                // injected hooks are simulated by this host-only control.
+                ManagedWorkRuntime.Continuation(task);
+                var ticket = ManagedWorkRuntime.InlineQueued(task, false);
+                Need(ticket is not null && Count(0) == 2);
+                var previous = ManagedWorkRuntime.Enter(task);
+                antecedent.SetResult(); Need(ran && task.IsCompletedSuccessfully);
+                ManagedWorkRuntime.Completed(task); ManagedWorkRuntime.Exit(previous);
+                Need(Count(0) == 2); ManagedWorkRuntime.InlineQueueFinished(ticket, true);
+                Need(Count(0) == 1); Finish(); break;
+            }
+            case "inline-primary-other-type-falls-back": {
+                var task = new Task(() => { }); ManagedWorkRuntime.Continuation(task);
+                InlineContinuationForControl = false;
+                Need(ManagedWorkRuntime.InlineQueued(task, false) is null && Count(0) == 2);
+                InlineContinuationForControl = true;
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task); Finish(); break;
+            }
+            case "inline-primary-required-owner-falls-back": {
+                object callback = new(); Enqueue(callback); Need(ManagedWorkRuntime.Popped(true, callback));
+                var previous = ManagedWorkRuntime.Enter(callback); var task = new Task(() => { });
+                ManagedWorkRuntime.CreatedAsync(task); ManagedWorkRuntime.Exit(previous);
+                ManagedWorkRuntime.CallbackCompleted(callback);
+                Need(ManagedWorkRuntime.InlineQueued(task, false) is null && Count(0) == 2);
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task); Finish(); break;
+            }
+            case "inline-primary-foreign-current-falls-back": {
+                var task = new Task(() => { }); ManagedWorkRuntime.Continuation(task);
+                object callback = new(); Enqueue(callback); Need(ManagedWorkRuntime.Popped(true, callback));
+                var previous = ManagedWorkRuntime.Enter(callback);
+                Need(ManagedWorkRuntime.InlineQueued(task, false) is null && Count(0) == 3);
+                ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.CallbackCompleted(callback);
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task); Finish(); break;
+            }
+            case "inline-primary-current-task-falls-back": {
+                var task = new Task(() => { }); ManagedWorkRuntime.Continuation(task);
+                var previous = ManagedWorkRuntime.Enter(task);
+                Need(ManagedWorkRuntime.InlineQueued(task, false) is null && Count(0) == 2);
+                ManagedWorkRuntime.Exit(previous); task.RunSynchronously(); ManagedWorkRuntime.Completed(task); Finish(); break;
+            }
+            case "inline-primary-captured-owner-falls-back": {
+                object callback = new(); Enqueue(callback); Need(ManagedWorkRuntime.Popped(true, callback));
+                var previous = ManagedWorkRuntime.Enter(callback);
+                var foreign = ManagedWorkRuntime.CurrentOwnerForControl(); ManagedWorkRuntime.Exit(previous);
+                var task = new CapturedControlTask(() => { }); ManagedWorkRuntime.Continuation(task);
+                ContextOwnerForControl = foreign;
+                Need(ManagedWorkRuntime.InlineQueued(task, false) is null && Count(0) == 3 && CapturedControlTask.VirtualReads == 0);
+                ContextOwnerForControl = null; ManagedWorkRuntime.CallbackCompleted(callback);
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task); Finish(); break;
+            }
+            case "inline-primary-captured-root-retained": {
+                ContextOwnerForControl = ManagedWorkRuntime.CurrentOwnerForControl();
+                var task = new CapturedControlTask(() => { }); ManagedWorkRuntime.Continuation(task);
+                var ticket = ManagedWorkRuntime.InlineQueued(task, false); Need(ticket is not null && CapturedControlTask.VirtualReads == 0);
+                var previous = ManagedWorkRuntime.Enter(task);
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task); ManagedWorkRuntime.Exit(previous);
+                Need(Count(0) == 2); ManagedWorkRuntime.InlineQueueFinished(ticket, true);
+                ContextOwnerForControl = null; Need(Count(0) == 1); Finish(); break;
+            }
+            case "inline-primary-captured-context-reentry-falls-back": {
+                object callback = new(); Enqueue(callback); Need(ManagedWorkRuntime.Popped(true, callback));
+                var previous = ManagedWorkRuntime.Enter(callback);
+                var foreign = ManagedWorkRuntime.CurrentOwnerForControl(); ManagedWorkRuntime.Exit(previous);
+                var task = new CapturedControlTask(() => { }); ManagedWorkRuntime.Continuation(task);
+                ContextOwnerForControl = ManagedWorkRuntime.CurrentOwnerForControl();
+                QueueAllocationCallback = () => ContextOwnerForControl = foreign;
+                Need(ManagedWorkRuntime.InlineQueued(task, false) is null && Count(0) == 3 && CapturedControlTask.VirtualReads == 0);
+                ContextOwnerForControl = null; ManagedWorkRuntime.CallbackCompleted(callback);
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task); Finish(); break;
+            }
+            case "inline-primary-reset-allocation-reentry-falls-back": {
+                Limits[0] = 3; Limits[3] = 1;
+                var task = new Task(() => { }); ManagedWorkRuntime.Continuation(task);
+                object callback = new(); Enqueue(callback);
+                var dispatch = ManagedWorkRuntime.BeginDispatch(callback);
+                QueueAllocationCallback = () => ManagedWorkRuntime.ResetStarting(dispatch);
+                Need(ManagedWorkRuntime.InlineQueued(task, false) is null && Count(0) == 3);
+                ManagedWorkRuntime.ResetReady(dispatch); ManagedWorkRuntime.ResetFinished(dispatch);
+                ManagedWorkRuntime.DispatchReturned(dispatch);
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task); Finish(); break;
+            }
+            case "inline-primary-current-owner-reentry-retained": {
+                var task = new Task(() => { }); ManagedWorkRuntime.Continuation(task);
+                var ticket = ManagedWorkRuntime.InlineQueued(task, false); Need(ticket is not null);
+                var previous = ManagedWorkRuntime.Enter(task);
+                var requiredTask = new TaskCompletionSource(); ManagedWorkRuntime.CreatedAsync(requiredTask.Task);
+                requiredTask.SetException(new InvalidOperationException("control-required-fault"));
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task); ManagedWorkRuntime.Exit(previous);
+                object? nestedPrevious = null;
+                RecordAllocationCallback = () => nestedPrevious = ManagedWorkRuntime.Enter(task);
+                ManagedWorkRuntime.InlineQueueFinished(ticket, true);
+                Need(Count(0) == 2 && ReferenceEquals(ManagedWorkRuntime.CurrentOwnerForControl(),
+                    ManagedWorkRuntime.OwnerObjectForControl(task)));
+                ManagedWorkRuntime.Exit(nestedPrevious); ManagedWorkRuntime.Completed(task);
+                ManagedWorkRuntime.Observed(requiredTask.Task); Need(Count(0) == 1); Finish(); break;
+            }
+            case "inline-primary-allocation-failure-falls-back": {
+                var task = new Task(() => { }); ManagedWorkRuntime.Continuation(task);
+                FailQueueAllocation = true;
+                Need(ManagedWorkRuntime.InlineQueued(task, false) is null && Count(0) == 2);
+                FailQueueAllocation = false; task.RunSynchronously(); ManagedWorkRuntime.Completed(task); Finish(); break;
+            }
+            case "inline-primary-full-table-falls-back": {
+                Limits[0] = 2; Limits[3] = 64;
+                var task = new Task(() => { }); ManagedWorkRuntime.Continuation(task);
+                var items = Enumerable.Range(0, 64).Select(_ => new MaintenanceControl()).ToArray();
+                foreach (var item in items) Enqueue(item);
+                Need(Count(3) == 64 && ManagedWorkRuntime.InlineQueued(task, false) is null);
+                foreach (var item in items) Need(ManagedWorkRuntime.Popped(true, item));
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task); Finish(); break;
+            }
+            case "inline-primary-alias-allocation-reentry-falls-back": {
+                Limits[0] = 3;
+                var task = new Task(() => { }); ManagedWorkRuntime.Continuation(task);
+                Task? promise = null;
+                QueueAllocationCallback = () => {
+                    var outer = new Task<Task>(() => task); ManagedWorkRuntime.Schedule(outer);
+                    promise = outer.Unwrap(); ManagedWorkRuntime.Unwrap(promise, outer);
+                    outer.RunSynchronously(); ManagedWorkRuntime.Inner(promise, task); ManagedWorkRuntime.Completed(outer);
+                };
+                Need(ManagedWorkRuntime.InlineQueued(task, false) is null && promise is not null && Count(0) == 3);
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task); Finish(); break;
+            }
+            case "inline-primary-late-alias-keeps-primary": {
+                Limits[0] = 3;
+                var failure = new InvalidOperationException("control-inner-fault");
+                var source = new TaskCompletionSource<Task>(); var promise = source.Task.Unwrap();
+                ManagedWorkRuntime.Unwrap(promise, source.Task);
+                Task? task = null;
+                task = new Task(() => { source.SetResult(task!); ManagedWorkRuntime.Inner(promise, task); throw failure; });
+                ManagedWorkRuntime.Continuation(task);
+                var ticket = ManagedWorkRuntime.InlineQueued(task, false); Need(ticket is not null);
+                var previous = ManagedWorkRuntime.Enter(task);
+                task.RunSynchronously(); Need(task.IsFaulted && promise.IsFaulted);
+                ManagedWorkRuntime.Observed(task); ManagedWorkRuntime.Completed(promise);
+                ManagedWorkRuntime.Completed(task); Need(Count(0) == 2 && Count(6) == 1);
+                ManagedWorkRuntime.Exit(previous); ManagedWorkRuntime.InlineQueueFinished(ticket, true);
+                Need(Count(0) == 1 && Count(6) == 1); ManagedWorkRuntime.Observed(promise); Finish(); break;
+            }
+            case "inline-primary-completed-task-falls-back": {
+                var task = new Task(() => { }); ManagedWorkRuntime.Continuation(task);
+                task.RunSynchronously(); Need(task.IsCompletedSuccessfully);
+                Need(ManagedWorkRuntime.InlineQueued(task, false) is null && Count(0) == 2);
+                ManagedWorkRuntime.Completed(task); Finish(); break;
+            }
+            case "inline-primary-started-cancellation": {
+                using var cancellation = new CancellationTokenSource(); bool called = false;
+                var task = new Task(() => called = true, cancellation.Token); ManagedWorkRuntime.Continuation(task);
+                const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+                var scheduler = typeof(Task).GetField("m_taskScheduler", flags) ?? throw new InvalidOperationException("missing-task-scheduler");
+                var start = typeof(Task).GetMethod("MarkStarted", flags) ?? throw new InvalidOperationException("missing-task-mark-started");
+                var inline = TaskScheduler.Default.GetType().GetMethod("TryExecuteTaskInline", flags)
+                    ?? throw new InvalidOperationException("missing-default-inline");
+                scheduler.SetValue(task, TaskScheduler.Default); Need((bool)start.Invoke(task, null)!);
+                QueueAllocationCallback = () => { cancellation.Cancel(); Need(!task.IsCompleted); };
+                var ticket = ManagedWorkRuntime.InlineQueued(task, false); Need(ticket is not null && !task.IsCompleted);
+                var previous = ManagedWorkRuntime.Enter(task);
+                Need((bool)inline.Invoke(TaskScheduler.Default, [task, false])! && task.IsCanceled && !called);
+                ManagedWorkRuntime.Completed(task); ManagedWorkRuntime.Exit(previous);
+                Need(Count(0) == 2); ManagedWorkRuntime.InlineQueueFinished(ticket, true);
+                Need(Count(0) == 1); Finish(); break;
+            }
+            case "inline-primary-unexpected-pop-fenced": {
+                var task = new Task(() => { }); ManagedWorkRuntime.Continuation(task);
+                var ticket = ManagedWorkRuntime.InlineQueued(task, false);
+                Refuses(() => ManagedWorkRuntime.Popped(true, task), "managed-work-inline-physical-dequeue");
+                ManagedWorkRuntime.InlineQueueFinished(ticket, false);
+                Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-inline-uncertain");
+                Need(Count(0) == 2 && Count(3) == 0); break;
+            }
+            case "inline-primary-settlement-refused":
+            case "inline-primary-settlement-unknown": {
+                var task = new Task(() => { }); ManagedWorkRuntime.Continuation(task);
+                var ticket = ManagedWorkRuntime.InlineQueued(task, false);
+                var previous = ManagedWorkRuntime.Enter(task); settlementRefusal = context.Item2;
+                settlementUnknown = name.EndsWith("unknown");
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task); ManagedWorkRuntime.Exit(previous);
+                Refuses(() => ManagedWorkRuntime.InlineQueueFinished(ticket, true), "managed-work-settlement-refused");
+                Refuses(() => ManagedWorkRuntime.InlineQueueFinished(ticket, true), "managed-work-inline-ticket");
+                Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-double-settle");
+                Need(refusedSettlements == 1 && Count(0) == (settlementUnknown ? 1 : 2)); break;
+            }
+            case "inline-primary-exception-retains-frame": {
+                var task = new Task(() => { }); ManagedWorkRuntime.Continuation(task);
+                var ticket = ManagedWorkRuntime.InlineQueued(task, false);
+                var previous = ManagedWorkRuntime.Enter(task);
+                task.RunSynchronously(); ManagedWorkRuntime.Completed(task); ManagedWorkRuntime.Exit(previous);
+                var original = new InvalidOperationException("inline-original-exception");
+                try { try { throw original; } finally { ManagedWorkRuntime.InlineQueueFinished(ticket, false); } }
+                catch (InvalidOperationException caught) when (ReferenceEquals(caught, original)) { }
+                Refuses(ManagedWorkRuntime.JoinAcceptedWork, "managed-work-inline-uncertain");
+                Need(Count(0) == 2 && Count(3) == 0); break;
+            }
             case "inline-pop-false-preserves-normal-dequeue": {
                 var task = new Task(() => { });
                 ManagedWorkRuntime.Schedule(task); Enqueue(task);
