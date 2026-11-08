@@ -8,6 +8,87 @@ fn list(id: &str, node: bool) -> proto::ListCapabilitiesRequest {
     }
 }
 
+// The RPC and authentication are real; the stream invoker is an explicit
+// observation double and does not claim native quarantine or retirement.
+#[tokio::test]
+async fn quarantine_diagnostic_is_only_returned_to_the_node_operator() {
+    use latent_capabilities::broker::{
+        network::{
+            OutboundStreamInvoker, StreamConnectRequest, StreamError, StreamErrorCode,
+            StreamInvocation, StreamNodeUsage,
+        },
+        ActivationCapabilityRuntime, CapabilitySession,
+    };
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    };
+
+    struct Observed(AtomicUsize);
+    impl OutboundStreamInvoker for Observed {
+        fn start(
+            &self,
+            _: &CapabilitySession,
+            _: StreamConnectRequest,
+        ) -> Result<StreamInvocation, StreamError> {
+            Err(StreamError::new(StreamErrorCode::Unsupported))
+        }
+        fn inspect_node_usage(
+            &self,
+        ) -> Result<Option<StreamNodeUsage>, latent_core::PlatformError> {
+            Ok(Some(StreamNodeUsage {
+                owners: 3,
+                connections: 2,
+                quarantined_connections: Some(self.0.load(Ordering::Acquire)),
+                ..Default::default()
+            }))
+        }
+    }
+
+    let harness = Harness::with_capabilities(ManagementLimits::default()).await;
+    seed(&harness, "acme", "alice", "local").await;
+    let runtime = ActivationCapabilityRuntime::new(
+        harness.capability_broker.as_ref().unwrap().clone(),
+        harness.deployments.clone(),
+    );
+    let observed = Arc::new(Observed(AtomicUsize::new(2)));
+    runtime.install_outbound_streams(observed.clone()).unwrap();
+    let mut client =
+        proto::capability_service_client::CapabilityServiceClient::new(harness.channel.clone());
+    for identity in ["alice", "caller", "bob"] {
+        assert_eq!(
+            client
+                .list_capabilities(request(identity, list("local", true)))
+                .await
+                .unwrap_err()
+                .code(),
+            Code::PermissionDenied
+        );
+    }
+    let node = client
+        .list_capabilities(request("operator", list("local", true)))
+        .await
+        .unwrap()
+        .into_inner()
+        .node_usage
+        .unwrap();
+    assert_eq!(node.stream_quarantined_connections, Some(2));
+    assert_eq!(node.counters["stream_owners"], 3);
+    assert_eq!(node.counters["stream_connections"], 2);
+    assert!(!node.counters.contains_key("stream_quarantined_connections"));
+    observed.0.store(3, Ordering::Release);
+    let inconsistent = client
+        .list_capabilities(request("operator", list("local", true)))
+        .await
+        .unwrap()
+        .into_inner()
+        .node_usage
+        .unwrap();
+    assert!(inconsistent.stream_quarantined_connections.is_none());
+    assert_eq!(inconsistent.counters["stream_owners"], 3);
+    assert_eq!(inconsistent.counters["stream_connections"], 2);
+}
+
 #[cfg(target_os = "linux")]
 #[tokio::test]
 #[expect(
@@ -55,6 +136,7 @@ async fn stream_diagnostics_are_operator_scoped_and_keep_actual_maintenance_visi
         .counters
         .keys()
         .any(|key| key.starts_with("stream_")));
+    assert!(unconfigured.stream_quarantined_connections.is_none());
     assert!(!broker.inspect_node_usage().unwrap().streams_configured);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let configuration = serde_json::from_value(serde_json::json!({
@@ -103,6 +185,7 @@ async fn stream_diagnostics_are_operator_scoped_and_keep_actual_maintenance_visi
     assert_eq!(node.counters["stream_configuration_epoch"], 1);
     assert_eq!(node.counters["stream_maintenance_owners"], 1);
     assert_eq!(node.counters["stream_owners"], 0);
+    assert_eq!(node.stream_quarantined_connections, Some(0));
     assert_eq!(node.counters["stream_stopped"], 0);
     assert_eq!(
         node.counters
@@ -133,6 +216,7 @@ async fn stream_diagnostics_are_operator_scoped_and_keep_actual_maintenance_visi
     assert_eq!(stopped.counters["stream_stopped"], 1);
     assert_eq!(stopped.counters["stream_maintenance_owners"], 0);
     assert_eq!(stopped.counters["stream_connections"], 0);
+    assert_eq!(stopped.stream_quarantined_connections, Some(0));
     drop(stop);
     drop(runtime);
     drop(owner);
@@ -148,6 +232,7 @@ async fn stream_diagnostics_are_operator_scoped_and_keep_actual_maintenance_visi
         .unavailable
         .contains(&"outbound-streams-no-retained-observation".into()));
     assert!(!gone.counters.contains_key("stream_connections"));
+    assert!(gone.stream_quarantined_connections.is_none());
     drop(client);
     let snapshot = pools.snapshot().unwrap();
     assert_eq!(snapshot.connections, 0);

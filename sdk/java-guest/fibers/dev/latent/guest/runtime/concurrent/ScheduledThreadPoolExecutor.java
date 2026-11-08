@@ -68,6 +68,15 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         @Override public V call() { invoked = true; command.run(); return result; }
     }
 
+    /** Retain the original lease and fence completion if settlement is uncertain. */
+    private static void closeQueued(Activation.Lease queued) {
+        try { queued.close(); }
+        catch (Throwable uncertain) {
+            Activation.fenceUncertainQueuedWorkSettlement(queued);
+            throw uncertain;
+        }
+    }
+
     /** Each queued occurrence owns its own lease, even when Task is shared. */
     private final class Entry {
         final Task<?> task;
@@ -84,7 +93,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
             // entire occurrence had never entered its physical release path.
             releasing = true;
             if (resultAccepted) { resultAccepted = false; task.removeQueueCopy(true); }
-            queued.close(); queued = null;
+            closeQueued(queued); queued = null;
             task.abandon();
             pendingWork--;
             released = true;
@@ -231,7 +240,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
             catch (Throwable uncertain) { throw error; }
             if (withdrawn) {
                 try {
-                    if (queued != null) queued.close();
+                    if (queued != null) closeQueued(queued);
                     if (accepted) task.removeQueueCopy(true);
                     if (task != null) task.abandon();
                     // Only the exact SDK implementation witnesses rejection. A
@@ -279,12 +288,13 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         boolean installed = false;
         boolean counted = false;
         boolean advanced = false;
+        boolean settlementAttempted = false;
         long previous = task.next;
         long revision = task.scheduleRevision;
         try {
             queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
             accepted = task.acceptQueueCopy();
-            if (!accepted) { queued.close(); return; }
+            if (!accepted) { settlementAttempted = true; closeQueued(queued); return; }
             entry = new Entry(task, queued, true);
             advance(task); advanced = true; revision = task.scheduleRevision;
             pendingWork++; counted = true;
@@ -292,12 +302,14 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
             if (workers.size() < parallelism && workers.size() < queue.size() + running) startWorker();
             notifyAll();
         } catch (Throwable error) {
+            // The no-copy path may have already attempted settlement.
+            if (settlementAttempted) throw error;
             boolean withdrawn;
             try { withdrawn = withdrawFailed(entry, installed); }
             catch (Throwable uncertain) { throw error; }
             if (withdrawn) {
                 try {
-                    if (queued != null) queued.close();
+                    if (queued != null) closeQueued(queued);
                     if (accepted) task.removeQueueCopy(true);
                     task.abandon();
                     if (counted) pendingWork--;

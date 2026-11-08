@@ -73,6 +73,7 @@ pub(super) fn tenant_usage(value: domain::TenantUsage) -> proto::CapabilityResou
     proto::CapabilityResourceUsage {
         scope: "tenant".into(),
         unavailable: Vec::new(),
+        stream_quarantined_connections: None,
         counters: HashMap::from([
             ("sessions".into(), value.sessions as u64),
             (
@@ -225,6 +226,12 @@ fn stream_usage(
             .push("outbound-streams-no-retained-observation".into());
         return;
     };
+    // This optional protobuf field is deliberately outside the fixed counter
+    // map: older clients can ignore its tag, and missing observations stay absent.
+    result.stream_quarantined_connections = usage
+        .quarantined_connections
+        .filter(|&count| count <= usage.owners && count <= usage.connections)
+        .and_then(|count| u64::try_from(count).ok());
     for (name, count) in [
         ("stream_configuration_epoch", usage.configuration_epoch),
         (
@@ -346,5 +353,38 @@ mod tests {
             .counters
             .keys()
             .any(|key| key.starts_with("stream_")));
+        assert!(retired.stream_quarantined_connections.is_none());
+        // A custom or older invoker may provide aggregate usage without a
+        // quarantine observation; the wire must not fabricate zero for it.
+        usage.streams = Some(Default::default());
+        let partial = node_usage(&usage);
+        assert!(partial.stream_quarantined_connections.is_none());
+        usage.streams = Some(latent_capabilities::broker::network::StreamNodeUsage {
+            owners: 4,
+            connections: 3,
+            quarantined_connections: Some(2),
+            ..Default::default()
+        });
+        let observed = node_usage(&usage);
+        assert_eq!(observed.stream_quarantined_connections, Some(2));
+        assert_eq!(observed.counters["stream_owners"], 4);
+        assert_eq!(observed.counters["stream_connections"], 3);
+        // A custom invoker's inconsistent observation is omitted rather than
+        // projected as zero or allowed to change the original totals.
+        for (owners, connections) in [(1, 3), (4, 1)] {
+            usage.streams = Some(latent_capabilities::broker::network::StreamNodeUsage {
+                owners,
+                connections,
+                quarantined_connections: Some(2),
+                ..Default::default()
+            });
+            let inconsistent = node_usage(&usage);
+            assert!(inconsistent.stream_quarantined_connections.is_none());
+            assert_eq!(inconsistent.counters["stream_owners"], owners as u64);
+            assert_eq!(
+                inconsistent.counters["stream_connections"],
+                connections as u64
+            );
+        }
     }
 }

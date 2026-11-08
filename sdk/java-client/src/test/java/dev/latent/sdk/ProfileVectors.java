@@ -739,7 +739,7 @@ final class ProfileVectors {
             check(value.includeNodeUsage() == false, "capabilities-page-too-large.include_node_usage");
         }
         {
-            Management.ListCapabilitiesResponse value = new Management.ListCapabilitiesResponse(List.of(new Management.CapabilityDescriptor("latent:secrets/reader@0.1.0", "latent:secrets/reader@0.1.0", "local-secrets-v1", List.of("read"), Map.ofEntries(), Optional.of(new Management.CapabilityBindingInspection(Optional.of(""), Optional.of(new Management.CapabilityInspectionPolicy("binding-a", Long.parseUnsignedLong("18446744073709551615"), "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")), List.of(new Management.CapabilityInspectionPolicy("policy-a", Long.parseUnsignedLong("9223372036854775808"), "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")), "local-secrets-v1", "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", Long.parseUnsignedLong("18446744073709551615"), "provider-configuration-changed"))), new Management.CapabilityDescriptor("future-capability", "future-contract", "future-provider", List.of(), Map.ofEntries(Map.entry("descriptive", "not-authority")), Optional.empty())), Optional.of(new Management.PageResponse(Optional.of("opaque-capability-cursor"))), Optional.of(new Management.CapabilityInspectionRevision("deployment-a", "revision-a", "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", Optional.of("publication:sha256:1111111111111111111111111111111111111111111111111111111111111111"), Long.parseUnsignedLong("18446744073709551615"), Long.parseUnsignedLong("9223372036854775808"))), Optional.of(new Management.CapabilityResourceUsage("tenant", Map.ofEntries(Map.entry("sessions", Long.parseUnsignedLong("18446744073709551615")), Map.entry("calls", Long.parseUnsignedLong("0"))), List.of("fixture-owner-unavailable"))), Optional.empty(), "sampled");
+            Management.ListCapabilitiesResponse value = new Management.ListCapabilitiesResponse(List.of(new Management.CapabilityDescriptor("latent:secrets/reader@0.1.0", "latent:secrets/reader@0.1.0", "local-secrets-v1", List.of("read"), Map.ofEntries(), Optional.of(new Management.CapabilityBindingInspection(Optional.of(""), Optional.of(new Management.CapabilityInspectionPolicy("binding-a", Long.parseUnsignedLong("18446744073709551615"), "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")), List.of(new Management.CapabilityInspectionPolicy("policy-a", Long.parseUnsignedLong("9223372036854775808"), "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")), "local-secrets-v1", "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", Long.parseUnsignedLong("18446744073709551615"), "provider-configuration-changed"))), new Management.CapabilityDescriptor("future-capability", "future-contract", "future-provider", List.of(), Map.ofEntries(Map.entry("descriptive", "not-authority")), Optional.empty())), Optional.of(new Management.PageResponse(Optional.of("opaque-capability-cursor"))), Optional.of(new Management.CapabilityInspectionRevision("deployment-a", "revision-a", "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", Optional.of("publication:sha256:1111111111111111111111111111111111111111111111111111111111111111"), Long.parseUnsignedLong("18446744073709551615"), Long.parseUnsignedLong("9223372036854775808"))), Optional.of(new Management.CapabilityResourceUsage("tenant", Map.ofEntries(Map.entry("sessions", Long.parseUnsignedLong("18446744073709551615")), Map.entry("calls", Long.parseUnsignedLong("0"))), List.of("fixture-owner-unavailable"), Optional.empty())), Optional.empty(), "sampled");
             check(value.capabilities().size() == 2, "redacted-capability-provider-inspection.capabilities.count");
             check(value.capabilities().get(0).id().equals("latent:secrets/reader@0.1.0"), "redacted-capability-provider-inspection.capabilities.0.id");
             check(value.capabilities().get(0).contract().equals("latent:secrets/reader@0.1.0"), "redacted-capability-provider-inspection.capabilities.0.contract");
@@ -787,11 +787,12 @@ final class ProfileVectors {
             check(value.tenantUsage().get().counters().get("calls") == Long.parseUnsignedLong("0"), "redacted-capability-provider-inspection.tenant_usage.counters.1");
             check(value.tenantUsage().get().unavailable().size() == 1, "redacted-capability-provider-inspection.tenant_usage.unavailable.count");
             check(value.tenantUsage().get().unavailable().get(0).equals("fixture-owner-unavailable"), "redacted-capability-provider-inspection.tenant_usage.unavailable.0");
+            check(!(value.tenantUsage().get().streamQuarantinedConnections().isPresent()), "redacted-capability-provider-inspection.tenant_usage.stream_quarantined_connections.presence");
             check(!(value.nodeUsage().isPresent()), "redacted-capability-provider-inspection.node_usage.presence");
             check(value.state().equals("sampled"), "redacted-capability-provider-inspection.state");
         }
         {
-            Management.ListCapabilitiesResponse value = new Management.ListCapabilitiesResponse(List.of(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.of(new Management.CapabilityResourceUsage("node", Map.ofEntries(), List.of("provider-pools-no-retained-owner", "audit-owner-not-configured"))), "binding-plan-unavailable");
+            Management.ListCapabilitiesResponse value = new Management.ListCapabilitiesResponse(List.of(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.of(new Management.CapabilityResourceUsage("node", Map.ofEntries(), List.of("provider-pools-no-retained-owner", "audit-owner-not-configured"), Optional.empty())), "binding-plan-unavailable");
             check(value.capabilities().size() == 0, "missing-provider-plan-not-zero-usage.capabilities.count");
             check(!(value.page().isPresent()), "missing-provider-plan-not-zero-usage.page.presence");
             check(!(value.revision().isPresent()), "missing-provider-plan-not-zero-usage.revision.presence");
@@ -802,7 +803,40 @@ final class ProfileVectors {
             check(value.nodeUsage().get().unavailable().size() == 2, "missing-provider-plan-not-zero-usage.node_usage.unavailable.count");
             check(value.nodeUsage().get().unavailable().get(0).equals("provider-pools-no-retained-owner"), "missing-provider-plan-not-zero-usage.node_usage.unavailable.0");
             check(value.nodeUsage().get().unavailable().get(1).equals("audit-owner-not-configured"), "missing-provider-plan-not-zero-usage.node_usage.unavailable.1");
+            check(!(value.nodeUsage().get().streamQuarantinedConnections().isPresent()), "missing-provider-plan-not-zero-usage.node_usage.stream_quarantined_connections.presence");
             check(value.state().equals("binding-plan-unavailable"), "missing-provider-plan-not-zero-usage.state");
+        }
+        {
+            Management.ListCapabilitiesResponse value = new Management.ListCapabilitiesResponse(List.of(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.of(new Management.CapabilityResourceUsage("node", Map.ofEntries(Map.entry("stream_owners", Long.parseUnsignedLong("0")), Map.entry("stream_connections", Long.parseUnsignedLong("0"))), List.of(), Optional.of(Long.parseUnsignedLong("0")))), "binding-plan-unavailable");
+            check(value.capabilities().size() == 0, "observed-stream-quarantine-zero.capabilities.count");
+            check(!(value.page().isPresent()), "observed-stream-quarantine-zero.page.presence");
+            check(!(value.revision().isPresent()), "observed-stream-quarantine-zero.revision.presence");
+            check(!(value.tenantUsage().isPresent()), "observed-stream-quarantine-zero.tenant_usage.presence");
+            check(value.nodeUsage().isPresent(), "observed-stream-quarantine-zero.node_usage.presence");
+            check(value.nodeUsage().get().scope().equals("node"), "observed-stream-quarantine-zero.node_usage.scope");
+            check(value.nodeUsage().get().counters().size() == 2, "observed-stream-quarantine-zero.node_usage.counters.count");
+            check(value.nodeUsage().get().counters().get("stream_owners") == Long.parseUnsignedLong("0"), "observed-stream-quarantine-zero.node_usage.counters.0");
+            check(value.nodeUsage().get().counters().get("stream_connections") == Long.parseUnsignedLong("0"), "observed-stream-quarantine-zero.node_usage.counters.1");
+            check(value.nodeUsage().get().unavailable().size() == 0, "observed-stream-quarantine-zero.node_usage.unavailable.count");
+            check(value.nodeUsage().get().streamQuarantinedConnections().isPresent(), "observed-stream-quarantine-zero.node_usage.stream_quarantined_connections.presence");
+            check(value.nodeUsage().get().streamQuarantinedConnections().get() == Long.parseUnsignedLong("0"), "observed-stream-quarantine-zero.node_usage.stream_quarantined_connections");
+            check(value.state().equals("binding-plan-unavailable"), "observed-stream-quarantine-zero.state");
+        }
+        {
+            Management.ListCapabilitiesResponse value = new Management.ListCapabilitiesResponse(List.of(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.of(new Management.CapabilityResourceUsage("node", Map.ofEntries(Map.entry("stream_owners", Long.parseUnsignedLong("3")), Map.entry("stream_connections", Long.parseUnsignedLong("2"))), List.of(), Optional.of(Long.parseUnsignedLong("1")))), "binding-plan-unavailable");
+            check(value.capabilities().size() == 0, "observed-stream-quarantine-retained.capabilities.count");
+            check(!(value.page().isPresent()), "observed-stream-quarantine-retained.page.presence");
+            check(!(value.revision().isPresent()), "observed-stream-quarantine-retained.revision.presence");
+            check(!(value.tenantUsage().isPresent()), "observed-stream-quarantine-retained.tenant_usage.presence");
+            check(value.nodeUsage().isPresent(), "observed-stream-quarantine-retained.node_usage.presence");
+            check(value.nodeUsage().get().scope().equals("node"), "observed-stream-quarantine-retained.node_usage.scope");
+            check(value.nodeUsage().get().counters().size() == 2, "observed-stream-quarantine-retained.node_usage.counters.count");
+            check(value.nodeUsage().get().counters().get("stream_owners") == Long.parseUnsignedLong("3"), "observed-stream-quarantine-retained.node_usage.counters.0");
+            check(value.nodeUsage().get().counters().get("stream_connections") == Long.parseUnsignedLong("2"), "observed-stream-quarantine-retained.node_usage.counters.1");
+            check(value.nodeUsage().get().unavailable().size() == 0, "observed-stream-quarantine-retained.node_usage.unavailable.count");
+            check(value.nodeUsage().get().streamQuarantinedConnections().isPresent(), "observed-stream-quarantine-retained.node_usage.stream_quarantined_connections.presence");
+            check(value.nodeUsage().get().streamQuarantinedConnections().get() == Long.parseUnsignedLong("1"), "observed-stream-quarantine-retained.node_usage.stream_quarantined_connections");
+            check(value.state().equals("binding-plan-unavailable"), "observed-stream-quarantine-retained.state");
         }
         {
             Management.CapabilityInspectionCeiling value = new Management.CapabilityInspectionCeiling(Integer.parseUnsignedInt("0"), Long.parseUnsignedLong("18446744073709551615"), Long.parseUnsignedLong("0"), Long.parseUnsignedLong("18446744073709551615"));
@@ -1284,6 +1318,6 @@ final class ProfileVectors {
         try { Management.parseU64Decimal("1\000"); throw new AssertionError("uint64 rejected"); } catch (NumberFormatException expected) { }
         try { Management.parseU64Decimal("1\n"); throw new AssertionError("uint64 rejected"); } catch (NumberFormatException expected) { }
         try { Management.parseU64Decimal("1\r\n"); throw new AssertionError("uint64 rejected"); } catch (NumberFormatException expected) { }
-        System.out.println("shared profile vectors: 78");
+        System.out.println("shared profile vectors: 80");
     }
 }

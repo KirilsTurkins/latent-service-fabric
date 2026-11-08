@@ -747,7 +747,7 @@ internal static class ProfileVectors
             Check(value.IncludeNodeUsage == false, "capabilities-page-too-large.include_node_usage");
         }
         {
-            var value = new Profile.ListCapabilitiesResponse(new Profile.CapabilityDescriptor[] {new Profile.CapabilityDescriptor("latent:secrets/reader@0.1.0", "latent:secrets/reader@0.1.0", "local-secrets-v1", new string[] {"read"}, new Dictionary<string, string> {}, new Profile.CapabilityBindingInspection("", new Profile.CapabilityInspectionPolicy("binding-a", 18446744073709551615UL, "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"), new Profile.CapabilityInspectionPolicy[] {new Profile.CapabilityInspectionPolicy("policy-a", 9223372036854775808UL, "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")}, "local-secrets-v1", "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", 18446744073709551615UL, "provider-configuration-changed")), new Profile.CapabilityDescriptor("future-capability", "future-contract", "future-provider", new string[] {}, new Dictionary<string, string> {{"descriptive", "not-authority"}}, null)}, new Profile.PageResponse("opaque-capability-cursor"), new Profile.CapabilityInspectionRevision("deployment-a", "revision-a", "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", 18446744073709551615UL, 9223372036854775808UL), new Profile.CapabilityResourceUsage("tenant", new Dictionary<string, ulong> {{"sessions", 18446744073709551615UL}, {"calls", 0UL}}, new string[] {"fixture-owner-unavailable"}), null, "sampled");
+            var value = new Profile.ListCapabilitiesResponse(new Profile.CapabilityDescriptor[] {new Profile.CapabilityDescriptor("latent:secrets/reader@0.1.0", "latent:secrets/reader@0.1.0", "local-secrets-v1", new string[] {"read"}, new Dictionary<string, string> {}, new Profile.CapabilityBindingInspection("", new Profile.CapabilityInspectionPolicy("binding-a", 18446744073709551615UL, "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"), new Profile.CapabilityInspectionPolicy[] {new Profile.CapabilityInspectionPolicy("policy-a", 9223372036854775808UL, "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")}, "local-secrets-v1", "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", 18446744073709551615UL, "provider-configuration-changed")), new Profile.CapabilityDescriptor("future-capability", "future-contract", "future-provider", new string[] {}, new Dictionary<string, string> {{"descriptive", "not-authority"}}, null)}, new Profile.PageResponse("opaque-capability-cursor"), new Profile.CapabilityInspectionRevision("deployment-a", "revision-a", "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", 18446744073709551615UL, 9223372036854775808UL), new Profile.CapabilityResourceUsage("tenant", new Dictionary<string, ulong> {{"sessions", 18446744073709551615UL}, {"calls", 0UL}}, new string[] {"fixture-owner-unavailable"}, null), null, "sampled");
             Check(value.Capabilities.Count == 2, "redacted-capability-provider-inspection.capabilities.count");
             Check(value.Capabilities[0].Id == "latent:secrets/reader@0.1.0", "redacted-capability-provider-inspection.capabilities.0.id");
             Check(value.Capabilities[0].Contract == "latent:secrets/reader@0.1.0", "redacted-capability-provider-inspection.capabilities.0.contract");
@@ -795,11 +795,12 @@ internal static class ProfileVectors
             Check(value.TenantUsage!.Counters["calls"] == 0UL, "redacted-capability-provider-inspection.tenant_usage.counters.1");
             Check(value.TenantUsage!.Unavailable.Count == 1, "redacted-capability-provider-inspection.tenant_usage.unavailable.count");
             Check(value.TenantUsage!.Unavailable[0] == "fixture-owner-unavailable", "redacted-capability-provider-inspection.tenant_usage.unavailable.0");
+            Check(!(value.TenantUsage!.StreamQuarantinedConnections is not null), "redacted-capability-provider-inspection.tenant_usage.stream_quarantined_connections.presence");
             Check(!(value.NodeUsage is not null), "redacted-capability-provider-inspection.node_usage.presence");
             Check(value.State == "sampled", "redacted-capability-provider-inspection.state");
         }
         {
-            var value = new Profile.ListCapabilitiesResponse(new Profile.CapabilityDescriptor[] {}, null, null, null, new Profile.CapabilityResourceUsage("node", new Dictionary<string, ulong> {}, new string[] {"provider-pools-no-retained-owner", "audit-owner-not-configured"}), "binding-plan-unavailable");
+            var value = new Profile.ListCapabilitiesResponse(new Profile.CapabilityDescriptor[] {}, null, null, null, new Profile.CapabilityResourceUsage("node", new Dictionary<string, ulong> {}, new string[] {"provider-pools-no-retained-owner", "audit-owner-not-configured"}, null), "binding-plan-unavailable");
             Check(value.Capabilities.Count == 0, "missing-provider-plan-not-zero-usage.capabilities.count");
             Check(!(value.Page is not null), "missing-provider-plan-not-zero-usage.page.presence");
             Check(!(value.Revision is not null), "missing-provider-plan-not-zero-usage.revision.presence");
@@ -810,7 +811,40 @@ internal static class ProfileVectors
             Check(value.NodeUsage!.Unavailable.Count == 2, "missing-provider-plan-not-zero-usage.node_usage.unavailable.count");
             Check(value.NodeUsage!.Unavailable[0] == "provider-pools-no-retained-owner", "missing-provider-plan-not-zero-usage.node_usage.unavailable.0");
             Check(value.NodeUsage!.Unavailable[1] == "audit-owner-not-configured", "missing-provider-plan-not-zero-usage.node_usage.unavailable.1");
+            Check(!(value.NodeUsage!.StreamQuarantinedConnections is not null), "missing-provider-plan-not-zero-usage.node_usage.stream_quarantined_connections.presence");
             Check(value.State == "binding-plan-unavailable", "missing-provider-plan-not-zero-usage.state");
+        }
+        {
+            var value = new Profile.ListCapabilitiesResponse(new Profile.CapabilityDescriptor[] {}, null, null, null, new Profile.CapabilityResourceUsage("node", new Dictionary<string, ulong> {{"stream_owners", 0UL}, {"stream_connections", 0UL}}, new string[] {}, 0UL), "binding-plan-unavailable");
+            Check(value.Capabilities.Count == 0, "observed-stream-quarantine-zero.capabilities.count");
+            Check(!(value.Page is not null), "observed-stream-quarantine-zero.page.presence");
+            Check(!(value.Revision is not null), "observed-stream-quarantine-zero.revision.presence");
+            Check(!(value.TenantUsage is not null), "observed-stream-quarantine-zero.tenant_usage.presence");
+            Check(value.NodeUsage is not null, "observed-stream-quarantine-zero.node_usage.presence");
+            Check(value.NodeUsage!.Scope == "node", "observed-stream-quarantine-zero.node_usage.scope");
+            Check(value.NodeUsage!.Counters.Count == 2, "observed-stream-quarantine-zero.node_usage.counters.count");
+            Check(value.NodeUsage!.Counters["stream_owners"] == 0UL, "observed-stream-quarantine-zero.node_usage.counters.0");
+            Check(value.NodeUsage!.Counters["stream_connections"] == 0UL, "observed-stream-quarantine-zero.node_usage.counters.1");
+            Check(value.NodeUsage!.Unavailable.Count == 0, "observed-stream-quarantine-zero.node_usage.unavailable.count");
+            Check(value.NodeUsage!.StreamQuarantinedConnections is not null, "observed-stream-quarantine-zero.node_usage.stream_quarantined_connections.presence");
+            Check(value.NodeUsage!.StreamQuarantinedConnections!.Value == 0UL, "observed-stream-quarantine-zero.node_usage.stream_quarantined_connections");
+            Check(value.State == "binding-plan-unavailable", "observed-stream-quarantine-zero.state");
+        }
+        {
+            var value = new Profile.ListCapabilitiesResponse(new Profile.CapabilityDescriptor[] {}, null, null, null, new Profile.CapabilityResourceUsage("node", new Dictionary<string, ulong> {{"stream_owners", 3UL}, {"stream_connections", 2UL}}, new string[] {}, 1UL), "binding-plan-unavailable");
+            Check(value.Capabilities.Count == 0, "observed-stream-quarantine-retained.capabilities.count");
+            Check(!(value.Page is not null), "observed-stream-quarantine-retained.page.presence");
+            Check(!(value.Revision is not null), "observed-stream-quarantine-retained.revision.presence");
+            Check(!(value.TenantUsage is not null), "observed-stream-quarantine-retained.tenant_usage.presence");
+            Check(value.NodeUsage is not null, "observed-stream-quarantine-retained.node_usage.presence");
+            Check(value.NodeUsage!.Scope == "node", "observed-stream-quarantine-retained.node_usage.scope");
+            Check(value.NodeUsage!.Counters.Count == 2, "observed-stream-quarantine-retained.node_usage.counters.count");
+            Check(value.NodeUsage!.Counters["stream_owners"] == 3UL, "observed-stream-quarantine-retained.node_usage.counters.0");
+            Check(value.NodeUsage!.Counters["stream_connections"] == 2UL, "observed-stream-quarantine-retained.node_usage.counters.1");
+            Check(value.NodeUsage!.Unavailable.Count == 0, "observed-stream-quarantine-retained.node_usage.unavailable.count");
+            Check(value.NodeUsage!.StreamQuarantinedConnections is not null, "observed-stream-quarantine-retained.node_usage.stream_quarantined_connections.presence");
+            Check(value.NodeUsage!.StreamQuarantinedConnections!.Value == 1UL, "observed-stream-quarantine-retained.node_usage.stream_quarantined_connections");
+            Check(value.State == "binding-plan-unavailable", "observed-stream-quarantine-retained.state");
         }
         {
             var value = new Profile.CapabilityInspectionCeiling(0U, 18446744073709551615UL, 0UL, 18446744073709551615UL);
@@ -1292,6 +1326,6 @@ internal static class ProfileVectors
         Rejects(() => Profile.UnsignedDecimal.Parse("1\u0000"));
         Rejects(() => Profile.UnsignedDecimal.Parse("1\n"));
         Rejects(() => Profile.UnsignedDecimal.Parse("1\r\n"));
-        Console.WriteLine("shared profile vectors: 78");
+        Console.WriteLine("shared profile vectors: 80");
     }
 }

@@ -633,10 +633,30 @@ public sealed record CapabilityInspectionRevision(
 /// <param name="Scope">The exact scope value with preserved presence.</param>
 /// <param name="Counters">The exact counters value with preserved presence.</param>
 /// <param name="Unavailable">The exact unavailable value with preserved presence.</param>
+/// <param name="StreamQuarantinedConnections">The exact stream_quarantined_connections value with preserved presence.</param>
 public sealed record CapabilityResourceUsage(
     string Scope,
     IReadOnlyDictionary<string, ulong> Counters,
-    IReadOnlyList<string> Unavailable);
+    IReadOnlyList<string> Unavailable,
+    ulong? StreamQuarantinedConnections)
+{
+    /// <summary>Constructs the previous shape with the new observations absent.</summary>
+    /// <param name="Scope">The original scope value.</param>
+    /// <param name="Counters">The original counters value.</param>
+    /// <param name="Unavailable">The original unavailable value.</param>
+    public CapabilityResourceUsage(string Scope, IReadOnlyDictionary<string, ulong> Counters, IReadOnlyList<string> Unavailable) : this(Scope, Counters, Unavailable, null) { }
+
+    /// <summary>Deconstructs the original fields.</summary>
+    /// <param name="Scope">The original scope value.</param>
+    /// <param name="Counters">The original counters value.</param>
+    /// <param name="Unavailable">The original unavailable value.</param>
+    public void Deconstruct(out string Scope, out IReadOnlyDictionary<string, ulong> Counters, out IReadOnlyList<string> Unavailable)
+    {
+        Scope = this.Scope;
+        Counters = this.Counters;
+        Unavailable = this.Unavailable;
+    }
+}
 
 /// <summary>Transport-neutral ListCapabilitiesResponse; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="Capabilities">The exact capabilities value with preserved presence.</param>
