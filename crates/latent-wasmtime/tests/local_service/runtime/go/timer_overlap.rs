@@ -20,7 +20,9 @@ async fn signed_overlapping_public_timer_operations_retire_the_original_wait() {
     for (case, id, mode, created) in [
         ("reset-reset", "go-timer-overlap-reset-reset", 0, 1),
         ("reset-stop", "go-timer-overlap-reset-stop", 1, 2),
-        ("fresh", "go-timer-overlap-fresh", 0, 3),
+        ("gc-reset-reset", "go-timer-overlap-gc-reset-reset", 2, 3),
+        ("gc-reset-stop", "go-timer-overlap-gc-reset-stop", 3, 4),
+        ("fresh", "go-timer-overlap-fresh", 0, 5),
     ] {
         let result = f.manager.start(f.request(id, mode)).unwrap().await;
         let selected = result
@@ -64,6 +66,6 @@ async fn signed_overlapping_public_timer_operations_retire_the_original_wait() {
         );
     }
     // Each selected Store emits its own fixed-width causal record on drop.
-    // The owner independently requires exactly two complete, ordered records;
+    // The owner independently requires exactly four complete, ordered records;
     // this test's success alone does not establish the overlap.
 }

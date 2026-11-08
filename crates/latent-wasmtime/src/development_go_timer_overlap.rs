@@ -28,6 +28,8 @@ const PREFIX: &str = "LSF-GO-TIMER-OVERLAP-V1";
 pub(crate) enum Case {
     ResetReset,
     ResetStop,
+    GcResetReset,
+    GcResetStop,
 }
 
 impl Case {
@@ -36,6 +38,8 @@ impl Case {
         match self {
             Self::ResetReset => "go-timer-overlap-reset-reset",
             Self::ResetStop => "go-timer-overlap-reset-stop",
+            Self::GcResetReset => "go-timer-overlap-gc-reset-reset",
+            Self::GcResetStop => "go-timer-overlap-gc-reset-stop",
         }
     }
 }
@@ -317,9 +321,14 @@ fn arc_bytes<T>() -> Option<usize> {
 
 impl Observer {
     pub(crate) fn select(activation: &str) -> Option<Case> {
-        [Case::ResetReset, Case::ResetStop]
-            .into_iter()
-            .find(|case| case.activation() == activation)
+        [
+            Case::ResetReset,
+            Case::ResetStop,
+            Case::GcResetReset,
+            Case::GcResetStop,
+        ]
+        .into_iter()
+        .find(|case| case.activation() == activation)
     }
 
     pub(crate) fn new(case: Case, budget: &ActivationBudget) -> Result<Self, PlatformError> {
@@ -633,6 +642,26 @@ mod tests {
                 next_finished: true,
             }
         );
+    }
+
+    #[test]
+    fn gc_cases_use_the_same_live_original_wait_and_ordered_parks() {
+        for case in [Case::GcResetReset, Case::GcResetStop] {
+            assert_eq!(Observer::select(case.activation()), Some(case));
+            let mut state = before_second_park();
+            state.case = Some(case);
+            assert!(state.next_live && state.next_pending && state.markers[0].parked);
+            assert!(state.park(token(4), 1));
+            state.next_finished(token(10));
+            assert!(state.snapshot().complete);
+
+            let mut early = before_second_park();
+            early.case = Some(case);
+            early.markers[0].parked = false;
+            early.markers[1] = Marker::default();
+            early.timer_start(token(12), Some(token(4)));
+            assert!(early.invalid);
+        }
     }
 
     #[test]

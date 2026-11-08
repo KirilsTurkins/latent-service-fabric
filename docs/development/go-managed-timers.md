@@ -68,6 +68,25 @@ is claimed for the later test/documentation composition. Even a pass does not co
 races, aggregate cost/fairness, node stop or low-level kernel/TLS qualification.
 Both issues remain open and historical v3 evidence is not relabeled as v5.
 
+## Garbage collection during an outstanding timer wait
+
+The separate timer-overlap owner retains the original Reset/Reset and
+Reset/Stop cells and adds one forced-collection version of each. In those cells,
+the second worker first stops its marker timer; the host witness accepts that
+marker only after the first worker has parked while the original provider wait
+is pending. The worker calls `runtime.GC` and checks that `NumGC` changed before
+it attempts its own timer operation. The host retains the original provider
+wait until the second worker parks and requires its physical retirement, so a
+passing signed cell establishes a collection between those observed events.
+The native reference cells only compare ordinary Go return behavior; the
+host witness establishes the guest ordering. A fresh activation follows the
+four selected cells. Task16, Wait4, Timer2 and the activation budgets stay
+unchanged. The existing 43-case timer campaign remains a separate owner.
+
+This source specifies the new qualification; it is not a signed result by
+itself. It does not prove every possible GC/timer interleaving, actual process
+RSS, trap quarantine, or the entire #742 timer and physical-cost requirements.
+
 Timer installation allocates replacement inventory separately from its
 non-suspending publication step, which rechecks the current slots after any GC
 pause. A host-only control forces allocation to pause while other admitted

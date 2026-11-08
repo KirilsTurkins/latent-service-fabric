@@ -1,6 +1,9 @@
 package export_tests_caller_api
 
-import "time"
+import (
+	"runtime"
+	"time"
+)
 
 type result struct {
 	worker uint8
@@ -10,7 +13,7 @@ type result struct {
 // Run is deliberately finite. The host witness, not this source's sleep or
 // channel order, establishes that both calls overlap an actual timer-next.
 func Run(which uint32) uint32 {
-	if which > 1 {
+	if which > 3 {
 		panic("unsupported overlap case")
 	}
 	target := time.NewTimer(time.Hour)
@@ -43,8 +46,20 @@ func Run(which uint32) uint32 {
 		if !marker.Stop() {
 			panic("second marker timer")
 		}
+		if which >= 2 {
+			// The host witness accepts this marker only after the first
+			// worker parks with the original provider wait still pending.
+			// The second worker then collects before it enters Reset/Stop.
+			var before, after runtime.MemStats
+			runtime.ReadMemStats(&before)
+			runtime.GC()
+			runtime.ReadMemStats(&after)
+			if before.NumGC == after.NumGC {
+				panic("forced collection did not complete")
+			}
+		}
 		markers <- struct{}{}
-		if which == 0 {
+		if which%2 == 0 {
 			results <- result{2, target.Reset(time.Hour)}
 		} else {
 			results <- result{2, target.Stop()}
@@ -61,7 +76,7 @@ func Run(which uint32) uint32 {
 	if one.worker != 1 || two.worker != 2 || !two.active {
 		panic("public timer result")
 	}
-	if which == 0 {
+	if which%2 == 0 {
 		if !one.active || !target.Stop() {
 			panic("final reset timer stop")
 		}
@@ -73,7 +88,7 @@ func Run(which uint32) uint32 {
 	}
 	close(release)
 	<-watcherDone
-	if which == 1 && !one.active {
+	if which%2 == 1 && !one.active {
 		return 43
 	}
 	return 42
