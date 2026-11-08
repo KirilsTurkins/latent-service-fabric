@@ -213,6 +213,7 @@ CONTROLS = (('original-host-memory',
   'host::native_host_future_tests::actual_host_future_callback_error_is_unchanged_and_its_box_retires',
   'host::native_host_future_tests::actual_host_future_legacy_unaccounted_embedding_keeps_original_scalar_result',
   'host::native_host_future_tests::actual_accessor_spawn_outer_box_refuses_before_run_and_retires_after_pending',
+  'host::native_host_future_tests::actual_inline_host_future_refuses_on_original_budget_before_dispatch_and_reuses_it',
   'host::native_host_future_tests::actual_sync_lower_result_box_refuses_before_poll_and_fresh_budget_reuses')),
  ('c-canonical-wait-routes',
  'latent-component-threading',
@@ -490,7 +491,7 @@ def qualify(output: Path, revision: str) -> dict:
     require(sys.platform == 'linux', 'host-codec-linux-owner-required')
     names = [name for _,_,_,cases in CONTROLS for name in cases]
     require(len(CONTROLS) == 44 and len({row[0] for row in CONTROLS}) == 44
-            and len(names) == len(set(names)) == 250, 'host-codec-control-inventory')
+            and len(names) == len(set(names)) == 251, 'host-codec-control-inventory')
     output = fresh(output)
     codec_wasmtime.verify(ROOT)
     result_bytes.verify(ROOT)
@@ -529,7 +530,7 @@ def qualify(output: Path, revision: str) -> dict:
             products[name] = identity
         record = {'schemaVersion':'latent.host-codec.native-products.v1','status':'passed',
             'sourceRevision':revision,'source':before,'materials':inputs,'compiler':compiler,
-            'products':products,'commands':stages.records,'controlCount':250,'nativeCohort':NATIVE_COHORT,
+            'products':products,'commands':stages.records,'controlCount':251,'nativeCohort':NATIVE_COHORT,
             'wasmtimeAllocationCohort':codec_wasmtime.COHORT,
             'controls':{stage:list(names) for stage,_,_,names in CONTROLS},
             'profile':'normal-managed-guest-default-features','signedQualification':False,
