@@ -16,6 +16,8 @@ pub struct NativeTransactionHostInspection {
     pub state_configuration_digest: String,
     pub state_configuration_epoch: u64,
     pub deferred_http: Vec<NativeDeferredEffectHostInspection>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub deferred_event: Vec<NativeDeferredEffectHostInspection>,
     #[serde(skip)]
     pub(in crate::standalone) response: latent_core::native_capacity::NativeBufferPermit,
 }
@@ -153,6 +155,64 @@ pub(in crate::standalone) fn deferred(
             profile
                 .idempotency_profile
                 .strip_prefix("qualified-http-v1:")
+                .ok_or_else(super::unavailable)?
+        ),
+        configuration_epoch: adapter.provider_reference().configuration_epoch(),
+        dispatch_subject: principal.subject,
+        dispatch_recovery_kind: caller.kind,
+        dispatch_recovery_scope: caller.scope,
+        result_policy: operation.result_policy.clone(),
+    }))
+}
+
+/// Describe a selected signed event binding and its original installed provider.
+/// Inspection is not a namespace selection, policy grant, or dispatch receipt.
+pub(in crate::standalone) fn deferred_event(
+    asset: &latent_artifacts::SelectedTransactionAsset,
+    operation: &crate::config::state::OperationSettings,
+    adapters: &[std::sync::Arc<latent_nats::deferred::JetStreamEffectAdapter>],
+) -> Result<Option<NativeDeferredEffectHostInspection>, PlatformError> {
+    let Some((scope, profile)) =
+        super::installations::event::recovery_profile(asset, operation, adapters)?
+    else {
+        return Ok(None);
+    };
+    let config = operation
+        .deferred_event
+        .as_ref()
+        .ok_or_else(super::unavailable)?;
+    let adapter = adapters
+        .iter()
+        .find(|adapter| {
+            use latent_effects::runtime::DeferredEffectAdapter;
+            adapter.profile() == &profile
+        })
+        .ok_or_else(super::unavailable)?;
+    let service = latent_core::ServiceId(asset.declaration().capsule.clone());
+    let principal = InvocationPrincipal {
+        subject: InvocationPrincipal::local_service_subject(&operation.tenant, &service),
+        kind: PrincipalKind::Service,
+        tenant: Some(operation.tenant.clone()),
+        service: Some(service.clone()),
+        claims: std::collections::BTreeMap::default(),
+    };
+    let caller = CallerScope::derive(&principal, &RecoverySelection::ServiceIntegration)?;
+    Ok(Some(NativeDeferredEffectHostInspection {
+        tenant: scope.tenant,
+        service: service.0,
+        publication: scope.publication,
+        namespace: scope.namespace,
+        incarnation: scope.incarnation,
+        logical_binding: scope.binding,
+        operation: scope.operation,
+        staging_binding: config.staging_binding.clone(),
+        dispatch_binding: config.dispatch_binding.clone(),
+        provider_profile: profile.adapter,
+        configuration_digest: format!(
+            "sha256:{}",
+            profile
+                .idempotency_profile
+                .strip_prefix("js-window-v1:")
                 .ok_or_else(super::unavailable)?
         ),
         configuration_epoch: adapter.provider_reference().configuration_epoch(),

@@ -178,6 +178,20 @@ impl StandaloneNode {
             (_, None) => Vec::new(),
             _ => return Err(super::mode_error()),
         };
+        let event_adapters = match (
+            catalogs.providers.as_deref(),
+            settings
+                .providers
+                .as_ref()
+                .and_then(|providers| providers.events.as_ref()),
+        ) {
+            (Some(provider), Some(events)) => provider.typed_deferred_event_adapters(
+                events,
+                Arc::new(state::inspection::UnadmittedTime),
+            )?,
+            (_, None) => Vec::new(),
+            _ => return Err(super::mode_error()),
+        };
         let repository = Arc::clone(&catalogs.artifacts);
         let operations = configuration.operations.clone();
         let native = bootstrap.native.clone();
@@ -190,6 +204,7 @@ impl StandaloneNode {
                 >,
             )> = Vec::new();
             let mut effects = Vec::new();
+            let mut event_effects = Vec::new();
             for operation in operations {
                 if !captured
                     .iter()
@@ -231,10 +246,15 @@ impl StandaloneNode {
                 if let Some(effect) = state::inspection::deferred(asset, &operation, &adapters)? {
                     effects.push(effect);
                 }
+                if let Some(effect) =
+                    state::inspection::deferred_event(asset, &operation, &event_adapters)?
+                {
+                    event_effects.push(effect);
+                }
             }
-            Ok::<_, PlatformError>(effects)
+            Ok::<_, PlatformError>((effects, event_effects))
         });
-        let effects = tokio::time::timeout_at(bootstrap.deadline.into(), capture)
+        let (effects, event_effects) = tokio::time::timeout_at(bootstrap.deadline.into(), capture)
             .await
             .map_err(|_| super::mode_error())?
             .map_err(|_| super::mode_error())??;
@@ -253,6 +273,7 @@ impl StandaloneNode {
             ),
             state_configuration_epoch: configuration.configuration_epoch,
             deferred_http: effects,
+            deferred_event: event_effects,
             response,
         };
         #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]

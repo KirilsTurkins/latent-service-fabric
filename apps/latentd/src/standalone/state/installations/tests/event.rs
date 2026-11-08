@@ -282,6 +282,104 @@ async fn configured_event_inspection_keeps_original_provider_identity_without_cr
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn signed_event_host_inspection_preserves_original_source_and_provider() {
+    use latent_core::native_capacity::{NativeAdmissionClass, NativeReservationRequest};
+    let event = EventFixture::new().await;
+    let mut setup = Setup::configured_installation(
+        Some(event.requirements()),
+        false,
+        false,
+        None,
+        false,
+        Some(&event),
+    )
+    .await;
+    let operation = setup.fixture.settings.operations[0].clone();
+    let original = Arc::new(
+        setup
+            .kernel
+            .native
+            .reserve(
+                NativeAdmissionClass::Recovery,
+                NativeReservationRequest {
+                    request_bytes: crate::config::state::INSTALLATION_CAPTURE_REQUEST_BYTES,
+                    work_bytes: crate::config::state::INSTALLATION_CAPTURE_WORK_BYTES,
+                    response_bytes: TRANSACTION_ASSET_RESPONSE_BYTES,
+                },
+                setup.kernel.original_deadline().unwrap(),
+            )
+            .unwrap(),
+    );
+    let artifacts = setup.services.artifacts.clone();
+    let native = setup.kernel.native.clone();
+    let worker_operation = operation.clone();
+    let worker_original = original.clone();
+    let captured = setup
+        .kernel
+        .store
+        .with_store_retaining(
+            StoreIoKind::RecoveryRead,
+            crate::config::state::INSTALLATION_CAPTURE_REQUEST_BYTES
+                + crate::config::state::INSTALLATION_CAPTURE_WORK_BYTES
+                + TRANSACTION_ASSET_RESPONSE_BYTES,
+            original.clone(),
+            move |_| {
+                Ok(artifacts.capture_selected_transaction_asset(
+                    &worker_operation.tenant,
+                    &worker_operation.component,
+                    &worker_operation.publication,
+                    &native,
+                    worker_original,
+                ))
+            },
+        )
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
+    let row = super::super::super::inspection::deferred_event(
+        captured.get(),
+        &operation,
+        &setup.services.http.events,
+    )
+    .unwrap()
+    .unwrap();
+    assert_eq!(row.publication, operation.publication.as_str());
+    assert_eq!(row.tenant, "tests");
+    assert_eq!(row.namespace, "orders");
+    assert_eq!(row.logical_binding, "approved-event");
+    assert_eq!(row.operation, "event");
+    assert_eq!(row.staging_binding, "intent-stage");
+    assert_eq!(row.dispatch_binding, "intent-dispatch");
+    assert_eq!(
+        row.provider_profile,
+        latent_nats::deferred::NATS_DEFERRED_PROFILE
+    );
+    let profile = setup.services.http.events[0].profile();
+    assert_eq!(
+        row.configuration_digest,
+        format!(
+            "sha256:{}",
+            profile
+                .idempotency_profile
+                .strip_prefix("js-window-v1:")
+                .unwrap()
+        )
+    );
+    let wire = serde_json::to_string(&row).unwrap();
+    let observed: serde_json::Value = serde_json::from_str(&wire).unwrap();
+    assert_eq!(observed["dispatchRecoveryKind"], "service-integration");
+    assert!(!wire.contains("fixture-secret"));
+    assert!(!wire.contains("event-secret"));
+    drop(captured);
+    drop(original);
+    setup.services.http = super::super::InstalledHttpEffects::empty();
+    setup.finish().await;
+    event.finish().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn signed_event_rule_installs_only_for_current_namespace_and_original_provider() {
     let event = EventFixture::new().await;
     let mut setup = Setup::configured_installation(

@@ -218,7 +218,7 @@ configuration cannot yet be combined on the same installed operation.
 configured provider and returns its bounded profile, configuration digest and
 epoch. It does not grant publication authority or prove a broker connection;
 the protected credential itself is not returned. Use the reported
-`idempotencyProfile` as the explicit Java source input and the configuration
+`profile.idempotency_profile` as the explicit Java source input and the configuration
 digest when pinning the node operation.
 
 The signed-package fixture verifies the installation with the actual protected

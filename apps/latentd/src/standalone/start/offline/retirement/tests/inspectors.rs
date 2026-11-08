@@ -299,6 +299,7 @@ async fn warm_transaction_host_inspector_retires_after_graph_drop() {
     );
     let wire: serde_json::Value = serde_json::from_slice(encoded.get()).unwrap();
     assert_eq!(wire["deferredHttp"], serde_json::json!([]));
+    assert!(wire.get("deferredEvent").is_none());
     drop(encoded);
     assert!(probe.native.snapshot().unwrap().physically_retired());
 }
