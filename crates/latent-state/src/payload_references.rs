@@ -12,7 +12,10 @@ mod links;
 mod physical;
 mod state_links;
 pub use links::{PayloadLinks, LINKS_PREFIX, MAX_LINK_BYTES};
-pub use physical::{physical_owner_count, validate_physical_inventory_head, PhysicalInventory};
+pub use physical::{
+    physical_owner_count, validate_physical_inventory_head,
+    validate_physical_inventory_head_with_checkpoint, PhysicalInventory,
+};
 pub use state_links::{validate_state_linked_row, StatePayloadLink, MAX_STATE_LINK_BYTES};
 #[cfg(test)]
 mod tests;
