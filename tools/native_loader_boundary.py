@@ -75,6 +75,70 @@ unsafe impl wasmtime::MemoryCreator for RefusingCreator {
         Err("native-linear-original-creator-refusal".into())
     }
 }'''
+# The existing Go overlap test observes actual deallocation before refund.
+# Bind its entire test-module opening, imports, const thread-local bookkeeping,
+# and sole GlobalAlloc impl. It forwards unchanged pointers/layouts to System;
+# post-deallocation observation uses only Copy integers/bools and Cell, with
+# try_with tolerating thread-local teardown. No allocation, dereference, panic,
+# or owner refund occurs in this observer. The cfg(test) fence is part of the
+# exact exception, not inferred from the filename. All following code is still
+# scanned, and copying this allocator to another path grants no exception.
+TIMER_ALLOCATOR_TEST = f"{CRATE}/src/development_go_timer_overlap.rs"
+TIMER_ALLOCATOR_TEST_PREFIX = '''#[cfg(test)]
+mod tests {
+    use super::*;
+    use latent_core::{BudgetProfile, ClockSample, EffectiveActivationBudget, ResourceBudget};
+    use latent_executor::OwnedPreparationWait;
+    use std::{
+        alloc::{GlobalAlloc, System},
+        cell::Cell,
+        future::Future,
+        task::{Context, Waker},
+    };
+
+    // Test-controller bookkeeping only: an immutable allocator delegates to
+    // System, while each test thread tracks just its two exact Arc pointers.
+    // It is not part of the activation witness or any non-test binary.
+    struct WatchingAllocator;
+    #[derive(Clone, Copy, Default)]
+    struct Watch {
+        payload: usize,
+        billing: usize,
+        payload_freed: bool,
+        billing_freed: bool,
+        before_refund: bool,
+    }
+    thread_local! {
+        static WATCH: Cell<Watch> = const { Cell::new(Watch {
+            payload: 0, billing: 0, payload_freed: false,
+            billing_freed: false, before_refund: false,
+        }) };
+    }
+    #[global_allocator]
+    static ALLOCATOR: WatchingAllocator = WatchingAllocator;
+    // SAFETY: allocation and deallocation are delegated with the unchanged
+    // pointer/layout to System. The observer stores integer addresses only;
+    // it never dereferences or changes the allocator's storage.
+    #[allow(unsafe_code, reason = "test-only exact allocator-release observation")]
+    unsafe impl GlobalAlloc for WatchingAllocator {
+        unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+            unsafe { System.alloc(layout) }
+        }
+        unsafe fn dealloc(&self, pointer: *mut u8, layout: Layout) {
+            unsafe { System.dealloc(pointer, layout) };
+            let _ = WATCH.try_with(|cell| {
+                let mut watch = cell.get();
+                if pointer as usize == watch.payload {
+                    watch.payload_freed = true;
+                }
+                if pointer as usize == watch.billing {
+                    watch.billing_freed = true;
+                }
+                cell.set(watch);
+            });
+        }
+    }
+'''
 # This third exception only allocates and unmaps guarded activation stacks through
 # Wasmtime's pinned public StackCreator interface. Original activation Native
 # and memory admission precede mapping; actual successful munmap precedes refund.
@@ -181,6 +245,11 @@ def validate(root: Path) -> list[str]:
                 errors.append("audited stream-copy lowering changed; review pinned ABI and physical copy ownership")
             else:
                 source = ""
+        elif relative == TIMER_ALLOCATOR_TEST:
+            if source.count(TIMER_ALLOCATOR_TEST_PREFIX) != 1:
+                errors.append("audited timer test allocator changed; review its test-only fence and System delegation")
+            else:
+                source = source.replace(TIMER_ALLOCATOR_TEST_PREFIX, "", 1)
         elif relative == REFUSING_CREATOR_TEST:
             if source.count(REFUSING_CREATOR_IMPL) != 1:
                 errors.append("audited refusing memory creator test changed; review its sole always-error trait item")

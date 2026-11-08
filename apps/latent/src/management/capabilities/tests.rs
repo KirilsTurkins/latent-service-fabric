@@ -208,6 +208,10 @@ fn usage_reports_only_fixed_owner_counters_and_preserves_unavailable() {
     let mut wrong = usage;
     wrong.counters.insert("credential_file".into(), 0);
     assert!(projection::checked(&wrong, 4096).is_err());
+    assert_stream_usage_projection();
+}
+
+fn assert_stream_usage_projection() {
     let mut streams = proto::CapabilityResourceUsage {
         scope: "node".into(),
         counters: HashMap::from([
