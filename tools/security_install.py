@@ -11,6 +11,8 @@ import re
 import sys
 import tarfile
 import time
+import urllib.error
+import urllib.parse
 import urllib.request
 import zipfile
 
@@ -43,18 +45,68 @@ def platform_key() -> str:
     return "windows-x64" if os.name == "nt" else "linux-x64"
 
 
-def download(url: str) -> bytes:
-    require(url.startswith("https://github.com/"), "unreviewed-download-origin")
-    started = time.monotonic()
-    request = urllib.request.Request(url, headers={"User-Agent": "lsf-security-baseline/1"})
+# One immutable, separately reviewed fallback for the exact pinned Linux scanner.
+# Archive and executable identities are still checked by install/verify_tool.
+ZIZMOR_LINUX_URL = ("https://github.com/zizmorcore/zizmor/releases/download/v1.30.1/"
+                    "zizmor-x86_64-unknown-linux-gnu.tar.gz")
+ZIZMOR_LINUX_ASSET = "https://api.github.com/repos/zizmorcore/zizmor/releases/assets/552067642"
+ZIZMOR_LINUX_ASSET_BYTES = 9_169_512
+
+
+class _AssetRedirect(urllib.request.HTTPRedirectHandler):
+    """Do not forward the API credential or follow an unrelated asset host."""
+
+    def redirect_request(self, request, fp, code, msg, headers, newurl):
+        target = urllib.parse.urlsplit(newurl)
+        require(target.scheme == "https" and target.hostname == "release-assets.githubusercontent.com"
+                and target.port in (None, 443) and target.username is None and target.password is None,
+                "unreviewed-asset-redirect")
+        redirected = super().redirect_request(request, fp, code, msg, headers, newurl)
+        require(redirected is not None and all(key.lower() != "authorization"
+                for key, _ in redirected.header_items()), "asset-redirect-credential")
+        return redirected
+
+
+def _read_download(request, started: float, opener) -> bytes:
     payload = bytearray()
-    with urllib.request.urlopen(request, timeout=20) as response:
+    with opener(request, timeout=20) as response:
         require(response.status == 200 and response.url.startswith("https://"), "download-status")
         while chunk := response.read1(65536):
             payload.extend(chunk)
             require(len(payload) <= MAX_DOWNLOAD_BYTES, "download-size-limit")
             require(time.monotonic() - started < 120, "download-time-limit")
     return bytes(payload)
+
+
+def download(url: str) -> bytes:
+    require(url.startswith("https://github.com/"), "unreviewed-download-origin")
+    started = time.monotonic()
+    request = urllib.request.Request(url, headers={"User-Agent": "lsf-security-baseline/1"})
+    try:
+        return _read_download(request, started, urllib.request.urlopen)
+    except (TimeoutError, urllib.error.URLError) as failure:
+        # Never retry integrity/size failures, unrelated HTTP errors, other
+        # tools, or work without the scoped credential. Discard partial bytes.
+        if isinstance(failure, urllib.error.HTTPError):
+            transient = failure.code == 504
+        elif isinstance(failure, urllib.error.URLError):
+            transient = isinstance(failure.reason, TimeoutError)
+        else:
+            transient = True
+        token = os.environ.get("GH_TOKEN") if url == ZIZMOR_LINUX_URL and transient else None
+        if not token:
+            raise
+        if isinstance(failure, urllib.error.HTTPError):
+            failure.close()
+        request = urllib.request.Request(ZIZMOR_LINUX_ASSET, headers={
+            "Accept": "application/octet-stream", "User-Agent": "lsf-security-baseline/1"})
+        # urllib drops unredirected headers before following a redirect; the
+        # handler also validates the next host and checks the copied headers.
+        request.add_unredirected_header("Authorization", "Bearer " + token)
+        opener = urllib.request.build_opener(_AssetRedirect()).open
+        payload = _read_download(request, started, opener)
+        require(len(payload) == ZIZMOR_LINUX_ASSET_BYTES, "download-size-mismatch")
+        return payload
 
 
 def extract_binary(payload: bytes, asset_name: str, binary_name: str) -> bytes:

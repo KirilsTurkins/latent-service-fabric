@@ -353,8 +353,8 @@ internal static class TaskWait
             }
             var generatedHelpers = Methods(module).Where(item => !originalMap.ContainsKey(item.Key))
                 .ToDictionary(item => item.Value.FullName, item => BodyIdentity(item.Value));
-            Require(generatedHelpers.Count == (aggregateSelected ? 96 : managedSelected ? 92 : finiteSelected ? 10 : 9)
-                && timerMethods.Length == 3 && modifiedBodies.Count == (aggregateSelected ? 36 : managedSelected ? 26 : 4));
+            Require(generatedHelpers.Count == (aggregateSelected ? 107 : managedSelected ? 103 : finiteSelected ? 10 : 9)
+                && timerMethods.Length == 3 && modifiedBodies.Count == (aggregateSelected ? 37 : managedSelected ? 27 : 4));
             module.Write(output, new WriterParameters { WriteSymbols = false, DeterministicMvid = true });
             using (var written = ModuleDefinition.ReadModule(output))
             {
@@ -377,7 +377,7 @@ internal static class TaskWait
                 var fields = written.GetTypes().SelectMany(type => type.Fields).Select(field => field.FullName).ToHashSet();
                 var addedFields = module.GetTypes().SelectMany(type => type.Fields).Select(field => field.FullName)
                     .Where(name => !originalFields.Contains(name)).ToHashSet();
-                Require(addedFields.Count == (aggregateSelected ? 59 : managedSelected ? 54 : 5) && fields.Count == originalFields.Count + addedFields.Count &&
+                Require(addedFields.Count == (aggregateSelected ? 61 : managedSelected ? 56 : 5) && fields.Count == originalFields.Count + addedFields.Count &&
                     fields.Except(addedFields).ToHashSet().SetEquals(originalFields) && addedFields.IsSubsetOf(fields));
             }
             Require(FileDigest(original, 8 * 1024 * 1024) == SourceDigest);

@@ -27,6 +27,9 @@ fn parent(generation: u64, id: u64) -> Result<Option<runtime::Token>, u32> {
 
 impl Guest for ClosedRuntime {
     fn reserve(kind: u32, generation: u64, id: u64) -> Result<(u64, u64), u32> {
+        // A reset notification with no proven managed context must not admit
+        // work even while the original activation is otherwise Running.
+        owner::continuation().map_err(error)?;
         let kind = match kind {
             0 => runtime::OwnerKind::Task,
             1 => runtime::OwnerKind::ManagedIdleWorker,
@@ -54,7 +57,11 @@ impl Guest for ClosedRuntime {
 
     fn context(generation: u64, id: u64) {
         // The exact copied CoreLib registry supplies only its still-owned Task
-        // token. Every actual child registration revalidates it in the host.
-        owner::set_continuation(parent(generation, id).expect("invalid managed work context"));
+        // token or the private reset fence. Every child revalidates its token.
+        if (generation, id) == (0, 1) {
+            owner::fence_continuation();
+        } else {
+            owner::set_continuation(parent(generation, id).expect("invalid managed work context"));
+        }
     }
 }

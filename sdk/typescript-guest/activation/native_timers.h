@@ -52,7 +52,7 @@ class Timers final {
   }
 
   bool begin_next(JSContext* cx, Record& record) {
-    if (!record.timer_live || record.closing || record.next.physical())
+    if (!record.timer_live || record.closing || record.next.unresolved())
       return fail(cx, "next-state", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
     // The record's precharged native storage includes this result buffer.
     record.outcome = {};

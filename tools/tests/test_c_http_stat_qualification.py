@@ -23,7 +23,8 @@ class StatQualificationControls(unittest.TestCase):
             c_capsule_project.validate(snapshot(project))
             self.assertEqual(read_json(project / 'capsule-project.json')['runtimeProfile'], FETCH_PROFILE)
             self.assertEqual(stat.CASES, ('normal', 'denied', 'not-found', 'fresh',
-                                          'range', 'range-ignored', 'range-denied'))
+                                          'range', 'range-ignored', 'range-denied',
+                                          'range-unsolicited', 'range-before'))
 
     def test_policy_separates_head_and_get_and_refuses_wrong_provider(self):
         descriptor = {'capability': stat.owner.HTTP, 'profile': 'bounded-streaming-http-identity-v1',
@@ -64,13 +65,14 @@ class StatQualificationControls(unittest.TestCase):
         token = b'Bearer ' + b'a' * 64
         peer = stat.RangePeer(token, maximum_seconds=10)
         try:
-            def exchange(path):
+            def exchange(path, *, send_range=True):
                 origin = peer.origin()
                 client = socket.create_connection(('127.0.0.1', origin['port']), timeout=2)
                 try:
                     client.sendall(b'GET ' + path + b' HTTP/1.1\r\nHost: 127.0.0.1:' +
                         str(origin['port']).encode() + b'\r\nAuthorization: ' + token +
-                        b'\r\nRange: bytes=5-\r\nConnection: close\r\n\r\n')
+                        b'\r\n' + (b'Range: bytes=5-\r\n' if send_range else b'') +
+                        b'Connection: close\r\n\r\n')
                     client.setblocking(False); data = bytearray(); deadline = time.monotonic() + 3
                     while time.monotonic() < deadline:
                         peer.poll(0.01)
@@ -88,10 +90,74 @@ class StatQualificationControls(unittest.TestCase):
             ignored = exchange(b'/conformance/body/boundary')
             self.assertTrue(ignored.startswith(b'HTTP/1.1 200 '))
             self.assertEqual(ignored.split(b'\r\n\r\n', 1)[1], b'x' * 8192)
-            self.assertEqual(peer.range_requests, 2)
+            unsolicited = exchange(b'/conformance/json', send_range=False)
+            self.assertEqual(unsolicited, stat.head(206, 4,
+                headers=((b'Content-Range', b'bytes 0-3/*'),)) + b'abcd')
+            before = exchange(b'/conformance/echo')
+            self.assertEqual(before, stat.head(206, 4,
+                headers=((b'Content-Range', b'bytes 0-3/4'),)) + b'abcd')
+            self.assertEqual(peer.range_requests, 3)
+            self.assertEqual(peer.unsolicited_requests, 1)
+            self.assertEqual(peer.early_range_requests, 1)
             self.assertEqual(peer.observation()['openConnections'], 0)
         finally:
             peer.close()
+
+    def test_invalid_response_requires_the_selected_request_shape(self):
+        request = SimpleNamespace(method=b'GET', headers={})
+        self.assertEqual(stat.invalid_partial_response(request, unsolicited=True), stat.head(206, 4,
+            headers=((b'Content-Range', b'bytes 0-3/*'),)) + b'abcd')
+        with self.assertRaisesRegex(WorkflowError, 'c-before-exact-range-request'):
+            stat.invalid_partial_response(request, unsolicited=False)
+        request.headers = {b'range': b'bytes=5-'}
+        self.assertEqual(stat.invalid_partial_response(request, unsolicited=False), stat.head(206, 4,
+            headers=((b'Content-Range', b'bytes 0-3/4'),)) + b'abcd')
+        with self.assertRaisesRegex(WorkflowError, 'c-unsolicited-request-has-range'):
+            stat.invalid_partial_response(request, unsolicited=True)
+        request.method = b'HEAD'
+        with self.assertRaisesRegex(WorkflowError, 'c-invalid-partial-method'):
+            stat.invalid_partial_response(request, unsolicited=False)
+
+    def test_invalid_cells_require_exact_error_peer_and_retirement(self):
+        consumed = {k: '0' for k in ('stateReadBytes', 'stateWriteBytes', 'blobReadBytes',
+                    'blobWriteBytes', 'logBytes', 'effectCount', 'childCalls')}
+        consumed.update(cpuFuel='1', peakMemoryBytes='1')
+        row = {'processReaped': True, 'exitCode': 3, 'decoded': [{'err': 'invalid-content-range'}],
+               'response': {'outcomeKnown': True, 'requestDispatched': True,
+                            'data': {'resolvedRevision': 'revision', 'consumption': consumed}}}
+        change = {'startedRequests': 1, 'requests': [{'vector': 'domain-json', 'method': 'GET',
+                   'role': 'primary', 'authorizationPresent': True}],
+                  'rejectedRequests': 0, 'connectionBoundRejections': 0}
+        peer = Mock(); peer.url.side_effect = lambda vector: 'http://peer/' + vector
+        peer.observation.return_value = {'openConnections': 0}
+        client = SimpleNamespace(deadline=10**12)
+        process = SimpleNamespace(owner=SimpleNamespace(exited=lambda: True))
+        with tempfile.TemporaryDirectory() as tmp, \
+                patch.object(stat.owner, 'selected_revision', return_value='revision'), \
+                patch.object(stat.owner, 'start_http_call', return_value=process) as start, \
+                patch.object(stat.owner, 'finish_call', return_value=row), \
+                patch.object(stat.owner, 'retire', return_value={'physicalOwnersAfter': 0}) as retire, \
+                patch.object(stat.owner, 'close_call'), patch.object(stat, 'validate'), \
+                patch.object(stat, 'delta', return_value=change):
+            def output(name):
+                path = Path(tmp) / name
+                path.mkdir()
+                return path
+            for case, vector in (('range-unsolicited', 'domain-json'), ('range-before', 'method-bytes')):
+                change['requests'][0]['vector'] = vector
+                result = stat.cell(client, object(), {}, peer, output(case), case)
+                self.assertEqual(result['case'], case)
+                self.assertEqual(start.call_args.args[2], case + '\nhttp://peer/' + vector)
+                self.assertEqual(result['retirement']['physicalOwnersAfter'], 0)
+            self.assertEqual(retire.call_count, 2)
+            row['decoded'] = [{'err': 'unexpected-range-error'}]
+            with self.assertRaisesRegex(WorkflowError, 'c-stat-exact-ordinary-result'):
+                stat.cell(client, object(), {}, peer, output('bad-result'), 'range-before')
+            row['decoded'] = [{'err': 'invalid-content-range'}]
+            change['requests'][0]['authorizationPresent'] = False
+            with self.assertRaisesRegex(WorkflowError, 'c-stat-one-authenticated-head-no-replay'):
+                stat.cell(client, object(), {}, peer, output('bad-peer'), 'range-before')
+            self.assertEqual(retire.call_count, 2)
 
     def test_exact_result_and_peer_head_are_required(self):
         consumed = {k: '0' for k in ('stateReadBytes', 'stateWriteBytes', 'blobReadBytes',

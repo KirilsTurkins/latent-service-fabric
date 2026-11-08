@@ -13,6 +13,7 @@ public class Timer implements Activation.ManagedPool {
     private final ArrayList<Entry> queue = new ArrayList<>();
     private final Thread worker;
     private volatile Activation.Lease owner;
+    private boolean ownerSettlementAttempted;
     private boolean cancelled;
     private volatile boolean retiring;
     private volatile int pendingWork;
@@ -74,13 +75,37 @@ public class Timer implements Activation.ManagedPool {
             Activation.manage(this);
             Activation.startManaged(worker, this);
         } catch (Throwable error) {
-            // An accepted or rollback-uncertain thread may still run this target.
-            if (!Activation.alive(worker)) target.clear();
-            cancelled = true;
-            owner.close(); owner = null;
-            Activation.unmanageRetired(this);
+            synchronized (lock) {
+                cancelled = true;
+                // A failed start may still own an accepted worker or a
+                // rollback-uncertain registration. Keep the executor lease
+                // until that worker's actual finally, or Store destruction.
+                if (!Activation.alive(worker)) {
+                    target.clear();
+                    try { settleOwner(); }
+                    catch (Throwable uncertain) { /* preserve the original start failure */ }
+                }
+                // An already-entered worker may be waiting on this timer.
+                lock.notifyAll();
+            }
             throw error;
         }
+    }
+
+    // Both constructor rollback and the worker's finally can reach here.
+    // The timer lock protects a single settlement attempt and keeps a failed
+    // lease rooted through Store teardown, including lost acknowledgements.
+    private void settleOwner() {
+        if (owner == null || ownerSettlementAttempted) return;
+        ownerSettlementAttempted = true;
+        Activation.Lease held = owner;
+        try { held.close(); }
+        catch (Throwable uncertain) {
+            Activation.fenceUncertainQueuedWorkSettlement(held);
+            throw uncertain;
+        }
+        owner = null;
+        Activation.unmanageRetired(this);
     }
 
     private static long after(long delay) {
@@ -222,7 +247,7 @@ public class Timer implements Activation.ManagedPool {
                 try {
                     clearQueue();
                     if (pendingWork != 0) Activation.fenceUncertainResultSettlement();
-                    else if (owner != null) { owner.close(); owner = null; Activation.unmanageRetired(this); }
+                    else settleOwner();
                 } catch (Throwable cleanupFailure) {
                     // The Timer still owns any unretired pool or queue entries.
                     // Never allow completion after an uncertain cleanup.

@@ -642,6 +642,7 @@ impl Drop for OverlapCompletion {
         if self.returned {
             self.observer.next_finished(self.token);
         }
+        self.observer.report_wait_drop(self.token, self.returned);
     }
 }
 struct PreparedWait {

@@ -7,14 +7,19 @@ import hashlib
 import io
 from pathlib import Path
 import platform
+import sys
 import tarfile
 import time
+import urllib.error
 import urllib.request
 
 VERSION = "0.62.0"
 ARCHIVE_SHA256 = "3e81cc6523729f7532b4aa7968648a04abf0c711b7d1677150e9121f4e6458fe"
 URL = (f"https://github.com/bytecodealliance/wit-bindgen/releases/download/v{VERSION}/"
        f"wit-bindgen-{VERSION}-x86_64-linux.tar.gz")
+# GitHub's asset ID for this exact release file. Its bytes must still pass the
+# same pinned archive digest and executable checks as the primary URL.
+ASSET_URL = "https://api.github.com/repos/bytecodealliance/wit-bindgen/releases/assets/555672356"
 MAX_ARCHIVE = 32 * 1024 * 1024
 MAX_BINARY = 64 * 1024 * 1024
 
@@ -41,20 +46,54 @@ def binary(archive: bytes) -> bytes:
         return data
 
 
+def download_archive() -> bytes:
+    deadline = time.monotonic() + 90
+
+    def read_before_deadline(request):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise ValueError("wit-bindgen download bound exceeded")
+        archive = bytearray()
+        with urllib.request.urlopen(request, timeout=min(30, remaining)) as response:
+            while True:
+                block = response.read(65536)
+                if time.monotonic() > deadline:
+                    raise ValueError("wit-bindgen download bound exceeded")
+                if not block:
+                    break
+                archive.extend(block)
+                if len(archive) > MAX_ARCHIVE:
+                    raise ValueError("wit-bindgen download bound exceeded")
+        return bytes(archive)
+
+    try:
+        return read_before_deadline(URL)
+    except urllib.error.HTTPError as error:
+        if error.code != 504:
+            raise
+        error.close()
+        reason = "HTTP 504"
+    except TimeoutError:
+        # The response context has closed and any partially read bytes are
+        # discarded before the fixed asset is fetched under the same deadline.
+        reason = "timeout"
+    print(f"wit-bindgen release download encountered {reason}; trying pinned release asset API",
+          file=sys.stderr)
+    request = urllib.request.Request(ASSET_URL, headers={
+        "Accept": "application/octet-stream",
+        "User-Agent": "latent-service-fabric-ci",
+        "X-GitHub-Api-Version": "2022-11-28",
+    })
+    return read_before_deadline(request)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path)
     args = parser.parse_args()
     if platform.system() != "Linux" or platform.machine() != "x86_64":
         raise ValueError("this installer supports only the pinned Linux CI profile")
-    deadline = time.monotonic() + 90
-    archive = bytearray()
-    with urllib.request.urlopen(URL, timeout=30) as response:
-        while block := response.read(65536):
-            archive.extend(block)
-            if len(archive) > MAX_ARCHIVE or time.monotonic() > deadline:
-                raise ValueError("wit-bindgen download bound exceeded")
-    data = binary(bytes(archive))
+    data = binary(download_archive())
     args.output.mkdir(parents=True, exist_ok=True)
     destination = args.output / "wit-bindgen"
     with destination.open("xb") as output:

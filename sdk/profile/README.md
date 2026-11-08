@@ -91,7 +91,24 @@ digest/epoch and sampled state. `revision` preserves deployment, revision,
 component, optional publication, route generation and catalog transaction.
 Counters and `unavailable` remain separate; an absent owner is not zero usage.
 `include_node_usage` requests an additional server-authorized view; it is not a
-node-operator claim.
+node-operator claim. `CapabilityResourceUsage.stream_quarantined_connections`
+is an optional, node-only sampled count already included in stream owners and
+connections. A missing field means the server or retained observation did not
+supply it; clients must preserve that absence rather than manufacture zero.
+The existing three-argument Java and .NET constructors remain available and
+leave this optional observation absent. The .NET three-value `Deconstruct`
+remains available alongside the new four-value form.
+
+This additive wire field changes generated alpha SDK models. Rust exhaustive
+struct literals must include the new field or `..Default::default()`; exhaustive
+patterns must include it or use `..`. Go unkeyed composite literals must add
+the new element (keyed literals remain valid). The
+C `latent_profile_capability_resource_usage` struct has new trailing fields and
+a different size/layout: rebuild C consumers and providers against the same
+header rather than mixing old and new binaries. Java and .NET record reflection,
+equality and hash codes include the additional component. TypeScript's field is
+optional, but consumers that enumerate exact keys should account for its presence.
+No state migration is required by this model change.
 
 The authoritative `ListCapabilitiesResponse` has **no effective grant-ceiling
 field**. Do not invent one or populate it with zeros. Inspect referenced records

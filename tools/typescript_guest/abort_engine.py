@@ -47,7 +47,7 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
       }
       signals_owned = true;
     }
-    if (!signals.append(value)) { JS_ReportOutOfMemory(cx); return false; }
+    if (!signals.append(value)) { JS_ReportOutOfMemory(cx); iterator.closeThrow(); return false; }
   }
   RootedObject self(cx, create_with_signals(cx, JS::HandleValueArray(signals)));
 ''', 'standard-any-sequence-conversion-before-signal-allocation')
@@ -109,6 +109,7 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
         'throwIfAbortedPreservesOriginalReasonIdentity': True,
         'anyConvertsOneIterableAndChecksSignalInstances': True,
         'anyHeapVectorOwner': 'one-original-native-count-per-frame-not-byte-accurate',
+        'anyAllocationFailure': 'close-iterator-preserving-original-exception',
         'staticAbortReasonOptional': True,
         'rootAbortFailureWithoutNewDependents': 'propagate-original-failure',
         'rootReasonAllocationFailure': 'return-before-direct-reason-slot-write',

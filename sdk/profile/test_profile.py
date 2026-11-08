@@ -11,7 +11,7 @@ class ProfileTests(unittest.TestCase):
         cls.profile, cls.messages, cls.enums = read_contract()
 
     def test_shared_contract_is_current(self):
-        self.assertEqual(validate(), (78, 16))
+        self.assertEqual(validate(), (80, 16))
 
     def test_exact_operation_profile(self):
         self.assertEqual([operation["name"] for operation in self.profile["operations"]], [
@@ -81,6 +81,20 @@ class ProfileTests(unittest.TestCase):
         policy = {field["name"]: field for field in self.messages["ApplyPolicyRequest"]}
         self.assertTrue(policy["policy"]["optional"])
         self.assertTrue(policy["expected_generation"]["optional"])
+
+    def test_quarantine_presence_and_legacy_constructors_remain_explicit(self):
+        field = next(field for field in self.messages["CapabilityResourceUsage"]
+                     if field["name"] == "stream_quarantined_connections")
+        self.assertEqual(field["number"], 4)
+        self.assertTrue(field["optional"])
+        self.assertEqual(self.profile["legacy_constructors"]["CapabilityResourceUsage"],
+                         ["stream_quarantined_connections"])
+        for value in ({"scope": "node"}, {"scope": "node", "stream_quarantined_connections": "0"},
+                      {"scope": "node", "stream_quarantined_connections": "2"}):
+            validate_value({"type": "CapabilityResourceUsage"}, value, self.messages, self.enums)
+        with self.assertRaises(ValueError):
+            validate_value({"type": "CapabilityResourceUsage"},
+                           {"scope": "node", "stream_quarantined_connections": None}, self.messages, self.enums)
 
     def test_recovery_receipt_matches_original_not_current_policy(self):
         fixtures = json.loads((ROOT / "sdk/profile/fixtures.json").read_text(encoding="utf-8"))

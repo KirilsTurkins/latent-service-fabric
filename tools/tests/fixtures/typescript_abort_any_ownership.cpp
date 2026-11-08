@@ -24,7 +24,7 @@ struct State {
   unsigned calls = 0, close_calls = 0, return_reentries = 0, created = 0;
   unsigned max_buffers = 0, allocation_failure = 0;
   bool ordering_error = false, nested_seen = false, nested_started = false, close_saw_owner = false;
-  bool return_reentry = false, return_threw = false;
+  bool return_reentry = false, return_reentry_outer = false, return_threw = false;
   bool uncatchable = false;
   const char* error = nullptr;
 
@@ -153,7 +153,7 @@ public:
     ++state.close_calls;
     if (state.live[1] && state.buffers[1] && state.pointers[1] && state.pointers[1]->physical)
       state.close_saw_owner = true;
-    if (state.return_reentry && input_->depth == 1) {
+    if (state.return_reentry && input_->depth == (state.return_reentry_outer ? 0u : 1u)) {
       ++state.return_reentries;
       Input inline_input{2, static_cast<size_t>(-1), false, input_->depth + 1};
       if (!invoke(cx_, inline_input)) state.ordering_error = true;
@@ -221,6 +221,10 @@ int main(int argc, char** argv) {
   if (!std::strcmp(name, "allocation-failure-first")) state.allocation_failure = 1;
   if (!std::strcmp(name, "allocation-failure")) state.allocation_failure = 2;
   if (!std::strcmp(name, "allocation-failure")) input.count = 17;
+  if (!std::strcmp(name, "allocation-failure-return")) {
+    input.count = 17; state.allocation_failure = 2;
+    state.return_reentry = true; state.return_reentry_outer = true;
+  }
   Records::Record* gc_record = nullptr;
   if (!std::strcmp(name, "gc-object")) {
     Lease gc_owned;
@@ -269,12 +273,14 @@ int main(int argc, char** argv) {
              (std::strcmp(name, "return-reentry") || (state.return_reentries == 1 && state.return_threw && state.created == 1));
   else if (!std::strcmp(name, "allocation-failure-first"))
     passed = !result && state.error && !std::strcmp(state.error, "oom") && state.admissions == 1 &&
-             !state.allocations && !state.frees && !state.close_calls && !state.created && state.live_count == 1 &&
+             !state.allocations && !state.frees && state.close_calls == 1 && !state.created && state.live_count == 1 &&
              !state.pointers[1]->physical && state.pointers[1]->collection_completed;
-  else if (!std::strcmp(name, "allocation-failure"))
+  else if (!std::strcmp(name, "allocation-failure") || !std::strcmp(name, "allocation-failure-return"))
     passed = !result && state.error && !std::strcmp(state.error, "oom") && state.admissions == 1 &&
-             state.allocations == 1 && state.frees == 1 && !state.close_calls && !state.created &&
-             state.live_count == 1 && !state.pointers[1]->physical && state.pointers[1]->collection_completed;
+             state.allocations == 1 && state.frees == 1 && state.close_calls == 1 && state.close_saw_owner &&
+             state.live_count == 1 && !state.pointers[1]->physical && state.pointers[1]->collection_completed &&
+             (!std::strcmp(name, "allocation-failure") ? !state.created :
+              state.created == 1 && state.return_reentries == 1 && state.return_threw);
   else if (!std::strcmp(name, "repeated"))
     passed = result && waited && second && state.admissions == 2 && state.allocations == 2 && state.frees == 2 &&
              state.acknowledgements == 1 && !state.live[1] && state.live[2] && !state.pointers[2]->physical;

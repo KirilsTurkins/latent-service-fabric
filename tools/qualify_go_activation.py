@@ -118,7 +118,8 @@ def compile_fixture(output: Path, *, offline_cache: Path | None = None, runtime_
             raise ValueError('Go-activation-source-changed')
         if fixture == 'checkpoints' and runtime_profile == 'go-component-activation-v2':
             record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)
-        if fixture == 'timers' and runtime_profile in {'go-component-activation-v3', 'go-component-activation-v5'}:
+        if fixture == 'timers' and runtime_profile in {
+                'go-component-activation-v3', 'go-component-activation-v5', 'go-component-activation-v7'}:
             record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)
         if fixture == 'initializers' and runtime_profile == 'go-component-activation-v4':
             record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)

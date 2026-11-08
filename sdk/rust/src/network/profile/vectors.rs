@@ -964,7 +964,7 @@ fn shared_vectors_roundtrip_through_actual_protobuf() {
         );
     }
     {
-        let value = ListCapabilitiesResponse{capabilities: vec![CapabilityDescriptor{id: "latent:secrets/reader@0.1.0".into(), contract: "latent:secrets/reader@0.1.0".into(), provider: "local-secrets-v1".into(), operations: vec!["read".into()], attributes: BTreeMap::from([]), inspection: Some(CapabilityBindingInspection{definition_digest: Some(String::new()), provider_binding: Some(CapabilityInspectionPolicy{id: "binding-a".into(), revision: 18_446_744_073_709_551_615_u64, digest: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into()}), policies: vec![CapabilityInspectionPolicy{id: "policy-a".into(), revision: 9_223_372_036_854_775_808_u64, digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into()}], provider_profile: "local-secrets-v1".into(), provider_configuration_digest: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into(), provider_configuration_epoch: 18_446_744_073_709_551_615_u64, state: "provider-configuration-changed".into()})}, CapabilityDescriptor{id: "future-capability".into(), contract: "future-contract".into(), provider: "future-provider".into(), operations: vec![], attributes: BTreeMap::from([("descriptive".into(), "not-authority".into())]), ..Default::default()}], page: Some(PageResponse{next_page_token: Some("opaque-capability-cursor".into())}), revision: Some(CapabilityInspectionRevision{deployment_id: "deployment-a".into(), revision_id: "revision-a".into(), component_digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(), publication_id: Some("publication:sha256:1111111111111111111111111111111111111111111111111111111111111111".into()), route_generation: 18_446_744_073_709_551_615_u64, catalog_transaction: 9_223_372_036_854_775_808_u64}), tenant_usage: Some(CapabilityResourceUsage{scope: "tenant".into(), counters: BTreeMap::from([("sessions".into(), 18_446_744_073_709_551_615_u64), ("calls".into(), 0_u64)]), unavailable: vec!["fixture-owner-unavailable".into()]}), state: "sampled".into(), ..Default::default()};
+        let value = ListCapabilitiesResponse{capabilities: vec![CapabilityDescriptor{id: "latent:secrets/reader@0.1.0".into(), contract: "latent:secrets/reader@0.1.0".into(), provider: "local-secrets-v1".into(), operations: vec!["read".into()], attributes: BTreeMap::from([]), inspection: Some(CapabilityBindingInspection{definition_digest: Some(String::new()), provider_binding: Some(CapabilityInspectionPolicy{id: "binding-a".into(), revision: 18_446_744_073_709_551_615_u64, digest: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into()}), policies: vec![CapabilityInspectionPolicy{id: "policy-a".into(), revision: 9_223_372_036_854_775_808_u64, digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into()}], provider_profile: "local-secrets-v1".into(), provider_configuration_digest: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into(), provider_configuration_epoch: 18_446_744_073_709_551_615_u64, state: "provider-configuration-changed".into()})}, CapabilityDescriptor{id: "future-capability".into(), contract: "future-contract".into(), provider: "future-provider".into(), operations: vec![], attributes: BTreeMap::from([("descriptive".into(), "not-authority".into())]), ..Default::default()}], page: Some(PageResponse{next_page_token: Some("opaque-capability-cursor".into())}), revision: Some(CapabilityInspectionRevision{deployment_id: "deployment-a".into(), revision_id: "revision-a".into(), component_digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(), publication_id: Some("publication:sha256:1111111111111111111111111111111111111111111111111111111111111111".into()), route_generation: 18_446_744_073_709_551_615_u64, catalog_transaction: 9_223_372_036_854_775_808_u64}), tenant_usage: Some(CapabilityResourceUsage{scope: "tenant".into(), counters: BTreeMap::from([("sessions".into(), 18_446_744_073_709_551_615_u64), ("calls".into(), 0_u64)]), unavailable: vec!["fixture-owner-unavailable".into()], ..Default::default()}), state: "sampled".into(), ..Default::default()};
         let encoded = control::ListCapabilitiesResponse::from(value.clone()).encode_to_vec();
         let decoded = control::ListCapabilitiesResponse::decode(encoded.as_slice()).unwrap();
         assert_eq!(
@@ -983,6 +983,7 @@ fn shared_vectors_roundtrip_through_actual_protobuf() {
                     "provider-pools-no-retained-owner".into(),
                     "audit-owner-not-configured".into(),
                 ],
+                ..Default::default()
             }),
             state: "binding-plan-unavailable".into(),
             ..Default::default()
@@ -993,6 +994,52 @@ fn shared_vectors_roundtrip_through_actual_protobuf() {
             ListCapabilitiesResponse::from(decoded),
             value,
             "missing-provider-plan-not-zero-usage"
+        );
+    }
+    {
+        let value = ListCapabilitiesResponse {
+            capabilities: vec![],
+            node_usage: Some(CapabilityResourceUsage {
+                scope: "node".into(),
+                counters: BTreeMap::from([
+                    ("stream_owners".into(), 0_u64),
+                    ("stream_connections".into(), 0_u64),
+                ]),
+                unavailable: vec![],
+                stream_quarantined_connections: Some(0_u64),
+            }),
+            state: "binding-plan-unavailable".into(),
+            ..Default::default()
+        };
+        let encoded = control::ListCapabilitiesResponse::from(value.clone()).encode_to_vec();
+        let decoded = control::ListCapabilitiesResponse::decode(encoded.as_slice()).unwrap();
+        assert_eq!(
+            ListCapabilitiesResponse::from(decoded),
+            value,
+            "observed-stream-quarantine-zero"
+        );
+    }
+    {
+        let value = ListCapabilitiesResponse {
+            capabilities: vec![],
+            node_usage: Some(CapabilityResourceUsage {
+                scope: "node".into(),
+                counters: BTreeMap::from([
+                    ("stream_owners".into(), 3_u64),
+                    ("stream_connections".into(), 2_u64),
+                ]),
+                unavailable: vec![],
+                stream_quarantined_connections: Some(1_u64),
+            }),
+            state: "binding-plan-unavailable".into(),
+            ..Default::default()
+        };
+        let encoded = control::ListCapabilitiesResponse::from(value.clone()).encode_to_vec();
+        let decoded = control::ListCapabilitiesResponse::decode(encoded.as_slice()).unwrap();
+        assert_eq!(
+            ListCapabilitiesResponse::from(decoded),
+            value,
+            "observed-stream-quarantine-retained"
         );
     }
     {
@@ -1155,5 +1202,5 @@ fn shared_vectors_roundtrip_through_actual_protobuf() {
             "activation-tree-original-captured-intent-witness"
         );
     }
-    println!("shared protobuf model vectors: 62");
+    println!("shared protobuf model vectors: 64");
 }

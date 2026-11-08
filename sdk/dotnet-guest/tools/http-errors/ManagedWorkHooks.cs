@@ -280,33 +280,100 @@ internal sealed class ManagedWorkHooks
             Before(pop, exit, Instruction.Create(OpCodes.Ldarg_0), Instruction.Create(OpCodes.Call, Hook("Popped")));
         changed.Add(pop);
 
-        var dispatch = queue.Methods.Single(method => method.Name == "DispatchWorkItem");
-        Need(dispatch.IsStatic && dispatch.Parameters.Count == 2 && dispatch.Parameters[0].ParameterType.MetadataType == MetadataType.Object);
-        // A callback's logical completion is published only after its original
-        // Execute path (including its finally) has returned or thrown.
-        var originalStart = dispatch.Body.Instructions[0];
-        var previous = new VariableDefinition(module.TypeSystem.Object);
-        dispatch.Body.InitLocals = true; dispatch.Body.Variables.Add(previous);
-        var il = dispatch.Body.GetILProcessor();
-        // Ledger/context refusals precede the original user exception handler;
-        // no global user handler may swallow failed bookkeeping as success.
-        foreach (var instruction in new[] { Instruction.Create(OpCodes.Ldarg_0), Instruction.Create(OpCodes.Call, Hook("Dequeue")),
-            Instruction.Create(OpCodes.Ldarg_0), Instruction.Create(OpCodes.Call, Hook("EnterDispatch")),
-            Instruction.Create(OpCodes.Stloc, previous) }) il.InsertBefore(originalStart, instruction);
-        var exits = dispatch.Body.Instructions.Where(instruction => instruction.OpCode == OpCodes.Ret).ToArray();
-        var cleanup = Instruction.Create(OpCodes.Ldloc, previous); var done = Instruction.Create(OpCodes.Ret);
-        foreach (var exit in exits) { exit.OpCode = OpCodes.Leave; exit.Operand = done; }
-        // Existing open handler ends must terminate before the new outer finally.
-        foreach (var handler in dispatch.Body.ExceptionHandlers)
+        // LocalFindAndPop is also used by TryDequeue. Claim an existing
+        // queue record only around the authenticated scheduler inline call.
+        var scheduler = Type("System.Threading.Tasks.ThreadPoolTaskScheduler");
+        var inline = scheduler.Methods.Single(method => method.Name == "TryExecuteTaskInline");
+        var taskType = Type("System.Threading.Tasks.Task");
+        Need(!inline.IsStatic && inline.ReturnType.MetadataType == MetadataType.Boolean
+            && inline.Parameters.Count == 2 && inline.Parameters[0].ParameterType.FullName == taskType.FullName
+            && inline.Parameters[1].ParameterType.MetadataType == MetadataType.Boolean
+            && inline.Body.ExceptionHandlers.Count == 1
+            && inline.Body.ExceptionHandlers[0].HandlerType == ExceptionHandlerType.Finally);
+        var inlinePop = inline.Body.Instructions.Where(instruction => instruction.Operand is MethodReference method
+            && method.FullName == "System.Boolean System.Threading.ThreadPool::TryPopCustomWorkItem(System.Object)").ToArray();
+        var inlineExecute = inline.Body.Instructions.Where(instruction => instruction.Operand is MethodReference method
+            && method.FullName == "System.Void System.Threading.Tasks.Task::ExecuteEntryUnsafe(System.Threading.Thread)").ToArray();
+        var inlineReturns = inline.Body.Instructions.Where(instruction => instruction.OpCode == OpCodes.Ret).ToArray();
+        Need(inlinePop.Length == 1 && inlineExecute.Length == 1 && inlineReturns.Length == 2);
+        var inlineStart = inline.Body.Instructions[0];
+        var inlineTicket = new VariableDefinition(module.TypeSystem.Object);
+        var inlineReturned = new VariableDefinition(module.TypeSystem.Boolean);
+        var inlineResult = new VariableDefinition(module.TypeSystem.Boolean);
+        inline.Body.InitLocals = true;
+        inline.Body.Variables.Add(inlineTicket); inline.Body.Variables.Add(inlineReturned); inline.Body.Variables.Add(inlineResult);
+        Before(inline, inlineStart, Instruction.Create(OpCodes.Ldarg_1), Instruction.Create(OpCodes.Ldarg_2),
+            Instruction.Create(OpCodes.Call, Hook("InlineQueued")), Instruction.Create(OpCodes.Stloc, inlineTicket));
+        var inlineIl = inline.Body.GetILProcessor();
+        var inlineCleanup = Instruction.Create(OpCodes.Ldloc, inlineTicket);
+        var inlineDone = Instruction.Create(OpCodes.Ldloc, inlineResult);
+        foreach (var exit in inlineReturns)
         {
-            if (handler.TryEnd is null) handler.TryEnd = cleanup;
-            if (handler.HandlerEnd is null) handler.HandlerEnd = cleanup;
+            exit.OpCode = OpCodes.Stloc; exit.Operand = inlineResult;
+            var yes = Instruction.Create(OpCodes.Ldc_I4_1); var saved = Instruction.Create(OpCodes.Stloc, inlineReturned);
+            var leave = Instruction.Create(OpCodes.Leave, inlineDone);
+            inlineIl.InsertAfter(exit, yes); inlineIl.InsertAfter(yes, saved); inlineIl.InsertAfter(saved, leave);
         }
-        il.Append(cleanup); il.Emit(OpCodes.Call, Hook("Exit"));
-        il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Call, Hook("CallbackCompleted")); il.Emit(OpCodes.Endfinally); il.Append(done);
-        dispatch.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Finally) {
-            TryStart = originalStart, TryEnd = cleanup, HandlerStart = cleanup, HandlerEnd = done,
+        inlineIl.Append(inlineCleanup); inlineIl.Emit(OpCodes.Ldloc, inlineReturned);
+        inlineIl.Emit(OpCodes.Call, Hook("InlineQueueFinished")); inlineIl.Emit(OpCodes.Endfinally);
+        inlineIl.Append(inlineDone); inlineIl.Emit(OpCodes.Ret);
+        inline.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Finally) {
+            TryStart = inlineStart, TryEnd = inlineCleanup, HandlerStart = inlineCleanup, HandlerEnd = inlineDone,
         });
+        changed.Add(inline);
+
+        var dispatch = queue.Methods.Single(method => method.Name == "Dispatch");
+        var workItem = queue.Methods.Single(method => method.Name == "DispatchWorkItem");
+        var tracked = queue.Methods.Single(method => method.Name == "DispatchWorkItemWithWorkerTracking");
+        Need(dispatch.IsStatic && dispatch.Parameters.Count == 0 && dispatch.Body.ExceptionHandlers.Count == 0
+            && dispatch.Body.Variables.Count > 4 && dispatch.Body.Variables[2].VariableType.MetadataType == MetadataType.Object);
+        var workCalls = module.GetTypes().SelectMany(type => type.Methods).Where(method => method.HasBody)
+            .SelectMany(method => method.Body.Instructions.Where(instruction => instruction.Operand is MethodReference target
+                && target.FullName == workItem.FullName).Select(instruction => (method, instruction))).ToArray();
+        Need(workCalls.Length == 2 && workCalls.Count(site => site.method == dispatch) == 1
+            && workCalls.Count(site => site.method == tracked) == 1);
+        var directCall = workCalls.Single(site => site.method == dispatch).instruction;
+        var trackedCall = dispatch.Body.Instructions.Single(instruction => instruction.Operand is MethodReference target
+            && target.FullName == tracked.FullName);
+        var originalStart = dispatch.Body.Instructions.Single(instruction => instruction.Operand is MethodReference target
+            && target.FullName == "System.Boolean System.Threading.ThreadPool::get_EnableWorkerTracking()");
+        var contextReset = dispatch.Body.Instructions.Single(instruction => instruction.Operand is MethodReference target
+            && target.FullName == "System.Void System.Threading.ExecutionContext::ResetThreadPoolThread(System.Threading.Thread)");
+        var threadReset = dispatch.Body.Instructions.Single(instruction => instruction.Operand is MethodReference target
+            && target.FullName == "System.Void System.Threading.Thread::ResetThreadPoolThread()");
+        var resume = directCall.Next;
+        Need(resume.OpCode == OpCodes.Ldnull && resume.Next.OpCode == OpCodes.Stloc_2
+            && resume.Next.Next.Next == contextReset && contextReset.Next.Next == threadReset
+            && trackedCall.Next.OpCode == OpCodes.Br_S && trackedCall.Next.Operand == resume
+            && originalStart.Offset < trackedCall.Offset && trackedCall.Offset < directCall.Offset);
+        var previous = new VariableDefinition(module.TypeSystem.Object);
+        var ticket = new VariableDefinition(module.TypeSystem.Object);
+        dispatch.Body.InitLocals = true; dispatch.Body.Variables.Add(previous); dispatch.Body.Variables.Add(ticket);
+        var il = dispatch.Body.GetILProcessor();
+        // The exact ticket lives in this Dispatch invocation, including nested
+        // invocations. Enter/Exit surround both original execution branches.
+        Before(dispatch, originalStart, Instruction.Create(OpCodes.Ldloc, dispatch.Body.Variables[2]),
+            Instruction.Create(OpCodes.Call, Hook("BeginDispatch")), Instruction.Create(OpCodes.Stloc, ticket),
+            Instruction.Create(OpCodes.Ldloc, dispatch.Body.Variables[2]), Instruction.Create(OpCodes.Ldloc, ticket),
+            Instruction.Create(OpCodes.Call, Hook("EnterDispatch")), Instruction.Create(OpCodes.Stloc, previous));
+        trackedCall.Next.OpCode = OpCodes.Leave; trackedCall.Next.Operand = resume;
+        var cleanup = Instruction.Create(OpCodes.Ldloc, ticket);
+        il.InsertBefore(resume, Instruction.Create(OpCodes.Leave, resume));
+        il.InsertBefore(resume, cleanup);
+        il.InsertBefore(resume, Instruction.Create(OpCodes.Call, Hook("ResetStarting")));
+        il.InsertBefore(resume, Instruction.Create(OpCodes.Ldloc, previous));
+        il.InsertBefore(resume, Instruction.Create(OpCodes.Call, Hook("Exit")));
+        il.InsertBefore(resume, Instruction.Create(OpCodes.Ldloc, ticket));
+        il.InsertBefore(resume, Instruction.Create(OpCodes.Call, Hook("ResetReady")));
+        il.InsertBefore(resume, Instruction.Create(OpCodes.Endfinally));
+        dispatch.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Finally) {
+            TryStart = originalStart, TryEnd = cleanup, HandlerStart = cleanup, HandlerEnd = resume,
+        });
+        // Reset can run user AsyncLocal notifications. Any exception before
+        // this point retains the original ticket and owner without retry.
+        Before(dispatch, threadReset.Next, Instruction.Create(OpCodes.Ldloc, ticket),
+            Instruction.Create(OpCodes.Call, Hook("ResetFinished")), Instruction.Create(OpCodes.Ldloc, ticket),
+            Instruction.Create(OpCodes.Call, Hook("DispatchReturned")));
         changed.Add(dispatch);
     }
 
