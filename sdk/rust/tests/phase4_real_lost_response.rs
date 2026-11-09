@@ -170,3 +170,66 @@ async fn recover_original_commit_after_lost_response() {
     retire(&client).await;
     println!("LOST_COMMIT_RECOVERED");
 }
+
+#[tokio::test]
+#[ignore = "requires an acknowledged commit and the real node fixture"]
+async fn fresh_query_after_commit() {
+    let namespace = selector().namespace.expect("namespace");
+    let minimum = unhex(&required("LSF_401_QUERY_MINIMUM_HEX"));
+    let client = client();
+    for index in 0..3 {
+        let result = client
+            .query(
+                transaction::QueryRequest {
+                    profile: Some(transaction::current_profile()),
+                    invocation: Some(InvokeRequest {
+                        activation_id: Some(format!("rust-sdk-fresh-query-{index}")),
+                        target: Some(InvocationTarget {
+                            tenant: namespace.tenant.clone(),
+                            service: "examples/transaction-java-aggregate".into(),
+                            contract: "examples:transactional-aggregate/api@1.0.0".into(),
+                            function: "query".into(),
+                            route: Some("transaction-java-aggregate".into()),
+                        }),
+                        payload: b"[]".to_vec(),
+                        media_type: "application/vnd.latent.wit-values.v1+json".into(),
+                        budget: Some(ResourceBudget {
+                            cpu_fuel: 1_000_000_000,
+                            memory_bytes: 67_108_864,
+                            state_read_bytes: 4_194_304,
+                            wall_time_limit_millis: Some(120_000),
+                            ..Default::default()
+                        }),
+                        ..Default::default()
+                    }),
+                    namespace: Some(namespace.clone()),
+                    entity: None,
+                    minimum_view_version: Some(minimum.clone()),
+                },
+                CallOptions::default(),
+            )
+            .await
+            .expect("query")
+            .value;
+        let view = result.view.expect("query view");
+        assert_eq!(view.namespace, Some(namespace.clone()));
+        assert_eq!(view.version, minimum);
+        assert!(result.source.is_some());
+        let success = result
+            .invocation
+            .expect("invocation")
+            .success
+            .expect("success");
+        assert!(success.committed_state_version.is_none() && success.effect_ids.is_empty());
+        let frame: serde_json::Value = serde_json::from_slice(&success.payload).expect("JSON");
+        let array = frame.as_array().expect("result frame");
+        assert_eq!(array.len(), 1);
+        let aggregate = &array[0]["ok"];
+        assert_eq!(aggregate["count"], "2");
+        let view_bytes: Vec<u8> =
+            serde_json::from_value(aggregate["view-version"].clone()).expect("view bytes");
+        assert_eq!(view_bytes, minimum);
+    }
+    retire(&client).await;
+    println!("FRESH_QUERY_AFTER_COMMIT");
+}
