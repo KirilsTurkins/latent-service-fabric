@@ -217,7 +217,16 @@ bool run_timer_turn(JSContext* cx) {
     JS_ReportErrorASCII(cx, "activation-runtime-timer-pump-with-eligible-jobs-denied");
     return false;
   }
-  if (!imports.turn(cx) || !partial_own.collect(cx) || !timers.turn(cx, false, false)) return false;
+  if (!imports.turn(cx) || !partial_own.collect(cx)) return false;
+  // An import completion may have enqueued a Promise reaction. Run the
+  // genuine JS job checkpoint before dispatching another timer callback.
+  if (!queue->empty()) return true;
+  if (!timers.turn(cx, false, false)) return false;
+  // A ready interval may rearm synchronously forever. Observe at most one
+  // already-queued shared-set event after its callback, without blocking or
+  // executing JS; the usual Promise checkpoint still precedes the next turn.
+  if (timers.callbackDispatched() && readiness.hasJoined() && !readiness.dispatch(cx, false))
+    return false;
   if (!queue->empty() || imports.hasReady() || timers.callbackDispatched()) return true;
   if (readiness.hasJoined()) return readiness.dispatch(cx, true);
   if (imports.hasPending() || partial_own.hasPending() || timers.hasPendingRecords()) {

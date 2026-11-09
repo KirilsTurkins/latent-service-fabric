@@ -118,6 +118,47 @@ class TimerSetupRetirementTests(unittest.TestCase):
     def test_failed_native_settlement_retains_owner_and_closes_admission(self):
         self.control('refused-native-settlement')
 
+    def test_ready_fairness_shared_events_checkpoint_and_retirement(self):
+        compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++')
+        if compiler is None:
+            raise RuntimeError('compiler selection changed after timer setup')
+        output = Path(self.temporary.name)
+        binary = output / ('timer-fairness.exe' if os.name == 'nt' else 'timer-fairness')
+        fixture = ROOT/'tools/tests/fixtures/typescript_record_retirement'
+        source = ROOT/'sdk/typescript-guest/activation/tests/timer_fairness.cpp'
+        engine = (ROOT/'sdk/typescript-guest/activation/native_engine.cpp').read_text(encoding='utf-8')
+        begin = 'bool run_timer_turn(JSContext* cx) {'
+        end = '\n}\n\nbool begin_root'
+        if engine.count(begin) != 1 or engine.count(end) != 1:
+            raise AssertionError('exact selected native pump source required')
+        start = engine.index(begin)
+        finish = engine.index(end, start) + 2
+        (output/'run_timer_turn.inc').write_text(engine[start:finish]+'\n', encoding='utf-8')
+        if Path(compiler).stem.lower() == 'cl':
+            args = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX',
+                    '/I'+str(ROOT), '/I'+str(output), '/I'+str(fixture), str(source),
+                    '/Fe:'+str(binary), '/Fo:'+str(output/'timer-fairness.obj')]
+        else:
+            args = [compiler, '-std=c++17', '-O0', '-Wall', '-Wextra', '-Werror',
+                    '-I', str(ROOT), '-I', str(output), '-I', str(fixture), str(source),
+                    '-o', str(binary)]
+        compiled = subprocess.run(args, capture_output=True, timeout=60)
+        if compiled.returncode or len(compiled.stdout) + len(compiled.stderr) > 65536:
+            raise AssertionError(compiled.stderr[:65536].decode(errors='replace'))
+        if not binary.is_file() or binary.stat().st_size > 4*1024**2:
+            raise AssertionError('finite timer fairness reference output required')
+        for case in ('immediate', 'delivered', 'queued', 'noevent', 'selfclear',
+                     'otherclear', 'import-ready', 'import-queued', 'cancelled',
+                     'two-import-ready', 'two-import-nojob'):
+            with self.subTest(case=case):
+                result = subprocess.run([str(binary), case], capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
+                self.assertLessEqual(len(result.stdout) + len(result.stderr), 65536)
+                observed = json.loads(result.stdout)
+                self.assertEqual(observed['case'], case)
+                self.assertIs(observed['passed'], True)
+                self.assertIs(observed['clean'], True)
+
 
 class SubtaskStartUncertaintyTests(unittest.TestCase):
     @classmethod
