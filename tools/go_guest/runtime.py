@@ -13,6 +13,10 @@ import shutil
 
 ROOT = Path(__file__).resolve().parents[2]
 UPSTREAM_PREIMAGES = {
+    # Single-threaded Wasm startup and the public GOMAXPROCS clamp are part of
+    # the admitted scheduler contract, including before activation entry.
+    "runtime/os_wasm.go": "17708274aaf6e4c15b6db7a25ccbae1222e1e265dec5dfc1906ebd3bb343c25a",
+    "runtime/debug.go": "01d5f04213a154af89bee99c8acfafa16ff116b83765126ad970c55f4df1d222",
     "runtime/os_wasip1.go": "c8ddc4ddc00af788539897f9a75c814d9c7fcfe9416dbf977f896631c158a3ca",
     "runtime/lock_wasip1.go": "946dfcba88ee68b89cb936a12a9a60a82f451ba915eef6e0708791cc4fc2981c",
     "syscall/fs_wasip1.go": "5cf5a98b3361c2d839e084b183366849cd276c9585620f04cc3c75e35a371448",
@@ -108,7 +112,8 @@ def scheduler_overlay(goroot: Path, destination: Path) -> Path:
     """The upstream WASI comparison gets the same async scheduler, without LSF imports."""
     goroot, destination = checked_roots(goroot, destination)
     contracts = {name: sha for name, sha in PREIMAGES.items()
-                 if name.startswith("runtime/lock_") or name == "runtime/proc.go"}
+                 if name.startswith("runtime/lock_") or name in {
+                     "runtime/proc.go", "runtime/os_wasm.go", "runtime/debug.go"}}
     sources = checked_sources(goroot, contracts)
     destination.mkdir(parents=True)
     replacements = {}

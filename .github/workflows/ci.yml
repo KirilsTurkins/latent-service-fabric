@@ -326,9 +326,24 @@ jobs:
 
       - name: Install the pinned stream fixture compiler
         if: matrix.lane == 'tests'
-        uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
-        with:
-          version: 1.254.0
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/ci-wasm-tools.tar.gz"
+          bindir="$RUNNER_TEMP/ci-wasm-tools-bin"
+          mkdir "$bindir"
+          timeout 90s gh api -H 'Accept: application/octet-stream' repos/bytecodealliance/wasm-tools/releases/assets/483720667 | head -c 5862465 > "$archive"
+          unset GH_TOKEN
+          test "$(stat --format=%s "$archive")" = 5862464
+          printf '%s  %s\n' d0efb16c9c859137b7ab3e99151c299cd47caee106ed4594561002f7a04945bd "$archive" | sha256sum --check --strict
+          tar -xOzf "$archive" wasm-tools-1.254.0-x86_64-linux/wasm-tools > "$bindir/wasm-tools"
+          test "$(stat --format=%s "$bindir/wasm-tools")" = 20231696
+          printf '%s  %s\n' cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6 "$bindir/wasm-tools" | sha256sum --check --strict
+          chmod 755 "$bindir/wasm-tools"
+          test "$("$bindir/wasm-tools" --version)" = 'wasm-tools 1.254.0 (bb58fdf91 2026-07-20)'
+          printf '%s\n' "$bindir" >> "$GITHUB_PATH"
       - name: Prepare the fixed native stream component fixture
         if: matrix.lane == 'tests'
         id: stream_outer_fixture
@@ -423,9 +438,24 @@ jobs:
         run: python3 -m unittest tools.tests.test_phase3_resource tools.tests.test_phase3_resource_web
       - name: Set up the pinned component composer
         if: (matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular' || matrix.lane == 'publications' || matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'
-        uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
-        with:
-          version: 1.254.0
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/ci-wasm-tools.tar.gz"
+          bindir="$RUNNER_TEMP/ci-wasm-tools-bin"
+          mkdir "$bindir"
+          timeout 90s gh api -H 'Accept: application/octet-stream' repos/bytecodealliance/wasm-tools/releases/assets/483720667 | head -c 5862465 > "$archive"
+          unset GH_TOKEN
+          test "$(stat --format=%s "$archive")" = 5862464
+          printf '%s  %s\n' d0efb16c9c859137b7ab3e99151c299cd47caee106ed4594561002f7a04945bd "$archive" | sha256sum --check --strict
+          tar -xOzf "$archive" wasm-tools-1.254.0-x86_64-linux/wasm-tools > "$bindir/wasm-tools"
+          test "$(stat --format=%s "$bindir/wasm-tools")" = 20231696
+          printf '%s  %s\n' cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6 "$bindir/wasm-tools" | sha256sum --check --strict
+          chmod 755 "$bindir/wasm-tools"
+          test "$("$bindir/wasm-tools" --version)" = 'wasm-tools 1.254.0 (bb58fdf91 2026-07-20)'
+          printf '%s\n' "$bindir" >> "$GITHUB_PATH"
       - name: Prepare immutable browser lane component
         if: (matrix.lane == 'renderer-public') && needs.profile.outputs.renderer == 'true'
         timeout-minutes: 5
@@ -944,13 +974,50 @@ jobs:
           cache-all-crates: false
           cache-on-failure: false
           save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && (matrix.lane == 'standalone' || matrix.lane == 'measurements' || matrix.lane == 'optimization') }}
-      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
-        with:
-          version: 1.254.0
-      - uses: KirilsTurkins/lsf-buf-setup-action@483cc1af1999992e503ff1da69b431f7b9f3bae9 # v1.50.0 + upstream changes + LSF security fixes
-        with:
-          version: 1.72.0
-          github_token: ${{ github.token }}
+      - name: Install the verified wasm-tools release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/ci-wasm-tools.tar.gz"
+          bindir="$RUNNER_TEMP/ci-wasm-tools-bin"
+          mkdir "$bindir"
+          timeout 90s gh api -H 'Accept: application/octet-stream' repos/bytecodealliance/wasm-tools/releases/assets/483720667 | head -c 5862465 > "$archive"
+          unset GH_TOKEN
+          test "$(stat --format=%s "$archive")" = 5862464
+          printf '%s  %s\n' d0efb16c9c859137b7ab3e99151c299cd47caee106ed4594561002f7a04945bd "$archive" | sha256sum --check --strict
+          tar -xOzf "$archive" wasm-tools-1.254.0-x86_64-linux/wasm-tools > "$bindir/wasm-tools"
+          test "$(stat --format=%s "$bindir/wasm-tools")" = 20231696
+          printf '%s  %s\n' cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6 "$bindir/wasm-tools" | sha256sum --check --strict
+          chmod 755 "$bindir/wasm-tools"
+          test "$("$bindir/wasm-tools" --version)" = 'wasm-tools 1.254.0 (bb58fdf91 2026-07-20)'
+          printf '%s\n' "$bindir" >> "$GITHUB_PATH"
+      - name: Install the verified Buf release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/lsf-buf-1.72.0.tar.gz"
+          destination="$RUNNER_TEMP/lsf-buf-1.72.0"
+          mkdir "$destination"
+          timeout 120s gh api -H 'Accept: application/octet-stream' repos/bufbuild/buf/releases/assets/480772583 | head -c 37851982 > "$archive"
+          unset GH_TOKEN
+          test "$(stat --format=%s "$archive")" = 37851981
+          printf '%s  %s\n' a9c6186cf6fcf062b247345e1b7b12c26f580c1b2a4bbf4d3fe080abf85ceee8 "$archive" | sha256sum --check --strict
+          tar -xzf "$archive" -C "$destination" buf/bin/buf buf/bin/protoc-gen-buf-breaking buf/bin/protoc-gen-buf-lint
+          bindir="$destination/buf/bin"
+          test "$(stat --format=%s "$bindir/buf")" = 54050978
+          test "$(stat --format=%s "$bindir/protoc-gen-buf-breaking")" = 41365666
+          test "$(stat --format=%s "$bindir/protoc-gen-buf-lint")" = 30810274
+          printf '%s  %s\n' \
+            8720830e26a733da55bb89bcd3cb44849c0965fc0c44fb5d691cccdc64dca5af "$bindir/buf" \
+            58cece373a057f6031bcbab1fdab1a774206b2ad15617fe61ae7bb1adda2b745 "$bindir/protoc-gen-buf-breaking" \
+            6b50ee2ef0876c73ad430522ee98c7070e41eaabeba649256278bd8dc92571a1 "$bindir/protoc-gen-buf-lint" | sha256sum --check --strict
+          chmod 755 "$bindir/buf" "$bindir/protoc-gen-buf-breaking" "$bindir/protoc-gen-buf-lint"
+          test "$("$bindir/buf" --version)" = 1.72.0
+          printf '%s\n' "$bindir" >> "$GITHUB_PATH"
       - uses: KirilsTurkins/lsf-setup-zig@e064b42fa88ad0859d8b54838b44f672ffd5ea7a # v2.2.1 + upstream changes + LSF security fixes
         with:
           version: "0.16.0"
@@ -1086,10 +1153,31 @@ jobs:
         with:
           go-version: 1.27.3
           cache-dependency-path: sdk/go/go.sum
-      - uses: KirilsTurkins/lsf-buf-setup-action@483cc1af1999992e503ff1da69b431f7b9f3bae9 # v1.50.0 + upstream changes + LSF security fixes
-        with:
-          version: 1.72.0
-          github_token: ${{ github.token }}
+      - name: Install the verified Buf release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/lsf-buf-1.72.0.tar.gz"
+          destination="$RUNNER_TEMP/lsf-buf-1.72.0"
+          mkdir "$destination"
+          timeout 120s gh api -H 'Accept: application/octet-stream' repos/bufbuild/buf/releases/assets/480772583 | head -c 37851982 > "$archive"
+          unset GH_TOKEN
+          test "$(stat --format=%s "$archive")" = 37851981
+          printf '%s  %s\n' a9c6186cf6fcf062b247345e1b7b12c26f580c1b2a4bbf4d3fe080abf85ceee8 "$archive" | sha256sum --check --strict
+          tar -xzf "$archive" -C "$destination" buf/bin/buf buf/bin/protoc-gen-buf-breaking buf/bin/protoc-gen-buf-lint
+          bindir="$destination/buf/bin"
+          test "$(stat --format=%s "$bindir/buf")" = 54050978
+          test "$(stat --format=%s "$bindir/protoc-gen-buf-breaking")" = 41365666
+          test "$(stat --format=%s "$bindir/protoc-gen-buf-lint")" = 30810274
+          printf '%s  %s\n' \
+            8720830e26a733da55bb89bcd3cb44849c0965fc0c44fb5d691cccdc64dca5af "$bindir/buf" \
+            58cece373a057f6031bcbab1fdab1a774206b2ad15617fe61ae7bb1adda2b745 "$bindir/protoc-gen-buf-breaking" \
+            6b50ee2ef0876c73ad430522ee98c7070e41eaabeba649256278bd8dc92571a1 "$bindir/protoc-gen-buf-lint" | sha256sum --check --strict
+          chmod 755 "$bindir/buf" "$bindir/protoc-gen-buf-breaking" "$bindir/protoc-gen-buf-lint"
+          test "$("$bindir/buf" --version)" = 1.72.0
+          printf '%s\n' "$bindir" >> "$GITHUB_PATH"
       - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
         with:
           node-version: 24.19.0
