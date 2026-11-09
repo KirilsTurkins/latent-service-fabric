@@ -40,6 +40,9 @@ pub struct InvokeArgs {
     pub metadata: Vec<String>,
     #[arg(long, value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
     pub budget: Option<PathBuf>,
+    /// Bounded numeric budget for the developer scenario handoff.
+    #[arg(long, hide = true, value_name = "JSON", conflicts_with_all = ["budget", "cpu_fuel", "memory_bytes", "wall_time_ms", "log_bytes"])]
+    pub budget_json: Option<crate::invocation::budget::Budget>,
     #[arg(long, value_enum, default_value = "phase1")]
     pub budget_profile: InvokeBudgetProfile,
     #[arg(long)]

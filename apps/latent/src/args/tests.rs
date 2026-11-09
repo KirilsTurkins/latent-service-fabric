@@ -156,6 +156,54 @@ fn invocation(extra: &[&str]) -> Cli {
 }
 
 #[test]
+fn numeric_budget_is_bounded_and_excludes_the_file_and_scalar_overrides() {
+    let base = [
+        "latent",
+        "invoke",
+        "--service",
+        "echo",
+        "--contract",
+        "test/api",
+        "--function",
+        "echo",
+        "--input",
+        "-",
+    ];
+    let parse = |extra: &[&str]| {
+        let mut arguments = base.to_vec();
+        arguments.extend_from_slice(extra);
+        Cli::try_parse_from(arguments)
+    };
+    let values = r#"{"cpuFuel":11,"memoryBytes":22,"wallTimeLimitMillis":33}"#;
+    assert!(parse(&["--budget-json", values]).is_ok());
+    for bad in [
+        "",
+        "[]",
+        r#"{"cpuFuel":"private"}"#,
+        r#"{"unknown":1}"#,
+        r#"{"cpuFuel":true}"#,
+        r#"{"childCalls":4294967296}"#,
+        r#"{"cpuFuel":18446744073709551616}"#,
+        r#"{"cpuFuel":1,"cpuFuel":2}"#,
+    ] {
+        assert!(parse(&["--budget-json", bad]).is_err());
+    }
+    for extra in [
+        vec!["--budget", "budget.json"],
+        vec!["--cpu-fuel", "1"],
+        vec!["--memory-bytes", "1"],
+        vec!["--wall-time-ms", "1"],
+        vec!["--log-bytes", "1"],
+    ] {
+        let mut arguments = vec!["--budget-json", values];
+        arguments.extend(extra);
+        assert!(parse(&arguments).is_err());
+    }
+    // The existing file form and its scalar overrides remain available.
+    assert!(parse(&["--budget", "budget.json", "--cpu-fuel", "1"]).is_ok());
+}
+
+#[test]
 fn identity_and_metadata_rejection_precede_any_input_read() {
     for extra in [
         vec!["--activation-id", ""],
