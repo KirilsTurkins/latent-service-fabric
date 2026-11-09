@@ -16,7 +16,8 @@ var config = new ClientOptions { Endpoint = "http://" + Required("LSF_401_ENDPOI
 var client = await BoundedClient.ConnectAsync(config);
 try
 {
-    if (Required("LSF_401_MODE") == "recover")
+    string mode = Required("LSF_401_MODE");
+    if (mode == "recover")
     {
         var lookup = new Tx.LookupCommandRequest(Tx.CurrentTransactionProfile.Create(), selector, null, new Profile.PublicationRef(Required("LSF_401_PUBLICATION"), tenant));
         var c = (await client.LookupCommandAsync(lookup, options)).Value.Command ?? throw new InvalidOperationException("missing command");
@@ -28,11 +29,11 @@ try
     }
     else
     {
-        Check(Required("LSF_401_MODE") == "invoke", "mode");
+        Check(mode == "invoke" || mode == "conflict", "mode");
         byte[] version = Convert.FromHexString(Required("LSF_401_EXPECTED_VERSION_HEX")); Check(version.Length > 0, "current key version");
         var target = new Profile.InvocationTarget(tenant, "examples/transaction-java-aggregate", "examples:transactional-aggregate/api@1.0.0", "update", "transaction-java-aggregate");
         var budget = new Profile.ResourceBudget(1000000000, 67108864, 0, 0, 4194304, 2097152, 0, 0, 0, 1, 120000);
-        var invocation = new Profile.InvokeRequest(key, null, null, target, Encoding.UTF8.GetBytes("[{\"delta\":1,\"reject\":true}]"),
+        var invocation = new Profile.InvokeRequest(key, null, null, target, Encoding.UTF8.GetBytes(mode == "conflict" ? "[{\"delta\":2,\"reject\":true}]" : "[{\"delta\":1,\"reject\":true}]"),
             "application/vnd.latent.wit-values.v1+json", null, 0, null, budget, new Dictionary<string,string>());
         var request = new Tx.InvokeCommandRequest(Tx.CurrentTransactionProfile.Create(), invocation, selector, "lsf-wit-values-v1", new[] { new Tx.ExpectedVersion(Encoding.UTF8.GetBytes("aggregate/count"), null, version) }, null);
         bool failed = false;
@@ -42,10 +43,11 @@ try
             var failure = error.Failure;
             Check(failure.Transport.Dispatched && failure.Transport.Outcome == Profile.OutcomeKnowledge.Unknown, "dispatched unknown");
             Check(failure.Identity.Command?.ClientKey == key && failure.Observed is null, "original identity without fabricated outcome");
+            if (mode == "conflict") Check(failure.Transport.GrpcStatus == 6, "retained key conflict");
             failed = true;
         }
         Check(failed, "response must be withheld");
-        Console.WriteLine("LOST_REJECTION_UNKNOWN");
+        Console.WriteLine(mode == "conflict" ? "CHANGED_INPUT_CONFLICT" : "LOST_REJECTION_UNKNOWN");
     }
 }
 finally { await client.DisposeAsync(); Check(client.Snapshot().Reaped, "client retirement"); }

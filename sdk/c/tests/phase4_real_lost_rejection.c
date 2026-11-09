@@ -16,7 +16,10 @@ static void invoked(const latent_transaction_invoke_command_result *r, const lat
     assert(f->transport.dispatched && f->transport.outcome==LATENT_PROFILE_OUTCOME_KNOWLEDGE_UNKNOWN);
     assert(f->identity.command && f->identity.command->client_key.length==strlen("c-sdk-lost-rejection") &&
         memcmp(f->identity.command->client_key.data,"c-sdk-lost-rejection",strlen("c-sdk-lost-rejection"))==0 && !f->observed.has_command);
-    puts("LOST_REJECTION_UNKNOWN");
+    if (strcmp(required("LSF_401_MODE"),"conflict")==0) {
+        assert(f->transport.has_grpc_status && f->transport.grpc_status==6);
+        puts("CHANGED_INPUT_CONFLICT");
+    } else puts("LOST_REJECTION_UNKNOWN");
 }
 static bool matches(latent_string s,const char *v) { size_t n=strlen(v); return s.length==n && memcmp(s.data,v,n)==0; }
 static void recovered(const latent_transaction_lookup_command_result *r, const latent_transaction_client_failure *f, void *ctx) {
@@ -42,11 +45,12 @@ int main(void) {
         latent_transaction_lookup_command_request req={.has_profile=true,.profile=latent_transaction_current_profile(),.has_command=true,.command=selector,.has_authorization_publication=true,.authorization_publication={.id=str(required("LSF_401_PUBLICATION")),.tenant=str(tenant)}};
         call=api->lookup_command(latent_transport_transaction(owner),&req,NULL,recovered,&out);
     } else {
-        assert(strcmp(required("LSF_401_MODE"),"invoke")==0); const char *hex=required("LSF_401_EXPECTED_VERSION_HEX"); size_t len=strlen(hex); assert(len && len%2==0 && len<=512); uint8_t version[256];
+        const char *mode=required("LSF_401_MODE"); assert(strcmp(mode,"invoke")==0 || strcmp(mode,"conflict")==0); const char *hex=required("LSF_401_EXPECTED_VERSION_HEX"); size_t len=strlen(hex); assert(len && len%2==0 && len<=512); uint8_t version[256];
         for(size_t i=0;i<len/2;i++) { int a=digit(hex[i*2]),b=digit(hex[i*2+1]); assert(a>=0 && b>=0); version[i]=(uint8_t)(a*16+b); }
         latent_transaction_expected_version expected={.key=BYTES("aggregate/count"),.has_version=true,.version={version,len/2}};
         latent_transaction_invoke_command_request req={.has_profile=true,.profile=latent_transaction_current_profile(),.has_command=true,.command=selector,.input_format=TEXT("lsf-wit-values-v1"),.expected_versions=&expected,.expected_versions_count=1,
             .has_invocation=true,.invocation={.has_activation_id=true,.activation_id=TEXT("c-sdk-lost-rejection"),.has_target=true,.target={.tenant=str(tenant),.service=TEXT("examples/transaction-java-aggregate"),.contract=TEXT("examples:transactional-aggregate/api@1.0.0"),.function=TEXT("update"),.has_route=true,.route=TEXT("transaction-java-aggregate")},.payload=BYTES("[{\"delta\":1,\"reject\":true}]"),.media_type=TEXT("application/vnd.latent.wit-values.v1+json"),.has_budget=true,.budget={.cpu_fuel=1000000000,.memory_bytes=67108864,.state_read_bytes=4194304,.state_write_bytes=2097152,.effect_count=1,.has_wall_time_limit_millis=true,.wall_time_limit_millis=120000}}};
+        if (strcmp(mode,"conflict")==0) req.invocation.payload=BYTES("[{\"delta\":2,\"reject\":true}]");
         call=api->invoke_command(latent_transport_transaction(owner),&req,NULL,invoked,&out); assert(call); wait(owner,&out); api->release_call(call); close_owner(owner); return 0;
     }
     assert(call); wait(owner,&out); api->release_call(call); close_owner(owner); return 0;
