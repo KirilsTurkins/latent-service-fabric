@@ -47,7 +47,10 @@ filesystem requirements and independent stage/disk/metadata/work limits.
 coherent view. A persisted durable-mode label alone cannot mint a pin. An ordinary
 opener preserves that release fence; a trusted host may bind an existing mode
 through `bind_existing_durable_for_view` only before sharing the owner and after
-checking the exact engine identity and provider configuration.
+checking the exact engine identity and provider configuration. A trusted host
+can instead use `enable_durable_for_view` to persist the mode on the same unique
+owner. Live readers or shared ownership refuse the transition; an uncertain
+mode write poisons that owner until the on-disk state is reopened and checked.
 
 `capture_reference` performs the existing authorized open on the original
 capability session and returns an affine `CapturedLocalPayload`. Its session,
@@ -55,17 +58,18 @@ provider, tenant, store binding, verified bytes and native reader travel togethe
 An encoded reference or digest cannot reconstruct this owner.
 
 `RequiredBlobInventory` walks a coherent required-owner catalogue in bounded
-pages, retaining the original local owner and snapshot identity. The host still
+pages, retaining the original local owner and snapshot identity. A failed,
+panicking or rebound page invalidates its cursor. The host still
 owns semantic closure validation, startup capacity/deadline checks and the final
 readiness decision. Inventory is an observation, not deletion or read authority.
 Release checks take a fresh matching engine view while retaining the original
 publication guard; provisional pins prevent racing reclamation.
 
 The [command envelope](../latent-commit/README.md) can attach verified local
-payloads through its trusted library API. Standalone startup still rejects
-required payload-reference rows because it has not installed the complete
-physical inventory; this is not a generally available guest reference-dispatch
-path. S3 has no constructor for these local custody types. State, snapshot,
+payloads through its trusted library API. Standalone startup validates required
+local payload rows against the matching configured owner and rejects unsupported
+or corrupt references. Guest reference attachment is not yet wired to that
+envelope. S3 has no constructor for these local custody types. State, snapshot,
 retention and end-to-end acceptance must be qualified at their consuming owners.
 
 ## Dependencies and build
