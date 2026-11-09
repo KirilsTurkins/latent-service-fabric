@@ -123,23 +123,31 @@ public class Timer implements Activation.ManagedPool {
 
     public void schedule(TimerTask task, long delay) { scheduleAt(task, after(delay), 0); }
     public void schedule(TimerTask task, Date time) { scheduleAt(task, Objects.requireNonNull(time).getTime(), 0); }
-    public void schedule(TimerTask task, long delay, long period) { scheduleAt(task, after(delay), period(period, false)); }
+    public void schedule(TimerTask task, long delay, long period) {
+        if (delay < 0) throw new IllegalArgumentException("negative delay");
+        long selectedPeriod = period(period, false);
+        scheduleAt(task, after(delay), selectedPeriod);
+    }
     public void schedule(TimerTask task, Date time, long period) {
-        scheduleAt(task, Objects.requireNonNull(time).getTime(), period(period, false));
+        long selectedPeriod = period(period, false);
+        scheduleAt(task, Objects.requireNonNull(time).getTime(), selectedPeriod);
     }
     public void scheduleAtFixedRate(TimerTask task, long delay, long period) {
-        scheduleAt(task, after(delay), period(period, true));
+        if (delay < 0) throw new IllegalArgumentException("negative delay");
+        long selectedPeriod = period(period, true);
+        scheduleAt(task, after(delay), selectedPeriod);
     }
     public void scheduleAtFixedRate(TimerTask task, Date time, long period) {
-        scheduleAt(task, Objects.requireNonNull(time).getTime(), period(period, true));
+        long selectedPeriod = period(period, true);
+        scheduleAt(task, Objects.requireNonNull(time).getTime(), selectedPeriod);
     }
 
     private void scheduleAt(TimerTask task, long time, long period) {
-        Objects.requireNonNull(task);
         if (time < 0) throw new IllegalArgumentException("negative timer deadline");
         synchronized (lock) {
             if (cancelled || retiring || Activation.closing() && !Activation.acceptedContinuation())
                 throw new IllegalStateException("activation-timer-closed");
+            Objects.requireNonNull(task);
             synchronized (task) {
                 if (task.state != TimerTask.VIRGIN) throw new IllegalStateException("timer task already scheduled or cancelled");
                 Activation.Lease queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);

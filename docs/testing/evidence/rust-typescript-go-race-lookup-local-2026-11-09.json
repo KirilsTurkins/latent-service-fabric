@@ -1,4 +1,4 @@
-﻿{
+{
     "description":  "Experimental three-client lookup; Go probe built and run with race instrumentation",
     "probeCommit":  "ceb8443dd3f6",
     "observation":  {
