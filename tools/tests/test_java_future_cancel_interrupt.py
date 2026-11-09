@@ -99,6 +99,10 @@ class FutureCancellationControl(unittest.TestCase):
                 return 'FUTURE_TASK_NULL_FAILURE PASS pending;null-success;terminal-noop;nonnull;blocked-getter'
             if stage == 'future-task-null-failure-owner':
                 return 'FUTURE_TASK_NULL_FAILURE_OWNER PASS original-result-held-until-runner-exit'
+            if stage in ('future-task-monitor-reference-jdk', 'future-task-monitor-source'):
+                return 'FUTURE_TASK_MONITOR_REFERENCE PASS run;cancel;completed-get;executor;scheduled-cancel'
+            if stage == 'future-task-monitor-owner':
+                return 'FUTURE_TASK_MONITOR_OWNER PASS managed;active-owners;scheduled;retired-under-public-monitor'
             if stage.endswith('-compile'):
                 return ''
             raise AssertionError('execution continued after the failed matrix')
@@ -112,31 +116,35 @@ class FutureCancellationControl(unittest.TestCase):
                 subject.scheduled_source_control(compiler, output)
             self.assertIs(caught.exception, failure)
             matrix.assert_called_once_with(compiler, output)
-        self.assertEqual([stage for stage, _ in calls[-7:]], ['scheduled-source-compile',
+        self.assertEqual([stage for stage, _ in calls[-9:]], ['scheduled-source-compile',
             'executor-invoke-interrupt-source', 'executor-invoke-interrupt-owner',
             'executor-await-termination-source', 'executor-await-termination-owner',
-            'future-task-null-failure-source', 'future-task-null-failure-owner'])
+            'future-task-null-failure-source', 'future-task-null-failure-owner',
+            'future-task-monitor-source', 'future-task-monitor-owner'])
         self.assertIn('executor-invoke-interrupt-reference-jdk', [stage for stage, _ in calls])
         self.assertIn('executor-await-termination-reference-jdk', [stage for stage, _ in calls])
         self.assertIn('future-task-null-failure-reference-jdk', [stage for stage, _ in calls])
-        argv = calls[-7][1]
+        self.assertIn('future-task-monitor-reference-jdk', [stage for stage, _ in calls])
+        argv = calls[-9][1]
         self.assertEqual(argv[:4], ('javac', '-proc:none', '--release', '25'))
         self.assertEqual(argv.count(control), 1)
         self.assertIn(sdk / 'fibers/dev/latent/guest/runtime/concurrent/FutureTask.java', argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ExecutorInvokeInterruptOwnerControl.java', argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ExecutorAwaitTerminationOwnerControl.java', argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/FutureTaskNullFailureOwnerControl.java', argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/FutureTaskMonitorOwnerControl.java', argv)
         for missing in ('executor-invoke-interrupt-reference-jdk', 'executor-invoke-interrupt-source',
                         'executor-invoke-interrupt-owner', 'executor-await-termination-reference-jdk',
                         'executor-await-termination-source', 'executor-await-termination-owner',
                         'future-task-null-failure-reference-jdk', 'future-task-null-failure-source',
-                        'future-task-null-failure-owner'):
+                        'future-task-null-failure-owner', 'future-task-monitor-reference-jdk',
+                        'future-task-monitor-source', 'future-task-monitor-owner'):
             with self.subTest(missing=missing), tempfile.TemporaryDirectory() as temporary, \
                     patch.object(subject, 'future_cancel_interrupt_control') as matrix:
                 def incomplete(stage, *arguments):
                     return 'SKIPPED' if stage == missing else run(stage, *arguments)
                 incomplete_compiler = SimpleNamespace(sdk=sdk, run=incomplete)
-                with self.assertRaisesRegex(ValueError, 'Java (executor (invoke|termination)|future task null failure) .*'):
+                with self.assertRaisesRegex(ValueError, 'Java (executor (invoke|termination)|future task null failure|FutureTask monitor) .*'):
                     subject.scheduled_source_control(incomplete_compiler, Path(temporary) / 'source')
                 matrix.assert_not_called()
 
