@@ -62,8 +62,11 @@ fn checkpoint_component(
     profile: &str,
 ) -> (latent_packaging::PackageBundle, Vec<u8>) {
     let timer_overlap = timer_overlap_fixture(variable, profile);
+    let timer_fired =
+        variable == "LSF_GO_V7_TIMER_FIRED_FIXTURE" && profile == "go-component-activation-v7";
     assert!(
         timer_overlap
+            || timer_fired
             || matches!(
                 (variable, profile),
                 ("LSF_GO_CHECKPOINT_FIXTURE", "go-component-activation-v2")
@@ -113,6 +116,8 @@ fn checkpoint_component(
         include_bytes!("../../../../../sdk/go-guest/runtime/synchronization-conformance/main.go")
     } else if task_saturation {
         include_bytes!("../../../../../sdk/go-guest/runtime/task-saturation-conformance/main.go")
+    } else if timer_fired {
+        include_bytes!("../../../../../sdk/go-guest/runtime/timer-fired-conformance/main.go")
     } else if timer_overlap {
         include_bytes!("../../../../../sdk/go-guest/runtime/timer-overlap-conformance/main.go")
     } else if managed {
@@ -138,6 +143,8 @@ fn checkpoint_component(
             "synchronization"
         } else if task_saturation {
             "task-saturation"
+        } else if timer_fired {
+            "timer-fired"
         } else if timer_overlap {
             "timer-overlap"
         } else if managed {
@@ -164,6 +171,7 @@ fn checkpoint_component(
         || managed
         || task_saturation
         || timer_overlap
+        || timer_fired
     {
         assert_eq!(
             record["nativeReference"]["modes"],
@@ -171,6 +179,8 @@ fn checkpoint_component(
                 serde_json::json!([0, 1, 2, 3, 4, 5, 9])
             } else if task_saturation {
                 serde_json::json!([0])
+            } else if timer_fired {
+                serde_json::json!([0, 1])
             } else if timer_overlap {
                 serde_json::json!([0, 1, 2, 3])
             } else if managed {
@@ -242,6 +252,28 @@ fn checkpoint_component(
                 "../../../../../sdk/go-guest/runtime/task-saturation-conformance/world.wit"
             )
         );
+    }
+    if timer_fired {
+        assert_eq!(
+            wit.as_bytes(),
+            include_bytes!("../../../../../sdk/go-guest/runtime/timer-fired-conformance/world.wit")
+        );
+        assert_eq!(
+            record["diagnosticRuntime"]["kind"],
+            "selected-stop-token-fence-observe-v2"
+        );
+        let original = include_bytes!("../../../../../sdk/go-guest/runtime/timer_async.go.in");
+        let derived =
+            std::fs::read(prepared.join("diagnostic-sdk/runtime/timer_async.go.in")).unwrap();
+        assert_eq!(
+            record["diagnosticRuntime"]["originalTimerAsyncDigest"],
+            latent_artifacts::package::artifact_blob_digest(original).as_str()
+        );
+        assert_eq!(
+            record["diagnosticRuntime"]["derivedTimerAsyncDigest"],
+            latent_artifacts::package::artifact_blob_digest(&derived).as_str()
+        );
+        assert_ne!(original.as_slice(), derived.as_slice());
     }
     if timer_overlap {
         assert_eq!(
