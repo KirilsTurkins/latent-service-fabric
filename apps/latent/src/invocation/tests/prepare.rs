@@ -102,6 +102,41 @@ fn budget_documents_reject_unknown_duplicate_and_later_phase_dimensions() {
 }
 
 #[test]
+fn inline_numeric_budget_matches_file_defaults_and_profile_checks() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("budget.json");
+    let mut args = invoke("unread-payload".into());
+    let full = r#"{"cpuFuel":11,"memoryBytes":22,"wallTimeLimitMillis":33,"childCalls":4,"outboundRequests":5,"stateReadBytes":0,"stateWriteBytes":0,"blobReadBytes":6,"blobWriteBytes":7,"logBytes":8,"effectCount":0}"#;
+    args.budget_json = Some(full.parse().unwrap());
+    assert!(super::super::budget::resolve(&args).is_err());
+    args.budget_profile = crate::args::InvokeBudgetProfile::Phase3;
+    for (document, wall) in [
+        ("{}", None),
+        (r#"{"wallTimeLimitMillis":null}"#, None),
+        (r#"{"wallTimeLimitMillis":0}"#, Some(0)),
+        (full, Some(33)),
+    ] {
+        fs::write(&path, document).unwrap();
+        args.budget_json = Some(document.parse().unwrap());
+        let inline = super::super::budget::resolve(&args).ok().unwrap();
+        args.budget_json = None;
+        args.budget = Some(path.clone());
+        let file = super::super::budget::resolve(&args).ok().unwrap();
+        assert_eq!(inline, file);
+        assert_eq!(inline.wall_time_limit_millis, wall);
+        args.budget = None;
+    }
+    args.budget_json = Some(r#"{"stateReadBytes":1}"#.parse().unwrap());
+    assert!(super::super::budget::resolve(&args).is_err());
+    args.budget_json = Some("{}".parse().unwrap());
+    args.budget = Some("unread-budget".into());
+    assert!(super::super::budget::resolve(&args).is_err());
+    args.budget = None;
+    args.cpu_fuel = Some(12);
+    assert!(super::super::budget::resolve(&args).is_err());
+}
+
+#[test]
 fn payload_bytes_are_never_interpreted_as_phase0_controls_and_cancel_is_explicit() {
     let directory = tempfile::tempdir().unwrap();
     let payload = directory.path().join("input");
