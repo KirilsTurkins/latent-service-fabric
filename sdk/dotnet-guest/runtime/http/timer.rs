@@ -12,6 +12,7 @@ type Work = Pin<Box<dyn Future<Output = Result<(), runtime::Error>>>>;
 pub struct Timer {
     work: RefCell<Option<Work>>,
     elapsed: Cell<bool>,
+    started: Cell<bool>,
     failure: Cell<Option<runtime::Error>>,
     owner: Option<Owner>,
     slot: Option<Slot>,
@@ -28,6 +29,7 @@ impl Timer {
         let timer = Rc::new(Self {
             work: RefCell::new(Some(Box::pin(runtime::wait_for(nanos, continuation)))),
             elapsed: Cell::new(false),
+            started: Cell::new(false),
             failure: Cell::new(None),
             owner: Some(owner),
             slot: Some(slot),
@@ -42,6 +44,9 @@ impl pump::Progress for Timer {
         let Some(mut work) = self.work.borrow_mut().take() else {
             return;
         };
+        // Mark before polling: a pending or exceptional poll may have
+        // started the canonical import and must use ordinary retirement.
+        self.started.set(true);
         match work.as_mut().poll(context) {
             Poll::Pending => *self.work.borrow_mut() = Some(work),
             Poll::Ready(Ok(())) => self.elapsed.set(true),
@@ -63,11 +68,16 @@ impl Drop for Timer {
         if let Some(work) = self.work.get_mut().take() {
             let owner = self.owner.take();
             let slot = self.slot.take();
-            pump::Pump::retire(move || {
+            let action = move || {
                 drop(work);
                 drop(owner);
                 drop(slot);
-            });
+            };
+            if self.started.get() {
+                pump::Pump::retire(action);
+            } else {
+                pump::Pump::retire_unpolled_timer(action);
+            }
         }
     }
 }
