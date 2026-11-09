@@ -68,7 +68,9 @@ public final class TimerPostAckControl {
                 var tokens=Bindings.LatentRuntimeActivation.admittedTimers;
                 need(tokens.size()==1 && Bindings.LatentRuntimeActivation.ownsTimer(tokens.get(0)) && (boolean)get("poisoned")
                     && Bindings.LatentRuntimeActivation.stops==0 && failed.get()==null,"host-owner-preserved");
-                need(timers.size()==(args[0].equals("after-list")?1:0) && timerField.get(work)==null,"local-publication-shape");
+                Object sentinel=timerField.get(work);
+                need(timers.size()==(args[0].equals("after-list")?1:0) && sentinel!=null
+                    && (boolean)field(sentinel.getClass(),"startPending").get(sentinel) && (int)get("pendingTimerStarts")==1,"local-publication-shape");
                 noAdmission();
                 need(threadMap.get(Thread.currentThread())==work && Bindings.LatentRuntimeActivation.ownsTimer(tokens.get(0)),"failed-root-preserves-host");
                 // This is only a model of cancellation/drop, not a Store witness.
@@ -84,35 +86,25 @@ public final class TimerPostAckControl {
                     && Bindings.LatentRuntimeActivation.stops==0 && failed.get()==null && timers.isEmpty(),"allocation-host-owner-preserved");
                 noAdmission();
             }
-            case "nested-after-list" -> {
+            case "nested-after-list", "nested-failures" -> {
                 var nestedError=new AtomicReference<Throwable>();
-                PostAckHooks.afterListAction=()->{
-                    PostAckHooks.failure=original;
+                var otherToken=Bindings.LatentRuntimeActivation.register(Bindings.LatentRuntimeActivationOwnerKind.Task,Option.none()).value();
+                Object other=ctor.newInstance(otherToken);Thread otherKey=new Thread();threadMap.put(otherKey,other);
+                Runnable nested=()->{
+                    threadMap.put(Thread.currentThread(),other);PostAckHooks.failure=original;
                     try {Activation.timer(Activation.monotonicMillis()+1000);}catch(Throwable error){nestedError.set(error);}
-                    finally {PostAckHooks.failure=null;}
+                    finally {PostAckHooks.failure=null;threadMap.put(Thread.currentThread(),work);}
                 };
+                if(args[0].equals("nested-after-list"))PostAckHooks.afterListAction=nested;
+                else Bindings.LatentRuntimeActivation.startObservation=nested;
                 try{Activation.timer(Activation.monotonicMillis()+1000);throw new AssertionError("outer-unexpected-success");}
                 catch(IllegalStateException expected){}
                 var tokens=Bindings.LatentRuntimeActivation.admittedTimers;
                 need(nestedError.get()==original && tokens.size()==2 && !tokens.get(0).equals(tokens.get(1))
                     && Bindings.LatentRuntimeActivation.ownsTimer(tokens.get(0)) && Bindings.LatentRuntimeActivation.ownsTimer(tokens.get(1))
+                    && timerField.get(work)!=null && timerField.get(other)!=null && (int)get("pendingTimerStarts")==2
                     && Bindings.LatentRuntimeActivation.stops==0 && failed.get()==null && (boolean)get("poisoned"),"both-host-owners-retained");
-                noAdmission();
-            }
-            case "nested-failures" -> {
-                var nestedError=new AtomicReference<Throwable>();
-                Bindings.LatentRuntimeActivation.startObservation=()->{
-                    PostAckHooks.failure=original;
-                    try {Activation.timer(Activation.monotonicMillis()+1000);}catch(Throwable error){nestedError.set(error);}
-                    finally {PostAckHooks.failure=null;}
-                };
-                try{Activation.timer(Activation.monotonicMillis()+1000);throw new AssertionError("outer-unexpected-success");}
-                catch(IllegalStateException expected){}
-                var tokens=Bindings.LatentRuntimeActivation.admittedTimers;
-                need(nestedError.get()==original && tokens.size()==2 && !tokens.get(0).equals(tokens.get(1))
-                    && Bindings.LatentRuntimeActivation.ownsTimer(tokens.get(0)) && Bindings.LatentRuntimeActivation.ownsTimer(tokens.get(1))
-                    && Bindings.LatentRuntimeActivation.stops==0 && failed.get()==null && (boolean)get("poisoned"),"both-host-owners-retained");
-                noAdmission();
+                noAdmission();need(threadMap.get(otherKey)==other,"nested-work-retained");
             }
             default -> throw new IllegalArgumentException("unknown mode");
         }
