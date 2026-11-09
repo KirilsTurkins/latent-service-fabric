@@ -93,6 +93,8 @@ struct TlsState {
     connection: rustls::ClientConnection,
     handshake_read: usize,
     handshake_write: usize,
+    #[cfg(test)]
+    hold_test_flush: bool,
 }
 struct SocketIo<'a> {
     tcp: &'a Wire,
@@ -190,6 +192,8 @@ impl Transport {
                 connection,
                 handshake_read: 0,
                 handshake_write: 0,
+                #[cfg(test)]
+                hold_test_flush: false,
             })),
             _tls_configuration: Some(config),
         })
@@ -211,6 +215,8 @@ impl Transport {
                     connection,
                     handshake_read: 0,
                     handshake_write: 0,
+                    #[cfg(test)]
+                    hold_test_flush: false,
                 }))
             }
             None => None,
@@ -297,6 +303,13 @@ impl Transport {
     }
     pub fn host_tls(&self) -> bool {
         self.tls.is_some()
+    }
+
+    #[cfg(test)]
+    pub fn test_hold_tls_flush(&self) {
+        let mut state = self.tls.as_ref().expect("TLS transport").lock().unwrap();
+        assert!(!state.connection.wants_write());
+        state.hold_test_flush = true;
     }
 
     // Flush only already accepted ciphertext. WouldBlock yields to this same
@@ -432,6 +445,8 @@ impl Transport {
             return self.wire.write(input);
         };
         let mut state = tls.lock().map_err(|_| failure())?;
+        #[cfg(test)]
+        let hold_test_flush = state.hold_test_flush;
         let connection = &mut state.connection;
         Self::flush(connection, &self.wire)?;
         if connection.wants_write() {
@@ -443,6 +458,13 @@ impl Transport {
             Err(error) if error.kind() == io::ErrorKind::WouldBlock => return Ok(None),
             Err(_) => return Err(failure()),
         };
+        #[cfg(test)]
+        if hold_test_flush {
+            // Keep the real rustls ciphertext on this same original transport;
+            // this is a synthetic wire stall, not observed kernel backpressure.
+            assert!(connection.wants_write());
+            return Ok(Some(count));
+        }
         // Retain this accepted plaintext prefix even if ciphertext dispatch
         // subsequently fails. Returning acceptance is not remote completion.
         if let Err(mut error) = Self::flush(connection, &self.wire) {
@@ -457,6 +479,10 @@ impl Transport {
             return Ok(true);
         };
         let mut state = tls.lock().map_err(|_| failure())?;
+        #[cfg(test)]
+        if state.hold_test_flush {
+            return Ok(!state.connection.wants_write());
+        }
         Self::flush(&mut state.connection, &self.wire)?;
         Ok(!state.connection.wants_write())
     }
