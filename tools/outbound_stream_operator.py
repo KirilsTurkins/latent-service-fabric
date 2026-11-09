@@ -26,6 +26,8 @@ CAPABILITY = "latent:network/streams@0.1.0"
 PROFILE = "lsf-outbound-streams-v1"
 OPERATIONS = ["connect", "read", "write", "ready", "inspect", "shutdown", "close", "chunk-bytes"]
 MAXIMUM_RECORDS = 32
+# Same bound as latent_policy::capability::MAX_DOCUMENT_BYTES.
+MAXIMUM_POLICY_BYTES = 64 * 1024
 CEILING = {"operations": 128, "inputBytes": 1048576, "outputBytes": 1048576, "wallTimeMillis": 10000}
 STAMP_FIELDS = ("tenant", "id", "recordKind", "generation", "contentDigest", "revoked")
 
@@ -306,6 +308,11 @@ def endpoint(value):
     return dict(value)
 
 
+def _canonical_publication(value):
+    # Exact latent_core::PublicationId grammar; this is identity, not authority.
+    return isinstance(value, str) and re.fullmatch(r"publication:sha256:[0-9a-f]{64}", value) is not None
+
+
 def descriptor(value, tenant):
     members(value, {"id", "tenant", "service", "capability", "profile",
                     "configurationDigest", "configurationEpoch"})
@@ -392,6 +399,7 @@ class StreamOperator:
                 require(state.load(root, "stream-operator-owner.json") == self.owner,
                         "stream-operator-owner-changed")
             else:
+                require(_canonical_publication(publication), "stream-operator-invalid-publication")
                 require(not (root / "operations.json").exists()
                         and not (root / "stream-policy-receipts.json").exists(),
                         "stream-operator-state-not-owned")
@@ -426,6 +434,7 @@ class StreamOperator:
 
     def _apply(self, kind, record_id, document):
         require(self.journal.read()["pending"] is None, "recover-original-operation-before-new-mutation")
+        require(_canonical_publication(self.owner["publication"]), "stream-operator-invalid-publication")
         records = self._records()
         key = kind + ":" + record_id
         observed = self.client.call("policy", "--kind", kind, "get", "--id", record_id)
@@ -443,16 +452,23 @@ class StreamOperator:
         else:
             require(observed["category"] == "not-found", "stream-operator-policy-not-owned")
             expected = "0"
-        state.atomic(self.root, "selected-stream-policy.json", document)
+        # The journal and child consume one frozen encoding. The selected file
+        # remains for private review, but is never reopened as the RPC payload.
+        selected = copy.deepcopy(document)
+        payload = encode(selected)
+        require(len(payload) <= MAX_DOCUMENT, "state-byte-limit")
+        require(len(payload) <= MAXIMUM_POLICY_BYTES, "stream-operator-policy-byte-bound")
+        state.atomic(self.root, "selected-stream-policy.json", selected)
         try:
             result = self.journal.execute("policy", {"policyId": record_id, "recordKind": kind,
-                "document": document, "expectedGeneration": expected}, lambda operation:
+                "document": selected, "expectedGeneration": expected}, lambda operation:
                 self.client.call("policy", "--kind", kind, "apply", "--id", record_id,
-                    "--file", self.root / "selected-stream-policy.json", "--operation-id", operation,
-                    "--expected-generation", expected))
-        except DevError as error:
+                    "--file", "-", "--operation-id", operation,
+                    "--expected-generation", expected, stdin=payload))
+        except (DevError, OSError) as error:
             if self.journal.read()["pending"] is not None:
-                raise DevError(error.code, uncertain=True) from None
+                code = error.code if isinstance(error, DevError) else "stream-operator-mutation-unavailable"
+                raise DevError(code, uncertain=True) from None
             raise
         successful(result)
         return record_id
