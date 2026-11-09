@@ -188,40 +188,6 @@
       "upstream_repository": "actions/attest",
       "upstream_revision": "b60c2628ab941b449db82e38ba8d500980ce8a54"
     },
-    "KirilsTurkins/lsf-buf-setup-action@483cc1af1999992e503ff1da69b431f7b9f3bae9": {
-      "files": [
-        {
-          "sha256": "a931565ee9d2bb5c6c23eb7b858404bbf03abc6777ec2243b255c848290fd70b",
-          "snapshot": ".github/security/actions/buf-setup-action/action.yml.snapshot",
-          "source": "action.yml",
-          "source_sha256": "a931565ee9d2bb5c6c23eb7b858404bbf03abc6777ec2243b255c848290fd70b"
-        },
-        {
-          "sha256": "823db409417fe0cdf7ce0ba97c67c047da7c59c7958a44c13456963e01889fc8",
-          "snapshot": ".github/security/actions/buf-setup-action/package.json",
-          "source": "package.json",
-          "source_sha256": "823db409417fe0cdf7ce0ba97c67c047da7c59c7958a44c13456963e01889fc8"
-        },
-        {
-          "sha256": "5355cf0e4b0b5b7927912e5f1c2074387dddaba17a5aea1c0be49764566ab01c",
-          "snapshot": ".github/security/actions/buf-setup-action/package-lock.json",
-          "source": "package-lock.json",
-          "source_sha256": "5355cf0e4b0b5b7927912e5f1c2074387dddaba17a5aea1c0be49764566ab01c"
-        }
-      ],
-      "kind": "npm",
-      "metadata": {
-        "sha256": "a931565ee9d2bb5c6c23eb7b858404bbf03abc6777ec2243b255c848290fd70b",
-        "snapshot": ".github/security/actions/buf-setup-action/action.yml.snapshot",
-        "source": "action.yml",
-        "source_sha256": "a931565ee9d2bb5c6c23eb7b858404bbf03abc6777ec2243b255c848290fd70b"
-      },
-      "repository": "KirilsTurkins/lsf-buf-setup-action",
-      "revision": "483cc1af1999992e503ff1da69b431f7b9f3bae9",
-      "security_pr": "https://github.com/KirilsTurkins/lsf-buf-setup-action/pull/2",
-      "upstream_repository": "bufbuild/buf-setup-action",
-      "upstream_revision": "fbb91772b52752bd36ca8552d2ff4b94e111f24f"
-    },
     "KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce": {
       "files": [
         {
