@@ -186,6 +186,9 @@ impl Body {
         if self.eof {
             return Ok(None);
         }
+        // The caller supplies an upper bound, so a smaller provider window
+        // can return a short chunk without exceeding its own reservation.
+        let maximum = maximum.min(self.exchange.transfer.maximum_chunk_bytes());
         // Reserve before transport work. A capacity rejection is retryable after
         // guest chunk Drop and must neither poll the socket nor poison framing.
         let mut chunk = self.exchange.transfer.output_buffer(maximum)?;

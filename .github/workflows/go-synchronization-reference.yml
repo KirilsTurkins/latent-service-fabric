@@ -8,9 +8,9 @@ on:
         type: choice
         required: true
         default: synchronization
-        options: [synchronization, admission, queued, managed-timers, task-saturation, timer-overlap, timer-overlap-v7]
+        options: [synchronization, admission, queued, managed-timers, task-saturation, timer-overlap, timer-overlap-v7, timer-fired-v7]
   push:
-    branches: ['feat/go-runtime-retirement-20261020', 'feat/go-runtime-admission-20261020', 'feat/go-runtime-queued-ownership-20261020', 'feat/go-v5-standard-timers-20261020', 'feat/go-v7-timer-overlap-20261108']
+    branches: ['feat/go-runtime-retirement-20261020', 'feat/go-runtime-admission-20261020', 'feat/go-runtime-queued-ownership-20261020', 'feat/go-v5-standard-timers-20261020', 'feat/go-v7-timer-overlap-20261108', 'feat/go-fired-timer-fence-v7-20261108']
 
 permissions:
   contents: read
@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  LSF_GO_REFERENCE_CAMPAIGN: ${{ inputs.campaign || (github.ref_name == 'feat/go-v7-timer-overlap-20261108' && 'timer-overlap-v7' || github.ref_name == 'feat/go-v5-standard-timers-20261020' && 'managed-timers' || github.ref_name == 'feat/go-runtime-queued-ownership-20261020' && 'queued' || github.ref_name == 'feat/go-runtime-admission-20261020' && 'admission' || 'synchronization') }}
+  LSF_GO_REFERENCE_CAMPAIGN: ${{ inputs.campaign || (github.ref_name == 'feat/go-fired-timer-fence-v7-20261108' && 'timer-fired-v7' || github.ref_name == 'feat/go-v7-timer-overlap-20261108' && 'timer-overlap-v7' || github.ref_name == 'feat/go-v5-standard-timers-20261020' && 'managed-timers' || github.ref_name == 'feat/go-runtime-queued-ownership-20261020' && 'queued' || github.ref_name == 'feat/go-runtime-admission-20261020' && 'admission' || 'synchronization') }}
   CARGO_BUILD_JOBS: '2'
   CARGO_INCREMENTAL: '0'
   CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
@@ -65,6 +65,9 @@ jobs:
       - name: Check exact Go timer overlap evidence controls
         if: env.LSF_GO_REFERENCE_CAMPAIGN == 'timer-overlap' || env.LSF_GO_REFERENCE_CAMPAIGN == 'timer-overlap-v7'
         run: python3 -m unittest tools.tests.test_go_timer_overlap -v
+      - name: Check fired timer evidence controls
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'timer-fired-v7'
+        run: python3 -m unittest tools.tests.test_go_fired_timer -v
       - name: Install captured compiler namespace
         run: |
           sudo apt-get update
@@ -126,6 +129,15 @@ jobs:
       - name: Require original v7 timer overlap and retirement witnesses
         if: env.LSF_GO_REFERENCE_CAMPAIGN == 'timer-overlap-v7'
         run: python3 tools/qualify_go_synchronization.py --campaign timer-overlap-v7 --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-timer-overlap-v7" --output "$RUNNER_TEMP/go-timer-overlap-v7-result"
+      - name: Reject foreign fired-timer fence probes using pinned Go
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'timer-fired-v7'
+        run: python3 tools/tests/go_fired_fence_controls.py
+      - name: Compile the selected v7 fired timer diagnostic
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'timer-fired-v7'
+        run: python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-timer-fired-v7" --runtime-profile go-component-activation-v7 --fixture timer-fired
+      - name: Require original fired timer wait retirement on the signed node
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'timer-fired-v7'
+        run: python3 tools/qualify_go_synchronization.py --campaign timer-fired-v7 --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-timer-fired-v7" --output "$RUNNER_TEMP/go-timer-fired-v7-result"
       - name: Retain bounded actual results and compiler source identities
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
@@ -177,5 +189,13 @@ jobs:
             ${{ runner.temp }}/go-timer-overlap-v7/build/component.wasm
             ${{ runner.temp }}/go-timer-overlap-v7/logs/
             ${{ runner.temp }}/go-timer-overlap-v7-result/
+            ${{ runner.temp }}/go-timer-fired-v7/GO-ACTIVATION-COMPILE.json
+            ${{ runner.temp }}/go-timer-fired-v7/GO-ACTIVATION-FAILED.json
+            ${{ runner.temp }}/go-timer-fired-v7/src/
+            ${{ runner.temp }}/go-timer-fired-v7/wit/
+            ${{ runner.temp }}/go-timer-fired-v7/diagnostic-sdk/runtime/timer_async.go.in
+            ${{ runner.temp }}/go-timer-fired-v7/build/component.wasm
+            ${{ runner.temp }}/go-timer-fired-v7/logs/
+            ${{ runner.temp }}/go-timer-fired-v7-result/
           if-no-files-found: warn
           retention-days: 7
