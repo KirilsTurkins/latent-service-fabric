@@ -148,7 +148,7 @@ public class Timer implements Activation.ManagedPool {
             if (cancelled || retiring || Activation.closing() && !Activation.acceptedContinuation())
                 throw new IllegalStateException("activation-timer-closed");
             Objects.requireNonNull(task);
-            synchronized (task) {
+            synchronized (task.stateLock) {
                 if (task.state != TimerTask.VIRGIN) throw new IllegalStateException("timer task already scheduled or cancelled");
                 Activation.Lease queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
                 Entry entry = null;
@@ -186,7 +186,7 @@ public class Timer implements Activation.ManagedPool {
     private void clearQueue() {
         while (!queue.isEmpty()) {
             Entry entry = queue.remove(queue.size() - 1);
-            synchronized (entry.task) { entry.task.timer = null; }
+            synchronized (entry.task.stateLock) { entry.task.timer = null; }
             entry.withdraw(); pendingWork--;
         }
     }
@@ -204,7 +204,7 @@ public class Timer implements Activation.ManagedPool {
                     int index = first();
                     entry = queue.get(index);
                     long remaining;
-                    synchronized (entry.task) {
+                    synchronized (entry.task.stateLock) {
                         if (entry.task.state == TimerTask.CANCELLED) {
                             entry.task.timer = null;
                             queue.remove(index);
@@ -280,7 +280,7 @@ public class Timer implements Activation.ManagedPool {
             int removed = 0;
             for (int i = queue.size() - 1; i >= 0; i--) {
                 Entry entry = queue.get(i);
-                synchronized (entry.task) {
+                synchronized (entry.task.stateLock) {
                     if (entry.task.state != TimerTask.CANCELLED) continue;
                     entry.task.timer = null;
                 }

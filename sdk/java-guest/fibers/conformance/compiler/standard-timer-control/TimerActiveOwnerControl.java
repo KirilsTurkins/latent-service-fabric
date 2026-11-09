@@ -17,6 +17,41 @@ public final class TimerActiveOwnerControl {
         try { require(latch.await(4, TimeUnit.SECONDS), reason); }
         catch (InterruptedException error) { throw new AssertionError(reason, error); }
     }
+    private static void publicTaskMonitor() throws Exception {
+        Timer timer = new Timer("task-public-monitor", true);
+        TimerTask task = new TimerTask() {
+            @Override public void run() { throw new AssertionError("cancelled-task-ran"); }
+        };
+        timer.schedule(task, 60_000);
+        require(Activation.queued() == 1 && Activation.executors() == 1, "owner-not-admitted");
+        CountDownLatch entered = new CountDownLatch(1), finished = new CountDownLatch(1);
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        Thread canceller = new Thread(() -> {
+            entered.countDown();
+            try { require(task.cancel(), "scheduled-cancel-failed"); }
+            catch (Throwable error) { failure.set(error); }
+            finally { finished.countDown(); }
+        });
+        try {
+            // Holding the application-visible monitor must not stop cancellation
+            // or the worker from retiring the original queued-work owner.
+            synchronized (task) {
+                canceller.start();
+                await(entered, "canceller-not-started");
+                await(finished, "cancel-blocked-on-public-monitor");
+                require(failure.get() == null, "cancel-failed");
+                long end = System.nanoTime() + TimeUnit.SECONDS.toNanos(4);
+                while (Activation.queued() != 0 && System.nanoTime() < end) Thread.sleep(1);
+                require(Activation.queued() == 0, "queued-owner-blocked-on-public-monitor");
+            }
+        } finally {
+            canceller.join(5000);
+            timer.cancel();
+            Activation.cleanup();
+        }
+        require(!canceller.isAlive() && Activation.owners() == 0 && Activation.queuedAttempts() == 1,
+                "monitor-control-cleanup");
+    }
     private static void withdrawn(String mode) throws Exception {
         boolean periodic = !mode.startsWith("one-shot");
         boolean self = mode.startsWith("self-");
@@ -335,6 +370,7 @@ public final class TimerActiveOwnerControl {
         require(args.length == 1, "case-required");
         String mode = args[0];
         switch (mode) {
+            case "public-task-monitor" -> publicTaskMonitor();
             case "one-shot-normal", "one-shot-error", "external-cancel", "external-purge",
                  "self-cancel", "self-purge" -> withdrawn(mode);
             case "fixed-rate-reschedule" -> recurring(true);

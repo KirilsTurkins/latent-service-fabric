@@ -238,41 +238,55 @@ impl
                 Ok(_) => Err(Error::InvalidState),
                 Err(error) => Err(error),
             };
-            access.with(|mut access| {
-                let mut store = access.as_context_mut();
-                checkpoint(&mut store)?;
-                let result = body.and_then(|body| {
-                    let table = &mut store.data_mut().capabilities.streams;
-                    let rep = table.reserve(Kind::Body)?;
-                    let result = wit::Response {
-                        status: body.head().status(),
-                        headers: body
-                            .head()
-                            .headers()
-                            .map(|(name, value)| wit::Header {
-                                name: name.into(),
-                                value: value.into(),
-                            })
-                            .collect(),
-                        body_media_type: body.head().body_media_type().map(str::to_owned),
-                        body: Resource::<wit::Body>::new_own(rep),
-                    };
-                    table.put(
-                        rep,
-                        Kind::Body,
-                        Value::Body {
-                            value: body,
-                            trailers_delivered: false,
-                        },
-                    )?;
-                    Ok(result)
-                });
-                synchronize(&mut store)?;
-                store.data_mut().record_host_call(started);
-                Ok((result.map_err(convert_error),))
-            })
+            complete_finish(access, body, started)
         }
     }
+}
+
+pub(super) fn complete_finish(
+    access: &Accessor<HostState>,
+    body: Result<Box<dyn latent_capabilities::broker::streaming_http::HttpBody>, Error>,
+    started: Instant,
+) -> wasmtime::Result<(Result<wit::Response, wit::HttpError>,)> {
+    // A response may own a live provider exchange. Keep it outside the Store
+    // callback until a table row is reserved and can accept that same body.
+    let mut retained = None;
+    let input = body.map(|body| retained = Some(body));
+    let completion = access.with(|mut access| {
+        let mut store = access.as_context_mut();
+        checkpoint(&mut store)?;
+        let result = input.and_then(|()| {
+            let table = &mut store.data_mut().capabilities.streams;
+            let rep = table.reserve(Kind::Body)?;
+            let body = retained.as_ref().expect("one finish body");
+            let result = wit::Response {
+                status: body.head().status(),
+                headers: body
+                    .head()
+                    .headers()
+                    .map(|(name, value)| wit::Header {
+                        name: name.into(),
+                        value: value.into(),
+                    })
+                    .collect(),
+                body_media_type: body.head().body_media_type().map(str::to_owned),
+                body: Resource::<wit::Body>::new_own(rep),
+            };
+            let body = retained.take().expect("one finish body");
+            match table.put_body_recoverable(rep, body) {
+                Ok(()) => Ok(result),
+                Err((error, body)) => {
+                    retained = Some(body);
+                    Err(error)
+                }
+            }
+        });
+        synchronize(&mut store)?;
+        store.data_mut().record_host_call(started);
+        Ok((result.map_err(convert_error),))
+    });
+    drop(retained);
+    completion
 }
 
 pub(super) fn abort_upload(
@@ -292,18 +306,29 @@ impl InlineConcurrentHost<HostState, (Resource<wit::Upload>,), (Result<(), wit::
         (target,): (Resource<wit::Upload>,),
     ) -> impl std::future::Future<Output = wasmtime::Result<(Result<(), wit::HttpError>,)>> + Send + 'a
     {
-        async move {
-            access.with(|mut access| {
-                let mut store = access.as_context_mut();
-                let result = store
-                    .data_mut()
-                    .capabilities
-                    .streams
-                    .remove(target.rep(), Kind::Upload);
-                checkpoint(&mut store)?;
-                synchronize(&mut store)?;
-                Ok((result.map_err(convert_error),))
-            })
-        }
+        async move { complete_abort_upload(access, target.rep()) }
     }
+}
+
+pub(super) fn complete_abort_upload(
+    access: &Accessor<HostState>,
+    rep: u32,
+) -> wasmtime::Result<(Result<(), wit::HttpError>,)> {
+    // Provider teardown may synchronously wake work that accesses this Store.
+    // Move the original value out before any checkpoint or synchronization.
+    let mut removed = None;
+    let completion = access.with(|mut access| {
+        let mut store = access.as_context_mut();
+        let result = store
+            .data_mut()
+            .capabilities
+            .streams
+            .remove_recoverable(rep, Kind::Upload)
+            .map(|value| removed = value);
+        checkpoint(&mut store)?;
+        synchronize(&mut store)?;
+        Ok((result.map_err(convert_error),))
+    });
+    drop(removed);
+    completion
 }

@@ -466,7 +466,7 @@ STANDARD_TIMER_ACTIVE_OWNER_CASES = (
     "callback-ack", "clear-queue-ack", "cancelled-head-ack", "purge-ack",
     "manage-before", "manage-close-refused", "manage-close-lost",
     "start-before", "start-uncertain", "start-accepted", "start-close-refused", "start-close-lost",
-    "start-finished-ok", "start-finished-refused", "start-finished-lost",
+    "start-finished-ok", "start-finished-refused", "start-finished-lost", "public-task-monitor",
 )
 
 
