@@ -2,7 +2,7 @@ name: Unchanged published Java scheduled semaphore through the normal signed nod
 on:
   workflow_call:
   push:
-    branches: ['feat/java-scheduled-executor-20261026', 'feat/java-cf-shutdown-now-20261028', 'feat/java-future-queue-20261028', 'feat/java-timer-start-refusal-20261109']
+    branches: ['feat/java-scheduled-executor-20261026', 'feat/java-cf-shutdown-now-20261028', 'feat/java-future-queue-20261028', 'feat/java-timer-start-refusal-20261109', 'feat/java-timer-rendezvous-20261109']
     paths:
       - '.github/workflows/java-scheduled-library.yml'
       - 'tools/qualify_java_scheduled_library.py'
@@ -31,11 +31,12 @@ jobs:
        github.ref_name == 'feat/java-cf-shutdown-now-20261028' ||
        github.ref_name == 'feat/java-future-queue-20261028' ||
        github.ref_name == 'feat/java-timer-start-refusal-20261109' ||
+       github.ref_name == 'feat/java-timer-rendezvous-20261109' ||
        (github.ref_name == 'development' &&
         github.workflow_ref == 'KirilsTurkins/latent-service-fabric/.github/workflows/java-scheduled-development.yml@refs/heads/development'))
     name: One scheduled component and eighteen signed calls
     runs-on: ubuntu-24.04
-    timeout-minutes: ${{ (github.ref_name == 'feat/java-scheduled-executor-20261026' || github.ref_name == 'feat/java-timer-start-refusal-20261109' || github.ref_name == 'development') && 45 || 25 }}
+    timeout-minutes: ${{ (github.ref_name == 'feat/java-scheduled-executor-20261026' || github.ref_name == 'feat/java-timer-start-refusal-20261109' || github.ref_name == 'feat/java-timer-rendezvous-20261109' || github.ref_name == 'development') && 45 || 25 }}
     env:
       CARGO_BUILD_JOBS: '2'
       CARGO_INCREMENTAL: '0'
@@ -86,7 +87,7 @@ jobs:
           path: ${{ runner.temp }}/compiler-archives/java-prepared
           key: java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}
       - name: Capture and compile the scheduled component then run eighteen signed calls
-        if: github.ref_name == 'feat/java-scheduled-executor-20261026' || github.ref_name == 'feat/java-timer-start-refusal-20261109' || github.ref_name == 'development'
+        if: github.ref_name == 'feat/java-scheduled-executor-20261026' || github.ref_name == 'feat/java-timer-start-refusal-20261109' || github.ref_name == 'feat/java-timer-rendezvous-20261109' || github.ref_name == 'development'
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-

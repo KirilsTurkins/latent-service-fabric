@@ -61,7 +61,6 @@ public final class Capsule {
     }
     // This diagnostic uses real SDK timer starts and the real host observation.
     // The JDK reference runs modes 0..7 only; it does not simulate this mode.
-    private static final int TIMER_PROBE_YIELDS = 50_000;
     private static final class TimerProbe {
         final Object gate = new Object();
         final boolean[] held = new boolean[2], released = new boolean[2], done = new boolean[2];
@@ -79,36 +78,51 @@ public final class Capsule {
     }
     private static void timerWorker(TimerProbe probe, int slot) {
         try (Activation.Lease ignored = Activation.timer(Activation.monotonicMillis() + 60_000)) {
-            synchronized (probe.gate) { probe.held[slot] = true; }
-            boolean released = false;
-            for (int i = 0; i < TIMER_PROBE_YIELDS; i++) {
-                synchronized (probe.gate) { released = probe.released[slot]; }
-                if (released) break;
-                Thread.yield();
+            synchronized (probe.gate) {
+                probe.held[slot] = true;
+                probe.gate.notifyAll();
+                while (!probe.released[slot]) probe.gate.wait();
             }
-            timerProbeRequire(released, "worker-release-timeout");
         } catch (Throwable error) {
-            synchronized (probe.gate) { probe.failure[slot] = error; }
+            synchronized (probe.gate) {
+                probe.failure[slot] = error;
+                probe.gate.notifyAll();
+            }
         } finally {
             // Published only after the original timer's close has returned.
-            synchronized (probe.gate) { probe.done[slot] = true; }
+            synchronized (probe.gate) {
+                probe.done[slot] = true;
+                probe.gate.notifyAll();
+            }
         }
     }
     private static void awaitTimerWorker(TimerProbe probe, int slot, boolean finished) {
-        for (int i = 0; i < TIMER_PROBE_YIELDS; i++) {
-            boolean ready;
-            synchronized (probe.gate) {
-                if (probe.failure[slot] != null)
-                    throw new IllegalStateException("timer-admission-worker", probe.failure[slot]);
-                ready = finished ? probe.done[slot] : probe.held[slot];
+        if (finished) {
+            try { probe.workers[slot].join(); }
+            catch (InterruptedException error) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("timer-admission-join-interrupted", error);
             }
-            if (ready && (!finished || !probe.workers[slot].isAlive())) return;
-            Thread.yield();
+            timerProbeRequire(!probe.workers[slot].isAlive(), "worker-alive-after-join");
         }
-        throw new IllegalStateException("timer-admission-probe-worker-timeout");
+        synchronized (probe.gate) {
+            try {
+                while (!finished && !probe.held[slot] && probe.failure[slot] == null && !probe.done[slot])
+                    probe.gate.wait();
+            } catch (InterruptedException error) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("timer-admission-wait-interrupted", error);
+            }
+            if (probe.failure[slot] != null)
+                throw new IllegalStateException("timer-admission-worker", probe.failure[slot]);
+            timerProbeRequire(finished ? probe.done[slot] : probe.held[slot], "worker-state");
+        }
     }
     private static void releaseTimerWorker(TimerProbe probe, int slot) {
-        synchronized (probe.gate) { probe.released[slot] = true; }
+        synchronized (probe.gate) {
+            probe.released[slot] = true;
+            probe.gate.notifyAll();
+        }
     }
     private static Long timerAdmissionRefusal() {
         TimerProbe probe = new TimerProbe();

@@ -28,6 +28,7 @@ from tools.rust_capsule_project import ROOT, fresh, read_file, write_json
 
 BRANCH = 'feat/java-scheduled-executor-20261026'
 TIMER_BRANCH = 'feat/java-timer-start-refusal-20261109'
+RENDEZVOUS_BRANCH = 'feat/java-timer-rendezvous-20261109'
 DEVELOPMENT_BRANCH = 'development'
 WORKFLOW = '.github/workflows/java-scheduled-library.yml'
 DEVELOPMENT_WORKFLOW = '.github/workflows/java-scheduled-development.yml'
@@ -82,10 +83,10 @@ def observations(raw, filtered=51):
 
 def qualify(output, revision):
     branch = os.environ.get('GITHUB_REF_NAME')
-    workflow = WORKFLOW if branch in {BRANCH, TIMER_BRANCH} else DEVELOPMENT_WORKFLOW
+    workflow = WORKFLOW if branch in {BRANCH, TIMER_BRANCH, RENDEZVOUS_BRANCH} else DEVELOPMENT_WORKFLOW
     need(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
         and os.environ.get('GITHUB_REPOSITORY') == identities.REPOSITORY
-        and branch in {BRANCH, TIMER_BRANCH, DEVELOPMENT_BRANCH}
+        and branch in {BRANCH, TIMER_BRANCH, RENDEZVOUS_BRANCH, DEVELOPMENT_BRANCH}
         and os.environ.get('GITHUB_EVENT_NAME') == 'push'
         and os.environ.get('GITHUB_SHA') == revision
         and os.environ.get('GITHUB_WORKFLOW_SHA') == revision
