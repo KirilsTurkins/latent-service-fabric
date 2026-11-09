@@ -1,4 +1,4 @@
-﻿{
+{
     "description":  "Experimental separate-node Rust SDK lookup against combined unmerged source and a disposable test signer",
     "observation":  {
                         "after":  {

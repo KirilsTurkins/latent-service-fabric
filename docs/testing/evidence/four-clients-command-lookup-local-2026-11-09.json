@@ -1,4 +1,4 @@
-﻿{
+{
     "description":  "Experimental C, Go, Rust and TypeScript original-command lookup against combined unmerged node source and disposable signer",
     "observation":  {
                         "after":  {

@@ -1,4 +1,4 @@
-﻿{
+{
     "description":  "Experimental fixed native C client direct command against combined unmerged node source",
     "observation":  {
                         "after":  {
