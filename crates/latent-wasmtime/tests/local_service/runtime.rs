@@ -18,6 +18,8 @@ pub(super) mod provenance;
 #[path = "../generic_backend/support.rs"]
 #[allow(dead_code)]
 pub(super) mod support;
+#[path = "runtime/unknown_import.rs"]
+mod unknown_import;
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[path = "runtime/typescript.rs"]
