@@ -261,12 +261,21 @@ impl ProtectedStoreOwner {
         let job_bytes = METADATA_JOB_BYTES
             .checked_add(inventory_bytes)
             .ok_or(ProtectedStoreError::InvalidConfiguration)?;
-        let total_bytes = bytes
-            .checked_add(job_bytes)
+        let retained_bytes = bytes
+            .checked_add(METADATA_JOB_BYTES)
             .ok_or(ProtectedStoreError::InvalidConfiguration)?;
         let buffer = keeper
-            .reserve_buffer(NativeBufferClass::Work, total_bytes)
+            .reserve_buffer(NativeBufferClass::Work, retained_bytes)
             .map_err(|_| ProtectedStoreError::InvalidConfiguration)?;
+        let inventory_buffer = if inventory_bytes == 0 {
+            None
+        } else {
+            Some(
+                keeper
+                    .reserve_buffer(NativeBufferClass::Work, inventory_bytes)
+                    .map_err(|_| ProtectedStoreError::InvalidConfiguration)?,
+            )
+        };
         let original = Arc::clone(&keeper);
         let resource = self.reserve_recovery_resource(
             bytes,
@@ -277,6 +286,7 @@ impl ProtectedStoreOwner {
         )?;
         let failure = Arc::clone(&self.failure);
         let inner = self.initialize_native_resource(resource, job_bytes, move |store| {
+            let _inventory_buffer = inventory_buffer;
             let view = store.engine().snapshot()?;
             if StoreIdentity::inspect(&view)?.as_ref() != Some(&identity) {
                 return Err(StoreError::Corrupt);
@@ -315,6 +325,50 @@ impl ProtectedStoreOwner {
             move |file, engine| {
                 let view = engine.snapshot()?;
                 file.inspect(&view, observe_dispatch(&view)?)
+            },
+        )?;
+        Ok(ProtectedCheckpointJob { inner })
+    }
+
+    /// Recheck the complete source inventory on the same fresh view and the
+    /// original checkpoint reservation. The observer must be bounded by the
+    /// supplied allowance and the original deadline; this is not write authority.
+    pub fn inspect_checkpoint_with_inbox_inventory(
+        &self,
+        checkpoint: ProtectedCheckpoint,
+        keeper: Arc<NativeReservation>,
+        inventory_bytes: u64,
+        observe_dispatch: impl FnOnce(&ReadView) -> Result<Option<(u64, u64)>, StoreError>
+            + Send
+            + 'static,
+        observe_inventory: impl FnOnce(&ReadView) -> Result<Option<InboxCustodyWatermark>, StoreError>
+            + Send
+            + 'static,
+    ) -> Result<ProtectedCheckpointJob<CheckpointInspection>, ProtectedStoreError> {
+        if inventory_bytes == 0
+            || inventory_bytes > 8 * 1024 * 1024
+            || keeper.class() != NativeAdmissionClass::Recovery
+            || !keeper.is_from_owner(&self.native_capacity()?)
+        {
+            return Err(ProtectedStoreError::InvalidConfiguration);
+        }
+        let job_bytes = METADATA_JOB_BYTES
+            .checked_add(inventory_bytes)
+            .ok_or(ProtectedStoreError::InvalidConfiguration)?;
+        let buffer = keeper
+            .reserve_buffer(NativeBufferClass::Work, job_bytes)
+            .map_err(|_| ProtectedStoreError::InvalidConfiguration)?;
+        let inner = self.with_resource(
+            checkpoint.resource,
+            StoreIoKind::RecoveryRead,
+            job_bytes,
+            move |file, engine| {
+                let _buffer = buffer;
+                file.require_original(&keeper)?;
+                let view = engine.snapshot()?;
+                let dispatch = observe_dispatch(&view)?;
+                let inventory = InventoryObservation::Observed(observe_inventory(&view)?);
+                file.inspect_with_inventory(&view, dispatch, inventory, &keeper)
             },
         )?;
         Ok(ProtectedCheckpointJob { inner })

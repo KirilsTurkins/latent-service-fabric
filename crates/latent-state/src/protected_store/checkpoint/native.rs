@@ -300,17 +300,7 @@ impl CheckpointFile {
             if current.identity() != &identity {
                 return Err(StoreError::Corrupt);
             }
-            let (epoch, floor) = dispatch.ok_or(StoreError::Conflict)?;
-            match (current.inbox_custody(), inventory) {
-                (_, InventoryObservation::NotObserved)
-                | (None, InventoryObservation::Observed(None)) => {
-                    current.check_store(&identity, epoch, floor)?;
-                }
-                (Some(_), InventoryObservation::Observed(Some(actual))) => {
-                    current.check_store_with_inbox_custody(&identity, epoch, floor, actual)?;
-                }
-                _ => return Err(StoreError::Conflict),
-            }
+            Self::check_observation(&current, &identity, dispatch, inventory)?;
             Some(current)
         };
         root.check_mutable_file(&lock_fence)
@@ -385,10 +375,65 @@ impl CheckpointFile {
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    fn check_observation(
+        current: &ExternalCheckpoint,
+        identity: &StoreIdentity,
+        dispatch: Option<(u64, u64)>,
+        inventory: InventoryObservation,
+    ) -> Result<(), StoreError> {
+        let (epoch, floor) = dispatch.ok_or(StoreError::Conflict)?;
+        match (current.inbox_custody(), inventory) {
+            (_, InventoryObservation::NotObserved)
+            | (None, InventoryObservation::Observed(None)) => {
+                current.check_store(identity, epoch, floor)
+            }
+            (Some(_), InventoryObservation::Observed(Some(actual))) => {
+                current.check_store_with_inbox_custody(identity, epoch, floor, actual)
+            }
+            _ => Err(StoreError::Conflict),
+        }
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     pub(in crate::protected_store) fn inspect(
         &self,
         view: &ReadView,
         dispatch: Option<(u64, u64)>,
+    ) -> Result<CheckpointInspection, StoreError> {
+        self.inspect_inner(view, dispatch, InventoryObservation::NotObserved)
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(in crate::protected_store) fn inspect_with_inventory(
+        &self,
+        view: &ReadView,
+        dispatch: Option<(u64, u64)>,
+        inventory: InventoryObservation,
+        keeper: &Arc<NativeReservation>,
+    ) -> Result<CheckpointInspection, StoreError> {
+        self.require_original(keeper)?;
+        self.inspect_inner(view, dispatch, inventory)
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(in crate::protected_store) fn require_original(
+        &self,
+        keeper: &Arc<NativeReservation>,
+    ) -> Result<(), StoreError> {
+        if !Arc::ptr_eq(&self.original, keeper) {
+            return Err(StoreError::Conflict);
+        }
+        self.original
+            .with_live(|| ())
+            .map_err(|_| StoreError::Conflict)
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    fn inspect_inner(
+        &self,
+        view: &ReadView,
+        dispatch: Option<(u64, u64)>,
+        inventory: InventoryObservation,
     ) -> Result<CheckpointInspection, StoreError> {
         self.original
             .with_live(|| ())
@@ -397,8 +442,9 @@ impl CheckpointFile {
         let current = self.current.lock().map_err(|_| StoreError::Unavailable)?;
         self.exact_current(current.as_ref())?;
         if let Some(checkpoint) = current.as_ref() {
-            let (epoch, floor) = dispatch.ok_or(StoreError::Conflict)?;
-            checkpoint.check_store(&self.identity, epoch, floor)?;
+            Self::check_observation(checkpoint, &self.identity, dispatch, inventory)?;
+        } else if matches!(inventory, InventoryObservation::Observed(Some(_))) {
+            return Err(StoreError::Conflict);
         }
         Ok(CheckpointInspection {
             checkpoint: current.clone(),
@@ -413,6 +459,27 @@ impl CheckpointFile {
         _: &ReadView,
         _: Option<(u64, u64)>,
     ) -> Result<CheckpointInspection, StoreError> {
+        Err(StoreError::UnsupportedFormat)
+    }
+
+    #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+    #[allow(clippy::unused_self)]
+    pub(in crate::protected_store) fn inspect_with_inventory(
+        &self,
+        _: &ReadView,
+        _: Option<(u64, u64)>,
+        _: InventoryObservation,
+        _: &Arc<NativeReservation>,
+    ) -> Result<CheckpointInspection, StoreError> {
+        Err(StoreError::UnsupportedFormat)
+    }
+
+    #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+    #[allow(clippy::unused_self)]
+    pub(in crate::protected_store) fn require_original(
+        &self,
+        _: &Arc<NativeReservation>,
+    ) -> Result<(), StoreError> {
         Err(StoreError::UnsupportedFormat)
     }
 
