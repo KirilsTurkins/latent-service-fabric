@@ -185,6 +185,35 @@ fn response_release_reopen_and_independent_effect_snapshot_owners_keep_actual_by
 }
 
 #[test]
+fn uncertain_durable_mode_publication_poisoned_owner_and_recovers_from_disk() {
+    let state_root = temporary_root();
+    let blob_root = temporary_root();
+    let state = database(state_root.path(), true, "payload-state-a");
+    let view = state.snapshot().unwrap();
+    let mut owner = LocalBlobStore::open(blob_root.path(), "private", limits()).unwrap();
+    let blob = put(&owner, b"existing");
+    owner.inner.root.fail_after("sync", 0);
+    assert_eq!(
+        LocalBlobStore::enable_durable_for_view(&mut owner, &view),
+        Err(LocalBlobError::Uncertain)
+    );
+    assert!(owner.snapshot().unwrap().poisoned);
+    assert_eq!(
+        owner.release_reference(&scope(), &blob, &|| Ok(())),
+        Err(LocalBlobError::Uncertain)
+    );
+    drop(owner);
+    let owner = LocalBlobStore::open_durable_for_view(blob_root.path(), "private", limits(), &view)
+        .unwrap();
+    let reader = owner.open_read(&scope(), &blob, &|| Ok(())).unwrap();
+    assert_eq!(read(&reader, 0, 8).unwrap(), b"existing");
+    assert_eq!(
+        owner.release_reference(&scope(), &blob, &|| Ok(())),
+        Err(LocalBlobError::Busy)
+    );
+}
+
+#[test]
 fn failed_durable_mode_capacity_check_preserves_ordinary_owner() {
     let state_root = temporary_root();
     let blob_root = temporary_root();
