@@ -28,7 +28,7 @@ def historical_cache_selection(steps):
     return result
 
 
-def original_compiler_parent(test, parent):
+def original_compiler_parent(test, parent, *, historical_security=True):
     """Invert only reviewed current changes before historical comparisons."""
     parent = copy.deepcopy(parent)
     # Keep the old workflow fingerprints while requiring the reviewed current
@@ -37,6 +37,29 @@ def original_compiler_parent(test, parent):
     parent['timeout-minutes'] = 55
     test.assertEqual(parent.pop('permissions'), {'contents': 'read', 'actions': 'read'})
     steps = parent['steps']
+    # Project the reviewed bounded replacement back to the historical action
+    # only after authenticating its complete current command and authority.
+    wasm = [step for step in steps if step.get('name') == 'Install the verified wasm-tools release asset']
+    test.assertEqual(len(wasm), 1)
+    test.assertEqual(signature(wasm[0]), 'cb32fca7dcd5a442c8253a3f5afc18d71fc1d3131c78d91bfbecebee9259e2a7')
+    wasm_pin = ('9244ec9f4725400c84054e3e6ec97514cadddf53' if historical_security
+                else '1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce')
+    steps[steps.index(wasm[0])] = {'uses': 'KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@' + wasm_pin,
+                                  'with': {'version': '1.254.0'}}
+    # The independently qualified final-import pair was added after the old
+    # baseline. Preserve an exact guard on both complete steps before removal.
+    for name, expected in (
+        ('Prepare the Java final-import admission control', 'c39b46b29451e8cd7d9a5c5947387c063ee448e521fd8a696ac43236da2aedb5'),
+        ('Refuse a test-signed unknown import and run the fresh valid tenant', '096e91c38c25e3dcd124802f5bb454bd56be723dbadfb50b51f3868b5d96a789')):
+        matches = [step for step in steps if step.get('name') == name]
+        test.assertEqual(len(matches), 1)
+        test.assertEqual(signature(matches[0]), expected)
+        steps.remove(matches[0])
+    retained = next(step for step in steps if step.get('name') ==
+                    'Retain diagnostics, generated source and component candidates')
+    final_import = '${{ runner.temp }}/java-standard-timers/final-import/**'
+    test.assertEqual(retained['with']['path'].splitlines().count(final_import), 1)
+    retained['with']['path'] = retained['with']['path'].replace(final_import + '\n', '', 1)
     index = next(i for i, step in enumerate(steps) if step.get('name') == 'Install pinned compiler tools')
     selected = steps[index - 2:index + 2]
     test.assertEqual([step.get('name') for step in selected], [
@@ -88,6 +111,24 @@ def historical_checkout(value):
 
 
 class JavaScratchWiring(unittest.TestCase):
+    def test_current_wasm_and_final_import_projection_rejects_changed_inputs(self):
+        parent = model()['jobs']['compiler-component']
+        for name in ('Install the verified wasm-tools release asset',
+                     'Prepare the Java final-import admission control',
+                     'Refuse a test-signed unknown import and run the fresh valid tenant'):
+            with self.subTest(name=name):
+                changed = copy.deepcopy(parent)
+                step = next(step for step in changed['steps'] if step.get('name') == name)
+                step['run'] += '\nchanged\n'
+                with self.assertRaises(AssertionError):
+                    original_compiler_parent(self, changed)
+        changed = copy.deepcopy(parent)
+        retained = next(step for step in changed['steps'] if step.get('name') ==
+                        'Retain diagnostics, generated source and component candidates')
+        retained['with']['path'] += '${{ runner.temp }}/java-standard-timers/final-import/**\n'
+        with self.assertRaises(AssertionError):
+            original_compiler_parent(self, changed)
+
     def test_cache_projection_requires_both_exact_current_refs_and_preserves_other_fields(self):
         steps = model()['jobs']['compiler-component']['steps']
         index = next(i for i, step in enumerate(steps) if step.get('name') == 'Install pinned compiler tools')
