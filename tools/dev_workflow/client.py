@@ -29,6 +29,50 @@ class Client:
         require(self.expected_config_digest in (None, expected_digest), "operator-client-already-bound")
         self.expected_config_digest = expected_digest
 
+    def require_scenario_budget_support(self) -> None:
+        # This fixed local probe supplies no configuration, credentials or
+        # payload. A supporting CLI parses --budget-json, then rejects the
+        # deliberately incompatible quiet/JSON pair before config or I/O.
+        # A legacy CLI rejects the unknown budget option during argument parse.
+        # This observes compatibility now; it does not pin the executable.
+        def probe(with_budget):
+            timeout = 3.0
+            if self.deadline is not None:
+                remaining = self.deadline - time.monotonic()
+                require(remaining > 5, "node-test-run-deadline")
+                timeout = min(timeout, remaining - 5)
+            arguments = [
+                str(self.binary), "--output", "json", "--quiet", "invoke",
+                "--service", "capability-probe", "--contract", "tests:probe/api@0.1.0",
+                "--function", "check", "--input", "-",
+            ]
+            if with_budget:
+                arguments.extend(["--budget-json", "{}"])
+            result = process.run(arguments, self.directory, timeout=timeout, maximum=65536)
+            require(result.returncode == 2 and not result.stderr, "installed-cli-budget-probe-failed")
+            try:
+                value = decode(result.stdout, 65536)
+            except DevError:
+                raise DevError("installed-cli-budget-probe-invalid-response") from None
+            require(isinstance(value, dict)
+                    and value.get("schemaVersion") == "latent.cli.result.v1"
+                    and value.get("category") == "local-error"
+                    and value.get("outcomeKnown") is True
+                    and value.get("requestDispatched") is False
+                    and isinstance(value.get("error"), dict), "installed-cli-budget-probe-invalid-response")
+            return value.get("command"), value["error"].get("code")
+
+        # The first probe verifies every fixed option before attributing a
+        # second parse failure to the newly required budget option.
+        if probe(False) != ("invoke", "conflicting-output-options"):
+            raise DevError("installed-cli-budget-probe-inconclusive")
+        observation = probe(True)
+        if observation == ("invoke", "conflicting-output-options"):
+            return
+        if observation == ("arguments", "invalid-arguments"):
+            raise DevError("installed-cli-budget-option-unavailable-upgrade-runtime")
+        raise DevError("installed-cli-budget-probe-inconclusive")
+
     def call(self, *arguments: str, timeout: float = 30, check=None, stdin: bytes | None = None) -> dict:
         if self.deadline is not None:
             timeout = min(timeout, self.deadline - time.monotonic())
