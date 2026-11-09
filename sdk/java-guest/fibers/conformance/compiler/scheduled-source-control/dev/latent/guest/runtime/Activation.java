@@ -26,6 +26,8 @@ public final class Activation {
     private static Lease lastFailedLease;
     private static Lease retainedFailedQueued;
     public static boolean retainFailedStart;
+    public static Throwable manageFailure;
+    public static java.util.function.Consumer<ManagedPool> manageObservation;
     public interface ManagedPool { boolean hasPendingWork(); boolean isRetired(); void closeAtRoot(); }
     public static final class Lease implements AutoCloseable {
         private final int kind;
@@ -80,10 +82,19 @@ public final class Activation {
     public static synchronized int closeAttempts(Bindings.LatentRuntimeActivationOwnerKind kind) { return closeAttempts[kind.ordinal()]; }
     public static synchronized int admissions(Bindings.LatentRuntimeActivationOwnerKind kind) { return admissions[kind.ordinal()]; }
     public static boolean retainsFailedQueued() { return retainedFailedQueued != null && retainedFailedQueued == lastFailedLease; }
+    public static boolean retainsOwner(Lease owner) { return retainedFailedQueued == owner && owner != null; }
     public static synchronized int failedLeaseAttempts() { return lastFailedLease == null ? 0 : lastFailedLease.attempts; }
-    public static void fenceUncertainResultSettlement() { poisoned = true; }
+    public static void fenceUncertainCompletion() { poisoned = true; }
+    public static void fenceUncertainResultSettlement() { fenceUncertainCompletion(); }
     public static void fenceUncertainQueuedWorkSettlement(Lease owner) { poisoned = true; retainedFailedQueued = owner; }
-    public static synchronized void manage(ManagedPool pool) { pools.add(pool); }
+    public static synchronized void manage(ManagedPool pool) {
+        if (manageObservation != null) {
+            var observation = manageObservation; manageObservation = null; observation.accept(pool);
+        }
+        if (manageFailure instanceof RuntimeException runtime) throw runtime;
+        if (manageFailure instanceof Error error) throw error;
+        pools.add(pool);
+    }
     public static void startManaged(Thread worker, ManagedPool pool) {
         synchronized (Activation.class) {
             if (managed.containsKey(worker)) throw new IllegalThreadStateException();

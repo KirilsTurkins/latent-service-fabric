@@ -161,6 +161,9 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
                      "fibers/dev/latent/guest/runtime/Activation.java", "fibers/dev/latent/guest/runtime/HostCalls.java",
                      "fibers/dev/latent/guest/runtime/Monitors.java",
                      timer_fixture + "dev/latent/generated/Bindings.java", timer_fixture + "TimerReadinessSourceControl.java")
+    timer_sources += (timer_fixture + "ExecutorActivationSettlementControl.java",)
+    timer_sources += tuple(path.relative_to(compiler.sdk).as_posix() for path in
+        sorted((compiler.sdk / "fibers/dev/latent/guest/runtime/concurrent").glob("*.java")))
     compiler.run("timer-readiness-source-compile", "javac", "-proc:none", "--release", "25", "-cp", classpath,
                  "-d", timer_output, *(compiler.sdk / name for name in timer_sources))
     timer = compiler.run("timer-readiness-source-control", "java", "-Xmx256m", "-cp",
@@ -168,12 +171,14 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
     if timer != ("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;"
                  "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence"):
         raise ValueError("Java timer readiness source control did not complete")
+    executor_settlement = executor_activation_settlement_control(compiler, timer_output, classpath)
     return {"status": "actual-locked-classlib-model-passed", "nativeCallbackPairs": 2,
             "pluginOrder": ["runtime", "platform"], "asyncLoweredOwnedPairs": 2,
             "coroutineWrappers": 6, "coroutineMonitors": 2, "coroutineNativePairs": 2,
             "queueClockSamples": 2, "queueShapeNegatives": 4,
             "queueHeapControl": "actual-pinned-jvm-queue-and-model-not-guest-qualification",
-            "timerReadinessSourceControl": "passed-private-source-ledger-not-guest-qualification", "jarDigests": identities}
+            "timerReadinessSourceControl": "passed-private-source-ledger-not-guest-qualification",
+            "executorActivationSettlement": executor_settlement, "jarDigests": identities}
 
 
 def completable_source_control(compiler: Compiler, output: Path) -> dict:
@@ -418,6 +423,51 @@ def future_cancel_interrupt_control(compiler: Compiler, classes: Path) -> dict:
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 
+EXECUTOR_OWNER_SETTLEMENT_CASES = (
+    'normal', 'denied', 'lost', 'root-normal', 'root-denied', 'root-lost',
+    'reenter-caught', 'reenter-throws', 'root-reenter-caught', 'root-reenter-throws',
+    'concurrent', 'root-concurrent',
+    'construct-normal', 'construct-denied', 'construct-lost',
+    'construct-oom-normal', 'construct-oom-denied', 'construct-oom-lost', 'construct-reentry',
+)
+EXECUTOR_ACTIVATION_SETTLEMENT_CASES = (
+    'denied', 'lost', 'root-denied', 'root-lost',
+    'construct-normal', 'construct-denied', 'construct-lost',
+    'inflight-root-success', 'inflight-root-denied', 'inflight-root-lost',
+)
+
+
+def executor_owner_settlement_control(compiler: Compiler, classes: Path) -> dict:
+    """Fresh source-port processes; the host ledger is private test code."""
+    executed = {}
+    for kind in ('managed', 'scheduled'):
+        executed[kind] = []
+        for mode in EXECUTOR_OWNER_SETTLEMENT_CASES:
+            result = compiler.run('executor-owner-settlement-' + kind + '-' + mode,
+                'java', '-Xmx256m', '-cp', classes, 'ExecutorOwnerSettlementControl', kind, mode).strip()
+            if result != 'EXECUTOR_OWNER_SETTLEMENT PASS ' + kind + ' ' + mode:
+                raise ValueError('Java executor owner settlement control did not complete: ' + kind + ' ' + mode)
+            executed[kind].append(mode)
+    return {'status': 'SDK-source-controls-passed', 'cases': executed,
+        'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
+
+
+def executor_activation_settlement_control(compiler: Compiler, classes: Path, classpath: str) -> dict:
+    """Actual Activation and pool source with a private host ledger, not guest execution."""
+    executed = {}
+    for kind in ('managed', 'scheduled'):
+        executed[kind] = []
+        for mode in EXECUTOR_ACTIVATION_SETTLEMENT_CASES:
+            result = compiler.run('executor-activation-settlement-' + kind + '-' + mode,
+                'java', '-Xmx256m', '-cp', str(classes) + os.pathsep + classpath,
+                'ExecutorActivationSettlementControl', kind, mode).strip()
+            if result != 'EXECUTOR_ACTIVATION_SETTLEMENT PASS ' + kind + ' ' + mode:
+                raise ValueError('Java executor activation settlement control did not complete: ' + kind + ' ' + mode)
+            executed[kind].append(mode)
+    return {'status': 'SDK-activation-source-controls-passed', 'cases': executed,
+        'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
+
+
 def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     """Real port source with a private host ledger, never injected guest bindings."""
     private = compiler.sdk / 'fibers/conformance/compiler/scheduled-source-control'
@@ -428,7 +478,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'CompletableFutureQueuedRollbackControl.java', 'CompletableFutureQueuedSettlementControl.java',
         'ManagedExecutorQueuedSettlementControl.java',
         'ScheduledQueuedSettlementControl.java', 'FutureTaskInterruptFailureControl.java',
-        'ExecutorCloseInterruptControl.java',
+        'ExecutorCloseInterruptControl.java', 'ExecutorOwnerSettlementControl.java',
         'dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
     reference = private / 'ScheduledStoppedReferenceControl.java'
     periodic_reference = private / 'ScheduledPeriodicReferenceControl.java'
@@ -465,6 +515,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     compiler.run('scheduled-source-compile', 'javac', '-proc:none', '--release', '25',
         '-d', output, *ports, *controls, selected, selected_periodic)
     interrupt_control = future_cancel_interrupt_control(compiler, output)
+    executor_settlement = executor_owner_settlement_control(compiler, output)
     for implementation in ('jdk', 'source'):
         for mode in ('terminated', 'drain', 'interrupted'):
             result = compiler.run('executor-close-interrupt-' + implementation + '-' + mode,
@@ -537,7 +588,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError('Java scheduled source control inputs changed')
     return {'status': 'SDK-source-controls-passed', 'referenceJdk': 'matched-stopped-and-periodic-observables', 'sourceInputs': inputs,
-        'futureCancelInterrupt': interrupt_control,
+        'futureCancelInterrupt': interrupt_control, 'executorOwnerSettlement': executor_settlement,
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 
