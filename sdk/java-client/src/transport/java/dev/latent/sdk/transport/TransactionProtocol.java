@@ -281,7 +281,7 @@ final class TransactionProtocol {
         Protocol.require(error.detailItems().size() <= 16);
         for (var detail : error.detailItems()) { id(detail.kind()); metadata(detail.fields(), false); }
     }
-    private static Object command(Object value, Object selector, String tenant) {
+    private static Object command(Object value, Object selector, String tenant, Object inline) {
         Object key = part(value, "key");
         namespace(part(key, "namespace"), tenant); id(part(key, "recoveryScope"));
         id(part(key, "operation")); id(part(key, "clientKey")); optionalId(part(key, "entity"));
@@ -312,10 +312,13 @@ final class TransactionProtocol {
         }
         boolean empty = success == null && rejection == null && technical == null;
         boolean omitted = empty && retained != null && Boolean.FALSE.equals(part(retained, "payloadAvailable"));
+        boolean inlinePayload = empty && retained != null && Boolean.TRUE.equals(part(retained, "payloadAvailable"));
+        boolean inlineSuccess = inlinePayload && inline != null && part(inline, "success") != null;
+        boolean inlineRejection = inlinePayload && inline != null && part(inline, "declaredError") != null;
         boolean durable = Boolean.TRUE.equals(part(value, "metadataDurable")), committed = Boolean.TRUE.equals(part(value, "applicationStateCommitted"));
         switch (outcome) {
-            case 2 -> Protocol.require(durable && committed && commit != null && abort == null && (success != null || omitted));
-            case 3 -> Protocol.require(durable && !committed && commit == null && abort == null && (rejection != null || omitted));
+            case 2 -> Protocol.require(durable && committed && commit != null && abort == null && (success != null || omitted || inlineSuccess));
+            case 3 -> Protocol.require(durable && !committed && commit == null && abort == null && (rejection != null || omitted || inlineRejection));
             case 4 -> Protocol.require(durable && !committed && commit == null && abort != null && success == null && rejection == null);
             case 7 -> Protocol.require(durable && abort == null && empty && committed == (commit != null));
             default -> Protocol.require(!committed && commit == null && abort == null && empty);
@@ -387,20 +390,35 @@ final class TransactionProtocol {
         graph(value);
         switch (value) {
             case Transactions.InvokeCommandResponse result -> {
-                Object inspected = command(part(value, "command"), part(original, "command"), tenant);
-                linkedInvocation(part(value, "invocation"), part(inspected, "source"), tenant, part(original, "invocation"));
+                Object invocation = part(value, "invocation");
+                Object inspected = command(part(value, "command"), part(original, "command"), tenant, invocation);
+                linkedInvocation(invocation, part(inspected, "source"), tenant, part(original, "invocation"));
                 for (var pair : List.of(List.of("success", "success"), List.of("businessRejection", "declaredError"), List.of("technicalFailure", "platformFailure"))) {
                     if (part(inspected, pair.get(0)) != null) same(part(inspected, pair.get(0)), part(part(value, "invocation"), pair.get(1)));
                 }
-                Protocol.require(part(inspected, "success") != null || part(inspected, "businessRejection") != null || part(inspected, "technicalFailure") != null
-                        || part(part(value, "invocation"), "platformFailure") != null);
+                boolean retained = part(inspected, "success") != null || part(inspected, "businessRejection") != null || part(inspected, "technicalFailure") != null;
+                if (!retained && part(invocation, "platformFailure") == null) {
+                    Object retentionValue = part(inspected, "retention");
+                    boolean available = retentionValue != null && Boolean.TRUE.equals(part(retentionValue, "payloadAvailable"));
+                    int outcome = enumeration(part(inspected, "outcome"), 7, "command.outcome");
+                    Protocol.require(available && ((outcome == 2 && part(invocation, "success") != null)
+                            || (outcome == 3 && part(invocation, "declaredError") != null)));
+                }
+                Object success = part(invocation, "success");
+                if (success != null) {
+                    Object commit = part(inspected, "commit");
+                    same(part(success, "effectIds"), part(commit, "effectIds"));
+                    ByteBuffer version = bytes(part(commit, "committedVersion"), 256, true).duplicate();
+                    byte[] raw = new byte[version.remaining()]; version.get(raw);
+                    same(part(success, "committedStateVersion"), java.util.HexFormat.of().formatHex(raw));
+                }
             }
             case Transactions.LookupCommandResponse result -> {
-                Object inspected = command(part(value, "command"), part(original, "command"), tenant);
+                Object inspected = command(part(value, "command"), part(original, "command"), tenant, null);
                 if (part(original, "attemptId") != null) same(part(inspected, "attemptId"), part(original, "attemptId"));
             }
             case Transactions.LookupCommitResponse result -> {
-                Object inspected = command(part(value, "command"), part(original, "command"), tenant);
+                Object inspected = command(part(value, "command"), part(original, "command"), tenant, null);
                 same(part(part(inspected, "commit"), "receiptId"), part(original, "receiptId"));
             }
             case Transactions.GetEffectResponse result -> effect(part(value, "effect"), part(original, "effectId"));
@@ -413,7 +431,7 @@ final class TransactionProtocol {
                 int disposition = enumeration(part(value, "disposition"), 5, "command.cancel.disposition");
                 Object inspected = part(value, "command");
                 if (inspected != null) {
-                    command(inspected, part(part(original, "command"), "command"), tenant);
+                    command(inspected, part(part(original, "command"), "command"), tenant, null);
                     if (disposition == 2) same(part(inspected, "outcome"), Transactions.CommandOutcome.COMMITTED);
                 } else Protocol.require(disposition == 4);
             }
