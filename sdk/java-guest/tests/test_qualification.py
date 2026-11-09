@@ -250,7 +250,7 @@ class WaitFrameModelIntegrity(unittest.TestCase):
         activation = Path(__file__).resolve().parents[1] / "fibers/dev/latent/guest/runtime/Activation.java"
         source = activation.read_text(encoding="utf-8")
         projected = fibers.timer_post_ack_projection(source)
-        for call in ("afterAccept", "afterList", "fence"):
+        for call in ("afterAccept", "beforeList", "afterList", "beforeAllocation"):
             self.assertEqual(projected.count("PostAckHooks." + call + "();"), 1)
         with self.assertRaisesRegex(ValueError, "post-ack projection source drift"):
             fibers.timer_post_ack_projection(source.replace("            timers.add(timer);\n", "", 1))

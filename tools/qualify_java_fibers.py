@@ -165,13 +165,14 @@ def timer_post_ack_projection(source: str) -> str:
     points = (
         ("            ((Lease)timer).token = started.value();\n", "            PostAckHooks.afterAccept();\n"),
         ("            timers.add(timer);\n", "            PostAckHooks.afterList();\n"),
-        ("    public static void fenceUncertainQueuedWorkSettlement(Lease owner) {\n"
-         "        poisoned = true;\n", "        PostAckHooks.fence();\n"),
+        ("        var continuation = Option.some(work.token);\n", "        PostAckHooks.beforeAllocation();\n"),
     )
     for point, hook in points:
         if source.count(point) != 1:
             raise ValueError("Java timer post-ack projection source drift")
         source = source.replace(point, point + hook, 1)
+    point = "            timers.add(timer);\n"
+    source = source.replace(point, "            PostAckHooks.beforeList();\n" + point, 1)
     return source
 
 
@@ -195,8 +196,8 @@ def timer_post_ack_source_control(compiler: Compiler, output: Path, classpath: s
                  "-cp", classpath, "-d", classes, projected, *sources)
     result = compiler.run("timer-post-ack-projection-control", "java", "-Xmx256m", "-cp",
                           str(classes) + os.pathsep + classpath, "TimerPostAckProjectionControl")
-    modes = ("normal", "refused-start", "missing-token", "rollback-confirmed", "rollback-refused",
-             "rollback-lost", "reentrant-root", "after-list", "fence-failure")
+    modes = ("normal", "refused-start", "allocation-before-admission", "missing-token",
+             "before-list", "list-allocation-failure", "after-list", "nested-failures", "nested-after-list")
     expected = ["TIMER_POST_ACK_CONTROL PASS " + mode for mode in modes]
     expected += ["TIMER_POST_ACK_PROJECTED PASS cases=9"]
     if result.strip().splitlines() != expected:

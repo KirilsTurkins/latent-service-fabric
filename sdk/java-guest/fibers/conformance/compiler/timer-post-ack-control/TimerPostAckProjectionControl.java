@@ -10,8 +10,8 @@ public final class TimerPostAckProjectionControl {
         String[] entries = System.getProperty("java.class.path").split(Pattern.quote(File.pathSeparator));
         URL[] urls = new URL[entries.length];
         for (int i = 0; i < entries.length; i++) urls[i] = Path.of(entries[i]).toUri().toURL();
-        String[] modes = {"normal", "refused-start", "missing-token", "rollback-confirmed", "rollback-refused",
-            "rollback-lost", "reentrant-root", "after-list", "fence-failure"};
+        String[] modes = {"normal", "refused-start", "allocation-before-admission", "missing-token",
+            "before-list", "list-allocation-failure", "after-list", "nested-failures", "nested-after-list"};
         for (String mode : modes) {
             try (var loader = new URLClassLoader(urls, ClassLoader.getPlatformClassLoader())) {
                 try { Class.forName("TimerPostAckControl", true, loader).getMethod("main", String[].class)

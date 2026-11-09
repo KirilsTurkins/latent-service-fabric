@@ -23,7 +23,10 @@ public final class Bindings {
         private static long next;
         private static final HashMap<LatentRuntimeActivationToken, LatentRuntimeActivationOwnerKind> owners = new HashMap<>();
         public static final ArrayList<LatentRuntimeActivationToken> selected = new ArrayList<>();
-        public static int waits, stops;
+        public static int waits, stops, starts, registrations;
+        public static boolean storeCancelled;
+        public static final ArrayList<LatentRuntimeActivationToken> admittedTimers = new ArrayList<>();
+        public static Runnable startObservation;
         public static long lastNanos;
         public static boolean denyNext, denyStop, denySettle, denyStart, nullStartToken;
         public static RuntimeException stopFailure;
@@ -31,15 +34,24 @@ public final class Bindings {
         public static Runnable stopObservation, settleObservation;
         public static int timers() { return (int)owners.values().stream().filter(kind -> kind == LatentRuntimeActivationOwnerKind.Timer).count(); }
         public static Reply<LatentRuntimeActivationToken> register(LatentRuntimeActivationOwnerKind kind, Option<LatentRuntimeActivationToken> continuation) {
+            registrations++;
             if (kind == LatentRuntimeActivationOwnerKind.Timer && timers() >= 2) return new Reply<>(null, Error.ResourceExhausted);
             var token = new LatentRuntimeActivationToken(1, ++next); owners.put(token, kind); return new Reply<>(token, null);
         }
         public static Reply<LatentRuntimeActivationToken> timerStart(Unsigned64 nanos, Option<Unsigned64> period, Option<LatentRuntimeActivationToken> continuation) {
-            lastNanos = nanos.bits();
+            starts++; lastNanos = nanos.bits();
             if (denyStart) return new Reply<>(null, Error.ResourceExhausted);
             var accepted = register(LatentRuntimeActivationOwnerKind.Timer, continuation);
+            if (!accepted.isError()) admittedTimers.add(accepted.value());
+            Runnable observation = startObservation; startObservation = null;
+            if (observation != null) observation.run();
             return nullStartToken && !accepted.isError() ? new Reply<>(null, null) : accepted;
         }
+        // Synthetic Store cleanup for this private ledger only.
+        public static boolean ownsTimer(LatentRuntimeActivationToken token) {
+            return owners.get(token) == LatentRuntimeActivationOwnerKind.Timer;
+        }
+        public static void discardStore() { storeCancelled = true; owners.clear(); }
         public static Reply<Unsigned64> timerNext(LatentRuntimeActivationToken token) {
             if (denyNext) return new Reply<>(null, Error.Cancelled);
             if (owners.get(token) != LatentRuntimeActivationOwnerKind.Timer) return new Reply<>(null, Error.InvalidToken);

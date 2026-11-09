@@ -328,8 +328,8 @@ public final class Activation {
         var delay = new Unsigned64(nanos);
         var period = Option.<Unsigned64>none();
         var continuation = Option.some(work.token);
-        // Allocate the exact rollback holder before admission, so a local
-        // registration failure cannot lose an already returned timer token.
+        // Allocate the Java holder before host admission so failure here
+        // cannot admit a timer that the caller never received.
         TimerLease timer = new TimerLease(null, work, deadline);
         // The clock or argument preparation may have suspended. Revalidate the
         // original logical owner before the final admission fence.
@@ -341,29 +341,24 @@ public final class Activation {
         try {
             ((Lease)timer).token = started.value();
             if (((Lease)timer).token == null) throw new IllegalStateException("activation-runtime-timer-start-token");
+            // A nested failure or teardown can happen during the host call.
+            // Check again before publishing this returned timer into Java.
+            boolean currentWork = lookup(Thread.currentThread()) == work && !work.complete && work.timer == null;
+            requireHealthyAdmission();
+            if (!entered || !currentWork) throw new IllegalStateException("activation-runtime-timer-frame");
             timers.add(timer);
             work.timer = timer;
+            // Publication can itself allocate or reenter. Do not hand a lease
+            // back after another accepted operation has fenced this activation.
+            boolean registeredWork = lookup(Thread.currentThread()) == work && !work.complete && work.timer == timer;
+            requireHealthyAdmission();
+            if (!entered || !registeredWork) throw new IllegalStateException("activation-runtime-timer-frame");
             return timer;
         } catch (Throwable error) {
-            // Fence completion before attempting to retain the original
-            // holder. The host keeps its timer until a confirmed stop.
+            // The admitted RuntimeTimer remains in the host's prepaid table.
+            // Do not submit a stop from a failed or partially mutated local
+            // registration; keep its owner until host Table/Store teardown.
             fenceUncertainCompletion();
-            boolean fenceReturned = false;
-            try {
-                fenceUncertainQueuedWorkSettlement(timer);
-                fenceReturned = true;
-            } catch (Throwable fencing) {
-                // Do not attempt settlement if publication failed. The host
-                // still owns any admitted timer until Store teardown.
-            }
-            if (fenceReturned && ((Lease)timer).token != null) {
-                try {
-                    var stopped = Bindings.LatentRuntimeActivation.timerStop(((Lease)timer).token);
-                    if (!stopped.isError()) ((Lease)timer).token = null;
-                } catch (Throwable rollback) {
-                    // The host may already have stopped the original timer.
-                }
-            }
             throw error;
         }
     }
