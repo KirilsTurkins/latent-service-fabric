@@ -101,24 +101,7 @@ impl Body for RequestBody {
         match self.get_mut() {
             Self::Buffered(body) => Pin::new(body).poll_frame(cx),
             Self::Protocol(body) => Pin::new(body).poll_frame(cx),
-            Self::Streaming(receiver) => {
-                let mut state = receiver
-                    .state
-                    .lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner);
-                if let Some(data) = state.pending.take() {
-                    if let Some(remaining) = &mut receiver.remaining {
-                        *remaining -= data.len() as u64;
-                    }
-                    return Poll::Ready(Some(Ok(Frame::data(data))));
-                }
-                if state.ended {
-                    Poll::Ready(None)
-                } else {
-                    state.waker = Some(cx.waker().clone());
-                    Poll::Pending
-                }
-            }
+            Self::Streaming(receiver) => poll_stream_with(receiver, || cx.waker().clone()),
         }
     }
     fn is_end_stream(&self) -> bool {
@@ -143,6 +126,57 @@ impl Body for RequestBody {
                 .map_or_else(SizeHint::default, SizeHint::with_exact),
         }
     }
+}
+
+fn poll_stream_with(
+    receiver: &mut Receiver,
+    make_waker: impl FnOnce() -> Waker,
+) -> Poll<Option<Result<Frame<Bytes>, Infallible>>> {
+    let mut state = receiver
+        .state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    if let Some(data) = state.pending.take() {
+        drop(state);
+        return ready_frame(receiver, data);
+    }
+    if state.ended {
+        return Poll::Ready(None);
+    }
+    // Cloning a supplied Waker and dropping the replaced owner can execute
+    // arbitrary code. Neither operation may occur while the queue is locked.
+    drop(state);
+    let waker = make_waker();
+    let mut state = receiver
+        .state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    // A sender may have queued a frame or ended while the lock was released.
+    // Observe that change rather than parking with a wakeup already consumed.
+    if let Some(data) = state.pending.take() {
+        drop(state);
+        drop(waker);
+        return ready_frame(receiver, data);
+    }
+    if state.ended {
+        drop(state);
+        drop(waker);
+        return Poll::Ready(None);
+    }
+    let previous = state.waker.replace(waker);
+    drop(state);
+    drop(previous);
+    Poll::Pending
+}
+
+fn ready_frame(
+    receiver: &mut Receiver,
+    data: Bytes,
+) -> Poll<Option<Result<Frame<Bytes>, Infallible>>> {
+    if let Some(remaining) = &mut receiver.remaining {
+        *remaining -= data.len() as u64;
+    }
+    Poll::Ready(Some(Ok(Frame::data(data))))
 }
 
 #[cfg(test)]
@@ -238,6 +272,77 @@ mod cancellation_lock_tests {
         queue.lock().unwrap().pending = Some(Bytes::from_owner(owner));
         drop(body);
         assert_eq!(result.load(Ordering::SeqCst), 1);
+        drop(sender);
+    }
+
+    struct PollWakerDrop {
+        queue: Weak<Mutex<State>>,
+        result: Arc<AtomicUsize>,
+    }
+    impl Wake for PollWakerDrop {
+        fn wake(self: Arc<Self>) {}
+    }
+    impl Drop for PollWakerDrop {
+        fn drop(&mut self) {
+            let Some(queue) = self.queue.upgrade() else {
+                self.result.store(3, Ordering::SeqCst);
+                return;
+            };
+            let observed = match queue.try_lock() {
+                Ok(_) => 1,
+                Err(TryLockError::WouldBlock) => 2,
+                Err(TryLockError::Poisoned(_)) => 3,
+            };
+            self.result.store(observed, Ordering::SeqCst);
+        }
+    }
+
+    #[test]
+    fn replacing_poll_waker_drops_previous_owner_after_queue_unlock() {
+        let (sender, mut body) = channel(None);
+        let queue = match &body {
+            RequestBody::Streaming(receiver) => Arc::downgrade(&receiver.state),
+            _ => unreachable!("channel returns a streaming body"),
+        };
+        let result = Arc::new(AtomicUsize::new(0));
+        let previous = Waker::from(Arc::new(PollWakerDrop {
+            queue,
+            result: Arc::clone(&result),
+        }));
+        assert!(Pin::new(&mut body)
+            .poll_frame(&mut Context::from_waker(&previous))
+            .is_pending());
+        drop(previous);
+        assert_eq!(result.load(Ordering::SeqCst), 0);
+        assert!(Pin::new(&mut body)
+            .poll_frame(&mut Context::from_waker(Waker::noop()))
+            .is_pending());
+        assert_eq!(result.load(Ordering::SeqCst), 1);
+        drop(body);
+        drop(sender);
+    }
+
+    #[test]
+    fn frame_queued_while_cloning_waker_is_not_lost() {
+        let (sender, mut body) = channel(None);
+        let receiver = match &mut body {
+            RequestBody::Streaming(receiver) => receiver,
+            _ => unreachable!("channel returns a streaming body"),
+        };
+        let queue = Arc::clone(&receiver.state);
+        let result = poll_stream_with(receiver, || {
+            let mut state = match queue.try_lock() {
+                Ok(state) => state,
+                Err(_) => panic!("waker was cloned while the queue lock was held"),
+            };
+            state.pending = Some(Bytes::from_static(b"next"));
+            Waker::noop().clone()
+        });
+        let Poll::Ready(Some(Ok(frame))) = result else {
+            panic!("a frame queued during registration must be returned");
+        };
+        assert_eq!(frame.into_data().unwrap(), Bytes::from_static(b"next"));
+        drop(body);
         drop(sender);
     }
 }
