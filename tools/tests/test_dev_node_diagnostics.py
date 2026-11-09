@@ -257,7 +257,18 @@ class ProbeIntegration(unittest.TestCase):
             result = failure()
             result["data"]["resolvedRevision"] = {**revision, "revisionId": "revision-v1:sha256:" + "c" * 64}
             cli, journal = Mock(), Mock()
-            cli.call.return_value = result
+            expected_input = (source / "input.json").read_bytes()
+            sent_inputs = []
+            def call(*args, **options):
+                if args[0] == "invoke":
+                    selected = args[args.index("--input") + 1]
+                    sent_inputs.append(options.get("stdin") if selected == "-" else Path(selected).read_bytes())
+                return result
+            def replace_after_intent(_cli, _journal, intent, invoke, _deadline):
+                self.assertEqual(intent["inputSha256"], common.digest(expected_input))
+                (root / "test-input.json").write_bytes(b"replacement")
+                return invoke("original")
+            cli.call.side_effect = call
             journal.read.return_value = {"pending": None}
             capture = diagnostics.Capture()
             from tools.dev_workflow import helper
@@ -265,10 +276,11 @@ class ProbeIntegration(unittest.TestCase):
                     patch.object(helper, "client", return_value=(cli, journal)), \
                     patch.object(helper, "installation", return_value=(SimpleNamespace(node=native / "node.json"), current)), \
                     patch.object(node_scenarios.node_tests, "target", return_value=({"publication": revision["publicationId"]}, revision, None)), \
-                    patch.object(node_scenarios.node_invocation, "execute", side_effect=lambda _cli, _journal, _intent, call, _deadline: call("original")):
+                    patch.object(node_scenarios.node_invocation, "execute", side_effect=replace_after_intent):
                 report = node_scenarios.run(root, {"environment": "node", "selection": []},
                                             diagnostic_observer=capture.observer("common-scenarios"))
             self.assertFalse(report["passed"])
+            self.assertEqual(sent_inputs, [expected_input])
             calls = cli.call.call_args_list
             # The outer compatibility test additionally enables its bounded
             # resource observation; the direct diagnostics path only invokes.

@@ -262,8 +262,9 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         long started = System.nanoTime();
         synchronized (this) {
             if (isTerminated()) return true;
-            if (Thread.interrupted()) throw new InterruptedException();
+            // No wait occurs for a nonpositive timeout; preserve interruption.
             if (nanos <= 0) return false;
+            if (Thread.interrupted()) throw new InterruptedException();
             while (!isTerminated()) {
                 long remaining = nanos - (System.nanoTime() - started);
                 if (remaining <= 0) return false;

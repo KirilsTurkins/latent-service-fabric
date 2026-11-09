@@ -135,6 +135,12 @@ impl Table {
             None => self.runtime.retire(),
         }
     }
+    #[cfg(feature = "development-go-timer-overlap")]
+    pub(crate) fn development_export_finished(&self) {
+        if let Some(observer) = &self.overlap {
+            observer.export_finished();
+        }
+    }
 }
 impl Drop for Table {
     fn drop(&mut self) {

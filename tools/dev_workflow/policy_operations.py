@@ -1,6 +1,7 @@
 """Confirm scoped test policy mutations through retained public receipts."""
 from __future__ import annotations
 
+import copy
 import re
 
 from .common import encode, require, sha
@@ -37,6 +38,7 @@ def settle(root, operation: dict, result: dict) -> None:
 def apply(root, client, journal, policy_id: str, kind: str, document: dict) -> str:
     from . import state
     require(root.name.startswith("test-") and kind in {"policy", "provider-binding"}, "test-policy-scope")
+    selected = copy.deepcopy(document)
     records = state.load(root, "test-policy-receipts.json") if (root / "test-policy-receipts.json").exists() else {}
     key = kind + ":" + policy_id
     require(key in records or len(records) < 32, "test-policy-retention-limit")
@@ -45,15 +47,18 @@ def apply(root, client, journal, policy_id: str, kind: str, document: dict) -> s
             "test-policy-observation-unavailable")
     if key in records:
         existing = observed["data"].get("policy")
-        require(observed["category"] == "success" and _same_policy(existing, records[key], document),
+        require(observed["category"] == "success" and _same_policy(existing, records[key], selected),
                 "test-policy-changed-no-overwrite")
         return policy_id
     require(observed["category"] == "not-found", "test-policy-not-owned-no-overwrite")
-    state.atomic(root, "selected-test-policy.json", document)
+    # The private file is a review copy, not the source of an RPC payload.
+    # Stage the same frozen intent in the journal and the child's private stdin.
+    payload = encode(selected)
+    state.atomic(root, "selected-test-policy.json", selected)
     result = journal.execute("policy", {"policyId": policy_id, "recordKind": kind,
-        "document": document, "expectedGeneration": "0"}, lambda operation:
-        client.call("policy", "--kind", kind, "apply", "--id", policy_id, "--file", root / "selected-test-policy.json",
-                    "--operation-id", operation, "--expected-generation", "0"))
+        "document": selected, "expectedGeneration": "0"}, lambda operation:
+        client.call("policy", "--kind", kind, "apply", "--id", policy_id, "--file", "-",
+                    "--operation-id", operation, "--expected-generation", "0", stdin=payload))
     from .client import successful
     successful(result)
     return policy_id
