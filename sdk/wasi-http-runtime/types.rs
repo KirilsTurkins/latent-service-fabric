@@ -4,7 +4,7 @@ use super::{
         http::{outgoing_handler, types},
         io,
     },
-    fields::{Fields, ParentFields},
+    fields::{ContentLengthError, Fields, ParentFields},
     http_io::{Input, Output},
     latent::http::streaming as raw,
     poll::Pollable,
@@ -62,6 +62,13 @@ fn header_error(value: super::fields::HeaderError) -> types::HeaderError {
         super::fields::HeaderError::InvalidSyntax => types::HeaderError::InvalidSyntax,
         super::fields::HeaderError::Forbidden => types::HeaderError::Forbidden,
         super::fields::HeaderError::Immutable => types::HeaderError::Immutable,
+    }
+}
+
+fn content_length_error(value: ContentLengthError) -> types::ErrorCode {
+    match value {
+        ContentLengthError::Invalid => types::ErrorCode::HttpProtocolError,
+        ContentLengthError::TooLarge => types::ErrorCode::HttpRequestBodySize(Some(MAX_BODY)),
     }
 }
 
@@ -247,6 +254,11 @@ impl types::GuestOutgoingRequest for Request {
         if self.exchange.body_requested.replace(true) {
             return Err(());
         }
+        // The request owns immutable headers even before handle consumes it.
+        // Invalid metadata is still reported by handle's existing validation.
+        if let Ok(length) = self.headers.content_length() {
+            self.exchange.set_expected_length(length);
+        }
         let slot = Slot::new();
         Ok(types::OutgoingBody::new(OutgoingBody {
             exchange: self.exchange.clone(),
@@ -363,16 +375,9 @@ impl Request {
                     if body_length.is_some() {
                         return Err(types::ErrorCode::HttpProtocolError);
                     }
-                    if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {
-                        return Err(types::ErrorCode::HttpProtocolError);
-                    }
-                    let length = value
-                        .parse::<u64>()
-                        .map_err(|_| types::ErrorCode::HttpRequestBodySize(Some(MAX_BODY)))?;
-                    if length > MAX_BODY {
-                        return Err(types::ErrorCode::HttpRequestBodySize(Some(MAX_BODY)));
-                    }
-                    body_length = Some(length);
+                    body_length = Some(
+                        super::fields::parse_content_length(value).map_err(content_length_error)?,
+                    );
                 }
                 _ => headers.push(raw::Header {
                     name: name.to_owned(),
@@ -577,25 +582,10 @@ impl types::GuestOutgoingBody for OutgoingBody {
             0,
             "outgoing body has a live output stream"
         );
-        if trailers.is_some() {
-            body.exchange.local_fail(raw::HttpError::InvalidRequest);
-            return Err(error_code(
-                body.exchange
-                    .failure
-                    .get()
-                    .expect("sticky trailer rejection"),
-            ));
-        }
-        if let Some(error) = body.exchange.failure.get() {
-            return Err(error_code(error));
-        }
-        if body.exchange.cancelled.get() {
-            return Err(types::ErrorCode::InternalError(Some(
-                "latent-http-cancelled".into(),
-            )));
-        }
+        body.exchange
+            .finish_output(trailers.is_some())
+            .map_err(error_code)?;
         body.finished.set(true);
-        body.exchange.output_finished.set(true);
         Ok(())
     }
 }
