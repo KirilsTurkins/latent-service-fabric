@@ -234,7 +234,7 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
     );
     if matches!(
         name,
-        "java-scheduled-libraries" | "java-shutdown-now" | "java-future-queue"
+        "java-scheduled-libraries" | "java-shutdown-now" | "java-future-queue" | "java-timers"
     ) {
         assert!(prepared.is_absolute());
         for (path, maximum) in [
@@ -529,6 +529,7 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
                 "java-fibers"
                     | "java-worker-libraries"
                     | "java-scheduled-libraries"
+                    | "java-timers"
                     | "java-shutdown-now"
                     | "java-future-queue"
             ) {
@@ -558,6 +559,7 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
                 "java-fibers"
                     | "java-worker-libraries"
                     | "java-scheduled-libraries"
+                    | "java-timers"
                     | "java-shutdown-now"
                     | "java-future-queue"
             ) {

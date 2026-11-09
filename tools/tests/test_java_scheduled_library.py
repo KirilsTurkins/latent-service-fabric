@@ -212,13 +212,107 @@ class ScheduledLibraryOwnership(unittest.TestCase):
         self.assertEqual(caller['permissions'], {'contents': 'read', 'actions': 'read'})
         self.assertEqual(caller['jobs'], {'scheduled-library': {'uses': '$/' + owner.WORKFLOW}})
         self.assertIn('workflow_call', called['on'])
-        self.assertEqual(called['on']['push']['branches'], [owner.BRANCH, owner.SHUTDOWN_BRANCH, owner.FUTURE_BRANCH])
+        self.assertEqual(called['on']['push']['branches'], [owner.BRANCH, owner.SHUTDOWN_BRANCH, owner.FUTURE_BRANCH, owner.TIMER_CALLBACK_BRANCH])
         job = called['jobs']['scheduled-library']
         self.assertIn(owner.DEVELOPMENT_WORKFLOW + '@refs/heads/development', job['if'])
         self.assertEqual(job['timeout-minutes'],
-            "${{ (github.ref_name == '" + owner.BRANCH + "' || github.ref_name == 'development') && 45 || 25 }}")
+            "${{ (github.ref_name == '" + owner.BRANCH + "' || github.ref_name == 'development' || github.ref_name == '" + owner.TIMER_CALLBACK_BRANCH + "') && 45 || 25 }}")
         self.assertEqual([step['if'] for step in job['steps'] if step.get('name', '').startswith('Capture and compile')],
             ["github.ref_name == '" + owner.BRANCH + "' || github.ref_name == 'development'"])
+
+
+class TimerCallbackOwnership(unittest.TestCase):
+    def test_exact_twelve_timer_calls_and_fresh_idle_are_required(self):
+        actual = [{**dict.fromkeys(owner.observed.ZERO_FIELDS, 0),
+            'activationId': f'java-timers-{index // 4}-{index % 4}',
+            'iteration': index // 4, 'mode': index % 4, 'value': 42,
+            'cpuFuel': 123, 'reportedPeakMemoryBytes': 4096,
+            'storesBefore': index, 'storesCreated': index + 1} for index in range(12)]
+        def encoded(values):
+            return ('\n'.join(['test ' + owner.TIMER_CALLBACK_CASE + ' ... ok',
+                'teavm-activation-fibers-v1 signed-preparation-setup-micros=1 stores-created=0 guest-activations=0',
+                *['LSF_JAVA_RETAINED=' + json.dumps(row) for row in values],
+                'test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 51 filtered out;']) + '\n').encode()
+        self.assertEqual(owner.timer_callback_observations(encoded(actual), 51)['calls'], actual)
+        for values in (actual[:-1], actual + [actual[0]], [row for row in actual if row['mode'] != 3], rows()):
+            with self.assertRaises(ValueError): owner.timer_callback_observations(encoded(values), 51)
+        for field, value in (('activationId', actual[0]['activationId']), ('mode', 2), ('value', 41),
+                ('liveStores', 1), ('brokerResults', 1), ('storesBefore', 0), ('cpuFuel', True),
+                ('cpuFuel', 10_000_000_001), ('reportedPeakMemoryBytes', 64 * 1024**2 + 1)):
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                bad = copy.deepcopy(actual); bad[-1][field] = value
+                owner.timer_callback_observations(encoded(bad), 51)
+        for raw in (encoded(actual).replace(b'0 ignored', b'1 ignored'),
+                    encoded(actual).replace(owner.TIMER_CALLBACK_CASE.encode(), owner.CASE.encode()),
+                    encoded(actual).replace(b'51 filtered out', b'50 filtered out')):
+            with self.assertRaises(ValueError): owner.timer_callback_observations(raw, 51)
+        prefix = b'tools.tests.test_java_scheduled_library.TimerCallbackOwnership.'
+        lines = [name + b' (' + prefix + name + b') ... ok' for name in owner.TIMER_CALLBACK_CONTROL_CASES]
+        def source_output(items, count=3, end=b'OK'):
+            return b'\n'.join([*items, b'', b'Ran ' + str(count).encode() + b' tests in 0.123s', b'', end, b''])
+        self.assertEqual(owner.timer_callback_source_observation(source_output(lines))['passed'], 3)
+        for raw in (source_output(lines[:-1], 2), source_output(lines + [lines[0]], 4),
+                    source_output([*lines[:-1], lines[-1].replace(b'... ok', b'... skipped')]),
+                    source_output(lines, end=b'OK (skipped=1)')):
+            with self.assertRaises(ValueError): owner.timer_callback_source_observation(raw)
+
+    def test_only_dedicated_branch_can_select_timer_callback(self):
+        revision = 'a' * 40
+        environment = {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': owner.identities.REPOSITORY,
+            'GITHUB_REF_NAME': owner.TIMER_CALLBACK_BRANCH, 'GITHUB_EVENT_NAME': 'push',
+            'GITHUB_SHA': revision, 'GITHUB_WORKFLOW_SHA': revision, 'GITHUB_WORKSPACE': str(owner.ROOT),
+            'GITHUB_WORKFLOW_REF': owner.identities.REPOSITORY + '/' + owner.WORKFLOW
+                + '@refs/heads/' + owner.TIMER_CALLBACK_BRANCH}
+        with patch.dict(os.environ, environment, clear=True), patch.object(owner.sys, 'platform', 'linux'), \
+                patch.object(owner, 'fresh', side_effect=RuntimeError('identity accepted')):
+            with self.assertRaisesRegex(RuntimeError, 'identity accepted'):
+                owner.qualify(Path('absent'), revision, timer_callback=True)
+        for overrides, selected in (({}, False), ({'GITHUB_SHA': 'b' * 40}, True),
+                ({'GITHUB_REF_NAME': 'release'}, True), ({'GITHUB_EVENT_NAME': 'pull_request'}, True),
+                ({'GITHUB_REF_NAME': owner.BRANCH, 'GITHUB_WORKFLOW_REF': owner.identities.REPOSITORY
+                    + '/' + owner.WORKFLOW + '@refs/heads/' + owner.BRANCH}, True),
+                ({'GITHUB_REF_NAME': owner.DEVELOPMENT_BRANCH, 'GITHUB_WORKFLOW_REF': owner.identities.REPOSITORY
+                    + '/' + owner.DEVELOPMENT_WORKFLOW + '@refs/heads/' + owner.DEVELOPMENT_BRANCH}, True),
+                ({'LSF_JAVA_TIMER_FIXTURE': 'different'}, True)):
+            with self.subTest(overrides=overrides, selected=selected), \
+                    patch.dict(os.environ, {**environment, **overrides}, clear=True), \
+                    patch.object(owner.sys, 'platform', 'linux'), \
+                    patch.object(owner, 'fresh', side_effect=AssertionError('output opened')):
+                with self.assertRaises(ValueError):
+                    owner.qualify(Path('absent'), revision, timer_callback=selected)
+
+    def test_timer_model_uses_warmed_locked_cache_before_component(self):
+        class BeforeComponent(Exception): pass
+        calls = []
+        class Compiler:
+            def __init__(self, directory, sdk, **options):
+                self.sdk, self.paths = sdk, {'java': Path('not-executed-java')}
+                calls.append(('compiler', options))
+            def run(self, stage, *argv):
+                calls.append((stage, argv))
+                return '42 42 42 42' if stage.startswith('reference-jdk-') and stage != 'reference-jdk-compile' else ''
+            def compile(self, *args, **kwargs):
+                calls.append(('component', kwargs)); raise BeforeComponent()
+        def control(name):
+            def selected(*args): calls.append((name, ())); return {'status': 'fixture'}
+            return selected
+        with tempfile.TemporaryDirectory() as temporary, patch('time.monotonic', return_value=100), \
+                patch.object(preparation, 'Compiler', Compiler), \
+                patch.object(preparation, 'recipe_inputs', return_value={}), \
+                patch.object(preparation, 'completable_source_control', side_effect=control('completable-source')), \
+                patch.object(preparation, 'standard_timer_source_control', side_effect=control('timer-source')), \
+                patch.object(preparation, 'standard_timer_model_control', side_effect=control('timer-model')):
+            path = Path(temporary) / 'prepared'; cache = Path(temporary) / 'verified-read-only-cache'
+            with self.assertRaises(BeforeComponent):
+                preparation.prepare(path, owner.ROOT / 'sdk/java-guest', fixture='timers',
+                    read_only_cache=cache, _deadline=1000)
+            self.assertEqual([stage for stage, _ in calls], ['compiler', 'reference-jdk-compile',
+                'reference-jdk-0', 'reference-jdk-1', 'reference-jdk-2',
+                'completable-source', 'timer-source', 'timer-model', 'component'])
+            self.assertEqual(calls[0][1]['read_only_cache'], cache)
+            self.assertEqual(calls[0][1]['_deadline'], 1000)
+            self.assertEqual((path / 'src/Capsule.java').read_bytes(),
+                (owner.ROOT / 'sdk/java-guest/fibers/conformance/timers/Capsule.java').read_bytes())
 
 
 class SourceControlInventory(unittest.TestCase):

@@ -2,7 +2,7 @@ name: Unchanged published Java scheduled semaphore through the normal signed nod
 on:
   workflow_call:
   push:
-    branches: ['feat/java-scheduled-executor-20261026', 'feat/java-cf-shutdown-now-20261028', 'feat/java-future-queue-20261028']
+    branches: ['feat/java-scheduled-executor-20261026', 'feat/java-cf-shutdown-now-20261028', 'feat/java-future-queue-20261028', 'feat/java-timer-callback-3001-20261109']
     paths:
       - '.github/workflows/java-scheduled-library.yml'
       - 'tools/qualify_java_scheduled_library.py'
@@ -30,11 +30,12 @@ jobs:
       (github.ref_name == 'feat/java-scheduled-executor-20261026' ||
        github.ref_name == 'feat/java-cf-shutdown-now-20261028' ||
        github.ref_name == 'feat/java-future-queue-20261028' ||
+       github.ref_name == 'feat/java-timer-callback-3001-20261109' ||
        (github.ref_name == 'development' &&
         github.workflow_ref == 'KirilsTurkins/latent-service-fabric/.github/workflows/java-scheduled-development.yml@refs/heads/development'))
-    name: One scheduled component and twenty signed calls
+    name: ${{ github.ref_name == 'feat/java-timer-callback-3001-20261109' && 'Scheduled and timer signed calls' || 'One scheduled component and twenty signed calls' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: ${{ (github.ref_name == 'feat/java-scheduled-executor-20261026' || github.ref_name == 'development') && 45 || 25 }}
+    timeout-minutes: ${{ (github.ref_name == 'feat/java-scheduled-executor-20261026' || github.ref_name == 'development' || github.ref_name == 'feat/java-timer-callback-3001-20261109') && 45 || 25 }}
     env:
       CARGO_BUILD_JOBS: '2'
       CARGO_INCREMENTAL: '0'
@@ -92,6 +93,14 @@ jobs:
           python3 -B tools/qualify_java_scheduled_library.py
           --source-commit "${{ github.sha }}"
           --output "$RUNNER_TEMP/java-scheduled-library"
+      - name: Qualify signed timer callback ownership using the scheduled harness
+        if: github.ref_name == 'feat/java-timer-callback-3001-20261109'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 -B tools/qualify_java_scheduled_library.py
+          --timer-callback --source-commit "${{ github.sha }}"
+          --output "$RUNNER_TEMP/java-scheduled-library"
       - name: Qualify ordinary shutdownNow ownership with four signed calls
         if: github.ref_name == 'feat/java-cf-shutdown-now-20261028'
         env:
@@ -132,6 +141,13 @@ jobs:
             ${{ runner.temp }}/java-scheduled-library/component/library-inputs/application/latent.dependencies.json
             ${{ runner.temp }}/java-scheduled-library/component/library-inputs/application/latent.dependencies.lock.json
             ${{ runner.temp }}/java-scheduled-library/libraries/*.jar
+            ${{ runner.temp }}/java-scheduled-library/timer-callback/component/src/Capsule.java
+            ${{ runner.temp }}/java-scheduled-library/timer-callback/component/wit/service.wit
+            ${{ runner.temp }}/java-scheduled-library/timer-callback/component/build/component.wasm
+            ${{ runner.temp }}/java-scheduled-library/timer-callback/component/FIBERS-COMPILE.json
+            ${{ runner.temp }}/java-scheduled-library/timer-callback/component/compiler-inputs.json
+            ${{ runner.temp }}/java-scheduled-library/timer-callback/compiler/*.log
+            ${{ runner.temp }}/java-scheduled-library/timer-callback/compiler/*.command.json
             ${{ runner.temp }}/java-scheduled-library/compiler/*.log
             ${{ runner.temp }}/java-scheduled-library/compiler/*.command.json
             ${{ runner.temp }}/java-scheduled-library/commands/logs/*.txt
