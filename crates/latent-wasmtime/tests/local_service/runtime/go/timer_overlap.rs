@@ -129,6 +129,14 @@ async fn run_overlap(variable: &str, profile: &str) {
 #[tokio::test]
 #[ignore = "requires the selected v7 diagnostic overlay and original pending timer witness"]
 async fn signed_fired_one_shot_public_stop_and_reset_wait_for_original_next() {
+    #[cfg(not(feature = "development-go-timer-overlap"))]
+    panic!("requires the development-go-timer-overlap feature");
+    #[cfg(feature = "development-go-timer-overlap")]
+    run_fired_one_shot_public_stop_and_reset_wait_for_original_next().await;
+}
+
+#[cfg(feature = "development-go-timer-overlap")]
+async fn run_fired_one_shot_public_stop_and_reset_wait_for_original_next() {
     assert!(cfg!(feature = "development-go-timer-overlap"));
     assert_eq!(std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(), Ok("go"));
     let root = tempfile::tempdir().unwrap();

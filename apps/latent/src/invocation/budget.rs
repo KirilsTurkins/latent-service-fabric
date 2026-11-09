@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use std::str::FromStr;
 
 use super::proto;
 use crate::{
@@ -7,9 +8,9 @@ use crate::{
     input,
 };
 
-#[derive(Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
-struct Budget {
+pub struct Budget {
     cpu_fuel: u64,
     memory_bytes: u64,
     wall_time_limit_millis: Option<u64>,
@@ -21,6 +22,17 @@ struct Budget {
     blob_write_bytes: u64,
     log_bytes: u64,
     effect_count: u32,
+}
+
+impl FromStr for Budget {
+    type Err = &'static str;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        if value.len() > 16 * 1024 || !value.trim_start().starts_with('{') {
+            return Err("invalid numeric budget");
+        }
+        serde_json::from_str(value).map_err(|_| "invalid numeric budget")
+    }
 }
 impl Default for Budget {
     fn default() -> Self {
@@ -41,15 +53,27 @@ impl Default for Budget {
 }
 
 pub(super) fn resolve(args: &InvokeArgs) -> Result<proto::ResourceBudget, Failure> {
-    let mut budget = args
-        .budget
-        .as_ref()
-        .map(|path| {
-            let bytes = input::read(path, 16 * 1024, "budget")?;
-            serde_json::from_slice::<Budget>(&bytes).map_err(|_| invalid())
-        })
-        .transpose()?
-        .unwrap_or_default();
+    if args.budget_json.is_some()
+        && (args.budget.is_some()
+            || args.cpu_fuel.is_some()
+            || args.memory_bytes.is_some()
+            || args.wall_time_ms.is_some()
+            || args.log_bytes.is_some())
+    {
+        return Err(invalid());
+    }
+    let mut budget = if let Some(inline) = &args.budget_json {
+        inline.clone()
+    } else {
+        args.budget
+            .as_ref()
+            .map(|path| {
+                let bytes = input::read(path, 16 * 1024, "budget")?;
+                serde_json::from_slice::<Budget>(&bytes).map_err(|_| invalid())
+            })
+            .transpose()?
+            .unwrap_or_default()
+    };
     if let Some(value) = args.cpu_fuel {
         budget.cpu_fuel = value;
     }
