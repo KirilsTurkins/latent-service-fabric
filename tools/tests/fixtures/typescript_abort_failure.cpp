@@ -11,7 +11,12 @@
 #include <optional>
 #include <vector>
 
-struct JSContext { int pending = 0, stack = 0, status = 0; bool trapped = false; };
+struct RootLink;
+struct JSContext {
+  int pending = 0, stack = 0, status = 0;
+  bool trapped = false;
+  std::array<RootLink*, 2> roots{};
+};
 struct Signal;
 namespace lsf::typescript::activation {
 struct TestOwner { size_t id = 0; };
@@ -25,11 +30,14 @@ struct State {
   std::vector<int> order;
   int destroyed = 0, dispatches = 0, null_dereferences = 0;
   int fail_algorithm = 0, fail_dispatch = 0, second_fail_dispatch = 0, trap_dispatch = 0;
+  int pending_algorithm = 0, trap_algorithm = 0;
+  int error_status = 1;
   int next_default_reason = 100, default_reasons = 0;
   bool fail_reason = false, fail_event = false, success_with_exception = false;
   bool fail_reserve = false, refuse_ack = false;
   bool premature_release = false, unowned = false, early_publication = false;
-  int pending_entries = 0;
+  int pending_entries = 0, active_roots = 0;
+  bool invalid_root_order = false;
   size_t limit = 64, admitted = 0, live = 0, peak = 0, acknowledged = 0;
   size_t reserve_attempts = 0, live_backings = 0;
   std::array<bool, 256> owners{}, backings{};
@@ -42,7 +50,8 @@ static State state;
 void error(JSContext* cx, int value, int stack, int status = 1) {
   cx->pending = value; cx->stack = stack; cx->status = status;
 }
-bool JS_IsExceptionPending(JSContext* cx) { return cx->pending != 0; }
+// Negative status models JSAPI ForcedReturn: failure, but not catchable.
+bool JS_IsExceptionPending(JSContext* cx) { return cx->status > 0; }
 void JS_ClearPendingException(JSContext* cx) { cx->pending = 0; cx->stack = 0; cx->status = 0; }
 void JS_ReportOutOfMemory(JSContext* cx) { error(cx, 606, 6060, 2); }
 static bool checkpoint(JSContext* cx) {
@@ -77,9 +86,11 @@ struct Algorithm {
   explicit Algorithm(int value) : id(value) {}
   ~Algorithm() { ++state.destroyed; }
   bool run(JSContext* cx) {
-    if (cx->pending) ++state.pending_entries;
+    if (JS_IsExceptionPending(cx)) ++state.pending_entries;
     state.order.push_back(id);
-    if (state.fail_algorithm == id) { error(cx, 202, id); return false; }
+    if (state.trap_algorithm == id) { cx->trapped = true; return false; }
+    if (state.pending_algorithm == id) { error(cx, 202, id, state.error_status); return true; }
+    if (state.fail_algorithm == id) { error(cx, 202, id, state.error_status); return false; }
     return true;
   }
 };
@@ -95,9 +106,33 @@ struct Signal {
 };
 using HandleObject = Signal*;
 using HandleValue = int;
+// Mirror the pinned per-kind Rooted stack discipline, not a collector. On a
+// bad pop repair the finite model's chain so negative controls report failure
+// without undefined behavior in the test itself.
+struct RootLink {
+  JSContext* cx;
+  size_t kind;
+  RootLink* previous;
+  RootLink(JSContext* context, size_t selected)
+      : cx(context), kind(selected), previous(cx->roots[kind]) {
+    cx->roots[kind] = this;
+    ++state.active_roots;
+  }
+  RootLink(const RootLink&) = delete;
+  ~RootLink() {
+    state.invalid_root_order |= cx->roots[kind] != this;
+    auto** link = &cx->roots[kind];
+    while (*link && *link != this) link = &(*link)->previous;
+    assert(*link == this);
+    *link = previous;
+    --state.active_roots;
+  }
+};
 struct RootedObject {
+  RootLink root;
   Signal* object;
-  RootedObject(JSContext*, Signal* value) : object(value) {}
+  explicit RootedObject(JSContext* cx, Signal* value = nullptr) : root(cx, 0), object(value) {}
+  void set(Signal* value) { object = value; }
   operator Signal*() const { return object; }
   explicit operator bool() const { return object != nullptr; }
   Signal& operator*() const {
@@ -106,9 +141,10 @@ struct RootedObject {
   }
 };
 struct RootedValue {
+  RootLink root;
   int value = 0;
-  explicit RootedValue(JSContext*) {}
-  RootedValue(JSContext*, int selected) : value(selected) {}
+  explicit RootedValue(JSContext* cx) : root(cx, 1) {}
+  RootedValue(JSContext* cx, int selected) : root(cx, 1), value(selected) {}
   operator int() const { return value; }
   bool isUndefined() const { return value == 0; }
   void setObject(Signal& object) { value = object.reason; }
@@ -150,7 +186,7 @@ public:
     return true;
   }
   void infallibleAppend(Signal* value) { assert(length_ < capacity_); begin()[length_++] = value; }
-  bool append(RootedObject value) {
+  bool append(const RootedObject& value) {
     if (length_ == capacity_ && !reserve(2 * capacity_)) return false;
     infallibleAppend(value);
     return true;
@@ -165,13 +201,16 @@ class AutoSaveExceptionState {
   JSContext* cx_;
   int pending_, stack_, status_;
   bool armed_ = true;
+  RootedValue exception_value_;
+  RootedObject exception_stack_;
 public:
   explicit AutoSaveExceptionState(JSContext* cx)
-      : cx_(cx), pending_(cx->pending), stack_(cx->stack), status_(cx->status) {
+      : cx_(cx), pending_(cx->pending), stack_(cx->stack), status_(cx->status),
+        exception_value_(cx, cx->pending), exception_stack_(cx) {
     JS_ClearPendingException(cx);
   }
   AutoSaveExceptionState(const AutoSaveExceptionState&) = delete;
-  ~AutoSaveExceptionState() { if (armed_ && !cx_->pending) restore(); }
+  ~AutoSaveExceptionState() { if (armed_ && !JS_IsExceptionPending(cx_)) restore(); }
   void drop() { armed_ = false; }
   void restore() { error(cx_, pending_, stack_, status_); armed_ = false; }
 };
@@ -188,11 +227,16 @@ struct DOMException {
     auto hook = std::move(state.on_reason);
     state.on_reason = nullptr;
     if (hook) hook(cx);
+    if (cx->trapped) return nullptr;
     static Signal exception;
     exception.reason = ++state.next_default_reason;
     return &exception;
   }
 };
+}
+// Factory internals are exercised separately by the emitted factory controls.
+[[maybe_unused]] static Signal* create_abort_exception(JSContext* cx, const char* name) {
+  return dom_exception::DOMException::create(cx, name, name);
 }
 struct Event {
   static Signal* create(JSContext* cx, RootedValue&, int) {
@@ -203,7 +247,7 @@ struct Event {
 };
 struct EventTarget {
   static bool dispatch_event(JSContext* cx, Signal* signal, RootedValue&, RootedValue*) {
-    if (cx->pending) ++state.pending_entries;
+    if (JS_IsExceptionPending(cx)) ++state.pending_entries;
     ++state.dispatches;
     state.order.push_back(100 + signal->id);
     if (state.on_dispatch && !state.on_dispatch(cx, signal)) return false;
@@ -211,7 +255,7 @@ struct EventTarget {
       JS_ClearPendingException(cx); cx->trapped = true; return false;
     }
     if (state.fail_dispatch == signal->id || state.second_fail_dispatch == signal->id) {
-      error(cx, state.fail_dispatch == signal->id ? 404 : 405, signal->id);
+      error(cx, state.fail_dispatch == signal->id ? 404 : 405, signal->id, state.error_status);
       return state.success_with_exception;
     }
     return true;
@@ -389,11 +433,157 @@ static bool fanout_case(const char* name) {
   return checkpoint(&cx) && verified && !state.live && !state.live_backings &&
          !state.unowned && !state.premature_release && !state.early_publication;
 }
+// Additional engine-audit boundaries. These still model JS/GC and host imports;
+// the real-engine harness is a separate qualification layer.
+static bool audit_case(const char* selected) {
+  const auto is = [selected](const char* name) { return std::strcmp(selected, name) == 0; };
+  JSContext cx;
+  size_t count = 9;
+  if (is("audit-boundary-empty") || is("audit-default-growth")) count = 0;
+  if (is("audit-boundary-inline")) count = 8;
+  Graph graph(count);
+  state.before_growth = &graph.root;
+  bool verified = false;
+  if (is("audit-entry-pending") || is("audit-already-pending") || is("audit-steps-entry-pending")) {
+    if (is("audit-already-pending")) { graph.root.aborted = true; graph.root.reason = 73; }
+    error(&cx, 0, 1234); // throwing undefined is pending, despite its value
+    const bool result = is("audit-steps-entry-pending")
+        ? AbortSignal::run_abort_steps(&cx, &graph.root)
+        : AbortSignal::abort(&cx, &graph.root, 7);
+    verified = !result && cx.pending == 0 && cx.stack == 1234 && cx.status == 1 &&
+               !state.dispatches && state.order.empty() && !state.admitted &&
+               graph.root.aborted == is("audit-already-pending");
+  } else if (is("audit-steps-dispatch-pending")) {
+    state.fail_dispatch = graph.root.id;
+    state.success_with_exception = true;
+    verified = !AbortSignal::run_abort_steps(&cx, &graph.root) && cx.pending == 404 &&
+               cx.stack == graph.root.id && state.dispatches == 1;
+  } else if (is("audit-algorithm-pending") || is("audit-algorithm-fatal")) {
+    add(graph.root, 12); add(graph.root, 13);
+    if (is("audit-algorithm-pending")) state.pending_algorithm = 12;
+    else state.trap_algorithm = 12;
+    const bool result = AbortSignal::abort(&cx, &graph.root, 7);
+    verified = !result && graph.reasons(7) && graph.root.algorithms.size() == 3 &&
+               std::find(state.order.begin(), state.order.end(), 13) == state.order.end() &&
+               !state.pending_entries;
+    if (is("audit-algorithm-pending")) verified &= cx.pending == 202 && cx.stack == 12 &&
+        cx.status == 1 && state.dispatches == 9;
+    else verified &= !JS_IsExceptionPending(&cx) && cx.trapped && !state.dispatches &&
+        state.order == std::vector<int>({11, 12});
+  } else if (is("audit-first-oom") || is("audit-later-oom") || is("audit-undefined-exception") ||
+             is("audit-oom-then-fatal") || is("audit-forced-return-after-error")) {
+    state.on_dispatch = [&](JSContext* context, Signal* signal) {
+      if (signal == &graph.root) {
+        error(context, is("audit-undefined-exception") ? 0 : (is("audit-later-oom") ? 404 : 606),
+              1234, is("audit-first-oom") || is("audit-oom-then-fatal") ? 2 : 1);
+        return false;
+      }
+      if (signal == &graph.dependents[0]) {
+        if (is("audit-oom-then-fatal") || is("audit-forced-return-after-error")) {
+          context->trapped = true;
+          if (is("audit-forced-return-after-error")) context->status = -1;
+          return false;
+        }
+        error(context, is("audit-later-oom") ? 606 : 405, 9999, is("audit-later-oom") ? 2 : 1);
+        return false;
+      }
+      return true;
+    };
+    const bool result = AbortSignal::abort(&cx, &graph.root, 7);
+    verified = !result && graph.reasons(7) && !state.pending_entries;
+    if (is("audit-oom-then-fatal") || is("audit-forced-return-after-error"))
+      verified &= cx.trapped && !JS_IsExceptionPending(&cx) && !cx.stack && state.dispatches == 2 &&
+                  cx.status == (is("audit-forced-return-after-error") ? -1 : 0);
+    else verified &= cx.stack == 1234 && state.dispatches == 10 &&
+        cx.pending == (is("audit-undefined-exception") ? 0 : (is("audit-later-oom") ? 404 : 606)) &&
+        cx.status == (is("audit-first-oom") ? 2 : 1);
+  } else if (is("audit-nested-dependent-error") || is("audit-nested-ack-refusal") ||
+             is("audit-first-error-then-ack-refusal")) {
+    Graph inner(9, 30);
+    bool inner_result = false, inner_retained = false;
+    const bool refuse = !is("audit-nested-dependent-error");
+    if (is("audit-first-error-then-ack-refusal")) state.fail_dispatch = graph.root.id;
+    state.on_dispatch = [&](JSContext* context, Signal* signal) {
+      if (!refuse && signal == &inner.dependents[0]) { error(context, 808, 8080, 3); return false; }
+      if (signal != &graph.dependents[0]) return true;
+      state.before_growth = &inner.root;
+      inner_result = AbortSignal::abort(context, &inner.root, 8);
+      state.before_growth = &graph.root;
+      if (!refuse) return inner_result;
+      state.refuse_ack = true;
+      const bool accepted = checkpoint(context);
+      inner_retained = !accepted && state.live == 2 && state.live_backings == 1 &&
+                       native::records.hasPhysical() && native::records.hasRetained();
+      return accepted;
+    };
+    const bool result = AbortSignal::abort(&cx, &graph.root, 7);
+    verified = !result && graph.reasons(7) && inner.reasons(8) && state.dispatches == 20 &&
+               state.peak == 2 && !state.pending_entries;
+    if (refuse) verified &= inner_result && inner_retained &&
+        cx.pending == (is("audit-first-error-then-ack-refusal") ? 404 : 707) &&
+        cx.stack == (is("audit-first-error-then-ack-refusal") ? graph.root.id : 7070) &&
+        native::records.stopped() && state.live == 2 && !state.live_backings;
+    else verified &= !inner_result && cx.pending == 808 && cx.stack == 8080 && cx.status == 3;
+    state.refuse_ack = false;
+  } else if (is("audit-graph-mutation")) {
+    Signal late;
+    late.id = 99; add(late, 991);
+    state.on_dispatch = [&](JSContext* context, Signal* signal) {
+      if (signal != &graph.root) return true;
+      // The physical fan-out snapshot must retain removed dependents and not
+      // grow when a callback mutates the source graph.
+      graph.root.dependents.values.clear();
+      graph.root.dependents.values.push_back(&late);
+      return AbortSignal::abort(context, &graph.dependents[0], 99);
+    };
+    verified = AbortSignal::abort(&cx, &graph.root, 7) && graph.reasons(7) && !late.aborted &&
+               late.algorithms.size() == 1 && state.dispatches == 10 && state.admitted == 1;
+  } else if (is("audit-default-growth") || is("audit-default-shrink")) {
+    state.on_reason = [&](JSContext*) {
+      if (is("audit-default-growth")) {
+        graph.count = 9;
+        for (size_t i = 0; i < graph.count; ++i) {
+          graph.dependents[i].id = 2 + static_cast<int>(i);
+          add(graph.dependents[i], 21 + 10 * static_cast<int>(i));
+          graph.root.dependents.values.push_back(&graph.dependents[i]);
+        }
+      } else { graph.root.dependents.values.pop_back(); graph.count = 8; }
+    };
+    const bool result = AbortSignal::abort(&cx, &graph.root, 0);
+    verified = result && graph.reasons(101) && state.default_reasons == 1 &&
+               state.dispatches == static_cast<int>(graph.count + 1) &&
+               state.admitted == (is("audit-default-growth") ? 1U : 0U);
+    if (is("audit-default-shrink")) verified &= !graph.dependents[8].aborted;
+  } else if (is("audit-default-reentry-failure") || is("audit-default-reentry-fatal")) {
+    bool inner_result = true;
+    if (is("audit-default-reentry-failure")) state.fail_dispatch = graph.root.id;
+    else state.trap_dispatch = graph.root.id;
+    state.on_reason = [&](JSContext* context) { inner_result = AbortSignal::abort(context, &graph.root, 73); };
+    const bool result = AbortSignal::abort(&cx, &graph.root, 0);
+    verified = !result && !inner_result && graph.reasons(73) && state.admitted == 1 &&
+               state.default_reasons == 1 && !state.pending_entries;
+    if (is("audit-default-reentry-failure")) verified &= cx.pending == 404 && cx.stack == 1 &&
+        state.dispatches == 10;
+    else verified &= cx.trapped && !JS_IsExceptionPending(&cx) && state.dispatches == 1;
+  } else if (is("audit-boundary-empty") || is("audit-boundary-inline") || is("audit-boundary-heap")) {
+    verified = AbortSignal::abort(&cx, &graph.root, 7) && graph.reasons(7) &&
+               state.dispatches == static_cast<int>(count + 1) &&
+               state.admitted == (count > 8 ? 1U : 0U) &&
+               state.live == state.admitted && !state.acknowledged &&
+               !native::records.hasPhysical() && !state.live_backings;
+  } else return false;
+  JS_ClearPendingException(&cx);
+  verified &= checkpoint(&cx) && state.live == 0 && !state.live_backings &&
+              state.admitted == state.acknowledged && !state.unowned &&
+              !state.premature_release && !state.early_publication;
+  return verified;
+}
 int main(int argc, char** argv) {
   if (argc != 2) return 2;
   const char* selected = argv[1];
   bool passed = false;
-  if (!std::strncmp(selected, "fanout-", 7)) passed = fanout_case(selected);
+  if (!std::strncmp(selected, "audit-", 6)) passed = audit_case(selected);
+  else if (!std::strncmp(selected, "fanout-", 7)) passed = fanout_case(selected);
   else {
     Signal root, first, second;
     root.id = 1; first.id = 2; second.id = 3;
@@ -443,6 +633,7 @@ int main(int argc, char** argv) {
                root.algorithms.size() == 3 && !state.dispatches && !cx.pending;
     else return 2;
   }
+  passed &= !state.invalid_root_order && state.active_roots == 0;
   std::printf("{\"case\":\"%s\",\"passed\":%s,\"engineQualified\":false}\n", selected, passed ? "true" : "false");
   return passed ? 0 : 1;
 }
