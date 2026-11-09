@@ -29,13 +29,14 @@ class Client:
         require(self.expected_config_digest in (None, expected_digest), "operator-client-already-bound")
         self.expected_config_digest = expected_digest
 
-    def call(self, *arguments: str, timeout: float = 30, check=None) -> dict:
+    def call(self, *arguments: str, timeout: float = 30, check=None, stdin: bytes | None = None) -> dict:
         if self.deadline is not None:
             timeout = min(timeout, self.deadline - time.monotonic())
             require(timeout > 0, "node-test-run-deadline")
+        require(stdin is None or type(stdin) is bytes, "operator-request-input-type")
         pin = [] if self.expected_config_digest is None else ["--expect-config-digest-stdin"]
-        input_options = {} if self.expected_config_digest is None else {
-            "stdin": (self.expected_config_digest + "\n").encode("ascii")}
+        prefix = b"" if self.expected_config_digest is None else (self.expected_config_digest + "\n").encode("ascii")
+        input_options = {} if not prefix and stdin is None else {"stdin": prefix + (stdin or b"")}
         result = process.run([str(self.binary), "--config", str(self.config), "--output", "json",
                                *pin, *map(str, arguments)], self.directory, timeout=timeout,
                              maximum=1048576, check=check, **input_options)

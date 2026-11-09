@@ -34,9 +34,16 @@ def run(command: list[str], cwd: Path, *, timeout: float = 30, maximum: int = MA
     argv = build_process._validate(command, cwd, selected, timeout, maximum)
     owner, failure, result = None, None, None
     deadline = time.monotonic() + timeout
-    with tempfile.TemporaryFile() as source, owned_cancellation() as cancellation:
-        source.write(stdin)
-        source.seek(0)
+    try:
+        source = tempfile.TemporaryFile()
+    except OSError:
+        raise DevError("owned-process-stdin-unavailable") from None
+    with source, owned_cancellation() as cancellation:
+        try:
+            require(source.write(stdin) == len(stdin), "owned-process-stdin-incomplete")
+            source.seek(0)
+        except OSError:
+            raise DevError("owned-process-stdin-unavailable") from None
         try:
             with cancellation.defer():
                 owner = build_process._new_owner()

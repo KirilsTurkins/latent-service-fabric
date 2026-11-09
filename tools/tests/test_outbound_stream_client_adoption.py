@@ -24,12 +24,12 @@ class ReplacementRpc(PolicyRpc):
         self.hook = None
         self.failure = None
 
-    def call(self, *arguments):
+    def call(self, *arguments, **kwargs):
         if arguments[0] == "node":
             self.calls.append(list(map(str, arguments)))
             result = {"outcomeKnown": True, "category": "success", "data": {"inventory": {"node": {"id": self.node}}}}
         else:
-            result = super().call(*arguments)
+            result = super().call(*arguments, **kwargs)
         if self.hook:
             self.hook()
         if self.failure:
@@ -61,7 +61,7 @@ class ClientAdoption(unittest.TestCase):
             "id": "streams", "tenant": "examples", "service": "stream-host",
             "capability": stream.CAPABILITY, "profile": stream.PROFILE,
             "configurationDigest": "sha256:" + "a" * 64, "configurationEpoch": "1"},
-            "consumer": "examples/mail", "publication": "publication-v1:sha256:" + "b" * 64,
+            "consumer": "examples/mail", "publication": "publication:sha256:" + "b" * 64,
             "principal": {"kind": "administrator", "subject": "operator"},
             "destination": {"host": "127.0.0.1", "port": 32123, "transport": "tcp"},
             "binding_id": "stream-installed", "policy_id": "stream-allow"}
