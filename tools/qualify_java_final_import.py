@@ -22,11 +22,16 @@ from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, checked_path, digest, fresh, read_file, read_json, write_json
 
 FEATURES = 'cm-threading,cm-async-stackful,cm-more-async-builtins'
+WASM_REPORTS = (b'wasm-tools 1.254.0', b'wasm-tools 1.254.0 (bb58fdf91 2026-07-20)')
 SOURCE = 'sdk/java-guest/fibers/conformance/timers/Capsule.java'
 INPUTS = {'component': ('build/component.wasm', control.MAXIMUM),
           'source': ('src/Capsule.java', 1024 * 1024),
           'wit': ('wit/service.wit', 1024 * 1024),
           'compileReceipt': ('FIBERS-COMPILE.json', 8 * 1024 * 1024)}
+
+
+def pinned_validator_report(version: bytes) -> bool:
+    return version.strip() in WASM_REPORTS
 
 
 def prepare(fixture: Path, output: Path, wasm: Path):
@@ -45,7 +50,7 @@ def prepare(fixture: Path, output: Path, wasm: Path):
     wasm_identity = file_identity(wasm, 64 * 1024 * 1024)
     output = fresh(output)
     commands = Commands(ROOT, output, build_environment(output), deadline_seconds=180, command_seconds=30)
-    require(commands.run('pinned-validator-version', wasm, '--version').strip() == b'wasm-tools 1.254.0',
+    require(pinned_validator_report(commands.run('pinned-validator-version', wasm, '--version')),
             'java-final-import-pinned-wasm-tools')
     (output / 'unknown.wat').write_text(control.TEMPLATE, encoding='utf8')
     commands.run('assemble-declaration-only-template', wasm, 'parse', output / 'unknown.wat',
