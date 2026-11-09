@@ -67,6 +67,49 @@ public final class Capsule {
         final boolean[] held = new boolean[2], released = new boolean[2], done = new boolean[2];
         final Throwable[] failure = new Throwable[2];
         final Thread[] workers = new Thread[2];
+        // Temporary failure-only diagnostic. Values are reported by the
+        // unchanged exact-result assertion, never accepted as success.
+        int firstStage, secondStage;
+        int phase;
+        void stage(int slot, int stage) {
+            synchronized (gate) {
+                if (slot == 0) firstStage = stage; else secondStage = stage;
+            }
+        }
+    }
+    private static int timerDiagnosticReason(Throwable error) {
+        String reason = error.getMessage();
+        if ("timer-admission-probe-worker-timeout".equals(reason)) return 1;
+        if ("timer-admission-worker".equals(reason)) {
+            Throwable cause = error.getCause();
+            return cause != null && "timer-admission-probe-worker-release-timeout".equals(cause.getMessage()) ? 2 : 3;
+        }
+        if ("timer-admission-probe-observe".equals(reason)) return 4;
+        if ("timer-admission-probe-two-live".equals(reason)) return 5;
+        if ("timer-admission-probe-typed-refusal".equals(reason)) return 6;
+        if ("timer-admission-probe-host-refusal".equals(reason)) return 7;
+        if ("timer-admission-probe-first-stop".equals(reason)) return 8;
+        if ("timer-admission-probe-same-work-retry".equals(reason)) return 9;
+        if ("timer-admission-probe-retry-stop".equals(reason)) return 10;
+        if ("timer-admission-probe-final-stop".equals(reason)) return 11;
+        return 12;
+    }
+    private static long timerDiagnostic(TimerProbe probe, Throwable error) {
+        int flags = 0, first, second;
+        synchronized (probe.gate) {
+            first = probe.firstStage; second = probe.secondStage;
+            if (probe.held[0]) flags |= 1;
+            if (probe.held[1]) flags |= 2;
+            if (probe.done[0]) flags |= 4;
+            if (probe.done[1]) flags |= 8;
+            if (probe.failure[0] != null) flags |= 16;
+            if (probe.failure[1] != null) flags |= 32;
+        }
+        // 1,000,000,000 + phase*1,000,000 + worker stages*100,000/10,000
+        // + reason*100 + bit flags. Never equal to expected 2,211,210.
+        return 1_000_000_000L + probe.phase * 1_000_000L
+            + first * 100_000L + second * 10_000L
+            + timerDiagnosticReason(error) * 100L + flags;
     }
     private static void timerProbeRequire(boolean value, String reason) {
         if (!value) throw new IllegalStateException("timer-admission-probe-" + reason);
@@ -78,8 +121,11 @@ public final class Capsule {
         return new long[] {value.timers(), value.admissionFailures().bits()};
     }
     private static void timerWorker(TimerProbe probe, int slot) {
+        probe.stage(slot, 1); // scheduled, before timer admission
         try (Activation.Lease ignored = Activation.timer(Activation.monotonicMillis() + 60_000)) {
+            probe.stage(slot, 2); // timer admission returned
             synchronized (probe.gate) { probe.held[slot] = true; }
+            probe.stage(slot, 3); // held flag published
             boolean released = false;
             for (int i = 0; i < TIMER_PROBE_YIELDS; i++) {
                 synchronized (probe.gate) { released = probe.released[slot]; }
@@ -114,41 +160,52 @@ public final class Capsule {
         TimerProbe probe = new TimerProbe();
         try {
             for (int i = 0; i < 2; i++) {
+                probe.phase = i + 1; // construct/start worker 0, then 1
                 final int slot = i;
                 probe.workers[i] = new Thread(() -> timerWorker(probe, slot), "timer-probe-" + i);
                 probe.workers[i].start();
             }
-            awaitTimerWorker(probe, 0, false);
-            awaitTimerWorker(probe, 1, false);
+            probe.phase = 3; awaitTimerWorker(probe, 0, false);
+            probe.phase = 4; awaitTimerWorker(probe, 1, false);
+            probe.phase = 5;
             long[] before = timerObservation();
             timerProbeRequire(before[0] == 2 && before[1] == 0, "two-live");
             boolean refused = false;
+            probe.phase = 6;
             try (Activation.Lease unexpected = Activation.timer(Activation.monotonicMillis() + 60_000)) {
                 throw new IllegalStateException("timer-admission-probe-expected-refusal");
             } catch (IllegalStateException expected) {
                 refused = "activation-runtime-timer-start-ResourceExhausted".equals(expected.getMessage());
             }
             timerProbeRequire(refused, "typed-refusal");
+            probe.phase = 7;
             long[] denied = timerObservation();
             timerProbeRequire(denied[0] == before[0] && denied[1] == before[1] + 1, "host-refusal");
             releaseTimerWorker(probe, 0);
+            probe.phase = 8;
             awaitTimerWorker(probe, 0, true);
+            probe.phase = 9;
             long[] one = timerObservation();
             timerProbeRequire(one[0] == 1 && one[1] == denied[1], "first-stop");
             long[] retried;
+            probe.phase = 10;
             try (Activation.Lease retry = Activation.timer(Activation.monotonicMillis() + 60_000)) {
                 retried = timerObservation();
                 timerProbeRequire(retried[0] == 2 && retried[1] == denied[1], "same-work-retry");
             }
-            long[] stopped = timerObservation();
+            probe.phase = 11; long[] stopped = timerObservation();
             timerProbeRequire(stopped[0] == 1 && stopped[1] == denied[1], "retry-stop");
             releaseTimerWorker(probe, 1);
+            probe.phase = 12;
             awaitTimerWorker(probe, 1, true);
+            probe.phase = 13;
             long[] end = timerObservation();
             timerProbeRequire(end[0] == 0 && end[1] == denied[1], "final-stop");
             // Encode the actual snapshots so the signed owner must check them.
             return ((((((before[0] * 10 + denied[0]) * 10 + (denied[1] - before[1])) * 10
                 + one[0]) * 10 + retried[0]) * 10 + stopped[0]) * 10 + end[0]);
+        } catch (Throwable error) {
+            return timerDiagnostic(probe, error);
         } finally {
             releaseTimerWorker(probe, 0);
             releaseTimerWorker(probe, 1);
