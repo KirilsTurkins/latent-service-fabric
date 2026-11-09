@@ -1,4 +1,4 @@
-﻿{
+{
     "description":  "Experimental direct Rust SDK command and six-client lookup against combined unmerged node source and disposable signer",
     "observation":  {
                         "after":  {
