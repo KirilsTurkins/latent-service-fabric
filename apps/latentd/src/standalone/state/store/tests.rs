@@ -240,7 +240,7 @@ async fn opted_in_startup_binds_fresh_local_owner_after_state_identity() {
         epoch: 1,
     };
     let owner = bootstrap
-        .open_store_with_local_payloads(&settings, owner, provider, blob_root.clone(), true)
+        .open_store_with_local_payloads(&settings, owner, provider.clone(), blob_root.clone(), true)
         .await
         .unwrap();
     assert_eq!(Arc::as_ptr(&owner), pointer);
@@ -256,6 +256,31 @@ async fn opted_in_startup_binds_fresh_local_owner_after_state_identity() {
     drop(pin);
     let store = Arc::clone(bootstrap.opened_store.as_ref().unwrap());
     drop(owner);
+    store.close();
+    let report = store
+        .drain_async(
+            bootstrap.deadline,
+            tokio::time::sleep_until(bootstrap.deadline.into()),
+        )
+        .unwrap()
+        .await;
+    assert!(report.clean && report.snapshot.physically_retired());
+    store.reap_retired_threads().unwrap();
+    drop(store);
+    drop(bootstrap);
+    let clock: Arc<dyn latent_core::ActivationClock> = Arc::new(SystemActivationClock);
+    let mut bootstrap = StateBootstrap::new_state(&settings, &clock).unwrap();
+    let owner = LocalBlobStore::open(&blob_root, "private", LocalBlobLimits::default()).unwrap();
+    let owner = bootstrap
+        .open_store_with_local_payloads(&settings, owner, provider, blob_root, false)
+        .await
+        .unwrap();
+    let pin = owner
+        .capture_durable_reference(&tenant, &blob, &|| Ok(()))
+        .unwrap();
+    drop(pin);
+    drop(owner);
+    let store = Arc::clone(bootstrap.opened_store.as_ref().unwrap());
     store.close();
     let report = store
         .drain_async(
