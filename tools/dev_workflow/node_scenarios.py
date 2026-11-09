@@ -74,6 +74,9 @@ def run(root, arguments, *, deadline: float | None = None, diagnostic_observer=N
     compatibility_outcomes = guest_compatibility_outcomes.from_build(source, descriptor, build_receipt)
     deadline = min(deadline if deadline is not None else float("inf"), time.monotonic() + 300)
     cli, journal = client(root, deadline=deadline)
+    # Verify the currently selected installed CLI before any test deployment,
+    # policy mutation or invocation can create a journaled operation.
+    cli.require_scenario_budget_support()
     deployed, revision, current_grants = node_tests.target(root, descriptor, build_receipt, cli)
     installed = None
     fixture_runtime = {}

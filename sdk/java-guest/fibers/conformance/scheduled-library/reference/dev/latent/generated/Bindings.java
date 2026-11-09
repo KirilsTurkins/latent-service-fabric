@@ -1,6 +1,6 @@
 package dev.latent.generated;
 
-/** Compile-only JDK reference declarations; the reference never runs mode 8. */
+/** Compile-only JDK reference declarations; the reference never runs modes 8 and 9. */
 public final class Bindings {
     public static final class LatentRuntimeActivation {
         public static ObservationResult observe() { throw new AssertionError("guest-only timer probe"); }
@@ -11,6 +11,7 @@ public final class Bindings {
     }
     public static final class Observation {
         public Long timers() { throw new AssertionError("guest-only timer probe"); }
+        public Long waits() { throw new AssertionError("guest-only timer probe"); }
         public Count admissionFailures() { throw new AssertionError("guest-only timer probe"); }
     }
     public static final class Count {

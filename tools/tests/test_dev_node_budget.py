@@ -5,10 +5,11 @@ import sys
 import tempfile
 import time
 import unittest
+import subprocess
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
-from tools.dev_workflow import common, journal, node_invocation, node_scenarios
+from tools.dev_workflow import common, journal, node_invocation, node_scenarios, state
 from tools.dev_workflow.client import Client
 
 
@@ -102,6 +103,95 @@ class NodeScenarioBudget(unittest.TestCase):
             self.assertEqual(result["data"], {"budget": encoded, "inputSha256": common.digest(raw)})
             with self.assertRaises(ChildProcessError):
                 os.waitpid(int(marker.read_text()), os.WNOHANG)
+
+
+class InstalledCliBudgetProbe(unittest.TestCase):
+    @staticmethod
+    def response(command, code):
+        return {"schemaVersion": "latent.cli.result.v1", "category": "local-error",
+                "command": command, "error": {"code": code}, "data": {},
+                "outcomeKnown": True, "requestDispatched": False}
+
+    def test_supported_and_legacy_cli_are_distinct_without_config_or_payload(self):
+        cli = Client(Path("/trusted/latent"), Path("/private/config"), Path("/work"))
+        response = self.response("invoke", "conflicting-output-options")
+        result = subprocess.CompletedProcess([], 2, common.encode(response), b"")
+        with patch("tools.dev_workflow.client.process.run", side_effect=[result, result]) as run:
+            cli.require_scenario_budget_support()
+        control, budget = run.call_args_list
+        argv = [str(cli.binary), "--output", "json", "--quiet", "invoke",
+                "--service", "capability-probe", "--contract", "tests:probe/api@0.1.0",
+                "--function", "check", "--input", "-"]
+        self.assertEqual(control.args[0], argv)
+        self.assertEqual(budget.args[0], [*argv, "--budget-json", "{}"])
+        self.assertNotIn(str(cli.config), budget.args[0])
+        for call in (control, budget):
+            self.assertEqual(call.kwargs, {"timeout": 3.0, "maximum": 65536})
+        old = subprocess.CompletedProcess([], 2, common.encode(self.response("arguments", "invalid-arguments")), b"")
+        with patch("tools.dev_workflow.client.process.run", side_effect=[result, old]), \
+                self.assertRaisesRegex(common.DevError, "installed-cli-budget-option-unavailable-upgrade-runtime"):
+            cli.require_scenario_budget_support()
+
+    def test_failed_or_malformed_probe_is_not_reported_as_an_old_cli(self):
+        cli = Client(Path("/trusted/latent"), Path("/private/config"), Path("/work"))
+        response = self.response("invoke", "conflicting-output-options")
+        good = subprocess.CompletedProcess([], 2, common.encode(response), b"")
+        variants = [
+            (subprocess.CompletedProcess([], 9, common.encode(response), b""), "installed-cli-budget-probe-failed"),
+            (subprocess.CompletedProcess([], 2, common.encode(response), b"private stderr"), "installed-cli-budget-probe-failed"),
+            (subprocess.CompletedProcess([], 2, b"not-json", b""), "installed-cli-budget-probe-invalid-response"),
+            (subprocess.CompletedProcess([], 2, common.encode({**response, "requestDispatched": True}), b""), "installed-cli-budget-probe-invalid-response"),
+            (subprocess.CompletedProcess([], 2, common.encode(self.response("invoke", "different-error")), b""), "installed-cli-budget-probe-inconclusive"),
+        ]
+        for result, code in variants:
+            with self.subTest(code=code), patch("tools.dev_workflow.client.process.run", side_effect=[good, result]), \
+                    self.assertRaisesRegex(common.DevError, code):
+                cli.require_scenario_budget_support()
+        bad_control = subprocess.CompletedProcess([], 2, common.encode(self.response("arguments", "invalid-arguments")), b"")
+        with patch("tools.dev_workflow.client.process.run", return_value=bad_control) as run, \
+                self.assertRaisesRegex(common.DevError, "installed-cli-budget-probe-inconclusive"):
+            cli.require_scenario_budget_support()
+        run.assert_called_once()
+        failure = common.DevError("owned-process-cleanup-unconfirmed", uncertain=True)
+        with patch("tools.dev_workflow.client.process.run", side_effect=failure), \
+                self.assertRaises(common.DevError) as caught:
+            cli.require_scenario_budget_support()
+        self.assertIs(caught.exception, failure)
+        self.assertTrue(caught.exception.uncertain)
+
+    def test_probe_does_not_start_without_its_cleanup_deadline(self):
+        cli = Client(Path("/trusted/latent"), Path("/private/config"), Path("/work"),
+                     deadline=time.monotonic() + 4)
+        with patch("tools.dev_workflow.client.process.run") as run, \
+                self.assertRaisesRegex(common.DevError, "node-test-run-deadline"):
+            cli.require_scenario_budget_support()
+        run.assert_not_called()
+
+    @unittest.skipUnless(os.name == "posix", "node workspace requires POSIX owners")
+    def test_incompatible_cli_stops_before_node_access_or_journal_creation(self):
+        from tools import guest_compatibility_outcomes
+        from tools.dev_workflow import helper
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "test-owned"
+            root.mkdir(mode=0o700)
+            source = root / "source"
+            source.mkdir(mode=0o700)
+            state.atomic(root, "project.json", {"descriptor": {}})
+            cli, controller = Mock(), Mock()
+            cli.require_scenario_budget_support.side_effect = common.DevError(
+                "installed-cli-budget-option-unavailable-upgrade-runtime")
+            with patch.object(node_scenarios.build, "accepted", return_value=(source, {})), \
+                    patch.object(guest_compatibility_outcomes, "from_build", return_value=None), \
+                    patch.object(helper, "client", return_value=(cli, controller)), \
+                    patch.object(node_scenarios.node_tests, "target") as target, \
+                    self.assertRaisesRegex(common.DevError, "installed-cli-budget-option-unavailable-upgrade-runtime"):
+                node_scenarios.run(root, {"environment": "node", "selection": []})
+            cli.require_scenario_budget_support.assert_called_once_with()
+            target.assert_not_called()
+            controller.begin.assert_not_called()
+            cli.call.assert_not_called()
+            self.assertFalse((root / "test-input.json").exists())
+            self.assertFalse((root / "test-budget.json").exists())
 
 
 if __name__ == "__main__":

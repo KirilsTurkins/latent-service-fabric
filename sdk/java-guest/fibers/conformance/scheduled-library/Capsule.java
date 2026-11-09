@@ -16,6 +16,7 @@ public final class Capsule {
         if (!value) throw new IllegalStateException("published-scheduled-observable");
     }
     public Long run(Long mode) {
+        if (mode == 9) return standardSleepAdmissionRefusal();
         if (mode == 8) return timerAdmissionRefusal();
         if (mode == 6) return defaultCompletion();
         if (mode == 7) return standardRejection();
@@ -74,7 +75,7 @@ public final class Capsule {
         var observed = Bindings.LatentRuntimeActivation.observe();
         timerProbeRequire(!observed.isError(), "observe");
         var value = observed.value();
-        return new long[] {value.timers(), value.admissionFailures().bits()};
+        return new long[] {value.timers(), value.admissionFailures().bits(), value.waits()};
     }
     private static void timerWorker(TimerProbe probe, int slot) {
         try (Activation.Lease ignored = Activation.timer(Activation.monotonicMillis() + 60_000)) {
@@ -163,6 +164,56 @@ public final class Capsule {
             // Encode the actual snapshots so the signed owner must check them.
             return ((((((before[0] * 10 + denied[0]) * 10 + (denied[1] - before[1])) * 10
                 + one[0]) * 10 + retried[0]) * 10 + stopped[0]) * 10 + end[0]);
+        } finally {
+            releaseTimerWorker(probe, 0);
+            releaseTimerWorker(probe, 1);
+        }
+    }
+    // Ordinary Thread.sleep must return its original Wait if Timer admission
+    // is refused, and the same logical thread must be able to try again.
+    private static Long standardSleepAdmissionRefusal() {
+        TimerProbe probe = new TimerProbe();
+        try {
+            for (int i = 0; i < 2; i++) {
+                final int slot = i;
+                probe.workers[i] = new Thread(() -> timerWorker(probe, slot), "sleep-probe-" + i);
+                probe.workers[i].start();
+            }
+            awaitTimerWorker(probe, 0, false);
+            awaitTimerWorker(probe, 1, false);
+            long[] before = timerObservation();
+            timerProbeRequire(before[0] == 2 && before[1] == 0 && before[2] == 2, "sleep-two-held");
+            boolean refused = false;
+            try {
+                Thread.sleep(1);
+            } catch (IllegalStateException expected) {
+                refused = "activation-runtime-timer-start-ResourceExhausted".equals(expected.getMessage());
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("sleep-probe-unexpected-interrupt", interrupted);
+            }
+            timerProbeRequire(refused, "sleep-typed-refusal");
+            long[] denied = timerObservation();
+            timerProbeRequire(denied[0] == before[0] && denied[1] == before[1] + 1
+                && denied[2] == before[2], "sleep-refusal-returned-wait");
+            releaseTimerWorker(probe, 0);
+            awaitTimerWorker(probe, 0, true);
+            long[] one = timerObservation();
+            timerProbeRequire(one[0] == 1 && one[1] == denied[1] && one[2] == 1, "sleep-first-stop");
+            try { Thread.sleep(1); }
+            catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("sleep-probe-retry-interrupted", interrupted);
+            }
+            long[] retried = timerObservation();
+            timerProbeRequire(retried[0] == 1 && retried[1] == denied[1] && retried[2] == 1,
+                "sleep-retry-returned-owners");
+            releaseTimerWorker(probe, 1);
+            awaitTimerWorker(probe, 1, true);
+            long[] end = timerObservation();
+            timerProbeRequire(end[0] == 0 && end[1] == denied[1] && end[2] == 0, "sleep-final-stop");
+            return (((((before[0] * 10 + before[2]) * 10 + (denied[1] - before[1])) * 10
+                + one[0]) * 10 + retried[0]) * 10 + end[0]);
         } finally {
             releaseTimerWorker(probe, 0);
             releaseTimerWorker(probe, 1);

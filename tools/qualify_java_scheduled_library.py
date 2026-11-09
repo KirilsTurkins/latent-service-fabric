@@ -1,4 +1,4 @@
-"""One scheduled component: sixteen library calls and two timer-refusal probes."""
+"""One scheduled component: sixteen existing calls and four timer-refusal probes."""
 from __future__ import annotations
 
 import argparse
@@ -59,15 +59,15 @@ def observations(raw, filtered=51):
     need(len(setup) == 1, 'normal-preparation')
     rows = [json.loads(line, object_pairs_hook=registry.unique_object)
             for line in re.findall(rb'^LSF_JAVA_RETAINED=(\{[^\r\n]*\})$', raw, re.M)]
-    need(len(rows) == 18, 'eighteen-calls')
+    need(len(rows) == 20, 'twenty-calls')
     created = 0
     for index, row in enumerate(rows):
-        iteration, mode = divmod(index, 9)
+        iteration, mode = divmod(index, 10)
         expected_id = f'{fixture}-{iteration}-{mode}'
         need(type(row) is dict and set(row) == {*observed.ZERO_FIELDS, 'activationId', 'iteration', 'mode',
             'value', 'cpuFuel', 'reportedPeakMemoryBytes', 'storesBefore', 'storesCreated'}, 'row-fields')
         need(row['activationId'] == expected_id and row['iteration'] == iteration
-            and row['mode'] == mode and row['value'] == (2_211_210 if mode == 8 else 42), 'actual-id-mode-value')
+            and row['mode'] == mode and row['value'] == ({8: 2_211_210, 9: 221_110}.get(mode, 42)), 'actual-id-mode-value')
         need(all(type(value) is int and 0 <= value <= 2**64 - 1
             for key, value in row.items() if key != 'activationId'), 'numeric-fields')
         need(0 < row['cpuFuel'] <= 10_000_000_000
@@ -77,6 +77,29 @@ def observations(raw, filtered=51):
         created = row['storesCreated']
     return {'case': case, 'passed': 1, 'failed': 0, 'ignored': 0, 'filteredOut': filtered,
             'setupMicroseconds': int(setup[0]), 'calls': rows, 'stdout': identities.identity(raw)}
+
+
+SOURCE_CONTROL_CASES = (
+    b'test_all_ten_modes_twice_require_actual_unique_ids_and_fresh_idle_stores',
+    b'test_both_timer_modes_reject_each_others_results',
+    b'test_compiler_retention_accepts_observed_command_pairs_and_remains_bounded',
+    b'test_mutually_exclusive_fixture_selector_is_refused_before_output_or_capture',
+    b'test_real_preparation_uses_normal_compiler_and_new_controls_before_component',
+    b'test_short_old_or_skipped_programmes_cannot_be_relabelled_scheduled_pass',
+    b'test_sleep_source_control_follows_compilation_and_fails_closed',
+)
+
+
+def source_control_observation(raw):
+    """Require every selected test by name, not just a successful process."""
+    names = re.findall(
+        rb'^([A-Za-z_][A-Za-z0-9_]*) \(tools\.tests\.test_java_scheduled_library\.'
+        rb'ScheduledLibraryOwnership\.\1\) \.\.\. ok\r?$', raw, re.M)
+    need(names == list(SOURCE_CONTROL_CASES)
+        and re.findall(rb'^Ran (\d+) tests in [0-9.]+s\r?$', raw, re.M) == [b'7']
+        and re.findall(rb'^(OK)\r?$', raw, re.M) == [b'OK']
+        and raw.rstrip().endswith(b'OK'), 'seven-controls-no-skip')
+    return {'passed': 7, 'skipped': 0, 'stderr': identities.identity(raw)}
 
 
 def qualify(output, revision):
@@ -114,8 +137,8 @@ def qualify(output, revision):
             'sourceControlSeconds': 60},
         'libraries': java_fiber_library_inputs.LIBRARIES,
         'scope': 'twelve unchanged Commons TimedSemaphore default-factory calls, four '
-            'source-controlled default-CompletableFuture/rejection calls, and two direct timer '
-            'admission-refusal/retry probes; no executor injection or full scheduler API claim'}
+            'source-controlled default-CompletableFuture/rejection calls, two direct timer and two '
+            'standard Thread.sleep admission-refusal/retry probes; no full scheduler API claim'}
     private = None
     prepared = None
     old_path = os.environ.get('PATH', '')
@@ -135,10 +158,7 @@ def qualify(output, revision):
         commands.run('source-controls', sys.executable, '-B', '-m', 'unittest', '-v',
             'tools.tests.test_java_scheduled_library.ScheduledLibraryOwnership')
         raw = read_file(logs / f'logs/{control_index:02d}-source-controls.stderr.txt', 128 * 1024)
-        need(re.findall(rb'^Ran (\d+) tests in [0-9.]+s\r?$', raw, re.M) == [b'5']
-            and re.findall(rb'^(OK)\r?$', raw, re.M) == [b'OK']
-            and raw.rstrip().endswith(b'OK'), 'five-controls-no-skip')
-        receipt['sourceControls'] = {'passed': 5, 'skipped': 0, 'stderr': identities.identity(raw)}
+        receipt['sourceControls'] = source_control_observation(raw)
         receipt['stage'] = 'normal-pinned-tools'
         commands.command_seconds = 175
         archive = private / 'gradle.zip'
@@ -213,7 +233,7 @@ def qualify(output, revision):
         listed = commands.run('list-exact-case', artifact.executable, CASE, '--exact', '--ignored', '--list')
         need(len(listed) <= artifacts.MAX_LIST_BYTES, 'list-bound')
         artifacts.validate_listing(listed, suite)
-        receipt['stage'] = 'eighteen-signed-scheduled-and-timer-calls'
+        receipt['stage'] = 'twenty-signed-scheduled-and-timer-calls'
         commands.command_seconds = 1795
         raw = commands.run('execute-exact-case', artifact.executable, CASE, '--exact', '--ignored',
             '--show-output', '--test-threads=1')
