@@ -171,6 +171,30 @@ assert.equal(globalThis.aborted,2);
                 with self.subTest(value=value), self.assertRaisesRegex(WorkflowError, 'numeric-budget-fields'):
                     boundaries.numeric_fields(path, fields)
 
+    def test_fanout_refusal_diagnostics_and_checkpoint_atomicity_never_substitute_for_success(self):
+        import shutil
+        import subprocess
+        fetch = boundaries.fetch
+        node = shutil.which('node')
+        self.assertIsNotNone(node, 'The Node probe-assertion reference host is required')
+        fixture = fetch.ROOT/'tools/tests/fixtures/typescript_abort_fanout_probe.mjs'
+        with tempfile.TemporaryDirectory() as directory:
+            completed = subprocess.run([node, str(fixture), str(fetch.ROOT/fetch.FIXTURE), directory],
+                capture_output=True, text=True, timeout=20, check=False)
+            self.assertEqual(completed.returncode, 0, completed.stdout+completed.stderr)
+            evidence = json.loads(completed.stdout)
+        self.assertEqual(evidence['scope'], 'probe-assertions-only')
+        expected = next(value for name, _mode, value in fetch.ABORT_FANOUT_VECTORS
+            if name == 'abort-fanout-refusal')
+        self.assertEqual(expected, 'abort-fanout:refusal:unchanged:recovered')
+        for diagnostic in evidence['diagnostics']:
+            row = {'exitCode': 0, 'decoded': [diagnostic], 'processReaped': True,
+                'response': {'outcomeKnown': True, 'error': None, 'data': {'consumption': {
+                    'cpuFuel': '100', 'outboundRequests': 0, 'childCalls': 0, 'effectCount': 0}}}}
+            with self.subTest(diagnostic=diagnostic), self.assertRaisesRegex(
+                    WorkflowError, 'fetch-runtime-typed-result'):
+                fetch.require_result(row, expected, 0)
+
 
 if __name__ == '__main__':
     unittest.main()
