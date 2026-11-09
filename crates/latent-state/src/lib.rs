@@ -4,6 +4,8 @@
 
 pub mod embedded;
 pub mod entity_lanes;
+/// Descriptive first-source custody plans. These do not authorize installation.
+pub mod inbox_scope;
 /// Versioned namespace records and lifecycle guards; descriptors grant no access.
 pub mod namespace;
 /// Independent bounded payload ownership records; they do not grant blob access.

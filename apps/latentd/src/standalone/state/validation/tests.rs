@@ -159,6 +159,64 @@ fn quota() -> TenantQuota {
 }
 
 #[test]
+fn startup_censuses_source_custody_and_refuses_corrupt_rows() {
+    use latent_core::StateNamespaceId;
+    use latent_state::{
+        inbox_scope::{InboxScope, PreparedInboxScope},
+        namespace::{
+            catalog::{NamespaceCatalog, NamespaceMutation, NamespaceOperationContext},
+            NamespaceQuota,
+        },
+    };
+    let fixture = Fixture::new();
+    fixture.initialize_identity();
+    let quotas = [quota()];
+    fixture.install(&quotas);
+    let namespace = NamespaceCatalog::new()
+        .prepare(
+            &fixture.store,
+            NamespaceOperationContext {
+                tenant: TenantId("tenant".into()),
+                actor: "operator".into(),
+                operation_id: "create".into(),
+            },
+            &NamespaceMutation::Create {
+                id: StateNamespaceId("orders".into()),
+                state_schema: format!("sha256:{}", "1".repeat(64)),
+                quota: NamespaceQuota::default(),
+            },
+            0,
+        )
+        .unwrap();
+    fixture.store.apply(namespace.batch).unwrap();
+    let record = InboxScope {
+        tenant: "tenant".into(),
+        namespace: "orders".into(),
+        incarnation: 1,
+        processing_scope: "primary".into(),
+        provider: "private-nats".into(),
+        stream: "orders".into(),
+        stream_created: "2026-01-01T00:00:00Z".into(),
+    };
+    let view = fixture.store.snapshot().unwrap();
+    let batch = PreparedInboxScope::prepare(&view, &record)
+        .unwrap()
+        .into_batch();
+    let key = batch
+        .mutations
+        .iter()
+        .find(|row| row.key.key.starts_with(b"inbox-source-v1\0"))
+        .unwrap()
+        .key
+        .clone();
+    drop(view);
+    fixture.store.apply(batch).unwrap();
+    fixture.validate(&quotas).unwrap();
+    fixture.replace(key, Some(b"corrupt".to_vec()));
+    assert_eq!(fixture.validate(&quotas), Err(StoreError::Corrupt));
+}
+
+#[test]
 fn standalone_refuses_unverified_required_payload_rows() {
     use latent_state::payload_references::{
         LocalPayloadIdentity, PayloadOwner, PayloadOwnerKind, PayloadReference,

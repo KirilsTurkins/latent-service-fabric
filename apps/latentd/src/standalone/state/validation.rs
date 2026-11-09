@@ -183,13 +183,14 @@ pub(in crate::standalone::state) fn foreign_row(
 ) -> Result<(), StoreError> {
     // Only UnsupportedFormat delegates. A malformed owned row cannot be
     // rescued by another codec, a prefix label, or permissive opaque storage.
-    let validators: [Validator; 11] = [
+    let validators: [Validator; 12] = [
         latent_wire::phase4::StateManagementBackend::validate_operation_row,
         tenant::validate_row,
         latent_state::session::validate_row,
         namespace_row,
         |_, key, bytes| RecoveryGuard::validate_row(key, bytes),
         |_, key, bytes| StoreIdentity::validate_row(key, bytes),
+        |_, key, bytes| latent_state::inbox_scope::validate_row(key, bytes),
         |_, key, bytes| latent_effects::dispatch_store::validate_row(key, bytes),
         |_, key, bytes| {
             latent_state::recovery::migration::AggregateMigrationProgress::validate_row(key, bytes)
