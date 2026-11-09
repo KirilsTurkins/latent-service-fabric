@@ -125,3 +125,66 @@ async fn run_overlap(variable: &str, profile: &str) {
     // original physical-wait drops, including both root-stop cases;
     // this test's success alone does not establish the overlap.
 }
+
+#[tokio::test]
+#[ignore = "requires the selected v7 diagnostic overlay and original pending timer witness"]
+async fn signed_fired_one_shot_public_stop_and_reset_wait_for_original_next() {
+    assert!(cfg!(feature = "development-go-timer-overlap"));
+    assert_eq!(std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(), Ok("go"));
+    let root = tempfile::tempdir().unwrap();
+    // Keep the existing Task16 / Queue16 / Wait4 / Timer2 envelope.
+    let f = prepare_owned_fixture(
+        root.path(),
+        "LSF_GO_V7_TIMER_FIRED_FIXTURE",
+        "go-component-activation-v7",
+        16,
+    )
+    .await;
+    let mut publication = None;
+    for (case, id, mode, created) in [
+        ("stop", "go-timer-fired-stop", 0, 1),
+        ("reset", "go-timer-fired-reset", 1, 2),
+        ("fresh", "go-timer-fired-fresh", 0, 3),
+    ] {
+        let result = f.manager.start(f.request(id, mode)).unwrap().await;
+        let selected = result
+            .resolved_revision
+            .as_ref()
+            .expect("signed publication");
+        let identity = (
+            selected.release.clone(),
+            selected.publication.clone().expect("original publication"),
+        );
+        if let Some(original) = &publication {
+            assert_eq!(*original, identity);
+        } else {
+            publication = Some(identity);
+        }
+        let receipt = success(result);
+        assert_eq!(
+            serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),
+            [42]
+        );
+        assert!(receipt.consumption.cpu_fuel > 0);
+        assert!(receipt.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
+        f.idle().await;
+        assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
+        let state = f.backend.resource_snapshot();
+        assert_eq!(state.stores_created, created);
+        assert_eq!(state.live_stores, 0);
+        assert_eq!(state.live_component_instances, 0);
+        assert_eq!(f.backend.active_instance_reservations(), 0);
+        let quota = f.quotas.usage().unwrap();
+        assert_eq!(quota.active_activations, 0);
+        assert_eq!(quota.reserved_cpu_fuel, 0);
+        assert_eq!(quota.reserved_memory_bytes, 0);
+        println!(
+            "GO_TIMER_FIRED_CASE {}",
+            serde_json::json!({"case":case,"mode":mode,"outcome":"success",
+            "storesCreated":created,"liveStores":0,"liveInstances":0,"reservations":0,"reservedFuel":0,
+            "reservedMemory":0,"pendingProviderWaits":0})
+        );
+    }
+    // The owner separately requires exact pre-drop probe and physical-drop
+    // records. Successful output alone cannot establish the interleaving.
+}

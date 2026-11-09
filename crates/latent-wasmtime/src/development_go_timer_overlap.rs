@@ -11,6 +11,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use crate::development_go_timer_fired_state::{Mode as FiredMode, Witness as FiredWitness};
 use latent_core::{
     activation_runtime::{OwnerKind, RuntimeToken},
     ActivationBudget, HostMemoryReservation, PlatformError, PlatformErrorCode,
@@ -35,6 +36,8 @@ pub(crate) enum Case {
     GcResetStop,
     CancelResetReset,
     DeadlineResetStop,
+    FiredStop,
+    FiredReset,
 }
 
 impl Case {
@@ -47,7 +50,13 @@ impl Case {
             Self::GcResetStop => "go-timer-overlap-gc-reset-stop",
             Self::CancelResetReset => "go-timer-overlap-cancel-reset-reset",
             Self::DeadlineResetStop => "go-timer-overlap-deadline-reset-stop",
+            Self::FiredStop => "go-timer-fired-stop",
+            Self::FiredReset => "go-timer-fired-reset",
         }
+    }
+
+    const fn fired(self) -> bool {
+        matches!(self, Self::FiredStop | Self::FiredReset)
     }
 
     const fn requires_gc(self) -> bool {
@@ -70,6 +79,7 @@ struct Marker {
 #[derive(Clone, Copy, Debug)]
 struct State {
     case: Option<Case>,
+    fired: Option<FiredWitness>,
     invalid: bool,
     timeout: bool,
     tasks: [Option<RuntimeToken>; MAX_TASKS],
@@ -92,6 +102,7 @@ impl State {
     const fn new() -> Self {
         Self {
             case: None,
+            fired: None,
             invalid: false,
             timeout: false,
             tasks: [None; MAX_TASKS],
@@ -139,6 +150,27 @@ impl State {
         parent: Option<RuntimeToken>,
         period: Option<u64>,
     ) {
+        if let Some(case) = self.case.filter(|case| case.fired()) {
+            let Some(root) = self.tasks[0] else {
+                self.invalid = true;
+                return;
+            };
+            let Some(parent) = parent else {
+                self.invalid = true;
+                return;
+            };
+            let mode = if case == Case::FiredStop {
+                FiredMode::Stop
+            } else {
+                FiredMode::Reset
+            };
+            let fired = self
+                .fired
+                .get_or_insert_with(|| FiredWitness::new(mode, root));
+            fired.timer_start(token, parent, period.is_some());
+            self.invalid |= fired.invalid();
+            return;
+        }
         if self.markers[1].parked {
             return;
         }
@@ -206,6 +238,15 @@ impl State {
     }
 
     fn next(&mut self, token: RuntimeToken, waits: u32) -> bool {
+        if self.case.is_some_and(Case::fired) {
+            let Some(fired) = self.fired.as_mut() else {
+                self.invalid = true;
+                return false;
+            };
+            let accepted = fired.accepted_next(token, waits);
+            self.invalid |= fired.invalid();
+            return accepted;
+        }
         if self.markers[1].parked {
             return false;
         }
@@ -219,6 +260,15 @@ impl State {
     }
 
     fn next_pending(&mut self, token: RuntimeToken) {
+        if self.case.is_some_and(Case::fired) {
+            let Some(fired) = self.fired.as_mut() else {
+                self.invalid = true;
+                return;
+            };
+            fired.pending(token);
+            self.invalid |= fired.invalid();
+            return;
+        }
         if Some(token) != self.target || !self.next_live || self.target_stopped || self.next_pending
         {
             self.invalid = true;
@@ -228,6 +278,15 @@ impl State {
     }
 
     fn timer_stop(&mut self, token: RuntimeToken, waits: u32) {
+        if self.case.is_some_and(Case::fired) {
+            let Some(fired) = self.fired.as_mut() else {
+                self.invalid = true;
+                return;
+            };
+            fired.timer_stop(token, waits);
+            self.invalid |= fired.invalid();
+            return;
+        }
         if self.markers[1].parked {
             return;
         }
@@ -309,6 +368,15 @@ impl State {
     }
 
     fn next_finished(&mut self, token: RuntimeToken) {
+        if self.case.is_some_and(Case::fired) {
+            let Some(fired) = self.fired.as_mut() else {
+                self.invalid = true;
+                return;
+            };
+            fired.original_dropped(token, true);
+            self.invalid |= fired.invalid();
+            return;
+        }
         if Some(token) != self.target {
             self.invalid = true;
             return;
@@ -425,6 +493,8 @@ impl Observer {
             Case::GcResetStop,
             Case::CancelResetReset,
             Case::DeadlineResetStop,
+            Case::FiredStop,
+            Case::FiredReset,
         ]
         .into_iter()
         .find(|case| case.activation() == activation)
@@ -507,11 +577,111 @@ impl Observer {
         self.apply(|state| state.next_finished(token));
     }
 
+    pub(crate) fn is_fired(&self) -> bool {
+        self.inner
+            .state
+            .lock()
+            .ok()
+            .is_some_and(|state| state.case.is_some_and(Case::fired))
+    }
+
+    // The selected guest probes only when the matching fence token equals
+    // its first stopped token; the host binds that stop to the real target.
+    pub(crate) fn fired_probe(&self, waits: u32, timers: u32) {
+        let mut release = false;
+        self.apply(|state| {
+            if !state.case.is_some_and(Case::fired) {
+                return;
+            }
+            if state.invalid || state.timeout {
+                return;
+            }
+            let Some(fired) = state.fired.as_mut() else {
+                state.invalid = true;
+                return;
+            };
+            release = fired.fence_probe(waits, timers);
+            state.invalid |= fired.invalid();
+        });
+        if release {
+            self.inner.parked.notify_one();
+        }
+    }
+
+    pub(crate) async fn wait_for_fired_probe(
+        &self,
+        token: RuntimeToken,
+        provider: &dyn PreparationReadWait,
+        budget: &ActivationBudget,
+        deadline: Instant,
+        stop: &crate::containment::StopControl,
+    ) {
+        self.apply(|state| {
+            let Some(fired) = state.fired.as_mut() else {
+                state.invalid = true;
+                return;
+            };
+            fired.hold_due(token);
+            state.invalid |= fired.invalid();
+        });
+        let now = provider.now();
+        let cap = now
+            .checked_add(BARRIER_LIMIT)
+            .unwrap_or(deadline)
+            .min(deadline);
+        loop {
+            if stop.observe().is_some() {
+                self.apply(|state| state.invalid = true);
+                return;
+            }
+            let ready = self.inner.state.lock().ok().and_then(|state| {
+                if state.invalid {
+                    None
+                } else {
+                    state.fired.as_ref().map(FiredWitness::probed)
+                }
+            });
+            if ready != Some(false) {
+                return;
+            }
+            let now = provider.now();
+            if now >= cap {
+                self.apply(|state| state.timeout = true);
+                return;
+            }
+            let next = now.checked_add(STOP_OBSERVATION).unwrap_or(cap).min(cap);
+            let Ok(mut timeout) = provider.wait_until_owned(next, budget) else {
+                self.apply(|state| state.invalid = true);
+                return;
+            };
+            let notified = self.inner.parked.notified();
+            let ready = self.inner.state.lock().ok().and_then(|state| {
+                if state.invalid {
+                    None
+                } else {
+                    state.fired.as_ref().map(FiredWitness::probed)
+                }
+            });
+            if ready != Some(false) {
+                return;
+            }
+            tokio::select! { () = notified => {}, () = &mut timeout => {}, }
+        }
+    }
+
     pub(crate) fn report_wait_drop(&self, token: RuntimeToken, returned: bool) {
         let Ok(mut state) = self.inner.state.lock() else {
             return;
         };
-        if state.target != Some(token) || !state.next_pending {
+        let matched = if state.case.is_some_and(Case::fired) {
+            state
+                .fired
+                .as_ref()
+                .is_some_and(|fired| fired.original_matches(token))
+        } else {
+            state.target == Some(token) && state.next_pending
+        };
+        if !matched {
             state.invalid = true;
             return;
         }
@@ -618,6 +788,21 @@ impl Observer {
             .0
             .as_ref()
             .map_or(0, |charge| charge.allocation.bytes());
+        if case.fired() {
+            let complete = !state.invalid
+                && !state.timeout
+                && state.fired.as_ref().is_some_and(FiredWitness::complete);
+            let _ = writeln!(
+                std::io::stderr().lock(),
+                "LSF-GO-TIMER-FIRED-V1|{}|{}|{}|{}|{}",
+                case.activation(),
+                u8::from(complete),
+                u8::from(state.invalid),
+                u8::from(state.timeout),
+                bytes
+            );
+            return;
+        }
         // Fixed fields and labels only. A failed write produces no evidence.
         let _ = writeln!(
             std::io::stderr().lock(),
