@@ -903,6 +903,9 @@ def recipe_inputs() -> dict[str, str]:
              ROOT / "tools/build_observation.py", ROOT / "tools/build_process.py",
              ROOT / "tools/build_process_linux.py", ROOT / "tools/build_process_windows.py"]
     paths += [ROOT / name for name in RECIPE]
+    # Compile-only JDK declarations are not included in the guest component.
+    paths += [ROOT / 'sdk/java-guest/fibers/conformance/scheduled-library/reference' / name
+              for name in ('dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
     return {path.relative_to(ROOT).as_posix(): digest(read_file(path)) for path in paths}
 
 
@@ -993,6 +996,9 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
             reference_sources += [compiler.sdk / ('runtime/dev/latent/guest/' + name + '.java')
                                   for name in ('Option', 'Result', 'Unsigned64', 'Unit')]
             report['referenceKind'] = 'private-runtime-wait-reference-using-JDK-threads'
+        elif fixture == 'scheduled-library':
+            reference_sources = [selected / 'reference' / name for name in
+                ('dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
         reference_options = ['-cp', os.pathsep.join(map(str, reference_jars))] if reference_jars else []
         compiler.run("reference-jdk-compile", "javac", "-proc:none", *reference_options, "-d", control, source, main, *reference_sources)
         report["reference"] = []
