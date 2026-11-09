@@ -280,8 +280,8 @@ def completable_model_control(compiler: Compiler, output: Path) -> dict:
     compiler.run("completable-model-compile", "javac", "-proc:none", "--release", "25", "-cp", classpath,
                  "-d", output, *sources)
     expected = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;canonical-api-and-helper-identities;"
-        "resolved-reference-closure;unsupported-no-fallback;result-settlement-fence;"
-        "actual-coroutine-monitors=28;owned-callback-bodies=31;bodies=189;actual-generated-callbacks=23;application-identity")
+        "resolved-reference-closure;unsupported-no-fallback;result-settlement-fence;queued-settlement-fence;"
+        "actual-coroutine-monitors=28;owned-callback-bodies=32;bodies=190;actual-generated-callbacks=23;application-identity")
     observed = compiler.run("completable-model-control", "java", "-Xmx256m", "-cp",
                             str(output) + os.pathsep + classpath,
                             "dev.latent.guest.runtime.compiler.CompletableFutureModelControl").strip()
@@ -292,8 +292,8 @@ def completable_model_control(compiler: Compiler, output: Path) -> dict:
     if fields != ("COMPLETABLE_FUTURE_FIELD_MODEL_CONTROL PASS declared-and-inherited-types;"
                   "closed-read-write-references;absent-no-fallback;models=6"):
         raise ValueError("Java CompletableFuture field model control did not complete")
-    return {"status": "actual-locked-classlib-model-passed", "modelFingerprintVersion": 4, "modelMethodBodies": 189,
-            "coroutineMonitorBodies": 28, "ownedCallbackBodies": 31, "actualGeneratedCallbacks": 23,
+    return {"status": "actual-locked-classlib-model-passed", "modelFingerprintVersion": 5, "modelMethodBodies": 190,
+            "coroutineMonitorBodies": 28, "ownedCallbackBodies": 32, "actualGeneratedCallbacks": 23,
             "jarDigests": identities,
             "fieldReferences": "actual-declared-and-inherited-types-passed",
             "portOrApplicationClassesInitialized": False, "actualGuestBindingsUsed": False}
