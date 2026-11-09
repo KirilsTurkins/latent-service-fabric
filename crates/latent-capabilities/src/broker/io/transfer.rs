@@ -937,6 +937,23 @@ mod native_tests {
         assert_eq!(transfer.accepted_input_bytes(), 4);
         assert!(chunk._memory.charged_to(&control.budget));
         assert_eq!(transfer.outstanding_chunks(), 1);
+        // Keep the exact original operation and transfer alive so no other
+        // owner can be mistaken for this input allocation's native charge.
+        assert_eq!(
+            control.budget.host_memory_bytes(),
+            before + 16 + super::super::ALLOCATION_BOOKKEEPING as u64
+        );
+        drop(chunk);
+        assert_eq!(control.budget.host_memory_bytes(), before);
+        assert_eq!(transfer.outstanding_chunks(), 0);
+
+        // Preserve the original control: a later input still retains its
+        // exact operation after the transfer and call owners are dropped.
+        let mut prepared = transfer.prepare_input(16).unwrap();
+        assert!(prepared.capture(b"data"));
+        let chunk = transfer.finish_prepared_input(prepared).unwrap();
+        assert_eq!(transfer.accepted_input_bytes(), 8);
+        assert!(chunk._memory.charged_to(&control.budget));
         drop((transfer, call));
         assert_eq!(chunk.as_ref(), b"data");
         assert_eq!(io.snapshot().staged_bytes, 16);

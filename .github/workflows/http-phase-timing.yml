@@ -54,6 +54,7 @@ env:
 jobs:
   phase-timing:
     name: Real transport and component HTTP phase boundaries
+    if: github.ref_name != 'diag/sdk690-retained-input-20261109'
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -125,5 +126,86 @@ jobs:
         with:
           name: c-http-upload-window-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/c-http-upload-window-controls/
+          if-no-files-found: warn
+          retention-days: 7
+
+  retained-input-diagnostic:
+    name: Exact retained input ledger diagnostic
+    if: github.ref_name == 'diag/sdk690-retained-input-20261109'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      EXPECTED_SOURCE_SHA: ${{ github.sha }}
+      CARGO_TERM_COLOR: never
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Verify exact candidate and source
+        run: |
+          set -euo pipefail
+          mkdir "$RUNNER_TEMP/sdk690-retention"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE_SHA"
+          test "$(git rev-parse HEAD:crates/latent-http/src/tests/streaming.rs)" = bf4469310421edb2ad0d79cdc99897c2cdc524d8
+          test "$(git rev-parse HEAD:crates/latent-capabilities/src/broker/io/transfer.rs)" = 880bfd41c6b6ac59e4f631968aa254db9e390a4f
+          test -z "$(git status --porcelain --untracked-files=all)"
+          {
+            printf 'sourceRevision=%s\n' "$(git rev-parse HEAD)"
+            printf 'sourceTree=%s\n' "$(git rev-parse HEAD^{tree})"
+            rustc --version
+            cargo --version
+          } > "$RUNNER_TEMP/sdk690-retention/source.txt"
+      - name: Measure exact original ownership and retirement
+        run: |
+          set -uo pipefail
+          export LSF_SDK690_RETIREMENT_MEASUREMENTS="$RUNNER_TEMP/sdk690-retention/measurements.txt"
+          cap_name=broker::io::transfer::native_tests::prepared_input_captures_once_without_callbacks_and_retains_the_original_owner
+          http_name=tests::streaming::prepared_upload_cancel_keeps_a_retained_transport_chunk_on_its_original_ledger
+          timeout --signal=KILL 900s cargo test --locked -p latent-capabilities --lib "$cap_name" -- --exact --nocapture --test-threads=1 2>&1 | (ulimit -f 4096 && cat > "$RUNNER_TEMP/sdk690-retention/capabilities.log")
+          cap_pipe=( "${PIPESTATUS[@]}" )
+          cap_status=${cap_pipe[0]}
+          cap_log_status=${cap_pipe[1]}
+          cat "$RUNNER_TEMP/sdk690-retention/capabilities.log"
+          timeout --signal=KILL 900s cargo test --locked -p latent-http --lib "$http_name" -- --exact --nocapture --test-threads=1 2>&1 | (ulimit -f 4096 && cat > "$RUNNER_TEMP/sdk690-retention/http.log")
+          http_pipe=( "${PIPESTATUS[@]}" )
+          http_status=${http_pipe[0]}
+          http_log_status=${http_pipe[1]}
+          cat "$RUNNER_TEMP/sdk690-retention/http.log"
+          evidence=0
+          test "$(grep -Fxc "test $cap_name ... ok" "$RUNNER_TEMP/sdk690-retention/capabilities.log" || true)" -eq 1 || evidence=1
+          test "$(grep -Fxc "test $http_name ... ok" "$RUNNER_TEMP/sdk690-retention/http.log" || true)" -eq 1 || evidence=1
+          test "$(grep -Ec '^test result: ok\. 1 passed; 0 failed; 0 ignored;' "$RUNNER_TEMP/sdk690-retention/capabilities.log" || true)" -eq 1 || evidence=1
+          test "$(grep -Ec '^test result: ok\. 1 passed; 0 failed; 0 ignored;' "$RUNNER_TEMP/sdk690-retention/http.log" || true)" -eq 1 || evidence=1
+          if test -s "$LSF_SDK690_RETIREMENT_MEASUREMENTS"; then
+            cat "$LSF_SDK690_RETIREMENT_MEASUREMENTS"
+            for key in prepared held after-chunk before-registry after-registry after-observer after-fixture; do
+              test "$(grep -Ec "^${key}=[0-9]+$" "$LSF_SDK690_RETIREMENT_MEASUREMENTS" || true)" -eq 1 || evidence=1
+            done
+            grep -Fx 'after-fixture=0' "$LSF_SDK690_RETIREMENT_MEASUREMENTS" >/dev/null || evidence=1
+          else
+            evidence=1
+          fi
+          test -z "$(git status --porcelain --untracked-files=all)" || evidence=1
+          printf 'cap_status=%s\ncap_log_status=%s\nhttp_status=%s\nhttp_log_status=%s\nevidence=%s\n' "$cap_status" "$cap_log_status" "$http_status" "$http_log_status" "$evidence" > "$RUNNER_TEMP/sdk690-retention/status.txt"
+          test "$cap_status" -eq 0 && test "$cap_log_status" -eq 0 && test "$http_status" -eq 0 && test "$http_log_status" -eq 0 && test "$evidence" -eq 0
+      - name: Retain exact test logs and failure evidence
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: sdk690-retention-diagnostic-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/sdk690-retention/
           if-no-files-found: warn
           retention-days: 7

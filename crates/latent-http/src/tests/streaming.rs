@@ -963,7 +963,15 @@ async fn prepared_upload_cancel_keeps_a_retained_transport_chunk_on_its_original
             retain: Some(retain),
         })
         .is_none());
+    let before_preparation = control.budget.host_memory_bytes();
     let mut prepared = upload.prepare_write(4096).unwrap();
+    let prepared_capacity = u64::try_from(prepared.capacity()).unwrap();
+    let preparation_charge = control
+        .budget
+        .host_memory_bytes()
+        .checked_sub(before_preparation)
+        .expect("preparation must reserve original native backing");
+    assert_eq!(preparation_charge, prepared_capacity + 64);
     assert!(prepared.capture(b"abcd"));
     let mut writing = upload.write_prepared(prepared);
     tokio::time::timeout(Duration::from_secs(2), async {
@@ -987,7 +995,8 @@ async fn prepared_upload_cancel_keeps_a_retained_transport_chunk_on_its_original
     drop(upload);
     drop(session);
     assert!(f.io.snapshot().staged_bytes >= 4);
-    assert!(control.budget.host_memory_bytes() > 0);
+    let with_retained_chunk = control.budget.host_memory_bytes();
+    assert!(with_retained_chunk >= preparation_charge);
     assert!(!observer.is_quiescent());
     drop(retained);
     assert!(observer.is_quiescent());
@@ -995,10 +1004,44 @@ async fn prepared_upload_cancel_keeps_a_retained_transport_chunk_on_its_original
         f.io.snapshot(),
         latent_capabilities::broker::io::IoSnapshot::default()
     );
-    assert_eq!(control.budget.host_memory_bytes(), 0);
+    let after_chunk = control.budget.host_memory_bytes();
+    assert!(with_retained_chunk
+        .checked_sub(after_chunk)
+        .is_some_and(|released| released >= preparation_charge));
     tokio::time::timeout(Duration::from_secs(3), server)
         .await
         .expect("peer did not retire")
         .unwrap();
     f.clean().await;
+    let before_registry_retirement = control.budget.host_memory_bytes();
+    // This provider-only fixture did not create a guest Store. Invoke the
+    // same post-Store registry cleanup only after the actual peer and pool
+    // have retired; an observer snapshot by itself does not release headers.
+    let outcome = Err(latent_core::PlatformError {
+        code: latent_core::PlatformErrorCode::Cancelled,
+        message: "controlled provider cancellation".into(),
+        retryable: false,
+        details: Vec::new(),
+    });
+    let report = observer.after_store_dropped(outcome);
+    assert_eq!(report.cleanup, latent_executor::ExecutionCleanup::Reusable);
+    let after_registry_retirement = control.budget.host_memory_bytes();
+    drop(observer);
+    let after_observer_drop = control.budget.host_memory_bytes();
+    drop(f);
+    let after_fixture_drop = control.budget.host_memory_bytes();
+    if let Some(path) = std::env::var_os("LSF_SDK690_RETIREMENT_MEASUREMENTS") {
+        std::fs::write(
+            path,
+            format!(
+                "prepared={preparation_charge}\nheld={with_retained_chunk}\n\
+                 after-chunk={after_chunk}\nbefore-registry={before_registry_retirement}\n\
+                 after-registry={after_registry_retirement}\nafter-observer={after_observer_drop}\n\
+                 after-fixture={after_fixture_drop}\n"
+            ),
+        )
+        .expect("write requested diagnostic measurements");
+    }
+    assert_eq!(after_fixture_drop, 0);
+    assert_eq!(control.budget.outstanding_reservations(), 0);
 }
