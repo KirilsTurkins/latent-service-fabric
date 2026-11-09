@@ -1,4 +1,4 @@
-﻿{
+{
     "description":  "Experimental fixed Go client direct command under race instrumentation against combined unmerged node source",
     "observation":  {
                         "after":  {

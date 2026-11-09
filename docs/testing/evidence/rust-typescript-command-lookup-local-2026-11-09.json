@@ -1,4 +1,4 @@
-﻿{
+{
     "description":  "Experimental Rust and TypeScript Node client lookups against a combined unmerged separate node and disposable test signer",
     "observation":  {
                         "after":  {

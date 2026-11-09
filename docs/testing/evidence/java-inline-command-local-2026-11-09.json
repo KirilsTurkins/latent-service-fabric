@@ -1,4 +1,4 @@
-﻿{
+{
     "description":  "Experimental fixed Java external client direct command against combined unmerged node source",
     "observation":  {
                         "after":  {
