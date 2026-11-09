@@ -46,6 +46,37 @@ class Response:
 class ScannerFallbackTests(unittest.TestCase):
     token = "synthetic" + "-credential"
 
+    def test_exact_cargo_audit_504_uses_pinned_api_and_bad_archive_fails_closed(self):
+        failure = urllib.error.HTTPError(installer.CARGO_AUDIT_LINUX_URL, 504, "gateway", {}, io.BytesIO())
+        opener = Mock(open=Mock(return_value=Response([b"fake"])))
+        with tempfile.TemporaryDirectory() as temporary, \
+             patch.dict(os.environ, {"GH_TOKEN": self.token}), \
+             patch.object(installer, "platform_key", return_value="linux-x64"), \
+             patch.object(installer.urllib.request, "urlopen", side_effect=failure), \
+             patch.object(installer.urllib.request, "build_opener", return_value=opener), \
+             patch.object(installer, "CARGO_AUDIT_LINUX_ASSET_BYTES", 4):
+            with self.assertRaisesRegex(SecurityError, "download-digest-mismatch"):
+                installer.install("cargo-audit", Path(temporary))
+            self.assertEqual(list(Path(temporary).iterdir()), [])
+        request = opener.open.call_args.args[0]
+        self.assertEqual(request.full_url, installer.CARGO_AUDIT_LINUX_ASSET)
+        self.assertEqual(request.unredirected_hdrs.get("Authorization"), "Bearer " + self.token)
+        self.assertNotIn("Authorization", request.headers)
+        self.assertTrue(failure.fp.closed)
+
+    def test_cargo_audit_wrong_url_missing_token_and_other_http_fail_without_api(self):
+        for url, token, code in ((installer.CARGO_AUDIT_LINUX_URL, "", 504),
+                                 (installer.CARGO_AUDIT_LINUX_URL, self.token, 404),
+                                 (installer.CARGO_AUDIT_LINUX_URL + "-other", self.token, 504)):
+            failure = urllib.error.HTTPError(url, code, "gateway", {}, io.BytesIO())
+            with self.subTest(url=url, token_present=bool(token), code=code), \
+                 patch.dict(os.environ, {"GH_TOKEN": token}), \
+                 patch.object(installer.urllib.request, "urlopen", side_effect=failure), \
+                 patch.object(installer.urllib.request, "build_opener") as api:
+                with self.assertRaises(urllib.error.HTTPError):
+                    installer.download(url)
+                api.assert_not_called()
+
     def test_original_success_never_uses_api_or_token(self):
         direct = Response([b"original"], "https://github.com/asset")
         with patch.dict(os.environ, {"GH_TOKEN": self.token}), \
@@ -219,24 +250,36 @@ class ScannerFallbackTests(unittest.TestCase):
         workflow = yaml.safe_load((ROOT / ".github/workflows/security-baseline.yml").read_text(encoding="utf8"))
         self.assertEqual(workflow["permissions"], {"contents": "read"})
         selected = []
-        for job, name in (("static", "Install digest-pinned offline workflow scanner"),
-                          ("self-test", "Install reviewed zizmor canary scanner")):
+        for job, name, tool in (("static", "Install digest-pinned offline workflow scanner", "zizmor"),
+                                ("self-test", "Install reviewed zizmor canary scanner", "zizmor"),
+                                ("self-test", "Install reviewed cargo-audit canary scanner", "cargo-audit")):
             matches = [s for s in workflow["jobs"][job]["steps"] if s.get("name") == name]
             self.assertEqual(len(matches), 1)
             self.assertEqual(matches[0]["env"], {"GH_TOKEN": "${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && github.token || '' }}"})
-            self.assertIn("--tool zizmor", matches[0]["run"])
+            self.assertIn("--tool " + tool, matches[0]["run"])
             selected.extend(matches)
         canary = next(s for s in workflow["jobs"]["self-test"]["steps"]
-                      if s.get("name") == "Install reviewed canary scanners")
-        self.assertIn("--tool cargo-audit", canary["run"])
+                      if s.get("name") == "Install reviewed gitleaks canary scanner")
         self.assertIn("--tool gitleaks", canary["run"])
-        self.assertNotIn("--tool zizmor", canary["run"])
+        self.assertNotIn("env", canary)
         self.assertNotIn("GH_TOKEN", workflow.get("env", {}))
         for definition in workflow["jobs"].values():
             self.assertNotIn("GH_TOKEN", definition.get("env", {}))
             for step in definition.get("steps", []):
                 if not any(step is item for item in selected):
                     self.assertNotIn("GH_TOKEN", step.get("env", {}))
+
+        rustsec = yaml.safe_load((ROOT / ".github/workflows/security-rustsec.yml").read_text(encoding="utf8"))
+        self.assertEqual(rustsec["permissions"], {"contents": "read"})
+        steps = rustsec["jobs"]["audit"]["steps"]
+        cargo = next(s for s in steps if s.get("name") == "Install digest-pinned cargo-audit outside the input checkout")
+        self.assertEqual(cargo["env"], {"GH_TOKEN": "${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && github.token || '' }}"})
+        self.assertIn("--tool cargo-audit", cargo["run"])
+        self.assertNotIn("GH_TOKEN", rustsec.get("env", {}))
+        self.assertNotIn("GH_TOKEN", rustsec["jobs"]["audit"].get("env", {}))
+        for step in steps:
+            if step is not cargo:
+                self.assertNotIn("GH_TOKEN", step.get("env", {}))
 
 
 if __name__ == "__main__":
