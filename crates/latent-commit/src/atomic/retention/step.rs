@@ -39,12 +39,7 @@ impl ResultMaintenanceOwner {
             clock.time.check(p.unix_millis)?;
             p.generation.checked_add(1).ok_or(AtomicError::Limit)
         })?;
-        let mut progress = MaintenanceProgress::anchor(clock, generation);
-        if let Some(previous) = previous {
-            progress.visited = previous.visited;
-            progress.retired = previous.retired;
-            progress.reclaimed_bytes = previous.reclaimed_bytes;
-        }
+        let progress = MaintenanceProgress::reanchor(clock, generation, previous)?;
         let mut batch = AtomicBatch::default();
         replace(
             &mut batch,
