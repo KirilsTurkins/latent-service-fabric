@@ -260,7 +260,7 @@ fn checkpoint_component(
         );
         assert_eq!(
             record["diagnosticRuntime"]["kind"],
-            "selected-returned-ticker-fence-observe-v3"
+            "selected-returned-ticker-cancel-fence-observe-v4"
         );
         let original = include_bytes!("../../../../../sdk/go-guest/runtime/timer_async.go.in");
         let derived =
