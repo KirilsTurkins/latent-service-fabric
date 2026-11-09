@@ -165,8 +165,18 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         private void finish() {
             synchronized (this) { if (finished) return; finished = true; }
             detach();
-            try { queued.close(); }
-            finally { queued = null; destination.retired(this); }
+            // An unsuccessful acknowledgement is not proof of retirement.
+            // Keep both original owners and fence the activation without retry.
+            closeQueued(queued);
+            queued = null;
+            destination.retired(this);
+        }
+        private static void closeQueued(Activation.Lease lease) {
+            try { lease.close(); }
+            catch (Throwable uncertain) {
+                Activation.fenceUncertainQueuedWorkSettlement(lease);
+                throw uncertain;
+            }
         }
         private synchronized void rejectBeforeRun(Executor rejecting) {
             // Only the original direct SDK route can prove nonacceptance of
@@ -180,8 +190,11 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
             Activation.Lease readmitted = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
             boolean accepted;
             try { accepted = destination.accept(this, false); }
-            catch (Throwable error) { readmitted.close(); throw error; }
-            if (!accepted) { readmitted.close(); withdrawn = false; return false; }
+            catch (Throwable error) {
+                try { closeQueued(readmitted); } catch (Throwable uncertain) { throw error; }
+                throw error;
+            }
+            if (!accepted) { closeQueued(readmitted); withdrawn = false; return false; }
             queued = readmitted;
             finished = false;
             withdrawn = false;
