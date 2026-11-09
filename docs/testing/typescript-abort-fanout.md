@@ -5,6 +5,16 @@ changes the source-owned AbortSignal implementation selected by
 `spidermonkey-activation-promises-clocks-imports-v1`; it does not add a JavaScript
 polyfill, a developer-selected transport, or a new public runtime profile.
 
+## Qualification status
+
+The [integration ledger](typescript-runtime-745-qualification.md) separates
+source controls, historical signed observations and remaining #745 obligations.
+Run 42516280360 passed nine-dependent fan-out but failed at
+`abort-fanout-refusal` with an actual `guest-trap` / `unreachable-code`. The
+following default-factory reentry and fresh fan-out cases were not reached,
+and the artifact has no post-refusal cleanup sample. The signed programme
+remains failed. Host C++ or sanitizer success does not replace that evidence.
+
 ## Admission and publication
 
 The pinned engine previously set the root and dependent abort reasons before

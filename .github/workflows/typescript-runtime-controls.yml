@@ -47,10 +47,14 @@ jobs:
       - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
         with:
           python-version: '3.13.5'
+      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6
+        with:
+          node-version: '24.19.0'
       - name: Record exact source and host compiler identities
         run: |
           git rev-parse HEAD
           python3 --version
+          node --version
           g++ --version
           clang++ --version
       - name: Compile and execute maintained ownership controls
