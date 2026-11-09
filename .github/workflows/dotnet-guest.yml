@@ -502,9 +502,25 @@ jobs:
           cache-all-crates: false
           cache-on-failure: false
           save-if: false
-      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
-        with:
-          version: 1.254.0
+      - name: Install the verified wasm-tools release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/dotnet-wasm-tools.tar.gz"
+          bindir="$RUNNER_TEMP/dotnet-wasm-tools-bin"
+          mkdir "$bindir"
+          timeout 90s gh api -H 'Accept: application/octet-stream' repos/bytecodealliance/wasm-tools/releases/assets/483720667 | head -c 5862465 > "$archive"
+          unset GH_TOKEN
+          test "$(stat --format=%s "$archive")" = 5862464
+          printf '%s  %s\n' d0efb16c9c859137b7ab3e99151c299cd47caee106ed4594561002f7a04945bd "$archive" | sha256sum --check --strict
+          tar -xOzf "$archive" wasm-tools-1.254.0-x86_64-linux/wasm-tools > "$bindir/wasm-tools"
+          test "$(stat --format=%s "$bindir/wasm-tools")" = 20231696
+          printf '%s  %s\n' cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6 "$bindir/wasm-tools" | sha256sum --check --strict
+          chmod 755 "$bindir/wasm-tools"
+          test "$("$bindir/wasm-tools" --version)" = 'wasm-tools 1.254.0 (bb58fdf91 2026-07-20)'
+          printf '%s\n' "$bindir" >> "$GITHUB_PATH"
       - name: Download this run's exact normal public products
         uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
         with:
@@ -518,11 +534,14 @@ jobs:
           sudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Install the pinned native compiler and closed runtime
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          curl --fail --location --max-time 180 \
-            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
-            --output "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          set -o pipefail
+          timeout 180s gh api -H 'Accept: application/octet-stream' repos/WebAssembly/wasi-sdk/releases/assets/316597213 | head -c 119441679 > "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          unset GH_TOKEN
+          test "$(stat --format=%s "$RUNNER_TEMP/wasi-sdk.tar.gz")" = 119441678
           printf '%s  %s\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 "$RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
           tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
           python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-authoring-bindgen"
@@ -658,9 +677,25 @@ jobs:
           cache-all-crates: false
           cache-on-failure: false
           save-if: false
-      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
-        with:
-          version: 1.254.0
+      - name: Install the verified wasm-tools release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/dotnet-wasm-tools.tar.gz"
+          bindir="$RUNNER_TEMP/dotnet-wasm-tools-bin"
+          mkdir "$bindir"
+          timeout 90s gh api -H 'Accept: application/octet-stream' repos/bytecodealliance/wasm-tools/releases/assets/483720667 | head -c 5862465 > "$archive"
+          unset GH_TOKEN
+          test "$(stat --format=%s "$archive")" = 5862464
+          printf '%s  %s\n' d0efb16c9c859137b7ab3e99151c299cd47caee106ed4594561002f7a04945bd "$archive" | sha256sum --check --strict
+          tar -xOzf "$archive" wasm-tools-1.254.0-x86_64-linux/wasm-tools > "$bindir/wasm-tools"
+          test "$(stat --format=%s "$bindir/wasm-tools")" = 20231696
+          printf '%s  %s\n' cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6 "$bindir/wasm-tools" | sha256sum --check --strict
+          chmod 755 "$bindir/wasm-tools"
+          test "$("$bindir/wasm-tools" --version)" = 'wasm-tools 1.254.0 (bb58fdf91 2026-07-20)'
+          printf '%s\n' "$bindir" >> "$GITHUB_PATH"
       - name: Download this run's exact normal public products
         uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
         with:
@@ -676,11 +711,14 @@ jobs:
           sudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Install the pinned native compiler and closed runtime
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          curl --fail --location --max-time 180 \
-            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
-            --output "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          set -o pipefail
+          timeout 180s gh api -H 'Accept: application/octet-stream' repos/WebAssembly/wasi-sdk/releases/assets/316597213 | head -c 119441679 > "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          unset GH_TOKEN
+          test "$(stat --format=%s "$RUNNER_TEMP/wasi-sdk.tar.gz")" = 119441678
           printf '%s  %s\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 "$RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
           tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
           python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-authoring-bindgen"
@@ -771,9 +809,25 @@ jobs:
           cache-all-crates: false
           cache-on-failure: false
           save-if: false
-      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
-        with:
-          version: 1.254.0
+      - name: Install the verified wasm-tools release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/dotnet-wasm-tools.tar.gz"
+          bindir="$RUNNER_TEMP/dotnet-wasm-tools-bin"
+          mkdir "$bindir"
+          timeout 90s gh api -H 'Accept: application/octet-stream' repos/bytecodealliance/wasm-tools/releases/assets/483720667 | head -c 5862465 > "$archive"
+          unset GH_TOKEN
+          test "$(stat --format=%s "$archive")" = 5862464
+          printf '%s  %s\n' d0efb16c9c859137b7ab3e99151c299cd47caee106ed4594561002f7a04945bd "$archive" | sha256sum --check --strict
+          tar -xOzf "$archive" wasm-tools-1.254.0-x86_64-linux/wasm-tools > "$bindir/wasm-tools"
+          test "$(stat --format=%s "$bindir/wasm-tools")" = 20231696
+          printf '%s  %s\n' cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6 "$bindir/wasm-tools" | sha256sum --check --strict
+          chmod 755 "$bindir/wasm-tools"
+          test "$("$bindir/wasm-tools" --version)" = 'wasm-tools 1.254.0 (bb58fdf91 2026-07-20)'
+          printf '%s\n' "$bindir" >> "$GITHUB_PATH"
       - name: Download this run's exact normal public products
         uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
         with:
@@ -789,11 +843,14 @@ jobs:
           sudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Install the pinned native compiler and closed runtime
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          curl --fail --location --max-time 180 \
-            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
-            --output "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          set -o pipefail
+          timeout 180s gh api -H 'Accept: application/octet-stream' repos/WebAssembly/wasi-sdk/releases/assets/316597213 | head -c 119441679 > "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          unset GH_TOKEN
+          test "$(stat --format=%s "$RUNNER_TEMP/wasi-sdk.tar.gz")" = 119441678
           printf '%s  %s\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 "$RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
           tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
           python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-authoring-bindgen"
@@ -877,10 +934,26 @@ jobs:
           cache-all-crates: false
           cache-on-failure: false
           save-if: false
-      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
+      - name: Install the verified wasm-tools release asset
         timeout-minutes: 1
-        with:
-          version: 1.254.0
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/dotnet-wasm-tools.tar.gz"
+          bindir="$RUNNER_TEMP/dotnet-wasm-tools-bin"
+          mkdir "$bindir"
+          timeout 90s gh api -H 'Accept: application/octet-stream' repos/bytecodealliance/wasm-tools/releases/assets/483720667 | head -c 5862465 > "$archive"
+          unset GH_TOKEN
+          test "$(stat --format=%s "$archive")" = 5862464
+          printf '%s  %s\n' d0efb16c9c859137b7ab3e99151c299cd47caee106ed4594561002f7a04945bd "$archive" | sha256sum --check --strict
+          tar -xOzf "$archive" wasm-tools-1.254.0-x86_64-linux/wasm-tools > "$bindir/wasm-tools"
+          test "$(stat --format=%s "$bindir/wasm-tools")" = 20231696
+          printf '%s  %s\n' cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6 "$bindir/wasm-tools" | sha256sum --check --strict
+          chmod 755 "$bindir/wasm-tools"
+          test "$("$bindir/wasm-tools" --version)" = 'wasm-tools 1.254.0 (bb58fdf91 2026-07-20)'
+          printf '%s\n' "$bindir" >> "$GITHUB_PATH"
       - name: Acquire the fixed same-core normal products without rebuilding them
         if: github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027'
         timeout-minutes: 2
@@ -908,11 +981,14 @@ jobs:
       - name: Install the pinned native compiler and closed runtime
         if: github.ref == 'refs/heads/test/sdk-dotnet-root-return-20261027' || github.ref == 'refs/heads/feat/sdk-dotnet-prefetched-readiness-review-20261028'
         timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          curl --fail --location --max-time 180 \
-            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
-            --output "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          set -o pipefail
+          timeout 180s gh api -H 'Accept: application/octet-stream' repos/WebAssembly/wasi-sdk/releases/assets/316597213 | head -c 119441679 > "$RUNNER_TEMP/wasi-sdk.tar.gz"
+          unset GH_TOKEN
+          test "$(stat --format=%s "$RUNNER_TEMP/wasi-sdk.tar.gz")" = 119441678
           printf '%s  %s\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 "$RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum --check --strict
           tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
           python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-authoring-bindgen"
