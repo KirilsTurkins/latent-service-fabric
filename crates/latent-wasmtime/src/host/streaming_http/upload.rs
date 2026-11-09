@@ -70,26 +70,44 @@ impl
                 }
                 Err(error) => Err(error),
             };
-            access.with(|mut access| {
-                let mut store = access.as_context_mut();
-                checkpoint(&mut store)?;
-                let result = completion.and_then(|pending| {
-                    let rep = pending.reservation.rep();
-                    let table = &mut store.data_mut().capabilities.streams;
-                    match pending.value {
-                        Ok(upload) => {
-                            table.put(rep, Kind::Upload, Value::Upload(upload))?;
-                            Ok(Resource::<wit::Upload>::new_own(rep))
-                        }
-                        Err(error) => Err(error),
-                    }
-                });
-                synchronize(&mut store)?;
-                store.data_mut().record_host_call(started);
-                Ok((result.map_err(convert_error),))
-            })
+            complete_open(access, completion, started)
         }
     }
+}
+
+pub(super) fn complete_open(
+    access: &Accessor<HostState>,
+    completion: Result<
+        Reserved<Result<Box<dyn latent_capabilities::broker::streaming_http::HttpUpload>, Error>>,
+        Error,
+    >,
+    started: Instant,
+) -> wasmtime::Result<(Result<Resource<wit::Upload>, wit::HttpError>,)> {
+    // A failed checkpoint must not drop the provider upload or its guard
+    // while Accessor::with still holds the Store. Transfer it only after the
+    // checkpoint succeeds; successful publication retains its existing order.
+    let mut completion = Some(completion);
+    access.with(|mut access| {
+        let mut store = access.as_context_mut();
+        checkpoint(&mut store)?;
+        let result = completion
+            .take()
+            .expect("one open completion")
+            .and_then(|pending| {
+                let rep = pending.reservation.rep();
+                let table = &mut store.data_mut().capabilities.streams;
+                match pending.value {
+                    Ok(upload) => {
+                        table.put(rep, Kind::Upload, Value::Upload(upload))?;
+                        Ok(Resource::<wit::Upload>::new_own(rep))
+                    }
+                    Err(error) => Err(error),
+                }
+            });
+        synchronize(&mut store)?;
+        store.data_mut().record_host_call(started);
+        Ok((result.map_err(convert_error),))
+    })
 }
 
 pub(super) fn write(
@@ -132,23 +150,51 @@ impl
                 Ok(_) => return Err(trap(Error::InvalidState)),
                 Err(error) => Err(error),
             };
-            access.with(|mut access| {
-                let mut store = access.as_context_mut();
-                checkpoint(&mut store)?;
-                let result = result.and_then(|(upload, result)| {
-                    store.data_mut().capabilities.streams.put(
-                        rep,
-                        Kind::Upload,
-                        Value::Upload(upload),
-                    )?;
-                    result
-                });
-                synchronize(&mut store)?;
-                store.data_mut().record_host_call(started);
-                Ok((result.map_err(convert_error),))
-            })
+            complete_write(access, rep, result, started)
         }
     }
+}
+
+pub(super) fn complete_write(
+    access: &Accessor<HostState>,
+    rep: u32,
+    result: Result<
+        (
+            Box<dyn latent_capabilities::broker::streaming_http::HttpUpload>,
+            Result<(), Error>,
+        ),
+        Error,
+    >,
+    started: Instant,
+) -> wasmtime::Result<(Result<(), wit::HttpError>,)> {
+    // Keep the completed provider upload out of the Store callback until the
+    // checkpoint succeeds. Its destructor may synchronously access that Store.
+    let mut result = Some(result);
+    let mut rejected = None;
+    let completion = access.with(|mut access| {
+        let mut store = access.as_context_mut();
+        checkpoint(&mut store)?;
+        let result = result
+            .take()
+            .expect("one write completion")
+            .and_then(|(upload, result)| {
+                let table = &mut store.data_mut().capabilities.streams;
+                match table.put_upload_recoverable(rep, upload) {
+                    Ok(()) => result,
+                    Err((error, upload)) => {
+                        rejected = Some(upload);
+                        Err(error)
+                    }
+                }
+            });
+        synchronize(&mut store)?;
+        store.data_mut().record_host_call(started);
+        Ok((result.map_err(convert_error),))
+    });
+    // A stale/closed row can reject publication after the provider completed.
+    // Its original upload must not be destroyed while this Store is borrowed.
+    drop(rejected);
+    completion
 }
 
 pub(super) fn finish(

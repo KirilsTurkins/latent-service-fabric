@@ -48,7 +48,7 @@ impl ExecutionCancellation for Cancellation {
         Some(&self.budget)
     }
 }
-fn ledger(profile: BudgetProfile) -> ActivationBudget {
+pub(super) fn ledger(profile: BudgetProfile) -> ActivationBudget {
     let mut resources = request_support::request().budget;
     resources.cpu_fuel = FUEL;
     resources.memory_bytes = MIB;
@@ -134,7 +134,7 @@ fn state(original: &ActivationBudget, empty: bool) -> HostState {
         BoundedLogSink::new(0, 0),
     )
 }
-fn engine() -> Engine {
+pub(super) fn engine() -> Engine {
     let mut config = Config::new();
     crate::WasmtimeConfig::default()
         .apply_engine(&mut config)
@@ -142,7 +142,7 @@ fn engine() -> Engine {
     config.consume_fuel(true);
     Engine::new(&config).unwrap()
 }
-fn store(engine: &Engine, original: &ActivationBudget, empty: bool) -> Store<HostState> {
+pub(super) fn store(engine: &Engine, original: &ActivationBudget, empty: bool) -> Store<HostState> {
     store_with_observations(engine, original, empty, None)
 }
 fn store_with_observations(
