@@ -21,7 +21,7 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | Tokio |                               1.53.3 | Fixed node runtimes, async adapters, and explicit test runtimes |
 | Prost |                               0.14.4 | Generated Protobuf message implementation |
 | Tonic / `tonic-prost` |                      0.14.6 / 0.14.6 | Generated RPC clients, servers, and Prost codec |
-| `tonic-prost-build` |                               0.14.6 | Build-time Rust generation from every authoritative `.proto` |
+| `tonic-prost-build` |                               0.14.9 | Build-time Rust generation from every authoritative `.proto` |
 | Hyper |                               1.12.0 | Native HTTP/OCI clients and optional Rust SDK HTTP/2 transport |
 | `protoc-bin-vendored` |                                3.2.0 | Pinned cross-platform `protoc`; no ambient compiler lookup |
 | `tokio-rustls` |                               0.26.6 | Direct TLS adapter dependency |
