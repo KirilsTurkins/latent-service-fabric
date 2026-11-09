@@ -194,12 +194,17 @@ class WaitFrameModelIntegrity(unittest.TestCase):
                 ("QUEUE_HEAP_CONTROL PASS actual-original-regression;actual-corrected-order;"
                  "up;down;ties;root;single-child;signed-min;last;singleton;empty;missing;repeat;model;preimage-negative;repeat-negative;donor-body-negative;donor-layout-negative;donor-node-negative\n"), "",
                 ("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;"
-                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence;timer-stop-uncertain-completion-fence;nested-stop-count-guard;timer-finally-return-fence;timer-teardown-admission-fence\n")] + [
+                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence;timer-stop-uncertain-completion-fence;nested-stop-count-guard;timer-finally-return-fence;timer-teardown-admission-fence\n"),
+                "TIMER_CLAIM_IR PASS selected-loop-positive;four-helpers-no-checkpoint-or-split-kind;not-guest\n"] + [
                 f"EXECUTOR_ACTIVATION_SETTLEMENT PASS {kind} {mode}" for kind in ("managed", "scheduled")
                 for mode in fibers.EXECUTOR_ACTIVATION_SETTLEMENT_CASES]
-            with patch.object(fibers, "timer_teardown_source_control") as teardown_control:
+            with (patch.object(fibers, "timer_teardown_source_control") as teardown_control,
+                  patch.object(fibers, "timer_post_ack_source_control") as post_ack_control,
+                  patch.object(fibers, "timer_start_admission_source_control") as start_control):
                 report = fibers.wait_frame_model_control(compiler, root / "model")
             teardown_control.assert_called_once()
+            post_ack_control.assert_called_once()
+            start_control.assert_called_once()
             self.assertEqual(report["nativeCallbackPairs"], 2)
             self.assertEqual(report["pluginOrder"], ["runtime", "platform"])
             self.assertEqual(report["asyncLoweredOwnedPairs"], 2)
@@ -215,7 +220,9 @@ class WaitFrameModelIntegrity(unittest.TestCase):
             compile_call, model_call, queue_call, heap_call, timer_compile, timer_call = compiler.run.call_args_list[:6]
             self.assertIn(compiler.sdk / "fibers/conformance/compiler/timer-source-control/ExecutorActivationSettlementControl.java",
                           timer_compile.args)
-            self.assertEqual(len(compiler.run.call_args_list[6:]), 2 * len(fibers.EXECUTOR_ACTIVATION_SETTLEMENT_CASES))
+            self.assertEqual(len(compiler.run.call_args_list[7:]), 2 * len(fibers.EXECUTOR_ACTIVATION_SETTLEMENT_CASES))
+            self.assertEqual(compiler.run.call_args_list[6].args[-1],
+                             "dev.latent.guest.runtime.compiler.TimerClaimIrControl")
             self.assertFalse(report["executorActivationSettlement"]["componentExecutionPerformed"])
             self.assertFalse(report["executorActivationSettlement"]["actualGuestBindingsUsed"])
             self.assertEqual(compile_call.args[:3], ("wait-frame-model-compile", "javac", "-proc:none"))
@@ -243,6 +250,24 @@ class WaitFrameModelIntegrity(unittest.TestCase):
             self.assertEqual(projected.count("TeardownHooks." + call + "();"), 1)
         with self.assertRaisesRegex(ValueError, "projection source drift"):
             fibers.timer_teardown_projection(source.replace("            if (stopPending) {\n", "", 1))
+
+    def test_post_ack_projection_rejects_source_drift(self):
+        activation = Path(__file__).resolve().parents[1] / "fibers/dev/latent/guest/runtime/Activation.java"
+        source = activation.read_text(encoding="utf-8")
+        projected = fibers.timer_post_ack_projection(source)
+        for call in ("afterAccept", "beforeList", "afterList", "beforeAllocation"):
+            self.assertEqual(projected.count("PostAckHooks." + call + "();"), 1)
+        with self.assertRaisesRegex(ValueError, "post-ack projection source drift"):
+            fibers.timer_post_ack_projection(source.replace("            timers.add(timer);\n", "", 1))
+
+    def test_start_admission_projection_rejects_source_drift(self):
+        activation = Path(__file__).resolve().parents[1] / "fibers/dev/latent/guest/runtime/Activation.java"
+        source = activation.read_text(encoding="utf-8")
+        projected = fibers.timer_start_admission_projection(source)
+        for call in ("allocation", "clock", "list", "lookup", "refusal"):
+            self.assertEqual(projected.count("TimerStartHooks." + call + "();"), 1)
+        with self.assertRaisesRegex(ValueError, "start-admission projection source drift"):
+            fibers.timer_start_admission_projection(source.replace("            timers.add(timer);\n", "", 1))
 
     def test_old_timer_readiness_receipt_does_not_cover_stop_uncertainty(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import re
 
-SCHEMA_VERSION = 'latent.go.network.runtime.v2'
+SCHEMA_VERSION = 'latent.go.network.runtime.v3'
 CASE = 'signed_ordinary_go_declared_tcp_preserves_refusals_io_and_cancelled_owner_retirement'
 EXPECTED = (
     ('unsupported-network', 0, 'unsupported-network', 0),
@@ -90,7 +90,7 @@ def outcomes(raw: bytes, filtered: int = 0) -> dict:
         name, separator, payload = line.partition(b' ')
         if (separator != b' ' or name not in {
                 b'GO_NETWORK_OWNER', b'GO_NETWORK_CASE', b'GO_NETWORK_READ_EDGE',
-                b'GO_NETWORK_COMPLETE'} or not payload):
+                b'GO_NETWORK_CANCEL_EDGE', b'GO_NETWORK_COMPLETE'} or not payload):
             raise ValueError('Go-network-runtime-malformed-observation')
         try:
             row = json.loads(payload.decode('utf-8'), object_pairs_hook=_unique, parse_constant=_constant)
@@ -99,13 +99,17 @@ def outcomes(raw: bytes, filtered: int = 0) -> dict:
         events.append((name, row))
         # Two records per case, two read edges, one completion. Reject before
         # retaining arbitrary numbers of otherwise syntactically valid records.
-        if len(events) > 2 * len(EXPECTED) + 3:
+        if len(events) > 2 * len(EXPECTED) + 4:
             raise ValueError('Go-network-runtime-exact-event-order-required')
 
     expected = []
     for label, mode, result, contacts in EXPECTED:
         if label in ('fragmented-read', 'cancel-pending-read'):
             expected.append((b'GO_NETWORK_READ_EDGE', _edge(label)))
+        if label == 'cancel-pending-read':
+            expected.append((b'GO_NETWORK_CANCEL_EDGE', {
+                'case': label, 'readDropStartsBefore': 1, 'readDropStartsAfterAccepted': 1,
+                'sameConnection': True, 'sameGenerationCurrent': True}))
         expected.append((b'GO_NETWORK_OWNER', {
             'case': label, 'stores': 0, 'instances': 0, 'streamOwners': 0,
             'ioOwners': 0, 'kernelRetirementQualified': False}))
@@ -120,6 +124,7 @@ def outcomes(raw: bytes, filtered: int = 0) -> dict:
         b'GO_NETWORK_CASE': 'Go-network-runtime-exact-ordinary-observations-required',
         b'GO_NETWORK_OWNER': 'Go-network-runtime-exact-user-owner-retirement-required',
         b'GO_NETWORK_READ_EDGE': 'Go-network-runtime-constructed-read-owner-required',
+        b'GO_NETWORK_CANCEL_EDGE': 'Go-network-runtime-original-cancel-owner-required',
         b'GO_NETWORK_COMPLETE': 'Go-network-runtime-completion-or-kernel-claim',
     }
     for (name, row), (_, wanted) in zip(events, expected):
@@ -128,6 +133,7 @@ def outcomes(raw: bytes, filtered: int = 0) -> dict:
     return {
         'cases': [row for name, row in events if name == b'GO_NETWORK_CASE'],
         'readEdges': [row for name, row in events if name == b'GO_NETWORK_READ_EDGE'],
+        'cancelEdge': next(row for name, row in events if name == b'GO_NETWORK_CANCEL_EDGE'),
         'userSpaceOwners': [row for name, row in events if name == b'GO_NETWORK_OWNER'],
         'completion': events[-1][1],
     }

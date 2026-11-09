@@ -106,7 +106,7 @@ the exact signed publication selected for the consumer:
     "configurationEpoch": "1"
   },
   "consumer": "examples/mail",
-  "publication": "publication-v1:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "publication": "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "principal": {"kind": "administrator", "subject": "workflow-operator"},
   "destination": {"host": "127.0.0.1", "port": 32123, "transport": "tcp"},
   "bindingId": "stream-installed",
@@ -114,8 +114,12 @@ the exact signed publication selected for the consumer:
 }
 ```
 
-The digests above are placeholders. The descriptor is installation information,
-not authority. The existing policy RPC authenticates the supplied private
+The digests above are placeholders. A publication identifier must use the
+canonical `publication:sha256:` prefix followed by 64 lowercase hexadecimal
+digits; invalid identifiers are refused before creating a new owner or
+sending a new grant or revoke. An existing matching legacy owner can still
+reopen and recover its original pending operation. The descriptor is
+installation information, not authority. The existing policy RPC authenticates the supplied private
 client configuration and requires administrator authority in the selected
 tenant. Global usage inspection additionally requires the node operator claim.
 Keep the specification, client configuration and state directories private;
@@ -164,7 +168,12 @@ omitted without changing the original totals. An observed zero is `"0"`.
 The local `stream-control` status also reports `quarantinedConnections`.
 
 Each mutation records its original intent and operation identity in protected
-state before dispatch. An uncertain response or transport exception retains
+state before dispatch. The exact encoded policy travels as the existing private
+stdin payload immediately after the client-configuration pin; the retained
+selected-policy file is a private draft, not evidence of the applied bytes,
+and is not reopened for dispatch. A
+staging failure sends no child request and retains the original journal for
+review. An uncertain response or transport exception retains
 that intent and prevents subsequent mutations. `recover` reads the original
 public operation receipt and current policy, validates the exact original
 document, and settles local state. It never resubmits an apply. An unknown or
