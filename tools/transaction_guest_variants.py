@@ -146,12 +146,15 @@ def forbidden_child(source: str) -> str:
         '            if (denied) return Result.err(Bindings.ExamplesTransactionalAggregateApiBusinessError.Rejected);\n')
 
 
-def create(directory: Path, language: str, variant: str, name: str | None = None) -> Path:
+def create(directory: Path, language: str, variant: str, name: str | None = None, *,
+           rust_event_profile: str | None = None) -> Path:
     child = variant == "forbidden-child"
     if language not in LANGUAGES or (variant not in VARIANTS and not (child and language == "java")):
         raise ValueError("unknown controlled transaction guest variant")
     if variant == "result-boundary" and language != "rust":
         raise ValueError("result-boundary qualification guest requires Rust")
+    if rust_event_profile is not None and (language != "rust" or variant != "forbidden-http"):
+        raise ValueError("Rust event profile requires the explicit forbidden HTTP variant")
     if language == "rust":
         from tools.rust_capsule_project import create as author
     elif language == "c":
@@ -164,7 +167,9 @@ def create(directory: Path, language: str, variant: str, name: str | None = None
         from tools.java_capsule_project import create as author
     else:
         from tools.dotnet_guest.project import create as author
-    project = author(directory, TEMPLATE, name or "transaction-" + language + "-" + variant)
+    selected_name = name or "transaction-" + language + "-" + variant
+    project = (author(directory, TEMPLATE, selected_name, event_profile=rust_event_profile)
+               if rust_event_profile is not None else author(directory, TEMPLATE, selected_name))
     if variant == "result-boundary":
         source = ROOT / "examples/rust-capsules" / TEMPLATE
         # An ordinary editable authored project, with unchanged captured SDK,

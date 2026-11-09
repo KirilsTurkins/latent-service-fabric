@@ -46,6 +46,14 @@ class TransactionGuestAuthoringTests(unittest.TestCase):
                 create(root / "bad", "greeting", event_profile=profile)
             with self.assertRaisesRegex(ValueError, "event profile"):
                 create(root / "bad-profile", TEMPLATE, event_profile="js-window-v1:invalid")
+            from tools.transaction_guest_variants import create as variant
+            denial = variant(root / "denial", "rust", "forbidden-http", "transaction-rust-aggregate",
+                             rust_event_profile=profile)
+            denial_files = snapshot(denial)
+            self.assertEqual(denial_files[EVENT_REQUIREMENTS], files[EVENT_REQUIREMENTS])
+            self.assertIn(b"latent_guest::http::send(", denial_files["src/lib.rs"])
+            with self.assertRaisesRegex(ValueError, "explicit forbidden HTTP variant"):
+                variant(root / "other", "java", "forbidden-http", rust_event_profile=profile)
 
     def test_java_authored_wit_captures_runtime_clocks_before_compiler_staging(self):
         from tools.compile_transaction_guests import authored_project, JAVA_SCHEMA_VARIANTS
