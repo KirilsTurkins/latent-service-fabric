@@ -10,6 +10,33 @@ from tools.transaction_guest_project import TEMPLATE, package_companion
 
 
 class TransactionGuestAuthoringTests(unittest.TestCase):
+    def test_forbidden_http_variants_capture_language_event_requirements(self):
+        from tools.transaction_guest_variants import create
+        from tools.transaction_guest_project import (EVENT_REQUIREMENTS, C_EVENT_PROFILE, GO_EVENT_PROFILE,
+            TYPESCRIPT_EVENT_PROFILE, DOTNET_EVENT_PROFILE, RUST_EVENT_PROFILE, package_effect_requirements)
+        markers = {'rust': RUST_EVENT_PROFILE, 'c': C_EVENT_PROFILE, 'go': GO_EVENT_PROFILE,
+                   'typescript': TYPESCRIPT_EVENT_PROFILE, 'dotnet': DOTNET_EVENT_PROFILE}
+        profile = 'js-window-v1:' + 'f' * 64
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for language, marker in markers.items():
+                with self.subTest(language=language):
+                    path = create(root / language, language, 'forbidden-http', event_profile=profile)
+                    files = snapshot(path)
+                    self.assertEqual(json.loads(files[marker])['idempotencyProfile'], profile)
+                    self.assertIn(b'latent:http/client@0.2.0', files['wit/world.wit'])
+                    if language == 'c':
+                        self.assertIn(b'latent_http_client_send(&frame->http_request, &frame->http_result);\n            break;',
+                                      files['src/main.c'])
+                    output = root / (language + '-package')
+                    output.mkdir()
+                    project = json.loads(files['capsule-project.json'])
+                    self.assertEqual(package_effect_requirements(output, project, files)[0], EVENT_REQUIREMENTS)
+            with self.assertRaisesRegex(ValueError, 'exclusive supported'):
+                create(root / 'invalid', 'java', 'forbidden-http', event_profile=profile)
+            with self.assertRaisesRegex(ValueError, 'exclusive supported'):
+                create(root / 'mixed', 'rust', 'forbidden-http', event_profile=profile, rust_event_profile=profile)
+
     def test_dotnet_event_profile_is_explicit_and_companion_linked(self):
         from tools.compile_transaction_guests import authored_project, compile_guests
         from tools.dotnet_capsule import main as dotnet_main
