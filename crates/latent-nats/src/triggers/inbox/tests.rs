@@ -269,3 +269,33 @@ fn ordinary_activation_success_never_acknowledges_a_transactional_input() {
         super::super::TriggerTerminal::RecoveryRequired
     );
 }
+
+#[test]
+fn simultaneous_scope_cannot_claim_different_stream_origins() {
+    let mut config = config();
+    let mut duplicate = config.bindings[0].clone();
+    duplicate.id = "second-binding".into();
+    duplicate.consumer = "second-consumer".into();
+    config.bindings.push(duplicate);
+    assert!(config.validate().is_ok(), "same origin can share a scope");
+
+    config.bindings[1].stream = "OTHER".into();
+    assert_eq!(config.validate(), Err(EventError::InvalidEvent));
+    config.bindings[1].stream = config.bindings[0].stream.clone();
+    config.bindings[1]
+        .transaction
+        .as_mut()
+        .unwrap()
+        .qualification
+        .stream_created = "2026-10-07T00:00:00Z".into();
+    assert_eq!(config.validate(), Err(EventError::InvalidEvent));
+    config.bindings[1]
+        .transaction
+        .as_mut()
+        .unwrap()
+        .processing_scope = "approved-replay".into();
+    assert!(
+        config.validate().is_ok(),
+        "explicit new scope can use another origin"
+    );
+}

@@ -163,6 +163,21 @@ impl TriggerConfig {
             }
             let profile = if let Some(transaction) = &binding.transaction {
                 transaction.validate(binding, self)?;
+                // One logical processing scope cannot concurrently claim different
+                // stream origins. Durable custody across restarts is a separate gate.
+                if self.bindings[..i].iter().any(|old| {
+                    old.tenant == binding.tenant
+                        && old.transaction.as_ref().is_some_and(|prior| {
+                            prior.namespace == transaction.namespace
+                                && prior.incarnation == transaction.incarnation
+                                && prior.processing_scope == transaction.processing_scope
+                                && (old.stream != binding.stream
+                                    || prior.qualification.stream_created
+                                        != transaction.qualification.stream_created)
+                        })
+                }) {
+                    return Err(EventError::InvalidEvent);
+                }
                 latent_core::BudgetProfile::Phase4
             } else {
                 latent_core::BudgetProfile::Phase3
