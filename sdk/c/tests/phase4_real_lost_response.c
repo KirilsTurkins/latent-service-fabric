@@ -39,6 +39,24 @@ static bool contains_bytes(latent_bytes haystack, const char *needle) {
     for (size_t i=0; i<=haystack.length-n; ++i) if (memcmp(haystack.data+i,needle,n)==0) return true;
     return false;
 }
+static bool payload_view_matches(latent_bytes payload, const char *hex) {
+    const char *prefix="\"view-version\":["; size_t n=strlen(prefix), count=0, pos=0, bytes=strlen(hex)/2;
+    if (!bytes || strlen(hex)%2 || payload.length<n) return false;
+    while (pos<=payload.length-n && memcmp(payload.data+pos,prefix,n)!=0) ++pos;
+    if (pos>payload.length-n) return false;
+    pos+=n;
+    while (count<bytes) {
+        if (pos>=payload.length || payload.data[pos]<'0' || payload.data[pos]>'9') return false;
+        unsigned value=0;
+        do { value=value*10u+(unsigned)(payload.data[pos++]-'0'); if (value>255) return false; }
+        while (pos<payload.length && payload.data[pos]>='0' && payload.data[pos]<='9');
+        int a=digit(hex[count*2]),b=digit(hex[count*2+1]);
+        if (a<0 || b<0 || value!=(unsigned)(a*16+b)) return false;
+        ++count;
+        if (pos>=payload.length || payload.data[pos++]!=(count==bytes ? ']' : ',')) return false;
+    }
+    return true;
+}
 static void queried(const latent_transaction_query_result *r, const latent_transaction_client_failure *f, void *ctx) {
     observed *o=ctx; assert(o->calls++ == 0 && r && !f);
     assert(!r->metadata.observed.has_command && !r->metadata.observed.effect && !r->metadata.observed.state);
@@ -48,6 +66,7 @@ static void queried(const latent_transaction_query_result *r, const latent_trans
     assert(equal_hex(v->view.version.data,v->view.version.length,required("LSF_401_QUERY_MINIMUM_HEX")));
     assert(!v->invocation.success.has_committed_state_version && v->invocation.success.effect_ids_count==0);
     assert(contains_bytes(v->invocation.success.payload,"\"count\":\"2\""));
+    assert(payload_view_matches(v->invocation.success.payload,required("LSF_401_QUERY_MINIMUM_HEX")));
 }
 static void wait(latent_transport *owner, observed *o) { for(unsigned i=0; o->calls==0 && i<1000; ++i) assert(latent_transport_poll(owner,10)); assert(o->calls==1); }
 static void close_owner(latent_transport *owner) { assert(latent_transport_shutdown(owner,1000)); latent_transport_usage u=latent_transport_get_usage(owner); assert(u.stopped && !u.sockets && !u.sessions && !u.in_flight && !u.queued && !u.retained_calls && !u.callbacks_pending && !u.http2_bytes); assert(latent_transport_destroy(owner)); }
