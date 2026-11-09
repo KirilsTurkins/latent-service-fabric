@@ -170,24 +170,31 @@ pub(super) fn complete_write(
     // Keep the completed provider upload out of the Store callback until the
     // checkpoint succeeds. Its destructor may synchronously access that Store.
     let mut result = Some(result);
-    access.with(|mut access| {
+    let mut rejected = None;
+    let completion = access.with(|mut access| {
         let mut store = access.as_context_mut();
         checkpoint(&mut store)?;
         let result = result
             .take()
             .expect("one write completion")
             .and_then(|(upload, result)| {
-                store.data_mut().capabilities.streams.put(
-                    rep,
-                    Kind::Upload,
-                    Value::Upload(upload),
-                )?;
-                result
+                let table = &mut store.data_mut().capabilities.streams;
+                match table.put_upload_recoverable(rep, upload) {
+                    Ok(()) => result,
+                    Err((error, upload)) => {
+                        rejected = Some(upload);
+                        Err(error)
+                    }
+                }
             });
         synchronize(&mut store)?;
         store.data_mut().record_host_call(started);
         Ok((result.map_err(convert_error),))
-    })
+    });
+    // A stale/closed row can reject publication after the provider completed.
+    // Its original upload must not be destroyed while this Store is borrowed.
+    drop(rejected);
+    completion
 }
 
 pub(super) fn finish(
