@@ -16,6 +16,7 @@ CURRENT_HTTP_PROFILE = "java-current-http-profile.json"
 EVENT_REQUIREMENTS = "deferred-event-requirements.json"
 CURRENT_EVENT_PROFILE = "java-current-event-profile.json"
 RUST_EVENT_PROFILE = "rust-current-event-profile.json"
+C_EVENT_PROFILE = "c-current-event-profile.json"
 
 
 def put_once_requirements(project: dict, companion: bytes) -> dict:
@@ -167,19 +168,19 @@ def package_effect_requirements(output: Path, project: dict, files: dict[str, by
     """Carry exact application requirements beside the unchanged signed binding."""
     from tools.dev_workflow.common import decode, encode, require
     raw_event = files.get(EVENT_REQUIREMENTS)
-    marker_event = files.get(CURRENT_EVENT_PROFILE)
-    rust_marker = files.get(RUST_EVENT_PROFILE)
-    if raw_event is not None or marker_event is not None or rust_marker is not None:
-        require(raw_event is not None and (marker_event is None) != (rust_marker is None) and HTTP_REQUIREMENTS not in files
+    markers = {CURRENT_EVENT_PROFILE: "latent.java.current-event-source-input.v1",
+               RUST_EVENT_PROFILE: "latent.rust.current-event-source-input.v1",
+               C_EVENT_PROFILE: "latent.c.current-event-source-input.v1"}
+    selected_markers = [name for name in markers if name in files]
+    if raw_event is not None or selected_markers:
+        require(raw_event is not None and len(selected_markers) == 1 and HTTP_REQUIREMENTS not in files
                 and CURRENT_HTTP_PROFILE not in files and "transaction-binding.json" in files,
                 "closed-current-event-inputs-required")
-        selected = decode(marker_event if marker_event is not None else rust_marker, 8192)
+        selected = decode(files[selected_markers[0]], 8192)
         require(isinstance(selected, dict) and set(selected) == {"schemaVersion", "idempotencyProfile"}
-                and selected["schemaVersion"] == ("latent.java.current-event-source-input.v1" if marker_event is not None
-                                                  else "latent.rust.current-event-source-input.v1"),
+                and selected["schemaVersion"] == markers[selected_markers[0]],
                 "closed-current-event-profile-input")
-        select = current_java_event_requirements if marker_event is not None else current_rust_event_requirements
-        expected = select(project, files["transaction-binding.json"], selected["idempotencyProfile"])
+        expected = current_event_requirements(project, files["transaction-binding.json"], selected["idempotencyProfile"])
         require(encode(decode(raw_event, 8192)) == encode(expected), "deferred-event-requirements-drift")
         with (output / EVENT_REQUIREMENTS).open("xb") as stream:
             stream.write(raw_event)
