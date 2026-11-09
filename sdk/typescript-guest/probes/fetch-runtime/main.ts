@@ -379,12 +379,29 @@ export const api: typeof Contract = {
     if (mode === 26) return abortDefaultReason();
     if (mode === 27) return ordinaryAbortFanout();
     if (mode === 28) {
-      const graph = refusedAbortFanout();
-      // Use the ordinary allocation/GC checkpoint, not a fixture-only pump.
-      await Promise.resolve();
-      graph.source.abort(graph.reason);
-      graph.verify();
-      return 'abort-fanout:refusal:unchanged:recovered';
+      let stage = 'refusal';
+      try {
+        const graph = refusedAbortFanout();
+        // Use the ordinary allocation/GC checkpoint, not a fixture-only pump.
+        stage = 'checkpoint';
+        await Promise.resolve();
+        // A refused fan-out must not resume itself when admission recovers.
+        stage = 'after-checkpoint';
+        if (!graph.unchanged()) throw new Error('abort-fanout-checkpoint-mutated-state');
+        stage = 'retry';
+        graph.source.abort(graph.reason);
+        stage = 'verification';
+        graph.verify();
+        return 'abort-fanout:refusal:unchanged:recovered';
+      } catch (error) {
+        // Keep a finite diagnostic instead of losing a catchable failure to
+        // the component's generic rejected-export trap. This is never the
+        // success value; the signed runner rejects every diagnostic result.
+        const cause = error instanceof Error &&
+          error.message === 'activation-runtime-promise-native-register-denied:2'
+          ? 'native-admission' : 'contract';
+        return `diagnostic:abort-fanout:${stage}:${cause}`;
+      }
     }
     if (mode === 29) return reentrantDefaultAbortFanout();
     if (mode !== 0) throw new TypeError('unsupported-fetch-runtime-mode');
