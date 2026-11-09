@@ -362,7 +362,30 @@ async fn checkpoint_with_matching_source_inventory_survives_restart() {
     .unwrap();
     drop(view);
     drop(engine);
-    let checkpoint = ExternalCheckpoint::decode(&std::fs::read(fixture.checkpoint()).unwrap())
+    // A source inserted without its external custody anchor must never be
+    // silently adopted by an older checkpoint on the ordinary startup path.
+    let legacy = std::fs::read(fixture.checkpoint()).unwrap();
+    let dispatch = fixture.persisted_dispatch();
+    let native = bootstrap.native.clone();
+    assert!(StateKernel::start(
+        bootstrap,
+        &fixture.settings,
+        fixture.authority.clone(),
+        Vec::new(),
+        &AdapterClock::default(),
+        tokio::runtime::Handle::current(),
+    )
+    .await
+    .is_err());
+    let retired = native
+        .drain_async(deadline, tokio::time::sleep_until(deadline.into()))
+        .unwrap()
+        .await;
+    assert!(!retired.clean && retired.snapshot.physically_retired());
+    assert_eq!(std::fs::read(fixture.checkpoint()).unwrap(), legacy);
+    assert_eq!(fixture.persisted_dispatch(), dispatch);
+    let bootstrap = fixture.bootstrap();
+    let checkpoint = ExternalCheckpoint::decode(&legacy)
         .unwrap()
         .advance_inbox_custody(custody)
         .unwrap();

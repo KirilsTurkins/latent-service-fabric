@@ -377,6 +377,9 @@ fn custody_checkpoint_open_compares_same_view_inventory_and_legacy_operations_st
                 Err(ProtectedStoreError::Store(StoreError::Conflict))
             );
             assert_eq!(fs::read(&path).unwrap(), encoded);
+            // A new dispatcher may legitimately advance its owner epoch before
+            // this protected floor is persisted; custody must stay unchanged.
+            seed_owner(&reopened, 4, 5000);
             let (checkpoint, advanced) = wait(
                 reopened
                     .advance_checkpoint_with_inbox_inventory(
@@ -393,6 +396,8 @@ fn custody_checkpoint_open_compares_same_view_inventory_and_legacy_operations_st
             .unwrap();
             let next = advanced.unwrap();
             assert_eq!(next.inbox_custody(), Some(watermark));
+            assert_eq!(next.dispatch_owner_epoch(), 4);
+            assert_eq!(next.clock_floor_millis(), 5000);
             encoded = next.encode();
             let (checkpoint, legacy) = wait(
                 reopened

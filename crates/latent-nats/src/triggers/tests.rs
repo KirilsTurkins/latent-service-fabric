@@ -2,6 +2,21 @@ use super::{consumer, wire, RootBudget, TriggerBinding, TriggerConfig};
 use crate::{EventError, NatsEndpoint};
 use serde_json::json;
 
+#[test]
+fn interrupted_transaction_requires_recovery_without_a_broker_disposition() {
+    assert_eq!(
+        super::execution::interrupted(true),
+        (
+            super::TriggerTerminal::RecoveryRequired,
+            consumer::Ack::Hold
+        ),
+    );
+    assert_eq!(
+        super::execution::interrupted(false),
+        (super::TriggerTerminal::Cancelled, consumer::Ack::Retry),
+    );
+}
+
 pub(super) fn config() -> TriggerConfig {
     TriggerConfig {
         format_version: 1,

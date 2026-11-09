@@ -38,7 +38,8 @@ pub(super) async fn execute(
         ()=stopped(stop)=>{
             let cleanup = activation.interrupt_for_cleanup(ActivationTransportInterruption::Disconnected);
             let _ = tokio::time::timeout(Duration::from_secs(3), cleanup).await;
-            return (TriggerTerminal::Cancelled, Ack::Retry, true, None);
+            let (terminal, ack) = interrupted(transaction.is_some());
+            return (terminal, ack, true, None);
         },
         receipt=&mut activation=>receipt,
     };
@@ -49,6 +50,15 @@ pub(super) async fn execute(
     } else {
         let (terminal, ack) = outcome(&receipt.outcome);
         (terminal, ack, false, None)
+    }
+}
+
+pub(super) fn interrupted(transactional: bool) -> (TriggerTerminal, Ack) {
+    if transactional {
+        // A detached cleanup does not prove whether the durable owner committed.
+        (TriggerTerminal::RecoveryRequired, Ack::Hold)
+    } else {
+        (TriggerTerminal::Cancelled, Ack::Retry)
     }
 }
 pub(super) fn root_request(
