@@ -166,5 +166,24 @@ async fn native_query_refuses_mutations_and_intents_without_durable_business_row
         assert_eq!(fixture.rows(family).await, 0);
     }
     assert!(fixture.native.snapshot().unwrap().physically_retired());
+
+    let (fresh_admission, fresh_envelope, fresh_budget) =
+        fixture.invocation(true, "fresh-after-query-refusal");
+    let fresh = fresh_admission
+        .admit(&fresh_envelope, &fresh_budget)
+        .await
+        .unwrap();
+    let TransactionAdmissionResult::Query { host: fresh_host } =
+        fresh_admission.take_result().unwrap().unwrap()
+    else {
+        panic!("fresh query host absent");
+    };
+    fresh.acquire(Mode::Query).unwrap();
+    assert!(fresh.read(b"counter".to_vec()).await.unwrap().is_none());
+    assert_eq!(fresh.view_identity().unwrap().version, original);
+    fresh_host.finish_guest_access();
+    fresh_host.retire().await.unwrap();
+    drop((fresh, fresh_host, fresh_admission));
+    assert!(fixture.native.snapshot().unwrap().physically_retired());
     fixture.shutdown().await;
 }
