@@ -6,6 +6,8 @@
 mod aot;
 mod backend;
 mod bindings;
+#[cfg(feature = "development-c-timed-original-trap")]
+mod c_timed_original_fault;
 mod cache;
 mod compiler;
 mod component_threading;

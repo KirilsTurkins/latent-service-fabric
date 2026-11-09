@@ -23,6 +23,40 @@ class ProfileAgreement(unittest.TestCase):
         features = tomllib.loads((root / "crates/latent-wasmtime/Cargo.toml").read_text())["features"]
         self.assertEqual(tuple(sorted(features)), inputs.FEATURES)
 
+    def test_previous_v10_feature_set_cannot_be_relabelled_as_current(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = Path(temporary).resolve()
+            debug = repo / "target/debug"
+            (debug / "deps").mkdir(parents=True)
+            package = repo / "crates/latent-wasmtime/Cargo.toml"
+            roles = [("latent-aot-compiler", "bin", False, "src/bin/latent-aot-compiler.rs")]
+            roles.extend((name, "test", True, f"tests/{name}.rs") for name in inputs.HARNESS_NAMES)
+            records = []
+            for name, kind, testing, source in roles:
+                binary = debug / (name if kind == "bin" else f"deps/{name}-exact")
+                binary.write_bytes(b"test")
+                binary.chmod(0o755)
+                records.append({"reason": "compiler-artifact", "manifest_path": str(package),
+                    "target": {"name": name, "kind": [kind], "src_path": str(package.parent / source)},
+                    "profile": {"test": testing, "opt_level": "0"},
+                    "features": list(inputs.FEATURES), "executable": str(binary)})
+            records.append({"reason": "build-finished", "success": True})
+            inventory = repo / "inventory.jsonl"
+            def write():
+                inventory.write_text("".join(json.dumps(record) + "\n" for record in records))
+            write()
+            found, _ = inputs.inventory_inputs(inventory, repo)
+            self.assertEqual(set(found), {"compiler", *inputs.HARNESS_NAMES})
+            for record in records[:-1]:
+                record["features"].remove("development-c-timed-original-trap")
+            write()
+            with self.assertRaisesRegex(inputs.InputError, "incompatible-cargo-feature-sets"):
+                inputs.inventory_inputs(inventory, repo)
+            manifest = repo / "manifest.json"
+            manifest.write_text(json.dumps({"schema": inputs.SCHEMA, "profile": "debug-all-features-v10"}))
+            with self.assertRaisesRegex(inputs.InputError, "wrong-input-schema-or-profile"):
+                inputs.validate(repo, manifest)
+
 
 class PreparedInputsTests(unittest.TestCase):
     def setUp(self):
@@ -126,7 +160,7 @@ class PreparedInputsTests(unittest.TestCase):
 
     def test_wrong_profile_and_missing_role_are_rejected(self):
         path = self.prepare()
-        for stale_profile in ("release", "debug-all-features-v8"):
+        for stale_profile in ("release", "debug-all-features-v8", "debug-all-features-v10"):
             with self.subTest(profile=stale_profile):
                 self.rewrite(path, lambda data: data.update(profile=stale_profile))
                 with self.assertRaisesRegex(inputs.InputError, "profile"):
@@ -208,6 +242,10 @@ class PreparedInputsTests(unittest.TestCase):
                          ["aot-test-timings", "development-clock-fixture", "development-test-host",
                           "java-guest-diagnostic"],
                          ["aot-test-timings", "development-clock-fixture", "development-local-service-fixture",
+                          "development-rust-http-combined", "development-test-host", "java-checkpoint-gc-trap-diagnostic",
+                          "java-guest-diagnostic", "rust-thread-trap-diagnostic"],
+                         ["aot-test-timings", "development-clock-fixture", "development-go-network-read-witness",
+                          "development-go-timer-overlap", "development-local-service-fixture",
                           "development-rust-http-combined", "development-test-host", "java-checkpoint-gc-trap-diagnostic",
                           "java-guest-diagnostic", "rust-thread-trap-diagnostic"]):
             with self.subTest(features=previous):

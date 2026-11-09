@@ -118,6 +118,8 @@ pub(crate) struct SharedRuntime {
     pub(crate) invocation_input_observer: InvocationInputObserver,
     #[cfg(feature = "development-test-host")]
     development_trap_observer: crate::development_trap_observer::DevelopmentTrapObserver,
+    #[cfg(feature = "development-c-timed-original-trap")]
+    c_timed_original_trap_enabled: bool,
     #[cfg(feature = "development-test-host")]
     development_join_cause: crate::development_trap_observer::DevelopmentJoinCauseObserver,
     preparation_context: Arc<PreparationContext>,
@@ -211,6 +213,9 @@ impl SharedRuntime {
                 crate::development_trap_observer::DevelopmentTrapObserver::for_engine_configuration(
                     config.development_numeric_trap_observation,
                 ),
+            #[cfg(feature = "development-c-timed-original-trap")]
+            c_timed_original_trap_enabled: config.development_c_timed_original_trap
+                && config.development_numeric_trap_observation,
             #[cfg(feature = "development-test-host")]
             development_join_cause: Default::default(),
             preparation_context,
@@ -631,6 +636,14 @@ impl WasmtimeBackend {
             &request.activation.target.contract.0,
             &request.activation.target.function.0,
         );
+        #[cfg(feature = "development-c-timed-original-trap")]
+        let c_timed_original_guard = crate::c_timed_original_fault::selected(
+            self.shared.c_timed_original_trap_enabled,
+            &request.activation,
+            &runtime.threading,
+        )
+        .then(|| self.shared.development_trap_observer.arm().ok())
+        .flatten();
         let mut store = AccountedStore::new(self.invocation_store(
             request,
             &stop,
@@ -741,6 +754,10 @@ impl WasmtimeBackend {
         #[cfg(feature = "development-test-host")]
         if let Err(error) = &call_result {
             self.shared.development_trap_observer.capture(error);
+        }
+        #[cfg(feature = "development-c-timed-original-trap")]
+        if let Some(guard) = &c_timed_original_guard {
+            crate::c_timed_original_fault::emit(guard);
         }
         // Capture the execution winner before cleanup signals unfinished child
         // owners. Cleanup cancellation cannot replace an existing trap, resource

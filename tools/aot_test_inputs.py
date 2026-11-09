@@ -25,10 +25,10 @@ if __package__ in (None, ""):
 from tools import ci_rust_artifacts as artifacts
 
 SCHEMA = "latent.aot-test-inputs.v1"
-PROFILE = "debug-all-features-v10"
+PROFILE = "debug-all-features-v11"
 # Exact --all-features closure, including explicit clock/local-service fixtures.
 # Production Wasm exceptions remain an explicit, bounded Java profile opt-in.
-FEATURES = ("aot-test-timings", "development-clock-fixture", "development-go-network-read-witness",
+FEATURES = ("aot-test-timings", "development-c-timed-original-trap", "development-clock-fixture", "development-go-network-read-witness",
             "development-go-timer-overlap",
             "development-local-service-fixture",
             "development-rust-http-combined", "development-test-host", "java-checkpoint-gc-trap-diagnostic", "java-guest-diagnostic",

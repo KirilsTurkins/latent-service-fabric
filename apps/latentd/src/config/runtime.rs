@@ -58,6 +58,16 @@ pub(super) fn wasmtime(
             .map(super::providers::ActivationRuntimeInstallation::runtime_limits),
         ..WasmtimeConfig::default()
     };
+    #[cfg(feature = "development-c-timed-original-trap")]
+    if matches!(
+        config.engine.threading_profile,
+        super::model::EngineThreadingProfile::CContext144SyncCooperativeV1
+    ) && std::env::var_os("LSF_C_TIMED_ORIGINAL_TRAP").as_deref()
+        == Some(std::ffi::OsStr::new("1"))
+    {
+        runtime.development_numeric_trap_observation = true;
+        runtime.development_c_timed_original_trap = true;
+    }
     #[cfg(feature = "development-test-node")]
     if let Some(fixtures) = &config.development_test {
         runtime.development_clock_readings = Some(fixtures.clock_readings(config)?);
