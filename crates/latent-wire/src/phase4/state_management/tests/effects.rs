@@ -1,6 +1,7 @@
 use super::*;
 mod cross_caller;
 mod fixture;
+mod history;
 mod inspection;
 mod provider;
 mod result_history;
