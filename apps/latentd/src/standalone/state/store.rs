@@ -226,6 +226,7 @@ impl StateBootstrap {
         self.check_live()?;
         let (mut owner, already_durable) = receiver.try_recv().map_err(|_| super::unavailable())?;
         if durable_retention && !already_durable {
+            use latent_core::native_capacity::NativeBufferClass;
             use latent_state::store_io::StoreIoKind;
             // A dropped startup waiter cannot expose the store while the
             // accepted physical mode transition is still running.
@@ -235,9 +236,13 @@ impl StateBootstrap {
                 delivered: false,
             };
             let original = self.original();
+            let buffer = original
+                .reserve_buffer(NativeBufferClass::Work, 4096)
+                .map_err(|_| super::unavailable())?;
             let current = Arc::clone(&original);
             let job = store
                 .with_store_retaining(StoreIoKind::RecoveryWrite, 4096, original, move |engine| {
+                    let _buffer = buffer;
                     validation::live(&current)?;
                     if let Some(observe) = before_promotion {
                         observe();
