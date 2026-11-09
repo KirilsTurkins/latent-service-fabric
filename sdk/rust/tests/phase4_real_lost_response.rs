@@ -101,6 +101,21 @@ async fn lost_committed_response_reports_unknown() {
         retry_attempt: None,
     };
     let client = client();
+    if env::var("LSF_401_DROP_AFTER_DISPATCH").as_deref() == Ok("1") {
+        assert!(
+            tokio::time::timeout(
+                Duration::from_secs(5),
+                client.invoke_command(request, CallOptions::default())
+            )
+            .await
+            .is_err(),
+            "withheld committed response must outlive the local waiter"
+        );
+        retire(&client).await;
+        println!("DROPPED_COMMIT_UNKNOWN");
+        println!("LOST_RESPONSE_UNKNOWN");
+        return;
+    }
     let failure = client
         .invoke_command(request, CallOptions::default())
         .await

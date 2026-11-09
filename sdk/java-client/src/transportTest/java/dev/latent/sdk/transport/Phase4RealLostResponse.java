@@ -29,7 +29,8 @@ public final class Phase4RealLostResponse {
         String tenant = required("LSF_401_TENANT"), key = "java-sdk-lost-response";
         var namespace = new Transactions.NamespaceSelector(tenant, required("LSF_401_NAMESPACE"), required("LSF_401_INCARNATION"));
         var selector = new Transactions.CommandSelector(Optional.of(namespace), "update", Optional.empty(), key, Optional.empty());
-        var options = new Management.CallOptions(Optional.of(5000L));
+        boolean cancellation = "1".equals(System.getenv("LSF_401_CANCEL_AFTER_DISPATCH"));
+        var options = new Management.CallOptions(Optional.of(cancellation ? 15000L : 5000L));
         var config = ClientConfig.loopback("http://" + required("LSF_401_ENDPOINT"), tenant, required("LSF_401_TOKEN"));
         var client = new RpcClient(config);
         try {
@@ -51,11 +52,14 @@ public final class Phase4RealLostResponse {
                 var expected = new Transactions.ExpectedVersion(ByteBuffer.wrap("aggregate/count".getBytes(StandardCharsets.UTF_8)), Optional.empty(), Optional.of(ByteBuffer.wrap(version)));
                 var request = new Transactions.InvokeCommandRequest(Optional.of(Transactions.currentProfile()), Optional.of(invocation), Optional.of(selector), "lsf-wit-values-v1", List.of(expected), Optional.empty());
                 boolean failed = false;
-                try { client.invokeCommand(request, options).get(20, TimeUnit.SECONDS); }
+                var pending = client.invokeCommand(request, options);
+                if (cancellation) { Thread.sleep(5000); check(pending.cancel(false), "local waiter cancellation"); }
+                try { pending.get(20, TimeUnit.SECONDS); }
                 catch (Exception error) {
                     var failure=TransactionClient.clientFailure(error).orElseThrow();
                     check(failure.transport().dispatched() && failure.transport().outcome().equals(Management.OutcomeKnowledge.UNKNOWN), "dispatched unknown");
                     check(failure.identity().command().orElseThrow().clientKey().equals(key) && failure.observed().isEmpty(), "original identity without fabricated outcome");
+                    if (cancellation) { check(failure.transport().category().equals(Management.FailureCategory.LOCAL_CANCELLED), "caller cancellation"); System.out.println("CANCELLED_COMMIT_UNKNOWN"); }
                     failed = true;
                 }
                 check(failed, "response must be withheld");

@@ -11,8 +11,9 @@ static string Hex(ReadOnlyMemory<byte> value) => Convert.ToHexString(value.Span)
 string tenant = Required("LSF_401_TENANT"), key = "dotnet-sdk-lost-response";
 var ns = new Tx.NamespaceSelector(tenant, Required("LSF_401_NAMESPACE"), Required("LSF_401_INCARNATION"));
 var selector = new Tx.CommandSelector(ns, "update", null, key, null);
-var options = new Profile.CallOptions(5000);
-var config = new ClientOptions { Endpoint = "http://" + Required("LSF_401_ENDPOINT"), BearerToken = Required("LSF_401_TOKEN") };
+bool cancellation = Environment.GetEnvironmentVariable("LSF_401_CANCEL_AFTER_DISPATCH") == "1";
+var options = new Profile.CallOptions(cancellation ? 15000UL : 5000UL);
+var config = new ClientOptions { Endpoint = "http://" + Required("LSF_401_ENDPOINT"), BearerToken = Required("LSF_401_TOKEN"), DefaultTimeout = TimeSpan.FromSeconds(cancellation ? 15 : 5) };
 var client = await BoundedClient.ConnectAsync(config);
 try
 {
@@ -36,10 +37,22 @@ try
             "application/vnd.latent.wit-values.v1+json", null, 0, null, budget, new Dictionary<string,string>());
         var request = new Tx.InvokeCommandRequest(Tx.CurrentTransactionProfile.Create(), invocation, selector, "lsf-wit-values-v1", new[] { new Tx.ExpectedVersion(Encoding.UTF8.GetBytes("aggregate/count"), null, version) }, null);
         bool failed = false;
-        try { await client.InvokeCommandAsync(request, options); }
+        using var active = new CancellationTokenSource();
+        if (cancellation) active.CancelAfter(TimeSpan.FromSeconds(5));
+        try { await client.InvokeCommandAsync(request, options, active.Token); }
+        catch (Tx.TransactionCancellationException error)
+        {
+            var failure = error.Failure;
+            Check(cancellation && failure.Transport.Category == Profile.FailureCategory.LocalCancelled, "caller cancellation");
+            Check(failure.Transport.Dispatched && failure.Transport.Outcome == Profile.OutcomeKnowledge.Unknown, "dispatched unknown");
+            Check(failure.Identity.Command?.ClientKey == key && failure.Observed is null, "original identity without fabricated outcome");
+            Console.WriteLine("CANCELLED_COMMIT_UNKNOWN");
+            failed = true;
+        }
         catch (Tx.TransactionException error)
         {
             var failure = error.Failure;
+            Check(!cancellation, "unexpected transaction failure during cancellation");
             Check(failure.Transport.Dispatched && failure.Transport.Outcome == Profile.OutcomeKnowledge.Unknown, "dispatched unknown");
             Check(failure.Identity.Command?.ClientKey == key && failure.Observed is null, "original identity without fabricated outcome");
             failed = true;

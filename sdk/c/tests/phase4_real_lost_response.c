@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #define TEXT(s) ((latent_string){s, sizeof(s)-1u})
 #define BYTES(s) ((latent_bytes){(const uint8_t *)(s), sizeof(s)-1u})
 static const char *required(const char *name) { const char *v=getenv(name); if (!v || !*v) { fprintf(stderr,"missing fixture field %s\n",name); exit(2); } return v; }
@@ -16,6 +17,11 @@ static void invoked(const latent_transaction_invoke_command_result *r, const lat
     assert(f->transport.dispatched && f->transport.outcome==LATENT_PROFILE_OUTCOME_KNOWLEDGE_UNKNOWN);
     assert(f->identity.command && f->identity.command->client_key.length==strlen("c-sdk-lost-response") &&
         memcmp(f->identity.command->client_key.data,"c-sdk-lost-response",strlen("c-sdk-lost-response"))==0 && !f->observed.has_command);
+    const char *cancellation=getenv("LSF_401_CANCEL_AFTER_DISPATCH");
+    if (cancellation && strcmp(cancellation,"1")==0) {
+        assert(f->transport.category==LATENT_PROFILE_FAILURE_CATEGORY_LOCAL_CANCELLED);
+        puts("CANCELLED_COMMIT_UNKNOWN");
+    }
     puts("LOST_RESPONSE_UNKNOWN");
 }
 static bool matches(latent_string s,const char *v) { size_t n=strlen(v); return s.length==n && memcmp(s.data,v,n)==0; }
@@ -33,6 +39,9 @@ static void close_owner(latent_transport *owner) { assert(latent_transport_shutd
 int main(void) {
     const char *tenant=required("LSF_401_TENANT"), *token=required("LSF_401_TOKEN"); char url[300]; int written=snprintf(url,sizeof(url),"http://%s",required("LSF_401_ENDPOINT")); assert(written>0 && (size_t)written<sizeof(url));
     latent_transport_config config=latent_transport_defaults(); config.endpoint=str(url); config.tenant=str(tenant); config.bearer_token=(latent_bytes){(const uint8_t *)token,strlen(token)};
+    const char *cancellation=getenv("LSF_401_CANCEL_AFTER_DISPATCH");
+    bool cancel_after_dispatch=cancellation && strcmp(cancellation,"1")==0;
+    if (cancel_after_dispatch) config.timeout_millis=15000;
     latent_transport *owner=NULL; assert(latent_transport_create(&config,&owner,NULL)); const latent_transaction_client_vtable *api=latent_transport_transaction_vtable();
     latent_transaction_command_selector selector={.has_namespace=true,.namespace={str(tenant),str(required("LSF_401_NAMESPACE")),str(required("LSF_401_INCARNATION"))},.operation=TEXT("update"),.client_key=TEXT("c-sdk-lost-response")};
     observed out={0}; latent_profile_call *call;
@@ -45,7 +54,13 @@ int main(void) {
         latent_transaction_expected_version expected={.key=BYTES("aggregate/count"),.has_version=true,.version={version,len/2}};
         latent_transaction_invoke_command_request req={.has_profile=true,.profile=latent_transaction_current_profile(),.has_command=true,.command=selector,.input_format=TEXT("lsf-wit-values-v1"),.expected_versions=&expected,.expected_versions_count=1,
             .has_invocation=true,.invocation={.has_activation_id=true,.activation_id=TEXT("c-sdk-lost-response"),.has_target=true,.target={.tenant=str(tenant),.service=TEXT("examples/transaction-java-aggregate"),.contract=TEXT("examples:transactional-aggregate/api@1.0.0"),.function=TEXT("update"),.has_route=true,.route=TEXT("transaction-java-aggregate")},.payload=BYTES("[{\"delta\":1,\"reject\":false}]"),.media_type=TEXT("application/vnd.latent.wit-values.v1+json"),.has_budget=true,.budget={.cpu_fuel=1000000000,.memory_bytes=67108864,.state_read_bytes=4194304,.state_write_bytes=2097152,.effect_count=1,.has_wall_time_limit_millis=true,.wall_time_limit_millis=120000}}};
-        call=api->invoke_command(latent_transport_transaction(owner),&req,NULL,invoked,&out); assert(call); wait(owner,&out); api->release_call(call); close_owner(owner); return 0;
+        call=api->invoke_command(latent_transport_transaction(owner),&req,NULL,invoked,&out); assert(call);
+        if (cancel_after_dispatch) {
+            struct timespec begin, now; assert(clock_gettime(CLOCK_MONOTONIC,&begin)==0);
+            do { assert(latent_transport_poll(owner,10)); assert(out.calls==0); assert(clock_gettime(CLOCK_MONOTONIC,&now)==0); } while ((now.tv_sec-begin.tv_sec)*1000000000LL + now.tv_nsec-begin.tv_nsec < 5000000000LL);
+            api->cancel_local(call);
+        }
+        wait(owner,&out); api->release_call(call); close_owner(owner); return 0;
     }
     assert(call); wait(owner,&out); api->release_call(call); close_owner(owner); return 0;
 }
