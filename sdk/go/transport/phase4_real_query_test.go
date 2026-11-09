@@ -36,6 +36,13 @@ func TestPhase4FreshQueryAfterCommitAgainstRealNode(t *testing.T) {
 	if err != nil || len(minimum) == 0 {
 		t.Fatal("invalid minimum view")
 	}
+	expected := minimum
+	if raw := os.Getenv("LSF_401_QUERY_EXPECTED_HEX"); raw != "" {
+		expected, err = hex.DecodeString(raw)
+		if err != nil || len(expected) == 0 {
+			t.Fatal("invalid expected view")
+		}
+	}
 	key, route, wall := "go-sdk-fresh-query", "transaction-java-aggregate", uint64(120000)
 	current := tx.CurrentProfile()
 	ns := tx.NamespaceSelector{Tenant: tenant, Namespace: rejectionField(t, "LSF_401_NAMESPACE"), Incarnation: rejectionField(t, "LSF_401_INCARNATION")}
@@ -54,7 +61,7 @@ func TestPhase4FreshQueryAfterCommitAgainstRealNode(t *testing.T) {
 		if result.Metadata.Observed != nil || value.Invocation == nil || value.Invocation.Success == nil || value.View == nil || value.View.Namespace == nil || value.Source == nil {
 			t.Fatal("query outcome or view missing")
 		}
-		if value.View.Namespace.Tenant != tenant || value.View.Namespace.Namespace != ns.Namespace || value.View.Namespace.Incarnation != ns.Incarnation || !bytes.Equal(value.View.Version, minimum) {
+		if value.View.Namespace.Tenant != tenant || value.View.Namespace.Namespace != ns.Namespace || value.View.Namespace.Incarnation != ns.Incarnation || !bytes.Equal(value.View.Version, expected) {
 			t.Fatal("query scope or view changed")
 		}
 		if value.Invocation.Success.CommittedStateVersion != nil || len(value.Invocation.Success.EffectIds) != 0 {

@@ -25,7 +25,9 @@ public final class Phase4RealQuery {
     }
     public static void main(String[] args) throws Exception {
         String tenant = required("LSF_401_TENANT"); byte[] minimum = HexFormat.of().parseHex(required("LSF_401_QUERY_MINIMUM_HEX"));
-        check(minimum.length > 0, "minimum view");
+        String expectedHex = System.getenv("LSF_401_QUERY_EXPECTED_HEX");
+        byte[] expected = expectedHex == null || expectedHex.isEmpty() ? minimum : HexFormat.of().parseHex(expectedHex);
+        check(minimum.length > 0 && expected.length > 0, "minimum and expected views");
         var namespace = new Transactions.NamespaceSelector(tenant, required("LSF_401_NAMESPACE"), required("LSF_401_INCARNATION"));
         var options = new Management.CallOptions(Optional.of(15000L));
         var client = new RpcClient(ClientConfig.loopback("http://" + required("LSF_401_ENDPOINT"), tenant, required("LSF_401_TOKEN")));
@@ -37,13 +39,13 @@ public final class Phase4RealQuery {
                 var request = new Transactions.QueryRequest(Optional.of(Transactions.currentProfile()), Optional.of(invoke), Optional.of(namespace), Optional.empty(), Optional.of(ByteBuffer.wrap(minimum)));
                 var value = client.query(request, options).get(20, TimeUnit.SECONDS).value();
                 var view = value.view().orElseThrow(); var success = value.invocation().orElseThrow().success().orElseThrow();
-                check(view.namespace().orElseThrow().equals(namespace) && java.util.Arrays.equals(bytes(view.version()), minimum), "scope and view");
+                check(view.namespace().orElseThrow().equals(namespace) && java.util.Arrays.equals(bytes(view.version()), expected), "scope and view");
                 check(value.source().isPresent() && success.committedStateVersion().isEmpty() && success.effectIds().isEmpty(), "query-only outcome");
                 var frame = JsonParser.parseString(new String(bytes(success.payload()), StandardCharsets.UTF_8)).getAsJsonArray();
                 check(frame.size() == 1, "result frame"); var result = frame.get(0).getAsJsonObject().getAsJsonObject("ok");
                 check(result.get("count").getAsString().equals("2"), "committed value"); var token = result.getAsJsonArray("view-version");
-                check(token.size() == minimum.length, "result view size");
-                for (int j = 0; j < minimum.length; ++j) check(token.get(j).getAsInt() == Byte.toUnsignedInt(minimum[j]), "result view identity");
+                check(token.size() == expected.length, "result view size");
+                for (int j = 0; j < expected.length; ++j) check(token.get(j).getAsInt() == Byte.toUnsignedInt(expected[j]), "result view identity");
             }
             System.out.println("FRESH_QUERY_AFTER_COMMIT");
         } finally { check(client.shutdown(Duration.ofSeconds(5)).clean(), "client retirement"); }

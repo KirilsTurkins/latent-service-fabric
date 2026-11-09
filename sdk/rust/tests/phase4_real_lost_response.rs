@@ -176,6 +176,10 @@ async fn recover_original_commit_after_lost_response() {
 async fn fresh_query_after_commit() {
     let namespace = selector().namespace.expect("namespace");
     let minimum = unhex(&required("LSF_401_QUERY_MINIMUM_HEX"));
+    let expected = env::var("LSF_401_QUERY_EXPECTED_HEX")
+        .ok()
+        .filter(|value| !value.is_empty())
+        .map_or_else(|| minimum.clone(), |value| unhex(&value));
     let client = client();
     for index in 0..3 {
         let result = client
@@ -213,7 +217,7 @@ async fn fresh_query_after_commit() {
             .value;
         let view = result.view.expect("query view");
         assert_eq!(view.namespace, Some(namespace.clone()));
-        assert_eq!(view.version, minimum);
+        assert_eq!(view.version, expected);
         assert!(result.source.is_some());
         let success = result
             .invocation
@@ -228,7 +232,7 @@ async fn fresh_query_after_commit() {
         assert_eq!(aggregate["count"], "2");
         let view_bytes: Vec<u8> =
             serde_json::from_value(aggregate["view-version"].clone()).expect("view bytes");
-        assert_eq!(view_bytes, minimum);
+        assert_eq!(view_bytes, expected);
     }
     retire(&client).await;
     println!("FRESH_QUERY_AFTER_COMMIT");

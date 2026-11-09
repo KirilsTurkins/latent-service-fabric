@@ -73,10 +73,11 @@ static void queried(const latent_transaction_query_result *r, const latent_trans
     const latent_transaction_query_response *v=&r->value;
     assert(v->has_view && v->view.has_namespace && v->has_source && v->has_invocation && v->invocation.has_success);
     assert(matches(v->view.namespace.tenant,required("LSF_401_TENANT")) && matches(v->view.namespace.namespace,required("LSF_401_NAMESPACE")) && matches(v->view.namespace.incarnation,required("LSF_401_INCARNATION")));
-    assert(equal_hex(v->view.version.data,v->view.version.length,required("LSF_401_QUERY_MINIMUM_HEX")));
+    const char *expected=getenv("LSF_401_QUERY_EXPECTED_HEX"); if (!expected || !*expected) expected=required("LSF_401_QUERY_MINIMUM_HEX");
+    assert(equal_hex(v->view.version.data,v->view.version.length,expected));
     assert(!v->invocation.success.has_committed_state_version && v->invocation.success.effect_ids_count==0);
     assert(contains_bytes(v->invocation.success.payload,"\"count\":\"2\""));
-    assert(payload_view_matches(v->invocation.success.payload,required("LSF_401_QUERY_MINIMUM_HEX")));
+    assert(payload_view_matches(v->invocation.success.payload,expected));
 }
 static void wait(latent_transport *owner, observed *o) { for(unsigned i=0; o->calls==0 && i<1000; ++i) assert(latent_transport_poll(owner,10)); assert(o->calls==1); }
 static void close_owner(latent_transport *owner) { assert(latent_transport_shutdown(owner,1000)); latent_transport_usage u=latent_transport_get_usage(owner); assert(u.stopped && !u.sockets && !u.sessions && !u.in_flight && !u.queued && !u.retained_calls && !u.callbacks_pending && !u.http2_bytes); assert(latent_transport_destroy(owner)); }

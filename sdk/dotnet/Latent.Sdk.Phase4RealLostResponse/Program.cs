@@ -21,7 +21,9 @@ try
     if (Required("LSF_401_MODE") == "query")
     {
         byte[] minimum = Convert.FromHexString(Required("LSF_401_QUERY_MINIMUM_HEX"));
-        Check(minimum.Length > 0, "minimum view");
+        string? expectedHex = Environment.GetEnvironmentVariable("LSF_401_QUERY_EXPECTED_HEX");
+        byte[] expectedView = string.IsNullOrEmpty(expectedHex) ? minimum : Convert.FromHexString(expectedHex);
+        Check(minimum.Length > 0 && expectedView.Length > 0, "minimum and expected views");
         for (int i = 0; i < 3; ++i)
         {
             var target = new Profile.InvocationTarget(tenant, "examples/transaction-java-aggregate", "examples:transactional-aggregate/api@1.0.0", "query", "transaction-java-aggregate");
@@ -30,13 +32,13 @@ try
             var response = await client.QueryAsync(new Tx.QueryRequest(Tx.CurrentTransactionProfile.Create(), invoke, ns, null, minimum), options);
             var value = response.Value; var view = value.View ?? throw new InvalidOperationException("query view");
             var success = value.Invocation?.Success ?? throw new InvalidOperationException("query success");
-            Check(response.Metadata.Observed is null && view.Namespace == ns && view.Version.Span.SequenceEqual(minimum) && value.Source is not null, "query scope and view");
+            Check(response.Metadata.Observed is null && view.Namespace == ns && view.Version.Span.SequenceEqual(expectedView) && value.Source is not null, "query scope and view");
             Check(success.CommittedStateVersion is null && success.EffectIds.Count == 0, "query-only outcome");
             using var frame = JsonDocument.Parse(success.Payload);
             var aggregate = frame.RootElement[0].GetProperty("ok");
             Check(frame.RootElement.GetArrayLength() == 1 && aggregate.GetProperty("count").GetString() == "2", "committed value");
-            var token = aggregate.GetProperty("view-version"); Check(token.GetArrayLength() == minimum.Length, "result view size");
-            for (int j = 0; j < minimum.Length; ++j) Check(token[j].GetByte() == minimum[j], "result view identity");
+            var token = aggregate.GetProperty("view-version"); Check(token.GetArrayLength() == expectedView.Length, "result view size");
+            for (int j = 0; j < expectedView.Length; ++j) Check(token[j].GetByte() == expectedView[j], "result view identity");
         }
         Console.WriteLine("FRESH_QUERY_AFTER_COMMIT");
     }
