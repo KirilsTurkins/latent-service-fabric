@@ -221,6 +221,21 @@ class ScheduledLibraryOwnership(unittest.TestCase):
             ["github.ref_name == '" + owner.BRANCH + "' || github.ref_name == 'development'"])
 
 
+class SourceControlInventory(unittest.TestCase):
+    def test_exact_seven_controls_and_no_skips_are_required(self):
+        prefix = b'tools.tests.test_java_scheduled_library.ScheduledLibraryOwnership.'
+        lines = [name + b' (' + prefix + name + b') ... ok' for name in owner.SOURCE_CONTROL_CASES]
+        def raw(rows, count=7, ending=b'OK'):
+            return b'\n'.join([*rows, b'', b'Ran ' + str(count).encode() + b' tests in 0.123s', b'', ending, b''])
+        good = raw(lines)
+        self.assertEqual(owner.source_control_observation(good)['passed'], 7)
+        for bad in (raw(lines[:5], 5), raw(lines[:-1], 7), raw(lines + [lines[0]], 8),
+                    raw([*lines[:-1], lines[0]]), raw([*lines[:-1], lines[-1].replace(b'... ok', b'... skipped')]),
+                    raw(lines, ending=b'OK (skipped=1)')):
+            with self.subTest(output=bad), self.assertRaisesRegex(ValueError, 'seven-controls-no-skip'):
+                owner.source_control_observation(bad)
+
+
 class TaskShutdownNowOwnership(unittest.TestCase):
     def test_four_actual_calls_require_current_ids_strict_budgets_and_physical_idle(self):
         actual = [{**dict.fromkeys(owner.observed.ZERO_FIELDS, 0),

@@ -79,6 +79,29 @@ def observations(raw, filtered=51):
             'setupMicroseconds': int(setup[0]), 'calls': rows, 'stdout': identities.identity(raw)}
 
 
+SOURCE_CONTROL_CASES = (
+    b'test_all_ten_modes_twice_require_actual_unique_ids_and_fresh_idle_stores',
+    b'test_both_timer_modes_reject_each_others_results',
+    b'test_compiler_retention_accepts_observed_command_pairs_and_remains_bounded',
+    b'test_mutually_exclusive_fixture_selector_is_refused_before_output_or_capture',
+    b'test_real_preparation_uses_normal_compiler_and_new_controls_before_component',
+    b'test_short_old_or_skipped_programmes_cannot_be_relabelled_scheduled_pass',
+    b'test_sleep_source_control_follows_compilation_and_fails_closed',
+)
+
+
+def source_control_observation(raw):
+    """Require every selected test by name, not just a successful process."""
+    names = re.findall(
+        rb'^([A-Za-z_][A-Za-z0-9_]*) \(tools\.tests\.test_java_scheduled_library\.'
+        rb'ScheduledLibraryOwnership\.\1\) \.\.\. ok\r?$', raw, re.M)
+    need(names == list(SOURCE_CONTROL_CASES)
+        and re.findall(rb'^Ran (\d+) tests in [0-9.]+s\r?$', raw, re.M) == [b'7']
+        and re.findall(rb'^(OK)\r?$', raw, re.M) == [b'OK']
+        and raw.rstrip().endswith(b'OK'), 'seven-controls-no-skip')
+    return {'passed': 7, 'skipped': 0, 'stderr': identities.identity(raw)}
+
+
 def qualify(output, revision):
     branch = os.environ.get('GITHUB_REF_NAME')
     workflow = WORKFLOW if branch == BRANCH else DEVELOPMENT_WORKFLOW
@@ -135,10 +158,7 @@ def qualify(output, revision):
         commands.run('source-controls', sys.executable, '-B', '-m', 'unittest', '-v',
             'tools.tests.test_java_scheduled_library.ScheduledLibraryOwnership')
         raw = read_file(logs / f'logs/{control_index:02d}-source-controls.stderr.txt', 128 * 1024)
-        need(re.findall(rb'^Ran (\d+) tests in [0-9.]+s\r?$', raw, re.M) == [b'5']
-            and re.findall(rb'^(OK)\r?$', raw, re.M) == [b'OK']
-            and raw.rstrip().endswith(b'OK'), 'five-controls-no-skip')
-        receipt['sourceControls'] = {'passed': 5, 'skipped': 0, 'stderr': identities.identity(raw)}
+        receipt['sourceControls'] = source_control_observation(raw)
         receipt['stage'] = 'normal-pinned-tools'
         commands.command_seconds = 175
         archive = private / 'gradle.zip'
