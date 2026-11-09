@@ -1,4 +1,4 @@
-"""One unchanged published TimedSemaphore component and sixteen normal signed calls."""
+"""One scheduled component: sixteen library calls and two timer-refusal probes."""
 from __future__ import annotations
 
 import argparse
@@ -27,6 +27,7 @@ from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, fresh, read_file, write_json
 
 BRANCH = 'feat/java-scheduled-executor-20261026'
+TIMER_BRANCH = 'feat/java-timer-start-refusal-20261109'
 DEVELOPMENT_BRANCH = 'development'
 WORKFLOW = '.github/workflows/java-scheduled-library.yml'
 DEVELOPMENT_WORKFLOW = '.github/workflows/java-scheduled-development.yml'
@@ -59,15 +60,15 @@ def observations(raw, filtered=51):
     need(len(setup) == 1, 'normal-preparation')
     rows = [json.loads(line, object_pairs_hook=registry.unique_object)
             for line in re.findall(rb'^LSF_JAVA_RETAINED=(\{[^\r\n]*\})$', raw, re.M)]
-    need(len(rows) == 16, 'sixteen-calls')
+    need(len(rows) == 18, 'eighteen-calls')
     created = 0
     for index, row in enumerate(rows):
-        iteration, mode = divmod(index, 8)
+        iteration, mode = divmod(index, 9)
         expected_id = f'{fixture}-{iteration}-{mode}'
         need(type(row) is dict and set(row) == {*observed.ZERO_FIELDS, 'activationId', 'iteration', 'mode',
             'value', 'cpuFuel', 'reportedPeakMemoryBytes', 'storesBefore', 'storesCreated'}, 'row-fields')
         need(row['activationId'] == expected_id and row['iteration'] == iteration
-            and row['mode'] == mode and row['value'] == 42, 'actual-id-mode-value')
+            and row['mode'] == mode and row['value'] == (2_211_210 if mode == 8 else 42), 'actual-id-mode-value')
         need(all(type(value) is int and 0 <= value <= 2**64 - 1
             for key, value in row.items() if key != 'activationId'), 'numeric-fields')
         need(0 < row['cpuFuel'] <= 10_000_000_000
@@ -81,10 +82,10 @@ def observations(raw, filtered=51):
 
 def qualify(output, revision):
     branch = os.environ.get('GITHUB_REF_NAME')
-    workflow = WORKFLOW if branch == BRANCH else DEVELOPMENT_WORKFLOW
+    workflow = WORKFLOW if branch in {BRANCH, TIMER_BRANCH} else DEVELOPMENT_WORKFLOW
     need(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
         and os.environ.get('GITHUB_REPOSITORY') == identities.REPOSITORY
-        and branch in {BRANCH, DEVELOPMENT_BRANCH}
+        and branch in {BRANCH, TIMER_BRANCH, DEVELOPMENT_BRANCH}
         and os.environ.get('GITHUB_EVENT_NAME') == 'push'
         and os.environ.get('GITHUB_SHA') == revision
         and os.environ.get('GITHUB_WORKFLOW_SHA') == revision
@@ -113,8 +114,9 @@ def qualify(output, revision):
             'nativeBuildSeconds': 900, 'caseProcessSeconds': 1800, 'listProcessSeconds': 30,
             'sourceControlSeconds': 60},
         'libraries': java_fiber_library_inputs.LIBRARIES,
-        'scope': 'twelve unchanged Commons TimedSemaphore default-factory calls plus four '
-            'source-controlled default-CompletableFuture/rejection calls; no executor injection or full scheduler API claim'}
+        'scope': 'twelve unchanged Commons TimedSemaphore default-factory calls, four '
+            'source-controlled default-CompletableFuture/rejection calls, and two direct timer '
+            'admission-refusal/retry probes; no executor injection or full scheduler API claim'}
     private = None
     prepared = None
     old_path = os.environ.get('PATH', '')
@@ -212,7 +214,7 @@ def qualify(output, revision):
         listed = commands.run('list-exact-case', artifact.executable, CASE, '--exact', '--ignored', '--list')
         need(len(listed) <= artifacts.MAX_LIST_BYTES, 'list-bound')
         artifacts.validate_listing(listed, suite)
-        receipt['stage'] = 'sixteen-signed-scheduled-library-calls'
+        receipt['stage'] = 'eighteen-signed-scheduled-and-timer-calls'
         commands.command_seconds = 1795
         raw = commands.run('execute-exact-case', artifact.executable, CASE, '--exact', '--ignored',
             '--show-output', '--test-threads=1')

@@ -13,10 +13,10 @@ from tools import qualify_java_scheduled_library as owner
 
 def rows():
     return [{**dict.fromkeys(owner.observed.ZERO_FIELDS, 0),
-        'activationId': f'java-scheduled-libraries-{index // 8}-{index % 8}',
-        'iteration': index // 8, 'mode': index % 8, 'value': 42,
+        'activationId': f'java-scheduled-libraries-{index // 9}-{index % 9}',
+        'iteration': index // 9, 'mode': index % 9, 'value': 2_211_210 if index % 9 == 8 else 42,
         'cpuFuel': 123, 'reportedPeakMemoryBytes': 4096,
-        'storesBefore': index, 'storesCreated': index + 1} for index in range(16)]
+        'storesBefore': index, 'storesCreated': index + 1} for index in range(18)]
 
 
 def output(values):
@@ -56,7 +56,8 @@ class ScheduledLibraryOwnership(unittest.TestCase):
     def test_all_eight_modes_twice_require_actual_unique_ids_and_fresh_idle_stores(self):
         actual = rows()
         self.assertEqual(owner.observations(output(actual))['calls'], actual)
-        for field, value in (('activationId', actual[0]['activationId']), ('mode', 5),
+        for field, value in (('activationId', actual[0]['activationId']), ('mode', 5), ('value', 42),
+                ('value', 2_211_211),
                 ('storesBefore', 0), ('liveStores', 1), ('cpuFuel', True),
                 ('cpuFuel', 10_000_000_001), ('reportedPeakMemoryBytes', 64 * 1024**2 + 1)):
             with self.subTest(field=field, value=value):
@@ -66,6 +67,7 @@ class ScheduledLibraryOwnership(unittest.TestCase):
     def test_short_old_or_skipped_programmes_cannot_be_relabelled_scheduled_pass(self):
         original = output(rows())
         variants = [output(rows()[:-1]), output(rows() + [rows()[0]]),
+            output([row for row in rows() if row['mode'] != 8]),
             original.replace(b'0 ignored', b'1 ignored'),
             original.replace(b'java-scheduled-libraries-', b'java-worker-libraries-'),
             original.replace(b'teavm-activation-fibers-v1', b'teavm-activation-fibers-io-v1'),
@@ -105,6 +107,11 @@ class ScheduledLibraryOwnership(unittest.TestCase):
             self.assertEqual(captured.call_args.kwargs['_deadline'], 1000)
             self.assertEqual(calls[0][1]['_deadline'], 1000)
             self.assertEqual(calls[-1][1], {'activation_profile': True})
+            reference = tuple(map(str, calls[1][1]))
+            self.assertTrue(any(name.endswith('reference/dev/latent/generated/Bindings.java')
+                                or name.endswith('reference\\dev\\latent\\generated\\Bindings.java') for name in reference))
+            self.assertTrue(any(name.endswith('reference/dev/latent/guest/runtime/Activation.java')
+                                or name.endswith('reference\\dev\\latent\\guest\\runtime\\Activation.java') for name in reference))
             self.assertEqual((path / 'src/Capsule.java').read_bytes(),
                 (owner.ROOT / 'sdk/java-guest/fibers/conformance/scheduled-library/Capsule.java').read_bytes())
             self.assertEqual(json.loads((path / 'FIBERS-COMPILE.json').read_bytes())['status'], 'failed')
@@ -127,7 +134,7 @@ class ScheduledLibraryOwnership(unittest.TestCase):
         # Both routes reach their unchanged owned-output boundary only for the
         # exact push, workflow path and commit; reject mixed or stale identities.
         environment.pop('LSF_JAVA_WORKER_LIBRARIES_FIXTURE')
-        for branch, workflow in ((owner.BRANCH, owner.WORKFLOW),
+        for branch, workflow in ((owner.BRANCH, owner.WORKFLOW), (owner.TIMER_BRANCH, owner.WORKFLOW),
                                  (owner.DEVELOPMENT_BRANCH, owner.DEVELOPMENT_WORKFLOW)):
             selected = {**environment, 'GITHUB_REF_NAME': branch,
                 'GITHUB_WORKFLOW_REF': owner.identities.REPOSITORY + '/' + workflow + '@refs/heads/' + branch}
@@ -168,13 +175,13 @@ class ScheduledLibraryOwnership(unittest.TestCase):
         self.assertEqual(caller['permissions'], {'contents': 'read', 'actions': 'read'})
         self.assertEqual(caller['jobs'], {'scheduled-library': {'uses': '$/' + owner.WORKFLOW}})
         self.assertIn('workflow_call', called['on'])
-        self.assertEqual(called['on']['push']['branches'], [owner.BRANCH, owner.SHUTDOWN_BRANCH, owner.FUTURE_BRANCH])
+        self.assertEqual(called['on']['push']['branches'], [owner.BRANCH, owner.SHUTDOWN_BRANCH, owner.FUTURE_BRANCH, owner.TIMER_BRANCH])
         job = called['jobs']['scheduled-library']
         self.assertIn(owner.DEVELOPMENT_WORKFLOW + '@refs/heads/development', job['if'])
         self.assertEqual(job['timeout-minutes'],
-            "${{ (github.ref_name == '" + owner.BRANCH + "' || github.ref_name == 'development') && 45 || 25 }}")
+            "${{ (github.ref_name == '" + owner.BRANCH + "' || github.ref_name == '" + owner.TIMER_BRANCH + "' || github.ref_name == 'development') && 45 || 25 }}")
         self.assertEqual([step['if'] for step in job['steps'] if step.get('name', '').startswith('Capture and compile')],
-            ["github.ref_name == '" + owner.BRANCH + "' || github.ref_name == 'development'"])
+            ["github.ref_name == '" + owner.BRANCH + "' || github.ref_name == '" + owner.TIMER_BRANCH + "' || github.ref_name == 'development'"])
 
 
 class TaskShutdownNowOwnership(unittest.TestCase):
