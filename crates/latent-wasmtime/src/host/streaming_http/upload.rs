@@ -306,18 +306,29 @@ impl InlineConcurrentHost<HostState, (Resource<wit::Upload>,), (Result<(), wit::
         (target,): (Resource<wit::Upload>,),
     ) -> impl std::future::Future<Output = wasmtime::Result<(Result<(), wit::HttpError>,)>> + Send + 'a
     {
-        async move {
-            access.with(|mut access| {
-                let mut store = access.as_context_mut();
-                let result = store
-                    .data_mut()
-                    .capabilities
-                    .streams
-                    .remove(target.rep(), Kind::Upload);
-                checkpoint(&mut store)?;
-                synchronize(&mut store)?;
-                Ok((result.map_err(convert_error),))
-            })
-        }
+        async move { complete_abort_upload(access, target.rep()) }
     }
+}
+
+pub(super) fn complete_abort_upload(
+    access: &Accessor<HostState>,
+    rep: u32,
+) -> wasmtime::Result<(Result<(), wit::HttpError>,)> {
+    // Provider teardown may synchronously wake work that accesses this Store.
+    // Move the original value out before any checkpoint or synchronization.
+    let mut removed = None;
+    let completion = access.with(|mut access| {
+        let mut store = access.as_context_mut();
+        let result = store
+            .data_mut()
+            .capabilities
+            .streams
+            .remove_recoverable(rep, Kind::Upload)
+            .map(|value| removed = value);
+        checkpoint(&mut store)?;
+        synchronize(&mut store)?;
+        Ok((result.map_err(convert_error),))
+    });
+    drop(removed);
+    completion
 }
