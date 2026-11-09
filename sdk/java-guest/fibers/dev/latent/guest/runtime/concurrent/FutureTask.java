@@ -14,6 +14,8 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
     private Callable<V> callable;
     private V value;
     private Throwable failure;
+    // A failed task may have a null cause through the protected JDK method.
+    private boolean failed;
     private boolean completed;
     private boolean cancelled;
     private Thread runner;
@@ -158,10 +160,10 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
         done();
     }
     protected void setException(Throwable error) {
-        Objects.requireNonNull(error);
         synchronized (this) {
             if (completed) return;
             failure = error;
+            failed = true;
             completed = true;
             notifyAll();
             releaseIfPhysicalComplete();
@@ -196,21 +198,21 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
     }
     private V report() throws ExecutionException {
         if (cancelled) throw new CancellationException();
-        if (failure != null) throw new ExecutionException(failure);
+        if (failed) throw new ExecutionException(failure);
         return value;
     }
 
     @Override public synchronized V resultNow() {
-        if (!completed || cancelled || failure != null) throw new IllegalStateException();
+        if (!completed || cancelled || failed) throw new IllegalStateException();
         return value;
     }
     @Override public synchronized Throwable exceptionNow() {
-        if (!completed || cancelled || failure == null) throw new IllegalStateException();
+        if (!completed || cancelled || !failed) throw new IllegalStateException();
         return failure;
     }
     @Override public synchronized java.util.concurrent.Future.State state() {
         if (!completed) return java.util.concurrent.Future.State.RUNNING;
         if (cancelled) return java.util.concurrent.Future.State.CANCELLED;
-        return failure == null ? java.util.concurrent.Future.State.SUCCESS : java.util.concurrent.Future.State.FAILED;
+        return failed ? java.util.concurrent.Future.State.FAILED : java.util.concurrent.Future.State.SUCCESS;
     }
 }
