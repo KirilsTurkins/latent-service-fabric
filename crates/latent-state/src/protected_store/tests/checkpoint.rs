@@ -316,6 +316,27 @@ fn custody_checkpoint_open_compares_same_view_inventory_and_legacy_operations_st
         .unwrap();
         if matching {
             result.unwrap();
+            let (checkpoint, mismatch) = wait(
+                reopened
+                    .inspect_checkpoint_with_inbox_inventory(
+                        checkpoint,
+                        Arc::clone(&original),
+                        4096,
+                        observed,
+                        |_| {
+                            Ok(Some(InboxCustodyWatermark {
+                                generation: 1,
+                                digest: [9; 32],
+                            }))
+                        },
+                    )
+                    .unwrap(),
+            )
+            .unwrap();
+            assert_eq!(
+                mismatch,
+                Err(ProtectedStoreError::Store(StoreError::Conflict))
+            );
             let (checkpoint, inspection) = wait(
                 reopened
                     .inspect_checkpoint_with_inbox_inventory(

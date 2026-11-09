@@ -213,6 +213,71 @@ impl InboxScopeInventory {
     }
 }
 
+/// Describe the before and after inventories for exactly one known source row
+/// during an independently validated, complete ordered scan. This supplies no
+/// approval, exclusion fence, checkpoint write authority, or restore proof.
+pub struct InboxScopeAddition {
+    key: RowKey,
+    bytes: Vec<u8>,
+    before: InboxScopeInventory,
+    after: InboxScopeInventory,
+    seen: bool,
+    failed: bool,
+}
+
+impl InboxScopeAddition {
+    pub fn new(source: &InboxScope) -> Result<Self, StoreError> {
+        Ok(Self {
+            key: source.key()?,
+            bytes: source.encode()?,
+            before: InboxScopeInventory::default(),
+            after: InboxScopeInventory::default(),
+            seen: false,
+            failed: false,
+        })
+    }
+
+    pub fn observe(&mut self, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+        if self.failed {
+            return Err(StoreError::Corrupt);
+        }
+        let result = (|| {
+            self.after.observe(key, bytes)?;
+            if key == &self.key {
+                if self.seen || bytes != self.bytes {
+                    return Err(StoreError::Conflict);
+                }
+                self.seen = true;
+            } else {
+                self.before.observe(key, bytes)?;
+            }
+            Ok(())
+        })();
+        if result.is_err() {
+            self.failed = true;
+        }
+        result
+    }
+
+    pub fn finish(
+        self,
+        expected_before: Option<crate::store_identity::InboxCustodyWatermark>,
+    ) -> Result<crate::store_identity::InboxCustodyWatermark, StoreError> {
+        if self.failed {
+            return Err(StoreError::Corrupt);
+        }
+        if !self.seen || self.before.finish()? != expected_before {
+            return Err(StoreError::Conflict);
+        }
+        let after = self.after.finish()?.ok_or(StoreError::Corrupt)?;
+        let previous = expected_before.map_or(0, |value| value.generation);
+        if after.generation != previous.checked_add(1).ok_or(StoreError::Capacity)? {
+            return Err(StoreError::Conflict);
+        }
+        Ok(after)
+    }
+}
+
 pub fn census_contribution(
     view: &ReadView,
     key: &RowKey,

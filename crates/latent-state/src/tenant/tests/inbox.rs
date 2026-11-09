@@ -153,6 +153,14 @@ fn ordered_census_captures_all_source_rows_and_refuses_partial_reuse() {
         .inbox_custody
         .unwrap();
     assert_eq!(first_watermark.generation, 1);
+    let first_page = view
+        .scan_after(Family::Maintenance, b"inbox-source-v1\0", None, 8, 8192)
+        .unwrap();
+    let mut first_addition = crate::inbox_scope::InboxScopeAddition::new(&scope()).unwrap();
+    for (key, bytes) in &first_page.rows {
+        first_addition.observe(key, bytes).unwrap();
+    }
+    assert_eq!(first_addition.finish(None), Ok(first_watermark));
     let mut another = scope();
     another.processing_scope = "approved-replay".into();
     let second = PreparedInboxScope::prepare(&view, &another).unwrap();
@@ -185,6 +193,37 @@ fn ordered_census_captures_all_source_rows_and_refuses_partial_reuse() {
         .scan_after(Family::Maintenance, b"inbox-source-v1\0", None, 8, 8192)
         .unwrap();
     assert_eq!(page.rows.len(), 2);
+    let mut addition = crate::inbox_scope::InboxScopeAddition::new(&another).unwrap();
+    for (key, bytes) in &page.rows {
+        addition.observe(key, bytes).unwrap();
+    }
+    assert_eq!(addition.finish(Some(first_watermark)), Ok(watermark));
+    let mut wrong_before = crate::inbox_scope::InboxScopeAddition::new(&another).unwrap();
+    for (key, bytes) in &page.rows {
+        wrong_before.observe(key, bytes).unwrap();
+    }
+    assert_eq!(wrong_before.finish(None), Err(StoreError::Conflict));
+    let mut absent = another.clone();
+    absent.processing_scope = "unseen-scope".into();
+    let mut absent = crate::inbox_scope::InboxScopeAddition::new(&absent).unwrap();
+    for (key, bytes) in &page.rows {
+        absent.observe(key, bytes).unwrap();
+    }
+    assert_eq!(
+        absent.finish(Some(first_watermark)),
+        Err(StoreError::Conflict)
+    );
+    let mut changed = another.clone();
+    changed.provider = "different-provider".into();
+    let mut changed = crate::inbox_scope::InboxScopeAddition::new(&changed).unwrap();
+    assert!(page
+        .rows
+        .iter()
+        .any(|(key, bytes)| changed.observe(key, bytes).is_err()));
+    assert_eq!(
+        changed.finish(Some(first_watermark)),
+        Err(StoreError::Corrupt)
+    );
     let mut left = crate::inbox_scope::InboxScopeInventory::default();
     let mut right = crate::inbox_scope::InboxScopeInventory::default();
     left.observe(&page.rows[0].0, &page.rows[0].1).unwrap();
