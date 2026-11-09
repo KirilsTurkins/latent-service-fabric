@@ -38,8 +38,8 @@
     }
   },
   "requiredJobs": [
-    "native-controls",
-    "current-backend"
+    "current-backend",
+    "native-controls"
   ],
   "reviewReason": "Preserve the existing bounded native owner and require a separate same-run authenticated backend handoff.",
   "schemaVersion": "latent.ci.contracts.v1",

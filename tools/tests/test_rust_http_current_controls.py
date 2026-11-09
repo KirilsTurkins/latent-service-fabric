@@ -162,7 +162,7 @@ class HistoricalInventory(unittest.TestCase):
         workflow_contract = json.loads((contract / 'workflow.json').read_bytes())
         job_contract = json.loads((contract / 'jobs/native-controls.json').read_bytes())
         self.assertEqual(workflow_contract['policy'], {key: value for key, value in structural.items() if key != 'jobs'})
-        self.assertEqual(workflow_contract['requiredJobs'], ['native-controls', 'current-backend'])
+        self.assertEqual(workflow_contract['requiredJobs'], ['current-backend', 'native-controls'])
         self.assertEqual(job_contract['definition'], structural['jobs']['native-controls'])
         backend_contract = json.loads((contract / 'jobs/current-backend.json').read_bytes())
         self.assertEqual(backend_contract['definition'], structural['jobs']['current-backend'])
