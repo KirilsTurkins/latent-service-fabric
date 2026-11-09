@@ -53,6 +53,62 @@ fn reference(
         payload: pin.identity(provider, epoch).unwrap(),
     }
 }
+
+#[test]
+fn durable_release_refuses_an_expired_zero_owner_view() {
+    let state_root = temporary_root();
+    let blob_root = temporary_root();
+    let file = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create_new(true)
+        .open(state_root.path().join("payload-state.redb"))
+        .unwrap();
+    let state = EmbeddedStore::open_file(
+        file,
+        StoreLimits {
+            cache_bytes: 1024 * 1024,
+            maximum_view_age: std::time::Duration::from_secs(2),
+            ..StoreLimits::default()
+        },
+    )
+    .unwrap();
+    let view = state.snapshot().unwrap();
+    let batch = StoreIdentity::new("payload-state-a".into())
+        .unwrap()
+        .prepare_initialization(&view)
+        .unwrap()
+        .unwrap();
+    drop(view);
+    state.apply(batch).unwrap();
+    let owner =
+        LocalBlobStore::open_durable(blob_root.path(), "private", limits(), &state).unwrap();
+    let blob = put(&owner, b"retained");
+    let pin = owner
+        .capture_durable_reference(&scope(), &blob, &|| Ok(()))
+        .unwrap();
+    let result = reference(&pin, PayloadOwnerKind::Result, 1, "local-a", 1);
+    update(&state, &[(None, Some(result.clone()))]);
+    drop(pin);
+    update(&state, &[(Some(result), None)]);
+    let calls = std::cell::Cell::new(0);
+    let delayed = || {
+        calls.set(calls.get() + 1);
+        if calls.get() == 2 {
+            std::thread::sleep(std::time::Duration::from_millis(2100));
+        }
+        Ok(())
+    };
+    assert_eq!(
+        owner.release_durable_reference(&scope(), &blob, &state, &delayed),
+        Err(LocalBlobError::Unavailable)
+    );
+    assert_eq!(calls.get(), 2);
+    assert_eq!(owner.reclaim(4, &|| Ok(())).unwrap().objects, 0);
+    assert!(owner
+        .release_durable_reference(&scope(), &blob, &state, &|| Ok(()))
+        .unwrap());
+}
 fn update(store: &EmbeddedStore, changes: &[(Option<PayloadReference>, Option<PayloadReference>)]) {
     let view = store.snapshot().unwrap();
     let plan = PreparedPayloadReferences::prepare(&view, changes).unwrap();

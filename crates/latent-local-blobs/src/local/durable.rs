@@ -525,7 +525,14 @@ impl LocalBlobStore {
         if owners != 0 || !required.references.is_empty() {
             return Err(LocalBlobError::Busy);
         }
-        self.release_reference_checked(scope, reference, checkpoint)
+        // The zero-owner observation must still be live at the release fence.
+        // In particular, a delayed caller cannot use an expired read view to
+        // retire the physical reference after its bounded observation ended.
+        self.release_reference_checked(scope, reference, &|| {
+            checkpoint()?;
+            let _ = view.is_empty().map_err(storage)?;
+            self.inner.check()
+        })
     }
 }
 fn decode_digest(value: &str) -> Result<[u8; 32]> {
