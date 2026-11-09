@@ -27,6 +27,10 @@ struct ActivationPromiseHooks {
   void (*nativeJobAllocationFailed)(void* record);
   void (*nativeJobCreated)(JSContext*, JSObject*, void* record);
   void* (*nativeJobRecord)(JSContext*, JSObject*);
+  // Intrinsic combinator element functions capture a shared result graph and
+  // can escape through a custom thenable without creating a Promise reaction.
+  bool (*beforeCapturedAllocate)(JSContext*, void** record);
+  void (*capturedCreated)(JSContext*, JSObject*, void* record);
 };
 
 // The embedding installs this once before content evaluation. Its lifetime
