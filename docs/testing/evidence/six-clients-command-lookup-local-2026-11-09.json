@@ -1,4 +1,4 @@
-﻿{
+{
     "description":  "Experimental six external clients performing original-command lookups against combined unmerged node source and disposable signer",
     "observation":  {
                         "after":  {

@@ -177,6 +177,12 @@ public final class Capsule {
 
     private static Long basic() {
         Timer first = timer("timer-first"), second = timer("timer-second");
+        // These invalid calls use existing timers and cannot admit queued work.
+        illegal(() -> first.schedule((TimerTask)null, new Date(-1)), IllegalArgumentException.class);
+        illegal(() -> first.schedule((TimerTask)null, new Date(-1), 1), IllegalArgumentException.class);
+        illegal(() -> first.scheduleAtFixedRate((TimerTask)null, new Date(-1), 1), IllegalArgumentException.class);
+        illegal(() -> first.schedule(task(self -> { }), (Date)null, 0), IllegalArgumentException.class);
+        illegal(() -> first.scheduleAtFixedRate(task(self -> { }), (Date)null, 0), IllegalArgumentException.class);
         int[] values = {0, 0, 0};
         local.set("root");
         TimerTask once = task(self -> {
@@ -208,6 +214,8 @@ public final class Capsule {
         illegal(() -> first.scheduleAtFixedRate(task(self -> { }), 0, -1), IllegalArgumentException.class);
         illegal(() -> first.schedule(null, 0), NullPointerException.class);
         first.cancel(); first.cancel(); second.cancel();
+        illegal(() -> first.schedule((TimerTask)null, 0), IllegalStateException.class);
+        illegal(() -> first.scheduleAtFixedRate((TimerTask)null, new Date(0), 1), IllegalStateException.class);
         illegal(() -> first.schedule(task(self -> { }), 0), IllegalStateException.class);
         return 42L;
     }

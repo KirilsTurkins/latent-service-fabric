@@ -1,4 +1,4 @@
-﻿{
+{
     "description":  "Experimental TypeScript durable rejection and original-result recovery using an instrumented node",
     "observation":  {
                         "after":  {

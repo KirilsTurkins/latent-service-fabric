@@ -1,5 +1,6 @@
 public final class Main {
     public static void main(String[] args) throws Exception {
+        TimerValidationOrder.check();
         try {
             for (long mode = 0; mode < 4; mode++) {
                 if (mode == 3) {

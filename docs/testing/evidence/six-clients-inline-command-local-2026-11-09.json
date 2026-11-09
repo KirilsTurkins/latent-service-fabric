@@ -1,4 +1,4 @@
-﻿{
+{
     "description":  "Experimental fixed .NET external client direct command and all six client mutations against combined unmerged node source",
     "observation":  {
                         "after":  {
