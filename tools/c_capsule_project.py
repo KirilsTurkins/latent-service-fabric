@@ -39,7 +39,11 @@ def authoring_inputs(root: Path) -> dict[str, bytes]:
     return dict(sorted(files.items()))
 
 
-def create(directory: Path, template: str, name: str | None = None, *, threading_profile: str | None = None) -> Path:
+def create(directory: Path, template: str, name: str | None = None, *, threading_profile: str | None = None,
+           event_profile: str | None = None) -> Path:
+    if event_profile is not None and (template != "transactional-aggregate" or not isinstance(event_profile, str)
+            or re.fullmatch(r"js-window-v1:[0-9a-f]{64}", event_profile) is None):
+        raise ValueError("explicit C transaction event profile required")
     if template not in AUTHORING_TEMPLATES:
         raise ValueError("unknown C capsule template")
     name = name or "my-" + template
@@ -76,6 +80,12 @@ def create(directory: Path, template: str, name: str | None = None, *, threading
         project["limits"].update(memoryBytes=67_108_864, wallTimeLimitMillis=120_000)
         from tools.transaction_guest_project import augment
         augment(files, project)
+        if event_profile is not None:
+            from tools.transaction_guest_project import C_EVENT_PROFILE, EVENT_REQUIREMENTS, current_event_requirements
+            marker = {"schemaVersion": "latent.c.current-event-source-input.v1", "idempotencyProfile": event_profile}
+            files[C_EVENT_PROFILE] = json.dumps(marker, indent=2).encode() + b"\n"
+            requirements = current_event_requirements(project, files["transaction-binding.json"], event_profile)
+            files[EVENT_REQUIREMENTS] = json.dumps(requirements, indent=2).encode() + b"\n"
     files["sdk-lock.json"] = json.dumps(lock, indent=2).encode() + b"\n"
     files["README.md"] = (f"# {name}\n\nEdit `src/main.c` and `wit/world.wit`. Keep `vendor/lsf` unchanged.\n"
         "Build with `tools/c_capsule.py` from the SDK checkout. The complete guide is\n"

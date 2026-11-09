@@ -1,0 +1,25 @@
+{
+  "description": "C transactional aggregate with actual local JetStream provider",
+  "qualification": "normal local combined-source Linux node and ephemeral demo trust",
+  "buildType": "https://latent.dev/build/c-guest/v1",
+  "sourceSnapshotDigest": "sha256:eb093294ce891d1871ea5c9e74c9e991738da599ae2e360c612c5517a29afacd",
+  "componentDigest": "sha256:65d6ca5e75c960402aa8b717718b1da36f5e42080d894639ba56a0f3ea7d6af9",
+  "companionDigest": "sha256:5db365b24e21c2952657fbcddd6eee46edc9a5035fb548f18e786dde36efa1de",
+  "buildObservationSha256": "2939e541b7567c09017afe03d3fc32910bd3e1e0395ad71021b883bb973a6f4a",
+  "signedReleaseSetSha256": "0f2fbf2417544ec33bb0684131f428ccc8898271049263ee435b24dfae86287f",
+  "publication": "publication:sha256:41e7045fca23c2aa1b81549d252848386a6168180157df8b9cd7271dbff7da2b",
+  "observedProviderProfile": "js-window-v1:c006df20839ef036dcb536a588a3ed31102fedca2d44a86f23c280a8436ec3f7",
+  "normalNodeSha256": "48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "fixtureSha256": "3bd19dcab9af5620e4ee580225e1ef779bf99d25bd7df8f89360f63aa3f78dfa",
+  "observations": [
+    "The C authoring capture pinned the actual disposable JetStream profile and companion-linked requirements. The maintained C compiler packaged the component, the explicit demo signer signed it, and the normal node admitted it.",
+    "An update committed one effect and received provider acknowledgement. A declared rejection left count and key version unchanged, and a stale edit returned a fenced abort.",
+    "The fixture deliberately dropped a second committed response body, recovered its original result through authorized lookup, and replayed both that result and the earlier rejection after state changed.",
+    "A fresh query returned count two and the actual broker held two messages for the two successful updates. The node was reaped cleanly with state and effect owners physically retired, and the fixture removed its own broker and TLS resources."
+  ],
+  "limitations": [
+    "The run did not count guest executions; matching retained outcomes and broker messages do not prove there was no extra execution.",
+    "This is one local C scenario, not cancellation, memory/fuel, crash-persistence or complete C guest qualification. Other guest languages and the overall conformance matrix remain open.",
+    "The normal node is a verified local combined-source binary containing unmerged work. Production trust, hosted CI and installed-distribution qualification are not established."
+  ]
+}

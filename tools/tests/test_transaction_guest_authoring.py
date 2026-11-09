@@ -10,6 +10,35 @@ from tools.transaction_guest_project import TEMPLATE, package_companion
 
 
 class TransactionGuestAuthoringTests(unittest.TestCase):
+    def test_c_event_profile_captures_and_packages_only_exact_companion_requirements(self):
+        from tools.compile_transaction_guests import authored_project
+        from tools.c_capsule import main as c_main
+        from tools.c_capsule_project import create, validate
+        from tools.transaction_guest_project import (C_EVENT_PROFILE, EVENT_REQUIREMENTS,
+                                                       RUST_EVENT_PROFILE, package_effect_requirements)
+        profile = 'js-window-v1:' + 'b' * 64
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.assertEqual(c_main(['new', str(root / 'source'), '--template', TEMPLATE,
+                                     '--name', 'transaction-c-aggregate', '--event-profile', profile]), 0)
+            files = snapshot(root / 'source')
+            project, _, _ = validate(files)
+            selected = authored_project('c', 'aggregate', root / 'selected', c_current_event_profile=profile)
+            self.assertEqual(snapshot(selected)[EVENT_REQUIREMENTS], files[EVENT_REQUIREMENTS])
+            with self.assertRaisesRegex(ValueError, 'exclusive C aggregate'):
+                authored_project('rust', 'aggregate', root / 'foreign', c_current_event_profile=profile)
+            self.assertEqual(json.loads(files[C_EVENT_PROFILE])['idempotencyProfile'], profile)
+            output = root / 'package'
+            output.mkdir()
+            self.assertEqual(package_effect_requirements(output, project, files)[0], EVENT_REQUIREMENTS)
+            self.assertEqual((output / EVENT_REQUIREMENTS).read_bytes(), files[EVENT_REQUIREMENTS])
+            with self.assertRaisesRegex(ValueError, 'closed-current-event-inputs-required'):
+                package_effect_requirements(root, project, {**files, RUST_EVENT_PROFILE: files[C_EVENT_PROFILE]})
+            with self.assertRaisesRegex(ValueError, 'event profile'):
+                create(root / 'invalid', 'greeting', event_profile=profile)
+            with self.assertRaisesRegex(ValueError, 'event profile'):
+                create(root / 'invalid-profile', TEMPLATE, event_profile='invalid')
+
     def test_rust_event_profile_is_explicit_captured_and_checked_before_packaging(self):
         from tools.compile_transaction_guests import authored_project
         from tools.rust_capsule import main as rust_main
