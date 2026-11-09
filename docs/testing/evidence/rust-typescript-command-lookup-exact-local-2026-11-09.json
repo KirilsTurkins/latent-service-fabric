@@ -1,4 +1,4 @@
-﻿{
+{
     "description":  "Exact committed Rust and TypeScript probe bytes against experimental combined unmerged source and disposable test signer",
     "probeCommit":  "837b55c8323c",
     "observation":  {
