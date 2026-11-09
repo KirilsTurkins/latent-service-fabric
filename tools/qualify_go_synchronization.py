@@ -565,7 +565,7 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
                'compilerInputsAfter': after_material, 'case': plan['case'], 'signedCases': rows,
                'signedInvocations': {'synchronization': len(rows), 'admission': 8, 'queued': 20,
                                      'managed-timers': len(rows), 'managed-v7-timers': len(rows),
-                                     'task-saturation': 3, 'timer-overlap': 7, 'timer-overlap-v7': 7, 'timer-fired-v7': 3}[programme], 'guestTaskCeiling': 16,
+                                     'task-saturation': 3, 'timer-overlap': 7, 'timer-overlap-v7': 7, 'timer-fired-v7': len(rows)}[programme], 'guestTaskCeiling': 16,
                'managedCapacity': 8, 'waitCeiling': 4, 'newRuntimeProfile': False,
                'kernelTlsOrCrossTenantQualified': False, 'fullGoRuntimeQualified': False}
     if programme == 'synchronization':
@@ -603,6 +603,7 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
                         'fullAggregateGoCostsQualified': False, 'kernelRetirementQualified': False})
         if programme == 'timer-fired-v7':
             receipt.update({'profile': 'go-component-activation-v7', 'queuedWorkCeiling': 16,
+                            'returnedTimerWitnesses': observed['returnedWitnesses'],
                             'diagnosticGuestOverlay': True, 'byteIdenticalProductionGuest': False})
         if programme == 'timer-overlap-v7':
             receipt.update({'profile': 'go-component-activation-v7', 'queuedWorkCeiling': 16,

@@ -2,6 +2,7 @@
 import json
 import tempfile
 from pathlib import Path
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -85,6 +86,38 @@ class FiredTimerControls(unittest.TestCase):
             with self.subTest(out=out[:100], diag=diag[:100]), self.assertRaises(ValueError):
                 owner.fired_timer_observations(out, diag, 53)
 
+
+    def test_receipt_retains_all_validated_fired_and_returned_cases(self):
+        available = {owner.FIRED_TIMER_CASE, *(f'other_{index}' for index in range(53))}
+        suite = {'id': 'latent-wasmtime.test.local-service',
+                 'expectedIgnored': [owner.FIRED_TIMER_CASE], 'timeoutSeconds': 900}
+        result = SimpleNamespace(returncode=0, output=b'', stderr=b'')
+
+        def owned(command, **_kwargs):
+            if command[0] == 'git' or '--list' in command:
+                return result
+            return SimpleNamespace(returncode=0, output=output(), stderr=diagnostic())
+
+        expected = owner.fired_timer_observations(output(), diagnostic(), 53)
+        with tempfile.TemporaryDirectory() as temporary, \
+                patch.object(owner.sys, 'platform', 'linux'), \
+                patch.object(owner.artifacts, 'require_source'), \
+                patch.object(owner, 'source_snapshot', return_value={'digest': 'unchanged'}), \
+                patch.object(owner, 'compile_identity', return_value={'digest': 'fixture'}), \
+                patch.object(owner.registry, 'load', return_value={'suites': [suite]}), \
+                patch.object(owner.discovery, 'listing', side_effect=[available, {owner.FIRED_TIMER_CASE}]), \
+                patch.object(owner.discovery, 'validate_cases'), \
+                patch.object(owner, 'run_owned', side_effect=owned):
+            out = Path(temporary) / 'output'
+            receipt = owner.qualify(ROOT, out, Path(temporary) / 'fixture', None,
+                                    'test-revision', 'timer-fired-v7')
+            self.assertEqual(receipt, json.loads((out / 'receipt.json').read_text(encoding='utf-8')))
+            self.assertEqual(receipt['signedCases'], expected['cases'])
+            self.assertEqual(receipt['signedInvocations'], 5)
+            self.assertEqual(receipt['signedInvocations'], len(receipt['signedCases']))
+            self.assertEqual(receipt['originalTimerOverlapWitnesses'], expected['witnesses'])
+            self.assertEqual(receipt['returnedTimerWitnesses'], expected['returnedWitnesses'])
+            self.assertEqual(receipt['physicalTimerWaitDrops'], expected['physicalWaitDrops'])
 
     def test_compiler_selects_the_diagnostic_sdk_without_editing_the_original(self):
         from tools import qualify_go_activation as activation
