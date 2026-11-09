@@ -49,6 +49,16 @@ func TestPhase4LostRejectionAgainstRealNode(t *testing.T) {
 	tenant, key, route, wall := rejectionField(t, "LSF_401_TENANT"), "go-sdk-lost-rejection", "transaction-java-aggregate", uint64(120000)
 	current, selector := tx.CurrentProfile(), lostRejectionSelector(t)
 	request := tx.InvokeCommandRequest{Profile: &current, Command: &selector, InputFormat: "lsf-wit-values-v1", ExpectedVersions: []tx.ExpectedVersion{{Key: []byte("aggregate/count"), Version: &version}}, Invocation: &profile.InvokeRequest{ActivationId: &key, Target: &profile.InvocationTarget{Tenant: tenant, Service: "examples/transaction-java-aggregate", Contract: "examples:transactional-aggregate/api@1.0.0", Function: "update", Route: &route}, Payload: []byte(`[{"delta":1,"reject":true}]`), MediaType: "application/vnd.latent.wit-values.v1+json", Budget: &profile.ResourceBudget{CpuFuel: 1000000000, MemoryBytes: 67108864, StateReadBytes: 4194304, StateWriteBytes: 2097152, EffectCount: 1, WallTimeLimitMillis: &wall}}}
+	if cancellation {
+		before, stop := context.WithCancel(context.Background())
+		stop()
+		_, beforeErr := client.InvokeCommand(before, request, profile.CallOptions{})
+		var beforeFailure *tx.ClientFailure
+		if !errors.As(beforeErr, &beforeFailure) || beforeFailure.Transport == nil || !errors.Is(beforeErr, context.Canceled) || beforeFailure.Transport.Dispatched || beforeFailure.Transport.Outcome != profile.OutcomeKnowledgeNotDispatched || beforeFailure.Identity.Command == nil || beforeFailure.Identity.Command.ClientKey != key || beforeFailure.Observed != nil {
+			t.Fatal("pre-cancelled call did not remain local with its original identity")
+		}
+		fmt.Println("CANCELLED_BEFORE_DISPATCH")
+	}
 	_, err = client.InvokeCommand(ctx, request, profile.CallOptions{})
 	if err == nil {
 		t.Fatal("response-blocked call unexpectedly succeeded")
