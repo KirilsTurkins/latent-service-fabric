@@ -18,6 +18,10 @@
         "successful source-matched Cargo artifact inventory"
       ],
       "recipe": "workspace-all-features",
+      "requiredCases": [
+        "tests::lifecycle::refused_initial_install_never_publishes_an_unusable_epoch",
+        "tests::lifecycle::refused_rotation_preserves_original_epoch_connection_and_new_admissions"
+      ],
       "resourceClass": "runtime-bounded",
       "source": "src/lib.rs",
       "target": "latent_streams",
