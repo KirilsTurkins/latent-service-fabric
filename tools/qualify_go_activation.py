@@ -122,7 +122,7 @@ def compile_fixture(output: Path, *, offline_cache: Path | None = None, runtime_
         derived_activation = derive_activation_bridge(original_activation)
         bridge.write_bytes(derived_bridge)
         activation.write_bytes(derived_activation)
-        diagnostic = {'kind': 'selected-returned-ticker-fence-observe-v3',
+        diagnostic = {'kind': 'selected-returned-ticker-cancel-fence-observe-v4',
                       'originalTimerAsyncDigest': digest(original_timer),
                       'derivedTimerAsyncDigest': digest(derived_timer),
                       'originalTimerBridgeDigest': digest(original_bridge),
