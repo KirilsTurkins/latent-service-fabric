@@ -438,6 +438,162 @@ class StreamOperator(unittest.TestCase):
             operator.revoke()
         self.assertEqual(len(self.mutations()), 2)
 
+    def _pending_recovery_case(self):
+        operator = self.operator()
+        self.client.uncertain = True
+        with self.assertRaises(DevError):
+            operator.grant()
+        self.assertIsNotNone(operator.journal.read()['pending'])
+        self.client.calls.clear()
+        return operator
+
+    def test_owner_changed_after_lookup_cannot_settle_original(self):
+        operator = self._pending_recovery_case()
+        before = (self.operator_root / 'operations.json').read_bytes()
+        owner_file = self.operator_root / 'stream-operator-owner.json'
+        call = self.client.call
+        changed = []
+        def race(*args, **kwargs):
+            result = call(*args, **kwargs)
+            if len(args) > 1 and args[:2] == ('policy', 'operation'):
+                foreign = copy.deepcopy(operator.owner)
+                foreign['publication'] = 'publication:sha256:' + 'c' * 64
+                state.atomic(self.operator_root, owner_file.name, foreign)
+                changed.append(owner_file.read_bytes())
+            return result
+        self.client.call = race
+        with self.assertRaises(DevError) as failure:
+            operator.recover()
+        self.assertTrue(failure.exception.uncertain)
+        self.assertEqual(owner_file.read_bytes(), changed[0])
+        self.assertEqual((self.operator_root / 'operations.json').read_bytes(), before)
+        self.assertIsNotNone(operator.journal.read()['pending'])
+        self.assertEqual(len([args for args in self.client.calls if 'apply' in args]), 0)
+
+    def test_client_configuration_changed_during_recovery_retains_pending(self):
+        operator = self._pending_recovery_case()
+        journal = self.operator_root / "operations.json"
+        before = journal.read_bytes()
+        original = self.config.read_bytes()
+        call = self.client.call
+
+        def race(*args, **kwargs):
+            result = call(*args, **kwargs)
+            if len(args) > 1 and args[:2] == ("policy", "operation"):
+                self.config.write_bytes(original + b" ")
+            return result
+
+        self.client.call = race
+        with self.assertRaisesRegex(DevError, "client-identity-changed") as failure:
+            operator.recover()
+        self.assertTrue(failure.exception.uncertain)
+        self.assertEqual(self.config.read_bytes(), original + b" ")
+        self.assertEqual(journal.read_bytes(), before)
+        self.assertIsNotNone(operator.journal.read()["pending"])
+        self.assertEqual(len(self.mutations()), 0)
+
+    def test_type_changed_pending_intent_is_not_overwritten_after_lookup(self):
+        operator = self._pending_recovery_case()
+        operations = self.operator_root / 'operations.json'
+        call = self.client.call
+        changed = []
+        def race(*args, **kwargs):
+            result = call(*args, **kwargs)
+            if len(args) > 1 and args[:2] == ('policy', 'operation'):
+                value = state.load(self.operator_root, operations.name)
+                document = value['pending']['intent']['document']
+                self.assertIs(type(document['formatVersion']), int)
+                document['formatVersion'] = True
+                state.atomic(self.operator_root, operations.name, value)
+                changed.append(operations.read_bytes())
+            return result
+        self.client.call = race
+        with self.assertRaises(DevError) as failure:
+            operator.recover()
+        self.assertTrue(failure.exception.uncertain)
+        self.assertEqual(operations.read_bytes(), changed[0])
+        self.assertIsNotNone(operator.journal.read()['pending'])
+        self.assertEqual(len([args for args in self.client.calls if 'apply' in args]), 0)
+
+    def test_invalid_original_request_digest_is_refused_before_remote_read(self):
+        operator = self._pending_recovery_case()
+        operations = self.operator_root / 'operations.json'
+        value = state.load(self.operator_root, operations.name)
+        value['pending']['requestDigest'] = 'sha256:' + '0' * 64
+        state.atomic(self.operator_root, operations.name, value)
+        before = operations.read_bytes()
+        with self.assertRaises(DevError) as failure:
+            operator.recover()
+        self.assertTrue(failure.exception.uncertain)
+        self.assertEqual(self.client.calls, [])
+        self.assertEqual(operations.read_bytes(), before)
+
+    def test_incomplete_pending_operation_is_redacted_and_never_looked_up(self):
+        operator = self._pending_recovery_case()
+        operations = self.operator_root / "operations.json"
+        value = state.load(self.operator_root, operations.name)
+        del value["pending"]["kind"]
+        state.atomic(self.operator_root, operations.name, value)
+        before = operations.read_bytes()
+        with self.assertRaises(DevError) as failure:
+            operator.recover()
+        self.assertTrue(failure.exception.uncertain)
+        self.assertEqual(self.client.calls, [])
+        self.assertEqual(operations.read_bytes(), before)
+
+    def test_recovery_without_pending_operation_keeps_existing_result(self):
+        operator = self.operator()
+        with self.assertRaisesRegex(DevError, "no-pending-operation") as failure:
+            operator.recover()
+        self.assertFalse(failure.exception.uncertain)
+        self.assertEqual(self.client.calls, [])
+
+    def test_changed_retained_receipt_during_lookup_is_not_overwritten(self):
+        operator = self.operator()
+        operator.grant()
+        self.client.uncertain = True
+        with self.assertRaises(DevError):
+            operator.revoke()
+        journal = self.operator_root / "operations.json"
+        before = journal.read_bytes()
+        receipts = self.operator_root / "stream-policy-receipts.json"
+        call = self.client.call
+        self.client.calls.clear()
+        changed = []
+
+        def race(*args, **kwargs):
+            result = call(*args, **kwargs)
+            if "get" in args and "policy" in args:
+                value = state.load(self.operator_root, receipts.name)
+                value["policy:" + self.options["policy_id"]]["receipt"]["generation"] = "777"
+                state.atomic(self.operator_root, receipts.name, value)
+                changed.append(receipts.read_bytes())
+            return result
+
+        self.client.call = race
+        with self.assertRaises(DevError) as failure:
+            operator.recover()
+        self.assertTrue(failure.exception.uncertain)
+        self.assertEqual(len(changed), 1)
+        self.assertEqual(receipts.read_bytes(), changed[0])
+        self.assertEqual(journal.read_bytes(), before)
+        self.assertIsNotNone(operator.journal.read()["pending"])
+        self.assertEqual(len(self.mutations()), 0)
+
+    def test_boolean_port_cannot_impersonate_owned_numeric_port(self):
+        destination = {**self.options["destination"], "port": 1}
+        operator = self.operator(destination=destination)
+        changed = copy.deepcopy(operator.owner)
+        changed["endpoint"]["port"] = True
+        state.atomic(self.operator_root, "stream-operator-owner.json", changed)
+        self.client.calls.clear()
+        with self.assertRaisesRegex(DevError, "stream-operator-owner-changed"):
+            operator.inspect("mail-deployment")
+        self.assertEqual(self.client.calls, [])
+        with self.assertRaisesRegex(DevError, "stream-operator-owner-changed"):
+            self.operator(destination=destination)
+        self.assertEqual(self.client.calls, [])
+
     def test_changed_private_client_configuration_or_owner_scope_fails_before_rpc(self):
         operator = self.operator()
         state.atomic(self.config_root, "config.json", {"profile": "another"})
@@ -893,8 +1049,9 @@ class StreamOperator(unittest.TestCase):
         self.assertTrue(failure.exception.uncertain)
         pending = operator.journal.read()['pending']
         self.assertIsNotNone(pending)
-        with self.assertRaisesRegex(DevError, 'client-identity-changed'):
+        with self.assertRaisesRegex(DevError, 'client-identity-changed') as failed_recovery:
             operator.recover()
+        self.assertTrue(failed_recovery.exception.uncertain)
         self.assertEqual(operator.journal.read()['pending'], pending)
         self.assertEqual(len(self.mutations()), 1)
         self.config.write_bytes(original)
