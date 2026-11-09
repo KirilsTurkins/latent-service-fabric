@@ -31,22 +31,27 @@ struct Counts {
 }
 
 // This is the actual future supplied to Wasmtime, not a fabricated waitable.
-// It intentionally does not save or wake the waker: Wasmtime first polls it
-// inline with a no-op waker, then the pending future is inserted into a host
-// future set which unconditionally queues every new entry for its first set
-// poll. In this isolated one-future control, that is the second overall poll.
-// This probes that finite insertion boundary; it does not model an external
-// readiness change or a correctly waking future that stays pending later.
+// It requests a wake on its first poll. Wasmtime's inline first poll uses a
+// no-op waker, then inserts the pending future into a host-future set which
+// initially queues every new entry. In this isolated one-future control, that
+// set poll is the second overall poll. This probes that finite insertion
+// boundary, not an external readiness change or later network progress.
 // Its original object stays alive after the first poll and counts its own Drop.
 struct OncePending(Arc<Mutex<Counts>>);
 impl Future for OncePending {
     type Output = wasmtime::Result<(u32,)>;
 
-    fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Self::Output> {
-        let mut counts = self.0.lock().unwrap();
-        counts.polls += 1;
-        match counts.polls {
-            1 => Poll::Pending,
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let poll = {
+            let mut counts = self.0.lock().unwrap();
+            counts.polls += 1;
+            counts.polls
+        };
+        match poll {
+            1 => {
+                cx.waker().wake_by_ref();
+                Poll::Pending
+            }
             2 => Poll::Ready(Ok((42,))),
             _ => panic!("the same future was polled after completion"),
         }
