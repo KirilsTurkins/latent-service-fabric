@@ -185,6 +185,49 @@ fn response_release_reopen_and_independent_effect_snapshot_owners_keep_actual_by
 }
 
 #[test]
+fn durable_capture_retires_its_pin_if_final_admission_or_owner_fails() {
+    let state_root = temporary_root();
+    let blob_root = temporary_root();
+    let state = database(state_root.path(), true, "payload-state-a");
+    let owner =
+        LocalBlobStore::open_durable(blob_root.path(), "private", limits(), &state).unwrap();
+    let blob = put(&owner, b"proof");
+    let calls = std::cell::Cell::new(0);
+    let expired = || {
+        calls.set(calls.get() + 1);
+        if calls.get() == 4 {
+            Err(LocalBlobError::DeadlineExceeded)
+        } else {
+            Ok(())
+        }
+    };
+    assert!(matches!(
+        owner.capture_durable_reference(&scope(), &blob, &expired),
+        Err(LocalBlobError::DeadlineExceeded)
+    ));
+    assert_eq!(calls.get(), 4);
+    {
+        let state = owner.inner.state().unwrap();
+        let object = state.objects.values().next().unwrap();
+        assert_eq!(object.durable_pins.load(Ordering::Acquire), 0);
+        assert_eq!(object.pins.load(Ordering::Acquire), 0);
+    }
+    calls.set(0);
+    let close = || {
+        calls.set(calls.get() + 1);
+        if calls.get() == 4 {
+            owner.close();
+        }
+        Ok(())
+    };
+    assert!(matches!(
+        owner.capture_durable_reference(&scope(), &blob, &close),
+        Err(LocalBlobError::Closed)
+    ));
+    assert_eq!(calls.get(), 4);
+}
+
+#[test]
 fn uncertain_durable_mode_publication_poisoned_owner_and_recovers_from_disk() {
     let state_root = temporary_root();
     let blob_root = temporary_root();

@@ -485,6 +485,11 @@ impl LocalBlobStore {
         }
         let mut reader = self.open_read(scope, reference, checkpoint)?;
         reader.make_durable()?;
+        // The real reader and provisional pin are already owned here. Refuse
+        // to hand them off if the original admission or local owner retired
+        // while that pin was being acquired; dropping the reader retires both.
+        checkpoint()?;
+        self.inner.check()?;
         Ok(LocalDurablePin {
             reader,
             configuration: decode_digest(&self.configuration_digest()?)?,
