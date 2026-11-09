@@ -22,6 +22,9 @@ mod task_saturation;
 #[path = "go/timer_overlap.rs"]
 mod timer_overlap;
 
+#[path = "go/zero_clock.rs"]
+mod zero_clock;
+
 fn timer_overlap_fixture(variable: &str, profile: &str) -> bool {
     matches!(
         (variable, profile),
@@ -64,9 +67,12 @@ fn checkpoint_component(
     let timer_overlap = timer_overlap_fixture(variable, profile);
     let timer_fired =
         variable == "LSF_GO_V7_TIMER_FIRED_FIXTURE" && profile == "go-component-activation-v7";
+    let zero_clock =
+        variable == "LSF_GO_V7_ZERO_CLOCK_FIXTURE" && profile == "go-component-activation-v7";
     assert!(
         timer_overlap
             || timer_fired
+            || zero_clock
             || matches!(
                 (variable, profile),
                 ("LSF_GO_CHECKPOINT_FIXTURE", "go-component-activation-v2")
@@ -116,6 +122,8 @@ fn checkpoint_component(
         include_bytes!("../../../../../sdk/go-guest/runtime/synchronization-conformance/main.go")
     } else if task_saturation {
         include_bytes!("../../../../../sdk/go-guest/runtime/task-saturation-conformance/main.go")
+    } else if zero_clock {
+        include_bytes!("../../../../../sdk/go-guest/runtime/zero-clock-conformance/main.go")
     } else if timer_fired {
         include_bytes!("../../../../../sdk/go-guest/runtime/timer-fired-conformance/main.go")
     } else if timer_overlap {
@@ -143,6 +151,8 @@ fn checkpoint_component(
             "synchronization"
         } else if task_saturation {
             "task-saturation"
+        } else if zero_clock {
+            "zero-clock"
         } else if timer_fired {
             "timer-fired"
         } else if timer_overlap {
@@ -172,12 +182,15 @@ fn checkpoint_component(
         || task_saturation
         || timer_overlap
         || timer_fired
+        || zero_clock
     {
         assert_eq!(
             record["nativeReference"]["modes"],
             if synchronization {
                 serde_json::json!([0, 1, 2, 3, 4, 5, 9])
             } else if task_saturation {
+                serde_json::json!([0])
+            } else if zero_clock {
                 serde_json::json!([0])
             } else if timer_fired {
                 serde_json::json!([0, 1, 2, 3])
@@ -333,6 +346,12 @@ fn checkpoint_component(
             include_bytes!(
                 "../../../../../sdk/go-guest/runtime/timer-overlap-conformance/world.wit"
             )
+        );
+    }
+    if zero_clock {
+        assert_eq!(
+            wit.as_bytes(),
+            include_bytes!("../../../../../sdk/go-guest/runtime/zero-clock-conformance/world.wit")
         );
     }
     if variable == "LSF_GO_V7_TIMER_FIXTURE" {
@@ -555,9 +574,19 @@ async fn prepare_owned_fixture(
     profile: &str,
     tasks: u32,
 ) -> Fixture {
+    prepare_owned_fixture_with_clock(root, variable, profile, tasks, None).await
+}
+
+async fn prepare_owned_fixture_with_clock(
+    root: &std::path::Path,
+    variable: &str,
+    profile: &str,
+    tasks: u32,
+    clock: Option<std::sync::Arc<super::super::fixture::zero_clock::ZeroClock>>,
+) -> Fixture {
     let (caller, source) = checkpoint_component(variable, profile);
     let release = packages::release(&caller);
-    let f = signed_runtime_with_limits(
+    let f = signed_runtime_with_clock(
         root,
         1,
         120_000,
@@ -573,6 +602,7 @@ async fn prepare_owned_fixture(
             },
             ..limits()
         },
+        clock,
     )
     .await;
     let mut key = f.backend.preparation_key(&release).unwrap();
