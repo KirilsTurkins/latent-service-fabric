@@ -1,7 +1,7 @@
 //! Owned HTTP v0.3 continuations of one policy-accepted operation.
 use super::{
     http::{HttpError, HttpHeaderBlock, HttpRequest, HttpResponseHead},
-    io::{IoFuture, IoOutputChunk},
+    io::{IoFuture, IoOutputChunk, PreparedIoInput},
     CapabilitySession,
 };
 use latent_core::PlatformError;
@@ -12,6 +12,7 @@ use std::{
 };
 pub const PHASE_TIMING_CAPABILITY: &str = "latent:http/phase-timing@0.4.0";
 pub const STREAMING_HTTP_CAPABILITY: &str = "latent:http/streaming@0.3.0";
+pub const UPLOAD_WINDOW_INTERFACE: &str = "latent:http/upload-window@0.5.0";
 /// Metadata has no buffered body. `None` selects bounded chunked framing;
 /// `Some(n)` commits an exact length, verified before successful finish.
 pub struct StreamingHttpRequest {
@@ -25,6 +26,19 @@ pub enum StreamingHttpError {
     UnexpectedEof,
     UnsupportedEncoding,
 }
+
+/// Preparation is an optional extension of the existing upload owner. Older
+/// providers refuse it explicitly without dispatching or accepting bytes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HttpWritePreparationError {
+    Unsupported,
+    Http(StreamingHttpError),
+}
+impl From<StreamingHttpError> for HttpWritePreparationError {
+    fn from(value: StreamingHttpError) -> Self {
+        Self::Http(value)
+    }
+}
 impl From<HttpError> for StreamingHttpError {
     fn from(value: HttpError) -> Self {
         Self::Http(value)
@@ -37,6 +51,17 @@ impl From<PlatformError> for StreamingHttpError {
 }
 pub type StreamingHttpInvocation =
     IoFuture<'static, Result<Box<dyn HttpUpload>, StreamingHttpError>>;
+
+/// A prepared buffer and the one original upload that admitted it. An unused
+/// preparation (including its transfer slot) is dropped before the upload.
+/// After dispatch, the real transport instead owns the submitted chunk and
+/// its original reservations until that chunk physically retires.
+pub struct PreparedHttpUpload {
+    pub prepared: Option<PreparedIoInput>,
+    pub upload: Box<dyn HttpUpload>,
+    pub generation: u64,
+}
+
 /// Explicit phase outcomes never replace the original activation deadline or cancellation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HttpPhaseError {
@@ -123,6 +148,31 @@ pub trait StreamingHttpInvoker: Send + Sync {
 }
 pub trait HttpUpload: Send {
     fn write(&mut self, bytes: Vec<u8>) -> IoFuture<'_, Result<(), StreamingHttpError>>;
+
+    /// Prepay a bounded input on this exact upload before guest-memory access.
+    /// This may call host code and must run outside a Store borrow.
+    fn prepare_write(
+        &mut self,
+        _maximum: usize,
+    ) -> Result<PreparedIoInput, HttpWritePreparationError> {
+        Err(HttpWritePreparationError::Unsupported)
+    }
+
+    /// Identity only: this does not refresh or grant the original authority.
+    /// Adapters invoke this outside a Store borrow before any write dispatch.
+    fn owns_prepared_write(&self, _prepared: &PreparedIoInput) -> bool {
+        false
+    }
+
+    /// Submit the same original preparation once. The default cannot accept
+    /// one; it is reached only if a provider advertises incompatible methods.
+    fn write_prepared(
+        &mut self,
+        _prepared: PreparedIoInput,
+    ) -> IoFuture<'_, Result<(), StreamingHttpError>> {
+        IoFuture::failed(HttpError::Unavailable.into())
+    }
+
     fn finish(self: Box<Self>) -> IoFuture<'static, Result<Box<dyn HttpBody>, StreamingHttpError>>;
     fn finish_with_read_timeout(
         self: Box<Self>,

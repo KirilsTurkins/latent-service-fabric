@@ -41,6 +41,15 @@ pub(crate) fn channel(length: Option<u64>) -> (Sender, RequestBody) {
     )
 }
 impl Sender {
+    #[cfg(test)]
+    pub(crate) fn clone_pending(&self) -> Option<Bytes> {
+        self.state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .pending
+            .clone()
+    }
+
     pub fn send(&self, chunk: IoInputChunk) -> Result<(), StreamingHttpError> {
         let mut state = self
             .state

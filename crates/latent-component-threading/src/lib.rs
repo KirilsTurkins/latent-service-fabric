@@ -51,6 +51,14 @@ mod rust_original_delta;
 pub use component::{CComponentRoutingReceipt, verify_c_component_routing};
 pub use component::{ComponentRoutingReceipt, verify_component_routing};
 
+/// Construct the existing bounded C verifier test fixture; it grants no
+/// runtime authentication or provider authority.
+#[cfg(feature = "c-http-upload-window-test-support")]
+#[doc(hidden)]
+pub fn c_http_upload_window_test_original_core() -> Vec<u8> {
+    c_abi::tests::fixture(0)
+}
+
 pub const MAX_BYTES: usize = 8 * 1024 * 1024;
 pub const MAX_FUNCTIONS: u32 = 65_534; // two new helpers stay within65,536
 pub const MAX_OPERATORS: u64 = 2_000_000;

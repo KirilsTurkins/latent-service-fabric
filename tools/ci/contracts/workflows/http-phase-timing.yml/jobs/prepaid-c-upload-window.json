@@ -1,0 +1,58 @@
+{
+  "definition": {
+    "env": {
+      "EXPECTED_SOURCE_SHA": "${{ github.event.pull_request.head.sha || github.sha }}",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "if": "github.ref_name == 'feat/sdk690-prepaid-upload-window-20261109' || (github.event_name == 'pull_request' && github.head_ref == 'feat/sdk690-prepaid-upload-window-20261109')",
+    "name": "Prepaid C HTTP upload current-source controls",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "persist-credentials": false,
+          "ref": "${{ github.event.pull_request.head.sha || github.sha }}"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "KirilsTurkins/lsf-rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "name": "Check exact source and bounded upload ownership controls",
+        "run": "python3 tools/c_http_upload_window_controls.py --output \"$RUNNER_TEMP/c-http-upload-window-controls\" --expected-revision \"$EXPECTED_SOURCE_SHA\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain source and bounded control logs",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "c-http-upload-window-${{ github.run_id }}-${{ github.run_attempt }}",
+          "path": "${{ runner.temp }}/c-http-upload-window-controls/",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 45
+  },
+  "jobId": "prepaid-c-upload-window",
+  "kind": "job",
+  "reviewReason": "Bounded exact-revision Linux controls retain their discovery, execution and failure evidence without replacing the existing phase job.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/http-phase-timing.yml"
+}

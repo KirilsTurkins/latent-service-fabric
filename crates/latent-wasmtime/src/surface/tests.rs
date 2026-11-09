@@ -261,3 +261,88 @@ fn phase_type_owner_requires_selected_installed_phase_and_never_supplies_legacy_
         .supports(original));
     }
 }
+
+#[test]
+fn upload_window_requires_one_original_operational_resource_identity() {
+    use wasm_encoder::{
+        Alias, Component, ComponentAliasSection, ComponentImportSection, ComponentOuterAliasKind,
+        ComponentTypeRef, ComponentTypeSection, InstanceType, PrimitiveValType, TypeBounds,
+    };
+    let original = latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY;
+    let helper = latent_capabilities::broker::streaming_http::UPLOAD_WINDOW_INTERFACE;
+    let mut config = wasmtime::Config::new();
+    crate::WasmtimeConfig::default()
+        .apply_engine(&mut config)
+        .unwrap();
+    let engine = wasmtime::Engine::new(&config).unwrap();
+    for case in ["valid", "foreign", "no-open", "no-write", "no-original"] {
+        let has_original = case != "no-original";
+        let use_alias = has_original && case != "foreign";
+        let mut encoded = Component::new();
+        if has_original {
+            let mut owner = InstanceType::new();
+            owner.export("upload", ComponentTypeRef::Type(TypeBounds::SubResource));
+            if case != "no-open" {
+                let index = owner.type_count();
+                owner
+                    .ty()
+                    .function()
+                    .params([] as [(&str, PrimitiveValType); 0])
+                    .result(None);
+                owner.export("open", ComponentTypeRef::Func(index));
+            }
+            let mut types = ComponentTypeSection::new();
+            types.instance(&owner);
+            let mut imports = ComponentImportSection::new();
+            imports.import(original, ComponentTypeRef::Instance(0));
+            encoded.section(&types).section(&imports);
+        }
+        if use_alias {
+            let mut aliases = ComponentAliasSection::new();
+            aliases.alias(Alias::InstanceExport {
+                instance: 0,
+                kind: wasm_encoder::ComponentExportKind::Type,
+                name: "upload",
+            });
+            encoded.section(&aliases);
+        }
+        let mut window = InstanceType::new();
+        if use_alias {
+            let index = window.type_count();
+            window.alias(Alias::Outer {
+                kind: ComponentOuterAliasKind::Type,
+                count: 1,
+                index: 1,
+            });
+            window.export("upload", ComponentTypeRef::Type(TypeBounds::Eq(index)));
+        } else {
+            window.export("upload", ComponentTypeRef::Type(TypeBounds::SubResource));
+        }
+        for name in ["prepare", "write"] {
+            if case == "no-write" && name == "write" {
+                continue;
+            }
+            let index = window.type_count();
+            window
+                .ty()
+                .function()
+                .params([] as [(&str, PrimitiveValType); 0])
+                .result(None);
+            window.export(name, ComponentTypeRef::Func(index));
+        }
+        let mut types = ComponentTypeSection::new();
+        types.instance(&window);
+        let mut imports = ComponentImportSection::new();
+        let type_index = u32::from(has_original) + u32::from(use_alias);
+        imports.import(helper, ComponentTypeRef::Instance(type_index));
+        encoded.section(&types).section(&imports);
+        let component = wasmtime::component::Component::new(&engine, encoded.finish()).unwrap();
+        let result =
+            super::streaming::validate_upload_window_aliases(&component.component_type(), &engine);
+        assert_eq!(
+            result.is_ok_and(|matched| matched),
+            case == "valid",
+            "{case}"
+        );
+    }
+}

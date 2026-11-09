@@ -1,6 +1,6 @@
 use serde_json::{json, Value};
 
-fn document() -> Value {
+pub(super) fn document() -> Value {
     let mut value = super::document();
     value["providers"].as_object_mut().unwrap().remove("blob");
     value["providers"]["httpStreaming"] = json!({

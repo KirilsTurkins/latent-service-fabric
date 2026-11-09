@@ -176,6 +176,23 @@ impl PreparationContext {
                 )
             })?;
         }
+        #[cfg(feature = "http-upload-window")]
+        if self.config.upload_window_enabled() {
+            if !original_streaming_installed {
+                return Err(platform_error(
+                    PlatformErrorCode::IncompatibleContract,
+                    "prepaid HTTP uploads require the original streaming provider",
+                    false,
+                ));
+            }
+            crate::host::streaming_http::upload_window::install(&mut linker).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind the prepaid HTTP upload helper",
+                    false,
+                )
+            })?;
+        }
         if let Some(invoker) = self.phase_http() {
             if !original_streaming_installed {
                 crate::host::streaming_http::install_resource_owner(&mut linker).map_err(|_| {

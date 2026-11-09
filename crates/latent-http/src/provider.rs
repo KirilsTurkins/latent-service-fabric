@@ -47,6 +47,9 @@ pub(crate) struct Inner {
 pub(crate) struct WriteGate {
     pub(crate) entered: tokio::sync::oneshot::Sender<()>,
     pub(crate) release: tokio::sync::oneshot::Receiver<()>,
+    // Optional extra reference to the real queued Bytes, used to model a
+    // transport that still holds the original chunk after upload cancellation.
+    pub(crate) retain: Option<tokio::sync::oneshot::Sender<bytes::Bytes>>,
 }
 impl HttpProvider {
     pub fn install(

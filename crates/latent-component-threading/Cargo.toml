@@ -11,6 +11,8 @@ description = "Bounded source transforms and routing authentication for owned co
 workspace = true
 
 [features]
+# C source fixture only, selected by the host's explicit boundary test.
+c-http-upload-window-test-support = []
 # Explicit historical diagnostic host only; the default remains the normal catalogue.
 rust-thread-diagnostic-legacy = []
 # Source proof only; does not admit or enable a runtime profile.

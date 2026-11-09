@@ -170,6 +170,76 @@ fn protected_c_profile_reaches_normal_node_settings_without_raising_any_limits()
     assert!(!uncreated.exists());
 }
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[test]
+fn protected_c_upload_window_selects_v8_only_with_original_streaming_provider() {
+    use std::os::unix::fs::PermissionsExt;
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("node.json");
+    let mut selected = document();
+    let http = super::http_streaming::document();
+    selected["providers"]["httpStreaming"] = http["providers"]["httpStreaming"].clone();
+    selected["providers"]["bindings"]
+        .as_array_mut()
+        .unwrap()
+        .push(http["providers"]["bindings"][0].clone());
+    selected["providers"]["activationRuntime"]["nativeThreads"] = true.into();
+    selected["engine"] = json!({"threadingProfile":"c-context144-sync-cooperative-v1"});
+    let derive = |value: &Value| {
+        std::fs::write(&path, serde_json::to_vec(value).unwrap()).unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+        super::super::NodeConfig::load(&path).unwrap().derive()
+    };
+    let original = derive(&selected).unwrap();
+    assert!(!original.wasmtime.http_upload_window);
+    selected["engine"]["httpUploadWindow"] = true.into();
+    let settings = derive(&selected).unwrap();
+    assert!(settings.wasmtime.http_upload_window);
+    assert_eq!(
+        settings.wasmtime.maximum_memory_bytes,
+        original.wasmtime.maximum_memory_bytes
+    );
+    assert_eq!(
+        settings.wasmtime.maximum_fuel,
+        original.wasmtime.maximum_fuel
+    );
+    let installed = settings
+        .providers
+        .as_ref()
+        .unwrap()
+        .http_streaming
+        .as_ref()
+        .unwrap();
+    assert_eq!(installed.limits.maximum_chunk_bytes, 1024);
+    assert_eq!(installed.limits.maximum_outstanding_chunks, 2);
+    let report = settings.check_config().unwrap();
+    assert!(report.matches(&settings));
+    assert!(!report.matches(&original));
+    assert_eq!(
+        serde_json::to_value(report).unwrap()["hostAbiProfile"],
+        latent_core::PHASE3_HOST_ABI_V8.id
+    );
+
+    let mut without_http = selected.clone();
+    without_http["providers"]
+        .as_object_mut()
+        .unwrap()
+        .remove("httpStreaming");
+    without_http["providers"]["bindings"]
+        .as_array_mut()
+        .unwrap()
+        .pop();
+    assert!(derive(&without_http).is_err());
+    let mut rust = selected.clone();
+    rust["engine"]["threadingProfile"] = "rust-context40-sync-cooperative-v1".into();
+    assert!(derive(&rust).is_err());
+    let mut phase = selected.clone();
+    phase["providers"]["httpStreaming"]["phaseTiming"] = true.into();
+    phase["providers"]["bindings"][1]["contract"] = "latent:http/phase-timing@0.4.0".into();
+    assert!(derive(&phase).is_err());
+    assert!(!directory.path().join("data").exists());
+}
+
 #[cfg(all(
     target_os = "linux",
     target_arch = "x86_64",

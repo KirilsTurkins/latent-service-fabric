@@ -113,6 +113,7 @@ impl
         async move {
             let started = Instant::now();
             let rep = target.rep();
+            let mut detached = None;
             let upload = access.with(|mut access| {
                 let mut store = access.as_context_mut();
                 checkpoint(&mut store)?;
@@ -121,13 +122,33 @@ impl
                     .capabilities
                     .streams
                     .take(rep, Kind::Upload, false);
+                let value = match value {
+                    Ok(value) => {
+                        detached = Some(value);
+                        Ok(())
+                    }
+                    Err(error) => Err(error),
+                };
                 synchronize(&mut store)?;
                 Ok::<_, wasmtime::Error>(value)
             })?;
+            let upload = upload.and_then(|()| detached.take().ok_or(Error::InvalidState));
             let result = match upload {
                 Ok(Value::Upload(mut upload)) => {
                     let result = upload.write(bytes).await;
                     Ok((upload, result))
+                }
+                #[cfg(feature = "http-upload-window")]
+                Ok(Value::WindowedUpload(mut owner)) => {
+                    // A legacy write invalidates an unconsumed preparation;
+                    // the generation remains and can never be reused.
+                    drop(owner.prepared.take());
+                    let result = owner.upload.write(bytes).await;
+                    let mut held = Some(Value::WindowedUpload(owner));
+                    if super::upload_window::restore(access, rep, &mut held)?.is_err() {
+                        return Ok((Err(wit::HttpError::Uncertain),));
+                    }
+                    return Ok((result.map_err(convert_error),));
                 }
                 Ok(_) => return Err(trap(Error::InvalidState)),
                 Err(error) => Err(error),
@@ -175,6 +196,7 @@ impl
            + 'a {
         async move {
             let started = Instant::now();
+            let mut detached = None;
             let upload = access.with(|mut access| {
                 let mut store = access.as_context_mut();
                 checkpoint(&mut store)?;
@@ -184,11 +206,24 @@ impl
                         .capabilities
                         .streams
                         .take(target.rep(), Kind::Upload, true);
+                let result = match result {
+                    Ok(value) => {
+                        detached = Some(value);
+                        Ok(())
+                    }
+                    Err(error) => Err(error),
+                };
                 synchronize(&mut store)?;
                 Ok::<_, wasmtime::Error>(result)
             })?;
+            let upload = upload.and_then(|()| detached.take().ok_or(Error::InvalidState));
             let body = match upload {
                 Ok(Value::Upload(upload)) => upload.finish().await,
+                #[cfg(feature = "http-upload-window")]
+                Ok(Value::WindowedUpload(mut owner)) => {
+                    drop(owner.prepared.take());
+                    owner.upload.finish().await
+                }
                 Ok(_) => Err(Error::InvalidState),
                 Err(error) => Err(error),
             };
@@ -247,17 +282,52 @@ impl InlineConcurrentHost<HostState, (Resource<wit::Upload>,), (Result<(), wit::
     ) -> impl std::future::Future<Output = wasmtime::Result<(Result<(), wit::HttpError>,)>> + Send + 'a
     {
         async move {
-            access.with(|mut access| {
+            #[cfg(feature = "http-upload-window")]
+            let mut detached = None;
+            let result = access.with(|mut access| {
                 let mut store = access.as_context_mut();
+                #[cfg(feature = "http-upload-window")]
+                let windowed = store
+                    .data_mut()
+                    .capabilities
+                    .streams
+                    .has_windowed_upload(target.rep())
+                    .unwrap_or(false);
+                #[cfg(feature = "http-upload-window")]
+                let result = if windowed {
+                    store
+                        .data_mut()
+                        .capabilities
+                        .streams
+                        .detach_remove_upload(target.rep())
+                        .map(|value| detached = value)
+                } else {
+                    store
+                        .data_mut()
+                        .capabilities
+                        .streams
+                        .remove(target.rep(), Kind::Upload)
+                };
+                #[cfg(not(feature = "http-upload-window"))]
                 let result = store
                     .data_mut()
                     .capabilities
                     .streams
                     .remove(target.rep(), Kind::Upload);
                 checkpoint(&mut store)?;
+                #[cfg(feature = "http-upload-window")]
+                if windowed {
+                    crate::host::service::synchronize_without_host_clock(&mut store)?;
+                } else {
+                    synchronize(&mut store)?;
+                }
+                #[cfg(not(feature = "http-upload-window"))]
                 synchronize(&mut store)?;
                 Ok((result.map_err(convert_error),))
-            })
+            });
+            #[cfg(feature = "http-upload-window")]
+            drop(detached);
+            result
         }
     }
 }

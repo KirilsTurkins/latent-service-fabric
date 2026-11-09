@@ -652,7 +652,7 @@ pub fn verify_c_canonical_abi(
     Ok(receipt)
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "c-http-upload-window-test-support"))]
 pub(crate) mod tests {
     use super::*;
     use wasm_encoder::ExportKind;
@@ -878,6 +878,7 @@ pub(crate) mod tests {
         );
     }
 
+    #[cfg(test)]
     fn operators(input: &[u8], function: u32) -> Vec<Operator<'_>> {
         let imported = plan(input).unwrap().imported_functions;
         Parser::new(0)

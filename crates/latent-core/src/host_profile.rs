@@ -48,6 +48,7 @@ impl HostInterfaceSpec {
             "latent:http/streaming@0.3.0" | "latent:http/phase-timing@0.4.0" => {
                 &["upload", "body", "chunk"]
             }
+            "latent:http/upload-window@0.5.0" => &["upload"],
             "latent:blob/blob@0.2.0" => &["chunk"],
             "latent:network/streams@0.1.0" => &["connection", "chunk"],
             "latent:state/key-value@0.2.0" => &["transaction", "query-view", "page"],
@@ -363,6 +364,39 @@ const PHASE3_V7_INTERFACES: [HostInterfaceSpec; 17] = [
 pub const PHASE3_HOST_ABI_V7: HostAbiProfile = HostAbiProfile {
     id: "lsf-host-abi-phase3-v7",
     interfaces: &PHASE3_V7_INTERFACES,
+};
+
+const PHASE3_V8_INTERFACES: [HostInterfaceSpec; 18] = [
+    PHASE3_V7_INTERFACES[0],
+    PHASE3_V7_INTERFACES[1],
+    PHASE3_V7_INTERFACES[2],
+    PHASE3_V7_INTERFACES[3],
+    PHASE3_V7_INTERFACES[4],
+    PHASE3_V7_INTERFACES[5],
+    PHASE3_V7_INTERFACES[6],
+    PHASE3_V7_INTERFACES[7],
+    PHASE3_V7_INTERFACES[8],
+    PHASE3_V7_INTERFACES[9],
+    PHASE3_V7_INTERFACES[10],
+    PHASE3_V7_INTERFACES[11],
+    PHASE3_V7_INTERFACES[12],
+    PHASE3_V7_INTERFACES[13],
+    PHASE3_V7_INTERFACES[14],
+    PHASE3_V7_INTERFACES[15],
+    PHASE3_V7_INTERFACES[16],
+    HostInterfaceSpec {
+        interface: "latent:http/upload-window@0.5.0",
+        package: "latent:http",
+        binding: HostInterfaceBinding::Provider,
+        wit: include_str!("../../../wit/platform/http-upload-window/package.wit"),
+        asynchronous: true,
+    },
+];
+/// Explicit prepaid-upload ABI. Selection grants no additional destination or
+/// provider authority, and every earlier interface remains frozen.
+pub const PHASE3_HOST_ABI_V8: HostAbiProfile = HostAbiProfile {
+    id: "lsf-host-abi-phase3-v8",
+    interfaces: &PHASE3_V8_INTERFACES,
 };
 
 /// Explicit transaction definition profile. Selection requires a separately

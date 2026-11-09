@@ -227,6 +227,158 @@ async fn upload_and_download_cross_many_windows_without_whole_body_buffering() {
     f.clean().await;
     server.await.unwrap();
 }
+
+#[tokio::test]
+async fn prepared_upload_uses_the_original_small_window_and_sends_each_chunk_once() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let server = tokio::spawn(async move {
+        let (mut stream, _) = listener.accept().await.unwrap();
+        let wire = read_request(&mut stream).await;
+        assert!(wire.ends_with(b"abcdefghijklmnop"));
+        stream
+            .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+            .await
+            .unwrap();
+    });
+    let f = fixture(port, 1);
+    let (session, _) = f.session(5000);
+    let observer = session.observer();
+    let mut upload = f
+        .streaming
+        .as_ref()
+        .unwrap()
+        .start(&session, input(port, Some(16)))
+        .unwrap()
+        .await
+        .unwrap();
+
+    // The legacy whole chunk is rejected before the provider sends it. The
+    // prepared route instead uses this exact provider's four-byte window.
+    assert!(matches!(
+        upload.write(b"abcdefgh".to_vec()).await,
+        Err(Error::Http(HttpError::BudgetExhausted))
+    ));
+    for bytes in b"abcdefghijklmnop".chunks(4) {
+        let mut prepared = upload.prepare_write(4096).unwrap();
+        assert_eq!(prepared.capacity(), 4);
+        assert!(matches!(
+            upload.prepare_write(4096),
+            Err(
+                latent_capabilities::broker::streaming_http::HttpWritePreparationError::Http(
+                    Error::Http(HttpError::BudgetExhausted)
+                )
+            )
+        ));
+        assert!(prepared.capture(bytes));
+        upload.write_prepared(prepared).await.unwrap();
+    }
+    let mut body = upload.finish().await.unwrap();
+    assert_eq!(body.head().status(), 200);
+    assert!(body.read(4).await.unwrap().is_none());
+    drop(body);
+    drop(session);
+    assert!(observer.is_quiescent());
+    server.await.unwrap();
+    f.clean().await;
+}
+
+#[tokio::test]
+async fn prepared_upload_rejects_excess_declared_length_before_send() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let server = tokio::spawn(async move {
+        let (mut stream, _) = listener.accept().await.unwrap();
+        let wire = read_request(&mut stream).await;
+        assert!(wire.ends_with(b"abc"));
+        stream
+            .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+            .await
+            .unwrap();
+    });
+    let f = fixture(port, 1);
+    let (session, _) = f.session(5000);
+    let mut upload = f
+        .streaming
+        .as_ref()
+        .unwrap()
+        .start(&session, input(port, Some(3)))
+        .unwrap()
+        .await
+        .unwrap();
+    let mut too_long = upload.prepare_write(4).unwrap();
+    assert!(too_long.capture(b"abcd"));
+    assert!(matches!(
+        upload.write_prepared(too_long).await,
+        Err(Error::Http(HttpError::RequestTooLarge))
+    ));
+    let mut valid = upload.prepare_write(4).unwrap();
+    assert!(valid.capture(b"abc"));
+    upload.write_prepared(valid).await.unwrap();
+    let mut body = upload.finish().await.unwrap();
+    assert!(body.read(4).await.unwrap().is_none());
+    drop(body);
+    drop(session);
+    server.await.unwrap();
+    f.clean().await;
+}
+
+#[tokio::test]
+async fn prepared_upload_preserves_the_original_cumulative_input_limit() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let server = tokio::spawn(async move {
+        let (mut stream, _) = listener.accept().await.unwrap();
+        let headers = read_request(&mut stream).await;
+        assert!(String::from_utf8(headers)
+            .unwrap()
+            .contains("transfer-encoding: chunked"));
+        let mut chunked = vec![0; 23];
+        stream.read_exact(&mut chunked).await.unwrap();
+        assert_eq!(chunked, b"4\r\nabcd\r\n4\r\nefgh\r\n0\r\n\r\n");
+        stream
+            .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+            .await
+            .unwrap();
+    });
+    let mut config = config(port);
+    config.destinations[0].redirect_destinations.clear();
+    let f = Fixture::streaming(
+        config,
+        HttpStreamLimits {
+            maximum_input_bytes: 8,
+            maximum_output_bytes: 8,
+            maximum_chunk_bytes: 4,
+            maximum_outstanding_chunks: 1,
+        },
+    );
+    let (session, _) = f.session(5000);
+    let mut upload = f
+        .streaming
+        .as_ref()
+        .unwrap()
+        .start(&session, input(port, None))
+        .unwrap()
+        .await
+        .unwrap();
+    for bytes in [b"abcd", b"efgh"] {
+        let mut prepared = upload.prepare_write(4096).unwrap();
+        assert!(prepared.capture(bytes));
+        upload.write_prepared(prepared).await.unwrap();
+    }
+    let mut excess = upload.prepare_write(4096).unwrap();
+    assert!(excess.capture(b"x"));
+    assert!(matches!(
+        upload.write_prepared(excess).await,
+        Err(Error::Http(HttpError::BudgetExhausted))
+    ));
+    let mut body = upload.finish().await.unwrap();
+    assert!(body.read(4).await.unwrap().is_none());
+    drop(body);
+    drop(session);
+    server.await.unwrap();
+    f.clean().await;
+}
 #[tokio::test]
 async fn truncated_body_is_terminal_and_never_verified_eof() {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -604,7 +756,7 @@ async fn finite_upload_window_stalls_without_an_unbounded_producer_queue() {
 
 // The gate is scoped to this fixture's actual provider and pauses only after
 // Sender::send has accepted the original chunk. It does not claim a kernel send.
-async fn queued_upload_write_case(cancel: bool) {
+async fn queued_upload_write_case(cancel: bool, prepared: bool) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let port = listener.local_addr().unwrap().port();
     let server = tokio::spawn(async move {
@@ -647,10 +799,17 @@ async fn queued_upload_write_case(cancel: bool) {
         .unwrap()
         .replace(crate::provider::WriteGate {
             entered,
-            release: release_rx
+            release: release_rx,
+            retain: None,
         })
         .is_none());
-    let mut writing = upload.write(b"abcd".to_vec());
+    let mut writing = if prepared {
+        let mut input = upload.prepare_write(4096).unwrap();
+        assert!(input.capture(b"abcd"));
+        upload.write_prepared(input)
+    } else {
+        upload.write(b"abcd".to_vec())
+    };
     tokio::time::timeout(Duration::from_secs(2), async {
         tokio::select! {
             result = &mut writing => panic!("write finished before the queued barrier: {result:?}"),
@@ -702,10 +861,144 @@ async fn queued_upload_write_case(cancel: bool) {
 
 #[tokio::test]
 async fn queued_upload_cancel_retires_original_connection_and_disallows_reuse() {
-    queued_upload_write_case(true).await;
+    queued_upload_write_case(true, false).await;
 }
 
 #[tokio::test]
 async fn queued_upload_release_completes_with_the_same_provider() {
-    queued_upload_write_case(false).await;
+    queued_upload_write_case(false, false).await;
+}
+
+#[tokio::test]
+async fn prepared_upload_cancel_retires_original_connection_and_disallows_reuse() {
+    queued_upload_write_case(true, true).await;
+}
+
+#[tokio::test]
+async fn prepared_upload_release_completes_with_the_same_provider() {
+    queued_upload_write_case(false, true).await;
+}
+
+#[tokio::test]
+async fn prepared_upload_unpolled_future_drops_input_before_its_original_upload() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let server = tokio::spawn(async move {
+        let (mut peer, _) = listener.accept().await.unwrap();
+        let mut received = Vec::new();
+        tokio::time::timeout(Duration::from_secs(3), peer.read_to_end(&mut received))
+            .await
+            .expect("upload must retire its original connection")
+            .unwrap();
+        assert!(!received.windows(4).any(|window| window == b"abcd"));
+    });
+    let f = fixture(port, 1);
+    let (session, control) = f.session(5000);
+    let observer = session.observer();
+    let mut upload = f
+        .streaming
+        .as_ref()
+        .unwrap()
+        .start(&session, input(port, Some(4)))
+        .unwrap()
+        .await
+        .unwrap();
+    let before = f.io.snapshot();
+    let native_before = control.budget.host_memory_bytes();
+    let mut prepared = upload.prepare_write(4096).unwrap();
+    assert!(prepared.capture(b"abcd"));
+    assert!(f.io.snapshot().staged_bytes >= before.staged_bytes + 4);
+    let writing = upload.write_prepared(prepared);
+    assert!(f.io.snapshot().staged_bytes >= before.staged_bytes + 4);
+    // The provider future has not been polled, so no transport send began.
+    drop(writing);
+    assert_eq!(f.io.snapshot(), before);
+    assert_eq!(control.budget.host_memory_bytes(), native_before);
+    drop(upload);
+    drop(session);
+    assert!(observer.is_quiescent());
+    tokio::time::timeout(Duration::from_secs(3), server)
+        .await
+        .expect("peer did not retire")
+        .unwrap();
+    f.clean().await;
+}
+
+#[tokio::test]
+async fn prepared_upload_cancel_keeps_a_retained_transport_chunk_on_its_original_ledger() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let server = tokio::spawn(async move {
+        let (mut peer, _) = listener.accept().await.unwrap();
+        let mut received = Vec::new();
+        tokio::time::timeout(Duration::from_secs(3), peer.read_to_end(&mut received))
+            .await
+            .expect("cancelled upload must retire its original connection")
+            .unwrap();
+        assert!(!received.windows(4).any(|window| window == b"abcd"));
+    });
+    let f = fixture(port, 1);
+    let (session, control) = f.session(5000);
+    let observer = session.observer();
+    let mut upload = f
+        .streaming
+        .as_ref()
+        .unwrap()
+        .start(&session, input(port, Some(4)))
+        .unwrap()
+        .await
+        .unwrap();
+    let (entered, entered_rx) = tokio::sync::oneshot::channel();
+    let (release, release_rx) = tokio::sync::oneshot::channel();
+    let (retain, retain_rx) = tokio::sync::oneshot::channel();
+    assert!(f
+        .provider
+        .inner
+        .write_gate
+        .lock()
+        .unwrap()
+        .replace(crate::provider::WriteGate {
+            entered,
+            release: release_rx,
+            retain: Some(retain),
+        })
+        .is_none());
+    let mut prepared = upload.prepare_write(4096).unwrap();
+    assert!(prepared.capture(b"abcd"));
+    let mut writing = upload.write_prepared(prepared);
+    tokio::time::timeout(Duration::from_secs(2), async {
+        tokio::select! {
+            result = &mut writing => panic!("write finished before its queued barrier: {result:?}"),
+            entered = entered_rx => entered.expect("original chunk must be queued"),
+        }
+    })
+    .await
+    .expect("write did not reach its queued barrier");
+    // This extra Bytes reference models a transport retaining the exact
+    // original queued owner; it does not claim kernel or peer retention.
+    let retained = retain_rx.await.unwrap();
+    assert_eq!(retained.as_ref(), b"abcd");
+    drop(writing);
+    drop(release);
+    assert!(matches!(
+        upload.write(b"x".to_vec()).await,
+        Err(Error::InvalidState)
+    ));
+    drop(upload);
+    drop(session);
+    assert!(f.io.snapshot().staged_bytes >= 4);
+    assert!(control.budget.host_memory_bytes() > 0);
+    assert!(!observer.is_quiescent());
+    drop(retained);
+    assert!(observer.is_quiescent());
+    assert_eq!(
+        f.io.snapshot(),
+        latent_capabilities::broker::io::IoSnapshot::default()
+    );
+    assert_eq!(control.budget.host_memory_bytes(), 0);
+    tokio::time::timeout(Duration::from_secs(3), server)
+        .await
+        .expect("peer did not retire")
+        .unwrap();
+    f.clean().await;
 }

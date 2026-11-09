@@ -354,6 +354,8 @@ class StandardFacilities(unittest.TestCase):
             self.assertFalse(any('allow-multiple-definition' in item or '--wrap' in item for item in command))
             for value in closed_defines:
                 self.assertEqual('-D' + value in command, selected in facilities.FETCH_PROFILES)
+            self.assertEqual('-DLSF_C_HTTP_UPLOAD_WINDOW=1' in command,
+                             selected in facilities.FETCH_WINDOW_PROFILES)
 
         # Run the normal owner's actual source/WIT selection for every profile;
         # capture at Compiler.compile before any compiler or external tool runs.
@@ -361,19 +363,28 @@ class StandardFacilities(unittest.TestCase):
         tool = self.root / 'never-executed-tool'
         tool.write_bytes(b'controlled source-selection boundary')
         captured = []
+        class Materials(dict):
+            clock_before_snapshot = None
+            def values(self):
+                self.clock_before_snapshot = 'controlled-clock' in self
+                return super().values()
         class SourceCompiler:
             def __init__(self, _temporary, _timeout, *, sdk, **_options):
                 self.sdk = sdk
                 self.paths = {'zig': tool, 'wit-bindgen': tool, 'wasm-tools': tool}
-                self.materials = {'zig': {'name': 'zig', 'size': 1, 'digest': digest(b'controlled')}}
+                self.materials = Materials({'zig': {'name': 'zig', 'size': 1, 'digest': digest(b'controlled')}})
             def enable_captured_isolation(self, _temporary):
                 return {}
             def select_threading_clock_inputs(self):
-                pass
+                self.materials['controlled-clock'] = {'name': 'controlled-clock', 'size': 1,
+                                                       'digest': digest(b'controlled-clock')}
             def compile(self, sources, wit, _world, _destination, **options):
                 captured.append((options['runtime_profile'],
                     [path.relative_to(self.sdk).as_posix() for path in sources if self.sdk in path.parents],
-                    '\n'.join(path.read_text() for path in wit.glob('*.wit'))))
+                    '\n'.join(path.read_text() for path in wit.glob('*.wit')),
+                    self.materials.clock_before_snapshot,
+                    next((digest(path.read_bytes()) for path in sources
+                          if path == self.sdk / 'src/libfetch/http.c'), None)))
                 raise CommandCaptured()
         for ordinal, selected in enumerate(sorted(facilities.SUPPORTED)):
             application = project.create(self.root / ('source-profile-' + str(ordinal)), 'greeting',
@@ -387,16 +398,60 @@ class StandardFacilities(unittest.TestCase):
                 with self.assertRaises(CommandCaptured):
                     builder.build(application, self.root / ('captured-source-' + str(ordinal)),
                                   tool, None, 'https://example.test/developer-project')
-            actual, selected_sources, selected_wit = captured[-1]
+            actual, selected_sources, selected_wit, clock_before_snapshot, http_source = captured[-1]
             self.assertEqual(actual, selected)
             expected_sources = ['src/' + name for name in facilities.PROFILE_SOURCES.get(selected, ())]
             self.assertEqual(selected_sources, expected_sources)
             has_clock = 'src/standard-clock-entropy.c' in selected_sources
             self.assertEqual(has_clock, selected in (facilities.PROFILE, facilities.COMBINED_PROFILE,
-                                                    facilities.FETCH_STANDARD_PROFILE))
+                                                    facilities.FETCH_STANDARD_PROFILE,
+                                                    facilities.FETCH_WINDOW_STANDARD_PROFILE))
+            self.assertEqual(clock_before_snapshot, has_clock and selected in facilities.FETCH_PROFILES)
+            inverse = json.loads((ROOT / 'tools/tests/fixtures/c-libfetch-upload-window/inverse.json').read_bytes())
+            self.assertEqual(http_source, 'sha256:' + inverse['http.c']['source_sha256']
+                             if selected in facilities.FETCH_PROFILES else None)
             for interface in facilities.IMPORTS:
                 self.assertEqual(('import ' + interface + ';') in selected_wit, has_clock)
         self.assertEqual(len(captured), len(facilities.SUPPORTED))
+
+    def test_libfetch_window_profiles_select_the_original_owner_and_reserved_adapter(self):
+        source = self.root / 'window-source'
+        source.mkdir()
+        original = b'package example:client; world service { export api; } interface api { run: func(); }\n'
+        (source / 'world.wit').write_bytes(original)
+        for index, profile in enumerate(facilities.FETCH_WINDOW_PROFILES):
+            with self.subTest(profile=profile):
+                selected = facilities.stage(source, 'service', self.root / ('window-' + str(index)),
+                                            ROOT / 'wit/platform', profile=profile)
+                text = (selected / 'world.wit').read_text()
+                self.assertEqual(text.count('import latent:http/streaming@0.3.0;'), 1)
+                self.assertEqual(text.count('import latent:http/upload-window@0.5.0;'), 1)
+                self.assertTrue({'http-v3', 'http-upload-window'} <=
+                                {path.name for path in (selected / 'deps').iterdir()})
+                self.assertEqual((selected / 'deps/http-upload-window/package.wit').read_bytes(),
+                                 (ROOT / 'wit/platform/http-upload-window/package.wit').read_bytes())
+                self.assertIn('LSF_C_HTTP_UPLOAD_WINDOW=1', facilities.compiler_defines(profile, ()))
+                with self.assertRaisesRegex(ValueError, '^c-http-compiler-owned-upload-window$'):
+                    facilities.compiler_defines(profile, ('LSF_C_HTTP_UPLOAD_WINDOW=0',))
+        for profile in (facilities.FETCH_PROFILE, facilities.FETCH_STANDARD_PROFILE):
+            self.assertNotIn('LSF_C_HTTP_UPLOAD_WINDOW=1', facilities.compiler_defines(profile, ()))
+        self.assertEqual((source / 'world.wit').read_bytes(), original)
+
+    def test_upload_window_owner_rejects_missing_or_duplicate_test_evidence(self):
+        from tools.c_http_upload_window_controls import require_discovery, require_one
+        name = 'module::one_exact_case'
+        line = ('test ' + name + ' ... ok\n').encode()
+        summary = b'test result: ok. 1 passed; 0 failed; 0 ignored; 10 filtered out\n'
+        require_one(line + summary, name)
+        for output in (summary, line + line + summary, line + summary + summary,
+                       line + b'test result: ok. 0 passed; 0 failed; 1 ignored;\n'):
+            with self.subTest(output=output), self.assertRaisesRegex(ValueError, 'exact-test-result-missing'):
+                require_one(output, name)
+        discovery = (name + ': test\n').encode()
+        require_discovery(discovery, (name,))
+        for output in (b'', discovery + discovery):
+            with self.subTest(output=output), self.assertRaisesRegex(ValueError, 'exact-test-discovery-missing'):
+                require_discovery(output, (name,))
 
     def test_libfetch_unthreaded_build_refuses_before_binding_generation_or_output(self):
         from unittest import mock

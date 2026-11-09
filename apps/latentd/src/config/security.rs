@@ -2,7 +2,7 @@
 
 use std::collections::BTreeMap;
 
-use latent_core::{PlatformError, PHASE3_HOST_ABI_CURRENT, PHASE4_HOST_ABI_V1};
+use latent_core::{PlatformError, PHASE3_HOST_ABI_CURRENT, PHASE3_HOST_ABI_V8, PHASE4_HOST_ABI_V1};
 use latent_wasmtime::ExecutionIsolationProfile;
 use serde::Serialize;
 
@@ -66,6 +66,16 @@ fn guest_clock_report(settings: &NodeSettings) -> Option<GuestClockReport> {
         })
 }
 
+fn selected_host_abi(settings: &NodeSettings) -> &'static str {
+    if settings.wasmtime.transactional_state {
+        PHASE4_HOST_ABI_V1.id
+    } else if settings.wasmtime.http_upload_window {
+        PHASE3_HOST_ABI_V8.id
+    } else {
+        PHASE3_HOST_ABI_CURRENT.id
+    }
+}
+
 impl ExecutionProfileReport {
     pub(crate) fn matches(&self, settings: &NodeSettings) -> bool {
         #[cfg(feature = "development-test-node")]
@@ -81,12 +91,7 @@ impl ExecutionProfileReport {
         self.profile == settings.wasmtime.execution_isolation_profile
             && self.native_thread_profile == native_thread_profile(settings)
             && self.activation_stack_accounting == activation_stack_accounting(settings)
-            && self.host_abi_profile
-                == if settings.wasmtime.transactional_state {
-                    PHASE4_HOST_ABI_V1.id
-                } else {
-                    PHASE3_HOST_ABI_CURRENT.id
-                }
+            && self.host_abi_profile == selected_host_abi(settings)
             && self.authenticated_native_loading == settings.isolated_aot.is_some()
             && self.protected_credential_file == settings.credentials_from_protected_file
             && (self.admission == "enforced") == settings.supply_chain.is_enforced()
@@ -143,11 +148,7 @@ pub(super) fn check(settings: &NodeSettings) -> Result<ExecutionProfileReport, P
             "trusted-local"
         },
         protected_credential_file: settings.credentials_from_protected_file,
-        host_abi_profile: if settings.wasmtime.transactional_state {
-            PHASE4_HOST_ABI_V1.id
-        } else {
-            PHASE3_HOST_ABI_CURRENT.id
-        },
+        host_abi_profile: selected_host_abi(settings),
         wasmtime_version: latent_wasmtime::WASMTIME_VERSION,
         target: settings.wasmtime.target_triple.clone(),
         compiler: if settings.isolated_aot.is_some() {

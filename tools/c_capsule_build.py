@@ -133,7 +133,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                         sort_keys=True, separators=(",", ":")).encode()) if closure is not None else None)
             write_json(output / "c-libraries.json", application.receipt)
             if threaded and runtime_profile in {standard_facilities.PROFILE, standard_facilities.COMBINED_PROFILE,
-                                                standard_facilities.FETCH_STANDARD_PROFILE}:
+                                                standard_facilities.FETCH_STANDARD_PROFILE,
+                                                standard_facilities.FETCH_WINDOW_STANDARD_PROFILE}:
                 # Select before the observed materials snapshot. compile()
                 # rechecks the same pins and cannot replace these identities.
                 compiler.select_threading_clock_inputs()

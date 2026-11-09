@@ -124,6 +124,8 @@ pub struct EngineConfig {
     pub allocator: EngineAllocator,
     pub optimization: EngineOptimization,
     pub java_guest: bool,
+    /// Explicit engine-wide selection; provider grants and limits stay separate.
+    pub http_upload_window: bool,
     pub threading_profile: EngineThreadingProfile,
     pub activation_stack_accounting: EngineActivationStackAccounting,
 }

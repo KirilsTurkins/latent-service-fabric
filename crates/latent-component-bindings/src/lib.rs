@@ -47,6 +47,12 @@ pub mod host {
         include!(concat!(env!("OUT_DIR"), "/http_phase_host.rs"));
     }
 
+    /// Explicit prepaid upload continuations over the original HTTP resource.
+    #[cfg(feature = "http-upload-window")]
+    pub mod http_upload_window {
+        include!(concat!(env!("OUT_DIR"), "/http_upload_window_host.rs"));
+    }
+
     /// Bounded immutable-blob resources and explicit storage outcomes.
     pub mod blob {
         include!(concat!(env!("OUT_DIR"), "/blob_host.rs"));

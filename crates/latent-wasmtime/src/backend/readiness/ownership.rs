@@ -36,6 +36,7 @@ impl WasmtimeBackend {
             .len()
             .saturating_add(surface.type_imports.len())
             .saturating_add(usize::from(surface.phase_type_owner))
+            .saturating_add(usize::from(surface.upload_window_alias))
             > 64
             || surface
                 .imports
@@ -65,7 +66,8 @@ impl WasmtimeBackend {
             profile,
             import_count: (surface.imports.len()
                 + surface.type_imports.len()
-                + usize::from(surface.phase_type_owner)) as u64,
+                + usize::from(surface.phase_type_owner)
+                + usize::from(surface.upload_window_alias)) as u64,
             function_count: surface.function_count() as u64,
             hostcall_fuel: surface.hostcall_fuel as u64,
             maximum_lifted_bytes: surface.value_codec_limits.max_lifted_bytes as u64,
@@ -75,7 +77,15 @@ impl WasmtimeBackend {
                 .authentication
                 .as_ref()
                 .map(|identity| *identity.metadata().digest()),
-            imports: surface.imports.iter().cloned().map(ContractId).collect(),
+            imports: surface
+                .imports
+                .iter()
+                .map(String::as_str)
+                .chain(surface.upload_window_alias.then_some(
+                    latent_capabilities::broker::streaming_http::UPLOAD_WINDOW_INTERFACE,
+                ))
+                .map(|name| ContractId(name.to_owned()))
+                .collect(),
             type_imports: surface
                 .type_imports
                 .iter()

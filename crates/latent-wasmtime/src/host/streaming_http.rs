@@ -20,6 +20,10 @@ mod body;
 pub(crate) mod phases;
 pub(super) mod table;
 mod upload;
+#[cfg(all(test, feature = "http-upload-window"))]
+mod upload_drop_tests;
+#[cfg(feature = "http-upload-window")]
+pub(crate) mod upload_window;
 use table::{Kind, Value};
 pub(crate) fn install(
     linker: &mut Linker<HostState>,

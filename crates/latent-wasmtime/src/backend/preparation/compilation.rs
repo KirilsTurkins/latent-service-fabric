@@ -19,6 +19,25 @@ use crate::containment::platform_error;
 use crate::preparation_observer::{PreparationJob, PreparationStage};
 use crate::surface;
 
+fn require_upload_window_c_authentication(
+    imported: bool,
+    threading: &crate::component_threading::Authentication,
+) -> Result<(), PlatformError> {
+    if imported
+        && !matches!(
+            threading,
+            crate::component_threading::Authentication::CVerified(_)
+        )
+    {
+        return Err(platform_error(
+            PlatformErrorCode::IncompatibleContract,
+            "prepaid HTTP uploads require the authenticated C cooperative component",
+            false,
+        ));
+    }
+    Ok(())
+}
+
 enum CompiledCode {
     Local(Component),
     Native(LoadedNative),
@@ -258,6 +277,7 @@ impl super::super::PreparationContext {
             }
             error
         })?;
+        require_upload_window_c_authentication(surface.upload_window_alias, &threading)?;
         let metadata_bytes = input
             .metadata_bytes
             .checked_add(surface.retained_bytes)
@@ -290,9 +310,12 @@ impl super::super::PreparationContext {
             .imports
             .iter()
             .filter(|import| {
-                !surface.phase_type_owner
+                (!surface.phase_type_owner
                     || import.contract.0
-                        != latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY
+                        != latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY)
+                    && (!surface.upload_window_alias
+                        || import.contract.0
+                            != latent_capabilities::broker::streaming_http::UPLOAD_WINDOW_INTERFACE)
             })
             .map(|import| import.contract.clone())
             .collect();
@@ -316,5 +339,29 @@ impl super::super::PreparationContext {
         linking.complete();
         WorkerWindow::check(wait, || self.check_runtime(&runtime))?;
         Ok(runtime)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::component_threading::Authentication;
+
+    #[test]
+    fn upload_window_requires_the_c_authenticated_profile_before_linking() {
+        for other in [
+            Authentication::Disabled,
+            Authentication::Verified([1; 32]),
+            Authentication::RustSyncVerified([2; 32]),
+        ] {
+            assert!(require_upload_window_c_authentication(true, &other).is_err());
+            assert!(require_upload_window_c_authentication(false, &other).is_ok());
+        }
+        // This tests the selection gate only. The proof must separately be
+        // produced from the real component bytes by C authentication.
+        assert!(
+            require_upload_window_c_authentication(true, &Authentication::CVerified([3; 32]))
+                .is_ok()
+        );
     }
 }

@@ -204,6 +204,128 @@ mod tests {
     use latent_core::{Metadata, ReleaseDigest};
     use latent_executor::PreparationKey;
 
+    #[cfg(feature = "http-upload-window")]
+    #[test]
+    fn upload_window_host_authentication_rejects_handcrafted_shared_original_memory() {
+        use sha2::Digest;
+        use std::borrow::Cow;
+        use wasm_encoder::{
+            Alias, Component, ComponentAliasSection, ComponentImportSection,
+            ComponentOuterAliasKind, ComponentTypeRef, ComponentTypeSection, CustomSection,
+            InstanceType, PrimitiveValType, TypeBounds,
+        };
+        use wasmparser::{Parser, Payload, Validator, WasmFeatures};
+
+        let original = latent_component_threading::c_http_upload_window_test_original_core();
+        let digest: [u8; 32] = sha2::Sha256::digest(&original).into();
+        assert!(
+            latent_component_threading::c_abi::transform_c_canonical_abi(&original, digest, "run")
+                .is_ok()
+        );
+        let memory = Parser::new(0)
+            .parse_all(&original)
+            .find_map(|payload| match payload.unwrap() {
+                Payload::MemorySection(reader) => Some(reader.range().start),
+                _ => None,
+            })
+            .expect("one original memory");
+        assert_eq!(&original[memory..memory + 4], &[1, 1, 4, 4]);
+        let mut shared = original.clone();
+        shared[memory + 1] = 3; // same finite memory with the shared flag set
+        Validator::new_with_features(WasmFeatures::default() | WasmFeatures::THREADS)
+            .validate_all(&shared)
+            .unwrap();
+
+        // This deliberately incomplete component contains the actual helper
+        // import and nominal resource alias, but no valid final C graph. It
+        // isolates authentication; it is not an accepted or signed guest.
+        let component = |core: &[u8]| {
+            let mut value = Component::new();
+            let mut owner = InstanceType::new();
+            owner.export("upload", ComponentTypeRef::Type(TypeBounds::SubResource));
+            let index = owner.type_count();
+            owner
+                .ty()
+                .function()
+                .params([] as [(&str, PrimitiveValType); 0])
+                .result(None);
+            owner.export("open", ComponentTypeRef::Func(index));
+            let mut types = ComponentTypeSection::new();
+            types.instance(&owner);
+            let mut imports = ComponentImportSection::new();
+            imports.import("latent:http/streaming@0.3.0", ComponentTypeRef::Instance(0));
+            value.section(&types).section(&imports);
+            let mut aliases = ComponentAliasSection::new();
+            aliases.alias(Alias::InstanceExport {
+                instance: 0,
+                kind: wasm_encoder::ComponentExportKind::Type,
+                name: "upload",
+            });
+            value.section(&aliases);
+            let mut helper = InstanceType::new();
+            let index = helper.type_count();
+            helper.alias(Alias::Outer {
+                kind: ComponentOuterAliasKind::Type,
+                count: 1,
+                index: 1,
+            });
+            helper.export("upload", ComponentTypeRef::Type(TypeBounds::Eq(index)));
+            for name in ["prepare", "write"] {
+                let index = helper.type_count();
+                helper
+                    .ty()
+                    .function()
+                    .params([] as [(&str, PrimitiveValType); 0])
+                    .result(None);
+                helper.export(name, ComponentTypeRef::Func(index));
+            }
+            let mut types = ComponentTypeSection::new();
+            types.instance(&helper);
+            let mut imports = ComponentImportSection::new();
+            imports.import(
+                "latent:http/upload-window@0.5.0",
+                ComponentTypeRef::Instance(2),
+            );
+            value.section(&types).section(&imports);
+            let mut proof = b"LSFCPR01".to_vec();
+            proof.extend_from_slice(&1_u32.to_le_bytes());
+            proof.extend_from_slice(&3_u32.to_le_bytes());
+            proof.extend_from_slice(&u32::try_from(core.len()).unwrap().to_le_bytes());
+            proof.extend_from_slice(b"run");
+            proof.extend_from_slice(core);
+            value.section(&CustomSection {
+                name: Cow::Borrowed(latent_component_threading::c_preimage::C_PREIMAGE_SECTION),
+                data: Cow::Owned(proof),
+            });
+            value.finish()
+        };
+        let normal_component = component(&original);
+        let shared_component = component(&shared);
+        assert_eq!(
+            latent_component_threading::c_preimage::verify_embedded_c_original_core(
+                &normal_component
+            )
+            .unwrap_err(),
+            "c-component-one-main-creator"
+        );
+        assert_eq!(
+            latent_component_threading::c_preimage::verify_embedded_c_original_core(
+                &shared_component
+            )
+            .unwrap_err(),
+            "c-context-linked-core-shape"
+        );
+        for value in [&normal_component, &shared_component] {
+            let error = Authentication::verify_profile(
+                Some(crate::NativeThreadProfile::CContext144SyncCooperativeV1),
+                value,
+                latent_component_threading::c_preimage::C_VERIFICATION_WORK_BYTES,
+            )
+            .unwrap_err();
+            assert_eq!(error.code, PlatformErrorCode::CorruptArtifact);
+        }
+    }
+
     #[test]
     fn rust_sync_private_dispatch_executes_production_helper_and_preserves_source_fallback() {
         let raw = latent_component_threading::rust_objects::emitted_dispatch_controls().unwrap();

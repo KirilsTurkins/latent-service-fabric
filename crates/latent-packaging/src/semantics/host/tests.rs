@@ -246,6 +246,62 @@ fn phase_semantics_bind_original_resource_owners_and_exact_versioned_extension()
 }
 
 #[test]
+fn upload_window_requires_the_exact_original_operational_resource() {
+    let original = latent_core::PHASE3_HOST_ABI_V3
+        .interface(STREAMING)
+        .unwrap()
+        .wit;
+    let selected = latent_core::PHASE3_HOST_ABI_V8
+        .interface(UPLOAD_WINDOW)
+        .unwrap()
+        .wit;
+    let local_owner = selected
+        .replace("{upload, http-error}", "{http-error}")
+        .replace(
+            "    record window {",
+            "    resource upload;\n    record window {",
+        );
+    assert_ne!(local_owner, selected);
+    for (source, accepted) in [
+        (selected.to_owned(), true),
+        (local_owner, false),
+        (
+            selected.replace("generation: u64", "generation: u32"),
+            false,
+        ),
+        (
+            selected.replace("prepare: async func", "prepare: func"),
+            false,
+        ),
+        (
+            selected.replace("target: borrow<upload>", "target: upload"),
+            false,
+        ),
+    ] {
+        let mut resolve = Resolve::default();
+        resolve.push_source("original.wit", original).unwrap();
+        resolve.push_source("window.wit", &source).unwrap();
+        let imports: BTreeMap<_, _> = resolve
+            .interfaces
+            .iter()
+            .filter_map(|(id, _)| {
+                let name = resolve.id_of(id)?;
+                (name == STREAMING || name == UPLOAD_WINDOW).then_some((name, id))
+            })
+            .collect();
+        assert_eq!(
+            validate(&resolve, &imports, SemanticLimits::default()).is_ok(),
+            accepted
+        );
+        let helper_only = BTreeMap::from([(UPLOAD_WINDOW.into(), imports[UPLOAD_WINDOW])]);
+        assert!(validate(&resolve, &helper_only, SemanticLimits::default()).is_err());
+    }
+    assert!(latent_core::PHASE3_HOST_ABI_CURRENT
+        .interface(UPLOAD_WINDOW)
+        .is_none());
+}
+
+#[test]
 fn phase_nominal_owner_requires_all_exact_types_no_calls_and_the_selected_phase() {
     let old = latent_core::PHASE3_HOST_ABI_V3
         .interface(STREAMING)

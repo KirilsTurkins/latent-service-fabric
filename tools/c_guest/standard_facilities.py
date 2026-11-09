@@ -10,7 +10,10 @@ LOGGING_PROFILE = 'c-standard-stdio-v1'
 COMBINED_PROFILE = 'c-standard-facilities-v1'
 FETCH_PROFILE = 'c-libfetch-http-v1'
 FETCH_STANDARD_PROFILE = 'c-libfetch-clock-entropy-v1'
-FETCH_PROFILES = (FETCH_PROFILE, FETCH_STANDARD_PROFILE)
+FETCH_WINDOW_PROFILE = 'c-libfetch-http-window-v1'
+FETCH_WINDOW_STANDARD_PROFILE = 'c-libfetch-clock-entropy-window-v1'
+FETCH_WINDOW_PROFILES = (FETCH_WINDOW_PROFILE, FETCH_WINDOW_STANDARD_PROFILE)
+FETCH_PROFILES = (FETCH_PROFILE, FETCH_STANDARD_PROFILE, *FETCH_WINDOW_PROFILES)
 DEFAULT = 'closed-synchronous-v1'
 IMPORTS = ('latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0', 'latent:random/random@0.1.0')
 SUPPORTED = frozenset((DEFAULT, PROFILE, LOGGING_PROFILE, COMBINED_PROFILE, *FETCH_PROFILES))
@@ -18,10 +21,14 @@ PROFILE_IMPORTS = {PROFILE: IMPORTS, LOGGING_PROFILE: ('latent:log/log@0.1.0',),
                    COMBINED_PROFILE: (*IMPORTS, 'latent:log/log@0.1.0'),
                    FETCH_PROFILE: ('latent:http/streaming@0.3.0',)}
 PROFILE_IMPORTS[FETCH_STANDARD_PROFILE] = (*PROFILE_IMPORTS[FETCH_PROFILE], *IMPORTS)
+PROFILE_IMPORTS[FETCH_WINDOW_PROFILE] = (*PROFILE_IMPORTS[FETCH_PROFILE], 'latent:http/upload-window@0.5.0')
+PROFILE_IMPORTS[FETCH_WINDOW_STANDARD_PROFILE] = (*PROFILE_IMPORTS[FETCH_WINDOW_PROFILE], *IMPORTS)
 PROFILE_SOURCES = {PROFILE: ('standard-clock-entropy.c',), LOGGING_PROFILE: ('standard-stdio.c',),
                    COMBINED_PROFILE: ('standard-clock-entropy.c', 'standard-stdio.c'),
                    FETCH_PROFILE: ('libfetch/fetch.c', 'libfetch/http.c', 'closed-file-abi.c')}
 PROFILE_SOURCES[FETCH_STANDARD_PROFILE] = (*PROFILE_SOURCES[FETCH_PROFILE], 'standard-clock-entropy.c')
+PROFILE_SOURCES[FETCH_WINDOW_PROFILE] = PROFILE_SOURCES[FETCH_PROFILE]
+PROFILE_SOURCES[FETCH_WINDOW_STANDARD_PROFILE] = (*PROFILE_SOURCES[FETCH_PROFILE], 'standard-clock-entropy.c')
 RECIPE = ('tools/c_guest/standard_facilities.py',)
 # The precompiled libc may extract other strong definitions from a member
 # needed by an unchanged dependency. Bind ordinary selected-source calls and
@@ -43,6 +50,8 @@ def selected_profile(project, graph=None):
 def compiler_defines(profile, defines):
     """The selected GNU-cookie port owns its declaration feature selection."""
     if profile in FETCH_PROFILES:
+        if any(value.split('=', 1)[0] == 'LSF_C_HTTP_UPLOAD_WINDOW' for value in defines):
+            raise ValueError('c-http-compiler-owned-upload-window')
         reserved = {*FETCH_CLOSED_SYMBOLS, *('__lsf_c_' + name for name in FETCH_CLOSED_SYMBOLS)}
         if any(value.split('=', 1)[0] in reserved for value in defines):
             raise ValueError('c-http-compiler-owned-closed-file-symbol')
@@ -50,6 +59,8 @@ def compiler_defines(profile, defines):
             if not any(value.split('=', 1)[0] == selected.split('=', 1)[0] for value in defines):
                 defines = (*defines, selected)
         defines = (*defines, *(name + '=__lsf_c_' + name for name in FETCH_CLOSED_SYMBOLS))
+        if profile in FETCH_WINDOW_PROFILES:
+            defines = (*defines, 'LSF_C_HTTP_UPLOAD_WINDOW=1')
     return defines
 
 

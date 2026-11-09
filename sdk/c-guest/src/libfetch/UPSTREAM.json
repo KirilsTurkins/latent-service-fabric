@@ -179,7 +179,9 @@
   },
   "runtimeProfiles": [
     "c-libfetch-http-v1",
-    "c-libfetch-clock-entropy-v1"
+    "c-libfetch-clock-entropy-v1",
+    "c-libfetch-http-window-v1",
+    "c-libfetch-clock-entropy-window-v1"
   ],
   "clockEntropyBackend": {
     "profile": "c-libfetch-clock-entropy-v1",

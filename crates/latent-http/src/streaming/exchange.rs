@@ -7,11 +7,11 @@ use crate::{
 };
 use latent_capabilities::broker::{
     http::HttpMethod,
-    io::{IoFuture, IoMemory, IoTransfer, IoTransferOptions},
+    io::{IoFuture, IoMemory, IoTransfer, IoTransferOptions, PreparedIoInput},
     pools::{PoolAdmission, PoolCall, PooledConnection, ProviderClient},
     streaming_http::{
-        HttpBody, HttpPhaseError, HttpPhaseFuture, HttpUpload, StreamingHttpError as Error,
-        PHASE_TIMING_CAPABILITY, STREAMING_HTTP_CAPABILITY,
+        HttpBody, HttpPhaseError, HttpPhaseFuture, HttpUpload, HttpWritePreparationError,
+        StreamingHttpError as Error, PHASE_TIMING_CAPABILITY, STREAMING_HTTP_CAPABILITY,
     },
     AuditProviderOutcome, CapabilityCallCost, CapabilityStreamBudget,
 };
@@ -274,6 +274,43 @@ impl HttpUpload for Upload {
         };
         prepared.finish((self, bytes))
     }
+
+    fn prepare_write(
+        &mut self,
+        maximum: usize,
+    ) -> Result<PreparedIoInput, HttpWritePreparationError> {
+        let state = self.state.as_ref().ok_or(Error::InvalidState)?;
+        state.call.io().checkpoint().map_err(Error::from)?;
+        if state.response.is_some() {
+            return Err(Error::InvalidState.into());
+        }
+        if maximum == 0 {
+            return Err(Error::Http(HttpError::InvalidRequest).into());
+        }
+        let maximum = maximum.min(state.transfer.maximum_chunk_bytes());
+        Ok(state.transfer.prepare_input(maximum).map_err(Error::from)?)
+    }
+
+    fn write_prepared(&mut self, input: PreparedIoInput) -> IoFuture<'_, Result<(), Error>> {
+        let Some(state) = self.state.as_ref() else {
+            return IoFuture::failed(Error::InvalidState);
+        };
+        let prepared = match state
+            .call
+            .prepare_io_future_with(Self::write_prepared_future)
+        {
+            Ok(prepared) => prepared,
+            Err(error) => return IoFuture::failed(error.into()),
+        };
+        prepared.finish((self, input))
+    }
+
+    fn owns_prepared_write(&self, input: &PreparedIoInput) -> bool {
+        self.state
+            .as_ref()
+            .is_some_and(|state| state.transfer.owns_prepared_input(input))
+    }
+
     fn finish(self: Box<Self>) -> IoFuture<'static, Result<Box<dyn HttpBody>, Error>> {
         let Some(state) = self.state.as_ref() else {
             return IoFuture::failed(Error::InvalidState);
@@ -360,6 +397,9 @@ impl Upload {
         {
             let gate = state.inner.write_gate.lock().unwrap().take();
             if let Some(gate) = gate {
+                if let Some(retain) = gate.retain {
+                    let _ = retain.send(state.sender.clone_pending().expect("chunk just queued"));
+                }
                 let _ = gate.entered.send(());
                 let _ = gate.release.await;
             }
@@ -368,6 +408,57 @@ impl Upload {
         pending.disarmed = result.is_ok();
         result
     }
+
+    fn write_prepared_future<'a>(
+        (this, input): (&'a mut Self, PreparedIoInput),
+    ) -> impl std::future::Future<Output = Result<(), Error>> + Send + 'a {
+        this.write_prepared_inner(input)
+    }
+
+    async fn write_prepared_inner(&mut self, input: PreparedIoInput) -> Result<(), Error> {
+        let state = self.state.as_mut().ok_or(Error::InvalidState)?;
+        state.call.io().checkpoint()?;
+        if state.response.is_some() {
+            return Err(Error::InvalidState);
+        }
+        let length = input.captured_len().ok_or(Error::InvalidState)?;
+        if self.length.is_some_and(|n| {
+            state
+                .transfer
+                .accepted_input_bytes()
+                .saturating_add(length as u64)
+                > n
+        }) {
+            return Err(HttpError::RequestTooLarge.into());
+        }
+        // This checks the exact transfer, current authority and aggregate
+        // allowance before the same single-send custody used by v0.3.
+        let chunk = state.transfer.finish_prepared_input(input)?;
+        let mut pending = PendingWrite {
+            state: &mut self.state,
+            disarmed: false,
+        };
+        let state = pending.state.as_mut().expect("checked upload state");
+        if let Err(error) = state.sender.send(chunk) {
+            pending.disarmed = true;
+            return Err(error);
+        }
+        #[cfg(test)]
+        {
+            let gate = state.inner.write_gate.lock().unwrap().take();
+            if let Some(gate) = gate {
+                if let Some(retain) = gate.retain {
+                    let _ = retain.send(state.sender.clone_pending().expect("chunk just queued"));
+                }
+                let _ = gate.entered.send(());
+                let _ = gate.release.await;
+            }
+        }
+        let result = state.progress(true).await;
+        pending.disarmed = result.is_ok();
+        result
+    }
+
     async fn finish_inner(mut self: Box<Self>) -> Result<Box<dyn HttpBody>, Error> {
         let mut state = self.state.take().ok_or(Error::InvalidState)?;
         state.call.io().checkpoint()?;

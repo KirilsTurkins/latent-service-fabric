@@ -199,6 +199,17 @@ current binding; a buffered HTTP 0.2 binding does not match this interface.
 Capability policy and deployment grants still authorize exact method/path/header
 resources. This entry does not install opaque sockets or infer their authority.
 
+The separately selected C cooperative engine can opt into prepaid upload
+windows with `engine.httpUploadWindow: true`. It also requires the existing
+`engine.threadingProfile: "c-context144-sync-cooperative-v1"`,
+`providers.activationRuntime.nativeThreads: true`, and an installed HTTP 0.3
+streaming provider with its normal binding, policy and deployment grants.
+Omitting the setting keeps the earlier host profile. The window continues the
+same upload and may be smaller than the guest's requested chunk; it adds no
+provider, destination, retry or byte allowance. It cannot be combined with
+the HTTP phase-timing or transactional-state profiles. The new profile still
+requires its own signed-component and host-boundary qualification.
+
 The existing hard ceilings remain 63 MiB input/output, 64 KiB per chunk and 32
 outstanding chunks. Root budgets, policies, broker/I/O windows and shared pool
 limits can be narrower. Increasing a setting cannot raise those other ceilings.

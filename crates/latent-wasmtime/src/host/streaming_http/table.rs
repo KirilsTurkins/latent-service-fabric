@@ -20,6 +20,8 @@ pub(super) enum Kind {
 }
 pub(super) enum Value {
     Upload(Box<dyn HttpUpload>),
+    #[cfg(feature = "http-upload-window")]
+    WindowedUpload(WindowedUpload),
     Body {
         value: Box<dyn HttpBody>,
         trailers_delivered: bool,
@@ -29,6 +31,36 @@ pub(super) enum Value {
         delivered: bool,
     },
 }
+
+#[cfg(feature = "http-upload-window")]
+pub(super) use latent_capabilities::broker::streaming_http::PreparedHttpUpload as WindowedUpload;
+
+// The existing fixed table pays for its largest value. The opt-in variant may
+// use that same capacity only when both the value and Option layout are exact.
+#[cfg(feature = "http-upload-window")]
+#[allow(dead_code)]
+enum LegacyValueLayout {
+    Upload(Box<dyn HttpUpload>),
+    Body {
+        value: Box<dyn HttpBody>,
+        trailers_delivered: bool,
+    },
+    Chunk {
+        value: IoOutputChunk,
+        delivered: bool,
+    },
+}
+#[cfg(feature = "http-upload-window")]
+const _: () = {
+    assert!(std::mem::size_of::<Value>() == std::mem::size_of::<LegacyValueLayout>());
+    assert!(std::mem::align_of::<Value>() == std::mem::align_of::<LegacyValueLayout>());
+    assert!(
+        std::mem::size_of::<Option<Value>>() == std::mem::size_of::<Option<LegacyValueLayout>>()
+    );
+    assert!(
+        std::mem::align_of::<Option<Value>>() == std::mem::align_of::<Option<LegacyValueLayout>>()
+    );
+};
 struct Entry {
     // Bit 0 marks an empty slot; bit 1 remains set once its value is published,
     // including while borrowed. A guard can erase only its unpublished slot.
@@ -155,12 +187,15 @@ impl Table {
             .ok_or(Error::InvalidState)
     }
     pub(super) fn put(&mut self, rep: u32, kind: Kind, value: Value) -> Result<(), Error> {
-        if !matches!(
+        let valid = matches!(
             (&value, kind),
             (Value::Upload(_), Kind::Upload)
                 | (Value::Body { .. }, Kind::Body)
                 | (Value::Chunk { .. }, Kind::Chunk)
-        ) {
+        );
+        #[cfg(feature = "http-upload-window")]
+        let valid = valid || matches!((&value, kind), (Value::WindowedUpload(_), Kind::Upload));
+        if !valid {
             return Err(Error::InvalidState);
         }
         let entry = self.entry(rep, kind)?;
@@ -172,6 +207,67 @@ impl Table {
             .state
             .store((u64::from(rep) << 2) | 2, Ordering::Release);
         Ok(())
+    }
+
+    /// Restore a detached value without dropping it in the Store on failure.
+    /// The caller retains `value` until all checks and the infallible move
+    /// occur in the same Store access.
+    #[cfg(feature = "http-upload-window")]
+    pub(super) fn restore_upload(
+        &mut self,
+        rep: u32,
+        value: &mut Option<Value>,
+    ) -> Result<(), Error> {
+        if !matches!(
+            value.as_ref(),
+            Some(Value::Upload(_) | Value::WindowedUpload(_))
+        ) {
+            return Err(Error::InvalidState);
+        }
+        let entry = self.entry(rep, Kind::Upload)?;
+        if entry.value.is_some()
+            || entry.state.load(Ordering::Acquire) != ((u64::from(rep) << 2) | 3)
+        {
+            return Err(Error::InvalidState);
+        }
+        entry.value = value.take();
+        entry
+            .state
+            .store((u64::from(rep) << 2) | 2, Ordering::Release);
+        Ok(())
+    }
+
+    /// Check the exact current generation without consuming it. A stale or
+    /// foreign ticket cannot steal another upload's prepared slot.
+    #[cfg(feature = "http-upload-window")]
+    pub(super) fn window_capacity(&mut self, rep: u32, generation: u64) -> Result<usize, Error> {
+        let Some(Value::WindowedUpload(value)) = &self.entry(rep, Kind::Upload)?.value else {
+            return Err(Error::InvalidState);
+        };
+        if value.generation != generation {
+            return Err(Error::InvalidState);
+        }
+        value
+            .prepared
+            .as_ref()
+            .map(latent_capabilities::broker::io::PreparedIoInput::capacity)
+            .ok_or(Error::InvalidState)
+    }
+
+    #[cfg(feature = "http-upload-window")]
+    pub(super) fn has_windowed_upload(&mut self, rep: u32) -> Result<bool, Error> {
+        Ok(matches!(
+            self.entry(rep, Kind::Upload)?.value.as_ref(),
+            Some(Value::WindowedUpload(_))
+        ))
+    }
+
+    #[cfg(feature = "http-upload-window")]
+    pub(super) fn detach_remove_upload(&mut self, rep: u32) -> Result<Option<Value>, Error> {
+        let entry = self.entry(rep, Kind::Upload)?;
+        let value = entry.value.take();
+        entry.state.store(0, Ordering::Release);
+        Ok(value)
     }
     pub(super) fn take(&mut self, rep: u32, kind: Kind, consume: bool) -> Result<Value, Error> {
         let entry = self.entry(rep, kind)?;
@@ -226,6 +322,11 @@ impl Table {
     }
 }
 
+#[cfg(all(test, feature = "http-upload-window"))]
+pub(super) fn diagnostic_table() -> Table {
+    tests::table()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -245,7 +346,7 @@ mod tests {
             IoFuture::failed(Error::InvalidState)
         }
     }
-    fn table() -> Table {
+    pub(super) fn table() -> Table {
         Table {
             entries: (0..CAPACITY)
                 .map(|_| Entry {
@@ -305,6 +406,34 @@ mod tests {
         assert_eq!(drops.load(Ordering::Acquire), CAPACITY - 1);
         drop(active);
         assert_eq!(drops.load(Ordering::Acquire), CAPACITY);
+    }
+
+    #[cfg(feature = "http-upload-window")]
+    #[test]
+    fn failed_window_restore_retains_the_detached_upload_until_the_caller_drops_it() {
+        let mut table = table();
+        let drops = Arc::new(AtomicUsize::new(0));
+        let rep = table.reserve(Kind::Upload).unwrap();
+        table
+            .put(
+                rep,
+                Kind::Upload,
+                Value::WindowedUpload(WindowedUpload {
+                    prepared: None,
+                    upload: Box::new(Upload(drops.clone())),
+                    generation: 7,
+                }),
+            )
+            .unwrap();
+        assert!(table.window_capacity(rep, 6).is_err());
+        assert!(table.window_capacity(rep, 7).is_err());
+        let mut held = Some(table.take(rep, Kind::Upload, false).unwrap());
+        table.remove(rep, Kind::Upload).unwrap();
+        assert!(table.restore_upload(rep, &mut held).is_err());
+        assert!(held.is_some());
+        assert_eq!(drops.load(Ordering::Acquire), 0);
+        drop(held);
+        assert_eq!(drops.load(Ordering::Acquire), 1);
     }
 
     #[test]

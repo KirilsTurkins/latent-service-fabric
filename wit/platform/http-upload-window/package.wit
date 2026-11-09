@@ -1,0 +1,21 @@
+package latent:http@0.5.0;
+
+// A prepaid copy for the same original streaming upload. This interface does
+// not open a request, grant a destination, or permit a replay after a write.
+interface upload-window {
+    use latent:http/streaming@0.3.0.{upload, http-error};
+    record window {
+        generation: u64,
+        maximum-bytes: u32,
+    }
+    variant preparation-error {
+        http(http-error),
+        unsupported-provider,
+    }
+    // Prepay one input slot on this exact upload. At most one preparation may
+    // exist per upload. The returned generation is valid for one write only.
+    prepare: async func(target: borrow<upload>, maximum-bytes: u32) -> result<window, preparation-error>;
+    // Consume the prepared generation and send its captured bytes once. The
+    // original v0.3 error and cancellation/uncertainty semantics still apply.
+    write: async func(target: borrow<upload>, generation: u64, bytes: list<u8>) -> result<_, http-error>;
+}

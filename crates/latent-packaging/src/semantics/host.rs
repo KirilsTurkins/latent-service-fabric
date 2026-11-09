@@ -1,7 +1,10 @@
 use super::{compare::Comparison, incompatible, SemanticLimits};
 use latent_core::{HostInterfaceSpec, PlatformError, PHASE3_HOST_ABI_CURRENT, PHASE4_HOST_ABI_V1};
 use std::collections::{BTreeMap, BTreeSet};
-use wit_parser::{InterfaceId, Resolve};
+use wit_parser::{InterfaceId, Resolve, Type, TypeDefKind, TypeId};
+
+const STREAMING_HTTP: &str = "latent:http/streaming@0.3.0";
+const UPLOAD_WINDOW: &str = "latent:http/upload-window@0.5.0";
 
 pub(super) fn recognizes(name: &str) -> bool {
     specification(name).is_some()
@@ -17,6 +20,7 @@ pub(super) fn specification(name: &str) -> Option<&'static HostInterfaceSpec> {
         // installation remain unchanged; the native host profile is explicit.
         .or_else(|| latent_core::PHASE3_HOST_ABI_V6.interface(name))
         .or_else(|| latent_core::PHASE3_HOST_ABI_V7.interface(name))
+        .or_else(|| latent_core::PHASE3_HOST_ABI_V8.interface(name))
 }
 
 /// Classify only the exact phase dependency after the caller validates its
@@ -28,11 +32,53 @@ pub(super) fn phase_type_owner(resolve: &Resolve, imports: &BTreeMap<String, Int
             .is_some_and(|id| resolve.interfaces[*id].functions.is_empty())
 }
 
+fn resource_target(resolve: &Resolve, mut id: TypeId) -> Option<TypeId> {
+    // Alias depth is already bounded by semantic validation. Keep this local
+    // identity walk independently finite as well.
+    for _ in 0..64 {
+        match &resolve.types[id].kind {
+            TypeDefKind::Type(Type::Id(next)) => id = *next,
+            TypeDefKind::Resource => return Some(id),
+            _ => return None,
+        }
+    }
+    None
+}
+
+/// This helper can only continue an operational original streaming import. It
+/// owns no resource of its own and creates no additional provider authority.
+pub(super) fn upload_window_alias(
+    resolve: &Resolve,
+    imports: &BTreeMap<String, InterfaceId>,
+) -> bool {
+    let (Some(original), Some(helper)) = (imports.get(STREAMING_HTTP), imports.get(UPLOAD_WINDOW))
+    else {
+        return false;
+    };
+    let original = &resolve.interfaces[*original];
+    let helper = &resolve.interfaces[*helper];
+    if original.functions.is_empty() {
+        return false;
+    }
+    match (original.types.get("upload"), helper.types.get("upload")) {
+        (Some(a), Some(b)) => {
+            let original = resource_target(resolve, *a);
+            original.is_some() && original == resource_target(resolve, *b)
+        }
+        _ => false,
+    }
+}
+
 pub(super) fn validate(
     resolve: &Resolve,
     imports: &BTreeMap<String, InterfaceId>,
     limits: SemanticLimits,
 ) -> Result<(), PlatformError> {
+    if imports.contains_key(UPLOAD_WINDOW) && !upload_window_alias(resolve, imports) {
+        return Err(incompatible(
+            "upload-window-requires-original-streaming-owner",
+        ));
+    }
     let mut trusted = Resolve::default();
     let mut loaded = BTreeSet::new();
     // One shared structural work allowance for non-callable type interfaces.
@@ -47,7 +93,7 @@ pub(super) fn validate(
             values.interface(*id, *id)?;
             continue;
         };
-        if name == "latent:http/phase-timing@0.4.0" {
+        if name == "latent:http/phase-timing@0.4.0" || name == UPLOAD_WINDOW {
             let dependency = PHASE3_HOST_ABI_CURRENT
                 .interface("latent:http/streaming@0.3.0")
                 .expect("immutable phase timing resource dependency");

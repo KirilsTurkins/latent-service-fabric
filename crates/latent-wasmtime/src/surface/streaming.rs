@@ -150,3 +150,125 @@ pub(crate) fn validate_phase_aliases(
     }
     Ok(())
 }
+
+/// The upload helper has no independent provider authority. It must use the
+/// exact nominal upload resource of an operational original streaming import.
+pub(crate) fn validate_upload_window_aliases(
+    component: &wasmtime::component::types::Component,
+    engine: &Engine,
+) -> Result<bool, PlatformError> {
+    use latent_capabilities::broker::streaming_http::{
+        STREAMING_HTTP_CAPABILITY, UPLOAD_WINDOW_INTERFACE,
+    };
+    let instance = |selected| {
+        component.imports(engine).find_map(|(name, item)| {
+            if name != selected {
+                return None;
+            }
+            match item.ty {
+                ComponentItem::ComponentInstance(interface) => Some(interface),
+                _ => None,
+            }
+        })
+    };
+    let Some(helper) = instance(UPLOAD_WINDOW_INTERFACE) else {
+        return Ok(false);
+    };
+    let original = instance(STREAMING_HTTP_CAPABILITY)
+        .ok_or_else(|| incompatible("upload window requires the original streaming import"))?;
+    if !original
+        .exports(engine)
+        .any(|(name, item)| name == "open" && matches!(item.ty, ComponentItem::ComponentFunc(_)))
+    {
+        return Err(incompatible(
+            "upload window requires an operational streaming import",
+        ));
+    }
+    let resource = |interface: &ComponentInstance| {
+        interface.exports(engine).find_map(|(name, item)| {
+            if name != "upload" {
+                return None;
+            }
+            match item.ty {
+                ComponentItem::Resource(resource) => Some(resource),
+                _ => None,
+            }
+        })
+    };
+    let expected = resource(&original)
+        .ok_or_else(|| incompatible("upload window original resource is missing"))?;
+    if resource(&helper) != Some(expected) {
+        return Err(incompatible(
+            "upload window resource differs from its original owner",
+        ));
+    }
+    for required in ["prepare", "write"] {
+        if !helper.exports(engine).any(|(name, item)| {
+            name == required && matches!(item.ty, ComponentItem::ComponentFunc(_))
+        }) {
+            return Err(incompatible("upload window operation is missing"));
+        }
+    }
+    Ok(true)
+}
+
+pub(crate) fn validate_upload_window(
+    name: &str,
+    function: &ComponentFunc,
+    interface: &ComponentInstance,
+    engine: &Engine,
+) -> Result<(), PlatformError> {
+    let mismatch = || incompatible("upload window signature does not match its original owner");
+    if !function.async_() {
+        return Err(mismatch());
+    }
+    let expected = interface.exports(engine).find_map(|(name, item)| {
+        if name != "upload" {
+            return None;
+        }
+        match item.ty {
+            ComponentItem::Resource(resource) => Some(resource),
+            _ => None,
+        }
+    });
+    let mut parameters = function.params();
+    let first = parameters.next().map(|(_, ty)| ty);
+    if !matches!((first, expected), (Some(Type::Borrow(actual)), Some(expected)) if actual == expected)
+    {
+        return Err(mismatch());
+    }
+    let second = parameters.next().map(|(_, ty)| ty);
+    let third = parameters.next().map(|(_, ty)| ty);
+    if parameters.next().is_some() {
+        return Err(mismatch());
+    }
+    let Some(Type::Result(result)) = function.results().next() else {
+        return Err(mismatch());
+    };
+    let valid = match name {
+        "prepare" => {
+            if !matches!(second, Some(Type::U32)) || third.is_some() {
+                false
+            } else if let Some(Type::Record(record)) = result.ok() {
+                let mut fields = record.fields();
+                matches!(fields.next(), Some(field) if field.name == "generation" && matches!(field.ty, Type::U64))
+                    && matches!(fields.next(), Some(field) if field.name == "maximum-bytes" && matches!(field.ty, Type::U32))
+                    && fields.next().is_none()
+                    && result.err().is_some()
+            } else {
+                false
+            }
+        }
+        "write" => {
+            matches!(second, Some(Type::U64))
+                && matches!(third, Some(Type::List(list)) if matches!(list.ty(), Type::U8))
+                && result.ok().is_none()
+                && result.err().is_some()
+        }
+        _ => false,
+    };
+    if !valid || function.results().len() != 1 {
+        return Err(mismatch());
+    }
+    Ok(())
+}

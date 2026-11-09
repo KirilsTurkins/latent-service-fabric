@@ -53,6 +53,7 @@ pub struct CheckedSurface {
     source_packages: Box<[(Box<str>, ArtifactBlobDigest)]>,
     counts: SurfaceCounts,
     phase_type_owner: bool,
+    upload_window_alias: bool,
 }
 
 impl CheckedSurface {
@@ -71,14 +72,17 @@ impl CheckedSurface {
         &self.imports
     }
     /// Checked source imports that require capability/provider bindings.
-    /// Resource-free values and the exact validated nominal HTTP phase owner
-    /// remain in `imports()` but confer no operational provider authority.
+    /// Resource-free values, the exact validated nominal HTTP phase owner, and
+    /// the verified upload-window alias remain in `imports()` but confer no
+    /// additional operational provider authority. The upload-window alias
+    /// requires the original operational streaming import and its grant.
     /// Compiler pruning never removes an otherwise operational source import.
     #[must_use]
     pub fn capability_imports(&self) -> impl Iterator<Item = &str> {
         self.imports.iter().map(AsRef::as_ref).filter(move |name| {
             host::recognizes(name)
                 && !(self.phase_type_owner && *name == "latent:http/streaming@0.3.0")
+                && !(self.upload_window_alias && *name == "latent:http/upload-window@0.5.0")
         })
     }
     #[must_use]
@@ -168,6 +172,7 @@ pub fn validate_capsule_with_profile(
     let type_nodes = compare::worlds(&source, &declared, &actual, &compiled, limits)?;
     host::validate(&source, &declared.imports, limits)?;
     let phase_type_owner = host::phase_type_owner(&source, &declared.imports);
+    let upload_window_alias = host::upload_window_alias(&source, &declared.imports);
     projection::validate(&source, world, contracts, limits)?;
     let functions = declared
         .exports
@@ -213,6 +218,7 @@ pub fn validate_capsule_with_profile(
             .collect(),
         counts,
         phase_type_owner,
+        upload_window_alias,
     })
 }
 

@@ -22,6 +22,7 @@
 ".github/workflows/http-phase-timing.yml",
 "crates/latent-capabilities/src/broker/**",
 "crates/latent-component-bindings/**",
+"crates/latent-component-threading/**",
 "crates/latent-core/src/host_profile.rs",
 "crates/latent-http/**",
 "crates/latent-packaging/src/semantics/host/**",
@@ -30,8 +31,19 @@
 "crates/latent-policy/src/capability.rs",
 "crates/latent-wasmtime/**",
 "apps/latentd/src/config/**",
+"apps/latentd/Cargo.toml",
 "apps/latentd/src/standalone/providers/runtime.rs",
 "wit/platform/http-phases/**",
+"wit/platform/http-upload-window/**",
+"wit/platform/runtime-phase3-http-upload-window/**",
+"wit/host-abi-phase3-v8.json",
+"sdk/c-guest/src/libfetch/**",
+"tools/c_http_upload_window_controls.py",
+"tools/c_capsule_build.py",
+"tools/c_guest/**",
+"tools/tests/test_c_standard_facilities.py",
+"tools/tests/test_c_thread_minimal.py",
+"tools/tests/fixtures/c-libfetch-upload-window/**",
 "Cargo.toml",
 "Cargo.lock",
 "tools/ci/suites.json",
@@ -50,9 +62,10 @@
 }
 },
 "requiredJobs":[
-"phase-timing"
+"phase-timing",
+"prepaid-c-upload-window"
 ],
-"reviewReason":"Add focused opt-in HTTP V7 real transport and canonical component phase controls; preserve all prior workflow and test obligations.",
+"reviewReason":"Preserve the existing phase job and add an explicitly selected source-bound prepaid upload control job.",
 "schemaVersion":"latent.ci.contracts.v1",
 "workflow":".github/workflows/http-phase-timing.yml"
 }

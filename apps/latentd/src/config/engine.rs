@@ -25,6 +25,7 @@ impl<'de> Deserialize<'de> for EngineConfig {
                     allocator: EngineAllocator,
                     optimization: EngineOptimization,
                     java_guest: bool,
+                    http_upload_window: bool,
                     threading_profile: EngineThreadingProfile,
                     activation_stack_accounting: EngineActivationStackAccounting,
                 }
@@ -33,6 +34,7 @@ impl<'de> Deserialize<'de> for EngineConfig {
                     allocator: fields.allocator,
                     optimization: fields.optimization,
                     java_guest: fields.java_guest,
+                    http_upload_window: fields.http_upload_window,
                     threading_profile: fields.threading_profile,
                     activation_stack_accounting: fields.activation_stack_accounting,
                 })

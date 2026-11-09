@@ -8,6 +8,7 @@ on:
       - '.github/workflows/http-phase-timing.yml'
       - 'crates/latent-capabilities/src/broker/**'
       - 'crates/latent-component-bindings/**'
+      - 'crates/latent-component-threading/**'
       - 'crates/latent-core/src/host_profile.rs'
       - 'crates/latent-http/**'
       - 'crates/latent-packaging/src/semantics/host/**'
@@ -16,8 +17,19 @@ on:
       - 'crates/latent-policy/src/capability.rs'
       - 'crates/latent-wasmtime/**'
       - 'apps/latentd/src/config/**'
+      - 'apps/latentd/Cargo.toml'
       - 'apps/latentd/src/standalone/providers/runtime.rs'
       - 'wit/platform/http-phases/**'
+      - 'wit/platform/http-upload-window/**'
+      - 'wit/platform/runtime-phase3-http-upload-window/**'
+      - 'wit/host-abi-phase3-v8.json'
+      - 'sdk/c-guest/src/libfetch/**'
+      - 'tools/c_http_upload_window_controls.py'
+      - 'tools/c_capsule_build.py'
+      - 'tools/c_guest/**'
+      - 'tools/tests/test_c_standard_facilities.py'
+      - 'tools/tests/test_c_thread_minimal.py'
+      - 'tools/tests/fixtures/c-libfetch-upload-window/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
       - 'tools/ci/suites.json'
@@ -79,3 +91,39 @@ jobs:
         run: |
           cargo test --locked -p latentd --lib config::tests::providers::http_streaming::phase_selection_is_explicit_strict_and_never_aliases_the_original_contract -- --exact --nocapture
           cargo test --locked -p latentd --lib config::tests::providers::http_streaming::protected_phase_configuration_selects_v7_without_changing_original_limits_or_side_effects -- --exact --nocapture
+
+  prepaid-c-upload-window:
+    name: Prepaid C HTTP upload current-source controls
+    if: github.ref_name == 'feat/sdk690-prepaid-upload-window-20261109' || (github.event_name == 'pull_request' && github.head_ref == 'feat/sdk690-prepaid-upload-window-20261109')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      EXPECTED_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Check exact source and bounded upload ownership controls
+        run: python3 tools/c_http_upload_window_controls.py --output "$RUNNER_TEMP/c-http-upload-window-controls" --expected-revision "$EXPECTED_SOURCE_SHA"
+      - name: Retain source and bounded control logs
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: c-http-upload-window-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/c-http-upload-window-controls/
+          if-no-files-found: warn
+          retention-days: 7

@@ -118,6 +118,26 @@ fn java_guest_engine_is_explicit_and_does_not_raise_operator_limits() {
 }
 
 #[test]
+fn upload_window_input_is_a_strict_engine_opt_in() {
+    let (_, config) = config();
+    assert!(!config.engine.http_upload_window);
+    for invalid in ["null", "1", "\"true\"", "[]", "{}"] {
+        let source = document().replacen(
+            '{',
+            &format!("{{\"engine\":{{\"httpUploadWindow\":{invalid}}},"),
+            1,
+        );
+        assert!(input::decode(source.as_bytes()).is_err());
+    }
+    let source = document().replacen(
+        '{',
+        "{\"engine\":{\"httpUploadWindow\":true,\"httpUploadWindow\":false},",
+        1,
+    );
+    assert!(input::decode(source.as_bytes()).is_err());
+}
+
+#[test]
 fn finite_engine_profiles_derive_checked_pool_capacity_without_opening_storage() {
     for allocator in [EngineAllocator::OnDemand, EngineAllocator::Pooling] {
         for optimization in [EngineOptimization::Speed, EngineOptimization::SpeedAndSize] {
@@ -126,6 +146,7 @@ fn finite_engine_profiles_derive_checked_pool_capacity_without_opening_storage()
                 allocator,
                 optimization,
                 java_guest: false,
+                http_upload_window: false,
                 threading_profile: crate::config::model::EngineThreadingProfile::default(),
                 activation_stack_accounting:
                     crate::config::model::EngineActivationStackAccounting::default(),

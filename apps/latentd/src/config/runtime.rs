@@ -51,6 +51,7 @@ pub(super) fn wasmtime(
                 .http_streaming_installations()
                 .any(|http| http.phase_timing)
         }),
+        http_upload_window: config.engine.http_upload_window,
         activation_runtime: config
             .providers
             .as_ref()
@@ -76,6 +77,15 @@ pub(super) fn wasmtime(
     runtime.value_codec_limits.max_output_bytes = config.limits.maximum_payload_bytes;
     if config.engine.java_guest {
         runtime.install_java_guest();
+    }
+    if config.engine.http_upload_window
+        && !config.providers.as_ref().is_some_and(|providers| {
+            providers
+                .http_streaming_installations()
+                .any(|http| !http.phase_timing)
+        })
+    {
+        return Err(invalid("engine.httpUploadWindow.httpStreaming"));
     }
     install_stack_accounting(config, &mut runtime)?;
     if config.renderer_profile.is_some() {

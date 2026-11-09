@@ -20,6 +20,22 @@ def before_exit_trap(raw):
   raise AssertionError('closed-file-original-abi-source')
  return original
 
+def before_upload_window(path, raw):
+ import hashlib,json
+ inverse=(ROOT/'tools/tests/fixtures/c-libfetch-upload-window/inverse.json').read_bytes()
+ if hashlib.sha256(inverse).hexdigest() != 'd89d2a54ac3ac80dcb1b6f2efa2214df62f36d011a042bf859aa744fee7c74e7':
+  raise AssertionError('libfetch-upload-window-inverse-identity')
+ record=json.loads(inverse)[path.rsplit('/',1)[-1]]
+ if hashlib.sha256(raw).hexdigest() != record['source_sha256']:
+  raise AssertionError('libfetch-upload-window-exact-source')
+ current=record['current_hunk'].encode(); previous=record['previous_hunk'].encode()
+ if raw.count(current) != 1:
+  raise AssertionError('libfetch-upload-window-exact-hunk')
+ original=raw.replace(current,previous,1)
+ if hashlib.sha256(original).hexdigest() != record['previous_sha256']:
+  raise AssertionError('libfetch-upload-window-prior-source')
+ return original
+
 def before_unsolicited_partial(raw):
  import hashlib
  # Reconstruct the exact previously reviewed Range source before applying its
@@ -63,7 +79,7 @@ def before_range(path, raw):
 
 def before_head_stat(path, raw):
  import hashlib
- raw = before_range(path, raw)
+ raw = before_range(path, before_upload_window(path, raw))
  changes = {
   'http.c': ('6d762b7001e35c32582a5a5e7bb3c4be2313ebaa6522d20ae298bd9ce29f6d6f', (
    (b'    if ((stat && strcmp(method, "GET")) || fetchAuthMethod || fetchDebug || fetchTimeout < 0) { unsupported(); return NULL; }',
@@ -85,12 +101,27 @@ def before_head_stat(path, raw):
 class CThreadMinimal(unittest.TestCase):
  def test_unsolicited_partial_inverse_requires_exact_reviewed_source(self):
   import hashlib
-  raw=(ROOT/'sdk/c-guest/src/libfetch/http.c').read_bytes()
+  path=ROOT/'sdk/c-guest/src/libfetch/http.c'
+  raw=before_upload_window(path.as_posix(),path.read_bytes())
   self.assertEqual(hashlib.sha256(before_unsolicited_partial(raw)).hexdigest(),
                    'c81b948e74babf3edbc97a25473597daf24cba87ce48abda828f2e753c64185d')
   for altered in (raw+b'\n',raw.replace(b'requested_offset > 0 && known_length',b'requested_offset >= 0 && known_length'),raw.replace(b'actual_offset < (uint64_t)partial_length',b'actual_offset <= (uint64_t)partial_length')):
    with self.assertRaisesRegex(AssertionError,'libfetch-unsolicited-partial-exact-source'):
     before_unsolicited_partial(altered)
+ def test_upload_window_inverse_refuses_missing_duplicate_modified_and_unrelated_drift(self):
+  import hashlib,json
+  inverse=json.loads((ROOT/'tools/tests/fixtures/c-libfetch-upload-window/inverse.json').read_bytes())
+  for name in ('http.c','UPSTREAM.json'):
+   path=ROOT/'sdk/c-guest/src/libfetch'/name; raw=path.read_bytes()
+   record=inverse[name]; current=record['current_hunk'].encode()
+   self.assertEqual(raw.count(current),1)
+   self.assertEqual(hashlib.sha256(before_upload_window(path.as_posix(),raw)).hexdigest(),record['previous_sha256'])
+   for label,altered in (('missing',raw.replace(current,b'',1)),
+                         ('duplicate',raw.replace(current,current+current,1)),
+                         ('changed',raw.replace(current,current+b'changed',1)),
+                         ('unrelated',raw+b'\n')):
+    with self.subTest(name=name,case=label),self.assertRaisesRegex(AssertionError,'libfetch-upload-window-exact-source'):
+     before_upload_window(path.as_posix(),altered)
  def test_minimal_overlay_preserves_every_original_byte_and_full_standard_lifecycle_calls(self):
   raw=(ROOT/(original.FIXTURE+'main.c')).read_bytes();derived=selected.selected_source(raw)
   self.assertEqual(derived.replace(selected.FUNCTIONS,b'',1).replace(selected.CASES,b'',1),raw)
@@ -149,6 +180,22 @@ class CThreadMinimal(unittest.TestCase):
     self.assertEqual(left[path], right[path], path)
     self.assertEqual(hashlib.sha256(left[path]).hexdigest(), expected, path)
     del left[path]; del right[path]
+   additions={
+    'vendor/lsf/wit/platform/http-upload-window/package.wit': '6c501f97efc1ba8d6203c36b173959e28b7af176e0964395e9f7bf8d627ca96a',
+    'vendor/lsf/wit/platform/runtime-phase3-http-upload-window/world.wit': 'a4a81d2b6e3de151b2e262793952a4aaebbd41b3ea69cdebb668980b519fe163',
+   }
+   import json
+   paths=(ROOT/'tools/tests/fixtures/c-libfetch-upload-window/project-paths.json').read_bytes()
+   self.assertEqual(hashlib.sha256(paths).hexdigest(),'d82904d67d330f3ce6980e15e45ae60e924ae8b8aa77ebe402b6aafc353ae514')
+   expected_paths=json.loads(paths)
+   self.assertEqual(len(expected_paths),67)
+   self.assertEqual(sorted(left),expected_paths)
+   self.assertEqual(len(left),67)
+   self.assertEqual(set(left),set(right))
+   for path,expected in additions.items():
+    self.assertEqual(left[path],right[path],path)
+    self.assertEqual(hashlib.sha256(left[path]).hexdigest(),expected,path)
+    del left[path];del right[path]
    self.assertEqual(set(left),set(right));self.assertEqual(len(left),65)
    self.assertEqual([n for n in left if left[n]!=right[n]],['src/main.c'])
    self.assertEqual(read_json(a/'capsule-project.json'),read_json(b/'capsule-project.json'))

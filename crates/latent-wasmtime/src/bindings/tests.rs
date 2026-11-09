@@ -629,3 +629,46 @@ fn phase_preparation_requires_exact_timer_reason_and_affine_continuation_shapes(
         assert!(validate(&Component::new(&engine, encode(&altered)).unwrap()).is_err());
     }
 }
+
+#[test]
+fn upload_window_manifest_preserves_prior_interfaces_and_exact_source_identity() {
+    use sha2::{Digest, Sha256};
+    let profile = latent_core::PHASE3_HOST_ABI_V8;
+    let previous = latent_core::PHASE3_HOST_ABI_V7;
+    let manifest: serde_json::Value =
+        serde_json::from_str(include_str!("../../../../wit/host-abi-phase3-v8.json")).unwrap();
+    let mut identity = Sha256::new();
+    profile.visit_identity_bytes(|bytes| identity.update(bytes));
+    assert_eq!(manifest["id"], profile.id);
+    assert_eq!(
+        manifest["digest"],
+        format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(identity.finalize())
+        )
+    );
+    let entries = manifest["interfaces"].as_array().unwrap();
+    assert_eq!(entries.len(), previous.interfaces().len() + 1);
+    for (entry, spec) in entries.iter().zip(profile.interfaces()) {
+        assert_eq!(entry["interface"], spec.interface);
+        assert_eq!(entry["package"], spec.package);
+        assert_eq!(entry["asynchronous"], spec.asynchronous);
+        assert_eq!(
+            entry["sourceSha256"],
+            format!(
+                "sha256:{:x}",
+                latent_core::digest::HexDigest(Sha256::digest(spec.wit.as_bytes()))
+            )
+        );
+    }
+    for old in previous.interfaces() {
+        assert_eq!(profile.interface(old.interface), Some(old));
+    }
+    assert_eq!(
+        latent_core::PHASE3_HOST_ABI_CURRENT,
+        latent_core::PHASE3_HOST_ABI_V5
+    );
+    assert!(previous
+        .interface("latent:http/upload-window@0.5.0")
+        .is_none());
+}

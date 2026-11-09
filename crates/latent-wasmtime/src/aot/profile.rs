@@ -228,6 +228,9 @@ fn declared_digest(
 }
 
 fn capabilities(config: &WasmtimeConfig) -> [u8; 32] {
+    if config.upload_window_enabled() {
+        return crate::bindings::host_abi_digest_for(latent_core::PHASE3_HOST_ABI_V8);
+    }
     if config.http_phase_timing {
         return crate::bindings::host_abi_digest_for(latent_core::PHASE3_HOST_ABI_V7);
     }

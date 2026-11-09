@@ -325,6 +325,32 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
     lsf_upload_adopt(&upload, opened.val.ok);
     for (size_t offset = 0; offset < body_length;) {
         const size_t remaining = body_length - offset;
+#if defined(LSF_C_HTTP_UPLOAD_WINDOW)
+        const uint32_t requested = remaining < LSF_FETCH_READ_BYTES ? (uint32_t)remaining : LSF_FETCH_READ_BYTES;
+        latent_http_0_5_0_upload_window_window_t window = {0};
+        latent_http_0_5_0_upload_window_preparation_error_t preparation_error = {0};
+        if (!latent_http_0_5_0_upload_window_prepare(lsf_upload_borrow(&upload), requested,
+                                                    &window, &preparation_error)) {
+            lsf_upload_close(&upload);
+            if (preparation_error.tag == LATENT_HTTP_0_5_0_UPLOAD_WINDOW_PREPARATION_ERROR_HTTP)
+                http_failure(preparation_error.val.http.tag);
+            else
+                unsupported();
+            goto fail_file;
+        }
+        if (!window.generation || !window.maximum_bytes || window.maximum_bytes > requested) {
+            lsf_upload_close(&upload);
+            failure(FETCH_PROTO, EIO, "Invalid HTTP upload window"); goto fail_file;
+        }
+        const size_t count = window.maximum_bytes;
+        probe_list_u8_t bytes = {(uint8_t *)body + offset, count};
+        latent_http_0_5_0_upload_window_http_error_t error = {0};
+        if (!latent_http_0_5_0_upload_window_write(lsf_upload_borrow(&upload), window.generation,
+                                                  &bytes, &error)) {
+            lsf_upload_close(&upload);
+            http_failure(error.tag); goto fail_file;
+        }
+#else
         const size_t count = remaining < LSF_FETCH_READ_BYTES ? remaining : LSF_FETCH_READ_BYTES;
         probe_list_u8_t bytes = {(uint8_t *)body + offset, count};
         latent_http_streaming_result_void_http_error_t written = {0};
@@ -333,6 +359,7 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
             lsf_upload_close(&upload);
             http_failure(written.val.err.tag); goto fail_file;
         }
+#endif
         offset += count;
     }
     latent_http_streaming_result_response_http_error_t completed = {0};

@@ -119,6 +119,9 @@ pub struct WasmtimeConfig {
     pub transactional_state: bool,
     /// Additive V7 HTTP phase interface; no provider or destination is implied.
     pub http_phase_timing: bool,
+    /// Explicit V8 prepaid uploads for the authenticated C cooperative profile.
+    #[cfg(feature = "http-upload-window")]
+    pub http_upload_window: bool,
     pub target_triple: String,
     pub cpu_feature_set: String,
     pub maximum_component_bytes: usize,
@@ -211,6 +214,8 @@ impl Default for WasmtimeConfig {
             java_guest: false,
             transactional_state: false,
             http_phase_timing: false,
+            #[cfg(feature = "http-upload-window")]
+            http_upload_window: false,
             activation_runtime: None,
             owned_native_stacks: false,
             owned_native_threads: false,
@@ -264,6 +269,16 @@ impl Default for WasmtimeConfig {
 }
 
 impl WasmtimeConfig {
+    pub(crate) fn upload_window_enabled(&self) -> bool {
+        #[cfg(feature = "http-upload-window")]
+        {
+            self.http_upload_window
+        }
+        #[cfg(not(feature = "http-upload-window"))]
+        {
+            false
+        }
+    }
     pub(crate) fn selected_thread_profile(&self) -> Option<NativeThreadProfile> {
         self.owned_native_threads
             .then_some(self.native_thread_profile)
@@ -321,6 +336,15 @@ impl WasmtimeConfig {
             return Err(invalid_config());
         }
         if self.http_phase_timing && self.transactional_state {
+            return Err(invalid_config());
+        }
+        #[cfg(feature = "http-upload-window")]
+        if self.http_upload_window
+            && (!self.owned_native_threads
+                || self.native_thread_profile != NativeThreadProfile::CContext144SyncCooperativeV1
+                || self.http_phase_timing
+                || self.transactional_state)
+        {
             return Err(invalid_config());
         }
         self.validate_renderer()?;

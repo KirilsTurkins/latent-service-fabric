@@ -707,7 +707,7 @@ pub fn transform_c_root_bootstrap(
     ))
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "c-http-upload-window-test-support"))]
 pub(crate) mod tests {
     use super::*;
     use std::borrow::Cow;
@@ -874,6 +874,7 @@ pub(crate) mod tests {
         module.finish()
     }
 
+    #[cfg(test)]
     fn stages(input: &[u8]) -> (Vec<u8>, c_template::CTemplateReceipt) {
         let (template, receipt) =
             c_template::transform_c_initial_template(input, Sha256::digest(input).into()).unwrap();
@@ -883,6 +884,7 @@ pub(crate) mod tests {
         (child, receipt)
     }
 
+    #[cfg(test)]
     #[derive(Debug, Default, PartialEq, Eq)]
     struct Names {
         module: Option<String>,
@@ -892,6 +894,7 @@ pub(crate) mod tests {
         types: Vec<(u32, String)>,
     }
 
+    #[cfg(test)]
     fn read_names(input: &[u8]) -> Names {
         fn direct(map: wasmparser::NameMap<'_>) -> Vec<(u32, String)> {
             map.map(|row| {
@@ -932,6 +935,7 @@ pub(crate) mod tests {
         found
     }
 
+    #[cfg(test)]
     fn named_fixture(function_names: bool, local_names: bool, trailing: bool) -> Vec<u8> {
         use wasm_encoder::{IndirectNameMap, NameMap, NameSection};
         let mut input = fixture(SYSTEM_STACK_HIGH as i32, false, false);

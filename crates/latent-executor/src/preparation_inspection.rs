@@ -19,6 +19,7 @@ pub struct PreparationInspection {
     /// Same sealed source metadata fingerprint as the owned preparation. This
     /// is lsf-wasmtime-preparation-metadata-v2, not a signed document digest.
     pub sealed_metadata_fingerprint: Option<[u8; 32]>,
+    /// Operational imports and explicitly validated non-authority helpers.
     pub imports: Vec<ContractId>,
     /// Actual validated resource-free type-only interfaces. These do not grant
     /// callable provider authority. import_count includes both collections.

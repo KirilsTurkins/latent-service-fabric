@@ -18,6 +18,8 @@ development-test-host = ["latent-artifacts/development-test-host", "latent-polic
 development-go-timer-overlap = ["dep:tokio"]
 # Selected only by the signed Go TCP read-order owner.
 development-go-network-read-witness = ["latent-streams/development-read-witness"]
+# Opt-in prepaid C HTTP upload support; earlier host profiles remain unchanged.
+http-upload-window = ["latent-component-bindings/http-upload-window"]
 
 # Retains the standalone compiler diagnostic; node installation is separately explicit.
 java-guest-diagnostic = []
@@ -80,6 +82,7 @@ rustix = { version = "=1.1.5", features = ["process", "thread", "fs", "pipe", "m
 seccompiler = "=0.5.0"
 
 [dev-dependencies]
+latent-component-threading = { path = "../latent-component-threading", features = ["c-http-upload-window-test-support"] }
 getrandom = "=0.4.3"
 latent-audit = { path = "../latent-audit", features = ["test-support"] }
 latent-ingress = { path = "../latent-ingress" }

@@ -42,6 +42,9 @@ fn main() -> io::Result<()> {
     write_activation_bindings(&output, &platform_wit)?;
     write_native_bindings(&output, &platform_wit)?;
     write_http_phase_bindings(&output, &platform_wit)?;
+    if env::var_os("CARGO_FEATURE_HTTP_UPLOAD_WINDOW").is_some() {
+        write_http_upload_window_bindings(&output, &platform_wit)?;
+    }
 
     println!(
         "cargo:rerun-if-changed={}",
@@ -409,6 +412,28 @@ fn write_http_phase_bindings(output: &Path, platform: &Path) -> io::Result<()> {
         format!(
             r#"wasmtime::component::bindgen!({{
             path: {path}, world: "latent:http-phase-host/profile@0.1.0",
+            imports: {{ default: async | trappable }}, exports: {{ default: async }},
+            with: {{ "latent:http/streaming@0.3.0": crate::host::streaming::latent::http0_3_0::streaming }},
+        }});"#
+        ),
+    )
+}
+
+fn write_http_upload_window_bindings(output: &Path, platform: &Path) -> io::Result<()> {
+    let wit = output.join("http-upload-window-wit");
+    recreate(&wit)?;
+    copy_wit_tree(&platform.join("http-v3"), &wit.join("deps/http-v3"))?;
+    copy_wit_tree(
+        &platform.join("http-upload-window"),
+        &wit.join("deps/http-upload-window"),
+    )?;
+    fs::write(wit.join("world.wit"), "package latent:http-upload-window-host@0.1.0; world profile { import latent:http/streaming@0.3.0; import latent:http/upload-window@0.5.0; }\n")?;
+    let path = format!("{:?}", wit.to_string_lossy());
+    fs::write(
+        output.join("http_upload_window_host.rs"),
+        format!(
+            r#"wasmtime::component::bindgen!({{
+            path: {path}, world: "latent:http-upload-window-host/profile@0.1.0",
             imports: {{ default: async | trappable }}, exports: {{ default: async }},
             with: {{ "latent:http/streaming@0.3.0": crate::host::streaming::latent::http0_3_0::streaming }},
         }});"#

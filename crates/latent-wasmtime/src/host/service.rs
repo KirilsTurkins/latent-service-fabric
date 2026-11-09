@@ -300,6 +300,24 @@ pub(super) fn synchronize(store: &mut StoreContextMut<'_, HostState>) -> wasmtim
     store.data_mut().accounting.reset_fuel_watermark(remaining);
     Ok(())
 }
+
+/// Reset fuel without invoking the configurable clock while the Store is
+/// borrowed. `remaining_at` uses its timestamp only for the wall-time field;
+/// its CPU component is derived from the same current original ledger state.
+#[cfg(feature = "http-upload-window")]
+pub(super) fn synchronize_without_host_clock(
+    store: &mut StoreContextMut<'_, HostState>,
+) -> wasmtime::Result<()> {
+    let remaining = store
+        .data()
+        .accounting
+        .budget()
+        .remaining_at(Instant::now())
+        .cpu_fuel;
+    store.set_fuel(remaining)?;
+    store.data_mut().accounting.reset_fuel_watermark(remaining);
+    Ok(())
+}
 pub(super) fn denied() -> PlatformError {
     failure(
         PlatformErrorCode::PermissionDenied,

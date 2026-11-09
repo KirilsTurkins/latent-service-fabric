@@ -236,7 +236,8 @@ class Compiler:
             sources = [*sources, runtime / 'threads.c', runtime / 'tls-keys.c', runtime / 'template-copy.c']
             include_directories = (*include_directories, runtime)
             timed_clock = runtime_profile in {standard_facilities.PROFILE, standard_facilities.COMBINED_PROFILE,
-                                               standard_facilities.FETCH_STANDARD_PROFILE}
+                                               standard_facilities.FETCH_STANDARD_PROFILE,
+                                               standard_facilities.FETCH_WINDOW_STANDARD_PROFILE}
             if timed_clock:
                 self.select_threading_clock_inputs()
                 defines = threading.linked_defines(defines, timed_clock=True)

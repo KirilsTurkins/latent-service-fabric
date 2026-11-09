@@ -33,6 +33,7 @@ pub(crate) struct Surface {
     pub imports: BTreeSet<String>,
     pub type_imports: BTreeSet<String>,
     pub phase_type_owner: bool,
+    pub upload_window_alias: bool,
     pub retained_bytes: usize,
     pub value_codec_limits: crate::values::ValueCodecLimits,
     pub hostcall_fuel: usize,
@@ -138,6 +139,8 @@ impl Providers {
             || (self.http && name == latent_capabilities::broker::http::HTTP_CAPABILITY)
             || (self.streaming_http
                 && name == latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY)
+            || (self.streaming_http
+                && name == latent_capabilities::broker::streaming_http::UPLOAD_WINDOW_INTERFACE)
             || (self.phase_http
                 && name == latent_capabilities::broker::streaming_http::PHASE_TIMING_CAPABILITY)
             || (self.outbound_streams
@@ -165,7 +168,7 @@ pub(crate) fn validate_with_providers(
     let mut remaining = config.value_codec_limits.max_type_nodes;
     let mut retained_bytes = 0;
     retain(1024, &mut retained_bytes, config)?;
-    let (imports, type_imports, phase_type_owner) = validate_imports(
+    let (imports, type_imports, phase_type_owner, upload_window_alias) = validate_imports(
         &component_type,
         engine,
         artifact,
@@ -265,6 +268,7 @@ pub(crate) fn validate_with_providers(
         imports,
         type_imports,
         phase_type_owner,
+        upload_window_alias,
         retained_bytes,
         value_codec_limits: config.value_codec_limits,
         hostcall_fuel: config.hostcall_fuel,
@@ -302,7 +306,7 @@ fn validate_imports(
     remaining: &mut usize,
     retained_bytes: &mut usize,
     providers: Providers,
-) -> Result<(BTreeSet<String>, BTreeSet<String>, bool), PlatformError> {
+) -> Result<(BTreeSet<String>, BTreeSet<String>, bool, bool), PlatformError> {
     let mut imports = BTreeSet::new();
     let transactional = component_type
         .imports(engine)
@@ -312,6 +316,8 @@ fn validate_imports(
     }
     let profile = if transactional {
         latent_core::PHASE4_HOST_ABI_V1
+    } else if config.upload_window_enabled() {
+        latent_core::PHASE3_HOST_ABI_V8
     } else if config.http_phase_timing {
         latent_core::PHASE3_HOST_ABI_V7
     } else if config.owned_native_threads {
@@ -323,6 +329,11 @@ fn validate_imports(
     if config.http_phase_timing {
         streaming::validate_phase_aliases(component_type, engine)?;
     }
+    let upload_window_alias = if config.upload_window_enabled() {
+        streaming::validate_upload_window_aliases(component_type, engine)?
+    } else {
+        false
+    };
     let mut type_imports = BTreeSet::new();
     let mut phase_type_owner = false;
     for (name, item) in component_type.imports(engine) {
@@ -393,6 +404,7 @@ fn validate_imports(
                             latent_capabilities::broker::blob::BLOB_CAPABILITY => blob::validate(name, &function, &interface, engine)?,
                             latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY => streaming::validate(name, &function, &interface, engine)?,
                             latent_capabilities::broker::streaming_http::PHASE_TIMING_CAPABILITY => streaming::validate(name, &function, &interface, engine)?,
+                            latent_capabilities::broker::streaming_http::UPLOAD_WINDOW_INTERFACE => streaming::validate_upload_window(name, &function, &interface, engine)?,
                             latent_capabilities::broker::network::STREAM_CAPABILITY => networking::validate(name, &function, &interface, engine)?,
                             transaction::STATE | transaction::INTENTS => transaction::validate(specification.interface, name, &function, &interface, engine, transaction_resource)?,
                             _ => return Err(incompatible("unsupported host resource interface")),
@@ -415,7 +427,9 @@ fn validate_imports(
             // This exact nominal resource owner is linked by the phase host,
             // not by the generic structural-type linker or an operational grant.
             phase_type_owner = true;
-        } else {
+        } else if !(upload_window_alias
+            && name == latent_capabilities::broker::streaming_http::UPLOAD_WINDOW_INTERFACE)
+        {
             imports.insert(name.to_owned());
         }
     }
@@ -428,17 +442,25 @@ fn validate_imports(
     let nominal_owner = latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY;
     if declared_imports.len() != artifact.manifest.imports.len()
         || (phase_type_owner && !declared_imports.contains_key(nominal_owner))
+        || (upload_window_alias
+            && !declared_imports
+                .contains_key(latent_capabilities::broker::streaming_http::UPLOAD_WINDOW_INTERFACE))
         || imports
             .iter()
             .any(|name| !declared_imports.contains_key(name.as_str()))
         || declared_imports.iter().any(|(name, optional)| {
-            !optional && !imports.contains(*name) && !(phase_type_owner && *name == nominal_owner)
+            !optional
+                && !imports.contains(*name)
+                && !(phase_type_owner && *name == nominal_owner)
+                && !(upload_window_alias
+                    && *name
+                        == latent_capabilities::broker::streaming_http::UPLOAD_WINDOW_INTERFACE)
         })
     {
         return Err(incompatible("manifest imports disagree with the component"));
     }
 
-    Ok((imports, type_imports, phase_type_owner))
+    Ok((imports, type_imports, phase_type_owner, upload_window_alias))
 }
 
 fn validate_type_interface(
