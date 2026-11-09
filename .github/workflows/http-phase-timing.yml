@@ -85,6 +85,9 @@ jobs:
           cargo test --locked -p latent-wasmtime --lib host::streaming_http::table::tests::finish_completion_refusals_drop_body_after_store_access -- --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/http-finish-refusal.log"
           test "$(grep -Fxc "running 1 test" "$RUNNER_TEMP/http-finish-refusal.log")" -eq 1
           test "$(grep -Fxc "test host::streaming_http::table::tests::finish_completion_refusals_drop_body_after_store_access ... ok" "$RUNNER_TEMP/http-finish-refusal.log")" -eq 1
+          cargo test --locked -p latent-wasmtime --lib host::streaming_http::table::tests::upload_take_clock_panic_drops_original_after_store_access -- --exact 2>&1 | tee "$RUNNER_TEMP/http-upload-take.log"
+          test "$(grep -Fxc "running 1 test" "$RUNNER_TEMP/http-upload-take.log")" -eq 1
+          test "$(grep -Fxc "test host::streaming_http::table::tests::upload_take_clock_panic_drops_original_after_store_access ... ok" "$RUNNER_TEMP/http-upload-take.log")" -eq 1
           cargo test --locked -p latent-wasmtime --lib host::streaming_http::table::tests::abort_upload_ -- --nocapture 2>&1 | tee "$RUNNER_TEMP/http-abort-ownership.log"
           test "$(grep -Fxc "running 2 tests" "$RUNNER_TEMP/http-abort-ownership.log")" -eq 1
           test "$(grep -Fxc "test host::streaming_http::table::tests::abort_upload_drops_original_after_store_access ... ok" "$RUNNER_TEMP/http-abort-ownership.log")" -eq 1

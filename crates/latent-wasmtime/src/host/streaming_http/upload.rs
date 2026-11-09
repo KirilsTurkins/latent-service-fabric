@@ -117,7 +117,7 @@ pub(super) fn write(
     Ok(())
 }
 
-struct Write;
+pub(super) struct Write;
 impl
     InlineConcurrentHost<HostState, (Resource<wit::Upload>, Vec<u8>), (Result<(), wit::HttpError>,)>
     for Write
@@ -131,6 +131,9 @@ impl
         async move {
             let started = Instant::now();
             let rep = target.rep();
+            // Keep the original upload outside Store access if the following
+            // synchronization refuses or unwinds after the table take.
+            let mut detached = None;
             let upload = access.with(|mut access| {
                 let mut store = access.as_context_mut();
                 checkpoint(&mut store)?;
@@ -139,9 +142,17 @@ impl
                     .capabilities
                     .streams
                     .take(rep, Kind::Upload, false);
+                let value = match value {
+                    Ok(value) => {
+                        detached = Some(value);
+                        Ok(())
+                    }
+                    Err(error) => Err(error),
+                };
                 synchronize(&mut store)?;
                 Ok::<_, wasmtime::Error>(value)
             })?;
+            let upload = upload.and_then(|()| detached.take().ok_or(Error::InvalidState));
             let result = match upload {
                 Ok(Value::Upload(mut upload)) => {
                     let result = upload.write(bytes).await;
@@ -204,7 +215,7 @@ pub(super) fn finish(
     Ok(())
 }
 
-struct Finish;
+pub(super) struct Finish;
 impl
     InlineConcurrentHost<
         HostState,
@@ -221,6 +232,9 @@ impl
            + 'a {
         async move {
             let started = Instant::now();
+            // Keep the original upload outside Store access if the following
+            // synchronization refuses or unwinds after the table take.
+            let mut detached = None;
             let upload = access.with(|mut access| {
                 let mut store = access.as_context_mut();
                 checkpoint(&mut store)?;
@@ -230,9 +244,17 @@ impl
                         .capabilities
                         .streams
                         .take(target.rep(), Kind::Upload, true);
+                let result = match result {
+                    Ok(value) => {
+                        detached = Some(value);
+                        Ok(())
+                    }
+                    Err(error) => Err(error),
+                };
                 synchronize(&mut store)?;
                 Ok::<_, wasmtime::Error>(result)
             })?;
+            let upload = upload.and_then(|()| detached.take().ok_or(Error::InvalidState));
             let body = match upload {
                 Ok(Value::Upload(upload)) => upload.finish().await,
                 Ok(_) => Err(Error::InvalidState),
