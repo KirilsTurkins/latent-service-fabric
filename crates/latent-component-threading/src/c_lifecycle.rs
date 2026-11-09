@@ -326,6 +326,82 @@ impl CEntry {
             function
         }
     }
+    // The thread-new import is the only function moved past later original
+    // indices. Defer that one name entry until its new index is reached, so
+    // both ordinary and indirect maps stay strictly ordered without sorting
+    // or buffering the rest of the map.
+    fn remap_ordered_function_names<T>(
+        &self,
+        entries: impl IntoIterator<Item = Result<(u32, T), reencode::Error<&'static str>>>,
+        mut append: impl FnMut(u32, T),
+    ) -> Result<(), reencode::Error<&'static str>> {
+        let mut deferred = None;
+        let mut previous = None;
+        let creation = self.creation();
+        for entry in entries {
+            let (original, value) = entry?;
+            if original == self.raw_new {
+                if deferred.replace(value).is_some() {
+                    return Err(reencode::Error::UserError("c-lifecycle-name-duplicate"));
+                }
+                continue;
+            }
+            let mapped = if original >= self.base.imported_functions {
+                original.checked_add(2).ok_or(reencode::Error::UserError(
+                    "c-lifecycle-name-index-overflow",
+                ))?
+            } else {
+                original
+            };
+            if mapped >= creation
+                && let Some(value) = deferred.take()
+            {
+                if mapped == creation || previous.is_some_and(|index| index >= creation) {
+                    return Err(reencode::Error::UserError(
+                        "c-lifecycle-name-index-collision",
+                    ));
+                }
+                append(creation, value);
+                previous = Some(creation);
+            }
+            if previous.is_some_and(|index| index >= mapped) {
+                return Err(reencode::Error::UserError("c-lifecycle-name-index-order"));
+            }
+            append(mapped, value);
+            previous = Some(mapped);
+        }
+        if let Some(value) = deferred {
+            if previous.is_some_and(|index| index >= creation) {
+                return Err(reencode::Error::UserError(
+                    "c-lifecycle-name-index-collision",
+                ));
+            }
+            append(creation, value);
+        }
+        Ok(())
+    }
+
+    fn remap_indirect_function_names(
+        &self,
+        names: &mut wasm_encoder::NameSection,
+        map: wasmparser::IndirectNameMap<'_>,
+        local: bool,
+    ) -> Result<(), reencode::Error<&'static str>> {
+        let mut output = wasm_encoder::IndirectNameMap::new();
+        let entries = map.into_iter().map(|entry| {
+            let entry = entry?;
+            let inner = reencode::utils::name_map(entry.names, |index| Ok(index))?;
+            Ok((entry.index, inner))
+        });
+        self.remap_ordered_function_names(entries, |index, inner| output.append(index, &inner))?;
+        if local {
+            names.locals(&output);
+        } else {
+            names.labels(&output);
+        }
+        Ok(())
+    }
+
     fn context(&self, body: &mut Function, parameter: u32) {
         pointer(body, parameter);
         // Validate the complete aligned record before reading any field. Use
@@ -490,6 +566,29 @@ impl Reencode for CEntry {
     type Error = &'static str;
     fn function_index(&mut self, index: u32) -> Result<u32, reencode::Error<Self::Error>> {
         Ok(self.remap(index))
+    }
+    fn parse_custom_name_subsection(
+        &mut self,
+        names: &mut wasm_encoder::NameSection,
+        section: wasmparser::Name<'_>,
+    ) -> Result<(), reencode::Error<Self::Error>> {
+        match section {
+            wasmparser::Name::Function(map) => {
+                let mut output = wasm_encoder::NameMap::new();
+                let entries = map.into_iter().map(|entry| {
+                    let entry = entry?;
+                    Ok((entry.index, entry.name))
+                });
+                self.remap_ordered_function_names(entries, |index, name| {
+                    output.append(index, name)
+                })?;
+                names.functions(&output);
+                Ok(())
+            }
+            wasmparser::Name::Local(map) => self.remap_indirect_function_names(names, map, true),
+            wasmparser::Name::Label(map) => self.remap_indirect_function_names(names, map, false),
+            other => reencode::utils::parse_custom_name_subsection(self, names, other),
+        }
     }
     fn parse_type_section(
         &mut self,

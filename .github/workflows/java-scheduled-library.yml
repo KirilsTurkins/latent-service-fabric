@@ -32,7 +32,7 @@ jobs:
        github.ref_name == 'feat/java-future-queue-20261028' ||
        (github.ref_name == 'development' &&
         github.workflow_ref == 'KirilsTurkins/latent-service-fabric/.github/workflows/java-scheduled-development.yml@refs/heads/development'))
-    name: One ordinary scheduled component and sixteen signed calls
+    name: One scheduled component and eighteen signed calls
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ (github.ref_name == 'feat/java-scheduled-executor-20261026' || github.ref_name == 'development') && 45 || 25 }}
     env:
@@ -84,7 +84,7 @@ jobs:
         with:
           path: ${{ runner.temp }}/compiler-archives/java-prepared
           key: java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}
-      - name: Capture and compile the ordinary semaphore then run only sixteen signed calls
+      - name: Capture and compile the scheduled component then run eighteen signed calls
         if: github.ref_name == 'feat/java-scheduled-executor-20261026' || github.ref_name == 'development'
         env:
           GH_TOKEN: ${{ github.token }}
