@@ -925,24 +925,47 @@ def future_queue_source_control(compiler: Compiler, output: Path) -> dict:
     ledger = compiler.sdk / 'fibers/conformance/compiler/scheduled-source-control'
     ports = sorted((compiler.sdk / 'fibers/dev/latent/guest/runtime/concurrent').glob('*.java'))
     controls = [fixture / 'Capsule.java', fixture / 'OwnerControl.java',
+        ledger / 'FutureTaskMonitorOwnerControl.java', ledger / 'FutureTaskMonitorReferenceControl.java',
         ledger / 'dev/latent/generated/Bindings.java', ledger / 'dev/latent/guest/runtime/Activation.java']
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path)) for path in (*ports, *controls)}
     output.mkdir()
+    reference = output / 'reference-jdk'; reference.mkdir()
+    compiler.run('future-task-monitor-reference-compile', 'javac', '-proc:none', '--release', '25',
+        '-d', reference, controls[3])
+    expected = 'FUTURE_TASK_MONITOR_REFERENCE PASS run;cancel;completed-get;executor;scheduled-cancel'
+    result = compiler.run('future-task-monitor-reference-jdk', 'java', '-Xmx256m', '-cp', reference,
+        'FutureTaskMonitorReferenceControl').strip()
+    if result != expected: raise ValueError('Java FutureTask monitor reference did not complete')
     text = read_file(fixture / 'Capsule.java').decode('utf-8')
     for name in ('FutureTask', 'Executors', 'ScheduledThreadPoolExecutor'):
         original = 'import java.util.concurrent.' + name + ';'
         if text.count(original) != 1: raise ValueError('Java FutureTask source import is ambiguous')
         text = text.replace(original, 'import dev.latent.guest.runtime.concurrent.' + name + ';')
     selected = output / 'Capsule.java'; selected.write_bytes(text.encode('utf-8'))
+    reference_text = read_file(controls[3]).decode('utf-8')
+    for name in ('FutureTask', 'Executors', 'ScheduledThreadPoolExecutor'):
+        original = 'import java.util.concurrent.' + name + ';'
+        if reference_text.count(original) != 1: raise ValueError('Java FutureTask monitor reference import is ambiguous')
+        reference_text = reference_text.replace(original, 'import dev.latent.guest.runtime.concurrent.' + name + ';')
+    selected_reference = output / 'FutureTaskMonitorReferenceControl.java'
+    selected_reference.write_bytes(reference_text.encode('utf-8'))
     compiler.run('future-queue-source-compile', 'javac', '-proc:none', '--release', '25',
-        '-d', output, selected, *ports, *controls[1:])
+        '-d', output, selected, selected_reference, *ports, controls[1], controls[2], *controls[4:])
     result = compiler.run('future-queue-source-control', 'java', '-Xmx256m', '-cp', output,
         'dev.latent.app.OwnerControl').strip()
     if result != 'FUTURE_QUEUE_OWNER PASS checks=48':
         raise ValueError('Java FutureTask queue ownership control did not complete')
+    result = compiler.run('future-task-monitor-source', 'java', '-Xmx256m', '-cp', output,
+        'FutureTaskMonitorReferenceControl').strip()
+    if result != expected: raise ValueError('Java FutureTask monitor source differs from reference')
+    result = compiler.run('future-task-monitor-owner', 'java', '-Xmx256m', '-cp', output,
+        'FutureTaskMonitorOwnerControl').strip()
+    if result != 'FUTURE_TASK_MONITOR_OWNER PASS managed;active-owners;scheduled;retired-under-public-monitor':
+        raise ValueError('Java FutureTask monitor ownership control did not complete')
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError('Java FutureTask queue inputs changed')
     return {'status': 'SDK-source-controls-passed', 'sourceInputs': inputs, 'ownershipChecks': 48,
+        'futureMonitor': 'JDK-and-SDK-source-controls-passed',
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 def recipe_inputs() -> dict[str, str]:

@@ -139,26 +139,32 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
             return Long.compare(getDelay(TimeUnit.NANOSECONDS), other.getDelay(TimeUnit.NANOSECONDS));
         }
         private ScheduledThreadPoolExecutor executor() { return ScheduledThreadPoolExecutor.this; }
-        @Override synchronized boolean acceptQueueCopy() {
-            if (!super.acceptQueueCopy()) return false;
-            try {
-                if (!futureAccepted && action instanceof FutureTask<?>)
-                    futureAccepted = ((FutureTask<?>)action).acceptQueueCopy();
-                if (!actionAccepted) actionAccepted = CompletableFuture.acceptedByQueue(action);
-                return true;
-            } catch (Throwable error) {
-                super.removeQueueCopy(true);
-                throw error;
+        @Override boolean acceptQueueCopy() {
+            synchronized (stateLock) {
+                if (!super.acceptQueueCopy()) return false;
+                try {
+                    if (!futureAccepted && action instanceof FutureTask<?>)
+                        futureAccepted = ((FutureTask<?>)action).acceptQueueCopy();
+                    if (!actionAccepted) actionAccepted = CompletableFuture.acceptedByQueue(action);
+                    return true;
+                } catch (Throwable error) {
+                    super.removeQueueCopy(true);
+                    throw error;
+                }
             }
         }
-        @Override synchronized void removeQueueCopy(boolean removed) {
-            // This private final task accounts for its actual invocations;
-            // unlike an arbitrary FutureTask subclass its run is not opaque.
-            super.removeQueueCopy(true);
-            releaseActionIfIdle();
+        @Override void removeQueueCopy(boolean removed) {
+            synchronized (stateLock) {
+                // This private final task accounts for its actual invocations;
+                // unlike an arbitrary FutureTask subclass its run is not opaque.
+                super.removeQueueCopy(true);
+                releaseActionIfIdle();
+            }
         }
         private void beginInvocation() { beginInternalPhysicalClaim(); }
-        private synchronized void endInvocation() { endInternalPhysicalClaim(); releaseActionIfIdle(); }
+        private void endInvocation() {
+            synchronized (stateLock) { endInternalPhysicalClaim(); releaseActionIfIdle(); }
+        }
         @Override public void run() {
             // A returned ScheduledFuture is also a Runnable. A caller may
             // start it while the pool is concurrently withdrawing its copy.
@@ -206,7 +212,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
                 if (complete) { action = null; runnableCall = null; }
             }
         }
-        private synchronized void abandon() { released = true; releaseActionIfIdle(); }
+        private void abandon() { synchronized (stateLock) { released = true; releaseActionIfIdle(); } }
         @Override public boolean cancel(boolean interrupt) {
             boolean changed = super.cancel(interrupt);
             synchronized (ScheduledThreadPoolExecutor.this) {
@@ -217,7 +223,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
                     }
                 } finally { ScheduledThreadPoolExecutor.this.notifyAll(); }
             }
-            synchronized (this) { releaseActionIfIdle(); }
+            synchronized (stateLock) { releaseActionIfIdle(); }
             return changed;
         }
     }

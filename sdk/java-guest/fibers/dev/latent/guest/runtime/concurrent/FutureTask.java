@@ -11,6 +11,9 @@ import java.util.concurrent.TimeoutException;
 
 /** Real pending execution, logical cancellation, and physical runner ownership. */
 public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
+    // Application code may synchronize on a FutureTask independently of its
+    // completion and ownership state.
+    final Object stateLock = new Object();
     private Callable<V> callable;
     private V value;
     private Throwable failure;
@@ -34,45 +37,55 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
         if (resultSettlementAttempted)
             throw new IllegalStateException("activation-future-result-settlement-uncertain");
     }
-    synchronized boolean accept() {
-        requireCertainResultOwner();
-        if (completed || owner != null) return false;
-        owner = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Result);
-        return true;
+    boolean accept() {
+        synchronized (stateLock) {
+            requireCertainResultOwner();
+            if (completed || owner != null) return false;
+            owner = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Result);
+            return true;
+        }
     }
-    synchronized boolean acceptQueueCopy() {
-        requireCertainResultOwner();
-        if (completed) return false;
-        if (queueCopies == Integer.MAX_VALUE) throw new java.util.concurrent.RejectedExecutionException("activation-future-queue-copies");
-        accept();
-        queueCopies++;
-        return true;
+    boolean acceptQueueCopy() {
+        synchronized (stateLock) {
+            requireCertainResultOwner();
+            if (completed) return false;
+            if (queueCopies == Integer.MAX_VALUE) throw new java.util.concurrent.RejectedExecutionException("activation-future-queue-copies");
+            accept();
+            queueCopies++;
+            return true;
+        }
     }
-    final synchronized boolean hasQueueCopies() { return queueCopies != 0; }
-    synchronized void removeQueueCopy(boolean removed) {
-        if (queueCopies <= 0) throw new IllegalStateException("activation-future-queue-copy");
-        queueCopies--;
-        if (!removed && !completed && runner == null) pendingRun = true;
-        // A completed physical run owns its original finally. A subclass run
-        // which leaves its future pending is not proof of harmless idle work.
-        if (removed && queueCopies == 0 && runner == null && !pendingRun && internalPhysicalClaims == 0 && owner != null) {
-            settleResultOnce();
+    final boolean hasQueueCopies() { synchronized (stateLock) { return queueCopies != 0; } }
+    void removeQueueCopy(boolean removed) {
+        synchronized (stateLock) {
+            if (queueCopies <= 0) throw new IllegalStateException("activation-future-queue-copy");
+            queueCopies--;
+            if (!removed && !completed && runner == null) pendingRun = true;
+            // A completed physical run owns its original finally. A subclass run
+            // which leaves its future pending is not proof of harmless idle work.
+            if (removed && queueCopies == 0 && runner == null && !pendingRun && internalPhysicalClaims == 0 && owner != null) {
+                settleResultOnce();
+            }
         }
     }
     // Package-internal final operations cannot dispatch into application code
     // while this future's ownership monitor is held.
-    final synchronized void beginInternalPhysicalClaim() {
-        if (internalPhysicalClaims == Integer.MAX_VALUE)
-            throw new java.util.concurrent.RejectedExecutionException("activation-future-physical-claims");
-        internalPhysicalClaims++;
+    final void beginInternalPhysicalClaim() {
+        synchronized (stateLock) {
+            if (internalPhysicalClaims == Integer.MAX_VALUE)
+                throw new java.util.concurrent.RejectedExecutionException("activation-future-physical-claims");
+            internalPhysicalClaims++;
+        }
     }
-    final synchronized boolean hasInternalPhysicalClaim() { return internalPhysicalClaims != 0; }
-    final synchronized void endInternalPhysicalClaim() {
-        if (internalPhysicalClaims <= 0) throw new IllegalStateException("activation-future-physical-claim");
-        internalPhysicalClaims--;
-        if (runner == null && internalPhysicalClaims == 0 && owner != null
-                && (completed || queueCopies == 0 && !pendingRun)) {
-            settleResultOnce();
+    final boolean hasInternalPhysicalClaim() { synchronized (stateLock) { return internalPhysicalClaims != 0; } }
+    final void endInternalPhysicalClaim() {
+        synchronized (stateLock) {
+            if (internalPhysicalClaims <= 0) throw new IllegalStateException("activation-future-physical-claim");
+            internalPhysicalClaims--;
+            if (runner == null && internalPhysicalClaims == 0 && owner != null
+                    && (completed || queueCopies == 0 && !pendingRun)) {
+                settleResultOnce();
+            }
         }
     }
     private void settleResultOnce() {
@@ -93,7 +106,7 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
     @Override public boolean cancel(boolean interrupt) {
         boolean notifyCompletion = false;
         try {
-            synchronized (this) {
+            synchronized (stateLock) {
                 if (completed) return false;
                 cancelled = completed = true;
                 try {
@@ -102,7 +115,7 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
                     // A custom Thread.interrupt() may throw before or after
                     // delivery. Cancellation still wakes waiters and runs done().
                     if (runner == null) callable = null;
-                    notifyAll();
+                    stateLock.notifyAll();
                     releaseIfPhysicalComplete();
                     // Preserve fail-closed behavior if owner settlement fails.
                     notifyCompletion = true;
@@ -113,10 +126,10 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
         }
         return true;
     }
-    @Override public synchronized boolean isCancelled() { return cancelled; }
-    @Override public synchronized boolean isDone() { return completed; }
+    @Override public boolean isCancelled() { synchronized (stateLock) { return cancelled; } }
+    @Override public boolean isDone() { synchronized (stateLock) { return completed; } }
     @Override public void run() {
-        synchronized (this) {
+        synchronized (stateLock) {
             if (completed || runner != null) return;
             accept();
             runner = Thread.currentThread();
@@ -130,12 +143,12 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
             set(result);
         }
         finally {
-            synchronized (this) { runner = null; callable = null; releaseIfPhysicalComplete(); }
+            synchronized (stateLock) { runner = null; callable = null; releaseIfPhysicalComplete(); }
         }
     }
     /** A recurring owner stays pending until a later completion or cancellation. */
     protected boolean runAndReset() {
-        synchronized (this) {
+        synchronized (stateLock) {
             if (completed || runner != null) return false;
             accept();
             runner = Thread.currentThread();
@@ -145,37 +158,37 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
             try { callable.call(); ran = true; }
             catch (Throwable error) { setException(error); }
         } finally {
-            synchronized (this) { runner = null; if (completed) callable = null; releaseIfPhysicalComplete(); }
+            synchronized (stateLock) { runner = null; if (completed) callable = null; releaseIfPhysicalComplete(); }
         }
-        synchronized (this) { return ran && !completed; }
+        synchronized (stateLock) { return ran && !completed; }
     }
     protected void set(V result) {
-        synchronized (this) {
+        synchronized (stateLock) {
             if (completed) return;
             value = result;
             completed = true;
-            notifyAll();
+            stateLock.notifyAll();
             releaseIfPhysicalComplete();
         }
         done();
     }
     protected void setException(Throwable error) {
-        synchronized (this) {
+        synchronized (stateLock) {
             if (completed) return;
             failure = error;
             failed = true;
             completed = true;
-            notifyAll();
+            stateLock.notifyAll();
             releaseIfPhysicalComplete();
         }
         done();
     }
     protected void done() { }
     @Override public V get() throws InterruptedException, ExecutionException {
-        synchronized (this) {
+        synchronized (stateLock) {
             if (!completed) {
                 if (Thread.interrupted()) throw new InterruptedException();
-                while (!completed) wait();
+                while (!completed) stateLock.wait();
             }
             return report();
         }
@@ -183,14 +196,14 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
     @Override public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         long nanos = Objects.requireNonNull(unit).toNanos(timeout);
         long started = System.nanoTime();
-        synchronized (this) {
+        synchronized (stateLock) {
             if (!completed) {
                 if (Thread.interrupted()) throw new InterruptedException();
                 if (nanos <= 0) throw new TimeoutException();
                 while (!completed) {
                     long remaining = nanos - (System.nanoTime() - started);
                     if (remaining <= 0) throw new TimeoutException();
-                    wait(remaining / 1_000_000, (int)(remaining % 1_000_000));
+                    stateLock.wait(remaining / 1_000_000, (int)(remaining % 1_000_000));
                 }
             }
             return report();
@@ -202,17 +215,23 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
         return value;
     }
 
-    @Override public synchronized V resultNow() {
-        if (!completed || cancelled || failed) throw new IllegalStateException();
-        return value;
+    @Override public V resultNow() {
+        synchronized (stateLock) {
+            if (!completed || cancelled || failed) throw new IllegalStateException();
+            return value;
+        }
     }
-    @Override public synchronized Throwable exceptionNow() {
-        if (!completed || cancelled || !failed) throw new IllegalStateException();
-        return failure;
+    @Override public Throwable exceptionNow() {
+        synchronized (stateLock) {
+            if (!completed || cancelled || !failed) throw new IllegalStateException();
+            return failure;
+        }
     }
-    @Override public synchronized java.util.concurrent.Future.State state() {
-        if (!completed) return java.util.concurrent.Future.State.RUNNING;
-        if (cancelled) return java.util.concurrent.Future.State.CANCELLED;
-        return failed ? java.util.concurrent.Future.State.FAILED : java.util.concurrent.Future.State.SUCCESS;
+    @Override public java.util.concurrent.Future.State state() {
+        synchronized (stateLock) {
+            if (!completed) return java.util.concurrent.Future.State.RUNNING;
+            if (cancelled) return java.util.concurrent.Future.State.CANCELLED;
+            return failed ? java.util.concurrent.Future.State.FAILED : java.util.concurrent.Future.State.SUCCESS;
+        }
     }
 }

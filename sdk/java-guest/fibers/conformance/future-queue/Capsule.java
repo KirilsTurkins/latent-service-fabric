@@ -113,6 +113,61 @@ public final class Capsule {
             require(pool.awaitTermination(5, TimeUnit.SECONDS) && timer.awaitTermination(5, TimeUnit.SECONDS));
         }
     }
+
+    private static void publicFutureMonitors() throws InterruptedException, java.util.concurrent.ExecutionException {
+        ExecutorService pool = Executors.newSingleThreadExecutor();
+        FutureTask<Integer> future = new FutureTask<>(() -> 42);
+        Object gate = new Object();
+        boolean[] submitted = {false};
+        Throwable[] failure = {null};
+        Thread submitter = new Thread(() -> {
+            try { pool.execute(future); }
+            catch (Throwable error) { failure[0] = error; }
+            finally { synchronized (gate) { submitted[0] = true; gate.notifyAll(); } }
+        });
+        try {
+            synchronized (future) {
+                submitter.start();
+                awaitProgress(gate, submitted);
+                require(failure[0] == null && future.get() == 42);
+            }
+        } finally {
+            submitter.join();
+            pool.shutdownNow();
+            require(pool.awaitTermination(5,TimeUnit.SECONDS));
+        }
+        ScheduledThreadPoolExecutor scheduled = new ScheduledThreadPoolExecutor(1);
+        java.util.concurrent.ScheduledFuture<?> delayed = scheduled.schedule(
+            () -> { throw new IllegalStateException("cancelled-monitor-future-ran"); }, 1, TimeUnit.DAYS);
+        Object cancelGate = new Object();
+        boolean[] cancelled = {false}, finished = {false};
+        Thread canceller = new Thread(() -> {
+            try { cancelled[0] = delayed.cancel(false); }
+            catch (Throwable error) { failure[0] = error; }
+            finally { synchronized (cancelGate) { finished[0] = true; cancelGate.notifyAll(); } }
+        });
+        try {
+            synchronized (delayed) {
+                canceller.start();
+                awaitProgress(cancelGate, finished);
+                require(failure[0] == null && cancelled[0]);
+            }
+        } finally {
+            canceller.join();
+            scheduled.shutdownNow();
+            require(scheduled.awaitTermination(5,TimeUnit.SECONDS));
+        }
+    }
+    private static void awaitProgress(Object gate, boolean[] progress) throws InterruptedException {
+        long start = System.nanoTime();
+        synchronized (gate) {
+            while (!progress[0]) {
+                if (System.nanoTime() - start > 5_000_000_000L)
+                    throw new IllegalStateException("future-public-monitor-deadline");
+                gate.wait(5);
+            }
+        }
+    }
     public Long run(Long mode) {
         try {
             if (mode == 0) {
@@ -132,6 +187,7 @@ public final class Capsule {
                     return denied ? 42L : 41L;
                 }
             } else if (mode == 1) {
+                publicFutureMonitors();
                 try (Pair selected = new Pair()) {
                     selected.withdrawFirst(); selected.withdrawLast();
                     selected.target.run(); selected.target.run();
