@@ -555,6 +555,88 @@ func TestUnstoppedReadinessFailureStillTraps(t *testing.T) {
 '''
 
 
+# This host-only control executes the exact projected runtime clock bridge with
+# a deterministic host sample. It does not execute a WASI or signed component.
+CLOCK_ZERO_CONTROL = r'''package clockbridge
+
+import "testing"
+
+func resetClock() {
+    lsfClockPauseDepth, lsfLastMonotonic, lsfLastWall = 0, 0, 0
+    lsfHasMonotonic, lsfHasWall = false, false
+    mockMonotonic, mockWall, monotonicCalls, wallCalls = 0, 0, 0, 0
+}
+
+func readMonotonic(t *testing.T, value uint64) uint64 {
+    t.Helper()
+    mockMonotonic = value
+    var result timestamp
+    if got := clock_time_get(clockMonotonic, 0, &result); got != 0 {
+        t.Fatalf("monotonic errno %d", got)
+    }
+    return uint64(result)
+}
+
+func TestZeroSampleAndPausedClock(t *testing.T) {
+    resetClock()
+    lsfSetClocksPaused(true)
+    result := timestamp(99)
+    if got := clock_time_get(clockMonotonic, 0, &result); got != 29 || result != 99 || monotonicCalls != 0 {
+        t.Fatalf("missing paused sample: errno=%d result=%d calls=%d", got, result, monotonicCalls)
+    }
+    lsfSetClocksPaused(false)
+    if got := readMonotonic(t, 0); got != 1 || lsfLastMonotonic != 0 || !lsfHasMonotonic {
+        t.Fatalf("zero sample=%d cached=%d has=%v", got, lsfLastMonotonic, lsfHasMonotonic)
+    }
+    lsfSetClocksPaused(true)
+    mockMonotonic = 9
+    if got := clock_time_get(clockMonotonic, 0, &result); got != 0 || result != 1 || monotonicCalls != 1 {
+        t.Fatalf("paused sample: errno=%d result=%d calls=%d", got, result, monotonicCalls)
+    }
+    lsfSetClocksPaused(false)
+    if got := readMonotonic(t, 1); got != 1 { t.Fatalf("one ns changed: %d", got) }
+    if got := readMonotonic(t, 23); got != 23 { t.Fatalf("nonzero sample changed: %d", got) }
+}
+
+func TestNondecreasingSamplesCannotAdvanceElapsedTime(t *testing.T) {
+    resetClock()
+    samples := []uint64{0, 1, 2, 23, (uint64(1)<<63)-1, ^uint64(0)}
+    previousRaw, previousMapped := samples[0], readMonotonic(t, samples[0])
+    for _, raw := range samples[1:] {
+        mapped := readMonotonic(t, raw)
+        if mapped < previousMapped || mapped-previousMapped > raw-previousRaw {
+            t.Fatalf("raw %d to %d mapped %d to %d", previousRaw, raw, previousMapped, mapped)
+        }
+        if mapped != raw { t.Fatalf("nonzero sample %d changed to %d", raw, mapped) }
+        previousRaw, previousMapped = raw, mapped
+    }
+}
+
+func TestWallAndInvalidClockBehavior(t *testing.T) {
+    resetClock()
+    mockWall = 1234
+    var result timestamp
+    if got := clock_time_get(clockRealtime, 0, &result); got != 0 || result != 1234000000 || wallCalls != 1 {
+        t.Fatalf("wall errno=%d result=%d calls=%d", got, result, wallCalls)
+    }
+    lsfSetClocksPaused(true)
+    mockWall = 9000
+    if got := clock_time_get(clockRealtime, 0, &result); got != 0 || result != 1234000000 || wallCalls != 1 {
+        t.Fatalf("paused wall errno=%d result=%d calls=%d", got, result, wallCalls)
+    }
+    lsfSetClocksPaused(false)
+    mockWall = ^uint64(0)/1000000 + 1
+    result = 77
+    if got := clock_time_get(clockRealtime, 0, &result); got != 61 || result != 77 {
+        t.Fatalf("wall overflow errno=%d result=%d", got, result)
+    }
+    if got := clock_time_get(42, 0, &result); got != 28 || result != 77 {
+        t.Fatalf("unknown clock errno=%d result=%d", got, result)
+    }
+}
+'''
+
+
 class SourceOnlyCompiler:
     def __init__(self, *_args, **_kwargs):
         self.materials = []
@@ -595,6 +677,40 @@ def compile_record(folder):
 
 
 class GoManagedTimers(unittest.TestCase):
+    def _check_zero_monotonic_origin_keeps_timers_positive_without_advancing_time(self):
+        source = (reference.ROOT / 'sdk/go-guest/runtime/runtime_bridge.go.in').read_text()
+        declarations = '\n'.join(
+            line for line in source.splitlines()
+            if line.startswith(('var lsfClockPauseDepth ', 'var lsfLastMonotonic,', 'var lsfHasMonotonic,'))
+        )
+        self.assertEqual(len(declarations.splitlines()), 3)
+        functions = []
+        for name in ('lsfSetClocksPaused', 'clock_time_get'):
+            start = source.index('func ' + name + '(')
+            functions.append(source[start:source.index('\n}', start) + 2])
+        prefix = '''package clockbridge
+
+type clockid = uint32
+type timestamp = uint64
+type errno = uint32
+const (clockRealtime clockid = 0; clockMonotonic clockid = 1)
+var mockMonotonic, mockWall uint64
+var monotonicCalls, wallCalls int
+func lsfMonotonicNanos() uint64 { monotonicCalls++; return mockMonotonic }
+func lsfWallMillis() uint64 { wallCalls++; return mockWall }
+func exit(int32) { panic("unexpected runtime exit") }
+'''
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'bridge.go').write_text(prefix + declarations + '\n\n' + '\n\n'.join(functions) + '\n')
+            (root / 'bridge_test.go').write_text(CLOCK_ZERO_CONTROL)
+            env = dict(os.environ, GO111MODULE='off', GOENV='off', GOFLAGS='', GOWORK='off',
+                       GOTOOLCHAIN='local', GOMAXPROCS='1', GOOS='', GOARCH='', CGO_ENABLED='0')
+            env.pop('GOROOT', None)
+            result = subprocess.run([shutil.which('go'), 'test', '-count=1', '-timeout=45s', '-v', '.'],
+                                    cwd=root, env=env, text=True, capture_output=True, timeout=180)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_reset_host_double_binds_original_source_and_license(self):
         reset_controls.assert_source_binding(self)
         # The authenticated old emitted source must fail the current contract;
@@ -641,6 +757,8 @@ class GoManagedTimers(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which('go'), 'controlled host interleaving requires Go')
     def test_timer_installation_rechecks_inventory_after_allocation_parking(self):
+        # Reuse this existing Go prerequisite; no new skip is introduced.
+        self._check_zero_monotonic_origin_keeps_timers_positive_without_advancing_time()
         source = (reference.ROOT / 'sdk/go-guest/runtime/timer_bridge.go.in').read_text()
         declaration = next(line for line in source.splitlines() if line.startswith('type lsfTimerSlot struct '))
         functions = []
