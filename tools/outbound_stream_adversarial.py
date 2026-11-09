@@ -52,10 +52,36 @@ class GatedSmtpPeer(SmtpPeer):
         record["barrier"] = {"attempt": record["attempt"], "sequence": sequence, "kind": kind}
 
     def _interest(self, stream, record):
-        events = selectors.EVENT_READ
+        # EOF closes only the client's send half. Keep the original descriptor
+        # and capacity while a reply or explicit gate still owns the write half.
+        events = 0 if record.get("readEof") else selectors.EVENT_READ
         if record["output"]:
             events |= selectors.EVENT_WRITE
-        self.selector.modify(stream, events, self)
+        if not events:
+            if not record.get("barrier") and not record.get("hostileActive"):
+                self._close_client(stream)
+            else:
+                # EOF is permanently readable. No queued output means neither
+                # read nor write interest: park without a busy readiness loop.
+                try:
+                    self.selector.unregister(stream)
+                except KeyError:
+                    pass
+            return
+        try:
+            self.selector.modify(stream, events, self)
+        except KeyError:
+            self.selector.register(stream, events, self)
+
+    def _read_eof(self, stream, record):
+        record["readEof"] = True
+        self._record(record["attempt"], "client-send-eof")
+        if record["data"] or record["input"]:
+            # An incomplete command/DATA terminator is not a mutation. Do not
+            # synthesize a successful protocol response for truncated input.
+            self._close_client(stream)
+            return
+        self._interest(stream, record)
 
     def _fill_hostile(self, stream, record):
         # Generate at most one bounded window; never allocate the whole hostile
@@ -80,6 +106,13 @@ class GatedSmtpPeer(SmtpPeer):
         self.check()
         accepting = key.fileobj is self.listener
         before = set(self.clients) if accepting else set()
+        record = self.clients.get(key.fileobj)
+        if record is not None and record.get("readEof"):
+            # Selector snapshots can contain the old read interest after EOF
+            # or a now-parked key. Never read/recount EOF or rearm that interest.
+            events &= selectors.EVENT_WRITE if record["output"] else 0
+            if not events:
+                return
         try:
             super().event(key, events)
         except BlockingIOError:
@@ -159,14 +192,28 @@ class GatedSmtpPeer(SmtpPeer):
         if ((action == "reply" and barrier["kind"] not in ("greeting", "mutation"))
                 or (action == "terminate" and barrier["kind"] != "unterminated")):
             raise ValueError("outbound-peer-release-kind-mismatch")
-        # A failed syscall cannot be relabelled as a successful control action.
+        # A release succeeds only after its original write/read interest is
+        # usable. In particular, re-registering a parked EOF owner can fail.
         try:
             if action == "reset":
                 stream.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
             elif action == "half-close":
                 stream.shutdown(socket.SHUT_WR)
-        except OSError:
-            self.failure = "peer-control-failed"
+                record["writeClosed"] = True
+                # This syscall is irreversible even if the following selector
+                # update fails. Count it separately from a successful release.
+                self.half_closes += 1
+            elif action in ("reply", "terminate"):
+                reply = b"\r\n" if action == "terminate" else (
+                    GREETING if barrier["kind"] == "greeting" else MUTATION_REPLY)
+                self._reply(record, reply)
+                if barrier["kind"] == "mutation":
+                    record["mutation_reply_end"] = len(record["output"])
+            if action not in ("reset", "close"):
+                record["barrier"] = None
+                self._interest(stream, record)
+        except (OSError, ValueError):
+            self.failure = self.failure or "peer-control-failed"
             self._close_client(stream)
             raise
         record["barrier"] = None
@@ -175,17 +222,6 @@ class GatedSmtpPeer(SmtpPeer):
         if action in ("reset", "close"):
             self.resets += int(action == "reset")
             self._close_client(stream)
-        elif action == "half-close":
-            self.half_closes += 1
-            record["writeClosed"] = True
-            self._interest(stream, record)
-        else:
-            reply = b"\r\n" if action == "terminate" else (
-                GREETING if barrier["kind"] == "greeting" else MUTATION_REPLY)
-            self._reply(record, reply)
-            if barrier["kind"] == "mutation":
-                record["mutation_reply_end"] = len(record["output"])
-            self._interest(stream, record)
 
     def _close_client(self, stream):
         record = self.clients.get(stream)
