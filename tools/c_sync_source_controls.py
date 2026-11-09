@@ -27,6 +27,7 @@ HEADERS = {
 SOURCES = ('tools/c_sync_source_controls.py', FIXTURE + 'c', FIXTURE + 'cjs',
     'tools/tests/fixtures/c-once-jspi.c', 'tools/tests/fixtures/c-once-jspi.cjs',
     'tools/tests/fixtures/c-root-drain-jspi.c', 'tools/tests/fixtures/c-root-drain-jspi.cjs',
+    'tools/tests/fixtures/c-gnu-join-reference.c', 'tools/tests/fixtures/c-gnu-join-reference.cjs',
     'sdk/c-guest/runtime/threads.c', 'sdk/c-guest/runtime/synchronization.c',
     'sdk/c-guest/runtime/thread-abi.h', 'tools/qualify_c_context_lowering.py',
     'crates/latent-component-threading/src/c_lifecycle.rs', 'crates/latent-component-threading/src/c_root.rs',
@@ -35,6 +36,17 @@ SOURCES = ('tools/c_sync_source_controls.py', FIXTURE + 'c', FIXTURE + 'cjs',
     'tools/build_observation.py', 'tools/build_process.py',
     'tools/build_process_windows.py', 'tools/build_process_linux.py',
     'tools/build_process_signals.py', 'tools/dev_workflow/common.py')
+
+
+# These inputs bind the original weak GNU-join stubs and the deadline type used
+# by the reference. This does not claim a complete Zig distribution manifest.
+GNU_JOIN_INPUTS = {
+    'libc/wasi/thread-stub/pthread_join.c': {'bytes': 818, 'sha256': 'c1c27373ba29ceb21496a6368ac1a94a6e0914bde5f0600d9f5c9ff1c3165f83'},
+    'libc/include/wasm-wasi-musl/time.h': {'bytes': 5791, 'sha256': '2ea91196e2b6268feabec85041a9bda6381800b470451a6bcff9445510c93546'},
+    'libc/include/wasm-wasi-musl/__header_time.h': {'bytes': 817, 'sha256': '03fe8f66a5ffa0b448a96e9a0f19bde5e8cd5923c024d4e927b16f6d8d9c14c9'},
+    'libc/include/wasm-wasi-musl/__struct_timespec.h': {'bytes': 205, 'sha256': 'b19b09edfe60735c5dd38da0416e722409473ec94885e465aab7c4fd98202840'},
+    'libc/include/wasm-wasi-musl/__typedef_time_t.h': {'bytes': 179, 'sha256': 'b1ad083733361f8b5077ff9dc3412bd7d7a5f455fdd1eef5fb66d188fada1e98'},
+}
 
 
 def public_abi(headers):
@@ -107,6 +119,9 @@ def run(output, zig, node):
                 headers[name] = stream.read(1024 * 1024 + 1)
             require(len(headers[name]) == header_ids[name]['bytes'], 'c-sync-public-header-read-bound')
         report['publicAbiInputs'] = header_ids
+        gnu_join_inputs = {name: identity(lib / name, 1024 * 1024) for name in GNU_JOIN_INPUTS}
+        require(gnu_join_inputs == GNU_JOIN_INPUTS, 'c-sync-pinned-gnu-join-inputs')
+        report['gnuJoinInputs'] = gnu_join_inputs
         abi = output / 'c-sync-reference-abi.h'
         abi.write_bytes(public_abi(headers))
         original = (ROOT / 'sdk/c-guest/runtime/threads.c').read_text()
@@ -119,6 +134,11 @@ def run(output, zig, node):
             original.index('#if defined(LSF_C_LINKED_LIBC)')]
         drain_body = output / 'c-root-drain-reference-body.h'
         drain_body.write_bytes((find + join + lifecycle).encode())
+        extension = original.find('int pthread_tryjoin_np(')
+        detach = original.index('int pthread_detach(')
+        require(extension < detach, 'c-sync-gnu-join-body-order')
+        gnu_join_body = output / 'c-gnu-join-reference-body.h'
+        gnu_join_body.write_bytes(original[extension:detach].encode() if extension >= 0 else b'')
         flags = ['cc', '-target', 'wasm32-wasi', '-std=c17', '-O2', '-Wall', '-Wextra', '-Werror']
         runtime = ROOT / 'sdk/c-guest/runtime'
         wasi = [part for family in ('wasm-wasi-musl', 'generic-musl') for part in
@@ -163,11 +183,34 @@ def run(output, zig, node):
         require(stdout == b'PASS root drain: existing and later joins, admission and park races, cancellation custody; JSPI test ports only\n',
             'c-root-drain-jspi-source-control-result')
         report['rootDrainScenarios'] = 5
+        libc = lib / 'libc'
+        wasi_musl, musl = libc / 'wasi/libc-top-half/musl', libc / 'musl'
+        private = (wasi_musl / 'src/internal', musl / 'src/internal', wasi_musl / 'src/include',
+            musl / 'src/include', wasi_musl / 'arch/wasm32', musl / 'arch/generic',
+            libc / 'wasi/libc-top-half/headers/private', libc / 'wasi/libc-bottom-half/cloudlibc/src')
+        # Compile the original weak-stub translation unit, with the same libc
+        # warning policy, rather than replacing it with a fabricated double.
+        command([zig, 'cc', '-target', 'wasm32-wasi', '-std=gnu17', '-D_GNU_SOURCE', '-O2', '-w',
+            '-matomics', '-mbulk-memory', '-pthread', '-fno-lto',
+            *(part for path in private for part in ('-I', path)),
+            '-c', lib / 'libc/wasi/thread-stub/pthread_join.c', '-o', output / 'pinned-pthread-join.o'])
+        command([zig, *flags, '-matomics', '-mbulk-memory', '-pthread', '-fno-lto', '-nostdlib',
+            '-Wl,--no-entry', '-Wl,--export-memory', *wasi, '-I', output,
+            ROOT / 'tools/tests/fixtures/c-gnu-join-reference.c', output / 'pinned-pthread-join.o',
+            '-o', output / 'gnu-join-reference.wasm'])
+        stdout = command([node, '--max-old-space-size=64',
+            ROOT / 'tools/tests/fixtures/c-gnu-join-reference.cjs', output / 'gnu-join-reference.wasm'])
+        require(stdout == b'PASS pinned libc GNU joins: explicit refusal, unchanged outputs\n',
+            'c-sync-pinned-gnu-join-result')
+        report['gnuJoinCases'] = 2
         report['outputs'] = {name: identity(output / name, 1024 * 1024) for name in
             ('threads.o', 'reference.wasm', 'once-jspi.wasm', 'root-drain-jspi.wasm',
-             abi.name, body.name, drain_body.name)}
+             'pinned-pthread-join.o', 'gnu-join-reference.wasm',
+             abi.name, body.name, drain_body.name, gnu_join_body.name)}
         require(header_ids == {name: identity(lib / name, 1024 * 1024) for name in HEADERS},
             'c-sync-header-input-changed')
+        require(gnu_join_inputs == {name: identity(lib / name, 1024 * 1024) for name in GNU_JOIN_INPUTS},
+            'c-sync-gnu-join-input-changed')
         require(before == {name: identity(ROOT / name, 1024 * 1024) for name in SOURCES},
             'c-sync-source-input-changed')
         require(tools == {name: identity(path) for name, path in (('zig', zig), ('node', node))},

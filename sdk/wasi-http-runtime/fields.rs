@@ -1,7 +1,7 @@
 //! Standard fields preserve duplicate values, casing, order and child lifetime.
 use super::{
     quota::Slot,
-    state::{MAX_HEADERS, MAX_HEADER_BYTES},
+    state::{MAX_BODY, MAX_HEADERS, MAX_HEADER_BYTES},
 };
 use std::{
     cell::{Cell, RefCell},
@@ -15,6 +15,25 @@ pub enum HeaderError {
     InvalidSyntax,
     Forbidden,
     Immutable,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ContentLengthError {
+    Invalid,
+    TooLarge,
+}
+
+pub fn parse_content_length(value: &str) -> Result<u64, ContentLengthError> {
+    if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {
+        return Err(ContentLengthError::Invalid);
+    }
+    let length = value
+        .parse::<u64>()
+        .map_err(|_| ContentLengthError::TooLarge)?;
+    if length > MAX_BODY {
+        return Err(ContentLengthError::TooLarge);
+    }
+    Ok(length)
 }
 
 pub struct Fields {
@@ -219,6 +238,22 @@ impl Drop for Fields {
 }
 
 impl ParentFields {
+    /// Observe the immutable request metadata without copying its bounded values.
+    pub fn content_length(&self) -> Result<Option<u64>, ContentLengthError> {
+        let entries = self.entries.borrow();
+        let mut length = None;
+        for (name, bytes) in entries.iter() {
+            if name.eq_ignore_ascii_case("content-length") {
+                if length.is_some() {
+                    return Err(ContentLengthError::Invalid);
+                }
+                let value = std::str::from_utf8(bytes).map_err(|_| ContentLengthError::Invalid)?;
+                length = Some(parse_content_length(value)?);
+            }
+        }
+        Ok(length)
+    }
+
     pub fn response(entries: Entries) -> Result<Self, HeaderError> {
         validate(&entries, false)?;
         Ok(Self {
@@ -265,6 +300,36 @@ impl Drop for ParentFields {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn immutable_content_length_matches_the_request_metadata_parser() {
+        for (values, expected) in [
+            (vec![], Ok(None)),
+            (vec!["0"], Ok(Some(0))),
+            (vec!["0007"], Ok(Some(7))),
+            (vec!["1048576"], Ok(Some(MAX_BODY))),
+            (vec![""], Err(ContentLengthError::Invalid)),
+            (vec![" 1"], Err(ContentLengthError::Invalid)),
+            (vec!["+1"], Err(ContentLengthError::Invalid)),
+            (vec!["1", "1"], Err(ContentLengthError::Invalid)),
+            (vec!["1048577"], Err(ContentLengthError::TooLarge)),
+            (
+                vec!["18446744073709551616"],
+                Err(ContentLengthError::TooLarge),
+            ),
+        ] {
+            let rows = values
+                .into_iter()
+                .map(|value| ("ConTenT-LenGth".to_owned(), value.as_bytes().to_vec()))
+                .collect();
+            let parent = Fields::from_list(rows).unwrap().into_parent();
+            assert_eq!(parent.content_length(), expected);
+        }
+        let parent = Fields::from_list(vec![("Content-Length".into(), vec![0x80])])
+            .unwrap()
+            .into_parent();
+        assert_eq!(parent.content_length(), Err(ContentLengthError::Invalid));
+    }
 
     #[test]
     fn duplicates_binary_values_casing_and_serial_order_are_preserved() {
