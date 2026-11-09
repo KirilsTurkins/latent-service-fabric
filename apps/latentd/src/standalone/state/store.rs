@@ -52,7 +52,7 @@ enum StartupPayload {
     Local {
         owner: Arc<latent_blobs::local::LocalBlobStore>,
         provider: crate::config::ProviderIdentity,
-        returned: std::sync::mpsc::SyncSender<Arc<latent_blobs::local::LocalBlobStore>>,
+        returned: std::sync::mpsc::SyncSender<(Arc<latent_blobs::local::LocalBlobStore>, bool)>,
     },
 }
 
@@ -61,6 +61,7 @@ pub(super) struct LocalPayloadSelection {
     provider: crate::config::ProviderIdentity,
     namespace: String,
     root: std::path::PathBuf,
+    durable_retention: bool,
 }
 
 #[cfg(target_os = "linux")]
@@ -75,6 +76,7 @@ impl LocalPayloadSelection {
             && self.provider.service == blob.identity.service
             && self.provider.epoch == blob.identity.epoch
             && self.namespace == blob.namespace
+            && self.durable_retention == blob.durable_retention
             && self.root
                 == settings
                     .data_directory
@@ -126,7 +128,9 @@ fn validate_startup_payload(
                 validation::validate(view, identity, quotas, original)?;
             }
             validation::live(original)?;
-            returned.send(owner).map_err(|_| StoreError::Unavailable)
+            returned
+                .send((owner, durable))
+                .map_err(|_| StoreError::Unavailable)
         }
     }
 }
@@ -160,26 +164,54 @@ impl StateBootstrap {
         owner: Arc<latent_blobs::local::LocalBlobStore>,
         provider: crate::config::ProviderIdentity,
         root: std::path::PathBuf,
+        durable_retention: bool,
     ) -> Result<Arc<latent_blobs::local::LocalBlobStore>, PlatformError> {
         let selection = LocalPayloadSelection {
             provider: provider.clone(),
             namespace: owner.namespace().to_owned(),
             root,
+            durable_retention,
         };
         let (returned, receiver) = std::sync::mpsc::sync_channel(1);
-        self.open_store_inner(
-            settings,
-            None,
-            false,
-            StartupPayload::Local {
-                owner,
-                provider,
-                returned,
-            },
-        )
-        .await?;
+        let store = self
+            .open_store_inner(
+                settings,
+                None,
+                false,
+                StartupPayload::Local {
+                    owner,
+                    provider,
+                    returned,
+                },
+            )
+            .await?;
         self.check_live()?;
-        let owner = receiver.try_recv().map_err(|_| super::unavailable())?;
+        let (mut owner, already_durable) = receiver.try_recv().map_err(|_| super::unavailable())?;
+        if durable_retention && !already_durable {
+            use latent_state::store_io::StoreIoKind;
+            let original = self.original();
+            let current = Arc::clone(&original);
+            let job = store
+                .with_store_retaining(StoreIoKind::RecoveryWrite, 4096, original, move |engine| {
+                    validation::live(&current)?;
+                    let view = engine.snapshot()?;
+                    let result = latent_blobs::local::LocalBlobStore::enable_durable_for_view(
+                        &mut owner, &view,
+                    );
+                    validation::live(&current)?;
+                    Ok((owner, result))
+                })
+                .map_err(|_| super::unavailable())?;
+            owner = match tokio::time::timeout_at(self.deadline.into(), job).await {
+                Ok(Ok(Ok((owner, Ok(()))))) => owner,
+                _ => {
+                    store.quarantine();
+                    self.native.quarantine();
+                    return Err(super::unavailable());
+                }
+            };
+            self.check_live()?;
+        }
         self.local_payload_selection = Some(Box::new(selection));
         Ok(owner)
     }

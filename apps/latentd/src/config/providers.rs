@@ -118,6 +118,8 @@ pub struct ProviderSecretFile {
 pub struct BlobInstallation {
     pub identity: ProviderIdentity,
     pub namespace: String,
+    #[serde(default)]
+    pub durable_retention: bool,
 }
 
 #[derive(Clone, Deserialize)]
@@ -186,6 +188,9 @@ pub(super) fn derive(
     }
     if let Some(blob) = &providers.blob {
         blob.identity.validate()?;
+        if blob.durable_retention && config.state.is_none() {
+            return Err(invalid("providers.blob.durableRetention"));
+        }
         if !token(&blob.namespace, 128) {
             return Err(invalid("providers.blob.namespace"));
         }

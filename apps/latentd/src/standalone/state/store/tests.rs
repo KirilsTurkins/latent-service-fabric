@@ -147,6 +147,50 @@ async fn actual_startup_returns_only_the_same_prepaid_store_and_original_initial
 }
 
 #[tokio::test]
+async fn opted_in_startup_binds_fresh_local_owner_after_state_identity() {
+    use latent_blobs::local::{LocalBlobLimits, LocalBlobStore};
+    let (root, settings, mut bootstrap) = fixture();
+    let blob_root = root.path().join("blobs");
+    std::fs::create_dir(&blob_root).unwrap();
+    std::fs::set_permissions(&blob_root, std::fs::Permissions::from_mode(0o700)).unwrap();
+    let owner = LocalBlobStore::open(&blob_root, "private", LocalBlobLimits::default()).unwrap();
+    let pointer = Arc::as_ptr(&owner);
+    let provider = crate::config::ProviderIdentity {
+        id: "local".into(),
+        tenant: "tenant".into(),
+        service: "blob".into(),
+        epoch: 1,
+    };
+    let owner = bootstrap
+        .open_store_with_local_payloads(&settings, owner, provider, blob_root.clone(), true)
+        .await
+        .unwrap();
+    assert_eq!(Arc::as_ptr(&owner), pointer);
+    assert!(blob_root.join("DURABLE.json").exists());
+    let tenant = latent_core::TenantId("tenant".into());
+    let writer = owner
+        .create(&tenant, "text/plain", Some(0), &|| Ok(()))
+        .unwrap();
+    let blob = writer.seal(&|| Ok(())).unwrap();
+    let pin = owner
+        .capture_durable_reference(&tenant, &blob, &|| Ok(()))
+        .unwrap();
+    drop(pin);
+    let store = Arc::clone(bootstrap.opened_store.as_ref().unwrap());
+    drop(owner);
+    store.close();
+    let report = store
+        .drain_async(
+            bootstrap.deadline,
+            tokio::time::sleep_until(bootstrap.deadline.into()),
+        )
+        .unwrap()
+        .await;
+    assert!(report.clean && report.snapshot.physically_retired());
+    store.reap_retired_threads().unwrap();
+}
+
+#[tokio::test]
 async fn startup_transfers_the_same_ordinary_blob_owner_without_enabling_durable_mode() {
     use latent_blobs::local::{LocalBlobLimits, LocalBlobStore};
     let (root, settings, mut bootstrap) = fixture();
@@ -162,7 +206,7 @@ async fn startup_transfers_the_same_ordinary_blob_owner_without_enabling_durable
         epoch: 1,
     };
     let owner = bootstrap
-        .open_store_with_local_payloads(&settings, owner, provider, blob_root.clone())
+        .open_store_with_local_payloads(&settings, owner, provider, blob_root.clone(), false)
         .await
         .unwrap();
     assert_eq!(Arc::as_ptr(&owner), pointer);
@@ -315,7 +359,7 @@ async fn startup_rebinds_the_original_existing_durable_blob_owner_to_the_reopene
         epoch: 1,
     };
     let owner = second
-        .open_store_with_local_payloads(&settings, owner, provider, blob_root.clone())
+        .open_store_with_local_payloads(&settings, owner, provider, blob_root.clone(), false)
         .await
         .unwrap();
     assert_eq!(Arc::as_ptr(&owner), pointer);
@@ -397,7 +441,13 @@ async fn actual_linked_payload_recovers_and_corruption_refuses_startup() {
     let mut bootstrap = StateBootstrap::new_state(&settings, &clock).unwrap();
     let owner = LocalBlobStore::open(&blob_root, "private", LocalBlobLimits::default()).unwrap();
     let owner = bootstrap
-        .open_store_with_local_payloads(&settings, owner, provider.clone(), blob_root.clone())
+        .open_store_with_local_payloads(
+            &settings,
+            owner,
+            provider.clone(),
+            blob_root.clone(),
+            false,
+        )
         .await
         .unwrap();
     let state = Arc::clone(bootstrap.opened_store.as_ref().unwrap());
@@ -548,26 +598,31 @@ async fn actual_linked_payload_recovers_and_corruption_refuses_startup() {
     std::fs::write(object.join("data"), b"evil").unwrap();
     let mut corrupt = StateBootstrap::new_state(&settings, &clock).unwrap();
     assert!(corrupt
-        .open_store_with_local_payloads(&settings, owner, provider, blob_root)
+        .open_store_with_local_payloads(&settings, owner, provider, blob_root, false)
         .await
         .is_err());
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn actual_blob_provider_installs_after_the_same_prepaid_state_initializer() {
-    Box::pin(provider_installs_after_state_initializer(false)).await;
+    Box::pin(provider_installs_after_state_initializer(false, false)).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn actual_blob_provider_reuses_a_reopened_durable_owner() {
-    Box::pin(provider_installs_after_state_initializer(true)).await;
+    Box::pin(provider_installs_after_state_initializer(true, false)).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn actual_blob_provider_prepares_opted_in_durable_owner() {
+    Box::pin(provider_installs_after_state_initializer(false, true)).await;
 }
 
 #[expect(
     clippy::too_many_lines,
     reason = "keep real provider, prepaid state and orderly retirement in one fixture"
 )]
-async fn provider_installs_after_state_initializer(durable: bool) {
+async fn provider_installs_after_state_initializer(durable: bool, opt_in: bool) {
     use crate::standalone::{
         audit::AuditRuntime,
         policies::PolicyRuntime,
@@ -590,6 +645,13 @@ async fn provider_installs_after_state_initializer(durable: bool) {
     let input = crate::config::NodeConfig::load(&config).unwrap();
     let mut node = input.derive().unwrap();
     node.state = Some(settings.clone());
+    node.providers
+        .as_mut()
+        .unwrap()
+        .blob
+        .as_mut()
+        .unwrap()
+        .durable_retention = opt_in;
     let runtime = tokio::runtime::Handle::current();
     let clock: Arc<dyn latent_core::ActivationClock> = Arc::new(SystemActivationClock);
     if durable {
@@ -713,6 +775,21 @@ async fn provider_installs_after_state_initializer(durable: bool) {
         .unwrap()
         .namespace = "private".into();
     assert!(bootstrap.matches_local_payload(&node));
+    node.providers
+        .as_mut()
+        .unwrap()
+        .blob
+        .as_mut()
+        .unwrap()
+        .durable_retention = !opt_in;
+    assert!(!bootstrap.matches_local_payload(&node));
+    node.providers
+        .as_mut()
+        .unwrap()
+        .blob
+        .as_mut()
+        .unwrap()
+        .durable_retention = opt_in;
     let original_data = node.data_directory.clone();
     node.data_directory = original_data.join("different");
     assert!(!bootstrap.matches_local_payload(&node));
@@ -722,7 +799,7 @@ async fn provider_installs_after_state_initializer(durable: bool) {
             .join("provider-blobs-local")
             .join("DURABLE.json")
             .exists(),
-        durable
+        durable || opt_in
     );
     assert!(
         provider

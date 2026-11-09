@@ -283,9 +283,13 @@ impl ProviderRuntime {
                             store,
                             blob.identity.clone(),
                             root.clone(),
+                            blob.durable_retention,
                         )
                         .await?
                 } else {
+                    if blob.durable_retention {
+                        return Err(unavailable());
+                    }
                     store
                 };
                 let provider = LocalBlobProvider::install(
