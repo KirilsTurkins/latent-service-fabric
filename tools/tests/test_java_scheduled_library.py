@@ -27,6 +27,32 @@ def output(values):
 
 
 class ScheduledLibraryOwnership(unittest.TestCase):
+    def test_compiler_retention_accepts_observed_command_pairs_and_remains_bounded(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            prepared = root / 'prepared'
+            compiler = prepared / 'compiler'
+            compiler.mkdir(parents=True)
+            # The scheduled-library failure recorded 178 successful commands;
+            # a successful command normally leaves both of these public files.
+            for index in range(178):
+                (compiler / f'{index}-stage.command.json').write_bytes(b'{}')
+                (compiler / f'{index}-stage.log').write_bytes(b'log')
+            (compiler / 'private.txt').write_bytes(b'not selected')
+            first = owner.retain(prepared, root / 'observed')
+            self.assertEqual(len(first), 356)
+            self.assertEqual((root / 'observed/compiler/177-stage.log').read_bytes(), b'log')
+            self.assertFalse((root / 'observed/compiler/private.txt').exists())
+
+            for index in range(178, 256):
+                (compiler / f'{index}-stage.command.json').write_bytes(b'{}')
+                (compiler / f'{index}-stage.log').write_bytes(b'log')
+            self.assertEqual(len(owner.retain(prepared, root / 'at-limit')), 512)
+            (compiler / 'overflow.log').write_bytes(b'overflow')
+            with self.assertRaisesRegex(ValueError, 'compiler-log-count'):
+                owner.retain(prepared, root / 'over-limit')
+            self.assertFalse((root / 'over-limit/compiler').exists())
+
     def test_all_eight_modes_twice_require_actual_unique_ids_and_fresh_idle_stores(self):
         actual = rows()
         self.assertEqual(owner.observations(output(actual))['calls'], actual)
