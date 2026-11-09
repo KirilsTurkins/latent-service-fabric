@@ -1,0 +1,204 @@
+{
+  "schemaVersion": "latent.ci.suite-fragment.v1",
+  "suites": [
+    {
+      "boundary": "qualification",
+      "expectedIgnored": [
+        "command_commits_through_real_client_and_retires"
+      ],
+      "id": "latent-sdk.test.phase4-real-command",
+      "ignoredLeaves": [
+        "command_commits_through_real_client_and_retires"
+      ],
+      "kind": "test",
+      "manifest": "sdk/rust/Cargo.toml",
+      "mode": "libtest",
+      "package": "latent-sdk",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory",
+        "explicitly provisioned separate signed node and operation-specific fixture"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/phase4_real_command.rs",
+      "target": "phase4_real_command",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "qualification",
+      "expectedIgnored": [
+        "changed_input_conflicts_with_original_rejection",
+        "lost_rejection_response_reports_unknown",
+        "recover_original_rejection_after_lost_response"
+      ],
+      "id": "latent-sdk.test.phase4-real-lost-rejection",
+      "ignoredLeaves": [
+        "changed_input_conflicts_with_original_rejection",
+        "lost_rejection_response_reports_unknown",
+        "recover_original_rejection_after_lost_response"
+      ],
+      "kind": "test",
+      "manifest": "sdk/rust/Cargo.toml",
+      "mode": "libtest",
+      "package": "latent-sdk",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory",
+        "explicitly provisioned separate signed node and operation-specific fixture"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/phase4_real_lost_rejection.rs",
+      "target": "phase4_real_lost_rejection",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "qualification",
+      "expectedIgnored": [
+        "fresh_query_after_commit",
+        "lost_committed_response_reports_unknown",
+        "recover_original_commit_after_lost_response"
+      ],
+      "id": "latent-sdk.test.phase4-real-lost-response",
+      "ignoredLeaves": [
+        "fresh_query_after_commit",
+        "lost_committed_response_reports_unknown",
+        "recover_original_commit_after_lost_response"
+      ],
+      "kind": "test",
+      "manifest": "sdk/rust/Cargo.toml",
+      "mode": "libtest",
+      "package": "latent-sdk",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory",
+        "explicitly provisioned separate signed node and operation-specific fixture"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/phase4_real_lost_response.rs",
+      "target": "phase4_real_lost_response",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "qualification",
+      "expectedIgnored": [
+        "committed_command_lookup_uses_real_shared_client_and_retires"
+      ],
+      "id": "latent-sdk.test.phase4-real-node",
+      "ignoredLeaves": [
+        "committed_command_lookup_uses_real_shared_client_and_retires"
+      ],
+      "kind": "test",
+      "manifest": "sdk/rust/Cargo.toml",
+      "mode": "libtest",
+      "package": "latent-sdk",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory",
+        "explicitly provisioned separate signed node and operation-specific fixture"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/phase4_real_node.rs",
+      "target": "phase4_real_node",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "qualification",
+      "expectedIgnored": [
+        "rejection_is_durable_without_business_writes",
+        "rejection_recovers_after_state_change"
+      ],
+      "id": "latent-sdk.test.phase4-real-rejection",
+      "ignoredLeaves": [
+        "rejection_is_durable_without_business_writes",
+        "rejection_recovers_after_state_change"
+      ],
+      "kind": "test",
+      "manifest": "sdk/rust/Cargo.toml",
+      "mode": "libtest",
+      "package": "latent-sdk",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory",
+        "explicitly provisioned separate signed node and operation-specific fixture"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/phase4_real_rejection.rs",
+      "target": "phase4_real_rejection",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "qualification",
+      "expectedIgnored": [
+        "foreign_caller_cannot_recover_original"
+      ],
+      "id": "latent-sdk.test.phase4-real-scope",
+      "ignoredLeaves": [
+        "foreign_caller_cannot_recover_original"
+      ],
+      "kind": "test",
+      "manifest": "sdk/rust/Cargo.toml",
+      "mode": "libtest",
+      "package": "latent-sdk",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory",
+        "explicitly provisioned separate signed node and operation-specific fixture"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/phase4_real_scope.rs",
+      "target": "phase4_real_scope",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "qualification",
+      "expectedIgnored": [
+        "stale_edit_does_not_refresh_expected_version"
+      ],
+      "id": "latent-sdk.test.phase4-real-stale-query",
+      "ignoredLeaves": [
+        "stale_edit_does_not_refresh_expected_version"
+      ],
+      "kind": "test",
+      "manifest": "sdk/rust/Cargo.toml",
+      "mode": "libtest",
+      "package": "latent-sdk",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory",
+        "explicitly provisioned separate signed node and operation-specific fixture"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/phase4_real_stale_query.rs",
+      "target": "phase4_real_stale_query",
+      "timeoutSeconds": 900
+    }
+  ]
+}

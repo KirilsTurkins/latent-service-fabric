@@ -504,7 +504,7 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
     } else {
         3
     } {
-        for mode in 0..if scheduled { 8 } else { 4 } {
+        for mode in 0..if scheduled { 9 } else { 4 } {
             let requested_id = format!("{name}-{iteration}-{mode}");
             let stores_before = f.backend.resource_snapshot().stores_created;
             let actual = f
@@ -523,9 +523,16 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
                 assert_eq!(actual.activation_id.0, requested_id);
             }
             let receipt = success(actual);
+            // The ninth scheduled mode encodes real host timer and admission
+            // snapshots; the original eight modes retain their exact result.
+            let value = if scheduled && mode == 8 {
+                2_211_210
+            } else {
+                42
+            };
             assert_eq!(
                 serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),
-                [42]
+                [value]
             );
             assert!(receipt.consumption.cpu_fuel > 0);
             assert!(receipt.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
@@ -549,7 +556,7 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
                     "LSF_JAVA_RETAINED={}",
                     serde_json::json!({
                         "activationId": requested_id, "iteration": iteration, "mode": mode,
-                        "value": 42, "cpuFuel": receipt.consumption.cpu_fuel,
+                        "value": value, "cpuFuel": receipt.consumption.cpu_fuel,
                         "reportedPeakMemoryBytes": receipt.consumption.peak_memory_bytes,
                         "storesBefore": stores_before, "storesCreated": runtime.stores_created,
                         "liveStores": runtime.live_stores,

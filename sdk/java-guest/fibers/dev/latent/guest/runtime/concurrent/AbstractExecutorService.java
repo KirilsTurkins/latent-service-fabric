@@ -40,7 +40,7 @@ public abstract class AbstractExecutorService implements java.util.concurrent.Ex
     private <T> List<Future<T>> all(Collection<? extends Callable<T>> tasks, long nanos, boolean timed)
             throws InterruptedException, TimeoutException {
         Objects.requireNonNull(tasks);
-        if (Thread.interrupted()) throw new InterruptedException();
+        // Completed results and empty task sets need no interruptible wait.
         long started = System.nanoTime();
         List<Future<T>> futures = new ArrayList<>(tasks.size());
         boolean finished = false;
@@ -83,7 +83,7 @@ public abstract class AbstractExecutorService implements java.util.concurrent.Ex
             throws InterruptedException, ExecutionException, TimeoutException {
         Objects.requireNonNull(tasks);
         if (tasks.isEmpty()) throw new IllegalArgumentException();
-        if (Thread.interrupted()) throw new InterruptedException();
+        // A ready completion can be consumed without an interruptible wait.
         long started = System.nanoTime();
         Completion<T> completion = new Completion<>(tasks.size());
         ArrayList<Future<T>> futures = new ArrayList<>(tasks.size());
@@ -106,6 +106,9 @@ public abstract class AbstractExecutorService implements java.util.concurrent.Ex
                         while (completion.ready.isEmpty()) {
                             if (!timed) completion.wait();
                             else {
+                                // A timed queue wait observes interruption even
+                                // when its deadline has already elapsed.
+                                if (Thread.interrupted()) throw new InterruptedException();
                                 if (nanos <= 0) throw new TimeoutException();
                                 long remaining = nanos - (System.nanoTime() - started);
                                 if (remaining <= 0) throw new TimeoutException();

@@ -883,6 +883,243 @@ pub(crate) mod tests {
         (child, receipt)
     }
 
+    #[derive(Debug, Default, PartialEq, Eq)]
+    struct Names {
+        module: Option<String>,
+        functions: Vec<(u32, String)>,
+        locals: Vec<(u32, Vec<(u32, String)>)>,
+        labels: Vec<(u32, Vec<(u32, String)>)>,
+        types: Vec<(u32, String)>,
+    }
+
+    fn read_names(input: &[u8]) -> Names {
+        fn direct(map: wasmparser::NameMap<'_>) -> Vec<(u32, String)> {
+            map.map(|row| {
+                let row = row.unwrap();
+                (row.index, row.name.to_owned())
+            })
+            .collect()
+        }
+        fn indirect(map: wasmparser::IndirectNameMap<'_>) -> Vec<(u32, Vec<(u32, String)>)> {
+            map.map(|row| {
+                let row = row.unwrap();
+                (row.index, direct(row.names))
+            })
+            .collect()
+        }
+        let mut found = Names::default();
+        let mut sections = 0;
+        for payload in Parser::new(0).parse_all(input) {
+            if let Payload::CustomSection(section) = payload.unwrap()
+                && let wasmparser::KnownCustom::Name(reader) = section.as_known()
+            {
+                sections += 1;
+                for row in reader {
+                    match row.unwrap() {
+                        wasmparser::Name::Module { name, .. } => {
+                            found.module = Some(name.to_owned())
+                        }
+                        wasmparser::Name::Function(map) => found.functions = direct(map),
+                        wasmparser::Name::Local(map) => found.locals = indirect(map),
+                        wasmparser::Name::Label(map) => found.labels = indirect(map),
+                        wasmparser::Name::Type(map) => found.types = direct(map),
+                        _ => panic!("unexpected name subsection in fixture"),
+                    }
+                }
+            }
+        }
+        assert_eq!(sections, 1);
+        found
+    }
+
+    fn named_fixture(function_names: bool, local_names: bool, trailing: bool) -> Vec<u8> {
+        use wasm_encoder::{IndirectNameMap, NameMap, NameSection};
+        let mut input = fixture(SYSTEM_STACK_HIGH as i32, false, false);
+        let mut names = NameSection::new();
+        names.module("original module");
+        if function_names {
+            let mut map = NameMap::new();
+            for (index, name) in [
+                (0, "get"),
+                (1, "raw_new"),
+                (2, "settle"),
+                (3, "entry"),
+                (9, "root"),
+                (10, "ctors"),
+            ] {
+                map.append(index, name);
+            }
+            if trailing {
+                map.append(u32::MAX - 3, "unmapped-tail");
+            }
+            names.functions(&map);
+        }
+        if local_names {
+            let mut locals = IndirectNameMap::new();
+            for (function, text) in [(1, "raw_first"), (2, "settle_first"), (9, "root_argument")] {
+                let mut map = NameMap::new();
+                map.append(0, text);
+                locals.append(function, &map);
+            }
+            if trailing {
+                let empty = NameMap::new();
+                locals.append(u32::MAX - 3, &empty);
+            }
+            names.locals(&locals);
+            let mut labels = IndirectNameMap::new();
+            let empty = NameMap::new();
+            // Empty maps are legal even for imported functions; this also
+            // checks ordering when label metadata names the displaced index.
+            labels.append(1, &empty);
+            labels.append(2, &empty);
+            labels.append(3, &empty);
+            labels.append(9, &empty);
+            names.labels(&labels);
+        }
+        let mut types = NameMap::new();
+        types.append(0, "context_get_type");
+        types.append(1, "thread_create_type");
+        names.types(&types);
+        let mut extra = Module::new();
+        extra.section(&names);
+        input.extend_from_slice(&extra.finish()[8..]);
+        input
+    }
+
+    #[test]
+    fn root_chain_preserves_sorted_remapped_function_and_local_names() {
+        for (functions, locals, trailing) in [
+            (true, false, false),
+            (false, true, false),
+            (true, true, false),
+            (true, true, true),
+        ] {
+            let input = named_fixture(functions, locals, trailing);
+            Validator::new().validate_all(&input).unwrap();
+            let mut expected = read_names(&input);
+            let (output, receipt) =
+                transform_c_root_bootstrap(&input, Sha256::digest(&input).into(), "run").unwrap();
+            let creation = receipt.child.sole_creation_consumer;
+            let remap = |index| {
+                if index == 1 {
+                    creation
+                } else if index >= 3 {
+                    index + 2
+                } else {
+                    index
+                }
+            };
+            for row in &mut expected.functions {
+                row.0 = remap(row.0);
+            }
+            expected.functions.sort_by_key(|row| row.0);
+            for row in &mut expected.locals {
+                row.0 = remap(row.0);
+            }
+            expected.locals.sort_by_key(|row| row.0);
+            for row in &mut expected.labels {
+                row.0 = remap(row.0);
+            }
+            expected.labels.sort_by_key(|row| row.0);
+            assert_eq!(read_names(&output), expected);
+            Validator::new().validate_all(&output).unwrap();
+            assert!(!receipt.component_routing_authenticated && !receipt.runtime_profile_qualified);
+        }
+    }
+
+    #[test]
+    fn root_chain_rejects_colliding_overflow_and_unsorted_function_names() {
+        use wasm_encoder::{NameMap, NameSection};
+        let original = fixture(SYSTEM_STACK_HIGH as i32, false, false);
+        let (template, _) =
+            c_template::transform_c_initial_template(&original, Sha256::digest(&original).into())
+                .unwrap();
+        let (context, _) =
+            c_context::transform_c_context(&template, Sha256::digest(&template).into()).unwrap();
+        let base = plan(&context).unwrap();
+        let collision = base.imported_functions + base.function_count;
+        for (entries, reason) in [
+            (
+                vec![(1, "raw"), (collision, "collision")],
+                "c-lifecycle-reencode",
+            ),
+            (vec![(u32::MAX, "overflow")], "c-lifecycle-reencode"),
+            (
+                vec![(2, "later"), (1, "out-of-order")],
+                "c-template-reencode",
+            ),
+        ] {
+            let mut names = NameSection::new();
+            let mut functions = NameMap::new();
+            for (index, value) in entries {
+                functions.append(index, value);
+            }
+            names.functions(&functions);
+            let mut extra = Module::new();
+            extra.section(&names);
+            let mut input = original.clone();
+            input.extend_from_slice(&extra.finish()[8..]);
+            assert_eq!(
+                transform_c_root_bootstrap(&input, Sha256::digest(&input).into(), "run"),
+                Err(reason)
+            );
+        }
+    }
+
+    #[test]
+    fn root_chain_rejects_invalid_indirect_function_name_maps() {
+        use wasm_encoder::{IndirectNameMap, NameMap, NameSection};
+        let original = fixture(SYSTEM_STACK_HIGH as i32, false, false);
+        let (template, _) =
+            c_template::transform_c_initial_template(&original, Sha256::digest(&original).into())
+                .unwrap();
+        let (context, _) =
+            c_context::transform_c_context(&template, Sha256::digest(&template).into()).unwrap();
+        let base = plan(&context).unwrap();
+        let collision = base.imported_functions + base.function_count;
+        for mode in ["collision", "overflow", "outer-order", "inner-order"] {
+            let mut entries = IndirectNameMap::new();
+            let mut inner = NameMap::new();
+            inner.append(0, "local");
+            let empty = NameMap::new();
+            let reason = match mode {
+                "collision" => {
+                    entries.append(1, &inner);
+                    entries.append(collision, &empty);
+                    "c-lifecycle-reencode"
+                }
+                "overflow" => {
+                    entries.append(u32::MAX, &empty);
+                    "c-lifecycle-reencode"
+                }
+                "outer-order" => {
+                    entries.append(2, &empty);
+                    entries.append(1, &inner);
+                    "c-template-reencode"
+                }
+                "inner-order" => {
+                    let mut bad = NameMap::new();
+                    bad.append(1, "later");
+                    bad.append(0, "earlier");
+                    entries.append(3, &bad);
+                    "c-template-reencode"
+                }
+                _ => unreachable!(),
+            };
+            let mut names = NameSection::new();
+            names.locals(&entries);
+            let mut extra = Module::new();
+            extra.section(&names);
+            let mut input = original.clone();
+            input.extend_from_slice(&extra.finish()[8..]);
+            assert_eq!(
+                transform_c_root_bootstrap(&input, Sha256::digest(&input).into(), "run"),
+                Err(reason),
+                "{mode}"
+            );
+        }
+    }
+
     #[test]
     fn guarded_root_chain_preserves_original_bodies_and_never_enables_a_component() {
         let input = fixture(SYSTEM_STACK_HIGH as i32, false, false);
