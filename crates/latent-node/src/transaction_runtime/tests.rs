@@ -115,7 +115,7 @@ async fn trusted_inbox_commit_and_replay(entity: Option<&str>) {
         Arc::try_unwrap(replay)
             .ok()
             .unwrap()
-            .with_trusted_inbox(identity)
+            .with_trusted_inbox(identity.clone())
             .unwrap(),
     );
     assert_eq!(
@@ -135,6 +135,34 @@ async fn trusted_inbox_commit_and_replay(entity: Option<&str>) {
     ));
     assert_eq!(fixture.rows(Family::Inbox).await, 1);
     drop((replay, envelope, budget));
+
+    let mut changed = identity;
+    changed.payload_digest = Identity::parse_hex(&format!(
+        "{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(b"different"))
+    ))
+    .unwrap();
+    assert_eq!(changed.command_key().unwrap(), key);
+    let (conflict, mut envelope, budget) = match entity {
+        Some(entity) => fixture.entity_invocation(&key, entity),
+        None => fixture.invocation(false, &key),
+    };
+    envelope.principal.kind = latent_core::PrincipalKind::Trigger;
+    envelope.input = b"different".to_vec();
+    let conflict = Arc::new(
+        Arc::try_unwrap(conflict)
+            .ok()
+            .unwrap()
+            .with_trusted_inbox(changed)
+            .unwrap(),
+    );
+    assert_eq!(
+        conflict.admit(&envelope, &budget).await.err().unwrap().code,
+        latent_core::PlatformErrorCode::StateConflict
+    );
+    assert!(conflict.take_result().unwrap().is_none());
+    assert_eq!(fixture.rows(Family::Inbox).await, 1);
+    drop((conflict, envelope, budget));
     assert_eq!(fixture.owners.lanes.snapshot().keys, 0);
     fixture.shutdown().await;
 }
