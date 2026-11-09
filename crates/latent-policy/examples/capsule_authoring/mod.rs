@@ -88,6 +88,15 @@ pub(super) fn sign_rust_transaction(output: &Path, input: &Path) -> Result<()> {
     sign_checked(output, vec![build], false, None)
 }
 
+/// Explicit demo trust for one completed maintained transaction build.
+pub(super) fn sign_transaction(output: &Path, input: &Path) -> Result<()> {
+    if !output.is_absolute() || output.exists() {
+        return Err("choose a fresh absolute transaction demo output".into());
+    }
+    let build = inputs::load_transaction(input)?;
+    sign_checked(output, vec![build], false, None)
+}
+
 pub(super) fn sign_demo(output: &Path, paths: &[OsString]) -> Result<()> {
     sign(output, paths, false)
 }
