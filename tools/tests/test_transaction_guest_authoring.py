@@ -10,6 +10,44 @@ from tools.transaction_guest_project import TEMPLATE, package_companion
 
 
 class TransactionGuestAuthoringTests(unittest.TestCase):
+    def test_go_event_profile_is_explicit_and_companion_linked(self):
+        from tools.compile_transaction_guests import authored_project, compile_guests
+        from tools.go_capsule import main as go_main
+        from tools.go_capsule_project import create, validate
+        from tools.transaction_guest_project import (GO_EVENT_PROFILE, C_EVENT_PROFILE,
+                                                       EVENT_REQUIREMENTS, package_effect_requirements)
+        profile = 'js-window-v1:' + 'c' * 64
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.assertEqual(go_main(['new', str(root / 'source'), '--template', TEMPLATE,
+                                      '--name', 'transaction-go-aggregate', '--event-profile', profile]), 0)
+            files = snapshot(root / 'source')
+            project, _, _ = validate(files)
+            selected = authored_project('go', 'aggregate', root / 'selected', go_current_event_profile=profile)
+            self.assertEqual(snapshot(selected)[EVENT_REQUIREMENTS], files[EVENT_REQUIREMENTS])
+            self.assertEqual(json.loads(files[GO_EVENT_PROFILE])['idempotencyProfile'], profile)
+            output = root / 'package'
+            output.mkdir()
+            self.assertEqual(package_effect_requirements(output, project, files)[0], EVENT_REQUIREMENTS)
+            bad = dict(files)
+            changed = json.loads(bad[EVENT_REQUIREMENTS])
+            changed['binding'] = 'other-event'
+            bad[EVENT_REQUIREMENTS] = json.dumps(changed).encode()
+            with self.assertRaisesRegex(ValueError, 'requirements-drift'):
+                package_effect_requirements(root, project, bad)
+            with self.assertRaisesRegex(ValueError, 'closed-current-event-inputs-required'):
+                package_effect_requirements(root, project, {**files, C_EVENT_PROFILE: files[GO_EVENT_PROFILE]})
+            with self.assertRaisesRegex(ValueError, 'event profile'):
+                create(root / 'invalid', 'greeting', event_profile=profile)
+            with self.assertRaisesRegex(ValueError, 'event profile'):
+                create(root / 'invalid-profile', TEMPLATE, event_profile='invalid')
+            with self.assertRaisesRegex(ValueError, 'exclusive Go aggregate'):
+                authored_project('c', 'aggregate', root / 'foreign', go_current_event_profile=profile)
+            with self.assertRaisesRegex(ValueError, 'exclusive explicit'):
+                compile_guests('go', root / 'foreign-output', go_current_event_profile=profile,
+                               c_current_event_profile=profile)
+            self.assertFalse((root / 'foreign-output').exists())
+
     def test_c_event_profile_captures_and_packages_only_exact_companion_requirements(self):
         from tools.compile_transaction_guests import authored_project
         from tools.c_capsule import main as c_main
