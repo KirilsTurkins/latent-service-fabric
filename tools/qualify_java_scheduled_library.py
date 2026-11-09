@@ -31,6 +31,8 @@ DEVELOPMENT_BRANCH = 'development'
 WORKFLOW = '.github/workflows/java-scheduled-library.yml'
 DEVELOPMENT_WORKFLOW = '.github/workflows/java-scheduled-development.yml'
 CASE = observed.WORKER_CASE
+TIMER_CALLBACK_BRANCH = 'feat/java-timer-callback-signed-20261109'
+TIMER_CALLBACK_CASE = 'runtime::signed_java_standard_timers_recur_cancel_and_drain_owned_workers'
 GRADLE_SHA = workers.GRADLE_SHA
 java_sources = workers.java_sources
 retain = workers.retain
@@ -79,19 +81,97 @@ def observations(raw, filtered=51):
             'setupMicroseconds': int(setup[0]), 'calls': rows, 'stdout': identities.identity(raw)}
 
 
-def qualify(output, revision):
+def timer_callback_observations(raw, filtered):
+    """Require the original timer fixture's twelve signed activations and idle owners."""
+    need(type(filtered) is int and filtered >= 0, 'timer-filter-count')
+    need(len(raw) <= artifacts.MAX_OUTPUT_BYTES, 'timer-output-bound')
+    need(re.findall(rb'^test ([a-zA-Z0-9_:]+) \.\.\. ok$', raw, re.M) ==
+         [TIMER_CALLBACK_CASE.encode()], 'timer-exact-case')
+    summaries = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; '
+        rb'(\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
+    need(summaries == [(b'1', b'0', b'0', b'0', str(filtered).encode())], 'timer-one-executed-no-skip')
+    setup = re.findall(rb'^teavm-activation-fibers-v1 signed-preparation-setup-micros=(\d+) '
+        rb'stores-created=0 guest-activations=0$', raw, re.M)
+    need(len(setup) == 1, 'timer-normal-preparation')
+    rows = [json.loads(line, object_pairs_hook=registry.unique_object)
+            for line in re.findall(rb'^LSF_JAVA_RETAINED=(\{[^\r\n]*\})$', raw, re.M)]
+    need(len(rows) == 12, 'timer-twelve-calls')
+    created = 0
+    for index, row in enumerate(rows):
+        iteration, mode = divmod(index, 4)
+        need(type(row) is dict and set(row) == {*observed.ZERO_FIELDS, 'activationId', 'iteration', 'mode',
+            'value', 'cpuFuel', 'reportedPeakMemoryBytes', 'storesBefore', 'storesCreated'}, 'timer-row-fields')
+        need(row['activationId'] == f'java-timers-{iteration}-{mode}' and row['iteration'] == iteration
+            and row['mode'] == mode and row['value'] == 42, 'timer-actual-id-mode-value')
+        need(all(type(value) is int and 0 <= value <= 2**64 - 1
+            for key, value in row.items() if key != 'activationId'), 'timer-numeric-fields')
+        need(0 < row['cpuFuel'] <= 10_000_000_000
+            and 0 < row['reportedPeakMemoryBytes'] <= 64 * 1024**2, 'timer-original-budget')
+        need(row['storesBefore'] == created and row['storesCreated'] > created, 'timer-fresh-stores')
+        need(all(row[field] == 0 for field in observed.ZERO_FIELDS), 'timer-actual-idle-counters')
+        created = row['storesCreated']
+    return {'case': TIMER_CALLBACK_CASE, 'passed': 1, 'failed': 0, 'ignored': 0,
+        'filteredOut': filtered, 'setupMicroseconds': int(setup[0]), 'calls': rows,
+        'stdout': identities.identity(raw)}
+
+
+TIMER_CALLBACK_CONTROL_CASES = (
+    b'test_exact_twelve_timer_calls_and_fresh_idle_are_required',
+    b'test_only_dedicated_branch_can_select_timer_callback',
+    b'test_timer_model_uses_warmed_locked_cache_before_component',
+)
+
+
+def timer_callback_source_observation(raw):
+    names = re.findall(
+        rb'^([A-Za-z_][A-Za-z0-9_]*) \(tools\.tests\.test_java_scheduled_library\.'
+        rb'TimerCallbackOwnership\.\1\) \.\.\. ok\r?$', raw, re.M)
+    need(names == list(TIMER_CALLBACK_CONTROL_CASES)
+        and re.findall(rb'^Ran (\d+) tests in [0-9.]+s\r?$', raw, re.M) == [b'3']
+        and re.findall(rb'^(OK)\r?$', raw, re.M) == [b'OK']
+        and raw.rstrip().endswith(b'OK'), 'timer-three-controls-no-skip')
+    return {'passed': 3, 'skipped': 0, 'stderr': identities.identity(raw)}
+
+
+SOURCE_CONTROL_CASES = (
+    b'test_all_ten_modes_twice_require_actual_unique_ids_and_fresh_idle_stores',
+    b'test_both_timer_modes_reject_each_others_results',
+    b'test_compiler_retention_accepts_observed_command_pairs_and_remains_bounded',
+    b'test_mutually_exclusive_fixture_selector_is_refused_before_output_or_capture',
+    b'test_real_preparation_uses_normal_compiler_and_new_controls_before_component',
+    b'test_short_old_or_skipped_programmes_cannot_be_relabelled_scheduled_pass',
+    b'test_sleep_source_control_follows_compilation_and_fails_closed',
+)
+
+
+def source_control_observation(raw):
+    """Require every selected test by name, not just a successful process."""
+    names = re.findall(
+        rb'^([A-Za-z_][A-Za-z0-9_]*) \(tools\.tests\.test_java_scheduled_library\.'
+        rb'ScheduledLibraryOwnership\.\1\) \.\.\. ok\r?$', raw, re.M)
+    need(names == list(SOURCE_CONTROL_CASES)
+        and re.findall(rb'^Ran (\d+) tests in [0-9.]+s\r?$', raw, re.M) == [b'7']
+        and re.findall(rb'^(OK)\r?$', raw, re.M) == [b'OK']
+        and raw.rstrip().endswith(b'OK'), 'seven-controls-no-skip')
+    return {'passed': 7, 'skipped': 0, 'stderr': identities.identity(raw)}
+
+
+def qualify(output, revision, *, timer_callback=False):
+    need(type(timer_callback) is bool, 'timer-selection-type')
     branch = os.environ.get('GITHUB_REF_NAME')
-    workflow = WORKFLOW if branch == BRANCH else DEVELOPMENT_WORKFLOW
+    workflow = WORKFLOW if branch in {BRANCH, TIMER_CALLBACK_BRANCH} else DEVELOPMENT_WORKFLOW
     need(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
         and os.environ.get('GITHUB_REPOSITORY') == identities.REPOSITORY
-        and branch in {BRANCH, DEVELOPMENT_BRANCH}
+        and branch in {BRANCH, DEVELOPMENT_BRANCH, TIMER_CALLBACK_BRANCH}
+        and timer_callback == (branch == TIMER_CALLBACK_BRANCH)
         and os.environ.get('GITHUB_EVENT_NAME') == 'push'
         and os.environ.get('GITHUB_SHA') == revision
         and os.environ.get('GITHUB_WORKFLOW_SHA') == revision
         and os.environ.get('GITHUB_WORKSPACE') == str(ROOT)
         and os.environ.get('GITHUB_WORKFLOW_REF') == identities.REPOSITORY + '/'
             + workflow + '@refs/heads/' + branch, 'fixed-hosted-push')
-    need('LSF_JAVA_WORKER_LIBRARIES_FIXTURE' not in os.environ, 'exclusive-fixture-selector')
+    need('LSF_JAVA_WORKER_LIBRARIES_FIXTURE' not in os.environ
+        and 'LSF_JAVA_TIMER_FIXTURE' not in os.environ, 'exclusive-fixture-selector')
     need(output != ROOT and ROOT not in output.parents and output not in ROOT.parents, 'owned-output')
     output = fresh(output)
     environment = build_environment(output)
@@ -116,8 +196,16 @@ def qualify(output, revision):
         'scope': 'twelve unchanged Commons TimedSemaphore default-factory calls, four '
             'source-controlled default-CompletableFuture/rejection calls, two direct timer and two '
             'standard Thread.sleep admission-refusal/retry probes; no full scheduler API claim'}
+    if timer_callback:
+        # Each component is capped by the existing 1200-second compiler bound;
+        # both components, native work and cleanup share the original deadline.
+        receipt['limits']['compilerAggregateSeconds'] = 2395
+        receipt['limits']['compilerSecondsPerFixture'] = 1200
+        receipt['scope'] += ('; twelve separate exact-source standard Timer calls including three '
+            'active-callback ownership witnesses; no complete Java or physical-final-free claim')
     private = None
     prepared = None
+    timer_prepared = None
     old_path = os.environ.get('PATH', '')
     try:
         observed.require_source(commands, revision, 'source-head-before')
@@ -135,10 +223,13 @@ def qualify(output, revision):
         commands.run('source-controls', sys.executable, '-B', '-m', 'unittest', '-v',
             'tools.tests.test_java_scheduled_library.ScheduledLibraryOwnership')
         raw = read_file(logs / f'logs/{control_index:02d}-source-controls.stderr.txt', 128 * 1024)
-        need(re.findall(rb'^Ran (\d+) tests in [0-9.]+s\r?$', raw, re.M) == [b'5']
-            and re.findall(rb'^(OK)\r?$', raw, re.M) == [b'OK']
-            and raw.rstrip().endswith(b'OK'), 'five-controls-no-skip')
-        receipt['sourceControls'] = {'passed': 5, 'skipped': 0, 'stderr': identities.identity(raw)}
+        receipt['sourceControls'] = source_control_observation(raw)
+        if timer_callback:
+            control_index = len(commands.records)
+            commands.run('timer-callback-source-controls', sys.executable, '-B', '-m', 'unittest', '-v',
+                'tools.tests.test_java_scheduled_library.TimerCallbackOwnership')
+            raw = read_file(logs / f'logs/{control_index:02d}-timer-callback-source-controls.stderr.txt', 128 * 1024)
+            receipt['timerCallbackSourceControls'] = timer_callback_source_observation(raw)
         receipt['stage'] = 'normal-pinned-tools'
         commands.command_seconds = 175
         archive = private / 'gradle.zip'
@@ -172,6 +263,24 @@ def qualify(output, revision):
             'normal-unmodified-component')
         receipt['componentDigest'] = report['componentDigest']
         receipt['javaComponentRecompiled'] = True
+        if timer_callback:
+            # The scheduled model required this same verified tooling closure.
+            # The timer compiler reads the cache without changing it and runs
+            # its strict graph model before compiling the exact timer source.
+            receipt['stage'] = 'normal-timer-component-and-reference'
+            cache = prepared / 'compiler/gradle-home/caches/modules-2'
+            need(cache.is_dir(), 'timer-scheduled-cache-missing')
+            timer_prepared = private / 'timer-callback'
+            qualify_java_fibers.prepare(timer_prepared, sdk, gradle=str(private / 'gradle-9.1.0/bin/gradle'),
+                read_only_cache=cache, fixture='timers', _deadline=commands.deadline)
+            timer_report = json.loads(read_file(timer_prepared / 'FIBERS-COMPILE.json', 8 * 1024**2))
+            need(timer_report['status'] == 'component-built-unqualified'
+                and timer_report['qualification'] == 'pending' and timer_report['nodeExecution'] == 'not-run'
+                and timer_report['fixture'] == 'timers'
+                and timer_report['standardTimerSource']['status'] == 'SDK-source-controls-passed'
+                and timer_report['standardTimerModel']['status'] == 'actual-locked-classlib-model-passed',
+                'normal-timer-component')
+            receipt['timerCallbackComponentDigest'] = timer_report['componentDigest']
         toolchain = tomllib.loads(read_file(ROOT / 'tools/toolchain.toml', 128 * 1024).decode())
         need(toolchain['rust']['toolchain'] == '1.97.1'
             and toolchain['contracts']['wasm-tools'] == '1.254.0', 'normal-tool-pins')
@@ -218,6 +327,23 @@ def qualify(output, revision):
         raw = commands.run('execute-exact-case', artifact.executable, CASE, '--exact', '--ignored',
             '--show-output', '--test-threads=1')
         receipt['observation'] = observations(raw, filtered=len(available) - 1)
+        if timer_callback:
+            need(TIMER_CALLBACK_CASE in contract['expectedIgnored'] and TIMER_CALLBACK_CASE in ignored_cases,
+                'required-timer-case-missing')
+            timer_suite = artifacts.Suite('crates/latent-wasmtime/Cargo.toml', 'local_service',
+                'tests/local_service.rs', TIMER_CALLBACK_CASE, frozenset({TIMER_CALLBACK_CASE}), True, kind='test')
+            commands.command_seconds = 25
+            listed = commands.run('list-exact-timer-case', artifact.executable, TIMER_CALLBACK_CASE,
+                '--exact', '--ignored', '--list')
+            need(len(listed) <= artifacts.MAX_LIST_BYTES, 'timer-list-bound')
+            artifacts.validate_listing(listed, timer_suite)
+            del commands.environment['LSF_JAVA_SCHEDULED_LIBRARIES_FIXTURE']
+            commands.environment['LSF_JAVA_TIMER_FIXTURE'] = str(timer_prepared)
+            receipt['stage'] = 'twelve-signed-standard-timer-callback-calls'
+            commands.command_seconds = 1795
+            raw = commands.run('execute-exact-timer-case', artifact.executable, TIMER_CALLBACK_CASE,
+                '--exact', '--ignored', '--show-output', '--test-threads=1')
+            receipt['timerCallbackObservation'] = timer_callback_observations(raw, filtered=len(available) - 1)
         java_fiber_library_inputs.check(prepared / 'library-inputs', report['libraries'])
         need(sources(commands, before['native']) == before and java_sources() == java_before, 'final-source')
         need(file_identity(artifact.executable, 'local-service-java-scheduled-library', 512 * 1024**2)
@@ -236,6 +362,8 @@ def qualify(output, revision):
         try:
             if prepared is not None:
                 receipt['publicProducts'] = retain(prepared, output)
+            if timer_prepared is not None:
+                receipt['timerCallbackPublicProducts'] = retain(timer_prepared, output / 'timer-callback')
         except BaseException:
             receipt.update(status='failed', publicRetentionFailed=True)
             if not original_failure:
@@ -503,6 +631,8 @@ if __name__ == '__main__':
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument('--shutdown-now', action='store_true')
     modes.add_argument('--future-queue', action='store_true')
+    modes.add_argument('--timer-callback', action='store_true')
     args = parser.parse_args()
     if args.future_queue: qualify_shutdown(args.output.resolve(), args.source_commit, future_queue=True)
-    else: (qualify_shutdown if args.shutdown_now else qualify)(args.output.resolve(), args.source_commit)
+    elif args.shutdown_now: qualify_shutdown(args.output.resolve(), args.source_commit)
+    else: qualify(args.output.resolve(), args.source_commit, timer_callback=args.timer_callback)

@@ -939,7 +939,7 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
             read_only_cache: Path | None = None, fixture="threads", observe_public_wineh=False,
             derived_llvm_public=False, private_scalar_llvm_public=False, _deadline=None):
     if _deadline is not None:
-        if (fixture not in {'worker-libraries', 'scheduled-library', 'shutdown-now', 'future-queue'} or type(_deadline) not in (int, float)
+        if (fixture not in {'worker-libraries', 'scheduled-library', 'shutdown-now', 'future-queue', 'timers'} or type(_deadline) not in (int, float)
                 or not math.isfinite(_deadline) or _deadline <= time.monotonic() + 5):
             raise ValueError('Java-worker-parent-deadline')
         # Includes the existing process owner's five-second cleanup allowance.
