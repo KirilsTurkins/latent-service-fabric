@@ -72,6 +72,10 @@ jobs:
           cargo test --locked -p latent-packaging --lib phase_semantics_bind_original_resource_owners_and_exact_versioned_extension -- --nocapture
           cargo test --locked -p latent-wasmtime --lib phase_preparation_requires_exact_timer_reason_and_affine_continuation_shapes -- --nocapture
           cargo test --locked -p latent-wasmtime --lib explicit_http_phase_profile_changes_preparation_identity_without_installing_authority -- --nocapture
+          set -o pipefail
+          cargo test --locked -p latent-wasmtime --lib host::streaming_http::table::tests::open_completion_checkpoint_refusal_drops_upload_after_store_access -- --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/http-open-checkpoint.log"
+          test "$(grep -Fxc "running 1 test" "$RUNNER_TEMP/http-open-checkpoint.log")" -eq 1
+          test "$(grep -Fxc "test host::streaming_http::table::tests::open_completion_checkpoint_refusal_drops_upload_after_store_access ... ok" "$RUNNER_TEMP/http-open-checkpoint.log")" -eq 1
       - name: Execute the new canonical ABI with actual sockets and fresh Stores
         run: |
           cargo test --locked -p latent-wasmtime --test streaming_http phases:: -- --nocapture
