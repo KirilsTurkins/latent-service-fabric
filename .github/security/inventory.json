@@ -453,6 +453,54 @@
       "path": ".github/security/actions/setup-go/package.json",
       "source_repair": "setup-go-deepmerge-source-v1",
       "minimatch_source_repair": "setup-go-minimatch-source-v1"
+    },
+    {
+      "absent_when_directory_missing": "sdk/dotnet/Latent.Sdk.Phase4RealCommand",
+      "kind": "nuget-locked",
+      "lock": "sdk/dotnet/Latent.Sdk.Phase4RealCommand/packages.lock.json",
+      "manifest_sha256": "65ff4afac47c8c7682e162fb74534548ea3deeae06a54a723e76ca61ad4bfe86",
+      "path": "sdk/dotnet/Latent.Sdk.Phase4RealCommand/Latent.Sdk.Phase4RealCommand.csproj",
+      "runtime_identifier": "linux-x64"
+    },
+    {
+      "absent_when_directory_missing": "sdk/dotnet/Latent.Sdk.Phase4RealLostRejection",
+      "kind": "nuget-locked",
+      "lock": "sdk/dotnet/Latent.Sdk.Phase4RealLostRejection/packages.lock.json",
+      "manifest_sha256": "65ff4afac47c8c7682e162fb74534548ea3deeae06a54a723e76ca61ad4bfe86",
+      "path": "sdk/dotnet/Latent.Sdk.Phase4RealLostRejection/Latent.Sdk.Phase4RealLostRejection.csproj",
+      "runtime_identifier": "linux-x64"
+    },
+    {
+      "absent_when_directory_missing": "sdk/dotnet/Latent.Sdk.Phase4RealLostResponse",
+      "kind": "nuget-locked",
+      "lock": "sdk/dotnet/Latent.Sdk.Phase4RealLostResponse/packages.lock.json",
+      "manifest_sha256": "65ff4afac47c8c7682e162fb74534548ea3deeae06a54a723e76ca61ad4bfe86",
+      "path": "sdk/dotnet/Latent.Sdk.Phase4RealLostResponse/Latent.Sdk.Phase4RealLostResponse.csproj",
+      "runtime_identifier": "linux-x64"
+    },
+    {
+      "absent_when_directory_missing": "sdk/dotnet/Latent.Sdk.Phase4RealNode",
+      "kind": "nuget-locked",
+      "lock": "sdk/dotnet/Latent.Sdk.Phase4RealNode/packages.lock.json",
+      "manifest_sha256": "65ff4afac47c8c7682e162fb74534548ea3deeae06a54a723e76ca61ad4bfe86",
+      "path": "sdk/dotnet/Latent.Sdk.Phase4RealNode/Latent.Sdk.Phase4RealNode.csproj",
+      "runtime_identifier": "linux-x64"
+    },
+    {
+      "absent_when_directory_missing": "sdk/dotnet/Latent.Sdk.Phase4RealRejection",
+      "kind": "nuget-locked",
+      "lock": "sdk/dotnet/Latent.Sdk.Phase4RealRejection/packages.lock.json",
+      "manifest_sha256": "65ff4afac47c8c7682e162fb74534548ea3deeae06a54a723e76ca61ad4bfe86",
+      "path": "sdk/dotnet/Latent.Sdk.Phase4RealRejection/Latent.Sdk.Phase4RealRejection.csproj",
+      "runtime_identifier": "linux-x64"
+    },
+    {
+      "absent_when_directory_missing": "sdk/dotnet/Latent.Sdk.Phase4RealScope",
+      "kind": "nuget-locked",
+      "lock": "sdk/dotnet/Latent.Sdk.Phase4RealScope/packages.lock.json",
+      "manifest_sha256": "65ff4afac47c8c7682e162fb74534548ea3deeae06a54a723e76ca61ad4bfe86",
+      "path": "sdk/dotnet/Latent.Sdk.Phase4RealScope/Latent.Sdk.Phase4RealScope.csproj",
+      "runtime_identifier": "linux-x64"
     }
   ],
   "non_manifest_modules": [
