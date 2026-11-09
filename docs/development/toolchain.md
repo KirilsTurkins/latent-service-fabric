@@ -34,7 +34,7 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | `wit-bindgen` Rust macro |                    0.63.0 | Rust guest bindings generated from WIT |
 | `wit-bindgen-cli` |                            0.62.0 | Separately pinned C/C#/Java and canonical ABI source fixtures |
 | Serde / `serde_json` |                    1.0.229 / 1.0.154 | Rust contract serialization |
-| TOML |                                1.1.6 | Configuration parsing and serialization |
+| TOML |                                1.1.8 | Configuration parsing and serialization |
 | BLAKE3 / SHA-256 |                       1.8.7 / 0.11.0 | Cache/prepared identity and artifact digest verification |
 | Clap / `tempfile` |                       4.6.7 / 3.27.0 | CLI surfaces and test-only temporary storage |
 | `libc` |                               0.2.191 | Unix audit/sandbox support and synchronized standalone/reference locks |
@@ -55,7 +55,7 @@ asynchronous functions; synchronous Core ABI adapters use `sync` overrides.
 Retained generated-source comments and ABI fixture identities describe their
 actual CLI generation and are not relabeled by a Rust crate update.
 
-Workspace dependencies are exact requirements and workspace crates consume them with `workspace = true`. Cargo ignores SemVer build metadata in requirements, so TOML is pinned as `=1.1.6`; the resolved package may display `1.1.6+spec-1.1.0` in `Cargo.lock`.
+Workspace dependencies are exact requirements and workspace crates consume them with `workspace = true`. Cargo ignores SemVer build metadata in requirements, so TOML is pinned as `=1.1.8`; the resolved package may display `1.1.8+spec-1.1.0` in `Cargo.lock`.
 
 Wasmtime is selected from `crates/vendor/wasmtime`, with original archive/file
 identities and a separate LSF patch manifest. The workspace also patches bytes
