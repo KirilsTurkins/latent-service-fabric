@@ -47,11 +47,13 @@ pub struct LocalDurablePin {
 
 /// A single-view physical recovery walk. The held original local-store owner
 /// and opaque cursor cannot be rebound to another root or engine snapshot.
+/// A failed or panicking page invalidates the cursor; restart with fresh owners.
 pub struct RequiredBlobInventory {
     owner: Arc<super::Inner>,
     view: usize,
     after: Option<Vec<u8>>,
     complete: bool,
+    invalid: bool,
 }
 
 /// A descriptive observation on one retained state view. None of these values
@@ -200,6 +202,7 @@ impl RequiredBlobInventory {
             view: view.identity(),
             after: None,
             complete: false,
+            invalid: false,
         })
     }
     /// Inspect at most `maximum_rows` owners on the original bounded worker.
@@ -212,8 +215,13 @@ impl RequiredBlobInventory {
         maximum_bytes: usize,
         checkpoint: &dyn Fn() -> Result<()>,
     ) -> Result<(usize, bool)> {
-        if self.complete || self.view != view.identity() || !Arc::ptr_eq(&self.owner, &store.inner)
-        {
+        if self.invalid || self.complete {
+            return Err(LocalBlobError::PermissionDenied);
+        }
+        // A failed or panicking admission cannot be replaced by a later
+        // callback and used to complete the same recovery observation.
+        self.invalid = true;
+        if self.view != view.identity() || !Arc::ptr_eq(&self.owner, &store.inner) {
             return Err(LocalBlobError::PermissionDenied);
         }
         // Empty pages are still observations. They cannot complete after the
@@ -239,6 +247,7 @@ impl RequiredBlobInventory {
         let count = page.references.len();
         self.after = page.resume;
         self.complete = self.after.is_none();
+        self.invalid = false;
         Ok((count, self.complete))
     }
 }

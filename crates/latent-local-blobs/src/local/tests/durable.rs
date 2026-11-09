@@ -759,6 +759,20 @@ fn empty_recovery_page_requires_live_admission_and_local_owner() {
         )),
         Err(LocalBlobError::DeadlineExceeded)
     );
+    assert_eq!(
+        inventory.next_page(&owner, &view, 1, 1024, &|| Ok(())),
+        Err(LocalBlobError::PermissionDenied)
+    );
+    let mut inventory = RequiredBlobInventory::begin(&owner, &view).unwrap();
+    assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _ = inventory.next_page(&owner, &view, 1, 1024, &|| panic!("interrupted admission"));
+    }))
+    .is_err());
+    assert_eq!(
+        inventory.next_page(&owner, &view, 1, 1024, &|| Ok(())),
+        Err(LocalBlobError::PermissionDenied)
+    );
+    let mut inventory = RequiredBlobInventory::begin(&owner, &view).unwrap();
     let calls = std::cell::Cell::new(0);
     let close_after_observation = || {
         calls.set(calls.get() + 1);
@@ -805,6 +819,11 @@ fn bounded_recovery_pages_stay_with_original_view_and_refuse_corruption() {
         Err(LocalBlobError::PermissionDenied)
     );
     drop(another_view);
+    assert_eq!(
+        inventory.next_page(&owner, &view, 1, 1024, &|| Ok(())),
+        Err(LocalBlobError::PermissionDenied)
+    );
+    let mut inventory = RequiredBlobInventory::begin(&owner, &view).unwrap();
     let object = owner
         .inner
         .state()
