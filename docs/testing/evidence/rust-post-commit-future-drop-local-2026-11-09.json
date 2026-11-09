@@ -1,0 +1,91 @@
+{
+  "description": "Rust future drop after independently observed successful commit with fresh-client recovery",
+  "qualification": "Rust candidate through response-blocking local HTTP/2 proxy and normal node; not hosted or distribution qualification",
+  "harnessSha256": "4ccdf0ec9db362a2af109db5b1b5e8c138804a5adf0bca6e6b1b9950269ba532",
+  "clientLogSha256": "82bfc7fe69f1dd209d69c53316c66f3801b0c04bc0dd6dffb4b5c832113ebbf0",
+  "recoveryLogSha256": "503c0f3ba7b2038cbad02523762c5a117ce1d62539233d0c70fb0d63df7a7598",
+  "repositorySourceSha256": "sha256:c74106c622e3ddbde6eb9ea6cc182ac70afffb5eeeaef926ed9c8a255fabb989",
+  "sourceLineEndings": "The tested source normalizes to the LF repository blob.",
+  "observation": {
+    "blockedBytes": 3020,
+    "blockedFrames": 3,
+    "brokerMessages": 2,
+    "businessCount": 2,
+    "clientOutcome": "pending future dropped; no client result returned",
+    "droppedAfterObservedCommit": true,
+    "durableCommandCount": 2,
+    "effectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "extraConnections": 0,
+    "nodeSha256": "sha256:48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+    "originalAttemptId": "1",
+    "originalCommandId": "0a085bf998e01b575f6254df99f81d972e2dcd223fcb7dbfd9942cfde4203225",
+    "originalEffectId": "039b19da71eaa4a4bf9e2e78b06c53975375619044ea064f25b5e733ce48d7ad",
+    "originalFingerprintSha256": "a47ec516a6fe585be5c13680bf63b812d68164ecf9882399973106b00a4d133f",
+    "originalReceiptId": "63adc34c6f312a30331220da84ffadd503ae99fd9d220a7a971fcf323a73c8b5",
+    "proxyFailure": "EOFError",
+    "proxyRetired": true,
+    "proxySourceSha256": "sha256:9fd5ba5c7bace82acb2eca31ef8c52a987bcd6e22dd6c6085ef2136f32b22d2a",
+    "qualification": "Rust candidate through response-blocking local HTTP/2 proxy and normal node; not hosted or distribution qualification",
+    "recoveredOriginal": true,
+    "requestStreamCount": 1,
+    "rustBinarySha256": "sha256:c8f287ce4b398c064694cd798a409399a9cb6b5bc54ac43b1049e9ccb19be376",
+    "rustSourceSha256": "sha256:c74106c622e3ddbde6eb9ea6cc182ac70afffb5eeeaef926ed9c8a255fabb989"
+  },
+  "finalShutdown": {
+    "reaped": true,
+    "clean": true,
+    "effects": {
+      "clean": true,
+      "physicallyRetired": true,
+      "schedulingOwnerRetired": true,
+      "workerThreadsJoined": 3,
+      "workerThreadsRemaining": 0,
+      "snapshot": {
+        "durable": {
+          "pending": 0,
+          "active": 0,
+          "acknowledged": 2,
+          "known_failed": 0,
+          "uncertain": 0,
+          "retry_scheduled": 0,
+          "blocked": 0,
+          "expired": 0,
+          "dead_lettered": 0,
+          "payload_bytes": 0,
+          "oldest_unresolved_millis": null
+        },
+        "countsObservedAtMillis": 1794206814772,
+        "queued": 0,
+        "activeJobs": 0,
+        "retainedAttemptBytes": 0,
+        "liveWorkers": 0,
+        "acceptedEffects": 0,
+        "liveTenants": 0,
+        "claims": 2,
+        "physicalOwners": 0,
+        "commandOwners": 0,
+        "commandClockFloor": 1794206813314,
+        "quarantinedPhysicalOwners": 0,
+        "paused": false,
+        "control": {
+          "generation": {
+            "ownerEpoch": 4,
+            "revision": 2
+          },
+          "pending": false,
+          "restoreReviewRequired": false
+        },
+        "admissionClosed": true,
+        "quarantined": false,
+        "failure": null
+      }
+    }
+  },
+  "limitations": [
+    "The caller dropped a pending future after an independent successful commit lookup; the caller received no failure object.",
+    "The fixture does not establish behavior during the commit itself.",
+    "The proxy observed one request stream and no queued extra connection, not a universal retry proof.",
+    "Guest execution count was not independently measured; this run did not perform a crash/restart.",
+    "This local combined-source fixture is not hosted or installed-distribution qualification."
+  ]
+}

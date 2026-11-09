@@ -4,7 +4,7 @@ use super::*;
 use latent_core::BoxFuture;
 use latent_effects::{
     authority::{AuthorityError, DispatchGrant, DispatchProfile, DispatchPurpose},
-    dispatch::{AttemptIdentity, AttemptReceipt, Disposition},
+    dispatch::{AttemptIdentity, AttemptReceipt, Disposition, RetryProof},
     payload::PayloadRecord,
     runtime::{
         AdapterOutcome, DeferredEffectAdapter, ProviderConfirmation, ProviderReconciliationOutcome,
@@ -19,6 +19,7 @@ pub(super) struct ControlledProvider {
     pub sends: AtomicUsize,
     pub lookups: AtomicUsize,
     pub hold: AtomicBool,
+    pub retry_once: AtomicBool,
     pub positive: AtomicBool,
     pub entered: tokio::sync::Notify,
     pub release: tokio::sync::Notify,
@@ -40,6 +41,7 @@ impl ControlledProvider {
             sends: AtomicUsize::new(0),
             lookups: AtomicUsize::new(0),
             hold: AtomicBool::new(false),
+            retry_once: AtomicBool::new(false),
             positive: AtomicBool::new(true),
             entered: tokio::sync::Notify::new(),
             release: tokio::sync::Notify::new(),
@@ -67,18 +69,31 @@ impl DeferredEffectAdapter for Adapter {
         };
         let provider = Arc::clone(&self.0);
         Ok(Box::pin(async move {
-            provider.sends.fetch_add(1, Ordering::SeqCst);
+            let attempt = provider.sends.fetch_add(1, Ordering::SeqCst);
+            let retry_once = provider.retry_once.load(Ordering::SeqCst);
+            let disposition = if retry_once && attempt > 0 {
+                Disposition::ProviderAcknowledged
+            } else {
+                provider.original
+            };
             let receipt = AttemptReceipt {
-                disposition: provider.original,
+                disposition,
                 reason: "controlled-native-outcome".into(),
-                provider_receipt: (provider.original == Disposition::ProviderAcknowledged)
+                provider_receipt: (disposition == Disposition::ProviderAcknowledged)
                     .then(|| "controlled-positive-provider-receipt".into()),
                 observed_at_millis: provider.time.load(Ordering::SeqCst),
             };
             drop(owned);
             AdapterOutcome {
                 receipt,
-                retry: None,
+                retry: (retry_once && attempt == 0).then_some((
+                    RetryProof::QualifiedDeduplication {
+                        valid_until_millis: 10000,
+                        same_payload: true,
+                        same_provider_incarnation: true,
+                    },
+                    1,
+                )),
             }
         }))
     }

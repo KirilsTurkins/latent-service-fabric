@@ -147,6 +147,9 @@ pub mod pump {
         pub fn retire(f: impl FnOnce() + 'static) {
             f()
         }
+        pub fn retire_unpolled_timer(f: impl FnOnce() + 'static) {
+            f()
+        }
     }
 }
 #[path = "../../sdk/dotnet-guest/runtime/http/managed.rs"]

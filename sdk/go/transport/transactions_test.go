@@ -49,7 +49,7 @@ func transactionCommandFixture(outcome tx.CommandOutcome, payload bool) *tx.Comm
 	switch outcome {
 	case tx.CommandOutcomeCommitted:
 		if payload {
-			result.Success = &profile.Success{Payload: []byte{0, 255}, MediaType: "application/octet-stream"}
+			result.Success = &profile.Success{Payload: []byte{0, 255}, MediaType: "application/octet-stream", CommittedStateVersion: pointer("01"), EffectIds: []string{"effect-a"}}
 		}
 		result.Commit = &tx.CommitReceipt{CommandId: result.CommandId, AttemptId: result.AttemptId, TransactionId: "transaction-a", ReceiptId: "receipt-a", CommittedVersion: []byte{1}, CommittedAtUnixMillis: math.MaxUint64, Source: source, EffectIds: []string{"effect-a"}}
 	case tx.CommandOutcomeRejected:

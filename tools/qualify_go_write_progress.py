@@ -18,6 +18,7 @@ import sys
 if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools.build_observation import file_identity
+from tools import go_network_deadline_reference as deadline
 from tools.owned_test_process import ProcessFailure, run_owned
 from tools.rust_capsule_project import ROOT, fresh
 from tools.test_run import redact
@@ -35,8 +36,8 @@ CASES = ('TestCopyCrossesChunkBoundary', 'TestDirectWriteAdvancesOnlyAcceptedByt
     'TestImpossibleCountsFailClosedBeforeAnotherDispatch',
     'TestEmptyClosedAndHalfClosedPathsKeepAdmissionRules',
     'TestCloseBetweenFragmentsKeepsPrefixAndStopsDispatch')
-RECIPE = (TEMPLATE, TESTS, 'tools/qualify_go_write_progress.py',
-          'tools/owned_test_process.py', 'tools/build_observation.py', 'tools/test_run.py',
+RECIPE = (TEMPLATE, TESTS, deadline.TESTS, *deadline.MATERIALS, 'tools/go_network_deadline_reference.py', 'tools/qualify_go_write_progress.py',
+          'tools/owned_test_process.py', 'tools/owned_process_worker.py', 'tools/build_observation.py', 'tools/test_run.py',
           '.github/workflows/go-write-progress-reference.yml')
 
 
@@ -113,6 +114,7 @@ def qualify(output: Path) -> dict:
     def save(name):
         (output / name).write_bytes((json.dumps(record, indent=2) + '\n').encode())
     try:
+        deadline.contract(before[TEMPLATE], {name: before[name] for name in deadline.MATERIALS})
         compiler = shutil.which('go')
         if compiler is None:
             raise ValueError('go-write-reference-compiler-unavailable')
@@ -148,8 +150,12 @@ def qualify(output: Path) -> dict:
             if result.returncode != (0 if name == 'current' else 1):
                 raise ValueError('go-write-reference-unexpected-command-outcome:' + name)
             results[name] = observed(result.output, name != 'current', close=name == 'before-close-guard')
+        deadline_result = deadline.qualify(output, compiler, environment, upstream, before[TEMPLATE], before[deadline.TESTS])
         if before != {name: (ROOT / name).read_bytes() for name in RECIPE} or file_identity(compiler, 'go') != identity:
             raise ValueError('go-write-reference-input-changed')
+        deadline_result.update(sourceRevision=record['sourceRevision'], baseline=BASELINE, compiler=identity,
+                               compilerVersion=version, sourceUnchanged=True, inputs=record['inputs'])
+        (output / 'deadline-receipt.json').write_bytes((json.dumps(deadline_result, indent=2) + '\n').encode())
         record.update(status='passed', sourceUnchanged=True, compiler=identity, compilerVersion=version, outcomes=results)
         save('receipt.json'); return record
     except BaseException:

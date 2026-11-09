@@ -19,6 +19,7 @@ public final class Activation {
     private static boolean entered;
     private static boolean rootComplete;
     private static boolean closing;
+    private static boolean finishingInvocation;
     private static boolean retiringPools;
     private static boolean iteratingPoolRetirement;
     private static volatile boolean poisoned;
@@ -31,6 +32,7 @@ public final class Activation {
     private static java.util.concurrent.Executor defaultAsyncExecutor;
     private static boolean queueClockCaptured;
     private static long queueClock;
+    private static int pendingTimerStops;
 
     private Activation() { }
 
@@ -214,10 +216,12 @@ public final class Activation {
         return new Lease(register(kind));
     }
 
-    /** No current or later invocation may succeed after an unknown Result settlement. */
-    public static void fenceUncertainResultSettlement() { poisoned = true; }
+    /** No current or later invocation may succeed after ownership becomes uncertain. */
+    public static void fenceUncertainCompletion() { poisoned = true; }
+    public static void fenceUncertainResultSettlement() { fenceUncertainCompletion(); }
 
-    /** Keep a failed constructor's admitted owner rooted until Store destruction. */
+    /** Keep an admitted owner with uncertain settlement rooted until Store destruction.
+     * This intrusive custody also covers executor and timer owners. */
     public static void fenceUncertainQueuedWorkSettlement(Lease owner) {
         poisoned = true;
         // The lease and list head were allocated before admission. Each failed
@@ -232,8 +236,18 @@ public final class Activation {
 
     private static void requireHealthyAdmission() {
         if (poisoned) throw new IllegalStateException("activation-runtime-poisoned-store");
+        if (finishingInvocation) {
+            fenceUncertainCompletion();
+            throw new IllegalStateException("activation-runtime-teardown");
+        }
+    }
+    private static void fencePendingTimerStops() {
+        // An accepted stop remains counted through host acknowledgement and
+        // local cleanup, even if its timer leaves the mutable registry.
+        if (pendingTimerStops != 0) poisoned = true;
     }
     private static void requireHealthyCompletion() {
+        fencePendingTimerStops();
         if (poisoned) throw new IllegalStateException("activation-runtime-owner-settlement-uncertain");
     }
 
@@ -242,6 +256,7 @@ public final class Activation {
         final long deadline;
         boolean fired;
         boolean closing;
+        boolean stopPending;
         boolean rawFrame;
         TimerLease(Bindings.LatentRuntimeActivationToken token, Work work, long deadline) {
             super(token);
@@ -250,12 +265,51 @@ public final class Activation {
         }
         @Override public void close() {
             if (super.token == null) return;
+            if (!entered || finishingInvocation || work.complete || work.timer != this) {
+                fenceUncertainCompletion();
+                throw new IllegalStateException("activation-runtime-timer-stop-teardown");
+            }
+            if (stopPending) {
+                fenceUncertainCompletion();
+                throw new IllegalStateException("activation-runtime-timer-stop-unconfirmed");
+            }
+            if (pendingTimerStops == Integer.MAX_VALUE) {
+                fenceUncertainCompletion();
+                throw new IllegalStateException("activation-runtime-timer-stop-capacity");
+            }
             closing = true;
-            var stopped = Bindings.LatentRuntimeActivation.timerStop(super.token);
-            if (stopped.isError()) throw new IllegalStateException("activation-runtime-timer-stop-" + stopped.error());
-            super.token = null;
-            if (work.timer == this) work.timer = null;
-            timers.remove(this);
+            pendingTimerStops++;
+            stopPending = true;
+            boolean returned = false;
+            try {
+                // The first gate and counter publication are straight-line;
+                // recheck teardown after publication before the host call.
+                if (!entered || finishingInvocation || work.complete || work.timer != this) {
+                    stopPending = false;
+                    pendingTimerStops--;
+                    returned = true;
+                    fenceUncertainCompletion();
+                    throw new IllegalStateException("activation-runtime-timer-stop-teardown");
+                }
+                var stopped = Bindings.LatentRuntimeActivation.timerStop(super.token);
+                if (stopped.isError()) {
+                    // A returned refusal has not removed the host timer and may
+                    // be retried. A thrown call has no such acknowledgement.
+                    stopPending = false;
+                    pendingTimerStops--;
+                    returned = true;
+                    throw new IllegalStateException("activation-runtime-timer-stop-" + stopped.error());
+                }
+                timers.remove(this);
+                if (work.timer == this) work.timer = null;
+                super.token = null;
+                stopPending = false;
+                pendingTimerStops--;
+                returned = true;
+            } catch (Throwable failure) {
+                if (!returned) fenceUncertainCompletion();
+                throw failure;
+            }
         }
     }
 
@@ -269,7 +323,17 @@ public final class Activation {
         long remaining = deadline <= now ? 0 : deadline - now;
         long nanos = remaining < 0 || remaining > Long.MAX_VALUE / 1_000_000
             ? Long.MAX_VALUE : remaining * 1_000_000;
-        var started = Bindings.LatentRuntimeActivation.timerStart(new Unsigned64(nanos), Option.none(), Option.some(work.token));
+        // Prepare all potentially allocating arguments before the final
+        // teardown admission fence; do not start a host timer after that fence.
+        var delay = new Unsigned64(nanos);
+        var period = Option.<Unsigned64>none();
+        var continuation = Option.some(work.token);
+        // The clock or argument preparation may have suspended. Revalidate the
+        // original logical owner before the final admission fence.
+        boolean sameWork = lookup(Thread.currentThread()) == work && !work.complete && work.timer == null;
+        requireHealthyAdmission();
+        if (!entered || !sameWork) throw new IllegalStateException("activation-runtime-timer-frame");
+        var started = Bindings.LatentRuntimeActivation.timerStart(delay, period, continuation);
         if (started.isError()) throw new IllegalStateException("activation-runtime-timer-start-" + started.error());
         try {
             TimerLease timer = new TimerLease(started.value(), work, deadline);
@@ -482,6 +546,7 @@ public final class Activation {
             catch (Throwable error) { failure = error; }
             finally { rootComplete = true; }
         }, false);
+        boolean returning = false;
         try {
             while (true) {
                 closeCompletedRoot();
@@ -507,14 +572,33 @@ public final class Activation {
             root.complete = true;
             Address output = result;
             result = null;
+            returning = true;
             return output;
         } finally {
-            finishInvocation();
+            finishInvocation(returning);
         }
     }
 
+    private static void finishInvocation(boolean returning) {
+        // An exceptional invocation may still own accepted sibling work.
+        // Keep the existing Store state while preserving its primary error.
+        if (!returning) {
+            finishingInvocation = true;
+            fenceUncertainCompletion();
+        }
+        finishInvocation();
+        // Teardown can discover a late in-flight stop after the earlier
+        // health check. Refuse that return without masking an existing error.
+        if (returning) requireHealthyCompletion();
+    }
+
     private static void finishInvocation() {
-        if (failedStarts != null || poisoned) {
+        finishingInvocation = true;
+        fencePendingTimerStops();
+        boolean liveTimers = !timers.isEmpty();
+        // A stop may have removed its entry while the registry was observed.
+        fencePendingTimerStops();
+        if (failedStarts != null || poisoned || liveTimers) {
             // The host must destroy this Store; retain every original reference
             // and reject re-entry while registration settlement is uncertain.
             poisoned = true;
@@ -531,5 +615,6 @@ public final class Activation {
         root = null;
         failure = null;
         entered = false;
+        finishingInvocation = false;
     }
 }

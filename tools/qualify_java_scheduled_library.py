@@ -134,10 +134,10 @@ def qualify(output, revision):
         commands.run('source-controls', sys.executable, '-B', '-m', 'unittest', '-v',
             'tools.tests.test_java_scheduled_library.ScheduledLibraryOwnership')
         raw = read_file(logs / f'logs/{control_index:02d}-source-controls.stderr.txt', 128 * 1024)
-        need(re.findall(rb'^Ran (\d+) tests in [0-9.]+s\r?$', raw, re.M) == [b'4']
+        need(re.findall(rb'^Ran (\d+) tests in [0-9.]+s\r?$', raw, re.M) == [b'5']
             and re.findall(rb'^(OK)\r?$', raw, re.M) == [b'OK']
-            and raw.rstrip().endswith(b'OK'), 'four-controls-no-skip')
-        receipt['sourceControls'] = {'passed': 4, 'skipped': 0, 'stderr': identities.identity(raw)}
+            and raw.rstrip().endswith(b'OK'), 'five-controls-no-skip')
+        receipt['sourceControls'] = {'passed': 5, 'skipped': 0, 'stderr': identities.identity(raw)}
         receipt['stage'] = 'normal-pinned-tools'
         commands.command_seconds = 175
         archive = private / 'gradle.zip'

@@ -371,16 +371,16 @@ fn captured_for_pointer(pointer: NonNull<()>) -> (NonNull<Control>, CapturedCall
             .expect("live captured worker pool identity")
     })
 }
-pub(crate) unsafe fn worker_tls_drained(pointer: NonNull<()>, canonical: u32) {
+pub(crate) unsafe fn worker_tls_drained(pointer: NonNull<()>, worker: u64) {
     let (control, _) = captured_for_pointer(pointer);
     unsafe { control.as_ref() }
-        .worker_tls_drained(canonical)
+        .worker_tls_drained(worker)
         .expect("actual captured worker TLS boundary");
 }
-pub(crate) unsafe fn worker_frames_exited(pointer: NonNull<()>, canonical: u32) {
+pub(crate) unsafe fn worker_frames_exited(pointer: NonNull<()>, worker: u64) {
     let (control, _) = captured_for_pointer(pointer);
     unsafe { control.as_ref() }
-        .worker_frames_exited(canonical)
+        .worker_frames_exited(worker)
         .expect("actual captured worker frame boundary");
 }
 pub(crate) unsafe fn worker_release(pointer: NonNull<()>) {

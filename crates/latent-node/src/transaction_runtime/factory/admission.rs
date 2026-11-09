@@ -32,6 +32,64 @@ enum PendingPublication {
     Refused(AtomicError),
 }
 
+fn source_pin(source: &latent_commit::atomic::SourceIdentity) -> Result<[u8; 32], PlatformError> {
+    use sha2::{Digest, Sha256};
+    source.validate().map_err(atomic)?;
+    let mut hash = Sha256::new();
+    hash.update(b"LSF queued command source v1\0");
+    for value in [
+        &source.publication,
+        &source.revision,
+        &source.release_digest,
+        &source.component_digest,
+        &source.contract_digest,
+        &source.state_schema,
+        &source.input_format,
+        &source.result_format,
+    ] {
+        hash.update((value.len() as u64).to_le_bytes());
+        hash.update(value.as_bytes());
+    }
+    hash.update(source.route_generation.to_le_bytes());
+    Ok(hash.finalize().into())
+}
+
+struct ClaimNotification<'a>(&'a super::super::entity_queue::EntityQueue);
+impl Drop for ClaimNotification<'_> {
+    fn drop(&mut self) {
+        self.0.claimed();
+    }
+}
+
+fn entity_queue_error(failure: super::super::entity_queue::QueueError) -> PlatformError {
+    use super::super::entity_queue::QueueError;
+    use latent_core::PlatformErrorCode as Code;
+    use latent_state::entity_lanes::{EntityLaneError, EntityRejection};
+    if failure == QueueError::DuplicateConflict {
+        return atomic(AtomicError::Conflict);
+    }
+    let (code, message) = match failure {
+        QueueError::Expired
+        | QueueError::Lane(EntityLaneError::Expired)
+        | QueueError::Rejected(EntityRejection::WaitExpired) => {
+            (Code::DeadlineExceeded, "entity-queue-expired")
+        }
+        QueueError::Rejected(EntityRejection::AuthorityChanged) => {
+            (Code::PermissionDenied, "entity-queue-authority-changed")
+        }
+        QueueError::Rejected(EntityRejection::CancelledBeforeExecution) => {
+            (Code::Cancelled, "entity-queue-cancelled")
+        }
+        QueueError::Lane(EntityLaneError::Backpressure(_)) => {
+            (Code::ResourceExhausted, "entity-queue-backpressure")
+        }
+        QueueError::DuplicateCapacity => (Code::ResourceExhausted, "entity-duplicate-backpressure"),
+        QueueError::OriginalOwnerEnded => (Code::Unavailable, "entity-original-owner-ended"),
+        _ => (Code::Unavailable, "entity-queue-unavailable"),
+    };
+    error(code, message)
+}
+
 impl crate::TransactionActivationAdmission for NativeTransactionAdmission {
     fn original_command_cancellation(
         &self,
@@ -86,7 +144,16 @@ impl crate::TransactionActivationAdmission for NativeTransactionAdmission {
         envelope: &'a ActivationEnvelope,
         budget: &'a ActivationBudget,
     ) -> BoxFuture<'a, Result<Arc<dyn TransactionHost>, PlatformError>> {
-        Box::pin(async move { self.admit_native(envelope, budget).await })
+        Box::pin(async move { self.admit_native(envelope, budget, None).await })
+    }
+
+    fn admit_controlled<'a>(
+        &'a self,
+        envelope: &'a ActivationEnvelope,
+        budget: &'a ActivationBudget,
+        control: crate::TransactionAdmissionControl,
+    ) -> BoxFuture<'a, Result<Arc<dyn TransactionHost>, PlatformError>> {
+        Box::pin(async move { self.admit_native(envelope, budget, Some(control)).await })
     }
 
     fn complete(
@@ -98,10 +165,15 @@ impl crate::TransactionActivationAdmission for NativeTransactionAdmission {
     }
 }
 impl NativeTransactionAdmission {
+    #[expect(
+        clippy::too_many_lines,
+        reason = "Keep the original source, capacity, queue and durable admission fences in their execution order"
+    )]
     async fn admit_native(
         &self,
         envelope: &ActivationEnvelope,
         budget: &ActivationBudget,
+        control: Option<crate::TransactionAdmissionControl>,
     ) -> Result<Arc<dyn TransactionHost>, PlatformError> {
         let mut selection = {
             let mut state = self.state.lock().map_err(|_| authorization::denied())?;
@@ -115,6 +187,14 @@ impl NativeTransactionAdmission {
         // Verify pinned source, mode, finite input and original policy BEFORE
         // any native lookup or durable reservation. DTOs supply no source grant.
         let source = observation::platform(Phase::Source, self.installation.source(envelope))?;
+        let selected_source = if selection.mode == TransactionOperationMode::StrictCommand
+            && selection.entity.is_some()
+            && selection.retry.is_none()
+        {
+            source_pin(&source)?
+        } else {
+            [0; 32]
+        };
         let initial = observation::platform(
             Phase::InitialPolicy,
             policy::initial(
@@ -129,6 +209,38 @@ impl NativeTransactionAdmission {
             observation::platform(Phase::Retention, self.reserve_retention(envelope, budget))?;
         let bytes = retention.request_bytes();
         *self.retention.lock().map_err(|_| authorization::denied())? = Some(Arc::clone(&retention));
+        let mut claim_changes = None;
+        let mut replay_probe = None;
+        if selection.mode == TransactionOperationMode::StrictCommand
+            && selection.entity.is_some()
+            && selection.retry.is_none()
+        {
+            // Subscribe before the lookup so a claim published between the
+            // snapshot and queue registration cannot be missed.
+            claim_changes = Some(self.owners.lanes.claim_changes());
+            let read = self.replay_existing_entity(&selection, envelope, budget);
+            replay_probe = Some(match control.as_ref() {
+                Some(control) => control.wait(read).await?,
+                None => read.await?,
+            });
+        }
+        // Pending command publication updates the namespace generation. Wait
+        // before that write, then read and seal a fresh namespace. Duplicates
+        // still use the ordinary durable admission/replay path after selection.
+        let lane = if selection.mode == TransactionOperationMode::StrictCommand {
+            self.acquire_entity_lane(
+                &selection,
+                envelope,
+                budget,
+                control.as_ref(),
+                claim_changes,
+                replay_probe,
+                selected_source,
+            )
+            .await?
+        } else {
+            None
+        };
         let namespace = observation::platform(
             Phase::NamespaceRead,
             self.read_namespace(&selection, &envelope.target.tenant)
@@ -146,8 +258,12 @@ impl NativeTransactionAdmission {
         let mode = selection.mode == TransactionOperationMode::StrictCommand;
         self.retain_response_authority(Arc::clone(&before), !mode)?;
         let scope = selected_scope(&selection, envelope, &source.state_schema);
+        let mut _claim_notification = None;
         let authorization = if mode {
             let role = CommandRole::capture(&self.owners.command).map_err(atomic)?;
+            if let Some(lane) = lane {
+                role.bind_lane(lane).map_err(atomic)?;
+            }
             let epoch = role.epoch();
             *self.state.lock().map_err(|_| authorization::denied())? = State::Pending {
                 claim: None,
@@ -186,6 +302,9 @@ impl NativeTransactionAdmission {
                 inbox: None,
                 owner_epoch: epoch,
             };
+            if selection.entity.is_some() {
+                _claim_notification = Some(ClaimNotification(&self.owners.lanes));
+            }
             observation::platform(
                 Phase::PendingPublication,
                 self.publish_pending(
@@ -200,10 +319,12 @@ impl NativeTransactionAdmission {
             let after = self
                 .read_namespace(&selection, &envelope.target.tenant)
                 .await?;
-            observation::platform(
+            let authorization = observation::platform(
                 Phase::FinalSeal,
                 self.seal(initial.after, after, envelope, budget, Some(role)),
-            )?
+            )?;
+            authorization.authorize("info", 0, 0, || Ok(()))?;
+            authorization
         } else {
             drop(initial.after);
             before
@@ -214,6 +335,135 @@ impl NativeTransactionAdmission {
             self.open_host(envelope, selection, scope, authorization)
                 .await,
         )
+    }
+
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "Keep the original budget, control, claim observation, and selected source together"
+    )]
+    async fn acquire_entity_lane(
+        &self,
+        selection: &TransactionSelection,
+        envelope: &ActivationEnvelope,
+        budget: &ActivationBudget,
+        control: Option<&crate::TransactionAdmissionControl>,
+        mut claims: Option<tokio::sync::watch::Receiver<u64>>,
+        probe: Option<super::entity_replay::ReplayProbe>,
+        selected_source: [u8; 32],
+    ) -> Result<Option<super::super::entity_queue::Physical>, PlatformError> {
+        use latent_core::native_capacity::NativeBufferClass;
+        use latent_state::entity_lanes::EntityScope;
+
+        let Some(entity) = selection.entity.as_ref() else {
+            return Ok(None);
+        };
+        let retained = self.retained_capacity()?;
+        let scope = EntityScope::new(
+            envelope.target.tenant.clone(),
+            StateNamespaceId(selection.namespace.clone()),
+            selection.incarnation,
+            latent_core::EntityKey(entity.clone()),
+        )
+        .map_err(|_| authorization::denied())?;
+        let deadline = budget
+            .deadline()
+            .monotonic()
+            .ok_or_else(authorization::denied)?;
+        let current_retention = Arc::clone(&retained);
+        let current = Arc::new(move || current_retention.check_current().is_ok());
+        let retained_bytes = retained.total_native_bytes()?;
+        let command = probe.map(|probe| {
+            (
+                probe.identity,
+                probe.fingerprint,
+                selected_source,
+                self.shared_owner.clone(),
+            )
+        });
+        let wait = async {
+            let mut duplicate_authorized = false;
+            let mut first_owner = None;
+            loop {
+                // Each waiter and its queue objects are prepaid from the
+                // original ingress; reacquire after the authorization read.
+                let permit = retained
+                    .native()
+                    .reserve_buffer(NativeBufferClass::Request, 16 * 1024)
+                    .map_err(|_| {
+                        error(
+                            latent_core::PlatformErrorCode::ResourceExhausted,
+                            "entity-queue-capacity",
+                        )
+                    })?;
+                let result = self
+                    .owners
+                    .lanes
+                    .acquire_for_command(
+                        scope.clone(),
+                        envelope.activation_id.0.as_bytes().to_vec(),
+                        retained_bytes,
+                        deadline,
+                        current.clone(),
+                        permit,
+                        command.clone(),
+                        duplicate_authorized,
+                        first_owner,
+                    )
+                    .await;
+                if let Err(super::super::entity_queue::QueueError::DuplicateNeedsAuthorization {
+                    source,
+                    owner,
+                }) = &result
+                {
+                    let source = *source;
+                    let owner = *owner;
+                    self.authorize_entity_duplicate(selection, envelope, budget)
+                        .await?;
+                    first_owner = Some((owner, source));
+                    duplicate_authorized = true;
+                    continue;
+                }
+                if matches!(
+                    result,
+                    Err(super::super::entity_queue::QueueError::OriginalOwnerEnded)
+                ) {
+                    // Recover a durable claim if it became visible just before
+                    // the original lane retired; otherwise refuse takeover.
+                    self.replay_existing_entity(selection, envelope, budget)
+                        .await?;
+                }
+                break result.map_err(entity_queue_error);
+            }
+        };
+        tokio::pin!(wait);
+        loop {
+            let next = async {
+                if let Some(changes) = claims.as_mut() {
+                    tokio::select! {
+                        result = &mut wait => result.map(Some),
+                        changed = changes.changed() => changed
+                            .map(|()| None)
+                            .map_err(|_| error(latent_core::PlatformErrorCode::Unavailable, "entity-queue-unavailable")),
+                    }
+                } else {
+                    (&mut wait).await.map(Some)
+                }
+            };
+            let next = match control {
+                Some(control) => control.wait(next).await?,
+                None => next.await?,
+            };
+            if let Some(lane) = next {
+                return Ok(Some(lane));
+            }
+            // The read job keeps its own physical owner after waiter loss. A
+            // cancellation or a duplicate result drops the queued reservation.
+            let read = self.replay_existing_entity(selection, envelope, budget);
+            match control {
+                Some(control) => control.wait(read).await?,
+                None => read.await?,
+            };
+        }
     }
 
     async fn open_host(
@@ -294,7 +544,7 @@ impl NativeTransactionAdmission {
         Ok(host)
     }
 
-    async fn read_namespace(
+    pub(super) async fn read_namespace(
         &self,
         selection: &TransactionSelection,
         tenant: &latent_core::TenantId,
@@ -331,7 +581,7 @@ impl NativeTransactionAdmission {
             })?
             .ok_or_else(authorization::denied)
     }
-    fn seal(
+    pub(super) fn seal(
         &self,
         initial: OwnedPolicyDecision,
         namespace: NamespaceRead,
@@ -606,7 +856,7 @@ fn selected_scope(
         },
     }
 }
-fn check_view(
+pub(super) fn check_view(
     selection: &TransactionSelection,
     namespace: &NamespaceRead,
     schema: &str,

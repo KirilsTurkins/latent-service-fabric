@@ -1,0 +1,856 @@
+{
+  "description": "Experimental Go and TypeScript durable business rejection recovery against a normal local node",
+  "observation": {
+    "after": {
+      "commandCount": "1",
+      "encodedStateBytes": "75",
+      "engineProfile": "protected-redb-immediate-ext4-v1",
+      "engineProfileDigest": "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+      "generation": "3",
+      "namespacePolicyDigest": "sha256:db5438882d26545ab0238153a041081726bbaf7d91a9dc3b71b8b4223d0a1c26",
+      "pendingEffectCount": "0",
+      "quota": {
+        "effectBytes": "8388608",
+        "effectRows": "4096",
+        "payloadBytes": "8388608",
+        "recoveryBytes": "1048576",
+        "resultBytes": "8388608",
+        "resultRows": "4096",
+        "stateBytes": "8388608",
+        "stateKeys": "4096"
+      },
+      "retainedFormats": [],
+      "status": "NAMESPACE_STATUS_ACTIVE",
+      "view": {
+        "namespace": {
+          "incarnation": "1",
+          "namespace": "transactional-aggregate",
+          "tenant": "examples"
+        },
+        "stateSchema": "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+        "version": {
+          "data": "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAAAMAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+          "encoding": "base64"
+        }
+      }
+    },
+    "attemptId": "1",
+    "before": {
+      "commandCount": "1",
+      "encodedStateBytes": "75",
+      "engineProfile": "protected-redb-immediate-ext4-v1",
+      "engineProfileDigest": "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+      "generation": "3",
+      "namespacePolicyDigest": "sha256:db5438882d26545ab0238153a041081726bbaf7d91a9dc3b71b8b4223d0a1c26",
+      "pendingEffectCount": "0",
+      "quota": {
+        "effectBytes": "8388608",
+        "effectRows": "4096",
+        "payloadBytes": "8388608",
+        "recoveryBytes": "1048576",
+        "resultBytes": "8388608",
+        "resultRows": "4096",
+        "stateBytes": "8388608",
+        "stateKeys": "4096"
+      },
+      "retainedFormats": [],
+      "status": "NAMESPACE_STATUS_ACTIVE",
+      "view": {
+        "namespace": {
+          "incarnation": "1",
+          "namespace": "transactional-aggregate",
+          "tenant": "examples"
+        },
+        "stateSchema": "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+        "version": {
+          "data": "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAAAMAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+          "encoding": "base64"
+        }
+      }
+    },
+    "brokerMessages": 1,
+    "cClientFixSourceSha256": "sha256:3e01cc9205a0164fb932c0591d11cf9fc94b0958ee9c918b77b2c5a8d55567fe",
+    "cCommandProbeBinarySha256": "sha256:74ef601cadfed67c093be0a00b08f48a0d89fb3ff3a83c744530e72e602c6a28",
+    "cCommandProbeSourceSha256": "sha256:6e205fd2bf8475aae27906eb01c50a4253c9e4aa511d88a6a91c98d1635c474c",
+    "cDirectCommand": {
+      "attempt-id": "1",
+      "command-id": "f3113edffd4b0a5fb8a449fa9b1f88dc1a5f6844ed40f35c9b443a9df9bd5660",
+      "disposition": "committed",
+      "effect-ids": [
+        "7f0f51da5335000ec1aac666901b5d67dcbce6c65666b265c8fbe6563b920095"
+      ]
+    },
+    "cDirectEffectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "cFinalBrokerMessages": 5,
+    "cFinalNamespace": {
+      "commandCount": "5",
+      "encodedStateBytes": "75",
+      "engineProfile": "protected-redb-immediate-ext4-v1",
+      "engineProfileDigest": "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+      "generation": "11",
+      "namespacePolicyDigest": "sha256:db5438882d26545ab0238153a041081726bbaf7d91a9dc3b71b8b4223d0a1c26",
+      "pendingEffectCount": "0",
+      "quota": {
+        "effectBytes": "8388608",
+        "effectRows": "4096",
+        "payloadBytes": "8388608",
+        "recoveryBytes": "1048576",
+        "resultBytes": "8388608",
+        "resultRows": "4096",
+        "stateBytes": "8388608",
+        "stateKeys": "4096"
+      },
+      "retainedFormats": [],
+      "status": "NAMESPACE_STATUS_ACTIVE",
+      "view": {
+        "namespace": {
+          "incarnation": "1",
+          "namespace": "transactional-aggregate",
+          "tenant": "examples"
+        },
+        "stateSchema": "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+        "version": {
+          "data": "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAAAsAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+          "encoding": "base64"
+        }
+      }
+    },
+    "cLookups": 2,
+    "cProbeBinarySha256": "sha256:78384739952f332808aa5c11b846e8e3efd4af271ebcd6f54f862e2d3a4e2398",
+    "cProbeSourceSha256": "sha256:25adca48739d818f2c2cac46d37b7d693ac10971a86522295773b899919288b2",
+    "capturePinsSha256": "sha256:b568f7ce45ad00ce5c8f5140faaa181724ae2c4a427d6884148099598fb7d847",
+    "cliSha256": "sha256:e1179de07a96719f3161f7748dbb14496151bf8b193253bf7b7a9fc819f4cec7",
+    "commandId": "9519180718750dc809725b7a546608e0bf15552ea311c3ac8300c1ee847c89fb",
+    "dotnetClientFixBinarySha256": "sha256:75d950bed048ac588a29857eb57490a50a907c1979c2bce397dffbac0e2c7574",
+    "dotnetClientFixSourceSha256": "sha256:f13e82b6f176ddca36eb4f4c1317d39fd8e3d8e64c3a38536484217f7adad942",
+    "dotnetCommandProbeBinarySha256": "sha256:af3919dfe30f7b101b4fe3213697b190f40c9d1d6cd08db2cc1459c669e229c6",
+    "dotnetCommandProbeSourceSha256": "sha256:d442726d7fcdf4ffd1cefee641239d64105af6c660859b02397cbef3c8e44cc0",
+    "dotnetDirectCommand": {
+      "attempt-id": "1",
+      "command-id": "6b02b26a17c0fef58c750b98cf8a450777489ac5bf3f234c23e9d44c1f9da727",
+      "disposition": "committed",
+      "effect-ids": [
+        "ff3904dd725653f4bd3496ccadce179fd0830d408f3b68eebe81dd2c4eb15819"
+      ]
+    },
+    "dotnetDirectEffectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "dotnetFinalBrokerMessages": 7,
+    "dotnetFinalNamespace": {
+      "commandCount": "7",
+      "encodedStateBytes": "75",
+      "engineProfile": "protected-redb-immediate-ext4-v1",
+      "engineProfileDigest": "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+      "generation": "15",
+      "namespacePolicyDigest": "sha256:db5438882d26545ab0238153a041081726bbaf7d91a9dc3b71b8b4223d0a1c26",
+      "pendingEffectCount": "0",
+      "quota": {
+        "effectBytes": "8388608",
+        "effectRows": "4096",
+        "payloadBytes": "8388608",
+        "recoveryBytes": "1048576",
+        "resultBytes": "8388608",
+        "resultRows": "4096",
+        "stateBytes": "8388608",
+        "stateKeys": "4096"
+      },
+      "retainedFormats": [],
+      "status": "NAMESPACE_STATUS_ACTIVE",
+      "view": {
+        "namespace": {
+          "incarnation": "1",
+          "namespace": "transactional-aggregate",
+          "tenant": "examples"
+        },
+        "stateSchema": "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+        "version": {
+          "data": "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAAA8AAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+          "encoding": "base64"
+        }
+      }
+    },
+    "dotnetLookups": 2,
+    "dotnetProbeBinarySha256": "sha256:08f202b00b14e9759c8f1791ae01a59fd54760ba1ba53f07f72ce8770feeba16",
+    "dotnetProbeProjectSha256": "sha256:65ff4afac47c8c7682e162fb74534548ea3deeae06a54a723e76ca61ad4bfe86",
+    "dotnetProbeSourceSha256": "sha256:26281e0ca90d74013934016c66ae5231fa8d324ab506d975f02ff0f1d2075784",
+    "effectAttempt": 1,
+    "effectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "finalBrokerMessages": 2,
+    "finalNamespace": {
+      "commandCount": "2",
+      "encodedStateBytes": "75",
+      "engineProfile": "protected-redb-immediate-ext4-v1",
+      "engineProfileDigest": "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+      "generation": "5",
+      "namespacePolicyDigest": "sha256:db5438882d26545ab0238153a041081726bbaf7d91a9dc3b71b8b4223d0a1c26",
+      "pendingEffectCount": "0",
+      "quota": {
+        "effectBytes": "8388608",
+        "effectRows": "4096",
+        "payloadBytes": "8388608",
+        "recoveryBytes": "1048576",
+        "resultBytes": "8388608",
+        "resultRows": "4096",
+        "stateBytes": "8388608",
+        "stateKeys": "4096"
+      },
+      "retainedFormats": [],
+      "status": "NAMESPACE_STATUS_ACTIVE",
+      "view": {
+        "namespace": {
+          "incarnation": "1",
+          "namespace": "transactional-aggregate",
+          "tenant": "examples"
+        },
+        "stateSchema": "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+        "version": {
+          "data": "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAAAUAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+          "encoding": "base64"
+        }
+      }
+    },
+    "goClientFixSourceSha256": "sha256:3455d413414f50619cdbd20c168f9c5846998348820848c5eec42d0cb235293f",
+    "goCommandProbeBinarySha256": "sha256:98791b73feea1072d3494f47fcfc83c8928ab4355faa1cbb0b918833888aee53",
+    "goCommandProbeSourceSha256": "sha256:1477d7f7319f80708f9564826bec8895bd3ae5abb93f426edbd59709aa492192",
+    "goDirectCommand": {
+      "attempt-id": "1",
+      "command-id": "2813c92e6ba14716f91d01f3b027d45eba3e64728cc409804b4020926dfd14d6",
+      "disposition": "committed",
+      "effect-ids": [
+        "fbf0a7d3aab3368483ebf8371add6da18d80fa48fd218c31f35d1a467d16e4d8"
+      ]
+    },
+    "goDirectEffectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "goFinalBrokerMessages": 4,
+    "goFinalNamespace": {
+      "commandCount": "4",
+      "encodedStateBytes": "75",
+      "engineProfile": "protected-redb-immediate-ext4-v1",
+      "engineProfileDigest": "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+      "generation": "9",
+      "namespacePolicyDigest": "sha256:db5438882d26545ab0238153a041081726bbaf7d91a9dc3b71b8b4223d0a1c26",
+      "pendingEffectCount": "0",
+      "quota": {
+        "effectBytes": "8388608",
+        "effectRows": "4096",
+        "payloadBytes": "8388608",
+        "recoveryBytes": "1048576",
+        "resultBytes": "8388608",
+        "resultRows": "4096",
+        "stateBytes": "8388608",
+        "stateKeys": "4096"
+      },
+      "retainedFormats": [],
+      "status": "NAMESPACE_STATUS_ACTIVE",
+      "view": {
+        "namespace": {
+          "incarnation": "1",
+          "namespace": "transactional-aggregate",
+          "tenant": "examples"
+        },
+        "stateSchema": "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+        "version": {
+          "data": "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAAAkAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+          "encoding": "base64"
+        }
+      }
+    },
+    "goLaterEffectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "goLookups": 2,
+    "goProbeBinarySha256": "sha256:e16b1b12d587f8c906bad32ee96afad7d71fb6b27d68c1b3e14bead57e889e8e",
+    "goProbeSourceSha256": "sha256:9b46c683afdc8f29af17d9ac24a129e55a2a309a27d6c525766d811b40eddcbc",
+    "goRecoveryBrokerMessages": 10,
+    "goRecoveryBusinessKeyVersionUnchanged": true,
+    "goRecoveryNamespace": {
+      "commandCount": "13",
+      "encodedStateBytes": "75",
+      "engineProfile": "protected-redb-immediate-ext4-v1",
+      "engineProfileDigest": "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+      "generation": "27",
+      "namespacePolicyDigest": "sha256:db5438882d26545ab0238153a041081726bbaf7d91a9dc3b71b8b4223d0a1c26",
+      "pendingEffectCount": "0",
+      "quota": {
+        "effectBytes": "8388608",
+        "effectRows": "4096",
+        "payloadBytes": "8388608",
+        "recoveryBytes": "1048576",
+        "resultBytes": "8388608",
+        "resultRows": "4096",
+        "stateBytes": "8388608",
+        "stateKeys": "4096"
+      },
+      "retainedFormats": [],
+      "status": "NAMESPACE_STATUS_ACTIVE",
+      "view": {
+        "namespace": {
+          "incarnation": "1",
+          "namespace": "transactional-aggregate",
+          "tenant": "examples"
+        },
+        "stateSchema": "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+        "version": {
+          "data": "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAABsAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+          "encoding": "base64"
+        }
+      }
+    },
+    "goRejectionAttemptId": "1",
+    "goRejectionBrokerMessages": 9,
+    "goRejectionBusinessKeyVersionUnchanged": true,
+    "goRejectionCommandId": "243418a79e7d9a5a8acef523acf6dd232bcb850374c1d1f1d08e6492cd604c86",
+    "goRejectionFingerprintSha256": "f6b8e9655b86d683f3631afbdee5083deb01c08e00b01a2bf589f40be6e737b5",
+    "goRejectionNamespace": {
+      "commandCount": "12",
+      "encodedStateBytes": "75",
+      "engineProfile": "protected-redb-immediate-ext4-v1",
+      "engineProfileDigest": "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+      "generation": "25",
+      "namespacePolicyDigest": "sha256:db5438882d26545ab0238153a041081726bbaf7d91a9dc3b71b8b4223d0a1c26",
+      "pendingEffectCount": "0",
+      "quota": {
+        "effectBytes": "8388608",
+        "effectRows": "4096",
+        "payloadBytes": "8388608",
+        "recoveryBytes": "1048576",
+        "resultBytes": "8388608",
+        "resultRows": "4096",
+        "stateBytes": "8388608",
+        "stateKeys": "4096"
+      },
+      "retainedFormats": [],
+      "status": "NAMESPACE_STATUS_ACTIVE",
+      "view": {
+        "namespace": {
+          "incarnation": "1",
+          "namespace": "transactional-aggregate",
+          "tenant": "examples"
+        },
+        "stateSchema": "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+        "version": {
+          "data": "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAABkAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+          "encoding": "base64"
+        }
+      }
+    },
+    "goRejectionOutcome": "rejected",
+    "goRejectionProbeBinarySha256": "sha256:17fc2526284b4a6ea85f4a80a4cb40160c1b26e6105e5790ca3293f459fc19e7",
+    "goRejectionProbeSourceSha256": "sha256:704625b315f40a6e54fd198d4f933733936d268a807afb4687faf4cbe5a4d959",
+    "guestSha256": "sha256:396784dda4174f84d3a6cb8c211dca9ad706fb826d613e5892b8140f815ad7f5",
+    "integrationGitCommit": "5aa6592da0fe2196db68d35510be6751597a77e5",
+    "javaClientFixClassSha256": "sha256:23c3db0c9e1e6fc7f4bb18dcee4e21d96a3fa6e492f15327aba83ebc5dd06426",
+    "javaClientFixSourceSha256": "sha256:3d6bd8016632939f8168252068bf837688f83379d6ae7e1288694fafa1694c06",
+    "javaCommandProbeClassSha256": "sha256:7073c056ec80b182f6f9a53ae2acf3214e2e503ba3e1a1f61351db04a1fa47b5",
+    "javaCommandProbeSourceSha256": "sha256:639da2e85d7630a3a009a60d672a2adeaf4d10883f41c67e42e3461b91cb489a",
+    "javaDirectCommand": {
+      "attempt-id": "1",
+      "command-id": "1b4eee02970ead2f96642bd7128f365684a08413c447a2fed906b992e3110d4e",
+      "disposition": "committed",
+      "effect-ids": [
+        "9d8c1bf562c883bd367c715f18e66ee5a93d7c60657c671f81ebdada53e16058"
+      ]
+    },
+    "javaDirectEffectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "javaFinalBrokerMessages": 6,
+    "javaFinalNamespace": {
+      "commandCount": "6",
+      "encodedStateBytes": "75",
+      "engineProfile": "protected-redb-immediate-ext4-v1",
+      "engineProfileDigest": "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+      "generation": "13",
+      "namespacePolicyDigest": "sha256:db5438882d26545ab0238153a041081726bbaf7d91a9dc3b71b8b4223d0a1c26",
+      "pendingEffectCount": "0",
+      "quota": {
+        "effectBytes": "8388608",
+        "effectRows": "4096",
+        "payloadBytes": "8388608",
+        "recoveryBytes": "1048576",
+        "resultBytes": "8388608",
+        "resultRows": "4096",
+        "stateBytes": "8388608",
+        "stateKeys": "4096"
+      },
+      "retainedFormats": [],
+      "status": "NAMESPACE_STATUS_ACTIVE",
+      "view": {
+        "namespace": {
+          "incarnation": "1",
+          "namespace": "transactional-aggregate",
+          "tenant": "examples"
+        },
+        "stateSchema": "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+        "version": {
+          "data": "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAAA0AAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+          "encoding": "base64"
+        }
+      }
+    },
+    "javaLookups": 2,
+    "javaProbeClassSha256": "sha256:a3412358eafb83bca2e23cb2a56c5131ac300e69d4837f2d0973abf201adf718",
+    "javaProbeSourceSha256": "sha256:e7d37410257c0a2ad953409bcc3105745b17b64d2d045ece2ebd7a177a70adeb",
+    "laterCommandId": "59fe9f3637c579d859d023890bf7648e38bc1c8de220f47115491de1779d932d",
+    "laterEffectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "nodeJsSha256": "sha256:bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+    "nodeSha256": "sha256:48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+    "probeSha256": "sha256:5bb12e3a7b7e4ec8ee2bd27cef28f4c96bad55270e6ca887c98001d8191a4a0b",
+    "publication": "publication:sha256:6e581d35373ff9f9e8bf51fba48e850c3c50639f3056950a70fd1b34ce471ccf",
+    "qualification": "experimental unmerged integration and client candidates with disposable signer; not hosted or distribution qualification",
+    "recoveryBrokerMessages": 8,
+    "recoveryBusinessKeyVersionUnchanged": true,
+    "recoveryNamespace": {
+      "commandCount": "9",
+      "encodedStateBytes": "75",
+      "engineProfile": "protected-redb-immediate-ext4-v1",
+      "engineProfileDigest": "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+      "generation": "19",
+      "namespacePolicyDigest": "sha256:db5438882d26545ab0238153a041081726bbaf7d91a9dc3b71b8b4223d0a1c26",
+      "pendingEffectCount": "0",
+      "quota": {
+        "effectBytes": "8388608",
+        "effectRows": "4096",
+        "payloadBytes": "8388608",
+        "recoveryBytes": "1048576",
+        "resultBytes": "8388608",
+        "resultRows": "4096",
+        "stateBytes": "8388608",
+        "stateKeys": "4096"
+      },
+      "retainedFormats": [],
+      "status": "NAMESPACE_STATUS_ACTIVE",
+      "view": {
+        "namespace": {
+          "incarnation": "1",
+          "namespace": "transactional-aggregate",
+          "tenant": "examples"
+        },
+        "stateSchema": "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+        "version": {
+          "data": "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAABMAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+          "encoding": "base64"
+        }
+      }
+    },
+    "rejectionAttemptId": "1",
+    "rejectionBrokerMessages": 7,
+    "rejectionBusinessKeyVersionUnchanged": true,
+    "rejectionCommandId": "41fa0e342077541109c07ac839251c012b7db5e524ab812011cdd38a5ca77871",
+    "rejectionFingerprintSha256": "33822fb2607ab1a046f63c78311ea77afd333744b222fad7ae5049266e6e96d3",
+    "rejectionNamespace": {
+      "commandCount": "8",
+      "encodedStateBytes": "75",
+      "engineProfile": "protected-redb-immediate-ext4-v1",
+      "engineProfileDigest": "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+      "generation": "17",
+      "namespacePolicyDigest": "sha256:db5438882d26545ab0238153a041081726bbaf7d91a9dc3b71b8b4223d0a1c26",
+      "pendingEffectCount": "0",
+      "quota": {
+        "effectBytes": "8388608",
+        "effectRows": "4096",
+        "payloadBytes": "8388608",
+        "recoveryBytes": "1048576",
+        "resultBytes": "8388608",
+        "resultRows": "4096",
+        "stateBytes": "8388608",
+        "stateKeys": "4096"
+      },
+      "retainedFormats": [],
+      "status": "NAMESPACE_STATUS_ACTIVE",
+      "view": {
+        "namespace": {
+          "incarnation": "1",
+          "namespace": "transactional-aggregate",
+          "tenant": "examples"
+        },
+        "stateSchema": "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+        "version": {
+          "data": "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAABEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+          "encoding": "base64"
+        }
+      }
+    },
+    "rejectionOutcome": "rejected",
+    "rustCommandProbeBinarySha256": "sha256:d473e15351faccc7489a8cb8f6bba84cf421f992303110afe0c044e0d83250fb",
+    "rustCommandProbeSourceSha256": "sha256:60722399dc536b25b3fc44753f9634253014256f573beb5f513790c045a85fff",
+    "rustDirectCommand": {
+      "attempt-id": "1",
+      "command-id": "7b68e936715136808ee1f2075a704bcdd2f67902d664f4bc9ce81e62733a1f24",
+      "disposition": "committed",
+      "effect-ids": [
+        "6cc8a069bd4710ac7aa47d02380c63ab577db5d7787877a0b5e0b083455796d5"
+      ]
+    },
+    "rustDirectEffectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "rustLookups": 2,
+    "rustRejectionProbeBinarySha256": "sha256:97bef26455644302dd888dc6751ea08cfacc7727d4720bffc40883da74e70102",
+    "rustRejectionProbeSourceSha256": "sha256:75e29de496d46e797dfcd6df4e112193ce0238967cf47f5a2a4a3ae4d7d012aa",
+    "sdkTestSha256": "sha256:77f2c05fedc9a25f435d3d52f0f05d925766f8da2a8b4c86ca61821eda13fabc",
+    "syntheticArchiveGitCommit": "631cf036f8c78f79a5be2a1c419dca074c2fedae",
+    "testSignerSha256": "sha256:1334016e2656141cabec596856d9c0bf02b93f5e34696d33390ffd92837c2f23",
+    "typescriptClientFixCompiledSha256": "sha256:972feda47735e288e6d81b5603be64de775c3941e92739a9b1cdf2feb48233f0",
+    "typescriptClientFixSourceSha256": "sha256:363153ab2e8f29338b37e3f7f2f46f60c6b307b5923db2b1d77887129c19f6de",
+    "typescriptCommandProbeSourceSha256": "sha256:b28daf5f674ab7d8d16694b9d9cf806147f5a9f5d920f7debbc10519dd6270c6",
+    "typescriptDirectCommand": {
+      "attempt-id": "1",
+      "command-id": "ca03c8ff0fd2135d7e3b20e03cd6194ffbd81af06addd51fa14dc654716b35ab",
+      "disposition": "committed",
+      "effect-ids": [
+        "8a6664d65e283b5a9d4aef1f738e2df5066ea1db22d3be4d8aa4b8d2664a0d00"
+      ]
+    },
+    "typescriptDirectEffectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "typescriptFinalBrokerMessages": 3,
+    "typescriptFinalNamespace": {
+      "commandCount": "3",
+      "encodedStateBytes": "75",
+      "engineProfile": "protected-redb-immediate-ext4-v1",
+      "engineProfileDigest": "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+      "generation": "7",
+      "namespacePolicyDigest": "sha256:db5438882d26545ab0238153a041081726bbaf7d91a9dc3b71b8b4223d0a1c26",
+      "pendingEffectCount": "0",
+      "quota": {
+        "effectBytes": "8388608",
+        "effectRows": "4096",
+        "payloadBytes": "8388608",
+        "recoveryBytes": "1048576",
+        "resultBytes": "8388608",
+        "resultRows": "4096",
+        "stateBytes": "8388608",
+        "stateKeys": "4096"
+      },
+      "retainedFormats": [],
+      "status": "NAMESPACE_STATUS_ACTIVE",
+      "view": {
+        "namespace": {
+          "incarnation": "1",
+          "namespace": "transactional-aggregate",
+          "tenant": "examples"
+        },
+        "stateSchema": "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+        "version": {
+          "data": "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAAAcAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+          "encoding": "base64"
+        }
+      }
+    },
+    "typescriptLaterEffectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "typescriptLookups": 2,
+    "typescriptProbeSha256": "sha256:204d4b2e462f9f4a1426aae5be601a2929f6c2839a145b404567764261945dc3",
+    "typescriptRecoveryBrokerMessages": 9,
+    "typescriptRecoveryBusinessKeyVersionUnchanged": true,
+    "typescriptRecoveryNamespace": {
+      "commandCount": "11",
+      "encodedStateBytes": "75",
+      "engineProfile": "protected-redb-immediate-ext4-v1",
+      "engineProfileDigest": "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+      "generation": "23",
+      "namespacePolicyDigest": "sha256:db5438882d26545ab0238153a041081726bbaf7d91a9dc3b71b8b4223d0a1c26",
+      "pendingEffectCount": "0",
+      "quota": {
+        "effectBytes": "8388608",
+        "effectRows": "4096",
+        "payloadBytes": "8388608",
+        "recoveryBytes": "1048576",
+        "resultBytes": "8388608",
+        "resultRows": "4096",
+        "stateBytes": "8388608",
+        "stateKeys": "4096"
+      },
+      "retainedFormats": [],
+      "status": "NAMESPACE_STATUS_ACTIVE",
+      "view": {
+        "namespace": {
+          "incarnation": "1",
+          "namespace": "transactional-aggregate",
+          "tenant": "examples"
+        },
+        "stateSchema": "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+        "version": {
+          "data": "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAABcAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+          "encoding": "base64"
+        }
+      }
+    },
+    "typescriptRejectionAttemptId": "1",
+    "typescriptRejectionBrokerMessages": 8,
+    "typescriptRejectionBusinessKeyVersionUnchanged": true,
+    "typescriptRejectionCommandId": "8aa11c4e83a28d23ebb4ba013d98730f5fc2df64cbe817825feb17efc9a87f4e",
+    "typescriptRejectionFingerprintSha256": "3c17942e444ab7e2631755916fdc939c914adb7605af06c1021f5190de8a3c08",
+    "typescriptRejectionNamespace": {
+      "commandCount": "10",
+      "encodedStateBytes": "75",
+      "engineProfile": "protected-redb-immediate-ext4-v1",
+      "engineProfileDigest": "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+      "generation": "21",
+      "namespacePolicyDigest": "sha256:db5438882d26545ab0238153a041081726bbaf7d91a9dc3b71b8b4223d0a1c26",
+      "pendingEffectCount": "0",
+      "quota": {
+        "effectBytes": "8388608",
+        "effectRows": "4096",
+        "payloadBytes": "8388608",
+        "recoveryBytes": "1048576",
+        "resultBytes": "8388608",
+        "resultRows": "4096",
+        "stateBytes": "8388608",
+        "stateKeys": "4096"
+      },
+      "retainedFormats": [],
+      "status": "NAMESPACE_STATUS_ACTIVE",
+      "view": {
+        "namespace": {
+          "incarnation": "1",
+          "namespace": "transactional-aggregate",
+          "tenant": "examples"
+        },
+        "stateSchema": "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+        "version": {
+          "data": "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAABUAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+          "encoding": "base64"
+        }
+      }
+    },
+    "typescriptRejectionOutcome": "rejected",
+    "typescriptRejectionProbeSourceSha256": "sha256:b35c931279a3a0afb8a78b1b7cf5dd6cfccb54edd59063a64163ee33686e7765",
+    "verifiedMergeSourceBlobs": 13749
+  },
+  "nodeShutdown": {
+    "processId": 178962,
+    "reaped": true,
+    "record": {
+      "schemaVersion": "latent.standalone.status.v1",
+      "event": "stopped",
+      "clean": true,
+      "report": {
+        "audit": {
+          "workerJoined": true,
+          "queuedOperations": 0,
+          "queryOwners": 0,
+          "queryBytes": 0,
+          "pendingAttempts": 0,
+          "reservedRecords": 0,
+          "stageBytes": 0,
+          "recoveryPending": false,
+          "unknownOutcomes": 0,
+          "previousSessionLossUnknown": true
+        },
+        "rollouts": {
+          "workerJoined": true,
+          "workerLive": false,
+          "queuedCommands": 0,
+          "activeCommands": 0,
+          "retainedRequestBytes": 0,
+          "responseOwners": 0,
+          "responseBytes": 0,
+          "failed": false,
+          "canary": {
+            "retainedWindows": 0,
+            "retainedSamples": 0,
+            "liveSamples": 0,
+            "snapshotOwners": 0
+          }
+        },
+        "policies": {
+          "workCompleted": true,
+          "activeJobs": 0,
+          "retainedReadOwners": 0
+        },
+        "providers": {
+          "clean": true,
+          "controlOwners": 0,
+          "connections": 0,
+          "pendingRequests": 0,
+          "runningRequests": 0,
+          "workers": 0,
+          "cleanupJobs": 0,
+          "failedCleanup": 0,
+          "sessions": 0,
+          "handles": 0,
+          "calls": 0,
+          "results": 0,
+          "ioCalls": 0,
+          "ioRetainedBytes": 0,
+          "blobStages": 0,
+          "blobHandles": 0,
+          "blobWork": 0,
+          "secretGenerations": 0,
+          "secretReferences": 0,
+          "streamOwners": 0,
+          "streamConnections": 0,
+          "streamPendingOperations": 0,
+          "streamRetainedChunks": 0,
+          "streamMaintenanceOwners": 0
+        },
+        "effects": {
+          "clean": true,
+          "physicallyRetired": true,
+          "schedulingOwnerRetired": true,
+          "workerThreadsJoined": 3,
+          "workerThreadsRemaining": 0,
+          "snapshot": {
+            "durable": {
+              "pending": 0,
+              "active": 0,
+              "acknowledged": 10,
+              "known_failed": 0,
+              "uncertain": 0,
+              "retry_scheduled": 0,
+              "blocked": 0,
+              "expired": 0,
+              "dead_lettered": 0,
+              "payload_bytes": 0,
+              "oldest_unresolved_millis": null
+            },
+            "countsObservedAtMillis": 1794185262529,
+            "queued": 0,
+            "activeJobs": 0,
+            "retainedAttemptBytes": 0,
+            "liveWorkers": 0,
+            "acceptedEffects": 0,
+            "liveTenants": 0,
+            "claims": 10,
+            "physicalOwners": 0,
+            "commandOwners": 0,
+            "commandClockFloor": 1794185259713,
+            "quarantinedPhysicalOwners": 0,
+            "paused": false,
+            "control": {
+              "generation": {
+                "ownerEpoch": 4,
+                "revision": 2
+              },
+              "pending": false,
+              "restoreReviewRequired": false
+            },
+            "admissionClosed": true,
+            "quarantined": false,
+            "failure": null
+          }
+        },
+        "state": {
+          "clean": true,
+          "quarantined": false,
+          "storePhysicallyRetired": true,
+          "nativePhysicallyRetired": true,
+          "liveStorageWorkers": 0,
+          "liveStorageOwners": 0,
+          "queuedStorageRetirements": 0,
+          "acceptedStorageJobs": 0,
+          "storageRetainedBytes": 0,
+          "ordinaryNativeReservations": 0,
+          "recoveryNativeReservations": 0,
+          "ordinaryNativeBytes": 0,
+          "recoveryNativeBytes": 0,
+          "namespaceOwners": 0
+        },
+        "http": {
+          "listenerAlive": false,
+          "ownerAlive": false,
+          "joined": true,
+          "failed": false,
+          "accepting": false,
+          "maximumConnections": 16,
+          "connections": 0,
+          "maximumExchanges": 4,
+          "exchanges": 0,
+          "maximumBufferBytes": 50331648,
+          "reservedBufferBytes": 0,
+          "assets": {
+            "maximumReads": 8,
+            "activeReads": 0,
+            "maximumBufferBytes": 33554432,
+            "retainedBufferBytes": 0,
+            "cacheEntries": 0,
+            "cacheHits": 0,
+            "cacheMisses": 0,
+            "corruptions": 0,
+            "capacityRejections": 0
+          },
+          "responseCacheEntries": 0,
+          "responseCacheOwners": 0,
+          "responseCacheReservedBytes": 0
+        },
+        "clean": true,
+        "activeConnections": 0,
+        "activeRpcs": 0,
+        "activeControlJobs": 0,
+        "activeActivations": 0,
+        "cancellationRegistrations": 0,
+        "observerCorrelations": 0,
+        "quotaReservations": 0,
+        "queuedReservations": 0,
+        "reservedCpuFuel": 0,
+        "reservedMemoryBytes": 0,
+        "activeLeases": 0,
+        "queuedActivations": 0,
+        "quarantinedCells": 0,
+        "activeBackendInvocations": 0,
+        "instanceReservations": 0,
+        "preparingComponents": 0,
+        "preparingSourceBytes": 0,
+        "preparingMetadataBytes": 0,
+        "liveStores": 0,
+        "liveHostStates": 0,
+        "liveInstances": 0,
+        "liveTemporaryBuffers": 0,
+        "liveCancellationProbes": 0,
+        "telemetryRetainedEntries": 854,
+        "telemetryFlushed": true,
+        "epochHelperJoined": true,
+        "compiler": {
+          "maximum_jobs": 1,
+          "maximum_workers": 1,
+          "maximum_queued_jobs": 0,
+          "maximum_waiters": 6,
+          "maximum_waiters_per_job": 6,
+          "maximum_ready_preparations": 6,
+          "maximum_document_bytes": 5308416,
+          "assigned_jobs": 0,
+          "running_jobs": 0,
+          "queued_jobs": 0,
+          "waiting_callers": 0,
+          "ready_preparations": 0,
+          "ready_metadata_bytes": 0,
+          "ready_compiled_image_bytes": 0,
+          "reserved_document_bytes": 0,
+          "workers_live": 0,
+          "workers_quiescent": 1,
+          "workers_joined": 1,
+          "accepting": false,
+          "failed": false,
+          "jobs_started": 1,
+          "jobs_completed": 1,
+          "jobs_failed": 0,
+          "jobs_abandoned": 0,
+          "coalesced_waiters": 0,
+          "queue_rejected": 0,
+          "waiter_rejected": 0,
+          "ready_rejected": 0,
+          "cancelled_waiters": 0,
+          "discarded_results": 0
+        },
+        "cleanup": {
+          "capacity": 7,
+          "accepting": false,
+          "driverAlive": false,
+          "driverJoined": true,
+          "reserved": 0,
+          "queued": 0,
+          "running": 0,
+          "handoffs": 0,
+          "completed": 0,
+          "timedOut": 0,
+          "panicked": 0,
+          "fallbacks": 0,
+          "failed": false
+        }
+      }
+    }
+  },
+  "logSha256": {
+    "goRejectionTest": "535ffc06712c7efd4e4588349a36ad06ffabb22abd392da3c5319caa229a2f6c",
+    "goRejectionRecovery": "36c9ef95075a26454a26ffea93e9eb53664b0bfed3777aa2ae6681d56ce1f82d",
+    "experiment": "8457552e291d33e25c93380634ea58c5f1cfcdbdee6d90d3cd01367f0514be14"
+  },
+  "limitations": [
+    "Combined unmerged node source and separately built SDK candidates with a disposable fixture signer; not hosted CI or an installed distribution.",
+    "The original rejection response was received; this does not establish recovery after a lost response.",
+    "Unchanged state evidence covers the tested business key."
+  ]
+}

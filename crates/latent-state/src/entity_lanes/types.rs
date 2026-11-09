@@ -126,8 +126,9 @@ pub enum EntityCallKind {
     SynchronousTransactionalChild,
 }
 
-/// The host supplies canonical caller/operation/command/attempt identity bytes.
-/// These bytes are internal, bounded and never projected by errors or Debug.
+/// The host supplies an internal bounded identity for this original invocation.
+/// Durable command identities and replay remain the commit owner's authority;
+/// the local lane identity is never projected by errors or Debug.
 pub struct EntityLaneRequest<T> {
     pub(super) scope: EntityScope,
     pub(super) command_identity: Vec<u8>,

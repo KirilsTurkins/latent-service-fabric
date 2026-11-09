@@ -387,13 +387,16 @@ class StreamOperator:
             "bindingId": binding_id, "policyId": policy_id, "clientConfigurationDigest": config_digest,
         }
         with state.lock(root, "stream-operator.lock"):
-            if (root / "stream-operator-owner.json").exists():
+            existing = (root / "stream-operator-owner.json").exists()
+            if existing:
                 require(state.load(root, "stream-operator-owner.json") == self.owner,
                         "stream-operator-owner-changed")
             else:
                 require(not (root / "operations.json").exists()
                         and not (root / "stream-policy-receipts.json").exists(),
                         "stream-operator-state-not-owned")
+            client.pin_config(config_digest)
+            if not existing:
                 state.atomic(root, "stream-operator-owner.json", self.owner)
         self.journal = journal.Journal(root, node, tenant, settle=self._settle)
 
@@ -426,6 +429,7 @@ class StreamOperator:
         records = self._records()
         key = kind + ":" + record_id
         observed = self.client.call("policy", "--kind", kind, "get", "--id", record_id)
+        self._owned()
         require(observed.get("outcomeKnown") is True and observed.get("category") in {"success", "not-found"},
                 "stream-operator-policy-observation-unavailable")
         if key in records:
@@ -596,6 +600,7 @@ class StreamOperator:
             old, old_token = _client_adoption_document(original, self.owner["tenant"])
             new, new_token = _client_adoption_document(candidate, self.owner["tenant"])
             require(old == new and old_token != new_token, "stream-operator-client-token-only-replacement")
+            replacement.pin_config(digest(candidate))
             records = self._records()
             for kind, field in (("provider-binding", "bindingId"), ("policy", "policyId")):
                 key = kind + ":" + self.owner[field]

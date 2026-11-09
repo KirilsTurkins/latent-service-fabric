@@ -1,0 +1,61 @@
+{
+  "description": "Rust future drop before polling and after dispatch, followed by original rejection recovery",
+  "qualification": "Local normal node built from combined unmerged source, separately built client candidate and disposable signer; not hosted or distribution qualification.",
+  "harnessSha256": "b81cfe6ec6d6701125fb86e1428038699b496ee93e2262e9b1ea5d0083f6bd22",
+  "clientLogSha256": "c29d866e1efc3757b12beb0b34233912736315dc0db3eececbdb7ba5b5678087",
+  "nodeSha256": "sha256:48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "rustSourceSha256": "sha256:0b3708538ba2ad9792a3430eb3d698eeb1563a8659ee4ebc5513ce152ec36ffc",
+  "rustBinarySha256": "sha256:0dbe78ddfb7c6f3ccbbdce76eebf3501171d691e399069d0ebf3b61e2f4b046d",
+  "proxySourceSha256": "sha256:9fd5ba5c7bace82acb2eca31ef8c52a987bcd6e22dd6c6085ef2136f32b22d2a",
+  "prePoll": "The original call future was dropped before polling. The subsequent dispatched call produced the sole observed request stream.",
+  "postDispatch": {
+    "dropAfterDurableObservation": true,
+    "originalCommandId": "41365d7cc071cc2da33c05235183d3b6197c57acc0e152b23efd8bd053c98bdc",
+    "originalAttemptId": "1",
+    "fingerprintSha256": "847593c834d75f284974a3c0714d2248f585c51b3770ef6504aa3fe7f3be8aad",
+    "freshClientRecoveredOriginalRejection": true,
+    "laterBusinessCount": 2,
+    "laterBrokerMessages": 2,
+    "durableCommandCount": "3",
+    "laterEffectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED"
+  },
+  "proxy": {
+    "extraConnections": 0,
+    "failureCategory": "EOFError",
+    "requestStreams": 1
+  },
+  "controlledCrash": {
+    "exitStatus": -9,
+    "processId": 256361,
+    "reaped": true,
+    "cleanShutdownObserved": false,
+    "nativeRetirementReportObserved": false
+  },
+  "postCrashClientRecoveries": 6,
+  "postCrashBusinessCount": 7,
+  "postCrashBrokerMessages": 7,
+  "finalShutdown": {
+    "reaped": true,
+    "clean": true,
+    "effects": {
+      "pending": 0,
+      "active": 0,
+      "acknowledged": 7,
+      "known_failed": 0,
+      "uncertain": 0,
+      "retry_scheduled": 0,
+      "blocked": 0,
+      "expired": 0,
+      "dead_lettered": 0,
+      "payload_bytes": 0,
+      "oldest_unresolved_millis": null
+    }
+  },
+  "limitations": [
+    "Dropping a future did not return an abort receipt and is not proof of remote abort.",
+    "The post-dispatch drop occurred after durable business rejection with its response withheld, not during commit or after successful commitment.",
+    "The proxy observed one request stream and no extra queued connections; it is not a universal retry proof.",
+    "The fixture deliberately made a separate changed-input conflict probe and a distinct later business command; neither was an automatic retry.",
+    "Guest execution count was not independently measured. All later effects were acknowledged before the controlled crash."
+  ]
+}

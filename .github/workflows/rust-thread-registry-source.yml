@@ -1,0 +1,186 @@
+name: Rust logical thread registry source controls
+
+on:
+  push:
+    branches: ['fix/rust-thread-reuse-20261109', 'fix/rust-pool-worker-reuse-20261109', 'fix/rust-mutex-reused-index-20261109']
+    paths:
+      - '.github/workflows/rust-thread-registry-source.yml'
+      - 'sdk/rust-standard-runtime/thread_registry.rs'
+      - 'sdk/rust-standard-runtime/thread_runtime.rs'
+      - 'sdk/rust-standard-runtime/tests/thread_registry_native.rs'
+      - 'sdk/rust-standard-runtime/executor_*.rs'
+      - 'sdk/rust-standard-runtime/tests/executor_*_native.rs'
+      - 'sdk/rust-standard-runtime/mutex.rs'
+      - 'sdk/rust-standard-runtime/rwlock.rs'
+      - 'sdk/rust-standard-runtime/condvar.rs'
+      - 'sdk/rust-standard-runtime/parker.rs'
+      - 'sdk/rust-standard-runtime/once.rs'
+      - 'sdk/rust-standard-runtime/thread_wait.rs'
+      - 'sdk/rust-standard-runtime/tests/thread_sync_native.rs'
+      - 'sdk/rust-standard-runtime/tests/mutex_reuse_cases.rs.inc'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-thread-registry-source-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  registry-source:
+    name: Execute bounded registry source-port controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - name: Compile and execute exact registry controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(rustc --version)" = 'rustc 1.97.1 (8bab26f4f 2026-07-14)'
+          rustc --edition=2024 --test sdk/rust-standard-runtime/tests/thread_registry_native.rs -o "$RUNNER_TEMP/rust-thread-registry-source"
+          "$RUNNER_TEMP/rust-thread-registry-source" --list | tee "$RUNNER_TEMP/rust-thread-registry-list.txt"
+          python3 - "$RUNNER_TEMP/rust-thread-registry-list.txt" <<'PY'
+          import pathlib, sys
+          lines = pathlib.Path(sys.argv[1]).read_text().splitlines()
+          actual = [line.removesuffix(': test') for line in lines if line.endswith(': test')]
+          expected = {
+              'finite_reservations_cannot_reuse_a_stale_handle_or_rollback_accepted_work',
+              'admission_refuses_root_alias_and_duplicate_or_malformed_real_identities',
+              'actual_entry_identity_and_threadinit_tls_and_reap_boundaries_are_ordered',
+              'joining_requires_reap_and_exact_claim_before_packet_can_be_consumed',
+              'real_join_dependencies_refuse_self_cycles_and_tls_exit_with_unfinished_join',
+              'detach_keeps_real_child_and_original_owner_until_tls_frames_and_canonical_reap',
+              'runnable_snapshot_owns_no_borrow_and_does_not_equal_completion_or_empty_registry',
+              'physical_reaper_claim_remains_exclusive_until_actual_free_and_settlement_return',
+              'final_root_close_removes_only_reaped_tombstones_after_all_user_frames',
+              'reaped_unjoined_child_does_not_reserve_recycled_canonical_or_context_identity',
+              'reaping_keeps_old_join_pending_while_freed_context_and_index_are_reused',
+              'finished_unjoined_child_keeps_join_identity_while_its_canonical_slot_is_reused',
+              'cycle_detection_still_follows_live_handles_after_old_index_is_reused',
+              'canonical_reuse_refuses_admitted_ready_and_running_children',
+          }
+          assert len(actual) == len(set(actual)) == len(expected) == 14 and set(actual) == expected
+          PY
+          "$RUNNER_TEMP/rust-thread-registry-source" --test-threads=1 | tee "$RUNNER_TEMP/rust-thread-registry-result.txt"
+          grep -Eq '^test result: ok[.] 14 passed; 0 failed; 0 ignored;' "$RUNNER_TEMP/rust-thread-registry-result.txt"
+      - name: Compile and execute exact pool worker identity controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          for suite in executor_lifecycle_native executor_worker_native executor_control_native executor_root_native; do
+            timeout 60s rustc --edition=2024 --test "sdk/rust-standard-runtime/tests/$suite.rs" -o "$RUNNER_TEMP/$suite"
+          done
+          python3 - "$RUNNER_TEMP" <<'PY'
+          import pathlib, re, subprocess, sys
+          root = pathlib.Path(sys.argv[1])
+          expected = {'executor_lifecycle_native': ['actual_worker_start_and_complete_provision_are_required_before_acceptance', 'closing_worker_tls_submission_requires_actual_successor_and_old_close_cannot_kill_it', 'fallible_admission_reservation_pins_worker_without_accepting_or_losing_work', 'finite_close_round_limit_refuses_before_an_unclosable_successor_or_future_is_accepted', 'independent_pool_state_and_empty_queue_do_not_confuse_unfinished_future', 'logical_empty_still_waits_for_real_wake_drop_tls_and_frame_boundaries', 'partially_started_generation_retains_started_worker_until_its_real_exit', 'successor_reuses_index_only_after_old_worker_tls_drains_without_retiring_its_record', 'wake_requeue_is_reserved_before_admission_and_late_generation_never_recreates_task'], 'executor_worker_native': ['recycled_canonical_index_retains_distinct_worker_keys_and_arc_leases', 'worker_lease_frame_callback_keeps_each_real_child_identity_after_return_to_root', 'worker_lease_refuses_root_ready_foreign_context_stale_executor_and_duplicate_transfer', 'worker_lease_retains_actual_arc_until_separate_tls_and_frame_notifications'], 'executor_control_native': ['actual_bridge_carries_worker_keys_through_recycled_canonical_index_and_arc_release', 'old_and_new_worker_callbacks_are_keyed_to_their_own_generations', 'three_reused_generations_retire_only_their_exact_worker_keys'], 'executor_root_native': ['captured_pool_and_control_retire_before_executor_completion_notification', 'last_executor_retirement_notifies_the_second_drain_check', 'pending_executor_keeps_its_owner_and_does_not_invent_a_notification', 'release_callback_successor_requires_a_fresh_scan_and_keeps_its_owner', 'retirement_invalidates_a_previously_quiescent_stamp']}
+          for suite, cases in expected.items():
+              listing = subprocess.run([str(root / suite), "--list"], capture_output=True, timeout=60, check=True)
+              assert len(listing.stdout) <= 1024 * 1024 and len(listing.stderr) <= 1024 * 1024
+              observed = [line.removesuffix(": test") for line in listing.stdout.decode().splitlines() if line.endswith(": test")]
+              assert len(observed) == len(set(observed)) == len(cases) and set(observed) == set(cases), suite
+              result = subprocess.run([str(root / suite), "--test-threads=1"], capture_output=True, timeout=60, check=True)
+              assert len(result.stdout) <= 1024 * 1024 and len(result.stderr) <= 1024 * 1024
+              passed = re.findall(rb"^test ([^\r\n]+) \.\.\. ok$", result.stdout, re.M)
+              assert len(passed) == len(cases) and {name.decode() for name in passed} == set(cases), suite
+              assert f"test result: ok. {len(cases)} passed; 0 failed; 0 ignored;".encode() in result.stdout, suite
+              print(result.stdout.decode(), end="")
+          PY
+      - name: Execute reused-index mutex and rwlock controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - "$RUNNER_TEMP" <<'PY'
+          import hashlib
+          import pathlib
+          import re
+          import subprocess
+          import sys
+          import tempfile
+
+          root = pathlib.Path.cwd()
+          base = pathlib.Path("sdk/rust-standard-runtime")
+          files = ("mutex.rs", "rwlock.rs", "condvar.rs", "parker.rs", "once.rs",
+                   "thread_wait.rs", "tests/thread_sync_native.rs", "tests/mutex_reuse_cases.rs.inc")
+          before = {}
+          for name in files:
+              path = root / base / name
+              assert path.is_file() and not path.is_symlink(), name
+              value = path.read_bytes()
+              assert len(value) <= 65536 and b"\r" not in value, name
+              before[name] = value
+          source = before["tests/thread_sync_native.rs"]
+          assert hashlib.sha256(source).hexdigest() == "db61a651ef33931b90d6c2af44abee352936a1cf3a059c637bef13c14dcef67a"
+          added = before["tests/mutex_reuse_cases.rs.inc"]
+          original_cases = re.findall(rb"(?m)^#\[test\]\nfn ([A-Za-z0-9_]+)\(", source)
+          new_cases = re.findall(rb"(?m)^#\[test\]\nfn ([A-Za-z0-9_]+)\(", added)
+          expected_new = [b"reused_index_after_leaked_mutex_guard_waits_without_fabricating_ownership",
+                          b"reused_index_after_leaked_writer_guard_keeps_rwlock_gate_closed",
+                          b"reference_safe_forgotten_guards_keep_locks_held_after_thread_exit"]
+          assert len(original_cases) == len(set(original_cases)) == 22
+          assert new_cases == expected_new
+          current = before["mutex.rs"]
+          comment = b"""        // A canonical index may be reused after an earlier thread leaked its
+                  // guard. A matching number alone cannot establish recursive ownership.
+                  // Waiting also preserves the allowed deadlock behavior for true recursion.
+          """
+          old_guard = b'        assert_ne!(self.owner.get(), Some(current), "recursive logical mutex lock");\n'
+          assert current.count(comment) == 1 and old_guard not in current
+          old = current.replace(comment, old_guard)
+          assert hashlib.sha256(old).hexdigest() == "f644c9d6356c12e9467354267b34fd66353dd9c659b812b849a391545c690090"
+
+          with tempfile.TemporaryDirectory(prefix="rust-mutex-reuse-", dir=sys.argv[1]) as temporary:
+              temporary = pathlib.Path(temporary)
+              executables = {}
+              for variant in ("old", "current"):
+                  target = temporary / variant / base
+                  for name in files[:-1]:
+                      value = old if variant == "old" and name == "mutex.rs" else before[name]
+                      if name == "tests/thread_sync_native.rs":
+                          value += added
+                      path = target / name
+                      path.parent.mkdir(parents=True, exist_ok=True)
+                      path.write_bytes(value)
+                  executable = temporary / variant / "sync-controls"
+                  command = ["rustc", "--edition=2024", "--test", str(target / "tests/thread_sync_native.rs"), "-o", str(executable)]
+                  compiled = subprocess.run(command, cwd=temporary, capture_output=True, timeout=60)
+                  assert len(compiled.stdout) <= 1024 * 1024 and len(compiled.stderr) <= 1024 * 1024
+                  if compiled.returncode:
+                      print(compiled.stderr.decode(errors="replace"), file=sys.stderr)
+                      raise AssertionError("sync source-control compilation failed: " + variant)
+                  executables[variant] = executable
+              for case in expected_new[:2]:
+                  result = subprocess.run([str(executables["old"]), "--exact", case.decode(), "--nocapture"],
+                                          cwd=temporary, capture_output=True, timeout=20)
+                  assert len(result.stdout) + len(result.stderr) <= 1024 * 1024
+                  combined = result.stdout + result.stderr
+                  assert result.returncode != 0 and b"recursive logical mutex lock" in combined
+                  assert b"must reach the real" in combined and b"FAILED" in combined
+              listing = subprocess.run([str(executables["current"]), "--list"], cwd=temporary,
+                                       capture_output=True, timeout=20, check=True)
+              assert len(listing.stdout) + len(listing.stderr) <= 1024 * 1024
+              actual = [line.removesuffix(b": test") for line in listing.stdout.splitlines() if line.endswith(b": test")]
+              expected = original_cases + expected_new
+              assert len(actual) == len(set(actual)) == len(expected) == 25 and set(actual) == set(expected)
+              result = subprocess.run([str(executables["current"]), "--test-threads=1"], cwd=temporary,
+                                      capture_output=True, timeout=60, check=True)
+              assert len(result.stdout) + len(result.stderr) <= 1024 * 1024
+              passed = re.findall(rb"(?m)^test ([^\r\n]+) \.\.\. ok$", result.stdout)
+              assert len(passed) == 25 and set(passed) == set(expected)
+              assert b"test result: ok. 25 passed; 0 failed; 0 ignored;" in result.stdout
+              guard = temporary / "guard_send.rs"
+              guard.write_text("fn require_send<T: Send>() {}\nfn main() { require_send::<std::sync::MutexGuard<'static, ()>>(); require_send::<std::sync::RwLockWriteGuard<'static, ()>>(); }\n")
+              denied = subprocess.run(["rustc", "--edition=2024", str(guard), "-o", str(temporary / "guard")],
+                                      cwd=temporary, capture_output=True, timeout=20)
+              assert denied.returncode != 0 and len(denied.stderr) <= 1024 * 1024
+              assert denied.stderr.count(b"cannot be sent between threads safely") >= 2
+              assert b"MutexGuard" in denied.stderr and b"RwLockWriteGuard" in denied.stderr
+              print("two old reused-index failures; 25 source-port controls passed; MutexGuard and RwLockWriteGuard are !Send")
+          for name in files:
+              assert (root / base / name).read_bytes() == before[name], name
+          PY

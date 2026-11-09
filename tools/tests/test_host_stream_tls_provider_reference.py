@@ -34,10 +34,15 @@ class BoundedTlsProviderReference(unittest.TestCase):
             "tests::sockets::abort_both_is_available_after_the_send_half_was_closed",
             "tests::sockets::abort_both_unpolled_reserves_control_and_blocks_new_send_without_dispatch",
             "tests::sockets::abort_both_cancels_an_accepted_send_shutdown_owner",
+            "tests::sockets::dropped_write_before_dispatch_keeps_the_same_connection_usable",
+            "tests::sockets::dropped_write_after_synthetic_no_progress_keeps_the_same_connection_usable",
+            "tests::sockets::dropped_write_during_synthetic_audit_wait_keeps_original_owners_and_never_replays",
+            "tests::sockets::synthetic_audit_failure_reports_the_accepted_prefix_once_and_fences_reuse",
             "tests::tls::abort::abort_both_wakes_tls_waiters_and_retains_held_write",
             "tests::tls::abort::abort_both_unpolled_tls_control_releases_slot_without_dispatch",
             "tests::tls::abort::abort_both_after_tls_peer_close_notify_retires_original_owner",
             "tests::tls::abort::abort_both_cancels_tls_ciphertext_flush_under_real_backpressure",
+            "tests::tls::abort::dropped_write_with_synthetically_held_tls_ciphertext_retains_original_owners",
         }
         self.assertTrue(required <= reference.ABORT_CASES <= reference.REQUIRED_CASES)
         for missing in reference.ABORT_CASES:

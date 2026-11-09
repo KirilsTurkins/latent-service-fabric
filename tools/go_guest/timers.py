@@ -48,7 +48,11 @@ def runtime_sources(goroot, sources, sdk):
 
 
 def async_source(text, sdk):
-    text = replace_once(text, '\tyielding    []chan unit', '\tyielding    []chan unit\n\ttimerWaits []*lsfTimerWait')
+    fields = ('\tyielding    []chan unit', '\tyieldTail   *lsfYieldWait')
+    if sum(text.count(field) for field in fields) != 1:
+        raise ValueError('go-timer-dispatcher-yield-shape-drift')
+    field = next(field for field in fields if field in text)
+    text = replace_once(text, field, field + '\n\ttimerWaits []*lsfTimerWait')
     text = replace_once(text, '\t\tnil,\n\t\truntime.Pinner{},', '\t\tnil,\n\t\tnil,\n\t\truntime.Pinner{},')
     text = replace_once(text, '\t\t\tcase STATUS_RETURNED:\n\t\t\t\twaitableJoin(event1, 0)',
         '\t\t\tcase STATUS_RETURNED:\n\t\t\t\tif lsfHandleTimerEvent(event1) { break }\n\t\t\t\twaitableJoin(event1, 0)')

@@ -27,10 +27,10 @@ mod executor_control {
         pub(crate) fn new() -> Self {
             Self(0)
         }
-        pub(crate) fn worker_tls_drained(&self, _: u32) -> Result<(), ()> {
+        pub(crate) fn worker_tls_drained(&self, _: u64) -> Result<(), ()> {
             panic!("worker TLS is outside the root notification control")
         }
-        pub(crate) fn worker_frames_exited(&self, _: u32) -> Result<(), ()> {
+        pub(crate) fn worker_frames_exited(&self, _: u64) -> Result<(), ()> {
             panic!("worker frames are outside the root notification control")
         }
     }
@@ -76,7 +76,10 @@ std::thread_local! {
     static RUNTIME: Cell<*mut Runtime> = Cell::new(ptr::null_mut());
     static HOST: RefCell<Host> = RefCell::new(Host::default());
 }
-const ROOT: Token = Token { generation: 41, id: 99 };
+const ROOT: Token = Token {
+    generation: 41,
+    id: 99,
+};
 fn current_task() -> Token {
     ROOT
 }
@@ -84,7 +87,10 @@ fn existing() -> *mut Runtime {
     RUNTIME.get()
 }
 fn ensure_runtime() -> io::Result<()> {
-    assert!(!existing().is_null(), "control requires an installed runtime");
+    assert!(
+        !existing().is_null(),
+        "control requires an installed runtime"
+    );
     Ok(())
 }
 fn completed_queue() -> &'static Completion {
@@ -114,7 +120,10 @@ impl Installed {
         assert!(existing().is_null());
         HOST.with(|host| {
             assert!(host.borrow().owners.is_empty());
-            *host.borrow_mut() = Host { next: ROOT.id, ..Host::default() };
+            *host.borrow_mut() = Host {
+                next: ROOT.id,
+                ..Host::default()
+            };
         });
         let mut runtime = Box::new(Runtime {
             executors: UnsafeCell::new(root::Registry::new()),
@@ -135,7 +144,10 @@ impl Drop for Installed {
         assert!(self.0.executors.get_mut().is_empty());
         assert!(!self.0.completed.prepared.get());
         assert_eq!(owners(), 0);
-        assert_eq!(RUNTIME.replace(ptr::null_mut()), ptr::from_mut(self.0.as_mut()));
+        assert_eq!(
+            RUNTIME.replace(ptr::null_mut()),
+            ptr::from_mut(self.0.as_mut())
+        );
     }
 }
 
@@ -189,7 +201,10 @@ struct PoolState {
     successor: RefCell<Option<Rc<PoolState>>>,
 }
 fn state(progress: Progress) -> Rc<PoolState> {
-    Rc::new(PoolState { progress: Cell::new(progress), successor: RefCell::new(None) })
+    Rc::new(PoolState {
+        progress: Cell::new(progress),
+        successor: RefCell::new(None),
+    })
 }
 struct Pool(Rc<PoolState>);
 impl Drop for Pool {
@@ -205,12 +220,23 @@ fn pool_pointer(state: Rc<PoolState>) -> NonNull<()> {
     NonNull::new(Arc::into_raw(Arc::new(Pool(state))).cast_mut().cast()).unwrap()
 }
 unsafe fn progress(pointer: NonNull<()>) -> Progress {
-    unsafe { &*pointer.cast::<Pool>().as_ptr() }.0.progress.get()
+    unsafe { &*pointer.cast::<Pool>().as_ptr() }
+        .0
+        .progress
+        .get()
 }
 unsafe fn release(pointer: NonNull<()>) {
     let pool = unsafe { Arc::from_raw(pointer.cast::<Pool>().as_ptr()) };
-    assert_eq!(Arc::strong_count(&pool), 1, "actual final retained pool Arc");
-    assert!(HOST.with(|host| host.borrow().owners.values().any(|row| row.0 == Kind::Executor as u32)));
+    assert_eq!(
+        Arc::strong_count(&pool),
+        1,
+        "actual final retained pool Arc"
+    );
+    assert!(HOST.with(|host| host
+        .borrow()
+        .owners
+        .values()
+        .any(|row| row.0 == Kind::Executor as u32)));
     drop(pool);
 }
 fn register_pool(state: Rc<PoolState>) {
@@ -236,9 +262,18 @@ fn last_executor_retirement_notifies_the_second_drain_check() {
     completed_queue().prepare();
     pool.progress.set(Progress::Releasable);
     clear_events();
-    assert!(unsafe { root::progress_all() }.is_none(), "changed snapshot requires a rescan");
-    assert!(completed_queue().take_notification(), "no remaining worker can wake this root");
-    assert_eq!(events(), ["drop-pool", "settle-executor", "notify-completion"]);
+    assert!(
+        unsafe { root::progress_all() }.is_none(),
+        "changed snapshot requires a rescan"
+    );
+    assert!(
+        completed_queue().take_notification(),
+        "no remaining worker can wake this root"
+    );
+    assert_eq!(
+        events(),
+        ["drop-pool", "settle-executor", "notify-completion"]
+    );
     runtime.stable_empty();
 }
 
@@ -270,7 +305,10 @@ fn retirement_invalidates_a_previously_quiescent_stamp() {
     pool.progress.set(Progress::Releasable);
     assert!(unsafe { root::progress_all() }.is_none());
     assert!(completed_queue().take_notification());
-    assert!(!root::unchanged(stamp), "retirement must publish its own transition");
+    assert!(
+        !root::unchanged(stamp),
+        "retirement must publish its own transition"
+    );
     runtime.stable_empty();
 }
 
@@ -287,7 +325,10 @@ fn release_callback_successor_requires_a_fresh_scan_and_keeps_its_owner() {
     assert_eq!(owners(), 1, "successor work is still registered");
     completed_queue().prepare();
     assert!(unsafe { root::progress_all() }.is_none());
-    assert!(!completed_queue().take_notification(), "no repeated wake without progress");
+    assert!(
+        !completed_queue().take_notification(),
+        "no repeated wake without progress"
+    );
     successor.progress.set(Progress::Releasable);
     completed_queue().prepare();
     assert!(unsafe { root::progress_all() }.is_none());
@@ -300,15 +341,29 @@ fn captured_pool_and_control_retire_before_executor_completion_notification() {
     let runtime = Installed::new();
     let serial = root::prepare().unwrap();
     unsafe {
-        root::commit_prepared(serial, pool_pointer(state(Progress::Releasable)),
-            root::CapturedCallbacks { progress: captured_progress, release: captured_release });
+        root::commit_prepared(
+            serial,
+            pool_pointer(state(Progress::Releasable)),
+            root::CapturedCallbacks {
+                progress: captured_progress,
+                release: captured_release,
+            },
+        );
     }
     assert_eq!(owners(), 2, "actual Executor and Control Native owners");
     completed_queue().prepare();
     clear_events();
     assert!(unsafe { root::progress_all() }.is_none());
     assert!(completed_queue().take_notification());
-    assert_eq!(events(), ["drop-pool", "drop-control", "settle-native",
-                         "settle-executor", "notify-completion"]);
+    assert_eq!(
+        events(),
+        [
+            "drop-pool",
+            "drop-control",
+            "settle-native",
+            "settle-executor",
+            "notify-completion"
+        ]
+    );
     runtime.stable_empty();
 }

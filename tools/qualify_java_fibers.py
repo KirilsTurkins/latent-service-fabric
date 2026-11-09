@@ -111,6 +111,55 @@ def timeunit_model_control(compiler: Compiler, output: Path) -> dict:
             "referenceConversionChecks": 1661, "jarDigests": identities}
 
 
+def timer_teardown_projection(source: str) -> str:
+    """Add test-only scheduling hooks to an exact copied Activation source."""
+    points = (
+        ("    private static void finishInvocation() {\n        finishingInvocation = true;\n"
+         "        fencePendingTimerStops();\n", "        TeardownHooks.afterSample();\n"),
+        ("            if (stopPending) {\n", "            TeardownHooks.beforeStopPublication();\n"),
+        ("        var continuation = Option.some(work.token);\n", "        TeardownHooks.beforeAdmission();\n"),
+    )
+    for point, hook in points:
+        if source.count(point) != 1:
+            raise ValueError("Java timer teardown projection source drift")
+        if "if (stopPending)" in point:
+            source = source.replace(point, hook + point, 1)
+        else:
+            source = source.replace(point, point + hook, 1)
+    return source
+
+
+def timer_teardown_source_control(compiler: Compiler, output: Path, classpath: str) -> None:
+    """Host JDK source projections only; not signed guest or physical retirement proof."""
+    fixture = compiler.sdk / "fibers/conformance/compiler/timer-source-control"
+    activation = compiler.sdk / "fibers/dev/latent/guest/runtime/Activation.java"
+    sources = [compiler.sdk / name for name in (
+        "runtime/dev/latent/guest/Option.java", "runtime/dev/latent/guest/Unsigned64.java",
+        "fibers/dev/latent/guest/runtime/HostCalls.java", "fibers/dev/latent/guest/runtime/Monitors.java")]
+    sources += [fixture / name for name in (
+        "dev/latent/generated/Bindings.java", "dev/latent/guest/runtime/TeardownHooks.java",
+        "TimerTeardownProjectionControl.java", "TimerTeardownRaceControl.java",
+        "TimerStopPrepublicationControl.java", "TimerAdmissionRaceControl.java")]
+    inputs = {str(path): digest(read_file(path)) for path in (activation, *sources)}
+    output.mkdir()
+    projected = output / "Activation.java"
+    projected.write_text(timer_teardown_projection(read_file(activation).decode("utf-8")), encoding="utf-8")
+    classes = output / "classes"
+    classes.mkdir()
+    compiler.run("timer-teardown-projection-compile", "javac", "-proc:none", "--release", "25",
+                 "-cp", classpath, "-d", classes, projected, *sources)
+    result = compiler.run("timer-teardown-projection-control", "java", "-Xmx256m", "-cp",
+                          str(classes) + os.pathsep + classpath, "TimerTeardownProjectionControl")
+    expected = ["TIMER_TEARDOWN_CONTROL PASS " + mode for mode in ("race", "exceptional", "clean", "closed-before")]
+    expected += ["TIMER_STOP_PREPUBLICATION PASS retained;no-host-stop"]
+    expected += ["TIMER_ADMISSION_RACE PASS " + mode for mode in ("exceptional", "clean")]
+    expected += ["TIMER_TEARDOWN_PROJECTED PASS cases=7"]
+    if result.strip().splitlines() != expected:
+        raise ValueError("Java timer teardown projection did not complete")
+    if inputs != {str(path): digest(read_file(path)) for path in (activation, *sources)}:
+        raise ValueError("Java timer teardown control inputs changed during execution")
+
+
 def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
     """Verify the actual native/callback pairs and their resumed owner frames."""
     classpath, identities = locked_model_classpath(compiler, include_platform=True)
@@ -161,19 +210,25 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
                      "fibers/dev/latent/guest/runtime/Activation.java", "fibers/dev/latent/guest/runtime/HostCalls.java",
                      "fibers/dev/latent/guest/runtime/Monitors.java",
                      timer_fixture + "dev/latent/generated/Bindings.java", timer_fixture + "TimerReadinessSourceControl.java")
+    timer_sources += (timer_fixture + "ExecutorActivationSettlementControl.java",)
+    timer_sources += tuple(path.relative_to(compiler.sdk).as_posix() for path in
+        sorted((compiler.sdk / "fibers/dev/latent/guest/runtime/concurrent").glob("*.java")))
     compiler.run("timer-readiness-source-compile", "javac", "-proc:none", "--release", "25", "-cp", classpath,
                  "-d", timer_output, *(compiler.sdk / name for name in timer_sources))
     timer = compiler.run("timer-readiness-source-control", "java", "-Xmx256m", "-cp",
                          str(timer_output) + os.pathsep + classpath, "TimerReadinessSourceControl").strip()
     if timer != ("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;"
-                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence"):
+                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence;timer-stop-uncertain-completion-fence;nested-stop-count-guard;timer-finally-return-fence;timer-teardown-admission-fence"):
         raise ValueError("Java timer readiness source control did not complete")
+    timer_teardown_source_control(compiler, output / "timer-teardown-projection", classpath)
+    executor_settlement = executor_activation_settlement_control(compiler, timer_output, classpath)
     return {"status": "actual-locked-classlib-model-passed", "nativeCallbackPairs": 2,
             "pluginOrder": ["runtime", "platform"], "asyncLoweredOwnedPairs": 2,
             "coroutineWrappers": 6, "coroutineMonitors": 2, "coroutineNativePairs": 2,
             "queueClockSamples": 2, "queueShapeNegatives": 4,
             "queueHeapControl": "actual-pinned-jvm-queue-and-model-not-guest-qualification",
-            "timerReadinessSourceControl": "passed-private-source-ledger-not-guest-qualification", "jarDigests": identities}
+            "timerReadinessSourceControl": "passed-private-source-ledger-not-guest-qualification",
+            "executorActivationSettlement": executor_settlement, "jarDigests": identities}
 
 
 def completable_source_control(compiler: Compiler, output: Path) -> dict:
@@ -418,6 +473,51 @@ def future_cancel_interrupt_control(compiler: Compiler, classes: Path) -> dict:
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 
+EXECUTOR_OWNER_SETTLEMENT_CASES = (
+    'normal', 'denied', 'lost', 'root-normal', 'root-denied', 'root-lost',
+    'reenter-caught', 'reenter-throws', 'root-reenter-caught', 'root-reenter-throws',
+    'concurrent', 'root-concurrent',
+    'construct-normal', 'construct-denied', 'construct-lost',
+    'construct-oom-normal', 'construct-oom-denied', 'construct-oom-lost', 'construct-reentry',
+)
+EXECUTOR_ACTIVATION_SETTLEMENT_CASES = (
+    'denied', 'lost', 'root-denied', 'root-lost',
+    'construct-normal', 'construct-denied', 'construct-lost',
+    'inflight-root-success', 'inflight-root-denied', 'inflight-root-lost',
+)
+
+
+def executor_owner_settlement_control(compiler: Compiler, classes: Path) -> dict:
+    """Fresh source-port processes; the host ledger is private test code."""
+    executed = {}
+    for kind in ('managed', 'scheduled'):
+        executed[kind] = []
+        for mode in EXECUTOR_OWNER_SETTLEMENT_CASES:
+            result = compiler.run('executor-owner-settlement-' + kind + '-' + mode,
+                'java', '-Xmx256m', '-cp', classes, 'ExecutorOwnerSettlementControl', kind, mode).strip()
+            if result != 'EXECUTOR_OWNER_SETTLEMENT PASS ' + kind + ' ' + mode:
+                raise ValueError('Java executor owner settlement control did not complete: ' + kind + ' ' + mode)
+            executed[kind].append(mode)
+    return {'status': 'SDK-source-controls-passed', 'cases': executed,
+        'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
+
+
+def executor_activation_settlement_control(compiler: Compiler, classes: Path, classpath: str) -> dict:
+    """Actual Activation and pool source with a private host ledger, not guest execution."""
+    executed = {}
+    for kind in ('managed', 'scheduled'):
+        executed[kind] = []
+        for mode in EXECUTOR_ACTIVATION_SETTLEMENT_CASES:
+            result = compiler.run('executor-activation-settlement-' + kind + '-' + mode,
+                'java', '-Xmx256m', '-cp', str(classes) + os.pathsep + classpath,
+                'ExecutorActivationSettlementControl', kind, mode).strip()
+            if result != 'EXECUTOR_ACTIVATION_SETTLEMENT PASS ' + kind + ' ' + mode:
+                raise ValueError('Java executor activation settlement control did not complete: ' + kind + ' ' + mode)
+            executed[kind].append(mode)
+    return {'status': 'SDK-activation-source-controls-passed', 'cases': executed,
+        'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
+
+
 def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     """Real port source with a private host ledger, never injected guest bindings."""
     private = compiler.sdk / 'fibers/conformance/compiler/scheduled-source-control'
@@ -425,8 +525,10 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     controls = [private / name for name in ('ScheduledOwnerControl.java', 'ScheduledCompletableOwnerControl.java',
         'ScheduledPeriodicOwnerControl.java', 'ScheduledPeriodicRollbackSettlementControl.java',
         'ScheduledFutureResultSettlementControl.java', 'CompletableFutureResultSettlementControl.java',
-        'CompletableFutureQueuedRollbackControl.java', 'ManagedExecutorQueuedSettlementControl.java',
+        'CompletableFutureQueuedRollbackControl.java', 'CompletableFutureQueuedSettlementControl.java',
+        'ManagedExecutorQueuedSettlementControl.java',
         'ScheduledQueuedSettlementControl.java', 'FutureTaskInterruptFailureControl.java',
+        'ExecutorCloseInterruptControl.java', 'ExecutorOwnerSettlementControl.java',
         'dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
     reference = private / 'ScheduledStoppedReferenceControl.java'
     periodic_reference = private / 'ScheduledPeriodicReferenceControl.java'
@@ -463,6 +565,13 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     compiler.run('scheduled-source-compile', 'javac', '-proc:none', '--release', '25',
         '-d', output, *ports, *controls, selected, selected_periodic)
     interrupt_control = future_cancel_interrupt_control(compiler, output)
+    executor_settlement = executor_owner_settlement_control(compiler, output)
+    for implementation in ('jdk', 'source'):
+        for mode in ('terminated', 'drain', 'interrupted'):
+            result = compiler.run('executor-close-interrupt-' + implementation + '-' + mode,
+                'java', '-Xmx256m', '-cp', output, 'ExecutorCloseInterruptControl', implementation, mode).strip()
+            if result != 'EXECUTOR_CLOSE_INTERRUPT PASS ' + implementation + ' ' + mode:
+                raise ValueError('Java executor close interruption control did not complete')
     result = compiler.run('scheduled-source-control', 'java', '-Xmx256m', '-cp', output, 'ScheduledOwnerControl').strip()
     expected = ('SCHEDULED_OWNER_CONTROL PASS preadmission;actual-result;running-cancel-held;periodic-nonoverlap;'
         'original-error-suppresses-repeat;timed-wait-cancel-and-interrupt;shutdown-policy;factory-rollback;all-retired')
@@ -517,13 +626,19 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
             'CompletableFutureQueuedRollbackControl', mode).strip()
         if result != 'COMPLETABLE_QUEUED_ROLLBACK PASS ' + mode:
             raise ValueError('Java CompletableFuture queue rollback control did not complete')
+    for path in ('direct', 'waiting', 'multiple', 'readmit-denied', 'readmit-completed'):
+        for fault in ('denied', 'lost', 'success'):
+            result = compiler.run('completable-queued-settlement-' + path + '-' + fault,
+                'java', '-Xmx256m', '-cp', output, 'CompletableFutureQueuedSettlementControl', path, fault).strip()
+            if result != 'COMPLETABLE_QUEUED_SETTLEMENT PASS ' + path + ' ' + fault:
+                raise ValueError('Java CompletableFuture queued settlement control did not complete')
     result = compiler.run('scheduled-periodic-source-control', 'java', '-Xmx256m', '-cp', output,
         'ScheduledPeriodicReferenceControl').strip()
     if result != expected_periodic: raise ValueError('Java periodic scheduled source differs from reference')
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError('Java scheduled source control inputs changed')
     return {'status': 'SDK-source-controls-passed', 'referenceJdk': 'matched-stopped-and-periodic-observables', 'sourceInputs': inputs,
-        'futureCancelInterrupt': interrupt_control,
+        'futureCancelInterrupt': interrupt_control, 'executorOwnerSettlement': executor_settlement,
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 

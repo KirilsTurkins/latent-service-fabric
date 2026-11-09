@@ -74,6 +74,15 @@ def replace_once(raw: bytes, old: bytes, new: bytes, label: str) -> bytes:
     return raw.replace(old, new, 1)
 
 
+def fence_snapshot_captures(engine: bytes) -> bytes:
+    """Fence unowned captured functions after the original full snapshot GC."""
+    return replace_once(engine,
+        b'    JS::NonIncrementalGC(cx(), JS::GCOptions::Normal, JS::GCReason::API);\n  }\n',
+        b'    JS::NonIncrementalGC(cx(), JS::GCOptions::Normal, JS::GCReason::API);\n'
+        b'    if (!lsf::typescript::activation::snapshot_captured_functions_empty(cx())) return false;\n'
+        b'  }\n', "snapshot-captured-function-fence-after-gc")
+
+
 def derive_queue_experiment(original: dict[str, bytes], native: dict[str, bytes],
                             generated: dict[str, bytes]) -> tuple[dict[str, bytes], dict]:
     """Return a new source carrier, preserving every input byte separately.
@@ -137,6 +146,7 @@ def derive_queue_experiment(original: dict[str, bytes], native: dict[str, bytes]
         b'  if (state() == EngineState::ScriptPreInitializing) {\n'
         b'    if (!lsf::typescript::activation::snapshot_jobs_empty(cx())) return false;\n'
         b'    JS::PrepareForFullGC(cx());', "snapshot-job-empty")
+    engine = fence_snapshot_captures(engine)
     result["StarlingMonkey/runtime/engine.cpp"] = engine
 
     embedding = result["embedding/embedding.cpp"]

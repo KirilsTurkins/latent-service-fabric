@@ -38,7 +38,7 @@ def fixture_reference(output, commands, compiler, source, fixture):
         # witness establishes that the operations actually overlapped.
         modes = [0, 1, 2, 3]
     elif fixture == 'timer-fired':
-        modes = [0, 1]
+        modes = [0, 1, 2, 3]
     elif fixture == 'synchronization':
         # Native main does not implement the component's accepted-work drain.
         # The parked/late-root/cancellation cases retain signed-only assertions.
@@ -106,20 +106,42 @@ def compile_fixture(output: Path, *, offline_cache: Path | None = None, runtime_
     sdk = ROOT / 'sdk/go-guest'
     diagnostic = None
     if fixture == 'timer-fired':
-        from tools.go_guest.fired_timer_witness import derive
+        from tools.go_guest.fired_timer_witness import (derive, derive_bridge, derive_activation_bridge,
+            GO_CHAN_SHA256, GO_RUNTIME2_SHA256, verified_runtime_sources)
         sdk_copy = output / 'diagnostic-sdk'
         shutil.copytree(sdk, sdk_copy)
         timer = sdk_copy / 'runtime/timer_async.go.in'
         original_timer = (sdk / 'runtime/timer_async.go.in').read_bytes()
         derived_timer = derive(original_timer)
         timer.write_bytes(derived_timer)
-        diagnostic = {'kind': 'selected-stop-token-fence-observe-v2',
+        bridge = sdk_copy / 'runtime/timer_bridge.go.in'
+        activation = sdk_copy / 'runtime/activation_bridge.go.in'
+        original_bridge = (sdk / 'runtime/timer_bridge.go.in').read_bytes()
+        original_activation = (sdk / 'runtime/activation_bridge.go.in').read_bytes()
+        derived_bridge = derive_bridge(original_bridge)
+        derived_activation = derive_activation_bridge(original_activation)
+        bridge.write_bytes(derived_bridge)
+        activation.write_bytes(derived_activation)
+        diagnostic = {'kind': 'selected-returned-ticker-fence-observe-v3',
                       'originalTimerAsyncDigest': digest(original_timer),
-                      'derivedTimerAsyncDigest': digest(derived_timer)}
+                      'derivedTimerAsyncDigest': digest(derived_timer),
+                      'originalTimerBridgeDigest': digest(original_bridge),
+                      'derivedTimerBridgeDigest': digest(derived_bridge),
+                      'originalActivationBridgeDigest': digest(original_activation),
+                      'derivedActivationBridgeDigest': digest(derived_activation),
+                      'runtimeChanDigest': 'sha256:' + GO_CHAN_SHA256,
+                      'runtimeDescriptorDigest': 'sha256:' + GO_RUNTIME2_SHA256}
         sdk = sdk_copy
     compiler = Compiler(output / 'compiler', sdk, commands, offline_cache=offline_cache,
                         runtime_profile=runtime_profile)
     try:
+        if fixture == 'timer-fired':
+            # The exact channel enqueue/commit and sudog layout underpin the
+            # channel-specific park probe. Preserve these authenticated inputs.
+            for name, content in verified_runtime_sources(compiler.goroot).items():
+                target = output / 'diagnostic-runtime-inputs' / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(content.encode('utf-8'))
         component, bindings = compiler.compile(output / 'src', output / 'wit', 'tests:caller/service@1.0.0',
             output / 'build', runtime_profile=runtime_profile)
         overlay = json.loads((output / 'build/runtime-overlay/overlay.json').read_bytes())['Replace']

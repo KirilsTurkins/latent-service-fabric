@@ -2,7 +2,7 @@
 //! This connects ordinary WASI polls to retained original LSF calls. It owns
 //! no OS thread, executor, Store, replacement budget, or ambient descriptor.
 use std::{
-    cell::RefCell,
+    cell::{Cell, RefCell},
     collections::BTreeMap,
     ffi::c_void,
     ptr,
@@ -20,6 +20,23 @@ pub trait Readiness {
     fn ready(&self) -> bool;
 }
 
+// Distinguish a never-polled timer without enlarging an individual queue entry.
+// Both wrappers own the exact original closure and release it only in an
+// async canonical task. The only early-safe producer is Timer::drop.
+trait Retirement {
+    fn unpolled_timer(&self) -> bool;
+    fn finish(self: Box<Self>);
+}
+struct RetirementAction<F, const UNPOLLED_TIMER: bool>(F);
+impl<F: FnOnce(), const UNPOLLED_TIMER: bool> Retirement for RetirementAction<F, UNPOLLED_TIMER> {
+    fn unpolled_timer(&self) -> bool {
+        UNPOLLED_TIMER
+    }
+    fn finish(self: Box<Self>) {
+        (self.0)();
+    }
+}
+
 type Callback = unsafe extern "C" fn(*mut c_void, u32);
 struct Completion {
     callback: Callback,
@@ -30,7 +47,8 @@ pub struct Pump {
     set: u32,
     callbacks: RefCell<BTreeMap<u32, Completion>>,
     operations: RefCell<Vec<Weak<dyn Progress>>>,
-    retired: RefCell<Vec<Box<dyn FnOnce()>>>,
+    retired: RefCell<Vec<Box<dyn Retirement>>>,
+    retiring: Cell<usize>,
 }
 thread_local! {
     static CURRENT: Rc<Pump> = Rc::new(Pump::new());
@@ -47,6 +65,7 @@ impl Pump {
             callbacks: RefCell::new(BTreeMap::new()),
             operations: RefCell::new(Vec::with_capacity(MAX_OPERATIONS)),
             retired: RefCell::new(Vec::with_capacity(MAX_OPERATIONS)),
+            retiring: Cell::new(0),
         }
     }
 
@@ -59,7 +78,7 @@ impl Pump {
         let mut operations = pump.operations.borrow_mut();
         operations.retain(|owner| owner.strong_count() != 0);
         assert!(
-            operations.len() + pump.retired.borrow().len() < MAX_OPERATIONS,
+            operations.len() + pump.retired.borrow().len() + pump.retiring.get() < MAX_OPERATIONS,
             "HTTP readiness owner limit"
         );
         operations.push(Rc::downgrade(operation));
@@ -68,23 +87,70 @@ impl Pump {
     /// Synchronous resource destructors transfer exact original owners here.
     /// They must never cancel/drop an accepted future from a sync WIT task.
     pub fn retire(action: impl FnOnce() + 'static) {
+        Self::retire_impl::<false>(action);
+    }
+
+    /// Only a timer whose wait future was never polled may use this class.
+    pub fn retire_unpolled_timer(action: impl FnOnce() + 'static) {
+        Self::retire_impl::<true>(action);
+    }
+
+    fn retire_impl<const UNPOLLED: bool>(action: impl FnOnce() + 'static) {
         let pump = Self::current();
         let mut retired = pump.retired.borrow_mut();
         assert!(
-            retired.len() < MAX_OPERATIONS,
+            retired.len() + pump.retiring.get() < MAX_OPERATIONS,
             "canonical retirement owner limit"
         );
-        retired.push(Box::new(action));
+        retired.push(Box::new(RetirementAction::<_, UNPOLLED>(action)));
+    }
+
+    fn take_retirement(&self, unpolled_only: bool) -> Option<Box<dyn Retirement>> {
+        // Nested polls may make progress, but cannot acquire an in-flight
+        // retirement or treat its owner as free capacity.
+        if self.retiring.get() != 0 {
+            return None;
+        }
+        let mut retired = self.retired.borrow_mut();
+        let index = if unpolled_only {
+            retired.iter().rposition(|action| action.unpolled_timer())?
+        } else {
+            retired.len().checked_sub(1)?
+        };
+        self.retiring.set(1);
+        Some(retired.remove(index))
+    }
+
+    fn run_retirement(self: &Rc<Self>, action: Box<dyn Retirement>) {
+        self.enter(|| action.finish());
+        // A trap or panic before return leaves this sentinel set. Never
+        // reinterpret an unknown host settlement as available capacity.
+        self.retiring.set(0);
+    }
+
+    fn reap_unpolled_timers(self: &Rc<Self>) {
+        for _ in 0..MAX_OPERATIONS {
+            let Some(action) = self.take_retirement(true) else {
+                break;
+            };
+            self.run_retirement(action);
+        }
     }
 
     /// Called only by the compiler-private async drain before root task-return.
     /// A future's real destructor confirms its original canonical cancellation;
     /// only then may the captured resources, token and quota slot be released.
     pub fn drain_retired(self: &Rc<Self>) {
+        assert_eq!(
+            self.retiring.get(),
+            0,
+            "canonical retirement already in progress"
+        );
         loop {
-            let action = self.retired.borrow_mut().pop();
-            let Some(action) = action else { break };
-            self.enter(action);
+            let Some(action) = self.take_retirement(false) else {
+                break;
+            };
+            self.run_retirement(action);
         }
         assert!(
             self.callbacks.borrow().is_empty(),
@@ -140,6 +206,9 @@ impl Pump {
             "WASI poll input limit"
         );
         loop {
+            // All selected callers enter poll through an async WIT export.
+            // Never reap here from synchronous stream/HTTP step calls.
+            self.reap_unpolled_timers();
             self.step();
             let ready: Vec<_> = inputs
                 .iter()
@@ -192,7 +261,7 @@ impl Drop for Pump {
             "pending canonical owner destruction"
         );
         assert!(
-            self.retired.get_mut().is_empty(),
+            self.retired.get_mut().is_empty() && self.retiring.get() == 0,
             "undrained canonical retirement owners"
         );
         unsafe { waitable_set_drop(self.set) };

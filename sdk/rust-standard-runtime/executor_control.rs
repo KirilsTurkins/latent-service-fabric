@@ -133,7 +133,10 @@ impl Control {
                 .position(Option::is_none)
                 .ok_or_else(|| io::Error::from(io::ErrorKind::WouldBlock))?;
             let id = state.next()?;
-            let value = state.life.reserve_worker(generation_row.value).map_err(state_error)?;
+            let value = state
+                .life
+                .reserve_worker(generation_row.value)
+                .map_err(state_error)?;
             state.workers[slot] = Some(Worker {
                 id,
                 value,
@@ -385,25 +388,16 @@ impl Control {
         drop(owner);
         Ok(consumed)
     }
-    pub(crate) fn worker_tls_drained(&self, canonical: u32) -> io::Result<()> {
+    pub(crate) fn worker_tls_drained(&self, key: u64) -> io::Result<()> {
         self.state(|state| {
-            let worker = state
-                .workers
-                .iter()
-                .flatten()
-                .find(|r| r.canonical == Some(canonical))
-                .ok_or_else(invalid)?
-                .value;
+            let slot = state.worker(key)?;
+            let worker = state.workers[slot].as_ref().unwrap().value;
             state.life.user_tls_drained(worker).map_err(state_error)
         })
     }
-    pub(crate) fn worker_frames_exited(&self, canonical: u32) -> io::Result<()> {
+    pub(crate) fn worker_frames_exited(&self, key: u64) -> io::Result<()> {
         self.state(|state| {
-            let slot = state
-                .workers
-                .iter()
-                .position(|r| r.as_ref().is_some_and(|r| r.canonical == Some(canonical)))
-                .ok_or_else(invalid)?;
+            let slot = state.worker(key)?;
             let row = state.workers[slot].as_ref().unwrap();
             assert!(row.close.is_none());
             state.life.frames_exited(row.value).map_err(state_error)?;

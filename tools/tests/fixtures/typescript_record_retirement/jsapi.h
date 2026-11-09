@@ -8,7 +8,7 @@ namespace js { template<class T> using UniquePtr = std::unique_ptr<T>; }
 
 struct JSContext { bool exception = false; const char* detail = nullptr; };
 struct JSObject {};
-struct JSTracer {};
+struct JSTracer { JSObject* unreachable = nullptr; };
 extern unsigned rooted_callables;
 extern bool call_succeeds;
 extern bool fail_next_capture;
@@ -49,7 +49,8 @@ struct HandleValueArray {
 inline int UndefinedHandleValue = 0;
 inline int NullHandleValue = 0;
 inline void JobQueueMayNotBeEmpty(JSContext*) {}
-inline bool Call(JSContext*, int, HandleObject, HandleValueArray, RootedValue*) { return call_succeeds; }
+inline void (*call_observer)(HandleObject) = nullptr;
+inline bool Call(JSContext*, int, HandleObject o, HandleValueArray, RootedValue*) { if (call_observer) call_observer(o); return call_succeeds; }
 inline void PrepareForFullGC(JSContext*) {}
 enum class GCOptions { Normal };
 enum class GCReason { API };
@@ -72,4 +73,6 @@ inline bool JS_IsExceptionPending(JSContext* cx) { return cx->exception; }
 inline void JS_ClearPendingException(JSContext* cx) { cx->exception = false; cx->detail = nullptr; }
 inline void JS_ReportErrorASCII(JSContext* cx, const char* detail, ...) { cx->exception = true; cx->detail = detail; }
 inline void JS_ReportOutOfMemory(JSContext* cx) { cx->exception = true; cx->detail = "oom"; }
-template<class T> void JS_UpdateWeakPointerAfterGC(JSTracer*, T*) {}
+template<class T> void JS_UpdateWeakPointerAfterGC(JSTracer* tracer, T* edge) {
+  if (tracer && edge->value == tracer->unreachable) edge->value = nullptr;
+}

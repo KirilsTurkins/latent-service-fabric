@@ -29,6 +29,7 @@ JS_PUBLIC_API bool JS::SetActivationPromiseHooks(
       !hooks->reactionCreated || !hooks->reactionRecord ||
       !hooks->beforeNativeJobAllocate || !hooks->nativeJobAllocationFailed ||
       !hooks->nativeJobCreated || !hooks->nativeJobRecord ||
+      !hooks->beforeCapturedAllocate || !hooks->capturedCreated ||
       activationPromiseHooks) {
     JS_ReportErrorASCII(cx, "activation-runtime-promise-hooks-install-invalid");
     return false;
@@ -38,6 +39,28 @@ JS_PUBLIC_API bool JS::SetActivationPromiseHooks(
   return true;
 }
 '''
+
+
+def instrument_combinator_element_function(source: bytes) -> bytes:
+    """Pre-admit the original combinator callback as one passive native owner."""
+    source = replace_once(source,
+        b"  JSFunction* fn = NewNativeFunction(\n"
+        b"      cx, native, 1, nullptr, gc::AllocKind::FUNCTION_EXTENDED, GenericObject);\n"
+        b"  if (!fn) {\n    return nullptr;\n  }\n",
+        b"  void* activationRecord = nullptr;\n"
+        b"  const bool activationObserved = activationPromiseHooks &&\n"
+        b"      activationPromiseContext == cx;\n"
+        b"  if (activationObserved &&\n"
+        b"      !activationPromiseHooks->beforeCapturedAllocate(cx, &activationRecord)) {\n"
+        b"    return nullptr;\n  }\n"
+        b"  RootedFunction fn(cx, NewNativeFunction(\n"
+        b"      cx, native, 1, nullptr, gc::AllocKind::FUNCTION_EXTENDED, GenericObject));\n"
+        b"  if (!fn) {\n"
+        b"    if (activationObserved) activationPromiseHooks->allocationFailed(activationRecord);\n"
+        b"    return nullptr;\n  }\n"
+        b"  if (activationObserved) activationPromiseHooks->capturedCreated(cx, fn.get(), activationRecord);\n",
+        "admit-before-combinator-element-function")
+    return source
 
 
 def derive_promise_lifecycle(original: dict[str, bytes], header: bytes) -> tuple[dict[str, bytes], dict]:
@@ -150,6 +173,7 @@ def derive_promise_lifecycle(original: dict[str, bytes], header: bytes) -> tuple
             b"    return false;\n  }\n"
             b"  if (activationObserved) activationPromiseHooks->nativeJobCreated(cx, job, activationRecord);\n"))
         source = replace_once(source, admission_preimage, after, "admit-before-" + native.decode())
+    source = instrument_combinator_element_function(source)
     result["js/src/builtin/Promise.cpp"] = source
     if "js/public/ActivationPromiseHooks.h" in original:
         raise ValueError("original engine already defines private hook ABI")
@@ -162,6 +186,7 @@ def derive_promise_lifecycle(original: dict[str, bytes], header: bytes) -> tuple
         "nativeAdmissionBeforeObjectAllocation": True,
         "pendingReactionAdmissionBeforeAllocation": True,
         "thenableResolutionJobAdmissionBeforeAllocation": True,
+        "combinatorElementNativeAdmissionBeforeAllocation": True,
         "originalReactionJobRecordLookup": True,
         "GCPerformsHostCallsOrRefunds": False,
         "originalPromiseObjectDeclarationUnchanged": True,

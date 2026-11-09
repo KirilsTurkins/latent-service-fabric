@@ -121,6 +121,56 @@ fn configured_payload_file_and_stdin_bounds_fail_before_connecting() {
 }
 
 #[test]
+fn opened_configuration_pin_fails_before_dispatch_and_preserves_stdin_tail() {
+    let directory = tempfile::tempdir().expect("bounded input directory");
+    let config = directory.path().join("client.json");
+    let original = serde_json::to_vec(&json!({
+        "formatVersion": 1, "profiles": [{"name":"local", "endpoint":"http://127.0.0.1:1",
+            "tenant":"examples", "token":OPERATOR, "limits":{"maximumPayloadBytes":3}}]
+    }))
+    .expect("profile JSON");
+    let digest = latent_artifacts::content_digest(&original).0;
+    let stdin = directory.path().join("stdin.bin");
+    fs::write(&stdin, format!("{digest}\n1234")).expect("pin and bounded input");
+
+    for (changed, code) in [
+        (false, "input-too-large"),
+        (true, "configuration-identity-changed"),
+    ] {
+        let mut bytes = original.clone();
+        if changed {
+            bytes.push(b' ');
+        }
+        fs::write(&config, bytes).expect("profile");
+        let mut command = Command::new(env!("CARGO_BIN_EXE_latent"));
+        command
+            .arg("--config")
+            .arg(&config)
+            .args([
+                "--expect-config-digest-stdin",
+                "--output",
+                "json",
+                "invoke",
+                "--service",
+                "examples/echo",
+                "--contract",
+                "examples:echo/api@0.1.0",
+                "--function",
+                "echo",
+                "--input",
+                "-",
+            ])
+            .stdin(fs::File::open(&stdin).expect("pin stdin"));
+        let output = Process::spawn(command, WATCHDOG).wait();
+        assert!(!output.stdout.contains(&digest) && !output.stderr.contains(&digest));
+        let value = output.json(2, "local-error");
+        assert_eq!(value["error"]["code"], code);
+        assert_eq!(value["requestDispatched"], false);
+        assert_eq!(value["outcomeKnown"], true);
+    }
+}
+
+#[test]
 #[cfg(target_os = "linux")]
 fn named_pipe_inputs_fail_before_open_or_network_dispatch() {
     let directory = tempfile::tempdir().expect("named pipe fixture directory");

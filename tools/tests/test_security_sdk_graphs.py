@@ -413,19 +413,20 @@ class SdkGraphTests(unittest.TestCase):
         self.assertEqual(observed, {("Google.Protobuf", "3.31.1"), ("Grpc.Core.Api", "2.71.0"), ("Grpc.Tools", "2.71.0"),
                                    ("Microsoft.NETCore.App.Ref", "8.0.33"), ("Microsoft.NETCore.App.Runtime.linux-x64", "8.0.33"),
                                    ("Microsoft.AspNetCore.App.Ref", "8.0.33"), ("Microsoft.AspNetCore.App.Runtime.linux-x64", "8.0.33")})
-        self.assertEqual(sum(item["coverage"] == "OSV" for item in records if item["path"].startswith("sdk/dotnet/")), 3)
+        self.assertEqual(sum(item["coverage"] == "OSV" for item in records if item["path"].startswith("sdk/dotnet/")), 9)
 
     def test_dotnet_legacy_absence_cannot_hide_partial_transport_or_orphan_configuration(self) -> None:
         from tools.security_common import tracked_paths
         root = Path(__file__).resolve().parents[2]
-        owned = ("sdk/dotnet/Latent.Sdk.Transport/", "sdk/dotnet/Latent.Sdk.Transport.Tests/", "sdk/dotnet/Latent.Sdk.ProviderWorkflow/")
+        owned = ("sdk/dotnet/Latent.Sdk.Transport/", "sdk/dotnet/Latent.Sdk.Transport.Tests/", "sdk/dotnet/Latent.Sdk.ProviderWorkflow/",
+                 *(f"sdk/dotnet/Latent.Sdk.Phase4Real{name}/" for name in ("Command", "LostRejection", "LostResponse", "Node", "Rejection", "Scope")))
         config = {"sdk/dotnet/global.json", "sdk/dotnet/nuget.transport.config"}
         legacy = [path for path in tracked_paths(root) if not path.startswith(owned) and path not in config]
         with patch("tools.security_inventory.tracked_paths", return_value=legacy):
             packages, records = inventory(root)
         self.assertFalse(any(item.path.startswith("sdk/dotnet/") for item in packages))
-        self.assertEqual(sum(item["coverage"] == "not-shipped-at-source-revision" and item["path"].startswith("sdk/dotnet/") for item in records), 3)
-        for extra in (*config, "sdk/dotnet/Latent.Sdk.Transport/README.md"):
+        self.assertEqual(sum(item["coverage"] == "not-shipped-at-source-revision" and item["path"].startswith("sdk/dotnet/") for item in records), 9)
+        for extra in (*config, "sdk/dotnet/Latent.Sdk.Transport/README.md", "sdk/dotnet/Latent.Sdk.Phase4RealNode/README.md"):
             with self.subTest(extra=extra), patch("tools.security_inventory.tracked_paths", return_value=[*legacy, extra]), self.assertRaises(SecurityError):
                 inventory(root)
 
