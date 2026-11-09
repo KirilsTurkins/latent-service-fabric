@@ -19,6 +19,7 @@ latent-node = { path = "../latent-node" }
 latent-routing = { path = "../latent-routing" }
 latent-capabilities = { path = "../latent-capabilities" }
 latent-policy = { path = "../latent-policy" }
+latent-state = { path = "../latent-state" }
 getrandom = "=0.4.3"
 rustls = { version = "=0.23.46", default-features = false, features = ["ring", "std", "tls12"] }
 serde.workspace = true
@@ -33,7 +34,6 @@ zeroize = { version = "=1.9.1", features = ["alloc"] }
 latent-artifacts = { path = "../latent-artifacts" }
 latent-core = { path = "../latent-core", features = ["test-support"] }
 latent-secrets = { path = "../latent-secrets" }
-latent-state = { path = "../latent-state" }
 rcgen = { version = "=0.14.10", default-features = false, features = ["crypto", "ring"] }
 tempfile.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "sync", "time"] }
