@@ -30,6 +30,39 @@ jobs:
         with:
           persist-credentials: false
       - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+        id: setup_python
+        continue-on-error: ${{ runner.os == 'Windows' }}
+        with:
+          python-version: 3.13.5
+      - name: Recover the verified Windows Python asset
+        if: runner.os == 'Windows' && steps.setup_python.outcome == 'failure'
+        timeout-minutes: 2
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/intellij-python-3.13.5.zip"
+          gh api -H 'Accept: application/octet-stream' repos/actions/python-versions/releases/assets/263151870 | head -c 28549021 > "$archive"
+          unset GH_TOKEN
+          test "$(wc -c < "$archive")" -eq 28549020
+          printf '%s  %s\n' 83953e399a4ed65460d7fa99fa53d2a91a0da742ffb744ebb2fb999c7b880e91 "$archive" | sha256sum --check --strict
+      - name: Install the verified Windows Python tool cache
+        if: runner.os == 'Windows' && steps.setup_python.outcome == 'failure'
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'intellij-python-3.13.5.zip'
+          $directory = Join-Path $env:RUNNER_TEMP 'intellij-python-3.13.5'
+          Expand-Archive -LiteralPath $archive -DestinationPath $directory -ErrorAction Stop
+          Push-Location -LiteralPath $directory -ErrorAction Stop
+          try { & .\setup.ps1 } finally { Pop-Location }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $cache = if ($env:AGENT_TOOLSDIRECTORY) { $env:AGENT_TOOLSDIRECTORY } else { $env:RUNNER_TOOL_CACHE }
+          $python = Join-Path $cache 'Python\3.13.5\x64\python.exe'
+          if (!(Test-Path -LiteralPath (Join-Path $cache 'Python\3.13.5\x64.complete'))) { throw 'Python tool cache is incomplete' }
+          if ((& $python --version) -ne 'Python 3.13.5') { throw 'Python version mismatch' }
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+        if: runner.os == 'Windows' && steps.setup_python.outcome == 'failure'
         with:
           python-version: 3.13.5
       - name: Export review-only IDE metadata
