@@ -197,9 +197,11 @@ class WaitFrameModelIntegrity(unittest.TestCase):
                  "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence;timer-stop-uncertain-completion-fence;nested-stop-count-guard;timer-finally-return-fence;timer-teardown-admission-fence\n")] + [
                 f"EXECUTOR_ACTIVATION_SETTLEMENT PASS {kind} {mode}" for kind in ("managed", "scheduled")
                 for mode in fibers.EXECUTOR_ACTIVATION_SETTLEMENT_CASES]
-            with patch.object(fibers, "timer_teardown_source_control") as teardown_control:
+            with (patch.object(fibers, "timer_teardown_source_control") as teardown_control,
+                  patch.object(fibers, "timer_post_ack_source_control") as post_ack_control):
                 report = fibers.wait_frame_model_control(compiler, root / "model")
             teardown_control.assert_called_once()
+            post_ack_control.assert_called_once()
             self.assertEqual(report["nativeCallbackPairs"], 2)
             self.assertEqual(report["pluginOrder"], ["runtime", "platform"])
             self.assertEqual(report["asyncLoweredOwnedPairs"], 2)
@@ -243,6 +245,15 @@ class WaitFrameModelIntegrity(unittest.TestCase):
             self.assertEqual(projected.count("TeardownHooks." + call + "();"), 1)
         with self.assertRaisesRegex(ValueError, "projection source drift"):
             fibers.timer_teardown_projection(source.replace("            if (stopPending) {\n", "", 1))
+
+    def test_post_ack_projection_rejects_source_drift(self):
+        activation = Path(__file__).resolve().parents[1] / "fibers/dev/latent/guest/runtime/Activation.java"
+        source = activation.read_text(encoding="utf-8")
+        projected = fibers.timer_post_ack_projection(source)
+        for call in ("afterAccept", "beforeList", "afterList", "beforeAllocation"):
+            self.assertEqual(projected.count("PostAckHooks." + call + "();"), 1)
+        with self.assertRaisesRegex(ValueError, "post-ack projection source drift"):
+            fibers.timer_post_ack_projection(source.replace("            timers.add(timer);\n", "", 1))
 
     def test_old_timer_readiness_receipt_does_not_cover_stop_uncertainty(self):
         with tempfile.TemporaryDirectory() as directory:

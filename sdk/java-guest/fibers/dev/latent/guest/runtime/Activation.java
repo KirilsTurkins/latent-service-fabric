@@ -328,6 +328,9 @@ public final class Activation {
         var delay = new Unsigned64(nanos);
         var period = Option.<Unsigned64>none();
         var continuation = Option.some(work.token);
+        // Allocate the Java holder before host admission so failure here
+        // cannot admit a timer that the caller never received.
+        TimerLease timer = new TimerLease(null, work, deadline);
         // The clock or argument preparation may have suspended. Revalidate the
         // original logical owner before the final admission fence.
         boolean sameWork = lookup(Thread.currentThread()) == work && !work.complete && work.timer == null;
@@ -336,13 +339,26 @@ public final class Activation {
         var started = Bindings.LatentRuntimeActivation.timerStart(delay, period, continuation);
         if (started.isError()) throw new IllegalStateException("activation-runtime-timer-start-" + started.error());
         try {
-            TimerLease timer = new TimerLease(started.value(), work, deadline);
+            ((Lease)timer).token = started.value();
+            if (((Lease)timer).token == null) throw new IllegalStateException("activation-runtime-timer-start-token");
+            // A nested failure or teardown can happen during the host call.
+            // Check again before publishing this returned timer into Java.
+            boolean currentWork = lookup(Thread.currentThread()) == work && !work.complete && work.timer == null;
+            requireHealthyAdmission();
+            if (!entered || !currentWork) throw new IllegalStateException("activation-runtime-timer-frame");
             timers.add(timer);
             work.timer = timer;
+            // Publication can itself allocate or reenter. Do not hand a lease
+            // back after another accepted operation has fenced this activation.
+            boolean registeredWork = lookup(Thread.currentThread()) == work && !work.complete && work.timer == timer;
+            requireHealthyAdmission();
+            if (!entered || !registeredWork) throw new IllegalStateException("activation-runtime-timer-frame");
             return timer;
         } catch (Throwable error) {
-            var stopped = Bindings.LatentRuntimeActivation.timerStop(started.value());
-            if (stopped.isError()) throw new IllegalStateException("activation-runtime-timer-start-rollback-" + stopped.error(), error);
+            // The admitted RuntimeTimer remains in the host's prepaid table.
+            // Do not submit a stop from a failed or partially mutated local
+            // registration; keep its owner until host Table/Store teardown.
+            fenceUncertainCompletion();
             throw error;
         }
     }

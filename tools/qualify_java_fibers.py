@@ -160,6 +160,52 @@ def timer_teardown_source_control(compiler: Compiler, output: Path, classpath: s
         raise ValueError("Java timer teardown control inputs changed during execution")
 
 
+def timer_post_ack_projection(source: str) -> str:
+    """Inject failure hooks only into an exact copied Activation source."""
+    points = (
+        ("            ((Lease)timer).token = started.value();\n", "            PostAckHooks.afterAccept();\n"),
+        ("            timers.add(timer);\n", "            PostAckHooks.afterList();\n"),
+        ("        var continuation = Option.some(work.token);\n", "        PostAckHooks.beforeAllocation();\n"),
+    )
+    for point, hook in points:
+        if source.count(point) != 1:
+            raise ValueError("Java timer post-ack projection source drift")
+        source = source.replace(point, point + hook, 1)
+    point = "            timers.add(timer);\n"
+    source = source.replace(point, "            PostAckHooks.beforeList();\n" + point, 1)
+    return source
+
+
+def timer_post_ack_source_control(compiler: Compiler, output: Path, classpath: str) -> None:
+    """Private host-JDK ledger and injected ordering; no guest or retirement claim."""
+    fixture = compiler.sdk / "fibers/conformance/compiler/timer-post-ack-control"
+    activation = compiler.sdk / "fibers/dev/latent/guest/runtime/Activation.java"
+    sources = [compiler.sdk / name for name in (
+        "runtime/dev/latent/guest/Option.java", "runtime/dev/latent/guest/Unsigned64.java",
+        "fibers/dev/latent/guest/runtime/HostCalls.java", "fibers/dev/latent/guest/runtime/Monitors.java")]
+    sources += [fixture / name for name in (
+        "dev/latent/generated/Bindings.java", "dev/latent/guest/runtime/PostAckHooks.java",
+        "TimerPostAckControl.java", "TimerPostAckProjectionControl.java")]
+    inputs = {str(path): digest(read_file(path)) for path in (activation, *sources)}
+    output.mkdir()
+    projected = output / "Activation.java"
+    projected.write_text(timer_post_ack_projection(read_file(activation).decode("utf-8")), encoding="utf-8")
+    classes = output / "classes"
+    classes.mkdir()
+    compiler.run("timer-post-ack-projection-compile", "javac", "-proc:none", "--release", "25",
+                 "-cp", classpath, "-d", classes, projected, *sources)
+    result = compiler.run("timer-post-ack-projection-control", "java", "-Xmx256m", "-cp",
+                          str(classes) + os.pathsep + classpath, "TimerPostAckProjectionControl")
+    modes = ("normal", "refused-start", "allocation-before-admission", "missing-token",
+             "before-list", "list-allocation-failure", "after-list", "nested-failures", "nested-after-list")
+    expected = ["TIMER_POST_ACK_CONTROL PASS " + mode for mode in modes]
+    expected += ["TIMER_POST_ACK_PROJECTED PASS cases=9"]
+    if result.strip().splitlines() != expected:
+        raise ValueError("Java timer post-ack projection did not complete")
+    if inputs != {str(path): digest(read_file(path)) for path in (activation, *sources)}:
+        raise ValueError("Java timer post-ack control inputs changed during execution")
+
+
 def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
     """Verify the actual native/callback pairs and their resumed owner frames."""
     classpath, identities = locked_model_classpath(compiler, include_platform=True)
@@ -221,6 +267,7 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
                  "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence;timer-stop-uncertain-completion-fence;nested-stop-count-guard;timer-finally-return-fence;timer-teardown-admission-fence"):
         raise ValueError("Java timer readiness source control did not complete")
     timer_teardown_source_control(compiler, output / "timer-teardown-projection", classpath)
+    timer_post_ack_source_control(compiler, output / "timer-post-ack-projection", classpath)
     executor_settlement = executor_activation_settlement_control(compiler, timer_output, classpath)
     return {"status": "actual-locked-classlib-model-passed", "nativeCallbackPairs": 2,
             "pluginOrder": ["runtime", "platform"], "asyncLoweredOwnedPairs": 2,
