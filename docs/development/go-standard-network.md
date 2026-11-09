@@ -119,6 +119,17 @@ builds and records only inert diagnostics within the existing prepaid connection
 allocation. The guest's own one-second connection deadline still applies; the
 host's two-second barrier is a failure ceiling, not a longer guest timeout.
 
+The revised source-bound owner also requires one connection's original second
+`Pending` read to remain before its first destructor marker when cancellation is
+accepted. It samples a saturating sequentially consistent marker counter before
+and immediately after the real cancellation call, without holding a provider
+lock across it. A thread could be preempted just before publishing that marker,
+but the read's socket and guard cannot begin dropping before it. A concurrent
+published marker makes the observation fail closed.
+The existing signed v2 receipt does not establish this new edge; a successful
+v3 run is required. This observation does not prove OS-readiness polling or
+final kernel free.
+
 Cancellation acknowledgement must retain the original activation, Store and
 socket owner. Each completed observation requires zero original user-space
 owners; peer close and those counters never attest final kernel free. The

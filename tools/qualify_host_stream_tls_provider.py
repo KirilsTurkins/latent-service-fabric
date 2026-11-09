@@ -59,6 +59,10 @@ NODE_CASES = frozenset('kernel::native::node_bootstrap::controls::' + name for n
     'node_wire_refuses_old_ack_foreign_generation_and_funding_bits',
     'node_postopen_refusal_retains_original_whole_escrow',
     'node_abandoned_waiter_keeps_custody_after_real_worker_returns',
+    'node_epoch_retired_during_open_refuses_attach_and_keeps_original_escrow',
+    'node_epoch_retired_during_attach_refuses_prepare_and_keeps_original_escrow',
+    'node_epoch_retired_during_prepare_refuses_prefix_and_keeps_original_escrow',
+    'node_uncertain_attach_after_retirement_keeps_original_error_and_escrow',
 ))
 REQUIRED_CASES = (TLS_CASES | ACCOUNTING_CASES | ABORT_CASES | KERNEL_RETIREMENT_CASES | NATIVE_CLOSE_CASES |
                   NODE_CASES | {DENIAL, KERNEL_CASE,

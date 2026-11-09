@@ -446,12 +446,48 @@ async fn signed_ordinary_go_declared_tcp_preserves_refusals_io_and_cancelled_own
     }
     assert_eq!(f.backend.resource_snapshot().live_stores, 1);
     assert_eq!(f.streams.as_ref().unwrap().io.snapshot().calls, 1);
-    assert_eq!(
-        f.manager
-            .cancel_for(&TenantId("tenant-a".into()), &id, "go-network-cancel")
-            .unwrap(),
-        CancelDisposition::Accepted
-    );
+    #[cfg(feature = "development-go-network-read-witness")]
+    let witness = f
+        .streams
+        .as_ref()
+        .unwrap()
+        .lifecycle
+        .read_cancel_witness()
+        .unwrap()
+        .expect("one original connection and provider generation");
+    #[cfg(feature = "development-go-network-read-witness")]
+    assert!(witness.original_second_read_live().unwrap());
+    #[cfg(feature = "development-go-network-read-witness")]
+    let drops_before_acceptance = witness.read_drop_starts();
+    #[cfg(feature = "development-go-network-read-witness")]
+    assert_eq!(drops_before_acceptance, 1);
+    let disposition = f
+        .manager
+        .cancel_for(&TenantId("tenant-a".into()), &id, "go-network-cancel")
+        .unwrap();
+    // Sample immediately after the real cancellation returns, before any await
+    // or callback. A concurrent early Drop makes this fail closed.
+    #[cfg(feature = "development-go-network-read-witness")]
+    let drops_after_acceptance = witness.read_drop_starts();
+    assert_eq!(disposition, CancelDisposition::Accepted);
+    #[cfg(feature = "development-go-network-read-witness")]
+    {
+        assert_eq!(
+            drops_after_acceptance, 1,
+            "original second Pending reached its first drop marker"
+        );
+        assert!(witness.original_generation_current().unwrap());
+        println!(
+            "GO_NETWORK_CANCEL_EDGE {}",
+            json!({
+                "case": "cancel-pending-read", "readDropStartsBefore": drops_before_acceptance,
+                "readDropStartsAfterAccepted": drops_after_acceptance,
+                "sameConnection": true, "sameGenerationCurrent": true,
+            })
+        );
+        // No diagnostic Arc may survive into the original settlement checks.
+        drop(witness);
+    }
     assert_eq!(f.quotas.usage().unwrap().active_activations, 1);
     assert_eq!(
         f.streams

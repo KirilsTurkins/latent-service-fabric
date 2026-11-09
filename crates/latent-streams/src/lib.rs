@@ -16,6 +16,8 @@ pub use config::{
     StreamTrustRoot,
 };
 pub use latent_capabilities::broker::network::{StreamError, StreamErrorCode};
+#[cfg(feature = "development-read-witness")]
+pub use lifecycle::ReadCancelWitness;
 pub use lifecycle::{StreamLifecycle, StreamStatus};
 pub use maintenance::{StreamMaintenance, StreamMaintenanceStop};
 pub use provider::StreamProvider;
