@@ -12,7 +12,10 @@ use super::{
     AdmissionInput, AtomicError, CommandAccess, CommandRecord, CommandTime, DurableResult,
     Identity, Outcome,
 };
-use latent_core::{transaction_contract::Value, StateNamespaceId, TenantId};
+use latent_core::{
+    transaction_contract::{CommandKey, Value},
+    StateNamespaceId, TenantId,
+};
 use latent_effects::authority::{
     CommitLink, DurableEffectAuthority, EffectAuthorityOwner, EffectScope, EffectTime,
 };
@@ -38,6 +41,7 @@ pub enum PublishedAdmission {
 pub struct PreparedAdmission {
     record: CommandRecord,
     batch: AtomicBatch,
+    scope_guard: Option<ExpectedRow>,
 }
 /// Once-only host claim, deliberately not cloneable or reconstructible from a
 /// caller-supplied receipt. The runtime owns physical executor/IO guards separately.
@@ -59,6 +63,25 @@ pub struct CompleteEnvelope {
     state_binding: Option<latent_state::embedded::StoreBinding>,
     #[cfg(target_os = "linux")]
     payloads: Vec<latent_blobs::provider::CapturedLocalPayload>,
+}
+
+/// Verify an already-published source against the authenticated inbox identity
+/// in the same view used by the transaction writer. This grants no authority.
+pub fn verify_inbox_scope(
+    view: &ReadView,
+    key: &CommandKey,
+    inbox: &super::InboxIdentity,
+    scope: &latent_state::inbox_scope::InboxScope,
+) -> Result<ExpectedRow, AtomicError> {
+    if key.tenant != scope.tenant
+        || key.namespace != scope.namespace
+        || incarnation(key)? != scope.incarnation
+        || inbox.provider != scope.provider
+        || inbox.binding != scope.input_binding()?
+    {
+        return Err(AtomicError::Conflict);
+    }
+    Ok(latent_state::inbox_scope::require_existing(view, scope)?)
 }
 
 /// A bounded closed observation of the namespace expectation in an actually
@@ -265,7 +288,11 @@ impl PreparedAdmission {
             ],
         };
         super::accounting::apply(view, &TenantId(record.key.tenant.clone()), &mut batch)?;
-        Ok(AdmissionDecision::New(Self { record, batch }))
+        Ok(AdmissionDecision::New(Self {
+            record,
+            batch,
+            scope_guard: None,
+        }))
     }
     #[must_use]
     pub fn record(&self) -> &CommandRecord {
@@ -274,6 +301,33 @@ impl PreparedAdmission {
     #[must_use]
     pub fn batch(&self) -> &AtomicBatch {
         &self.batch
+    }
+    /// Attach the current matching source row to the pending and final writers.
+    pub fn fence_inbox_scope(
+        mut self,
+        view: &ReadView,
+        scope: &latent_state::inbox_scope::InboxScope,
+    ) -> Result<Self, AtomicError> {
+        let inbox = self.record.inbox.as_ref().ok_or(AtomicError::Invalid)?;
+        let expected = verify_inbox_scope(view, &self.record.key, inbox, scope)?;
+        if self.record.attempt != 1
+            || self.scope_guard.is_some()
+            || self
+                .batch
+                .expectations
+                .iter()
+                .any(|row| row.key == expected.key)
+            || self
+                .batch
+                .mutations
+                .iter()
+                .any(|row| row.key == expected.key)
+        {
+            return Err(AtomicError::Invalid);
+        }
+        self.batch.expectations.push(expected.clone());
+        self.scope_guard = Some(expected);
+        Ok(self)
     }
     pub fn publish(
         self,
@@ -284,7 +338,11 @@ impl PreparedAdmission {
         store
             .apply_fenced(self.batch, final_accept)
             .map_err(fenced_error)?;
-        let physical = super::ownership::AttemptState::new(self.record.clone(), expected.clone());
+        let physical = super::ownership::AttemptState::new(
+            self.record.clone(),
+            expected.clone(),
+            self.scope_guard.clone(),
+        );
         Ok(AdmittedCommand {
             record: self.record,
             expected,
@@ -313,8 +371,11 @@ impl PreparedAdmission {
         let expected = self.record.encode()?;
         match store.apply_fenced(self.batch, final_accept) {
             Ok(()) => {
-                let physical =
-                    super::ownership::AttemptState::new(self.record.clone(), expected.clone());
+                let physical = super::ownership::AttemptState::new(
+                    self.record.clone(),
+                    expected.clone(),
+                    self.scope_guard.clone(),
+                );
                 Ok(PublishedAdmission::New(AdmittedCommand {
                     record: self.record,
                     expected,
@@ -325,6 +386,11 @@ impl PreparedAdmission {
             }
             Err(FencedStoreError::Store(latent_state::embedded::StoreError::Conflict)) => {
                 let view = store.snapshot()?;
+                if let Some(guard) = &self.scope_guard {
+                    if view.get(&guard.key)? != guard.value {
+                        return Err(AtomicError::Conflict);
+                    }
+                }
                 let bytes = view
                     .get(&command_row_key(self.record.id))?
                     .ok_or(AtomicError::Conflict)?;
@@ -391,8 +457,11 @@ impl PreparedAdmission {
         let expected = self.record.encode()?;
         match store.apply_fenced(self.batch, final_accept) {
             Ok(()) => {
-                let physical =
-                    super::ownership::AttemptState::new(self.record.clone(), expected.clone());
+                let physical = super::ownership::AttemptState::new(
+                    self.record.clone(),
+                    expected.clone(),
+                    self.scope_guard.clone(),
+                );
                 Ok(PublishedAdmission::New(AdmittedCommand {
                     record: self.record,
                     expected,
@@ -676,7 +745,11 @@ impl PreparedAdmission {
             });
         }
         super::accounting::apply(view, &TenantId(record.key.tenant.clone()), &mut batch)?;
-        Ok(AdmissionDecision::New(Self { record, batch }))
+        Ok(AdmissionDecision::New(Self {
+            record,
+            batch,
+            scope_guard: None,
+        }))
     }
 }
 
@@ -870,8 +943,11 @@ impl CompleteEnvelope {
         code: String,
         time: CommandTime,
     ) -> Result<Self, AtomicError> {
-        let physical =
-            super::ownership::AttemptState::new(retired.record.clone(), retired.expected.clone());
+        let physical = super::ownership::AttemptState::new(
+            retired.record.clone(),
+            retired.expected.clone(),
+            retired.scope_guard.clone(),
+        );
         let claim = AdmittedCommand {
             record: retired.record,
             expected: retired.expected,
@@ -1157,6 +1233,12 @@ impl CompleteEnvelope {
                 },
             ],
         };
+        if let Some(guard) = &claim.physical.scope_guard {
+            if view.get(&guard.key)? != guard.value {
+                return Err(AtomicError::Conflict);
+            }
+            batch.expectations.push(guard.clone());
+        }
         if result.outcome != Outcome::Aborted {
             if let Some(inbox) = &terminal.inbox {
                 let key = inbox.row_key(&terminal.key)?;

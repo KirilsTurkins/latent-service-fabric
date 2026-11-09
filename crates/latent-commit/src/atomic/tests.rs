@@ -20,6 +20,7 @@ mod accounted;
 mod captured;
 mod census;
 mod historical_reservations;
+mod inbox_scope_fence;
 #[cfg(target_os = "linux")]
 mod io_faults;
 mod managed_accounting;

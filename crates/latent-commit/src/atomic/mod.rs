@@ -31,8 +31,9 @@ pub use validation::{
     validate_view_observed_with_checkpoint,
 };
 pub use writer::{
-    inspect, AdmissionDecision, AdmittedCommand, CompleteEnvelope, EnvelopeNamespaceExpectation,
-    PreparedAdmission, PreparedDisposition, PublishedAdmission, RetryRequest, StagedIntent,
+    inspect, verify_inbox_scope, AdmissionDecision, AdmittedCommand, CompleteEnvelope,
+    EnvelopeNamespaceExpectation, PreparedAdmission, PreparedDisposition, PublishedAdmission,
+    RetryRequest, StagedIntent,
 };
 #[cfg(target_os = "linux")]
 pub use writer::{PayloadAttachment, PayloadAttachmentTarget};

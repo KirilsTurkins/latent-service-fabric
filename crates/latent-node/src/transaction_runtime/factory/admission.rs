@@ -654,6 +654,7 @@ impl NativeTransactionAdmission {
         let time = role.captured_time();
         let keeper: Arc<dyn std::any::Any + Send + Sync> =
             Arc::new((Arc::clone(&authorization), Arc::clone(&role)));
+        let inbox_scope = self.inbox_scope.clone();
         let job = self.owners.store.with_store_retaining(
             StoreIoKind::Write,
             bytes,
@@ -680,18 +681,42 @@ impl NativeTransactionAdmission {
                 };
                 let first_attempt = retry.is_none();
                 let mut retained_input = Some(input);
-                let prepared = if let Some(retry) = retry.as_ref() {
-                    authorize(CommandAccess::Admit, None).and_then(|()| {
-                        let input = retained_input.as_ref().ok_or(AtomicError::Invalid)?;
-                        super::retry::check_association(&view, input, retry)?;
-                        PreparedAdmission::retry(&view, input, &retry.request, time, &authorize)
-                    })
-                } else {
-                    match retained_input.take() {
-                        Some(input) => PreparedAdmission::prepare(&view, input, time, &authorize),
-                        None => Err(AtomicError::Invalid),
-                    }
+                let scope_check = match (&inbox_scope, retained_input.as_ref()) {
+                    (Some(scope), Some(input)) => input
+                        .inbox
+                        .as_ref()
+                        .ok_or(AtomicError::Invalid)
+                        .and_then(|inbox| {
+                            latent_commit::atomic::verify_inbox_scope(
+                                &view, &input.key, inbox, scope,
+                            )
+                            .map(|_| ())
+                        }),
+                    (None, _) => Ok(()),
+                    _ => Err(AtomicError::Invalid),
                 };
+                let prepared = scope_check.and_then(|()| {
+                    if let Some(retry) = retry.as_ref() {
+                        authorize(CommandAccess::Admit, None).and_then(|()| {
+                            let input = retained_input.as_ref().ok_or(AtomicError::Invalid)?;
+                            super::retry::check_association(&view, input, retry)?;
+                            PreparedAdmission::retry(&view, input, &retry.request, time, &authorize)
+                        })
+                    } else {
+                        match retained_input.take() {
+                            Some(input) => {
+                                PreparedAdmission::prepare(&view, input, time, &authorize)
+                            }
+                            None => Err(AtomicError::Invalid),
+                        }
+                    }
+                });
+                let prepared = prepared.and_then(|decision| match (decision, &inbox_scope) {
+                    (AdmissionDecision::New(prepared), Some(scope)) => prepared
+                        .fence_inbox_scope(&view, scope)
+                        .map(AdmissionDecision::New),
+                    (decision, _) => Ok(decision),
+                });
                 let prepared = observation::atomic(Phase::PendingPreparation, prepared);
                 // A CAS loser may take one fresh view to inspect the winning
                 // command. Retire the original planning view first.

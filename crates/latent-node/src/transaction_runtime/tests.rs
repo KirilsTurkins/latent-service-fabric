@@ -28,6 +28,120 @@ async fn trusted_inbox_entity_lane_commits_and_replays_original_without_new_owne
     trusted_inbox_commit_and_replay(Some("hot")).await;
 }
 
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn scoped_inbox_requires_existing_source_before_guest_and_replays_after_commit() {
+    use latent_commit::atomic::{Identity, InboxIdentity};
+    use latent_state::{
+        inbox_scope::{InboxScope, PreparedInboxScope},
+        store_io::StoreIoKind,
+    };
+    use sha2::{Digest, Sha256};
+    let fixture = Fixture::with_scoped_trigger().await;
+    let scope = InboxScope {
+        tenant: "a".into(),
+        namespace: "orders".into(),
+        incarnation: 1,
+        processing_scope: "primary".into(),
+        provider: "input".into(),
+        stream: "orders".into(),
+        stream_created: "2026-01-01T00:00:00Z".into(),
+    };
+    let identity = InboxIdentity {
+        provider: scope.provider.clone(),
+        binding: scope.input_binding().unwrap(),
+        message: "42".into(),
+        payload_digest: Identity::parse_hex(&format!(
+            "{:x}",
+            latent_core::digest::HexDigest(Sha256::digest(b"same"))
+        ))
+        .unwrap(),
+    };
+    let key = identity.command_key().unwrap();
+    let (missing, mut envelope, budget) = fixture.invocation(false, &key);
+    envelope.principal.kind = latent_core::PrincipalKind::Trigger;
+    let missing = Arc::new(
+        Arc::try_unwrap(missing)
+            .ok()
+            .unwrap()
+            .with_trusted_inbox(identity.clone())
+            .unwrap()
+            .with_trusted_inbox_scope(scope.clone())
+            .unwrap(),
+    );
+    assert!(missing.admit(&envelope, &budget).await.is_err());
+    assert_eq!(fixture.rows(Family::Command).await, 0);
+    drop((missing, envelope, budget));
+    let approved = scope.clone();
+    fixture
+        .protected_store()
+        .with_store(StoreIoKind::Write, 8192, move |store| {
+            let view = store.snapshot()?;
+            let plan = PreparedInboxScope::prepare(&view, &approved)?;
+            drop(view);
+            store
+                .apply_fenced(plan.into_batch(), || Ok::<_, ()>(()))
+                .map_err(|_| latent_state::embedded::StoreError::Unavailable)
+        })
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap();
+    let (first, mut envelope, budget) = fixture.invocation(false, &key);
+    envelope.principal.kind = latent_core::PrincipalKind::Trigger;
+    let first = Arc::new(
+        Arc::try_unwrap(first)
+            .ok()
+            .unwrap()
+            .with_trusted_inbox(identity.clone())
+            .unwrap()
+            .with_trusted_inbox_scope(scope.clone())
+            .unwrap(),
+    );
+    let guest = first.admit(&envelope, &budget).await.unwrap();
+    guest.acquire(Mode::Command).unwrap();
+    guest.finish_guest_access();
+    let _ = budget.finalize_at(None, std::time::Instant::now());
+    first
+        .complete(
+            success(b"original"),
+            fixture.commit_control(&envelope, &budget),
+        )
+        .await;
+    assert!(matches!(
+        first.take_owned_completion().unwrap().unwrap().result,
+        TransactionCompletionResult::Command(CommandCompletionDisposition::Durable { .. })
+    ));
+    assert_eq!(fixture.rows(Family::Inbox).await, 1);
+    drop((guest, first, envelope, budget));
+    let (replay, mut envelope, budget) = fixture.invocation(false, &key);
+    envelope.principal.kind = latent_core::PrincipalKind::Trigger;
+    let replay = Arc::new(
+        Arc::try_unwrap(replay)
+            .ok()
+            .unwrap()
+            .with_trusted_inbox(identity)
+            .unwrap()
+            .with_trusted_inbox_scope(scope)
+            .unwrap(),
+    );
+    assert_eq!(
+        replay.admit(&envelope, &budget).await.err().unwrap().code,
+        latent_core::PlatformErrorCode::AlreadyExists
+    );
+    let _ = budget.finalize_at(None, std::time::Instant::now());
+    replay
+        .complete(
+            success(b"not executed"),
+            fixture.commit_control(&envelope, &budget),
+        )
+        .await;
+    assert!(matches!(
+        replay.take_owned_completion().unwrap().unwrap().result,
+        TransactionCompletionResult::Existing { .. }
+    ));
+    assert_eq!(fixture.rows(Family::Inbox).await, 1);
+}
+
 async fn trusted_inbox_commit_and_replay(entity: Option<&str>) {
     use latent_commit::atomic::{Identity, InboxIdentity};
     use sha2::{Digest, Sha256};

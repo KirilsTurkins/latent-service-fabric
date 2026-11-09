@@ -119,7 +119,8 @@ impl InboxAdmissionFactory for InboxFactory {
         };
         Ok(Arc::new(
             NativeTransactionAdmission::new(Arc::clone(&self.owners), installation, selection)?
-                .with_trusted_inbox(delivery.identity().clone())?,
+                .with_trusted_inbox(delivery.identity().clone())?
+                .with_trusted_inbox_scope(delivery.scope().clone())?,
         ))
     }
 }

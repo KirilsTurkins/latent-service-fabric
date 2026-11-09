@@ -223,3 +223,18 @@ impl PreparedInboxScope {
         self.batch
     }
 }
+
+/// Capture an already-published exact source for a dependent atomic writer.
+/// Missing history is never interpreted as approval to create a new scope.
+pub fn require_existing(view: &ReadView, scope: &InboxScope) -> Result<ExpectedRow, StoreError> {
+    let plan = PreparedInboxScope::prepare(view, scope)?;
+    if !plan.existing {
+        return Err(StoreError::Conflict);
+    }
+    let key = scope.key()?;
+    plan.batch
+        .expectations
+        .into_iter()
+        .find(|expected| expected.key == key && expected.value.is_some())
+        .ok_or(StoreError::Corrupt)
+}

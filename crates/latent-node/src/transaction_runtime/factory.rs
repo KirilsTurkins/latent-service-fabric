@@ -201,6 +201,7 @@ pub struct NativeTransactionAdmission {
     validator: Option<Arc<dyn TransactionOutcomeValidator>>,
     cancellation_abort: Mutex<Option<Arc<super::cancellation::CancellationAbortSlot>>>,
     inbox: Option<latent_commit::atomic::InboxIdentity>,
+    inbox_scope: Option<latent_state::inbox_scope::InboxScope>,
     shared_owner: Option<Arc<super::SharedCommandOwner>>,
 }
 impl NativeTransactionAdmission {
@@ -221,6 +222,7 @@ impl NativeTransactionAdmission {
             validator: None,
             cancellation_abort: Mutex::new(None),
             inbox: None,
+            inbox_scope: None,
             shared_owner: None,
         })
     }
@@ -246,6 +248,33 @@ impl NativeTransactionAdmission {
             return Err(authorization::denied());
         }
         self.inbox = Some(identity);
+        Ok(self)
+    }
+
+    /// Require the separately qualified source to match a previously approved
+    /// durable scope. This does not create a scope or establish restore safety.
+    pub fn with_trusted_inbox_scope(
+        mut self,
+        scope: latent_state::inbox_scope::InboxScope,
+    ) -> Result<Self, PlatformError> {
+        let inbox = self.inbox.as_ref().ok_or_else(authorization::denied)?;
+        let valid = match self.state.get_mut() {
+            Ok(State::Fresh(Some(selection))) => {
+                selection.entity.is_none()
+                    && selection.retry.is_none()
+                    && selection.namespace == scope.namespace
+                    && selection.incarnation == scope.incarnation
+            }
+            _ => false,
+        };
+        if !valid
+            || self.inbox_scope.is_some()
+            || inbox.provider != scope.provider
+            || scope.input_binding().map_err(|_| authorization::denied())? != inbox.binding
+        {
+            return Err(authorization::denied());
+        }
+        self.inbox_scope = Some(scope);
         Ok(self)
     }
 

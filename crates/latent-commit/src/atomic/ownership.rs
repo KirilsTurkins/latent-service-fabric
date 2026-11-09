@@ -2,6 +2,7 @@
 //! retires one. Unretired guards quarantine the attempt and cannot mint abort proof.
 
 use super::{AdmittedCommand, AtomicError, CommandRecord};
+use latent_state::embedded::ExpectedRow;
 use std::sync::{
     atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering},
     Arc,
@@ -13,15 +14,21 @@ pub(super) const UNKNOWN: u8 = 3;
 pub(super) struct AttemptState {
     pub record: CommandRecord,
     pub expected: Vec<u8>,
+    pub scope_guard: Option<ExpectedRow>,
     pub owners: AtomicUsize,
     pub phase: AtomicU8,
     pub quarantined: AtomicBool,
 }
 impl AttemptState {
-    pub fn new(record: CommandRecord, expected: Vec<u8>) -> Arc<Self> {
+    pub fn new(
+        record: CommandRecord,
+        expected: Vec<u8>,
+        scope_guard: Option<ExpectedRow>,
+    ) -> Arc<Self> {
         Arc::new(Self {
             record,
             expected,
+            scope_guard,
             owners: AtomicUsize::new(1),
             phase: AtomicU8::new(OPEN),
             quarantined: AtomicBool::new(false),
@@ -35,6 +42,7 @@ pub struct AttemptRetirement {
 pub struct RetiredAttempt {
     pub(super) record: CommandRecord,
     pub(super) expected: Vec<u8>,
+    pub(super) scope_guard: Option<ExpectedRow>,
 }
 pub struct PhysicalAttemptWork {
     state: Arc<AttemptState>,
@@ -85,6 +93,7 @@ impl AttemptRetirement {
         Ok(RetiredAttempt {
             record: self.state.record.clone(),
             expected: self.state.expected.clone(),
+            scope_guard: self.state.scope_guard.clone(),
         })
     }
 }
