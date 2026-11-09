@@ -186,6 +186,13 @@ fn physical_inventory_rejects_another_engine_with_identical_head() {
             .unwrap()
             .1
     );
+    // A second snapshot of the same engine and unchanged head is still not
+    // the original coherent observation used to produce the first page.
+    let another_view = first_store.snapshot().unwrap();
+    assert!(matches!(
+        inventory.next_page(&another_view, 1, MAX_REFERENCE_BYTES),
+        Err(StoreError::Conflict)
+    ));
     let other_view = other_store.snapshot().unwrap();
     assert!(matches!(
         inventory.next_page(&other_view, 1, MAX_REFERENCE_BYTES),
