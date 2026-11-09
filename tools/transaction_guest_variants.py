@@ -205,8 +205,10 @@ def main() -> None:
     parser.add_argument("--variant", required=True, choices=(*VARIANTS, "forbidden-child"))
     parser.add_argument("--project", required=True, type=Path)
     parser.add_argument("--name")
+    parser.add_argument("--rust-event-profile", help="Exact observed event profile for the Rust forbidden-HTTP source; grants no authority")
     arguments = parser.parse_args()
-    print(create(arguments.project, arguments.language, arguments.variant, arguments.name))
+    print(create(arguments.project, arguments.language, arguments.variant, arguments.name,
+                 rust_event_profile=arguments.rust_event_profile))
 
 
 if __name__ == "__main__":
