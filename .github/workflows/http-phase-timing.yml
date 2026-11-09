@@ -82,6 +82,9 @@ jobs:
           cargo test --locked -p latent-wasmtime --lib host::streaming_http::table::tests::write_completion_stale_row_drops_upload_after_store_access -- --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/http-write-stale-row.log"
           test "$(grep -Fxc "running 1 test" "$RUNNER_TEMP/http-write-stale-row.log")" -eq 1
           test "$(grep -Fxc "test host::streaming_http::table::tests::write_completion_stale_row_drops_upload_after_store_access ... ok" "$RUNNER_TEMP/http-write-stale-row.log")" -eq 1
+          cargo test --locked -p latent-wasmtime --lib host::streaming_http::table::tests::finish_completion_refusals_drop_body_after_store_access -- --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/http-finish-refusal.log"
+          test "$(grep -Fxc "running 1 test" "$RUNNER_TEMP/http-finish-refusal.log")" -eq 1
+          test "$(grep -Fxc "test host::streaming_http::table::tests::finish_completion_refusals_drop_body_after_store_access ... ok" "$RUNNER_TEMP/http-finish-refusal.log")" -eq 1
       - name: Execute the new canonical ABI with actual sockets and fresh Stores
         run: |
           cargo test --locked -p latent-wasmtime --test streaming_http phases:: -- --nocapture
