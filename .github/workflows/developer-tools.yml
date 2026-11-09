@@ -209,8 +209,33 @@ jobs:
         with:
           persist-credentials: false
       - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+        id: python-setup
+        continue-on-error: true
         with:
           python-version: 3.13.5
+      - name: Recover the pinned Python release after setup download failure
+        if: steps.python-setup.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/guest-python.tar.gz"
+          python_root="$RUNNER_TEMP/guest-python"
+          timeout 180s gh api -H 'Accept: application/octet-stream' repos/actions/python-versions/releases/assets/263151873 | head -c 129234020 > "$archive"
+          unset GH_TOKEN
+          test "$(stat --format=%s "$archive")" = 129234019
+          printf '%s  %s\n' c12a003f80a8cb0df9fa15aee369ab5c9512976edff9405dded164e2c6922e1b "$archive" | sha256sum --check --strict
+          mkdir "$python_root"
+          tar -xzf "$archive" -C "$python_root" --no-same-owner
+          ln -s python3.13 "$python_root/bin/python"
+          export LD_LIBRARY_PATH="$python_root/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+          test "$("$python_root/bin/python" --version)" = 'Python 3.13.5'
+          "$python_root/bin/python" -m pip --version
+          printf '%s\n' "$python_root/bin" >> "$GITHUB_PATH"
+          printf 'LD_LIBRARY_PATH=%s\n' "$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
+          printf 'pythonLocation=%s\nPython_ROOT_DIR=%s\nPython2_ROOT_DIR=%s\nPython3_ROOT_DIR=%s\n' "$python_root" "$python_root" "$python_root" "$python_root" >> "$GITHUB_ENV"
+          printf 'PKG_CONFIG_PATH=%s\n' "$python_root/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
           targets: wasm32-unknown-unknown
