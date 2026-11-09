@@ -18,6 +18,8 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     private final ArrayDeque<Item> queue = new ArrayDeque<>();
     private final ArrayList<Thread> workers = new ArrayList<>();
     private volatile Activation.Lease owner;
+    private final java.util.concurrent.atomic.AtomicBoolean ownerSettlementStarted =
+        new java.util.concurrent.atomic.AtomicBoolean();
     private boolean shutdown;
     private boolean interrupting;
     private volatile boolean retiring;
@@ -48,7 +50,15 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         this.expireIdle = expireIdle;
         owner = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Executor);
         try { Activation.manage(this); }
-        catch (Throwable error) { owner.close(); owner = null; throw error; }
+        catch (Throwable error) {
+            try { settleOwner(true); }
+            catch (Throwable uncertain) {
+                // Preserve the entry failure even if rollback is unknown.
+                // This also fences an already in-flight settlement attempt.
+                Activation.fenceUncertainCompletion();
+            }
+            throw error;
+        }
     }
 
     /** Preserve the admitted lease and fence completion if settlement is uncertain. */
@@ -190,9 +200,28 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         }
     }
 
-    private void settleIfTerminated() {
-        if ((shutdown || retiring) && queue.isEmpty() && workers.isEmpty() && owner != null) {
-            owner.close();
+    private void settleIfTerminated() { settleIfTerminated(false); }
+    private void settleIfTerminated(boolean root) {
+        if ((shutdown || retiring) && queue.isEmpty() && workers.isEmpty()) settleOwner(root);
+    }
+    private void settleOwner(boolean rootOrRollback) {
+        if (owner != null) {
+            // closeAtRoot can enter outside a suspendable pool monitor. Claim
+            // the sole attempt before the host call, including under reentry.
+            if (!ownerSettlementStarted.compareAndSet(false, true)) {
+                if (owner == null || !rootOrRollback) return;
+                // Root retirement cannot report success while the first host
+                // call still has an unknown outcome. Keep its pool rooted.
+                Activation.fenceUncertainCompletion();
+                throw new IllegalStateException("activation-executor-owner-settlement-uncertain");
+            }
+            Activation.Lease held = owner;
+            try { held.close(); }
+            catch (Throwable uncertain) {
+                // The intrusive list roots the same lease without allocating.
+                Activation.fenceUncertainQueuedWorkSettlement(held);
+                throw uncertain;
+            }
             owner = null;
             Activation.unmanageRetired(this);
         }
@@ -208,7 +237,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         // ordinary resumed finally paths; workers keep their physical owners.
         retiring = true;
         for (Thread worker : workers) worker.interrupt();
-        if (workers.isEmpty()) settleIfTerminated();
+        if (workers.isEmpty()) settleIfTerminated(true);
     }
     @Override public synchronized void shutdown() { shutdown = true; notifyAll(); settleIfTerminated(); }
     @Override public synchronized List<Runnable> shutdownNow() {

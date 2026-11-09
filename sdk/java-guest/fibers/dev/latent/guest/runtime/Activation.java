@@ -214,10 +214,12 @@ public final class Activation {
         return new Lease(register(kind));
     }
 
-    /** No current or later invocation may succeed after an unknown Result settlement. */
-    public static void fenceUncertainResultSettlement() { poisoned = true; }
+    /** No current or later invocation may succeed after ownership becomes uncertain. */
+    public static void fenceUncertainCompletion() { poisoned = true; }
+    public static void fenceUncertainResultSettlement() { fenceUncertainCompletion(); }
 
-    /** Keep a failed constructor's admitted owner rooted until Store destruction. */
+    /** Keep an admitted owner with uncertain settlement rooted until Store destruction.
+     * This intrusive custody also covers executor and timer owners. */
     public static void fenceUncertainQueuedWorkSettlement(Lease owner) {
         poisoned = true;
         // The lease and list head were allocated before admission. Each failed

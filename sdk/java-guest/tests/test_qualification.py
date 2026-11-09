@@ -194,7 +194,9 @@ class WaitFrameModelIntegrity(unittest.TestCase):
                 ("QUEUE_HEAP_CONTROL PASS actual-original-regression;actual-corrected-order;"
                  "up;down;ties;root;single-child;signed-min;last;singleton;empty;missing;repeat;model;preimage-negative;repeat-negative;donor-body-negative;donor-layout-negative;donor-node-negative\n"), "",
                 ("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;"
-                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence\n")]
+                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence\n")] + [
+                f"EXECUTOR_ACTIVATION_SETTLEMENT PASS {kind} {mode}" for kind in ("managed", "scheduled")
+                for mode in fibers.EXECUTOR_ACTIVATION_SETTLEMENT_CASES]
             report = fibers.wait_frame_model_control(compiler, root / "model")
             self.assertEqual(report["nativeCallbackPairs"], 2)
             self.assertEqual(report["pluginOrder"], ["runtime", "platform"])
@@ -208,7 +210,12 @@ class WaitFrameModelIntegrity(unittest.TestCase):
             self.assertEqual(report["timerReadinessSourceControl"],
                              "passed-private-source-ledger-not-guest-qualification")
             self.assertEqual(len(report["jarDigests"]), 10)
-            compile_call, model_call, queue_call, heap_call, timer_compile, timer_call = compiler.run.call_args_list
+            compile_call, model_call, queue_call, heap_call, timer_compile, timer_call = compiler.run.call_args_list[:6]
+            self.assertIn(compiler.sdk / "fibers/conformance/compiler/timer-source-control/ExecutorActivationSettlementControl.java",
+                          timer_compile.args)
+            self.assertEqual(len(compiler.run.call_args_list[6:]), 2 * len(fibers.EXECUTOR_ACTIVATION_SETTLEMENT_CASES))
+            self.assertFalse(report["executorActivationSettlement"]["componentExecutionPerformed"])
+            self.assertFalse(report["executorActivationSettlement"]["actualGuestBindingsUsed"])
             self.assertEqual(compile_call.args[:3], ("wait-frame-model-compile", "javac", "-proc:none"))
             self.assertEqual(compile_call.args[-5:], tuple(compiler.sdk / source for source in (
                 "fibers/compiler/dev/latent/guest/runtime/compiler/SleepContinuations.java",
