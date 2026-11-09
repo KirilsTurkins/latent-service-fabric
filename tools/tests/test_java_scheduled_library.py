@@ -171,7 +171,7 @@ class ScheduledLibraryOwnership(unittest.TestCase):
         # Both routes reach their unchanged owned-output boundary only for the
         # exact push, workflow path and commit; reject mixed or stale identities.
         environment.pop('LSF_JAVA_WORKER_LIBRARIES_FIXTURE')
-        for branch, workflow in ((owner.BRANCH, owner.WORKFLOW),
+        for branch, workflow in ((owner.BRANCH, owner.WORKFLOW), (owner.SLEEP_BRANCH, owner.WORKFLOW),
                                  (owner.DEVELOPMENT_BRANCH, owner.DEVELOPMENT_WORKFLOW)):
             selected = {**environment, 'GITHUB_REF_NAME': branch,
                 'GITHUB_WORKFLOW_REF': owner.identities.REPOSITORY + '/' + workflow + '@refs/heads/' + branch}
@@ -212,13 +212,13 @@ class ScheduledLibraryOwnership(unittest.TestCase):
         self.assertEqual(caller['permissions'], {'contents': 'read', 'actions': 'read'})
         self.assertEqual(caller['jobs'], {'scheduled-library': {'uses': '$/' + owner.WORKFLOW}})
         self.assertIn('workflow_call', called['on'])
-        self.assertEqual(called['on']['push']['branches'], [owner.BRANCH, owner.SHUTDOWN_BRANCH, owner.FUTURE_BRANCH])
+        self.assertEqual(called['on']['push']['branches'], [owner.BRANCH, owner.SHUTDOWN_BRANCH, owner.FUTURE_BRANCH, owner.SLEEP_BRANCH])
         job = called['jobs']['scheduled-library']
         self.assertIn(owner.DEVELOPMENT_WORKFLOW + '@refs/heads/development', job['if'])
         self.assertEqual(job['timeout-minutes'],
-            "${{ (github.ref_name == '" + owner.BRANCH + "' || github.ref_name == 'development') && 45 || 25 }}")
+            "${{ (github.ref_name == '" + owner.BRANCH + "' || github.ref_name == '" + owner.SLEEP_BRANCH + "' || github.ref_name == 'development') && 45 || 25 }}")
         self.assertEqual([step['if'] for step in job['steps'] if step.get('name', '').startswith('Capture and compile')],
-            ["github.ref_name == '" + owner.BRANCH + "' || github.ref_name == 'development'"])
+            ["github.ref_name == '" + owner.BRANCH + "' || github.ref_name == '" + owner.SLEEP_BRANCH + "' || github.ref_name == 'development'"])
 
 
 class TaskShutdownNowOwnership(unittest.TestCase):
