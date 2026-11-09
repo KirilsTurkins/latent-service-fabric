@@ -12,18 +12,22 @@ from tools.go_guest import fired_timer_witness as probe
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def output():
-    rows = [dict(case=case, mode=mode, outcome='success', storesCreated=count, liveStores=0,
+def output(include_returned_cancel=False):
+    cases = [('stop', 0, 'success', 1), ('reset', 1, 'success', 2), ('returned-stop', 2, 'success', 3),
+             ('returned-reset', 3, 'success', 4)]
+    if include_returned_cancel:
+        cases.append(('returned-cancel', 4, 'cancelled', 5))
+    cases.append(('fresh', 0, 'success', 6 if include_returned_cancel else 5))
+    rows = [dict(case=case, mode=mode, outcome=outcome, storesCreated=count, liveStores=0,
                  liveInstances=0, reservations=0, reservedFuel=0, reservedMemory=0, pendingProviderWaits=0)
-            for case, mode, count in [('stop', 0, 1), ('reset', 1, 2), ('returned-stop', 2, 3),
-                                      ('returned-reset', 3, 4), ('fresh', 0, 5)]]
+            for case, mode, outcome, count in cases]
     lines = [f'test {owner.FIRED_TIMER_CASE} ... ok']
     lines.extend('GO_TIMER_FIRED_CASE ' + json.dumps(row) for row in rows)
     lines.append('test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 53 filtered out;')
     return ('\n'.join(lines) + '\n').encode()
 
 
-def diagnostic():
+def diagnostic(include_returned_cancel=False):
     ids = ['go-timer-fired-stop', 'go-timer-fired-reset']
     lines = []
     for name in ids:
@@ -32,6 +36,9 @@ def diagnostic():
     for name in ['go-timer-returned-stop', 'go-timer-returned-reset']:
         lines.append(f'LSF-GO-TIMER-WAIT-DROP-V1|{name}|1')
         lines.append(f'LSF-GO-TIMER-RETURNED-V1|{name}|1|0|0|512')
+    if include_returned_cancel:
+        lines.append('LSF-GO-TIMER-WAIT-DROP-V1|go-timer-returned-cancel|1')
+        lines.append('LSF-GO-TIMER-RETURNED-CANCEL-V1|go-timer-returned-cancel|1|0|0|512')
     return ('\n'.join(lines) + '\n').encode()
 
 
@@ -86,6 +93,24 @@ class FiredTimerControls(unittest.TestCase):
             with self.subTest(out=out[:100], diag=diag[:100]), self.assertRaises(ValueError):
                 owner.fired_timer_observations(out, diag, 53)
 
+    def test_current_cancellation_requires_its_exact_case_witness_and_original_wait_drop(self):
+        parsed = owner.fired_timer_observations(output(True), diagnostic(True), 53, include_returned_cancel=True)
+        self.assertEqual([row['case'] for row in parsed['cases']],
+            ['stop', 'reset', 'returned-stop', 'returned-reset', 'returned-cancel', 'fresh'])
+        self.assertEqual(parsed['returnedCancellationWitness']['activation'], 'go-timer-returned-cancel')
+        for out, diag in (
+            (output(), diagnostic()),
+            (output(True).replace(b'"outcome": "cancelled"', b'"outcome": "success"'), diagnostic(True)),
+            (output(True), diagnostic(True).replace(b'RETURNED-CANCEL-V1|go-timer-returned-cancel|1',
+                                                    b'RETURNED-CANCEL-V1|go-timer-returned-cancel|0')),
+            (output(True), diagnostic(True).replace(b'WAIT-DROP-V1|go-timer-returned-cancel|1',
+                                                    b'WAIT-DROP-V1|go-timer-returned-cancel|0')),
+        ):
+            with self.subTest(out=out[:100], diag=diag[-100:]), self.assertRaises(ValueError):
+                owner.fired_timer_observations(out, diag, 53, include_returned_cancel=True)
+        with self.assertRaises(ValueError):
+            owner.fired_timer_observations(output(True), diagnostic(True), 53)
+
 
     def test_receipt_retains_all_validated_fired_and_returned_cases(self):
         available = {owner.FIRED_TIMER_CASE, *(f'other_{index}' for index in range(53))}
@@ -96,9 +121,9 @@ class FiredTimerControls(unittest.TestCase):
         def owned(command, **_kwargs):
             if command[0] == 'git' or '--list' in command:
                 return result
-            return SimpleNamespace(returncode=0, output=output(), stderr=diagnostic())
+            return SimpleNamespace(returncode=0, output=output(True), stderr=diagnostic(True))
 
-        expected = owner.fired_timer_observations(output(), diagnostic(), 53)
+        expected = owner.fired_timer_observations(output(True), diagnostic(True), 53, include_returned_cancel=True)
         with tempfile.TemporaryDirectory() as temporary, \
                 patch.object(owner.sys, 'platform', 'linux'), \
                 patch.object(owner.artifacts, 'require_source'), \
@@ -113,10 +138,11 @@ class FiredTimerControls(unittest.TestCase):
                                     'test-revision', 'timer-fired-v7')
             self.assertEqual(receipt, json.loads((out / 'receipt.json').read_text(encoding='utf-8')))
             self.assertEqual(receipt['signedCases'], expected['cases'])
-            self.assertEqual(receipt['signedInvocations'], 5)
+            self.assertEqual(receipt['signedInvocations'], 6)
             self.assertEqual(receipt['signedInvocations'], len(receipt['signedCases']))
             self.assertEqual(receipt['originalTimerOverlapWitnesses'], expected['witnesses'])
             self.assertEqual(receipt['returnedTimerWitnesses'], expected['returnedWitnesses'])
+            self.assertEqual(receipt['returnedCancellationWitness'], expected['returnedCancellationWitness'])
             self.assertEqual(receipt['physicalTimerWaitDrops'], expected['physicalWaitDrops'])
 
     def test_compiler_selects_the_diagnostic_sdk_without_editing_the_original(self):
@@ -185,7 +211,7 @@ class FiredTimerControls(unittest.TestCase):
                 'ordinarySource': True, 'signedExecution': 'not-run',
                 'componentDigest': 'sha256:' + owner.digest(b'example-component'),
                 'bindingDigest': 'example', 'tools': {}, 'transformations': [],
-                'diagnosticRuntime': {'kind': 'selected-returned-ticker-fence-observe-v3',
+                'diagnosticRuntime': {'kind': 'selected-returned-ticker-cancel-fence-observe-v4',
                     'originalTimerAsyncDigest': 'sha256:' + owner.digest(original),
                     'derivedTimerAsyncDigest': 'sha256:' + owner.digest(derived),
                     'originalTimerBridgeDigest': 'sha256:' + owner.digest(original_bridge),
@@ -231,6 +257,9 @@ class FiredTimerControls(unittest.TestCase):
         returned_branch = 'feat/go-returned-timer-fence-20261109'
         self.assertIn(returned_branch, workflow['on']['push']['branches'])
         self.assertIn("github.ref_name == '" + returned_branch + "' && 'timer-fired-v7'", workflow['env']['LSF_GO_REFERENCE_CAMPAIGN'])
+        cancel_branch = 'feat/go-returned-cancel-20261109'
+        self.assertIn(cancel_branch, workflow['on']['push']['branches'])
+        self.assertIn("github.ref_name == '" + cancel_branch + "' && 'timer-fired-v7'", workflow['env']['LSF_GO_REFERENCE_CAMPAIGN'])
         self.assertNotIn('release', workflow['on']['push']['branches'])
         self.assertIn("github.ref_name == '" + branch + "' && 'timer-fired-v7'", workflow['env']['LSF_GO_REFERENCE_CAMPAIGN'])
         self.assertIn('timer-fired-v7', workflow['on']['workflow_dispatch']['inputs']['campaign']['options'])

@@ -45,12 +45,17 @@ import ("runtime"; "unsafe")
 type lsfTimerWait struct { token [2]uint64; subtask uint32; result unsafe.Pointer; stopped, started bool; done chan struct{} }
 var state *struct { timerWaits []*lsfTimerWait }
 var lsfFiredFirstStopped, lsfReturnedToken, selected [2]uint64
-var lsfReturnedFenceSeen bool
+var lsfReturnedFenceSeen, lsfReturnedCancel, cancelSelected bool
+var heldProbes int
 var events chan string
 var release chan struct{}
 var marked unsafe.Pointer
 func lsfReturnedTickerSelected(g, id uint64) bool { return selected == [2]uint64{g,id} }
-func lsfReturnedObserve() { if lsfReturnedFenceSeen { events <- "after-drop" } else { events <- "event"; close(release) } }
+func lsfReturnedCancelSelected(g, id uint64) bool { return cancelSelected && selected == [2]uint64{g,id} }
+func lsfReturnedObserve() {
+    if cancelSelected && lsfReturnedFenceSeen { heldProbes++; events <- "held"; if heldProbes == 3 { panic("simulated root cancellation") }; return }
+    if lsfReturnedFenceSeen { events <- "after-drop" } else { events <- "event"; close(release) }
+}
 func lsfFiredFenceWitness() { events <- "fence" }
 func lsfReturnedSetFenceChannel(p unsafe.Pointer) { marked=p; if p == nil { events <- "unmark" } else { events <- "mark" } }
 func waitableJoin(_, _ uint32) { events <- "unjoin" }
@@ -63,7 +68,7 @@ import ("testing"; "time"; "unsafe")
 func reset() *lsfTimerWait {
     value:=new([16]byte); wait:=&lsfTimerWait{token:[2]uint64{7,10},subtask:42,result:unsafe.Pointer(value),started:true,done:make(chan struct{})}
     state=&struct{timerWaits []*lsfTimerWait}{[]*lsfTimerWait{wait}}
-    lsfFiredFirstStopped=[2]uint64{};lsfReturnedToken=[2]uint64{};lsfReturnedFenceSeen=false
+    lsfFiredFirstStopped=[2]uint64{};lsfReturnedToken=[2]uint64{};lsfReturnedFenceSeen=false;lsfReturnedCancel=false;cancelSelected=false;heldProbes=0
     selected=wait.token;events=make(chan string,16);release=make(chan struct{});marked=nil
     return wait
 }
@@ -89,6 +94,19 @@ func TestReturnedFenceRejectsAnotherGeneration(t *testing.T) {
     state.timerWaits=[]*lsfTimerWait{foreign};lsfReturnedToken=[2]uint64{7,10}
     lsfActivationTimerFence(8,10)
     if lsfReturnedFenceSeen || marked!=nil {t.Fatal("foreign generation marked as matched fence")}
+}
+func TestCancellationHoldsTheOriginalEventBeforeSubtaskDrop(t *testing.T) {
+    wait:=reset();cancelSelected=true;finished:=make(chan struct{})
+    go func(){ <-release;lsfActivationTimerStopped(7,10);lsfActivationTimerFence(7,10);events<-"public";close(finished) }()
+    defer func(){
+        if recover()==nil || heldProbes!=3 { t.Fatal("simulated cancellation did not stop the held event") }
+        for len(events)>0 { event:= <-events; if event=="unjoin" || event=="drop" || event=="public" { t.Fatalf("early %s",event) } }
+        if len(state.timerWaits)!=1 || state.timerWaits[0]!=wait {t.Fatal("original wait was removed")}
+        close(wait.done)
+        select {case <-finished:case <-time.After(time.Second):t.Fatal("test waiter did not finish")}
+    }()
+    lsfHandleTimerEvent(42)
+    t.Fatal("held event unexpectedly returned")
 }
 '''
 
@@ -116,9 +134,9 @@ def returned_controls(go: str, root: Path, environment: dict, derived: str) -> N
         if name == 'weakened-returned':
             if result.returncode == 0 or 'foreign generation marked as matched fence' not in output:
                 raise ValueError('Go-returned-fence-weak-probe-not-rejected')
-        elif result.returncode != 0 or output.count('--- PASS: Test') != 3:
+        elif result.returncode != 0 or output.count('--- PASS: Test') != 4:
             raise ValueError('Go-returned-fence-selected-probe-failed: ' + output[-1500:])
-        print(name + ': ' + ('foreign generation rejected' if name.startswith('weakened') else 'three source-port controls passed'))
+        print(name + ': ' + ('foreign generation rejected' if name.startswith('weakened') else 'four source-port controls passed'))
 
 
 
@@ -182,6 +200,27 @@ def returned_park_controls(go: str, root: Path, environment: dict) -> None:
         print(name + ': ' + ('foreign channel rejected' if name.startswith('weakened') else 'three source-port controls passed'))
 
 
+def cancellation_gate_controls(root: Path) -> None:
+    rustc = shutil.which('rustc')
+    if rustc is None:
+        raise ValueError('Go-returned-cancel-gate-pinned-rust-missing')
+    version = subprocess.run([rustc, '--version'], check=True, capture_output=True, text=True, timeout=10).stdout.split()
+    if len(version) < 2 or version[1] != '1.97.1':
+        raise ValueError('Go-returned-cancel-gate-unreviewed-rust')
+    source = ROOT / 'crates/latent-wasmtime/src/development_go_timer_cancel.rs'
+    binary = root / 'returned-cancel-gate'
+    build = subprocess.run([rustc, '--edition=2021', '--test', str(source), '-o', str(binary)],
+                           capture_output=True, text=True, timeout=90)
+    if build.returncode != 0 or len((build.stdout + build.stderr).encode()) > 1024 * 1024:
+        raise ValueError('Go-returned-cancel-gate-build-failed: ' + build.stderr[-1500:])
+    result = subprocess.run([str(binary), '--test-threads=1'], capture_output=True, text=True, timeout=30)
+    output = result.stdout + result.stderr
+    if (result.returncode != 0 or len(output.encode()) > 1024 * 1024
+            or 'test result: ok. 3 passed; 0 failed; 0 ignored;' not in output):
+        raise ValueError('Go-returned-cancel-gate-controls-failed: ' + output[-1500:])
+    print('returned-cancel: three exact Rust gate controls passed')
+
+
 def main() -> None:
     go = shutil.which('go')
     if go is None:
@@ -224,6 +263,7 @@ def main() -> None:
             print(name + ': ' + ('both false signals rejected' if name == 'weakened' else 'both source-port controls passed'))
         returned_controls(go, root, environment, source)
         returned_park_controls(go, root, environment)
+        cancellation_gate_controls(root)
 
 
 if __name__ == '__main__':
