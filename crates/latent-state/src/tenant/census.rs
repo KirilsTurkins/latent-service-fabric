@@ -36,6 +36,8 @@ pub struct TenantCensusReport {
     pub logical_bytes: u64,
     pub global_rows: u64,
     pub global_bytes: u64,
+    /// Digest of every validated source row seen by this exact ordered scan.
+    pub inbox_custody: Option<crate::store_identity::InboxCustodyWatermark>,
 }
 struct Counter {
     tenant: TenantId,
@@ -53,6 +55,7 @@ pub struct TenantCensus {
     previous: Option<RowKey>,
     deadline: Instant,
     failed: bool,
+    inbox_inventory: crate::inbox_scope::InboxScopeInventory,
 }
 impl TenantCensus {
     pub fn capture(
@@ -99,10 +102,12 @@ impl TenantCensus {
                 logical_bytes: 0,
                 global_rows: 0,
                 global_bytes: 0,
+                inbox_custody: None,
             },
             previous: None,
             deadline,
             failed: false,
+            inbox_inventory: crate::inbox_scope::InboxScopeInventory::default(),
         })
     }
 
@@ -138,6 +143,7 @@ impl TenantCensus {
         }) {
             return Err(StoreError::Corrupt);
         }
+        self.inbox_inventory.observe(key, bytes)?;
         self.report.rows = self
             .report
             .rows
@@ -228,7 +234,7 @@ impl TenantCensus {
             Ok(())
         }
     }
-    pub fn finish(self) -> Result<TenantCensusReport, StoreError> {
+    pub fn finish(mut self) -> Result<TenantCensusReport, StoreError> {
         self.checkpoint()?;
         if self.failed
             || !self.guard_seen
@@ -239,6 +245,7 @@ impl TenantCensus {
         {
             return Err(StoreError::Corrupt);
         }
+        self.report.inbox_custody = self.inbox_inventory.finish()?;
         Ok(self.report)
     }
 }

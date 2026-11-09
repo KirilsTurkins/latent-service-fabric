@@ -1,7 +1,10 @@
 use latent_core::native_capacity::NativeReservation;
 use std::sync::Arc;
 
-use super::{CheckpointInspection, ProtectedCheckpointConfig, StoreInitializationWitness};
+use super::{
+    CheckpointInspection, InventoryObservation, ProtectedCheckpointConfig,
+    StoreInitializationWitness,
+};
 use crate::embedded::{ReadView, StoreError};
 use crate::protected_store::physical::{FailureLatch, PhysicalStore};
 use crate::store_identity::{ExternalCheckpoint, StoreIdentity};
@@ -227,12 +230,17 @@ impl CheckpointFile {
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "Retain the exact store, file and observation owners together"
+    )]
     pub(in crate::protected_store) fn open(
         store: &PhysicalStore,
         config: ProtectedCheckpointConfig,
         identity: StoreIdentity,
         fresh: Option<StoreInitializationWitness>,
         dispatch: Option<(u64, u64)>,
+        inventory: InventoryObservation,
         failure: Arc<FailureLatch>,
         original: Arc<NativeReservation>,
     ) -> Result<Self, StoreError> {
@@ -280,6 +288,9 @@ impl CheckpointFile {
             (file, fence, false)
         };
         let current = if created_here {
+            if matches!(inventory, InventoryObservation::Observed(Some(_))) {
+                return Err(StoreError::Conflict);
+            }
             if file.metadata().map_err(|_| StoreError::Unavailable)?.len() != 0 {
                 return Err(StoreError::Corrupt);
             }
@@ -290,7 +301,16 @@ impl CheckpointFile {
                 return Err(StoreError::Corrupt);
             }
             let (epoch, floor) = dispatch.ok_or(StoreError::Conflict)?;
-            current.check_store(&identity, epoch, floor)?;
+            match (current.inbox_custody(), inventory) {
+                (_, InventoryObservation::NotObserved)
+                | (None, InventoryObservation::Observed(None)) => {
+                    current.check_store(&identity, epoch, floor)?;
+                }
+                (Some(_), InventoryObservation::Observed(Some(actual))) => {
+                    current.check_store_with_inbox_custody(&identity, epoch, floor, actual)?;
+                }
+                _ => return Err(StoreError::Conflict),
+            }
             Some(current)
         };
         root.check_mutable_file(&lock_fence)
@@ -312,12 +332,17 @@ impl CheckpointFile {
     }
 
     #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "Match the native bounded opening interface"
+    )]
     pub(in crate::protected_store) fn open(
         _: &PhysicalStore,
         _: ProtectedCheckpointConfig,
         _: StoreIdentity,
         _: Option<StoreInitializationWitness>,
         _: Option<(u64, u64)>,
+        _: InventoryObservation,
         _: Arc<FailureLatch>,
         _: Arc<NativeReservation>,
     ) -> Result<Self, StoreError> {
@@ -419,6 +444,13 @@ impl CheckpointFile {
         self.exact_current(current.as_ref())?;
         if current.as_ref() != expected {
             return Err(StoreError::Conflict);
+        }
+        if current
+            .as_ref()
+            .is_some_and(|checkpoint| checkpoint.inbox_custody().is_some())
+        {
+            // The legacy writer cannot re-observe and fence the inventory.
+            return Err(StoreError::UnsupportedFormat);
         }
         let (epoch, floor) = dispatch.ok_or(StoreError::Conflict)?;
         let next = if let Some(original) = current.as_ref() {

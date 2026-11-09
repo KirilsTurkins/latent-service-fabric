@@ -212,6 +212,31 @@ fn startup_censuses_source_custody_and_refuses_corrupt_rows() {
     drop(view);
     fixture.store.apply(batch).unwrap();
     fixture.validate(&quotas).unwrap();
+    let view = fixture.store.snapshot().unwrap();
+    let observed = validate_inventory(&view, &fixture.identity, &quotas, &fixture.original)
+        .unwrap()
+        .unwrap();
+    assert_eq!(observed.generation, 1);
+    let checkpoint = latent_state::store_identity::ExternalCheckpoint::initial(
+        fixture.identity.clone(),
+        1,
+        1,
+        1000,
+    )
+    .unwrap()
+    .advance_inbox_custody(observed)
+    .unwrap();
+    assert_eq!(
+        checkpoint.check_store_with_inbox_custody(&fixture.identity, 1, 1000, observed),
+        Ok(())
+    );
+    let mut older = observed;
+    older.digest[0] ^= 1;
+    assert_eq!(
+        checkpoint.check_store_with_inbox_custody(&fixture.identity, 1, 1000, older),
+        Err(StoreError::Conflict)
+    );
+    drop(view);
     fixture.replace(key, Some(b"corrupt".to_vec()));
     assert_eq!(fixture.validate(&quotas), Err(StoreError::Corrupt));
 }

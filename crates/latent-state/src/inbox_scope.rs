@@ -132,6 +132,87 @@ pub fn validate_row(key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
     Ok(())
 }
 
+/// Incremental description of immutable source rows in the existing ordered
+/// startup scan. Its generation is the retained row count; deletion requires a
+/// separately reviewed history scheme. Completeness and authorization still
+/// belong to the scan owner.
+pub struct InboxScopeInventory {
+    hash: Sha256,
+    previous: Option<Vec<u8>>,
+    count: u64,
+    failed: bool,
+}
+
+impl Default for InboxScopeInventory {
+    fn default() -> Self {
+        let mut hash = Sha256::new();
+        hash.update(b"lsf-inbox-source-inventory-v1\0");
+        Self {
+            hash,
+            previous: None,
+            count: 0,
+            failed: false,
+        }
+    }
+}
+
+impl InboxScopeInventory {
+    pub fn observe(&mut self, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+        if self.failed {
+            return Err(StoreError::Corrupt);
+        }
+        let result = self.observe_inner(key, bytes);
+        if result.is_err() {
+            self.failed = true;
+        }
+        result
+    }
+
+    fn observe_inner(&mut self, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+        if key.family != Family::Maintenance || !key.key.starts_with(PREFIX) {
+            return Ok(());
+        }
+        validate_row(key, bytes)?;
+        if self
+            .previous
+            .as_ref()
+            .is_some_and(|prior| prior.as_slice() >= key.key.as_slice())
+        {
+            return Err(StoreError::Corrupt);
+        }
+        self.count = self
+            .count
+            .checked_add(1)
+            .filter(|count| *count <= 65_536)
+            .ok_or(StoreError::Capacity)?;
+        for part in [key.key.as_slice(), bytes] {
+            self.hash.update((part.len() as u64).to_le_bytes());
+            self.hash.update(part);
+        }
+        self.previous = Some(key.key.clone());
+        Ok(())
+    }
+
+    pub fn finish(
+        self,
+    ) -> Result<Option<crate::store_identity::InboxCustodyWatermark>, StoreError> {
+        if self.failed {
+            return Err(StoreError::Corrupt);
+        }
+        if self.count == 0 {
+            return Ok(None);
+        }
+        let digest: [u8; 32] = self.hash.finalize().into();
+        if digest == [0; 32] {
+            return Err(StoreError::Corrupt);
+        }
+        Ok(Some(crate::store_identity::InboxCustodyWatermark {
+            generation: self.count,
+            digest,
+        }))
+    }
+}
+
 pub fn census_contribution(
     view: &ReadView,
     key: &RowKey,
@@ -195,7 +276,7 @@ impl PreparedInboxScope {
             mutations: Vec::new(),
         };
         if existing {
-            crate::tenant::prepare_update(view, &tenant, Default::default())?
+            crate::tenant::prepare_update(view, &tenant, crate::tenant::TenantDelta::default())?
                 .append_read_expectations(&mut batch)?;
         } else {
             let delta = crate::tenant::TenantDelta {

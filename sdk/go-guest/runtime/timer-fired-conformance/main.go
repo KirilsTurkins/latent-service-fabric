@@ -5,16 +5,19 @@ import "time"
 // This source uses public operations only. The selected signed observer must
 // independently prove the original wait and canonical subtask ordering.
 func Run(which uint32) uint32 {
-	if which > 3 {
+	if which > 4 {
 		panic("unsupported fired timer case")
 	}
 	if which >= 2 {
 		// The diagnostic owner selects this distinctive ordinary ticker and
 		// proves the returned event and fence ordering independently.
-		target := time.NewTicker(251 * time.Millisecond)
+		period := 251 * time.Millisecond
+		if which == 4 { period = 257 * time.Millisecond }
+		target := time.NewTicker(period)
 		<-target.C
 		if which == 3 { target.Reset(time.Hour) }
 		target.Stop()
+		if which == 4 { panic("returned ticker cancellation did not interrupt") }
 		marker := time.NewTimer(time.Hour)
 		if !marker.Stop() { panic("returned ticker marker") }
 		return 42

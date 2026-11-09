@@ -40,6 +40,7 @@ pub(crate) enum Case {
     FiredReset,
     ReturnedStop,
     ReturnedReset,
+    ReturnedCancel,
 }
 
 impl Case {
@@ -56,6 +57,7 @@ impl Case {
             Self::FiredReset => "go-timer-fired-reset",
             Self::ReturnedStop => "go-timer-returned-stop",
             Self::ReturnedReset => "go-timer-returned-reset",
+            Self::ReturnedCancel => crate::development_go_timer_cancel::ACTIVATION,
         }
     }
 
@@ -64,7 +66,10 @@ impl Case {
     }
 
     const fn returned(self) -> bool {
-        matches!(self, Self::ReturnedStop | Self::ReturnedReset)
+        matches!(
+            self,
+            Self::ReturnedStop | Self::ReturnedReset | Self::ReturnedCancel
+        )
     }
 
     const fn requires_gc(self) -> bool {
@@ -154,7 +159,12 @@ impl State {
             return;
         }
         if self.target.is_none() {
-            if period != Some(251_000_000) {
+            let expected_period = if self.case == Some(Case::ReturnedCancel) {
+                257_000_000
+            } else {
+                251_000_000
+            };
+            if period != Some(expected_period) {
                 self.invalid = true;
                 return;
             }
@@ -233,6 +243,13 @@ impl State {
             } else {
                 self.handshake_confirmed = true;
             }
+        } else if self.case == Some(Case::ReturnedCancel) {
+            // The diagnostic dispatcher keeps the same returned subtask held
+            // until the real root cancellation arrives. Repeated probes must
+            // never be confused with the normal post-drop observation.
+            if !self.markers[0].parked || waits != 0 || timers != 0 || self.second_waiting {
+                self.invalid = true;
+            }
         } else if !self.markers[1].stopped {
             if !self.markers[0].parked || waits != 0 || timers != 0 {
                 self.invalid = true;
@@ -262,6 +279,27 @@ impl State {
             && self.gc_marker_stopped
             && (self.case == Some(Case::ReturnedStop)
                 || (self.markers[1].timer.is_some() && self.markers[1].parked))
+    }
+
+    fn returned_cancel_complete(&self) -> bool {
+        self.case == Some(Case::ReturnedCancel)
+            && !self.invalid
+            && !self.timeout
+            && self.task_count == 1
+            && self.target.is_some()
+            && self.next_seen
+            && self.next_pending
+            && self.next_finished
+            && !self.next_live
+            && self.ready_before_stop
+            && self.target_stopped
+            && self.markers[0].stopped
+            && self.markers[0].parked
+            && self.handshake_confirmed
+            && !self.markers[1].stopped
+            && !self.second_waiting
+            && self.markers[0].timer.is_none()
+            && self.markers[1].timer.is_none()
     }
 
     fn task(&mut self, kind: OwnerKind, token: RuntimeToken, parent: Option<RuntimeToken>) {
@@ -696,12 +734,20 @@ impl Observer {
             Case::FiredReset,
             Case::ReturnedStop,
             Case::ReturnedReset,
+            Case::ReturnedCancel,
         ]
         .into_iter()
         .find(|case| case.activation() == activation)
     }
 
     pub(crate) fn new(case: Case, budget: &ActivationBudget) -> Result<Self, PlatformError> {
+        if case == Case::ReturnedCancel && !crate::development_go_timer_cancel::bind() {
+            return Err(crate::containment::platform_error(
+                PlatformErrorCode::InvalidArgument,
+                "go-returned-cancel-gate-not-exclusively-armed",
+                false,
+            ));
+        }
         let (payload, total) = (|| {
             let payload = arc_bytes::<Inner>()?;
             let total = payload.checked_add(arc_bytes::<Charge>()?)?;
@@ -790,9 +836,22 @@ impl Observer {
     // its first stopped token; the host binds that stop to the real target.
     pub(crate) fn fired_probe(&self, waits: u32, timers: u32) {
         let mut release = false;
+        let mut cancel_action = 0;
         self.apply(|state| {
             if state.case.is_some_and(Case::returned) {
+                let was_parked = state.handshake_confirmed;
                 state.returned_probe(waits, timers);
+                if state.case == Some(Case::ReturnedCancel) {
+                    cancel_action = if state.invalid {
+                        3
+                    } else if !was_parked && state.handshake_confirmed {
+                        1
+                    } else if was_parked {
+                        2
+                    } else {
+                        0
+                    };
+                }
                 return;
             }
             if !state.case.is_some_and(Case::fired) {
@@ -808,8 +867,34 @@ impl Observer {
             release = fired.fence_probe(waits, timers);
             state.invalid |= fired.invalid();
         });
+        // Publish only after releasing the witness lock. No application or
+        // manager callback runs inside this synchronization boundary.
+        let valid = match cancel_action {
+            1 => crate::development_go_timer_cancel::ready(),
+            2 => crate::development_go_timer_cancel::held_probe(),
+            3 => {
+                crate::development_go_timer_cancel::invalid();
+                false
+            }
+            _ => true,
+        };
+        if !valid {
+            self.apply(|state| state.invalid = true);
+        }
         if release {
             self.inner.parked.notify_one();
+        }
+    }
+
+    pub(crate) fn export_finished(&self) {
+        let selected = self
+            .inner
+            .state
+            .lock()
+            .ok()
+            .is_some_and(|state| state.case == Some(Case::ReturnedCancel));
+        if selected {
+            crate::development_go_timer_cancel::export_finished();
         }
     }
 
@@ -995,6 +1080,20 @@ impl Observer {
             .0
             .as_ref()
             .map_or(0, |charge| charge.allocation.bytes());
+        if case == Case::ReturnedCancel {
+            let complete =
+                crate::development_go_timer_cancel::finish(state.returned_cancel_complete());
+            let _ = writeln!(
+                std::io::stderr().lock(),
+                "LSF-GO-TIMER-RETURNED-CANCEL-V1|{}|{}|{}|{}|{}",
+                case.activation(),
+                u8::from(complete),
+                u8::from(state.invalid),
+                u8::from(state.timeout),
+                bytes
+            );
+            return;
+        }
         if case.returned() {
             let _ = writeln!(
                 std::io::stderr().lock(),
@@ -1162,7 +1261,12 @@ mod tests {
             ..State::new()
         };
         state.task(OwnerKind::Task, token(1), None);
-        state.timer_start(token(10), Some(token(1)), Some(251_000_000));
+        let period = if case == Case::ReturnedCancel {
+            257_000_000
+        } else {
+            251_000_000
+        };
+        state.timer_start(token(10), Some(token(1)), Some(period));
         assert!(state.next(token(10), 1));
         state.next_pending(token(10));
         state.next_finished(token(10));
@@ -1194,6 +1298,28 @@ mod tests {
             state.timer_stop(token(12), 0);
             assert!(state.returned_complete(), "{case:?}: {state:?}");
         }
+    }
+
+    #[test]
+    fn returned_cancellation_requires_the_matched_park_before_any_public_return() {
+        let mut held = returned_before_drop(Case::ReturnedCancel);
+        assert!(held.returned_cancel_complete());
+        held.returned_probe(0, 0);
+        assert!(held.returned_cancel_complete());
+
+        let mut before_park = returned_before_event(Case::ReturnedCancel);
+        before_park.returned_probe(0, 1);
+        before_park.timer_stop(token(10), 0);
+        before_park.returned_probe(0, 0);
+        assert!(!before_park.returned_cancel_complete());
+
+        let mut woke = returned_before_drop(Case::ReturnedCancel);
+        woke.wake(token(1));
+        assert!(woke.invalid && !woke.returned_cancel_complete());
+
+        let mut wrong_count = returned_before_drop(Case::ReturnedCancel);
+        wrong_count.returned_probe(1, 0);
+        assert!(wrong_count.invalid && !wrong_count.returned_cancel_complete());
     }
 
     #[test]

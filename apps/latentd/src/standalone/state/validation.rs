@@ -59,6 +59,17 @@ pub(super) fn validate(
     quotas: &[TenantQuota],
     original: &NativeReservation,
 ) -> Result<(), StoreError> {
+    validate_inventory(view, identity, quotas, original).map(|_| ())
+}
+
+/// The watermark is descriptive only after the entire existing producer and
+/// tenant scan succeeds on this view; it does not authorize a checkpoint write.
+pub(super) fn validate_inventory(
+    view: &ReadView,
+    identity: &StoreIdentity,
+    quotas: &[TenantQuota],
+    original: &NativeReservation,
+) -> Result<Option<latent_state::store_identity::InboxCustodyWatermark>, StoreError> {
     live(original)?;
     if !quotas.is_empty() {
         tenant::configuration_digest(quotas)?;
@@ -70,13 +81,15 @@ pub(super) fn validate(
     if only_initial_identity(view, original)? {
         // An existing matching identity still cannot recreate a lost external
         // checkpoint. That later decision consumes the affine kernel witness.
-        return live(original);
+        live(original)?;
+        return Ok(None);
     }
     if current.is_none() {
         return Err(StoreError::UnsupportedFormat);
     }
     if quotas.is_empty() {
-        return validate_global_bootstrap(view, original);
+        validate_global_bootstrap(view, original)?;
+        return Ok(None);
     }
     let mut census = TenantCensus::capture(
         view,
@@ -94,10 +107,11 @@ pub(super) fn validate(
         },
         || live(original),
     )?;
-    census.finish()?;
+    let report = census.finish()?;
     live(original)?;
     DispatchCatalog::validate_view(view)?;
-    live(original)
+    live(original)?;
+    Ok(report.inbox_custody)
 }
 
 fn validate_global_bootstrap(

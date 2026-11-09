@@ -68,7 +68,7 @@ class Client:
                     # Diagnostics cannot replace the original response decision.
                     self.observation_failed = True
 
-    def control(self, language: str, *arguments: str) -> dict:
+    def control(self, language: str, *arguments: str, stdin: bytes | None = None) -> dict:
         # SpiderMonkey package preparation uses the language owner's existing
         # bounded control allowance. This is one request, never a retry after
         # timeout, and does not increase the server or activation limits.
@@ -78,7 +78,8 @@ class Client:
             remaining = self.deadline - time.monotonic()
             require(remaining > 0, "node-test-run-deadline")
             rpc_millis = min(rpc_millis, max(1, int((remaining - 1) * 1000)))
-        return self.call("--rpc-timeout-ms", str(rpc_millis), *arguments, timeout=timeout)
+        options = {} if stdin is None else {"stdin": stdin}
+        return self.call("--rpc-timeout-ms", str(rpc_millis), *arguments, timeout=timeout, **options)
 
     def lookup(self, kind: str, operation: str) -> dict:
         require(kind in {"release", "deployment", "invoke", "policy"}, "unknown-operation-kind")

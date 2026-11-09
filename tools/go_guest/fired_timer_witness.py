@@ -23,9 +23,12 @@ var lsfFiredFirstStopped [2]uint64
 var lsfFiredFenceRecorded bool
 var lsfReturnedToken [2]uint64
 var lsfReturnedFenceSeen bool
+var lsfReturnedCancel bool
 
 //go:linkname lsfReturnedTickerSelected runtime.lsfReturnedTickerSelected
 func lsfReturnedTickerSelected(generation, id uint64) bool
+//go:linkname lsfReturnedCancelSelected runtime.lsfReturnedCancelSelected
+func lsfReturnedCancelSelected(generation, id uint64) bool
 //go:linkname lsfReturnedSetFenceChannel runtime.lsfReturnedSetFenceChannel
 func lsfReturnedSetFenceChannel(channel unsafe.Pointer)
 
@@ -42,6 +45,8 @@ func lsfReturnedBeforeDrop(wait *lsfTimerWait) {
        !lsfReturnedTickerSelected(wait.token[0], wait.token[1]) { return }
     if lsfReturnedToken[1] != 0 { panic("duplicate returned timer witness") }
     lsfReturnedToken = wait.token
+    // Capture the cancellation fixture identity before public Stop retires it.
+    lsfReturnedCancel = lsfReturnedCancelSelected(wait.token[0], wait.token[1])
     // This helper is reached only from the matching STATUS_RETURNED event,
     // before the canonical subtask is unjoined or dropped.
     lsfReturnedObserve()
@@ -50,6 +55,16 @@ func lsfReturnedBeforeDrop(wait *lsfTimerWait) {
     // Give the selected root a chance to park. The host independently requires
     // the real park before accepting the post-drop observation.
     runtime.Gosched()
+    if lsfReturnedCancel {
+        // Keep the same canonical event and its pinned result held. The host
+        // sees every successful probe and fails the gate before this limit.
+        // Root cancellation must interrupt/refuse the original observe call.
+        for attempts := 0; attempts < 16384; attempts++ {
+            lsfReturnedObserve()
+            runtime.Gosched()
+        }
+        panic("returned timer cancellation did not arrive")
+    }
 }
 
 func lsfReturnedAfterDrop(wait *lsfTimerWait) {
@@ -130,7 +145,20 @@ func lsfReturnedTickerSelected(generation, id uint64) bool {
     for _, pp := range allp {
         for _, entry := range pp.timers.heap {
             t := entry.timer
-            if t.lsfToken == ([2]uint64{generation, id}) && t.isChan && t.period == 251000000 { return true }
+            if t.lsfToken == ([2]uint64{generation, id}) && t.isChan &&
+                (t.period == 251000000 || t.period == 257000000) { return true }
+        }
+    }
+    return false
+}
+
+//go:linkname lsfReturnedCancelSelected
+//go:nosplit
+func lsfReturnedCancelSelected(generation, id uint64) bool {
+    for _, pp := range allp {
+        for _, entry := range pp.timers.heap {
+            t := entry.timer
+            if t.lsfToken == ([2]uint64{generation, id}) && t.isChan && t.period == 257000000 { return true }
         }
     }
     return false

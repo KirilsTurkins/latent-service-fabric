@@ -16,7 +16,7 @@ use super::{
     ProtectedResourceJob, ProtectedStoreError, ProtectedStoreOwner, ProtectedStoreResource,
 };
 use crate::embedded::{ReadView, StoreError};
-use crate::store_identity::{ExternalCheckpoint, StoreIdentity};
+use crate::store_identity::{ExternalCheckpoint, InboxCustodyWatermark, StoreIdentity};
 use crate::store_io::{
     StoreIoError, StoreIoJob, StoreIoKind, StoreIoRetirement, StoreIoRetirementWitness,
 };
@@ -26,6 +26,14 @@ pub(super) use native::CheckpointFile;
 
 const RESOURCE_BYTES: u64 = 32 * 1024;
 const METADATA_JOB_BYTES: u64 = 4096;
+type InventoryObserver =
+    Box<dyn FnOnce(&ReadView) -> Result<Option<InboxCustodyWatermark>, StoreError> + Send>;
+
+#[derive(Clone, Copy)]
+pub(super) enum InventoryObservation {
+    NotObserved,
+    Observed(Option<InboxCustodyWatermark>),
+}
 
 struct CheckpointKeeper {
     // Actual native footprint retires only after the private resource's native
@@ -186,6 +194,59 @@ impl ProtectedStoreOwner {
             + Send
             + 'static,
     ) -> Result<ProtectedCheckpointJob<()>, ProtectedStoreError> {
+        self.open_checkpoint_inner(config, identity, fresh, keeper, observe_dispatch, None, 0)
+    }
+
+    /// Open with an independently validated bounded inventory from the same
+    /// native view. This alone does not publish readiness or allow a write.
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "Keep the original keeper, source observation and checkpoint identity together"
+    )]
+    pub fn open_checkpoint_with_inbox_inventory(
+        &self,
+        config: ProtectedCheckpointConfig,
+        identity: StoreIdentity,
+        fresh: Option<StoreInitializationWitness>,
+        keeper: Arc<NativeReservation>,
+        inventory_bytes: u64,
+        observe_dispatch: impl FnOnce(&ReadView) -> Result<Option<(u64, u64)>, StoreError>
+            + Send
+            + 'static,
+        observe_inventory: impl FnOnce(&ReadView) -> Result<Option<InboxCustodyWatermark>, StoreError>
+            + Send
+            + 'static,
+    ) -> Result<ProtectedCheckpointJob<()>, ProtectedStoreError> {
+        if inventory_bytes == 0 || inventory_bytes > 8 * 1024 * 1024 {
+            return Err(ProtectedStoreError::InvalidConfiguration);
+        }
+        self.open_checkpoint_inner(
+            config,
+            identity,
+            fresh,
+            keeper,
+            observe_dispatch,
+            Some(Box::new(observe_inventory)),
+            inventory_bytes,
+        )
+    }
+
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "One native owner retains the complete bounded opening context"
+    )]
+    fn open_checkpoint_inner(
+        &self,
+        config: ProtectedCheckpointConfig,
+        identity: StoreIdentity,
+        fresh: Option<StoreInitializationWitness>,
+        keeper: Arc<NativeReservation>,
+        observe_dispatch: impl FnOnce(&ReadView) -> Result<Option<(u64, u64)>, StoreError>
+            + Send
+            + 'static,
+        observe_inventory: Option<InventoryObserver>,
+        inventory_bytes: u64,
+    ) -> Result<ProtectedCheckpointJob<()>, ProtectedStoreError> {
         let bytes = config.validate()?;
         if keeper.class() != NativeAdmissionClass::Recovery
             || !keeper.is_from_owner(&self.native_capacity()?)
@@ -197,8 +258,14 @@ impl ProtectedStoreOwner {
         }) {
             return Err(ProtectedStoreError::InvalidConfiguration);
         }
+        let job_bytes = METADATA_JOB_BYTES
+            .checked_add(inventory_bytes)
+            .ok_or(ProtectedStoreError::InvalidConfiguration)?;
+        let total_bytes = bytes
+            .checked_add(job_bytes)
+            .ok_or(ProtectedStoreError::InvalidConfiguration)?;
         let buffer = keeper
-            .reserve_buffer(NativeBufferClass::Work, bytes + METADATA_JOB_BYTES)
+            .reserve_buffer(NativeBufferClass::Work, total_bytes)
             .map_err(|_| ProtectedStoreError::InvalidConfiguration)?;
         let original = Arc::clone(&keeper);
         let resource = self.reserve_recovery_resource(
@@ -209,21 +276,26 @@ impl ProtectedStoreOwner {
             }),
         )?;
         let failure = Arc::clone(&self.failure);
-        let inner =
-            self.initialize_native_resource(resource, METADATA_JOB_BYTES, move |store| {
-                let view = store.engine().snapshot()?;
-                if StoreIdentity::inspect(&view)?.as_ref() != Some(&identity) {
-                    return Err(StoreError::Corrupt);
-                }
-                let dispatch = observe_dispatch(&view)?;
-                if fresh.is_some() && dispatch.is_some() {
-                    return Err(StoreError::Conflict);
-                }
-                if fresh.is_some() {
-                    check_fresh_view(&view, &identity)?;
-                }
-                CheckpointFile::open(store, config, identity, fresh, dispatch, failure, original)
-            })?;
+        let inner = self.initialize_native_resource(resource, job_bytes, move |store| {
+            let view = store.engine().snapshot()?;
+            if StoreIdentity::inspect(&view)?.as_ref() != Some(&identity) {
+                return Err(StoreError::Corrupt);
+            }
+            let dispatch = observe_dispatch(&view)?;
+            let inventory = match observe_inventory {
+                Some(observe) => InventoryObservation::Observed(observe(&view)?),
+                None => InventoryObservation::NotObserved,
+            };
+            if fresh.is_some() && dispatch.is_some() {
+                return Err(StoreError::Conflict);
+            }
+            if fresh.is_some() {
+                check_fresh_view(&view, &identity)?;
+            }
+            CheckpointFile::open(
+                store, config, identity, fresh, dispatch, inventory, failure, original,
+            )
+        })?;
         Ok(ProtectedCheckpointJob { inner })
     }
 

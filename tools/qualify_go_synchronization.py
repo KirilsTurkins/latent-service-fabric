@@ -254,7 +254,7 @@ def timer_overlap_observations(raw: bytes, diagnostic: bytes, filtered: int, cas
             'physicalWaitDrops': [{'activation': name, 'returned': drop_map[name]} for name in names]}
 
 
-def fired_timer_observations(raw: bytes, diagnostic: bytes, filtered: int) -> dict:
+def fired_timer_observations(raw: bytes, diagnostic: bytes, filtered: int, *, include_returned_cancel: bool = False) -> dict:
     """Require the matched-token probe and actual original physical drops."""
     if len(raw) > 2 * 1024 * 1024 or len(diagnostic) > 2 * 1024 * 1024:
         raise ValueError('Go-fired-timer-output-bound')
@@ -271,13 +271,18 @@ def fired_timer_observations(raw: bytes, diagnostic: bytes, filtered: int) -> di
         return value
     prefix = b'GO_TIMER_FIRED_CASE '
     values = re.findall(rb'^GO_TIMER_FIRED_CASE (.+)$', raw, re.M)
-    if raw.count(prefix) != 5 or len(values) != 5:
+    count = 6 if include_returned_cancel else 5
+    if raw.count(prefix) != count or len(values) != count:
         raise ValueError('Go-fired-timer-exact-case-count')
     rows = [json.loads(item, object_pairs_hook=unique) for item in values]
-    expected = [dict(case=case, mode=mode, outcome='success', storesCreated=count, liveStores=0,
+    cases = [('stop', 0, 'success', 1), ('reset', 1, 'success', 2),
+             ('returned-stop', 2, 'success', 3), ('returned-reset', 3, 'success', 4)]
+    if include_returned_cancel:
+        cases.append(('returned-cancel', 4, 'cancelled', 5))
+    cases.append(('fresh', 0, 'success', 6 if include_returned_cancel else 5))
+    expected = [dict(case=case, mode=mode, outcome=outcome, storesCreated=count, liveStores=0,
                      liveInstances=0, reservations=0, reservedFuel=0, reservedMemory=0, pendingProviderWaits=0)
-                for case, mode, count in [('stop', 0, 1), ('reset', 1, 2),
-                    ('returned-stop', 2, 3), ('returned-reset', 3, 4), ('fresh', 0, 5)]]
+                for case, mode, outcome, count in cases]
     if json.dumps(rows, sort_keys=True, separators=(',', ':')) != json.dumps(expected, sort_keys=True, separators=(',', ':')):
         raise ValueError('Go-fired-timer-signed-retirement-required')
     witness_prefix = b'LSF-GO-TIMER-FIRED-V1|'
@@ -312,11 +317,26 @@ def fired_timer_observations(raw: bytes, diagnostic: bytes, filtered: int) -> di
         raise ValueError('Go-returned-timer-inconsistent-layout')
     drop_prefix = b'LSF-GO-TIMER-WAIT-DROP-V1|'
     drops = re.findall(rb'^LSF-GO-TIMER-WAIT-DROP-V1\|([^\r\n|]+)\|([01])$', diagnostic, re.M)
-    all_ids = ids + returned_ids
-    if diagnostic.count(drop_prefix) != 4 or drops != [(name.encode(), b'1') for name in all_ids]:
+    all_ids = ids + returned_ids + (('go-timer-returned-cancel',) if include_returned_cancel else ())
+    if diagnostic.count(drop_prefix) != len(all_ids) or drops != [(name.encode(), b'1') for name in all_ids]:
         raise ValueError('Go-fired-timer-physical-wait-drops-required')
-    return {'cases': rows, 'witnesses': witnesses, 'returnedWitnesses': returned_witnesses,
-            'physicalWaitDrops': [{'activation': name, 'returned': True} for name in all_ids]}
+    cancel_prefix = b'LSF-GO-TIMER-RETURNED-CANCEL-V1|'
+    cancel_records = re.findall(rb'^LSF-GO-TIMER-RETURNED-CANCEL-V1\|([^\r\n]+)$', diagnostic, re.M)
+    result = {'cases': rows, 'witnesses': witnesses, 'returnedWitnesses': returned_witnesses,
+              'physicalWaitDrops': [{'activation': name, 'returned': True} for name in all_ids]}
+    if include_returned_cancel:
+        if diagnostic.count(cancel_prefix) != 1 or len(cancel_records) != 1:
+            raise ValueError('Go-returned-cancel-exact-witness-required')
+        fields = cancel_records[0].split(b'|')
+        if (len(fields) != 5 or fields[:4] != [b'go-timer-returned-cancel', b'1', b'0', b'0']
+                or not re.fullmatch(rb'[1-9][0-9]{0,3}', fields[4])
+                or int(fields[4]) != witnesses[0]['modeledWitnessBytes']):
+            raise ValueError('Go-returned-cancel-causal-witness-required')
+        result['returnedCancellationWitness'] = {'activation': 'go-timer-returned-cancel',
+            'modeledWitnessBytes': int(fields[4])}
+    elif cancel_records or diagnostic.count(cancel_prefix):
+        raise ValueError('Go-returned-cancel-unexpected-historical-witness')
+    return result
 
 
 def campaign(campaign: str, fixture: Path, negative: Path | None) -> dict:
@@ -368,6 +388,7 @@ def source_snapshot(root: Path) -> dict:
               'crates/latent-core/src/budget.rs', 'crates/latent-core/src/budget/descendants/mod.rs',
               'crates/latent-capabilities/src/broker.rs', 'crates/latent-capabilities/src/broker/session.rs',
               'crates/latent-wasmtime/src/host/runtime.rs', 'crates/latent-wasmtime/src/lib.rs',
+              'crates/latent-wasmtime/src/backend.rs', 'crates/latent-wasmtime/src/development_go_timer_cancel.rs',
               'crates/latent-wasmtime/src/development_go_timer_overlap.rs', 'crates/latent-wasmtime/src/development_go_timer_fired_state.rs', 'wit/platform/activation-runtime/package.wit',
               '.github/workflows/go-guest.yml',
               '.github/workflows/go-synchronization-reference.yml', 'tools/ci/suites.json',
@@ -445,7 +466,7 @@ def compile_identity(path: Path, root: Path, profile: str, fixture: str = 'synch
                 or diagnostic_timer.is_symlink() or diagnostic_timer.read_bytes() != derived_timer
                 or diagnostic_bridge.is_symlink() or diagnostic_bridge.read_bytes() != derived_bridge
                 or diagnostic_activation.is_symlink() or diagnostic_activation.read_bytes() != derived_activation
-                or record.get('diagnosticRuntime') != {'kind': 'selected-returned-ticker-fence-observe-v3',
+                or record.get('diagnosticRuntime') != {'kind': 'selected-returned-ticker-cancel-fence-observe-v4',
                     'originalTimerAsyncDigest': 'sha256:' + digest(original_timer),
                     'derivedTimerAsyncDigest': 'sha256:' + digest(derived_timer),
                     'originalTimerBridgeDigest': 'sha256:' + digest(original_bridge),
@@ -541,7 +562,8 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
     if programme in {'timer-overlap', 'timer-overlap-v7'}:
         observed = timer_overlap_observations(result.output, result.stderr, len(available) - 1, plan['case'])
     elif programme == 'timer-fired-v7':
-        observed = fired_timer_observations(result.output, result.stderr, len(available) - 1)
+        observed = fired_timer_observations(result.output, result.stderr, len(available) - 1,
+                                            include_returned_cancel=True)
     elif programme == 'managed-v7-timers':
         observed = managed_timer_observations(result.output, len(available) - 1, V7_TIMER_CASE)
     else:
@@ -604,6 +626,7 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
         if programme == 'timer-fired-v7':
             receipt.update({'profile': 'go-component-activation-v7', 'queuedWorkCeiling': 16,
                             'returnedTimerWitnesses': observed['returnedWitnesses'],
+                            'returnedCancellationWitness': observed['returnedCancellationWitness'],
                             'diagnosticGuestOverlay': True, 'byteIdenticalProductionGuest': False})
         if programme == 'timer-overlap-v7':
             receipt.update({'profile': 'go-component-activation-v7', 'queuedWorkCeiling': 16,

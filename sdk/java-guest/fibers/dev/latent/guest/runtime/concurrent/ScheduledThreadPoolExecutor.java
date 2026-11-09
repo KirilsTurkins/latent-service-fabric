@@ -566,10 +566,12 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         long nanos = Objects.requireNonNull(unit).toNanos(timeout), started = System.nanoTime();
         synchronized (this) {
             if (isTerminated()) return true;
+            // No wait occurs for a nonpositive timeout; preserve interruption.
+            if (nanos <= 0) return false;
             if (Thread.interrupted()) throw new InterruptedException();
             while (!isTerminated()) {
                 long remaining = nanos - (System.nanoTime() - started);
-                if (nanos <= 0 || remaining <= 0) return false;
+                if (remaining <= 0) return false;
                 wait(remaining / 1_000_000, (int)(remaining % 1_000_000));
             }
             return true;

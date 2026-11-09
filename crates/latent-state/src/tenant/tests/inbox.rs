@@ -128,3 +128,76 @@ fn final_fence_and_quota_refuse_publication() {
         Err(StoreError::Capacity)
     ));
 }
+
+#[test]
+fn ordered_census_captures_all_source_rows_and_refuses_partial_reuse() {
+    let fixture = Fixture::new();
+    fixture.install(&[quota("alpha")]);
+    fixture
+        .store()
+        .apply(domain::create(fixture.store(), "alpha", "orders"))
+        .unwrap();
+    let view = fixture.store().snapshot().unwrap();
+    assert_eq!(
+        census::verify(&view, &[quota("alpha")])
+            .unwrap()
+            .inbox_custody,
+        None
+    );
+    let first = PreparedInboxScope::prepare(&view, &scope()).unwrap();
+    drop(view);
+    fixture.store().apply(first.into_batch()).unwrap();
+    let view = fixture.store().snapshot().unwrap();
+    let first_watermark = census::verify(&view, &[quota("alpha")])
+        .unwrap()
+        .inbox_custody
+        .unwrap();
+    assert_eq!(first_watermark.generation, 1);
+    let mut another = scope();
+    another.processing_scope = "approved-replay".into();
+    let second = PreparedInboxScope::prepare(&view, &another).unwrap();
+    drop(view);
+    fixture.store().apply(second.into_batch()).unwrap();
+    let view = fixture.store().snapshot().unwrap();
+    let watermark = census::verify(&view, &[quota("alpha")])
+        .unwrap()
+        .inbox_custody
+        .unwrap();
+    assert_eq!(watermark.generation, 2);
+    assert_ne!(watermark.digest, first_watermark.digest);
+    let identity = crate::store_identity::StoreIdentity::new("census-store".into()).unwrap();
+    let checkpoint =
+        crate::store_identity::ExternalCheckpoint::initial(identity.clone(), 1, 1, 100)
+            .unwrap()
+            .advance_inbox_custody(first_watermark)
+            .unwrap()
+            .advance_inbox_custody(watermark)
+            .unwrap();
+    assert_eq!(
+        checkpoint.check_store_with_inbox_custody(&identity, 1, 100, first_watermark),
+        Err(StoreError::Conflict)
+    );
+    assert_eq!(
+        checkpoint.check_store_with_inbox_custody(&identity, 1, 100, watermark),
+        Ok(())
+    );
+    let page = view
+        .scan_after(Family::Maintenance, b"inbox-source-v1\0", None, 8, 8192)
+        .unwrap();
+    assert_eq!(page.rows.len(), 2);
+    let mut left = crate::inbox_scope::InboxScopeInventory::default();
+    let mut right = crate::inbox_scope::InboxScopeInventory::default();
+    left.observe(&page.rows[0].0, &page.rows[0].1).unwrap();
+    right.observe(&page.rows[1].0, &page.rows[1].1).unwrap();
+    let left = left.finish().unwrap().unwrap();
+    let right = right.finish().unwrap().unwrap();
+    assert_eq!(left.generation, right.generation);
+    assert_ne!(left.digest, right.digest);
+    let mut inventory = crate::inbox_scope::InboxScopeInventory::default();
+    inventory.observe(&page.rows[1].0, &page.rows[1].1).unwrap();
+    assert_eq!(
+        inventory.observe(&page.rows[0].0, &page.rows[0].1),
+        Err(StoreError::Corrupt)
+    );
+    assert_eq!(inventory.finish(), Err(StoreError::Corrupt));
+}

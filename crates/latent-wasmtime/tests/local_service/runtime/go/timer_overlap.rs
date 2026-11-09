@@ -146,9 +146,58 @@ async fn signed_fired_one_shot_public_stop_and_reset_wait_for_original_next() {
         ("reset", "go-timer-fired-reset", 1, 2),
         ("returned-stop", "go-timer-returned-stop", 2, 3),
         ("returned-reset", "go-timer-returned-reset", 3, 4),
-        ("fresh", "go-timer-fired-fresh", 0, 5),
+        ("returned-cancel", "go-timer-returned-cancel", 4, 5),
+        ("fresh", "go-timer-fired-fresh", 0, 6),
     ] {
-        let result = f.manager.start(f.request(id, mode)).unwrap().await;
+        // The future is owned by this test, with no detached invocation. Once
+        // the exact witness gate is ready, do not poll it again until the real
+        // tenant-authorized cancellation has been synchronously accepted.
+        let gate = (mode == 4).then(|| {
+            latent_wasmtime::ReturnedCancellationGate::arm().expect("exclusive cancellation gate")
+        });
+        let mut invocation = Box::pin(f.manager.start(f.request(id, mode)).unwrap());
+        if let Some(gate) = &gate {
+            // Inspect the gate immediately after each invocation poll. A
+            // ready event must not be lost to select's randomized re-polling.
+            let boundary = std::future::poll_fn(|cx| {
+                assert!(!gate.failed(), "returned-event cancellation gate failed");
+                if gate.ready() {
+                    return std::task::Poll::Ready(());
+                }
+                match std::future::Future::poll(invocation.as_mut(), cx) {
+                    std::task::Poll::Ready(result) => {
+                        panic!("root ended before cancellation: {:?}", result.outcome)
+                    }
+                    std::task::Poll::Pending => {
+                        assert!(!gate.failed(), "returned-event cancellation gate failed");
+                        if gate.ready() {
+                            std::task::Poll::Ready(())
+                        } else {
+                            std::task::Poll::Pending
+                        }
+                    }
+                }
+            });
+            tokio::time::timeout(Duration::from_secs(5), boundary)
+                .await
+                .expect("bounded returned-event cancellation gate");
+            assert!(gate.claim(), "claim the still-held event");
+            assert_eq!(
+                f.manager
+                    .cancel_for(
+                        &TenantId("tenant-a".into()),
+                        &ActivationId(id.into()),
+                        "returned-timer-cancel"
+                    )
+                    .unwrap(),
+                latent_core::CancelDisposition::Accepted
+            );
+            assert!(
+                gate.accepted(),
+                "the held event must survive until cancellation is accepted"
+            );
+        }
+        let result = invocation.await;
         let selected = result
             .resolved_revision
             .as_ref()
@@ -162,14 +211,26 @@ async fn signed_fired_one_shot_public_stop_and_reset_wait_for_original_next() {
         } else {
             publication = Some(identity);
         }
-        let receipt = success(result);
-        assert_eq!(
-            serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),
-            [42]
-        );
-        assert!(receipt.consumption.cpu_fuel > 0);
-        assert!(receipt.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
+        let outcome = if mode == 4 {
+            assert_eq!(failure(result).code, PlatformErrorCode::Cancelled);
+            "cancelled"
+        } else {
+            let receipt = success(result);
+            assert_eq!(
+                serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),
+                [42]
+            );
+            assert!(receipt.consumption.cpu_fuel > 0);
+            assert!(receipt.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
+            "success"
+        };
         f.idle().await;
+        if let Some(gate) = &gate {
+            assert!(
+                gate.completed(),
+                "cancelled returned-event witness must finish"
+            );
+        }
         assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
         let state = f.backend.resource_snapshot();
         assert_eq!(state.stores_created, created);
@@ -182,7 +243,7 @@ async fn signed_fired_one_shot_public_stop_and_reset_wait_for_original_next() {
         assert_eq!(quota.reserved_memory_bytes, 0);
         println!(
             "GO_TIMER_FIRED_CASE {}",
-            serde_json::json!({"case":case,"mode":mode,"outcome":"success",
+            serde_json::json!({"case":case,"mode":mode,"outcome":outcome,
             "storesCreated":created,"liveStores":0,"liveInstances":0,"reservations":0,"reservedFuel":0,
             "reservedMemory":0,"pendingProviderWaits":0})
         );

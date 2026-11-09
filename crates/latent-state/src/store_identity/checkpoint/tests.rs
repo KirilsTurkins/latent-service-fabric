@@ -80,7 +80,7 @@ fn closed_checkpoint_truncation_checksum_changes_and_trailing_bytes_never_decode
 fn closed_checkpoint_rejects_unknown_formats_and_checksummed_invalid_fields() {
     let encoded = checkpoint().encode();
     let mut unknown = encoded.clone();
-    unknown[4] = 2;
+    unknown[4] = 3;
     resign(&mut unknown);
     assert_eq!(
         ExternalCheckpoint::decode(&unknown),
@@ -104,6 +104,111 @@ fn closed_checkpoint_rejects_unknown_formats_and_checksummed_invalid_fields() {
     resign(&mut oversized_identity);
     assert_eq!(
         ExternalCheckpoint::decode(&oversized_identity),
+        Err(StoreError::Corrupt)
+    );
+}
+
+#[test]
+fn custody_watermark_is_monotonic_and_legacy_readiness_fails_closed() {
+    let original = checkpoint();
+    let first = InboxCustodyWatermark {
+        generation: 1,
+        digest: [7; 32],
+    };
+    let captured = original.advance_inbox_custody(first).unwrap();
+    assert_eq!(captured.generation(), original.generation() + 1);
+    assert_eq!(
+        ExternalCheckpoint::decode(&captured.encode()).unwrap(),
+        captured
+    );
+    assert_eq!(
+        captured.check_store(original.identity(), 3, 4000),
+        Err(StoreError::UnsupportedFormat)
+    );
+    assert_eq!(
+        captured.check_store_with_inbox_custody(original.identity(), 3, 4000, first),
+        Ok(())
+    );
+    let changed = InboxCustodyWatermark {
+        generation: 1,
+        digest: [8; 32],
+    };
+    assert_eq!(
+        captured.check_store_with_inbox_custody(original.identity(), 3, 4000, changed),
+        Err(StoreError::Conflict)
+    );
+    assert_eq!(
+        captured.advance_inbox_custody(first),
+        Err(StoreError::Conflict)
+    );
+    assert_eq!(
+        captured.advance_inbox_custody(InboxCustodyWatermark {
+            generation: 2,
+            digest: first.digest
+        }),
+        Err(StoreError::Conflict)
+    );
+    assert_eq!(
+        captured.advance_inbox_custody(InboxCustodyWatermark {
+            generation: 2,
+            digest: [0; 32]
+        }),
+        Err(StoreError::Conflict)
+    );
+    let next = captured
+        .advance_inbox_custody(InboxCustodyWatermark {
+            generation: 2,
+            digest: [9; 32],
+        })
+        .unwrap();
+    let next = next.advance(3, 4, 5000).unwrap();
+    assert_eq!(next.inbox_custody().unwrap().generation, 2);
+    assert_eq!(ExternalCheckpoint::decode(&next.encode()).unwrap(), next);
+    assert_eq!(
+        original.check_store_with_inbox_custody(original.identity(), 3, 4000, first),
+        Err(StoreError::UnsupportedFormat)
+    );
+}
+
+#[test]
+fn custody_checkpoint_refuses_truncation_tampering_and_invalid_fields() {
+    let encoded = checkpoint()
+        .advance_inbox_custody(InboxCustodyWatermark {
+            generation: 1,
+            digest: [7; 32],
+        })
+        .unwrap()
+        .encode();
+    for length in 0..encoded.len() {
+        assert!(ExternalCheckpoint::decode(&encoded[..length]).is_err());
+    }
+    for index in 5..encoded.len() {
+        let mut changed = encoded.clone();
+        changed[index] ^= 1;
+        assert_eq!(
+            ExternalCheckpoint::decode(&changed),
+            Err(StoreError::Corrupt)
+        );
+    }
+    let mut invalid = encoded.clone();
+    invalid[HEADER_BYTES..HEADER_BYTES + 8].fill(0);
+    resign(&mut invalid);
+    assert_eq!(
+        ExternalCheckpoint::decode(&invalid),
+        Err(StoreError::Corrupt)
+    );
+    let mut invalid = encoded.clone();
+    invalid[HEADER_BYTES..HEADER_BYTES + 8].copy_from_slice(&2_u64.to_be_bytes());
+    resign(&mut invalid);
+    assert_eq!(
+        ExternalCheckpoint::decode(&invalid),
+        Err(StoreError::Corrupt)
+    );
+    let mut invalid = encoded;
+    invalid[HEADER_BYTES + 8..HEADER_BYTES + CUSTODY_BYTES].fill(0);
+    resign(&mut invalid);
+    assert_eq!(
+        ExternalCheckpoint::decode(&invalid),
         Err(StoreError::Corrupt)
     );
 }
