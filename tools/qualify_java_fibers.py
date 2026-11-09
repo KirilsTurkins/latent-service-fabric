@@ -931,6 +931,7 @@ def recipe_inputs() -> dict[str, str]:
     # Compile-only JDK declarations are not included in the guest component.
     paths += [ROOT / 'sdk/java-guest/fibers/conformance/scheduled-library/reference' / name
               for name in ('dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
+    paths += [ROOT / 'sdk/java-guest/fibers/conformance/timers/reference/dev/latent/generated/Bindings.java']
     return {path.relative_to(ROOT).as_posix(): digest(read_file(path)) for path in paths}
 
 
@@ -1024,6 +1025,8 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
         elif fixture == 'scheduled-library':
             reference_sources = [selected / 'reference' / name for name in
                 ('dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
+        elif fixture == 'timers':
+            reference_sources = [selected / 'reference/dev/latent/generated/Bindings.java']
         reference_options = ['-cp', os.pathsep.join(map(str, reference_jars))] if reference_jars else []
         compiler.run("reference-jdk-compile", "javac", "-proc:none", *reference_options, "-d", control, source, main, *reference_sources)
         report["reference"] = []
