@@ -17,9 +17,9 @@ use latent_effects::{
 };
 use latent_policy::supply_chain::SupplyChainAuthority;
 use latent_state::{
-    embedded::{EmbeddedStore, StoreError},
+    embedded::{EmbeddedStore, ReadView, StoreError},
     protected_store::{ProtectedCheckpointConfig, ProtectedStoreOwner},
-    store_identity::StoreIdentity,
+    store_identity::{InboxCustodyWatermark, StoreIdentity},
     store_io::StoreIoKind,
 };
 
@@ -30,6 +30,33 @@ const MAXIMUM_PREPARATION_BYTES: u64 = 1024 * 1024;
 
 type PreparationAction =
     Box<dyn FnOnce(&EmbeddedStore, &NativeReservation) -> Result<(), StoreError> + Send>;
+type InventoryAction =
+    dyn Fn(&ReadView) -> Result<Option<InboxCustodyWatermark>, StoreError> + Send + Sync;
+
+/// Trusted complete scan under an independently retained startup owner. This
+/// only compares existing source history; it cannot approve a new source.
+pub struct ProtectedInboxInventory {
+    retained_bytes: u64,
+    observe: Arc<InventoryAction>,
+}
+
+impl ProtectedInboxInventory {
+    pub fn new(
+        retained_bytes: u64,
+        observe: impl Fn(&ReadView) -> Result<Option<InboxCustodyWatermark>, StoreError>
+            + Send
+            + Sync
+            + 'static,
+    ) -> Result<Self, PlatformError> {
+        if retained_bytes == 0 || retained_bytes > 8 * 1024 * 1024 {
+            return Err(unavailable());
+        }
+        Ok(Self {
+            retained_bytes,
+            observe: Arc::new(observe),
+        })
+    }
+}
 
 /// Trusted finite tenant/bootstrap preparation. It runs on the SAME recovery
 /// writer after Fresh checkpoint creation, never on the async runtime. The
@@ -75,6 +102,7 @@ pub struct ProtectedEffectStartup {
     pub checkpoint: ProtectedCheckpointConfig,
     pub identity: StoreIdentity,
     pub preparation: Option<super::ProtectedStatePreparation>,
+    pub inventory: Option<ProtectedInboxInventory>,
     pub original_deadline: Instant,
     pub control_runtime: tokio::runtime::Handle,
 }
@@ -115,6 +143,10 @@ impl EffectRuntime {
     }
 }
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "Checkpoint ownership, bounded observation and retirement remain in one startup sequence"
+)]
 async fn admitted(
     startup: ProtectedEffectStartup,
 ) -> Result<(EffectRuntime, Arc<ProtectedEffectClock>), PlatformError> {
@@ -124,6 +156,10 @@ async fn admitted(
         .preparation
         .as_ref()
         .map_or(0, |preparation| preparation.retained_bytes);
+    let inventory_bytes = startup
+        .inventory
+        .as_ref()
+        .map_or(0, |inventory| inventory.retained_bytes);
     let keeper = Arc::new(
         native
             .reserve(
@@ -131,6 +167,7 @@ async fn admitted(
                 NativeReservationRequest {
                     work_bytes: CHECKPOINT_WORK_BYTES
                         .checked_add(preparation_bytes)
+                        .and_then(|bytes| bytes.checked_add(inventory_bytes))
                         .ok_or_else(unavailable)?,
                     ..NativeReservationRequest::default()
                 },
@@ -144,21 +181,45 @@ async fn admitted(
         .await
         .map_err(|_| unavailable())?
         .map_err(|_| unavailable())?;
-    let (mut checkpoint, opened) = store
-        .open_checkpoint(
+    let opening = if let Some(inventory) = &startup.inventory {
+        let observe = Arc::clone(&inventory.observe);
+        store.open_checkpoint_with_inbox_inventory(
+            startup.checkpoint,
+            startup.identity,
+            fresh,
+            Arc::clone(&keeper),
+            inventory.retained_bytes,
+            DispatchCatalog::checkpoint,
+            move |view| observe(view),
+        )
+    } else {
+        store.open_checkpoint(
             startup.checkpoint,
             startup.identity,
             fresh,
             Arc::clone(&keeper),
             DispatchCatalog::checkpoint,
         )
+    };
+    let (mut checkpoint, opened) = opening
         .map_err(|_| unavailable())?
         .await
         .map_err(|_| unavailable())?;
     opened.map_err(|_| unavailable())?;
     let retired = checkpoint.retirement_witness().ok_or_else(unavailable)?;
-    let (checkpoint, inspected) = store
-        .inspect_checkpoint(checkpoint, DispatchCatalog::checkpoint)
+    let inspection = if let Some(inventory) = &startup.inventory {
+        let observe = Arc::clone(&inventory.observe);
+        store.inspect_checkpoint_with_inbox_inventory(
+            checkpoint,
+            Arc::clone(&keeper),
+            inventory.retained_bytes,
+            DispatchCatalog::checkpoint,
+            move |view| observe(view),
+        )
+    } else {
+        store.inspect_checkpoint(checkpoint, DispatchCatalog::checkpoint)
+    };
+    let (checkpoint, inspected) = inspection
         .map_err(|_| unavailable())?
         .await
         .map_err(|_| unavailable())?;
@@ -189,13 +250,26 @@ async fn admitted(
     .map_err(super::runtime_error)?;
     let effects = EffectRuntime { owner };
     effects.bind_native_capacity(&native)?;
-    let (checkpoint, advanced) = store
-        .advance_checkpoint(
+    let advanced = if let Some(inventory) = &startup.inventory {
+        let observe = Arc::clone(&inventory.observe);
+        store.advance_checkpoint_with_inbox_inventory(
+            checkpoint,
+            inspected.checkpoint,
+            time.covered_epoch()?,
+            Arc::clone(&keeper),
+            inventory.retained_bytes,
+            DispatchCatalog::checkpoint,
+            move |view| observe(view),
+        )
+    } else {
+        store.advance_checkpoint(
             checkpoint,
             inspected.checkpoint,
             time.covered_epoch()?,
             DispatchCatalog::checkpoint,
         )
+    };
+    let (checkpoint, advanced) = advanced
         .map_err(|_| unavailable())?
         .await
         .map_err(|_| unavailable())?;

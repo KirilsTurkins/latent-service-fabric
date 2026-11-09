@@ -341,6 +341,84 @@ mod tests {
         }
     }
 
+    #[tokio::test]
+    async fn write_completion_checkpoint_refusal_drops_upload_after_store_access() {
+        use crate::host::native_context_reply_tests::{engine, ledger, store};
+        use latent_core::BudgetProfile;
+        use wasmtime::AsContextMut;
+
+        for fail_checkpoint in [true, false] {
+            let engine = engine();
+            let budget = ledger(BudgetProfile::Phase1);
+            let mut store = store(&engine, &budget, true);
+            let mut resources = table();
+            let rep = resources.reserve(Kind::Upload).unwrap();
+            store.data_mut().capabilities.streams = resources;
+            if fail_checkpoint {
+                store.set_fuel(u64::MAX).unwrap();
+            }
+            let observed = Arc::new(AtomicUsize::new(0));
+            let witness = observed.clone();
+            store
+                .run_concurrent(async |access| {
+                    let upload = ReentrantOpenUpload {
+                        access: access.with_getter(|state: &mut crate::host::HostState| state),
+                        observed: witness.clone(),
+                    };
+                    // Model the real write path: the published upload is taken
+                    // without consuming its still-busy original table entry.
+                    let upload = access.with(|mut access| {
+                        let mut store = access.as_context_mut();
+                        let table = &mut store.data_mut().capabilities.streams;
+                        table
+                            .put(rep, Kind::Upload, Value::Upload(Box::new(upload)))
+                            .unwrap();
+                        match table.take(rep, Kind::Upload, false).unwrap() {
+                            Value::Upload(upload) => upload,
+                            _ => panic!("expected upload"),
+                        }
+                    });
+                    let result = super::super::upload::complete_write(
+                        access,
+                        rep,
+                        Ok((upload, Ok(()))),
+                        std::time::Instant::now(),
+                    );
+                    if fail_checkpoint {
+                        assert!(result.is_err());
+                        assert_eq!(witness.load(Ordering::SeqCst), 1);
+                        access.with(|mut access| {
+                            let mut store = access.as_context_mut();
+                            let entry = store
+                                .data_mut()
+                                .capabilities
+                                .streams
+                                .entry(rep, Kind::Upload)
+                                .unwrap();
+                            assert!(entry.value.is_none());
+                        });
+                    } else {
+                        assert!(result.unwrap().0.is_ok());
+                        assert_eq!(witness.load(Ordering::SeqCst), 0);
+                        let value = access.with(|mut access| {
+                            access
+                                .as_context_mut()
+                                .data_mut()
+                                .capabilities
+                                .streams
+                                .take(rep, Kind::Upload, true)
+                                .unwrap()
+                        });
+                        drop(value);
+                        assert_eq!(witness.load(Ordering::SeqCst), 1);
+                    }
+                })
+                .await
+                .unwrap();
+            assert_eq!(observed.load(Ordering::SeqCst), 1);
+        }
+    }
+
     fn table() -> Table {
         Table {
             entries: (0..CAPACITY)
