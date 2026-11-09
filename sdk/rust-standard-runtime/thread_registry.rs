@@ -111,6 +111,49 @@ impl Registry {
         Ok(())
     }
 
+    /// Find a still-owned TLS-drained tombstone whose canonical index the
+    /// actual engine just assigned to a newly created thread. Its Context is
+    /// still in the PAL Child. The caller must check the real frame boundary
+    /// outside this table borrow before clearing the obsolete lookup key.
+    pub(crate) fn canonical_reuse_candidate(
+        &self,
+        canonical: u32,
+    ) -> Result<Option<(Handle, usize)>, Error> {
+        if canonical == self.root {
+            return Err(Error::State);
+        }
+        match self.by_index(canonical) {
+            Err(Error::Stale) => Ok(None),
+            Err(error) => Err(error),
+            Ok((handle, row)) if row.phase == Phase::TlsDrained => {
+                Ok(Some((handle, row.context.ok_or(Error::State)?)))
+            }
+            Ok(_) => Err(Error::State),
+        }
+    }
+
+    /// Forget only an obsolete canonical lookup key after the caller verified
+    /// that the exact old Context's frames exited. The handle, Context, Task,
+    /// join claim and every physical owner remain with the old child.
+    pub(crate) fn clear_exited_canonical(
+        &mut self,
+        handle: Handle,
+        canonical: u32,
+        frames_exited: bool,
+    ) -> Result<(), Error> {
+        let mut row = self.record(handle)?;
+        if !frames_exited
+            || row.phase != Phase::TlsDrained
+            || row.canonical != Some(canonical)
+            || row.context.is_none()
+        {
+            return Err(Error::State);
+        }
+        row.canonical = None;
+        self.put(handle, row);
+        Ok(())
+    }
+
     /// Publish only a real Task, allocated aligned context, and the index
     /// returned by authenticated canonical thread.new. No guest-derived index
     /// or pointer is used as a substitute for the generation-scoped handle.
@@ -203,6 +246,12 @@ impl Registry {
             return Err(Error::Pending);
         }
         record.phase = Phase::Reaping;
+        // The caller has copied the real Child Context and proved frame exit.
+        // Keep that Child/Task/Native owner through physical free and settlement;
+        // these are only stale identity lookup keys in the Copy registry. A new
+        // System allocation cannot reuse the address until the old one is freed.
+        record.canonical = None;
+        record.context = None;
         self.put(handle, record);
         Ok(())
     }
@@ -349,13 +398,17 @@ impl Registry {
     pub(crate) fn candidates(&self) -> [Option<(Handle, u32)>; MAX_THREADS] {
         crate::array::from_fn(|slot| {
             self.records[slot].and_then(|row| {
-                matches!(row.phase, Phase::Ready | Phase::Running | Phase::TlsDrained).then(|| {
-                    (
-                        Handle {
-                            slot: slot as u8,
-                            serial: row.serial,
+                row.canonical.and_then(|canonical| {
+                    matches!(row.phase, Phase::Ready | Phase::Running | Phase::TlsDrained).then(
+                        || {
+                            (
+                                Handle {
+                                    slot: slot as u8,
+                                    serial: row.serial,
+                                },
+                                canonical,
+                            )
                         },
-                        row.canonical.unwrap(),
                     )
                 })
             })

@@ -117,7 +117,7 @@ fn actual_entry_identity_and_threadinit_tls_and_reap_boundaries_are_ordered() {
     assert_eq!(registry.current_task(1), Ok(token(1)));
     registry.claim_reap(child).unwrap();
     registry.reaped(child).unwrap();
-    assert_eq!(registry.current_task(1), Err(Error::State));
+    assert_eq!(registry.current_task(1), Err(Error::Stale));
 }
 
 #[test]
@@ -233,4 +233,125 @@ fn final_root_close_removes_only_reaped_tombstones_after_all_user_frames() {
     registry.close_after_root_frames().unwrap();
     assert_eq!(registry.current_task(1), Err(Error::Stale));
     assert_eq!(registry.reserve(), Err(Error::Closed));
+}
+
+#[test]
+fn reaped_unjoined_child_does_not_reserve_recycled_canonical_or_context_identity() {
+    let mut registry = Registry::new(0);
+    let old = running(&mut registry, 1);
+    registry.claim_join(old, 0).unwrap();
+    registry.tls_drained(old, 1).unwrap();
+    // Port supplies the real frame-exit proof required before claim_reap.
+    registry.claim_reap(old).unwrap();
+    assert_eq!(registry.is_reaped(old), Ok(false));
+    assert_eq!(registry.complete_join(old, 0), Err(Error::Pending));
+    registry.reaped(old).unwrap();
+    let next = registry.reserve().unwrap();
+    // A fresh engine table slot and a fresh System allocation may both reuse
+    // the old numeric values after its physical frame/context retirement.
+    registry.admitted(next, token(2), 8, 1).unwrap();
+    assert_eq!(registry.entered(1, 8), Ok(next));
+    registry.start(next, 1).unwrap();
+    assert_eq!(registry.current_task(1), Ok(token(2)));
+    registry.complete_join(old, 0).unwrap();
+    assert_eq!(registry.current_task(1), Ok(token(2)));
+}
+
+#[test]
+fn reaping_keeps_old_join_pending_while_freed_context_and_index_are_reused() {
+    let mut registry = Registry::new(0);
+    let old = running(&mut registry, 1);
+    registry.claim_join(old, 0).unwrap();
+    registry.tls_drained(old, 1).unwrap();
+    registry.claim_reap(old).unwrap();
+    // The port schedules the new allocation after the actual old Context was
+    // freed but before the old Native/Task settlement returned to its reaper.
+    let next = registry.reserve().unwrap();
+    registry.admitted(next, token(2), 8, 1).unwrap();
+    assert_eq!(registry.entered(1, 8), Ok(next));
+    registry.start(next, 1).unwrap();
+    assert_eq!(registry.complete_join(old, 0), Err(Error::Pending));
+    assert_eq!(registry.claim_reap(old), Err(Error::Pending));
+    registry.reaped(old).unwrap();
+    registry.complete_join(old, 0).unwrap();
+    assert_eq!(registry.current_task(1), Ok(token(2)));
+}
+
+#[test]
+fn finished_unjoined_child_keeps_join_identity_while_its_canonical_slot_is_reused() {
+    let mut registry = Registry::new(0);
+    let old = running(&mut registry, 1);
+    assert_eq!(registry.canonical_reuse_candidate(1), Err(Error::State));
+    registry.tls_drained(old, 1).unwrap();
+    let next = registry.reserve().unwrap();
+    // Without the caller's actual frame-exit check, admission still refuses the
+    // duplicate. The port supplies that proof only for the exact old Context.
+    assert_eq!(registry.admitted(next, token(2), 16, 1), Err(Error::State));
+    assert_eq!(registry.canonical_reuse_candidate(1), Ok(Some((old, 8))));
+    assert_eq!(
+        registry.clear_exited_canonical(old, 2, true),
+        Err(Error::State)
+    );
+    assert_eq!(
+        registry.clear_exited_canonical(old, 1, false),
+        Err(Error::State)
+    );
+    assert_eq!(registry.admitted(next, token(2), 16, 1), Err(Error::State));
+    registry.clear_exited_canonical(old, 1, true).unwrap();
+    assert!(registry.candidates().iter().all(Option::is_none));
+    assert_eq!(registry.is_reaped(old), Ok(false));
+    registry.admitted(next, token(2), 16, 1).unwrap();
+    assert_eq!(registry.entered(1, 16), Ok(next));
+    registry.start(next, 1).unwrap();
+    assert_eq!(registry.current_task(1), Ok(token(2)));
+    // A different live thread may join the old child even after index reuse.
+    registry.claim_join(old, 1).unwrap();
+    assert_eq!(registry.complete_join(old, 1), Err(Error::Pending));
+    registry.claim_reap(old).unwrap();
+    registry.reaped(old).unwrap();
+    registry.complete_join(old, 1).unwrap();
+    assert_eq!(registry.current_task(1), Ok(token(2)));
+}
+
+#[test]
+fn cycle_detection_still_follows_live_handles_after_old_index_is_reused() {
+    let mut registry = Registry::new(0);
+    let old = running(&mut registry, 1);
+    registry.tls_drained(old, 1).unwrap();
+    let replacement = registry.reserve().unwrap();
+    assert_eq!(registry.canonical_reuse_candidate(1), Ok(Some((old, 8))));
+    registry.clear_exited_canonical(old, 1, true).unwrap();
+    registry.admitted(replacement, token(2), 16, 1).unwrap();
+    assert_eq!(registry.entered(1, 16), Ok(replacement));
+    registry.start(replacement, 1).unwrap();
+    let other = registry.reserve().unwrap();
+    registry.admitted(other, token(3), 24, 2).unwrap();
+    assert_eq!(registry.entered(2, 24), Ok(other));
+    registry.start(other, 2).unwrap();
+    registry.claim_join(other, 1).unwrap();
+    assert_eq!(registry.claim_join(replacement, 2), Err(Error::Cycle));
+    assert_eq!(registry.tls_drained(replacement, 1), Err(Error::State));
+    registry.claim_join(old, 2).unwrap();
+    assert_eq!(registry.complete_join(old, 2), Err(Error::Pending));
+    registry.claim_reap(old).unwrap();
+    registry.reaped(old).unwrap();
+    registry.complete_join(old, 2).unwrap();
+    assert_eq!(registry.claim_join(replacement, 2), Err(Error::Cycle));
+}
+
+#[test]
+fn canonical_reuse_refuses_admitted_ready_and_running_children() {
+    let mut registry = Registry::new(0);
+    let live = admitted(&mut registry, 1);
+    let next = registry.reserve().unwrap();
+    assert_eq!(registry.canonical_reuse_candidate(1), Err(Error::State));
+    assert_eq!(registry.admitted(next, token(2), 16, 1), Err(Error::State));
+    assert_eq!(registry.entered(1, 8), Ok(live));
+    assert_eq!(registry.canonical_reuse_candidate(1), Err(Error::State));
+    assert_eq!(registry.admitted(next, token(2), 16, 1), Err(Error::State));
+    registry.start(live, 1).unwrap();
+    assert_eq!(registry.canonical_reuse_candidate(1), Err(Error::State));
+    assert_eq!(registry.admitted(next, token(2), 16, 1), Err(Error::State));
+    assert_eq!(registry.current_task(1), Ok(token(1)));
+    registry.rollback(next).unwrap();
 }
