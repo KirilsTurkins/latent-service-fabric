@@ -24,7 +24,16 @@ func TestPhase4LostRejectionAgainstRealNode(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	client, err := transport.New(ctx, transport.DefaultConfig("http://"+rejectionField(t, "LSF_401_ENDPOINT"), rejectionField(t, "LSF_401_TOKEN")))
+	cancellation := os.Getenv("LSF_401_CANCEL_AFTER_DISPATCH") == "1"
+	if cancellation {
+		timer := time.AfterFunc(5*time.Second, cancel)
+		defer timer.Stop()
+	}
+	config := transport.DefaultConfig("http://"+rejectionField(t, "LSF_401_ENDPOINT"), rejectionField(t, "LSF_401_TOKEN"))
+	if cancellation {
+		config.DefaultTimeout = 15 * time.Second
+	}
+	client, err := transport.New(ctx, config)
 	if err != nil {
 		t.Fatalf("client: %v", err)
 	}
@@ -50,6 +59,12 @@ func TestPhase4LostRejectionAgainstRealNode(t *testing.T) {
 	}
 	if failure.Identity.Command == nil || failure.Identity.Command.ClientKey != key || failure.Observed != nil {
 		t.Fatal("original identity missing or durable outcome fabricated")
+	}
+	if cancellation {
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("cancellation mismatch: category=%d outcome=%d dispatched=%t", failure.Transport.Category, failure.Transport.Outcome, failure.Transport.Dispatched)
+		}
+		fmt.Println("CANCELLED_DISPATCH_UNKNOWN")
 	}
 	fmt.Println("LOST_REJECTION_UNKNOWN")
 }
