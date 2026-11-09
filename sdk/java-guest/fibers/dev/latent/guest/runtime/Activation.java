@@ -328,6 +328,9 @@ public final class Activation {
         var delay = new Unsigned64(nanos);
         var period = Option.<Unsigned64>none();
         var continuation = Option.some(work.token);
+        // Allocate the exact rollback holder before admission, so a local
+        // registration failure cannot lose an already returned timer token.
+        TimerLease timer = new TimerLease(null, work, deadline);
         // The clock or argument preparation may have suspended. Revalidate the
         // original logical owner before the final admission fence.
         boolean sameWork = lookup(Thread.currentThread()) == work && !work.complete && work.timer == null;
@@ -336,13 +339,31 @@ public final class Activation {
         var started = Bindings.LatentRuntimeActivation.timerStart(delay, period, continuation);
         if (started.isError()) throw new IllegalStateException("activation-runtime-timer-start-" + started.error());
         try {
-            TimerLease timer = new TimerLease(started.value(), work, deadline);
+            ((Lease)timer).token = started.value();
+            if (((Lease)timer).token == null) throw new IllegalStateException("activation-runtime-timer-start-token");
             timers.add(timer);
             work.timer = timer;
             return timer;
         } catch (Throwable error) {
-            var stopped = Bindings.LatentRuntimeActivation.timerStop(started.value());
-            if (stopped.isError()) throw new IllegalStateException("activation-runtime-timer-start-rollback-" + stopped.error(), error);
+            // Fence completion before attempting to retain the original
+            // holder. The host keeps its timer until a confirmed stop.
+            fenceUncertainCompletion();
+            boolean fenceReturned = false;
+            try {
+                fenceUncertainQueuedWorkSettlement(timer);
+                fenceReturned = true;
+            } catch (Throwable fencing) {
+                // Do not attempt settlement if publication failed. The host
+                // still owns any admitted timer until Store teardown.
+            }
+            if (fenceReturned && ((Lease)timer).token != null) {
+                try {
+                    var stopped = Bindings.LatentRuntimeActivation.timerStop(((Lease)timer).token);
+                    if (!stopped.isError()) ((Lease)timer).token = null;
+                } catch (Throwable rollback) {
+                    // The host may already have stopped the original timer.
+                }
+            }
             throw error;
         }
     }
