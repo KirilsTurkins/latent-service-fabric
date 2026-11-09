@@ -3,6 +3,7 @@ import hashlib
 import json
 from pathlib import Path
 import tempfile
+import tomllib
 import unittest
 
 from tools import rust_standard_tls_profile as profile
@@ -144,7 +145,11 @@ class StandardTlsSource(unittest.TestCase):
 
     def test_root_and_child_source_abi_binds_exact_owned_prefix_without_enabling_threads(self):
         abi = json.loads(self.recipe()['sdk/rust-standard-runtime/thread-abi.json'])
-        self.assertEqual(abi['coreTransform'], {'wasmEncoder': '0.259.0', 'wasmParser': '0.259.0'})
+        self.assertEqual(abi['coreTransform'], {'wasmEncoder': '0.262.0', 'wasmParser': '0.262.0'})
+        manifest = tomllib.loads((ROOT / 'crates/latent-component-threading/Cargo.toml').read_text())
+        deps = manifest['dependencies']
+        self.assertEqual(deps['wasm-encoder']['version'], '=' + abi['coreTransform']['wasmEncoder'])
+        self.assertEqual(deps['wasmparser'], '=' + abi['coreTransform']['wasmParser'])
         self.assertEqual(abi['componentAssembly']['tool'], 'wasm-tools 1.254.0')
         self.assertEqual(abi['componentAssembly']['observedWitComponentProducer'], '0.254.0')
         self.assertFalse(abi['componentAssembly']['qualifiedOwnedRustComponent'])
