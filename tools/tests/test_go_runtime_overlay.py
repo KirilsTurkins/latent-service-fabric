@@ -715,7 +715,10 @@ class GoRuntimeOverlayTests(unittest.TestCase):
                 self.assertEqual((goroot / "src" / name).read_bytes(), original[name])
             os_source = str(goroot / "src/runtime/os_wasip1.go")
             self.assertNotIn(os_source, upstream_rows)
-            self.assertNotIn("wasi_snapshot_preview1", Path(strict_rows[os_source]).read_text())
+            adapted_os = Path(strict_rows[os_source]).read_text()
+            self.assertNotIn("wasi_snapshot_preview1", adapted_os)
+            bridge = (runtime.ROOT / "sdk/go-guest/runtime/runtime_bridge.go.in").read_text()
+            self.assertTrue(adapted_os.endswith("\n" + bridge))
             for name in ("runtime/lock_wasip1.go", "runtime/proc.go"):
                 key = str(goroot / "src" / name)
                 self.assertEqual(Path(upstream_rows[key]).read_bytes(), Path(strict_rows[key]).read_bytes())

@@ -1,6 +1,7 @@
 """Finite evidence guards and real adapter/peer controls, not native qualification."""
 from copy import deepcopy
 from contextlib import closing
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -17,6 +18,179 @@ from tools.standard_http.peer import Peer
 
 
 class TypeScriptFetchRuntimeTests(unittest.TestCase):
+    def test_completed_capture_keeps_standard_workflow_owner(self):
+        # The observation is manually invocable; the normal Fetch owner must
+        # retain its original unconditional step and development-only trigger.
+        workflow = '.github/workflows/typescript-guest.yml'
+        source = (fetch.ROOT/workflow).read_text(encoding='utf-8')
+        contracts = fetch.ROOT/'tools/ci/contracts/workflows/typescript-guest.yml'
+        policy = json.loads((contracts/'workflow.json').read_text(encoding='utf-8'))
+        job_contract = json.loads((contracts/'jobs/fetch-runtime.json').read_text(encoding='utf-8'))
+        self.assertEqual(policy['workflow'], workflow)
+        self.assertEqual(job_contract['workflow'], workflow)
+        self.assertEqual(policy['policy']['on']['push']['branches'], ['development'])
+        self.assertNotIn('feat/sdk-745-completed-capture-20261109', source)
+        job = job_contract['definition']
+        self.assertEqual(job['timeout-minutes'], 25)
+        steps = job['steps']
+        normal_name = 'Build, sign and invoke actual default Fetch through the typed HTTP provider'
+        normal = [step for step in steps if step.get('name') == normal_name]
+        self.assertEqual(len(normal), 1)
+        self.assertNotIn('if', normal[0])
+        self.assertTrue(all(step.get('name') not in {
+            'Observe completed retained Promise callbacks with the same signed owner',
+            'Retain completed Promise capture diagnostic separately',
+        } for step in steps))
+        body = source.split('  fetch-runtime:\n', 1)[1].split('  fetch-failure-frames:\n', 1)[0]
+        self.assertIn('      - name: ' + normal_name + '\n        run: ' + normal[0]['run'], body)
+        self.assertNotIn('--observe-completed-capture-from', body)
+
+    def test_completed_capture_uses_release_retained_fresh_order(self):
+        self.assertEqual(fetch.COMPLETED_CAPTURE_VECTORS, (
+            ('combinator-completed-control', 30, 'combinator:completed:released:3'),
+            ('combinator-completed-retained', 29, None),
+            ('combinator-completed-fresh', 30, 'combinator:completed:released:3')))
+        diagnostic = fetch.execution_vectors(True)
+        self.assertEqual([(row[0], row[1], row[3]) for row in diagnostic],
+                         list(fetch.COMPLETED_CAPTURE_VECTORS))
+        self.assertTrue(all(row[4] == 0 for row in diagnostic))
+        ordinary = fetch.execution_vectors(False)
+        self.assertEqual(len(ordinary), 20)
+        self.assertEqual(hashlib.sha256(json.dumps(ordinary, separators=(',', ':')).encode()).hexdigest(),
+                         'c952d6ed1f30da648221945f606081d03a6a43f3a9f9d577f973d20919d123fa')
+        with self.assertRaises(WorkflowError): fetch.execution_vectors(1)
+
+    def test_completed_capture_requires_the_exact_lifecycle_trap(self):
+        original = {'exitCode': 4, 'decoded': None, 'processReaped': True,
+            'response': {'outcomeKnown': True, 'category': 'platform-failure',
+                'error': {'code': 'guest-trap', 'details': [{'kind': 'activation.guest-trap',
+                    'fields': {'code': 'runtime-lifecycle-unproven'}}]},
+                'data': {'terminalState': 'guest_trap', 'consumption': {'cpuFuel': '100',
+                    'peakMemoryBytes': '65536', 'outboundRequests': 0, 'childCalls': 0, 'effectCount': 0}}}}
+        fetch.require_completed_capture_refusal(original)
+        for mutation in ('exit', 'result', 'reaped', 'unknown', 'category', 'outer-code',
+                         'trap-code', 'duplicate-trap', 'terminal', 'fuel', 'memory', 'outbound', 'boolean'):
+            row = deepcopy(original)
+            if mutation == 'exit': row['exitCode'] = 0
+            elif mutation == 'result': row['decoded'] = ['combinator:completed:retained:3']
+            elif mutation == 'reaped': row['processReaped'] = False
+            elif mutation == 'unknown': row['response']['outcomeKnown'] = False
+            elif mutation == 'category': row['response']['category'] = 'success'
+            elif mutation == 'outer-code': row['response']['error']['code'] = 'internal'
+            elif mutation == 'trap-code': row['response']['error']['details'][0]['fields']['code'] = 'guest-trap'
+            elif mutation == 'duplicate-trap': row['response']['error']['details'].append(
+                deepcopy(row['response']['error']['details'][0]))
+            elif mutation == 'terminal': row['response']['data']['terminalState'] = 'succeeded'
+            elif mutation == 'fuel': row['response']['data']['consumption']['cpuFuel'] = '0'
+            elif mutation == 'memory': row['response']['data']['consumption']['peakMemoryBytes'] = '0'
+            elif mutation == 'outbound': row['response']['data']['consumption']['outboundRequests'] = 1
+            else: row['response']['data']['consumption']['childCalls'] = False
+            with self.subTest(mutation=mutation), self.assertRaises(WorkflowError):
+                fetch.require_completed_capture_refusal(row)
+
+    def test_completed_capture_requires_one_bounded_native_bucket(self):
+        from tools.runtime_owner_refusal_diagnostic import observe
+        original = observe(b'LSF-RUNTIME-OWNER-REFUSAL-V1 tasks=0 executors=0 queued-work=0 waits=0 '
+                           b'timers=0 results=0 native=3\n')
+        self.assertEqual(fetch.require_completed_capture_owners(original)['native'], 3)
+        for mutation in ('version', 'scope', 'task-scope', 'qualification', 'missing', 'extra', 'invalid', 'capture-limit', 'too-few',
+                         'too-many', 'boolean', 'foreign-bucket', 'negative-bucket', 'other-limit', 'other-live'):
+            value = deepcopy(original)
+            if mutation == 'version': value['formatVersion'] = True
+            elif mutation == 'scope': value['scope'] = 'some-other-observer'
+            elif mutation == 'task-scope': value['tasksIncludesManagedIdleWorkers'] = False
+            elif mutation == 'qualification': value['qualification'] = True
+            elif mutation == 'missing': value['records'] = []
+            elif mutation == 'extra': value['records'].append(deepcopy(value['records'][0]))
+            elif mutation == 'invalid': value['invalidMarkerCount'] = 1
+            elif mutation == 'capture-limit': value['atCaptureLimit'] = True
+            elif mutation == 'too-few': value['records'][0]['native'] = 2
+            elif mutation == 'too-many': value['records'][0]['native'] = 65
+            elif mutation == 'boolean': value['records'][0]['native'] = True
+            elif mutation == 'foreign-bucket': value['records'][0]['foreign'] = 1
+            elif mutation == 'negative-bucket': value['records'][0]['tasks'] = -1
+            elif mutation == 'other-limit': value['records'][0]['tasks'] = fetch.OWNER_LIMITS['tasks'] + 1
+            else: value['records'][0]['waits'] = 1
+            with self.subTest(mutation=mutation), self.assertRaises(WorkflowError):
+                fetch.require_completed_capture_owners(value)
+        marker = (b'LSF-RUNTIME-OWNER-REFUSAL-V1 tasks=0 executors=0 queued-work=0 waits=0 '
+                  b'timers=0 results=0 native=3\n')
+        for bad in (b'', marker.replace(b'native=3', b'native=03'),
+                    marker.replace(b'native=3', b'native=3 extra=1'), marker + marker,
+                    marker.replace(b'tasks=0', b'tasks=1')):
+            with self.subTest(stderr=bad), self.assertRaises(WorkflowError):
+                fetch.require_completed_capture_owners(observe(bad))
+
+    def test_completed_capture_peer_refuses_any_contact(self):
+        original = {'state': 'stopped', 'acceptedConnections': 0, 'startedRequests': 0,
+            'completedResponseWrites': 0, 'rejectedRequests': 0, 'committedMutations': 0,
+            'receivedBytes': 0, 'requests': [], 'events': []}
+        with patch.object(fetch, 'validate_peer') as validate:
+            self.assertEqual(fetch.empty_peer_evidence(original), original)
+            validate.assert_called_once_with(original)
+            for name in ('acceptedConnections', 'startedRequests', 'completedResponseWrites',
+                         'rejectedRequests', 'committedMutations', 'receivedBytes'):
+                changed = dict(original, **{name: 1})
+                with self.subTest(name=name), self.assertRaises(WorkflowError):
+                    fetch.empty_peer_evidence(changed)
+
+    def test_completed_capture_reuses_exact_standard_build_with_a_separate_observation(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            qualified = root/'standard'
+            app, artifact, node = qualified/'application', qualified/'build', qualified/'node'
+            for directory in (app/'src', app/'wit', artifact, node, qualified/'selected-native', root/'original'):
+                directory.mkdir(parents=True, exist_ok=True)
+            for name in ('main.ts', 'default-client.ts'):
+                (app/'src'/name).write_bytes((fetch.ROOT/fetch.FIXTURE/name).read_bytes())
+            (app/'wit/world.wit').write_bytes((fetch.ROOT/fetch.FIXTURE/'world.wit').read_bytes())
+            (artifact/'BUILD-COMPLETE.json').write_bytes(b'{}\n')
+            binaries = {}
+            for name in fetch.PRODUCTS:
+                original = root/'original'/name
+                original.write_bytes(('native:'+name).encode())
+                (qualified/'selected-native'/name).write_bytes(original.read_bytes())
+                binaries[name] = original
+            identity = {'source': 'synthetic-current-native'}
+            self.write(qualified/'native-inputs.json', identity)
+            normal_node = {'status': 'passed', 'signedExecution': 'passed', 'providerExecution': 'passed',
+                           'cases': ['original-case']}
+            self.write(node/'qualification.json', normal_node)
+            component = {'bytes': 8, 'sha256': 'sha256:'+'a'*64}
+            standard = {'schemaVersion': 'latent.typescript.signed-fetch-subset.v1', 'status': 'passed',
+                'fullTicketQualification': False, 'runtimeProfile': fetch.IMPORT_PROFILE,
+                'fetchProfile': fetch.PROFILE, 'nativeTuple': identity,
+                'sourceIdentityDigest': fetch.digest(fetch.inventory(fetch.snapshot(app))),
+                'component': component, 'build': fetch.file_identity(artifact/'BUILD-COMPLETE.json'),
+                'execution': fetch.file_identity(node/'qualification.json'), 'cases': ['original-case']}
+            self.write(qualified/'qualification.json', standard)
+
+            def execute(_artifact, _binaries, output, *, completed_capture_diagnostic):
+                self.assertTrue(completed_capture_diagnostic)
+                output.mkdir()
+                self.write(output/'qualification.json', {'status': 'observed'})
+                self.write(output/'runtime-owner-refusals.json', {'native': 3})
+                return {'status': 'observed', 'signedGuestExecuted': True,
+                    'retainedInvocationSucceeded': False, 'physicalStoreRetirementProved': False,
+                    'cases': [row[0] for row in fetch.COMPLETED_CAPTURE_VECTORS]}
+
+            with patch.object(fetch, 'native_inputs', return_value=(binaries, identity)), \
+                    patch.object(fetch, 'build_evidence', return_value={'component': component}), \
+                    patch.object(fetch, 'execute', side_effect=execute) as observed:
+                result = fetch.diagnose_completed_capture(qualified, root/'diagnostic', prepared=root/'prepared')
+                self.assertEqual(result['status'], 'observed')
+                self.assertEqual(result['retainedOutcome'], 'runtime-lifecycle-unproven')
+                self.assertFalse(result['retainedInvocationSucceeded'])
+                self.assertFalse(result['physicalStoreRetirementProved'])
+                self.assertNotIn('signedExecution', result)
+                self.assertEqual(fetch.read_json(qualified/'qualification.json'), standard)
+                observed.assert_called_once()
+
+                (app/'src/main.ts').write_text('changed source', encoding='utf-8')
+                with self.assertRaisesRegex(WorkflowError, 'application-source'):
+                    fetch.diagnose_completed_capture(qualified, root/'wrong-source', prepared=root/'prepared')
+                observed.assert_called_once()
+
     def test_combinator_vectors_require_retention_denial_close_and_recovery(self):
         self.assertEqual(fetch.COMBINATOR_VECTORS, (
             ('combinator-retained', 27, 'combinator:retained:3:ordered'),
