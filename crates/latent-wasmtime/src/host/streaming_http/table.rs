@@ -245,6 +245,102 @@ mod tests {
             IoFuture::failed(Error::InvalidState)
         }
     }
+
+    struct ReentrantOpenUpload {
+        access: wasmtime::component::Accessor<crate::host::HostState>,
+        observed: Arc<AtomicUsize>,
+    }
+    impl Drop for ReentrantOpenUpload {
+        fn drop(&mut self) {
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                self.access.with(|_| ());
+            }));
+            // 1 means the same Store was available; 2 means the upload was
+            // destroyed while an Accessor::with callback still held it.
+            self.observed
+                .store(if result.is_ok() { 1 } else { 2 }, Ordering::SeqCst);
+        }
+    }
+    impl HttpUpload for ReentrantOpenUpload {
+        fn write(&mut self, _: Vec<u8>) -> IoFuture<'_, Result<(), Error>> {
+            IoFuture::failed(Error::InvalidState)
+        }
+        fn finish(self: Box<Self>) -> IoFuture<'static, Result<Box<dyn HttpBody>, Error>> {
+            IoFuture::failed(Error::InvalidState)
+        }
+    }
+
+    #[tokio::test]
+    async fn open_completion_checkpoint_refusal_drops_upload_after_store_access() {
+        use crate::host::native_context_reply_tests::{engine, ledger, store};
+        use latent_core::BudgetProfile;
+        use wasmtime::AsContextMut;
+
+        for fail_checkpoint in [true, false] {
+            let engine = engine();
+            let budget = ledger(BudgetProfile::Phase1);
+            let mut store = store(&engine, &budget, true);
+            let mut resources = table();
+            let reservation = resources.reserve_guarded(Kind::Upload).unwrap();
+            let rep = reservation.rep();
+            store.data_mut().capabilities.streams = resources;
+            if fail_checkpoint {
+                // The accounting watermark has not advanced to this value;
+                // the real leading checkpoint therefore refuses it.
+                store.set_fuel(u64::MAX).unwrap();
+            }
+            let observed = Arc::new(AtomicUsize::new(0));
+            let witness = observed.clone();
+            store
+                .run_concurrent(async |access| {
+                    let upload = ReentrantOpenUpload {
+                        access: access.with_getter(|state: &mut crate::host::HostState| state),
+                        observed: witness.clone(),
+                    };
+                    let pending = Reserved {
+                        value: Ok(Box::new(upload) as Box<dyn HttpUpload>),
+                        reservation,
+                    };
+                    let result = super::super::upload::complete_open(
+                        access,
+                        Ok(pending),
+                        std::time::Instant::now(),
+                    );
+                    if fail_checkpoint {
+                        assert!(result.is_err());
+                        assert_eq!(witness.load(Ordering::SeqCst), 1);
+                        access.with(|mut access| {
+                            assert!(access
+                                .as_context_mut()
+                                .data_mut()
+                                .capabilities
+                                .streams
+                                .entry(rep, Kind::Upload)
+                                .is_err());
+                        });
+                    } else {
+                        let resource = result.unwrap().0.unwrap();
+                        assert_eq!(resource.rep(), rep);
+                        assert_eq!(witness.load(Ordering::SeqCst), 0);
+                        let value = access.with(|mut access| {
+                            access
+                                .as_context_mut()
+                                .data_mut()
+                                .capabilities
+                                .streams
+                                .take(rep, Kind::Upload, true)
+                                .unwrap()
+                        });
+                        drop(value);
+                        assert_eq!(witness.load(Ordering::SeqCst), 1);
+                    }
+                })
+                .await
+                .unwrap();
+            assert_eq!(observed.load(Ordering::SeqCst), 1);
+        }
+    }
+
     fn table() -> Table {
         Table {
             entries: (0..CAPACITY)
