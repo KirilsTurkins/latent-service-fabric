@@ -773,6 +773,38 @@ class GoManagedTimers(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'unreviewed-campaign'):
             reference.campaign('managed-v7-timers', fixture, Path('legacy-v5'))
 
+        from tools import ci_lane_inventory as lanes
+        workflow = reference.ROOT / '.github/workflows/go-synchronization-reference.yml'
+        model = lanes.structural_workflow(lanes.workflow_model(workflow.read_text(encoding='utf8')))
+        choices = model['on']['workflow_dispatch']['inputs']['campaign']['options']
+        self.assertTrue({'synchronization', 'admission', 'queued', 'managed-timers', 'task-saturation',
+                         'timer-overlap', 'timer-overlap-v7', 'timer-fired-v7', 'managed-v7-timers'} <= set(choices))
+        branch = 'feat/go-v7-standard-timers-20261109'
+        self.assertIn(branch, model['on']['push']['branches'])
+        self.assertNotIn('release', model['on']['push']['branches'])
+        self.assertIn("github.ref_name == '" + branch + "' && 'managed-v7-timers'",
+                      model['env']['LSF_GO_REFERENCE_CAMPAIGN'])
+        job = model['jobs']['synchronization']
+        steps = {step['name']: step for step in job['steps'] if 'name' in step}
+        compile_step = steps['Compile unchanged standard timers with actual v7 and seventeen native references']
+        signed_step = steps['Run all forty-three original timer outcomes under managed-v7 ownership']
+        condition = "env.LSF_GO_REFERENCE_CAMPAIGN == 'managed-v7-timers'"
+        self.assertEqual(compile_step['if'], condition)
+        self.assertEqual(signed_step['if'], condition)
+        self.assertEqual(compile_step['run'], 'python3 tools/qualify_go_activation.py --output "'
+                         '$RUNNER_TEMP/go-managed-v7-timers" --runtime-profile go-component-activation-v7 --fixture timers')
+        self.assertEqual(signed_step['run'], 'python3 tools/qualify_go_synchronization.py --campaign managed-v7-timers '
+                         '--source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-managed-v7-timers" '
+                         '--output "$RUNNER_TEMP/go-managed-v7-timers-result"')
+        retained = steps['Retain bounded actual results and compiler source identities']['with']['path']
+        for suffix in ('/src/', '/wit/', '/build/component.wasm', '/GO-ACTIVATION-COMPILE.json', '-result/'):
+            self.assertIn('go-managed-v7-timers' + suffix, retained)
+        contract = reference.ROOT / 'tools/ci/contracts/workflows/go-synchronization-reference.yml'
+        policy = json.loads((contract / 'workflow.json').read_bytes())
+        definition = json.loads((contract / 'jobs/synchronization.json').read_bytes())
+        self.assertEqual(policy['policy'], {key: value for key, value in model.items() if key != 'jobs'})
+        self.assertEqual(definition['definition'], job)
+
     def test_v7_case_is_an_additional_exact_ignored_inventory_entry(self):
         suites = json.loads((reference.ROOT / 'tools/ci/suites.json').read_bytes())['suites']
         suite, = [entry for entry in suites if entry['id'] == 'latent-wasmtime.test.local-service']
