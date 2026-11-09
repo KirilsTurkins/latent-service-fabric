@@ -12,6 +12,7 @@ from tools.transaction_guest_project import TEMPLATE, package_companion
 class TransactionGuestAuthoringTests(unittest.TestCase):
     def test_rust_event_profile_is_explicit_captured_and_checked_before_packaging(self):
         from tools.compile_transaction_guests import authored_project
+        from tools.rust_capsule import main as rust_main
         from tools.rust_capsule_project import create
         from tools.rust_capsule_build import validate_project
         from tools.transaction_guest_project import (EVENT_REQUIREMENTS, RUST_EVENT_PROFILE,
@@ -26,6 +27,9 @@ class TransactionGuestAuthoringTests(unittest.TestCase):
             selected_files = snapshot(selected)
             self.assertEqual(selected_files[EVENT_REQUIREMENTS], files[EVENT_REQUIREMENTS])
             self.assertEqual(selected_files[RUST_EVENT_PROFILE], files[RUST_EVENT_PROFILE])
+            self.assertEqual(rust_main(['new', str(root / 'cli'), '--template', TEMPLATE,
+                                        '--name', 'transaction-rust-aggregate', '--event-profile', profile]), 0)
+            self.assertEqual(snapshot(root / 'cli')[EVENT_REQUIREMENTS], files[EVENT_REQUIREMENTS])
             with self.assertRaisesRegex(ValueError, "exclusive Rust aggregate"):
                 authored_project("java", "aggregate", root / "foreign", rust_current_event_profile=profile)
             self.assertEqual(json.loads(files[RUST_EVENT_PROFILE])["idempotencyProfile"], profile)
