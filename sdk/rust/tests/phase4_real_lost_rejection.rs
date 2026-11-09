@@ -101,6 +101,24 @@ async fn lost_rejection_response_reports_unknown() {
         retry_attempt: None,
     };
     let client = client();
+    if env::var("LSF_401_DROP_AFTER_DISPATCH").as_deref() == Ok("1") {
+        let before = client.invoke_command(request.clone(), CallOptions::default());
+        drop(before);
+        println!("DROPPED_BEFORE_POLL");
+        assert!(
+            tokio::time::timeout(
+                Duration::from_secs(5),
+                client.invoke_command(request, CallOptions::default())
+            )
+            .await
+            .is_err(),
+            "withheld response must outlive the local waiter"
+        );
+        retire(&client).await;
+        println!("DROPPED_DISPATCH_UNKNOWN");
+        println!("LOST_REJECTION_UNKNOWN");
+        return;
+    }
     let failure = client
         .invoke_command(request, CallOptions::default())
         .await
