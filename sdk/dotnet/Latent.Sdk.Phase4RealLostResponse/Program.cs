@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using Latent.Sdk.Transport;
 using Profile = Latent.Sdk.Profile;
 using Tx = Latent.Sdk.Transactions;
@@ -17,7 +18,29 @@ var config = new ClientOptions { Endpoint = "http://" + Required("LSF_401_ENDPOI
 var client = await BoundedClient.ConnectAsync(config);
 try
 {
-    if (Required("LSF_401_MODE") == "recover")
+    if (Required("LSF_401_MODE") == "query")
+    {
+        byte[] minimum = Convert.FromHexString(Required("LSF_401_QUERY_MINIMUM_HEX"));
+        Check(minimum.Length > 0, "minimum view");
+        for (int i = 0; i < 3; ++i)
+        {
+            var target = new Profile.InvocationTarget(tenant, "examples/transaction-java-aggregate", "examples:transactional-aggregate/api@1.0.0", "query", "transaction-java-aggregate");
+            var budget = new Profile.ResourceBudget(1000000000, 67108864, 0, 0, 4194304, 0, 0, 0, 0, 0, 120000);
+            var invoke = new Profile.InvokeRequest("dotnet-sdk-fresh-query-" + i, null, null, target, Encoding.UTF8.GetBytes("[]"), "application/vnd.latent.wit-values.v1+json", null, 0, null, budget, new Dictionary<string,string>());
+            var response = await client.QueryAsync(new Tx.QueryRequest(Tx.CurrentTransactionProfile.Create(), invoke, ns, null, minimum), options);
+            var value = response.Value; var view = value.View ?? throw new InvalidOperationException("query view");
+            var success = value.Invocation?.Success ?? throw new InvalidOperationException("query success");
+            Check(response.Metadata.Observed is null && view.Namespace == ns && view.Version.Span.SequenceEqual(minimum) && value.Source is not null, "query scope and view");
+            Check(success.CommittedStateVersion is null && success.EffectIds.Count == 0, "query-only outcome");
+            using var frame = JsonDocument.Parse(success.Payload);
+            var aggregate = frame.RootElement[0].GetProperty("ok");
+            Check(frame.RootElement.GetArrayLength() == 1 && aggregate.GetProperty("count").GetString() == "2", "committed value");
+            var token = aggregate.GetProperty("view-version"); Check(token.GetArrayLength() == minimum.Length, "result view size");
+            for (int j = 0; j < minimum.Length; ++j) Check(token[j].GetByte() == minimum[j], "result view identity");
+        }
+        Console.WriteLine("FRESH_QUERY_AFTER_COMMIT");
+    }
+    else if (Required("LSF_401_MODE") == "recover")
     {
         var lookup = new Tx.LookupCommandRequest(Tx.CurrentTransactionProfile.Create(), selector, null, new Profile.PublicationRef(Required("LSF_401_PUBLICATION"), tenant));
         var c = (await client.LookupCommandAsync(lookup, options)).Value.Command ?? throw new InvalidOperationException("missing command");
