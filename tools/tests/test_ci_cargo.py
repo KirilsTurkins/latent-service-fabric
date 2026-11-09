@@ -43,6 +43,16 @@ class FoundationRecipeTests(unittest.TestCase):
             self.foundation.validate_ci_and_docs(root)
             self.assertEqual(self.foundation.ERRORS, ['Makefile foundation target missing: workspace-prepare:'])
 
+    def test_unrelated_shell_continuation_does_not_mask_foundation(self):
+        import yaml
+        document = yaml.load(self.workflow, Loader=yaml.BaseLoader)
+        document["jobs"]["rust"]["steps"].insert(0, {
+            "name": "Unrelated multiline download",
+            "run": "curl --fail \\\n  --silent https://example.invalid/tool\n",
+        })
+        self.foundation.validate_cargo_workflow(yaml.safe_dump(document))
+        self.assertEqual(self.foundation.ERRORS, [])
+
     def test_comment_cannot_replace_binding_execution(self):
         self.foundation.validate_cargo_workflow(self.workflow.replace(
             "run: python3 tools/ci_cargo.py run bindings",

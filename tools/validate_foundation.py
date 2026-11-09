@@ -247,6 +247,11 @@ def validate_cargo_workflow(workflow: str) -> None:
             if step.get("continue-on-error", "false") != "false":
                 continue
             for line in step.get("run", "").splitlines():
+                # Other shell commands can contain line continuations or
+                # syntax that is not a complete command on an individual line.
+                # They cannot invoke this recipe, so do not parse them here.
+                if "tools/ci_cargo.py" not in line:
+                    continue
                 words = shlex.split(line, comments=True)
                 if len(words) >= 4 and words[:3] == ["python3", "tools/ci_cargo.py", "run"]:
                     if "if" in step:
