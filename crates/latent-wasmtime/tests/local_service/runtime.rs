@@ -300,6 +300,18 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
         assert_eq!(record["fixture"], "scheduled-library");
         assert_eq!(record["status"], "component-built-unqualified");
         assert_eq!(
+            record["timerSleepAdmissionSource"]["status"],
+            "SDK-source-control-passed"
+        );
+        assert_eq!(
+            record["timerSleepAdmissionSource"]["componentExecutionPerformed"],
+            false
+        );
+        assert_eq!(
+            record["timerSleepAdmissionSource"]["actualGuestBindingsUsed"],
+            false
+        );
+        assert_eq!(
             record["scheduledSource"]["status"],
             "SDK-source-controls-passed"
         );
@@ -504,7 +516,7 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
     } else {
         3
     } {
-        for mode in 0..if scheduled { 9 } else { 4 } {
+        for mode in 0..if scheduled { 10 } else { 4 } {
             let requested_id = format!("{name}-{iteration}-{mode}");
             let stores_before = f.backend.resource_snapshot().stores_created;
             let actual = f
@@ -523,12 +535,12 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
                 assert_eq!(actual.activation_id.0, requested_id);
             }
             let receipt = success(actual);
-            // The ninth scheduled mode encodes real host timer and admission
-            // snapshots; the original eight modes retain their exact result.
-            let value = if scheduled && mode == 8 {
-                2_211_210
-            } else {
-                42
+            // The last two modes encode host admission and owner snapshots;
+            // the original eight modes retain their exact result.
+            let value = match (scheduled, mode) {
+                (true, 8) => 2_211_210,
+                (true, 9) => 221_110,
+                _ => 42,
             };
             assert_eq!(
                 serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),

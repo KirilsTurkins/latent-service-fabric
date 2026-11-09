@@ -13,10 +13,10 @@ from tools import qualify_java_scheduled_library as owner
 
 def rows():
     return [{**dict.fromkeys(owner.observed.ZERO_FIELDS, 0),
-        'activationId': f'java-scheduled-libraries-{index // 9}-{index % 9}',
-        'iteration': index // 9, 'mode': index % 9, 'value': 2_211_210 if index % 9 == 8 else 42,
+        'activationId': f'java-scheduled-libraries-{index // 10}-{index % 10}',
+        'iteration': index // 10, 'mode': index % 10, 'value': {8: 2_211_210, 9: 221_110}.get(index % 10, 42),
         'cpuFuel': 123, 'reportedPeakMemoryBytes': 4096,
-        'storesBefore': index, 'storesCreated': index + 1} for index in range(18)]
+        'storesBefore': index, 'storesCreated': index + 1} for index in range(20)]
 
 
 def output(values):
@@ -53,21 +53,30 @@ class ScheduledLibraryOwnership(unittest.TestCase):
                 owner.retain(prepared, root / 'over-limit')
             self.assertFalse((root / 'over-limit/compiler').exists())
 
-    def test_all_nine_modes_twice_require_actual_unique_ids_and_fresh_idle_stores(self):
+    def test_all_ten_modes_twice_require_actual_unique_ids_and_fresh_idle_stores(self):
         actual = rows()
         self.assertEqual(owner.observations(output(actual))['calls'], actual)
         for field, value in (('activationId', actual[0]['activationId']), ('mode', 5), ('value', 42),
-                ('value', 2_211_211),
+                ('value', 2_211_211), ('value', 221_111),
                 ('storesBefore', 0), ('liveStores', 1), ('cpuFuel', True),
                 ('cpuFuel', 10_000_000_001), ('reportedPeakMemoryBytes', 64 * 1024**2 + 1)):
             with self.subTest(field=field, value=value):
                 bad = copy.deepcopy(actual); bad[-1][field] = value
                 with self.assertRaises(ValueError): owner.observations(output(bad))
 
+    def test_both_timer_modes_reject_each_others_results(self):
+        original = rows()
+        for index in (8, 9, 18, 19):
+            bad = copy.deepcopy(original)
+            bad[index]['value'] = 221_110 if bad[index]['mode'] == 8 else 2_211_210
+            with self.subTest(index=index), self.assertRaises(ValueError):
+                owner.observations(output(bad))
+
     def test_short_old_or_skipped_programmes_cannot_be_relabelled_scheduled_pass(self):
         original = output(rows())
         variants = [output(rows()[:-1]), output(rows() + [rows()[0]]),
             output([row for row in rows() if row['mode'] != 8]),
+            output([row for row in rows() if row['mode'] != 9]),
             original.replace(b'0 ignored', b'1 ignored'),
             original.replace(b'java-scheduled-libraries-', b'java-worker-libraries-'),
             original.replace(b'teavm-activation-fibers-v1', b'teavm-activation-fibers-io-v1'),
@@ -96,6 +105,7 @@ class ScheduledLibraryOwnership(unittest.TestCase):
                 patch.object(preparation, 'recipe_inputs', return_value={}), \
                 patch.object(libraries, 'capture', return_value=((), (), {})) as captured, \
                 patch.object(preparation, 'scheduled_source_control', side_effect=control('scheduled-source')), \
+                patch.object(preparation, 'timer_sleep_admission_source_control', side_effect=control('sleep-source')) as sleep, \
                 patch.object(preparation, 'scheduled_model_control', side_effect=control('scheduled-model')) as model, \
                 patch.object(preparation, 'completable_source_control', side_effect=AssertionError('old controls replayed')):
             path = Path(temporary) / 'prepared'
@@ -103,6 +113,7 @@ class ScheduledLibraryOwnership(unittest.TestCase):
                 preparation.prepare(path, owner.ROOT / 'sdk/java-guest', fixture='scheduled-library', _deadline=1000)
             self.assertEqual([stage for stage, _ in calls], ['compiler', 'reference-jdk-compile', 'reference-jdk-0',
                 'scheduled-source', 'component'])
+            sleep.assert_not_called()
             model.assert_not_called()
             self.assertEqual(captured.call_args.kwargs['_deadline'], 1000)
             self.assertEqual(calls[0][1]['_deadline'], 1000)
@@ -118,6 +129,32 @@ class ScheduledLibraryOwnership(unittest.TestCase):
         with patch('time.monotonic', return_value=100), patch.object(preparation, 'fresh', side_effect=AssertionError('IO')):
             with self.assertRaisesRegex(ValueError, 'deadline'):
                 preparation.prepare(Path('absent'), Path('absent'), fixture='scheduled-library', _deadline=105)
+
+    def test_sleep_source_control_follows_compilation_and_fails_closed(self):
+        class AfterComponent(Exception): pass
+        calls = []
+        class Compiler:
+            def __init__(self, directory, sdk, **options):
+                self.sdk, self.paths = sdk, {'java': Path('not-executed-java')}
+            def run(self, stage, *argv):
+                return '42 42 42 42 42 42 42 42' if stage == 'reference-jdk-0' else ''
+            def compile(self, *args, **kwargs):
+                calls.append('component'); return Path('not-executed-component'), {}
+        def source(*args):
+            calls.append('sleep-source'); raise AfterComponent()
+        with tempfile.TemporaryDirectory() as temporary, patch('time.monotonic', return_value=100), \
+                patch.object(preparation, 'Compiler', Compiler), \
+                patch.object(preparation, 'recipe_inputs', return_value={}), \
+                patch.object(libraries, 'capture', return_value=((), (), {})), \
+                patch.object(preparation, 'scheduled_source_control', return_value={}), \
+                patch.object(preparation, 'timer_sleep_admission_source_control', side_effect=source), \
+                patch.object(preparation, 'scheduled_model_control') as model:
+            path = Path(temporary) / 'prepared'
+            with self.assertRaises(AfterComponent):
+                preparation.prepare(path, owner.ROOT / 'sdk/java-guest', fixture='scheduled-library', _deadline=1000)
+            self.assertEqual(calls, ['component', 'sleep-source'])
+            model.assert_not_called()
+            self.assertEqual(json.loads((path / 'FIBERS-COMPILE.json').read_bytes())['status'], 'failed')
 
     def test_mutually_exclusive_fixture_selector_is_refused_before_output_or_capture(self):
         revision = 'a' * 40
