@@ -74,10 +74,11 @@ whether the first read is finishing audit or the pending operation is a write.
 The unchanged Go `io.ReadFull` source supplies the next read.
 
 The [runtime controller](../../tools/qualify_go_network_runtime.py) writes new
-`latent.go.network.runtime.v2` receipts using the dependency-free
-[transcript decoder](../../tools/go_network_read_barrier.py). It requires both
-ordered `GO_NETWORK_READ_EDGE` records and every current case/owner/completion
-record. Reserved-prefix lines cannot silently disappear when malformed. The
+`latent.go.network.runtime.v3` receipts using the dependency-free
+[transcript decoder](../../tools/go_network_read_barrier.py). The revised source
+requires both ordered `GO_NETWORK_READ_EDGE` records, the original-read
+`GO_NETWORK_CANCEL_EDGE`, and every current case/owner/completion record. A
+future successful signed run is needed to establish the new cancellation edge. Reserved-prefix lines cannot silently disappear when malformed. The
 reader rejects duplicates, unknown/private fields, numeric type substitutions,
 extra failed native tests, excessive nesting and oversized output/records.
 Historical receipts keep their original schema and narrower execution claims.
