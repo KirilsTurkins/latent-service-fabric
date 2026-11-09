@@ -1,0 +1,27 @@
+name: Agent 2 pinned AbortSignal audit inputs
+on:
+  push:
+    branches: [fix/1852-agent2-abort-engine-audit]
+    paths: [.github/workflows/agent2-abort-audit-inputs.yml]
+permissions:
+  contents: read
+jobs:
+  pinned-inputs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Download and verify existing pinned build inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p audit-inputs
+          curl --fail --location --max-time 180 --retry 2 'https://codeload.github.com/bytecodealliance/StarlingMonkey/tar.gz/9dda8ba7fcda2e17c6795d402f0478cf4c1f7f37' -o audit-inputs/starling.archive
+          curl --fail --location --max-time 180 --retry 2 'https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-30/wasi-sdk-30.0-x86_64-linux.tar.gz' -o audit-inputs/wasi-sdk.archive
+          printf '%s\n' 'ce27045db832476faaf752940c9c302d8df1241a6e17ca1eca47fd3054998949  audit-inputs/starling.archive' '0507679dff16814b74516cd969a9b16d2ced1347388024bc7966264648c78bfb  audit-inputs/wasi-sdk.archive' | sha256sum --check
+      - name: Retain verified inputs for the current audit
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: agent2-pinned-abort-audit-inputs
+          path: audit-inputs/
+          if-no-files-found: error
+          retention-days: 1
