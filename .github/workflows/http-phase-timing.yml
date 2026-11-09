@@ -41,6 +41,7 @@ env:
 
 jobs:
   phase-timing:
+    if: github.ref != 'refs/heads/feat/sdk740-combined-owner-20261109'
     name: Real transport and component HTTP phase boundaries
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -79,3 +80,61 @@ jobs:
         run: |
           cargo test --locked -p latentd --lib config::tests::providers::http_streaming::phase_selection_is_explicit_strict_and_never_aliases_the_original_contract -- --exact --nocapture
           cargo test --locked -p latentd --lib config::tests::providers::http_streaming::protected_phase_configuration_selects_v7_without_changing_original_limits_or_side_effects -- --exact --nocapture
+
+  sdk740-combined:
+    name: Signed outbound tenant and failure controls
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feat/sdk740-combined-owner-20261109'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Verify source and execute combined signed node cases
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/sdk740-combined"
+          mkdir -p "$out"
+          test "$(git rev-parse HEAD^)" = "0c3e4b10b441e901d0c8e97eeb99e86088100f49"
+          test "$(git rev-parse HEAD:crates/latent-wasmtime/tests/local_service/fixture.rs)" = "ee63002910ad3568f123fc241d57ed2798c09e1f"
+          test "$(git rev-parse HEAD:crates/latent-wasmtime/tests/local_service/outbound.rs)" = "b35a7d0bb4438d6d7ecff80b7db1539d1996e3f5"
+          test "$(git rev-parse HEAD:crates/latent-wasmtime/tests/local_service/outbound/owners.rs)" = "5721a1431a4dae58a9fbadd14c223ae1c78129bf"
+          test "$(git rev-parse HEAD:crates/latent-wasmtime/tests/local_service/outbound/conformance.rs)" = "cd14432f8c019c17dd24cf4af828d3d386478027"
+          test "$(git rev-parse HEAD:crates/latent-wasmtime/tests/local_service/outbound/cross_tenant.rs)" = "6a53b628eff1769ed64d3e8aba50d33d28bbedff"
+          git rev-parse HEAD HEAD^ > "$out/source.txt"
+          cargo test --locked -p latent-wasmtime --test local_service -- --list 2>&1 | tee "$out/list.txt"
+          cases=(
+            outbound::cross_tenant::signed_tenant_b_succeeds_after_tenant_a_cancel_and_policy_retirement
+            outbound::cross_tenant::signed_tenant_cannot_substitute_another_tenants_current_stream_grant
+            outbound::conformance::signed_reset_is_a_stream_error_and_fresh_work_succeeds
+            outbound::conformance::signed_stream_output_budget_exhaustion_keeps_fresh_call_independent
+            outbound::signed_stream_node_admission_reuses_cell_with_fresh_physical_owners
+            outbound::conformance::signed_lost_reply_preserves_peer_mutation_without_implicit_replay
+          )
+          for i in "${!cases[@]}"; do
+            case_name="${cases[$i]}"
+            test "$(grep -Fxc "$case_name: test" "$out/list.txt")" = 1
+            cargo test --locked -p latent-wasmtime --test local_service "$case_name" -- --exact --nocapture 2>&1 | tee "$out/case-$i.txt"
+            grep -Fq 'test result: ok. 1 passed; 0 failed; 0 ignored;' "$out/case-$i.txt"
+          done
+      - name: Retain source and bounded results
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: sdk740-combined-${{ github.sha }}
+          path: ${{ runner.temp }}/sdk740-combined/
+          if-no-files-found: warn
+          retention-days: 7
