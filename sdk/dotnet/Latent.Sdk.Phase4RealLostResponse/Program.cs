@@ -40,6 +40,21 @@ try
         }
         Console.WriteLine("FRESH_QUERY_AFTER_COMMIT");
     }
+    else if (Required("LSF_401_MODE") == "stale")
+    {
+        const string staleKey = "dotnet-sdk-stale-edit";
+        byte[] version = Convert.FromHexString(Required("LSF_401_EXPECTED_VERSION_HEX")); Check(version.Length > 0, "original version");
+        var staleSelector = new Tx.CommandSelector(ns, "update", null, staleKey, null);
+        var target = new Profile.InvocationTarget(tenant, "examples/transaction-java-aggregate", "examples:transactional-aggregate/api@1.0.0", "update", "transaction-java-aggregate");
+        var budget = new Profile.ResourceBudget(1000000000, 67108864, 0, 0, 4194304, 2097152, 0, 0, 0, 1, 120000);
+        var invocation = new Profile.InvokeRequest(staleKey, null, null, target, Encoding.UTF8.GetBytes("[{\"delta\":1,\"reject\":false}]"), "application/vnd.latent.wit-values.v1+json", null, 0, null, budget, new Dictionary<string,string>());
+        var request = new Tx.InvokeCommandRequest(Tx.CurrentTransactionProfile.Create(), invocation, staleSelector, "lsf-wit-values-v1", new[] { new Tx.ExpectedVersion(Encoding.UTF8.GetBytes("aggregate/count"), null, version) }, null);
+        var response = await client.InvokeCommandAsync(request, options);
+        Check(response.Metadata.Identity.ExpectedVersions is { Count: 1 } retained && retained[0].Version is { } original && original.Span.SequenceEqual(version), "original version retained");
+        var command = response.Value.Command ?? throw new InvalidOperationException("missing stale outcome");
+        Check(command.Outcome == Tx.CommandOutcome.Aborted && command.MetadataDurable && !command.ApplicationStateCommitted && command.Commit is null && command.ProvenAbort is not null, "durable abort");
+        Console.WriteLine("DOTNET_STALE_EDIT_ABORTED");
+    }
     else if (Required("LSF_401_MODE") == "recover")
     {
         var lookup = new Tx.LookupCommandRequest(Tx.CurrentTransactionProfile.Create(), selector, null, new Profile.PublicationRef(Required("LSF_401_PUBLICATION"), tenant));

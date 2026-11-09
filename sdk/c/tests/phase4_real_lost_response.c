@@ -34,6 +34,16 @@ static void recovered(const latent_transaction_lookup_command_result *r, const l
     assert(matches(c->commit.receipt_id,required("LSF_401_ORIGINAL_RECEIPT")) && matches(c->commit.effect_ids[0],required("LSF_401_ORIGINAL_EFFECT")));
     puts("LOST_COMMIT_RECOVERED");
 }
+static void stale_received(const latent_transaction_invoke_command_result *r, const latent_transaction_client_failure *f, void *ctx) {
+    observed *o=ctx; assert(o->calls++ == 0 && r && !f);
+    assert(r->metadata.identity.expected_versions_count==1 && r->metadata.identity.expected_versions[0].has_version);
+    latent_bytes v=r->metadata.identity.expected_versions[0].version;
+    assert(equal_hex(v.data,v.length,required("LSF_401_EXPECTED_VERSION_HEX")));
+    assert(r->value.has_command);
+    const latent_transaction_command_inspection *c=&r->value.command;
+    assert(c->outcome==LATENT_TRANSACTION_COMMAND_OUTCOME_ABORTED && c->metadata_durable && !c->application_state_committed && !c->has_commit && c->has_proven_abort);
+    puts("C_STALE_EDIT_ABORTED");
+}
 static bool contains_bytes(latent_bytes haystack, const char *needle) {
     size_t n=strlen(needle); if (haystack.length<n) return false;
     for (size_t i=0; i<=haystack.length-n; ++i) if (memcmp(haystack.data+i,needle,n)==0) return true;
@@ -89,6 +99,15 @@ int main(void) {
             out=(observed){0}; call=api->query(latent_transport_transaction(owner),&req,NULL,queried,&out); assert(call); wait(owner,&out); api->release_call(call);
         }
         close_owner(owner); puts("FRESH_QUERY_AFTER_COMMIT"); return 0;
+    }
+    if (strcmp(required("LSF_401_MODE"),"stale")==0) {
+        const char *hex=required("LSF_401_EXPECTED_VERSION_HEX"); size_t len=strlen(hex); assert(len && len%2==0 && len<=512); uint8_t version[256];
+        for(size_t i=0;i<len/2;i++) { int a=digit(hex[i*2]),b=digit(hex[i*2+1]); assert(a>=0 && b>=0); version[i]=(uint8_t)(a*16+b); }
+        selector.client_key=TEXT("c-sdk-stale-edit");
+        latent_transaction_expected_version expected={.key=BYTES("aggregate/count"),.has_version=true,.version={version,len/2}};
+        latent_transaction_invoke_command_request req={.has_profile=true,.profile=latent_transaction_current_profile(),.has_command=true,.command=selector,.input_format=TEXT("lsf-wit-values-v1"),.expected_versions=&expected,.expected_versions_count=1,
+            .has_invocation=true,.invocation={.has_activation_id=true,.activation_id=TEXT("c-sdk-stale-edit"),.has_target=true,.target={.tenant=str(tenant),.service=TEXT("examples/transaction-java-aggregate"),.contract=TEXT("examples:transactional-aggregate/api@1.0.0"),.function=TEXT("update"),.has_route=true,.route=TEXT("transaction-java-aggregate")},.payload=BYTES("[{\"delta\":1,\"reject\":false}]"),.media_type=TEXT("application/vnd.latent.wit-values.v1+json"),.has_budget=true,.budget={.cpu_fuel=1000000000,.memory_bytes=67108864,.state_read_bytes=4194304,.state_write_bytes=2097152,.effect_count=1,.has_wall_time_limit_millis=true,.wall_time_limit_millis=120000}}};
+        call=api->invoke_command(latent_transport_transaction(owner),&req,NULL,stale_received,&out); assert(call); wait(owner,&out); api->release_call(call); close_owner(owner); return 0;
     }
     if (strcmp(required("LSF_401_MODE"),"recover")==0) {
         latent_transaction_lookup_command_request req={.has_profile=true,.profile=latent_transaction_current_profile(),.has_command=true,.command=selector,.has_authorization_publication=true,.authorization_publication={.id=str(required("LSF_401_PUBLICATION")),.tenant=str(tenant)}};
