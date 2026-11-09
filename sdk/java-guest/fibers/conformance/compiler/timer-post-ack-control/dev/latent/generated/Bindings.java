@@ -23,13 +23,13 @@ public final class Bindings {
         private static long next;
         private static final HashMap<LatentRuntimeActivationToken, LatentRuntimeActivationOwnerKind> owners = new HashMap<>();
         public static final ArrayList<LatentRuntimeActivationToken> selected = new ArrayList<>();
-        public static int waits, stops, starts, registrations;
+        public static int waits, stops, starts, registrations, settlements;
         public static boolean storeCancelled;
         public static final ArrayList<LatentRuntimeActivationToken> admittedTimers = new ArrayList<>();
         public static Runnable startObservation;
         public static long lastNanos;
-        public static boolean denyNext, denyStop, denySettle, denyStart, nullStartToken;
-        public static RuntimeException stopFailure;
+        public static boolean denyNext, denyStop, denySettle, denyStart, nullStartToken, settleFailureAfter;
+        public static RuntimeException stopFailure, startFailure;
         public static RuntimeException settleFailure;
         public static Runnable stopObservation, settleObservation;
         public static int timers() { return (int)owners.values().stream().filter(kind -> kind == LatentRuntimeActivationOwnerKind.Timer).count(); }
@@ -45,6 +45,7 @@ public final class Bindings {
             if (!accepted.isError()) admittedTimers.add(accepted.value());
             Runnable observation = startObservation; startObservation = null;
             if (observation != null) observation.run();
+            if (startFailure != null) throw startFailure;
             return nullStartToken && !accepted.isError() ? new Reply<>(null, null) : accepted;
         }
         // Synthetic Store cleanup for this private ledger only.
@@ -66,11 +67,14 @@ public final class Bindings {
             return result;
         }
         public static Reply<Void> settle(LatentRuntimeActivationToken token) {
+            settlements++;
             Runnable observation = settleObservation; settleObservation = null;
             if (observation != null) observation.run();
-            if (settleFailure != null) throw settleFailure;
+            if (settleFailure != null && !settleFailureAfter) throw settleFailure;
             if (denySettle) return new Reply<>(null, Error.Cancelled);
-            return new Reply<>(null, owners.remove(token) == null ? Error.InvalidToken : null);
+            var error = owners.remove(token) == null ? Error.InvalidToken : null;
+            if (settleFailure != null) throw settleFailure;
+            return new Reply<>(null, error);
         }
         public static Reply<Void> park(LatentRuntimeActivationToken token) { return new Reply<>(null, null); }
         public static Reply<Void> wake(LatentRuntimeActivationToken token) { return new Reply<>(null, null); }
