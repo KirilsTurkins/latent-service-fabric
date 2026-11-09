@@ -11,7 +11,8 @@ test("lost rejection response preserves unknown outcome and explicit recovery", 
   const command = { namespace: { tenant, namespace: required("LSF_401_NAMESPACE"), incarnation: required("LSF_401_INCARNATION") }, operation: "update", clientKey: key };
   const client = new RpcClient({ endpoint: `http://${required("LSF_401_ENDPOINT")}`, tenant, credential: Buffer.from(required("LSF_401_TOKEN")) });
   try {
-    if (required("LSF_401_MODE") === "recover") {
+    const mode = required("LSF_401_MODE");
+    if (mode === "recover") {
       const value = (await client.lookupCommand({ profile: currentProfile(), command, authorizationPublication: { tenant, id: required("LSF_401_PUBLICATION") } })).value.command;
       assert.ok(value && value.outcome === CommandOutcome.Rejected && value.metadataDurable && !value.applicationStateCommitted && !value.commit && value.businessRejection);
       assert.equal(value.commandId, required("LSF_401_ORIGINAL_ID")); assert.equal(value.attemptId, required("LSF_401_ORIGINAL_ATTEMPT"));
@@ -19,15 +20,16 @@ test("lost rejection response preserves unknown outcome and explicit recovery", 
       assert.deepEqual(Buffer.from(value.businessRejection.code), bytes(required("LSF_401_REJECTION_CODE"))); assert.deepEqual(Buffer.from(value.businessRejection.payload), bytes(required("LSF_401_REJECTION_PAYLOAD")));
       console.log("LOST_REJECTION_RECOVERED");
     } else {
-      assert.equal(required("LSF_401_MODE"), "invoke");
+      assert.ok(mode === "invoke" || mode === "conflict");
       const request = { profile: currentProfile(), command, invocation: { activationId: key, target: { tenant, service: "examples/transaction-java-aggregate", contract: "examples:transactional-aggregate/api@1.0.0", function: "update", route: "transaction-java-aggregate" },
-        payload: Buffer.from('[{"delta":1,"reject":true}]'), mediaType: "application/vnd.latent.wit-values.v1+json", priority: 0, metadata: {},
+        payload: Buffer.from(mode === "conflict" ? '[{"delta":2,"reject":true}]' : '[{"delta":1,"reject":true}]'), mediaType: "application/vnd.latent.wit-values.v1+json", priority: 0, metadata: {},
         budget: { cpuFuel: 1000000000n, memoryBytes: 67108864n, childCalls: 0, outboundRequests: 0, stateReadBytes: 4194304n, stateWriteBytes: 2097152n, blobReadBytes: 0n, blobWriteBytes: 0n, logBytes: 0n, effectCount: 1, wallTimeLimitMillis: 120000n } }, inputFormat: "lsf-wit-values-v1", expectedVersions: [{ key: Buffer.from("aggregate/count"), version: bytes(required("LSF_401_EXPECTED_VERSION_HEX")) }] };
       let failure;
       try { await client.invokeCommand(request); assert.fail("response-blocked call unexpectedly succeeded"); } catch (error) { failure = error?.failure; }
       assert.ok(failure); assert.equal(failure.dispatched, true); assert.equal(failure.outcome, OutcomeKnowledge.Unknown);
       assert.equal(failure.transactionIdentity?.command?.clientKey, key); assert.equal(failure.observedTransaction, undefined);
-      console.log("LOST_REJECTION_UNKNOWN");
+      if (mode === "conflict") { assert.equal(failure.grpcStatus, 6); console.log("CHANGED_INPUT_CONFLICT"); }
+      else console.log("LOST_REJECTION_UNKNOWN");
     }
   } finally {
     await client.shutdown(); const usage = client.usage();
