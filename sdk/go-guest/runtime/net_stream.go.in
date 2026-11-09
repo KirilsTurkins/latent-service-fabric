@@ -130,11 +130,12 @@ func lsfStreamTimeout(deadline time.Time) (lsfWit.Option[uint32], error) {
 	if remaining <= 0 {
 		return lsfWit.None[uint32](), lsfOS.ErrDeadlineExceeded
 	}
-	// Ceiling to milliseconds avoids an earlier local timeout. No saturation or
-	// hidden authority extension for an unrepresentable deadline.
+	// The selected provider already enforces an absolute connection lifetime
+	// of at most 10 seconds, additionally limited by the root deadline. Keep
+	// the explicit timeout within its accepted range without extending either.
 	millis := (remaining-1)/time.Millisecond + 1
-	if millis > 4294967295 {
-		return lsfWit.None[uint32](), lsfStreamUnsupported()
+	if millis > 10000 {
+		millis = 10000
 	}
 	return lsfWit.Some(uint32(millis)), nil
 }
