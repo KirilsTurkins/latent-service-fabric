@@ -10,6 +10,43 @@ from tools.transaction_guest_project import TEMPLATE, package_companion
 
 
 class TransactionGuestAuthoringTests(unittest.TestCase):
+    def test_rust_event_profile_is_explicit_captured_and_checked_before_packaging(self):
+        from tools.compile_transaction_guests import authored_project
+        from tools.rust_capsule_project import create
+        from tools.rust_capsule_build import validate_project
+        from tools.transaction_guest_project import (EVENT_REQUIREMENTS, RUST_EVENT_PROFILE,
+                                                       CURRENT_EVENT_PROFILE, package_effect_requirements)
+        profile = "js-window-v1:" + "a" * 64
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = create(root / "source", TEMPLATE, "transaction-rust-aggregate", event_profile=profile)
+            files = snapshot(source)
+            value, _ = validate_project(files)
+            selected = authored_project("rust", "aggregate", root / "selected", rust_current_event_profile=profile)
+            selected_files = snapshot(selected)
+            self.assertEqual(selected_files[EVENT_REQUIREMENTS], files[EVENT_REQUIREMENTS])
+            self.assertEqual(selected_files[RUST_EVENT_PROFILE], files[RUST_EVENT_PROFILE])
+            with self.assertRaisesRegex(ValueError, "exclusive Rust aggregate"):
+                authored_project("java", "aggregate", root / "foreign", rust_current_event_profile=profile)
+            self.assertEqual(json.loads(files[RUST_EVENT_PROFILE])["idempotencyProfile"], profile)
+            self.assertEqual(json.loads(files[EVENT_REQUIREMENTS])["capsule"], value["service"])
+            output = root / "package"
+            output.mkdir()
+            self.assertEqual(package_effect_requirements(output, value, files)[0], EVENT_REQUIREMENTS)
+            self.assertEqual((output / EVENT_REQUIREMENTS).read_bytes(), files[EVENT_REQUIREMENTS])
+            bad = dict(files)
+            changed = json.loads(bad[EVENT_REQUIREMENTS])
+            changed["binding"] = "other-event"
+            bad[EVENT_REQUIREMENTS] = json.dumps(changed).encode()
+            with self.assertRaisesRegex(ValueError, "requirements-drift"):
+                package_effect_requirements(root, value, bad)
+            with self.assertRaisesRegex(ValueError, "closed-current-event-inputs-required"):
+                package_effect_requirements(root, value, {**files, CURRENT_EVENT_PROFILE: files[RUST_EVENT_PROFILE]})
+            with self.assertRaisesRegex(ValueError, "event profile"):
+                create(root / "bad", "greeting", event_profile=profile)
+            with self.assertRaisesRegex(ValueError, "event profile"):
+                create(root / "bad-profile", TEMPLATE, event_profile="js-window-v1:invalid")
+
     def test_java_authored_wit_captures_runtime_clocks_before_compiler_staging(self):
         from tools.compile_transaction_guests import authored_project, JAVA_SCHEMA_VARIANTS
         from tools.java_capsule_project import validate

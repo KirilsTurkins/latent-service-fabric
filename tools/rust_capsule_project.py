@@ -265,7 +265,12 @@ def sdk_files() -> dict[str, bytes]:
     return files
 
 
-def create(directory: Path, template: str, name: str | None = None, *, runtime_profile=None) -> Path:
+def create(directory: Path, template: str, name: str | None = None, *, runtime_profile=None,
+           event_profile: str | None = None) -> Path:
+    if event_profile is not None and (template != "transactional-aggregate"
+            or not isinstance(event_profile, str)
+            or re.fullmatch(r"js-window-v1:[0-9a-f]{64}", event_profile) is None):
+        raise ValueError("explicit Rust transaction event profile required")
     from tools import rust_standard_logging_inputs as standard
     selected_runtime = standard.selection({'runtimeProfile': runtime_profile} if runtime_profile is not None else {})
     if template not in AUTHORING_TEMPLATES:
@@ -399,6 +404,14 @@ panic = "abort"
         project["limits"].update(memoryBytes=67_108_864, wallTimeLimitMillis=120_000)
         from tools.transaction_guest_project import augment
         augment(files, project)
+        if event_profile is not None:
+            from tools.transaction_guest_project import (EVENT_REQUIREMENTS, RUST_EVENT_PROFILE,
+                                                          current_rust_event_requirements)
+            marker = {"schemaVersion": "latent.rust.current-event-source-input.v1",
+                      "idempotencyProfile": event_profile}
+            files[RUST_EVENT_PROFILE] = json.dumps(marker, indent=2).encode() + b"\n"
+            requirements = current_rust_event_requirements(project, files["transaction-binding.json"], event_profile)
+            files[EVENT_REQUIREMENTS] = json.dumps(requirements, indent=2).encode() + b"\n"
     pin = {"formatVersion": 1, "toolchain": pins,
            "sdk": json.loads(inventory(vendor)),
            "bindings": read_json(ROOT / "tools/guest_bindings.lock.json"),

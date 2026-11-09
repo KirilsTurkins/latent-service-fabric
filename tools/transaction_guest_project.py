@@ -15,6 +15,7 @@ HTTP_BODY = b"java-aggregate-put-once-v1\0"
 CURRENT_HTTP_PROFILE = "java-current-http-profile.json"
 EVENT_REQUIREMENTS = "deferred-event-requirements.json"
 CURRENT_EVENT_PROFILE = "java-current-event-profile.json"
+RUST_EVENT_PROFILE = "rust-current-event-profile.json"
 
 
 def put_once_requirements(project: dict, companion: bytes) -> dict:
@@ -60,7 +61,7 @@ def current_java_http_requirements(project: dict, companion: bytes, profile: str
                         "maximum_attempts": 3, "maximum_age_millis": 600000, "attempt_timeout_millis": 2000}}
 
 
-def current_java_event_requirements(project: dict, companion: bytes, profile: str) -> dict:
+def current_event_requirements(project: dict, companion: bytes, profile: str) -> dict:
     """Pin the actual native profile; this source document grants no authority."""
     from tools.dev_workflow.transaction_binding import validate
     binding = validate(companion, capsule=project["service"], deployment=project["name"], binding=project["name"])
@@ -71,7 +72,7 @@ def current_java_event_requirements(project: dict, companion: bytes, profile: st
                 for name, mode in (("update", "strict-command"), ("query", "fresh-query"), ("scan", "fresh-query"))]
             or not isinstance(profile, str)
             or re.fullmatch(r"js-window-v1:[0-9a-f]{64}", profile) is None):
-        raise ValueError("explicit current Java event profile and transaction binding required")
+        raise ValueError("explicit current event profile and transaction binding required")
     return {"formatVersion": 1, "protocol": "lsf-jetstream-event-v1",
             "capsule": project["service"], "deployment": project["name"], "stateBinding": binding["binding"],
             "namespace": binding["namespace"], "companionDigest": "sha256:" + hashlib.sha256(companion).hexdigest(),
@@ -79,6 +80,16 @@ def current_java_event_requirements(project: dict, companion: bytes, profile: st
             "payloadFormat": "nats-event-value-v1", "idempotencyProfile": profile,
             "ceiling": {"maximum_payload_bytes": 8192, "maximum_response_bytes": 16384,
                         "maximum_attempts": 3, "maximum_age_millis": 60000, "attempt_timeout_millis": 5000}}
+
+
+def current_java_event_requirements(project: dict, companion: bytes, profile: str) -> dict:
+    """Preserve the Java capture's existing explicit event selection."""
+    return current_event_requirements(project, companion, profile)
+
+
+def current_rust_event_requirements(project: dict, companion: bytes, profile: str) -> dict:
+    """The same signed event contract, selected explicitly by a Rust author."""
+    return current_event_requirements(project, companion, profile)
 
 
 REFERENCE_WORLD = "examples:order-draft/service@1.0.0"
@@ -157,15 +168,18 @@ def package_effect_requirements(output: Path, project: dict, files: dict[str, by
     from tools.dev_workflow.common import decode, encode, require
     raw_event = files.get(EVENT_REQUIREMENTS)
     marker_event = files.get(CURRENT_EVENT_PROFILE)
-    if raw_event is not None or marker_event is not None:
-        require(raw_event is not None and marker_event is not None and HTTP_REQUIREMENTS not in files
+    rust_marker = files.get(RUST_EVENT_PROFILE)
+    if raw_event is not None or marker_event is not None or rust_marker is not None:
+        require(raw_event is not None and (marker_event is None) != (rust_marker is None) and HTTP_REQUIREMENTS not in files
                 and CURRENT_HTTP_PROFILE not in files and "transaction-binding.json" in files,
                 "closed-current-event-inputs-required")
-        selected = decode(marker_event, 8192)
+        selected = decode(marker_event if marker_event is not None else rust_marker, 8192)
         require(isinstance(selected, dict) and set(selected) == {"schemaVersion", "idempotencyProfile"}
-                and selected["schemaVersion"] == "latent.java.current-event-source-input.v1",
-                "closed-current-java-event-profile-input")
-        expected = current_java_event_requirements(project, files["transaction-binding.json"], selected["idempotencyProfile"])
+                and selected["schemaVersion"] == ("latent.java.current-event-source-input.v1" if marker_event is not None
+                                                  else "latent.rust.current-event-source-input.v1"),
+                "closed-current-event-profile-input")
+        select = current_java_event_requirements if marker_event is not None else current_rust_event_requirements
+        expected = select(project, files["transaction-binding.json"], selected["idempotencyProfile"])
         require(encode(decode(raw_event, 8192)) == encode(expected), "deferred-event-requirements-drift")
         with (output / EVENT_REQUIREMENTS).open("xb") as stream:
             stream.write(raw_event)
