@@ -46,6 +46,23 @@ struct StartingStore {
     delivered: bool,
 }
 
+#[cfg(target_os = "linux")]
+struct StartingPayloadPromotion {
+    store: Arc<ProtectedStoreOwner>,
+    native: NativeCapacityOwner,
+    delivered: bool,
+}
+
+#[cfg(target_os = "linux")]
+impl Drop for StartingPayloadPromotion {
+    fn drop(&mut self) {
+        if !self.delivered {
+            self.store.quarantine();
+            self.native.quarantine();
+        }
+    }
+}
+
 enum StartupPayload {
     None,
     #[cfg(target_os = "linux")]
@@ -166,6 +183,27 @@ impl StateBootstrap {
         root: std::path::PathBuf,
         durable_retention: bool,
     ) -> Result<Arc<latent_blobs::local::LocalBlobStore>, PlatformError> {
+        self.open_store_with_local_payloads_inner(
+            settings,
+            owner,
+            provider,
+            root,
+            durable_retention,
+            None,
+        )
+        .await
+    }
+
+    #[cfg(target_os = "linux")]
+    async fn open_store_with_local_payloads_inner(
+        &mut self,
+        settings: &StateSettings,
+        owner: Arc<latent_blobs::local::LocalBlobStore>,
+        provider: crate::config::ProviderIdentity,
+        root: std::path::PathBuf,
+        durable_retention: bool,
+        before_promotion: Option<Box<dyn FnOnce() + Send>>,
+    ) -> Result<Arc<latent_blobs::local::LocalBlobStore>, PlatformError> {
         let selection = LocalPayloadSelection {
             provider: provider.clone(),
             namespace: owner.namespace().to_owned(),
@@ -189,10 +227,21 @@ impl StateBootstrap {
         let (mut owner, already_durable) = receiver.try_recv().map_err(|_| super::unavailable())?;
         if durable_retention && !already_durable {
             use latent_state::store_io::StoreIoKind;
+            // A dropped startup waiter cannot expose the store while the
+            // accepted physical mode transition is still running.
+            let mut guard = StartingPayloadPromotion {
+                store: Arc::clone(&store),
+                native: self.native.clone(),
+                delivered: false,
+            };
             let original = self.original();
             let current = Arc::clone(&original);
             let job = store
                 .with_store_retaining(StoreIoKind::RecoveryWrite, 4096, original, move |engine| {
+                    validation::live(&current)?;
+                    if let Some(observe) = before_promotion {
+                        observe();
+                    }
                     validation::live(&current)?;
                     let view = engine.snapshot()?;
                     let result = latent_blobs::local::LocalBlobStore::enable_durable_for_view(
@@ -202,15 +251,15 @@ impl StateBootstrap {
                     Ok((owner, result))
                 })
                 .map_err(|_| super::unavailable())?;
-            owner = match tokio::time::timeout_at(self.deadline.into(), job).await {
-                Ok(Ok(Ok((owner, Ok(()))))) => owner,
-                _ => {
-                    store.quarantine();
-                    self.native.quarantine();
-                    return Err(super::unavailable());
-                }
+            owner = if let Ok(Ok(Ok((owner, Ok(()))))) =
+                tokio::time::timeout_at(self.deadline.into(), job).await
+            {
+                owner
+            } else {
+                return Err(super::unavailable());
             };
             self.check_live()?;
+            guard.delivered = true;
         }
         self.local_payload_selection = Some(Box::new(selection));
         Ok(owner)

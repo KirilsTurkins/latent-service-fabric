@@ -147,6 +147,84 @@ async fn actual_startup_returns_only_the_same_prepaid_store_and_original_initial
 }
 
 #[tokio::test]
+async fn cancelled_payload_promotion_keeps_the_original_physical_owner_quarantined() {
+    use latent_blobs::local::{LocalBlobError, LocalBlobLimits, LocalBlobStore};
+    let (root, settings, mut bootstrap) = fixture();
+    let blob_root = root.path().join("promotion-blobs");
+    std::fs::create_dir(&blob_root).unwrap();
+    std::fs::set_permissions(&blob_root, std::fs::Permissions::from_mode(0o700)).unwrap();
+    let owner = LocalBlobStore::open(&blob_root, "private", LocalBlobLimits::default()).unwrap();
+    let native = bootstrap.native.clone();
+    let gate = Arc::new((Mutex::new(false), Condvar::new()));
+    let blocked = Arc::clone(&gate);
+    let (entered, observed) = tokio::sync::oneshot::channel();
+    let provider = crate::config::ProviderIdentity {
+        id: "local".into(),
+        tenant: "tenant".into(),
+        service: "blob".into(),
+        epoch: 1,
+    };
+    let mut startup = Box::pin(bootstrap.open_store_with_local_payloads_inner(
+        &settings,
+        owner,
+        provider,
+        blob_root.clone(),
+        true,
+        Some(Box::new(move || {
+            entered.send(()).unwrap();
+            let lock = blocked.0.lock().unwrap();
+            let (lock, timed) = blocked
+                .1
+                .wait_timeout_while(lock, std::time::Duration::from_secs(10), |release| {
+                    !*release
+                })
+                .unwrap();
+            assert!(*lock && !timed.timed_out());
+        })),
+    ));
+    tokio::select! {
+        result = &mut startup => panic!("promotion returned before cancellation: {}", result.is_ok()),
+        result = tokio::time::timeout(std::time::Duration::from_secs(5), observed) => {
+            result.unwrap().unwrap();
+        }
+    }
+    drop(startup);
+    let store = Arc::clone(bootstrap.opened_store.as_ref().unwrap());
+    assert!(store.snapshot().unwrap().quarantined);
+    assert!(native.snapshot().unwrap().quarantined);
+    assert!(matches!(
+        LocalBlobStore::open(&blob_root, "private", LocalBlobLimits::default()),
+        Err(LocalBlobError::Busy)
+    ));
+    *gate.0.lock().unwrap() = true;
+    gate.1.notify_all();
+    tokio::time::timeout(std::time::Duration::from_secs(10), async {
+        loop {
+            if let Ok(owner) =
+                LocalBlobStore::open(&blob_root, "private", LocalBlobLimits::default())
+            {
+                drop(owner);
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(1)).await;
+        }
+    })
+    .await
+    .unwrap();
+    assert!(!blob_root.join("DURABLE.json").exists());
+    store.close();
+    let report = store
+        .drain_async(
+            bootstrap.deadline,
+            tokio::time::sleep_until(bootstrap.deadline.into()),
+        )
+        .unwrap()
+        .await;
+    assert!(report.snapshot.physically_retired());
+    store.reap_retired_threads().unwrap();
+}
+
+#[tokio::test]
 async fn opted_in_startup_binds_fresh_local_owner_after_state_identity() {
     use latent_blobs::local::{LocalBlobLimits, LocalBlobStore};
     let (root, settings, mut bootstrap) = fixture();
