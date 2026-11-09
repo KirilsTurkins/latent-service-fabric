@@ -634,18 +634,19 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'ManagedExecutorQueuedSettlementControl.java',
         'ScheduledQueuedSettlementControl.java', 'FutureTaskInterruptFailureControl.java',
         'ExecutorCloseInterruptControl.java', 'ExecutorOwnerSettlementControl.java',
-        'ExecutorInvokeInterruptOwnerControl.java',
+        'ExecutorInvokeInterruptOwnerControl.java', 'ExecutorAwaitTerminationOwnerControl.java',
         'dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
     reference = private / 'ScheduledStoppedReferenceControl.java'
     periodic_reference = private / 'ScheduledPeriodicReferenceControl.java'
     invoke_reference = private / 'ExecutorInvokeInterruptReferenceControl.java'
+    termination_reference = private / 'ExecutorAwaitTerminationReferenceControl.java'
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
-        for path in (*ports, *controls, reference, periodic_reference, invoke_reference)}
+        for path in (*ports, *controls, reference, periodic_reference, invoke_reference, termination_reference)}
     output.mkdir()
     jdk_output = output / 'reference-jdk'
     jdk_output.mkdir()
     compiler.run('scheduled-stopped-reference-compile', 'javac', '-proc:none', '--release', '25',
-        '-d', jdk_output, reference, periodic_reference, invoke_reference)
+        '-d', jdk_output, reference, periodic_reference, invoke_reference, termination_reference)
     expected_stopped = ('SCHEDULED_STOPPED_REFERENCE PASS delayed;fixed-rate;fixed-delay;nested;future;'
         'running;shutdown;shutdown-policy;physical-runner')
     result = compiler.run('scheduled-stopped-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
@@ -661,6 +662,10 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     result = compiler.run('executor-invoke-interrupt-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'ExecutorInvokeInterruptReferenceControl', 'jdk').strip()
     if result != expected_invoke: raise ValueError('Java executor invoke interruption reference did not complete')
+    expected_termination = 'EXECUTOR_AWAIT_TERMINATION PASS zero;negative;positive;terminated;blocked-interrupt'
+    result = compiler.run('executor-await-termination-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
+        'ExecutorAwaitTerminationReferenceControl', 'jdk').strip()
+    if result != expected_termination: raise ValueError('Java executor termination reference did not complete')
     text = read_file(reference).decode('utf-8')
     for name in ('CompletableFuture', 'FutureTask', 'ScheduledThreadPoolExecutor'):
         original = 'import java.util.concurrent.' + name + ';'
@@ -680,8 +685,14 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     selected_invoke = output / 'ExecutorInvokeInterruptReferenceControl.java'
     selected_invoke.write_bytes(text.replace(original,
         'import dev.latent.guest.runtime.concurrent.AbstractExecutorService;').encode('utf-8'))
+    text = read_file(termination_reference).decode('utf-8')
+    original = 'import java.util.concurrent.Executors;'
+    if text.count(original) != 1: raise ValueError('Java executor termination reference import is ambiguous')
+    selected_termination = output / 'ExecutorAwaitTerminationReferenceControl.java'
+    selected_termination.write_bytes(text.replace(original,
+        'import dev.latent.guest.runtime.concurrent.Executors;').encode('utf-8'))
     compiler.run('scheduled-source-compile', 'javac', '-proc:none', '--release', '25',
-        '-d', output, *ports, *controls, selected, selected_periodic, selected_invoke)
+        '-d', output, *ports, *controls, selected, selected_periodic, selected_invoke, selected_termination)
     result = compiler.run('executor-invoke-interrupt-source', 'java', '-Xmx256m', '-cp', output,
         'ExecutorInvokeInterruptReferenceControl', 'source').strip()
     if result != expected_invoke: raise ValueError('Java executor invoke source differs from reference')
@@ -689,6 +700,13 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'ExecutorInvokeInterruptOwnerControl').strip()
     if result != 'EXECUTOR_INVOKE_INTERRUPT_OWNER PASS all;any;queued-until-drain;result-settled':
         raise ValueError('Java executor invoke interruption owner control did not complete')
+    result = compiler.run('executor-await-termination-source', 'java', '-Xmx256m', '-cp', output,
+        'ExecutorAwaitTerminationReferenceControl', 'source').strip()
+    if result != expected_termination: raise ValueError('Java executor termination source differs from reference')
+    result = compiler.run('executor-await-termination-owner', 'java', '-Xmx256m', '-cp', output,
+        'ExecutorAwaitTerminationOwnerControl').strip()
+    if result != 'EXECUTOR_AWAIT_TERMINATION_OWNER PASS managed;scheduled;owners-held-until-worker-return':
+        raise ValueError('Java executor termination owner control did not complete')
     interrupt_control = future_cancel_interrupt_control(compiler, output)
     executor_settlement = executor_owner_settlement_control(compiler, output)
     for implementation in ('jdk', 'source'):
@@ -765,6 +783,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     return {'status': 'SDK-source-controls-passed', 'referenceJdk': 'matched-stopped-and-periodic-observables', 'sourceInputs': inputs,
         'futureCancelInterrupt': interrupt_control, 'executorOwnerSettlement': executor_settlement,
         'executorInvokeInterrupt': 'matched-14-preinterrupted-and-two-blocked-JDK-cases',
+        'executorAwaitTermination': 'matched-16-preinterrupted-and-two-blocked-JDK-cases',
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 
