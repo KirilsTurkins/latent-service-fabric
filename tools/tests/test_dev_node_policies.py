@@ -1287,5 +1287,56 @@ class ScenarioCurrentnessObservations(unittest.TestCase):
         self.assertEqual(scenarios.ADMISSION_CURRENTNESS_REASONS, set(re.findall(r'"([a-z-]+)"', declaration)))
 
 
+@unittest.skipUnless(os.name == "posix", "the installed node helper runs on Linux")
+class InvocationInputOwnership(unittest.TestCase):
+    def test_original_invocation_bytes_and_target_survive_review_file_replacement(self):
+        import base64
+        from tools.dev_workflow import helper
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            raw = b"original\x00\xff-input"
+            arguments = {"service": "service-a", "contract": "a:b/c@1.0.0", "function": "run",
+                         "mediaType": "application/octet-stream", "input": base64.b64encode(raw).decode("ascii")}
+            request = {"operation": "invoke", "workspace": "owned", "arguments": arguments}
+            controller = journal.Journal(root, "node", "examples")
+            original_begin = controller.begin
+            sent = []
+
+            def replace_after_journal(kind, intent):
+                operation = original_begin(kind, intent)
+                (root / "invoke-input.json").write_bytes(b"replacement")
+                arguments.update(service="service-b", contract="x:y/z@1.0.0", function="other",
+                                 mediaType="text/plain")
+                return operation
+
+            def call(*args, **kwargs):
+                selected = args[args.index("--input") + 1]
+                payload = kwargs.get("stdin") if selected == "-" else Path(selected).read_bytes()
+                sent.append((args, payload))
+                return {"category": "transport-failure", "outcomeKnown": False,
+                        "requestDispatched": True, "error": {"code": "rpc-failed", "grpcCode": "unavailable"}}
+
+            with patch.object(helper, "root_directory", return_value=root), \
+                    patch.object(state, "workspace", return_value=root), \
+                    patch.object(helper, "client", return_value=(type("Cli", (), {"call": staticmethod(call)})(), controller)), \
+                    patch.object(controller, "begin", side_effect=replace_after_journal):
+                with self.assertRaisesRegex(common.DevError, "operation-outcome-uncertain"):
+                    helper.dispatch(request)
+
+            pending = controller.read()["pending"]
+            self.assertEqual(len(sent), 1)
+            args, payload = sent[0]
+            self.assertEqual(payload, raw)
+            self.assertEqual(args[args.index("--input") + 1], "-")
+            self.assertEqual(args[args.index("--activation-id") + 1], pending["id"])
+            for name, expected in (("service", "service-a"), ("contract", "a:b/c@1.0.0"),
+                                   ("function", "run"), ("mediaType", "application/octet-stream")):
+                flag = "--media-type" if name == "mediaType" else "--" + name
+                self.assertEqual(args[args.index(flag) + 1], expected)
+                self.assertEqual(pending["intent"][name], expected)
+            self.assertEqual(pending["intent"]["inputSha256"], common.digest(raw))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -324,11 +324,14 @@ def dispatch(request: dict) -> dict:
                 paths.read(root, "invoke-input.json", 1048576)
                 input_path.unlink()
             paths.write_new(input_path, raw)
+            # The retained file is a review copy. Freeze the complete target
+            # and send the same opaque bytes named in the original intent.
+            target = {name: str(arguments[name]) for name in ("service", "contract", "function", "mediaType")}
             cli, journal = client(root)
-            return journal.execute("invoke", {"inputSha256": digest(raw), "service": arguments["service"]},
-                lambda activation: cli.call("invoke", "--service", arguments["service"], "--contract", arguments["contract"],
-                    "--function", arguments["function"], "--media-type", arguments["mediaType"],
-                    "--input", input_path, "--activation-id", activation))
+            return journal.execute("invoke", {"inputSha256": digest(raw), **target},
+                lambda activation: cli.call("invoke", "--service", target["service"], "--contract", target["contract"],
+                    "--function", target["function"], "--media-type", target["mediaType"],
+                    "--input", "-", "--activation-id", activation, stdin=raw))
         require(False, "operation-not-yet-qualified")
 
 
