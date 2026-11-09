@@ -20,7 +20,9 @@ static void invoked(const latent_transaction_invoke_command_result *r, const lat
 }
 static bool matches(latent_string s,const char *v) { size_t n=strlen(v); return s.length==n && memcmp(s.data,v,n)==0; }
 static void recovered(const latent_transaction_lookup_command_result *r, const latent_transaction_client_failure *f, void *ctx) {
-    observed *o=ctx; assert(o->calls++ == 0 && f==NULL && r && r->value.has_command);
+    observed *o=ctx;
+    if (f) fprintf(stderr,"RECOVERY_FAILURE category=%d outcome=%d dispatched=%d grpc_present=%d grpc=%d\n",f->transport.category,f->transport.outcome,(int)f->transport.dispatched,(int)f->transport.has_grpc_status,f->transport.grpc_status);
+    assert(o->calls++ == 0 && f==NULL && r && r->value.has_command);
     const latent_transaction_command_inspection *c=&r->value.command; const latent_profile_declared_error *e=&c->business_rejection;
     assert(c->outcome==LATENT_TRANSACTION_COMMAND_OUTCOME_REJECTED && c->metadata_durable && !c->application_state_committed && !c->has_commit && c->has_business_rejection);
     assert(matches(c->command_id,required("LSF_401_ORIGINAL_ID")) && matches(c->attempt_id,required("LSF_401_ORIGINAL_ATTEMPT")));
