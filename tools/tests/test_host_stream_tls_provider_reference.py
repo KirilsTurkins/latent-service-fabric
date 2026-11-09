@@ -11,6 +11,21 @@ from tools import qualify_host_stream_tls_provider as reference
 
 
 class BoundedTlsProviderReference(unittest.TestCase):
+    def test_original_node_epoch_stops_before_each_following_stage(self):
+        prefix = 'kernel::native::node_bootstrap::controls::'
+        required = {prefix + name for name in (
+            'node_epoch_retired_during_open_refuses_attach_and_keeps_original_escrow',
+            'node_epoch_retired_during_attach_refuses_prepare_and_keeps_original_escrow',
+            'node_epoch_retired_during_prepare_refuses_prefix_and_keeps_original_escrow',
+            'node_uncertain_attach_after_retirement_keeps_original_error_and_escrow',
+        )}
+        self.assertTrue(required <= reference.NODE_CASES <= reference.REQUIRED_CASES)
+        for case in required:
+            with self.subTest(missing=case), self.assertRaisesRegex(ValueError, 'required-case-missing'):
+                reference.validate_obligations(reference.REQUIRED_CASES - {case}, frozenset())
+            with self.subTest(ignored=case), self.assertRaisesRegex(ValueError, 'required-case-missing'):
+                reference.validate_obligations(reference.REQUIRED_CASES, frozenset({case}))
+
     def test_real_catalogue_keeps_public_refusal_and_activates_all_four_tls_controls(self):
         row = reference.suite_contract(reference.provider.ROOT)
         self.assertEqual(len(reference.TLS_CASES), 4)
