@@ -15,6 +15,38 @@ binds the downloaded archives, engine/patch/compiler/component/native identities
 provider bindings and local attempts. Reusing those bytes does not rebuild them.
 A later integration must record its own exact head and tested merge separately.
 
+## Staged review integration — 2026-11-09
+
+**Reviewed source tree:** `615766e5e10564a9b6503ae93d21742cfce71a6a`
+(code-stage head before this evidence-only ledger revision). Agent file blobs were
+staged on isolated #1928 through single-parent commits; no source branch was
+force-updated or merged into the parent PR. This is **source integration**, not
+an executed signed qualification of the new tuple.
+
+| Agent | Reviewed delivery | Staged scope | Status still open |
+| --- | --- | --- | --- |
+| 1 | [#1932](https://github.com/KirilsTurkins/latent-service-fabric/pull/1932), `d483b31a1141df962edcc4eb71bb54270445ef4a` | Three-file signed probe checkpoint/refusal assertion and negative controls; no experimental workflow history | **Explicit final blocker:** real `abort-fanout-refusal` unreachable-code trap remains unexplained, with no post-failure cleanup sample. Not a runtime fix. |
+| 2 | [#1934](https://github.com/KirilsTurkins/latent-service-fabric/pull/1934), `9636f2c26112be311c4bee3353d68688ee1b524c` | Eleven-file root LIFO, EventTarget failure propagation and guarded default DOMException factory + fixtures/docs | 101 GCC/Clang finite controls, 27 focused sanitizer controls and Node wasm trap witness are source/host evidence, **not** patched SpiderMonkey, signed guest or Store custody. |
+| 3 | [#1931](https://github.com/KirilsTurkins/latent-service-fabric/pull/1931), `835def07622ff9405138c974c286017ff7d637a4` | Eight-file ACK token retention/retry, cancelled import fencing, pre-effect timer capture, reservation-slot rejection, tests/docs | 23 GCC/Clang/ASan controls per compiler variant (12 old-source failures) are finite. Aggregate byte accounting and Store/pooled memory physical retirement remain incomplete. |
+| 4 | [#1929](https://github.com/KirilsTurkins/latent-service-fabric/pull/1929), `a11228373ecd403e30f71ac1a1cb9ede2e2bc57e` | Three-file module-family diagnostics, boundary controls, network compatibility matrix | 33/35 host checks passed with **two skips**; no fresh pinned compiler/signed net result. #738/#739 stay open and no public DNS/TLS/general streams are enabled. |
+
+Agent 5's original fixture pairing `ddae8e8799f182c2839a83a9e548b615f9267380`
+remains a test-only sanitizer correction. Agent 1 diagnostic workflow commits are
+**not** accepted fixes; none of the above counts becomes signed acceptance.
+The historical engine digest `sha256:149b58b73d4dab8539e62c5ae4392a582637d9969588df6f490ba35a2d123d5b`,
+component digest `sha256:7ea905f38f6cd241760cc7b0d8fa18408a094a03b5ad7491a182cb872ceb080b`,
+compiler and provider IDs in the JSON audit belong exclusively to the
+historical `6ab3da5364ac3e7db57c7154f894bc6223ad728b` merge.
+**No selected new engine, patch/component/native/provider tuple has yet passed
+for the staged integration head.**
+
+GitHub launched head-`615766e` workflows: runtime ownership controls
+42704632350, TypeScript guest qualification 42704632832, CI 42704632374,
+developer tools 42704632343 and IntelliJ project 42704632778. At observation
+they were queued/pending; each must be rechecked for the final, documentation-
+updated checkout SHA. A later commit may cancel superseded runs, not pass them.
+
+
 ## Status vocabulary
 
 **Implemented** means source exists, not that every behavior is qualified.
@@ -168,9 +200,9 @@ This integration changes no policy, profile, resource ceiling, deadline or
 post-invocation oracle. A count-model reservation cannot stand in for the
 aggregate ownership requirement.
 
-Before promotion, integrate each agent's reviewed commit without losing its
-source/tests, resolve the parent development conflict, and record the exact
-integrated SHA. Run the normal source-splicer, patched-library, selected engine,
+Before promotion, retain these reviewed staged source/test blobs, resolve the
+parent development conflict without discarding either side, and record the
+exact final integrated checkout and source/compiled-product identities. Run the normal source-splicer, patched-library, selected engine,
 component build, signed Fetch, runtime scheduling/retirement/limits, ordinary
 published-library and applicable dependency-approved networking programmes.
 Historical-product replay workflows must remain labelled historical; opting
@@ -178,8 +210,8 @@ into one is not a fresh integrated-engine build. Check every selected CI job,
 including general failures, then bind the final receipts to source/compiler/
 patch/component/native/provider identities and unchanged authority/limits.
 
-Agent 1 owns the signed refusal path; Agent 2 owns engine/JSAPI lifetime; Agent 3
-owns aggregate resource lifecycle; Agent 4 owns standard networking prerequisites;
-Agent 5 owns this ledger, regression CI and integration evidence. No finished
-integration from Agents 1–4 is credited by this snapshot. Keep both PRs draft
-and the two open parent criteria open until their actual obligations are met.
+The four partial deliveries are staged, but none constitutes whole-criterion
+qualification. Agent 1 has explicitly reported the unresolved signed refusal;
+Agent 2's source fix still needs pinned-engine execution; Agent 3's Store custody
+and byte accounting remain blocked; Agent 4's provider/operator gates remain
+open. Keep #1928/#1852 draft and both open #745 criteria unchanged.
