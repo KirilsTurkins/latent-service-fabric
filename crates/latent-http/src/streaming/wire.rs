@@ -77,13 +77,18 @@ impl Drop for Sender {
 }
 impl Drop for Receiver {
     fn drop(&mut self) {
-        let mut state = self
-            .state
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        state.dropped = true;
-        state.pending = None;
-        state.waker = None;
+        // A queued byte owner or waker can run code when its last reference
+        // drops. Publish closure under the lock, then retire them outside it.
+        let (pending, waker) = {
+            let mut state = self
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            state.dropped = true;
+            (state.pending.take(), state.waker.take())
+        };
+        drop(pending);
+        drop(waker);
     }
 }
 impl Body for RequestBody {
@@ -137,5 +142,102 @@ impl Body for RequestBody {
                 .remaining
                 .map_or_else(SizeHint::default, SizeHint::with_exact),
         }
+    }
+}
+
+#[cfg(test)]
+mod cancellation_lock_tests {
+    use super::*;
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        TryLockError, Weak,
+    };
+    use std::task::Wake;
+
+    // 1 means the detached receiver is visible without its queue lock;
+    // 2 means this real destructor was called under that same lock.
+    fn observe(queue: &Weak<Mutex<State>>, result: &AtomicUsize) {
+        let Some(queue) = queue.upgrade() else {
+            result.store(3, Ordering::SeqCst);
+            return;
+        };
+        let observation = match queue.try_lock() {
+            Ok(state) if state.dropped && state.pending.is_none() && state.waker.is_none() => 1,
+            Ok(_) => 3,
+            Err(TryLockError::WouldBlock) => 2,
+            Err(TryLockError::Poisoned(_)) => 4,
+        };
+        result.store(observation, Ordering::SeqCst);
+    }
+
+    struct ReentrantWake {
+        queue: Weak<Mutex<State>>,
+        result: Arc<AtomicUsize>,
+    }
+    impl Wake for ReentrantWake {
+        fn wake(self: Arc<Self>) {}
+    }
+    impl Drop for ReentrantWake {
+        fn drop(&mut self) {
+            observe(&self.queue, &self.result);
+        }
+    }
+
+    struct ReentrantBytes {
+        queue: Weak<Mutex<State>>,
+        result: Arc<AtomicUsize>,
+        bytes: [u8; 4],
+    }
+    impl AsRef<[u8]> for ReentrantBytes {
+        fn as_ref(&self) -> &[u8] {
+            &self.bytes
+        }
+    }
+    impl Drop for ReentrantBytes {
+        fn drop(&mut self) {
+            observe(&self.queue, &self.result);
+        }
+    }
+
+    #[test]
+    fn receiver_drop_releases_last_waker_after_queue_unlock() {
+        let (sender, mut body) = channel(None);
+        let queue = match &body {
+            RequestBody::Streaming(receiver) => Arc::downgrade(&receiver.state),
+            _ => unreachable!("channel returns a streaming body"),
+        };
+        let result = Arc::new(AtomicUsize::new(0));
+        let waker = Waker::from(Arc::new(ReentrantWake {
+            queue,
+            result: Arc::clone(&result),
+        }));
+        {
+            let mut cx = Context::from_waker(&waker);
+            assert!(Pin::new(&mut body).poll_frame(&mut cx).is_pending());
+        }
+        drop(waker);
+        assert_eq!(result.load(Ordering::SeqCst), 0);
+        drop(body);
+        assert_eq!(result.load(Ordering::SeqCst), 1);
+        drop(sender);
+    }
+
+    #[test]
+    fn receiver_drop_releases_queued_bytes_after_queue_unlock() {
+        let (sender, body) = channel(None);
+        let queue = match &body {
+            RequestBody::Streaming(receiver) => &receiver.state,
+            _ => unreachable!("channel returns a streaming body"),
+        };
+        let result = Arc::new(AtomicUsize::new(0));
+        let owner = ReentrantBytes {
+            queue: Arc::downgrade(queue),
+            result: Arc::clone(&result),
+            bytes: *b"data",
+        };
+        queue.lock().unwrap().pending = Some(Bytes::from_owner(owner));
+        drop(body);
+        assert_eq!(result.load(Ordering::SeqCst), 1);
+        drop(sender);
     }
 }
