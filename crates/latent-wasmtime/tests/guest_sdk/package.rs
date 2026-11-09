@@ -189,6 +189,87 @@ impl Signers {
         self.upload_for_tenant(bundle, observation, &TenantId("tests".into()))
     }
 
+    /// Test-only adversarial envelope: sign exact raw OCI/config bytes and
+    /// verify the signatures independently. Semantic admission still occurs
+    /// only through the normal enforced catalog.
+    pub fn adversarial_upload(
+        &self,
+        input: latent_packaging::BundleInput,
+        observation: &BuildObservation,
+    ) -> PackageAdmissionUpload {
+        let subject = PackageSigningSubject::from_package(
+            &input.manifest,
+            &input.configuration,
+            PackageLimits::default(),
+        )
+        .unwrap();
+        let validity = SignatureValidity {
+            issued_at: self.now,
+            expires_at: self.now + 1200,
+        };
+        let signature = self
+            .publisher
+            .sign_package(&subject, validity, SignatureLimits::default())
+            .unwrap();
+        let provenance = self
+            .builder
+            .sign_build(&subject, observation, validity, ProvenanceLimits::default())
+            .unwrap();
+        let policy: serde_json::Value = serde_json::from_slice(&self.policy_document).unwrap();
+        let publisher = PublisherPolicy::from_json(
+            &serde_json::to_vec(&policy["publisher"]).unwrap(),
+            SignatureLimits::default(),
+        )
+        .unwrap();
+        let revocations = RevocationSnapshot::from_json(
+            &serde_json::to_vec(&policy["publisherRevocations"]).unwrap(),
+            SignatureLimits::default(),
+        )
+        .unwrap();
+        PublisherVerifier::new(
+            PublisherTrust::new(publisher, revocations).unwrap(),
+            SignatureLimits::default(),
+            self.now,
+        )
+        .unwrap()
+        .verify_package(&subject, signature.as_ref(), self.now)
+        .unwrap();
+        let builder = BuilderPolicy::from_json(
+            &serde_json::to_vec(&policy["builder"]).unwrap(),
+            ProvenanceLimits::default(),
+        )
+        .unwrap();
+        let revocations = BuilderRevocationSnapshot::from_json(
+            &serde_json::to_vec(&policy["builderRevocations"]).unwrap(),
+            ProvenanceLimits::default(),
+        )
+        .unwrap();
+        BuilderVerifier::new(
+            BuilderTrust::new(builder, revocations).unwrap(),
+            ProvenanceLimits::default(),
+            self.now,
+        )
+        .unwrap()
+        .verify_package(&subject, provenance.as_ref(), self.now)
+        .unwrap();
+        PackageAdmissionUpload {
+            manifest: input.manifest,
+            configuration: input.configuration,
+            layers: input.layers,
+            signatures: vec![AdmissionEvidence {
+                manifest: signature.manifest_bytes().to_vec(),
+                configuration: b"{}".to_vec(),
+                payload: signature.payload_bytes().to_vec(),
+            }],
+            provenance: vec![AdmissionEvidence {
+                manifest: provenance.manifest_bytes().to_vec(),
+                configuration: b"{}".to_vec(),
+                payload: provenance.payload_bytes().to_vec(),
+            }],
+            sboms: vec![],
+        }
+    }
+
     pub fn upload_for_tenant(
         &self,
         bundle: &PackageBundle,
