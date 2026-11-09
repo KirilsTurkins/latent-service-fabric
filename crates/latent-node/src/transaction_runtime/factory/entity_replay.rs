@@ -91,7 +91,7 @@ impl NativeTransactionAdmission {
                 },
                 expected_versions: selection.expected_versions.clone(),
             },
-            None,
+            self.inbox.as_ref(),
         )
         .map_err(atomic)?;
         let identity = durable::command_identity(&key).map_err(atomic)?;

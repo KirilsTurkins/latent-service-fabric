@@ -57,6 +57,35 @@ async fn trusted_inbox_commit_and_replay(entity: Option<&str>) {
             .unwrap(),
     );
     let guest = first.admit(&envelope, &budget).await.unwrap();
+    if let Some(entity) = entity {
+        let (duplicate, mut duplicate_envelope, duplicate_budget) =
+            fixture.entity_invocation(&key, entity);
+        duplicate_envelope.principal.kind = latent_core::PrincipalKind::Trigger;
+        let duplicate = Arc::new(
+            Arc::try_unwrap(duplicate)
+                .ok()
+                .unwrap()
+                .with_trusted_inbox(identity.clone())
+                .unwrap(),
+        );
+        let result = tokio::time::timeout(
+            std::time::Duration::from_secs(5),
+            duplicate.admit(&duplicate_envelope, &duplicate_budget),
+        )
+        .await
+        .unwrap();
+        assert!(
+            matches!(result, Err(error) if error.code == latent_core::PlatformErrorCode::AlreadyExists)
+        );
+        let Some(TransactionAdmissionResult::Existing { command, .. }) =
+            duplicate.take_result().unwrap()
+        else {
+            panic!("active input duplicate did not retain the original command");
+        };
+        assert_eq!(command.outcome(), Outcome::Pending);
+        assert_eq!(fixture.owners.lanes.snapshot().active, 1);
+        assert_eq!(fixture.owners.lanes.snapshot().queued, 0);
+    }
     guest.acquire(Mode::Command).unwrap();
     guest.finish_guest_access();
     let _ = budget.finalize_at(None, std::time::Instant::now());
