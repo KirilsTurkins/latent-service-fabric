@@ -95,3 +95,43 @@ func TestPhase4RecoverLostRejectionAgainstRealNode(t *testing.T) {
 	}
 	fmt.Println("LOST_REJECTION_RECOVERED")
 }
+
+func TestPhase4ChangedInputConflictsWithOriginalRejection(t *testing.T) {
+	if os.Getenv("LSF_401_LIVE") != "1" {
+		t.Skip("requires an original durable rejection on a separate node")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	client, err := transport.New(ctx, transport.DefaultConfig("http://"+rejectionField(t, "LSF_401_ENDPOINT"), rejectionField(t, "LSF_401_TOKEN")))
+	if err != nil {
+		t.Fatalf("client: %v", err)
+	}
+	defer func() {
+		if err := client.Close(); err != nil {
+			t.Error("client retirement")
+		}
+	}()
+	version, err := hex.DecodeString(rejectionField(t, "LSF_401_EXPECTED_VERSION_HEX"))
+	if err != nil || len(version) == 0 {
+		t.Fatal("invalid original version")
+	}
+	tenant, key, route, wall := rejectionField(t, "LSF_401_TENANT"), "go-sdk-lost-rejection", "transaction-java-aggregate", uint64(120000)
+	current, selector := tx.CurrentProfile(), lostRejectionSelector(t)
+	request := tx.InvokeCommandRequest{Profile: &current, Command: &selector, InputFormat: "lsf-wit-values-v1", ExpectedVersions: []tx.ExpectedVersion{{Key: []byte("aggregate/count"), Version: &version}}, Invocation: &profile.InvokeRequest{ActivationId: &key, Target: &profile.InvocationTarget{Tenant: tenant, Service: "examples/transaction-java-aggregate", Contract: "examples:transactional-aggregate/api@1.0.0", Function: "update", Route: &route}, Payload: []byte(`[{"delta":2,"reject":true}]`), MediaType: "application/vnd.latent.wit-values.v1+json", Budget: &profile.ResourceBudget{CpuFuel: 1000000000, MemoryBytes: 67108864, StateReadBytes: 4194304, StateWriteBytes: 2097152, EffectCount: 1, WallTimeLimitMillis: &wall}}}
+	_, err = client.InvokeCommand(ctx, request, profile.CallOptions{})
+	var failure *tx.ClientFailure
+	if !errors.As(err, &failure) || failure.Transport == nil {
+		t.Fatalf("expected dispatched conflicting-input refusal: %v", err)
+	}
+	if failure.Transport.GrpcStatus == nil || *failure.Transport.GrpcStatus != 6 || !failure.Transport.Dispatched {
+		status := int32(-1)
+		if failure.Transport.GrpcStatus != nil {
+			status = *failure.Transport.GrpcStatus
+		}
+		t.Fatalf("conflicting-input refusal: category=%d grpc=%d dispatched=%t outcome=%d", failure.Transport.Category, status, failure.Transport.Dispatched, failure.Transport.Outcome)
+	}
+	if failure.Identity.Command == nil || failure.Identity.Command.ClientKey != key || failure.Observed != nil {
+		t.Fatal("conflict did not retain original command identity")
+	}
+	fmt.Println("CHANGED_INPUT_CONFLICT")
+}
