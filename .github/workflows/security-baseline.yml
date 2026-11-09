@@ -156,10 +156,12 @@ jobs:
           python3 -m pip install --only-binary=:all: --no-deps --require-hashes --requirement .github/security/requirements.txt
       - name: Test expiry, unknown data, fork permissions, docs profiles and the aggregate
         run: python3 -m unittest discover -s tools/tests -p 'test_security*.py'
-      - name: Install reviewed canary scanners
-        run: |
-          python3 tools/security_install.py --tool cargo-audit --destination "$RUNNER_TEMP/security-tools"
-          python3 tools/security_install.py --tool gitleaks --destination "$RUNNER_TEMP/security-tools"
+      - name: Install reviewed cargo-audit canary scanner
+        env:
+          GH_TOKEN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && github.token || '' }}
+        run: python3 tools/security_install.py --tool cargo-audit --destination "$RUNNER_TEMP/security-tools"
+      - name: Install reviewed gitleaks canary scanner
+        run: python3 tools/security_install.py --tool gitleaks --destination "$RUNNER_TEMP/security-tools"
       - name: Install reviewed zizmor canary scanner
         env:
           GH_TOKEN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && github.token || '' }}

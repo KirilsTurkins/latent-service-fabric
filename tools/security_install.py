@@ -45,12 +45,16 @@ def platform_key() -> str:
     return "windows-x64" if os.name == "nt" else "linux-x64"
 
 
-# One immutable, separately reviewed fallback for the exact pinned Linux scanner.
+# Immutable, separately reviewed fallbacks for the exact pinned Linux scanners.
 # Archive and executable identities are still checked by install/verify_tool.
 ZIZMOR_LINUX_URL = ("https://github.com/zizmorcore/zizmor/releases/download/v1.30.1/"
                     "zizmor-x86_64-unknown-linux-gnu.tar.gz")
 ZIZMOR_LINUX_ASSET = "https://api.github.com/repos/zizmorcore/zizmor/releases/assets/552067642"
 ZIZMOR_LINUX_ASSET_BYTES = 9_169_512
+CARGO_AUDIT_LINUX_URL = ("https://github.com/rustsec/rustsec/releases/download/cargo-audit/v0.22.2/"
+                         "cargo-audit-x86_64-unknown-linux-gnu-v0.22.2.tgz")
+CARGO_AUDIT_LINUX_ASSET = "https://api.github.com/repos/rustsec/rustsec/releases/assets/439291614"
+CARGO_AUDIT_LINUX_ASSET_BYTES = 6_554_209
 
 
 class _AssetRedirect(urllib.request.HTTPRedirectHandler):
@@ -93,19 +97,25 @@ def download(url: str) -> bytes:
             transient = isinstance(failure.reason, TimeoutError)
         else:
             transient = True
-        token = os.environ.get("GH_TOKEN") if url == ZIZMOR_LINUX_URL and transient else None
+        if url == ZIZMOR_LINUX_URL:
+            asset_url, asset_bytes = ZIZMOR_LINUX_ASSET, ZIZMOR_LINUX_ASSET_BYTES
+        elif url == CARGO_AUDIT_LINUX_URL:
+            asset_url, asset_bytes = CARGO_AUDIT_LINUX_ASSET, CARGO_AUDIT_LINUX_ASSET_BYTES
+        else:
+            asset_url, asset_bytes = None, None
+        token = os.environ.get("GH_TOKEN") if asset_url and transient else None
         if not token:
             raise
         if isinstance(failure, urllib.error.HTTPError):
             failure.close()
-        request = urllib.request.Request(ZIZMOR_LINUX_ASSET, headers={
+        request = urllib.request.Request(asset_url, headers={
             "Accept": "application/octet-stream", "User-Agent": "lsf-security-baseline/1"})
         # urllib drops unredirected headers before following a redirect; the
         # handler also validates the next host and checks the copied headers.
         request.add_unredirected_header("Authorization", "Bearer " + token)
         opener = urllib.request.build_opener(_AssetRedirect()).open
         payload = _read_download(request, started, opener)
-        require(len(payload) == ZIZMOR_LINUX_ASSET_BYTES, "download-size-mismatch")
+        require(len(payload) == asset_bytes, "download-size-mismatch")
         return payload
 
 
