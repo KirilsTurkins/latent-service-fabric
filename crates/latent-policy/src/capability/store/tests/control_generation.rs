@@ -1,6 +1,40 @@
 use super::*;
 
 #[test]
+fn concurrent_catalog_reads_coexist_but_mutation_remains_exclusive() {
+    let fixture = Fixture::new();
+    let store = fixture.store(PolicyStoreLimits::default());
+    let bytes = serde_json::to_vec(&policy()).unwrap();
+    let held = store.state.try_read().unwrap();
+    let captured = store.capture_control_generation(deadline()).unwrap();
+    assert_eq!(
+        store.inspection_generation().unwrap(),
+        captured.persisted_generation()
+    );
+    let error = mutate(&store, "p", "create", 0, Some(&bytes))
+        .err()
+        .unwrap();
+    assert_eq!(error.code, PlatformErrorCode::Unavailable);
+    drop(held);
+    mutate(&store, "p", "create", 0, Some(&bytes)).unwrap();
+    assert!(store
+        .with_control_generation(&captured, deadline(), &mut |_| Ok(()))
+        .is_err());
+}
+
+#[test]
+fn catalog_reader_panic_still_poisons_the_original_owner() {
+    let fixture = Fixture::new();
+    let store = fixture.store(PolicyStoreLimits::default());
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _read = store.lock().unwrap();
+        panic!("controlled catalog read unwind");
+    }));
+    assert!(result.is_err());
+    assert!(store.capture_control_generation(deadline()).is_err());
+}
+
+#[test]
 fn control_generation_comes_from_complete_persisted_image_and_rejects_foreign_reopen() {
     let fixture = Fixture::new();
     let store = fixture.store(PolicyStoreLimits::default());
@@ -107,7 +141,7 @@ fn control_generation_rejects_deadline_busy_fence_and_uncertain_owner_before_cal
             .is_err());
     }
     {
-        let _held = store.state.try_lock().unwrap();
+        let _held = store.state.try_write().unwrap();
         assert!(store.capture_control_generation(deadline()).is_err());
         assert!(store
             .with_control_generation(&captured, deadline(), &mut action)

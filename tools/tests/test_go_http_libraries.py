@@ -14,6 +14,35 @@ from tools.qualify_go_standard_http import NATIVE_NAMES
 from tools.rust_capsule_project import read_file, snapshot
 
 
+class AuditCleanupReadiness(unittest.TestCase):
+    def test_waits_for_two_idle_observations_and_rejects_unknown_outcomes(self):
+        import time
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        from tools.go_standard_http_node import audit_cleanup_ready
+
+        names = ('audit_queued_operations', 'audit_queued_bytes', 'audit_pending_attempts',
+                 'audit_reserved_records', 'audit_reserved_bytes', 'audit_query_owners',
+                 'audit_query_bytes', 'audit_stage_bytes', 'audit_closed', 'audit_recovery_pending',
+                 'audit_unknown_outcomes', 'audit_node_metadata_quarantined_reserved_bytes')
+        idle = {name: '0' for name in names}
+
+        def observation(attributes):
+            return {'data': {'inventory': {'topology': {'available': True, 'complete': True, 'entries': [
+                {'name': 'audit-journal', 'kind': 'store', 'ownership': 'node-fixed', 'attributes': attributes}]}}}}
+
+        client = SimpleNamespace(deadline=time.monotonic() + 10, call=Mock(side_effect=[
+            observation({**idle, 'audit_queued_operations': '1'}), observation(idle), observation(idle)]))
+        with patch('tools.go_standard_http_node.time.sleep'):
+            self.assertEqual(audit_cleanup_ready(client), idle)
+        self.assertEqual(client.call.call_count, 3)
+        uncertain = SimpleNamespace(deadline=time.monotonic() + 10,
+            call=Mock(return_value=observation({**idle, 'audit_unknown_outcomes': '1'})))
+        with self.assertRaisesRegex(WorkflowError, 'audit-owner-uncertain'):
+            audit_cleanup_ready(uncertain)
+        self.assertEqual(uncertain.call.call_count, 1)
+
+
 class HttpLibraryCapture(unittest.TestCase):
     def test_malformed_json_oracle_requires_paired_native_results_in_signed_runner(self):
         import ast

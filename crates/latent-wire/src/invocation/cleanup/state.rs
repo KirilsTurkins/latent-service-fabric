@@ -258,6 +258,51 @@ impl State {
 }
 
 impl CleanupSlot {
+    /// Continue the exact sponsored activation in its existing reserved slot.
+    /// Useful work keeps its original budget/deadline; only cleanup may use the
+    /// existing short allowance after that deadline. No new task is spawned.
+    pub(super) fn continue_shared_with_retention<R: Send + 'static>(
+        self,
+        handle: ActivationHandle,
+        retention: R,
+        original_deadline: std::time::Instant,
+    ) {
+        let handoff = Instant::now();
+        let deadline = Instant::from_std(original_deadline)
+            .max(handoff)
+            .checked_add(self.shared.allowance)
+            .expect("validated shared continuation deadline");
+        if let Some(observer) = &self.shared.observer {
+            let (slot, generation) = self.key.expect("reserved cleanup observation");
+            observer.record_for_activation(
+                &handle.activation_id().0,
+                DeadlineDiagnosticObservation::TransportHandoff {
+                    observed_at: handoff.into_std(),
+                    slot: slot as u64,
+                    generation,
+                    // This records the transport cause, not cancellation of
+                    // the still-sponsored activation's execution authority.
+                    cause: DeadlineDiagnosticDecision::Cancelled,
+                },
+            );
+        }
+        struct Retained<R> {
+            handle: ActivationHandle,
+            _retention: R,
+        }
+        let mut retained = Retained {
+            handle,
+            _retention: retention,
+        };
+        self.transfer(Work {
+            future: Box::pin(async move {
+                drop((&mut retained.handle).await);
+                drop(retained);
+            }),
+            deadline,
+        });
+    }
+
     pub(in crate::invocation) fn continue_after_interruption(
         self,
         handle: ActivationHandle,

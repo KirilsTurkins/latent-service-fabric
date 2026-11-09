@@ -75,7 +75,7 @@ fn every_unknown_policy_flush_cut_keeps_original_stamp_rejected_after_restart() 
         let original = effects.install("a", "publication-a", None).unwrap();
         store
             .state
-            .lock()
+            .read()
             .unwrap()
             .ledger
             .as_ref()

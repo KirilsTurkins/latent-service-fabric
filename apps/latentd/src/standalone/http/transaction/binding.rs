@@ -98,6 +98,7 @@ pub(in crate::standalone::http) fn bind(
     facts: &TransactionRequest,
     reservation: &mut InboundActivationReservation,
     input_bytes: usize,
+    shared_owner: Arc<latent_node::transaction_runtime::SharedCommandOwner>,
 ) -> Result<
     (
         Arc<NativeTransactionAdmission>,
@@ -157,7 +158,8 @@ pub(in crate::standalone::http) fn bind(
             selection,
             native,
         )?
-        .with_prepared_input(Arc::new(HttpResultValidator)),
+        .with_prepared_input(Arc::new(HttpResultValidator))
+        .with_shared_command_owner(shared_owner),
     );
     reservation.bind_transaction(admission.clone())?;
     Ok((admission, installation))

@@ -1,0 +1,36 @@
+{
+  "description": "Bounded audit quiescence before Go HTTP fixture deployment cleanup",
+  "hostedFailure": {
+    "pullRequest": 1740,
+    "run": 42582205017,
+    "job": 129043778768,
+    "componentDigest": "sha256:1636f23767c408b1a92c6a41d39c2da089381893e0e474dd11002d831e567716",
+    "nodeSha256": "8205c1636e6cb20f081e9b048105f3440599b578d672e4f9621fb1faa84c6389",
+    "controlCall": 84,
+    "code": "resource-exhausted",
+    "detail": "audit-capacity",
+    "operationLookup": "unknown",
+    "precedingAuditQueuedOperations": 1,
+    "precedingDroppedObservations": 1742
+  },
+  "reproduction": {
+    "sourceSnapshotDigest": "sha256:820a07c84f7d428b96eed4694585e5c4066e0d126388cd97cf82cdc067ceb4d5",
+    "packageInputs": "reconstructed files match all original retained package-input digests",
+    "hostedComponentAndNodeReused": true,
+    "baselineCasesPassed": 30,
+    "baselineShutdownClean": true,
+    "candidateCasesPassed": 30,
+    "candidateShutdownClean": true,
+    "candidateAuditPendingAndReservationsZero": true,
+    "candidateSourceNormalizedSha256": "f30b3db1a8d0b816252ebd0ed5d0b0d5b95b564a882ec5b6a5aa5cdcb56fbeec"
+  },
+  "checks": [
+    "The bounded fixture observes the same audit owner twice with no queued, pending, reserved or query work and no recovery, unknown, closed or quarantined state before the one cleanup attempt.",
+    "Focused unit coverage checks settling and unknown-outcome refusal."
+  ],
+  "limitations": [
+    "The original intermittent audit-capacity failure did not reproduce locally, so this readiness observation is a mitigation rather than proof of its exact cause or elimination.",
+    "The observation is not an atomic reservation; capacity can change afterwards. No failed or uncertain deployment mutation is retried.",
+    "This is a local run of the retained hosted binary and component with reconstructed package inputs; hosted exact-head validation is still required."
+  ]
+}

@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, VecDeque};
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use std::task::Waker;
 use std::time::Instant;
 
 use latent_core::{StateNamespaceId, TenantId};
@@ -37,6 +38,7 @@ pub(super) struct State<T> {
     pub next_ticket: u64,
     pub next_generation: u64,
     pub identity: Arc<()>,
+    pub dispatcher: Option<Waker>,
 }
 
 impl<T> State<T> {
@@ -48,6 +50,7 @@ impl<T> State<T> {
             next_ticket: 0,
             next_generation: 0,
             identity: Arc::new(()),
+            dispatcher: None,
         }
     }
 
