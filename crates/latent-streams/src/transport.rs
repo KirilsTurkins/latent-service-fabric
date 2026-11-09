@@ -341,6 +341,7 @@ impl Transport {
             connection,
             handshake_read,
             handshake_write,
+            ..
         } = &mut *state;
         // Limit encrypted handshake input before it reaches the TLS parser.
         // This is an explicit finite host profile, not a universal chain limit.
