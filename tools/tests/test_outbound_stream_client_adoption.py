@@ -79,7 +79,9 @@ class ClientAdoption(unittest.TestCase):
     def test_token_handoff_reads_only_three_owned_records_and_restart_matches_new_owner(self):
         before, owner = self.snapshot(), copy.deepcopy(self.operator.owner)
         old, new = self.config.read_bytes(), self.candidate.read_bytes()
+        self.assertEqual(self.client.expected_config_digest, digest(old))
         result = self.operator.adopt_client(self.replacement)
+        self.assertEqual(self.replacement.expected_config_digest, digest(new))
         self.assertEqual(result, {"executionPermission": False, "outcome": "client-token-adopted-original-grants-retained"})
         self.assertEqual(self.replacement.calls, [["node", "get", "node"],
             ["policy", "--kind", "provider-binding", "get", "--id", "stream-installed"],

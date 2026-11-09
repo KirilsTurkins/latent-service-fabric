@@ -11,8 +11,9 @@ fixtures. Their acceptance does not establish provider readiness or authority.
 ## Run the scenario
 
 Use the repository's Python 3.13 environment and explicitly selected Linux
-x86-64 `latentd` and `latent` executables. The executables must support the
-current policy management commands. From the source checkout, choose a **new**
+x86-64 `latentd` and `latent` executables. The CLI must support the current
+policy commands and the opened-configuration digest check; an older binary
+without that option refuses the operator's requests. From the source checkout, choose a **new**
 work directory under an owner-controlled private parent:
 
 ```sh
