@@ -41,6 +41,44 @@ pub struct IoInputChunk {
     _slot: Slot,
     owner: Option<Arc<dyn Send + Sync>>,
 }
+/// One buffer and one outstanding slot prepaid by their original transfer.
+/// The allocation dies before its memory and slot reservations. A Store-side
+/// adapter may capture bytes without calling back into the operation, then
+/// return this owner to the transfer for the authority and total-byte checks.
+/// Capture alone is callback-free: every drop or failed conversion of this owner
+/// must run outside a Store borrow. This type does not provide a cancellation or
+/// Store-teardown handoff.
+pub struct PreparedIoInput {
+    bytes: Vec<u8>,
+    memory: IoMemory,
+    slot: Slot,
+    captured: bool,
+}
+
+impl PreparedIoInput {
+    #[must_use]
+    pub fn capacity(&self) -> usize {
+        self.bytes.capacity()
+    }
+
+    #[must_use]
+    pub fn captured_len(&self) -> Option<usize> {
+        self.captured.then_some(self.bytes.len())
+    }
+
+    /// Copy once into already allocated storage. This does not inspect the
+    /// operation, allocate, or invoke a caller-supplied callback. An invalid
+    /// request leaves the preparation unchanged and publishes no bytes.
+    pub fn capture(&mut self, source: &[u8]) -> bool {
+        if self.captured || source.is_empty() || source.len() > self.bytes.len() {
+            return false;
+        }
+        self.bytes[..source.len()].copy_from_slice(source);
+        self.bytes.truncate(source.len());
+        self.captured = true;
+        true
+    }
+}
 impl IoInputChunk {
     pub fn retain_owner(&mut self, owner: Arc<dyn Send + Sync>) -> Result<(), PlatformError> {
         if self.owner.is_some() {
@@ -346,6 +384,73 @@ impl IoTransfer {
     }
     pub fn input(&self, bytes: Vec<u8>) -> Result<IoInputChunk, PlatformError> {
         self.input_with(bytes.capacity(), || Ok(bytes))
+    }
+    /// Reserve and allocate one bounded input before borrowing guest memory.
+    /// Like `input_with`, this may invoke the original operation's callbacks;
+    /// callers must not invoke it while holding a Store borrow.
+    pub fn prepare_input(&self, maximum: usize) -> Result<PreparedIoInput, PlatformError> {
+        self.inner.check()?;
+        if maximum == 0 || maximum > self.maximum_chunk_bytes() {
+            return Err(capacity());
+        }
+        let slot = Transfer::slot(&self.inner)?;
+        // This new ingress path promises physical ownership of its snapshot.
+        // The older logical-only profile must therefore refuse before allocating.
+        let mut memory = IoMemory::reserve_host(&self.inner.operation, maximum, 512)?;
+        // As in IoBuffer, fixed repetition requests exactly the prepaid
+        // capacity and no growing operation is exposed after construction.
+        let bytes = vec![0; maximum];
+        if bytes.capacity() != maximum {
+            return Err(capacity());
+        }
+        memory.confirm_host_capacity(bytes.capacity())?;
+        Ok(PreparedIoInput {
+            bytes,
+            memory,
+            slot,
+            captured: false,
+        })
+    }
+
+    #[must_use]
+    pub fn owns_prepared_input(&self, prepared: &PreparedIoInput) -> bool {
+        Shared::ptr_eq(&self.inner, &prepared.slot.inner)
+    }
+
+    /// Validate the original owner and spend the actual captured bytes once.
+    /// Authority/deadline checks may call host-provided code, so this must run
+    /// outside a Store borrow. A failed check publishes no transport chunk.
+    pub fn finish_prepared_input(
+        &self,
+        prepared: PreparedIoInput,
+    ) -> Result<IoInputChunk, PlatformError> {
+        if !self.owns_prepared_input(&prepared) {
+            return Err(denied());
+        }
+        if !prepared.captured {
+            return Err(invalid());
+        }
+        self.inner.check()?;
+        let PreparedIoInput {
+            bytes,
+            memory,
+            slot,
+            captured: _,
+        } = prepared;
+        // Install the real owner before spending, so failure frees bytes before
+        // refunding either their memory reservation or their transfer slot.
+        let chunk = IoInputChunk {
+            bytes,
+            _memory: memory,
+            _slot: slot,
+            owner: None,
+        };
+        spend(
+            &self.inner.input,
+            chunk.bytes.len(),
+            self.inner.budget.input_bytes(),
+        )?;
+        Ok(chunk)
     }
     /// Reserve the original resident/native charges before materializing guest
     /// bytes. The producer runs synchronously and no Store borrow is retained.
@@ -666,6 +771,189 @@ mod native_tests {
                 + 2 * (16 + super::super::ALLOCATION_BOOKKEEPING as u64)
         );
         drop((resident, explicit, explicit_call));
+        assert_eq!(control.budget.host_memory_bytes(), baseline);
+    }
+    struct ObservedClock {
+        calls: AtomicUsize,
+        forbidden: AtomicBool,
+    }
+    impl latent_core::ActivationClock for ObservedClock {
+        fn sample(&self) -> latent_core::ClockSample {
+            assert!(!self.forbidden.load(Ordering::SeqCst));
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            latent_core::ClockSample::system_now()
+        }
+        fn monotonic_now(&self) -> Instant {
+            assert!(!self.forbidden.load(Ordering::SeqCst));
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            Instant::now()
+        }
+    }
+
+    #[tokio::test]
+    async fn prepared_input_captures_once_without_callbacks_and_retains_the_original_owner() {
+        let clock = Arc::new(ObservedClock {
+            calls: AtomicUsize::new(0),
+            forbidden: AtomicBool::new(false),
+        });
+        let fixture = Fixture::with_activation_clock(clock.clone());
+        let (request, control) = native_request(&fixture, "prepared-input-owner");
+        let session = fixture.session(&request, &control);
+        let io = IoRuntime::new(IoLimits::default()).unwrap();
+        let baseline = control.budget.host_memory_bytes();
+        let call = start(&io, &session).await;
+        let transfer = call
+            .transfer(IoTransferOptions {
+                maximum_chunk_bytes: 16,
+                maximum_outstanding_chunks: 1,
+            })
+            .unwrap();
+        assert!(transfer.prepare_input(0).is_err());
+        assert!(transfer.prepare_input(17).is_err());
+        assert_eq!(transfer.outstanding_chunks(), 0);
+
+        let before = control.budget.host_memory_bytes();
+        let mut prepared = transfer.prepare_input(16).unwrap();
+        assert_eq!(prepared.capacity(), 16);
+        assert_eq!(transfer.outstanding_chunks(), 1);
+        assert_eq!(io.snapshot().staged_bytes, 16);
+        assert_eq!(
+            control.budget.host_memory_bytes(),
+            before + 16 + super::super::ALLOCATION_BOOKKEEPING as u64
+        );
+        assert!(transfer.prepare_input(1).is_err());
+        let calls = clock.calls.load(Ordering::SeqCst);
+        clock.forbidden.store(true, Ordering::SeqCst);
+        assert!(!prepared.capture(&[]));
+        assert!(!prepared.capture(&[1; 17]));
+        let mut source = *b"data";
+        assert!(prepared.capture(&source));
+        source.fill(b'x');
+        assert!(!prepared.capture(&source));
+        clock.forbidden.store(false, Ordering::SeqCst);
+        assert_eq!(clock.calls.load(Ordering::SeqCst), calls);
+        assert_eq!(transfer.accepted_input_bytes(), 0);
+        let chunk = transfer.finish_prepared_input(prepared).unwrap();
+        assert!(clock.calls.load(Ordering::SeqCst) > calls);
+        assert_eq!(chunk.as_ref(), b"data");
+        assert_eq!(transfer.accepted_input_bytes(), 4);
+        assert!(chunk._memory.charged_to(&control.budget));
+        assert_eq!(transfer.outstanding_chunks(), 1);
+        drop((transfer, call));
+        assert_eq!(chunk.as_ref(), b"data");
+        assert_eq!(io.snapshot().staged_bytes, 16);
+        assert!(control.budget.host_memory_bytes() > baseline);
+        drop(chunk);
+        assert_eq!(io.snapshot(), super::super::IoSnapshot::default());
+        assert_eq!(control.budget.host_memory_bytes(), baseline);
+    }
+
+    #[tokio::test]
+    async fn prepared_input_refuses_foreign_owners_cancellation_and_unfunded_capacity() {
+        let fixture = Fixture::new(CapabilityBrokerLimits::default());
+        let (request, control) = native_request(&fixture, "prepared-input-refusal");
+        let session = fixture.session(&request, &control);
+        let io = IoRuntime::new(IoLimits::default()).unwrap();
+        let first_call = start(&io, &session).await;
+        let second_call = start(&io, &session).await;
+        let options = IoTransferOptions {
+            maximum_chunk_bytes: 16,
+            maximum_outstanding_chunks: 1,
+        };
+        let first = first_call.transfer(options).unwrap();
+        let second = second_call.transfer(options).unwrap();
+        let before = control.budget.host_memory_bytes();
+        let envelope = 16 + super::super::ALLOCATION_BOOKKEEPING as u64;
+        let held = request.budget.memory_bytes - before - envelope + 1;
+        let padding = control.budget.reserve_host_memory(held).unwrap();
+        let before_refusal = io.snapshot();
+        assert!(first.prepare_input(16).is_err());
+        assert_eq!(io.snapshot(), before_refusal);
+        assert_eq!(first.outstanding_chunks(), 0);
+        drop(padding);
+
+        let mut foreign = first.prepare_input(8).unwrap();
+        assert!(foreign.capture(b"foreign"));
+        assert!(first.owns_prepared_input(&foreign));
+        assert!(!second.owns_prepared_input(&foreign));
+        assert!(second.finish_prepared_input(foreign).is_err());
+        assert_eq!(first.outstanding_chunks(), 0);
+        assert_eq!(first.accepted_input_bytes(), 0);
+        assert_eq!(second.accepted_input_bytes(), 0);
+        assert_eq!(io.snapshot().staged_bytes, 0);
+        assert_eq!(control.budget.host_memory_bytes(), before);
+
+        let mut cancelled = first.prepare_input(8).unwrap();
+        control.probe.0.store(true, Ordering::SeqCst);
+        // Capturing is deliberately inert even after cancellation. The later
+        // original-operation check refuses before a transport owner is formed.
+        assert!(cancelled.capture(b"cancel"));
+        assert!(first.finish_prepared_input(cancelled).is_err());
+        assert_eq!(first.outstanding_chunks(), 0);
+        assert_eq!(first.accepted_input_bytes(), 0);
+        assert_eq!(io.snapshot().staged_bytes, 0);
+        assert_eq!(control.budget.host_memory_bytes(), before);
+    }
+
+    #[tokio::test]
+    async fn prepared_input_refuses_the_logical_only_profile_before_allocation() {
+        let fixture = Fixture::new(CapabilityBrokerLimits::default());
+        let (request, control) = fixture.request("prepared-input-phase1");
+        assert!(!control.budget.profile().supports_descendants());
+        let session = fixture.session(&request, &control);
+        let io = IoRuntime::new(IoLimits::default()).unwrap();
+        let call = start(&io, &session).await;
+        let transfer = call
+            .transfer(IoTransferOptions {
+                maximum_chunk_bytes: 16,
+                maximum_outstanding_chunks: 1,
+            })
+            .unwrap();
+        let before = io.snapshot();
+        assert!(transfer.prepare_input(16).is_err());
+        assert_eq!(io.snapshot(), before);
+        assert_eq!(transfer.outstanding_chunks(), 0);
+        assert_eq!(control.budget.host_memory_bytes(), 0);
+    }
+
+    #[tokio::test]
+    async fn prepared_input_requires_capture_and_spends_the_original_cumulative_budget() {
+        let fixture = Fixture::new(CapabilityBrokerLimits::default());
+        let (request, control) = native_request(&fixture, "prepared-input-total");
+        let session = fixture.session(&request, &control);
+        let io = IoRuntime::new(IoLimits::default()).unwrap();
+        let baseline = control.budget.host_memory_bytes();
+        let call = start(&io, &session).await;
+        let transfer = call
+            .transfer(IoTransferOptions {
+                maximum_chunk_bytes: 16,
+                maximum_outstanding_chunks: 1,
+            })
+            .unwrap();
+        let before = control.budget.host_memory_bytes();
+        let uncaptured = transfer.prepare_input(16).unwrap();
+        assert_eq!(uncaptured.captured_len(), None);
+        assert!(transfer.finish_prepared_input(uncaptured).is_err());
+        assert_eq!(transfer.outstanding_chunks(), 0);
+        assert_eq!(io.snapshot().staged_bytes, 0);
+        assert_eq!(control.budget.host_memory_bytes(), before);
+
+        for _ in 0..8 {
+            let mut prepared = transfer.prepare_input(16).unwrap();
+            assert!(prepared.capture(&[7; 16]));
+            assert_eq!(prepared.captured_len(), Some(16));
+            drop(transfer.finish_prepared_input(prepared).unwrap());
+        }
+        assert_eq!(transfer.accepted_input_bytes(), 128);
+        let mut exhausted = transfer.prepare_input(1).unwrap();
+        assert!(exhausted.capture(&[8]));
+        assert!(transfer.finish_prepared_input(exhausted).is_err());
+        assert_eq!(transfer.accepted_input_bytes(), 128);
+        assert_eq!(transfer.outstanding_chunks(), 0);
+        assert_eq!(io.snapshot().staged_bytes, 0);
+        assert_eq!(control.budget.host_memory_bytes(), before);
+        drop((transfer, call));
+        assert_eq!(io.snapshot(), super::super::IoSnapshot::default());
         assert_eq!(control.budget.host_memory_bytes(), baseline);
     }
 }
