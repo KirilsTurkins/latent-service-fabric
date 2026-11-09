@@ -403,41 +403,68 @@ impl LocalBlobStore {
         limits: LocalBlobLimits,
         view: &ReadView,
     ) -> Result<Arc<Self>> {
-        let identity = StoreIdentity::inspect(view)
+        StoreIdentity::inspect(view)
             .map_err(storage)?
             .ok_or(LocalBlobError::Invalid)?;
         let mut owner = Self::open(root, namespace, limits)?;
+        Self::enable_durable_for_view(&mut owner, view)?;
+        Ok(owner)
+    }
+
+    /// Opt an exclusively held local owner into durable retention for this
+    /// actual engine. The trusted host must authorize this irreversible mode
+    /// transition and finish semantic startup validation before publication.
+    /// Existing readers, handles or another owner prevent the transition.
+    pub fn enable_durable_for_view(owner: &mut Arc<Self>, view: &ReadView) -> Result<()> {
+        owner.inner.check()?;
+        if Arc::get_mut(owner)
+            .and_then(|owner| Arc::get_mut(&mut owner.inner))
+            .is_none()
+            || owner.inner.durable_binding.is_some()
+        {
+            return Err(LocalBlobError::Busy);
+        }
+        let identity = StoreIdentity::inspect(view)
+            .map_err(storage)?
+            .ok_or(LocalBlobError::Invalid)?;
         let mode = ModeRecord {
             version: 1,
             store_identity: identity.as_str().into(),
             configuration_digest: owner.configuration_digest()?,
         };
         mode.validate()?;
+        let encoded = record(&mode)?;
         if let Some(existing) = &owner.inner.durable {
             if existing != &mode {
                 return Err(LocalBlobError::PermissionDenied);
             }
         } else {
+            let _ = view.is_empty().map_err(storage)?;
             {
                 let mut state = owner.inner.state()?;
                 state.durable_mode = true;
-                owner.inner.disk_room(&state, 0, 0)?;
+                if let Err(error) = owner.inner.disk_room(&state, 0, 0) {
+                    state.durable_mode = false;
+                    return Err(error);
+                }
             }
             owner
                 .inner
                 .root
-                .write_new("DURABLE.json", &record(&mode)?)?;
+                .write_new("DURABLE.json", &encoded)
+                .map_err(|_| owner.inner.uncertain())?;
             owner
                 .inner
                 .root
                 .sync()
                 .map_err(|_| owner.inner.uncertain())?;
         }
-        let inner = Arc::get_mut(&mut Arc::get_mut(&mut owner).ok_or(LocalBlobError::Busy)?.inner)
+        let inner = Arc::get_mut(&mut Arc::get_mut(owner).ok_or(LocalBlobError::Busy)?.inner)
             .ok_or(LocalBlobError::Busy)?;
         inner.durable = Some(mode);
         inner.durable_binding = Some(view.binding());
-        Ok(owner)
+        let _ = view.is_empty().map_err(storage)?;
+        Ok(())
     }
     /// Native provider work verifies length/media/digest and acquires its real
     /// reader handle before the envelope can receive a provisional pin.

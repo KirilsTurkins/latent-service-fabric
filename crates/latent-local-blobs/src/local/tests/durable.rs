@@ -185,6 +185,67 @@ fn response_release_reopen_and_independent_effect_snapshot_owners_keep_actual_by
 }
 
 #[test]
+fn failed_durable_mode_capacity_check_preserves_ordinary_owner() {
+    let state_root = temporary_root();
+    let blob_root = temporary_root();
+    let state = database(state_root.path(), true, "payload-state-a");
+    let view = state.snapshot().unwrap();
+    let limits = LocalBlobLimits {
+        maximum_disk_bytes: super::super::DISK_ROOT_BYTES + super::super::DISK_ENTRY_BYTES + 16,
+        ..limits()
+    };
+    let mut owner = LocalBlobStore::open(blob_root.path(), "private", limits).unwrap();
+    let blob = put(&owner, b"sixteen-byte-val");
+    assert_eq!(
+        LocalBlobStore::enable_durable_for_view(&mut owner, &view),
+        Err(LocalBlobError::Capacity)
+    );
+    assert!(!blob_root.path().join("DURABLE.json").exists());
+    assert!(owner
+        .release_reference(&scope(), &blob, &|| Ok(()))
+        .unwrap());
+}
+
+#[test]
+fn enabling_durable_mode_requires_the_unique_open_owner() {
+    let state_root = temporary_root();
+    let blob_root = temporary_root();
+    let state = database(state_root.path(), true, "payload-state-a");
+    let view = state.snapshot().unwrap();
+    let mut owner = LocalBlobStore::open(blob_root.path(), "private", limits()).unwrap();
+    let blob = put(&owner, b"existing");
+    let shared = owner.clone();
+    assert_eq!(
+        LocalBlobStore::enable_durable_for_view(&mut owner, &view),
+        Err(LocalBlobError::Busy)
+    );
+    assert!(!blob_root.path().join("DURABLE.json").exists());
+    drop(shared);
+    let reader = owner.open_read(&scope(), &blob, &|| Ok(())).unwrap();
+    assert_eq!(
+        LocalBlobStore::enable_durable_for_view(&mut owner, &view),
+        Err(LocalBlobError::Busy)
+    );
+    assert_eq!(read(&reader, 0, 8).unwrap(), b"existing");
+    drop(reader);
+    LocalBlobStore::enable_durable_for_view(&mut owner, &view).unwrap();
+    assert!(blob_root.path().join("DURABLE.json").exists());
+    assert_eq!(
+        LocalBlobStore::enable_durable_for_view(&mut owner, &view),
+        Err(LocalBlobError::Busy)
+    );
+    assert_eq!(
+        owner.release_reference(&scope(), &blob, &|| Ok(())),
+        Err(LocalBlobError::Busy)
+    );
+    drop(owner);
+    let owner = LocalBlobStore::open_durable_for_view(blob_root.path(), "private", limits(), &view)
+        .unwrap();
+    let reader = owner.open_read(&scope(), &blob, &|| Ok(())).unwrap();
+    assert_eq!(read(&reader, 0, 8).unwrap(), b"existing");
+}
+
+#[test]
 fn reopening_binds_the_same_unique_durable_owner_without_recreating_its_mode() {
     let state_root = temporary_root();
     let other_root = temporary_root();
