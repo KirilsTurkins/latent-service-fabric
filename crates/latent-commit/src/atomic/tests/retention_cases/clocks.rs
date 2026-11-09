@@ -184,6 +184,15 @@ fn same_boot_reanchor_cannot_renew_cumulative_drift_tolerance() {
         owner.anchor(
             &store,
             Some(resumed.generation),
+            observation(70_099, 70_001),
+            maintenance
+        ),
+        Err(AtomicError::RecoveryRequired)
+    );
+    assert_eq!(
+        owner.anchor(
+            &store,
+            Some(resumed.generation),
             observation(70_101, 69_999),
             maintenance
         ),

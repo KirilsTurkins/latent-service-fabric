@@ -93,6 +93,7 @@ impl MaintenanceProgress {
                     .unix_millis
                     .checked_sub(previous.anchor_unix_millis);
                 if clock.monotonic_millis < previous.monotonic_millis
+                    || clock.time.unix_millis < previous.unix_millis
                     || !matches!((elapsed, wall), (Some(e), Some(w)) if e.abs_diff(w) <= 1_000)
                 {
                     return Err(AtomicError::RecoveryRequired);

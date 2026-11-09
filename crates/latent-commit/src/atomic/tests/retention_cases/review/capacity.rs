@@ -381,4 +381,16 @@ fn namespace_review_reanchors_cannot_renew_same_boot_drift_tolerance() {
         )
         .unwrap();
     assert_eq!(resumed.anchor_unix_millis, 2100);
+    let before = super::adversarial::checkpoint(&store, &record);
+    assert_eq!(
+        owner.anchor_review(
+            &store,
+            &record.key,
+            Some(resumed.generation),
+            observation(72_099, 70_001),
+            clock_permission
+        ),
+        Err(AtomicError::RecoveryRequired)
+    );
+    assert_eq!(super::adversarial::checkpoint(&store, &record), before);
 }
