@@ -576,15 +576,16 @@ class CompletableModelIntegrity(unittest.TestCase):
     def test_reviewed_executor_model_requires_exact_body_and_original_closure_fingerprints(self):
         reviewed = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;"
             "canonical-api-and-helper-identities;resolved-reference-closure;unsupported-no-fallback;"
-            "result-settlement-fence;actual-coroutine-monitors=28;owned-callback-bodies=31;bodies=189;"
+            "result-settlement-fence;queued-settlement-fence;actual-coroutine-monitors=28;owned-callback-bodies=32;bodies=190;"
             "actual-generated-callbacks=23;application-identity")
         fields = ("COMPLETABLE_FUTURE_FIELD_MODEL_CONTROL PASS declared-and-inherited-types;"
             "closed-read-write-references;absent-no-fallback;models=6")
-        variants = [reviewed, reviewed.replace("bodies=189;", "bodies=188;"),
-            reviewed.replace("bodies=189;", "bodies=190;"),
+        variants = [reviewed, reviewed.replace("bodies=190;", "bodies=189;"),
+            reviewed.replace("bodies=190;", "bodies=191;"),
             reviewed.replace("actual-coroutine-monitors=28;", "actual-coroutine-monitors=27;"),
-            reviewed.replace("owned-callback-bodies=31;", "owned-callback-bodies=30;"),
+            reviewed.replace("owned-callback-bodies=32;", "owned-callback-bodies=31;"),
             reviewed.replace("result-settlement-fence;", ""),
+            reviewed.replace("queued-settlement-fence;", ""),
             reviewed.replace("actual-generated-callbacks=23;", "actual-generated-callbacks=24;"),
             reviewed.replace("actual-generated-callbacks=23;", ""),
             reviewed.replace("resolved-reference-closure;", ""),
@@ -596,10 +597,10 @@ class CompletableModelIntegrity(unittest.TestCase):
                 compiler.run.side_effect = ["", observed, fields]
                 if observed == reviewed:
                     report = fibers.completable_model_control(compiler, root / "model")
-                    self.assertEqual(report["modelFingerprintVersion"], 4)
-                    self.assertEqual(report["modelMethodBodies"], 189)
+                    self.assertEqual(report["modelFingerprintVersion"], 5)
+                    self.assertEqual(report["modelMethodBodies"], 190)
                     self.assertEqual(report["coroutineMonitorBodies"], 28)
-                    self.assertEqual(report["ownedCallbackBodies"], 31)
+                    self.assertEqual(report["ownedCallbackBodies"], 32)
                     self.assertEqual(report["actualGeneratedCallbacks"], 23)
                     self.assertEqual(report["fieldReferences"], "actual-declared-and-inherited-types-passed")
                     self.assertEqual(compiler.run.call_args.args[-1],
@@ -612,7 +613,7 @@ class CompletableModelIntegrity(unittest.TestCase):
     def test_valid_original_model_cannot_qualify_partial_or_changed_field_closure(self):
         reviewed = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;"
             "canonical-api-and-helper-identities;resolved-reference-closure;unsupported-no-fallback;"
-            "result-settlement-fence;actual-coroutine-monitors=28;owned-callback-bodies=31;bodies=189;"
+            "result-settlement-fence;queued-settlement-fence;actual-coroutine-monitors=28;owned-callback-bodies=32;bodies=190;"
             "actual-generated-callbacks=23;application-identity")
         fields = ("COMPLETABLE_FUTURE_FIELD_MODEL_CONTROL PASS declared-and-inherited-types;"
             "closed-read-write-references;absent-no-fallback;models=6")
