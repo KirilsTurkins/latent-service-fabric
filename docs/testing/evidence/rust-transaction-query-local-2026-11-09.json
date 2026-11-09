@@ -1,0 +1,32 @@
+{
+  "description": "Rust transactional aggregate fresh query on a local normal Linux node",
+  "qualification": "Local combined-source node and ephemeral demo trust; one fresh query only",
+  "selectedAuthoringDevelopmentCommit": "1c3a7e6186198bea737e65afedfb217775eba9c1",
+  "authoringSourceSnapshotDigest": "sha256:8281c2a6c7c97aa689ed3d3c474a660dbd4b01b752cca1c6b2a45d0fa49f5a6f",
+  "authoringBuildObservationSha256": "653256d20371594de4b99899858873b787b86253cd3d0f59189e0763d1a7f03f",
+  "componentDigest": "sha256:f511abdf77aabac8ca1f51f7ba9fdc96aaeb27679d91710f6212a0eb4b7bbf8e",
+  "companionDigest": "sha256:7476e5920630fba7c45f5da8acc63cf0b086f8c15d3ede2769b9c74695b06b4d",
+  "signedReleaseSetSha256": "e717d82a5797413d42779e967cface5d554e3fb73a8e94abd686f30b17cae13c",
+  "publication": "publication:sha256:a5714b8f061bb50fe293e792ed698bde0dbed7372cd62861498f1148fe998f9e",
+  "normalNodeSha256": "48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "fixtureSha256": "fbdfe9be9eb1c22205453b7fae47a46f438df63de977f4cab57dbcc5dc78cd0e",
+  "requestedLimits": {
+    "memoryBytes": 67108864,
+    "wallTimeLimitMillis": 120000
+  },
+  "observations": [
+    "Maintained Rust build captured the source, produced and packaged a real component; explicit Rust transaction demo signing produced the admitted release.",
+    "The template generator with the accompanying limit change produced the same captured project files as the tested project.",
+    "An authenticated fresh HTTP query returned the empty aggregate and its original view; command count remained zero before and after.",
+    "The isolated compiler reported one started and completed job. The node was reaped after clean shutdown and physically retired its state and effect owners."
+  ],
+  "precedingDiagnostics": [
+    "An early fixture installed routes after runtime capture and received 403 from a stale selection; installing routes in the metadata session resolved that fixture error.",
+    "The one-second original limit expired during cold compilation. At 120 seconds, both 4 MiB and 32 MiB runs returned resource-exhausted; a separate instrumented build identified the canonical input memory reservation as the refusal."
+  ],
+  "limitations": [
+    "This is one empty-state Rust query, not a command, intent, conflict, rejection, lost-response, cancellation, or complete language qualification.",
+    "The node comes from a verified local combined-source snapshot containing unmerged work; this is not current development, hosted CI, production trust, or an installed distribution.",
+    "The component was built with the maintained source recipe before the accompanying template-generator change; a separate byte comparison confirmed that the new generator emits the tested project inputs."
+  ]
+}
