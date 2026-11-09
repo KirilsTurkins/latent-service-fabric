@@ -14,6 +14,8 @@ mod containment;
 #[cfg(feature = "development-test-host")]
 mod development_borrow_admission;
 #[cfg(feature = "development-go-timer-overlap")]
+mod development_go_timer_fired_state;
+#[cfg(feature = "development-go-timer-overlap")]
 mod development_go_timer_overlap;
 #[cfg(feature = "development-test-host")]
 mod development_trap_observer;
