@@ -1,0 +1,25 @@
+{
+  "description": "Rust oversized-result attempt after state and event staging",
+  "qualification": "normal local combined-source Linux node with ephemeral demo trust and disposable JetStream",
+  "componentDigest": "sha256:7a4485f9bb275292176b1ac841b77c7470b3e0ce85b8df0d538736c91caffa12",
+  "sourceSnapshotDigest": "sha256:e4bc82e151c3e4013159655004381cd91b6c45fc1ed369c70340a8f339674d65",
+  "buildObservationSha256": "9bb728cf8775e92e316fdceba0e88c426ce668393fd131489bd08baac10c32f0",
+  "signedReleaseSetSha256": "ee283373a464f51099d31af8117ccaebfacc69eb7f5bcf0afa390f92ff3d1276",
+  "publication": "publication:sha256:16705de6fe2922412f49d8db3cfd1b1f76774fedee49d6e4a310ebe4f1f956cb",
+  "normalNodeSha256": "48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "fixtureSha256": "afe818e1eb08495daaa12d4784ef2894858de08a627898a5aa31164338c6b4a2",
+  "observations": [
+    "The controlled Rust variant requested a 131073-byte canonical result after its state and event staging calls. The normal node returned HTTP 409 with a validated abort fence and no effect IDs.",
+    "A subsequent fresh query returned zero; namespace inspection showed zero state bytes and zero pending effects, and the real broker contained no messages. The node shut down cleanly and physically retired its state and effect owners; the fixture removed its own broker."
+  ],
+  "separateInstrumentedDiagnostic": {
+    "componentDigest": "sha256:deb79998111bf2761cbee16d4117f507d56de7712b2c175412f29a8e96f9598d",
+    "nodeSha256": "d076d849b13ab3392a59f073bf76327c0079f4b713d5eca62cabe3894bb82b1f",
+    "fixtureSha256": "9468170ec228f6b9227463b5ff6442fd0807d28033c2bcbfc791469bd03b2ec7",
+    "observed": "The separately rebuilt diagnostic node and component, using another disposable provider profile, observed an accepted state write and intent stage before a guest execution failure and fenced abort."
+  },
+  "limitations": [
+    "The normal-node abort does not itself identify the internal failure as the output-size validator; the separate instrumentation is diagnostic and uses another component and provider profile.",
+    "This does not establish all result boundaries, other guest languages, hosted CI, production trust or installed-distribution qualification. The node source includes unmerged work."
+  ]
+}

@@ -153,8 +153,8 @@ def create(directory: Path, language: str, variant: str, name: str | None = None
         raise ValueError("unknown controlled transaction guest variant")
     if variant == "result-boundary" and language != "rust":
         raise ValueError("result-boundary qualification guest requires Rust")
-    if rust_event_profile is not None and (language != "rust" or variant != "forbidden-http"):
-        raise ValueError("Rust event profile requires the explicit forbidden HTTP variant")
+    if rust_event_profile is not None and (language != "rust" or variant not in {"forbidden-http", "result-boundary"}):
+        raise ValueError("Rust event profile requires an explicit Rust transaction variant")
     if language == "rust":
         from tools.rust_capsule_project import create as author
     elif language == "c":
@@ -205,7 +205,7 @@ def main() -> None:
     parser.add_argument("--variant", required=True, choices=(*VARIANTS, "forbidden-child"))
     parser.add_argument("--project", required=True, type=Path)
     parser.add_argument("--name")
-    parser.add_argument("--rust-event-profile", help="Exact observed event profile for the Rust forbidden-HTTP source; grants no authority")
+    parser.add_argument("--rust-event-profile", help="Exact observed event profile for a Rust transaction variant; grants no authority")
     arguments = parser.parse_args()
     print(create(arguments.project, arguments.language, arguments.variant, arguments.name,
                  rust_event_profile=arguments.rust_event_profile))

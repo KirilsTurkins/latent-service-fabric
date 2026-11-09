@@ -56,7 +56,10 @@ class TransactionGuestAuthoringTests(unittest.TestCase):
             denial_files = snapshot(denial)
             self.assertEqual(denial_files[EVENT_REQUIREMENTS], files[EVENT_REQUIREMENTS])
             self.assertIn(b"latent_guest::http::send(", denial_files["src/lib.rs"])
-            with self.assertRaisesRegex(ValueError, "explicit forbidden HTTP variant"):
+            boundary = variant(root / "boundary", "rust", "result-boundary", "transaction-rust-aggregate",
+                               rust_event_profile=profile)
+            self.assertEqual(snapshot(boundary)[EVENT_REQUIREMENTS], files[EVENT_REQUIREMENTS])
+            with self.assertRaisesRegex(ValueError, "explicit Rust transaction variant"):
                 variant(root / "other", "java", "forbidden-http", rust_event_profile=profile)
 
     def test_java_authored_wit_captures_runtime_clocks_before_compiler_staging(self):
