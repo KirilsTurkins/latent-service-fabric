@@ -41,6 +41,7 @@ env:
 
 jobs:
   phase-timing:
+    if: github.ref != 'refs/heads/feat/sdk-740-accepted-cancel-owner-r2-20261109'
     name: Real transport and component HTTP phase boundaries
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -79,3 +80,47 @@ jobs:
         run: |
           cargo test --locked -p latentd --lib config::tests::providers::http_streaming::phase_selection_is_explicit_strict_and_never_aliases_the_original_contract -- --exact --nocapture
           cargo test --locked -p latentd --lib config::tests::providers::http_streaming::protected_phase_configuration_selects_v7_without_changing_original_limits_or_side_effects -- --exact --nocapture
+
+  sdk740-accepted-cancel:
+    name: Signed peer mutation and cancellation diagnostic
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feat/sdk-740-accepted-cancel-owner-r2-20261109'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Identify source and run the exact signed node case
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/sdk740-accepted-cancel"
+          mkdir -p "$out"
+          test "$(git rev-parse HEAD^)" = "3a9e00a064a56185f3ff8fd7037cb6e546f3de80"
+          test "$(git rev-parse HEAD:crates/latent-wasmtime/tests/local_service/outbound/conformance.rs)" = "9ef0362371aac902996b2e3d9df044ecb2d00d97"
+          git rev-parse HEAD HEAD^ > "$out/source.txt"
+          case_name=outbound::conformance::signed_lost_reply_preserves_peer_mutation_without_implicit_replay
+          cargo test --locked -p latent-wasmtime --test local_service "$case_name" -- --list 2>&1 | tee "$out/list.txt"
+          test "$(grep -Fxc "$case_name: test" "$out/list.txt")" = 1
+          cargo test --locked -p latent-wasmtime --test local_service "$case_name" -- --exact --nocapture 2>&1 | tee "$out/run.txt"
+          grep -Fq 'test result: ok. 1 passed; 0 failed; 0 ignored;' "$out/run.txt"
+      - name: Retain exact source and bounded result
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: sdk740-accepted-cancel-${{ github.sha }}
+          path: ${{ runner.temp }}/sdk740-accepted-cancel/
+          if-no-files-found: warn
+          retention-days: 7
