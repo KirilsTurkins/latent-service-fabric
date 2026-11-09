@@ -1,1 +1,47 @@
-{"kind":"workflow","policy":{"concurrency":{"cancel-in-progress":false,"group":"rust-http-current-native-${{ github.ref }}"},"name":"Rust HTTP current native controls","on":{"push":{"branches":["fix/rust-http-current-native-20261109"],"paths":[".github/workflows/rust-http-current-native.yml",".github/workflows/sdk-native-products.yml",".github/workflows/host-codec-memory.yml",".cargo/**","Cargo.lock","Cargo.toml","rust-toolchain.toml","api/proto/**","apps/**","crates/**","examples/echo-contract/**","examples/package-format/**","schemas/**","sdk/rust/**","tools/**","wit/**"]},"workflow_dispatch":null},"permissions":{"contents":"read"}},"requiredJobs":["native-controls"],"reviewReason":"Run the separately bounded same-source native producer with every original default-feature control; retain original and supplemental evidence.","schemaVersion":"latent.ci.contracts.v1","workflow":".github/workflows/rust-http-current-native.yml"}
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "rust-http-current-native-${{ github.ref }}"
+    },
+    "name": "Rust HTTP current native controls",
+    "on": {
+      "push": {
+        "branches": [
+          "fix/rust-http-current-native-20261109",
+          "fix/rust-http-current-backend-20261109"
+        ],
+        "paths": [
+          ".github/workflows/rust-http-current-native.yml",
+          ".github/workflows/sdk-native-products.yml",
+          ".github/workflows/host-codec-memory.yml",
+          ".cargo/**",
+          "Cargo.lock",
+          "Cargo.toml",
+          "rust-toolchain.toml",
+          "api/proto/**",
+          "apps/**",
+          "crates/**",
+          "examples/echo-contract/**",
+          "examples/package-format/**",
+          "schemas/**",
+          "sdk/rust/**",
+          "tools/**",
+          "wit/**"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "native-controls",
+    "current-backend"
+  ],
+  "reviewReason": "Preserve the existing bounded native owner and require a separate same-run authenticated backend handoff.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-http-current-native.yml"
+}

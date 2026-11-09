@@ -2,7 +2,7 @@ name: Rust HTTP current native controls
 
 on:
   push:
-    branches: ['fix/rust-http-current-native-20261109']
+    branches: ['fix/rust-http-current-native-20261109', 'fix/rust-http-current-backend-20261109']
     paths:
       - '.github/workflows/rust-http-current-native.yml'
       - '.github/workflows/sdk-native-products.yml'
@@ -73,7 +73,7 @@ jobs:
       - name: Check current source and fail-closed control boundaries
         run: |
           python3 -m pip install --requirement tools/requirements.lock
-          python3 -B -m unittest tools.tests.test_rust_http_current_controls tools.tests.test_host_codec_native tools.tests.test_c_timed_current_products -q
+          python3 -B -m unittest tools.tests.test_rust_http_current_controls tools.tests.test_rust_http_current_backend_handoff tools.tests.test_host_codec_native tools.tests.test_c_timed_current_products -q
       - name: Execute the current producer and original default-feature controls
         timeout-minutes: 23
         run: >-
@@ -81,11 +81,17 @@ jobs:
           --prepared "$RUNNER_TEMP/rust-http-current-native"
           --output "$RUNNER_TEMP/rust-http-current-controls"
           --revision "$GITHUB_SHA"
+      - name: Record exact same-run native origin
+        run: >-
+          python3 -B tools/rust_http_current_backend_handoff.py origin
+          --prepared "$RUNNER_TEMP/rust-http-current-native"
+          --controls "$RUNNER_TEMP/rust-http-current-controls"
+          --output "$RUNNER_TEMP/rust-http-current-controls/same-run-origin.json"
       - name: Retain bounded current-source and control observations
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
-          name: rust-http-current-native-evidence-${{ github.sha }}
+          name: rust-http-current-native-evidence-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             ${{ runner.temp }}/rust-http-current-native/*.json
             ${{ runner.temp }}/rust-http-current-native/logs/*.txt
@@ -97,7 +103,100 @@ jobs:
         if: success()
         uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
-          name: rust-http-current-native-products-${{ github.sha }}
+          name: rust-http-current-native-products-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/rust-http-current-native/native-binaries/**
           if-no-files-found: error
           retention-days: 7
+
+  current-backend:
+    name: Recheck same-run native evidence and build the standard backend
+    needs: native-controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Restore compiled Rust dependencies
+        uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Fetch only the original pinned control histories
+        run: |
+          git fetch --no-tags --depth=1 origin b606b1402961593dd918722a66fe293bfab9b319
+          git fetch --no-tags --depth=1 origin c7134289f446cb3171eb0ffd800a94afc2a5209f
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+      - name: Restore this run's current-source evidence
+        uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
+        with:
+          name: rust-http-current-native-evidence-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/rust-http-handoff-transfer
+      - name: Restore this run's five bounded native products
+        uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
+        with:
+          name: rust-http-current-native-products-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/rust-http-handoff-transfer/rust-http-current-native/native-binaries
+      - name: Install the verified wasm-tools release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/rust-http-wasm-tools.tar.gz"
+          bindir="$RUNNER_TEMP/rust-http-wasm-tools-bin"
+          mkdir "$bindir"
+          timeout 90s gh api -H 'Accept: application/octet-stream' repos/bytecodealliance/wasm-tools/releases/assets/483720667 | head -c 5862465 > "$archive"
+          unset GH_TOKEN
+          test "$(stat --format=%s "$archive")" = 5862464
+          printf '%s  %s\n' d0efb16c9c859137b7ab3e99151c299cd47caee106ed4594561002f7a04945bd "$archive" | sha256sum --check --strict
+          tar -xOzf "$archive" wasm-tools-1.254.0-x86_64-linux/wasm-tools > "$bindir/wasm-tools"
+          test "$(stat --format=%s "$bindir/wasm-tools")" = 20231696
+          printf '%s  %s\n' cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6 "$bindir/wasm-tools" | sha256sum --check --strict
+          chmod 755 "$bindir/wasm-tools"
+          test "$("$bindir/wasm-tools" --version)" = 'wasm-tools 1.254.0 (bb58fdf91 2026-07-20)'
+          printf '%s\n' "$bindir" >> "$GITHUB_PATH"
+      - name: Acquire locked compiler dependencies
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          cargo fetch --locked --target wasm32-unknown-unknown --target x86_64-unknown-linux-gnu
+      - name: Verify same-run source and compile the ordinary backend
+        run: >-
+          python3 -B tools/rust_http_current_backend_handoff.py build
+          --prepared "$RUNNER_TEMP/rust-http-handoff-transfer/rust-http-current-native"
+          --controls "$RUNNER_TEMP/rust-http-handoff-transfer/rust-http-current-controls"
+          --output "$RUNNER_TEMP/rust-http-backend-handoff"
+      - name: Retain bounded backend result and build evidence
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: rust-http-current-backend-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/rust-http-backend-handoff/*.json
+            ${{ runner.temp }}/rust-http-backend-handoff/backend/*.json
+            ${{ runner.temp }}/rust-http-backend-handoff/backend/*.wasm
+            ${{ runner.temp }}/rust-http-backend-handoff/backend/component-composer/wac
+            ${{ runner.temp }}/rust-http-backend-handoff/backend/logs/*.txt
+          if-no-files-found: warn
+          retention-days: 3
