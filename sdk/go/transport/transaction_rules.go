@@ -2,6 +2,7 @@ package transport
 
 import (
 	"bytes"
+	"encoding/hex"
 	"errors"
 	"latent.dev/sdk/go/profile"
 	tx "latent.dev/sdk/go/transaction"
@@ -452,7 +453,7 @@ func (v *transactionValidator) result(value reflect.Value, kind string) {
 		}
 	}
 }
-func (v *transactionValidator) command(value, selected reflect.Value) {
+func (v *transactionValidator) command(value, selected, inline reflect.Value) {
 	key := transactionField(value, "Key")
 	ns := transactionField(key, "Namespace")
 	v.namespace(ns, v.id(transactionField(transactionField(selected, "Namespace"), "Tenant")))
@@ -520,12 +521,15 @@ func (v *transactionValidator) command(value, selected reflect.Value) {
 	committed := v.boolean(transactionField(value, "ApplicationStateCommitted"))
 	retention := transactionField(value, "Retention")
 	omitted := results == 0 && transactionHas(retention) && !v.boolean(transactionField(retention, "PayloadAvailable"))
+	inlinePayload := results == 0 && transactionHas(retention) && v.boolean(transactionField(retention, "PayloadAvailable"))
+	inlineSuccess := inlinePayload && transactionHas(transactionField(inline, "Success"))
+	inlineRejection := inlinePayload && transactionHas(transactionField(inline, "DeclaredError"))
 	success, rejected := transactionHas(transactionField(value, "Success")), transactionHas(transactionField(value, "BusinessRejection"))
 	switch outcome {
 	case 2:
-		v.check(durable && committed && transactionHas(commit) && !transactionHas(abort) && (success || omitted))
+		v.check(durable && committed && transactionHas(commit) && !transactionHas(abort) && (success || omitted || inlineSuccess))
 	case 3:
-		v.check(durable && !committed && !transactionHas(commit) && !transactionHas(abort) && (rejected || omitted))
+		v.check(durable && !committed && !transactionHas(commit) && !transactionHas(abort) && (rejected || omitted || inlineRejection))
 	case 4:
 		v.check(durable && !committed && !transactionHas(commit) && transactionHas(abort) && !success && !rejected)
 	case 7:
@@ -617,8 +621,8 @@ func validateTransactionResponse(response, original any, state *callState) error
 	switch request.Type().Name() {
 	case "InvokeCommandRequest":
 		command := transactionField(value, "Command")
-		v.command(command, transactionField(request, "Command"))
 		invocation := transactionField(value, "Invocation")
+		v.command(command, transactionField(request, "Command"), invocation)
 		v.invocationResponse(invocation, transactionField(command, "Source"), transactionField(transactionField(request, "Invocation"), "ActivationId"))
 		for _, pair := range [][2]string{{"Success", "Success"}, {"BusinessRejection", "DeclaredError"}, {"TechnicalFailure", "PlatformFailure"}} {
 			result := transactionField(command, pair[0])
@@ -626,15 +630,27 @@ func validateTransactionResponse(response, original any, state *callState) error
 				v.check(transactionEqual(result, transactionField(invocation, pair[1])))
 			}
 		}
-		v.check(transactionHas(transactionField(command, "Success")) || transactionHas(transactionField(command, "BusinessRejection")) || transactionHas(transactionField(command, "TechnicalFailure")) || transactionHas(transactionField(invocation, "PlatformFailure")))
+		retained := transactionHas(transactionField(command, "Success")) || transactionHas(transactionField(command, "BusinessRejection")) || transactionHas(transactionField(command, "TechnicalFailure"))
+		if !retained && !transactionHas(transactionField(invocation, "PlatformFailure")) {
+			retention := transactionField(command, "Retention")
+			available := transactionHas(retention) && v.boolean(transactionField(retention, "PayloadAvailable"))
+			outcome := v.enum(transactionField(command, "Outcome"), 7, "command.outcome")
+			v.check(available && ((outcome == 2 && transactionHas(transactionField(invocation, "Success"))) || (outcome == 3 && transactionHas(transactionField(invocation, "DeclaredError")))))
+		}
+		if success := transactionField(invocation, "Success"); transactionHas(success) {
+			commit := transactionField(command, "Commit")
+			v.check(transactionEqual(transactionField(success, "EffectIds"), transactionField(commit, "EffectIds")))
+			version := v.text(transactionField(success, "CommittedStateVersion"), 512, true, false)
+			v.check(version == hex.EncodeToString(v.data(transactionField(commit, "CommittedVersion"), 256, true)))
+		}
 	case "LookupCommandRequest":
 		command := transactionField(value, "Command")
-		v.command(command, transactionField(request, "Command"))
+		v.command(command, transactionField(request, "Command"), reflect.Value{})
 		if attempt := transactionField(request, "AttemptId"); transactionHas(attempt) {
 			v.check(transactionEqual(transactionField(command, "AttemptId"), attempt))
 		}
 	case "LookupCommitRequest":
-		v.command(transactionField(value, "Command"), transactionField(request, "Command"))
+		v.command(transactionField(value, "Command"), transactionField(request, "Command"), reflect.Value{})
 		v.check(transactionEqual(transactionField(transactionField(transactionField(value, "Command"), "Commit"), "ReceiptId"), transactionField(request, "ReceiptId")))
 	case "GetEffectRequest":
 		v.effect(transactionField(value, "Effect"), transactionField(request, "EffectId"))
@@ -648,7 +664,7 @@ func validateTransactionResponse(response, original any, state *callState) error
 		disposition := v.enum(transactionField(value, "Disposition"), 5, "command.cancel.disposition")
 		command := transactionField(value, "Command")
 		if transactionHas(command) {
-			v.command(command, transactionField(transactionField(request, "Command"), "Command"))
+			v.command(command, transactionField(transactionField(request, "Command"), "Command"), reflect.Value{})
 			v.check(disposition != 2 || v.enum(transactionField(command, "Outcome"), 7, "command.outcome") == 2)
 		} else {
 			v.check(disposition == 4)

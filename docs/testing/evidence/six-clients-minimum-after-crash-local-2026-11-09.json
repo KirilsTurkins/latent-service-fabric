@@ -1,0 +1,216 @@
+{
+  "description": "Six clients supply the original minimum after a controlled node crash and recover a newer committed view",
+  "qualification": "Local combined-source normal node and actual Java guest; not hosted or installed-distribution qualification.",
+  "harnessSha256": "1ac08db6b6dd3d781c58b798fa81e3d7123908bf2093c19cca81a804b7a5fea4",
+  "clientLogSha256": {
+    "go": "37929467cbfe39179c92366ab823e9fabbcf93fad1370aca3448ed90e25a5d42",
+    "typescript": "6fe4b630cecc90fc8870fbce83fd3fe5a668d10b3bf7f2c6e8180f3a3364fab3",
+    "java": "465d6ba6537eb56921e1cb8e4e8da9fa6175c21494d0451fb6914597ab90fe5b",
+    "dotnet": "93eb867d490be8ae97b710b4546bd9c84d9f247d52c18e1816345e860372e400",
+    "rust": "991c4e9d0b382c3533754452bd624d873f595c139e64700f832c5282f85d4da9",
+    "c": "93eb867d490be8ae97b710b4546bd9c84d9f247d52c18e1816345e860372e400"
+  },
+  "originalGoRecoveryLogSha256": "5294a7e3dfc0b8d27bcdff25d8aa8d951a32ca997fbfbaafa177e4518ef05026",
+  "capturePinsSha256": "514287d06b0c31b7e364513fdfbcb0b92497974c91892d95db881dde987c66f3",
+  "guestCapture": {
+    "nativeIdempotencyProfile": "js-window-v1:a84614ccf781e4d8eea5262ceae7e13b9108b43a0f2519794dc6c3ae8b7dd086",
+    "sourceCommit": "631cf036f8c78f79a5be2a1c419dca074c2fedae",
+    "variants": {
+      "aggregate": {
+        "materials": {
+          "applicationSchemaInputs": {
+            "bytes": 505,
+            "sha256": "sha256:88f04d81694d8e74bafee0e34f7aa77d6c426343803d5656274292ae3ee740e0"
+          },
+          "capsuleSource": {
+            "bytes": 3684,
+            "sha256": "sha256:28939cbc29ad95e2f963cc2e7e6b13fe126368427ee70b0206a3012ad5006039"
+          },
+          "companion": {
+            "bytes": 959,
+            "sha256": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d"
+          },
+          "compilerInputs": {
+            "bytes": 2912190,
+            "sha256": "sha256:90084065888bd8044720b7c6c4319af94ff429d45976ab38e2730d687beb2250"
+          },
+          "component": {
+            "bytes": 1077276,
+            "sha256": "sha256:396784dda4174f84d3a6cb8c211dca9ad706fb826d613e5892b8140f815ad7f5"
+          },
+          "currentEventMarker": {
+            "bytes": 172,
+            "sha256": "sha256:fdb2c03baae3f5cbc21c3719cf69508ba7f2061fa82bdab5989fb8bfe3f2e448"
+          },
+          "eventRequirements": {
+            "bytes": 779,
+            "sha256": "sha256:39a4d82059ab78659e78787a94a635f6005cd258d1899e263ee1f4a83c985c65"
+          },
+          "recipeInputs": {
+            "bytes": 11864,
+            "sha256": "sha256:17988ae053c90c652e427cc52e8b7aa291692477d90d46699f332fe7feef3dfd"
+          },
+          "report": {
+            "bytes": 80389,
+            "sha256": "sha256:502b3d6d589efc8709a76ea19840f2134f72dfb74871b690259ac565daffaa3c"
+          },
+          "sourceInputs": {
+            "bytes": 46779,
+            "sha256": "sha256:c104f6e823f5c0dc3d5fc6e5405d12efd93d059d21af31135201699aa0cb8335"
+          }
+        }
+      }
+    }
+  },
+  "observation": {
+    "blockedBytes": 3015,
+    "blockedFrames": 3,
+    "brokerMessages": 2,
+    "businessCount": 2,
+    "cQueryBinarySha256": "sha256:071d65c5b26bd9d1a02c7d2bd9e91a1509f1a28dc2460e126ade234b69c86d26",
+    "cQueryCount": 3,
+    "cQuerySourceSha256": "sha256:2b9be39a876ca3d9040edff39fe0a2e99bdc702c0c0fc01735365642b301aacf",
+    "cStaleEditAborted": true,
+    "cancelledAfterObservedCommit": true,
+    "clientOutcome": "dispatched-unknown",
+    "controlledCrashBeforeRestart": true,
+    "dotnetQueryAssemblySha256": "sha256:de784855c893fc2a6d20c52276c41101b14353e586b172abb6f2d04946494861",
+    "dotnetQueryCount": 3,
+    "dotnetQuerySourceSha256": "sha256:fd4c11116114d6e730ddcdb7631ab102ec1eb362a4b6636a746f4e5524d302e9",
+    "dotnetStaleEditAborted": true,
+    "durableCommandCount": 8,
+    "effectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "extraConnections": 0,
+    "goBinarySha256": "sha256:91b52419c8c855f8de473306bf228d16b96fd5bc64d0d008471a97f39ecece24",
+    "goSourceSha256": "sha256:3f305cde5e50b5029cb94c865b7648c567fc52ddad0c56e2f2682839fff56957",
+    "goStaleBinarySha256": "sha256:cdfcafef7d5aedf972481e16b6e7f7aa97733856ccaf996749b634750d9c83c1",
+    "goStaleEditAborted": true,
+    "goStaleSourceSha256": "sha256:1aacc7c9804f248e7cf497ceec3011e01543658166252655c94be0ef23ac4aa1",
+    "javaQueryClassSha256": "sha256:2541cb859be180201934aa55c11f9bc03f6c1b7befd6d87226b565b9b4e4567a",
+    "javaQueryCount": 3,
+    "javaQuerySourceSha256": "sha256:cb78e4e139e5eebbf6f82c85ba5c327df77f4de2f509637a132ec626ad847ba3",
+    "javaStaleClassSha256": "sha256:a856ca8f25bf436dfef602a4c743976b2337ec00d149ecb8e67a5db0b32698b7",
+    "javaStaleEditAborted": true,
+    "javaStaleSourceSha256": "sha256:7657b443ebbbd0677aa7889d7c8fdc28f26adfae23d2f64ee36626606a1d9823",
+    "lifecycleCandidateSha256": "sha256:bccfe45b16330050df66bc9db60a2a781578d507ce194f06da758dde99ef726c",
+    "nodeJsSha256": "sha256:bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+    "nodeSha256": "sha256:48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+    "ordinaryRestartQueryClients": 6,
+    "ordinaryRestartQueryCountPerClient": 3,
+    "originalAttemptId": "1",
+    "originalCommandId": "b105c8179c43515fa004382f7704fcf2021cfd92f6f60573bfe17fc07c6aad26",
+    "originalCommitRecoveredAfterCrash": true,
+    "originalEffectId": "8937d5b76892c652ecf500a8bf75811318ab76f26de80f6df478ba82d14c2051",
+    "originalFingerprintSha256": "a47ec516a6fe585be5c13680bf63b812d68164ecf9882399973106b00a4d133f",
+    "originalKeyVersionPreservedAfterRestart": true,
+    "originalReceiptId": "72f0f87bbf503894b29644892fd8aa4d8cf817412d9b4efabed194edf5dc1778",
+    "postRestartViewSha256": "6082e59419111f8c15d311bdcac13dc1056ed6f2618d1bffc03e7ad7ddcb76f9",
+    "preRestartMinimumAcceptedByHttp": true,
+    "preRestartMinimumSha256": "0c78c55ce28b5818a5d09a3902c87e8fd8922dade9c342b7b4fbe22178e79a66",
+    "proxyFailure": "EOFError",
+    "proxyRetired": true,
+    "proxySourceSha256": "sha256:9fd5ba5c7bace82acb2eca31ef8c52a987bcd6e22dd6c6085ef2136f32b22d2a",
+    "qualification": "Go candidate through response-blocking local HTTP/2 proxy and normal node; not hosted or distribution qualification",
+    "queryAfterCommit": true,
+    "queryBinarySha256": "sha256:9eb13bf1a080ee3d4f744c66cb4dee33667cd4bc1f79695650fb5af38573351b",
+    "queryCount": 3,
+    "queryNoCommandGrowth": true,
+    "querySourceSha256": "sha256:53ccaaf289764a256cdfc1a04cfe23bdacdf140eb9dd68046943ccaa0695d92f",
+    "recoveredOriginal": true,
+    "requestStreamCount": 1,
+    "rustQueryBinarySha256": "sha256:57372e4b6b845adc8d6b54b2eed4015840b6de6b26ceb7cc9279039e09c0fbff",
+    "rustQueryCount": 3,
+    "rustQuerySourceSha256": "sha256:6a52f8f17da32ca33bf9bdea0a7e9bf3c6384b06f1d2516d13df215455ab94ba",
+    "sixClientsSuppliedOriginalMinimumAfterRestart": true,
+    "staleEditAborted": true,
+    "staleEditBinarySha256": "sha256:88188a1c11f12b8a10f4f9f1cf612967b49e806d658348f2ee7dba56b182acad",
+    "staleEditNoStateChange": true,
+    "staleEditSourceSha256": "sha256:995934bd8c44b436dec8bf4922819f2abb8941c35150c335c21b4e6b462476fc",
+    "typescriptQueryCount": 3,
+    "typescriptQuerySourceSha256": "sha256:274ba1186608ac8752ceb167b11ebafff1d90b23444b710ec8cd5a0991b68d4a",
+    "typescriptStaleEditAborted": true,
+    "typescriptStaleSourceSha256": "sha256:ae3702be3812b3cbbafc7a6d2796b9738d8f08b1ce4f75f3c0774be9eb112e82"
+  },
+  "crash": {
+    "exitStatus": -9,
+    "processId": 54216,
+    "reaped": true,
+    "cleanShutdownObserved": false,
+    "nativeRetirementReportObserved": false
+  },
+  "restartedShutdown": {
+    "reaped": true,
+    "clean": true,
+    "effects": {
+      "clean": true,
+      "physicallyRetired": true,
+      "schedulingOwnerRetired": true,
+      "workerThreadsJoined": 3,
+      "workerThreadsRemaining": 0,
+      "snapshot": {
+        "durable": {
+          "pending": 0,
+          "active": 0,
+          "acknowledged": 2,
+          "known_failed": 0,
+          "uncertain": 0,
+          "retry_scheduled": 0,
+          "blocked": 0,
+          "expired": 0,
+          "dead_lettered": 0,
+          "payload_bytes": 0,
+          "oldest_unresolved_millis": null
+        },
+        "countsObservedAtMillis": 1794214177106,
+        "queued": 0,
+        "activeJobs": 0,
+        "retainedAttemptBytes": 0,
+        "liveWorkers": 0,
+        "acceptedEffects": 0,
+        "liveTenants": 0,
+        "claims": 0,
+        "physicalOwners": 0,
+        "commandOwners": 0,
+        "commandClockFloor": 1794214173110,
+        "quarantinedPhysicalOwners": 0,
+        "paused": false,
+        "control": {
+          "generation": {
+            "ownerEpoch": 5,
+            "revision": 2
+          },
+          "pending": false,
+          "restoreReviewRequired": false
+        },
+        "admissionClosed": true,
+        "quarantined": false,
+        "failure": null
+      }
+    },
+    "state": {
+      "clean": true,
+      "quarantined": false,
+      "storePhysicallyRetired": true,
+      "nativePhysicallyRetired": true,
+      "liveStorageWorkers": 0,
+      "liveStorageOwners": 0,
+      "queuedStorageRetirements": 0,
+      "acceptedStorageJobs": 0,
+      "storageRetainedBytes": 0,
+      "ordinaryNativeReservations": 0,
+      "recoveryNativeReservations": 0,
+      "ordinaryNativeBytes": 0,
+      "recoveryNativeBytes": 0,
+      "namespaceOwners": 0
+    }
+  },
+  "limitations": [
+    "The controlled kill occurred after all commit, effect and stale-edit observations; it does not simulate power loss or interruption during commit.",
+    "The killed node has no clean-shutdown or native-retirement report; the restarted node was stopped and reaped cleanly.",
+    "The expected newer view came from an authenticated HTTP query after restart; each client supplied the original pre-crash minimum and compared its response and payload against the newer view.",
+    "The maintained recovery-session lifecycle source was imported into the older combined-source fixture; its exact digest matches the repository source.",
+    "All six clients query one Java guest; other guest languages, older-history restore and every physical retained row are not established.",
+    "This local combined-source run is not hosted or installed-distribution qualification.",
+    "The observation field named ordinaryRestartQueryClients counts the post-crash restart probes; it does not imply an orderly pre-crash shutdown."
+  ]
+}

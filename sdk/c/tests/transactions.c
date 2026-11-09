@@ -254,6 +254,23 @@ static void effect_plan_methods(latent_transport *owner) {
     out = (observed){0}; call = api->mutate_state(client, &mutation, NULL, mutate_state, &out); finish(owner, call, &out, true); assert(!out.state);
 }
 
+static void inline_command_cases(latent_transport *owner) {
+    latent_transaction_client *client = latent_transport_transaction(owner);
+    const char *names[] = {"inline", "inline-wrong-version", "inline-wrong-effects", "inline-reject"};
+    uint8_t version = 0xaa;
+    for (size_t index = 0; index < 4; ++index) {
+        latent_transaction_expected_version expected = {.key = BYTES("count"), .has_version = true, .version = {&version, 1}};
+        latent_transaction_invoke_command_request request = invoke_request((latent_string){names[index], strlen(names[index])}, &expected);
+        observed out = {0}; latent_profile_call *call = api->invoke_command(client, &request, NULL, invoke_command, &out);
+        finish(owner, call, &out, index == 1 || index == 2);
+        if (index == 1 || index == 2) assert(out.dispatched);
+        else assert(out.command);
+    }
+    latent_transaction_lookup_command_request missing = lookup(TEXT("inline-lookup"));
+    observed out = {0}; latent_profile_call *call = api->lookup_command(client, &missing, NULL, lookup_command, &out);
+    finish(owner, call, &out, true); assert(out.dispatched);
+}
+
 static void local_rejections(latent_transport *owner) {
     latent_transaction_client *client = latent_transport_transaction(owner);
     latent_transaction_control_dispatcher_request command = control(TEXT("overflow")); command.expected_generation.revision = UINT64_MAX;
@@ -336,7 +353,7 @@ int main(int argc, char **argv) {
     config.maximum_decoded_bytes = 8388608; config.maximum_owned_bytes = 33554432;
     latent_transport *owner = NULL; assert(latent_transport_create(&config, &owner, NULL));
     local_rejections(owner); assert(latent_transport_get_usage(owner).sockets == 0);
-    all_methods(owner); bounded_recovery(owner); effect_plan_methods(owner); reentrant_shutdown(owner);
+    all_methods(owner); inline_command_cases(owner); bounded_recovery(owner); effect_plan_methods(owner); reentrant_shutdown(owner);
     assert(latent_transport_shutdown(owner, 1000));
     latent_transport_usage usage = latent_transport_get_usage(owner);
     assert(usage.sockets == 0 && usage.sessions == 0 && usage.retained_calls == 0 && usage.callbacks_pending == 0);

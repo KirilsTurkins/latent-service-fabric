@@ -128,11 +128,11 @@
 "Validate capability policy CLI lifecycle"
 ],
 "renderer_actions":[
-"Set up the qualified Angular build runtime",
-"Set up the pinned component composer"
+"Set up the qualified Angular build runtime"
 ],
 "renderer_condition":"needs.profile.outputs.renderer == 'true'",
 "renderer_run_steps":[
+"Set up the pinned component composer",
 "Check selected renderer prerequisites before building",
 "Prepare immutable browser lane component"
 ],

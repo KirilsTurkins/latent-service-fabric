@@ -1,0 +1,90 @@
+{
+  "description": "TypeScript caller cancellation after independently observed successful commit with fresh-client recovery",
+  "qualification": "TypeScript Node candidate through response-blocking local HTTP/2 proxy and normal node; not hosted or distribution qualification",
+  "harnessSha256": "acb582877beb1e717ec39f838fb29eb25f8f768f28275c515e77fda9ac7aec68",
+  "clientLogSha256": "9b3477f42c21fb203f4a9653de826e5a5f61adcfaaee385d94c64e13b16a2d99",
+  "recoveryLogSha256": "843d6f57a8ebd1365d2850437574a077abc9cf20c31fa395d5045fef2ef055da",
+  "repositorySourceSha256": "sha256:cdff1fcc0c7185bf02848dd8ee9806cd3017d6f504fb283c2ab6fa91f60ba75a",
+  "sourceLineEndings": "The tested source normalizes to the LF repository blob.",
+  "observation": {
+    "blockedBytes": 3031,
+    "blockedFrames": 3,
+    "brokerMessages": 2,
+    "businessCount": 2,
+    "cancelledAfterObservedCommit": true,
+    "clientOutcome": "dispatched-unknown",
+    "durableCommandCount": 2,
+    "effectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "extraConnections": 0,
+    "nodeJsSha256": "sha256:bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+    "nodeSha256": "sha256:48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+    "originalAttemptId": "1",
+    "originalCommandId": "5f826ab5095a0f627e98bbcd83dcbf211a1fbf5f99347a977874d927df674734",
+    "originalEffectId": "67928234e700d78e8e3e31bc86d96c5adb62902852e308951f2314958fbd1072",
+    "originalFingerprintSha256": "a47ec516a6fe585be5c13680bf63b812d68164ecf9882399973106b00a4d133f",
+    "originalReceiptId": "1e1c986f6681ccffed288103d633a86077c10e9f6ac7fe98eefb288f763f3d43",
+    "proxyFailure": "EOFError",
+    "proxyRetired": true,
+    "proxySourceSha256": "sha256:9fd5ba5c7bace82acb2eca31ef8c52a987bcd6e22dd6c6085ef2136f32b22d2a",
+    "qualification": "TypeScript Node candidate through response-blocking local HTTP/2 proxy and normal node; not hosted or distribution qualification",
+    "recoveredOriginal": true,
+    "requestStreamCount": 1,
+    "typescriptSourceSha256": "sha256:b270e36a725579031075a35283a4108d789d9fa1146ef0c054ebb6baaef272f8"
+  },
+  "finalShutdown": {
+    "reaped": true,
+    "clean": true,
+    "effects": {
+      "clean": true,
+      "physicallyRetired": true,
+      "schedulingOwnerRetired": true,
+      "workerThreadsJoined": 3,
+      "workerThreadsRemaining": 0,
+      "snapshot": {
+        "durable": {
+          "pending": 0,
+          "active": 0,
+          "acknowledged": 2,
+          "known_failed": 0,
+          "uncertain": 0,
+          "retry_scheduled": 0,
+          "blocked": 0,
+          "expired": 0,
+          "dead_lettered": 0,
+          "payload_bytes": 0,
+          "oldest_unresolved_millis": null
+        },
+        "countsObservedAtMillis": 1794206277922,
+        "queued": 0,
+        "activeJobs": 0,
+        "retainedAttemptBytes": 0,
+        "liveWorkers": 0,
+        "acceptedEffects": 0,
+        "liveTenants": 0,
+        "claims": 2,
+        "physicalOwners": 0,
+        "commandOwners": 0,
+        "commandClockFloor": 1794206276175,
+        "quarantinedPhysicalOwners": 0,
+        "paused": false,
+        "control": {
+          "generation": {
+            "ownerEpoch": 4,
+            "revision": 2
+          },
+          "pending": false,
+          "restoreReviewRequired": false
+        },
+        "admissionClosed": true,
+        "quarantined": false,
+        "failure": null
+      }
+    }
+  },
+  "limitations": [
+    "The cancellation followed an independently observed successful commit while the response was withheld; this does not establish behavior during the commit itself.",
+    "The proxy observed one request stream and no queued extra connection, not a universal retry proof.",
+    "Guest execution count was not independently measured; this run did not perform a crash/restart.",
+    "This local combined-source fixture is not hosted or installed-distribution qualification."
+  ]
+}

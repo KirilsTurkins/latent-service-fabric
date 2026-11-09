@@ -1,0 +1,91 @@
+{
+  "description": "C caller cancellation after independently observed successful commit with fresh-client recovery",
+  "qualification": "C candidate through response-blocking local HTTP/2 proxy and normal node; not hosted or distribution qualification",
+  "harnessSha256": "83813fbcdff4cd5572466630a49419c7ac69a9ab78a4826d4bd84afae0da26b2",
+  "clientLogSha256": "f27a7ec8280da5eeb65ef4047643735533d0495962dac041212204b772b54387",
+  "recoveryLogSha256": "212af725dd8acb6e17e290154b9a5708145981e41f30c7e56752e16dc58366d8",
+  "repositorySourceSha256": "sha256:7eebf60909ca95dd698a7bbb0506b0ffbfe63302e11722b53856e7e78945250c",
+  "sourceLineEndings": "The tested source normalizes to the LF repository blob.",
+  "observation": {
+    "blockedBytes": 3013,
+    "blockedFrames": 3,
+    "brokerMessages": 2,
+    "businessCount": 2,
+    "cBinarySha256": "sha256:a53ff4808c2d210ad4ecd776151deb1a970c820adbd969862fc475f1c01ad9d8",
+    "cSourceSha256": "sha256:e108cc2a42efef6c81720d329707b8778e3a246b775f0b8c6dcf5b5989e9bd81",
+    "cancelledAfterObservedCommit": true,
+    "clientOutcome": "dispatched-unknown",
+    "durableCommandCount": 2,
+    "effectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "extraConnections": 0,
+    "nodeSha256": "sha256:48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+    "originalAttemptId": "1",
+    "originalCommandId": "84b7be2c77202039e7f3f288013da0081b11b643cfcf31e63b56191b4cd3e009",
+    "originalEffectId": "0d976d5e6ec2126da705b0dec92312ff0b6f7a33906f929c6e2dbd10eee28962",
+    "originalFingerprintSha256": "a47ec516a6fe585be5c13680bf63b812d68164ecf9882399973106b00a4d133f",
+    "originalReceiptId": "8dad7df0d9f5e69c54221fbf4f1c96792362ae928447dc6c242a3484ad238a67",
+    "proxyFailure": "EOFError",
+    "proxyRetired": true,
+    "proxySourceSha256": "sha256:9fd5ba5c7bace82acb2eca31ef8c52a987bcd6e22dd6c6085ef2136f32b22d2a",
+    "qualification": "C candidate through response-blocking local HTTP/2 proxy and normal node; not hosted or distribution qualification",
+    "recoveredOriginal": true,
+    "requestStreamCount": 1
+  },
+  "finalShutdown": {
+    "reaped": true,
+    "clean": true,
+    "effects": {
+      "clean": true,
+      "physicallyRetired": true,
+      "schedulingOwnerRetired": true,
+      "workerThreadsJoined": 3,
+      "workerThreadsRemaining": 0,
+      "snapshot": {
+        "durable": {
+          "pending": 0,
+          "active": 0,
+          "acknowledged": 2,
+          "known_failed": 0,
+          "uncertain": 0,
+          "retry_scheduled": 0,
+          "blocked": 0,
+          "expired": 0,
+          "dead_lettered": 0,
+          "payload_bytes": 0,
+          "oldest_unresolved_millis": null
+        },
+        "countsObservedAtMillis": 1794207106157,
+        "queued": 0,
+        "activeJobs": 0,
+        "retainedAttemptBytes": 0,
+        "liveWorkers": 0,
+        "acceptedEffects": 0,
+        "liveTenants": 0,
+        "claims": 2,
+        "physicalOwners": 0,
+        "commandOwners": 0,
+        "commandClockFloor": 1794207104684,
+        "quarantinedPhysicalOwners": 0,
+        "paused": false,
+        "control": {
+          "generation": {
+            "ownerEpoch": 4,
+            "revision": 2
+          },
+          "pending": false,
+          "restoreReviewRequired": false
+        },
+        "admissionClosed": true,
+        "quarantined": false,
+        "failure": null
+      }
+    }
+  },
+  "limitations": [
+    "Cancellation followed an independently observed successful commit while the response was withheld; this does not establish behavior during the commit itself.",
+    "The proxy observed one request stream and no queued extra connection, not a universal retry proof.",
+    "Guest execution count was not independently measured; this run did not perform a crash/restart.",
+    "Attempt 122 observed cancellation and recovery but failed its provider acknowledgement assertion with POLICY_BLOCKED.",
+    "This local combined-source fixture is not hosted or installed-distribution qualification."
+  ]
+}

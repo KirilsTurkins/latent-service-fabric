@@ -1,0 +1,62 @@
+{
+  "description": "Go changed-input conflict against retained business rejection, separate normal-node local experiment",
+  "qualification": "Partial local observation with combined unmerged node source, separately built Go candidate and disposable fixture signer; not hosted, distribution or six-client conflict qualification.",
+  "harnessSha256": "7582a5687fcfad1326eabc161101f2a12657a88877103e7f754f4c7f6a8c9707",
+  "goConflictLogSha256": "a3f2b249cf541ea78f62ffd26485a6b0549f2e23e5b0d5c51def6006c05a7f90",
+  "nodeSha256": "sha256:48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "goSourceSha256": "sha256:5e5579ad0688224440e293aa7085fe23ee2847cb5651be602dd6fdfa6e3ddc3d",
+  "goBinarySha256": "sha256:1066b300851b635652c875b9afb0b405e26f865d9749a572397dd3ccf76900a4",
+  "proxySourceSha256": "sha256:9fd5ba5c7bace82acb2eca31ef8c52a987bcd6e22dd6c6085ef2136f32b22d2a",
+  "conflict": {
+    "changedInput": "delta 1 to delta 2 under the original command key and original current precondition",
+    "grpcStatus": "ALREADY_EXISTS (6)",
+    "dispatched": true,
+    "originalCommandId": "5f8ff1676cc88bc570584001144400ff0dc1c7ce716af2b529a3e4ffc2a1aee6",
+    "originalAttemptId": "1",
+    "originalFingerprintSha256": "f6b8e9655b86d683f3631afbdee5083deb01c08e00b01a2bf589f40be6e737b5",
+    "originalRejectedOutcomeUnchanged": true,
+    "originalVersionAndBusinessCountUnchanged": true,
+    "brokerMessagesBeforeAndAfterConflict": 6,
+    "additionalReadOnlyLookupVerified": true
+  },
+  "subsequentRecovery": {
+    "laterBusinessCount": 7,
+    "durableCommandCount": 13,
+    "brokerMessagesAfterLaterCommit": 7,
+    "laterEffectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "originalRejectionRecovered": true,
+    "postCrashClientRecoveries": 6,
+    "postCrashBusinessCount": 7,
+    "postCrashBrokerMessages": 7
+  },
+  "crashReceipt": {
+    "exitStatus": -9,
+    "processId": 233141,
+    "reaped": true,
+    "cleanShutdownObserved": false,
+    "nativeRetirementReportObserved": false
+  },
+  "finalShutdown": {
+    "reaped": true,
+    "clean": true,
+    "effects": {
+      "pending": 0,
+      "active": 0,
+      "acknowledged": 7,
+      "known_failed": 0,
+      "uncertain": 0,
+      "retry_scheduled": 0,
+      "blocked": 0,
+      "expired": 0,
+      "dead_lettered": 0,
+      "payload_bytes": 0,
+      "oldest_unresolved_millis": null
+    }
+  },
+  "limitations": [
+    "The conflict path is qualified only for the Go client in this experiment.",
+    "The fixture checks unchanged state, original result and broker counts; it does not independently measure guest execution count.",
+    "All later effects were acknowledged before the crash; pending-effect redelivery, in-commit crashes, power loss and hosted qualification are not covered.",
+    "Intermittent policy-blocked and resource-exhausted observations remain unresolved."
+  ]
+}

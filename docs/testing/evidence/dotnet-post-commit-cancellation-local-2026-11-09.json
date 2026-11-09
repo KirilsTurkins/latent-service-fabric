@@ -1,0 +1,90 @@
+{
+  "description": ".NET caller cancellation after independently observed successful commit with fresh-client recovery",
+  "qualification": "Dotnet candidate through response-blocking local HTTP/2 proxy and normal node; not hosted or distribution qualification",
+  "harnessSha256": "e3c875fd8bfb3a4d8356a882adb7736b580e7eb320d6602fc270c54696f5569b",
+  "clientLogSha256": "f27a7ec8280da5eeb65ef4047643735533d0495962dac041212204b772b54387",
+  "recoveryLogSha256": "212af725dd8acb6e17e290154b9a5708145981e41f30c7e56752e16dc58366d8",
+  "repositorySourceSha256": "sha256:8b2882c2aeb83b1e9131cd60ab69020b834c17036336c805f1e6903c2edf39c8",
+  "sourceLineEndings": "The tested source normalizes to the LF repository blob.",
+  "observation": {
+    "blockedBytes": 3023,
+    "blockedFrames": 3,
+    "brokerMessages": 2,
+    "businessCount": 2,
+    "cancelledAfterObservedCommit": true,
+    "clientOutcome": "dispatched-unknown",
+    "dotnetBinarySha256": "sha256:19fbf654b39c489dd2e7420b0a936236e85f900269199f92e18479080b3025b4",
+    "dotnetSourceSha256": "sha256:dfb8250bed1f088c4fccbcae5f16dc6f8a88940309e88cfda717c849fa06d263",
+    "durableCommandCount": 2,
+    "effectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "extraConnections": 0,
+    "nodeSha256": "sha256:48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+    "originalAttemptId": "1",
+    "originalCommandId": "2d99050feb46a53d4ee8f6be1d6f26fce8bca0fa03fb1dfb915fe0941cfd4b07",
+    "originalEffectId": "57f025a4c4cd438dc6472864f9bf1cdd542c6d71bcd7402c963195267f9c09bc",
+    "originalFingerprintSha256": "a47ec516a6fe585be5c13680bf63b812d68164ecf9882399973106b00a4d133f",
+    "originalReceiptId": "7db96dafab046564c3a8812f86a7ffee588b095fa7efac2e0bf5735e69ac0daa",
+    "proxyFailure": "EOFError",
+    "proxyRetired": true,
+    "proxySourceSha256": "sha256:9fd5ba5c7bace82acb2eca31ef8c52a987bcd6e22dd6c6085ef2136f32b22d2a",
+    "qualification": "Dotnet candidate through response-blocking local HTTP/2 proxy and normal node; not hosted or distribution qualification",
+    "recoveredOriginal": true,
+    "requestStreamCount": 1
+  },
+  "finalShutdown": {
+    "reaped": true,
+    "clean": true,
+    "effects": {
+      "clean": true,
+      "physicallyRetired": true,
+      "schedulingOwnerRetired": true,
+      "workerThreadsJoined": 3,
+      "workerThreadsRemaining": 0,
+      "snapshot": {
+        "durable": {
+          "pending": 0,
+          "active": 0,
+          "acknowledged": 2,
+          "known_failed": 0,
+          "uncertain": 0,
+          "retry_scheduled": 0,
+          "blocked": 0,
+          "expired": 0,
+          "dead_lettered": 0,
+          "payload_bytes": 0,
+          "oldest_unresolved_millis": null
+        },
+        "countsObservedAtMillis": 1794206482774,
+        "queued": 0,
+        "activeJobs": 0,
+        "retainedAttemptBytes": 0,
+        "liveWorkers": 0,
+        "acceptedEffects": 0,
+        "liveTenants": 0,
+        "claims": 2,
+        "physicalOwners": 0,
+        "commandOwners": 0,
+        "commandClockFloor": 1794206481278,
+        "quarantinedPhysicalOwners": 0,
+        "paused": false,
+        "control": {
+          "generation": {
+            "ownerEpoch": 4,
+            "revision": 2
+          },
+          "pending": false,
+          "restoreReviewRequired": false
+        },
+        "admissionClosed": true,
+        "quarantined": false,
+        "failure": null
+      }
+    }
+  },
+  "limitations": [
+    "Cancellation followed an independently observed successful commit while the response was withheld; this does not establish behavior during the commit itself.",
+    "The proxy observed one request stream and no queued extra connection, not a universal retry proof.",
+    "Guest execution count was not independently measured; this run did not perform a crash/restart.",
+    "This local combined-source fixture is not hosted or installed-distribution qualification."
+  ]
+}
