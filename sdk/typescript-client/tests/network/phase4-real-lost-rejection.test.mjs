@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { RpcClient } from "../../dist/node/index.js";
-import { OutcomeKnowledge } from "../../dist/management.js";
+import { FailureCategory, OutcomeKnowledge } from "../../dist/management.js";
 import { currentProfile, CommandOutcome } from "../../dist/transactions.js";
 function required(name) { const value = process.env[name]; assert.ok(value, `missing fixture field: ${name}`); return value; }
 function bytes(value) { assert.match(value, /^(?:[0-9a-f]{2})+$/); return Buffer.from(value, "hex"); }
@@ -13,7 +13,7 @@ test("lost rejection response preserves unknown outcome and explicit recovery", 
   try {
     const mode = required("LSF_401_MODE");
     if (mode === "recover") {
-      const value = (await client.lookupCommand({ profile: currentProfile(), command, authorizationPublication: { tenant, id: required("LSF_401_PUBLICATION") } })).value.command;
+      const value = (await client.lookupCommand({ profile: currentProfile(), command, authorizationPublication: { tenant, id: required("LSF_401_PUBLICATION") } }, { signal: new AbortController().signal })).value.command;
       assert.ok(value && value.outcome === CommandOutcome.Rejected && value.metadataDurable && !value.applicationStateCommitted && !value.commit && value.businessRejection);
       assert.equal(value.commandId, required("LSF_401_ORIGINAL_ID")); assert.equal(value.attemptId, required("LSF_401_ORIGINAL_ATTEMPT"));
       assert.deepEqual(Buffer.from(value.fingerprintSha256), bytes(required("LSF_401_ORIGINAL_FINGERPRINT")));
@@ -24,9 +24,22 @@ test("lost rejection response preserves unknown outcome and explicit recovery", 
       const request = { profile: currentProfile(), command, invocation: { activationId: key, target: { tenant, service: "examples/transaction-java-aggregate", contract: "examples:transactional-aggregate/api@1.0.0", function: "update", route: "transaction-java-aggregate" },
         payload: Buffer.from(mode === "conflict" ? '[{"delta":2,"reject":true}]' : '[{"delta":1,"reject":true}]'), mediaType: "application/vnd.latent.wit-values.v1+json", priority: 0, metadata: {},
         budget: { cpuFuel: 1000000000n, memoryBytes: 67108864n, childCalls: 0, outboundRequests: 0, stateReadBytes: 4194304n, stateWriteBytes: 2097152n, blobReadBytes: 0n, blobWriteBytes: 0n, logBytes: 0n, effectCount: 1, wallTimeLimitMillis: 120000n } }, inputFormat: "lsf-wit-values-v1", expectedVersions: [{ key: Buffer.from("aggregate/count"), version: bytes(required("LSF_401_EXPECTED_VERSION_HEX")) }] };
+      const cancellation = mode === "invoke" && process.env.LSF_401_CANCEL_AFTER_DISPATCH === "1";
+      let controller, timer;
+      if (cancellation) {
+        const before = new AbortController(); before.abort();
+        let early;
+        try { await client.invokeCommand(request, { signal: before.signal }); assert.fail("pre-aborted call unexpectedly succeeded"); } catch (error) { early = error?.failure; }
+        assert.ok(early); assert.equal(early.category, FailureCategory.LocalCancelled); assert.equal(early.dispatched, false);
+        assert.equal(early.outcome, OutcomeKnowledge.NotDispatched); assert.equal(early.transactionIdentity?.command?.clientKey, key); assert.equal(early.observedTransaction, undefined);
+        console.log("CANCELLED_BEFORE_DISPATCH");
+        controller = new AbortController(); timer = setTimeout(() => controller.abort(), 5000);
+      }
       let failure;
-      try { await client.invokeCommand(request); assert.fail("response-blocked call unexpectedly succeeded"); } catch (error) { failure = error?.failure; }
+      try { await client.invokeCommand(request, cancellation ? { signal: controller.signal } : undefined); assert.fail("response-blocked call unexpectedly succeeded"); } catch (error) { failure = error?.failure; }
+      finally { if (timer) clearTimeout(timer); }
       assert.ok(failure); assert.equal(failure.dispatched, true); assert.equal(failure.outcome, OutcomeKnowledge.Unknown);
+      if (cancellation) { assert.equal(failure.category, FailureCategory.LocalCancelled); console.log("CANCELLED_DISPATCH_UNKNOWN"); }
       assert.equal(failure.transactionIdentity?.command?.clientKey, key); assert.equal(failure.observedTransaction, undefined);
       if (mode === "conflict") { assert.equal(failure.grpcStatus, 6); console.log("CHANGED_INPUT_CONFLICT"); }
       else console.log("LOST_REJECTION_UNKNOWN");
