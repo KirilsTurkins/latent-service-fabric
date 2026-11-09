@@ -74,7 +74,12 @@ def public_watch_events(values):
                  'guest-tool-digest-mismatch', 'guest-tool-inventory-changed-during-build',
                  'guest-tool-unrecorded-directory', 'private-state-directory-required',
                  'source-file-unavailable-or-unsafe', 'compiler-process-failed',
-                 'compiler-cleanup-unconfirmed', 'compiler-cancelled', 'compiler-input-or-build-failed'},
+                 'compiler-cleanup-unconfirmed', 'compiler-cancelled', 'compiler-input-or-build-failed',
+                 'backend-transport-lost-status-required', 'operator-outcome-uncertain',
+                 'recover-original-operation-before-new-mutation', 'operation-outcome-uncertain-use-recover',
+                 'original-operation-unknown-or-expired-no-replay',
+                 'original-operation-durability-uncertain-no-replay', 'recovery-transport-outcome-unknown',
+                 'operation-journal-conflict', 'owned-process-cleanup-unconfirmed'},
     }
     result = []
     for value in values[-32:]:

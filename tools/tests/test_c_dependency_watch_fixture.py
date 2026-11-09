@@ -168,6 +168,14 @@ class PublicWatchDiagnostics(unittest.TestCase):
         for secret in ('token-secret', 'a' * 64, '/private/token', 'payload'):
             self.assertNotIn(secret, json.dumps(observed))
 
+    def test_known_uncertain_deployment_codes_are_visible_without_private_fields(self):
+        from tools.qualify_c_dependency_watch import public_watch_events
+        observed = public_watch_events([{'event': 'edit-failed', 'phase': 'deploy',
+            'code': 'operation-outcome-uncertain-use-recover', 'uncertain': True,
+            'diagnostics': {'secret': 'private'}}])
+        self.assertEqual(observed, [{'event': 'edit-failed', 'phase': 'deploy',
+            'code': 'operation-outcome-uncertain-use-recover', 'uncertain': True}])
+
     def test_projection_keeps_only_the_last_thirty_two_observations(self):
         from tools.qualify_c_dependency_watch import public_watch_events
         values = [{'code': 'success'} for _ in range(8)] + [
@@ -183,13 +191,16 @@ class PublicWatchDiagnostics(unittest.TestCase):
             and any(isinstance(target, ast.Name) and target.id == 'allowed' for target in node.targets))
         allowed = ast.literal_eval(table)
         self.assertEqual(set(allowed), {'event', 'phase', 'code'})
-        self.assertEqual(tuple(len(allowed[key]) for key in ('event', 'phase', 'code')), (5, 4, 23))
+        self.assertEqual(tuple(len(allowed[key]) for key in ('event', 'phase', 'code')), (5, 4, 32))
         root = Path(__file__).resolve().parents[2]
         actual = set()
         for name in ('tools/dev_workflow/cli.py', 'tools/dev_workflow/watch.py',
                      'tools/dev_workflow/build.py', 'tools/dev_workflow/build_client.py',
                      'tools/dev_workflow/node_test_signing.py', 'tools/dev_workflow/tool_inventory.py',
-                     'tools/dev_workflow/paths.py', 'tools/dev_guest_recipe.py'):
+                     'tools/dev_workflow/paths.py', 'tools/dev_guest_recipe.py',
+                     'tools/dev_workflow/backend.py', 'tools/dev_workflow/client.py',
+                     'tools/dev_workflow/journal.py', 'tools/dev_workflow/node_deployment.py',
+                     'tools/dev_workflow/process.py'):
             actual.update(node.value for node in ast.walk(ast.parse((root / name).read_text()))
                 if isinstance(node, ast.Constant) and isinstance(node.value, str))
         self.assertLessEqual(set().union(*allowed.values()), actual)
