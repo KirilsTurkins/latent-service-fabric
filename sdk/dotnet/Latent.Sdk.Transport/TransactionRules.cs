@@ -229,7 +229,7 @@ internal static partial class TransactionRules
         Text(value.Message, 1024, false, false); Require(value.DetailItems.Count <= 16);
         foreach (var detail in value.DetailItems) { Text(detail.Kind); Metadata(detail.Fields); }
     }
-    private static Tx.CommandInspection Command(Tx.CommandInspection? raw, Tx.CommandSelector? requested)
+    private static Tx.CommandInspection Command(Tx.CommandInspection? raw, Tx.CommandSelector? requested, Profile.InvokeResponse? inline = null)
     {
         var value = Present(raw); var selector = Present(requested); var key = Present(value.Key);
         Namespace(key.Namespace, selector.Namespace!.Tenant); Identity(key.RecoveryScope); Identity(key.Operation); Identity(key.ClientKey); if (key.Entity is not null) Identity(key.Entity);
@@ -250,10 +250,13 @@ internal static partial class TransactionRules
         }
         if (value.ProvenAbort is { } abort) { Fence(abort); Require(abort.CommandId == value.CommandId && abort.AttemptId == value.AttemptId); }
         bool omitted = results == 0 && value.Retention?.PayloadAvailable == false;
+        bool inlinePayload = results == 0 && value.Retention?.PayloadAvailable == true;
+        bool inlineSuccess = inlinePayload && inline?.Success is not null;
+        bool inlineRejection = inlinePayload && inline?.DeclaredError is not null;
         Require(value.Outcome.Value switch
         {
-            2 => value.MetadataDurable && value.ApplicationStateCommitted && value.Commit is not null && value.ProvenAbort is null && (value.Success is not null || omitted),
-            3 => value.MetadataDurable && !value.ApplicationStateCommitted && value.Commit is null && value.ProvenAbort is null && (value.BusinessRejection is not null || omitted),
+            2 => value.MetadataDurable && value.ApplicationStateCommitted && value.Commit is not null && value.ProvenAbort is null && (value.Success is not null || omitted || inlineSuccess),
+            3 => value.MetadataDurable && !value.ApplicationStateCommitted && value.Commit is null && value.ProvenAbort is null && (value.BusinessRejection is not null || omitted || inlineRejection),
             4 => value.MetadataDurable && !value.ApplicationStateCommitted && value.Commit is null && value.ProvenAbort is not null && value.Success is null && value.BusinessRejection is null,
             7 => value.MetadataDurable && value.ProvenAbort is null && results == 0 && value.ApplicationStateCommitted == (value.Commit is not null),
             _ => !value.ApplicationStateCommitted && value.Commit is null && value.ProvenAbort is null && results == 0
@@ -304,16 +307,28 @@ internal static partial class TransactionRules
     private static bool EqualSuccess(Profile.Success left, Profile.Success right) => EqualBytes(left.Payload, right.Payload) && left.MediaType == right.MediaType &&
         left.CommittedStateVersion == right.CommittedStateVersion && left.EffectIds.SequenceEqual(right.EffectIds) && EqualMetadata(left.Metadata, right.Metadata);
     private static bool EqualRejection(Profile.DeclaredError left, Profile.DeclaredError right) => left.Code == right.Code && left.Message == right.Message && EqualBytes(left.Payload, right.Payload) && left.MediaType == right.MediaType && EqualMetadata(left.Metadata, right.Metadata);
+    private static bool EqualFailure(Profile.PlatformError left, Profile.PlatformError right) => left.Code == right.Code && left.Message == right.Message && left.Retryable == right.Retryable &&
+        left.DetailItems.Count == right.DetailItems.Count && left.DetailItems.Zip(right.DetailItems).All(pair => pair.First.Kind == pair.Second.Kind && EqualMetadata(pair.First.Fields, pair.Second.Fields));
 
     internal static void Response(object response, object original, CallState state)
     {
         switch (response, original)
         {
             case (Tx.InvokeCommandResponse value, Tx.InvokeCommandRequest requested):
-                var command = Command(value.Command, requested.Command); InvocationResponse(value.Invocation, command.Source, requested.Invocation?.ActivationId);
+                var command = Command(value.Command, requested.Command, value.Invocation); InvocationResponse(value.Invocation, command.Source, requested.Invocation?.ActivationId);
                 if (command.Success is { } success) Require(value.Invocation!.Success is { } other && EqualSuccess(success, other));
                 if (command.BusinessRejection is { } reject) Require(value.Invocation!.DeclaredError is { } other && EqualRejection(reject, other));
-                Require(command.Success is not null || command.BusinessRejection is not null || command.TechnicalFailure is not null || value.Invocation!.PlatformFailure is not null);
+                if (command.TechnicalFailure is { } technical) Require(value.Invocation!.PlatformFailure is { } other && EqualFailure(technical, other));
+                bool retained = command.Success is not null || command.BusinessRejection is not null || command.TechnicalFailure is not null;
+                if (!retained && value.Invocation!.PlatformFailure is null)
+                    Require(command.Retention?.PayloadAvailable == true && ((command.Outcome.Value == 2 && value.Invocation.Success is not null)
+                        || (command.Outcome.Value == 3 && value.Invocation.DeclaredError is not null)));
+                if (value.Invocation!.Success is { } inlineSuccess)
+                {
+                    var commit = Present(command.Commit);
+                    Require(inlineSuccess.EffectIds.SequenceEqual(commit.EffectIds)
+                        && inlineSuccess.CommittedStateVersion == Convert.ToHexString(commit.CommittedVersion.Span).ToLowerInvariant());
+                }
                 break;
             case (Tx.LookupCommandResponse value, Tx.LookupCommandRequest requested):
                 var lookup = Command(value.Command, requested.Command); Require(requested.AttemptId is null || lookup.AttemptId == requested.AttemptId); break;
