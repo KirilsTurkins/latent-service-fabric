@@ -2,12 +2,14 @@ name: Rust logical thread registry source controls
 
 on:
   push:
-    branches: ['fix/rust-thread-reuse-20261109']
+    branches: ['fix/rust-thread-reuse-20261109', 'fix/rust-pool-worker-reuse-20261109']
     paths:
       - '.github/workflows/rust-thread-registry-source.yml'
       - 'sdk/rust-standard-runtime/thread_registry.rs'
       - 'sdk/rust-standard-runtime/thread_runtime.rs'
       - 'sdk/rust-standard-runtime/tests/thread_registry_native.rs'
+      - 'sdk/rust-standard-runtime/executor_*.rs'
+      - 'sdk/rust-standard-runtime/tests/executor_*_native.rs'
   workflow_dispatch:
 
 permissions:
@@ -58,3 +60,26 @@ jobs:
           PY
           "$RUNNER_TEMP/rust-thread-registry-source" --test-threads=1 | tee "$RUNNER_TEMP/rust-thread-registry-result.txt"
           grep -Eq '^test result: ok[.] 14 passed; 0 failed; 0 ignored;' "$RUNNER_TEMP/rust-thread-registry-result.txt"
+      - name: Compile and execute exact pool worker identity controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          for suite in executor_lifecycle_native executor_worker_native executor_control_native executor_root_native; do
+            timeout 60s rustc --edition=2024 --test "sdk/rust-standard-runtime/tests/$suite.rs" -o "$RUNNER_TEMP/$suite"
+          done
+          python3 - "$RUNNER_TEMP" <<'PY'
+          import pathlib, re, subprocess, sys
+          root = pathlib.Path(sys.argv[1])
+          expected = {'executor_lifecycle_native': ['actual_worker_start_and_complete_provision_are_required_before_acceptance', 'closing_worker_tls_submission_requires_actual_successor_and_old_close_cannot_kill_it', 'fallible_admission_reservation_pins_worker_without_accepting_or_losing_work', 'finite_close_round_limit_refuses_before_an_unclosable_successor_or_future_is_accepted', 'independent_pool_state_and_empty_queue_do_not_confuse_unfinished_future', 'logical_empty_still_waits_for_real_wake_drop_tls_and_frame_boundaries', 'partially_started_generation_retains_started_worker_until_its_real_exit', 'successor_reuses_index_only_after_old_worker_tls_drains_without_retiring_its_record', 'wake_requeue_is_reserved_before_admission_and_late_generation_never_recreates_task'], 'executor_worker_native': ['recycled_canonical_index_retains_distinct_worker_keys_and_arc_leases', 'worker_lease_frame_callback_keeps_each_real_child_identity_after_return_to_root', 'worker_lease_refuses_root_ready_foreign_context_stale_executor_and_duplicate_transfer', 'worker_lease_retains_actual_arc_until_separate_tls_and_frame_notifications'], 'executor_control_native': ['actual_bridge_carries_worker_keys_through_recycled_canonical_index_and_arc_release', 'old_and_new_worker_callbacks_are_keyed_to_their_own_generations', 'three_reused_generations_retire_only_their_exact_worker_keys'], 'executor_root_native': ['captured_pool_and_control_retire_before_executor_completion_notification', 'last_executor_retirement_notifies_the_second_drain_check', 'pending_executor_keeps_its_owner_and_does_not_invent_a_notification', 'release_callback_successor_requires_a_fresh_scan_and_keeps_its_owner', 'retirement_invalidates_a_previously_quiescent_stamp']}
+          for suite, cases in expected.items():
+              listing = subprocess.run([str(root / suite), "--list"], capture_output=True, timeout=60, check=True)
+              assert len(listing.stdout) <= 1024 * 1024 and len(listing.stderr) <= 1024 * 1024
+              observed = [line.removesuffix(": test") for line in listing.stdout.decode().splitlines() if line.endswith(": test")]
+              assert len(observed) == len(set(observed)) == len(cases) and set(observed) == set(cases), suite
+              result = subprocess.run([str(root / suite), "--test-threads=1"], capture_output=True, timeout=60, check=True)
+              assert len(result.stdout) <= 1024 * 1024 and len(result.stderr) <= 1024 * 1024
+              passed = re.findall(rb"^test ([^\r\n]+) \.\.\. ok$", result.stdout, re.M)
+              assert len(passed) == len(cases) and {name.decode() for name in passed} == set(cases), suite
+              assert f"test result: ok. {len(cases)} passed; 0 failed; 0 ignored;".encode() in result.stdout, suite
+              print(result.stdout.decode(), end="")
+          PY

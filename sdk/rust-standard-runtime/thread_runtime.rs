@@ -313,9 +313,9 @@ pub(crate) unsafe fn entered(context: *mut u8) {
             .as_ref()
             .map(|lease| lease.tls_notification())
     });
-    if let Some((pointer, canonical, callback)) = executor {
+    if let Some((pointer, worker, callback)) = executor {
         unsafe {
-            callback(pointer, canonical);
+            callback(pointer, worker);
         }
     }
     // Both queues are private UNTImed queues: these paths contain only bounded
