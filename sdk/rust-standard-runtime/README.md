@@ -287,7 +287,7 @@ remain open. The internal V2
 context prefix is recorded in [thread-abi.json](thread-abi.json); CURRENT V5 and
 the frozen activation interface remain unchanged.
 
-The core transform uses `wasm-encoder` and `wasmparser` version 0.259.0.
+The core transform uses `wasm-encoder` and `wasmparser` version 0.262.0.
 Component assembly uses the separately pinned `wasm-tools` version 1.254.0,
 whose encoded producer is `wit-component` version 0.254.0. A small explicit
 WAT module-graph campaign uses that normal assembly and authenticates the actual

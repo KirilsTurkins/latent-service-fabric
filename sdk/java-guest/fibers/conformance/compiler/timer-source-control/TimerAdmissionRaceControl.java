@@ -31,7 +31,9 @@ public final class TimerAdmissionRaceControl {
         }catch(Throwable failure){observed=failure;}finally{release.countDown();worker.join(5000);}
         require(!worker.isAlive(),"admission-worker-stuck");
         if(exceptional)require(observed==marker && (boolean)get("poisoned") && threads.get(worker)==workerWork,"exceptional-admission-owner-not-retained");
-        else require(observed==null,"clean-mode-unexpected-failure");
+        else require(observed instanceof java.lang.reflect.InvocationTargetException exception
+            && exception.getCause() instanceof IllegalStateException && (boolean)get("poisoned")
+            && threads.get(worker)==workerWork,"inflight-admission-not-retained");
         require(error.get() instanceof IllegalStateException && value.get()==null && Bindings.LatentRuntimeActivation.timers()==0,
             "timer-admitted-after-teardown");
         System.out.println("TIMER_ADMISSION_RACE PASS "+args[0]);
