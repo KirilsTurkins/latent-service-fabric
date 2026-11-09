@@ -72,10 +72,12 @@ outcome classes. Optional kinds are `CapabilityGrantAllowed`,
 | `NotStarted`, `Rejected`, `Unknown` | No dispatch, a known rejection, or insufficient provider-result evidence. |
 
 Providers call `record_provider_outcome` only after observing that boundary.
-Cancellation and unclassified terminal paths stay unknown. Retained context
-lowering can finish without proof of guest delivery. An idempotency key, Allow DTO
-or audit sequence never establishes exactly-once execution, rollback or consumer
-processing.
+Cancellation after dispatch but before a provider observation leaves the outcome
+unknown. An already observed `HostCompleted` boundary may remain recorded when
+guest delivery or the journal acknowledgement is later lost. It does not prove
+peer processing or remote commit. Retained context lowering can finish without
+proof of guest delivery. An idempotency key, Allow DTO or audit sequence never
+establishes exactly-once execution, rollback or consumer processing.
 
 `OwnedCapabilityResponse` exposes `provider_outcome` separately from
 `audit_durability`. `finish_audit` returns a durable sequence when acknowledged.

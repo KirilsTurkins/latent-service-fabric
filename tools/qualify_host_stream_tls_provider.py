@@ -36,11 +36,16 @@ ABORT_CASES = frozenset("tests::sockets::" + name for name in (
     "abort_both_is_available_after_the_send_half_was_closed",
     "abort_both_unpolled_reserves_control_and_blocks_new_send_without_dispatch",
     "abort_both_cancels_an_accepted_send_shutdown_owner",
+    "dropped_write_before_dispatch_keeps_the_same_connection_usable",
+    "dropped_write_after_synthetic_no_progress_keeps_the_same_connection_usable",
+    "dropped_write_during_synthetic_audit_wait_keeps_original_owners_and_never_replays",
+    "synthetic_audit_failure_reports_the_accepted_prefix_once_and_fences_reuse",
 )) | frozenset("tests::tls::abort::" + name for name in (
     "abort_both_wakes_tls_waiters_and_retains_held_write",
     "abort_both_unpolled_tls_control_releases_slot_without_dispatch",
     "abort_both_after_tls_peer_close_notify_retires_original_owner",
     "abort_both_cancels_tls_ciphertext_flush_under_real_backpressure",
+    "dropped_write_with_synthetically_held_tls_ciphertext_retains_original_owners",
 ))
 KERNEL_CASE = 'tests::kernel::current_linux_pressure_and_active_close_distinguish_kernel_tail_from_fd_refund'
 KERNEL_RETIREMENT_CASES = frozenset(('tests::kernel::current_linux_kernel_tail_keeps_original_leases_quarantined', 'tests::kernel::current_linux_failed_connect_quarantines_original_dial_and_native_charge', 'tests::kernel::current_linux_cancelled_dns_quarantines_original_scope_and_native_charge', 'tests::kernel::current_unqualified_kernel_profile_refuses_normal_install_without_allocation'))
