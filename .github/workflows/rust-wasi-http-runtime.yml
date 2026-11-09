@@ -2,10 +2,12 @@ name: Rust standard WASI HTTP backend
 
 on:
   push:
-    branches: ['feat/rust-wasi-http-profile-20261021', 'diag/rust-http-combined-host-20261105']
+    branches: ['feat/rust-wasi-http-profile-20261021', 'diag/rust-http-combined-host-20261105', 'fix/rust-http-finish-length-20261108']
     paths:
       - '.github/workflows/rust-wasi-http-runtime.yml'
       - 'sdk/wasi-http-runtime/**'
+      - 'tools/fixtures/wasi-http-request-options/**'
+      - 'tools/rust_wasi_http_finish_control.py'
       - 'tools/rust_wasi_http_inputs.py'
       - 'tools/toolchain-smoke/examples/rust_wasi_http_runtime.rs'
       - 'tools/toolchain-smoke/examples/rust_http_pump_probe.rs'
@@ -68,6 +70,13 @@ jobs:
           set -euo pipefail
           rustc --edition=2021 --test tools/fixtures/wasi-http-request-options/control.rs -o "$RUNNER_TEMP/rust-http-resource-controls"
           "$RUNNER_TEMP/rust-http-resource-controls" --test-threads=1 | tee "$RUNNER_TEMP/rust-http-resource-controls.txt"
+      - name: Execute content-length finish and ownership controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -B tools/rust_wasi_http_finish_control.py --output "$RUNNER_TEMP/rust-http-finish-method.rs" | tee "$RUNNER_TEMP/rust-http-finish-source.txt"
+          LSF_RUST_HTTP_FINISH_BODY="$RUNNER_TEMP/rust-http-finish-method.rs" rustc --edition=2021 --cfg lsf_exported_finish_control --test tools/fixtures/wasi-http-request-options/exchange-control.rs -o "$RUNNER_TEMP/rust-http-exchange-controls"
+          "$RUNNER_TEMP/rust-http-exchange-controls" --test-threads=1 | tee "$RUNNER_TEMP/rust-http-exchange-controls.txt"
       - name: Execute callback-safe readiness, cancellation and bounded waiter controls
         shell: bash
         run: |
@@ -102,6 +111,9 @@ jobs:
           name: rust-wasi-http-backend-${{ github.sha }}
           path: |-
             ${{ runner.temp }}/rust-http-resource-controls.txt
+            ${{ runner.temp }}/rust-http-exchange-controls.txt
+            ${{ runner.temp }}/rust-http-finish-source.txt
+            ${{ runner.temp }}/rust-http-finish-method.rs
             ${{ runner.temp }}/rust-http-runtime/INSTALL-COMPLETE.json
             ${{ runner.temp }}/rust-http-runtime/INSTALL-FAILED.json
             ${{ runner.temp }}/rust-http-runtime/source-inputs.json

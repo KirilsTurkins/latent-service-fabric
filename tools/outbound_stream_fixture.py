@@ -77,9 +77,19 @@ class SmtpPeer:
 
     def _close_client(self, stream):
         if stream in self.clients:
-            self.selector.unregister(stream)
+            try:
+                self.selector.unregister(stream)
+            except KeyError:
+                # A derived gated peer may park a live descriptor without
+                # readiness interest. It remains owned in clients until close.
+                pass
             del self.clients[stream]
         stream.close()
+
+    def _read_eof(self, stream, record):
+        # Preserve the ungated fixture's original EOF policy. Gated peers can
+        # retain the write half and its original deadline without copying I/O.
+        self._close_client(stream)
 
     def close(self):
         for stream in list(self.clients):
@@ -194,7 +204,7 @@ class SmtpPeer:
             if events & selectors.EVENT_READ:
                 raw = stream.recv(4096)
                 if not raw:
-                    self._close_client(stream)
+                    self._read_eof(stream, record)
                     return
                 record["idle"] = time.monotonic() + IDLE_SECONDS
                 record["input"].extend(raw)

@@ -278,6 +278,17 @@ int thrd_join(thrd_t identity,int *result) {
     if (!error && result!=NULL) *result=thread->result.c11;
     errno=saved;return error?thrd_error:thrd_success;
 }
+/* The pinned single-threaded libc's GNU join extensions return success
+ * without observing or retiring a child. This profile does not implement
+ * either extension, so refuse them without touching a result or a join claim. */
+int pthread_tryjoin_np(pthread_t identity,void **result);
+int pthread_timedjoin_np(pthread_t identity,void **result,const struct timespec *deadline);
+int pthread_tryjoin_np(pthread_t identity,void **result) {
+    (void)identity;(void)result;return ENOTSUP;
+}
+int pthread_timedjoin_np(pthread_t identity,void **result,const struct timespec *deadline) {
+    (void)identity;(void)result;(void)deadline;return ENOTSUP;
+}
 int pthread_detach(pthread_t identity) {
     int saved=errno;int error=find(identity)==NULL?ESRCH:ENOTSUP;errno=saved;return error;
 }
