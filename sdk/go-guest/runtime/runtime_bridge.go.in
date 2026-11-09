@@ -44,10 +44,11 @@ func clock_time_get(id clockid, _ timestamp, result *timestamp) errno {
 			lsfHasMonotonic = true
 		}
 		if !lsfHasMonotonic { return 29 }
-		*result = lsfLastMonotonic
-		// Go reserves zero as an inactive timer deadline. Its monotonic
-		// origin is arbitrary; mapping only zero cannot advance elapsed time.
-		if *result == 0 { *result = 1 }
+		// Go reserves zero as an inactive timer deadline. Shift the
+		// arbitrary origin uniformly so elapsed intervals remain exact.
+		// nanotime is signed; refuse before its positive range overflows.
+		if lsfLastMonotonic >= (uint64(1)<<63)-1 { return 61 }
+		*result = lsfLastMonotonic + 1
 	case clockRealtime:
 		if lsfClockPauseDepth == 0 {
 			lsfLastWall = lsfWallMillis()

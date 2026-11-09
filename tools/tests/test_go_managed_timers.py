@@ -594,23 +594,58 @@ func TestZeroSampleAndPausedClock(t *testing.T) {
         t.Fatalf("paused sample: errno=%d result=%d calls=%d", got, result, monotonicCalls)
     }
     lsfSetClocksPaused(false)
-    if got := readMonotonic(t, 1); got != 1 { t.Fatalf("one ns changed: %d", got) }
-    if got := readMonotonic(t, 23); got != 23 { t.Fatalf("nonzero sample changed: %d", got) }
+    if got := readMonotonic(t, 1); got != 2 { t.Fatalf("one ns offset: %d", got) }
+    if got := readMonotonic(t, 23); got != 24 { t.Fatalf("nonzero sample offset: %d", got) }
 }
 
-func TestNondecreasingSamplesCannotAdvanceElapsedTime(t *testing.T) {
+func TestMonotonicOffsetPreservesEveryInterval(t *testing.T) {
     resetClock()
-    samples := []uint64{0, 1, 2, 23, (uint64(1)<<63)-1, ^uint64(0)}
+    samples := []uint64{0, 1, 2, 23, (uint64(1)<<63)-2}
     previousRaw, previousMapped := samples[0], readMonotonic(t, samples[0])
     for _, raw := range samples[1:] {
         mapped := readMonotonic(t, raw)
-        if mapped < previousMapped || mapped-previousMapped > raw-previousRaw {
+        if mapped != raw+1 || mapped < previousMapped || mapped-previousMapped != raw-previousRaw {
             t.Fatalf("raw %d to %d mapped %d to %d", previousRaw, raw, previousMapped, mapped)
         }
-        if mapped != raw { t.Fatalf("nonzero sample %d changed to %d", raw, mapped) }
         previousRaw, previousMapped = raw, mapped
     }
 }
+
+func TestOneShotIsDueAtOriginalHostDeadline(t *testing.T) {
+    resetClock()
+    start := readMonotonic(t, 0)
+    when := start + 5
+    delay := when - readMonotonic(t, 0)
+    atHostDeadline := readMonotonic(t, 5)
+    if delay != 5 || atHostDeadline != when {
+        t.Fatalf("one-shot host delay=%d Go deadline=%d mapped at host deadline=%d", delay, when, atHostDeadline)
+    }
+}
+
+func TestSignedNanotimeOverflowFailsClosed(t *testing.T) {
+    resetClock()
+    maxSigned := (uint64(1)<<63)-1
+    if got := readMonotonic(t, maxSigned-1); got != maxSigned {
+        t.Fatalf("last supported sample=%d", got)
+    }
+    mockMonotonic = maxSigned
+    result := timestamp(77)
+    if got := clock_time_get(clockMonotonic, 0, &result); got != 61 || result != 77 || lsfLastMonotonic != maxSigned {
+        t.Fatalf("signed overflow errno=%d result=%d cached=%d", got, result, lsfLastMonotonic)
+    }
+    calls := monotonicCalls
+    lsfSetClocksPaused(true)
+    mockMonotonic = 0
+    if got := clock_time_get(clockMonotonic, 0, &result); got != 61 || result != 77 || monotonicCalls != calls {
+        t.Fatalf("paused overflow errno=%d result=%d calls=%d", got, result, monotonicCalls)
+    }
+    lsfSetClocksPaused(false)
+    mockMonotonic = ^uint64(0)
+    if got := clock_time_get(clockMonotonic, 0, &result); got != 61 || result != 77 {
+        t.Fatalf("u64 overflow errno=%d result=%d", got, result)
+    }
+}
+
 
 func TestWallAndInvalidClockBehavior(t *testing.T) {
     resetClock()
