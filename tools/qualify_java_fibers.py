@@ -623,6 +623,31 @@ def executor_activation_settlement_control(compiler: Compiler, classes: Path, cl
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 
+def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> dict:
+    """Run the actual sleep owner against a private, two-Timer host ledger."""
+    classpath, identities = locked_model_classpath(compiler, include_platform=True)
+    sdk = compiler.sdk
+    fixture = sdk / 'fibers/conformance/compiler/timer-source-control'
+    sources = [sdk / name for name in (
+        'runtime/dev/latent/guest/Option.java', 'runtime/dev/latent/guest/Unsigned64.java',
+        'fibers/dev/latent/guest/runtime/Activation.java', 'fibers/dev/latent/guest/runtime/HostCalls.java',
+        'fibers/dev/latent/guest/runtime/Monitors.java')]
+    sources += [fixture / 'dev/latent/generated/Bindings.java', fixture / 'TimerSleepAdmissionSourceControl.java']
+    sources += sorted((sdk / 'fibers/dev/latent/guest/runtime/concurrent').glob('*.java'))
+    inputs = {path.relative_to(sdk).as_posix(): digest(read_file(path)) for path in sources}
+    output.mkdir()
+    compiler.run('timer-sleep-admission-source-compile', 'javac', '-proc:none', '--release', '25',
+        '-cp', classpath, '-d', output, *sources)
+    actual = compiler.run('timer-sleep-admission-source-control', 'java', '-Xmx256m', '-cp',
+        str(output) + os.pathsep + classpath, 'TimerSleepAdmissionSourceControl').strip()
+    if actual != 'TIMER_SLEEP_ADMISSION_SOURCE PASS typed-refusal;wait-return;same-work-retry;raw-hook-finally':
+        raise ValueError('Java timer sleep admission source control did not complete')
+    if inputs != {name: digest(read_file(sdk / name)) for name in inputs}:
+        raise ValueError('Java timer sleep admission source inputs changed')
+    return {'status': 'SDK-source-control-passed', 'sourceInputs': inputs, 'jarDigests': identities,
+        'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
+
+
 def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     """Real port source with a private host ledger, never injected guest bindings."""
     private = compiler.sdk / 'fibers/conformance/compiler/scheduled-source-control'
@@ -1027,6 +1052,10 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
         component, report["record"] = compiler.compile(output / "src", wit.parent,
             "tests:caller/service@1.0.0", output / "build", activation_profile=True, **selection)
         if fixture in {'scheduled-library', 'future-queue'}:
+            # Compiler.compile populates its private locked Gradle cache first.
+            if fixture == 'scheduled-library':
+                report['timerSleepAdmissionSource'] = timer_sleep_admission_source_control(
+                    compiler, output / 'timer-sleep-admission-source')
             report['scheduledModel'] = scheduled_model_control(compiler, output / 'scheduled-model')
         elif fixture == 'shutdown-now':
             report['completableModel'] = completable_model_control(compiler, output / 'completable-model')
