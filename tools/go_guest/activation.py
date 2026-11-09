@@ -116,11 +116,26 @@ def async_source(dependency: Path, sdk: Path, *, checkpoints=False, timers=False
     text = replace_once(text, '\t\t\treturn CALLBACK_CODE_EXIT',
         '\t\t\tlsfActivationLeave()\n\t\t\treturn CALLBACK_CODE_EXIT')
     if checkpoints:
-        text = replace_once(text, 'yielding    chan unit', 'yielding    []chan unit')
-        text = replace_once(text, '\t\tyielding <- unit{}',
-            '\t\tfor _, channel := range yielding { channel <- unit{} }')
-        text = replace_once(text, '\tstate.yielding = channel',
-            '\tstate.yielding = append(state.yielding, channel)')
+        from tools.go_guest.checkpoints import checkpoint_yield_template
+        if checkpoint_yield_template(sdk) == 'legacy':
+            # Existing captured SDKs retain their original dispatcher bytes.
+            text = replace_once(text, 'yielding    chan unit', 'yielding    []chan unit')
+            text = replace_once(text, '\t\tyielding <- unit{}',
+                '\t\tfor _, channel := range yielding { channel <- unit{} }')
+            text = replace_once(text, '\tstate.yielding = channel',
+                '\tstate.yielding = append(state.yielding, channel)')
+        else:
+            text = replace_once(text, 'yielding    chan unit',
+                'yielding    *lsfYieldWait\n\tyieldTail   *lsfYieldWait')
+            text = replace_once(text, '\t\tnil,\n\t\truntime.Pinner{},',
+                '\t\tnil,\n\t\tnil,\n\t\truntime.Pinner{},')
+            text = replace_once(text,
+                '\tyielding := state.yielding\n\tif state.yielding != nil {\n'
+                '\t\tstate.yielding = nil\n\t\tyielding <- unit{}\n\t}',
+                '\tyielding := lsfTakeYields()\n\tfor yielding != nil {\n'
+                '\t\tnext := yielding.next\n\t\tyielding.next = nil\n'
+                '\t\tyielding.channel <- unit{}\n\t\tyielding = next\n\t}')
+            text = replace_once(text, '\tstate.yielding = channel', '\tlsfQueueYield(channel)')
         text += '\n' + (sdk / 'runtime/checkpoint_async.go.in').read_text()
     if timers:
         from tools.go_guest.timers import async_source as timer_source

@@ -102,18 +102,23 @@ impl LocalTransactionRuntime {
                 .transport_deadline_unix_millis()
                 .ok_or_else(|| error(PlatformErrorCode::InvalidArgument))?,
         );
-        let admission = Arc::new(NativeTransactionAdmission::with_ingress_reservation(
-            Arc::clone(&self.owners),
-            Arc::clone(&selected.installation),
-            selected.selection,
-            native,
-        )?);
+        let shared_owner =
+            Arc::new(latent_node::transaction_runtime::SharedCommandOwner::default());
+        let admission = Arc::new(
+            NativeTransactionAdmission::with_ingress_reservation(
+                Arc::clone(&self.owners),
+                Arc::clone(&selected.installation),
+                selected.selection,
+                native,
+            )?
+            .with_shared_command_owner(Arc::clone(&shared_owner)),
+        );
         let handle = self.manager.start_transaction_with_deadline(
             request,
             Some(incoming),
             admission.clone(),
         )?;
-        let retained = slot.own(handle, admission);
+        let retained = slot.own_shared(handle, admission, shared_owner, expires_at);
         let installation = selected.installation;
         Ok(Box::pin(async move {
             let (receipt, admission) = retained.await;

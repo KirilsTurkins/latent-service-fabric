@@ -38,6 +38,16 @@ impl NativeTransactionAdmission {
         let (result, observation) = match admitted {
             TransactionAdmissionResult::Command { claim, host } => {
                 let identity = claim.record().clone();
+                let lane = match host
+                    .authorization
+                    .role
+                    .as_ref()
+                    .map(|role| role.retain_lane())
+                    .transpose()
+                {
+                    Ok(lane) => lane.flatten(),
+                    Err(_) => return unavailable(consumption),
+                };
                 let completion = CommandCompletion::new(
                     claim,
                     host.clone(),
@@ -61,6 +71,7 @@ impl NativeTransactionAdmission {
                         failure_code,
                         &control,
                         original_failure.as_ref(),
+                        lane,
                     )
                     .await;
                 let observation = command_observation(&disposition, consumption, original_failure);

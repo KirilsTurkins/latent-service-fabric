@@ -78,7 +78,7 @@ static ReactionRecords* reaction_records;
 static FixtureNative* native_accounting;
 static unsigned promises_created = 0, promises_settled = 0, promises_finalized = 0;
 static unsigned reactions_created = 0, reactions_finalized = 0;
-static unsigned native_jobs_created = 0;
+static unsigned native_jobs_created = 0, captured_created = 0;
 static bool before_promise(JSContext* cx, void** output) {
   return promise_records->checkpoint(cx) && reaction_records->checkpoint(cx) &&
          collectNativePressure(cx, native_accounting->owners, [](JSContext* context) {
@@ -104,6 +104,10 @@ static void created_reaction(JSContext* cx, JSObject* object, void* record) {
 }
 static void* reaction_record(JSContext* cx, JSObject* object) {
   return reaction_records->record(cx, object);
+}
+static void created_captured(JSContext* cx, JSObject* object, void* record) {
+  ++captured_created;
+  PromiseRecords::capturedCreated(cx, object, record);
 }
 static void created_native_job(JSContext* cx, JSObject* object, void* record) {
   ++native_jobs_created;
@@ -182,7 +186,8 @@ int main(int argc, char** argv) {
         settled_promise, before_reaction, ReactionRecords::allocationFailed,
         created_reaction, reaction_record,
         before_reaction, ReactionRecords::allocationFailed,
-        created_native_job, reaction_record};
+        created_native_job, reaction_record,
+        before_promise, created_captured};
     if (!JS_AddWeakPointerZonesCallback(cx, weak_sweep, nullptr) ||
         !JS_AddFinalizeCallback(cx, collection_completed, nullptr) ||
         !JS::SetActivationPromiseHooks(cx, &hooks)) return 8;
@@ -220,6 +225,37 @@ int main(int argc, char** argv) {
       status = !evaluated && JS_IsExceptionPending(cx) && reactions_created == 1 &&
                jobs.queued == 1 && jobs.tasks == 1 && jobs.entries == 0 && queue.empty() ? 0 : 1;
       JS_ClearPendingException(cx);
+    } else if (!std::strcmp(selected, "combinator-captured-retirement")) {
+      if (!evaluate(cx, "globalThis.captured=[];"
+          "globalThis.Collector=class extends Promise {"
+          " static resolve(value){return {then(resolve){captured.push(resolve);}};} };"
+          "globalThis.product=Collector.all([1,2,3]);", &output)) return 9;
+      output.setUndefined();
+      bool charged = captured_created == 3 && promises_created == 1 &&
+                     native.owners == 4 && jobs.tasks == 0 && jobs.queued == 0 &&
+                     reactions_created == 0 && queue.empty() &&
+                     expect(cx, "captured.length===3");
+      collect(cx, native);
+      charged = charged && checkpoint(cx) && native.owners == 4 &&
+                native.acknowledgements == 0;
+      if (!evaluate(cx, "globalThis.captured=null;globalThis.product=null;globalThis.Collector=null;", &output)) return 9;
+      output.setUndefined();
+      collect(cx, native);
+      status = charged && checkpoint(cx) && native.owners == 0 &&
+               native.acknowledgements == 4 && !native.hostcall_in_gc ? 0 : 1;
+    } else if (!std::strcmp(selected, "combinator-native-refusal")) {
+      native.limit = 3;
+      bool evaluated = evaluate(cx, "globalThis.captured=[];"
+          "globalThis.Collector=class extends Promise {"
+          " static resolve(value){return {then(resolve){captured.push(resolve);}};} };"
+          "globalThis.product=Collector.all([1,2,3,4]);", &output);
+      JS::RootedObject result(cx, output.isObject() ? &output.toObject() : nullptr);
+      bool rejected = result && JS::GetPromiseState(result) == JS::PromiseState::Rejected;
+      status = evaluated && rejected && !JS_IsExceptionPending(cx) &&
+               captured_created == 2 && promises_created == 1 && native.owners == 3 &&
+               native.admissions == 3 && jobs.tasks == 0 && jobs.queued == 0 &&
+               reactions_created == 0 && queue.empty() && expect(cx, "captured.length===2") ? 0 : 1;
+      result = nullptr;
     } else if (!std::strcmp(selected, "native-preallocation")) {
       native.limit = 0;
       bool evaluated = evaluate(cx, "new Promise(()=>{});", &output);
@@ -306,7 +342,8 @@ int main(int argc, char** argv) {
     jobs.refuse_retirement = native.refuse_retirement = false;
     output.setUndefined();
     if (!evaluate(cx, "globalThis.root=null;globalThis.finish=null;globalThis.order=null;"
-        "globalThis.retained=null;", &output)) return 10;
+        "globalThis.retained=null;globalThis.captured=null;globalThis.product=null;"
+        "globalThis.Collector=null;", &output)) return 10;
     output.setUndefined();
     bool cancelled = queue.cancelQueued(cx);
     collect(cx, native);

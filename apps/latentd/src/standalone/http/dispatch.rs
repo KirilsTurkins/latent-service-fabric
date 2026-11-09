@@ -188,6 +188,9 @@ pub(super) fn begin(
         Ok(eligibility) => eligibility,
         Err(error) => return Err(status(reserved.reject(error))),
     };
+    let shared_owner = transaction
+        .as_ref()
+        .map(|_| Arc::new(latent_node::transaction_runtime::SharedCommandOwner::default()));
     let transaction = match (transaction.as_ref(), facts.as_ref()) {
         (Some(route), Some(facts)) => {
             let binding = shared
@@ -207,6 +210,7 @@ pub(super) fn begin(
                         facts,
                         &mut reserved,
                         invocation.input().len(),
+                        Arc::clone(shared_owner.as_ref().expect("transaction owner")),
                     )
                 });
             match binding {
@@ -233,19 +237,21 @@ pub(super) fn begin(
     let length = invocation.input().len();
     reserved.input_buffer().copy_from_slice(invocation.input());
     let handle = reserved.start(length).map_err(status)?;
-    let activation = cleanup.own(
-        handle,
-        Retention {
-            invocation,
-            _route: lease,
-            cache,
-            journal: shared.services.manager.journal(),
-            tenant,
-            scheme: shared.settings.scheme,
-            transaction,
-            clock: Arc::clone(&shared.services.clock),
-        },
-    );
+    let deadline = invocation.deadline().monotonic();
+    let retention = Retention {
+        invocation,
+        _route: lease,
+        cache,
+        journal: shared.services.manager.journal(),
+        tenant,
+        scheme: shared.settings.scheme,
+        transaction,
+        clock: Arc::clone(&shared.services.clock),
+    };
+    let activation = match shared_owner {
+        Some(owner) => cleanup.own_shared(handle, retention, owner, deadline),
+        None => cleanup.own(handle, retention),
+    };
     // This fixed-size owner allocation is covered by the exchange reservation.
     Ok(Begun::Activation(Box::new(activation)))
 }

@@ -18,7 +18,9 @@ impl Mutex {
     }
     pub fn lock(&self) {
         let current = runtime::current_index();
-        assert_ne!(self.owner.get(), Some(current), "recursive logical mutex lock");
+        // A canonical index may be reused after an earlier thread leaked its
+        // guard. A matching number alone cannot establish recursive ownership.
+        // Waiting also preserves the allowed deadlock behavior for true recursion.
         if self.owner.get().is_none() && self.waiters.is_empty() {
             self.owner.set(Some(current));
         } else {

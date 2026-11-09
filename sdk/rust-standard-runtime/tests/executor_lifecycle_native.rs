@@ -222,3 +222,30 @@ fn finite_close_round_limit_refuses_before_an_unclosable_successor_or_future_is_
     assert_eq!(pool.reserve_future(), Err(Error::WorkPending));
     pool.retire().unwrap();
 }
+
+#[test]
+fn successor_reuses_index_only_after_old_worker_tls_drains_without_retiring_its_record() {
+    let mut pool = Lifecycle::new();
+    let (old_generation, old) = worker(&mut pool, 7);
+    let close = pool.request_close().unwrap().unwrap();
+    assert_eq!(close.messages, 1);
+    let next_generation = pool.prepare_generation(1).unwrap();
+    let next = pool.reserve_worker(next_generation).unwrap();
+    assert_eq!(pool.worker_started(next, 7), Err(Error::State));
+    assert!(pool.claim_close(old, old_generation).unwrap());
+    assert_eq!(pool.worker_started(next, 7), Err(Error::State));
+    pool.user_tls_drained(old).unwrap();
+    // The port supplies a real successor selected by the separate PAL and
+    // engine after the old Context's frame/index proof; no slot is freed here.
+    pool.worker_started(next, 7).unwrap();
+    pool.commit_generation(next_generation).unwrap();
+    assert_eq!(pool.retire(), Err(Error::WorkPending));
+    pool.frames_exited(old).unwrap();
+    assert_eq!(pool.frames_exited(old), Err(Error::Stale));
+    let close = pool.request_close().unwrap().unwrap();
+    assert_eq!(close.messages, 1);
+    assert!(pool.claim_close(next, next_generation).unwrap());
+    pool.user_tls_drained(next).unwrap();
+    pool.frames_exited(next).unwrap();
+    pool.retire().unwrap();
+}

@@ -53,6 +53,8 @@ RECIPE=(
     'tools/tests/test_typescript_owned_fixture.py','tools/tests/test_typescript_owned_component.py',
     'tools/tests/fixtures/typescript_native_open_binding.json','tools/tests/fixtures/typescript_native_task_state.json',
     'crates/latent-wasmtime/examples/typescript_runtime_probe.rs',
+    'crates/latent-wasmtime/examples/typescript_runtime_probe/host_turn.rs',
+    'crates/latent-wasmtime/examples/typescript_runtime_probe/host_turn_component.rs',
     'crates/latent-wasmtime/examples/typescript_runtime_probe/owned_results.rs',
     'crates/latent-wasmtime/examples/typescript_runtime_probe/owned_results_runtime.rs',
     'crates/latent-wasmtime/examples/typescript_runtime_probe/backing_controls.rs',

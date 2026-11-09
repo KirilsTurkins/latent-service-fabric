@@ -39,6 +39,9 @@ class Timers final {
   Record* tail_ = nullptr;
   NativeOwner retired_native_{};
   int32_t next_id_ = 1;
+  // IDs never repeat. A value cursor remains valid if a callback clears
+  // and physically retires its own or another timer record.
+  int32_t last_dispatched_id_ = 0;
   bool exhausted_ids_ = false;
   bool stopped_ = false;
   bool callback_dispatched_ = false;
@@ -244,17 +247,24 @@ public:
     callback_dispatched_ = false;
     if (stopped_) return fail(cx, "pump-stopped", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
     if (!collect(cx)) return false;
-    for (auto* record = records_.get(); record; record = record->following.get()) {
-      if (record->closing) continue;
-      if (record->next.cancelledReady())
-        return fail(cx, "unexpected-cancellation", LATENT_RUNTIME_ACTIVATION_ERROR_CANCELLED);
-      if (record->next.resultReady()) {
-        if (record->outcome.is_err)
-          return fail(cx, "next", record->outcome.val.err);
-        const bool result = invoke(cx, *record);
-        callback_dispatched_ = true;
-        if (!result) stopped_ = true;
-        return result;
+    // Select after the last dispatched ID, then wrap to the first ready ID.
+    // This bounds the scan by two traversals and prevents an immediately
+    // rearmed interval from repeatedly taking the first ready slot.
+    for (unsigned pass = 0; pass != 2; ++pass) {
+      for (auto* record = records_.get(); record; record = record->following.get()) {
+        if (record->closing || (record->id > last_dispatched_id_) != (pass == 0)) continue;
+        if (record->next.cancelledReady())
+          return fail(cx, "unexpected-cancellation", LATENT_RUNTIME_ACTIVATION_ERROR_CANCELLED);
+        if (record->next.resultReady()) {
+          if (record->outcome.is_err)
+            return fail(cx, "next", record->outcome.val.err);
+          // `invoke` may destroy this record after its JS callback returns.
+          last_dispatched_id_ = record->id;
+          const bool result = invoke(cx, *record);
+          callback_dispatched_ = true;
+          if (!result) stopped_ = true;
+          return result;
+        }
       }
     }
     if (!records_ && !readiness_.hasJoined()) return readiness_.retire(cx);

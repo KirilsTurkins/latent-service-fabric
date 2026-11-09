@@ -194,8 +194,12 @@ class WaitFrameModelIntegrity(unittest.TestCase):
                 ("QUEUE_HEAP_CONTROL PASS actual-original-regression;actual-corrected-order;"
                  "up;down;ties;root;single-child;signed-min;last;singleton;empty;missing;repeat;model;preimage-negative;repeat-negative;donor-body-negative;donor-layout-negative;donor-node-negative\n"), "",
                 ("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;"
-                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence\n")]
-            report = fibers.wait_frame_model_control(compiler, root / "model")
+                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence;timer-stop-uncertain-completion-fence;nested-stop-count-guard;timer-finally-return-fence;timer-teardown-admission-fence\n")] + [
+                f"EXECUTOR_ACTIVATION_SETTLEMENT PASS {kind} {mode}" for kind in ("managed", "scheduled")
+                for mode in fibers.EXECUTOR_ACTIVATION_SETTLEMENT_CASES]
+            with patch.object(fibers, "timer_teardown_source_control") as teardown_control:
+                report = fibers.wait_frame_model_control(compiler, root / "model")
+            teardown_control.assert_called_once()
             self.assertEqual(report["nativeCallbackPairs"], 2)
             self.assertEqual(report["pluginOrder"], ["runtime", "platform"])
             self.assertEqual(report["asyncLoweredOwnedPairs"], 2)
@@ -208,7 +212,12 @@ class WaitFrameModelIntegrity(unittest.TestCase):
             self.assertEqual(report["timerReadinessSourceControl"],
                              "passed-private-source-ledger-not-guest-qualification")
             self.assertEqual(len(report["jarDigests"]), 10)
-            compile_call, model_call, queue_call, heap_call, timer_compile, timer_call = compiler.run.call_args_list
+            compile_call, model_call, queue_call, heap_call, timer_compile, timer_call = compiler.run.call_args_list[:6]
+            self.assertIn(compiler.sdk / "fibers/conformance/compiler/timer-source-control/ExecutorActivationSettlementControl.java",
+                          timer_compile.args)
+            self.assertEqual(len(compiler.run.call_args_list[6:]), 2 * len(fibers.EXECUTOR_ACTIVATION_SETTLEMENT_CASES))
+            self.assertFalse(report["executorActivationSettlement"]["componentExecutionPerformed"])
+            self.assertFalse(report["executorActivationSettlement"]["actualGuestBindingsUsed"])
             self.assertEqual(compile_call.args[:3], ("wait-frame-model-compile", "javac", "-proc:none"))
             self.assertEqual(compile_call.args[-5:], tuple(compiler.sdk / source for source in (
                 "fibers/compiler/dev/latent/guest/runtime/compiler/SleepContinuations.java",
@@ -225,6 +234,34 @@ class WaitFrameModelIntegrity(unittest.TestCase):
             self.assertEqual(heap_call.args[-1], "dev.latent.guest.runtime.compiler.QueueHeapControl")
             self.assertEqual(timer_compile.args[:3], ("timer-readiness-source-compile", "javac", "-proc:none"))
             self.assertEqual(timer_call.args[-1], "TimerReadinessSourceControl")
+
+    def test_teardown_projection_rejects_source_drift(self):
+        activation = Path(__file__).resolve().parents[1] / "fibers/dev/latent/guest/runtime/Activation.java"
+        source = activation.read_text(encoding="utf-8")
+        projected = fibers.timer_teardown_projection(source)
+        for call in ("afterSample", "beforeStopPublication", "beforeAdmission"):
+            self.assertEqual(projected.count("TeardownHooks." + call + "();"), 1)
+        with self.assertRaisesRegex(ValueError, "projection source drift"):
+            fibers.timer_teardown_projection(source.replace("            if (stopPending) {\n", "", 1))
+
+    def test_old_timer_readiness_receipt_does_not_cover_stop_uncertainty(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+            compiler.run.side_effect = ["", ("WAIT_FRAME_MODEL_CONTROL PASS original-native-negative;"
+                "real-native-callback-pairs;resumed-java-frame-owners;throws-and-standard-owners;"
+                "actual-platform-order;async-lowered-owned-pairs;platform-first-negative;"
+                "shape-and-repeat-negatives;application-identity;"
+                "coroutine-wrappers=6;coroutine-monitors=2;coroutine-native-pairs=2;entry-layout-negative"),
+                ("QUEUE_DEADLINE_MODEL_CONTROL PASS actual-locked-queue;first-sample-delays;"
+                 "second-sample-comparison;owned-clock-hooks=2;negative-shapes=4"),
+                ("QUEUE_HEAP_CONTROL PASS actual-original-regression;actual-corrected-order;"
+                 "up;down;ties;root;single-child;signed-min;last;singleton;empty;missing;repeat;model;preimage-negative;repeat-negative;donor-body-negative;donor-layout-negative;donor-node-negative"), "",
+                ("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;"
+                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence")]
+            with self.assertRaisesRegex(ValueError, "Java timer readiness source control did not complete"):
+                fibers.wait_frame_model_control(compiler, root / "model")
+            self.assertEqual(compiler.run.call_count, 6)
 
     def test_incomplete_queue_heap_receipt_is_not_accepted(self):
         with tempfile.TemporaryDirectory() as directory:

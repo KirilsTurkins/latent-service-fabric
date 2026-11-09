@@ -10,25 +10,25 @@ use crate::ptr::NonNull;
 
 #[derive(Clone, Copy)]
 pub(crate) struct Callbacks {
-    pub(crate) tls_drained: unsafe fn(NonNull<()>, u32),
-    pub(crate) frames_exited: unsafe fn(NonNull<()>, u32),
+    pub(crate) tls_drained: unsafe fn(NonNull<()>, u64),
+    pub(crate) frames_exited: unsafe fn(NonNull<()>, u64),
     pub(crate) release: unsafe fn(NonNull<()>),
 }
 
 pub(crate) struct Lease {
     pointer: NonNull<()>,
     callbacks: Callbacks,
-    canonical: u32,
+    worker: u64,
 }
 impl Lease {
-    pub(crate) fn tls_notification(&self) -> (NonNull<()>, u32, unsafe fn(NonNull<()>, u32)) {
-        (self.pointer, self.canonical, self.callbacks.tls_drained)
+    pub(crate) fn tls_notification(&self) -> (NonNull<()>, u64, unsafe fn(NonNull<()>, u64)) {
+        (self.pointer, self.worker, self.callbacks.tls_drained)
     }
     pub(crate) unsafe fn after_frames(self) {
         // The reaper already authenticated phase/SP/TLS/frame return and freed
         // the actual child linear context. It still owns that child's Task.
         unsafe {
-            (self.callbacks.frames_exited)(self.pointer, self.canonical);
+            (self.callbacks.frames_exited)(self.pointer, self.worker);
             (self.callbacks.release)(self.pointer);
         }
         // release consumes exactly the transferred real Arc reference. Other
@@ -43,18 +43,18 @@ impl Lease {
 /// pointer is an owned Arc::into_raw reference to the same pool registered by
 /// executor, and all three callbacks come from the authenticated captured port.
 /// The TLS/frame callbacks are nonsuspending, cannot run/drop user values, and
-/// cannot submit work. The PAL supplies its saved authenticated child index,
-/// not the root's current index or a guest-supplied resumer. The port maps it
-/// to that exact still-live worker generation. release consumes one reference
-/// on the reaper's
-/// normal Rust frame. The selected compiler's complete graph must authenticate
+/// cannot submit work. The pool supplies its already validated, nonzero worker
+/// key. That key remains unique through real frame retirement even if the
+/// canonical index is recycled. The release callback consumes one reference
+/// on the reaper's normal Rust frame. The selected compiler's complete graph must authenticate
 /// these callsites/callback bodies; this private source API alone does not.
 pub(crate) unsafe fn register(
     executor: executor_root::Handle,
     pointer: NonNull<()>,
+    worker: u64,
     callbacks: Callbacks,
 ) -> io::Result<()> {
-    if existing().is_null() || !executor_root::owns(executor, pointer) {
+    if worker == 0 || existing().is_null() || !executor_root::owns(executor, pointer) {
         return Err(io::Error::from(io::ErrorKind::InvalidInput));
     }
     let canonical = current_index();
@@ -71,7 +71,7 @@ pub(crate) unsafe fn register(
         child.executor = Some(Lease {
             pointer,
             callbacks,
-            canonical,
+            worker,
         });
         Ok(())
     })

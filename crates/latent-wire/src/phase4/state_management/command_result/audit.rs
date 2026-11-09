@@ -27,6 +27,10 @@ pub(super) async fn begin(
             hash.update(b"effect\0");
             hash.update(value.encode_to_vec());
         }
+        contract::Request::ListEffectHistory(value) => {
+            hash.update(b"effect-history\0");
+            hash.update(value.encode_to_vec());
+        }
         contract::Request::CancelCommand(value) => {
             hash.update(b"cancel\0");
             hash.update(value.encode_to_vec());

@@ -132,7 +132,8 @@ class HistoricalInventory(unittest.TestCase):
         from tools import ci_lane_inventory as lanes
         root = Path(__file__).resolve().parents[2]
         model = lanes.workflow_model((root / owner.CURRENT_WORKFLOW).read_text(encoding='utf-8'))
-        self.assertEqual(model['on']['push']['branches'], ['fix/rust-http-current-native-20261109'])
+        self.assertEqual(model['on']['push']['branches'], ['fix/rust-http-current-native-20261109',
+            'fix/rust-http-current-backend-20261109'])
         self.assertIn('workflow_dispatch', model['on'])
         self.assertEqual(model['permissions'], {'contents': 'read'})
         self.assertFalse(model['concurrency']['cancel-in-progress'])
@@ -161,8 +162,27 @@ class HistoricalInventory(unittest.TestCase):
         workflow_contract = json.loads((contract / 'workflow.json').read_bytes())
         job_contract = json.loads((contract / 'jobs/native-controls.json').read_bytes())
         self.assertEqual(workflow_contract['policy'], {key: value for key, value in structural.items() if key != 'jobs'})
-        self.assertEqual(workflow_contract['requiredJobs'], ['native-controls'])
+        self.assertEqual(workflow_contract['requiredJobs'], ['current-backend', 'native-controls'])
         self.assertEqual(job_contract['definition'], structural['jobs']['native-controls'])
+        backend_contract = json.loads((contract / 'jobs/current-backend.json').read_bytes())
+        self.assertEqual(backend_contract['definition'], structural['jobs']['current-backend'])
+        backend = model['jobs']['current-backend']
+        self.assertEqual((backend['needs'], backend['runs-on'], backend['timeout-minutes']),
+            ('native-controls', 'ubuntu-24.04', 30))
+        origin = steps['Record exact same-run native origin']
+        self.assertIn('rust_http_current_backend_handoff.py origin', origin['run'])
+        self.assertNotIn('if', origin)
+        self.assertIn('${{ github.run_id }}-${{ github.run_attempt }}', evidence['with']['name'])
+        self.assertIn('${{ github.run_id }}-${{ github.run_attempt }}', products['with']['name'])
+        following = {step.get('name'): step for step in backend['steps'] if step.get('name')}
+        self.assertEqual(following["Restore this run's current-source evidence"]['with']['name'],
+            evidence['with']['name'])
+        self.assertEqual(following["Restore this run's five bounded native products"]['with']['name'],
+            products['with']['name'])
+        self.assertIn('rust_http_current_backend_handoff.py build',
+            following['Verify same-run source and compile the ordinary backend']['run'])
+        self.assertEqual(following['Retain bounded backend result and build evidence']['if'], 'always()')
+        self.assertFalse(any('development-rust-http-combined' in str(step) for step in backend['steps']))
 
     def test_removed_original_command_is_rejected_even_with_a_matching_test_plan(self):
         source = self.files[owner.WORKFLOW].replace(b"commands.run('c-profile-9'", b"commands.skip('c-profile-9'", 1)

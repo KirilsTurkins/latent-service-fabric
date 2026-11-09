@@ -322,6 +322,27 @@ pub(crate) struct Connection {
     owner_memory: HostMemoryReservation,
     registry: crate::connection_registry::RegistryWeak,
     _owner_metadata: Arc<ProviderMetadata>,
+    #[cfg(test)]
+    write_gate: Mutex<Option<TestWriteGate>>,
+    #[cfg(test)]
+    write_none_once: std::sync::atomic::AtomicBool,
+    #[cfg(test)]
+    fail_audit_once: std::sync::atomic::AtomicBool,
+}
+
+#[cfg(test)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum TestWritePoint {
+    BeforeDispatch,
+    NoProgress,
+    FlushPending,
+    AuditPending,
+}
+#[cfg(test)]
+struct TestWriteGate {
+    point: TestWritePoint,
+    entered: tokio::sync::oneshot::Sender<()>,
+    release: tokio::sync::oneshot::Receiver<()>,
 }
 struct Handle {
     connection: Arc<Connection>,
@@ -340,6 +361,45 @@ struct PendingGuard {
 struct ChunkOwner {
     _connection: Arc<Connection>,
     _window: latent_capabilities::broker::network::StreamChunkReservation,
+}
+
+// One write owns the original input, audit call, and Pending socket through its
+// terminal observation. On an abandoned possible dispatch, stop admission
+// while all of those original owners still exist. Their fields then retire in
+// declaration order; Pending drops its transport before its operation guard.
+struct WriteFlight {
+    input: IoInputChunk,
+    call: ProviderCall,
+    pending: Pending,
+    connection: Arc<Connection>,
+    possible: bool,
+    accepted: u32,
+    accounted: bool,
+}
+impl WriteFlight {
+    fn record_accepted(&mut self, count: u32) {
+        if self.accounted {
+            return;
+        }
+        if count != 0 {
+            let mut state = self
+                .connection
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            state.accepted_write += u64::from(count);
+            state.last_progress = Instant::now();
+        }
+        self.accounted = true;
+    }
+}
+impl Drop for WriteFlight {
+    fn drop(&mut self) {
+        if self.possible {
+            self.record_accepted(self.accepted);
+            self.connection.abort(StreamErrorCode::Cancelled);
+        }
+    }
 }
 impl Drop for PendingGuard {
     fn drop(&mut self) {
@@ -428,6 +488,12 @@ pub(crate) async fn connect(
         owner_memory,
         registry: inner.connections.downgrade(),
         _owner_metadata: owner_metadata,
+        #[cfg(test)]
+        write_gate: Mutex::new(None),
+        #[cfg(test)]
+        write_none_once: std::sync::atomic::AtomicBool::new(false),
+        #[cfg(test)]
+        fail_audit_once: std::sync::atomic::AtomicBool::new(false),
     });
     // Move the confirmed owner reservation into the real Arc; it cannot be
     // refunded by a facade while a pending operation still retains the Arc.
@@ -760,6 +826,79 @@ async fn create_socket(
 }
 
 impl Connection {
+    #[cfg(test)]
+    pub(crate) fn test_write_none_once(&self) {
+        self.write_none_once
+            .store(true, std::sync::atomic::Ordering::Release);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_fail_audit_once(&self) {
+        self.fail_audit_once
+            .store(true, std::sync::atomic::Ordering::Release);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_write_gate(
+        &self,
+        point: TestWritePoint,
+    ) -> (
+        tokio::sync::oneshot::Receiver<()>,
+        tokio::sync::oneshot::Sender<()>,
+    ) {
+        let (entered, reached) = tokio::sync::oneshot::channel();
+        let (release, held) = tokio::sync::oneshot::channel();
+        assert!(self
+            .write_gate
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .replace(TestWriteGate {
+                point,
+                entered,
+                release: held,
+            })
+            .is_none());
+        (reached, release)
+    }
+
+    #[cfg(test)]
+    async fn test_wait_write_gate(&self, point: TestWritePoint) {
+        let gate = {
+            let mut gate = self
+                .write_gate
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            if gate.as_ref().is_some_and(|gate| gate.point == point) {
+                gate.take()
+            } else {
+                None
+            }
+        };
+        let Some(gate) = gate else {
+            return;
+        };
+        if gate.entered.send(()).is_ok() {
+            let _ = gate.release.await;
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_hold_tls_flush(&self) {
+        let mut state = self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        state
+            .socket
+            .as_mut()
+            .expect("live physical owner")
+            .resource()
+            .stream
+            .as_ref()
+            .expect("live transport")
+            .test_hold_tls_flush();
+    }
+
     pub(crate) fn metadata_billing(&self) -> Arc<ProviderMetadata> {
         Arc::clone(&self._owner_metadata)
     }
@@ -1061,11 +1200,26 @@ impl Connection {
             .map_err(Into::into)
     }
     async fn audit(&self, mut call: ProviderCall, success: bool) -> Result<(), StreamError> {
+        self.audit_ref(&mut call, success).await
+    }
+    async fn audit_ref(&self, call: &mut ProviderCall, success: bool) -> Result<(), StreamError> {
         call.record_provider_outcome(if success {
             AuditProviderOutcome::HostCompleted
         } else {
             AuditProviderOutcome::Unknown
         })?;
+        #[cfg(test)]
+        self.test_wait_write_gate(TestWritePoint::AuditPending)
+            .await;
+        #[cfg(test)]
+        if success
+            && self
+                .fail_audit_once
+                .swap(false, std::sync::atomic::Ordering::AcqRel)
+        {
+            return Err(error(StreamErrorCode::Uncertain)
+                .uncertain(self.observe().application_write_attempted));
+        }
         if call.finish_audit().await == CapabilityAuditDurability::OutcomeUnknown {
             return Err(error(StreamErrorCode::Uncertain)
                 .uncertain(self.observe().application_write_attempted));
@@ -1181,81 +1335,120 @@ impl OutboundStream for Handle {
         let connection = Arc::clone(&self.connection);
         let prepared = self.connection.call.prepare_io_future_with(
             move |(pending, input, cost): (Pending, IoInputChunk, CapabilityCallCost)| async move {
-                let mut call = connection.authorize("write", cost).await?;
+                let call = connection.authorize("write", cost).await?;
                 connection.scope.charge_transfer(input.as_ref().len())?;
-                let mut accepted_prefix = 0u32;
-                let result = connection
-                    .wait(&pending, call.deadline(), async {
-                        loop {
-                            recheck_provider(&mut call).await?;
-                            connection
-                                .state
-                                .lock()
-                                .unwrap_or_else(std::sync::PoisonError::into_inner)
-                                .attempted_write = true;
-                            match pending.socket.try_write(input.as_ref()) {
-                                Ok(None) => pending
-                                    .socket
-                                    .writable()
-                                    .await
-                                    .map_err(|_| error(StreamErrorCode::IoFailed))?,
-                                Ok(Some(count)) => {
-                                    accepted_prefix = u32::try_from(count).expect("bounded chunk");
-                                    // Flush only this accepted plaintext prefix.
-                                    // No new write or retry occurs while waiting.
-                                    loop {
-                                        recheck_provider(&mut call).await?;
-                                        if pending.socket.flush_pending()? {
-                                            break;
-                                        }
+                let mut flight = WriteFlight {
+                    input,
+                    call,
+                    pending,
+                    connection: Arc::clone(&connection),
+                    possible: false,
+                    accepted: 0,
+                    accounted: false,
+                };
+                let deadline = flight.call.deadline();
+                let result = {
+                    let pending = &flight.pending;
+                    let input = &flight.input;
+                    let call = &mut flight.call;
+                    let possible = &mut flight.possible;
+                    let accepted = &mut flight.accepted;
+                    connection
+                        .wait(pending, deadline, async {
+                            loop {
+                                recheck_provider(call).await?;
+                                #[cfg(test)]
+                                connection
+                                    .test_wait_write_gate(TestWritePoint::BeforeDispatch)
+                                    .await;
+                                connection
+                                    .state
+                                    .lock()
+                                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                                    .attempted_write = true;
+                                // From this point a panic or dropped future cannot
+                                // prove that the original write had no effect.
+                                *possible = true;
+                                #[cfg(test)]
+                                let result = if connection
+                                    .write_none_once
+                                    .swap(false, std::sync::atomic::Ordering::AcqRel)
+                                {
+                                    Ok(None) // Synthetic definite-no-dispatch port.
+                                } else {
+                                    pending.socket.try_write(input.as_ref())
+                                };
+                                #[cfg(not(test))]
+                                let result = pending.socket.try_write(input.as_ref());
+                                match result {
+                                    Ok(None) => {
+                                        // Each supported transport returns None only
+                                        // after proving no application bytes accepted.
+                                        *possible = false;
+                                        #[cfg(test)]
+                                        connection
+                                            .test_wait_write_gate(TestWritePoint::NoProgress)
+                                            .await;
                                         pending
                                             .socket
                                             .writable()
                                             .await
                                             .map_err(|_| error(StreamErrorCode::IoFailed))?;
                                     }
-                                    break Ok(count);
+                                    Ok(Some(count)) => {
+                                        *accepted = u32::try_from(count).expect("bounded chunk");
+                                        // Flush only this accepted plaintext prefix.
+                                        // No new write or retry occurs while waiting.
+                                        loop {
+                                            recheck_provider(call).await?;
+                                            if pending.socket.flush_pending()? {
+                                                break;
+                                            }
+                                            #[cfg(test)]
+                                            connection
+                                                .test_wait_write_gate(TestWritePoint::FlushPending)
+                                                .await;
+                                            pending
+                                                .socket
+                                                .writable()
+                                                .await
+                                                .map_err(|_| error(StreamErrorCode::IoFailed))?;
+                                        }
+                                        break Ok(count);
+                                    }
+                                    Err(error) => {
+                                        *accepted = error.accepted_prefix_bytes;
+                                        break Err(error);
+                                    }
                                 }
-                                Err(error) => break Err(error),
                             }
-                        }
-                    })
-                    .await
-                    .and_then(|value| value);
+                        })
+                        .await
+                        .and_then(|value| value)
+                };
                 let count = match result {
                     Ok(count) if count != 0 => count,
                     Ok(_) => {
                         connection.abort(StreamErrorCode::IoFailed);
-                        connection.audit(call, false).await?;
+                        connection.audit_ref(&mut flight.call, false).await?;
                         return Err(error(StreamErrorCode::IoFailed).uncertain(true));
                     }
                     Err(mut failure) => {
                         failure.accepted_prefix_bytes =
-                            failure.accepted_prefix_bytes.max(accepted_prefix);
-                        if failure.accepted_prefix_bytes != 0 {
-                            connection
-                                .state
-                                .lock()
-                                .unwrap_or_else(std::sync::PoisonError::into_inner)
-                                .accepted_write += u64::from(failure.accepted_prefix_bytes);
-                        }
+                            failure.accepted_prefix_bytes.max(flight.accepted);
+                        flight.record_accepted(failure.accepted_prefix_bytes);
                         connection.abort(failure.code);
-                        connection.audit(call, false).await?;
+                        connection.audit_ref(&mut flight.call, false).await?;
                         return Err(connection.terminal_error(failure));
                     }
                 };
-                {
-                    let mut state = connection
-                        .state
-                        .lock()
-                        .unwrap_or_else(std::sync::PoisonError::into_inner);
-                    state.accepted_write += count as u64;
-                    state.last_progress = Instant::now();
-                }
-                if let Err(mut failure) = connection.audit(call, true).await {
+                flight.record_accepted(u32::try_from(count).expect("bounded chunk"));
+                if let Err(mut failure) = connection.audit_ref(&mut flight.call, true).await {
                     failure.accepted_prefix_bytes = u32::try_from(count).expect("bounded chunk");
+                    connection.abort(failure.code);
                     return Err(failure.uncertain(true));
                 }
+                flight.possible = false;
                 Ok(u32::try_from(count).expect("bounded chunk"))
             },
         )?;

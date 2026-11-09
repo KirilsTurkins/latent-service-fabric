@@ -69,6 +69,62 @@ async fn assert_aborted_wire(server: &mut TlsStream<TcpStream>) {
 }
 
 #[tokio::test]
+async fn dropped_write_with_synthetically_held_tls_ciphertext_retains_original_owners() {
+    use crate::connection::TestWritePoint;
+
+    for (version, expected) in versions() {
+        let peer = Peer::with_versions(&[version]).await;
+        let fixture = Fixture::for_tls_accounting(peer.config());
+        let (session, control) = fixture.session(5000);
+        let baseline = control.native_session_bytes();
+        let (stream, mut server) = connect_peer(&peer, &fixture, &session, expected).await;
+        let held_read = stream.read(1, None).unwrap();
+        let owner = fixture
+            .provider
+            .inner
+            .connections
+            .snapshot(0)
+            .unwrap()
+            .unwrap();
+        // This test-only wire stall keeps real accepted ciphertext inside the
+        // same rustls connection; it does not claim kernel backpressure.
+        owner.test_hold_tls_flush();
+        let (entered, release) = owner.test_write_gate(TestWritePoint::FlushPending);
+        drop(owner);
+        let mut write = stream.write(b"ONCE".to_vec(), None).unwrap();
+        tokio::select! {
+            result = &mut write => panic!("write completed before the TLS flush gate: {result:?}"),
+            reached = tokio::time::timeout(Duration::from_secs(1), entered) => reached.expect("test gate deadline").unwrap(),
+        }
+        assert_eq!(stream.inspect().accepted_write_bytes, 0);
+        assert_eq!(fixture.provider.usage().unwrap().pending_operations, 2);
+        drop(write);
+        drop(release);
+        assert_eq!(stream.inspect().state, StreamState::Stopping);
+        assert_eq!(stream.inspect().accepted_write_bytes, 4);
+        assert!(stream.inspect().application_write_attempted);
+        assert_eq!(fixture.provider.usage().unwrap().pending_operations, 1);
+        assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+        assert!(control.budget.host_memory_bytes() > baseline);
+        let failure = stream.write(b"RETRY".to_vec(), None).err().unwrap();
+        assert_eq!(failure.code, StreamErrorCode::Cancelled);
+        assert!(failure.may_have_applied);
+        drop(held_read);
+        assert_aborted_wire(&mut server).await;
+        assert_eq!(fixture.provider.usage().unwrap().connections, 0);
+        assert!(
+            tokio::time::timeout(Duration::from_millis(20), peer.listener.accept())
+                .await
+                .is_err()
+        );
+        drop((server, stream, session));
+        fixture.clean().await;
+        drop(fixture);
+        control.assert_native_settled();
+    }
+}
+
+#[tokio::test]
 async fn abort_both_wakes_tls_waiters_and_retains_held_write() {
     for (version, expected) in versions() {
         for attempted in [false, true] {

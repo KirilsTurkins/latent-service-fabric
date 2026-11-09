@@ -57,6 +57,9 @@ ABORT_ANY_VECTORS = (('abort-any-frames', 24, 'abort-any:80:nested:12:ordered'),
                      ('abort-any-fresh', 24, 'abort-any:80:nested:12:ordered'))
 ABORT_DEFAULT_VECTORS = (('abort-default-reason', 26, 'abort-default:shared:2:thrown'),
                          ('abort-default-fresh', 26, 'abort-default:shared:2:thrown'))
+COMBINATOR_VECTORS = (('combinator-retained', 27, 'combinator:retained:3:ordered'),
+                      ('combinator-refusal', 28, 'combinator:native-refusal:closed:recovered'),
+                      ('combinator-fresh', 27, 'combinator:retained:3:ordered'))
 
 
 def project(directory: Path) -> Path:
@@ -281,6 +284,8 @@ def execute(artifact, native, output):
                   for name, mode, expected in ABORT_ANY_VECTORS),
                 *((name, mode, '/conformance/json', expected, 0)
                   for name, mode, expected in ABORT_DEFAULT_VECTORS),
+                *((name, mode, '/conformance/json', expected, 0)
+                  for name, mode, expected in COMBINATOR_VECTORS),
                 ('json', 0, '/conformance/json', '1:200:'+json_bytes(DOMAIN).decode()+':used', 1),
                 ('http404', 0, '/conformance/status/404',
                     '1:404:'+json_bytes({'status':404, 'message':'domain-error'}).decode()+':used', 1),

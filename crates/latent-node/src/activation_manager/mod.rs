@@ -46,7 +46,9 @@ use lifecycle::Lifecycle;
 pub use observation::ActivationObservationSnapshot;
 use observation::{Counters, ObservationServices};
 pub(crate) use transaction::OriginalCancellationMetadataFence;
-pub use transaction::{TransactionActivationAdmission, TransactionCommitControl};
+pub use transaction::{
+    TransactionActivationAdmission, TransactionAdmissionControl, TransactionCommitControl,
+};
 pub use transport_stop::ActivationTransportInterruption;
 use transport_stop::TransportStop;
 

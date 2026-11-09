@@ -21,7 +21,7 @@ impl PolicyStore {
         request.validate()?;
         check_deadline(deadline)?;
         let lease = self.owner.mutation_lease()?;
-        let mut state = self.lock()?;
+        let mut state = self.lock_mut()?;
         let _panic_guard = PoisonOnUnwind(&self.owner);
         let parsed = request
             .document
