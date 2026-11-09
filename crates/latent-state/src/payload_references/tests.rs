@@ -131,6 +131,52 @@ fn physical_inventory_fences_changed_generation_and_detects_missing_index() {
 }
 
 #[test]
+fn physical_inventory_rechecks_view_after_final_checkpoint() {
+    let root = tempfile::tempdir().unwrap();
+    let file = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create_new(true)
+        .open(root.path().join("state.redb"))
+        .unwrap();
+    let database = EmbeddedStore::open_file(
+        file,
+        StoreLimits {
+            cache_bytes: 1024 * 1024,
+            maximum_view_age: std::time::Duration::from_secs(1),
+            ..StoreLimits::default()
+        },
+    )
+    .unwrap();
+    update(
+        &database,
+        None,
+        Some(reference(PayloadOwnerKind::Result, 1)),
+    );
+    let view = database.snapshot().unwrap();
+    let heads = view
+        .scan_after(
+            Family::PayloadReference,
+            b"immutable-payload-retention-head-v1\0",
+            None,
+            2,
+            2 * MAX_REFERENCE_BYTES,
+        )
+        .unwrap();
+    let (key, bytes) = &heads.rows[0];
+    let mut checkpoints = 0;
+    let result = validate_physical_inventory_head_with_checkpoint(&view, key, bytes, &mut || {
+        checkpoints += 1;
+        if checkpoints == 3 {
+            std::thread::sleep(std::time::Duration::from_millis(1100));
+        }
+        Ok(())
+    });
+    assert_eq!(checkpoints, 3);
+    assert_eq!(result, Err(StoreError::SnapshotExpired));
+}
+
+#[test]
 fn physical_inventory_stops_when_original_checkpoint_expires_between_pages() {
     let root = tempfile::tempdir().unwrap();
     let database = store(root.path(), true);

@@ -83,6 +83,7 @@ pub fn validate_physical_inventory_head_with_checkpoint(
         )?;
         if complete {
             checkpoint()?;
+            let _ = view.is_empty()?;
             return Ok(true);
         }
     }
@@ -157,6 +158,7 @@ impl PhysicalInventory {
         if observed > self.expected || (page.resume.is_none() && observed != self.expected) {
             return Err(StoreError::Corrupt);
         }
+        let _ = view.is_empty()?;
         self.observed = observed;
         self.after = page.resume;
         self.finished = self.after.is_none();
