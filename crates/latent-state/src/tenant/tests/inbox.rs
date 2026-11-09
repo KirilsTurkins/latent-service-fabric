@@ -173,6 +173,16 @@ fn ordered_census_captures_all_source_rows_and_refuses_partial_reuse() {
         .unwrap();
     assert_eq!(watermark.generation, 2);
     assert_ne!(watermark.digest, first_watermark.digest);
+    assert_eq!(
+        census::verify_addition(&view, &[quota("alpha")], &another, Some(first_watermark))
+            .unwrap()
+            .inbox_custody,
+        Some(watermark)
+    );
+    assert!(matches!(
+        census::verify_addition(&view, &[quota("alpha")], &another, None),
+        Err(StoreError::Conflict)
+    ));
     let identity = crate::store_identity::StoreIdentity::new("census-store".into()).unwrap();
     let checkpoint =
         crate::store_identity::ExternalCheckpoint::initial(identity.clone(), 1, 1, 100)
@@ -239,4 +249,40 @@ fn ordered_census_captures_all_source_rows_and_refuses_partial_reuse() {
         Err(StoreError::Corrupt)
     );
     assert_eq!(inventory.finish(), Err(StoreError::Corrupt));
+}
+
+#[test]
+fn late_source_transition_poison_cannot_be_ignored() {
+    let fixture = Fixture::new();
+    let quotas = [quota("alpha")];
+    fixture.install(&quotas);
+    let view = fixture.store().snapshot().unwrap();
+    let mut census = TenantCensus::capture(
+        &view,
+        &quotas,
+        GlobalMetadataAllowance {
+            rows: 5,
+            bytes: 256 * 1024,
+        },
+        std::time::Instant::now() + std::time::Duration::from_secs(20),
+    )
+    .unwrap();
+    let key = guard_key();
+    let bytes = view.get(&key).unwrap().unwrap();
+    census
+        .observe(
+            &key,
+            &bytes,
+            census_contribution(&view, &key, &bytes).unwrap(),
+        )
+        .unwrap();
+    assert_eq!(
+        census.track_inbox_addition(&scope(), None),
+        Err(StoreError::Conflict)
+    );
+    assert!(matches!(
+        census.observe(&key, &bytes, TenantCensusContribution::Global),
+        Err(StoreError::Corrupt)
+    ));
+    assert!(matches!(census.finish(), Err(StoreError::Corrupt)));
 }

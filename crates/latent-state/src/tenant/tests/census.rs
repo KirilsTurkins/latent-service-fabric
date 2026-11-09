@@ -73,6 +73,26 @@ pub(crate) fn verify(
     view: &ReadView,
     quotas: &[TenantQuota],
 ) -> Result<TenantCensusReport, StoreError> {
+    verify_inner(view, quotas, None)
+}
+
+pub(crate) fn verify_addition(
+    view: &ReadView,
+    quotas: &[TenantQuota],
+    source: &crate::inbox_scope::InboxScope,
+    before: Option<crate::store_identity::InboxCustodyWatermark>,
+) -> Result<TenantCensusReport, StoreError> {
+    verify_inner(view, quotas, Some((source, before)))
+}
+
+fn verify_inner(
+    view: &ReadView,
+    quotas: &[TenantQuota],
+    addition: Option<(
+        &crate::inbox_scope::InboxScope,
+        Option<crate::store_identity::InboxCustodyWatermark>,
+    )>,
+) -> Result<TenantCensusReport, StoreError> {
     let mut census = TenantCensus::capture(
         view,
         quotas,
@@ -82,6 +102,9 @@ pub(crate) fn verify(
         },
         Instant::now() + Duration::from_secs(20),
     )?;
+    if let Some((source, before)) = addition {
+        census.track_inbox_addition(source, before)?;
+    }
     for family in [
         Family::Namespace,
         Family::State,

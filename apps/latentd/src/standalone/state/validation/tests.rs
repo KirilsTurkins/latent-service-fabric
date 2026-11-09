@@ -217,6 +217,41 @@ fn startup_censuses_source_custody_and_refuses_corrupt_rows() {
         .unwrap()
         .unwrap();
     assert_eq!(observed.generation, 1);
+    assert_eq!(
+        validate_inventory_addition(
+            &view,
+            &fixture.identity,
+            &quotas,
+            &fixture.original,
+            &record,
+            None,
+        ),
+        Ok(observed)
+    );
+    assert_eq!(
+        validate_inventory_addition(
+            &view,
+            &fixture.identity,
+            &quotas,
+            &fixture.original,
+            &record,
+            Some(observed),
+        ),
+        Err(StoreError::Conflict)
+    );
+    let mut changed = record.clone();
+    changed.provider = "other-provider".into();
+    assert_eq!(
+        validate_inventory_addition(
+            &view,
+            &fixture.identity,
+            &quotas,
+            &fixture.original,
+            &changed,
+            None,
+        ),
+        Err(StoreError::Conflict)
+    );
     let checkpoint = latent_state::store_identity::ExternalCheckpoint::initial(
         fixture.identity.clone(),
         1,

@@ -70,6 +70,40 @@ pub(super) fn validate_inventory(
     quotas: &[TenantQuota],
     original: &NativeReservation,
 ) -> Result<Option<latent_state::store_identity::InboxCustodyWatermark>, StoreError> {
+    validate_inventory_inner(view, identity, quotas, original, None)
+}
+
+/// Describes a single addition only after the same complete producer and quota
+/// validation. The caller must separately establish approval and exclusion.
+#[cfg_attr(not(test), allow(dead_code))]
+pub(super) fn validate_inventory_addition(
+    view: &ReadView,
+    identity: &StoreIdentity,
+    quotas: &[TenantQuota],
+    original: &NativeReservation,
+    source: &latent_state::inbox_scope::InboxScope,
+    expected_before: Option<latent_state::store_identity::InboxCustodyWatermark>,
+) -> Result<latent_state::store_identity::InboxCustodyWatermark, StoreError> {
+    validate_inventory_inner(
+        view,
+        identity,
+        quotas,
+        original,
+        Some((source, expected_before)),
+    )?
+    .ok_or(StoreError::Conflict)
+}
+
+fn validate_inventory_inner(
+    view: &ReadView,
+    identity: &StoreIdentity,
+    quotas: &[TenantQuota],
+    original: &NativeReservation,
+    addition: Option<(
+        &latent_state::inbox_scope::InboxScope,
+        Option<latent_state::store_identity::InboxCustodyWatermark>,
+    )>,
+) -> Result<Option<latent_state::store_identity::InboxCustodyWatermark>, StoreError> {
     live(original)?;
     if !quotas.is_empty() {
         tenant::configuration_digest(quotas)?;
@@ -81,6 +115,9 @@ pub(super) fn validate_inventory(
     if only_initial_identity(view, original)? {
         // An existing matching identity still cannot recreate a lost external
         // checkpoint. That later decision consumes the affine kernel witness.
+        if addition.is_some() {
+            return Err(StoreError::Conflict);
+        }
         live(original)?;
         return Ok(None);
     }
@@ -88,6 +125,9 @@ pub(super) fn validate_inventory(
         return Err(StoreError::UnsupportedFormat);
     }
     if quotas.is_empty() {
+        if addition.is_some() {
+            return Err(StoreError::Conflict);
+        }
         validate_global_bootstrap(view, original)?;
         return Ok(None);
     }
@@ -97,6 +137,9 @@ pub(super) fn validate_inventory(
         tenant::INSTALLED_GLOBAL_ALLOWANCE,
         original.original_deadline(),
     )?;
+    if let Some((source, before)) = addition {
+        census.track_inbox_addition(source, before)?;
+    }
     latent_commit::atomic::validate_view_observed_with_checkpoint(
         view,
         foreign_row,
