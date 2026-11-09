@@ -644,6 +644,62 @@ class GoRuntimeOverlayTests(unittest.TestCase):
                     runtime.prepare_compiler(goroot, output)
                 self.assertFalse(output.exists())
 
+        # Wasm starts with one logical CPU and the public setter clamps to one.
+        # Both files participate in preparation and the final private overlay.
+        pinned = {
+            "runtime/os_wasm.go": "17708274aaf6e4c15b6db7a25ccbae1222e1e265dec5dfc1906ebd3bb343c25a",
+            "runtime/debug.go": "01d5f04213a154af89bee99c8acfafa16ff116b83765126ad970c55f4df1d222",
+        }
+        for name, expected_digest in pinned.items():
+            self.assertEqual(runtime.UPSTREAM_PREIMAGES.get(name), expected_digest)
+            self.assertEqual(runtime.PREIMAGES.get(name), expected_digest)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            goroot, original, upstream = self.fixture(root, prepared=False)
+            (goroot / "VERSION").write_text("go1.27.3\n")
+            samples = {
+                "runtime/os_wasm.go": b"package runtime\nfunc getCPUCount() int32 { return 1 }\n",
+                "runtime/debug.go": b"package runtime\nfunc GOMAXPROCS(n int) int { return n }\n",
+            }
+            for name, data in samples.items():
+                (goroot / "src" / name).write_bytes(data)
+                upstream[name] = hashlib.sha256(data).hexdigest()
+            patched = sources()
+            runtime.install_scheduler(patched)
+            expected = {name: hashlib.sha256(text.encode()).hexdigest() for name, text in patched.items()}
+            expected.update({name: hashlib.sha256(data).hexdigest() for name, data in samples.items()})
+            with patch.dict(runtime.UPSTREAM_PREIMAGES, upstream, clear=True), \
+                    patch.dict(runtime.PREIMAGES, expected, clear=True):
+                prepared = runtime.prepare_compiler(goroot, root / "prepared")
+                overlay = runtime.overlay(prepared, root / "overlay")
+                replacements = json.loads(overlay.read_text())["Replace"]
+                comparison = runtime.scheduler_overlay(prepared, root / "comparison")
+                compared = json.loads(comparison.read_text())["Replace"]
+                for index, (name, data) in enumerate(samples.items()):
+                    source = goroot / "src" / name
+                    copied = prepared / "src" / name
+                    self.assertEqual(copied.read_bytes(), data)
+                    self.assertEqual(Path(replacements[str(copied)]).read_text(), data.decode())
+                    self.assertEqual(Path(compared[str(copied)]).read_text(), data.decode())
+                    source.write_bytes(data + b"// drift\n")
+                    denied_prepare = root / ("denied-prepare-" + str(index))
+                    with self.assertRaisesRegex(ValueError, "go-runtime-source-drift"):
+                        runtime.prepare_compiler(goroot, denied_prepare)
+                    self.assertFalse(denied_prepare.exists())
+                    source.write_bytes(data)
+                    copied.write_bytes(data + b"// drift\n")
+                    with self.assertRaisesRegex(ValueError, "go-runtime-source-drift"):
+                        runtime.checked_sources(prepared, runtime.PREIMAGES)
+                    denied_overlay = root / ("denied-overlay-" + str(index))
+                    with self.assertRaisesRegex(ValueError, "go-runtime-source-drift"):
+                        runtime.overlay(prepared, denied_overlay)
+                    self.assertFalse(denied_overlay.exists())
+                    denied_comparison = root / ("denied-comparison-" + str(index))
+                    with self.assertRaisesRegex(ValueError, "go-runtime-source-drift"):
+                        runtime.scheduler_overlay(prepared, denied_comparison)
+                    self.assertFalse(denied_comparison.exists())
+                    copied.write_bytes(data)
+
     def test_scheduler_and_lsf_overlays_preserve_sources_and_separate_wasi_authority(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
