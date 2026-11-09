@@ -49,7 +49,8 @@ struct HandleValueArray {
 inline int UndefinedHandleValue = 0;
 inline int NullHandleValue = 0;
 inline void JobQueueMayNotBeEmpty(JSContext*) {}
-inline bool Call(JSContext*, int, HandleObject, HandleValueArray, RootedValue*) { return call_succeeds; }
+inline void (*call_observer)(HandleObject) = nullptr;
+inline bool Call(JSContext*, int, HandleObject o, HandleValueArray, RootedValue*) { if (call_observer) call_observer(o); return call_succeeds; }
 inline void PrepareForFullGC(JSContext*) {}
 enum class GCOptions { Normal };
 enum class GCReason { API };
