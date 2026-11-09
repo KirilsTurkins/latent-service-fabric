@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 /** Failure/retirement observations supplement the unchanged JDK reference. */
 public final class TimerModelMain {
     public static void main(String[] args) throws Exception {
+        TimerValidationAdmissionControl.check();
         Main.main(args);
         Activation.denyNext = "Executor";
         try { new Timer("denied", true); throw new AssertionError("missing-executor-admission"); }

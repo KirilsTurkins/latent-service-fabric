@@ -480,14 +480,16 @@ def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
     fixture = compiler.sdk / "fibers/conformance"
     application = fixture / "timers/Capsule.java"
     main = fixture / "timers/Main.java"
+    validation = fixture / "timers/TimerValidationOrder.java"
     private = fixture / "compiler/standard-timer-control"
     sources = [private / name for name in (
-        "TimerModelMain.java", "TimerActiveOwnerControl.java", "dev/latent/generated/Bindings.java",
-        "dev/latent/guest/runtime/Activation.java")]
+        "TimerModelMain.java", "TimerActiveOwnerControl.java", "TimerValidationAdmissionControl.java",
+        "dev/latent/generated/Bindings.java", "dev/latent/guest/runtime/Activation.java")]
+    clock_sources = [private / "FakeClock.java", private / "ClockOrderControl.java"]
     ports = [compiler.sdk / ("fibers/dev/latent/guest/runtime/util/" + name + ".java")
              for name in ("Timer", "TimerTask")]
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
-              for path in (application, main, *sources, *ports)}
+              for path in (application, main, validation, *sources, *ports, *clock_sources)}
     output.mkdir()
     mapped = output / "Capsule.java"
     text = read_file(application).decode("utf-8")
@@ -496,8 +498,15 @@ def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
         if text.count(original) != 1: raise ValueError("Java timer source control import is ambiguous")
         text = text.replace(original, "import dev.latent.guest.runtime.util." + name + ";")
     mapped.write_text(text, encoding="utf-8")
+    mapped_validation = output / "TimerValidationOrder.java"
+    text = read_file(validation).decode("utf-8")
+    for name in ("Timer", "TimerTask"):
+        original = "import java.util." + name + ";"
+        if text.count(original) != 1: raise ValueError("Java timer validation control import is ambiguous")
+        text = text.replace(original, "import dev.latent.guest.runtime.util." + name + ";")
+    mapped_validation.write_text(text, encoding="utf-8")
     compiler.run("standard-timer-source-compile", "javac", "-proc:none", "--release", "25",
-                 "-d", output, mapped, main, *sources, *ports)
+                 "-d", output, mapped, mapped_validation, main, *sources, *ports)
     expected = ["42 42 42 42",
         "TIMER_SOURCE_CONTROL PASS reference-observables;queue-rollback;cancel-drain;idle-finally;no-live-owners"]
     for iteration in range(3):
@@ -514,8 +523,26 @@ def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
             raise ValueError("Java timer active-owner control did not complete: " + case)
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError("Java timer control inputs changed during execution")
+    # Replace only the clock read in a private source port to verify invalid
+    # periods are rejected before the scheduler consults wall time.
+    clock = output / "clock-control"
+    clock.mkdir()
+    timer = read_file(ports[0]).decode("utf-8")
+    if timer.count("System.currentTimeMillis()") != 2:
+        raise ValueError("Java timer clock control source is ambiguous")
+    clock_timer = clock / "Timer.java"
+    clock_timer.write_text(timer.replace("System.currentTimeMillis()", "FakeClock.currentTimeMillis()"), encoding="utf-8")
+    compiler.run("standard-timer-clock-compile", "javac", "-proc:none", "--release", "25", "-d", clock,
+                 clock_timer, ports[1], *clock_sources, sources[-2], sources[-1])
+    result = compiler.run("standard-timer-clock-control", "java", "-Xmx256m", "-cp", clock, "ClockOrderControl")
+    if result.strip() != "TIMER_CLOCK_ORDER PASS":
+        raise ValueError("Java timer clock ordering control did not complete")
+    if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
+        raise ValueError("Java timer control inputs changed during execution")
     return {"status": "SDK-source-controls-passed", "iterations": 3, "modes": [0, 1, 2, 3],
-            "sourceInputs": inputs, "componentExecutionPerformed": False, "actualGuestBindingsUsed": False}
+            "sourceInputs": inputs, "validationOrder": {"observations": 35, "referenceAndSource": "passed",
+                "preAdmission": "passed", "syntheticClock": "passed"},
+            "componentExecutionPerformed": False, "actualGuestBindingsUsed": False}
 
 
 def standard_timer_model_control(compiler: Compiler, output: Path) -> dict:
@@ -1026,7 +1053,8 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
             reference_sources = [selected / 'reference' / name for name in
                 ('dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
         elif fixture == 'timers':
-            reference_sources = [selected / 'reference/dev/latent/generated/Bindings.java']
+            reference_sources = [selected / 'reference/dev/latent/generated/Bindings.java',
+                                 selected / 'TimerValidationOrder.java']
         reference_options = ['-cp', os.pathsep.join(map(str, reference_jars))] if reference_jars else []
         compiler.run("reference-jdk-compile", "javac", "-proc:none", *reference_options, "-d", control, source, main, *reference_sources)
         report["reference"] = []
