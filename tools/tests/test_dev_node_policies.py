@@ -291,6 +291,46 @@ class PolicyRecovery(unittest.TestCase):
         self.assertEqual(client.call.call_count, 1)
         self.assertIsNone(self.controller.read()["pending"])
 
+    def test_new_test_grant_sends_the_journaled_bytes_even_if_review_file_changes(self):
+        for kind in ("policy", "provider-binding"):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary) / "test-intent"
+                root.mkdir(mode=0o700)
+                controller = journal.Journal(root, "node", "examples",
+                    settle=lambda operation, result: policy_operations.settle(root, operation, result))
+                document = {"formatVersion": 1, "tenant": "examples", "selected": kind}
+                expected = common.encode(document)
+                replacement = {"formatVersion": 1, "tenant": "examples", "selected": "replacement"}
+                applied = []
+
+                def call(*arguments, **options):
+                    if "get" in arguments:
+                        return {"category": "not-found", "outcomeKnown": True, "data": {}}
+                    pending = controller.read()["pending"]
+                    self.assertEqual(common.encode(pending["intent"]["document"]), expected)
+                    state.atomic(root, "selected-test-policy.json", replacement)
+                    document["selected"] = "caller-mutated"
+                    path = arguments[arguments.index("--file") + 1]
+                    payload = options["stdin"] if path == "-" else Path(path).read_bytes()
+                    applied.append(payload)
+                    receipt = {"operationId": pending["id"], "tenant": "examples", "id": "test-allow",
+                        "recordKind": kind, "generation": "1", "contentDigest": "sha256:" + "c" * 64,
+                        "revoked": False}
+                    return {"category": "success", "outcomeKnown": True,
+                        "data": {"receipt": receipt, "policy": {**receipt, "document": common.decode(payload)}}}
+
+                client = Mock()
+                client.call.side_effect = call
+                failure = None
+                try:
+                    policy_operations.apply(root, client, controller, "test-allow", kind, document)
+                except common.DevError as error:
+                    failure = error
+                self.assertEqual(applied, [expected])
+                self.assertIsNone(failure)
+                self.assertIsNone(controller.read()["pending"])
+                self.assertEqual(client.call.call_count, 2)
+
     def test_lookup_queries_current_document_only_after_retained_operation(self):
         client = Mock()
         response = self.response("operation")
