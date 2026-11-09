@@ -1,5 +1,6 @@
 """Fail-closed controls for the fired Go one-shot diagnostic campaign."""
 import json
+import re
 import tempfile
 from pathlib import Path
 from types import SimpleNamespace
@@ -179,6 +180,11 @@ class FiredTimerControls(unittest.TestCase):
             self.assertEqual((seen['sdk'] / 'runtime/timer_async.go.in').read_bytes(), probe.derive(original))
             self.assertEqual(original_path.read_bytes(), original)
             self.assertEqual(record['diagnosticRuntime']['originalTimerAsyncDigest'], 'sha256:' + owner.digest(original))
+            # The signed Rust fixture is a separate consumer of this receipt.
+            # A mismatched identity otherwise fails only after the guest build.
+            rust = (ROOT / 'crates/latent-wasmtime/tests/local_service/runtime/go.rs').read_text(encoding='utf-8')
+            expected = re.findall(r'record\["diagnosticRuntime"\]\["kind"\]\s*,\s*"([^"]+)"', rust)
+            self.assertEqual(expected, [record['diagnosticRuntime']['kind']])
             (output / 'wit').mkdir(exist_ok=True)
             (output / 'wit/world.wit').write_bytes((ROOT / 'sdk/go-guest/runtime/timer-fired-conformance/world.wit').read_bytes())
             owner.compile_identity(output, ROOT, 'go-component-activation-v7', 'timer-fired')
