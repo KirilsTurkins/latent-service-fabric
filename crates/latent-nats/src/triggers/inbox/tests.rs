@@ -64,6 +64,35 @@ fn input_identity_survives_consumer_and_binding_display_changes_but_refuses_payl
 }
 
 #[test]
+fn qualified_delivery_exposes_exact_origin_without_changing_existing_binding() {
+    let config = config();
+    let binding = &config.bindings[0];
+    let transaction = binding.transaction.as_ref().unwrap();
+    let original = delivery("input-broker", binding, 42, b"input");
+    let incarnation = transaction.incarnation.to_le_bytes();
+    let expected = identity(
+        b"lsf-jetstream-input-scope-v1\0",
+        &[
+            binding.tenant.as_bytes(),
+            b"input-broker",
+            binding.stream.as_bytes(),
+            transaction.qualification.stream_created.as_bytes(),
+            transaction.processing_scope.as_bytes(),
+            transaction.namespace.as_bytes(),
+            &incarnation,
+        ],
+    );
+    assert_eq!(original.identity().binding, expected.hex());
+    assert_eq!(original.scope().input_binding().unwrap(), expected.hex());
+    assert_eq!(original.scope().provider, "input-broker");
+    assert_eq!(original.scope().stream, binding.stream);
+    assert_eq!(
+        original.scope().stream_created,
+        transaction.qualification.stream_created
+    );
+}
+
+#[test]
 fn transactional_request_metadata_survives_trigger_display_rename() {
     let mut config = config();
     let deadline = latent_core::IncomingDeadline::new(

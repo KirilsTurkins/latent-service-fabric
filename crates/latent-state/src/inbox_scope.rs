@@ -68,6 +68,31 @@ impl InboxScope {
         })
     }
 
+    /// Derive the existing trusted-input scope identifier from the exact
+    /// descriptive source. This digest does not authorize creating the record.
+    pub fn input_binding(&self) -> Result<String, StoreError> {
+        self.validate()?;
+        let incarnation = self.incarnation.to_le_bytes();
+        let mut hash = Sha256::new();
+        hash.update(b"lsf-jetstream-input-scope-v1\0");
+        for part in [
+            self.tenant.as_bytes(),
+            self.provider.as_bytes(),
+            self.stream.as_bytes(),
+            self.stream_created.as_bytes(),
+            self.processing_scope.as_bytes(),
+            self.namespace.as_bytes(),
+            incarnation.as_slice(),
+        ] {
+            hash.update((part.len() as u64).to_le_bytes());
+            hash.update(part);
+        }
+        Ok(format!(
+            "{:x}",
+            latent_core::digest::HexDigest(hash.finalize())
+        ))
+    }
+
     fn encode(&self) -> Result<Vec<u8>, StoreError> {
         self.validate()?;
         let mut bytes = serde_json::to_vec(self).map_err(|_| StoreError::Invalid)?;

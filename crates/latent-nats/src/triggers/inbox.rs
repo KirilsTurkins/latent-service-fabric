@@ -76,6 +76,7 @@ pub struct InboxDelivery {
     processing_scope: String,
     client_id: String,
     identity: InboxIdentity,
+    scope: latent_state::inbox_scope::InboxScope,
 }
 impl InboxDelivery {
     #[must_use]
@@ -101,6 +102,12 @@ impl InboxDelivery {
     #[must_use]
     pub fn identity(&self) -> &InboxIdentity {
         &self.identity
+    }
+
+    /// Describes the qualified input origin. It is not a custody grant.
+    #[must_use]
+    pub fn scope(&self) -> &latent_state::inbox_scope::InboxScope {
+        &self.scope
     }
 
     pub(super) fn capture(
@@ -141,19 +148,18 @@ fn capture(
     if sequence == 0 || !text(provider, 128) || qualified.binding != binding_identity(binding)? {
         return Err(EventError::PermissionDenied);
     }
-    let incarnation = selected.incarnation.to_le_bytes();
-    let scope = identity(
-        b"lsf-jetstream-input-scope-v1\0",
-        &[
-            binding.tenant.as_bytes(),
-            provider.as_bytes(),
-            binding.stream.as_bytes(),
-            selected.qualification.stream_created.as_bytes(),
-            selected.processing_scope.as_bytes(),
-            selected.namespace.as_bytes(),
-            &incarnation,
-        ],
-    );
+    let scope = latent_state::inbox_scope::InboxScope {
+        tenant: binding.tenant.clone(),
+        namespace: selected.namespace.clone(),
+        incarnation: selected.incarnation,
+        processing_scope: selected.processing_scope.clone(),
+        provider: provider.into(),
+        stream: binding.stream.clone(),
+        stream_created: selected.qualification.stream_created.clone(),
+    };
+    let binding_id = scope
+        .input_binding()
+        .map_err(|_| EventError::InvalidEvent)?;
     let payload_digest = Identity::parse_hex(&format!(
         "{:x}",
         latent_core::digest::HexDigest(Sha256::digest(payload))
@@ -161,7 +167,7 @@ fn capture(
     .map_err(|_| EventError::InvalidEvent)?;
     let identity = InboxIdentity {
         provider: provider.into(),
-        binding: scope.hex(),
+        binding: binding_id,
         message: sequence.to_string(),
         payload_digest,
     };
@@ -175,6 +181,7 @@ fn capture(
         processing_scope: selected.processing_scope.clone(),
         client_id,
         identity,
+        scope,
     })
 }
 
