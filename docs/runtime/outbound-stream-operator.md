@@ -81,6 +81,13 @@ double, including refused-check retention. That packaging observation is not
 real `latentd` installation or controlled-peer stream qualification; its receipt
 keeps `realLatentd: false` and `providerReadiness: "not-observed"`.
 
+Use a `latent` CLI built with this source for operator commands: the operator sends the retained
+client-file digest through the existing temporary-file-backed stdin owner, and the CLI checks the actual
+opened bytes before using credentials or issuing a request. An older CLI that
+does not support this check refuses the command. This binds the bytes consumed
+by each trusted CLI process; it does not attest the selected executable or
+undo an already-dispatched operation.
+
 For an already installed provider, put this specification in a private
 directory. Use the actual provider descriptor from the node startup record and
 the exact signed publication selected for the consumer:

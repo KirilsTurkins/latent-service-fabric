@@ -5,7 +5,7 @@ from pathlib import Path
 import time
 
 from . import process
-from .common import DevError, decode, require
+from .common import DevError, decode, require, sha
 
 
 # Native CLI Category::exit_code is a closed, one-to-one result contract.
@@ -22,13 +22,23 @@ class Client:
         self.deadline = deadline
         self.observer, self.calls, self.failed_call = observer, 0, None
         self.observation_failed = False
+        self.expected_config_digest = None
+
+    def pin_config(self, expected_digest: str) -> None:
+        expected_digest = sha(expected_digest)
+        require(self.expected_config_digest in (None, expected_digest), "operator-client-already-bound")
+        self.expected_config_digest = expected_digest
 
     def call(self, *arguments: str, timeout: float = 30, check=None) -> dict:
         if self.deadline is not None:
             timeout = min(timeout, self.deadline - time.monotonic())
             require(timeout > 0, "node-test-run-deadline")
+        pin = [] if self.expected_config_digest is None else ["--expect-config-digest-stdin"]
+        input_options = {} if self.expected_config_digest is None else {
+            "stdin": (self.expected_config_digest + "\n").encode("ascii")}
         result = process.run([str(self.binary), "--config", str(self.config), "--output", "json",
-                               *map(str, arguments)], self.directory, timeout=timeout, maximum=1048576, check=check)
+                               *pin, *map(str, arguments)], self.directory, timeout=timeout,
+                             maximum=1048576, check=check, **input_options)
         self.calls += 1
         value, failure = None, None
         try:

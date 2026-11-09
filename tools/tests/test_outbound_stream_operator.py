@@ -5,6 +5,7 @@ import copy
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
 import tempfile
 import unittest
@@ -12,6 +13,7 @@ from unittest.mock import patch
 
 from tools import outbound_stream_operator as stream
 from tools.dev_workflow import paths, state
+from tools.dev_workflow.client import Client
 from tools.dev_workflow.common import DevError, digest, encode
 
 
@@ -25,6 +27,7 @@ class PolicyRpc:
         self.calls = []
         self.uncertain = self.throws = False
         self.inspect_authority = False
+        self.expected_config_digest = None
         self.inspection = {
             "capabilities": [{"id": stream.CAPABILITY, "contract": stream.CAPABILITY,
                 "provider": stream.PROFILE, "operations": list(stream.OPERATIONS),
@@ -40,6 +43,9 @@ class PolicyRpc:
             "nextPageToken": None, "state": "compiled-plan",
             "tenantUsage": {"scope": "tenant", "counters": {}, "unavailable": []},
             "nodeUsage": {"scope": "node", "counters": {}, "unavailable": ["outbound-stream-inspection-unavailable"]}}
+
+    def pin_config(self, expected_digest):
+        self.expected_config_digest = expected_digest
 
     def call(self, *arguments):
         args = list(map(str, arguments))
@@ -614,6 +620,121 @@ class StreamOperator(unittest.TestCase):
                 with patch("tools.dev_workflow.client.process.run",return_value=response):
                     with self.assertRaisesRegex(DevError,"operator-response-exit-mismatch"):
                         selected.call("policy","get")
+
+
+    def test_changed_protected_client_between_observation_and_mutation_refuses(self):
+        operator = self.operator()
+        original = self.config.read_bytes()
+        changed = original + b' '
+        original_call = self.client.call
+        consumed = []
+        changed_once = False
+
+        def call(*args):
+            nonlocal changed_once
+            if 'apply' in args:
+                consumed.append(self.config.read_bytes())
+            result = original_call(*args)
+            if 'get' in args and not changed_once:
+                self.config.write_bytes(changed)
+                changed_once = True
+            return result
+
+        with patch.object(self.client, 'call', side_effect=call):
+            with self.assertRaisesRegex(DevError, 'client-identity-changed'):
+                operator.grant()
+        self.assertEqual(consumed, [])
+        self.assertEqual(self.mutations(), [])
+        self.assertEqual(operator._records(), {})
+
+    def test_child_open_refusal_does_not_dispatch_or_repeat_a_policy_mutation(self):
+        class GuardedRpc(PolicyRpc):
+            def call(inner, *args):
+                if 'apply' in args:
+                    # Model replacement after the parent's last precheck and
+                    # after journal.begin, but before the child opens its file.
+                    inner.config.write_bytes(inner.config.read_bytes() + b' ')
+                    if digest(inner.config.read_bytes()) != inner.expected_config_digest:
+                        return {'outcomeKnown': True, 'requestDispatched': False,
+                                'category': 'local-error', 'data': {}}
+                return super().call(*args)
+
+        self.client = GuardedRpc(self.config)
+        operator = self.operator()
+        with self.assertRaisesRegex(DevError, 'operator-request-rejected'):
+            operator.grant()
+        self.assertEqual(self.client.records, {})
+        self.assertEqual(operator._records(), {})
+        self.assertEqual(self.mutations(), [])
+        self.assertIsNone(operator.journal.read()['pending'])
+        self.assertEqual(len(operator.journal.read()['history']), 1)
+
+    def test_dispatched_unknown_stays_pending_if_config_changes_before_recovery(self):
+        operator = self.operator()
+        original = self.config.read_bytes()
+        call = self.client.call
+        self.client.uncertain = True
+
+        def dispatch(*args):
+            result = call(*args)
+            if 'apply' in args:
+                self.config.write_bytes(original + b' ')
+            return result
+
+        with patch.object(self.client, 'call', side_effect=dispatch), self.assertRaises(DevError) as failure:
+            operator.grant()
+        self.assertTrue(failure.exception.uncertain)
+        pending = operator.journal.read()['pending']
+        self.assertIsNotNone(pending)
+        with self.assertRaisesRegex(DevError, 'client-identity-changed'):
+            operator.recover()
+        self.assertEqual(operator.journal.read()['pending'], pending)
+        self.assertEqual(len(self.mutations()), 1)
+        self.config.write_bytes(original)
+        operator.recover()
+        self.assertIsNone(operator.journal.read()['pending'])
+        self.assertEqual(len(self.mutations()), 1)
+
+    def test_owned_process_passes_digest_on_stdin_and_scripted_child_checks_its_open(self):
+        import tools.dev_workflow.client as client_module
+
+        original = self.config.read_bytes()
+        expected = digest(original)
+        selected = Client(sys.executable, self.config, self.operator_root)
+        selected.pin_config(expected)
+        runner = client_module.process.run
+        observed = []
+        mutate = False
+        script = r'''
+import hashlib, json, pathlib, sys
+args = sys.argv[1:]
+path = pathlib.Path(args[args.index('--config') + 1])
+pin = sys.stdin.buffer.read(72)
+actual = ('sha256:' + hashlib.sha256(path.read_bytes()).hexdigest() + '\n').encode('ascii')
+matched = '--expect-config-digest-stdin' in args and pin == actual
+print(json.dumps({'schemaVersion':'latent.cli.result.v1', 'outcomeKnown':True,
+                  'requestDispatched':False, 'category':'success' if matched else 'local-error',
+                  'data':{'matched':matched}}))
+sys.exit(0 if matched else 2)
+'''
+
+        def run_child(argv, cwd, **kwargs):
+            observed.append((list(argv), kwargs['stdin']))
+            if mutate:
+                self.config.write_bytes(original + b' ')
+            return runner([sys.executable, '-c', script, *argv[1:]], cwd, **kwargs)
+
+        with patch.object(client_module.process, 'run', side_effect=run_child):
+            self.assertTrue(selected.call('policy', 'get')['data']['matched'])
+            mutate = True
+            refused = selected.call('policy', 'get')
+        self.assertEqual(refused['category'], 'local-error')
+        self.assertFalse(refused['requestDispatched'])
+        self.assertEqual([item[1] for item in observed], [(expected + '\n').encode()] * 2)
+        self.assertTrue(all('--expect-config-digest-stdin' in argv for argv, _ in observed))
+        self.assertTrue(all(expected not in argv for argv, _ in observed))
+        with self.assertRaisesRegex(DevError, 'operator-client-already-bound'):
+            selected.pin_config(digest(original + b' '))
 
 
 class StreamConfiguration(unittest.TestCase):
