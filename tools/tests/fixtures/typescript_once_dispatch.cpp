@@ -11,6 +11,7 @@ struct Listener {
   bool once = false, removed = false, stop = false, fail_lookup = false;
 };
 struct JSContext {};
+static bool JS_IsExceptionPending(JSContext*) { return false; }
 struct JSObject {};
 static bool JS_GetProperty(JSContext*, JSObject*, const char*, int*) { return false; }
 struct List {
@@ -20,12 +21,14 @@ struct List {
   }
 };
 struct Target { List list; };
-enum class EventFlag { StopImmediatePropagation };
+enum class EventFlag { StopImmediatePropagation, InPassiveListener };
 struct Event {
+  using EventFlag = ::EventFlag;
   Target* target;
   bool stopped = false;
   static bool has_flag(Event* event, EventFlag) { return event->stopped; }
   static Target* current_target(Event* event) { return event->target; }
+  static void set_flag(Event*, EventFlag, bool) {}
 };
 #define MOZ_ASSERT(condition) do { if (!(condition)) std::abort(); } while (false)
 struct EventTarget {

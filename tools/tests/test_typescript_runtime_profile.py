@@ -399,13 +399,25 @@ class TypeScriptAbortSourceTests(unittest.TestCase):
         boundary = b'JSObject *AbortSignal::create_with_timeout('
         original = raw[raw.index(first):raw.index(boundary)]
         changed = after[after.index(first):after.index(boundary)]
-        null_check = b'  if (!event) return false;\n'
-        self.assertEqual(changed.count(null_check), 1)
-        self.assertEqual(changed.replace(null_check, b'', 1), original)
+        # Check the precise failure fences without pinning the former bug that
+        # allowed a successful native boolean to hide a pending exception.
+        for replacement, previous in (
+                (b'  if (!event || JS_IsExceptionPending(cx)) return false;\n', b''),
+                (b'create_abort_exception(cx, "AbortError")',
+                 b'dom_exception::DOMException::create(cx, "AbortError", "AbortError")'),
+                (b'  if (JS_IsExceptionPending(cx)) return false;\n', b''),
+                (b'    if (!algorithm->run(cx) || JS_IsExceptionPending(cx)) {\n',
+                 b'    if (!algorithm->run(cx)) {\n'),
+                (b'  const bool dispatched = EventTarget::dispatch_event(cx, self, event_val, &res_val);\n'
+                 b'  return dispatched && !JS_IsExceptionPending(cx);\n',
+                 b'  return EventTarget::dispatch_event(cx, self, event_val, &res_val);\n')):
+            self.assertEqual(changed.count(replacement), 1)
+            changed = changed.replace(replacement, previous, 1)
+        self.assertEqual(changed, original)
         following = b'// https://dom.spec.whatwg.org/#dom-abortsignal-any'
         self.assertEqual(raw[raw.index(following, raw.index(boundary)):],
                          after[after.index(following, after.index(boundary)):])
-        self.assertIn(b'DOMException::create(cx, "TimeoutError", "TimeoutError")', after)
+        self.assertIn(b'create_abort_exception(cx, "TimeoutError")', after)
 
     def test_pinned_abort_source_change_is_rejected_before_derivation(self):
         from tools.typescript_guest.abort_engine import derive_abort_timeout
@@ -420,7 +432,7 @@ class TypeScriptAbortSourceTests(unittest.TestCase):
         start = after.index(b'bool AbortSignal::set_reason(')
         end = after.index(b'JSObject *AbortSignal::create(', start)
         body = after[start:end]
-        allocation = body.index(b'DOMException::create(cx, "AbortError", "AbortError")')
+        allocation = body.index(b'create_abort_exception(cx, "AbortError")')
         failure = body.index(b'if (!exception) {\n      return false;\n    }', allocation)
         slot = body.index(b'SetReservedSlot(self, std::to_underlying(Slots::Reason)', failure)
         self.assertLess(allocation, failure)

@@ -80,8 +80,37 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
     abort_start = raw.index(b'bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason) {')
     abort_end = raw.index(b'// https://dom.spec.whatwg.org/#run-the-abort-steps', abort_start)
     source = replace_once(source, raw[abort_start:abort_end],
-        b'''bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason) {
+        b'''// The pinned DOMException::create dereferences unchecked string/constructor
+// results and writes slots on an unchecked constructor result. Keep its observable
+// constructor lookup/reentry, but guard every failure and native-class boundary.
+static JSObject *create_abort_exception(JSContext *cx, const char *name) {
+  using Exception = dom_exception::DOMException;
+  if (JS_IsExceptionPending(cx)) return nullptr;
+  RootedString text(cx, JS_NewStringCopyZ(cx, name));
+  if (!text) return nullptr;
+  JS::RootedValueArray<2> args(cx);
+  args[0].setString(text);
+  args[1].setString(text);
+  RootedObject constructor(cx, JS_GetConstructor(cx, Exception::proto_obj));
+  if (!constructor || JS_IsExceptionPending(cx)) return nullptr;
+  RootedValue ctor(cx, JS::ObjectValue(*constructor));
+  RootedObject exception(cx);
+  if (!JS::Construct(cx, ctor, args, &exception) || JS_IsExceptionPending(cx)) return nullptr;
+  if (!Exception::is_instance(exception)) {
+    api::throw_error(cx, api::Errors::TypeError, "AbortSignal", "DOMException constructor",
+                     "return a DOMException");
+    return nullptr;
+  }
+  // No further allocation or user code between class validation and slot writes.
+  JS::SetReservedSlot(exception, static_cast<size_t>(Exception::Slots::Message), args[0]);
+  JS::SetReservedSlot(exception, static_cast<size_t>(Exception::Slots::Name), args[1]);
+  return exception;
+}
+
+bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason) {
   MOZ_ASSERT(is_instance(self));
+  // Never convert a pre-existing failure into a successful no-op.
+  if (JS_IsExceptionPending(cx)) return false;
   if (is_aborted(self)) return true;
 
   // Default-error construction can re-enter JS through the pinned factory.
@@ -89,8 +118,8 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
   // across that construction. The eventual reason remains rooted throughout.
   RootedValue propagated_reason(cx, reason);
   if (propagated_reason.isUndefined()) {
-    RootedObject exception(cx, dom_exception::DOMException::create(cx, "AbortError", "AbortError"));
-    if (!exception) return false;
+    RootedObject exception(cx, create_abort_exception(cx, "AbortError"));
+    if (!exception || JS_IsExceptionPending(cx)) return false;
     propagated_reason.setObject(*exception);
     if (is_aborted(self)) return true;
   }
@@ -128,6 +157,10 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
   // Finish accepted dependent work without running JS with a pending exception.
   // Keep the first catchable failure and its original stack in one rooted frame.
   // An uncatchable failure fences further work and must not be hidden by it.
+  // AutoSaveExceptionState owns a RootedObject for the exception stack. Its
+  // roots must be popped before this reusable signal root (strict JSAPI LIFO).
+  // Do not emplace it inside the lifetime of a per-iteration RootedObject.
+  RootedObject current_signal(cx);
   mozilla::Maybe<JS::AutoSaveExceptionState> first_failure;
   auto run_steps = [&](HandleObject signal) {
     const bool succeeded = run_abort_steps(cx, signal);
@@ -142,8 +175,8 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
   };
   if (!run_steps(self)) return false;
   for (auto &sig : dep_signals_to_abort) {
-    RootedObject signal(cx, sig);
-    if (!run_steps(signal)) return false;
+    current_signal.set(sig);
+    if (!run_steps(current_signal)) return false;
   }
   if (first_failure) {
     first_failure->restore();
@@ -153,11 +186,31 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
 }
 
 ''', 'admitted-fanout-before-abort-publication-and-preserved-first-failure')
+    # The same guarded factory covers static abort() and the timeout reason.
+    for name in ('AbortError', 'TimeoutError'):
+        source = replace_once(source,
+            ('dom_exception::DOMException::create(cx, "'+name+'", "'+name+'")').encode(),
+            ('create_abort_exception(cx, "'+name+'")').encode(),
+            'guarded-original-'+name+'-construction')
+    source = replace_once(source,
+        b'bool AbortSignal::run_abort_steps(JSContext *cx, HandleObject self) {\n',
+        b'bool AbortSignal::run_abort_steps(JSContext *cx, HandleObject self) {\n'
+        b'  if (JS_IsExceptionPending(cx)) return false;\n',
+        'abort-steps-reject-pending-failure-before-callbacks')
+    source = replace_once(source,
+        b'    if (!algorithm->run(cx)) {\n',
+        b'    if (!algorithm->run(cx) || JS_IsExceptionPending(cx)) {\n',
+        'abort-algorithm-success-cannot-hide-a-pending-failure')
+    source = replace_once(source,
+        b'  return EventTarget::dispatch_event(cx, self, event_val, &res_val);\n',
+        b'  const bool dispatched = EventTarget::dispatch_event(cx, self, event_val, &res_val);\n'
+        b'  return dispatched && !JS_IsExceptionPending(cx);\n',
+        'abort-steps-never-return-success-with-pending-failure')
     source = replace_once(source,
         b'  RootedObject event(cx, Event::create(cx, type_val, JS::NullHandleValue));\n'
         b'  RootedValue event_val(cx, JS::ObjectValue(*event));\n',
         b'  RootedObject event(cx, Event::create(cx, type_val, JS::NullHandleValue));\n'
-        b'  if (!event) return false;\n'
+        b'  if (!event || JS_IsExceptionPending(cx)) return false;\n'
         b'  RootedValue event_val(cx, JS::ObjectValue(*event));\n',
         'abort-event-allocation-before-dereference')
     return source, {'format': 'latent.typescript.abort-timeout-source-derivation.v1',
@@ -181,7 +234,11 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
         'dependentFanoutOwner': 'one-original-native-count-per-heap-frame-not-byte-accurate',
         'dependentFanoutRetirement': 'frame-unwind-then-safe-host-ack',
         'defaultReasonReentrancy': 'first-completed-abort-wins',
+        'defaultReasonFactory': 'checked-lookup-construction-and-native-class-before-slot-writes',
         'catchableAbortStepFailure': 'drain-dependents-then-restore-first-exception-and-stack',
+        'savedExceptionRootOrder': 'reusable-signal-root-before-lazy-exception-state',
+        'abortAlgorithmFailure': 'retain-list-and-fence-this-signal-before-draining-dependents',
+        'pendingExceptionAtAbortEntry': 'fail-without-mutation-or-callbacks',
         'uncatchableAbortStepFailure': 'fence-without-restoring-earlier-catchable-failure',
         'abortEventAllocationFailure': 'return-after-original-algorithm-cleanup',
         'dependentAbortAndReasonAllocationFailures': 'not-qualified',
