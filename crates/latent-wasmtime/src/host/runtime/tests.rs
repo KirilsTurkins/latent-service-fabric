@@ -2,6 +2,8 @@
 use super::*;
 use latent_core::{ActivationBudget, BudgetCancellationProbe, DelegationLimits};
 
+mod custody;
+
 struct Signal;
 impl BudgetCancellationProbe for Signal {
     fn is_cancelled(&self) -> bool {

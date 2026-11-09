@@ -273,6 +273,7 @@ pub(crate) struct HostState {
     #[cfg(feature = "development-local-service-fixture")]
     pub(crate) local_service_refusals: service::refusal::Observer,
     pub(crate) runtime: Option<runtime::Table>,
+    pub(crate) store_custody: Option<crate::store_custody::Custody>,
     pub(crate) runtime_limits: Option<latent_core::activation_runtime::RuntimeLimits>,
     pub(crate) runtime_stop: Option<Arc<crate::containment::StopControl>>,
     context: ActivationHostContext,
@@ -338,6 +339,7 @@ impl HostState {
             ),
             context,
             runtime: None,
+            store_custody: None,
             runtime_limits: config.activation_runtime,
             runtime_stop: None,
             limiter,
@@ -396,6 +398,14 @@ impl HostState {
             .host_call_timing
             .elapsed_micros
             .saturating_add(u64::try_from(started.elapsed().as_micros()).unwrap_or(u64::MAX));
+    }
+}
+
+impl Drop for HostState {
+    fn drop(&mut self) {
+        if let Some(custody) = &self.store_custody {
+            custody.retain_runtime(&mut self.runtime);
+        }
     }
 }
 

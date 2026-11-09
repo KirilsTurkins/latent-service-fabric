@@ -65,7 +65,7 @@ fn ledger(profile: BudgetProfile) -> ActivationBudget {
     .unwrap();
     ActivationBudget::with_profile(grant, profile).unwrap()
 }
-fn state(original: &ActivationBudget, empty: bool) -> HostState {
+pub(super) fn state(original: &ActivationBudget, empty: bool) -> HostState {
     let mut request = request_support::request();
     request.budget = original.granted().clone();
     request.activation.budget = request.budget.clone();

@@ -21,7 +21,8 @@
 "feat/streaming-table-memory-20261022",
 "feat/runtime-shared-memory-20261022",
 "feat/session-core-memory-20261022",
-"feat/rust-thread-runtime-20261023"
+"feat/rust-thread-runtime-20261023",
+"feat/sdk-745-store-custody-20261109"
 ]
 },
 "workflow_dispatch":{}
@@ -31,9 +32,10 @@
 }
 },
 "requiredJobs":[
-"native"
+"native",
+"store-custody"
 ],
-"reviewReason":"Run the unchanged 200-control ordinary native producer on the Rust runtime branch as well as the existing memory branches; retain exact source/event provenance before signed selection",
+"reviewReason":"Preserve the original native producer and add a dedicated branch-scoped on-demand Store custody job with exact source and test observations; no signed guest qualification is claimed",
 "schemaVersion":"latent.ci.contracts.v1",
 "workflow":".github/workflows/host-codec-memory.yml"
 }

@@ -54,6 +54,7 @@ pub(crate) struct Table {
     owners: Vec<RuntimeOwner>,
     timers: Vec<RuntimeTimer>,
     runtime: ActivationRuntime,
+    cancel_on_drop: bool,
     pub(crate) native_stacks: Option<Arc<crate::native_stacks::StackContext>>,
     timer_observer: Option<TimerObserver>,
     #[cfg(feature = "development-go-timer-overlap")]
@@ -119,6 +120,7 @@ impl Table {
             owners,
             timers,
             runtime,
+            cancel_on_drop: true,
             native_stacks: None,
             timer_observer,
             #[cfg(feature = "development-go-timer-overlap")]
@@ -135,13 +137,20 @@ impl Table {
             None => self.runtime.retire(),
         }
     }
+
+    pub(crate) fn detach_cancel_for_store_retirement(&mut self) -> ActivationRuntime {
+        self.cancel_on_drop = false;
+        self.runtime.clone()
+    }
 }
 impl Drop for Table {
     fn drop(&mut self) {
-        if let Some(stacks) = &self.native_stacks {
-            stacks.cancel_unstarted();
+        if self.cancel_on_drop {
+            if let Some(stacks) = &self.native_stacks {
+                stacks.cancel_unstarted();
+            }
+            self.runtime.cancel();
         }
-        self.runtime.cancel();
         #[cfg(feature = "development-go-timer-overlap")]
         if let Some(observer) = &self.overlap {
             observer.report();

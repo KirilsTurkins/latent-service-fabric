@@ -1,7 +1,7 @@
 name: Ordinary host shared table and runtime memory diagnostics
 on:
   push:
-    branches: ['feat/host-codec-memory-736-20261021', 'feat/typescript-table-memory-20261022', 'feat/activation-registry-memory-20261022', 'feat/activation-funcrefs-memory-20261022', 'feat/component-resource-map-memory-20261022', 'feat/linear-memory-notifications-20261022', 'feat/hostcall-future-memory-20261022', 'feat/owned-context-replies-memory-20261022', 'feat/capability-lowering-current-20261022', 'feat/streaming-table-memory-20261022', 'feat/runtime-shared-memory-20261022', 'feat/session-core-memory-20261022', 'feat/rust-thread-runtime-20261023']
+    branches: ['feat/host-codec-memory-736-20261021', 'feat/typescript-table-memory-20261022', 'feat/activation-registry-memory-20261022', 'feat/activation-funcrefs-memory-20261022', 'feat/component-resource-map-memory-20261022', 'feat/linear-memory-notifications-20261022', 'feat/hostcall-future-memory-20261022', 'feat/owned-context-replies-memory-20261022', 'feat/capability-lowering-current-20261022', 'feat/streaming-table-memory-20261022', 'feat/runtime-shared-memory-20261022', 'feat/session-core-memory-20261022', 'feat/rust-thread-runtime-20261023', 'feat/sdk-745-store-custody-20261109']
   workflow_dispatch: {}
 permissions:
   contents: read
@@ -57,5 +57,63 @@ jobs:
         with:
           name: host-codec-memory-${{ github.sha }}
           path: ${{ runner.temp }}/host-codec-memory/
+          if-no-files-found: warn
+          retention-days: 7
+
+  store-custody:
+    name: Original on-demand Store custody controls
+    if: github.event_name == 'push' && github.ref == 'refs/heads/feat/sdk-745-store-custody-20261109'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Run the two exact on-demand Store controls
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/store-custody"
+          mkdir -p "$output"
+          git rev-parse HEAD | tee "$output/source.txt"
+          test "$(cat "$output/source.txt")" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+          rustc --version | tee "$output/rustc.txt"
+          grep -E '^rustc 1\.97\.1 \(' "$output/rustc.txt"
+          cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --lib host::runtime::tests::custody:: -- --list 2>&1 | tee "$output/list.txt"
+          grep -Fx 'host::runtime::tests::custody::actual_store_destruction_keeps_the_original_native_owner_until_inner_retires: test' "$output/list.txt"
+          grep -Fx 'host::runtime::tests::custody::single_injected_store_inner_panic_retains_owner_and_poisons_only_test_cohort: test' "$output/list.txt"
+          test "$(grep -Ec '^[A-Za-z0-9_:]+: test$' "$output/list.txt")" -eq 2
+          cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --lib host::runtime::tests::custody:: -- --test-threads=1 2>&1 | tee "$output/result.txt"
+          grep -Fx 'test host::runtime::tests::custody::actual_store_destruction_keeps_the_original_native_owner_until_inner_retires ... ok' "$output/result.txt"
+          grep -Fx 'test host::runtime::tests::custody::single_injected_store_inner_panic_retains_owner_and_poisons_only_test_cohort ... ok' "$output/result.txt"
+          grep -F 'test result: ok. 2 passed; 0 failed; 0 ignored;' "$output/result.txt"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+      - name: Retain Store source identity and bounded test logs
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: store-custody-${{ github.sha }}
+          path: ${{ runner.temp }}/store-custody/
           if-no-files-found: warn
           retention-days: 7

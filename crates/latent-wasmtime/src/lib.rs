@@ -32,6 +32,7 @@ mod preparation_observer;
 #[cfg(feature = "rust-thread-trap-diagnostic")]
 mod rust_thread_fault;
 mod services;
+mod store_custody;
 mod surface;
 mod telemetry;
 mod timing;

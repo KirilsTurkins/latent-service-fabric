@@ -57,7 +57,7 @@ use call_phase::CallPhase;
 use owned::WasmtimePreparedUse;
 pub use preparation::PreparationActivitySnapshot;
 use preparation::{Compilation, ComponentIntegrity, PreparationCounters};
-use store::AccountedStore;
+use store::{AccountedStore, Retirement};
 
 fn admission_association_error() -> PlatformError {
     platform_error(
@@ -82,6 +82,23 @@ pub(crate) struct PreparedRuntime {
     lifetime_charge: crate::cache::PreparedRuntimeCharge,
     // All native owners above must retire before live-image quota is refunded.
     _native_image: Option<crate::aot::image_budget::NativeImagePermit>,
+}
+
+// Runtime must precede its active-use owner on every return, cancellation and
+// unwind path, including before and after moving the permit into Store custody.
+struct InvocationOwners {
+    runtime: Arc<PreparedRuntime>,
+    permit: Option<crate::cache::ActiveInstancePermit>,
+    custody: Option<crate::store_custody::Custody>,
+}
+
+#[cfg(test)]
+pub(crate) fn custody_test_wrap_store(
+    store: Store<HostState>,
+    admission: crate::store_custody::Admission,
+    custody: crate::store_custody::Custody,
+) -> impl std::ops::Deref<Target = Store<HostState>> {
+    AccountedStore::new(store, Retirement::new(admission, Some(custody)))
 }
 
 impl PreparedRuntime {
@@ -503,6 +520,12 @@ impl WasmtimeBackend {
         // transfers its original reservation and never looks in the cache again.
         let (instance_permit, runtime) =
             self.invocation_runtime(prepared, &request.prepared.opaque_handle)?;
+        let mut invocation_owners = InvocationOwners {
+            runtime,
+            permit: Some(instance_permit),
+            custody: None,
+        };
+        let runtime = &invocation_owners.runtime;
         let cancellation_probe = cancellation.probe();
         let cancellation_guard = cancellation_probe
             .as_ref()
@@ -631,14 +654,56 @@ impl WasmtimeBackend {
             &request.activation.target.contract.0,
             &request.activation.target.function.0,
         );
-        let mut store = AccountedStore::new(self.invocation_store(
+        // Every backend Store participates in the linked-image admission
+        // fence. Only the ordinary on-demand profile gets physical custody;
+        // pooling and the separately selected diagnostic keep their old path.
+        let admission = crate::store_custody::Admission::enter()?;
+        let selected_custody = self.config.instance_allocator == crate::InstanceAllocator::OnDemand
+            && !self.config.owned_native_stacks
+            && self.config.activation_runtime.is_some()
+            && runtime
+                .surface
+                .imports
+                .contains(crate::host::runtime::CAPABILITY)
+            && codec_budget.profile() == latent_core::BudgetProfile::Phase3
+            && !cfg!(feature = "rust-thread-trap-diagnostic");
+        let prepared_custody = if selected_custody {
+            match crate::store_custody::Custody::prepare(&codec_budget) {
+                Ok(prepared) => Some(prepared),
+                Err(error) => {
+                    admission.verified();
+                    return Err(error);
+                }
+            }
+        } else {
+            None
+        };
+        if let Some(prepared) = prepared_custody {
+            let permit = invocation_owners
+                .permit
+                .take()
+                .expect("active invocation permit");
+            invocation_owners.custody = Some(prepared.attach(Arc::clone(runtime), permit));
+        }
+        let custody = invocation_owners.custody.clone();
+        let mut retirement = Retirement::new(admission, custody.clone());
+        let result = self.invocation_store(
             request,
             &stop,
             accounting,
             capabilities,
             ownership.transaction,
             &runtime,
-        )?);
+            custody,
+        );
+        let store = match result {
+            Ok(store) => store,
+            Err(error) => {
+                retirement.verified();
+                return Err(error);
+            }
+        };
+        let mut store = AccountedStore::new(store, retirement);
         *native_stack_observer = store
             .data()
             .runtime
@@ -792,7 +857,12 @@ impl WasmtimeBackend {
         drop(temporary_buffer_guard);
         timing.activation_resource_reclamation_micros = elapsed_micros(reclamation_started);
 
-        let outcome = reclamation::finish(runtime, instance_permit, timing, || outcome);
+        let InvocationOwners {
+            runtime,
+            permit,
+            custody,
+        } = invocation_owners;
+        let outcome = reclamation::finish(runtime, (permit, custody), timing, || outcome);
 
         let reusable_proof_started = Instant::now();
         drop(stop);
@@ -846,6 +916,7 @@ impl WasmtimeBackend {
         capabilities: Option<latent_capabilities::broker::CapabilitySession>,
         mut transaction: transaction_access::GuestAccess,
         runtime: &PreparedRuntime,
+        store_custody: Option<crate::store_custody::Custody>,
     ) -> Result<Store<HostState>, PlatformError> {
         let effective_memory = request
             .budget
@@ -883,6 +954,7 @@ impl WasmtimeBackend {
             self.shared.clock_origin,
             self.shared.log_sink.clone(),
         );
+        host_state.store_custody = store_custody;
 
         host_state.capabilities = crate::host::capabilities::HostCapabilities::new(
             capabilities,
@@ -930,15 +1002,21 @@ impl WasmtimeBackend {
             host_state.accounting.budget().profile(),
             latent_core::BudgetProfile::Phase3 | latent_core::BudgetProfile::Phase4
         ) {
-            #[cfg(not(feature = "rust-thread-trap-diagnostic"))]
-            let memory = crate::native_tables::binding(host_state.accounting.budget())
+            let memory = if let Some(custody) = &host_state.store_custody {
+                crate::store_custody::binding(host_state.accounting.budget(), custody.clone())
+                    .map_err(native_store_error)?
+            } else {
+                #[cfg(not(feature = "rust-thread-trap-diagnostic"))]
+                let memory = crate::native_tables::binding(host_state.accounting.budget())
+                    .map_err(native_store_error)?;
+                #[cfg(feature = "rust-thread-trap-diagnostic")]
+                let memory = crate::native_tables::binding_with_observer(
+                    host_state.accounting.budget(),
+                    crate::rust_thread_fault::scheduler_observer(&runtime.threading),
+                )
                 .map_err(native_store_error)?;
-            #[cfg(feature = "rust-thread-trap-diagnostic")]
-            let memory = crate::native_tables::binding_with_observer(
-                host_state.accounting.budget(),
-                crate::rust_thread_fault::scheduler_observer(&runtime.threading),
-            )
-            .map_err(native_store_error)?;
+                memory
+            };
             Store::try_new_with_memory_binding(&self.engine, host_state, memory)
                 .map_err(native_store_error)?
         } else {

@@ -350,11 +350,12 @@ bool observe_import_borrow(JSContext* cx, JS::HandleObject handle, bool cancel,
 
 void observe_result_retirement(JSContext* cx) {
   // The original post_call has released lowering buffers and the call's native
-  // rooted values. Reachable application graphs remain charged until the Store
-  // physically retires; never claim their release merely because root settled.
+  // rooted values. Never claim that reachable application graphs physically
+  // retired merely because the root settled.
   // Canonical post-return cannot leave the component. GC records physical
-  // retirement without importing broker settlement; the exact reservations stay
-  // charged until a permitted checkpoint or the host's physical Store retirement.
+  // retirement without importing broker settlement. Remaining reservations stay
+  // in the host runtime table until a permitted checkpoint or table teardown;
+  // custody through physical Store retirement depends on the selected host path.
   JS::PrepareForFullGC(cx);
   JS::NonIncrementalGC(cx, JS::GCOptions::Normal, JS::GCReason::API);
 }
