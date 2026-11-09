@@ -20,6 +20,9 @@ class GoNetworkRuntimeTests(unittest.TestCase):
                     'pendingOperations': 1, 'ioCalls': 1, 'streamOwners': 1, 'connections': 1,
                     'retiredGenerations': 0, 'quarantinedConnections': 0,
                     'providerStopped': False, 'currentGenerationRetired': False, 'liveStores': 1, 'activeActivations': 1}))
+            if label == 'cancel-pending-read':
+                result.append(('GO_NETWORK_CANCEL_EDGE', {'case': label, 'readDropStartsBefore': 1,
+                    'readDropStartsAfterAccepted': 1, 'sameConnection': True, 'sameGenerationCurrent': True}))
             result.append(('GO_NETWORK_OWNER', {'case': label, 'stores': 0, 'instances': 0,
                 'streamOwners': 0, 'ioOwners': 0, 'kernelRetirementQualified': False}))
             result.append(('GO_NETWORK_CASE', {'case': label, 'mode': mode, 'result': output, 'contacts': contacts}))
@@ -117,6 +120,27 @@ class GoNetworkRuntimeTests(unittest.TestCase):
                     rows[index][1][key] = value
                 with self.subTest(case=label, mutation=mutation), self.assertRaises(ValueError):
                     runtime.outcomes(self.output(rows))
+
+    def test_cancellation_requires_the_same_undropped_original_owner(self):
+        for field, bad in (('readDropStartsBefore', 2), ('readDropStartsAfterAccepted', 2),
+                           ('sameConnection', False), ('sameGenerationCurrent', False),
+                           ('readDropStartsAfterAccepted', True)):
+            rows = self.rows()
+            index = next(i for i, (name, _) in enumerate(rows) if name == 'GO_NETWORK_CANCEL_EDGE')
+            rows[index][1][field] = bad
+            with self.subTest(field=field, bad=bad), self.assertRaises(ValueError):
+                runtime.outcomes(self.output(rows))
+        for mutation in ('missing', 'duplicate', 'reordered'):
+            rows = self.rows()
+            index = next(i for i, (name, _) in enumerate(rows) if name == 'GO_NETWORK_CANCEL_EDGE')
+            if mutation == 'missing':
+                rows.pop(index)
+            elif mutation == 'duplicate':
+                rows.insert(index, rows[index])
+            else:
+                rows[index], rows[index + 1] = rows[index + 1], rows[index]
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                runtime.outcomes(self.output(rows))
 
     def test_original_guarded_modes_are_unchanged_and_new_mode_uses_ordinary_half_close_eof(self):
         source = (ROOT / 'sdk/go-guest/runtime/network-conformance/main.go').read_bytes()
