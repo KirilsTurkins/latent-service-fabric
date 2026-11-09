@@ -1,0 +1,29 @@
+{
+  "description": "Rust strict transaction denies immediate HTTP after staging",
+  "qualification": "normal local combined-source Linux node, ephemeral demo trust, disposable JetStream provider and loopback listener",
+  "compatibilitySourceNormalizedSha256": "a13d6eba4edd103a90d306404abc8f6eedbcbd1233d42f6de9acd48614ebed79",
+  "hostAbiProfile": "lsf-host-abi-phase4-v1",
+  "encodedHostManifestDigest": "sha256:2e1d26917ffb153b2a0a09e036e53e5a44c2a55b3a1870abe23ea1a406480a99",
+  "descriptivePreparationImports": [
+    "latent:http/client@0.2.0"
+  ],
+  "sourceSnapshotDigest": "sha256:71aac787573f87636cc545317040118ca2a762721dc721fabc1a3f147438a532",
+  "componentDigest": "sha256:f7bdcbc37397e08f8521467c66474d12f723ffbab741c72ef667820540fa6b0f",
+  "buildObservationSha256": "303c2a1fc7a56703bcc15d9f71f781c18ca4573614105d0052380d724b44169e",
+  "signedReleaseSetSha256": "a9f5331468c0a824684625183e3e076ccbd725d4c27bf951a7402be39a5309bf",
+  "publication": "publication:sha256:f9cbe4510c1ae6691ebe9edc2cd79626a34a500203d5cff0b3e52983f080dc18",
+  "observedProviderProfile": "js-window-v1:9bc203e53b4a1c4d874d5b2b7e8ad2f3ab9142531d7b8a4e56affebf67287d96",
+  "normalNodeSha256": "48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "fixtureSha256": "42cc4fdec01d1b4c599787816b1735accb41c76cbc9aa3a5a3045e02a1432b99",
+  "observations": [
+    "The captured Rust variant included state, intent and buffered HTTP imports. The maintained compatibility inspection recognized the native validator descriptive HTTP exception while preserving the frozen host manifest digest and reporting invocation behavior unresolved.",
+    "After real component build, demo signing and admission, the guest staged state and an event, attempted immediate HTTP, and returned its declared rejection only on the typed permission-denied result. The authorized durable command lookup matched the rejection.",
+    "A fresh query found the key absent, namespace inspection found zero state bytes and pending effects, the controlled loopback listener observed no connection, and the real broker contained no messages.",
+    "The node was reaped with clean state and effect physical retirement, and the fixture removed its own broker and TLS files."
+  ],
+  "limitations": [
+    "This is one local Rust typed-denial case, not the full six-language, crash, cancellation or resource-boundary matrix.",
+    "The normal node comes from a verified local combined-source snapshot with unmerged work. This does not qualify hosted CI, production trust or the installed distribution.",
+    "The compatibility exception recognizes an existing signature for preparation; the node still enforces transaction budgets and current provider authority."
+  ]
+}

@@ -152,6 +152,40 @@ class CompatibilityReport(unittest.TestCase):
 
 
 class FinalComponentInspection(unittest.TestCase):
+    def test_transaction_http_preparation_is_descriptive_and_exact(self):
+        host = build.host_manifest('lsf-host-abi-phase4-v1')
+        original = copy.deepcopy(host)
+        state = 'latent:state/key-value@0.2.0'
+        declared = {'imports': [state, HTTP]}
+        selected, additions = build.preparation_host(host, declared)
+        self.assertEqual(additions, [HTTP])
+        self.assertEqual(host, original)
+        self.assertEqual(selected['digest'], host['digest'])
+        self.assertEqual([item['classification'] for item in c.import_findings(
+            [state, HTTP], [state, HTTP], selected)], ['unresolved-behavior'])
+        self.assertEqual([item['classification'] for item in c.import_findings(
+            [state, HTTP], [state, HTTP], selected, installed=set(), granted=set())],
+            ['missing-provider', 'missing-provider'])
+        self.assertEqual(build.preparation_host(host, {'imports': [HTTP]}), (host, []))
+        self.assertEqual(build.preparation_host(host, {'imports': [state, 'latent:http/client@0.3.0']}), (host, []))
+        self.assertEqual(build.preparation_host(build.host_manifest(build.DEFAULT_PROFILE), declared)[1], [])
+        from unittest.mock import patch
+        with patch.object(build, 'read_file', return_value=b'changed HTTP signature'):
+            with self.assertRaisesRegex(ValueError, 'transaction-http-source-drift'):
+                build.preparation_host(host, declared)
+        class Commands:
+            def run(self, *args):
+                return encode(graph(imports=(state, HTTP)))
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            (output / 'component.wasm').write_bytes(b'component')
+            result = build.inspect(Commands(), Path('wasm-tools'), output,
+                {'imports': [state, HTTP], 'exports': ['examples:hello/service@1.0.0']},
+                host_abi_profile='lsf-host-abi-phase4-v1')
+            self.assertEqual(result['hostAbiDigest'], digest(encode(host)))
+            self.assertEqual(result['descriptivePreparationImports'], [HTTP])
+            self.assertEqual([item['classification'] for item in result['findings']], ['unresolved-behavior'])
+
     def test_phase4_catalog_requires_captured_profile_companion_links_schema_and_wit(self):
         from tools.java_transaction_schema import create
         from tools.rust_capsule_project import snapshot
