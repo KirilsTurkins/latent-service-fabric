@@ -24,6 +24,7 @@ use latent_state::{
     session::{StateMode, StateScope},
     store_io::StoreIoKind,
 };
+use sha2::{Digest, Sha256};
 enum PendingPublication {
     New(latent_commit::atomic::AdmittedCommand),
     Existing(CommandRecord),
@@ -184,6 +185,18 @@ impl NativeTransactionAdmission {
             *state = State::Failed;
             selection
         };
+        if let Some(inbox) = &self.inbox {
+            let digest = latent_commit::atomic::Identity::parse_hex(&format!(
+                "{:x}",
+                latent_core::digest::HexDigest(Sha256::digest(&envelope.input))
+            ))
+            .map_err(atomic)?;
+            if envelope.principal.kind != latent_core::PrincipalKind::Trigger
+                || digest != inbox.payload_digest
+            {
+                return Err(authorization::denied());
+            }
+        }
         // Verify pinned source, mode, finite input and original policy BEFORE
         // any native lookup or durable reservation. DTOs supply no source grant.
         let source = observation::platform(Phase::Source, self.installation.source(envelope))?;
@@ -299,7 +312,7 @@ impl NativeTransactionAdmission {
                 source,
                 result_read_policy: self.installation.result_read_policy.clone(),
                 result_policy: self.installation.result_policy,
-                inbox: None,
+                inbox: self.inbox.clone(),
                 owner_epoch: epoch,
             };
             if selection.entity.is_some() {

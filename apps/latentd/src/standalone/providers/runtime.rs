@@ -43,6 +43,8 @@ mod startup;
 mod stream_control;
 #[path = "streams.rs"]
 mod streams;
+#[path = "triggers.rs"]
+mod triggers;
 #[cfg(feature = "development-outbound-streams")]
 pub use stream_control::StreamControlStatus;
 
@@ -54,6 +56,7 @@ pub(in crate::standalone) struct ProviderRuntime {
     streaming_secrets: Vec<latent_secrets::LocalSecretStore>,
     guest_secrets: Option<latent_secrets::LocalSecretStore>,
     event_secrets: Option<latent_secrets::LocalSecretStore>,
+    incoming_secrets: Option<latent_secrets::LocalSecretStore>,
     http: Option<latent_http::HttpProvider>,
     events: Option<latent_nats::NatsPublisher>,
     metrics: Option<Arc<latent_capabilities::broker::metrics::MetricProvider>>,
@@ -71,6 +74,110 @@ pub(in crate::standalone) struct ProviderRuntime {
 }
 
 impl ProviderRuntime {
+    #[cfg(test)]
+    pub(in crate::standalone) async fn install_control_test_poller(
+        &self,
+        directory: std::path::PathBuf,
+        configuration: latent_nats::triggers::TriggerConfig,
+    ) -> (
+        latent_nats::triggers::NatsTriggers,
+        latent_secrets::LocalSecretStore,
+    ) {
+        use latent_capabilities::broker::secrets::TlsCredentialScope;
+        use latent_secrets::{
+            SecretLimits, SecretPurpose, SecretSource, SecretSpec, SystemSecretClock,
+        };
+        let deadline = Instant::now() + Duration::from_secs(5);
+        let store = latent_secrets::LocalSecretStore::open_before(
+            Arc::clone(&self.pools),
+            directory,
+            SecretLimits::default(),
+            Vec::new(),
+            Arc::new(SystemSecretClock),
+            deadline,
+        )
+        .unwrap()
+        .await
+        .unwrap();
+        let destination = configuration.endpoint.credential_destination();
+        store
+            .reload_before(
+                0,
+                vec![SecretSpec {
+                    tenant: TenantId("tests".into()),
+                    reference: "input-control".into(),
+                    source: SecretSource::File {
+                        name: "credential".into(),
+                    },
+                    purpose: SecretPurpose::TlsProviderCredential {
+                        provider_id: "input-control".into(),
+                        destination: destination.clone(),
+                    },
+                    media_type: "text/plain".into(),
+                    version: "1".into(),
+                    expires_at_unix_millis: None,
+                }],
+                deadline,
+            )
+            .unwrap()
+            .await
+            .unwrap();
+        let secret = store
+            .bind_tls_credential(
+                TlsCredentialScope {
+                    tenant: TenantId("tests".into()),
+                    provider_id: "input-control".into(),
+                    destination,
+                },
+                "input-control".into(),
+            )
+            .unwrap();
+        let poller = latent_nats::triggers::NatsTriggers::install(
+            Arc::clone(&self.pools),
+            "input-control",
+            1,
+            0,
+            configuration,
+            vec![latent_nats::NatsCredential {
+                username: None,
+                secret,
+            }],
+        )
+        .unwrap();
+        (poller, store)
+    }
+
+    pub async fn install_incoming(
+        &mut self,
+        settings: &crate::config::triggers::TriggerSettings,
+        admission: Arc<dyn latent_nats::triggers::InboxAdmissionFactory>,
+        deadline: Instant,
+    ) -> Result<latent_nats::triggers::NatsTriggers, PlatformError> {
+        if self.incoming_secrets.is_some() {
+            return Err(unavailable());
+        }
+        let store = latent_secrets::LocalSecretStore::open_before(
+            Arc::clone(&self.pools),
+            settings.installation.credential_directory.clone(),
+            latent_secrets::SecretLimits::default(),
+            Vec::new(),
+            Arc::new(latent_secrets::SystemSecretClock),
+            deadline,
+        )
+        .map_err(|_| unavailable())?
+        .await
+        .map_err(|_| unavailable())?;
+        self.incoming_secrets = Some(store);
+        triggers::install(
+            &self.pools,
+            self.incoming_secrets.as_ref().ok_or_else(unavailable)?,
+            settings,
+            admission,
+            deadline,
+        )
+        .await
+    }
+
     #[expect(
         clippy::too_many_lines,
         reason = "bounded provider owners are installed and rolled back in one transaction"
@@ -82,7 +189,15 @@ impl ProviderRuntime {
         policies: Arc<PolicyStore>,
         services: ProviderServices,
     ) -> Result<Self, PlatformError> {
-        let config = settings.providers.as_ref().ok_or_else(unavailable)?;
+        let empty;
+        let config = if let Some(config) = &settings.providers {
+            config.as_ref()
+        } else if settings.transactional_triggers.is_some() {
+            empty = crate::config::ConfiguredProviders::incoming_only();
+            &empty
+        } else {
+            return Err(unavailable());
+        };
         let broker = Arc::new(
             ActivationCapabilityBroker::new(
                 artifacts.lifecycle_authority(),
@@ -112,6 +227,7 @@ impl ProviderRuntime {
             streaming_secrets: Vec::with_capacity(config.http_streaming_installations().count()),
             guest_secrets: None,
             event_secrets: None,
+            incoming_secrets: None,
             http: None,
             events: None,
             metrics: None,
@@ -461,6 +577,9 @@ impl ProviderRuntime {
         if let Some(secrets) = &self.event_secrets {
             secrets.close();
         }
+        if let Some(secrets) = &self.incoming_secrets {
+            secrets.close();
+        }
         if let Some(metrics) = &self.metrics {
             metrics.retire();
         }
@@ -482,10 +601,15 @@ impl ProviderRuntime {
         let mut secret_generations = 0;
         let mut secret_references = 0;
         let mut secrets_closed = true;
-        for store in [&self.secrets, &self.guest_secrets, &self.event_secrets]
-            .into_iter()
-            .flatten()
-            .chain(self.streaming_secrets.iter())
+        for store in [
+            &self.secrets,
+            &self.guest_secrets,
+            &self.event_secrets,
+            &self.incoming_secrets,
+        ]
+        .into_iter()
+        .flatten()
+        .chain(self.streaming_secrets.iter())
         {
             store.close();
             let snapshot = store.snapshot().map_err(|_| unavailable())?;

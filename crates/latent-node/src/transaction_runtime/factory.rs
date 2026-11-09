@@ -200,6 +200,7 @@ pub struct NativeTransactionAdmission {
     ingress: Mutex<Option<NativeReservation>>,
     validator: Option<Arc<dyn TransactionOutcomeValidator>>,
     cancellation_abort: Mutex<Option<Arc<super::cancellation::CancellationAbortSlot>>>,
+    inbox: Option<latent_commit::atomic::InboxIdentity>,
     shared_owner: Option<Arc<super::SharedCommandOwner>>,
 }
 impl NativeTransactionAdmission {
@@ -219,8 +220,33 @@ impl NativeTransactionAdmission {
             ingress: Mutex::new(None),
             validator: None,
             cancellation_abort: Mutex::new(None),
+            inbox: None,
             shared_owner: None,
         })
+    }
+
+    /// Attach descriptive identity captured by a trusted local input owner.
+    /// This grants no namespace or publication access: the normal admission,
+    /// principal, source and physical-owner fences still apply. The transport
+    /// must derive its command key from the same authenticated input scope.
+    pub fn with_trusted_inbox(
+        mut self,
+        identity: latent_commit::atomic::InboxIdentity,
+    ) -> Result<Self, PlatformError> {
+        let expected_key = identity.command_key().map_err(atomic)?;
+        let valid = match self.state.get_mut() {
+            Ok(State::Fresh(Some(selection))) => {
+                selection.mode == latent_manifest::TransactionOperationMode::StrictCommand
+                    && selection.retry.is_none()
+                    && selection.client_key.as_deref() == Some(expected_key.as_str())
+            }
+            _ => false,
+        };
+        if !valid || self.inbox.is_some() {
+            return Err(authorization::denied());
+        }
+        self.inbox = Some(identity);
+        Ok(self)
     }
 
     /// Consume the transport's already accepted reservation. No second global

@@ -267,6 +267,57 @@ fn confirm(
 }
 
 #[test]
+fn pending_and_technical_abort_never_publish_a_processed_input_marker() {
+    let (_dir, store, effects) = setup();
+    let request = || {
+        let mut request = input("inbox-abort");
+        request.inbox = Some(InboxIdentity {
+            provider: "input".into(),
+            binding: "source".into(),
+            message: "message-1".into(),
+            payload_digest: Identity::derive(b"input", &[b"message"]),
+        });
+        request
+    };
+    let first = request();
+    let inbox_key = first.inbox.as_ref().unwrap().row_key(&first.key).unwrap();
+    let admitted = claim(&store, first);
+    let view = store.snapshot().unwrap();
+    assert!(view.get(&inbox_key).unwrap().is_none());
+    assert!(matches!(
+        PreparedAdmission::prepare(&view, request(), time(101), permission),
+        Ok(AdmissionDecision::Existing(_))
+    ));
+    drop(view);
+
+    let retirement = admitted.retirement();
+    let physical = admitted.physical_work().unwrap();
+    drop(admitted);
+    assert!(retirement.proven_noncommit().is_err());
+    physical.retire();
+    let retired = retirement.proven_noncommit().unwrap();
+    let view = store.snapshot().unwrap();
+    let abort =
+        CompleteEnvelope::technical_abort(&view, retired, "transient".into(), time(101)).unwrap();
+    assert_eq!(confirm(abort, &store, &effects).outcome(), Outcome::Aborted);
+    drop(view);
+
+    let view = store.snapshot().unwrap();
+    assert!(view.get(&inbox_key).unwrap().is_none());
+    assert!(matches!(
+        PreparedAdmission::prepare(&view, request(), time(102), permission),
+        Ok(AdmissionDecision::Existing(_))
+    ));
+    for family in [Family::State, Family::Outbox] {
+        assert!(view
+            .scan_after(family, b"", None, 128, 1024)
+            .unwrap()
+            .rows
+            .is_empty());
+    }
+}
+
+#[test]
 fn actual_engine_success_reopens_with_state_result_inbox_and_exact_effect_linkage() {
     let (dir, store, effects) = setup();
     let mut request = input("one");
