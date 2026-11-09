@@ -2,11 +2,22 @@ package export_tests_caller_api
 
 import "time"
 
-// This source provides public operations only; the signed host observer must
-// separately prove the original timer-next stayed physically live.
+// This source uses public operations only. The selected signed observer must
+// independently prove the original wait and canonical subtask ordering.
 func Run(which uint32) uint32 {
-	if which > 1 {
+	if which > 3 {
 		panic("unsupported fired timer case")
+	}
+	if which >= 2 {
+		// The diagnostic owner selects this distinctive ordinary ticker and
+		// proves the returned event and fence ordering independently.
+		target := time.NewTicker(251 * time.Millisecond)
+		<-target.C
+		if which == 3 { target.Reset(time.Hour) }
+		target.Stop()
+		marker := time.NewTimer(time.Hour)
+		if !marker.Stop() { panic("returned ticker marker") }
+		return 42
 	}
 	target := time.NewTimer(250 * time.Millisecond)
 	fired := make(chan struct{})

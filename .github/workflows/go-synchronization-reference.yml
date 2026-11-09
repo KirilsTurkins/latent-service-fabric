@@ -10,7 +10,7 @@ on:
         default: synchronization
         options: [synchronization, admission, queued, managed-timers, task-saturation, timer-overlap, timer-overlap-v7, timer-fired-v7, managed-v7-timers]
   push:
-    branches: ['feat/go-runtime-retirement-20261020', 'feat/go-runtime-admission-20261020', 'feat/go-runtime-queued-ownership-20261020', 'feat/go-v5-standard-timers-20261020', 'feat/go-v7-timer-overlap-20261108', 'feat/go-fired-timer-fence-v7-20261108', 'feat/go-v7-standard-timers-20261109']
+    branches: ['feat/go-runtime-retirement-20261020', 'feat/go-runtime-admission-20261020', 'feat/go-runtime-queued-ownership-20261020', 'feat/go-v5-standard-timers-20261020', 'feat/go-v7-timer-overlap-20261108', 'feat/go-fired-timer-fence-v7-20261108', 'feat/go-v7-standard-timers-20261109', 'feat/go-returned-timer-fence-20261109']
 
 permissions:
   contents: read
@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  LSF_GO_REFERENCE_CAMPAIGN: ${{ inputs.campaign || (github.ref_name == 'feat/go-v7-standard-timers-20261109' && 'managed-v7-timers' || github.ref_name == 'feat/go-fired-timer-fence-v7-20261108' && 'timer-fired-v7' || github.ref_name == 'feat/go-v7-timer-overlap-20261108' && 'timer-overlap-v7' || github.ref_name == 'feat/go-v5-standard-timers-20261020' && 'managed-timers' || github.ref_name == 'feat/go-runtime-queued-ownership-20261020' && 'queued' || github.ref_name == 'feat/go-runtime-admission-20261020' && 'admission' || 'synchronization') }}
+  LSF_GO_REFERENCE_CAMPAIGN: ${{ inputs.campaign || (github.ref_name == 'feat/go-v7-standard-timers-20261109' && 'managed-v7-timers' || github.ref_name == 'feat/go-returned-timer-fence-20261109' && 'timer-fired-v7' || github.ref_name == 'feat/go-fired-timer-fence-v7-20261108' && 'timer-fired-v7' || github.ref_name == 'feat/go-v7-timer-overlap-20261108' && 'timer-overlap-v7' || github.ref_name == 'feat/go-v5-standard-timers-20261020' && 'managed-timers' || github.ref_name == 'feat/go-runtime-queued-ownership-20261020' && 'queued' || github.ref_name == 'feat/go-runtime-admission-20261020' && 'admission' || 'synchronization') }}
   CARGO_BUILD_JOBS: '2'
   CARGO_INCREMENTAL: '0'
   CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
@@ -207,6 +207,9 @@ jobs:
             ${{ runner.temp }}/go-timer-fired-v7/src/
             ${{ runner.temp }}/go-timer-fired-v7/wit/
             ${{ runner.temp }}/go-timer-fired-v7/diagnostic-sdk/runtime/timer_async.go.in
+            ${{ runner.temp }}/go-timer-fired-v7/diagnostic-sdk/runtime/timer_bridge.go.in
+            ${{ runner.temp }}/go-timer-fired-v7/diagnostic-sdk/runtime/activation_bridge.go.in
+            ${{ runner.temp }}/go-timer-fired-v7/diagnostic-runtime-inputs/
             ${{ runner.temp }}/go-timer-fired-v7/build/component.wasm
             ${{ runner.temp }}/go-timer-fired-v7/logs/
             ${{ runner.temp }}/go-timer-fired-v7-result/

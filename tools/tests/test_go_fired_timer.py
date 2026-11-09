@@ -14,7 +14,8 @@ ROOT = Path(__file__).resolve().parents[2]
 def output():
     rows = [dict(case=case, mode=mode, outcome='success', storesCreated=count, liveStores=0,
                  liveInstances=0, reservations=0, reservedFuel=0, reservedMemory=0, pendingProviderWaits=0)
-            for case, mode, count in [('stop', 0, 1), ('reset', 1, 2), ('fresh', 0, 3)]]
+            for case, mode, count in [('stop', 0, 1), ('reset', 1, 2), ('returned-stop', 2, 3),
+                                      ('returned-reset', 3, 4), ('fresh', 0, 5)]]
     lines = [f'test {owner.FIRED_TIMER_CASE} ... ok']
     lines.extend('GO_TIMER_FIRED_CASE ' + json.dumps(row) for row in rows)
     lines.append('test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 53 filtered out;')
@@ -26,7 +27,10 @@ def diagnostic():
     lines = []
     for name in ids:
         lines.append(f'LSF-GO-TIMER-WAIT-DROP-V1|{name}|1')
-        lines.append(f'LSF-GO-TIMER-FIRED-V1|{name}|1|0|0|1024')
+        lines.append(f'LSF-GO-TIMER-FIRED-V1|{name}|1|0|0|512')
+    for name in ['go-timer-returned-stop', 'go-timer-returned-reset']:
+        lines.append(f'LSF-GO-TIMER-WAIT-DROP-V1|{name}|1')
+        lines.append(f'LSF-GO-TIMER-RETURNED-V1|{name}|1|0|0|512')
     return ('\n'.join(lines) + '\n').encode()
 
 
@@ -38,7 +42,16 @@ class FiredTimerControls(unittest.TestCase):
         self.assertIn(probe.INSTRUMENTED, derived)
         self.assertIn(probe.INSTRUMENTED_STOPPED, derived)
         self.assertIn(b'wait.token == lsfFiredFirstStopped', derived)
-        for changed in (source.replace(probe.MATCH, b'changed'), source.replace(probe.SIGNATURE, b'changed'),
+        self.assertIn(probe.INSTRUMENTED_EVENT, derived)
+        timer_bridge = (ROOT / 'sdk/go-guest/runtime/timer_bridge.go.in').read_bytes()
+        activation_bridge = (ROOT / 'sdk/go-guest/runtime/activation_bridge.go.in').read_bytes()
+        self.assertIn(probe.BRIDGE, probe.derive_bridge(timer_bridge))
+        self.assertIn(probe.PARK_INSTRUMENTED, probe.derive_activation_bridge(activation_bridge))
+        for invalid in (timer_bridge.replace(b'func lsfNextTimer()', b'func other()'), timer_bridge + b'lsfReturnedTickerSelected'):
+            with self.assertRaisesRegex(ValueError, 'source-drift'): probe.derive_bridge(invalid)
+        for invalid in (activation_bridge.replace(probe.PARK_MATCH, b'changed'), activation_bridge + probe.PARK_MATCH):
+            with self.assertRaisesRegex(ValueError, 'source-drift'): probe.derive_activation_bridge(invalid)
+        for changed in (source.replace(probe.EVENT, b'changed'), source.replace(probe.MATCH, b'changed'), source.replace(probe.SIGNATURE, b'changed'),
                         source.replace(probe.STOPPED, b'changed'), source + probe.MATCH, source + probe.STOPPED,
                         source + b'lsfFiredFenceWitness', source + b'lsfFiredFirstStopped'):
             with self.subTest(changed=changed[-40:]), self.assertRaisesRegex(ValueError, 'source-drift'):
@@ -54,14 +67,18 @@ class FiredTimerControls(unittest.TestCase):
 
     def test_strict_signed_case_and_physical_drop_evidence(self):
         parsed = owner.fired_timer_observations(output(), diagnostic(), 53)
-        self.assertEqual([row['case'] for row in parsed['cases']], ['stop', 'reset', 'fresh'])
-        self.assertEqual(len(parsed['physicalWaitDrops']), 2)
+        self.assertEqual([row['case'] for row in parsed['cases']], ['stop', 'reset', 'returned-stop', 'returned-reset', 'fresh'])
+        self.assertEqual(len(parsed['physicalWaitDrops']), 4)
+        self.assertEqual(len(parsed['returnedWitnesses']), 2)
         for out, diag in (
             (output().replace(owner.FIRED_TIMER_CASE.encode(), b'other'), diagnostic()),
             (output().replace(b'"liveStores": 0', b'"liveStores": 1', 1), diagnostic()),
             (output() + output(), diagnostic()),
-            (output(), diagnostic().replace(b'|1|0|0|1024', b'|1|1|0|1024', 1)),
-            (output(), diagnostic().replace(b'|1|0|0|1024', b'|1|0|1|1024', 1)),
+            (output(), diagnostic().replace(b'|1|0|0|512', b'|1|1|0|512', 1)),
+            (output(), diagnostic().replace(b'|1|0|0|512', b'|1|0|1|512', 1)),
+            (output(), diagnostic().replace(b'RETURNED-V1|go-timer-returned-stop|1', b'RETURNED-V1|go-timer-returned-stop|0')),
+            (output(), diagnostic().replace(b'RETURNED-V1|go-timer-returned-reset', b'RETURNED-V1|foreign')),
+            (output(), diagnostic().replace(b'WAIT-DROP-V1|go-timer-returned-stop|1', b'WAIT-DROP-V1|go-timer-returned-stop|0')),
             (output(), diagnostic().replace(b'WAIT-DROP-V1|go-timer-fired-stop|1', b'WAIT-DROP-V1|go-timer-fired-stop|0')),
             (output(), diagnostic() + diagnostic()),
         ):
@@ -75,6 +92,11 @@ class FiredTimerControls(unittest.TestCase):
         class SourceOnlyCompiler:
             def __init__(self, _root, sdk, *_args, **_kwargs):
                 self.materials = []
+                self.goroot = _root / 'fake-goroot'
+                directory = self.goroot / 'src/runtime'
+                directory.mkdir(parents=True)
+                (directory / 'chan.go').write_bytes(b'fake chan\n')
+                (directory / 'runtime2.go').write_bytes(b'fake runtime2\n')
                 seen['sdk'] = sdk
             def compile(self, _source, _wit, _world, output, **_kwargs):
                 (output / 'runtime-overlay').mkdir(parents=True)
@@ -85,9 +107,11 @@ class FiredTimerControls(unittest.TestCase):
         source = (ROOT / 'sdk/go-guest/runtime/timer-fired-conformance/main.go').read_bytes()
         original_path = ROOT / 'sdk/go-guest/runtime/timer_async.go.in'
         original = original_path.read_bytes()
-        native = {'modes': [0, 1], 'output': 42, 'freshProcessPerMode': True,
+        native = {'modes': [0, 1, 2, 3], 'output': 42, 'freshProcessPerMode': True,
                   'sourceDigest': 'sha256:' + owner.digest(source)}
         with tempfile.TemporaryDirectory() as temporary, patch.object(activation, 'ROOT', ROOT), \
+                patch.object(probe, 'GO_CHAN_SHA256', owner.digest(b'fake chan\n')), \
+                patch.object(probe, 'GO_RUNTIME2_SHA256', owner.digest(b'fake runtime2\n')), \
                 patch.object(activation, 'Compiler', SourceOnlyCompiler), patch.object(activation, 'stage'), \
                 patch.object(activation, 'fixture_reference', return_value=native):
             output = Path(temporary) / 'capture'
@@ -110,40 +134,70 @@ class FiredTimerControls(unittest.TestCase):
         derived = probe.derive(original)
         with tempfile.TemporaryDirectory() as name:
             fixture = Path(name)
-            for folder in ('src', 'wit', 'build', 'diagnostic-sdk/runtime'):
+            for folder in ('src', 'wit', 'build', 'diagnostic-sdk/runtime', 'diagnostic-runtime-inputs/runtime'):
                 (fixture / folder).mkdir(parents=True)
             (fixture / 'src/main.go').write_bytes(source)
             (fixture / 'wit/world.wit').write_bytes(world)
             (fixture / 'build/component.wasm').write_bytes(b'example-component')
             timer = fixture / 'diagnostic-sdk/runtime/timer_async.go.in'
             timer.write_bytes(derived)
+            original_bridge = (ROOT / 'sdk/go-guest/runtime/timer_bridge.go.in').read_bytes()
+            original_activation = (ROOT / 'sdk/go-guest/runtime/activation_bridge.go.in').read_bytes()
+            (fixture / 'diagnostic-sdk/runtime/timer_bridge.go.in').write_bytes(probe.derive_bridge(original_bridge))
+            (fixture / 'diagnostic-sdk/runtime/activation_bridge.go.in').write_bytes(probe.derive_activation_bridge(original_activation))
+            (fixture / 'diagnostic-runtime-inputs/runtime/chan.go').write_bytes(b'fake chan\n')
+            (fixture / 'diagnostic-runtime-inputs/runtime/runtime2.go').write_bytes(b'fake runtime2\n')
             record = {'profile': 'go-component-activation-v7', 'fixture': 'timer-fired',
                 'sourceDigest': 'sha256:' + owner.digest(source), 'sourceUnchanged': True,
                 'ordinarySource': True, 'signedExecution': 'not-run',
                 'componentDigest': 'sha256:' + owner.digest(b'example-component'),
                 'bindingDigest': 'example', 'tools': {}, 'transformations': [],
-                'diagnosticRuntime': {'kind': 'selected-stop-token-fence-observe-v2',
+                'diagnosticRuntime': {'kind': 'selected-returned-ticker-fence-observe-v3',
                     'originalTimerAsyncDigest': 'sha256:' + owner.digest(original),
-                    'derivedTimerAsyncDigest': 'sha256:' + owner.digest(derived)},
-                'nativeReference': {'modes': [0, 1], 'output': 42, 'freshProcessPerMode': True,
+                    'derivedTimerAsyncDigest': 'sha256:' + owner.digest(derived),
+                    'originalTimerBridgeDigest': 'sha256:' + owner.digest(original_bridge),
+                    'derivedTimerBridgeDigest': 'sha256:' + owner.digest(probe.derive_bridge(original_bridge)),
+                    'originalActivationBridgeDigest': 'sha256:' + owner.digest(original_activation),
+                    'derivedActivationBridgeDigest': 'sha256:' + owner.digest(probe.derive_activation_bridge(original_activation)),
+                    'runtimeChanDigest': 'sha256:' + owner.digest(b'fake chan\n'),
+                    'runtimeDescriptorDigest': 'sha256:' + owner.digest(b'fake runtime2\n')},
+                'nativeReference': {'modes': [0, 1, 2, 3], 'output': 42, 'freshProcessPerMode': True,
                                     'sourceDigest': 'sha256:' + owner.digest(source)}}
             receipt = fixture / 'GO-ACTIVATION-COMPILE.json'
             receipt.write_text(json.dumps(record), encoding='utf-8')
-            owner.compile_identity(fixture, ROOT, 'go-component-activation-v7', 'timer-fired')
-            timer.write_bytes(derived + b'// tampered')
-            with self.assertRaisesRegex(ValueError, 'diagnostic-runtime-drift'):
+            with patch.object(probe, 'GO_CHAN_SHA256', owner.digest(b'fake chan\n')), \
+                    patch.object(probe, 'GO_RUNTIME2_SHA256', owner.digest(b'fake runtime2\n')):
                 owner.compile_identity(fixture, ROOT, 'go-component-activation-v7', 'timer-fired')
-            timer.write_bytes(derived)
-            record['diagnosticRuntime']['originalTimerAsyncDigest'] = 'sha256:' + '0' * 64
-            receipt.write_text(json.dumps(record), encoding='utf-8')
-            with self.assertRaisesRegex(ValueError, 'diagnostic-runtime-drift'):
-                owner.compile_identity(fixture, ROOT, 'go-component-activation-v7', 'timer-fired')
+                timer.write_bytes(derived + b'// tampered')
+                with self.assertRaisesRegex(ValueError, 'diagnostic-runtime-drift'):
+                    owner.compile_identity(fixture, ROOT, 'go-component-activation-v7', 'timer-fired')
+                timer.write_bytes(derived)
+                (fixture / 'diagnostic-runtime-inputs/runtime/chan.go').write_bytes(b'changed')
+                with self.assertRaisesRegex(ValueError, 'diagnostic-runtime-drift'):
+                    owner.compile_identity(fixture, ROOT, 'go-component-activation-v7', 'timer-fired')
+                (fixture / 'diagnostic-runtime-inputs/runtime/chan.go').write_bytes(b'fake chan\n')
+                for relative in ('diagnostic-runtime-inputs/runtime/runtime2.go',
+                                 'diagnostic-sdk/runtime/timer_bridge.go.in',
+                                 'diagnostic-sdk/runtime/activation_bridge.go.in'):
+                    protected = fixture / relative
+                    previous = protected.read_bytes()
+                    protected.write_bytes(previous + b'changed')
+                    with self.assertRaisesRegex(ValueError, 'diagnostic-runtime-drift'):
+                        owner.compile_identity(fixture, ROOT, 'go-component-activation-v7', 'timer-fired')
+                    protected.write_bytes(previous)
+                record['diagnosticRuntime']['originalTimerAsyncDigest'] = 'sha256:' + '0' * 64
+                receipt.write_text(json.dumps(record), encoding='utf-8')
+                with self.assertRaisesRegex(ValueError, 'diagnostic-runtime-drift'):
+                    owner.compile_identity(fixture, ROOT, 'go-component-activation-v7', 'timer-fired')
 
     def test_branch_owner_and_inventory_bind_the_new_campaign(self):
         from tools import ci_lane_inventory as lanes
         workflow = lanes.workflow_model((ROOT / '.github/workflows/go-synchronization-reference.yml').read_text())
         branch = 'feat/go-fired-timer-fence-v7-20261108'
         self.assertIn(branch, workflow['on']['push']['branches'])
+        returned_branch = 'feat/go-returned-timer-fence-20261109'
+        self.assertIn(returned_branch, workflow['on']['push']['branches'])
+        self.assertIn("github.ref_name == '" + returned_branch + "' && 'timer-fired-v7'", workflow['env']['LSF_GO_REFERENCE_CAMPAIGN'])
         self.assertNotIn('release', workflow['on']['push']['branches'])
         self.assertIn("github.ref_name == '" + branch + "' && 'timer-fired-v7'", workflow['env']['LSF_GO_REFERENCE_CAMPAIGN'])
         self.assertIn('timer-fired-v7', workflow['on']['workflow_dispatch']['inputs']['campaign']['options'])
@@ -158,7 +212,9 @@ class FiredTimerControls(unittest.TestCase):
         self.assertIn('--runtime-profile go-component-activation-v7 --fixture timer-fired', build['run'])
         self.assertIn('--campaign timer-fired-v7 --source-commit "${{ github.sha }}"', signed['run'])
         retained = next(s for s in steps if s.get('name') == 'Retain bounded actual results and compiler source identities')['with']['path']
-        for suffix in ('src/', 'wit/', 'diagnostic-sdk/runtime/timer_async.go.in', 'build/component.wasm', 'logs/'):
+        for suffix in ('src/', 'wit/', 'diagnostic-sdk/runtime/timer_async.go.in',
+                       'diagnostic-sdk/runtime/timer_bridge.go.in', 'diagnostic-sdk/runtime/activation_bridge.go.in',
+                       'diagnostic-runtime-inputs/', 'build/component.wasm', 'logs/'):
             self.assertIn('go-timer-fired-v7/' + suffix, retained)
         self.assertIn('go-timer-fired-v7-result/', retained)
         suites = json.loads((ROOT / 'tools/ci/suites.json').read_text())['suites']

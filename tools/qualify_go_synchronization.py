@@ -271,12 +271,13 @@ def fired_timer_observations(raw: bytes, diagnostic: bytes, filtered: int) -> di
         return value
     prefix = b'GO_TIMER_FIRED_CASE '
     values = re.findall(rb'^GO_TIMER_FIRED_CASE (.+)$', raw, re.M)
-    if raw.count(prefix) != 3 or len(values) != 3:
+    if raw.count(prefix) != 5 or len(values) != 5:
         raise ValueError('Go-fired-timer-exact-case-count')
     rows = [json.loads(item, object_pairs_hook=unique) for item in values]
     expected = [dict(case=case, mode=mode, outcome='success', storesCreated=count, liveStores=0,
                      liveInstances=0, reservations=0, reservedFuel=0, reservedMemory=0, pendingProviderWaits=0)
-                for case, mode, count in [('stop', 0, 1), ('reset', 1, 2), ('fresh', 0, 3)]]
+                for case, mode, count in [('stop', 0, 1), ('reset', 1, 2),
+                    ('returned-stop', 2, 3), ('returned-reset', 3, 4), ('fresh', 0, 5)]]
     if json.dumps(rows, sort_keys=True, separators=(',', ':')) != json.dumps(expected, sort_keys=True, separators=(',', ':')):
         raise ValueError('Go-fired-timer-signed-retirement-required')
     witness_prefix = b'LSF-GO-TIMER-FIRED-V1|'
@@ -294,12 +295,28 @@ def fired_timer_observations(raw: bytes, diagnostic: bytes, filtered: int) -> di
         witnesses.append({'activation': activation, 'modeledWitnessBytes': int(fields[4])})
     if len({item['modeledWitnessBytes'] for item in witnesses}) != 1:
         raise ValueError('Go-fired-timer-inconsistent-layout')
+    returned_prefix = b'LSF-GO-TIMER-RETURNED-V1|'
+    returned_records = re.findall(rb'^LSF-GO-TIMER-RETURNED-V1\|([^\r\n]+)$', diagnostic, re.M)
+    returned_ids = ('go-timer-returned-stop', 'go-timer-returned-reset')
+    if diagnostic.count(returned_prefix) != 2 or len(returned_records) != 2:
+        raise ValueError('Go-returned-timer-exact-witnesses-required')
+    returned_witnesses = []
+    for activation, record in zip(returned_ids, returned_records):
+        fields = record.split(b'|')
+        if len(fields) != 5 or fields[:4] != [activation.encode(), b'1', b'0', b'0']:
+            raise ValueError('Go-returned-timer-causal-witness-required')
+        if not re.fullmatch(rb'[1-9][0-9]{0,3}', fields[4]):
+            raise ValueError('Go-returned-timer-witness-budget')
+        returned_witnesses.append({'activation': activation, 'modeledWitnessBytes': int(fields[4])})
+    if any(item['modeledWitnessBytes'] != witnesses[0]['modeledWitnessBytes'] for item in returned_witnesses):
+        raise ValueError('Go-returned-timer-inconsistent-layout')
     drop_prefix = b'LSF-GO-TIMER-WAIT-DROP-V1|'
     drops = re.findall(rb'^LSF-GO-TIMER-WAIT-DROP-V1\|([^\r\n|]+)\|([01])$', diagnostic, re.M)
-    if diagnostic.count(drop_prefix) != 2 or drops != [(name.encode(), b'1') for name in ids]:
+    all_ids = ids + returned_ids
+    if diagnostic.count(drop_prefix) != 4 or drops != [(name.encode(), b'1') for name in all_ids]:
         raise ValueError('Go-fired-timer-physical-wait-drops-required')
-    return {'cases': rows, 'witnesses': witnesses,
-            'physicalWaitDrops': [{'activation': name, 'returned': True} for name in ids]}
+    return {'cases': rows, 'witnesses': witnesses, 'returnedWitnesses': returned_witnesses,
+            'physicalWaitDrops': [{'activation': name, 'returned': True} for name in all_ids]}
 
 
 def campaign(campaign: str, fixture: Path, negative: Path | None) -> dict:
@@ -401,7 +418,7 @@ def compile_identity(path: Path, root: Path, profile: str, fixture: str = 'synch
     if profile in {'go-component-activation-v5', 'go-component-activation-v7'}:
         native = record['nativeReference']
         expected_modes = {'synchronization': NATIVE_MODES, 'managed-idle': [0, 1, 2], 'timers': TIMER_NATIVE_MODES,
-                          'task-saturation': [0], 'timer-overlap': [0, 1, 2, 3], 'timer-fired': [0, 1]}[fixture]
+                          'task-saturation': [0], 'timer-overlap': [0, 1, 2, 3], 'timer-fired': [0, 1, 2, 3]}[fixture]
         native_outputs = (native.get('outputs') in ([42, 42, 42, 42], [42, 43, 42, 42],
                                                     [42, 42, 42, 43], [42, 43, 42, 43])
                           if fixture == 'timer-overlap' else native.get('output') == 42)
@@ -409,13 +426,34 @@ def compile_identity(path: Path, root: Path, profile: str, fixture: str = 'synch
                 or native['freshProcessPerMode'] is not True or native['sourceDigest'] != record['sourceDigest']):
             raise ValueError('Go-synchronization-native-reference')
     if fixture == 'timer-fired':
-        from tools.go_guest.fired_timer_witness import derive
+        from tools.go_guest.fired_timer_witness import (derive, derive_bridge, derive_activation_bridge,
+            GO_CHAN_SHA256, GO_RUNTIME2_SHA256)
         original_timer = (root / 'sdk/go-guest/runtime/timer_async.go.in').read_bytes()
-        derived_timer = derive(original_timer)
+        original_bridge = (root / 'sdk/go-guest/runtime/timer_bridge.go.in').read_bytes()
+        original_activation = (root / 'sdk/go-guest/runtime/activation_bridge.go.in').read_bytes()
+        derived_timer, derived_bridge, derived_activation = (derive(original_timer),
+            derive_bridge(original_bridge), derive_activation_bridge(original_activation))
         diagnostic_timer = path / 'diagnostic-sdk/runtime/timer_async.go.in'
-        if (diagnostic_timer.is_symlink() or diagnostic_timer.read_bytes() != derived_timer
-                or record.get('diagnosticRuntime') != {'kind': 'selected-stop-token-fence-observe-v2',
-                    'originalTimerAsyncDigest': 'sha256:' + digest(original_timer), 'derivedTimerAsyncDigest': 'sha256:' + digest(derived_timer)}):
+        diagnostic_bridge = path / 'diagnostic-sdk/runtime/timer_bridge.go.in'
+        diagnostic_activation = path / 'diagnostic-sdk/runtime/activation_bridge.go.in'
+        runtime_chan = path / 'diagnostic-runtime-inputs/runtime/chan.go'
+        runtime_descriptor = path / 'diagnostic-runtime-inputs/runtime/runtime2.go'
+        if (runtime_chan.is_symlink() or runtime_descriptor.is_symlink()
+                or runtime_chan.stat().st_size > 128 * 1024 or runtime_descriptor.stat().st_size > 128 * 1024
+                or digest(runtime_chan.read_bytes()) != GO_CHAN_SHA256
+                or digest(runtime_descriptor.read_bytes()) != GO_RUNTIME2_SHA256
+                or diagnostic_timer.is_symlink() or diagnostic_timer.read_bytes() != derived_timer
+                or diagnostic_bridge.is_symlink() or diagnostic_bridge.read_bytes() != derived_bridge
+                or diagnostic_activation.is_symlink() or diagnostic_activation.read_bytes() != derived_activation
+                or record.get('diagnosticRuntime') != {'kind': 'selected-returned-ticker-fence-observe-v3',
+                    'originalTimerAsyncDigest': 'sha256:' + digest(original_timer),
+                    'derivedTimerAsyncDigest': 'sha256:' + digest(derived_timer),
+                    'originalTimerBridgeDigest': 'sha256:' + digest(original_bridge),
+                    'derivedTimerBridgeDigest': 'sha256:' + digest(derived_bridge),
+                    'originalActivationBridgeDigest': 'sha256:' + digest(original_activation),
+                    'derivedActivationBridgeDigest': 'sha256:' + digest(derived_activation),
+                    'runtimeChanDigest': 'sha256:' + GO_CHAN_SHA256,
+                    'runtimeDescriptorDigest': 'sha256:' + GO_RUNTIME2_SHA256}):
             raise ValueError('Go-fired-timer-diagnostic-runtime-drift')
     identity = {'receiptSha256': digest(raw), 'profile': profile, 'sourceDigest': record['sourceDigest'],
                 'componentDigest': record['componentDigest'], 'bindingDigest': record['bindingDigest'],

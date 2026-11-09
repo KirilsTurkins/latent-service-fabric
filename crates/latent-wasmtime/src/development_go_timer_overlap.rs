@@ -38,6 +38,8 @@ pub(crate) enum Case {
     DeadlineResetStop,
     FiredStop,
     FiredReset,
+    ReturnedStop,
+    ReturnedReset,
 }
 
 impl Case {
@@ -52,11 +54,17 @@ impl Case {
             Self::DeadlineResetStop => "go-timer-overlap-deadline-reset-stop",
             Self::FiredStop => "go-timer-fired-stop",
             Self::FiredReset => "go-timer-fired-reset",
+            Self::ReturnedStop => "go-timer-returned-stop",
+            Self::ReturnedReset => "go-timer-returned-reset",
         }
     }
 
     const fn fired(self) -> bool {
         matches!(self, Self::FiredStop | Self::FiredReset)
+    }
+
+    const fn returned(self) -> bool {
+        matches!(self, Self::ReturnedStop | Self::ReturnedReset)
     }
 
     const fn requires_gc(self) -> bool {
@@ -127,6 +135,135 @@ impl State {
         }
     }
 
+    // Returned-event qualification reuses the existing fixed-capacity fields:
+    // ready_before_stop = event probe; markers[0].stopped = fence probe;
+    // markers[0].parked = root park; handshake_confirmed = exact channel probe;
+    // markers[1].stopped = post-subtask-drop probe; second_waiting = root wake;
+    // markers[1].timer/parked = replacement/stopped; markers[0].timer and
+    // gc_marker_stopped = public-return marker and its stop. No extra Arc or
+    // storage is admitted, and these fields retain their old meanings elsewhere.
+    fn returned_start(
+        &mut self,
+        token: RuntimeToken,
+        parent: Option<RuntimeToken>,
+        period: Option<u64>,
+    ) {
+        let root = self.tasks[0];
+        if self.invalid || self.task_count != 1 || root.is_none() || parent != root {
+            self.invalid = true;
+            return;
+        }
+        if self.target.is_none() {
+            if period != Some(251_000_000) {
+                self.invalid = true;
+                return;
+            }
+            self.target = Some(token);
+        } else if !self.markers[1].stopped || !self.second_waiting || Some(token) == self.target {
+            self.invalid = true;
+        } else if self.case == Some(Case::ReturnedReset) && self.markers[1].timer.is_none() {
+            if period != Some(3_600_000_000_000) {
+                self.invalid = true;
+                return;
+            }
+            self.markers[1].timer = Some(token);
+        } else if self.markers[0].timer.is_none()
+            && (self.case == Some(Case::ReturnedStop) || self.markers[1].parked)
+            && period.is_none()
+            && self.markers[1].timer != Some(token)
+        {
+            self.markers[0].timer = Some(token);
+        } else {
+            self.invalid = true;
+        }
+    }
+
+    fn returned_stop(&mut self, token: RuntimeToken) {
+        if self.invalid {
+            return;
+        }
+        if Some(token) == self.target {
+            if !self.ready_before_stop || !self.next_finished || self.target_stopped {
+                self.invalid = true;
+            } else {
+                self.target_stopped = true;
+            }
+        } else if Some(token) == self.markers[1].timer {
+            if !self.second_waiting || !self.markers[1].stopped || self.markers[1].parked {
+                self.invalid = true;
+            } else {
+                self.markers[1].parked = true;
+            }
+        } else if Some(token) == self.markers[0].timer {
+            if self.gc_marker_stopped {
+                self.invalid = true;
+            } else {
+                self.gc_marker_stopped = true;
+            }
+        } else {
+            self.invalid = true;
+        }
+    }
+
+    fn returned_probe(&mut self, waits: u32, timers: u32) {
+        if self.invalid {
+            return;
+        }
+        if !self.ready_before_stop {
+            if !self.next_seen
+                || !self.next_pending
+                || !self.next_finished
+                || self.target_stopped
+                || waits != 0
+                || timers != 1
+            {
+                self.invalid = true;
+            } else {
+                self.ready_before_stop = true;
+            }
+        } else if !self.markers[0].stopped {
+            if !self.target_stopped || self.next_live || waits != 0 || timers != 0 {
+                self.invalid = true;
+            } else {
+                self.markers[0].stopped = true;
+            }
+        } else if !self.handshake_confirmed {
+            if !self.markers[0].parked || waits != 0 || timers != 0 {
+                self.invalid = true;
+            } else {
+                self.handshake_confirmed = true;
+            }
+        } else if !self.markers[1].stopped {
+            if !self.markers[0].parked || waits != 0 || timers != 0 {
+                self.invalid = true;
+            } else {
+                self.markers[1].stopped = true;
+            }
+        } else {
+            self.invalid = true;
+        }
+    }
+
+    fn returned_complete(&self) -> bool {
+        !self.invalid
+            && self.task_count == 1
+            && self.next_seen
+            && self.next_pending
+            && self.next_finished
+            && !self.next_live
+            && self.ready_before_stop
+            && self.target_stopped
+            && self.markers[0].stopped
+            && self.markers[0].parked
+            && self.handshake_confirmed
+            && self.markers[1].stopped
+            && self.second_waiting
+            && self.markers[0].timer.is_some()
+            && self.gc_marker_stopped
+            && (self.case == Some(Case::ReturnedStop)
+                || (self.markers[1].timer.is_some() && self.markers[1].parked))
+    }
+
     fn task(&mut self, kind: OwnerKind, token: RuntimeToken, parent: Option<RuntimeToken>) {
         if kind != OwnerKind::Task {
             return;
@@ -150,6 +287,10 @@ impl State {
         parent: Option<RuntimeToken>,
         period: Option<u64>,
     ) {
+        if self.case.is_some_and(Case::returned) {
+            self.returned_start(token, parent, period);
+            return;
+        }
         if let Some(case) = self.case.filter(|case| case.fired()) {
             let Some(root) = self.tasks[0] else {
                 self.invalid = true;
@@ -238,6 +379,15 @@ impl State {
     }
 
     fn next(&mut self, token: RuntimeToken, waits: u32) -> bool {
+        if self.case.is_some_and(Case::returned) {
+            if self.invalid || self.next_seen || Some(token) != self.target || waits == 0 {
+                self.invalid = true;
+                return false;
+            }
+            self.next_seen = true;
+            self.next_live = true;
+            return true;
+        }
         if self.case.is_some_and(Case::fired) {
             let Some(fired) = self.fired.as_mut() else {
                 self.invalid = true;
@@ -260,6 +410,18 @@ impl State {
     }
 
     fn next_pending(&mut self, token: RuntimeToken) {
+        if self.case.is_some_and(Case::returned) {
+            if Some(token) != self.target
+                || !self.next_live
+                || self.next_pending
+                || self.target_stopped
+            {
+                self.invalid = true;
+            } else {
+                self.next_pending = true;
+            }
+            return;
+        }
         if self.case.is_some_and(Case::fired) {
             let Some(fired) = self.fired.as_mut() else {
                 self.invalid = true;
@@ -278,6 +440,10 @@ impl State {
     }
 
     fn timer_stop(&mut self, token: RuntimeToken, waits: u32) {
+        if self.case.is_some_and(Case::returned) {
+            self.returned_stop(token);
+            return;
+        }
         if self.case.is_some_and(Case::fired) {
             let Some(fired) = self.fired.as_mut() else {
                 self.invalid = true;
@@ -321,6 +487,16 @@ impl State {
     }
 
     fn park(&mut self, task: RuntimeToken, waits: u32) -> bool {
+        if self.case.is_some_and(Case::returned) {
+            if Some(task) == self.tasks[0] && self.markers[0].stopped {
+                if self.markers[0].parked {
+                    self.invalid = true;
+                } else {
+                    self.markers[0].parked = true;
+                }
+            }
+            return false;
+        }
         if self.markers[1].parked {
             return false;
         }
@@ -362,12 +538,35 @@ impl State {
     }
 
     fn wake(&mut self, task: RuntimeToken) {
+        if self.case.is_some_and(Case::returned) {
+            if Some(task) == self.tasks[0] && self.markers[0].parked {
+                if !self.markers[1].stopped || self.second_waiting {
+                    self.invalid = true;
+                } else {
+                    self.second_waiting = true;
+                }
+            }
+            return;
+        }
         if self.markers[1].task == Some(task) {
             self.second_waiting = false;
         }
     }
 
     fn next_finished(&mut self, token: RuntimeToken) {
+        if self.case.is_some_and(Case::returned) {
+            if Some(token) != self.target
+                || !self.next_live
+                || !self.next_pending
+                || self.target_stopped
+            {
+                self.invalid = true;
+            } else {
+                self.next_live = false;
+                self.next_finished = true;
+            }
+            return;
+        }
         if self.case.is_some_and(Case::fired) {
             let Some(fired) = self.fired.as_mut() else {
                 self.invalid = true;
@@ -495,6 +694,8 @@ impl Observer {
             Case::DeadlineResetStop,
             Case::FiredStop,
             Case::FiredReset,
+            Case::ReturnedStop,
+            Case::ReturnedReset,
         ]
         .into_iter()
         .find(|case| case.activation() == activation)
@@ -590,6 +791,10 @@ impl Observer {
     pub(crate) fn fired_probe(&self, waits: u32, timers: u32) {
         let mut release = false;
         self.apply(|state| {
+            if state.case.is_some_and(Case::returned) {
+                state.returned_probe(waits, timers);
+                return;
+            }
             if !state.case.is_some_and(Case::fired) {
                 return;
             }
@@ -673,7 +878,9 @@ impl Observer {
         let Ok(mut state) = self.inner.state.lock() else {
             return;
         };
-        let matched = if state.case.is_some_and(Case::fired) {
+        let matched = if state.case.is_some_and(Case::returned) {
+            state.target == Some(token) && state.next_pending
+        } else if state.case.is_some_and(Case::fired) {
             state
                 .fired
                 .as_ref()
@@ -788,6 +995,18 @@ impl Observer {
             .0
             .as_ref()
             .map_or(0, |charge| charge.allocation.bytes());
+        if case.returned() {
+            let _ = writeln!(
+                std::io::stderr().lock(),
+                "LSF-GO-TIMER-RETURNED-V1|{}|{}|{}|{}|{}",
+                case.activation(),
+                u8::from(state.returned_complete()),
+                u8::from(state.invalid),
+                u8::from(state.timeout),
+                bytes
+            );
+            return;
+        }
         if case.fired() {
             let complete = !state.invalid
                 && !state.timeout
@@ -935,6 +1154,88 @@ mod tests {
 
     fn token(id: u64) -> RuntimeToken {
         RuntimeToken { generation: 1, id }
+    }
+
+    fn returned_before_event(case: Case) -> State {
+        let mut state = State {
+            case: Some(case),
+            ..State::new()
+        };
+        state.task(OwnerKind::Task, token(1), None);
+        state.timer_start(token(10), Some(token(1)), Some(251_000_000));
+        assert!(state.next(token(10), 1));
+        state.next_pending(token(10));
+        state.next_finished(token(10));
+        state
+    }
+
+    fn returned_before_drop(case: Case) -> State {
+        let mut state = returned_before_event(case);
+        state.returned_probe(0, 1); // matching successful returned event
+        state.timer_stop(token(10), 0);
+        state.returned_probe(0, 0); // same-token public fence
+        state.park(token(1), 0);
+        state.returned_probe(0, 0); // exact wait.done channel identity
+        state
+    }
+
+    #[test]
+    fn returned_timer_requires_same_token_fence_park_drop_and_public_return() {
+        for case in [Case::ReturnedStop, Case::ReturnedReset] {
+            let mut state = returned_before_drop(case);
+            assert!(!state.returned_complete());
+            state.returned_probe(0, 0); // after canonical subtask drop
+            state.wake(token(1));
+            if case == Case::ReturnedReset {
+                state.timer_start(token(11), Some(token(1)), Some(3_600_000_000_000));
+                state.timer_stop(token(11), 0);
+            }
+            state.timer_start(token(12), Some(token(1)), None);
+            state.timer_stop(token(12), 0);
+            assert!(state.returned_complete(), "{case:?}: {state:?}");
+        }
+    }
+
+    #[test]
+    fn returned_timer_rejects_early_stop_missing_or_foreign_edges() {
+        let mut stopped = returned_before_event(Case::ReturnedStop);
+        stopped.timer_stop(token(10), 0);
+        assert!(!stopped.returned_complete());
+        assert!(stopped.invalid);
+
+        let mut foreign = returned_before_event(Case::ReturnedStop);
+        foreign.returned_probe(0, 1);
+        foreign.timer_stop(
+            RuntimeToken {
+                generation: 2,
+                id: 10,
+            },
+            0,
+        );
+        assert!(!foreign.returned_complete());
+        assert!(foreign.invalid);
+
+        let mut no_park = returned_before_event(Case::ReturnedStop);
+        no_park.returned_probe(0, 1);
+        no_park.timer_stop(token(10), 0);
+        no_park.returned_probe(0, 0);
+        no_park.returned_probe(0, 0);
+        assert!(!no_park.returned_complete());
+        assert!(no_park.invalid);
+
+        let mut no_channel = returned_before_event(Case::ReturnedReset);
+        no_channel.returned_probe(0, 1);
+        no_channel.timer_stop(token(10), 0);
+        no_channel.returned_probe(0, 0);
+        no_channel.park(token(1), 0);
+        no_channel.wake(token(1));
+        assert!(!no_channel.returned_complete());
+        assert!(no_channel.invalid);
+
+        let mut early_replacement = returned_before_drop(Case::ReturnedReset);
+        early_replacement.timer_start(token(11), Some(token(1)), Some(3_600_000_000_000));
+        assert!(!early_replacement.returned_complete());
+        assert!(early_replacement.invalid);
     }
 
     fn before_second_park() -> State {

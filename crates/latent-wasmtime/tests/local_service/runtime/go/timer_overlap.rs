@@ -144,7 +144,9 @@ async fn signed_fired_one_shot_public_stop_and_reset_wait_for_original_next() {
     for (case, id, mode, created) in [
         ("stop", "go-timer-fired-stop", 0, 1),
         ("reset", "go-timer-fired-reset", 1, 2),
-        ("fresh", "go-timer-fired-fresh", 0, 3),
+        ("returned-stop", "go-timer-returned-stop", 2, 3),
+        ("returned-reset", "go-timer-returned-reset", 3, 4),
+        ("fresh", "go-timer-fired-fresh", 0, 5),
     ] {
         let result = f.manager.start(f.request(id, mode)).unwrap().await;
         let selected = result
