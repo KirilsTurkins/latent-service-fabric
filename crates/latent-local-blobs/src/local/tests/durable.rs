@@ -689,6 +689,39 @@ fn recovery_checks_actual_required_bytes_and_rejects_foreign_view_or_corruption(
 }
 
 #[test]
+fn empty_recovery_page_requires_live_admission_and_local_owner() {
+    let state_root = temporary_root();
+    let blob_root = temporary_root();
+    let state = database(state_root.path(), true, "payload-state-a");
+    let owner =
+        LocalBlobStore::open_durable(blob_root.path(), "private", limits(), &state).unwrap();
+    let view = state.snapshot().unwrap();
+    let mut inventory = RequiredBlobInventory::begin(&owner, &view).unwrap();
+    assert_eq!(
+        inventory.next_page(&owner, &view, 1, 1024, &|| Err(
+            LocalBlobError::DeadlineExceeded
+        )),
+        Err(LocalBlobError::DeadlineExceeded)
+    );
+    let calls = std::cell::Cell::new(0);
+    let close_after_observation = || {
+        calls.set(calls.get() + 1);
+        if calls.get() == 2 {
+            owner.close();
+        }
+        Ok(())
+    };
+    assert_eq!(
+        inventory.next_page(&owner, &view, 1, 1024, &close_after_observation),
+        Err(LocalBlobError::Closed)
+    );
+    assert!(matches!(
+        RequiredBlobInventory::begin(&owner, &view),
+        Err(LocalBlobError::Closed)
+    ));
+}
+
+#[test]
 fn bounded_recovery_pages_stay_with_original_view_and_refuse_corruption() {
     let state_root = temporary_root();
     let blob_root = temporary_root();

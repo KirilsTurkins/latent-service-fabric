@@ -173,6 +173,7 @@ impl LocalReferenceAudit {
 }
 impl RequiredBlobInventory {
     pub fn begin(store: &LocalBlobStore, view: &ReadView) -> Result<Self> {
+        store.inner.check()?;
         let mode = store
             .inner
             .durable
@@ -215,6 +216,10 @@ impl RequiredBlobInventory {
         {
             return Err(LocalBlobError::PermissionDenied);
         }
+        // Empty pages are still observations. They cannot complete after the
+        // original admission or local physical owner has already retired.
+        checkpoint()?;
+        store.inner.check()?;
         let page = payload_references::required_owner_page(
             view,
             self.after.as_deref(),
@@ -228,6 +233,9 @@ impl RequiredBlobInventory {
             let bytes = reference.encode().map_err(storage)?;
             store.verify_required_reference(view, &key, &bytes, checkpoint)?;
         }
+        let _ = view.is_empty().map_err(storage)?;
+        checkpoint()?;
+        store.inner.check()?;
         let count = page.references.len();
         self.after = page.resume;
         self.complete = self.after.is_none();
