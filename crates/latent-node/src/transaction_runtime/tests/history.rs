@@ -115,3 +115,56 @@ async fn original_restored_store_refuses_queries_and_pending_before_review() {
     assert_eq!(fixture.rows(Family::State).await, 0);
     fixture.shutdown().await;
 }
+
+#[tokio::test]
+async fn native_query_refuses_mutations_and_intents_without_durable_business_rows() {
+    use latent_executor::transaction::{Intent, IntentFailure};
+
+    let fixture = Fixture::new().await;
+    let (admission, envelope, budget) = fixture.invocation(true, "query-mutation-refusal");
+    let guest = admission.admit(&envelope, &budget).await.unwrap();
+    let TransactionAdmissionResult::Query { host } = admission.take_result().unwrap().unwrap()
+    else {
+        panic!("query host absent");
+    };
+    guest.acquire(Mode::Query).unwrap();
+    let original = guest.view_identity().unwrap().version;
+    assert!(guest.read(b"counter".to_vec()).await.unwrap().is_none());
+    assert_eq!(
+        guest.put(b"counter".to_vec(), value(b"forbidden")).await,
+        Err(StateFailure::WrongMode)
+    );
+    assert_eq!(
+        guest.delete(b"counter".to_vec()).await,
+        Err(StateFailure::WrongMode)
+    );
+    assert_eq!(
+        guest
+            .stage(Intent {
+                binding: "approved-event".into(),
+                operation: "event".into(),
+                payload: value(b"forbidden"),
+                expires_at_unix_millis: None,
+            })
+            .await,
+        Err(IntentFailure::WrongMode)
+    );
+    assert!(matches!(guest.command_info(), Err(StateFailure::WrongMode)));
+    assert!(guest.staging_identity().is_none());
+    assert_eq!(guest.view_identity().unwrap().version, original);
+    host.finish_guest_access();
+    host.retire().await.unwrap();
+    drop((guest, host, admission));
+    for family in [
+        Family::State,
+        Family::Tombstone,
+        Family::Command,
+        Family::Attempt,
+        Family::Result,
+        Family::Outbox,
+    ] {
+        assert_eq!(fixture.rows(family).await, 0);
+    }
+    assert!(fixture.native.snapshot().unwrap().physically_retired());
+    fixture.shutdown().await;
+}
