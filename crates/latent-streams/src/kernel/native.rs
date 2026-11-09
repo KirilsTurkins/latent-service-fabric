@@ -1546,6 +1546,52 @@ pub(crate) mod node_bootstrap {
             .expect("actual owner returned to original bounded quarantine")
         }
 
+        fn synthetic_capacity_reply(attachment: Attachment) -> [u8; CAPACITY_REPLY_BYTES] {
+            let mut capacity = [0u8; CAPACITY_REPLY_BYTES];
+            capacity[..REPLY_BYTES].copy_from_slice(&observed(2));
+            capacity[4..8].copy_from_slice(&CAPACITY_VERSION.to_le_bytes());
+            let words = [
+                1u64,
+                1,
+                327680,
+                64,
+                16,
+                1,
+                1,
+                1,
+                512,
+                1,
+                2097152,
+                0,
+                2097152,
+                0,
+                600000,
+                4096,
+                4096,
+                128,
+                2,
+                2,
+                1,
+                9,
+                8,
+                1,
+                0x0023_0022_0021_0020,
+                0x0027_0026_0025_0024,
+                1,
+                1,
+                7,
+                1048576,
+                524288,
+                196608,
+            ];
+            for (index, word) in words.into_iter().enumerate() {
+                capacity[REPLY_BYTES + index * 8..REPLY_BYTES + (index + 1) * 8]
+                    .copy_from_slice(&word.to_le_bytes());
+            }
+            assert!(capacity_reply(&capacity, attachment).is_ok());
+            capacity
+        }
+
         async fn assert_retired_node_retained(
             fixture: &Fixture,
             before: latent_capabilities::broker::pools::ProviderPoolSnapshot,
@@ -1686,48 +1732,7 @@ pub(crate) mod node_bootstrap {
                 .reserve_stream_kernel_node_backing(&fixture.provider.inner.installed)
                 .unwrap();
             let attachment = reply(&observed(2), 123, None).unwrap().1;
-            let mut capacity = [0u8; CAPACITY_REPLY_BYTES];
-            capacity[..REPLY_BYTES].copy_from_slice(&observed(2));
-            capacity[4..8].copy_from_slice(&CAPACITY_VERSION.to_le_bytes());
-            let words = [
-                1u64,
-                1,
-                327680,
-                64,
-                16,
-                1,
-                1,
-                1,
-                512,
-                1,
-                2097152,
-                0,
-                2097152,
-                0,
-                600000,
-                4096,
-                4096,
-                128,
-                2,
-                2,
-                1,
-                9,
-                8,
-                1,
-                0x0023_0022_0021_0020,
-                0x0027_0026_0025_0024,
-                1,
-                1,
-                7,
-                1048576,
-                524288,
-                196608,
-            ];
-            for (index, word) in words.into_iter().enumerate() {
-                capacity[REPLY_BYTES + index * 8..REPLY_BYTES + (index + 1) * 8]
-                    .copy_from_slice(&word.to_le_bytes());
-            }
-            assert!(capacity_reply(&capacity, attachment).is_ok());
+            let capacity = synthetic_capacity_reply(attachment);
             let (client, peer) = UnixDatagram::pair().unwrap();
             client
                 .set_read_timeout(Some(Duration::from_secs(2)))
