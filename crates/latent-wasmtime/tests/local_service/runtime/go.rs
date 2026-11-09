@@ -180,7 +180,7 @@ fn checkpoint_component(
             } else if task_saturation {
                 serde_json::json!([0])
             } else if timer_fired {
-                serde_json::json!([0, 1])
+                serde_json::json!([0, 1, 2, 3])
             } else if timer_overlap {
                 serde_json::json!([0, 1, 2, 3])
             } else if managed {
@@ -260,7 +260,7 @@ fn checkpoint_component(
         );
         assert_eq!(
             record["diagnosticRuntime"]["kind"],
-            "selected-stop-token-fence-observe-v2"
+            "selected-returned-ticker-fence-observe-v3"
         );
         let original = include_bytes!("../../../../../sdk/go-guest/runtime/timer_async.go.in");
         let derived =
@@ -274,6 +274,58 @@ fn checkpoint_component(
             latent_artifacts::package::artifact_blob_digest(&derived).as_str()
         );
         assert_ne!(original.as_slice(), derived.as_slice());
+        for (name, original, original_key, derived_key) in [
+            (
+                "timer_bridge.go.in",
+                include_bytes!("../../../../../sdk/go-guest/runtime/timer_bridge.go.in").as_slice(),
+                "originalTimerBridgeDigest",
+                "derivedTimerBridgeDigest",
+            ),
+            (
+                "activation_bridge.go.in",
+                include_bytes!("../../../../../sdk/go-guest/runtime/activation_bridge.go.in")
+                    .as_slice(),
+                "originalActivationBridgeDigest",
+                "derivedActivationBridgeDigest",
+            ),
+        ] {
+            let derived =
+                std::fs::read(prepared.join("diagnostic-sdk/runtime").join(name)).unwrap();
+            assert_eq!(
+                record["diagnosticRuntime"][original_key],
+                latent_artifacts::package::artifact_blob_digest(original).as_str()
+            );
+            assert_eq!(
+                record["diagnosticRuntime"][derived_key],
+                latent_artifacts::package::artifact_blob_digest(&derived).as_str()
+            );
+            assert_ne!(original, derived.as_slice());
+        }
+        for (name, key, expected) in [
+            (
+                "chan.go",
+                "runtimeChanDigest",
+                "sha256:dbe8d02ebb1b554b28263c8f34747c0b6d796b3e7040a2f6a625c472e9ce9a42",
+            ),
+            (
+                "runtime2.go",
+                "runtimeDescriptorDigest",
+                "sha256:7d66ed912f68b1259947807ca1bdf79ee7e54c6a61a716d88db663d570af66da",
+            ),
+        ] {
+            let source = std::fs::read(
+                prepared
+                    .join("diagnostic-runtime-inputs/runtime")
+                    .join(name),
+            )
+            .unwrap();
+            assert!(source.len() <= 128 * 1024);
+            assert_eq!(record["diagnosticRuntime"][key], expected);
+            assert_eq!(
+                latent_artifacts::package::artifact_blob_digest(&source).as_str(),
+                expected
+            );
+        }
     }
     if timer_overlap {
         assert_eq!(
