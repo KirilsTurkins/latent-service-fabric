@@ -18,6 +18,7 @@ CURRENT_EVENT_PROFILE = "java-current-event-profile.json"
 RUST_EVENT_PROFILE = "rust-current-event-profile.json"
 C_EVENT_PROFILE = "c-current-event-profile.json"
 GO_EVENT_PROFILE = "go-current-event-profile.json"
+TYPESCRIPT_EVENT_PROFILE = "typescript-current-event-profile.json"
 
 
 def put_once_requirements(project: dict, companion: bytes) -> dict:
@@ -172,7 +173,8 @@ def package_effect_requirements(output: Path, project: dict, files: dict[str, by
     markers = {CURRENT_EVENT_PROFILE: "latent.java.current-event-source-input.v1",
                RUST_EVENT_PROFILE: "latent.rust.current-event-source-input.v1",
                C_EVENT_PROFILE: "latent.c.current-event-source-input.v1",
-               GO_EVENT_PROFILE: "latent.go.current-event-source-input.v1"}
+               GO_EVENT_PROFILE: "latent.go.current-event-source-input.v1",
+               TYPESCRIPT_EVENT_PROFILE: "latent.typescript.current-event-source-input.v1"}
     selected_markers = [name for name in markers if name in files]
     if raw_event is not None or selected_markers:
         require(raw_event is not None and len(selected_markers) == 1 and HTTP_REQUIREMENTS not in files
