@@ -687,22 +687,23 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'ScheduledQueuedSettlementControl.java', 'FutureTaskInterruptFailureControl.java',
         'ExecutorCloseInterruptControl.java', 'ExecutorOwnerSettlementControl.java',
         'ExecutorInvokeInterruptOwnerControl.java', 'ExecutorAwaitTerminationOwnerControl.java',
-        'FutureTaskNullFailureOwnerControl.java',
+        'FutureTaskNullFailureOwnerControl.java', 'FutureTaskMonitorOwnerControl.java',
         'dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
     reference = private / 'ScheduledStoppedReferenceControl.java'
     periodic_reference = private / 'ScheduledPeriodicReferenceControl.java'
     invoke_reference = private / 'ExecutorInvokeInterruptReferenceControl.java'
     termination_reference = private / 'ExecutorAwaitTerminationReferenceControl.java'
     null_failure_reference = private / 'FutureTaskNullFailureReferenceControl.java'
+    monitor_reference = private / 'FutureTaskMonitorReferenceControl.java'
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
         for path in (*ports, *controls, reference, periodic_reference, invoke_reference, termination_reference,
-                     null_failure_reference)}
+                     null_failure_reference, monitor_reference)}
     output.mkdir()
     jdk_output = output / 'reference-jdk'
     jdk_output.mkdir()
     compiler.run('scheduled-stopped-reference-compile', 'javac', '-proc:none', '--release', '25',
         '-d', jdk_output, reference, periodic_reference, invoke_reference, termination_reference,
-        null_failure_reference)
+        null_failure_reference, monitor_reference)
     expected_stopped = ('SCHEDULED_STOPPED_REFERENCE PASS delayed;fixed-rate;fixed-delay;nested;future;'
         'running;shutdown;shutdown-policy;physical-runner')
     result = compiler.run('scheduled-stopped-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
@@ -726,6 +727,10 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     result = compiler.run('future-task-null-failure-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'FutureTaskNullFailureReferenceControl', 'jdk').strip()
     if result != expected_null_failure: raise ValueError('Java future task null failure reference did not complete')
+    expected_monitor = 'FUTURE_TASK_MONITOR_REFERENCE PASS run;cancel;completed-get;executor;scheduled-cancel'
+    result = compiler.run('future-task-monitor-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
+        'FutureTaskMonitorReferenceControl').strip()
+    if result != expected_monitor: raise ValueError('Java FutureTask monitor reference did not complete')
     text = read_file(reference).decode('utf-8')
     for name in ('CompletableFuture', 'FutureTask', 'ScheduledThreadPoolExecutor'):
         original = 'import java.util.concurrent.' + name + ';'
@@ -757,9 +762,16 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     selected_null_failure = output / 'FutureTaskNullFailureReferenceControl.java'
     selected_null_failure.write_bytes(text.replace(original,
         'import dev.latent.guest.runtime.concurrent.FutureTask;').encode('utf-8'))
+    text = read_file(monitor_reference).decode('utf-8')
+    for name in ('FutureTask', 'Executors', 'ScheduledThreadPoolExecutor'):
+        original = 'import java.util.concurrent.' + name + ';'
+        if text.count(original) != 1: raise ValueError('Java FutureTask monitor reference import is ambiguous')
+        text = text.replace(original, 'import dev.latent.guest.runtime.concurrent.' + name + ';')
+    selected_monitor = output / 'FutureTaskMonitorReferenceControl.java'
+    selected_monitor.write_bytes(text.encode('utf-8'))
     compiler.run('scheduled-source-compile', 'javac', '-proc:none', '--release', '25',
         '-d', output, *ports, *controls, selected, selected_periodic, selected_invoke, selected_termination,
-        selected_null_failure)
+        selected_null_failure, selected_monitor)
     result = compiler.run('executor-invoke-interrupt-source', 'java', '-Xmx256m', '-cp', output,
         'ExecutorInvokeInterruptReferenceControl', 'source').strip()
     if result != expected_invoke: raise ValueError('Java executor invoke source differs from reference')
@@ -781,6 +793,13 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'FutureTaskNullFailureOwnerControl').strip()
     if result != 'FUTURE_TASK_NULL_FAILURE_OWNER PASS original-result-held-until-runner-exit':
         raise ValueError('Java future task null failure owner control did not complete')
+    result = compiler.run('future-task-monitor-source', 'java', '-Xmx256m', '-cp', output,
+        'FutureTaskMonitorReferenceControl').strip()
+    if result != expected_monitor: raise ValueError('Java FutureTask monitor source differs from reference')
+    result = compiler.run('future-task-monitor-owner', 'java', '-Xmx256m', '-cp', output,
+        'FutureTaskMonitorOwnerControl').strip()
+    if result != 'FUTURE_TASK_MONITOR_OWNER PASS managed;active-owners;scheduled;retired-under-public-monitor':
+        raise ValueError('Java FutureTask monitor ownership control did not complete')
     interrupt_control = future_cancel_interrupt_control(compiler, output)
     executor_settlement = executor_owner_settlement_control(compiler, output)
     for implementation in ('jdk', 'source'):
@@ -859,6 +878,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'executorInvokeInterrupt': 'matched-14-preinterrupted-and-two-blocked-JDK-cases',
         'executorAwaitTermination': 'matched-16-preinterrupted-and-two-blocked-JDK-cases',
         'futureTaskNullFailure': 'matched-JDK-null-failure-and-retained-running-result',
+        'futureTaskPublicMonitor': 'JDK-and-SDK-source-controls-passed',
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 
