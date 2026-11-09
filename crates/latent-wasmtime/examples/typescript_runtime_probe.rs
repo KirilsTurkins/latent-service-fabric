@@ -11,6 +11,8 @@ use wasmtime::{Config, Engine, Store, StoreLimits, StoreLimitsBuilder};
 
 #[path = "typescript_runtime_probe/backing_controls.rs"]
 mod backing_controls;
+#[path = "typescript_runtime_probe/host_turn.rs"]
+mod host_turn;
 #[path = "typescript_runtime_probe/owned_results.rs"]
 mod owned_results;
 #[path = "typescript_runtime_probe/service_memory.rs"]
@@ -58,6 +60,12 @@ async fn main() -> wasmtime::Result<()> {
     });
     println!("diagnostic compiler optimization: {optimization}");
     let engine = Engine::new(&config)?;
+    // The existing compiler-boundary invocation has no profile argument.
+    // Keep all separately authenticated diagnostic profiles byte-for-byte in
+    // their existing output channel and run this finite host control only here.
+    if std::env::args().nth(3).is_none() {
+        host_turn::run().await?;
+    }
     if std::env::args().nth(3).as_deref() == Some("sdk-backing-core") {
         return backing_controls::run(&engine, std::path::Path::new(&path));
     }
