@@ -8,9 +8,9 @@ on:
         type: choice
         required: true
         default: synchronization
-        options: [synchronization, admission, queued, managed-timers, task-saturation, timer-overlap, timer-overlap-v7, timer-fired-v7]
+        options: [synchronization, admission, queued, managed-timers, task-saturation, timer-overlap, timer-overlap-v7, timer-fired-v7, managed-v7-timers]
   push:
-    branches: ['feat/go-runtime-retirement-20261020', 'feat/go-runtime-admission-20261020', 'feat/go-runtime-queued-ownership-20261020', 'feat/go-v5-standard-timers-20261020', 'feat/go-v7-timer-overlap-20261108', 'feat/go-fired-timer-fence-v7-20261108']
+    branches: ['feat/go-runtime-retirement-20261020', 'feat/go-runtime-admission-20261020', 'feat/go-runtime-queued-ownership-20261020', 'feat/go-v5-standard-timers-20261020', 'feat/go-v7-timer-overlap-20261108', 'feat/go-fired-timer-fence-v7-20261108', 'feat/go-v7-standard-timers-20261109']
 
 permissions:
   contents: read
@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  LSF_GO_REFERENCE_CAMPAIGN: ${{ inputs.campaign || (github.ref_name == 'feat/go-fired-timer-fence-v7-20261108' && 'timer-fired-v7' || github.ref_name == 'feat/go-v7-timer-overlap-20261108' && 'timer-overlap-v7' || github.ref_name == 'feat/go-v5-standard-timers-20261020' && 'managed-timers' || github.ref_name == 'feat/go-runtime-queued-ownership-20261020' && 'queued' || github.ref_name == 'feat/go-runtime-admission-20261020' && 'admission' || 'synchronization') }}
+  LSF_GO_REFERENCE_CAMPAIGN: ${{ inputs.campaign || (github.ref_name == 'feat/go-v7-standard-timers-20261109' && 'managed-v7-timers' || github.ref_name == 'feat/go-fired-timer-fence-v7-20261108' && 'timer-fired-v7' || github.ref_name == 'feat/go-v7-timer-overlap-20261108' && 'timer-overlap-v7' || github.ref_name == 'feat/go-v5-standard-timers-20261020' && 'managed-timers' || github.ref_name == 'feat/go-runtime-queued-ownership-20261020' && 'queued' || github.ref_name == 'feat/go-runtime-admission-20261020' && 'admission' || 'synchronization') }}
   CARGO_BUILD_JOBS: '2'
   CARGO_INCREMENTAL: '0'
   CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
@@ -111,6 +111,12 @@ jobs:
       - name: Run all forty-three original timer outcomes under managed-v5 ownership
         if: env.LSF_GO_REFERENCE_CAMPAIGN == 'managed-timers'
         run: python3 tools/qualify_go_synchronization.py --campaign managed-timers --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-managed-timers" --output "$RUNNER_TEMP/go-managed-timers-result"
+      - name: Compile unchanged standard timers with actual v7 and seventeen native references
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'managed-v7-timers'
+        run: python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-managed-v7-timers" --runtime-profile go-component-activation-v7 --fixture timers
+      - name: Run all forty-three original timer outcomes under managed-v7 ownership
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'managed-v7-timers'
+        run: python3 tools/qualify_go_synchronization.py --campaign managed-v7-timers --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-managed-v7-timers" --output "$RUNNER_TEMP/go-managed-v7-timers-result"
       - name: Compile ordinary Task saturation with actual v5 and native reference
         if: env.LSF_GO_REFERENCE_CAMPAIGN == 'task-saturation'
         run: python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-task-saturation" --runtime-profile go-component-activation-v5 --fixture task-saturation
@@ -168,6 +174,13 @@ jobs:
             ${{ runner.temp }}/go-managed-timers-result/receipt.json
             ${{ runner.temp }}/go-managed-timers-result/signed.stdout.log
             ${{ runner.temp }}/go-managed-timers-result/signed.stderr.log
+            ${{ runner.temp }}/go-managed-v7-timers/GO-ACTIVATION-COMPILE.json
+            ${{ runner.temp }}/go-managed-v7-timers/GO-ACTIVATION-FAILED.json
+            ${{ runner.temp }}/go-managed-v7-timers/src/
+            ${{ runner.temp }}/go-managed-v7-timers/wit/
+            ${{ runner.temp }}/go-managed-v7-timers/build/component.wasm
+            ${{ runner.temp }}/go-managed-v7-timers/logs/
+            ${{ runner.temp }}/go-managed-v7-timers-result/
             ${{ runner.temp }}/go-task-saturation/GO-ACTIVATION-COMPILE.json
             ${{ runner.temp }}/go-task-saturation/GO-ACTIVATION-FAILED.json
             ${{ runner.temp }}/go-task-saturation/src/
