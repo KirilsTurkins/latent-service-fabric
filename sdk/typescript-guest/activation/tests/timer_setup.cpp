@@ -64,26 +64,36 @@ int main(int argc,char** argv) {
   JS::Value value;
   JS::HandleValueArray one(&value,1);
   int32_t id=99;
-  stop_refused=refused;
   native.refuse_ack=refused_native;
-  fail_next_capture=true;
-  const bool first=timers.start(&cx,&callback,one,0,false,&id);
-  const bool first_valid=!first && id==0 && cx.exception && cx.detail &&
-      std::strcmp(cx.detail,"oom")==0 && starts==1 && stops==1;
+  bool first_valid=false;
+  if (refused) {
+    // Capture allocation now precedes host timer creation. Exercise a real
+    // stop refusal on an admitted timer instead of relying on the old order.
+    const bool started=timers.start(&cx,&callback,one,0,false,&id);
+    stop_refused=true;
+    first_valid=started && id!=0 && !timers.clear(&cx,id) && cx.exception &&
+        starts==1 && stops==1 && live_timers==1 && rooted_callables==1;
+  } else {
+    fail_next_capture=true;
+    const bool first=timers.start(&cx,&callback,one,0,false,&id);
+    first_valid=!first && id==0 && cx.exception && cx.detail &&
+        std::strcmp(cx.detail,"oom")==0 && starts==0 && stops==0 && rooted_callables==0;
+  }
   const unsigned first_live=native.live;
   JS_ClearPendingException(&cx);
   int32_t later_id=0;
   const bool later=timers.start(&cx,&callback,JS::HandleValueArray::empty(),0,false,&later_id);
   const bool admission_valid=refused || refused_native
-      ? (!later && later_id==0 && starts==1 && native.admissions==1 && first_live==1 && live_timers==(refused ? 1u : 0u))
-      : (later && later_id!=0 && starts==2 && native.admissions==2 && first_live==0 && live_timers==1);
+      ? (!later && later_id==0 && starts==(refused ? 1u : 0u) && native.admissions==1 &&
+         first_live==1 && live_timers==(refused ? 1u : 0u))
+      : (later && later_id!=0 && starts==1 && native.admissions==2 && first_live==0 && live_timers==1);
   JS_ClearPendingException(&cx);
   stop_refused=false;
   native.refuse_ack=false;
   const bool retired=timers.cancel(&cx) && !timers.hasPending() && live_timers==0 &&
       native.live==0 && rooted_callables==0 && native.acknowledgements==native.admissions;
-  const bool stopped_exactly=stopped_ids[0]==1 &&
-      (refused_native ? stops==1 : stops==2 && stopped_ids[1]==(refused ? 1u : 2u));
+  const bool stopped_exactly=refused_native ? stops==0 :
+      stopped_ids[0]==1 && (refused ? stops==2 && stopped_ids[1]==1 : stops==1);
   const bool cleaned=retired && stopped_exactly && native.last_acknowledged==(refused || refused_native ? 1u : 2u);
   const bool passed=first_valid && admission_valid && cleaned;
   std::printf("{\"case\":\"%s\",\"passed\":%s,\"engineQualified\":false}\n",argv[1],passed?"true":"false");
