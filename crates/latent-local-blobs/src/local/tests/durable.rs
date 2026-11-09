@@ -228,6 +228,53 @@ fn durable_capture_retires_its_pin_if_final_admission_or_owner_fails() {
 }
 
 #[test]
+fn expired_view_after_mode_publication_reports_uncertain_and_preserves_bytes() {
+    let state_root = temporary_root();
+    let blob_root = temporary_root();
+    let file = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create_new(true)
+        .open(state_root.path().join("payload-state.redb"))
+        .unwrap();
+    let state = EmbeddedStore::open_file(
+        file,
+        StoreLimits {
+            cache_bytes: 1024 * 1024,
+            maximum_view_age: std::time::Duration::from_secs(1),
+            ..StoreLimits::default()
+        },
+    )
+    .unwrap();
+    let view = state.snapshot().unwrap();
+    let initial = StoreIdentity::new("payload-state-a".into())
+        .unwrap()
+        .prepare_initialization(&view)
+        .unwrap()
+        .unwrap();
+    drop(view);
+    state.apply(initial).unwrap();
+    let mut owner = LocalBlobStore::open(blob_root.path(), "private", limits()).unwrap();
+    let blob = put(&owner, b"existing");
+    let view = state.snapshot().unwrap();
+    assert_eq!(
+        LocalBlobStore::enable_durable_for_view_after_publish(&mut owner, &view, || {
+            std::thread::sleep(std::time::Duration::from_millis(1100));
+        }),
+        Err(LocalBlobError::Uncertain)
+    );
+    assert!(owner.snapshot().unwrap().poisoned);
+    assert!(blob_root.path().join("DURABLE.json").exists());
+    drop(view);
+    drop(owner);
+    let view = state.snapshot().unwrap();
+    let owner = LocalBlobStore::open_durable_for_view(blob_root.path(), "private", limits(), &view)
+        .unwrap();
+    let reader = owner.open_read(&scope(), &blob, &|| Ok(())).unwrap();
+    assert_eq!(read(&reader, 0, 8).unwrap(), b"existing");
+}
+
+#[test]
 fn uncertain_durable_mode_publication_poisoned_owner_and_recovers_from_disk() {
     let state_root = temporary_root();
     let blob_root = temporary_root();

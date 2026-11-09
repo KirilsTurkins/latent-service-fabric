@@ -416,6 +416,23 @@ impl LocalBlobStore {
     /// transition and finish semantic startup validation before publication.
     /// Existing readers, handles or another owner prevent the transition.
     pub fn enable_durable_for_view(owner: &mut Arc<Self>, view: &ReadView) -> Result<()> {
+        Self::enable_durable_for_view_inner(owner, view, || {})
+    }
+
+    #[cfg(test)]
+    pub(super) fn enable_durable_for_view_after_publish(
+        owner: &mut Arc<Self>,
+        view: &ReadView,
+        after_publish: impl FnOnce(),
+    ) -> Result<()> {
+        Self::enable_durable_for_view_inner(owner, view, after_publish)
+    }
+
+    fn enable_durable_for_view_inner(
+        owner: &mut Arc<Self>,
+        view: &ReadView,
+        after_publish: impl FnOnce(),
+    ) -> Result<()> {
         owner.inner.check()?;
         if Arc::get_mut(owner)
             .and_then(|owner| Arc::get_mut(&mut owner.inner))
@@ -434,10 +451,11 @@ impl LocalBlobStore {
         };
         mode.validate()?;
         let encoded = record(&mode)?;
-        if let Some(existing) = &owner.inner.durable {
+        let created = if let Some(existing) = &owner.inner.durable {
             if existing != &mode {
                 return Err(LocalBlobError::PermissionDenied);
             }
+            false
         } else {
             let _ = view.is_empty().map_err(storage)?;
             {
@@ -458,12 +476,22 @@ impl LocalBlobStore {
                 .root
                 .sync()
                 .map_err(|_| owner.inner.uncertain())?;
-        }
+            true
+        };
         let inner = Arc::get_mut(&mut Arc::get_mut(owner).ok_or(LocalBlobError::Busy)?.inner)
             .ok_or(LocalBlobError::Busy)?;
         inner.durable = Some(mode);
         inner.durable_binding = Some(view.binding());
-        let _ = view.is_empty().map_err(storage)?;
+        if created {
+            after_publish();
+        }
+        if let Err(error) = view.is_empty() {
+            return Err(if created {
+                owner.inner.uncertain()
+            } else {
+                storage(error)
+            });
+        }
         Ok(())
     }
     /// Native provider work verifies length/media/digest and acquires its real
