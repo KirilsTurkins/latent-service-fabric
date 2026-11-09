@@ -92,5 +92,7 @@
     "The fixture deliberately made a separate changed-input conflict probe and a distinct later business command; neither was an automatic retry.",
     "Guest execution count was not independently measured. All later effects were acknowledged before the controlled crash.",
     "Attempt 107 failed before dispatch because the probe caught the wrong cancellation exception type; attempt 108 stopped on a prerequisite POLICY_BLOCKED effect. Neither is counted as a successful cancellation qualification."
-  ]
+  ],
+  "repositorySourceSha256": "sha256:b314b95e3594d859df1984edc8796d7569539fe9bd88158439473ec4f166639b",
+  "sourceLineEndings": "The tested source had CRLF line endings; normalizing them to LF exactly matches the committed repository blob."
 }
