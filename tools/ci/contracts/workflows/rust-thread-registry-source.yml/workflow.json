@@ -1,0 +1,36 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "rust-thread-registry-source-${{ github.ref }}"
+    },
+    "name": "Rust logical thread registry source controls",
+    "on": {
+      "push": {
+        "branches": [
+          "fix/rust-thread-reuse-20261109",
+          "fix/rust-pool-worker-reuse-20261109"
+        ],
+        "paths": [
+          ".github/workflows/rust-thread-registry-source.yml",
+          "sdk/rust-standard-runtime/thread_registry.rs",
+          "sdk/rust-standard-runtime/thread_runtime.rs",
+          "sdk/rust-standard-runtime/tests/thread_registry_native.rs",
+          "sdk/rust-standard-runtime/executor_*.rs",
+          "sdk/rust-standard-runtime/tests/executor_*_native.rs"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "registry-source"
+  ],
+  "reviewReason": "Keep the existing bounded registry owner and add separately named pool identity source controls.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-thread-registry-source.yml"
+}

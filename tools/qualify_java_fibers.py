@@ -425,8 +425,10 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     controls = [private / name for name in ('ScheduledOwnerControl.java', 'ScheduledCompletableOwnerControl.java',
         'ScheduledPeriodicOwnerControl.java', 'ScheduledPeriodicRollbackSettlementControl.java',
         'ScheduledFutureResultSettlementControl.java', 'CompletableFutureResultSettlementControl.java',
-        'CompletableFutureQueuedRollbackControl.java', 'ManagedExecutorQueuedSettlementControl.java',
+        'CompletableFutureQueuedRollbackControl.java', 'CompletableFutureQueuedSettlementControl.java',
+        'ManagedExecutorQueuedSettlementControl.java',
         'ScheduledQueuedSettlementControl.java', 'FutureTaskInterruptFailureControl.java',
+        'ExecutorCloseInterruptControl.java',
         'dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
     reference = private / 'ScheduledStoppedReferenceControl.java'
     periodic_reference = private / 'ScheduledPeriodicReferenceControl.java'
@@ -463,6 +465,12 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     compiler.run('scheduled-source-compile', 'javac', '-proc:none', '--release', '25',
         '-d', output, *ports, *controls, selected, selected_periodic)
     interrupt_control = future_cancel_interrupt_control(compiler, output)
+    for implementation in ('jdk', 'source'):
+        for mode in ('terminated', 'drain', 'interrupted'):
+            result = compiler.run('executor-close-interrupt-' + implementation + '-' + mode,
+                'java', '-Xmx256m', '-cp', output, 'ExecutorCloseInterruptControl', implementation, mode).strip()
+            if result != 'EXECUTOR_CLOSE_INTERRUPT PASS ' + implementation + ' ' + mode:
+                raise ValueError('Java executor close interruption control did not complete')
     result = compiler.run('scheduled-source-control', 'java', '-Xmx256m', '-cp', output, 'ScheduledOwnerControl').strip()
     expected = ('SCHEDULED_OWNER_CONTROL PASS preadmission;actual-result;running-cancel-held;periodic-nonoverlap;'
         'original-error-suppresses-repeat;timed-wait-cancel-and-interrupt;shutdown-policy;factory-rollback;all-retired')
@@ -517,6 +525,12 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
             'CompletableFutureQueuedRollbackControl', mode).strip()
         if result != 'COMPLETABLE_QUEUED_ROLLBACK PASS ' + mode:
             raise ValueError('Java CompletableFuture queue rollback control did not complete')
+    for path in ('direct', 'waiting', 'multiple', 'readmit-denied', 'readmit-completed'):
+        for fault in ('denied', 'lost', 'success'):
+            result = compiler.run('completable-queued-settlement-' + path + '-' + fault,
+                'java', '-Xmx256m', '-cp', output, 'CompletableFutureQueuedSettlementControl', path, fault).strip()
+            if result != 'COMPLETABLE_QUEUED_SETTLEMENT PASS ' + path + ' ' + fault:
+                raise ValueError('Java CompletableFuture queued settlement control did not complete')
     result = compiler.run('scheduled-periodic-source-control', 'java', '-Xmx256m', '-cp', output,
         'ScheduledPeriodicReferenceControl').strip()
     if result != expected_periodic: raise ValueError('Java periodic scheduled source differs from reference')

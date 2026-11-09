@@ -330,10 +330,12 @@ public final class ScheduledPeriodicOwnerControl {
         Activation.denyCloseNext = "QueuedWork"; Activation.denyCloseAfter = 1;
         try { CompletableFuture.supplyAsync(() -> { calls.incrementAndGet(); return 42; }, pool); throw new AssertionError(); }
         catch (IllegalStateException expected) { require(expected.getMessage().equals("source-owner-settlement-denied")); }
-        require(calls.get() == 0 && pool.hasPendingWork() && !pool.isTerminated()); held(1, 0);
+        require(calls.get() == 0 && pool.hasPendingWork() && !pool.isTerminated()); held(1, 1);
+        require(Activation.poisoned && Activation.retainsFailedQueued() && Activation.failedLeaseAttempts() == 1);
         require(Activation.count(LatentRuntimeActivationOwnerKind.Executor) == 1);
         pool.shutdownNow();
-        require(pool.hasPendingWork() && !pool.isTerminated()); held(1, 0);
+        require(pool.hasPendingWork() && !pool.isTerminated()); held(1, 1);
+        require(Activation.failedLeaseAttempts() == 1);
         // The intentionally denied token remains charged until this private
         // test process ends; it is never presented as a clean retirement.
     }

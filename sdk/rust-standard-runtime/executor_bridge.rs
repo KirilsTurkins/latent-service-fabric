@@ -117,6 +117,7 @@ fn request(operation: u32, pool: u64, a: u64, b: u64, pointer: *mut ()) -> io::R
                 worker::register(
                     binding.handle,
                     binding.pointer,
+                    a,
                     WorkerCallbacks {
                         tls_drained: root::worker_tls_drained,
                         frames_exited: root::worker_frames_exited,

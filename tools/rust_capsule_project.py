@@ -393,6 +393,10 @@ panic = "abort"
         files['src/lib.rs'] = binding_source.replace(opening, opening + ' generate_all,', 1).encode()
     files["capsule-project.json"] = json.dumps(project, indent=2).encode() + b"\n"
     if template == "transactional-aggregate":
+        # The Phase 4 codec reserves bounded host scratch in the activation's
+        # memory budget, and cold isolated compilation shares its deadline.
+        # These limits request capacity; they grant no state or effect access.
+        project["limits"].update(memoryBytes=67_108_864, wallTimeLimitMillis=120_000)
         from tools.transaction_guest_project import augment
         augment(files, project)
     pin = {"formatVersion": 1, "toolchain": pins,
