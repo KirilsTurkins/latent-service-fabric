@@ -13,6 +13,9 @@ public final class TimerReadinessSourceControl {
     private static Field field(Class<?> type, String name) throws ReflectiveOperationException { var field = type.getDeclaredField(name); field.setAccessible(true); return field; }
     private static Object get(String name) throws Exception { return field(Activation.class, name).get(null); }
     private static void set(String name, Object value) throws Exception { field(Activation.class, name).set(null, value); }
+    private static void resetFinishingModel() throws Exception {
+        try { set("finishingInvocation", false); } catch (NoSuchFieldException oldSource) { }
+    }
     @SuppressWarnings("unchecked")
     private static Object work(Thread thread) throws Exception {
         var token = Bindings.LatentRuntimeActivation.register(Bindings.LatentRuntimeActivationOwnerKind.Task, Option.none()).value();
@@ -203,7 +206,7 @@ public final class TimerReadinessSourceControl {
         // Test-only simulation of physical completion and a fresh Store.
         Activation.finished(thread);
         require(get("failedStarts") == null, "physical-completion-unlinks-before-fresh-store");
-        set("poisoned", false); set("entered", true);
+        set("poisoned", false); set("entered", true); resetFinishingModel();
         pool.retire();
     }
     private static void uncertainQueuedOwnersPoison() throws Exception {
@@ -260,7 +263,7 @@ public final class TimerReadinessSourceControl {
         // Private source-control teardown simulates destroying the poisoned Store.
         head.set(null);
         for (Activation.Lease lease : leases) lease.close();
-        set("poisoned", false); set("entered", true);
+        set("poisoned", false); set("entered", true); resetFinishingModel();
         require(owners() == original, "queued-retention-control-cleanup");
     }
     private static void uncertainResultPoisons() throws Exception {
@@ -283,7 +286,7 @@ public final class TimerReadinessSourceControl {
         try { Activation.invoke(0, null, 0); throw new AssertionError("uncertain-result-store-reentered"); }
         catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-runtime-poisoned-store"), "uncertain-result-reentry-refused"); }
         // Private control only: simulate a fresh Store for the remaining cases.
-        set("poisoned", false); set("entered", true);
+        set("poisoned", false); set("entered", true); resetFinishingModel();
     }
     private static void failedInsertionsAndPoison() throws Exception {
         set("closing", false); set("retiringPools", false); set("rootComplete", false);
@@ -345,7 +348,234 @@ public final class TimerReadinessSourceControl {
         catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-runtime-poisoned-store"), "poisoned-reentry-error"); }
         require(owners() == original + 3, "poisoned-reentry-does-not-change-host-custody");
     }
+    // Every scenario gets a fresh private ledger; this is not guest retirement.
+    @SuppressWarnings("unchecked")
+    private static void resetTimerStopModel() throws Exception {
+        ((Map<?, ?>)get("threads")).clear();
+        ((List<?>)get("timers")).clear();
+        ((Map<?, ?>)field(Bindings.LatentRuntimeActivation.class, "owners").get(null)).clear();
+        set("root", null); set("entered", false); set("poisoned", false); resetFinishingModel();
+        try { set("pendingTimerStops", 0); } catch (NoSuchFieldException oldSource) { }
+        Bindings.LatentRuntimeActivation.stopObservation = null;
+        Bindings.LatentRuntimeActivation.denyStop = false;
+        Bindings.LatentRuntimeActivation.stops = 0;
+    }
+    private static void startTimerStopModel() throws Exception {
+        resetTimerStopModel();
+        set("entered", true); set("root", work(Thread.currentThread()));
+    }
+    private static Bindings.LatentRuntimeActivationToken timerToken(Activation.Lease timer) throws Exception {
+        return (Bindings.LatentRuntimeActivationToken)field(Activation.Lease.class, "token").get(timer);
+    }
+    private static void finishTimerStopModel() throws Exception {
+        var finish = Activation.class.getDeclaredMethod("finishInvocation"); finish.setAccessible(true); finish.invoke(null);
+    }
+    private static void timerStopNormal() throws Exception {
+        var normal = Activation.timer(Activation.monotonicMillis() + 1000);
+        normal.close(); normal.close();
+        require(Bindings.LatentRuntimeActivation.stops == 1 && Bindings.LatentRuntimeActivation.timers() == 0,
+            "normal-stop-is-idempotent");
+        var refused = Activation.timer(Activation.monotonicMillis() + 1000);
+        Bindings.LatentRuntimeActivation.denyStop = true;
+        try { refused.close(); throw new AssertionError("returned-refusal-was-accepted"); }
+        catch (IllegalStateException failure) {
+            require(failure.getMessage().equals("activation-runtime-timer-stop-Cancelled"), "returned-refusal-error-preserved");
+        }
+        require(!(boolean)get("poisoned") && Bindings.LatentRuntimeActivation.timers() == 1,
+            "returned-refusal-retains-original-owner");
+        Bindings.LatentRuntimeActivation.denyStop = false;
+        refused.close();
+        require(Bindings.LatentRuntimeActivation.stops == 3 && Bindings.LatentRuntimeActivation.timers() == 0,
+            "returned-refusal-can-retry-successfully");
+    }
+    private static void timerStopReentry() throws Exception {
+        var timer = Activation.timer(Activation.monotonicMillis() + 1000);
+        var nested = new AtomicReference<Throwable>();
+        Bindings.LatentRuntimeActivation.stopObservation = () -> {
+            Bindings.LatentRuntimeActivation.stopObservation = null;
+            try { timer.close(); } catch (Throwable failure) { nested.set(failure); }
+        };
+        try { timer.close(); }
+        catch (Throwable failure) { throw new AssertionError("reentrant-stop-submitted-twice", failure); }
+        require(nested.get() instanceof IllegalStateException && Bindings.LatentRuntimeActivation.stops == 1,
+            "reentrant-stop-rejected-before-host-call");
+        require((boolean)get("poisoned"), "reentrant-stop-fences-completion");
+    }
+    private static void timerStopReentryUncaught() throws Exception {
+        var timer = Activation.timer(Activation.monotonicMillis() + 1000);
+        var token = timerToken(timer);
+        Bindings.LatentRuntimeActivation.stopObservation = () -> {
+            Bindings.LatentRuntimeActivation.stopObservation = null;
+            timer.close();
+        };
+        denied(timer::close);
+        require(Bindings.LatentRuntimeActivation.stops == 1 && (boolean)get("poisoned")
+            && timerToken(timer).equals(token) && ((List<?>)get("timers")).contains(timer),
+            "uncaught-reentry-retains-original-and-fences");
+    }
+    private static void timerStopNested() throws Exception {
+        long deadline = Activation.monotonicMillis() + 1000;
+        var first = Activation.timer(deadline);
+        var second = otherTimer(deadline);
+        var nested = new AtomicReference<Throwable>();
+        Bindings.LatentRuntimeActivation.stopObservation = () -> {
+            Bindings.LatentRuntimeActivation.stopObservation = null;
+            try {
+                first.close();
+                require((int)get("pendingTimerStops") == 1, "one-stop-remains-after-nested-cleanup");
+                var completion = Activation.class.getDeclaredMethod("requireHealthyCompletion"); completion.setAccessible(true);
+                try { completion.invoke(null); throw new AssertionError("nested-stop-completion-was-allowed"); }
+                catch (java.lang.reflect.InvocationTargetException failure) {
+                    require(failure.getCause() instanceof IllegalStateException, "nested-stop-completion-refused");
+                }
+            } catch (Throwable failure) { nested.set(failure); }
+        };
+        second.close();
+        if (nested.get() != null) throw new AssertionError("nested-stop", nested.get());
+        require(Bindings.LatentRuntimeActivation.stops == 2 && (int)get("pendingTimerStops") == 0
+            && (boolean)get("poisoned"), "nested-stops-counted-through-cleanup");
+    }
+    private static void timerStopOverflow() throws Exception {
+        var timer = Activation.timer(Activation.monotonicMillis() + 1000);
+        var token = timerToken(timer);
+        set("pendingTimerStops", Integer.MAX_VALUE);
+        denied(timer::close);
+        require(Bindings.LatentRuntimeActivation.stops == 0 && (boolean)get("poisoned")
+            && timerToken(timer).equals(token), "counter-overflow-fails-closed-before-stop");
+    }
+    private static void timerStopRootCollision(boolean checkCompletionFirst) throws Exception {
+        var timer = Activation.timer(Activation.monotonicMillis() + 1000);
+        var collision = new AtomicReference<Throwable>();
+        Bindings.LatentRuntimeActivation.stopObservation = () -> {
+            Bindings.LatentRuntimeActivation.stopObservation = null;
+            try {
+                if (checkCompletionFirst) {
+                    var completion = Activation.class.getDeclaredMethod("requireHealthyCompletion"); completion.setAccessible(true);
+                    try { completion.invoke(null); throw new AssertionError("root-inflight-completion-was-allowed"); }
+                    catch (java.lang.reflect.InvocationTargetException failure) {
+                        require(failure.getCause() instanceof IllegalStateException, "root-inflight-completion-refused");
+                    }
+                }
+                finishTimerStopModel();
+                require((boolean)get("poisoned") && !(boolean)get("entered") && ((List<?>)get("timers")).contains(timer),
+                    "root-inflight-teardown-retains-record");
+            } catch (Throwable failure) { collision.set(failure); }
+        };
+        timer.close();
+        if (collision.get() != null) throw new AssertionError("root-collision", collision.get());
+        require(Bindings.LatentRuntimeActivation.stops == 1 && (boolean)get("poisoned"), "root-collision-fenced");
+    }
+    private static void timerStopLateFinally(boolean returning) throws Exception {
+        var timer = Activation.timer(Activation.monotonicMillis() + 1000);
+        var original = new IllegalStateException("original-root-failure");
+        var callbackFailure = new AtomicReference<Throwable>();
+        Object root = get("root");
+        Bindings.LatentRuntimeActivation.stopObservation = () -> {
+            Bindings.LatentRuntimeActivation.stopObservation = null;
+            try {
+                var finish = Activation.class.getDeclaredMethod("finishInvocation", boolean.class); finish.setAccessible(true);
+                if (returning) {
+                    try { finish.invoke(null, true); throw new AssertionError("late-success-return-was-allowed"); }
+                    catch (java.lang.reflect.InvocationTargetException failure) {
+                        require(failure.getCause() instanceof IllegalStateException, "late-success-refused");
+                    }
+                } else {
+                    Throwable observed = null;
+                    try { try { throw original; } finally { finish.invoke(null, false); } }
+                    catch (Throwable failure) { observed = failure; }
+                    require(observed == original, "finally-masked-original-error");
+                }
+                require((boolean)get("poisoned") && !(boolean)get("entered")
+                    && ((List<?>)get("timers")).contains(timer) && field(root.getClass(), "timer").get(root) == timer,
+                    "late-finally-did-not-retain-timer");
+            } catch (Throwable failure) { callbackFailure.set(failure); }
+        };
+        timer.close();
+        if (callbackFailure.get() != null) throw new AssertionError("late-finally", callbackFailure.get());
+        require((boolean)get("poisoned") && Bindings.LatentRuntimeActivation.stops == 1,
+            "late-finally-completion-not-fenced");
+    }
+    private static void timerTeardownRegistered() throws Exception {
+        var timer = Activation.timer(Activation.monotonicMillis() + 1000);
+        var original = timerToken(timer); Object root = get("root");
+        var finish = Activation.class.getDeclaredMethod("finishInvocation", boolean.class); finish.setAccessible(true);
+        try { finish.invoke(null, true); throw new AssertionError("live-timer-teardown-succeeded"); }
+        catch (java.lang.reflect.InvocationTargetException failure) {
+            require(failure.getCause() instanceof IllegalStateException, "live-timer-completion-refused");
+        }
+        denied(timer::close);
+        require((boolean)get("poisoned") && !(boolean)get("entered") && ((List<?>)get("timers")).contains(timer)
+            && field(root.getClass(), "timer").get(root) == timer && timerToken(timer).equals(original)
+            && Bindings.LatentRuntimeActivation.stops == 0, "teardown-retains-and-does-not-stop-timer");
+    }
+    private static void timerTeardownExceptional() throws Exception {
+        var timer = Activation.timer(Activation.monotonicMillis() + 1000);
+        var original = new IllegalStateException("original-teardown-failure"); Throwable observed = null;
+        var finish = Activation.class.getDeclaredMethod("finishInvocation", boolean.class); finish.setAccessible(true);
+        try { try { throw original; } finally { finish.invoke(null, false); } }
+        catch (Throwable failure) { observed = failure; }
+        require(observed == original && (boolean)get("poisoned") && ((List<?>)get("timers")).contains(timer),
+            "exceptional-teardown-preserves-primary-and-timer");
+    }
+    private static void timerTeardownClean(boolean closeTimer) throws Exception {
+        if (closeTimer) Activation.timer(Activation.monotonicMillis() + 1000).close();
+        var finish = Activation.class.getDeclaredMethod("finishInvocation", boolean.class); finish.setAccessible(true);
+        finish.invoke(null, true);
+        require(!(boolean)get("poisoned") && !(boolean)get("entered") && !(boolean)get("finishingInvocation")
+            && get("root") == null && ((List<?>)get("timers")).isEmpty(), "clean-teardown-changed");
+    }
+    private static void timerStopThrow(boolean loseAcknowledgement) throws Exception {
+        var timer = Activation.timer(Activation.monotonicMillis() + 1000);
+        var token = timerToken(timer);
+        var marker = new IllegalStateException(loseAcknowledgement ? "stop-lost-ack" : "stop-threw-before-result");
+        Bindings.LatentRuntimeActivation.stopObservation = () -> {
+            Bindings.LatentRuntimeActivation.stopObservation = null;
+            if (loseAcknowledgement)
+                require(!Bindings.LatentRuntimeActivation.settle(token).isError(), "fake-host-stop-before-lost-ack");
+            throw marker;
+        };
+        try { timer.close(); throw new AssertionError("throwing-stop-returned"); }
+        catch (IllegalStateException failure) { require(failure == marker, "original-stop-error-preserved"); }
+        require((boolean)get("poisoned") && ((List<?>)get("timers")).contains(timer), "throwing-stop-retains-and-poisons");
+        require(Bindings.LatentRuntimeActivation.timers() == (loseAcknowledgement ? 0 : 1), "fake-host-outcome-distinguished");
+        denied(timer::close);
+        require(Bindings.LatentRuntimeActivation.stops == 1 && timerToken(timer).equals(token), "uncertain-stop-not-retried");
+        finishTimerStopModel();
+        require((boolean)get("poisoned") && !(boolean)get("entered") && ((List<?>)get("timers")).contains(timer),
+            "throwing-stop-retained-through-teardown");
+        denied(() -> Activation.invoke(0, null, 0));
+    }
+    private static void timerStopCase(String mode) throws Exception {
+        startTimerStopModel();
+        switch (mode) {
+            case "normal" -> timerStopNormal();
+            case "reentry" -> timerStopReentry();
+            case "reentry-uncaught" -> timerStopReentryUncaught();
+            case "nested" -> timerStopNested();
+            case "overflow" -> timerStopOverflow();
+            case "root-collision" -> timerStopRootCollision(true);
+            case "root-finally-only" -> timerStopRootCollision(false);
+            case "late-return" -> timerStopLateFinally(true);
+            case "primary-error" -> timerStopLateFinally(false);
+            case "teardown-registered" -> timerTeardownRegistered();
+            case "teardown-exception" -> timerTeardownExceptional();
+            case "teardown-empty" -> timerTeardownClean(false);
+            case "teardown-confirmed" -> timerTeardownClean(true);
+            case "thrown" -> timerStopThrow(false);
+            case "lost-ack" -> timerStopThrow(true);
+            default -> throw new IllegalArgumentException("unknown timer stop control");
+        }
+    }
+
     public static void main(String[] arguments) throws Exception {
+        if (arguments.length == 1) {
+            timerStopCase(arguments[0]);
+            System.out.println("TIMER_STOP_CONTROL PASS " + arguments[0]);
+            return;
+        }
+        for (String mode : new String[]{"normal", "reentry", "reentry-uncaught", "nested", "overflow", "root-collision", "root-finally-only", "late-return", "primary-error", "teardown-registered", "teardown-exception", "teardown-empty", "teardown-confirmed", "thrown", "lost-ack"})
+            timerStopCase(mode);
+        resetTimerStopModel(); // private fake teardown; production never resets uncertainty.
         set("entered", true); set("root", work(Thread.currentThread()));
         long deadline = Activation.monotonicMillis() + 200;
         var first = Activation.timer(deadline); var second = otherTimer(deadline);
@@ -400,6 +630,6 @@ public final class TimerReadinessSourceControl {
         uncertainResultPoisons();
         failedStartedWorkerPoisons();
         failedInsertionsAndPoison();
-        System.out.println("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence");
+        System.out.println("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence;timer-stop-uncertain-completion-fence;nested-stop-count-guard;timer-finally-return-fence;timer-teardown-admission-fence");
     }
 }
