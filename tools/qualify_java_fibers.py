@@ -111,6 +111,55 @@ def timeunit_model_control(compiler: Compiler, output: Path) -> dict:
             "referenceConversionChecks": 1661, "jarDigests": identities}
 
 
+def timer_teardown_projection(source: str) -> str:
+    """Add test-only scheduling hooks to an exact copied Activation source."""
+    points = (
+        ("    private static void finishInvocation() {\n        finishingInvocation = true;\n"
+         "        fencePendingTimerStops();\n", "        TeardownHooks.afterSample();\n"),
+        ("            if (stopPending) {\n", "            TeardownHooks.beforeStopPublication();\n"),
+        ("        var continuation = Option.some(work.token);\n", "        TeardownHooks.beforeAdmission();\n"),
+    )
+    for point, hook in points:
+        if source.count(point) != 1:
+            raise ValueError("Java timer teardown projection source drift")
+        if "if (stopPending)" in point:
+            source = source.replace(point, hook + point, 1)
+        else:
+            source = source.replace(point, point + hook, 1)
+    return source
+
+
+def timer_teardown_source_control(compiler: Compiler, output: Path, classpath: str) -> None:
+    """Host JDK source projections only; not signed guest or physical retirement proof."""
+    fixture = compiler.sdk / "fibers/conformance/compiler/timer-source-control"
+    activation = compiler.sdk / "fibers/dev/latent/guest/runtime/Activation.java"
+    sources = [compiler.sdk / name for name in (
+        "runtime/dev/latent/guest/Option.java", "runtime/dev/latent/guest/Unsigned64.java",
+        "fibers/dev/latent/guest/runtime/HostCalls.java", "fibers/dev/latent/guest/runtime/Monitors.java")]
+    sources += [fixture / name for name in (
+        "dev/latent/generated/Bindings.java", "dev/latent/guest/runtime/TeardownHooks.java",
+        "TimerTeardownProjectionControl.java", "TimerTeardownRaceControl.java",
+        "TimerStopPrepublicationControl.java", "TimerAdmissionRaceControl.java")]
+    inputs = {str(path): digest(read_file(path)) for path in (activation, *sources)}
+    output.mkdir()
+    projected = output / "Activation.java"
+    projected.write_text(timer_teardown_projection(read_file(activation).decode("utf-8")), encoding="utf-8")
+    classes = output / "classes"
+    classes.mkdir()
+    compiler.run("timer-teardown-projection-compile", "javac", "-proc:none", "--release", "25",
+                 "-cp", classpath, "-d", classes, projected, *sources)
+    result = compiler.run("timer-teardown-projection-control", "java", "-Xmx256m", "-cp",
+                          str(classes) + os.pathsep + classpath, "TimerTeardownProjectionControl")
+    expected = ["TIMER_TEARDOWN_CONTROL PASS " + mode for mode in ("race", "exceptional", "clean", "closed-before")]
+    expected += ["TIMER_STOP_PREPUBLICATION PASS retained;no-host-stop"]
+    expected += ["TIMER_ADMISSION_RACE PASS " + mode for mode in ("exceptional", "clean")]
+    expected += ["TIMER_TEARDOWN_PROJECTED PASS cases=7"]
+    if result.strip().splitlines() != expected:
+        raise ValueError("Java timer teardown projection did not complete")
+    if inputs != {str(path): digest(read_file(path)) for path in (activation, *sources)}:
+        raise ValueError("Java timer teardown control inputs changed during execution")
+
+
 def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
     """Verify the actual native/callback pairs and their resumed owner frames."""
     classpath, identities = locked_model_classpath(compiler, include_platform=True)
@@ -169,8 +218,9 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
     timer = compiler.run("timer-readiness-source-control", "java", "-Xmx256m", "-cp",
                          str(timer_output) + os.pathsep + classpath, "TimerReadinessSourceControl").strip()
     if timer != ("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;"
-                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence"):
+                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence;timer-stop-uncertain-completion-fence;nested-stop-count-guard;timer-finally-return-fence;timer-teardown-admission-fence"):
         raise ValueError("Java timer readiness source control did not complete")
+    timer_teardown_source_control(compiler, output / "timer-teardown-projection", classpath)
     executor_settlement = executor_activation_settlement_control(compiler, timer_output, classpath)
     return {"status": "actual-locked-classlib-model-passed", "nativeCallbackPairs": 2,
             "pluginOrder": ["runtime", "platform"], "asyncLoweredOwnedPairs": 2,
