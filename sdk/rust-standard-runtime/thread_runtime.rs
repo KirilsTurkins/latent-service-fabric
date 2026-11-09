@@ -25,8 +25,8 @@ pub(crate) use owner::Token;
 use owner::{AllocationError, Error, Kind, Owner, SystemOwned};
 pub(crate) use registry::Handle;
 pub(crate) use wait_driver::{
-    allocate_wait_node, deallocate_wait_node, drive_wait, register_wait, unregister_wait, wake_wait,
-    WaitLease,
+    allocate_wait_node, deallocate_wait_node, drive_wait, register_wait, unregister_wait,
+    wake_wait, WaitLease,
 };
 
 struct Child {
@@ -229,6 +229,29 @@ pub(crate) unsafe fn spawn(stack: usize, init: Box<ThreadInit>) -> io::Result<Ha
         canonical, parent,
         "canonical creation returned current thread"
     );
+    // Wasmtime returns a fresh *live* table slot, but recycles its numeric
+    // index after a previous child has really left the instance. A completed
+    // unjoined child still owns its independent handle and Context. Check its
+    // exact frame boundary without retaining a registry/Child borrow, then
+    // forget only the obsolete canonical key before publishing the new child.
+    let prior = reg(|r| r.canonical_reuse_candidate(canonical))
+        .expect("canonical std index still belongs to a live child");
+    if let Some((prior, expected_context)) = prior {
+        let old = children(|c| {
+            c[prior.slot()]
+                .as_ref()
+                .expect("TLS-drained child backing")
+                .context
+        });
+        assert_eq!(
+            old.as_ptr().addr(),
+            expected_context,
+            "canonical reuse Context identity"
+        );
+        let exited = unsafe { tls::frames_exited(old.as_ptr()) };
+        reg(|r| r.clear_exited_canonical(prior, canonical, exited))
+            .expect("canonical reuse before frame exit or with changed identity");
+    }
     reg(|r| r.admitted(handle, token, context.addr(), canonical))
         .expect("canonical std identity publication");
     let child = Child {
