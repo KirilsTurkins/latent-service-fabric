@@ -71,6 +71,9 @@ def create(directory: Path, template: str, name: str | None = None, *, threading
                          "witDigest": digest(files["wit/world.wit"])}}
     files["capsule-project.json"] = json.dumps(project, indent=2).encode() + b"\n"
     if template == "transactional-aggregate":
+        # Transaction input canonicalization reserves host scratch in the same
+        # bounded activation budget, and cold compilation shares its deadline.
+        project["limits"].update(memoryBytes=67_108_864, wallTimeLimitMillis=120_000)
         from tools.transaction_guest_project import augment
         augment(files, project)
     files["sdk-lock.json"] = json.dumps(lock, indent=2).encode() + b"\n"
