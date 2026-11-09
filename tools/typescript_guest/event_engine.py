@@ -204,9 +204,37 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         b'        return false;\n'
         b'      }\n',
         b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn)) {\n'
+        b'        Event::set_flag(event, Event::EventFlag::InPassiveListener, false);\n'
         b'        invocation_failed = true;\n'
         b'        break;\n'
         b'      }\n', 'finish-once-listener-retirement-after-callback-lookup-error')
+    source = replace_once(source,
+        b'                               JS::HandleVector<ListenerRef> list, bool *found) {\n',
+        b'                               JS::HandleVector<ListenerRef> list, bool *found) {\n'
+        b'  if (JS_IsExceptionPending(cx)) return false;\n',
+        'listener-invocation-rejects-preexisting-pending-failure')
+    source = replace_once(source,
+        b'    if (JS::IsCallable(callback_obj)) {\n',
+        b'    bool called = false;\n'
+        b'    if (JS::IsCallable(callback_obj)) {\n', 'retain-native-callback-outcome')
+    for call in (b'JS::Call(cx, global, callback_val, args, &rval)',
+                 b'JS::Call(cx, callback_val, handle_fn, args, &rval)'):
+        source = replace_once(source, b'      '+call+b';\n',
+            b'      called = '+call+b';\n', 'check-each-native-callback-outcome')
+    source = replace_once(source,
+        b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn)) {\n',
+        b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn) ||\n'
+        b'          JS_IsExceptionPending(cx)) {\n', 'callback-lookup-cannot-hide-pending-failure')
+    source = replace_once(source, b'    if (JS_IsExceptionPending(cx)) {\n',
+        b'    // Catchable listener exceptions retain ordinary DOM reporting below.\n'
+        b'    // A false/no-pending native termination is not a listener exception: it\n'
+        b'    // must fence later callbacks, including independent abort dependents.\n'
+        b'    if (!called && !JS_IsExceptionPending(cx)) {\n'
+        b'      Event::set_flag(event, Event::EventFlag::InPassiveListener, false);\n'
+        b'      invocation_failed = true;\n'
+        b'      break;\n'
+        b'    }\n\n'
+        b'    if (JS_IsExceptionPending(cx)) {\n', 'uncatchable-listener-failure-fences-dispatch')
     source = replace_once(source, b'  return true;\n}\n\nJSObject *EventTarget::create(',
         b'  return !invocation_failed;\n}\n\nJSObject *EventTarget::create(',
         'preserve-callback-lookup-failure-after-retirement')
@@ -216,7 +244,7 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         'restore-dispatch-state-after-listener-error')
     source = replace_once(source,
         b'  rval.setBoolean(!Event::has_flag(event, EventFlag::Canceled));\n',
-        b'  if (!invoked) return false; // preserve the original pending exception\n'
+        b'  if (!invoked || JS_IsExceptionPending(cx)) return false; // preserve the original failure\n'
         b'  rval.setBoolean(!Event::has_flag(event, EventFlag::Canceled));\n',
         'return-original-listener-error-after-dispatch-cleanup')
     # All three original list construction sites use exactly the same wrapper.
@@ -363,5 +391,7 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         'dispatchCloneAdmission':'before-backing-vector-growth',
         'dispatchCloneRetirement':'frame-destructor-then-safe-host-ack',
         'dispatchCloneOwner':'one-original-native-count-not-byte-accurate',
+        'uncatchableListenerFailure':'cleanup-then-fence-dispatch-and-abort-dependents',
+        'catchableListenerException':'original-DOM-reporting-retained',
         'hostImportsDuringGC':False,'originalAPIAndListenerAlgorithmsRetained':True,
         'snapshotMutableGraphs':'denied','supportedAsyncProfile':False,'signedLSFComponentQualified':False}
