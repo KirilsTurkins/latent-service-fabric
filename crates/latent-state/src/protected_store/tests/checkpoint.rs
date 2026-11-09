@@ -283,7 +283,7 @@ fn custody_checkpoint_open_compares_same_view_inventory_and_legacy_operations_st
         wait(checkpoint.retire());
         assert!(finish(&owner).clean);
         let path = external.path().join(CHECKPOINT_NAME);
-        let encoded = record.encode();
+        let mut encoded = record.encode();
         fs::write(&path, &encoded).unwrap();
         let reopened = bound(config);
         let actual = if matching {
@@ -353,14 +353,55 @@ fn custody_checkpoint_open_compares_same_view_inventory_and_legacy_operations_st
             )
             .unwrap();
             assert_eq!(inspection.unwrap().checkpoint, Some(record.clone()));
-            let (checkpoint, advanced) = wait(
+            let (checkpoint, mismatch) = wait(
                 reopened
-                    .advance_checkpoint(checkpoint, Some(record), 2, observed)
+                    .advance_checkpoint_with_inbox_inventory(
+                        checkpoint,
+                        Some(record.clone()),
+                        2,
+                        Arc::clone(&original),
+                        4096,
+                        observed,
+                        |_| {
+                            Ok(Some(InboxCustodyWatermark {
+                                generation: 1,
+                                digest: [9; 32],
+                            }))
+                        },
+                    )
                     .unwrap(),
             )
             .unwrap();
             assert_eq!(
-                advanced,
+                mismatch,
+                Err(ProtectedStoreError::Store(StoreError::Conflict))
+            );
+            assert_eq!(fs::read(&path).unwrap(), encoded);
+            let (checkpoint, advanced) = wait(
+                reopened
+                    .advance_checkpoint_with_inbox_inventory(
+                        checkpoint,
+                        Some(record.clone()),
+                        2,
+                        Arc::clone(&original),
+                        4096,
+                        observed,
+                        move |_| Ok(Some(watermark)),
+                    )
+                    .unwrap(),
+            )
+            .unwrap();
+            let next = advanced.unwrap();
+            assert_eq!(next.inbox_custody(), Some(watermark));
+            encoded = next.encode();
+            let (checkpoint, legacy) = wait(
+                reopened
+                    .advance_checkpoint(checkpoint, Some(next), 2, observed)
+                    .unwrap(),
+            )
+            .unwrap();
+            assert_eq!(
+                legacy,
                 Err(ProtectedStoreError::Store(StoreError::UnsupportedFormat))
             );
             wait(checkpoint.retire());
@@ -450,6 +491,29 @@ fn custody_inspection_refuses_another_recovery_reservation() {
     opened.unwrap();
     let other = keeper(&owner);
     let observed_inventory = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let observed_by_callback = Arc::clone(&observed_inventory);
+    let (checkpoint, result) = wait(
+        owner
+            .advance_checkpoint_with_inbox_inventory(
+                checkpoint,
+                None,
+                1,
+                Arc::clone(&other),
+                4096,
+                observed,
+                move |_| {
+                    observed_by_callback.store(true, std::sync::atomic::Ordering::SeqCst);
+                    Ok(None)
+                },
+            )
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        result,
+        Err(ProtectedStoreError::Store(StoreError::Conflict))
+    );
+    assert!(!observed_inventory.load(std::sync::atomic::Ordering::SeqCst));
     let observed_by_callback = Arc::clone(&observed_inventory);
     let (checkpoint, result) = wait(
         owner

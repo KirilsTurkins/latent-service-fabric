@@ -491,7 +491,35 @@ impl CheckpointFile {
         protected_clock_epoch: u64,
         dispatch: Option<(u64, u64)>,
     ) -> Result<ExternalCheckpoint, StoreError> {
-        self.advance_inner(view, expected, protected_clock_epoch, dispatch, || {})
+        self.advance_inner(
+            view,
+            expected,
+            protected_clock_epoch,
+            dispatch,
+            InventoryObservation::NotObserved,
+            || {},
+        )
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(super) fn advance_with_inventory(
+        &self,
+        view: &ReadView,
+        expected: Option<&ExternalCheckpoint>,
+        protected_clock_epoch: u64,
+        dispatch: Option<(u64, u64)>,
+        inventory: InventoryObservation,
+        keeper: &Arc<NativeReservation>,
+    ) -> Result<ExternalCheckpoint, StoreError> {
+        self.require_original(keeper)?;
+        self.advance_inner(
+            view,
+            expected,
+            protected_clock_epoch,
+            dispatch,
+            inventory,
+            || {},
+        )
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -501,6 +529,7 @@ impl CheckpointFile {
         expected: Option<&ExternalCheckpoint>,
         protected_clock_epoch: u64,
         dispatch: Option<(u64, u64)>,
+        inventory: InventoryObservation,
         after_write: impl FnOnce(),
     ) -> Result<ExternalCheckpoint, StoreError> {
         self.original
@@ -512,12 +541,18 @@ impl CheckpointFile {
         if current.as_ref() != expected {
             return Err(StoreError::Conflict);
         }
-        if current
-            .as_ref()
-            .is_some_and(|checkpoint| checkpoint.inbox_custody().is_some())
-        {
-            // The legacy writer cannot re-observe and fence the inventory.
-            return Err(StoreError::UnsupportedFormat);
+        match (
+            current.as_ref().and_then(ExternalCheckpoint::inbox_custody),
+            inventory,
+        ) {
+            (Some(_), InventoryObservation::NotObserved) => {
+                return Err(StoreError::UnsupportedFormat)
+            }
+            (_, InventoryObservation::NotObserved)
+            | (None, InventoryObservation::Observed(None)) => {}
+            (Some(expected), InventoryObservation::Observed(Some(actual)))
+                if expected == actual => {}
+            _ => return Err(StoreError::Conflict),
         }
         let (epoch, floor) = dispatch.ok_or(StoreError::Conflict)?;
         let next = if let Some(original) = current.as_ref() {
@@ -555,7 +590,14 @@ impl CheckpointFile {
         dispatch: Option<(u64, u64)>,
         after_write: impl FnOnce(),
     ) -> Result<ExternalCheckpoint, StoreError> {
-        self.advance_inner(view, expected, protected_clock_epoch, dispatch, after_write)
+        self.advance_inner(
+            view,
+            expected,
+            protected_clock_epoch,
+            dispatch,
+            InventoryObservation::NotObserved,
+            after_write,
+        )
     }
 
     #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
@@ -566,6 +608,20 @@ impl CheckpointFile {
         _: Option<&ExternalCheckpoint>,
         _: u64,
         _: Option<(u64, u64)>,
+    ) -> Result<ExternalCheckpoint, StoreError> {
+        Err(StoreError::UnsupportedFormat)
+    }
+
+    #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+    #[allow(clippy::unused_self)]
+    pub(super) fn advance_with_inventory(
+        &self,
+        _: &ReadView,
+        _: Option<&ExternalCheckpoint>,
+        _: u64,
+        _: Option<(u64, u64)>,
+        _: InventoryObservation,
+        _: &Arc<NativeReservation>,
     ) -> Result<ExternalCheckpoint, StoreError> {
         Err(StoreError::UnsupportedFormat)
     }

@@ -408,6 +408,64 @@ impl ProtectedStoreOwner {
         Ok(ProtectedCheckpointJob { inner })
     }
 
+    /// Advance existing floors while preserving an unchanged, fully observed
+    /// source inventory. The caller must keep source writers excluded until
+    /// this protected operation and its readiness decision have completed.
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "The original reservation, bounded observers and exact prior record remain explicit"
+    )]
+    pub fn advance_checkpoint_with_inbox_inventory(
+        &self,
+        checkpoint: ProtectedCheckpoint,
+        expected: Option<ExternalCheckpoint>,
+        protected_clock_epoch: u64,
+        keeper: Arc<NativeReservation>,
+        inventory_bytes: u64,
+        observe_dispatch: impl FnOnce(&ReadView) -> Result<Option<(u64, u64)>, StoreError>
+            + Send
+            + 'static,
+        observe_inventory: impl FnOnce(&ReadView) -> Result<Option<InboxCustodyWatermark>, StoreError>
+            + Send
+            + 'static,
+    ) -> Result<ProtectedCheckpointJob<ExternalCheckpoint>, ProtectedStoreError> {
+        if protected_clock_epoch == 0
+            || inventory_bytes == 0
+            || inventory_bytes > 8 * 1024 * 1024
+            || keeper.class() != NativeAdmissionClass::Recovery
+            || !keeper.is_from_owner(&self.native_capacity()?)
+        {
+            return Err(ProtectedStoreError::InvalidConfiguration);
+        }
+        let job_bytes = METADATA_JOB_BYTES
+            .checked_add(inventory_bytes)
+            .ok_or(ProtectedStoreError::InvalidConfiguration)?;
+        let buffer = keeper
+            .reserve_buffer(NativeBufferClass::Work, job_bytes)
+            .map_err(|_| ProtectedStoreError::InvalidConfiguration)?;
+        let inner = self.with_resource(
+            checkpoint.resource,
+            StoreIoKind::RecoveryWrite,
+            job_bytes,
+            move |file, engine| {
+                let _buffer = buffer;
+                file.require_original(&keeper)?;
+                let view = engine.snapshot()?;
+                let dispatch = observe_dispatch(&view)?;
+                let inventory = InventoryObservation::Observed(observe_inventory(&view)?);
+                file.advance_with_inventory(
+                    &view,
+                    expected.as_ref(),
+                    protected_clock_epoch,
+                    dispatch,
+                    inventory,
+                    &keeper,
+                )
+            },
+        )?;
+        Ok(ProtectedCheckpointJob { inner })
+    }
+
     #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
     pub(in crate::protected_store) fn advance_checkpoint_for_test(
         &self,
