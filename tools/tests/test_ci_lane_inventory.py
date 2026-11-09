@@ -29,7 +29,7 @@ def synthetic_workflow():
             {"name": "Set up the qualified Angular build runtime",
              "if": spec["rust"]["renderer_condition"], "uses": "node"},
             {"name": "Set up the pinned component composer",
-             "if": spec["rust"]["renderer_condition"], "uses": "wasm-tools"},
+             "if": spec["rust"]["renderer_condition"], "run": "wasm-tools"},
             {"name": spec["rust"]["prepared_step"],
              "if": spec["rust"]["renderer_condition"],
              "run": "\n".join(spec["rust"]["prepared_command_fragments"])},
