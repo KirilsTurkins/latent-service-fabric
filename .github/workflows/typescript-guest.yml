@@ -130,7 +130,7 @@ on:
       - 'examples/renderer-profile/package*.json'
       - '.github/workflows/typescript-guest.yml'
   push:
-    branches: [development, feat/sdk-745-completed-capture-20261109]
+    branches: [development]
     paths:
       - 'sdk/typescript-guest/**'
       - 'sdk/transaction-contract/**'
@@ -744,7 +744,7 @@ jobs:
     name: Finite signed default Fetch and one-shot JSON bodies
     needs: [boundary, source-splicer, promise-library, fetch-component]
     runs-on: ubuntu-24.04
-    timeout-minutes: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/feat/sdk-745-completed-capture-20261109') && 35 || 25 }}
+    timeout-minutes: 25
     env:
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
@@ -792,12 +792,6 @@ jobs:
           path: ${{ runner.temp }}/typescript-signed-fetch-engine
       - name: Build, sign and invoke actual default Fetch through the typed HTTP provider
         run: python3 tools/qualify_typescript_fetch_runtime.py --tools "$RUNNER_TEMP/typescript-signed-fetch-tools" --engine "$RUNNER_TEMP/typescript-signed-fetch-engine" --splicer "$RUNNER_TEMP/typescript-signed-fetch-splicer" --prepared-qualification "$RUNNER_TEMP/typescript-signed-fetch-native" --output "$RUNNER_TEMP/typescript-signed-fetch"
-      - name: Observe completed retained Promise callbacks with the same signed owner
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/feat/sdk-745-completed-capture-20261109' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 -B tools/qualify_typescript_fetch_runtime.py --tools "$RUNNER_TEMP/typescript-signed-fetch-tools" --engine "$RUNNER_TEMP/typescript-signed-fetch-engine" --splicer "$RUNNER_TEMP/typescript-signed-fetch-splicer" --prepared-qualification "$RUNNER_TEMP/typescript-signed-fetch-native" --observe-completed-capture-from "$RUNNER_TEMP/typescript-signed-fetch" --output "$RUNNER_TEMP/typescript-completed-capture" 2>&1 | tee "$RUNNER_TEMP/typescript-completed-capture.log"
       - name: Retain finite signed Fetch attempts and exact input identities
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
@@ -810,18 +804,6 @@ jobs:
             ${{ runner.temp }}/typescript-signed-fetch/build/component.wasm
             ${{ runner.temp }}/typescript-signed-fetch/node/*.json
             ${{ runner.temp }}/typescript-signed-fetch/node/controls/*.json
-          if-no-files-found: warn
-          retention-days: 7
-      - name: Retain completed Promise capture diagnostic separately
-        if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/feat/sdk-745-completed-capture-20261109' }}
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
-        with:
-          name: typescript-completed-capture-${{ github.sha }}
-          path: |
-            ${{ runner.temp }}/typescript-completed-capture/*.json
-            ${{ runner.temp }}/typescript-completed-capture/node/*.json
-            ${{ runner.temp }}/typescript-completed-capture/node/controls/*.json
-            ${{ runner.temp }}/typescript-completed-capture.log
           if-no-files-found: warn
           retention-days: 7
   fetch-failure-frames:

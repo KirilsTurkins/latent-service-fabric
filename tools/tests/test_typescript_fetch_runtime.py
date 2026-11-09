@@ -18,9 +18,9 @@ from tools.standard_http.peer import Peer
 
 
 class TypeScriptFetchRuntimeTests(unittest.TestCase):
-    def test_completed_capture_workflow_is_branch_only_and_contract_bound(self):
-        # The signed Fetch job runs this module before installing Python
-        # dependencies, so keep this check on the standard library.
+    def test_completed_capture_keeps_standard_workflow_owner(self):
+        # The observation is manually invocable; the normal Fetch owner must
+        # retain its original unconditional step and development-only trigger.
         workflow = '.github/workflows/typescript-guest.yml'
         source = (fetch.ROOT/workflow).read_text(encoding='utf-8')
         contracts = fetch.ROOT/'tools/ci/contracts/workflows/typescript-guest.yml'
@@ -28,35 +28,22 @@ class TypeScriptFetchRuntimeTests(unittest.TestCase):
         job_contract = json.loads((contracts/'jobs/fetch-runtime.json').read_text(encoding='utf-8'))
         self.assertEqual(policy['workflow'], workflow)
         self.assertEqual(job_contract['workflow'], workflow)
-        branch = 'feat/sdk-745-completed-capture-20261109'
-        self.assertEqual(policy['policy']['on']['push']['branches'], ['development', branch])
-        self.assertEqual(source.count('    branches: [development, ' + branch + ']'), 1)
+        self.assertEqual(policy['policy']['on']['push']['branches'], ['development'])
+        self.assertNotIn('feat/sdk-745-completed-capture-20261109', source)
         job = job_contract['definition']
-        expected_timeout = "${{ (github.event_name == 'push' && github.ref == 'refs/heads/" + branch + "') && 35 || 25 }}"
-        self.assertEqual(job['timeout-minutes'], expected_timeout)
-        body = source.split('  fetch-runtime:\n', 1)[1].split('  fetch-failure-frames:\n', 1)[0]
-        self.assertIn('    timeout-minutes: ' + expected_timeout, body)
+        self.assertEqual(job['timeout-minutes'], 25)
         steps = job['steps']
         normal_name = 'Build, sign and invoke actual default Fetch through the typed HTTP provider'
-        diagnostic_name = 'Observe completed retained Promise callbacks with the same signed owner'
-        retained_name = 'Retain completed Promise capture diagnostic separately'
-        normal = next(index for index, step in enumerate(steps) if step.get('name') == normal_name)
-        diagnostic = next(index for index, step in enumerate(steps) if step.get('name') == diagnostic_name)
-        retained = next(step for step in steps if step.get('name') == retained_name)
-        self.assertLess(normal, diagnostic)
-        self.assertNotIn('if', steps[normal])
-        self.assertIn('      - name: ' + normal_name + '\n        run: ' + steps[normal]['run'], body)
-        selector = "github.event_name == 'push' && github.ref == 'refs/heads/" + branch + "'"
-        self.assertEqual(steps[diagnostic]['if'], '${{ ' + selector + ' }}')
-        self.assertEqual(retained['if'], '${{ always() && ' + selector + ' }}')
-        self.assertIn('      - name: ' + diagnostic_name + '\n        if: ${{ ' + selector + ' }}', body)
-        self.assertIn('      - name: ' + retained_name + '\n        if: ${{ always() && ' + selector + ' }}', body)
-        self.assertIn('--observe-completed-capture-from "$RUNNER_TEMP/typescript-signed-fetch"',
-                      steps[diagnostic]['run'])
-        self.assertIn('set -euo pipefail', steps[diagnostic]['run'])
-        self.assertIn('typescript-completed-capture/node/controls/*.json', retained['with']['path'])
-        self.assertIn('typescript-completed-capture.log', retained['with']['path'])
-        self.assertNotIn('typescript-signed-fetch/', retained['with']['path'])
+        normal = [step for step in steps if step.get('name') == normal_name]
+        self.assertEqual(len(normal), 1)
+        self.assertNotIn('if', normal[0])
+        self.assertTrue(all(step.get('name') not in {
+            'Observe completed retained Promise callbacks with the same signed owner',
+            'Retain completed Promise capture diagnostic separately',
+        } for step in steps))
+        body = source.split('  fetch-runtime:\n', 1)[1].split('  fetch-failure-frames:\n', 1)[0]
+        self.assertIn('      - name: ' + normal_name + '\n        run: ' + normal[0]['run'], body)
+        self.assertNotIn('--observe-completed-capture-from', body)
 
     def test_completed_capture_uses_release_retained_fresh_order(self):
         self.assertEqual(fetch.COMPLETED_CAPTURE_VECTORS, (
