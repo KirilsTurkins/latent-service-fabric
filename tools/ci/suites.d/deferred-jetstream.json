@@ -3,6 +3,26 @@
   "suites": [
     {
       "boundary": "product",
+      "expectedIgnored": [],
+      "id": "latent-nats.example.deferred-event-fault-proxy",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "crates/latent-nats/Cargo.toml",
+      "mode": "compile-only",
+      "package": "latent-nats",
+      "platforms": ["linux-x86_64"],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/deferred_event_fault_proxy.rs",
+      "target": "deferred_event_fault_proxy",
+      "timeoutSeconds": 300
+    },
+    {
+      "boundary": "product",
       "expectedIgnored": [
         "campaign::real_deferred_atomic_state_result_payload_and_broker_receipt_agree",
         "campaign::real_deferred_committed_presend_restart_uses_same_payload_and_advanced_physical_epoch",
