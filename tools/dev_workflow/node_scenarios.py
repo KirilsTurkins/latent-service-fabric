@@ -100,11 +100,13 @@ def run(root, arguments, *, deadline: float | None = None, diagnostic_observer=N
             issued_activation = activation
             if execution is not None and execution.get("cancelWhenRunning", False):
                 cancellation = node_cancellation.Cancellation(root, cli, activation, deadline)
+            # The input file is a review copy. The private stdin is the same
+            # opaque payload whose digest was recorded in the original intent.
             result = cli.call("invoke", "--service", case["service"], "--contract", case["contract"],
-                "--function", case["function"], "--input", path, "--media-type", case["mediaType"], "--activation-id", activation,
+                "--function", case["function"], "--input", "-", "--media-type", case["mediaType"], "--activation-id", activation,
                 "--budget", root / "test-budget.json", "--budget-profile", "phase3" if installed is not None else "phase1",
                 "--rpc-timeout-ms", str(case["timeoutMillis"] + 1000), timeout=case["timeoutMillis"] / 1000 + 5,
-                check=cancellation.check if cancellation is not None else None)
+                check=cancellation.check if cancellation is not None else None, stdin=raw)
             # Client.call returns only after its owned process is positively
             # reaped. The observer receives no environment or raw process logs.
             original_client_reaped = True
