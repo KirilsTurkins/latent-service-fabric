@@ -3,8 +3,8 @@
   "target": "wasm32-unknown-unknown",
   "compiler": "1.97.1",
   "coreTransform": {
-    "wasmEncoder": "0.259.0",
-    "wasmParser": "0.259.0"
+    "wasmEncoder": "0.262.0",
+    "wasmParser": "0.262.0"
   },
   "componentAssembly": {
     "tool": "wasm-tools 1.254.0",
