@@ -60,6 +60,11 @@
         "run": "set -euo pipefail\nrustc --edition=2021 --test tools/fixtures/wasi-http-request-options/control.rs -o \"$RUNNER_TEMP/rust-http-resource-controls\"\n\"$RUNNER_TEMP/rust-http-resource-controls\" --test-threads=1 | tee \"$RUNNER_TEMP/rust-http-resource-controls.txt\"\n"
       },
       {
+        "name": "Execute content-length finish and ownership controls",
+        "shell": "bash",
+        "run": "set -euo pipefail\npython3 -B tools/rust_wasi_http_finish_control.py --output \"$RUNNER_TEMP/rust-http-finish-method.rs\" | tee \"$RUNNER_TEMP/rust-http-finish-source.txt\"\nLSF_RUST_HTTP_FINISH_BODY=\"$RUNNER_TEMP/rust-http-finish-method.rs\" rustc --edition=2021 --cfg lsf_exported_finish_control --test tools/fixtures/wasi-http-request-options/exchange-control.rs -o \"$RUNNER_TEMP/rust-http-exchange-controls\"\n\"$RUNNER_TEMP/rust-http-exchange-controls\" --test-threads=1 | tee \"$RUNNER_TEMP/rust-http-exchange-controls.txt\"\n"
+      },
+      {
         "name": "Execute callback-safe readiness, cancellation and bounded waiter controls",
         "shell": "bash",
         "run": "set -euo pipefail\nrustc --edition=2021 --test sdk/wasi-http-runtime/pump.rs -o \"$RUNNER_TEMP/rust-http-pump-controls\"\n\"$RUNNER_TEMP/rust-http-pump-controls\" | tee \"$RUNNER_TEMP/rust-http-pump-controls.txt\"\n"
@@ -88,7 +93,7 @@
         "uses": "KirilsTurkins/lsf-upload-artifact",
         "with": {
           "name": "rust-wasi-http-backend-${{ github.sha }}",
-          "path": "${{ runner.temp }}/rust-http-resource-controls.txt\n${{ runner.temp }}/rust-http-runtime/INSTALL-COMPLETE.json\n${{ runner.temp }}/rust-http-runtime/INSTALL-FAILED.json\n${{ runner.temp }}/rust-http-runtime/source-inputs.json\n${{ runner.temp }}/rust-http-runtime/reference.wit.json\n${{ runner.temp }}/rust-http-runtime/adapter.wit.json\n${{ runner.temp }}/rust-http-runtime/raw-runtime.wasm\n${{ runner.temp }}/rust-http-runtime/rust-wasi-http-runtime.wasm\n${{ runner.temp }}/rust-http-runtime/component-composer/wac\n${{ runner.temp }}/rust-http-runtime/logs/*.stdout.txt\n${{ runner.temp }}/rust-http-runtime/logs/*.stderr.txt\n${{ runner.temp }}/rust-http-pump-controls.txt\n${{ runner.temp }}/rust-http-retirement-controls.txt\n${{ runner.temp }}/rust-http-pump-native-guest.txt\n${{ runner.temp }}/rust-http-pump-guest.txt\n${{ runner.temp }}/rust-http-pump-probe.wasm",
+          "path": "${{ runner.temp }}/rust-http-resource-controls.txt\n${{ runner.temp }}/rust-http-exchange-controls.txt\n${{ runner.temp }}/rust-http-finish-source.txt\n${{ runner.temp }}/rust-http-finish-method.rs\n${{ runner.temp }}/rust-http-runtime/INSTALL-COMPLETE.json\n${{ runner.temp }}/rust-http-runtime/INSTALL-FAILED.json\n${{ runner.temp }}/rust-http-runtime/source-inputs.json\n${{ runner.temp }}/rust-http-runtime/reference.wit.json\n${{ runner.temp }}/rust-http-runtime/adapter.wit.json\n${{ runner.temp }}/rust-http-runtime/raw-runtime.wasm\n${{ runner.temp }}/rust-http-runtime/rust-wasi-http-runtime.wasm\n${{ runner.temp }}/rust-http-runtime/component-composer/wac\n${{ runner.temp }}/rust-http-runtime/logs/*.stdout.txt\n${{ runner.temp }}/rust-http-runtime/logs/*.stderr.txt\n${{ runner.temp }}/rust-http-pump-controls.txt\n${{ runner.temp }}/rust-http-retirement-controls.txt\n${{ runner.temp }}/rust-http-pump-native-guest.txt\n${{ runner.temp }}/rust-http-pump-guest.txt\n${{ runner.temp }}/rust-http-pump-probe.wasm",
           "if-no-files-found": "warn",
           "retention-days": 3
         }
@@ -97,7 +102,7 @@
   },
   "jobId": "standard-backend",
   "kind": "job",
-  "reviewReason": "Bind the corrected source-captured graph and retain ordinary refusal, independent grants, finite ownership, compiled sequential progress, physical retirement and original signed witness gates.",
+  "reviewReason": "Run the original backend compilation and controls, adding the bounded Content-Length finish and owner-retention control without changing deadlines or authority.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-wasi-http-runtime.yml"
 }

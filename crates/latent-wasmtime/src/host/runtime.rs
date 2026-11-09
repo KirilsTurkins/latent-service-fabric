@@ -435,6 +435,10 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
     });
     sync!("observe", (), (), |table| {
         let snapshot = table.runtime.snapshot();
+        #[cfg(feature = "development-go-timer-overlap")]
+        if let Some(observer) = &table.overlap {
+            observer.fired_probe(snapshot.owners[3], snapshot.owners[4]);
+        }
         Ok(wit::Observation {
             phase: phase(snapshot.phase),
             tasks: snapshot.owners[0],
@@ -801,14 +805,15 @@ fn prepare_timer_next(state: &mut HostState, token: RuntimeToken) -> PreparedWai
 fn complete_elapsed_wait(
     runtime: &ActivationRuntime,
     timer: Option<&mut TimerWait>,
+    plain_owner: Option<RuntimeToken>,
     now: Instant,
 ) -> Result<u64, PlatformError> {
     match timer {
         Some(timer) => timer.complete(now),
         None => {
-            // Plain waits have no schedule commit. A final phase observation
-            // orders their elapsed success against runtime cancellation.
-            runtime.check_live()?;
+            let owner = plain_owner
+                .ok_or_else(|| failure(PlatformErrorCode::Internal, "runtime-plain-wait-owner"))?;
+            runtime.commit_elapsed_timer_readiness(owner)?;
             Ok(0)
         }
     }
@@ -870,7 +875,7 @@ impl WaitingTimer {
             if self.timer_wait.as_ref().is_some_and(TimerWait::is_closed) {
                 #[cfg(feature = "development-go-timer-overlap")]
                 if let Some(overlap) = &mut self.overlap {
-                    if !overlap.barrier_done {
+                    if !overlap.barrier_done && !overlap.observer.is_fired() {
                         overlap.barrier_done = true;
                         overlap
                             .observer
@@ -901,7 +906,31 @@ impl WaitingTimer {
                 ));
             }
             if now >= self.requested {
-                return complete_elapsed_wait(&self.runtime, self.timer_wait.as_mut(), now);
+                #[cfg(feature = "development-go-timer-overlap")]
+                if let Some(overlap) = &mut self.overlap {
+                    if !overlap.barrier_done && overlap.observer.is_fired() {
+                        overlap.barrier_done = true;
+                        overlap
+                            .observer
+                            .wait_for_fired_probe(
+                                overlap.token,
+                                self.wait.as_ref(),
+                                self.call.budget_accounting(),
+                                self.call.deadline(),
+                                self.stop.as_ref(),
+                            )
+                            .await;
+                        // Re-run stop, deadline and authority checks. This is
+                        // only a scheduling gate; it never supplies a result.
+                        continue;
+                    }
+                }
+                return complete_elapsed_wait(
+                    &self.runtime,
+                    self.timer_wait.as_mut(),
+                    self._owner.as_ref().map(RuntimeOwner::token),
+                    now,
+                );
             }
             let next = self
                 .requested

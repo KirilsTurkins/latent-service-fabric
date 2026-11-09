@@ -47,6 +47,8 @@ on:
       - 'tools/tests/fixtures/c-once-jspi.cjs'
       - 'tools/tests/fixtures/c-root-drain-jspi.c'
       - 'tools/tests/fixtures/c-root-drain-jspi.cjs'
+      - 'tools/tests/fixtures/c-gnu-join-reference.c'
+      - 'tools/tests/fixtures/c-gnu-join-reference.cjs'
       - 'docs/testing/evidence/c-thread-native-rustfmt-2026-10-21.json'
       - 'tools/tests/test_c_threading_profile.py'
       - 'tools/tests/test_c_threading_compatibility.py'

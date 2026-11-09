@@ -523,18 +523,24 @@ static int sync_await_timer(struct sync_wait *node) {
     require(current()==node->thread && !node->suspended);
     if (node->notified) return 0;
     struct lsf_c_token timer=node->timer;require(token_live(timer));
+    int refusal=0;
     park(node->thread->task);
     if (!node->notified) {
         struct sync_timer_result result={.tag=255};
         sync_host_timer_next(timer.generation,timer.id,&result);
         require(current()==node->thread);
         /* Local stop is accepted only after this exact queue notification.
-         * Global cancellation/deadline never becomes requested elapsed time. */
-        require((result.tag==0 && result.value.skipped==0) ||
+         * The host may separately refuse the physical TimerWait's original
+         * Wait after this C Wait and Timer were admitted. All other errors,
+         * including global cancellation and deadline, remain terminal. */
+        if (result.tag==1 && result.value.error==2) refusal=runtime_error(result.value.error);
+        else require((result.tag==0 && result.value.skipped==0) ||
             (result.tag==1 && result.value.error==3 && node->notified));
     }
     wake(node->thread->task);
-    return node->notified?0:ETIMEDOUT;
+    /* A real notification may have transferred the lock before a refusal
+     * returned. Honour that handoff; wake above still checks Task liveness. */
+    return node->notified?0:refusal?refusal:ETIMEDOUT;
 }
 static void sync_remove(struct sync_wait **head,struct sync_wait **tail,uint32_t *count,
                         struct sync_wait *node) {
@@ -565,7 +571,8 @@ static int sync_mutex_timed(void *object,const struct timespec *deadline) {
     if (value.tail) value.tail->next=&node;else value.head=&node;
     value.tail=&node;++value.waiters;sync_mutex_write(object,value);
     error=sync_await_timer(&node);value=sync_mutex_read(object);
-    if (error==ETIMEDOUT) {
+    if (error) {
+        require(error==ETIMEDOUT || error==EAGAIN);
         sync_remove(&value.head,&value.tail,&value.waiters,&node);
         sync_mutex_write(object,value);
     } else {
@@ -608,7 +615,7 @@ static int sync_cond_timed(void *object,void *mutex,const struct timespec *deadl
     require(sync_unlock(mutex)==0);
     error=nanos==0?ETIMEDOUT:sync_await_timer(&node);
     if (node.linked) {
-        require(error==ETIMEDOUT);value=sync_cond_read(object);
+        require(error==ETIMEDOUT || error==EAGAIN);value=sync_cond_read(object);
         sync_remove(&value.head,&value.tail,&value.waiters,&node);
         if (!value.head) value.mutex=NULL;
         sync_cond_write(object,value);
@@ -624,7 +631,10 @@ static int sync_sleep(const struct timespec *duration,struct timespec *remaining
     if (nanos!=0) {
         struct sync_wait node;error=sync_begin(&node);if (error) return error;
         error=sync_timer_start(&node,nanos);
-        if (!error) { require(sync_await_timer(&node)==ETIMEDOUT); }
+        if (!error) {
+            int outcome=sync_await_timer(&node);
+            if (outcome==EAGAIN) error=outcome;else require(outcome==ETIMEDOUT);
+        }
         sync_end(&node);if (error) return error;
     }
     if (remaining) *remaining=(struct timespec){0};

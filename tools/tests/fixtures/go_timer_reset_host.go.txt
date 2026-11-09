@@ -4,6 +4,7 @@ import (
     "fmt"
     "runtime"
     "testing"
+    "time"
     "unsafe"
 )
 
@@ -32,6 +33,8 @@ var enteredFence chan struct{}
 var resetHook func(*timer)
 var fixtureChannel *hchan
 var denyTimerAdmission bool
+var heldPhysical map[[2]uint64]bool
+var timerLimit int
 const lockRankTimerSend = 0
 func getg() *g { return &currentG }
 func nanotime() int64 { return 100 }
@@ -55,25 +58,30 @@ func (t *timer) reset(_, period int64) bool {
 func internal_weak_runtime_registerWeakPointer(p unsafe.Pointer) unsafe.Pointer { return p }
 func internal_weak_runtime_makeStrongFromWeak(p unsafe.Pointer) unsafe.Pointer { return p }
 func lsfTimerStart(_ int64, _ int32, _ int64, _ int32, _, _ int64, result unsafe.Pointer) {
-    if denyTimerAdmission { *(*lsfTokenResult)(result)=lsfTokenResult{tag:1};return }
+    if denyTimerAdmission || (timerLimit != 0 && len(hostOwners) >= timerLimit) {
+        *(*lsfTokenResult)(result)=lsfTokenResult{tag:1};return
+    }
     lastID++;token:=[2]uint64{7,lastID};hostOwners[token]=true
     *(*lsfTokenResult)(result)=lsfTokenResult{generation:token[0],id:token[1]}
 }
 func lsfTimerStop(generation,id int64,result unsafe.Pointer) {
     token:=[2]uint64{uint64(generation),uint64(id)}
     if !hostOwners[token] { panic(fmt.Sprint("unknown original owner ",token)) }
-    delete(hostOwners,token);*(*lsfUnitResult)(result)=lsfUnitResult{}
+    if !heldPhysical[token] { delete(hostOwners,token) }
+    *(*lsfUnitResult)(result)=lsfUnitResult{}
     if retiredOld!=nil && token==[2]uint64{7,1} { retiredOld<-struct{}{} }
 }
-func fixture() (*timeTimer,*lsfTimerWait) {
+func fixtureKind(channelTimer bool) (*timeTimer,*lsfTimerWait) {
     runtime.GOMAXPROCS(1);lsfTimerSlots=nil;lsfTimerCallbacks=0;lastID=0;resetHook=nil;denyTimerAdmission=false
-    hostOwners=map[[2]uint64]bool{}
-    fixtureChannel=&hchan{dataqsiz:1}
+    hostOwners=map[[2]uint64]bool{};heldPhysical=map[[2]uint64]bool{};timerLimit=0
+    fixtureChannel=nil
+    if channelTimer { fixtureChannel=&hchan{dataqsiz:1} }
     current:=newTimer(200,0,nil,nil,fixtureChannel)
     wait:=&lsfTimerWait{token:[2]uint64{7,1},done:make(chan unit)}
     state=&taskState{timerWaits:[]*lsfTimerWait{wait}};enteredFence=make(chan struct{});retiredOld=make(chan struct{},1)
     return current,wait
 }
+func fixture() (*timeTimer,*lsfTimerWait) { return fixtureKind(true) }
 func startFirst(t *testing.T,current *timeTimer,wait *lsfTimerWait,operation string) <-chan bool {
     t.Helper();done:=make(chan bool,1)
     go func(){ if operation=="reset" { done<-resetTimer(current,200,0) } else { done<-stopTimer(current) } }()
@@ -141,4 +149,85 @@ func TestRecoverablePanicReleasesGateForFollowingStop(t *testing.T) {
     <-enteredFence;close(wait.done)
     if result:=<-done;result!="modeled panic" { t.Fatal(result) }
     if !stopTimer(current) { t.Fatal("remaining model timer was not active") };expectOwners(t,current,0,false)
+}
+
+// The host double retains an original Timer while its pending TimerWait holds
+// the real provider's shared inner owner. These are source-level controls, not
+// actual Go guest, scheduler or host-provider executions.
+func TestExpiredOneShotPublicOperationFencesPhysicalWait(t *testing.T) {
+    for _, channelTimer := range []bool{true,false} {
+        for _, reset := range []bool{true,false} {
+            for _, reuseSlot := range []bool{false,true} {
+                name := fmt.Sprintf("channel=%v/reset=%v/reuse=%v",channelTimer,reset,reuseSlot)
+                t.Run(name,func(t *testing.T) {
+                    current,wait:=fixtureKind(channelTimer);old:=current.lsfToken
+                    var other *timeTimer
+                    if !reuseSlot { other=newTimer(300,0,nil,nil,&hchan{dataqsiz:1}) }
+                    heldPhysical[old]=true;current.active=false
+                    lsfBeforeTimerCallback(&current.timer);lsfAfterTimerCallback(&current.timer)
+                    if reuseSlot { other=newTimer(300,0,nil,nil,&hchan{dataqsiz:1}) }
+                    timerLimit=2
+                    if !wait.stopped || !hostOwners[old] || !hostOwners[other.lsfToken] {
+                        t.Fatal("callback did not retain the modeled pending physical owner")
+                    }
+                    if reuseSlot && other.lsfSlot!=1 { t.Fatal("the retired slot was not reused") }
+                    done:=make(chan interface{},1)
+                    go func(){
+                        defer func(){ if failure:=recover(); failure!=nil { done<-failure } }()
+                        if reset { done<-resetTimer(current,200,0) } else { done<-stopTimer(current) }
+                    }()
+                    select {
+                    case <-enteredFence:
+                        if len(hostOwners)!=2 || !hostOwners[old] || !hostOwners[other.lsfToken] {
+                            t.Fatalf("old or unrelated owner lost while fenced: %v",hostOwners)
+                        }
+                    case value:=<-done:
+                        t.Fatalf("operation returned or failed before physical retirement: %v",value)
+                    case <-time.After(2*time.Second):
+                        t.Fatal("public operation did not reach the original wait fence")
+                    }
+                    delete(heldPhysical,old);delete(hostOwners,old)
+                    state.timerWaits=nil // Actual dispatcher removes the record before closing done.
+                    close(wait.done)
+                    select {
+                    case value:=<-done:
+                        if value!=false { t.Fatalf("expired operation returned %v",value) }
+                    case <-time.After(2*time.Second):
+                        t.Fatal("public operation did not resume after physical retirement")
+                    }
+                    expected:=1;if reset { expected=2 }
+                    if len(hostOwners)!=expected || !hostOwners[other.lsfToken] {
+                        t.Fatalf("wrong retained owners after retirement: %v",hostOwners)
+                    }
+                    if reset && (current.lsfToken==old || !hostOwners[current.lsfToken]) {
+                        t.Fatalf("replacement did not retain a distinct owner: %v",hostOwners)
+                    }
+                    if reset {
+                        if !stopTimer(current) { t.Fatal("replacement was not active") }
+                    } else if stopTimer(current) {
+                        t.Fatal("repeated Stop changed an expired timer")
+                    }
+                    if current.lsfToken!=[2]uint64{} || current.lsfSlot!=0 ||
+                        len(hostOwners)!=1 || !hostOwners[other.lsfToken] {
+                        t.Fatalf("repeated operation affected the unrelated owner: %v",hostOwners)
+                    }
+                })
+            }
+        }
+    }
+}
+func TestExpiredOneShotWithoutPendingWaitCanResetImmediately(t *testing.T) {
+    for _,channelTimer:=range []bool{true,false} {
+        t.Run(fmt.Sprintf("channel=%v",channelTimer),func(t *testing.T) {
+            current,wait:=fixtureKind(channelTimer);old:=current.lsfToken
+            state.timerWaits=nil;close(wait.done) // Dispatcher already dropped the actual subtask.
+            current.active=false
+            lsfBeforeTimerCallback(&current.timer);lsfAfterTimerCallback(&current.timer)
+            timerLimit=1
+            if resetTimer(current,200,0) { t.Fatal("expired one-shot reported active") }
+            if len(hostOwners)!=1 || current.lsfToken==old || !hostOwners[current.lsfToken] {
+                t.Fatalf("immediate fresh admission failed: old=%v owners=%v",old,hostOwners)
+            }
+        })
+    }
 }

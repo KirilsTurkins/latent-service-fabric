@@ -4,9 +4,11 @@ from __future__ import annotations
 import copy
 import json
 import os
+import subprocess
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from tools import outbound_stream_operator as stream
 from tools.dev_workflow import paths, state
@@ -541,6 +543,77 @@ class StreamOperator(unittest.TestCase):
         self.assertEqual(len(self.mutations()), 1)
         self.assertIs(self.client.records[key]["document"]["configurationEpoch"], True)
         self.assertEqual(self.client.records[key]["generation"], "2")
+
+
+    def test_malformed_cli_mutation_envelope_keeps_original_intent_for_recovery(self):
+        from tools.dev_workflow.client import Client
+        for number,category in enumerate(("unrecognized-result", "not-found", ["bad-category"], "success")):
+            with self.subTest(category_type=type(category).__name__, category_index=number):
+                root=self.root/("response-"+str(number));paths.new_directory(root)
+                rpc=PolicyRpc(self.config)
+                operator=stream.StreamOperator(root,rpc,**self.options)
+                process_client=Client(Path("selected-cli"),self.config,root)
+                original=rpc.call
+                def malformed(*arguments):
+                    actual=original(*arguments) # The source-port backend applies exactly once.
+                    if "apply" not in arguments:
+                        return actual
+                    value={"schemaVersion":"latent.cli.result.v1","category":category,
+                           "outcomeKnown":True,"requestDispatched":True,
+                           "data":actual["data"] if category=="success" else {}}
+                    response=subprocess.CompletedProcess([],4,encode(value),b"")
+                    with patch("tools.dev_workflow.client.process.run",return_value=response):
+                        return process_client.call(*arguments)
+                rpc.call=malformed
+                with self.assertRaises(DevError) as caught:
+                    operator.grant()
+                pending=operator.journal.read()["pending"]
+                self.assertIsNotNone(pending,"applied mutation must remain pending for its original receipt")
+                self.assertTrue(caught.exception.uncertain,"ambiguous mutation must retain its journal")
+                self.assertEqual(pending["intent"]["recordKind"],"provider-binding")
+                self.assertEqual(operator._records(),{})
+                self.assertEqual(len([args for args in rpc.calls if "apply" in args]),1)
+                rpc.call=original
+                operator.recover()
+                self.assertIsNone(operator.journal.read()["pending"])
+                operator.grant()
+                applies=[args for args in rpc.calls if "apply" in args]
+                self.assertEqual(len(applies),2)
+                self.assertEqual(sum(pending["id"] in args for args in applies),1)
+
+    def test_nonobject_cli_response_is_a_redacted_structured_refusal(self):
+        from tools.dev_workflow.client import Client
+        for value in (None,False,7,"PUBLIC-CANARY-DO-NOT-LOG",["PUBLIC-CANARY-DO-NOT-LOG"]):
+            with self.subTest(kind=type(value).__name__):
+                observations=[]
+                selected=Client(Path("selected-cli"),self.config,self.operator_root,observer=observations.append)
+                response=subprocess.CompletedProcess([],4,encode(value),b"private-output")
+                with patch("tools.dev_workflow.client.process.run",return_value=response) as invoked:
+                    with self.assertRaisesRegex(DevError,"operator-response-format"):
+                        selected.call("policy","apply","PUBLIC-CANARY-ARGUMENT")
+                self.assertEqual(invoked.call_count,1)
+                self.assertEqual(observations[0]["validationCode"],"operator-response-format")
+                self.assertNotIn("PUBLIC-CANARY",str(observations))
+                self.assertNotIn("private-output",str(observations))
+
+
+    def test_cli_result_categories_match_the_native_exit_contract(self):
+        from tools.dev_workflow.client import Client
+        selected=Client(Path("selected-cli"),self.config,self.operator_root)
+        categories=(("success",0),("local-error",2),("declared-error",3),
+                    ("platform-failure",4),("transport-failure",5),("not-found",6),("interrupted",130))
+        for category,status in categories:
+            value={"schemaVersion":"latent.cli.result.v1","category":category,
+                   "outcomeKnown":True,"requestDispatched":False,"data":{}}
+            with self.subTest(category=category):
+                response=subprocess.CompletedProcess([],status,encode(value),b"")
+                with patch("tools.dev_workflow.client.process.run",return_value=response):
+                    self.assertEqual(selected.call("policy","get"),value)
+                wrong=5 if status!=5 else 4
+                response=subprocess.CompletedProcess([],wrong,encode(value),b"")
+                with patch("tools.dev_workflow.client.process.run",return_value=response):
+                    with self.assertRaisesRegex(DevError,"operator-response-exit-mismatch"):
+                        selected.call("policy","get")
 
 
 class StreamConfiguration(unittest.TestCase):
