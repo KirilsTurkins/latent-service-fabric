@@ -941,13 +941,17 @@ sys.exit(0 if matched else 2)
             self.config.write_bytes(original)
             mutate = False
             delivered = selected.call('policy', 'apply', '--file', '-', stdin=payload)
+            controlled = selected.control('typescript', 'deployment', 'apply', '-', stdin=payload)
         self.assertEqual(refused['category'], 'local-error')
         self.assertFalse(refused['requestDispatched'])
         self.assertTrue(delivered['data']['matched'])
         self.assertEqual(delivered['data']['tailSize'], len(payload))
         self.assertEqual(delivered['data']['tailDigest'], digest(payload))
+        self.assertTrue(controlled['data']['matched'])
+        self.assertEqual(controlled['data']['tailSize'], len(payload))
+        self.assertEqual(controlled['data']['tailDigest'], digest(payload))
         self.assertEqual([item[1] for item in observed],
-                         [(expected + '\n').encode()] * 2 + [(expected + '\n').encode() + payload])
+                         [(expected + '\n').encode()] * 2 + [(expected + '\n').encode() + payload] * 2)
         self.assertTrue(all('--expect-config-digest-stdin' in argv for argv, _ in observed))
         self.assertTrue(all(expected not in argv and payload.decode() not in str(argv) for argv, _ in observed))
         with self.assertRaisesRegex(DevError, 'operator-client-already-bound'):

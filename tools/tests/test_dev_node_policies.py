@@ -341,6 +341,62 @@ class PolicyRecovery(unittest.TestCase):
         self.assertEqual(client.call.call_args_list[1].args, ("policy", "--kind", "policy", "get", "--id", "test-allow"))
 
 
+@unittest.skipUnless(os.name == "posix", "the installed node helper runs on Linux")
+class NodeDeploymentInput(unittest.TestCase):
+    def test_selected_deployment_replacement_cannot_change_the_sent_intent(self):
+        from tools.dev_workflow import build, build_artifacts, build_cache, helper
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "test-deployment"
+            source = root / "source"
+            config = root / "runtime/config"
+            for directory in (root, source, root / "runtime", config):
+                directory.mkdir(mode=0o700)
+            descriptor = {"tenant": "examples", "language": "go", "artifacts": {"deployment": "deployment.json"}}
+            receipt = {"packager": "packager", "package": {"packageDigest": "package"},
+                "artifacts": {"component": "component", "capsule": "capsule", "contracts": "contracts"},
+                "attempt": "attempt", "buildKey": "build"}
+            state.atomic(root, "project.json", {"descriptor": descriptor, "snapshot": "source"})
+            state.atomic(root, "test-profile.json", {})
+            state.atomic(config, "node.json", {"supplyChain": {"mode": "trusted-local"}})
+            state.atomic(source, "deployment.json", {"metadata": {"name": "sample"}, "spec": {}})
+            publication_input = common.digest(common.encode({"mode": "trusted-local", "package": "package",
+                **receipt["artifacts"]}))
+            state.atomic(root, "last-publication.json", {"publicationInput": publication_input, "publication": "published"})
+            grants = [{"capability": "clock", "policy": "selected"}]
+            expected = common.encode({"metadata": {"name": "sample"}, "spec": {
+                "publication": "published", "grants": copy.deepcopy(grants)}})
+            applied, intents = [], []
+            controller = journal.Journal(root, "node", "examples", settle=lambda *_:
+                state.atomic(root, "last-deployment.json", {"deployment": "sample", "generation": "1"}))
+
+            class Client:
+                binary = root / "bin/latent"
+                def call(self, *arguments, **_options):
+                    return {"outcomeKnown": True, "category": "not-found",
+                            "data": {"deployment": None, "stateVersion": "0"}}
+                def control(self, _language, *arguments, **options):
+                    intents.append(controller.read()["pending"]["intent"])
+                    replacement = {"metadata": {"name": "sample"}, "spec": {
+                        "publication": "published", "grants": [{"capability": "other", "policy": "other"}]}}
+                    state.atomic(root, "selected-deployment.json", replacement)
+                    grants[0]["policy"] = "caller-mutated"
+                    selected = arguments[arguments.index("apply") + 1]
+                    applied.append(options["stdin"] if selected == "-" else Path(selected).read_bytes())
+                    return {"outcomeKnown": True, "category": "success", "data": {}}
+
+            with patch.object(build, "accepted", return_value=(source, receipt)), \
+                    patch.object(helper, "client", return_value=(Client(), controller)), \
+                    patch.object(helper.paths, "digest_file", return_value=("packager", 1)), \
+                    patch.object(build_artifacts, "package", return_value=receipt["package"]), \
+                    patch.object(build_cache, "monitor", return_value=None):
+                result = helper.deploy(root, test_grants=grants)
+            self.assertEqual(result["deployment"], "sample")
+            self.assertEqual(applied, [expected])
+            self.assertEqual(intents[0]["deploymentInput"], common.digest(expected))
+            self.assertIsNone(controller.read()["pending"])
+
+
 class TestProfile(unittest.TestCase):
     def setUp(self):
         signer = patch('tools.dev_workflow.node_test_signing.prepare', return_value={"trust": "isolated-short-lived-demo-only"})
