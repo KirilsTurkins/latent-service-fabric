@@ -177,6 +177,7 @@ public final class Capsule {
 
     private static Long basic() {
         Timer first = timer("timer-first"), second = timer("timer-second");
+        taskMonitorCompatibility(first);
         // These invalid calls use existing timers and cannot admit queued work.
         illegal(() -> first.schedule((TimerTask)null, new Date(-1)), IllegalArgumentException.class);
         illegal(() -> first.schedule((TimerTask)null, new Date(-1), 1), IllegalArgumentException.class);
@@ -218,6 +219,35 @@ public final class Capsule {
         illegal(() -> first.scheduleAtFixedRate((TimerTask)null, new Date(0), 1), IllegalStateException.class);
         illegal(() -> first.schedule(task(self -> { }), 0), IllegalStateException.class);
         return 42L;
+    }
+
+    private static void taskMonitorCompatibility(Timer timer) {
+        TimerTask future = task(self -> { throw new IllegalStateException("cancelled-monitor-task-ran"); });
+        boolean[] done = {false};
+        Thread contender = new Thread(() -> {
+            try {
+                timer.schedule(future, 60_000);
+                future.scheduledExecutionTime();
+                require(future.cancel());
+            } catch (Throwable error) { failure = error; }
+            finally { synchronized (gate) { done[0] = true; gate.notifyAll(); } }
+        });
+        try {
+            // Waiting on the separate gate keeps the public task monitor held.
+            synchronized (future) {
+                contender.start();
+                await(() -> done[0]);
+            }
+        } finally {
+            try { contender.join(); }
+            catch (InterruptedException error) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("timer-monitor-join-interrupted", error);
+            }
+        }
+        if (failure != null) throw new IllegalStateException("timer-monitor-worker-failed", failure);
+        int purged = timer.purge();
+        require(purged >= 0 && purged <= 1);
     }
 
     private static Long recurring() {

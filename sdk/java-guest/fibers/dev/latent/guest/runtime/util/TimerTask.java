@@ -3,6 +3,9 @@ package dev.latent.guest.runtime.util;
 /** Standard task state is independent of its physical queue/worker owners. */
 public abstract class TimerTask implements Runnable {
     static final int VIRGIN = 0, SCHEDULED = 1, EXECUTED = 2, CANCELLED = 3;
+    // Applications may use a TimerTask's public monitor independently. Only
+    // this monitor protects the scheduler's task state and association.
+    final Object stateLock = new Object();
     int state;
     long lastScheduled;
     Timer timer;
@@ -14,7 +17,7 @@ public abstract class TimerTask implements Runnable {
     public boolean cancel() {
         boolean scheduled;
         Timer selected;
-        synchronized (this) {
+        synchronized (stateLock) {
             scheduled = state == SCHEDULED;
             state = CANCELLED;
             selected = timer;
@@ -23,5 +26,7 @@ public abstract class TimerTask implements Runnable {
         return scheduled;
     }
 
-    public synchronized long scheduledExecutionTime() { return lastScheduled; }
+    public long scheduledExecutionTime() {
+        synchronized (stateLock) { return lastScheduled; }
+    }
 }

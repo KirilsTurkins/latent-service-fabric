@@ -374,18 +374,31 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
             compiler = self.fixture(root)
             application = compiler.sdk / "fibers/conformance/timers/Capsule.java"
             original = application.read_bytes()
-            compiler.run.side_effect = ["", *([self.receipt()] * 3), *self.active_receipts()]
+            compiler.run.side_effect = ["", *([self.receipt()] * 3), *self.active_receipts(),
+                                        "", "TIMER_CLOCK_ORDER PASS\n"]
             report = fibers.standard_timer_source_control(compiler, root / "control")
             self.assertEqual(application.read_bytes(), original)
             mapped = (root / "control/Capsule.java").read_text()
             self.assertIn("import dev.latent.guest.runtime.util.Timer;", mapped)
             self.assertNotIn("import java.util.Timer;", mapped)
-            self.assertEqual(len(report["sourceInputs"]), 8)
+            self.assertEqual(set(report["sourceInputs"]), {
+                "fibers/conformance/timers/Capsule.java", "fibers/conformance/timers/Main.java",
+                "fibers/conformance/timers/TimerValidationOrder.java",
+                "fibers/conformance/compiler/standard-timer-control/TimerModelMain.java",
+                "fibers/conformance/compiler/standard-timer-control/TimerActiveOwnerControl.java",
+                "fibers/conformance/compiler/standard-timer-control/TimerValidationAdmissionControl.java",
+                "fibers/conformance/compiler/standard-timer-control/FakeClock.java",
+                "fibers/conformance/compiler/standard-timer-control/ClockOrderControl.java",
+                "fibers/conformance/compiler/standard-timer-control/dev/latent/generated/Bindings.java",
+                "fibers/conformance/compiler/standard-timer-control/dev/latent/guest/runtime/Activation.java",
+                "fibers/dev/latent/guest/runtime/util/Timer.java",
+                "fibers/dev/latent/guest/runtime/util/TimerTask.java",
+            })
             self.assertEqual(report["iterations"], 3)
-            self.assertEqual(fibers.STANDARD_TIMER_ACTIVE_OWNER_CASES[-11:], (
+            self.assertEqual(fibers.STANDARD_TIMER_ACTIVE_OWNER_CASES[-12:], (
                 "manage-before", "manage-close-refused", "manage-close-lost",
                 "start-before", "start-uncertain", "start-accepted", "start-close-refused", "start-close-lost",
-                "start-finished-ok", "start-finished-refused", "start-finished-lost"))
+                "start-finished-ok", "start-finished-refused", "start-finished-lost", "public-task-monitor"))
             self.assertFalse(report["componentExecutionPerformed"])
             self.assertFalse(report["actualGuestBindingsUsed"])
 
@@ -397,6 +410,15 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "timer active-owner control did not complete: one-shot-normal"):
                 fibers.standard_timer_source_control(compiler, root / "control")
             self.assertEqual(compiler.run.call_count, 5)
+
+    def test_clock_order_must_return_its_exact_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler = self.fixture(root)
+            compiler.run.side_effect = ["", *([self.receipt()] * 3), *self.active_receipts(),
+                                        "", "TIMER_CLOCK_ORDER INCOMPLETE\n"]
+            with self.assertRaisesRegex(ValueError, "timer clock ordering control did not complete"):
+                fibers.standard_timer_source_control(compiler, root / "control")
 
     def test_changed_sdk_bytes_after_completed_runs_invalidate_receipt(self):
         with tempfile.TemporaryDirectory() as directory:

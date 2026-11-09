@@ -396,7 +396,7 @@ class StreamOperator:
         with state.lock(root, "stream-operator.lock"):
             existing = (root / "stream-operator-owner.json").exists()
             if existing:
-                require(state.load(root, "stream-operator-owner.json") == self.owner,
+                require(encode(state.load(root, "stream-operator-owner.json")) == encode(self.owner),
                         "stream-operator-owner-changed")
             else:
                 require(_canonical_publication(publication), "stream-operator-invalid-publication")
@@ -409,7 +409,7 @@ class StreamOperator:
         self.journal = journal.Journal(root, node, tenant, settle=self._settle)
 
     def _owned(self):
-        require(state.load(self.root, "stream-operator-owner.json") == self.owner,
+        require(encode(state.load(self.root, "stream-operator-owner.json")) == encode(self.owner),
                 "stream-operator-owner-changed")
         config = Path(self.client.config).absolute()
         require(digest(_private_read(config))
@@ -505,8 +505,38 @@ class StreamOperator:
 
     def recover(self):
         with state.lock(self.root, "stream-operator.lock"):
-            self._owned()
-            return self.journal.recover(lambda kind, operation: policy_operations.lookup(self.client, operation))
+            names = ("stream-operator-owner.json", "operations.json", "stream-policy-receipts.json")
+
+            def snapshot():
+                return {name: _private_read(self.root / name, MAX_DOCUMENT)
+                        if os.path.lexists(self.root / name) else None for name in names}
+
+            try:
+                self._owned()
+                before = snapshot()
+                pending = self.journal.read()["pending"]
+                if pending is not None:
+                    self._pending_client_operation(pending)
+                require(snapshot() == before, "stream-operator-recovery-state-changed")
+
+                def lookup(kind, operation):
+                    require(snapshot() == before, "stream-operator-recovery-state-changed")
+                    current = self.journal.read()["pending"]
+                    self._pending_client_operation(current)
+                    require(kind == current["kind"] and operation == current["id"],
+                            "stream-operator-recovery-journal-changed")
+                    result = policy_operations.lookup(self.client, operation)
+                    self._owned()
+                    require(snapshot() == before, "stream-operator-recovery-state-changed")
+                    return result
+
+                return self.journal.recover(lookup)
+            except DevError as error:
+                if error.code == "no-pending-operation":
+                    raise
+                raise DevError(error.code, uncertain=True) from None
+            except (OSError, KeyError, TypeError, AttributeError):
+                raise DevError("stream-operator-recovery-state-unavailable", uncertain=True) from None
 
     def adopt_provider(self, provider):
         """Explicitly record an observed new generation, without any mutation RPC.
