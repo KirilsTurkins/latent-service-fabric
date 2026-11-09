@@ -47,7 +47,8 @@ pub struct LocalDurablePin {
 
 /// A single-view physical recovery walk. The held original local-store owner
 /// and opaque cursor cannot be rebound to another root or engine snapshot.
-/// A failed or panicking page invalidates the cursor; restart with fresh owners.
+/// A failed or panicking page invalidates the cursor; restart with a fresh
+/// cursor and a live admission.
 pub struct RequiredBlobInventory {
     owner: Arc<super::Inner>,
     view: usize,
@@ -377,7 +378,9 @@ impl LocalBlobStore {
                 other => other,
             })?;
         drop(reader);
-        checkpoint()
+        checkpoint()?;
+        let _ = view.is_empty().map_err(storage)?;
+        self.inner.check()
     }
 
     /// Trusted setup on the fixed native storage owner. The actual selected
