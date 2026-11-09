@@ -953,10 +953,31 @@ jobs:
       - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
-      - uses: KirilsTurkins/lsf-buf-setup-action@483cc1af1999992e503ff1da69b431f7b9f3bae9 # v1.50.0 + upstream changes + LSF security fixes
-        with:
-          version: 1.72.0
-          github_token: ${{ github.token }}
+      - name: Install the verified Buf release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/lsf-buf-1.72.0.tar.gz"
+          destination="$RUNNER_TEMP/lsf-buf-1.72.0"
+          mkdir "$destination"
+          timeout 120s gh api -H 'Accept: application/octet-stream' repos/bufbuild/buf/releases/assets/480772583 | head -c 37851982 > "$archive"
+          unset GH_TOKEN
+          test "$(stat --format=%s "$archive")" = 37851981
+          printf '%s  %s\n' a9c6186cf6fcf062b247345e1b7b12c26f580c1b2a4bbf4d3fe080abf85ceee8 "$archive" | sha256sum --check --strict
+          tar -xzf "$archive" -C "$destination" buf/bin/buf buf/bin/protoc-gen-buf-breaking buf/bin/protoc-gen-buf-lint
+          bindir="$destination/buf/bin"
+          test "$(stat --format=%s "$bindir/buf")" = 54050978
+          test "$(stat --format=%s "$bindir/protoc-gen-buf-breaking")" = 41365666
+          test "$(stat --format=%s "$bindir/protoc-gen-buf-lint")" = 30810274
+          printf '%s  %s\n' \
+            8720830e26a733da55bb89bcd3cb44849c0965fc0c44fb5d691cccdc64dca5af "$bindir/buf" \
+            58cece373a057f6031bcbab1fdab1a774206b2ad15617fe61ae7bb1adda2b745 "$bindir/protoc-gen-buf-breaking" \
+            6b50ee2ef0876c73ad430522ee98c7070e41eaabeba649256278bd8dc92571a1 "$bindir/protoc-gen-buf-lint" | sha256sum --check --strict
+          chmod 755 "$bindir/buf" "$bindir/protoc-gen-buf-breaking" "$bindir/protoc-gen-buf-lint"
+          test "$("$bindir/buf" --version)" = 1.72.0
+          printf '%s\n' "$bindir" >> "$GITHUB_PATH"
       - uses: KirilsTurkins/lsf-setup-zig@e064b42fa88ad0859d8b54838b44f672ffd5ea7a # v2.2.1 + upstream changes + LSF security fixes
         with:
           version: "0.16.0"
@@ -1092,10 +1113,31 @@ jobs:
         with:
           go-version: 1.27.3
           cache-dependency-path: sdk/go/go.sum
-      - uses: KirilsTurkins/lsf-buf-setup-action@483cc1af1999992e503ff1da69b431f7b9f3bae9 # v1.50.0 + upstream changes + LSF security fixes
-        with:
-          version: 1.72.0
-          github_token: ${{ github.token }}
+      - name: Install the verified Buf release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/lsf-buf-1.72.0.tar.gz"
+          destination="$RUNNER_TEMP/lsf-buf-1.72.0"
+          mkdir "$destination"
+          timeout 120s gh api -H 'Accept: application/octet-stream' repos/bufbuild/buf/releases/assets/480772583 | head -c 37851982 > "$archive"
+          unset GH_TOKEN
+          test "$(stat --format=%s "$archive")" = 37851981
+          printf '%s  %s\n' a9c6186cf6fcf062b247345e1b7b12c26f580c1b2a4bbf4d3fe080abf85ceee8 "$archive" | sha256sum --check --strict
+          tar -xzf "$archive" -C "$destination" buf/bin/buf buf/bin/protoc-gen-buf-breaking buf/bin/protoc-gen-buf-lint
+          bindir="$destination/buf/bin"
+          test "$(stat --format=%s "$bindir/buf")" = 54050978
+          test "$(stat --format=%s "$bindir/protoc-gen-buf-breaking")" = 41365666
+          test "$(stat --format=%s "$bindir/protoc-gen-buf-lint")" = 30810274
+          printf '%s  %s\n' \
+            8720830e26a733da55bb89bcd3cb44849c0965fc0c44fb5d691cccdc64dca5af "$bindir/buf" \
+            58cece373a057f6031bcbab1fdab1a774206b2ad15617fe61ae7bb1adda2b745 "$bindir/protoc-gen-buf-breaking" \
+            6b50ee2ef0876c73ad430522ee98c7070e41eaabeba649256278bd8dc92571a1 "$bindir/protoc-gen-buf-lint" | sha256sum --check --strict
+          chmod 755 "$bindir/buf" "$bindir/protoc-gen-buf-breaking" "$bindir/protoc-gen-buf-lint"
+          test "$("$bindir/buf" --version)" = 1.72.0
+          printf '%s\n' "$bindir" >> "$GITHUB_PATH"
       - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
         with:
           node-version: 24.19.0
