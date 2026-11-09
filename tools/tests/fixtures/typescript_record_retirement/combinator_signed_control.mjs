@@ -54,6 +54,36 @@ try {
   } finally {
     Promise.all = original;
   }
+
+  // This is a reference for the fixture's callback and module-state contract.
+  // A Node module re-import is not an LSF activation or native-owner proof.
+  const released = 'combinator:completed:released:3';
+  const retained = 'combinator:completed:retained:3';
+  assert.equal(await api.run(30, ''), released);
+  assert.equal(await api.run(29, ''), retained);
+  await assert.rejects(api.run(30, ''), /combinator-capture-not-fresh/);
+  const fresh = await import(pathToFileURL(join(work, 'main.mjs')).href + '?fresh=1');
+  assert.equal(await fresh.api.run(30, ''), released);
+
+  const start = source.indexOf('function completedCombinatorCapture(');
+  const end = source.indexOf('\nfunction refusedCombinators(', start);
+  assert.ok(start >= 0 && end > start);
+  const originalCapture = source.slice(start, end);
+  const pendingCapture = originalCapture.replace('held[2](3); held[0](1); held[1](2);',
+                                                  'held[2](3); held[0](1);');
+  assert.notEqual(pendingCapture, originalCapture);
+  await writeFile(join(work, 'pending.mjs'), source.slice(0, start) + pendingCapture + source.slice(end));
+  const pending = await import(pathToFileURL(join(work, 'pending.mjs')));
+  await assert.rejects(pending.api.run(29, ''), /combinator-capture-not-fulfilled/);
+  await assert.rejects(pending.api.run(30, ''), /combinator-capture-not-fulfilled/);
+
+  const droppedCapture = originalCapture.replace('if (retain) completedCombinatorCallbacks = held;',
+                                                  'if (retain) held.length = 0;');
+  assert.notEqual(droppedCapture, originalCapture);
+  await writeFile(join(work, 'dropped.mjs'), source.slice(0, start) + droppedCapture + source.slice(end));
+  const dropped = await import(pathToFileURL(join(work, 'dropped.mjs')));
+  assert.equal(await dropped.api.run(29, ''), retained);
+  assert.equal(await dropped.api.run(30, ''), released);
   console.log('fixture-controls-passed; engine-qualified=false');
 } finally {
   await rm(work, {recursive: true, force: true});

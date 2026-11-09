@@ -33,6 +33,7 @@ class FutureCancelGuestSelection(unittest.TestCase):
                 calls.append((stage, argv))
                 if stage == 'reference-jdk-compile':
                     test.assertIn(output / 'src/Capsule.java', argv)
+                    test.assertIn(sdk / 'fibers/conformance/timers/reference/dev/latent/generated/Bindings.java', argv)
                     test.assertEqual((output / 'src/Capsule.java').read_bytes(), original)
                 return reference if stage.startswith('reference-jdk-') else ''
 

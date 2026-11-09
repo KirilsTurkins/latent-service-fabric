@@ -288,6 +288,7 @@ class ProbeIntegration(unittest.TestCase):
                 report = node_scenarios.run(root, {"environment": "node", "selection": []},
                                             diagnostic_observer=capture.observer("common-scenarios"))
             self.assertFalse(report["passed"])
+            cli.require_scenario_budget_support.assert_called_once_with()
             self.assertEqual(sent_inputs, [expected_input])
             self.assertEqual(sent_budgets[0]["cpuFuel"], 1000000000)
             self.assertEqual(sent_budgets[0]["memoryBytes"], 67108864)

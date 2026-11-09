@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Consumer;
+import dev.latent.generated.Bindings;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.FutureTask;
 
@@ -170,7 +171,7 @@ public final class Capsule {
         if (mode == 0) return basic();
         if (mode == 1) return recurring();
         if (mode == 2) return acceptedAfterRoot();
-        if (mode == 3) return cancellation();
+        if (mode == 3) { activeTimerOwners(); return cancellation(); }
         throw new IllegalArgumentException();
     }
 
@@ -247,6 +248,76 @@ public final class Capsule {
         Timer timer = timer("accepted-after-root");
         timer.schedule(task(self -> { sleep(20); lateCallback = true; }), 10);
         return 42L;
+    }
+
+    // The reference JDK uses scripted observations solely to check callback
+    // ordering. Only the guest observes the actual host owner counts.
+    private static long[] observedOwners() {
+        var observed = Bindings.LatentRuntimeActivation.observe();
+        require(!observed.isError());
+        var value = observed.value();
+        return new long[] {value.queuedWork(), value.executors()};
+    }
+    private static void requireOwners(long[] baseline, long queued, long executors) {
+        require(baseline[0] >= 0 && baseline[1] >= 0);
+        long[] actual = observedOwners();
+        require(actual[0] == baseline[0] + queued && actual[1] == baseline[1] + executors);
+    }
+    private static void activeTimerOwners() {
+        long[] baseline = observedOwners();
+        Timer timer = timer("active-owner-witness");
+        boolean[] progress = {false, false, false, false};
+        Thread[] worker = {null};
+        TimerTask periodic = task(self -> {
+            synchronized (gate) {
+                worker[0] = Thread.currentThread();
+                progress[0] = true; gate.notifyAll();
+                while (!progress[1]) {
+                    try { gate.wait(); }
+                    catch (InterruptedException error) { throw new IllegalStateException(error); }
+                }
+            }
+        });
+        TimerTask marker = task(self -> {
+            synchronized (gate) {
+                require(worker[0] == Thread.currentThread());
+                progress[2] = true; gate.notifyAll();
+                while (!progress[3]) {
+                    try { gate.wait(); }
+                    catch (InterruptedException error) { throw new IllegalStateException(error); }
+                }
+                require(!Thread.currentThread().isInterrupted());
+            }
+        });
+        try {
+            timer.scheduleAtFixedRate(periodic, 0, 60_000);
+            await(() -> progress[0]);
+            timer.schedule(marker, 0);
+            requireOwners(baseline, 2, 1);
+            require(periodic.cancel() && timer.purge() == 1);
+            // Purging a running periodic task cannot retire its active owner.
+            requireOwners(baseline, 2, 1);
+            synchronized (gate) { progress[1] = true; gate.notifyAll(); }
+            await(() -> progress[2]);
+            // The marker begins only after the first callback and its finally.
+            requireOwners(baseline, 1, 1);
+            timer.cancel();
+            // The already-dequeued one-shot marker still owns its callback.
+            requireOwners(baseline, 1, 1);
+        } finally {
+            timer.cancel();
+            synchronized (gate) { progress[1] = progress[3] = true; gate.notifyAll(); }
+            if (worker[0] != null) {
+                try { worker[0].join(5_000); }
+                catch (InterruptedException error) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("timer-owner-join-interrupted", error);
+                }
+                require(!worker[0].isAlive());
+            }
+        }
+        if (failure != null) throw new IllegalStateException("timer-owner-worker-failed", failure);
+        requireOwners(baseline, 0, 0);
     }
 
     private static Long cancellation() {
