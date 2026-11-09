@@ -322,6 +322,10 @@ pub(crate) struct Connection {
     owner_memory: HostMemoryReservation,
     registry: crate::connection_registry::RegistryWeak,
     _owner_metadata: Arc<ProviderMetadata>,
+    // The first read-specific drop action records an inert,
+    // monotone edge before the original transport or guard can be dropped.
+    #[cfg(feature = "development-read-witness")]
+    read_drop_starts: std::sync::atomic::AtomicU8,
     #[cfg(test)]
     write_gate: Mutex<Option<TestWriteGate>>,
     #[cfg(test)]
@@ -398,6 +402,21 @@ impl Drop for WriteFlight {
         if self.possible {
             self.record_accepted(self.accepted);
             self.connection.abort(StreamErrorCode::Cancelled);
+        }
+    }
+}
+#[cfg(feature = "development-read-witness")]
+impl Drop for Pending {
+    fn drop(&mut self) {
+        if self._guard.direction == 0 {
+            use std::sync::atomic::Ordering;
+            // Three is a sentinel, so a prior provisional or later read can
+            // never wrap around and impersonate the original second read.
+            let _ = self._guard.connection.read_drop_starts.fetch_update(
+                Ordering::SeqCst,
+                Ordering::SeqCst,
+                |value| Some(value.saturating_add(1).min(3)),
+            );
         }
     }
 }
@@ -488,6 +507,8 @@ pub(crate) async fn connect(
         owner_memory,
         registry: inner.connections.downgrade(),
         _owner_metadata: owner_metadata,
+        #[cfg(feature = "development-read-witness")]
+        read_drop_starts: std::sync::atomic::AtomicU8::new(0),
         #[cfg(test)]
         write_gate: Mutex::new(None),
         #[cfg(test)]
@@ -897,6 +918,26 @@ impl Connection {
             .as_ref()
             .expect("live transport")
             .test_hold_tls_flush();
+    }
+
+    #[cfg(feature = "development-read-witness")]
+    pub(crate) fn read_drop_starts(&self) -> u8 {
+        self.read_drop_starts
+            .load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    #[cfg(feature = "development-read-witness")]
+    pub(crate) fn original_second_read_live(&self) -> Result<bool, StreamError> {
+        let state = self.state.try_lock().map_err(crate::snapshot_lock_error)?;
+        Ok(state.read_admissions == 2
+            && state.retired_read_delivered == 1
+            && state.delivered_read == 1
+            && state.pending == 1
+            && state.busy[0]
+            && state.socket.is_some()
+            && !state.closing
+            && !state.quarantined
+            && self.read_drop_starts() == 1)
     }
 
     pub(crate) fn metadata_billing(&self) -> Arc<ProviderMetadata> {
@@ -1752,6 +1793,7 @@ mod read_witness_tests {
             assert_eq!(first_copy.as_ref(), b"p");
             drop(first_copy);
             drop(first_chunk);
+            assert_eq!(connection.read_drop_starts(), 1);
             let after_first = fixture.provider.usage().unwrap();
             assert_eq!(
                 (
@@ -1775,7 +1817,11 @@ mod read_witness_tests {
                 (1, 1, 1)
             );
             drop(provisional);
+            assert_eq!(connection.read_drop_starts(), 2);
             let second = stream.read(4, None).unwrap();
+            // A provisional drop cannot impersonate the original read, even
+            // when the old admission/guard snapshot otherwise matches.
+            assert!(!connection.original_second_read_live().unwrap());
             let after_second = fixture.provider.usage().unwrap();
             assert_eq!(
                 (
@@ -1791,12 +1837,14 @@ mod read_witness_tests {
             assert!(!bytes.is_empty() && b"ong".starts_with(bytes.as_ref()));
             drop(bytes);
             drop(second_chunk);
+            assert_eq!(connection.read_drop_starts(), 3);
             let third = stream.read(1, None).unwrap();
             assert_eq!(fixture.provider.usage().unwrap().read_admissions, 3);
             drop(third);
             let fourth = stream.read(1, None).unwrap();
             assert_eq!(fixture.provider.usage().unwrap().read_admissions, 3);
             drop(fourth);
+            assert_eq!(connection.read_drop_starts(), 3);
             stream.close().await.unwrap();
             drop(connection);
             peer.await.unwrap();

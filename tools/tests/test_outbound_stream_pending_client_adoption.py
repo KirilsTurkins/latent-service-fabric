@@ -33,11 +33,11 @@ class PendingClientAdoption(unittest.TestCase):
             self.operator.grant()
         original = self.client.call
 
-        def dispatch(*arguments):
+        def dispatch(*arguments, **kwargs):
             if "apply" in arguments:
                 kind = arguments[arguments.index("--kind") + 1]
                 self.client.uncertain = kind == ("provider-binding" if stage == "binding" else "policy")
-            return original(*arguments)
+            return original(*arguments, **kwargs)
 
         with patch.object(self.client, "call", side_effect=dispatch), self.assertRaises(DevError):
             (self.operator.revoke if stage == "revoke" else self.operator.grant)()

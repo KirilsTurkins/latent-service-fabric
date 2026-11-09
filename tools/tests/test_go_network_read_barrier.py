@@ -17,7 +17,7 @@ class GoNetworkReadBarrierTests(unittest.TestCase):
                          ['fragmented-read', 'cancel-pending-read'])
         self.assertIs(record['completion']['normalProviderInstalled'], False)
         self.assertIs(record['completion']['kernelRetirementQualified'], False)
-        self.assertEqual(evidence.SCHEMA_VERSION, 'latent.go.network.runtime.v2')
+        self.assertEqual(evidence.SCHEMA_VERSION, 'latent.go.network.runtime.v3')
         # JSON key order and ordinary harness chatter are not protocol identity.
         rows = [(name, dict(reversed(list(row.items())))) for name, row in self.sample.rows()]
         self.assertEqual(evidence.outcomes(b'running 1 test\n' + self.sample.output(rows)
@@ -73,7 +73,7 @@ class GoNetworkReadBarrierTests(unittest.TestCase):
                 evidence.outcomes(self.sample.output(changed))
 
     def test_duplicate_json_fields_are_rejected_in_every_record_kind(self):
-        for name in ('GO_NETWORK_OWNER', 'GO_NETWORK_CASE', 'GO_NETWORK_READ_EDGE', 'GO_NETWORK_COMPLETE'):
+        for name in ('GO_NETWORK_OWNER', 'GO_NETWORK_CASE', 'GO_NETWORK_READ_EDGE', 'GO_NETWORK_CANCEL_EDGE', 'GO_NETWORK_COMPLETE'):
             raw = self.sample.output()
             begin = raw.index(name.encode() + b' ')
             end = raw.index(b'\n', begin)

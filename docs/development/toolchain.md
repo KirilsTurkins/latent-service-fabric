@@ -21,20 +21,20 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | Tokio |                               1.53.3 | Fixed node runtimes, async adapters, and explicit test runtimes |
 | Prost |                               0.14.4 | Generated Protobuf message implementation |
 | Tonic / `tonic-prost` |                      0.14.6 / 0.14.6 | Generated RPC clients, servers, and Prost codec |
-| `tonic-prost-build` |                               0.14.6 | Build-time Rust generation from every authoritative `.proto` |
+| `tonic-prost-build` |                               0.14.9 | Build-time Rust generation from every authoritative `.proto` |
 | Hyper |                               1.12.0 | Native HTTP/OCI clients and optional Rust SDK HTTP/2 transport |
 | `protoc-bin-vendored` |                                3.2.0 | Pinned cross-platform `protoc`; no ambient compiler lookup |
 | `tokio-rustls` |                               0.26.6 | Direct TLS adapter dependency |
 | Tracing / tracing-subscriber |                      0.1.44 / 0.3.23 | Structured instrumentation baseline and compile probe |
 | Wasmtime |                               48.0.8 | Maintained source package with selected value/native-allocation hooks; exact cohort participates in runtime identity |
 | redb |                                4.4.0 | Protected host-state engine; the retained record-layout identifier is a separate format contract |
-| `wasmparser` |                               0.262.0 | Direct component binary validation; the threading source profile retains 0.259.0 alongside its matching encoder, and WIT tooling retains separately locked parser dependencies |
+| `wasmparser` |                               0.262.0 | Direct component binary validation; the threading source profile uses 0.262.0 alongside its matching encoder, and WIT tooling retains separately locked parser dependencies |
 | `wasm-encoder` |                               0.261.0 | Component fixtures; `waitable_set_wait(memory)` retains the zero immediate used by the pinned runtime |
 | `wit-parser` |                               0.262.0 | Direct WIT parsing and component decoding; guest tooling retains its separately locked parser dependencies |
 | `wit-bindgen` Rust macro |                    0.63.0 | Rust guest bindings generated from WIT |
 | `wit-bindgen-cli` |                            0.62.0 | Separately pinned C/C#/Java and canonical ABI source fixtures |
 | Serde / `serde_json` |                    1.0.229 / 1.0.154 | Rust contract serialization |
-| TOML |                                1.1.6 | Configuration parsing and serialization |
+| TOML |                                1.1.8 | Configuration parsing and serialization |
 | BLAKE3 / SHA-256 |                       1.8.7 / 0.11.0 | Cache/prepared identity and artifact digest verification |
 | Clap / `tempfile` |                       4.6.7 / 3.27.0 | CLI surfaces and test-only temporary storage |
 | `libc` |                               0.2.191 | Unix audit/sandbox support and synchronized standalone/reference locks |
@@ -55,7 +55,7 @@ asynchronous functions; synchronous Core ABI adapters use `sync` overrides.
 Retained generated-source comments and ABI fixture identities describe their
 actual CLI generation and are not relabeled by a Rust crate update.
 
-Workspace dependencies are exact requirements and workspace crates consume them with `workspace = true`. Cargo ignores SemVer build metadata in requirements, so TOML is pinned as `=1.1.6`; the resolved package may display `1.1.6+spec-1.1.0` in `Cargo.lock`.
+Workspace dependencies are exact requirements and workspace crates consume them with `workspace = true`. Cargo ignores SemVer build metadata in requirements, so TOML is pinned as `=1.1.8`; the resolved package may display `1.1.8+spec-1.1.0` in `Cargo.lock`.
 
 Wasmtime is selected from `crates/vendor/wasmtime`, with original archive/file
 identities and a separate LSF patch manifest. The workspace also patches bytes
