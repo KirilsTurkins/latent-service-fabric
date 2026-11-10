@@ -44,6 +44,8 @@ public abstract class AbstractExecutorService implements java.util.concurrent.Ex
         long started = System.nanoTime();
         List<Future<T>> futures = new ArrayList<>(tasks.size());
         boolean finished = false;
+        boolean timedOut = false;
+        int observed = 0;
         try {
             // Materialize every result before executing: a null task does not
             // accidentally turn a partially validated collection into work.
@@ -53,20 +55,26 @@ public abstract class AbstractExecutorService implements java.util.concurrent.Ex
                 execute((Runnable)future);
             }
             for (Future<T> future : futures) {
-                try {
-                    if (timed) {
-                        long remaining = nanos - (System.nanoTime() - started);
-                        if (remaining <= 0) return futures;
-                        future.get(remaining, TimeUnit.NANOSECONDS);
-                    } else future.get();
-                } catch (ExecutionException | java.util.concurrent.CancellationException ignored) {
-                    // Every submitted task is awaited regardless of its result.
-                } catch (TimeoutException expired) { return futures; }
+                // Preserve custom RunnableFuture dispatch, as the JDK does:
+                // an already completed result does not need a get or a wait.
+                if (!future.isDone()) {
+                    try {
+                        if (timed) {
+                            long remaining = nanos - (System.nanoTime() - started);
+                            future.get(remaining, TimeUnit.NANOSECONDS);
+                        } else future.get();
+                    } catch (ExecutionException | java.util.concurrent.CancellationException ignored) {
+                        // Every submitted task is awaited regardless of its result.
+                    } catch (TimeoutException expired) { timedOut = true; return futures; }
+                }
+                observed++;
             }
             finished = true;
             return futures;
         } finally {
-            if (!finished) for (Future<T> future : futures) future.cancel(true);
+            // A timed-out wait cancels its remaining suffix. Other failures
+            // still cancel every submitted or not-yet-submitted result.
+            if (!finished) for (int i = timedOut ? observed : 0; i < futures.size(); i++) futures.get(i).cancel(true);
         }
     }
 
