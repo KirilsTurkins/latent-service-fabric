@@ -530,10 +530,14 @@ class CompletableSourceIntegrity(unittest.TestCase):
         executor = "\n".join(json.dumps(dict(zip(
             ("scenario", "exceptionPropagated", "queuedBeforeRun", "futureDoneBeforeRun",
              "supplierCallsAfterRun", "outcomeAfterRun"), values))) for values in scenarios)
-        return ["", native, executor, "", native + "\n" + owners, executor,
+        monitor = "COMPLETABLE_FUTURE_MONITOR_REFERENCE PASS completion;exception-callbacks=7;cause-once=6"
+        monitor_owner = ("COMPLETABLE_FUTURE_MONITOR_OWNER PASS callback-retirement;"
+                         "cancelled-queued-retirement;subscribe-race")
+        return ["", native, executor, monitor, "", native + "\n" + owners, executor,
                 "COMPLETABLE_FUTURE_EXECUTOR_ACCEPTANCE_OWNER PASS observables=49",
                 "COMPLETABLE_FUTURE_EXECUTOR_UNCERTAIN_OWNER PASS observables=30;"
-                "queued=8;results=8;cleanup-denied;activation-retirement-unqualified"]
+                "queued=8;results=8;cleanup-denied;activation-retirement-unqualified",
+                monitor, monitor_owner]
 
     def test_incomplete_standard_observables_stop_before_sdk_control_compilation(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -549,7 +553,7 @@ class CompletableSourceIntegrity(unittest.TestCase):
             root = Path(directory)
             compiler = self.fixture(root)
             receipts = self.complete_receipts()
-            receipts[4] = receipts[1] + "\nCOMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=1;raceRounds=1"
+            receipts[5] = receipts[1] + "\nCOMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=1;raceRounds=1"
             compiler.run.side_effect = receipts
             with self.assertRaisesRegex(ValueError, "source ownership controls did not complete"):
                 fibers.completable_source_control(compiler, root / "control")
@@ -566,6 +570,7 @@ class CompletableSourceIntegrity(unittest.TestCase):
                     "CompletableFutureExecutorThrowReferenceControl.java",
                     "CompletableFutureExecutorAcceptanceOwnerControl.java",
                     "CompletableFutureExecutorUncertainOwnerControl.java",
+                    "CompletableMonitorReferenceControl.java", "CompletableMonitorOwnerControl.java",
                     "source-control/PrivateSourceRunner.java", "source-control/dev/latent/generated/Bindings.java",
                     "source-control/dev/latent/guest/runtime/Activation.java",
                     "source-control/dev/latent/guest/runtime/concurrent/Executors.java")
@@ -575,6 +580,7 @@ class CompletableSourceIntegrity(unittest.TestCase):
                              (82, 419, 32))
             self.assertFalse(report["componentExecutionPerformed"])
             self.assertFalse(report["actualGuestBindingsUsed"])
+            self.assertEqual(report["futureMonitor"], "JDK-and-SDK-source-controls-passed")
             original = (compiler.sdk / "fibers/conformance/compiler/CompletableFutureNativeControl.java").read_text()
             private = (root / "control/private/CompletableFutureNativeControl.java").read_text()
             for name in ("CompletableFuture", "CompletionStage", "CompletionException"):
@@ -597,7 +603,7 @@ class CompletableSourceIntegrity(unittest.TestCase):
             compiler.run.side_effect = observe
             with self.assertRaisesRegex(ValueError, "inputs changed during execution"):
                 fibers.completable_source_control(compiler, root / "control")
-            self.assertEqual(compiler.run.call_count, 8)
+            self.assertEqual(compiler.run.call_count, 11)
 
     def test_ambiguous_private_import_rewrite_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -608,7 +614,7 @@ class CompletableSourceIntegrity(unittest.TestCase):
             compiler.run.side_effect = self.complete_receipts()
             with self.assertRaisesRegex(ValueError, "import is ambiguous"):
                 fibers.completable_source_control(compiler, root / "control")
-            self.assertEqual(compiler.run.call_count, 3)
+            self.assertEqual(compiler.run.call_count, 4)
 
     def test_incomplete_executor_reference_receipt_stops_before_port_compilation(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -626,14 +632,14 @@ class CompletableSourceIntegrity(unittest.TestCase):
             root = Path(directory)
             compiler = self.fixture(root)
             receipts = self.complete_receipts()
-            receipts[5] = receipts[5].replace("value-42", "value-43", 1)
+            receipts[6] = receipts[6].replace("value-42", "value-43", 1)
             compiler.run.side_effect = receipts
             with self.assertRaisesRegex(ValueError, "executor behavior differs from the actual reference JDK"):
                 fibers.completable_source_control(compiler, root / "control")
-            self.assertEqual(compiler.run.call_count, 6)
+            self.assertEqual(compiler.run.call_count, 7)
 
     def test_uncertain_executor_capacity_requires_complete_physical_boundary_receipt(self):
-        original = self.complete_receipts()[-1]
+        original = self.complete_receipts()[8]
         for incomplete in (original.replace("queued=8", "queued=7"),
                            original.replace("results=8", "results=7"),
                            original.replace("cleanup-denied;", "")):
@@ -641,11 +647,24 @@ class CompletableSourceIntegrity(unittest.TestCase):
                 root = Path(directory)
                 compiler = self.fixture(root)
                 receipts = self.complete_receipts()
-                receipts[-1] = incomplete
+                receipts[8] = incomplete
                 compiler.run.side_effect = receipts
                 with self.assertRaisesRegex(ValueError, "uncertain executor capacity control did not complete"):
                     fibers.completable_source_control(compiler, root / "control")
-                self.assertEqual(compiler.run.call_count, 8)
+                self.assertEqual(compiler.run.call_count, 9)
+
+    def test_incomplete_monitor_receipt_fails_closed_at_each_stage(self):
+        for index, expected_error in ((3, "monitor reference"), (9, "monitor source"),
+                                      (10, "monitor ownership")):
+            with self.subTest(index=index), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                compiler = self.fixture(root)
+                receipts = self.complete_receipts()
+                receipts[index] += ";incomplete"
+                compiler.run.side_effect = receipts
+                with self.assertRaisesRegex(ValueError, expected_error):
+                    fibers.completable_source_control(compiler, root / "control")
+                self.assertEqual(compiler.run.call_count, index + 1)
 
     def test_unknown_component_fixture_fails_before_output_or_compiler_creation(self):
         with tempfile.TemporaryDirectory() as directory:
