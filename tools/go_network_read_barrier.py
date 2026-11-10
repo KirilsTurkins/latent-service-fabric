@@ -10,6 +10,10 @@ import json
 import re
 
 SCHEMA_VERSION = 'latent.go.network.runtime.v3'
+V7_SCHEMA_VERSION = 'latent.go.network.runtime.v7.v1'
+V7_PROFILE = 'go-component-activation-v7'
+V7_LIMITS = {'profile': V7_PROFILE, 'tasks': 16, 'executors': 2, 'queuedWork': 16,
+             'waits': 4, 'timers': 2, 'results': 2, 'nativeOwners': 2}
 CASE = 'signed_ordinary_go_declared_tcp_preserves_refusals_io_and_cancelled_owner_retirement'
 EXPECTED = (
     ('unsupported-network', 0, 'unsupported-network', 0),
@@ -56,6 +60,29 @@ def _edge(label: str) -> dict:
             'ioCalls': 1, 'streamOwners': 1, 'connections': 1, 'retiredGenerations': 0,
             'quarantinedConnections': 0, 'providerStopped': False,
             'currentGenerationRetired': False, 'liveStores': 1, 'activeActivations': 1}
+
+
+def profile_witness(raw: bytes, profile: str) -> dict | None:
+    """Bind a v7 run to its explicit existing resource limits, without changing v5 evidence."""
+    if not isinstance(raw, bytes) or len(raw) > MAXIMUM_OUTPUT_BYTES:
+        raise ValueError('Go-network-runtime-output-bound')
+    lines = [line for line in raw.split(b'\n') if line.lstrip().startswith(b'GO_V7_NETWORK_LIMITS')]
+    if profile == 'go-component-activation-v5':
+        if lines:
+            raise ValueError('Go-network-runtime-unexpected-v7-profile')
+        return None
+    if profile != V7_PROFILE or len(lines) != 1 or len(lines[0]) > MAXIMUM_RECORD_BYTES:
+        raise ValueError('Go-network-runtime-v7-profile-required')
+    prefix = b'GO_V7_NETWORK_LIMITS '
+    if not lines[0].startswith(prefix):
+        raise ValueError('Go-network-runtime-v7-profile-required')
+    try:
+        value = json.loads(lines[0][len(prefix):].decode('utf-8'), object_pairs_hook=_unique, parse_constant=_constant)
+    except (json.JSONDecodeError, UnicodeDecodeError, RecursionError):
+        raise ValueError('Go-network-runtime-v7-profile-required') from None
+    if not _same(value, V7_LIMITS):
+        raise ValueError('Go-network-runtime-v7-profile-required')
+    return value
 
 
 def outcomes(raw: bytes, filtered: int = 0) -> dict:

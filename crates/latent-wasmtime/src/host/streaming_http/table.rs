@@ -713,6 +713,105 @@ mod tests {
         assert_eq!(observed.load(Ordering::SeqCst), 1);
     }
 
+    struct PanicAfterUploadTake {
+        armed: Arc<std::sync::atomic::AtomicBool>,
+        now: std::time::Instant,
+    }
+    impl latent_core::ActivationClock for PanicAfterUploadTake {
+        fn sample(&self) -> latent_core::ClockSample {
+            latent_core::ClockSample::new(9000, self.now)
+        }
+        fn monotonic_now(&self) -> std::time::Instant {
+            if self.armed.swap(false, Ordering::SeqCst) {
+                panic!("injected post-take clock panic");
+            }
+            self.now
+        }
+    }
+
+    #[tokio::test]
+    async fn upload_take_clock_panic_drops_original_after_store_access() {
+        use crate::host::native_context_reply_tests::{engine, ledger, store};
+        use latent_core::BudgetProfile;
+        use std::future::Future;
+        use wasmtime::component::{InlineConcurrentHost, Resource};
+        use wasmtime::AsContextMut;
+
+        let mut drop_orders = Vec::new();
+        for finish in [false, true] {
+            let engine = engine();
+            let budget = ledger(BudgetProfile::Phase1);
+            let mut store = store(&engine, &budget, true);
+            let armed = Arc::new(std::sync::atomic::AtomicBool::new(false));
+            store.data_mut().clock = Arc::new(PanicAfterUploadTake {
+                armed: Arc::clone(&armed),
+                now: std::time::Instant::now(),
+            });
+            let mut resources = table();
+            let rep = resources.reserve(Kind::Upload).unwrap();
+            store.data_mut().capabilities.streams = resources;
+            let observed = Arc::new(AtomicUsize::new(0));
+            let witness = Arc::clone(&observed);
+            store
+                .run_concurrent(async |access| {
+                    let upload = ReentrantOpenUpload {
+                        access: access.with_getter(|state: &mut crate::host::HostState| state),
+                        observed: Arc::clone(&witness),
+                    };
+                    access.with(|mut access| {
+                        access
+                            .as_context_mut()
+                            .data_mut()
+                            .capabilities
+                            .streams
+                            .put(rep, Kind::Upload, Value::Upload(Box::new(upload)))
+                            .unwrap();
+                    });
+                    armed.store(true, Ordering::SeqCst);
+                    let waker = std::task::Waker::noop();
+                    let mut context = std::task::Context::from_waker(waker);
+                    let panicked = if finish {
+                        let host = super::super::upload::Finish;
+                        let target = Resource::<super::super::wit::Upload>::new_own(rep);
+                        let mut future = Box::pin(host.invoke(access, (target,)));
+                        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                            future.as_mut().poll(&mut context)
+                        }));
+                        drop(future);
+                        result.is_err()
+                    } else {
+                        let host = super::super::upload::Write;
+                        let target = Resource::<super::super::wit::Upload>::new_borrow(rep);
+                        let mut future = Box::pin(host.invoke(access, (target, Vec::new())));
+                        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                            future.as_mut().poll(&mut context)
+                        }));
+                        drop(future);
+                        result.is_err()
+                    };
+                    assert!(panicked, "the post-take clock must have panicked");
+                    assert!(!armed.load(Ordering::SeqCst));
+                    access.with(|mut access| {
+                        let mut store = access.as_context_mut();
+                        let row = store
+                            .data_mut()
+                            .capabilities
+                            .streams
+                            .entry(rep, Kind::Upload);
+                        if finish {
+                            assert!(row.is_err());
+                        } else {
+                            assert!(row.unwrap().value.is_none());
+                        }
+                    });
+                })
+                .await
+                .unwrap();
+            drop_orders.push(observed.load(Ordering::SeqCst));
+        }
+        assert_eq!(drop_orders, [1, 1]);
+    }
+
     fn table() -> Table {
         Table {
             entries: (0..CAPACITY)

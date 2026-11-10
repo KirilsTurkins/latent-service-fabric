@@ -36,10 +36,11 @@ class GoNetworkSourceTests(unittest.TestCase):
             self.assertFalse(network_context.selected(root, 'go-component-async-v1'))
             self.module(root)
             for profile in ('go-component-async-v1', 'go-component-activation-v1',
-                            'go-component-activation-v4', False, None):
+                            'go-component-activation-v4', 'go-component-activation-v6', False, None):
                 with self.subTest(profile=profile), self.assertRaisesRegex(ValueError, 'requires-managed-v5'):
                     network_context.selected(root, profile)
             self.assertTrue(network_context.selected(root, 'go-component-activation-v5'))
+            self.assertTrue(network_context.selected(root, 'go-component-activation-v7'))
             self.assertFalse((root / 'lsf').exists())
 
     def test_unknown_version_or_interface_and_aliased_or_duplicate_package_fail_closed(self):

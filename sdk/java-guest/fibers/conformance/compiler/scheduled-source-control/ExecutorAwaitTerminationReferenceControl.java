@@ -1,5 +1,8 @@
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -57,6 +60,38 @@ public final class ExecutorAwaitTerminationReferenceControl {
             require(!waiter.isAlive(), "waiter did not retire");
         }
     }
+    private static final class MisreportedPool extends ScheduledThreadPoolExecutor {
+        private final boolean reported;
+        MisreportedPool(boolean reported, ThreadFactory factory) { super(1, factory); this.reported = reported; }
+        @Override public boolean isTerminated() { return reported; }
+    }
+    private static void overriddenTermination() throws Exception {
+        AtomicReference<Thread> worker = new AtomicReference<>();
+        MisreportedPool live = new MisreportedPool(true, task -> {
+            Thread thread = new Thread(task); worker.set(thread); return thread;
+        });
+        CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
+        try {
+            live.execute(() -> {
+                entered.countDown();
+                try { if (!release.await(5,TimeUnit.SECONDS)) throw new AssertionError("callback-release"); }
+                catch (InterruptedException error) { throw new AssertionError(error); }
+            });
+            require(entered.await(5,TimeUnit.SECONDS), "callback-not-entered");
+            live.shutdown();
+            require(!live.awaitTermination(0,TimeUnit.NANOSECONDS), "override-falsely-completed-zero");
+            require(!live.awaitTermination(10,TimeUnit.MILLISECONDS), "override-falsely-completed-timed");
+        } finally {
+            release.countDown();
+            live.shutdown();
+            Thread thread = worker.get();
+            if (thread != null) { thread.join(5000); require(!thread.isAlive(), "live-worker-not-retired"); }
+        }
+        MisreportedPool retired = new MisreportedPool(false, Thread::new);
+        retired.shutdown();
+        require(retired.awaitTermination(0,TimeUnit.NANOSECONDS), "override-hid-retirement-zero");
+        require(retired.awaitTermination(10,TimeUnit.MILLISECONDS), "override-hid-retirement-timed");
+    }
     public static void main(String[] args) throws Exception {
         for (boolean scheduled : new boolean[] {false, true}) {
             for (boolean terminated : new boolean[] {false, true}) {
@@ -71,8 +106,9 @@ public final class ExecutorAwaitTerminationReferenceControl {
             }
             interruptWaiting(scheduled);
         }
+        overriddenTermination();
         if (args.length == 1 && args[0].equals("source"))
             Class.forName("dev.latent.guest.runtime.Activation").getMethod("idle").invoke(null);
-        System.out.println("EXECUTOR_AWAIT_TERMINATION PASS zero;negative;positive;terminated;blocked-interrupt");
+        System.out.println("EXECUTOR_AWAIT_TERMINATION PASS zero;negative;positive;terminated;blocked-interrupt;override");
     }
 }

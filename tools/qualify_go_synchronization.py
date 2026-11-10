@@ -141,7 +141,15 @@ def managed_timer_observations(raw: bytes, filtered: int, case: str = MANAGED_TI
     if (case not in {MANAGED_TIMER_CASE, V7_TIMER_CASE} or names != [case.encode()]
             or totals != [(b'1', b'0', b'0', b'0', str(filtered).encode())]):
         raise ValueError('Go-managed-timers-exact-signed-case-required')
-    rows = [json.loads(value) for value in re.findall(rb'^GO_MANAGED_TIMER_CASE (.+)$', raw, re.M)]
+    def unique(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError('Go-managed-timers-duplicate-field')
+            value[key] = item
+        return value
+    rows = [json.loads(value, object_pairs_hook=unique)
+            for value in re.findall(rb'^GO_MANAGED_TIMER_CASE (.+)$', raw, re.M)]
     if len(rows) != len(MANAGED_TIMER_ROWS):
         raise ValueError('Go-managed-timers-missing-or-extra-invocation')
     actual = []
