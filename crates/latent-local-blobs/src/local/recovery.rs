@@ -81,6 +81,9 @@ fn recover_inventory(inner: &Inner) -> Result<State> {
     let object_capacity = limits
         .maximum_objects
         .min((limits.maximum_metadata_bytes - OWNER_BYTES) / OBJECT_BYTES);
+    // Refuse an oversized directory before hashing any of its objects. The
+    // second walk rechecks the same cap without keeping all names in memory.
+    inner.objects.visit_names(object_capacity, |_| Ok(()))?;
     inner.objects.visit_names(object_capacity, |key| {
         inner.room(&state, OBJECT_BYTES)?;
         if !model::hex(key, 64) {
@@ -130,6 +133,7 @@ fn recover_inventory(inner: &Inner) -> Result<State> {
     let stage_capacity = limits
         .maximum_stages
         .min((limits.maximum_metadata_bytes - inner.metadata(&state)?) / STAGE_BYTES);
+    inner.staging.visit_names(stage_capacity, |_| Ok(()))?;
     inner.staging.visit_names(stage_capacity, |name| {
         inner.room(&state, STAGE_BYTES)?;
         if !model::hex(name, 16) {

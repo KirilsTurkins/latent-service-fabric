@@ -31,6 +31,27 @@ fn directory_walk_bounds_callbacks_and_propagates_failure() {
 }
 
 #[test]
+fn recovery_refuses_oversized_directory_before_reading_object_contents() {
+    let root = temporary_root();
+    drop(store(root.path()));
+    for digit in ['a', 'b'] {
+        let directory = root
+            .path()
+            .join("objects")
+            .join(digit.to_string().repeat(64));
+        std::fs::create_dir(&directory).unwrap();
+        // A content walk would instead reject this unknown entry as corrupt.
+        std::fs::write(directory.join("unknown"), b"").unwrap();
+    }
+    let mut limited = limits();
+    limited.maximum_objects = 1;
+    assert!(matches!(
+        LocalBlobStore::open(root.path(), "private", limited),
+        Err(LocalBlobError::Capacity)
+    ));
+}
+
+#[test]
 fn insecure_roots_and_symlink_ancestors_are_rejected() {
     let parent = temporary_root();
     let root = parent.path().join("root");
