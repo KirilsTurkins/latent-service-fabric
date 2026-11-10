@@ -173,12 +173,22 @@ def require_denied(row):
         for name in ('outboundRequests', 'childCalls', 'effectCount')), 'fetch-runtime-denial-effects')
 
 
+def record_failure(path, value, failure):
+    """Keep evidence-write errors secondary to the failure being reported."""
+    try:
+        write_json(path, value)
+    except BaseException as evidence_failure:
+        failure.add_note('fetch-runtime-failure-evidence:'+type(evidence_failure).__name__)
+
+
 def retire(client, probe, target, output, name):
     value = sample(client, probe, 'after-'+name, 1)
+    # Retain the rejected sample too; host counters are not physical-custody proof.
+    write_json(output/('after-'+name+'.json'), value)
     slots = next(row for row in value['inventory']['topology']['entries'] if row['name'] == 'invocation-cleanup-slots')
     require(slots['activeCount'] == '0', 'fetch-runtime-cleanup-slots')
-    write_json(output/('after-'+name+'.json'), value)
     usage = client.call('capability', 'list', '--deployment', target['name'], '--include-node-usage')['data']['nodeUsage']
+    write_json(output/('after-'+name+'-usage.json'), usage)
     require(not usage['unavailable'] and all(name in usage['counters'] and int(usage['counters'][name]) == 0
         for name in ACTIVE_COUNTERS), 'fetch-runtime-physical-owners')
 
@@ -312,9 +322,9 @@ def execute(artifact, native, output):
         result.update(status='passed', signedExecution='passed', providerExecution='passed')
         write_json(output/'qualification.json', result)
         return result
-    except BaseException:
+    except BaseException as failure:
         result.update(status='failed', stage=stage)
-        write_json(output/'FAILED.json', result)
+        record_failure(output/'FAILED.json', result, failure)
         raise
 
 
@@ -370,8 +380,9 @@ def qualify(output, tools, engine, splicer, native=None, native_tuple=None, prep
                 'Abort-streaming-cancellation-timeout-races', 'reaction-timer-memory-limits', 'cross-tenant-reuse']}
         write_json(output/'qualification.json', result)
         return result
-    except BaseException:
-        write_json(output/'FAILED.json', {'status': 'failed', 'stage': stage, 'fullTicketQualification': False})
+    except BaseException as failure:
+        record_failure(output/'FAILED.json', {
+            'status': 'failed', 'stage': stage, 'fullTicketQualification': False}, failure)
         raise
 
 

@@ -123,3 +123,18 @@ Store and native-owner evidence; never promote counter counts into custody.
 
 Exact historical engine, compiler, component and provider identities remain in
 the [completed CI observation](evidence/typescript-runtime-745-ci-2026-11-10.json).
+
+## Combined compiler and listener continuation
+
+The [combined integration record](typescript-runtime-745-integration-2026-11-10.md)
+tracks the reviewed export-frame correction, exact-listener abort removal and
+unchanged-budget qualification gates. Refusal still awaits a normal Promise
+checkpoint with the same graph and asserts unchanged state before retry.
+Default-factory reentry fully verifies its graph before ending that helper frame;
+a normal checkpoint precedes the independent restored-constructor check. None of
+these changes is credited as signed success until the combined engine runs.
+
+Rejected cleanup inventory and usage samples are now retained before validation
+fails. Writing FAILED.json cannot replace the original invocation/capture error
+or cancellation; any secondary write error contributes only a type-name note.
+No missing, nonzero or unavailable counter is interpreted as successful cleanup.

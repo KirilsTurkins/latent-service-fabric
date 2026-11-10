@@ -8,6 +8,10 @@ on:
       - 'tools/typescript_fetch_failure.py'
       - 'tools/qualify_typescript_fetch_runtime.py'
       - 'tools/tests/test_typescript_fetch_failure.py'
+      - 'tools/tests/test_typescript_fetch_failure_evidence.py'
+      - 'tools/tests/test_typescript_export_task_meta.py'
+      - 'tools/tests/fixtures/typescript_fetch_export_binding.js'
+      - 'tools/tests/test_aot_profile_boundary.py'
       - 'tools/tests/test_typescript_qualification_prerequisites.py'
       - 'tools/typescript_guest/**'
       - 'sdk/typescript-guest/activation/**'
@@ -68,4 +72,7 @@ jobs:
             tools.tests.test_typescript_record_retirement \
             tools.tests.test_typescript_abort_any_ownership \
             tools.tests.test_typescript_qualification_prerequisites \
-            tools.tests.test_typescript_fetch_failure -v
+            tools.tests.test_typescript_fetch_failure \
+            tools.tests.test_typescript_fetch_failure_evidence \
+            tools.tests.test_typescript_export_task_meta \
+            tools.tests.test_aot_profile_boundary -v
