@@ -210,6 +210,47 @@ async fn query_response_keeps_original_read_permission_and_global_frame_charge()
 }
 
 #[tokio::test]
+async fn query_cannot_succeed_after_an_ignored_read_charge_failure() {
+    let fixture = Fixture::new().await;
+    let (admission, envelope, budget) = fixture.invocation(true, "failed-query-charge");
+    let guest = admission.admit(&envelope, &budget).await.unwrap();
+    guest.acquire(Mode::Query).unwrap();
+    let consumed = budget
+        .snapshot_at(std::time::Instant::now())
+        .state_read_bytes;
+    budget
+        .consume(
+            latent_core::BudgetDimension::StateReadBytes,
+            envelope.budget.state_read_bytes - consumed,
+        )
+        .unwrap();
+    assert_eq!(
+        guest.read(b"missing".to_vec()).await,
+        Err(StateFailure::ReadBudgetExhausted)
+    );
+    guest.finish_guest_access();
+    let _ = budget.finalize_at(None, std::time::Instant::now());
+    let observation = admission
+        .complete(
+            success(b"ignored failure"),
+            fixture.commit_control(&envelope, &budget),
+        )
+        .await;
+    assert!(matches!(observation, ActivationOutcome::Failed { .. }));
+    let response = admission.take_owned_completion().unwrap().unwrap();
+    assert!(matches!(
+        response.result,
+        TransactionCompletionResult::Query {
+            outcome: ActivationOutcome::Failed { .. },
+            ..
+        }
+    ));
+    drop((response, guest, admission));
+    assert!(fixture.native.snapshot().unwrap().physically_retired());
+    fixture.shutdown().await;
+}
+
+#[tokio::test]
 async fn existing_command_response_rechecks_fresh_data_permission_without_another_guest() {
     let fixture = Fixture::new().await;
     let (first, envelope, budget) = fixture.invocation(false, "same-key");

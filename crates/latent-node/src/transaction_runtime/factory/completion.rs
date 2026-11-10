@@ -85,7 +85,10 @@ impl NativeTransactionAdmission {
                 let retired = host.retire().await.is_ok();
                 // Recheck after actual native destruction; guest calls and
                 // ledger spending stay closed throughout this completion.
-                let current = control.matches(host.activation_id(), host.budget())
+                let current = !host
+                    .technical_fault
+                    .load(std::sync::atomic::Ordering::Acquire)
+                    && control.matches(host.activation_id(), host.budget())
                     && control.is_current()
                     && host.authorization.authorize_query_completion().is_ok()
                     && retained.check_current().is_ok();
