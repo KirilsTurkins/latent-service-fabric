@@ -162,12 +162,16 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
                                   b'      called = JS::Call(cx, global, callback_val, args, &rval);')
         changed = changed.replace(b'called = JS::Call(', b'JS::Call(')
         changed = changed.replace(
-            b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn) ||\n'
-            b'          JS_IsExceptionPending(cx)) {\n',
-            b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn)) {\n', 1)
-        changed = changed.replace(
-            b'        Event::set_flag(event, Event::EventFlag::InPassiveListener, false);\n'
-            b'        invocation_failed = true;\n        break;\n', b'        return false;\n', 1)
+            b'      // WebIDL callback-operation lookup is part of the invocation.\n'
+            b'      // Report catchable getter errors just like callback exceptions.\n'
+            b'      called = JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn);\n'
+            b'      if (called && !JS_IsExceptionPending(cx)) {\n'
+            b'        JS::Call(cx, callback_val, handle_fn, args, &rval);\n'
+            b'      }\n',
+            b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn)) {\n'
+            b'        return false;\n'
+            b'      }\n'
+            b'      JS::Call(cx, callback_val, handle_fn, args, &rval);\n', 1)
         fence = (b'    // Catchable listener exceptions retain ordinary DOM reporting below.\n'
                  b'    // A false/no-pending native termination is not a listener exception: it\n'
                  b'    // must fence later callbacks, including independent abort dependents.\n'
@@ -457,7 +461,8 @@ class EventCallbackFailureControls(unittest.TestCase):
 
     def test_fatal_outcome_fences_callbacks_without_changing_catchable_reporting(self):
         for case in ('success', 'function-fatal', 'object-fatal', 'catchable-continues',
-                     'success-pending-reported', 'getter-failure', 'getter-pending', 'entry-pending',
+                     'success-pending-reported', 'getter-failure', 'getter-pending', 'getter-fatal',
+                     'getter-report-fatal', 'getter-report-error', 'getter-steal-fatal', 'entry-pending',
                      'function-receiver', 'report-no-script', 'steal-fatal', 'steal-error',
                      'steal-success-pending', 'report-fatal', 'report-error', 'report-success-pending'):
             with self.subTest(case=case):
@@ -467,7 +472,8 @@ class EventCallbackFailureControls(unittest.TestCase):
                                  {'case': case, 'passed': True, 'engineQualified': False})
 
     def test_original_reproduces_fatal_and_pending_callback_failures(self):
-        for case in ('function-fatal', 'object-fatal', 'getter-failure', 'getter-pending', 'entry-pending',
+        for case in ('function-fatal', 'object-fatal', 'getter-failure', 'getter-pending', 'getter-fatal',
+                     'getter-report-fatal', 'getter-report-error', 'getter-steal-fatal', 'entry-pending',
                      'function-receiver', 'report-no-script', 'steal-fatal', 'steal-error',
                      'steal-success-pending', 'report-fatal', 'report-error', 'report-success-pending'):
             with self.subTest(case=case):
@@ -536,8 +542,10 @@ class EventPublicationControls(unittest.TestCase):
         stop_end = selected.index(b'\n    }', stop_start) + len(b'\n    }')
         cleanup_start = selected.index(b'  if (listeners_removed) {', stop_end)
         cleanup_end = selected.index(b'\n  }', cleanup_start) + len(b'\n  }')
-        getter_start = selected.index(b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn)', inner)
+        getter_start = selected.index(b'      called = JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn);', inner)
         getter_end = selected.index(b'\n      }', getter_start) + len(b'\n      }')
+        fence_start = selected.index(b'    if (!called && !JS_IsExceptionPending(cx)) {', getter_end)
+        fence_end = selected.index(b'\n    }', fence_start) + len(b'\n    }')
         failure_flag = (b'    bool invocation_failed = false;' if
                         b'  bool invocation_failed = false;' in selected[inner:stop_start] else b'')
         return_start = selected.index(b'  return ', cleanup_end)
@@ -547,6 +555,7 @@ class EventPublicationControls(unittest.TestCase):
                                (b'    // INSERT_EMITTED_CLEANUP_BLOCK', selected[cleanup_start:cleanup_end]),
                                (b'    // INSERT_FAILURE_FLAG', failure_flag),
                                (b'        // INSERT_EMITTED_GETTER_BLOCK', selected[getter_start:getter_end]),
+                               (b'        // INSERT_EMITTED_FATAL_FENCE', selected[fence_start:fence_end]),
                                (b'    // INSERT_EMITTED_INNER_RETURN', selected[return_start:return_end])):
             if dispatch.count(marker) != 1:
                 raise AssertionError('unique emitted dispatch insertion point required')
@@ -614,7 +623,7 @@ class EventPublicationControls(unittest.TestCase):
 
     def test_listener_lookup_error_runs_retirement_and_dispatch_cleanup(self):
         for binary, cases in (
-                (self.dispatch_binary, ('once-getter-failure-retires-listener',)),
+                (self.dispatch_binary, ('once-getter-fatal-retires-listener',)),
                 (self.event_binary, ('lookup-error-resets-dispatch', 'success-resets-dispatch',
                                      'success-pending-resets-dispatch',
                                      'success-preserves-canceled-result'))):
@@ -648,7 +657,7 @@ class AbortListenerIdentityControls(unittest.TestCase):
     def setUpClass(cls):
         compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++') or shutil.which('g++')
         if not compiler:
-            raise unittest.SkipTest('C++ compiler required for emitted abort-listener controls')
+            raise RuntimeError('C++ compiler required for emitted abort-listener controls')
         cls.temporary = tempfile.TemporaryDirectory()
         cls.addClassCleanup(cls.temporary.cleanup)
         output = Path(cls.temporary.name)
@@ -782,6 +791,83 @@ class AbortHandlerControls(unittest.TestCase):
                 result = subprocess.run([str(self.binary), case], capture_output=True, timeout=10)
                 self.assertEqual(result.returncode, 0, (result.stdout+result.stderr)[:65536])
                 self.assertEqual(json.loads(result.stdout), {'case': case, 'passed': True, 'engineQualified': False})
+
+
+class AbortWeakCollectionControls(unittest.TestCase):
+    """Phase/relocation doubles execute emitted bodies; not a real GC pass."""
+    @classmethod
+    def setUpClass(cls):
+        compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++') or shutil.which('cl')
+        if not compiler:
+            raise RuntimeError('C++ compiler required for weak-collection controls')
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.temporary.cleanup)
+        out = Path(cls.temporary.name)
+        root = Path(__file__).resolve().parents[2]
+        template = (Path(__file__).parent/'fixtures/typescript_abort_weak_gc.cpp').read_bytes()
+        selected, _ = derive()
+        weak_path = 'StarlingMonkey/builtins/web/abort/weak-index-set.h'
+        event = selected['StarlingMonkey/builtins/web/event/event-target.cpp']
+        predicate = event[event.index(b'bool EventTarget::has_listener('):event.index(b'} // namespace builtins::web::event', event.index(b'bool EventTarget::has_listener('))]
+        original_abort = (FIXTURES/'original-abort-signal.cpp').read_bytes()
+        for label, weak, signal in (('selected', selected[weak_path], selected[abort_engine.PATH]),
+                                    ('original', originals()[weak_path], original_abort)):
+            weak = weak[weak.index(b'using WeakVec ='):weak.index(b'#endif')]
+            trace = signal[signal.index(b'void AbortSignal::trace('):signal.index(b'bool AbortSignal::init_class(')]
+            text = template
+            for marker, body in ((b'// INSERT_EMITTED_WEAK_SET', weak),
+                                 (b'// INSERT_EMITTED_LISTENER_PREDICATE', predicate),
+                                 (b'// INSERT_EMITTED_SIGNAL_TRACE', trace)):
+                if text.count(marker) != 1:
+                    raise AssertionError('unique weak-collection insertion marker required')
+                text = text.replace(marker, body, 1)
+            src = out/(label+'.cpp')
+            src.write_bytes(text)
+            binary = out/(label+'.exe' if os.name == 'nt' else label)
+            defined = 'SELECTED_WEAK_SET='+str(int(label == 'selected'))
+            if Path(compiler).stem.lower() == 'cl':
+                command = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX', '/D'+defined, '/I'+str(root), str(src), '/Fe:'+str(binary), '/Fo:'+str(out/(label+'.obj'))]
+            else:
+                command = [compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror', '-D'+defined, '-I'+str(root), str(src), '-o', str(binary)]
+            result = subprocess.run(command, capture_output=True, timeout=60)
+            if result.returncode or len(result.stdout)+len(result.stderr) > 65536:
+                raise AssertionError((result.stdout+result.stderr)[:65536].decode(errors='replace'))
+            setattr(cls, label+'_binary', binary)
+
+    def test_observed_liveness_weak_sources_relocation_and_custody(self):
+        for case in ('unobserved', 'heap-unobserved', 'observed-listener', 'observed-algorithm',
+                     'removed-listener', 'nonabort-listener', 'aborted-dependent',
+                     'listener-removal-next-collection', 'source-is-weak', 'captured-source',
+                     'partial-object', 'relocation-before-inspection', 'custody-refused-ack',
+                     'aborted-failed-algorithm', 'failed-algorithm-drained-next-collection'):
+            with self.subTest(case=case):
+                result = subprocess.run([str(self.selected_binary), case], capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 0, (result.stdout+result.stderr)[:65536])
+                self.assertEqual(json.loads(result.stdout), {'case': case, 'passed': True, 'engineQualified': False})
+
+    def test_original_trace_reproduces_wrong_phase_and_overretention(self):
+        for case in ('unobserved', 'heap-unobserved', 'removed-listener', 'nonabort-listener',
+                     'source-is-weak', 'aborted-dependent', 'custody-refused-ack'):
+            with self.subTest(case=case):
+                result = subprocess.run([str(self.original_binary), case], capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 1, (result.stdout+result.stderr)[:65536])
+                self.assertFalse(json.loads(result.stdout)['passed'])
+
+    def test_cache_registration_and_foreground_finalization_are_source_bound(self):
+        selected, receipt = derive()
+        weak = selected['StarlingMonkey/builtins/web/abort/weak-index-set.h']
+        self.assertIn(b'JS::WeakCache<WeakVec>', weak)
+        self.assertIn(b'cache_.emplace(JS_GetRuntime(cx));', weak)
+        self.assertNotIn(b'void trace(', weak)
+        self.assertNotIn(b'bool traceWeak(', weak)
+        header = selected['StarlingMonkey/builtins/web/abort/abort-signal.h']
+        self.assertIn(b'BuiltinImpl<AbortSignal, AbortSignalClassPolicy>', header)
+        self.assertIn(b'return JSCLASS_FOREGROUND_FINALIZE;', header)
+        source = selected[abort_engine.PATH]
+        self.assertLess(source.index(b'sources->value.init(cx);'), source.index(b'sources.release()'))
+        self.assertLess(source.index(b'dependents->value.init(cx);'), source.index(b'dependents.release()'))
+        self.assertEqual(receipt['abortWeakEdges'], 'runtime-WeakCache-sweep-not-object-marking-hook')
+        self.assertFalse(receipt['signedLSFComponentQualified'])
 
 
 if __name__ == "__main__":
