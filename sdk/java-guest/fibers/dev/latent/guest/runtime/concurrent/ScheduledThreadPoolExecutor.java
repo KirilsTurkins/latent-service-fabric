@@ -62,7 +62,8 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         return now > Long.MAX_VALUE - delay ? Long.MAX_VALUE : now + delay;
     }
     private boolean allowed(Task<?> task) {
-        return !retiring && !interrupting && (!shutdown || (task.period == 0 ? executeDelayed : continuePeriodic));
+        return !retiring && !interrupting && (!shutdown || (task.period == 0
+            ? executeDelayed || task.next - elapsed() <= 0 : continuePeriodic));
     }
     private boolean mayInvoke(Task<?> task) {
         // Preserve the existing one-shot shutdown behavior; periodic tasks
@@ -460,7 +461,9 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
                         } else {
                             // A competing invocation may be running the same
                             // periodic task. Retire only this consumed copy.
-                            if (!allowed(task) && !task.isDone()) task.cancel(false);
+                            // The occurrence was already due when dequeued.
+                            // Do not reread the clock before releasing its owners.
+                            if (!mayInvoke(task) && !task.isDone()) task.cancel(false);
                             if (task.isDone()) discardCompleted(task);
                             entry.release();
                         }
@@ -505,14 +508,18 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     @Override public java.util.concurrent.Future<?> submit(Runnable command) { return submit(command, null); }
 
     private void pruneShutdown() {
-        int index = queue.size() - 1;
-        while (index >= 0) {
-            if (index >= queue.size()) { index = queue.size() - 1; continue; }
-            Task<?> task = queue.get(index).task;
-            if (!allowed(task)) { task.cancel(false); index = queue.size() - 1; }
-            else --index;
+        try {
+            int index = queue.size() - 1;
+            while (index >= 0) {
+                if (index >= queue.size()) { index = queue.size() - 1; continue; }
+                Task<?> task = queue.get(index).task;
+                if (!allowed(task)) { task.cancel(false); index = queue.size() - 1; }
+                else --index;
+            }
+        } finally {
+            // A failed clock read must not strand the original queued work.
+            notifyAll();
         }
-        notifyAll();
         settleIfTerminated();
     }
     public synchronized void setContinueExistingPeriodicTasksAfterShutdownPolicy(boolean value) {
