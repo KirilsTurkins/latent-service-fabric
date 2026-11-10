@@ -437,6 +437,8 @@ class StreamOperator:
         require(_canonical_publication(self.owner["publication"]), "stream-operator-invalid-publication")
         records = self._records()
         key = kind + ":" + record_id
+        require(key in records or len(records) < MAXIMUM_RECORDS,
+                "stream-operator-retained-record-bound")
         observed = self.client.call("policy", "--kind", kind, "get", "--id", record_id)
         self._owned()
         require(observed.get("outcomeKnown") is True and observed.get("category") in {"success", "not-found"},
@@ -491,6 +493,11 @@ class StreamOperator:
     def grant(self):
         with state.lock(self.root, "stream-operator.lock"):
             self._owned()
+            require(self.journal.read()["pending"] is None, "recover-original-operation-before-new-mutation")
+            records = self._records()
+            keys = ("provider-binding:" + self.owner["bindingId"], "policy:" + self.owner["policyId"])
+            require(len(records) + sum(key not in records for key in keys) <= MAXIMUM_RECORDS,
+                    "stream-operator-retained-record-bound")
             self._apply("provider-binding", self.owner["bindingId"], self._binding())
             self._apply("policy", self.owner["policyId"], self._policy("allow"))
             return {"capability": CAPABILITY, "policy": self.owner["policyId"]}
