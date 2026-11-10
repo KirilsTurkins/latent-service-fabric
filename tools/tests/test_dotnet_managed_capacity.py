@@ -88,6 +88,138 @@ class ManagedCapacityTests(unittest.TestCase):
             with self.subTest(bad=bad), self.assertRaises((WorkflowError, ValueError)):
                 node.timers(bad)
 
+    def test_rearm_derivation_authenticates_historical_fixture_and_only_adds_the_witness(self):
+        from tools import dotnet_managed_capacity_fixture as fixture
+        from tools.rust_capsule_project import ROOT, digest, read_file
+        original = read_file(ROOT/fixture.SOURCE); snippet = read_file(ROOT/fixture.REARM_SOURCE)
+        derived = fixture.rearm_source(original, snippet)
+        inserted_case = b'        case 8: return TimerRearmDiagnostic();\n'
+        self.assertEqual(derived.count(inserted_case), 1)
+        self.assertEqual(derived.count(snippet), 1)
+        self.assertEqual(derived.replace(inserted_case, b'', 1).replace(snippet, b'', 1), original)
+        for source, extra in ((original+b' ', snippet), (original, snippet+b' ')):
+            with self.subTest(mutated=source != original), self.assertRaises(WorkflowError):
+                fixture.rearm_source(source, extra)
+        def standard(directory):
+            directory.mkdir(); (directory/'src').mkdir()
+            (directory/'sdk-lock.json').write_text('{"template":{"sourceDigest":"old"}}', encoding='utf8')
+            return directory
+        with tempfile.TemporaryDirectory() as temporary, patch.object(fixture, 'standard_project', standard):
+            root = Path(temporary)
+            for selected, expected in ((False, original), (True, derived)):
+                app = fixture.project(root/str(selected), rearm_diagnostic=selected)
+                self.assertEqual((app/'src/Main.cs').read_bytes(), expected)
+                self.assertEqual(json.loads((app/'sdk-lock.json').read_text())['template']['sourceDigest'], digest(expected))
+            with self.assertRaises(WorkflowError):fixture.project(root/'invalid', rearm_diagnostic=1)
+
+    def test_optional_rearm_plan_preserves_all_seventeen_original_cases(self):
+        original = [
+            ('capacity-2-0-0', 0, False), ('capacity-2-0-0-fresh', 7, False),
+            ('capacity-2-1-1', 1, False), ('capacity-2-1-1-fresh', 7, False),
+            ('capacity-2-2-2', 2, False), ('capacity-2-2-2-fresh', 7, False),
+            ('capacity-2-3-3', 3, False), ('capacity-2-3-3-fresh', 7, False),
+            ('capacity-2-4-4', 4, False), ('capacity-2-4-4-fresh', 7, False),
+            ('capacity-2-5-5', 5, False), ('capacity-2-5-5-fresh', 7, False),
+            ('capacity-2-6-6', 6, False), ('capacity-2-6-6-fresh', 7, False)]
+        self.assertEqual(node.case_plan(2, False), original)
+        self.assertEqual(node.case_plan(2, True), original + [
+            ('capacity-2-rearm-8', 8, True), ('capacity-2-rearm-8-fresh', 7, True)])
+        self.assertEqual(node.case_plan(0, False), [('capacity-0-0-7', 7, False)])
+        self.assertEqual(node.case_plan(1, False), [
+            ('capacity-1-0-7', 7, False), ('capacity-1-1-7', 7, False)])
+        for native in (0, 1):self.assertEqual(node.case_plan(native, True), node.case_plan(native, False))
+        for native, selected in ((True, False), (3, False), (2, 1), (2, 'true')):
+            with self.subTest(native=native, selected=selected), self.assertRaises(WorkflowError):
+                node.case_plan(native, selected)
+
+    def test_rearm_observation_is_opt_in_bounded_and_never_qualifies_a_fix(self):
+        budget = {'cpuFuel': 1000000000, 'memoryBytes': 134217728}
+        row = self.row(); row['decoded'] = ['1:timer-rearm:0:0:1,2,3,3:1,1,1,0:42:0']
+        with self.assertRaises(WorkflowError):node.checked(row, 8, {'exact': True}, budget)
+        actual = node.checked(row, 8, {'exact': True}, budget, rearm_diagnostic=True)
+        self.assertEqual(actual['waitCounts'], [1, 2, 3, 3])
+        self.assertEqual(actual['waitDeltaAtLastChange'], 2)
+        self.assertIs(actual['diagnosticOnly'], True)
+        self.assertIs(actual['timerRearmFixQualified'], False)
+        self.assertIs(actual['postRetirementPhysicalCustodyQualified'], False)
+        steady = copy.deepcopy(row); steady['decoded'] = ['1:timer-rearm:0:0:1,1,1,0:1,1,1,0:42:0']
+        self.assertEqual(node.checked(steady, 8, {'exact': True}, budget,
+            rearm_diagnostic=True)['waitDeltaAtLastChange'], 0)
+        for bad in ('1:timer-rearm:0:0:1,2,3:1,1,1,0:42:0',
+                    '1:timer-rearm:0:0:1,2,17,3:1,1,1,0:42:0',
+                    '1:timer-rearm:0:1:1,2,3,3:1,1,1,0:42:0',
+                    '1:timer-rearm:0:0:1,2,3,3:1,0,1,0:42:0',
+                    '1:timer-rearm:0:0:1,2,3,3:1,1,1,0:42:1',
+                    '1:timer-rearm:0:0:01,2,3,3:1,1,1,0:42:0',
+                    '1:timer-rearm:0:0:1,2,3,3:1,1,1,0:10000:0'):
+            changed = copy.deepcopy(row); changed['decoded'] = [bad]
+            with self.subTest(bad=bad), self.assertRaises((WorkflowError, ValueError)):
+                node.checked(changed, 8, {'exact': True}, budget, rearm_diagnostic=True)
+        trap = copy.deepcopy(row); trap['exitCode'] = 4
+        trap['response'].update(category='platform-failure', error={'code': 'guest-trap'})
+        with self.assertRaises(WorkflowError):node.checked(trap, 8, {'exact': True}, budget, rearm_diagnostic=True)
+        with self.assertRaises(WorkflowError):node.checked(row, 0, {'exact': True}, budget, rearm_diagnostic=True)
+
+    def test_runner_keeps_original_cases_separate_and_propagates_diagnostic_failure(self):
+        from contextlib import ExitStack, nullcontext
+        from types import SimpleNamespace
+        from tools.rust_capsule_project import read_json
+
+        def exercise(selected, fail=False):
+            calls = []; peers = []
+            class Peer:
+                def __init__(self, *_args, **_kwargs):self.index = len(peers); peers.append(self)
+                def origin(self):return {}
+                def close(self):
+                    count = 1 if self.index == 0 else 0
+                    return {'startedRequests': count, 'acceptedConnections': count, 'openConnections': 0,
+                        'rejectedRequests': 0, 'committedMutations': 0}
+            class Client:
+                def __init__(self, *_args, **_kwargs):pass
+                def call(self, *_args, **_kwargs):
+                    return {'data': {'operation': {'publication': {'id': 'stub'}}}}
+            def invoke(_client, _node, _target, _peer, _probe, mode, label, **kwargs):
+                calls.append((label, mode, kwargs))
+                if fail and mode == 8:raise ValueError('diagnostic-trap')
+                return {'case': label, 'receipt': {'path': 'controls/'+label+'.json'}}
+            target = {'name': 'fixture', 'generation': 1}
+            replacements = [(node.shared, 'identities', lambda _x: {'component.wasm': {'sha256': 'stub'}}),
+                (node, 'file_identity', lambda *_args: {'sha256': 'stub', 'bytes': 1}),
+                (node, 'run_bounded_result', lambda *_args, **_kwargs: SimpleNamespace(returncode=0)),
+                (node, 'build_environment', lambda *_args: {}), (node, 'owned_cancellation', lambda: nullcontext(None)),
+                (node, 'Peer', Peer), (node, 'cleanup_owner', lambda *_args: None),
+                (node, 'RecordingClient', Client), (node, 'configuration', lambda *_args: Path('stub')),
+                (node, 'connect', lambda *_args: SimpleNamespace(startup_record={'providers': {}})),
+                (node, 'Probe', lambda *_args: object()), (node, 'prepare', lambda *_args: {}),
+                (node, 'deploy', lambda *_args, **_kwargs: target), (node.base, 'grants', lambda *_args: ({}, [])),
+                (node, 'invoke', invoke), (node, 'sample', lambda *_args: {}),
+                (node, 'delete_all', lambda *_args: None), (node, 'stop', lambda *_args: None),
+                (node, 'stopped_record', lambda *_args: {'reaped': True, 'record': {'clean': True}}),
+                (node, 'validate_peer', lambda *_args: None)]
+            with tempfile.TemporaryDirectory() as temporary, ExitStack() as patches:
+                for owner, name, replacement in replacements:
+                    patches.enter_context(patch.object(owner, name, replacement))
+                output = Path(temporary)/'campaign'
+                native = {key: Path(key) for key in ('capsule_authoring', 'latent', 'latentd')}
+                if fail:
+                    with self.assertRaisesRegex(ValueError, 'diagnostic-trap'):
+                        node.run(Path('artifact'), native, output, deadline=10**20, rearm_diagnostic=selected)
+                    self.assertEqual(read_json(output/'FAILED.json')['stage'], 'capacity-2-rearm-8')
+                    self.assertFalse((output/'qualification.json').exists())
+                    self.assertFalse(any(label == 'capacity-2-rearm-8-fresh' for label, _, _ in calls))
+                    return
+                result = node.run(Path('artifact'), native, output, deadline=10**20, rearm_diagnostic=selected)
+                self.assertEqual(result['invocations'], 19 if selected else 17)
+                self.assertEqual(len(result['cases']), 17)
+                self.assertEqual(sum(mode == 8 for _, mode, _ in calls), int(selected))
+                if selected:
+                    self.assertEqual(len(result['timerRearmDiagnostic']['cases']), 2)
+                    self.assertFalse(result['timerRearmDiagnostic']['timerRearmFixQualified'])
+                    selected_call = next(kwargs for _, mode, kwargs in calls if mode == 8)
+                    self.assertIs(selected_call['rearm_diagnostic'], True)
+                else:self.assertNotIn('timerRearmDiagnostic', result)
+        exercise(False); exercise(True); exercise(True, fail=True)
+
     def row(self):
         return {'processReaped': True, 'exitCode': 0, 'decoded': ['1:'+node.EXPECTED[0]],
             'response': {'outcomeKnown': True, 'category': 'success', 'data': {'resolvedRevision': {'exact': True},

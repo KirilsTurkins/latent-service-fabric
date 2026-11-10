@@ -123,7 +123,8 @@ class CThreadingProfile(unittest.TestCase):
         for selected in (False, True):
             with self.subTest(selected=selected), self.assertRaisesRegex(ValueError, 'compiler-owned'):
                 threading.linked_defines(('LSF_C_TIMED_CLOCK=1',), timed_clock=selected)
-        for name in ('nanosleep', 'thrd_sleep', '__lsf_c_nanosleep', '__lsf_c_thrd_sleep'):
+        for name in ('nanosleep', 'thrd_sleep', '__lsf_c_nanosleep', '__lsf_c_thrd_sleep',
+                     '__imported_wasi_snapshot_preview1_poll_oneoff'):
             with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'compiler-owned'):
                 threading.linked_defines((name + '=foreign',), timed_clock=True)
         for selected in (1, None, 'true'):
@@ -149,6 +150,24 @@ class CThreadingProfile(unittest.TestCase):
         self.assertEqual({threading.libc_material_name(name) for name in threading.LIBC},
                          {'c-threading-libc-' + str(index) for index in range(10)} |
                          {'c-threading-once-libc-' + str(index) for index in range(2)})
+
+    def test_poll_input_preimages_have_separate_stable_labels(self):
+        import hashlib
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            original = b'original-poll-header\n'
+            path = root / 'poll.h'
+            path.write_bytes(original)
+            with patch.object(threading, 'POLL_LIBC', {'poll.h': hashlib.sha256(original).hexdigest()}):
+                self.assertEqual(threading.poll_libc_inputs(root / 'zig'), {'poll.h': path})
+                self.assertEqual(threading.poll_libc_material_name('poll.h'), 'c-threading-poll-0')
+                path.write_bytes(original + b'changed')
+                with self.assertRaisesRegex(ValueError, 'poll-preimage'):
+                    threading.poll_libc_inputs(root / 'zig')
+                with self.assertRaisesRegex(ValueError, 'poll-material-path'):
+                    threading.poll_libc_material_name('foreign.h')
+        self.assertEqual(len(threading.POLL_LIBC), 7)
 
     def test_installed_recipe_ships_optional_helper_and_exact_runtime_without_default_selection(self):
         from tools import dev_tool_distribution

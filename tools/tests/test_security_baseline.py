@@ -191,6 +191,7 @@ class SecurityFixtureTests(unittest.TestCase):
         paths = {entry["path"] for entry in records}
         self.assertIn("Cargo.toml", paths)
         self.assertIn("sdk/go/go.mod", paths)
+        self.assertIn("sdk/go-guest/runtime/checkpoints-captured-conformance/module/go.mod", paths)
         self.assertIn("sdk/java-client/build.gradle.kts", paths)
         self.assertIn("sdk/dotnet/Latent.Sdk/Latent.Sdk.csproj", paths)
         self.assertTrue(any(package.path == "sdk/typescript-client/package-lock.json" for package in packages))

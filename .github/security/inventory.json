@@ -509,6 +509,12 @@
       "manifest_sha256": "65ff4afac47c8c7682e162fb74534548ea3deeae06a54a723e76ca61ad4bfe86",
       "path": "sdk/dotnet/Latent.Sdk.Phase4RealScope/Latent.Sdk.Phase4RealScope.csproj",
       "runtime_identifier": "linux-x64"
+    },
+    {
+      "absent_when_directory_missing": "sdk/go-guest/runtime/checkpoints-captured-conformance/module",
+      "kind": "no-external-packages",
+      "path": "sdk/go-guest/runtime/checkpoints-captured-conformance/module/go.mod",
+      "sha256": "5c2311eabf7ca52bc87173a6545e3896d08e18776fea7b4c33efc089086fb874"
     }
   ],
   "non_manifest_modules": [
