@@ -15,6 +15,19 @@ use std::sync::{
     Arc, Mutex,
 };
 
+// A dispatched view owns the original session until its response is restored.
+// Cancellation or any failed submission/worker response must not let a later
+// guest return certify that the incomplete state operation succeeded.
+struct InFlightView<'a>(Option<&'a AtomicBool>);
+
+impl Drop for InFlightView<'_> {
+    fn drop(&mut self) {
+        if let Some(fault) = self.0 {
+            fault.store(true, Ordering::Release);
+        }
+    }
+}
+
 impl StateTransactionHost {
     #[allow(
         clippy::too_many_arguments,
@@ -189,6 +202,7 @@ impl StateTransactionHost {
             .map_err(|_| StateFailure::Unavailable)?
             .take()
             .ok_or(StateFailure::Unavailable)?;
+        let mut in_flight = InFlightView(Some(&self.technical_fault));
         let auth = Arc::clone(&self.authorization);
         let mut payload = owned.payload;
         let job = self
@@ -232,6 +246,7 @@ impl StateTransactionHost {
             self.technical_fault.store(true, Ordering::Release);
             return Err(StateFailure::Unavailable);
         }
+        in_flight.0 = None;
         if let Err(error) = charged {
             self.technical_fault.store(true, Ordering::Release);
             return Err(error);

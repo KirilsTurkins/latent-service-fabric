@@ -137,3 +137,80 @@ fn retired_conflict_cannot_replace_an_original_execution_fault() {
         )
     );
 }
+
+#[tokio::test]
+async fn query_cannot_succeed_after_a_corrupt_read_loses_the_view() {
+    use crate::transaction_runtime::tests::fixture::Fixture;
+    use crate::TransactionActivationAdmission;
+    use latent_executor::transaction::{Mode, StateFailure};
+    use latent_state::embedded::{AtomicBatch, RowMutation};
+    use latent_state::session::{state_payload_cell_key, StateMode, StateScope};
+    use latent_state::store_io::StoreIoKind;
+
+    let fixture = Fixture::new().await;
+    let scope = StateScope {
+        tenant: latent_core::TenantId("a".into()),
+        namespace: latent_core::StateNamespaceId("orders".into()),
+        incarnation: 1,
+        state_schema: format!("sha256:{}", "1".repeat(64)),
+        entity: None,
+        mode: StateMode::Query,
+    };
+    let row = state_payload_cell_key(&scope, b"bad").unwrap();
+    fixture
+        .protected_store()
+        .with_store(StoreIoKind::RecoveryWrite, 8192, move |store| {
+            store.apply(AtomicBatch {
+                expectations: vec![],
+                mutations: vec![RowMutation {
+                    key: row,
+                    value: Some(b"corrupt".to_vec()),
+                }],
+            })
+        })
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap();
+    let (admission, envelope, budget) = fixture.invocation(true, "failed-query-view");
+    let guest = admission.admit(&envelope, &budget).await.unwrap();
+    guest.acquire(Mode::Query).unwrap();
+    let host = {
+        let state = admission.state.lock().unwrap();
+        match &*state {
+            super::super::State::Ready(Some(TransactionAdmissionResult::Query { host })) => {
+                Arc::clone(host)
+            }
+            _ => panic!("query host absent"),
+        }
+    };
+    assert_eq!(
+        guest.read(b"bad".to_vec()).await,
+        Err(StateFailure::Unavailable)
+    );
+    guest.finish_guest_access();
+    // Observe the exact issued view witness; time alone cannot prove retirement.
+    tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        while !host.witness.has_retired() {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    let _ = budget.finalize_at(None, std::time::Instant::now());
+    let observation = admission
+        .complete(
+            observed()[0].clone(),
+            fixture.commit_control(&envelope, &budget),
+        )
+        .await;
+    assert!(matches!(observation, ActivationOutcome::Failed { .. }));
+    drop((
+        admission.take_owned_completion().unwrap(),
+        guest,
+        host,
+        admission,
+    ));
+    assert!(fixture.native.snapshot().unwrap().physically_retired());
+    fixture.shutdown_uncertain_writer().await;
+}
