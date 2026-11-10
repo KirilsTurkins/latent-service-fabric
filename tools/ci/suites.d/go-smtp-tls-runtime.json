@@ -4,11 +4,13 @@
     {
       "boundary": "runtime",
       "expectedIgnored": [
-        "signed_ordinary_go_smtp_starttls_preserves_trust_hostname_and_fresh_connection"
+        "signed_ordinary_go_smtp_starttls_preserves_trust_hostname_and_fresh_connection",
+        "signed_published_go_smtp_and_separate_worker_timer_preserve_original_owners"
       ],
       "id": "latent-wasmtime.test.go_smtp_tls",
       "ignoredLeaves": [
-        "signed_ordinary_go_smtp_starttls_preserves_trust_hostname_and_fresh_connection"
+        "signed_ordinary_go_smtp_starttls_preserves_trust_hostname_and_fresh_connection",
+        "signed_published_go_smtp_and_separate_worker_timer_preserve_original_owners"
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
@@ -20,7 +22,8 @@
       "prerequisites": [
         "pinned Rust toolchain",
         "fresh ordinary Go SMTP/guest TLS component with explicit roots and managed v5",
-        "successful source-matched Cargo artifact inventory"
+        "successful source-matched Cargo artifact inventory",
+        "captured published Go SMTP and separate RxGo/backoff worker fixture when selected"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
