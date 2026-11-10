@@ -243,7 +243,7 @@ async fn dropped_query_waiter_keeps_operation_until_the_actual_view_is_destroyed
     tokio::task::spawn_blocking(move || {
         entered_rx
             .recv_timeout(std::time::Duration::from_secs(5))
-            .unwrap()
+            .unwrap();
     })
     .await
     .unwrap();
