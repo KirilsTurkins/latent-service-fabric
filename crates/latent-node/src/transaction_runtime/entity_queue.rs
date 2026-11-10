@@ -288,7 +288,7 @@ impl EntityQueue {
             .and_then(|n| n.checked_add(scope.entity().0.len()))
             .ok_or(QueueError::Unavailable)?;
         let charge = scope_bytes
-            .checked_mul(6)
+            .checked_mul(8)
             .and_then(|n| {
                 identity
                     .len()
