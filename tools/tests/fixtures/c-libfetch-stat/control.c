@@ -8,14 +8,21 @@
 
 static int opens, finishes, aborts, expected_method, status = 200;
 static bool deny, abort_failure;
-static const char *length;
+static const char *length, *expected_media, *expected_body;
+static size_t written;
 static const char *expected_url = "https://example.test/item";
 static bool validate_url;
 static char last_url[8193];
 
 bool latent_http_streaming_open(const latent_http_streaming_request_t *request, int *out, http_error *error) {
     opens++;
-    assert(request->method == expected_method && request->body_length.is_some && request->body_length.val == 0);
+    assert(request->method == expected_method && request->body_length.is_some);
+    assert(request->body_length.val == (expected_body ? strlen(expected_body) : 0));
+    assert(request->body_media_type.is_some == (expected_media != NULL));
+    if (expected_media) {
+        assert(request->body_media_type.val.len == strlen(expected_media));
+        assert(!memcmp(request->body_media_type.val.ptr, expected_media, strlen(expected_media)));
+    }
     assert(request->url.len < sizeof(last_url));
     memcpy(last_url, request->url.ptr, request->url.len);
     last_url[request->url.len] = 0;
@@ -37,10 +44,16 @@ bool latent_http_streaming_open(const latent_http_streaming_request_t *request, 
     *out = 17; return true;
 }
 bool latent_http_streaming_write(int upload, const probe_list_u8_t *bytes, http_error *error) {
-    (void)upload; (void)bytes; (void)error; assert(!"unexpected write"); return false;
+    (void)error; assert(upload == 17 && expected_body);
+    const size_t expected = strlen(expected_body);
+    assert(written <= expected && bytes->len <= expected - written);
+    assert(!memcmp(bytes->ptr, expected_body + written, bytes->len));
+    written += bytes->len;
+    return true;
 }
 bool latent_http_streaming_finish(int upload, response *out, http_error *error) {
     (void)error; assert(upload == 17); finishes++;
+    assert(written == (expected_body ? strlen(expected_body) : 0));
     out->status = status; out->body = 23;
     if (length) {
         out->headers.ptr = calloc(1, sizeof(*out->headers.ptr)); assert(out->headers.ptr);
@@ -68,7 +81,18 @@ bool latent_http_streaming_abort_body(int body, http_error *error) {
 static void reset(void) {
     opens = finishes = aborts = 0; expected_method = LATENT_HTTP_STREAMING_METHOD_HEAD;
     status = 200; deny = abort_failure = validate_url = false; length = NULL; errno = 0;
+    expected_media = expected_body = NULL; written = 0;
     expected_url = "https://example.test/item"; last_url[0] = 0;
+}
+
+static void request_with_media(const char *type, const char *body, const char *media) {
+    reset(); expected_method = LATENT_HTTP_STREAMING_METHOD_GET;
+    expected_media = media; expected_body = body;
+    struct url *url = fetchParseURL("https://example.test/item");
+    assert(url);
+    FILE *file = fetchReqHTTP(url, "GET", "A", type, body);
+    assert(file && fclose(file) == 0 && opens == 1 && finishes == 1 && aborts == 1);
+    fetchFreeURL(url);
 }
 
 static void constructed_url(const char *document, int port, const char *target, bool rejected) {
@@ -120,6 +144,39 @@ int main(void) {
     assert(fetchStatURL(url, &stat, "A") == 0);
     assert(stat.size == 12345 && stat.atime == 0 && stat.mtime == 0);
     assert(opens == 1 && finishes == 1 && aborts == 1);
+
+    /* HEAD metadata is 64-bit even when wasm32 URL.length is not. */
+    reset(); length = "5000000000";
+    struct url *wide = fetchParseURL(url);
+    assert(wide && fetchStat(wide, &stat, "A") == 0 && stat.size == INT64_C(5000000000));
+    assert(wide->length == (SIZE_MAX < UINT64_C(5000000000) ? SIZE_MAX : (size_t)UINT64_C(5000000000)));
+    assert(opens == 1 && finishes == 1 && aborts == 1);
+    fetchFreeURL(wide);
+    reset(); length = "9223372036854775807";
+    assert(fetchStatURL(url, &stat, "A") == 0 && stat.size == INT64_MAX);
+    reset(); length = "9223372036854775808";
+    assert(fetchStatURL(url, &stat, "A") == -1 && stat.size == -1);
+    assert(errno == EOVERFLOW && fetchLastErrCode == FETCH_PROTO);
+    assert(opens == 1 && finishes == 1 && aborts == 1);
+    length = "19";
+    assert(fetchStatURL(url, &stat, "A") == 0 && stat.size == 19);
+    assert(opens == 2 && finishes == 2 && aborts == 2);
+
+    /* Upstream ignores content_type when the body pointer is NULL. */
+    request_with_media("application/json", NULL, NULL);
+    request_with_media("", NULL, NULL);
+    request_with_media(NULL, NULL, NULL);
+    request_with_media("application/json", "", "application/json");
+    request_with_media("application/json", "abc", "application/json");
+    char overlong_media[258];
+    memset(overlong_media, 'x', sizeof(overlong_media) - 1);
+    overlong_media[sizeof(overlong_media) - 1] = 0;
+    request_with_media(overlong_media, NULL, NULL);
+    reset(); expected_method = LATENT_HTTP_STREAMING_METHOD_GET;
+    struct url *overlong_url = fetchParseURL(url);
+    assert(overlong_url && !fetchReqHTTP(overlong_url, "GET", "A", overlong_media, ""));
+    assert(errno == EFBIG && fetchLastErrCode == FETCH_FULL && opens == 0);
+    fetchFreeURL(overlong_url);
 
     reset(); assert(fetchStatURL(url, &stat, "A") == 0);
     assert(stat.size == -1 && stat.atime == 0 && stat.mtime == 0 && aborts == 1);
