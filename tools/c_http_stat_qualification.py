@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Qualify ordinary libfetch HEAD and Range with one signed C component."""
+"""Qualify ordinary libfetch HEAD, Range and redirect refusal with one signed C component."""
 from __future__ import annotations
 
 import argparse
@@ -32,7 +32,7 @@ from tools.standard_http.peer import Peer
 from tools.standard_http.vectors import DOMAIN, head, json_bytes
 from tools.static_api.node import policy
 
-CASES = ('normal', 'denied', 'not-found', 'fresh', 'range', 'range-ignored', 'range-denied',
+CASES = ('normal', 'denied', 'not-found', 'redirect', 'fresh', 'range', 'range-ignored', 'range-denied',
          'range-unsolicited', 'range-before')
 PROBE = 'sdk/c-guest/runtime-fixtures/libfetch/stat-probe.c'
 SELF = 'tools/c_http_stat_qualification.py'
@@ -108,7 +108,7 @@ def install(client, node, target, origin):
         'configurationDigest': descriptor['configurationDigest'], 'configurationEpoch': 1,
         'restriction': {'operations': []}})
     rules = []
-    for method, paths in [('HEAD', ['/conformance/json', '/conformance/status/404']),
+    for method, paths in [('HEAD', ['/conformance/json', '/conformance/status/404', '/conformance/redirect']),
                           ('GET', ['/conformance/echo', '/conformance/json', '/conformance/body/boundary'])]:
         rules.append({'id': 'ordinary-libfetch-' + method.lower(), 'effect': 'allow',
             'principals': [{'kind': 'administrator', 'subject': 'workflow-operator'}],
@@ -124,7 +124,7 @@ def install(client, node, target, origin):
 
 def cell(client, probe, target, peer, output, case):
     vectors = {'normal': 'domain-json', 'denied': 'method-bytes',
-               'not-found': 'http-404', 'fresh': 'domain-json', 'range': 'domain-json',
+               'not-found': 'http-404', 'redirect': 'redirect', 'fresh': 'domain-json', 'range': 'domain-json',
                'range-ignored': 'response-boundary', 'range-denied': 'http-404',
                'range-unsolicited': 'domain-json', 'range-before': 'method-bytes'}
     require(case in CASES, 'c-stat-closed-case-set')
@@ -154,6 +154,7 @@ def cell(client, probe, target, peer, output, case):
             'fresh': (0, [{'ok': f'{len(json_bytes(DOMAIN))}:0:0'}]),
             'denied': (3, [{'err': 'permission-denied'}]),
             'not-found': (3, [{'err': 'unavailable'}]),
+            'redirect': (3, [{'err': 'redirect-unsupported'}]),
             'range': range_result(5, len(domain), domain[5:]),
             'range-ignored': range_result(0, 8192, b'x' * 8192),
             'range-denied': (3, [{'err': 'permission-denied'}]),
@@ -187,8 +188,18 @@ def cell(client, probe, target, peer, output, case):
                     'c-stat-one-authenticated-head-no-replay')
         require(observed['openConnections'] == 0, 'c-stat-no-peer-owners-left')
         write_json(output / ('peer-' + activation + '.json'), observed)
+        retirement = owner.retire(client, probe, target, output, activation)
+        if case == 'redirect':
+            # Both origins remain live. Drain any immediately pending contact
+            # after the original activation is retired, then fail on any new
+            # connection or request instead of treating an idle snapshot as a fence.
+            peer.poll(0.05)
+            after_retirement = peer.observation()
+            require_zero_contact(observed, after_retirement)
+            require(after_retirement['openConnections'] == 0, 'c-redirect-no-late-peer-owners')
+            write_json(output / ('peer-post-retirement-' + activation + '.json'), after_retirement)
         return {'case': case, 'activation': activation, 'exitCode': row['exitCode'],
-                'peerDelta': change, 'retirement': owner.retire(client, probe, target, output, activation)}
+                'peerDelta': change, 'retirement': retirement}
     except BaseException:
         primary = True
         write_json(output / ('peer-failed-' + activation + '.json'), peer.observation())
@@ -229,7 +240,11 @@ def run_node(artifact, native, output, deadline):
             config, settings = configure_base(work / 'node', signed, peer.origin()['port'], language='c')
             owner.configure_http(settings, read_json(artifact / 'capsule.json'), peer, credential)
             destinations = settings['providers']['httpStreaming']['configuration']['destinations']
-            require(destinations[0]['origin'] == peer.origin()
+            require(len(destinations) == 2 and destinations[0]['origin'] == peer.origin()
+                    and destinations[1]['origin'] == peer.origin('secondary')
+                    and destinations[0]['redirectDestinations'] == []
+                    and destinations[1]['redirectDestinations'] == []
+                    and settings['providers']['httpStreaming']['configuration']['limits']['maximumRedirects'] == 0
                     and 'range' not in destinations[0]['allowedRequestHeaders'], 'c-range-provider-shape')
             destinations[0]['allowedRequestHeaders'].append('range')
             config.write_bytes((json.dumps(settings, sort_keys=True, separators=(',', ':')) + '\n').encode())
@@ -249,11 +264,15 @@ def run_node(artifact, native, output, deadline):
             grants = install(client, node, target, peer.origin())
             target = deploy(client, source / 'deployment.json', target['publication'],
                             generation=str(target['generation']), grants=grants)
-            stage = 'nine-signed-head-and-range-cells'
+            stage = 'ten-signed-head-range-and-redirect-cells'
             record['cases'] = [cell(client, probe, target, peer, output, case) for case in CASES]
-            require(peer.observation()['startedRequests'] == 7 and peer.range_requests == 3
-                    and peer.unsolicited_requests == 1 and peer.early_range_requests == 1,
-                    'c-stat-seven-contacts-three-ranges-one-unsolicited-one-early')
+            final_peer = peer.observation()
+            validate(final_peer)
+            require(final_peer['acceptedConnections'] == final_peer['startedRequests'] == 8
+                    and all(row['role'] == 'primary' for row in final_peer['requests'])
+                    and peer.range_requests == 3 and peer.unsolicited_requests == 1
+                    and peer.early_range_requests == 1,
+                    'c-stat-eight-primary-contacts-three-ranges-one-unsolicited-one-early')
             record['exactRangeRequests'] = peer.range_requests
             record['unsolicitedRequests'] = peer.unsolicited_requests
             record['earlyRangeRequests'] = peer.early_range_requests
@@ -303,7 +322,7 @@ def qualify(args):
               'full690Qualified': False, 'fullCCostModelQualified': False,
               'publisherAuthenticated': False, 'releasePublished': False,
               'limits': {'parentSeconds': 1320, 'commandSeconds': 900, 'cleanupReserveSeconds': 5,
-                         'jobs': 2, 'components': 1, 'cells': 9, 'clientCalls': 384}}
+                         'jobs': 2, 'components': 1, 'cells': 10, 'clientCalls': 384}}
     stage = 'source'
     def source_inputs(capture=False):
         rows = http_sources(commands, output, capture=capture, runtime_profile=FETCH_PROFILE)
@@ -340,10 +359,10 @@ def qualify(args):
         c_capsule_build.build(project, artifact, native['capsule_contracts'], native['package'],
             'https://github.com/KirilsTurkins/latent-service-fabric', installed=installed, _deadline=commands.deadline)
         result['build'] = http_build_evidence(artifact, original, runtime_profile=FETCH_PROFILE)
-        stage = 'nine-signed-head-and-range-cells'
+        stage = 'ten-signed-head-range-and-redirect-cells'
         result['node'] = run_node(artifact, native, output / 'node', commands.deadline)
         require(result['node']['status'] == 'passed'
-                and [row['case'] for row in result['node']['cases']] == list(CASES), 'c-stat-exact-nine-outcomes')
+                and [row['case'] for row in result['node']['cases']] == list(CASES), 'c-stat-exact-ten-outcomes')
         require(helpers == source_inputs() and source_identity(ROOT) == source
                 and sdk == inventory(c_capsule_project.sdk_inputs(ROOT, threading=True))
                 and original == inventory(snapshot(project))

@@ -22,7 +22,7 @@ class StatQualificationControls(unittest.TestCase):
             (project / 'src/main.c').write_bytes((stat.ROOT / stat.PROBE).read_bytes())
             c_capsule_project.validate(snapshot(project))
             self.assertEqual(read_json(project / 'capsule-project.json')['runtimeProfile'], FETCH_PROFILE)
-            self.assertEqual(stat.CASES, ('normal', 'denied', 'not-found', 'fresh',
+            self.assertEqual(stat.CASES, ('normal', 'denied', 'not-found', 'redirect', 'fresh',
                                           'range', 'range-ignored', 'range-denied',
                                           'range-unsolicited', 'range-before'))
 
@@ -39,7 +39,8 @@ class StatQualificationControls(unittest.TestCase):
             self.assertEqual(grants[-1], {'capability': stat.owner.HTTP, 'policy': 'http-allow'})
             rules = policy.call_args_list[1].args[3]['rules']
             self.assertEqual([row['resources']['methods'] for row in rules], [['HEAD'], ['GET']])
-            self.assertEqual(rules[0]['resources']['paths'], ['/conformance/json', '/conformance/status/404'])
+            self.assertEqual(rules[0]['resources']['paths'],
+                             ['/conformance/json', '/conformance/status/404', '/conformance/redirect'])
             self.assertEqual(rules[1]['resources']['paths'],
                              ['/conformance/echo', '/conformance/json', '/conformance/body/boundary'])
             self.assertTrue(all(row['resources']['origins'] == [origin] for row in rules))
@@ -102,6 +103,85 @@ class StatQualificationControls(unittest.TestCase):
             self.assertEqual(peer.observation()['openConnections'], 0)
         finally:
             peer.close()
+
+    def test_redirect_peer_returns_location_to_live_secondary_without_contact(self):
+        token = b'Bearer ' + b'a' * 64
+        peer = stat.RangePeer(token, maximum_seconds=10)
+        try:
+            before = peer.observation()
+            origin, secondary = peer.origin(), peer.origin('secondary')
+            client = socket.create_connection(('127.0.0.1', origin['port']), timeout=2)
+            try:
+                client.sendall(b'HEAD /conformance/redirect HTTP/1.1\r\nHost: 127.0.0.1:' +
+                    str(origin['port']).encode() + b'\r\nAuthorization: ' + token +
+                    b'\r\nConnection: close\r\n\r\n')
+                client.setblocking(False); data = bytearray(); deadline = time.monotonic() + 3
+                while time.monotonic() < deadline:
+                    peer.poll(0.01)
+                    try: block = client.recv(16384)
+                    except BlockingIOError: continue
+                    if not block: break
+                    data.extend(block)
+                else:
+                    self.fail('controlled redirect peer did not close')
+            finally:
+                client.close()
+            location = f"http://127.0.0.1:{secondary['port']}/conformance/redirect-target".encode()
+            self.assertEqual(bytes(data), stat.head(302, 0, headers=((b'Location', location),)))
+            change = stat.delta(before, peer.observation())
+            self.assertEqual((change['acceptedConnections'], change['startedRequests']), (1, 1))
+            self.assertEqual([(row['role'], row['vector']) for row in change['requests']],
+                             [('primary', 'redirect')])
+            self.assertTrue(change['requests'][0]['authorizationPresent'])
+        finally:
+            peer.close()
+
+    def test_redirect_cell_requires_exact_failure_and_no_secondary_contact(self):
+        consumed = {k: '0' for k in ('stateReadBytes', 'stateWriteBytes', 'blobReadBytes',
+                    'blobWriteBytes', 'logBytes', 'effectCount', 'childCalls')}
+        consumed.update(cpuFuel='1', peakMemoryBytes='1')
+        row = {'processReaped': True, 'exitCode': 3, 'decoded': [{'err': 'redirect-unsupported'}],
+               'response': {'outcomeKnown': True, 'requestDispatched': True,
+                            'data': {'resolvedRevision': 'revision', 'consumption': consumed}}}
+        change = {'acceptedConnections': 1, 'startedRequests': 1,
+                  'requests': [{'vector': 'redirect', 'method': 'HEAD', 'role': 'primary',
+                                'authorizationPresent': True}],
+                  'rejectedRequests': 0, 'connectionBoundRejections': 0}
+        peer = Mock(); peer.url.return_value = 'http://peer/redirect'
+        peer.observation.return_value = {'openConnections': 0}
+        client = SimpleNamespace(deadline=10**12)
+        process = SimpleNamespace(owner=SimpleNamespace(exited=lambda: True))
+        with tempfile.TemporaryDirectory() as tmp, \
+                patch.object(stat.owner, 'selected_revision', return_value='revision'), \
+                patch.object(stat.owner, 'start_http_call', return_value=process) as start, \
+                patch.object(stat.owner, 'finish_call', return_value=row), \
+                patch.object(stat.owner, 'retire', return_value={'physicalOwnersAfter': 0}) as retire, \
+                patch.object(stat.owner, 'close_call'), patch.object(stat, 'validate'), \
+                patch.object(stat, 'delta', return_value=change), \
+                patch.object(stat, 'require_zero_contact') as no_late:
+            def output(name):
+                path = Path(tmp) / name
+                path.mkdir()
+                return path
+            result = stat.cell(client, object(), {}, peer, output('good'), 'redirect')
+            self.assertEqual(start.call_args.args[2], 'redirect\nhttp://peer/redirect')
+            self.assertEqual(result['retirement']['physicalOwnersAfter'], 0)
+            no_late.assert_called_once(); peer.poll.assert_called_once_with(0.05)
+            row['decoded'] = [{'err': 'unexpected-stat-error'}]
+            with self.assertRaisesRegex(WorkflowError, 'c-stat-exact-ordinary-result'):
+                stat.cell(client, object(), {}, peer, output('wrong-result'), 'redirect')
+            row['decoded'] = [{'err': 'redirect-unsupported'}]
+            change['acceptedConnections'] = 2
+            change['requests'].append({'role': 'secondary'})
+            with self.assertRaisesRegex(WorkflowError, 'c-stat-one-authenticated-head-no-replay'):
+                stat.cell(client, object(), {}, peer, output('secondary-contact'), 'redirect')
+            self.assertEqual(retire.call_count, 1)
+            change['acceptedConnections'] = 1
+            change['requests'].pop()
+            no_late.side_effect = WorkflowError('late-secondary-contact')
+            with self.assertRaisesRegex(WorkflowError, 'late-secondary-contact'):
+                stat.cell(client, object(), {}, peer, output('late-contact'), 'redirect')
+            self.assertEqual(retire.call_count, 2)
 
     def test_invalid_response_requires_the_selected_request_shape(self):
         request = SimpleNamespace(method=b'GET', headers={})
