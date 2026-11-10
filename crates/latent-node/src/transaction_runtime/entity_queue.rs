@@ -44,13 +44,19 @@ pub(super) enum QueueError {
 }
 
 type CommandIdentity = latent_commit::atomic::Identity;
+type CommandSelection = (
+    CommandIdentity,
+    CommandIdentity,
+    [u8; 32],
+    Option<Arc<super::SharedCommandOwner>>,
+);
 type Commands = Arc<Mutex<BTreeMap<CommandIdentity, Arc<CommandEntry>>>>;
 type DuplicateWaiters = Arc<Mutex<BTreeMap<EntityScope, usize>>>;
 
 // Count both ordinary queued work and duplicate observers under the same
 // configured limits. A slot is held until selection or cancellation, and
 // never keeps a physical lane owner alive.
-struct WaitingSlot {
+pub(super) struct WaitingSlot {
     waiters: DuplicateWaiters,
     scope: EntityScope,
 }
@@ -90,6 +96,13 @@ impl Drop for DuplicateWaiter {
             }
         }
     }
+}
+
+// A duplicate still consumes queue capacity while its original result-read
+// authority is being checked, before it may sponsor the active owner.
+pub(super) struct AuthorizingWaiter {
+    _duplicate: DuplicateWaiter,
+    _waiting: WaitingSlot,
 }
 
 struct CommandRegistration {
@@ -198,7 +211,7 @@ impl EntityQueue {
         })
     }
 
-    fn reserve_waiting(&self, scope: &EntityScope) -> Result<WaitingSlot, QueueError> {
+    pub(super) fn reserve_waiting(&self, scope: &EntityScope) -> Result<WaitingSlot, QueueError> {
         let mut waiters = self.waiting.lock().map_err(|_| QueueError::Unavailable)?;
         let mut global = 0_usize;
         let mut tenant = 0_usize;
@@ -225,6 +238,31 @@ impl EntityQueue {
             waiters: Arc::clone(&self.waiting),
             scope: scope.clone(),
         })
+    }
+
+    pub(super) fn reserve_authorizing_duplicate(
+        &self,
+        scope: &EntityScope,
+    ) -> Result<AuthorizingWaiter, QueueError> {
+        let waiting = self.reserve_waiting(scope)?;
+        let mut waiters = self
+            .duplicate_waiters
+            .lock()
+            .map_err(|_| QueueError::Unavailable)?;
+        *waiters.entry(scope.clone()).or_default() += 1;
+        drop(waiters);
+        Ok(AuthorizingWaiter {
+            _waiting: waiting,
+            _duplicate: DuplicateWaiter {
+                waiters: Arc::clone(&self.duplicate_waiters),
+                scope: scope.clone(),
+                _sponsor: None,
+            },
+        })
+    }
+
+    pub(super) async fn wait_for_waiter_expiry(&self, deadline: Instant) {
+        wait_until(deadline, self.clock.as_ref()).await;
     }
 
     pub(super) fn claim_changes(&self) -> watch::Receiver<u64> {
@@ -273,12 +311,7 @@ impl EntityQueue {
         deadline: Instant,
         current: Arc<dyn Fn() -> bool + Send + Sync>,
         permit: NativeBufferPermit,
-        command: Option<(
-            CommandIdentity,
-            CommandIdentity,
-            [u8; 32],
-            Option<Arc<super::SharedCommandOwner>>,
-        )>,
+        command: Option<CommandSelection>,
         duplicate_authorized: bool,
         mut first_owner: Option<(u64, [u8; 32], Instant)>,
     ) -> Result<Physical, QueueError> {

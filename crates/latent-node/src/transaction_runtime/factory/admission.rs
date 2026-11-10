@@ -339,6 +339,7 @@ impl NativeTransactionAdmission {
 
     #[expect(
         clippy::too_many_arguments,
+        clippy::too_many_lines,
         reason = "Keep the original budget, control, claim observation, and selected source together"
     )]
     async fn acquire_entity_lane(
@@ -419,8 +420,32 @@ impl NativeTransactionAdmission {
                     let source = *source;
                     let owner = *owner;
                     let wait_until = *wait_until;
-                    self.authorize_entity_duplicate(selection, envelope, budget)
-                        .await?;
+                    // Authorization is itself part of waiting for the first
+                    // owner. Prepay and count it before starting the bounded
+                    // read, and keep that charge until the waiter is dropped.
+                    let waiter_permit = retained
+                        .native()
+                        .reserve_buffer(NativeBufferClass::Request, 16 * 1024)
+                        .map_err(|_| {
+                            error(
+                                latent_core::PlatformErrorCode::ResourceExhausted,
+                                "entity-queue-capacity",
+                            )
+                        })?;
+                    let waiter = self
+                        .owners
+                        .lanes
+                        .reserve_authorizing_duplicate(&scope)
+                        .map_err(entity_queue_error)?;
+                    let authorized = self.authorize_entity_duplicate(selection, envelope, budget);
+                    tokio::select! {
+                        result = authorized => result?,
+                        () = self.owners.lanes.wait_for_waiter_expiry(wait_until) => {
+                            return Err(entity_queue_error(super::super::entity_queue::QueueError::Expired));
+                        }
+                    }
+                    drop(waiter);
+                    drop(waiter_permit);
                     first_owner = Some((owner, source, wait_until));
                     duplicate_authorized = true;
                     continue;

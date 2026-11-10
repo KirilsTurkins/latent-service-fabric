@@ -1278,3 +1278,54 @@ async fn wait_age_is_rechecked_after_authority_callback() {
     assert_eq!(queue.snapshot().active, 0);
     assert_eq!(queue.snapshot().keys, 0);
 }
+
+#[test]
+fn duplicate_authorization_counts_against_shared_wait_limits() {
+    let mut bounds = limits();
+    bounds.entity_queued = 1;
+    let queue = EntityQueue::new(bounds, Arc::new(latent_core::SystemActivationClock)).unwrap();
+    let key = scope("tenant-a", "hot");
+    let authorization = queue.reserve_authorizing_duplicate(&key).unwrap();
+    assert_eq!(queue.duplicate_waiter_count().unwrap(), 1);
+    assert!(matches!(
+        queue.reserve_waiting(&key),
+        Err(QueueError::Lane(EntityLaneError::Backpressure(
+            EntityLaneLimit::EntityQueue
+        )))
+    ));
+    drop(authorization);
+    assert_eq!(queue.duplicate_waiter_count().unwrap(), 0);
+    assert!(queue.waiting.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn duplicate_authorization_timeout_uses_the_injected_clock() {
+    struct FakeClock {
+        start: Instant,
+        elapsed_millis: AtomicU64,
+    }
+    impl ActivationClock for FakeClock {
+        fn sample(&self) -> latent_core::ClockSample {
+            latent_core::ClockSample::new(0, self.monotonic_now())
+        }
+        fn monotonic_now(&self) -> Instant {
+            self.start + Duration::from_millis(self.elapsed_millis.load(Ordering::SeqCst))
+        }
+    }
+    let start = Instant::now();
+    let clock = Arc::new(FakeClock {
+        start,
+        elapsed_millis: AtomicU64::new(0),
+    });
+    let queue = Arc::new(EntityQueue::new(limits(), clock.clone()).unwrap());
+    let task = tokio::spawn(async move {
+        queue
+            .wait_for_waiter_expiry(start + Duration::from_millis(100))
+            .await;
+    });
+    clock.elapsed_millis.store(100, Ordering::SeqCst);
+    tokio::time::timeout(Duration::from_secs(2), task)
+        .await
+        .unwrap()
+        .unwrap();
+}
