@@ -11,6 +11,9 @@ The pinned Wasmtime `Store<T>::drop` destroys host data before instance backing.
 original host data through that destruction path, then drops the original data.
 It does not reconstruct tokens, mint a second budget, or invoke guest cleanup
 after a Wasm trap. Fuel and memory observations precede destruction as before.
+Custody begins immediately after Store construction, before fallible fuel and
+event-loop setup. A setup error therefore follows the same destruction order
+and cannot escape without its trusted retirement disposition.
 
 Runtime finalization and Store destruction are distinct trusted facts. An
 invocation-local, allocation-free `RuntimeRetirement` records both. A failed
@@ -22,15 +25,16 @@ consumption, host-result disposition, and earlier quarantine reasons are retaine
 
 ## Executed validation
 
-The six new test methods execute the pinned Wasmtime implementation, real table
+The seven new test methods execute the pinned Wasmtime implementation, real table
 allocation callbacks, and the original `ActivationRuntime`/`ActivationBudget`.
 They cover on-demand and pooled allocation, ordinary return, an actual Wasm
-`unreachable` trap, cancellation of a polled future, and outer Rust unwinding.
-A negative control reproduces the old early Native-owner refund. The selected
-path retains that owner until the actual table backing's allocation guard dies.
-A real refused `ActivationRuntime::retire` remains a reuse veto after Store
-cleanup reduces its owner count to zero. Tests also preserve existing quarantine
-and host-result states and reject duplicate Store proof reuse.
+`unreachable` trap, cancellation of a polled future, outer Rust unwinding, and
+an actual engine fuel-setup refusal after allocation. A negative control
+reproduces the old early Native-owner refund. The selected path retains that
+owner until the actual table backing's allocation guard dies. A real refused
+`ActivationRuntime::retire` remains a reuse veto after Store cleanup reduces its
+owner count to zero. Tests also preserve existing quarantine and host-result
+states and reject duplicate Store proof reuse.
 
 Local Rust 1.97.1, locked/offline build:
 
@@ -40,11 +44,11 @@ LSF_TEST_STREAM_OUTERS_COMPONENT=/path/to/native-stream-outers.wasm \
   cargo test -p latent-wasmtime --locked --offline --lib
 ```
 
-The focused selection passed all six tests. The library selection passed 498,
-failed zero, and retained 11 existing ignored tests. These are observed counts,
-not a required inventory. The missing stream fixture from the earlier attempt
-was parsed from the unchanged maintained WAT using the retained JCO toolchain;
-no assertion or library test was disabled. `git diff --check` passed.
+The focused selection passed all seven tests. The final library selection passed
+499, failed zero, and retained 11 existing ignored tests. These are observed
+counts, not a required inventory. The missing stream fixture from the earlier
+attempt was parsed from the unchanged maintained WAT using the retained JCO
+toolchain; no assertion or library test was disabled. `git diff --check` passed.
 
 Source scope matters: the local checkout was recovered from authenticated
 `12a40da53ce33e2ef297892b8e0a9b09f327adcc` history. Each modified production-file

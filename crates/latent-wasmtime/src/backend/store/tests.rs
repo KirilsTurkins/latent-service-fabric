@@ -405,3 +405,25 @@ fn early_return_and_a_second_store_cannot_reuse_an_earlier_proof() {
         ExecutionCleanup::Quarantine { .. }
     ));
 }
+
+#[test]
+fn failed_store_setup_keeps_custody_and_cannot_claim_reuse() {
+    use latent_executor::ExecutionCleanup;
+    for pooled in [false, true] {
+        let (store, runtime, observed, _, _) = store(&engine(pooled));
+        let mut retirement = RuntimeRetirement::default();
+        {
+            let mut custody = StoreCustody::new(store, &mut retirement);
+            // This actual engine has fuel disabled. Its setup API refuses,
+            // after allocation and before any logical-finalization witness.
+            assert!(custody.set_fuel(1).is_err());
+            assert_eq!(runtime.snapshot().owners[6], 1);
+        }
+        assert_eq!(observed.native_at_allocation_drop.load(Ordering::SeqCst), 1);
+        assert_eq!(runtime.snapshot().owners[6], 0);
+        assert!(matches!(
+            retirement.apply(failure_report("setup-failed")).cleanup,
+            ExecutionCleanup::Quarantine { .. }
+        ));
+    }
+}
