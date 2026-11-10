@@ -535,11 +535,30 @@ class CompletableSourceIntegrity(unittest.TestCase):
                          "cancelled-queued-retirement;subscribe-race")
         readiness = "COMPLETABLE_OVERRIDE_READINESS_REFERENCE PASS cases=19;public-dispatch;private-helper"
         readmit = "COMPLETABLE_OVERRIDE_READMIT_OWNER PASS simulated-queue-copies=2;original-ledger"
-        return ["", native, executor, monitor, readiness, "", native + "\n" + owners, executor,
+        destination = "\n".join((
+            "thenApply:42:completeCalls=0:failureCalls=0",
+            "callbackFailure:error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+            "sourceFailure:error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+            "thenCompose:42:completeCalls=0:failureCalls=0", "exceptionally:42:completeCalls=0:failureCalls=0",
+            "thenCombine:42:completeCalls=0:failureCalls=0", "applyToEither:42:completeCalls=0:failureCalls=0",
+            "runAfterEither:done=true:callbacks=1:completeCalls=0:failureCalls=0",
+            "handle:42:completeCalls=0:failureCalls=0", "whenComplete:41:completeCalls=0:failureCalls=0",
+            "whenCompleteFailure:error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+            "exceptionallyCompose:42:completeCalls=0:failureCalls=0",
+            "thenComposeFailure:error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+            "completeAsync:42:completeCalls=0:failureCalls=0",
+            "completeAsyncFailure:error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+            "publicComplete:false:null:completeCalls=1",
+            "publicFailure:false:null:failureCalls=1", "barrier:normal:before=null:after=42:completeCalls=0:failureCalls=0",
+            "barrier:failure:before=null:after=error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+            "barrier:cancel:before=null:after=error:CancellationException:completeCalls=0:failureCalls=0",
+            "queuedRejection:before=error:RejectedExecutionException:after=error:RejectedExecutionException:"
+            "callbacks=0:completeCalls=0:failureCalls=0"))
+        return ["", native, executor, monitor, readiness, destination, "", native + "\n" + owners, executor,
                 "COMPLETABLE_FUTURE_EXECUTOR_ACCEPTANCE_OWNER PASS observables=49",
                 "COMPLETABLE_FUTURE_EXECUTOR_UNCERTAIN_OWNER PASS observables=30;"
                 "queued=8;results=8;cleanup-denied;activation-retirement-unqualified",
-                monitor, monitor_owner, readiness, readmit]
+                monitor, monitor_owner, readiness, readmit, destination]
 
     def test_incomplete_standard_observables_stop_before_sdk_control_compilation(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -555,7 +574,7 @@ class CompletableSourceIntegrity(unittest.TestCase):
             root = Path(directory)
             compiler = self.fixture(root)
             receipts = self.complete_receipts()
-            receipts[6] = receipts[1] + "\nCOMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=1;raceRounds=1"
+            receipts[7] = receipts[1] + "\nCOMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=1;raceRounds=1"
             compiler.run.side_effect = receipts
             with self.assertRaisesRegex(ValueError, "source ownership controls did not complete"):
                 fibers.completable_source_control(compiler, root / "control")
@@ -574,6 +593,7 @@ class CompletableSourceIntegrity(unittest.TestCase):
                     "CompletableFutureExecutorUncertainOwnerControl.java",
                     "CompletableMonitorReferenceControl.java", "CompletableMonitorOwnerControl.java",
                     "CompletableOverrideReadinessReferenceControl.java",
+                    "CompletableOverrideDestinationReferenceControl.java",
                     "source-control/dev/latent/guest/runtime/concurrent/CompletableOverrideReadmitOwnerControl.java",
                     "source-control/PrivateSourceRunner.java", "source-control/dev/latent/generated/Bindings.java",
                     "source-control/dev/latent/guest/runtime/Activation.java",
@@ -587,6 +607,7 @@ class CompletableSourceIntegrity(unittest.TestCase):
             self.assertEqual(report["futureMonitor"], "JDK-and-SDK-source-controls-passed")
             self.assertEqual(report["futureReadiness"], "JDK-and-SDK-source-controls-passed")
             self.assertEqual(report["futureReadmit"], "simulated-queue-copies-original-source-ledger-passed")
+            self.assertEqual(report["futureDestination"], "JDK-and-SDK-source-controls-passed")
             original = (compiler.sdk / "fibers/conformance/compiler/CompletableFutureNativeControl.java").read_text()
             private = (root / "control/private/CompletableFutureNativeControl.java").read_text()
             for name in ("CompletableFuture", "CompletionStage", "CompletionException"):
@@ -609,7 +630,7 @@ class CompletableSourceIntegrity(unittest.TestCase):
             compiler.run.side_effect = observe
             with self.assertRaisesRegex(ValueError, "inputs changed during execution"):
                 fibers.completable_source_control(compiler, root / "control")
-            self.assertEqual(compiler.run.call_count, 14)
+            self.assertEqual(compiler.run.call_count, 16)
 
     def test_ambiguous_private_import_rewrite_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -620,7 +641,7 @@ class CompletableSourceIntegrity(unittest.TestCase):
             compiler.run.side_effect = self.complete_receipts()
             with self.assertRaisesRegex(ValueError, "import is ambiguous"):
                 fibers.completable_source_control(compiler, root / "control")
-            self.assertEqual(compiler.run.call_count, 5)
+            self.assertEqual(compiler.run.call_count, 6)
 
     def test_incomplete_executor_reference_receipt_stops_before_port_compilation(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -638,14 +659,14 @@ class CompletableSourceIntegrity(unittest.TestCase):
             root = Path(directory)
             compiler = self.fixture(root)
             receipts = self.complete_receipts()
-            receipts[7] = receipts[7].replace("value-42", "value-43", 1)
+            receipts[8] = receipts[8].replace("value-42", "value-43", 1)
             compiler.run.side_effect = receipts
             with self.assertRaisesRegex(ValueError, "executor behavior differs from the actual reference JDK"):
                 fibers.completable_source_control(compiler, root / "control")
-            self.assertEqual(compiler.run.call_count, 8)
+            self.assertEqual(compiler.run.call_count, 9)
 
     def test_uncertain_executor_capacity_requires_complete_physical_boundary_receipt(self):
-        original = self.complete_receipts()[9]
+        original = self.complete_receipts()[10]
         for incomplete in (original.replace("queued=8", "queued=7"),
                            original.replace("results=8", "results=7"),
                            original.replace("cleanup-denied;", "")):
@@ -653,15 +674,15 @@ class CompletableSourceIntegrity(unittest.TestCase):
                 root = Path(directory)
                 compiler = self.fixture(root)
                 receipts = self.complete_receipts()
-                receipts[9] = incomplete
+                receipts[10] = incomplete
                 compiler.run.side_effect = receipts
                 with self.assertRaisesRegex(ValueError, "uncertain executor capacity control did not complete"):
                     fibers.completable_source_control(compiler, root / "control")
-                self.assertEqual(compiler.run.call_count, 10)
+                self.assertEqual(compiler.run.call_count, 11)
 
     def test_incomplete_monitor_receipt_fails_closed_at_each_stage(self):
-        for index, expected_error in ((3, "monitor reference"), (10, "monitor source"),
-                                      (11, "monitor ownership")):
+        for index, expected_error in ((3, "monitor reference"), (11, "monitor source"),
+                                      (12, "monitor ownership")):
             with self.subTest(index=index), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 compiler = self.fixture(root)
@@ -673,8 +694,20 @@ class CompletableSourceIntegrity(unittest.TestCase):
                 self.assertEqual(compiler.run.call_count, index + 1)
 
     def test_incomplete_readiness_receipt_fails_closed_at_each_stage(self):
-        for index, expected_error in ((4, "readiness reference"), (12, "readiness source"),
-                                      (13, "readiness readmission")):
+        for index, expected_error in ((4, "readiness reference"), (13, "readiness source"),
+                                      (14, "readiness readmission")):
+            with self.subTest(index=index), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                compiler = self.fixture(root)
+                receipts = self.complete_receipts()
+                receipts[index] += ";incomplete"
+                compiler.run.side_effect = receipts
+                with self.assertRaisesRegex(ValueError, expected_error):
+                    fibers.completable_source_control(compiler, root / "control")
+                self.assertEqual(compiler.run.call_count, index + 1)
+
+    def test_incomplete_destination_receipt_fails_closed_at_each_stage(self):
+        for index, expected_error in ((5, "destination reference"), (15, "destination source")):
             with self.subTest(index=index), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 compiler = self.fixture(root)

@@ -353,6 +353,7 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
     monitor_owner = fixture / "CompletableMonitorOwnerControl.java"
     readiness_reference = fixture / "CompletableOverrideReadinessReferenceControl.java"
     readmit_owner = fixture / "source-control/dev/latent/guest/runtime/concurrent/CompletableOverrideReadmitOwnerControl.java"
+    destination_reference = fixture / "CompletableOverrideDestinationReferenceControl.java"
     stubs = [fixture / "source-control" / name for name in (
         "PrivateSourceRunner.java", "dev/latent/generated/Bindings.java",
         "dev/latent/guest/runtime/Activation.java", "dev/latent/guest/runtime/concurrent/Executors.java")]
@@ -360,12 +361,13 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
              for name in ("CompletableFuture", "CompletionStage", "CompletionException")]
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
               for path in (native, owners, executor_reference, executor_owners, uncertain_owners,
-                           monitor_reference, monitor_owner, readiness_reference, readmit_owner, *stubs, *ports)}
+                           monitor_reference, monitor_owner, readiness_reference, readmit_owner,
+                           destination_reference, *stubs, *ports)}
     output.mkdir()
     reference, private = output / "reference", output / "private"
     reference.mkdir(); private.mkdir()
     compiler.run("completable-reference-compile", "javac", "-proc:none", "--release", "25", "-d", reference,
-                 native, executor_reference, monitor_reference, readiness_reference)
+                 native, executor_reference, monitor_reference, readiness_reference, destination_reference)
     expected = "COMPLETABLE_FUTURE_SOURCE_CONTROL PASS observables=82"
     observed = compiler.run("completable-reference-run", "java", "-Xmx256m", "-cp", reference,
                             "CompletableFutureNativeControl").strip()
@@ -382,6 +384,32 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
     observed = compiler.run("completable-readiness-reference-jdk", "java", "-Xmx256m", "-cp", reference,
                             "CompletableOverrideReadinessReferenceControl").strip()
     if observed != readiness_expected: raise ValueError("Java CompletableFuture readiness reference did not complete")
+    destination_expected = "\n".join((
+        "thenApply:42:completeCalls=0:failureCalls=0",
+        "callbackFailure:error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+        "sourceFailure:error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+        "thenCompose:42:completeCalls=0:failureCalls=0",
+        "exceptionally:42:completeCalls=0:failureCalls=0",
+        "thenCombine:42:completeCalls=0:failureCalls=0",
+        "applyToEither:42:completeCalls=0:failureCalls=0",
+        "runAfterEither:done=true:callbacks=1:completeCalls=0:failureCalls=0",
+        "handle:42:completeCalls=0:failureCalls=0",
+        "whenComplete:41:completeCalls=0:failureCalls=0",
+        "whenCompleteFailure:error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+        "exceptionallyCompose:42:completeCalls=0:failureCalls=0",
+        "thenComposeFailure:error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+        "completeAsync:42:completeCalls=0:failureCalls=0",
+        "completeAsyncFailure:error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+        "publicComplete:false:null:completeCalls=1",
+        "publicFailure:false:null:failureCalls=1",
+        "barrier:normal:before=null:after=42:completeCalls=0:failureCalls=0",
+        "barrier:failure:before=null:after=error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+        "barrier:cancel:before=null:after=error:CancellationException:completeCalls=0:failureCalls=0",
+        "queuedRejection:before=error:RejectedExecutionException:after=error:RejectedExecutionException:"
+        "callbacks=0:completeCalls=0:failureCalls=0"))
+    observed = compiler.run("completable-destination-reference-jdk", "java", "-Xmx256m", "-cp", reference,
+                            "CompletableOverrideDestinationReferenceControl").strip()
+    if observed != destination_expected: raise ValueError("Java CompletableFuture destination reference did not complete")
     text = read_file(native).decode("utf-8")
     for name in ("CompletableFuture", "CompletionStage", "CompletionException"):
         original = "import java.util.concurrent." + name + ";"
@@ -415,8 +443,14 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
     private_readiness = private / readiness_reference.name
     private_readiness.write_text(text.replace(original, "import dev.latent.guest.runtime.concurrent.CompletableFuture;"),
                                  encoding="utf-8")
+    text = read_file(destination_reference).decode("utf-8")
+    if text.count(original) != 1: raise ValueError("Java CompletableFuture destination control import is ambiguous")
+    private_destination = private / destination_reference.name
+    private_destination.write_text(text.replace(original, "import dev.latent.guest.runtime.concurrent.CompletableFuture;"),
+                                   encoding="utf-8")
     compiler.run("completable-source-compile", "javac", "-proc:none", "--release", "25", "-d", private,
-                 private_native, private_executor, private_monitor, private_readiness, monitor_owner, readmit_owner,
+                 private_native, private_executor, private_monitor, private_readiness, private_destination,
+                 monitor_owner, readmit_owner,
                  owners, executor_owners, uncertain_owners, *stubs, *ports)
     owner_result = "COMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=419;raceRounds=32"
     observed = compiler.run("completable-source-run", "java", "-Xmx256m", "-cp", private,
@@ -451,6 +485,9 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
                             "dev.latent.guest.runtime.concurrent.CompletableOverrideReadmitOwnerControl").strip()
     if observed != "COMPLETABLE_OVERRIDE_READMIT_OWNER PASS simulated-queue-copies=2;original-ledger":
         raise ValueError("Java CompletableFuture readiness readmission control did not complete")
+    observed = compiler.run("completable-destination-source", "java", "-Xmx256m", "-cp", private,
+                            "CompletableOverrideDestinationReferenceControl", "source").strip()
+    if observed != destination_expected: raise ValueError("Java CompletableFuture destination source differs from JDK")
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError("Java CompletableFuture control inputs changed during execution")
     return {"status": "reference-and-SDK-source-controls-passed", "referenceObservables": 82,
@@ -461,6 +498,7 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
             "futureMonitor": "JDK-and-SDK-source-controls-passed",
             "futureReadiness": "JDK-and-SDK-source-controls-passed",
             "futureReadmit": "simulated-queue-copies-original-source-ledger-passed",
+            "futureDestination": "JDK-and-SDK-source-controls-passed",
             "componentExecutionPerformed": False, "actualGuestBindingsUsed": False}
 
 
