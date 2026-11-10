@@ -11,6 +11,7 @@ from tools import qualify_go_write_progress as q
 from tools import go_network_deadline_reference as deadline
 from tools import go_network_empty_read_reference as empty_read
 from tools import go_network_half_close_reference as half_close
+from tools import go_network_endpoint_reference as endpoint
 
 ROOT=Path(__file__).resolve().parents[2]
 
@@ -182,6 +183,37 @@ class GoWriteProgressTests(unittest.TestCase):
             with self.assertRaises(ValueError):half_close.observed(self.encoded(rows),old_flag)
         duplicate=b'{"Package":"example.invalid/halfclose","Action":"pass","Action":"fail"}'
         with self.assertRaisesRegex(ValueError,'duplicate-field'):half_close.observed(duplicate,False)
+
+    def test_endpoint_projection_and_counterexample_are_source_bound(self):
+        raw=(ROOT/q.TEMPLATE).read_bytes()
+        body=endpoint.method(raw)
+        self.assertEqual(raw.count(body),1)
+        self.assertEqual(endpoint.projected(raw).count(body),1)
+        old=subprocess.check_output(['git','show',q.BASELINE+':'+q.TEMPLATE],cwd=ROOT)
+        self.assertEqual(hashlib.sha256(endpoint.method(old)).hexdigest(),endpoint.OLD_METHOD_SHA)
+        fixture=(ROOT/endpoint.TESTS).read_text()
+        for case in endpoint.CASES:
+            self.assertEqual(fixture.count('func '+case+'('),1)
+        for invalid in (raw+body,raw.replace(b'\n',b'\r\n'),b'x'*65537,
+                        raw.replace(b'func lsfStreamEndpoint(',b'func renamedEndpoint(')):
+            with self.assertRaises(ValueError):endpoint.method(invalid)
+
+    def test_endpoint_receipt_requires_exact_counterexample_and_all_controls(self):
+        package='example.invalid/endpoint'
+        old=[{'Package':package,'Action':'output','Test':endpoint.CASES[0],
+              'Output':'non-ASCII endpoint accepted as "k.example":443'},
+             {'Package':package,'Action':'fail','Test':endpoint.CASES[0]},
+             {'Package':package,'Action':'fail'}]
+        current=[{'Package':package,'Action':'pass','Test':case} for case in endpoint.CASES]
+        current.append({'Package':package,'Action':'pass'})
+        self.assertEqual(endpoint.observed(self.encoded(old),True),[endpoint.CASES[0]])
+        self.assertEqual(endpoint.observed(self.encoded(current),False),list(endpoint.CASES))
+        for rows,old_flag in ((old[1:],True),(current[:-2]+current[-1:],False),
+                              (current+[current[0]],False),([dict(current[0],Action='skip')]+current[1:],False),
+                              ([dict(current[0],Package='unexpected')]+current[1:],False)):
+            with self.assertRaises(ValueError):endpoint.observed(self.encoded(rows),old_flag)
+        duplicate=b'{"Package":"example.invalid/endpoint","Action":"pass","Action":"fail"}'
+        with self.assertRaisesRegex(ValueError,'duplicate-field'):endpoint.observed(duplicate,False)
 
     def test_direct_help_works_outside_repo_without_import_path_environment(self):
         with tempfile.TemporaryDirectory() as directory:
