@@ -12,8 +12,8 @@ use latent_core::{
     ActivationClock,
 };
 use latent_state::entity_lanes::{
-    EntityCallKind, EntityDispatch, EntityLaneError, EntityLaneLimits, EntityLaneRequest,
-    EntityLanes, EntityPhysicalOwner, EntityRejection, EntityScope,
+    EntityCallKind, EntityDispatch, EntityLaneError, EntityLaneLimit, EntityLaneLimits,
+    EntityLaneRequest, EntityLanes, EntityPhysicalOwner, EntityRejection, EntityScope,
 };
 use tokio::sync::{oneshot, watch};
 
@@ -42,6 +42,26 @@ pub(super) enum QueueError {
 type CommandIdentity = latent_commit::atomic::Identity;
 type Commands = Arc<Mutex<BTreeMap<CommandIdentity, Arc<CommandEntry>>>>;
 type DuplicateWaiters = Arc<Mutex<BTreeMap<EntityScope, usize>>>;
+
+// Count both ordinary queued work and duplicate observers under the same
+// configured limits. A slot is held until selection or cancellation, and
+// never keeps a physical lane owner alive.
+struct WaitingSlot {
+    waiters: DuplicateWaiters,
+    scope: EntityScope,
+}
+impl Drop for WaitingSlot {
+    fn drop(&mut self) {
+        if let Ok(mut waiters) = self.waiters.lock() {
+            if let Some(count) = waiters.get_mut(&self.scope) {
+                *count -= 1;
+                if *count == 0 {
+                    waiters.remove(&self.scope);
+                }
+            }
+        }
+    }
+}
 
 struct CommandEntry {
     fingerprint: CommandIdentity,
@@ -116,6 +136,7 @@ pub(super) struct EntityQueue {
     maximum_commands: usize,
     next_command_generation: AtomicU64,
     duplicate_waiters: DuplicateWaiters,
+    waiting: DuplicateWaiters,
     maximum_global_waiters: usize,
     maximum_tenant_waiters: usize,
     maximum_entity_waiters: usize,
@@ -164,10 +185,40 @@ impl EntityQueue {
             maximum_commands: maximum_turn.saturating_mul(2),
             next_command_generation: AtomicU64::new(1),
             duplicate_waiters: Arc::new(Mutex::new(BTreeMap::new())),
+            waiting: Arc::new(Mutex::new(BTreeMap::new())),
             maximum_global_waiters: maximum_turn,
             maximum_tenant_waiters,
             maximum_entity_waiters,
             maximum_wait_age,
+        })
+    }
+
+    fn reserve_waiting(&self, scope: &EntityScope) -> Result<WaitingSlot, QueueError> {
+        let mut waiters = self.waiting.lock().map_err(|_| QueueError::Unavailable)?;
+        let mut global = 0_usize;
+        let mut tenant = 0_usize;
+        for (key, count) in waiters.iter() {
+            global = global.saturating_add(*count);
+            if key.tenant() == scope.tenant() {
+                tenant = tenant.saturating_add(*count);
+            }
+        }
+        let limit = if global >= self.maximum_global_waiters {
+            Some(EntityLaneLimit::GlobalQueue)
+        } else if tenant >= self.maximum_tenant_waiters {
+            Some(EntityLaneLimit::TenantQueue)
+        } else if waiters.get(scope).copied().unwrap_or(0) >= self.maximum_entity_waiters {
+            Some(EntityLaneLimit::EntityQueue)
+        } else {
+            None
+        };
+        if let Some(limit) = limit {
+            return Err(QueueError::Lane(EntityLaneError::Backpressure(limit)));
+        }
+        *waiters.entry(scope.clone()).or_default() += 1;
+        Ok(WaitingSlot {
+            waiters: Arc::clone(&self.waiting),
+            scope: scope.clone(),
         })
     }
 
@@ -260,6 +311,7 @@ impl EntityQueue {
             .min(deadline);
         let mut changes = self.signal.subscribe();
         let mut duplicate_waiter = None;
+        let mut waiting_slot = None;
         let registration = loop {
             if duplicate_waiter.is_some() {
                 if self.clock.monotonic_now() >= duplicate_deadline {
@@ -332,6 +384,13 @@ impl EntityQueue {
                 break Some(next);
             }
             if duplicate_waiter.is_none() {
+                waiting_slot = Some(self.reserve_waiting(&scope).map_err(|error| {
+                    if matches!(error, QueueError::Lane(EntityLaneError::Backpressure(_))) {
+                        QueueError::DuplicateCapacity
+                    } else {
+                        error
+                    }
+                })?);
                 let mut waiters = self
                     .duplicate_waiters
                     .lock()
@@ -369,6 +428,12 @@ impl EntityQueue {
                 result = changes.changed() => if result.is_err() { return Err(QueueError::Unavailable); },
                 () = wait_until(duplicate_deadline, self.clock.as_ref()) => return Err(QueueError::Expired),
             }
+        };
+        // Ordinary requests and duplicate observers share these limits. Keep
+        // the slot across enqueue and release it on selection or cancellation.
+        let _waiting_slot = match waiting_slot {
+            Some(slot) => slot,
+            None => self.reserve_waiting(&scope)?,
         };
         let (send, mut receive) = oneshot::channel();
         let pending = Arc::new(Pending {

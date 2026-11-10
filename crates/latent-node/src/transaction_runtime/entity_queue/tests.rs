@@ -1011,3 +1011,88 @@ async fn duplicate_waiter_rechecks_authority_before_owner_recovery() {
     assert_eq!(queue.duplicate_waiter_count().unwrap(), 0);
     assert_eq!(queue.snapshot().active, 0);
 }
+
+#[tokio::test]
+async fn ordinary_and_duplicate_waiters_share_the_entity_queue_limit() {
+    let mut bounds = limits();
+    bounds.entity_queued = 2;
+    bounds.maximum_wait_age = Duration::from_secs(2);
+    let queue =
+        Arc::new(EntityQueue::new(bounds, Arc::new(latent_core::SystemActivationClock)).unwrap());
+    let key = CommandIdentity::parse_hex(&"aa".repeat(32)).unwrap();
+    let fingerprint = CommandIdentity::parse_hex(&"bb".repeat(32)).unwrap();
+    let owner = queue
+        .acquire_for_command(
+            scope("tenant-a", "hot"),
+            vec![1],
+            64,
+            deadline(),
+            Arc::new(|| true),
+            permit(),
+            Some((key, fingerprint, [1; 32], None)),
+            false,
+            None,
+        )
+        .await
+        .unwrap();
+    let ordinary_queue = Arc::clone(&queue);
+    let ordinary = tokio::spawn(async move {
+        ordinary_queue
+            .acquire(
+                scope("tenant-a", "hot"),
+                vec![2],
+                64,
+                deadline(),
+                Arc::new(|| true),
+                permit(),
+            )
+            .await
+    });
+    queued(&queue, 1).await;
+    let duplicate_queue = Arc::clone(&queue);
+    let duplicate = tokio::spawn(async move {
+        duplicate_queue
+            .acquire_for_command(
+                scope("tenant-a", "hot"),
+                vec![3],
+                64,
+                deadline(),
+                Arc::new(|| true),
+                permit(),
+                Some((key, fingerprint, [1; 32], None)),
+                true,
+                None,
+            )
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(2), async {
+        while queue.duplicate_waiter_count().unwrap() != 1 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    let excess = queue
+        .acquire(
+            scope("tenant-a", "hot"),
+            vec![4],
+            64,
+            deadline(),
+            Arc::new(|| true),
+            permit(),
+        )
+        .await;
+    assert!(matches!(
+        excess,
+        Err(QueueError::Lane(EntityLaneError::Backpressure(
+            EntityLaneLimit::EntityQueue
+        )))
+    ));
+    duplicate.abort();
+    let _ = duplicate.await;
+    ordinary.abort();
+    let _ = ordinary.await;
+    drop(owner);
+    assert!(queue.waiting.lock().unwrap().is_empty());
+    assert_eq!(queue.snapshot().active, 0);
+}
