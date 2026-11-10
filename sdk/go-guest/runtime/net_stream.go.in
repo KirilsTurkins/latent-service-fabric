@@ -210,14 +210,25 @@ func (c *lsfStreamConn) begin(write bool) (lsfWit.Option[uint32], func(), error)
 }
 
 func (c *lsfStreamConn) Read(bytes []byte) (int, error) {
+	// A zero-length TCP read never waits for readability or checks the
+	// deadline. Preserve this profile's closed and overlapping-read refusals.
+	if len(bytes) == 0 {
+		c.mu.Lock()
+		closing, busy := c.closing, c.readBusy
+		c.mu.Unlock()
+		if closing {
+			return 0, c.opError("read", ErrClosed)
+		}
+		if busy {
+			return 0, c.opError("read", lsfStreamUnsupported())
+		}
+		return 0, nil
+	}
 	timeout, release, err := c.begin(false)
 	if err != nil {
 		return 0, c.opError("read", err)
 	}
 	defer release()
-	if len(bytes) == 0 {
-		return 0, nil
-	}
 	c.mu.Lock()
 	eof := c.readEOF
 	c.mu.Unlock()

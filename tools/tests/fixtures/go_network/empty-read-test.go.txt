@@ -1,0 +1,199 @@
+package emptyread
+
+import (
+	"context"
+	"errors"
+	lsfWit "example.invalid/emptyread/wit"
+	"fmt"
+	"io"
+	"net"
+	"os"
+	"sync"
+	"testing"
+	"time"
+)
+
+var ErrClosed = net.ErrClosed
+var deadlineExceeded = os.ErrDeadlineExceeded
+
+func lsfStreamUnsupported() error { return errors.ErrUnsupported }
+
+type lsfStreamError struct{ failure int }
+
+func (e *lsfStreamError) Error() string { return "provider-error" }
+
+type OpError struct {
+	Op, Net string
+	Addr    any
+	Err     error
+}
+
+func (e *OpError) Error() string { return fmt.Sprintf("%s: %v", e.Op, e.Err) }
+func (e *OpError) Unwrap() error { return e.Err }
+
+type lsfStreamConn struct {
+	mu                                               sync.Mutex
+	stream                                           *wire
+	remote                                           string
+	readDeadline, writeDeadline                      time.Time
+	readBusy, writeBusy, closing, readEOF, writeShut bool
+}
+
+func conn() *lsfStreamConn { return &lsfStreamConn{stream: &wire{}} }
+
+type wire struct {
+	calls, closes int
+	data          []byte
+	end           bool
+}
+type readResult struct {
+	w       *wire
+	maximum uint32
+}
+
+func (w *wire) ReadContext(_ context.Context, maximum uint32, _ lsfWit.Option[uint32]) readResult {
+	w.calls++
+	return readResult{w: w, maximum: maximum}
+}
+func (r readResult) IsErr() bool     { return false }
+func (r readResult) Err() int        { return 0 }
+func (r readResult) Ok() chunkOption { return chunkOption{w: r.w} }
+
+type chunkOption struct{ w *wire }
+
+func (o chunkOption) IsNone() bool { return o.w.end }
+func (o chunkOption) Some() *chunk { return &chunk{w: o.w} }
+
+type chunk struct{ w *wire }
+
+func (c *chunk) Close()                                     { c.w.closes++ }
+func (c *chunk) BytesContext(_ context.Context) bytesResult { return bytesResult{data: c.w.data} }
+
+type bytesResult struct{ data []byte }
+
+func (r bytesResult) IsErr() bool { return false }
+func (r bytesResult) Err() int    { return 0 }
+func (r bytesResult) Ok() []byte  { return r.data }
+
+func TestZeroReadExpiredNoDispatch(t *testing.T) {
+	c := conn()
+	c.readDeadline = time.Now().Add(-time.Second)
+	n, err := c.Read(nil)
+	if n != 0 || err != nil || c.stream.calls != 0 || c.readBusy {
+		t.Fatalf("empty-expired: n=%d err=%v calls=%d busy=%v", n, err, c.stream.calls, c.readBusy)
+	}
+}
+
+func TestZeroReadEOFNoDispatch(t *testing.T) {
+	c := conn()
+	c.readEOF = true
+	n, err := c.Read([]byte{})
+	if n != 0 || err != nil || c.stream.calls != 0 || c.readBusy {
+		t.Fatal("empty-eof")
+	}
+}
+
+func TestZeroReadClosedAndBusyKeepProfileRules(t *testing.T) {
+	for _, tc := range []struct {
+		closed, busy bool
+		expected     error
+	}{
+		{true, false, net.ErrClosed},
+		{false, true, errors.ErrUnsupported},
+		{true, true, net.ErrClosed},
+	} {
+		c := conn()
+		c.closing, c.readBusy = tc.closed, tc.busy
+		n, err := c.Read(nil)
+		if n != 0 || !errors.Is(err, tc.expected) || c.stream.calls != 0 || c.readBusy != tc.busy {
+			t.Fatalf("empty-admission: closed=%v busy=%v n=%d err=%v calls=%d", tc.closed, tc.busy, n, err, c.stream.calls)
+		}
+	}
+}
+
+func TestNonemptyExpiredStillRefusesBeforeDispatch(t *testing.T) {
+	c := conn()
+	c.readDeadline = time.Now().Add(-time.Second)
+	n, err := c.Read(make([]byte, 1))
+	if n != 0 || !errors.Is(err, deadlineExceeded) || c.stream.calls != 0 || c.readBusy {
+		t.Fatal("nonempty-expired")
+	}
+}
+
+func TestNonemptyReadPreservesProviderPathAndEOF(t *testing.T) {
+	c := conn()
+	c.stream.data = []byte("a")
+	dst := make([]byte, 2)
+	n, err := c.Read(dst)
+	if n != 1 || err != nil || string(dst[:n]) != "a" || c.stream.calls != 1 || c.stream.closes != 1 || c.readBusy {
+		t.Fatal("nonempty-data")
+	}
+	c.stream.end = true
+	n, err = c.Read(dst)
+	if n != 0 || !errors.Is(err, io.EOF) || c.stream.calls != 2 || !c.readEOF || c.readBusy {
+		t.Fatal("nonempty-eof")
+	}
+	n, err = c.Read(nil)
+	if n != 0 || err != nil || c.stream.calls != 2 {
+		t.Fatal("empty-after-eof")
+	}
+}
+
+func TestPinnedNativeTCPZeroReadDeadlineEOFAndClose(t *testing.T) {
+	ln, err := net.ListenTCP("tcp4", &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+	accepts := make(chan *net.TCPConn, 1)
+	failures := make(chan error, 1)
+	go func() {
+		c, err := ln.AcceptTCP()
+		if err != nil {
+			failures <- err
+			return
+		}
+		accepts <- c
+	}()
+	client, err := net.DialTCP("tcp4", nil, ln.Addr().(*net.TCPAddr))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+	var peer *net.TCPConn
+	select {
+	case peer = <-accepts:
+	case err = <-failures:
+		t.Fatal(err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("accept-timeout")
+	}
+	defer peer.Close()
+	if err = client.SetReadDeadline(time.Now().Add(-time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := client.Read(nil); n != 0 || err != nil {
+		t.Fatalf("reference-empty-expired: %d %v", n, err)
+	}
+	if n, err := client.Read(make([]byte, 1)); n != 0 || !errors.Is(err, deadlineExceeded) {
+		t.Fatalf("reference-nonempty-expired: %d %v", n, err)
+	}
+	if err = client.SetReadDeadline(time.Now().Add(5 * time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if err = peer.CloseWrite(); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := client.Read(make([]byte, 1)); n != 0 || !errors.Is(err, io.EOF) {
+		t.Fatalf("reference-eof: %d %v", n, err)
+	}
+	if n, err := client.Read(nil); n != 0 || err != nil {
+		t.Fatalf("reference-empty-eof: %d %v", n, err)
+	}
+	if err = client.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := client.Read(nil); n != 0 || !errors.Is(err, net.ErrClosed) {
+		t.Fatalf("reference-empty-closed: %d %v", n, err)
+	}
+}
