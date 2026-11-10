@@ -191,16 +191,19 @@ impl EffectManagementCatalog {
         view: &ReadView,
         checkpoint: &mut dyn FnMut() -> Result<(), StoreError>,
     ) -> Result<(), StoreError> {
-        walk(view, PLAN_PREFIX, checkpoint, |key, bytes| {
+        walk(view, PLAN_PREFIX, checkpoint, |key, bytes, _| {
             validate_plan(view, key, bytes)
         })?;
-        walk(view, RECEIPT_PREFIX, checkpoint, |key, bytes| {
+        walk(view, RECEIPT_PREFIX, checkpoint, |key, bytes, _| {
             validate_receipt(view, key, bytes)
         })?;
-        walk(view, COUNTER_PREFIX, checkpoint, |key, bytes| {
-            validate_counter(view, key, bytes)
-        })?;
-        walk(view, SLOT_PREFIX, checkpoint, |key, bytes| {
+        walk(
+            view,
+            COUNTER_PREFIX,
+            checkpoint,
+            |key, bytes, checkpoint| validate_counter_with_checkpoint(view, key, bytes, checkpoint),
+        )?;
+        walk(view, SLOT_PREFIX, checkpoint, |key, bytes, _| {
             Self::validate_row(key, bytes)?;
             let (effect, sequence) = slot_identity(key)?;
             let operation = bytes.try_into().map_err(|_| StoreError::Corrupt)?;
@@ -213,7 +216,7 @@ impl EffectManagementCatalog {
             }
             Ok(())
         })?;
-        walk(view, &reservation_prefix(), checkpoint, |key, bytes| {
+        walk(view, &reservation_prefix(), checkpoint, |key, bytes, _| {
             Self::validate_row(key, bytes)?;
             let operation = identity(key, &reservation_prefix())?;
             let plan = load_plan(view, &operation)?;
@@ -380,6 +383,15 @@ fn validate_receipt(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), S
     Ok(())
 }
 fn validate_counter(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+    validate_counter_with_checkpoint(view, key, bytes, &mut || Ok(()))
+}
+
+pub(super) fn validate_counter_with_checkpoint(
+    view: &ReadView,
+    key: &RowKey,
+    bytes: &[u8],
+    checkpoint: &mut dyn FnMut() -> Result<(), StoreError>,
+) -> Result<(), StoreError> {
     EffectManagementCatalog::validate_row(key, bytes)?;
     let effect = identity(key, COUNTER_PREFIX)?;
     let record_key = effect_row_key(&crate::effect_identity::render(&effect))?;
@@ -393,6 +405,7 @@ fn validate_counter(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), S
         return Err(StoreError::Corrupt);
     }
     for sequence in 1..=count {
+        checkpoint()?;
         let bytes = view
             .get(&codec::slot(&effect, sequence))?
             .ok_or(StoreError::Corrupt)?;
@@ -476,7 +489,11 @@ fn walk(
     view: &ReadView,
     prefix: &[u8],
     checkpoint: &mut dyn FnMut() -> Result<(), StoreError>,
-    mut verify: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
+    mut verify: impl FnMut(
+        &RowKey,
+        &[u8],
+        &mut dyn FnMut() -> Result<(), StoreError>,
+    ) -> Result<(), StoreError>,
 ) -> Result<(), StoreError> {
     let mut cursor = None;
     loop {
@@ -490,7 +507,7 @@ fn walk(
         )?;
         for (key, bytes) in &page.rows {
             checkpoint()?;
-            verify(key, bytes)?;
+            verify(key, bytes, checkpoint)?;
         }
         cursor = page.resume;
         checkpoint()?;

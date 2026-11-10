@@ -64,6 +64,30 @@ fn dispatcher_inventory_stops_when_original_admission_expires() {
 }
 
 #[test]
+fn management_counter_scan_observes_the_original_checkpoint() {
+    let fixture = Fixture::new(StoreLimits::default());
+    fixture.complete(false);
+    fixture.plan(
+        fixture.request("checkpoint-counter", EffectManagementAction::Redrive),
+        None,
+    );
+    let view = fixture.store().snapshot().unwrap();
+    let identity = crate::effect_identity::parse(fixture.effect()).unwrap();
+    let key = codec::row(COUNTER_PREFIX, &identity);
+    let bytes = view.get(&key).unwrap().unwrap();
+    let mut calls = 0;
+    assert_eq!(
+        super::validation::validate_counter_with_checkpoint(&view, &key, &bytes, &mut || {
+            calls += 1;
+            Err(StoreError::Unavailable)
+        }),
+        Err(StoreError::Unavailable)
+    );
+    assert_eq!(calls, 1);
+    DispatchCatalog::validate_view(&view).unwrap();
+}
+
+#[test]
 fn dispatcher_inventory_rechecks_view_after_final_checkpoint() {
     let fixture = Fixture::new(StoreLimits {
         maximum_view_age: std::time::Duration::from_secs(1),
