@@ -8,6 +8,7 @@ import shutil
 import time
 import tomllib
 
+from tools.c_application_dependencies import MAX_SOURCE_UNITS
 from tools.build_process import run_bounded
 from tools.build_observation import build_environment, file_identity
 from tools.c_guest.bindings import digest, generate
@@ -17,6 +18,46 @@ from tools.c_guest.language import DEFAULT as C_STANDARD, selected_standard
 ROOT = Path(__file__).resolve().parents[2]
 SDK = ROOT / "sdk/c-guest"
 CAPABILITIES = ("blob", "callee", "events", "http", "metrics", "random", "secrets", "service", "streaming")
+
+MAX_LINK_RESPONSE_BYTES = 1024 * 1024
+
+
+def _link_response_bytes(paths: list[Path]) -> bytes:
+    """Encode owned paths using the pinned Zig response-file tokenizer."""
+    if not 1 <= len(paths) <= MAX_SOURCE_UNITS:
+        raise ValueError("C dependency link response count exceeded")
+    parts, used = [], 0
+    for path in paths:
+        value = str(path)
+        # Zig's response iterator accepts single quotes as delimiters too;
+        # reject them rather than permitting a differently tokenized object.
+        if (not path.is_absolute() or "'" in value
+                or any(ord(char) < 32 or ord(char) == 127 for char in value)):
+            raise ValueError("invalid C dependency object response path")
+        try:
+            if len(value.encode('utf-8')) > 32768:
+                raise ValueError("invalid C dependency object response path")
+            encoded, backslashes = ['"'], 0
+            for char in value:
+                if char == '\\':
+                    backslashes += 1
+                    continue
+                if char == '"':
+                    encoded.append('\\' * (2 * backslashes + 1))
+                else:
+                    encoded.append('\\' * backslashes)
+                encoded.append(char)
+                backslashes = 0
+            encoded.append('\\' * (2 * backslashes))
+            encoded.append('"\n')
+            token = ''.join(encoded).encode('utf-8')
+        except UnicodeError as error:
+            raise ValueError("invalid C dependency object response path") from error
+        used += len(token)
+        if used > MAX_LINK_RESPONSE_BYTES:
+            raise ValueError("C dependency link response byte limit exceeded")
+        parts.append(token)
+    return b''.join(parts)
 
 
 class Compiler:
@@ -215,8 +256,8 @@ class Compiler:
             raise ValueError('c-threading-requires-transformer-and-no-static-archives')
         if embed_directories and (language_standard != 'c23' or len(embed_directories) > 64):
             raise ValueError('c-embed-directories-require-bounded-c23-selection')
-        if not sources or len(sources) > 64:
-            raise ValueError("C source count must be between 1 and 64")
+        if not sources or len(sources) > MAX_SOURCE_UNITS:
+            raise ValueError(f"C source count must be between 1 and {MAX_SOURCE_UNITS}")
         if any(path.is_symlink() or not path.is_file() or path.stat().st_size > 262144 for path in sources):
             raise ValueError("invalid or oversized C source")
         if (not isinstance(dependency_sources, tuple) or len(set(dependency_sources)) != len(dependency_sources)
@@ -322,7 +363,20 @@ class Compiler:
             command = [replacements.get(value, value) for value in command]
             self.isolation.receipt['dependencyCompilation'] = {
                 'warningPolicy': 'visible-warnings-without-werror', 'objects': rows}
-        self.run("zig", *command)
+        # Preserve the global 256-argument subprocess bound. Only the new
+        # larger captured-source path uses response files; existing inputs
+        # retain their original direct linker argv and ordering.
+        link_command, responses = command, []
+        if len(dependency_objects) > 64:
+            link_command, responses = self._dependency_link_responses(command, dependency_objects, destination)
+            if responses:
+                self.isolation.receipt['dependencyCompilation']['linkResponseFiles'] = [
+                    {'digest': identity['digest'], 'size': identity['size'], 'objectOrdinals': ordinals}
+                    for _path, identity, ordinals in responses]
+        self.run("zig", *link_command)
+        for response_path, identity, _ordinals in responses:
+            if file_identity(response_path, 'c-dependency-link-response', MAX_LINK_RESPONSE_BYTES) != identity:
+                raise ValueError('C dependency link response changed during compilation')
         if runtime_profile in standard_facilities.FETCH_PROFILES and self.commands is not None:
             from tools.rust_capsule_project import read_file
             payload = read_file(core, 64 * 1024 * 1024)
@@ -384,6 +438,48 @@ class Compiler:
                 link_inputs.append(self.sdk / 'src/trap.c')
             self.observe_compiler_edges(command, destination, link_inputs, dependency_sources=dependency_sources)
         return component, lock
+
+    def _dependency_link_responses(self, command, objects, destination):
+        """Replace consecutive owned-object runs in place, without reordering."""
+        if not 1 <= len(objects) <= MAX_SOURCE_UNITS or self.isolation is None:
+            raise ValueError('C dependency link response requires bounded owned objects')
+        indexes = {}
+        for ordinal, path in enumerate(objects):
+            if (not path.is_absolute() or path.parent != destination
+                    or path.name != f'dependency-{ordinal:04}.o' or str(path) in indexes):
+                raise ValueError('C dependency link response requires bounded owned objects')
+            indexes[str(path)] = ordinal
+        compacted, responses, seen, used = [], [], [], 0
+        index = 0
+        while index < len(command):
+            if command[index] not in indexes:
+                compacted.append(command[index])
+                index += 1
+                continue
+            end = index
+            while end < len(command) and command[end] in indexes:
+                end += 1
+            run = command[index:end]
+            ordinals = [indexes[value] for value in run]
+            seen.extend(ordinals)
+            if len(run) == 1:
+                compacted.extend(run)
+            else:
+                payload = _link_response_bytes([Path(value) for value in run])
+                used += len(payload)
+                if used > MAX_LINK_RESPONSE_BYTES:
+                    raise ValueError('C dependency link response byte limit exceeded')
+                path = destination / f'dependency-link-{len(responses):04}.rsp'
+                with path.open('xb') as output:
+                    output.write(payload)
+                identity = file_identity(path, 'c-dependency-link-response', MAX_LINK_RESPONSE_BYTES)
+                self.isolation.protect_inputs(path)
+                compacted.append('@' + str(path))
+                responses.append((path, identity, ordinals))
+            index = end
+        if sorted(seen) != list(range(len(objects))):
+            raise ValueError('C dependency link response objects changed')
+        return compacted, responses
 
     @staticmethod
     def translation_options(original, link_inputs):
