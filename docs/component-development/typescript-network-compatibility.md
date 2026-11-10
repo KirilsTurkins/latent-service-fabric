@@ -1,7 +1,7 @@
 # TypeScript networking compatibility and prerequisite boundary
 
-Dependency status reviewed on 2026-11-09; compiler-gate continuation on
-2026-11-10 for issue #745 and integration into
+Dependency status reviewed on 2026-11-09; compiler-gate and Socket event
+continuations on 2026-11-10 for issue #745 and integration into
 `feat/typescript-runtime-745`, starting at
 `83c339673b87afabfa06f3a8e818324f46c1ae6f`. The development comparison used
 `b3e296215d764d22e4c683ab32c9926072610db7`. This is a partial integration
@@ -10,7 +10,7 @@ boundary, **not production enablement or completion of #745**.
 The available standard module is the finite, activation-local TCP subset
 `lsf-node-net-tcp-v1`. There is no general Node stream implementation, public DNS
 API or Node TLS port. No new signed Component Model execution was performed for
-this diagnostic change. Older signed receipts below remain evidence for their
+these diagnostic and Socket event changes. Older signed receipts below remain evidence for their
 own exact source and reference provider only.
 
 ## Dependency status
@@ -51,6 +51,7 @@ later, not to every operation or adversarial case in a row.
 | Readiness | Internal writable wake hint through `streams.ready`; finite `connect`/`ready` Socket events. | The public `ready` event follows connect; it is not a reusable native poll handle. Readiness does not promise bytes, successful transfer or retirement. No libuv, OS descriptor or cross-activation polling API. |
 | `end`, send half-close, `finish` | TCP send shutdown after queued writes. Accepted terminal intent can join actual peer EOF/borrow release/close before root completion. | End initiation is not consuming close. Receive-only shutdown, host-TLS send half-close, listeners and servers are not silently emulated. |
 | `destroy`, errors, `close` | Cancel pending originals, join their acknowledgements and callback tails, consume connection close. | Logical `destroyed`/`closed` flags are not physical-retirement evidence. Failed close or acknowledgement cannot certify an empty registry. Open sockets without accepted terminal intent fail root completion. |
+| `on`, `once`, `off`, `removeListener`, `removeAllListeners`, `emit` | Finite event facade; one-shot registrations are consumed by identity before invocation. | Duplicate functions remain distinct registrations. Nested emission cannot replay a consumed one-shot row; removals do not cancel an in-progress snapshot or erase a replacement registration. Current host controls compare the ordinary Node Socket facade; not full `EventEmitter` or signed execution qualification. |
 | `setTimeout` / `timeout` | Application idle notification on the selected standard activation timer runtime. | Does not itself destroy the socket, extend an original provider/activation deadline, or refund a timer owner. Timeout callback races have model controls here; actual native clock ownership is a separate gate. |
 | `dns`, `node:dns`, `dns/promises`, `node:dns/promises` | Explicit compiler refusal. | WIT has no public lookup/resolve/reverse/resolver operation or standalone DNS authority. A dummy connect must not be used to implement DNS. |
 | `tls` / `node:tls`, `TLSSocket`, `tls.connect`, STARTTLS | Explicit compiler refusal. | No qualified TypeScript guest TLS/crypto/entropy/trust/credential lifecycle mapping. The `tls-failed` WIT error tag is not a TLS implementation. |
@@ -156,8 +157,46 @@ pinned 24.19.0 qualification toolchain: five boundary cases plus the unchanged
 30-case socket suite ran with 33 passes and two existing frontend skips. The
 2026-11-10 continuation adds two preflight/result-gate controls: 37 tests ran
 with 35 passes and those same two skips. No compiler or signed pass is inferred.
-The supported `node:net` module emission remains unchanged; its resolver source
-identity still requires a fresh normal receipt.
+Those first two compiler-only slices left supported `node:net` emission
+unchanged. The subsequent Socket event repair below changes the emitted backend;
+both backend and resolver identities now require a fresh normal receipt.
+
+### Socket one-shot event repair (2026-11-10)
+
+The parent `99d122fbce0b2dc55519686923558f54c9db7247` consumed a one-shot
+listener through public `removeListener(name, function)`. That operation removes
+the **last** matching registration, so it could erase a persistent duplicate and
+leave the one-shot registration live. Its emission snapshot could also invoke a
+one-shot row already consumed by a nested emission. Removing all listeners and
+re-registering the same function during emission exposed a third manifestation:
+the old snapshot removed the replacement. Callback exceptions did not repair the
+incorrect registry state.
+
+The repair consumes the exact original registration before invoking its callback
+and skips a row already consumed by nested emission. It reuses the existing
+`once` field (persistent/pending/consumed); it adds no listener field, queue,
+transport owner or limit. Public `removeListener`/`off` still removes the last
+matching registration. Existing in-flight snapshots, callback receiver and
+arguments, original thrown values and the transport tail `finally` are preserved.
+This follows the [Node event contract](https://nodejs.org/api/events.html#emitteronceeventname-listener),
+not a broader claim of `EventEmitter` support.
+
+All four new regression tests failed with the exact original backend and passed
+with the repair. The direct comparisons use real Node 22.16.0 `Socket` objects
+without connecting them: duplicate registration orders, nested emissions,
+removal/replacement during a snapshot, public removal order, and original thrown
+values including `undefined`, `null`, false and zero. A separate control uses the
+actual LSF facade and transport with the existing provider/ACK doubles: a caught
+synchronous callback fault leaves the connected model usable and its existing
+close path completes in two fresh instances. That control is not a native socket,
+physical-retirement or cross-tenant signed observation.
+
+The combined boundary and unchanged socket suites ran 41 tests: 39 passed and the
+two existing pinned-frontend controls skipped. The four new controls are selected
+automatically by the existing no-skip compiler gate; no workflow, fixture
+inventory or exact test-count assertion changed. The pinned Node 24.19.0 gate
+and fresh signed TCP execution remain pending. Historical signed receipts do not
+qualify the changed backend.
 
 ### Fail-closed compiler gate
 

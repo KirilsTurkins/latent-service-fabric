@@ -90,7 +90,16 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       if (held) transport.enterTail(this.#token);
       try {
         for (const row of rows.slice()) {
-          if (row.once) this.removeListener(name, row.listener);
+          // false = persistent, true = pending once, null = consumed once.
+          // Nested emit can consume a row still held by this snapshot. Remove
+          // this registration, not the last registration of the same function;
+          // a replacement array/listener installed during emit must survive.
+          if (row.once === null) continue;
+          if (row.once) {
+            row.once = null;
+            const index = rows.indexOf(row);
+            if (index >= 0) rows.splice(index, 1);
+          }
           Reflect.apply(row.listener, this, args);
         }
         return true;

@@ -202,6 +202,138 @@ for(const [streamCode,code] of Object.entries({
 }
 """)
 
+    def test_once_registration_identity_and_nested_emit_match_node_socket(self):
+        self.javascript(r"""
+import {Socket as ReferenceSocket} from 'node:net';
+// No connect/DNS/OS handles: compare only the ordinary Socket event facade.
+function observe(Socket, event, scenario) {
+ const socket=new Socket(), trace=[];
+ function listener(value) { assert.equal(this,socket);trace.push(value); }
+ if(scenario==='duplicate-once-first') {
+  socket.once(event,listener).on(event,listener);
+  for(const value of ['first','second','third'])socket.emit(event,value);
+ } else if(scenario==='duplicate-once-last') {
+  socket.on(event,listener).once(event,listener);
+  for(const value of ['first','second','third'])socket.emit(event,value);
+ } else if(scenario==='nested-earlier-listener') {
+  let nested=false;
+  socket.on(event,function(value) {
+   assert.equal(this,socket);trace.push('persistent:'+value);
+   if(!nested) { nested=true;socket.emit(event,'nested');nested=false; }
+  });
+  socket.once(event,listener);socket.emit(event,'outer');
+ } else if(scenario==='nested-same-function') {
+  let nested=false;
+  function shared(value) {
+   assert.equal(this,socket);trace.push(value);
+   if(!nested) { nested=true;socket.emit(event,'nested');nested=false; }
+  }
+  socket.once(event,shared).on(event,shared);socket.emit(event,'outer');
+ } else if(scenario==='duplicate-once-registrations') {
+  socket.once(event,listener).once(event,listener);
+  socket.emit(event,'first');socket.emit(event,'second');
+ } else throw new Error('unknown event scenario');
+ return {trace,left:socket.listenerCount(event)};
+}
+for(const event of ['ready','timeout','drain','connect']) {
+ for(const scenario of ['duplicate-once-first','duplicate-once-last',
+     'nested-earlier-listener','nested-same-function','duplicate-once-registrations']) {
+  const f=fixture(), expected=observe(ReferenceSocket,event,scenario);
+  assert.deepEqual(observe(f.net.Socket,event,scenario),expected,event+':'+scenario);
+  assert.deepEqual(f.calls,[]);f.transport.assertEmpty();
+ }
+}
+""")
+
+    def test_listener_snapshot_removal_and_replacement_match_node_socket(self):
+        self.javascript(r"""
+import {Socket as ReferenceSocket} from 'node:net';
+function observe(Socket, scenario) {
+ const socket=new Socket(), trace=[];
+ function later(value) { assert.equal(this,socket);trace.push('later:'+value); }
+ socket.on('ready',function(value) {
+  trace.push('first:'+value);
+  if(value!=='first')return;
+  if(scenario==='replace-all')socket.removeAllListeners('ready');
+  else socket.removeListener('ready',later);
+  if(scenario!=='remove-only')socket.on('ready',later);
+ });
+ socket.once('ready',later);
+ socket.emit('ready','first');socket.emit('ready','second');
+ return {trace,left:socket.listenerCount('ready')};
+}
+for(const scenario of ['replace-all','replace-one','remove-only']) {
+ const f=fixture();assert.deepEqual(observe(f.net.Socket,scenario),observe(ReferenceSocket,scenario),scenario);
+ assert.deepEqual(f.calls,[]);f.transport.assertEmpty();
+}
+// Public removeListener/off still removes the newest registration of a
+// function, unlike the private identity-based consumption of one once row.
+for(const order of [['on','once'],['once','on']])for(const method of ['off','removeListener']) {
+ function removed(Socket) {
+  const socket=new Socket();let calls=0;const listener=()=>++calls;
+  for(const add of order)socket[add]('ready',listener);
+  assert.equal(socket[method]('ready',listener),socket);
+  socket.emit('ready');socket.emit('ready');
+  return {calls,left:socket.listenerCount('ready')};
+ }
+ const f=fixture();assert.deepEqual(removed(f.net.Socket),removed(ReferenceSocket));f.transport.assertEmpty();
+}
+""")
+
+    def test_once_callback_fault_preserves_original_value_and_other_registrations(self):
+        self.javascript(r"""
+import {Socket as ReferenceSocket} from 'node:net';
+for(const fault of [undefined,null,false,0,'',Object.freeze({original:true}),new Error('original')]) {
+ function observed(Socket) {
+  const socket=new Socket();let calls=0,caught=0;
+  function listener(){assert.equal(this,socket);++calls;throw fault;}
+  socket.once('ready',listener).on('ready',listener);
+  for(let turn=0;turn<3;++turn) {
+   let threw=false;
+   try { socket.emit('ready'); }
+   catch(value) { threw=true;++caught;assert.equal(value,fault); }
+   assert.equal(threw,true,'a listener exception must escape unchanged');
+  }
+  return {calls,caught,left:socket.listenerCount('ready')};
+ }
+ const f=fixture();assert.deepEqual(observed(f.net.Socket),observed(ReferenceSocket));f.transport.assertEmpty();
+}
+// A previously consumed one-shot callback stays consumed even if a later
+// nested callback throws and the outer emission is resumed by its caller.
+function reentry(Socket) {
+ const socket=new Socket(),fault={},trace=[];let nested=false;
+ socket.on('ready',()=>{if(!nested){nested=true;try{socket.emit('ready')}catch(value){assert.equal(value,fault)}nested=false;}});
+ socket.once('ready',()=>trace.push('once'));
+ socket.on('ready',()=>{if(nested)throw fault;trace.push('last')});
+ socket.emit('ready');return trace;
+}
+const f=fixture();assert.deepEqual(reentry(f.net.Socket),reentry(ReferenceSocket));f.transport.assertEmpty();
+""")
+
+    def test_caught_once_fault_keeps_existing_socket_tail_and_fresh_state(self):
+        self.javascript(r"""
+// Actual LSF facade/transport source with the owning suite's ACK doubles.
+// This is not native socket or physical-retirement evidence.
+for(let activation=0;activation<2;++activation) {
+ const f=fixture(),connected=deferred(),closed=deferred();
+ const socket=f.net.connect(32123,'localhost');
+ socket.once('connect',connected.resolve).once('close',closed.resolve).on('error',closed.reject);
+ await connected.promise;await turn();
+ const fault=Object.freeze({activation});let calls=0;
+ function listener(){assert.equal(this,socket);++calls;throw fault;}
+ socket.once('timeout',listener).on('timeout',listener);
+ for(let attempt=0;attempt<2;++attempt) {
+  let caught=false;
+  try { socket.emit('timeout'); } catch(value) { caught=true;assert.equal(value,fault); }
+  assert(caught);assert.equal(socket.listenerCount('timeout'),1);
+ }
+ assert.equal(calls,2);assert.equal(socket.destroyed,false);
+ assert.throws(f.transport.assertEmpty,/unclosed/);
+ socket.removeListener('timeout',listener);socket.destroy();await closed.promise;
+ assert.deepEqual(f.calls,['connect','close']);f.transport.assertEmpty();
+}
+""")
+
     def test_idle_timeout_notifies_without_close_and_late_callbacks_are_inert(self):
         self.javascript(r"""
 // Deterministic application-idle-timer model. The actual activation/root clock
