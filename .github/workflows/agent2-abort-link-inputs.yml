@@ -1,0 +1,48 @@
+name: Agent 2 pinned AbortSignal link inputs
+
+on:
+  push:
+    branches: [fix/1852-agent2-abort-engine-audit]
+    paths: [.github/workflows/agent2-abort-link-inputs.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent2-abort-link-inputs-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Acquire and verify the complete pinned upstream link archive
+        env:
+          INPUTS: ${{ runner.temp }}/agent2-abort-link-inputs
+        run: |
+          set -euo pipefail
+          mkdir -p "$INPUTS"
+          curl --fail --location --proto '=https' --tlsv1.2 --max-time 600 \
+            https://github.com/bytecodealliance/StarlingMonkey/releases/download/libspidermonkey_FIREFOX_147_0_4_RELEASE_STARLING/spidermonkey-static-release.tar.gz \
+            --output "$INPUTS/spidermonkey-static-release.tar.gz"
+          test "$(stat -c '%s' "$INPUTS/spidermonkey-static-release.tar.gz")" = 184568633
+          printf '%s  %s\n' c57dc83d93dc04198882b44fea49cd3cb01e0b267bf99fae3b058cb158da684b "$INPUTS/spidermonkey-static-release.tar.gz" | sha256sum --check
+          git rev-parse HEAD > "$INPUTS/source-head.txt"
+          git show -s --format=raw HEAD > "$INPUTS/source-commit.txt"
+          git bundle create "$INPUTS/source.bundle" HEAD
+          git bundle verify "$INPUTS/source.bundle"
+          printf '%s\n' 'Pinned upstream support inputs only. This artifact is not a patched-engine, GC, signed-runtime or Store qualification result.' > "$INPUTS/SCOPE.txt"
+          (cd "$INPUTS" && sha256sum spidermonkey-static-release.tar.gz source.bundle source-head.txt source-commit.txt SCOPE.txt > SHA256SUMS)
+      - name: Retain verified inputs without promoting qualification
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: agent2-pinned-abort-link-inputs-${{ github.sha }}
+          path: ${{ runner.temp }}/agent2-abort-link-inputs/
+          if-no-files-found: error
+          retention-days: 2
