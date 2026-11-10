@@ -187,13 +187,15 @@ class ScheduledReadyShutdownControl(unittest.TestCase):
     def receipt(stage):
         if stage in ('scheduled-ready-shutdown-jdk', 'scheduled-ready-shutdown-source'):
             return 'SCHEDULED_READY_SHUTDOWN PASS disabled;changed;elapsed;default;periodic;owners'
-        if stage == 'scheduled-ready-clock-compile': return ''
+        if stage in ('scheduled-ready-clock-compile', 'scheduled-ready-manual-clock-compile'): return ''
         if stage == 'scheduled-ready-clock-boundary':
             return ('boundary=49:cancelled=true:held=1:1:1:active=none:final=0:0:0\n'
                     'boundary=50:cancelled=false:held=1:2:2:active=1:1:1:final=0:0:0\n'
                     'boundary=51:cancelled=false:held=1:2:2:active=1:1:1:final=0:0:0')
         if stage == 'scheduled-ready-clock-failure':
             return 'clock-failure=propagated:held=1:1:1:laterCancelled=true:final=0:0:0'
+        if stage == 'scheduled-ready-clock-post': return 'normal-post:clock-unread;all-settled-once'
+        if stage == 'scheduled-ready-clock-manual': return 'manual-post:result-held-until-caller-return;all-settled-once'
         raise AssertionError(stage)
 
     @staticmethod
@@ -215,20 +217,23 @@ class ScheduledReadyShutdownControl(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             report = self.run_control(Path(temporary), run)
         self.assertEqual(calls, ['scheduled-ready-shutdown-jdk', 'scheduled-ready-shutdown-source',
-            'scheduled-ready-clock-compile', 'scheduled-ready-clock-boundary', 'scheduled-ready-clock-failure'])
+            'scheduled-ready-clock-compile', 'scheduled-ready-clock-boundary', 'scheduled-ready-clock-failure',
+            'scheduled-ready-clock-post', 'scheduled-ready-manual-clock-compile', 'scheduled-ready-clock-manual'])
         self.assertEqual(report, {'status': 'JDK-and-SDK-source-controls-passed', 'clockFailure': 'synthetic-host-only',
+            'postDequeue': 'normal-and-manual-source-ledger-passed',
             'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False})
 
     def test_missing_and_wrong_receipts_fail_closed(self):
         for stage in ('scheduled-ready-shutdown-jdk', 'scheduled-ready-shutdown-source',
-                      'scheduled-ready-clock-boundary', 'scheduled-ready-clock-failure'):
+                      'scheduled-ready-clock-boundary', 'scheduled-ready-clock-failure',
+                      'scheduled-ready-clock-post', 'scheduled-ready-clock-manual'):
             for bad in ('', 'SKIPPED'):
                 with self.subTest(stage=stage, bad=bad), tempfile.TemporaryDirectory() as temporary:
                     calls = []
                     def run(actual, *args):
                         calls.append(actual)
                         return bad if actual == stage else self.receipt(actual)
-                    with self.assertRaisesRegex(ValueError, 'Java scheduled ready .* control did not complete'):
+                    with self.assertRaisesRegex(ValueError, 'Java scheduled (ready|post-dequeue|manual post-dequeue) .*control did not complete'):
                         self.run_control(Path(temporary), run)
                     self.assertEqual(calls[-1], stage)
 
@@ -247,3 +252,20 @@ class ScheduledReadyShutdownControl(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'clock source is ambiguous'):
                 self.run_control(Path(temporary), run)
         self.assertEqual(calls, ['scheduled-ready-shutdown-jdk', 'scheduled-ready-shutdown-source'])
+
+    def test_changed_dequeue_hook_is_rejected_before_manual_compile(self):
+        original = subject.read_file
+        def read(path, *args):
+            raw = original(path, *args)
+            if path.name == 'ScheduledThreadPoolExecutor.java':
+                return raw.replace(b'queue.remove(index); running++;', b'changed dequeue')
+            return raw
+        calls = []
+        def run(stage, *args):
+            calls.append(stage)
+            return self.receipt(stage)
+        with tempfile.TemporaryDirectory() as temporary, patch.object(subject, 'read_file', side_effect=read):
+            with self.assertRaisesRegex(ValueError, 'dequeue source is ambiguous'):
+                self.run_control(Path(temporary), run)
+        self.assertEqual(calls[-1], 'scheduled-ready-clock-post')
+        self.assertNotIn('scheduled-ready-manual-clock-compile', calls)

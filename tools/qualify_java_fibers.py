@@ -888,7 +888,28 @@ def scheduled_ready_shutdown_control(compiler: Compiler, output: Path, reference
                           'ScheduledReadyClockControl', 'failure').strip()
     if result != 'clock-failure=propagated:held=1:1:1:laterCancelled=true:final=0:0:0':
         raise ValueError('Java scheduled ready clock failure control did not complete')
+    result = compiler.run('scheduled-ready-clock-post', 'java', '-Xmx256m', '-cp', clock,
+                          'ScheduledReadyClockControl', 'post').strip()
+    if result != 'normal-post:clock-unread;all-settled-once':
+        raise ValueError('Java scheduled post-dequeue control did not complete')
+    # Arm the synthetic clock after dequeue to model a concurrent manual run.
+    # This private splice is never included in a component.
+    needle = 'queue.remove(index); running++;'
+    if text.count(needle) != 1: raise ValueError('Java scheduled dequeue source is ambiguous')
+    manual = output / 'scheduled-ready-manual-clock'
+    manual.mkdir()
+    manual_port = manual / 'ScheduledThreadPoolExecutor.java'
+    manual_port.write_text(text.replace(needle, needle + ' ScheduledReadyFakeClock.armAfterDequeue();'), encoding='utf-8')
+    compiler.run('scheduled-ready-manual-clock-compile', 'javac', '-proc:none', '--release', '25', '-d', manual,
+                 *[path for path in ports if path != timer], manual_port,
+                 private / 'ScheduledReadyFakeClock.java', private / 'ScheduledReadyClockControl.java',
+                 private / 'dev/latent/generated/Bindings.java', private / 'dev/latent/guest/runtime/Activation.java')
+    result = compiler.run('scheduled-ready-clock-manual', 'java', '-Xmx256m', '-cp', manual,
+                          'ScheduledReadyClockControl', 'manual').strip()
+    if result != 'manual-post:result-held-until-caller-return;all-settled-once':
+        raise ValueError('Java scheduled manual post-dequeue control did not complete')
     return {'status': 'JDK-and-SDK-source-controls-passed', 'clockFailure': 'synthetic-host-only',
+            'postDequeue': 'normal-and-manual-source-ledger-passed',
             'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 

@@ -461,7 +461,9 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
                         } else {
                             // A competing invocation may be running the same
                             // periodic task. Retire only this consumed copy.
-                            if (!allowed(task) && !task.isDone()) task.cancel(false);
+                            // The occurrence was already due when dequeued.
+                            // Do not reread the clock before releasing its owners.
+                            if (!mayInvoke(task) && !task.isDone()) task.cancel(false);
                             if (task.isDone()) discardCompleted(task);
                             entry.release();
                         }
