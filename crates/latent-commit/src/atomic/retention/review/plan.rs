@@ -159,7 +159,9 @@ pub(super) fn progress(
         // observation. Its exact bytes are fenced; subsequent steps consume the
         // namespace's already reserved fixed-size clock slot.
         let key = MaintenanceProgress::key();
-        let bytes = view.get(&key)?.ok_or(AtomicError::RecoveryRequired)?;
+        let bytes = view
+            .get_bounded(&key, super::super::clock::PROGRESS_BYTES)?
+            .ok_or(AtomicError::RecoveryRequired)?;
         let mut anchor = MaintenanceProgress::decode(&bytes)?;
         // Only clock continuity transfers to this namespace. Global sweep
         // counters describe other work and must not become namespace counts.

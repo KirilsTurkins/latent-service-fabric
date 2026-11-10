@@ -5,7 +5,7 @@ use crate::atomic::{
     AtomicError, MaintenanceClock, MaintenanceProgress, ResultMaintenanceOwner,
 };
 use latent_core::{transaction_contract::CommandKey, StateNamespaceId, TenantId};
-use latent_state::embedded::EmbeddedStore;
+use latent_state::embedded::{EmbeddedStore, ExpectedRow};
 
 impl ResultMaintenanceOwner {
     /// Install an explicitly authorized clock observation in the namespace's
@@ -45,7 +45,33 @@ impl ResultMaintenanceOwner {
             clock.time.check(previous.unix_millis)?;
             previous.generation.checked_add(1).ok_or(AtomicError::Limit)
         })?;
-        let progress = MaintenanceProgress::reanchor(clock, generation, usage.review_clock.take())?;
+        let previous = usage.review_clock.take();
+        let progress = if previous.is_some() {
+            MaintenanceProgress::reanchor(clock, generation, previous)?
+        } else {
+            // A first namespace anchor must not bypass an already installed
+            // global same-boot reference. Fence even its absence so a global
+            // anchor cannot appear between this observation and acceptance.
+            let global_key = MaintenanceProgress::key();
+            let global_bytes =
+                view.get_bounded(&global_key, super::super::clock::PROGRESS_BYTES)?;
+            let global = global_bytes
+                .as_deref()
+                .map(MaintenanceProgress::decode)
+                .transpose()?;
+            if let Some(global) = &global {
+                clock.time.check(global.unix_millis)?;
+            }
+            plan.expect(ExpectedRow {
+                key: global_key,
+                value: global_bytes,
+            })?;
+            let mut progress = MaintenanceProgress::reanchor(clock, generation, global)?;
+            progress.visited = 0;
+            progress.retired = 0;
+            progress.reclaimed_bytes = 0;
+            progress
+        };
         usage.review_clock = Some(progress.clone());
         plan.replace(usage_key, old, Some(usage.encode()?))?;
         drop(view);

@@ -5,6 +5,7 @@ use super::super::{
 use latent_state::embedded::{Family, RowKey};
 
 pub(in crate::atomic) const PROGRESS_KEY: &[u8] = b"result-retention-v1\0";
+pub(in crate::atomic) const PROGRESS_BYTES: usize = 146;
 
 /// Host-derived clock observation. Guest/request fields cannot supply this
 /// proof. A new boot or restored history needs an explicit authorized anchor;
@@ -132,10 +133,10 @@ impl MaintenanceProgress {
                 .to_le_bytes(),
         );
         out.0.extend_from_slice(cursor);
-        out.finish(146)
+        out.finish(PROGRESS_BYTES)
     }
     pub(in crate::atomic) fn decode(bytes: &[u8]) -> Result<Self, AtomicError> {
-        let mut input = Decoder::new(bytes, b"LMP\0\x02", 146)?;
+        let mut input = Decoder::new(bytes, b"LMP\0\x02", PROGRESS_BYTES)?;
         let boot = input.identity()?.bytes();
         let generation = input.number()?;
         let unix_millis = input.number()?;

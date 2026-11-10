@@ -1,6 +1,82 @@
 use super::*;
 
 #[test]
+fn oversized_global_clock_is_refused_by_all_review_entry_points() {
+    let (_dir, store, effects) = setup();
+    let record = completed(&store, &effects, "oversized-global-clock");
+    let owner = ResultMaintenanceOwner::default();
+    store
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: MaintenanceProgress::key(),
+                value: Some(vec![0; 147]),
+            }],
+        })
+        .unwrap();
+    assert_eq!(
+        owner.anchor(&store, None, observation(2100, 0), maintenance),
+        Err(AtomicError::Corrupt)
+    );
+    assert_eq!(
+        owner.step(&store, observation(2100, 0), maintenance),
+        Err(AtomicError::Corrupt)
+    );
+    assert_eq!(
+        owner.anchor_review(
+            &store,
+            &record.key,
+            None,
+            observation(2100, 0),
+            clock_permission,
+        ),
+        Err(AtomicError::Corrupt)
+    );
+    assert_eq!(
+        owner.terminalize(&store, &request(&record), observation(2200, 100), authorize),
+        Err(AtomicError::Corrupt)
+    );
+}
+
+#[test]
+fn first_namespace_anchor_cannot_reset_global_same_boot_drift() {
+    let (_dir, store, effects) = setup();
+    let record = completed(&store, &effects, "review-global-clock");
+    let owner = ResultMaintenanceOwner::default();
+    anchor(&owner, &store);
+    assert_eq!(
+        owner.anchor_review(
+            &store,
+            &record.key,
+            None,
+            observation(4101, 1000),
+            clock_permission,
+        ),
+        Err(AtomicError::RecoveryRequired)
+    );
+    let accepted = owner
+        .anchor_review(
+            &store,
+            &record.key,
+            None,
+            observation(3100, 1000),
+            clock_permission,
+        )
+        .unwrap();
+    assert_eq!(
+        (
+            accepted.anchor_unix_millis,
+            accepted.anchor_monotonic_millis
+        ),
+        (2100, 0)
+    );
+    assert_eq!(
+        (accepted.visited, accepted.retired, accepted.reclaimed_bytes),
+        (0, 0, 0)
+    );
+}
+
+#[test]
 fn first_namespace_review_does_not_inherit_global_maintenance_counts() {
     let (_dir, store, effects) = setup();
     let record = completed(&store, &effects, "review-global-counters");
