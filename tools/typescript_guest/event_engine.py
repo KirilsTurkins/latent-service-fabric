@@ -6,6 +6,7 @@ from tools.typescript_guest.activation_engine import identity, replace_once, STA
 FETCH_SOURCE_SHA256 = '0992832f377bd45986e79447f463f1de2ff609f32d53723e0ef04de2c7178cf2'
 
 PREIMAGES = {
+    'StarlingMonkey/builtins/web/dom-exception.cpp': '7d51a56e77de10c80d90611056695a517af312120543e60c3d230cc1ae6632f7',
     'StarlingMonkey/builtins/web/abort/weak-index-set.h': '0a919f6ee4c6625708370d7778d054ab809b2d844a862f563090ce4697041967',
     'StarlingMonkey/builtins/web/event/event-target.cpp': '0b22572ccb4de19fb1476073d0586d1afe03c856454a466d0d2c6607ace20ffd',
     'StarlingMonkey/builtins/web/event/event-target.h': 'ca9f9ed1fc9facad0308be0e8e86daada19d8b1715c727f90da8db4e60141e63',
@@ -75,6 +76,14 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         b'class EventTarget : public BuiltinImpl<EventTarget, TraceableClassPolicy> {\n'
         b'  friend struct Terminator; // removes the exact admitted record without JS conversion\n',
         'abort-terminator-private-list-access')
+    source = replace_once(source,
+        b'class EventTarget : public BuiltinImpl<EventTarget, TraceableClassPolicy> {\n',
+        b'// Listener leases mutate the activation-local retirement list.\n'
+        b'struct EventTargetClassPolicy : TraceableClassPolicy {\n'
+        b'  static constexpr uint32_t class_flags() { return JSCLASS_FOREGROUND_FINALIZE; }\n'
+        b'};\n\n'
+        b'class EventTarget : public BuiltinImpl<EventTarget, EventTargetClassPolicy> {\n',
+        'listener-container-and-lease-finalization-on-foreground')
     source = replace_once(source,
         b'  static bool add_listener(JSContext *cx, HandleObject self, HandleValue type, HandleValue callback,\n',
         b'  // Allocation-free marking predicate; never calls JavaScript.\n'
@@ -398,6 +407,67 @@ bool EventTarget::has_listener(JSObject *self, const char *type) {
 '''
     result[name] = source
 
+    name = 'StarlingMonkey/builtins/web/dom-exception.cpp'
+    source = original[name]
+    start = source.index(b'JSObject *DOMException::create(')
+    end = source.index(b'bool DOMException::init_class(', start)
+    source = replace_once(source, source[start:end],
+        b'''JSObject *DOMException::create(JSContext *cx, std::string_view message, std::string_view name) {
+  if (JS_IsExceptionPending(cx)) return nullptr;
+  JS::RootedString message_string(cx, JS_NewStringCopyN(cx, message.data(), message.size()));
+  if (!message_string || JS_IsExceptionPending(cx)) return nullptr;
+  JS::RootedString name_string(cx, JS_NewStringCopyN(cx, name.data(), name.size()));
+  if (!name_string || JS_IsExceptionPending(cx)) return nullptr;
+  JS::RootedValueArray<2> args(cx);
+  args[0].setString(message_string);
+  args[1].setString(name_string);
+  JS::RootedObject ctor_object(cx, JS_GetConstructor(cx, proto_obj));
+  if (!ctor_object || JS_IsExceptionPending(cx)) return nullptr;
+  JS::RootedValue ctor(cx, JS::ObjectValue(*ctor_object));
+  JS::RootedObject instance(cx);
+  if (!JS::Construct(cx, ctor, args, &instance) || JS_IsExceptionPending(cx)) return nullptr;
+  if (!instance || !is_instance(instance)) {
+    api::throw_error(cx, api::Errors::TypeError, "DOMException", "constructor",
+                     "return a DOMException");
+    return nullptr;
+  }
+  // Preserve the pinned observable constructor lookup/reentry. Validate the
+  // native class before writing slots, then neither allocate nor invoke script.
+  JS::SetReservedSlot(instance, std::to_underlying(Slots::Message), args[0]);
+  JS::SetReservedSlot(instance, std::to_underlying(Slots::Name), args[1]);
+  return instance;
+}
+
+bool DOMException::raise(JSContext *cx, std::string_view message, std::string_view name) {
+  if (JS_IsExceptionPending(cx)) return false;
+  JS::RootedObject error(cx, create(cx, message, name));
+  if (!error || JS_IsExceptionPending(cx)) return false;
+  JS::RootedValue value(cx, JS::ObjectValue(*error));
+  JS_SetPendingException(cx, value);
+  return false;
+}
+
+// constructor(optional DOMString message = "", optional DOMString name = "Error");
+bool DOMException::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
+  if (JS_IsExceptionPending(cx)) return false;
+  CTOR_HEADER("DOMException", 0);
+  JS::RootedObject instance(cx, JS_NewObjectForConstructor(cx, &class_, args));
+  if (!instance || JS_IsExceptionPending(cx)) return false;
+  JS::RootedString message(cx, args.hasDefined(0) ? JS::ToString(cx, args.get(0))
+                                               : JS_GetEmptyString(cx));
+  if (!message || JS_IsExceptionPending(cx)) return false;
+  JS::SetReservedSlot(instance, std::to_underlying(Slots::Message), JS::StringValue(message));
+  JS::RootedString name(cx, args.hasDefined(1) ? JS::ToString(cx, args.get(1))
+                                            : JS_NewStringCopyZ(cx, "Error"));
+  if (!name || JS_IsExceptionPending(cx)) return false;
+  JS::SetReservedSlot(instance, std::to_underlying(Slots::Name), JS::StringValue(name));
+  args.rval().setObject(*instance);
+  return true;
+}
+
+''', 'guard-native-DOMException-factory-raise-and-default-name')
+    result[name] = source
+
     # The pinned carrier has two more AbortAlgorithm subclasses in fetch.
     # Every derived allocation transfers an admitted lease into the base;
     # adding an uncharged default constructor would hide missing ownership.
@@ -558,6 +628,8 @@ bool EventTarget::has_listener(JSObject *self, const char *type) {
         'listenerErrorReportFailure':'preserved-and-fences-later-callbacks',
         'functionListenerReceiver':'event-current-target',
         'hostImportsDuringGC':False,
+        'eventFinalizationOwner':'foreground-native-lease-retirement',
+        'DOMExceptionNativeFactory':'checked-rooted-native-class-and-preserved-failure',
         'abortWeakEdges':'runtime-WeakCache-sweep-not-object-marking-hook',
         'abortDependentLiveness':'reachable-source-retains-observed-live-signals-and-pending-algorithm-custody',
         'abortSourceLiveness':'weak-no-reverse-strong-retention',
