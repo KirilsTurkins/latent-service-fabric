@@ -11,7 +11,9 @@ pub(super) fn open(
     path: &Path,
     namespace: &str,
     limits: LocalBlobLimits,
+    checkpoint: &dyn Fn() -> Result<()>,
 ) -> Result<Arc<LocalBlobStore>> {
+    checkpoint()?;
     let root = Directory::root(path)?;
     let lock = root.open_file("LOCK", true, !root.present("LOCK")?, 0)?;
     lock.try_lock().map_err(|_| LocalBlobError::Busy)?;
@@ -64,15 +66,16 @@ pub(super) fn open(
         durable,
         durable_binding: None,
     });
-    let state = recover_inventory(&inner)?;
+    let state = recover_inventory(&inner, checkpoint)?;
     // Re-establish the directory durability boundary before admitting recovered
     // references, including a rename that may have outlived a lost response.
     inner.objects.sync()?;
     inner.staging.sync()?;
+    checkpoint()?;
     *inner.state()? = state;
     Ok(Arc::new(LocalBlobStore { inner }))
 }
-fn recover_inventory(inner: &Inner) -> Result<State> {
+fn recover_inventory(inner: &Inner, checkpoint: &dyn Fn() -> Result<()>) -> Result<State> {
     let limits = inner.limits;
     let mut state = State {
         durable_mode: inner.durable.is_some(),
@@ -83,8 +86,11 @@ fn recover_inventory(inner: &Inner) -> Result<State> {
         .min((limits.maximum_metadata_bytes - OWNER_BYTES) / OBJECT_BYTES);
     // Refuse an oversized directory before hashing any of its objects. The
     // second walk rechecks the same cap without keeping all names in memory.
-    inner.objects.visit_names(object_capacity, |_| Ok(()))?;
+    inner
+        .objects
+        .visit_names(object_capacity, |_| checkpoint())?;
     inner.objects.visit_names(object_capacity, |key| {
+        checkpoint()?;
         inner.room(&state, OBJECT_BYTES)?;
         if !model::hex(key, 64) {
             return Err(LocalBlobError::Corrupt);
@@ -110,7 +116,7 @@ fn recover_inventory(inner: &Inner) -> Result<State> {
             let source: StageRecord = parse(&directory, "STAGE.json")?;
             validate_stage(&source, &reference, limits.maximum_object_bytes)?;
             state.next = state.next.max(source.id);
-            let (_, identity) = read::verify(&directory, &reference, &|| Ok(()))?;
+            let (_, identity) = read::verify(&directory, &reference, checkpoint)?;
             state.referenced += 1;
             Object {
                 bytes: reference.size,
@@ -133,8 +139,11 @@ fn recover_inventory(inner: &Inner) -> Result<State> {
     let stage_capacity = limits
         .maximum_stages
         .min((limits.maximum_metadata_bytes - inner.metadata(&state)?) / STAGE_BYTES);
-    inner.staging.visit_names(stage_capacity, |_| Ok(()))?;
+    inner
+        .staging
+        .visit_names(stage_capacity, |_| checkpoint())?;
     inner.staging.visit_names(stage_capacity, |name| {
+        checkpoint()?;
         inner.room(&state, STAGE_BYTES)?;
         if !model::hex(name, 16) {
             return Err(LocalBlobError::Corrupt);
@@ -169,6 +178,7 @@ fn recover_inventory(inner: &Inner) -> Result<State> {
         );
         Ok(())
     })?;
+    checkpoint()?;
     Ok(state)
 }
 pub(super) fn inventory(directory: &Directory, object: bool, maximum: u64) -> Result<Vec<String>> {

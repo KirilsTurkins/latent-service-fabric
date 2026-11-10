@@ -31,6 +31,48 @@ fn directory_walk_bounds_callbacks_and_propagates_failure() {
 }
 
 #[test]
+fn interrupted_recovery_preserves_the_original_payload_for_a_fresh_open() {
+    let parent = temporary_root();
+    let root = parent.path().join("root");
+    let owner = store(&root);
+    let reference = put(&owner, b"data");
+    drop(owner);
+
+    let calls = std::cell::Cell::new(0);
+    let checkpoint = || {
+        calls.set(calls.get() + 1);
+        if calls.get() == 4 {
+            Err(LocalBlobError::DeadlineExceeded)
+        } else {
+            Ok(())
+        }
+    };
+    assert!(matches!(
+        LocalBlobStore::open_with_checkpoint(&root, "private", limits(), &checkpoint),
+        Err(LocalBlobError::DeadlineExceeded)
+    ));
+    assert_eq!(calls.get(), 4);
+    let reopened = store(&root);
+    let reader = reopened
+        .open_read(&scope(), &reference, &|| Ok(()))
+        .unwrap();
+    assert_eq!(read(&reader, 0, 4).unwrap(), b"data");
+}
+
+#[test]
+fn expired_recovery_does_not_create_a_root() {
+    let parent = temporary_root();
+    let root = parent.path().join("uncreated");
+    assert!(matches!(
+        LocalBlobStore::open_with_checkpoint(&root, "private", limits(), &|| {
+            Err(LocalBlobError::DeadlineExceeded)
+        }),
+        Err(LocalBlobError::DeadlineExceeded)
+    ));
+    assert!(!root.exists());
+}
+
+#[test]
 fn recovery_refuses_oversized_directory_before_reading_object_contents() {
     let root = temporary_root();
     drop(store(root.path()));

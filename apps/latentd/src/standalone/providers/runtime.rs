@@ -269,7 +269,18 @@ impl ProviderRuntime {
                         let root = root.clone();
                         let namespace = blob.namespace.clone();
                         owner.pools.control_blocking(move || {
-                            LocalBlobStore::open(&root, &namespace, LocalBlobLimits::default())
+                            LocalBlobStore::open_with_checkpoint(
+                                &root,
+                                &namespace,
+                                LocalBlobLimits::default(),
+                                &|| {
+                                    if Instant::now() >= deadline {
+                                        Err(latent_blobs::local::LocalBlobError::DeadlineExceeded)
+                                    } else {
+                                        Ok(())
+                                    }
+                                },
+                            )
                         })
                     },
                     deadline,

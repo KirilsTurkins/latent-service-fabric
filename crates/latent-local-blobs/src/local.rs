@@ -123,9 +123,19 @@ impl LocalBlobStore {
     /// Opens/reconciles a bounded inventory synchronously. Unknown entries and
     /// unsafe files are preserved and reject opening. No guest chooses this path.
     pub fn open(root: &Path, namespace: &str, limits: LocalBlobLimits) -> Result<Arc<Self>> {
+        Self::open_with_checkpoint(root, namespace, limits, &|| Ok(()))
+    }
+    /// Recheck the original host admission while walking and hashing the local
+    /// inventory. A failed observation never publishes the partially built owner.
+    pub fn open_with_checkpoint(
+        root: &Path,
+        namespace: &str,
+        limits: LocalBlobLimits,
+        checkpoint: &dyn Fn() -> Result<()>,
+    ) -> Result<Arc<Self>> {
         limits.validate()?;
         model::text(namespace)?;
-        recovery::open(root, namespace, limits)
+        recovery::open(root, namespace, limits, checkpoint)
     }
     #[must_use]
     pub fn limits(&self) -> LocalBlobLimits {
