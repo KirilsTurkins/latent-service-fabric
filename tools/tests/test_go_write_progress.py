@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from tools import qualify_go_write_progress as q
 from tools import go_network_deadline_reference as deadline
+from tools import go_network_empty_read_reference as empty_read
 
 ROOT=Path(__file__).resolve().parents[2]
 
@@ -114,6 +115,36 @@ class GoWriteProgressTests(unittest.TestCase):
               {'Package':'example.invalid/streamwrite','Action':'fail'}]
         self.assertEqual(q.observed(self.encoded(rows),True,close=True),[q.CASES[-1]])
         with self.assertRaises(ValueError):q.observed(self.encoded(rows),False)
+    def test_empty_read_projection_keeps_exact_methods_and_bounded_fixture(self):
+        raw=(ROOT/q.TEMPLATE).read_bytes()
+        methods=empty_read.methods(raw)
+        projected=empty_read.projected(raw)
+        for method in methods:
+            self.assertEqual(raw.count(method),1)
+            self.assertEqual(projected.count(method),1)
+        fixture=(ROOT/empty_read.TESTS).read_text()
+        for case in empty_read.CASES:
+            self.assertEqual(fixture.count('func '+case+'('),1)
+        for invalid in (raw+methods[-1],raw.replace(b'\n',b'\r\n'),b'x'*65537,
+                        raw.replace(b'func (c *lsfStreamConn) Read(',b'func renamedRead(')):
+            with self.assertRaises(ValueError):empty_read.methods(invalid)
+    def test_empty_read_counterexample_and_full_controls_fail_closed(self):
+        package='example.invalid/emptyread'
+        old=[{'Package':package,'Action':'output','Test':empty_read.CASES[0],
+              'Output':'empty-expired: n=0 err=read: i/o timeout calls=0 busy=false'},
+             {'Package':package,'Action':'fail','Test':empty_read.CASES[0]},
+             {'Package':package,'Action':'fail'}]
+        current=[{'Package':package,'Action':'pass','Test':case} for case in empty_read.CASES]
+        current.append({'Package':package,'Action':'pass'})
+        self.assertEqual(empty_read.observed(self.encoded(old),True),[empty_read.CASES[0]])
+        self.assertEqual(empty_read.observed(self.encoded(current),False),list(empty_read.CASES))
+        for rows,old_flag in ((old[1:],True),(current[:-2]+current[-1:],False),
+                              (current+[current[0]],False),([dict(current[0],Action='skip')]+current[1:],False),
+                              ([dict(current[0],Package='unexpected')]+current[1:],False)):
+            with self.assertRaises(ValueError):empty_read.observed(self.encoded(rows),old_flag)
+        duplicate=b'{"Package":"example.invalid/emptyread","Action":"pass","Action":"fail"}'
+        with self.assertRaisesRegex(ValueError,'duplicate-field'):empty_read.observed(duplicate,False)
+
     def test_direct_help_works_outside_repo_without_import_path_environment(self):
         with tempfile.TemporaryDirectory() as directory:
             result=subprocess.run([sys.executable,str(ROOT/'tools/qualify_go_write_progress.py'),'--help'],cwd=directory,env=dict(os.environ,PYTHONPATH=''),capture_output=True,timeout=15)
