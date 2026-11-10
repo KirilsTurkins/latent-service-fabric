@@ -133,6 +133,21 @@ class StreamOperator(unittest.TestCase):
         self.assertTrue(policy["requireAudit"])
         self.assertEqual(policy["ceiling"], stream.CEILING)
 
+    def test_scoped_ipv6_is_rejected_before_owner_or_policy_mutation(self):
+        self.assertEqual(stream.endpoint({"host": "2001:db8::1", "port": 443, "transport": "tcp"})["host"],
+                         "2001:db8::1")
+        for index, host in enumerate(("fe80::1%eth0", "::1%1", "2001:db8::1%2")):
+            with self.subTest(host=host):
+                root = self.root / ("scoped-ipv6-" + str(index))
+                paths.new_directory(root)
+                client = PolicyRpc(self.config)
+                destination = {"host": host, "port": 443, "transport": "tcp"}
+                with self.assertRaisesRegex(DevError, "stream-operator-noncanonical-host"):
+                    stream.StreamOperator(root, client, **{**self.options, "destination": destination})
+                self.assertEqual(client.calls, [])
+                self.assertFalse((root / "stream-operator-owner.json").exists())
+                self.assertFalse((root / "operations.json").exists())
+
     def test_publication_is_canonical_before_any_owner_or_policy_mutation(self):
         invalid = (
             "publication-v1:sha256:" + "b" * 64,

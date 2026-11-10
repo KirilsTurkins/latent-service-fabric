@@ -303,7 +303,8 @@ def endpoint(value):
                 and not (host.startswith("0x") and re.fullmatch(r"[0-9a-f]+", host[2:])),
                 "stream-operator-noncanonical-host")
     else:
-        require(str(address) == host and not getattr(address, "ipv4_mapped", None),
+        require(str(address) == host and getattr(address, "scope_id", None) is None
+                and not getattr(address, "ipv4_mapped", None),
                 "stream-operator-noncanonical-host")
     return dict(value)
 
