@@ -1,18 +1,21 @@
 """Closed finite protocol outcomes, explicit verification and original owners."""
 import json
 from pathlib import Path
+import tempfile
 import unittest
 
 from tools import qualify_go_smtp_tls_runtime as runtime
 from tools import go_network_read_barrier as network_runtime
+from tools import qualify_go_published_smtp as published
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 class GoSmtpTlsRuntimeTests(unittest.TestCase):
-    def rows(self):
+    def rows(self, program='standard'):
         result = []
-        for label, mode, outcome, contacts in runtime.EXPECTED:
+        cases = runtime.EXPECTED if program == 'standard' else runtime.PUBLISHED_EXPECTED
+        for label, mode, outcome, contacts in cases:
             result.append(('GO_SMTP_OWNER', {'case': label, 'stores': 0, 'instances': 0,
                 'streamOwners': 0, 'ioOwners': 0, 'kernelRetirementQualified': False}))
             result.append(('GO_SMTP_CASE', {'case': label, 'mode': mode, 'result': outcome, 'contacts': contacts}))
@@ -20,10 +23,11 @@ class GoSmtpTlsRuntimeTests(unittest.TestCase):
             'normalProviderInstalled': False, 'kernelRetirementQualified': False, 'hostTlsQualified': False}))
         return result
 
-    def output(self, rows=None):
-        rows = self.rows() if rows is None else rows
+    def output(self, rows=None, program='standard'):
+        rows = self.rows(program) if rows is None else rows
+        case = runtime.CASE if program == 'standard' else runtime.PUBLISHED_CASE
         return '\n'.join(name + ' ' + json.dumps(row) for name, row in rows).encode() + (
-            '\ntest ' + runtime.CASE + ' ... ok\n'
+            '\ntest ' + case + ' ... ok\n'
             'test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.0s\n').encode()
 
     def test_exact_smtp_and_guest_tls_paths_do_not_promote_host_tls_or_kernel_accounting(self):
@@ -55,6 +59,18 @@ class GoSmtpTlsRuntimeTests(unittest.TestCase):
     def test_workflow_selection_keeps_v5_and_requires_an_explicit_v7_route(self):
         self.assertEqual(runtime.workflow_profile('push', runtime.V5_PUSH_BRANCH, ''), runtime.MANAGED_PROFILE)
         self.assertEqual(runtime.workflow_profile('push', runtime.V7_PUSH_BRANCH, ''), runtime.STACK_PROFILE)
+        self.assertEqual(runtime.workflow_profile('push', runtime.PUBLISHED_PUSH_BRANCH, ''), runtime.STACK_PROFILE)
+        self.assertEqual(runtime.workflow_program('push', runtime.PUBLISHED_PUSH_BRANCH, ''), 'published')
+        self.assertEqual(runtime.workflow_program('push', runtime.V7_PUSH_BRANCH, ''), 'standard')
+        self.assertEqual(runtime.workflow_program('workflow_dispatch', 'development', ''), 'standard')
+        self.assertEqual(runtime.workflow_program('workflow_dispatch', 'development', 'published'), 'published')
+        with self.assertRaisesRegex(ValueError, 'program-not-selected'):
+            runtime.qualify(ROOT, ROOT / 'must-not-exist', 'revision', Path('go'), runtime.MANAGED_PROFILE, 'published')
+        for event, branch, choice in (('push', runtime.PUBLISHED_PUSH_BRANCH, 'standard'),
+                                      ('push', 'development', ''),
+                                      ('workflow_dispatch', 'development', 'unknown')):
+            with self.assertRaisesRegex(ValueError, 'workflow-program'):
+                runtime.workflow_program(event, branch, choice)
         for choice in ('', 'v5'):
             self.assertEqual(runtime.workflow_profile('workflow_dispatch', 'development', choice), runtime.MANAGED_PROFILE)
         self.assertEqual(runtime.workflow_profile('workflow_dispatch', 'development', 'v7'), runtime.STACK_PROFILE)
@@ -65,11 +81,109 @@ class GoSmtpTlsRuntimeTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'workflow-selection'):
                     runtime.workflow_profile(event, branch, choice)
         workflow = (ROOT / '.github/workflows/go-smtp-tls-runtime.yml').read_text()
-        for branch in (runtime.V5_PUSH_BRANCH, runtime.V7_PUSH_BRANCH):
+        for branch in (runtime.V5_PUSH_BRANCH, runtime.V7_PUSH_BRANCH, runtime.PUBLISHED_PUSH_BRANCH):
             self.assertIn("'" + branch + "'", workflow)
         for expected in ('default: v5', 'options: [v5, v7]',
                          'LSF_GO_SMTP_TLS_DISPATCH_PROFILE: ${{ inputs.profile }}', '--workflow-selection'):
             self.assertIn(expected, workflow)
+
+    def test_published_contracts_product_requires_exact_successful_cargo_inventory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = root / 'crates/latent-packaging/Cargo.toml'
+            source = manifest.parent / 'examples/capsule_contracts.rs'
+            executable = root / 'target/debug/examples/capsule_contracts'
+            for item in (manifest, source, executable):
+                item.parent.mkdir(parents=True, exist_ok=True)
+                item.write_bytes(b'x')
+            artifact = {'reason': 'compiler-artifact', 'manifest_path': str(manifest),
+                        'target': {'kind': ['example'], 'name': 'capsule_contracts', 'src_path': str(source)},
+                        'profile': {'test': False}, 'executable': str(executable)}
+            finish = {'reason': 'build-finished', 'success': True}
+            encode = lambda rows: b'\n'.join(json.dumps(row).encode() for row in rows) + b'\n'
+            self.assertEqual(runtime.contracts_artifact(encode([artifact, finish]), root), executable)
+            for rows in ([finish], [artifact], [artifact, artifact, finish],
+                         [dict(artifact, profile={'test': True}), finish],
+                         [dict(artifact, executable=str(manifest)), finish],
+                         [artifact, {'reason': 'build-finished', 'success': False}],
+                         [artifact, finish, artifact]):
+                with self.subTest(rows=rows), self.assertRaises(ValueError):
+                    runtime.contracts_artifact(encode(rows), root)
+
+    def test_published_transcript_has_separate_case_and_closed_observations(self):
+        raw = self.output(program='published')
+        record = runtime.outcomes(raw, program='published')
+        self.assertEqual([row['case'] for row in record['cases']],
+                         [row[0] for row in runtime.PUBLISHED_EXPECTED])
+        self.assertEqual(len(record['userSpaceOwners']), 6)
+        with self.assertRaises(ValueError):
+            runtime.outcomes(raw)
+        with self.assertRaises(ValueError):
+            runtime.outcomes(self.output(), program='published')
+        with self.assertRaises(ValueError):
+            runtime.outcomes(raw + b'GO_SMTP_UNKNOWN {}\n', program='published')
+        with self.assertRaises(ValueError):
+            runtime.outcomes(raw, program='unknown')
+
+    def test_published_graph_binds_original_client_and_separate_worker_edges(self):
+        versions = {name: value[0] for name, value in published.LIBRARIES.items()}
+        versions[published.SASL] = published.SASL_VERSION
+        ids = {name: 'fixture-' + str(index) for index, name in enumerate(versions)}
+        names = {'github.com/emersion/go-smtp': 'client.go', published.SASL: 'sasl.go',
+                 'github.com/reactivex/rxgo/v2': 'observable_operator.go',
+                 'github.com/cenkalti/backoff/v4': 'timer.go'}
+        declaration = {'Module': {'Path': 'wit_component'},
+                       'Require': [{'Path': name, 'Version': version}
+                                   for name, version in versions.items() if name != published.SASL]}
+        nodes = [{'id': 'root', 'path': 'wit_component', 'main': True}]
+        nodes += [{'id': ids[name], 'path': name, 'version': version, 'main': False,
+                   'indirect': name == published.SASL, 'replacement': None}
+                  for name, version in versions.items()]
+        edges = [{'owner': 'wit_component', 'selected': ids[name]}
+                 for name in versions if name != published.SASL]
+        edges += [{'owner': 'github.com/emersion/go-smtp@v0.25.0',
+                   'dependency': published.SASL + '@' + published.SASL_VERSION,
+                   'selected': ids[published.SASL]},
+                  {'owner': 'github.com/reactivex/rxgo/v2@v2.5.0',
+                   'dependency': 'github.com/cenkalti/backoff/v4@v4.0.0',
+                   'selected': ids['github.com/cenkalti/backoff/v4']}]
+        native = {'module': 'wit_component', 'nodes': nodes, 'edges': edges}
+        assets = [{'id': ids[name], 'role': 'application',
+                   'metadata': {'module': name, 'version': version, 'assetType': 'selected-module-source',
+                                'effectiveModule': name, 'effectiveVersion': version},
+                   'files': [{'path': names[name], 'digest': 'sha256:' + '0' * 64, 'size': 1}]}
+                  for name, version in versions.items()]
+        result = published.graph_evidence(declaration, native, assets)
+        self.assertEqual(len(result['transitiveEdges']), 2)
+        self.assertEqual(result['smtpRetryPolicy'], 'none')
+        for mutation in ('edge', 'replacement', 'source'):
+            changed_native = json.loads(json.dumps(native))
+            changed_assets = json.loads(json.dumps(assets))
+            if mutation == 'edge':
+                changed_native['edges'].pop()
+            elif mutation == 'replacement':
+                changed_native['nodes'][-1]['replacement'] = {'path': 'other'}
+            else:
+                changed_assets[0]['files'] = []
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                published.graph_evidence(declaration, changed_native, changed_assets)
+
+    def test_published_client_uses_original_factories_and_separate_pre_network_timer(self):
+        root = ROOT / 'sdk/go-guest/runtime/published-smtp-conformance'
+        source = (root / 'main.go').read_text()
+        for expected in ('smtp.Dial(config.Address)', 'smtp.DialStartTLS(config.Address',
+                         'client.Noop()', 'client.Quit()', 'rxgo.Defer(', 'source.BackOffRetry(policy)',
+                         'backoff.NewConstantBackOff(5*time.Millisecond)', 'attempts.Load() == 2'):
+            self.assertIn(expected, source)
+        self.assertLess(source.index('if !workerTimerStage()'), source.index('smtp.Dial(config.Address)'))
+        for forbidden in ('smtp.NewClient(', 'net.Conn', 'net.Pipe', 'InsecureSkipVerify', 'lsf/'):
+            self.assertNotIn(forbidden, source)
+        module = (root / 'go.mod').read_text()
+        for expected in ('github.com/emersion/go-smtp v0.25.0',
+                         'github.com/reactivex/rxgo/v2 v2.5.0',
+                         'github.com/cenkalti/backoff/v4 v4.0.0',
+                         'github.com/emersion/go-sasl v0.0.0-20241020182733-b788ff22d5a6'):
+            self.assertIn(expected, module)
 
     def test_missing_reordered_duplicate_or_incorrect_verification_results_fail(self):
         variants = []
