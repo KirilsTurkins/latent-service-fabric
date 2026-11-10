@@ -387,6 +387,18 @@ impl EntityQueue {
                 return Ok(());
             };
             let (pending, outcome) = match next {
+                EntityDispatch::Ready(execution)
+                    if execution.cancellation_requested(self.clock.monotonic_now()) =>
+                {
+                    let (request, owner) = execution.into_owned_work();
+                    drop(owner);
+                    (
+                        request.into_payload(),
+                        Err(QueueError::Rejected(
+                            EntityRejection::CancelledBeforeExecution,
+                        )),
+                    )
+                }
                 EntityDispatch::Ready(execution) => {
                     let (request, owner) = execution.into_owned_work();
                     let pending = request.into_payload();

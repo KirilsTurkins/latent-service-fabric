@@ -587,6 +587,50 @@ async fn queued_authority_and_wait_age_are_rechecked_before_execution() {
 }
 
 #[tokio::test]
+async fn deadline_is_rechecked_after_authority_callback() {
+    struct FakeClock {
+        start: Instant,
+        elapsed_millis: AtomicU64,
+    }
+    impl ActivationClock for FakeClock {
+        fn sample(&self) -> latent_core::ClockSample {
+            latent_core::ClockSample::new(0, self.monotonic_now())
+        }
+        fn monotonic_now(&self) -> Instant {
+            self.start + Duration::from_millis(self.elapsed_millis.load(Ordering::SeqCst))
+        }
+    }
+    let start = Instant::now();
+    let clock = Arc::new(FakeClock {
+        start,
+        elapsed_millis: AtomicU64::new(0),
+    });
+    let queue = EntityQueue::new(limits(), clock.clone()).unwrap();
+    let callback_clock = Arc::clone(&clock);
+    let result = queue
+        .acquire(
+            scope("tenant-a", "order"),
+            vec![1],
+            64,
+            start + Duration::from_secs(1),
+            Arc::new(move || {
+                callback_clock.elapsed_millis.store(1000, Ordering::SeqCst);
+                true
+            }),
+            permit(),
+        )
+        .await;
+    assert!(matches!(
+        result,
+        Err(QueueError::Rejected(
+            EntityRejection::CancelledBeforeExecution
+        ))
+    ));
+    assert_eq!(queue.snapshot().active, 0);
+    assert_eq!(queue.snapshot().keys, 0);
+}
+
+#[tokio::test]
 async fn queued_wait_age_uses_the_original_injected_clock() {
     struct FakeClock {
         start: Instant,
