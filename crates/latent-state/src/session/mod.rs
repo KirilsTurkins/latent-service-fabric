@@ -628,14 +628,10 @@ impl StateSession {
             if let Some(value) = self.value(&key)? {
                 let amount = key
                     .len()
-                    .checked_add(
-                        Cell {
-                            generation: self.namespace.version.generation,
-                            value: Some(value.value.clone()),
-                        }
-                        .encode()?
-                        .len(),
-                    )
+                    .checked_add(codec::encoded_len(
+                        self.namespace.version.generation,
+                        Some(&value.value),
+                    )?)
                     .and_then(|bytes| bytes.checked_add(value.version.len() + 16))
                     .ok_or(StateError::Limit)?;
                 if amount > maximum_bytes.saturating_sub(encoded_bytes) {

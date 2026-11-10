@@ -11,17 +11,49 @@ pub(super) struct Cell {
     pub value: Option<Value>,
 }
 
+/// Compute the exact encoded cell size without copying an owned payload.
+pub(super) fn encoded_len(generation: u64, value: Option<&Value>) -> Result<usize, StateError> {
+    if generation == 0 {
+        return Err(StateError::Invalid);
+    }
+    let mut size = MAGIC.len() + 8 + 1;
+    if let Some(value) = value {
+        value.validate().map_err(|_| StateError::Limit)?;
+        u32::try_from(value.bytes.len()).map_err(|_| StateError::Limit)?;
+        u16::try_from(value.media_type.len()).map_err(|_| StateError::Limit)?;
+        u8::try_from(value.metadata.len()).map_err(|_| StateError::Limit)?;
+        size = size
+            .checked_add(4)
+            .and_then(|n| n.checked_add(value.bytes.len()))
+            .and_then(|n| n.checked_add(2))
+            .and_then(|n| n.checked_add(value.media_type.len()))
+            .and_then(|n| n.checked_add(1))
+            .ok_or(StateError::Limit)?;
+        for (key, value) in &value.metadata {
+            u16::try_from(key.len()).map_err(|_| StateError::Limit)?;
+            u16::try_from(value.len()).map_err(|_| StateError::Limit)?;
+            size = size
+                .checked_add(2)
+                .and_then(|n| n.checked_add(key.len()))
+                .and_then(|n| n.checked_add(2))
+                .and_then(|n| n.checked_add(value.len()))
+                .ok_or(StateError::Limit)?;
+        }
+    }
+    if size > CELL_BYTES {
+        return Err(StateError::Limit);
+    }
+    Ok(size)
+}
+
 impl Cell {
     pub fn encode(&self) -> Result<Vec<u8>, StateError> {
-        if self.generation == 0 {
-            return Err(StateError::Invalid);
-        }
-        let mut bytes = Vec::with_capacity(64);
+        let size = encoded_len(self.generation, self.value.as_ref())?;
+        let mut bytes = Vec::with_capacity(size);
         bytes.extend_from_slice(MAGIC);
         bytes.extend_from_slice(&self.generation.to_le_bytes());
         bytes.push(u8::from(self.value.is_some()));
         if let Some(value) = &self.value {
-            value.validate().map_err(|_| StateError::Limit)?;
             bytes.extend_from_slice(
                 &u32::try_from(value.bytes.len())
                     .map_err(|_| StateError::Limit)?
@@ -38,6 +70,7 @@ impl Cell {
         if bytes.len() > CELL_BYTES {
             return Err(StateError::Limit);
         }
+        debug_assert_eq!(bytes.len(), size);
         Ok(bytes)
     }
 

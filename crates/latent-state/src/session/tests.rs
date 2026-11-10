@@ -25,6 +25,33 @@ fn value(bytes: &[u8]) -> Value {
         metadata: vec![],
     }
 }
+
+#[test]
+fn cell_length_matches_the_encoded_bytes_for_query_page_accounting() {
+    let mut annotated = value(&vec![42; 16 * 1024]);
+    annotated.metadata = vec![
+        ("kind".into(), "order".into()),
+        ("note".into(), "non-ascii value: ü".into()),
+    ];
+    for candidate in [None, Some(value(&[])), Some(annotated)] {
+        let cell = Cell {
+            generation: 7,
+            value: candidate,
+        };
+        assert_eq!(
+            codec::encoded_len(cell.generation, cell.value.as_ref()).unwrap(),
+            cell.encode().unwrap().len()
+        );
+    }
+    assert_eq!(codec::encoded_len(0, None), Err(StateError::Invalid));
+    let mut invalid = value(b"x");
+    invalid.metadata = vec![("same".into(), "a".into()), ("same".into(), "b".into())];
+    assert_eq!(
+        codec::encoded_len(1, Some(&invalid)),
+        Err(StateError::Limit)
+    );
+}
+
 impl Fixture {
     fn new() -> Self {
         Self::with_quota(NamespaceQuota::default(), 1)
