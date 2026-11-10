@@ -17,10 +17,11 @@ jobs:
   capture:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    env:
-      INPUTS: ${{ runner.temp }}/agent2-abort-link-inputs
-      BUILD: ${{ runner.temp }}/agent2-abort-rust-support
     steps:
+      - name: Select isolated runner directories
+        run: |
+          echo "INPUTS=$RUNNER_TEMP/agent2-abort-link-inputs" >> "$GITHUB_ENV"
+          echo "BUILD=$RUNNER_TEMP/agent2-abort-rust-support" >> "$GITHUB_ENV"
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
         with:
           fetch-depth: 0
