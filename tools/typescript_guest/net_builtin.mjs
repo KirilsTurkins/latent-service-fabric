@@ -1,5 +1,28 @@
 import { NET_PROFILE, NET_PRIVATE } from './node_net_bindings.mjs';
 
+// Compiler-only boundary, independent of the host Node version and npm package
+// identity. These exact builtins must not resolve to captured npm/browser shims.
+// This does not install a stream, resolver or TLS implementation in the guest.
+const unavailable = new Map([
+  ...['dns', 'dns/promises'].map(name => [name,
+    'No public DNS API is installed. Hostname resolution belongs to an explicitly authorized TCP connect; it does not authorize lookup, resolve, reverse or custom resolvers.']),
+  ['tls',
+    'No Node TLS port is installed. The TCP profile cannot supply TLS certificate callbacks, STARTTLS or client identity; host TLS is not a transparent replacement.'],
+  ...['stream', 'stream/promises', 'stream/web', 'stream/consumers',
+    '_stream_duplex', '_stream_passthrough', '_stream_readable',
+    '_stream_transform', '_stream_wrap', '_stream_writable'].map(name => [name,
+    'No general Node stream module is installed. The Socket event subset is not Readable, Writable, Duplex, pipeline or a Web Streams adapter.']),
+]);
+const compatibility = 'See docs/component-development/typescript-network-compatibility.md. Issue #737 approves a contract, not runtime enablement; #745 networking consumes the implementation and qualification gates in #738 and #739. No npm dependency or module declaration grants network authority.';
+
+function unavailableModule(path) {
+  const name = path.startsWith('node:') ? path.slice(5) : path;
+  const explanation = unavailable.get(name);
+  if (explanation === undefined) return undefined;
+  return {errors: [{text: 'standard-node-network-module-unavailable:node:' + name,
+    notes: [{text: explanation}, {text: compatibility}]}]};
+}
+
 export function netBuiltin(source, enabled) {
   if (typeof source !== 'string' || source.length < 1 || source.length > 128 * 1024 ||
       typeof enabled !== 'boolean' || source.split('export function createNodeNetModule(').length !== 2)
@@ -18,8 +41,12 @@ export function netBuiltin(source, enabled) {
           return {errors: [{text: 'compiler-private-node-net-transport'}]};
         return {path: NET_PRIVATE, external: true};
       }
+      const denied = unavailableModule(args.path);
+      if (denied) return denied;
       if (args.path !== 'net' && args.path !== 'node:net') return undefined;
-      if (!enabled) return {errors: [{text: 'standard-node-net-requires-exact-stream-runtime-and-declaration'}]};
+      if (!enabled) return {errors: [{text: 'standard-node-net-requires-exact-stream-runtime-and-declaration',
+        notes: [{text: 'Select the maintained activation-import runtime and exact latent:network/streams@0.1.0 world through the normal compiler. The lsf-node-net-tcp-v1 mapping is TCP-only; declarations do not install a provider or grant an endpoint.'},
+          {text: compatibility}]}]};
       return {path: 'node:net', namespace: 'lsf-owned-node-net', sideEffects: false};
     },
     load(args) {
