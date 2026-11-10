@@ -178,6 +178,28 @@ static char *request_url(const struct url *url) {
     return text;
 }
 
+/* Keep the upstream libfetch categories for actual HTTP errors.
+ * This does not retry a request or change the profile's existing errno values. */
+static int http_status_category(uint16_t status) {
+    switch (status) {
+    case 400: case 405: case 406: case 411: case 413: case 414: case 415:
+    case 501: case 505:
+        return FETCH_PROTO;
+    case 402: case 407:
+        return FETCH_AUTH;
+    case 408: case 504:
+        return FETCH_TIMEOUT;
+    case 409:
+        return FETCH_EXISTS;
+    case 416:
+        return FETCH_UNAVAIL;
+    case 503:
+        return FETCH_TEMP;
+    default:
+        return FETCH_SERVER;
+    }
+}
+
 static bool content_length(const latent_http_streaming_list_header_t *headers, size_t *length, bool *known) {
     bool found = false;
     *length = SIZE_MAX; /* The original libfetch unknown-length sentinel. */
@@ -368,7 +390,7 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
         if (status >= 300 && status < 400) failure(FETCH_MOVED, ENOTSUP, "HTTP redirects are outside this profile");
         else if (status == 401 || status == 403) failure(FETCH_AUTH, EACCES, "HTTP authentication refused");
         else if (status == 404 || status == 410) failure(FETCH_UNAVAIL, ENOENT, "HTTP resource unavailable");
-        else failure(FETCH_SERVER, EIO, "HTTP server returned an error response");
+        else failure(http_status_category(status), EIO, "HTTP server returned an error response");
         snprintf(fetchLastErrString, MAXERRSTRING, "HTTP status %u%s", (unsigned)status,
                  status >= 300 && status < 400 ? ": redirects unsupported" : ": request failed");
         goto fail_file;

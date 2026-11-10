@@ -20,8 +20,25 @@ def before_exit_trap(raw):
   raise AssertionError('closed-file-original-abi-source')
  return original
 
+def before_http_status_categories(raw):
+ import hashlib
+ if hashlib.sha256(raw).hexdigest() != '1418689760e50035c1bb3cc1979e5170a2cc11fa763a5f87889102e9684b0b03':
+  raise AssertionError('libfetch-http-status-exact-source')
+ changes = (
+  (b'', b"/* Keep the upstream libfetch categories for actual HTTP errors.\n * This does not retry a request or change the profile's existing errno values. */\nstatic int http_status_category(uint16_t status) {\n    switch (status) {\n    case 400: case 405: case 406: case 411: case 413: case 414: case 415:\n    case 501: case 505:\n        return FETCH_PROTO;\n    case 402: case 407:\n        return FETCH_AUTH;\n    case 408: case 504:\n        return FETCH_TIMEOUT;\n    case 409:\n        return FETCH_EXISTS;\n    case 416:\n        return FETCH_UNAVAIL;\n    case 503:\n        return FETCH_TEMP;\n    default:\n        return FETCH_SERVER;\n    }\n}\n\n"),
+  (b'        else failure(FETCH_SERVER, EIO, "HTTP server returned an error response");', b'        else failure(http_status_category(status), EIO, "HTTP server returned an error response");'),
+ )
+ for previous, current in reversed(changes):
+  if raw.count(current) != 1:
+   raise AssertionError('libfetch-http-status-exact-addendum')
+  raw = raw.replace(current, previous, 1)
+ if hashlib.sha256(raw).hexdigest() != '906a26d42fad5eb071b02191282f1a3da60a8cfa117782cd125a34f6ad02ab1d':
+  raise AssertionError('libfetch-http-status-prior-source')
+ return raw
+
 def before_fragment_target(raw):
  import hashlib
+ raw = before_http_status_categories(raw)
  if hashlib.sha256(raw).hexdigest() != '906a26d42fad5eb071b02191282f1a3da60a8cfa117782cd125a34f6ad02ab1d':
   raise AssertionError('libfetch-fragment-target-exact-source')
  changes = (
@@ -105,13 +122,23 @@ def before_head_stat(path, raw):
  return raw
 
 class CThreadMinimal(unittest.TestCase):
+ def test_http_status_inverse_requires_exact_reviewed_source(self):
+  import hashlib
+  raw=(ROOT/'sdk/c-guest/src/libfetch/http.c').read_bytes()
+  self.assertEqual(hashlib.sha256(before_http_status_categories(raw)).hexdigest(),
+                   '906a26d42fad5eb071b02191282f1a3da60a8cfa117782cd125a34f6ad02ab1d')
+  altered_category=raw.replace(b'case 503:\n        return FETCH_TEMP;',b'case 503:\n        return FETCH_SERVER;')
+  self.assertNotEqual(altered_category, raw)
+  for altered in (raw+b'\n', altered_category):
+   with self.assertRaisesRegex(AssertionError,'libfetch-http-status-exact-source'):
+    before_http_status_categories(altered)
  def test_unsolicited_partial_inverse_requires_exact_reviewed_source(self):
   import hashlib
   raw=(ROOT/'sdk/c-guest/src/libfetch/http.c').read_bytes()
   self.assertEqual(hashlib.sha256(before_unsolicited_partial(raw)).hexdigest(),
                    'c81b948e74babf3edbc97a25473597daf24cba87ce48abda828f2e753c64185d')
   for altered in (raw+b'\n',raw.replace(b'requested_offset > 0 && known_length',b'requested_offset >= 0 && known_length'),raw.replace(b'actual_offset < (uint64_t)partial_length',b'actual_offset <= (uint64_t)partial_length')):
-   with self.assertRaisesRegex(AssertionError,'libfetch-fragment-target-exact-source'):
+   with self.assertRaisesRegex(AssertionError,'libfetch-http-status-exact-source'):
     before_unsolicited_partial(altered)
  def test_minimal_overlay_preserves_every_original_byte_and_full_standard_lifecycle_calls(self):
   raw=(ROOT/(original.FIXTURE+'main.c')).read_bytes();derived=selected.selected_source(raw)
