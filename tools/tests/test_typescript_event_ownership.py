@@ -360,7 +360,7 @@ class AbortTrapFrameControls(unittest.TestCase):
         compiler = os.environ.get('LSF_TYPESCRIPT_WASM_CXX') or shutil.which('clang++')
         node = os.environ.get('LSF_TYPESCRIPT_WASM_NODE') or shutil.which('node')
         if not compiler or not node:
-            raise unittest.SkipTest('Clang with wasm32 and Node are required for the trap witness')
+            raise RuntimeError('Clang with wasm32 and Node are required for the trap witness')
         root = Path(__file__).resolve().parents[2]
         header = (root/'sdk/typescript-guest/activation/native_retirement.h').read_bytes()
         start = header.index(b'template<class Records> class NativeFrameLease;')
@@ -409,8 +409,6 @@ class EventCallbackFailureControls(unittest.TestCase):
     def setUpClass(cls):
         compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++') or shutil.which('cl')
         if not compiler:
-            if os.name == 'nt':
-                raise unittest.SkipTest('A C++ compiler is required for callback failure controls')
             raise RuntimeError('C++ compiler is required for callback failure controls')
         cls.temporary = tempfile.TemporaryDirectory()
         cls.addClassCleanup(cls.temporary.cleanup)
