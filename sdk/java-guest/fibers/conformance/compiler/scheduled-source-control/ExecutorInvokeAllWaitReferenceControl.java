@@ -2,6 +2,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -9,6 +10,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 
 /** Same public executor control, run once against the JDK and once against source. */
 public final class ExecutorInvokeAllWaitReferenceControl {
@@ -52,7 +54,14 @@ public final class ExecutorInvokeAllWaitReferenceControl {
         boolean falseDone;
         boolean throwDone;
         int submissions;
+        CountDownLatch preparing, continuePreparation;
         @Override protected <T> RunnableFuture<T> newTaskFor(Callable<T> task) {
+            if (created.isEmpty() && preparing != null) {
+                preparing.countDown();
+                try {
+                    if (!continuePreparation.await(4, TimeUnit.SECONDS)) throw new AssertionError("preparation-release");
+                } catch (InterruptedException error) { throw new AssertionError(error); }
+            }
             Observed<T> f = new Observed<>(super.newTaskFor(task));
             f.forbidDoneGet = forbidDoneGet; f.forbidDoneCancel = forbidDoneCancel;
             f.falseDone = falseDone; f.throwDone = throwDone;
@@ -152,8 +161,27 @@ public final class ExecutorInvokeAllWaitReferenceControl {
                 && executor.created.get(0).cancelCalls == 1, "nonpositive");
         }
     }
+    private static void firstSubmissionAfterPreparation() throws Exception {
+        Direct executor = new Direct();
+        executor.preparing = new CountDownLatch(1); executor.continuePreparation = new CountDownLatch(1);
+        AtomicReference<List<Future<Integer>>> result = new AtomicReference<>();
+        AtomicReference<Throwable> error = new AtomicReference<>();
+        Thread caller = new Thread(() -> {
+            try { result.set(executor.invokeAll(List.of(() -> 42, () -> 43), 10, TimeUnit.MILLISECONDS)); }
+            catch (Throwable failure) { error.set(failure); }
+        });
+        caller.setDaemon(true); caller.start();
+        try {
+            need(executor.preparing.await(4, TimeUnit.SECONDS), "preparation-entry");
+            Thread.sleep(50); // The first task has not yet been constructed when the deadline expires.
+        } finally { executor.continuePreparation.countDown(); }
+        caller.join(4000);
+        need(!caller.isAlive() && error.get() == null && result.get() != null, "preparation-caller");
+        need(executor.submissions == 1 && result.get().get(0).get() == 42
+            && result.get().get(1).isCancelled(), "first-submission-after-preparation");
+    }
     public static void main(String[] args) throws Exception {
-        if (args.length > 1 || args.length == 1 && !List.of("untimed", "guarded", "late", "negative", "suffix", "exception", "nonpositive").contains(args[0]))
+        if (args.length > 1 || args.length == 1 && !List.of("untimed", "guarded", "late", "negative", "suffix", "exception", "nonpositive", "first-submission").contains(args[0]))
             throw new IllegalArgumentException("control-mode");
         if (args.length == 0 || args[0].equals("untimed")) { completed(false, false); completed(false, true); }
         if (args.length == 0 || args[0].equals("guarded")) { guarded(false); guarded(true); }
@@ -162,7 +190,8 @@ public final class ExecutorInvokeAllWaitReferenceControl {
         if (args.length == 0 || args[0].equals("suffix")) timeoutSuffix();
         if (args.length == 0 || args[0].equals("exception")) exceptionCancelsAll();
         if (args.length == 0 || args[0].equals("nonpositive")) nonpositive();
+        if (args.length == 0 || args[0].equals("first-submission")) firstSubmissionAfterPreparation();
         System.out.println("INVOKE_ALL_WAIT PASS " + (args.length == 0
-            ? "completed;subclass;late;negative-get;timeout-suffix;exception;done-failure;nonpositive" : args[0]));
+            ? "completed;subclass;late;negative-get;timeout-suffix;exception;done-failure;nonpositive;first-submission" : args[0]));
     }
 }

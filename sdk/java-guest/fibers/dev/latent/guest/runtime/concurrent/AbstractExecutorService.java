@@ -50,9 +50,13 @@ public abstract class AbstractExecutorService implements java.util.concurrent.Ex
             // Materialize every result before executing: a null task does not
             // accidentally turn a partially validated collection into work.
             for (Callable<T> task : tasks) futures.add(newTaskFor(Objects.requireNonNull(task)));
+            boolean first = true;
             for (Future<T> future : futures) {
-                if (timed && (nanos <= 0 || System.nanoTime() - started >= nanos)) return futures;
+                // The JDK tests the original duration for the first submit;
+                // later submits use the elapsed deadline after preparation.
+                if (timed && (nanos <= 0 || !first && System.nanoTime() - started >= nanos)) return futures;
                 execute((Runnable)future);
+                first = false;
             }
             for (Future<T> future : futures) {
                 // Preserve custom RunnableFuture dispatch, as the JDK does:
