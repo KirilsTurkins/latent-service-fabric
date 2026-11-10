@@ -330,7 +330,7 @@ bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason) {
 
   // Stage/deduplicate sources in the result's already admitted native set.
   // Publishing backlinks here would retain an unreachable partial result after
-  // an allocation failure (the pinned weak sets conservatively trace strongly).
+  // an allocation failure. Weak sweep is not a transaction rollback.
   // No second temporary heap vector or additional owner is needed.
   auto *our_signals = source_signals(self);
   for (size_t i = 0; i < signals.length(); ++i) {

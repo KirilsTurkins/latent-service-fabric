@@ -13,6 +13,7 @@ class RequiredQualificationTools(unittest.TestCase):
             for control, diagnostic in (
                     (events.EventCallbackFailureControls, 'callback failure controls'),
                     (events.AbortListenerIdentityControls, 'emitted abort-listener controls'),
+                    (events.AbortWeakCollectionControls, 'weak-collection controls'),
                     (records.OwnerRetryTests, 'native owner retry controls'),
                     (records.QueueCancellationTests, 'queue cancellation controls')):
                 with self.subTest(platform=platform, control=control.__name__), \
