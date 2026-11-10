@@ -1,6 +1,6 @@
 //! One bounded invocation, status read, or explicit cancellation.
 mod bounds;
-mod budget;
+pub(crate) mod budget;
 mod prepare;
 mod response;
 #[cfg(test)]

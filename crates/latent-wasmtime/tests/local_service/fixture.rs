@@ -48,6 +48,8 @@ mod guest_runtime;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[path = "outbound/owners.rs"]
 pub mod streams;
+#[path = "zero_clock.rs"]
+pub(crate) mod zero_clock;
 
 pub struct Observations {
     pub starts: Mutex<Vec<latent_telemetry::ActivationObservationContext>>,
@@ -101,12 +103,37 @@ impl ActivationIdSource for Ids {
 pub struct ObservedReadWait {
     pub active: AtomicU64,
     pub entered: tokio::sync::Notify,
+    zero_clock: Option<Arc<zero_clock::ZeroClock>>,
 }
+impl ObservedReadWait {
+    pub fn system() -> Self {
+        Self {
+            active: AtomicU64::new(0),
+            entered: tokio::sync::Notify::new(),
+            zero_clock: None,
+        }
+    }
+
+    pub fn controlled(clock: Arc<zero_clock::ZeroClock>) -> Self {
+        Self {
+            active: AtomicU64::new(0),
+            entered: tokio::sync::Notify::new(),
+            zero_clock: Some(clock),
+        }
+    }
+}
+
 impl latent_executor::PreparationReadWait for ObservedReadWait {
     fn now(&self) -> Instant {
+        if let Some(clock) = &self.zero_clock {
+            return clock.monotonic_now();
+        }
         latent_executor::PreparationReadWait::now(&latent_node::CurrentnessReadTimer)
     }
     fn wait_until(&self, deadline: Instant) -> latent_core::BoxFuture<'_, ()> {
+        if let Some(clock) = &self.zero_clock {
+            return Box::pin(clock.wait(deadline, &self.active, &self.entered));
+        }
         struct Active<'a>(&'a AtomicU64);
         impl Drop for Active<'_> {
             fn drop(&mut self) {
@@ -130,6 +157,11 @@ impl latent_executor::PreparationReadWait for ObservedReadWait {
         deadline: Instant,
         budget: &latent_core::ActivationBudget,
     ) -> Result<latent_executor::OwnedPreparationWait<'a>, PlatformError> {
+        if let Some(clock) = &self.zero_clock {
+            return latent_executor::OwnedPreparationWait::try_boxed(budget, || {
+                clock.wait(deadline, &self.active, &self.entered)
+            });
+        }
         struct Active<'a>(&'a AtomicU64);
         impl Drop for Active<'_> {
             fn drop(&mut self) {
@@ -274,6 +306,40 @@ impl Fixture {
         )
         .await
     }
+    /// The zero-origin diagnostic alone supplies a finite test clock/wait.
+    /// The real node, broker, signed component, timer and original budget remain.
+    pub async fn with_zero_clock_activation_runtime(
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        limits: latent_core::activation_runtime::RuntimeLimits,
+        call_wall_millis: u64,
+        clock: Arc<zero_clock::ZeroClock>,
+    ) -> Self {
+        Self::try_with_packages_and_load_controlled(
+            1,
+            false,
+            true,
+            None,
+            Some(provided),
+            Arc::new(ZeroClockFixtureLoad(Arc::clone(&clock))),
+            None,
+            Some((limits, call_wall_millis, None)),
+            None,
+            None,
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            None,
+            false,
+            false,
+            false,
+            Some(clock),
+        )
+        .await
+        .unwrap()
+    }
+
     pub async fn with_named_activation_runtime(
         cells: u32,
         provided: (
@@ -571,6 +637,40 @@ impl Fixture {
         )
         .await
     }
+    /// Two separately scoped signed callers share the existing node, backend,
+    /// scheduler and development stream lifecycle; neither gets the other's
+    /// publication or policy authority.
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub async fn with_two_tenant_outbound_streams(
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        configuration: latent_streams::StreamProviderConfig,
+    ) -> Self {
+        Self::try_with_packages_and_load(
+            1,
+            false,
+            true,
+            None,
+            Some(provided),
+            Arc::new(SyntheticFixtureLoad),
+            Some(RuntimeIdentities {
+                tenant: TenantId("tenant-b".into()),
+                ..RuntimeIdentities::default()
+            }),
+            None,
+            Some(TenantId("tenant-a".into())),
+            Some(TwoTenantAdmission::RefuseAtOne),
+            Some(Box::new(configuration)),
+            false,
+            false,
+            false,
+        )
+        .await
+        .unwrap()
+    }
     /// The same original node/broker owners, with both explicitly granted
     /// managed-runtime imports and the development-only stream provider.
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -731,9 +831,8 @@ impl Fixture {
         .unwrap()
     }
     #[expect(
-        clippy::too_many_lines,
         clippy::too_many_arguments,
-        reason = "one explicit real catalog, broker and node ownership composition for integration tests"
+        reason = "preserve the existing fixture constructor and argument ownership"
     )]
     async fn try_with_packages_and_load(
         cells: u32,
@@ -761,6 +860,59 @@ impl Fixture {
         go_stack_ceiling: bool,
         original_provider_configuration: bool,
     ) -> Result<Self, PlatformError> {
+        Self::try_with_packages_and_load_controlled(
+            cells,
+            foreign,
+            permit_target,
+            audit,
+            provided,
+            load,
+            identities,
+            activation_runtime,
+            additional_runtime_tenant,
+            two_tenant_admission,
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            outbound_streams,
+            numeric_capture,
+            go_stack_ceiling,
+            original_provider_configuration,
+            None,
+        )
+        .await
+    }
+
+    #[expect(
+        clippy::too_many_lines,
+        clippy::too_many_arguments,
+        reason = "one explicit real catalog, broker and node ownership composition for integration tests"
+    )]
+    async fn try_with_packages_and_load_controlled(
+        cells: u32,
+        foreign: bool,
+        permit_target: bool,
+        audit: Option<latent_audit::AuditHandle>,
+        provided: Option<(
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        )>,
+        load: Arc<dyn NodeLoadSource>,
+        identities: Option<RuntimeIdentities>,
+        activation_runtime: Option<(
+            latent_core::activation_runtime::RuntimeLimits,
+            u64,
+            Option<bool>,
+        )>,
+        additional_runtime_tenant: Option<TenantId>,
+        two_tenant_admission: Option<TwoTenantAdmission>,
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))] outbound_streams: Option<
+            Box<latent_streams::StreamProviderConfig>,
+        >,
+        numeric_capture: bool,
+        go_stack_ceiling: bool,
+        original_provider_configuration: bool,
+        zero_clock: Option<Arc<zero_clock::ZeroClock>>,
+    ) -> Result<Self, PlatformError> {
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         let stream_enabled = outbound_streams.is_some();
         #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
@@ -780,7 +932,7 @@ impl Fixture {
             two_tenant_admission.is_some()
         );
         if let Some(other) = &additional_runtime_tenant {
-            assert!(activation_runtime.is_some());
+            assert!(activation_runtime.is_some() || stream_enabled);
             assert_eq!(identities.tenant.0, "tenant-b");
             assert_eq!(other.0, "tenant-a");
         }
@@ -1099,7 +1251,10 @@ impl Fixture {
                 )
                 .unwrap();
         }
-        let clock: Arc<dyn ActivationClock> = Arc::new(SystemActivationClock);
+        let clock: Arc<dyn ActivationClock> = match &zero_clock {
+            Some(clock) => clock.clone(),
+            None => Arc::new(SystemActivationClock),
+        };
         let broker_limits = CapabilityBrokerLimits::default();
         let broker = ActivationCapabilityBroker::new(
             catalog.lifecycle_authority(),
@@ -1176,12 +1331,30 @@ impl Fixture {
         }
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         let streams = outbound_streams.map(|configuration| {
-            Box::new(streams::Owners::install(
-                &broker,
-                &policies,
-                &caller_publication,
-                &configuration,
-            ))
+            if let Some(other) = &additional_runtime_tenant {
+                let other_publication = latent_artifacts::PublicationRef::package(
+                    latent_artifacts::LifecycleScope::Tenant(other.clone()),
+                    caller.layout().digest(),
+                )
+                .unwrap();
+                assert_ne!(other_publication.id, caller_publication);
+                Box::new(streams::Owners::install_for_tenants(
+                    &broker,
+                    &policies,
+                    &[
+                        (identities.tenant.clone(), caller_publication.clone()),
+                        (other.clone(), other_publication.id),
+                    ],
+                    &configuration,
+                ))
+            } else {
+                Box::new(streams::Owners::install(
+                    &broker,
+                    &policies,
+                    &caller_publication,
+                    &configuration,
+                ))
+            }
         });
         let guest_runtime = if original_provider_configuration {
             #[cfg(all(
@@ -1224,7 +1397,9 @@ impl Fixture {
         } else {
             guest_runtime::Runtime::scoped(&broker, &policies, tenant, &scopes, false)
         };
-        if let Some(other) = &additional_runtime_tenant {
+        if let (Some(other), Some((_, call_wall_millis, _))) =
+            (&additional_runtime_tenant, activation_runtime)
+        {
             let publication = latent_artifacts::PublicationRef::package(
                 latent_artifacts::LifecycleScope::Tenant(other.clone()),
                 caller.layout().digest(),
@@ -1238,7 +1413,7 @@ impl Fixture {
                     publications: std::slice::from_ref(&publication.id),
                     principal: ("user", "alice"),
                 }],
-                activation_runtime.unwrap().1,
+                call_wall_millis,
             );
         }
         let callee_contract = callee.surface().unwrap().exports()[0].to_string();
@@ -1266,12 +1441,20 @@ impl Fixture {
             &runtime_services[..]
         };
         definitions.extend(guest_runtime.definitions(tenant, runtime_services));
-        if let Some(other) = &additional_runtime_tenant {
+        if let Some(other) = additional_runtime_tenant
+            .as_ref()
+            .filter(|_| activation_runtime.is_some())
+        {
             definitions.extend(guest_runtime.definitions(&other.0, &[caller_service]));
         }
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         if streams.is_some() {
-            definitions.push(streams::Owners::definition());
+            if let Some(other) = &additional_runtime_tenant {
+                definitions.push(streams::Owners::definition_for_tenant(&identities.tenant));
+                definitions.push(streams::Owners::definition_for_tenant(other));
+            } else {
+                definitions.push(streams::Owners::definition());
+            }
         }
         let mut providers = vec![ConfiguredBindingProvider {
             tenant: identities.tenant.clone(),
@@ -1280,12 +1463,20 @@ impl Fixture {
             local_deployment: Some(DeploymentId("callee".into())),
         }];
         providers.extend(guest_runtime.providers(tenant));
-        if let Some(other) = &additional_runtime_tenant {
+        if let Some(other) = additional_runtime_tenant
+            .as_ref()
+            .filter(|_| activation_runtime.is_some())
+        {
             providers.extend(guest_runtime.providers(&other.0));
         }
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         if let Some(streams) = &streams {
-            providers.push(streams.provider());
+            if let Some(other) = &additional_runtime_tenant {
+                providers.push(streams.provider_for_tenant(&identities.tenant));
+                providers.push(streams.provider_for_tenant(other));
+            } else {
+                providers.push(streams.provider());
+            }
         }
         let (generation, transaction) = store.binding_version().unwrap();
         let update = store
@@ -1313,6 +1504,7 @@ impl Fixture {
         let read_wait = Arc::new(ObservedReadWait {
             active: AtomicU64::new(0),
             entered: tokio::sync::Notify::new(),
+            zero_clock,
         });
         let factory = WasmtimeComponentEngineFactory::with_catalog(
             config,
@@ -1555,6 +1747,59 @@ impl NodeLoadSource for SyntheticFixtureLoad {
             queue_delay_millis: 0,
             observed_at: Instant::now(),
         })
+    }
+}
+
+/// The diagnostic load sample must use the same original clock as admission.
+/// This retains the existing synthetic healthy load and normal freshness checks.
+struct ZeroClockFixtureLoad(Arc<zero_clock::ZeroClock>);
+impl NodeLoadSource for ZeroClockFixtureLoad {
+    fn snapshot(&self) -> Result<NodeLoadSnapshot, PlatformError> {
+        Ok(NodeLoadSnapshot {
+            accepting: true,
+            cpu_pressure_milli: 0,
+            memory_pressure_milli: 0,
+            queue_delay_millis: 0,
+            observed_at: self.0.monotonic_now(),
+        })
+    }
+}
+
+#[cfg(test)]
+mod zero_clock_load_tests {
+    use super::*;
+
+    #[test]
+    fn fixture_load_uses_the_injected_admission_clock() {
+        let clock = Arc::new(zero_clock::ZeroClock::new());
+        let origin = clock.monotonic_now();
+        // The original live source observes a later domain value than this
+        // deliberately frozen clock, which admission must reject as future.
+        std::thread::sleep(Duration::from_millis(1));
+        let live = SyntheticFixtureLoad.snapshot().unwrap();
+        assert!(origin.checked_duration_since(live.observed_at).is_none());
+
+        let load = ZeroClockFixtureLoad(Arc::clone(&clock));
+        let initial = load.snapshot().unwrap();
+        assert_eq!(
+            origin.checked_duration_since(initial.observed_at),
+            Some(Duration::ZERO)
+        );
+        assert!(initial.accepting);
+        assert_eq!(
+            (
+                initial.cpu_pressure_milli,
+                initial.memory_pressure_milli,
+                initial.queue_delay_millis,
+            ),
+            (0, 0, 0)
+        );
+
+        clock.advance(Duration::from_nanos(5));
+        assert_eq!(
+            load.snapshot().unwrap().observed_at,
+            origin + Duration::from_nanos(5)
+        );
     }
 }
 fn deployment(

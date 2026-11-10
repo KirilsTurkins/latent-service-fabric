@@ -132,6 +132,76 @@ fn load_tenant(root: &Path, tenant: Option<&str>) -> Result<Build> {
     )
 }
 
+/// Loads only a completed observed Rust capsule under the trusted Phase 4
+/// packaging profile. Input metadata never selects or widens that profile.
+pub(super) fn load_rust_transaction(root: &Path) -> Result<Build> {
+    load_transaction_profile(root, true)
+}
+
+/// Select the same host-owned transaction profile for the six maintained
+/// standalone build types. The source observation cannot select the profile.
+pub(super) fn load_transaction(root: &Path) -> Result<Build> {
+    load_transaction_profile(root, false)
+}
+
+fn transaction_build_type(build_type: &str, rust_only: bool) -> bool {
+    build_type == RUST_CAPSULE_BUILD_TYPE
+        || (!rust_only
+            && matches!(
+                build_type,
+                C_GUEST_BUILD_TYPE
+                    | GO_CAPSULE_BUILD_TYPE
+                    | TYPESCRIPT_CAPSULE_BUILD_TYPE
+                    | DOTNET_CAPSULE_BUILD_TYPE
+                    | JAVA_CAPSULE_BUILD_TYPE
+            ))
+}
+
+fn load_transaction_profile(root: &Path, rust_only: bool) -> Result<Build> {
+    let marker: Value = serde_json::from_slice(&read(root, "BUILD-COMPLETE.json", 65536)?)?;
+    let raw = read(root, "build-observation.json", 32768)?;
+    let observation = decode_build_observation(&raw, ProvenanceLimits::default())?;
+    if !transaction_build_type(&observation.build_type, rust_only)
+        || marker["formatVersion"] != 1
+        || marker["observationDigest"] != artifact_blob_digest(&raw).as_str()
+    {
+        return Err("completed supported transaction build observation required".into());
+    }
+    let mut limits = PackagingLimits::default();
+    limits.manifest_profile = latent_manifest::ManifestValidationProfile::phase4(
+        latent_core::BudgetProfile::Phase4,
+        latent_core::PHASE4_HOST_ABI_V1,
+        &latent_manifest::phase4_host_abi_digest(),
+    )
+    .map_err(|_| "unsupported transaction packaging profile")?;
+    let build = load_observed(
+        root,
+        observation,
+        limits,
+        Some(&marker["sourceDigest"]),
+        Some(TENANT),
+    )?;
+    let companion = build
+        .bundle
+        .blob("transaction-binding.json")
+        .ok_or("transaction companion missing")?;
+    let deployment: Value = serde_json::from_slice(&build.deployment)?;
+    let name = deployment["metadata"]["name"]
+        .as_str()
+        .ok_or("deployment identity missing")?;
+    validate_transaction_binding(companion, &build.service, name)?;
+    Ok(build)
+}
+
+fn validate_transaction_binding(bytes: &[u8], service: &str, deployment: &str) -> Result<()> {
+    let binding = latent_manifest::TransactionBinding::decode(bytes)
+        .map_err(|_| "invalid transaction companion")?;
+    binding
+        .check_links(service, deployment, &binding.binding)
+        .map_err(|_| "transaction companion link mismatch")?;
+    Ok(())
+}
+
 pub(super) fn load_current_java(root: &Path, raw: &[u8]) -> Result<Build> {
     let observation = decode_build_observation(raw, ProvenanceLimits::default())?;
     if observation.build_type != JAVA_CAPSULE_BUILD_TYPE {
@@ -307,6 +377,73 @@ mod packaging_fixture;
 mod tests {
     use super::*;
     use latent_packaging::LayerInput;
+
+    #[test]
+    fn transaction_demo_accepts_only_maintained_build_types_and_keeps_rust_mode_narrow() {
+        for build in [
+            RUST_CAPSULE_BUILD_TYPE,
+            C_GUEST_BUILD_TYPE,
+            GO_CAPSULE_BUILD_TYPE,
+            TYPESCRIPT_CAPSULE_BUILD_TYPE,
+            DOTNET_CAPSULE_BUILD_TYPE,
+            JAVA_CAPSULE_BUILD_TYPE,
+        ] {
+            assert!(transaction_build_type(build, false));
+            assert_eq!(
+                transaction_build_type(build, true),
+                build == RUST_CAPSULE_BUILD_TYPE
+            );
+        }
+        assert!(!transaction_build_type(
+            "https://example.invalid/unreviewed-build",
+            false
+        ));
+    }
+
+    #[test]
+    fn rust_transaction_companion_requires_supported_profile_and_original_links() {
+        let value = json!({
+            "apiVersion": "latent.dev/v1", "kind": "TransactionBinding",
+            "capsule": "examples/transaction-rust-aggregate", "deployment": "transaction-rust-aggregate",
+            "binding": "transaction-rust-aggregate", "profile": "lsf-transaction-v1",
+            "hostAbiDigest": latent_manifest::phase4_host_abi_digest(),
+            "namespace": "transactional-aggregate", "stateSchema": format!("sha256:{}", "a".repeat(64)),
+            "operations": [{"operation": "query", "mode": "fresh-query", "inputFormat": "lsf-wit-values-v1", "resultFormat": "lsf-wit-values-v1"}]
+        });
+        let encoded = serde_json::to_vec(&value).unwrap();
+        assert!(validate_transaction_binding(
+            &encoded,
+            "examples/transaction-rust-aggregate",
+            "transaction-rust-aggregate"
+        )
+        .is_ok());
+        assert!(validate_transaction_binding(
+            &encoded,
+            "examples/other",
+            "transaction-rust-aggregate"
+        )
+        .is_err());
+        assert!(validate_transaction_binding(
+            &encoded,
+            "examples/transaction-rust-aggregate",
+            "other"
+        )
+        .is_err());
+        let mut wrong = value;
+        wrong["hostAbiDigest"] = json!(format!("sha256:{}", "0".repeat(64)));
+        assert!(validate_transaction_binding(
+            &serde_json::to_vec(&wrong).unwrap(),
+            "examples/transaction-rust-aggregate",
+            "transaction-rust-aggregate"
+        )
+        .is_err());
+        assert!(validate_transaction_binding(
+            b"{}",
+            "examples/transaction-rust-aggregate",
+            "transaction-rust-aggregate"
+        )
+        .is_err());
+    }
 
     #[test]
     fn shared_server_metadata_requires_observed_profile_component_source_and_web_lifecycle() {

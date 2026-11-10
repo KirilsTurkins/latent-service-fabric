@@ -49,6 +49,7 @@ pub struct Exchange {
     pub cancelled: Cell<bool>,
     read_requested: Cell<bool>,
     expected: Cell<Option<u64>>,
+    accepted: Cell<u64>,
     written: Cell<u64>,
     dispatch_possible: Cell<bool>,
     admitted: Cell<bool>,
@@ -83,6 +84,7 @@ impl Exchange {
             cancelled: Cell::new(false),
             read_requested: Cell::new(false),
             expected: Cell::new(None),
+            accepted: Cell::new(0),
             written: Cell::new(0),
             dispatch_possible: Cell::new(false),
             admitted: Cell::new(false),
@@ -113,12 +115,13 @@ impl Exchange {
             return Err(self.failure.get().expect("sticky upload failure"));
         }
         let length = bytes.len() as u64;
+        let accepted = self.accepted.get().saturating_add(length);
         if length > CHUNK as u64
-            || self.written.get().saturating_add(length) > MAX_BODY
+            || accepted > MAX_BODY
             || self
                 .expected
                 .get()
-                .is_some_and(|maximum| self.written.get().saturating_add(length) > maximum)
+                .is_some_and(|maximum| accepted > maximum)
         {
             self.local_fail(raw::HttpError::RequestTooLarge);
             return Err(self.failure.get().expect("sticky upload failure"));
@@ -126,6 +129,35 @@ impl Exchange {
         if !bytes.is_empty() {
             *self.queued.borrow_mut() = Some(bytes);
         }
+        self.accepted.set(accepted);
+        Ok(())
+    }
+
+    pub fn set_expected_length(&self, expected: Option<u64>) {
+        assert!(!self.admitted.get() && self.accepted.get() == 0);
+        self.expected.set(expected);
+    }
+
+    pub fn finish_output(&self, trailers: bool) -> Result<(), raw::HttpError> {
+        if trailers {
+            self.local_fail(raw::HttpError::InvalidRequest);
+        }
+        if let Some(error) = self.failure.get() {
+            return Err(error);
+        }
+        if self.cancelled.get() {
+            return Err(raw::HttpError::Cancelled);
+        }
+        if self
+            .expected
+            .get()
+            .is_some_and(|length| length != self.accepted.get())
+        {
+            // A started original import may already have affected the peer.
+            self.local_fail(raw::HttpError::InvalidRequest);
+            return Err(self.failure.get().expect("sticky length mismatch"));
+        }
+        self.output_finished.set(true);
         Ok(())
     }
 

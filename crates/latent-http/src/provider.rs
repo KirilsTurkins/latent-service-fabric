@@ -39,7 +39,14 @@ pub(crate) struct Inner {
     pub tls: Arc<rustls::ClientConfig>,
     pub resolver: Resolver,
     pub pools: Arc<ProviderPools>,
+    #[cfg(test)]
+    pub(crate) write_gate: std::sync::Mutex<Option<WriteGate>>,
     _configuration: ProviderMetadata,
+}
+#[cfg(test)]
+pub(crate) struct WriteGate {
+    pub(crate) entered: tokio::sync::oneshot::Sender<()>,
+    pub(crate) release: tokio::sync::oneshot::Receiver<()>,
 }
 impl HttpProvider {
     pub fn install(
@@ -167,6 +174,8 @@ impl HttpProvider {
                 tls,
                 resolver: Resolver::new(),
                 pools,
+                #[cfg(test)]
+                write_gate: std::sync::Mutex::new(None),
                 _configuration: configuration,
             }),
         })

@@ -18,6 +18,8 @@ pub(super) mod provenance;
 #[path = "../generic_backend/support.rs"]
 #[allow(dead_code)]
 pub(super) mod support;
+#[path = "runtime/unknown_import.rs"]
+mod unknown_import;
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[path = "runtime/typescript.rs"]
@@ -88,6 +90,27 @@ async fn signed_runtime_with_limits(
     source_input: &[u8],
     runtime_limits: RuntimeLimits,
 ) -> Fixture {
+    signed_runtime_with_clock(
+        root,
+        cells,
+        call_wall_millis,
+        caller,
+        source_input,
+        runtime_limits,
+        None,
+    )
+    .await
+}
+
+async fn signed_runtime_with_clock(
+    root: &std::path::Path,
+    cells: u32,
+    call_wall_millis: u64,
+    caller: latent_packaging::PackageBundle,
+    source_input: &[u8],
+    runtime_limits: RuntimeLimits,
+    clock: Option<std::sync::Arc<super::fixture::zero_clock::ZeroClock>>,
+) -> Fixture {
     let callee = packages::callee(42);
     let signers = package::Signers::new(latent_signing::PROVENANCE_BUILD_TYPE);
     let mut uploads = vec![];
@@ -120,13 +143,24 @@ async fn signed_runtime_with_limits(
             .await
             .unwrap();
     }
-    Fixture::with_activation_runtime(
-        cells,
-        (catalog, caller, callee),
-        runtime_limits,
-        call_wall_millis,
-    )
-    .await
+    if let Some(clock) = clock {
+        assert_eq!(cells, 1);
+        Fixture::with_zero_clock_activation_runtime(
+            (catalog, caller, callee),
+            runtime_limits,
+            call_wall_millis,
+            clock,
+        )
+        .await
+    } else {
+        Fixture::with_activation_runtime(
+            cells,
+            (catalog, caller, callee),
+            runtime_limits,
+            call_wall_millis,
+        )
+        .await
+    }
 }
 
 /// The normal suite does not build a toolchain. Run the explicit compiler
@@ -297,6 +331,18 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
     if name == "java-scheduled-libraries" {
         assert_eq!(record["fixture"], "scheduled-library");
         assert_eq!(record["status"], "component-built-unqualified");
+        assert_eq!(
+            record["timerSleepAdmissionSource"]["status"],
+            "SDK-source-control-passed"
+        );
+        assert_eq!(
+            record["timerSleepAdmissionSource"]["componentExecutionPerformed"],
+            false
+        );
+        assert_eq!(
+            record["timerSleepAdmissionSource"]["actualGuestBindingsUsed"],
+            false
+        );
         assert_eq!(
             record["scheduledSource"]["status"],
             "SDK-source-controls-passed"
@@ -502,7 +548,7 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
     } else {
         3
     } {
-        for mode in 0..if scheduled { 8 } else { 4 } {
+        for mode in 0..if scheduled { 10 } else { 4 } {
             let requested_id = format!("{name}-{iteration}-{mode}");
             let stores_before = f.backend.resource_snapshot().stores_created;
             let actual = f
@@ -521,9 +567,16 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
                 assert_eq!(actual.activation_id.0, requested_id);
             }
             let receipt = success(actual);
+            // The last two modes encode host admission and owner snapshots;
+            // the original eight modes retain their exact result.
+            let value = match (scheduled, mode) {
+                (true, 8) => 2_211_210,
+                (true, 9) => 221_110,
+                _ => 42,
+            };
             assert_eq!(
                 serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),
-                [42]
+                [value]
             );
             assert!(receipt.consumption.cpu_fuel > 0);
             assert!(receipt.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
@@ -547,7 +600,7 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
                     "LSF_JAVA_RETAINED={}",
                     serde_json::json!({
                         "activationId": requested_id, "iteration": iteration, "mode": mode,
-                        "value": 42, "cpuFuel": receipt.consumption.cpu_fuel,
+                        "value": value, "cpuFuel": receipt.consumption.cpu_fuel,
                         "reportedPeakMemoryBytes": receipt.consumption.peak_memory_bytes,
                         "storesBefore": stores_before, "storesCreated": runtime.stores_created,
                         "liveStores": runtime.live_stores,
@@ -1049,7 +1102,7 @@ mod owned_timer {
         mem::size_of,
         pin::Pin,
         sync::{
-            atomic::{AtomicU64, AtomicUsize, Ordering},
+            atomic::{AtomicUsize, Ordering},
             Arc,
         },
         task::{Context, Poll, Waker},
@@ -1217,16 +1270,68 @@ mod owned_timer {
         assert_eq!(legacy.0.load(Ordering::SeqCst), 1);
     }
 
+    #[tokio::test]
+    async fn controlled_wait_refusal_and_cancellation_keep_original_budget() {
+        let clock = std::sync::Arc::new(super::super::fixture::zero_clock::ZeroClock::new());
+        let observer = ObservedReadWait::controlled(clock.clone());
+        let deadline = clock.origin() + Duration::from_nanos(5);
+        let denied = original(0);
+        assert!(matches!(observer.wait_until_owned(deadline, &denied),
+            Err(ref error) if error.code == PlatformErrorCode::ResourceExhausted));
+        assert_eq!(denied.host_memory_bytes(), 0);
+        assert_eq!(clock.pending_waiters(), 0);
+        assert_eq!(observer.active.load(Ordering::Acquire), 0);
+
+        let budget = original(4096);
+        let foreign = original(4096);
+        let foreign_hold = foreign.reserve_host_memory(23).unwrap();
+        let mut wait = observer.wait_until_owned(deadline, &budget).unwrap();
+        assert!(budget.host_memory_bytes() > 0);
+        assert_eq!(observer.active.load(Ordering::Acquire), 0);
+        assert!(Pin::new(&mut wait)
+            .poll(&mut Context::from_waker(Waker::noop()))
+            .is_pending());
+        assert!(clock.target_live());
+        assert_eq!(clock.pending_waiters(), 1);
+        assert_eq!(observer.active.load(Ordering::Acquire), 1);
+        drop(wait);
+        assert!(!clock.target_live());
+        assert_eq!(clock.pending_waiters(), 0);
+        assert_eq!(observer.active.load(Ordering::Acquire), 0);
+        assert_eq!(budget.host_memory_bytes(), 0);
+        assert_eq!(foreign.host_memory_bytes(), 23);
+        drop(foreign_hold);
+
+        let elapsed_clock =
+            std::sync::Arc::new(super::super::fixture::zero_clock::ZeroClock::new());
+        let elapsed_observer = ObservedReadWait::controlled(elapsed_clock.clone());
+        let elapsed_budget = original(4096);
+        let mut elapsed = elapsed_observer
+            .wait_until_owned(
+                elapsed_clock.origin() + Duration::from_nanos(5),
+                &elapsed_budget,
+            )
+            .unwrap();
+        assert!(Pin::new(&mut elapsed)
+            .poll(&mut Context::from_waker(Waker::noop()))
+            .is_pending());
+        elapsed_clock.advance(Duration::from_nanos(5));
+        assert!(Pin::new(&mut elapsed)
+            .poll(&mut Context::from_waker(Waker::noop()))
+            .is_ready());
+        assert_eq!(elapsed_clock.pending_waiters(), 0);
+        assert!(elapsed_budget.host_memory_bytes() > 0);
+        drop(elapsed);
+        assert_eq!(elapsed_budget.host_memory_bytes(), 0);
+    }
+
     #[tokio::test(start_paused = true)]
     async fn observed_inner_and_outer_refusals_and_pending_drop_preserve_originals() {
         let sleep_bytes = size_of::<tokio::time::Sleep>() as u64 + BOX_ALLOCATION_BOOKKEEPING;
         assert!(sleep_bytes > 1);
         for memory in [sleep_bytes - 1, sleep_bytes] {
             let budget = original(memory);
-            let observer = ObservedReadWait {
-                active: AtomicU64::new(0),
-                entered: tokio::sync::Notify::new(),
-            };
+            let observer = ObservedReadWait::system();
             assert!(matches!(
                 observer.wait_until_owned(
                     tokio::time::Instant::now().into_std() + Duration::from_secs(1),
@@ -1246,10 +1351,7 @@ mod owned_timer {
         let budget = original(4096);
         let foreign = original(4096);
         let foreign_hold = foreign.reserve_host_memory(23).unwrap();
-        let observer = ObservedReadWait {
-            active: AtomicU64::new(0),
-            entered: tokio::sync::Notify::new(),
-        };
+        let observer = ObservedReadWait::system();
         let mut wait = observer
             .wait_until_owned(
                 tokio::time::Instant::now().into_std() + Duration::from_secs(1),

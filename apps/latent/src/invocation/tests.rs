@@ -37,6 +37,7 @@ fn invoke(input: PathBuf) -> InvokeArgs {
         idempotency_key: None,
         metadata: Vec::new(),
         budget: None,
+        budget_json: None,
         budget_profile: crate::args::InvokeBudgetProfile::Phase1,
         cpu_fuel: None,
         memory_bytes: None,

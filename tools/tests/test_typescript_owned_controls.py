@@ -139,23 +139,44 @@ class TypeScriptOwnedControlsTests(unittest.TestCase):
                             raw.replace(b'0 ignored',b'1 ignored')]:
                 with self.assertRaises(ValueError):controls.partial_rust_case(changed,case)
         with self.assertRaises(ValueError):controls.partial_rust_case(b'',controls.PARTIAL_RUST_CASES[0])
-        # Authenticate the actual current source and full historical inverse;
-        # no producer receipt, current ROOT file or unrelated recipe is changed.
+        # Reconstruct the exact eligible historical recipe from a frozen,
+        # independently identified source. The changed current recipe needs
+        # a receipt matching its source; it must not reuse this historical one.
         name='tools/typescript_guest/activation_engine.py'
-        raw=(controls.ROOT/name).read_bytes()
+        fixture=controls.ROOT/'tools/tests/fixtures/typescript_clock_profile/original-sdk-e611/activation_engine.py'
+        frozen=fixture.read_bytes()
+        self.assertEqual(controls.native_build.file_bytes(frozen),
+            {'bytes':14930,'sha256':'sha256:449242586e04b173f152745d80928ef7953bfb5f2a80cc14ed2fc25a96c050b0'})
+        anchor=b'    "native_import_values.h",\n'
+        observer=b'    "native_import_observer.h",\n'
+        self.assertEqual(frozen.count(anchor),1)
+        historical=frozen.replace(anchor,anchor+observer,1)
         old={'bytes':14962,'sha256':'sha256:5e576fd983990296b18a6ac743a1bca42d22c6a521f89a14c1e2221177a9b7a5'}
+        self.assertEqual(controls.native_build.file_bytes(historical),old)
+        before=b'    "native_import_lifecycle.h", "native_imports.h", "broker_import_accounting.h",\n'
+        after=b'    "native_import_lifecycle.h", "native_imports.h", "native_import_partial.h", "broker_import_accounting.h",\n'
+        self.assertEqual(historical.count(before),1)
+        raw=historical.replace(before,after,1)
+        eligible={'bytes':14989,'sha256':'sha256:445603d926010c98662d27fd5d92512ca742685c7634e92a754ecfec1f9cd53f'}
+        self.assertEqual(controls.native_build.file_bytes(raw),eligible)
         proof=controls.native_build.library_recipe_equivalence(name,raw,old)
-        self.assertEqual(proof['current'],controls.native_build.file_bytes(raw))
+        self.assertEqual(proof['current'],eligible)
+        self.assertEqual(proof['inverse'],{'before':before.decode(),'after':after.decode()})
         self.assertEqual(proof['inverseIdentity'],old)
         self.assertFalse(proof['historicalReceiptReissued'])
-        before=proof['inverse']['before'].encode();after=proof['inverse']['after'].encode()
-        historical=raw.replace(after,before,1)
-        self.assertEqual(controls.native_build.file_bytes(historical),old)
+        self.assertEqual(raw.replace(after,before,1),historical)
         self.assertIsNone(controls.native_build.library_recipe_equivalence(name,historical,old))
-        self.assertIsNone(controls.native_build.library_recipe_equivalence(name,raw,proof['current']))
+        self.assertIsNone(controls.native_build.library_recipe_equivalence(name,raw,eligible))
+        current=(controls.ROOT/name).read_bytes()
+        current_identity=controls.native_build.file_bytes(current)
+        self.assertNotEqual(current_identity,eligible)
+        self.assertIsNone(controls.native_build.library_recipe_equivalence(name,current,current_identity))
+        for stale in (old,eligible):
+            with self.subTest(stale=stale), self.assertRaisesRegex(ValueError,'typescript-native-library-recipe-drift'):
+                controls.native_build.library_recipe_equivalence(name,current,stale)
         for path,source,identity in [
                 ('tools/typescript_guest/promise_library.py',raw,old),
-                (name,raw+b' ',old),(name,raw.replace(after,before),proof['current']),
+                (name,raw+b' ',old),(name,raw.replace(after,before),eligible),
                 (name,raw.replace(after,after+after),old),
                 (name,raw.replace(b'FIREFOX_COMMIT',b'FIREFOX_COMMIX',1),old),
                 (name,raw,dict(old,bytes=14963)),
@@ -163,6 +184,46 @@ class TypeScriptOwnedControlsTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'typescript-native-library-recipe-drift'):
                 controls.native_build.library_recipe_equivalence(path,source,identity)
         self.assertIn('tools/typescript_guest/native_build.py',controls.PARTIAL_INPUTS)
+
+        # Synthetic receipt control: the production validator must accept an
+        # exact current recipe and refuse a historical one before header work.
+        import json
+        import tempfile
+        from pathlib import Path
+        from tools.typescript_guest import native_build, promise_library
+
+        recipe_paths=('tools/build_typescript_promise_library.py',
+            'tools/typescript_guest/promise_library.py',
+            'tools/typescript_guest/promise_engine.py',
+            'tools/typescript_guest/activation_engine.py',
+            'sdk/typescript-guest/activation/promise_hooks.h')
+        with tempfile.TemporaryDirectory() as temporary:
+            library=Path(temporary)
+            product=library/'obj/js/src/build/libjs_static.a'
+            product.parent.mkdir(parents=True)
+            product.write_bytes(b'synthetic library product')
+            for source_name in promise_library.SOURCES:
+                (library/(source_name+'-acquisition.json')).write_text('{}',encoding='utf-8')
+            exported={'synthetic':'exported-header'}
+            record={'schemaVersion':'latent.typescript.promise-library-source-build.v1',
+                'status':'passed','scope':'intrinsic-hook-library-compile-only',
+                'qualification':'unknown','sources':promise_library.SOURCES,
+                'recipe':{name:native_build.file_identity(native_build.ROOT/name) for name in recipe_paths},
+                'library':{'path':'obj/js/src/build/libjs_static.a',**native_build.file_identity(product)},
+                'exportedHeader':exported}
+            receipt=library/'library-build.json'
+            receipt.write_text(json.dumps(record),encoding='utf-8')
+            with patch.object(promise_library,'installed_header_identity',return_value=exported), \
+                    patch.object(promise_library,'recheck_archives') as archives:
+                _,_,observed,_,_=native_build.validated_library(library)
+                self.assertEqual(observed,native_build.file_identity(product))
+                self.assertEqual(archives.call_count,1)
+                for stale in (old,eligible):
+                    record['recipe'][name]=stale
+                    receipt.write_text(json.dumps(record),encoding='utf-8')
+                    with self.subTest(stale=stale), self.assertRaisesRegex(ValueError,'typescript-native-library-recipe-drift'):
+                        native_build.validated_library(library)
+                    self.assertEqual(archives.call_count,1)
 
 
     def test_z_prepared_fixture_refuses_wrong_origin_prefix_and_compiled_source_drift(self):

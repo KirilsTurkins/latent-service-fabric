@@ -215,7 +215,7 @@ class ProbeIntegration(unittest.TestCase):
                               "import os, pathlib, sys\n"
                               "pathlib.Path(" + repr(str(marker)) + ").write_text(str(os.getpid()))\n"
                               "sys.stdout.write(" + repr(json.dumps(response) + "\n") + ")\n"
-                              "sys.exit(3)\n", encoding="utf-8")
+                              "sys.exit(4)\n", encoding="utf-8")
             binary.chmod(0o700)
             result = Client(binary, root / "config.json", root).call("invoke", timeout=5)
             with self.assertRaises(ChildProcessError):
@@ -257,7 +257,26 @@ class ProbeIntegration(unittest.TestCase):
             result = failure()
             result["data"]["resolvedRevision"] = {**revision, "revisionId": "revision-v1:sha256:" + "c" * 64}
             cli, journal = Mock(), Mock()
-            cli.call.return_value = result
+            expected_input = (source / "input.json").read_bytes()
+            sent_inputs = []
+            sent_budgets = []
+            def call(*args, **options):
+                if args[0] == "invoke":
+                    selected = args[args.index("--input") + 1]
+                    sent_inputs.append(options.get("stdin") if selected == "-" else Path(selected).read_bytes())
+                    self.assertNotIn("--budget", args)
+                    values = args[args.index("--budget-json") + 1]
+                    sent_budgets.append(common.decode(values.encode("ascii")))
+                return result
+            def replace_after_intent(_cli, _journal, intent, invoke, _deadline):
+                self.assertEqual(intent["inputSha256"], common.digest(expected_input))
+                original = state.load(root, "test-budget.json")
+                self.assertEqual(intent["budgetSha256"], common.digest(common.encode(original).removesuffix(b"\n")))
+                self.assertEqual(intent["budgetProfile"], "phase1")
+                (root / "test-input.json").write_bytes(b"replacement")
+                state.atomic(root, "test-budget.json", {"cpuFuel": 7, "memoryBytes": 8, "wallTimeLimitMillis": 9})
+                return invoke("original")
+            cli.call.side_effect = call
             journal.read.return_value = {"pending": None}
             capture = diagnostics.Capture()
             from tools.dev_workflow import helper
@@ -265,10 +284,16 @@ class ProbeIntegration(unittest.TestCase):
                     patch.object(helper, "client", return_value=(cli, journal)), \
                     patch.object(helper, "installation", return_value=(SimpleNamespace(node=native / "node.json"), current)), \
                     patch.object(node_scenarios.node_tests, "target", return_value=({"publication": revision["publicationId"]}, revision, None)), \
-                    patch.object(node_scenarios.node_invocation, "execute", side_effect=lambda _cli, _journal, _intent, call, _deadline: call("original")):
+                    patch.object(node_scenarios.node_invocation, "execute", side_effect=replace_after_intent):
                 report = node_scenarios.run(root, {"environment": "node", "selection": []},
                                             diagnostic_observer=capture.observer("common-scenarios"))
             self.assertFalse(report["passed"])
+            cli.require_scenario_budget_support.assert_called_once_with()
+            self.assertEqual(sent_inputs, [expected_input])
+            self.assertEqual(sent_budgets[0]["cpuFuel"], 1000000000)
+            self.assertEqual(sent_budgets[0]["memoryBytes"], 67108864)
+            self.assertEqual(sent_budgets[0]["wallTimeLimitMillis"], 1000)
+            self.assertNotIn("logBytes", sent_budgets[0])  # CLI supplies the original default.
             calls = cli.call.call_args_list
             # The outer compatibility test additionally enables its bounded
             # resource observation; the direct diagnostics path only invokes.

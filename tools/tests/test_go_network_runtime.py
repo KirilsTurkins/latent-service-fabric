@@ -5,7 +5,8 @@ from pathlib import Path
 import re
 import unittest
 
-from tools import qualify_go_network_runtime as runtime
+from tools import go_network_read_barrier as runtime
+from tools import qualify_go_network_runtime as controller
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -20,6 +21,9 @@ class GoNetworkRuntimeTests(unittest.TestCase):
                     'pendingOperations': 1, 'ioCalls': 1, 'streamOwners': 1, 'connections': 1,
                     'retiredGenerations': 0, 'quarantinedConnections': 0,
                     'providerStopped': False, 'currentGenerationRetired': False, 'liveStores': 1, 'activeActivations': 1}))
+            if label == 'cancel-pending-read':
+                result.append(('GO_NETWORK_CANCEL_EDGE', {'case': label, 'readDropStartsBefore': 1,
+                    'readDropStartsAfterAccepted': 1, 'sameConnection': True, 'sameGenerationCurrent': True}))
             result.append(('GO_NETWORK_OWNER', {'case': label, 'stores': 0, 'instances': 0,
                 'streamOwners': 0, 'ioOwners': 0, 'kernelRetirementQualified': False}))
             result.append(('GO_NETWORK_CASE', {'case': label, 'mode': mode, 'result': output, 'contacts': contacts}))
@@ -45,6 +49,58 @@ class GoNetworkRuntimeTests(unittest.TestCase):
         self.assertEqual([x['constructedReads'] for x in record['readEdges']], [2, 2])
         self.assertIs(record['completion']['kernelRetirementQualified'], False)
         self.assertIs(record['completion']['normalProviderInstalled'], False)
+
+    def test_v7_profile_limits_are_separate_exact_and_fail_closed(self):
+        marker = b'GO_V7_NETWORK_LIMITS ' + json.dumps(runtime.V7_LIMITS).encode() + b'\n'
+        self.assertEqual(runtime.profile_witness(self.output() + marker, runtime.V7_PROFILE), runtime.V7_LIMITS)
+        self.assertIsNone(runtime.profile_witness(self.output(), 'go-component-activation-v5'))
+        self.assertEqual(runtime.outcomes(self.output() + marker), runtime.outcomes(self.output()))
+        for raw, profile in ((self.output(), runtime.V7_PROFILE),
+                             (self.output() + marker + marker, runtime.V7_PROFILE),
+                             (self.output() + marker, 'go-component-activation-v5'),
+                             (self.output() + marker, 'go-component-activation-v6'),
+                             (self.output() + marker.replace(b'"queuedWork": 16', b'"queuedWork": true'), runtime.V7_PROFILE),
+                             (self.output() + marker.replace(b'"queuedWork": 16', b'"queuedWork": 2'), runtime.V7_PROFILE),
+                             (self.output() + marker.replace(b'"tasks": 16', b'"tasks": 16, "extra": 0'), runtime.V7_PROFILE)):
+            with self.subTest(profile=profile, output=raw[-160:]), self.assertRaises(ValueError):
+                runtime.profile_witness(raw, profile)
+
+    def test_workflow_selection_is_bounded_and_preserves_v5_default(self):
+        for branch in controller.V5_PUSH_BRANCHES:
+            with self.subTest(branch=branch):
+                self.assertEqual(controller.workflow_profile('push', branch, ''), controller.MANAGED_PROFILE)
+        self.assertEqual(controller.workflow_profile('push', controller.V7_PUSH_BRANCH, ''), controller.STACK_PROFILE)
+        for choice in ('', 'v5'):
+            self.assertEqual(controller.workflow_profile('workflow_dispatch', 'development', choice),
+                             controller.MANAGED_PROFILE)
+        self.assertEqual(controller.workflow_profile('workflow_dispatch', 'development', 'v7'),
+                         controller.STACK_PROFILE)
+        for event, branch, choice in (
+                ('push', 'development', ''), ('push', controller.V7_PUSH_BRANCH, 'v5'),
+                ('push', next(iter(controller.V5_PUSH_BRANCHES)), 'v7'),
+                ('workflow_dispatch', 'development', 'v6'), ('workflow_dispatch', 'development', 'V7'),
+                ('pull_request', controller.V7_PUSH_BRANCH, ''), ('', '', '')):
+            with self.subTest(event=event, branch=branch, choice=choice):
+                with self.assertRaisesRegex(ValueError, 'workflow-selection'):
+                    controller.workflow_profile(event, branch, choice)
+        workflow = (ROOT / '.github/workflows/go-network-runtime.yml').read_text()
+        for branch in controller.V5_PUSH_BRANCHES | {controller.V7_PUSH_BRANCH}:
+            self.assertIn("'"+ branch +"'", workflow)
+        self.assertIn('default: v5', workflow)
+        self.assertIn('options: [v5, v7]', workflow)
+        self.assertIn('LSF_GO_NETWORK_DISPATCH_PROFILE: ${{ inputs.profile }}', workflow)
+        self.assertIn('--workflow-selection', workflow)
+
+    def test_v7_owner_uses_only_the_original_profile_limits(self):
+        source = (ROOT / 'tools/qualify_go_network_runtime.py').read_text()
+        self.assertIn('choices=(MANAGED_PROFILE, STACK_PROFILE)', source)
+        self.assertIn('runtime_profile=profile', source)
+        self.assertIn('profile_witness(raw, profile)', source)
+        native = re.sub(r'\s+', ' ', (ROOT / 'crates/latent-wasmtime/tests/go_outbound_streams.rs').read_text())
+        for expected in ('PROFILE => 2', 'V7_PROFILE => 16', 'unsupported Go network runtime profile',
+                         'assert_eq!(record["profile"], profile.as_str())', 'GO_V7_NETWORK_LIMITS',
+                         'queued_work,', 'tasks: 16', 'waits: 4', 'timers: 2', 'native_owners: 2'):
+            self.assertIn(expected, native)
 
     def test_missing_duplicate_reordered_or_failed_ordinary_cases_cannot_pass(self):
         for mutation in ('missing', 'duplicate', 'reorder', 'failed'):
@@ -117,6 +173,27 @@ class GoNetworkRuntimeTests(unittest.TestCase):
                     rows[index][1][key] = value
                 with self.subTest(case=label, mutation=mutation), self.assertRaises(ValueError):
                     runtime.outcomes(self.output(rows))
+
+    def test_cancellation_requires_the_same_undropped_original_owner(self):
+        for field, bad in (('readDropStartsBefore', 2), ('readDropStartsAfterAccepted', 2),
+                           ('sameConnection', False), ('sameGenerationCurrent', False),
+                           ('readDropStartsAfterAccepted', True)):
+            rows = self.rows()
+            index = next(i for i, (name, _) in enumerate(rows) if name == 'GO_NETWORK_CANCEL_EDGE')
+            rows[index][1][field] = bad
+            with self.subTest(field=field, bad=bad), self.assertRaises(ValueError):
+                runtime.outcomes(self.output(rows))
+        for mutation in ('missing', 'duplicate', 'reordered'):
+            rows = self.rows()
+            index = next(i for i, (name, _) in enumerate(rows) if name == 'GO_NETWORK_CANCEL_EDGE')
+            if mutation == 'missing':
+                rows.pop(index)
+            elif mutation == 'duplicate':
+                rows.insert(index, rows[index])
+            else:
+                rows[index], rows[index + 1] = rows[index + 1], rows[index]
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                runtime.outcomes(self.output(rows))
 
     def test_original_guarded_modes_are_unchanged_and_new_mode_uses_ordinary_half_close_eof(self):
         source = (ROOT / 'sdk/go-guest/runtime/network-conformance/main.go').read_bytes()

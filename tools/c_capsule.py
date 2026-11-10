@@ -21,6 +21,11 @@ def parser() -> argparse.ArgumentParser:
     new.add_argument("--name")
     new.add_argument('--threading-profile', choices=('c-context144-sync-cooperative-v1',),
                      help='Explicit finite C context profile; does not grant runtime authority')
+    new.add_argument('--event-profile', help='Exact observed event idempotency profile for the transaction template; grants no authority')
+    new.add_argument('--header-profile', choices=('c-closed-signal-jump-headers-v1',),
+                     help='Expose declarations only; signal and nonlocal jumps remain unavailable')
+    new.add_argument('--runtime-profile', choices=('c-stream-clock-entropy-v1',),
+                     help='Select the bounded IPv4 stream source profile; grants remain independent')
     resolve_ = commands.add_parser("resolve", help="Explicitly capture declared C source/static library closure")
     resolve_.add_argument("project", type=Path)
     resolve_.add_argument("--candidate", type=Path, required=True)
@@ -87,7 +92,10 @@ def main(argv: list[str] | None = None) -> int:
     authoring = args.command in {"add", "update", "remove", "resolve", "review-lock", "dependencies", "test", "watch", "generator-request", "generate"}
     try:
         if args.command == "new":
-            result = create(args.directory, args.template, args.name, threading_profile=args.threading_profile)
+            result = create(args.directory, args.template, args.name, threading_profile=args.threading_profile,
+                            header_profile=args.header_profile,
+                            **({'event_profile': args.event_profile} if args.event_profile is not None else {}),
+                            **({'runtime_profile': args.runtime_profile} if args.runtime_profile is not None else {}))
         elif authoring:
             from tools import c_dependency_authoring as dependencies
             from tools.application_dependencies import document

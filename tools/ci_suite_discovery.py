@@ -100,6 +100,11 @@ def _libtest_outcomes(lines: list[str], available: set[str] | frozenset[str],
             if match:
                 summaries.append(match.groups())
         elif line.startswith("test "):
+            progress = re.fullmatch(r"test (.+) has been running for over 60 seconds", line)
+            if progress:
+                if progress.group(1) not in available - ignored:
+                    errors.append("unknown-progress")
+                continue
             match = re.fullmatch(r"test (.+) \.\.\. (ok|ignored|FAILED)(?:, .*)?", line)
             if not match:
                 errors.append("malformed-outcome")

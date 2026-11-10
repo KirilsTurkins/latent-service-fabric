@@ -89,6 +89,22 @@ impl Registry {
         let slots = self.slots.try_lock().map_err(crate::snapshot_lock_error)?;
         Ok(slots.get(index).and_then(Slot::owner))
     }
+    #[cfg(feature = "development-read-witness")]
+    pub fn sole_owner(&self) -> Result<Option<Arc<Connection>>, StreamError> {
+        // Clone bounded original owners under the table lock, then release all
+        // clones only outside it. There is no callback or destructor under the
+        // registry lock, including the multiple-owner refusal path.
+        let owners: [Option<Arc<Connection>>; CAPACITY] = {
+            let slots = self.slots.try_lock().map_err(crate::snapshot_lock_error)?;
+            std::array::from_fn(|index| slots[index].owner())
+        };
+        let mut owners = owners.into_iter().flatten();
+        let first = owners.next();
+        if owners.next().is_some() {
+            return Ok(None);
+        }
+        Ok(first)
+    }
     fn retain(&self, owner: &Connection) -> bool {
         let displaced = {
             // No state lock is held by stop; this mutex encloses pointer

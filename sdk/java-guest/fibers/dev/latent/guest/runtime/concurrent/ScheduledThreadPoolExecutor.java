@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
@@ -20,8 +21,12 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     private final ThreadFactory factory;
     private final long origin = System.nanoTime();
     private final ArrayList<Entry> queue = new ArrayList<>();
-    private final ArrayList<Thread> workers = new ArrayList<>();
+    // The root coordinator cannot acquire the pool monitor, and interrupting
+    // a worker can retire it before the coordinator reaches the next one.
+    private final List<Thread> workers = new CopyOnWriteArrayList<>();
     private volatile Activation.Lease owner;
+    private final java.util.concurrent.atomic.AtomicBoolean ownerSettlementStarted =
+        new java.util.concurrent.atomic.AtomicBoolean();
     private volatile boolean shutdown;
     private volatile boolean interrupting;
     private volatile boolean continuePeriodic;
@@ -42,7 +47,15 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         this.factory = Objects.requireNonNull(factory);
         owner = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Executor);
         try { Activation.manage(this); }
-        catch (Throwable error) { owner.close(); owner = null; throw error; }
+        catch (Throwable error) {
+            try { settleOwner(true); }
+            catch (Throwable uncertain) {
+                // Preserve the entry failure even if rollback is unknown.
+                // This also fences an already in-flight settlement attempt.
+                Activation.fenceUncertainCompletion();
+            }
+            throw error;
+        }
     }
 
     private long elapsed() { return System.nanoTime() - origin; }
@@ -52,7 +65,8 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         return now > Long.MAX_VALUE - delay ? Long.MAX_VALUE : now + delay;
     }
     private boolean allowed(Task<?> task) {
-        return !retiring && !interrupting && (!shutdown || (task.period == 0 ? executeDelayed : continuePeriodic));
+        return !retiring && !interrupting && (!shutdown || (task.period == 0
+            ? executeDelayed || task.next - elapsed() <= 0 : continuePeriodic));
     }
     private boolean mayInvoke(Task<?> task) {
         // Preserve the existing one-shot shutdown behavior; periodic tasks
@@ -129,26 +143,32 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
             return Long.compare(getDelay(TimeUnit.NANOSECONDS), other.getDelay(TimeUnit.NANOSECONDS));
         }
         private ScheduledThreadPoolExecutor executor() { return ScheduledThreadPoolExecutor.this; }
-        @Override synchronized boolean acceptQueueCopy() {
-            if (!super.acceptQueueCopy()) return false;
-            try {
-                if (!futureAccepted && action instanceof FutureTask<?>)
-                    futureAccepted = ((FutureTask<?>)action).acceptQueueCopy();
-                if (!actionAccepted) actionAccepted = CompletableFuture.acceptedByQueue(action);
-                return true;
-            } catch (Throwable error) {
-                super.removeQueueCopy(true);
-                throw error;
+        @Override boolean acceptQueueCopy() {
+            synchronized (stateLock) {
+                if (!super.acceptQueueCopy()) return false;
+                try {
+                    if (!futureAccepted && action instanceof FutureTask<?>)
+                        futureAccepted = ((FutureTask<?>)action).acceptQueueCopy();
+                    if (!actionAccepted) actionAccepted = CompletableFuture.acceptedByQueue(action);
+                    return true;
+                } catch (Throwable error) {
+                    super.removeQueueCopy(true);
+                    throw error;
+                }
             }
         }
-        @Override synchronized void removeQueueCopy(boolean removed) {
-            // This private final task accounts for its actual invocations;
-            // unlike an arbitrary FutureTask subclass its run is not opaque.
-            super.removeQueueCopy(true);
-            releaseActionIfIdle();
+        @Override void removeQueueCopy(boolean removed) {
+            synchronized (stateLock) {
+                // This private final task accounts for its actual invocations;
+                // unlike an arbitrary FutureTask subclass its run is not opaque.
+                super.removeQueueCopy(true);
+                releaseActionIfIdle();
+            }
         }
         private void beginInvocation() { beginInternalPhysicalClaim(); }
-        private synchronized void endInvocation() { endInternalPhysicalClaim(); releaseActionIfIdle(); }
+        private void endInvocation() {
+            synchronized (stateLock) { endInternalPhysicalClaim(); releaseActionIfIdle(); }
+        }
         @Override public void run() {
             // A returned ScheduledFuture is also a Runnable. A caller may
             // start it while the pool is concurrently withdrawing its copy.
@@ -196,9 +216,12 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
                 if (complete) { action = null; runnableCall = null; }
             }
         }
-        private synchronized void abandon() { released = true; releaseActionIfIdle(); }
+        private void abandon() { synchronized (stateLock) { released = true; releaseActionIfIdle(); } }
         @Override public boolean cancel(boolean interrupt) {
             boolean changed = super.cancel(interrupt);
+            // Completion forbids new queue copies. Existing physical claims
+            // and in-flight settlements retain their original owners.
+            if (!changed && !hasQueueCopies()) return false;
             synchronized (ScheduledThreadPoolExecutor.this) {
                 try {
                     for (int index = queue.size() - 1; index >= 0; --index) {
@@ -207,7 +230,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
                     }
                 } finally { ScheduledThreadPoolExecutor.this.notifyAll(); }
             }
-            synchronized (this) { releaseActionIfIdle(); }
+            synchronized (stateLock) { releaseActionIfIdle(); }
             return changed;
         }
     }
@@ -444,7 +467,9 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
                         } else {
                             // A competing invocation may be running the same
                             // periodic task. Retire only this consumed copy.
-                            if (!allowed(task) && !task.isDone()) task.cancel(false);
+                            // The occurrence was already due when dequeued.
+                            // Do not reread the clock before releasing its owners.
+                            if (!mayInvoke(task) && !task.isDone()) task.cancel(false);
                             if (task.isDone()) discardCompleted(task);
                             entry.release();
                         }
@@ -489,14 +514,18 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     @Override public java.util.concurrent.Future<?> submit(Runnable command) { return submit(command, null); }
 
     private void pruneShutdown() {
-        int index = queue.size() - 1;
-        while (index >= 0) {
-            if (index >= queue.size()) { index = queue.size() - 1; continue; }
-            Task<?> task = queue.get(index).task;
-            if (!allowed(task)) { task.cancel(false); index = queue.size() - 1; }
-            else --index;
+        try {
+            int index = queue.size() - 1;
+            while (index >= 0) {
+                if (index >= queue.size()) { index = queue.size() - 1; continue; }
+                Task<?> task = queue.get(index).task;
+                if (!allowed(task)) { task.cancel(false); index = queue.size() - 1; }
+                else --index;
+            }
+        } finally {
+            // A failed clock read must not strand the original queued work.
+            notifyAll();
         }
-        notifyAll();
         settleIfTerminated();
     }
     public synchronized void setContinueExistingPeriodicTasksAfterShutdownPolicy(boolean value) {
@@ -523,23 +552,46 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         notifyAll(); settleIfTerminated();
         return pending;
     }
-    private void settleIfTerminated() {
-        if ((shutdown || retiring) && pendingWork == 0 && workers.isEmpty() && owner != null) {
-            owner.close(); owner = null;
+    private void settleIfTerminated() { settleIfTerminated(false); }
+    private void settleIfTerminated(boolean root) {
+        if ((shutdown || retiring) && pendingWork == 0 && workers.isEmpty()) settleOwner(root);
+    }
+    private void settleOwner(boolean rootOrRollback) {
+        if (owner != null) {
+            // closeAtRoot can enter outside a suspendable pool monitor. Claim
+            // the sole attempt before the host call, including under reentry.
+            if (!ownerSettlementStarted.compareAndSet(false, true)) {
+                if (owner == null || !rootOrRollback) return;
+                // Root retirement cannot report success while the first host
+                // call still has an unknown outcome. Keep its pool rooted.
+                Activation.fenceUncertainCompletion();
+                throw new IllegalStateException("activation-executor-owner-settlement-uncertain");
+            }
+            Activation.Lease held = owner;
+            try { held.close(); }
+            catch (Throwable uncertain) {
+                // The intrusive list roots the same lease without allocating.
+                Activation.fenceUncertainQueuedWorkSettlement(held);
+                throw uncertain;
+            }
+            owner = null;
             Activation.unmanageRetired(this);
         }
     }
     @Override public boolean isRetired() { return owner == null; }
     @Override public synchronized boolean isShutdown() { return shutdown || retiring; }
-    @Override public synchronized boolean isTerminated() { return (shutdown || retiring) && owner == null; }
+    private boolean terminatedUnderLock() { return (shutdown || retiring) && owner == null; }
+    @Override public synchronized boolean isTerminated() { return terminatedUnderLock(); }
     @Override public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         long nanos = Objects.requireNonNull(unit).toNanos(timeout), started = System.nanoTime();
         synchronized (this) {
-            if (isTerminated()) return true;
+            if (terminatedUnderLock()) return true;
+            // No wait occurs for a nonpositive timeout; preserve interruption.
+            if (nanos <= 0) return false;
             if (Thread.interrupted()) throw new InterruptedException();
-            while (!isTerminated()) {
+            while (!terminatedUnderLock()) {
                 long remaining = nanos - (System.nanoTime() - started);
-                if (nanos <= 0 || remaining <= 0) return false;
+                if (remaining <= 0) return false;
                 wait(remaining / 1_000_000, (int)(remaining % 1_000_000));
             }
             return true;
@@ -549,6 +601,6 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     @Override public void closeAtRoot() {
         retiring = true;
         for (Thread worker : workers) worker.interrupt();
-        if (workers.isEmpty()) settleIfTerminated();
+        if (workers.isEmpty()) settleIfTerminated(true);
     }
 }

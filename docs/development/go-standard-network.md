@@ -1,7 +1,8 @@
 # Go declared-stream source port
 
-The selected `go-component-activation-v5` compiler can derive a finite
-`net.Dial`, `net.DialTimeout` and `Dialer.DialContext` backend from the captured
+The selected `go-component-activation-v5` and `go-component-activation-v7`
+compilers can derive a finite `net.Dial`, `net.DialTimeout` and
+`Dialer.DialContext` backend from the captured
 `latent:network/streams@0.1.0` import. This is an implementation prerequisite
 for [#742](https://github.com/KirilsTurkins/latent-service-fabric/issues/742)
 criteria 7/8 and the accepted
@@ -42,10 +43,23 @@ or ASCII DNS names. DNS is performed only inside an authorized host connect.
 Standalone resolver operations, concrete `*net.TCPConn` construction, UDP,
 listeners, native socket options, custom resolvers/controls/local binds,
 explicit keepalive and address-family/fallback policies are unsupported. Numeric
-`LookupPort` remains a pure local conversion. Next-operation deadlines map to
-the bounded host timeout; expired deadlines fail before dispatch. Re-arming a
-deadline while its direction is active is explicitly unsupported. Send shutdown
-uses an actual context deadline. The WIT exposes no local endpoint, so
+`LookupPort` remains a pure local conversion. Read and write deadlines map to
+the bounded host timeout; expired deadlines fail before dispatch. Empty reads
+return locally after the closed and overlap checks, so an expired read deadline
+alone does not make them fail. Remaining
+deadlines over 10 seconds use the provider's 10-second timeout maximum: the
+accepted profile already limits connection lifetime to at most 10 seconds and
+still enforces the original root deadline and its shorter idle bound. The guest
+samples its remaining time before dispatch and passes a relative timeout; delay
+between that sample and host admission can therefore outlast the original Go
+deadline. This conversion does not establish exact wall-clock deadline behavior
+at that boundary. Dial context cancellation retains its existing path. Re-arming a
+deadline while its direction is active is explicitly unsupported. An equivalent
+deadline remains accepted only when it uses the same monotonic or wall-clock
+basis; stripping a monotonic reading can change the effective deadline after a
+wall-clock adjustment even when `time.Time.Equal` reports equal. `CloseWrite`
+does not use the Go write deadline; the original connection, idle, provider and
+activation bounds still apply to send shutdown. The WIT exposes no local endpoint, so
 `LocalAddr` is nil; `RemoteAddr` describes the declared target, not a resolved
 peer address. This is not full `net.Conn` compatibility.
 
@@ -82,6 +96,13 @@ are source evidence; they cannot satisfy the remaining signed workload matrix
 or the maintained-kernel allocation/final-free artifact requirement.
 
 
+The v7 selection composes this same declared stream port with the existing
+queued-work owner and single-stack ceiling. Its separate signed owner selects
+Task16, Executor2, Queue16, Wait4, Timer2, Result2 and Native2. The v5 owner's
+original Queue2 remains unchanged. A passing v5 receipt does not qualify the
+v7 composition; the v7 owner must execute independently. The v6 composition
+remains refused. Neither selection enables the normal provider.
+
 The dedicated runtime lane compiles the current guarded ordinary fixture
 once, then builds only the `go_outbound_streams` native integration target. It
 uses the existing signed catalog, node admission, broker, runtime grants and
@@ -111,6 +132,17 @@ OS-readiness poll or final kernel free. The feature is absent from ordinary
 builds and records only inert diagnostics within the existing prepaid connection
 allocation. The guest's own one-second connection deadline still applies; the
 host's two-second barrier is a failure ceiling, not a longer guest timeout.
+
+The revised source-bound owner also requires one connection's original second
+`Pending` read to remain before its first destructor marker when cancellation is
+accepted. It samples a saturating sequentially consistent marker counter before
+and immediately after the real cancellation call, without holding a provider
+lock across it. A thread could be preempted just before publishing that marker,
+but the read's socket and guard cannot begin dropping before it. A concurrent
+published marker makes the observation fail closed.
+The existing signed v2 receipt does not establish this new edge; a successful
+v3 run is required. This observation does not prove OS-readiness polling or
+final kernel free.
 
 Cancellation acknowledgement must retain the original activation, Store and
 socket owner. Each completed observation requires zero original user-space

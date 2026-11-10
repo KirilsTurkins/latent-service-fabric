@@ -34,8 +34,9 @@ struct token_result { uint8_t tag,pad[7];union { struct lsf_c_token token;uint8_
 struct unit_result { uint8_t tag,error; };
 static struct lsf_c_thread root,child,*active;
 static unsigned admissions,settlements,parks,wakes,suspends,resumes,timers,stops;
+static unsigned next_error,global_cancel,next_calls,wake_attempts,refuse_wait,refuse_timer;
 static uint64_t admitted_nanos;
-static void (*on_suspend)(void);
+static void (*on_suspend)(void),(*on_timer_next)(void);
 static void require(int value) { if (!value) __builtin_trap(); }
 static int token_live(struct lsf_c_token value) { return value.generation && value.id; }
 static struct lsf_c_thread *current(void) { return active; }
@@ -44,14 +45,15 @@ static int ensure_root_owners(struct lsf_c_thread *value) {
 }
 static int acquire(unsigned kind,const struct lsf_c_token *parent,struct lsf_c_token *out) {
     require(kind==LSF_C_WAIT && parent && parent->id);++admissions;
+    if (refuse_wait) return EAGAIN;
     *out=(struct lsf_c_token){1,11};return 0;
 }
 static void settle(struct lsf_c_token *token) {
     require(token->generation==1 && token->id==11);++settlements;*token=(struct lsf_c_token){0};
 }
 static void park(struct lsf_c_token token) { require(token.id);++parks; }
-static void wake(struct lsf_c_token token) { require(token.id);++wakes; }
-static int runtime_error(unsigned value) { (void)value;__builtin_trap(); }
+static void wake(struct lsf_c_token token) { ++wake_attempts;require(token.id && !global_cancel);++wakes; }
+static int runtime_error(unsigned value) { if (value==2) return EAGAIN;__builtin_trap(); }
 #include "synchronization.c"
 
 uint32_t __lsf_c_sync_suspend(void) {
@@ -63,10 +65,18 @@ void sync_host_timer_start(uint64_t delay,uint32_t has_period,uint64_t period,
                            uint32_t has_parent,uint64_t generation,uint64_t id,
                            struct token_result *out) {
     require(!has_period && !period && has_parent && generation==1 && id==11);
-    ++timers;admitted_nanos=delay;out->tag=0;out->value.token=(struct lsf_c_token){1,13};
+    ++timers;admitted_nanos=delay;
+    if (refuse_timer) { out->tag=1;out->value.error=2;return; }
+    out->tag=0;out->value.token=(struct lsf_c_token){1,13};
 }
 void sync_host_timer_next(uint64_t generation,uint64_t id,struct sync_timer_result *out) {
-    require(generation==1 && id==13);out->tag=0;out->value.skipped=0;
+    require(generation==1 && id==13);++next_calls;
+    if (on_timer_next) {
+        void (*callback)(void)=on_timer_next;on_timer_next=NULL;
+        struct lsf_c_thread *saved=active;active=&child;callback();active=saved;
+    }
+    if (next_error) { out->tag=1;out->value.error=next_error; }
+    else { out->tag=0;out->value.skipped=0; }
 }
 void sync_host_timer_stop(uint64_t generation,uint64_t id,struct unit_result *out) {
     require(generation==1 && id==13);++stops;out->tag=0;
@@ -83,13 +93,23 @@ static void reset(void) {
     child=(struct lsf_c_thread){.canonical_id=12,.phase=LSF_C_RUNNING,.root=&root,.task={1,9}};
     active=&root;sample=(struct timespec){2000000000,500000000};
     admissions=settlements=parks=wakes=suspends=resumes=timers=stops=0;
-    admitted_nanos=0;clock_calls=clock_failure=0;source_errno=37;on_suspend=NULL;
+    admitted_nanos=0;clock_calls=clock_failure=0;source_errno=37;
+    next_error=global_cancel=next_calls=wake_attempts=refuse_wait=refuse_timer=0;on_suspend=on_timer_next=NULL;
     memset(&mutex,0,sizeof(mutex));memset(&cond,0,sizeof(cond));
     memset(&c11_mutex,0,sizeof(c11_mutex));memset(&c11_cond,0,sizeof(c11_cond));
     memset(&queued,0,sizeof(queued));
 }
 static void child_unlock(void) { require(pthread_mutex_unlock(&mutex)==0); }
 static void child_unlock_c11(void) { require(mtx_unlock(&c11_mutex)==thrd_success); }
+static void child_unlock_during_reacquire(void) {
+    require(admissions==1 && settlements==0 && timers==1 && stops==1);child_unlock();
+}
+static void child_unlock_c11_during_reacquire(void) {
+    require(admissions==1 && settlements==0 && timers==1 && stops==1);child_unlock_c11();
+}
+static void child_signal(void) { require(pthread_cond_signal(&cond)==0); }
+static void child_unlock_and_cancel(void) { child_unlock();global_cancel=1; }
+static void cancel_before_wake(void) { global_cancel=1; }
 static void queue_child(void *object) {
     queued=(struct sync_wait){.thread=&child,.linked=1};
     struct sync_mutex value=sync_mutex_read(object);
@@ -186,3 +206,389 @@ __attribute__((export_name("duration_boundaries"))) int duration_boundaries(void
     deadline=(struct timespec){-1,0};
     CHECK(sync_duration(&deadline,&nanos)==EINVAL);return 0;
 }
+
+/* ResourceExhausted is WIT error ordinal 2 from the actual timer-next host.
+ * Its additional physical Wait can be refused after this source has admitted
+ * its own Wait and Timer. The ports below model that result, not the ledger. */
+__attribute__((export_name("mutex_next_refused"))) int mutex_next_refused(void) {
+    reset();active=&child;CHECK(pthread_mutex_lock(&mutex)==0);active=&root;next_error=2;
+    const struct timespec future={2000000001,500000000};
+    CHECK(pthread_mutex_timedlock(&mutex,&future)==EAGAIN);
+    struct sync_mutex value=sync_mutex_read(&mutex);
+    CHECK(value.owner==(uint32_t)(uintptr_t)&child && !value.head && !value.tail && !value.waiters);
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
+    active=&child;CHECK(pthread_mutex_unlock(&mutex)==0);active=&root;
+    CHECK(pthread_mutex_trylock(&mutex)==0 && pthread_mutex_unlock(&mutex)==0);return 0;
+}
+__attribute__((export_name("condition_next_refused"))) int condition_next_refused(void) {
+    reset();CHECK(pthread_mutex_lock(&mutex)==0);queue_child(&mutex);
+    on_suspend=child_unlock_during_reacquire;next_error=2;
+    const struct timespec future={2000000001,500000000};
+    CHECK(pthread_cond_timedwait(&cond,&mutex,&future)==EAGAIN);
+    struct sync_cond value=sync_cond_read(&cond);
+    CHECK(!value.head && !value.tail && !value.mutex && !value.waiters);
+    CHECK(sync_mutex_read(&mutex).owner==(uint32_t)(uintptr_t)&root && queued.notified);
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==2 && wakes==2);
+    CHECK(suspends==1 && resumes==1 && pthread_mutex_unlock(&mutex)==0);return 0;
+}
+__attribute__((export_name("sleep_next_refused"))) int sleep_next_refused(void) {
+    reset();next_error=2;const struct timespec duration={1,0};struct timespec remaining={8,9};
+    CHECK(thrd_sleep(&duration,&remaining)==-2 && remaining.tv_sec==8 && remaining.tv_nsec==9);
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
+    return 0;
+}
+__attribute__((export_name("c11_next_refused"))) int c11_next_refused(void) {
+    reset();CHECK(mtx_init(&c11_mutex,mtx_timed)==thrd_success);
+    active=&child;CHECK(mtx_lock(&c11_mutex)==thrd_success);active=&root;next_error=2;
+    const struct timespec future={2000000001,500000000};
+    CHECK(mtx_timedlock(&c11_mutex,&future)==thrd_error);
+    struct sync_mutex value=sync_mutex_read(&c11_mutex);
+    CHECK(value.owner==(uint32_t)(uintptr_t)&child && !value.head && !value.waiters);
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
+    return 0;
+}
+__attribute__((export_name("c11_condition_next_refused"))) int c11_condition_next_refused(void) {
+    reset();CHECK(mtx_init(&c11_mutex,mtx_timed)==thrd_success);
+    CHECK(cnd_init(&c11_cond)==thrd_success && mtx_lock(&c11_mutex)==thrd_success);
+    queue_child(&c11_mutex);on_suspend=child_unlock_c11_during_reacquire;next_error=2;
+    const struct timespec future={2000000001,500000000};
+    CHECK(cnd_timedwait(&c11_cond,&c11_mutex,&future)==thrd_error);
+    struct sync_cond value=sync_cond_read(&c11_cond);
+    CHECK(!value.head && !value.tail && !value.mutex && !value.waiters);
+    CHECK(sync_mutex_read(&c11_mutex).owner==(uint32_t)(uintptr_t)&root && queued.notified);
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==2 && wakes==2);
+    CHECK(suspends==1 && resumes==1 && mtx_unlock(&c11_mutex)==thrd_success);return 0;
+}
+__attribute__((export_name("mutex_notification_during_refusal"))) int mutex_notification_during_refusal(void) {
+    reset();active=&child;CHECK(pthread_mutex_lock(&mutex)==0);active=&root;
+    next_error=2;on_timer_next=child_unlock;
+    const struct timespec future={2000000001,500000000};
+    CHECK(pthread_mutex_timedlock(&mutex,&future)==0);
+    struct sync_mutex value=sync_mutex_read(&mutex);
+    CHECK(value.owner==(uint32_t)(uintptr_t)&root && !value.head && !value.tail && !value.waiters);
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
+    CHECK(pthread_mutex_unlock(&mutex)==0);return 0;
+}
+__attribute__((export_name("condition_notification_during_refusal"))) int condition_notification_during_refusal(void) {
+    reset();CHECK(pthread_mutex_lock(&mutex)==0);next_error=2;on_timer_next=child_signal;
+    const struct timespec future={2000000001,500000000};
+    CHECK(pthread_cond_timedwait(&cond,&mutex,&future)==0);
+    struct sync_cond value=sync_cond_read(&cond);
+    CHECK(!value.head && !value.tail && !value.mutex && !value.waiters);
+    CHECK(sync_mutex_read(&mutex).owner==(uint32_t)(uintptr_t)&root);
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
+    CHECK(pthread_mutex_unlock(&mutex)==0);return 0;
+}
+__attribute__((export_name("terminal_cancel"))) int terminal_cancel(void) {
+    reset();active=&child;require(pthread_mutex_lock(&mutex)==0);active=&root;
+    next_error=3;const struct timespec future={2000000001,500000000};
+    return pthread_mutex_timedlock(&mutex,&future);
+}
+__attribute__((export_name("terminal_deadline"))) int terminal_deadline(void) {
+    reset();active=&child;require(pthread_mutex_lock(&mutex)==0);active=&root;
+    next_error=4;const struct timespec future={2000000001,500000000};
+    return pthread_mutex_timedlock(&mutex,&future);
+}
+__attribute__((export_name("terminal_cancel_after_notification"))) int terminal_cancel_after_notification(void) {
+    reset();active=&child;require(pthread_mutex_lock(&mutex)==0);active=&root;
+    next_error=3;on_timer_next=child_unlock_and_cancel;
+    const struct timespec future={2000000001,500000000};
+    return pthread_mutex_timedlock(&mutex,&future);
+}
+__attribute__((export_name("refusal_cancel_before_wake"))) int refusal_cancel_before_wake(void) {
+    reset();active=&child;require(pthread_mutex_lock(&mutex)==0);active=&root;
+    next_error=2;on_timer_next=cancel_before_wake;
+    const struct timespec future={2000000001,500000000};
+    return pthread_mutex_timedlock(&mutex,&future);
+}
+__attribute__((export_name("refusal_notification_cancel_before_wake"))) int refusal_notification_cancel_before_wake(void) {
+    reset();active=&child;require(pthread_mutex_lock(&mutex)==0);active=&root;
+    next_error=2;on_timer_next=child_unlock_and_cancel;
+    const struct timespec future={2000000001,500000000};
+    return pthread_mutex_timedlock(&mutex,&future);
+}
+__attribute__((export_name("terminal_state"))) int terminal_state(void) {
+    CHECK(admissions==1 && settlements==0 && timers==1 && parks==1 && next_calls==1 && !wakes);
+    if (global_cancel) {
+        CHECK((next_error==2 || next_error==3) && wake_attempts==1);
+        struct sync_mutex value=sync_mutex_read(&mutex);
+        if (stops==1) CHECK(value.owner==(uint32_t)(uintptr_t)&root && !value.head && !value.waiters);
+        else CHECK(!stops && value.owner==(uint32_t)(uintptr_t)&child && value.head && value.waiters==1);
+    } else CHECK((next_error==3 || next_error==4) && !stops && !wake_attempts);
+    return 0;
+}
+
+
+/* Explicit broker/timer doubles; not an engine, real ledger, or signed run. */
+static __wasi_subscription_t poll_request;
+static __wasi_event_t poll_event;
+static __wasi_size_t poll_count;
+static void poll_reset(uint64_t nanos) {
+    reset();
+    memset(&poll_request,0,sizeof(poll_request));
+    memset(&poll_event,0,sizeof(poll_event));
+    poll_request.userdata=UINT64_C(0x1122334455667788);
+    poll_request.u.tag=__WASI_EVENTTYPE_CLOCK;
+    poll_request.u.u.clock.id=__WASI_CLOCKID_REALTIME;
+    poll_request.u.u.clock.timeout=nanos;
+    poll_event.userdata=UINT64_C(0x9988776655443322);
+    poll_event.type=77;
+    poll_count=99;
+}
+static int poll_call(int count) {
+    return __imported_wasi_snapshot_preview1_poll_oneoff((int32_t)(uintptr_t)&poll_request,
+             (int32_t)(uintptr_t)&poll_event,count,(int32_t)(uintptr_t)&poll_count);
+}
+static int poll_unchanged(void) {
+    return poll_event.userdata==UINT64_C(0x9988776655443322) && poll_event.type==77 && poll_count==99;
+}
+static void poll_during_next(void) {
+    require(poll_unchanged() && admissions==1 && settlements==0 && timers==1 &&
+            stops==0 && parks==1 && wakes==0 && admitted_nanos==5000000);
+    /* Mutation during the host wait must not alter the selected input. */
+    poll_request.userdata=0;
+    poll_request.u.u.clock.timeout=0;
+}
+__attribute__((export_name("poll_clock_zero"))) int poll_clock_zero(void) {
+    poll_reset(0);
+    CHECK(poll_call(1)==0 && poll_count==1 && poll_event.type==__WASI_EVENTTYPE_CLOCK);
+    CHECK(poll_event.userdata==UINT64_C(0x1122334455667788) && !poll_event.error);
+    CHECK(!admissions && !timers && !parks && !stops && !settlements && source_errno==37);
+    return 0;
+}
+__attribute__((export_name("poll_clock_elapsed"))) int poll_clock_elapsed(void) {
+    poll_reset(5000000);on_timer_next=poll_during_next;
+    CHECK(poll_call(1)==0 && poll_count==1 && poll_event.type==__WASI_EVENTTYPE_CLOCK);
+    CHECK(poll_event.userdata==UINT64_C(0x1122334455667788) && !poll_event.error);
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
+    CHECK(next_calls==1 && admitted_nanos==5000000 && source_errno==37);return 0;
+}
+__attribute__((export_name("poll_clock_refusals"))) int poll_clock_refusals(void) {
+    poll_reset(5000000);refuse_wait=1;
+    CHECK(poll_call(1)==__WASI_ERRNO_AGAIN && poll_unchanged());
+    CHECK(admissions==1 && !settlements && !timers && !parks);
+    poll_reset(5000000);refuse_timer=1;
+    CHECK(poll_call(1)==__WASI_ERRNO_AGAIN && poll_unchanged());
+    CHECK(admissions==1 && settlements==1 && timers==1 && !stops && !parks);
+    poll_reset(5000000);next_error=2;
+    CHECK(poll_call(1)==__WASI_ERRNO_AGAIN && poll_unchanged());
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
+    return 0;
+}
+__attribute__((export_name("poll_clock_invalid"))) int poll_clock_invalid(void) {
+    poll_reset(5000000);
+    CHECK(poll_call(0)==__WASI_ERRNO_INVAL);
+    CHECK(poll_call(2)==__WASI_ERRNO_NOTSUP);
+    poll_request.u.tag=__WASI_EVENTTYPE_FD_READ;CHECK(poll_call(1)==__WASI_ERRNO_NOTSUP);
+    poll_request.u.tag=__WASI_EVENTTYPE_FD_WRITE;CHECK(poll_call(1)==__WASI_ERRNO_NOTSUP);
+    poll_request.u.tag=__WASI_EVENTTYPE_CLOCK;
+    poll_request.u.u.clock.id=__WASI_CLOCKID_MONOTONIC;CHECK(poll_call(1)==__WASI_ERRNO_NOTSUP);
+    poll_request.u.u.clock.id=__WASI_CLOCKID_REALTIME;poll_request.u.u.clock.flags=1;
+    CHECK(poll_call(1)==__WASI_ERRNO_NOTSUP);poll_request.u.u.clock.flags=0;
+    CHECK(__imported_wasi_snapshot_preview1_poll_oneoff(-1,(int32_t)(uintptr_t)&poll_event,1,
+          (int32_t)(uintptr_t)&poll_count)==__WASI_ERRNO_FAULT);
+    CHECK(__imported_wasi_snapshot_preview1_poll_oneoff((int32_t)(uintptr_t)&poll_request,-1,1,
+          (int32_t)(uintptr_t)&poll_count)==__WASI_ERRNO_FAULT);
+    CHECK(__imported_wasi_snapshot_preview1_poll_oneoff((int32_t)(uintptr_t)&poll_request,
+          (int32_t)(uintptr_t)&poll_event,1,-1)==__WASI_ERRNO_FAULT);
+    CHECK(__imported_wasi_snapshot_preview1_poll_oneoff((int32_t)(uintptr_t)&poll_request,
+          (int32_t)(uintptr_t)&poll_event,1,(int32_t)(uintptr_t)&poll_event)==__WASI_ERRNO_INVAL);
+    CHECK(poll_unchanged() && !admissions && !timers && source_errno==37);
+    return 0;
+}
+__attribute__((export_name("poll_terminal_cancel"))) int poll_terminal_cancel(void) {
+    poll_reset(5000000);next_error=3;return poll_call(1);
+}
+__attribute__((export_name("poll_terminal_deadline"))) int poll_terminal_deadline(void) {
+    poll_reset(5000000);next_error=4;return poll_call(1);
+}
+__attribute__((export_name("poll_terminal_state"))) int poll_terminal_state(void) {
+    CHECK(poll_unchanged() && admissions==1 && !settlements && timers==1 && !stops);
+    CHECK(parks==1 && !wakes && next_calls==1);return 0;
+}
+
+
+static union {
+    __wasi_subscription_t input;
+    __wasi_event_t output;
+} poll_alias;
+static void poll_event_alias_pending(void) {
+    require(poll_count==99 && admissions==1 && !settlements && timers==1 && !stops);
+    require(poll_alias.input.userdata==UINT64_C(0x1122334455667788));
+    poll_alias.input.userdata=0;
+}
+static void poll_count_alias_pending(void) {
+    require(poll_unchanged() && admissions==1 && !settlements && timers==1 && !stops);
+    require(poll_request.userdata==UINT64_C(0x1122334455667788));
+    poll_request.userdata=0;
+}
+__attribute__((export_name("poll_clock_max"))) int poll_clock_max(void) {
+    poll_reset(UINT64_MAX);
+    CHECK(poll_call(1)==0 && poll_count==1 && poll_event.type==__WASI_EVENTTYPE_CLOCK);
+    CHECK(poll_event.userdata==UINT64_C(0x1122334455667788) && !poll_event.error);
+    CHECK(admitted_nanos==UINT64_MAX && admissions==1 && settlements==1 &&
+          timers==1 && stops==1 && parks==1 && wakes==1);
+    return 0;
+}
+__attribute__((export_name("poll_clock_aliases"))) int poll_clock_aliases(void) {
+    poll_reset(5000000);poll_alias.input=poll_request;on_timer_next=poll_event_alias_pending;
+    CHECK(__imported_wasi_snapshot_preview1_poll_oneoff((int32_t)(uintptr_t)&poll_alias.input,
+          (int32_t)(uintptr_t)&poll_alias.output,1,(int32_t)(uintptr_t)&poll_count)==0);
+    CHECK(poll_count==1 && poll_alias.output.userdata==UINT64_C(0x1122334455667788) &&
+          poll_alias.output.type==__WASI_EVENTTYPE_CLOCK && !poll_alias.output.error);
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && admitted_nanos==5000000);
+    poll_reset(5000000);on_timer_next=poll_count_alias_pending;
+    CHECK(__imported_wasi_snapshot_preview1_poll_oneoff((int32_t)(uintptr_t)&poll_request,
+          (int32_t)(uintptr_t)&poll_event,1,(int32_t)(uintptr_t)&poll_request)==0);
+    __wasi_size_t count;memcpy(&count,&poll_request,sizeof(count));
+    CHECK(count==1 && poll_event.userdata==UINT64_C(0x1122334455667788) &&
+          poll_event.type==__WASI_EVENTTYPE_CLOCK && !poll_event.error);
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && admitted_nanos==5000000);
+    return 0;
+}
+
+#if defined(LSF_C_TEST_LIBC_SELECT)
+#include <sys/select.h>
+#include <poll.h>
+static void poll_libc_during_next(void) {
+    require(admissions==1 && !settlements && timers==1 && !stops &&
+            parks==1 && !wakes && admitted_nanos==5000000);
+}
+__attribute__((export_name("poll_clock_via_libc"))) int poll_clock_via_libc(void) {
+    poll_reset(5000000);on_timer_next=poll_libc_during_next;
+    CHECK(poll(NULL,0,5)==0);
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
+    CHECK(next_calls==1 && admitted_nanos==5000000);return 0;
+}
+
+static int select_delay_control(time_t seconds,suseconds_t micros,uint64_t expected) {
+    reset();struct timeval timeout={.tv_sec=seconds,.tv_usec=micros};
+    CHECK(select(0,NULL,NULL,NULL,&timeout)==0);
+    CHECK(timeout.tv_sec==seconds && timeout.tv_usec==micros && source_errno==37);
+    if (expected) {
+        CHECK(admitted_nanos==expected && admissions==1 && settlements==1 && timers==1 && stops==1);
+        CHECK(parks==1 && wakes==1 && next_calls==1);
+    } else CHECK(!admissions && !settlements && !timers && !stops && !parks && !wakes);
+    return 0;
+}
+static int pselect_delay_control(time_t seconds,long nanos,uint64_t expected) {
+    reset();const struct timespec timeout={.tv_sec=seconds,.tv_nsec=nanos};
+    CHECK(pselect(0,NULL,NULL,NULL,&timeout,NULL)==0);
+    CHECK(timeout.tv_sec==seconds && timeout.tv_nsec==nanos && source_errno==37);
+    CHECK(admitted_nanos==expected && admissions==1 && settlements==1 && timers==1 && stops==1);
+    CHECK(parks==1 && wakes==1 && next_calls==1);return 0;
+}
+__attribute__((export_name("select_precision_via_libc"))) int select_precision_via_libc(void) {
+    int result;
+    if ((result=select_delay_control(0,0,0))) return result;
+    if ((result=select_delay_control(0,1,1000))) return result;
+    if ((result=select_delay_control(0,999,999000))) return result;
+    if ((result=select_delay_control(0,1000,1000000))) return result;
+    if ((result=select_delay_control(0,1999,1999000))) return result;
+    if ((result=select_delay_control(0,5000,5000000))) return result;
+    if ((result=select_delay_control(2592000,0,UINT64_C(2592000000000000)))) return result;
+    if ((result=pselect_delay_control(0,1,1))) return result;
+    if ((result=pselect_delay_control(0,1999999,1999999))) return result;
+    if ((result=pselect_delay_control(INT64_C(18446744073),709551615,UINT64_MAX))) return result;
+    return 0;
+}
+
+static fd_set selected_r,selected_w,selected_e;
+static void select_sets_pending(void) {
+    require(FD_ISSET(5,&selected_r) && FD_ISSET(6,&selected_w) && FD_ISSET(7,&selected_e));
+    require(admissions==1 && !settlements && timers==1 && !stops && parks==1 && !wakes);
+}
+__attribute__((export_name("select_sets_via_libc"))) int select_sets_via_libc(void) {
+    reset();FD_ZERO(&selected_r);FD_ZERO(&selected_w);FD_ZERO(&selected_e);
+    FD_SET(5,&selected_r);FD_SET(6,&selected_w);FD_SET(7,&selected_e);
+    on_timer_next=select_sets_pending;
+    struct timeval tv={0,1};
+    CHECK(select(0,&selected_r,&selected_w,&selected_e,&tv)==0);
+    CHECK(!selected_r.__nfds && !selected_w.__nfds && !selected_e.__nfds);
+    CHECK(admitted_nanos==1000 && admissions==1 && settlements==1 && timers==1 && stops==1);
+    CHECK(parks==1 && wakes==1 && source_errno==37 && tv.tv_sec==0 && tv.tv_usec==1);
+
+    reset();FD_ZERO(&selected_r);FD_ZERO(&selected_w);FD_ZERO(&selected_e);
+    const struct timespec ts={0,1};
+    CHECK(pselect(12,&selected_r,&selected_w,&selected_e,&ts,NULL)==0);
+    CHECK(!selected_r.__nfds && !selected_w.__nfds && !selected_e.__nfds);
+    CHECK(admitted_nanos==1 && admissions==1 && settlements==1 && timers==1 && stops==1);
+    CHECK(parks==1 && wakes==1 && source_errno==37 && ts.tv_sec==0 && ts.tv_nsec==1);
+
+    /* Valid entries at or above nfds are ignored, even when nfds is nonzero. */
+    reset();FD_ZERO(&selected_r);FD_ZERO(&selected_w);FD_ZERO(&selected_e);
+    FD_SET(5,&selected_r);FD_SET(6,&selected_w);FD_SET(7,&selected_e);
+    on_timer_next=select_sets_pending;tv=(struct timeval){0,1};
+    CHECK(select(5,&selected_r,&selected_w,&selected_e,&tv)==0);
+    CHECK(!selected_r.__nfds && !selected_w.__nfds && !selected_e.__nfds);
+    CHECK(admitted_nanos==1000 && admissions==1 && settlements==1 && timers==1 && stops==1);
+
+    /* A real descriptor remains on the original path and is refused by the
+     * existing clock-only bridge; no timer or readiness is fabricated. */
+    reset();FD_ZERO(&selected_r);FD_SET(0,&selected_r);tv=(struct timeval){0,1};
+    CHECK(select(1,&selected_r,NULL,NULL,&tv)==-1);
+    CHECK(FD_ISSET(0,&selected_r) && !admissions && !timers && !stops);
+    return 0;
+}
+__attribute__((export_name("select_refusals_via_libc"))) int select_refusals_via_libc(void) {
+    reset();sigset_t mask={0};const struct timespec ts={0,1};
+    CHECK(pselect(0,NULL,NULL,NULL,&ts,&mask)==-1);
+    CHECK(source_errno==ENOTSUP && !admissions && !timers && !stops);
+
+    reset();FD_ZERO(&selected_r);FD_SET(5,&selected_r);refuse_wait=1;
+    struct timeval tv={0,1};CHECK(select(0,&selected_r,NULL,NULL,&tv)==-1);
+    CHECK(source_errno==EAGAIN && FD_ISSET(5,&selected_r));
+    CHECK(admissions==1 && !settlements && !timers && !stops && !parks);
+
+    reset();FD_ZERO(&selected_r);FD_SET(5,&selected_r);refuse_timer=1;tv=(struct timeval){0,1};
+    CHECK(select(0,&selected_r,NULL,NULL,&tv)==-1);
+    CHECK(source_errno==EAGAIN && FD_ISSET(5,&selected_r));
+    CHECK(admissions==1 && settlements==1 && timers==1 && !stops && !parks);
+
+    reset();FD_ZERO(&selected_r);FD_SET(5,&selected_r);next_error=2;tv=(struct timeval){0,1};
+    CHECK(select(0,&selected_r,NULL,NULL,&tv)==-1);
+    CHECK(source_errno==EAGAIN && FD_ISSET(5,&selected_r));
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
+    return 0;
+}
+__attribute__((export_name("select_limits_via_libc"))) int select_limits_via_libc(void) {
+    reset();struct timeval tv={-1,0};
+    CHECK(select(0,NULL,NULL,NULL,&tv)==-1 && source_errno==EINVAL);
+    tv=(struct timeval){0,1000000};
+    CHECK(select(0,NULL,NULL,NULL,&tv)==-1 && source_errno==EINVAL);
+    tv=(struct timeval){INT64_MAX,999999};
+    CHECK(select(0,NULL,NULL,NULL,&tv)==-1 && source_errno==EOVERFLOW);
+    struct timespec ts={0,1000000000};
+    CHECK(pselect(0,NULL,NULL,NULL,&ts,NULL)==-1 && source_errno==EINVAL);
+    ts=(struct timespec){INT64_MAX,999999999};
+    CHECK(pselect(0,NULL,NULL,NULL,&ts,NULL)==-1 && source_errno==EOVERFLOW);
+    CHECK(!admissions && !timers && !stops);
+    /* The upstream no-subscription path still refuses an infinite wait. */
+    CHECK(select(0,NULL,NULL,NULL,NULL)==-1);
+    CHECK(!admissions && !timers && !stops);
+    CHECK(pselect(-1,NULL,NULL,NULL,NULL,NULL)==-1);
+    CHECK(!admissions && !timers && !stops);
+    return 0;
+}
+int timed_select_from_dependency(long);
+int timed_pselect_from_dependency(long);
+__attribute__((export_name("select_dependency_via_libc"))) int select_dependency_via_libc(void) {
+    reset();CHECK(timed_select_from_dependency(1)==0);
+    CHECK(admitted_nanos==1000 && admissions==1 && settlements==1 && timers==1 && stops==1);
+    reset();CHECK(timed_pselect_from_dependency(1)==0);
+    CHECK(admitted_nanos==1 && admissions==1 && settlements==1 && timers==1 && stops==1);
+    return 0;
+}
+__attribute__((export_name("select_terminal_cancel"))) int select_terminal_cancel(void) {
+    reset();FD_ZERO(&selected_r);FD_SET(5,&selected_r);next_error=3;
+    struct timeval tv={0,1};return select(0,&selected_r,NULL,NULL,&tv);
+}
+__attribute__((export_name("select_terminal_deadline"))) int select_terminal_deadline(void) {
+    reset();FD_ZERO(&selected_r);FD_SET(5,&selected_r);next_error=4;
+    struct timeval tv={0,1};return select(0,&selected_r,NULL,NULL,&tv);
+}
+__attribute__((export_name("select_terminal_state"))) int select_terminal_state(void) {
+    CHECK(FD_ISSET(5,&selected_r) && admissions==1 && !settlements && timers==1 && !stops);
+    CHECK(parks==1 && !wakes && next_calls==1);return 0;
+}
+#endif

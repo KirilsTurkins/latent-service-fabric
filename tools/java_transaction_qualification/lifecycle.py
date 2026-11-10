@@ -43,6 +43,7 @@ PENDING_NODE_PROGRAM = ('publish', 'authority', 'namespace-create', 'legacy-runt
 PRECOMMIT_NODE_PROGRAM = ('publish', 'authority', 'namespace-create', 'legacy-runtime',
                           'diagnostic-metadata', 'diagnostic-runtime', 'diagnostic-after-crash')
 EARLY_HTTP_NODE_PROGRAM = ('publish', 'authority', 'namespace-create', 'early-http-runtime')
+EARLY_HTTP_RECOVERY_NODE_PROGRAM = (*EARLY_HTTP_NODE_PROGRAM, 'early-http-recovery')
 
 
 class Node:
@@ -51,7 +52,7 @@ class Node:
         require(type(current_publication_program) is bool
                 and (not current_publication_program or getattr(client, 'phase4', False)),
                 'explicit-current-node-program')
-        require(type(current_program) is str and current_program in {'terminal', 'pending-close', 'early-http', 'precommit-crash'}
+        require(type(current_program) is str and current_program in {'terminal', 'pending-close', 'early-http', 'early-http-recovery', 'precommit-crash'}
                 and (current_program == 'terminal' or current_publication_program),
                 'closed-current-node-program-selection')
         self.client, self.executable, self.directory = client, executable, directory
@@ -61,7 +62,7 @@ class Node:
         self.current_publication_program = current_publication_program
         self.current_program = current_program
         self.program = {'terminal': CURRENT_NODE_PROGRAM, 'pending-close': PENDING_NODE_PROGRAM,
-                        'early-http': EARLY_HTTP_NODE_PROGRAM,
+                        'early-http': EARLY_HTTP_NODE_PROGRAM, 'early-http-recovery': EARLY_HTTP_RECOVERY_NODE_PROGRAM,
                         'precommit-crash': PRECOMMIT_NODE_PROGRAM}[current_program]
         self.metadata_sessions = CURRENT_METADATA_SESSIONS
         self.current_activation = None
@@ -77,7 +78,7 @@ class Node:
     def start(self, configuration: Path, *, restore_authority=False, current_session=None):
         require(type(restore_authority) is bool, "explicit-restore-authority-session")
         if restore_authority:
-            require(self.current_program != 'early-http', 'early-http-cannot-install-restore-authority')
+            require(self.current_program not in {'early-http', 'early-http-recovery'}, 'early-http-cannot-install-restore-authority')
             require(self.current_program != 'precommit-crash', 'precommit-cannot-install-restore-authority')
             settings = read_json(configuration)
             state = settings.get("state")
@@ -314,6 +315,29 @@ def inspect(client, node: Path, configuration: Path, operations, *, stage="trans
                                   intent_operation=intent_operation)
     # Business inspection still opens/retire the real control catalog owner.
     # Its persisted clock floor cannot be reused immediately by another boot.
+    admission_lease_interval(client)
+    return observed
+
+
+def inspect_event_profile(client, node: Path, configuration: Path):
+    """Capture the original configured-provider preview, without granting authority."""
+    value = decode(native(client, node, "event-provider-preview", "inspect-configured-event-effects",
+                          "--config", configuration, timeout=120), 262144)
+    require(isinstance(value, dict) and set(value) == {"schemaVersion", "adapters"}
+            and value["schemaVersion"] == "latent.configured-event-effect-inspection.v1"
+            and isinstance(value["adapters"], list) and 0 < len(value["adapters"]) <= 16,
+            "actual-configured-event-profile-preview")
+    admission_lease_interval(client)
+    return value
+
+
+def inspect_event_host(client, node: Path, configuration: Path, operations: list[dict],
+                       requirements: bytes, preview: dict):
+    """Cross-check original native host and provider observations; install nothing."""
+    from .event_hosts import ObservedEventHost
+    value = decode(native(client, node, "event-host-inspection", "inspect-transaction-hosts",
+                          "--config", configuration, timeout=120), 262144)
+    observed = ObservedEventHost.read(value, preview, operations, requirements)
     admission_lease_interval(client)
     return observed
 

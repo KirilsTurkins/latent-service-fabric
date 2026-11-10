@@ -1,0 +1,66 @@
+{
+  "description": "Rust and TypeScript changed-input conflict against retained business rejection, partial normal-node experiment",
+  "scope": "Separate normal node built from combined unmerged sources and disposable signer; not hosted or distribution qualification.",
+  "harnessSha256": "2c3f1f38f44e30ece60ea1f2a691cad982519203187faefe0febe531073a6d5a",
+  "nodeSha256": "48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "rustSourceSha256": "8b28cd2b6d40101b8d70a7e860fada82deff6b54b106a0d912504ad2c73816b8",
+  "rustBinarySha256": "402161e7668ec5a635bb993ea9e60fa730bfe1738a1945109dd703af2fe3c57b",
+  "typescriptSourceSha256": "730c13f84d6575e57bd26c6c56d4bb38173f29ae216a7b96ba4e29f8dd01dce5",
+  "clients": [
+    {
+      "client": "rust",
+      "grpcStatus": "ALREADY_EXISTS (6)",
+      "originalCommandId": "41365d7cc071cc2da33c05235183d3b6197c57acc0e152b23efd8bd053c98bdc",
+      "originalAttemptId": "1",
+      "fingerprintSha256": {
+        "data": "hHWTyDTXXyhJdKPAcU0iSPWFxRs3cO9lBKo/5/O+iq0=",
+        "encoding": "base64"
+      },
+      "logSha256": "ca1c727f11b0688a805c90dee188d336951ef21706f8303e3578caa6e44946d1",
+      "originalRecordUnchanged": true,
+      "businessVersionAndCountUnchanged": true,
+      "brokerCountUnchanged": true
+    },
+    {
+      "client": "typescript",
+      "grpcStatus": "ALREADY_EXISTS (6)",
+      "originalCommandId": "2ab5a47ba8c063a9f8b9e59afeef6ad8e127e2fca546a3e2f4dfeef01b95e73b",
+      "originalAttemptId": "1",
+      "fingerprintSha256": {
+        "data": "BXQexzyYNEIDAn8D9jq0YVCb2rg2K75iT2l8JaKonyw=",
+        "encoding": "base64"
+      },
+      "logSha256": "a2e58f65a63d177487cf7bf3f300bb9269226a4c0e2119953bbd4e0e2b528038",
+      "originalRecordUnchanged": true,
+      "businessVersionAndCountUnchanged": true,
+      "brokerCountUnchanged": true
+    }
+  ],
+  "laterEvent": {
+    "disposition": "EFFECT_DISPOSITION_POLICY_BLOCKED",
+    "attempt": 1,
+    "providerReceipt": null
+  },
+  "shutdown": {
+    "reaped": true,
+    "clean": true,
+    "durableEffects": {
+      "pending": 0,
+      "active": 0,
+      "acknowledged": 2,
+      "known_failed": 0,
+      "uncertain": 0,
+      "retry_scheduled": 0,
+      "blocked": 1,
+      "expired": 0,
+      "dead_lettered": 0,
+      "payload_bytes": 8,
+      "oldest_unresolved_millis": 1794197826264
+    }
+  },
+  "limitations": [
+    "The following distinct TypeScript command committed but its event became policy-blocked. The run stopped before C, Go and the planned crash.",
+    "The fixture verifies unchanged records, state and broker counts but does not independently count guest executions.",
+    "The exact policy denial stage and earlier resource-exhausted lookup refusals remain unclassified."
+  ]
+}

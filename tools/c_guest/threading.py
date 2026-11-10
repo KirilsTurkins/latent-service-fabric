@@ -30,7 +30,9 @@ SYNC_SYMBOLS = ('pthread_mutex_init', 'pthread_mutex_lock', 'pthread_mutex_trylo
     'cnd_init', 'cnd_destroy', 'cnd_wait', 'cnd_signal', 'cnd_broadcast', 'cnd_timedwait')
 YIELD_SYMBOLS = ('thrd_yield',)
 ONCE_SYMBOLS = ('pthread_once', '__pthread_once', 'call_once')
-TIME_SYMBOLS = ('nanosleep', 'thrd_sleep')
+LEGACY_TIME_SYMBOLS = ('nanosleep', 'thrd_sleep')
+TIME_SYMBOLS = (*LEGACY_TIME_SYMBOLS, 'select', 'pselect')
+TIME_RESPONSE = ''.join('-D' + name + '=__lsf_c_' + name + '\n' for name in TIME_SYMBOLS).encode('ascii')
 LIBC = {
     'lib/libc/include/wasm-wasi-musl/pthread.h': '21b1fd90de05919d0718109f16fa1408a0750dcf65f63cc661c506f07e8e1ca1',
     'lib/libc/include/generic-musl/threads.h': '402b75ff71dd5051ebf8744fe7e09a9e43740b9798e6c02701929c852972a2fc',
@@ -83,18 +85,53 @@ CLOCK_LIBC = {
 }
 
 
-def linked_defines(defines, *, timed_clock=False):
-    if type(timed_clock) is not bool:
+# Pinned libc path underlying the clock-only select/poll bridge. Its labels are
+# separate, so existing thread/clock material identities remain stable.
+POLL_LIBC = {
+    'lib/libc/include/wasm-wasi-musl/wasi/api.h': '8cf2859277ea2fc984780a00048686955805fd8a00c7be1d8f916105becf0174',
+    'lib/libc/include/wasm-wasi-musl/poll.h': '66229496e3f0e33a22af24e5a67cb0b8fe9982b840ccb4ac2d33f15823d1ffb7',
+    'lib/libc/include/wasm-wasi-musl/sys/select.h': 'd9790464bc8f5541dc3ce8355fb54bd6562c3c0f9f0eb82961dc9658188bc1fa',
+    'lib/libc/wasi/libc-bottom-half/cloudlibc/src/libc/sys/select/select.c': '4ed4bcf6b13f12e6fbf9964d4e72dc2681cd3545a5e2b1ab54b4877aac89164b',
+    'lib/libc/wasi/libc-bottom-half/cloudlibc/src/libc/sys/select/pselect.c': '549e8f8b0a671690080e69f02175d48e5654adbf522a929588a2d46a8da66334',
+    'lib/libc/wasi/libc-bottom-half/cloudlibc/src/libc/poll/poll.c': '54bc546fb972fc852fdd48d768a5b4d1da5d85e810ab0f567a76672c19fd9eb5',
+    'lib/libc/wasi/libc-bottom-half/sources/__wasilibc_real.c': '4ec78ec7f15dc9bd4bd18a6ac142170746ecb57bcd312c4827aaac79734b8f6e',
+}
+# Keep the existing poll material labels stable while separately binding the
+# fd_set representation used by the timed select override.
+POLL_FD_LIBC = {
+    'lib/libc/include/wasm-wasi-musl/__fd_set.h': '35c4ae8b4daf451890d11b135e4fe904c55830724ff5bf2f618584ee77639769',
+    'lib/libc/include/wasm-wasi-musl/__typedef_fd_set.h': 'ae46d12d8e20156af29f84ca7a34a13a46eebb96aae9e3c3017389e62b342d20',
+    'lib/libc/include/wasm-wasi-musl/__macro_FD_SETSIZE.h': 'd2ac9784db69fe83aa2fb6e0275767e54e195fc758297c22533ed5a438d6ae1f',
+}
+POLL_LIBC_MAX_BYTES = 65536
+
+
+def linked_defines(defines, *, timed_clock=False, time_response=False):
+    if type(timed_clock) is not bool or type(time_response) is not bool or (time_response and not timed_clock):
         raise ValueError('c-threading-timed-clock-selection')
-    symbols = (*TLS_SYMBOLS, *YIELD_SYMBOLS, *ONCE_SYMBOLS, *SYNC_SYMBOLS, *(TIME_SYMBOLS if timed_clock else ()))
-    reserved_symbols = symbols
+    base = (*TLS_SYMBOLS, *YIELD_SYMBOLS, *ONCE_SYMBOLS, *SYNC_SYMBOLS)
+    selected_time = TIME_SYMBOLS if time_response else LEGACY_TIME_SYMBOLS if timed_clock else ()
+    reserved_symbols = (*base, *selected_time)
     reserved = {'LSF_C_LINKED_LIBC', 'LSF_C_TIMED_CLOCK', *reserved_symbols,
                 *('__lsf_c_' + name for name in reserved_symbols)}
+    if timed_clock:
+        reserved.add('__imported_wasi_snapshot_preview1_poll_oneoff')
     if any(value.split('=', 1)[0] in reserved for value in defines):
         raise ValueError('c-threading-compiler-owned-tls-symbol')
+    emitted = base if time_response else (*base, *selected_time)
     return (*defines, 'LSF_C_LINKED_LIBC=1',
             *(('LSF_C_TIMED_CLOCK=1',) if timed_clock else ()),
-            *(name + '=__lsf_c_' + name for name in symbols))
+            *(name + '=__lsf_c_' + name for name in emitted))
+
+
+def timed_alias_response(sdk):
+    """Recognize one exact owned SDK file; absence preserves the legacy profile."""
+    path = sdk / 'runtime/timed-symbols.rsp'
+    if not path.exists() and not path.is_symlink():
+        return None
+    if read_file(path, 256) != TIME_RESPONSE:
+        raise ValueError('c-threading-timed-symbol-response-preimage')
+    return path
 
 
 def selected(project):
@@ -130,18 +167,57 @@ def clock_libc_material_name(path):
     return 'c-threading-clock-' + str(sorted(CLOCK_LIBC).index(path))
 
 
+def poll_libc_inputs(zig):
+    selected = {**POLL_LIBC, **POLL_FD_LIBC}
+    paths = {name: zig.parent / name for name in selected}
+    if any(digest(read_file(path, POLL_LIBC_MAX_BYTES)) != 'sha256:' + selected[name]
+           for name, path in paths.items()):
+        raise ValueError('c-threading-original-libc-poll-preimage')
+    return paths
+
+
+def poll_libc_material_name(path):
+    if path in POLL_LIBC:
+        return 'c-threading-poll-' + str(sorted(POLL_LIBC).index(path))
+    if path in POLL_FD_LIBC:
+        return 'c-threading-select-fd-' + str(sorted(POLL_FD_LIBC).index(path))
+    raise ValueError('c-threading-original-libc-poll-material-path')
+
+
 def stage(source: Path, world: str, destination: Path, platform: Path) -> Path:
     return standard_facilities.stage_imports(source, world, destination, platform, IMPORTS)
 
 
-def public_export(graph):
+def public_export(graph, selected_world=None):
     """Read the real generated graph; the selected public async effect uses a synchronous Core ABI."""
     def require(value):
         if not value:
             raise ValueError('c-threading-finite-public-contract-required')
     require(type(graph) is dict and set(graph) == {'worlds', 'interfaces', 'types', 'packages'})
-    require(type(graph['worlds']) is list and len(graph['worlds']) == 1)
-    exports = graph['worlds'][0]['exports']
+    require(type(graph['worlds']) is list and 1 <= len(graph['worlds']) <= 32
+            and type(graph['packages']) is list)
+    if selected_world is None:
+        require(len(graph['worlds']) == 1)
+        selected = graph['worlds'][0]
+    else:
+        require(type(selected_world) is str)
+        qualified = re.fullmatch(r'([a-z][a-z0-9-]*:[a-z][a-z0-9-]*)/([a-z][a-z0-9-]*)@([0-9]+\.[0-9]+\.[0-9]+)', selected_world)
+        if qualified:
+            package, leaf = qualified.group(1) + '@' + qualified.group(3), qualified.group(2)
+        else:
+            require(re.fullmatch(r'[a-z][a-z0-9-]*', selected_world) is not None)
+            package, leaf = None, selected_world
+        matches = []
+        for candidate in graph['worlds']:
+            require(type(candidate) is dict and type(candidate.get('package')) is int
+                    and 0 <= candidate['package'] < len(graph['packages'])
+                    and type(graph['packages'][candidate['package']]) is dict)
+            if (candidate.get('name') == leaf and (package is None
+                    or graph['packages'][candidate['package']].get('name') == package)):
+                matches.append(candidate)
+        require(len(matches) == 1)
+        selected = matches[0]
+    exports = selected['exports']
     require(type(exports) is dict and len(exports) == 1)
     key, value = next(iter(exports.items()))
     index = value.get('interface', {}).get('id')

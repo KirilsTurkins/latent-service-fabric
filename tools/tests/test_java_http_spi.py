@@ -241,7 +241,7 @@ class JavaSpiManualWorkflow(unittest.TestCase):
             "${{ (github.event_name != 'workflow_dispatch' || !inputs.qualify-scratch-refusals) && (github.event_name != 'workflow_dispatch' || !inputs.java_http_spi) }}")
         selected['jobs']['dependency-ingestion']['if'] = old['jobs']['dependency-ingestion']['if']
         selected['jobs']['compiler-component'] = original_compiler_parent(
-            self, selected['jobs']['compiler-component'])
+            self, selected['jobs']['compiler-component'], historical_security=False)
         steps = selected['jobs']['compiler-component']['steps']
         retained = next(step for step in steps if step.get('name') ==
             'Retain diagnostics, generated source and component candidates')

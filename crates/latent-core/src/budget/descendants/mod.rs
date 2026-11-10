@@ -4,6 +4,8 @@ mod admission;
 mod memory;
 #[cfg(test)]
 mod native_retirement_tests;
+#[cfg(test)]
+mod publication_tests;
 mod retirement;
 #[cfg(test)]
 mod tests;
@@ -123,6 +125,52 @@ struct ParentReservation {
 impl ParentReservation {
     fn parent(&self) -> &ActivationBudgetInner {
         &self.capacity.parent.inner
+    }
+}
+
+impl ActivationBudgetInner {
+    // Runtime publication has already made its tentative write under the
+    // original state/accounting locks. Visit only immutable, retained lineage
+    // links: no ancestor accounting lock, callback, allocation or destructor.
+    // Since closed flags never reopen, successful child-to-root RMWs establish
+    // that all were open at the first RMW. Missing/excess lineage fails closed.
+    pub(super) fn commit_ancestry_while_open(
+        &self,
+        #[cfg(test)] mut after_flag: impl FnMut(u8),
+    ) -> bool {
+        let mut cursor = self;
+        let Some(mut expected_depth) = cursor.lineage.get().map(|lineage| lineage.depth) else {
+            return false;
+        };
+        if expected_depth > 16 {
+            return false;
+        }
+        for _ in 0..=16 {
+            let Some(lineage) = cursor.lineage.get() else {
+                return false;
+            };
+            if lineage.depth != expected_depth {
+                return false;
+            }
+            if cursor
+                .closed
+                .compare_exchange(false, false, Ordering::AcqRel, Ordering::Acquire)
+                .is_err()
+            {
+                return false;
+            }
+            #[cfg(test)]
+            after_flag(lineage.depth);
+            let Some(parent) = &lineage.parent else {
+                return expected_depth == 0;
+            };
+            if expected_depth == 0 {
+                return false;
+            }
+            expected_depth -= 1;
+            cursor = parent.parent();
+        }
+        false
     }
 }
 

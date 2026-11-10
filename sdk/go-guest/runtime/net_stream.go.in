@@ -86,10 +86,17 @@ func lsfStreamEndpoint(address string) (string, uint16, error) {
 		}
 		host = ip.String()
 	} else {
-		host = lsfStrings.ToLower(host)
 		if len(host) == 0 || len(host) > 253 {
 			return "", 0, &AddrError{Err: "invalid host", Addr: address}
 		}
+		// Unicode case folding can map non-ASCII input to an ASCII label.
+		// Enforce this profile's ASCII-only contract before normalization.
+		for i := 0; i < len(host); i++ {
+			if host[i] >= 0x80 {
+				return "", 0, &AddrError{Err: "invalid host label", Addr: address}
+			}
+		}
+		host = lsfStrings.ToLower(host)
 		labels := lsfStrings.Split(host, ".")
 		for _, label := range labels {
 			if len(label) == 0 || len(label) > 63 || label[0] == '-' || label[len(label)-1] == '-' {
@@ -130,11 +137,12 @@ func lsfStreamTimeout(deadline time.Time) (lsfWit.Option[uint32], error) {
 	if remaining <= 0 {
 		return lsfWit.None[uint32](), lsfOS.ErrDeadlineExceeded
 	}
-	// Ceiling to milliseconds avoids an earlier local timeout. No saturation or
-	// hidden authority extension for an unrepresentable deadline.
+	// The selected provider already enforces an absolute connection lifetime
+	// of at most 10 seconds, additionally limited by the root deadline. Keep
+	// the explicit timeout within its accepted range without extending either.
 	millis := (remaining-1)/time.Millisecond + 1
-	if millis > 4294967295 {
-		return lsfWit.None[uint32](), lsfStreamUnsupported()
+	if millis > 10000 {
+		millis = 10000
 	}
 	return lsfWit.Some(uint32(millis)), nil
 }
@@ -209,14 +217,25 @@ func (c *lsfStreamConn) begin(write bool) (lsfWit.Option[uint32], func(), error)
 }
 
 func (c *lsfStreamConn) Read(bytes []byte) (int, error) {
+	// A zero-length TCP read never waits for readability or checks the
+	// deadline. Preserve this profile's closed and overlapping-read refusals.
+	if len(bytes) == 0 {
+		c.mu.Lock()
+		closing, busy := c.closing, c.readBusy
+		c.mu.Unlock()
+		if closing {
+			return 0, c.opError("read", ErrClosed)
+		}
+		if busy {
+			return 0, c.opError("read", lsfStreamUnsupported())
+		}
+		return 0, nil
+	}
 	timeout, release, err := c.begin(false)
 	if err != nil {
 		return 0, c.opError("read", err)
 	}
 	defer release()
-	if len(bytes) == 0 {
-		return 0, nil
-	}
 	c.mu.Lock()
 	eof := c.readEOF
 	c.mu.Unlock()
@@ -305,21 +324,21 @@ func (c *lsfStreamConn) Write(bytes []byte) (int, error) {
 }
 
 func (c *lsfStreamConn) CloseWrite() error {
-	_, release, err := c.begin(true)
-	if err != nil {
-		return c.opError("closewrite", err)
-	}
-	defer release()
 	c.mu.Lock()
-	deadline := c.writeDeadline
-	c.mu.Unlock()
-	ctx := context.Background()
-	if !deadline.IsZero() {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithDeadline(ctx, deadline)
-		defer cancel()
+	if c.closing {
+		c.mu.Unlock()
+		return c.opError("closewrite", ErrClosed)
 	}
-	r := c.stream.ShutdownContext(ctx, lsfNetwork.ShutdownModeSend)
+	if c.writeBusy {
+		c.mu.Unlock()
+		return c.opError("closewrite", lsfStreamUnsupported())
+	}
+	c.writeBusy = true
+	c.mu.Unlock()
+	defer func() { c.mu.Lock(); c.writeBusy = false; c.mu.Unlock() }()
+	// Go's TCP CloseWrite is not governed by SetWriteDeadline. The original
+	// provider, connection and activation deadlines still bound this call.
+	r := c.stream.ShutdownContext(context.Background(), lsfNetwork.ShutdownModeSend)
 	if r.IsErr() {
 		return c.opError("closewrite", &lsfStreamError{r.Err()})
 	}
@@ -356,13 +375,20 @@ func (c *lsfStreamConn) Close() error {
 
 func (c *lsfStreamConn) LocalAddr() Addr  { return nil }      // absent from this WIT, never fabricated
 func (c *lsfStreamConn) RemoteAddr() Addr { return c.remote } // declared endpoint, not resolved peer IP
+// Equal ignores monotonic readings when either argument lacks one. A pending
+// operation cannot be rearmed, so an apparent wall-time match must also keep
+// the same clock basis. Round(0) strips only the monotonic reading.
+func lsfStreamSameDeadline(a, b time.Time) bool {
+	return a.Equal(b) && (a == a.Round(0)) == (b == b.Round(0))
+}
+
 func (c *lsfStreamConn) setDeadline(t time.Time, read, write bool) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.closing {
 		return c.opError("set", ErrClosed)
 	}
-	if read && c.readBusy && !t.Equal(c.readDeadline) || write && c.writeBusy && !t.Equal(c.writeDeadline) {
+	if read && c.readBusy && !lsfStreamSameDeadline(t, c.readDeadline) || write && c.writeBusy && !lsfStreamSameDeadline(t, c.writeDeadline) {
 		return c.opError("set", lsfStreamUnsupported())
 	}
 	if read {

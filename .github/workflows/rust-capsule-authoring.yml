@@ -284,6 +284,8 @@ jobs:
     needs: authoring
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    env:
+      RUSTUP_TOOLCHAIN: "1.97.1"
     steps:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
@@ -350,6 +352,8 @@ jobs:
     needs: authoring
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    env:
+      RUSTUP_TOOLCHAIN: "1.97.1"
     steps:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:

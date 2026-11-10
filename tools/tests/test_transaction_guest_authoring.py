@@ -10,6 +10,228 @@ from tools.transaction_guest_project import TEMPLATE, package_companion
 
 
 class TransactionGuestAuthoringTests(unittest.TestCase):
+    def test_forbidden_http_variants_capture_language_event_requirements(self):
+        from tools.transaction_guest_variants import create
+        from tools.transaction_guest_project import (EVENT_REQUIREMENTS, C_EVENT_PROFILE, GO_EVENT_PROFILE,
+            TYPESCRIPT_EVENT_PROFILE, DOTNET_EVENT_PROFILE, RUST_EVENT_PROFILE, package_effect_requirements)
+        markers = {'rust': RUST_EVENT_PROFILE, 'c': C_EVENT_PROFILE, 'go': GO_EVENT_PROFILE,
+                   'typescript': TYPESCRIPT_EVENT_PROFILE, 'dotnet': DOTNET_EVENT_PROFILE}
+        profile = 'js-window-v1:' + 'f' * 64
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for language, marker in markers.items():
+                with self.subTest(language=language):
+                    path = create(root / language, language, 'forbidden-http', event_profile=profile)
+                    files = snapshot(path)
+                    self.assertEqual(json.loads(files[marker])['idempotencyProfile'], profile)
+                    self.assertIn(b'latent:http/client@0.2.0', files['wit/world.wit'])
+                    if language == 'c':
+                        self.assertIn(b'latent_http_client_send(&frame->http_request, &frame->http_result);\n            break;',
+                                      files['src/main.c'])
+                    output = root / (language + '-package')
+                    output.mkdir()
+                    project = json.loads(files['capsule-project.json'])
+                    self.assertEqual(package_effect_requirements(output, project, files)[0], EVENT_REQUIREMENTS)
+            with self.assertRaisesRegex(ValueError, 'exclusive supported'):
+                create(root / 'invalid', 'java', 'forbidden-http', event_profile=profile)
+            with self.assertRaisesRegex(ValueError, 'exclusive supported'):
+                create(root / 'mixed', 'rust', 'forbidden-http', event_profile=profile, rust_event_profile=profile)
+
+    def test_dotnet_event_profile_is_explicit_and_companion_linked(self):
+        from tools.compile_transaction_guests import authored_project, compile_guests
+        from tools.dotnet_capsule import main as dotnet_main
+        from tools.dotnet_guest.project import create, validate
+        from tools.transaction_guest_project import (DOTNET_EVENT_PROFILE, TYPESCRIPT_EVENT_PROFILE,
+                                                       EVENT_REQUIREMENTS, package_effect_requirements)
+        profile = 'js-window-v1:' + 'e' * 64
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.assertEqual(dotnet_main(['new', str(root / 'source'), '--template', TEMPLATE,
+                                          '--name', 'transaction-dotnet-aggregate', '--event-profile', profile]), 0)
+            files = snapshot(root / 'source')
+            project, _, _ = validate(files)
+            selected = authored_project('dotnet', 'aggregate', root / 'selected', dotnet_current_event_profile=profile)
+            self.assertEqual(snapshot(selected)[EVENT_REQUIREMENTS], files[EVENT_REQUIREMENTS])
+            self.assertEqual(json.loads(files[DOTNET_EVENT_PROFILE])['idempotencyProfile'], profile)
+            output = root / 'package'
+            output.mkdir()
+            self.assertEqual(package_effect_requirements(output, project, files)[0], EVENT_REQUIREMENTS)
+            bad = dict(files)
+            changed = json.loads(bad[EVENT_REQUIREMENTS])
+            changed['binding'] = 'other-event'
+            bad[EVENT_REQUIREMENTS] = json.dumps(changed).encode()
+            with self.assertRaisesRegex(ValueError, 'requirements-drift'):
+                package_effect_requirements(root, project, bad)
+            with self.assertRaisesRegex(ValueError, 'closed-current-event-inputs-required'):
+                package_effect_requirements(root, project, {**files, TYPESCRIPT_EVENT_PROFILE: files[DOTNET_EVENT_PROFILE]})
+            with self.assertRaisesRegex(ValueError, 'event profile'):
+                create(root / 'invalid', 'greeting', event_profile=profile)
+            with self.assertRaisesRegex(ValueError, 'event profile'):
+                create(root / 'invalid-profile', TEMPLATE, event_profile='invalid')
+            with self.assertRaisesRegex(ValueError, 'exclusive .NET aggregate'):
+                authored_project('go', 'aggregate', root / 'foreign', dotnet_current_event_profile=profile)
+            with self.assertRaisesRegex(ValueError, 'exclusive explicit'):
+                compile_guests('dotnet', root / 'foreign-output', dotnet_current_event_profile=profile,
+                               typescript_current_event_profile=profile)
+            self.assertFalse((root / 'foreign-output').exists())
+
+    def test_typescript_event_profile_is_explicit_and_companion_linked(self):
+        from tools.compile_transaction_guests import authored_project, compile_guests
+        from tools.typescript_capsule import main as ts_main
+        from tools.typescript_guest.project import create, validate
+        from tools.transaction_guest_project import (TYPESCRIPT_EVENT_PROFILE, GO_EVENT_PROFILE,
+                                                       EVENT_REQUIREMENTS, package_effect_requirements)
+        profile = 'js-window-v1:' + 'd' * 64
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.assertEqual(ts_main(['new', str(root / 'source'), '--template', TEMPLATE,
+                                      '--name', 'transaction-typescript-aggregate', '--event-profile', profile]), 0)
+            files = snapshot(root / 'source')
+            project, _, _ = validate(files)
+            selected = authored_project('typescript', 'aggregate', root / 'selected', typescript_current_event_profile=profile)
+            self.assertEqual(snapshot(selected)[EVENT_REQUIREMENTS], files[EVENT_REQUIREMENTS])
+            self.assertEqual(json.loads(files[TYPESCRIPT_EVENT_PROFILE])['idempotencyProfile'], profile)
+            output = root / 'package'
+            output.mkdir()
+            self.assertEqual(package_effect_requirements(output, project, files)[0], EVENT_REQUIREMENTS)
+            bad = dict(files)
+            changed = json.loads(bad[EVENT_REQUIREMENTS])
+            changed['binding'] = 'other-event'
+            bad[EVENT_REQUIREMENTS] = json.dumps(changed).encode()
+            with self.assertRaisesRegex(ValueError, 'requirements-drift'):
+                package_effect_requirements(root, project, bad)
+            with self.assertRaisesRegex(ValueError, 'closed-current-event-inputs-required'):
+                package_effect_requirements(root, project, {**files, GO_EVENT_PROFILE: files[TYPESCRIPT_EVENT_PROFILE]})
+            with self.assertRaisesRegex(ValueError, 'event profile'):
+                create(root / 'invalid', 'greeting', event_profile=profile)
+            with self.assertRaisesRegex(ValueError, 'event profile'):
+                create(root / 'invalid-profile', TEMPLATE, event_profile='invalid')
+            with self.assertRaisesRegex(ValueError, 'exclusive TypeScript aggregate'):
+                authored_project('go', 'aggregate', root / 'foreign', typescript_current_event_profile=profile)
+            with self.assertRaisesRegex(ValueError, 'exclusive explicit'):
+                compile_guests('typescript', root / 'foreign-output', typescript_current_event_profile=profile,
+                               go_current_event_profile=profile)
+            self.assertFalse((root / 'foreign-output').exists())
+
+    def test_go_event_profile_is_explicit_and_companion_linked(self):
+        from tools.compile_transaction_guests import authored_project, compile_guests
+        from tools.go_capsule import main as go_main
+        from tools.go_capsule_project import create, validate
+        from tools.transaction_guest_project import (GO_EVENT_PROFILE, C_EVENT_PROFILE,
+                                                       EVENT_REQUIREMENTS, package_effect_requirements)
+        profile = 'js-window-v1:' + 'c' * 64
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.assertEqual(go_main(['new', str(root / 'source'), '--template', TEMPLATE,
+                                      '--name', 'transaction-go-aggregate', '--event-profile', profile]), 0)
+            files = snapshot(root / 'source')
+            project, _, _ = validate(files)
+            selected = authored_project('go', 'aggregate', root / 'selected', go_current_event_profile=profile)
+            self.assertEqual(snapshot(selected)[EVENT_REQUIREMENTS], files[EVENT_REQUIREMENTS])
+            self.assertEqual(json.loads(files[GO_EVENT_PROFILE])['idempotencyProfile'], profile)
+            output = root / 'package'
+            output.mkdir()
+            self.assertEqual(package_effect_requirements(output, project, files)[0], EVENT_REQUIREMENTS)
+            bad = dict(files)
+            changed = json.loads(bad[EVENT_REQUIREMENTS])
+            changed['binding'] = 'other-event'
+            bad[EVENT_REQUIREMENTS] = json.dumps(changed).encode()
+            with self.assertRaisesRegex(ValueError, 'requirements-drift'):
+                package_effect_requirements(root, project, bad)
+            with self.assertRaisesRegex(ValueError, 'closed-current-event-inputs-required'):
+                package_effect_requirements(root, project, {**files, C_EVENT_PROFILE: files[GO_EVENT_PROFILE]})
+            with self.assertRaisesRegex(ValueError, 'event profile'):
+                create(root / 'invalid', 'greeting', event_profile=profile)
+            with self.assertRaisesRegex(ValueError, 'event profile'):
+                create(root / 'invalid-profile', TEMPLATE, event_profile='invalid')
+            with self.assertRaisesRegex(ValueError, 'exclusive Go aggregate'):
+                authored_project('c', 'aggregate', root / 'foreign', go_current_event_profile=profile)
+            with self.assertRaisesRegex(ValueError, 'exclusive explicit'):
+                compile_guests('go', root / 'foreign-output', go_current_event_profile=profile,
+                               c_current_event_profile=profile)
+            self.assertFalse((root / 'foreign-output').exists())
+
+    def test_c_event_profile_captures_and_packages_only_exact_companion_requirements(self):
+        from tools.compile_transaction_guests import authored_project
+        from tools.c_capsule import main as c_main
+        from tools.c_capsule_project import create, validate
+        from tools.transaction_guest_project import (C_EVENT_PROFILE, EVENT_REQUIREMENTS,
+                                                       RUST_EVENT_PROFILE, package_effect_requirements)
+        profile = 'js-window-v1:' + 'b' * 64
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.assertEqual(c_main(['new', str(root / 'source'), '--template', TEMPLATE,
+                                     '--name', 'transaction-c-aggregate', '--event-profile', profile]), 0)
+            files = snapshot(root / 'source')
+            project, _, _ = validate(files)
+            selected = authored_project('c', 'aggregate', root / 'selected', c_current_event_profile=profile)
+            self.assertEqual(snapshot(selected)[EVENT_REQUIREMENTS], files[EVENT_REQUIREMENTS])
+            with self.assertRaisesRegex(ValueError, 'exclusive C aggregate'):
+                authored_project('rust', 'aggregate', root / 'foreign', c_current_event_profile=profile)
+            self.assertEqual(json.loads(files[C_EVENT_PROFILE])['idempotencyProfile'], profile)
+            output = root / 'package'
+            output.mkdir()
+            self.assertEqual(package_effect_requirements(output, project, files)[0], EVENT_REQUIREMENTS)
+            self.assertEqual((output / EVENT_REQUIREMENTS).read_bytes(), files[EVENT_REQUIREMENTS])
+            with self.assertRaisesRegex(ValueError, 'closed-current-event-inputs-required'):
+                package_effect_requirements(root, project, {**files, RUST_EVENT_PROFILE: files[C_EVENT_PROFILE]})
+            with self.assertRaisesRegex(ValueError, 'event profile'):
+                create(root / 'invalid', 'greeting', event_profile=profile)
+            with self.assertRaisesRegex(ValueError, 'event profile'):
+                create(root / 'invalid-profile', TEMPLATE, event_profile='invalid')
+
+    def test_rust_event_profile_is_explicit_captured_and_checked_before_packaging(self):
+        from tools.compile_transaction_guests import authored_project
+        from tools.rust_capsule import main as rust_main
+        from tools.rust_capsule_project import create
+        from tools.rust_capsule_build import validate_project
+        from tools.transaction_guest_project import (EVENT_REQUIREMENTS, RUST_EVENT_PROFILE,
+                                                       CURRENT_EVENT_PROFILE, package_effect_requirements)
+        profile = "js-window-v1:" + "a" * 64
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = create(root / "source", TEMPLATE, "transaction-rust-aggregate", event_profile=profile)
+            files = snapshot(source)
+            value, _ = validate_project(files)
+            selected = authored_project("rust", "aggregate", root / "selected", rust_current_event_profile=profile)
+            selected_files = snapshot(selected)
+            self.assertEqual(selected_files[EVENT_REQUIREMENTS], files[EVENT_REQUIREMENTS])
+            self.assertEqual(selected_files[RUST_EVENT_PROFILE], files[RUST_EVENT_PROFILE])
+            self.assertEqual(rust_main(['new', str(root / 'cli'), '--template', TEMPLATE,
+                                        '--name', 'transaction-rust-aggregate', '--event-profile', profile]), 0)
+            self.assertEqual(snapshot(root / 'cli')[EVENT_REQUIREMENTS], files[EVENT_REQUIREMENTS])
+            with self.assertRaisesRegex(ValueError, "exclusive Rust aggregate"):
+                authored_project("java", "aggregate", root / "foreign", rust_current_event_profile=profile)
+            self.assertEqual(json.loads(files[RUST_EVENT_PROFILE])["idempotencyProfile"], profile)
+            self.assertEqual(json.loads(files[EVENT_REQUIREMENTS])["capsule"], value["service"])
+            output = root / "package"
+            output.mkdir()
+            self.assertEqual(package_effect_requirements(output, value, files)[0], EVENT_REQUIREMENTS)
+            self.assertEqual((output / EVENT_REQUIREMENTS).read_bytes(), files[EVENT_REQUIREMENTS])
+            bad = dict(files)
+            changed = json.loads(bad[EVENT_REQUIREMENTS])
+            changed["binding"] = "other-event"
+            bad[EVENT_REQUIREMENTS] = json.dumps(changed).encode()
+            with self.assertRaisesRegex(ValueError, "requirements-drift"):
+                package_effect_requirements(root, value, bad)
+            with self.assertRaisesRegex(ValueError, "closed-current-event-inputs-required"):
+                package_effect_requirements(root, value, {**files, CURRENT_EVENT_PROFILE: files[RUST_EVENT_PROFILE]})
+            with self.assertRaisesRegex(ValueError, "event profile"):
+                create(root / "bad", "greeting", event_profile=profile)
+            with self.assertRaisesRegex(ValueError, "event profile"):
+                create(root / "bad-profile", TEMPLATE, event_profile="js-window-v1:invalid")
+            from tools.transaction_guest_variants import create as variant
+            denial = variant(root / "denial", "rust", "forbidden-http", "transaction-rust-aggregate",
+                             rust_event_profile=profile)
+            denial_files = snapshot(denial)
+            self.assertEqual(denial_files[EVENT_REQUIREMENTS], files[EVENT_REQUIREMENTS])
+            self.assertIn(b"latent_guest::http::send(", denial_files["src/lib.rs"])
+            boundary = variant(root / "boundary", "rust", "result-boundary", "transaction-rust-aggregate",
+                               rust_event_profile=profile)
+            self.assertEqual(snapshot(boundary)[EVENT_REQUIREMENTS], files[EVENT_REQUIREMENTS])
+            with self.assertRaisesRegex(ValueError, "explicit Rust transaction variant"):
+                variant(root / "other", "java", "forbidden-http", rust_event_profile=profile)
+
     def test_java_authored_wit_captures_runtime_clocks_before_compiler_staging(self):
         from tools.compile_transaction_guests import authored_project, JAVA_SCHEMA_VARIANTS
         from tools.java_capsule_project import validate

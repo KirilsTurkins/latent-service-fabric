@@ -57,3 +57,72 @@ and three clean/reaped nodes. Each individual timer is counted independently:
 births1..8 and disposal returns7..0. Periodic2 passes with its original100 ms
 period and all original limits. One fresh normal AOT guest was compiled; no
 native host or previous HTTP/client programme was rebuilt.
+
+## Optional earlier-rearm diagnostic
+
+`tools/qualify_dotnet_managed_capacity.py --timer-rearm-diagnostic` runs the
+unchanged seventeen mandatory cases and adds an explicitly separate diagnostic
+pair on the same captured component and native products. The selected diagnostic
+derives its extra mode from the exact authenticated original fixture and an
+identity-bound snippet; the default and historical fixture bytes stay unchanged.
+One activation creates
+one ordinary `Timer`, changes it twice to strictly earlier deadlines, and reports
+the original activation Wait and Timer counts after creation, each change, and
+disposal. It requires the guest `Environment.TickCount64` elapsed time through
+the changes to remain below the 10-second separation between requested delays,
+and reports that value. It verifies that no callback has fired at each sample,
+and the existing node owner
+checks the exact signed result, budget and post-call counters before a separate
+fresh activation. The original Task, Wait, Timer, queue and other ceilings are
+unchanged. A refusal, trap, unexpected callback, failed cleanup or missing fresh
+activation remains a failed run; the raw result is retained where available.
+
+The observation is diagnostic: growth does not by itself prove permanent
+retention, and no growth does not qualify the timer implementation or its
+physical custody. The original 17-case selection and success checks remain unchanged when the
+option is not selected. The hosted workflow's existing manual selector currently also
+depends on the workflow being available on the repository default branch; a
+task-owned selector-only child can run the same job on a reviewed branch without
+changing the production workflow. No signed execution is claimed by this code.
+
+## Ready-poll retirement of an unpolled timer
+
+An async WASI poll or pollable block can return an already-ready input before
+entering the Pump's normal poll loop. If an earlier, never-polled Timer was
+dropped, the ready path now invokes the existing guarded unpolled-timer reap
+before sampling readiness. Live input readiness owners are cloned before local
+input wrappers are dropped; the component-model borrow remains in force for the
+call. A Timer still referenced by an input pollable cannot be the Timer whose
+final `Rc` drop queued that retirement. Started timers and other retirement
+classes still use the original final drain.
+
+A per-activation monotone marker is set only after an unpolled retirement is
+queued. Without such a timer, a ready closed pollable still does not create a
+Pump or canonical waitable set. After the marker has been set, each ready
+poll/block can scan at most the existing 32 retirement entries, even when none
+are eligible; it does not create another waitable set or expand any owner limit.
+The existing seven Pump controls and their historical receipt remain separate;
+the added nine-case source-port receipt is retained under the existing logs
+artifact path. The controls use fake ABI, ledger, resource and clock ports and
+do not prove a canonical guest call, physical retirement or signed execution.
+This does not replace an earlier live driver on `Timer.Change`.
+
+## Optional ready-pollable retirement witness
+
+`tools/qualify_dotnet_managed_capacity.py --ready-retirement-witness` preserves
+the original seventeen cases and adds a separate source-bound low-level WASI
+case followed by a fresh activation. The derived NativeAOT fixture retains a
+zero-duration timer pollable after its first block completes. It then creates
+and drops a different, never-polled long timer and observes the original Wait
+remaining held. Blocking the same already-ready pollable must settle that Wait;
+a repeated block must leave the count unchanged, and dropping the ready
+pollable must return the remaining Wait. A trap or any unexpected count fails
+the campaign. All existing limits and normal signing, verification, capture,
+and cleanup checks remain in force.
+
+The witness calls the adapter's already-selected WASI interfaces directly; it
+does not qualify an ordinary `System.Threading.Timer` producer, the separate
+still-live `Timer.Change` rearm path, or physical retirement after Store
+teardown. The default and historical fixture bytes and the opt-in rearm case
+remain unchanged. The existing manual owner or a temporary selector child can
+run the new option; a source or model pass is not a signed guest result.

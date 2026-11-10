@@ -12,7 +12,11 @@ from tools.rust_capsule_project import (ROOT, AUTHORING_TEMPLATES, TEMPLATES, TU
 RUNTIME_IMPORTS = ("latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0", "latent:random/random@0.1.0")
 
 
-def create(directory: Path, template: str, name: str | None = None, *, runtime_profile: str | None = None) -> Path:
+def create(directory: Path, template: str, name: str | None = None, *, runtime_profile: str | None = None,
+           event_profile: str | None = None) -> Path:
+    if event_profile is not None and (template != "transactional-aggregate" or not isinstance(event_profile, str)
+            or re.fullmatch(r"js-window-v1:[0-9a-f]{64}", event_profile) is None):
+        raise ValueError("explicit Go transaction event profile required")
     from tools.go_guest.activation import PROFILES
     if runtime_profile is not None and (not isinstance(runtime_profile, str)
             or runtime_profile not in {'go-component-async-v1', *PROFILES}):
@@ -65,6 +69,12 @@ def create(directory: Path, template: str, name: str | None = None, *, runtime_p
     if template == "transactional-aggregate":
         from tools.transaction_guest_project import augment
         augment(files, project)
+        if event_profile is not None:
+            from tools.transaction_guest_project import GO_EVENT_PROFILE, EVENT_REQUIREMENTS, current_event_requirements
+            marker = {"schemaVersion": "latent.go.current-event-source-input.v1", "idempotencyProfile": event_profile}
+            files[GO_EVENT_PROFILE] = json.dumps(marker, indent=2).encode() + b"\n"
+            requirements = current_event_requirements(project, files["transaction-binding.json"], event_profile)
+            files[EVENT_REQUIREMENTS] = json.dumps(requirements, indent=2).encode() + b"\n"
     files["sdk-lock.json"] = json.dumps(lock, indent=2).encode() + b"\n"
     files["README.md"] = (f"# {name}\n\nEdit `src/main.go` and `wit/world.wit`. Keep `vendor/lsf` unchanged.\n"
         "Build with `tools/go_capsule.py` from the SDK checkout. Generated export package names follow WIT.\n"

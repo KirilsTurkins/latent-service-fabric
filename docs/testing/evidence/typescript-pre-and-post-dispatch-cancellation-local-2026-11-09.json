@@ -1,0 +1,63 @@
+{
+  "description": "TypeScript Node pre-dispatch and post-dispatch AbortSignal cancellation with fresh-signal recovery",
+  "qualification": "Local normal node built from combined unmerged source, separately built client candidate and disposable signer; not hosted, browser or distribution qualification.",
+  "harnessSha256": "1bceb83e780c131cfb495f208894b610bfc45d058381812d803f947ecc55289d",
+  "clientLogSha256": "32743dbeb13704c84514618e82aecd9c33eaf4053a90dbc48bd96107bb32e1be",
+  "nodeSha256": "sha256:48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "typescriptSourceSha256": "sha256:0b19b37affa17825b8e48c1dbb9ae951467a8bd556430a427e4a20076bf5a437",
+  "nodeJsSha256": "sha256:bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+  "proxySourceSha256": "sha256:9fd5ba5c7bace82acb2eca31ef8c52a987bcd6e22dd6c6085ef2136f32b22d2a",
+  "preDispatch": "Pre-aborted signal returned local cancellation with not-dispatched outcome, original selector and no fabricated observation.",
+  "postDispatch": {
+    "cancelledAfterDurableObservation": true,
+    "durableCommandCount": "3",
+    "extraQueuedConnections": 0,
+    "fingerprintSha256": "847593c834d75f284974a3c0714d2248f585c51b3770ef6504aa3fe7f3be8aad",
+    "freshContextRecoveredOriginalRejection": true,
+    "laterBrokerMessages": 2,
+    "laterBusinessCount": 2,
+    "laterEffectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "originalAttemptId": "1",
+    "originalCommandId": "2ab5a47ba8c063a9f8b9e59afeef6ad8e127e2fca546a3e2f4dfeef01b95e73b",
+    "singleObservedRequestStream": 1
+  },
+  "proxy": {
+    "extraConnections": 0,
+    "failureCategory": "EOFError",
+    "requestStreams": 1
+  },
+  "controlledCrash": {
+    "exitStatus": -9,
+    "processId": 255212,
+    "reaped": true,
+    "cleanShutdownObserved": false,
+    "nativeRetirementReportObserved": false
+  },
+  "postCrashClientRecoveries": 6,
+  "postCrashBusinessCount": 7,
+  "postCrashBrokerMessages": 7,
+  "finalShutdown": {
+    "reaped": true,
+    "clean": true,
+    "effects": {
+      "pending": 0,
+      "active": 0,
+      "acknowledged": 7,
+      "known_failed": 0,
+      "uncertain": 0,
+      "retry_scheduled": 0,
+      "blocked": 0,
+      "expired": 0,
+      "dead_lettered": 0,
+      "payload_bytes": 0,
+      "oldest_unresolved_millis": null
+    }
+  },
+  "limitations": [
+    "Post-dispatch abort occurred after a durable business rejection while its response was withheld; cancellation during commit and after successful commitment remain untested.",
+    "The proxy counted the observed request stream and no additional queued connections; this is not a universal retry proof.",
+    "The fixture deliberately made a separate changed-input conflict probe and a distinct later business command; neither was an automatic retry.",
+    "Guest execution count was not independently measured. All later effects were acknowledged before the controlled crash.",
+    "Two preceding attempts stopped during node startup at nodeServices: unavailable; their cause remains unclassified."
+  ]
+}

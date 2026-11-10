@@ -45,7 +45,7 @@ def inputs(language="rust"):
                     "rust_dependency_recovery.py", "rust_dependency_failures.py")
     elif language == "c":
         helpers += ("c_capsule.py", "c_capsule_project.py", "c_capsule_build.py",
-                    "qualify_c_capsules.py", "c_guest/compiler.py", "c_guest/bindings.py",
+                    "qualify_c_capsules.py", "c_guest/compiler.py", "c_guest/bindings.py", "c_guest/closed_headers.py",
                     "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
                     "c_application_dependencies.py", "c_static_symbols.py", "c_static_archive_build.py",
                     "captured_compiler_isolation.py", "c_dependency_fixture.py", "c_dependency_controls.py",

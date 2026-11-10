@@ -52,6 +52,7 @@ struct Ports {
     timer_start_error: Option<u8>,
     malformed_start: bool,
     wake_error: Option<u8>,
+    during_wake: Option<Box<dyn FnOnce()>>,
     timer_closed: bool,
 }
 std::thread_local! { static PORTS: RefCell<Ports> = RefCell::new(Ports::default()); }
@@ -145,6 +146,8 @@ unsafe extern "C" fn park(generation: u64, id: u64, out: *mut u8) {
 unsafe extern "C" fn wake(generation: u64, id: u64, out: *mut u8) {
     assert_eq!((generation, id), (ROOT.generation, ROOT.id));
     call("wake-task");
+    let callback = PORTS.with(|p| p.borrow_mut().during_wake.take());
+    if let Some(callback) = callback { callback(); }
     if let Some(error) = PORTS.with(|p| p.borrow().wake_error) {
         unsafe {
             failure(out, error);
@@ -547,4 +550,56 @@ fn last_executor_retirement_notifies_the_already_prepared_root_wait() {
     assert!(driver::quiescent());
     reset();
     drop(storage);
+}
+
+#[test]
+fn immediate_ready_uses_original_task_wake_without_park_timer_or_canonical_resume() {
+    reset();
+    let wait = driver::WaitLease::admit(None);
+    assert!(!driver::quiescent(), "the original Wait reservation stays live");
+    PORTS.with(|p| p.borrow_mut().during_wake = Some(Box::new(|| {
+        assert!(!driver::quiescent(), "actual Wait remains live through wake");
+        assert_eq!(calls(), ["admit-wait", "wake-task"]);
+    })));
+    wait.immediate_ready();
+    assert_eq!(calls(), ["admit-wait", "wake-task", "settle-wait"]);
+    assert!(driver::quiescent());
+    assert_retired();
+}
+
+#[test]
+fn immediate_ready_refuses_a_terminal_task_wake() {
+    // The host can report Cancelled/Deadline from its outer checks or
+    // InvalidToken when the fenced core wake loses a cancellation race.
+    for error in [3, 4, 6] {
+        reset();
+        let wait = driver::WaitLease::admit(None);
+        PORTS.with(|p| p.borrow_mut().wake_error = Some(error));
+        PORTS.with(|p| p.borrow_mut().during_wake = Some(Box::new(|| {
+            assert!(!driver::quiescent(), "Wait remains live through refused wake");
+        })));
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            wait.immediate_ready();
+        }));
+        assert!(result.is_err(), "refused wake cannot produce readiness");
+        // Native unwind runs the fake settlement; production panic=abort
+        // never resumes or retries an ambiguous host settlement here.
+        PORTS.with(|p| p.borrow_mut().wake_error = None);
+        assert_eq!(calls(), ["admit-wait", "wake-task", "settle-wait"]);
+        assert!(driver::quiescent());
+        assert_retired();
+    }
+}
+
+#[test]
+fn immediate_ready_refuses_an_actual_timed_wait_lease() {
+    reset();
+    let wait = driver::WaitLease::admit(Some(time::Duration::from_nanos(1)));
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        wait.immediate_ready();
+    }));
+    assert!(result.is_err());
+    assert_eq!(calls(), ["admit-wait", "timer-start", "timer-stop", "settle-wait"]);
+    assert!(driver::quiescent());
+    assert_retired();
 }

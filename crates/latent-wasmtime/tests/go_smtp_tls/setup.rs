@@ -25,20 +25,73 @@ pub(super) fn configuration(port: u16) -> StreamProviderConfig {
 }
 
 pub(super) async fn configured(root: &std::path::Path, port: u16) -> Fixture {
+    configured_for(root, port, false, false).await
+}
+
+pub(super) async fn configured_published(root: &std::path::Path, port: u16) -> Fixture {
+    configured_for(root, port, true, false).await
+}
+
+pub(super) async fn configured_lost_reply(root: &std::path::Path, port: u16) -> Fixture {
+    configured_for(root, port, true, true).await
+}
+
+async fn configured_for(
+    root: &std::path::Path,
+    port: u16,
+    published: bool,
+    lost_reply: bool,
+) -> Fixture {
     let prepared = std::path::PathBuf::from(
         std::env::var_os("LSF_GO_SMTP_TLS_FIXTURE").expect("compile the guarded Go fixture"),
     );
-    let record: serde_json::Value =
-        serde_json::from_slice(&std::fs::read(prepared.join("GO-SMTP-TLS-COMPILE.json")).unwrap())
-            .unwrap();
+    let (expected_source, expected_world, record_name) = if lost_reply {
+        (
+            LOST_REPLY_SOURCE,
+            PUBLISHED_WORLD,
+            "GO-SMTP-PUBLISHED-COMPILE.json",
+        )
+    } else if published {
+        (
+            PUBLISHED_SOURCE,
+            PUBLISHED_WORLD,
+            "GO-SMTP-PUBLISHED-COMPILE.json",
+        )
+    } else {
+        (SOURCE, WORLD, "GO-SMTP-TLS-COMPILE.json")
+    };
+    let record_bytes = std::fs::read(prepared.join(record_name)).unwrap();
+    let record: serde_json::Value = serde_json::from_slice(&record_bytes).unwrap();
     let source = std::fs::read(prepared.join("src/main.go")).unwrap();
     let component = std::fs::read(prepared.join("build/component.wasm")).unwrap();
-    assert_eq!(source, SOURCE);
+    assert_eq!(source, expected_source);
     assert_eq!(
         std::fs::read_to_string(prepared.join("wit/world.wit")).unwrap(),
-        WORLD
+        expected_world
     );
-    assert_eq!(record["profile"], PROFILE);
+    let profile = match std::env::var("LSF_GO_SMTP_TLS_PROFILE") {
+        Ok(value) => value,
+        Err(std::env::VarError::NotPresent) => PROFILE.to_owned(),
+        Err(std::env::VarError::NotUnicode(_)) => panic!("non-Unicode Go SMTP/TLS runtime profile"),
+    };
+    let queued_work = match profile.as_str() {
+        PROFILE => 2,
+        V7_PROFILE => 16,
+        _ => panic!("unsupported Go SMTP/TLS runtime profile"),
+    };
+    assert_eq!(record["profile"], profile.as_str());
+    if published {
+        assert_eq!(profile, V7_PROFILE);
+        assert_eq!(record["dependencyClosure"]["smtpRetryPolicy"], "none");
+        assert_eq!(
+            record["dependencyClosure"]["workerTimer"],
+            if lost_reply {
+                "not exercised by the separate lost-reply fixture"
+            } else {
+                "separate RxGo/backoff stage before network"
+            }
+        );
+    }
     assert_eq!(record["sourceUnchanged"], true);
     assert_eq!(
         record["sourceDigest"],
@@ -48,7 +101,7 @@ pub(super) async fn configured(root: &std::path::Path, port: u16) -> Fixture {
         record["componentDigest"],
         latent_artifacts::package::artifact_blob_digest(&component).as_str()
     );
-    let caller = packages::go_network_runtime(component, WORLD);
+    let caller = packages::go_network_runtime(component, expected_world);
     let callee = packages::callee(42);
     // This signs the actual in-process native fixture package construction.
     // The separate retained compile observation binds the real Go compiler;
@@ -70,10 +123,8 @@ pub(super) async fn configured(root: &std::path::Path, port: u16) -> Fixture {
         let mut capture = original.to_vec();
         capture.extend_from_slice(include_bytes!("../local_service/packages.rs"));
         if std::ptr::eq(bundle, &caller) {
-            capture.extend_from_slice(WORLD.as_bytes());
-            capture.extend_from_slice(
-                &std::fs::read(prepared.join("GO-SMTP-TLS-COMPILE.json")).unwrap(),
-            );
+            capture.extend_from_slice(expected_world.as_bytes());
+            capture.extend_from_slice(&record_bytes);
         }
         observation.source.snapshot_digest =
             latent_artifacts::package::artifact_blob_digest(&capture).into_string();
@@ -95,20 +146,25 @@ pub(super) async fn configured(root: &std::path::Path, port: u16) -> Fixture {
             .await
             .unwrap();
     }
-    Fixture::with_runtime_outbound_streams(
-        (catalog, caller, callee),
-        latent_core::activation_runtime::RuntimeLimits {
-            tasks: 16,
-            executors: 2,
-            queued_work: 2,
-            waits: 4,
-            timers: 2,
-            results: 2,
-            native_owners: 2,
-        },
-        configuration(port),
-    )
-    .await
+    let limits = latent_core::activation_runtime::RuntimeLimits {
+        tasks: 16,
+        executors: 2,
+        queued_work,
+        waits: 4,
+        timers: 2,
+        results: 2,
+        native_owners: 2,
+    };
+    if profile == V7_PROFILE {
+        println!(
+            "GO_V7_NETWORK_LIMITS {}",
+            json!({"profile": profile, "tasks": limits.tasks, "executors": limits.executors,
+                "queuedWork": limits.queued_work, "waits": limits.waits, "timers": limits.timers,
+                "results": limits.results, "nativeOwners": limits.native_owners})
+        );
+    }
+    Fixture::with_runtime_outbound_streams((catalog, caller, callee), limits, configuration(port))
+        .await
 }
 
 pub(super) fn request(

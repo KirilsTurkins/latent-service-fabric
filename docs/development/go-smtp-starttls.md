@@ -84,3 +84,37 @@ This advances the finite networking/TLS portion of
 supplies future protocol controls for
 [#738](https://github.com/KirilsTurkins/latent-service-fabric/issues/738).
 Both issues remain open.
+
+The existing owner can also select the v7 declared-stream compiler/profile. The
+same unchanged six SMTP/STARTTLS cases use the original v7 Task16, Executor2,
+Queue16, Wait4, Timer2, Result2 and Native2 bounds; v5 remains the default with
+Queue2. A separate v7 receipt and exact limits witness bind this composition.
+The historical v5 receipt above does not establish a v7 result. The dedicated
+v7 push branch selects it; the manual choice requires the workflow to exist on
+the repository's default branch. These controls do not establish a published
+third-party client, production provider availability or kernel final-free.
+
+
+The same owner has a separate v7 published-client selection for the unchanged
+emersion/go-smtp v0.25.0 client. Its ordinary Dial and DialStartTLS factories own
+the connection; fixture code supplies only the destination and explicit test
+roots. The independently captured RxGo/backoff worker and timer complete an
+effect-free retry before the client is constructed. This is not a retry policy
+of the SMTP library, and no network call or effect is retried by the fixture.
+The selected module graph and original ZIPs are captured and checked before the
+maintained offline Go authoring build, which uses its existing compiler namespace.
+This route requires its own signed result and does not inherit the earlier v5
+or v7 standard-library observation. It does not qualify the normal provider,
+host TLS accounting or final kernel retirement.
+
+The separately selected `published-lost-reply` owner captures the same published
+SMTP dependency graph for a different fixture. Its controlled local peer reads
+one complete message, then closes without sending the final SMTP reply. The
+fixture must observe the ordinary client's error and label delivery unknown;
+this does not establish a typed host-level uncertainty classification. After
+that activation and its reported user-space owners retire, the peer checks for
+another connection during a bounded 250 ms window; a fresh activation performs a
+separate NOOP and QUIT. The receipt records connection counts and the peer's
+one accepted message separately. This fixture does not exercise RxGo/backoff,
+host TLS, a normally installed provider, cross-tenant reuse or final kernel
+retirement. A source or native client control alone is not a signed result.

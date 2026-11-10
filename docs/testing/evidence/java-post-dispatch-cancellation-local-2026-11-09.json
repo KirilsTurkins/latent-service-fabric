@@ -1,0 +1,97 @@
+{
+  "description": "Java post-dispatch future cancellation with fresh-client recovery",
+  "qualification": "Local normal node built from combined unmerged source, separately built client candidate and disposable signer; not hosted or distribution qualification.",
+  "harnessSha256": "1091497ebea0fb0807f33dbf1c4ee8493cfcdd35ed4486b3f987d3ad11ee0960",
+  "javaLogSha256": "ca4c478ffaaf940030ddb9f655e9e7779ad1a7dfed1c6e93b834411c0ddbcd1d",
+  "nodeSha256": "sha256:48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "javaSourceSha256": "sha256:d80535a395e5c4b546a658585214c62e252fb595e284a99c8937e4e0845e1738",
+  "repositorySourceSha256": "sha256:18dff27855113a0594001c69981276e06f13fc71fb6f9d5904c4a3b3cfe8d3ec",
+  "sourceLineEndings": "The tested source normalizes to the committed LF repository blob.",
+  "javaClassSha256": "sha256:c67d9dcd7359ba78fe24fcef8a04169e8207d0998a2da64c37106847f9ca9ce5",
+  "proxySourceSha256": "sha256:9fd5ba5c7bace82acb2eca31ef8c52a987bcd6e22dd6c6085ef2136f32b22d2a",
+  "postDispatch": {
+    "cancelledAfterDurableObservation": true,
+    "durableCommandCount": "3",
+    "extraQueuedConnections": 0,
+    "fingerprintSha256": "847593c834d75f284974a3c0714d2248f585c51b3770ef6504aa3fe7f3be8aad",
+    "freshContextRecoveredOriginalRejection": true,
+    "laterBrokerMessages": 2,
+    "laterBusinessCount": 2,
+    "laterEffectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "originalAttemptId": "1",
+    "originalCommandId": "ae95f341bd33683aecaecc5ff46c5b4f475a6717c916242cdc745280bd1cfdc3",
+    "singleObservedRequestStream": 1
+  },
+  "proxy": {
+    "extraConnections": 0,
+    "failureCategory": "EOFError",
+    "requestStreams": 1
+  },
+  "controlledCrash": {
+    "exitStatus": -9,
+    "processId": 3499,
+    "reaped": true,
+    "cleanShutdownObserved": false,
+    "nativeRetirementReportObserved": false
+  },
+  "postCrashClientRecoveries": 6,
+  "postCrashBusinessCount": 7,
+  "postCrashBrokerMessages": 7,
+  "finalShutdown": {
+    "reaped": true,
+    "clean": true,
+    "effects": {
+      "clean": true,
+      "physicallyRetired": true,
+      "schedulingOwnerRetired": true,
+      "workerThreadsJoined": 3,
+      "workerThreadsRemaining": 0,
+      "snapshot": {
+        "durable": {
+          "pending": 0,
+          "active": 0,
+          "acknowledged": 7,
+          "known_failed": 0,
+          "uncertain": 0,
+          "retry_scheduled": 0,
+          "blocked": 0,
+          "expired": 0,
+          "dead_lettered": 0,
+          "payload_bytes": 0,
+          "oldest_unresolved_millis": null
+        },
+        "countsObservedAtMillis": 1794203077896,
+        "queued": 0,
+        "activeJobs": 0,
+        "retainedAttemptBytes": 0,
+        "liveWorkers": 0,
+        "acceptedEffects": 0,
+        "liveTenants": 0,
+        "claims": 0,
+        "physicalOwners": 0,
+        "commandOwners": 0,
+        "commandClockFloor": 1794203076129,
+        "quarantinedPhysicalOwners": 0,
+        "paused": false,
+        "control": {
+          "generation": {
+            "ownerEpoch": 5,
+            "revision": 2
+          },
+          "pending": false,
+          "restoreReviewRequired": false
+        },
+        "admissionClosed": true,
+        "quarantined": false,
+        "failure": null
+      }
+    }
+  },
+  "limitations": [
+    "Cancellation occurred after a durable business rejection while its response was withheld; this does not cover pre-dispatch cancellation, cancellation during commit or after successful commitment.",
+    "The proxy counted one observed request stream and no additional queued connections; this is not a universal retry proof.",
+    "The fixture deliberately made a separate changed-input conflict probe and a distinct later business command; neither was an automatic retry.",
+    "Guest execution count was not independently measured. All later effects were acknowledged before the controlled crash.",
+    "Attempt 109 observed post-dispatch cancellation but the later effect remained POLICY_BLOCKED; it did not complete the crash campaign."
+  ]
+}

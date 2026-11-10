@@ -2,6 +2,7 @@
 mod abort_recovery;
 mod admission;
 mod completion;
+mod entity_replay;
 mod policy;
 pub(super) mod pre_host_conflict;
 mod replay;
@@ -32,8 +33,31 @@ pub struct TransactionAdmissionOwners {
     time: Arc<dyn CommandTimeSource>,
     command: CommandAdmissionSource,
     native: NativeCapacityOwner,
+    pub(super) lanes: super::entity_queue::EntityQueue,
 }
 impl TransactionAdmissionOwners {
+    /// Current number of prepaid duplicate callers waiting for a claim.
+    pub fn entity_duplicate_waiter_count(&self) -> Result<usize, PlatformError> {
+        self.lanes.duplicate_waiter_count().map_err(|_| {
+            error(
+                latent_core::PlatformErrorCode::Unavailable,
+                "entity-queue-unavailable",
+            )
+        })
+    }
+    /// Current aggregate lane counts and byte charges. The observation grants
+    /// no execution, command, or namespace authority.
+    pub fn entity_lanes_snapshot(
+        &self,
+    ) -> Result<latent_state::entity_lanes::EntityLaneSnapshot, PlatformError> {
+        self.lanes.observe().map_err(|_| {
+            error(
+                latent_core::PlatformErrorCode::Unavailable,
+                "entity-queue-unavailable",
+            )
+        })
+    }
+
     /// Prepay the original global slot and finite physical byte envelope before
     /// transport dispatch returns a future or starts the activation manager.
     /// The affine reservation must be transferred into the same admission.
@@ -57,6 +81,47 @@ impl TransactionAdmissionOwners {
         if !command.uses_store(&store) || !store.uses_native_capacity(&native) {
             return Err(authorization::denied());
         }
+        let limits = native.limits();
+        let bytes = limits.ordinary.bytes;
+        let minimum = super::capacity::minimum_ingress_bytes();
+        let byte_slots = usize::try_from(bytes / minimum).unwrap_or(usize::MAX);
+        let slots = limits.ordinary.slots.min(byte_slots).max(1);
+        let tenant_slots = if slots > 2 { slots - 1 } else { slots };
+        let tenant_bytes = if slots > 2 { bytes - minimum } else { bytes }
+            .max(
+                limits
+                    .ordinary
+                    .maximum_reservation_bytes
+                    .saturating_add(16 * 1024),
+            )
+            .min(bytes);
+        let entity_bytes = (bytes / 2)
+            .max(
+                limits
+                    .ordinary
+                    .maximum_reservation_bytes
+                    .saturating_add(16 * 1024),
+            )
+            .min(bytes);
+        let lanes = super::entity_queue::EntityQueue::new(
+            latent_state::entity_lanes::EntityLaneLimits {
+                global_queued: slots,
+                tenant_queued: tenant_slots,
+                entity_queued: (slots / 4).max(1),
+                global_keys: slots,
+                tenant_keys: tenant_slots,
+                global_active: slots,
+                tenant_active: tenant_slots,
+                global_bytes: bytes,
+                tenant_bytes,
+                entity_bytes,
+                scope_bytes: 3 * latent_core::transaction_contract::IDENTITY_BYTES,
+                command_identity_bytes: latent_core::transaction_contract::IDENTITY_BYTES,
+                maximum_wait_age: limits.maximum_lifetime,
+            },
+            native.clock(),
+        )
+        .map_err(|_| authorization::denied())?;
         Ok(Self {
             store,
             namespaces,
@@ -65,6 +130,7 @@ impl TransactionAdmissionOwners {
             time: Arc::new(super::command_role::CommandClock(command.clone())),
             command,
             native,
+            lanes,
         })
     }
 }
@@ -134,6 +200,7 @@ pub struct NativeTransactionAdmission {
     ingress: Mutex<Option<NativeReservation>>,
     validator: Option<Arc<dyn TransactionOutcomeValidator>>,
     cancellation_abort: Mutex<Option<Arc<super::cancellation::CancellationAbortSlot>>>,
+    shared_owner: Option<Arc<super::SharedCommandOwner>>,
 }
 impl NativeTransactionAdmission {
     pub fn new(
@@ -152,6 +219,7 @@ impl NativeTransactionAdmission {
             ingress: Mutex::new(None),
             validator: None,
             cancellation_abort: Mutex::new(None),
+            shared_owner: None,
         })
     }
 
@@ -167,6 +235,14 @@ impl NativeTransactionAdmission {
         let mut admission = Self::new(owners, installation, selection)?;
         admission.ingress = Mutex::new(Some(native));
         Ok(admission)
+    }
+
+    /// Bind the already-reserved transport owner for an authenticated command.
+    /// This adds no deadline, execution authority, worker, or native reservation.
+    #[must_use]
+    pub fn with_shared_command_owner(mut self, owner: Arc<super::SharedCommandOwner>) -> Self {
+        self.shared_owner = Some(owner);
+        self
     }
 
     /// Require typed prepared input and validate the promised result before

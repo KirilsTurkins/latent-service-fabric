@@ -586,6 +586,13 @@ fn target(request: &contract::Request) -> Result<RequestedTarget<'_>, PlatformEr
             value.command.as_ref(),
             value.authorization_publication.as_ref(),
         )),
+        contract::Request::ListEffectHistory(value) => {
+            let effect = value.effect.as_ref().ok_or_else(invalid)?;
+            Some((
+                effect.command.as_ref(),
+                effect.authorization_publication.as_ref(),
+            ))
+        }
         contract::Request::CancelCommand(value) => {
             let original = value.command.as_ref().ok_or_else(invalid)?;
             Some((

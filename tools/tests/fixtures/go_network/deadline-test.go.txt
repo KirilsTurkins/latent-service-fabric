@@ -1,0 +1,54 @@
+package streamdeadline
+
+import (
+    "errors"
+    "math"
+    "os"
+    "testing"
+    time "example.invalid/streamdeadline/faketime"
+)
+
+// The exact production function uses an explicit clock and WIT-option double.
+// Provider behavior below is modeled; this does not execute a component.
+func future(n int64) time.Time { return time.Time{Remaining: n} }
+
+func TestLongDeadlineEntersProviderWithAcceptedArgument(t *testing.T) {
+    option, err := lsfStreamTimeout(future(11000000000))
+    if err != nil || !option.Present || option.Value == 0 || option.Value > 10000 {
+        t.Fatalf("provider-timeout-argument-rejected: value=%d present=%v error=%v", option.Value, option.Present, err)
+    }
+}
+
+func TestNoDeadlineAndExpiredDeadline(t *testing.T) {
+    option, err := lsfStreamTimeout(time.Time{Empty: true})
+    if err != nil || option.Present { t.Fatal("zero deadline did not remain absent") }
+    for _, remaining := range []int64{-1, 0} {
+        option, err := lsfStreamTimeout(future(remaining))
+        if option.Present || !errors.Is(err, os.ErrDeadlineExceeded) { t.Fatalf("expired: %d", remaining) }
+    }
+}
+
+func TestCeilingAndProviderMaximum(t *testing.T) {
+    cases := []struct{ remaining int64; want uint32 }{
+        {1, 1}, {999999, 1}, {1000000, 1}, {1000001, 2},
+        {9999999999, 10000}, {10000000000, 10000}, {10000000001, 10000}, {math.MaxInt64, 10000},
+    }
+    for _, item := range cases {
+        option, err := lsfStreamTimeout(future(item.remaining))
+        if err != nil || !option.Present || option.Value != item.want {
+            t.Fatalf("rounding-cap remaining=%d got=%v err=%v want=%d", item.remaining, option, err, item.want)
+        }
+    }
+}
+
+func TestProviderModelRetainsNarrowerOriginalDeadline(t *testing.T) {
+    option, err := lsfStreamTimeout(future(20000000000))
+    if err != nil || !option.Present { t.Fatal("long deadline") }
+    // This models the provider minimum; the separate source checks and signed
+    // owners authenticate the real provider/root path independently.
+    rootMillis, providerMillis := uint32(900), uint32(10000)
+    effective := option.Value
+    if rootMillis < effective { effective = rootMillis }
+    if providerMillis < effective { effective = providerMillis }
+    if effective != rootMillis { t.Fatal("root deadline was extended") }
+}

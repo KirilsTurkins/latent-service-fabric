@@ -14,6 +14,18 @@ fn main() {
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     let args = std::env::args_os().skip(1).collect::<Vec<_>>();
+    if args.len() == 3 && args[0] == "demo-sign-rust-transaction" {
+        return authoring::sign_rust_transaction(
+            std::path::Path::new(&args[1]),
+            std::path::Path::new(&args[2]),
+        );
+    }
+    if args.len() == 3 && args[0] == "demo-sign-transaction" {
+        return authoring::sign_transaction(
+            std::path::Path::new(&args[1]),
+            std::path::Path::new(&args[2]),
+        );
+    }
     if args.len() == 3 && args[0] == "demo-sign-neutral-resources" {
         return authoring::sign_neutral_resources(
             std::path::Path::new(&args[1]),
@@ -135,6 +147,33 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             &args[3..],
         );
     }
+    if args.len() == 4 && args[0] == "fixture-sign-recovery-event-java-input" {
+        return authoring::sign_recovery_event_java(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("event fixture source must be UTF-8")?,
+            &args[3..],
+        );
+    }
+    if args.len() == 4 && args[0] == "fixture-sign-live-event-java-input" {
+        return authoring::sign_live_event_java(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("event fixture source must be UTF-8")?,
+            &args[3..],
+        );
+    }
+    if args.len() == 4 && args[0] == "fixture-sign-captured-event-java-input" {
+        return authoring::sign_captured_event_java(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("event fixture source must be UTF-8")?,
+            &args[3..],
+        );
+    }
     if args.len() == 4 && args[0] == "fixture-sign-poststage-http-java-input" {
         return authoring::sign_poststage_http_java(
             std::path::Path::new(&args[1]),
@@ -172,7 +211,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         || !matches!(args[0].to_str(), Some("demo-sign" | "demo-sign-separated"))
         || args.len() > 18
     {
-        return Err("usage: capsule_authoring <demo-sign|demo-sign-separated> <new-private-output> <build-directory>... (at most 16 builds), or demo-check-stale-proofs <new-private-output> <policy> <signed-package-directory>... (at most 2 packages); development qualification only".into());
+        return Err("usage: capsule_authoring <demo-sign|demo-sign-separated> <new-private-output> <build-directory>... (at most 16 builds), or <demo-sign-transaction|demo-sign-rust-transaction> <new-private-output> <completed-build>, or demo-check-stale-proofs <new-private-output> <policy> <signed-package-directory>... (at most 2 packages); development qualification only".into());
     }
     if args[0] == "demo-sign-separated" {
         authoring::sign_demo_separated(std::path::Path::new(&args[1]), &args[2..])

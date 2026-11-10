@@ -18,6 +18,11 @@ import sys
 if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools.build_observation import file_identity
+from tools import go_network_deadline_reference as deadline
+from tools import go_network_deadline_set_reference as deadline_set
+from tools import go_network_empty_read_reference as empty_read
+from tools import go_network_half_close_reference as half_close
+from tools import go_network_endpoint_reference as endpoint
 from tools.owned_test_process import ProcessFailure, run_owned
 from tools.rust_capsule_project import ROOT, fresh
 from tools.test_run import redact
@@ -35,8 +40,8 @@ CASES = ('TestCopyCrossesChunkBoundary', 'TestDirectWriteAdvancesOnlyAcceptedByt
     'TestImpossibleCountsFailClosedBeforeAnotherDispatch',
     'TestEmptyClosedAndHalfClosedPathsKeepAdmissionRules',
     'TestCloseBetweenFragmentsKeepsPrefixAndStopsDispatch')
-RECIPE = (TEMPLATE, TESTS, 'tools/qualify_go_write_progress.py',
-          'tools/owned_test_process.py', 'tools/build_observation.py', 'tools/test_run.py',
+RECIPE = (TEMPLATE, TESTS, deadline.TESTS, deadline_set.TESTS, empty_read.TESTS, half_close.TESTS, half_close.SDK, half_close.OWNER, endpoint.TESTS, *deadline.MATERIALS, 'tools/go_network_deadline_reference.py', 'tools/go_network_deadline_set_reference.py', 'tools/go_network_empty_read_reference.py', 'tools/go_network_half_close_reference.py', 'tools/go_network_endpoint_reference.py', 'tools/qualify_go_write_progress.py',
+          'tools/owned_test_process.py', 'tools/owned_process_worker.py', 'tools/build_observation.py', 'tools/test_run.py',
           '.github/workflows/go-write-progress-reference.yml')
 
 
@@ -113,6 +118,7 @@ def qualify(output: Path) -> dict:
     def save(name):
         (output / name).write_bytes((json.dumps(record, indent=2) + '\n').encode())
     try:
+        deadline.contract(before[TEMPLATE], {name: before[name] for name in deadline.MATERIALS})
         compiler = shutil.which('go')
         if compiler is None:
             raise ValueError('go-write-reference-compiler-unavailable')
@@ -148,8 +154,35 @@ def qualify(output: Path) -> dict:
             if result.returncode != (0 if name == 'current' else 1):
                 raise ValueError('go-write-reference-unexpected-command-outcome:' + name)
             results[name] = observed(result.output, name != 'current', close=name == 'before-close-guard')
+        deadline_result = deadline.qualify(output, compiler, environment, upstream, before[TEMPLATE], before[deadline.TESTS])
+        set_baseline = subprocess.check_output(['git', 'show', deadline_set.BASELINE + ':' + TEMPLATE], cwd=ROOT, timeout=30)
+        set_result = deadline_set.qualify(output, compiler, environment, set_baseline,
+                                          before[TEMPLATE], before[deadline_set.TESTS])
+        empty_baseline = subprocess.check_output(['git', 'show', empty_read.BASELINE + ':' + TEMPLATE], cwd=ROOT, timeout=30)
+        empty_result = empty_read.qualify(output, compiler, environment, empty_baseline,
+                                          before[TEMPLATE], before[empty_read.TESTS])
+        half_baseline = subprocess.check_output(['git', 'show', half_close.BASELINE + ':' + TEMPLATE], cwd=ROOT, timeout=30)
+        half_result = half_close.qualify(output, compiler, environment, half_baseline,
+                                         before[TEMPLATE], before[half_close.SDK], before[half_close.OWNER], before[half_close.TESTS])
+        endpoint_result = endpoint.qualify(output, compiler, environment, upstream,
+                                           before[TEMPLATE], before[endpoint.TESTS])
         if before != {name: (ROOT / name).read_bytes() for name in RECIPE} or file_identity(compiler, 'go') != identity:
             raise ValueError('go-write-reference-input-changed')
+        endpoint_result.update(sourceRevision=record['sourceRevision'], baseline=BASELINE,
+                               compiler=identity, compilerVersion=version, sourceUnchanged=True, inputs=record['inputs'])
+        (output / 'endpoint-receipt.json').write_bytes((json.dumps(endpoint_result, indent=2) + '\n').encode())
+        empty_result.update(sourceRevision=record['sourceRevision'], baseline=empty_read.BASELINE,
+                            compiler=identity, compilerVersion=version, sourceUnchanged=True, inputs=record['inputs'])
+        (output / 'empty-read-receipt.json').write_bytes((json.dumps(empty_result, indent=2) + '\n').encode())
+        half_result.update(sourceRevision=record['sourceRevision'], baseline=half_close.BASELINE,
+                           compiler=identity, compilerVersion=version, sourceUnchanged=True, inputs=record['inputs'])
+        (output / 'half-close-receipt.json').write_bytes((json.dumps(half_result, indent=2) + '\n').encode())
+        set_result.update(sourceRevision=record['sourceRevision'], baseline=deadline_set.BASELINE,
+                          compiler=identity, compilerVersion=version, sourceUnchanged=True, inputs=record['inputs'])
+        (output / 'deadline-set-receipt.json').write_bytes((json.dumps(set_result, indent=2) + '\n').encode())
+        deadline_result.update(sourceRevision=record['sourceRevision'], baseline=BASELINE, compiler=identity,
+                               compilerVersion=version, sourceUnchanged=True, inputs=record['inputs'])
+        (output / 'deadline-receipt.json').write_bytes((json.dumps(deadline_result, indent=2) + '\n').encode())
         record.update(status='passed', sourceUnchanged=True, compiler=identity, compilerVersion=version, outcomes=results)
         save('receipt.json'); return record
     except BaseException:

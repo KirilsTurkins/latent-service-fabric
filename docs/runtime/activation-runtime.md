@@ -43,8 +43,12 @@ upstream binding that requires guest allocation. Pending host futures and owned
 stream/list/string resources retain their existing physical owners.
 
 Park, wake and timer completion arbitrate against the original cancellation
-state. A concurrent stop cannot become a successful elapsed wait or revive a
-retired owner. Runtime arenas, timer-state backing and selected timer/poll
+state; a closed ledger cannot publish new readiness or revive a retired owner.
+Plain elapsed waits commit their existing Timer owner against closure of the
+original ledger and its ancestors, without creating another owner. A readiness
+committed before closure may be delivered afterward; independent external
+probes and deadline passage are not serialized by that commit. Runtime arenas,
+timer-state backing and selected timer/poll
 futures are preadmitted before allocation; callbacks keep their original
 reservation while physically active. See [host-I/O backing](async-host-io.md#future-and-callback-backing).
 

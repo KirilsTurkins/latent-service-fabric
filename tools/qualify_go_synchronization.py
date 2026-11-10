@@ -25,6 +25,11 @@ V7_TIMER_CASE = 'runtime::go::managed_timers::signed_managed_v7_timers_gc_callba
 TASK_SATURATION_CASE = 'runtime::go::task_saturation::signed_task16_saturation_reports_original_refusal_and_fresh_retirement'
 TIMER_OVERLAP_CASE = 'runtime::go::timer_overlap::signed_overlapping_public_timer_operations_retire_the_original_wait'
 V7_TIMER_OVERLAP_CASE = 'runtime::go::timer_overlap::signed_v7_overlapping_public_timer_operations_retire_the_original_wait'
+FIRED_TIMER_CASE = 'runtime::go::timer_overlap::signed_fired_one_shot_public_stop_and_reset_wait_for_original_next'
+ZERO_CLOCK_CASE = 'runtime::go::zero_clock::signed_zero_origin_five_nanosecond_timer_retires_original_wait'
+TICKER_CLOCK_CASE = 'runtime::go::zero_clock::signed_zero_clock_ticker_coalesces_missed_periods'
+WALL_CLOCK_CASE = 'runtime::go::zero_clock::signed_zero_clock_timer_survives_wall_jumps'
+SLEEP_CANCEL_CASE = 'runtime::go::zero_clock::signed_sleep_cancellation_precedes_elapsed_edge'
 TIMER_MODES = [0, 1, 2, 3, 4, 5, 6, 18, 19, 20, 9, 11, 12, 13, 14, 15, 16, 17]
 TIMER_NATIVE_MODES = [mode for mode in TIMER_MODES if mode != 4]
 MANAGED_TIMER_ROWS = [('ordinary', iteration, mode, 'success') for iteration in range(2) for mode in TIMER_MODES]
@@ -139,7 +144,15 @@ def managed_timer_observations(raw: bytes, filtered: int, case: str = MANAGED_TI
     if (case not in {MANAGED_TIMER_CASE, V7_TIMER_CASE} or names != [case.encode()]
             or totals != [(b'1', b'0', b'0', b'0', str(filtered).encode())]):
         raise ValueError('Go-managed-timers-exact-signed-case-required')
-    rows = [json.loads(value) for value in re.findall(rb'^GO_MANAGED_TIMER_CASE (.+)$', raw, re.M)]
+    def unique(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError('Go-managed-timers-duplicate-field')
+            value[key] = item
+        return value
+    rows = [json.loads(value, object_pairs_hook=unique)
+            for value in re.findall(rb'^GO_MANAGED_TIMER_CASE (.+)$', raw, re.M)]
     if len(rows) != len(MANAGED_TIMER_ROWS):
         raise ValueError('Go-managed-timers-missing-or-extra-invocation')
     actual = []
@@ -253,6 +266,285 @@ def timer_overlap_observations(raw: bytes, diagnostic: bytes, filtered: int, cas
             'physicalWaitDrops': [{'activation': name, 'returned': drop_map[name]} for name in names]}
 
 
+def fired_timer_observations(raw: bytes, diagnostic: bytes, filtered: int, *, include_returned_cancel: bool = False) -> dict:
+    """Require the matched-token probe and actual original physical drops."""
+    if len(raw) > 2 * 1024 * 1024 or len(diagnostic) > 2 * 1024 * 1024:
+        raise ValueError('Go-fired-timer-output-bound')
+    names = re.findall(rb'^test ([A-Za-z0-9_:]+) \.\.\. ok$', raw, re.M)
+    totals = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
+    if names != [FIRED_TIMER_CASE.encode()] or totals != [(b'1', b'0', b'0', b'0', str(filtered).encode())]:
+        raise ValueError('Go-fired-timer-exact-signed-case-required')
+    def unique(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError('Go-fired-timer-duplicate-field')
+            value[key] = item
+        return value
+    prefix = b'GO_TIMER_FIRED_CASE '
+    values = re.findall(rb'^GO_TIMER_FIRED_CASE (.+)$', raw, re.M)
+    count = 6 if include_returned_cancel else 5
+    if raw.count(prefix) != count or len(values) != count:
+        raise ValueError('Go-fired-timer-exact-case-count')
+    rows = [json.loads(item, object_pairs_hook=unique) for item in values]
+    cases = [('stop', 0, 'success', 1), ('reset', 1, 'success', 2),
+             ('returned-stop', 2, 'success', 3), ('returned-reset', 3, 'success', 4)]
+    if include_returned_cancel:
+        cases.append(('returned-cancel', 4, 'cancelled', 5))
+    cases.append(('fresh', 0, 'success', 6 if include_returned_cancel else 5))
+    expected = [dict(case=case, mode=mode, outcome=outcome, storesCreated=count, liveStores=0,
+                     liveInstances=0, reservations=0, reservedFuel=0, reservedMemory=0, pendingProviderWaits=0)
+                for case, mode, outcome, count in cases]
+    if json.dumps(rows, sort_keys=True, separators=(',', ':')) != json.dumps(expected, sort_keys=True, separators=(',', ':')):
+        raise ValueError('Go-fired-timer-signed-retirement-required')
+    witness_prefix = b'LSF-GO-TIMER-FIRED-V1|'
+    records = re.findall(rb'^LSF-GO-TIMER-FIRED-V1\|([^\r\n]+)$', diagnostic, re.M)
+    if diagnostic.count(witness_prefix) != 2 or len(records) != 2:
+        raise ValueError('Go-fired-timer-exact-witnesses-required')
+    ids = ('go-timer-fired-stop', 'go-timer-fired-reset')
+    witnesses = []
+    for activation, record in zip(ids, records):
+        fields = record.split(b'|')
+        if len(fields) != 5 or fields[:4] != [activation.encode(), b'1', b'0', b'0']:
+            raise ValueError('Go-fired-timer-causal-witness-required')
+        if not re.fullmatch(rb'[1-9][0-9]{0,3}', fields[4]):
+            raise ValueError('Go-fired-timer-witness-budget')
+        witnesses.append({'activation': activation, 'modeledWitnessBytes': int(fields[4])})
+    if len({item['modeledWitnessBytes'] for item in witnesses}) != 1:
+        raise ValueError('Go-fired-timer-inconsistent-layout')
+    returned_prefix = b'LSF-GO-TIMER-RETURNED-V1|'
+    returned_records = re.findall(rb'^LSF-GO-TIMER-RETURNED-V1\|([^\r\n]+)$', diagnostic, re.M)
+    returned_ids = ('go-timer-returned-stop', 'go-timer-returned-reset')
+    if diagnostic.count(returned_prefix) != 2 or len(returned_records) != 2:
+        raise ValueError('Go-returned-timer-exact-witnesses-required')
+    returned_witnesses = []
+    for activation, record in zip(returned_ids, returned_records):
+        fields = record.split(b'|')
+        if len(fields) != 5 or fields[:4] != [activation.encode(), b'1', b'0', b'0']:
+            raise ValueError('Go-returned-timer-causal-witness-required')
+        if not re.fullmatch(rb'[1-9][0-9]{0,3}', fields[4]):
+            raise ValueError('Go-returned-timer-witness-budget')
+        returned_witnesses.append({'activation': activation, 'modeledWitnessBytes': int(fields[4])})
+    if any(item['modeledWitnessBytes'] != witnesses[0]['modeledWitnessBytes'] for item in returned_witnesses):
+        raise ValueError('Go-returned-timer-inconsistent-layout')
+    drop_prefix = b'LSF-GO-TIMER-WAIT-DROP-V1|'
+    drops = re.findall(rb'^LSF-GO-TIMER-WAIT-DROP-V1\|([^\r\n|]+)\|([01])$', diagnostic, re.M)
+    all_ids = ids + returned_ids + (('go-timer-returned-cancel',) if include_returned_cancel else ())
+    if diagnostic.count(drop_prefix) != len(all_ids) or drops != [(name.encode(), b'1') for name in all_ids]:
+        raise ValueError('Go-fired-timer-physical-wait-drops-required')
+    cancel_prefix = b'LSF-GO-TIMER-RETURNED-CANCEL-V1|'
+    cancel_records = re.findall(rb'^LSF-GO-TIMER-RETURNED-CANCEL-V1\|([^\r\n]+)$', diagnostic, re.M)
+    result = {'cases': rows, 'witnesses': witnesses, 'returnedWitnesses': returned_witnesses,
+              'physicalWaitDrops': [{'activation': name, 'returned': True} for name in all_ids]}
+    if include_returned_cancel:
+        if diagnostic.count(cancel_prefix) != 1 or len(cancel_records) != 1:
+            raise ValueError('Go-returned-cancel-exact-witness-required')
+        fields = cancel_records[0].split(b'|')
+        if (len(fields) != 5 or fields[:4] != [b'go-timer-returned-cancel', b'1', b'0', b'0']
+                or not re.fullmatch(rb'[1-9][0-9]{0,3}', fields[4])
+                or int(fields[4]) != witnesses[0]['modeledWitnessBytes']):
+            raise ValueError('Go-returned-cancel-causal-witness-required')
+        result['returnedCancellationWitness'] = {'activation': 'go-timer-returned-cancel',
+            'modeledWitnessBytes': int(fields[4])}
+    elif cancel_records or diagnostic.count(cancel_prefix):
+        raise ValueError('Go-returned-cancel-unexpected-historical-witness')
+    return result
+
+
+def zero_clock_observations(raw: bytes, diagnostic: bytes, filtered: int) -> dict:
+    """Require one admitted timer, its live Wait and the gated 0-to-5 ns edge."""
+    if max(len(raw), len(diagnostic)) > 2 * 1024 * 1024:
+        raise ValueError('Go-zero-clock-output-bound')
+    names = re.findall(rb'^test ([A-Za-z0-9_:]+) \.\.\. ok$', raw, re.M)
+    totals = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
+    if names != [ZERO_CLOCK_CASE.encode()] or totals != [(b'1', b'0', b'0', b'0', str(filtered).encode())]:
+        raise ValueError('Go-zero-clock-exact-signed-case-required')
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError('Go-zero-clock-duplicate-field')
+            result[key] = value
+        return result
+    rows = [json.loads(value, object_pairs_hook=unique) for value in
+            re.findall(rb'^GO_ZERO_CLOCK_CASE (.+)$', raw, re.M)]
+    expected = [dict(case='zero-to-five-nanoseconds', outcome='success', rawBefore=0,
+                     rawAfter=5, pendingOriginalWait=True, liveStores=0, liveInstances=0,
+                     reservations=0, reservedFuel=0, reservedMemory=0, pendingProviderWaits=0)]
+    if json.dumps(rows, sort_keys=True, separators=(',', ':')) != json.dumps(expected, sort_keys=True, separators=(',', ':')):
+        raise ValueError('Go-zero-clock-signed-retirement-required')
+    markers = [line for line in diagnostic.splitlines() if
+               line.startswith((b'LSF-GO-NODE-STOP-TIMER-V1|', b'LSF-GO-ZERO-CLOCK-V1|'))]
+    if len(markers) != 5:
+        raise ValueError('Go-zero-clock-exact-witnesses-required')
+    start = markers[0].split(b'|')
+    next_event = markers[1].split(b'|')
+    root_close = markers[4].split(b'|')
+    def valid(fields, event, sequence, waits, timers):
+        return (len(fields) == 7 and fields[:4] == [b'LSF-GO-NODE-STOP-TIMER-V1', b'pending', event, sequence]
+                and fields[4].isdigit() and 1 <= int(fields[4]) <= 16
+                and fields[5:] == [str(waits).encode(), str(timers).encode()])
+    if (not valid(start, b'start-accepted', b'1', 0, 1)
+            or not valid(next_event, b'next-entered', b'2', 1, 1)
+            or markers[2:4] != [b'LSF-GO-ZERO-CLOCK-V1|wait-pending|0|5',
+                               b'LSF-GO-ZERO-CLOCK-V1|advance|0|5']
+            or not valid(root_close, b'root-close', b'3', 0, 0)):
+        raise ValueError('Go-zero-clock-original-wait-order-required')
+    return {'cases': rows, 'observations': ['one-timer-accepted', 'one-original-wait-admitted',
+            'wait-polled-pending-at-zero', 'same-clock-advanced-five', 'root-closed-with-no-wait-or-timer']}
+
+
+def ticker_clock_observations(raw: bytes, diagnostic: bytes, filtered: int) -> dict:
+    """Require three actual pending waits and the shared 0/5/29/30 clock edges."""
+    if max(len(raw), len(diagnostic)) > 2 * 1024 * 1024:
+        raise ValueError('Go-ticker-clock-output-bound')
+    names = re.findall(rb'^test ([A-Za-z0-9_:]+) \.\.\. ok$', raw, re.M)
+    totals = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
+    if names != [TICKER_CLOCK_CASE.encode()] or totals != [(b'1', b'0', b'0', b'0', str(filtered).encode())]:
+        raise ValueError('Go-ticker-clock-exact-signed-case-required')
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError('Go-ticker-clock-duplicate-field')
+            result[key] = value
+        return result
+    rows = [json.loads(value, object_pairs_hook=unique) for value in
+            re.findall(rb'^GO_TICKER_CATCHUP_CASE (.+)$', raw, re.M)]
+    expected = [dict(case='zero-clock-ticker-coalescing', outcome='success',
+                     pendingDeadlines=[5, 10, 30], advances=[5, 29, 30], nominalMissedPeriods=3,
+                     liveStores=0, liveInstances=0, reservations=0, reservedFuel=0,
+                     reservedMemory=0, pendingProviderWaits=0)]
+    if json.dumps(rows, sort_keys=True, separators=(',', ':')) != json.dumps(expected, sort_keys=True, separators=(',', ':')):
+        raise ValueError('Go-ticker-clock-signed-retirement-required')
+    markers = [line for line in diagnostic.splitlines() if line.startswith(
+        (b'LSF-GO-NODE-STOP-TIMER-V1|', b'LSF-GO-TICKER-CLOCK-V1|'))]
+    if len(markers) != 11:
+        raise ValueError('Go-ticker-clock-exact-witnesses-required')
+    def valid(fields, event, sequence, waits, timers):
+        return (len(fields) == 7 and fields[:4] == [b'LSF-GO-NODE-STOP-TIMER-V1', b'pending', event, sequence]
+                and fields[4].isdigit() and 1 <= int(fields[4]) <= 16
+                and fields[5:] == [str(waits).encode(), str(timers).encode()])
+    if (not valid(markers[0].split(b'|'), b'start-accepted', b'1', 0, 1)
+            or not valid(markers[1].split(b'|'), b'next-entered', b'2', 1, 1)
+            or markers[2:4] != [b'LSF-GO-TICKER-CLOCK-V1|wait-pending|0|5',
+                                b'LSF-GO-TICKER-CLOCK-V1|advance|0|5']
+            or not valid(markers[4].split(b'|'), b'next-entered', b'3', 1, 1)
+            or markers[5:7] != [b'LSF-GO-TICKER-CLOCK-V1|wait-pending|5|10',
+                                b'LSF-GO-TICKER-CLOCK-V1|advance|5|29']
+            or not valid(markers[7].split(b'|'), b'next-entered', b'4', 1, 1)
+            or markers[8:10] != [b'LSF-GO-TICKER-CLOCK-V1|wait-pending|29|30',
+                                 b'LSF-GO-TICKER-CLOCK-V1|advance|29|30']
+            or not valid(markers[10].split(b'|'), b'root-close', b'5', 0, 0)):
+        raise ValueError('Go-ticker-clock-original-wait-order-required')
+    return {'cases': rows, 'observations': ['one-timer-admitted', 'three-original-waits-admitted',
+            'pending-at-five-ten-thirty', 'no-immediate-catchup-at-twenty-nine',
+            'root-closed-with-no-wait-or-timer']}
+
+
+def wall_clock_observations(raw: bytes, diagnostic: bytes, filtered: int) -> dict:
+    """Require a single pending original wait across both controlled wall jumps."""
+    if max(len(raw), len(diagnostic)) > 2 * 1024 * 1024:
+        raise ValueError('Go-wall-clock-output-bound')
+    names = re.findall(rb'^test ([A-Za-z0-9_:]+) \.\.\. ok$', raw, re.M)
+    totals = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
+    if names != [WALL_CLOCK_CASE.encode()] or totals != [(b'1', b'0', b'0', b'0', str(filtered).encode())]:
+        raise ValueError('Go-wall-clock-exact-signed-case-required')
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError('Go-wall-clock-duplicate-field')
+            result[key] = value
+        return result
+    rows = [json.loads(value, object_pairs_hook=unique) for value in
+            re.findall(rb'^GO_WALL_CLOCK_CASE (.+)$', raw, re.M)]
+    expected = [dict(case='pending-timer-wall-jumps', outcome='success',
+                     wallOffsetsMillis=[60000, -60000], monotonicBefore=0, monotonicAfter=5,
+                     sameWaitRepolls=2, liveStores=0, liveInstances=0, reservations=0,
+                     reservedFuel=0, reservedMemory=0, pendingProviderWaits=0)]
+    if json.dumps(rows, sort_keys=True, separators=(',', ':')) != json.dumps(expected, sort_keys=True, separators=(',', ':')):
+        raise ValueError('Go-wall-clock-signed-retirement-required')
+    markers = [line for line in diagnostic.splitlines() if line.startswith(
+        (b'LSF-GO-NODE-STOP-TIMER-V1|', b'LSF-GO-ZERO-CLOCK-V1|', b'LSF-GO-WALL-CLOCK-V1|'))]
+    if len(markers) != 10:
+        raise ValueError('Go-wall-clock-exact-witnesses-required')
+    def valid(fields, event, sequence, waits, timers):
+        return (len(fields) == 7 and fields[:4] == [b'LSF-GO-NODE-STOP-TIMER-V1', b'pending', event, sequence]
+                and fields[4].isdigit() and 1 <= int(fields[4]) <= 16
+                and fields[5:] == [str(waits).encode(), str(timers).encode()])
+    if (not valid(markers[0].split(b'|'), b'start-accepted', b'1', 0, 1)
+            or not valid(markers[1].split(b'|'), b'next-entered', b'2', 1, 1)
+            or markers[2:9] != [b'LSF-GO-ZERO-CLOCK-V1|wait-pending|0|5',
+                                b'LSF-GO-WALL-CLOCK-V1|jump|1|0',
+                                b'LSF-GO-WALL-CLOCK-V1|repoll|1|0|5',
+                                b'LSF-GO-WALL-CLOCK-V1|jump|2|0',
+                                b'LSF-GO-WALL-CLOCK-V1|repoll|2|0|5',
+                                b'LSF-GO-WALL-CLOCK-V1|restore|0',
+                                b'LSF-GO-WALL-CLOCK-V1|advance|0|5']
+            or not valid(markers[9].split(b'|'), b'root-close', b'3', 0, 0)):
+        raise ValueError('Go-wall-clock-original-wait-order-required')
+    return {'cases': rows, 'observations': ['one-timer-accepted', 'one-original-wait-admitted',
+            'wait-polled-pending-at-zero', 'original-wait-repolled-pending-after-each-wall-jump',
+            'same-monotonic-clock-advanced-five', 'root-closed-with-no-wait-or-timer']}
+
+
+def sleep_cancel_observations(raw: bytes, diagnostic: bytes, filtered: int) -> dict:
+    """Require accepted root cancellation before the controlled sleep edge."""
+    if max(len(raw), len(diagnostic)) > 2 * 1024 * 1024:
+        raise ValueError('Go-sleep-cancel-output-bound')
+    names = re.findall(rb'^test ([A-Za-z0-9_:]+) \.\.\. ok$', raw, re.M)
+    totals = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
+    if names != [SLEEP_CANCEL_CASE.encode()] or totals != [(b'1', b'0', b'0', b'0', str(filtered).encode())]:
+        raise ValueError('Go-sleep-cancel-exact-signed-case-required')
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError('Go-sleep-cancel-duplicate-field')
+            result[key] = value
+        return result
+    rows = [json.loads(value, object_pairs_hook=unique) for value in
+            re.findall(rb'^GO_SLEEP_CANCEL_CASE (.+)$', raw, re.M)]
+    expected = [dict(case='accepted-before-sleep-edge', outcome='cancelled', fresh='success',
+                     monotonicAtCancel=0, monotonicAfter=5, pendingOriginalWait=True,
+                     liveStores=0, liveInstances=0, reservations=0, reservedFuel=0,
+                     reservedMemory=0, pendingProviderWaits=0)]
+    if json.dumps(rows, sort_keys=True, separators=(',', ':')) != json.dumps(expected, sort_keys=True, separators=(',', ':')):
+        raise ValueError('Go-sleep-cancel-signed-retirement-required')
+    lines = diagnostic.splitlines()
+    markers = [line for line in lines if line.startswith((b'LSF-GO-ZERO-CLOCK-V1|', b'LSF-GO-SLEEP-CANCEL-V1|'))]
+    if markers != [b'LSF-GO-ZERO-CLOCK-V1|wait-pending|0|5',
+                   b'LSF-GO-SLEEP-CANCEL-V1|pending|0|5',
+                   b'LSF-GO-SLEEP-CANCEL-V1|accepted|0|5',
+                   b'LSF-GO-SLEEP-CANCEL-V1|advance|0|5',
+                   b'LSF-GO-SLEEP-CANCEL-V1|retired|5|0',
+                   b'LSF-GO-SLEEP-CANCEL-V1|fresh|5|0']:
+        raise ValueError('Go-sleep-cancel-ordered-witnesses-required')
+    node = [line.split(b'|') for line in lines if line.startswith(b'LSF-GO-NODE-STOP-TIMER-V1|')]
+    if len(node) not in (1, 2):
+        raise ValueError('Go-sleep-cancel-original-wait-observation-required')
+    # The clock can wake the controller before this outer host observer runs.
+    # The clock's pending record itself precedes the test's cancellation.
+    first = node[0]
+    if (len(first) != 7 or first[:4] != [b'LSF-GO-NODE-STOP-TIMER-V1', b'pending', b'wait-pending', b'1']
+            or not first[4].isdigit() or int(first[4]) > 16
+            or not first[5].isdigit() or int(first[5]) > 4 or first[6] != b'1'
+            or not lines.index(markers[0]) < lines.index(b'|'.join(first))):
+        raise ValueError('Go-sleep-cancel-original-wait-observation-required')
+    # A concurrently processed cancellation may also let the guest enter its
+    # ordinary root-close path. That is not evidence of early timer success.
+    if len(node) == 2:
+        last = node[1]
+        if (len(last) != 7 or last[:4] != [b'LSF-GO-NODE-STOP-TIMER-V1', b'pending', b'root-close', b'2']
+                or not all(value.isdigit() for value in last[4:])
+                or int(last[4]) > 16 or int(last[5]) > 4 or int(last[6]) > 2):
+            raise ValueError('Go-sleep-cancel-unexpected-observer')
+    return {'cases': rows, 'observations': ['sleep-host-wait-polled-pending',
+            'root-cancellation-accepted-before-monotonic-edge', 'original-wait-retired',
+            'fresh-activation-succeeded']}
+
+
 def campaign(campaign: str, fixture: Path, negative: Path | None) -> dict:
     if campaign == 'synchronization' and negative is not None:
         return {'case': CASE, 'fixture': 'synchronization', 'variable': 'LSF_GO_SYNCHRONIZATION_FIXTURE',
@@ -276,6 +568,21 @@ def campaign(campaign: str, fixture: Path, negative: Path | None) -> dict:
     if campaign == 'timer-overlap-v7' and negative is None:
         return {'case': V7_TIMER_OVERLAP_CASE, 'fixture': 'timer-overlap', 'variable': 'LSF_GO_V7_TIMER_OVERLAP_FIXTURE',
                 'inputs': [(fixture, 'go-component-activation-v7')]}
+    if campaign == 'zero-clock-v7' and negative is None:
+        return {'case': ZERO_CLOCK_CASE, 'fixture': 'zero-clock', 'variable': 'LSF_GO_V7_ZERO_CLOCK_FIXTURE',
+                'inputs': [(fixture, 'go-component-activation-v7')]}
+    if campaign == 'ticker-clock-v7' and negative is None:
+        return {'case': TICKER_CLOCK_CASE, 'fixture': 'zero-clock', 'variable': 'LSF_GO_V7_ZERO_CLOCK_FIXTURE',
+                'inputs': [(fixture, 'go-component-activation-v7')]}
+    if campaign == 'wall-clock-v7' and negative is None:
+        return {'case': WALL_CLOCK_CASE, 'fixture': 'zero-clock', 'variable': 'LSF_GO_V7_ZERO_CLOCK_FIXTURE',
+                'inputs': [(fixture, 'go-component-activation-v7')]}
+    if campaign == 'sleep-cancel-v7' and negative is None:
+        return {'case': SLEEP_CANCEL_CASE, 'fixture': 'zero-clock', 'variable': 'LSF_GO_V7_ZERO_CLOCK_FIXTURE',
+                'inputs': [(fixture, 'go-component-activation-v7')]}
+    if campaign == 'timer-fired-v7' and negative is None:
+        return {'case': FIRED_TIMER_CASE, 'fixture': 'timer-fired', 'variable': 'LSF_GO_V7_TIMER_FIRED_FIXTURE',
+                'inputs': [(fixture, 'go-component-activation-v7')]}
     raise ValueError('Go-runtime-unreviewed-campaign-or-negative')
 
 
@@ -284,7 +591,10 @@ def source_snapshot(root: Path) -> dict:
              for path in (root / folder).rglob('*') if path.is_file() and '__pycache__' not in path.parts}
     files |= {root / name for name in ('Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', '.cargo/managed-guest.toml',
               'crates/latent-wasmtime/Cargo.toml', 'crates/latent-wasmtime/tests/local_service.rs',
+              'crates/latent-wasmtime/tests/local_service/runtime.rs',
               'crates/latent-wasmtime/tests/local_service/runtime/go.rs',
+              'crates/latent-wasmtime/tests/local_service/runtime/go/zero_clock.rs',
+              'crates/latent-wasmtime/tests/local_service/zero_clock.rs',
               'crates/latent-wasmtime/tests/local_service/runtime/go/synchronization.rs',
               'crates/latent-wasmtime/tests/local_service/runtime/go/admission.rs',
               'crates/latent-wasmtime/tests/local_service/runtime/go/queued.rs',
@@ -296,14 +606,22 @@ def source_snapshot(root: Path) -> dict:
               'crates/latent-wasmtime/tests/local_service/packages.rs',
               'crates/latent-wasmtime/tests/local_service/component.rs',
               'crates/latent-core/src/activation_runtime.rs', 'crates/latent-core/src/activation_runtime/timer.rs',
+              'crates/latent-core/src/test_support/clocks.rs', 'crates/latent-core/src/clock.rs',
+              'crates/latent-executor/src/preparation_read_wait.rs',
+              'crates/latent-node/src/activation_manager/control.rs',
+              'crates/latent-wasmtime/src/host/clock.rs',
+              'crates/latent-wasmtime/src/host/runtime/positive_timer_observer.rs',
               'crates/latent-core/src/budget.rs', 'crates/latent-core/src/budget/descendants/mod.rs',
               'crates/latent-capabilities/src/broker.rs', 'crates/latent-capabilities/src/broker/session.rs',
               'crates/latent-wasmtime/src/host/runtime.rs', 'crates/latent-wasmtime/src/lib.rs',
-              'crates/latent-wasmtime/src/development_go_timer_overlap.rs', 'wit/platform/activation-runtime/package.wit',
+              'crates/latent-wasmtime/src/backend.rs', 'crates/latent-wasmtime/src/development_go_timer_cancel.rs',
+              'crates/latent-wasmtime/src/development_go_timer_overlap.rs', 'crates/latent-wasmtime/src/development_go_timer_fired_state.rs', 'wit/platform/activation-runtime/package.wit',
               '.github/workflows/go-guest.yml',
               '.github/workflows/go-synchronization-reference.yml', 'tools/ci/suites.json',
-              'tools/tests/test_go_task_saturation.py', 'tools/tests/test_go_timer_overlap.py',
-              'tools/tests/test_go_managed_timers.py', 'tools/stage_runtime_wit.py',
+              'tools/tests/test_go_task_saturation.py', 'tools/tests/test_go_timer_overlap.py', 'tools/tests/test_go_fired_timer.py',
+              'tools/tests/go_fired_fence_controls.py',
+              'tools/tests/test_go_managed_timers.py', 'tools/tests/test_go_zero_clock.py',
+              'tools/stage_runtime_wit.py',
               'tools/qualify_go_activation.py', 'tools/qualify_go_synchronization.py')}
     if len(files) > 1024:
         raise ValueError('Go-synchronization-source-count')
@@ -320,22 +638,25 @@ def compile_identity(path: Path, root: Path, profile: str, fixture: str = 'synch
     if len(raw) > 512 * 1024:
         raise ValueError('Go-synchronization-compiler-receipt-bound')
     record = json.loads(raw)
-    if (fixture not in {'synchronization', 'managed-idle', 'timers', 'task-saturation', 'timer-overlap'}
+    if (fixture not in {'synchronization', 'managed-idle', 'timers', 'task-saturation', 'timer-overlap', 'timer-fired', 'zero-clock'}
             or (fixture in {'managed-idle', 'task-saturation'} and profile != 'go-component-activation-v5')
             or (fixture == 'timer-overlap' and profile not in {'go-component-activation-v5', 'go-component-activation-v7'})
+            or (fixture == 'timer-fired' and profile != 'go-component-activation-v7')
+            or (fixture == 'zero-clock' and profile != 'go-component-activation-v7')
             or (fixture == 'timers' and profile not in {'go-component-activation-v5', 'go-component-activation-v7'})
             or (fixture == 'synchronization' and profile not in {'go-component-activation-v1', 'go-component-activation-v5'})):
         raise ValueError('Go-runtime-unreviewed-source-profile')
     folder = {'synchronization': 'synchronization-conformance', 'managed-idle': 'managed-idle-conformance',
               'timers': 'timers-conformance', 'task-saturation': 'task-saturation-conformance',
-              'timer-overlap': 'timer-overlap-conformance'}[fixture]
+              'timer-overlap': 'timer-overlap-conformance', 'timer-fired': 'timer-fired-conformance',
+              'zero-clock': 'zero-clock-conformance'}[fixture]
     source = (root / 'sdk/go-guest/runtime' / folder / 'main.go').read_bytes()
     if (record['profile'] != profile or record['fixture'] != fixture
             or record['sourceDigest'] != 'sha256:' + digest(source) or record['sourceUnchanged'] is not True
             or record['ordinarySource'] is not True or record['signedExecution'] != 'not-run'
             or (path / 'src/main.go').read_bytes() != source):
         raise ValueError('Go-synchronization-compiler-source-or-profile')
-    if ((fixture in {'task-saturation', 'timer-overlap'} or
+    if ((fixture in {'task-saturation', 'timer-overlap', 'timer-fired', 'zero-clock'} or
             (fixture == 'timers' and profile == 'go-component-activation-v7')) and (path / 'wit/world.wit').read_bytes()
             != (root / 'sdk/go-guest/runtime' / folder / 'world.wit').read_bytes()):
         raise ValueError('Go-' + fixture + '-compiler-world')
@@ -347,18 +668,63 @@ def compile_identity(path: Path, root: Path, profile: str, fixture: str = 'synch
     if profile in {'go-component-activation-v5', 'go-component-activation-v7'}:
         native = record['nativeReference']
         expected_modes = {'synchronization': NATIVE_MODES, 'managed-idle': [0, 1, 2], 'timers': TIMER_NATIVE_MODES,
-                          'task-saturation': [0], 'timer-overlap': [0, 1, 2, 3]}[fixture]
+                          'task-saturation': [0], 'timer-overlap': [0, 1, 2, 3],
+                          'timer-fired': [0, 1, 2, 3], 'zero-clock': [0]}[fixture]
         native_outputs = (native.get('outputs') in ([42, 42, 42, 42], [42, 43, 42, 42],
                                                     [42, 42, 42, 43], [42, 43, 42, 43])
                           if fixture == 'timer-overlap' else native.get('output') == 42)
         if (native['modes'] != expected_modes or not native_outputs
                 or native['freshProcessPerMode'] is not True or native['sourceDigest'] != record['sourceDigest']):
             raise ValueError('Go-synchronization-native-reference')
-    return {'receiptSha256': digest(raw), 'profile': profile, 'sourceDigest': record['sourceDigest'],
-            'componentDigest': record['componentDigest'], 'bindingDigest': record['bindingDigest'],
-            'toolMaterialsSha256': digest(json.dumps(record['tools'], sort_keys=True).encode()),
-            'transformationsSha256': digest(json.dumps(record['transformations'], sort_keys=True).encode()),
-            'nativeReference': record.get('nativeReference')}
+    if fixture == 'timer-fired':
+        from tools.go_guest.fired_timer_witness import (derive, derive_bridge, derive_activation_bridge,
+            GO_CHAN_SHA256, GO_RUNTIME2_SHA256)
+        original_timer = (root / 'sdk/go-guest/runtime/timer_async.go.in').read_bytes()
+        original_bridge = (root / 'sdk/go-guest/runtime/timer_bridge.go.in').read_bytes()
+        original_activation = (root / 'sdk/go-guest/runtime/activation_bridge.go.in').read_bytes()
+        derived_timer, derived_bridge, derived_activation = (derive(original_timer),
+            derive_bridge(original_bridge), derive_activation_bridge(original_activation))
+        diagnostic_timer = path / 'diagnostic-sdk/runtime/timer_async.go.in'
+        diagnostic_bridge = path / 'diagnostic-sdk/runtime/timer_bridge.go.in'
+        diagnostic_activation = path / 'diagnostic-sdk/runtime/activation_bridge.go.in'
+        runtime_chan = path / 'diagnostic-runtime-inputs/runtime/chan.go'
+        runtime_descriptor = path / 'diagnostic-runtime-inputs/runtime/runtime2.go'
+        if (runtime_chan.is_symlink() or runtime_descriptor.is_symlink()
+                or runtime_chan.stat().st_size > 128 * 1024 or runtime_descriptor.stat().st_size > 128 * 1024
+                or digest(runtime_chan.read_bytes()) != GO_CHAN_SHA256
+                or digest(runtime_descriptor.read_bytes()) != GO_RUNTIME2_SHA256
+                or diagnostic_timer.is_symlink() or diagnostic_timer.read_bytes() != derived_timer
+                or diagnostic_bridge.is_symlink() or diagnostic_bridge.read_bytes() != derived_bridge
+                or diagnostic_activation.is_symlink() or diagnostic_activation.read_bytes() != derived_activation
+                or record.get('diagnosticRuntime') != {'kind': 'selected-returned-ticker-cancel-fence-observe-v4',
+                    'originalTimerAsyncDigest': 'sha256:' + digest(original_timer),
+                    'derivedTimerAsyncDigest': 'sha256:' + digest(derived_timer),
+                    'originalTimerBridgeDigest': 'sha256:' + digest(original_bridge),
+                    'derivedTimerBridgeDigest': 'sha256:' + digest(derived_bridge),
+                    'originalActivationBridgeDigest': 'sha256:' + digest(original_activation),
+                    'derivedActivationBridgeDigest': 'sha256:' + digest(derived_activation),
+                    'runtimeChanDigest': 'sha256:' + GO_CHAN_SHA256,
+                    'runtimeDescriptorDigest': 'sha256:' + GO_RUNTIME2_SHA256}):
+            raise ValueError('Go-fired-timer-diagnostic-runtime-drift')
+    identity = {'receiptSha256': digest(raw), 'profile': profile, 'sourceDigest': record['sourceDigest'],
+                'componentDigest': record['componentDigest'], 'bindingDigest': record['bindingDigest'],
+                'toolMaterialsSha256': digest(json.dumps(record['tools'], sort_keys=True).encode()),
+                'transformationsSha256': digest(json.dumps(record['transformations'], sort_keys=True).encode()),
+                'nativeReference': record.get('nativeReference')}
+    if fixture == 'timer-fired':
+        identity['diagnosticRuntime'] = record['diagnosticRuntime']
+    return identity
+
+
+def require_ticker_native_reference(native, root: Path) -> None:
+    source = (root / 'sdk/go-guest/runtime/zero-clock-conformance/ticker-reference_test.go.txt').read_bytes()
+    if not source or len(source) > 65536 or not isinstance(native, dict):
+        raise ValueError('Go-native-ticker-reference-source')
+    expected = {'case': 'TestNativeTickerCoalescesMissedPeriods',
+                'sourceDigest': 'sha256:' + digest(source),
+                'fakeClock': 'go-testing-synctest', 'passed': True}
+    if json.dumps(native.get('tickerReference'), sort_keys=True, separators=(',', ':')) != json.dumps(expected, sort_keys=True, separators=(',', ':')):
+        raise ValueError('Go-native-ticker-reference-required')
 
 
 def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revision: str, programme: str = 'synchronization') -> dict:
@@ -369,6 +735,8 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
                    'LSF_GUEST_SDK_LANGUAGE': 'go', plan['variable']: str(fixture.resolve())}
     if negative is not None:
         environment['LSF_GO_SYNCHRONIZATION_NO_CHECKPOINT_FIXTURE'] = str(negative.resolve())
+    if programme in {'zero-clock-v7', 'ticker-clock-v7', 'wall-clock-v7', 'sleep-cancel-v7'}:
+        environment['LSF_GO_NODE_STOP_TIMER_OBSERVER'] = '1'
     artifacts.require_source(root, revision, environment)
     def clean_source():
         state = run_owned(['git', '-c', 'gc.auto=0', 'status', '--porcelain'], cwd=root,
@@ -378,12 +746,14 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
     clean_source()
     before = source_snapshot(root)
     material = {profile: compile_identity(path, root, profile, plan['fixture']) for path, profile in plan['inputs']}
+    if programme == 'ticker-clock-v7':
+        require_ticker_native_reference(material['go-component-activation-v7'].get('nativeReference'), root)
     suites = registry.load(root / 'tools/ci/suites.json')['suites']
     suite, = [row for row in suites if row['id'] == 'latent-wasmtime.test.local-service']
     if plan['case'] not in suite['expectedIgnored'] or suite['timeoutSeconds'] != 900:
         raise ValueError('Go-synchronization-suite-contract')
     output = fresh(output)
-    features = ['--features', 'development-go-timer-overlap'] if programme in {'timer-overlap', 'timer-overlap-v7'} else []
+    features = ['--features', 'development-go-timer-overlap'] if programme in {'timer-overlap', 'timer-overlap-v7', 'timer-fired-v7'} else []
     command = ['cargo', '--config', '.cargo/managed-guest.toml', 'test', '--locked', '-p', 'latent-wasmtime',
                '--test', 'local_service', *features, plan['case'], '--', '--ignored', '--exact', '--show-output']
     deadline = time.monotonic() + 1800
@@ -433,14 +803,26 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
     parser = {'synchronization': observations, 'admission': admission_observations,
               'queued': queued_observations, 'managed-timers': managed_timer_observations,
               'managed-v7-timers': managed_timer_observations,
-              'task-saturation': task_saturation_observations, 'timer-overlap': None, 'timer-overlap-v7': None}[programme]
+              'task-saturation': task_saturation_observations, 'timer-overlap': None, 'timer-overlap-v7': None,
+              'timer-fired-v7': None, 'zero-clock-v7': None, 'ticker-clock-v7': None, 'wall-clock-v7': None, 'sleep-cancel-v7': None}[programme]
     if programme in {'timer-overlap', 'timer-overlap-v7'}:
         observed = timer_overlap_observations(result.output, result.stderr, len(available) - 1, plan['case'])
+    elif programme == 'timer-fired-v7':
+        observed = fired_timer_observations(result.output, result.stderr, len(available) - 1,
+                                            include_returned_cancel=True)
     elif programme == 'managed-v7-timers':
         observed = managed_timer_observations(result.output, len(available) - 1, V7_TIMER_CASE)
+    elif programme == 'zero-clock-v7':
+        observed = zero_clock_observations(result.output, result.stderr, len(available) - 1)
+    elif programme == 'ticker-clock-v7':
+        observed = ticker_clock_observations(result.output, result.stderr, len(available) - 1)
+    elif programme == 'wall-clock-v7':
+        observed = wall_clock_observations(result.output, result.stderr, len(available) - 1)
+    elif programme == 'sleep-cancel-v7':
+        observed = sleep_cancel_observations(result.output, result.stderr, len(available) - 1)
     else:
         observed = parser(result.output, len(available) - 1)
-    rows = observed['cases'] if programme in {'task-saturation', 'timer-overlap', 'timer-overlap-v7'} else observed
+    rows = observed['cases'] if programme in {'task-saturation', 'timer-overlap', 'timer-overlap-v7', 'timer-fired-v7', 'zero-clock-v7', 'ticker-clock-v7', 'wall-clock-v7', 'sleep-cancel-v7'} else observed
     after = source_snapshot(root)
     after_material = {profile: compile_identity(path, root, profile, plan['fixture']) for path, profile in plan['inputs']}
     clean_source()
@@ -453,12 +835,17 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
                                  'managed-v7-timers': 'lsf.go-managed-v7-timers-reference.v1',
                                  'task-saturation': 'lsf.go-task-saturation-reference.v1',
                                  'timer-overlap': 'lsf.go-timer-overlap-reference.v4',
-                                 'timer-overlap-v7': 'lsf.go-v7-timer-overlap-reference.v1'}[programme], 'sourceRevision': revision,
+                                 'timer-overlap-v7': 'lsf.go-v7-timer-overlap-reference.v1',
+                                 'timer-fired-v7': 'lsf.go-v7-fired-timer-reference.v1',
+                                 'zero-clock-v7': 'lsf.go-v7-zero-clock-reference.v1',
+                                 'ticker-clock-v7': 'lsf.go-v7-ticker-clock-reference.v1',
+                                 'wall-clock-v7': 'lsf.go-v7-wall-clock-reference.v1',
+                                 'sleep-cancel-v7': 'lsf.go-v7-sleep-cancel-reference.v1'}[programme], 'sourceRevision': revision,
                'sourceBefore': before, 'sourceAfter': after, 'compilerInputsBefore': material,
                'compilerInputsAfter': after_material, 'case': plan['case'], 'signedCases': rows,
                'signedInvocations': {'synchronization': len(rows), 'admission': 8, 'queued': 20,
                                      'managed-timers': len(rows), 'managed-v7-timers': len(rows),
-                                     'task-saturation': 3, 'timer-overlap': 7, 'timer-overlap-v7': 7}[programme], 'guestTaskCeiling': 16,
+                                     'task-saturation': 3, 'timer-overlap': 7, 'timer-overlap-v7': 7, 'timer-fired-v7': len(rows), 'zero-clock-v7': len(rows), 'ticker-clock-v7': len(rows), 'wall-clock-v7': len(rows), 'sleep-cancel-v7': 2 * len(rows)}[programme], 'guestTaskCeiling': 16,
                'managedCapacity': 8, 'waitCeiling': 4, 'newRuntimeProfile': False,
                'kernelTlsOrCrossTenantQualified': False, 'fullGoRuntimeQualified': False}
     if programme == 'synchronization':
@@ -485,6 +872,11 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
             receipt.update({'profile': 'go-component-activation-v7', 'queuedWorkCeiling': 16,
                             'addedSkipNegativeRejected': True, 'relabelsV5Evidence': False,
                             'fullAggregateGoCostsQualified': False})
+    elif programme in {'zero-clock-v7', 'ticker-clock-v7', 'wall-clock-v7', 'sleep-cancel-v7'}:
+        receipt.update({'profile': 'go-component-activation-v7', 'queuedWorkCeiling': 16,
+                        'timerCeiling': 2, 'manualClockAndWaitAreTestInfrastructure': True,
+                        'providerObservations': observed['observations'],
+                        'fullTimerRaceMatrixQualified': False, 'kernelRetirementQualified': False})
     elif programme == 'task-saturation':
         receipt.update({'originalTaskLimitObservation': observed['refusal'], 'liveApplicationWorkersBeforeRefusal': 7,
                         'terminalCauseEstablishedByObservation': False,
@@ -494,6 +886,11 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
                         'physicalTimerWaitDrops': observed['physicalWaitDrops'], 'timerCeiling': 2,
                         'developmentWitnessOnly': True, 'fullTimerRaceMatrixQualified': False,
                         'fullAggregateGoCostsQualified': False, 'kernelRetirementQualified': False})
+        if programme == 'timer-fired-v7':
+            receipt.update({'profile': 'go-component-activation-v7', 'queuedWorkCeiling': 16,
+                            'returnedTimerWitnesses': observed['returnedWitnesses'],
+                            'returnedCancellationWitness': observed['returnedCancellationWitness'],
+                            'diagnosticGuestOverlay': True, 'byteIdenticalProductionGuest': False})
         if programme == 'timer-overlap-v7':
             receipt.update({'profile': 'go-component-activation-v7', 'queuedWorkCeiling': 16,
                             'relabelsV5Evidence': False})
@@ -508,7 +905,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--fixture', type=Path, required=True)
     parser.add_argument('--no-checkpoints', type=Path)
-    parser.add_argument('--campaign', choices=('synchronization', 'admission', 'queued', 'managed-timers', 'managed-v7-timers', 'task-saturation', 'timer-overlap', 'timer-overlap-v7'), default='synchronization')
+    parser.add_argument('--campaign', choices=('synchronization', 'admission', 'queued', 'managed-timers', 'managed-v7-timers', 'task-saturation', 'timer-overlap', 'timer-overlap-v7', 'timer-fired-v7', 'zero-clock-v7', 'ticker-clock-v7', 'wall-clock-v7', 'sleep-cancel-v7'), default='synchronization')
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--source-commit', default=os.environ.get('GITHUB_SHA'))
     args = parser.parse_args()
