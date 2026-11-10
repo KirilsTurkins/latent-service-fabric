@@ -20,7 +20,7 @@ from tools.java_http_composition.node import (
     ADAPTER, DOMAIN_CONTRACT, SERVICE_CAPABILITY, WEB_CONTRACT, configure, decoded,
     grant, idle, invoke, request, route, service_grant, web_request, rebind,
 )
-from tools.phase2_operator_process import Process, read_json, require, write_json
+from tools.phase2_operator_process import Process, WorkflowError, read_json, require, write_json
 from tools.phase2_operator_scenario import NODE_ID, connect, receipt, stop
 from tools.phase2_operator_canary import rollback_target
 from tools.phase3_resource_identity import file_identity, inventory, source_identity
@@ -99,6 +99,55 @@ def cancellation(client, targets, host, result):
     result["afterCancellationFresh"] = fresh_status(client, targets, host, "java-after-cancellation")
 
 
+def _retain_uncertain_promotion_lookup(client, original_call, revision, failure):
+    """Read the exact failed operation once; never reinterpret its original outcome."""
+    try:
+        if str(failure) != f"authoring-control-{original_call}-4":
+            return
+        original = read_json(client.evidence / f"{original_call:03}.json")
+        recovery = original.get("data", {}).get("recovery", {})
+        if (original.get("schemaVersion") != "latent.cli.result.v1"
+                or original.get("category") != "platform-failure"
+                or original.get("requestDispatched") is not True or original.get("outcomeKnown") is not False
+                or not isinstance(recovery, dict) or recovery.get("family") != "rollout"
+                or recovery.get("tenant") != "examples" or recovery.get("rolloutId") != "java-http-canary"
+                or recovery.get("operationId") != "java-canary-promote"
+                or recovery.get("expectedRevision") != str(revision)
+                or "targetGeneration" not in recovery or recovery["targetGeneration"] is not None):
+            return
+        status = "lookup-failed"
+        try:
+            value = client._control_call("rollout", "operation", "java-http-canary", "java-canary-promote",
+                                         codes=(0, 2, 3, 4, 5, 6, 130))
+            if value.get("schemaVersion") == "latent.cli.result.v1" and value.get("category") == "success":
+                data = value.get("data", {})
+                disposition, receipt_value = data.get("disposition"), data.get("receipt")
+                if (disposition in ("ROLLOUT_OPERATION_LOOKUP_DISPOSITION_UNKNOWN",
+                                    "ROLLOUT_OPERATION_LOOKUP_DISPOSITION_UNCERTAIN")
+                        and receipt_value is None and value.get("outcomeKnown") is False):
+                    status = "unknown"
+                elif (disposition == "ROLLOUT_OPERATION_LOOKUP_DISPOSITION_FOUND"
+                        and value.get("outcomeKnown") is True and isinstance(receipt_value, dict)
+                        and receipt_value.get("tenant") == "examples"
+                        and receipt_value.get("rolloutId") == "java-http-canary"
+                        and receipt_value.get("operationId") == "java-canary-promote"
+                        and receipt_value.get("expectedRevision") == str(revision)
+                        and receipt_value.get("action") == "ROLLOUT_ACTION_PROMOTE"
+                        and receipt_value.get("outcome") == "ROLLOUT_OPERATION_OUTCOME_COMMITTED"
+                        and type(receipt_value.get("step")) is int and receipt_value["step"] == 1):
+                    status = "matching-committed-promotion"
+                else:
+                    status = "inconsistent"
+        except Exception:
+            pass
+        # Fixed observation only: neither arbitrary receipt/error text nor a
+        # recovered operation can change this failed qualification's result.
+        write_json(client.evidence / "java-canary-promotion-lookup.json", {"qualification": False, "status": status})
+    except Exception:
+        # A diagnostic failure cannot replace the original failed mutation.
+        pass
+
+
 def canary(client, targets, publications, releases, host):
     base = client.call("deployment", "get", "java-http-adapter")["data"]["deployment"]
     candidate = read_json(releases / "java-http-adapter-next/deployment.json")
@@ -147,8 +196,13 @@ def canary(client, targets, publications, releases, host):
     try:
         drain["beforePromotion"] = readiness(client)
         drain["activation"] = client.call("activation", "get", "java-canary-drain")["data"]
-        promoted = receipt(client.call("rollout", "promote", "java-http-canary", "--expected-revision", started["revision"],
-            "--operation-id", "java-canary-promote", "--next-step", 1), "java-canary-promote")
+        promotion_call = client.calls + 1
+        try:
+            promoted = receipt(client.call("rollout", "promote", "java-http-canary", "--expected-revision", started["revision"],
+                "--operation-id", "java-canary-promote", "--next-step", 1), "java-canary-promote")
+        except WorkflowError as error:
+            _retain_uncertain_promotion_lookup(client, promotion_call, started["revision"], error)
+            raise
         held = client.call("node", "get", NODE_ID)["data"]["inventory"]
         drain["afterPromotion"] = held
         drain["activationAfterPromotion"] = client.call("activation", "get", "java-canary-drain")["data"]
