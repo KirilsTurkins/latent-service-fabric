@@ -73,11 +73,11 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
         derived, _ = derive()
         source = derived['StarlingMonkey/builtins/web/event/event-target.cpp']
         listener = source.index(b'js_new<EventListener>(')
-        self.assertLess(source.rindex(b'admit_native_object(cx, accepted)', 0, listener), listener)
+        self.assertLess(source.rindex(b'admit_native_object(cx, listener_owner)', 0, listener), listener)
         terminator = source.index(b'js::MakeUnique<Terminator>(')
         self.assertLess(source.rindex(b'admit_native_object(cx, accepted)', 0, terminator), terminator)
         self.assertIn(b'if (!AbortSignal::add_algorithm(signal, std::move(terminator))) {', source)
-        self.assertLess(source.index(b'if (!list->reserve(list->length() + 1))'), terminator)
+        self.assertLess(source.index(b'if (!list->reserve(list->length() + (replacing_removed ? 0 : 1)))'), terminator)
         self.assertLess(terminator, source.index(b'list->infallibleAppend(staged);', terminator))
         self.assertLess(source.index(b'if (!AbortSignal::add_algorithm(signal, std::move(terminator)))'),
                         source.index(b'staged->callback = callback_val;'))
@@ -95,7 +95,12 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
                 original = original[:original.index(b'\n};')]
                 derived = derived[:derived.index(b'\n};')]
                 self.assertEqual(derived.count(b'AbortAlgorithm(std::move(owner))'), 1)
-                self.assertEqual(original[original.index(b'  bool run('):], derived[derived.index(b'  bool run('):])
+                if name.endswith('event-target.cpp'):
+                    self.assertIn(b'it->get() == listener.get()', derived)
+                    self.assertIn(b'listener->trace(trc)', derived)
+                    self.assertNotIn(b'EventTarget::remove_listener(', derived)
+                else:
+                    self.assertEqual(original[original.index(b'  bool run('):], derived[derived.index(b'  bool run('):])
         header = selected['StarlingMonkey/builtins/web/abort/abort-signal.h']
         self.assertNotIn(b'\n  AbortAlgorithm() = default;', header)
         self.assertIn(b'AbortAlgorithm(const AbortAlgorithm &) = delete;', header)
@@ -149,8 +154,39 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
         changed = changed.replace(replacement, previous, 1)
         changed = changed.replace(b'  bool listeners_removed = false;\n  bool invocation_failed = false;\n',
                                   b'  bool listeners_removed = false;\n', 1)
-        changed = changed.replace(b'        invocation_failed = true;\n        break;\n',
-                                  b'        return false;\n', 1)
+        changed = changed.replace(b'  if (JS_IsExceptionPending(cx)) return false;\n', b'', 1)
+        changed = changed.replace(b'    bool called = false;\n', b'', 1)
+        changed = changed.replace(b'      RootedObject current_target(cx, Event::current_target(event));\n'
+                                  b'      called = JS::Call(cx, current_target, callback_val, args, &rval);',
+                                  b'      auto global = engine->global();\n'
+                                  b'      called = JS::Call(cx, global, callback_val, args, &rval);')
+        changed = changed.replace(b'called = JS::Call(', b'JS::Call(')
+        changed = changed.replace(
+            b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn) ||\n'
+            b'          JS_IsExceptionPending(cx)) {\n',
+            b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn)) {\n', 1)
+        changed = changed.replace(
+            b'        Event::set_flag(event, Event::EventFlag::InPassiveListener, false);\n'
+            b'        invocation_failed = true;\n        break;\n', b'        return false;\n', 1)
+        fence = (b'    // Catchable listener exceptions retain ordinary DOM reporting below.\n'
+                 b'    // A false/no-pending native termination is not a listener exception: it\n'
+                 b'    // must fence later callbacks, including independent abort dependents.\n'
+                 b'    if (!called && !JS_IsExceptionPending(cx)) {\n'
+                 b'      Event::set_flag(event, Event::EventFlag::InPassiveListener, false);\n'
+                 b'      invocation_failed = true;\n'
+                 b'      break;\n'
+                 b'    }\n\n')
+        self.assertEqual(changed.count(fence), 1)
+        changed = changed.replace(fence, b'', 1)
+        # Only the reviewed receiver/reporting boundaries change; the remaining
+        # original ordering, once-removal and object-listener body is preserved.
+        report_start = changed.index(b"      // The engine's void logger")
+        report_end = changed.index(b'      JS::PrintError(stderr, report, false);\n', report_start) + len(b'      JS::PrintError(stderr, report, false);\n')
+        original_report_start = original.index(b'      // TODO: report an exception')
+        original_report_end = original.index(b'      JS_ClearPendingException(cx);\n', original_report_start) + len(b'      JS_ClearPendingException(cx);\n')
+        changed = changed[:report_start] + original[original_report_start:original_report_end] + changed[report_end:]
+        changed = changed.replace(b'    RootedValue callback_val(cx, listener->callback);',
+                                  b'    auto *engine = api::Engine::get(cx);\n    RootedValue callback_val(cx, listener->callback);')
         changed = changed.replace(b'  return !invocation_failed;\n', b'  return true;\n', 1)
         self.assertEqual(changed, original)
         dispatch_start = b'bool EventTarget::dispatch(JSContext *cx'
@@ -160,7 +196,7 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
         changed_dispatch = changed_dispatch.replace(b'  const bool invoked = invoke_listeners(cx, target, event);\n',
             b'  if (!invoke_listeners(cx, target, event)) {\n    return false;\n  }\n', 1)
         changed_dispatch = changed_dispatch.replace(
-            b'  if (!invoked) return false; // preserve the original pending exception\n', b'', 1)
+            b'  if (!invoked || JS_IsExceptionPending(cx)) return false; // preserve the original failure\n', b'', 1)
         self.assertEqual(changed_dispatch, original_dispatch)
         invoke_start = b'bool EventTarget::invoke_listeners('
         invoke_end = b'// https://dom.spec.whatwg.org/#concept-event-listener-inner-invoke'
@@ -264,6 +300,38 @@ class AbortFailureControls(unittest.TestCase):
                 raise AssertionError((result.stdout + result.stderr)[:65536].decode(errors='replace'))
             setattr(cls, label+'_binary', binary)
 
+
+        factory_template = (Path(__file__).parent/'fixtures/typescript_abort_factory_failure.cpp').read_bytes()
+        marker = b'// INSERT_EMITTED_ABORT_FACTORY'
+        if factory_template.count(marker) != 1:
+            raise AssertionError('unique emitted factory insertion point required')
+        start = selected.index(b'static JSObject *create_abort_exception(')
+        factory = selected[start:selected.index(abort_start, start)]
+        source_file = output/'factory.cpp'
+        source_file.write_bytes(factory_template.replace(marker, factory, 1))
+        cls.factory_binary = output/('factory.exe' if os.name == 'nt' else 'factory')
+        if Path(compiler).stem.lower() == 'cl':
+            args = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX', str(source_file),
+                    '/Fe:'+str(cls.factory_binary), '/Fo:'+str(output/'factory.obj')]
+        else:
+            args = [compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror',
+                    str(source_file), '-o', str(cls.factory_binary)]
+        result = subprocess.run(args, capture_output=True, timeout=60)
+        if result.returncode or len(result.stdout) + len(result.stderr) > 65536:
+            raise AssertionError((result.stdout + result.stderr)[:65536].decode(errors='replace'))
+
+    def test_actual_emitted_factory_guards_all_native_result_boundaries(self):
+        for case in ('success-abort', 'success-timeout', 'string-oom',
+                     'constructor-lookup-failure', 'constructor-lookup-terminal',
+                     'constructor-lookup-pending', 'constructor-throw', 'constructor-terminal',
+                     'constructor-pending', 'constructor-wrong-class', 'constructor-null-result',
+                     'entry-pending'):
+            with self.subTest(case=case):
+                result = subprocess.run([str(self.factory_binary), case], capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
+                self.assertEqual(json.loads(result.stdout),
+                                 {'case': case, 'passed': True, 'engineQualified': False})
+
     def test_failure_preserves_original_exception_and_completed_or_retained_work(self):
         for case in ('success', 'dispatch-failure', 'event-failure', 'reason-failure',
                      'algorithm-failure', 'dependent-continuation', 'default-reason',
@@ -272,7 +340,18 @@ class AbortFailureControls(unittest.TestCase):
                      'fanout-recovery', 'fanout-nested', 'fanout-nested-refusal',
                      'fanout-ack-refusal', 'fanout-repeated', 'fanout-first-error',
                      'fanout-dependent-error', 'fanout-trap', 'fanout-error-then-trap',
-                     'fanout-success-with-error', 'fanout-default-reentry'):
+                     'fanout-success-with-error', 'fanout-default-reentry',
+                     'audit-entry-pending', 'audit-already-pending', 'audit-steps-entry-pending',
+                     'audit-steps-dispatch-pending', 'audit-algorithm-pending', 'audit-algorithm-fatal',
+                     'audit-first-oom', 'audit-later-oom', 'audit-undefined-exception',
+                     'audit-oom-then-fatal', 'audit-forced-return-after-error',
+                     'audit-nested-dependent-error', 'audit-nested-ack-refusal',
+                     'audit-first-error-then-ack-refusal',
+                     'audit-graph-mutation', 'audit-default-growth', 'audit-default-shrink',
+                     'audit-default-reentry-failure', 'audit-default-reentry-fatal',
+                     'audit-boundary-empty', 'audit-boundary-inline', 'audit-boundary-heap',
+                     'algorithms-first-error', 'algorithms-later-fatal', 'algorithms-ack-refusal',
+                     'algorithms-event-failure', 'algorithms-undefined-first', 'algorithms-oom-first'):
             with self.subTest(case=case):
                 result = subprocess.run([str(self.selected_binary), case], capture_output=True, timeout=10)
                 self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
@@ -293,6 +372,105 @@ class AbortFailureControls(unittest.TestCase):
             with self.subTest(case=case):
                 result = subprocess.run([str(self.original_binary), case], capture_output=True, timeout=10)
                 self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
+
+
+class AbortTrapFrameControls(unittest.TestCase):
+    """Actual Wasm trap behavior of production leases; not SpiderMonkey or Store proof."""
+    def test_wasm_trap_does_not_fabricate_frame_destruction(self):
+        compiler = os.environ.get('LSF_TYPESCRIPT_WASM_CXX') or shutil.which('clang++')
+        node = os.environ.get('LSF_TYPESCRIPT_WASM_NODE') or shutil.which('node')
+        if not compiler or not node:
+            raise RuntimeError('Clang with wasm32 and Node are required for the trap witness')
+        root = Path(__file__).resolve().parents[2]
+        header = (root/'sdk/typescript-guest/activation/native_retirement.h').read_bytes()
+        start = header.index(b'template<class Records> class NativeFrameLease;')
+        end = header.index(b'template<class Records,class T> struct OwnedNativeContainer', start)
+        template = (Path(__file__).parent/'fixtures/typescript_abort_trap_frame.cpp').read_bytes()
+        marker = b'// INSERT_LEASES'
+        self.assertEqual(template.count(marker), 1)
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            source = output/'trap.cpp'
+            binary = output/'trap.wasm'
+            source.write_bytes(template.replace(marker, header[start:end], 1))
+            result = subprocess.run([compiler, '--target=wasm32', '-std=c++17', '-O1',
+                '-Wall', '-Wextra', '-Werror', '-fno-exceptions', '-fno-rtti', '-nostdlib',
+                '-Wl,--no-entry', str(source), '-o', str(binary)], capture_output=True, timeout=60)
+            self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
+            script = r"""
+const fs = require('fs');
+(async () => {
+  const bytes = fs.readFileSync(process.argv[1]);
+  for (const trap of [false, true]) {
+    const {instance} = await WebAssembly.instantiate(bytes);
+    let trapped = false;
+    try { instance.exports.run(trap ? 1 : 0); }
+    catch (error) {
+      if (!(error instanceof WebAssembly.RuntimeError)) throw error;
+      trapped = true;
+    }
+    const state = instance.exports.observe();
+    console.log(JSON.stringify({trap, trapped, state, spiderMonkeyQualified: false}));
+  }
+})().catch(error => { console.error(error); process.exitCode = 1; });
+"""
+            result = subprocess.run([node, '-e', script, str(binary)], capture_output=True, timeout=30)
+            self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
+            # Normal destruction: body first, one frame retirement, two callbacks.
+            # Trap: owner remains physical, neither destructor runs, callback 2 is fenced.
+            self.assertEqual([json.loads(line) for line in result.stdout.splitlines()], [
+                {'trap': False, 'trapped': False, 'state': 8466, 'spiderMonkeyQualified': False},
+                {'trap': True, 'trapped': True, 'state': 4097, 'spiderMonkeyQualified': False}])
+
+
+class EventCallbackFailureControls(unittest.TestCase):
+    """Execute the whole derived callback dispatcher, not only cleanup fragments."""
+    @classmethod
+    def setUpClass(cls):
+        compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++') or shutil.which('cl')
+        if not compiler:
+            raise RuntimeError('C++ compiler is required for callback failure controls')
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.temporary.cleanup)
+        output = Path(cls.temporary.name)
+        template = (Path(__file__).parent/'fixtures/typescript_event_callback_failure.cpp').read_bytes()
+        marker = b'// INSERT_EMITTED_INNER_INVOKE'
+        if template.count(marker) != 1:
+            raise AssertionError('unique emitted callback insertion point required')
+        name = 'StarlingMonkey/builtins/web/event/event-target.cpp'
+        for label, source in (('selected', derive()[0][name]), ('original', originals()[name])):
+            body = source[source.index(b'bool EventTarget::inner_invoke('):source.index(b'JSObject *EventTarget::create(')]
+            source_file = output/(label+'.cpp')
+            source_file.write_bytes(template.replace(marker, body, 1))
+            binary = output/(label+'.exe' if os.name == 'nt' else label)
+            if Path(compiler).stem.lower() == 'cl':
+                args = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX',
+                        str(source_file), '/Fe:'+str(binary), '/Fo:'+str(output/(label+'.obj'))]
+            else:
+                args = [compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror', str(source_file), '-o', str(binary)]
+            result = subprocess.run(args, capture_output=True, timeout=60)
+            if result.returncode or len(result.stdout) + len(result.stderr) > 65536:
+                raise AssertionError((result.stdout + result.stderr)[:65536].decode(errors='replace'))
+            setattr(cls, label+'_binary', binary)
+
+    def test_fatal_outcome_fences_callbacks_without_changing_catchable_reporting(self):
+        for case in ('success', 'function-fatal', 'object-fatal', 'catchable-continues',
+                     'success-pending-reported', 'getter-failure', 'getter-pending', 'entry-pending',
+                     'function-receiver', 'report-no-script', 'steal-fatal', 'steal-error',
+                     'steal-success-pending', 'report-fatal', 'report-error', 'report-success-pending'):
+            with self.subTest(case=case):
+                result = subprocess.run([str(self.selected_binary), case], capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
+                self.assertEqual(json.loads(result.stdout),
+                                 {'case': case, 'passed': True, 'engineQualified': False})
+
+    def test_original_reproduces_fatal_and_pending_callback_failures(self):
+        for case in ('function-fatal', 'object-fatal', 'getter-failure', 'getter-pending', 'entry-pending',
+                     'function-receiver', 'report-no-script', 'steal-fatal', 'steal-error',
+                     'steal-success-pending', 'report-fatal', 'report-error', 'report-success-pending'):
+            with self.subTest(case=case):
+                result = subprocess.run([str(self.original_binary), case], capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 1, (result.stdout + result.stderr)[:65536])
 
 
 class EventPublicationControls(unittest.TestCase):
@@ -356,7 +534,7 @@ class EventPublicationControls(unittest.TestCase):
         stop_end = selected.index(b'\n    }', stop_start) + len(b'\n    }')
         cleanup_start = selected.index(b'  if (listeners_removed) {', stop_end)
         cleanup_end = selected.index(b'\n  }', cleanup_start) + len(b'\n  }')
-        getter_start = selected.index(b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn)) {', inner)
+        getter_start = selected.index(b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn)', inner)
         getter_end = selected.index(b'\n      }', getter_start) + len(b'\n      }')
         failure_flag = (b'    bool invocation_failed = false;' if
                         b'  bool invocation_failed = false;' in selected[inner:stop_start] else b'')
@@ -412,7 +590,8 @@ class EventPublicationControls(unittest.TestCase):
             'algorithm-refusal-before-listener-publication',
             'vector-refusal-before-algorithm-publication',
             'successful-registration-retains-both-owners',
-            'once-listener-reinserted-after-original-neighbor',
+            'once-listener-replaced-after-original-neighbor',
+            'duplicate-active-ignores-new-signal',
             'reactivation-refusal-keeps-existing-listener',
             'signal-aborted-during-type-conversion',
         ):
@@ -435,6 +614,7 @@ class EventPublicationControls(unittest.TestCase):
         for binary, cases in (
                 (self.dispatch_binary, ('once-getter-failure-retires-listener',)),
                 (self.event_binary, ('lookup-error-resets-dispatch', 'success-resets-dispatch',
+                                     'success-pending-resets-dispatch',
                                      'success-preserves-canceled-result'))):
             for case in cases:
                 with self.subTest(case=case):
@@ -461,5 +641,146 @@ class EventPublicationControls(unittest.TestCase):
                                  {'case': case, 'passed': False, 'engineQualified': False})
 
 
-if __name__ == '__main__':
+class AbortListenerIdentityControls(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++') or shutil.which('g++')
+        if not compiler:
+            raise RuntimeError('C++ compiler required for emitted abort-listener controls')
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.temporary.cleanup)
+        output = Path(cls.temporary.name)
+        root = Path(__file__).resolve().parents[2]
+        template = (root/'tools/tests/fixtures/typescript_abort_listener_identity.cpp').read_bytes()
+        selected = derive()[0]['StarlingMonkey/builtins/web/event/event-target.cpp']
+        start = selected.index(b'struct Terminator : AbortAlgorithm {')
+        end = selected.index(b'\n};', start) + len(b'\n};')
+        marker = b'// INSERT_EMITTED_ABORT_TERMINATOR'
+        if template.count(marker) != 1:
+            raise AssertionError('unique emitted Terminator insertion point required')
+        source = output/'identity.cpp'
+        source.write_bytes(template.replace(marker, selected[start:end]))
+        cls.binary = output/('identity.exe' if os.name == 'nt' else 'identity')
+        if Path(compiler).stem.lower() == 'cl':
+            args = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX', '/I'+str(root),
+                    str(source), '/Fe:'+str(cls.binary), '/Fo:'+str(output/'identity.obj')]
+        else:
+            args = [compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror', '-I'+str(root),
+                    str(source), '-o', str(cls.binary)]
+        result = subprocess.run(args, capture_output=True, timeout=60)
+        if result.returncode or len(result.stdout) + len(result.stderr) > 65536:
+            raise AssertionError((result.stdout + result.stderr)[:65536].decode(errors='replace'))
+
+    def test_exact_identity_tracing_physical_custody_and_refused_acknowledgement(self):
+        for case in ('exact-removal-and-idempotence', 'old-abort-cannot-remove-replacement',
+                     'detached-record-remains-traced-and-owned',
+                     'dispatch-clone-outlives-abort-algorithm', 'refused-ack-retains-physical-custody'):
+            with self.subTest(case=case):
+                result = subprocess.run([str(self.binary), case], capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 0, result.stderr.decode(errors='replace'))
+                record = json.loads(result.stdout)
+                self.assertTrue(record['passed'])
+                self.assertFalse(record['engineQualified'])
+
+
+class AbortGraphPublicationControls(unittest.TestCase):
+    """Actual emitted graph transaction with finite allocation fault injection."""
+    @classmethod
+    def setUpClass(cls):
+        compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++') or shutil.which('cl')
+        if not compiler:
+            raise RuntimeError('C++ compiler required for graph publication controls')
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.temporary.cleanup)
+        out = Path(cls.temporary.name)
+        marker = b'// INSERT_EMITTED_GRAPH_CREATION'
+        template = (Path(__file__).parent/'fixtures/typescript_abort_graph_publication.cpp').read_bytes()
+        if template.count(marker) != 1:
+            raise AssertionError('unique graph transaction marker required')
+        start = b'JSObject *AbortSignal::create_with_signals('
+        end = b'bool AbortSignal::constructor('
+        selected = derive()[0][abort_engine.PATH]
+        original = (FIXTURES/'original-abort-signal.cpp').read_bytes()
+        previous = original[original.index(start):original.index(end)]
+        # Previous selected implementation checked each insert, but published
+        # reciprocal links incrementally. Keep this negative control explicit.
+        for operation in (b'our_signals->insert(signal)', b'our_signals->insert(source)', b'their_signals->insert(self)'):
+            previous = previous.replace(operation+b';', b'if (!'+operation+b') { JS_ReportOutOfMemory(cx); return nullptr; }')
+        for label, body in (('selected', selected[selected.index(start):selected.index(end)]), ('previous', previous)):
+            src = out/(label+'.cpp')
+            # The legacy implementation has no pending-entry check.
+            text = template.replace(marker, body)
+            if label == 'previous':
+                text = text.replace(b'static bool JS_IsExceptionPending(', b'[[maybe_unused]] static bool JS_IsExceptionPending(')
+            src.write_bytes(text)
+            binary = out/(label+('.exe' if os.name == 'nt' else ''))
+            if Path(compiler).stem.lower() == 'cl':
+                command = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX', str(src), '/Fe:'+str(binary), '/Fo:'+str(out/(label+'.obj'))]
+            else:
+                command = [compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror', str(src), '-o', str(binary)]
+            result = subprocess.run(command, capture_output=True, timeout=60)
+            if result.returncode:
+                raise AssertionError((result.stdout+result.stderr)[:65536].decode(errors='replace'))
+            setattr(cls, label+'_binary', binary)
+
+    def check_case(self, binary, case, position=0, expected=True):
+        result = subprocess.run([str(binary), case, str(position)], capture_output=True, timeout=10)
+        self.assertEqual(result.returncode, 0 if expected else 1, (result.stdout+result.stderr)[:65536])
+        self.assertEqual(json.loads(result.stdout), {'case': case, 'position': position, 'passed': expected, 'engineQualified': False})
+
+    def test_complete_staging_reserves_before_every_backlink_publication(self):
+        for case in ('success', 'empty', 'already-aborted', 'entry-pending'):
+            with self.subTest(case=case):
+                self.check_case(self.selected_binary, case)
+        for case in ('stage-failure', 'reserve-failure'):
+            for position in range(1, 10):
+                with self.subTest(case=case, position=position):
+                    self.check_case(self.selected_binary, case, position)
+
+    def test_previous_incremental_publication_leaves_partial_reciprocal_links(self):
+        for case in ('stage-failure', 'reserve-failure'):
+            for position in (2, 9):
+                with self.subTest(case=case, position=position):
+                    self.check_case(self.previous_binary, case, position, expected=False)
+
+
+class AbortHandlerControls(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++') or shutil.which('cl')
+        if not compiler:
+            raise RuntimeError('C++ compiler required for onabort controls')
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.temporary.cleanup)
+        out = Path(cls.temporary.name)
+        source = derive()[0][abort_engine.PATH]
+        start = source.index(b'bool AbortSignal::onabort_invoke(')
+        end = source.index(b'// https://dom.spec.whatwg.org/#dom-abortsignal-timeout', start)
+        template = (Path(__file__).parent/'fixtures/typescript_abort_handler.cpp').read_bytes()
+        marker = b'// INSERT_EMITTED_HANDLER'
+        if template.count(marker) != 1:
+            raise AssertionError('unique onabort emission point required')
+        src = out/'handler.cpp'
+        src.write_bytes(template.replace(marker, source[start:end]))
+        cls.binary = out/('handler.exe' if os.name == 'nt' else 'handler')
+        if Path(compiler).stem.lower() == 'cl':
+            command = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX', str(src), '/Fe:'+str(cls.binary), '/Fo:'+str(out/'handler.obj')]
+        else:
+            command = [compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror', str(src), '-o', str(cls.binary)]
+        result = subprocess.run(command, capture_output=True, timeout=60)
+        if result.returncode:
+            raise AssertionError((result.stdout+result.stderr)[:65536].decode(errors='replace'))
+
+    def test_stable_handler_identity_conversion_reentry_and_failure_boundaries(self):
+        for case in ('install-failure', 'function-failure', 'function-pending', 'entry-pending',
+                     'noncallable', 'replace-order', 'remove-independent', 'remove-failure',
+                     'primitive-clears', 'callback-reentry', 'false-cancels', 'native-fatal',
+                     'callback-throws', 'success-pending'):
+            with self.subTest(case=case):
+                result = subprocess.run([str(self.binary), case], capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 0, (result.stdout+result.stderr)[:65536])
+                self.assertEqual(json.loads(result.stdout), {'case': case, 'passed': True, 'engineQualified': False})
+
+
+if __name__ == "__main__":
     unittest.main()

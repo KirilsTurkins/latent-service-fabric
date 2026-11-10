@@ -5,6 +5,16 @@ changes the source-owned AbortSignal implementation selected by
 `spidermonkey-activation-promises-clocks-imports-v1`; it does not add a JavaScript
 polyfill, a developer-selected transport, or a new public runtime profile.
 
+## Qualification status
+
+The [integration ledger](typescript-runtime-745-qualification.md) separates
+source controls, historical signed observations and remaining #745 obligations.
+Run 42516280360 passed nine-dependent fan-out but failed at
+`abort-fanout-refusal` with an actual `guest-trap` / `unreachable-code`. The
+following default-factory reentry and fresh fan-out cases were not reached,
+and the artifact has no post-refusal cleanup sample. The signed programme
+remains failed. Host C++ or sanitizer success does not replace that evidence.
+
 ## Admission and publication
 
 The pinned engine previously set the root and dependent abort reasons before
@@ -99,3 +109,32 @@ through Store retirement and quarantine, the remaining unchanged-library
 qualification, and approved stream/DNS/socket/TLS mappings are not established
 here. The source derivation remains explicitly unqualified; #745's remaining
 acceptance criteria must not be checked off on the strength of these controls.
+
+
+## Failure-case observations on subsequent source
+
+The runner change made after the failed historical signed job records
+`after-failed-<case>.json` and binds that file identity to `FAILED.json`
+when it can safely read the node inventory and provider counters. It does
+not restart the trapped guest, extend any deadline, fabricate zero counters
+or establish original-owner physical retirement. The historical artifact had
+no such sample. An observed sample on a future job still requires independent
+Store and native-owner evidence; never promote counter counts into custody.
+
+Exact historical engine, compiler, component and provider identities remain in
+the [completed CI observation](evidence/typescript-runtime-745-ci-2026-11-10.json).
+
+## Combined compiler and listener continuation
+
+The [combined integration record](typescript-runtime-745-integration-2026-11-10.md)
+tracks the reviewed export-frame correction, exact-listener abort removal and
+unchanged-budget qualification gates. Refusal still awaits a normal Promise
+checkpoint with the same graph and asserts unchanged state before retry.
+Default-factory reentry fully verifies its graph before ending that helper frame;
+a normal checkpoint precedes the independent restored-constructor check. None of
+these changes is credited as signed success until the combined engine runs.
+
+Rejected cleanup inventory and usage samples are now retained before validation
+fails. Writing FAILED.json cannot replace the original invocation/capture error
+or cancellation; any secondary write error contributes only a type-name note.
+No missing, nonzero or unavailable counter is interpreted as successful cleanup.

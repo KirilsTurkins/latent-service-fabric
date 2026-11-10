@@ -26,13 +26,19 @@ public:
       : phase_(phase), jobs_(jobs) {}
 
   bool beforeAllocate(JSContext* cx, NativeOwner& owner) override {
-    if (!phase_ || phase_(cx) == Phase::Unavailable) {
+    // A reservation slot cannot be reused until its original owner has been
+    // acknowledged, including a failed allocation's retained rollback token.
+    // Check before snapshot handling too: compilation never erases live debt.
+    if (owner.live)
+      return failure(cx, "native-readmission", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
+    const auto phase = phase_ ? phase_(cx) : Phase::Unavailable;
+    if (phase == Phase::Unavailable) {
       JS_ReportErrorASCII(cx, "activation-runtime-promise-phase-unavailable");
       return false;
     }
     // Snapshot evaluation observes intrinsic state but imports no authority.
     // Its process/heap remains subject to the original bounded compiler recipe.
-    if (phase_(cx) == Phase::CompilerSnapshot) return true;
+    if (phase == Phase::CompilerSnapshot) return true;
     Token inherited{};
     const bool has_parent = jobs_.currentContinuation(inherited);
     latent_runtime_activation_token_t parent{inherited.generation, inherited.id};
