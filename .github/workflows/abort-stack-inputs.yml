@@ -1,0 +1,41 @@
+name: Abort stack conflict-resolution inputs
+
+on:
+  push:
+    branches: ['ci/abort-stack-1852-inputs-20261110']
+    paths: ['.github/workflows/abort-stack-inputs.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Capture source history without checkout credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/abort-stack-inputs"
+          mkdir -p "$out"
+          refs=(
+            refs/remotes/origin/development
+            refs/remotes/origin/feat/typescript-runtime-745
+            refs/remotes/origin/fix/typescript-745-activation-resource-ownership
+            refs/remotes/origin/fix/1852-agent2-abort-engine-audit
+          )
+          git show-ref "${refs[@]}" > "$out/refs.txt"
+          git bundle create "$out/stack.bundle" "${refs[@]}"
+          git bundle verify "$out/stack.bundle"
+          sha256sum "$out/stack.bundle" > "$out/stack.sha256"
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: abort-stack-inputs-${{ github.sha }}
+          path: ${{ runner.temp }}/abort-stack-inputs/
+          if-no-files-found: error
+          retention-days: 2
