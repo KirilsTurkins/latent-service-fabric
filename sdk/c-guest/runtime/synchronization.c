@@ -24,6 +24,7 @@ struct sync_wait {
 };
 #if LSF_C_TIMED_CLOCK
 #include <time.h>
+#include <wasi/api.h>
 _Static_assert(sizeof(time_t)==8 && sizeof(clockid_t)==4 && sizeof(struct timespec)==16,
                "pinned clock and timespec ABI");
 static void sync_timer_retire(struct sync_wait *node);
@@ -638,6 +639,56 @@ static int sync_sleep(const struct timespec *duration,struct timespec *remaining
         sync_end(&node);if (error) return error;
     }
     if (remaining) *remaining=(struct timespec){0};
+    return 0;
+}
+
+/* The pinned libc's select(0, ...) and poll without descriptors request one
+ * relative REALTIME clock subscription. This bridge supports only that finite
+ * case. It does not provide descriptors or an ambient WASI host. Copy the
+ * original subscription before timer admission/await; publish no result until
+ * the existing owned sleep has really completed and retired its timer.
+ */
+static int sync_poll_range(uint32_t address,uint32_t size) {
+    uint64_t memory=(uint64_t)__builtin_wasm_memory_size(0)*65536u;
+    return address!=0 && (uint64_t)address<=memory && size<=memory-(uint64_t)address;
+}
+static __wasi_errno_t sync_poll_error(int error) {
+    switch (error) {
+    case 0: return 0;
+    case EAGAIN: return __WASI_ERRNO_AGAIN;
+    case ECANCELED: return __WASI_ERRNO_CANCELED;
+    case EINVAL: return __WASI_ERRNO_INVAL;
+    case ENOTSUP: return __WASI_ERRNO_NOTSUP;
+    case EOVERFLOW: return __WASI_ERRNO_OVERFLOW;
+    case EPERM: return __WASI_ERRNO_PERM;
+    case ETIMEDOUT: return __WASI_ERRNO_TIMEDOUT;
+    default: return __WASI_ERRNO_IO;
+    }
+}
+__attribute__((used))
+int32_t __imported_wasi_snapshot_preview1_poll_oneoff(int32_t input,int32_t output,
+                                                      int32_t count,int32_t result) {
+    uint32_t in=(uint32_t)input,out=(uint32_t)output,nevents=(uint32_t)result;
+    if ((uint32_t)count==0) return __WASI_ERRNO_INVAL;
+    if ((uint32_t)count!=1) return __WASI_ERRNO_NOTSUP;
+    if (!sync_poll_range(in,sizeof(__wasi_subscription_t)) ||
+        !sync_poll_range(out,sizeof(__wasi_event_t)) ||
+        !sync_poll_range(nevents,sizeof(__wasi_size_t))) return __WASI_ERRNO_FAULT;
+    if ((uint64_t)out<((uint64_t)nevents+sizeof(__wasi_size_t)) &&
+        (uint64_t)nevents<((uint64_t)out+sizeof(__wasi_event_t))) return __WASI_ERRNO_INVAL;
+    __wasi_subscription_t selected;
+    memcpy(&selected,(const void *)(uintptr_t)in,sizeof(selected));
+    if (selected.u.tag!=__WASI_EVENTTYPE_CLOCK ||
+        selected.u.u.clock.id!=__WASI_CLOCKID_REALTIME || selected.u.u.clock.flags!=0)
+        return __WASI_ERRNO_NOTSUP;
+    uint64_t nanos=selected.u.u.clock.timeout;
+    struct timespec duration={(time_t)(nanos/1000000000u),(long)(nanos%1000000000u)};
+    int error=sync_sleep(&duration,NULL);
+    if (error) return sync_poll_error(error);
+    __wasi_event_t event={.userdata=selected.userdata,.type=__WASI_EVENTTYPE_CLOCK};
+    __wasi_size_t one=1;
+    memcpy((void *)(uintptr_t)out,&event,sizeof(event));
+    memcpy((void *)(uintptr_t)nevents,&one,sizeof(one));
     return 0;
 }
 int nanosleep(const struct timespec *duration,struct timespec *remaining) {
