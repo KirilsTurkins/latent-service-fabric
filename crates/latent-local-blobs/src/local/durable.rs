@@ -242,8 +242,10 @@ impl RequiredBlobInventory {
             let bytes = reference.encode().map_err(storage)?;
             store.verify_required_reference(view, &key, &bytes, checkpoint)?;
         }
-        let _ = view.is_empty().map_err(storage)?;
         checkpoint()?;
+        // The admission checkpoint may itself block until the snapshot has
+        // expired; do not publish a completed observation from that view.
+        let _ = view.is_empty().map_err(storage)?;
         store.inner.check()?;
         let count = page.references.len();
         self.after = page.resume;

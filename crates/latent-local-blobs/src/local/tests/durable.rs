@@ -960,6 +960,56 @@ fn required_reference_verification_refuses_owner_closed_at_final_checkpoint() {
 }
 
 #[test]
+fn empty_recovery_page_rechecks_view_after_final_checkpoint() {
+    let state_root = temporary_root();
+    let blob_root = temporary_root();
+    let file = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create_new(true)
+        .open(state_root.path().join("payload-state.redb"))
+        .unwrap();
+    let state = EmbeddedStore::open_file(
+        file,
+        StoreLimits {
+            cache_bytes: 1024 * 1024,
+            maximum_view_age: std::time::Duration::from_secs(1),
+            ..StoreLimits::default()
+        },
+    )
+    .unwrap();
+    let view = state.snapshot().unwrap();
+    let batch = StoreIdentity::new("payload-state-a".into())
+        .unwrap()
+        .prepare_initialization(&view)
+        .unwrap()
+        .unwrap();
+    drop(view);
+    state.apply(batch).unwrap();
+    let owner =
+        LocalBlobStore::open_durable(blob_root.path(), "private", limits(), &state).unwrap();
+    let view = state.snapshot().unwrap();
+    let mut inventory = RequiredBlobInventory::begin(&owner, &view).unwrap();
+    let calls = std::cell::Cell::new(0);
+    let delayed = || {
+        calls.set(calls.get() + 1);
+        if calls.get() == 2 {
+            std::thread::sleep(std::time::Duration::from_millis(1100));
+        }
+        Ok(())
+    };
+    assert_eq!(
+        inventory.next_page(&owner, &view, 1, 1024, &delayed),
+        Err(LocalBlobError::Unavailable)
+    );
+    assert_eq!(calls.get(), 2);
+    assert_eq!(
+        inventory.next_page(&owner, &view, 1, 1024, &|| Ok(())),
+        Err(LocalBlobError::PermissionDenied)
+    );
+}
+
+#[test]
 fn empty_recovery_page_requires_live_admission_and_local_owner() {
     let state_root = temporary_root();
     let blob_root = temporary_root();
