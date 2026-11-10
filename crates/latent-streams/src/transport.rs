@@ -250,6 +250,56 @@ impl Transport {
             }
         }
     }
+    /// A zero-time readiness observation for an already admitted plain TCP
+    /// owner. It never reads or writes bytes, creates no descriptor and never
+    /// waits for an event. TLS and protected transports retain their old path.
+    #[cfg(target_os = "linux")]
+    pub fn ready_now(&self, interest: Interest) -> io::Result<Option<Readiness>> {
+        use rustix::event::{poll, PollFd, PollFlags, Timespec};
+        let tcp = match &self.wire {
+            Wire::Tcp(tcp) => tcp,
+            #[cfg(any(test, feature = "development-outbound"))]
+            Wire::Protected(_) => return Err(io::ErrorKind::Unsupported.into()),
+        };
+        if self.tls.is_some() {
+            return Err(io::ErrorKind::Unsupported.into());
+        }
+        let mut events = PollFlags::empty();
+        if interest.is_readable() {
+            events |= PollFlags::IN;
+        }
+        if interest.is_writable() {
+            events |= PollFlags::OUT;
+        }
+        let mut fds = [PollFd::new(tcp.as_ref(), events)];
+        let immediate = Timespec {
+            tv_sec: 0,
+            tv_nsec: 0,
+        };
+        let count = poll(&mut fds, Some(&immediate)).map_err(|_| io::ErrorKind::Other)?;
+        if count == 0 {
+            return Ok(None);
+        }
+        let observed = fds[0].revents();
+        if observed.intersects(PollFlags::ERR | PollFlags::NVAL) {
+            return Err(io::ErrorKind::Other.into());
+        }
+        if !observed.intersects(PollFlags::IN | PollFlags::OUT | PollFlags::HUP) {
+            return Err(io::ErrorKind::Other.into());
+        }
+        Ok(Some(Readiness {
+            readable: observed.contains(PollFlags::IN),
+            writable: observed.contains(PollFlags::OUT),
+            read_closed: observed.contains(PollFlags::HUP),
+            write_closed: observed.contains(PollFlags::HUP),
+        }))
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn ready_now(&self, _interest: Interest) -> io::Result<Option<Readiness>> {
+        Err(io::ErrorKind::Unsupported.into())
+    }
+
     pub async fn readable(&self) -> io::Result<()> {
         self.ready(Interest::READABLE).await.map(|_| ())
     }
