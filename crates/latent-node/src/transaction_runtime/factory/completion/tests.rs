@@ -189,14 +189,6 @@ async fn query_cannot_succeed_after_a_corrupt_read_loses_the_view() {
         Err(StateFailure::Unavailable)
     );
     guest.finish_guest_access();
-    // Observe the exact issued view witness; time alone cannot prove retirement.
-    tokio::time::timeout(std::time::Duration::from_secs(5), async {
-        while !host.witness.has_retired() {
-            tokio::task::yield_now().await;
-        }
-    })
-    .await
-    .unwrap();
     let _ = budget.finalize_at(None, std::time::Instant::now());
     let observation = admission
         .complete(
@@ -211,6 +203,73 @@ async fn query_cannot_succeed_after_a_corrupt_read_loses_the_view() {
         host,
         admission,
     ));
-    assert!(fixture.native.snapshot().unwrap().physically_retired());
+    let native = fixture.native.clone();
     fixture.shutdown_uncertain_writer().await;
+    assert!(native.snapshot().unwrap().physically_retired());
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn dropped_query_waiter_keeps_operation_until_the_actual_view_is_destroyed() {
+    use crate::transaction_runtime::tests::fixture::Fixture;
+    use crate::TransactionActivationAdmission;
+    use latent_executor::transaction::Mode;
+    use std::sync::mpsc;
+
+    let fixture = Fixture::new().await;
+    let (admission, envelope, budget) = fixture.invocation(true, "detached-query-view");
+    let guest = admission.admit(&envelope, &budget).await.unwrap();
+    guest.acquire(Mode::Query).unwrap();
+    let host = {
+        let state = admission.state.lock().unwrap();
+        match &*state {
+            super::super::State::Ready(Some(TransactionAdmissionResult::Query { host })) => {
+                Arc::clone(host)
+            }
+            _ => panic!("query host absent"),
+        }
+    };
+    let (entered, entered_rx) = mpsc::channel();
+    let (release, release_rx) = mpsc::channel();
+    let worker_host = Arc::clone(&host);
+    let waiter = tokio::spawn(async move {
+        worker_host
+            .access("get-query", 0, 0, move |_, _| {
+                entered.send(()).unwrap();
+                release_rx.recv().unwrap();
+                Ok(())
+            })
+            .await
+    });
+    tokio::task::spawn_blocking(move || {
+        entered_rx
+            .recv_timeout(std::time::Duration::from_secs(5))
+            .unwrap()
+    })
+    .await
+    .unwrap();
+    waiter.abort();
+    assert!(waiter.await.unwrap_err().is_cancelled());
+    guest.finish_guest_access();
+    let _ = budget.finalize_at(None, std::time::Instant::now());
+    let outcome = admission
+        .complete(
+            observed()[0].clone(),
+            fixture.commit_control(&envelope, &budget),
+        )
+        .await;
+    assert!(matches!(outcome, ActivationOutcome::Failed { .. }));
+    drop((
+        admission.take_owned_completion().unwrap(),
+        guest,
+        host,
+        admission,
+    ));
+    let held = fixture.protected_store().snapshot().unwrap();
+    assert!(
+        held.physical_owners >= 2,
+        "view and original operation remain owned: {held:?}"
+    );
+    assert!(!fixture.native.snapshot().unwrap().physically_retired());
+    release.send(()).unwrap();
+    fixture.shutdown().await;
 }

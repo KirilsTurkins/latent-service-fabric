@@ -103,8 +103,24 @@ struct OwnedSession {
     view: ProtectedStoreView,
     payload: SessionPayload,
 }
+// The query operation is shared with its original native view before opening.
+// Its final owner can therefore queue the pin's retirement only after the view
+// has been destroyed, even if the activation/completion waiter is lost.
+struct QueryOperation(Mutex<Option<ProtectedStoreOperation>>);
+
+impl Drop for QueryOperation {
+    fn drop(&mut self) {
+        if let Ok(slot) = self.0.get_mut() {
+            if let Some(operation) = slot.take() {
+                drop(operation.retire());
+            }
+        }
+    }
+}
+
 struct Physical {
-    operation: ProtectedStoreOperation,
+    operation: Option<ProtectedStoreOperation>,
+    query_operation: Option<Arc<QueryOperation>>,
     work: Option<PhysicalAttemptWork>,
 }
 
@@ -178,7 +194,19 @@ impl StateTransactionHost {
             // already retired. Re-observation cannot refund a second charge.
             return Ok(());
         };
-        physical.operation.retire().await;
+        if let Some(operation) = physical.operation {
+            operation.retire().await;
+        }
+        if let Some(query) = physical.query_operation {
+            let operation = query
+                .0
+                .lock()
+                .map_err(|_| StateFailure::Unavailable)?
+                .take();
+            if let Some(operation) = operation {
+                operation.retire().await;
+            }
+        }
         if let Some(work) = physical.work {
             work.retire();
         }

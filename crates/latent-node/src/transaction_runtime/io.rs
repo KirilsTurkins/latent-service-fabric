@@ -1,6 +1,6 @@
 use super::{
     authorization::StateAuthorization, CommandHostSelection, CommandTimeSource, OwnedSession,
-    Physical, StateTransactionHost,
+    Physical, QueryOperation, StateTransactionHost,
 };
 use latent_core::{transaction_contract::Precondition, ActivationId, BudgetDimension};
 use latent_effects::authority::EffectAuthorityOwner;
@@ -67,21 +67,35 @@ impl StateTransactionHost {
             return Err(StateFailure::ReadBudgetExhausted);
         };
         let retained_memory = Arc::clone(&memory);
-        let operation = match store.reserve_operation() {
-            Ok(operation) => operation,
+        let keeper: Arc<dyn std::any::Any + Send + Sync> =
+            Arc::new((memory.clone(), Arc::clone(&authorization)));
+        let reserved = if mode == latent_executor::transaction::Mode::Query {
+            store.reserve_operation_retaining(Arc::clone(&keeper))
+        } else {
+            store.reserve_operation()
+        };
+        let mut operation = match reserved {
+            Ok(operation) => Some(operation),
             Err(error) => {
                 retire_unstarted(command.take());
                 return Err(protected_error(error));
             }
         };
-        // Native destruction can outlive a dropped opening or guest waiter.
-        // Bind the original memory charge before accepting physical I/O.
+        // Attach the same query operation before opening. The fixed view worker
+        // releases its copy only after actual native destruction.
+        let query_operation = if mode == latent_executor::transaction::Mode::Query {
+            Some(Arc::new(QueryOperation(Mutex::new(operation.take()))))
+        } else {
+            None
+        };
         let physical_memory: Arc<dyn std::any::Any + Send + Sync> =
-            Arc::new((memory.clone(), Arc::clone(&authorization)));
+            Arc::new((keeper, query_operation.clone()));
         let opening = match store.open_view_retaining(physical_memory) {
             Ok(opening) => opening,
             Err(error) => {
-                operation.retire().await;
+                if let Some(operation) = operation.take() {
+                    operation.retire().await;
+                }
                 retire_unstarted(command.take());
                 return Err(protected_error(error));
             }
@@ -93,7 +107,9 @@ impl StateTransactionHost {
         let mut view = match opened {
             Ok(view) => view,
             Err(error) => {
-                operation.retire().await;
+                if let Some(operation) = operation.take() {
+                    operation.retire().await;
+                }
                 return Err(error);
             }
         };
@@ -122,18 +138,24 @@ impl StateTransactionHost {
             Ok((view, Ok(Ok(payload)))) => OwnedSession { view, payload },
             Ok((view, Ok(Err(error)))) => {
                 view.retire().await;
-                operation.retire().await;
+                if let Some(operation) = operation.take() {
+                    operation.retire().await;
+                }
                 retire_unstarted(command.take());
                 return Err(error);
             }
             Ok((view, Err(error))) => {
                 view.retire().await;
-                operation.retire().await;
+                if let Some(operation) = operation.take() {
+                    operation.retire().await;
+                }
                 retire_unstarted(command.take());
                 return Err(protected_error(error));
             }
             Err(error) => {
-                operation.retire().await;
+                if let Some(operation) = operation.take() {
+                    operation.retire().await;
+                }
                 // A rejected/detached job may already own native retirement.
                 // Its actual issued witness, never the waiter's failure, is
                 // the only permission to retire this physical attempt guard.
@@ -168,7 +190,11 @@ impl StateTransactionHost {
             store,
             session: Mutex::new(Some(owned)),
             witness,
-            physical: Mutex::new(Some(Physical { operation, work })),
+            physical: Mutex::new(Some(Physical {
+                operation,
+                query_operation,
+                work,
+            })),
             acquired: AtomicU8::new(0),
             released: AtomicBool::new(false),
             guest_closed: AtomicBool::new(false),
