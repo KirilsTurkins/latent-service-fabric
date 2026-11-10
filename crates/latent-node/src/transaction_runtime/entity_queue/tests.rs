@@ -1236,3 +1236,45 @@ async fn duplicate_authorization_rechecks_original_ingress_before_waiting() {
     assert_eq!(queue.snapshot().active, 1);
     drop(owner);
 }
+
+#[tokio::test]
+async fn wait_age_is_rechecked_after_authority_callback() {
+    struct FakeClock {
+        start: Instant,
+        elapsed_millis: AtomicU64,
+    }
+    impl ActivationClock for FakeClock {
+        fn sample(&self) -> latent_core::ClockSample {
+            latent_core::ClockSample::new(0, self.monotonic_now())
+        }
+        fn monotonic_now(&self) -> Instant {
+            self.start + Duration::from_millis(self.elapsed_millis.load(Ordering::SeqCst))
+        }
+    }
+    let start = Instant::now();
+    let clock = Arc::new(FakeClock {
+        start,
+        elapsed_millis: AtomicU64::new(0),
+    });
+    let queue = EntityQueue::new(limits(), clock.clone()).unwrap();
+    let callback_clock = Arc::clone(&clock);
+    let result = queue
+        .acquire(
+            scope("tenant-a", "order"),
+            vec![1],
+            64,
+            start + Duration::from_secs(3),
+            Arc::new(move || {
+                callback_clock.elapsed_millis.store(101, Ordering::SeqCst);
+                true
+            }),
+            permit(),
+        )
+        .await;
+    assert!(matches!(
+        result,
+        Err(QueueError::Rejected(EntityRejection::WaitExpired))
+    ));
+    assert_eq!(queue.snapshot().active, 0);
+    assert_eq!(queue.snapshot().keys, 0);
+}

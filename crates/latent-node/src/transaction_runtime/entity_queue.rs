@@ -116,6 +116,7 @@ impl Drop for CommandRegistration {
 struct Pending {
     current: Arc<dyn Fn() -> bool + Send + Sync>,
     deadline: Instant,
+    wait_until: Instant,
     result: Mutex<Option<oneshot::Sender<Result<Physical, QueueError>>>>,
     permit: Mutex<Option<NativeBufferPermit>>,
     command: Option<Arc<CommandRegistration>>,
@@ -443,10 +444,16 @@ impl EntityQueue {
             Some(slot) => slot,
             None => self.reserve_waiting(&scope)?,
         };
+        let enqueued_at = self.clock.monotonic_now();
+        let queue_wait_until = enqueued_at
+            .checked_add(self.maximum_wait_age)
+            .ok_or(QueueError::Unavailable)?
+            .min(deadline);
         let (send, mut receive) = oneshot::channel();
         let pending = Arc::new(Pending {
             current,
             deadline,
+            wait_until: queue_wait_until,
             result: Mutex::new(Some(send)),
             permit: Mutex::new(Some(permit)),
             command: registration,
@@ -461,7 +468,7 @@ impl EntityQueue {
         );
         let _waiter = self
             .lanes
-            .enqueue(request, self.clock.monotonic_now())
+            .enqueue(request, enqueued_at)
             .map_err(|error| QueueError::Lane(error.reason))?;
         loop {
             let now = self.clock.monotonic_now();
@@ -505,12 +512,18 @@ impl EntityQueue {
                     let cancelled = execution.cancellation_requested(now);
                     let (request, owner) = execution.into_owned_work();
                     let pending = request.into_payload();
-                    if cancelled {
-                        let failure = if now >= pending.deadline {
-                            QueueError::Expired
-                        } else {
-                            QueueError::Rejected(EntityRejection::CancelledBeforeExecution)
-                        };
+                    let failure = if now >= pending.deadline {
+                        Some(QueueError::Expired)
+                    } else if cancelled {
+                        Some(QueueError::Rejected(
+                            EntityRejection::CancelledBeforeExecution,
+                        ))
+                    } else if now >= pending.wait_until {
+                        Some(QueueError::Rejected(EntityRejection::WaitExpired))
+                    } else {
+                        None
+                    };
+                    if let Some(failure) = failure {
                         drop(owner);
                         (pending, Err(failure))
                     } else {
