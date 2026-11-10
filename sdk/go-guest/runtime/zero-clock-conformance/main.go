@@ -22,6 +22,12 @@ func Run(which uint32) uint32 {
         third := <-ticker.C
         if !third.After(second) { panic("ticker time did not advance again") }
         return 42
+    case 2:
+        // A controlled host cancels before the monotonic edge is advanced.
+        time.Sleep(5 * time.Nanosecond)
+        return 99
+    case 3:
+        return 42
     default:
         panic("unreviewed zero-clock mode")
     }
