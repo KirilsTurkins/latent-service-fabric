@@ -98,6 +98,42 @@ fn first_source_is_atomic_quota_charged_and_survives_reopen() {
 }
 
 #[test]
+fn oversized_first_source_row_is_refused_without_mutation() {
+    let fixture = Fixture::new();
+    fixture.install(&[quota("alpha")]);
+    fixture
+        .store()
+        .apply(domain::create(fixture.store(), "alpha", "orders"))
+        .unwrap();
+    let view = fixture.store().snapshot().unwrap();
+    let key = PreparedInboxScope::prepare(&view, &scope())
+        .unwrap()
+        .into_batch()
+        .mutations
+        .into_iter()
+        .find(|row| row.key.key.starts_with(b"inbox-source-v1\0"))
+        .unwrap()
+        .key;
+    drop(view);
+    fixture
+        .store()
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: key.clone(),
+                value: Some(vec![0; 2049]),
+            }],
+        })
+        .unwrap();
+    let view = fixture.store().snapshot().unwrap();
+    assert!(matches!(
+        PreparedInboxScope::prepare(&view, &scope()),
+        Err(StoreError::Corrupt)
+    ));
+    assert_eq!(view.get(&key).unwrap().unwrap().len(), 2049);
+}
+
+#[test]
 fn final_fence_and_quota_refuse_publication() {
     let fixture = Fixture::new();
     let mut limited = quota("alpha");

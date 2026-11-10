@@ -324,7 +324,7 @@ impl PreparedInboxScope {
             record.incarnation,
         )?
         .to_vec();
-        let original = view.get(&key)?;
+        let original = view.get_typed_bounded(&key, MAX_BYTES)?;
         if let Some(old) = &original {
             validate_row(&key, old)?;
             if *old != bytes {
