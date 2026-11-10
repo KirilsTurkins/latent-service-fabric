@@ -279,6 +279,27 @@ fn physical_inventory_rejects_another_engine_with_identical_head() {
 }
 
 #[test]
+fn state_link_cannot_name_an_unplanned_owner() {
+    let root = tempfile::tempdir().unwrap();
+    let database = store(root.path(), true);
+    let first = reference(PayloadOwnerKind::State, 11);
+    let other = reference(PayloadOwnerKind::State, 12);
+    let view = database.snapshot().unwrap();
+    let mut plan = PreparedPayloadReferences::prepare(&view, &[(None, Some(first))]).unwrap();
+    let link = StatePayloadLink {
+        reference: other,
+        cell_key: RowKey {
+            family: Family::State,
+            key: b"cell".to_vec(),
+        },
+    };
+    assert_eq!(
+        plan.replace_state_link(&view, None, Some(&link)),
+        Err(StoreError::Conflict)
+    );
+}
+
+#[test]
 fn closure_cannot_name_an_unplanned_owner() {
     let root = tempfile::tempdir().unwrap();
     let database = store(root.path(), true);

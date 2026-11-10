@@ -477,6 +477,37 @@ impl PreparedPayloadReferences {
         if view.get_bounded(&key, MAX_STATE_LINK_BYTES)? != old {
             return Err(StoreError::Conflict);
         }
+        if let (Some(before), Some(bytes)) = (before, old.as_deref()) {
+            state_links::validate_link(view, &key, bytes)?;
+            let owner_key = before.reference.owner_key()?;
+            if after.is_none()
+                && !self
+                    .batch
+                    .mutations
+                    .iter()
+                    .any(|row| row.key == owner_key && row.value.is_none())
+            {
+                return Err(StoreError::Conflict);
+            }
+        }
+        if let Some(after) = after {
+            let reference = &after.reference;
+            let bytes = reference.encode()?;
+            for row_key in [
+                reference.owner_key()?,
+                reference.object_key()?,
+                reference.physical_key()?,
+            ] {
+                if !self
+                    .batch
+                    .mutations
+                    .iter()
+                    .any(|row| row.key == row_key && row.value.as_deref() == Some(bytes.as_slice()))
+                {
+                    return Err(StoreError::Conflict);
+                }
+            }
+        }
         for bytes in [&old, &new].into_iter().flatten() {
             self.encoded_bytes = self
                 .encoded_bytes
