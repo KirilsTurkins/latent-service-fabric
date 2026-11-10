@@ -32,7 +32,7 @@ from tools.standard_http.peer import Peer
 from tools.standard_http.vectors import DOMAIN, head, json_bytes
 from tools.static_api.node import policy
 
-CASES = ('normal', 'denied', 'not-found', 'redirect', 'fresh', 'range', 'range-ignored', 'range-denied',
+CASES = ('missing-grant', 'normal', 'denied', 'not-found', 'redirect', 'fresh', 'range', 'range-ignored', 'range-denied',
          'range-unsolicited', 'range-before')
 PROBE = 'sdk/c-guest/runtime-fixtures/libfetch/stat-probe.c'
 SELF = 'tools/c_http_stat_qualification.py'
@@ -123,7 +123,7 @@ def install(client, node, target, origin):
 
 
 def cell(client, probe, target, peer, output, case):
-    vectors = {'normal': 'domain-json', 'denied': 'method-bytes',
+    vectors = {'missing-grant': 'domain-json', 'normal': 'domain-json', 'denied': 'method-bytes',
                'not-found': 'http-404', 'redirect': 'redirect', 'fresh': 'domain-json', 'range': 'domain-json',
                'range-ignored': 'response-boundary', 'range-denied': 'http-404',
                'range-unsolicited': 'domain-json', 'range-before': 'method-bytes'}
@@ -131,7 +131,8 @@ def cell(client, probe, target, peer, output, case):
     before, revision = peer.observation(), owner.selected_revision(client, target)
     validate(before)
     activation = 'c-stat-' + case
-    process = owner.start_http_call(client, target, case + '\n' + peer.url(vectors[case]), activation)
+    mode = 'normal' if case == 'missing-grant' else case
+    process = owner.start_http_call(client, target, mode + '\n' + peer.url(vectors[case]), activation)
     deadline, primary = min(client.deadline, time.monotonic() + 8), False
     try:
         while not process.owner.exited():
@@ -141,9 +142,11 @@ def cell(client, probe, target, peer, output, case):
         row = owner.finish_call(client, process)
         write_json(output / ('invocation-' + activation + '.json'), row)
         response = row['response']
-        require(row['processReaped'] is True and response['outcomeKnown'] is True
-                and response['requestDispatched'] is True
-                and response['data']['resolvedRevision'] == revision, 'c-stat-known-current-invocation')
+        require(row['processReaped'] is True and response['outcomeKnown'] is True,
+                'c-stat-known-current-invocation')
+        if case != 'missing-grant':
+            require(response['requestDispatched'] is True
+                    and response['data']['resolvedRevision'] == revision, 'c-stat-known-current-invocation')
         def range_result(offset, total, data):
             checksum = 0
             for byte in data: checksum = (checksum * 33 + byte) & 0xffffffff
@@ -161,14 +164,23 @@ def cell(client, probe, target, peer, output, case):
             'range-unsolicited': (3, [{'err': 'invalid-content-range'}]),
             'range-before': (3, [{'err': 'invalid-content-range'}]),
         }
-        require(type(row['exitCode']) is int and (row['exitCode'], row['decoded']) == expected[case],
-                'c-stat-exact-ordinary-result')
         consumed = response['data']['consumption']
-        require(0 < owner.integer(consumed['cpuFuel']) <= 1_000_000_000
-                and 0 < owner.integer(consumed['peakMemoryBytes']) <= 32 * 1024**2
-                and all(owner.integer(consumed[key]) == 0 for key in ('stateReadBytes', 'stateWriteBytes',
-                    'blobReadBytes', 'blobWriteBytes', 'logBytes', 'effectCount', 'childCalls')),
-                'c-stat-original-budget-and-unrelated-authority')
+        if case == 'missing-grant':
+            # The required HTTP import is denied before entering the guest;
+            # no libfetch errno or guest-level error is fabricated here.
+            require(type(row['exitCode']) is int and row['exitCode'] == 4 and row['decoded'] is None
+                    and response['error']['code'] == 'permission-denied'
+                    and all(owner.integer(consumed[key]) == 0 for key in
+                            ('cpuFuel', 'peakMemoryBytes', 'outboundRequests')),
+                    'c-stat-missing-http-grant-prevents-guest')
+        else:
+            require(type(row['exitCode']) is int and (row['exitCode'], row['decoded']) == expected[case],
+                    'c-stat-exact-ordinary-result')
+            require(0 < owner.integer(consumed['cpuFuel']) <= 1_000_000_000
+                    and 0 < owner.integer(consumed['peakMemoryBytes']) <= 32 * 1024**2
+                    and all(owner.integer(consumed[key]) == 0 for key in ('stateReadBytes', 'stateWriteBytes',
+                        'blobReadBytes', 'blobWriteBytes', 'logBytes', 'effectCount', 'childCalls')),
+                    'c-stat-original-budget-and-unrelated-authority')
         for _ in range(128):
             observed = peer.observation()
             if observed['openConnections'] == 0: break
@@ -176,7 +188,7 @@ def cell(client, probe, target, peer, output, case):
             peer.poll(min(0.02, max(0, deadline - time.monotonic())))
         observed = peer.observation(); validate(observed)
         change = delta(before, observed)
-        if case in ('denied', 'range-denied'):
+        if case in ('missing-grant', 'denied', 'range-denied'):
             require_zero_contact(before, observed)
         else:
             require(change['startedRequests'] == 1 and len(change['requests']) == 1
@@ -208,6 +220,27 @@ def cell(client, probe, target, peer, output, case):
         raise
     finally:
         owner.close_call(process, primary_failure=primary)
+
+
+def exercise_cells(client, node, probe, source, target, peer, output):
+    # Install the same original provider policies once, but first deploy only
+    # the two C-runtime grants. The otherwise-allowed HEAD then has no HTTP
+    # grant at all. Regrant the original HTTP policy before the positive cells.
+    grants = install(client, node, target, peer.origin())
+    runtime_grants = [grant for grant in grants if grant['capability'] != owner.HTTP]
+    http_grants = [grant for grant in grants if grant['capability'] == owner.HTTP]
+    require(len(http_grants) == 1 and len(runtime_grants) == len(owner.PROVIDERS)
+            and {grant['capability'] for grant in runtime_grants} == set(owner.PROVIDERS),
+            'c-stat-exact-runtime-only-grants')
+    runtime_target = deploy(client, source / 'deployment.json', target['publication'],
+                            generation=str(target['generation']), grants=runtime_grants)
+    require(runtime_target['grants'] == runtime_grants, 'c-stat-http-grant-absent')
+    cases = [cell(client, probe, runtime_target, peer, output, 'missing-grant')]
+    target = deploy(client, source / 'deployment.json', target['publication'],
+                    generation=str(runtime_target['generation']), grants=grants)
+    require(target['grants'] == grants, 'c-stat-original-http-grant-restored')
+    cases.extend(cell(client, probe, target, peer, output, case) for case in CASES[1:])
+    return target, cases
 
 
 def run_node(artifact, native, output, deadline):
@@ -261,11 +294,8 @@ def run_node(artifact, native, output, deadline):
                     'c-stat-signed-admission')
             target = deploy(client, source / 'deployment.json', published['data']['operation']['publication']['id'])
             require(target['grants'] == [], 'c-stat-no-ambient-grants')
-            grants = install(client, node, target, peer.origin())
-            target = deploy(client, source / 'deployment.json', target['publication'],
-                            generation=str(target['generation']), grants=grants)
-            stage = 'ten-signed-head-range-and-redirect-cells'
-            record['cases'] = [cell(client, probe, target, peer, output, case) for case in CASES]
+            stage = 'eleven-signed-head-range-and-redirect-cells'
+            target, record['cases'] = exercise_cells(client, node, probe, source, target, peer, output)
             final_peer = peer.observation()
             validate(final_peer)
             require(final_peer['acceptedConnections'] == final_peer['startedRequests'] == 8
@@ -322,7 +352,7 @@ def qualify(args):
               'full690Qualified': False, 'fullCCostModelQualified': False,
               'publisherAuthenticated': False, 'releasePublished': False,
               'limits': {'parentSeconds': 1320, 'commandSeconds': 900, 'cleanupReserveSeconds': 5,
-                         'jobs': 2, 'components': 1, 'cells': 10, 'clientCalls': 384}}
+                         'jobs': 2, 'components': 1, 'cells': 11, 'clientCalls': 384}}
     stage = 'source'
     def source_inputs(capture=False):
         rows = http_sources(commands, output, capture=capture, runtime_profile=FETCH_PROFILE)
@@ -359,10 +389,10 @@ def qualify(args):
         c_capsule_build.build(project, artifact, native['capsule_contracts'], native['package'],
             'https://github.com/KirilsTurkins/latent-service-fabric', installed=installed, _deadline=commands.deadline)
         result['build'] = http_build_evidence(artifact, original, runtime_profile=FETCH_PROFILE)
-        stage = 'ten-signed-head-range-and-redirect-cells'
+        stage = 'eleven-signed-head-range-and-redirect-cells'
         result['node'] = run_node(artifact, native, output / 'node', commands.deadline)
         require(result['node']['status'] == 'passed'
-                and [row['case'] for row in result['node']['cases']] == list(CASES), 'c-stat-exact-ten-outcomes')
+                and [row['case'] for row in result['node']['cases']] == list(CASES), 'c-stat-exact-eleven-outcomes')
         require(helpers == source_inputs() and source_identity(ROOT) == source
                 and sdk == inventory(c_capsule_project.sdk_inputs(ROOT, threading=True))
                 and original == inventory(snapshot(project))
