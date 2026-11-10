@@ -16,18 +16,25 @@ ROOT = Path(__file__).resolve().parents[2]
 class GoSmtpTlsRuntimeTests(unittest.TestCase):
     def rows(self, program='standard'):
         result = []
-        cases = runtime.EXPECTED if program == 'standard' else runtime.PUBLISHED_EXPECTED
+        cases = {'standard': runtime.EXPECTED, 'published': runtime.PUBLISHED_EXPECTED,
+                 'published-lost-reply': runtime.LOST_REPLY_EXPECTED}[program]
         for label, mode, outcome, contacts in cases:
             result.append(('GO_SMTP_OWNER', {'case': label, 'stores': 0, 'instances': 0,
                 'streamOwners': 0, 'ioOwners': 0, 'kernelRetirementQualified': False}))
             result.append(('GO_SMTP_CASE', {'case': label, 'mode': mode, 'result': outcome, 'contacts': contacts}))
-        result.append(('GO_SMTP_COMPLETE', {'cases': 6, 'contacts': 6, 'cleanLogicalProviderStop': True,
-            'normalProviderInstalled': False, 'kernelRetirementQualified': False, 'hostTlsQualified': False}))
+        complete = {'cases': 6, 'contacts': 6, 'cleanLogicalProviderStop': True,
+            'normalProviderInstalled': False, 'kernelRetirementQualified': False, 'hostTlsQualified': False}
+        if program == 'published-lost-reply':
+            complete = {'cases': 2, 'contacts': 2, 'peerMutations': 1, 'postCompletionReplayWindowMillis': 250,
+                'cleanLogicalProviderStop': True, 'normalProviderInstalled': False,
+                'kernelRetirementQualified': False, 'hostTlsQualified': False}
+        result.append(('GO_SMTP_COMPLETE', complete))
         return result
 
     def output(self, rows=None, program='standard'):
         rows = self.rows(program) if rows is None else rows
-        case = runtime.CASE if program == 'standard' else runtime.PUBLISHED_CASE
+        case = {'standard': runtime.CASE, 'published': runtime.PUBLISHED_CASE,
+                'published-lost-reply': runtime.LOST_REPLY_CASE}[program]
         return '\n'.join(name + ' ' + json.dumps(row) for name, row in rows).encode() + (
             '\ntest ' + case + ' ... ok\n'
             'test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.0s\n').encode()
@@ -65,11 +72,16 @@ class GoSmtpTlsRuntimeTests(unittest.TestCase):
         self.assertEqual(runtime.workflow_profile('push', runtime.REFERENCE_PIN_PUSH_BRANCH, ''), runtime.STACK_PROFILE)
         self.assertEqual(runtime.workflow_program('push', runtime.PUBLISHED_PUSH_BRANCH, ''), 'published')
         self.assertEqual(runtime.workflow_program('push', runtime.REFERENCE_PIN_PUSH_BRANCH, ''), 'published')
+        self.assertEqual(runtime.workflow_profile('push', runtime.LOST_REPLY_PUSH_BRANCH, ''), runtime.STACK_PROFILE)
+        self.assertEqual(runtime.workflow_program('push', runtime.LOST_REPLY_PUSH_BRANCH, ''), 'published-lost-reply')
         self.assertEqual(runtime.workflow_program('push', runtime.V7_PUSH_BRANCH, ''), 'standard')
         self.assertEqual(runtime.workflow_program('workflow_dispatch', 'development', ''), 'standard')
         self.assertEqual(runtime.workflow_program('workflow_dispatch', 'development', 'published'), 'published')
-        with self.assertRaisesRegex(ValueError, 'program-not-selected'):
-            runtime.qualify(ROOT, ROOT / 'must-not-exist', 'revision', Path('go'), runtime.MANAGED_PROFILE, 'published')
+        self.assertEqual(runtime.workflow_program('workflow_dispatch', 'development', 'published-lost-reply'),
+                         'published-lost-reply')
+        for program in ('published', 'published-lost-reply'):
+            with self.assertRaisesRegex(ValueError, 'program-not-selected'):
+                runtime.qualify(ROOT, ROOT / 'must-not-exist', 'revision', Path('go'), runtime.MANAGED_PROFILE, program)
         for event, branch, choice in (('push', runtime.PUBLISHED_PUSH_BRANCH, 'standard'),
                                       ('push', 'development', ''),
                                       ('workflow_dispatch', 'development', 'unknown')):
@@ -130,6 +142,26 @@ class GoSmtpTlsRuntimeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             runtime.outcomes(raw, program='unknown')
 
+    def test_lost_reply_requires_one_peer_mutation_no_extra_contact_and_fresh_invocation(self):
+        program = 'published-lost-reply'
+        raw = self.output(program=program)
+        result = runtime.outcomes(raw, program=program)
+        self.assertEqual(result['completion']['peerMutations'], 1)
+        self.assertEqual(result['completion']['postCompletionReplayWindowMillis'], 250)
+        self.assertEqual([row['case'] for row in result['cases']], [row[0] for row in runtime.LOST_REPLY_EXPECTED])
+        for key, value in (('peerMutations', 0), ('peerMutations', 2), ('contacts', 3),
+                           ('postCompletionReplayWindowMillis', 0), ('kernelRetirementQualified', True)):
+            rows = self.rows(program)
+            rows[-1][1][key] = value
+            with self.subTest(key=key, value=value), self.assertRaises(ValueError):
+                runtime.outcomes(self.output(rows, program), program=program)
+        with self.assertRaises(ValueError):
+            runtime.outcomes(self.output(self.rows(program)[:-3] + self.rows(program)[-1:], program), program=program)
+        with self.assertRaises(ValueError):
+            runtime.outcomes(raw, program='published')
+        with self.assertRaises(ValueError):
+            runtime.outcomes(self.output(program='published'), program=program)
+
     def test_published_graph_binds_original_client_and_separate_worker_edges(self):
         versions = {name: value[0] for name, value in published.LIBRARIES.items()}
         versions[published.SASL] = published.SASL_VERSION
@@ -161,6 +193,12 @@ class GoSmtpTlsRuntimeTests(unittest.TestCase):
         result = published.graph_evidence(declaration, native, assets)
         self.assertEqual(len(result['transitiveEdges']), 2)
         self.assertEqual(result['smtpRetryPolicy'], 'none')
+        lost = published.graph_evidence(declaration, native, assets, lost_reply=True)
+        self.assertEqual(lost['workerTimer'], 'not exercised by the separate lost-reply fixture')
+        self.assertEqual([row['ordinaryApi'] for row in lost['applicationLibraries']][1:],
+                         ['captured but not exercised by the lost-reply fixture'] * 2)
+        with self.assertRaises(ValueError):
+            published.graph_evidence(declaration, native, assets, lost_reply=1)
         for mutation in ('edge', 'replacement', 'source'):
             changed_native = json.loads(json.dumps(native))
             changed_assets = json.loads(json.dumps(assets))

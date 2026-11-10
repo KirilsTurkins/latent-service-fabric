@@ -13,7 +13,7 @@ import time
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
 from tools.c_guest.compiler import Compiler
-from tools.c_guest import standard_facilities
+from tools.c_guest import closed_headers, standard_facilities
 from tools.c_guest import language
 from tools import c_resource_inputs
 from tools.c_capsule_project import validate
@@ -48,7 +48,7 @@ RECIPE += guest_authoring_frontend.RECIPE
 RECIPE += guest_resources.RECIPE
 RECIPE += ("tools/c_generator_authoring.py",)
 RECIPE += standard_facilities.RECIPE
-RECIPE += language.RECIPE + c_resource_inputs.RECIPE
+RECIPE += language.RECIPE + c_resource_inputs.RECIPE + closed_headers.RECIPE
 
 
 def binding_check(work: Path, lock: dict, commands: Commands, generator: Path) -> str:
@@ -84,6 +84,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         guest_resources.select(files)
         project, lock, pins = validate(files)
         threaded = project.get('threadingProfile', 'single-threaded') != 'single-threaded'
+        use_closed_headers = closed_headers.selected(project)
         if threaded:
             from tools.c_guest import threading
             from tools.c_guest import threading_compatibility
@@ -111,6 +112,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             runtime_profile = standard_facilities.selected_profile(project, closure.lock if closure is not None else None)
             if runtime_profile in standard_facilities.FETCH_PROFILES and not threaded:
                 raise ValueError('c-libfetch-http-requires-cooperative-threading')
+            if runtime_profile == standard_facilities.STREAM_PROFILE and not threaded:
+                raise ValueError('c-stream-network-requires-cooperative-threading')
             language_standard = language.selected_standard(project, closure.lock if closure is not None else None)
             resources = c_resource_inputs.selected(closure, files)
             write_json(output / 'c-resources.json', resources.observation)
@@ -131,12 +134,17 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                    runtime_digest=digest(inventory(snapshot(work / "vendor/lsf/sdk/c-guest"))),
                                    compiler_distribution_digest=digest(json.dumps(isolated_inputs["distributions"],
                                         sort_keys=True, separators=(",", ":")).encode()) if closure is not None else None)
+            if use_closed_headers:
+                application.receipt['headerProfile'] = closed_headers.PROFILE
             write_json(output / "c-libraries.json", application.receipt)
             if threaded and runtime_profile in {standard_facilities.PROFILE, standard_facilities.COMBINED_PROFILE,
-                                                standard_facilities.FETCH_STANDARD_PROFILE}:
+                                                standard_facilities.FETCH_STANDARD_PROFILE,
+                                                standard_facilities.STREAM_PROFILE}:
                 # Select before the observed materials snapshot. compile()
                 # rechecks the same pins and cannot replace these identities.
                 compiler.select_threading_clock_inputs()
+            if use_closed_headers:
+                compiler.select_closed_header_inputs()
             materials = list(compiler.materials.values())
             paths = {"contracts-tool": checked_path(contracts_tool)}
             if packager is not None:
@@ -166,7 +174,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                                           runtime_profile=runtime_profile, language_standard=language_standard,
                                                           embed_directories=resources.directories if language_standard == 'c23' else (),
                                                           **({'dependency_sources': application.sources} if application.sources else {}),
-                                                          **({'threading_profile': threading.PROFILE} if threaded else {}))
+                                                          **({'threading_profile': threading.PROFILE} if threaded else {}),
+                                                          **({'header_profile': closed_headers.PROFILE} if use_closed_headers else {}))
             if closure is not None or threaded:
                 write_json(output / "compiler-inputs.json", isolated_inputs)
             component = read_file(component_path, 64 * 1024 * 1024)

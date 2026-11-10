@@ -6,6 +6,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
@@ -16,7 +17,9 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     private final boolean cached;
     private final boolean expireIdle;
     private final ArrayDeque<Item> queue = new ArrayDeque<>();
-    private final ArrayList<Thread> workers = new ArrayList<>();
+    // Root retirement runs outside a suspendable pool monitor. Its iterator
+    // must remain valid if a worker retires during an interrupt callback.
+    private final List<Thread> workers = new CopyOnWriteArrayList<>();
     private volatile Activation.Lease owner;
     private final java.util.concurrent.atomic.AtomicBoolean ownerSettlementStarted =
         new java.util.concurrent.atomic.AtomicBoolean();

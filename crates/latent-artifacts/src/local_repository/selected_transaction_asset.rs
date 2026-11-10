@@ -166,14 +166,15 @@ impl DirectoryArtifactRepository {
             .admission
             .as_ref()
             .ok_or_else(|| super::corrupt("transaction-asset-admission"))?;
-        let (declaration, asset_digest, http_requirements) = stored.transaction_asset(
-            &directory,
-            &grant,
-            &verified.metadata,
-            &self.codec,
-            &check,
-            profile,
-        )?;
+        let (declaration, asset_digest, http_requirements, event_requirements) = stored
+            .transaction_asset(
+                &directory,
+                &grant,
+                &verified.metadata,
+                &self.codec,
+                &check,
+                profile,
+            )?;
         check()?;
         // Recheck this original proof, without selecting or minting a new one.
         grant.check_current()?;
@@ -184,6 +185,7 @@ impl DirectoryArtifactRepository {
             publication: grant,
             asset_digest,
             http_requirements,
+            event_requirements,
             original: Arc::clone(&original),
         };
         if value.retained_bytes() > profile.response_bytes() as usize {

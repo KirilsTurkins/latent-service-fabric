@@ -5,6 +5,7 @@ use super::super::{
 use latent_state::embedded::{Family, RowKey};
 
 pub(in crate::atomic) const PROGRESS_KEY: &[u8] = b"result-retention-v1\0";
+pub(in crate::atomic) const PROGRESS_BYTES: usize = 146;
 
 /// Host-derived clock observation. Guest/request fields cannot supply this
 /// proof. A new boot or restored history needs an explicit authorized anchor;
@@ -75,6 +76,38 @@ impl MaintenanceProgress {
             cursor: None,
         }
     }
+    pub(super) fn reanchor(
+        clock: MaintenanceClock,
+        generation: u64,
+        previous: Option<Self>,
+    ) -> Result<Self, AtomicError> {
+        let mut progress = Self::anchor(clock, generation);
+        if let Some(previous) = previous {
+            if clock.boot == previous.boot {
+                // A same-process re-anchor cannot renew the drift tolerance,
+                // including after a long idle period. New boots require review.
+                let elapsed = clock
+                    .monotonic_millis
+                    .checked_sub(previous.anchor_monotonic_millis);
+                let wall = clock
+                    .time
+                    .unix_millis
+                    .checked_sub(previous.anchor_unix_millis);
+                if clock.monotonic_millis < previous.monotonic_millis
+                    || clock.time.unix_millis < previous.unix_millis
+                    || !matches!((elapsed, wall), (Some(e), Some(w)) if e.abs_diff(w) <= 1_000)
+                {
+                    return Err(AtomicError::RecoveryRequired);
+                }
+                progress.anchor_unix_millis = previous.anchor_unix_millis;
+                progress.anchor_monotonic_millis = previous.anchor_monotonic_millis;
+            }
+            progress.visited = previous.visited;
+            progress.retired = previous.retired;
+            progress.reclaimed_bytes = previous.reclaimed_bytes;
+        }
+        Ok(progress)
+    }
     pub(in crate::atomic) fn encode(&self) -> Result<Vec<u8>, AtomicError> {
         let mut out = Encoder::new(b"LMP\0\x02");
         out.identity(super::super::Identity(self.boot));
@@ -100,10 +133,10 @@ impl MaintenanceProgress {
                 .to_le_bytes(),
         );
         out.0.extend_from_slice(cursor);
-        out.finish(146)
+        out.finish(PROGRESS_BYTES)
     }
     pub(in crate::atomic) fn decode(bytes: &[u8]) -> Result<Self, AtomicError> {
-        let mut input = Decoder::new(bytes, b"LMP\0\x02", 146)?;
+        let mut input = Decoder::new(bytes, b"LMP\0\x02", PROGRESS_BYTES)?;
         let boot = input.identity()?.bytes();
         let generation = input.number()?;
         let unix_millis = input.number()?;

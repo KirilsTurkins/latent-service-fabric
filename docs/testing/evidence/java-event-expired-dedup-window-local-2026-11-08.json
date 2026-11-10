@@ -1,0 +1,160 @@
+{
+  "schemaVersion": "latent.phase4.event-expired-dedup-window-observation.v1",
+  "qualification": "local temporary integration source and isolated fixture signer; not merged-source, distribution, or hosted qualification",
+  "integrationSource": {
+    "schemaVersion": "latent.phase4.integration-source.v1",
+    "baseSource": "aa47593fce1130d9578eb952722e7b3939bc22de",
+    "historySource": "4b8cddb22ac3f67dd68587f6cd8c2518d3383a68",
+    "coreSource": "64b81e819e36f95d0f1280e728562fa49b842dee",
+    "description": "Temporary explicit source combination for local integration only; not a merged commit",
+    "overlays": {
+      "crates/latent-core/src/activation_runtime.rs": {
+        "sha256": "sha256:c14be16aeccc026944e6bc60f2d91ec4dfdda3517f66f13a6b12ce4f412c5a2e",
+        "bytes": 26947
+      },
+      "crates/latent-core/src/activation_runtime/tests.rs": {
+        "sha256": "sha256:d32b9843962163f19ed318d3c856b840bdbe3c003fc3f4d805af6e0c9f036d9f",
+        "bytes": 44725
+      },
+      "crates/latent-core/src/budget.rs": {
+        "sha256": "sha256:14c7b687bab34a11b937c731c602620247dedf14e131d48e68bb7587315a2ece",
+        "bytes": 69645
+      },
+      "crates/latent-wire/src/phase4/state_management.rs": {
+        "sha256": "sha256:c335fb113fe88383158e07a334aa9fc5af68e9f10f1b5acc5269860e3dbc43b9",
+        "bytes": 26197
+      },
+      "crates/latent-wire/src/phase4/state_management/command_result.rs": {
+        "sha256": "sha256:3bca68771d5f1a52882e96c400b51482e60d9aed931d57da373d04e5c3bd2b89",
+        "bytes": 14407
+      },
+      "crates/latent-wire/src/phase4/state_management/command_result/audit.rs": {
+        "sha256": "sha256:82d5732780b06614f7b520897b5c787a4c224e6dd115c20caf9b95c9d6fbb6bd",
+        "bytes": 2854
+      },
+      "crates/latent-wire/src/phase4/state_management/command_result/effect.rs": {
+        "sha256": "sha256:cca08f06d001b7a2ec030a1e46aa23ba9035484e358e7cc051f74a77e7962b26",
+        "bytes": 9522
+      },
+      "crates/latent-wire/src/phase4/state_management/recovery_bindings.rs": {
+        "sha256": "sha256:cb84c727be4d54700e287849d2debeca01dd927c0cea1f1c45860f737d4d90a3",
+        "bytes": 4119
+      }
+    },
+    "binaries": {
+      "deferred_event_fault_proxy": {
+        "sha256": "sha256:5a39cc6dbf3444bb7d06c43004f29383852d1b372d14d17bdc39dfde43cf13c0",
+        "bytes": 11930720
+      },
+      "latent": {
+        "sha256": "sha256:0177ad1be1302f753977597b008d22752d32078c1c21bbb56b8c003e9eebdb7d",
+        "bytes": 79680400
+      },
+      "latent-aot-compiler": {
+        "sha256": "sha256:0db8951c27ac7de4e48c1234f6c9bf0ad289268a57eee5d61bb589e6f93a029a",
+        "bytes": 51833424
+      },
+      "latentd": {
+        "sha256": "sha256:80af0dd96cb5e004e1927724a2db7e9c4c46fbe4ff34b1b70ed1b75492b9f1e1",
+        "bytes": 205466152
+      }
+    }
+  },
+  "holdProxySource": {
+    "schemaVersion": "latent.phase4.local-held-ack-proxy.v1",
+    "parentIntegrationManifest": {
+      "sha256": "sha256:85252219f27b129c050ff7559f458433a9c3354f7e096ec0d1a10beecf702909",
+      "bytes": 2453
+    },
+    "uncommittedFixtureSource": {
+      "sha256": "sha256:e9bb159f8166ec545f6e407036fa84e5e1bd918a5c35a295f162fdf3e2ff7692",
+      "bytes": 4205
+    },
+    "fixtureBinary": {
+      "sha256": "sha256:6d7590fc87ef91d3ab6ae288a25c0385afeacb2b664dbf2ec0e0cd8703d7f803",
+      "bytes": 11932928
+    }
+  },
+  "guestSourceCommit": "aa47593fce1130d9578eb952722e7b3939bc22de",
+  "scenario": {
+    "commandCommitted": true,
+    "brokerAcceptedOriginalBeforeCrash": true,
+    "acknowledgementHeldAndLostOnCrash": true,
+    "effectId": "a3d1b8c4b796da7e1c2c76b6a7affbce8e0c909f42a49a165874ab086d8cccf2",
+    "inflightPhysicalOwners": "1",
+    "configuredDuplicateWindowMillis": 30000,
+    "elapsedAfterHeldAckMillis": 32061,
+    "controlledCrashReaped": true,
+    "crashCleanRetirementClaimed": false,
+    "beforeResumeDisposition": "EFFECT_DISPOSITION_UNCERTAIN_AFTER_DISPATCH",
+    "afterResumeDisposition": "EFFECT_DISPOSITION_UNCERTAIN_AFTER_DISPATCH",
+    "dispatchAttempt": 1,
+    "explicitResume": true,
+    "postResumeObservationMillis": 5000,
+    "brokerMessagesBeforeCrash": 1,
+    "brokerMessagesAfterRestartBeforeResume": 1,
+    "brokerMessagesAfterResume": 1,
+    "brokerIdentityAndPayloadMatched": true,
+    "originalResultRecovered": true,
+    "freshQueryObservedCount": 1,
+    "restartedNodeCleanRetirement": true
+  },
+  "materials": {
+    "guestCapture": {
+      "sha256": "sha256:c5a8c5e568d35f7bd88421da1ae74eb90a84e7e71a8e0c751563ccc4fc7eb132",
+      "bytes": 2245
+    },
+    "integrationSource": {
+      "sha256": "sha256:85252219f27b129c050ff7559f458433a9c3354f7e096ec0d1a10beecf702909",
+      "bytes": 2453
+    },
+    "holdProxySource": {
+      "sha256": "sha256:5a473e680bd8bdc15264e21c92de3fb10238da3a485d11dcdde68bdf33d09106",
+      "bytes": 489
+    },
+    "campaignProgram": {
+      "sha256": "sha256:f27afe53f3cfdc0cf93c086923b16a1ec7129b453ff29fe536f9abda9f3ac460",
+      "bytes": 9662
+    },
+    "heldAckMarker": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "originalResult": {
+      "sha256": "sha256:bd1eec8c6523f4bfd6cca48a72d76c096deb9ef5ca48df8d33225cc9eb585f11",
+      "bytes": 959
+    },
+    "recoveredResult": {
+      "sha256": "sha256:bd1eec8c6523f4bfd6cca48a72d76c096deb9ef5ca48df8d33225cc9eb585f11",
+      "bytes": 959
+    },
+    "inflightEffect": {
+      "sha256": "sha256:60ddb64e5c1a8ad78adcb3cb697b9b07c1f158d7597e4f5b97f62f518af2ffc6",
+      "bytes": 1096
+    },
+    "physicalOwner": {
+      "sha256": "sha256:d6645fb320f3a27543be9900831fa1a583e68da943e574649bba7fa256433b67",
+      "bytes": 593
+    },
+    "beforeResume": {
+      "sha256": "sha256:e4b449e792d635633eae44e97af1c8fdeddb1514cdeb961fb0146ffedc5deb68",
+      "bytes": 1125
+    },
+    "afterResume": {
+      "sha256": "sha256:e4b449e792d635633eae44e97af1c8fdeddb1514cdeb961fb0146ffedc5deb68",
+      "bytes": 1125
+    },
+    "brokerObservation": {
+      "sha256": "sha256:112e3ba4977993803f991b60eae2b8ca4a35ed6c8b48a3966bb8710ad6887498",
+      "bytes": 364
+    },
+    "controlledCrash": {
+      "sha256": "sha256:4d237f2c394256583bab9632d6ff1bc00ee5dc9d8fee9d86650bbe220cd225f3",
+      "bytes": 118
+    },
+    "restartRetirement": {
+      "sha256": "sha256:35090599ef6ed6742190d75df80767c974fabd647f72123115a88828f5fc0190",
+      "bytes": 4190
+    }
+  }
+}

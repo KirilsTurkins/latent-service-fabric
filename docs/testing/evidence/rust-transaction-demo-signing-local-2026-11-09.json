@@ -1,0 +1,35 @@
+{
+  "description": "Explicit Rust transaction demo signing with pinned Phase 4 packaging profile",
+  "selectedDevelopmentCommit": "1c3a7e6186198bea737e65afedfb217775eba9c1",
+  "selectedDevelopmentTree": "20d58b2750aeb841c246c5eaf2a898623832caa8",
+  "signerSourceNormalizedSha256": {
+    "crates/latent-policy/examples/capsule_authoring.rs": "ea805e08688402e3ffab99394db958a067f4e3f9b1dbb1ad9787404d90f3109d",
+    "crates/latent-policy/examples/capsule_authoring/mod.rs": "ac916152e6d49d5d742145e8cb151cd38ff0643eb36996a9574c663202894cd8",
+    "crates/latent-policy/examples/capsule_authoring/inputs.rs": "38ab681b61d880b7ec8d310726533eefe9ede699fc074fd7445b0bd3e8618ec4"
+  },
+  "signerBinarySha256": "a9d42b2ad429cca608e9a19b8d0137d05155bf040ea97e438e53be826731a7be",
+  "buildObservationSha256": "dd811d29fb5c5dcb100768149966464bf77b02c2ea1da9c7a26a2ed78d4c1816",
+  "buildCompleteSha256": "a981044817a05dea4caddd7e5ceff0a5cf5b948cb036db2479f791d8c2cb3281",
+  "releaseSetSha256": "ea013698ce178bbf43b884a326fa74482e57182ae5ced6a6d63518bf87e728b1",
+  "release": {
+    "buildType": "https://latent.dev/build/rust-capsule/v1",
+    "componentDigest": "sha256:316827c86428a24325f615acd5cbcea1c50017edcc0b507db2a0087a9ff764ed",
+    "name": "transaction-rust-aggregate",
+    "observationDigest": "sha256:73ebaf340f9c2ac2296b649900a50a95b37cd081a06f631153b17f3497bb5277",
+    "packageDigest": "sha256:d362f52384caea383632597956eb9d846918a8559242caed2949f1f738f5e767",
+    "service": "examples/transaction-rust-aggregate",
+    "sourceSnapshotDigest": "sha256:b3449ea62ee38bca454f6dc1fbc0104a3ed097739a0aa3fa3391bc7995f7989b",
+    "world": "examples:transactional-aggregate/service@1.0.0"
+  },
+  "checks": [
+    "The maintained Rust authoring build generated a package with an observed packager identity.",
+    "The explicit transaction demo signer accepted the package and its existing enforced-policy verifier accepted the signed evidence.",
+    "Changing the component after the observed build was refused before output creation; an existing output directory was refused.",
+    "The signer example test suite passed 45 tests, including supported profile and companion link refusal."
+  ],
+  "limitations": [
+    "This is ephemeral local demo trust, not production signing, installed-distribution qualification or actual node admission.",
+    "The Rust component has not yet executed on a node in this experiment.",
+    "The compiler source tree was the selected development snapshot; signer source includes the accompanying branch changes."
+  ]
+}

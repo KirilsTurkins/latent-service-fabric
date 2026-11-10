@@ -6,7 +6,7 @@ function assert(ok, message) {
 }
 
 class Probe {
-  constructor(path) {
+  constructor(path, iteratorFault) {
     this.clock = 1000000000n;
     this.nextOwner = 1n;
     this.nextSubtask = 1;
@@ -18,6 +18,11 @@ class Probe {
     this.observations = [];
     this.denyNextStart = false;
     this.denyNextStop = false;
+    this.iteratorFault = iteratorFault;
+    this.iteratorParked = new Set();
+    this.iteratorSnapshots = new Map();
+    this.denyIteratorPark = false;
+    this.denyIteratorWake = false;
     const wasi = new WASI({ version: 'preview1', args: [], env: {}, preopens: {}, returnOnExit: true });
     const tokenResult = (ptr, id) => {
       const view = this.view();
@@ -35,10 +40,29 @@ class Probe {
       },
       settle: (generation, id, ptr) => {
         assert(this.owners.delete(String(id)), 'settling missing mock owner ' + id);
+        this.iteratorParked.delete(String(id));
         unitResult(ptr); this.records.push(['settle', String(id)]);
       },
-      park: (generation, id, ptr) => { unitResult(ptr); },
-      wake: (generation, id, ptr) => { unitResult(ptr); },
+      park: (generation, id, ptr) => {
+        if (this.iteratorFault === undefined) { unitResult(ptr); return; }
+        const key = String(id);
+        assert(this.owners.get(key) === 0 && !this.iteratorParked.has(key), 'invalid iterator park');
+        if (this.denyIteratorPark) {
+          this.denyIteratorPark = false; this.records.push(['deny-iterator-park', key]);
+          this.view().setUint8(ptr, 1); return;
+        }
+        this.iteratorParked.add(key); this.records.push(['iterator-park', key]); unitResult(ptr);
+      },
+      wake: (generation, id, ptr) => {
+        if (this.iteratorFault === undefined) { unitResult(ptr); return; }
+        const key = String(id);
+        assert(this.owners.get(key) === 0 && this.iteratorParked.has(key), 'invalid iterator wake');
+        if (this.denyIteratorWake) {
+          this.denyIteratorWake = false; this.records.push(['deny-iterator-wake', key]);
+          this.view().setUint8(ptr, 1); return;
+        }
+        this.iteratorParked.delete(key); this.records.push(['iterator-wake', key]); unitResult(ptr);
+      },
       close: ptr => { unitResult(ptr); this.records.push(['close']); },
       'timer-start': (delay, periodic, period, hasParent, generation, parent, ptr) => {
         if (this.denyNextStart) {
@@ -100,6 +124,14 @@ class Probe {
         observe: (kind, value) => {
           this.observations.push([kind, value]);
           this.records.push(['observe', kind, value]);
+          if (this.iteratorFault !== undefined && kind >= 50 && kind <= 55) {
+            const tasks = [...this.owners].filter(([, ownerKind]) => ownerKind === 0).map(([id]) => id);
+            this.iteratorSnapshots.set(kind, {tasks, parked: tasks.filter(id => this.iteratorParked.has(id))});
+            if (kind === 50 && this.iteratorFault === 'initial-park') this.denyIteratorPark = true;
+            if (kind === 51 && this.iteratorFault === 'switch-park') this.denyIteratorPark = true;
+            if (kind === 51 && this.iteratorFault === 'switch-wake') this.denyIteratorWake = true;
+            if (kind === 55 && this.iteratorFault === 'exit-wake') this.denyIteratorWake = true;
+          }
         },
       },
     };
@@ -224,6 +256,51 @@ function trappedCallback(path) {
   console.log(JSON.stringify({case: 'trap-callback-retirement', liveTimers: [...p.timers.keys()], records: p.records}));
 }
 
+function iterator(path, fault) {
+  const p = new Probe(path, fault);
+  let result, trapped = false;
+  try { result = p.begin(7); }
+  catch (error) { if (!(error instanceof WebAssembly.RuntimeError)) throw error; trapped = true; }
+  if (fault === 'none') {
+    assert(!trapped && (result & 15) === 0, 'iterator activation did not finish');
+    for (const stage of [50, 51, 52, 53, 54]) assert(p.iteratorSnapshots.has(stage), 'missing iterator stage ' + stage);
+    const root = p.iteratorSnapshots.get(50).tasks;
+    const child = p.iteratorSnapshots.get(51).tasks.filter(id => !root.includes(id));
+    assert(root.length === 1 && child.length === 1, 'unexpected iterator task owners');
+    assert(p.iteratorSnapshots.get(51).parked.includes(child[0]), 'new iterator child is not parked');
+    assert(p.iteratorSnapshots.get(52).parked.includes(root[0]), 'iterator caller is not parked');
+    assert(p.iteratorSnapshots.get(53).parked.includes(child[0]), 'yielded iterator is not parked');
+    assert(p.observations.some(([kind, value]) => kind === 53 && value === 42), 'wrong iterator value');
+    assert(!p.iteratorSnapshots.get(54).tasks.includes(child[0]), 'stopped iterator task survived');
+    assert(p.owners.size === 0, 'iterator activation retained mock owners');
+  } else {
+    assert(trapped, 'iterator accounting refusal did not trap');
+    const denied = fault.endsWith('wake') ? 'deny-iterator-wake' : 'deny-iterator-park';
+    assert(p.records.some(x => x[0] === denied), 'iterator refusal was not reached');
+    if (fault === 'exit-wake') {
+      const root = p.iteratorSnapshots.get(50).tasks[0];
+      const child = p.iteratorSnapshots.get(51).tasks.find(id => id !== root);
+      const childQueue = p.records.find(x => x[0] === 'register' && x[1] === 3 && x[4] === child)[2];
+      const taskDrop = p.records.findIndex(x => x[0] === 'settle' && x[1] === child);
+      const queueDrop = p.records.findIndex(x => x[0] === 'settle' && x[1] === childQueue);
+      const refusal = p.records.findIndex(x => x[0] === denied && x[1] === root);
+      assert(queueDrop >= 0 && queueDrop < taskDrop && taskDrop < refusal, 'exited child was not settled before the refused wake');
+      assert(p.owners.get(root) === 0 && !p.iteratorSnapshots.has(54), 'refused caller resumed or lost its owner');
+      assert([...p.owners.values()].filter(kind => kind === 3).length >= 1, 'original caller queue owner was lost');
+    } else {
+      assert(!p.iteratorSnapshots.has(52), 'iterator continued after accounting refusal');
+      assert([...p.owners.values()].filter(kind => kind === 0).length >= 2, 'original task owners were lost');
+      assert([...p.owners.values()].filter(kind => kind === 3).length >= 2, 'original queue owners were lost');
+    }
+    const before = JSON.stringify([...p.owners]);
+    let retrapped = false;
+    try { p.begin(7); } catch (error) { if (!(error instanceof WebAssembly.RuntimeError)) throw error; retrapped = true; }
+    assert(retrapped && JSON.stringify([...p.owners]) === before, 'trapped core instance reused its owners');
+  }
+  console.log(JSON.stringify({case: 'iterator-' + fault, trapped, result,
+    snapshots: [...p.iteratorSnapshots], owners: [...p.owners], records: p.records}));
+}
+
 const wasm = process.argv[2];
 assert(wasm, 'expected the current runtime control Wasm path');
 resetPair(wasm, 1);
@@ -233,4 +310,5 @@ firing(wasm, 3);
 idleDrain(wasm);
 trappedGateHolder(wasm);
 trappedCallback(wasm);
+for (const fault of ['none', 'initial-park', 'switch-park', 'switch-wake', 'exit-wake']) iterator(wasm, fault);
 console.log('REAL_RUNTIME_WITH_MOCK_HOST=PASS');

@@ -46,9 +46,15 @@ impl Pollable {
             .iter()
             .map(|resource| resource.get::<Self>().source.clone())
             .collect();
+        // No local input wrappers or references into their representations are
+        // needed while the Pump retires an independent original timer.
+        drop(inputs);
         Self::wait(&sources)
     }
     fn wait(sources: &[Rc<dyn Readiness>]) -> Vec<u32> {
+        // Both callers enter through async WIT exports. Retire any already
+        // dropped, never-polled timers before the ready fast path returns.
+        pump::Pump::reap_unpolled_before_ready();
         // Closed streams require no runtime grant or canonical allocation.
         // This also allows an unadmitted upload's initial writable window.
         let ready: Vec<_> = sources
@@ -65,6 +71,7 @@ impl Pollable {
 }
 impl io::poll::GuestPollable for Pollable {
     async fn block(&self) {
-        Self::wait(&[self.source.clone()]);
+        let source = self.source.clone();
+        Self::wait(&[source]);
     }
 }

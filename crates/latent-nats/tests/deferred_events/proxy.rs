@@ -1,7 +1,7 @@
 //! Owned finite TLS proxy; faults occur around an actual broker acknowledgement.
 use super::support::WATCHDOG;
 use latent_nats::NatsConfig;
-use rcgen::{BasicConstraints, CertificateParams, IsCa, KeyPair};
+use rcgen::{BasicConstraints, CertificateParams, DnType, IsCa, KeyPair};
 use std::io;
 use std::sync::atomic::AtomicUsize;
 use std::{
@@ -27,6 +27,7 @@ pub struct Proxy {
     pub seen: Arc<Notify>,
     pub active: Arc<AtomicUsize>,
     pub release: Arc<Notify>,
+    pub forwarded: Arc<Notify>,
     stop: Option<oneshot::Sender<()>>,
     task: tokio::task::JoinHandle<()>,
 }
@@ -34,13 +35,20 @@ pub fn identity() -> (TlsAcceptor, Vec<u8>) {
     let ca_key = KeyPair::generate().unwrap();
     let mut params = CertificateParams::new(vec![]).unwrap();
     params.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
+    params
+        .distinguished_name
+        .push(DnType::CommonName, "lsf-fixture-ca");
+    let issuer_params = params.clone();
     let ca = params.self_signed(&ca_key).unwrap();
     let server_key = KeyPair::generate().unwrap();
     let mut params = CertificateParams::new(vec![]).unwrap();
     params
+        .distinguished_name
+        .push(DnType::CommonName, "lsf-fixture-proxy");
+    params
         .subject_alt_names
         .push(rcgen::SanType::IpAddress("127.0.0.1".parse().unwrap()));
-    let issuer = rcgen::Issuer::new(CertificateParams::new(vec![]).unwrap(), &ca_key);
+    let issuer = rcgen::Issuer::new(issuer_params, &ca_key);
     let cert = params.signed_by(&server_key, &issuer).unwrap();
     let tls = rustls::ServerConfig::builder_with_provider(Arc::new(
         rustls::crypto::ring::default_provider(),
@@ -86,8 +94,14 @@ impl Proxy {
         let seen = Arc::new(Notify::new());
         let active = Arc::new(AtomicUsize::new(0));
         let release = Arc::new(Notify::new());
-        let (fault, event, running, unpause) =
-            (mode.clone(), seen.clone(), active.clone(), release.clone());
+        let forwarded = Arc::new(Notify::new());
+        let (fault, event, running, unpause, delivered) = (
+            mode.clone(),
+            seen.clone(),
+            active.clone(),
+            release.clone(),
+            forwarded.clone(),
+        );
         let (stop, mut stopped) = oneshot::channel();
         let task = tokio::spawn(async move {
             let mut children = tokio::task::JoinSet::new();
@@ -98,7 +112,7 @@ impl Proxy {
                     result=children.join_next(),if !children.is_empty()=>{result.unwrap().unwrap();},
                     result=listener.accept(),if accepted<16=>{
                         let (socket,_)=result.unwrap();accepted+=1;
-                                                let (acceptor,connector,fault,event,running,unpause)=(acceptor.clone(),connector.clone(),fault.clone(),event.clone(),running.clone(),unpause.clone());
+                        let (acceptor,connector,fault,event,running,unpause,delivered)=(acceptor.clone(),connector.clone(),fault.clone(),event.clone(),running.clone(),unpause.clone(),delivered.clone());
                         running.fetch_add(1,Ordering::AcqRel);
                         children.spawn(async move {
                             let _active=Active(running);
@@ -111,7 +125,7 @@ impl Proxy {
                                 let mut up_read=BufReader::with_capacity(8192,up_read);
                                 tokio::select! {
                                     result=forward(&mut down_read,&mut up_write,None)=>result,
-                                    result=forward(&mut up_read,&mut down_write,Some((&fault,&event,&unpause)))=>result,
+                                    result=forward(&mut up_read,&mut down_write,Some((&fault,&event,&unpause,&delivered)))=>result,
                                 }
                             };
                             let _=tokio::time::timeout(WATCHDOG,exchange).await;
@@ -130,6 +144,7 @@ impl Proxy {
             seen,
             active,
             release,
+            forwarded,
             stop: Some(stop),
             task,
         }
@@ -171,7 +186,7 @@ pub async fn line<R: AsyncRead + Unpin>(reader: &mut R) -> io::Result<Vec<u8>> {
 async fn forward<R: AsyncRead + Unpin, W: AsyncWrite + Unpin>(
     reader: &mut R,
     writer: &mut W,
-    fault: Option<(&AtomicUsize, &Notify, &Notify)>,
+    fault: Option<(&AtomicUsize, &Notify, &Notify, &Notify)>,
 ) -> io::Result<()> {
     for _ in 0..128 {
         let header = line(reader).await?;
@@ -193,8 +208,9 @@ async fn forward<R: AsyncRead + Unpin, W: AsyncWrite + Unpin>(
         } else {
             Vec::new()
         };
+        let mut held = false;
         if message {
-            if let Some((mode, seen, release)) = fault {
+            if let Some((mode, seen, release, _)) = fault {
                 let parsed =
                     serde_json::from_slice::<serde_json::Value>(&body[..body.len() - 2]).ok();
                 let ack = parsed
@@ -207,6 +223,7 @@ async fn forward<R: AsyncRead + Unpin, W: AsyncWrite + Unpin>(
                 if ack && selected == HOLD_ACK {
                     seen.notify_one();
                     release.notified().await;
+                    held = true;
                 } else if (ack && matches!(selected, DROP_ACK | MALFORMED_ACK | OVERSIZED_ACK))
                     || (info && matches!(selected, MALFORMED_INFO | OVERSIZED_INFO))
                 {
@@ -238,6 +255,11 @@ async fn forward<R: AsyncRead + Unpin, W: AsyncWrite + Unpin>(
         writer.write_all(&header).await?;
         writer.write_all(&body).await?;
         writer.flush().await?;
+        if held {
+            if let Some((_, _, _, forwarded)) = fault {
+                forwarded.notify_one();
+            }
+        }
     }
     Err(invalid())
 }

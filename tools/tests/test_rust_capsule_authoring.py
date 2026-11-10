@@ -104,6 +104,15 @@ class RustProjectTests(unittest.TestCase):
     def files(self):
         return dict(self.inputs)
 
+    def test_transaction_template_requests_bounded_codec_and_cold_start_capacity(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = project.create(Path(temporary) / "project", "transactional-aggregate")
+            value, _pins = build.validate_project(project.snapshot(root))
+        self.assertEqual(value["limits"]["memoryBytes"], 67_108_864)
+        self.assertEqual(value["limits"]["wallTimeLimitMillis"], 120_000)
+        self.assertEqual(value["limits"]["outboundRequests"], 0)
+        self.assertEqual(json.loads(self.inputs["capsule-project.json"])["limits"]["memoryBytes"], 4_194_304)
+
     def changed(self, filename, change):
         files = self.files()
         value = json.loads(files[filename])

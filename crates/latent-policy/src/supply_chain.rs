@@ -57,6 +57,7 @@ struct Inner {
     ledger: Mutex<Ledger>,
     halted: AtomicBool,
     reader_poisoned: AtomicBool,
+    admission_closed: AtomicBool,
     retired: AtomicBool,
     verifying: AtomicBool,
 }
@@ -254,6 +255,7 @@ impl SupplyChainAuthority {
                 runtime,
                 manifest_profile,
                 retired: AtomicBool::new(false),
+                admission_closed: AtomicBool::new(false),
                 verifying: AtomicBool::new(false),
                 ledger: Mutex::new(ledger),
                 halted: AtomicBool::new(false),
@@ -264,6 +266,12 @@ impl SupplyChainAuthority {
                 state: RwLock::new(state),
             }),
         })
+    }
+
+    /// Close new admission and invalidate retained grants while the original
+    /// ledger and covered clock remain owned for accepted work to retire.
+    pub fn close_admission(&self) {
+        self.inner.admission_closed.store(true, Ordering::Release);
     }
 
     /// Permanently retires this node incarnation. Retained caches/factories and
@@ -559,8 +567,12 @@ impl AdmissionAuthority for SupplyChainAuthority {
 }
 
 impl Inner {
+    fn admission_closed(&self) -> bool {
+        self.admission_closed.load(Ordering::Acquire) || self.retired.load(Ordering::Acquire)
+    }
+
     fn verification(&self) -> Result<VerificationPermit<'_>, PlatformError> {
-        if self.retired.load(Ordering::Acquire) {
+        if self.admission_closed() {
             return Err(unavailable("admission-owner-retired"));
         }
         self.verifying
@@ -570,7 +582,7 @@ impl Inner {
     }
 
     fn commit_fence(&self) -> Result<CommitFence<'_>, PlatformError> {
-        if self.retired.load(Ordering::Acquire) {
+        if self.admission_closed() {
             return Err(unavailable("admission-owner-retired"));
         }
         if self.reader_poisoned.load(Ordering::Acquire) {
@@ -609,7 +621,7 @@ impl Inner {
         })
     }
     fn read(&self) -> Result<CurrentnessRead<'_>, PlatformError> {
-        if self.retired.load(Ordering::Acquire) {
+        if self.admission_closed() {
             return Err(unavailable("admission-owner-retired"));
         }
         if self.reader_poisoned.load(Ordering::Acquire) {
@@ -633,7 +645,7 @@ impl Inner {
         Ok(now)
     }
     fn currentness(&self) -> Result<(), PlatformError> {
-        if self.retired.load(Ordering::Acquire) {
+        if self.admission_closed() {
             return Err(unavailable("admission-owner-retired"));
         }
         if self.halted.load(Ordering::Acquire) {

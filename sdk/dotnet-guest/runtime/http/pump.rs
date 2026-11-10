@@ -52,6 +52,9 @@ pub struct Pump {
 }
 thread_local! {
     static CURRENT: Rc<Pump> = Rc::new(Pump::new());
+    // Monotone for this activation. Set only after an unpolled timer's
+    // original owner has been transferred into an already initialized Pump.
+    static UNPOLLED_TIMER_SEEN: Cell<bool> = const { Cell::new(false) };
 }
 
 impl Pump {
@@ -103,6 +106,17 @@ impl Pump {
             "canonical retirement owner limit"
         );
         retired.push(Box::new(RetirementAction::<_, UNPOLLED>(action)));
+        if UNPOLLED {
+            UNPOLLED_TIMER_SEEN.with(|seen| seen.set(true));
+        }
+    }
+
+    /// Only async poll/block entry points may use this checkpoint. The marker
+    /// never creates a Pump for a closed or already-ready source by itself.
+    pub fn reap_unpolled_before_ready() {
+        if UNPOLLED_TIMER_SEEN.with(Cell::get) {
+            Self::current().reap_unpolled_timers();
+        }
     }
 
     fn take_retirement(&self, unpolled_only: bool) -> Option<Box<dyn Retirement>> {

@@ -25,18 +25,33 @@ pub(super) fn configuration(port: u16) -> StreamProviderConfig {
 }
 
 pub(super) async fn configured(root: &std::path::Path, port: u16) -> Fixture {
-    configured_for(root, port, false).await
+    configured_for(root, port, false, false).await
 }
 
 pub(super) async fn configured_published(root: &std::path::Path, port: u16) -> Fixture {
-    configured_for(root, port, true).await
+    configured_for(root, port, true, false).await
 }
 
-async fn configured_for(root: &std::path::Path, port: u16, published: bool) -> Fixture {
+pub(super) async fn configured_lost_reply(root: &std::path::Path, port: u16) -> Fixture {
+    configured_for(root, port, true, true).await
+}
+
+async fn configured_for(
+    root: &std::path::Path,
+    port: u16,
+    published: bool,
+    lost_reply: bool,
+) -> Fixture {
     let prepared = std::path::PathBuf::from(
         std::env::var_os("LSF_GO_SMTP_TLS_FIXTURE").expect("compile the guarded Go fixture"),
     );
-    let (expected_source, expected_world, record_name) = if published {
+    let (expected_source, expected_world, record_name) = if lost_reply {
+        (
+            LOST_REPLY_SOURCE,
+            PUBLISHED_WORLD,
+            "GO-SMTP-PUBLISHED-COMPILE.json",
+        )
+    } else if published {
         (
             PUBLISHED_SOURCE,
             PUBLISHED_WORLD,
@@ -70,7 +85,11 @@ async fn configured_for(root: &std::path::Path, port: u16, published: bool) -> F
         assert_eq!(record["dependencyClosure"]["smtpRetryPolicy"], "none");
         assert_eq!(
             record["dependencyClosure"]["workerTimer"],
-            "separate RxGo/backoff stage before network"
+            if lost_reply {
+                "not exercised by the separate lost-reply fixture"
+            } else {
+                "separate RxGo/backoff stage before network"
+            }
         );
     }
     assert_eq!(record["sourceUnchanged"], true);

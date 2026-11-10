@@ -2,8 +2,10 @@ package main
 
 import (
     "go/ast"
+    "go/importer"
     "go/parser"
     "go/token"
+    "go/types"
     "os"
     "path/filepath"
     "strings"
@@ -44,11 +46,157 @@ func TestNonSuspendablePathsRetainReachableRejection(t *testing.T) {
     }
 }
 
+func TestBackwardGotoSitesAreScopedToEachFunction(t *testing.T) {
+    source := "package control\nfunc f(n int) int {\ntop:\nif n > 0 { n--; goto top }\ngoto forward\nforward:\n_ = func() {\ntop:\nif n > 0 { n--; goto top }\n}\nreturn n\n}\n"
+    row, _ := adaptControl(t, source)
+    if len(row.Sites) != 4 { t.Fatalf("sites: %+v", row.Sites) }
+    for _, site := range row.Sites { if !site.Suspendable { t.Fatal("ordinary site rejected") } }
+    if row.Sites[1].Line != 4 || row.Sites[3].Line != 9 { t.Fatalf("goto sites: %+v", row.Sites) }
+}
+
+func TestGotoPreservesLabeledBreakContinueAndScope(t *testing.T) {
+    source := "package control\nfunc f() int {\nn := 0\nouter:\nfor {\nn++\nif n < 2 { continue outer }\nbreak outer\n}\ngoto forward\nback:\nif n < 3 { n++; goto back }\nforward:\nif n == 2 { goto back }\nreturn n\n}\n"
+    row, adapted := adaptControl(t, source)
+    if len(row.Sites) != 4 { t.Fatalf("sites: %+v", row.Sites) }
+    positions := token.NewFileSet()
+    file, err := parser.ParseFile(positions, "adapted.go", adapted, 0)
+    if err != nil { t.Fatal(err) }
+    config := types.Config{Importer: importer.Default()}
+    if _, err := config.Check("control", positions, []*ast.File{file}, nil); err != nil { t.Fatal(err) }
+}
+
+func TestSelfLabeledGotoAndCoincidentEditsCompile(t *testing.T) {
+    source := "package control\nfunc f(){\nself:goto self\n}\nfunc g(){\nhead:for {goto head}\n}\n"
+    row, adapted := adaptControl(t, source)
+    if len(row.Sites) != 5 || row.Sites[3] != row.Sites[4] { t.Fatalf("sites: %+v", row.Sites) }
+    positions := token.NewFileSet()
+    file, err := parser.ParseFile(positions, "selected/module/ordinary.go", adapted, 0)
+    if err != nil { t.Fatal(err) }
+    config := types.Config{Importer: importer.Default()}
+    if _, err := config.Check("control", positions, []*ast.File{file}, nil); err != nil { t.Fatal(err) }
+    labeledCall := false
+    ast.Inspect(file, func(node ast.Node) bool {
+        if labeled, ok := node.(*ast.LabeledStmt); ok && labeled.Label.Name == "self" {
+            _, labeledCall = labeled.Stmt.(*ast.ExprStmt)
+        }
+        return true
+    })
+    if !labeledCall { t.Fatal("self goto must target its checkpoint") }
+}
+
+func TestBackwardGotoPreservesExistingLineDirectives(t *testing.T) {
+    source := "package control\nfunc f(n int){\nagain:\n//line authored.go:70:7\nif n>0 { n--; goto again }\n//line other.go:90\nif n>0 { n--; goto again }\n//line :120\nif n>0 { n--; goto again }\n}\n"
+    row, adapted := adaptControl(t, source)
+    if len(row.Sites) != 4 { t.Fatalf("sites: %+v", row.Sites) }
+    locate := func(contents any) []token.Position {
+        positions := token.NewFileSet()
+        file, err := parser.ParseFile(positions, "selected/module/ordinary.go", contents, 0)
+        if err != nil { t.Fatal(err) }
+        var result []token.Position
+        ast.Inspect(file, func(node ast.Node) bool {
+            if branch, ok := node.(*ast.BranchStmt); ok && branch.Tok == token.GOTO {
+                position := positions.Position(branch.Pos())
+                position.Offset = 0 // adaptation adds bytes but must preserve logical diagnostics
+                result = append(result, position)
+            }
+            return true
+        })
+        return result
+    }
+    before, after := locate(source), locate(adapted)
+    if len(before) != 3 || len(after) != len(before) { t.Fatalf("positions: %+v / %+v", before, after) }
+    for i := range before { if before[i] != after[i] { t.Fatalf("goto %d: %+v / %+v", i, before[i], after[i]) } }
+}
+
+func TestUnencodableLineDirectiveFailsClosed(t *testing.T) {
+    root := t.TempDir()
+    source := filepath.Join(root, "input.go")
+    raw := "package control\nfunc f(){\nagain:\n/*line source\nname.go:80*/goto again\n}\n"
+    if err := os.WriteFile(source, []byte(raw), 0600); err != nil { t.Fatal(err) }
+    if _, err := transform(inputRow(source), root); err == nil || !strings.Contains(err.Error(), "diagnostic-path-invalid") { t.Fatal(err) }
+}
+
+func TestInvalidGotoKeepsOrdinaryGoTypeErrors(t *testing.T) {
+    for _, source := range []string{
+        "package control\nfunc f(){goto missing}\n",
+        "package control\nfunc f(){\nsame:goto same\nsame:goto same\n}\n",
+        "package control\nfunc f(){\nouter:\n_ = func(){goto outer}\ngoto outer\n}\n",
+    } {
+        _, adapted := adaptControl(t, source)
+        check := func(contents any) []string {
+            positions := token.NewFileSet()
+            file, err := parser.ParseFile(positions, "selected/module/ordinary.go", contents, 0)
+            if err != nil { t.Fatal(err) }
+            var errors []string
+            config := types.Config{Importer: importer.Default(), Error: func(err error) { errors = append(errors, err.Error()) }}
+            if _, err := config.Check("control", positions, []*ast.File{file}, nil); err == nil { t.Fatal("invalid goto accepted") }
+            return errors
+        }
+        before, after := check(source), check(adapted)
+        if strings.Join(before, "\n") != strings.Join(after, "\n") { t.Fatalf("errors changed: %v / %v", before, after) }
+    }
+}
+
+func TestMalformedGotoIsRejectedByParser(t *testing.T) {
+    root := t.TempDir()
+    source := filepath.Join(root, "input.go")
+    if err := os.WriteFile(source, []byte("package control\nfunc f(){goto}\n"), 0600); err != nil { t.Fatal(err) }
+    if _, err := transform(inputRow(source), root); err == nil { t.Fatal("malformed goto accepted") }
+}
+
+func TestBackwardGotoInNonSuspendableFunctionIsRejected(t *testing.T) {
+    for _, directive := range []string{"//go:nosplit", "//go:nowritebarrierrec", "//go:systemstack"} {
+        row, adapted := adaptControl(t, "package control\n"+directive+"\nfunc f() {\nagain:\ngoto again\n}\n")
+        if len(row.Sites) != 2 || row.Sites[0].Suspendable || row.Sites[1].Suspendable {
+            t.Fatalf("%s: sites: %+v", directive, row.Sites)
+        }
+        if strings.Count(string(adapted), "_non_suspendable();") != 2 { t.Fatalf("%s: no fail-closed calls", directive) }
+    }
+}
+
+func TestNonSuspendablePragmasFollowCompilerDeclarationBoundaries(t *testing.T) {
+    for _, directive := range []string{"//go:nosplit", "//go:nowritebarrierrec", "//go:systemstack"} {
+        for _, source := range []string{
+            "package control\n"+directive+"\n\n// ordinary comment\n\nfunc f(){for{}}\nfunc g(){for{}}\n",
+            "package control\n"+directive+" ignored suffix\n\nfunc f(){for{}}\nfunc g(){for{}}\n",
+            "package control\nfunc\n"+directive+"\nf(){for{}}\nfunc g(){for{}}\n",
+        } {
+            row, _ := adaptControl(t, source)
+            if len(row.Sites) != 4 || row.Sites[0].Suspendable || row.Sites[1].Suspendable || !row.Sites[2].Suspendable || !row.Sites[3].Suspendable {
+                t.Fatalf("%s: sites: %+v", directive, row.Sites)
+            }
+        }
+        // The intervening var consumes the pragma; the real compiler reports
+        // that misplaced directive instead of applying it to the later func.
+        row, _ := adaptControl(t, "package control\n"+directive+"\nvar unrelated int\nfunc f(){for{}}\n")
+        if len(row.Sites) != 2 || !row.Sites[0].Suspendable || !row.Sites[1].Suspendable {
+            t.Fatalf("%s: pragma crossed declaration: %+v", directive, row.Sites)
+        }
+    }
+}
+
+func TestPragmaTabsAndMethodReceiverFollowPinnedCompiler(t *testing.T) {
+    source := "package control\n"+
+        "//go:nosplit\tcomment\nfunc tab(){for{}}\n"+
+        "//go:nosplit \tcomment\nfunc space(){for{}}\n"+
+        "//go:nosplit\n// ordinary\n//go:nosplit ignored\nfunc grouped(){for{}}\n"+
+        "type T struct{}\nfunc\n//go:nosplit\n(T) before(){for{}}\n"+
+        "func (T) /*go:nosplit*/ ignored(){for{}}\n"
+    row, _ := adaptControl(t, source)
+    expected := []bool{true,true,false,false,false,false,false,false,true,true}
+    if len(row.Sites) != len(expected) { t.Fatalf("sites: %+v", row.Sites) }
+    for i, site := range row.Sites { if site.Suspendable != expected[i] { t.Fatalf("site %d: %+v", i, site) } }
+    root := t.TempDir()
+    invalid := filepath.Join(root, "invalid.go")
+    if err := os.WriteFile(invalid, []byte("package control\ntype T struct{}\nfunc (T) //go:nosplit\nmethod(){}\n"), 0600); err != nil { t.Fatal(err) }
+    if _, err := transform(inputRow(invalid), root); err == nil { t.Fatal("receiver newline accepted") }
+}
+
 func TestOriginalDiagnosticCoordinatesAndUnsafeImport(t *testing.T) {
     row, adapted := adaptControl(t, "package control\nimport _ \"unsafe\"\nfunc f() {\n\tfor true {\n\t\tmissing()\n\t}\n}\n")
     if strings.Count(string(adapted), "import _ \"unsafe\"") != 1 { t.Fatal("duplicate import") }
     positions := token.NewFileSet()
-    file, err := parser.ParseFile(positions, "compiler-copy.go", adapted, 0)
+    file, err := parser.ParseFile(positions, "selected/module/ordinary.go", adapted, 0)
     if err != nil { t.Fatal(err) }
     found := false
     ast.Inspect(file, func(node ast.Node) bool {

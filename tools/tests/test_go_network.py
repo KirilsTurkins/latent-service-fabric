@@ -181,6 +181,15 @@ class GoNetworkSourceTests(unittest.TestCase):
             self.assertIn('d.resolver().resolveAddrList', original)
             self.assertNotIn('lsfStreamDial', original)
 
+    def test_ascii_endpoint_validation_precedes_case_folding_and_connect(self):
+        source = (SDK / 'runtime/net_stream.go.in').read_text()
+        endpoint = re.search(r'(?ms)^func lsfStreamEndpoint\(.*?^\}', source)[0]
+        self.assertLess(endpoint.index('host[i] >= 0x80'), endpoint.index('lsfStrings.ToLower(host)'))
+        self.assertLess(endpoint.index('len(host) > 253'), endpoint.index('lsfStrings.ToLower(host)'))
+        dial = re.search(r'(?ms)^func lsfStreamDial\(.*?^\}', source)[0]
+        self.assertLess(dial.index('lsfStreamEndpoint(address)'), dial.index('lsfNetwork.ConnectContext('))
+        self.assertRegex(dial, r'host, port, err := lsfStreamEndpoint\(address\)\n\tif err != nil \{\n\t\treturn failure\(err\)')
+
     def test_standalone_dns_and_concrete_tcp_are_closed_unsupported_without_os_fallback(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
