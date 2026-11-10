@@ -92,9 +92,9 @@ class FutureCancellationControl(unittest.TestCase):
             if stage == 'executor-invoke-interrupt-owner':
                 return 'EXECUTOR_INVOKE_INTERRUPT_OWNER PASS all;any;queued-until-drain;result-settled'
             if stage in ('executor-await-termination-reference-jdk', 'executor-await-termination-source'):
-                return 'EXECUTOR_AWAIT_TERMINATION PASS zero;negative;positive;terminated;blocked-interrupt'
+                return 'EXECUTOR_AWAIT_TERMINATION PASS zero;negative;positive;terminated;blocked-interrupt;override'
             if stage == 'executor-await-termination-owner':
-                return 'EXECUTOR_AWAIT_TERMINATION_OWNER PASS managed;scheduled;owners-held-until-worker-return'
+                return 'EXECUTOR_AWAIT_TERMINATION_OWNER PASS managed;scheduled;owners-held-until-worker-return;override'
             if stage in ('future-task-null-failure-reference-jdk', 'future-task-null-failure-source'):
                 return 'FUTURE_TASK_NULL_FAILURE PASS pending;null-success;terminal-noop;nonnull;blocked-getter'
             if stage == 'future-task-null-failure-owner':

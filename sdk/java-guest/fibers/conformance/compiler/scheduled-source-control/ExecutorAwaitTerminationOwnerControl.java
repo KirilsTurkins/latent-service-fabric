@@ -4,6 +4,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /** Private-ledger source control; it does not prove physical host retirement. */
 public final class ExecutorAwaitTerminationOwnerControl {
@@ -51,9 +52,41 @@ public final class ExecutorAwaitTerminationOwnerControl {
         }
         Activation.idle();
     }
+    private static final class MisreportedPool extends dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor {
+        MisreportedPool(AtomicReference<Thread> worker) {
+            super(1, task -> { Thread thread = new Thread(task); worker.set(thread); return thread; });
+        }
+        @Override public boolean isTerminated() { return true; }
+    }
+    private static void overriddenTermination() throws Exception {
+        AtomicReference<Thread> worker = new AtomicReference<>();
+        MisreportedPool pool = new MisreportedPool(worker);
+        CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
+        try {
+            Future<Integer> result = pool.submit(() -> { entered.countDown(); release.await(); return 42; });
+            require(entered.await(5,TimeUnit.SECONDS), "override-callback-not-entered");
+            pool.shutdown();
+            require(Activation.count(LatentRuntimeActivationOwnerKind.Executor)==1, "override-executor-owner-absent");
+            require(Activation.count(LatentRuntimeActivationOwnerKind.QueuedWork)==1, "override-queue-owner-absent");
+            require(Activation.count(LatentRuntimeActivationOwnerKind.Result)==1, "override-result-owner-absent");
+            require(!pool.awaitTermination(0,TimeUnit.NANOSECONDS), "override-falsely-completed-zero");
+            require(!pool.awaitTermination(10,TimeUnit.MILLISECONDS), "override-falsely-completed-timed");
+            require(Activation.count(LatentRuntimeActivationOwnerKind.Executor)==1 &&
+                    Activation.count(LatentRuntimeActivationOwnerKind.QueuedWork)==1 &&
+                    Activation.count(LatentRuntimeActivationOwnerKind.Result)==1, "override-owners-retired-early");
+            release.countDown();
+            require(result.get(5,TimeUnit.SECONDS)==42 && pool.awaitTermination(5,TimeUnit.SECONDS), "override-worker-not-retired");
+        } finally {
+            release.countDown(); pool.shutdown();
+            Thread thread=worker.get();
+            if (thread != null) { thread.join(5000); require(!thread.isAlive(), "override-cleanup-not-retired"); }
+        }
+        Activation.idle();
+    }
     public static void main(String[] args) throws Exception {
         running(false);
         running(true);
-        System.out.println("EXECUTOR_AWAIT_TERMINATION_OWNER PASS managed;scheduled;owners-held-until-worker-return");
+        overriddenTermination();
+        System.out.println("EXECUTOR_AWAIT_TERMINATION_OWNER PASS managed;scheduled;owners-held-until-worker-return;override");
     }
 }

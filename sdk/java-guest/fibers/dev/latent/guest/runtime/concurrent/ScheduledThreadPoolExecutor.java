@@ -567,15 +567,16 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     }
     @Override public boolean isRetired() { return owner == null; }
     @Override public synchronized boolean isShutdown() { return shutdown || retiring; }
-    @Override public synchronized boolean isTerminated() { return (shutdown || retiring) && owner == null; }
+    private boolean terminatedUnderLock() { return (shutdown || retiring) && owner == null; }
+    @Override public synchronized boolean isTerminated() { return terminatedUnderLock(); }
     @Override public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         long nanos = Objects.requireNonNull(unit).toNanos(timeout), started = System.nanoTime();
         synchronized (this) {
-            if (isTerminated()) return true;
+            if (terminatedUnderLock()) return true;
             // No wait occurs for a nonpositive timeout; preserve interruption.
             if (nanos <= 0) return false;
             if (Thread.interrupted()) throw new InterruptedException();
-            while (!isTerminated()) {
+            while (!terminatedUnderLock()) {
                 long remaining = nanos - (System.nanoTime() - started);
                 if (remaining <= 0) return false;
                 wait(remaining / 1_000_000, (int)(remaining % 1_000_000));

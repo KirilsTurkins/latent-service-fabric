@@ -719,7 +719,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     result = compiler.run('executor-invoke-interrupt-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'ExecutorInvokeInterruptReferenceControl', 'jdk').strip()
     if result != expected_invoke: raise ValueError('Java executor invoke interruption reference did not complete')
-    expected_termination = 'EXECUTOR_AWAIT_TERMINATION PASS zero;negative;positive;terminated;blocked-interrupt'
+    expected_termination = 'EXECUTOR_AWAIT_TERMINATION PASS zero;negative;positive;terminated;blocked-interrupt;override'
     result = compiler.run('executor-await-termination-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'ExecutorAwaitTerminationReferenceControl', 'jdk').strip()
     if result != expected_termination: raise ValueError('Java executor termination reference did not complete')
@@ -751,11 +751,12 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     selected_invoke.write_bytes(text.replace(original,
         'import dev.latent.guest.runtime.concurrent.AbstractExecutorService;').encode('utf-8'))
     text = read_file(termination_reference).decode('utf-8')
-    original = 'import java.util.concurrent.Executors;'
-    if text.count(original) != 1: raise ValueError('Java executor termination reference import is ambiguous')
+    for name in ('Executors', 'ScheduledThreadPoolExecutor'):
+        original = 'import java.util.concurrent.' + name + ';'
+        if text.count(original) != 1: raise ValueError('Java executor termination reference import is ambiguous')
+        text = text.replace(original, 'import dev.latent.guest.runtime.concurrent.' + name + ';')
     selected_termination = output / 'ExecutorAwaitTerminationReferenceControl.java'
-    selected_termination.write_bytes(text.replace(original,
-        'import dev.latent.guest.runtime.concurrent.Executors;').encode('utf-8'))
+    selected_termination.write_bytes(text.encode('utf-8'))
     text = read_file(null_failure_reference).decode('utf-8')
     original = 'import java.util.concurrent.FutureTask;'
     if text.count(original) != 1: raise ValueError('Java future task null failure reference import is ambiguous')
@@ -784,7 +785,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     if result != expected_termination: raise ValueError('Java executor termination source differs from reference')
     result = compiler.run('executor-await-termination-owner', 'java', '-Xmx256m', '-cp', output,
         'ExecutorAwaitTerminationOwnerControl').strip()
-    if result != 'EXECUTOR_AWAIT_TERMINATION_OWNER PASS managed;scheduled;owners-held-until-worker-return':
+    if result != 'EXECUTOR_AWAIT_TERMINATION_OWNER PASS managed;scheduled;owners-held-until-worker-return;override':
         raise ValueError('Java executor termination owner control did not complete')
     result = compiler.run('future-task-null-failure-source', 'java', '-Xmx256m', '-cp', output,
         'FutureTaskNullFailureReferenceControl', 'source').strip()
@@ -876,7 +877,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     return {'status': 'SDK-source-controls-passed', 'referenceJdk': 'matched-stopped-and-periodic-observables', 'sourceInputs': inputs,
         'futureCancelInterrupt': interrupt_control, 'executorOwnerSettlement': executor_settlement,
         'executorInvokeInterrupt': 'matched-14-preinterrupted-and-two-blocked-JDK-cases',
-        'executorAwaitTermination': 'matched-16-preinterrupted-and-two-blocked-JDK-cases',
+        'executorAwaitTermination': 'matched-16-preinterrupted-two-blocked-and-overridden-state-JDK-cases',
         'futureTaskNullFailure': 'matched-JDK-null-failure-and-retained-running-result',
         'futureTaskPublicMonitor': 'JDK-and-SDK-source-controls-passed',
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
