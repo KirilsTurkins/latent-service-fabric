@@ -107,3 +107,34 @@ doubles. During the first timer-stop it expires and poisons a later wait node,
 then publishes a new waiter. The broadcaster must reread the live queue and
 leave the newer sequence untouched. This source control passed; it does not
 claim canonical execution, original-ledger execution or signed qualification.
+
+
+## Clock-only libc wait bridge
+
+The selected timed-thread and standard-clock profiles now bridge the pinned
+WASI libc's single relative REALTIME clock subscription to the existing owned
+sleep. This supplies the descriptor-free select call used by the pinned
+libcurl source's wait. Zero delay completes without a host call. A positive
+delay admits the original Wait and Timer, and publishes one clock event only
+after the existing timer wait has actually returned and retired. Admission
+refusal leaves the result untouched; cancellation and activation deadline do
+not become elapsed-time success. The subscription is copied and output ranges
+validated before any timer admission or await.
+
+This is deliberately not descriptor readiness. FD subscriptions, multiple
+subscriptions, absolute deadlines and other clock types return ENOTSUP;
+zero subscriptions and overlapping result ranges return EINVAL. No socket,
+ambient WASI host, connection grant, or polling of stdout/stderr is added.
+The selected libc ABI, polling/select sources and generated WASI wrapper have
+their own pinned and rechecked compiler material identities.
+
+The existing timed source owner exercises the actual C bridge with serialized
+broker and timer doubles, including ownership refusal, terminal cancellation
+and deadline, input mutation while awaiting, and the pinned libc's ordinary
+select path. These checks are not a signed component, original ledger or proof
+of physical retirement. An earlier [current-source timed owner
+run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/42525327883)
+on 14a55263ca17359603df3691f20a1dcac25ca17e reached the timed-sleep case and
+trapped; its exact cause remains unproved. That failure is not resolved or
+reclassified by this bridge, and signed timer/readiness qualification remains
+open.
