@@ -7,9 +7,24 @@ const imports = WebAssembly.Module.imports(module_);
 if (imports.length) throw new Error(`Unexpected imports: ${JSON.stringify(imports)}`);
 const exports_ = new WebAssembly.Instance(module_, {}).exports;
 if (process.argv[3] === '--libc') {
-  const result = exports_.poll_clock_via_libc();
-  if (result) throw Error(`libc select control failed at C line ${result}`);
-  console.log('PASS poll_clock_via_libc');
+  const cases = ['poll_clock_via_libc', 'select_precision_via_libc', 'select_sets_via_libc',
+    'select_refusals_via_libc', 'select_limits_via_libc', 'select_dependency_via_libc'];
+  for (const name of cases) {
+    const result = exports_[name]();
+    if (result) throw Error(name + ' failed at C line ' + result);
+    console.log('PASS ' + name);
+  }
+  for (const name of ['select_terminal_cancel', 'select_terminal_deadline']) {
+    try {
+      exports_[name]();
+      throw new Error(name + ' unexpectedly returned');
+    } catch (error) {
+      if (!(error instanceof WebAssembly.RuntimeError)) throw error;
+      const result = exports_.select_terminal_state();
+      if (result) throw Error(name + ' terminal state failed at C line ' + result);
+      console.log('PASS ' + name);
+    }
+  }
   process.exit(0);
 }
 const cases = ['mutex_fast', 'mutex_expired', 'mutex_invalid', 'condition_expired',

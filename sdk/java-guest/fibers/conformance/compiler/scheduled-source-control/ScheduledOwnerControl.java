@@ -54,9 +54,9 @@ public final class ScheduledOwnerControl {
         @Override public void interrupt() { interrupts.incrementAndGet(); super.interrupt(); }
     }
     @SuppressWarnings("unchecked")
-    private static java.util.ArrayList<Thread> workers(java.util.concurrent.ExecutorService pool) throws Exception {
+    private static java.util.List<Thread> workers(java.util.concurrent.ExecutorService pool) throws Exception {
         var field = pool.getClass().getDeclaredField("workers"); field.setAccessible(true);
-        return (java.util.ArrayList<Thread>)field.get(pool);
+        return (java.util.List<Thread>)field.get(pool);
     }
     private static void factoryRejectionTargets() throws Exception {
         for (boolean scheduled : new boolean[]{false, true}) for (String mode : new String[]{"null", "throws", "live", "add-before", "add-after"}) {
@@ -142,6 +142,64 @@ public final class ScheduledOwnerControl {
                 workers(pool).remove(worker.get()); // Private fake teardown only.
             }
             finish(pool);
+        }
+    }
+    private static void retirementIteration() throws Exception {
+        // Simulate a worker leaving the registry during interrupt. The host
+        // source control can run threads in parallel; a reentrant callback can
+        // also modify the registry before the coordinator resumes iteration.
+        for (boolean scheduled : new boolean[]{false, true}) for (boolean concurrent : new boolean[]{false, true})
+                for (int count : new int[]{1, 2, 3}) {
+            var pool = executor(scheduled, task -> new Thread(task));
+            var registry = workers(pool);
+            AtomicInteger remainingInterrupted = new AtomicInteger();
+            Thread first = new Thread() {
+                @Override public void interrupt() {
+                    if (!concurrent) { registry.remove(0); return; }
+                    Thread retired = new Thread(() -> registry.remove(0));
+                    retired.start();
+                    try { retired.join(5000); }
+                    catch (InterruptedException error) { Thread.currentThread().interrupt(); throw new AssertionError(error); }
+                    require(!retired.isAlive());
+                }
+            };
+            registry.add(first);
+            for (int index = 1; index < count; index++) registry.add(new Thread() {
+                @Override public void interrupt() { remainingInterrupted.incrementAndGet(); }
+            });
+            try {
+                ((Activation.ManagedPool)pool).closeAtRoot();
+                require(remainingInterrupted.get() == count - 1);
+                require(registry.size() == count - 1);
+                require(Activation.count(LatentRuntimeActivationOwnerKind.Executor) == (count == 1 ? 0 : 1));
+            } finally {
+                registry.clear(); // Private fake teardown only.
+                finish(pool);
+            }
+        }
+    }
+    private static void retirementRemovalFailure() throws Exception {
+        // A copy-on-write removal can fail before publishing its new array.
+        // Keep the original worker and executor owner on that failure.
+        for (boolean scheduled : new boolean[]{false, true}) {
+            var pool = executor(scheduled, task -> new Thread(task));
+            class FailingWorkers extends java.util.concurrent.CopyOnWriteArrayList<Thread> {
+                final OutOfMemoryError failure = new OutOfMemoryError("worker-registry-copy");
+                @Override public Thread remove(int index) { throw failure; }
+            }
+            var registry = new FailingWorkers();
+            Thread worker = new Thread(); registry.add(worker);
+            var field = pool.getClass().getDeclaredField("workers"); field.setAccessible(true); field.set(pool, registry);
+            var remove = pool.getClass().getDeclaredMethod("removeWorker", Thread.class); remove.setAccessible(true);
+            try {
+                try { remove.invoke(pool, worker); throw new AssertionError("expected-registry-failure"); }
+                catch (java.lang.reflect.InvocationTargetException error) { require(error.getCause() == registry.failure); }
+                require(registry.size() == 1 && registry.get(0) == worker
+                    && Activation.count(LatentRuntimeActivationOwnerKind.Executor) == 1);
+            } finally {
+                registry.clear(); // Private fake teardown only.
+                finish(pool);
+            }
         }
     }
     private static void duplicateRetainedWorker() throws Exception {
@@ -345,9 +403,11 @@ public final class ScheduledOwnerControl {
         earlyFactoryTarget();
         rejectedWorkerTargets();
         failedStartOwnership();
+        retirementIteration();
+        retirementRemovalFailure();
         duplicateRetainedWorker();
         duplicateLiveAndCompletedWorker();
         identityRemoval();
-        System.out.println("SCHEDULED_OWNER_CONTROL PASS preadmission;actual-result;running-cancel-held;periodic-nonoverlap;original-error-suppresses-repeat;timed-wait-cancel-and-interrupt;shutdown-policy;factory-rollback;all-retired");
+        System.out.println("SCHEDULED_OWNER_CONTROL PASS preadmission;actual-result;running-cancel-held;periodic-nonoverlap;original-error-suppresses-repeat;timed-wait-cancel-and-interrupt;shutdown-policy;factory-rollback;worker-retirement-snapshot;copy-failure-retained;all-retired");
     }
 }

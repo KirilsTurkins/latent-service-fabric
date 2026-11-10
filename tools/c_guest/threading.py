@@ -30,7 +30,9 @@ SYNC_SYMBOLS = ('pthread_mutex_init', 'pthread_mutex_lock', 'pthread_mutex_trylo
     'cnd_init', 'cnd_destroy', 'cnd_wait', 'cnd_signal', 'cnd_broadcast', 'cnd_timedwait')
 YIELD_SYMBOLS = ('thrd_yield',)
 ONCE_SYMBOLS = ('pthread_once', '__pthread_once', 'call_once')
-TIME_SYMBOLS = ('nanosleep', 'thrd_sleep')
+LEGACY_TIME_SYMBOLS = ('nanosleep', 'thrd_sleep')
+TIME_SYMBOLS = (*LEGACY_TIME_SYMBOLS, 'select', 'pselect')
+TIME_RESPONSE = ''.join('-D' + name + '=__lsf_c_' + name + '\n' for name in TIME_SYMBOLS).encode('ascii')
 LIBC = {
     'lib/libc/include/wasm-wasi-musl/pthread.h': '21b1fd90de05919d0718109f16fa1408a0750dcf65f63cc661c506f07e8e1ca1',
     'lib/libc/include/generic-musl/threads.h': '402b75ff71dd5051ebf8744fe7e09a9e43740b9798e6c02701929c852972a2fc',
@@ -94,23 +96,42 @@ POLL_LIBC = {
     'lib/libc/wasi/libc-bottom-half/cloudlibc/src/libc/poll/poll.c': '54bc546fb972fc852fdd48d768a5b4d1da5d85e810ab0f567a76672c19fd9eb5',
     'lib/libc/wasi/libc-bottom-half/sources/__wasilibc_real.c': '4ec78ec7f15dc9bd4bd18a6ac142170746ecb57bcd312c4827aaac79734b8f6e',
 }
+# Keep the existing poll material labels stable while separately binding the
+# fd_set representation used by the timed select override.
+POLL_FD_LIBC = {
+    'lib/libc/include/wasm-wasi-musl/__fd_set.h': '35c4ae8b4daf451890d11b135e4fe904c55830724ff5bf2f618584ee77639769',
+    'lib/libc/include/wasm-wasi-musl/__typedef_fd_set.h': 'ae46d12d8e20156af29f84ca7a34a13a46eebb96aae9e3c3017389e62b342d20',
+    'lib/libc/include/wasm-wasi-musl/__macro_FD_SETSIZE.h': 'd2ac9784db69fe83aa2fb6e0275767e54e195fc758297c22533ed5a438d6ae1f',
+}
 POLL_LIBC_MAX_BYTES = 65536
 
 
-def linked_defines(defines, *, timed_clock=False):
-    if type(timed_clock) is not bool:
+def linked_defines(defines, *, timed_clock=False, time_response=False):
+    if type(timed_clock) is not bool or type(time_response) is not bool or (time_response and not timed_clock):
         raise ValueError('c-threading-timed-clock-selection')
-    symbols = (*TLS_SYMBOLS, *YIELD_SYMBOLS, *ONCE_SYMBOLS, *SYNC_SYMBOLS, *(TIME_SYMBOLS if timed_clock else ()))
-    reserved_symbols = symbols
+    base = (*TLS_SYMBOLS, *YIELD_SYMBOLS, *ONCE_SYMBOLS, *SYNC_SYMBOLS)
+    selected_time = TIME_SYMBOLS if time_response else LEGACY_TIME_SYMBOLS if timed_clock else ()
+    reserved_symbols = (*base, *selected_time)
     reserved = {'LSF_C_LINKED_LIBC', 'LSF_C_TIMED_CLOCK', *reserved_symbols,
                 *('__lsf_c_' + name for name in reserved_symbols)}
     if timed_clock:
         reserved.add('__imported_wasi_snapshot_preview1_poll_oneoff')
     if any(value.split('=', 1)[0] in reserved for value in defines):
         raise ValueError('c-threading-compiler-owned-tls-symbol')
+    emitted = base if time_response else (*base, *selected_time)
     return (*defines, 'LSF_C_LINKED_LIBC=1',
             *(('LSF_C_TIMED_CLOCK=1',) if timed_clock else ()),
-            *(name + '=__lsf_c_' + name for name in symbols))
+            *(name + '=__lsf_c_' + name for name in emitted))
+
+
+def timed_alias_response(sdk):
+    """Recognize one exact owned SDK file; absence preserves the legacy profile."""
+    path = sdk / 'runtime/timed-symbols.rsp'
+    if not path.exists() and not path.is_symlink():
+        return None
+    if read_file(path, 256) != TIME_RESPONSE:
+        raise ValueError('c-threading-timed-symbol-response-preimage')
+    return path
 
 
 def selected(project):
@@ -147,17 +168,20 @@ def clock_libc_material_name(path):
 
 
 def poll_libc_inputs(zig):
-    paths = {name: zig.parent / name for name in POLL_LIBC}
-    if any(digest(read_file(path, POLL_LIBC_MAX_BYTES)) != 'sha256:' + POLL_LIBC[name]
+    selected = {**POLL_LIBC, **POLL_FD_LIBC}
+    paths = {name: zig.parent / name for name in selected}
+    if any(digest(read_file(path, POLL_LIBC_MAX_BYTES)) != 'sha256:' + selected[name]
            for name, path in paths.items()):
         raise ValueError('c-threading-original-libc-poll-preimage')
     return paths
 
 
 def poll_libc_material_name(path):
-    if path not in POLL_LIBC:
-        raise ValueError('c-threading-original-libc-poll-material-path')
-    return 'c-threading-poll-' + str(sorted(POLL_LIBC).index(path))
+    if path in POLL_LIBC:
+        return 'c-threading-poll-' + str(sorted(POLL_LIBC).index(path))
+    if path in POLL_FD_LIBC:
+        return 'c-threading-select-fd-' + str(sorted(POLL_FD_LIBC).index(path))
+    raise ValueError('c-threading-original-libc-poll-material-path')
 
 
 def stage(source: Path, world: str, destination: Path, platform: Path) -> Path:

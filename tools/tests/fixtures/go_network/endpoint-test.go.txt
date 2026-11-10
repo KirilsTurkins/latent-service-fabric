@@ -1,0 +1,29 @@
+package endpoint
+import ("strings"; "testing")
+func TestUnicodeAliasRejected(t *testing.T) {
+    label := strings.Repeat("\u212a", 40)
+    longAlias := strings.Join([]string{label, label, label, label}, ".") + ":443"
+    for _, input := range []string{"\u212a.example:443", "\u0130.example:25", "\xff.example:80", longAlias} {
+        host, port, err := lsfStreamEndpoint(input)
+        if err == nil { t.Errorf("non-ASCII endpoint accepted as %q:%d", host, port) }
+    }
+}
+func TestSupportedASCII(t *testing.T) {
+    for _, x := range []struct{ in, host string; port uint16 }{
+        {"ExAmPlE.Com:443", "example.com", 443}, {"127.0.0.1:25", "127.0.0.1", 25},
+        {"[2001:db8::1]:65535", "2001:db8::1", 65535}, {"xn--bcher-kva.example:80", "xn--bcher-kva.example", 80},
+    } { host, port, err := lsfStreamEndpoint(x.in); if err != nil || host != x.host || port != x.port { t.Errorf("%s -> %q:%d %v", x.in, host, port, err) } }
+}
+func TestExistingRefusals(t *testing.T) {
+    for _, input := range []string{"a..example:443", "-name.example:443", "example.com:0", "127.1:80", "[fe80::1%eth0]:80"} {
+        if host, port, err := lsfStreamEndpoint(input); err == nil { t.Errorf("invalid %q accepted as %q:%d", input, host, port) }
+    }
+}
+
+func TestASCIIHostLengthBound(t *testing.T) {
+    label := strings.Repeat("A", 63)
+    max := strings.Join([]string{label, label, label, strings.Repeat("A", 61)}, ".")
+    host, port, err := lsfStreamEndpoint(max+":443")
+    if err != nil || len(host) != 253 || host != strings.ToLower(max) || port != 443 { t.Fatalf("253-byte ASCII host changed: %d %d %v", len(host), port, err) }
+    if host, port, err := lsfStreamEndpoint(max+"A:443"); err == nil { t.Errorf("254-byte host accepted as %q:%d", host, port) }
+}
