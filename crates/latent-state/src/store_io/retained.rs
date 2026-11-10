@@ -44,18 +44,14 @@ impl<S: Send + 'static, T: Send + 'static> Retirement for Retained<S, T> {
         } = *self;
         let control = Arc::clone(&reservation.0.control);
         // Native handle destruction precedes physical ownership/byte refund.
-        if custody.is_some() {
-            if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(value))).is_err() {
-                // Native retirement was not positively observed. Keep the
-                // bounded original keeper/pin charged until process loss;
-                // unwinding must not reopen custody or refund its capacity.
-                control.fail(StoreIoError::RecoveryRequired);
-                std::mem::forget(owner);
-                std::mem::forget(reservation);
-                return;
-            }
-        } else {
-            drop(value);
+        if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(value))).is_err() {
+            // No native retirement was proven. Keep the original bounded
+            // keeper and reservation charged until process loss, whether this
+            // was ordinary work or exclusive custody.
+            control.fail(StoreIoError::RecoveryRequired);
+            std::mem::forget(owner);
+            std::mem::forget(reservation);
+            return;
         }
         drop(owner);
         drop(reservation);

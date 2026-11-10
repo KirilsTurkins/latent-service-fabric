@@ -471,3 +471,55 @@ fn dropping_drain_cannot_extend_original_deadline_or_make_late_retirement_clean(
     assert!(report.snapshot.quarantined);
     assert!(!report.clean);
 }
+
+#[test]
+fn ordinary_native_destructor_panic_keeps_original_owner_and_no_retirement_proof() {
+    struct Native;
+    impl Drop for Native {
+        fn drop(&mut self) {
+            panic!("controlled unknown native retirement");
+        }
+    }
+    let (store, _, _) = store();
+    let owner = StoreIoOwner::new(store, limits(), |_| Ok(())).unwrap();
+    let global = NativeCapacityOwner::new(Default::default()).unwrap();
+    let original = Arc::new(
+        global
+            .reserve(
+                NativeAdmissionClass::Ordinary,
+                NativeReservationRequest {
+                    work_bytes: 512,
+                    ..NativeReservationRequest::default()
+                },
+                Instant::now() + WATCHDOG,
+            )
+            .unwrap(),
+    );
+    let weak = Arc::downgrade(&original);
+    let mut retained = owner.reserve_retained::<Native>(512).unwrap();
+    retained.retain_owner(original).unwrap();
+    let witness = retained.retirement_witness().unwrap();
+    assert!(retained.attach(Native).is_ok());
+    drop(retained.retire());
+    let control = &owner.inner.control;
+    let state = control.state.lock().unwrap();
+    let (state, timeout) = control
+        .changed
+        .wait_timeout_while(state, WATCHDOG, |state| !state.quarantined)
+        .unwrap();
+    assert!(!timeout.timed_out());
+    assert!(state.closed);
+    assert_eq!(state.physical_owners, 1);
+    assert_eq!(state.accepted, 1);
+    drop(state);
+    assert!(!witness.has_retired());
+    assert!(weak.upgrade().is_some());
+    assert_eq!(global.snapshot().unwrap().ordinary.slots, 1);
+    let report = wait(
+        owner
+            .drain_async(Instant::now() + WATCHDOG, std::future::ready(()))
+            .unwrap(),
+    );
+    assert!(!report.clean && !report.snapshot.physically_retired());
+    assert_eq!(global.snapshot().unwrap().ordinary.slots, 1);
+}
