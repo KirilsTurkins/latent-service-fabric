@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from tools import qualify_go_write_progress as q
 from tools import go_network_deadline_reference as deadline
+from tools import go_network_deadline_set_reference as deadline_set
 from tools import go_network_empty_read_reference as empty_read
 from tools import go_network_half_close_reference as half_close
 from tools import go_network_endpoint_reference as endpoint
@@ -166,6 +167,19 @@ class GoWriteProgressTests(unittest.TestCase):
         for invalid in (sdk+half_close.methods(sdk,half_close.SDK_PATTERNS)[0],
                         sdk.replace(b'func (c *Connection) ShutdownContext(',b'func renamed(')):
             with self.assertRaises(ValueError):half_close.methods(invalid,half_close.SDK_PATTERNS)
+
+    def test_half_close_projection_retains_required_deadline_helper_only_for_current_source(self):
+        raw=(ROOT/q.TEMPLATE).read_bytes()
+        helper,setter=deadline_set.methods(raw,current=True)
+        self.assertEqual(half_close.projected(raw).count(helper),1)
+        self.assertEqual(half_close.projected(raw).count(setter),1)
+        for invalid in (raw.replace(helper,b''), raw+helper):
+            with self.assertRaises(ValueError):half_close.projected(invalid)
+        old=raw.replace(helper,b'').replace(b'!lsfStreamSameDeadline(t, c.readDeadline)',b'!t.Equal(c.readDeadline)')
+        old=old.replace(b'!lsfStreamSameDeadline(t, c.writeDeadline)',b'!t.Equal(c.writeDeadline)')
+        old_setter=deadline_set.methods(old,current=False)[0]
+        self.assertEqual(half_close.projected(old).count(old_setter),1)
+        self.assertNotIn(helper,half_close.projected(old))
 
     def test_half_close_counterexample_and_full_controls_fail_closed(self):
         package='example.invalid/halfclose'
