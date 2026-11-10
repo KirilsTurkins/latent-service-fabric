@@ -66,7 +66,43 @@ def timers(text):
         'coalescedDriverCountedSeparately': True}
 
 
-def checked(row, mode, revision, budget, *, installation_refusal=False):
+def timer_rearm(text):
+    parts = text.split(':')
+    require(len(parts) == 8 and parts[:2] == ['1', 'timer-rearm'] and parts[7] == '0',
+        'capacity-timer-rearm-result-shape')
+    baseline_waits, baseline_timers = (shared.natural(value) for value in parts[2:4])
+    elapsed_ms = shared.natural(parts[6]); require(elapsed_ms < 10000, 'capacity-timer-rearm-elapsed-bound')
+    waits, timers = ([shared.natural(value) for value in part.split(',')] for part in parts[4:6])
+    require(len(waits) == len(timers) == 4 and baseline_waits <= LIMITS['waits']
+        and baseline_timers == 0 and all(value <= LIMITS['waits'] for value in waits)
+        and all(value <= LIMITS['timers'] for value in timers)
+        and all(value > 0 for value in timers[:3]), 'capacity-timer-rearm-bounded-observation')
+    return {'scope': 'one-timer-two-earlier-changes-synchronous-observations',
+        'baselineWaits': baseline_waits, 'baselineTimers': baseline_timers,
+        'waitCounts': waits, 'timerCounts': timers,
+        'waitDeltaAtLastChange': waits[2] - waits[0], 'guestElapsedMilliseconds': elapsed_ms,
+        'callbacksAtLastSample': 0,
+        'diagnosticOnly': True, 'timerRearmFixQualified': False,
+        'postRetirementPhysicalCustodyQualified': False}
+
+
+def case_plan(native_limit, rearm_diagnostic):
+    require(type(native_limit) is int and native_limit in (0, 1, 2)
+        and type(rearm_diagnostic) is bool, 'capacity-case-plan-profile')
+    modes = list(range(len(CASES))) if native_limit == 2 else [7] if native_limit == 0 else [7, 7]
+    result = []
+    for index, mode in enumerate(modes):
+        label = 'capacity-'+str(native_limit)+'-'+str(index)+'-'+str(mode)
+        result.append((label, mode, False))
+        if native_limit == 2:result.append((label+'-fresh', 7, False))
+    if native_limit == 2 and rearm_diagnostic:
+        result.extend([('capacity-2-rearm-8', 8, True), ('capacity-2-rearm-8-fresh', 7, True)])
+    return result
+
+
+def checked(row, mode, revision, budget, *, installation_refusal=False, rearm_diagnostic=False):
+    require(type(rearm_diagnostic) is bool and (not rearm_diagnostic or mode == 8)
+        and (not installation_refusal or not rearm_diagnostic), 'capacity-timer-rearm-selection')
     response = row['response']; require(row['processReaped'] is True and response['outcomeKnown'] is True
         and response['data'].get('resolvedRevision') == revision, 'capacity-exact-result-identity')
     if installation_refusal:
@@ -75,11 +111,11 @@ def checked(row, mode, revision, budget, *, installation_refusal=False):
         detail = {'scope': 'source-bound-production-registry-native-lease-refusal-before-application-entry',
             'originalManagedExceptionTransported': False, 'diagnosticCauseIndependentlyTyped': False}
     else:
-        require(type(mode) is int and 0 <= mode < len(EXPECTED) and row['exitCode'] == 0
-            and response['category'] == 'success'
+        require(type(mode) is int and (0 <= mode < len(EXPECTED) or (mode == 8 and rearm_diagnostic))
+            and row['exitCode'] == 0 and response['category'] == 'success'
             and type(row['decoded']) is list and len(row['decoded']) == 1, 'capacity-managed-result')
-        detail = timers(row['decoded'][0]) if mode == 2 else None
-        if mode != 2:require(row['decoded'] == ['1:'+EXPECTED[mode]], 'capacity-original-capacity-oracle')
+        detail = timer_rearm(row['decoded'][0]) if mode == 8 else timers(row['decoded'][0]) if mode == 2 else None
+        if mode not in (2, 8):require(row['decoded'] == ['1:'+EXPECTED[mode]], 'capacity-original-capacity-oracle')
     used = response['data']['consumption']
     require(shared.natural(used['outboundRequests']) == (1 if mode == 5 and not installation_refusal else 0)
         and 0 < shared.natural(used['cpuFuel']) <= shared.natural(budget['cpuFuel']) <= 1000000000
@@ -88,7 +124,7 @@ def checked(row, mode, revision, budget, *, installation_refusal=False):
     return detail
 
 
-def invoke(client, node, target, peer, probe, mode, label, *, installation_refusal=False):
+def invoke(client, node, target, peer, probe, mode, label, *, installation_refusal=False, rearm_diagnostic=False):
     revision = selected_revision(client, target); offset = len(peer.observation()['requests'])
     process = start_call(client, target, 'dotnet-standard-http', 'run', [mode, shared.endpoint(peer)], label)
     failed = False
@@ -110,7 +146,8 @@ def invoke(client, node, target, peer, probe, mode, label, *, installation_refus
             try:write_json(client.evidence/(label+'-cleanup-refusal.json'), {'qualification': False, 'processCleanupConfirmed': False})
             except BaseException:pass
             if not failed:raise
-    detail = checked(row, mode, revision, target['budget'], installation_refusal=installation_refusal)
+    detail = checked(row, mode, revision, target['budget'], installation_refusal=installation_refusal,
+        rearm_diagnostic=rearm_diagnostic)
     for _ in range(64):
         peer.poll(.005)
         if peer.observation()['openConnections'] == 0:break
@@ -135,12 +172,16 @@ def invoke(client, node, target, peer, probe, mode, label, *, installation_refus
     return {'case': label, 'receipt': {'path': 'controls/'+path.name, **file_identity(path, 1024**2)}}
 
 
-def run(artifact, native, output, *, deadline):
+def run(artifact, native, output, *, deadline, rearm_diagnostic=False):
+    require(type(rearm_diagnostic) is bool, 'capacity-timer-rearm-selection')
     output = fresh(output); original = shared.identities(artifact)
     products = {name: file_identity(path, 512*1024**2) for name, path in native.items()}
     record = {'schemaVersion': 'latent.dotnet.managed-capacity-node.v1', 'status': 'in-progress',
         'originalBuild': original, 'nativeProducts': products, 'profiles': [], 'cases': [],
         'nativeMemoryAllocationQualified': False, 'postRetiredStoreCallbackQualified': False}
+    if rearm_diagnostic:
+        record['timerRearmDiagnostic'] = {'diagnosticOnly': True, 'timerRearmFixQualified': False,
+            'postRetirementPhysicalCustodyQualified': False, 'cases': []}
     stage = 'normal-signing'
     try:
         signed = output/'releases'
@@ -173,15 +214,12 @@ def run(artifact, native, output, *, deadline):
                 target = deploy(client, source/'deployment.json', publication)
                 _, grants = base.grants(client, node, publication, peer.origin())
                 target = deploy(client, source/'deployment.json', publication, generation=str(target['generation']), grants=grants)
-                modes = list(range(len(CASES))) if native_limit == 2 else [7] if native_limit == 0 else [7, 7]
-                for index, mode in enumerate(modes):
-                    stage = label = 'capacity-'+str(native_limit)+'-'+str(index)+'-'+str(mode)
+                for label, mode, diagnostic in case_plan(native_limit, rearm_diagnostic):
+                    stage = label
                     entry = invoke(client, node, target, peer, probe, mode, label,
-                        installation_refusal=native_limit == 0)
-                    entry['receipt']['path'] = profile.name+'/'+entry['receipt']['path']; record['cases'].append(entry)
-                    if native_limit == 2:
-                        entry = invoke(client, node, target, peer, probe, 7, label+'-fresh')
-                        entry['receipt']['path'] = profile.name+'/'+entry['receipt']['path']; record['cases'].append(entry)
+                        installation_refusal=native_limit == 0, rearm_diagnostic=diagnostic and mode == 8)
+                    entry['receipt']['path'] = profile.name+'/'+entry['receipt']['path']
+                    (record['timerRearmDiagnostic']['cases'] if diagnostic else record['cases']).append(entry)
                 write_json(profile/'final-owner.json', sample(client, probe, 'final-capacity', 1))
                 delete_all(client, [target['name']]); stop(client, node)
                 shutdown = stopped_record(node); write_json(profile/'node-stopped.json', shutdown)
@@ -192,9 +230,11 @@ def run(artifact, native, output, *, deadline):
                     'capacity-exact-final-peer')
         require(shared.identities(artifact) == original and products == {
             name: file_identity(path, 512*1024**2) for name, path in native.items()}, 'capacity-final-products')
-        record.update(status='passed', invocations=17, signedComponents=1, httpContacts=1,
+        record.update(status='passed', invocations=19 if rearm_diagnostic else 17, signedComponents=1, httpContacts=1,
             managedOwnerCapacityQualified=True, originalExecutionLimitsIncreased=False)
         require(len(record['cases']) == 17, 'capacity-mandatory-cases')
+        if rearm_diagnostic:
+            require(len(record['timerRearmDiagnostic']['cases']) == 2, 'capacity-timer-rearm-and-fresh-required')
         write_json(output/'qualification.json', record); return record
     except BaseException:
         try:write_json(output/'FAILED.json', {**record, 'status': 'failed', 'stage': stage})

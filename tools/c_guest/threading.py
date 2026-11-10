@@ -83,6 +83,20 @@ CLOCK_LIBC = {
 }
 
 
+# Pinned libc path underlying the clock-only select/poll bridge. Its labels are
+# separate, so existing thread/clock material identities remain stable.
+POLL_LIBC = {
+    'lib/libc/include/wasm-wasi-musl/wasi/api.h': '8cf2859277ea2fc984780a00048686955805fd8a00c7be1d8f916105becf0174',
+    'lib/libc/include/wasm-wasi-musl/poll.h': '66229496e3f0e33a22af24e5a67cb0b8fe9982b840ccb4ac2d33f15823d1ffb7',
+    'lib/libc/include/wasm-wasi-musl/sys/select.h': 'd9790464bc8f5541dc3ce8355fb54bd6562c3c0f9f0eb82961dc9658188bc1fa',
+    'lib/libc/wasi/libc-bottom-half/cloudlibc/src/libc/sys/select/select.c': '4ed4bcf6b13f12e6fbf9964d4e72dc2681cd3545a5e2b1ab54b4877aac89164b',
+    'lib/libc/wasi/libc-bottom-half/cloudlibc/src/libc/sys/select/pselect.c': '549e8f8b0a671690080e69f02175d48e5654adbf522a929588a2d46a8da66334',
+    'lib/libc/wasi/libc-bottom-half/cloudlibc/src/libc/poll/poll.c': '54bc546fb972fc852fdd48d768a5b4d1da5d85e810ab0f567a76672c19fd9eb5',
+    'lib/libc/wasi/libc-bottom-half/sources/__wasilibc_real.c': '4ec78ec7f15dc9bd4bd18a6ac142170746ecb57bcd312c4827aaac79734b8f6e',
+}
+POLL_LIBC_MAX_BYTES = 65536
+
+
 def linked_defines(defines, *, timed_clock=False):
     if type(timed_clock) is not bool:
         raise ValueError('c-threading-timed-clock-selection')
@@ -90,6 +104,8 @@ def linked_defines(defines, *, timed_clock=False):
     reserved_symbols = symbols
     reserved = {'LSF_C_LINKED_LIBC', 'LSF_C_TIMED_CLOCK', *reserved_symbols,
                 *('__lsf_c_' + name for name in reserved_symbols)}
+    if timed_clock:
+        reserved.add('__imported_wasi_snapshot_preview1_poll_oneoff')
     if any(value.split('=', 1)[0] in reserved for value in defines):
         raise ValueError('c-threading-compiler-owned-tls-symbol')
     return (*defines, 'LSF_C_LINKED_LIBC=1',
@@ -128,6 +144,20 @@ def clock_libc_material_name(path):
     if path not in CLOCK_LIBC:
         raise ValueError('c-threading-original-libc-clock-material-path')
     return 'c-threading-clock-' + str(sorted(CLOCK_LIBC).index(path))
+
+
+def poll_libc_inputs(zig):
+    paths = {name: zig.parent / name for name in POLL_LIBC}
+    if any(digest(read_file(path, POLL_LIBC_MAX_BYTES)) != 'sha256:' + POLL_LIBC[name]
+           for name, path in paths.items()):
+        raise ValueError('c-threading-original-libc-poll-preimage')
+    return paths
+
+
+def poll_libc_material_name(path):
+    if path not in POLL_LIBC:
+        raise ValueError('c-threading-original-libc-poll-material-path')
+    return 'c-threading-poll-' + str(sorted(POLL_LIBC).index(path))
 
 
 def stage(source: Path, world: str, destination: Path, platform: Path) -> Path:

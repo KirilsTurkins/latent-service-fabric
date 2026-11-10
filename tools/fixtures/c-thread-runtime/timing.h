@@ -160,9 +160,11 @@ static bool timed_children(probe_string_t *input, probe_string_t *result, probe_
     timed_children_count = timed_kind == 5 ? 3 : 2;
     unsigned failure = timed_validation();
     if (failure) {
+        unsigned failure_errno = (unsigned)errno;
+        require(pthread_setspecific(key, NULL) == 0 && pthread_key_delete(key) == 0);
         char output[96], *cursor = output;
         memcpy(cursor, "timed-validation:", 17); cursor += 17;
-        number(&cursor, failure); *cursor++ = ':'; number(&cursor, (unsigned)errno); *cursor = 0;
+        number(&cursor, failure); *cursor++ = ':'; number(&cursor, failure_errno); *cursor = 0;
         probe_string_dup(error, output); probe_string_free(input); return false;
     }
     if (timed_c11) {

@@ -131,8 +131,11 @@ class CTimedRuntime(unittest.TestCase):
             key = next(iter(threading.CLOCK_LIBC))
             compiler = Compiler.__new__(Compiler)
             compiler.paths = {'zig': Path(directory) / 'zig'}
-            compiler.threading_clock_inputs = {}; compiler.materials = {}
-            with patch.object(threading, 'clock_libc_inputs', return_value={key: path}):
+            poll_path = Path(directory) / 'poll.h'; poll_path.write_bytes(b'first-poll-input-double')
+            poll_key = next(iter(threading.POLL_LIBC))
+            compiler.threading_clock_inputs = {}; compiler.threading_poll_inputs = {}; compiler.materials = {}
+            with patch.object(threading, 'clock_libc_inputs', return_value={key: path}), \
+                    patch.object(threading, 'poll_libc_inputs', return_value={poll_key: poll_path}):
                 compiler.select_threading_clock_inputs()
                 frozen = copy.deepcopy(compiler.materials)
                 compiler.select_threading_clock_inputs(); self.assertEqual(compiler.materials, frozen)
@@ -140,11 +143,119 @@ class CTimedRuntime(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'clock-input-changed'):
                     compiler.select_threading_clock_inputs()
                 self.assertEqual(compiler.materials, frozen)
+                path.write_bytes(b'first-authenticated-input-double')
+                poll_path.write_bytes(b'changed-poll-after-observation')
+                with self.assertRaisesRegex(ValueError, 'poll-input-changed'):
+                    compiler.select_threading_clock_inputs()
+                self.assertEqual(compiler.materials, frozen)
         source = (fixture.ROOT / 'tools/c_capsule_build.py').read_text()
         self.assertLess(source.index('compiler.select_threading_clock_inputs()'),
                         source.index('materials = list(compiler.materials.values())'))
         self.assertIn('c-timed-all-original-twenty-and-sixteen-timed-outcomes',
                       Path(qualification.__file__).read_text())
+
+
+    def test_timed_validation_failure_preserves_error_and_root_tls_cleanup(self):
+        # Execute the actual fixture branch and destructor with native pthread
+        # TLS. The validator is forced to fail; no guest or ledger is simulated.
+        import os
+        import shutil
+        import subprocess
+        if os.name != 'posix' or not shutil.which('cc'):
+            self.skipTest('native POSIX compiler required')
+        root = fixture.ROOT / 'tools/fixtures/c-thread-runtime'
+        main = (root / 'main.c').read_text()
+        timing = (root / 'timing.h').read_text()
+
+        def between(source, start, end):
+            begin = source.index(start)
+            return source[begin:source.index(end, begin)]
+
+        validation = between(timing, 'static unsigned timed_validation(void)', '\nstatic bool timed_children')
+        self.assertNotIn('pthread_create(', validation)
+        self.assertNotIn('thrd_create(', validation)
+        children = timing[timing.index('static bool timed_children'):]
+        branch = between(children, '    unsigned failure = timed_validation();', '\n    if (timed_c11) {')
+        self.assertLess(children.index(branch), children.index('pthread_create('))
+        self.assertLess(children.index(branch), children.index('thrd_create('))
+        require = between(main, 'static void require(int predicate)', '\n#if LSF_C_TIMED_CLOCK')
+        destructor = between(main, 'static void destructor(void *value)', '\n\nstatic void *worker')
+        number = between(main, 'static void number(char **output', '\n\nstatic void observed_result')
+        prefix = r'''
+#define _POSIX_C_SOURCE 200809L
+#include <errno.h>
+#include <pthread.h>
+#include <signal.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+typedef struct { const char *ptr; size_t len; } probe_string_t;
+static _Thread_local unsigned local;
+static pthread_key_t key;
+static pthread_t root_id;
+static unsigned forced_failure, forced_errno, destructed, input_freed;
+static int intercepted_setspecific(pthread_key_t k,const void *v) {
+    int result=pthread_setspecific(k,v); if (v==NULL) errno=97; return result;
+}
+static __attribute__((unused)) int intercepted_key_delete(pthread_key_t k) {
+    int result=pthread_key_delete(k); errno=98; return result;
+}
+#define pthread_setspecific intercepted_setspecific
+#define pthread_key_delete intercepted_key_delete
+#define FIXTURE_DESTRUCT() (++destructed)
+'''
+        suffix = r'''
+static unsigned timed_validation(void) { return forced_failure; }
+static void probe_string_dup(probe_string_t *error,const char *value) {
+    error->ptr=strdup(value); error->len=strlen(value);
+    if (!error->ptr || write(1,value,error->len)!=(ssize_t)error->len || write(1,"\n",1)!=1) _exit(91);
+}
+static void probe_string_free(probe_string_t *input) { (void)input; input_freed=1; }
+static bool run_error_branch(probe_string_t *input,probe_string_t *error) {
+'''
+        end = r'''
+    return true;
+}
+static void *activation(void *unused) {
+    (void)unused;
+    root_id=pthread_self();local=70;
+    require(pthread_key_create(&key,destructor)==0);
+    require(pthread_setspecific(key,(void *)(uintptr_t)77)==0);
+    errno=(int)forced_errno;
+    probe_string_t input={0},error={0};
+    bool ok=run_error_branch(&input,&error);
+    if (ok || !input_freed || !error.ptr) _exit(92);
+    free((void *)error.ptr);
+    return NULL;
+}
+static void caught_trap(int signal_number) { (void)signal_number;_exit(86); }
+int main(int argc,char **argv) {
+    if (argc!=3) return 90;
+    forced_failure=(unsigned)strtoul(argv[1],NULL,10);
+    forced_errno=(unsigned)strtoul(argv[2],NULL,10);
+    if (signal(SIGILL,caught_trap)==SIG_ERR) return 93;
+    pthread_t root;
+    if (pthread_create(&root,NULL,activation,NULL)!=0 || pthread_join(root,NULL)!=0) return 94;
+    return destructed ? 95 : 0;
+}
+'''
+        harness = prefix + require + '\n' + destructor + '\n' + number + '\n' + suffix + branch + end
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / 'source.c'
+            executable = Path(directory) / 'control'
+            source.write_text(harness)
+            subprocess.run(['cc', '-std=c11', '-O2', '-Wall', '-Wextra', '-Werror', '-pthread',
+                            str(source), '-o', str(executable)], check=True, capture_output=True, timeout=30)
+            for failure, error in ((1, 5), (7, 23), (14, 0)):
+                with self.subTest(failure=failure, error=error):
+                    result = subprocess.run([str(executable), str(failure), str(error)],
+                                            capture_output=True, timeout=10)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(result.stdout, f'timed-validation:{failure}:{error}\n'.encode())
+
 
 
 if __name__ == '__main__': unittest.main()

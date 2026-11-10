@@ -1,0 +1,22 @@
+    // Optional observation only: one user timer and two earlier rearms. The
+    // actual Wait counts, including post-dispose custody, are reported without
+    // treating either their growth or non-growth as a qualified implementation.
+    private static string TimerRearmDiagnostic()
+    {
+        var before = Observe(); Need(before.timers == 0);
+        var waits = new uint[4]; var timers = new uint[4]; int fired = 0;
+        long started = Environment.TickCount64; long elapsed = 0;
+        using (var timer = new Timer(_ => Interlocked.Increment(ref fired),
+            null, 60000, Timeout.Infinite)) {
+            for (int i = 0; i != 3; i++) {
+                if (i != 0) Need(timer.Change(60000 - i * 10000, Timeout.Infinite));
+                var observed = Observe(); waits[i] = observed.waits; timers[i] = observed.timers;
+                elapsed = unchecked(Environment.TickCount64 - started);
+                Need(elapsed >= 0 && elapsed < 10000 && Volatile.Read(ref fired) == 0);
+            }
+        }
+        var disposed = Observe(); waits[3] = disposed.waits; timers[3] = disposed.timers;
+        Need(Volatile.Read(ref fired) == 0);
+        return "timer-rearm:" + before.waits + ":" + before.timers + ":"
+            + string.Join(',', waits) + ":" + string.Join(',', timers) + ":" + elapsed + ":0";
+    }
