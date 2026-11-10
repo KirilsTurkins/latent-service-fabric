@@ -324,7 +324,7 @@ impl Fixture {
             true,
             None,
             Some(provided),
-            Arc::new(SyntheticFixtureLoad),
+            Arc::new(ZeroClockFixtureLoad(Arc::clone(&clock))),
             None,
             Some((limits, call_wall_millis, None)),
             None,
@@ -1747,6 +1747,59 @@ impl NodeLoadSource for SyntheticFixtureLoad {
             queue_delay_millis: 0,
             observed_at: Instant::now(),
         })
+    }
+}
+
+/// The diagnostic load sample must use the same original clock as admission.
+/// This retains the existing synthetic healthy load and normal freshness checks.
+struct ZeroClockFixtureLoad(Arc<zero_clock::ZeroClock>);
+impl NodeLoadSource for ZeroClockFixtureLoad {
+    fn snapshot(&self) -> Result<NodeLoadSnapshot, PlatformError> {
+        Ok(NodeLoadSnapshot {
+            accepting: true,
+            cpu_pressure_milli: 0,
+            memory_pressure_milli: 0,
+            queue_delay_millis: 0,
+            observed_at: self.0.monotonic_now(),
+        })
+    }
+}
+
+#[cfg(test)]
+mod zero_clock_load_tests {
+    use super::*;
+
+    #[test]
+    fn fixture_load_uses_the_injected_admission_clock() {
+        let clock = Arc::new(zero_clock::ZeroClock::new());
+        let origin = clock.monotonic_now();
+        // The original live source observes a later domain value than this
+        // deliberately frozen clock, which admission must reject as future.
+        std::thread::sleep(Duration::from_millis(1));
+        let live = SyntheticFixtureLoad.snapshot().unwrap();
+        assert!(origin.checked_duration_since(live.observed_at).is_none());
+
+        let load = ZeroClockFixtureLoad(Arc::clone(&clock));
+        let initial = load.snapshot().unwrap();
+        assert_eq!(
+            origin.checked_duration_since(initial.observed_at),
+            Some(Duration::ZERO)
+        );
+        assert!(initial.accepting);
+        assert_eq!(
+            (
+                initial.cpu_pressure_milli,
+                initial.memory_pressure_milli,
+                initial.queue_delay_millis,
+            ),
+            (0, 0, 0)
+        );
+
+        clock.advance(Duration::from_nanos(5));
+        assert_eq!(
+            load.snapshot().unwrap().observed_at,
+            origin + Duration::from_nanos(5)
+        );
     }
 }
 fn deployment(
