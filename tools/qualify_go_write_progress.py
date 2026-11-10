@@ -19,6 +19,7 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools.build_observation import file_identity
 from tools import go_network_deadline_reference as deadline
+from tools import go_network_deadline_set_reference as deadline_set
 from tools import go_network_empty_read_reference as empty_read
 from tools import go_network_half_close_reference as half_close
 from tools.owned_test_process import ProcessFailure, run_owned
@@ -38,7 +39,7 @@ CASES = ('TestCopyCrossesChunkBoundary', 'TestDirectWriteAdvancesOnlyAcceptedByt
     'TestImpossibleCountsFailClosedBeforeAnotherDispatch',
     'TestEmptyClosedAndHalfClosedPathsKeepAdmissionRules',
     'TestCloseBetweenFragmentsKeepsPrefixAndStopsDispatch')
-RECIPE = (TEMPLATE, TESTS, deadline.TESTS, empty_read.TESTS, half_close.TESTS, half_close.SDK, half_close.OWNER, *deadline.MATERIALS, 'tools/go_network_deadline_reference.py', 'tools/go_network_empty_read_reference.py', 'tools/go_network_half_close_reference.py', 'tools/qualify_go_write_progress.py',
+RECIPE = (TEMPLATE, TESTS, deadline.TESTS, deadline_set.TESTS, empty_read.TESTS, half_close.TESTS, half_close.SDK, half_close.OWNER, *deadline.MATERIALS, 'tools/go_network_deadline_reference.py', 'tools/go_network_deadline_set_reference.py', 'tools/go_network_empty_read_reference.py', 'tools/go_network_half_close_reference.py', 'tools/qualify_go_write_progress.py',
           'tools/owned_test_process.py', 'tools/owned_process_worker.py', 'tools/build_observation.py', 'tools/test_run.py',
           '.github/workflows/go-write-progress-reference.yml')
 
@@ -153,6 +154,9 @@ def qualify(output: Path) -> dict:
                 raise ValueError('go-write-reference-unexpected-command-outcome:' + name)
             results[name] = observed(result.output, name != 'current', close=name == 'before-close-guard')
         deadline_result = deadline.qualify(output, compiler, environment, upstream, before[TEMPLATE], before[deadline.TESTS])
+        set_baseline = subprocess.check_output(['git', 'show', deadline_set.BASELINE + ':' + TEMPLATE], cwd=ROOT, timeout=30)
+        set_result = deadline_set.qualify(output, compiler, environment, set_baseline,
+                                          before[TEMPLATE], before[deadline_set.TESTS])
         empty_baseline = subprocess.check_output(['git', 'show', empty_read.BASELINE + ':' + TEMPLATE], cwd=ROOT, timeout=30)
         empty_result = empty_read.qualify(output, compiler, environment, empty_baseline,
                                           before[TEMPLATE], before[empty_read.TESTS])
@@ -167,6 +171,9 @@ def qualify(output: Path) -> dict:
         half_result.update(sourceRevision=record['sourceRevision'], baseline=half_close.BASELINE,
                            compiler=identity, compilerVersion=version, sourceUnchanged=True, inputs=record['inputs'])
         (output / 'half-close-receipt.json').write_bytes((json.dumps(half_result, indent=2) + '\n').encode())
+        set_result.update(sourceRevision=record['sourceRevision'], baseline=deadline_set.BASELINE,
+                          compiler=identity, compilerVersion=version, sourceUnchanged=True, inputs=record['inputs'])
+        (output / 'deadline-set-receipt.json').write_bytes((json.dumps(set_result, indent=2) + '\n').encode())
         deadline_result.update(sourceRevision=record['sourceRevision'], baseline=BASELINE, compiler=identity,
                                compilerVersion=version, sourceUnchanged=True, inputs=record['inputs'])
         (output / 'deadline-receipt.json').write_bytes((json.dumps(deadline_result, indent=2) + '\n').encode())
