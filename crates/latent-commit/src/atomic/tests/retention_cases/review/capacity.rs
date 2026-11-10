@@ -1,5 +1,62 @@
 use super::*;
 
+#[test]
+fn first_namespace_review_does_not_inherit_global_maintenance_counts() {
+    let (_dir, store, effects) = setup();
+    let record = completed(&store, &effects, "review-global-counters");
+    let owner = ResultMaintenanceOwner::default();
+    anchor(&owner, &store);
+    let global = owner
+        .step(&store, observation(2150, 50), maintenance)
+        .unwrap();
+    assert_eq!((global.visited, global.retired), (1, 1));
+    assert!(global.reclaimed_bytes > 0);
+    let record = CommandRecord::decode(
+        &store
+            .snapshot()
+            .unwrap()
+            .get(&record::command_row_key(record.id))
+            .unwrap()
+            .unwrap(),
+    )
+    .unwrap();
+    owner
+        .terminalize(&store, &request(&record), observation(2200, 100), authorize)
+        .unwrap();
+    let view = store.snapshot().unwrap();
+    let (usage, _, _) = writer::Usage::read(&view, &record.key).unwrap();
+    let progress = usage.review_clock.unwrap();
+    assert_eq!(
+        (progress.visited, progress.retired, progress.reclaimed_bytes),
+        (1, 0, 0)
+    );
+    assert_eq!(
+        (
+            progress.anchor_unix_millis,
+            progress.anchor_monotonic_millis
+        ),
+        (global.anchor_unix_millis, global.anchor_monotonic_millis)
+    );
+    drop(view);
+    let reanchored = owner
+        .anchor_review(
+            &store,
+            &record.key,
+            Some(progress.generation),
+            observation(2250, 150),
+            clock_permission,
+        )
+        .unwrap();
+    assert_eq!(
+        (
+            reanchored.visited,
+            reanchored.retired,
+            reanchored.reclaimed_bytes
+        ),
+        (1, 0, 0)
+    );
+}
+
 fn clock_permission(key: &CommandKey) -> Result<(), AtomicError> {
     if key.tenant == "tenant" && key.namespace == "aggregate" && key.incarnation == "1" {
         Ok(())
