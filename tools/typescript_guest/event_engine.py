@@ -82,6 +82,13 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         b'  using OwnedAlgorithmList = lsf::typescript::activation::NativeContainer<AlgorithmList>;\n'
         b'  using OwnedWeakSet = lsf::typescript::activation::NativeContainer<WeakIndexSet>;\n',
         'original-algorithm-and-weak-set-owned-containers')
+    source = replace_once(source, b'    OnAbort,\n',
+        b'    OnAbort,\n    OnAbortListener,\n', 'separate-handler-value-and-listener-identity')
+    source = replace_once(source,
+        b'  static bool onabort_set(JSContext *cx, unsigned argc, JS::Value *vp);\n',
+        b'  static bool onabort_set(JSContext *cx, unsigned argc, JS::Value *vp);\n'
+        b'  static bool onabort_invoke(JSContext *cx, unsigned argc, JS::Value *vp);\n',
+        'stable-native-handler-invoker')
     result[name] = source
 
     name = 'StarlingMonkey/builtins/web/event/event-target.cpp'
@@ -252,6 +259,11 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn)) {\n',
         b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn) ||\n'
         b'          JS_IsExceptionPending(cx)) {\n', 'callback-lookup-cannot-hide-pending-failure')
+    source = replace_once(source,
+        b'      auto global = engine->global();\n      called = JS::Call(cx, global, callback_val, args, &rval);\n',
+        b'      RootedObject current_target(cx, Event::current_target(event));\n'
+        b'      called = JS::Call(cx, current_target, callback_val, args, &rval);\n',
+        'function-listener-receiver-is-event-current-target')
     source = replace_once(source, b'    if (JS_IsExceptionPending(cx)) {\n',
         b'    // Catchable listener exceptions retain ordinary DOM reporting below.\n'
         b'    // A false/no-pending native termination is not a listener exception: it\n'
@@ -262,6 +274,39 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         b'      break;\n'
         b'    }\n\n'
         b'    if (JS_IsExceptionPending(cx)) {\n', 'uncatchable-listener-failure-fences-dispatch')
+    source = replace_once(source, b'#include "js/GCPolicyAPI.h"\n',
+        b'#include "js/GCPolicyAPI.h"\n#include "js/Exception.h"\n'
+        b'#include "js/ErrorReport.h"\n#include <cstdio>\n',
+        'checked-no-script-listener-error-reporting-includes')
+    source = replace_once(source, b'    auto *engine = api::Engine::get(cx);\n', b'',
+        'listener-reporting-does-not-use-void-engine-logger')
+    source = replace_once(source,
+        b'''      // TODO: report an exception as in spec:
+      // https://html.spec.whatwg.org/multipage/webappapis.html#report-an-exception
+      // https://github.com/bytecodealliance/StarlingMonkey/issues/239
+      auto msg = "Exception in event listener for " + listener->type;
+      engine->dump_pending_exception(msg.c_str());
+      JS_ClearPendingException(cx);
+''',
+        b'''      // The engine's void logger permits user conversion and hides a failed
+      // report. Never reenter script while reporting or erase a new failure.
+      // Full HTML error-event dispatch remains outside this carrier's profile.
+      JS::ExceptionStack exception(cx);
+      if (!JS::StealPendingExceptionStack(cx, &exception) || JS_IsExceptionPending(cx)) {
+        Event::set_flag(event, Event::EventFlag::InPassiveListener, false);
+        invocation_failed = true;
+        break;
+      }
+      JS::ErrorReportBuilder report(cx);
+      if (!report.init(cx, exception, JS::ErrorReportBuilder::NoSideEffects) ||
+          JS_IsExceptionPending(cx)) {
+        Event::set_flag(event, Event::EventFlag::InPassiveListener, false);
+        invocation_failed = true;
+        break;
+      }
+      std::fprintf(stderr, "Exception in event listener for %s\\n", listener->type.c_str());
+      JS::PrintError(stderr, report, false);
+''', 'reporting-failure-fences-listeners-without-running-user-conversion')
     source = replace_once(source, b'  return true;\n}\n\nJSObject *EventTarget::create(',
         b'  return !invocation_failed;\n}\n\nJSObject *EventTarget::create(',
         'preserve-callback-lookup-failure-after-retirement')
@@ -389,15 +434,8 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
             assert source.count(old)==2
             source=source.replace(old,new,1).replace(old,b'JS::PrivateValue(dependents.release())',1)
         else: source=replace_once(source,old,new,label)
-    # Both weak-link sides report their actual allocation failures. The graph
-    # stays attached to its exact owners until GC physically destroys it.
-    for before in (b'      our_signals->insert(signal);', b'      their_signals->insert(self);',
-                   b'        our_signals->insert(source);', b'        their_signals->insert(self);'):
-        indentation = before[:len(before)-len(before.lstrip())]
-        operation = before.strip().removesuffix(b';')
-        source = replace_once(source, b'\n'+before+b'\n',
-            b'\n'+indentation+b'if (!'+operation+b') { JS_ReportOutOfMemory(cx); return nullptr; }\n',
-            'checked-original-weak-graph-allocation')
+    # create_with_signals is already a staged transaction from abort_engine.
+    # Do not reintroduce incremental backlinks while applying native wrappers.
     source = replace_once(source,
         b'  EventTarget::finalize(gcx, self);\n',
         b'  // Destructors never invoke the activation host while GC is running.\n'
@@ -419,7 +457,9 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         'dispatchCloneRetirement':'frame-destructor-then-safe-host-ack',
         'dispatchCloneOwner':'one-original-native-count-not-byte-accurate',
         'uncatchableListenerFailure':'cleanup-then-fence-dispatch-and-abort-dependents',
-        'catchableListenerException':'original-DOM-reporting-retained',
+        'catchableListenerException':'checked-no-side-effects-reporting',
+        'listenerErrorReportFailure':'preserved-and-fences-later-callbacks',
+        'functionListenerReceiver':'event-current-target',
         'hostImportsDuringGC':False,
         'abortListenerIdentity': 'exact-record-not-reconverted-type-callback-or-options',
         'abortListenerCustody': 'strong-native-ref-retains-original-listener-lease-until-destruction',

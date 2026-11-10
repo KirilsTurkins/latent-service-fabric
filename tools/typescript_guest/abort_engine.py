@@ -14,7 +14,7 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
         b'#include "../timers.h"\n#include "native_timeout.h"\n#include "native_engine.h"\n'
         b'#include "native_objects.h"\n'
         b'#include "js/ForOfIterator.h"\n#include "js/Exception.h"\n'
-        b'#include "mozilla/Maybe.h"\n', 'abort-native-include')
+        b'#include "mozilla/Maybe.h"\n#include <utility>\n', 'abort-native-include')
     source = replace_once(source,
         b'    JS_SetPendingException(cx, reason);\n  }\n\n  return true;\n}',
         b'    JS_SetPendingException(cx, reason);\n    return false;\n  }\n\n  return true;\n}',
@@ -77,6 +77,67 @@ def derive_abort_timeout(raw: bytes) -> tuple[bytes, dict]:
         b'  if (!lsf::typescript::activation::start_timeout_nanoseconds(\n'
         b'          cx, handler, JS::HandleValueArray(args), nanos, &timer_id)) {',
         'actual-AbortSignal-native-timer-readiness')
+    handler_start = raw.index(b'bool AbortSignal::onabort_set(')
+    handler_end = raw.index(b'// https://dom.spec.whatwg.org/#dom-abortsignal-timeout', handler_start)
+    source = replace_once(source, raw[handler_start:handler_end],
+        b'''// Property handlers have their own stable listener, distinct from a callback
+// registered through addEventListener. Replacing the value must not reorder it.
+bool AbortSignal::onabort_invoke(JSContext *cx, unsigned argc, JS::Value *vp) {
+  METHOD_HEADER(1);
+  if (JS_IsExceptionPending(cx)) return false;
+  RootedValue callback(cx, JS::GetReservedSlot(self, std::to_underlying(Slots::OnAbort)));
+  // Web IDL LegacyTreatNonObjectAsNull retains non-callable objects but invokes
+  // them as a no-op; it must not look up a handleEvent property on those objects.
+  if (!callback.isObject() || !JS::IsCallable(&callback.toObject())) {
+    args.rval().setUndefined();
+    return true;
+  }
+  JS::RootedValueArray<1> event_args(cx);
+  event_args[0].set(args.get(0));
+  RootedValue result(cx);
+  if (!JS::Call(cx, self, callback, event_args, &result) || JS_IsExceptionPending(cx)) return false;
+  if (result.isBoolean() && !result.toBoolean()) {
+    RootedObject event(cx, &event_args[0].toObject());
+    Event::set_canceled(event, true);
+  }
+  args.rval().setUndefined();
+  return true;
+}
+
+bool AbortSignal::onabort_set(JSContext *cx, unsigned argc, JS::Value *vp) {
+  METHOD_HEADER(1);
+  if (JS_IsExceptionPending(cx)) return false;
+  RootedValue callback(cx, args.get(0));
+  if (!callback.isObject()) callback.setNull();
+  RootedValue listener(cx, JS::GetReservedSlot(self, std::to_underlying(Slots::OnAbortListener)));
+  RootedValue type(cx, JS::StringValue(abort_type_atom));
+  RootedValue opts(cx, JS::FalseValue());
+  if (callback.isNull()) {
+    if (listener.isObject() &&
+        (!EventTarget::remove_listener(cx, self, type, listener, opts) || JS_IsExceptionPending(cx)))
+      return false;
+    listener.setNull();
+  } else if (!listener.isObject()) {
+    JS::RootedFunction handler(cx, JS_NewFunction(cx, onabort_invoke, 1, 0, nullptr));
+    if (!handler || JS_IsExceptionPending(cx)) return false;
+    listener.setObject(*JS_GetFunctionObject(handler));
+    if (!EventTarget::add_listener(cx, self, type, listener, opts) || JS_IsExceptionPending(cx))
+      return false;
+  }
+  // Admissions/allocations succeeded. No script runs between listener mutation
+  // and these slot writes; failed installation cannot replace the old value.
+  JS::SetReservedSlot(self, std::to_underlying(Slots::OnAbort), callback);
+  JS::SetReservedSlot(self, std::to_underlying(Slots::OnAbortListener), listener);
+  args.rval().setUndefined();
+  return true;
+}
+
+''', 'stable-property-abort-listener-and-transactional-handler-value')
+    source = replace_once(source,
+        b'  SetReservedSlot(self, std::to_underlying(Slots::OnAbort), JS::NullValue());\n',
+        b'  SetReservedSlot(self, std::to_underlying(Slots::OnAbort), JS::NullValue());\n'
+        b'  SetReservedSlot(self, std::to_underlying(Slots::OnAbortListener), JS::NullValue());\n',
+        'initialize-distinct-property-handler-listener-slot')
     abort_start = raw.index(b'bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason) {')
     abort_end = raw.index(b'// https://dom.spec.whatwg.org/#run-the-abort-steps', abort_start)
     source = replace_once(source, raw[abort_start:abort_end],
@@ -192,27 +253,117 @@ bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason) {
             ('dom_exception::DOMException::create(cx, "'+name+'", "'+name+'")').encode(),
             ('create_abort_exception(cx, "'+name+'")').encode(),
             'guarded-original-'+name+'-construction')
-    source = replace_once(source,
-        b'bool AbortSignal::run_abort_steps(JSContext *cx, HandleObject self) {\n',
-        b'bool AbortSignal::run_abort_steps(JSContext *cx, HandleObject self) {\n'
-        b'  if (JS_IsExceptionPending(cx)) return false;\n',
-        'abort-steps-reject-pending-failure-before-callbacks')
-    source = replace_once(source,
-        b'    if (!algorithm->run(cx)) {\n',
-        b'    if (!algorithm->run(cx) || JS_IsExceptionPending(cx)) {\n',
-        'abort-algorithm-success-cannot-hide-a-pending-failure')
-    source = replace_once(source,
-        b'  return EventTarget::dispatch_event(cx, self, event_val, &res_val);\n',
-        b'  const bool dispatched = EventTarget::dispatch_event(cx, self, event_val, &res_val);\n'
-        b'  return dispatched && !JS_IsExceptionPending(cx);\n',
-        'abort-steps-never-return-success-with-pending-failure')
-    source = replace_once(source,
-        b'  RootedObject event(cx, Event::create(cx, type_val, JS::NullHandleValue));\n'
-        b'  RootedValue event_val(cx, JS::ObjectValue(*event));\n',
-        b'  RootedObject event(cx, Event::create(cx, type_val, JS::NullHandleValue));\n'
-        b'  if (!event || JS_IsExceptionPending(cx)) return false;\n'
-        b'  RootedValue event_val(cx, JS::ObjectValue(*event));\n',
-        'abort-event-allocation-before-dereference')
+    steps_start = raw.index(b'bool AbortSignal::run_abort_steps(')
+    steps_end = raw.index(b"// Set signal's abort reason to reason if it is given;", steps_start)
+    source = replace_once(source, raw[steps_start:steps_end],
+        b'''bool AbortSignal::run_abort_steps(JSContext *cx, HandleObject self) {
+  if (JS_IsExceptionPending(cx)) return false;
+  // Every persistent root precedes the lazily engaged exception-state roots.
+  // A later event allocation must not pop roots below the saved first failure.
+  RootedValue res_val(cx);
+  RootedValue type_val(cx, JS::StringValue(abort_type_atom));
+  RootedObject event(cx);
+  RootedValue event_val(cx);
+  mozilla::Maybe<JS::AutoSaveExceptionState> first_failure;
+  auto remember_failure = [&](bool ok) {
+    if (ok && !JS_IsExceptionPending(cx)) return true;
+    if (!JS_IsExceptionPending(cx)) {
+      if (first_failure) first_failure->drop();
+      return false; // native termination fences all remaining work
+    }
+    if (!first_failure) first_failure.emplace(cx);
+    else JS_ClearPendingException(cx);
+    return true;
+  };
+  auto finish = [&]() {
+    if (first_failure) { first_failure->restore(); return false; }
+    return !JS_IsExceptionPending(cx);
+  };
+
+  auto *algorithms = AbortSignal::algorithms(self);
+  size_t completed = 0;
+  for (size_t next = 0; next < algorithms->length(); ++next) {
+    const bool ok = (*algorithms)[next]->run(cx);
+    if (ok && !JS_IsExceptionPending(cx)) {
+      // Compact completed records into a prefix without allocating another
+      // vector, exposing null trace entries, or destroying any capture while
+      // later algorithms execute. Keep failed records in original order.
+      for (size_t index = next; index > completed; --index)
+        std::swap((*algorithms)[index], (*algorithms)[index - 1]);
+      ++completed;
+    } else if (!remember_failure(ok)) {
+      if (completed) algorithms->erase(algorithms->begin(), algorithms->begin() + completed);
+      return false;
+    }
+  }
+  // Only completed algorithms are physically destroyed. Failed records may
+  // still capture accepted work; retain their original leases and GC edges.
+  if (completed) algorithms->erase(algorithms->begin(), algorithms->begin() + completed);
+
+  event = Event::create(cx, type_val, JS::NullHandleValue);
+  if (!event || JS_IsExceptionPending(cx)) {
+    if (!remember_failure(false)) return false;
+    return finish();
+  }
+  event_val.setObject(*event);
+  if (!remember_failure(EventTarget::dispatch_event(cx, self, event_val, &res_val))) return false;
+  return finish();
+}
+
+''', 'drain-independent-algorithms-retain-failures-and-restore-first-exception')
+    any_start = raw.index(b'JSObject *AbortSignal::create_with_signals(')
+    any_end = raw.index(b'bool AbortSignal::constructor(', any_start)
+    source = replace_once(source, raw[any_start:any_end],
+        b'''JSObject *AbortSignal::create_with_signals(JSContext *cx, HandleValueArray signals) {
+  if (JS_IsExceptionPending(cx)) return nullptr;
+  RootedObject self(cx, create(cx));
+  if (!self || JS_IsExceptionPending(cx)) return nullptr;
+
+  // Already-aborted inputs select the first reason without touching any source.
+  for (size_t i = 0; i < signals.length(); ++i) {
+    RootedObject signal(cx, &signals[i].toObject());
+    if (is_aborted(signal)) {
+      SetReservedSlot(self, std::to_underlying(Slots::Reason), reason(signal));
+      return self;
+    }
+  }
+
+  // Stage/deduplicate sources in the result's already admitted native set.
+  // Publishing backlinks here would retain an unreachable partial result after
+  // an allocation failure (the pinned weak sets conservatively trace strongly).
+  // No second temporary heap vector or additional owner is needed.
+  auto *our_signals = source_signals(self);
+  for (size_t i = 0; i < signals.length(); ++i) {
+    RootedObject signal(cx, &signals[i].toObject());
+    if (!is_dependent(signal)) {
+      if (!our_signals->insert(signal)) { JS_ReportOutOfMemory(cx); return nullptr; }
+    } else {
+      for (auto const &source : source_signals(signal)->items()) {
+        MOZ_ASSERT(!is_aborted(source) && !is_dependent(source));
+        if (!our_signals->insert(source)) { JS_ReportOutOfMemory(cx); return nullptr; }
+      }
+    }
+  }
+
+  // Reserve every backlink before publishing any. These SystemAllocPolicy
+  // operations cannot run script or collect JS objects; self roots the staged
+  // source edges. On failure only owned capacity may have grown, not the graph.
+  for (auto const &source : our_signals->items()) {
+    auto &links = dependent_signals(source)->items();
+    if (!links.reserve(links.length() + 1)) {
+      JS_ReportOutOfMemory(cx);
+      return nullptr;
+    }
+  }
+  SetReservedSlot(self, std::to_underlying(Slots::Dependent), JS::TrueValue());
+  for (auto const &source : our_signals->items()) {
+    // Sources are unique and self is new: no duplicate backlink can exist.
+    dependent_signals(source)->items().infallibleAppend(self.get());
+  }
+  return self;
+}
+
+''', 'stage-and-reserve-complete-dependent-graph-before-backlink-publication')
     return source, {'format': 'latent.typescript.abort-timeout-source-derivation.v1',
         'starlingCommit': STARLING_COMMIT, 'originalSource': identity({PATH: raw}),
         'derivedSource': identity({PATH: source}),
@@ -226,7 +377,10 @@ bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason) {
         'anyConvertsOneIterableAndChecksSignalInstances': True,
         'anyHeapVectorOwner': 'one-original-native-count-per-frame-not-byte-accurate',
         'anyAllocationFailure': 'close-iterator-preserving-original-exception',
+        'anyGraphPublication': 'deduplicate-in-owned-source-set-reserve-all-backlinks-then-infallible-commit',
+        'anyGraphAllocationFailure': 'no-published-backlink-no-unreachable-result-retained-by-inputs',
         'staticAbortReasonOptional': True,
+        'onabortHandler': 'stable-distinct-listener-with-transactional-value-and-WebIDL-conversion',
         'rootAbortFailureWithoutNewDependents': 'propagate-original-failure',
         'rootReasonAllocationFailure': 'return-before-direct-reason-slot-write',
         'dependentAbortReason': 'rooted-root-reason-identity',
@@ -237,7 +391,8 @@ bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason) {
         'defaultReasonFactory': 'checked-lookup-construction-and-native-class-before-slot-writes',
         'catchableAbortStepFailure': 'drain-dependents-then-restore-first-exception-and-stack',
         'savedExceptionRootOrder': 'reusable-signal-root-before-lazy-exception-state',
-        'abortAlgorithmFailure': 'retain-list-and-fence-this-signal-before-draining-dependents',
+        'abortAlgorithmFailure': 'drain-independent-steps-retain-failed-records-and-preserve-first-exception',
+        'abortAlgorithmRetirement': 'completed-prefix-destruction-only-no-extra-vector-or-owner',
         'pendingExceptionAtAbortEntry': 'fail-without-mutation-or-callbacks',
         'uncatchableAbortStepFailure': 'fence-without-restoring-earlier-catchable-failure',
         'abortEventAllocationFailure': 'return-after-original-algorithm-cleanup',

@@ -108,3 +108,62 @@ IDs, source/checkout/product/provider identities and failure artifacts; address
 Store/quarantine/byte attribution, approved networking and the parent conflict
 with development. A successful host model, build, artifact upload or skipped
 workflow is never enough to close a material acceptance criterion.
+
+## Agent 5 continuation — 2026-11-10, after source 45e9b021
+
+This follow-up incorporates only reviewed additive changes from Agent 2's
+[cc2d67be](https://github.com/KirilsTurkins/latent-service-fabric/commit/cc2d67be0d3606da718fcc4669cc889256171001)
+(parent `72a26d82`) and Agent 4's
+[65fa26ed](https://github.com/KirilsTurkins/latent-service-fabric/commit/65fa26edc124a91a98a5c99d3b54d8a164142b47)
+(parent `7e3817f`). The previous integration source was
+`45e9b021dbc481147468260e21314bf18351bd71`. The final successor
+commit, PR synthetic merge, actual product/engine/patch/compiler/component,
+runtime and provider identities must be read from its own CI receipts, **not**
+from this historical section.
+
+- **Agent 2:** `AbortSignal.any()` deduplicates and stages its source graph,
+  reserves all backlinks before any infallible publication, and refuses
+  allocation without a published partial result. The distinct stable
+  `onabort` listener preserves ordinary listener identity and correct
+  invocation receiver. Abort algorithms drain independently through catchable
+  failures while completed records physically retire and failed/unrun records
+  remain owned. Exception reporting avoids side-effecting user conversion and
+  fences native failure. The test-file preimage differs because Agent 5
+  independently replaced a missing-compiler `SkipTest` with `RuntimeError`;
+  this correction is retained through a verified patch merge. Agent 2's
+  **105 GCC, 105 Clang and 31 focused ASan+UBSan** passes are its own emitted
+  C++/host controls; actual derived WASI translation units compiled, but a
+  complete native engine link failed due to missing Mozilla allocator/glue.
+  No signed guest/physical Store or real weak-GC proof is claimed. See
+  [transaction audit](typescript-abort-transaction-audit.md).
+- **Agent 4:** Socket idle timeout starts before/during connect rather than
+  only after success; `setTimeout(0, callback)` removes the newest matching
+  callback, timer refusal precedes connect listener and native reservation,
+  and stale timer identities cannot clear replacement slots. Notification
+  never becomes automatic destruction or a resource refund. Eight focused
+  host controls passed; seven fail on the old backend. Combined host suites
+  **49 run / 47 passed / 2 pinned-frontend skips** are not pinned compiler or
+  signed Component Model passes. No TLS, general stream, public DNS, grants,
+  provider or accounting code was enabled. Signed TCP prerequisite producers
+  `40077087832`/artifact `12553639081`, `39420914927`/artifact
+  `12265176239`, and `40042939576`/artifact `12541695434`
+  listed zero available artifacts; the original workflow-origin gate also
+  excludes this branch. #738/#739 remain open.
+
+**New failed strict signed attempt on Agent 1's separate source:**
+[run 42788274731, job 129734901112](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/42788274731)
+for `57cfd22f0df9f611d67bba421b7b27be99e4c2b4` ended in
+`typescript-library-exact-prepared-source-required` while authenticating
+reused prepared native inputs from historical run `42516280360`. It
+never reached component execution or the refusal probe; therefore it neither
+reproduces nor resolves the original `guest-trap/unreachable-code` on this
+new compiler. Retained failure artifact `13759750093` has ZIP SHA-256
+`9587067cff959bde4c56845870128fa23cb396035d8bbd290fc4aafaa8fb7c89`.
+Do not weaken source comparison or substitute old receipts: the prepared
+inputs must be regenerated and authenticated for the actual selected source
+before any new signed qualification claim.
+
+All nine #745 acceptance rows above retain their prior unqualified status
+until the rebuilt final integration's CI finishes. Local source/host control
+results are separate from signed source-owned engine, aggregate byte
+attribution, Store/pool quarantine, published npm and real-network evidence.

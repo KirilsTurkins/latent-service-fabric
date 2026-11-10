@@ -45,6 +45,7 @@ struct State {
   Signal* before_growth = nullptr;
   std::function<void(JSContext*)> on_reason;
   std::function<bool(JSContext*, Signal*)> on_dispatch;
+  std::function<bool(JSContext*, int)> on_algorithm;
 };
 static State state;
 void error(JSContext* cx, int value, int stack, int status = 1) {
@@ -82,12 +83,14 @@ bool admit_native_object(JSContext* cx, NativeObjectLease& lease) {
 }
 }
 struct Algorithm {
+  native::NativeObjectLease native_owner;
   int id;
   explicit Algorithm(int value) : id(value) {}
   ~Algorithm() { ++state.destroyed; }
   bool run(JSContext* cx) {
     if (JS_IsExceptionPending(cx)) ++state.pending_entries;
     state.order.push_back(id);
+    if (state.on_algorithm) return state.on_algorithm(cx, id);
     if (state.trap_algorithm == id) { cx->trapped = true; return false; }
     if (state.pending_algorithm == id) { error(cx, 202, id, state.error_status); return true; }
     if (state.fail_algorithm == id) { error(cx, 202, id, state.error_status); return false; }
@@ -98,11 +101,14 @@ struct WeakIndexSet {
   std::vector<Signal*> values;
   std::vector<Signal*>& items() { return values; }
 };
+struct AlgorithmList : std::vector<std::unique_ptr<Algorithm>> {
+  size_t length() const { return size(); }
+};
 struct Signal {
   int id = 0, reason = 0;
   bool aborted = false;
   WeakIndexSet dependents;
-  std::vector<std::unique_ptr<Algorithm>> algorithms;
+  AlgorithmList algorithms;
 };
 using HandleObject = Signal*;
 using HandleValue = int;
@@ -134,6 +140,7 @@ struct RootedObject {
   explicit RootedObject(JSContext* cx, Signal* value = nullptr) : root(cx, 0), object(value) {}
   void set(Signal* value) { object = value; }
   operator Signal*() const { return object; }
+  RootedObject& operator=(Signal* value) { object = value; return *this; }
   explicit operator bool() const { return object != nullptr; }
   Signal& operator*() const {
     if (!object) { ++state.null_dereferences; static Signal fallback; return fallback; }
@@ -278,7 +285,7 @@ struct AbortSignal {
   }
   static int reason(Signal* signal) { return signal->reason; }
   static WeakIndexSet* dependent_signals(Signal* signal) { return &signal->dependents; }
-  static std::vector<std::unique_ptr<Algorithm>>* algorithms(Signal* signal) { return &signal->algorithms; }
+  static AlgorithmList* algorithms(Signal* signal) { return &signal->algorithms; }
   static bool abort(JSContext*, HandleObject, HandleValue);
   static bool run_abort_steps(JSContext*, HandleObject);
 };
@@ -463,13 +470,14 @@ static bool audit_case(const char* selected) {
     if (is("audit-algorithm-pending")) state.pending_algorithm = 12;
     else state.trap_algorithm = 12;
     const bool result = AbortSignal::abort(&cx, &graph.root, 7);
-    verified = !result && graph.reasons(7) && graph.root.algorithms.size() == 3 &&
-               std::find(state.order.begin(), state.order.end(), 13) == state.order.end() &&
-               !state.pending_entries;
+    verified = !result && graph.reasons(7) && !state.pending_entries;
     if (is("audit-algorithm-pending")) verified &= cx.pending == 202 && cx.stack == 12 &&
-        cx.status == 1 && state.dispatches == 9;
+        cx.status == 1 && state.dispatches == 10 && graph.root.algorithms.size() == 1 &&
+        graph.root.algorithms[0]->id == 12 &&
+        std::find(state.order.begin(), state.order.end(), 13) != state.order.end();
     else verified &= !JS_IsExceptionPending(&cx) && cx.trapped && !state.dispatches &&
-        state.order == std::vector<int>({11, 12});
+        graph.root.algorithms.size() == 2 && graph.root.algorithms[0]->id == 12 &&
+        graph.root.algorithms[1]->id == 13 && state.order == std::vector<int>({11, 12});
   } else if (is("audit-first-oom") || is("audit-later-oom") || is("audit-undefined-exception") ||
              is("audit-oom-then-fatal") || is("audit-forced-return-after-error")) {
     state.on_dispatch = [&](JSContext* context, Signal* signal) {
@@ -578,11 +586,70 @@ static bool audit_case(const char* selected) {
               !state.premature_release && !state.early_publication;
   return verified;
 }
+static bool algorithm_custody_case(const char* selected) {
+  const auto is = [selected](const char* value) { return std::strcmp(selected, value) == 0; };
+  JSContext cx;
+  Signal signal;
+  signal.id = 1;
+  for (int id = 1; id <= 6; ++id) {
+    add(signal, id);
+    if (!native::admit_native_object(&cx, signal.algorithms.back()->native_owner)) return false;
+  }
+  bool all_captures_live = true, reentry_ok = true;
+  const bool fatal = is("algorithms-later-fatal");
+  const bool ack_refusal = is("algorithms-ack-refusal");
+  const bool event_failure = is("algorithms-event-failure");
+  const bool undefined_error = is("algorithms-undefined-first");
+  const bool oom_first = is("algorithms-oom-first");
+  state.on_algorithm = [&](JSContext* context, int id) {
+    // Earlier completed algorithms still physically exist throughout the drain.
+    all_captures_live &= state.destroyed == 0 && state.live == 6;
+    for (const auto& record : signal.algorithms) all_captures_live &= bool(record);
+    reentry_ok &= AbortSignal::abort(context, &signal, 99) && signal.reason == 7;
+    if (id == 2) { error(context, undefined_error ? 0 : 202, 2222, oom_first ? 2 : 1); return false; }
+    if (id == 4) {
+      if (fatal) { context->trapped = true; return false; }
+      error(context, 606, 4444, 2); return false;
+    }
+    return true;
+  };
+  state.fail_event = event_failure;
+  state.fail_dispatch = 1; // later catchable dispatch error must not replace #2
+  const bool ok = AbortSignal::abort(&cx, &signal, 7);
+  bool verified = !ok && all_captures_live && reentry_ok && !state.pending_entries;
+  if (fatal) verified &= cx.trapped && !JS_IsExceptionPending(&cx) && !state.dispatches &&
+      state.order == std::vector<int>({1,2,3,4}) && state.destroyed == 2;
+  else verified &= cx.pending == (undefined_error ? 0 : 202) && cx.stack == 2222 &&
+      cx.status == (oom_first ? 2 : 1) && state.destroyed == 4 &&
+      state.order == (event_failure ? std::vector<int>({1,2,3,4,5,6}) : std::vector<int>({1,2,3,4,5,6,101}));
+  std::vector<int> retained;
+  for (const auto& algorithm : signal.algorithms) retained.push_back(algorithm->id);
+  verified &= retained == (fatal ? std::vector<int>({2,4,5,6}) : std::vector<int>({2,4}));
+  // These calls are explicit finite GC/host doubles, never an engine witness.
+  JS_ClearPendingException(&cx);
+  native::records.collectionCompleted();
+  state.refuse_ack = ack_refusal;
+  verified &= checkpoint(&cx) != ack_refusal && native::records.hasPhysical();
+  if (ack_refusal) verified &= state.live == 6 && cx.pending == 707;
+  else verified &= state.live == retained.size();
+  state.refuse_ack = false;
+  JS_ClearPendingException(&cx);
+  verified &= checkpoint(&cx) && state.live == retained.size();
+  signal.algorithms.clear();
+  verified &= !native::records.hasPhysical() && state.live == retained.size();
+  verified &= checkpoint(&cx) && state.live == retained.size(); // no collection invented
+  native::records.collectionCompleted();
+  verified &= checkpoint(&cx) && state.live == 0 && state.admitted == state.acknowledged &&
+      state.destroyed == 6 && !state.premature_release;
+  return verified;
+}
+
 int main(int argc, char** argv) {
   if (argc != 2) return 2;
   const char* selected = argv[1];
   bool passed = false;
-  if (!std::strncmp(selected, "audit-", 6)) passed = audit_case(selected);
+  if (!std::strncmp(selected, "algorithms-", 11)) passed = algorithm_custody_case(selected);
+  else if (!std::strncmp(selected, "audit-", 6)) passed = audit_case(selected);
   else if (!std::strncmp(selected, "fanout-", 7)) passed = fanout_case(selected);
   else {
     Signal root, first, second;
@@ -615,8 +682,9 @@ int main(int argc, char** argv) {
       passed = !result && !root.aborted && state.order.empty() && !state.destroyed &&
                root.algorithms.size() == 3 && !state.dispatches && cx.pending == 101;
     else if (!std::strcmp(selected, "algorithm-failure"))
-      passed = !result && root.aborted && state.order == std::vector<int>({11, 12}) && !state.destroyed &&
-               root.algorithms.size() == 3 && !state.dispatches && cx.pending == 202;
+      passed = !result && root.aborted && state.order == std::vector<int>({11, 12, 13, 101}) &&
+               state.destroyed == 2 && root.algorithms.size() == 1 && root.algorithms[0]->id == 12 &&
+               state.dispatches == 1 && cx.pending == 202 && cx.stack == 12 && !state.pending_entries;
     else if (!std::strcmp(selected, "dependent-continuation"))
       passed = !result && root.aborted && first.aborted && second.aborted &&
                state.order == std::vector<int>({11, 12, 13, 101, 21, 22, 102, 31, 103}) &&
