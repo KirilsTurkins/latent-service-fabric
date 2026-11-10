@@ -87,6 +87,32 @@ static void constructed_url(const char *document, int port, const char *target, 
     }
     fetchFreeURL(url);
 }
+
+static void malformed_constructed_host(const char *host, const char *old_target) {
+    reset(); expected_method = LATENT_HTTP_STREAMING_METHOD_GET;
+    expected_url = old_target;
+    struct url *url = fetchMakeURL("https", host, 0, "/item?document=1", "", "");
+    assert(url && !strcmp(url->host, host) && !strcmp(url->doc, "/item?document=1"));
+    FILE *file = fetchXGet(url, NULL, "A");
+    assert(!file && errno == EINVAL && fetchLastErrCode == FETCH_URL);
+    assert(opens == 0 && finishes == 0 && aborts == 0);
+    assert(!strcmp(url->host, host) && !strcmp(url->doc, "/item?document=1"));
+    fetchFreeURL(url);
+}
+
+static void valid_constructed_host(const char *host, int port, const char *target) {
+    reset(); expected_method = LATENT_HTTP_STREAMING_METHOD_GET;
+    expected_url = target;
+    struct url *url = fetchMakeURL("https", host, port, "/item?document=1", "", "");
+    assert(url && !strcmp(url->host, host));
+    FILE *file = fetchXGet(url, NULL, "A");
+    assert(file && fclose(file) == 0);
+    assert(opens == 1 && finishes == 1 && aborts == 1);
+    assert(!strcmp(last_url, target) && !strcmp(url->host, host) &&
+           !strcmp(url->doc, "/item?document=1"));
+    fetchFreeURL(url);
+}
+
 int main(void) {
     const char *url = "https://example.test/item";
     struct url_stat stat;
@@ -143,6 +169,27 @@ int main(void) {
     FILE *after_error = fetchXGetURL(url, &stat, "A");
     assert(after_error && fclose(after_error) == 0);
     assert(opens == 2 && finishes == 2 && aborts == 2);
+
+    malformed_constructed_host("example.test?changed=1",
+                               "https://example.test?changed=1/item?document=1");
+    malformed_constructed_host("example.test/other",
+                               "https://example.test/other/item?document=1");
+    malformed_constructed_host("example.test#local",
+                               "https://example.test#local/item?document=1");
+    malformed_constructed_host("a@example.test",
+                               "https://a@example.test/item?document=1");
+    malformed_constructed_host("example.test\\other",
+                               "https://example.test\\other/item?document=1");
+    valid_constructed_host("example.test", 8443,
+                           "https://example.test:8443/item?document=1");
+    valid_constructed_host("example.test:8443", 0,
+                           "https://example.test:8443/item?document=1");
+    valid_constructed_host("[::1]", 8443,
+                           "https://[::1]:8443/item?document=1");
+    valid_constructed_host("[::1]:8443", 0,
+                           "https://[::1]:8443/item?document=1");
+    valid_constructed_host("[2001:db8::1]", 0,
+                           "https://[2001:db8::1]/item?document=1");
 
     reset(); status = 404;
     assert(fetchStatURL(url, &stat, "A") == -1 && errno == ENOENT && fetchLastErrCode == FETCH_UNAVAIL);

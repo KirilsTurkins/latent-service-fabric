@@ -167,6 +167,13 @@ static char *request_url(const struct url *url) {
         document + host + scheme + 10 > LSF_FETCH_URL_BYTES) {
         failure(FETCH_URL, ENAMETOOLONG, "HTTP URL exceeds its bound"); return NULL;
     }
+    /* Host and document are separate libfetch fields. Do not let a URL
+     * component delimiter in the host change the requested document. */
+    if (memchr(url->host, '/', host) || memchr(url->host, '?', host) ||
+        memchr(url->host, '#', host) || memchr(url->host, '@', host) ||
+        memchr(url->host, '\\', host)) {
+        failure(FETCH_URL, EINVAL, "Invalid constructed HTTP host"); return NULL;
+    }
     /* A literal fragment is client-side only. Keep encoded %23 and queries
      * intact, without modifying the caller's original parsed URL. */
     const char *fragment = memchr(url->doc, '#', document);
