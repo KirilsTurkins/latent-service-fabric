@@ -77,7 +77,8 @@ bool exports_examples_libfetch_api_run(probe_string_t *input, probe_string_t *re
     if (rc != 0) {
         const char *message = !strcmp(copy, "denied") && code == FETCH_AUTH && saved == EACCES
             ? "permission-denied" : !strcmp(copy, "not-found") && code == FETCH_UNAVAIL && saved == ENOENT
-            ? "unavailable" : "unexpected-stat-error";
+            ? "unavailable" : !strcmp(copy, "redirect") && code == FETCH_MOVED && saved == ENOTSUP
+            ? "redirect-unsupported" : "unexpected-stat-error";
         free(copy); probe_string_dup(error, message); return false;
     }
     if (strcmp(copy, "normal") && strcmp(copy, "fresh")) {
