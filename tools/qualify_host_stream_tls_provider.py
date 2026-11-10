@@ -40,6 +40,10 @@ ABORT_CASES = frozenset("tests::sockets::" + name for name in (
     "dropped_write_after_synthetic_no_progress_keeps_the_same_connection_usable",
     "dropped_write_during_synthetic_audit_wait_keeps_original_owners_and_never_replays",
     "synthetic_audit_failure_reports_the_accepted_prefix_once_and_fences_reuse",
+    "dropped_read_after_consumption_fences_reuse_and_retains_pending_owner",
+    "failed_read_audit_fences_reuse_after_consuming_bytes",
+    "dropped_read_before_consumption_keeps_connection_usable",
+    "dropped_read_after_socket_consumption_fences_before_currentness_return",
 )) | frozenset("tests::tls::abort::" + name for name in (
     "abort_both_wakes_tls_waiters_and_retains_held_write",
     "abort_both_unpolled_tls_control_releases_slot_without_dispatch",
