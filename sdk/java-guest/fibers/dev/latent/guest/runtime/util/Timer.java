@@ -206,6 +206,11 @@ public class Timer implements Activation.ManagedPool {
                         try { lock.wait(); } catch (InterruptedException wake) { }
                     }
                     if (cancelled || retiring) return;
+                    // Cancellation may target a later entry behind a long-lived
+                    // recurring task. Reclaim those entries on this worker turn
+                    // instead of keeping their owners until their deadlines.
+                    purgeCancelled();
+                    if (queue.isEmpty()) continue;
                     int index = first();
                     entry = queue.get(index);
                     long remaining;
@@ -280,19 +285,25 @@ public class Timer implements Activation.ManagedPool {
 
     void taskCancelled() { synchronized (lock) { lock.notifyAll(); } }
 
+    // Caller holds the Timer lock before acquiring each task's state lock.
+    private int purgeCancelled() {
+        int removed = 0;
+        for (int i = queue.size() - 1; i >= 0; i--) {
+            Entry entry = queue.get(i);
+            synchronized (entry.task.stateLock) {
+                if (entry.task.state != TimerTask.CANCELLED) continue;
+                entry.task.timer = null;
+            }
+            queue.remove(i);
+            entry.withdraw(); pendingWork--;
+            removed++;
+        }
+        return removed;
+    }
+
     public int purge() {
         synchronized (lock) {
-            int removed = 0;
-            for (int i = queue.size() - 1; i >= 0; i--) {
-                Entry entry = queue.get(i);
-                synchronized (entry.task.stateLock) {
-                    if (entry.task.state != TimerTask.CANCELLED) continue;
-                    entry.task.timer = null;
-                }
-                queue.remove(i);
-                entry.withdraw(); pendingWork--;
-                removed++;
-            }
+            int removed = purgeCancelled();
             if (removed != 0) lock.notifyAll();
             return removed;
         }

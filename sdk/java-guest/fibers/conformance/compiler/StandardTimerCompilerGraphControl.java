@@ -39,6 +39,8 @@ public final class StandardTimerCompilerGraphControl {
         require(vm.getProblemProvider().getProblems().isEmpty(), "actual-timer-compiler-problems");
         require(vm.getMethods().contains(new MethodReference("java.util.Timer", "nextName", ValueType.object("java.lang.String"))),
             "actual-timer-private-name-monitor-reachable");
+        require(vm.getMethods().contains(new MethodReference("java.util.Timer", "purgeCancelled", ValueType.INTEGER)),
+            "actual-timer-private-cancelled-cleanup-reachable");
         for (String cls : List.of("java.util.Timer", "dev.latent.guest.runtime.util.Timer$Worker", App.class.getName() + "$1")) {
             String method = cls.equals("java.util.Timer") ? "work" : "run";
             require(vm.getMethods().contains(new MethodReference(cls, method, ValueType.VOID)),

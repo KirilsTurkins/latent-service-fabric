@@ -94,6 +94,19 @@ public final class StandardTimerModelControl {
             if (instruction instanceof MonitorEnterInstruction enter && aliases.contains(enter.getObjectRef())) entered = true;
         }
         require(entered, "private-name-lock-monitor-enter");
+        var cancelledCleanup = timerModel.getMethod(new MethodDescriptor("purgeCancelled", ValueType.INTEGER));
+        var timerWork = timerModel.getMethod(new MethodDescriptor("work", ValueType.VOID));
+        require(cancelledCleanup != null && cancelledCleanup.getLevel() == AccessLevel.PRIVATE
+            && cancelledCleanup.getProgram() != null && timerWork != null && timerWork.getProgram() != null,
+            "private-cancelled-cleanup");
+        boolean callsPrivateCleanup = false, callsPublicPurge = false;
+        for (BasicBlock block : timerWork.getProgram().getBasicBlocks()) for (Instruction instruction : block) {
+            if (instruction instanceof InvokeInstruction invoke && invoke.getMethod().getClassName().equals("java.util.Timer")) {
+                callsPrivateCleanup |= invoke.getMethod().getName().equals("purgeCancelled");
+                callsPublicPurge |= invoke.getMethod().getName().equals("purge");
+            }
+        }
+        require(callsPrivateCleanup && !callsPublicPurge, "worker-private-cancelled-cleanup-call");
         int bodies = 0, references = 0;
         for (ClassHolder model : models) {
             for (FieldHolder declaration : model.getFields()) canonical(declaration.getType());
@@ -125,6 +138,6 @@ public final class StandardTimerModelControl {
         require(source.get("java.util.Timer").getMethod(new MethodDescriptor("absentControlMethod", ValueType.VOID)) == null,
                 "unsupported-timer-member-no-fallback");
         StandardTimerCompilerGraphControl.run();
-        System.out.println("STANDARD_TIMER_MODEL_CONTROL PASS original-classlib-negative;layout-and-repeat-negatives;canonical-api-and-private-helper;private-name-monitor;resolved-method-and-field-types;unsupported-no-fallback;models=3;actual-c-dependency-worker-and-callback");
+        System.out.println("STANDARD_TIMER_MODEL_CONTROL PASS original-classlib-negative;layout-and-repeat-negatives;canonical-api-and-private-helper;private-name-monitor;private-cancelled-cleanup;resolved-method-and-field-types;unsupported-no-fallback;models=3;actual-c-dependency-worker-and-callback");
     }
 }
