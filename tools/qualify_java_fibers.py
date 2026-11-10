@@ -727,7 +727,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     result = compiler.run('future-task-null-failure-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'FutureTaskNullFailureReferenceControl', 'jdk').strip()
     if result != expected_null_failure: raise ValueError('Java future task null failure reference did not complete')
-    expected_monitor = 'FUTURE_TASK_MONITOR_REFERENCE PASS run;cancel;completed-get;executor;scheduled-cancel'
+    expected_monitor = 'FUTURE_TASK_MONITOR_REFERENCE PASS run;cancel;completed-get;executor;scheduled-cancel;failed-get-callback'
     result = compiler.run('future-task-monitor-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'FutureTaskMonitorReferenceControl').strip()
     if result != expected_monitor: raise ValueError('Java FutureTask monitor reference did not complete')
@@ -799,7 +799,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     if result != expected_monitor: raise ValueError('Java FutureTask monitor source differs from reference')
     result = compiler.run('future-task-monitor-owner', 'java', '-Xmx256m', '-cp', output,
         'FutureTaskMonitorOwnerControl').strip()
-    if result != 'FUTURE_TASK_MONITOR_OWNER PASS managed;active-owners;scheduled;retired-under-public-monitor':
+    if result != 'FUTURE_TASK_MONITOR_OWNER PASS managed;active-owners;scheduled;retired-under-public-monitor;failure-owner':
         raise ValueError('Java FutureTask monitor ownership control did not complete')
     interrupt_control = future_cancel_interrupt_control(compiler, output)
     executor_settlement = executor_owner_settlement_control(compiler, output)
@@ -953,7 +953,7 @@ def future_queue_source_control(compiler: Compiler, output: Path) -> dict:
     reference = output / 'reference-jdk'; reference.mkdir()
     compiler.run('future-task-monitor-reference-compile', 'javac', '-proc:none', '--release', '25',
         '-d', reference, controls[3])
-    expected = 'FUTURE_TASK_MONITOR_REFERENCE PASS run;cancel;completed-get;executor;scheduled-cancel'
+    expected = 'FUTURE_TASK_MONITOR_REFERENCE PASS run;cancel;completed-get;executor;scheduled-cancel;failed-get-callback'
     result = compiler.run('future-task-monitor-reference-jdk', 'java', '-Xmx256m', '-cp', reference,
         'FutureTaskMonitorReferenceControl').strip()
     if result != expected: raise ValueError('Java FutureTask monitor reference did not complete')
@@ -981,7 +981,7 @@ def future_queue_source_control(compiler: Compiler, output: Path) -> dict:
     if result != expected: raise ValueError('Java FutureTask monitor source differs from reference')
     result = compiler.run('future-task-monitor-owner', 'java', '-Xmx256m', '-cp', output,
         'FutureTaskMonitorOwnerControl').strip()
-    if result != 'FUTURE_TASK_MONITOR_OWNER PASS managed;active-owners;scheduled;retired-under-public-monitor':
+    if result != 'FUTURE_TASK_MONITOR_OWNER PASS managed;active-owners;scheduled;retired-under-public-monitor;failure-owner':
         raise ValueError('Java FutureTask monitor ownership control did not complete')
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError('Java FutureTask queue inputs changed')

@@ -100,9 +100,9 @@ class FutureCancellationControl(unittest.TestCase):
             if stage == 'future-task-null-failure-owner':
                 return 'FUTURE_TASK_NULL_FAILURE_OWNER PASS original-result-held-until-runner-exit'
             if stage in ('future-task-monitor-reference-jdk', 'future-task-monitor-source'):
-                return 'FUTURE_TASK_MONITOR_REFERENCE PASS run;cancel;completed-get;executor;scheduled-cancel'
+                return 'FUTURE_TASK_MONITOR_REFERENCE PASS run;cancel;completed-get;executor;scheduled-cancel;failed-get-callback'
             if stage == 'future-task-monitor-owner':
-                return 'FUTURE_TASK_MONITOR_OWNER PASS managed;active-owners;scheduled;retired-under-public-monitor'
+                return 'FUTURE_TASK_MONITOR_OWNER PASS managed;active-owners;scheduled;retired-under-public-monitor;failure-owner'
             if stage.endswith('-compile'):
                 return ''
             raise AssertionError('execution continued after the failed matrix')

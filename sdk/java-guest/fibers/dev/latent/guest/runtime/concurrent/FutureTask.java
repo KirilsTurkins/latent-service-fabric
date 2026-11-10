@@ -185,17 +185,24 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
     }
     protected void done() { }
     @Override public V get() throws InterruptedException, ExecutionException {
+        Throwable error;
         synchronized (stateLock) {
             if (!completed) {
                 if (Thread.interrupted()) throw new InterruptedException();
                 while (!completed) stateLock.wait();
             }
-            return report();
+            if (cancelled) throw new CancellationException();
+            if (!failed) return value;
+            error = failure;
         }
+        // ExecutionException(Throwable) invokes the cause's overridable
+        // toString(). Do not run application code under the private monitor.
+        throw new ExecutionException(error);
     }
     @Override public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         long nanos = Objects.requireNonNull(unit).toNanos(timeout);
         long started = System.nanoTime();
+        Throwable error;
         synchronized (stateLock) {
             if (!completed) {
                 if (Thread.interrupted()) throw new InterruptedException();
@@ -206,13 +213,11 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
                     stateLock.wait(remaining / 1_000_000, (int)(remaining % 1_000_000));
                 }
             }
-            return report();
+            if (cancelled) throw new CancellationException();
+            if (!failed) return value;
+            error = failure;
         }
-    }
-    private V report() throws ExecutionException {
-        if (cancelled) throw new CancellationException();
-        if (failed) throw new ExecutionException(failure);
-        return value;
+        throw new ExecutionException(error);
     }
 
     @Override public V resultNow() {
