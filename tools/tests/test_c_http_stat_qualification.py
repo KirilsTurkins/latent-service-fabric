@@ -22,7 +22,7 @@ class StatQualificationControls(unittest.TestCase):
             (project / 'src/main.c').write_bytes((stat.ROOT / stat.PROBE).read_bytes())
             c_capsule_project.validate(snapshot(project))
             self.assertEqual(read_json(project / 'capsule-project.json')['runtimeProfile'], FETCH_PROFILE)
-            self.assertEqual(stat.CASES, ('normal', 'denied', 'not-found', 'redirect', 'fresh',
+            self.assertEqual(stat.CASES, ('missing-grant', 'normal', 'denied', 'not-found', 'redirect', 'fresh',
                                           'range', 'range-ignored', 'range-denied',
                                           'range-unsolicited', 'range-before'))
 
@@ -299,6 +299,70 @@ class StatQualificationControls(unittest.TestCase):
             change['requests'][0]['method'] = 'HEAD'
             with self.assertRaisesRegex(WorkflowError, 'c-stat-one-authenticated-head-no-replay'):
                 stat.cell(client, object(), {}, peer, second, 'range')
+
+    def test_missing_http_grant_is_absent_for_first_cell_then_original_grants_return(self):
+        grants = [{'capability': capability, 'policy': 'original-runtime'}
+                  for capability in stat.owner.PROVIDERS]
+        grants.append({'capability': stat.owner.HTTP, 'policy': 'http-allow'})
+        target = {'name': 'route', 'service': 'service', 'publication': 'pub',
+                  'generation': '1', 'grants': []}
+        seen = []
+        def deploy(client, source, publication, *, generation, grants):
+            return {**target, 'generation': str(int(generation) + 1), 'grants': list(grants)}
+        def cell(client, probe, current, peer, output, case):
+            seen.append((case, tuple(grant['capability'] for grant in current['grants'])))
+            return {'case': case}
+        peer = Mock(); peer.origin.return_value = {'host': '127.0.0.1', 'port': 1234}
+        with patch.object(stat, 'install', return_value=grants), \
+                patch.object(stat, 'deploy', side_effect=deploy) as deployment, \
+                patch.object(stat, 'cell', side_effect=cell):
+            result, cases = stat.exercise_cells(object(), object(), object(), Path('/signed'),
+                                                target, peer, Path('/out'))
+            self.assertEqual([row['case'] for row in cases], list(stat.CASES))
+            self.assertEqual(seen[0][0], 'missing-grant')
+            self.assertEqual(set(seen[0][1]), set(stat.owner.PROVIDERS))
+            self.assertNotIn(stat.owner.HTTP, seen[0][1])
+            self.assertEqual(seen[1][0], 'normal')
+            self.assertTrue(all(stat.owner.HTTP in capabilities for _, capabilities in seen[1:]))
+            self.assertEqual(result['grants'], grants)
+            self.assertEqual(deployment.call_count, 2)
+        with patch.object(stat, 'install', return_value=grants[:-1]), \
+                patch.object(stat, 'deploy') as deployment:
+            with self.assertRaisesRegex(WorkflowError, 'c-stat-exact-runtime-only-grants'):
+                stat.exercise_cells(object(), object(), object(), Path('/signed'), target, peer, Path('/out'))
+            deployment.assert_not_called()
+
+    def test_missing_grant_cell_uses_allowed_head_path_and_demands_zero_contact(self):
+        consumed = {'cpuFuel': '0', 'peakMemoryBytes': '0', 'outboundRequests': '0'}
+        row = {'processReaped': True, 'exitCode': 4, 'decoded': None,
+               'response': {'outcomeKnown': True, 'error': {'code': 'permission-denied'},
+                            'data': {'consumption': consumed}}}
+        peer = Mock(); peer.url.return_value = 'http://peer/conformance/json'
+        peer.observation.return_value = {'openConnections': 0}
+        client = SimpleNamespace(deadline=10**12)
+        process = SimpleNamespace(owner=SimpleNamespace(exited=lambda: True))
+        with tempfile.TemporaryDirectory() as tmp, \
+                patch.object(stat.owner, 'selected_revision', return_value='revision'), \
+                patch.object(stat.owner, 'start_http_call', return_value=process) as start, \
+                patch.object(stat.owner, 'finish_call', return_value=row), \
+                patch.object(stat.owner, 'retire', return_value={'physicalOwnersAfter': 0}), \
+                patch.object(stat.owner, 'close_call'), patch.object(stat, 'validate'), \
+                patch.object(stat, 'delta', return_value={}), patch.object(stat, 'require_zero_contact') as zero:
+            first, second = Path(tmp) / 'first', Path(tmp) / 'second'
+            first.mkdir(); second.mkdir()
+            result = stat.cell(client, object(), {}, peer, first, 'missing-grant')
+            self.assertEqual(result['case'], 'missing-grant')
+            peer.url.assert_called_once_with('domain-json')
+            self.assertEqual(start.call_args.args[2], 'normal\nhttp://peer/conformance/json')
+            zero.assert_called_once()
+            zero.side_effect = WorkflowError('unexpected-contact')
+            with self.assertRaisesRegex(WorkflowError, 'unexpected-contact'):
+                stat.cell(client, object(), {}, peer, second, 'missing-grant')
+            third = Path(tmp) / 'third'; third.mkdir()
+            zero.side_effect = None
+            consumed['cpuFuel'] = '1'
+            with self.assertRaisesRegex(WorkflowError, 'c-stat-missing-http-grant-prevents-guest'):
+                stat.cell(client, object(), {}, peer, third, 'missing-grant')
 
     def test_denied_head_requires_zero_contact_and_the_declared_error(self):
         consumed = {k: '0' for k in ('stateReadBytes', 'stateWriteBytes', 'blobReadBytes',

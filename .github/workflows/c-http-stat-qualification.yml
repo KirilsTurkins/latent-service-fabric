@@ -42,7 +42,7 @@
   },
   "jobs": {
     "ordinary-stat": {
-      "name": "Ten signed ordinary C HEAD, Range, and redirect cells",
+      "name": "Eleven signed ordinary C HEAD, Range, and redirect cells",
       "runs-on": "ubuntu-24.04",
       "timeout-minutes": 25,
       "steps": [
@@ -102,7 +102,7 @@
           "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/guest-tools\"\necho \"$RUNNER_TEMP/guest-tools\" >> \"$GITHUB_PATH\"\nsudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
         },
         {
-          "name": "Build fresh ordinary products and execute ten signed libfetch HEAD, Range, and redirect cells",
+          "name": "Build fresh ordinary products and execute eleven signed libfetch HEAD, Range, and redirect cells",
           "run": "python3 -B -m unittest tools.tests.test_c_http_stat_qualification\npython3 -B tools/c_libfetch_stat_control.py\npython3 -B tools/c_http_stat_qualification.py --zig \"$(command -v zig)\" --wit-bindgen \"$(command -v wit-bindgen)\" --wasm-tools \"$(command -v wasm-tools)\" --output \"$RUNNER_TEMP/c-http-stat\""
         },
         {
