@@ -358,6 +358,10 @@ struct Pending {
     socket: Arc<crate::transport::Transport>,
     _guard: PendingGuard,
     deadline: Instant,
+    // Only a plain-TCP readiness observation may end at this narrower
+    // deadline without retiring the connection. It owns the same Pending.
+    observation_deadline: Option<Instant>,
+    observation_immediate: bool,
 }
 struct PendingGuard {
     connection: Arc<Connection>,
@@ -366,6 +370,23 @@ struct PendingGuard {
 struct ChunkOwner {
     _connection: Arc<Connection>,
     _window: latent_capabilities::broker::network::StreamChunkReservation,
+}
+
+// The original ready call and socket stay owned until its audit and final
+// currentness check settle. Abandoning that handoff fences the same connection
+// before either owner is released.
+struct ReadinessFlight {
+    call: ProviderCall,
+    pending: Pending,
+    connection: Arc<Connection>,
+    settled: bool,
+}
+impl Drop for ReadinessFlight {
+    fn drop(&mut self) {
+        if !self.settled {
+            self.connection.abort(StreamErrorCode::Cancelled);
+        }
+    }
 }
 
 // Retain the original buffer/output and socket across currentness and audit.
@@ -1022,13 +1043,26 @@ impl Connection {
             .io()
             .checkpoint()
             .map_err(|failure| self.terminal_error(failure.into()))?;
-        if timeout.is_some_and(|value| value == 0 || value > 10_000) {
+        if timeout.is_some_and(|value| value > 10_000 || (value == 0 && direction != 2)) {
             return Err(error(StreamErrorCode::InvalidInput));
         }
         let mut state = self
             .state
             .lock()
             .map_err(|_| error(StreamErrorCode::Exhausted))?;
+        if timeout == Some(0) {
+            let immediate = cfg!(target_os = "linux")
+                && state.socket.as_mut().is_some_and(|physical| {
+                    physical
+                        .resource()
+                        .stream
+                        .as_ref()
+                        .is_some_and(|socket| !socket.host_tls() && !socket.protected_owner())
+                });
+            if !immediate {
+                return Err(error(StreamErrorCode::InvalidInput));
+            }
+        }
         if state.closing {
             return Err(
                 error(state.failure.unwrap_or(StreamErrorCode::InvalidState))
@@ -1040,9 +1074,6 @@ impl Connection {
         }
         let now = Instant::now();
         let mut deadline = self.deadline.min(state.last_progress + self.idle);
-        if let Some(value) = timeout {
-            deadline = deadline.min(now + Duration::from_millis(u64::from(value)));
-        }
         if now >= deadline {
             return Err(error(StreamErrorCode::Timeout).uncertain(state.attempted_write));
         }
@@ -1056,6 +1087,16 @@ impl Connection {
                 .as_ref()
                 .expect("live socket transport"),
         );
+        let observation = direction == 2 && !socket.host_tls() && !socket.protected_owner();
+        let requested = timeout.map(|value| now + Duration::from_millis(u64::from(value)));
+        if !observation {
+            if let Some(requested) = requested {
+                deadline = deadline.min(requested);
+            }
+        }
+        if now >= deadline {
+            return Err(error(StreamErrorCode::Timeout).uncertain(state.attempted_write));
+        }
         state.pending += 1;
         state.busy[direction] = true;
         Ok(Pending {
@@ -1065,6 +1106,8 @@ impl Connection {
                 direction,
             },
             deadline,
+            observation_deadline: if observation { requested } else { None },
+            observation_immediate: observation && timeout == Some(0),
         })
     }
     fn drain_closed(&self) {
@@ -1260,6 +1303,67 @@ impl Connection {
             .await
             .map_err(Into::into)
     }
+    // A readiness-only timeout is nonterminal only after the same original
+    // call remains current. Busy/failed authority checks fail closed; they are
+    // not reclassified as an ordinary socket timeout.
+    fn ready_timeout_current(
+        &self,
+        pending: &Pending,
+        call: &mut ProviderCall,
+    ) -> Result<(), StreamError> {
+        let io = self.call.io();
+        let call_deadline = call.deadline();
+        io.checkpoint().map_err(StreamError::from)?;
+        if Instant::now() >= pending.deadline.min(call_deadline).min(io.deadline()) {
+            return Err(error(StreamErrorCode::Timeout));
+        }
+        io.recheck_authority().map_err(StreamError::from)?;
+        // `ready` is authorized independently of the original connect call.
+        // Both exact accepted owners must remain current for a nonterminal
+        // observation; neither check mints or replaces authority.
+        call.recheck_authority().map_err(StreamError::from)?;
+        io.checkpoint().map_err(StreamError::from)?;
+        let state = self
+            .state
+            .lock()
+            .map_err(|_| error(StreamErrorCode::Exhausted))?;
+        if state.closing {
+            return Err(
+                error(state.failure.unwrap_or(StreamErrorCode::InvalidState))
+                    .uncertain(state.attempted_write),
+            );
+        }
+        if Instant::now() >= pending.deadline.min(call_deadline).min(io.deadline()) {
+            return Err(error(StreamErrorCode::Timeout).uncertain(state.attempted_write));
+        }
+        Ok(())
+    }
+
+    async fn complete_readiness_observation(
+        self: &Arc<Self>,
+        pending: Pending,
+        call: ProviderCall,
+        success: bool,
+    ) -> Result<(), StreamError> {
+        let mut flight = ReadinessFlight {
+            call,
+            pending,
+            connection: Arc::clone(self),
+            settled: false,
+        };
+        let result = match self.audit_ref(&mut flight.call, success).await {
+            Ok(()) => self.ready_timeout_current(&flight.pending, &mut flight.call),
+            Err(failure) => Err(failure),
+        };
+        if let Err(failure) = result {
+            self.abort(failure.code);
+            flight.settled = true;
+            return Err(self.terminal_error(failure));
+        }
+        flight.settled = true;
+        Ok(())
+    }
+
     async fn audit(&self, mut call: ProviderCall, success: bool) -> Result<(), StreamError> {
         self.audit_ref(&mut call, success).await
     }
@@ -1576,7 +1680,7 @@ impl OutboundStream for Handle {
             self.connection
                 .call
                 .prepare_io_future_with(move |pending: Pending| async move {
-                    let call = connection
+                    let mut call = connection
                         .authorize("ready", CapabilityCallCost::new(0))
                         .await?;
                     let selected = match interest {
@@ -1593,17 +1697,51 @@ impl OutboundStream for Handle {
                             writable: false,
                         });
                     }
-                    let result = connection
-                        .wait(&pending, call.deadline(), pending.socket.ready(selected))
-                        .await
-                        .and_then(|value| value.map_err(|_| error(StreamErrorCode::IoFailed)));
+                    let call_deadline = call.deadline();
+                    let lifetime = pending.deadline.min(call_deadline).min(connection.call.io().deadline());
+                    let result = if pending.observation_immediate {
+                        connection.ready_timeout_current(&pending, &mut call)
+                            .and_then(|()| pending.socket.ready_now(selected)
+                                .map_err(|_| error(StreamErrorCode::IoFailed)))
+                            .and_then(|ready| {
+                                connection.ready_timeout_current(&pending, &mut call)?;
+                                Ok(ready)
+                            })
+                    } else if let Some(observation) = pending.observation_deadline.filter(|value| *value < lifetime) {
+                        if Instant::now() >= observation {
+                            connection.ready_timeout_current(&pending, &mut call).map(|()| None)
+                        } else {
+                            tokio::select! {
+                                biased;
+                                value = connection.wait(&pending, call_deadline, pending.socket.ready(selected)) => {
+                                    value.and_then(|value| value.map(Some).map_err(|_| error(StreamErrorCode::IoFailed)))
+                                }
+                                () = tokio::time::sleep_until(observation.into()) => {
+                                    connection.ready_timeout_current(&pending, &mut call).map(|()| None)
+                                }
+                            }
+                        }
+                    } else {
+                        connection.wait(&pending, call_deadline, pending.socket.ready(selected))
+                            .await
+                            .and_then(|value| value.map(Some).map_err(|_| error(StreamErrorCode::IoFailed)))
+                    };
                     match result {
-                        Ok(ready) => {
-                            connection.audit(call, true).await?;
+                        Ok(Some(ready)) => {
+                            if pending.observation_immediate {
+                                connection.complete_readiness_observation(pending, call, true).await?;
+                            } else {
+                                connection.audit(call, true).await?;
+                            }
                             Ok(StreamReadiness {
                                 readable: ready.is_readable() || ready.is_read_closed(),
                                 writable: ready.is_writable() || ready.is_write_closed(),
                             })
+                        }
+                        Ok(None) => {
+                            connection.complete_readiness_observation(pending, call, false).await?;
+                            Err(error(StreamErrorCode::Timeout)
+                                .uncertain(connection.observe().application_write_attempted))
                         }
                         Err(failure) => {
                             connection.abort(failure.code);
