@@ -123,14 +123,7 @@ impl StandaloneStateRuntime {
         );
         let adapters = installed
             .as_ref()
-            .map(|s| {
-                s.http
-                    .adapters
-                    .iter()
-                    .cloned()
-                    .map(|a| a as Arc<dyn latent_effects::runtime::DeferredEffectAdapter>)
-                    .collect()
-            })
+            .map(|s| s.http.dispatcher_adapters())
             .unwrap_or_default();
         let (kernel, mut effects) = StateKernel::start(
             bootstrap,

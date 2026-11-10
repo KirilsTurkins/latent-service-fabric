@@ -416,6 +416,24 @@ impl ProviderRuntime {
         installation: &crate::config::providers::EventInstallation,
         time: Arc<dyn latent_effects::runtime::EffectTimeSource>,
     ) -> Result<Vec<Arc<dyn latent_effects::runtime::DeferredEffectAdapter>>, PlatformError> {
+        self.typed_deferred_event_adapters(installation, time)
+            .map(|adapters| {
+                adapters
+                    .into_iter()
+                    .map(|adapter| {
+                        adapter as Arc<dyn latent_effects::runtime::DeferredEffectAdapter>
+                    })
+                    .collect()
+            })
+    }
+
+    /// Retain the actual installed event owner for signed rule installation.
+    /// Holding this adapter does not itself grant staging or dispatch authority.
+    pub fn typed_deferred_event_adapters(
+        &self,
+        installation: &crate::config::providers::EventInstallation,
+        time: Arc<dyn latent_effects::runtime::EffectTimeSource>,
+    ) -> Result<Vec<Arc<latent_nats::deferred::JetStreamEffectAdapter>>, PlatformError> {
         if installation.deferred.is_empty() {
             return Ok(Vec::new());
         }
@@ -434,9 +452,7 @@ impl ProviderRuntime {
                         deferred.qualification.clone(),
                         Arc::clone(&time),
                     )
-                    .map(|adapter| {
-                        Arc::new(adapter) as Arc<dyn latent_effects::runtime::DeferredEffectAdapter>
-                    })
+                    .map(Arc::new)
                     .map_err(|_| unavailable())
             })
             .collect();

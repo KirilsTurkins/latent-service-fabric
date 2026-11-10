@@ -6,7 +6,7 @@ mod clock;
 mod configuration;
 pub(in crate::standalone) mod inspection;
 mod installations;
-pub use inspection::ConfiguredHttpEffectInspection;
+pub use inspection::{ConfiguredEventEffectInspection, ConfiguredHttpEffectInspection};
 pub use inspection::{
     NativeDeferredEffectHostInspection, NativeHttpCallerInspection, NativeTransactionHostInspection,
 };

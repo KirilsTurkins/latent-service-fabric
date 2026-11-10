@@ -1,0 +1,26 @@
+{
+  "description": "Go transactional aggregate with actual local JetStream provider",
+  "qualification": "normal local combined-source Linux node and ephemeral demo trust",
+  "buildType": "https://latent.dev/build/go-capsule/v1",
+  "sourceSnapshotDigest": "sha256:defe1b97961061bdad01467ec39e4dcee2c638e87e1f8ce3af6124258c601ca3",
+  "componentDigest": "sha256:8fba06ad483ffb65f12b0b89d9d26f6d8eb92007e85158aabe5c420f923031a9",
+  "companionDigest": "sha256:6c1b3bd302390f9ac221e66c1ba6e10f46f9a382567396e8ce3cab8708fd6a8a",
+  "buildObservationSha256": "74bb58f358a09d743840aa2e0727d50e634e5c465b1d1109b140290f175afe1f",
+  "compilerEdgesSha256": "62aeb9c11a26def1d8a1422aa6156eb6bacefd869a2fbbf3916f6e899c7737e6",
+  "signedReleaseSetSha256": "9503507aa72a6fd260623d10958040159df4659a20be5bcaa8748bdf2706a769",
+  "publication": "publication:sha256:976edd2036065e6e29054fecfda454ad98cfe681889afa723e2b3070da82eae0",
+  "observedProviderProfile": "js-window-v1:6ffd29da1e57f4b1ce347c842ae6e3fff6d0346a4c6389f6338d4072e7431f87",
+  "normalNodeSha256": "48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "fixtureSha256": "f0d9d225706076d90d862d9b8d49834206fde90a09ad2768b61229fbcb81b82f",
+  "observations": [
+    "The Go authoring capture pinned the actual disposable JetStream profile and companion-linked requirements. The maintained Go compiler packaged the component, the explicit demo signer signed it, and the normal node admitted it with separately scoped clock, random, state and event grants.",
+    "An update committed one effect and received provider acknowledgement. A declared rejection left count and key version unchanged, and a stale edit returned a fenced abort.",
+    "The fixture deliberately dropped a second committed response body, recovered its original result through authorized lookup, and replayed both that result and the earlier rejection after state changed.",
+    "A fresh query returned count two and the actual broker held two messages for the two successful updates. The node was reaped cleanly with state and effect owners physically retired, and the fixture removed its own broker and TLS resources."
+  ],
+  "limitations": [
+    "The run did not count guest executions; matching retained outcomes and broker messages do not prove there was no extra execution.",
+    "This is one local Go scenario, not cancellation, memory/fuel, crash-persistence or complete Go guest qualification. Other guest languages and the overall conformance matrix remain open.",
+    "The normal node is a verified local combined-source binary containing unmerged work. Production trust, hosted CI and installed-distribution qualification are not established."
+  ]
+}

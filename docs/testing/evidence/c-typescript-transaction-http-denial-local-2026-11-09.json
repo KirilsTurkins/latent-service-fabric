@@ -1,0 +1,38 @@
+{
+  "description": "C and TypeScript strict transaction immediate HTTP denials after staging",
+  "qualification": "normal local combined-source Linux node, ephemeral demo trust, actual JetStream provider and controlled loopback listener",
+  "normalNodeSha256": "48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "guests": [
+    {
+      "language": "c",
+      "sourceSnapshotDigest": "sha256:c09697e78e27388cdd5093b2f609f87e15bad49907cde91ee855bb4470cf2d99",
+      "componentDigest": "sha256:764d80e893a0cf9ba2ef360b38095a12e37539edfcb8d67fc7dd902df5622454",
+      "companionDigest": "sha256:5db365b24e21c2952657fbcddd6eee46edc9a5035fb548f18e786dde36efa1de",
+      "buildObservationSha256": "2b8b7f0c0a8231c02bc16268a428a21e10c7cf54f4ac118bc4f169a91fb1dc41",
+      "signedReleaseSetSha256": "7d87d02f9f03214387689c0f20063bbc294d7926f4585eeda468457cde95636c",
+      "publication": "publication:sha256:9dae4673b8885ecb00c62b1a09ca8d139f8c968550ea695301feca367c50c9d7",
+      "eventProfile": "js-window-v1:7d893a3bfd446d5cf552a3c23cd2cc499a3444e25ad4ba91e111e9223aef52f7",
+      "fixtureSha256": "41a92f74d52a149e4d908677154108b01ca1e204b8405aac4a5c72645b8f8ffc"
+    },
+    {
+      "language": "typescript",
+      "sourceSnapshotDigest": "sha256:3e54fc9450dc5935f6a2ab0b6be1f4dec56b79ec1e4be764f3377298694a2128",
+      "componentDigest": "sha256:87236eea4f7d9f0dcd86e54a871beafd9787a0c9aa1b57b12f21e019ab6f58a2",
+      "companionDigest": "sha256:ffc450bf7e4183458c31552003748f2b7a9b2ea83e310eb7b28281822dcafbb5",
+      "buildObservationSha256": "3fa22aca25658c2b2778c7af32c830fa68cc22600e65a6dc0adac5686874c78b",
+      "signedReleaseSetSha256": "b5915298b178b328c97b5daeef972bdf7712b3a9e17499bfab58d005c2910afa",
+      "publication": "publication:sha256:f9a0ed406330465709deb311d0052cdc480fa5a3226d1601eda0fc86161da4cf",
+      "eventProfile": "js-window-v1:82f80286254036bcf06304005405ad0bb2b02fa30801d40dc5a63cd1773776a4",
+      "fixtureSha256": "dc16a35b24dd50096b1cdcaf682c78427529e4009d355cb759be0cd2a59c2cd2"
+    }
+  ],
+  "observations": [
+    "Each real component was built from its captured controlled variant, demo-signed and admitted by the local node with actual event-provider requirements and no immediate HTTP grant.",
+    "Each variant stages a state write and event intent before attempting HTTP, and returns its declared rejection only after receiving the typed permission-denied result. Both durable results were rejected, fresh queries found the key absent, and namespace inspection found no pending effects or encoded state.",
+    "The controlled listener observed no connection, the broker held zero messages, and node and broker owners retired cleanly. The initial C variant fell through to the scan handler and aborted; the corrected variant was rebuilt and rerun."
+  ],
+  "limitations": [
+    "This covers one controlled denial per guest, not all authority, cancellation, crash, fuel or memory cases. It does not count guest executions.",
+    "The node contains unmerged local combined source; production trust, hosted CI and installed distribution are not established."
+  ]
+}

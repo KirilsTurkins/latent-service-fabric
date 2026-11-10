@@ -1,0 +1,19 @@
+{
+  "description": "Rust command with no configured event staging authority, followed by a fresh query",
+  "qualification": "local normal combined-source node with ephemeral demo trust",
+  "componentDigest": "sha256:f511abdf77aabac8ca1f51f7ba9fdc96aaeb27679d91710f6212a0eb4b7bbf8e",
+  "publication": "publication:sha256:a5714b8f061bb50fe293e792ed698bde0dbed7372cd62861498f1148fe998f9e",
+  "normalNodeSha256": "48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "fixtureSha256": "4c7013c46cbdeb004eccedbc9185f8e6d7e3a760178777a48d8486e9e48e2323",
+  "observations": [
+    "An initial fresh query returned an absent key and zero aggregate.",
+    "The update request under a configuration with no event staging installation returned HTTP 409 with an aborted disposition, a validated abort fence and no effect IDs.",
+    "A subsequent fresh query returned zero with the key still absent. Namespace inspection showed one command record, zero encoded state bytes and zero pending effects.",
+    "The normal node was reaped after clean shutdown and physically retired state and effect owners."
+  ],
+  "limitations": [
+    "The abort observation alone does not identify the precise internal failure or prove the guest reached its event-staging call.",
+    "This does not establish a successful state and event commit, declared business rejection, conflict, recovery, other guests, production trust, hosted CI or packaged distribution.",
+    "The normal node was built from a verified local combined-source snapshot containing unmerged work. The companion Rust query receipt records the captured authoring inputs and component."
+  ]
+}

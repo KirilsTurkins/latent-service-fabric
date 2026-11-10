@@ -1,0 +1,25 @@
+{
+  "description": "Rust transactional aggregate with observed local JetStream provider",
+  "qualification": "normal local combined-source Linux node and ephemeral demo trust",
+  "eventAuthoringBranchCommit": "eba2c833ea44",
+  "authoringSourceSnapshotDigest": "sha256:1f12ee2e00ac77d71defe4596df143af6f74ee6d889801c364c9077080c365aa",
+  "buildObservationSha256": "2b0cd3806dbe87a7990998cd4a53b55e4c56292601c56203c7fa0aa56caf1a1c",
+  "componentDigest": "sha256:819723bf6f0778eb57f4054bff095abe7e24b24b41ed3ffdd3ee896c9fd15a0e",
+  "companionDigest": "sha256:7476e5920630fba7c45f5da8acc63cf0b086f8c15d3ede2769b9c74695b06b4d",
+  "signedReleaseSetSha256": "eb6b463facdff6bbff0ccf8eff38b37e6686a796d50e757b71b861054750d712",
+  "publication": "publication:sha256:39dcd6201bd2ed9bb3f3af1840a5867db4e726dfce46710a1a6fa79720ec4ddd",
+  "observedProviderProfile": "js-window-v1:c1bab86f80c20eeff4467f18f63999e7909cf9d31a9b45582185c7fafcdc1881",
+  "normalNodeSha256": "48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "fixtureSha256": "1c56667094367af234a7db94826f0200abbf45aa8c83d481b6019eabc34809a6",
+  "observations": [
+    "A disposable JetStream stream was qualified and the node reported its exact configured event profile. The Rust authoring capture pinned that profile and its companion-linked requirements; the maintained compiler and packager produced a component and the explicit demo signer produced its release.",
+    "The normal node admitted the signed release, applied narrowly scoped state and event policies, and accepted an authenticated update against an initially empty namespace.",
+    "The original command was committed with one effect; an authorized command lookup matched the original durable result, a fresh query returned count one, the effect reported provider acknowledgement, and the real stream contained one message.",
+    "The node was reaped after clean shutdown and reported physical retirement of its effect and state owners. The fixture removed its own broker, stream storage and TLS files."
+  ],
+  "limitations": [
+    "This is one local successful Rust command and query using a disposable real broker. It does not prove rejection, stale conflicts, lost response, retries, crash boundaries, cancellation or full Rust acceptance.",
+    "The node is a normal binary built from a verified local combined-source snapshot containing unmerged work, not current development, an installed distribution or hosted CI.",
+    "The signer uses ephemeral local demo trust; production signing and release qualification are not established. A single broker message does not establish universal exactly-once delivery."
+  ]
+}

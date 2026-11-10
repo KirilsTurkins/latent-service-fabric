@@ -74,6 +74,7 @@ pub struct SelectedTransactionAsset {
     pub(crate) asset_digest: ArtifactBlobDigest,
     pub(crate) original: Arc<NativeReservation>,
     pub(crate) http_requirements: Option<(ArtifactBlobDigest, Vec<u8>)>,
+    pub(crate) event_requirements: Option<(ArtifactBlobDigest, Vec<u8>)>,
 }
 
 impl SelectedTransactionAsset {
@@ -105,6 +106,15 @@ impl SelectedTransactionAsset {
     #[must_use]
     pub fn deferred_http_requirements(&self) -> Option<(&ArtifactBlobDigest, &[u8])> {
         self.http_requirements
+            .as_ref()
+            .map(|(digest, bytes)| (digest, bytes.as_slice()))
+    }
+
+    /// One bounded event document from the same verified signed package.
+    /// These bytes and their digest do not grant staging or dispatch authority.
+    #[must_use]
+    pub fn deferred_event_requirements(&self) -> Option<(&ArtifactBlobDigest, &[u8])> {
+        self.event_requirements
             .as_ref()
             .map(|(digest, bytes)| (digest, bytes.as_slice()))
     }

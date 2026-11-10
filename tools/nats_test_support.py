@@ -2,6 +2,7 @@
 """Finite TLS-only fixture provisioning for the owned public NATS test server."""
 from __future__ import annotations
 import json
+import os
 from pathlib import Path
 import socket
 import ssl
@@ -10,9 +11,15 @@ import time
 
 PASSWORD = "lsf-public-nats-password"
 class Client:
-    def __init__(self, port, ca):
+    def __init__(self, port, ca, token_auth=None):
         self.port, self.ca = int(port), Path(ca)
         if not 0 < self.port < 65536: raise ValueError("invalid test port")
+        if token_auth is None:
+            selected = os.environ.get("LSF_NATS_TEST_TOKEN_AUTH", "0")
+            if selected not in {"0", "1"}: raise ValueError("invalid fixture authentication mode")
+            token_auth = selected == "1"
+        if type(token_auth) is not bool: raise ValueError("invalid fixture authentication mode")
+        self.token_auth = token_auth
         self.count = 0
     def request(self, subject, value):
         self.count += 1
@@ -29,8 +36,8 @@ class Client:
                         if len(data)>8192 or not data.endswith(b"\r\n"): raise RuntimeError("invalid fixture frame")
                         return data[:-2]
                     if not line().startswith(b"INFO "): raise RuntimeError("fixture INFO missing")
-                    connect=json.dumps({"verbose":False,"pedantic":True,"tls_required":True,"headers":True,
-                        "user":"operator","pass":PASSWORD}).encode()
+                    auth = {"auth_token": PASSWORD} if self.token_auth else {"user":"operator", "pass":PASSWORD}
+                    connect=json.dumps({"verbose":False,"pedantic":True,"tls_required":True,"headers":True, **auth}).encode()
                     stream.sendall(b"CONNECT "+connect+b"\r\nSUB _INBOX.ADMIN.LSF 1\r\nPING\r\n")
                     for _ in range(8):
                         response=line()

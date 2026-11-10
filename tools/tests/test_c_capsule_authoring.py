@@ -33,6 +33,15 @@ class CAuthoringTests(unittest.TestCase):
                 files["src/main.c"] += b"\n/* application change */\n"
                 project.validate(files)
 
+    def test_transaction_template_requests_bounded_codec_and_cold_start_capacity(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            source = project.create(Path(temporary) / 'transaction', 'transactional-aggregate')
+            value, _, _ = project.validate(project.snapshot(source))
+        self.assertEqual(value['limits']['memoryBytes'], 67_108_864)
+        self.assertEqual(value['limits']['wallTimeLimitMillis'], 120_000)
+        self.assertEqual(value['limits']['outboundRequests'], 0)
+        self.assertEqual(json.loads(self.files['capsule-project.json'])['limits']['memoryBytes'], 4_194_304)
+
     def test_fresh_output_does_not_overwrite_existing_project(self):
         with self.assertRaisesRegex(ValueError, "fresh"):
             project.create(self.root, "shipping")

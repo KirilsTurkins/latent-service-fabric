@@ -8,7 +8,11 @@ from tools.rust_capsule_project import (ROOT, AUTHORING_TEMPLATES, TEMPLATES, TU
     fresh, inventory, read_file, snapshot)
 
 
-def create(directory: Path, template: str, name: str | None = None, *, runtime_profile: str | None = None) -> Path:
+def create(directory: Path, template: str, name: str | None = None, *, runtime_profile: str | None = None,
+           event_profile: str | None = None) -> Path:
+    if event_profile is not None and (template != "transactional-aggregate" or not isinstance(event_profile, str)
+            or re.fullmatch(r"js-window-v1:[0-9a-f]{64}", event_profile) is None):
+        raise ValueError("explicit TypeScript transaction event profile required")
     from tools.typescript_guest.runtime_profile import NATIVE_PROFILES, selected_profile
     profile = selected_profile({'runtimeProfile': runtime_profile} if runtime_profile is not None else {})
     if template not in AUTHORING_TEMPLATES:
@@ -49,6 +53,12 @@ def create(directory: Path, template: str, name: str | None = None, *, runtime_p
     if template == "transactional-aggregate":
         from tools.transaction_guest_project import augment
         augment(files, project)
+        if event_profile is not None:
+            from tools.transaction_guest_project import TYPESCRIPT_EVENT_PROFILE, EVENT_REQUIREMENTS, current_event_requirements
+            marker = {"schemaVersion": "latent.typescript.current-event-source-input.v1", "idempotencyProfile": event_profile}
+            files[TYPESCRIPT_EVENT_PROFILE] = json.dumps(marker, indent=2).encode() + b"\n"
+            requirements = current_event_requirements(project, files["transaction-binding.json"], event_profile)
+            files[EVENT_REQUIREMENTS] = json.dumps(requirements, indent=2).encode() + b"\n"
     files["sdk-lock.json"] = json.dumps(lock, indent=2).encode() + b"\n"
     files["README.md"] = (f"# {name}\n\nEdit `src/main.ts` and `wit/world.wit`. Keep `vendor/lsf` unchanged.\n"
         "`tools/typescript_capsule.py build` generates authoritative typed bindings,\n"

@@ -1,0 +1,33 @@
+{
+  "description": "C transaction ownership scope and fresh-query qualification",
+  "qualification": "normal local combined-source Linux node and ephemeral demo trust",
+  "initialFailure": {
+    "componentDigest": "sha256:49d871a1d8cae586c6c489d868ec4b328dd6cb90cadb1a19cf3f344f5623d7f8",
+    "sourceSnapshotDigest": "sha256:fa9654dc646c3d8264e24f799fe001c8aad442a5f8092a6f7217c473a78f88cf",
+    "outcome": "HTTP 503; activation guest-trap",
+    "diagnostic": "A separate instrumented node observed the trap before state-acquisition host entry. The template had left its ownership scope at a zero-byte limit, so its first state-handle adoption could not succeed."
+  },
+  "corrected": {
+    "buildType": "https://latent.dev/build/c-guest/v1",
+    "sourceSnapshotDigest": "sha256:266508de425d59983f1aa4a4acd700c36a4b89939726ec3e5d667c10b08ea034",
+    "componentDigest": "sha256:e3f3f3369b36f09ca26f71f8558247dc56247255e9838b23d35ba406f19470a0",
+    "companionDigest": "sha256:5db365b24e21c2952657fbcddd6eee46edc9a5035fb548f18e786dde36efa1de",
+    "buildObservationSha256": "49c4e47ed991e4657b928564b994bdadabfa4c04eba883451dcdba60da3e536e",
+    "signerSha256": "fad55ca7e64a3e2187eb908342421e861bbc930b7a551111936f02aee284c93b",
+    "signedReleaseSetSha256": "d206be50ab4945712f98ff742a4cb5f6bf998ebfe0c493b84a8ef4a3ba8d9be1",
+    "publication": "publication:sha256:1b9bf7a175cbb4e0c79e30ffe41e8b03187adbcd96d09c45f42e88f26ce915bf",
+    "fixtureSha256": "9a1a4e2dfce535916bf031d57d8c841e64a090f03035dc4cbb63112e0ff3c7c7",
+    "normalNodeSha256": "48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9"
+  },
+  "observations": [
+    "The C transaction template now initializes its bounded ownership scope before state acquisition and requests finite capacity for transaction codec scratch and cold startup.",
+    "The maintained C compiler produced the corrected component; the explicit transaction demo signer accepted its completed observed build and linked companion. The Rust-only demo mode rejected this C build before creating output.",
+    "The normal node admitted the C release. An authenticated fresh query returned count zero and an absent key; command count stayed zero. Node state and effect owners retired physically and shutdown was clean.",
+    "The local signer example suite passed 47 tests and C authoring tests passed eight tests."
+  ],
+  "limitations": [
+    "The copied local fixture observation retains an obsolete Rust label; the signed service, C build type, captured C source and component identify this as the C guest.",
+    "This is one C fresh query, not a successful command or intent, rejection, cancellation, crash, memory-limit or full language qualification.",
+    "The normal node uses a local verified combined-source snapshot containing unmerged work and short-lived demo trust; hosted CI and installed distribution remain separate."
+  ]
+}
