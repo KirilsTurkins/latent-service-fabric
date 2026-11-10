@@ -1,0 +1,124 @@
+name: Agent 1 signed abort qualification
+
+on:
+  push:
+    branches: ['fix/typescript-abort-fanout-refusal-1852-agent1']
+    paths:
+      - '.github/workflows/agent1-abort-qualification.yml'
+      - 'tools/typescript_guest/source_splicer.mjs'
+      - 'tools/typescript_guest/componentize.mjs'
+      - 'tools/tests/test_typescript_export_task_meta.py'
+      - 'tools/qualify_typescript_fetch_runtime.py'
+      - 'sdk/typescript-guest/probes/fetch-runtime/**'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  signed-fetch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: true
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: true
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: true
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: true
+      PYTHONDONTWRITEBYTECODE: 1
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
+        with:
+          python-version: '3.13.5'
+      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6
+        with:
+          node-version: '24.19.0'
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e
+        with:
+          shared-key: typescript-agent1-default-native
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce
+        with:
+          version: '1.254.0'
+      - name: Install the unchanged isolated compiler boundary
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/agent1-tools"
+      - name: Check actual generated export metadata and Fetch assertions
+        env:
+          LSF_TYPESCRIPT_FRONTEND: ${{ runner.temp }}/agent1-tools
+        run: |
+          python3 -B -m unittest tools.tests.test_typescript_export_task_meta tools.tests.test_typescript_native_task_meta tools.tests.test_typescript_native_await tools.tests.test_typescript_async_waiters tools.tests.test_typescript_idle_tasks tools.tests.test_typescript_source_splicer tools.tests.test_typescript_fetch_runtime tools.tests.test_typescript_fetch_boundaries -v
+      - name: Build and freeze genuine current-source default native products
+        run: |
+          python3 - <<'PYCODE'
+          import os, tomllib
+          from pathlib import Path
+          from tools.build_observation import build_environment
+          from tools.phase2_operator_process import write_json
+          from tools.qualify_java_server_lifecycle_suite import native
+          from tools.rust_capsule_build import Commands
+          from tools.rust_capsule_project import ROOT, fresh
+          output = fresh(Path(os.environ['RUNNER_TEMP'])/'agent1-native-build')
+          environment = build_environment(output)
+          environment.update(CARGO_TARGET_DIR=str(ROOT/'target'), CARGO_INCREMENTAL='0',
+              CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0',
+              CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true', CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',
+              CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
+          commands = Commands(ROOT, output, environment, deadline_seconds=900, command_seconds=900)
+          try:
+              native(commands, output, tomllib.loads((ROOT/'tools/toolchain.toml').read_text()))
+          finally:
+              write_json(output/'commands.json', commands.records)
+          PYCODE
+      # Only unchanged source-built engine/splicer products are reused through
+      # their normal authenticated receipts. The native host is freshly built:
+      # an old prepared qualification also binds SDK/compiler source and cannot
+      # be relabelled as evidence for this changed checkout.
+      - uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5
+        with:
+          name: typescript-source-splicer-input-6ab3da5364ac3e7db57c7154f894bc6223ad728b
+          run-id: 42516280360
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/agent1-splicer
+      - uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5
+        with:
+          name: typescript-fetch-engine-input-6ab3da5364ac3e7db57c7154f894bc6223ad728b
+          run-id: 42516280360
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/agent1-engine
+      - name: Build sign and execute the complete strict Fetch programme
+        run: |
+          python3 tools/qualify_typescript_fetch_runtime.py --tools "$RUNNER_TEMP/agent1-tools" --engine "$RUNNER_TEMP/agent1-engine" --splicer "$RUNNER_TEMP/agent1-splicer" --native "$RUNNER_TEMP/agent1-native-build/native" --native-tuple "$RUNNER_TEMP/agent1-native-build/native/native-tuple.json" --output "$RUNNER_TEMP/agent1-signed-fetch"
+      - name: Preserve the exact source and qualification identity
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/agent1-source"
+          git archive --format=tar.gz HEAD > "$RUNNER_TEMP/agent1-source/source.tar.gz"
+          git rev-parse HEAD > "$RUNNER_TEMP/agent1-source/head.txt"
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        if: always()
+        with:
+          name: agent1-signed-abort-qualification-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/agent1-source/
+            ${{ runner.temp }}/agent1-native-build/commands.json
+            ${{ runner.temp }}/agent1-native-build/native/native-tuple.json
+            ${{ runner.temp }}/agent1-native-build/logs/**
+            ${{ runner.temp }}/agent1-signed-fetch/*.json
+            ${{ runner.temp }}/agent1-signed-fetch/build/*.json
+            ${{ runner.temp }}/agent1-signed-fetch/build/logs/**
+            ${{ runner.temp }}/agent1-signed-fetch/build/component.wasm
+            ${{ runner.temp }}/agent1-signed-fetch/node/*.json
+            ${{ runner.temp }}/agent1-signed-fetch/node/controls/*.json
+          if-no-files-found: error
+          retention-days: 7
