@@ -3,7 +3,7 @@ name: Go bounded write progress reference
 on:
   workflow_dispatch:
   push:
-    branches: ['feat/go-stream-write-progress-20261020', 'fix/go-stream-deadline-20261109', 'fix/go-empty-read-deadline-20261110', 'fix/go-half-close-deadline-20261110']
+    branches: ['feat/go-stream-write-progress-20261020', 'fix/go-stream-deadline-20261109', 'fix/go-empty-read-deadline-20261110', 'fix/go-half-close-deadline-20261110', 'fix/go-deadline-clock-basis-20261110']
 
 permissions:
   contents: read
@@ -28,7 +28,7 @@ jobs:
       - name: Install pinned source controls
         run: python3 -m pip install -r tools/requirements.lock
       - name: Check exact projection and strict counterexample reader
-        run: python3 -m unittest tools.tests.test_go_write_progress tools.tests.test_go_network -v
+        run: python3 -m unittest tools.tests.test_go_write_progress tools.tests.test_go_network tools.tests.test_go_network_deadline_set -v
       - name: Authenticate one official reference compiler
         run: |
           set -euo pipefail
