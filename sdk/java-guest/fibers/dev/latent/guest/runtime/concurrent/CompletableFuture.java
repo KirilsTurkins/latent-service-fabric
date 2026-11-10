@@ -351,7 +351,9 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     private static Throwable wrapped(Throwable error) {
         return error instanceof CompletionException ? error : new CompletionException(error);
     }
-    private void asyncFailure(Throwable error) { completeExceptionally(wrapped(error)); }
+    // Internal continuation completion must not dispatch into an application
+    // override of completeExceptionally on a destination subclass.
+    private void asyncFailure(Throwable error) { finish(null, wrapped(error)); }
     public boolean complete(T result) { return finish(result, null); }
     public boolean completeExceptionally(Throwable error) { return finish(null, Objects.requireNonNull(error)); }
     @Override public boolean cancel(boolean interrupt) {
@@ -469,7 +471,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     private static <U> void submit(CompletableFuture<U> destination, Executor executor,
             Supplier<? extends U> supplier, boolean evenIfCompleted) {
         new Action(destination, null, null, true, executor,
-            () -> destination.complete(supplier.get()), evenIfCompleted).fire(true);
+            () -> destination.finish(supplier.get(), null), evenIfCompleted).fire(true);
     }
     public static <U> CompletableFuture<U> supplyAsync(Supplier<U> supplier) {
         Objects.requireNonNull(supplier);
@@ -516,7 +518,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         Objects.requireNonNull(fn);
         CompletableFuture<U> destination = newIncompleteFuture();
         new Action(destination, this, null, true, executor,
-            () -> destination.complete(fn.apply(successful())), false, 1).install();
+            () -> destination.finish(fn.apply(successful()), null), false, 1).install();
         return destination;
     }
     private <U, V> CompletableFuture<V> binary(CompletionStage<? extends U> other,
@@ -528,7 +530,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         // failure, but an installed listener propagates failure before dispatch.
         int shortcut = completionRecorded() && right.completionRecorded() ? 0 : 1;
         new Action(destination, this, right, true, executor,
-            () -> destination.complete(fn.apply(successful(), right.successful())), false, shortcut).install();
+            () -> destination.finish(fn.apply(successful(), right.successful()), null), false, shortcut).install();
         return destination;
     }
     private <U> CompletableFuture<U> either(CompletionStage<? extends T> other,
@@ -537,7 +539,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         CompletableFuture<? extends T> right = Objects.requireNonNull(other).toCompletableFuture();
         CompletableFuture<U> destination = newIncompleteFuture();
         new Action(destination, this, right, false, executor,
-            () -> destination.complete(fn.apply(completionRecorded() ? successful() : right.successful())), false, 1).install();
+            () -> destination.finish(fn.apply(completionRecorded() ? successful() : right.successful()), null), false, 1).install();
         return destination;
     }
     private <U> CompletableFuture<U> handled(BiFunction<? super T, Throwable, ? extends U> fn, Executor executor) {
@@ -547,7 +549,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
             T result;
             Throwable error;
             synchronized (stateLock) { result = value; error = failure; }
-            destination.complete(fn.apply(result, error));
+            destination.finish(fn.apply(result, error), null);
         }).install();
         return destination;
     }
@@ -563,14 +565,14 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
                 if (error == null) throw callback;
                 if (callback != error) error.addSuppressed(callback);
             }
-            if (error == null) destination.complete(result); else destination.asyncFailure(error);
+            if (error == null) destination.finish(result, null); else destination.asyncFailure(error);
         }).install();
         return destination;
     }
     private void relay(CompletableFuture<T> destination) {
         new Action(destination, this, null, true, null, () -> {
             Throwable error = error();
-            if (error == null) destination.complete(successful()); else destination.asyncFailure(error);
+            if (error == null) destination.finish(successful(), null); else destination.asyncFailure(error);
         }).install();
     }
     private <U> CompletableFuture<U> composed(Function<? super T, ? extends CompletionStage<U>> fn, Executor executor) {
@@ -589,7 +591,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         CompletableFuture<T> destination = newIncompleteFuture();
         new Action(destination, this, null, true, executor, () -> {
             Throwable error = error();
-            if (error == null) destination.complete(successful());
+            if (error == null) destination.finish(successful(), null);
             else Objects.requireNonNull(fn.apply(error)).toCompletableFuture().relay(destination);
         }, false, 2).install();
         return destination;
@@ -626,7 +628,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         CompletableFuture<?> right = Objects.requireNonNull(other).toCompletableFuture();
         CompletableFuture<Void> destination = newIncompleteFuture();
         new Action(destination, this, right, false, executor, () -> {
-            if (completionRecorded()) successful(); else right.successful(); fn.run(); destination.complete(null);
+            if (completionRecorded()) successful(); else right.successful(); fn.run(); destination.finish(null, null);
         }, false, 1).install();
         return destination;
     }
