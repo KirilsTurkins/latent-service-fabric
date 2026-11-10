@@ -776,12 +776,7 @@ async fn deadline_is_rechecked_after_authority_callback() {
             permit(),
         )
         .await;
-    assert!(matches!(
-        result,
-        Err(QueueError::Rejected(
-            EntityRejection::CancelledBeforeExecution
-        ))
-    ));
+    assert!(matches!(result, Err(QueueError::Expired)));
     assert_eq!(queue.snapshot().active, 0);
     assert_eq!(queue.snapshot().keys, 0);
 }

@@ -91,6 +91,7 @@ impl Drop for CommandRegistration {
 
 struct Pending {
     current: Arc<dyn Fn() -> bool + Send + Sync>,
+    deadline: Instant,
     result: Mutex<Option<oneshot::Sender<Result<Physical, QueueError>>>>,
     permit: Mutex<Option<NativeBufferPermit>>,
     command: Option<Arc<CommandRegistration>>,
@@ -362,6 +363,7 @@ impl EntityQueue {
         let (send, mut receive) = oneshot::channel();
         let pending = Arc::new(Pending {
             current,
+            deadline,
             result: Mutex::new(Some(send)),
             permit: Mutex::new(Some(permit)),
             command: registration,
@@ -415,33 +417,33 @@ impl EntityQueue {
                 return Ok(());
             };
             let (pending, outcome) = match next {
-                EntityDispatch::Ready(execution)
-                    if execution.cancellation_requested(self.clock.monotonic_now()) =>
-                {
-                    let (request, owner) = execution.into_owned_work();
-                    drop(owner);
-                    (
-                        request.into_payload(),
-                        Err(QueueError::Rejected(
-                            EntityRejection::CancelledBeforeExecution,
-                        )),
-                    )
-                }
                 EntityDispatch::Ready(execution) => {
+                    let now = self.clock.monotonic_now();
+                    let cancelled = execution.cancellation_requested(now);
                     let (request, owner) = execution.into_owned_work();
                     let pending = request.into_payload();
-                    let permit = pending
-                        .permit
-                        .lock()
-                        .map_err(|_| QueueError::Unavailable)?
-                        .take()
-                        .ok_or(QueueError::Unavailable)?;
-                    let lease = Arc::new(PhysicalLease {
-                        _lane: owner,
-                        _permit: permit,
-                        _command: pending.command.clone(),
-                    });
-                    (pending, Ok(lease))
+                    if cancelled {
+                        let failure = if now >= pending.deadline {
+                            QueueError::Expired
+                        } else {
+                            QueueError::Rejected(EntityRejection::CancelledBeforeExecution)
+                        };
+                        drop(owner);
+                        (pending, Err(failure))
+                    } else {
+                        let permit = pending
+                            .permit
+                            .lock()
+                            .map_err(|_| QueueError::Unavailable)?
+                            .take()
+                            .ok_or(QueueError::Unavailable)?;
+                        let lease = Arc::new(PhysicalLease {
+                            _lane: owner,
+                            _permit: permit,
+                            _command: pending.command.clone(),
+                        });
+                        (pending, Ok(lease))
+                    }
                 }
                 EntityDispatch::Rejected(rejected) => (
                     rejected.request.into_payload(),
