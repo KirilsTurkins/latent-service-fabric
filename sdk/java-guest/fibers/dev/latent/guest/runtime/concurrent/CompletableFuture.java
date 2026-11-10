@@ -194,7 +194,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
             finish();
         }
         private boolean readmit() {
-            if (destination.isDone()) { withdrawn = false; return false; }
+            if (destination.completionRecorded()) { withdrawn = false; return false; }
             Activation.Lease readmitted = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
             boolean accepted;
             try { accepted = destination.accept(this, false); }
@@ -239,8 +239,9 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
             finish();
         }
         boolean ready() {
-            return left == null || (right == null ? left.isDone()
-                : both ? left.isDone() && right.isDone() : left.isDone() || right.isDone());
+            return left == null || (right == null ? left.completionRecorded()
+                : both ? left.completionRecorded() && right.completionRecorded()
+                    : left.completionRecorded() || right.completionRecorded());
         }
         void perform() { body.run(); }
         void fire(boolean propagateRejection) {
@@ -251,7 +252,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
             try {
                 Throwable inputFailure = null;
                 if (inputShortcut == 1) {
-                    CompletableFuture<?> selected = right != null && !both && !left.isDone() ? right : left;
+                    CompletableFuture<?> selected = right != null && !both && !left.completionRecorded() ? right : left;
                     inputFailure = selected.error();
                     if (inputFailure == null && right != null && both) inputFailure = right.error();
                 }
@@ -280,7 +281,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         @Override public void run() {
             if (!startRun()) return;
             try {
-                if (!destination.isDone()) perform();
+                if (!destination.completionRecorded()) perform();
             } catch (Throwable error) { destination.asyncFailure(error); }
             finally { finish(); }
         }
@@ -305,8 +306,8 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         @Override boolean ready() {
             if (inputs == null) return false;
             for (CompletableFuture<?> input : inputs) {
-                if (both && !input.isDone()) return false;
-                if (!both && input.isDone()) return true;
+                if (both && !input.completionRecorded()) return false;
+                if (!both && input.completionRecorded()) return true;
             }
             return both;
         }
@@ -319,7 +320,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
                 }
                 ((CompletableFuture<Object>)destination).complete(null);
             } else {
-                for (CompletableFuture<?> input : inputs) if (input.isDone()) {
+                for (CompletableFuture<?> input : inputs) if (input.completionRecorded()) {
                     ((CompletableFuture<Object>)destination).complete(input.successful());
                     return;
                 }
@@ -358,6 +359,9 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     }
     @Override public boolean isCancelled() { synchronized (stateLock) { return completed && failure instanceof CancellationException; } }
     @Override public boolean isDone() { synchronized (stateLock) { return completed; } }
+    // Stage dispatch uses the recorded state, not an application override of
+    // the public observation method. The same lock protects the result.
+    private final boolean completionRecorded() { synchronized (stateLock) { return completed; } }
     public boolean isCompletedExceptionally() { synchronized (stateLock) { return completed && failure != null; } }
     @Override public T resultNow() {
         synchronized (stateLock) {
@@ -522,7 +526,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         CompletableFuture<V> destination = newIncompleteFuture();
         // The reference JDK dispatches an already-ready binary stage even on
         // failure, but an installed listener propagates failure before dispatch.
-        int shortcut = isDone() && right.isDone() ? 0 : 1;
+        int shortcut = completionRecorded() && right.completionRecorded() ? 0 : 1;
         new Action(destination, this, right, true, executor,
             () -> destination.complete(fn.apply(successful(), right.successful())), false, shortcut).install();
         return destination;
@@ -533,7 +537,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         CompletableFuture<? extends T> right = Objects.requireNonNull(other).toCompletableFuture();
         CompletableFuture<U> destination = newIncompleteFuture();
         new Action(destination, this, right, false, executor,
-            () -> destination.complete(fn.apply(isDone() ? successful() : right.successful())), false, 1).install();
+            () -> destination.complete(fn.apply(completionRecorded() ? successful() : right.successful())), false, 1).install();
         return destination;
     }
     private <U> CompletableFuture<U> handled(BiFunction<? super T, Throwable, ? extends U> fn, Executor executor) {
@@ -622,7 +626,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         CompletableFuture<?> right = Objects.requireNonNull(other).toCompletableFuture();
         CompletableFuture<Void> destination = newIncompleteFuture();
         new Action(destination, this, right, false, executor, () -> {
-            if (isDone()) successful(); else right.successful(); fn.run(); destination.complete(null);
+            if (completionRecorded()) successful(); else right.successful(); fn.run(); destination.complete(null);
         }, false, 1).install();
         return destination;
     }

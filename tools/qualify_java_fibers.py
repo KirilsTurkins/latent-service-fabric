@@ -351,6 +351,8 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
     uncertain_owners = fixture / "CompletableFutureExecutorUncertainOwnerControl.java"
     monitor_reference = fixture / "CompletableMonitorReferenceControl.java"
     monitor_owner = fixture / "CompletableMonitorOwnerControl.java"
+    readiness_reference = fixture / "CompletableOverrideReadinessReferenceControl.java"
+    readmit_owner = fixture / "source-control/dev/latent/guest/runtime/concurrent/CompletableOverrideReadmitOwnerControl.java"
     stubs = [fixture / "source-control" / name for name in (
         "PrivateSourceRunner.java", "dev/latent/generated/Bindings.java",
         "dev/latent/guest/runtime/Activation.java", "dev/latent/guest/runtime/concurrent/Executors.java")]
@@ -358,12 +360,12 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
              for name in ("CompletableFuture", "CompletionStage", "CompletionException")]
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
               for path in (native, owners, executor_reference, executor_owners, uncertain_owners,
-                           monitor_reference, monitor_owner, *stubs, *ports)}
+                           monitor_reference, monitor_owner, readiness_reference, readmit_owner, *stubs, *ports)}
     output.mkdir()
     reference, private = output / "reference", output / "private"
     reference.mkdir(); private.mkdir()
     compiler.run("completable-reference-compile", "javac", "-proc:none", "--release", "25", "-d", reference,
-                 native, executor_reference, monitor_reference)
+                 native, executor_reference, monitor_reference, readiness_reference)
     expected = "COMPLETABLE_FUTURE_SOURCE_CONTROL PASS observables=82"
     observed = compiler.run("completable-reference-run", "java", "-Xmx256m", "-cp", reference,
                             "CompletableFutureNativeControl").strip()
@@ -376,6 +378,10 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
     observed = compiler.run("completable-monitor-reference-jdk", "java", "-Xmx256m", "-cp", reference,
                             "CompletableMonitorReferenceControl").strip()
     if observed != monitor_expected: raise ValueError("Java CompletableFuture monitor reference did not complete")
+    readiness_expected = "COMPLETABLE_OVERRIDE_READINESS_REFERENCE PASS cases=19;public-dispatch;private-helper"
+    observed = compiler.run("completable-readiness-reference-jdk", "java", "-Xmx256m", "-cp", reference,
+                            "CompletableOverrideReadinessReferenceControl").strip()
+    if observed != readiness_expected: raise ValueError("Java CompletableFuture readiness reference did not complete")
     text = read_file(native).decode("utf-8")
     for name in ("CompletableFuture", "CompletionStage", "CompletionException"):
         original = "import java.util.concurrent." + name + ";"
@@ -403,8 +409,14 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
         text = text.replace(original, "import dev.latent.guest.runtime.concurrent." + name + ";")
     private_monitor = private / monitor_reference.name
     private_monitor.write_text(text, encoding="utf-8")
+    text = read_file(readiness_reference).decode("utf-8")
+    original = "import java.util.concurrent.CompletableFuture;"
+    if text.count(original) != 1: raise ValueError("Java CompletableFuture readiness control import is ambiguous")
+    private_readiness = private / readiness_reference.name
+    private_readiness.write_text(text.replace(original, "import dev.latent.guest.runtime.concurrent.CompletableFuture;"),
+                                 encoding="utf-8")
     compiler.run("completable-source-compile", "javac", "-proc:none", "--release", "25", "-d", private,
-                 private_native, private_executor, private_monitor, monitor_owner,
+                 private_native, private_executor, private_monitor, private_readiness, monitor_owner, readmit_owner,
                  owners, executor_owners, uncertain_owners, *stubs, *ports)
     owner_result = "COMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=419;raceRounds=32"
     observed = compiler.run("completable-source-run", "java", "-Xmx256m", "-cp", private,
@@ -432,6 +444,13 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
     if observed != ("COMPLETABLE_FUTURE_MONITOR_OWNER PASS callback-retirement;"
                     "cancelled-queued-retirement;subscribe-race"):
         raise ValueError("Java CompletableFuture monitor ownership control did not complete")
+    observed = compiler.run("completable-readiness-source", "java", "-Xmx256m", "-cp", private,
+                            "CompletableOverrideReadinessReferenceControl", "source").strip()
+    if observed != readiness_expected: raise ValueError("Java CompletableFuture readiness source differs from JDK")
+    observed = compiler.run("completable-readmit-owner", "java", "-Xmx256m", "-cp", private,
+                            "dev.latent.guest.runtime.concurrent.CompletableOverrideReadmitOwnerControl").strip()
+    if observed != "COMPLETABLE_OVERRIDE_READMIT_OWNER PASS simulated-queue-copies=2;original-ledger":
+        raise ValueError("Java CompletableFuture readiness readmission control did not complete")
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError("Java CompletableFuture control inputs changed during execution")
     return {"status": "reference-and-SDK-source-controls-passed", "referenceObservables": 82,
@@ -440,6 +459,8 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
             "uncertainExecutorOwnershipObservables": 30,
             "uncertainAcceptanceAtOriginalOwnerCapacity": True, "uncertainActivationRetirementQualified": False,
             "futureMonitor": "JDK-and-SDK-source-controls-passed",
+            "futureReadiness": "JDK-and-SDK-source-controls-passed",
+            "futureReadmit": "simulated-queue-copies-original-source-ledger-passed",
             "componentExecutionPerformed": False, "actualGuestBindingsUsed": False}
 
 
@@ -465,7 +486,7 @@ def completable_model_control(compiler: Compiler, output: Path) -> dict:
                  "-d", output, *sources)
     expected = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;canonical-api-and-helper-identities;"
         "resolved-reference-closure;unsupported-no-fallback;result-settlement-fence;queued-settlement-fence;"
-        "actual-coroutine-monitors=28;owned-callback-bodies=32;bodies=190;actual-generated-callbacks=23;application-identity")
+        "actual-coroutine-monitors=29;owned-callback-bodies=33;bodies=191;actual-generated-callbacks=23;application-identity")
     observed = compiler.run("completable-model-control", "java", "-Xmx256m", "-cp",
                             str(output) + os.pathsep + classpath,
                             "dev.latent.guest.runtime.compiler.CompletableFutureModelControl").strip()
@@ -476,8 +497,8 @@ def completable_model_control(compiler: Compiler, output: Path) -> dict:
     if fields != ("COMPLETABLE_FUTURE_FIELD_MODEL_CONTROL PASS declared-and-inherited-types;"
                   "closed-read-write-references;absent-no-fallback;models=6"):
         raise ValueError("Java CompletableFuture field model control did not complete")
-    return {"status": "actual-locked-classlib-model-passed", "modelFingerprintVersion": 5, "modelMethodBodies": 190,
-            "coroutineMonitorBodies": 28, "ownedCallbackBodies": 32, "actualGeneratedCallbacks": 23,
+    return {"status": "actual-locked-classlib-model-passed", "modelFingerprintVersion": 6, "modelMethodBodies": 191,
+            "coroutineMonitorBodies": 29, "ownedCallbackBodies": 33, "actualGeneratedCallbacks": 23,
             "jarDigests": identities,
             "fieldReferences": "actual-declared-and-inherited-types-passed",
             "portOrApplicationClassesInitialized": False, "actualGuestBindingsUsed": False}
