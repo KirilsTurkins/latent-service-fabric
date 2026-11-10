@@ -151,7 +151,7 @@ int main(void) {
     content_range="bytes 10-99/99"; content_length="90"; refuses(10);
     reset(); expected_range="bytes=10-"; status=416;
     struct url *out_of_range=url(10);
-    assert(!fetchGet(out_of_range,"A") && fetchLastErrCode==FETCH_SERVER && aborts==1);
+    assert(!fetchGet(out_of_range,"A") && fetchLastErrCode==FETCH_UNAVAIL && errno==EIO && opens==1 && aborts==1);
     fetchFreeURL(out_of_range);
     reset(); expected_range="bytes=10-"; denied=true;
     struct url *u=url(10); assert(!fetchGet(u,"A") && errno==EACCES && opens==1 && aborts==0); fetchFreeURL(u);

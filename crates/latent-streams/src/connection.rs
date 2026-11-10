@@ -340,6 +340,7 @@ pub(crate) enum TestWritePoint {
     BeforeDispatch,
     NoProgress,
     FlushPending,
+    ReadConsumed,
     AuditPending,
 }
 #[cfg(test)]
@@ -365,6 +366,25 @@ struct PendingGuard {
 struct ChunkOwner {
     _connection: Arc<Connection>,
     _window: latent_capabilities::broker::network::StreamChunkReservation,
+}
+
+// Retain the original buffer/output and socket across currentness and audit.
+// If consumed bytes cannot be handed off, fence the same connection before
+// releasing any original owners that remain in this flight.
+struct ReadFlight {
+    buffer: Option<IoTransferBuffer>,
+    output: Option<IoOutputChunk>,
+    call: ProviderCall,
+    pending: Pending,
+    connection: Arc<Connection>,
+    consumed: bool,
+}
+impl Drop for ReadFlight {
+    fn drop(&mut self) {
+        if self.consumed {
+            self.connection.abort(StreamErrorCode::Cancelled);
+        }
+    }
 }
 
 // One write owns the original input, audit call, and Pending socket through its
@@ -1280,33 +1300,59 @@ impl OutboundStream for Handle {
         }
         let connection = Arc::clone(&self.connection);
         let prepared = self.connection.call.prepare_io_future_with(
-            move |(pending, mut buffer): (Pending, IoTransferBuffer)| async move {
-                let mut call = connection
+            move |(pending, buffer): (Pending, IoTransferBuffer)| async move {
+                let call = connection
                     .authorize("read", CapabilityCallCost::new(maximum))
                     .await?;
                 connection.scope.charge_transfer(maximum)?;
-                let result = connection
-                    .wait(&pending, call.deadline(), async {
-                        loop {
-                            recheck_provider(&mut call).await?;
-                            match pending.socket.try_read(buffer.spare_mut()?) {
-                                Ok(None) => pending
-                                    .socket
-                                    .readable()
-                                    .await
-                                    .map_err(|_| error(StreamErrorCode::IoFailed))?,
-                                Ok(Some(count)) => break Ok(count),
-                                Err(error) => break Err(error),
+                let mut flight = ReadFlight {
+                    buffer: Some(buffer),
+                    output: None,
+                    call,
+                    pending,
+                    connection: Arc::clone(&connection),
+                    consumed: false,
+                };
+                let deadline = flight.call.deadline();
+                let result = {
+                    let pending = &flight.pending;
+                    let buffer = flight.buffer.as_mut().expect("original read buffer");
+                    let call = &mut flight.call;
+                    let consumed = &mut flight.consumed;
+                    connection
+                        .wait(pending, deadline, async {
+                            loop {
+                                recheck_provider(call).await?;
+                                match pending.socket.try_read(buffer.spare_mut()?) {
+                                    Ok(None) => pending
+                                        .socket
+                                        .readable()
+                                        .await
+                                        .map_err(|_| error(StreamErrorCode::IoFailed))?,
+                                    Ok(Some(count)) => {
+                                        // wait() performs another authority check after
+                                        // this return. Record consumption before it can
+                                        // suspend, fail, or be abandoned.
+                                        *consumed = count != 0;
+                                        #[cfg(test)]
+                                        connection
+                                            .test_wait_write_gate(TestWritePoint::ReadConsumed)
+                                            .await;
+                                        break Ok(count);
+                                    }
+                                    Err(error) => break Err(error),
+                                }
                             }
-                        }
-                    })
-                    .await
-                    .and_then(|value| value);
+                        })
+                        .await
+                        .and_then(|value| value)
+                };
                 let count = match result {
                     Ok(count) => count,
                     Err(failure) => {
                         connection.abort(failure.code);
-                        connection.audit(call, false).await?;
+                        flight.consumed = false;
+                        connection.audit_ref(&mut flight.call, false).await?;
                         return Err(connection.terminal_error(failure));
                     }
                 };
@@ -1321,14 +1367,29 @@ impl OutboundStream for Handle {
                         state.last_progress = Instant::now();
                     }
                 }
-                buffer.advance_written(count)?;
-                let result = if count == 0 {
-                    None
-                } else {
-                    Some(buffer.finish()?)
-                };
-                connection.audit(call, true).await?;
-                Ok(result)
+                flight
+                    .buffer
+                    .as_mut()
+                    .expect("original read buffer")
+                    .advance_written(count)?;
+                if count != 0 {
+                    flight.output = Some(
+                        flight
+                            .buffer
+                            .take()
+                            .expect("original read buffer")
+                            .finish()?,
+                    );
+                }
+                if let Err(failure) = connection.audit_ref(&mut flight.call, true).await {
+                    if flight.consumed {
+                        connection.abort(failure.code);
+                        flight.consumed = false;
+                    }
+                    return Err(failure);
+                }
+                flight.consumed = false;
+                Ok(flight.output.take())
             },
         )?;
         let pending = self.connection.pending(0, timeout)?;

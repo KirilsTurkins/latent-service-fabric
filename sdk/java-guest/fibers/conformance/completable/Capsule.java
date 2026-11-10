@@ -5,6 +5,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -46,7 +47,38 @@ public final class Capsule {
         pending.toCompletableFuture().complete(20);
         require(mapped.toCompletableFuture().get(5, TimeUnit.SECONDS) == 42);
         require(CompletableFuture.runAsync(() -> { }).thenRunAsync(() -> { }).get() == null);
+        defaultExecutorPublicMonitor();
         return 42L;
+    }
+    private static void defaultExecutorPublicMonitor() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<Integer> source = new CompletableFuture<>();
+        Executor executor = source.defaultExecutor();
+        CompletableFuture<Integer> mapped = source.thenApplyAsync(value -> value + 1, executor);
+        Object gate = new Object();
+        boolean[] done = {false};
+        Throwable[] failure = {null};
+        Thread completer = new Thread(() -> {
+            try { require(source.complete(41)); }
+            catch (Throwable error) { failure[0] = error; }
+            finally { synchronized (gate) { done[0] = true; gate.notifyAll(); } }
+        });
+        try {
+            synchronized (executor) {
+                completer.start();
+                long start = System.nanoTime();
+                synchronized (gate) {
+                    while (!done[0]) {
+                        if (System.nanoTime() - start > 5_000_000_000L)
+                            throw new IllegalStateException("default-executor-public-monitor-deadline");
+                        gate.wait(5);
+                    }
+                }
+                require(failure[0] == null && mapped.get(5,TimeUnit.SECONDS) == 42);
+            }
+        } finally {
+            completer.join(5000);
+            require(!completer.isAlive());
+        }
     }
     private static final class Gate {
         private boolean entered, released, exited;
@@ -97,11 +129,41 @@ public final class Capsule {
         require(combined.get() == 42 && all.join() == null);
         require(any.join().equals(20) || any.join().equals(22));
         left.join(); right.join();
+        publicFutureMonitor();
         require(first.applyToEither(second, value -> value + 22).join() == 42);
         require(CompletableFuture.allOf().join() == null && !CompletableFuture.anyOf().isDone());
         require(first.thenCompose(value -> CompletableFuture.completedFuture(value + 22)).join() == 42);
         require(first.whenComplete((value, error) -> require(value == 20 && error == null)).join() == 20);
         return 42L;
+    }
+    private static void publicFutureMonitor() throws InterruptedException {
+        CompletableFuture<Integer> source = new CompletableFuture<>();
+        CompletableFuture<Integer> mapped = source.thenApply(value -> value + 1);
+        Object gate = new Object();
+        boolean[] done = {false};
+        Throwable[] failure = {null};
+        Thread completer = new Thread(() -> {
+            try { require(source.complete(41)); }
+            catch (Throwable error) { failure[0] = error; }
+            finally { synchronized (gate) { done[0] = true; gate.notifyAll(); } }
+        });
+        try {
+            synchronized (source) {
+                completer.start();
+                long start = System.nanoTime();
+                synchronized (gate) {
+                    while (!done[0]) {
+                        if (System.nanoTime() - start > 5_000_000_000L)
+                            throw new IllegalStateException("completable-public-monitor-deadline");
+                        gate.wait(5);
+                    }
+                }
+                require(failure[0] == null && mapped.join() == 42);
+            }
+        } finally {
+            completer.join(5000);
+            require(!completer.isAlive());
+        }
     }
     private static Long rootReturns() {
         CompletableFuture.runAsync(() -> sleep(20)).thenRunAsync(() -> {

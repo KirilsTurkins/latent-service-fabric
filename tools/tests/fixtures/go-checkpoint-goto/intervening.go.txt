@@ -1,0 +1,4 @@
+package directivecheck
+//go:nosplit
+var unrelated int
+func Later() {}

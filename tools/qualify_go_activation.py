@@ -19,7 +19,7 @@ from tools.stage_runtime_wit import stage
 def fixture_reference(output, commands, compiler, source, fixture):
     """Run only this reviewed fixture on the pinned native Go reference."""
     if fixture == 'checkpoints':
-        modes = [0, 1, 4]
+        modes = [0, 1, 4, 5, 6]
     elif fixture == 'timers':
         # Mode 4 intentionally returns with accepted callbacks: native Go main
         # exits immediately, whereas the component profile requires drain.

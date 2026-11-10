@@ -1,0 +1,295 @@
+package halfclose
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"net"
+	"os"
+	"sync"
+	"sync/atomic"
+	"testing"
+	"time"
+
+	lsfNetwork "example.invalid/halfclose/network"
+	"example.invalid/halfclose/raw"
+	"example.invalid/halfclose/wit"
+)
+
+var ErrClosed = net.ErrClosed
+
+func lsfStreamUnsupported() error { return errors.ErrUnsupported }
+
+type lsfStreamError struct{ failure lsfNetwork.StreamError }
+
+func (e *lsfStreamError) Error() string { return fmt.Sprintf("provider-error:%d", e.failure.Code) }
+
+type OpError struct {
+	Op, Net string
+	Addr    any
+	Err     error
+}
+
+func (e *OpError) Error() string { return fmt.Sprintf("%s: %v", e.Op, e.Err) }
+func (e *OpError) Unwrap() error { return e.Err }
+
+type lsfStreamConn struct {
+	mu                                               sync.Mutex
+	stream                                           *lsfNetwork.Connection
+	remote                                           string
+	readDeadline, writeDeadline                      time.Time
+	readBusy, writeBusy, closing, readEOF, writeShut bool
+	closeDone                                        chan struct{}
+	closeError                                       error
+}
+
+func connection() (*lsfStreamConn, *raw.Connection) {
+	wire := &raw.Connection{}
+	wire.OnShutdown = func(context.Context, raw.ShutdownMode) wit.Result[raw.Observation, raw.StreamError] {
+		return wit.Ok[raw.Observation, raw.StreamError](raw.Observation{})
+	}
+	wire.OnClose = func(context.Context) wit.Result[raw.Observation, raw.StreamError] {
+		return wit.Ok[raw.Observation, raw.StreamError](raw.Observation{})
+	}
+	return &lsfStreamConn{stream: lsfNetwork.TestConnection(wire), closeDone: make(chan struct{})}, wire
+}
+
+func TestExpiredDeadlineStillHalfCloses(t *testing.T) {
+	c, wire := connection()
+	var calls atomic.Int32
+	wire.OnShutdown = func(ctx context.Context, how raw.ShutdownMode) wit.Result[raw.Observation, raw.StreamError] {
+		calls.Add(1)
+		if _, ok := ctx.Deadline(); ok || how != raw.ShutdownModeSend {
+			t.Error("unexpected shutdown context or mode")
+		}
+		return wit.Ok[raw.Observation, raw.StreamError](raw.Observation{})
+	}
+	c.writeDeadline = time.Now().Add(-time.Second)
+	err := c.CloseWrite()
+	if err != nil || calls.Load() != 1 || !c.writeShut || c.writeBusy {
+		t.Fatalf("expired-half-close: err=%v calls=%d shut=%t", err, calls.Load(), c.writeShut)
+	}
+}
+
+func TestFutureDeadlineDoesNotCancelShutdown(t *testing.T) {
+	c, wire := connection()
+	c.writeDeadline = time.Now().Add(time.Hour)
+	wire.OnShutdown = func(ctx context.Context, _ raw.ShutdownMode) wit.Result[raw.Observation, raw.StreamError] {
+		if _, ok := ctx.Deadline(); ok {
+			t.Error("write deadline incorrectly attached to shutdown")
+		}
+		return wit.Ok[raw.Observation, raw.StreamError](raw.Observation{})
+	}
+	if err := c.CloseWrite(); err != nil || !c.writeShut || c.writeBusy {
+		t.Fatalf("future-half-close: %v", err)
+	}
+}
+
+func TestHalfClosePreservesClosedAndOverlapRules(t *testing.T) {
+	for _, tc := range []struct {
+		closed, busy bool
+		expected     error
+	}{
+		{true, false, net.ErrClosed},
+		{false, true, errors.ErrUnsupported},
+		{true, true, net.ErrClosed},
+	} {
+		c, wire := connection()
+		var calls atomic.Int32
+		wire.OnShutdown = func(context.Context, raw.ShutdownMode) wit.Result[raw.Observation, raw.StreamError] {
+			calls.Add(1)
+			return wit.Ok[raw.Observation, raw.StreamError](raw.Observation{})
+		}
+		c.closing, c.writeBusy = tc.closed, tc.busy
+		if err := c.CloseWrite(); !errors.Is(err, tc.expected) || calls.Load() != 0 || c.writeBusy != tc.busy {
+			t.Fatalf("half-close-admission: closed=%t busy=%t err=%v calls=%d", tc.closed, tc.busy, err, calls.Load())
+		}
+	}
+}
+
+func TestHalfCloseFailureIsNotReplayed(t *testing.T) {
+	c, wire := connection()
+	var calls atomic.Int32
+	wire.OnShutdown = func(context.Context, raw.ShutdownMode) wit.Result[raw.Observation, raw.StreamError] {
+		calls.Add(1)
+		return wit.Err[raw.Observation, raw.StreamError](raw.StreamError{Code: raw.ErrorCodeUncertain, MayHaveApplied: true})
+	}
+	err := c.CloseWrite()
+	var failure *lsfStreamError
+	if !errors.As(err, &failure) || failure.failure.Code != raw.ErrorCodeUncertain ||
+		!failure.failure.MayHaveApplied || calls.Load() != 1 || c.writeShut || c.writeBusy {
+		t.Fatalf("half-close-uncertain: err=%v calls=%d", err, calls.Load())
+	}
+}
+
+func TestProviderStopIsNotRelabeledOrRetried(t *testing.T) {
+	for _, code := range []uint8{raw.ErrorCodeCancelled, raw.ErrorCodeTimeout} {
+		c, wire := connection()
+		var calls atomic.Int32
+		wire.OnShutdown = func(context.Context, raw.ShutdownMode) wit.Result[raw.Observation, raw.StreamError] {
+			calls.Add(1)
+			return wit.Err[raw.Observation, raw.StreamError](raw.StreamError{Code: code, MayHaveApplied: true})
+		}
+		err := c.CloseWrite()
+		var failure *lsfStreamError
+		if !errors.As(err, &failure) || failure.failure.Code != code || !failure.failure.MayHaveApplied ||
+			calls.Load() != 1 || c.writeShut || c.writeBusy {
+			t.Fatalf("half-close-provider-stop: code=%d err=%v calls=%d", code, err, calls.Load())
+		}
+	}
+}
+
+func TestHalfCloseKeepsWriteOwnerAndReadIndependent(t *testing.T) {
+	c, wire := connection()
+	readContext, releaseRead, ok := c.stream.TestBorrowRead()
+	if !ok {
+		t.Fatal("read borrow refused")
+	}
+	defer releaseRead()
+	started, finish := make(chan struct{}), make(chan struct{})
+	var calls atomic.Int32
+	wire.OnShutdown = func(context.Context, raw.ShutdownMode) wit.Result[raw.Observation, raw.StreamError] {
+		calls.Add(1)
+		close(started)
+		<-finish
+		return wit.Ok[raw.Observation, raw.StreamError](raw.Observation{})
+	}
+	done := make(chan error, 1)
+	go func() { done <- c.CloseWrite() }()
+	select {
+	case <-started:
+	case <-time.After(3 * time.Second):
+		t.Fatal("shutdown not admitted")
+	}
+	if err := c.CloseWrite(); !errors.Is(err, errors.ErrUnsupported) {
+		t.Fatalf("second shutdown admitted: %v", err)
+	}
+	if err := c.setDeadline(time.Now().Add(time.Second), false, true); !errors.Is(err, errors.ErrUnsupported) {
+		t.Fatalf("write deadline rearmed: %v", err)
+	}
+	select {
+	case <-readContext.Done():
+		t.Fatal("shutdown cancelled independent read")
+	default:
+	}
+	close(finish)
+	select {
+	case err := <-done:
+		if err != nil || calls.Load() != 1 || c.writeBusy || !c.writeShut {
+			t.Fatalf("half-close-retirement: %v calls=%d", err, calls.Load())
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("shutdown did not finish")
+	}
+}
+
+func TestCloseCancelsAndWaitsForOriginalBorrow(t *testing.T) {
+	c, wire := connection()
+	c.writeDeadline = time.Now().Add(-time.Second)
+	started, cancelled, acknowledge := make(chan struct{}), make(chan struct{}), make(chan struct{})
+	var shutdownCalls, closeCalls atomic.Int32
+	wire.OnShutdown = func(ctx context.Context, _ raw.ShutdownMode) wit.Result[raw.Observation, raw.StreamError] {
+		shutdownCalls.Add(1)
+		close(started)
+		<-ctx.Done()
+		close(cancelled)
+		<-acknowledge
+		return wit.Err[raw.Observation, raw.StreamError](raw.StreamError{Code: raw.ErrorCodeCancelled, MayHaveApplied: true})
+	}
+	wire.OnClose = func(context.Context) wit.Result[raw.Observation, raw.StreamError] {
+		closeCalls.Add(1)
+		return wit.Ok[raw.Observation, raw.StreamError](raw.Observation{})
+	}
+	shutdownDone, closeDone := make(chan error, 1), make(chan error, 1)
+	go func() { shutdownDone <- c.CloseWrite() }()
+	select {
+	case <-started:
+	case <-time.After(3 * time.Second):
+		t.Fatal("shutdown not admitted")
+	}
+	go func() { closeDone <- c.Close() }()
+	select {
+	case <-cancelled:
+	case <-time.After(3 * time.Second):
+		t.Fatal("close did not cancel original borrow")
+	}
+	select {
+	case err := <-closeDone:
+		t.Fatalf("close returned before acknowledgment: %v", err)
+	default:
+	}
+	if closeCalls.Load() != 0 || wire.Drops.Load() != 0 {
+		t.Fatal("owner retired before acknowledgment")
+	}
+	close(acknowledge)
+	select {
+	case err := <-shutdownDone:
+		var failure *lsfStreamError
+		if !errors.As(err, &failure) || failure.failure.Code != raw.ErrorCodeCancelled || !failure.failure.MayHaveApplied {
+			t.Fatalf("lost shutdown outcome: %v", err)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("shutdown acknowledgment did not finish")
+	}
+	select {
+	case err := <-closeDone:
+		if err != nil || shutdownCalls.Load() != 1 || closeCalls.Load() != 1 || wire.Drops.Load() != 1 {
+			t.Fatalf("close custody: err=%v shutdown=%d close=%d drops=%d", err, shutdownCalls.Load(), closeCalls.Load(), wire.Drops.Load())
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("close did not finish")
+	}
+}
+
+func TestPinnedNativeTCPHalfCloseIgnoresWriteDeadline(t *testing.T) {
+	ln, err := net.ListenTCP("tcp4", &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+	if err = ln.SetDeadline(time.Now().Add(3 * time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	client, err := net.DialTCP("tcp4", nil, ln.Addr().(*net.TCPAddr))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+	peer, err := ln.AcceptTCP()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer peer.Close()
+	if err = client.SetWriteDeadline(time.Now().Add(-time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := client.Write([]byte("x")); n != 0 || !errors.Is(err, os.ErrDeadlineExceeded) {
+		t.Fatalf("reference-write-deadline: n=%d err=%v", n, err)
+	}
+	if err = client.CloseWrite(); err != nil {
+		t.Fatalf("reference-half-close: %v", err)
+	}
+	if err = peer.SetReadDeadline(time.Now().Add(3 * time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := peer.Read(make([]byte, 1)); n != 0 || !errors.Is(err, io.EOF) {
+		t.Fatalf("reference-peer-eof: n=%d err=%v", n, err)
+	}
+	if _, err = peer.Write([]byte("r")); err != nil {
+		t.Fatal(err)
+	}
+	if err = client.SetReadDeadline(time.Now().Add(3 * time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	var b [1]byte
+	if n, err := io.ReadFull(client, b[:]); n != 1 || err != nil || b[0] != 'r' {
+		t.Fatalf("reference-read-after-half-close: n=%d err=%v", n, err)
+	}
+	if err = client.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err = client.CloseWrite(); !errors.Is(err, net.ErrClosed) {
+		t.Fatalf("reference-closed-half-close: %v", err)
+	}
+}

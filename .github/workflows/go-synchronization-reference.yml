@@ -10,7 +10,7 @@ on:
         default: synchronization
         options: [synchronization, admission, queued, managed-timers, task-saturation, timer-overlap, timer-overlap-v7, timer-fired-v7, managed-v7-timers, zero-clock-v7]
   push:
-    branches: ['feat/go-runtime-retirement-20261020', 'feat/go-runtime-admission-20261020', 'feat/go-runtime-queued-ownership-20261020', 'feat/go-v5-standard-timers-20261020', 'feat/go-v7-timer-overlap-20261108', 'feat/go-fired-timer-fence-v7-20261108', 'feat/go-v7-standard-timers-20261109', 'feat/go-returned-timer-fence-20261109', 'feat/go-returned-cancel-20261109', 'test/go-zero-clock-v7-20261109']
+    branches: ['feat/go-runtime-retirement-20261020', 'feat/go-runtime-admission-20261020', 'feat/go-runtime-queued-ownership-20261020', 'feat/go-v5-standard-timers-20261020', 'feat/go-v7-timer-overlap-20261108', 'feat/go-fired-timer-fence-v7-20261108', 'feat/go-v7-standard-timers-20261109', 'feat/go-returned-timer-fence-20261109', 'feat/go-returned-cancel-20261109', 'test/go-zero-clock-v7-20261109', 'fix/go-zero-clock-load-20261110']
 
 permissions:
   contents: read
@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  LSF_GO_REFERENCE_CAMPAIGN: ${{ inputs.campaign || (github.ref_name == 'test/go-zero-clock-v7-20261109' && 'zero-clock-v7' || github.ref_name == 'feat/go-v7-standard-timers-20261109' && 'managed-v7-timers' || github.ref_name == 'feat/go-returned-cancel-20261109' && 'timer-fired-v7' || github.ref_name == 'feat/go-returned-timer-fence-20261109' && 'timer-fired-v7' || github.ref_name == 'feat/go-fired-timer-fence-v7-20261108' && 'timer-fired-v7' || github.ref_name == 'feat/go-v7-timer-overlap-20261108' && 'timer-overlap-v7' || github.ref_name == 'feat/go-v5-standard-timers-20261020' && 'managed-timers' || github.ref_name == 'feat/go-runtime-queued-ownership-20261020' && 'queued' || github.ref_name == 'feat/go-runtime-admission-20261020' && 'admission' || 'synchronization') }}
+  LSF_GO_REFERENCE_CAMPAIGN: ${{ inputs.campaign || (github.ref_name == 'fix/go-zero-clock-load-20261110' && 'zero-clock-v7' || github.ref_name == 'test/go-zero-clock-v7-20261109' && 'zero-clock-v7' || github.ref_name == 'feat/go-v7-standard-timers-20261109' && 'managed-v7-timers' || github.ref_name == 'feat/go-returned-cancel-20261109' && 'timer-fired-v7' || github.ref_name == 'feat/go-returned-timer-fence-20261109' && 'timer-fired-v7' || github.ref_name == 'feat/go-fired-timer-fence-v7-20261108' && 'timer-fired-v7' || github.ref_name == 'feat/go-v7-timer-overlap-20261108' && 'timer-overlap-v7' || github.ref_name == 'feat/go-v5-standard-timers-20261020' && 'managed-timers' || github.ref_name == 'feat/go-runtime-queued-ownership-20261020' && 'queued' || github.ref_name == 'feat/go-runtime-admission-20261020' && 'admission' || 'synchronization') }}
   CARGO_BUILD_JOBS: '2'
   CARGO_INCREMENTAL: '0'
   CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
@@ -70,7 +70,12 @@ jobs:
         run: python3 -m unittest tools.tests.test_go_fired_timer -v
       - name: Check exact zero-clock timer evidence controls
         if: env.LSF_GO_REFERENCE_CAMPAIGN == 'zero-clock-v7'
-        run: python3 -m unittest tools.tests.test_go_zero_clock -v
+        run: |
+          set -euo pipefail
+          python3 -m unittest tools.tests.test_go_zero_clock -v
+          cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service fixture::zero_clock_load_tests::fixture_load_uses_the_injected_admission_clock -- --exact --show-output | tee "$RUNNER_TEMP/go-zero-clock-load-check.log"
+          grep -Fx 'test fixture::zero_clock_load_tests::fixture_load_uses_the_injected_admission_clock ... ok' "$RUNNER_TEMP/go-zero-clock-load-check.log"
+          grep -Eq '^test result: ok[.] 1 passed; 0 failed; 0 ignored; 0 measured; [0-9]+ filtered out;' "$RUNNER_TEMP/go-zero-clock-load-check.log"
       - name: Install captured compiler namespace
         run: |
           sudo apt-get update
@@ -229,5 +234,6 @@ jobs:
             ${{ runner.temp }}/go-zero-clock-v7/build/component.wasm
             ${{ runner.temp }}/go-zero-clock-v7/logs/
             ${{ runner.temp }}/go-zero-clock-v7-result/
+            ${{ runner.temp }}/go-zero-clock-load-check.log
           if-no-files-found: warn
           retention-days: 7
