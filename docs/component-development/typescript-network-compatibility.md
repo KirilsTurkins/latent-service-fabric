@@ -1,6 +1,7 @@
 # TypeScript networking compatibility and prerequisite boundary
 
-Dependency status reviewed on 2026-11-09; compiler-gate and Socket event
+Dependency implementation reviewed on 2026-11-09, with #738/#739 open status
+rechecked on 2026-11-10; compiler-gate, Socket event and idle-timeout
 continuations on 2026-11-10 for issue #745 and integration into
 `feat/typescript-runtime-745`, starting at
 `83c339673b87afabfa06f3a8e818324f46c1ae6f`. The development comparison used
@@ -10,7 +11,7 @@ boundary, **not production enablement or completion of #745**.
 The available standard module is the finite, activation-local TCP subset
 `lsf-node-net-tcp-v1`. There is no general Node stream implementation, public DNS
 API or Node TLS port. No new signed Component Model execution was performed for
-these diagnostic and Socket event changes. Older signed receipts below remain evidence for their
+these diagnostic, Socket event and idle-timeout changes. Older signed receipts below remain evidence for their
 own exact source and reference provider only.
 
 ## Dependency status
@@ -52,7 +53,7 @@ later, not to every operation or adversarial case in a row.
 | `end`, send half-close, `finish` | TCP send shutdown after queued writes. Accepted terminal intent can join actual peer EOF/borrow release/close before root completion. | End initiation is not consuming close. Receive-only shutdown, host-TLS send half-close, listeners and servers are not silently emulated. |
 | `destroy`, errors, `close` | Cancel pending originals, join their acknowledgements and callback tails, consume connection close. | Logical `destroyed`/`closed` flags are not physical-retirement evidence. Failed close or acknowledgement cannot certify an empty registry. Open sockets without accepted terminal intent fail root completion. |
 | `on`, `once`, `off`, `removeListener`, `removeAllListeners`, `emit` | Finite event facade; one-shot registrations are consumed by identity before invocation. | Duplicate functions remain distinct registrations. Nested emission cannot replay a consumed one-shot row; removals do not cancel an in-progress snapshot or erase a replacement registration. Current host controls compare the ordinary Node Socket facade; not full `EventEmitter` or signed execution qualification. |
-| `setTimeout` / `timeout` | Application idle notification on the selected standard activation timer runtime. | Does not itself destroy the socket, extend an original provider/activation deadline, or refund a timer owner. Timeout callback races have model controls here; actual native clock ownership is a separate gate. |
+| `setTimeout` / `timeout` | Application idle notification before/during connect and on a connected socket, using the selected activation timer runtime. Zero disables the timer and removes only the supplied matching callback. | A stale/replaced timer cannot notify or clear the current timer. Notification does not itself destroy the socket, extend an original provider/activation deadline, or refund an owner. Finite integer milliseconds only; actual native clock and signed deadline-race qualification remain separate. |
 | `dns`, `node:dns`, `dns/promises`, `node:dns/promises` | Explicit compiler refusal. | WIT has no public lookup/resolve/reverse/resolver operation or standalone DNS authority. A dummy connect must not be used to implement DNS. |
 | `tls` / `node:tls`, `TLSSocket`, `tls.connect`, STARTTLS | Explicit compiler refusal. | No qualified TypeScript guest TLS/crypto/entropy/trust/credential lifecycle mapping. The `tls-failed` WIT error tag is not a TLS implementation. |
 | `stream` / `node:stream`, `/promises`, `/web`, `/consumers`, legacy `_stream_*` builtins | Explicit compiler refusal. | No complete Node stream classes, pipeline/finished, Web Streams adapters, generalized queue ownership or their lifecycle qualification. A finite Socket API is not a general stream API. |
@@ -61,8 +62,10 @@ later, not to every operation or adversarial case in a row.
 The selected profile remains two socket states, three pending operations per
 socket, 64 KiB/16 queued write records and 16 KiB transfer windows. These are
 model limits, not proof that engine, captured objects, TLS/native or kernel bytes
-are fully bounded. This change modifies no runtime admission, limit, provider,
-AbortSignal implementation, cleanup owner or capability declaration.
+are fully bounded. This change modifies no native admission policy, limit, provider,
+AbortSignal implementation, cleanup owner or capability declaration. The idle
+clock is now admitted before a connect reserves its socket, rather than being
+silently deferred until connection success.
 
 ### Error translation is deliberately coarse
 
@@ -148,7 +151,7 @@ kernel final-free. Those original receipts and failures remain unchanged.
 | TLS verification/handshake failure and successful TLS | Translation of an injected `tls-failed` tag is covered. No TLS port, handshake or signed TLS result is claimed; prerequisite remains blocked. |
 | Partial read/write, no-progress readiness, backpressure | Existing source/transport controls pass. Historical signed echo/held-read evidence does not cover every adversarial short-transfer schedule. |
 | Cancellation, callback exceptions, distinct cancel/borrow acknowledgements | Existing captured-initializer/host controls and narrower historical signed destroy case. They do not certify final native/kernel retirement. |
-| Idle timeout, late callback and repeated activations | Deterministic application timer model checks notification without implicit close, reset on progress, cleared timer and inert late callback across fresh model instances. Actual signed timeout/deadline races remain pending. |
+| Idle timeout, late callback and repeated activations | Controls cover pre-connect/pending-connect notification, identity-fenced replacement, zero-disable/callback removal, snapshot refusal, timer-admission refusal before socket reservation, reentrant rearm and callback faults. A pending-connect model retains distinct cancel/result/borrow acknowledgements across two fresh instances. Actual signed timeout/deadline races remain pending. |
 | Direct/transitive selection and fallback refusal | Resolver/source-binding controls pass; a separate actual pinned-bundler control exercises transitive CommonJS through ESM and fake npm/browser fallbacks. The compiler gate now also checks caught CommonJS imports, side-effect imports, transitive profile disablement and relative filename lookalikes. It is selected by a separate compiler-only workflow; its new hosted result remains pending; local supplementary discovery still skips the two pre-existing frontend cases. |
 | Unchanged published library | The historical direct `is-port-reachable` programme is real. No new published-library or signed transitive execution was performed in this change. |
 
@@ -197,6 +200,61 @@ automatically by the existing no-skip compiler gate; no workflow, fixture
 inventory or exact test-count assertion changed. The pinned Node 24.19.0 gate
 and fresh signed TCP execution remain pending. Historical signed receipts do not
 qualify the changed backend.
+
+### Socket idle-timeout repair (2026-11-10)
+
+Parent `7e3817f69610b670e7228138b16cc890aaeaf6ad` only armed an idle timer
+on a connected socket. A library setting its ordinary timeout before a connect
+could therefore wait indefinitely for the connection from the facade's point of
+view (the independent provider/root deadline still applied). Disabling a timer
+with `setTimeout(0, callback)` added that callback instead of removing its newest
+matching registration. A callback already selected from a replaced timer could
+also notify and clear the slot holding a newer timer, preventing later cleanup
+from clearing the actual current timer. Calls on destroyed sockets retained new
+callback state.
+
+The facade now arms the existing bounded timer before/during connect as well as
+after it. Connect refreshes the timer before publishing its supplied listener or
+reserving a socket; a refused refresh therefore cannot dispatch a connection or
+strand a reserved socket without a connect result. A failed timer admission
+publishes no supplied timeout callback. The configured interval remains a
+configuration value, not proof that admission succeeded; retrying is explicit.
+Zero disables the timer and removes only the supplied matching callback. A call
+on a destroyed socket changes neither timer nor listeners. Nonzero snapshot-time
+arming is explicitly refused, including before any connection is attempted.
+The supported argument subset remains integer milliseconds from zero through
+`2147483647`; this is not all Node timer coercion behavior.
+
+Each callback captures its actual returned timer identifier and runs only while
+that identifier is still current. The selected native activation timer owner
+uses monotonically increasing, non-reused IDs and fails on ID exhaustion;
+`native_timers.h` and its policy are unchanged. Clear/replacement invalidates the
+facade slot before calling the original clear operation. A stale callback cannot
+steal a replacement, and a callback may install a new timer without the old
+callback subsequently erasing it. No timer owner, budget, clock, cancellation
+acknowledgement or physical-retirement rule is replaced by this identity check.
+
+Timeout remains a **notification**, not implicit destroy, reconnect, operation
+rollback, success, deadline extension or retirement. The existing transport
+owns callback tails: an escaping callback fault, including a falsey value,
+poisons that original socket rather than certifying a clean root return. The
+pending-connect control observes timeout without cancellation, then explicitly
+destroys and requires distinct cancel, logical-result and borrow acknowledgements
+before consuming close. Two fresh modeled instances execute that sequence.
+
+Eight focused controls pass on the repair. Against the exact published parent
+backend (Git blob `98080307950dd5cd0c9c298f4b319bba86dccd87`), seven fail and the
+original callback-fault custody control passes. All earlier event controls and
+the unchanged socket suite remain selected: **49 tests ran, 47 passed and the two
+existing pinned-frontend tests skipped**. No exact-count gate was changed.
+Node 22.16.0 supplies a real unconnected-Socket timer and callback-removal
+reference; the selected Node 24.19.0
+[`setStreamTimeout` source](https://github.com/nodejs/node/blob/v24.19.0/lib/internal/stream_base_commons.js)
+was also reviewed. That source comparison is not execution of Node 24.19.0.
+The LSF facade/transport execute unchanged provider/ACK and deterministic-clock
+doubles; they are not signed execution, actual LSF native clock, DNS/contact,
+root-deadline or physical-retirement evidence. Fresh pinned compiler and signed
+TCP results are still required for this changed backend.
 
 ### Fail-closed compiler gate
 
@@ -261,6 +319,24 @@ the owner workflow's origin and native/provider inputs. Substituting the recent
 Fetch engine, widening the allowed workflow origins or attributing the old
 client receipt to this branch would not satisfy that gate. Those checks are
 unchanged here; no fresh signed TCP execution is claimed.
+
+The complete acquisition chain was traced on 2026-11-10; restoring just the
+engine ZIP would not unblock execution:
+
+| Required input / origin | Existing binding | Observed blocker |
+| --- | --- | --- |
+| OWN compiler/engine prerequisites | `borrow_signed_inputs.py`: run `40077087832`, artifact `12553639081`, source `6d834e502beea33fbae9347fbaf23ff8c37223b3` | Producer lists zero artifacts. Exact executed native/source controls and receipt are required; a successful Fetch build is not equivalent. |
+| Native CLI/tool products | `java_phase_native_products.py`: run `39420914927`, artifact `12265176239`, source `77bf0e3f3b68e17342b6146abd6f2de34a3efa00` | This producer also lists zero artifacts. Its authenticated five products are mandatory to build/admit the ordinary client. |
+| Retained library used to rebuild OWN prerequisites | `owned_result_library.py` consumes `typescript_borrow_retry_inputs.py`: run `40042939576`, artifact `12541695434`, source `e2dfcf6d1b48b650fee585e83cd15720bf7f745c` | This producer lists zero artifacts as well. Re-running the old OWN job alone cannot restore its missing library input. The old failed producer's successful library products were never a full qualification pass. |
+| Signed TCP workflow origin | `borrow_signed_controls.py` requires push/attempt 1 on `feat/typescript-accepted-close-20261025` through `typescript-borrow-signed.yml` | The Agent 4 integration branch is not an accepted origin. This fixed gate is unchanged; no environment spoofing or broadened allow-list is used. |
+
+These immutable checks cannot be satisfied by editing an artifact identifier,
+copying recent Fetch products, or marking an unavailable job as passed. A
+replacement needs a reviewed current-source producer chain, normal compiler and
+engine validation, actual prerequisite controls, authenticated native products,
+and a narrowly owned signed-run origin. It must retain the original provider,
+authority and resource gates and record new identities rather than rewriting the
+historical receipts. No replacement producer or new signed run is claimed here.
 
 ## What still prevents #745 from closing
 

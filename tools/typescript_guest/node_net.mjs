@@ -163,6 +163,9 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       if (this.#token || this.#connecting || this.#connected || this.#destroyed)
         throw error('ERR_SOCKET_CLOSED', 'connect');
       const [request, listener] = destination(args);
+      // Refresh the configured idle clock before publishing a listener or
+      // reserving a native socket: timer refusal must not leave a half-connect.
+      this.#touch();
       if (listener) this.once('connect', listener);
       this.#token = transport.reserve(this.#afterTail, this); // BEFORE CAP connect.
       this.#connecting = true; this.#connectBusy = true; this.#remotePort = request.port;
@@ -185,19 +188,34 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       this.#emit('connect'); this.#emit('ready');
     }
     #touch() {
-      if (this.#timer !== undefined) { clearTimer(this.#timer); this.#timer = undefined; }
-      if (this.#timeout && !this.#destroyed)
-        this.#timer = setTimer(() => this.#owned(this.#onTimeout), this.#timeout);
+      if (this.#timer !== undefined) {
+        const previous = this.#timer; this.#timer = undefined; clearTimer(previous);
+      }
+      if (this.#timeout && !this.#destroyed) {
+        // Activation timer ids are not reused. An already selected callback
+        // from a cleared/replaced timer must not consume the new timer's slot.
+        const timer = setTimer(() => {
+          if (this.#timer === timer) this.#owned(this.#onTimeout);
+        }, this.#timeout);
+        this.#timer = timer;
+      }
     }
     #onTimeout() {
       this.#timer = undefined; if (!this.#destroyed) this.#emit('timeout');
     }
     setTimeout(milliseconds, callback) {
+      if (this.#destroyed) return this;
       if (!Number.isInteger(milliseconds) || milliseconds < 0 || milliseconds > 2147483647 ||
           callback !== undefined && typeof callback !== 'function') throw error('ERR_INVALID_ARG_VALUE', 'setTimeout');
-      if (callback) this.once('timeout', callback);
+      if (milliseconds && snapshotActive()) throw error('ERR_LSF_SNAPSHOT_EFFECT', 'setTimeout');
       this.#timeout = milliseconds;
-      if (this.#connected) this.#touch();
+      // Socket idle notification applies before and during connect as well.
+      // Do not publish a supplied callback if timer admission refuses.
+      this.#touch();
+      if (callback) {
+        if (milliseconds) this.once('timeout', callback);
+        else this.removeListener('timeout', callback);
+      }
       return this;
     }
     pause() { this.#flowing = false; return this; }
@@ -469,7 +487,9 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
     destroy(cause) {
       if (this.#destroyed) return this;
       this.#destroyed = true; this.#connected = false; this.#connecting = false; this.#error = cause;
-      if (this.#timer !== undefined) { clearTimer(this.#timer); this.#timer = undefined; }
+      if (this.#timer !== undefined) {
+        const previous = this.#timer; this.#timer = undefined; clearTimer(previous);
+      }
       if (!this.#token) { this.#closed = true; this.#notifyClose(); return this; }
       transport.acceptTerminal(this.#token);
       transport.holdNotification(this.#token);

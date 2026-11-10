@@ -357,6 +357,177 @@ for(let activation=0;activation<2;++activation) {
 """)
 
 
+    def timer_javascript(self, body):
+        # Real facade and transport; only the clock/provider/ACKs are doubles.
+        self.javascript(r"""
+function timedFixture(options={}) {
+ const timers=new Map(), calls=[];let next=0, refuse=false;
+ const timerFault=Object.freeze({timerAdmissionRefused:true});
+ const t={...target(),setTimeout(callback,milliseconds){
+  if(refuse)throw timerFault;
+  const id=++next;timers.set(id,{callback,milliseconds});return id;
+ },clearTimeout(id){timers.delete(id)}};
+ const native={connect:request=>{calls.push(['connect',request]);return options.connect?.(request)??settled({})},
+  read:()=>settled(undefined),write:(_,bytes)=>settled(bytes.length),
+  ready:()=>settled({writable:true}),chunkBytes:()=>settled(new Uint8Array()),
+  shutdown:()=>{calls.push(['shutdown']);return settled({})},
+  close:()=>{calls.push(['close']);return settled({})}};
+ const transport=createNodeNetTransport(native,t,()=>({}));
+ const net=createNodeNetModule(transport,Buffer,()=>options.snapshot===true,t);
+ return {net,transport,timers,calls,timerFault,refuse(value=true){refuse=value},
+  fire(id){const row=timers.get(id);assert(row);timers.delete(id);row.callback()}};
+}
+"""+body)
+
+    def test_timeout_zero_removes_only_requested_callback_like_node(self):
+        self.timer_javascript(r"""
+import {Socket as ReferenceSocket} from 'node:net';
+function observe(Socket) {
+ const s=new Socket(),trace=[];
+ function same(){trace.push('same')};function other(){trace.push('other')};
+ s.once('timeout',same).on('timeout',same).once('timeout',other);
+ s.setTimeout(0,same);const afterDisable=s.listenerCount('timeout');
+ s.emit('timeout');s.emit('timeout');
+ const afterEmit=s.listenerCount('timeout');s.destroy();
+ // A destroyed socket must not retain a newly supplied timeout callback.
+ s.setTimeout(7,same);const afterDestroy=s.listenerCount('timeout');
+ return {trace,afterDisable,afterEmit,afterDestroy};
+}
+const f=timedFixture();assert.deepEqual(observe(f.net.Socket),observe(ReferenceSocket));
+assert.equal(f.timers.size,0);f.transport.assertEmpty();
+""")
+
+    def test_idle_timeout_notifies_before_connect_without_network_effects(self):
+        self.timer_javascript(r"""
+import {Socket as ReferenceSocket} from 'node:net';
+// Actual Node timer on an unconnected Socket; a bounded watchdog keeps the
+// reference process alive. No connect(), DNS or peer is used by this control.
+const reference=new ReferenceSocket();let referenceCount=0;
+await new Promise((yes,no)=>{
+ const watchdog=setTimeout(()=>{reference.destroy();no(Error('reference timeout absent'))},2000);
+ reference.setTimeout(7,function(){assert.equal(this,reference);++referenceCount;clearTimeout(watchdog);yes()});
+});reference.destroy();
+const f=timedFixture(),s=new f.net.Socket();let actual=0;
+s.setTimeout(7,function(){assert.equal(this,s);++actual});
+assert.equal(f.timers.size,1);assert.equal(f.calls.length,0);
+f.fire([...f.timers.keys()][0]);assert.equal(actual,referenceCount);
+assert.equal(s.destroyed,false);assert.equal(s.listenerCount('timeout'),0);
+s.destroy();await turn();f.transport.assertEmpty();
+""")
+
+    def test_pending_connect_timeout_keeps_original_cancellation_and_borrow_acks(self):
+        self.timer_javascript(r"""
+for(let activation=0;activation<2;++activation){
+ const logical=deferred(),borrow=deferred(),cancelled=deferred();let cancellations=0;
+ const f=timedFixture({connect:()=>({promise:logical.promise,borrowReleased:borrow.promise,
+  cancel(){++cancellations;return cancelled.promise}})}),s=new f.net.Socket();
+ const events=[],closed=deferred();
+ s.on('connect',()=>events.push('connect')).on('error',closed.reject)
+  .on('close',()=>{events.push('close');closed.resolve()})
+  .setTimeout(7,()=>events.push('timeout')).connect(32123,'localhost');
+ await turn();assert.equal(f.timers.size,1);assert.equal(s.connecting,true);
+ f.fire([...f.timers.keys()][0]);assert.deepEqual(events,['timeout']);
+ assert.equal(s.destroyed,false);assert.equal(cancellations,0);
+ assert.equal(f.calls.length,1);assert.throws(f.transport.assertEmpty,/unclosed/);
+ s.destroy();await turn();assert.equal(cancellations,1);
+ // Local cancellation is not result, borrow, close, or retirement evidence.
+ cancelled.resolve();await turn();assert.deepEqual(events,['timeout']);
+ logical.resolve({});await turn();assert.deepEqual(events,['timeout']);
+ assert.equal(f.calls.length,1);assert.throws(f.transport.assertEmpty,/unclosed/);
+ borrow.resolve();await closed.promise;
+ assert.deepEqual(events,['timeout','close']);assert.equal(cancellations,1);
+ assert.deepEqual(f.calls.map(row=>row[0]),['connect','close']);
+ assert.equal(f.timers.size,0);f.transport.assertEmpty();
+}
+""")
+
+    def test_replaced_and_disabled_timeout_callbacks_cannot_steal_current_timer(self):
+        self.timer_javascript(r"""
+const f=timedFixture(),s=new f.net.Socket(),connected=deferred(),closed=deferred();let notifications=0;
+s.on('timeout',()=>++notifications).on('error',closed.reject)
+ .once('connect',connected.resolve).once('close',closed.resolve).connect(32123,'localhost');
+await connected.promise;await turn();s.setTimeout(7);
+const old=[...f.timers.values()][0].callback;s.setTimeout(11);
+const current=[...f.timers.entries()][0];assert.equal(current[1].milliseconds,11);
+old();assert.equal(notifications,0);assert.equal(f.timers.size,1);
+f.fire(current[0]);assert.equal(notifications,1);assert.equal(s.destroyed,false);
+s.setTimeout(13);const disabled=[...f.timers.values()][0].callback;
+s.setTimeout(0);assert.equal(f.timers.size,0);disabled();assert.equal(notifications,1);
+s.setTimeout(17);const replaced=[...f.timers.values()][0].callback;
+await new Promise((yes,no)=>s.write('x',error=>error?no(error):yes()));
+assert.equal(f.timers.size,1);replaced();assert.equal(notifications,1);
+s.destroy();await closed.promise;assert.equal(f.timers.size,0);f.transport.assertEmpty();
+""")
+
+    def test_timeout_admission_refusal_does_not_publish_callback_or_dispatch(self):
+        self.timer_javascript(r"""
+const f=timedFixture(),s=new f.net.Socket();let notified=0;
+f.refuse();let caught=false;
+try{s.setTimeout(7,()=>++notified)}catch(fault){caught=true;assert.equal(fault,f.timerFault)}
+assert(caught);assert.equal(s.listenerCount('timeout'),0);assert.equal(f.timers.size,0);
+assert.equal(f.calls.length,0);f.transport.assertEmpty();
+f.refuse(false);s.setTimeout(7,()=>++notified);
+const stale=[...f.timers.values()][0].callback;
+f.refuse();caught=false;
+try{s.connect(32123,'localhost')}catch(fault){caught=true;assert.equal(fault,f.timerFault)}
+assert(caught);assert.equal(s.connecting,false);assert.equal(f.calls.length,0);
+assert.equal(f.timers.size,0);stale();assert.equal(notified,0);f.transport.assertEmpty();
+s.destroy();await turn();f.transport.assertEmpty();
+""")
+
+
+    def test_timeout_snapshot_and_invalid_arguments_have_no_timer_or_connect_effect(self):
+        self.timer_javascript(r"""
+const f=timedFixture(),s=new f.net.Socket();let calls=0;
+for(const milliseconds of [-1,0.5,Infinity,NaN,2147483648,'7',null,undefined]) {
+ assert.throws(()=>s.setTimeout(milliseconds,()=>++calls),error=>error.code==='ERR_INVALID_ARG_VALUE');
+}
+assert.throws(()=>s.setTimeout(7,{}),error=>error.code==='ERR_INVALID_ARG_VALUE');
+assert.equal(s.timeout,undefined);assert.equal(s.listenerCount('timeout'),0);
+assert.equal(f.timers.size,0);assert.equal(f.calls.length,0);assert.equal(calls,0);f.transport.assertEmpty();
+const frozen=timedFixture({snapshot:true}),image=new frozen.net.Socket();
+assert.throws(()=>image.setTimeout(7,()=>++calls),error=>error.code==='ERR_LSF_SNAPSHOT_EFFECT');
+assert.equal(image.timeout,undefined);assert.equal(image.listenerCount('timeout'),0);
+assert.equal(frozen.timers.size,0);assert.equal(frozen.calls.length,0);frozen.transport.assertEmpty();
+assert.equal(image.setTimeout(0),image);assert.equal(frozen.timers.size,0);
+s.destroy();image.destroy();await turn();
+""")
+
+    def test_timeout_callback_failure_keeps_original_fault_and_socket_custody(self):
+        self.timer_javascript(r"""
+for(const fault of [undefined,null,false,0,'',Object.freeze({original:true})]) {
+ const f=timedFixture(),s=new f.net.Socket(),connected=deferred();let later=0;
+ s.once('connect',connected.resolve).connect(32123,'localhost');await connected.promise;await turn();
+ s.setTimeout(7,function(){assert.equal(this,s);throw fault}).on('timeout',()=>++later);
+ let caught=false;
+ try {f.fire([...f.timers.keys()][0])}catch(value){caught=true;assert.equal(value,fault)}
+ assert(caught);assert.equal(later,0);assert.equal(f.timers.size,0);
+ assert.equal(s.destroyed,false);assert.equal(s.listenerCount('timeout'),1);
+ // The original transport poisons an escaped callback. No facade timer path
+ // may convert that into successful root settlement or a fictional refund.
+ caught=false;try{f.transport.beginAcceptedClose()}catch(value){caught=true;assert.equal(value,fault)}
+ assert(caught);assert.throws(f.transport.assertEmpty,/unclosed/);
+ s.destroy();await turn();assert.deepEqual(f.calls.map(row=>row[0]),['connect']);
+ assert.throws(f.transport.assertEmpty,/unclosed/);
+ const fresh=timedFixture();fresh.transport.assertEmpty();
+}
+""")
+
+    def test_timeout_callback_can_rearm_without_old_callback_clearing_replacement(self):
+        self.timer_javascript(r"""
+const f=timedFixture(),s=new f.net.Socket();let notifications=0;
+s.setTimeout(7,function(){
+ ++notifications;this.setTimeout(11,function(){++notifications;this.destroy()});
+});
+const first=[...f.timers.entries()][0];f.fire(first[0]);assert.equal(notifications,1);
+const replacement=[...f.timers.entries()][0];assert.equal(replacement[1].milliseconds,11);
+first[1].callback();assert.equal(notifications,1);assert.equal(f.timers.size,1);
+f.fire(replacement[0]);await turn();assert.equal(notifications,2);assert.equal(s.destroyed,true);
+replacement[1].callback();assert.equal(notifications,2);assert.equal(f.timers.size,0);
+assert.equal(f.calls.length,0);f.transport.assertEmpty();
+""")
+
+
 def compiler_controls(frontend: Path) -> dict:
     """Real bundler control, required tools rather than a successful skip."""
     self = unittest.TestCase()
