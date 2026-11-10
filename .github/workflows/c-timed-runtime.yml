@@ -10,6 +10,7 @@ on:
       - 'tools/c_timed_source_controls.py'
       - 'tools/tests/fixtures/c-timed-broadcast-source.*'
       - 'tools/tests/fixtures/c-timed-deadline-source.*'
+      - 'tools/tests/fixtures/c-timed-select-dependency.c'
       - 'tools/fixtures/c-thread-runtime/timing.h'
       - 'sdk/c-guest/runtime/synchronization.c'
       - '.cargo/config.toml'

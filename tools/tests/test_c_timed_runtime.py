@@ -184,12 +184,20 @@ class CTimedRuntime(unittest.TestCase):
             key = next(iter(threading.CLOCK_LIBC))
             compiler = Compiler.__new__(Compiler)
             compiler.paths = {'zig': Path(directory) / 'zig'}
+            compiler.sdk = Path(directory) / 'sdk'
+            (compiler.sdk / 'runtime').mkdir(parents=True)
+            response = compiler.sdk / 'runtime/timed-symbols.rsp'
+            response.write_bytes(threading.TIME_RESPONSE)
             poll_path = Path(directory) / 'poll.h'; poll_path.write_bytes(b'first-poll-input-double')
             poll_key = next(iter(threading.POLL_LIBC))
             compiler.threading_clock_inputs = {}; compiler.threading_poll_inputs = {}; compiler.materials = {}
+            from types import SimpleNamespace
+            compiler.isolation = SimpleNamespace(receipt={})
             with patch.object(threading, 'clock_libc_inputs', return_value={key: path}), \
                     patch.object(threading, 'poll_libc_inputs', return_value={poll_key: poll_path}):
                 compiler.select_threading_clock_inputs()
+                self.assertEqual(compiler.isolation.receipt['cTimedSourceMapping']['mode'], 'fixed-sdk-response-v1')
+                self.assertFalse(compiler.isolation.receipt['cTimedSourceMapping']['selectPrecisionQualified'])
                 frozen = copy.deepcopy(compiler.materials)
                 compiler.select_threading_clock_inputs(); self.assertEqual(compiler.materials, frozen)
                 path.write_bytes(b'changed-after-observation')
@@ -201,6 +209,23 @@ class CTimedRuntime(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'poll-input-changed'):
                     compiler.select_threading_clock_inputs()
                 self.assertEqual(compiler.materials, frozen)
+                poll_path.write_bytes(b'first-poll-input-double')
+                response.write_bytes(threading.TIME_RESPONSE + b'-Wl,--allow-undefined\n')
+                with self.assertRaisesRegex(ValueError, 'response-preimage'):
+                    compiler.select_threading_clock_inputs()
+                # This guard runs immediately before any Zig use of the @file.
+                with self.assertRaisesRegex(ValueError, 'response-preimage'):
+                    compiler.run('zig', '@' + str(response))
+                self.assertEqual(compiler.materials, frozen)
+                response.unlink()
+                legacy = Compiler.__new__(Compiler)
+                legacy.paths = compiler.paths; legacy.sdk = compiler.sdk
+                legacy.threading_clock_inputs = {}; legacy.threading_poll_inputs = {}; legacy.materials = {}
+                legacy.isolation = SimpleNamespace(receipt={})
+                legacy.select_threading_clock_inputs()
+                self.assertEqual(legacy.isolation.receipt['cTimedSourceMapping']['mode'], 'legacy-sleep-defines')
+                self.assertFalse(legacy.isolation.receipt['cTimedSourceMapping']['selectPrecisionQualified'])
+                self.assertIsNone(legacy.threading_time_alias)
         source = (fixture.ROOT / 'tools/c_capsule_build.py').read_text()
         self.assertLess(source.index('compiler.select_threading_clock_inputs()'),
                         source.index('materials = list(compiler.materials.values())'))
