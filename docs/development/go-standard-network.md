@@ -1,7 +1,8 @@
 # Go declared-stream source port
 
-The selected `go-component-activation-v5` compiler can derive a finite
-`net.Dial`, `net.DialTimeout` and `Dialer.DialContext` backend from the captured
+The selected `go-component-activation-v5` and `go-component-activation-v7`
+compilers can derive a finite `net.Dial`, `net.DialTimeout` and
+`Dialer.DialContext` backend from the captured
 `latent:network/streams@0.1.0` import. This is an implementation prerequisite
 for [#742](https://github.com/KirilsTurkins/latent-service-fabric/issues/742)
 criteria 7/8 and the accepted
@@ -88,6 +89,13 @@ guest was executed. The full upstream preimages and derivation/refusal controls
 are source evidence; they cannot satisfy the remaining signed workload matrix
 or the maintained-kernel allocation/final-free artifact requirement.
 
+
+The v7 selection composes this same declared stream port with the existing
+queued-work owner and single-stack ceiling. Its separate signed owner selects
+Task16, Executor2, Queue16, Wait4, Timer2, Result2 and Native2. The v5 owner's
+original Queue2 remains unchanged. A passing v5 receipt does not qualify the
+v7 composition; the v7 owner must execute independently. The v6 composition
+remains refused. Neither selection enables the normal provider.
 
 The dedicated runtime lane compiles the current guarded ordinary fixture
 once, then builds only the `go_outbound_streams` native integration target. It
