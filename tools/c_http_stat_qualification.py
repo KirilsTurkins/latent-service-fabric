@@ -32,7 +32,7 @@ from tools.standard_http.peer import Peer
 from tools.standard_http.vectors import DOMAIN, head, json_bytes
 from tools.static_api.node import policy
 
-CASES = ('missing-grant', 'normal', 'denied', 'not-found', 'redirect', 'fresh', 'range', 'range-ignored', 'range-denied',
+CASES = ('missing-grant', 'normal', 'denied', 'not-found', 'redirect', 'oversized', 'fresh', 'range', 'range-ignored', 'range-denied',
          'range-unsolicited', 'range-before')
 PROBE = 'sdk/c-guest/runtime-fixtures/libfetch/stat-probe.c'
 SELF = 'tools/c_http_stat_qualification.py'
@@ -66,11 +66,15 @@ class RangePeer(Peer):
         self.range_requests = 0
         self.unsolicited_requests = 0
         self.early_range_requests = 0
+        self.oversized_requests = 0
 
     def _start_request(self, stream, record):
         super()._start_request(stream, record)
         if record.parser.method == b'GET':
-            if record.vector.identity == 'domain-json' and b'range' not in record.parser.headers:
+            if record.vector.identity == 'oversized-body':
+                require(b'range' not in record.parser.headers, 'c-oversized-unexpected-range')
+                self.oversized_requests += 1
+            elif record.vector.identity == 'domain-json' and b'range' not in record.parser.headers:
                 self.unsolicited_requests += 1
             else:
                 require(record.parser.headers.get(b'range') == b'bytes=5-', 'c-range-exact-request')
@@ -109,7 +113,8 @@ def install(client, node, target, origin):
         'restriction': {'operations': []}})
     rules = []
     for method, paths in [('HEAD', ['/conformance/json', '/conformance/status/404', '/conformance/redirect']),
-                          ('GET', ['/conformance/echo', '/conformance/json', '/conformance/body/boundary'])]:
+                          ('GET', ['/conformance/echo', '/conformance/json', '/conformance/body/boundary',
+                                   '/conformance/body/oversized'])]:
         rules.append({'id': 'ordinary-libfetch-' + method.lower(), 'effect': 'allow',
             'principals': [{'kind': 'administrator', 'subject': 'workflow-operator'}],
             'services': [target['service']], 'publications': [target['publication']],
@@ -124,7 +129,8 @@ def install(client, node, target, origin):
 
 def cell(client, probe, target, peer, output, case):
     vectors = {'missing-grant': 'domain-json', 'normal': 'domain-json', 'denied': 'method-bytes',
-               'not-found': 'http-404', 'redirect': 'redirect', 'fresh': 'domain-json', 'range': 'domain-json',
+               'not-found': 'http-404', 'redirect': 'redirect', 'oversized': 'oversized-body',
+               'fresh': 'domain-json', 'range': 'domain-json',
                'range-ignored': 'response-boundary', 'range-denied': 'http-404',
                'range-unsolicited': 'domain-json', 'range-before': 'method-bytes'}
     require(case in CASES, 'c-stat-closed-case-set')
@@ -158,6 +164,7 @@ def cell(client, probe, target, peer, output, case):
             'denied': (3, [{'err': 'permission-denied'}]),
             'not-found': (3, [{'err': 'unavailable'}]),
             'redirect': (3, [{'err': 'redirect-unsupported'}]),
+            'oversized': (3, [{'err': 'response-too-large'}]),
             'range': range_result(5, len(domain), domain[5:]),
             'range-ignored': range_result(0, 8192, b'x' * 8192),
             'range-denied': (3, [{'err': 'permission-denied'}]),
@@ -193,7 +200,7 @@ def cell(client, probe, target, peer, output, case):
         else:
             require(change['startedRequests'] == 1 and len(change['requests']) == 1
                     and change['requests'][0]['vector'] == vectors[case]
-                    and change['requests'][0]['method'] == ('GET' if case.startswith('range') else 'HEAD')
+                    and change['requests'][0]['method'] == ('GET' if case.startswith('range') or case == 'oversized' else 'HEAD')
                     and change['requests'][0]['role'] == 'primary'
                     and change['requests'][0]['authorizationPresent'] is True
                     and change['rejectedRequests'] == change['connectionBoundRejections'] == 0,
@@ -439,20 +446,21 @@ def run_node(artifact, native, output, deadline):
                     'c-stat-signed-admission')
             target = deploy(client, source / 'deployment.json', published['data']['operation']['publication']['id'])
             require(target['grants'] == [], 'c-stat-no-ambient-grants')
-            stage = 'eleven-signed-head-range-and-redirect-cells'
+            stage = 'twelve-signed-head-range-redirect-and-oversized-cells'
             target, record['cases'] = exercise_cells(client, node, probe, source, target, peer, output)
-            require(len(CASES) == 11 and [row['case'] for row in record['cases']] == list(CASES),
-                    'c-stat-eleven-primary-invocations')
+            require(len(CASES) == 12 and [row['case'] for row in record['cases']] == list(CASES),
+                    'c-stat-twelve-primary-invocations')
             final_peer = peer.observation()
             validate(final_peer)
-            require(final_peer['acceptedConnections'] == final_peer['startedRequests'] == 8
+            require(final_peer['acceptedConnections'] == final_peer['startedRequests'] == 9
                     and all(row['role'] == 'primary' for row in final_peer['requests'])
                     and peer.range_requests == 3 and peer.unsolicited_requests == 1
-                    and peer.early_range_requests == 1,
-                    'c-stat-eight-primary-contacts-three-ranges-one-unsolicited-one-early')
+                    and peer.early_range_requests == 1 and peer.oversized_requests == 1,
+                    'c-stat-nine-primary-contacts-three-ranges-one-unsolicited-one-early-one-oversized')
             record['exactRangeRequests'] = peer.range_requests
             record['unsolicitedRequests'] = peer.unsolicited_requests
             record['earlyRangeRequests'] = peer.early_range_requests
+            record['oversizedRequests'] = peer.oversized_requests
             delete_all(client, [target['name']])
             record['afterDeletes'] = sample(client, probe, 'c-stat-after-deletes', 0)
             stop(client, node); record['nodeShutdown'] = stopped_record(node)
@@ -511,7 +519,7 @@ def qualify(args):
               'full690Qualified': False, 'fullCCostModelQualified': False,
               'publisherAuthenticated': False, 'releasePublished': False,
               'limits': {'parentSeconds': 1320, 'commandSeconds': 900, 'cleanupReserveSeconds': 5,
-                         'jobs': 2, 'components': 1, 'cells': 12, 'clientCalls': 384, 'invocationProcesses': 12}}
+                         'jobs': 2, 'components': 1, 'cells': 13, 'clientCalls': 384, 'invocationProcesses': 13}}
     stage = 'source'
     def source_inputs(capture=False):
         rows = http_sources(commands, output, capture=capture, runtime_profile=FETCH_PROFILE)
@@ -548,11 +556,11 @@ def qualify(args):
         c_capsule_build.build(project, artifact, native['capsule_contracts'], native['package'],
             'https://github.com/KirilsTurkins/latent-service-fabric', installed=installed, _deadline=commands.deadline)
         result['build'] = http_build_evidence(artifact, original, runtime_profile=FETCH_PROFILE)
-        stage = 'eleven-signed-head-range-and-redirect-cells'
+        stage = 'twelve-signed-head-range-redirect-and-oversized-cells'
         result['node'] = run_node(artifact, native, output / 'node', commands.deadline)
         require(result['node']['status'] == 'passed'
                 and [row['case'] for row in result['node']['cases']] == list(CASES)
-                and result['node']['missingProvider']['status'] == 'passed', 'c-stat-exact-twelve-outcomes')
+                and result['node']['missingProvider']['status'] == 'passed', 'c-stat-exact-thirteen-outcomes')
         require(helpers == source_inputs() and source_identity(ROOT) == source
                 and sdk == inventory(c_capsule_project.sdk_inputs(ROOT, threading=True))
                 and original == inventory(snapshot(project))

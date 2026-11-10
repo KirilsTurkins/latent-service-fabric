@@ -8,7 +8,7 @@
 
 static int status, aborts, reads;
 static int expected_method = LATENT_HTTP_STREAMING_METHOD_GET;
-static bool deny, expect_range;
+static bool deny, expect_range, fail_finish;
 static const char *payload, *reply_range, *reply_length;
 static size_t position, chunk_length;
 
@@ -41,7 +41,9 @@ static void header(latent_http_streaming_header_t *out, const char *name, const 
     assert(out->name.ptr && out->value.ptr);
 }
 bool latent_http_streaming_finish(int upload, response *out, http_error *error) {
-    (void)error; assert(upload == 17); out->status = status; out->body = 23;
+    assert(upload == 17);
+    if (fail_finish) { error->tag = LATENT_HTTP_STREAMING_HTTP_ERROR_RESPONSE_TOO_LARGE; return false; }
+    out->status = status; out->body = 23;
     out->headers.len = status == 206 || status == 302 ? 2 : 1;
     out->headers.ptr = calloc(out->headers.len, sizeof(*out->headers.ptr)); assert(out->headers.ptr);
     header(&out->headers.ptr[0], "Content-Length", reply_length);
@@ -95,5 +97,8 @@ int main(void) {
     status = 302; reply_length = "0"; payload = ""; position = aborts = reads = 0;
     expected_method = LATENT_HTTP_STREAMING_METHOD_HEAD; expect_range = false;
     call("redirect", "redirect-unsupported", false); assert(aborts == 1 && reads == 0);
-    puts("C signed Range and redirect fixture source controls passed (fake HTTP ports)");
+    expected_method = LATENT_HTTP_STREAMING_METHOD_GET; fail_finish = true;
+    position = aborts = reads = 0;
+    call("oversized", "response-too-large", false); assert(aborts == 0 && reads == 0);
+    puts("C signed Range, redirect and oversized-response fixture controls passed (fake HTTP ports)");
 }

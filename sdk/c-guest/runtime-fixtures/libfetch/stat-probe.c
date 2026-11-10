@@ -71,6 +71,17 @@ bool exports_examples_libfetch_api_run(probe_string_t *input, probe_string_t *re
         bool ok = range_request(copy, url, result, error);
         free(copy); return ok;
     }
+    if (!strcmp(copy, "oversized")) {
+        FILE *file = fetchGetURL(url, "A");
+        int saved = errno, code = fetchLastErrCode;
+        if (file) {
+            fclose(file); free(copy); probe_string_dup(error, "unexpected-oversized-success"); return false;
+        }
+        free(copy);
+        probe_string_dup(error, code == FETCH_FULL && saved == EFBIG
+                                ? "response-too-large" : "unexpected-oversized-error");
+        return false;
+    }
     struct url_stat stat;
     int rc = fetchStatURL(url, &stat, "A");
     int saved = errno, code = fetchLastErrCode;

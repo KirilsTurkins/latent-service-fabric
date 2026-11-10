@@ -23,7 +23,7 @@ class StatQualificationControls(unittest.TestCase):
             (project / 'src/main.c').write_bytes((stat.ROOT / stat.PROBE).read_bytes())
             c_capsule_project.validate(snapshot(project))
             self.assertEqual(read_json(project / 'capsule-project.json')['runtimeProfile'], FETCH_PROFILE)
-            self.assertEqual(stat.CASES, ('missing-grant', 'normal', 'denied', 'not-found', 'redirect', 'fresh',
+            self.assertEqual(stat.CASES, ('missing-grant', 'normal', 'denied', 'not-found', 'redirect', 'oversized', 'fresh',
                                           'range', 'range-ignored', 'range-denied',
                                           'range-unsolicited', 'range-before'))
 
@@ -43,7 +43,8 @@ class StatQualificationControls(unittest.TestCase):
             self.assertEqual(rules[0]['resources']['paths'],
                              ['/conformance/json', '/conformance/status/404', '/conformance/redirect'])
             self.assertEqual(rules[1]['resources']['paths'],
-                             ['/conformance/echo', '/conformance/json', '/conformance/body/boundary'])
+                             ['/conformance/echo', '/conformance/json', '/conformance/body/boundary',
+                              '/conformance/body/oversized'])
             self.assertTrue(all(row['resources']['origins'] == [origin] for row in rules))
         node.startup_record['providers'][0]['profile'] = 'wrong'
         with patch.object(stat.owner, 'install', return_value=[]), patch.object(stat, 'policy') as policy:
@@ -98,12 +99,49 @@ class StatQualificationControls(unittest.TestCase):
             before = exchange(b'/conformance/echo')
             self.assertEqual(before, stat.head(206, 4,
                 headers=((b'Content-Range', b'bytes 0-3/4'),)) + b'abcd')
+            oversized = exchange(b'/conformance/body/oversized', send_range=False)
+            self.assertEqual(oversized, stat.head(200, 65536,
+                headers=((b'Content-Type', b'application/json; charset=utf-8'),)) + b'x' * 65536)
+            self.assertEqual(peer.oversized_requests, 1)
             self.assertEqual(peer.range_requests, 3)
             self.assertEqual(peer.unsolicited_requests, 1)
             self.assertEqual(peer.early_range_requests, 1)
             self.assertEqual(peer.observation()['openConnections'], 0)
         finally:
             peer.close()
+
+    def test_oversized_cell_requires_exact_error_authenticated_get_and_no_replay(self):
+        consumed = {k: '0' for k in ('stateReadBytes', 'stateWriteBytes', 'blobReadBytes',
+                    'blobWriteBytes', 'logBytes', 'effectCount', 'childCalls')}
+        consumed.update(cpuFuel='1', peakMemoryBytes='1')
+        row = {'processReaped': True, 'exitCode': 3, 'decoded': [{'err': 'response-too-large'}],
+               'response': {'outcomeKnown': True, 'requestDispatched': True,
+                            'data': {'resolvedRevision': 'revision', 'consumption': consumed}}}
+        change = {'startedRequests': 1, 'requests': [{'vector': 'oversized-body', 'method': 'GET',
+                   'role': 'primary', 'authorizationPresent': True}],
+                  'rejectedRequests': 0, 'connectionBoundRejections': 0}
+        peer = Mock(); peer.url.return_value = 'http://peer/conformance/body/oversized'
+        peer.observation.return_value = {'openConnections': 0}
+        client = SimpleNamespace(deadline=10**12)
+        process = SimpleNamespace(owner=SimpleNamespace(exited=lambda: True))
+        with tempfile.TemporaryDirectory() as tmp, \
+                patch.object(stat.owner, 'selected_revision', return_value='revision'), \
+                patch.object(stat.owner, 'start_http_call', return_value=process) as start, \
+                patch.object(stat.owner, 'finish_call', return_value=row), \
+                patch.object(stat.owner, 'retire', return_value={'physicalOwnersAfter': 0}), \
+                patch.object(stat.owner, 'close_call'), patch.object(stat, 'validate'), \
+                patch.object(stat, 'delta', return_value=change):
+            first, second, third = (Path(tmp) / name for name in ('first', 'second', 'third'))
+            first.mkdir(); second.mkdir(); third.mkdir()
+            self.assertEqual(stat.cell(client, object(), {}, peer, first, 'oversized')['case'], 'oversized')
+            self.assertEqual(start.call_args.args[2], 'oversized\nhttp://peer/conformance/body/oversized')
+            row['decoded'] = [{'err': 'unexpected-oversized-error'}]
+            with self.assertRaisesRegex(WorkflowError, 'c-stat-exact-ordinary-result'):
+                stat.cell(client, object(), {}, peer, second, 'oversized')
+            row['decoded'] = [{'err': 'response-too-large'}]
+            change['requests'][0]['method'] = 'HEAD'
+            with self.assertRaisesRegex(WorkflowError, 'c-stat-one-authenticated-head-no-replay'):
+                stat.cell(client, object(), {}, peer, third, 'oversized')
 
     def test_redirect_peer_returns_location_to_live_secondary_without_contact(self):
         token = b'Bearer ' + b'a' * 64
