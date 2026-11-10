@@ -106,3 +106,23 @@ the added nine-case source-port receipt is retained under the existing logs
 artifact path. The controls use fake ABI, ledger, resource and clock ports and
 do not prove a canonical guest call, physical retirement or signed execution.
 This does not replace an earlier live driver on `Timer.Change`.
+
+## Optional ready-pollable retirement witness
+
+`tools/qualify_dotnet_managed_capacity.py --ready-retirement-witness` preserves
+the original seventeen cases and adds a separate source-bound low-level WASI
+case followed by a fresh activation. The derived NativeAOT fixture retains a
+zero-duration timer pollable after its first block completes. It then creates
+and drops a different, never-polled long timer and observes the original Wait
+remaining held. Blocking the same already-ready pollable must settle that Wait;
+a repeated block must leave the count unchanged, and dropping the ready
+pollable must return the remaining Wait. A trap or any unexpected count fails
+the campaign. All existing limits and normal signing, verification, capture,
+and cleanup checks remain in force.
+
+The witness calls the adapter's already-selected WASI interfaces directly; it
+does not qualify an ordinary `System.Threading.Timer` producer, the separate
+still-live `Timer.Change` rearm path, or physical retirement after Store
+teardown. The default and historical fixture bytes and the opt-in rearm case
+remain unchanged. The existing manual owner or a temporary selector child can
+run the new option; a source or model pass is not a signed guest result.
