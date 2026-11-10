@@ -2,8 +2,15 @@ name: Execute ordinary Go SMTP and guest STARTTLS
 
 on:
   workflow_dispatch:
+    inputs:
+      profile:
+        description: Go runtime profile
+        type: choice
+        required: true
+        default: v5
+        options: [v5, v7]
   push:
-    branches: ['feat/go-smtp-starttls-20261020']
+    branches: ['feat/go-smtp-starttls-20261020', 'feat/go-smtp-v7-20261110']
 
 permissions:
   contents: read
@@ -60,7 +67,9 @@ jobs:
           echo "$out" >> "$GITHUB_PATH"
           echo "$out/go-async/bin" >> "$GITHUB_PATH"
       - name: Compile ordinary SMTP guest TLS then execute one targeted signed harness
-        run: python3 tools/qualify_go_smtp_tls_runtime.py --reference-go "$RUNNER_TEMP/go-smtp-tls-tools/go/bin/go" --source-commit "${{ github.sha }}" --output "$RUNNER_TEMP/go-smtp-tls-runtime"
+        env:
+          LSF_GO_SMTP_TLS_DISPATCH_PROFILE: ${{ inputs.profile }}
+        run: python3 tools/qualify_go_smtp_tls_runtime.py --reference-go "$RUNNER_TEMP/go-smtp-tls-tools/go/bin/go" --source-commit "${{ github.sha }}" --output "$RUNNER_TEMP/go-smtp-tls-runtime" --workflow-selection
       - name: Retain bounded compiler and owner evidence including failures
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes

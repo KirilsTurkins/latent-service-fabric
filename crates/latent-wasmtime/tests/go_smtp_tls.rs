@@ -38,6 +38,7 @@ use tokio_rustls::TlsAcceptor;
 
 const CONTRACT: &str = "examples:go-standard-network/api@1.0.0";
 const PROFILE: &str = "go-component-activation-v5";
+const V7_PROFILE: &str = "go-component-activation-v7";
 const SOURCE: &[u8] = include_bytes!("../../../sdk/go-guest/runtime/smtp-tls-conformance/main.go");
 const WORLD: &str = include_str!("../../../sdk/go-guest/runtime/smtp-tls-conformance/world.wit");
 
