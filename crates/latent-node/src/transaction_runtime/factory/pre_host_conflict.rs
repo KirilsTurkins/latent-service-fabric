@@ -123,6 +123,9 @@ impl NativeTransactionAdmission {
         original_retention: Arc<TransactionRetention>,
     ) -> TransactionCompletionResult {
         let command = pending.record().clone();
+        let Ok(lane) = pending.role.retain_lane() else {
+            return recovery(command, original_retention);
+        };
         let marker = pending.conflict.take().filter(|marker| {
             matches!(outcome, ActivationOutcome::Failed { error, .. }
                 if error.code == PlatformErrorCode::StateConflict)
@@ -140,7 +143,8 @@ impl NativeTransactionAdmission {
             }
         };
         let retained = Arc::clone(&marker.retained);
-        let Ok(writer) = Writer::new(self, marker, &command, control.clone()) else {
+        let Ok(writer) = Writer::new_with_lane(self, marker, &command, control.clone(), lane)
+        else {
             return recovery(command, retained);
         };
         let active = Arc::clone(&writer);
@@ -233,14 +237,26 @@ struct Writer {
     reservation: Arc<NativeReservation>,
     _buffers: [NativeBufferPermit; 3],
     control: TransactionCommitControl,
+    _lane: Option<crate::transaction_runtime::entity_queue::Physical>,
 }
 
 impl Writer {
+    #[cfg(test)]
     fn new(
         admission: &NativeTransactionAdmission,
         marker: OriginalConflict,
         command: &CommandRecord,
         control: TransactionCommitControl,
+    ) -> Result<Arc<Self>, AtomicError> {
+        Self::new_with_lane(admission, marker, command, control, None)
+    }
+
+    fn new_with_lane(
+        admission: &NativeTransactionAdmission,
+        marker: OriginalConflict,
+        command: &CommandRecord,
+        control: TransactionCommitControl,
+        lane: Option<crate::transaction_runtime::entity_queue::Physical>,
     ) -> Result<Arc<Self>, AtomicError> {
         if !marker.matches(admission, command, &control) {
             return Err(AtomicError::PermissionDenied);
@@ -286,6 +302,7 @@ impl Writer {
             reservation,
             _buffers: buffers,
             control,
+            _lane: lane,
         }))
     }
 

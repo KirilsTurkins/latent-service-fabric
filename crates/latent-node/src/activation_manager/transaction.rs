@@ -33,6 +33,17 @@ pub trait TransactionActivationAdmission: Send + Sync {
         budget: &'a ActivationBudget,
     ) -> BoxFuture<'a, Result<Arc<dyn TransactionHost>, PlatformError>>;
 
+    /// The installed implementation may use this original activation control
+    /// at an explicitly safe waiting boundary after durable admission.
+    fn admit_controlled<'a>(
+        &'a self,
+        envelope: &'a ActivationEnvelope,
+        budget: &'a ActivationBudget,
+        _control: TransactionAdmissionControl,
+    ) -> BoxFuture<'a, Result<Arc<dyn TransactionHost>, PlatformError>> {
+        self.admit(envelope, budget)
+    }
+
     /// The same handle invokes this after guest/cell cleanup and accounting
     /// observation, while its original cancellation registration is still live.
     fn complete(
@@ -41,6 +52,59 @@ pub trait TransactionActivationAdmission: Send + Sync {
         _control: TransactionCommitControl,
     ) -> BoxFuture<'_, ActivationOutcome> {
         Box::pin(async move { outcome })
+    }
+}
+
+/// Original activation stop signals for an admission-owned wait. It does not
+/// authorize dropping a future that may own an in-flight physical publication.
+#[derive(Clone)]
+pub struct TransactionAdmissionControl {
+    token: crate::CancellationToken,
+    transport: Arc<super::transport_stop::TransportStop>,
+    clock: Arc<dyn ActivationClock>,
+    deadline: Option<std::time::Instant>,
+}
+
+impl TransactionAdmissionControl {
+    pub(super) fn new(
+        token: crate::CancellationToken,
+        transport: Arc<super::transport_stop::TransportStop>,
+        clock: Arc<dyn ActivationClock>,
+        budget: &ActivationBudget,
+    ) -> Self {
+        Self {
+            token,
+            transport,
+            clock,
+            deadline: budget.deadline().monotonic(),
+        }
+    }
+
+    pub(crate) async fn wait<T>(
+        &self,
+        future: impl std::future::Future<Output = Result<T, PlatformError>>,
+    ) -> Result<T, PlatformError> {
+        super::control::stage(
+            future,
+            &self.token,
+            self.deadline,
+            &self.clock,
+            &self.transport,
+        )
+        .await
+    }
+
+    #[cfg(all(test, unix))]
+    pub(crate) fn for_native_test(
+        registration: &crate::CancellationRegistration,
+        budget: &ActivationBudget,
+    ) -> Self {
+        Self::new(
+            registration.token(),
+            Arc::default(),
+            Arc::new(latent_core::SystemActivationClock),
+            budget,
+        )
     }
 }
 

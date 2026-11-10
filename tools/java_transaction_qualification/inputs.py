@@ -57,13 +57,16 @@ class ComponentInput:
     compiler_source: str
     host_abi_digest: str
     requirements_digest: str | None
+    event_requirements_digest: str | None = None
 
     def observation(self) -> dict:
-        return {"variant": self.name, "componentDigest": self.component_digest,
-                "companionDigest": self.companion_digest, "sourceDigest": self.source_digest,
-                "compilerSource": self.compiler_source, "hostAbiDigest": self.host_abi_digest,
-                "requirementsDigest": self.requirements_digest,
-                "signedNodeExecutionQualified": False}
+        result = {"variant": self.name, "componentDigest": self.component_digest,
+                  "companionDigest": self.companion_digest, "sourceDigest": self.source_digest,
+                  "compilerSource": self.compiler_source, "hostAbiDigest": self.host_abi_digest,
+                  "requirementsDigest": self.requirements_digest, "signedNodeExecutionQualified": False}
+        if self.event_requirements_digest is not None:
+            result["eventRequirementsDigest"] = self.event_requirements_digest
+        return result
 
 
 def load(directory: Path) -> tuple[ComponentInput, ...]:

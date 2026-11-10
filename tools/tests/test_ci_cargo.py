@@ -43,11 +43,41 @@ class FoundationRecipeTests(unittest.TestCase):
             self.foundation.validate_ci_and_docs(root)
             self.assertEqual(self.foundation.ERRORS, ['Makefile foundation target missing: workspace-prepare:'])
 
+    def test_unrelated_shell_continuation_does_not_mask_foundation(self):
+        import yaml
+        document = yaml.load(self.workflow, Loader=yaml.BaseLoader)
+        document["jobs"]["rust"]["steps"].insert(0, {
+            "name": "Unrelated multiline download",
+            "run": "curl --fail \\\n  --silent https://example.invalid/tool\n",
+        })
+        self.foundation.validate_cargo_workflow(yaml.safe_dump(document))
+        self.assertEqual(self.foundation.ERRORS, [])
+
     def test_comment_cannot_replace_binding_execution(self):
         self.foundation.validate_cargo_workflow(self.workflow.replace(
             "run: python3 tools/ci_cargo.py run bindings",
             "run: echo disabled # python3 tools/ci_cargo.py run bindings latent-rpc latent-component-bindings"))
         self.assertIn("CI workflow does not invoke foundation recipe: bindings", self.foundation.ERRORS)
+
+    def test_unrelated_multiline_shell_does_not_break_recipe_validation(self):
+        import yaml
+        document = yaml.load(self.workflow, Loader=yaml.BaseLoader)
+        document['jobs']['rust']['steps'].append({
+            'name': 'Unrelated multiline download',
+            'run': "printf '%s' \\\n  fixture\n",
+        })
+        self.foundation.validate_cargo_workflow(yaml.safe_dump(document))
+        self.assertEqual(self.foundation.ERRORS, [])
+
+    def test_unrelated_multiline_python_does_not_break_recipe_validation(self):
+        import yaml
+        document = yaml.load(self.workflow, Loader=yaml.BaseLoader)
+        document['jobs']['rust']['steps'].append({
+            'name': 'Unrelated multiline Python',
+            'run': "python3 -m unrelated \\\n  fixture\n",
+        })
+        self.foundation.validate_cargo_workflow(yaml.safe_dump(document))
+        self.assertEqual(self.foundation.ERRORS, [])
 
     def test_conditionally_skipped_binding_step_does_not_satisfy_foundation(self):
         self.foundation.validate_cargo_workflow(self.workflow.replace(

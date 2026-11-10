@@ -322,6 +322,32 @@ pub(crate) struct Connection {
     owner_memory: HostMemoryReservation,
     registry: crate::connection_registry::RegistryWeak,
     _owner_metadata: Arc<ProviderMetadata>,
+    // The first read-specific drop action records an inert,
+    // monotone edge before the original transport or guard can be dropped.
+    #[cfg(feature = "development-read-witness")]
+    read_drop_starts: std::sync::atomic::AtomicU8,
+    #[cfg(test)]
+    write_gate: Mutex<Option<TestWriteGate>>,
+    #[cfg(test)]
+    write_none_once: std::sync::atomic::AtomicBool,
+    #[cfg(test)]
+    fail_audit_once: std::sync::atomic::AtomicBool,
+}
+
+#[cfg(test)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum TestWritePoint {
+    BeforeDispatch,
+    NoProgress,
+    FlushPending,
+    ReadConsumed,
+    AuditPending,
+}
+#[cfg(test)]
+struct TestWriteGate {
+    point: TestWritePoint,
+    entered: tokio::sync::oneshot::Sender<()>,
+    release: tokio::sync::oneshot::Receiver<()>,
 }
 struct Handle {
     connection: Arc<Connection>,
@@ -332,6 +358,10 @@ struct Pending {
     socket: Arc<crate::transport::Transport>,
     _guard: PendingGuard,
     deadline: Instant,
+    // Only a plain-TCP readiness observation may end at this narrower
+    // deadline without retiring the connection. It owns the same Pending.
+    observation_deadline: Option<Instant>,
+    observation_immediate: bool,
 }
 struct PendingGuard {
     connection: Arc<Connection>,
@@ -340,6 +370,96 @@ struct PendingGuard {
 struct ChunkOwner {
     _connection: Arc<Connection>,
     _window: latent_capabilities::broker::network::StreamChunkReservation,
+}
+
+// The original ready call and socket stay owned until its audit and final
+// currentness check settle. Abandoning that handoff fences the same connection
+// before either owner is released.
+struct ReadinessFlight {
+    call: ProviderCall,
+    pending: Pending,
+    connection: Arc<Connection>,
+    settled: bool,
+}
+impl Drop for ReadinessFlight {
+    fn drop(&mut self) {
+        if !self.settled {
+            self.connection.abort(StreamErrorCode::Cancelled);
+        }
+    }
+}
+
+// Retain the original buffer/output and socket across currentness and audit.
+// If consumed bytes cannot be handed off, fence the same connection before
+// releasing any original owners that remain in this flight.
+struct ReadFlight {
+    buffer: Option<IoTransferBuffer>,
+    output: Option<IoOutputChunk>,
+    call: ProviderCall,
+    pending: Pending,
+    connection: Arc<Connection>,
+    consumed: bool,
+}
+impl Drop for ReadFlight {
+    fn drop(&mut self) {
+        if self.consumed {
+            self.connection.abort(StreamErrorCode::Cancelled);
+        }
+    }
+}
+
+// One write owns the original input, audit call, and Pending socket through its
+// terminal observation. On an abandoned possible dispatch, stop admission
+// while all of those original owners still exist. Their fields then retire in
+// declaration order; Pending drops its transport before its operation guard.
+struct WriteFlight {
+    input: IoInputChunk,
+    call: ProviderCall,
+    pending: Pending,
+    connection: Arc<Connection>,
+    possible: bool,
+    accepted: u32,
+    accounted: bool,
+}
+impl WriteFlight {
+    fn record_accepted(&mut self, count: u32) {
+        if self.accounted {
+            return;
+        }
+        if count != 0 {
+            let mut state = self
+                .connection
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            state.accepted_write += u64::from(count);
+            state.last_progress = Instant::now();
+        }
+        self.accounted = true;
+    }
+}
+impl Drop for WriteFlight {
+    fn drop(&mut self) {
+        if self.possible {
+            self.record_accepted(self.accepted);
+            self.connection.abort(StreamErrorCode::Cancelled);
+        }
+    }
+}
+#[cfg(feature = "development-read-witness")]
+impl Drop for Pending {
+    fn drop(&mut self) {
+        if self._guard.direction == 0 {
+            use std::sync::atomic::Ordering;
+            // Three is a sentinel, so a prior provisional or later read can
+            // never wrap around and impersonate the original second read.
+            let _ = self._guard.connection.read_drop_starts.fetch_update(
+                Ordering::SeqCst,
+                Ordering::SeqCst,
+                |value| Some(value.saturating_add(1).min(3)),
+            );
+        }
+    }
 }
 impl Drop for PendingGuard {
     fn drop(&mut self) {
@@ -428,6 +548,14 @@ pub(crate) async fn connect(
         owner_memory,
         registry: inner.connections.downgrade(),
         _owner_metadata: owner_metadata,
+        #[cfg(feature = "development-read-witness")]
+        read_drop_starts: std::sync::atomic::AtomicU8::new(0),
+        #[cfg(test)]
+        write_gate: Mutex::new(None),
+        #[cfg(test)]
+        write_none_once: std::sync::atomic::AtomicBool::new(false),
+        #[cfg(test)]
+        fail_audit_once: std::sync::atomic::AtomicBool::new(false),
     });
     // Move the confirmed owner reservation into the real Arc; it cannot be
     // refunded by a facade while a pending operation still retains the Arc.
@@ -760,6 +888,99 @@ async fn create_socket(
 }
 
 impl Connection {
+    #[cfg(test)]
+    pub(crate) fn test_write_none_once(&self) {
+        self.write_none_once
+            .store(true, std::sync::atomic::Ordering::Release);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_fail_audit_once(&self) {
+        self.fail_audit_once
+            .store(true, std::sync::atomic::Ordering::Release);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_write_gate(
+        &self,
+        point: TestWritePoint,
+    ) -> (
+        tokio::sync::oneshot::Receiver<()>,
+        tokio::sync::oneshot::Sender<()>,
+    ) {
+        let (entered, reached) = tokio::sync::oneshot::channel();
+        let (release, held) = tokio::sync::oneshot::channel();
+        assert!(self
+            .write_gate
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .replace(TestWriteGate {
+                point,
+                entered,
+                release: held,
+            })
+            .is_none());
+        (reached, release)
+    }
+
+    #[cfg(test)]
+    async fn test_wait_write_gate(&self, point: TestWritePoint) {
+        let gate = {
+            let mut gate = self
+                .write_gate
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            if gate.as_ref().is_some_and(|gate| gate.point == point) {
+                gate.take()
+            } else {
+                None
+            }
+        };
+        let Some(gate) = gate else {
+            return;
+        };
+        if gate.entered.send(()).is_ok() {
+            let _ = gate.release.await;
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_hold_tls_flush(&self) {
+        let mut state = self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        state
+            .socket
+            .as_mut()
+            .expect("live physical owner")
+            .resource()
+            .stream
+            .as_ref()
+            .expect("live transport")
+            .test_hold_tls_flush();
+    }
+
+    #[cfg(feature = "development-read-witness")]
+    pub(crate) fn read_drop_starts(&self) -> u8 {
+        self.read_drop_starts
+            .load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    #[cfg(feature = "development-read-witness")]
+    pub(crate) fn original_second_read_live(&self) -> Result<bool, StreamError> {
+        let state = self.state.try_lock().map_err(crate::snapshot_lock_error)?;
+        Ok(state.read_admissions == 2
+            && state.retired_read_delivered == 1
+            && state.delivered_read == 1
+            && state.pending == 1
+            && state.busy[0]
+            && state.socket.is_some()
+            && !state.closing
+            && !state.quarantined
+            && self.read_drop_starts() == 1)
+    }
+
     pub(crate) fn metadata_billing(&self) -> Arc<ProviderMetadata> {
         Arc::clone(&self._owner_metadata)
     }
@@ -822,13 +1043,26 @@ impl Connection {
             .io()
             .checkpoint()
             .map_err(|failure| self.terminal_error(failure.into()))?;
-        if timeout.is_some_and(|value| value == 0 || value > 10_000) {
+        if timeout.is_some_and(|value| value > 10_000 || (value == 0 && direction != 2)) {
             return Err(error(StreamErrorCode::InvalidInput));
         }
         let mut state = self
             .state
             .lock()
             .map_err(|_| error(StreamErrorCode::Exhausted))?;
+        if timeout == Some(0) {
+            let immediate = cfg!(target_os = "linux")
+                && state.socket.as_mut().is_some_and(|physical| {
+                    physical
+                        .resource()
+                        .stream
+                        .as_ref()
+                        .is_some_and(|socket| !socket.host_tls() && !socket.protected_owner())
+                });
+            if !immediate {
+                return Err(error(StreamErrorCode::InvalidInput));
+            }
+        }
         if state.closing {
             return Err(
                 error(state.failure.unwrap_or(StreamErrorCode::InvalidState))
@@ -840,9 +1074,6 @@ impl Connection {
         }
         let now = Instant::now();
         let mut deadline = self.deadline.min(state.last_progress + self.idle);
-        if let Some(value) = timeout {
-            deadline = deadline.min(now + Duration::from_millis(u64::from(value)));
-        }
         if now >= deadline {
             return Err(error(StreamErrorCode::Timeout).uncertain(state.attempted_write));
         }
@@ -856,6 +1087,16 @@ impl Connection {
                 .as_ref()
                 .expect("live socket transport"),
         );
+        let observation = direction == 2 && !socket.host_tls() && !socket.protected_owner();
+        let requested = timeout.map(|value| now + Duration::from_millis(u64::from(value)));
+        if !observation {
+            if let Some(requested) = requested {
+                deadline = deadline.min(requested);
+            }
+        }
+        if now >= deadline {
+            return Err(error(StreamErrorCode::Timeout).uncertain(state.attempted_write));
+        }
         state.pending += 1;
         state.busy[direction] = true;
         Ok(Pending {
@@ -865,6 +1106,8 @@ impl Connection {
                 direction,
             },
             deadline,
+            observation_deadline: if observation { requested } else { None },
+            observation_immediate: observation && timeout == Some(0),
         })
     }
     fn drain_closed(&self) {
@@ -1060,12 +1303,88 @@ impl Connection {
             .await
             .map_err(Into::into)
     }
+    // A readiness-only timeout is nonterminal only after the same original
+    // call remains current. Busy/failed authority checks fail closed; they are
+    // not reclassified as an ordinary socket timeout.
+    fn ready_timeout_current(
+        &self,
+        pending: &Pending,
+        call: &mut ProviderCall,
+    ) -> Result<(), StreamError> {
+        let io = self.call.io();
+        let call_deadline = call.deadline();
+        io.checkpoint().map_err(StreamError::from)?;
+        if Instant::now() >= pending.deadline.min(call_deadline).min(io.deadline()) {
+            return Err(error(StreamErrorCode::Timeout));
+        }
+        io.recheck_authority().map_err(StreamError::from)?;
+        // `ready` is authorized independently of the original connect call.
+        // Both exact accepted owners must remain current for a nonterminal
+        // observation; neither check mints or replaces authority.
+        call.recheck_authority().map_err(StreamError::from)?;
+        io.checkpoint().map_err(StreamError::from)?;
+        let state = self
+            .state
+            .lock()
+            .map_err(|_| error(StreamErrorCode::Exhausted))?;
+        if state.closing {
+            return Err(
+                error(state.failure.unwrap_or(StreamErrorCode::InvalidState))
+                    .uncertain(state.attempted_write),
+            );
+        }
+        if Instant::now() >= pending.deadline.min(call_deadline).min(io.deadline()) {
+            return Err(error(StreamErrorCode::Timeout).uncertain(state.attempted_write));
+        }
+        Ok(())
+    }
+
+    async fn complete_readiness_observation(
+        self: &Arc<Self>,
+        pending: Pending,
+        call: ProviderCall,
+        success: bool,
+    ) -> Result<(), StreamError> {
+        let mut flight = ReadinessFlight {
+            call,
+            pending,
+            connection: Arc::clone(self),
+            settled: false,
+        };
+        let result = match self.audit_ref(&mut flight.call, success).await {
+            Ok(()) => self.ready_timeout_current(&flight.pending, &mut flight.call),
+            Err(failure) => Err(failure),
+        };
+        if let Err(failure) = result {
+            self.abort(failure.code);
+            flight.settled = true;
+            return Err(self.terminal_error(failure));
+        }
+        flight.settled = true;
+        Ok(())
+    }
+
     async fn audit(&self, mut call: ProviderCall, success: bool) -> Result<(), StreamError> {
+        self.audit_ref(&mut call, success).await
+    }
+    async fn audit_ref(&self, call: &mut ProviderCall, success: bool) -> Result<(), StreamError> {
         call.record_provider_outcome(if success {
             AuditProviderOutcome::HostCompleted
         } else {
             AuditProviderOutcome::Unknown
         })?;
+        #[cfg(test)]
+        self.test_wait_write_gate(TestWritePoint::AuditPending)
+            .await;
+        #[cfg(test)]
+        if success
+            && self
+                .fail_audit_once
+                .swap(false, std::sync::atomic::Ordering::AcqRel)
+        {
+            return Err(error(StreamErrorCode::Uncertain)
+                .uncertain(self.observe().application_write_attempted));
+        }
         if call.finish_audit().await == CapabilityAuditDurability::OutcomeUnknown {
             return Err(error(StreamErrorCode::Uncertain)
                 .uncertain(self.observe().application_write_attempted));
@@ -1085,33 +1404,59 @@ impl OutboundStream for Handle {
         }
         let connection = Arc::clone(&self.connection);
         let prepared = self.connection.call.prepare_io_future_with(
-            move |(pending, mut buffer): (Pending, IoTransferBuffer)| async move {
-                let mut call = connection
+            move |(pending, buffer): (Pending, IoTransferBuffer)| async move {
+                let call = connection
                     .authorize("read", CapabilityCallCost::new(maximum))
                     .await?;
                 connection.scope.charge_transfer(maximum)?;
-                let result = connection
-                    .wait(&pending, call.deadline(), async {
-                        loop {
-                            recheck_provider(&mut call).await?;
-                            match pending.socket.try_read(buffer.spare_mut()?) {
-                                Ok(None) => pending
-                                    .socket
-                                    .readable()
-                                    .await
-                                    .map_err(|_| error(StreamErrorCode::IoFailed))?,
-                                Ok(Some(count)) => break Ok(count),
-                                Err(error) => break Err(error),
+                let mut flight = ReadFlight {
+                    buffer: Some(buffer),
+                    output: None,
+                    call,
+                    pending,
+                    connection: Arc::clone(&connection),
+                    consumed: false,
+                };
+                let deadline = flight.call.deadline();
+                let result = {
+                    let pending = &flight.pending;
+                    let buffer = flight.buffer.as_mut().expect("original read buffer");
+                    let call = &mut flight.call;
+                    let consumed = &mut flight.consumed;
+                    connection
+                        .wait(pending, deadline, async {
+                            loop {
+                                recheck_provider(call).await?;
+                                match pending.socket.try_read(buffer.spare_mut()?) {
+                                    Ok(None) => pending
+                                        .socket
+                                        .readable()
+                                        .await
+                                        .map_err(|_| error(StreamErrorCode::IoFailed))?,
+                                    Ok(Some(count)) => {
+                                        // wait() performs another authority check after
+                                        // this return. Record consumption before it can
+                                        // suspend, fail, or be abandoned.
+                                        *consumed = count != 0;
+                                        #[cfg(test)]
+                                        connection
+                                            .test_wait_write_gate(TestWritePoint::ReadConsumed)
+                                            .await;
+                                        break Ok(count);
+                                    }
+                                    Err(error) => break Err(error),
+                                }
                             }
-                        }
-                    })
-                    .await
-                    .and_then(|value| value);
+                        })
+                        .await
+                        .and_then(|value| value)
+                };
                 let count = match result {
                     Ok(count) => count,
                     Err(failure) => {
                         connection.abort(failure.code);
-                        connection.audit(call, false).await?;
+                        flight.consumed = false;
+                        connection.audit_ref(&mut flight.call, false).await?;
                         return Err(connection.terminal_error(failure));
                     }
                 };
@@ -1126,14 +1471,29 @@ impl OutboundStream for Handle {
                         state.last_progress = Instant::now();
                     }
                 }
-                buffer.advance_written(count)?;
-                let result = if count == 0 {
-                    None
-                } else {
-                    Some(buffer.finish()?)
-                };
-                connection.audit(call, true).await?;
-                Ok(result)
+                flight
+                    .buffer
+                    .as_mut()
+                    .expect("original read buffer")
+                    .advance_written(count)?;
+                if count != 0 {
+                    flight.output = Some(
+                        flight
+                            .buffer
+                            .take()
+                            .expect("original read buffer")
+                            .finish()?,
+                    );
+                }
+                if let Err(failure) = connection.audit_ref(&mut flight.call, true).await {
+                    if flight.consumed {
+                        connection.abort(failure.code);
+                        flight.consumed = false;
+                    }
+                    return Err(failure);
+                }
+                flight.consumed = false;
+                Ok(flight.output.take())
             },
         )?;
         let pending = self.connection.pending(0, timeout)?;
@@ -1181,81 +1541,120 @@ impl OutboundStream for Handle {
         let connection = Arc::clone(&self.connection);
         let prepared = self.connection.call.prepare_io_future_with(
             move |(pending, input, cost): (Pending, IoInputChunk, CapabilityCallCost)| async move {
-                let mut call = connection.authorize("write", cost).await?;
+                let call = connection.authorize("write", cost).await?;
                 connection.scope.charge_transfer(input.as_ref().len())?;
-                let mut accepted_prefix = 0u32;
-                let result = connection
-                    .wait(&pending, call.deadline(), async {
-                        loop {
-                            recheck_provider(&mut call).await?;
-                            connection
-                                .state
-                                .lock()
-                                .unwrap_or_else(std::sync::PoisonError::into_inner)
-                                .attempted_write = true;
-                            match pending.socket.try_write(input.as_ref()) {
-                                Ok(None) => pending
-                                    .socket
-                                    .writable()
-                                    .await
-                                    .map_err(|_| error(StreamErrorCode::IoFailed))?,
-                                Ok(Some(count)) => {
-                                    accepted_prefix = u32::try_from(count).expect("bounded chunk");
-                                    // Flush only this accepted plaintext prefix.
-                                    // No new write or retry occurs while waiting.
-                                    loop {
-                                        recheck_provider(&mut call).await?;
-                                        if pending.socket.flush_pending()? {
-                                            break;
-                                        }
+                let mut flight = WriteFlight {
+                    input,
+                    call,
+                    pending,
+                    connection: Arc::clone(&connection),
+                    possible: false,
+                    accepted: 0,
+                    accounted: false,
+                };
+                let deadline = flight.call.deadline();
+                let result = {
+                    let pending = &flight.pending;
+                    let input = &flight.input;
+                    let call = &mut flight.call;
+                    let possible = &mut flight.possible;
+                    let accepted = &mut flight.accepted;
+                    connection
+                        .wait(pending, deadline, async {
+                            loop {
+                                recheck_provider(call).await?;
+                                #[cfg(test)]
+                                connection
+                                    .test_wait_write_gate(TestWritePoint::BeforeDispatch)
+                                    .await;
+                                connection
+                                    .state
+                                    .lock()
+                                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                                    .attempted_write = true;
+                                // From this point a panic or dropped future cannot
+                                // prove that the original write had no effect.
+                                *possible = true;
+                                #[cfg(test)]
+                                let result = if connection
+                                    .write_none_once
+                                    .swap(false, std::sync::atomic::Ordering::AcqRel)
+                                {
+                                    Ok(None) // Synthetic definite-no-dispatch port.
+                                } else {
+                                    pending.socket.try_write(input.as_ref())
+                                };
+                                #[cfg(not(test))]
+                                let result = pending.socket.try_write(input.as_ref());
+                                match result {
+                                    Ok(None) => {
+                                        // Each supported transport returns None only
+                                        // after proving no application bytes accepted.
+                                        *possible = false;
+                                        #[cfg(test)]
+                                        connection
+                                            .test_wait_write_gate(TestWritePoint::NoProgress)
+                                            .await;
                                         pending
                                             .socket
                                             .writable()
                                             .await
                                             .map_err(|_| error(StreamErrorCode::IoFailed))?;
                                     }
-                                    break Ok(count);
+                                    Ok(Some(count)) => {
+                                        *accepted = u32::try_from(count).expect("bounded chunk");
+                                        // Flush only this accepted plaintext prefix.
+                                        // No new write or retry occurs while waiting.
+                                        loop {
+                                            recheck_provider(call).await?;
+                                            if pending.socket.flush_pending()? {
+                                                break;
+                                            }
+                                            #[cfg(test)]
+                                            connection
+                                                .test_wait_write_gate(TestWritePoint::FlushPending)
+                                                .await;
+                                            pending
+                                                .socket
+                                                .writable()
+                                                .await
+                                                .map_err(|_| error(StreamErrorCode::IoFailed))?;
+                                        }
+                                        break Ok(count);
+                                    }
+                                    Err(error) => {
+                                        *accepted = error.accepted_prefix_bytes;
+                                        break Err(error);
+                                    }
                                 }
-                                Err(error) => break Err(error),
                             }
-                        }
-                    })
-                    .await
-                    .and_then(|value| value);
+                        })
+                        .await
+                        .and_then(|value| value)
+                };
                 let count = match result {
                     Ok(count) if count != 0 => count,
                     Ok(_) => {
                         connection.abort(StreamErrorCode::IoFailed);
-                        connection.audit(call, false).await?;
+                        connection.audit_ref(&mut flight.call, false).await?;
                         return Err(error(StreamErrorCode::IoFailed).uncertain(true));
                     }
                     Err(mut failure) => {
                         failure.accepted_prefix_bytes =
-                            failure.accepted_prefix_bytes.max(accepted_prefix);
-                        if failure.accepted_prefix_bytes != 0 {
-                            connection
-                                .state
-                                .lock()
-                                .unwrap_or_else(std::sync::PoisonError::into_inner)
-                                .accepted_write += u64::from(failure.accepted_prefix_bytes);
-                        }
+                            failure.accepted_prefix_bytes.max(flight.accepted);
+                        flight.record_accepted(failure.accepted_prefix_bytes);
                         connection.abort(failure.code);
-                        connection.audit(call, false).await?;
+                        connection.audit_ref(&mut flight.call, false).await?;
                         return Err(connection.terminal_error(failure));
                     }
                 };
-                {
-                    let mut state = connection
-                        .state
-                        .lock()
-                        .unwrap_or_else(std::sync::PoisonError::into_inner);
-                    state.accepted_write += count as u64;
-                    state.last_progress = Instant::now();
-                }
-                if let Err(mut failure) = connection.audit(call, true).await {
+                flight.record_accepted(u32::try_from(count).expect("bounded chunk"));
+                if let Err(mut failure) = connection.audit_ref(&mut flight.call, true).await {
                     failure.accepted_prefix_bytes = u32::try_from(count).expect("bounded chunk");
+                    connection.abort(failure.code);
                     return Err(failure.uncertain(true));
                 }
+                flight.possible = false;
                 Ok(u32::try_from(count).expect("bounded chunk"))
             },
         )?;
@@ -1281,7 +1680,7 @@ impl OutboundStream for Handle {
             self.connection
                 .call
                 .prepare_io_future_with(move |pending: Pending| async move {
-                    let call = connection
+                    let mut call = connection
                         .authorize("ready", CapabilityCallCost::new(0))
                         .await?;
                     let selected = match interest {
@@ -1298,17 +1697,51 @@ impl OutboundStream for Handle {
                             writable: false,
                         });
                     }
-                    let result = connection
-                        .wait(&pending, call.deadline(), pending.socket.ready(selected))
-                        .await
-                        .and_then(|value| value.map_err(|_| error(StreamErrorCode::IoFailed)));
+                    let call_deadline = call.deadline();
+                    let lifetime = pending.deadline.min(call_deadline).min(connection.call.io().deadline());
+                    let result = if pending.observation_immediate {
+                        connection.ready_timeout_current(&pending, &mut call)
+                            .and_then(|()| pending.socket.ready_now(selected)
+                                .map_err(|_| error(StreamErrorCode::IoFailed)))
+                            .and_then(|ready| {
+                                connection.ready_timeout_current(&pending, &mut call)?;
+                                Ok(ready)
+                            })
+                    } else if let Some(observation) = pending.observation_deadline.filter(|value| *value < lifetime) {
+                        if Instant::now() >= observation {
+                            connection.ready_timeout_current(&pending, &mut call).map(|()| None)
+                        } else {
+                            tokio::select! {
+                                biased;
+                                value = connection.wait(&pending, call_deadline, pending.socket.ready(selected)) => {
+                                    value.and_then(|value| value.map(Some).map_err(|_| error(StreamErrorCode::IoFailed)))
+                                }
+                                () = tokio::time::sleep_until(observation.into()) => {
+                                    connection.ready_timeout_current(&pending, &mut call).map(|()| None)
+                                }
+                            }
+                        }
+                    } else {
+                        connection.wait(&pending, call_deadline, pending.socket.ready(selected))
+                            .await
+                            .and_then(|value| value.map(Some).map_err(|_| error(StreamErrorCode::IoFailed)))
+                    };
                     match result {
-                        Ok(ready) => {
-                            connection.audit(call, true).await?;
+                        Ok(Some(ready)) => {
+                            if pending.observation_immediate {
+                                connection.complete_readiness_observation(pending, call, true).await?;
+                            } else {
+                                connection.audit(call, true).await?;
+                            }
                             Ok(StreamReadiness {
                                 readable: ready.is_readable() || ready.is_read_closed(),
                                 writable: ready.is_writable() || ready.is_write_closed(),
                             })
+                        }
+                        Ok(None) => {
+                            connection.complete_readiness_observation(pending, call, false).await?;
+                            Err(error(StreamErrorCode::Timeout)
+                                .uncertain(connection.observe().application_write_attempted))
                         }
                         Err(failure) => {
                             connection.abort(failure.code);
@@ -1559,6 +1992,7 @@ mod read_witness_tests {
             assert_eq!(first_copy.as_ref(), b"p");
             drop(first_copy);
             drop(first_chunk);
+            assert_eq!(connection.read_drop_starts(), 1);
             let after_first = fixture.provider.usage().unwrap();
             assert_eq!(
                 (
@@ -1582,7 +2016,11 @@ mod read_witness_tests {
                 (1, 1, 1)
             );
             drop(provisional);
+            assert_eq!(connection.read_drop_starts(), 2);
             let second = stream.read(4, None).unwrap();
+            // A provisional drop cannot impersonate the original read, even
+            // when the old admission/guard snapshot otherwise matches.
+            assert!(!connection.original_second_read_live().unwrap());
             let after_second = fixture.provider.usage().unwrap();
             assert_eq!(
                 (
@@ -1598,12 +2036,14 @@ mod read_witness_tests {
             assert!(!bytes.is_empty() && b"ong".starts_with(bytes.as_ref()));
             drop(bytes);
             drop(second_chunk);
+            assert_eq!(connection.read_drop_starts(), 3);
             let third = stream.read(1, None).unwrap();
             assert_eq!(fixture.provider.usage().unwrap().read_admissions, 3);
             drop(third);
             let fourth = stream.read(1, None).unwrap();
             assert_eq!(fixture.provider.usage().unwrap().read_admissions, 3);
             drop(fourth);
+            assert_eq!(connection.read_drop_starts(), 3);
             stream.close().await.unwrap();
             drop(connection);
             peer.await.unwrap();

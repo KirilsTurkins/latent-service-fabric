@@ -9,7 +9,9 @@ import java.util.concurrent.TimeUnit;
 public final class Activation {
     private static final ArrayList<ManagedPool> pools = new ArrayList<>();
     private static final ArrayList<Thread> workers = new ArrayList<>();
-    private static int queued, executors, queuedAttempts;
+    private static int queued, executors, queuedAttempts, queuedRegistrations;
+    // Disabled by default; individual private controls may model a fixed cap.
+    private static int queuedLimit = Integer.MAX_VALUE;
     private static volatile boolean closing;
     private static boolean poisoned;
     private static Lease failedQueued, lastFailedQueued, lastFailedExecutor;
@@ -85,12 +87,16 @@ public final class Activation {
         }
     }
     public static synchronized Lease owner(Bindings.LatentRuntimeActivationOwnerKind kind) {
+        if (kind == Bindings.LatentRuntimeActivationOwnerKind.QueuedWork) queuedRegistrations++;
         if (poisoned) throw new IllegalStateException("source-poisoned-store");
         if (kind.name().equals(denyNext)) {
             denyNext = null;
             throw new IllegalStateException("source-owner-admission-denied");
         }
-        if (kind == Bindings.LatentRuntimeActivationOwnerKind.QueuedWork) queued++;
+        if (kind == Bindings.LatentRuntimeActivationOwnerKind.QueuedWork) {
+            if (queued >= queuedLimit) throw new IllegalStateException("source-queued-capacity");
+            queued++;
+        }
         else executors++;
         return new Lease(kind);
     }
@@ -135,6 +141,11 @@ public final class Activation {
     public static void checkpoint() { Thread.yield(); }
     public static synchronized int queued() { return queued; }
     public static synchronized int queuedAttempts() { return queuedAttempts; }
+    public static synchronized int queuedRegistrations() { return queuedRegistrations; }
+    public static synchronized void setQueuedLimit(int limit) {
+        if (limit < 1 || queued != 0) throw new IllegalStateException("source-queued-limit");
+        queuedLimit = limit;
+    }
     public static synchronized boolean poisoned() { return poisoned; }
     public static synchronized boolean retainedFailedQueued() {
         return failedQueued != null && failedQueued == lastFailedQueued;

@@ -1,0 +1,63 @@
+{
+  "description": "C pre-dispatch and post-dispatch local cancellation with fresh-client recovery",
+  "qualification": "Local normal node built from combined unmerged source, separately built client candidate and disposable signer; not hosted or distribution qualification.",
+  "harnessSha256": "368028beb914ee09050fc832bb7885e6e32528f752a912188c991a3ac6b9539c",
+  "clientLogSha256": "ed015db99361b5f70b79789b753064fe15ec34119c9de0d3ea90ce33814fdae2",
+  "nodeSha256": "sha256:48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "cSourceSha256": "sha256:721c8d19c32bb06172861b83fc747a4bee0b9a77c21f06108a9ef572a574334e",
+  "cBinarySha256": "sha256:565e49ba6a779ad309960660f3256be5ffbd8a305e133976d8d66f3703d4b178",
+  "proxySourceSha256": "sha256:9fd5ba5c7bace82acb2eca31ef8c52a987bcd6e22dd6c6085ef2136f32b22d2a",
+  "preDispatch": "Local cancellation before polling produced exactly one callback with not-dispatched outcome and original selector.",
+  "postDispatch": {
+    "cancelledAfterDurableObservation": true,
+    "durableCommandCount": "3",
+    "extraQueuedConnections": 0,
+    "fingerprintSha256": "847593c834d75f284974a3c0714d2248f585c51b3770ef6504aa3fe7f3be8aad",
+    "freshContextRecoveredOriginalRejection": true,
+    "laterBrokerMessages": 2,
+    "laterBusinessCount": 2,
+    "laterEffectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "originalAttemptId": "1",
+    "originalCommandId": "ee3743d29fb614aecf581701dec32b23eef9d6d024ebdcaadec1f2634b3ddd6e",
+    "singleObservedRequestStream": 1
+  },
+  "proxy": {
+    "extraConnections": 0,
+    "failureCategory": "EOFError",
+    "requestStreams": 1
+  },
+  "controlledCrash": {
+    "exitStatus": -9,
+    "processId": 258474,
+    "reaped": true,
+    "cleanShutdownObserved": false,
+    "nativeRetirementReportObserved": false
+  },
+  "postCrashClientRecoveries": 6,
+  "postCrashBusinessCount": 7,
+  "postCrashBrokerMessages": 7,
+  "finalShutdown": {
+    "reaped": true,
+    "clean": true,
+    "effects": {
+      "pending": 0,
+      "active": 0,
+      "acknowledged": 7,
+      "known_failed": 0,
+      "uncertain": 0,
+      "retry_scheduled": 0,
+      "blocked": 0,
+      "expired": 0,
+      "dead_lettered": 0,
+      "payload_bytes": 0,
+      "oldest_unresolved_millis": null
+    }
+  },
+  "limitations": [
+    "Post-dispatch cancellation followed a durable business rejection while the response was withheld; cancellation during commit and after successful commitment remain untested.",
+    "The proxy counted the observed request stream and no additional queued connections; this is not a universal retry proof.",
+    "The fixture deliberately made a separate changed-input conflict probe and a distinct later business command; neither was an automatic retry.",
+    "Guest execution count was not independently measured. All later effects were acknowledged before the controlled crash.",
+    "A preceding C recovery lookup returned gRPC 8 and a separate read observed the original; its capacity owner remains unclassified."
+  ]
+}

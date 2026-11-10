@@ -33,6 +33,7 @@ struct AbortWriter {
     // physically retired guest/session can never be reopened by this owner.
     _host: Arc<StateTransactionHost>,
     cancellation: Mutex<Option<super::super::cancellation::PendingCancellationAbort>>,
+    _lane: Option<super::super::entity_queue::Physical>,
 }
 
 impl NativeTransactionAdmission {
@@ -43,6 +44,7 @@ impl NativeTransactionAdmission {
         failure_code: Option<latent_core::PlatformErrorCode>,
         control: &crate::TransactionCommitControl,
         original_failure: Option<&latent_activation::ActivationOutcome>,
+        lane: Option<super::super::entity_queue::Physical>,
     ) -> CommandCompletionDisposition {
         // A successful guest return with an unavailable host-encoded result
         // cannot certify a terminal guest fault. Keep the original pending
@@ -89,7 +91,8 @@ impl NativeTransactionAdmission {
                 slot.take_original(&command, host, control)
             })
             .flatten();
-        let Ok(writer) = AbortWriter::new_with_cancellation(self, host, &command, cancellation)
+        let Ok(writer) =
+            AbortWriter::new_with_cancellation(self, host, &command, cancellation, lane)
         else {
             return CommandCompletionDisposition::Retired {
                 command,
@@ -137,7 +140,7 @@ impl AbortWriter {
         host: &Arc<StateTransactionHost>,
         command: &CommandRecord,
     ) -> Result<Arc<Self>, AtomicError> {
-        Self::new_with_cancellation(admission, host, command, None)
+        Self::new_with_cancellation(admission, host, command, None, None)
     }
 
     fn new_with_cancellation(
@@ -145,6 +148,7 @@ impl AbortWriter {
         host: &Arc<StateTransactionHost>,
         command: &CommandRecord,
         cancellation: Option<super::super::cancellation::PendingCancellationAbort>,
+        lane: Option<super::super::entity_queue::Physical>,
     ) -> Result<Arc<Self>, AtomicError> {
         let deadline = host.authorization.authority.deadline();
         let reservation = Arc::new(
@@ -188,6 +192,7 @@ impl AbortWriter {
             _buffers: buffers,
             _host: Arc::clone(host),
             cancellation: Mutex::new(cancellation),
+            _lane: lane,
         }))
     }
 

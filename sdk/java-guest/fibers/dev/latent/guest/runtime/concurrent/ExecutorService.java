@@ -21,11 +21,15 @@ public interface ExecutorService extends Executor, AutoCloseable {
     <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException;
     <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException;
     @Override default void close() {
+        boolean terminated = isTerminated();
+        if (terminated) return;
         shutdown();
         boolean interrupted = false;
-        while (!isTerminated()) {
-            try { awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS); }
-            catch (InterruptedException error) { interrupted = true; shutdownNow(); }
+        while (!terminated) {
+            try { terminated = awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS); }
+            catch (InterruptedException error) {
+                if (!interrupted) { shutdownNow(); interrupted = true; }
+            }
         }
         if (interrupted) Thread.currentThread().interrupt();
     }

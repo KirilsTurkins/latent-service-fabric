@@ -1,0 +1,88 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"runtime"
+	"sync/atomic"
+
+	"example.invalid/worker"
+)
+
+var stop atomic.Uint32
+
+func spin(started, finished chan struct{}) {
+	fmt.Println("worker-entered")
+	close(started)
+again:
+	if stop.Load() == 0 {
+		goto again
+	}
+	close(finished)
+}
+
+func recoverSemantics() (value int) {
+	defer func() {
+		var rounds atomic.Uint32
+	again:
+		if rounds.Add(1) < 2048 {
+			goto again
+		}
+		if recover() != "marker" || rounds.Load() != 2048 {
+			panic("recover changed")
+		}
+		value = 42
+	}()
+	panic("marker")
+}
+
+func labelSemantics() int {
+	n := 0
+outer:
+	for {
+		n++
+		if n < 2 {
+			continue outer
+		}
+		break outer
+	}
+	goto forward
+back:
+	n++
+	if n < 4 {
+		goto back
+	}
+forward:
+	if n < 3 {
+		goto back
+	}
+	return n
+}
+
+func main() {
+	runtime.GOMAXPROCS(1)
+	started, finished := make(chan struct{}), make(chan struct{})
+	if len(os.Args) != 2 {
+		panic("expected app or dependency")
+	}
+	switch os.Args[1] {
+	case "semantics":
+		if recoverSemantics() != 42 || labelSemantics() != 4 {
+			panic("control flow changed")
+		}
+		fmt.Println("semantic-preserved")
+		return
+	case "app":
+		go spin(started, finished)
+		<-started
+		stop.Store(1)
+	case "dependency":
+		go worker.Spin(started, finished)
+		<-started
+		worker.Stop.Store(1)
+	default:
+		panic("unexpected mode")
+	}
+	<-finished
+	fmt.Println("sibling-progress")
+}

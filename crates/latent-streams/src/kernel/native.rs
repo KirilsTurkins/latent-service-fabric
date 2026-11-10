@@ -1229,6 +1229,13 @@ pub(crate) mod node_bootstrap {
                 // Arm before a failed open; panic=abort does not unwind this guard.
                 attempt.entered = true;
                 value.descriptor = Some(open()?);
+                // An open can outlast the original epoch or maintenance deadline.
+                // Keep the entered guard armed and do not begin ATTACH after an
+                // already-observed stop; this is not an atomic revocation fence.
+                request.checkpoint()?;
+                value
+                    .backing
+                    .checkpoint(&physical_pools, &value.installed)?;
                 value.attachment = Some(initialize(
                     value.descriptor.as_mut().expect("actual fd"),
                     deadline,
@@ -1241,6 +1248,12 @@ pub(crate) mod node_bootstrap {
                     _ => false,
                 };
                 let prepared = if prepare {
+                    // The ATTACH reply may also arrive after the epoch stopped.
+                    // Preserve its original descriptor and escrow on refusal.
+                    request.checkpoint()?;
+                    value
+                        .backing
+                        .checkpoint(&physical_pools, &value.installed)?;
                     Some(prepare_capacity(
                         value.descriptor.as_mut().expect("actual fd"),
                         value.attachment.expect("original attachment"),
@@ -1251,6 +1264,11 @@ pub(crate) mod node_bootstrap {
                 };
                 #[cfg(any(test, feature = "development-outbound"))]
                 if matches!(&value._profile, SelectedProfile::PciPrefix(_)) {
+                    // Do not start a further PCI prefix after an observed stop.
+                    request.checkpoint()?;
+                    value
+                        .backing
+                        .checkpoint(&physical_pools, &value.installed)?;
                     run_pci_prefix(
                         value.descriptor.as_mut().expect("actual fd"),
                         value.attachment.expect("original attachment"),
@@ -1526,6 +1544,263 @@ pub(crate) mod node_bootstrap {
             })
             .await
             .expect("actual owner returned to original bounded quarantine")
+        }
+
+        fn synthetic_capacity_reply(attachment: Attachment) -> [u8; CAPACITY_REPLY_BYTES] {
+            let mut capacity = [0u8; CAPACITY_REPLY_BYTES];
+            capacity[..REPLY_BYTES].copy_from_slice(&observed(2));
+            capacity[4..8].copy_from_slice(&CAPACITY_VERSION.to_le_bytes());
+            let words = [
+                1u64,
+                1,
+                327680,
+                64,
+                16,
+                1,
+                1,
+                1,
+                512,
+                1,
+                2097152,
+                0,
+                2097152,
+                0,
+                600000,
+                4096,
+                4096,
+                128,
+                2,
+                2,
+                1,
+                9,
+                8,
+                1,
+                0x0023_0022_0021_0020,
+                0x0027_0026_0025_0024,
+                1,
+                1,
+                7,
+                1048576,
+                524288,
+                196608,
+            ];
+            for (index, word) in words.into_iter().enumerate() {
+                capacity[REPLY_BYTES + index * 8..REPLY_BYTES + (index + 1) * 8]
+                    .copy_from_slice(&word.to_le_bytes());
+            }
+            assert!(capacity_reply(&capacity, attachment).is_ok());
+            capacity
+        }
+
+        async fn assert_retired_node_retained(
+            fixture: &Fixture,
+            before: latent_capabilities::broker::pools::ProviderPoolSnapshot,
+        ) {
+            let held = retained(&fixture.pools).await;
+            assert!(fixture.provider.inner.installed.is_retired());
+            assert_eq!(
+                fixture.provider.inner.installed.quarantined_connections(),
+                1
+            );
+            assert_eq!(held.connections, before.connections + 1);
+            assert!(held.metadata_bytes >= before.metadata_bytes + 1024 * 1024);
+            assert!(held.failed_cleanup > before.failed_cleanup);
+        }
+
+        #[tokio::test]
+        async fn node_epoch_retired_during_open_refuses_attach_and_keeps_original_escrow() {
+            use std::sync::atomic::{AtomicUsize, Ordering};
+
+            let fixture = Fixture::new(config());
+            let before = snapshot(&fixture.pools).await;
+            let backing = fixture
+                .pools
+                .reserve_stream_kernel_node_backing(&fixture.provider.inner.installed)
+                .unwrap();
+            let directory = tempfile::tempdir().unwrap();
+            let path = directory.path().join("retired-open");
+            let opened_path = path.clone();
+            let epoch = fixture.provider.inner.installed.clone();
+            let calls = Arc::new(AtomicUsize::new(0));
+            let attach_calls = Arc::clone(&calls);
+            let result = enter_with(
+                Arc::clone(&fixture.pools),
+                fixture.provider.inner.installed.clone(),
+                backing,
+                instrument_profile(),
+                Instant::now() + Duration::from_secs(5),
+                move || {
+                    let file =
+                        File::create(opened_path).map_err(|_| error(StreamErrorCode::IoFailed))?;
+                    epoch.retire();
+                    Ok(file)
+                },
+                move |_, _| {
+                    attach_calls.fetch_add(1, Ordering::SeqCst);
+                    Ok(reply(&observed(2), 123, None).unwrap().1)
+                },
+            )
+            .await;
+            assert!(matches!(result, Err(failure) if failure.code == StreamErrorCode::Denied));
+            assert!(path.exists()); // The real open completed before retirement.
+            assert_eq!(calls.load(Ordering::SeqCst), 0);
+            assert_retired_node_retained(&fixture, before).await;
+        }
+
+        #[tokio::test]
+        async fn node_epoch_retired_during_attach_refuses_prepare_and_keeps_original_escrow() {
+            let fixture = Fixture::new(config());
+            let before = snapshot(&fixture.pools).await;
+            let backing = fixture
+                .pools
+                .reserve_stream_kernel_node_backing(&fixture.provider.inner.installed)
+                .unwrap();
+            let directory = tempfile::tempdir().unwrap();
+            let path = directory.path().join("retired-attach");
+            let opened_path = path.clone();
+            let epoch = fixture.provider.inner.installed.clone();
+            let profile = InstalledCapacityProfile {
+                abi: CAPACITY_ABI,
+                image: [4; 32],
+                source: [5; 32],
+                configuration: [6; 32],
+            };
+            let result = enter_selected_with(
+                Arc::clone(&fixture.pools),
+                fixture.provider.inner.installed.clone(),
+                backing,
+                SelectedProfile::Capacity(profile),
+                Instant::now() + Duration::from_secs(5),
+                move || File::create(opened_path).map_err(|_| error(StreamErrorCode::IoFailed)),
+                move |_, _| {
+                    let original = reply(&observed(2), 123, None).unwrap().1;
+                    epoch.retire();
+                    Ok(original) // Synthetic ATTACH reply, before PREPARE.
+                },
+            )
+            .await;
+            assert!(matches!(result, Err(failure) if failure.code == StreamErrorCode::Denied));
+            assert_eq!(std::fs::metadata(path).unwrap().len(), 0);
+            assert_retired_node_retained(&fixture, before).await;
+        }
+
+        #[tokio::test]
+        async fn node_uncertain_attach_after_retirement_keeps_original_error_and_escrow() {
+            let fixture = Fixture::new(config());
+            let before = snapshot(&fixture.pools).await;
+            let backing = fixture
+                .pools
+                .reserve_stream_kernel_node_backing(&fixture.provider.inner.installed)
+                .unwrap();
+            let directory = tempfile::tempdir().unwrap();
+            let path = directory.path().join("uncertain-attach");
+            let opened_path = path.clone();
+            let epoch = fixture.provider.inner.installed.clone();
+            let profile = InstalledCapacityProfile {
+                abi: CAPACITY_ABI,
+                image: [4; 32],
+                source: [5; 32],
+                configuration: [6; 32],
+            };
+            let result = enter_selected_with(
+                Arc::clone(&fixture.pools),
+                fixture.provider.inner.installed.clone(),
+                backing,
+                SelectedProfile::Capacity(profile),
+                Instant::now() + Duration::from_secs(5),
+                move || File::create(opened_path).map_err(|_| error(StreamErrorCode::IoFailed)),
+                move |file, _| {
+                    file.write_all(b"uncertain attach").unwrap();
+                    epoch.retire();
+                    Err(error(StreamErrorCode::Unsupported))
+                },
+            )
+            .await;
+            assert!(matches!(result, Err(failure) if failure.code == StreamErrorCode::Unsupported));
+            assert_eq!(std::fs::read(path).unwrap(), b"uncertain attach");
+            assert_retired_node_retained(&fixture, before).await;
+        }
+
+        #[tokio::test]
+        async fn node_epoch_retired_during_prepare_refuses_prefix_and_keeps_original_escrow() {
+            use std::os::{fd::OwnedFd, unix::net::UnixDatagram};
+
+            let fixture = Fixture::new(config());
+            let before = snapshot(&fixture.pools).await;
+            let backing = fixture
+                .pools
+                .reserve_stream_kernel_node_backing(&fixture.provider.inner.installed)
+                .unwrap();
+            let attachment = reply(&observed(2), 123, None).unwrap().1;
+            let capacity = synthetic_capacity_reply(attachment);
+            let (client, peer) = UnixDatagram::pair().unwrap();
+            client
+                .set_read_timeout(Some(Duration::from_secs(2)))
+                .unwrap();
+            client
+                .set_write_timeout(Some(Duration::from_secs(2)))
+                .unwrap();
+            peer.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
+            let epoch = fixture.provider.inner.installed.clone();
+            let server = std::thread::spawn(move || {
+                let mut request = [0u8; REQUEST_BYTES];
+                assert_eq!(peer.recv(&mut request).unwrap(), REQUEST_BYTES);
+                assert_eq!(
+                    request,
+                    frame_version(CAPACITY_VERSION, CAPACITY_PREPARE, 123, 7)
+                );
+                epoch.retire(); // Happens before the successful PREPARE reply.
+                assert_eq!(peer.send(&capacity).unwrap(), CAPACITY_REPLY_BYTES);
+                match peer.recv(&mut request) {
+                    Ok(count) => {
+                        assert_eq!(count, REQUEST_BYTES);
+                        assert_eq!(
+                            request,
+                            frame_version(CAPACITY_VERSION, PCI_PREFIX_OPERATION, 123, 7)
+                        );
+                        let mut reply = observed(2);
+                        reply[4..8].copy_from_slice(&CAPACITY_VERSION.to_le_bytes());
+                        let _ = peer.send(&reply);
+                        true
+                    }
+                    Err(error)
+                        if matches!(
+                            error.kind(),
+                            std::io::ErrorKind::WouldBlock
+                                | std::io::ErrorKind::TimedOut
+                                | std::io::ErrorKind::ConnectionRefused
+                        ) =>
+                    {
+                        false
+                    }
+                    Err(error) => panic!("unexpected datagram error: {error}"),
+                }
+            });
+            let descriptor = File::from(OwnedFd::from(client));
+            let profile = InstalledPciPrefixProfile {
+                capacity: InstalledCapacityProfile {
+                    abi: CAPACITY_ABI,
+                    image: [4; 32],
+                    source: [5; 32],
+                    configuration: [6; 32],
+                },
+            };
+            let result = enter_selected_with(
+                Arc::clone(&fixture.pools),
+                fixture.provider.inner.installed.clone(),
+                backing,
+                SelectedProfile::PciPrefix(profile),
+                Instant::now() + Duration::from_secs(10),
+                move || Ok(descriptor),
+                move |_, _| Ok(attachment),
+            )
+            .await;
+            assert!(matches!(result, Err(failure) if failure.code == StreamErrorCode::Denied));
+            assert!(
+                !server.join().unwrap(),
+                "PCI prefix followed an already-retired epoch"
+            );
+            assert_retired_node_retained(&fixture, before).await;
         }
 
         #[tokio::test]

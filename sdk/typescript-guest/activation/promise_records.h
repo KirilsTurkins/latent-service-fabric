@@ -22,6 +22,7 @@ class PromiseRecords final {
     JS::Heap<JSObject*> object;
     bool pending = false;
     bool physical = false;
+    bool captured = false;
     std::unique_ptr<Record> next;
     explicit Record(NativeOwner accepted) : owner(accepted) {}
   };
@@ -81,6 +82,16 @@ public:
     auto* record = static_cast<Record*>(pointer);
     record->object = object;
     record->physical = record->pending = true;
+  }
+  // A combinator element function has physical native ownership, but is not
+  // itself an unresolved Promise or an independently scheduled reaction.
+  static void capturedCreated(JSContext*, JSObject* object, void* pointer) {
+    if (!pointer) return;
+    auto* record = static_cast<Record*>(pointer);
+    record->object = object;
+    record->physical = true;
+    record->pending = false;
+    record->captured = true;
   }
   void settled(JSContext*, JSObject* object) {
     for (auto* record = records_.get(); record; record = record->next.get()) {
@@ -142,6 +153,31 @@ public:
     return true;
   }
 
+  // Only compiler-snapshot records have no activation owner. After the
+  // original full GC, no such still-live captured function may be snapshotted
+  // and later executed in an activation without its original owner.
+  bool hasUnownedCapturedFunctions() const {
+    for (auto* record = records_.get(); record; record = record->next.get()) {
+      if (record->physical && record->captured && !record->owner.live) return true;
+    }
+    return false;
+  }
+  bool snapshotCapturesEmpty(JSContext* cx, size_t live_native) {
+    // A snapshot cannot release an activation's native reservation. Refuse
+    // before checkpointing if a live owner unexpectedly reaches this phase.
+    if (live_native != 0) {
+      if (!JS_IsExceptionPending(cx))
+        JS_ReportErrorASCII(cx, "activation-runtime-snapshot-native-owner-denied");
+      return false;
+    }
+    if (!checkpoint(cx)) return false;
+    if (hasUnownedCapturedFunctions()) {
+      if (!JS_IsExceptionPending(cx))
+        JS_ReportErrorASCII(cx, "activation-runtime-captured-function-during-snapshot-denied");
+      return false;
+    }
+    return true;
+  }
   bool hasPendingPromises() const {
     for (auto* record = records_.get(); record; record = record->next.get()) {
       if (record->pending) return true;

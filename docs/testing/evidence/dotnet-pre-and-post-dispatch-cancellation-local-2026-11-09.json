@@ -1,0 +1,98 @@
+{
+  "description": ".NET pre-dispatch and post-dispatch cancellation token with fresh-client recovery",
+  "qualification": "Local normal node built from combined unmerged source, separately built client candidate and disposable signer; not hosted or distribution qualification.",
+  "harnessSha256": "863f8e4a5e0e3d0e4613c539013024c2fbca7318195a6c1aac83247e855a5bbb",
+  "dotnetLogSha256": "ed015db99361b5f70b79789b753064fe15ec34119c9de0d3ea90ce33814fdae2",
+  "nodeSha256": "sha256:48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "dotnetSourceSha256": "sha256:4fe7c7c03b5a3f1c7aa34319fda287dbc7ffdfa1e401833b1db98e82c09a4401",
+  "dotnetBinarySha256": "sha256:1f8edba5a346ab5ed9dbcc07435d81373e8eedeb7067c8fa0528d7b71e9559ff",
+  "proxySourceSha256": "sha256:9fd5ba5c7bace82acb2eca31ef8c52a987bcd6e22dd6c6085ef2136f32b22d2a",
+  "preDispatch": "Already-cancelled token returned a typed cancellation with not-dispatched outcome, original selector and no fabricated observation.",
+  "postDispatch": {
+    "cancelledAfterDurableObservation": true,
+    "durableCommandCount": "3",
+    "extraQueuedConnections": 0,
+    "fingerprintSha256": "847593c834d75f284974a3c0714d2248f585c51b3770ef6504aa3fe7f3be8aad",
+    "freshContextRecoveredOriginalRejection": true,
+    "laterBrokerMessages": 2,
+    "laterBusinessCount": 2,
+    "laterEffectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "originalAttemptId": "1",
+    "originalCommandId": "4b208af65b3450e55a1e51783b2b64d957abf481124dceb9509f50461f674e36",
+    "singleObservedRequestStream": 1
+  },
+  "proxy": {
+    "extraConnections": 0,
+    "failureCategory": "EOFError",
+    "requestStreams": 1
+  },
+  "controlledCrash": {
+    "exitStatus": -9,
+    "processId": 1689,
+    "reaped": true,
+    "cleanShutdownObserved": false,
+    "nativeRetirementReportObserved": false
+  },
+  "postCrashClientRecoveries": 6,
+  "postCrashBusinessCount": 7,
+  "postCrashBrokerMessages": 7,
+  "finalShutdown": {
+    "reaped": true,
+    "clean": true,
+    "effects": {
+      "clean": true,
+      "physicallyRetired": true,
+      "schedulingOwnerRetired": true,
+      "workerThreadsJoined": 3,
+      "workerThreadsRemaining": 0,
+      "snapshot": {
+        "durable": {
+          "pending": 0,
+          "active": 0,
+          "acknowledged": 7,
+          "known_failed": 0,
+          "uncertain": 0,
+          "retry_scheduled": 0,
+          "blocked": 0,
+          "expired": 0,
+          "dead_lettered": 0,
+          "payload_bytes": 0,
+          "oldest_unresolved_millis": null
+        },
+        "countsObservedAtMillis": 1794202753222,
+        "queued": 0,
+        "activeJobs": 0,
+        "retainedAttemptBytes": 0,
+        "liveWorkers": 0,
+        "acceptedEffects": 0,
+        "liveTenants": 0,
+        "claims": 0,
+        "physicalOwners": 0,
+        "commandOwners": 0,
+        "commandClockFloor": 1794202751110,
+        "quarantinedPhysicalOwners": 0,
+        "paused": false,
+        "control": {
+          "generation": {
+            "ownerEpoch": 5,
+            "revision": 2
+          },
+          "pending": false,
+          "restoreReviewRequired": false
+        },
+        "admissionClosed": true,
+        "quarantined": false,
+        "failure": null
+      }
+    }
+  },
+  "limitations": [
+    "Post-dispatch cancellation occurred after a durable business rejection while its response was withheld; it does not cover cancellation during commit or after successful commitment.",
+    "The proxy counted one observed request stream and no additional queued connections; this is not a universal retry proof.",
+    "The fixture deliberately made a separate changed-input conflict probe and a distinct later business command; neither was an automatic retry.",
+    "Guest execution count was not independently measured. All later effects were acknowledged before the controlled crash.",
+    "Attempt 107 failed before dispatch because the probe caught the wrong cancellation exception type; attempt 108 stopped on a prerequisite POLICY_BLOCKED effect. Neither is counted as a successful cancellation qualification."
+  ],
+  "repositorySourceSha256": "sha256:b314b95e3594d859df1984edc8796d7569539fe9bd88158439473ec4f166639b",
+  "sourceLineEndings": "The tested source had CRLF line endings; normalizing them to LF exactly matches the committed repository blob."
+}

@@ -319,6 +319,7 @@ class StandardFacilities(unittest.TestCase):
         compiler.commands, compiler.isolation = None, None
         compiler.validate_static_libraries = lambda *args: None
         compiler.select_threading_clock_inputs = lambda: None
+        compiler.threading_time_alias = None  # This stub models the legacy captured SDK.
         calls = []
         def run(tool, *arguments):
             if tool == 'zig':
@@ -353,7 +354,9 @@ class StandardFacilities(unittest.TestCase):
             self.assertFalse(any(item.startswith('-Wl,--export=__imported_wasi_') for item in command))
             self.assertFalse(any('allow-multiple-definition' in item or '--wrap' in item for item in command))
             for value in closed_defines:
-                self.assertEqual('-D' + value in command, selected in facilities.FETCH_PROFILES)
+                expected = (selected in facilities.FETCH_PROFILES or
+                            (selected == facilities.STREAM_PROFILE and value == 'abort=__lsf_c_abort'))
+                self.assertEqual('-D' + value in command, expected)
 
         # Run the normal owner's actual source/WIT selection for every profile;
         # capture at Compiler.compile before any compiler or external tool runs.
@@ -377,7 +380,7 @@ class StandardFacilities(unittest.TestCase):
                 raise CommandCaptured()
         for ordinal, selected in enumerate(sorted(facilities.SUPPORTED)):
             application = project.create(self.root / ('source-profile-' + str(ordinal)), 'greeting',
-                threading_profile=threading_profile if selected in facilities.FETCH_PROFILES else None)
+                threading_profile=threading_profile if selected in (*facilities.FETCH_PROFILES, facilities.STREAM_PROFILE) else None)
             configuration = json.loads((application / 'capsule-project.json').read_bytes())
             configuration['runtimeProfile'] = selected
             (application / 'capsule-project.json').write_text(json.dumps(configuration))
@@ -393,7 +396,7 @@ class StandardFacilities(unittest.TestCase):
             self.assertEqual(selected_sources, expected_sources)
             has_clock = 'src/standard-clock-entropy.c' in selected_sources
             self.assertEqual(has_clock, selected in (facilities.PROFILE, facilities.COMBINED_PROFILE,
-                                                    facilities.FETCH_STANDARD_PROFILE))
+                                                    facilities.FETCH_STANDARD_PROFILE, facilities.STREAM_PROFILE))
             for interface in facilities.IMPORTS:
                 self.assertEqual(('import ' + interface + ';') in selected_wit, has_clock)
         self.assertEqual(len(captured), len(facilities.SUPPORTED))

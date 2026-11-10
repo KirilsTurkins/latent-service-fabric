@@ -399,6 +399,11 @@ static bool before_promise(JSContext* cx, void** output) {
 #endif
   return accepted;
 }
+static bool before_captured(JSContext* cx, void** output) {
+  // Combinator callbacks are native objects, not borrow-control Promises.
+  return promise_records->checkpoint(cx) && reaction_records->checkpoint(cx) &&
+         promise_records->beforeAllocate(cx, output);
+}
 static bool before_reaction(JSContext* cx, void** output) {
   return promise_records->checkpoint(cx) && reaction_records->checkpoint(cx) &&
          reaction_records->beforeAllocate(cx, output);
@@ -723,7 +728,8 @@ static int partial_main(int argc,char** argv) {
     static const JS::ActivationPromiseHooks hooks{
       before_promise,PromiseRecords::allocationFailed,PromiseRecords::created,settled_promise,
       before_reaction,ReactionRecords::allocationFailed,ReactionRecords::created,reaction_record,
-      before_reaction,ReactionRecords::allocationFailed,ReactionRecords::created,reaction_record};
+      before_reaction,ReactionRecords::allocationFailed,ReactionRecords::created,reaction_record,
+      before_captured,PromiseRecords::capturedCreated};
     if(!JS_AddWeakPointerZonesCallback(cx,weak_sweep,nullptr)||
         !JS_AddFinalizeCallback(cx,collection_end,nullptr)||!JS::SetActivationPromiseHooks(cx,&hooks))return 8;
     JS::RootedValue value(cx),symbol_value(cx);JS::RootedObject prototype(cx),promise(cx),first(cx);
@@ -901,7 +907,8 @@ int main(int argc, char** argv) {
     static const JS::ActivationPromiseHooks hooks{
         before_promise, PromiseRecords::allocationFailed, PromiseRecords::created, settled_promise,
         before_reaction, ReactionRecords::allocationFailed, ReactionRecords::created, reaction_record,
-        before_reaction, ReactionRecords::allocationFailed, ReactionRecords::created, reaction_record};
+        before_reaction, ReactionRecords::allocationFailed, ReactionRecords::created, reaction_record,
+        before_captured, PromiseRecords::capturedCreated};
     if (!JS_AddWeakPointerZonesCallback(cx, weak_sweep, nullptr)) return 8;
     if (!JS_AddFinalizeCallback(cx, collection_end, nullptr) ||
         !JS::SetActivationPromiseHooks(cx, &hooks)) return 8;

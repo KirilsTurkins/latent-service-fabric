@@ -125,3 +125,137 @@ async fn run_overlap(variable: &str, profile: &str) {
     // original physical-wait drops, including both root-stop cases;
     // this test's success alone does not establish the overlap.
 }
+
+#[tokio::test]
+#[ignore = "requires the selected v7 diagnostic overlay and original pending timer witness"]
+async fn signed_fired_one_shot_public_stop_and_reset_wait_for_original_next() {
+    #[cfg(not(feature = "development-go-timer-overlap"))]
+    panic!("requires the development-go-timer-overlap feature");
+    #[cfg(feature = "development-go-timer-overlap")]
+    run_fired_one_shot_public_stop_and_reset_wait_for_original_next().await;
+}
+
+#[cfg(feature = "development-go-timer-overlap")]
+async fn run_fired_one_shot_public_stop_and_reset_wait_for_original_next() {
+    assert!(cfg!(feature = "development-go-timer-overlap"));
+    assert_eq!(std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(), Ok("go"));
+    let root = tempfile::tempdir().unwrap();
+    // Keep the existing Task16 / Queue16 / Wait4 / Timer2 envelope.
+    let f = prepare_owned_fixture(
+        root.path(),
+        "LSF_GO_V7_TIMER_FIRED_FIXTURE",
+        "go-component-activation-v7",
+        16,
+    )
+    .await;
+    let mut publication = None;
+    for (case, id, mode, created) in [
+        ("stop", "go-timer-fired-stop", 0, 1),
+        ("reset", "go-timer-fired-reset", 1, 2),
+        ("returned-stop", "go-timer-returned-stop", 2, 3),
+        ("returned-reset", "go-timer-returned-reset", 3, 4),
+        ("returned-cancel", "go-timer-returned-cancel", 4, 5),
+        ("fresh", "go-timer-fired-fresh", 0, 6),
+    ] {
+        // The future is owned by this test, with no detached invocation. Once
+        // the exact witness gate is ready, do not poll it again until the real
+        // tenant-authorized cancellation has been synchronously accepted.
+        let gate = (mode == 4).then(|| {
+            latent_wasmtime::ReturnedCancellationGate::arm().expect("exclusive cancellation gate")
+        });
+        let mut invocation = Box::pin(f.manager.start(f.request(id, mode)).unwrap());
+        if let Some(gate) = &gate {
+            // Inspect the gate immediately after each invocation poll. A
+            // ready event must not be lost to select's randomized re-polling.
+            let boundary = std::future::poll_fn(|cx| {
+                assert!(!gate.failed(), "returned-event cancellation gate failed");
+                if gate.ready() {
+                    return std::task::Poll::Ready(());
+                }
+                match std::future::Future::poll(invocation.as_mut(), cx) {
+                    std::task::Poll::Ready(result) => {
+                        panic!("root ended before cancellation: {:?}", result.outcome)
+                    }
+                    std::task::Poll::Pending => {
+                        assert!(!gate.failed(), "returned-event cancellation gate failed");
+                        if gate.ready() {
+                            std::task::Poll::Ready(())
+                        } else {
+                            std::task::Poll::Pending
+                        }
+                    }
+                }
+            });
+            tokio::time::timeout(Duration::from_secs(5), boundary)
+                .await
+                .expect("bounded returned-event cancellation gate");
+            assert!(gate.claim(), "claim the still-held event");
+            assert_eq!(
+                f.manager
+                    .cancel_for(
+                        &TenantId("tenant-a".into()),
+                        &ActivationId(id.into()),
+                        "returned-timer-cancel"
+                    )
+                    .unwrap(),
+                latent_core::CancelDisposition::Accepted
+            );
+            assert!(
+                gate.accepted(),
+                "the held event must survive until cancellation is accepted"
+            );
+        }
+        let result = invocation.await;
+        let selected = result
+            .resolved_revision
+            .as_ref()
+            .expect("signed publication");
+        let identity = (
+            selected.release.clone(),
+            selected.publication.clone().expect("original publication"),
+        );
+        if let Some(original) = &publication {
+            assert_eq!(*original, identity);
+        } else {
+            publication = Some(identity);
+        }
+        let outcome = if mode == 4 {
+            assert_eq!(failure(result).code, PlatformErrorCode::Cancelled);
+            "cancelled"
+        } else {
+            let receipt = success(result);
+            assert_eq!(
+                serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),
+                [42]
+            );
+            assert!(receipt.consumption.cpu_fuel > 0);
+            assert!(receipt.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
+            "success"
+        };
+        f.idle().await;
+        if let Some(gate) = &gate {
+            assert!(
+                gate.completed(),
+                "cancelled returned-event witness must finish"
+            );
+        }
+        assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
+        let state = f.backend.resource_snapshot();
+        assert_eq!(state.stores_created, created);
+        assert_eq!(state.live_stores, 0);
+        assert_eq!(state.live_component_instances, 0);
+        assert_eq!(f.backend.active_instance_reservations(), 0);
+        let quota = f.quotas.usage().unwrap();
+        assert_eq!(quota.active_activations, 0);
+        assert_eq!(quota.reserved_cpu_fuel, 0);
+        assert_eq!(quota.reserved_memory_bytes, 0);
+        println!(
+            "GO_TIMER_FIRED_CASE {}",
+            serde_json::json!({"case":case,"mode":mode,"outcome":outcome,
+            "storesCreated":created,"liveStores":0,"liveInstances":0,"reservations":0,"reservedFuel":0,
+            "reservedMemory":0,"pendingProviderWaits":0})
+        );
+    }
+    // The owner separately requires exact pre-drop probe and physical-drop
+    // records. Successful output alone cannot establish the interleaving.
+}

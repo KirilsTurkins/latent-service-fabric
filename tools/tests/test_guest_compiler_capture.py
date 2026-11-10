@@ -27,6 +27,18 @@ BINDINGS = {key: digest(key.encode()) for key in ('recipeDigest', 'compilerDiges
 
 
 class AutomaticCompilerCapture(unittest.TestCase):
+    def test_transaction_go_capture_writes_the_bounded_canonical_document(self):
+        from tools.rust_capsule_project import ROOT
+        files = {'src/main.go': (ROOT / 'sdk/go-guest/templates/transactional-aggregate.go').read_bytes()}
+        with tempfile.TemporaryDirectory() as directory:
+            owner = capture.Capture(files, 'go')
+            value = owner.finish(Path(directory), files, b'component', **{
+                key.removesuffix('Digest'): val for key, val in BINDINGS.items()})
+            raw = (Path(directory) / capture.OUTPUT).read_bytes()
+            self.assertEqual(raw, encode(value))
+            self.assertLessEqual(len(raw), 65536)
+            capture.validate(decode(raw, 65536), files=files)
+
     def test_pinned_Go_root_name_uses_actual_compiled_package_then_unique_final_byte_match(self):
         from tools import guest_api_analysis
         from tools.tests.test_guest_emitted_code import core, section

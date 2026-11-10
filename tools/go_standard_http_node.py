@@ -19,7 +19,7 @@ from tools.build_process import run_bounded_result
 from tools.build_process_signals import owned_cancellation
 from tools.guest_runtime_profiles import RUNTIME
 from tools.phase2_operator_process import Process, read_json, require, write_json, stopped_record
-from tools.phase2_operator_scenario import configure_node, connect, stop
+from tools.phase2_operator_scenario import NODE_ID, configure_node, connect, stop
 from tools.phase3_resource_identity import file_identity
 from tools.phase3_resource_os import Probe
 from tools.phase3_resource_profile import ACTIVE_COUNTERS
@@ -35,6 +35,37 @@ ACTIVATION = 'latent:runtime/activation@0.1.0'
 OPS = ['register', 'park', 'wake', 'settle', 'close', 'observe', 'wait-for',
        'wait-until', 'timer-start', 'timer-next', 'timer-stop']
 RUNTIME_PROVIDERS = dict(RUNTIME)
+
+
+def audit_cleanup_ready(client):
+    """Observe bounded audit retirement before the single cleanup mutation.
+
+    This is a readiness observation, not a reservation or a retry of a failed
+    mutation. Fail closed if the original journal is missing or uncertain.
+    """
+    pending = ('audit_queued_operations', 'audit_queued_bytes', 'audit_pending_attempts',
+               'audit_reserved_records', 'audit_reserved_bytes', 'audit_query_owners',
+               'audit_query_bytes', 'audit_stage_bytes')
+    healthy = ('audit_closed', 'audit_recovery_pending', 'audit_unknown_outcomes',
+               'audit_node_metadata_quarantined_reserved_bytes')
+    deadline = min(client.deadline, time.monotonic() + 5)
+    stable = 0
+    for _ in range(64):
+        require(time.monotonic() < deadline, 'standard-go-audit-cleanup-deadline')
+        topology = client.call('node', 'get', NODE_ID)['data']['inventory']['topology']
+        require(topology['available'] and topology['complete'], 'standard-go-audit-topology-unavailable')
+        rows = [row for row in topology['entries'] if row.get('name') == 'audit-journal'
+                and row.get('kind') == 'store' and row.get('ownership') == 'node-fixed']
+        require(len(rows) == 1 and isinstance(rows[0].get('attributes'), dict), 'standard-go-audit-owner-missing')
+        attributes = rows[0]['attributes']
+        require(all(attributes.get(key) == '0' for key in healthy), 'standard-go-audit-owner-uncertain')
+        require(all(isinstance(attributes.get(key), str) and attributes[key].isascii()
+                    and attributes[key].isdecimal() for key in pending), 'standard-go-audit-observation-invalid')
+        stable = stable + 1 if all(attributes[key] == '0' for key in pending) else 0
+        if stable == 2:
+            return {key: attributes[key] for key in (*pending, *healthy)}
+        time.sleep(0.025)
+    raise ValueError('standard-go-audit-cleanup-observation-bound')
 
 
 def configuration(directory, releases, startup, credential, *, adversarial=False):
@@ -364,6 +395,8 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                 # this node, which has no HTTP listener installation.
                 retire_case(client,probe,target,output,name)
             result['finalOs'] = probe.sample()
+            result['auditBeforeCleanup'] = audit_cleanup_ready(client)
+            write_json(output/'audit-before-cleanup.json', result['auditBeforeCleanup'])
             delete_all(client, [target['name']])
             stop(client, node)
             result['shutdown'] = stopped_record(node)

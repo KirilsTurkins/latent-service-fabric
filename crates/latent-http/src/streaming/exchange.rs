@@ -43,6 +43,19 @@ struct Upload {
     state: Option<Exchange>,
     length: Option<u64>,
 }
+// Once send may publish a chunk, an abandoned or failed write cannot leave
+// this original exchange available for a later write or finish.
+struct PendingWrite<'a> {
+    state: &'a mut Option<Exchange>,
+    disarmed: bool,
+}
+impl Drop for PendingWrite<'_> {
+    fn drop(&mut self) {
+        if !self.disarmed {
+            *self.state = None;
+        }
+    }
+}
 fn make_reply(
     (sender, request): (
         &mut hyper::client::conn::http1::SendRequest<wire::RequestBody>,
@@ -328,11 +341,31 @@ impl Upload {
         }
         // Admission and resident capacity precede queueing/polling the driver.
         let chunk = state.transfer.input(bytes)?;
-        state.sender.send(chunk)?;
-        let result = state.progress(true).await;
-        if result.is_err() {
-            self.state = None;
+        // The guard keeps the existing exchange in place, but retires it if
+        // send or the in-flight progress future is abandoned or unwinds.
+        let mut pending = PendingWrite {
+            state: &mut self.state,
+            disarmed: false,
+        };
+        let state = pending.state.as_mut().expect("checked upload state");
+        if let Err(error) = state.sender.send(chunk) {
+            // send refused before publishing this chunk; retain the existing
+            // pre-dispatch behavior, including its accepted-input accounting.
+            pending.disarmed = true;
+            return Err(error);
         }
+        // The real-provider control can pause this exact provider after its
+        // actual queue accepts the chunk. No test state exists in production.
+        #[cfg(test)]
+        {
+            let gate = state.inner.write_gate.lock().unwrap().take();
+            if let Some(gate) = gate {
+                let _ = gate.entered.send(());
+                let _ = gate.release.await;
+            }
+        }
+        let result = state.progress(true).await;
+        pending.disarmed = result.is_ok();
         result
     }
     async fn finish_inner(mut self: Box<Self>) -> Result<Box<dyn HttpBody>, Error> {

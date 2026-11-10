@@ -21,6 +21,7 @@ pub(super) struct Imports {
     pub result_limit_trap: AtomicBool,
     pub pause_read: AtomicBool,
     pub pause_after_stage: AtomicBool,
+    pub fail_stage_once: AtomicBool,
     pub staged: Notify,
     pub continue_after_stage: Notify,
     pub entered: Notify,
@@ -106,6 +107,9 @@ impl TransactionHost for Host {
     }
     fn stage(&self, intent: Intent) -> BoxFuture<'_, Result<u32, IntentFailure>> {
         Box::pin(async move {
+            if self.imports.fail_stage_once.swap(false, Ordering::SeqCst) {
+                return Err(IntentFailure::Unavailable);
+            }
             let sequence = self.inner.stage(intent).await?;
             self.imports.staged_intents.fetch_add(1, Ordering::SeqCst);
             if self.imports.pause_after_stage.swap(false, Ordering::SeqCst) {

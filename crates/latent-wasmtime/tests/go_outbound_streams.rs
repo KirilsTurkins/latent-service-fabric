@@ -35,6 +35,7 @@ use tokio::{
 
 const CONTRACT: &str = "examples:go-standard-network/api@1.0.0";
 const PROFILE: &str = "go-component-activation-v5";
+const V7_PROFILE: &str = "go-component-activation-v7";
 const SOURCE: &[u8] = include_bytes!("../../../sdk/go-guest/runtime/network-conformance/main.go");
 const WORLD: &str = include_str!("../../../sdk/go-guest/runtime/network-conformance/world.wit");
 
@@ -65,6 +66,16 @@ async fn configured(root: &std::path::Path, port: u16) -> Fixture {
     let prepared = std::path::PathBuf::from(
         std::env::var_os("LSF_GO_NETWORK_FIXTURE").expect("compile the guarded Go fixture"),
     );
+    let profile = match std::env::var("LSF_GO_NETWORK_PROFILE") {
+        Ok(value) => value,
+        Err(std::env::VarError::NotPresent) => PROFILE.into(),
+        Err(std::env::VarError::NotUnicode(_)) => panic!("non-UTF-8 Go network runtime profile"),
+    };
+    let queued_work = match profile.as_str() {
+        PROFILE => 2,
+        V7_PROFILE => 16,
+        _ => panic!("unsupported Go network runtime profile"),
+    };
     let record: serde_json::Value =
         serde_json::from_slice(&std::fs::read(prepared.join("GO-NETWORK-COMPILE.json")).unwrap())
             .unwrap();
@@ -75,7 +86,7 @@ async fn configured(root: &std::path::Path, port: u16) -> Fixture {
         std::fs::read_to_string(prepared.join("wit/world.wit")).unwrap(),
         WORLD
     );
-    assert_eq!(record["profile"], PROFILE);
+    assert_eq!(record["profile"], profile.as_str());
     assert_eq!(record["sourceUnchanged"], true);
     assert_eq!(
         record["sourceDigest"],
@@ -132,12 +143,12 @@ async fn configured(root: &std::path::Path, port: u16) -> Fixture {
             .await
             .unwrap();
     }
-    Fixture::with_runtime_outbound_streams(
+    let fixture = Fixture::with_runtime_outbound_streams(
         (catalog, caller, callee),
         latent_core::activation_runtime::RuntimeLimits {
             tasks: 16,
             executors: 2,
-            queued_work: 2,
+            queued_work,
             waits: 4,
             timers: 2,
             results: 2,
@@ -145,7 +156,16 @@ async fn configured(root: &std::path::Path, port: u16) -> Fixture {
         },
         configuration(port),
     )
-    .await
+    .await;
+    if profile == V7_PROFILE {
+        println!(
+            "GO_V7_NETWORK_LIMITS {}",
+            json!({"profile": V7_PROFILE, "tasks": 16, "executors": 2,
+                "queuedWork": queued_work, "waits": 4, "timers": 2,
+                "results": 2, "nativeOwners": 2})
+        );
+    }
+    fixture
 }
 
 fn request(f: &Fixture, id: &str, mode: u32, port: u16) -> ActivationRequest {
@@ -446,12 +466,48 @@ async fn signed_ordinary_go_declared_tcp_preserves_refusals_io_and_cancelled_own
     }
     assert_eq!(f.backend.resource_snapshot().live_stores, 1);
     assert_eq!(f.streams.as_ref().unwrap().io.snapshot().calls, 1);
-    assert_eq!(
-        f.manager
-            .cancel_for(&TenantId("tenant-a".into()), &id, "go-network-cancel")
-            .unwrap(),
-        CancelDisposition::Accepted
-    );
+    #[cfg(feature = "development-go-network-read-witness")]
+    let witness = f
+        .streams
+        .as_ref()
+        .unwrap()
+        .lifecycle
+        .read_cancel_witness()
+        .unwrap()
+        .expect("one original connection and provider generation");
+    #[cfg(feature = "development-go-network-read-witness")]
+    assert!(witness.original_second_read_live().unwrap());
+    #[cfg(feature = "development-go-network-read-witness")]
+    let drops_before_acceptance = witness.read_drop_starts();
+    #[cfg(feature = "development-go-network-read-witness")]
+    assert_eq!(drops_before_acceptance, 1);
+    let disposition = f
+        .manager
+        .cancel_for(&TenantId("tenant-a".into()), &id, "go-network-cancel")
+        .unwrap();
+    // Sample immediately after the real cancellation returns, before any await
+    // or callback. A concurrent early Drop makes this fail closed.
+    #[cfg(feature = "development-go-network-read-witness")]
+    let drops_after_acceptance = witness.read_drop_starts();
+    assert_eq!(disposition, CancelDisposition::Accepted);
+    #[cfg(feature = "development-go-network-read-witness")]
+    {
+        assert_eq!(
+            drops_after_acceptance, 1,
+            "original second Pending reached its first drop marker"
+        );
+        assert!(witness.original_generation_current().unwrap());
+        println!(
+            "GO_NETWORK_CANCEL_EDGE {}",
+            json!({
+                "case": "cancel-pending-read", "readDropStartsBefore": drops_before_acceptance,
+                "readDropStartsAfterAccepted": drops_after_acceptance,
+                "sameConnection": true, "sameGenerationCurrent": true,
+            })
+        );
+        // No diagnostic Arc may survive into the original settlement checks.
+        drop(witness);
+    }
     assert_eq!(f.quotas.usage().unwrap().active_activations, 1);
     assert_eq!(
         f.streams

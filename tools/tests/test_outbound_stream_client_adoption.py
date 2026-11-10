@@ -24,12 +24,12 @@ class ReplacementRpc(PolicyRpc):
         self.hook = None
         self.failure = None
 
-    def call(self, *arguments):
+    def call(self, *arguments, **kwargs):
         if arguments[0] == "node":
             self.calls.append(list(map(str, arguments)))
             result = {"outcomeKnown": True, "category": "success", "data": {"inventory": {"node": {"id": self.node}}}}
         else:
-            result = super().call(*arguments)
+            result = super().call(*arguments, **kwargs)
         if self.hook:
             self.hook()
         if self.failure:
@@ -61,7 +61,7 @@ class ClientAdoption(unittest.TestCase):
             "id": "streams", "tenant": "examples", "service": "stream-host",
             "capability": stream.CAPABILITY, "profile": stream.PROFILE,
             "configurationDigest": "sha256:" + "a" * 64, "configurationEpoch": "1"},
-            "consumer": "examples/mail", "publication": "publication-v1:sha256:" + "b" * 64,
+            "consumer": "examples/mail", "publication": "publication:sha256:" + "b" * 64,
             "principal": {"kind": "administrator", "subject": "operator"},
             "destination": {"host": "127.0.0.1", "port": 32123, "transport": "tcp"},
             "binding_id": "stream-installed", "policy_id": "stream-allow"}
@@ -79,7 +79,9 @@ class ClientAdoption(unittest.TestCase):
     def test_token_handoff_reads_only_three_owned_records_and_restart_matches_new_owner(self):
         before, owner = self.snapshot(), copy.deepcopy(self.operator.owner)
         old, new = self.config.read_bytes(), self.candidate.read_bytes()
+        self.assertEqual(self.client.expected_config_digest, digest(old))
         result = self.operator.adopt_client(self.replacement)
+        self.assertEqual(self.replacement.expected_config_digest, digest(new))
         self.assertEqual(result, {"executionPermission": False, "outcome": "client-token-adopted-original-grants-retained"})
         self.assertEqual(self.replacement.calls, [["node", "get", "node"],
             ["policy", "--kind", "provider-binding", "get", "--id", "stream-installed"],

@@ -41,6 +41,8 @@ on:
       - tools/go_standard_entropy_probe.py
       - tools/tests/test_go_standard_entropy.py
       - tools/qualify_go_activation.py
+      - tools/qualify_go_captured_checkpoints.py
+      - tools/tests/test_go_captured_checkpoints.py
       - tools/qualify_go_synchronization.py
       - tools/tests/test_go_synchronization.py
       - tools/tests/test_go_admission.py
@@ -187,6 +189,8 @@ on:
       - tools/probe_go_authoring.py
       - tools/qualify_go_capsules.py
       - tools/qualify_go_activation.py
+      - tools/qualify_go_captured_checkpoints.py
+      - tools/tests/test_go_captured_checkpoints.py
       - tools/qualify_go_synchronization.py
       - tools/tests/test_go_synchronization.py
       - tools/tests/test_go_admission.py
@@ -383,9 +387,25 @@ jobs:
           cache-all-crates: false
           cache-on-failure: false
           save-if: false
-      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
-        with:
-          version: 1.254.0
+      - name: Install the verified wasm-tools release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/sdk-wasm-tools.tar.gz"
+          bindir="$RUNNER_TEMP/sdk-wasm-tools-bin"
+          mkdir "$bindir"
+          timeout 90s gh api -H 'Accept: application/octet-stream' repos/bytecodealliance/wasm-tools/releases/assets/483720667 | head -c 5862465 > "$archive"
+          unset GH_TOKEN
+          test "$(stat --format=%s "$archive")" = 5862464
+          printf '%s  %s\n' d0efb16c9c859137b7ab3e99151c299cd47caee106ed4594561002f7a04945bd "$archive" | sha256sum --check --strict
+          tar -xOzf "$archive" wasm-tools-1.254.0-x86_64-linux/wasm-tools > "$bindir/wasm-tools"
+          test "$(stat --format=%s "$bindir/wasm-tools")" = 20231696
+          printf '%s  %s\n' cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6 "$bindir/wasm-tools" | sha256sum --check --strict
+          chmod 755 "$bindir/wasm-tools"
+          test "$("$bindir/wasm-tools" --version)" = 'wasm-tools 1.254.0 (bb58fdf91 2026-07-20)'
+          printf '%s\n' "$bindir" >> "$GITHUB_PATH"
       - name: Install the locked compiler and generator
         run: |
           set -euo pipefail
@@ -434,9 +454,13 @@ jobs:
           LSF_GUEST_SDK_LANGUAGE=go LSF_GO_ACTIVATION_FIXTURE="$RUNNER_TEMP/go-activation" cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::go::signed_standard_goroutines_sleep_and_drain_use_original_activation_owners -- --ignored --exact --nocapture
       - name: Qualify compiler checkpoints against unchanged CPU source and native Go
         run: |
-          python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-checkpoints" --runtime-profile go-component-activation-v2 --fixture checkpoints
-          python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-no-checkpoints" --runtime-profile go-component-activation-v1 --fixture checkpoints
+          python3 -m tools.tests.go_checkpoint_goto_reference --go "$RUNNER_TEMP/go-guest-tools/go/bin/go"
+          python3 -m unittest tools.tests.test_go_captured_checkpoints
+          python3 tools/qualify_go_captured_checkpoints.py --output "$RUNNER_TEMP/go-checkpoints" --runtime-profile go-component-activation-v2
+          python3 tools/qualify_go_captured_checkpoints.py --output "$RUNNER_TEMP/go-no-checkpoints" --runtime-profile go-component-activation-v1
           LSF_GUEST_SDK_LANGUAGE=go LSF_GO_CHECKPOINT_FIXTURE="$RUNNER_TEMP/go-checkpoints" LSF_GO_NO_CHECKPOINT_FIXTURE="$RUNNER_TEMP/go-no-checkpoints" cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::go::signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_activation -- --ignored --exact --nocapture
+          LSF_GUEST_SDK_LANGUAGE=go LSF_GO_CHECKPOINT_FIXTURE="$RUNNER_TEMP/go-checkpoints" LSF_GO_NO_CHECKPOINT_FIXTURE="$RUNNER_TEMP/go-no-checkpoints" cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::go::signed_application_goto_checkpoints_progress_with_original_budget -- --ignored --exact --nocapture
+          LSF_GUEST_SDK_LANGUAGE=go LSF_GO_CHECKPOINT_FIXTURE="$RUNNER_TEMP/go-checkpoints" LSF_GO_NO_CHECKPOINT_FIXTURE="$RUNNER_TEMP/go-no-checkpoints" cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::go::signed_captured_dependency_goto_progresses_with_original_budget -- --ignored --exact --nocapture
       - name: Compile context-aware typed HTTP ownership without claiming default transport qualification
         run: |
           python3 -m unittest tools.tests.test_go_http_context

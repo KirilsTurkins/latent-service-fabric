@@ -1,0 +1,147 @@
+package main
+
+import (
+    "runtime"
+    "sync/atomic"
+    "testing"
+    "time"
+)
+
+// Test hooks model an allocation park before publication. The production
+// publish/take helpers remain byte-for-byte identical in the projected source.
+var controlOrder atomic.Int32
+var controlEntered, controlResume, controlFast, controlSlow chan struct{}
+var controlSlowChannel, controlFastChannel chan unit
+var controlBlock atomic.Bool
+var controlFailure atomic.Bool
+
+func resetControl() {
+    runtime.GOMAXPROCS(1)
+    state = &taskState{}
+    controlOrder.Store(0)
+    controlBlock.Store(true)
+    controlFailure.Store(false)
+    controlEntered, controlResume = make(chan struct{}), make(chan struct{})
+    controlFast, controlSlow = make(chan struct{}), make(chan struct{})
+    controlSlowChannel, controlFastChannel = nil, nil
+}
+func checkpointQueueBeforePublish(channel chan unit) {
+    if controlFailure.Load() { panic("synthetic-allocation-refusal") }
+    switch controlOrder.Add(1) {
+    case 1:
+        controlSlowChannel = channel
+        if controlBlock.Load() { close(controlEntered); <-controlResume }
+    case 2:
+        controlFastChannel = channel
+    }
+}
+func checkpointQueueAfterPublish(channel chan unit) {
+    if channel == controlFastChannel { close(controlFast) }
+    if channel == controlSlowChannel { close(controlSlow) }
+}
+func await(t *testing.T, ch <-chan struct{}) {
+    t.Helper()
+    select { case <-ch: case <-time.After(3*time.Second): t.Fatal("checkpoint-control-timeout") }
+}
+func waiters(t *testing.T) []chan unit {
+    t.Helper()
+    found := make([]chan unit, 0)
+    seen := make(map[*lsfYieldWait]bool)
+    var last *lsfYieldWait
+    for node := state.yielding; node != nil; node = node.next {
+        if seen[node] || len(found) >= 8193 { t.Fatal("checkpoint-queue-cycle-or-capacity") }
+        seen[node] = true
+        found = append(found, node.channel)
+        last = node
+    }
+    if last != state.yieldTail { t.Fatal("checkpoint-queue-tail-mismatch") }
+    return found
+}
+func checkPair(t *testing.T) {
+    t.Helper()
+    got := waiters(t)
+    if len(got) != 2 || got[0] != controlFastChannel || got[1] != controlSlowChannel {
+        t.Fatalf("reentrant publication lost, duplicated or reordered a caller: length %d", len(got))
+    }
+}
+func wakeAll() {
+    node := lsfTakeYields()
+    for node != nil {
+        next := node.next
+        node.next = nil
+        node.channel <- unit{}
+        node = next
+    }
+}
+func runPair(t *testing.T, slow, fast func(), detach bool) {
+    t.Helper()
+    resetControl()
+    if detach {
+        previous := make(chan unit)
+        previousDone := make(chan struct{})
+        go func() { <-previous; close(previousDone) }()
+        lsfPublishYield(&lsfYieldWait{channel: previous})
+        defer func() { select { case <-previousDone: default: t.Error("previous yield was not delivered") } }()
+    }
+    slowDone, fastDone := make(chan struct{}), make(chan struct{})
+    go func() { slow(); close(slowDone) }()
+    await(t, controlEntered)
+    if detach { wakeAll() }
+    go func() { fast(); close(fastDone) }()
+    await(t, controlFast)
+    close(controlResume)
+    await(t, controlSlow)
+    checkPair(t)
+    wakeAll()
+    await(t, fastDone); await(t, slowDone)
+    if len(waiters(t)) != 0 { t.Fatal("woken nodes remain in the live queue") }
+}
+func TestAllocationReentryPreservesFIFOAndBothYieldPaths(t *testing.T) {
+    t.Run("checkpoint-then-public", func(t *testing.T) { runPair(t, lsfActivationYield, Yield, false) })
+    t.Run("public-then-checkpoint", func(t *testing.T) { runPair(t, Yield, lsfActivationYield, false) })
+}
+func TestDetachedBatchCannotBeRepublished(t *testing.T) {
+    t.Run("checkpoint-then-public", func(t *testing.T) { runPair(t, lsfActivationYield, Yield, true) })
+    t.Run("public-then-checkpoint", func(t *testing.T) { runPair(t, Yield, lsfActivationYield, true) })
+}
+func TestOriginalOwnerEnvelopeAndFIFO(t *testing.T) {
+    resetControl()
+    const limit = 8192 // The existing host limit on all runtime owners.
+    channels := make([]chan unit, limit)
+    for i := range channels {
+        channels[i] = make(chan unit, 1)
+        lsfPublishYield(&lsfYieldWait{channel: channels[i]})
+    }
+    runtime.GC()
+    got := waiters(t)
+    if len(got) != limit { t.Fatalf("original capacity: %d", len(got)) }
+    for i := range got { if got[i] != channels[i] { t.Fatalf("FIFO mismatch at %d", i) } }
+    wakeAll()
+    if state.yielding != nil || state.yieldTail != nil { t.Fatal("detached batch remains live") }
+    for i := range channels { select { case <-channels[i]: default: t.Fatalf("lost wake %d", i) } }
+}
+func TestNewQueueDoesNotMutateDetachedBatch(t *testing.T) {
+    resetControl()
+    first, second, later := make(chan unit, 1), make(chan unit, 1), make(chan unit, 1)
+    lsfPublishYield(&lsfYieldWait{channel:first})
+    lsfPublishYield(&lsfYieldWait{channel:second})
+    detached := lsfTakeYields()
+    lsfPublishYield(&lsfYieldWait{channel:later})
+    if detached == nil || detached.channel != first || detached.next == nil || detached.next.channel != second || detached.next.next != nil {
+        t.Fatal("later publication changed detached FIFO")
+    }
+    if got := waiters(t); len(got) != 1 || got[0] != later { t.Fatal("new queue lost later caller") }
+}
+
+func TestPrepublicationFailureKeepsExistingQueue(t *testing.T) {
+    resetControl()
+    first := make(chan unit, 1)
+    lsfPublishYield(&lsfYieldWait{channel:first})
+    controlFailure.Store(true)
+    func() {
+        defer func() { if recover() == nil { t.Error("expected synthetic failure") } }()
+        lsfQueueYield(make(chan unit))
+    }()
+    got := waiters(t)
+    if len(got) != 1 || got[0] != first { t.Fatal("prepublication failure changed existing owner") }
+}

@@ -42,13 +42,13 @@ def command(selector, mode):
     value.key.operation, value.key.client_key = selector.operation, selector.client_key
     if selector.HasField("entity"):
         value.key.entity = selector.entity
-    value.success.CopyFrom(invocation_pb2.Success(payload=b"ok", media_type="application/octet-stream"))
+    value.success.CopyFrom(invocation_pb2.Success(payload=b"ok", media_type="application/octet-stream", committed_state_version=b"v1".hex(), effect_ids=["effect-a"]))
     value.commit.CopyFrom(tx.CommitReceipt(command_id=value.command_id, attempt_id=value.attempt_id,
         transaction_id="transaction-a", committed_version=b"v1", committed_at_unix_millis=MAXIMUM,
         effect_ids=["effect-a"], receipt_id="receipt-a", source=source()))
     if mode == "paired":
         value.success.payload = b"p" * (750 * 1024)
-    elif mode == "reject":
+    elif mode in {"reject", "inline-reject"}:
         value.ClearField("success"); value.ClearField("commit")
         value.outcome, value.application_state_committed = 3, False
         value.business_rejection.CopyFrom(invocation_pb2.DeclaredError(code="rejected", payload=b"no", media_type="application/octet-stream"))
@@ -64,6 +64,9 @@ def command(selector, mode):
     elif mode in {"linked256", "linked257"}:
         value.retention.CopyFrom(tx.LinkedRetention(record_format="command-v1", record_version=1, payload_available=True,
             required_record_ids=["linked-" + str(i) for i in range(256 if mode == "linked256" else 257)]))
+    elif mode == "inline-lookup":
+        value.ClearField("success")
+        value.retention.CopyFrom(tx.LinkedRetention(record_format="command-v1", record_version=1, payload_available=True))
     elif mode == "unknown":
         value.ClearField("success"); value.ClearField("commit"); value.ClearField("source")
         value.outcome, value.metadata_durable, value.application_state_committed = 5, False, False
@@ -173,6 +176,11 @@ class Peer:
             cmd = command(request.command, key)
             if key == "lost": self.lost = cmd; writer.close(); return
             value = tx.InvokeCommandResponse(command=cmd, invocation=invoked(request.invocation.activation_id, cmd))
+            if key.startswith("inline"):
+                value.command.ClearField("success"); value.command.ClearField("business_rejection")
+                value.command.retention.CopyFrom(tx.LinkedRetention(record_format="command-v1", record_version=1, payload_available=True))
+                if key == "inline-wrong-version": value.invocation.success.committed_state_version = "00"
+                if key == "inline-wrong-effects": value.invocation.success.effect_ids[:] = ["different-effect"]
             if key == "substitution": value.invocation.activation_id = "different-activation"
             self.reply(connection, pending, stream, value)
         elif method in {"LookupCommand", "LookupCommit"}:

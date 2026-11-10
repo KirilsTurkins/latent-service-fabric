@@ -1,0 +1,118 @@
+{
+  "description": "Go, TypeScript and Java client fresh queries after an acknowledged committed state change",
+  "qualification": "Local combined-source normal node and actual Java guest; not hosted or installed-distribution qualification.",
+  "harnessSha256": "4ce277c069cde6f9d10bbfc2f4fdc6696446252e97562286425ec988ac57059e",
+  "clientLogSha256": {
+    "go": "37929467cbfe39179c92366ab823e9fabbcf93fad1370aca3448ed90e25a5d42",
+    "typescript": "808b0aa54d3ab0ced98bb8e60a43c7c52a475046ef7edd30f0f56f19163b56d9",
+    "java": "465d6ba6537eb56921e1cb8e4e8da9fa6175c21494d0451fb6914597ab90fe5b"
+  },
+  "observation": {
+    "blockedBytes": 3016,
+    "blockedFrames": 3,
+    "brokerMessages": 2,
+    "businessCount": 2,
+    "cancelledAfterObservedCommit": true,
+    "clientOutcome": "dispatched-unknown",
+    "durableCommandCount": 2,
+    "effectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "extraConnections": 0,
+    "goBinarySha256": "sha256:91b52419c8c855f8de473306bf228d16b96fd5bc64d0d008471a97f39ecece24",
+    "goSourceSha256": "sha256:3f305cde5e50b5029cb94c865b7648c567fc52ddad0c56e2f2682839fff56957",
+    "javaQueryClassSha256": "sha256:2b13cc0a0e12051d47b9728bb223833cfdf34ab62ca1f6c1d5aed0c8632602f2",
+    "javaQueryCount": 3,
+    "javaQuerySourceSha256": "sha256:9a2bc6173278990e0454576b818cc3f2cf4949cc2ef42c311d3ca950abbe158f",
+    "nodeJsSha256": "sha256:bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+    "nodeSha256": "sha256:48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+    "originalAttemptId": "1",
+    "originalCommandId": "b105c8179c43515fa004382f7704fcf2021cfd92f6f60573bfe17fc07c6aad26",
+    "originalEffectId": "8937d5b76892c652ecf500a8bf75811318ab76f26de80f6df478ba82d14c2051",
+    "originalFingerprintSha256": "a47ec516a6fe585be5c13680bf63b812d68164ecf9882399973106b00a4d133f",
+    "originalReceiptId": "72f0f87bbf503894b29644892fd8aa4d8cf817412d9b4efabed194edf5dc1778",
+    "proxyFailure": "EOFError",
+    "proxyRetired": true,
+    "proxySourceSha256": "sha256:9fd5ba5c7bace82acb2eca31ef8c52a987bcd6e22dd6c6085ef2136f32b22d2a",
+    "qualification": "Go candidate through response-blocking local HTTP/2 proxy and normal node; not hosted or distribution qualification",
+    "queryAfterCommit": true,
+    "queryBinarySha256": "sha256:bb00dd5476a0a3dbfcd07396be4fe8500aa0e4d2b4019a7697113aeb004f449c",
+    "queryCount": 3,
+    "queryNoCommandGrowth": true,
+    "querySourceSha256": "sha256:9d42fb970c5034dee3c2bfe664b6e3608841a1d7574655712c1d53b61cd323f8",
+    "recoveredOriginal": true,
+    "requestStreamCount": 1,
+    "typescriptQueryCount": 3,
+    "typescriptQuerySourceSha256": "sha256:c64c9f10537441cfeb8822192a0d490ee44f575d8f7816c3c98073d57b29e8cb"
+  },
+  "finalShutdown": {
+    "reaped": true,
+    "clean": true,
+    "effects": {
+      "clean": true,
+      "physicallyRetired": true,
+      "schedulingOwnerRetired": true,
+      "workerThreadsJoined": 3,
+      "workerThreadsRemaining": 0,
+      "snapshot": {
+        "durable": {
+          "pending": 0,
+          "active": 0,
+          "acknowledged": 2,
+          "known_failed": 0,
+          "uncertain": 0,
+          "retry_scheduled": 0,
+          "blocked": 0,
+          "expired": 0,
+          "dead_lettered": 0,
+          "payload_bytes": 0,
+          "oldest_unresolved_millis": null
+        },
+        "countsObservedAtMillis": 1794209871851,
+        "queued": 0,
+        "activeJobs": 0,
+        "retainedAttemptBytes": 0,
+        "liveWorkers": 0,
+        "acceptedEffects": 0,
+        "liveTenants": 0,
+        "claims": 2,
+        "physicalOwners": 0,
+        "commandOwners": 0,
+        "commandClockFloor": 1794209868508,
+        "quarantinedPhysicalOwners": 0,
+        "paused": false,
+        "control": {
+          "generation": {
+            "ownerEpoch": 4,
+            "revision": 2
+          },
+          "pending": false,
+          "restoreReviewRequired": false
+        },
+        "admissionClosed": true,
+        "quarantined": false,
+        "failure": null
+      }
+    },
+    "state": {
+      "clean": true,
+      "quarantined": false,
+      "storePhysicallyRetired": true,
+      "nativePhysicallyRetired": true,
+      "liveStorageWorkers": 0,
+      "liveStorageOwners": 0,
+      "queuedStorageRetirements": 0,
+      "acceptedStorageJobs": 0,
+      "storageRetainedBytes": 0,
+      "ordinaryNativeReservations": 0,
+      "recoveryNativeReservations": 0,
+      "ordinaryNativeBytes": 0,
+      "recoveryNativeBytes": 0,
+      "namespaceOwners": 0
+    }
+  },
+  "limitations": [
+    "The fixture checks stable command count and pending-effect count, not the physical total of every retained effect or audit row.",
+    "The minimum view was taken from a separately authorized query after the commit; reuse of a command receipt version is not established.",
+    "Three clients query a single Java guest; this run does not cover .NET, C, Rust, other guests, stale edits or crash/restart.",
+    "This local combined-source fixture is not hosted or installed-distribution qualification."
+  ]
+}

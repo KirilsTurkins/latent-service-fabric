@@ -25,7 +25,10 @@ def build(project_path: Path, output: Path, repository: str, *, installed=None) 
     output, commands, stage = fresh(output), None, "capture"
     try:
         files, dependency_root = build_inputs(project_path)
-        _project, _lock, pins = validate(files)
+        project, _lock, pins = validate(files)
+        from tools.c_guest.closed_headers import selected as selected_headers
+        if selected_headers(project):
+            raise ValueError('c-closed-headers-static-archives-unsupported')
         source_inputs = inventory(files)
         recipe_inputs = inventory({name: read_file(ROOT / name) for name in RECIPE})
         (output / "source-inputs.json").write_bytes(source_inputs)

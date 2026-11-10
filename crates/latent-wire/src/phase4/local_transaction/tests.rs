@@ -3,6 +3,7 @@
 //! publication is explicit; these cases do not qualify publisher signatures.
 mod backend;
 mod cancellation;
+mod entity_lanes;
 mod fixture;
 mod large_results;
 mod namespace;

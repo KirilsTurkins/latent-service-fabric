@@ -49,6 +49,7 @@ impl WasmtimeBackend {
         let mut capability_observer = None;
         let mut host_result = latent_executor::HostResultDisposition::Observed;
         let mut native_stack_observer = None;
+        let mut runtime_retirement = super::store::RuntimeRetirement::default();
         let activation_id = request.activation.activation_id.clone();
         let started = Instant::now();
         let mut timing = Phase0InvocationTiming::default();
@@ -66,6 +67,7 @@ impl WasmtimeBackend {
                     &mut capability_observer,
                     &mut host_result,
                     &mut native_stack_observer,
+                    &mut runtime_retirement,
                 ),
                 observation,
             )
@@ -80,6 +82,7 @@ impl WasmtimeBackend {
                 &mut capability_observer,
                 &mut host_result,
                 &mut native_stack_observer,
+                &mut runtime_retirement,
             )
             .await
         };
@@ -100,7 +103,7 @@ impl WasmtimeBackend {
             report
         };
         report.host_result = host_result;
-        report
+        runtime_retirement.apply(report)
     }
 }
 

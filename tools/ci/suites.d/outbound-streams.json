@@ -18,6 +18,14 @@
         "successful source-matched Cargo artifact inventory"
       ],
       "recipe": "workspace-all-features",
+      "requiredCases": [
+        "tests::lifecycle::refused_initial_install_never_publishes_an_unusable_epoch",
+        "tests::lifecycle::refused_rotation_preserves_original_epoch_connection_and_new_admissions",
+        "tests::sockets::dropped_read_after_consumption_fences_reuse_and_retains_pending_owner",
+        "tests::sockets::dropped_read_after_socket_consumption_fences_before_currentness_return",
+        "tests::sockets::dropped_read_before_consumption_keeps_connection_usable",
+        "tests::sockets::failed_read_audit_fences_reuse_after_consuming_bytes"
+      ],
       "resourceClass": "runtime-bounded",
       "source": "src/lib.rs",
       "target": "latent_streams",

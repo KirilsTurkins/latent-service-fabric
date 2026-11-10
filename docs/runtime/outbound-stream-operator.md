@@ -81,6 +81,13 @@ double, including refused-check retention. That packaging observation is not
 real `latentd` installation or controlled-peer stream qualification; its receipt
 keeps `realLatentd: false` and `providerReadiness: "not-observed"`.
 
+Use a `latent` CLI built with this source for operator commands: the operator sends the retained
+client-file digest through the existing temporary-file-backed stdin owner, and the CLI checks the actual
+opened bytes before using credentials or issuing a request. An older CLI that
+does not support this check refuses the command. This binds the bytes consumed
+by each trusted CLI process; it does not attest the selected executable or
+undo an already-dispatched operation.
+
 For an already installed provider, put this specification in a private
 directory. Use the actual provider descriptor from the node startup record and
 the exact signed publication selected for the consumer:
@@ -99,7 +106,7 @@ the exact signed publication selected for the consumer:
     "configurationEpoch": "1"
   },
   "consumer": "examples/mail",
-  "publication": "publication-v1:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "publication": "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "principal": {"kind": "administrator", "subject": "workflow-operator"},
   "destination": {"host": "127.0.0.1", "port": 32123, "transport": "tcp"},
   "bindingId": "stream-installed",
@@ -107,8 +114,12 @@ the exact signed publication selected for the consumer:
 }
 ```
 
-The digests above are placeholders. The descriptor is installation information,
-not authority. The existing policy RPC authenticates the supplied private
+The digests above are placeholders. A publication identifier must use the
+canonical `publication:sha256:` prefix followed by 64 lowercase hexadecimal
+digits; invalid identifiers are refused before creating a new owner or
+sending a new grant or revoke. An existing matching legacy owner can still
+reopen and recover its original pending operation. The descriptor is
+installation information, not authority. The existing policy RPC authenticates the supplied private
 client configuration and requires administrator authority in the selected
 tenant. Global usage inspection additionally requires the node operator claim.
 Keep the specification, client configuration and state directories private;
@@ -157,7 +168,12 @@ omitted without changing the original totals. An observed zero is `"0"`.
 The local `stream-control` status also reports `quarantinedConnections`.
 
 Each mutation records its original intent and operation identity in protected
-state before dispatch. An uncertain response or transport exception retains
+state before dispatch. The exact encoded policy travels as the existing private
+stdin payload immediately after the client-configuration pin; the retained
+selected-policy file is a private draft, not evidence of the applied bytes,
+and is not reopened for dispatch. A
+staging failure sends no child request and retains the original journal for
+review. An uncertain response or transport exception retains
 that intent and prevents subsequent mutations. `recover` reads the original
 public operation receipt and current policy, validates the exact original
 document, and settles local state. It never resubmits an apply. An unknown or
@@ -185,8 +201,8 @@ latent-dev stream-operator adopt-client \
 ```
 
 The same default/single profile, endpoint, tenant, timeouts, limits and all other
-profiles must remain exact. Adoption requires no pending original operation and
-both confirmed owned grant receipts. Using only the replacement credentials,
+profiles must remain exact. By default, adoption requires no pending original
+operation and both confirmed owned grant receipts. Using only the replacement credentials,
 the selected CLI reads the exact node and both original policy records; their
 full documents and stamps must match. Node inspection requires administrator
 credentials with the existing trusted node-operator claim, as does usage
@@ -200,6 +216,66 @@ matches that owner. No token or file path is copied into state or public output.
 Adoption sends no grant mutation, replays no pending request and grants no new
 authority. It neither revokes the old token nor rotates TLS credentials or a
 live stream provider; those remain separate administrator/node-owner actions.
+
+## Recovery after management-token expiry
+
+An expired or revoked management bearer can prevent receipt recovery while an
+original grant or revocation is still pending. The development-source frontend
+adds an explicit `adopt-client --preserve-pending` path for this situation.
+Older published toolkits may not support this flag. From this source checkout,
+use the same protected specification, state and original client file, plus a
+separate token-only replacement that has the required administrator and
+node-operator authority:
+
+```sh
+python3.13 -m tools.outbound_stream_operator adopt-client \
+  --cli /path/to/latent --client-config /private/client/original.json \
+  --replacement-client-config /private/client/replacement.json \
+  --state-dir /private/operator/state --specification /private/operator/stream.json \
+  --preserve-pending
+```
+
+This path requires an existing pending stream-policy intent. It validates the
+original operation identity, tenant, node, request digest, complete destination
+and publication scope, and retained generation precondition. Using only the
+replacement credentials, it makes at most four read-only requests: the exact
+node, the original operation receipt, the owned binding and the owned policy.
+The receipt and current affected record must confirm the complete original
+intent. The other owned record must remain exact. During a first binding grant,
+a policy without a retained receipt must be affirmatively not found; an
+unavailable read or a foreign existing record is not absence. A first policy
+grant still requires its previously confirmed binding. A receipt already saved
+before a local settlement crash is validated without settling it again.
+
+The existing 90-second client deadline, per-call process/output bounds and
+protected-file checks are unchanged. Inputs, owner, journal and retained
+receipts are rechecked before one atomic credential-digest update. The command
+neither changes the journal nor copies a new receipt into it. Success reports
+`recoveryRequired: true` and `executionPermission: false`; grants, revocation
+and provider adoption remain blocked by the original pending operation.
+
+Use the replacement file for a separate recovery command:
+
+```sh
+python3.13 -m tools.outbound_stream_operator recover \
+  --cli /path/to/latent --client-config /private/client/replacement.json \
+  --state-dir /private/operator/state --specification /private/operator/stream.json
+```
+
+Recovery reads and validates the original receipt and current policy again.
+The earlier handoff observation is not cached authority or an atomic remote
+snapshot. Only confirmed recovery settles local metadata; it never resubmits
+the mutation. Unknown, expired, malformed or changed receipts remain unresolved.
+Pending-handoff failures report `uncertain: true`, including failures before
+owner construction. A local write/durability failure may leave the digest
+update visible: retain both private client files and inspect which one matches
+the retained owner before recovery. Never delete or rewrite the journal to
+make an uncertain request retryable. No bearer is revoked by this command, and
+TLS credentials, live stream rotation, provider readiness and production gates
+remain separate. The focused tests use explicit protocol doubles and private
+filesystem state; they are not standalone-node or packaged qualification.
+
+## Provider rotation and drain
 
 Provider-descriptor adoption likewise rechecks the original client and exact
 owner, journal and receipt bytes immediately before its local write, after the

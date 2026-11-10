@@ -1,0 +1,60 @@
+{
+  "description": "Guest source and component capture supplement to the immutable six-client restart receipt",
+  "parentReceipt": "docs/testing/evidence/six-clients-original-minimum-after-restart-local-2026-11-09.json",
+  "parentReceiptNormalizedSha256": "a824f6328a50208abe3ccf203b8013bff06411ee62b7daec0a24002a9a9b5ea3",
+  "capturePinsSha256": "977be724145f58a9aafd62d2f4e79756f130765015fdd20fbb3b1864753c8af3",
+  "guestCapture": {
+    "nativeIdempotencyProfile": "js-window-v1:d23c20ef06143cdaf102d9f5299a7a6177fff107abc5d2856d937c5516fbedb5",
+    "sourceCommit": "631cf036f8c78f79a5be2a1c419dca074c2fedae",
+    "variants": {
+      "aggregate": {
+        "materials": {
+          "applicationSchemaInputs": {
+            "bytes": 505,
+            "sha256": "sha256:88f04d81694d8e74bafee0e34f7aa77d6c426343803d5656274292ae3ee740e0"
+          },
+          "capsuleSource": {
+            "bytes": 3684,
+            "sha256": "sha256:28939cbc29ad95e2f963cc2e7e6b13fe126368427ee70b0206a3012ad5006039"
+          },
+          "companion": {
+            "bytes": 959,
+            "sha256": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d"
+          },
+          "compilerInputs": {
+            "bytes": 2912190,
+            "sha256": "sha256:90084065888bd8044720b7c6c4319af94ff429d45976ab38e2730d687beb2250"
+          },
+          "component": {
+            "bytes": 1077276,
+            "sha256": "sha256:396784dda4174f84d3a6cb8c211dca9ad706fb826d613e5892b8140f815ad7f5"
+          },
+          "currentEventMarker": {
+            "bytes": 172,
+            "sha256": "sha256:537d7e7cc7d4a936653474d62bb073b66dd0996a69a7ca62657c03daa3e6d698"
+          },
+          "eventRequirements": {
+            "bytes": 779,
+            "sha256": "sha256:43c58efacc7f561582d77bbd3dcb27c7c3f437e838142c39a7b5280edc04378d"
+          },
+          "recipeInputs": {
+            "bytes": 11864,
+            "sha256": "sha256:17988ae053c90c652e427cc52e8b7aa291692477d90d46699f332fe7feef3dfd"
+          },
+          "report": {
+            "bytes": 80484,
+            "sha256": "sha256:df26654e1dbe661fa719c1a42b7ab09c310e14fe5b203fbe1a30d46439ced627"
+          },
+          "sourceInputs": {
+            "bytes": 46779,
+            "sha256": "sha256:c6d81527c92c9e4f31db663d3fefcce23befeb16a8ea46c460b5732ef29148ab"
+          }
+        }
+      }
+    }
+  },
+  "limitations": [
+    "Capture pins identify source, component, compiler inputs and provider profile; they do not independently qualify a packaged distribution or signer.",
+    "See the parent receipt for execution, restart and retained-row limitations."
+  ]
+}

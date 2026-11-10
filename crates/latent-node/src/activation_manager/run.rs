@@ -212,7 +212,15 @@ impl Inner {
                     "strict transaction admission required",
                 ));
             }
-            let host = admission.admit(&envelope, &budget).await?;
+            let admission_control = super::TransactionAdmissionControl::new(
+                token.clone(),
+                transport.clone(),
+                self.clock.clone(),
+                &budget,
+            );
+            let host = admission
+                .admit_controlled(&envelope, &budget, admission_control)
+                .await?;
             if host.activation_id() != &envelope.activation_id
                 || !host.budget().is_same_instance(&budget)
             {

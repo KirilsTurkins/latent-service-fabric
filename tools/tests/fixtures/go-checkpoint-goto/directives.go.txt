@@ -1,0 +1,31 @@
+package directivecheck
+//go:noescape
+func use(*[4096]byte)
+func Plain() { var b [4096]byte; use(&b) }
+//go:nosplit
+func Contiguous() { var b [4096]byte; use(&b) }
+//go:nosplit
+
+// detached ordinary documentation
+
+func Blank() { var b [4096]byte; use(&b) }
+//go:nosplit ignored suffix
+
+func Suffix() { var b [4096]byte; use(&b) }
+func
+//go:nosplit
+AfterFunc() { var b [4096]byte; use(&b) }
+func After() { var b [4096]byte; use(&b) }
+//go:nosplit	comment
+func TabSuffix() { var b [4096]byte; use(&b) }
+//go:nosplit 	comment
+func SpaceTab() { var b [4096]byte; use(&b) }
+//go:nosplit
+// ordinary comment
+//go:nosplit ignored
+func Multiple() { var b [4096]byte; use(&b) }
+type T struct{}
+func
+//go:nosplit
+(T) BeforeReceiver() { var b [4096]byte; use(&b) }
+func (T) /*go:nosplit*/ Ignored() { var b [4096]byte; use(&b) }

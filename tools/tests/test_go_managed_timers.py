@@ -555,6 +555,123 @@ func TestUnstoppedReadinessFailureStillTraps(t *testing.T) {
 '''
 
 
+# This host-only control executes the exact projected runtime clock bridge with
+# a deterministic host sample. It does not execute a WASI or signed component.
+CLOCK_ZERO_CONTROL = r'''package clockbridge
+
+import "testing"
+
+func resetClock() {
+    lsfClockPauseDepth, lsfLastMonotonic, lsfLastWall = 0, 0, 0
+    lsfHasMonotonic, lsfHasWall = false, false
+    mockMonotonic, mockWall, monotonicCalls, wallCalls = 0, 0, 0, 0
+}
+
+func readMonotonic(t *testing.T, value uint64) uint64 {
+    t.Helper()
+    mockMonotonic = value
+    var result timestamp
+    if got := clock_time_get(clockMonotonic, 0, &result); got != 0 {
+        t.Fatalf("monotonic errno %d", got)
+    }
+    return uint64(result)
+}
+
+func TestZeroSampleAndPausedClock(t *testing.T) {
+    resetClock()
+    lsfSetClocksPaused(true)
+    result := timestamp(99)
+    if got := clock_time_get(clockMonotonic, 0, &result); got != 29 || result != 99 || monotonicCalls != 0 {
+        t.Fatalf("missing paused sample: errno=%d result=%d calls=%d", got, result, monotonicCalls)
+    }
+    lsfSetClocksPaused(false)
+    if got := readMonotonic(t, 0); got != 1 || lsfLastMonotonic != 0 || !lsfHasMonotonic {
+        t.Fatalf("zero sample=%d cached=%d has=%v", got, lsfLastMonotonic, lsfHasMonotonic)
+    }
+    lsfSetClocksPaused(true)
+    mockMonotonic = 9
+    if got := clock_time_get(clockMonotonic, 0, &result); got != 0 || result != 1 || monotonicCalls != 1 {
+        t.Fatalf("paused sample: errno=%d result=%d calls=%d", got, result, monotonicCalls)
+    }
+    lsfSetClocksPaused(false)
+    if got := readMonotonic(t, 1); got != 2 { t.Fatalf("one ns offset: %d", got) }
+    if got := readMonotonic(t, 23); got != 24 { t.Fatalf("nonzero sample offset: %d", got) }
+}
+
+func TestMonotonicOffsetPreservesEveryInterval(t *testing.T) {
+    resetClock()
+    samples := []uint64{0, 1, 2, 23, (uint64(1)<<63)-2}
+    previousRaw, previousMapped := samples[0], readMonotonic(t, samples[0])
+    for _, raw := range samples[1:] {
+        mapped := readMonotonic(t, raw)
+        if mapped != raw+1 || mapped < previousMapped || mapped-previousMapped != raw-previousRaw {
+            t.Fatalf("raw %d to %d mapped %d to %d", previousRaw, raw, previousMapped, mapped)
+        }
+        previousRaw, previousMapped = raw, mapped
+    }
+}
+
+func TestOneShotIsDueAtOriginalHostDeadline(t *testing.T) {
+    resetClock()
+    start := readMonotonic(t, 0)
+    when := start + 5
+    delay := when - readMonotonic(t, 0)
+    atHostDeadline := readMonotonic(t, 5)
+    if delay != 5 || atHostDeadline != when {
+        t.Fatalf("one-shot host delay=%d Go deadline=%d mapped at host deadline=%d", delay, when, atHostDeadline)
+    }
+}
+
+func TestSignedNanotimeOverflowFailsClosed(t *testing.T) {
+    resetClock()
+    maxSigned := (uint64(1)<<63)-1
+    if got := readMonotonic(t, maxSigned-1); got != maxSigned {
+        t.Fatalf("last supported sample=%d", got)
+    }
+    mockMonotonic = maxSigned
+    result := timestamp(77)
+    if got := clock_time_get(clockMonotonic, 0, &result); got != 61 || result != 77 || lsfLastMonotonic != maxSigned {
+        t.Fatalf("signed overflow errno=%d result=%d cached=%d", got, result, lsfLastMonotonic)
+    }
+    calls := monotonicCalls
+    lsfSetClocksPaused(true)
+    mockMonotonic = 0
+    if got := clock_time_get(clockMonotonic, 0, &result); got != 61 || result != 77 || monotonicCalls != calls {
+        t.Fatalf("paused overflow errno=%d result=%d calls=%d", got, result, monotonicCalls)
+    }
+    lsfSetClocksPaused(false)
+    mockMonotonic = ^uint64(0)
+    if got := clock_time_get(clockMonotonic, 0, &result); got != 61 || result != 77 {
+        t.Fatalf("u64 overflow errno=%d result=%d", got, result)
+    }
+}
+
+
+func TestWallAndInvalidClockBehavior(t *testing.T) {
+    resetClock()
+    mockWall = 1234
+    var result timestamp
+    if got := clock_time_get(clockRealtime, 0, &result); got != 0 || result != 1234000000 || wallCalls != 1 {
+        t.Fatalf("wall errno=%d result=%d calls=%d", got, result, wallCalls)
+    }
+    lsfSetClocksPaused(true)
+    mockWall = 9000
+    if got := clock_time_get(clockRealtime, 0, &result); got != 0 || result != 1234000000 || wallCalls != 1 {
+        t.Fatalf("paused wall errno=%d result=%d calls=%d", got, result, wallCalls)
+    }
+    lsfSetClocksPaused(false)
+    mockWall = ^uint64(0)/1000000 + 1
+    result = 77
+    if got := clock_time_get(clockRealtime, 0, &result); got != 61 || result != 77 {
+        t.Fatalf("wall overflow errno=%d result=%d", got, result)
+    }
+    if got := clock_time_get(42, 0, &result); got != 28 || result != 77 {
+        t.Fatalf("unknown clock errno=%d result=%d", got, result)
+    }
+}
+'''
+
+
 class SourceOnlyCompiler:
     def __init__(self, *_args, **_kwargs):
         self.materials = []
@@ -595,6 +712,40 @@ def compile_record(folder):
 
 
 class GoManagedTimers(unittest.TestCase):
+    def _check_zero_monotonic_origin_keeps_timers_positive_without_advancing_time(self):
+        source = (reference.ROOT / 'sdk/go-guest/runtime/runtime_bridge.go.in').read_text()
+        declarations = '\n'.join(
+            line for line in source.splitlines()
+            if line.startswith(('var lsfClockPauseDepth ', 'var lsfLastMonotonic,', 'var lsfHasMonotonic,'))
+        )
+        self.assertEqual(len(declarations.splitlines()), 3)
+        functions = []
+        for name in ('lsfSetClocksPaused', 'clock_time_get'):
+            start = source.index('func ' + name + '(')
+            functions.append(source[start:source.index('\n}', start) + 2])
+        prefix = '''package clockbridge
+
+type clockid = uint32
+type timestamp = uint64
+type errno = uint32
+const (clockRealtime clockid = 0; clockMonotonic clockid = 1)
+var mockMonotonic, mockWall uint64
+var monotonicCalls, wallCalls int
+func lsfMonotonicNanos() uint64 { monotonicCalls++; return mockMonotonic }
+func lsfWallMillis() uint64 { wallCalls++; return mockWall }
+func exit(int32) { panic("unexpected runtime exit") }
+'''
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'bridge.go').write_text(prefix + declarations + '\n\n' + '\n\n'.join(functions) + '\n')
+            (root / 'bridge_test.go').write_text(CLOCK_ZERO_CONTROL)
+            env = dict(os.environ, GO111MODULE='off', GOENV='off', GOFLAGS='', GOWORK='off',
+                       GOTOOLCHAIN='local', GOMAXPROCS='1', GOOS='', GOARCH='', CGO_ENABLED='0')
+            env.pop('GOROOT', None)
+            result = subprocess.run([shutil.which('go'), 'test', '-count=1', '-timeout=45s', '-v', '.'],
+                                    cwd=root, env=env, text=True, capture_output=True, timeout=180)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_reset_host_double_binds_original_source_and_license(self):
         reset_controls.assert_source_binding(self)
         # The authenticated old emitted source must fail the current contract;
@@ -641,6 +792,8 @@ class GoManagedTimers(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which('go'), 'controlled host interleaving requires Go')
     def test_timer_installation_rechecks_inventory_after_allocation_parking(self):
+        # Reuse this existing Go prerequisite; no new skip is introduced.
+        self._check_zero_monotonic_origin_keeps_timers_positive_without_advancing_time()
         source = (reference.ROOT / 'sdk/go-guest/runtime/timer_bridge.go.in').read_text()
         declaration = next(line for line in source.splitlines() if line.startswith('type lsfTimerSlot struct '))
         functions = []
@@ -773,6 +926,38 @@ class GoManagedTimers(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'unreviewed-campaign'):
             reference.campaign('managed-v7-timers', fixture, Path('legacy-v5'))
 
+        from tools import ci_lane_inventory as lanes
+        workflow = reference.ROOT / '.github/workflows/go-synchronization-reference.yml'
+        model = lanes.structural_workflow(lanes.workflow_model(workflow.read_text(encoding='utf8')))
+        choices = model['on']['workflow_dispatch']['inputs']['campaign']['options']
+        self.assertTrue({'synchronization', 'admission', 'queued', 'managed-timers', 'task-saturation',
+                         'timer-overlap', 'timer-overlap-v7', 'timer-fired-v7', 'managed-v7-timers'} <= set(choices))
+        branch = 'feat/go-v7-standard-timers-20261109'
+        self.assertIn(branch, model['on']['push']['branches'])
+        self.assertNotIn('release', model['on']['push']['branches'])
+        self.assertIn("github.ref_name == '" + branch + "' && 'managed-v7-timers'",
+                      model['env']['LSF_GO_REFERENCE_CAMPAIGN'])
+        job = model['jobs']['synchronization']
+        steps = {step['name']: step for step in job['steps'] if 'name' in step}
+        compile_step = steps['Compile unchanged standard timers with actual v7 and seventeen native references']
+        signed_step = steps['Run all forty-three original timer outcomes under managed-v7 ownership']
+        condition = "env.LSF_GO_REFERENCE_CAMPAIGN == 'managed-v7-timers'"
+        self.assertEqual(compile_step['if'], condition)
+        self.assertEqual(signed_step['if'], condition)
+        self.assertEqual(compile_step['run'], 'python3 tools/qualify_go_activation.py --output "'
+                         '$RUNNER_TEMP/go-managed-v7-timers" --runtime-profile go-component-activation-v7 --fixture timers')
+        self.assertEqual(signed_step['run'], 'python3 tools/qualify_go_synchronization.py --campaign managed-v7-timers '
+                         '--source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-managed-v7-timers" '
+                         '--output "$RUNNER_TEMP/go-managed-v7-timers-result"')
+        retained = steps['Retain bounded actual results and compiler source identities']['with']['path']
+        for suffix in ('/src/', '/wit/', '/build/component.wasm', '/GO-ACTIVATION-COMPILE.json', '-result/'):
+            self.assertIn('go-managed-v7-timers' + suffix, retained)
+        contract = reference.ROOT / 'tools/ci/contracts/workflows/go-synchronization-reference.yml'
+        policy = json.loads((contract / 'workflow.json').read_bytes())
+        definition = json.loads((contract / 'jobs/synchronization.json').read_bytes())
+        self.assertEqual(policy['policy'], {key: value for key, value in model.items() if key != 'jobs'})
+        self.assertEqual(definition['definition'], job)
+
     def test_v7_case_is_an_additional_exact_ignored_inventory_entry(self):
         suites = json.loads((reference.ROOT / 'tools/ci/suites.json').read_bytes())['suites']
         suite, = [entry for entry in suites if entry['id'] == 'latent-wasmtime.test.local-service']
@@ -847,6 +1032,19 @@ class GoManagedTimers(unittest.TestCase):
             values[0][key] = value
             with self.subTest(key=key), self.assertRaisesRegex(ValueError, 'private-or-unknown|invocation-contract'):
                 reference.managed_timer_observations(output(values), 50)
+
+    def test_conflicting_duplicate_outcome_cannot_relabel_a_timer_case(self):
+        # Exact first row from retained v7 signed owner 42573711698; the other
+        # rows use the existing complete 43-case source fixture.
+        retained = b'GO_MANAGED_TIMER_CASE {"case":"ordinary","iteration":0,"mode":0,"outcome":"success"}'
+        original = b'GO_MANAGED_TIMER_CASE ' + json.dumps(rows()[0]).encode()
+        raw = output(rows(), 77).replace(reference.MANAGED_TIMER_CASE.encode(), reference.V7_TIMER_CASE.encode(), 1)
+        self.assertEqual(raw.count(original), 1)
+        raw = raw.replace(original, retained, 1)
+        self.assertEqual(reference.managed_timer_observations(raw, 77, reference.V7_TIMER_CASE), rows())
+        conflict = raw.replace(b'"outcome":"success"', b'"outcome":"guest-trap","outcome":"success"', 1)
+        with self.assertRaisesRegex(ValueError, 'Go-managed-timers-duplicate-field'):
+            reference.managed_timer_observations(conflict, 77, reference.V7_TIMER_CASE)
 
     def test_wrapper_success_other_target_or_ignored_cases_cannot_qualify_managed_timers(self):
         raw = output(rows())

@@ -55,3 +55,19 @@ fn obsolete_catalog_migration_command_is_rejected() {
             .is_err()
     );
 }
+
+#[test]
+fn event_profile_preview_requires_an_explicit_configuration() {
+    let parsed = CommandLine::try_parse_from([
+        "latentd",
+        "inspect-configured-event-effects",
+        "--config",
+        "node.json",
+    ])
+    .unwrap();
+    let Command::InspectConfiguredEventEffects { config } = parsed.command else {
+        panic!("event effect inspection expected");
+    };
+    assert_eq!(config, std::path::PathBuf::from("node.json"));
+    assert!(CommandLine::try_parse_from(["latentd", "inspect-configured-event-effects"]).is_err());
+}

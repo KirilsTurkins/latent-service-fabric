@@ -19,6 +19,7 @@ public final class Activation {
     private static boolean entered;
     private static boolean rootComplete;
     private static boolean closing;
+    private static boolean finishingInvocation;
     private static boolean retiringPools;
     private static boolean iteratingPoolRetirement;
     private static volatile boolean poisoned;
@@ -31,6 +32,8 @@ public final class Activation {
     private static java.util.concurrent.Executor defaultAsyncExecutor;
     private static boolean queueClockCaptured;
     private static long queueClock;
+    private static int pendingTimerStops;
+    private static int pendingTimerStarts;
 
     private Activation() { }
 
@@ -43,6 +46,8 @@ public final class Activation {
         Thread failedThread;
         Work nextFailed;
         boolean rollbackPending;
+        boolean finishing;
+        boolean finishRefused;
         TimerLease timer;
         Work(Bindings.LatentRuntimeActivationToken token) { this.token = token; }
     }
@@ -68,7 +73,7 @@ public final class Activation {
         if (!entered) throw new IllegalStateException("activation-runtime-entry-required");
         Work existing = lookup(thread);
         if (existing != null) {
-            if (!existing.complete && !existing.rollbackPending && existing.prepared) { existing.prepared = false; return; }
+            if (!existing.complete && !existing.rollbackPending && !existing.finishing && existing.prepared) { existing.prepared = false; return; }
             throw new IllegalThreadStateException();
         }
         // Allocate custody before admission so an OOM cannot lose a new token.
@@ -214,10 +219,12 @@ public final class Activation {
         return new Lease(register(kind));
     }
 
-    /** No current or later invocation may succeed after an unknown Result settlement. */
-    public static void fenceUncertainResultSettlement() { poisoned = true; }
+    /** No current or later invocation may succeed after ownership becomes uncertain. */
+    public static void fenceUncertainCompletion() { poisoned = true; }
+    public static void fenceUncertainResultSettlement() { fenceUncertainCompletion(); }
 
-    /** Keep a failed constructor's admitted owner rooted until Store destruction. */
+    /** Keep an admitted owner with uncertain settlement rooted until Store destruction.
+     * This intrusive custody also covers executor and timer owners. */
     public static void fenceUncertainQueuedWorkSettlement(Lease owner) {
         poisoned = true;
         // The lease and list head were allocated before admission. Each failed
@@ -232,8 +239,22 @@ public final class Activation {
 
     private static void requireHealthyAdmission() {
         if (poisoned) throw new IllegalStateException("activation-runtime-poisoned-store");
+        if (finishingInvocation) {
+            fenceUncertainCompletion();
+            throw new IllegalStateException("activation-runtime-teardown");
+        }
+    }
+    private static void fencePendingTimerStops() {
+        // An accepted stop remains counted through host acknowledgement and
+        // local cleanup, even if its timer leaves the mutable registry.
+        if (pendingTimerStops != 0) poisoned = true;
+    }
+    private static void fencePendingTimerStarts() {
+        if (pendingTimerStarts != 0) poisoned = true;
     }
     private static void requireHealthyCompletion() {
+        fencePendingTimerStops();
+        fencePendingTimerStarts();
         if (poisoned) throw new IllegalStateException("activation-runtime-owner-settlement-uncertain");
     }
 
@@ -242,6 +263,8 @@ public final class Activation {
         final long deadline;
         boolean fired;
         boolean closing;
+        boolean stopPending;
+        boolean startPending;
         boolean rawFrame;
         TimerLease(Bindings.LatentRuntimeActivationToken token, Work work, long deadline) {
             super(token);
@@ -250,35 +273,143 @@ public final class Activation {
         }
         @Override public void close() {
             if (super.token == null) return;
+            if (!entered || finishingInvocation || work.complete || work.timer != this) {
+                fenceUncertainCompletion();
+                throw new IllegalStateException("activation-runtime-timer-stop-teardown");
+            }
+            if (stopPending) {
+                fenceUncertainCompletion();
+                throw new IllegalStateException("activation-runtime-timer-stop-unconfirmed");
+            }
+            if (pendingTimerStops == Integer.MAX_VALUE) {
+                fenceUncertainCompletion();
+                throw new IllegalStateException("activation-runtime-timer-stop-capacity");
+            }
             closing = true;
-            var stopped = Bindings.LatentRuntimeActivation.timerStop(super.token);
-            if (stopped.isError()) throw new IllegalStateException("activation-runtime-timer-stop-" + stopped.error());
-            super.token = null;
-            if (work.timer == this) work.timer = null;
-            timers.remove(this);
+            pendingTimerStops++;
+            stopPending = true;
+            boolean returned = false;
+            try {
+                // The first gate and counter publication are straight-line;
+                // recheck teardown after publication before the host call.
+                if (!entered || finishingInvocation || work.complete || work.timer != this) {
+                    stopPending = false;
+                    pendingTimerStops--;
+                    returned = true;
+                    fenceUncertainCompletion();
+                    throw new IllegalStateException("activation-runtime-timer-stop-teardown");
+                }
+                var stopped = Bindings.LatentRuntimeActivation.timerStop(super.token);
+                if (stopped.isError()) {
+                    // A returned refusal has not removed the host timer and may
+                    // be retried. A thrown call has no such acknowledgement.
+                    stopPending = false;
+                    pendingTimerStops--;
+                    returned = true;
+                    throw new IllegalStateException("activation-runtime-timer-stop-" + stopped.error());
+                }
+                timers.remove(this);
+                if (work.timer == this) work.timer = null;
+                super.token = null;
+                stopPending = false;
+                pendingTimerStops--;
+                returned = true;
+            } catch (Throwable failure) {
+                if (!returned) fenceUncertainCompletion();
+                throw failure;
+            }
         }
+    }
+
+    // These straight-line state transitions do not call the host, allocate or
+    // contain a scheduling checkpoint. Each start keeps its original count and
+    // Work sentinel until a definite refusal or complete local publication.
+    private static int beginTimerStart(Work work, TimerLease timer) {
+        if (!entered || finishingInvocation || poisoned || work.complete || work.finishing || work.timer != null) return 0;
+        if (pendingTimerStarts == Integer.MAX_VALUE) { poisoned = true; return 2; }
+        pendingTimerStarts++;
+        timer.startPending = true;
+        timer.closing = true;
+        work.timer = timer;
+        return 1;
+    }
+
+    private static void abandonUnstartedTimer(Work work, TimerLease timer) {
+        if (pendingTimerStarts <= 0 || work.timer != timer || !timer.startPending) { poisoned = true; return; }
+        work.timer = null;
+        timer.startPending = false;
+        pendingTimerStarts--;
+    }
+
+    private static boolean publishStartedTimer(Work work, TimerLease timer) {
+        if (!entered || finishingInvocation || poisoned || work.complete || work.finishing
+                || pendingTimerStarts <= 0 || work.timer != timer || !timer.startPending) return false;
+        timer.startPending = false;
+        pendingTimerStarts--;
+        timer.closing = false;
+        return true;
     }
 
     /** One host-owned timer also accounts the corresponding logical Java wait. */
     public static Lease timer(long deadline) {
         requireHealthyAdmission();
         Work work = lookup(Thread.currentThread());
-        if (!entered || work == null || work.complete || work.timer != null)
+        if (!entered || work == null || work.complete || work.finishing || work.timer != null)
             throw new IllegalStateException("activation-runtime-timer-frame");
-        long now = monotonicMillis();
-        long remaining = deadline <= now ? 0 : deadline - now;
-        long nanos = remaining < 0 || remaining > Long.MAX_VALUE / 1_000_000
-            ? Long.MAX_VALUE : remaining * 1_000_000;
-        var started = Bindings.LatentRuntimeActivation.timerStart(new Unsigned64(nanos), Option.none(), Option.some(work.token));
-        if (started.isError()) throw new IllegalStateException("activation-runtime-timer-start-" + started.error());
+        // Allocation can fail before host admission, without leaving an owner.
+        TimerLease timer = new TimerLease(null, work, deadline);
+        boolean sameWork = lookup(Thread.currentThread()) == work;
+        requireHealthyAdmission();
+        if (!sameWork) throw new IllegalStateException("activation-runtime-timer-frame");
+        int admission = beginTimerStart(work, timer);
+        if (admission == 2) throw new IllegalStateException("activation-runtime-timer-start-capacity");
+        if (admission != 1) throw new IllegalStateException("activation-runtime-timer-frame");
+        boolean hostUncertain = false;
         try {
-            TimerLease timer = new TimerLease(started.value(), work, deadline);
+            // The Work sentinel and count precede every clock/argument operation
+            // that can suspend, and are rechecked before the host call.
+            long now = monotonicMillis();
+            long remaining = deadline <= now ? 0 : deadline - now;
+            long nanos = remaining < 0 || remaining > Long.MAX_VALUE / 1_000_000
+                ? Long.MAX_VALUE : remaining * 1_000_000;
+            var delay = new Unsigned64(nanos);
+            var period = Option.<Unsigned64>none();
+            var continuation = Option.some(work.token);
+            boolean selected = lookup(Thread.currentThread()) == work && !work.complete
+                && !work.finishing && work.timer == timer;
+            requireHealthyAdmission();
+            if (!entered || !selected) throw new IllegalStateException("activation-runtime-timer-frame");
+            // A trap or lost reply can occur after host admission. Never retry
+            // or release its original Work/count on an ambiguous result.
+            hostUncertain = true;
+            var started = Bindings.LatentRuntimeActivation.timerStart(delay, period, continuation);
+            if (started.isError()) {
+                // The typed error is returned only before host timer publication.
+                hostUncertain = false;
+                throw new IllegalStateException("activation-runtime-timer-start-" + started.error());
+            }
+            ((Lease)timer).token = started.value();
+            if (((Lease)timer).token == null) throw new IllegalStateException("activation-runtime-timer-start-token");
+            selected = lookup(Thread.currentThread()) == work && !work.complete
+                && !work.finishing && work.timer == timer;
+            requireHealthyAdmission();
+            if (!entered || !selected) throw new IllegalStateException("activation-runtime-timer-frame");
             timers.add(timer);
-            work.timer = timer;
+            selected = lookup(Thread.currentThread()) == work && !work.complete
+                && !work.finishing && work.timer == timer;
+            requireHealthyAdmission();
+            if (!selected || !publishStartedTimer(work, timer))
+                throw new IllegalStateException("activation-runtime-timer-frame");
             return timer;
         } catch (Throwable error) {
-            var stopped = Bindings.LatentRuntimeActivation.timerStop(started.value());
-            if (stopped.isError()) throw new IllegalStateException("activation-runtime-timer-start-rollback-" + stopped.error(), error);
+            if (hostUncertain) {
+                // The host Table remains the original admitted timer owner.
+                // Keep the Work sentinel/count and refuse successful completion.
+                fenceUncertainCompletion();
+            } else {
+                // No host owner was published, or it definitively refused.
+                abandonUnstartedTimer(work, timer);
+            }
             throw error;
         }
     }
@@ -307,14 +438,38 @@ public final class Activation {
         timer.rawFrame = false;
     }
 
+    private static int beginWorkFinish(Work work) {
+        if (work.complete || work.rollbackPending || work.finishing && !work.finishRefused) return 0;
+        if (work.timer != null && work.timer.startPending) { poisoned = true; return 2; }
+        work.finishing = true;
+        work.finishRefused = false;
+        return 1;
+    }
+
     /** Runs after the original Thread finally block has restored identity. */
     public static void finished(Thread thread) {
         Work work = lookup(thread);
-        if (work == null || work.complete || work.rollbackPending) throw new IllegalStateException("activation-runtime-thread-owner");
-        var settled = Bindings.LatentRuntimeActivation.settle(work.token);
-        if (settled.isError()) throw new IllegalStateException("activation-runtime-settle-" + settled.error());
-        work.token = null;
-        work.complete = true;
+        if (work == null) throw new IllegalStateException("activation-runtime-thread-owner");
+        int admission = beginWorkFinish(work);
+        if (admission == 2) return; // Preserve a primary exception and the original owner.
+        if (admission != 1) throw new IllegalStateException("activation-runtime-thread-owner");
+        boolean refused = false;
+        try {
+            var settled = Bindings.LatentRuntimeActivation.settle(work.token);
+            if (settled.isError()) {
+                // Build the refusal while the Work remains closed to new
+                // timers, including any reentry from exception allocation.
+                var refusal = new IllegalStateException("activation-runtime-settle-" + settled.error());
+                refused = true;
+                work.finishRefused = true;
+                throw refusal;
+            }
+            work.token = null;
+            work.complete = true;
+        } catch (Throwable error) {
+            if (!refused) fenceUncertainCompletion();
+            throw error;
+        }
         ManagedPool pool = work.pool;
         work.pool = null;
         if (work.failedThread != null) unlinkFailedStart(work);
@@ -482,6 +637,7 @@ public final class Activation {
             catch (Throwable error) { failure = error; }
             finally { rootComplete = true; }
         }, false);
+        boolean returning = false;
         try {
             while (true) {
                 closeCompletedRoot();
@@ -501,20 +657,44 @@ public final class Activation {
                 if (delay != 0 && pending()) waitFor(delay < 0 ? -1 : delay);
             }
             if (failure != null) throw new IllegalStateException("activation-runtime-root-failure", failure);
+            // Close start admission before observing pending starts and settling
+            // the original root, so the two gates cannot pass in opposite order.
+            finishingInvocation = true;
             requireHealthyCompletion();
             var settled = Bindings.LatentRuntimeActivation.settle(root.token);
             if (settled.isError()) throw new IllegalStateException("activation-runtime-root-settle-" + settled.error());
             root.complete = true;
             Address output = result;
             result = null;
+            returning = true;
             return output;
         } finally {
-            finishInvocation();
+            finishInvocation(returning);
         }
     }
 
+    private static void finishInvocation(boolean returning) {
+        // An exceptional invocation may still own accepted sibling work.
+        // Keep the existing Store state while preserving its primary error.
+        if (!returning) {
+            finishingInvocation = true;
+            fenceUncertainCompletion();
+        }
+        finishInvocation();
+        // Teardown can discover a late in-flight stop after the earlier
+        // health check. Refuse that return without masking an existing error.
+        if (returning) requireHealthyCompletion();
+    }
+
     private static void finishInvocation() {
-        if (failedStarts != null || poisoned) {
+        finishingInvocation = true;
+        fencePendingTimerStops();
+        fencePendingTimerStarts();
+        boolean liveTimers = !timers.isEmpty();
+        // A stop or start may change state while the registry was observed.
+        fencePendingTimerStops();
+        fencePendingTimerStarts();
+        if (failedStarts != null || poisoned || liveTimers) {
             // The host must destroy this Store; retain every original reference
             // and reject re-entry while registration settlement is uncertain.
             poisoned = true;
@@ -531,5 +711,6 @@ public final class Activation {
         root = null;
         failure = null;
         entered = false;
+        finishingInvocation = false;
     }
 }

@@ -1,0 +1,94 @@
+{
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "Current native producer and original Rust HTTP controls",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "name": "Restore compiled Rust dependencies",
+        "uses": "KirilsTurkins/lsf-rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "name": "Fetch only the original pinned control histories",
+        "run": "git fetch --no-tags --depth=1 origin b606b1402961593dd918722a66fe293bfab9b319\ngit fetch --no-tags --depth=1 origin c7134289f446cb3171eb0ffd800a94afc2a5209f\ntest \"$(git rev-parse HEAD)\" = \"$GITHUB_SHA\"\ntest -z \"$(git status --porcelain=v1 --untracked-files=all)\"\n"
+      },
+      {
+        "name": "Check current source and fail-closed control boundaries",
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -B -m unittest tools.tests.test_rust_http_current_controls tools.tests.test_rust_http_current_backend_handoff tools.tests.test_host_codec_native tools.tests.test_c_timed_current_products -q\n"
+      },
+      {
+        "name": "Execute the current producer and original default-feature controls",
+        "run": "python3 -B tools/rust_http_current_controls.py --prepared \"$RUNNER_TEMP/rust-http-current-native\" --output \"$RUNNER_TEMP/rust-http-current-controls\" --revision \"$GITHUB_SHA\"",
+        "timeout-minutes": 23
+      },
+      {
+        "name": "Record exact same-run native origin",
+        "run": "python3 -B tools/rust_http_current_backend_handoff.py origin --prepared \"$RUNNER_TEMP/rust-http-current-native\" --controls \"$RUNNER_TEMP/rust-http-current-controls\" --output \"$RUNNER_TEMP/rust-http-current-controls/same-run-origin.json\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded current-source and control observations",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "rust-http-current-native-evidence-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
+          "path": "${{ runner.temp }}/rust-http-current-native/*.json\n${{ runner.temp }}/rust-http-current-native/logs/*.txt\n${{ runner.temp }}/rust-http-current-controls/*.json\n${{ runner.temp }}/rust-http-current-controls/logs/*.txt\n",
+          "retention-days": 7
+        }
+      },
+      {
+        "if": "success()",
+        "name": "Retain the five verified and size-bounded native products",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "rust-http-current-native-products-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
+          "path": "${{ runner.temp }}/rust-http-current-native/native-binaries/**",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 25
+  },
+  "jobId": "native-controls",
+  "kind": "job",
+  "reviewReason": "Preserve exact native bounds and same-run evidence before the ordinary backend build.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-http-current-native.yml"
+}

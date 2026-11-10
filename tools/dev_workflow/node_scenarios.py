@@ -2,10 +2,38 @@
 from __future__ import annotations
 
 import platform
+import re
 import time
 
 from . import build, node_cancellation, node_deployment, node_fixtures, node_invocation, node_test_grants, node_test_profile, node_tests, paths, scenarios, service, state
-from .common import decode, digest, members, require
+from .common import decode, digest, encode, integer, members, require
+
+
+# Only recognized unsigned numeric budget fields can cross the argument
+# boundary. Defaults and profile enforcement remain in the CLI budget parser.
+_BUDGET_FIELDS = {
+    "cpuFuel": 2**64 - 1, "memoryBytes": 2**64 - 1,
+    "wallTimeLimitMillis": 2**64 - 1, "childCalls": 2**32 - 1,
+    "outboundRequests": 2**32 - 1, "stateReadBytes": 2**64 - 1,
+    "stateWriteBytes": 2**64 - 1, "blobReadBytes": 2**64 - 1,
+    "blobWriteBytes": 2**64 - 1, "logBytes": 2**64 - 1,
+    "effectCount": 2**32 - 1,
+}
+
+
+def _selected_budget(ceilings, timeout, execution):
+    members(ceilings, set(), set(_BUDGET_FIELDS))
+    budget = dict(ceilings)
+    for name, value in budget.items():
+        if name != "wallTimeLimitMillis" or value is not None:
+            integer(value, 0, _BUDGET_FIELDS[name])
+    budget["wallTimeLimitMillis"] = min(timeout, budget.get("wallTimeLimitMillis") or timeout)
+    for key, target in (("fuel", "cpuFuel"), ("memoryBytes", "memoryBytes")):
+        if execution is not None and key in execution:
+            require(isinstance(execution[key], str)
+                    and re.fullmatch(r"[1-9][0-9]{0,10}", execution[key]), "scenario-budget-format")
+            budget[target] = integer(int(execution[key]), 0, 2**64 - 1)
+    return budget
 
 
 def _collect_node_observations(collector, client, selectors, deadline):
@@ -46,6 +74,9 @@ def run(root, arguments, *, deadline: float | None = None, diagnostic_observer=N
     compatibility_outcomes = guest_compatibility_outcomes.from_build(source, descriptor, build_receipt)
     deadline = min(deadline if deadline is not None else float("inf"), time.monotonic() + 300)
     cli, journal = client(root, deadline=deadline)
+    # Verify the currently selected installed CLI before any test deployment,
+    # policy mutation or invocation can create a journaled operation.
+    cli.require_scenario_budget_support()
     deployed, revision, current_grants = node_tests.target(root, descriptor, build_receipt, cli)
     installed = None
     fixture_runtime = {}
@@ -86,11 +117,12 @@ def run(root, arguments, *, deadline: float | None = None, diagnostic_observer=N
             paths.read(root, path.name, 1048576)
             path.unlink()
         paths.write_new(path, raw)
-        budget = dict(ceilings)
-        budget["wallTimeLimitMillis"] = min(case["timeoutMillis"], budget.get("wallTimeLimitMillis") or case["timeoutMillis"])
-        for key, target in (("fuel", "cpuFuel"), ("memoryBytes", "memoryBytes")):
-            if execution is not None and key in execution:
-                budget[target] = int(execution[key])
+        budget = _selected_budget(ceilings, case["timeoutMillis"], execution)
+        # Freeze both the document and its journal identity before dispatch.
+        # No file, caller-owned mapping, or unvalidated string is reopened.
+        budget_json = encode(budget).removesuffix(b"\n").decode("ascii")
+        budget_digest = digest(budget_json.encode("ascii"))
+        budget_profile = "phase3" if installed is not None else "phase1"
         state.atomic(root, "test-budget.json", budget)
         cancellation = None
         original_client_reaped = False
@@ -100,17 +132,20 @@ def run(root, arguments, *, deadline: float | None = None, diagnostic_observer=N
             issued_activation = activation
             if execution is not None and execution.get("cancelWhenRunning", False):
                 cancellation = node_cancellation.Cancellation(root, cli, activation, deadline)
+            # The input file is a review copy. The private stdin is the same
+            # opaque payload whose digest was recorded in the original intent.
             result = cli.call("invoke", "--service", case["service"], "--contract", case["contract"],
-                "--function", case["function"], "--input", path, "--media-type", case["mediaType"], "--activation-id", activation,
-                "--budget", root / "test-budget.json", "--budget-profile", "phase3" if installed is not None else "phase1",
+                "--function", case["function"], "--input", "-", "--media-type", case["mediaType"], "--activation-id", activation,
+                "--budget-json", budget_json, "--budget-profile", budget_profile,
                 "--rpc-timeout-ms", str(case["timeoutMillis"] + 1000), timeout=case["timeoutMillis"] / 1000 + 5,
-                check=cancellation.check if cancellation is not None else None)
+                check=cancellation.check if cancellation is not None else None, stdin=raw)
             # Client.call returns only after its owned process is positively
             # reaped. The observer receives no environment or raw process logs.
             original_client_reaped = True
             return result
         result = node_invocation.execute(cli, journal,
-            {"case": case["id"], "inputSha256": digest(raw), "expectedRevision": revision}, call, deadline)
+            {"case": case["id"], "inputSha256": digest(raw), "budgetSha256": budget_digest,
+             "budgetProfile": budget_profile, "expectedRevision": revision}, call, deadline)
         if diagnostic_observer is not None:
             diagnostic_observer(case["id"], result, original_client_reaped)
         if compatibility_outcomes is not None:

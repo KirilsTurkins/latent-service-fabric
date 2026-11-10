@@ -8,9 +8,9 @@ on:
         type: choice
         required: true
         default: synchronization
-        options: [synchronization, admission, queued, managed-timers, task-saturation, timer-overlap, timer-overlap-v7]
+        options: [synchronization, admission, queued, managed-timers, task-saturation, timer-overlap, timer-overlap-v7, timer-fired-v7, managed-v7-timers, zero-clock-v7]
   push:
-    branches: ['feat/go-runtime-retirement-20261020', 'feat/go-runtime-admission-20261020', 'feat/go-runtime-queued-ownership-20261020', 'feat/go-v5-standard-timers-20261020', 'feat/go-v7-timer-overlap-20261108']
+    branches: ['feat/go-runtime-retirement-20261020', 'feat/go-runtime-admission-20261020', 'feat/go-runtime-queued-ownership-20261020', 'feat/go-v5-standard-timers-20261020', 'feat/go-v7-timer-overlap-20261108', 'feat/go-fired-timer-fence-v7-20261108', 'feat/go-v7-standard-timers-20261109', 'feat/go-returned-timer-fence-20261109', 'feat/go-returned-cancel-20261109', 'test/go-zero-clock-v7-20261109', 'fix/go-zero-clock-load-20261110', 'test/go-ticker-coalescing-20261110', 'test/go-timer-wall-jumps-20261110', 'test/go-sleep-cancel-20261110']
 
 permissions:
   contents: read
@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  LSF_GO_REFERENCE_CAMPAIGN: ${{ inputs.campaign || (github.ref_name == 'feat/go-v7-timer-overlap-20261108' && 'timer-overlap-v7' || github.ref_name == 'feat/go-v5-standard-timers-20261020' && 'managed-timers' || github.ref_name == 'feat/go-runtime-queued-ownership-20261020' && 'queued' || github.ref_name == 'feat/go-runtime-admission-20261020' && 'admission' || 'synchronization') }}
+  LSF_GO_REFERENCE_CAMPAIGN: ${{ inputs.campaign || (github.ref_name == 'test/go-sleep-cancel-20261110' && 'zero-clock-v7' || github.ref_name == 'test/go-timer-wall-jumps-20261110' && 'zero-clock-v7' || github.ref_name == 'test/go-ticker-coalescing-20261110' && 'zero-clock-v7' || github.ref_name == 'fix/go-zero-clock-load-20261110' && 'zero-clock-v7' || github.ref_name == 'test/go-zero-clock-v7-20261109' && 'zero-clock-v7' || github.ref_name == 'feat/go-v7-standard-timers-20261109' && 'managed-v7-timers' || github.ref_name == 'feat/go-returned-cancel-20261109' && 'timer-fired-v7' || github.ref_name == 'feat/go-returned-timer-fence-20261109' && 'timer-fired-v7' || github.ref_name == 'feat/go-fired-timer-fence-v7-20261108' && 'timer-fired-v7' || github.ref_name == 'feat/go-v7-timer-overlap-20261108' && 'timer-overlap-v7' || github.ref_name == 'feat/go-v5-standard-timers-20261020' && 'managed-timers' || github.ref_name == 'feat/go-runtime-queued-ownership-20261020' && 'queued' || github.ref_name == 'feat/go-runtime-admission-20261020' && 'admission' || 'synchronization') }}
   CARGO_BUILD_JOBS: '2'
   CARGO_INCREMENTAL: '0'
   CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
@@ -65,6 +65,20 @@ jobs:
       - name: Check exact Go timer overlap evidence controls
         if: env.LSF_GO_REFERENCE_CAMPAIGN == 'timer-overlap' || env.LSF_GO_REFERENCE_CAMPAIGN == 'timer-overlap-v7'
         run: python3 -m unittest tools.tests.test_go_timer_overlap -v
+      - name: Check fired timer evidence controls
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'timer-fired-v7'
+        run: python3 -m unittest tools.tests.test_go_fired_timer -v
+      - name: Check exact zero-clock timer evidence controls
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'zero-clock-v7'
+        run: |
+          set -euo pipefail
+          python3 -m unittest tools.tests.test_go_zero_clock -v
+          cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service fixture::zero_clock_load_tests::fixture_load_uses_the_injected_admission_clock -- --exact --show-output | tee "$RUNNER_TEMP/go-zero-clock-load-check.log"
+          grep -Fx 'test fixture::zero_clock_load_tests::fixture_load_uses_the_injected_admission_clock ... ok' "$RUNNER_TEMP/go-zero-clock-load-check.log"
+          grep -Eq '^test result: ok[.] 1 passed; 0 failed; 0 ignored; 0 measured; [0-9]+ filtered out;' "$RUNNER_TEMP/go-zero-clock-load-check.log"
+          cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service fixture::zero_clock::tests::wall_jumps_repoll_the_original_wait_without_completing_it -- --exact --show-output | tee "$RUNNER_TEMP/go-wall-clock-fixture-check.log"
+          grep -Fx 'test fixture::zero_clock::tests::wall_jumps_repoll_the_original_wait_without_completing_it ... ok' "$RUNNER_TEMP/go-wall-clock-fixture-check.log"
+          grep -Eq '^test result: ok[.] 1 passed; 0 failed; 0 ignored; 0 measured; [0-9]+ filtered out;' "$RUNNER_TEMP/go-wall-clock-fixture-check.log"
       - name: Install captured compiler namespace
         run: |
           sudo apt-get update
@@ -108,6 +122,12 @@ jobs:
       - name: Run all forty-three original timer outcomes under managed-v5 ownership
         if: env.LSF_GO_REFERENCE_CAMPAIGN == 'managed-timers'
         run: python3 tools/qualify_go_synchronization.py --campaign managed-timers --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-managed-timers" --output "$RUNNER_TEMP/go-managed-timers-result"
+      - name: Compile unchanged standard timers with actual v7 and seventeen native references
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'managed-v7-timers'
+        run: python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-managed-v7-timers" --runtime-profile go-component-activation-v7 --fixture timers
+      - name: Run all forty-three original timer outcomes under managed-v7 ownership
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'managed-v7-timers'
+        run: python3 tools/qualify_go_synchronization.py --campaign managed-v7-timers --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-managed-v7-timers" --output "$RUNNER_TEMP/go-managed-v7-timers-result"
       - name: Compile ordinary Task saturation with actual v5 and native reference
         if: env.LSF_GO_REFERENCE_CAMPAIGN == 'task-saturation'
         run: python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-task-saturation" --runtime-profile go-component-activation-v5 --fixture task-saturation
@@ -126,6 +146,30 @@ jobs:
       - name: Require original v7 timer overlap and retirement witnesses
         if: env.LSF_GO_REFERENCE_CAMPAIGN == 'timer-overlap-v7'
         run: python3 tools/qualify_go_synchronization.py --campaign timer-overlap-v7 --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-timer-overlap-v7" --output "$RUNNER_TEMP/go-timer-overlap-v7-result"
+      - name: Reject foreign fired-timer fence probes using pinned Go
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'timer-fired-v7'
+        run: python3 tools/tests/go_fired_fence_controls.py
+      - name: Compile the selected v7 fired timer diagnostic
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'timer-fired-v7'
+        run: python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-timer-fired-v7" --runtime-profile go-component-activation-v7 --fixture timer-fired
+      - name: Require original fired timer wait retirement on the signed node
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'timer-fired-v7'
+        run: python3 tools/qualify_go_synchronization.py --campaign timer-fired-v7 --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-timer-fired-v7" --output "$RUNNER_TEMP/go-timer-fired-v7-result"
+      - name: Compile the ordinary zero-clock one-shot fixture with actual v7
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'zero-clock-v7'
+        run: python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-zero-clock-v7" --runtime-profile go-component-activation-v7 --fixture zero-clock
+      - name: Require one original signed timer wait across the shared zero-origin edge
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'zero-clock-v7'
+        run: python3 tools/qualify_go_synchronization.py --campaign zero-clock-v7 --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-zero-clock-v7" --output "$RUNNER_TEMP/go-zero-clock-v7-result"
+      - name: Require signed ticker coalescing on the same bounded clock
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'zero-clock-v7'
+        run: python3 tools/qualify_go_synchronization.py --campaign ticker-clock-v7 --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-zero-clock-v7" --output "$RUNNER_TEMP/go-ticker-clock-v7-result"
+      - name: Require a pending signed timer to survive wall clock jumps
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'zero-clock-v7'
+        run: python3 tools/qualify_go_synchronization.py --campaign wall-clock-v7 --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-zero-clock-v7" --output "$RUNNER_TEMP/go-wall-clock-v7-result"
+      - name: Require cancellation before the original Go sleep edge
+        if: env.LSF_GO_REFERENCE_CAMPAIGN == 'zero-clock-v7'
+        run: python3 tools/qualify_go_synchronization.py --campaign sleep-cancel-v7 --source-commit "${{ github.sha }}" --fixture "$RUNNER_TEMP/go-zero-clock-v7" --output "$RUNNER_TEMP/go-sleep-cancel-v7-result"
       - name: Retain bounded actual results and compiler source identities
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
@@ -156,6 +200,13 @@ jobs:
             ${{ runner.temp }}/go-managed-timers-result/receipt.json
             ${{ runner.temp }}/go-managed-timers-result/signed.stdout.log
             ${{ runner.temp }}/go-managed-timers-result/signed.stderr.log
+            ${{ runner.temp }}/go-managed-v7-timers/GO-ACTIVATION-COMPILE.json
+            ${{ runner.temp }}/go-managed-v7-timers/GO-ACTIVATION-FAILED.json
+            ${{ runner.temp }}/go-managed-v7-timers/src/
+            ${{ runner.temp }}/go-managed-v7-timers/wit/
+            ${{ runner.temp }}/go-managed-v7-timers/build/component.wasm
+            ${{ runner.temp }}/go-managed-v7-timers/logs/
+            ${{ runner.temp }}/go-managed-v7-timers-result/
             ${{ runner.temp }}/go-task-saturation/GO-ACTIVATION-COMPILE.json
             ${{ runner.temp }}/go-task-saturation/GO-ACTIVATION-FAILED.json
             ${{ runner.temp }}/go-task-saturation/src/
@@ -177,5 +228,28 @@ jobs:
             ${{ runner.temp }}/go-timer-overlap-v7/build/component.wasm
             ${{ runner.temp }}/go-timer-overlap-v7/logs/
             ${{ runner.temp }}/go-timer-overlap-v7-result/
+            ${{ runner.temp }}/go-timer-fired-v7/GO-ACTIVATION-COMPILE.json
+            ${{ runner.temp }}/go-timer-fired-v7/GO-ACTIVATION-FAILED.json
+            ${{ runner.temp }}/go-timer-fired-v7/src/
+            ${{ runner.temp }}/go-timer-fired-v7/wit/
+            ${{ runner.temp }}/go-timer-fired-v7/diagnostic-sdk/runtime/timer_async.go.in
+            ${{ runner.temp }}/go-timer-fired-v7/diagnostic-sdk/runtime/timer_bridge.go.in
+            ${{ runner.temp }}/go-timer-fired-v7/diagnostic-sdk/runtime/activation_bridge.go.in
+            ${{ runner.temp }}/go-timer-fired-v7/diagnostic-runtime-inputs/
+            ${{ runner.temp }}/go-timer-fired-v7/build/component.wasm
+            ${{ runner.temp }}/go-timer-fired-v7/logs/
+            ${{ runner.temp }}/go-timer-fired-v7-result/
+            ${{ runner.temp }}/go-zero-clock-v7/GO-ACTIVATION-COMPILE.json
+            ${{ runner.temp }}/go-zero-clock-v7/GO-ACTIVATION-FAILED.json
+            ${{ runner.temp }}/go-zero-clock-v7/src/
+            ${{ runner.temp }}/go-zero-clock-v7/wit/
+            ${{ runner.temp }}/go-zero-clock-v7/build/component.wasm
+            ${{ runner.temp }}/go-zero-clock-v7/logs/
+            ${{ runner.temp }}/go-zero-clock-v7-result/
+            ${{ runner.temp }}/go-zero-clock-load-check.log
+            ${{ runner.temp }}/go-ticker-clock-v7-result/
+            ${{ runner.temp }}/go-wall-clock-v7-result/
+            ${{ runner.temp }}/go-sleep-cancel-v7-result/
+            ${{ runner.temp }}/go-wall-clock-fixture-check.log
           if-no-files-found: warn
           retention-days: 7

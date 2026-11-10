@@ -37,6 +37,8 @@ def emitted_time_source():
     original = checked_time_source(TIME_SOURCE.read_bytes(), GO_LICENSE.read_bytes())
     inputs = {
         'runtime/time.go': original,
+        'runtime/coro.go': ('\t\tgp = newproc1(startfv, gp, pc, true, waitReasonCoroutine)\n'
+            '\t\t// Clear gp.m.\n\t// Emit the trace event after getting gnext but before changing curg.\n'),
         'runtime/runtime2.go': '\tvalgrindStackID uintptr\n}',
         'runtime/mfinal.go': 'func SetFinalizer(obj any, finalizer any) {',
         'runtime/mcleanup.go': 'func AddCleanup[T, S any](ptr *T, cleanup func(S), arg S) Cleanup {',
@@ -111,6 +113,32 @@ def assert_source_binding(case):
     for altered, license_input in ((source + b'\n', license_bytes), (source, license_bytes + b'\n')):
         with case.assertRaisesRegex(ValueError, 'upstream-or-license-drift'):
             checked_time_source(altered, license_input)
+    # A retired one-shot identity stays on the Go timer until public
+    # Stop/Reset fences it. Bind the pinned execution paths that prevent a
+    # second callback using that identity before a new positive-when rearm.
+    time_source = emitted_time_source()
+    def method(signature):
+        start = time_source.index(signature)
+        return time_source[start:time_source.index('\n}', start) + 2]
+    fire = method('func (t *timer) unlockAndRun(')
+    maybe_channel = method('func (t *timer) maybeRunChan(')
+    needs_add = method('func (t *timer) needsAdd(')
+    modify = method('func (t *timer) modify(')
+    sleep = extract(time_source, 'timeSleep')
+    reset = extract(time_source, 'resetTimer')
+    case.assertEqual(time_source.count('t.unlockAndRun('), 3)
+    case.assertIn('} else {\n\t\tnext = 0\n\t}', fire)
+    case.assertLess(fire.index('t.when = next'), fire.index('lsfBeforeTimerCallback(t)'))
+    case.assertIn('t.state |= timerZombie', fire)
+    case.assertLess(fire.index('t.updateHeap()'), fire.index('lsfBeforeTimerCallback(t)'))
+    case.assertIn('t.when == 0 || t.when > now', maybe_channel)
+    case.assertIn('t.when > 0', needs_add)
+    case.assertIn('if when <= 0', modify)
+    case.assertLess(modify.index('t.when = when'), modify.index('t.unlockAndRun(bubble.now, bubble)'))
+    case.assertLess(reset.index('lsfInstallTimer(&t.timer, newToken)'), reset.index('t.reset(when, period)'))
+    case.assertLess(sleep.index('if lsfActivationActive {'), sleep.index('t := gp.timer'))
+    case.assertEqual(sum(line.strip().startswith(('t.reset(', 'gp.timer.reset('))
+                         for line in time_source.splitlines()), 2)
     source = host_source()
     case.assertEqual(source.count('<-t.lsfGate'), 2)
     case.assertEqual(source.count('t.lsfGate = make(chan struct{}, 1)'), 1)
@@ -141,6 +169,8 @@ def run_host_doubles(case, go):
                  'TestStopResetSerializesAndReturnsFalseForReset',
                  'TestStopStopSerializesAndSecondIsFalse',
                  'TestOneShotCallbackMayRetireWithoutTakingGate',
-                 'TestRecoverablePanicReleasesGateForFollowingStop'):
+                 'TestRecoverablePanicReleasesGateForFollowingStop',
+                 'TestExpiredOneShotPublicOperationFencesPhysicalWait',
+                 'TestExpiredOneShotWithoutPendingWaitCanResetImmediately'):
         case.assertIn('--- PASS: ' + name, output)
     print('Go timer host double: production-source interleavings passed', flush=True)

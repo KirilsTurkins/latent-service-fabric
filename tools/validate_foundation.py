@@ -247,6 +247,11 @@ def validate_cargo_workflow(workflow: str) -> None:
             if step.get("continue-on-error", "false") != "false":
                 continue
             for line in step.get("run", "").splitlines():
+                # Only a standalone Python recipe invocation can satisfy the
+                # foundation contract. Other shell or Python lines may have
+                # continuations or unmatched per-line quotes.
+                if not re.match(r"^\s*python3(?:\s|$)", line) or "tools/ci_cargo.py" not in line:
+                    continue
                 words = shlex.split(line, comments=True)
                 if len(words) >= 4 and words[:3] == ["python3", "tools/ci_cargo.py", "run"]:
                     if "if" in step:

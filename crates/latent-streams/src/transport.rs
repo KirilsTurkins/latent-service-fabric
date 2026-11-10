@@ -93,6 +93,8 @@ struct TlsState {
     connection: rustls::ClientConnection,
     handshake_read: usize,
     handshake_write: usize,
+    #[cfg(test)]
+    hold_test_flush: bool,
 }
 struct SocketIo<'a> {
     tcp: &'a Wire,
@@ -190,6 +192,8 @@ impl Transport {
                 connection,
                 handshake_read: 0,
                 handshake_write: 0,
+                #[cfg(test)]
+                hold_test_flush: false,
             })),
             _tls_configuration: Some(config),
         })
@@ -211,6 +215,8 @@ impl Transport {
                     connection,
                     handshake_read: 0,
                     handshake_write: 0,
+                    #[cfg(test)]
+                    hold_test_flush: false,
                 }))
             }
             None => None,
@@ -244,6 +250,56 @@ impl Transport {
             }
         }
     }
+    /// A zero-time readiness observation for an already admitted plain TCP
+    /// owner. It never reads or writes bytes, creates no descriptor and never
+    /// waits for an event. TLS and protected transports retain their old path.
+    #[cfg(target_os = "linux")]
+    pub fn ready_now(&self, interest: Interest) -> io::Result<Option<Readiness>> {
+        use rustix::event::{poll, PollFd, PollFlags, Timespec};
+        let tcp = match &self.wire {
+            Wire::Tcp(tcp) => tcp,
+            #[cfg(any(test, feature = "development-outbound"))]
+            Wire::Protected(_) => return Err(io::ErrorKind::Unsupported.into()),
+        };
+        if self.tls.is_some() {
+            return Err(io::ErrorKind::Unsupported.into());
+        }
+        let mut events = PollFlags::empty();
+        if interest.is_readable() {
+            events |= PollFlags::IN;
+        }
+        if interest.is_writable() {
+            events |= PollFlags::OUT;
+        }
+        let mut fds = [PollFd::new(tcp.as_ref(), events)];
+        let immediate = Timespec {
+            tv_sec: 0,
+            tv_nsec: 0,
+        };
+        let count = poll(&mut fds, Some(&immediate)).map_err(|_| io::ErrorKind::Other)?;
+        if count == 0 {
+            return Ok(None);
+        }
+        let observed = fds[0].revents();
+        if observed.intersects(PollFlags::ERR | PollFlags::NVAL) {
+            return Err(io::ErrorKind::Other.into());
+        }
+        if !observed.intersects(PollFlags::IN | PollFlags::OUT | PollFlags::HUP) {
+            return Err(io::ErrorKind::Other.into());
+        }
+        Ok(Some(Readiness {
+            readable: observed.contains(PollFlags::IN),
+            writable: observed.contains(PollFlags::OUT),
+            read_closed: observed.contains(PollFlags::HUP),
+            write_closed: observed.contains(PollFlags::HUP),
+        }))
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn ready_now(&self, _interest: Interest) -> io::Result<Option<Readiness>> {
+        Err(io::ErrorKind::Unsupported.into())
+    }
+
     pub async fn readable(&self) -> io::Result<()> {
         self.ready(Interest::READABLE).await.map(|_| ())
     }
@@ -299,6 +355,13 @@ impl Transport {
         self.tls.is_some()
     }
 
+    #[cfg(test)]
+    pub fn test_hold_tls_flush(&self) {
+        let mut state = self.tls.as_ref().expect("TLS transport").lock().unwrap();
+        assert!(!state.connection.wants_write());
+        state.hold_test_flush = true;
+    }
+
     // Flush only already accepted ciphertext. WouldBlock yields to this same
     // original socket; it never restarts a plaintext write or handshake.
     fn flush(connection: &mut rustls::ClientConnection, tcp: &Wire) -> Result<(), StreamError> {
@@ -328,6 +391,7 @@ impl Transport {
             connection,
             handshake_read,
             handshake_write,
+            ..
         } = &mut *state;
         // Limit encrypted handshake input before it reaches the TLS parser.
         // This is an explicit finite host profile, not a universal chain limit.
@@ -432,6 +496,8 @@ impl Transport {
             return self.wire.write(input);
         };
         let mut state = tls.lock().map_err(|_| failure())?;
+        #[cfg(test)]
+        let hold_test_flush = state.hold_test_flush;
         let connection = &mut state.connection;
         Self::flush(connection, &self.wire)?;
         if connection.wants_write() {
@@ -443,6 +509,13 @@ impl Transport {
             Err(error) if error.kind() == io::ErrorKind::WouldBlock => return Ok(None),
             Err(_) => return Err(failure()),
         };
+        #[cfg(test)]
+        if hold_test_flush {
+            // Keep the real rustls ciphertext on this same original transport;
+            // this is a synthetic wire stall, not observed kernel backpressure.
+            assert!(connection.wants_write());
+            return Ok(Some(count));
+        }
         // Retain this accepted plaintext prefix even if ciphertext dispatch
         // subsequently fails. Returning acceptance is not remote completion.
         if let Err(mut error) = Self::flush(connection, &self.wire) {
@@ -457,6 +530,10 @@ impl Transport {
             return Ok(true);
         };
         let mut state = tls.lock().map_err(|_| failure())?;
+        #[cfg(test)]
+        if state.hold_test_flush {
+            return Ok(!state.connection.wants_write());
+        }
         Self::flush(&mut state.connection, &self.wire)?;
         Ok(!state.connection.wants_write())
     }

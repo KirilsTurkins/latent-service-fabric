@@ -21,6 +21,7 @@ def parser() -> argparse.ArgumentParser:
     new.add_argument("--name")
     new.add_argument('--runtime-profile', choices=('wasm32-unknown-unknown-panic-abort-v1', 'rust-standard-closed-v1', 'rust-standard-logging-v1', 'rust-standard-entropy-v1', 'rust-standard-logging-entropy-v1'),
                      help='Explicit owned standard runtime selection; installs no authority')
+    new.add_argument('--event-profile', help='Exact observed event idempotency profile for the transaction template; grants no authority')
     for operation in ('add', 'update', 'remove', 'lock'):
         native = commands.add_parser(operation, help='Explicit native Cargo declaration/lock authoring in a controlled fetch stage')
         native.add_argument('project', type=Path)
@@ -88,7 +89,8 @@ def main(argv: list[str] | None = None) -> int:
     authoring = args.command in {"add", "update", "remove", "lock", "resolve", "review-lock", "dependencies", "test", "watch"}
     try:
         if args.command == "new":
-            result = project.create(args.directory, args.template, args.name, runtime_profile=args.runtime_profile)
+            result = project.create(args.directory, args.template, args.name, runtime_profile=args.runtime_profile,
+                                    **({'event_profile': args.event_profile} if args.event_profile is not None else {}))
         elif authoring:
             from tools import rust_dependency_authoring as dependencies
             from tools.build_snapshot import canonical

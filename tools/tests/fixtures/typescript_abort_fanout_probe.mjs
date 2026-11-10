@@ -59,7 +59,7 @@ async function exercise(selected, fault) {
     return original.resolve.call(this, value);
   };
   try {
-    const result = await selected.run(28, '');
+    const result = await selected.run(32, '');
     assert.equal(held, 0, 'all admitted filler listeners must be removed on every exit');
     assert.equal(removed, fault === 'no-refusal' ? 128 : 3);
     return {result, checkpoint};
@@ -97,8 +97,8 @@ async function factoryContract(fault) {
     };
   }
   try {
-    if (fault === 'none') assert.equal(await api.run(29, ''), 'abort-fanout:default-reentry:first-wins');
-    else await assert.rejects(api.run(29, ''), /abort-fanout-default-constructor-not-restored/);
+    if (fault === 'none') assert.equal(await api.run(33, ''), 'abort-fanout:default-reentry:first-wins');
+    else await assert.rejects(api.run(33, ''), /abort-fanout-default-constructor-not-restored/);
     assert.equal(calls, 2);
     assert.equal(checkpoint, 1);
   } finally {
@@ -110,7 +110,7 @@ async function factoryContract(fault) {
 }
 
 try {
-  assert.equal(await api.run(27, ''), 'abort-fanout:9:ordered');
+  assert.equal(await api.run(31, ''), 'abort-fanout:9:ordered');
   const normal = await exercise(api, 'none');
   assert.deepEqual(normal, {result: success, checkpoint: 1});
   const diagnostics = [];
@@ -138,10 +138,10 @@ try {
   const old = (await import(pathToFileURL(`${output}/without-checkpoint-guard.mjs`))).api;
   assert.equal((await exercise(old, 'checkpoint-mutation')).result, success);
   const fresh = (await import(pathToFileURL(`${output}/main.mjs`).href+'?fresh')).api;
-  assert.equal(await fresh.run(27, ''), 'abort-fanout:9:ordered');
+  assert.equal(await fresh.run(31, ''), 'abort-fanout:9:ordered');
   // Node's primordial factory is not the selected native factory. Its lack of
   // constructor reentry must remain a failure, never a passing fallback.
-  await assert.rejects(api.run(29, ''), /abort-fanout-default-factory-not-reentered/);
+  await assert.rejects(api.run(33, ''), /abort-fanout-default-factory-not-reentered/);
   for (const fault of ['none', 'wrong-default', 'missing-restoration']) await factoryContract(fault);
   assert.equal(contacts, 0);
   console.log(JSON.stringify({scope: 'probe-assertions-only', diagnostics}));

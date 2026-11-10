@@ -90,12 +90,13 @@ pub(super) struct Fixture {
     catalog: Arc<DirectoryArtifactRepository>,
     routes: Arc<DirectoryDeploymentRepository>,
     installation: Arc<TransactionInstallation>,
+    pub owners: Option<Arc<TransactionAdmissionOwners>>,
     deployment: latent_manifest::DeploymentManifest,
-    publication: latent_artifacts::ReleaseUseEligibility,
+    pub(super) publication: latent_artifacts::ReleaseUseEligibility,
     namespaces: Arc<NamespaceCatalog>,
     recovery: latent_capabilities::namespace::RecoverySelection,
     native: latent_core::native_capacity::NativeCapacityOwner,
-    effects: EffectAuthorityOwner,
+    pub(super) effects: EffectAuthorityOwner,
     dispatcher: Option<DispatcherOwner>,
     cleanup: Option<ActivationCleanupOwner>,
     config: ProtectedStoreConfig,
@@ -429,6 +430,7 @@ impl Fixture {
             catalog,
             routes,
             installation,
+            owners: None,
             deployment,
             publication,
             namespaces,
@@ -466,6 +468,7 @@ impl Fixture {
             )
             .unwrap(),
         );
+        self.owners = Some(Arc::clone(&owners));
         let cleanup = ActivationCleanupOwner::start(
             8,
             Duration::from_millis(100),
@@ -740,12 +743,16 @@ impl Fixture {
         self.wire().await;
     }
     pub async fn deploy_compatible_revision(&mut self) -> latent_routing::ResolvedRevision {
+        let resolved = self.apply_compatible_revision().await;
+        self.restart().await;
+        resolved
+    }
+    pub(super) async fn apply_compatible_revision(&mut self) -> latent_routing::ResolvedRevision {
         // A transport ceiling is mutable and changes the actual deployment
         // revision while preserving the command's immutable business inputs.
         self.deployment.resources.cpu_fuel -= 1;
         self.routes.apply(self.deployment.clone()).await.unwrap();
-        let resolved = self
-            .routes
+        self.routes
             .pin()
             .unwrap()
             .resolve(
@@ -758,9 +765,7 @@ impl Fixture {
                 },
                 Some("rollout-probe"),
             )
-            .unwrap();
-        self.restart().await;
-        resolved
+            .unwrap()
     }
     pub async fn namespace_transition(
         &self,

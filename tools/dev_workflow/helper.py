@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import base64
+import copy
 import os
 from pathlib import Path
 import pwd
@@ -168,7 +169,7 @@ def deploy(root: Path, *, test_grants: list | None = None, deadline: float | Non
     deployment = decode(paths.read(source, artifacts["deployment"]))
     if test_grants is not None:
         require(root.name.startswith("test-") and (root / "test-profile.json").exists(), "disposable-test-grants-only")
-        deployment["spec"]["grants"] = test_grants
+        deployment["spec"]["grants"] = copy.deepcopy(test_grants)
     deployment["spec"]["publication"] = publication
     name = deployment["metadata"]["name"]
     observation = cli.call("deployment", "get", name, "--operation-snapshot")
@@ -181,13 +182,16 @@ def deploy(root: Path, *, test_grants: list | None = None, deadline: float | Non
     # Only the generation owned by the last successful switch may be replaced.
     last = state.load(root, "last-deployment.json") if (root / "last-deployment.json").exists() else None
     require(generation == (last["generation"] if last else "0"), "concurrent-deployment-change-no-overwrite")
+    # The retained file is a review copy. The operation and CLI consume the
+    # same frozen input even if that file or the caller's grants change.
+    deployment_input = encode(deployment)
     state.atomic(root, "selected-deployment.json", deployment)
     applied = journal.execute("deployment", {"publication": publication, "source": saved["snapshot"],
         "attempt": receipt["attempt"], "buildKey": receipt["buildKey"], "publicationInput": publication_input,
-        "componentDigest": receipt["artifacts"]["component"], "deployment": name,
+        "componentDigest": receipt["artifacts"]["component"], "deployment": name, "deploymentInput": digest(deployment_input),
         "expectedGeneration": generation, "expectedStateVersion": version}, lambda operation:
-        cli.control(descriptor["language"], "deployment", "apply", root / "selected-deployment.json", "--expected-generation", generation,
-                 "--operation-id", operation, "--expected-state-version", version))
+        cli.control(descriptor["language"], "deployment", "apply", "-", "--expected-generation", generation,
+                 "--operation-id", operation, "--expected-state-version", version, stdin=deployment_input))
     successful(applied)
     return state.load(root, "last-deployment.json")
 
@@ -320,11 +324,14 @@ def dispatch(request: dict) -> dict:
                 paths.read(root, "invoke-input.json", 1048576)
                 input_path.unlink()
             paths.write_new(input_path, raw)
+            # The retained file is a review copy. Freeze the complete target
+            # and send the same opaque bytes named in the original intent.
+            target = {name: str(arguments[name]) for name in ("service", "contract", "function", "mediaType")}
             cli, journal = client(root)
-            return journal.execute("invoke", {"inputSha256": digest(raw), "service": arguments["service"]},
-                lambda activation: cli.call("invoke", "--service", arguments["service"], "--contract", arguments["contract"],
-                    "--function", arguments["function"], "--media-type", arguments["mediaType"],
-                    "--input", input_path, "--activation-id", activation))
+            return journal.execute("invoke", {"inputSha256": digest(raw), **target},
+                lambda activation: cli.call("invoke", "--service", target["service"], "--contract", target["contract"],
+                    "--function", target["function"], "--media-type", target["mediaType"],
+                    "--input", "-", "--activation-id", activation, stdin=raw))
         require(False, "operation-not-yet-qualified")
 
 

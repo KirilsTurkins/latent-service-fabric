@@ -481,6 +481,7 @@ impl WasmtimeBackend {
         capability_observer: &mut Option<latent_capabilities::broker::CapabilitySessionObserver>,
         host_result: &mut latent_executor::HostResultDisposition,
         native_stack_observer: &mut Option<Arc<crate::native_stacks::StackContext>>,
+        runtime_retirement: &mut store::RuntimeRetirement,
     ) -> Result<GuestOutcome, PlatformError> {
         let cancellation = ownership.cancellation;
         let setup_started = Instant::now();
@@ -631,14 +632,17 @@ impl WasmtimeBackend {
             &request.activation.target.contract.0,
             &request.activation.target.function.0,
         );
-        let mut store = AccountedStore::new(self.invocation_store(
-            request,
-            &stop,
-            accounting,
-            capabilities,
-            ownership.transaction,
-            &runtime,
-        )?);
+        let mut store = AccountedStore::new(
+            self.invocation_store(
+                request,
+                &stop,
+                accounting,
+                capabilities,
+                ownership.transaction,
+                &runtime,
+            )?,
+            runtime_retirement,
+        );
         *native_stack_observer = store
             .data()
             .runtime
@@ -719,6 +723,7 @@ impl WasmtimeBackend {
             .as_mut()
             .and_then(|runtime| runtime.finalize().err())
             .or(codec_capacity_error);
+        store.runtime_finalized(lifecycle_error.is_none());
         let memory_exhausted = call_result
             .as_ref()
             .err()
@@ -1343,6 +1348,10 @@ async fn call_export(
                     "validated component function index is absent",
                 )),
             };
+            #[cfg(feature = "development-go-timer-overlap")]
+            if let Some(table) = &store.data().runtime {
+                table.development_export_finished();
+            }
             timing.guest_call_micros = elapsed_micros(guest_call_started);
             result
         }

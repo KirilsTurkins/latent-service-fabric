@@ -40,33 +40,54 @@ public abstract class AbstractExecutorService implements java.util.concurrent.Ex
     private <T> List<Future<T>> all(Collection<? extends Callable<T>> tasks, long nanos, boolean timed)
             throws InterruptedException, TimeoutException {
         Objects.requireNonNull(tasks);
-        if (Thread.interrupted()) throw new InterruptedException();
+        // Completed results and empty task sets need no interruptible wait.
         long started = System.nanoTime();
         List<Future<T>> futures = new ArrayList<>(tasks.size());
         boolean finished = false;
+        boolean timedOut = false;
+        int observed = 0;
         try {
-            // Materialize every result before executing: a null task does not
-            // accidentally turn a partially validated collection into work.
-            for (Callable<T> task : tasks) futures.add(newTaskFor(Objects.requireNonNull(task)));
-            for (Future<T> future : futures) {
-                if (timed && (nanos <= 0 || System.nanoTime() - started >= nanos)) return futures;
-                execute((Runnable)future);
+            if (!timed) {
+                // Untimed JDK invokeAll submits each result before constructing
+                // the next. Record it first in case execute accepts then throws.
+                for (Callable<T> task : tasks) {
+                    Future<T> future = newTaskFor(Objects.requireNonNull(task));
+                    futures.add(future);
+                    execute((Runnable)future);
+                }
+            } else {
+                // The timed form materializes its results before any submission.
+                for (Callable<T> task : tasks) futures.add(newTaskFor(Objects.requireNonNull(task)));
+                boolean first = true;
+                for (Future<T> future : futures) {
+                    // Test the original duration for the first submit; later
+                    // submits use the elapsed deadline after preparation.
+                    if (nanos <= 0 || !first && System.nanoTime() - started >= nanos) return futures;
+                    execute((Runnable)future);
+                    first = false;
+                }
             }
             for (Future<T> future : futures) {
-                try {
-                    if (timed) {
-                        long remaining = nanos - (System.nanoTime() - started);
-                        if (remaining <= 0) return futures;
-                        future.get(remaining, TimeUnit.NANOSECONDS);
-                    } else future.get();
-                } catch (ExecutionException | java.util.concurrent.CancellationException ignored) {
-                    // Every submitted task is awaited regardless of its result.
-                } catch (TimeoutException expired) { return futures; }
+                // Preserve custom RunnableFuture dispatch, as the JDK does:
+                // an already completed result does not need a get or a wait.
+                if (!future.isDone()) {
+                    try {
+                        if (timed) {
+                            long remaining = nanos - (System.nanoTime() - started);
+                            future.get(remaining, TimeUnit.NANOSECONDS);
+                        } else future.get();
+                    } catch (ExecutionException | java.util.concurrent.CancellationException ignored) {
+                        // Every submitted task is awaited regardless of its result.
+                    } catch (TimeoutException expired) { timedOut = true; return futures; }
+                }
+                observed++;
             }
             finished = true;
             return futures;
         } finally {
-            if (!finished) for (Future<T> future : futures) future.cancel(true);
+            // A timed-out wait cancels its remaining suffix. Other failures
+            // still cancel every submitted or not-yet-submitted result.
+            if (!finished) for (int i = timedOut ? observed : 0; i < futures.size(); i++) futures.get(i).cancel(true);
         }
     }
 
@@ -83,42 +104,58 @@ public abstract class AbstractExecutorService implements java.util.concurrent.Ex
             throws InterruptedException, ExecutionException, TimeoutException {
         Objects.requireNonNull(tasks);
         if (tasks.isEmpty()) throw new IllegalArgumentException();
-        if (Thread.interrupted()) throw new InterruptedException();
+        // A ready completion can be consumed without an interruptible wait.
         long started = System.nanoTime();
-        Completion<T> completion = new Completion<>(tasks.size());
+        Completion<T> completion = new Completion<>();
         ArrayList<Future<T>> futures = new ArrayList<>(tasks.size());
+        var remaining = tasks.iterator();
+        int active = 0;
         try {
-            for (Callable<T> task : tasks) {
-                Objects.requireNonNull(task);
-                FutureTask<T> future = new FutureTask<>(task) {
-                    @Override protected void done() {
-                        synchronized (completion) { completion.ready.addLast(this); completion.notifyAll(); }
-                    }
-                };
-                futures.add(future);
-                execute(future);
-            }
             ExecutionException last = null;
-            while (completion.remaining != 0) {
+            while (true) {
                 Future<T> future;
-                synchronized (completion) {
-                    if (completion.ready.isEmpty()) {
+                synchronized (completion) { future = completion.ready.pollFirst(); }
+                if (future == null && remaining.hasNext()) {
+                    Callable<T> task = Objects.requireNonNull(remaining.next());
+                    FutureTask<T> next = new FutureTask<>(task) {
+                        @Override protected void done() {
+                            synchronized (completion) { completion.ready.addLast(this); completion.notifyAll(); }
+                        }
+                    };
+                    // An executor may accept the task and then throw, so retain
+                    // its cancellation obligation before entering execute.
+                    futures.add(next);
+                    execute(next);
+                    active++;
+                    continue;
+                }
+                if (future == null) {
+                    if (active == 0) break;
+                    synchronized (completion) {
                         while (completion.ready.isEmpty()) {
                             if (!timed) completion.wait();
                             else {
+                                // A timed queue wait observes interruption even
+                                // when its deadline has already elapsed.
+                                if (Thread.interrupted()) throw new InterruptedException();
                                 if (nanos <= 0) throw new TimeoutException();
-                                long remaining = nanos - (System.nanoTime() - started);
-                                if (remaining <= 0) throw new TimeoutException();
-                                completion.wait(remaining / 1_000_000, (int)(remaining % 1_000_000));
+                                long wait = nanos - (System.nanoTime() - started);
+                                if (wait <= 0) throw new TimeoutException();
+                                completion.wait(wait / 1_000_000, (int)(wait % 1_000_000));
                             }
                         }
+                        future = completion.ready.removeFirst();
                     }
-                    future = completion.ready.removeFirst();
-                    completion.remaining--;
                 }
-                try { return future.get(); }
-                catch (ExecutionException failed) { last = failed; }
-                catch (java.util.concurrent.CancellationException cancelled) { last = new ExecutionException(cancelled); }
+                active--;
+                T value;
+                try { value = future.get(); }
+                catch (ExecutionException failed) { last = failed; continue; }
+                catch (java.util.concurrent.CancellationException cancelled) { last = new ExecutionException(cancelled); continue; }
+                // Preserve the public null-element check without submitting more
+                // work once an already-completed task supplied the result.
+                while (remaining.hasNext()) Objects.requireNonNull(remaining.next());
+                return value;
             }
             throw last == null ? new ExecutionException(new IllegalStateException()) : last;
         } finally { for (Future<T> future : futures) future.cancel(true); }
@@ -126,7 +163,5 @@ public abstract class AbstractExecutorService implements java.util.concurrent.Ex
 
     private static final class Completion<T> {
         final ArrayDeque<Future<T>> ready = new ArrayDeque<>();
-        int remaining;
-        Completion(int count) { remaining = count; }
     }
 }

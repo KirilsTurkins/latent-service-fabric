@@ -9,6 +9,7 @@ import java.util.Objects;
 /** One managed logical worker and an admitted finite queue per ordinary timer. */
 public class Timer implements Activation.ManagedPool {
     private static int serial;
+    private static final Object serialLock = new Object();
     private final Object lock = new Object();
     private final ArrayList<Entry> queue = new ArrayList<>();
     private final Thread worker;
@@ -61,7 +62,11 @@ public class Timer implements Activation.ManagedPool {
         void clear() { timer = null; }
     }
 
-    private static synchronized String nextName() { return "Timer-" + serial++; }
+    private static String nextName() {
+        int value;
+        synchronized (serialLock) { value = serial++; }
+        return "Timer-" + value;
+    }
     public Timer() { this(nextName(), false); }
     public Timer(boolean daemon) { this(nextName(), daemon); }
     public Timer(String name) { this(name, false); }
@@ -123,24 +128,32 @@ public class Timer implements Activation.ManagedPool {
 
     public void schedule(TimerTask task, long delay) { scheduleAt(task, after(delay), 0); }
     public void schedule(TimerTask task, Date time) { scheduleAt(task, Objects.requireNonNull(time).getTime(), 0); }
-    public void schedule(TimerTask task, long delay, long period) { scheduleAt(task, after(delay), period(period, false)); }
+    public void schedule(TimerTask task, long delay, long period) {
+        if (delay < 0) throw new IllegalArgumentException("negative delay");
+        long selectedPeriod = period(period, false);
+        scheduleAt(task, after(delay), selectedPeriod);
+    }
     public void schedule(TimerTask task, Date time, long period) {
-        scheduleAt(task, Objects.requireNonNull(time).getTime(), period(period, false));
+        long selectedPeriod = period(period, false);
+        scheduleAt(task, Objects.requireNonNull(time).getTime(), selectedPeriod);
     }
     public void scheduleAtFixedRate(TimerTask task, long delay, long period) {
-        scheduleAt(task, after(delay), period(period, true));
+        if (delay < 0) throw new IllegalArgumentException("negative delay");
+        long selectedPeriod = period(period, true);
+        scheduleAt(task, after(delay), selectedPeriod);
     }
     public void scheduleAtFixedRate(TimerTask task, Date time, long period) {
-        scheduleAt(task, Objects.requireNonNull(time).getTime(), period(period, true));
+        long selectedPeriod = period(period, true);
+        scheduleAt(task, Objects.requireNonNull(time).getTime(), selectedPeriod);
     }
 
     private void scheduleAt(TimerTask task, long time, long period) {
-        Objects.requireNonNull(task);
         if (time < 0) throw new IllegalArgumentException("negative timer deadline");
         synchronized (lock) {
             if (cancelled || retiring || Activation.closing() && !Activation.acceptedContinuation())
                 throw new IllegalStateException("activation-timer-closed");
-            synchronized (task) {
+            Objects.requireNonNull(task);
+            synchronized (task.stateLock) {
                 if (task.state != TimerTask.VIRGIN) throw new IllegalStateException("timer task already scheduled or cancelled");
                 Activation.Lease queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
                 Entry entry = null;
@@ -178,7 +191,7 @@ public class Timer implements Activation.ManagedPool {
     private void clearQueue() {
         while (!queue.isEmpty()) {
             Entry entry = queue.remove(queue.size() - 1);
-            synchronized (entry.task) { entry.task.timer = null; }
+            synchronized (entry.task.stateLock) { entry.task.timer = null; }
             entry.withdraw(); pendingWork--;
         }
     }
@@ -193,10 +206,15 @@ public class Timer implements Activation.ManagedPool {
                         try { lock.wait(); } catch (InterruptedException wake) { }
                     }
                     if (cancelled || retiring) return;
+                    // Cancellation may target a later entry behind a long-lived
+                    // recurring task. Reclaim those entries on this worker turn
+                    // instead of keeping their owners until their deadlines.
+                    purgeCancelled();
+                    if (queue.isEmpty()) continue;
                     int index = first();
                     entry = queue.get(index);
                     long remaining;
-                    synchronized (entry.task) {
+                    synchronized (entry.task.stateLock) {
                         if (entry.task.state == TimerTask.CANCELLED) {
                             entry.task.timer = null;
                             queue.remove(index);
@@ -227,7 +245,11 @@ public class Timer implements Activation.ManagedPool {
                 }
                 Throwable callbackFailure = null;
                 try { entry.task.run(); }
-                catch (Throwable error) { callbackFailure = error; throw error; }
+                catch (Throwable error) {
+                    // The reference Timer worker ignores an InterruptedException
+                    // from either wait or the task body, then processes its queue.
+                    if (!(error instanceof InterruptedException)) { callbackFailure = error; throw error; }
+                }
                 finally {
                     synchronized (lock) {
                         try { entry.returned(); pendingWork--; }
@@ -267,19 +289,25 @@ public class Timer implements Activation.ManagedPool {
 
     void taskCancelled() { synchronized (lock) { lock.notifyAll(); } }
 
+    // Caller holds the Timer lock before acquiring each task's state lock.
+    private int purgeCancelled() {
+        int removed = 0;
+        for (int i = queue.size() - 1; i >= 0; i--) {
+            Entry entry = queue.get(i);
+            synchronized (entry.task.stateLock) {
+                if (entry.task.state != TimerTask.CANCELLED) continue;
+                entry.task.timer = null;
+            }
+            queue.remove(i);
+            entry.withdraw(); pendingWork--;
+            removed++;
+        }
+        return removed;
+    }
+
     public int purge() {
         synchronized (lock) {
-            int removed = 0;
-            for (int i = queue.size() - 1; i >= 0; i--) {
-                Entry entry = queue.get(i);
-                synchronized (entry.task) {
-                    if (entry.task.state != TimerTask.CANCELLED) continue;
-                    entry.task.timer = null;
-                }
-                queue.remove(i);
-                entry.withdraw(); pendingWork--;
-                removed++;
-            }
+            int removed = purgeCancelled();
             if (removed != 0) lock.notifyAll();
             return removed;
         }
