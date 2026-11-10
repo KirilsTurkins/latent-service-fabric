@@ -48,6 +48,28 @@ def ticker_witness():
             b'LSF-GO-NODE-STOP-TIMER-V1|pending|root-close|5|1|0|0\n')
 
 
+def wall_output():
+    row = dict(case='pending-timer-wall-jumps', outcome='success', wallOffsetsMillis=[60000, -60000],
+               monotonicBefore=0, monotonicAfter=5, sameWaitRepolls=2, liveStores=0, liveInstances=0,
+               reservations=0, reservedFuel=0, reservedMemory=0, pendingProviderWaits=0)
+    return ('\n'.join([f'test {owner.WALL_CLOCK_CASE} ... ok',
+                       'GO_WALL_CLOCK_CASE ' + json.dumps(row),
+                       'test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 39 filtered out;']) + '\n').encode()
+
+
+def wall_witness():
+    return (b'LSF-GO-NODE-STOP-TIMER-V1|pending|start-accepted|1|1|0|1\n'
+            b'LSF-GO-NODE-STOP-TIMER-V1|pending|next-entered|2|1|1|1\n'
+            b'LSF-GO-ZERO-CLOCK-V1|wait-pending|0|5\n'
+            b'LSF-GO-WALL-CLOCK-V1|jump|1|0\n'
+            b'LSF-GO-WALL-CLOCK-V1|repoll|1|0|5\n'
+            b'LSF-GO-WALL-CLOCK-V1|jump|2|0\n'
+            b'LSF-GO-WALL-CLOCK-V1|repoll|2|0|5\n'
+            b'LSF-GO-WALL-CLOCK-V1|restore|0\n'
+            b'LSF-GO-WALL-CLOCK-V1|advance|0|5\n'
+            b'LSF-GO-NODE-STOP-TIMER-V1|pending|root-close|3|1|0|0\n')
+
+
 class ZeroClockControls(unittest.TestCase):
     def test_only_exact_v7_campaign_is_selected(self):
         path = Path('fixture')
@@ -158,6 +180,43 @@ class ZeroClockControls(unittest.TestCase):
         with self.assertRaises(ValueError):
             owner.ticker_clock_observations(ticker_output(), ticker_witness(), 39)
 
+
+    def test_wall_campaign_reuses_the_source_bound_zero_clock_component(self):
+        path = Path('fixture')
+        self.assertEqual(owner.campaign('wall-clock-v7', path, None),
+            {'case': owner.WALL_CLOCK_CASE, 'fixture': 'zero-clock',
+             'variable': 'LSF_GO_V7_ZERO_CLOCK_FIXTURE',
+             'inputs': [(path, 'go-component-activation-v7')]})
+        with self.assertRaises(ValueError):
+            owner.campaign('wall-clock-v7', path, Path('unexpected'))
+
+    def test_wall_witness_requires_two_ordered_repolls_of_one_wait(self):
+        observed = owner.wall_clock_observations(wall_output(), wall_witness(), 39)
+        self.assertEqual(observed['cases'][0]['wallOffsetsMillis'], [60000, -60000])
+        lines = wall_witness().splitlines(keepends=True)
+        bad = [b''.join(lines[:4] + lines[5:]),
+               b''.join(lines[:5] + [lines[5], lines[5]] + lines[6:]),
+               b''.join(lines[:3] + [lines[4], lines[3]] + lines[5:]),
+               wall_witness().replace(b'repoll|2|0|5', b'repoll|2|1|5'),
+               wall_witness().replace(b'advance|0|5', b'advance|0|4'),
+               wall_witness().replace(b'next-entered|2|1|1|1', b'next-entered|2|1|0|1'),
+               wall_witness().replace(b'root-close|3|1|0|0', b'root-close|3|1|1|0')]
+        for value in bad:
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                owner.wall_clock_observations(wall_output(), value, 39)
+
+    def test_wall_rejects_duplicate_foreign_or_unsettled_results(self):
+        bad = [wall_output().replace(owner.WALL_CLOCK_CASE.encode(), b'foreign'),
+               wall_output().replace(b'"sameWaitRepolls": 2', b'"sameWaitRepolls": 1'),
+               wall_output().replace(b'"sameWaitRepolls": 2', b'"sameWaitRepolls": 2, "sameWaitRepolls": 2'),
+               wall_output().replace(b'"liveStores": 0', b'"liveStores": 1'),
+               wall_output().replace(b'"monotonicBefore": 0', b'"monotonicBefore": false'),
+               wall_output() + wall_output()]
+        for value in bad:
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                owner.wall_clock_observations(value, wall_witness(), 39)
+        with self.assertRaises(ValueError):
+            owner.wall_clock_observations(wall_output(), wall_witness(), 40)
 
     def test_native_ticker_reference_is_strictly_parsed_and_source_bound(self):
         def encoded(rows):
