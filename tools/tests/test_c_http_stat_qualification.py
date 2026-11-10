@@ -1,4 +1,5 @@
 """Local qualification-harness controls; no guest or provider is executed."""
+from contextlib import ExitStack, contextmanager
 import socket
 import tempfile
 import time
@@ -299,6 +300,145 @@ class StatQualificationControls(unittest.TestCase):
             change['requests'][0]['method'] = 'HEAD'
             with self.assertRaisesRegex(WorkflowError, 'c-stat-one-authenticated-head-no-replay'):
                 stat.cell(client, object(), {}, peer, second, 'range')
+
+    def test_followup_controls_and_single_invocation_are_bounded_before_dispatch(self):
+        attempted = []
+        def control(client, *args, **kwargs):
+            client.control_attempts += 1
+            attempted.append(args)
+            return 'called'
+        with tempfile.TemporaryDirectory() as tmp, patch.object(stat.RecordingClient, '_control_call', control):
+            root = Path(tmp)
+            first = stat.FollowupClient('latent', root, Mock(), time.monotonic() + 60,
+                                        primary_attempts=382, evidence=root / 'first')
+            self.assertEqual(first._control_call('node', 'get'), 'called')
+            first.reserve_invocation()
+            self.assertEqual(first._control_call('node', 'get'), 'called')
+            with self.assertRaisesRegex(WorkflowError, 'c-stat-followup-control-bound'):
+                first._control_call('node', 'get')
+            with self.assertRaisesRegex(WorkflowError, 'c-stat-followup-invocation-bound'):
+                first.reserve_invocation()
+            self.assertEqual(len(attempted), 2)
+            second = stat.FollowupClient('latent', root, Mock(), time.monotonic() + 60,
+                                         primary_attempts=0, evidence=root / 'second')
+            second.control_attempts = 127
+            second.reserve_invocation()
+            self.assertEqual(second._control_call('node', 'get'), 'called')
+            with self.assertRaisesRegex(WorkflowError, 'c-stat-followup-control-bound'):
+                second._control_call('node', 'get')
+            self.assertEqual(len(attempted), 3)
+            with self.assertRaisesRegex(WorkflowError, 'c-stat-followup-primary-control-bound'):
+                stat.FollowupClient('latent', root, Mock(), time.monotonic() + 60,
+                                    primary_attempts=384, evidence=root / 'third')
+
+    def test_missing_provider_omits_only_exact_http_installation_and_binding(self):
+        runtimes = [{'contract': capability, 'name': 'runtime'} for capability in stat.owner.PROVIDERS]
+        http = {'contract': stat.owner.HTTP, 'name': 'http-standard'}
+        settings = {'providers': {'httpStreaming': {'sentinel': 1},
+                                  'bindings': [*runtimes, http], 'unrelated': {'retained': True}}}
+        stat.omit_http_provider(settings)
+        self.assertNotIn('httpStreaming', settings['providers'])
+        self.assertEqual(settings['providers']['bindings'], runtimes)
+        self.assertEqual(settings['providers']['unrelated'], {'retained': True})
+        malformed = {'providers': {'httpStreaming': {}, 'bindings': [*runtimes, http, dict(http)]}}
+        with self.assertRaisesRegex(WorkflowError, 'c-stat-exact-http-provider-to-omit'):
+            stat.omit_http_provider(malformed)
+        self.assertIn('httpStreaming', malformed['providers'])
+        self.assertEqual(len(malformed['providers']['bindings']), len(runtimes) + 2)
+
+    def test_missing_provider_orchestrates_original_component_and_runtime_only(self):
+        runtimes = [{'capability': capability, 'policy': 'runtime'} for capability in stat.owner.PROVIDERS]
+        consumed = {'cpuFuel': '0', 'peakMemoryBytes': '0', 'outboundRequests': '0'}
+        row = {'exitCode': 4, 'processReaped': True, 'decoded': None,
+               'response': {'outcomeKnown': True, 'error': {'code': 'incompatible-contract'},
+                            'data': {'terminalState': 'rejected', 'consumption': consumed}}}
+        ready = {'state': 'ready', 'acceptedConnections': 0, 'startedRequests': 0, 'requests': []}
+        stopped = {**ready, 'state': 'stopped'}
+        peer = Mock(); peer.origin.return_value = {'scheme': 'http', 'host': '127.0.0.1', 'port': 1234}
+        peer.url.return_value = 'http://127.0.0.1:1234/conformance/json'
+        peer.observation.return_value = ready; peer.close.return_value = stopped
+        node = Mock(); node.startup_record = {'providers': [{'capability': cap} for cap in stat.owner.PROVIDERS]}
+        process = SimpleNamespace(owner=SimpleNamespace(exited=lambda: True))
+        cancellation = SimpleNamespace(check=Mock())
+        @contextmanager
+        def cancellation_scope():
+            yield cancellation
+        with tempfile.TemporaryDirectory() as tmp, ExitStack() as patches:
+            base = Path(tmp); artifact = base / 'artifact'; artifact.mkdir()
+            (artifact / 'capsule.json').write_text('{}')
+            (artifact / 'component.wasm').write_bytes(b'original-component')
+            binary = base / 'latentd'; binary.write_bytes(b'original-node')
+            digest = stat.file_identity(artifact / 'component.wasm')['sha256']
+            client = Mock(); client.deadline = time.monotonic() + 100; client.calls = 1
+            client.control_attempts = 1; client.invocation_attempts = 1
+            def client_call(*args, **kwargs):
+                if args[:2] == ('release', 'publish-package'):
+                    return {'outcomeKnown': True, 'data': {'release': {'digest': digest},
+                            'operation': {'publication': {'id': 'same-publication'}}}}
+                if args[:2] == ('capability', 'list'):
+                    return {'data': {'nodeUsage': {'unavailable': ['http'], 'counters': {}}}}
+                self.fail('unexpected client call')
+            client.call.side_effect = client_call
+            def configure(directory, signed, port, *, language):
+                return directory / 'node.json', {'providers': {'bindings': []}}
+            def configure_http(settings, capsule, current_peer, credential):
+                settings['providers']['httpStreaming'] = {}
+                settings['providers']['bindings'] = ([{'contract': cap} for cap in stat.owner.PROVIDERS]
+                                                      + [{'contract': stat.owner.HTTP}])
+            target = {'name': 'route', 'service': 'service', 'publication': 'same-publication',
+                      'generation': '1', 'grants': []}
+            def deploy(client, source, publication, *, generation='0', grants=None):
+                return {**target, 'generation': str(int(generation) + 1),
+                        'grants': [] if grants is None else list(grants)}
+            pairs = [(stat, 'owned_cancellation', cancellation_scope), (stat, 'RangePeer', Mock(return_value=peer)),
+                     (stat, 'FollowupClient', Mock(return_value=client)), (stat, 'configure_base', configure),
+                     (stat.owner, 'configure_http', configure_http), (stat, 'connect', Mock(return_value=node)),
+                     (stat, 'Probe', Mock()), (stat, 'deploy', Mock(side_effect=deploy)),
+                     (stat.owner, 'install', Mock(return_value=runtimes)),
+                     (stat.owner, 'start_http_call', Mock(return_value=process)),
+                     (stat.owner, 'finish_call', Mock(return_value=row)), (stat.owner, 'close_call', Mock()),
+                     (stat, 'validate', Mock()), (stat, 'require_zero_contact', Mock()),
+                     (stat, 'sample', Mock(return_value={'physicalOwnersAfter': 0})),
+                     (stat, 'delete_all', Mock()), (stat, 'stop', Mock()),
+                     (stat, 'stopped_record', Mock(return_value={'reaped': True, 'record': {'clean': True}}))]
+            for obj, name, replacement in pairs:
+                patches.enter_context(patch.object(obj, name, replacement))
+            result = stat.missing_provider(artifact, base / 'signed',
+                {'latent': base / 'latent', 'latentd': binary}, base / 'result', time.monotonic() + 100, 200)
+            self.assertEqual(result['status'], 'passed')
+            self.assertFalse(result['unavailableCountersCountedAsZero'])
+            self.assertEqual(result['providerObservation']['unavailable'], ['http'])
+            self.assertEqual(stat.owner.start_http_call.call_args.args[2],
+                             'normal\nhttp://127.0.0.1:1234/conformance/json')
+            self.assertEqual(stat.owner.start_http_call.call_args.args[1]['grants'], runtimes)
+            self.assertEqual(stat.require_zero_contact.call_count, 2)
+            client.reserve_invocation.assert_called_once()
+            self.assertIn('idleObservation', result)
+            self.assertNotIn('physicalRetirement', result)
+            self.assertEqual(result['cliCalls'], 1)
+            self.assertEqual(result['controlAttempts'], 1)
+            self.assertEqual(result['invocationAttempts'], 1)
+            self.assertTrue((base / 'result' / 'qualified.json').is_file())
+
+    def test_missing_provider_requires_pre_guest_rejection_and_zero_consumption(self):
+        row = {'exitCode': 4, 'processReaped': True, 'decoded': None,
+               'response': {'outcomeKnown': True, 'error': {'code': 'incompatible-contract'},
+                            'data': {'terminalState': 'rejected', 'consumption':
+                                     {'cpuFuel': '0', 'peakMemoryBytes': '0', 'outboundRequests': '0',
+                                      'wallTimeMicros': '15'}}}}
+        stat.require_missing_provider_result(row)
+        for key, value in (('cpuFuel', '1'), ('peakMemoryBytes', '1'), ('outboundRequests', '1')):
+            row['response']['data']['consumption'][key] = value
+            with self.subTest(key=key), self.assertRaisesRegex(WorkflowError, 'c-stat-missing-provider-rejected-before-guest'):
+                stat.require_missing_provider_result(row)
+            row['response']['data']['consumption'][key] = '0'
+        row['response']['error']['code'] = 'permission-denied'
+        with self.assertRaisesRegex(WorkflowError, 'c-stat-missing-provider-rejected-before-guest'):
+            stat.require_missing_provider_result(row)
+        row['response']['error']['code'] = 'incompatible-contract'
+        row['decoded'] = [{'err': 'something'}]
+        with self.assertRaisesRegex(WorkflowError, 'c-stat-missing-provider-rejected-before-guest'):
+            stat.require_missing_provider_result(row)
 
     def test_missing_http_grant_is_absent_for_first_cell_then_original_grants_return(self):
         grants = [{'capability': capability, 'policy': 'original-runtime'}
