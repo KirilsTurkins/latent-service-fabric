@@ -50,11 +50,14 @@ def compiler_defines(profile, defines):
     """The selected GNU-cookie port owns its declaration feature selection."""
     if profile == STREAM_PROFILE:
         reserved = {'LSF_C_STREAM_NETWORK', 'LSF_C_STANDARD_STREAMS_H', 'POLLPRI', 'POLLRDBAND',
-                    'POLLWRBAND', 'SO_KEEPALIVE', 'SOL_IP', *STREAM_SYMBOLS,
+                    'POLLWRBAND', 'SO_KEEPALIVE', 'SOL_IP', 'abort', '__lsf_c_abort', *STREAM_SYMBOLS,
                     *('__lsf_c_net_' + name for name in STREAM_SYMBOLS)}
         if any(value.split('=', 1)[0] in reserved for value in defines):
             raise ValueError('c-stream-compiler-owned-symbol')
-        return (*defines, 'LSF_C_STREAM_NETWORK=1')
+        # The selected WASI libc may pull its own abort together with another
+        # needed symbol. Keep the SDK's source-level trap distinct, as in the
+        # existing HTTP source profile; both paths remain non-returning traps.
+        return (*defines, 'LSF_C_STREAM_NETWORK=1', 'abort=__lsf_c_abort')
     if profile in FETCH_PROFILES:
         reserved = {*FETCH_CLOSED_SYMBOLS, *('__lsf_c_' + name for name in FETCH_CLOSED_SYMBOLS)}
         if any(value.split('=', 1)[0] in reserved for value in defines):

@@ -354,7 +354,9 @@ class StandardFacilities(unittest.TestCase):
             self.assertFalse(any(item.startswith('-Wl,--export=__imported_wasi_') for item in command))
             self.assertFalse(any('allow-multiple-definition' in item or '--wrap' in item for item in command))
             for value in closed_defines:
-                self.assertEqual('-D' + value in command, selected in facilities.FETCH_PROFILES)
+                expected = (selected in facilities.FETCH_PROFILES or
+                            (selected == facilities.STREAM_PROFILE and value == 'abort=__lsf_c_abort'))
+                self.assertEqual('-D' + value in command, expected)
 
         # Run the normal owner's actual source/WIT selection for every profile;
         # capture at Compiler.compile before any compiler or external tool runs.

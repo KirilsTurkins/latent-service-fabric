@@ -48,9 +48,9 @@ class CStreamProfile(unittest.TestCase):
     def test_compiler_owns_the_selected_symbols_and_refuses_unthreaded_before_generation(self):
         facilities = standard_facilities
         selected = facilities.compiler_defines(facilities.STREAM_PROFILE, ('CUSTOM=1',))
-        self.assertEqual(selected, ('CUSTOM=1', 'LSF_C_STREAM_NETWORK=1'))
+        self.assertEqual(selected, ('CUSTOM=1', 'LSF_C_STREAM_NETWORK=1', 'abort=__lsf_c_abort'))
         for symbol in (*facilities.STREAM_SYMBOLS, 'LSF_C_STREAM_NETWORK', 'POLLPRI',
-                       '__lsf_c_net_send', 'LSF_C_STANDARD_STREAMS_H'):
+                       '__lsf_c_net_send', 'LSF_C_STANDARD_STREAMS_H', 'abort', '__lsf_c_abort'):
             with self.subTest(symbol=symbol), self.assertRaisesRegex(ValueError, 'compiler-owned-symbol'):
                 facilities.compiler_defines(facilities.STREAM_PROFILE, (symbol + '=1',))
         compiler = Compiler.__new__(Compiler)
