@@ -279,6 +279,87 @@ fn physical_inventory_rejects_another_engine_with_identical_head() {
 }
 
 #[test]
+fn closure_cannot_name_an_unplanned_owner() {
+    let root = tempfile::tempdir().unwrap();
+    let database = store(root.path(), true);
+    let result = reference(PayloadOwnerKind::Result, 11);
+    let effect = reference(PayloadOwnerKind::Effect, 12);
+    let view = database.snapshot().unwrap();
+    let mut plan =
+        PreparedPayloadReferences::prepare(&view, &[(None, Some(result.clone()))]).unwrap();
+    let dangling = PayloadLinks {
+        anchor: result.owner.clone(),
+        references: vec![result.clone(), effect],
+    };
+    assert_eq!(
+        plan.replace_links(&view, None, Some(&dangling)),
+        Err(StoreError::Corrupt)
+    );
+    let valid = PayloadLinks {
+        anchor: result.owner.clone(),
+        references: vec![result],
+    };
+    plan.replace_links(&view, None, Some(&valid)).unwrap();
+    let mut batch = AtomicBatch::default();
+    plan.append_to(&mut batch).unwrap();
+    drop(view);
+    database.apply(batch).unwrap();
+    let view = database.snapshot().unwrap();
+    valid.verify_rows(&view).unwrap();
+    let unrelated = reference(PayloadOwnerKind::State, 13);
+    let mut plan = PreparedPayloadReferences::prepare(&view, &[(None, Some(unrelated))]).unwrap();
+    assert_eq!(
+        plan.replace_links(&view, Some(&valid), None),
+        Err(StoreError::Conflict)
+    );
+}
+
+#[test]
+fn closure_retained_owner_is_fenced_until_commit() {
+    let root = tempfile::tempdir().unwrap();
+    let database = store(root.path(), true);
+    let result = reference(PayloadOwnerKind::Result, 11);
+    let effect = reference(PayloadOwnerKind::Effect, 12);
+    let both = PayloadLinks {
+        anchor: result.owner.clone(),
+        references: vec![result.clone(), effect.clone()],
+    };
+    let remaining = PayloadLinks {
+        anchor: result.owner.clone(),
+        references: vec![effect.clone()],
+    };
+    let view = database.snapshot().unwrap();
+    let mut initial = PreparedPayloadReferences::prepare(
+        &view,
+        &[(None, Some(result.clone())), (None, Some(effect.clone()))],
+    )
+    .unwrap();
+    initial.replace_links(&view, None, Some(&both)).unwrap();
+    let mut batch = AtomicBatch::default();
+    initial.append_to(&mut batch).unwrap();
+    drop(view);
+    database.apply(batch).unwrap();
+
+    let view = database.snapshot().unwrap();
+    let mut plan = PreparedPayloadReferences::prepare(&view, &[(Some(result), None)]).unwrap();
+    plan.replace_links(&view, Some(&both), Some(&remaining))
+        .unwrap();
+    let mut batch = AtomicBatch::default();
+    plan.append_to(&mut batch).unwrap();
+    drop(view);
+    database
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: effect.owner_key().unwrap(),
+                value: None,
+            }],
+        })
+        .unwrap();
+    assert_eq!(database.apply(batch), Err(StoreError::Conflict));
+}
+
+#[test]
 fn physical_count_and_attempt_closure_keep_effect_after_result_expiry() {
     let root = tempfile::tempdir().unwrap();
     let database = store(root.path(), true);

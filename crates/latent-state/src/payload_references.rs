@@ -378,14 +378,82 @@ impl PreparedPayloadReferences {
         if view.get_bounded(&key, MAX_LINK_BYTES)? != old {
             return Err(StoreError::Conflict);
         }
+        if let Some(before) = before {
+            before.verify_rows(view)?;
+            for reference in &before.references {
+                if after.is_none_or(|links| {
+                    !links
+                        .references
+                        .iter()
+                        .any(|row| row.owner == reference.owner)
+                }) {
+                    let owner = reference.owner_key()?;
+                    if !self
+                        .batch
+                        .mutations
+                        .iter()
+                        .any(|row| row.key == owner && row.value.is_none())
+                    {
+                        return Err(StoreError::Conflict);
+                    }
+                }
+            }
+        }
+        // The final closure must name the exact reciprocal rows that this
+        // batch will leave behind. Unchanged rows need CAS guards as well:
+        // another writer must not remove them between this view and commit.
+        let mut guards = Vec::new();
+        if let Some(after) = after {
+            for reference in &after.references {
+                let bytes = reference.encode()?;
+                for row_key in [
+                    reference.owner_key()?,
+                    reference.object_key()?,
+                    reference.physical_key()?,
+                ] {
+                    if let Some(row) = self.batch.mutations.iter().find(|row| row.key == row_key) {
+                        if row.value.as_deref() != Some(bytes.as_slice()) {
+                            return Err(StoreError::Conflict);
+                        }
+                    } else if let Some(row) = self
+                        .batch
+                        .expectations
+                        .iter()
+                        .find(|row| row.key == row_key)
+                    {
+                        if row.value.as_deref() != Some(bytes.as_slice()) {
+                            return Err(StoreError::Conflict);
+                        }
+                    } else {
+                        if view.get_bounded(&row_key, MAX_REFERENCE_BYTES)?.as_deref()
+                            != Some(bytes.as_slice())
+                        {
+                            return Err(StoreError::Corrupt);
+                        }
+                        guards.push(ExpectedRow {
+                            key: row_key,
+                            value: Some(bytes.clone()),
+                        });
+                    }
+                }
+            }
+        }
+        let mut encoded_bytes = self.encoded_bytes;
+        for guard in &guards {
+            encoded_bytes = encoded_bytes
+                .checked_add(guard.key.key.len())
+                .and_then(|size| size.checked_add(guard.value.as_ref().map_or(0, Vec::len)))
+                .ok_or(StoreError::Capacity)?;
+        }
         for bytes in [&old, &new].into_iter().flatten() {
-            self.encoded_bytes = self
-                .encoded_bytes
+            encoded_bytes = encoded_bytes
                 .checked_add(key.key.len())
                 .and_then(|size| size.checked_add(bytes.len()))
                 .ok_or(StoreError::Capacity)?;
         }
         append(&mut self.batch, key, old, new)?;
+        self.batch.expectations.extend(guards);
+        self.encoded_bytes = encoded_bytes;
         Ok(())
     }
 
