@@ -34,6 +34,7 @@ public final class Activation {
     private static long queueClock;
     private static int pendingTimerStops;
     private static int pendingTimerStarts;
+    private static int pendingRegistrations;
 
     private Activation() { }
 
@@ -60,12 +61,37 @@ public final class Activation {
 
     private static Bindings.LatentRuntimeActivationToken register(Bindings.LatentRuntimeActivationOwnerKind kind) {
         requireHealthyAdmission();
-        Work parent = lookup(Thread.currentThread());
-        var token = Bindings.LatentRuntimeActivation.register(
-            kind,
-            parent == null || parent.complete ? Option.none() : Option.some(parent.token));
-        if (token.isError()) throw new IllegalStateException("activation-runtime-register-" + token.error());
-        return token.value();
+        // The host publishes an owner before the result is lifted into Java.
+        // Keep completion fenced until a definite refusal or a usable token has
+        // returned to its existing caller's custody.
+        if (pendingRegistrations == Integer.MAX_VALUE) {
+            fenceUncertainCompletion();
+            throw new IllegalStateException("activation-runtime-register-capacity");
+        }
+        pendingRegistrations++;
+        boolean hostUncertain = false;
+        try {
+            Work parent = lookup(Thread.currentThread());
+            var continuation = parent == null || parent.complete ? Option.<Bindings.LatentRuntimeActivationToken>none()
+                : Option.some(parent.token);
+            requireHealthyAdmission();
+            hostUncertain = true;
+            var registered = Bindings.LatentRuntimeActivation.register(kind, continuation);
+            if (registered.isError()) {
+                // A typed refusal precedes host publication and is retryable.
+                hostUncertain = false;
+                throw new IllegalStateException("activation-runtime-register-" + registered.error());
+            }
+            var token = registered.value();
+            if (token == null) throw new IllegalStateException("activation-runtime-register-token");
+            requireHealthyAdmission();
+            pendingRegistrations--;
+            return token;
+        } catch (Throwable error) {
+            if (hostUncertain) fenceUncertainCompletion();
+            else pendingRegistrations--;
+            throw error;
+        }
     }
 
     /** Called before TeaVM allocates its event/continuation for Thread.start. */
@@ -252,9 +278,13 @@ public final class Activation {
     private static void fencePendingTimerStarts() {
         if (pendingTimerStarts != 0) poisoned = true;
     }
+    private static void fencePendingRegistrations() {
+        if (pendingRegistrations != 0) poisoned = true;
+    }
     private static void requireHealthyCompletion() {
         fencePendingTimerStops();
         fencePendingTimerStarts();
+        fencePendingRegistrations();
         if (poisoned) throw new IllegalStateException("activation-runtime-owner-settlement-uncertain");
     }
 
@@ -690,10 +720,12 @@ public final class Activation {
         finishingInvocation = true;
         fencePendingTimerStops();
         fencePendingTimerStarts();
+        fencePendingRegistrations();
         boolean liveTimers = !timers.isEmpty();
         // A stop or start may change state while the registry was observed.
         fencePendingTimerStops();
         fencePendingTimerStarts();
+        fencePendingRegistrations();
         if (failedStarts != null || poisoned || liveTimers) {
             // The host must destroy this Store; retain every original reference
             // and reject re-entry while registration settlement is uncertain.

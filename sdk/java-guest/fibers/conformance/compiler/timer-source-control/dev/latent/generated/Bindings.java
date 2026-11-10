@@ -26,12 +26,23 @@ public final class Bindings {
         public static int waits, stops;
         public static long lastNanos;
         public static boolean denyNext, denyStop, denySettle;
+        public static boolean denyRegistration, nullRegistration;
+        public static RuntimeException registrationFailure;
+        public static Runnable registrationObservation;
+        public static int registrationAttempts;
         public static RuntimeException settleFailure;
         public static Runnable stopObservation, settleObservation;
         public static int timers() { return (int)owners.values().stream().filter(kind -> kind == LatentRuntimeActivationOwnerKind.Timer).count(); }
+        public static int owners(LatentRuntimeActivationOwnerKind kind) { return (int)owners.values().stream().filter(value -> value == kind).count(); }
         public static Reply<LatentRuntimeActivationToken> register(LatentRuntimeActivationOwnerKind kind, Option<LatentRuntimeActivationToken> continuation) {
+            registrationAttempts++;
+            if (denyRegistration) return new Reply<>(null, Error.ResourceExhausted);
             if (kind == LatentRuntimeActivationOwnerKind.Timer && timers() >= 2) return new Reply<>(null, Error.ResourceExhausted);
-            var token = new LatentRuntimeActivationToken(1, ++next); owners.put(token, kind); return new Reply<>(token, null);
+            var token = new LatentRuntimeActivationToken(1, ++next); owners.put(token, kind);
+            Runnable observation = registrationObservation; registrationObservation = null;
+            if (observation != null) observation.run();
+            if (registrationFailure != null) throw registrationFailure;
+            return new Reply<>(nullRegistration ? null : token, null);
         }
         public static Reply<LatentRuntimeActivationToken> timerStart(Unsigned64 nanos, Option<Unsigned64> period, Option<LatentRuntimeActivationToken> continuation) {
             lastNanos = nanos.bits(); return register(LatentRuntimeActivationOwnerKind.Timer, continuation);

@@ -838,7 +838,8 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
         'runtime/dev/latent/guest/Option.java', 'runtime/dev/latent/guest/Unsigned64.java',
         'fibers/dev/latent/guest/runtime/Activation.java', 'fibers/dev/latent/guest/runtime/HostCalls.java',
         'fibers/dev/latent/guest/runtime/Monitors.java')]
-    sources += [fixture / 'dev/latent/generated/Bindings.java', fixture / 'TimerSleepAdmissionSourceControl.java']
+    sources += [fixture / 'dev/latent/generated/Bindings.java', fixture / 'TimerSleepAdmissionSourceControl.java',
+                fixture / 'OwnerAdmissionSourceControl.java']
     sources += sorted((sdk / 'fibers/dev/latent/guest/runtime/concurrent').glob('*.java'))
     inputs = {path.relative_to(sdk).as_posix(): digest(read_file(path)) for path in sources}
     output.mkdir()
@@ -848,9 +849,16 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
         str(output) + os.pathsep + classpath, 'TimerSleepAdmissionSourceControl').strip()
     if actual != 'TIMER_SLEEP_ADMISSION_SOURCE PASS zero-raw-frame;zero-interrupt;typed-refusal;wait-return;same-work-retry;raw-hook-finally':
         raise ValueError('Java timer sleep admission source control did not complete')
+    owner_cases = ('normal', 'refused', 'lost', 'null', 'reentry', 'capacity')
+    for case in owner_cases:
+        actual = compiler.run('owner-admission-source-' + case, 'java', '-Xmx256m', '-cp',
+            str(output) + os.pathsep + classpath, 'OwnerAdmissionSourceControl', case).strip()
+        if actual != 'OWNER_ADMISSION_SOURCE PASS ' + case:
+            raise ValueError('Java owner admission source control did not complete: ' + case)
     if inputs != {name: digest(read_file(sdk / name)) for name in inputs}:
         raise ValueError('Java timer sleep admission source inputs changed')
     return {'status': 'SDK-source-control-passed', 'sourceInputs': inputs, 'jarDigests': identities,
+        'ownerAdmissionCases': list(owner_cases),
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 
