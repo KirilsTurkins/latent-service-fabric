@@ -168,6 +168,41 @@ public final class Capsule {
             }
         }
     }
+    private static final class MisreportedTermination extends ScheduledThreadPoolExecutor {
+        private final boolean reported;
+        MisreportedTermination(boolean reported, Thread[] worker) {
+            super(1, task -> { Thread thread = new Thread(task); worker[0] = thread; return thread; });
+            this.reported = reported;
+        }
+        @Override public boolean isTerminated() { return reported; }
+    }
+    private static void overriddenTermination() throws InterruptedException {
+        Thread[] worker = {null};
+        MisreportedTermination live = new MisreportedTermination(true, worker);
+        Object gate = new Object();
+        boolean[] entered = {false}, release = {false};
+        try {
+            live.execute(() -> { synchronized (gate) {
+                entered[0] = true; gate.notifyAll();
+                while (!release[0]) {
+                    try { gate.wait(); }
+                    catch (InterruptedException error) { throw new IllegalStateException(error); }
+                }
+            } });
+            awaitProgress(gate, entered);
+            live.shutdown();
+            require(!live.awaitTermination(0,TimeUnit.NANOSECONDS));
+            require(!live.awaitTermination(1,TimeUnit.MILLISECONDS));
+        } finally {
+            synchronized (gate) { release[0] = true; gate.notifyAll(); }
+            live.shutdown();
+            if (worker[0] != null) worker[0].join();
+            require(live.awaitTermination(5,TimeUnit.SECONDS));
+        }
+        MisreportedTermination retired = new MisreportedTermination(false, new Thread[1]);
+        retired.shutdown();
+        require(retired.awaitTermination(0,TimeUnit.NANOSECONDS));
+    }
     public Long run(Long mode) {
         try {
             if (mode == 0) {
@@ -196,6 +231,7 @@ public final class Capsule {
             } else if (mode == 2) {
                 try (Running selected = new Running()) { selected.finish(); }
             } else if (mode == 3) {
+                overriddenTermination();
                 try (ScheduledCopy selected = new ScheduledCopy()) { selected.withdrawLast(); }
             } else throw new IllegalArgumentException("future-queue-mode");
             return 42L;
