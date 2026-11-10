@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from tools import c_capsule_project
+from tools import c_capsule, c_capsule_project
 from tools.c_guest import standard_facilities, threading
 from tools.c_guest.compiler import Compiler
 from tools.rust_capsule_project import ROOT, snapshot
@@ -28,6 +28,10 @@ class CStreamProfile(unittest.TestCase):
             selected, _, _ = c_capsule_project.validate(files)
             self.assertEqual(selected['runtimeProfile'], standard_facilities.STREAM_PROFILE)
             self.assertEqual(selected['threadingProfile'], threading.PROFILE)
+            self.assertEqual(c_capsule.main(['new', str(root / 'cli'), '--threading-profile', threading.PROFILE,
+                                             '--runtime-profile', standard_facilities.STREAM_PROFILE]), 0)
+            cli_project, _, _ = c_capsule_project.validate(snapshot(root / 'cli'))
+            self.assertEqual(cli_project['runtimeProfile'], standard_facilities.STREAM_PROFILE)
             self.assertIn(b'greet: async func(name: string)', files['wit/world.wit'])
             self.assertIn('vendor/lsf/sdk/c-guest/src/standard-streams.c', files)
             self.assertIn('vendor/lsf/sdk/c-guest/include/lsf/standard-streams.h', files)

@@ -654,6 +654,7 @@ impl StandaloneNode {
                         http: super::state::InstalledHttpEffects::new(
                             self.providers.as_deref(),
                             settings.providers.as_ref().and_then(|p| p.http.as_ref()),
+                            settings.providers.as_ref().and_then(|p| p.events.as_ref()),
                         )?,
                     }),
                     control_runtime.clone(),

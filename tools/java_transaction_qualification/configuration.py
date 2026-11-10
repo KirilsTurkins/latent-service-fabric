@@ -245,3 +245,98 @@ def active_operations(operations: list[dict], publication: str, component_digest
                     and row["deployment"] == DEPLOYMENT and row["incarnation"] == 1
                     for row in selected), "exact-one-current-runtime-operation-set")
     return copy.deepcopy(selected)
+
+
+def current_event_operations(item: ComponentInput, publication: str, provider_incarnation: str, *,
+                             provider_id: str, credential_reference: str,
+                             staging_binding: str, staging_policy: str,
+                             dispatch_binding: str, dispatch_policy: str) -> list[dict]:
+    """Select exact captured event inputs; these constraints do not grant authority."""
+    import re
+    import unicodedata
+    from tools.transaction_guest_project import CURRENT_EVENT_PROFILE, EVENT_REQUIREMENTS, current_java_event_requirements
+    require(item.name == "aggregate" and item.requirements_digest is None
+            and isinstance(item.event_requirements_digest, str)
+            and re.fullmatch(r"sha256:[0-9a-f]{64}", item.event_requirements_digest)
+            and re.fullmatch(r"sha256:[0-9a-f]{64}", item.component_digest or "")
+            and re.fullmatch(r"publication:sha256:[0-9a-f]{64}", publication or "")
+            and re.fullmatch(r"[0-9a-f]{64}", provider_incarnation or ""),
+            "explicit-current-event-component-and-provider")
+    for identity in (provider_id, credential_reference, staging_binding, staging_policy, dispatch_binding, dispatch_policy):
+        require(isinstance(identity, str) and 0 < len(identity.encode("utf-8")) <= 256
+                and not any(unicodedata.category(ch) == "Cc" for ch in identity), "bounded-event-owner-identity")
+    project = item.directory / "project"
+    companion = read_file(project / "transaction-binding.json", 128 * 1024)
+    requirements = read_file(project / EVENT_REQUIREMENTS, 8192)
+    marker = decode(read_file(project / CURRENT_EVENT_PROFILE, 8192), 8192)
+    require(digest(companion) == item.companion_digest and digest(requirements) == item.event_requirements_digest
+            and isinstance(marker, dict) and set(marker) == {"schemaVersion", "idempotencyProfile"}
+            and marker["schemaVersion"] == "latent.java.current-event-source-input.v1",
+            "exact-current-event-captured-inputs")
+    descriptor = decode(read_file(project / "capsule-project.json", 128 * 1024))
+    expected = current_java_event_requirements(descriptor, companion, marker["idempotencyProfile"])
+    require(decode(requirements, 8192) == expected and expected["capsule"] == SERVICE
+            and expected["namespace"] == NAMESPACE and expected["deployment"] == DEPLOYMENT
+            and expected["stateBinding"] == DEPLOYMENT, "exact-current-event-operation-scope")
+    rows = []
+    for name in ("update", "query", "scan"):
+        row = {"tenant": TENANT, "componentDigest": item.component_digest, "publication": publication,
+               "contract": CONTRACT, "function": name, "deployment": DEPLOYMENT, "route": DEPLOYMENT,
+               "binding": DEPLOYMENT, "companionDigest": item.companion_digest, "incarnation": 1,
+               "resultPolicy": RESULT_POLICY, "statePolicies": [STATE_POLICY]}
+        if name == "update":
+            row["deferredEvent"] = {"requirementsDigest": item.event_requirements_digest, "providerId": provider_id,
+                                    "providerIncarnation": provider_incarnation, "credentialReference": credential_reference,
+                                    "stagingBinding": staging_binding, "stagingPolicies": [staging_policy],
+                                    "dispatchBinding": dispatch_binding, "dispatchPolicies": [dispatch_policy],
+                                    "dispatchAuthority": {"formatVersion": 1, "mode": "signed-service-integration"}}
+        rows.append(row)
+    return active_operations(rows, publication, item.component_digest)
+
+
+def with_event_provider(configuration: Configuration, path: Path, *, port: int, ca: Path,
+                        credential: Path, qualification: dict) -> Configuration:
+    """Capture one bounded disposable provider configuration; this grants no authority."""
+    import copy
+    import re
+    require(isinstance(configuration, Configuration) and isinstance(path, Path) and path.is_absolute()
+            and not path.exists() and not path.is_symlink(), "fresh-event-node-configuration")
+    require(type(port) is int and 1 <= port <= 65535, "actual-event-listener-port")
+    require(all(isinstance(item, Path) and item.is_absolute() and item.is_file() and not item.is_symlink()
+                for item in (ca, credential)), "explicit-original-event-tls-and-credential-files")
+    require(re.fullmatch(r"[A-Za-z0-9_.@-]{1,128}", credential.name) is not None
+            and credential.name not in {".", ".."} and not credential.parent.is_symlink(),
+            "protected-event-credential-path")
+    root_bytes = read_file(ca, 65536)
+    require(0 < len(root_bytes) <= 65536 and 0 < len(read_file(credential, 4096)) <= 4096,
+            "bounded-original-event-tls-and-credential")
+    fields = {"formatVersion", "serverVersion", "streamCreated", "maximumMessages", "maximumBytes",
+              "maximumAgeMillis", "maximumMessageBytes"}
+    require(isinstance(qualification, dict) and set(qualification) == fields
+            and type(qualification["formatVersion"]) is int and qualification["formatVersion"] == 1
+            and qualification["serverVersion"] == "2.14.6"
+            and isinstance(qualification["streamCreated"], str)
+            and re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,9})?Z", qualification["streamCreated"])
+            and all(type(qualification[name]) is int for name in
+                    ("maximumMessages", "maximumBytes", "maximumAgeMillis", "maximumMessageBytes"))
+            and qualification["maximumMessages"] == 64 and qualification["maximumBytes"] == 1048576
+            and qualification["maximumAgeMillis"] == 0 and qualification["maximumMessageBytes"] == 65536,
+            "exact-original-event-broker-qualification")
+    value = copy.deepcopy(configuration.value)
+    providers = value.get("providers")
+    require(isinstance(providers, dict) and "events" not in providers, "one-explicit-event-provider")
+    providers["events"] = {
+        "identity": {"id": "events", "tenant": TENANT, "service": "event-host", "epoch": 1},
+        "configuration": {"formatVersion": 1,
+            "endpoint": {"serverName": "127.0.0.1", "peer": f"127.0.0.1:{port}", "allowNonPublicPeer": True},
+            "publicRoots": False, "extraRoots": [list(root_bytes)],
+            "topics": [{"tenant": TENANT, "topic": "updated", "subject": "lsf.deferred.allowed",
+                        "stream": "DURABLE", "duplicateWindowMillis": 30000}],
+            "idempotencyNamespace": "lsf-java-transaction-event", "maximumPayloadBytes": 8192,
+            "timeoutMillis": 5000},
+        "credentialDirectory": str(credential.parent), "credentialReference": "java-event-token",
+        "credentialFile": credential.name,
+        "deferred": [{"topic": "updated", "qualification": copy.deepcopy(qualification)}],
+    }
+    write_json(path, value)
+    return Configuration(path, value, configuration.authority, configuration.recipient_origin)

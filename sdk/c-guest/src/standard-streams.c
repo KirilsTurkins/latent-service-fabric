@@ -28,6 +28,7 @@ struct descriptor {
     bool allocated;
     bool busy;
     bool has_connection;
+    bool write_shut;
     bool failed;
     bool has_error;
     latent_network_streams_own_connection_t connection;
@@ -182,6 +183,7 @@ ssize_t __lsf_c_net_send(int fd, const void *buffer, size_t length, int flags) {
     struct descriptor *slot = ready_descriptor(fd);
     if (!slot) return -1;
     if (flags != 0) return fail(ENOTSUP);
+    if (slot->write_shut) return fail(EPIPE);
     if (!length) return 0;
     if (!buffer) return fail(EINVAL);
     if (length > MAX_TRANSFER) length = MAX_TRANSFER;
@@ -245,14 +247,16 @@ int __lsf_c_net_shutdown(int fd, int how) {
     struct descriptor *slot = ready_descriptor(fd);
     if (!slot) return -1;
     if (how != SHUT_WR && how != SHUT_RDWR) return fail(ENOTSUP);
+    if (how == SHUT_WR && slot->write_shut) return 0;
     latent_network_streams_observation_t observation;
     latent_network_streams_stream_error_t error;
     slot->busy = true;
     if (!latent_network_streams_shutdown(borrow(slot), how == SHUT_WR ?
             LATENT_NETWORK_STREAMS_SHUTDOWN_MODE_SEND : LATENT_NETWORK_STREAMS_SHUTDOWN_MODE_BOTH,
             &observation, &error)) return failed_call(slot, error);
-    slot->busy = false;
+    if (how == SHUT_WR) slot->write_shut = true;
     if (how == SHUT_RDWR) slot->failed = true;
+    slot->busy = false;
     return 0;
 }
 

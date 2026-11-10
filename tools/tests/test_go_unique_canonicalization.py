@@ -64,7 +64,9 @@ class GoUniqueCanonicalizationTests(unittest.TestCase):
                 '\tcasgstatus(gp, _Grunning, _Gwaiting)\n\tif trace.ok() {',
                 '\t\tif !ok {\n\t\t\ttrace := traceAcquire()']),
                 'runtime/os_wasip1.go': ''}
-            checked = {'runtime/runtime2.go': '\tvalgrindStackID uintptr\n}',
+            checked = {'runtime/coro.go': ('\t\tgp = newproc1(startfv, gp, pc, true, waitReasonCoroutine)\n'
+                '\t\t// Clear gp.m.\n\t// Emit the trace event after getting gnext but before changing curg.\n'),
+                'runtime/runtime2.go': '\tvalgrindStackID uintptr\n}',
                 'runtime/time.go': 'func timeSleep(ns int64) {\nfunc newTimer(when, period int64, f func(arg any, seq uintptr, delay int64), arg any, c *hchan) *timeTimer {',
                 'runtime/mfinal.go': 'func SetFinalizer(obj any, finalizer any) {',
                 'runtime/mcleanup.go': 'func AddCleanup[T, S any](ptr *T, cleanup func(S), arg S) Cleanup {\nORIGINAL_APPLICATION_CLEANUP_BODY\n}'}

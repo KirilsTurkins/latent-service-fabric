@@ -1,6 +1,7 @@
 package main
 
 import (
+    "iter"
     "runtime"
     "time"
     _ "unsafe"
@@ -108,6 +109,23 @@ func idleDrain() {
     runtime.KeepAlive(timer)
 }
 
+// Exercise the standard library coroutine path with the ordinary v7 owners.
+func iteratorTurn() {
+    observe(50, 0)
+    next, stop := iter.Pull(func(yield func(uint32) bool) {
+        observe(52, 0)
+        if !yield(42) { observe(55, 0); return }
+        yield(43)
+    })
+    observe(51, 0)
+    value, ok := next()
+    if !ok { panic("iterator produced no value") }
+    observe(53, value)
+    stop()
+    observe(54, 0)
+    activationFinish()
+}
+
 //go:wasmexport begin
 func begin(mode uint32) uint32 {
     return async.Run(func() {
@@ -118,6 +136,7 @@ func begin(mode uint32) uint32 {
         case 4: resetPair(false)
         case 5: idleDrain()
         case 6: resetPair(true)
+        case 7: iteratorTurn()
         default: panic("unknown mode")
         }
     })

@@ -37,6 +37,8 @@ def emitted_time_source():
     original = checked_time_source(TIME_SOURCE.read_bytes(), GO_LICENSE.read_bytes())
     inputs = {
         'runtime/time.go': original,
+        'runtime/coro.go': ('\t\tgp = newproc1(startfv, gp, pc, true, waitReasonCoroutine)\n'
+            '\t\t// Clear gp.m.\n\t// Emit the trace event after getting gnext but before changing curg.\n'),
         'runtime/runtime2.go': '\tvalgrindStackID uintptr\n}',
         'runtime/mfinal.go': 'func SetFinalizer(obj any, finalizer any) {',
         'runtime/mcleanup.go': 'func AddCleanup[T, S any](ptr *T, cleanup func(S), arg S) Cleanup {',

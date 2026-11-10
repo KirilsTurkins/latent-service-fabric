@@ -4,12 +4,21 @@ use latent_core::PlatformErrorCode;
 use std::io::Write;
 
 pub(super) fn run(path: &std::path::Path) -> Result<(), Failure> {
-    run_mode(path, false)
+    run_mode(path, Mode::Hosts)
 }
 pub(super) fn http_effects(path: &std::path::Path) -> Result<(), Failure> {
-    run_mode(path, true)
+    run_mode(path, Mode::Http)
 }
-fn run_mode(path: &std::path::Path, preview: bool) -> Result<(), Failure> {
+pub(super) fn event_effects(path: &std::path::Path) -> Result<(), Failure> {
+    run_mode(path, Mode::Event)
+}
+#[derive(Clone, Copy)]
+enum Mode {
+    Hosts,
+    Http,
+    Event,
+}
+fn run_mode(path: &std::path::Path, mode: Mode) -> Result<(), Failure> {
     let settings = NodeConfig::load(path)
         .and_then(|config| config.derive())
         .map_err(|error| Failure::new("configuration", error.code))?;
@@ -20,20 +29,25 @@ fn run_mode(path: &std::path::Path, preview: bool) -> Result<(), Failure> {
         .control
         .build("latent-inspection", &threads)
         .map_err(|_| Failure::new("runtime", PlatformErrorCode::Unavailable))?;
-    let encoded = if preview {
-        runtime
+    let encoded = match mode {
+        Mode::Http => runtime
             .block_on(StandaloneNode::inspect_configured_http_effects(
                 settings,
                 runtime.handle().clone(),
             ))
-            .and_then(crate::standalone::ConfiguredHttpEffectInspection::encode)
-    } else {
-        runtime
+            .and_then(crate::standalone::ConfiguredHttpEffectInspection::encode),
+        Mode::Event => runtime
+            .block_on(StandaloneNode::inspect_configured_event_effects(
+                settings,
+                runtime.handle().clone(),
+            ))
+            .and_then(crate::standalone::ConfiguredEventEffectInspection::encode),
+        Mode::Hosts => runtime
             .block_on(StandaloneNode::inspect_transaction_hosts(
                 settings,
                 runtime.handle().clone(),
             ))
-            .and_then(crate::standalone::NativeTransactionHostInspection::encode)
+            .and_then(crate::standalone::NativeTransactionHostInspection::encode),
     };
     runtime.shutdown_timeout(grace);
     if threads.load(std::sync::atomic::Ordering::SeqCst) != 0 {

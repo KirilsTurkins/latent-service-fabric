@@ -54,13 +54,22 @@ impl RecoverySource {
 pub(super) fn profile(
     operation: &RecoverySource,
     adapters: &[Arc<latent_http::deferred::HttpEffectAdapter>],
+    event_adapters: &[Arc<latent_nats::deferred::JetStreamEffectAdapter>],
 ) -> Result<Option<RecoveryProfile>, PlatformError> {
-    super::super::installations::http::recovery_profile(
-        operation.asset.get(),
-        &operation.input,
-        adapters,
-    )
-    .map(|profile| profile.map(|(scope, profile)| RecoveryProfile { scope, profile }))
+    let profile = if operation.input.deferred_event.is_some() {
+        super::super::installations::event::recovery_profile(
+            operation.asset.get(),
+            &operation.input,
+            event_adapters,
+        )?
+    } else {
+        super::super::installations::http::recovery_profile(
+            operation.asset.get(),
+            &operation.input,
+            adapters,
+        )?
+    };
+    Ok(profile.map(|(scope, profile)| RecoveryProfile { scope, profile }))
 }
 
 pub(super) fn capture_current(
@@ -112,6 +121,14 @@ pub(super) fn capture_decoder(
     match (
         &mut input.deferred_http,
         asset.get().deferred_http_requirements(),
+    ) {
+        (Some(config), Some((digest, _))) => config.requirements_digest = digest.to_string(),
+        (None, None) => {}
+        _ => return Err(super::denied()),
+    }
+    match (
+        &mut input.deferred_event,
+        asset.get().deferred_event_requirements(),
     ) {
         (Some(config), Some((digest, _))) => config.requirements_digest = digest.to_string(),
         (None, None) => {}

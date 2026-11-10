@@ -191,11 +191,14 @@ class SecurityFixtureTests(unittest.TestCase):
         paths = {entry["path"] for entry in records}
         self.assertIn("Cargo.toml", paths)
         self.assertIn("sdk/go/go.mod", paths)
+        self.assertIn("sdk/go-guest/runtime/checkpoints-captured-conformance/module/go.mod", paths)
         self.assertIn("sdk/java-client/build.gradle.kts", paths)
         self.assertIn("sdk/dotnet/Latent.Sdk/Latent.Sdk.csproj", paths)
         self.assertTrue(any(package.path == "sdk/typescript-client/package-lock.json" for package in packages))
         self.assertTrue(any(package.path == "examples/renderer-profile/package-lock.json" for package in packages))
         self.assertTrue(any(package.path == "tools/requirements.lock" for package in packages))
+        self.assertTrue(any(package.path == ".github/security/graphs/published-smtp/dependencies.lock.json"
+                            and package.name == "github.com/emersion/go-smtp" for package in packages))
         # The real standalone cache must use the existing pinned isolated route.
         from tools.security_inventory import cargo_inventory
         from tools.security_common import digest

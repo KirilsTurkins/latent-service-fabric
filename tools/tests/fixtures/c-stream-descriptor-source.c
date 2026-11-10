@@ -28,7 +28,7 @@ void *memset(void *out,int value,size_t size) {
 }
 
 static int current_fd,mode,host_calls,close_calls,drop_calls,free_calls,reentry_ok;
-static int last_timeout,interest_seen,allow_host,timer_polls,inspect_calls;
+static int last_timeout,interest_seen,allow_host,timer_polls,inspect_calls,send_shut,shutdown_calls;
 static uint8_t message[]={'a','b','c'};
 static bool host_equals(probe_string_t host,const char *text,size_t size) {
     if(host.len!=size)return false;
@@ -50,12 +50,13 @@ bool latent_network_streams_connect(latent_network_streams_connect_request_t *re
        request->transport!=LATENT_NETWORK_STREAMS_TRANSPORT_TCP || request->timeout_millis.is_some)
         __builtin_trap();
     if(!allow_host){*error=(latent_network_streams_stream_error_t){.code=LATENT_NETWORK_STREAMS_ERROR_CODE_DENIED};return false;}
-    *out=(latent_network_streams_own_connection_t){71};return true;
+    send_shut=0;*out=(latent_network_streams_own_connection_t){71};return true;
 }
 bool latent_network_streams_write(latent_network_streams_borrow_connection_t connection,
         probe_list_u8_t *bytes,uint32_t *timeout,uint32_t *out,latent_network_streams_stream_error_t *error) {
     ++host_calls;if(connection.__handle!=71 || timeout || !bytes->ptr || bytes->len!=3)__builtin_trap();
     reentry_ok=(__lsf_c_net_close(current_fd)==-1 && lsf_test_errno==EBUSY);
+    if(send_shut){*error=(latent_network_streams_stream_error_t){.code=LATENT_NETWORK_STREAMS_ERROR_CODE_INVALID_STATE};return false;}
     if(mode==1){*error=(latent_network_streams_stream_error_t){.code=LATENT_NETWORK_STREAMS_ERROR_CODE_UNCERTAIN,
         .accepted_prefix_bytes=1,.may_have_applied=true};return false;}
     *out=2;return true;
@@ -96,7 +97,12 @@ void latent_network_streams_inspect(latent_network_streams_borrow_connection_t c
 bool latent_network_streams_shutdown(latent_network_streams_borrow_connection_t connection,
         latent_network_streams_shutdown_mode_t how,latent_network_streams_observation_t *out,
         latent_network_streams_stream_error_t *error) {
-    (void)how;(void)error;if(connection.__handle!=71)__builtin_trap();*out=(latent_network_streams_observation_t){0};return true;
+    (void)error;if(connection.__handle!=71 || how!=LATENT_NETWORK_STREAMS_SHUTDOWN_MODE_SEND)__builtin_trap();
+    bool send_blocked=(__lsf_c_net_send(current_fd,"xyz",3,0)==-1 && lsf_test_errno==EBUSY);
+    bool close_blocked=(__lsf_c_net_close(current_fd)==-1 && lsf_test_errno==EBUSY);
+    reentry_ok=send_blocked && close_blocked;
+    ++host_calls;++shutdown_calls;send_shut=1;
+    *out=(latent_network_streams_observation_t){.state=LATENT_NETWORK_STREAMS_STATE_WRITE_SHUT};return true;
 }
 bool latent_network_streams_close(latent_network_streams_own_connection_t connection,
         latent_network_streams_observation_t *out,latent_network_streams_stream_error_t *error) {
@@ -185,5 +191,24 @@ __attribute__((export_name("readiness_controls"))) int readiness_controls(void) 
     CHECK(__lsf_c_net_poll(&urgent,1,0)==-1 && lsf_test_errno==ENOTSUP);
     CHECK(urgent.revents==123 && host_calls==before);
     CHECK(__lsf_c_net_poll(NULL,0,2)==0 && timer_polls==1);
+    return 0;
+}
+
+__attribute__((export_name("half_close_controls"))) int half_close_controls(void) {
+    mode=0;allow_host=1;current_fd=__lsf_c_net_socket(AF_INET,SOCK_STREAM,0);
+    struct sockaddr_in peer=address();CHECK(__lsf_c_net_connect(current_fd,(struct sockaddr *)&peer,sizeof(peer))==0);
+    int before_shutdown=shutdown_calls;
+    CHECK(__lsf_c_net_shutdown(current_fd,SHUT_WR)==0 && shutdown_calls==before_shutdown+1 && reentry_ok);
+    int repeated=__lsf_c_net_shutdown(current_fd,SHUT_WR);
+    int before=host_calls;
+    ssize_t written=__lsf_c_net_send(current_fd,"xyz",3,0);int write_errno=lsf_test_errno;
+    char received[3];ssize_t count=__lsf_c_net_recv(current_fd,received,sizeof(received),0);
+    CHECK(count==3 && received[0]=='a' && received[1]=='b' && received[2]=='c');
+    CHECK(repeated==0 && shutdown_calls==before_shutdown+1);
+    CHECK(written==-1 && write_errno==EPIPE && host_calls==before+1);
+    CHECK(__lsf_c_net_send(current_fd,NULL,0,0)==-1 && lsf_test_errno==EPIPE);
+    struct lsf_stream_error diagnostic;
+    CHECK(lsf_stream_last_error(current_fd,&diagnostic)==-1 && lsf_test_errno==ENOENT);
+    CHECK(__lsf_c_net_close(current_fd)==0);
     return 0;
 }

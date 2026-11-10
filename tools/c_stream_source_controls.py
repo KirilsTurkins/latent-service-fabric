@@ -49,7 +49,8 @@ def run(output: Path, zig: Path, wit: Path, node: Path) -> dict:
                  ROOT / SOURCES[0], ROOT / SOURCES[4], '-o', output / 'controls.wasm']
         commands.run('compile', zig, *args)
         observed = commands.run('controls', node, ROOT / SOURCES[5], output / 'controls.wasm')
-        require(observed == b'PASS descriptor_controls\nPASS readiness_controls\n', 'c-stream-source-exact-outcome')
+        require(observed == b'PASS descriptor_controls\nPASS readiness_controls\nPASS half_close_controls\n',
+                'c-stream-source-exact-outcome')
         link_args = ['cc', '-std=c11', '-target', 'wasm32-wasi', '-O2', '-Wall', '-Wextra', '-Werror',
                      '-mexec-model=reactor', '-Wl,--no-entry', '-Wl,--export-memory', '-matomics',
                      '-mbulk-memory', '-pthread', '-fno-lto', '-D_DEFAULT_SOURCE',
@@ -64,7 +65,7 @@ def run(output: Path, zig: Path, wit: Path, node: Path) -> dict:
                 and tools == {name: file_identity(path, name) for name, path in (('zig', zig), ('wit-bindgen', wit), ('node', node))},
                 'c-stream-source-input-changed')
         result.update(status='passed', commands=commands.records,
-                      cases=['descriptor_controls', 'readiness_controls', 'libc-entropy',
+                      cases=['descriptor_controls', 'readiness_controls', 'half_close_controls', 'libc-entropy',
                              'application_abort', 'original_libc_abort'])
         write_json(output / 'source-controls.json', result)
         return result

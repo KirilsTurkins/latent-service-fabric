@@ -42,6 +42,11 @@ enum Command {
         #[arg(long, value_name = "PATH")]
         config: PathBuf,
     },
+    /// Preview actual configured event effect fingerprints without publications.
+    InspectConfiguredEventEffects {
+        #[arg(long, value_name = "PATH")]
+        config: PathBuf,
+    },
     /// Preview actual configured HTTP effect fingerprints without publications.
     InspectConfiguredHttpEffects {
         #[arg(long, value_name = "PATH")]
@@ -75,6 +80,7 @@ pub fn main_entry() -> ExitCode {
         Command::Serve { config } => run_serve(&config),
         Command::InspectTransactionHosts { config } => run_inspection(&config),
         Command::InspectConfiguredHttpEffects { config } => run_http_effect_inspection(&config),
+        Command::InspectConfiguredEventEffects { config } => run_event_effect_inspection(&config),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,
@@ -97,6 +103,15 @@ fn run_http_effect_inspection(path: &std::path::Path) -> Result<(), Failure> {
 }
 #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
 fn run_http_effect_inspection(_path: &std::path::Path) -> Result<(), Failure> {
+    Err(Failure::new("platform", PlatformErrorCode::Unavailable))
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn run_event_effect_inspection(path: &std::path::Path) -> Result<(), Failure> {
+    inspection::event_effects(path)
+}
+#[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+fn run_event_effect_inspection(_path: &std::path::Path) -> Result<(), Failure> {
     Err(Failure::new("platform", PlatformErrorCode::Unavailable))
 }
 

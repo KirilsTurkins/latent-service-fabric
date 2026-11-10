@@ -7,6 +7,33 @@ use std::time::{Duration, Instant};
 
 const WATCHDOG: Duration = Duration::from_secs(10);
 
+#[test]
+fn closed_admission_keeps_only_the_original_covered_clock_until_retirement() {
+    let fixture = Fixture::new();
+    let directory = tempfile::tempdir().unwrap();
+    let authority = open(&fixture, directory.path());
+    let grant = authority
+        .verify(&TenantId("tests".into()), fixture.upload())
+        .unwrap()
+        .grant;
+    let source = authority.covered_clock_source();
+    authority.close_admission();
+    assert!(authority
+        .verify(&TenantId("tests".into()), fixture.upload())
+        .is_err());
+    assert!(grant.with_current(&mut |checker| checker.check()).is_err());
+    assert_eq!(source.sample().unwrap().now_seconds, NOW);
+    assert!(SupplyChainAuthority::open(
+        directory.path(),
+        fixture.approved(),
+        fixture.clock.clone(),
+        5
+    )
+    .is_err());
+    authority.retire();
+    assert!(source.sample().is_err());
+}
+
 struct Pause {
     entered: mpsc::SyncSender<()>,
     resume: mpsc::Receiver<()>,

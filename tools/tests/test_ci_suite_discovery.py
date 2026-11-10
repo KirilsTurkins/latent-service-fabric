@@ -70,6 +70,13 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual(errors, [])
         self.assertEqual(report['suites'][0]['executed'], ['a'])
         self.assertEqual(report['suites'][0]['skipped'], ['b'])
+        progress = log.replace('test a ... ok', 'test a has been running for over 60 seconds\ntest a ... ok')
+        self.assertFalse(discovery.workspace_execution(receipt, progress)[1])
+        for invalid in ('test foreign has been running for over 60 seconds',
+                        'test b has been running for over 60 seconds',
+                        'test a has been running for over 61 seconds'):
+            self.assertTrue(discovery.workspace_execution(receipt, log.replace('test a ... ok', invalid + '\ntest a ... ok'))[1])
+        self.assertTrue(discovery.workspace_execution(receipt, progress.replace('test a ... ok\n', ''))[1])
         nested = log.replace("test a ... ok\n", "test a ... ok\ntest a ... ok\ntest result: ok. 1 passed; 0 failed; 0 ignored;\n", 1)
         self.assertTrue(discovery.workspace_execution(receipt, nested)[1])
         receipt['suites'][0]['nestedCases'] = ['a']

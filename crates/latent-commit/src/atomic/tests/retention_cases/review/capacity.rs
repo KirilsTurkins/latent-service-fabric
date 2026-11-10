@@ -1,5 +1,138 @@
 use super::*;
 
+#[test]
+fn oversized_global_clock_is_refused_by_all_review_entry_points() {
+    let (_dir, store, effects) = setup();
+    let record = completed(&store, &effects, "oversized-global-clock");
+    let owner = ResultMaintenanceOwner::default();
+    store
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: MaintenanceProgress::key(),
+                value: Some(vec![0; 147]),
+            }],
+        })
+        .unwrap();
+    assert_eq!(
+        owner.anchor(&store, None, observation(2100, 0), maintenance),
+        Err(AtomicError::Corrupt)
+    );
+    assert_eq!(
+        owner.step(&store, observation(2100, 0), maintenance),
+        Err(AtomicError::Corrupt)
+    );
+    assert_eq!(
+        owner.anchor_review(
+            &store,
+            &record.key,
+            None,
+            observation(2100, 0),
+            clock_permission,
+        ),
+        Err(AtomicError::Corrupt)
+    );
+    assert_eq!(
+        owner.terminalize(&store, &request(&record), observation(2200, 100), authorize),
+        Err(AtomicError::Corrupt)
+    );
+}
+
+#[test]
+fn first_namespace_anchor_cannot_reset_global_same_boot_drift() {
+    let (_dir, store, effects) = setup();
+    let record = completed(&store, &effects, "review-global-clock");
+    let owner = ResultMaintenanceOwner::default();
+    anchor(&owner, &store);
+    assert_eq!(
+        owner.anchor_review(
+            &store,
+            &record.key,
+            None,
+            observation(4101, 1000),
+            clock_permission,
+        ),
+        Err(AtomicError::RecoveryRequired)
+    );
+    let accepted = owner
+        .anchor_review(
+            &store,
+            &record.key,
+            None,
+            observation(3100, 1000),
+            clock_permission,
+        )
+        .unwrap();
+    assert_eq!(
+        (
+            accepted.anchor_unix_millis,
+            accepted.anchor_monotonic_millis
+        ),
+        (2100, 0)
+    );
+    assert_eq!(
+        (accepted.visited, accepted.retired, accepted.reclaimed_bytes),
+        (0, 0, 0)
+    );
+}
+
+#[test]
+fn first_namespace_review_does_not_inherit_global_maintenance_counts() {
+    let (_dir, store, effects) = setup();
+    let record = completed(&store, &effects, "review-global-counters");
+    let owner = ResultMaintenanceOwner::default();
+    anchor(&owner, &store);
+    let global = owner
+        .step(&store, observation(2150, 50), maintenance)
+        .unwrap();
+    assert_eq!((global.visited, global.retired), (1, 1));
+    assert!(global.reclaimed_bytes > 0);
+    let record = CommandRecord::decode(
+        &store
+            .snapshot()
+            .unwrap()
+            .get(&record::command_row_key(record.id))
+            .unwrap()
+            .unwrap(),
+    )
+    .unwrap();
+    owner
+        .terminalize(&store, &request(&record), observation(2200, 100), authorize)
+        .unwrap();
+    let view = store.snapshot().unwrap();
+    let (usage, _, _) = writer::Usage::read(&view, &record.key).unwrap();
+    let progress = usage.review_clock.unwrap();
+    assert_eq!(
+        (progress.visited, progress.retired, progress.reclaimed_bytes),
+        (1, 0, 0)
+    );
+    assert_eq!(
+        (
+            progress.anchor_unix_millis,
+            progress.anchor_monotonic_millis
+        ),
+        (global.anchor_unix_millis, global.anchor_monotonic_millis)
+    );
+    drop(view);
+    let reanchored = owner
+        .anchor_review(
+            &store,
+            &record.key,
+            Some(progress.generation),
+            observation(2250, 150),
+            clock_permission,
+        )
+        .unwrap();
+    assert_eq!(
+        (
+            reanchored.visited,
+            reanchored.retired,
+            reanchored.reclaimed_bytes
+        ),
+        (1, 0, 0)
+    );
+}
+
 fn clock_permission(key: &CommandKey) -> Result<(), AtomicError> {
     if key.tenant == "tenant" && key.namespace == "aggregate" && key.incarnation == "1" {
         Ok(())
@@ -328,4 +461,69 @@ fn forged_quota_padding_and_mixed_reservation_formats_fail_coherent_startup() {
     let view = store.snapshot().unwrap();
     assert_eq!(view.get(&quota).unwrap(), Some(original));
     validate_view(&view, foreign_codec).unwrap();
+}
+
+#[test]
+fn namespace_review_reanchors_cannot_renew_same_boot_drift_tolerance() {
+    let (_dir, store, effects) = setup();
+    let record = completed(&store, &effects, "review-reanchor-drift");
+    let owner = ResultMaintenanceOwner::default();
+    let first = owner
+        .anchor_review(
+            &store,
+            &record.key,
+            None,
+            observation(2100, 0),
+            clock_permission,
+        )
+        .unwrap();
+    let second = owner
+        .anchor_review(
+            &store,
+            &record.key,
+            Some(first.generation),
+            observation(3000, 0),
+            clock_permission,
+        )
+        .unwrap();
+    let before = super::adversarial::checkpoint(&store, &record);
+    assert_eq!(
+        owner.terminalize(&store, &request(&record), observation(3900, 0), authorize),
+        Err(AtomicError::RecoveryRequired)
+    );
+    assert_eq!(super::adversarial::checkpoint(&store, &record), before);
+    assert_eq!(
+        owner.anchor_review(
+            &store,
+            &record.key,
+            Some(second.generation),
+            observation(3900, 0),
+            clock_permission
+        ),
+        Err(AtomicError::RecoveryRequired)
+    );
+    assert_eq!(super::adversarial::checkpoint(&store, &record), before);
+    assert_eq!(second.anchor_unix_millis, 2100);
+    let resumed = owner
+        .anchor_review(
+            &store,
+            &record.key,
+            Some(second.generation),
+            observation(72_100, 70_000),
+            clock_permission,
+        )
+        .unwrap();
+    assert_eq!(resumed.anchor_unix_millis, 2100);
+    let before = super::adversarial::checkpoint(&store, &record);
+    assert_eq!(
+        owner.anchor_review(
+            &store,
+            &record.key,
+            Some(resumed.generation),
+            observation(72_099, 70_001),
+            clock_permission
+        ),
+        Err(AtomicError::RecoveryRequired)
+    );
+    assert_eq!(super::adversarial::checkpoint(&store, &record), before);
 }

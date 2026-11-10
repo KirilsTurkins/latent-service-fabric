@@ -129,7 +129,8 @@ def forbidden_http(source: str, language: str) -> str:
         f'                .method = LATENT_HTTP_CLIENT_METHOD_GET, .url = LSF_LITERAL("{URL}"),\n'
         '                .timeout_millis = {true, 1000},\n'
         '            }; /* Arguments remain in the affine frame until retirement. */\n'
-        '            status = latent_http_client_send(&frame->http_request, &frame->http_result);')
+        '            status = latent_http_client_send(&frame->http_request, &frame->http_result);\n'
+        '            break;')
 
 
 def forbidden_child(source: str) -> str:
@@ -146,12 +147,18 @@ def forbidden_child(source: str) -> str:
         '            if (denied) return Result.err(Bindings.ExamplesTransactionalAggregateApiBusinessError.Rejected);\n')
 
 
-def create(directory: Path, language: str, variant: str, name: str | None = None) -> Path:
+def create(directory: Path, language: str, variant: str, name: str | None = None, *,
+           rust_event_profile: str | None = None, event_profile: str | None = None) -> Path:
     child = variant == "forbidden-child"
     if language not in LANGUAGES or (variant not in VARIANTS and not (child and language == "java")):
         raise ValueError("unknown controlled transaction guest variant")
     if variant == "result-boundary" and language != "rust":
         raise ValueError("result-boundary qualification guest requires Rust")
+    if rust_event_profile is not None and (language != "rust" or variant not in {"forbidden-http", "result-boundary"}):
+        raise ValueError("Rust event profile requires an explicit Rust transaction variant")
+    if event_profile is not None and (language not in {"rust", "c", "typescript", "go", "dotnet"}
+            or variant != "forbidden-http" or rust_event_profile is not None):
+        raise ValueError("event profile requires an exclusive supported forbidden-HTTP variant")
     if language == "rust":
         from tools.rust_capsule_project import create as author
     elif language == "c":
@@ -164,7 +171,10 @@ def create(directory: Path, language: str, variant: str, name: str | None = None
         from tools.java_capsule_project import create as author
     else:
         from tools.dotnet_guest.project import create as author
-    project = author(directory, TEMPLATE, name or "transaction-" + language + "-" + variant)
+    selected_name = name or "transaction-" + language + "-" + variant
+    selected_profile = event_profile if event_profile is not None else rust_event_profile
+    project = (author(directory, TEMPLATE, selected_name, event_profile=selected_profile)
+               if selected_profile is not None else author(directory, TEMPLATE, selected_name))
     if variant == "result-boundary":
         source = ROOT / "examples/rust-capsules" / TEMPLATE
         # An ordinary editable authored project, with unchanged captured SDK,
@@ -200,8 +210,11 @@ def main() -> None:
     parser.add_argument("--variant", required=True, choices=(*VARIANTS, "forbidden-child"))
     parser.add_argument("--project", required=True, type=Path)
     parser.add_argument("--name")
+    parser.add_argument("--rust-event-profile", help="Exact observed event profile for a Rust transaction variant; grants no authority")
+    parser.add_argument("--event-profile", help="Exact observed event profile for a supported forbidden-HTTP variant; grants no authority")
     arguments = parser.parse_args()
-    print(create(arguments.project, arguments.language, arguments.variant, arguments.name))
+    print(create(arguments.project, arguments.language, arguments.variant, arguments.name,
+                 rust_event_profile=arguments.rust_event_profile, event_profile=arguments.event_profile))
 
 
 if __name__ == "__main__":

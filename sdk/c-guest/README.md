@@ -113,6 +113,16 @@ socket option changes, local bind, IPv6 and unsupported message flags are refuse
 `SO_TYPE` is observable and TLS is not supplied by this profile.
 `POLLPRI` is never silently ignored. Descriptor-free timer polls retain the
 existing timed runtime. Calls inside prebuilt libc objects are not remapped.
+Selected-source `read`, `write` and `close` route only to this socket table;
+stdin, stdout and stderr are not socket descriptors and return `EBADF` through
+those calls. This profile does not combine the separate standard-stdio logging
+profile. Its socket table uses numbers 3 through 10: another independently
+allocated descriptor matching an occupied slot would alias that socket on these
+source-level calls. Do not combine it with another descriptor producer until
+the profiles share a coordinated descriptor namespace.
+After a successful send half-close, later sends return `EPIPE` without another
+provider write, while reads remain available; repeated send half-close is local
+and idempotent.
 An error after a possible write keeps the descriptor failed; the optional
 `lsf_stream_last_error` reports its original error code, accepted prefix and
 possible-effect bit while the descriptor remains open.

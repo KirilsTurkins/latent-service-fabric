@@ -16,6 +16,18 @@ with patch.object(sys, "path", [str(SCRIPT.parent), *sys.path]):
 
 
 class DeferredNatsRunnerTests(unittest.TestCase):
+    def test_standalone_token_mode_is_explicit_and_keeps_default_scoped_users(self):
+        self.assertEqual(RUNNER.authorization(True), {"token": RUNNER.PASSWORD})
+        self.assertEqual(len(RUNNER.authorization(False)["users"]), 2)
+        for invalid in (None, 0, 1, "true"):
+            with self.assertRaises(ValueError):
+                RUNNER.authorization(invalid)
+        self.assertTrue(RUNNER.Client(4222, Path('ca.pem'), token_auth=True).token_auth)
+        self.assertFalse(RUNNER.Client(4222, Path('ca.pem'), token_auth=False).token_auth)
+        with patch.dict(RUNNER.os.environ, {"LSF_NATS_TEST_TOKEN_AUTH": "invalid"}):
+            with self.assertRaises(ValueError):
+                RUNNER.Client(4222, Path('ca.pem'))
+
     def test_deferred_profile_cannot_select_the_immediate_or_trigger_harness(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

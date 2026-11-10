@@ -13,6 +13,13 @@ RESULT_FORMAT = "lsf-wit-values-v1"
 HTTP_REQUIREMENTS = "deferred-http-requirements.json"
 HTTP_BODY = b"java-aggregate-put-once-v1\0"
 CURRENT_HTTP_PROFILE = "java-current-http-profile.json"
+EVENT_REQUIREMENTS = "deferred-event-requirements.json"
+CURRENT_EVENT_PROFILE = "java-current-event-profile.json"
+RUST_EVENT_PROFILE = "rust-current-event-profile.json"
+C_EVENT_PROFILE = "c-current-event-profile.json"
+GO_EVENT_PROFILE = "go-current-event-profile.json"
+TYPESCRIPT_EVENT_PROFILE = "typescript-current-event-profile.json"
+DOTNET_EVENT_PROFILE = "dotnet-current-event-profile.json"
 
 
 def put_once_requirements(project: dict, companion: bytes) -> dict:
@@ -56,6 +63,37 @@ def current_java_http_requirements(project: dict, companion: bytes, profile: str
             "payloadFormat": "http-body-value-v1", "idempotencyProfile": profile,
             "ceiling": {"maximum_payload_bytes": 27, "maximum_response_bytes": 2048,
                         "maximum_attempts": 3, "maximum_age_millis": 600000, "attempt_timeout_millis": 2000}}
+
+
+def current_event_requirements(project: dict, companion: bytes, profile: str) -> dict:
+    """Pin the actual native profile; this source document grants no authority."""
+    from tools.dev_workflow.transaction_binding import validate
+    binding = validate(companion, capsule=project["service"], deployment=project["name"], binding=project["name"])
+    if (project.get("world") != "examples:transactional-aggregate/service@1.0.0"
+            or binding["namespace"] != TEMPLATE
+            or binding["operations"] != [
+                {"operation": name, "mode": mode, "inputFormat": INPUT_FORMAT, "resultFormat": RESULT_FORMAT}
+                for name, mode in (("update", "strict-command"), ("query", "fresh-query"), ("scan", "fresh-query"))]
+            or not isinstance(profile, str)
+            or re.fullmatch(r"js-window-v1:[0-9a-f]{64}", profile) is None):
+        raise ValueError("explicit current event profile and transaction binding required")
+    return {"formatVersion": 1, "protocol": "lsf-jetstream-event-v1",
+            "capsule": project["service"], "deployment": project["name"], "stateBinding": binding["binding"],
+            "namespace": binding["namespace"], "companionDigest": "sha256:" + hashlib.sha256(companion).hexdigest(),
+            "binding": "approved-event", "operation": "event", "adapter": "nats-jetstream-effect-v1",
+            "payloadFormat": "nats-event-value-v1", "idempotencyProfile": profile,
+            "ceiling": {"maximum_payload_bytes": 8192, "maximum_response_bytes": 16384,
+                        "maximum_attempts": 3, "maximum_age_millis": 60000, "attempt_timeout_millis": 5000}}
+
+
+def current_java_event_requirements(project: dict, companion: bytes, profile: str) -> dict:
+    """Preserve the Java capture's existing explicit event selection."""
+    return current_event_requirements(project, companion, profile)
+
+
+def current_rust_event_requirements(project: dict, companion: bytes, profile: str) -> dict:
+    """The same signed event contract, selected explicitly by a Rust author."""
+    return current_event_requirements(project, companion, profile)
 
 
 REFERENCE_WORLD = "examples:order-draft/service@1.0.0"
@@ -132,6 +170,27 @@ def packaging_arguments(files: dict[str, bytes]) -> tuple[str, ...]:
 def package_effect_requirements(output: Path, project: dict, files: dict[str, bytes]) -> tuple[str, str, str] | None:
     """Carry exact application requirements beside the unchanged signed binding."""
     from tools.dev_workflow.common import decode, encode, require
+    raw_event = files.get(EVENT_REQUIREMENTS)
+    markers = {CURRENT_EVENT_PROFILE: "latent.java.current-event-source-input.v1",
+               RUST_EVENT_PROFILE: "latent.rust.current-event-source-input.v1",
+               C_EVENT_PROFILE: "latent.c.current-event-source-input.v1",
+               GO_EVENT_PROFILE: "latent.go.current-event-source-input.v1",
+               TYPESCRIPT_EVENT_PROFILE: "latent.typescript.current-event-source-input.v1",
+               DOTNET_EVENT_PROFILE: "latent.dotnet.current-event-source-input.v1"}
+    selected_markers = [name for name in markers if name in files]
+    if raw_event is not None or selected_markers:
+        require(raw_event is not None and len(selected_markers) == 1 and HTTP_REQUIREMENTS not in files
+                and CURRENT_HTTP_PROFILE not in files and "transaction-binding.json" in files,
+                "closed-current-event-inputs-required")
+        selected = decode(files[selected_markers[0]], 8192)
+        require(isinstance(selected, dict) and set(selected) == {"schemaVersion", "idempotencyProfile"}
+                and selected["schemaVersion"] == markers[selected_markers[0]],
+                "closed-current-event-profile-input")
+        expected = current_event_requirements(project, files["transaction-binding.json"], selected["idempotencyProfile"])
+        require(encode(decode(raw_event, 8192)) == encode(expected), "deferred-event-requirements-drift")
+        with (output / EVENT_REQUIREMENTS).open("xb") as stream:
+            stream.write(raw_event)
+        return (EVENT_REQUIREMENTS, "asset", "application/json")
     raw = files.get(HTTP_REQUIREMENTS)
     if raw is None:
         if project.get("world") == REFERENCE_WORLD and "order-draft-source.json" in files:

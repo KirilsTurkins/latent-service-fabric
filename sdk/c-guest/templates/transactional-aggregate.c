@@ -176,6 +176,7 @@ static probe_callback_code_t pump(struct frame *frame, lsf_async_result_t state)
 }
 static struct frame *start(enum operation operation) {
     struct frame *frame = calloc(1, sizeof(*frame)); lsf_require(frame != NULL);
+    lsf_scope_init(&frame->scope, 65536);
     frame->operation = operation;
     lsf_frame_enter(frame);
     latent_state_key_value_state_error_t error;
