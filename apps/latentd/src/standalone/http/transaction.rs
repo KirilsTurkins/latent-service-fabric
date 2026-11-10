@@ -170,6 +170,25 @@ pub(super) fn deliver(
         .map_err(|e| e.status().unwrap_or(0))
 }
 
+// Stable classifications only: never reflect guest error text or details to
+// the caller. Durable command outcomes are mapped independently below.
+fn query_failure_status(code: &str) -> u16 {
+    match PlatformErrorCode::from_wire_code(code) {
+        Some(PlatformErrorCode::Unauthenticated) => 401,
+        Some(PlatformErrorCode::PermissionDenied) => 403,
+        Some(PlatformErrorCode::InvalidArgument) => 400,
+        Some(PlatformErrorCode::NotFound) => 404,
+        Some(PlatformErrorCode::StateConflict | PlatformErrorCode::AlreadyExists) => 409,
+        Some(PlatformErrorCode::DeadlineExceeded) => 504,
+        Some(
+            PlatformErrorCode::IncompatibleContract
+            | PlatformErrorCode::CorruptArtifact
+            | PlatformErrorCode::GuestTrap,
+        ) => 502,
+        _ => 503,
+    }
+}
+
 fn project(response: phase4::Response) -> Result<(u16, Response), u16> {
     let mut body = Response {
         profile: http::transaction::PROFILE,
@@ -184,20 +203,28 @@ fn project(response: phase4::Response) -> Result<(u16, Response), u16> {
         abort_fence: None,
         result: None,
     };
-    let (command, invocation) = match response {
-        phase4::Response::InvokeCommand(value) => (value.command, value.invocation),
+    let (command, invocation, query) = match response {
+        phase4::Response::InvokeCommand(value) => (value.command, value.invocation, false),
         phase4::Response::Query(value) => {
             body.state_view = value.view.map(|v| STANDARD.encode(v.version));
-            (None, value.invocation)
+            (None, value.invocation, true)
         }
-        phase4::Response::LookupCommand(value) => (value.command, None),
+        phase4::Response::LookupCommand(value) => (value.command, None, false),
         _ => return Err(503),
     };
+    let mut query_failure = None;
     if let Some(invocation) = invocation {
         body.result = match invocation.result {
             Some(i::invoke_response::Result::Success(value)) => Some(success(value)?),
             Some(i::invoke_response::Result::DeclaredError(value)) => Some(rejection(value)?),
-            Some(i::invoke_response::Result::PlatformFailure(_)) => None,
+            Some(i::invoke_response::Result::PlatformFailure(error)) => {
+                if query {
+                    query_failure = Some(query_failure_status(&error.code));
+                    // A failed query must not advertise a usable fresh view.
+                    body.state_view = None;
+                }
+                None
+            }
             None => return Err(503),
         };
     }
@@ -260,7 +287,7 @@ fn project(response: phase4::Response) -> Result<(u16, Response), u16> {
             200
         }
     } else {
-        503
+        query_failure.unwrap_or(503)
     };
     if body.result.is_some() {
         body.representation = "application-result";

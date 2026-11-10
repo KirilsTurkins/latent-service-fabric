@@ -74,3 +74,63 @@ fn durable_receipt_status_is_independent_of_application_body_availability() {
         assert!(body.result.is_none());
     }
 }
+
+#[test]
+fn query_platform_failures_have_bounded_http_statuses_without_error_details() {
+    for (code, expected) in [
+        ("unauthenticated", 401),
+        ("permission-denied", 403),
+        ("invalid-argument", 400),
+        ("not-found", 404),
+        ("state-conflict", 409),
+        ("deadline-exceeded", 504),
+        ("guest-trap", 502),
+        ("future-unknown-error", 503),
+    ] {
+        let response = t::QueryResponse {
+            view: Some(t::ViewIdentity {
+                version: b"stale-view".to_vec(),
+                ..Default::default()
+            }),
+            invocation: Some(i::InvokeResponse {
+                result: Some(i::invoke_response::Result::PlatformFailure(
+                    i::PlatformError {
+                        code: code.into(),
+                        message: "private detail".into(),
+                        ..Default::default()
+                    },
+                )),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let (status, body) = project(response.into()).unwrap();
+        assert_eq!(status, expected);
+        let encoded = serde_json::to_string(&body).unwrap();
+        assert!(!encoded.contains("private detail"));
+        assert!(body.result.is_none());
+        assert!(body.state_view.is_none());
+    }
+}
+
+#[test]
+fn platform_failure_does_not_override_a_committed_command_disposition() {
+    let response = t::InvokeCommandResponse {
+        command: Some(t::CommandInspection {
+            outcome: t::CommandOutcome::Committed as i32,
+            ..Default::default()
+        }),
+        invocation: Some(i::InvokeResponse {
+            result: Some(i::invoke_response::Result::PlatformFailure(
+                i::PlatformError {
+                    code: "permission-denied".into(),
+                    ..Default::default()
+                },
+            )),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+    let (status, body) = project(response.into()).unwrap();
+    assert_eq!((status, body.disposition), (200, "committed"));
+}
