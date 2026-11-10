@@ -341,9 +341,10 @@ class ExecutorInvokeAllWaitControl(unittest.TestCase):
     def receipt(stage):
         if stage in ('executor-invoke-all-wait-jdk', 'executor-invoke-all-wait-source'):
             return ('INVOKE_ALL_WAIT PASS completed;subclass;late;negative-get;timeout-suffix;'
-                    'exception;done-failure;nonpositive')
+                    'exception;done-failure;nonpositive;first-submission;untimed-order')
         if stage in ('executor-invoke-all-owner-timeout', 'executor-invoke-all-owner-optimistic',
-                     'executor-invoke-all-owner-prefix'):
+                     'executor-invoke-all-owner-prefix', 'executor-invoke-all-owner-first-prepared',
+                     'executor-invoke-all-owner-construction-failure', 'executor-invoke-all-owner-accept-then-throw'):
             mode = stage.removeprefix('executor-invoke-all-owner-')
             return ('INVOKE_ALL_OWNER ' + mode + ' held=1:1:' + ('1' if mode == 'prefix' else '0')
                     + ' retired=0:0:0 result-settle=1')
@@ -356,7 +357,9 @@ class ExecutorInvokeAllWaitControl(unittest.TestCase):
         report = subject.executor_invoke_all_wait_control(SimpleNamespace(run=run), Path('source'), Path('jdk'))
         self.assertEqual([stage for stage, _ in calls], ['executor-invoke-all-wait-jdk',
             'executor-invoke-all-wait-source', 'executor-invoke-all-owner-timeout',
-            'executor-invoke-all-owner-optimistic', 'executor-invoke-all-owner-prefix'])
+            'executor-invoke-all-owner-optimistic', 'executor-invoke-all-owner-prefix',
+            'executor-invoke-all-owner-first-prepared', 'executor-invoke-all-owner-construction-failure',
+            'executor-invoke-all-owner-accept-then-throw'])
         self.assertEqual(calls[0][1], ('java', '-Xmx256m', '-cp', Path('jdk'),
                                       'ExecutorInvokeAllWaitReferenceControl'))
         self.assertEqual(calls[1][1], ('java', '-Xmx256m', '-cp', Path('source'),
@@ -364,14 +367,19 @@ class ExecutorInvokeAllWaitControl(unittest.TestCase):
         self.assertEqual(calls[2][1][-2:], ('ExecutorInvokeAllOwnerControl', 'timeout'))
         self.assertEqual(calls[3][1][-2:], ('ExecutorInvokeAllOwnerControl', 'optimistic'))
         self.assertEqual(calls[4][1][-2:], ('ExecutorInvokeAllOwnerControl', 'prefix'))
+        self.assertEqual(calls[5][1][-2:], ('ExecutorInvokeAllOwnerControl', 'first-prepared'))
+        self.assertEqual(calls[6][1][-2:], ('ExecutorInvokeAllOwnerControl', 'construction-failure'))
+        self.assertEqual(calls[7][1][-2:], ('ExecutorInvokeAllOwnerControl', 'accept-then-throw'))
         self.assertEqual(report, {'status': 'JDK-and-SDK-source-controls-passed',
-            'ownership': 'synthetic-host-ledger-only', 'firstSubmissionDeadline': 'unchanged',
+            'ownership': 'synthetic-host-ledger-only', 'firstSubmissionDeadline': 'original-positive-then-elapsed',
+            'untimedSubmissionOrder': 'construct-record-submit',
             'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False})
 
     def test_missing_wrong_and_duplicate_receipts_fail_closed(self):
         stages = ('executor-invoke-all-wait-jdk', 'executor-invoke-all-wait-source',
                   'executor-invoke-all-owner-timeout', 'executor-invoke-all-owner-optimistic',
-                  'executor-invoke-all-owner-prefix')
+                  'executor-invoke-all-owner-prefix', 'executor-invoke-all-owner-first-prepared',
+                  'executor-invoke-all-owner-construction-failure', 'executor-invoke-all-owner-accept-then-throw')
         for missing in stages:
             for bad in ('', 'SKIPPED', self.receipt(missing) + '\n' + self.receipt(missing)):
                 with self.subTest(stage=missing, bad=bad):
