@@ -1,0 +1,20 @@
+package main
+import (
+    "testing"
+    "testing/synctest"
+    "time"
+)
+
+func TestNativeTickerCoalescesMissedPeriods(t *testing.T) {
+    synctest.Test(t, func(t *testing.T) {
+        ticker := time.NewTicker(5 * time.Nanosecond)
+        defer ticker.Stop()
+        first := <-ticker.C
+        time.Sleep(24 * time.Nanosecond)
+        second := <-ticker.C
+        if delta := second.Sub(first); delta != 5 * time.Nanosecond { t.Fatalf("second offset: %s", delta) }
+        select { case <-ticker.C: t.Fatal("missed ticks replayed"); default: }
+        third := <-ticker.C
+        if delta := third.Sub(second); delta != 20 * time.Nanosecond { t.Fatalf("third offset: %s", delta) }
+    })
+}

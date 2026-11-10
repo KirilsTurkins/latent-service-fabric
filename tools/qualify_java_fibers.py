@@ -349,18 +349,25 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
     executor_reference = fixture / "CompletableFutureExecutorThrowReferenceControl.java"
     executor_owners = fixture / "CompletableFutureExecutorAcceptanceOwnerControl.java"
     uncertain_owners = fixture / "CompletableFutureExecutorUncertainOwnerControl.java"
+    monitor_reference = fixture / "CompletableMonitorReferenceControl.java"
+    monitor_owner = fixture / "CompletableMonitorOwnerControl.java"
+    readiness_reference = fixture / "CompletableOverrideReadinessReferenceControl.java"
+    readmit_owner = fixture / "source-control/dev/latent/guest/runtime/concurrent/CompletableOverrideReadmitOwnerControl.java"
+    destination_reference = fixture / "CompletableOverrideDestinationReferenceControl.java"
     stubs = [fixture / "source-control" / name for name in (
         "PrivateSourceRunner.java", "dev/latent/generated/Bindings.java",
         "dev/latent/guest/runtime/Activation.java", "dev/latent/guest/runtime/concurrent/Executors.java")]
     ports = [compiler.sdk / ("fibers/dev/latent/guest/runtime/concurrent/" + name + ".java")
              for name in ("CompletableFuture", "CompletionStage", "CompletionException")]
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
-              for path in (native, owners, executor_reference, executor_owners, uncertain_owners, *stubs, *ports)}
+              for path in (native, owners, executor_reference, executor_owners, uncertain_owners,
+                           monitor_reference, monitor_owner, readiness_reference, readmit_owner,
+                           destination_reference, *stubs, *ports)}
     output.mkdir()
     reference, private = output / "reference", output / "private"
     reference.mkdir(); private.mkdir()
     compiler.run("completable-reference-compile", "javac", "-proc:none", "--release", "25", "-d", reference,
-                 native, executor_reference)
+                 native, executor_reference, monitor_reference, readiness_reference, destination_reference)
     expected = "COMPLETABLE_FUTURE_SOURCE_CONTROL PASS observables=82"
     observed = compiler.run("completable-reference-run", "java", "-Xmx256m", "-cp", reference,
                             "CompletableFutureNativeControl").strip()
@@ -369,6 +376,40 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
                                      "CompletableFutureExecutorThrowReferenceControl").strip()
     executor_cases = [json.loads(line) for line in executor_expected.splitlines()]
     if len(executor_cases) != 6: raise ValueError("Java CompletableFuture executor reference cases did not complete")
+    monitor_expected = "COMPLETABLE_FUTURE_MONITOR_REFERENCE PASS completion;exception-callbacks=7;cause-once=6"
+    observed = compiler.run("completable-monitor-reference-jdk", "java", "-Xmx256m", "-cp", reference,
+                            "CompletableMonitorReferenceControl").strip()
+    if observed != monitor_expected: raise ValueError("Java CompletableFuture monitor reference did not complete")
+    readiness_expected = "COMPLETABLE_OVERRIDE_READINESS_REFERENCE PASS cases=19;public-dispatch;private-helper"
+    observed = compiler.run("completable-readiness-reference-jdk", "java", "-Xmx256m", "-cp", reference,
+                            "CompletableOverrideReadinessReferenceControl").strip()
+    if observed != readiness_expected: raise ValueError("Java CompletableFuture readiness reference did not complete")
+    destination_expected = "\n".join((
+        "thenApply:42:completeCalls=0:failureCalls=0",
+        "callbackFailure:error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+        "sourceFailure:error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+        "thenCompose:42:completeCalls=0:failureCalls=0",
+        "exceptionally:42:completeCalls=0:failureCalls=0",
+        "thenCombine:42:completeCalls=0:failureCalls=0",
+        "applyToEither:42:completeCalls=0:failureCalls=0",
+        "runAfterEither:done=true:callbacks=1:completeCalls=0:failureCalls=0",
+        "handle:42:completeCalls=0:failureCalls=0",
+        "whenComplete:41:completeCalls=0:failureCalls=0",
+        "whenCompleteFailure:error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+        "exceptionallyCompose:42:completeCalls=0:failureCalls=0",
+        "thenComposeFailure:error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+        "completeAsync:42:completeCalls=0:failureCalls=0",
+        "completeAsyncFailure:error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+        "publicComplete:false:null:completeCalls=1",
+        "publicFailure:false:null:failureCalls=1",
+        "barrier:normal:before=null:after=42:completeCalls=0:failureCalls=0",
+        "barrier:failure:before=null:after=error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+        "barrier:cancel:before=null:after=error:CancellationException:completeCalls=0:failureCalls=0",
+        "queuedRejection:before=error:RejectedExecutionException:after=error:RejectedExecutionException:"
+        "callbacks=0:completeCalls=0:failureCalls=0"))
+    observed = compiler.run("completable-destination-reference-jdk", "java", "-Xmx256m", "-cp", reference,
+                            "CompletableOverrideDestinationReferenceControl").strip()
+    if observed != destination_expected: raise ValueError("Java CompletableFuture destination reference did not complete")
     text = read_file(native).decode("utf-8")
     for name in ("CompletableFuture", "CompletionStage", "CompletionException"):
         original = "import java.util.concurrent." + name + ";"
@@ -389,8 +430,28 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
         text = text.replace(original, "import dev.latent.guest.runtime.concurrent." + name + ";")
     private_executor = private / executor_reference.name
     private_executor.write_text(text, encoding="utf-8")
+    text = read_file(monitor_reference).decode("utf-8")
+    for name in ("CompletableFuture", "CompletionException"):
+        original = "import java.util.concurrent." + name + ";"
+        if text.count(original) != 1: raise ValueError("Java CompletableFuture monitor control import is ambiguous")
+        text = text.replace(original, "import dev.latent.guest.runtime.concurrent." + name + ";")
+    private_monitor = private / monitor_reference.name
+    private_monitor.write_text(text, encoding="utf-8")
+    text = read_file(readiness_reference).decode("utf-8")
+    original = "import java.util.concurrent.CompletableFuture;"
+    if text.count(original) != 1: raise ValueError("Java CompletableFuture readiness control import is ambiguous")
+    private_readiness = private / readiness_reference.name
+    private_readiness.write_text(text.replace(original, "import dev.latent.guest.runtime.concurrent.CompletableFuture;"),
+                                 encoding="utf-8")
+    text = read_file(destination_reference).decode("utf-8")
+    if text.count(original) != 1: raise ValueError("Java CompletableFuture destination control import is ambiguous")
+    private_destination = private / destination_reference.name
+    private_destination.write_text(text.replace(original, "import dev.latent.guest.runtime.concurrent.CompletableFuture;"),
+                                   encoding="utf-8")
     compiler.run("completable-source-compile", "javac", "-proc:none", "--release", "25", "-d", private,
-                 private_native, private_executor, owners, executor_owners, uncertain_owners, *stubs, *ports)
+                 private_native, private_executor, private_monitor, private_readiness, private_destination,
+                 monitor_owner, readmit_owner,
+                 owners, executor_owners, uncertain_owners, *stubs, *ports)
     owner_result = "COMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=419;raceRounds=32"
     observed = compiler.run("completable-source-run", "java", "-Xmx256m", "-cp", private,
                             "PrivateSourceRunner").strip()
@@ -409,6 +470,24 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
     if observed != ("COMPLETABLE_FUTURE_EXECUTOR_UNCERTAIN_OWNER PASS observables=30;"
                     "queued=8;results=8;cleanup-denied;activation-retirement-unqualified"):
         raise ValueError("Java CompletableFuture uncertain executor capacity control did not complete")
+    observed = compiler.run("completable-monitor-source", "java", "-Xmx256m", "-cp", private,
+                            "CompletableMonitorReferenceControl").strip()
+    if observed != monitor_expected: raise ValueError("Java CompletableFuture monitor source differs from JDK")
+    observed = compiler.run("completable-monitor-owner", "java", "-Xmx256m", "-cp", private,
+                            "CompletableMonitorOwnerControl").strip()
+    if observed != ("COMPLETABLE_FUTURE_MONITOR_OWNER PASS callback-retirement;"
+                    "cancelled-queued-retirement;subscribe-race"):
+        raise ValueError("Java CompletableFuture monitor ownership control did not complete")
+    observed = compiler.run("completable-readiness-source", "java", "-Xmx256m", "-cp", private,
+                            "CompletableOverrideReadinessReferenceControl", "source").strip()
+    if observed != readiness_expected: raise ValueError("Java CompletableFuture readiness source differs from JDK")
+    observed = compiler.run("completable-readmit-owner", "java", "-Xmx256m", "-cp", private,
+                            "dev.latent.guest.runtime.concurrent.CompletableOverrideReadmitOwnerControl").strip()
+    if observed != "COMPLETABLE_OVERRIDE_READMIT_OWNER PASS simulated-queue-copies=2;original-ledger":
+        raise ValueError("Java CompletableFuture readiness readmission control did not complete")
+    observed = compiler.run("completable-destination-source", "java", "-Xmx256m", "-cp", private,
+                            "CompletableOverrideDestinationReferenceControl", "source").strip()
+    if observed != destination_expected: raise ValueError("Java CompletableFuture destination source differs from JDK")
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError("Java CompletableFuture control inputs changed during execution")
     return {"status": "reference-and-SDK-source-controls-passed", "referenceObservables": 82,
@@ -416,6 +495,10 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
             "executorReferenceCases": 6, "executorAcceptanceOwnershipObservables": 49,
             "uncertainExecutorOwnershipObservables": 30,
             "uncertainAcceptanceAtOriginalOwnerCapacity": True, "uncertainActivationRetirementQualified": False,
+            "futureMonitor": "JDK-and-SDK-source-controls-passed",
+            "futureReadiness": "JDK-and-SDK-source-controls-passed",
+            "futureReadmit": "simulated-queue-copies-original-source-ledger-passed",
+            "futureDestination": "JDK-and-SDK-source-controls-passed",
             "componentExecutionPerformed": False, "actualGuestBindingsUsed": False}
 
 
@@ -441,7 +524,7 @@ def completable_model_control(compiler: Compiler, output: Path) -> dict:
                  "-d", output, *sources)
     expected = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;canonical-api-and-helper-identities;"
         "resolved-reference-closure;unsupported-no-fallback;result-settlement-fence;queued-settlement-fence;"
-        "actual-coroutine-monitors=28;owned-callback-bodies=32;bodies=190;actual-generated-callbacks=23;application-identity")
+        "actual-coroutine-monitors=29;owned-callback-bodies=33;bodies=191;actual-generated-callbacks=23;application-identity")
     observed = compiler.run("completable-model-control", "java", "-Xmx256m", "-cp",
                             str(output) + os.pathsep + classpath,
                             "dev.latent.guest.runtime.compiler.CompletableFutureModelControl").strip()
@@ -452,8 +535,8 @@ def completable_model_control(compiler: Compiler, output: Path) -> dict:
     if fields != ("COMPLETABLE_FUTURE_FIELD_MODEL_CONTROL PASS declared-and-inherited-types;"
                   "closed-read-write-references;absent-no-fallback;models=6"):
         raise ValueError("Java CompletableFuture field model control did not complete")
-    return {"status": "actual-locked-classlib-model-passed", "modelFingerprintVersion": 5, "modelMethodBodies": 190,
-            "coroutineMonitorBodies": 28, "ownedCallbackBodies": 32, "actualGeneratedCallbacks": 23,
+    return {"status": "actual-locked-classlib-model-passed", "modelFingerprintVersion": 6, "modelMethodBodies": 191,
+            "coroutineMonitorBodies": 29, "ownedCallbackBodies": 33, "actualGeneratedCallbacks": 23,
             "jarDigests": identities,
             "fieldReferences": "actual-declared-and-inherited-types-passed",
             "portOrApplicationClassesInitialized": False, "actualGuestBindingsUsed": False}
@@ -482,14 +565,18 @@ def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
     main = fixture / "timers/Main.java"
     validation = fixture / "timers/TimerValidationOrder.java"
     private = fixture / "compiler/standard-timer-control"
+    class_monitor = private / "TimerClassMonitorReferenceControl.java"
+    cancelled_reference = private / "TimerCancelledQueueReferenceControl.java"
+    interrupt_reference = private / "TimerInterruptedCallbackControl.java"
     sources = [private / name for name in (
         "TimerModelMain.java", "TimerActiveOwnerControl.java", "TimerValidationAdmissionControl.java",
+        "TimerCancelledSettlementOwnerControl.java", "TimerInterruptedSettlementOwnerControl.java",
         "dev/latent/generated/Bindings.java", "dev/latent/guest/runtime/Activation.java")]
     clock_sources = [private / "FakeClock.java", private / "ClockOrderControl.java"]
     ports = [compiler.sdk / ("fibers/dev/latent/guest/runtime/util/" + name + ".java")
              for name in ("Timer", "TimerTask")]
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
-              for path in (application, main, validation, *sources, *ports, *clock_sources)}
+              for path in (application, main, validation, class_monitor, cancelled_reference, interrupt_reference, *sources, *ports, *clock_sources)}
     output.mkdir()
     mapped = output / "Capsule.java"
     text = read_file(application).decode("utf-8")
@@ -505,8 +592,63 @@ def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
         if text.count(original) != 1: raise ValueError("Java timer validation control import is ambiguous")
         text = text.replace(original, "import dev.latent.guest.runtime.util." + name + ";")
     mapped_validation.write_text(text, encoding="utf-8")
+    mapped_class_monitor = output / "TimerClassMonitorReferenceControl.java"
+    text = read_file(class_monitor).decode("utf-8")
+    for name in ("Timer", "TimerTask"):
+        original = "import java.util." + name + ";"
+        if text.count(original) != 1: raise ValueError("Java timer class monitor control import is ambiguous")
+        text = text.replace(original, "import dev.latent.guest.runtime.util." + name + ";")
+    mapped_class_monitor.write_text(text, encoding="utf-8")
+    mapped_cancelled = output / "TimerCancelledQueueReferenceControl.java"
+    text = read_file(cancelled_reference).decode("utf-8")
+    for name in ("Timer", "TimerTask"):
+        original = "import java.util." + name + ";"
+        if text.count(original) != 1: raise ValueError("Java cancelled timer control import is ambiguous")
+        text = text.replace(original, "import dev.latent.guest.runtime.util." + name + ";")
+    mapped_cancelled.write_text(text, encoding="utf-8")
+    mapped_interrupt = output / "TimerInterruptedCallbackControl.java"
+    text = read_file(interrupt_reference).decode("utf-8")
+    for name in ("Timer", "TimerTask"):
+        original = "import java.util." + name + ";"
+        if text.count(original) != 1: raise ValueError("Java interrupted timer control import is ambiguous")
+        text = text.replace(original, "import dev.latent.guest.runtime.util." + name + ";")
+    mapped_interrupt.write_text(text, encoding="utf-8")
+    reference = output / "class-monitor-reference"
+    reference.mkdir()
+    compiler.run("standard-timer-class-monitor-reference-compile", "javac", "-proc:none", "--release", "25",
+                 "-d", reference, class_monitor, cancelled_reference, interrupt_reference)
+    class_monitor_expected = [mode + ":whileHeld=true:blocked=false:once=1:recurring=2:publicMonitor=preserved"
+                              for mode in ("default", "daemon", "named")]
+    result = compiler.run("standard-timer-class-monitor-reference", "java", "-Xmx256m", "-cp", reference,
+                          "TimerClassMonitorReferenceControl")
+    if result.strip().splitlines() != class_monitor_expected:
+        raise ValueError("Java timer class monitor reference did not complete")
+    cancelled_jdk = [
+        "capacity:automatic:before=-1:witness=-1:removed=-1:afterPurge=-1:accepted=2:afterCancel=-1:reschedule=refused:unexpected=0",
+        "capacity:purge:before=-1:witness=-1:removed=valid:afterPurge=-1:accepted=2:afterCancel=-1:reschedule=refused:unexpected=0",
+        "active:automatic:before=-1:removed=-1:afterPurge=-1:witness=-1:afterCancel=-1:reschedule=refused:callbacks=1",
+        "active:purge:before=-1:removed=valid:afterPurge=-1:witness=-1:afterCancel=-1:reschedule=refused:callbacks=1",
+        "self:before=-1:witness=-1:afterCancel=-1:reschedule=refused:callbacks=1:witnessCalls=1"]
+    result = compiler.run("standard-timer-cancelled-reference", "java", "-Xmx256m", "-cp", reference,
+                          "TimerCancelledQueueReferenceControl")
+    if result.strip().splitlines() != cancelled_jdk:
+        raise ValueError("Java cancelled timer reference did not complete")
     compiler.run("standard-timer-source-compile", "javac", "-proc:none", "--release", "25",
-                 "-d", output, mapped, mapped_validation, main, *sources, *ports)
+                 "-d", output, mapped, mapped_validation, mapped_class_monitor, mapped_cancelled, mapped_interrupt, main, *sources, *ports)
+    result = compiler.run("standard-timer-class-monitor-source", "java", "-Xmx256m", "-cp", output,
+                          "TimerClassMonitorReferenceControl", "source")
+    if result.strip().splitlines() != class_monitor_expected:
+        raise ValueError("Java timer class monitor source differs from reference")
+    cancelled_source = [
+        "capacity:automatic:before=8:witness=2:removed=-1:afterPurge=2:accepted=2:afterCancel=1:reschedule=refused:unexpected=0",
+        "capacity:purge:before=8:witness=2:removed=0:afterPurge=2:accepted=2:afterCancel=1:reschedule=refused:unexpected=0",
+        "active:automatic:before=2:removed=-1:afterPurge=2:witness=1:afterCancel=1:reschedule=refused:callbacks=1",
+        "active:purge:before=2:removed=1:afterPurge=2:witness=1:afterCancel=1:reschedule=refused:callbacks=1",
+        "self:before=2:witness=1:afterCancel=1:reschedule=refused:callbacks=1:witnessCalls=1"]
+    result = compiler.run("standard-timer-cancelled-source", "java", "-Xmx256m", "-cp", output,
+                          "TimerCancelledQueueReferenceControl", "source")
+    if result.strip().splitlines() != cancelled_source:
+        raise ValueError("Java cancelled timer source control did not complete")
     expected = ["42 42 42 42",
         "TIMER_SOURCE_CONTROL PASS reference-observables;queue-rollback;cancel-drain;idle-finally;no-live-owners"]
     for iteration in range(3):
@@ -537,10 +679,47 @@ def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
     result = compiler.run("standard-timer-clock-control", "java", "-Xmx256m", "-cp", clock, "ClockOrderControl")
     if result.strip() != "TIMER_CLOCK_ORDER PASS":
         raise ValueError("Java timer clock ordering control did not complete")
+    for mode, queued in (("refused", 1), ("lost", 0)):
+        result = compiler.run("standard-timer-cancelled-settlement-" + mode, "java", "-Xmx256m", "-cp", output,
+                              "TimerCancelledSettlementOwnerControl", mode)
+        expected = (mode + ":witness=false:poisoned=true:retained=true:queued=" + str(queued)
+                    + ":executors=1:attempts=3:admission=refused")
+        if result.strip() != expected: raise ValueError("Java cancelled timer settlement control did not complete: " + mode)
+    def interrupted_expected(source):
+        results = []
+        for mode in ("once-direct", "periodic-direct", "once-sleep", "periodic-sleep", "once-flag", "once-subclass", "runtime", "error"):
+            fatal = mode in ("runtime", "error")
+            periodic = mode.startswith("periodic")
+            message = "IllegalStateException" if mode == "runtime" else "AssertionError" if mode == "error" else "none"
+            flag = "none" if fatal else "true" if mode == "once-flag" else "false"
+            counts = ("2,0,0" if fatal else "1,1,1" if periodic else "2,1,1") if source else "-1,-1,-1"
+            owners = "0" if source else "-1"
+            results.append(mode + ":survived=" + str(not fatal).lower() + ":accepted=" + str(not fatal).lower()
+                + ":calls=" + ("2" if periodic else "1") + ":error=" + message + ":flag=" + flag
+                + ":queued=" + counts + ":owners=" + owners)
+        return results
+    for scope, directory, arguments in (("reference", reference, ()), ("source", output, ("source",))):
+        result = compiler.run("standard-timer-interrupted-" + scope, "java", "-Xmx256m", "-cp", directory,
+                              "TimerInterruptedCallbackControl", *arguments)
+        if result.strip().splitlines() != interrupted_expected(scope == "source"):
+            raise ValueError("Java interrupted timer " + scope + " control did not complete")
+    for thrown in ("interrupt", "runtime"):
+        for outcome, queued in (("refused", 1), ("lost", 0)):
+            result = compiler.run("standard-timer-interrupted-settlement-" + thrown + "-" + outcome,
+                                  "java", "-Xmx256m", "-cp", output,
+                                  "TimerInterruptedSettlementOwnerControl", thrown, outcome)
+            primary = "source-queued-settlement-" + outcome if thrown == "interrupt" else "guest-primary"
+            expected = (thrown + ":" + outcome + ":primary=" + primary
+                        + ":poisoned=true:retained=true:queued=" + str(queued) + ":executors=1:attempts=2")
+            if result.strip() != expected:
+                raise ValueError("Java interrupted timer settlement control did not complete: " + thrown + ":" + outcome)
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError("Java timer control inputs changed during execution")
     return {"status": "SDK-source-controls-passed", "iterations": 3, "modes": [0, 1, 2, 3],
-            "sourceInputs": inputs, "validationOrder": {"observations": 35, "referenceAndSource": "passed",
+            "sourceInputs": inputs, "classMonitor": "JDK-and-SDK-source-controls-passed",
+            "cancelledTail": "JDK-reference-and-bounded-private-ledger-passed",
+            "interruptedCallback": "JDK-reference-and-bounded-private-ledger-passed",
+            "validationOrder": {"observations": 35, "referenceAndSource": "passed",
                 "preAdmission": "passed", "syntheticClock": "passed"},
             "componentExecutionPerformed": False, "actualGuestBindingsUsed": False}
 
@@ -566,7 +745,7 @@ def standard_timer_model_control(compiler: Compiler, output: Path) -> dict:
                  "-d", output, *sources)
     result = compiler.run("standard-timer-model-control", "java", "-Xmx256m", "-cp",
         str(output) + os.pathsep + classpath, "dev.latent.guest.runtime.compiler.StandardTimerModelControl").strip()
-    if result != ("STANDARD_TIMER_MODEL_CONTROL PASS original-classlib-negative;layout-and-repeat-negatives;canonical-api-and-private-helper;"
+    if result != ("STANDARD_TIMER_MODEL_CONTROL PASS original-classlib-negative;layout-and-repeat-negatives;canonical-api-and-private-helper;private-name-monitor;private-cancelled-cleanup;"
                   "resolved-method-and-field-types;unsupported-no-fallback;models=3;actual-c-dependency-worker-and-callback"):
         raise ValueError("Java standard timer model control did not complete")
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
@@ -675,6 +854,139 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 
+def scheduled_ready_shutdown_control(compiler: Compiler, output: Path, reference: Path,
+                                     ports: list[Path], private: Path) -> dict:
+    """Compare eligible shutdown work and test clock failures in a private host port."""
+    expected = 'SCHEDULED_READY_SHUTDOWN PASS disabled;changed;elapsed;default;periodic;owners'
+    for scope, directory, arguments in (('jdk', reference, ()), ('source', output, ('source',))):
+        result = compiler.run('scheduled-ready-shutdown-' + scope, 'java', '-Xmx256m', '-cp', directory,
+                              'ScheduledReadyShutdownReferenceControl', *arguments).strip()
+        if result != expected: raise ValueError('Java scheduled ready shutdown ' + scope + ' control did not complete')
+    timer = next(path for path in ports if path.name == 'ScheduledThreadPoolExecutor.java')
+    text = read_file(timer).decode('utf-8')
+    for original, replacement in (
+            ('private final long origin = System.nanoTime();', 'private final long origin = ScheduledReadyFakeClock.nanoTime();'),
+            ('private long elapsed() { return System.nanoTime() - origin; }',
+             'private long elapsed() { return ScheduledReadyFakeClock.nanoTime() - origin; }')):
+        if text.count(original) != 1: raise ValueError('Java scheduled shutdown clock source is ambiguous')
+        text = text.replace(original, replacement)
+    clock = output / 'scheduled-ready-clock'
+    clock.mkdir()
+    mapped = clock / 'ScheduledThreadPoolExecutor.java'
+    mapped.write_text(text, encoding='utf-8')
+    compiler.run('scheduled-ready-clock-compile', 'javac', '-proc:none', '--release', '25', '-d', clock,
+                 *[path for path in ports if path != timer], mapped,
+                 private / 'ScheduledReadyFakeClock.java', private / 'ScheduledReadyClockControl.java',
+                 private / 'dev/latent/generated/Bindings.java', private / 'dev/latent/guest/runtime/Activation.java')
+    result = compiler.run('scheduled-ready-clock-boundary', 'java', '-Xmx256m', '-cp', clock,
+                          'ScheduledReadyClockControl').strip().splitlines()
+    if result != ['boundary=49:cancelled=true:held=1:1:1:active=none:final=0:0:0',
+                  'boundary=50:cancelled=false:held=1:2:2:active=1:1:1:final=0:0:0',
+                  'boundary=51:cancelled=false:held=1:2:2:active=1:1:1:final=0:0:0']:
+        raise ValueError('Java scheduled ready clock boundary control did not complete')
+    result = compiler.run('scheduled-ready-clock-failure', 'java', '-Xmx256m', '-cp', clock,
+                          'ScheduledReadyClockControl', 'failure').strip()
+    if result != 'clock-failure=propagated:held=1:1:1:laterCancelled=true:final=0:0:0':
+        raise ValueError('Java scheduled ready clock failure control did not complete')
+    result = compiler.run('scheduled-ready-clock-post', 'java', '-Xmx256m', '-cp', clock,
+                          'ScheduledReadyClockControl', 'post').strip()
+    if result != 'normal-post:clock-unread;all-settled-once':
+        raise ValueError('Java scheduled post-dequeue control did not complete')
+    # Arm the synthetic clock after dequeue to model a concurrent manual run.
+    # This private splice is never included in a component.
+    needle = 'queue.remove(index); running++;'
+    if text.count(needle) != 1: raise ValueError('Java scheduled dequeue source is ambiguous')
+    manual = output / 'scheduled-ready-manual-clock'
+    manual.mkdir()
+    manual_port = manual / 'ScheduledThreadPoolExecutor.java'
+    manual_port.write_text(text.replace(needle, needle + ' ScheduledReadyFakeClock.armAfterDequeue();'), encoding='utf-8')
+    compiler.run('scheduled-ready-manual-clock-compile', 'javac', '-proc:none', '--release', '25', '-d', manual,
+                 *[path for path in ports if path != timer], manual_port,
+                 private / 'ScheduledReadyFakeClock.java', private / 'ScheduledReadyClockControl.java',
+                 private / 'dev/latent/generated/Bindings.java', private / 'dev/latent/guest/runtime/Activation.java')
+    result = compiler.run('scheduled-ready-clock-manual', 'java', '-Xmx256m', '-cp', manual,
+                          'ScheduledReadyClockControl', 'manual').strip()
+    if result != 'manual-post:result-held-until-caller-return;all-settled-once':
+        raise ValueError('Java scheduled manual post-dequeue control did not complete')
+    return {'status': 'JDK-and-SDK-source-controls-passed', 'clockFailure': 'synthetic-host-only',
+            'postDequeue': 'normal-and-manual-source-ledger-passed',
+            'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
+
+
+def scheduled_noop_cancel_control(compiler: Compiler, output: Path, reference: Path) -> dict:
+    """Exercise settled no-op cancellation and preserve in-flight original owners."""
+    expected = 'SCHEDULED_NOOP_CANCEL_REFERENCE PASS completed;cancelled;public-monitor'
+    for scope, directory, arguments in (('jdk', reference, ()), ('source', output, ('source',))):
+        result = compiler.run('scheduled-noop-cancel-' + scope, 'java', '-Xmx256m', '-cp', directory,
+                              'ScheduledNoopCancelReferenceControl', *arguments).strip()
+        if result != expected: raise ValueError('Java scheduled no-op cancellation ' + scope + ' control did not complete')
+    owner_expected = {
+        'copy': 'completed-copy:cancel=false:withdrawn=true:settled-once=true',
+        'cancelled': 'cancelled:returnedWhileHeld=true:settled-once=true',
+        'running': 'running:returnedWhileHeld=false:original-owners-held=true:settled-once=true',
+        'manual': 'manual:returnedWhileHeld=true:result-held=true:settled-once=true',
+        'refused': 'refused:returnedWhileHeld=true:poisoned=true:original-retained=true:attempts=1',
+        'lost': 'lost:returnedWhileHeld=true:poisoned=true:original-retained=true:attempts=1'}
+    for mode, expected in owner_expected.items():
+        result = compiler.run('scheduled-noop-owner-' + mode, 'java', '-Xmx256m', '-cp', output,
+                              'ScheduledNoopCancelOwnerControl', mode).strip()
+        if result != expected: raise ValueError('Java scheduled no-op owner control did not complete: ' + mode)
+    for mode, remaining, poisoned in (('success', '0:0:0', 'false'), ('refused', '1:1:0', 'true'),
+                                      ('lost', '1:0:0', 'true')):
+        result = compiler.run('scheduled-noop-inflight-' + mode, 'java', '-Xmx256m', '-cp', output,
+                              'ScheduledNoopInflightControl', mode).strip()
+        expected = (mode + ':secondReturnedWhileSettlementPending=true:held=1:1:0:settlementAttempts=1:poisoned='
+                    + poisoned + ':remaining=' + remaining)
+        if result != expected: raise ValueError('Java scheduled no-op in-flight control did not complete: ' + mode)
+    return {'status': 'JDK-and-SDK-source-controls-passed', 'inflight': 'synthetic-host-only',
+            'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
+
+
+def executor_invoke_any_ready_control(compiler: Compiler, output: Path, reference: Path) -> dict:
+    """Check ready-first execution and original owners using only private host ports."""
+    expected = ('EXECUTOR_INVOKE_ANY_READY PASS one;zero;failure;rejection;all-failed;'
+                'null-rule;iterator-observed')
+    for scope, directory in (('jdk', reference), ('source', output)):
+        result = compiler.run('executor-invoke-any-ready-' + scope, 'java', '-Xmx256m', '-cp', directory,
+                              'ExecutorInvokeAnyReadyReferenceControl', scope).strip()
+        if result != expected: raise ValueError('Java executor invokeAny ready reference control did not complete')
+    owners = (
+        ('parallel', 'InvokeAnyParallelOwnerProbe', (),
+         'parallel:result=42:held=1:0:1:pending=true:cancelInterrupt=true:after=0:0:0'),
+        ('timeout', 'InvokeAnyPendingOwnerProbe', ('timeout',),
+         'timeout:outcome=timeout:held=1:2:0:pending=true:after=0:0:0'),
+        ('interrupt', 'InvokeAnyPendingOwnerProbe', ('interrupt',),
+         'interrupt:outcome=interrupted:held=1:2:0:pending=true:after=0:0:0'),
+        ('accepted-throw', 'InvokeAnyAcceptedThrowOwnerProbe', (),
+         'accepted-throw:held=1:1:0:pending=true:callbacks=0:after=0:0:0'))
+    for mode, main, arguments, expected in owners:
+        result = compiler.run('executor-invoke-any-owner-' + mode, 'java', '-Xmx256m', '-cp', output,
+                              main, *arguments).strip()
+        if result != expected: raise ValueError('Java executor invokeAny ownership control did not complete')
+    return {'status': 'JDK-and-SDK-source-controls-passed', 'iterator': 'SDK-validates-after-ready-JDK-returns-early',
+            'ownership': 'synthetic-host-ledger-only', 'componentExecutionPerformed': False,
+            'actualGuestBindingsUsed': False}
+
+
+def executor_invoke_all_wait_control(compiler: Compiler, output: Path, reference: Path) -> dict:
+    """Compare completed/timeout results and retain actual source-owned work."""
+    expected = ('INVOKE_ALL_WAIT PASS completed;subclass;late;negative-get;timeout-suffix;'
+                'exception;done-failure;nonpositive')
+    for scope, directory in (('jdk', reference), ('source', output)):
+        result = compiler.run('executor-invoke-all-wait-' + scope, 'java', '-Xmx256m', '-cp', directory,
+                              'ExecutorInvokeAllWaitReferenceControl').strip()
+        if result != expected: raise ValueError('Java executor invokeAll wait ' + scope + ' control did not complete')
+    for mode in ('timeout', 'optimistic', 'prefix'):
+        result = compiler.run('executor-invoke-all-owner-' + mode, 'java', '-Xmx256m', '-cp', output,
+                              'ExecutorInvokeAllOwnerControl', mode).strip()
+        expected = ('INVOKE_ALL_OWNER ' + mode + ' held=1:1:' + ('1' if mode == 'prefix' else '0')
+                    + ' retired=0:0:0 result-settle=1')
+        if result != expected: raise ValueError('Java executor invokeAll owner control did not complete')
+    return {'status': 'JDK-and-SDK-source-controls-passed', 'ownership': 'synthetic-host-ledger-only',
+            'firstSubmissionDeadline': 'unchanged', 'componentExecutionPerformed': False,
+            'actualGuestBindingsUsed': False}
+
+
 def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     """Real port source with a private host ledger, never injected guest bindings."""
     private = compiler.sdk / 'fibers/conformance/compiler/scheduled-source-control'
@@ -687,22 +999,32 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'ScheduledQueuedSettlementControl.java', 'FutureTaskInterruptFailureControl.java',
         'ExecutorCloseInterruptControl.java', 'ExecutorOwnerSettlementControl.java',
         'ExecutorInvokeInterruptOwnerControl.java', 'ExecutorAwaitTerminationOwnerControl.java',
-        'FutureTaskNullFailureOwnerControl.java',
+        'FutureTaskNullFailureOwnerControl.java', 'FutureTaskMonitorOwnerControl.java',
+        'DefaultExecutorOwnerControl.java', 'ScheduledReadyClockControl.java', 'ScheduledReadyFakeClock.java',
+        'ScheduledNoopCancelOwnerControl.java', 'ScheduledNoopInflightControl.java',
+        'InvokeAnyParallelOwnerProbe.java', 'InvokeAnyPendingOwnerProbe.java', 'InvokeAnyAcceptedThrowOwnerProbe.java',
+        'ExecutorInvokeAllOwnerControl.java',
         'dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
+    noop_reference = private / 'ScheduledNoopCancelReferenceControl.java'
+    ready_reference = private / 'ScheduledReadyShutdownReferenceControl.java'
     reference = private / 'ScheduledStoppedReferenceControl.java'
     periodic_reference = private / 'ScheduledPeriodicReferenceControl.java'
     invoke_reference = private / 'ExecutorInvokeInterruptReferenceControl.java'
+    invoke_any_reference = private / 'ExecutorInvokeAnyReadyReferenceControl.java'
+    invoke_all_reference = private / 'ExecutorInvokeAllWaitReferenceControl.java'
     termination_reference = private / 'ExecutorAwaitTerminationReferenceControl.java'
     null_failure_reference = private / 'FutureTaskNullFailureReferenceControl.java'
+    monitor_reference = private / 'FutureTaskMonitorReferenceControl.java'
+    default_monitor_reference = private / 'DefaultExecutorMonitorReferenceControl.java'
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
-        for path in (*ports, *controls, reference, periodic_reference, invoke_reference, termination_reference,
-                     null_failure_reference)}
+        for path in (*ports, *controls, noop_reference, ready_reference, reference, periodic_reference, invoke_reference, invoke_any_reference, invoke_all_reference, termination_reference,
+                     null_failure_reference, monitor_reference, default_monitor_reference)}
     output.mkdir()
     jdk_output = output / 'reference-jdk'
     jdk_output.mkdir()
     compiler.run('scheduled-stopped-reference-compile', 'javac', '-proc:none', '--release', '25',
         '-d', jdk_output, reference, periodic_reference, invoke_reference, termination_reference,
-        null_failure_reference)
+        null_failure_reference, monitor_reference, default_monitor_reference, ready_reference, noop_reference, invoke_any_reference, invoke_all_reference)
     expected_stopped = ('SCHEDULED_STOPPED_REFERENCE PASS delayed;fixed-rate;fixed-delay;nested;future;'
         'running;shutdown;shutdown-policy;physical-runner')
     result = compiler.run('scheduled-stopped-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
@@ -718,7 +1040,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     result = compiler.run('executor-invoke-interrupt-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'ExecutorInvokeInterruptReferenceControl', 'jdk').strip()
     if result != expected_invoke: raise ValueError('Java executor invoke interruption reference did not complete')
-    expected_termination = 'EXECUTOR_AWAIT_TERMINATION PASS zero;negative;positive;terminated;blocked-interrupt'
+    expected_termination = 'EXECUTOR_AWAIT_TERMINATION PASS zero;negative;positive;terminated;blocked-interrupt;override'
     result = compiler.run('executor-await-termination-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'ExecutorAwaitTerminationReferenceControl', 'jdk').strip()
     if result != expected_termination: raise ValueError('Java executor termination reference did not complete')
@@ -726,6 +1048,14 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     result = compiler.run('future-task-null-failure-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'FutureTaskNullFailureReferenceControl', 'jdk').strip()
     if result != expected_null_failure: raise ValueError('Java future task null failure reference did not complete')
+    expected_monitor = 'FUTURE_TASK_MONITOR_REFERENCE PASS run;cancel;completed-get;executor;scheduled-cancel;failed-get-callback'
+    result = compiler.run('future-task-monitor-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
+        'FutureTaskMonitorReferenceControl').strip()
+    if result != expected_monitor: raise ValueError('Java FutureTask monitor reference did not complete')
+    expected_default_monitor = 'DEFAULT_EXECUTOR_MONITOR_REFERENCE PASS cold;warm'
+    result = compiler.run('default-executor-monitor-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
+        'DefaultExecutorMonitorReferenceControl', 'jdk').strip()
+    if result != expected_default_monitor: raise ValueError('Java default executor monitor reference did not complete')
     text = read_file(reference).decode('utf-8')
     for name in ('CompletableFuture', 'FutureTask', 'ScheduledThreadPoolExecutor'):
         original = 'import java.util.concurrent.' + name + ';'
@@ -745,21 +1075,59 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     selected_invoke = output / 'ExecutorInvokeInterruptReferenceControl.java'
     selected_invoke.write_bytes(text.replace(original,
         'import dev.latent.guest.runtime.concurrent.AbstractExecutorService;').encode('utf-8'))
+    text = read_file(invoke_any_reference).decode('utf-8')
+    if text.count(original) != 1: raise ValueError('Java executor invokeAny reference import is ambiguous')
+    selected_invoke_any = output / 'ExecutorInvokeAnyReadyReferenceControl.java'
+    selected_invoke_any.write_bytes(text.replace(original,
+        'import dev.latent.guest.runtime.concurrent.AbstractExecutorService;').encode('utf-8'))
+    text = read_file(invoke_all_reference).decode('utf-8')
+    for name in ('AbstractExecutorService', 'FutureTask'):
+        original = 'import java.util.concurrent.' + name + ';'
+        if text.count(original) != 1: raise ValueError('Java executor invokeAll reference import is ambiguous')
+        text = text.replace(original, 'import dev.latent.guest.runtime.concurrent.' + name + ';')
+    selected_invoke_all = output / 'ExecutorInvokeAllWaitReferenceControl.java'
+    selected_invoke_all.write_bytes(text.encode('utf-8'))
     text = read_file(termination_reference).decode('utf-8')
-    original = 'import java.util.concurrent.Executors;'
-    if text.count(original) != 1: raise ValueError('Java executor termination reference import is ambiguous')
+    for name in ('Executors', 'ScheduledThreadPoolExecutor'):
+        original = 'import java.util.concurrent.' + name + ';'
+        if text.count(original) != 1: raise ValueError('Java executor termination reference import is ambiguous')
+        text = text.replace(original, 'import dev.latent.guest.runtime.concurrent.' + name + ';')
     selected_termination = output / 'ExecutorAwaitTerminationReferenceControl.java'
-    selected_termination.write_bytes(text.replace(original,
-        'import dev.latent.guest.runtime.concurrent.Executors;').encode('utf-8'))
+    selected_termination.write_bytes(text.encode('utf-8'))
     text = read_file(null_failure_reference).decode('utf-8')
     original = 'import java.util.concurrent.FutureTask;'
     if text.count(original) != 1: raise ValueError('Java future task null failure reference import is ambiguous')
     selected_null_failure = output / 'FutureTaskNullFailureReferenceControl.java'
     selected_null_failure.write_bytes(text.replace(original,
         'import dev.latent.guest.runtime.concurrent.FutureTask;').encode('utf-8'))
+    text = read_file(monitor_reference).decode('utf-8')
+    for name in ('FutureTask', 'Executors', 'ScheduledThreadPoolExecutor'):
+        original = 'import java.util.concurrent.' + name + ';'
+        if text.count(original) != 1: raise ValueError('Java FutureTask monitor reference import is ambiguous')
+        text = text.replace(original, 'import dev.latent.guest.runtime.concurrent.' + name + ';')
+    selected_monitor = output / 'FutureTaskMonitorReferenceControl.java'
+    selected_monitor.write_bytes(text.encode('utf-8'))
+    text = read_file(default_monitor_reference).decode('utf-8')
+    original = 'import java.util.concurrent.CompletableFuture;'
+    if text.count(original) != 1: raise ValueError('Java default executor monitor import is ambiguous')
+    selected_default_monitor = output / 'DefaultExecutorMonitorReferenceControl.java'
+    selected_default_monitor.write_bytes(text.replace(original,
+        'import dev.latent.guest.runtime.concurrent.CompletableFuture;').encode('utf-8'))
+    text = read_file(ready_reference).decode('utf-8')
+    original = 'import java.util.concurrent.ScheduledThreadPoolExecutor;'
+    if text.count(original) != 1: raise ValueError('Java scheduled ready shutdown source import is ambiguous')
+    selected_ready = output / 'ScheduledReadyShutdownReferenceControl.java'
+    selected_ready.write_bytes(text.replace(original,
+        'import dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor;').encode('utf-8'))
+    text = read_file(noop_reference).decode('utf-8')
+    original = 'import java.util.concurrent.ScheduledThreadPoolExecutor;'
+    if text.count(original) != 1: raise ValueError('Java scheduled no-op cancellation source import is ambiguous')
+    selected_noop = output / 'ScheduledNoopCancelReferenceControl.java'
+    selected_noop.write_bytes(text.replace(original,
+        'import dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor;').encode('utf-8'))
     compiler.run('scheduled-source-compile', 'javac', '-proc:none', '--release', '25',
         '-d', output, *ports, *controls, selected, selected_periodic, selected_invoke, selected_termination,
-        selected_null_failure)
+        selected_null_failure, selected_monitor, selected_default_monitor, selected_ready, selected_noop, selected_invoke_any, selected_invoke_all)
     result = compiler.run('executor-invoke-interrupt-source', 'java', '-Xmx256m', '-cp', output,
         'ExecutorInvokeInterruptReferenceControl', 'source').strip()
     if result != expected_invoke: raise ValueError('Java executor invoke source differs from reference')
@@ -772,7 +1140,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     if result != expected_termination: raise ValueError('Java executor termination source differs from reference')
     result = compiler.run('executor-await-termination-owner', 'java', '-Xmx256m', '-cp', output,
         'ExecutorAwaitTerminationOwnerControl').strip()
-    if result != 'EXECUTOR_AWAIT_TERMINATION_OWNER PASS managed;scheduled;owners-held-until-worker-return':
+    if result != 'EXECUTOR_AWAIT_TERMINATION_OWNER PASS managed;scheduled;owners-held-until-worker-return;override':
         raise ValueError('Java executor termination owner control did not complete')
     result = compiler.run('future-task-null-failure-source', 'java', '-Xmx256m', '-cp', output,
         'FutureTaskNullFailureReferenceControl', 'source').strip()
@@ -781,6 +1149,21 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'FutureTaskNullFailureOwnerControl').strip()
     if result != 'FUTURE_TASK_NULL_FAILURE_OWNER PASS original-result-held-until-runner-exit':
         raise ValueError('Java future task null failure owner control did not complete')
+    result = compiler.run('future-task-monitor-source', 'java', '-Xmx256m', '-cp', output,
+        'FutureTaskMonitorReferenceControl').strip()
+    if result != expected_monitor: raise ValueError('Java FutureTask monitor source differs from reference')
+    result = compiler.run('future-task-monitor-owner', 'java', '-Xmx256m', '-cp', output,
+        'FutureTaskMonitorOwnerControl').strip()
+    if result != 'FUTURE_TASK_MONITOR_OWNER PASS managed;active-owners;scheduled;retired-under-public-monitor;failure-owner':
+        raise ValueError('Java FutureTask monitor ownership control did not complete')
+    result = compiler.run('default-executor-monitor-source', 'java', '-Xmx256m', '-cp', output,
+        'DefaultExecutorMonitorReferenceControl', 'source').strip()
+    if result != expected_default_monitor: raise ValueError('Java default executor monitor source differs from JDK')
+    for mode in ('denied', 'manage', 'uncertain', 'concurrent', 'rejection-lock'):
+        result = compiler.run('default-executor-monitor-owner-' + mode, 'java', '-Xmx256m', '-cp', output,
+            'DefaultExecutorOwnerControl', mode).strip()
+        if result != 'DEFAULT_EXECUTOR_OWNER PASS ' + mode:
+            raise ValueError('Java default executor monitor owner control did not complete')
     interrupt_control = future_cancel_interrupt_control(compiler, output)
     executor_settlement = executor_owner_settlement_control(compiler, output)
     for implementation in ('jdk', 'source'):
@@ -791,7 +1174,8 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
                 raise ValueError('Java executor close interruption control did not complete')
     result = compiler.run('scheduled-source-control', 'java', '-Xmx256m', '-cp', output, 'ScheduledOwnerControl').strip()
     expected = ('SCHEDULED_OWNER_CONTROL PASS preadmission;actual-result;running-cancel-held;periodic-nonoverlap;'
-        'original-error-suppresses-repeat;timed-wait-cancel-and-interrupt;shutdown-policy;factory-rollback;all-retired')
+        'original-error-suppresses-repeat;timed-wait-cancel-and-interrupt;shutdown-policy;factory-rollback;'
+        'worker-retirement-snapshot;copy-failure-retained;all-retired')
     if result != expected: raise ValueError('Java scheduled source control did not complete')
     result = compiler.run('scheduled-completable-owner-control', 'java', '-Xmx256m', '-cp', output,
         'ScheduledCompletableOwnerControl').strip()
@@ -852,13 +1236,20 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     result = compiler.run('scheduled-periodic-source-control', 'java', '-Xmx256m', '-cp', output,
         'ScheduledPeriodicReferenceControl').strip()
     if result != expected_periodic: raise ValueError('Java periodic scheduled source differs from reference')
+    ready_shutdown = scheduled_ready_shutdown_control(compiler, output, jdk_output, ports, private)
+    noop_cancel = scheduled_noop_cancel_control(compiler, output, jdk_output)
+    invoke_any_ready = executor_invoke_any_ready_control(compiler, output, jdk_output)
+    invoke_all_wait = executor_invoke_all_wait_control(compiler, output, jdk_output)
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError('Java scheduled source control inputs changed')
     return {'status': 'SDK-source-controls-passed', 'referenceJdk': 'matched-stopped-and-periodic-observables', 'sourceInputs': inputs,
         'futureCancelInterrupt': interrupt_control, 'executorOwnerSettlement': executor_settlement,
         'executorInvokeInterrupt': 'matched-14-preinterrupted-and-two-blocked-JDK-cases',
-        'executorAwaitTermination': 'matched-16-preinterrupted-and-two-blocked-JDK-cases',
+        'executorAwaitTermination': 'matched-16-preinterrupted-two-blocked-and-overridden-state-JDK-cases',
         'futureTaskNullFailure': 'matched-JDK-null-failure-and-retained-running-result',
+        'futureTaskPublicMonitor': 'JDK-and-SDK-source-controls-passed',
+        'defaultExecutorPublicMonitor': 'JDK-and-SDK-source-controls-passed', 'readyShutdown': ready_shutdown,
+        'noopCancel': noop_cancel, 'invokeAnyReady': invoke_any_ready, 'invokeAllWait': invoke_all_wait,
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 
@@ -925,24 +1316,47 @@ def future_queue_source_control(compiler: Compiler, output: Path) -> dict:
     ledger = compiler.sdk / 'fibers/conformance/compiler/scheduled-source-control'
     ports = sorted((compiler.sdk / 'fibers/dev/latent/guest/runtime/concurrent').glob('*.java'))
     controls = [fixture / 'Capsule.java', fixture / 'OwnerControl.java',
+        ledger / 'FutureTaskMonitorOwnerControl.java', ledger / 'FutureTaskMonitorReferenceControl.java',
         ledger / 'dev/latent/generated/Bindings.java', ledger / 'dev/latent/guest/runtime/Activation.java']
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path)) for path in (*ports, *controls)}
     output.mkdir()
+    reference = output / 'reference-jdk'; reference.mkdir()
+    compiler.run('future-task-monitor-reference-compile', 'javac', '-proc:none', '--release', '25',
+        '-d', reference, controls[3])
+    expected = 'FUTURE_TASK_MONITOR_REFERENCE PASS run;cancel;completed-get;executor;scheduled-cancel;failed-get-callback'
+    result = compiler.run('future-task-monitor-reference-jdk', 'java', '-Xmx256m', '-cp', reference,
+        'FutureTaskMonitorReferenceControl').strip()
+    if result != expected: raise ValueError('Java FutureTask monitor reference did not complete')
     text = read_file(fixture / 'Capsule.java').decode('utf-8')
     for name in ('FutureTask', 'Executors', 'ScheduledThreadPoolExecutor'):
         original = 'import java.util.concurrent.' + name + ';'
         if text.count(original) != 1: raise ValueError('Java FutureTask source import is ambiguous')
         text = text.replace(original, 'import dev.latent.guest.runtime.concurrent.' + name + ';')
     selected = output / 'Capsule.java'; selected.write_bytes(text.encode('utf-8'))
+    reference_text = read_file(controls[3]).decode('utf-8')
+    for name in ('FutureTask', 'Executors', 'ScheduledThreadPoolExecutor'):
+        original = 'import java.util.concurrent.' + name + ';'
+        if reference_text.count(original) != 1: raise ValueError('Java FutureTask monitor reference import is ambiguous')
+        reference_text = reference_text.replace(original, 'import dev.latent.guest.runtime.concurrent.' + name + ';')
+    selected_reference = output / 'FutureTaskMonitorReferenceControl.java'
+    selected_reference.write_bytes(reference_text.encode('utf-8'))
     compiler.run('future-queue-source-compile', 'javac', '-proc:none', '--release', '25',
-        '-d', output, selected, *ports, *controls[1:])
+        '-d', output, selected, selected_reference, *ports, controls[1], controls[2], *controls[4:])
     result = compiler.run('future-queue-source-control', 'java', '-Xmx256m', '-cp', output,
         'dev.latent.app.OwnerControl').strip()
     if result != 'FUTURE_QUEUE_OWNER PASS checks=48':
         raise ValueError('Java FutureTask queue ownership control did not complete')
+    result = compiler.run('future-task-monitor-source', 'java', '-Xmx256m', '-cp', output,
+        'FutureTaskMonitorReferenceControl').strip()
+    if result != expected: raise ValueError('Java FutureTask monitor source differs from reference')
+    result = compiler.run('future-task-monitor-owner', 'java', '-Xmx256m', '-cp', output,
+        'FutureTaskMonitorOwnerControl').strip()
+    if result != 'FUTURE_TASK_MONITOR_OWNER PASS managed;active-owners;scheduled;retired-under-public-monitor;failure-owner':
+        raise ValueError('Java FutureTask monitor ownership control did not complete')
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError('Java FutureTask queue inputs changed')
     return {'status': 'SDK-source-controls-passed', 'sourceInputs': inputs, 'ownershipChecks': 48,
+        'futureMonitor': 'JDK-and-SDK-source-controls-passed',
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 def recipe_inputs() -> dict[str, str]:

@@ -24,6 +24,8 @@ struct sync_wait {
 };
 #if LSF_C_TIMED_CLOCK
 #include <time.h>
+#include <sys/select.h>
+#include <wasi/api.h>
 _Static_assert(sizeof(time_t)==8 && sizeof(clockid_t)==4 && sizeof(struct timespec)==16,
                "pinned clock and timespec ABI");
 static void sync_timer_retire(struct sync_wait *node);
@@ -638,6 +640,114 @@ static int sync_sleep(const struct timespec *duration,struct timespec *remaining
         sync_end(&node);if (error) return error;
     }
     if (remaining) *remaining=(struct timespec){0};
+    return 0;
+}
+
+/* The pinned libc rounds select/pselect down to whole milliseconds (and caps
+ * long intervals). Route only finite calls with no selected descriptors to
+ * the same owned sleep, preserving the requested precision. All other shapes
+ * retain the original libc path; non-NULL signal masks are unsupported.
+ *
+ * Input duration is copied before suspension. The descriptor sets are
+ * modified only after the timer really completes and its owners retire.
+ */
+extern int sync_original_select(int,fd_set *restrict,fd_set *restrict,fd_set *restrict,
+                                struct timeval *restrict) __asm__("select");
+extern int sync_original_pselect(int,fd_set *restrict,fd_set *restrict,fd_set *restrict,
+                                 const struct timespec *restrict,
+                                 const sigset_t *restrict) __asm__("pselect");
+static int sync_inactive_fd_set(const fd_set *set,int nfds) {
+    if (!set) return 1;
+    if (set->__nfds>FD_SETSIZE) return 0;
+    for (size_t index=0;index<set->__nfds;++index) {
+        int fd=set->__fds[index];
+        if (fd>=0 && fd<nfds) return 0;
+    }
+    return 1;
+}
+static int sync_select_timer_only(int nfds,const fd_set *readfds,
+                                  const fd_set *writefds,const fd_set *errorfds) {
+    return nfds>=0 && (nfds==0 || (sync_inactive_fd_set(readfds,nfds) &&
+        sync_inactive_fd_set(writefds,nfds) && sync_inactive_fd_set(errorfds,nfds)));
+}
+static void sync_clear_fd_sets(fd_set *readfds,fd_set *writefds,fd_set *errorfds) {
+    if (readfds) FD_ZERO(readfds);
+    if (writefds) FD_ZERO(writefds);
+    if (errorfds) FD_ZERO(errorfds);
+}
+int __lsf_c_select(int nfds,fd_set *restrict readfds,fd_set *restrict writefds,
+                   fd_set *restrict errorfds,struct timeval *restrict timeout) {
+    if (timeout && sync_select_timer_only(nfds,readfds,writefds,errorfds)) {
+        struct timeval value=*timeout;
+        if (value.tv_usec<0 || value.tv_usec>=1000000) { errno=EINVAL;return -1; }
+        struct timespec delay={.tv_sec=value.tv_sec,.tv_nsec=value.tv_usec*1000};
+        int saved=errno,error=sync_sleep(&delay,NULL);
+        if (!error) sync_clear_fd_sets(readfds,writefds,errorfds);
+        errno=error?error:saved;return error?-1:0;
+    }
+    return sync_original_select(nfds,readfds,writefds,errorfds,timeout);
+}
+int __lsf_c_pselect(int nfds,fd_set *restrict readfds,fd_set *restrict writefds,
+                    fd_set *restrict errorfds,const struct timespec *restrict timeout,
+                    const sigset_t *restrict sigmask) {
+    if (nfds<0) return sync_original_pselect(nfds,readfds,writefds,errorfds,timeout,sigmask);
+    if (sigmask) { errno=ENOTSUP;return -1; }
+    if (timeout && sync_select_timer_only(nfds,readfds,writefds,errorfds)) {
+        struct timespec value=*timeout;
+        int saved=errno,error=sync_sleep(&value,NULL);
+        if (!error) sync_clear_fd_sets(readfds,writefds,errorfds);
+        errno=error?error:saved;return error?-1:0;
+    }
+    return sync_original_pselect(nfds,readfds,writefds,errorfds,timeout,sigmask);
+}
+
+/* The pinned libc's select(0, ...) and poll without descriptors request one
+ * relative REALTIME clock subscription. This bridge supports only that finite
+ * case. It does not provide descriptors or an ambient WASI host. Copy the
+ * original subscription before timer admission/await; publish no result until
+ * the existing owned sleep has really completed and retired its timer.
+ */
+static int sync_poll_range(uint32_t address,uint32_t size) {
+    uint64_t memory=(uint64_t)__builtin_wasm_memory_size(0)*65536u;
+    return address!=0 && (uint64_t)address<=memory && size<=memory-(uint64_t)address;
+}
+static __wasi_errno_t sync_poll_error(int error) {
+    switch (error) {
+    case 0: return 0;
+    case EAGAIN: return __WASI_ERRNO_AGAIN;
+    case ECANCELED: return __WASI_ERRNO_CANCELED;
+    case EINVAL: return __WASI_ERRNO_INVAL;
+    case ENOTSUP: return __WASI_ERRNO_NOTSUP;
+    case EOVERFLOW: return __WASI_ERRNO_OVERFLOW;
+    case EPERM: return __WASI_ERRNO_PERM;
+    case ETIMEDOUT: return __WASI_ERRNO_TIMEDOUT;
+    default: return __WASI_ERRNO_IO;
+    }
+}
+__attribute__((used))
+int32_t __imported_wasi_snapshot_preview1_poll_oneoff(int32_t input,int32_t output,
+                                                      int32_t count,int32_t result) {
+    uint32_t in=(uint32_t)input,out=(uint32_t)output,nevents=(uint32_t)result;
+    if ((uint32_t)count==0) return __WASI_ERRNO_INVAL;
+    if ((uint32_t)count!=1) return __WASI_ERRNO_NOTSUP;
+    if (!sync_poll_range(in,sizeof(__wasi_subscription_t)) ||
+        !sync_poll_range(out,sizeof(__wasi_event_t)) ||
+        !sync_poll_range(nevents,sizeof(__wasi_size_t))) return __WASI_ERRNO_FAULT;
+    if ((uint64_t)out<((uint64_t)nevents+sizeof(__wasi_size_t)) &&
+        (uint64_t)nevents<((uint64_t)out+sizeof(__wasi_event_t))) return __WASI_ERRNO_INVAL;
+    __wasi_subscription_t selected;
+    memcpy(&selected,(const void *)(uintptr_t)in,sizeof(selected));
+    if (selected.u.tag!=__WASI_EVENTTYPE_CLOCK ||
+        selected.u.u.clock.id!=__WASI_CLOCKID_REALTIME || selected.u.u.clock.flags!=0)
+        return __WASI_ERRNO_NOTSUP;
+    uint64_t nanos=selected.u.u.clock.timeout;
+    struct timespec duration={(time_t)(nanos/1000000000u),(long)(nanos%1000000000u)};
+    int error=sync_sleep(&duration,NULL);
+    if (error) return sync_poll_error(error);
+    __wasi_event_t event={.userdata=selected.userdata,.type=__WASI_EVENTTYPE_CLOCK};
+    __wasi_size_t one=1;
+    memcpy((void *)(uintptr_t)out,&event,sizeof(event));
+    memcpy((void *)(uintptr_t)nevents,&one,sizeof(one));
     return 0;
 }
 int nanosleep(const struct timespec *duration,struct timespec *remaining) {

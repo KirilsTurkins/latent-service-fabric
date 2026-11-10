@@ -319,6 +319,7 @@ class StandardFacilities(unittest.TestCase):
         compiler.commands, compiler.isolation = None, None
         compiler.validate_static_libraries = lambda *args: None
         compiler.select_threading_clock_inputs = lambda: None
+        compiler.threading_time_alias = None  # This stub models the legacy captured SDK.
         calls = []
         def run(tool, *arguments):
             if tool == 'zig':

@@ -1033,6 +1033,19 @@ func exit(int32) { panic("unexpected runtime exit") }
             with self.subTest(key=key), self.assertRaisesRegex(ValueError, 'private-or-unknown|invocation-contract'):
                 reference.managed_timer_observations(output(values), 50)
 
+    def test_conflicting_duplicate_outcome_cannot_relabel_a_timer_case(self):
+        # Exact first row from retained v7 signed owner 42573711698; the other
+        # rows use the existing complete 43-case source fixture.
+        retained = b'GO_MANAGED_TIMER_CASE {"case":"ordinary","iteration":0,"mode":0,"outcome":"success"}'
+        original = b'GO_MANAGED_TIMER_CASE ' + json.dumps(rows()[0]).encode()
+        raw = output(rows(), 77).replace(reference.MANAGED_TIMER_CASE.encode(), reference.V7_TIMER_CASE.encode(), 1)
+        self.assertEqual(raw.count(original), 1)
+        raw = raw.replace(original, retained, 1)
+        self.assertEqual(reference.managed_timer_observations(raw, 77, reference.V7_TIMER_CASE), rows())
+        conflict = raw.replace(b'"outcome":"success"', b'"outcome":"guest-trap","outcome":"success"', 1)
+        with self.assertRaisesRegex(ValueError, 'Go-managed-timers-duplicate-field'):
+            reference.managed_timer_observations(conflict, 77, reference.V7_TIMER_CASE)
+
     def test_wrapper_success_other_target_or_ignored_cases_cannot_qualify_managed_timers(self):
         raw = output(rows())
         for old, new in [(reference.MANAGED_TIMER_CASE.encode(), reference.CASE.encode()),

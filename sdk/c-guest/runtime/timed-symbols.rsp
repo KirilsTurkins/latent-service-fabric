@@ -1,0 +1,4 @@
+-Dnanosleep=__lsf_c_nanosleep
+-Dthrd_sleep=__lsf_c_thrd_sleep
+-Dselect=__lsf_c_select
+-Dpselect=__lsf_c_pselect

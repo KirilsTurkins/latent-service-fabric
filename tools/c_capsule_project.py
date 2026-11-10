@@ -17,7 +17,7 @@ def sdk_inputs(root: Path, *, threading: bool = False) -> dict[str, bytes]:
     for path in ("Cargo.toml", "tools/toolchain.toml", "LICENSE", "NOTICE"):
         vendor[path] = read_file(root / path)
     if threading:
-        for path in ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c', 'template-copy.c', 'synchronization.c'):
+        for path in ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c', 'template-copy.c', 'synchronization.c', 'timed-symbols.rsp'):
             vendor['sdk/c-guest/runtime/' + path] = read_file(root / 'sdk/c-guest/runtime' / path)
     return vendor
 

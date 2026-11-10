@@ -21,6 +21,24 @@ func Run(which uint32) uint32 {
 	if which == 2 { for {} }
 	if which == 3 { nonSuspendable() }
 	if which == 4 { return 42 }
+	if which == 5 || which == 6 {
+		var release, result atomic.Uint32
+		started := make(chan struct{})
+		var group sync.WaitGroup
+		group.Add(1)
+		go func() {
+			defer group.Done()
+			close(started)
+			if which == 6 { result.Store(42); return }
+		again:
+			if release.Load() == 0 { goto again }
+			result.Store(42)
+		}()
+		<-started
+		release.Store(1)
+		group.Wait()
+		return result.Load()
+	}
 	var started, finish, result atomic.Uint32
 	var group sync.WaitGroup
 	group.Add(2)

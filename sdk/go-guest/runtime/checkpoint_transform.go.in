@@ -48,26 +48,58 @@ func transform(row input, destination string) (result, error) {
 	name := "__lsf_checkpoint_" + hex.EncodeToString(identity[:8])
 	blocked := name + "_non_suspendable"
 	var nonSuspendable []span
+	// The compiler retains pragmas across blank lines and comments until the
+	// next declaration, and takes a function pragma after scanning `func` and
+	// before its name or receiver. FuncDecl.Doc omits separated comments.
+	previous, commentIndex := file.Name.End(), 0
 	for _, declaration := range file.Decls {
-		fn, ok := declaration.(*ast.FuncDecl)
-		if !ok { continue }
-		if strings.HasPrefix(fn.Name.Name, "__lsf_checkpoint_") {
-			return result{}, fmt.Errorf("%s: checkpoint-compiler-name-reserved", fset.Position(fn.Pos()))
-		}
-		if fn.Doc != nil {
-			for _, comment := range fn.Doc.List {
-				if comment.Text == "//go:nosplit" || strings.HasPrefix(comment.Text, "//go:nowritebarrier") {
-					nonSuspendable = append(nonSuspendable, span{fn.Pos(), fn.End()})
-				}
+		if fn, ok := declaration.(*ast.FuncDecl); ok {
+			if strings.HasPrefix(fn.Name.Name, "__lsf_checkpoint_") {
+				return result{}, fmt.Errorf("%s: checkpoint-compiler-name-reserved", fset.Position(fn.Pos()))
 			}
+			first := fn.Name.Pos()
+			if fn.Recv != nil { first = fn.Recv.Opening }
+			blockedFunction := false
+			for commentIndex < len(file.Comments) && file.Comments[commentIndex].End() <= first {
+				for _, comment := range file.Comments[commentIndex].List {
+					if comment.Pos() < previous { continue }
+					verb := comment.Text
+					if i := strings.IndexByte(verb, ' '); i >= 0 { verb = verb[:i] }
+					if verb == "//go:nosplit" || verb == "//go:systemstack" || strings.HasPrefix(verb, "//go:nowritebarrier") {
+						blockedFunction = true
+					}
+				}
+				commentIndex++
+			}
+			if blockedFunction { nonSuspendable = append(nonSuspendable, span{fn.Pos(), fn.End()}) }
 		}
+		previous = declaration.End()
 	}
 	var edits []edit
 	record := result{Path: row.Path, UpstreamDigest: digest(raw), Sites: []site{}}
-	add := func(body *ast.BlockStmt) {
-		if body == nil { return }
-		position := body.Lbrace + 1
+	// A line directive may have changed both the filename and the column.
+	// Emit a filename relative to the input's diagnostic directory, exactly as
+	// the Go scanner resolves line directives in the original source.
+	resetPosition := func(position token.Pos) (string, error) {
 		original := fset.Position(position)
+		filename := original.Filename
+		if filename != "" && !filepath.IsAbs(filename) {
+			var err error
+			filename, err = filepath.Rel(filepath.Dir(row.Diagnostic), filename)
+			if err != nil { return "", err }
+		}
+		if strings.ContainsAny(filename, "\r\n") {
+			return "", fmt.Errorf("checkpoint-diagnostic-path-invalid")
+		}
+		location := filename + ":" + strconv.Itoa(original.Line)
+		if original.Column != 0 { location += ":" + strconv.Itoa(original.Column) }
+		return "//line " + location + "\n", nil
+	}
+	var positionError error
+	add := func(position token.Pos) {
+		original := fset.Position(position)
+		reset, err := resetPosition(position)
+		if err != nil { positionError = err; return }
 		suspendable := true
 		for _, interval := range nonSuspendable {
 			if position >= interval.first && position <= interval.last { suspendable = false }
@@ -76,17 +108,31 @@ func transform(row input, destination string) (result, error) {
 		if !suspendable { callee = blocked }
 		record.Sites = append(record.Sites, site{original.Line, original.Column, suspendable})
 		edits = append(edits, edit{fset.File(position).Offset(position),
-			"\n" + callee + "();\n//line " + row.Diagnostic + ":" + strconv.Itoa(original.Line) + ":" + strconv.Itoa(original.Column) + "\n"})
+			"\n" + callee + "();\n" + reset})
 	}
+	addBody := func(body *ast.BlockStmt) {
+		if body != nil { add(body.Lbrace + 1) }
+	}
+	// The parser resolves labels within each function, including nested
+	// literals. An unresolved label is left to the ordinary Go type checker.
+	// Every goto cycle has a backward edge in source order.
 	ast.Inspect(file, func(node ast.Node) bool {
 		switch node := node.(type) {
-		case *ast.FuncDecl: add(node.Body)
-		case *ast.FuncLit: add(node.Body)
-		case *ast.ForStmt: add(node.Body)
-		case *ast.RangeStmt: add(node.Body)
+		case *ast.FuncDecl: addBody(node.Body)
+		case *ast.FuncLit: addBody(node.Body)
+		case *ast.ForStmt: addBody(node.Body)
+		case *ast.RangeStmt: addBody(node.Body)
+		case *ast.BranchStmt:
+			if node.Tok == token.GOTO && node.Label != nil && node.Label.Obj != nil {
+				label, ok := node.Label.Obj.Decl.(*ast.LabeledStmt)
+				if !ok || node.Label.Obj.Kind != ast.Lbl {
+					positionError = fmt.Errorf("checkpoint-label-resolution-invalid")
+				} else if label.Pos() < node.Pos() { add(node.Pos()) }
+			}
 		}
 		return true
 	})
+	if positionError != nil { return result{}, positionError }
 	if len(record.Sites) > 65536 { return result{}, fmt.Errorf("checkpoint-sites-per-file-exhausted") }
 	if len(record.Sites) == 0 { return record, nil }
 	hasUnsafe := false
@@ -95,9 +141,10 @@ func transform(row input, destination string) (result, error) {
 	}
 	if !hasUnsafe {
 		position := file.Name.End()
-		original := fset.Position(position)
+		reset, err := resetPosition(position)
+		if err != nil { return result{}, err }
 		edits = append(edits, edit{fset.File(position).Offset(position),
-			"\nimport _ \"unsafe\"\n//line " + row.Diagnostic + ":" + strconv.Itoa(original.Line) + ":" + strconv.Itoa(original.Column) + "\n"})
+			"\nimport _ \"unsafe\"\n" + reset})
 	}
 	sort.Slice(edits, func(i, j int) bool { return edits[i].offset > edits[j].offset })
 	adapted := append([]byte{}, raw...)

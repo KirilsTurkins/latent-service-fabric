@@ -20,9 +20,9 @@ from tools import ci_rust_artifacts as artifacts
 from tools import ci_suite_discovery as discovery
 from tools import ci_suite_inventory as registry
 from tools.go_capsule_build import RECIPE as BUILD_RECIPE
-from tools.go_guest.activation import MANAGED_PROFILE
+from tools.go_guest.activation import MANAGED_PROFILE, STACK_PROFILE
 from tools.go_guest.compiler import Compiler
-from tools.go_network_read_barrier import CASE, EXPECTED, SCHEMA_VERSION, outcomes
+from tools.go_network_read_barrier import CASE, EXPECTED, SCHEMA_VERSION, V7_SCHEMA_VERSION, outcomes, profile_witness
 from tools.owned_test_process import ProcessFailure, run_owned
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, snapshot
@@ -30,6 +30,28 @@ from tools.stage_runtime_wit import stage
 from tools.test_run import redact
 
 SUITE = 'latent-wasmtime.test.go_outbound_streams'
+V5_PUSH_BRANCHES = frozenset({
+    'feat/go-standard-tcp-runtime-20261020',
+    'feat/go-network-read-order-20261108',
+    'feat/go-cancel-original-read-20261109',
+    'feat/sdk-738-bounded-outbound-owners',
+})
+V7_PUSH_BRANCH = 'feat/go-network-v7-20261110'
+
+
+def workflow_profile(event: str, branch: str, choice: str) -> str:
+    """Select only a declared push owner or the bounded manual profile choice."""
+    if event == 'push' and not choice:
+        if branch in V5_PUSH_BRANCHES:
+            return MANAGED_PROFILE
+        if branch == V7_PUSH_BRANCH:
+            return STACK_PROFILE
+    elif event == 'workflow_dispatch':
+        if choice in ('', 'v5'):
+            return MANAGED_PROFILE
+        if choice == 'v7':
+            return STACK_PROFILE
+    raise ValueError('Go-network-runtime-workflow-selection')
 
 
 def encoded(value: dict) -> bytes:
@@ -63,9 +85,12 @@ def source_inputs(root: Path) -> dict:
     return result
 
 
-def qualify(root: Path, output: Path, revision: str) -> dict:
+def qualify(root: Path, output: Path, revision: str, profile: str = MANAGED_PROFILE) -> dict:
+    if profile not in (MANAGED_PROFILE, STACK_PROFILE):
+        raise ValueError('Go-network-runtime-profile-not-selected')
     environment = dict(os.environ, CARGO_BUILD_JOBS='2', CARGO_INCREMENTAL='0',
-                       CARGO_TARGET_DIR=str(root / 'target'), LSF_GUEST_SDK_LANGUAGE='go')
+                       CARGO_TARGET_DIR=str(root / 'target'), LSF_GUEST_SDK_LANGUAGE='go',
+                       LSF_GO_NETWORK_PROFILE=profile)
     artifacts.require_source(root, revision, environment)
     if sys.platform != 'linux':
         raise ValueError('Go-network-runtime-linux-required')
@@ -73,7 +98,7 @@ def qualify(root: Path, output: Path, revision: str) -> dict:
     before = source_inputs(root)
     inputs = encoded(before)
     (output / 'native-inputs.json').write_bytes(inputs)
-    record = {'schemaVersion': SCHEMA_VERSION, 'sourceRevision': revision,
+    record = {'schemaVersion': SCHEMA_VERSION if profile == MANAGED_PROFILE else V7_SCHEMA_VERSION, 'sourceRevision': revision,
               'status': 'in-progress', 'sourceDigest': digest(inputs), 'normalProviderInstalled': False,
               'kernelAccountingQualified': False, 'fullGoNetworkingQualified': False,
               'readWitnessFeature': 'development-go-network-read-witness'}
@@ -111,13 +136,13 @@ def qualify(root: Path, output: Path, revision: str) -> dict:
             (prepared / name).write_bytes(read_file(root / 'sdk/go-guest/runtime-deps' / name))
         stage(prepared / 'wit', fixture)
         commands = Commands(prepared, prepared, environment, deadline_seconds=900, command_seconds=600)
-        compiler = Compiler(prepared / 'compiler', root / 'sdk/go-guest', commands, runtime_profile=MANAGED_PROFILE)
+        compiler = Compiler(prepared / 'compiler', root / 'sdk/go-guest', commands, runtime_profile=profile)
         component, _ = compiler.compile(prepared / 'src', prepared / 'wit',
-            'examples:go-standard-network/service@1.0.0', prepared / 'build', runtime_profile=MANAGED_PROFILE)
+            'examples:go-standard-network/service@1.0.0', prepared / 'build', runtime_profile=profile)
         compiler.check_unchanged()
         if source != snapshot(fixture):
             raise ValueError('Go-network-runtime-source-changed')
-        compiled = {'profile': MANAGED_PROFILE, 'sourceUnchanged': True,
+        compiled = {'profile': profile, 'sourceUnchanged': True,
                     'sourceDigest': digest(source['main.go']), 'componentDigest': digest(read_file(component, 64 * 1024 * 1024)),
                     'tools': compiler.materials, 'compilerInputsDigest': digest(inventory(source))}
         (prepared / 'GO-NETWORK-COMPILE.json').write_bytes(encoded(compiled))
@@ -143,6 +168,9 @@ def qualify(root: Path, output: Path, revision: str) -> dict:
         raw = command([str(native.executable), '--ignored', '--exact', CASE, '--show-output', '--test-threads=1'],
                       'native', 300, 1024 * 1024)
         record['observations'] = outcomes(raw, filtered=len(available) - 1)
+        selected_limits = profile_witness(raw, profile)
+        if selected_limits is not None:
+            record['selectedRuntimeLimits'] = selected_limits
         if before != source_inputs(root):
             raise ValueError('Go-network-runtime-native-inputs-changed')
         compiler.check_unchanged()
@@ -160,5 +188,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--source-commit', default=os.environ.get('GITHUB_SHA'))
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument('--profile', choices=(MANAGED_PROFILE, STACK_PROFILE))
+    selection.add_argument('--workflow-selection', action='store_true')
     arguments = parser.parse_args()
-    print(json.dumps(qualify(ROOT, arguments.output.resolve(), arguments.source_commit)))
+    if arguments.workflow_selection:
+        profile = workflow_profile(os.environ.get('GITHUB_EVENT_NAME', ''), os.environ.get('GITHUB_REF_NAME', ''),
+                                   os.environ.get('LSF_GO_NETWORK_DISPATCH_PROFILE', ''))
+    else:
+        profile = arguments.profile or MANAGED_PROFILE
+    print(json.dumps(qualify(ROOT, arguments.output.resolve(), arguments.source_commit, profile)))

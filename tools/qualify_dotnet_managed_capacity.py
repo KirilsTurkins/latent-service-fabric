@@ -27,15 +27,20 @@ MATERIALS = (fixture.SOURCE, 'tools/dotnet_managed_capacity_fixture.py',
     'tools/dotnet_managed_capacity_node.py', 'tools/qualify_dotnet_managed_capacity.py',
     'tools/dotnet_managed_work_controls.py', 'tools/fixtures/dotnet-timer-wait-control.rs',
     'tools/fixtures/timer-pump-source-control.rs',
+    'tools/fixtures/timer-ready-source-control.rs',
     *shared.MATERIALS)
 
 
-def qualify(native_directory, tools, output):
+def qualify(native_directory, tools, output, *, rearm_diagnostic=False, ready_witness=False):
+    require(type(rearm_diagnostic) is bool and type(ready_witness) is bool
+        and not (rearm_diagnostic and ready_witness), 'capacity-timer-selection')
     output = fresh(output); deadline = time.monotonic()+1800
     native_record = products.verify_prepared(native_directory)
     native = products.native_products(native_directory)
     original_products = {name: file_identity(path, 512*1024**2) for name, path in native.items()}
-    materials = {name: file_identity(ROOT/name) for name in MATERIALS}
+    selected_materials = MATERIALS + ((fixture.REARM_SOURCE,) if rearm_diagnostic else ()) + (
+        (fixture.READY_SOURCE,) if ready_witness else ())
+    materials = {name: file_identity(ROOT/name) for name in selected_materials}
     sdk = inventory(snapshot(ROOT/'sdk/dotnet-guest')); native_source = source_identity(ROOT)
     runtime = runtime_inputs(ROOT)
     require(read_file(tools/'runtime-inputs.json') == runtime, 'capacity-current-runtime-installation')
@@ -50,7 +55,8 @@ def qualify(native_directory, tools, output):
         'full693Qualified': False, 'full746Qualified': False}
     stage = 'normal-project-capture'
     try:
-        app = fixture.project(output/'application'); captured = inventory(source_files(app))
+        app = fixture.project(output/'application', rearm_diagnostic=rearm_diagnostic, ready_witness=ready_witness)
+        captured = inventory(source_files(app))
         stage = 'catalogue-free-normal-builder'
         staged = output/'staged-recipe'; selected = staging.stage(ROOT, staged)
         write_json(output/'catalogue-free-source.json', selected); artifact = output/'build'
@@ -70,23 +76,43 @@ def qualify(native_directory, tools, output):
         require(record['build']['taskPort']['managedAcceptedWork'] == managed_work.TIMER_REWRITE_RECEIPT,
             'capacity-current-individual-timer-port-required')
         stage = 'signed-capacity-refusal-retirement-and-fresh'
-        execution = node.run(artifact, native, output/'node', deadline=deadline)
-        require(execution['status'] == 'passed' and execution['invocations'] == 17
-            and execution['httpContacts'] == 1, 'capacity-all-mandatory-outcomes')
+        execution = node.run(artifact, native, output/'node', deadline=deadline,
+            rearm_diagnostic=rearm_diagnostic, ready_witness=ready_witness)
+        require(execution['status'] == 'passed' and execution['invocations'] == (19 if rearm_diagnostic or ready_witness else 17)
+            and execution['httpContacts'] == 1 and len(execution['cases']) == 17,
+            'capacity-all-mandatory-outcomes')
+        if rearm_diagnostic:
+            diagnostic = execution['timerRearmDiagnostic']
+            require(diagnostic['diagnosticOnly'] is True and diagnostic['timerRearmFixQualified'] is False
+                and diagnostic['postRetirementPhysicalCustodyQualified'] is False
+                and len(diagnostic['cases']) == 2, 'capacity-timer-rearm-diagnostic-not-qualification')
+        if ready_witness:
+            witness = execution['readyTimerRetirementWitness']
+            require(witness['ordinaryTimerDriverQualified'] is False
+                and witness['postRetirementPhysicalCustodyQualified'] is False
+                and len(witness['cases']) == 2, 'capacity-ready-witness-and-fresh-required')
         require(time.monotonic() < deadline and products.verify_prepared(native_directory) == native_record
             and original_products == {name: file_identity(path, 512*1024**2) for name, path in native.items()}
-            and materials == {name: file_identity(ROOT/name) for name in MATERIALS}
+            and materials == {name: file_identity(ROOT/name) for name in selected_materials}
             and inventory(snapshot(ROOT/'sdk/dotnet-guest')) == sdk and runtime_inputs(ROOT) == runtime
             and read_file(tools/'runtime-inputs.json') == runtime and source_identity(ROOT) == native_source
             and installation == {name: file_identity(tools/name, 16*1024**2) for name in installation}
             and inventory(source_files(app)) == captured and staging.verify(staged) == selected,
             'capacity-final-source-native-runtime-and-deadline-fences')
-        record.update(status='passed', invocations=17, signedComponents=1, httpContacts=1,
+        record.update(status='passed', invocations=19 if rearm_diagnostic or ready_witness else 17, signedComponents=1, httpContacts=1,
             nodeReceipt=file_identity(output/'node/qualification.json'),
             limitations=['Exact historical6fd native compilation is authenticated separately from current SDK/fixture compilation.',
                 'NativeMemory allocation failure is not claimed: raw native-ledger admission and real managed-table installation are distinct controls.',
                 'The zero-native installation terminal is generic guest-trap; no original exception transport or post-retired callback is claimed.',
                 'Existing HTTP/private-client and30-case lifecycle evidence retains its original source and is not rerun here.'])
+        if rearm_diagnostic:
+            record['timerRearmDiagnostic'] = {'diagnosticOnly': True, 'timerRearmFixQualified': False,
+                'postRetirementPhysicalCustodyQualified': False,
+                'nodeReceipt': file_identity(output/'node/qualification.json')}
+        if ready_witness:
+            record['readyTimerRetirementWitness'] = {'ordinaryTimerDriverQualified': False,
+                'postRetirementPhysicalCustodyQualified': False,
+                'nodeReceipt': file_identity(output/'node/qualification.json')}
         write_json(output/'qualification.json', record); return record
     except BaseException:
         try:write_json(output/'FAILED.json', {**record, 'status': 'failed', 'stage': stage})
@@ -97,5 +123,10 @@ def qualify(native_directory, tools, output):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('native', 'tools', 'output'):parser.add_argument('--'+name, type=Path, required=True)
+    parser.add_argument('--timer-rearm-diagnostic', action='store_true',
+        help='also run the separately recorded one-timer rearm observation and fresh activation')
+    parser.add_argument('--ready-retirement-witness', action='store_true',
+        help='also run the separately recorded ready-pollable retirement and fresh activation')
     args = parser.parse_args()
-    print(qualify(args.native, args.tools, args.output)['status'])
+    print(qualify(args.native, args.tools, args.output, rearm_diagnostic=args.timer_rearm_diagnostic,
+        ready_witness=args.ready_retirement_witness)['status'])

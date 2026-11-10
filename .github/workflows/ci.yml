@@ -974,10 +974,25 @@ jobs:
             b422af24d86344ac7abb8b8fa56c3782aab63915 \
             95b8d8b16c29d94755262345a305401ee99a801f \
             e3f0edf822c10e84bbeede276174ac3217542afc \
+            c7134289f446cb3171eb0ffd800a94afc2a5209f \
             cddfb5d016a6311ed0db4673e490dc9caad917dd
       - name: Install Python validator dependencies
         run: python -m pip install --requirement tools/requirements.lock
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        id: contracts_rustup
+        continue-on-error: true
+        with:
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - name: Isolate Rustup after setup failure
+        if: steps.contracts_rustup.outcome == 'failure'
+        shell: bash
+        run: |
+          set -euo pipefail
+          isolated="$(mktemp -d "$RUNNER_TEMP/lsf-contract-rustup.XXXXXX")"
+          printf 'RUSTUP_HOME=%s\n' "$isolated" >> "$GITHUB_ENV"
+      - name: Retry the pinned Rust toolchain in the isolated home
+        if: steps.contracts_rustup.outcome == 'failure'
+        uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
           targets: wasm32-wasip2,wasm32-unknown-unknown
       - name: Restore compiled Rust dependencies

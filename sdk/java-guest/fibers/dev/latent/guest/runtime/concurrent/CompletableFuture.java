@@ -17,6 +17,8 @@ import java.util.function.Supplier;
 
 /** Pending standard stages on activation-owned fibers, with physical callback retirement. */
 public class CompletableFuture<T> implements java.util.concurrent.Future<T>, CompletionStage<T> {
+    // Application code may independently synchronize on the public future.
+    private final Object stateLock = new Object();
     private T value;
     private Throwable failure;
     private boolean completed;
@@ -28,17 +30,19 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     public CompletableFuture() { }
 
     private static final class DefaultExecutor implements Executor {
+        // The executor is returned to application code, which may use its
+        // public monitor independently of pool initialization.
+        private final Object lock = new Object();
         private Executor pool;
         @Override public void execute(Runnable command) {
             Objects.requireNonNull(command);
             Executor selected;
-            synchronized (this) {
-                if (pool == null) {
-                    try { pool = Executors.newDefaultAsyncPool(); }
-                    catch (Throwable error) { rejectedBeforeAcceptance(command, this); throw error; }
+            try {
+                synchronized (lock) {
+                    if (pool == null) pool = Executors.newDefaultAsyncPool();
+                    selected = pool;
                 }
-                selected = pool;
-            }
+            } catch (Throwable error) { rejectedBeforeAcceptance(command, this); throw error; }
             selected.execute(command);
         }
     }
@@ -48,25 +52,29 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     public Executor defaultExecutor() { return asyncPool(); }
     public <U> CompletableFuture<U> newIncompleteFuture() { return new CompletableFuture<>(); }
 
-    private synchronized boolean accept(Action action, boolean evenIfCompleted) {
-        if (resultSettlementAttempted)
-            throw new IllegalStateException("activation-completable-result-settlement-uncertain");
-        if (completed && !evenIfCompleted) return false;
-        if (resultOwner == null) resultOwner = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Result);
-        try { accepted.add(action); }
-        catch (Throwable error) {
-            if (accepted.isEmpty()) {
-                // Keep the original acceptance error if rollback itself is
-                // refused or its acknowledgement is unknown.
-                try { settleResultOnce(); } catch (Throwable uncertain) { throw error; }
+    private boolean accept(Action action, boolean evenIfCompleted) {
+        synchronized (stateLock) {
+            if (resultSettlementAttempted)
+                throw new IllegalStateException("activation-completable-result-settlement-uncertain");
+            if (completed && !evenIfCompleted) return false;
+            if (resultOwner == null) resultOwner = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Result);
+            try { accepted.add(action); }
+            catch (Throwable error) {
+                if (accepted.isEmpty()) {
+                    // Keep the original acceptance error if rollback itself is
+                    // refused or its acknowledgement is unknown.
+                    try { settleResultOnce(); } catch (Throwable uncertain) { throw error; }
+                }
+                throw error;
             }
-            throw error;
+            return true;
         }
-        return true;
     }
-    private synchronized void retired(Action action) {
-        if (!accepted.remove(action)) throw new IllegalStateException("activation-future-callback-owner");
-        if (accepted.isEmpty() && resultOwner != null) settleResultOnce();
+    private void retired(Action action) {
+        synchronized (stateLock) {
+            if (!accepted.remove(action)) throw new IllegalStateException("activation-future-callback-owner");
+            if (accepted.isEmpty() && resultOwner != null) settleResultOnce();
+        }
     }
     private void settleResultOnce() {
         if (resultOwner == null || resultSettlementAttempted) return;
@@ -81,13 +89,13 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         }
     }
     private void subscribe(Action action) {
-        synchronized (this) {
+        synchronized (stateLock) {
             if (action.finished || action.dispatched) return;
             if (!completed) { dependents.add(action); return; }
         }
         action.fire(false);
     }
-    private synchronized void unsubscribe(Action action) { dependents.remove(action); }
+    private void unsubscribe(Action action) { synchronized (stateLock) { dependents.remove(action); } }
 
     /** An SDK rejection describes this submission, never another accepted copy. */
     static void rejectedBeforeAcceptance(Runnable command, Executor rejecting) {
@@ -186,7 +194,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
             finish();
         }
         private boolean readmit() {
-            if (destination.isDone()) { withdrawn = false; return false; }
+            if (destination.completionRecorded()) { withdrawn = false; return false; }
             Activation.Lease readmitted = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
             boolean accepted;
             try { accepted = destination.accept(this, false); }
@@ -231,8 +239,9 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
             finish();
         }
         boolean ready() {
-            return left == null || (right == null ? left.isDone()
-                : both ? left.isDone() && right.isDone() : left.isDone() || right.isDone());
+            return left == null || (right == null ? left.completionRecorded()
+                : both ? left.completionRecorded() && right.completionRecorded()
+                    : left.completionRecorded() || right.completionRecorded());
         }
         void perform() { body.run(); }
         void fire(boolean propagateRejection) {
@@ -243,7 +252,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
             try {
                 Throwable inputFailure = null;
                 if (inputShortcut == 1) {
-                    CompletableFuture<?> selected = right != null && !both && !left.isDone() ? right : left;
+                    CompletableFuture<?> selected = right != null && !both && !left.completionRecorded() ? right : left;
                     inputFailure = selected.error();
                     if (inputFailure == null && right != null && both) inputFailure = right.error();
                 }
@@ -272,7 +281,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         @Override public void run() {
             if (!startRun()) return;
             try {
-                if (!destination.isDone()) perform();
+                if (!destination.completionRecorded()) perform();
             } catch (Throwable error) { destination.asyncFailure(error); }
             finally { finish(); }
         }
@@ -297,8 +306,8 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         @Override boolean ready() {
             if (inputs == null) return false;
             for (CompletableFuture<?> input : inputs) {
-                if (both && !input.isDone()) return false;
-                if (!both && input.isDone()) return true;
+                if (both && !input.completionRecorded()) return false;
+                if (!both && input.completionRecorded()) return true;
             }
             return both;
         }
@@ -311,7 +320,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
                 }
                 ((CompletableFuture<Object>)destination).complete(null);
             } else {
-                for (CompletableFuture<?> input : inputs) if (input.isDone()) {
+                for (CompletableFuture<?> input : inputs) if (input.completionRecorded()) {
                     ((CompletableFuture<Object>)destination).complete(input.successful());
                     return;
                 }
@@ -323,7 +332,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     private boolean finish(T result, Throwable error) {
         Action[] ready;
         Action[] pending;
-        synchronized (this) {
+        synchronized (stateLock) {
             if (completed) return false;
             ready = dependents.toArray(new Action[0]);
             pending = accepted.toArray(new Action[0]);
@@ -331,7 +340,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
             failure = error;
             completed = true;
             dependents.clear();
-            notifyAll();
+            stateLock.notifyAll();
         }
         // Waiting continuations can be removed; queued/running callbacks retain
         // both owners until their physical run/finally scope has completed.
@@ -342,86 +351,127 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     private static Throwable wrapped(Throwable error) {
         return error instanceof CompletionException ? error : new CompletionException(error);
     }
-    private void asyncFailure(Throwable error) { completeExceptionally(wrapped(error)); }
+    // Internal continuation completion must not dispatch into an application
+    // override of completeExceptionally on a destination subclass.
+    private void asyncFailure(Throwable error) { finish(null, wrapped(error)); }
     public boolean complete(T result) { return finish(result, null); }
     public boolean completeExceptionally(Throwable error) { return finish(null, Objects.requireNonNull(error)); }
     @Override public boolean cancel(boolean interrupt) {
         return finish(null, new CancellationException()) || isCancelled();
     }
-    @Override public synchronized boolean isCancelled() { return completed && failure instanceof CancellationException; }
-    @Override public synchronized boolean isDone() { return completed; }
-    public synchronized boolean isCompletedExceptionally() { return completed && failure != null; }
-    @Override public synchronized T resultNow() {
-        if (!completed || failure != null) throw new IllegalStateException();
-        return value;
+    @Override public boolean isCancelled() { synchronized (stateLock) { return completed && failure instanceof CancellationException; } }
+    @Override public boolean isDone() { synchronized (stateLock) { return completed; } }
+    // Stage dispatch uses the recorded state, not an application override of
+    // the public observation method. The same lock protects the result.
+    private final boolean completionRecorded() { synchronized (stateLock) { return completed; } }
+    public boolean isCompletedExceptionally() { synchronized (stateLock) { return completed && failure != null; } }
+    @Override public T resultNow() {
+        synchronized (stateLock) {
+            if (!completed || failure != null) throw new IllegalStateException();
+            return value;
+        }
     }
-    @Override public synchronized Throwable exceptionNow() {
-        if (!completed || failure == null || failure instanceof CancellationException) throw new IllegalStateException();
-        return failure instanceof CompletionException && failure.getCause() != null ? failure.getCause() : failure;
+    @Override public Throwable exceptionNow() {
+        Throwable error;
+        synchronized (stateLock) {
+            if (!completed || failure == null || failure instanceof CancellationException) throw new IllegalStateException();
+            error = failure;
+        }
+        if (error instanceof CompletionException) {
+            Throwable cause = error.getCause();
+            if (cause != null) error = cause;
+        }
+        return error;
     }
-    @Override public synchronized java.util.concurrent.Future.State state() {
-        if (!completed) return java.util.concurrent.Future.State.RUNNING;
-        if (failure == null) return java.util.concurrent.Future.State.SUCCESS;
-        return failure instanceof CancellationException ? java.util.concurrent.Future.State.CANCELLED
-            : java.util.concurrent.Future.State.FAILED;
+    @Override public java.util.concurrent.Future.State state() {
+        synchronized (stateLock) {
+            if (!completed) return java.util.concurrent.Future.State.RUNNING;
+            if (failure == null) return java.util.concurrent.Future.State.SUCCESS;
+            return failure instanceof CancellationException ? java.util.concurrent.Future.State.CANCELLED
+                : java.util.concurrent.Future.State.FAILED;
+        }
     }
-    private T getResult() throws ExecutionException {
-        if (failure instanceof CancellationException) throw (CancellationException)failure;
-        if (failure != null) throw new ExecutionException(
-            failure instanceof CompletionException && failure.getCause() != null ? failure.getCause() : failure);
-        return value;
+    private T getResult(T result, Throwable error) throws ExecutionException {
+        if (error instanceof CancellationException) throw (CancellationException)error;
+        if (error != null) {
+            if (error instanceof CompletionException) {
+                Throwable cause = error.getCause();
+                if (cause != null) error = cause;
+            }
+            throw new ExecutionException(error);
+        }
+        return result;
     }
-    private T joinResult() {
-        if (failure instanceof CancellationException) throw (CancellationException)failure;
-        if (failure != null) throw (CompletionException)wrapped(failure);
-        return value;
+    private T joinResult(T result, Throwable error) {
+        if (error instanceof CancellationException) throw (CancellationException)error;
+        if (error != null) throw (CompletionException)wrapped(error);
+        return result;
     }
     @Override public T get() throws InterruptedException, ExecutionException {
-        synchronized (this) {
+        T result;
+        Throwable error;
+        synchronized (stateLock) {
             if (!completed) {
                 if (Thread.interrupted()) throw new InterruptedException();
-                while (!completed) wait();
+                while (!completed) stateLock.wait();
             }
-            return getResult();
+            result = value; error = failure;
         }
+        // CompletionException.getCause() and Throwable.toString() can dispatch
+        // to application code. Report the captured outcome after unlocking.
+        return getResult(result, error);
     }
     @Override public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         long nanos = Objects.requireNonNull(unit).toNanos(timeout);
         long started = System.nanoTime();
-        synchronized (this) {
+        T result;
+        Throwable error;
+        synchronized (stateLock) {
             if (!completed) {
                 if (Thread.interrupted()) throw new InterruptedException();
                 if (nanos <= 0) throw new TimeoutException();
                 while (!completed) {
                     long remaining = nanos - (System.nanoTime() - started);
                     if (remaining <= 0) throw new TimeoutException();
-                    wait(remaining / 1_000_000, (int)(remaining % 1_000_000));
+                    stateLock.wait(remaining / 1_000_000, (int)(remaining % 1_000_000));
                 }
             }
-            return getResult();
+            result = value; error = failure;
         }
+        return getResult(result, error);
     }
     public T join() {
         boolean interrupted = false;
         try {
-            synchronized (this) {
+            T result;
+            Throwable error;
+            synchronized (stateLock) {
                 while (!completed) {
-                    try { wait(); }
+                    try { stateLock.wait(); }
                     catch (InterruptedException wake) { interrupted = true; }
                 }
-                return joinResult();
+                result = value; error = failure;
             }
+            return joinResult(result, error);
         } finally { if (interrupted) Thread.currentThread().interrupt(); }
     }
-    public synchronized T getNow(T otherwise) { return completed ? joinResult() : otherwise; }
-    public synchronized int getNumberOfDependents() { return dependents.size(); }
+    public T getNow(T otherwise) {
+        T result;
+        Throwable error;
+        synchronized (stateLock) {
+            if (!completed) return otherwise;
+            result = value; error = failure;
+        }
+        return joinResult(result, error);
+    }
+    public int getNumberOfDependents() { synchronized (stateLock) { return dependents.size(); } }
     @Override public CompletableFuture<T> toCompletableFuture() { return this; }
     public CompletableFuture<T> copy() { return thenApply(Function.identity()); }
 
     private static <U> void submit(CompletableFuture<U> destination, Executor executor,
             Supplier<? extends U> supplier, boolean evenIfCompleted) {
         new Action(destination, null, null, true, executor,
-            () -> destination.complete(supplier.get()), evenIfCompleted).fire(true);
+            () -> destination.finish(supplier.get(), null), evenIfCompleted).fire(true);
     }
     public static <U> CompletableFuture<U> supplyAsync(Supplier<U> supplier) {
         Objects.requireNonNull(supplier);
@@ -454,16 +504,21 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         Objects.requireNonNull(supplier); Objects.requireNonNull(executor); submit(this, executor, supplier, true); return this;
     }
 
-    private synchronized Throwable error() { return failure; }
-    private synchronized T successful() {
-        if (!completed) throw new IllegalStateException("activation-future-input-not-ready");
-        return joinResult();
+    private Throwable error() { synchronized (stateLock) { return failure; } }
+    private T successful() {
+        T result;
+        Throwable error;
+        synchronized (stateLock) {
+            if (!completed) throw new IllegalStateException("activation-future-input-not-ready");
+            result = value; error = failure;
+        }
+        return joinResult(result, error);
     }
     private <U> CompletableFuture<U> unary(Function<? super T, ? extends U> fn, Executor executor) {
         Objects.requireNonNull(fn);
         CompletableFuture<U> destination = newIncompleteFuture();
         new Action(destination, this, null, true, executor,
-            () -> destination.complete(fn.apply(successful())), false, 1).install();
+            () -> destination.finish(fn.apply(successful()), null), false, 1).install();
         return destination;
     }
     private <U, V> CompletableFuture<V> binary(CompletionStage<? extends U> other,
@@ -473,9 +528,9 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         CompletableFuture<V> destination = newIncompleteFuture();
         // The reference JDK dispatches an already-ready binary stage even on
         // failure, but an installed listener propagates failure before dispatch.
-        int shortcut = isDone() && right.isDone() ? 0 : 1;
+        int shortcut = completionRecorded() && right.completionRecorded() ? 0 : 1;
         new Action(destination, this, right, true, executor,
-            () -> destination.complete(fn.apply(successful(), right.successful())), false, shortcut).install();
+            () -> destination.finish(fn.apply(successful(), right.successful()), null), false, shortcut).install();
         return destination;
     }
     private <U> CompletableFuture<U> either(CompletionStage<? extends T> other,
@@ -484,7 +539,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         CompletableFuture<? extends T> right = Objects.requireNonNull(other).toCompletableFuture();
         CompletableFuture<U> destination = newIncompleteFuture();
         new Action(destination, this, right, false, executor,
-            () -> destination.complete(fn.apply(isDone() ? successful() : right.successful())), false, 1).install();
+            () -> destination.finish(fn.apply(completionRecorded() ? successful() : right.successful()), null), false, 1).install();
         return destination;
     }
     private <U> CompletableFuture<U> handled(BiFunction<? super T, Throwable, ? extends U> fn, Executor executor) {
@@ -493,8 +548,8 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         new Action(destination, this, null, true, executor, () -> {
             T result;
             Throwable error;
-            synchronized (this) { result = value; error = failure; }
-            destination.complete(fn.apply(result, error));
+            synchronized (stateLock) { result = value; error = failure; }
+            destination.finish(fn.apply(result, error), null);
         }).install();
         return destination;
     }
@@ -504,20 +559,20 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         new Action(destination, this, null, true, executor, () -> {
             T result;
             Throwable error;
-            synchronized (this) { result = value; error = failure; }
+            synchronized (stateLock) { result = value; error = failure; }
             try { fn.accept(result, error); }
             catch (Throwable callback) {
                 if (error == null) throw callback;
                 if (callback != error) error.addSuppressed(callback);
             }
-            if (error == null) destination.complete(result); else destination.asyncFailure(error);
+            if (error == null) destination.finish(result, null); else destination.asyncFailure(error);
         }).install();
         return destination;
     }
     private void relay(CompletableFuture<T> destination) {
         new Action(destination, this, null, true, null, () -> {
             Throwable error = error();
-            if (error == null) destination.complete(successful()); else destination.asyncFailure(error);
+            if (error == null) destination.finish(successful(), null); else destination.asyncFailure(error);
         }).install();
     }
     private <U> CompletableFuture<U> composed(Function<? super T, ? extends CompletionStage<U>> fn, Executor executor) {
@@ -536,7 +591,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         CompletableFuture<T> destination = newIncompleteFuture();
         new Action(destination, this, null, true, executor, () -> {
             Throwable error = error();
-            if (error == null) destination.complete(successful());
+            if (error == null) destination.finish(successful(), null);
             else Objects.requireNonNull(fn.apply(error)).toCompletableFuture().relay(destination);
         }, false, 2).install();
         return destination;
@@ -573,7 +628,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         CompletableFuture<?> right = Objects.requireNonNull(other).toCompletableFuture();
         CompletableFuture<Void> destination = newIncompleteFuture();
         new Action(destination, this, right, false, executor, () -> {
-            if (isDone()) successful(); else right.successful(); fn.run(); destination.complete(null);
+            if (completionRecorded()) successful(); else right.successful(); fn.run(); destination.finish(null, null);
         }, false, 1).install();
         return destination;
     }
