@@ -72,7 +72,7 @@ class CTimedRuntime(unittest.TestCase):
         self.assertEqual(function(node, 'run'), function(original, 'run'))
 
     def test_timer_result_requires_same_closed_mode_real_positive_owner_counts_and_canonical_numbers(self):
-        for mode in fixture.MODES:
+        for mode in (*fixture.MODES, fixture.SELECT_MODE):
             timers = 2 if 'broadcast' in mode else 1
             value = 'timed:' + mode + ':' + str(timers) + ':3:2:6388000'
             self.assertEqual(fixture.observation(value, mode)['timers'], timers)
@@ -109,14 +109,16 @@ class CTimedRuntime(unittest.TestCase):
                 patch.object(node, 'invoke_timed', side_effect=invoke), \
                 patch.object(node, 'selected_revision', return_value={'double': True}):
             record = node.programme(None, None, None, None, target, Path(directory))
-        self.assertEqual(len(record['outcomes']), 36)
+        self.assertEqual(len(record['outcomes']), 37)
+        self.assertEqual(record['originalThirtySixOutcomePrefix'], 36)
         self.assertEqual(record['originalTwentyOutcomePrefix'], 20)
         self.assertEqual([mode for mode, _ in invoked[:18]], [
             'pthread', 'c11', 'mixed', 'invalid', 'pressure', 'root-return', 'application-error',
             'root-trap', 'pthread', 'callback-trap', 'c11', 'cancel', 'mixed', 'deadline', 'pthread',
             'sync-pthread', 'sync-mixed', 'pthread'])
-        self.assertEqual([mode for mode, _ in invoked[18:-1]], list(fixture.MODES))
-        self.assertEqual(invoked[-1], ('timed-sleep-c11', 'c-thread-fresh-timed'))
+        self.assertEqual([mode for mode, _ in invoked[18:-2]], list(fixture.MODES))
+        self.assertEqual(invoked[-2], ('timed-sleep-c11', 'c-thread-fresh-timed'))
+        self.assertEqual(invoked[-1], (fixture.SELECT_MODE, 'c-thread-timed-select'))
         self.assertEqual(len(denied), 5)
         for index, missing in enumerate(original.IMPORTS):
             self.assertEqual(deployments[index], [row for row in grants if row['capability'] != missing])
@@ -124,6 +126,57 @@ class CTimedRuntime(unittest.TestCase):
             self.assertEqual(deployments[index + 3], [row for row in grants if row['capability'] != missing])
         self.assertEqual(deployments[2], grants)
         self.assertEqual(deployments[-1], grants)
+
+    def test_select_witness_requires_one_timer_and_cannot_turn_failure_into_success(self):
+        with self.assertRaisesRegex(ValueError, 'select-exact-timer'):
+            fixture.observation('timed:timed-select:2:3:2:6388000', fixture.SELECT_MODE)
+        revision = {'id': 'selected'}
+        process = SimpleNamespace()
+        consumption = {name: '0' for name in ('outboundRequests', 'stateReadBytes', 'stateWriteBytes',
+            'blobReadBytes', 'blobWriteBytes', 'logBytes', 'effectCount', 'childCalls')}
+        for code in ('guest-trap', 'cancelled', 'deadline'):
+            row = {'processReaped': True, 'exitCode': 4, 'decoded': None,
+                'response': {'outcomeKnown': True, 'requestDispatched': True,
+                    'data': {'resolvedRevision': revision, 'consumption': consumption},
+                    'error': {'code': code}}}
+            with self.subTest(code=code), tempfile.TemporaryDirectory() as directory, \
+                    patch.object(node, 'selected_revision', return_value=revision), \
+                    patch.object(node, 'start_call', return_value=process), \
+                    patch.object(original, 'finish_call', return_value=row), \
+                    patch.object(original, 'retain_partial') as retained, \
+                    patch.object(original, 'close_call') as closed, \
+                    patch.object(original, 'retire') as retired:
+                with self.assertRaisesRegex(RuntimeError, 'c-timed-ordinary-success'):
+                    node.invoke_timed(None, None, {}, Path(directory), fixture.SELECT_MODE, 'select-failure')
+                retained.assert_called_once()
+                closed.assert_called_once_with(process, primary_failure=True)
+                retired.assert_not_called()
+
+    def test_original_timed_failure_stops_before_select(self):
+        grants = [{'capability': value, 'policy': str(index)}
+                  for index, value in enumerate(fixture.IMPORTS)]
+        target = {'grants': [], 'publication': 'publication', 'generation': '1'}
+        entered = []
+        def deploy(*args, **kwargs):
+            return dict(target, grants=kwargs['grants'])
+        def original_invoke(*args, **kwargs):
+            return {'mode': args[-2]}
+        def fail_timed(*args, **kwargs):
+            entered.append(args[-2])
+            raise RuntimeError('original timed failure')
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.object(node, 'install', return_value=grants), \
+                patch.object(node, 'deploy', side_effect=deploy), \
+                patch.object(node, 'start_call', return_value=SimpleNamespace()), \
+                patch.object(original, 'finish_call', return_value={'double': True}), \
+                patch.object(original, 'denied'), \
+                patch.object(original, 'retire', return_value={'double': True}), \
+                patch.object(original, 'invoke', side_effect=original_invoke), \
+                patch.object(node, 'invoke_timed', side_effect=fail_timed):
+            with self.assertRaisesRegex(RuntimeError, 'original timed failure'):
+                node.programme(None, None, None, None, target, Path(directory))
+        self.assertEqual(entered, [fixture.MODES[0]])
+        self.assertNotIn(fixture.SELECT_MODE, entered)
 
     def test_clock_inputs_are_frozen_before_observation_and_cannot_be_replaced_after_snapshot(self):
         with tempfile.TemporaryDirectory() as directory:

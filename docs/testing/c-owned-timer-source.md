@@ -138,3 +138,15 @@ on 14a55263ca17359603df3691f20a1dcac25ca17e reached the timed-sleep case and
 trapped; its exact cause remains unproved. That failure is not resolved or
 reclassified by this bridge, and signed timer/readiness qualification remains
 open.
+
+
+The same owner now appends one separately named descriptor-free select case
+after the original thirty-six outcomes. In that fresh signed invocation, the
+selecting child marks entry before a 200 ms select. The observer does not create
+its own timer: it yields while requiring exactly one live timer, the original
+root/select Waits and phase 1, then marks sibling progress. The selecting
+child requires phase 2 and a passed monotonic deadline after select returns.
+The case retains the original activation limits, authority checks and retirement
+observations. Its result remains pending until the owning run executes and passes it; the
+unchanged prefix may fail earlier. It does not qualify descriptor readiness,
+signed select cancellation, physical final-free or the broader C runtime.

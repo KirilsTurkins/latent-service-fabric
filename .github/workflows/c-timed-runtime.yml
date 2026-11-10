@@ -159,7 +159,7 @@ concurrency:
 
 jobs:
   ordinary-c-threads:
-    name: One captured C component and thirty-six signed lifecycle and timer cases
+    name: One captured C component and thirty-seven signed lifecycle and timer cases
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
