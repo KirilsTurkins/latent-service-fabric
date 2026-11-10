@@ -181,6 +181,91 @@ async fn duplicate_waiters_are_authorized_bounded_and_cancel_independently() {
 }
 
 #[tokio::test]
+async fn duplicate_waiters_obey_global_and_tenant_limits() {
+    async fn acquire(
+        queue: &EntityQueue,
+        tenant: &str,
+        entity: &str,
+        key: CommandIdentity,
+        fingerprint: CommandIdentity,
+        authorized: bool,
+    ) -> Result<Physical, QueueError> {
+        queue
+            .acquire_for_command(
+                scope(tenant, entity),
+                vec![1],
+                64,
+                deadline(),
+                Arc::new(|| true),
+                permit(),
+                Some((key, fingerprint, [0; 32], None)),
+                authorized,
+                None,
+            )
+            .await
+    }
+
+    let mut bounds = limits();
+    bounds.global_queued = 2;
+    bounds.tenant_queued = 1;
+    bounds.entity_queued = 2;
+    let queue =
+        Arc::new(EntityQueue::new(bounds, Arc::new(latent_core::SystemActivationClock)).unwrap());
+    let fingerprint = CommandIdentity::parse_hex(&"77".repeat(32)).unwrap();
+    let keys: Vec<_> = (1..=4)
+        .map(|n| CommandIdentity::parse_hex(&format!("{n:02x}").repeat(32)).unwrap())
+        .collect();
+    let a1 = acquire(&queue, "tenant-a", "one", keys[0], fingerprint, false)
+        .await
+        .unwrap();
+    let a2 = acquire(&queue, "tenant-a", "two", keys[1], fingerprint, false)
+        .await
+        .unwrap();
+    let b = acquire(&queue, "tenant-b", "one", keys[2], fingerprint, false)
+        .await
+        .unwrap();
+    let c = acquire(&queue, "tenant-c", "one", keys[3], fingerprint, false)
+        .await
+        .unwrap();
+    let q = Arc::clone(&queue);
+    let key = keys[0];
+    let first =
+        tokio::spawn(async move { acquire(&q, "tenant-a", "one", key, fingerprint, true).await });
+    tokio::time::timeout(Duration::from_secs(2), async {
+        while queue.duplicate_waiter_count().unwrap() != 1 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    assert!(matches!(
+        acquire(&queue, "tenant-a", "two", keys[1], fingerprint, true).await,
+        Err(QueueError::DuplicateCapacity)
+    ));
+    let q = Arc::clone(&queue);
+    let key = keys[2];
+    let second =
+        tokio::spawn(async move { acquire(&q, "tenant-b", "one", key, fingerprint, true).await });
+    tokio::time::timeout(Duration::from_secs(2), async {
+        while queue.duplicate_waiter_count().unwrap() != 2 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    assert!(matches!(
+        acquire(&queue, "tenant-c", "one", keys[3], fingerprint, true).await,
+        Err(QueueError::DuplicateCapacity)
+    ));
+    first.abort();
+    second.abort();
+    let _ = first.await;
+    let _ = second.await;
+    assert_eq!(queue.duplicate_waiter_count().unwrap(), 0);
+    drop((a1, a2, b, c));
+}
+
+#[tokio::test]
 async fn duplicate_does_not_become_owner_when_the_unclaimed_owner_retires() {
     let queue =
         Arc::new(EntityQueue::new(limits(), Arc::new(latent_core::SystemActivationClock)).unwrap());

@@ -115,6 +115,8 @@ pub(super) struct EntityQueue {
     maximum_commands: usize,
     next_command_generation: AtomicU64,
     duplicate_waiters: DuplicateWaiters,
+    maximum_global_waiters: usize,
+    maximum_tenant_waiters: usize,
     maximum_entity_waiters: usize,
 }
 
@@ -142,6 +144,7 @@ impl EntityQueue {
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, QueueError> {
         let maximum_turn = limits.global_queued;
+        let maximum_tenant_waiters = limits.tenant_queued;
         let maximum_entity_waiters = limits.entity_queued;
         let lanes = EntityLanes::new(limits).map_err(QueueError::Lane)?;
         let (signal, _) = watch::channel(0);
@@ -158,6 +161,8 @@ impl EntityQueue {
             maximum_commands: maximum_turn.saturating_mul(2),
             next_command_generation: AtomicU64::new(1),
             duplicate_waiters: Arc::new(Mutex::new(BTreeMap::new())),
+            maximum_global_waiters: maximum_turn,
+            maximum_tenant_waiters,
             maximum_entity_waiters,
         })
     }
@@ -308,7 +313,18 @@ impl EntityQueue {
                     .duplicate_waiters
                     .lock()
                     .map_err(|_| QueueError::Unavailable)?;
-                if waiters.get(&scope).copied().unwrap_or(0) >= self.maximum_entity_waiters {
+                let mut global = 0_usize;
+                let mut tenant = 0_usize;
+                for (key, count) in waiters.iter() {
+                    global = global.saturating_add(*count);
+                    if key.tenant() == scope.tenant() {
+                        tenant = tenant.saturating_add(*count);
+                    }
+                }
+                if global >= self.maximum_global_waiters
+                    || tenant >= self.maximum_tenant_waiters
+                    || waiters.get(&scope).copied().unwrap_or(0) >= self.maximum_entity_waiters
+                {
                     return Err(QueueError::DuplicateCapacity);
                 }
                 let sponsor = match sponsor {
