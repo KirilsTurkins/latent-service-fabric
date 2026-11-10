@@ -134,3 +134,19 @@ fn platform_failure_does_not_override_a_committed_command_disposition() {
     let (status, body) = project(response.into()).unwrap();
     assert_eq!((status, body.disposition), (200, "committed"));
 }
+
+#[test]
+fn command_without_durable_disposition_cannot_return_application_success() {
+    let response = t::InvokeCommandResponse {
+        command: None,
+        invocation: Some(i::InvokeResponse {
+            result: Some(i::invoke_response::Result::Success(i::Success::default())),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+    let (status, body) = project(response.into()).unwrap();
+    assert_eq!((status, body.disposition), (503, "recovery-required"));
+    assert!(body.result.is_none());
+    assert!(body.command_id.is_none());
+}

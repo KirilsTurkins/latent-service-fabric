@@ -204,14 +204,25 @@ fn project(response: phase4::Response) -> Result<(u16, Response), u16> {
         result: None,
     };
     let (command, invocation, query) = match response {
-        phase4::Response::InvokeCommand(value) => (value.command, value.invocation, false),
+        phase4::Response::InvokeCommand(value) => {
+            body.disposition = "recovery-required";
+            (value.command, value.invocation, false)
+        }
         phase4::Response::Query(value) => {
             body.state_view = value.view.map(|v| STANDARD.encode(v.version));
             (None, value.invocation, true)
         }
-        phase4::Response::LookupCommand(value) => (value.command, None, false),
+        phase4::Response::LookupCommand(value) => {
+            body.disposition = "recovery-required";
+            (value.command, None, false)
+        }
         _ => return Err(503),
     };
+    // An invocation value is not a durable command disposition. If the
+    // command record is absent, never return success or its application body.
+    if !query && command.is_none() {
+        return Ok((503, body));
+    }
     let mut query_failure = None;
     if let Some(invocation) = invocation {
         body.result = match invocation.result {

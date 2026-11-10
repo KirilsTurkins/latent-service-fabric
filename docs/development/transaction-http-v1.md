@@ -136,12 +136,14 @@ Typed transaction delivery uses a fixed host-owned media type,
 response limit. It supplies `Cache-Control: no-store` and the existing browser
 security headers. Query platform failures use bounded HTTP statuses: 400 for
 invalid input, 401 for unauthenticated callers, 403 for denied access, 404 for a
-missing target, 409 for a state conflict or existing identity, 502 for an
+missing resource, 409 for a state conflict or existing identity, 502 for an
 incompatible contract, corrupt artifact or trapped guest execution, 504 for a deadline and 503 for unavailable or unrecognized failures.
 Failure responses omit the query view and private platform error details. These
 status mappings do not replace current-authority checks; a revoked or disconnected
 exchange may end before a response is delivered. Durable command status continues
-to reflect its recorded disposition independently of delivery failure.
+to reflect its recorded disposition independently of delivery failure. If a
+command response has no durable disposition, it reports recovery required and
+never projects the invocation result as a successful command response.
 
 Historical guest headers, cookies and session material are
 never copied into this response. HEAD retains the representation length while
