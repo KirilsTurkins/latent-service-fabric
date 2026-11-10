@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   snapshot:
-    runs-on: ubuntu-24.04
+    runs-on: macos-15
     timeout-minutes: 15
     steps:
       - name: Fetch public source histories without credentials and record exact identities
@@ -28,7 +28,7 @@ jobs:
           git -C "$RUNNER_TEMP/lsf-stack.git" show-ref > "$RUNNER_TEMP/lsf-stack-refs.txt"
           git -C "$RUNNER_TEMP/lsf-stack.git" fsck --no-reflogs
           tar -C "$RUNNER_TEMP" -czf "$RUNNER_TEMP/lsf-stack.git.tar.gz" lsf-stack.git
-          sha256sum "$RUNNER_TEMP/lsf-stack.git.tar.gz" > "$RUNNER_TEMP/lsf-stack.sha256"
+          shasum -a 256 "$RUNNER_TEMP/lsf-stack.git.tar.gz" > "$RUNNER_TEMP/lsf-stack.sha256"
       - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
         with:
           name: abort-stack-exact-histories
