@@ -266,6 +266,77 @@ async fn duplicate_waiters_obey_global_and_tenant_limits() {
 }
 
 #[tokio::test]
+async fn duplicate_waiter_expires_at_configured_wait_age() {
+    struct FakeClock {
+        start: Instant,
+        elapsed_millis: AtomicU64,
+    }
+    impl ActivationClock for FakeClock {
+        fn sample(&self) -> latent_core::ClockSample {
+            latent_core::ClockSample::new(0, self.monotonic_now())
+        }
+        fn monotonic_now(&self) -> Instant {
+            self.start + Duration::from_millis(self.elapsed_millis.load(Ordering::SeqCst))
+        }
+    }
+    let start = Instant::now();
+    let clock = Arc::new(FakeClock {
+        start,
+        elapsed_millis: AtomicU64::new(0),
+    });
+    let queue = Arc::new(EntityQueue::new(limits(), clock.clone()).unwrap());
+    let identity = CommandIdentity::parse_hex(&"88".repeat(32)).unwrap();
+    let fingerprint = CommandIdentity::parse_hex(&"99".repeat(32)).unwrap();
+    let command = Some((identity, fingerprint, [0; 32], None));
+    let owner = queue
+        .acquire_for_command(
+            scope("tenant-a", "order"),
+            vec![1],
+            64,
+            start + Duration::from_secs(3),
+            Arc::new(|| true),
+            permit(),
+            command.clone(),
+            false,
+            None,
+        )
+        .await
+        .unwrap();
+    let waiting = Arc::clone(&queue);
+    let waiter = tokio::spawn(async move {
+        waiting
+            .acquire_for_command(
+                scope("tenant-a", "order"),
+                vec![2],
+                64,
+                start + Duration::from_secs(3),
+                Arc::new(|| true),
+                permit(),
+                command,
+                true,
+                None,
+            )
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(2), async {
+        while queue.duplicate_waiter_count().unwrap() != 1 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    clock.elapsed_millis.store(101, Ordering::SeqCst);
+    let result = tokio::time::timeout(Duration::from_secs(2), waiter)
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(matches!(result, Err(QueueError::Expired)));
+    assert_eq!(queue.duplicate_waiter_count().unwrap(), 0);
+    assert_eq!(queue.snapshot().active, 1);
+    drop(owner);
+}
+
+#[tokio::test]
 async fn duplicate_does_not_become_owner_when_the_unclaimed_owner_retires() {
     let queue =
         Arc::new(EntityQueue::new(limits(), Arc::new(latent_core::SystemActivationClock)).unwrap());

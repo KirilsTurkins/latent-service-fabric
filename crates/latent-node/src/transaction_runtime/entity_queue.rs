@@ -118,6 +118,7 @@ pub(super) struct EntityQueue {
     maximum_global_waiters: usize,
     maximum_tenant_waiters: usize,
     maximum_entity_waiters: usize,
+    maximum_wait_age: Duration,
 }
 
 impl EntityQueue {
@@ -146,6 +147,7 @@ impl EntityQueue {
         let maximum_turn = limits.global_queued;
         let maximum_tenant_waiters = limits.tenant_queued;
         let maximum_entity_waiters = limits.entity_queued;
+        let maximum_wait_age = limits.maximum_wait_age;
         let lanes = EntityLanes::new(limits).map_err(QueueError::Lane)?;
         let (signal, _) = watch::channel(0);
         let (claims, _) = watch::channel(0);
@@ -164,6 +166,7 @@ impl EntityQueue {
             maximum_global_waiters: maximum_turn,
             maximum_tenant_waiters,
             maximum_entity_waiters,
+            maximum_wait_age,
         })
     }
 
@@ -248,9 +251,18 @@ impl EntityQueue {
         if permit.buffer_class() != NativeBufferClass::Request || permit.bytes() < charge {
             return Err(QueueError::Unavailable);
         }
+        let duplicate_deadline = self
+            .clock
+            .monotonic_now()
+            .checked_add(self.maximum_wait_age)
+            .ok_or(QueueError::Unavailable)?
+            .min(deadline);
         let mut changes = self.signal.subscribe();
         let mut duplicate_waiter = None;
         let registration = loop {
+            if duplicate_waiter.is_some() && self.clock.monotonic_now() >= duplicate_deadline {
+                return Err(QueueError::Expired);
+            }
             let Some((identity, fingerprint, source, owner)) = &command else {
                 break None;
             };
@@ -344,7 +356,7 @@ impl EntityQueue {
             }
             tokio::select! {
                 result = changes.changed() => if result.is_err() { return Err(QueueError::Unavailable); },
-                () = wait_until(deadline, self.clock.as_ref()) => return Err(QueueError::Expired),
+                () = wait_until(duplicate_deadline, self.clock.as_ref()) => return Err(QueueError::Expired),
             }
         };
         let (send, mut receive) = oneshot::channel();
