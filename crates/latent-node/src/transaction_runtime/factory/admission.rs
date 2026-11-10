@@ -381,6 +381,11 @@ impl NativeTransactionAdmission {
                 self.shared_owner.clone(),
             )
         });
+        let wait_deadline = self
+            .owners
+            .lanes
+            .waiter_deadline(deadline)
+            .map_err(entity_queue_error)?;
         let wait = async {
             let mut duplicate_authorized = false;
             let mut first_owner = None;
@@ -476,9 +481,17 @@ impl NativeTransactionAdmission {
                     (&mut wait).await.map(Some)
                 }
             };
-            let next = match control {
-                Some(control) => control.wait(next).await?,
-                None => next.await?,
+            let next = tokio::select! {
+                biased;
+                () = self.owners.lanes.wait_for_waiter_expiry(wait_deadline) => {
+                    return Err(entity_queue_error(super::super::entity_queue::QueueError::Expired));
+                }
+                result = async {
+                    match control {
+                        Some(control) => control.wait(next).await,
+                        None => next.await,
+                    }
+                } => result?,
             };
             if let Some(lane) = next {
                 return Ok(Some(lane));
@@ -486,10 +499,18 @@ impl NativeTransactionAdmission {
             // The read job keeps its own physical owner after waiter loss. A
             // cancellation or a duplicate result drops the queued reservation.
             let read = self.replay_existing_entity(selection, envelope, budget);
-            match control {
-                Some(control) => control.wait(read).await?,
-                None => read.await?,
-            };
+            tokio::select! {
+                biased;
+                () = self.owners.lanes.wait_for_waiter_expiry(wait_deadline) => {
+                    return Err(entity_queue_error(super::super::entity_queue::QueueError::Expired));
+                }
+                result = async {
+                    match control {
+                        Some(control) => control.wait(read).await,
+                        None => read.await,
+                    }
+                } => { result?; }
+            }
         }
     }
 

@@ -261,6 +261,14 @@ impl EntityQueue {
         })
     }
 
+    pub(super) fn waiter_deadline(&self, deadline: Instant) -> Result<Instant, QueueError> {
+        self.clock
+            .monotonic_now()
+            .checked_add(self.maximum_wait_age)
+            .map(|limit| limit.min(deadline))
+            .ok_or(QueueError::Unavailable)
+    }
+
     pub(super) async fn wait_for_waiter_expiry(&self, deadline: Instant) {
         wait_until(deadline, self.clock.as_ref()).await;
     }
