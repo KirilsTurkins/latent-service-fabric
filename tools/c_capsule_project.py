@@ -10,7 +10,7 @@ from tools.rust_capsule_project import (ROOT, AUTHORING_TEMPLATES, TEMPLATES, TU
     fresh, inventory, read_file, snapshot)
 
 
-def sdk_inputs(root: Path, *, threading: bool = False) -> dict[str, bytes]:
+def sdk_inputs(root: Path, *, threading: bool = False, closed_headers: bool = False) -> dict[str, bytes]:
     vendor = {}
     for folder in ("sdk/c-guest/include", "sdk/c-guest/src", "wit/platform"):
         vendor.update({folder + "/" + path: data for path, data in snapshot(root / folder).items()})
@@ -19,13 +19,18 @@ def sdk_inputs(root: Path, *, threading: bool = False) -> dict[str, bytes]:
     if threading:
         for path in ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c', 'template-copy.c', 'synchronization.c', 'timed-symbols.rsp'):
             vendor['sdk/c-guest/runtime/' + path] = read_file(root / 'sdk/c-guest/runtime' / path)
+    if closed_headers:
+        if not threading:
+            raise ValueError('c-closed-headers-require-cooperative-threading')
+        from tools.c_guest.closed_headers import GUARD
+        vendor['sdk/c-guest/' + GUARD] = read_file(root / 'sdk/c-guest' / GUARD)
     return vendor
 
 
 def authoring_inputs(root: Path) -> dict[str, bytes]:
     # Ship the optional profile's sources in the installed SDK inventory. The
     # ordinary project still captures only sdk_inputs(..., threading=False).
-    files = sdk_inputs(root, threading=True)
+    files = sdk_inputs(root, threading=True, closed_headers=True)
     for template in AUTHORING_TEMPLATES:
         path = ("tools/toolchain-smoke/examples/tutorial_" + template.replace("-", "_")
                 if template in TUTORIALS else "examples/rust-capsules/" + template)
@@ -40,7 +45,7 @@ def authoring_inputs(root: Path) -> dict[str, bytes]:
 
 
 def create(directory: Path, template: str, name: str | None = None, *, threading_profile: str | None = None,
-           event_profile: str | None = None) -> Path:
+           event_profile: str | None = None, header_profile: str | None = None) -> Path:
     if event_profile is not None and (template != "transactional-aggregate" or not isinstance(event_profile, str)
             or re.fullmatch(r"js-window-v1:[0-9a-f]{64}", event_profile) is None):
         raise ValueError("explicit C transaction event profile required")
@@ -55,7 +60,12 @@ def create(directory: Path, template: str, name: str | None = None, *, threading
     if threading_profile is not None:
         from tools.c_guest import threading
         selected_threading = threading.selected({'threadingProfile': threading_profile})
-    vendor = sdk_inputs(ROOT, threading=selected_threading)
+    from tools.c_guest import closed_headers
+    header_selection = {'threadingProfile': threading_profile or 'single-threaded'}
+    if header_profile is not None:
+        header_selection['headerProfile'] = header_profile
+    selected_headers = closed_headers.selected(header_selection)
+    vendor = sdk_inputs(ROOT, threading=selected_threading, closed_headers=selected_headers)
     files = {"vendor/lsf/" + path: data for path, data in vendor.items()}
     files.update({"src/main.c": read_file(ROOT / "sdk/c-guest/templates" / (template + ".c")),
                   "wit/world.wit": read_file(source / "world.wit"), ".gitignore": b"/target/\n"})
@@ -69,6 +79,8 @@ def create(directory: Path, template: str, name: str | None = None, *, threading
                "service": "examples/" + name, "world": f"examples:{template}/service@1.0.0", "limits": limits}
     if selected_threading:
         project['threadingProfile'] = threading.PROFILE
+    if selected_headers:
+        project['headerProfile'] = closed_headers.PROFILE
     lock = {"formatVersion": 1, "language": "c", "sdk": json.loads(inventory(vendor)),
             "bindings": json.loads(read_file(ROOT / "tools/guest_bindings.lock.json")),
             "template": {"name": template, "sourceDigest": digest(files["src/main.c"]),
@@ -103,13 +115,16 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     if not {"capsule-project.json", "sdk-lock.json", "src/main.c", "wit/world.wit"} <= files.keys():
         raise ValueError("incomplete C capsule project")
     project, lock = (decode_json(files[name]) for name in ("capsule-project.json", "sdk-lock.json"))
-    if (not isinstance(project, dict) or set(project) - {"runtimeProfile", "languageStandard", "threadingProfile"} != {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
+    if (not isinstance(project, dict) or set(project) - {"runtimeProfile", "languageStandard", "threadingProfile", "headerProfile"} != {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
             or type(project["formatVersion"]) is not int or project["formatVersion"] != 1):
         raise ValueError("unsupported capsule project format")
     from tools.c_guest.standard_facilities import selected_profile
     selected_profile(project)
     from tools.c_guest.language import selected_standard
     selected_standard(project)
+    from tools.c_guest import closed_headers
+    if closed_headers.selected(project) and 'vendor/lsf/sdk/c-guest/' + closed_headers.GUARD not in files:
+        raise ValueError('c-closed-headers-require-captured-guard')
     if project.get('threadingProfile', 'single-threaded') != 'single-threaded':
         from tools.c_guest import threading
         if threading.selected(project) and not all('vendor/lsf/sdk/c-guest/runtime/' + name in files
