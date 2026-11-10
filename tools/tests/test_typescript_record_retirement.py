@@ -246,5 +246,45 @@ class OwnerRetryTests(unittest.TestCase):
                     self.assertEqual(row['callbacks'], 0)
 
 
+class QueueCancellationTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        compiler = (os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or
+                    shutil.which('c++') or shutil.which('cl'))
+        if compiler is None:
+            raise RuntimeError('C++ compiler is required for queue cancellation controls')
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.temporary.cleanup)
+        output = Path(cls.temporary.name)
+        includes = output / 'include'
+        write_owner_retry_includes(includes)
+        cls.binary = output / ('queue.exe' if os.name == 'nt' else 'queue')
+        source = ROOT / 'sdk/typescript-guest/activation/tests/queue_cancellation.cpp'
+        if Path(compiler).stem.lower() == 'cl':
+            command = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX',
+                       '/I' + str(includes), str(source), '/Fe:' + str(cls.binary),
+                       '/Fo:' + str(output / 'queue.obj')]
+        else:
+            command = [compiler, '-std=c++17', '-O0', '-Wall', '-Wextra', '-Werror',
+                       '-I', str(includes), str(source), '-o', str(cls.binary)]
+        result = subprocess.run(command, capture_output=True, timeout=60, check=False)
+        if result.returncode or len(result.stdout) + len(result.stderr) > 65536:
+            raise AssertionError((result.stdout + result.stderr)[:65536].decode(errors='replace'))
+        if not cls.binary.is_file() or cls.binary.stat().st_size > 4 * 1024**2:
+            raise AssertionError('finite queue reference output required')
+
+    def test_cancel_fences_admission_without_destroying_an_executing_frame(self):
+        for suffix in ('success', 'false', 'exception', 'ack-refusal'):
+            case = 'reentrant-cancel-' + suffix
+            with self.subTest(case=case):
+                result = subprocess.run([str(self.binary), case], capture_output=True,
+                                        timeout=10, check=False)
+                self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
+                self.assertLessEqual(len(result.stdout) + len(result.stderr), 65536)
+                row = json.loads(result.stdout)
+                self.assertEqual(row, {'case': case, 'passed': True, 'engineQualified': False,
+                                       'callbacks': 1, 'retainedRoots': 0, 'retiredTasks': 2})
+
+
 if __name__ == '__main__':
     unittest.main()

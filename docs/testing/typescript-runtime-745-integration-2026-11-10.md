@@ -167,3 +167,37 @@ All nine #745 acceptance rows above retain their prior unqualified status
 until the rebuilt final integration's CI finishes. Local source/host control
 results are separate from signed source-owned engine, aggregate byte
 attribution, Store/pool quarantine, published npm and real-network evidence.
+
+
+## Agent 3 reentrant cancellation gate staged (2026-11-10)
+
+Reviewed Agent 3 [#1931](https://github.com/KirilsTurkins/latent-service-fabric/pull/1931)
+commit `1d41110ca404b833c8da4c46080646b9be0156fc` (parent
+`bce274289ff775c52bbf7ff8c9e1e88c154a3ebc`). The production JobQueue
+now closes admission before declining to retire an executing callback
+requested by reentrant cancellation. The running frame, queued sibling,
+callback roots and prepaid original owners remain held; late and prepaid
+admission, nested draining and repeated cancellation are fenced. Four
+success/false/exception/refused-ACK cases exercise the production header
+with finite broker doubles; pinned JSAPI fixture cases are separate and
+do not prove physical Store destruction or signed guest execution.
+
+Agent 3 reports **17 retirement unittest methods passed under GCC and Clang**
+on that agent source, not on the combined integration head. Its diagnostic
+input-acquisition workflow `bce27428` is not staged. The previous Agent 5
+native-owner fail-closed compiler selection is preserved; the new
+QueueCancellationTests prerequisite also raises a RuntimeError on a missing
+C++ compiler, including Windows, and the missing-tool guard is extended.
+Full GCC/Clang/ASan+UBSan and pinned engine/signed-component qualification
+must run on the new exact combined integration head. No original budget,
+grant, deadline, accounting interface or network provider changes.
+Physical Store/pool/quarantine custody and aggregate byte accounting
+remain **unresolved**.
+
+Agent 1's newer [#1932](https://github.com/KirilsTurkins/latent-service-fabric/pull/1932)
+`be5c0d5f5d0caa731fc6e7c448cc9f669d4e1259` updates only its
+temporary qualification workflow to rebuild current native products.
+Its signed run `42820097517` / job `129843136088` was **queued** at
+review; the temporary workflow is not staged. The prior Agent 1 signed
+run `42788274731` / job `129734901112` failed source provenance
+before guest execution. It does not qualify the integrated compiler fix.
