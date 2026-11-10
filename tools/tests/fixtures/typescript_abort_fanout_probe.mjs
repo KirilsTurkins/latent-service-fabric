@@ -71,6 +71,44 @@ async function exercise(selected, fault) {
   }
 }
 
+// Model the selected native factory only to test the probe's assertions. This
+// does not change the Node reference result or count as native execution.
+async function factoryContract(fault) {
+  const define = Object.defineProperty;
+  const descriptor = Object.getOwnPropertyDescriptor(DOMException.prototype, 'constructor');
+  let calls = 0, checkpoint = 0;
+  AbortController.prototype.abort = function(reason) {
+    if (reason === undefined && !this.signal.aborted) {
+      ++calls;
+      const Factory = DOMException.prototype.constructor;
+      reason = new Factory('aborted', fault === 'wrong-default' && calls === 2 ? 'WrongError' : 'AbortError');
+    }
+    return original.abort.call(this, reason);
+  };
+  Promise.resolve = function(value) {
+    assert.equal(calls, 1, 'reentry must finish before the independent factory checkpoint');
+    ++checkpoint;
+    return original.resolve.call(this, value);
+  };
+  if (fault === 'missing-restoration') {
+    Object.defineProperty = function(target, key, value) {
+      if (target === DOMException.prototype && key === 'constructor' && value.value === descriptor.value) return target;
+      return define(target, key, value);
+    };
+  }
+  try {
+    if (fault === 'none') assert.equal(await api.run(29, ''), 'abort-fanout:default-reentry:first-wins');
+    else await assert.rejects(api.run(29, ''), /abort-fanout-default-constructor-not-restored/);
+    assert.equal(calls, 2);
+    assert.equal(checkpoint, 1);
+  } finally {
+    Object.defineProperty = define;
+    define(DOMException.prototype, 'constructor', descriptor);
+    AbortController.prototype.abort = original.abort;
+    Promise.resolve = original.resolve;
+  }
+}
+
 try {
   assert.equal(await api.run(27, ''), 'abort-fanout:9:ordered');
   const normal = await exercise(api, 'none');
@@ -104,6 +142,7 @@ try {
   // Node's primordial factory is not the selected native factory. Its lack of
   // constructor reentry must remain a failure, never a passing fallback.
   await assert.rejects(api.run(29, ''), /abort-fanout-default-factory-not-reentered/);
+  for (const fault of ['none', 'wrong-default', 'missing-restoration']) await factoryContract(fault);
   assert.equal(contacts, 0);
   console.log(JSON.stringify({scope: 'probe-assertions-only', diagnostics}));
 } finally {
