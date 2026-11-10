@@ -1,0 +1,85 @@
+name: Agent 2 complete pinned-engine link inputs
+on:
+  push:
+    branches: ['ci/1852-agent2-linked-engine-inputs']
+    paths: ['.github/workflows/agent2-linked-engine-inputs.yml']
+permissions:
+  contents: read
+jobs:
+  inputs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6
+        with:
+          node-version: 24.19.0
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          targets: wasm32-wasip1
+      - name: Install unchanged normal build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes clang-18 llvm-18 lld-18 autoconf2.13 m4 libffi-dev python3-dev
+      - name: Build the exact normal patched intrinsic library
+        run: python3 tools/build_typescript_promise_library.py --output "$RUNNER_TEMP/typescript-promise-library"
+      - name: Install the pinned bindings generator
+        run: python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/typescript-promise-tools"
+      - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce
+        with:
+          version: 1.254.0
+      - name: Link the complete normal engine without changing build or runtime limits
+        run: python3 tools/build_typescript_native_engine.py --library "$RUNNER_TEMP/typescript-promise-library" --output "$RUNNER_TEMP/typescript-native-engine" --wit-bindgen "$RUNNER_TEMP/typescript-promise-tools/wit-bindgen"
+      - name: Retain the complete real link closure and immutable source
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/agent2-linked-inputs"
+          mkdir -p "$output"
+          git rev-parse HEAD > "$output/source-commit.txt"
+          git archive HEAD | gzip -n > "$output/source.tar.gz"
+          python3 - <<'PY'
+          import hashlib, json, os, tarfile
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP'])
+          engine = root / 'typescript-native-engine'
+          receipt = json.loads((engine / 'engine-build.json').read_text())
+          assert receipt['status'] == 'passed'
+          assert receipt['qualification'] == 'unknown'
+          archive = root / 'agent2-linked-inputs' / 'normal-engine-link-closure.tar.gz'
+          with tarfile.open(archive, 'w:gz', dereference=True) as carrier:
+              for name in ('spidermonkey', 'build', 'componentize-source', 'cpm-cache', 'jobs-generated', 'clocks-generated', 'engine.wasm', 'licenses'):
+                  carrier.add(engine / name, arcname='typescript-native-engine/' + name)
+              for path in sorted(engine.iterdir()):
+                  if path.is_file() and path.suffix in {'.json', '.log'}:
+                      carrier.add(path, arcname='typescript-native-engine/' + path.name)
+              library = root / 'typescript-promise-library'
+              for name in ('library-build.json', 'source-derivation.json', 'build-command.json', 'mozconfig', 'obj/config.status', 'obj/js/src/js-confdefs.h'):
+                  carrier.add(library / name, arcname='typescript-promise-library/' + name)
+          manifest = {}
+          for path in sorted((root / 'agent2-linked-inputs').iterdir()):
+              if path.is_file():
+                  digest = hashlib.file_digest(path.open('rb'), 'sha256').hexdigest()
+                  manifest[path.name] = {'bytes': path.stat().st_size, 'sha256': digest}
+          (root / 'agent2-linked-inputs' / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+          PY
+      - name: Upload actual products and failed build evidence
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: agent2-complete-linked-engine-inputs-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/agent2-linked-inputs/
+            ${{ runner.temp }}/typescript-promise-library/*.json
+            ${{ runner.temp }}/typescript-promise-library/*.log
+            ${{ runner.temp }}/typescript-native-engine/*.json
+            ${{ runner.temp }}/typescript-native-engine/*.log
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
