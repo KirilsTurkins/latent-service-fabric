@@ -5,6 +5,10 @@ on:
     paths:
       - '.github/workflows/typescript-runtime-controls.yml'
       - 'tools/typescript_runtime_sanitizer_cxx.sh'
+      - 'tools/typescript_fetch_failure.py'
+      - 'tools/qualify_typescript_fetch_runtime.py'
+      - 'tools/tests/test_typescript_fetch_failure.py'
+      - 'tools/tests/test_typescript_qualification_prerequisites.py'
       - 'tools/typescript_guest/**'
       - 'sdk/typescript-guest/activation/**'
       - 'tools/tests/test_typescript_event_ownership.py'
@@ -62,4 +66,6 @@ jobs:
           python3 -B -m unittest \
             tools.tests.test_typescript_event_ownership \
             tools.tests.test_typescript_record_retirement \
-            tools.tests.test_typescript_abort_any_ownership -v
+            tools.tests.test_typescript_abort_any_ownership \
+            tools.tests.test_typescript_qualification_prerequisites \
+            tools.tests.test_typescript_fetch_failure -v

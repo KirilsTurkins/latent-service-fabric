@@ -32,6 +32,7 @@ from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file
 from tools.standard_http.observations import validate as validate_peer
 from tools.standard_http.vectors import DOMAIN, json_bytes
 from tools.static_api.node import policy
+from tools.typescript_fetch_failure import observe_case_failure
 from tools.typescript_guest.build import build
 from tools.typescript_guest.fetch_profile import PROFILE
 from tools.typescript_guest.project import validate
@@ -268,10 +269,11 @@ def execute(artifact, native, output):
                     runtime, authorized = grants(client, node, publication, origin)
                     target = deploy(client, source/'deployment.json', publication,
                         generation=str(target['generation']), grants=runtime)
-                row = call(client, target, 'typescript-fetch', 'run', [1, address+'/conformance/json'], 'fetch-'+phase)
-                result[phase] = row
-                require_denied(row)
-                retire(client, probe, target, output, phase)
+                with observe_case_failure(client, target, output, phase, result):
+                    row = call(client, target, 'typescript-fetch', 'run', [1, address+'/conformance/json'], 'fetch-'+phase)
+                    result[phase] = row
+                    require_denied(row)
+                    retire(client, probe, target, output, phase)
             target = deploy(client, source/'deployment.json', publication,
                 generation=str(target['generation']), grants=authorized)
             vectors = [('entry', 1, '/conformance/json', 'entered', 0),
@@ -294,10 +296,11 @@ def execute(artifact, native, output):
                 ('fresh', 0, '/conformance/json', '1:200:'+json_bytes(DOMAIN).decode()+':used', 1)]
             for name, mode, path, expected, outbound in vectors:
                 stage = name
-                row = call(client, target, 'typescript-fetch', 'run', [mode, address+path], 'fetch-'+name)
-                require_result(row, expected, outbound)
-                result['cases'].append(name)
-                retire(client, probe, target, output, name)
+                with observe_case_failure(client, target, output, name, result):
+                    row = call(client, target, 'typescript-fetch', 'run', [mode, address+path], 'fetch-'+name)
+                    require_result(row, expected, outbound)
+                    retire(client, probe, target, output, name)
+                    result['cases'].append(name)
             delete_all(client, [target['name']])
             stop(client, node)
             result['shutdown'] = stopped_record(node)
