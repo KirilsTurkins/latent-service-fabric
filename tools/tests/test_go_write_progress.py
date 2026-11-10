@@ -10,6 +10,7 @@ import unittest
 from tools import qualify_go_write_progress as q
 from tools import go_network_deadline_reference as deadline
 from tools import go_network_empty_read_reference as empty_read
+from tools import go_network_half_close_reference as half_close
 
 ROOT=Path(__file__).resolve().parents[2]
 
@@ -144,6 +145,43 @@ class GoWriteProgressTests(unittest.TestCase):
             with self.assertRaises(ValueError):empty_read.observed(self.encoded(rows),old_flag)
         duplicate=b'{"Package":"example.invalid/emptyread","Action":"pass","Action":"fail"}'
         with self.assertRaisesRegex(ValueError,'duplicate-field'):empty_read.observed(duplicate,False)
+
+    def test_half_close_projects_actual_adapter_and_owner_without_rewriting(self):
+        raw=(ROOT/q.TEMPLATE).read_bytes()
+        sdk=(ROOT/half_close.SDK).read_bytes()
+        for method in half_close.methods(raw,half_close.PATTERNS):
+            self.assertEqual(raw.count(method),1)
+            self.assertEqual(half_close.projected(raw).count(method),1)
+        for method in half_close.methods(sdk,half_close.SDK_PATTERNS):
+            self.assertEqual(sdk.count(method),1)
+            self.assertEqual(half_close.projected_sdk(sdk).count(method),1)
+        fixture=(ROOT/half_close.TESTS).read_text()
+        for case in half_close.CASES:
+            self.assertEqual(fixture.count('func '+case+'('),1)
+        for invalid in (raw+half_close.methods(raw,half_close.PATTERNS)[3],
+                        raw.replace(b'\n',b'\r\n'),b'x'*65537,
+                        raw.replace(b'func (c *lsfStreamConn) CloseWrite(',b'func renamed(')):
+            with self.assertRaises(ValueError):half_close.methods(invalid,half_close.PATTERNS)
+        for invalid in (sdk+half_close.methods(sdk,half_close.SDK_PATTERNS)[0],
+                        sdk.replace(b'func (c *Connection) ShutdownContext(',b'func renamed(')):
+            with self.assertRaises(ValueError):half_close.methods(invalid,half_close.SDK_PATTERNS)
+
+    def test_half_close_counterexample_and_full_controls_fail_closed(self):
+        package='example.invalid/halfclose'
+        old=[{'Package':package,'Action':'output','Test':half_close.CASES[0],
+              'Output':'expired-half-close: err=closewrite: i/o timeout calls=0 shut=false'},
+             {'Package':package,'Action':'fail','Test':half_close.CASES[0]},
+             {'Package':package,'Action':'fail'}]
+        current=[{'Package':package,'Action':'pass','Test':case} for case in half_close.CASES]
+        current.append({'Package':package,'Action':'pass'})
+        self.assertEqual(half_close.observed(self.encoded(old),True),[half_close.CASES[0]])
+        self.assertEqual(half_close.observed(self.encoded(current),False),list(half_close.CASES))
+        for rows,old_flag in ((old[1:],True),(current[:-2]+current[-1:],False),
+                              (current+[current[0]],False),([dict(current[0],Action='skip')]+current[1:],False),
+                              ([dict(current[0],Package='unexpected')]+current[1:],False)):
+            with self.assertRaises(ValueError):half_close.observed(self.encoded(rows),old_flag)
+        duplicate=b'{"Package":"example.invalid/halfclose","Action":"pass","Action":"fail"}'
+        with self.assertRaisesRegex(ValueError,'duplicate-field'):half_close.observed(duplicate,False)
 
     def test_direct_help_works_outside_repo_without_import_path_environment(self):
         with tempfile.TemporaryDirectory() as directory:

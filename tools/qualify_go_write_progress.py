@@ -20,6 +20,7 @@ if __package__ in {None, ''}:
 from tools.build_observation import file_identity
 from tools import go_network_deadline_reference as deadline
 from tools import go_network_empty_read_reference as empty_read
+from tools import go_network_half_close_reference as half_close
 from tools.owned_test_process import ProcessFailure, run_owned
 from tools.rust_capsule_project import ROOT, fresh
 from tools.test_run import redact
@@ -37,7 +38,7 @@ CASES = ('TestCopyCrossesChunkBoundary', 'TestDirectWriteAdvancesOnlyAcceptedByt
     'TestImpossibleCountsFailClosedBeforeAnotherDispatch',
     'TestEmptyClosedAndHalfClosedPathsKeepAdmissionRules',
     'TestCloseBetweenFragmentsKeepsPrefixAndStopsDispatch')
-RECIPE = (TEMPLATE, TESTS, deadline.TESTS, empty_read.TESTS, *deadline.MATERIALS, 'tools/go_network_deadline_reference.py', 'tools/go_network_empty_read_reference.py', 'tools/qualify_go_write_progress.py',
+RECIPE = (TEMPLATE, TESTS, deadline.TESTS, empty_read.TESTS, half_close.TESTS, half_close.SDK, half_close.OWNER, *deadline.MATERIALS, 'tools/go_network_deadline_reference.py', 'tools/go_network_empty_read_reference.py', 'tools/go_network_half_close_reference.py', 'tools/qualify_go_write_progress.py',
           'tools/owned_test_process.py', 'tools/owned_process_worker.py', 'tools/build_observation.py', 'tools/test_run.py',
           '.github/workflows/go-write-progress-reference.yml')
 
@@ -155,11 +156,17 @@ def qualify(output: Path) -> dict:
         empty_baseline = subprocess.check_output(['git', 'show', empty_read.BASELINE + ':' + TEMPLATE], cwd=ROOT, timeout=30)
         empty_result = empty_read.qualify(output, compiler, environment, empty_baseline,
                                           before[TEMPLATE], before[empty_read.TESTS])
+        half_baseline = subprocess.check_output(['git', 'show', half_close.BASELINE + ':' + TEMPLATE], cwd=ROOT, timeout=30)
+        half_result = half_close.qualify(output, compiler, environment, half_baseline,
+                                         before[TEMPLATE], before[half_close.SDK], before[half_close.OWNER], before[half_close.TESTS])
         if before != {name: (ROOT / name).read_bytes() for name in RECIPE} or file_identity(compiler, 'go') != identity:
             raise ValueError('go-write-reference-input-changed')
         empty_result.update(sourceRevision=record['sourceRevision'], baseline=empty_read.BASELINE,
                             compiler=identity, compilerVersion=version, sourceUnchanged=True, inputs=record['inputs'])
         (output / 'empty-read-receipt.json').write_bytes((json.dumps(empty_result, indent=2) + '\n').encode())
+        half_result.update(sourceRevision=record['sourceRevision'], baseline=half_close.BASELINE,
+                           compiler=identity, compilerVersion=version, sourceUnchanged=True, inputs=record['inputs'])
+        (output / 'half-close-receipt.json').write_bytes((json.dumps(half_result, indent=2) + '\n').encode())
         deadline_result.update(sourceRevision=record['sourceRevision'], baseline=BASELINE, compiler=identity,
                                compilerVersion=version, sourceUnchanged=True, inputs=record['inputs'])
         (output / 'deadline-receipt.json').write_bytes((json.dumps(deadline_result, indent=2) + '\n').encode())
