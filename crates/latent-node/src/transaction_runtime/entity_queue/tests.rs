@@ -1174,3 +1174,65 @@ async fn duplicate_authorization_cannot_refresh_the_original_wait_age() {
     assert_eq!(queue.snapshot().active, 1);
     drop(owner);
 }
+
+#[tokio::test]
+async fn duplicate_authorization_rechecks_original_ingress_before_waiting() {
+    let queue = EntityQueue::new(limits(), Arc::new(latent_core::SystemActivationClock)).unwrap();
+    let key = CommandIdentity::parse_hex(&"ee".repeat(32)).unwrap();
+    let fingerprint = CommandIdentity::parse_hex(&"ff".repeat(32)).unwrap();
+    let owner = queue
+        .acquire_for_command(
+            scope("tenant-a", "hot"),
+            vec![1],
+            64,
+            deadline(),
+            Arc::new(|| true),
+            permit(),
+            Some((key, fingerprint, [1; 32], None)),
+            false,
+            None,
+        )
+        .await
+        .unwrap();
+    let probe = queue
+        .acquire_for_command(
+            scope("tenant-a", "hot"),
+            vec![2],
+            64,
+            deadline(),
+            Arc::new(|| true),
+            permit(),
+            Some((key, fingerprint, [1; 32], None)),
+            false,
+            None,
+        )
+        .await;
+    let Err(QueueError::DuplicateNeedsAuthorization {
+        source,
+        owner: generation,
+        wait_until,
+    }) = probe
+    else {
+        panic!("duplicate must require authorization");
+    };
+    let resumed = queue
+        .acquire_for_command(
+            scope("tenant-a", "hot"),
+            vec![2],
+            64,
+            deadline(),
+            Arc::new(|| false),
+            permit(),
+            Some((key, fingerprint, [1; 32], None)),
+            true,
+            Some((generation, source, wait_until)),
+        )
+        .await;
+    assert!(matches!(
+        resumed,
+        Err(QueueError::Rejected(EntityRejection::AuthorityChanged))
+    ));
+    assert_eq!(queue.duplicate_waiter_count().unwrap(), 0);
+    assert_eq!(queue.snapshot().active, 1);
+    drop(owner);
+}

@@ -320,15 +320,12 @@ impl EntityQueue {
         let mut duplicate_waiter = None;
         let mut waiting_slot = None;
         let registration = loop {
-            if first_owner.is_some() && self.clock.monotonic_now() >= duplicate_deadline {
-                return Err(QueueError::Expired);
-            }
-            if duplicate_waiter.is_some() {
+            if first_owner.is_some() {
                 if self.clock.monotonic_now() >= duplicate_deadline {
                     return Err(QueueError::Expired);
                 }
-                // Recheck the original ingress authority whenever the shared
-                // owner changes, before recovering an existing command.
+                // Recheck original ingress authority after authorization and
+                // whenever the shared owner changes, before any recovery.
                 if !(current)() {
                     return Err(QueueError::Rejected(EntityRejection::AuthorityChanged));
                 }
