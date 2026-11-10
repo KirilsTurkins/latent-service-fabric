@@ -121,6 +121,23 @@ int main(void) {
     assert(stat.size == 12345 && stat.atime == 0 && stat.mtime == 0);
     assert(opens == 1 && finishes == 1 && aborts == 1);
 
+    /* HEAD metadata is 64-bit even when wasm32 URL.length is not. */
+    reset(); length = "5000000000";
+    struct url *wide = fetchParseURL(url);
+    assert(wide && fetchStat(wide, &stat, "A") == 0 && stat.size == INT64_C(5000000000));
+    assert(wide->length == (SIZE_MAX < UINT64_C(5000000000) ? SIZE_MAX : (size_t)UINT64_C(5000000000)));
+    assert(opens == 1 && finishes == 1 && aborts == 1);
+    fetchFreeURL(wide);
+    reset(); length = "9223372036854775807";
+    assert(fetchStatURL(url, &stat, "A") == 0 && stat.size == INT64_MAX);
+    reset(); length = "9223372036854775808";
+    assert(fetchStatURL(url, &stat, "A") == -1 && stat.size == -1);
+    assert(errno == EOVERFLOW && fetchLastErrCode == FETCH_PROTO);
+    assert(opens == 1 && finishes == 1 && aborts == 1);
+    length = "19";
+    assert(fetchStatURL(url, &stat, "A") == 0 && stat.size == 19);
+    assert(opens == 2 && finishes == 2 && aborts == 2);
+
     reset(); assert(fetchStatURL(url, &stat, "A") == 0);
     assert(stat.size == -1 && stat.atime == 0 && stat.mtime == 0 && aborts == 1);
     reset(); assert(fetchStatURL(url, NULL, "A") == 0 && aborts == 1);
