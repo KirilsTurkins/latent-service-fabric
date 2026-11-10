@@ -177,14 +177,17 @@ impl Lifecycle {
     // Validate before the PAL takes ownership of a real worker Arc. The
     // subsequent transition is pure and nonsuspending on this selected
     // single-fiber profile; no fallible broker call follows that transfer.
+    // An older TLS-drained generation may still retain a recycled index. The
+    // caller validates the actual new PAL child before committing; the old
+    // worker remains owned until its separately keyed real-frame callback.
     pub(crate) fn check_worker_start(&self, worker: Worker, canonical: u32) -> Result<(), Error> {
         let record = self.worker(worker)?;
         if record.phase != WorkerPhase::Reserved
-            || self
-                .workers
-                .iter()
-                .flatten()
-                .any(|row| row.canonical == Some(canonical))
+            || self.workers.iter().flatten().any(|row| {
+                row.canonical == Some(canonical)
+                    && !(row.phase == WorkerPhase::UserTlsDrained
+                        && row.generation != worker.generation)
+            })
         {
             return Err(Error::State);
         }

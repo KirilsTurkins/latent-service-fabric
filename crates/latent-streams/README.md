@@ -44,6 +44,59 @@ TCP supports send-only shutdown. TLS send-only shutdown and receive-only shutdow
 remain unsupported. TLS `shutdown(Both)` does not send a close-notify record; it
 can also retire a connection after the peer has sent its own close-notify.
 
+### Original read-witness controls
+
+The opt-in `development-read-witness` feature observes successful read-future
+construction inside the original prepaid connection. `read_admissions` saturates
+at three, `pending_reads` aggregates with a sentinel at two, and
+`retired_read_delivered_bytes` samples delivered bytes when the original read
+guard releases. Provisional guards whose later buffer/window preparation fails
+do not count as constructed reads. The observations are inert: they do not add
+an admission failure, ledger, executor, queue or serialized operator field.
+Ordinary builds omit the witness; `development-outbound` alone does not select it.
+
+The [real TCP controls](src/tests/read_progress.rs) use this same feature, not a
+second observation implementation. They distinguish unpolled reads from writes,
+refuse overlap, withhold future peer bytes until an actual short read completes,
+and retain an actual lowering copy after dropping its source chunk and revoking
+the provider. Failed window preparation, multiple live connections and provider
+rotation have separate controls. Each control has a bounded outer deadline.
+Run the registered library suite with its `workspace-all-features` recipe to
+include these non-ignored feature-gated tests; a default-feature build alone
+does not execute them.
+
+The [signed Go harness](../latent-wasmtime/tests/go_outbound_streams.rs) selects
+`development-go-network-read-witness` and isolates one original connection. Both
+the fragmented-read case and the cancellation case require a successfully
+constructed second read, its live read guard, and one byte observed at prior
+guard retirement. A delivered byte and one pending operation alone cannot tell
+whether the first read is finishing audit or the pending operation is a write.
+The unchanged Go `io.ReadFull` source supplies the next read.
+
+The [runtime controller](../../tools/qualify_go_network_runtime.py) writes new
+`latent.go.network.runtime.v3` receipts using the dependency-free
+[transcript decoder](../../tools/go_network_read_barrier.py). The revised source
+requires both ordered `GO_NETWORK_READ_EDGE` records, the original-read
+`GO_NETWORK_CANCEL_EDGE`, and every current case/owner/completion record. A
+future successful signed run is needed to establish the new cancellation edge. Reserved-prefix lines cannot silently disappear when malformed. The
+reader rejects duplicates, unknown/private fields, numeric type substitutions,
+extra failed native tests, excessive nesting and oversized output/records.
+Historical receipts keep their original schema and narrower execution claims.
+From a full checkout, run the decoder and source controls without a compiler:
+
+```sh
+python3 -m unittest tools.tests.test_go_network_read_barrier tools.tests.test_go_network_runtime -v
+```
+
+Snapshots describe currently retained owners, including retired generations,
+not process-wide history or identities. Read-guard retirement does not refund
+retained chunks/copies, the original IoCall, connection, activation or unproved
+kernel tails. Source and parser tests do not establish native or signed-component
+execution; those require fresh source-matched runs. Production, kernel and TLS
+installation gates remain unchanged. See the
+[Go source-port guide](../../docs/development/go-standard-network.md) for the
+separate historical and current signed-execution boundaries.
+
 ## Integration boundaries
 
 ADR-0061's bounded design was accepted on October 16, 2026; production
@@ -71,6 +124,7 @@ Cargo features (the manifest owns their exact expansion):
 | --- | --- |
 | `default` | No additional feature dependency. |
 | `development-outbound` | No additional feature dependency. |
+| `development-read-witness` | No additional feature dependency; inert original read-future diagnostics. |
 
 Use [Cargo.toml](Cargo.toml) for external dependencies, target gates and test/build edges; [the workspace manifest](../../Cargo.toml) and [the toolchain guide](../../docs/development/toolchain.md) own current pins. Dependency presence does not install a runtime service.
 

@@ -59,11 +59,78 @@ pub struct StreamStatus {
     pub current_generation_retired: bool,
     pub maintenance_owners: usize,
 }
+/// A bounded qualification observer of one original connection and epoch.
+/// It does not clone the socket, alter cancellation, or create an owner charge;
+/// each retained Arc keeps its already-paid original allocation alive.
+#[cfg(feature = "development-read-witness")]
+pub struct ReadCancelWitness {
+    lifecycle: Arc<StreamLifecycle>,
+    provider: StreamProvider,
+    connection: Arc<crate::connection::Connection>,
+}
+
+#[cfg(feature = "development-read-witness")]
+impl ReadCancelWitness {
+    /// Fail closed if the same provider generation is no longer current.
+    pub fn original_generation_current(&self) -> Result<bool, StreamError> {
+        let state = self
+            .lifecycle
+            .state
+            .try_lock()
+            .map_err(crate::snapshot_lock_error)?;
+        Ok(!state.stopped
+            && state.retired.iter().all(Option::is_none)
+            && Arc::ptr_eq(&self.provider.inner, &state.current.inner)
+            && !self.provider.inner.installed.is_retired())
+    }
+
+    /// The exact same connection has completed one read and still owns the
+    /// completely constructed second read, whose first drop marker has not
+    /// been reached. Its original socket and guard are retained at that edge.
+    pub fn original_second_read_live(&self) -> Result<bool, StreamError> {
+        Ok(self.original_generation_current()? && self.connection.original_second_read_live()?)
+    }
+
+    /// Count first read Pending drop markers, saturated at three. This is a
+    /// sequentially consistent observation of the retained original connection.
+    pub fn read_drop_starts(&self) -> u8 {
+        self.connection.read_drop_starts()
+    }
+}
+
 fn unavailable() -> StreamError {
     StreamError::new(StreamErrorCode::Revoked)
 }
 
 impl StreamLifecycle {
+    /// Capture the sole connection in the currently installed development
+    /// provider. No locks or callbacks are retained across the returned value.
+    #[cfg(feature = "development-read-witness")]
+    pub fn read_cancel_witness(self: &Arc<Self>) -> Result<Option<ReadCancelWitness>, StreamError> {
+        let provider = {
+            let state = self.state.try_lock().map_err(crate::snapshot_lock_error)?;
+            if state.stopped
+                || state.retired.iter().any(Option::is_some)
+                || state.current.inner.installed.is_retired()
+            {
+                return Ok(None);
+            }
+            state.current.clone()
+        };
+        let Some(connection) = provider.inner.connections.sole_owner()? else {
+            return Ok(None);
+        };
+        let witness = ReadCancelWitness {
+            lifecycle: Arc::clone(self),
+            provider,
+            connection,
+        };
+        if !witness.original_generation_current()? {
+            return Ok(None);
+        }
+        Ok(Some(witness))
+    }
+
     /// One maintained-node future scans bounded weak slots on the existing
     /// control runtime. The node owns and joins it; installation spawns nothing.
     pub fn maintenance(self: &Arc<Self>) -> Result<crate::StreamMaintenance, StreamError> {

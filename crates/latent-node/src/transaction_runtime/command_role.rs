@@ -10,6 +10,7 @@ pub(super) struct CommandRole {
     epoch: u64,
     captured: CommandTime,
     guard: Mutex<Option<CommandAdmission>>,
+    lane: Mutex<Option<super::entity_queue::Physical>>,
 }
 impl CommandRole {
     pub fn capture(source: &CommandAdmissionSource) -> Result<Arc<Self>, AtomicError> {
@@ -19,6 +20,7 @@ impl CommandRole {
             epoch: guard.owner_epoch(),
             captured: command_time(time),
             guard: Mutex::new(Some(guard)),
+            lane: Mutex::new(None),
         }))
     }
     pub const fn epoch(&self) -> u64 {
@@ -26,6 +28,25 @@ impl CommandRole {
     }
     pub const fn captured_time(&self) -> CommandTime {
         self.captured
+    }
+
+    pub(super) fn bind_lane(&self, lane: super::entity_queue::Physical) -> Result<(), AtomicError> {
+        let mut slot = self
+            .lane
+            .lock()
+            .map_err(|_| AtomicError::RecoveryRequired)?;
+        if slot.is_some() {
+            return Err(AtomicError::RecoveryRequired);
+        }
+        *slot = Some(lane);
+        Ok(())
+    }
+
+    pub(super) fn retain_lane(&self) -> Result<Option<super::entity_queue::Physical>, AtomicError> {
+        self.lane
+            .lock()
+            .map(|lane| lane.clone())
+            .map_err(|_| AtomicError::RecoveryRequired)
     }
     pub fn with_current<T>(
         &self,
@@ -56,6 +77,10 @@ impl CommandRole {
         {
             guard.retire();
         }
+        self.lane
+            .lock()
+            .map_err(|_| AtomicError::RecoveryRequired)?
+            .take();
         Ok(())
     }
 }

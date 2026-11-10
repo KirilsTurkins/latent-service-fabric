@@ -64,12 +64,43 @@ jobs:
         run: |
           cargo test --locked -p latent-core --lib host_profile::phase_timing_tests:: -- --nocapture
           cargo test --locked -p latent-http --lib tests::phase_timing:: -- --nocapture
+          cargo test --locked -p latent-http --lib tests::streaming::requested_read_maximum_ -- --nocapture
+          cargo test --locked -p latent-http --lib tests::streaming::queued_upload_ -- --nocapture
           cargo test --locked -p latent-http --lib reason_ -- --nocapture
+      - name: Check prepaid input ownership and refusal
+        run: |
+          set -o pipefail
+          cargo test --locked -p latent-capabilities --lib broker::io::transfer::native_tests::prepared_input_ -- 2>&1 | tee "$RUNNER_TEMP/http-prepared-input.log"
+          test "$(grep -Fxc "running 4 tests" "$RUNNER_TEMP/http-prepared-input.log")" -eq 1
+          test "$(grep -Fxc "test broker::io::transfer::native_tests::prepared_input_captures_once_without_callbacks_and_retains_the_original_owner ... ok" "$RUNNER_TEMP/http-prepared-input.log")" -eq 1
+          test "$(grep -Fxc "test broker::io::transfer::native_tests::prepared_input_refuses_foreign_owners_cancellation_and_unfunded_capacity ... ok" "$RUNNER_TEMP/http-prepared-input.log")" -eq 1
+          test "$(grep -Fxc "test broker::io::transfer::native_tests::prepared_input_refuses_the_logical_only_profile_before_allocation ... ok" "$RUNNER_TEMP/http-prepared-input.log")" -eq 1
+          test "$(grep -Fxc "test broker::io::transfer::native_tests::prepared_input_requires_capture_and_spends_the_original_cumulative_budget ... ok" "$RUNNER_TEMP/http-prepared-input.log")" -eq 1
       - name: Check exact semantic and prepared component contracts
         run: |
           cargo test --locked -p latent-packaging --lib phase_semantics_bind_original_resource_owners_and_exact_versioned_extension -- --nocapture
           cargo test --locked -p latent-wasmtime --lib phase_preparation_requires_exact_timer_reason_and_affine_continuation_shapes -- --nocapture
           cargo test --locked -p latent-wasmtime --lib explicit_http_phase_profile_changes_preparation_identity_without_installing_authority -- --nocapture
+          set -o pipefail
+          cargo test --locked -p latent-wasmtime --lib host::streaming_http::table::tests::open_completion_checkpoint_refusal_drops_upload_after_store_access -- --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/http-open-checkpoint.log"
+          test "$(grep -Fxc "running 1 test" "$RUNNER_TEMP/http-open-checkpoint.log")" -eq 1
+          test "$(grep -Fxc "test host::streaming_http::table::tests::open_completion_checkpoint_refusal_drops_upload_after_store_access ... ok" "$RUNNER_TEMP/http-open-checkpoint.log")" -eq 1
+          cargo test --locked -p latent-wasmtime --lib host::streaming_http::table::tests::write_completion_checkpoint_refusal_drops_upload_after_store_access -- --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/http-write-checkpoint.log"
+          test "$(grep -Fxc "running 1 test" "$RUNNER_TEMP/http-write-checkpoint.log")" -eq 1
+          test "$(grep -Fxc "test host::streaming_http::table::tests::write_completion_checkpoint_refusal_drops_upload_after_store_access ... ok" "$RUNNER_TEMP/http-write-checkpoint.log")" -eq 1
+          cargo test --locked -p latent-wasmtime --lib host::streaming_http::table::tests::write_completion_stale_row_drops_upload_after_store_access -- --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/http-write-stale-row.log"
+          test "$(grep -Fxc "running 1 test" "$RUNNER_TEMP/http-write-stale-row.log")" -eq 1
+          test "$(grep -Fxc "test host::streaming_http::table::tests::write_completion_stale_row_drops_upload_after_store_access ... ok" "$RUNNER_TEMP/http-write-stale-row.log")" -eq 1
+          cargo test --locked -p latent-wasmtime --lib host::streaming_http::table::tests::finish_completion_refusals_drop_body_after_store_access -- --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/http-finish-refusal.log"
+          test "$(grep -Fxc "running 1 test" "$RUNNER_TEMP/http-finish-refusal.log")" -eq 1
+          test "$(grep -Fxc "test host::streaming_http::table::tests::finish_completion_refusals_drop_body_after_store_access ... ok" "$RUNNER_TEMP/http-finish-refusal.log")" -eq 1
+          cargo test --locked -p latent-wasmtime --lib host::streaming_http::table::tests::upload_take_clock_panic_drops_original_after_store_access -- --exact 2>&1 | tee "$RUNNER_TEMP/http-upload-take.log"
+          test "$(grep -Fxc "running 1 test" "$RUNNER_TEMP/http-upload-take.log")" -eq 1
+          test "$(grep -Fxc "test host::streaming_http::table::tests::upload_take_clock_panic_drops_original_after_store_access ... ok" "$RUNNER_TEMP/http-upload-take.log")" -eq 1
+          cargo test --locked -p latent-wasmtime --lib host::streaming_http::table::tests::abort_upload_ -- --nocapture 2>&1 | tee "$RUNNER_TEMP/http-abort-ownership.log"
+          test "$(grep -Fxc "running 2 tests" "$RUNNER_TEMP/http-abort-ownership.log")" -eq 1
+          test "$(grep -Fxc "test host::streaming_http::table::tests::abort_upload_drops_original_after_store_access ... ok" "$RUNNER_TEMP/http-abort-ownership.log")" -eq 1
+          test "$(grep -Fxc "test host::streaming_http::table::tests::abort_upload_busy_and_missing_rows_keep_original_semantics ... ok" "$RUNNER_TEMP/http-abort-ownership.log")" -eq 1
       - name: Execute the new canonical ABI with actual sockets and fresh Stores
         run: |
           cargo test --locked -p latent-wasmtime --test streaming_http phases:: -- --nocapture

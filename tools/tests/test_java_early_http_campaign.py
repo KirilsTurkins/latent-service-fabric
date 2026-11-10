@@ -75,6 +75,28 @@ class EarlyHttpControls(unittest.TestCase):
             with self.assertRaises(ValueError):
                 lifecycle.Node(SimpleNamespace(), root / 'unused', root, current_program='early-http')
 
+    def test_recovery_program_adds_one_runtime_restart_without_restore_authority(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            client = SimpleNamespace(phase4=True, environment={}, cancellation=None)
+            node = lifecycle.Node(client, root / 'unused', root, current_publication_program=True,
+                                  current_program='early-http-recovery')
+            self.assertEqual(node.program, (*lifecycle.EARLY_HTTP_NODE_PROGRAM, 'early-http-recovery'))
+            rows = [{'publication': PUBLICATION, 'function': name} for name in ('update', 'query', 'scan')]
+            path = root / 'node.json'
+            with patch.object(lifecycle, 'Process', side_effect=RuntimeError('not-created')) as process:
+                for position, session in enumerate(node.program):
+                    node.ordinal = position
+                    path = root / ('recovery-node-' + str(position) + '.json')
+                    write_json(path, {'state': {'formatVersion': 2, 'operations': [] if position < 2 else rows}})
+                    with self.assertRaisesRegex(RuntimeError, 'not-created'):
+                        node.start(path, current_session=session)
+                self.assertEqual(process.call_count, 5)
+                node.ordinal = 5
+                with self.assertRaises(ValueError): node.start(path, current_session='early-http-recovery')
+                with self.assertRaises(ValueError): node.start(path, restore_authority=True)
+                self.assertEqual(process.call_count, 5)
+
     def test_selection_is_one_early_capture_and_rejects_changed_or_six_component_documents(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary).resolve() / 'selection.json'

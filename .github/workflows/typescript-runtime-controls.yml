@@ -1,0 +1,78 @@
+name: TypeScript runtime ownership controls
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/typescript-runtime-controls.yml'
+      - 'tools/typescript_runtime_sanitizer_cxx.sh'
+      - 'tools/typescript_fetch_failure.py'
+      - 'tools/qualify_typescript_fetch_runtime.py'
+      - 'tools/tests/test_typescript_fetch_failure.py'
+      - 'tools/tests/test_typescript_fetch_failure_evidence.py'
+      - 'tools/tests/test_typescript_export_task_meta.py'
+      - 'tools/tests/fixtures/typescript_fetch_export_binding.js'
+      - 'tools/tests/test_aot_profile_boundary.py'
+      - 'tools/tests/test_typescript_qualification_prerequisites.py'
+      - 'tools/typescript_guest/**'
+      - 'sdk/typescript-guest/activation/**'
+      - 'tools/tests/test_typescript_event_ownership.py'
+      - 'tools/tests/test_typescript_record_retirement.py'
+      - 'tools/tests/test_typescript_abort_any_ownership.py'
+      - 'tools/tests/fixtures/typescript_*.cpp'
+      - 'tools/tests/fixtures/typescript_record_retirement/**'
+      - 'tools/tests/fixtures/typescript_runtime_profile/**'
+      - 'tools/tests/fixtures/typescript_clock_profile/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: typescript-runtime-controls-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ownership:
+    name: Native ownership controls (${{ matrix.compiler }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - compiler: gcc
+            cxx: g++
+          - compiler: clang
+            cxx: clang++
+          - compiler: asan-ubsan
+            cxx: ./tools/typescript_runtime_sanitizer_cxx.sh
+    env:
+      LSF_TYPESCRIPT_RECORD_CXX: ${{ matrix.cxx }}
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
+        with:
+          python-version: '3.13.5'
+      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6
+        with:
+          node-version: '24.19.0'
+      - name: Record exact source and host compiler identities
+        run: |
+          git rev-parse HEAD
+          python3 --version
+          node --version
+          g++ --version
+          clang++ --version
+      - name: Compile and execute maintained ownership controls
+        run: |
+          python3 -B -m unittest \
+            tools.tests.test_typescript_event_ownership \
+            tools.tests.test_typescript_record_retirement \
+            tools.tests.test_typescript_abort_any_ownership \
+            tools.tests.test_typescript_qualification_prerequisites \
+            tools.tests.test_typescript_fetch_failure \
+            tools.tests.test_typescript_fetch_failure_evidence \
+            tools.tests.test_typescript_export_task_meta \
+            tools.tests.test_aot_profile_boundary -v

@@ -432,6 +432,84 @@ fn same_ledger_cancellation_after_timer_commit_keeps_readiness_charged() {
 }
 
 #[test]
+fn ancestor_closure_before_timer_commit_refuses_readiness() {
+    let mut outcomes = Vec::new();
+    for finalize in [false, true] {
+        for period in [None, Some(Duration::from_millis(1))] {
+            let (parent, child, runtime) = child_runtime();
+            let first = Instant::now();
+            let timer = RuntimeTimer::new(&runtime, first, period, None).unwrap();
+            let mut wait = timer.begin_wait().unwrap();
+            let before = runtime.snapshot();
+            let (held_tx, held_rx) = mpsc::sync_channel(0);
+            let (resume_tx, resume_rx) = mpsc::sync_channel(0);
+            let worker = std::thread::spawn(move || {
+                let result = wait.complete_with_publication_hooks(
+                    first,
+                    || {},
+                    || {},
+                    || {},
+                    || {
+                        held_tx.send(()).unwrap();
+                        resume_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+                    },
+                    || {},
+                );
+                (result, wait)
+            });
+            held_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+            let close_parent = parent.clone();
+            let (done_tx, done_rx) = mpsc::sync_channel(0);
+            let closer = std::thread::spawn(move || {
+                if finalize {
+                    let _ = close_parent.finalize_at(None, Instant::now());
+                } else {
+                    close_parent.cancel_descendants().unwrap();
+                }
+                done_tx.send(()).unwrap();
+            });
+            let terminal_received = done_rx.recv_timeout(Duration::from_secs(3));
+            let completed = terminal_received.is_ok();
+            resume_tx.send(()).unwrap();
+            let (result, wait) = worker.join().unwrap();
+            if !completed {
+                done_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+            }
+            closer.join().unwrap();
+            let after = runtime.snapshot();
+            let next = timer.inner.schedule.lock().unwrap().next;
+            outcomes.push((
+                finalize,
+                period,
+                completed,
+                result.is_ok(),
+                first,
+                next,
+                before,
+                after,
+            ));
+            drop(wait);
+            drop(timer);
+            runtime.retire().unwrap();
+            drop(runtime);
+            let _ = child.finish(None, Instant::now());
+            assert_eq!(parent.descendant_snapshot().unwrap().live_descendants, 0);
+        }
+    }
+    for (finalize, period, completed, published, first, next, before, after) in outcomes {
+        assert!(completed);
+        assert!(
+            !published,
+            "finalize={finalize} period={period:?} published after ancestor closure"
+        );
+        assert_eq!(next, Some(first));
+        assert_eq!(after.phase, super::super::RuntimePhase::Cancelling);
+        assert_eq!(after.owners, before.owners);
+        assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
+    }
+}
+
+#[test]
 fn deadline_after_the_last_probe_can_precede_timer_publication() {
     // The monotonic deadline can pass after observation and before the write;
     // the ledger check is not a clock/commit handshake.

@@ -1,0 +1,136 @@
+{
+  "schemaVersion": "latent.java.event-local-observation.v1",
+  "trust": "ephemeral-native-package-test-only",
+  "compilerSourceCommit": "e23f1f7b06f7efc104a1ab14b085641e7fe97b8b",
+  "nativeSourceCommit": "9a19b0239ae66f88ec2b2f51013f7b60c3d3c71f",
+  "nativeIdempotencyProfile": "js-window-v1:39763e09aeadbd6833f00a5ab3b6b29319a485efe699f20dd7d067a90a63b9ca",
+  "publication": "publication:sha256:5417c020934ae41743d5dfa3926926bd6f15c50645685f48679e45afabdffc04",
+  "componentDigest": "sha256:396784dda4174f84d3a6cb8c211dca9ad706fb826d613e5892b8140f815ad7f5",
+  "nativeTools": {
+    "latent": {
+      "sha256": "sha256:1854cfdbd6bf0b2d9113757861807eb02241bb95500c424930a11d6e19a3aac3",
+      "bytes": 79664072
+    },
+    "latentd": {
+      "sha256": "sha256:be311e371a5bf25e6178c3a39c23d0e40086272203901c9ea878cc8c8781edd2",
+      "bytes": 205436032
+    },
+    "latent-aot-compiler": {
+      "sha256": "sha256:4d8e8ba726b183b49c0470636024967fda44e0f0f11fb7651cf837742eaaafd7",
+      "bytes": 51833656
+    }
+  },
+  "contractsTool": {
+    "name": "contracts-tool",
+    "digest": "sha256:2b7c98093d6640515d6bcb5bbccf8dbb21668256f1c629847f323eaff6a39138",
+    "size": 14876600
+  },
+  "experimentalPinnedSigner": {
+    "name": "packager",
+    "digest": "sha256:8814c4afe6a8eceba914f4498a5eef7c5aa1c29507cd0f7a6a2fd4e6564cfc7f",
+    "size": 30089504
+  },
+  "signerNote": "Isolated signer built from the native example with this exact live capture temporarily pinned; no compiler or execution provenance is asserted by the signer.",
+  "observations": {
+    "signedPublicationAdmitted": true,
+    "policyAndNamespaceInstalled": true,
+    "rejectedCommandNoEffect": true,
+    "committedEffectAcknowledged": true,
+    "originalReplayPreserved": true,
+    "brokerFirstMessageCount": 1,
+    "brokerFirstMessageIdMatchesEffect": true,
+    "lostClientResponseRecoveredAfterControlledNodeCrash": true,
+    "postRestartEffectAcknowledged": true,
+    "brokerPostRestartMessageCount": 2,
+    "brokerSecondMessageIdMatchesEffect": true,
+    "currentPublisherDenialAbortedCommand": true,
+    "denialPreservedStateAndMessageCount": true,
+    "policyRestored": true,
+    "nodeSessionsPhysicallyRetiredExceptControlledCrash": true
+  },
+  "limitations": [
+    "Local ephemeral broker and synthetic test trust only.",
+    "The controlled crash follows a lost client response; broker acknowledgement loss was not injected.",
+    "The denial preceded commit; pending-effect revocation and post-commit reconciliation were not demonstrated.",
+    "No packaged distribution or full ticket qualification is claimed."
+  ],
+  "evidenceCustody": "Original local evidence retained in the owned test volume; hashes below do not embed the evidence bytes.",
+  "evidence": {
+    "compilerReport": {
+      "sha256": "sha256:fda35d9cf6561222f4d90f1ed115358678189cfe71b89df1b25af12cf9264944",
+      "bytes": 79267
+    },
+    "compilerInputs": {
+      "sha256": "sha256:90084065888bd8044720b7c6c4319af94ff429d45976ab38e2730d687beb2250",
+      "bytes": 2912190
+    },
+    "component": {
+      "sha256": "sha256:396784dda4174f84d3a6cb8c211dca9ad706fb826d613e5892b8140f815ad7f5",
+      "bytes": 1077276
+    },
+    "eventRequirements": {
+      "sha256": "sha256:2e672bd2c4617291d50447b4294eac817ccb1bfd779bb524abdd86e5a4e184d9",
+      "bytes": 779
+    },
+    "providerPreview": {
+      "sha256": "sha256:37b22c9a8287321c31a2355ec568a62c4534fbccc6830bc6433bc67e91a1d0da",
+      "bytes": 469
+    },
+    "acceptedResponse": {
+      "sha256": "sha256:a1547660ff2203b07766a1469037a34fa9eb0b4a3e5c43ae4bcba1ddc548fa4f",
+      "bytes": 931
+    },
+    "rejectedResponse": {
+      "sha256": "sha256:e6b0deb11e0948cfac3aaec348dfdcec245f1742d7b6f2e32fb93c9db8eeeef6",
+      "bytes": 468
+    },
+    "replayResponse": {
+      "sha256": "sha256:a1547660ff2203b07766a1469037a34fa9eb0b4a3e5c43ae4bcba1ddc548fa4f",
+      "bytes": 931
+    },
+    "brokerFirstObservation": {
+      "sha256": "sha256:f167924cd206ad0112817746512c6bdf11453f171e1e8cb658172fc9df793cdc",
+      "bytes": 347
+    },
+    "brokerSecondObservation": {
+      "sha256": "sha256:bac69f4c8b9f70c578159f134a317fd2b0e33574df1ab5672fff8a24a496fbc3",
+      "bytes": 304
+    },
+    "recoveredResponse": {
+      "sha256": "sha256:0f3c86392377ca756f6168e3a3338851c4c30def3e0ee527f20ac23bb2b80a0c",
+      "bytes": 1199
+    },
+    "deniedResponse": {
+      "sha256": "sha256:650e1d3552b8135294e50b700d734465df5d3b0b70ff275c43e101e50cb2a2df",
+      "bytes": 552
+    },
+    "denialStateQuery": {
+      "sha256": "sha256:c6cdcc880cc18b1ec0d48793e4f78cc9d2efc9fbddcd432ab4eb307990978b3f",
+      "bytes": 1029
+    },
+    "node1Retirement": {
+      "sha256": "sha256:309db63634cba23799f7df1a3bbd6e5152afbcd08df1062232bdb8a66e6d1fdb",
+      "bytes": 4165
+    },
+    "node2Retirement": {
+      "sha256": "sha256:40c87793c14b27fc9e7a8aff547bdd630ac691f8eb46e1b875d884148cd01454",
+      "bytes": 4177
+    },
+    "node3Retirement": {
+      "sha256": "sha256:b080946abfae8a28d1b1e931415c145ac3822351915ae9271ddc91371297912e",
+      "bytes": 4177
+    },
+    "node4Retirement": {
+      "sha256": "sha256:ab4ba10c4bf47bce616e81233209e3f16fe575cccd9addbb76dd312cbfcb4d7b",
+      "bytes": 4180
+    },
+    "controlledCrash": {
+      "sha256": "sha256:cb9878ea3b342bccc7e4a939302c80ce4ea4c7cab5085de1e312a0f095a2c3fb",
+      "bytes": 116
+    },
+    "restartRetirement": {
+      "sha256": "sha256:6bb2d8dce841406c93d4497d1a42794ad224419753e49069110e956434bc24ae",
+      "bytes": 4179
+    }
+  }
+}

@@ -1,0 +1,21 @@
+package worker
+
+import (
+	"fmt"
+	"runtime"
+	"sync/atomic"
+)
+
+// The runtime import is used by the host-only checkpoint substitution.
+var _ = runtime.Gosched
+var Stop atomic.Uint32
+
+func Spin(started, finished chan struct{}) {
+	fmt.Println("worker-entered")
+	close(started)
+again:
+	if Stop.Load() == 0 {
+		goto again
+	}
+	close(finished)
+}

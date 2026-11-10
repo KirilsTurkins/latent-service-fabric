@@ -201,7 +201,7 @@ fn every_uncertain_write_poison_invalidates_live_owner_and_recovery_checks_the_f
         mutate(&store, "p", "create", 0, Some(&bytes)).unwrap();
         store
             .state
-            .lock()
+            .read()
             .unwrap()
             .ledger
             .as_ref()

@@ -14,6 +14,7 @@ from tools import java_resource_fixture as fixture, java_resource_probe as probe
 from tools import qualify_java_resources as qualification
 from tools import application_dependencies as dependencies
 from tools.phase3_resource_profile import ACTIVE_COUNTERS
+from tools.tests.qualification_selection import restore_pre_dotnet_reset
 from tools.rust_capsule_project import ROOT, digest, read_file
 from tools.tests.test_sdk_scratch_probe import invocation
 from tools.tests.test_java_scratch_wiring import original_compiler_parent
@@ -198,7 +199,8 @@ class JavaResourceConformance(unittest.TestCase):
                 self.assertFalse(output.exists())
 
     def test_original_shared_runner_ast_is_preserved_after_only_new_selector_guard_and_branch(self):
-        current = ast.parse(read_file(ROOT/'tools/run_rust_capsule_workflow.py').decode())
+        current = restore_pre_dotnet_reset(
+            self, ast.parse(read_file(ROOT/'tools/run_rust_capsule_workflow.py').decode()))
         class Project(ast.NodeTransformer):
             def visit_FunctionDef(self,node):
                 if node.name == 'run':

@@ -22,6 +22,9 @@ mod task_saturation;
 #[path = "go/timer_overlap.rs"]
 mod timer_overlap;
 
+#[path = "go/zero_clock.rs"]
+mod zero_clock;
+
 fn timer_overlap_fixture(variable: &str, profile: &str) -> bool {
     matches!(
         (variable, profile),
@@ -57,13 +60,80 @@ fn timer_overlap_fixture_requires_the_exact_variable_and_profile() {
     ));
 }
 
+// Exact semantic records printed by run 39310234677; they are not a
+// substitute for the unavailable retained artifact or a fresh signed result.
+fn retained_checkpoint_record_is_exact(
+    variable: &str,
+    profile: &str,
+    source: &[u8],
+    record: &serde_json::Value,
+) -> bool {
+    if source
+        != include_bytes!(
+            "../../../../../tools/tests/fixtures/go-checkpoint-goto/retained-main.go.txt"
+        )
+    {
+        return false;
+    }
+    let logged: &[u8] = match (variable, profile) {
+        ("LSF_GO_CHECKPOINT_FIXTURE", "go-component-activation-v2") => {
+            include_bytes!(
+                "../../../../../tools/tests/fixtures/go-checkpoint-goto/retained-v2-log-receipt.json"
+            )
+        }
+        ("LSF_GO_NO_CHECKPOINT_FIXTURE", "go-component-activation-v1") => {
+            include_bytes!(
+                "../../../../../tools/tests/fixtures/go-checkpoint-goto/retained-v1-log-receipt.json"
+            )
+        }
+        _ => return false,
+    };
+    serde_json::from_slice::<serde_json::Value>(logged).is_ok_and(|expected| expected == *record)
+}
+
+fn assert_retained_checkpoint_guard_controls() {
+    let source = include_bytes!(
+        "../../../../../tools/tests/fixtures/go-checkpoint-goto/retained-main.go.txt"
+    );
+    for (variable, profile, bytes) in [
+        (
+            "LSF_GO_CHECKPOINT_FIXTURE",
+            "go-component-activation-v2",
+            include_bytes!("../../../../../tools/tests/fixtures/go-checkpoint-goto/retained-v2-log-receipt.json").as_slice(),
+        ),
+        (
+            "LSF_GO_NO_CHECKPOINT_FIXTURE",
+            "go-component-activation-v1",
+            include_bytes!("../../../../../tools/tests/fixtures/go-checkpoint-goto/retained-v1-log-receipt.json").as_slice(),
+        ),
+    ] {
+        let record: serde_json::Value = serde_json::from_slice(bytes).unwrap();
+        assert!(retained_checkpoint_record_is_exact(variable, profile, source, &record));
+        assert!(!retained_checkpoint_record_is_exact("unknown", profile, source, &record));
+        let mut changed_source = source.to_vec();
+        changed_source[0] ^= 1;
+        assert!(!retained_checkpoint_record_is_exact(variable, profile, &changed_source, &record));
+        for field in ["componentDigest", "bindingDigest", "transformations"] {
+            let mut changed = record.clone();
+            changed[field] = serde_json::Value::Null;
+            assert!(!retained_checkpoint_record_is_exact(variable, profile, source, &changed));
+        }
+    }
+}
+
 fn checkpoint_component(
     variable: &str,
     profile: &str,
 ) -> (latent_packaging::PackageBundle, Vec<u8>) {
     let timer_overlap = timer_overlap_fixture(variable, profile);
+    let timer_fired =
+        variable == "LSF_GO_V7_TIMER_FIRED_FIXTURE" && profile == "go-component-activation-v7";
+    let zero_clock =
+        variable == "LSF_GO_V7_ZERO_CLOCK_FIXTURE" && profile == "go-component-activation-v7";
     assert!(
         timer_overlap
+            || timer_fired
+            || zero_clock
             || matches!(
                 (variable, profile),
                 ("LSF_GO_CHECKPOINT_FIXTURE", "go-component-activation-v2")
@@ -93,6 +163,22 @@ fn checkpoint_component(
         std::env::var_os(variable).expect("compile the Go checkpoint fixture"),
     );
     let source = std::fs::read(prepared.join("src/main.go")).unwrap();
+    // The retained CPU owner reuses the exact source and components printed by
+    // run 39310234677; its historical bytes do not contain the new goto mode.
+    let retained_checkpoint = matches!(
+        variable,
+        "LSF_GO_CHECKPOINT_FIXTURE" | "LSF_GO_NO_CHECKPOINT_FIXTURE"
+    ) && source.as_slice()
+        == include_bytes!(
+            "../../../../../tools/tests/fixtures/go-checkpoint-goto/retained-main.go.txt"
+        );
+    let captured_checkpoint = matches!(
+        variable,
+        "LSF_GO_CHECKPOINT_FIXTURE" | "LSF_GO_NO_CHECKPOINT_FIXTURE"
+    ) && source.as_slice()
+        == include_bytes!(
+            "../../../../../sdk/go-guest/runtime/checkpoints-captured-conformance/main.go"
+        );
     let synchronization = matches!(
         variable,
         "LSF_GO_SYNCHRONIZATION_FIXTURE" | "LSF_GO_SYNCHRONIZATION_NO_CHECKPOINT_FIXTURE"
@@ -113,6 +199,10 @@ fn checkpoint_component(
         include_bytes!("../../../../../sdk/go-guest/runtime/synchronization-conformance/main.go")
     } else if task_saturation {
         include_bytes!("../../../../../sdk/go-guest/runtime/task-saturation-conformance/main.go")
+    } else if zero_clock {
+        include_bytes!("../../../../../sdk/go-guest/runtime/zero-clock-conformance/main.go")
+    } else if timer_fired {
+        include_bytes!("../../../../../sdk/go-guest/runtime/timer-fired-conformance/main.go")
     } else if timer_overlap {
         include_bytes!("../../../../../sdk/go-guest/runtime/timer-overlap-conformance/main.go")
     } else if managed {
@@ -123,6 +213,14 @@ fn checkpoint_component(
         include_bytes!("../../../../../sdk/go-guest/runtime/initializers-conformance/main.go")
     } else if timers {
         include_bytes!("../../../../../sdk/go-guest/runtime/timers-conformance/main.go")
+    } else if retained_checkpoint {
+        include_bytes!(
+            "../../../../../tools/tests/fixtures/go-checkpoint-goto/retained-main.go.txt"
+        )
+    } else if captured_checkpoint {
+        include_bytes!(
+            "../../../../../sdk/go-guest/runtime/checkpoints-captured-conformance/main.go"
+        )
     } else {
         include_bytes!("../../../../../sdk/go-guest/runtime/checkpoints-conformance/main.go")
     };
@@ -138,6 +236,10 @@ fn checkpoint_component(
             "synchronization"
         } else if task_saturation {
             "task-saturation"
+        } else if zero_clock {
+            "zero-clock"
+        } else if timer_fired {
+            "timer-fired"
         } else if timer_overlap {
             "timer-overlap"
         } else if managed {
@@ -148,6 +250,8 @@ fn checkpoint_component(
             "initializers"
         } else if timers {
             "timers"
+        } else if captured_checkpoint {
+            "checkpoints-captured"
         } else {
             "checkpoints"
         }
@@ -157,6 +261,12 @@ fn checkpoint_component(
         record["sourceDigest"],
         latent_artifacts::package::artifact_blob_digest(&source).as_str()
     );
+    if retained_checkpoint {
+        assert!(
+            retained_checkpoint_record_is_exact(variable, profile, &source, &record),
+            "retained checkpoint receipt differs from the historical logged record"
+        );
+    }
     if profile == "go-component-activation-v2"
         || timers
         || initializers
@@ -164,6 +274,8 @@ fn checkpoint_component(
         || managed
         || task_saturation
         || timer_overlap
+        || timer_fired
+        || zero_clock
     {
         assert_eq!(
             record["nativeReference"]["modes"],
@@ -171,6 +283,10 @@ fn checkpoint_component(
                 serde_json::json!([0, 1, 2, 3, 4, 5, 9])
             } else if task_saturation {
                 serde_json::json!([0])
+            } else if zero_clock {
+                serde_json::json!([0])
+            } else if timer_fired {
+                serde_json::json!([0, 1, 2, 3])
             } else if timer_overlap {
                 serde_json::json!([0, 1, 2, 3])
             } else if managed {
@@ -181,8 +297,12 @@ fn checkpoint_component(
                 serde_json::json!([0])
             } else if timers {
                 serde_json::json!([0, 1, 2, 3, 5, 6, 18, 19, 20, 9, 11, 12, 13, 14, 15, 16, 17])
-            } else {
+            } else if retained_checkpoint {
                 serde_json::json!([0, 1, 4])
+            } else if captured_checkpoint {
+                serde_json::json!([0, 1, 4, 5, 6, 7, 8])
+            } else {
+                serde_json::json!([0, 1, 4, 5, 6])
             }
         );
         if timer_overlap {
@@ -243,12 +363,92 @@ fn checkpoint_component(
             )
         );
     }
+    if timer_fired {
+        assert_eq!(
+            wit.as_bytes(),
+            include_bytes!("../../../../../sdk/go-guest/runtime/timer-fired-conformance/world.wit")
+        );
+        assert_eq!(
+            record["diagnosticRuntime"]["kind"],
+            "selected-returned-ticker-cancel-fence-observe-v4"
+        );
+        let original = include_bytes!("../../../../../sdk/go-guest/runtime/timer_async.go.in");
+        let derived =
+            std::fs::read(prepared.join("diagnostic-sdk/runtime/timer_async.go.in")).unwrap();
+        assert_eq!(
+            record["diagnosticRuntime"]["originalTimerAsyncDigest"],
+            latent_artifacts::package::artifact_blob_digest(original).as_str()
+        );
+        assert_eq!(
+            record["diagnosticRuntime"]["derivedTimerAsyncDigest"],
+            latent_artifacts::package::artifact_blob_digest(&derived).as_str()
+        );
+        assert_ne!(original.as_slice(), derived.as_slice());
+        for (name, original, original_key, derived_key) in [
+            (
+                "timer_bridge.go.in",
+                include_bytes!("../../../../../sdk/go-guest/runtime/timer_bridge.go.in").as_slice(),
+                "originalTimerBridgeDigest",
+                "derivedTimerBridgeDigest",
+            ),
+            (
+                "activation_bridge.go.in",
+                include_bytes!("../../../../../sdk/go-guest/runtime/activation_bridge.go.in")
+                    .as_slice(),
+                "originalActivationBridgeDigest",
+                "derivedActivationBridgeDigest",
+            ),
+        ] {
+            let derived =
+                std::fs::read(prepared.join("diagnostic-sdk/runtime").join(name)).unwrap();
+            assert_eq!(
+                record["diagnosticRuntime"][original_key],
+                latent_artifacts::package::artifact_blob_digest(original).as_str()
+            );
+            assert_eq!(
+                record["diagnosticRuntime"][derived_key],
+                latent_artifacts::package::artifact_blob_digest(&derived).as_str()
+            );
+            assert_ne!(original, derived.as_slice());
+        }
+        for (name, key, expected) in [
+            (
+                "chan.go",
+                "runtimeChanDigest",
+                "sha256:dbe8d02ebb1b554b28263c8f34747c0b6d796b3e7040a2f6a625c472e9ce9a42",
+            ),
+            (
+                "runtime2.go",
+                "runtimeDescriptorDigest",
+                "sha256:7d66ed912f68b1259947807ca1bdf79ee7e54c6a61a716d88db663d570af66da",
+            ),
+        ] {
+            let source = std::fs::read(
+                prepared
+                    .join("diagnostic-runtime-inputs/runtime")
+                    .join(name),
+            )
+            .unwrap();
+            assert!(source.len() <= 128 * 1024);
+            assert_eq!(record["diagnosticRuntime"][key], expected);
+            assert_eq!(
+                latent_artifacts::package::artifact_blob_digest(&source).as_str(),
+                expected
+            );
+        }
+    }
     if timer_overlap {
         assert_eq!(
             wit.as_bytes(),
             include_bytes!(
                 "../../../../../sdk/go-guest/runtime/timer-overlap-conformance/world.wit"
             )
+        );
+    }
+    if zero_clock {
+        assert_eq!(
+            wit.as_bytes(),
+            include_bytes!("../../../../../sdk/go-guest/runtime/zero-clock-conformance/world.wit")
         );
     }
     if variable == "LSF_GO_V7_TIMER_FIXTURE" {
@@ -471,9 +671,19 @@ async fn prepare_owned_fixture(
     profile: &str,
     tasks: u32,
 ) -> Fixture {
+    prepare_owned_fixture_with_clock(root, variable, profile, tasks, None).await
+}
+
+async fn prepare_owned_fixture_with_clock(
+    root: &std::path::Path,
+    variable: &str,
+    profile: &str,
+    tasks: u32,
+    clock: Option<std::sync::Arc<super::super::fixture::zero_clock::ZeroClock>>,
+) -> Fixture {
     let (caller, source) = checkpoint_component(variable, profile);
     let release = packages::release(&caller);
-    let f = signed_runtime_with_limits(
+    let f = signed_runtime_with_clock(
         root,
         1,
         120_000,
@@ -489,6 +699,7 @@ async fn prepare_owned_fixture(
             },
             ..limits()
         },
+        clock,
     )
     .await;
     let mut key = f.backend.preparation_key(&release).unwrap();
@@ -606,6 +817,7 @@ async fn signed_initializer_goroutines_waits_and_timers_start_inside_original_ac
 #[tokio::test]
 #[ignore = "requires pinned checkpoint and unmodified negative components and explicit go profile"]
 async fn signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_activation() {
+    assert_retained_checkpoint_guard_controls();
     assert_eq!(std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(), Ok("go"));
     let root = tempfile::tempdir().unwrap();
     let f = prepare_checkpoint_fixture(
@@ -728,6 +940,380 @@ async fn signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_a
     negative.idle().await;
 }
 
+// The fresh-only case checks the actual source site selected by the compiler;
+// historical checkpoints do not claim or require this new goto evidence.
+fn assert_fresh_goto_transformation(variable: &str, profile: &str) {
+    let prepared = std::path::PathBuf::from(
+        std::env::var_os(variable).expect("compile the fresh Go checkpoint fixture"),
+    );
+    let source = std::fs::read(prepared.join("src/main.go")).unwrap();
+    assert!(
+        source.as_slice()
+            == include_bytes!(
+                "../../../../../sdk/go-guest/runtime/checkpoints-conformance/main.go"
+            )
+            || source.as_slice()
+                == include_bytes!(
+                    "../../../../../sdk/go-guest/runtime/checkpoints-captured-conformance/main.go"
+                ),
+        "unexpected application checkpoint fixture"
+    );
+    let transforms: serde_json::Value = serde_json::from_slice(
+        &std::fs::read(prepared.join("go-runtime-transformations.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(transforms["profile"], profile);
+    let rows = transforms["automaticTransformations"].as_array().unwrap();
+    let mut selected = rows
+        .iter()
+        .filter(|row| row["name"] == "go-compiler-checkpoints/export_tests_caller_api/main.go");
+    if profile == "go-component-activation-v2" {
+        let application = selected.next().expect("checkpointed application source");
+        assert!(
+            selected.next().is_none(),
+            "duplicate application transformation"
+        );
+        assert_eq!(
+            application["upstreamDigest"],
+            latent_artifacts::package::artifact_blob_digest(&source).as_str()
+        );
+        let needle = b"goto again";
+        let mut offsets = source
+            .windows(needle.len())
+            .enumerate()
+            .filter_map(|(offset, bytes)| (bytes == needle).then_some(offset));
+        let offset = offsets.next().expect("fixture backward goto");
+        assert!(offsets.next().is_none(), "ambiguous fixture backward goto");
+        let preceding = &source[..offset];
+        let line = 1 + preceding.iter().filter(|byte| **byte == b'\n').count();
+        let column = preceding
+            .iter()
+            .rposition(|byte| *byte == b'\n')
+            .map_or(offset + 1, |newline| offset - newline);
+        assert!(application["sites"].as_array().unwrap().iter().any(|site| {
+            site["line"].as_u64() == Some(line as u64)
+                && site["column"].as_u64() == Some(column as u64)
+                && site["suspendable"] == true
+        }));
+    } else {
+        assert_eq!(profile, "go-component-activation-v1");
+        assert!(
+            selected.next().is_none(),
+            "negative source was checkpointed"
+        );
+    }
+}
+
+#[tokio::test]
+#[ignore = "requires fresh pinned goto checkpoint and negative components and explicit go profile"]
+async fn signed_application_goto_checkpoints_progress_with_original_budget() {
+    assert_eq!(std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(), Ok("go"));
+    assert_fresh_goto_transformation("LSF_GO_CHECKPOINT_FIXTURE", "go-component-activation-v2");
+    assert_fresh_goto_transformation("LSF_GO_NO_CHECKPOINT_FIXTURE", "go-component-activation-v1");
+    let root = tempfile::tempdir().unwrap();
+    let f = prepare_checkpoint_fixture(
+        root.path(),
+        "LSF_GO_CHECKPOINT_FIXTURE",
+        "go-component-activation-v2",
+    )
+    .await;
+    for iteration in 0..3 {
+        for mode in [5, 6] {
+            let receipt = success(
+                f.manager
+                    .start(f.request(&format!("go-goto-{iteration}-{mode}"), mode))
+                    .unwrap()
+                    .await,
+            );
+            assert_eq!(
+                serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),
+                [42]
+            );
+            assert!(receipt.consumption.cpu_fuel > 0);
+            assert!(receipt.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
+            f.idle().await;
+            assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
+        }
+    }
+    drop(f);
+    let negative_root = tempfile::tempdir().unwrap();
+    let negative = prepare_checkpoint_fixture(
+        negative_root.path(),
+        "LSF_GO_NO_CHECKPOINT_FIXTURE",
+        "go-component-activation-v1",
+    )
+    .await;
+    // The same admission and channel path without the spin must fit this
+    // exact fuel budget before exhaustion can serve as the goto counterfactual.
+    let mut no_spin = negative.request("go-no-checkpoint-goto-control", 6);
+    no_spin.budget.cpu_fuel = 5_000_000;
+    assert_eq!(value(negative.manager.start(no_spin).unwrap().await), 42);
+    negative.idle().await;
+    let mut blocked_goto = negative.request("go-no-checkpoint-goto-cannot-progress", 5);
+    blocked_goto.budget.cpu_fuel = 5_000_000;
+    let error = failure(negative.manager.start(blocked_goto).unwrap().await);
+    assert_eq!(error.code, PlatformErrorCode::ResourceExhausted);
+    assert!(error.details.iter().any(|detail| {
+        detail.kind == "activation.fuel-exhausted"
+            && detail.fields.get("dimension").map(String::as_str) == Some("cpu-fuel")
+    }));
+    negative.idle().await;
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct CapturedGotoTransformations {
+    format_version: u32,
+    profile: String,
+    automatic_transformations: Vec<CapturedGotoTransformation>,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct CapturedGotoTransformation {
+    name: String,
+    upstream_digest: String,
+    adapted_digest: String,
+    #[serde(rename = "profile")]
+    _profile: Option<String>,
+    sites: Option<Vec<CapturedGotoSite>>,
+}
+
+#[derive(serde::Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+struct CapturedGotoSite {
+    line: usize,
+    column: usize,
+    suspendable: bool,
+}
+
+#[test]
+fn captured_dependency_transformation_rejects_duplicate_json_fields() {
+    let valid = br#"{"formatVersion":1,"profile":"v2","automaticTransformations":[{"name":"x","upstreamDigest":"a","adaptedDigest":"b","sites":[{"line":1,"column":2,"suspendable":true}]}]}"#;
+    assert!(serde_json::from_slice::<CapturedGotoTransformations>(valid).is_ok());
+    for duplicate in [
+        br#"{"formatVersion":1,"profile":"v1","profile":"v2","automaticTransformations":[]}"#.as_slice(),
+        br#"{"formatVersion":1,"profile":"v2","automaticTransformations":[{"name":"x","name":"y","upstreamDigest":"a","adaptedDigest":"b"}]}"#.as_slice(),
+        br#"{"formatVersion":1,"profile":"v2","automaticTransformations":[{"name":"x","upstreamDigest":"a","adaptedDigest":"b","sites":[{"line":1,"line":2,"column":2,"suspendable":true}]}]}"#.as_slice(),
+    ] {
+        assert!(serde_json::from_slice::<CapturedGotoTransformations>(duplicate).is_err());
+    }
+}
+
+// A fresh fixture must bind the vendored compiler input to the reviewed local
+// module captured by the ordinary application closure, not just to a receipt.
+fn assert_captured_dependency_goto(variable: &str, profile: &str) {
+    let prepared = std::path::PathBuf::from(
+        std::env::var_os(variable).expect("compile the captured Go checkpoint fixture"),
+    );
+    let source = std::fs::read(prepared.join("dependency-source/worker.go")).unwrap();
+    let module = std::fs::read(prepared.join("dependency-source/go.mod")).unwrap();
+    assert_eq!(
+        source.as_slice(),
+        include_bytes!(
+            "../../../../../sdk/go-guest/runtime/checkpoints-captured-conformance/module/worker.go"
+        )
+    );
+    assert_eq!(
+        module.as_slice(),
+        include_bytes!(
+            "../../../../../sdk/go-guest/runtime/checkpoints-captured-conformance/module/go.mod"
+        )
+    );
+    let record: serde_json::Value = serde_json::from_slice(
+        &std::fs::read(prepared.join("GO-ACTIVATION-COMPILE.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(record["fixture"], "checkpoints-captured");
+    assert_eq!(record["profile"], profile);
+    let lock = std::fs::read(prepared.join("project/latent.dependencies.lock.json")).unwrap();
+    let native = std::fs::read(prepared.join("project/go-resolved.lock.json")).unwrap();
+    let dependency = &record["capturedDependency"];
+    assert_eq!(
+        dependency["lockDigest"],
+        latent_artifacts::package::artifact_blob_digest(&lock).as_str()
+    );
+    assert_eq!(
+        dependency["nativeGraphDigest"],
+        latent_artifacts::package::artifact_blob_digest(&native).as_str()
+    );
+    assert_eq!(
+        dependency["sourceDigest"],
+        latent_artifacts::package::artifact_blob_digest(&source).as_str()
+    );
+    assert_eq!(
+        dependency["moduleDigest"],
+        latent_artifacts::package::artifact_blob_digest(&module).as_str()
+    );
+    let lock: serde_json::Value = serde_json::from_slice(&lock).unwrap();
+    let native: serde_json::Value = serde_json::from_slice(&native).unwrap();
+    assert_eq!(lock["selection"]["runtimeProfile"], profile);
+    assert_eq!(native["selection"]["runtimeProfile"], profile);
+    let selected: Vec<_> = lock["artifacts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|row| row["metadata"]["module"] == "example.invalid/worker")
+        .collect();
+    assert_eq!(selected.len(), 1);
+    let artifact = selected[0];
+    assert_eq!(artifact["role"], "application");
+    assert_eq!(artifact["metadata"]["assetType"], "local-module");
+    assert_eq!(artifact["metadata"]["version"], "v0.0.0");
+    assert_eq!(artifact["id"], dependency["artifact"]);
+    let files = artifact["files"].as_array().unwrap();
+    assert_eq!(files.len(), 2);
+    for (name, bytes) in [
+        ("worker.go", source.as_slice()),
+        ("go.mod", module.as_slice()),
+    ] {
+        let matches: Vec<_> = files.iter().filter(|entry| entry["path"] == name).collect();
+        assert_eq!(matches.len(), 1);
+        assert_eq!(
+            matches[0]["digest"],
+            latent_artifacts::package::artifact_blob_digest(bytes).as_str()
+        );
+        assert_eq!(matches[0]["size"].as_u64(), Some(bytes.len() as u64));
+    }
+    let nodes: Vec<_> = native["nodes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|node| node["path"] == "example.invalid/worker")
+        .collect();
+    assert_eq!(nodes.len(), 1);
+    assert_eq!(nodes[0]["id"], artifact["id"]);
+    assert_eq!(nodes[0]["indirect"], false);
+    assert!(!nodes[0]["replacement"].is_null());
+    assert_eq!(
+        native["edges"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|edge| edge["owner"] == native["module"] && edge["selected"] == artifact["id"])
+            .count(),
+        1
+    );
+    let maximum = 2 * 1024 * 1024;
+    let file = std::fs::File::open(prepared.join("go-runtime-transformations.json")).unwrap();
+    let mut limited = std::io::Read::take(file, (maximum + 1) as u64);
+    let mut transformations = Vec::new();
+    std::io::Read::read_to_end(&mut limited, &mut transformations).unwrap();
+    assert!(
+        transformations.len() <= maximum,
+        "Go transformation receipt exceeds its bound"
+    );
+    assert_eq!(
+        dependency["transformationsDigest"],
+        latent_artifacts::package::artifact_blob_digest(&transformations).as_str()
+    );
+    let transformations: CapturedGotoTransformations =
+        serde_json::from_slice(&transformations).unwrap();
+    assert_eq!(transformations.format_version, 1);
+    assert_eq!(transformations.profile, profile);
+    let rows: Vec<_> = transformations
+        .automatic_transformations
+        .iter()
+        .filter(|row| row.name == "go-compiler-checkpoints/vendor/example.invalid/worker/worker.go")
+        .collect();
+    let needle = b"goto again";
+    let offsets: Vec<_> = source
+        .windows(needle.len())
+        .enumerate()
+        .filter_map(|(offset, bytes)| (bytes == needle).then_some(offset))
+        .collect();
+    assert_eq!(offsets.len(), 1);
+    let offset = offsets[0];
+    let preceding = &source[..offset];
+    let line = 1 + preceding.iter().filter(|byte| **byte == b'\n').count();
+    let column = preceding
+        .iter()
+        .rposition(|byte| *byte == b'\n')
+        .map_or(offset + 1, |newline| offset - newline);
+    let site = serde_json::json!({"line":line,"column":column,"suspendable":true});
+    assert_eq!(dependency["sourceSite"], site);
+    if profile == "go-component-activation-v2" {
+        assert_eq!(rows.len(), 1);
+        assert_eq!(
+            rows[0].upstream_digest,
+            dependency["sourceDigest"].as_str().unwrap()
+        );
+        assert_ne!(rows[0].upstream_digest, rows[0].adapted_digest);
+        let expected = CapturedGotoSite {
+            line,
+            column,
+            suspendable: true,
+        };
+        assert_eq!(
+            rows[0]
+                .sites
+                .as_ref()
+                .unwrap()
+                .iter()
+                .filter(|item| *item == &expected)
+                .count(),
+            1
+        );
+    } else {
+        assert_eq!(profile, "go-component-activation-v1");
+        assert!(rows.is_empty());
+    }
+}
+
+#[tokio::test]
+#[ignore = "requires fresh pinned captured dependency checkpoint pair and explicit go profile"]
+async fn signed_captured_dependency_goto_progresses_with_original_budget() {
+    assert_eq!(std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(), Ok("go"));
+    assert_captured_dependency_goto("LSF_GO_CHECKPOINT_FIXTURE", "go-component-activation-v2");
+    assert_captured_dependency_goto("LSF_GO_NO_CHECKPOINT_FIXTURE", "go-component-activation-v1");
+    let root = tempfile::tempdir().unwrap();
+    let f = prepare_checkpoint_fixture(
+        root.path(),
+        "LSF_GO_CHECKPOINT_FIXTURE",
+        "go-component-activation-v2",
+    )
+    .await;
+    for iteration in 0..3 {
+        for mode in [7, 8] {
+            let receipt = success(
+                f.manager
+                    .start(f.request(&format!("go-dependency-goto-{iteration}-{mode}"), mode))
+                    .unwrap()
+                    .await,
+            );
+            assert_eq!(
+                serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),
+                [42]
+            );
+            assert!(receipt.consumption.cpu_fuel > 0);
+            assert!(receipt.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
+            f.idle().await;
+            assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
+        }
+    }
+    drop(f);
+    let negative_root = tempfile::tempdir().unwrap();
+    let negative = prepare_checkpoint_fixture(
+        negative_root.path(),
+        "LSF_GO_NO_CHECKPOINT_FIXTURE",
+        "go-component-activation-v1",
+    )
+    .await;
+    let mut no_spin = negative.request("go-no-checkpoint-dependency-control", 8);
+    no_spin.budget.cpu_fuel = 5_000_000;
+    assert_eq!(value(negative.manager.start(no_spin).unwrap().await), 42);
+    negative.idle().await;
+    let mut spin = negative.request("go-no-checkpoint-dependency-cannot-progress", 7);
+    spin.budget.cpu_fuel = 5_000_000;
+    let error = failure(negative.manager.start(spin).unwrap().await);
+    assert_eq!(error.code, PlatformErrorCode::ResourceExhausted);
+    assert!(error
+        .details
+        .iter()
+        .any(|detail| detail.kind == "activation.fuel-exhausted"
+            && detail.fields.get("dimension").map(String::as_str) == Some("cpu-fuel")));
+    negative.idle().await;
+}
 #[tokio::test]
 #[ignore = "requires the pinned Go activation fixture and explicit go profile"]
 async fn signed_standard_goroutines_sleep_and_drain_use_original_activation_owners() {

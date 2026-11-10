@@ -1,6 +1,10 @@
 //! Closed captured inputs and explicit synthetic trust, never compiler execution.
 mod native_memory;
 pub(crate) use native_memory::sign_native_memory_current_java;
+mod event;
+pub(crate) use event::sign_captured_event_java;
+pub(crate) use event::sign_live_event_java;
+pub(crate) use event::sign_recovery_event_java;
 mod november;
 pub(crate) use november::sign_current_465_java;
 pub(crate) use november::sign_november_current_java;
@@ -176,6 +180,42 @@ fn load(
         require(report["nativeEffectOperation"].is_null() && report["nativeEffectProfile"].is_null()
             && report["currentHttpProfileInputDigest"].is_null(),
             "negative Java fixture cannot acquire a current HTTP marker or native effect requirement")?;
+    } else if name == "aggregate" && expected_profile.starts_with("js-window-v1:") {
+        pinned(
+            root,
+            "src/dev/latent/app/Capsule.java",
+            &pin["capsuleSource"],
+            262_144,
+        )?;
+        let marker = pinned(
+            root,
+            "java-current-event-profile.json",
+            &pin["currentEventMarker"],
+            8192,
+        )?;
+        let marker: Value = serde_json::from_slice(&marker)?;
+        require(
+            marker["schemaVersion"] == "latent.java.current-event-source-input.v1"
+                && marker["idempotencyProfile"] == expected_profile
+                && report["nativeEffectOperation"] == "event"
+                && report["nativeEffectProfile"] == "current-v1-event"
+                && report["currentEventProfileInputDigest"] == pin["currentEventMarker"]["sha256"]
+                && report["deferredEventRequirementsDigest"] == pin["eventRequirements"]["sha256"],
+            "current Java fixture event marker mismatch",
+        )?;
+        pinned(
+            root,
+            "deferred-event-requirements.json",
+            &pin["eventRequirements"],
+            8192,
+        )?;
+        pinned(
+            root,
+            "application-schema-inputs.json",
+            &pin["applicationSchemaInputs"],
+            8192,
+        )?;
+        absent(root, "deferred-http-requirements.json")?;
     } else if name != "aggregate" {
         pinned(
             root,

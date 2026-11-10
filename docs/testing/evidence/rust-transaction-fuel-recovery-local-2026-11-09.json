@@ -1,0 +1,19 @@
+{
+  "description": "Rust guest low-fuel refusal followed by a fresh query with restored deployment budget",
+  "qualification": "normal local combined-source Linux node and ephemeral demo trust",
+  "componentDigest": "sha256:f511abdf77aabac8ca1f51f7ba9fdc96aaeb27679d91710f6212a0eb4b7bbf8e",
+  "publication": "publication:sha256:a5714b8f061bb50fe293e792ed698bde0dbed7372cd62861498f1148fe998f9e",
+  "signedReleaseSetSha256": "4729f8d7ac424b50cd723e4c71a4b35a438e499ef2d8c1daa9614a4296442d94",
+  "normalNodeSha256": "48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "fixtureSha256": "50634e2565b2362a85d013153c1455a41f7e33c056ec59fd2560201244b37eff",
+  "observations": [
+    "With deployment CPU fuel narrowed to 1000, the authenticated Rust query returned HTTP 503 and its original activation recorded resource-exhausted with the guest-fuel-exhausted execution diagnostic.",
+    "After clean runtime shutdown, the fixture restored the authored deployment budget through the authenticated metadata path, updated the routes, and restarted the runtime. A fresh query returned count zero with the key absent.",
+    "All six node sessions were reaped cleanly with state and effect owners physically retired."
+  ],
+  "limitations": [
+    "The successful recovery used a restored deployment budget and a new runtime session; it was not a second invocation under the inadequate budget.",
+    "This is one fuel case on a local combined-source node containing unmerged work. It does not qualify memory limits, command cancellation, persistence crashes, other guests, hosted CI or packaged distribution.",
+    "The signer used ephemeral demo trust."
+  ]
+}

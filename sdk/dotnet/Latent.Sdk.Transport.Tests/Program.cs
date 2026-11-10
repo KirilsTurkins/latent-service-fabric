@@ -18,7 +18,7 @@ internal static partial class Program
             {
                 EightOperations, TargetInspection, CancellationAndQueue, DeadlinesAndShutdown, NoReplay, LostMutation,
                 MalformedAndBounds, AuditAndRawStatus, ConnectionOwnership, ZeroLengthReads, FrameFragments, StalledRawPeers,
-                TransactionSixteenOperations, TransactionDurableRejectionThroughAuditFailure, TransactionTransportAbortAndExplicitAttempt,
+                TransactionInlineOutcomeAssociation, TransactionSixteenOperations, TransactionDurableRejectionThroughAuditFailure, TransactionTransportAbortAndExplicitAttempt,
                 TransactionWireBoundsAndOldPayloads, TransactionOriginalInputsAndCancellation, TransactionProfileAndDeadlineFailBeforeDispatch,
                 TransactionDispatcherReceiptAndAuditAreIndependent, TransactionEffectPlanOriginalCasAndFacts,
                 DisposalOwnsSocketTeardown

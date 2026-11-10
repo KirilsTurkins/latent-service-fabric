@@ -1,0 +1,38 @@
+{
+  "description": "Go and .NET strict transaction immediate HTTP denials after staging",
+  "qualification": "normal local combined-source Linux node, ephemeral demo trust, actual JetStream provider and controlled loopback listener",
+  "normalNodeSha256": "48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "guests": [
+    {
+      "language": "go",
+      "sourceSnapshotDigest": "sha256:45470f80bf57345cad2e86ebf456484447e5ef5dbc8db45c23f860dbdfcc7859",
+      "componentDigest": "sha256:f862b4bee02e07acce82c11dd2722df803d6faf93753e3af5ad42f5a33cdde26",
+      "companionDigest": "sha256:6c1b3bd302390f9ac221e66c1ba6e10f46f9a382567396e8ce3cab8708fd6a8a",
+      "buildObservationSha256": "2fa0865dd0854f7c2c6477c079337027c6adce0a803b12a07767fa46a99064bc",
+      "signedReleaseSetSha256": "b86d231732a68b6d2936c2b52804c4245ab007e799380e047b51b697c0f5b76c",
+      "publication": "publication:sha256:0ee5554a480ef6cb59dcd57bafe853c0fc837b68528ca90b735fd12d96284cb3",
+      "eventProfile": "js-window-v1:e0bae96da8d5832444140d3a2b790e884977bfd824fcb9eda2740164fc04409e",
+      "fixtureSha256": "46a41c46d583566dd766d6c77157c86674f48b70d9ab2fb78ebbc6735603e726"
+    },
+    {
+      "language": "dotnet",
+      "sourceSnapshotDigest": "sha256:b00b4cc0b65b33e4ce931764312fe92a131cf95777feea917c53fe6f251352b9",
+      "componentDigest": "sha256:901096adc0062aa8c97e7ea97e9ab0f75a3b84ddf32b4d4bc49443a418879b63",
+      "companionDigest": "sha256:42013a7b811c1e790f9837d4ce1db15e08536b4927a57836c548dc9e012586cc",
+      "buildObservationSha256": "20b2dddc66a27d46628053564c969b3f1246307154f65b7bef4d5776e4911f58",
+      "signedReleaseSetSha256": "21c0afd39dca4102b9df714b59c666bbcf175de162c11346833925bac3afb2d6",
+      "publication": "publication:sha256:082a21d0d6683f914dd54acf832b858d0ff8429ce81efa7868bad56b1f6acf19",
+      "eventProfile": "js-window-v1:6e9e81bad81e3548adbb6772f120fe28ea47bd66bbb235da0fcdb694ccedb470",
+      "fixtureSha256": "fe88a84f8e558f4b8201211cf7e64c7908a56b68dfe7c89ca78a960296484cd0"
+    }
+  ],
+  "observations": [
+    "Each real component was built from its captured controlled variant, demo-signed and admitted by the local node with actual event-provider requirements, separate runtime-support grants, and no immediate HTTP grant.",
+    "Each variant stages a state write and event intent before attempting HTTP, and returns its declared rejection only after receiving the typed permission-denied result. Both durable results were rejected, fresh queries found the key absent, and namespace inspection found no pending effects or encoded state.",
+    "The controlled listener observed no connection, the broker held zero messages, and node and broker owners retired cleanly."
+  ],
+  "limitations": [
+    "This covers one controlled denial per guest, not all authority, cancellation, crash, fuel or memory cases. It does not count guest executions.",
+    "The node contains unmerged local combined source; production trust, hosted CI and installed distribution are not established."
+  ]
+}

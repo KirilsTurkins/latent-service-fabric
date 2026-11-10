@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import shutil
 from pathlib import Path
 import sys
 
@@ -15,10 +16,40 @@ from tools.rust_capsule_project import ROOT, digest, inventory, snapshot, write_
 from tools.stage_runtime_wit import stage
 
 
+TICKER_REFERENCE = 'sdk/go-guest/runtime/zero-clock-conformance/ticker-reference_test.go.txt'
+TICKER_REFERENCE_CASE = 'TestNativeTickerCoalescesMissedPeriods'
+
+
+def ticker_reference_result(raw):
+    """Require the one real Go synctest result; reject setup failures and skips."""
+    if not isinstance(raw, bytes) or len(raw) > 1024 * 1024:
+        raise ValueError('Go-native-ticker-output-bound')
+    events = []
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError('Go-native-ticker-duplicate-field')
+            result[key] = value
+        return result
+    for line in raw.splitlines():
+        row = json.loads(line, object_pairs_hook=unique)
+        if not isinstance(row, dict) or row.get('Package') != 'command-line-arguments':
+            raise ValueError('Go-native-ticker-package')
+        action, case = row.get('Action'), row.get('Test')
+        if action not in {'start', 'run', 'output', 'pass'} or case not in (None, TICKER_REFERENCE_CASE):
+            raise ValueError('Go-native-ticker-unexpected-event')
+        if action in {'start', 'run', 'pass'}:
+            events.append((action, case))
+    if events != [('start', None), ('run', TICKER_REFERENCE_CASE), ('pass', TICKER_REFERENCE_CASE), ('pass', None)]:
+        raise ValueError('Go-native-ticker-exact-result-required')
+    return True
+
+
 def fixture_reference(output, commands, compiler, source, fixture):
     """Run only this reviewed fixture on the pinned native Go reference."""
     if fixture == 'checkpoints':
-        modes = [0, 1, 4]
+        modes = [0, 1, 4, 5, 6]
     elif fixture == 'timers':
         # Mode 4 intentionally returns with accepted callbacks: native Go main
         # exits immediately, whereas the component profile requires drain.
@@ -28,6 +59,8 @@ def fixture_reference(output, commands, compiler, source, fixture):
         modes = [0]
     elif fixture == 'managed-idle':
         modes = [0, 1, 2]
+    elif fixture == 'zero-clock':
+        modes = [0]
     elif fixture == 'task-saturation':
         # Native Go has no managed activation Task ceiling. Only the bounded
         # release/join path is a comparable native observable.
@@ -35,6 +68,8 @@ def fixture_reference(output, commands, compiler, source, fixture):
     elif fixture == 'timer-overlap':
         # Native execution checks public return values; only the signed host
         # witness establishes that the operations actually overlapped.
+        modes = [0, 1, 2, 3]
+    elif fixture == 'timer-fired':
         modes = [0, 1, 2, 3]
     elif fixture == 'synchronization':
         # Native main does not implement the component's accepted-work drain.
@@ -62,6 +97,19 @@ def fixture_reference(output, commands, compiler, source, fixture):
             if value not in allowed:
                 raise ValueError('Go-native-reference-output')
             outputs.append(int(value))
+        ticker_reference = None
+        if fixture == 'zero-clock':
+            ticker_source = (ROOT / TICKER_REFERENCE).read_bytes()
+            if not ticker_source or len(ticker_source) > 65536:
+                raise ValueError('Go-native-ticker-source-bound')
+            ticker_test = reference / 'ticker_reference_test.go'
+            ticker_test.write_bytes(ticker_source)
+            ticker_result = commands.run('zero-clock-native-ticker', compiler.paths['go'], 'test',
+                                         '-json', '-timeout=10s', '-count=1', ticker_test,
+                                         max_output_bytes=1024 * 1024)
+            ticker_reference_result(ticker_result)
+            ticker_reference = {'case': TICKER_REFERENCE_CASE, 'sourceDigest': digest(ticker_source),
+                                'fakeClock': 'go-testing-synctest', 'passed': True}
     finally:
         commands.environment.clear()
         commands.environment.update(previous)
@@ -71,6 +119,8 @@ def fixture_reference(output, commands, compiler, source, fixture):
         result['outputs'] = outputs
     else:
         result['output'] = 42
+    if ticker_reference is not None:
+        result['tickerReference'] = ticker_reference
     return result
 
 
@@ -84,12 +134,16 @@ def compile_fixture(output: Path, *, offline_cache: Path | None = None, runtime_
         raise ValueError('Go-task-saturation-requires-v5')
     if fixture == 'timer-overlap' and runtime_profile not in {'go-component-activation-v5', 'go-component-activation-v7'}:
         raise ValueError('Go-timer-overlap-requires-v5-or-v7')
+    if fixture == 'timer-fired' and runtime_profile != 'go-component-activation-v7':
+        raise ValueError('Go-fired-timer-requires-v7')
+    if fixture == 'zero-clock' and runtime_profile != 'go-component-activation-v7':
+        raise ValueError('Go-zero-clock-requires-v7')
     output.mkdir(parents=True, exist_ok=False)
-    if fixture not in {'ordinary', 'checkpoints', 'timers', 'initializers', 'managed-idle', 'synchronization', 'task-saturation', 'timer-overlap'}:
+    if fixture not in {'ordinary', 'checkpoints', 'timers', 'initializers', 'managed-idle', 'synchronization', 'task-saturation', 'timer-overlap', 'timer-fired', 'zero-clock'}:
         raise ValueError('unsupported-Go-activation-fixture')
     if fixture == 'managed-idle' and runtime_profile != 'go-component-activation-v5':
         raise ValueError('Go-managed-idle-fixture-requires-v5')
-    original = ROOT / 'sdk/go-guest/runtime' / {'ordinary': 'conformance', 'checkpoints': 'checkpoints-conformance', 'timers': 'timers-conformance', 'initializers': 'initializers-conformance', 'managed-idle': 'managed-idle-conformance', 'synchronization': 'synchronization-conformance', 'task-saturation': 'task-saturation-conformance', 'timer-overlap': 'timer-overlap-conformance'}[fixture]
+    original = ROOT / 'sdk/go-guest/runtime' / {'ordinary': 'conformance', 'checkpoints': 'checkpoints-conformance', 'timers': 'timers-conformance', 'initializers': 'initializers-conformance', 'managed-idle': 'managed-idle-conformance', 'synchronization': 'synchronization-conformance', 'task-saturation': 'task-saturation-conformance', 'timer-overlap': 'timer-overlap-conformance', 'timer-fired': 'timer-fired-conformance', 'zero-clock': 'zero-clock-conformance'}[fixture]
     source = (original / 'main.go').read_bytes()
     (output / 'src').mkdir()
     (output / 'src/main.go').write_bytes(source)
@@ -98,9 +152,45 @@ def compile_fixture(output: Path, *, offline_cache: Path | None = None, runtime_
     stage(output / 'wit', original)
     # stage copies only WIT; Go source remains separately captured above.
     commands = Commands(output, output, dict(os.environ))
-    compiler = Compiler(output / 'compiler', ROOT / 'sdk/go-guest', commands, offline_cache=offline_cache,
+    sdk = ROOT / 'sdk/go-guest'
+    diagnostic = None
+    if fixture == 'timer-fired':
+        from tools.go_guest.fired_timer_witness import (derive, derive_bridge, derive_activation_bridge,
+            GO_CHAN_SHA256, GO_RUNTIME2_SHA256, verified_runtime_sources)
+        sdk_copy = output / 'diagnostic-sdk'
+        shutil.copytree(sdk, sdk_copy)
+        timer = sdk_copy / 'runtime/timer_async.go.in'
+        original_timer = (sdk / 'runtime/timer_async.go.in').read_bytes()
+        derived_timer = derive(original_timer)
+        timer.write_bytes(derived_timer)
+        bridge = sdk_copy / 'runtime/timer_bridge.go.in'
+        activation = sdk_copy / 'runtime/activation_bridge.go.in'
+        original_bridge = (sdk / 'runtime/timer_bridge.go.in').read_bytes()
+        original_activation = (sdk / 'runtime/activation_bridge.go.in').read_bytes()
+        derived_bridge = derive_bridge(original_bridge)
+        derived_activation = derive_activation_bridge(original_activation)
+        bridge.write_bytes(derived_bridge)
+        activation.write_bytes(derived_activation)
+        diagnostic = {'kind': 'selected-returned-ticker-cancel-fence-observe-v4',
+                      'originalTimerAsyncDigest': digest(original_timer),
+                      'derivedTimerAsyncDigest': digest(derived_timer),
+                      'originalTimerBridgeDigest': digest(original_bridge),
+                      'derivedTimerBridgeDigest': digest(derived_bridge),
+                      'originalActivationBridgeDigest': digest(original_activation),
+                      'derivedActivationBridgeDigest': digest(derived_activation),
+                      'runtimeChanDigest': 'sha256:' + GO_CHAN_SHA256,
+                      'runtimeDescriptorDigest': 'sha256:' + GO_RUNTIME2_SHA256}
+        sdk = sdk_copy
+    compiler = Compiler(output / 'compiler', sdk, commands, offline_cache=offline_cache,
                         runtime_profile=runtime_profile)
     try:
+        if fixture == 'timer-fired':
+            # The exact channel enqueue/commit and sudog layout underpin the
+            # channel-specific park probe. Preserve these authenticated inputs.
+            for name, content in verified_runtime_sources(compiler.goroot).items():
+                target = output / 'diagnostic-runtime-inputs' / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(content.encode('utf-8'))
         component, bindings = compiler.compile(output / 'src', output / 'wit', 'tests:caller/service@1.0.0',
             output / 'build', runtime_profile=runtime_profile)
         overlay = json.loads((output / 'build/runtime-overlay/overlay.json').read_bytes())['Replace']
@@ -114,6 +204,8 @@ def compile_fixture(output: Path, *, offline_cache: Path | None = None, runtime_
                   'tools': compiler.materials, 'transformations': transformations,
                   'sourceUnchanged': source == (original / 'main.go').read_bytes(),
                   'ordinarySource': True, 'signedExecution': 'not-run', 'qualification': 'compile-only'}
+        if diagnostic is not None:
+            record['diagnosticRuntime'] = diagnostic
         if not record['sourceUnchanged']:
             raise ValueError('Go-activation-source-changed')
         if fixture == 'checkpoints' and runtime_profile == 'go-component-activation-v2':
@@ -127,7 +219,7 @@ def compile_fixture(output: Path, *, offline_cache: Path | None = None, runtime_
             record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)
         if fixture == 'task-saturation':
             record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)
-        if fixture == 'timer-overlap':
+        if fixture in {'timer-overlap', 'timer-fired', 'zero-clock'}:
             record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)
         if fixture == 'synchronization' and runtime_profile == 'go-component-activation-v5':
             record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)
@@ -143,7 +235,7 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--offline-cache', type=Path)
     parser.add_argument('--runtime-profile', choices=sorted(PROFILES), default=PROFILE)
-    parser.add_argument('--fixture', choices=('ordinary', 'checkpoints', 'timers', 'initializers', 'managed-idle', 'synchronization', 'task-saturation', 'timer-overlap'), default='ordinary')
+    parser.add_argument('--fixture', choices=('ordinary', 'checkpoints', 'timers', 'initializers', 'managed-idle', 'synchronization', 'task-saturation', 'timer-overlap', 'timer-fired', 'zero-clock'), default='ordinary')
     args = parser.parse_args()
     print(json.dumps(compile_fixture(args.output, offline_cache=args.offline_cache,
         runtime_profile=args.runtime_profile, fixture=args.fixture)))

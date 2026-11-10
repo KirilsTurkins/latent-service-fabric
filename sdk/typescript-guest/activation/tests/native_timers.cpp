@@ -305,7 +305,8 @@ int main(int argc, char** argv) {
     static const JS::ActivationPromiseHooks hooks{
         before_promise, PromiseRecords::allocationFailed, PromiseRecords::created, settled_promise,
         before_reaction, ReactionRecords::allocationFailed, ReactionRecords::created, reaction_record,
-        before_reaction, ReactionRecords::allocationFailed, ReactionRecords::created, reaction_record};
+        before_reaction, ReactionRecords::allocationFailed, ReactionRecords::created, reaction_record,
+        before_promise, PromiseRecords::capturedCreated};
     if (!JS_AddWeakPointerZonesCallback(cx, weak_sweep, nullptr)) return 8;
     if (!JS_AddFinalizeCallback(cx, collection_end, nullptr) ||
         !JS::SetActivationPromiseHooks(cx, &hooks)) return 8;

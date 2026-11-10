@@ -110,7 +110,34 @@ impl Fixture {
             None,
             true,
             Some((bytes, false)),
-            Some(http_document),
+            Some(("deferred-http-requirements.json", http_document)),
+            false,
+            TransactionShape::DeferredHttp,
+        )
+    }
+    pub fn transactional_with_event_companion(bytes: Vec<u8>, event_document: Vec<u8>) -> Self {
+        Self::configured_http_shape(
+            "builder-a",
+            true,
+            None,
+            true,
+            Some((bytes, false)),
+            Some(("deferred-event-requirements.json", event_document)),
+            false,
+            TransactionShape::Standard,
+        )
+    }
+    pub fn transactional_deferred_event_with_companion(
+        bytes: Vec<u8>,
+        event_document: Vec<u8>,
+    ) -> Self {
+        Self::configured_http_shape(
+            "builder-a",
+            true,
+            None,
+            true,
+            Some((bytes, false)),
+            Some(("deferred-event-requirements.json", event_document)),
             false,
             TransactionShape::DeferredHttp,
         )
@@ -158,7 +185,7 @@ impl Fixture {
             requirements,
             transactional,
             companion,
-            http_document,
+            http_document.map(|bytes| ("deferred-http-requirements.json", bytes)),
             executable,
             TransactionShape::Standard,
         )
@@ -178,7 +205,7 @@ impl Fixture {
         requirements: Option<Value>,
         transactional: bool,
         companion: Option<(Vec<u8>, bool)>,
-        http_document: Option<Vec<u8>>,
+        requirements_document: Option<(&'static str, Vec<u8>)>,
         executable: bool,
         shape: TransactionShape,
     ) -> Self {
@@ -223,9 +250,9 @@ impl Fixture {
                 manifest["execution"]["limits"]["wallTimeLimitMillis"] = json!(10_000);
             });
         }
-        if let Some(bytes) = http_document {
+        if let Some((path, bytes)) = requirements_document {
             input.layers.push(packaging::layer(
-                "deferred-http-requirements.json",
+                path,
                 latent_artifacts::package::LayerRole::Asset,
                 "application/json",
                 bytes,

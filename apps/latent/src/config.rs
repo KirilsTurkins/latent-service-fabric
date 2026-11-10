@@ -6,6 +6,7 @@ mod model;
 mod tests;
 mod validation;
 
+use std::io::{self, Read};
 use std::path::Path;
 use std::time::Duration;
 
@@ -35,6 +36,9 @@ pub fn resolve(cli: &Cli) -> Result<ResolvedConfig, Failure> {
         return Err(invalid());
     }
     let bytes = crate::input::read(path, decode::MAXIMUM_CONFIG_BYTES, "configuration")?;
+    if cli.expect_config_digest_stdin {
+        verify_opened_config(&bytes, io::stdin().lock())?;
+    }
     let document = decode::document(&bytes)?;
     validation::document(&document)?;
     let requested = cli
@@ -74,6 +78,25 @@ pub fn resolve(cli: &Cli) -> Result<ResolvedConfig, Failure> {
         limits: selected.limits,
         manifest_profile: cli.manifest_profile()?,
     })
+}
+
+fn verify_opened_config(bytes: &[u8], mut input: impl Read) -> Result<(), Failure> {
+    // The first 72 stdin bytes are a canonical sha256: digest and newline.
+    // The remaining stdin, if any, is reserved for the command's own input.
+    let mut expected = [0_u8; 72];
+    input.read_exact(&mut expected).map_err(|_| changed())?;
+    let actual = latent_artifacts::content_digest(bytes).0;
+    if expected[71] != b'\n' || &expected[..71] != actual.as_bytes() {
+        return Err(changed());
+    }
+    Ok(())
+}
+
+fn changed() -> Failure {
+    Failure::local(
+        "configuration-identity-changed",
+        "Credential configuration did not match the selected owner; no request was sent.",
+    )
 }
 
 fn invalid() -> Failure {

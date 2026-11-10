@@ -22,6 +22,30 @@ HOST_MANIFESTS = {
 V5_INTERFACES = frozenset({
     "latent:runtime/activation@0.1.0", "latent:network/streams@0.1.0"})
 TRANSACTION_INTERFACES = frozenset({"latent:state/key-value@0.2.0", "latent:intents/staging@0.1.0"})
+TRANSACTION_STATE = "latent:state/key-value@0.2.0"
+TRANSACTION_DESCRIPTIVE_HTTP = "latent:http/client@0.2.0"
+
+
+def preparation_host(host: dict, declared: dict) -> tuple[dict, list[str]]:
+    """Mirror the native Phase 4 descriptive HTTP exception without granting it.
+
+    The original ABI manifest and its digest remain unchanged. The selected
+    native validator recognizes this one existing signature only for a state
+    transaction and separately requires a zero outbound-request budget.
+    """
+    imports = declared.get("imports")
+    require(isinstance(imports, (list, dict)), "compatibility-declared-imports")
+    if (host.get("id") != "lsf-host-abi-phase4-v1" or TRANSACTION_STATE not in imports
+            or TRANSACTION_DESCRIPTIVE_HTTP not in imports):
+        return host, []
+    previous = host_manifest(DEFAULT_PROFILE)
+    rows = [row for row in previous["interfaces"] if row["interface"] == TRANSACTION_DESCRIPTIVE_HTTP]
+    require(len(rows) == 1 and not any(row["interface"] == TRANSACTION_DESCRIPTIVE_HTTP
+                                     for row in host["interfaces"]), "compatibility-transaction-http-signature")
+    row = rows[0]
+    require(digest(read_file(ROOT / row["source"])) == row["sourceSha256"],
+            "compatibility-transaction-http-source-drift")
+    return {**host, "interfaces": [*host["interfaces"], row]}, [TRANSACTION_DESCRIPTIVE_HTTP]
 
 
 def host_abi(files: dict[str, bytes] | None = None) -> dict:
@@ -233,10 +257,11 @@ def inspect(commands, wasm: Path, output: Path, declared: dict,
         require(host_abi_profile in (DEFAULT_PROFILE, captured["id"]), "compatibility-transaction-host-profile-mismatch")
         host_abi_profile = captured["id"]
     host = host_manifest(host_abi_profile)
+    preparation, supplemental = preparation_host(host, declared)
     raw = commands.run("compatibility-final-wit", wasm, "component", "wit", output / "component.wasm", "--json")
     names = interface_names(decode(raw, 4 * 1024 * 1024),
-                            host_interfaces={row["interface"] for row in host["interfaces"]})
-    findings = compatibility.import_findings(names["imports"], list(declared["imports"]), host)
+                            host_interfaces={row["interface"] for row in preparation["interfaces"]})
+    findings = compatibility.import_findings(names["imports"], list(declared["imports"]), preparation)
     expected_exports = list(declared["exports"])
     if set(names["exports"]) != set(expected_exports):
         findings.append(compatibility.finding("surface-mismatch", "link", "final-component"))
@@ -245,6 +270,8 @@ def inspect(commands, wasm: Path, output: Path, declared: dict,
               "findings": findings}
     if names["typeImports"]:
         result["typeImports"] = names["typeImports"]
+    if supplemental:
+        result["descriptivePreparationImports"] = supplemental
     if host_abi_profile != DEFAULT_PROFILE:
         result["hostAbiProfile"] = host_abi_profile
     write_json(output / "compatibility-inspection.json", result)

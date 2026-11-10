@@ -291,6 +291,46 @@ class PolicyRecovery(unittest.TestCase):
         self.assertEqual(client.call.call_count, 1)
         self.assertIsNone(self.controller.read()["pending"])
 
+    def test_new_test_grant_sends_the_journaled_bytes_even_if_review_file_changes(self):
+        for kind in ("policy", "provider-binding"):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary) / "test-intent"
+                root.mkdir(mode=0o700)
+                controller = journal.Journal(root, "node", "examples",
+                    settle=lambda operation, result: policy_operations.settle(root, operation, result))
+                document = {"formatVersion": 1, "tenant": "examples", "selected": kind}
+                expected = common.encode(document)
+                replacement = {"formatVersion": 1, "tenant": "examples", "selected": "replacement"}
+                applied = []
+
+                def call(*arguments, **options):
+                    if "get" in arguments:
+                        return {"category": "not-found", "outcomeKnown": True, "data": {}}
+                    pending = controller.read()["pending"]
+                    self.assertEqual(common.encode(pending["intent"]["document"]), expected)
+                    state.atomic(root, "selected-test-policy.json", replacement)
+                    document["selected"] = "caller-mutated"
+                    path = arguments[arguments.index("--file") + 1]
+                    payload = options["stdin"] if path == "-" else Path(path).read_bytes()
+                    applied.append(payload)
+                    receipt = {"operationId": pending["id"], "tenant": "examples", "id": "test-allow",
+                        "recordKind": kind, "generation": "1", "contentDigest": "sha256:" + "c" * 64,
+                        "revoked": False}
+                    return {"category": "success", "outcomeKnown": True,
+                        "data": {"receipt": receipt, "policy": {**receipt, "document": common.decode(payload)}}}
+
+                client = Mock()
+                client.call.side_effect = call
+                failure = None
+                try:
+                    policy_operations.apply(root, client, controller, "test-allow", kind, document)
+                except common.DevError as error:
+                    failure = error
+                self.assertEqual(applied, [expected])
+                self.assertIsNone(failure)
+                self.assertIsNone(controller.read()["pending"])
+                self.assertEqual(client.call.call_count, 2)
+
     def test_lookup_queries_current_document_only_after_retained_operation(self):
         client = Mock()
         response = self.response("operation")
@@ -299,6 +339,62 @@ class PolicyRecovery(unittest.TestCase):
         self.assertEqual(policy_operations.lookup(client, "operation"), response)
         self.assertEqual(client.call.call_args_list[0].args, ("policy", "operation", "--operation-id", "operation"))
         self.assertEqual(client.call.call_args_list[1].args, ("policy", "--kind", "policy", "get", "--id", "test-allow"))
+
+
+@unittest.skipUnless(os.name == "posix", "the installed node helper runs on Linux")
+class NodeDeploymentInput(unittest.TestCase):
+    def test_selected_deployment_replacement_cannot_change_the_sent_intent(self):
+        from tools.dev_workflow import build, build_artifacts, build_cache, helper
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "test-deployment"
+            source = root / "source"
+            config = root / "runtime/config"
+            for directory in (root, source, root / "runtime", config):
+                directory.mkdir(mode=0o700)
+            descriptor = {"tenant": "examples", "language": "go", "artifacts": {"deployment": "deployment.json"}}
+            receipt = {"packager": "packager", "package": {"packageDigest": "package"},
+                "artifacts": {"component": "component", "capsule": "capsule", "contracts": "contracts"},
+                "attempt": "attempt", "buildKey": "build"}
+            state.atomic(root, "project.json", {"descriptor": descriptor, "snapshot": "source"})
+            state.atomic(root, "test-profile.json", {})
+            state.atomic(config, "node.json", {"supplyChain": {"mode": "trusted-local"}})
+            state.atomic(source, "deployment.json", {"metadata": {"name": "sample"}, "spec": {}})
+            publication_input = common.digest(common.encode({"mode": "trusted-local", "package": "package",
+                **receipt["artifacts"]}))
+            state.atomic(root, "last-publication.json", {"publicationInput": publication_input, "publication": "published"})
+            grants = [{"capability": "clock", "policy": "selected"}]
+            expected = common.encode({"metadata": {"name": "sample"}, "spec": {
+                "publication": "published", "grants": copy.deepcopy(grants)}})
+            applied, intents = [], []
+            controller = journal.Journal(root, "node", "examples", settle=lambda *_:
+                state.atomic(root, "last-deployment.json", {"deployment": "sample", "generation": "1"}))
+
+            class Client:
+                binary = root / "bin/latent"
+                def call(self, *arguments, **_options):
+                    return {"outcomeKnown": True, "category": "not-found",
+                            "data": {"deployment": None, "stateVersion": "0"}}
+                def control(self, _language, *arguments, **options):
+                    intents.append(controller.read()["pending"]["intent"])
+                    replacement = {"metadata": {"name": "sample"}, "spec": {
+                        "publication": "published", "grants": [{"capability": "other", "policy": "other"}]}}
+                    state.atomic(root, "selected-deployment.json", replacement)
+                    grants[0]["policy"] = "caller-mutated"
+                    selected = arguments[arguments.index("apply") + 1]
+                    applied.append(options["stdin"] if selected == "-" else Path(selected).read_bytes())
+                    return {"outcomeKnown": True, "category": "success", "data": {}}
+
+            with patch.object(build, "accepted", return_value=(source, receipt)), \
+                    patch.object(helper, "client", return_value=(Client(), controller)), \
+                    patch.object(helper.paths, "digest_file", return_value=("packager", 1)), \
+                    patch.object(build_artifacts, "package", return_value=receipt["package"]), \
+                    patch.object(build_cache, "monitor", return_value=None):
+                result = helper.deploy(root, test_grants=grants)
+            self.assertEqual(result["deployment"], "sample")
+            self.assertEqual(applied, [expected])
+            self.assertEqual(intents[0]["deploymentInput"], common.digest(expected))
+            self.assertIsNone(controller.read()["pending"])
 
 
 class TestProfile(unittest.TestCase):
@@ -554,7 +650,7 @@ class ScenarioTargets(unittest.TestCase):
         from tools.dev_workflow.client import Client
         response = {"schemaVersion": "latent.cli.result.v1", "category": "transport-failure",
                     "outcomeKnown": False, "data": {}, "error": {"code": "rpc-timeout"}}
-        completed = SimpleNamespace(returncode=4, stdout=common.encode(response))
+        completed = SimpleNamespace(returncode=5, stdout=common.encode(response))
         for language, deadline, expected_rpc, expected_process in (
             ("typescript", 400, "125000", 130), ("typescript", 112, "11000", 12),
             ("rust", 400, "5000", 30),
@@ -1189,6 +1285,57 @@ class ScenarioCurrentnessObservations(unittest.TestCase):
         source = (Path(__file__).resolve().parents[2] / "crates/latent-core/src/error.rs").read_text()
         declaration = source.split("pub const ADMISSION_CURRENTNESS_REASONS: &[&str] = &[", 1)[1].split("];", 1)[0]
         self.assertEqual(scenarios.ADMISSION_CURRENTNESS_REASONS, set(re.findall(r'"([a-z-]+)"', declaration)))
+
+
+@unittest.skipUnless(os.name == "posix", "the installed node helper runs on Linux")
+class InvocationInputOwnership(unittest.TestCase):
+    def test_original_invocation_bytes_and_target_survive_review_file_replacement(self):
+        import base64
+        from tools.dev_workflow import helper
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            raw = b"original\x00\xff-input"
+            arguments = {"service": "service-a", "contract": "a:b/c@1.0.0", "function": "run",
+                         "mediaType": "application/octet-stream", "input": base64.b64encode(raw).decode("ascii")}
+            request = {"operation": "invoke", "workspace": "owned", "arguments": arguments}
+            controller = journal.Journal(root, "node", "examples")
+            original_begin = controller.begin
+            sent = []
+
+            def replace_after_journal(kind, intent):
+                operation = original_begin(kind, intent)
+                (root / "invoke-input.json").write_bytes(b"replacement")
+                arguments.update(service="service-b", contract="x:y/z@1.0.0", function="other",
+                                 mediaType="text/plain")
+                return operation
+
+            def call(*args, **kwargs):
+                selected = args[args.index("--input") + 1]
+                payload = kwargs.get("stdin") if selected == "-" else Path(selected).read_bytes()
+                sent.append((args, payload))
+                return {"category": "transport-failure", "outcomeKnown": False,
+                        "requestDispatched": True, "error": {"code": "rpc-failed", "grpcCode": "unavailable"}}
+
+            with patch.object(helper, "root_directory", return_value=root), \
+                    patch.object(state, "workspace", return_value=root), \
+                    patch.object(helper, "client", return_value=(type("Cli", (), {"call": staticmethod(call)})(), controller)), \
+                    patch.object(controller, "begin", side_effect=replace_after_journal):
+                with self.assertRaisesRegex(common.DevError, "operation-outcome-uncertain"):
+                    helper.dispatch(request)
+
+            pending = controller.read()["pending"]
+            self.assertEqual(len(sent), 1)
+            args, payload = sent[0]
+            self.assertEqual(payload, raw)
+            self.assertEqual(args[args.index("--input") + 1], "-")
+            self.assertEqual(args[args.index("--activation-id") + 1], pending["id"])
+            for name, expected in (("service", "service-a"), ("contract", "a:b/c@1.0.0"),
+                                   ("function", "run"), ("mediaType", "application/octet-stream")):
+                flag = "--media-type" if name == "mediaType" else "--" + name
+                self.assertEqual(args[args.index(flag) + 1], expected)
+                self.assertEqual(pending["intent"][name], expected)
+            self.assertEqual(pending["intent"]["inputSha256"], common.digest(raw))
 
 
 if __name__ == "__main__":

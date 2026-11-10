@@ -1,0 +1,137 @@
+{
+  "schemaVersion": "latent.phase4.event-crash-before-send-observation.v1",
+  "qualification": "local temporary integration source and isolated fixture signer; not merged-source, distribution, or hosted qualification",
+  "integrationSource": {
+    "schemaVersion": "latent.phase4.integration-source.v1",
+    "baseSource": "aa47593fce1130d9578eb952722e7b3939bc22de",
+    "historySource": "4b8cddb22ac3f67dd68587f6cd8c2518d3383a68",
+    "coreSource": "64b81e819e36f95d0f1280e728562fa49b842dee",
+    "description": "Temporary explicit source combination for local integration only; not a merged commit",
+    "overlays": {
+      "crates/latent-core/src/activation_runtime.rs": {
+        "sha256": "sha256:c14be16aeccc026944e6bc60f2d91ec4dfdda3517f66f13a6b12ce4f412c5a2e",
+        "bytes": 26947
+      },
+      "crates/latent-core/src/activation_runtime/tests.rs": {
+        "sha256": "sha256:d32b9843962163f19ed318d3c856b840bdbe3c003fc3f4d805af6e0c9f036d9f",
+        "bytes": 44725
+      },
+      "crates/latent-core/src/budget.rs": {
+        "sha256": "sha256:14c7b687bab34a11b937c731c602620247dedf14e131d48e68bb7587315a2ece",
+        "bytes": 69645
+      },
+      "crates/latent-wire/src/phase4/state_management.rs": {
+        "sha256": "sha256:c335fb113fe88383158e07a334aa9fc5af68e9f10f1b5acc5269860e3dbc43b9",
+        "bytes": 26197
+      },
+      "crates/latent-wire/src/phase4/state_management/command_result.rs": {
+        "sha256": "sha256:3bca68771d5f1a52882e96c400b51482e60d9aed931d57da373d04e5c3bd2b89",
+        "bytes": 14407
+      },
+      "crates/latent-wire/src/phase4/state_management/command_result/audit.rs": {
+        "sha256": "sha256:82d5732780b06614f7b520897b5c787a4c224e6dd115c20caf9b95c9d6fbb6bd",
+        "bytes": 2854
+      },
+      "crates/latent-wire/src/phase4/state_management/command_result/effect.rs": {
+        "sha256": "sha256:cca08f06d001b7a2ec030a1e46aa23ba9035484e358e7cc051f74a77e7962b26",
+        "bytes": 9522
+      },
+      "crates/latent-wire/src/phase4/state_management/recovery_bindings.rs": {
+        "sha256": "sha256:cb84c727be4d54700e287849d2debeca01dd927c0cea1f1c45860f737d4d90a3",
+        "bytes": 4119
+      }
+    },
+    "binaries": {
+      "deferred_event_fault_proxy": {
+        "sha256": "sha256:5a39cc6dbf3444bb7d06c43004f29383852d1b372d14d17bdc39dfde43cf13c0",
+        "bytes": 11930720
+      },
+      "latent": {
+        "sha256": "sha256:0177ad1be1302f753977597b008d22752d32078c1c21bbb56b8c003e9eebdb7d",
+        "bytes": 79680400
+      },
+      "latent-aot-compiler": {
+        "sha256": "sha256:0db8951c27ac7de4e48c1234f6c9bf0ad289268a57eee5d61bb589e6f93a029a",
+        "bytes": 51833424
+      },
+      "latentd": {
+        "sha256": "sha256:80af0dd96cb5e004e1927724a2db7e9c4c46fbe4ff34b1b70ed1b75492b9f1e1",
+        "bytes": 205466152
+      }
+    }
+  },
+  "guestSourceCommit": "aa47593fce1130d9578eb952722e7b3939bc22de",
+  "scenario": {
+    "dispatcherPausedBeforeCommit": true,
+    "commandCommitted": true,
+    "effectId": "b424d5386f1c09abf23a37939928d76475ae0ebf523c3dafe3b534c2afca90ae",
+    "beforeCrash": {
+      "disposition": "EFFECT_DISPOSITION_PENDING",
+      "dispatchAttempt": 0,
+      "brokerMessages": 0
+    },
+    "controlledCrashReaped": true,
+    "crashCleanRetirementClaimed": false,
+    "afterRestartBeforeResume": {
+      "disposition": "EFFECT_DISPOSITION_PENDING",
+      "dispatchAttempt": 0,
+      "brokerMessages": 0
+    },
+    "explicitResume": true,
+    "afterResume": {
+      "disposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+      "dispatchAttempt": 1,
+      "brokerMessages": 1,
+      "brokerIdentityAndPayloadMatched": true
+    },
+    "originalResultRecovered": true,
+    "freshQueryObservedCount": 1,
+    "restartedNodeCleanRetirement": true
+  },
+  "materials": {
+    "guestCapture": {
+      "sha256": "sha256:4e5465b46379fa39b7c7dc37ad2dcb80aaa77f20ea637af0d73a189f23549013",
+      "bytes": 2245
+    },
+    "integrationSource": {
+      "sha256": "sha256:85252219f27b129c050ff7559f458433a9c3354f7e096ec0d1a10beecf702909",
+      "bytes": 2453
+    },
+    "campaignProgram": {
+      "sha256": "sha256:b55061a254ef86675fb6469b58118ebf5e7b3eaa63b3bc52fdfde6705ff3e716",
+      "bytes": 9172
+    },
+    "originalResult": {
+      "sha256": "sha256:013c6fb88f78534bfa40baa9fc4c85f65109c3c35e281eb1b4ca9d275b806206",
+      "bytes": 959
+    },
+    "recoveredResult": {
+      "sha256": "sha256:013c6fb88f78534bfa40baa9fc4c85f65109c3c35e281eb1b4ca9d275b806206",
+      "bytes": 959
+    },
+    "pendingBefore": {
+      "sha256": "sha256:ddf595ca1432d7a214f0285ac91b152da88b758035e5f97fecdbc0b8f98e955a",
+      "bytes": 1094
+    },
+    "pendingAfter": {
+      "sha256": "sha256:ddf595ca1432d7a214f0285ac91b152da88b758035e5f97fecdbc0b8f98e955a",
+      "bytes": 1094
+    },
+    "deliveredEffect": {
+      "sha256": "sha256:07ea2df7788b53f1d1bcd350c090adb2101fb7e169b62122d117f7ea55b63b6b",
+      "bytes": 1156
+    },
+    "brokerObservation": {
+      "sha256": "sha256:a65e054e3b6fa8e0eaafebcdff5889fd88aee34be552103a1818390b67d1deb8",
+      "bytes": 341
+    },
+    "controlledCrash": {
+      "sha256": "sha256:8a7a09aa87a9cf9e1709d38ecf5bfff3052977f00ddf7c0cbc20588fcdbbc315",
+      "bytes": 118
+    },
+    "restartRetirement": {
+      "sha256": "sha256:775177c781195c544c35b5b23f943e60fb1c5e245adb81d24a46f612d6abf5e3",
+      "bytes": 4181
+    }
+  }
+}

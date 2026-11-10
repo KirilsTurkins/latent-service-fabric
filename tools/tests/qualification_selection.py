@@ -1,10 +1,49 @@
 """Verify and invert only the reviewed tooling gate for historical workflow tests."""
+import ast
 import copy
 import json
 from pathlib import Path
 
 PREFIX = "${{ needs.tooling-selection.outputs.reason != 'isolated-tooling:documentation-validator-tests' && ("
 SUFFIX = ") }}"
+
+
+
+def restore_pre_dotnet_reset(test, tree):
+    """Authenticate the #1795 reset selector before historical projections."""
+    functions = [node for node in tree.body
+                 if isinstance(node, ast.FunctionDef) and node.name == 'run']
+    test.assertEqual(len(functions), 1)
+    function = functions[0]
+    name = 'dotnet_task_reset_witness'
+    test.assertEqual(sum(argument.arg == name for argument in function.args.kwonlyargs), 1)
+    test.assertEqual(function.args.kwonlyargs[-1].arg, name)
+    default = function.args.kw_defaults[-1]
+    test.assertIsInstance(default, ast.Constant)
+    test.assertIs(default.value, False)
+    expected_guard = ast.parse(
+        "require(type(dotnet_task_reset_witness) is bool and "
+        "(not dotnet_task_reset_witness or dotnet_task_runtime is True), "
+        "'authoring-dotnet-reset-witness-selection')"
+    ).body[0]
+    test.assertEqual(ast.dump(function.body[0], include_attributes=False),
+                     ast.dump(expected_guard, include_attributes=False))
+    calls = [node for node in ast.walk(function)
+             if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+             and node.func.id == 'probe_managed_tasks']
+    test.assertEqual(len(calls), 1)
+    call = calls[0]
+    test.assertEqual(len(call.keywords), 1)
+    test.assertEqual(call.keywords[0].arg, 'reset_notification')
+    test.assertIsInstance(call.keywords[0].value, ast.Name)
+    test.assertEqual(call.keywords[0].value.id, name)
+    function.args.kwonlyargs.pop()
+    function.args.kw_defaults.pop()
+    function.body.pop(0)
+    call.keywords.pop()
+    test.assertFalse(any(isinstance(node, ast.Name) and node.id == name
+                         for node in ast.walk(function)))
+    return tree
 
 
 def unwrap_tooling_gate(test, job):

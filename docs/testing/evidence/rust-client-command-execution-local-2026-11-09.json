@@ -1,0 +1,170 @@
+{
+    "description":  "Experimental direct Rust SDK command and six-client lookup against combined unmerged node source and disposable signer",
+    "observation":  {
+                        "after":  {
+                                      "commandCount":  "1",
+                                      "encodedStateBytes":  "75",
+                                      "engineProfile":  "protected-redb-immediate-ext4-v1",
+                                      "engineProfileDigest":  "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+                                      "generation":  "3",
+                                      "namespacePolicyDigest":  "sha256:defab96d1888529575364b52112a492877362ed84192804880345b7c79788e71",
+                                      "pendingEffectCount":  "0",
+                                      "quota":  {
+                                                    "effectBytes":  "8388608",
+                                                    "effectRows":  "4096",
+                                                    "payloadBytes":  "8388608",
+                                                    "recoveryBytes":  "1048576",
+                                                    "resultBytes":  "8388608",
+                                                    "resultRows":  "4096",
+                                                    "stateBytes":  "8388608",
+                                                    "stateKeys":  "4096"
+                                                },
+                                      "retainedFormats":  [
+
+                                                          ],
+                                      "status":  "NAMESPACE_STATUS_ACTIVE",
+                                      "view":  {
+                                                   "namespace":  {
+                                                                     "incarnation":  "1",
+                                                                     "namespace":  "transactional-aggregate",
+                                                                     "tenant":  "examples"
+                                                                 },
+                                                   "stateSchema":  "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+                                                   "version":  {
+                                                                   "data":  "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAAAMAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+                                                                   "encoding":  "base64"
+                                                               }
+                                               }
+                                  },
+                        "attemptId":  "1",
+                        "before":  {
+                                       "commandCount":  "1",
+                                       "encodedStateBytes":  "75",
+                                       "engineProfile":  "protected-redb-immediate-ext4-v1",
+                                       "engineProfileDigest":  "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+                                       "generation":  "3",
+                                       "namespacePolicyDigest":  "sha256:defab96d1888529575364b52112a492877362ed84192804880345b7c79788e71",
+                                       "pendingEffectCount":  "0",
+                                       "quota":  {
+                                                     "effectBytes":  "8388608",
+                                                     "effectRows":  "4096",
+                                                     "payloadBytes":  "8388608",
+                                                     "recoveryBytes":  "1048576",
+                                                     "resultBytes":  "8388608",
+                                                     "resultRows":  "4096",
+                                                     "stateBytes":  "8388608",
+                                                     "stateKeys":  "4096"
+                                                 },
+                                       "retainedFormats":  [
+
+                                                           ],
+                                       "status":  "NAMESPACE_STATUS_ACTIVE",
+                                       "view":  {
+                                                    "namespace":  {
+                                                                      "incarnation":  "1",
+                                                                      "namespace":  "transactional-aggregate",
+                                                                      "tenant":  "examples"
+                                                                  },
+                                                    "stateSchema":  "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+                                                    "version":  {
+                                                                    "data":  "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAAAMAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+                                                                    "encoding":  "base64"
+                                                                }
+                                                }
+                                   },
+                        "brokerMessages":  1,
+                        "cLookups":  2,
+                        "cProbeBinarySha256":  "sha256:78384739952f332808aa5c11b846e8e3efd4af271ebcd6f54f862e2d3a4e2398",
+                        "cProbeSourceSha256":  "sha256:25adca48739d818f2c2cac46d37b7d693ac10971a86522295773b899919288b2",
+                        "capturePinsSha256":  "sha256:3ccfde1ec458d0e5a015926036cbe9e65b68d44302e2ce61a648e235b6033738",
+                        "cliSha256":  "sha256:e1179de07a96719f3161f7748dbb14496151bf8b193253bf7b7a9fc819f4cec7",
+                        "commandId":  "9519180718750dc809725b7a546608e0bf15552ea311c3ac8300c1ee847c89fb",
+                        "dotnetLookups":  2,
+                        "dotnetProbeBinarySha256":  "sha256:08f202b00b14e9759c8f1791ae01a59fd54760ba1ba53f07f72ce8770feeba16",
+                        "dotnetProbeProjectSha256":  "sha256:65ff4afac47c8c7682e162fb74534548ea3deeae06a54a723e76ca61ad4bfe86",
+                        "dotnetProbeSourceSha256":  "sha256:26281e0ca90d74013934016c66ae5231fa8d324ab506d975f02ff0f1d2075784",
+                        "effectAttempt":  1,
+                        "effectDisposition":  "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+                        "finalBrokerMessages":  2,
+                        "finalNamespace":  {
+                                               "commandCount":  "2",
+                                               "encodedStateBytes":  "75",
+                                               "engineProfile":  "protected-redb-immediate-ext4-v1",
+                                               "engineProfileDigest":  "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+                                               "generation":  "5",
+                                               "namespacePolicyDigest":  "sha256:defab96d1888529575364b52112a492877362ed84192804880345b7c79788e71",
+                                               "pendingEffectCount":  "0",
+                                               "quota":  {
+                                                             "effectBytes":  "8388608",
+                                                             "effectRows":  "4096",
+                                                             "payloadBytes":  "8388608",
+                                                             "recoveryBytes":  "1048576",
+                                                             "resultBytes":  "8388608",
+                                                             "resultRows":  "4096",
+                                                             "stateBytes":  "8388608",
+                                                             "stateKeys":  "4096"
+                                                         },
+                                               "retainedFormats":  [
+
+                                                                   ],
+                                               "status":  "NAMESPACE_STATUS_ACTIVE",
+                                               "view":  {
+                                                            "namespace":  {
+                                                                              "incarnation":  "1",
+                                                                              "namespace":  "transactional-aggregate",
+                                                                              "tenant":  "examples"
+                                                                          },
+                                                            "stateSchema":  "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+                                                            "version":  {
+                                                                            "data":  "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAAAUAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+                                                                            "encoding":  "base64"
+                                                                        }
+                                                        }
+                                           },
+                        "goLookups":  2,
+                        "goProbeBinarySha256":  "sha256:e16b1b12d587f8c906bad32ee96afad7d71fb6b27d68c1b3e14bead57e889e8e",
+                        "goProbeSourceSha256":  "sha256:9b46c683afdc8f29af17d9ac24a129e55a2a309a27d6c525766d811b40eddcbc",
+                        "guestSha256":  "sha256:396784dda4174f84d3a6cb8c211dca9ad706fb826d613e5892b8140f815ad7f5",
+                        "integrationGitCommit":  "5aa6592da0fe2196db68d35510be6751597a77e5",
+                        "javaLookups":  2,
+                        "javaProbeClassSha256":  "sha256:a3412358eafb83bca2e23cb2a56c5131ac300e69d4837f2d0973abf201adf718",
+                        "javaProbeSourceSha256":  "sha256:e7d37410257c0a2ad953409bcc3105745b17b64d2d045ece2ebd7a177a70adeb",
+                        "nodeJsSha256":  "sha256:bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+                        "nodeSha256":  "sha256:48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+                        "probeSha256":  "sha256:5bb12e3a7b7e4ec8ee2bd27cef28f4c96bad55270e6ca887c98001d8191a4a0b",
+                        "publication":  "publication:sha256:c0ac52891f0a8569a9b9e424f3402e506624786d301219d85357eb8a86d503c2",
+                        "qualification":  "experimental unmerged integration with disposable signer; not hosted or distribution qualification",
+                        "rustCommandProbeBinarySha256":  "sha256:d473e15351faccc7489a8cb8f6bba84cf421f992303110afe0c044e0d83250fb",
+                        "rustCommandProbeSourceSha256":  "sha256:60722399dc536b25b3fc44753f9634253014256f573beb5f513790c045a85fff",
+                        "rustDirectCommand":  {
+                                                  "attempt-id":  "1",
+                                                  "command-id":  "7b68e936715136808ee1f2075a704bcdd2f67902d664f4bc9ce81e62733a1f24",
+                                                  "disposition":  "committed",
+                                                  "effect-ids":  [
+                                                                     "6cc8a069bd4710ac7aa47d02380c63ab577db5d7787877a0b5e0b083455796d5"
+                                                                 ]
+                                              },
+                        "rustDirectEffectDisposition":  "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+                        "rustLookups":  2,
+                        "sdkTestSha256":  "sha256:77f2c05fedc9a25f435d3d52f0f05d925766f8da2a8b4c86ca61821eda13fabc",
+                        "syntheticArchiveGitCommit":  "631cf036f8c78f79a5be2a1c419dca074c2fedae",
+                        "testSignerSha256":  "sha256:410e322bbc6e975135fa81e3e9afd3d9195388447c38c00db66de4b203127928",
+                        "typescriptLookups":  2,
+                        "typescriptProbeSha256":  "sha256:204d4b2e462f9f4a1426aae5be601a2929f6c2839a145b404567764261945dc3",
+                        "verifiedMergeSourceBlobs":  13749
+                    },
+    "rustCommandTestLogSha256":  "sha256:2f27dc6d0fd68c0d19f8e75536502c3caf4e220c434743c47f03035767341253",
+    "experimentScriptSha256":  "sha256:85a8cdb7a2fa6b3298290483c4ec70388f7dcd5380a372b67634a79fb6a77c9f",
+    "freshQuery":  "The fixture queried the Java guest after the direct command and asserted aggregate count 2",
+    "priorAttempt":  "An earlier fresh fixture committed the direct command and retired with two acknowledged effects; evidence parsing failed before the final broker and query checks. This independent rerun performed those checks.",
+    "nodeShutdown":  {
+                         "effectsPhysicallyRetired":  true,
+                         "reaped":  true,
+                         "activeActivations":  0,
+                         "liveStores":  0,
+                         "clean":  true,
+                         "acknowledgedEffects":  2
+                     },
+    "brokerFixtureRemoved":  true,
+    "limitations":  "Combined unmerged source and disposable signer; not hosted CI, installed distribution, other clients mutating, rejection, cancellation, crash, or replay qualification."
+}

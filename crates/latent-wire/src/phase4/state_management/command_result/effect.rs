@@ -1,13 +1,89 @@
 use super::{
-    contract, denied, missing, unsupported, CommandRecord, CommandTime, Outcome, ReadError,
+    capacity, contract, denied, invalid, missing, unsupported, CommandRecord, CommandTime, Outcome,
+    ReadError,
 };
 use latent_effects::{
     authority::DurableEffectAuthority,
-    dispatch::{Disposition, EffectManagementFact},
+    dispatch::{AttemptIdentity, Disposition, EffectManagementFact},
     dispatch_store::DispatchCatalog,
 };
 use latent_rpc::transaction::v1 as t;
 use latent_state::embedded::ReadView;
+use prost::Message;
+
+/// A continuation selects only a position in the requested effect's bounded
+/// history. The original effect association and current read authority are
+/// checked again for every page by the same owner as `GetEffect`.
+pub(super) fn history(
+    view: &ReadView,
+    command: &CommandRecord,
+    request: &t::ListEffectHistoryRequest,
+    time: CommandTime,
+) -> Result<contract::Response, ReadError> {
+    let target = request.effect.as_ref().ok_or_else(invalid)?;
+    let requested = request.page.as_ref().ok_or_else(invalid)?;
+    let contract::Response::GetEffect(current) = response(view, command, target, time)? else {
+        return Err(unsupported().into());
+    };
+    let current = current.effect.ok_or_else(unsupported)?;
+    let page = DispatchCatalog::history_page(
+        view,
+        &target.effect_id,
+        requested.cursor.as_deref(),
+        requested.limit as usize,
+        512 * 1024,
+    )
+    .map_err(|error| match error {
+        latent_state::embedded::StoreError::Invalid => ReadError::Refused(invalid()),
+        other => ReadError::Store(other),
+    })?;
+    let mut receipts = Vec::with_capacity(page.rows.len());
+    for row in page.rows {
+        if row.effect != target.effect_id || row.receipt.observed_at_millis > time.unix_millis {
+            return Err(unsupported().into());
+        }
+        let mut receipt = current.clone();
+        let (format, version) = row.durable_format();
+        if let Some(retention) = &mut receipt.retention {
+            retention.record_format = format.into();
+            retention.record_version = version;
+        }
+        receipt.dispatch_attempt = row.attempt.as_ref().map_or(0, AttemptIdentity::attempt);
+        receipt.owner_epoch = row.attempt.as_ref().map(AttemptIdentity::owner_epoch);
+        receipt.claim_generation = row.attempt.as_ref().map(AttemptIdentity::claim_generation);
+        receipt.disposition = disposition(row.receipt.disposition) as i32;
+        receipt.failure_code =
+            failure_code(disposition(row.receipt.disposition)).map(str::to_owned);
+        receipt.provider_receipt = row.receipt.provider_receipt;
+        receipt.occurred_at_unix_millis = row.receipt.observed_at_millis;
+        // A historic attempt is not the current effect mutation version or an
+        // administrator's current management receipt.
+        receipt.record_version.clear();
+        receipt.management_operation_receipt_id = None;
+        receipts.push(receipt);
+    }
+    let mut result = t::ListEffectHistoryResponse {
+        page: Some(t::PageResponse {
+            next_cursor: page.resume,
+            returned_count: u32::try_from(receipts.len()).map_err(|_| capacity())?,
+            encoded_bytes: 0,
+        }),
+        receipts,
+    };
+    // The encoded length includes its own length field; converge before the
+    // transport reserves its response buffers.
+    for _ in 0..3 {
+        let size = result.encoded_len();
+        result.page.as_mut().ok_or_else(unsupported)?.encoded_bytes = size as u64;
+    }
+    let size = result.encoded_len();
+    if size > contract::MAX_PAGE_BYTES
+        || result.page.as_ref().ok_or_else(unsupported)?.encoded_bytes != size as u64
+    {
+        return Err(capacity().into());
+    }
+    Ok(result.into())
+}
 
 pub(super) fn response(
     view: &ReadView,

@@ -1,0 +1,103 @@
+{
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "name": "Recheck same-run native evidence and build the standard backend",
+    "needs": "native-controls",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "name": "Restore compiled Rust dependencies",
+        "uses": "KirilsTurkins/lsf-rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "name": "Fetch only the original pinned control histories",
+        "run": "git fetch --no-tags --depth=1 origin b606b1402961593dd918722a66fe293bfab9b319\ngit fetch --no-tags --depth=1 origin c7134289f446cb3171eb0ffd800a94afc2a5209f\ntest \"$(git rev-parse HEAD)\" = \"$GITHUB_SHA\"\ntest -z \"$(git status --porcelain=v1 --untracked-files=all)\"\n"
+      },
+      {
+        "name": "Restore this run's current-source evidence",
+        "uses": "KirilsTurkins/lsf-download-artifact",
+        "with": {
+          "name": "rust-http-current-native-evidence-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
+          "path": "${{ runner.temp }}/rust-http-handoff-transfer"
+        }
+      },
+      {
+        "name": "Restore this run's five bounded native products",
+        "uses": "KirilsTurkins/lsf-download-artifact",
+        "with": {
+          "name": "rust-http-current-native-products-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
+          "path": "${{ runner.temp }}/rust-http-handoff-transfer/rust-http-current-native/native-binaries"
+        }
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Install the verified wasm-tools release asset",
+        "run": "set -euo pipefail\narchive=\"$RUNNER_TEMP/rust-http-wasm-tools.tar.gz\"\nbindir=\"$RUNNER_TEMP/rust-http-wasm-tools-bin\"\nmkdir \"$bindir\"\ntimeout 90s gh api -H 'Accept: application/octet-stream' repos/bytecodealliance/wasm-tools/releases/assets/483720667 | head -c 5862465 > \"$archive\"\nunset GH_TOKEN\ntest \"$(stat --format=%s \"$archive\")\" = 5862464\nprintf '%s  %s\\n' d0efb16c9c859137b7ab3e99151c299cd47caee106ed4594561002f7a04945bd \"$archive\" | sha256sum --check --strict\ntar -xOzf \"$archive\" wasm-tools-1.254.0-x86_64-linux/wasm-tools > \"$bindir/wasm-tools\"\ntest \"$(stat --format=%s \"$bindir/wasm-tools\")\" = 20231696\nprintf '%s  %s\\n' cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6 \"$bindir/wasm-tools\" | sha256sum --check --strict\nchmod 755 \"$bindir/wasm-tools\"\ntest \"$(\"$bindir/wasm-tools\" --version)\" = 'wasm-tools 1.254.0 (bb58fdf91 2026-07-20)'\nprintf '%s\\n' \"$bindir\" >> \"$GITHUB_PATH\"\n",
+        "shell": "bash"
+      },
+      {
+        "name": "Acquire locked compiler dependencies",
+        "run": "python3 -m pip install --requirement tools/requirements.lock\ncargo fetch --locked --target wasm32-unknown-unknown --target x86_64-unknown-linux-gnu\n"
+      },
+      {
+        "name": "Verify same-run source and compile the ordinary backend",
+        "run": "python3 -B tools/rust_http_current_backend_handoff.py build --prepared \"$RUNNER_TEMP/rust-http-handoff-transfer/rust-http-current-native\" --controls \"$RUNNER_TEMP/rust-http-handoff-transfer/rust-http-current-controls\" --output \"$RUNNER_TEMP/rust-http-backend-handoff\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded backend result and build evidence",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "rust-http-current-backend-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
+          "path": "${{ runner.temp }}/rust-http-backend-handoff/*.json\n${{ runner.temp }}/rust-http-backend-handoff/backend/*.json\n${{ runner.temp }}/rust-http-backend-handoff/backend/*.wasm\n${{ runner.temp }}/rust-http-backend-handoff/backend/component-composer/wac\n${{ runner.temp }}/rust-http-backend-handoff/backend/logs/*.txt\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 30
+  },
+  "jobId": "current-backend",
+  "kind": "job",
+  "reviewReason": "Preserve exact native bounds and same-run evidence before the ordinary backend build.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-http-current-native.yml"
+}

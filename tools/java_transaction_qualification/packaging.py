@@ -42,10 +42,20 @@ def schema_assets(files):
         require(CURRENT_HTTP_PROFILE in files and 0 < len(files[CURRENT_HTTP_PROFILE]) <= 8192,
                 "signed-current-http-profile-marker-required")
         marker = decode(files[CURRENT_HTTP_PROFILE], 8192)
-        require(set(marker) == {"schemaVersion", "idempotencyProfile"}
+        require(isinstance(marker, dict) and set(marker) == {"schemaVersion", "idempotencyProfile"}
                 and marker["schemaVersion"] == "latent.java.current-http-source-input.v1",
                 "closed-signed-current-http-marker")
         selected[CURRENT_HTTP_PROFILE] = files[CURRENT_HTTP_PROFILE]
+    from tools.transaction_guest_project import CURRENT_EVENT_PROFILE, EVENT_REQUIREMENTS
+    if CURRENT_EVENT_PROFILE in files or EVENT_REQUIREMENTS in files:
+        require(declaration.get("effect") == "event" and CURRENT_EVENT_PROFILE in files
+                and EVENT_REQUIREMENTS in files and 0 < len(files[CURRENT_EVENT_PROFILE]) <= 8192,
+                "signed-current-event-profile-marker-required")
+        marker = decode(files[CURRENT_EVENT_PROFILE], 8192)
+        require(isinstance(marker, dict) and set(marker) == {"schemaVersion", "idempotencyProfile"}
+                and marker["schemaVersion"] == "latent.java.current-event-source-input.v1",
+                "closed-signed-current-event-marker")
+        selected[CURRENT_EVENT_PROFILE] = files[CURRENT_EVENT_PROFILE]
     if declaration["variant"] != "legacy-v1":
         require(CODEC_ASSET in files and 0 < len(files[CODEC_ASSET]) <= 262144,
                 "original-compatible-reader-codec-required")
@@ -59,6 +69,19 @@ def captured_assets(item, files):
     assets.update(schema_assets(files))
     if item.requirements_digest:
         assets['deferred-http-requirements.json'] = files['deferred-http-requirements.json']
+    from tools.transaction_guest_project import CURRENT_EVENT_PROFILE, EVENT_REQUIREMENTS, current_java_event_requirements
+    if getattr(item, "event_requirements_digest", None) is not None:
+        require(CURRENT_EVENT_PROFILE in files and EVENT_REQUIREMENTS in files
+                and "transaction-binding.json" in files and "capsule-project.json" in files
+                and digest(files[EVENT_REQUIREMENTS]) == item.event_requirements_digest,
+                "current-marker-requires-exact-signed-event-requirements")
+        marker = decode(files[CURRENT_EVENT_PROFILE], 8192)
+        expected = current_java_event_requirements(decode(files["capsule-project.json"]),
+                                                   files["transaction-binding.json"], marker["idempotencyProfile"])
+        require(decode(files[EVENT_REQUIREMENTS], 8192) == expected, "signed-event-requirements-drift")
+        assets[EVENT_REQUIREMENTS] = files[EVENT_REQUIREMENTS]
+    elif CURRENT_EVENT_PROFILE in files or EVENT_REQUIREMENTS in files:
+        raise ValueError("unselected-current-event-requirements")
     if 'java-current-http-profile.json' in files:
         require(item.requirements_digest is not None, 'current-marker-requires-signed-effect-requirements')
         assets['java-current-http-profile.json'] = files['java-current-http-profile.json']
@@ -194,6 +217,56 @@ def package_current(selections, output: Path, contracts_tool: Path, signer: Path
             "distinct-current-java-original-and-negative-selection")
     return _package_items(items, output, contracts_tool, signer, timeout=timeout,
                           compiler_source=items[0].compiler_source)
+
+
+def package_captured_event(directory: Path, selected, output: Path, contracts_tool: Path, signer: Path, *, timeout=600) -> Path:
+    """Sign the independently pinned event capture with disposable fixture trust only."""
+    from .current_inputs import CurrentSelection, load_current
+    require(isinstance(directory, Path) and isinstance(selected, CurrentSelection)
+            and type(timeout) is int and 0 < timeout <= 1800, "explicit-event-capture-and-deadline")
+    captures = {
+        '9a19b0239ae66f88ec2b2f51013f7b60c3d3c71f': ('java-current-event-capture-9a19-2026-11-08.json',
+                                                      'fixture-sign-captured-event-java-input'),
+        '49eaca04be33f71d993e093576343ee89afb0cf0': ('java-current-event-capture-49ea-2026-11-08.json',
+                                                      'fixture-sign-live-event-java-input'),
+        'e23f1f7b06f7efc104a1ab14b085641e7fe97b8b': ('java-current-event-capture-e23-2026-11-08.json',
+                                                      'fixture-sign-recovery-event-java-input'),
+    }
+    require(selected.source_commit in captures, 'closed-event-capture-source')
+    packet_name, signing_mode = captures[selected.source_commit]
+    packet = decode(read_file(Path(__file__).resolve().parents[2] / 'docs/testing/evidence' / packet_name))['captures']
+    pins = packet['variants']['aggregate']['materials']
+    require(selected.variant == 'aggregate' and selected.source_commit == packet['sourceCommit']
+            and selected.report_digest == pins['report']['sha256']
+            and selected.component_digest == pins['component']['sha256']
+            and selected.compiler_inputs_digest == pins['compilerInputs']['sha256'],
+            'exact-independent-event-capture-selection')
+    item = load_current(directory, selected)
+    require(item.event_requirements_digest == pins['eventRequirements']['sha256']
+            and item.requirements_digest is None, 'exact-original-event-requirements')
+    output = fresh(output)
+    command = Commands(output, output, build_environment(output), deadline_seconds=timeout,
+                       command_seconds=min(timeout, 600))
+    record = {'passed': False, 'input': item.observation(), 'compiledAgain': False,
+              'signedNodeExecutionQualified': False, 'packagedDistributionQualified': False}
+    try:
+        prepare(item, output / 'aggregate', contracts_tool, signer, command)
+        command.run('event-signing', signer, signing_mode,
+                    output / 'signed', item.compiler_source, output / 'aggregate')
+        releases = decode(read_file(output / 'signed/release-set.json'))
+        require(releases['schemaVersion'] == 'latent.component.signing-fixture.v1'
+                and releases['trust'] == 'ephemeral-native-package-test-only'
+                and len(releases['releases']) == 1
+                and releases['releases'][0]['componentDigest'] == item.component_digest
+                and releases['releases'][0]['name'] == 'java718-aggregate', 'exact-event-signed-package')
+        require(inventory(snapshot(item.directory / 'project')) == read_file(item.directory / 'source-inputs.json', 4*1024*1024)
+                and digest(read_file(item.directory / 'component.wasm')) == item.component_digest,
+                'preserved-event-input-recheck')
+        record['passed'] = True
+        return output / 'signed'
+    finally:
+        record['commands'] = command.records
+        write_json(output / 'package-fixture-receipt.json', record)
 
 
 def _package_items(items, output, contracts_tool, signer, *, timeout, compiler_source=None):

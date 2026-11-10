@@ -297,6 +297,7 @@ impl Fixture {
                 policies: vec!["native".into()],
                 entity: None,
                 deferred_http: None,
+                deferred_event: None,
             };
             let operation =
                 retain(input, asset, native.clone(), original.clone(), index == 0).unwrap();

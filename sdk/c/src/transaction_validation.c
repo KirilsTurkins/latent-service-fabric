@@ -403,7 +403,7 @@ static void result(tx_validator *v, tx_value value, bool technical, bool rejecte
     if (rejected) { id(v, field(value, "code")); string_value(v, field(value, "message"), 4096, false, false); }
     else { optional_id(v, field(value, "committed_state_version")); unique_ids(v, field(value, "effect_ids")); }
 }
-static void command(tx_validator *v, tx_value value, tx_value selected) {
+static void command(tx_validator *v, tx_value value, tx_value selected, tx_value inline_value) {
     tx_value key = field(value, "key");
     namespace_value(v, field(key, "namespace"), text(field(field(selected, "namespace"), "tenant")));
     identity(v, field(key, "recovery_scope")); identity(v, field(key, "operation")); identity(v, field(key, "client_key"));
@@ -437,9 +437,12 @@ static void command(tx_validator *v, tx_value value, tx_value selected) {
     }
     bool durable = boolean(field(value, "metadata_durable")), committed = boolean(field(value, "application_state_committed"));
     tx_value retained = field(value, "retention"); bool omitted = results == 0 && has(retained) && !boolean(field(retained, "payload_available"));
+    bool inline_payload = results == 0 && has(retained) && boolean(field(retained, "payload_available"));
+    bool inline_success = inline_payload && has(field(inline_value, "success"));
+    bool inline_rejection = inline_payload && has(field(inline_value, "declared_error"));
     switch (outcome) {
-        case 2: check(v, durable && committed && has(commit) && !has(abort) && (success || omitted)); break;
-        case 3: check(v, durable && !committed && !has(commit) && !has(abort) && (rejected || omitted)); break;
+        case 2: check(v, durable && committed && has(commit) && !has(abort) && (success || omitted || inline_success)); break;
+        case 3: check(v, durable && !committed && !has(commit) && !has(abort) && (rejected || omitted || inline_rejection)); break;
         case 4: check(v, durable && !committed && !has(commit) && has(abort) && !success && !rejected); break;
         case 7: check(v, durable && !has(abort) && results == 0 && committed == has(commit)); break;
         default: check(v, !committed && !has(commit) && !has(abort) && results == 0); break;
@@ -512,20 +515,42 @@ bool lsf_transaction_response_valid(latent_profile_call *call) {
     tx_validator v = {call, true};
     switch (call->operation) {
         case LSF_TX_invoke_command: {
-            tx_value cmd = field(value, "command"), invoked = field(value, "invocation"); command(&v, cmd, field(request, "command"));
+            tx_value cmd = field(value, "command"), invoked = field(value, "invocation"); command(&v, cmd, field(request, "command"), invoked);
             invocation_response(&v, invoked, field(cmd, "source"), field(field(request, "invocation"), "activation_id"));
             const char *left[] = {"success", "business_rejection", "technical_failure"};
             const char *right[] = {"success", "declared_error", "platform_failure"};
             for (size_t index = 0; index < 3; ++index) if (has(field(cmd, left[index]))) check(&v, equal(field(cmd, left[index]), field(invoked, right[index])));
-            check(&v, has(field(cmd, "success")) || has(field(cmd, "business_rejection")) || has(field(cmd, "technical_failure")) || has(field(invoked, "platform_failure")));
+            bool retained = has(field(cmd, "success")) || has(field(cmd, "business_rejection")) || has(field(cmd, "technical_failure"));
+            if (!retained && !has(field(invoked, "platform_failure"))) {
+                tx_value retention_value = field(cmd, "retention");
+                int32_t outcome = enumeration(&v, field(cmd, "outcome"), 7, "command.outcome");
+                check(&v, has(retention_value) && boolean(field(retention_value, "payload_available"))
+                    && ((outcome == 2 && has(field(invoked, "success"))) || (outcome == 3 && has(field(invoked, "declared_error")))));
+            }
+            if (has(field(invoked, "success"))) {
+                tx_value success_value = field(invoked, "success"), commit = field(cmd, "commit");
+                tx_value actual = field(success_value, "effect_ids"), expected = field(commit, "effect_ids");
+                check(&v, actual.count == expected.count);
+                for (size_t index = 0; index < actual.count && index < expected.count; ++index) check(&v, equal(item(actual, index), item(expected, index)));
+                latent_string version = text(field(success_value, "committed_state_version"));
+                latent_bytes committed_version = data(field(commit, "committed_version"));
+                static const char digits[] = "0123456789abcdef";
+                bool valid_version = has(field(success_value, "committed_state_version")) && committed_version.length <= 256
+                    && committed_version.length != 0 && committed_version.data != NULL && version.data != NULL
+                    && version.length == committed_version.length * 2;
+                check(&v, valid_version);
+                if (valid_version) for (size_t index = 0; index < committed_version.length; ++index)
+                    check(&v, version.data[index*2] == digits[committed_version.data[index] >> 4]
+                        && version.data[index*2+1] == digits[committed_version.data[index] & 15]);
+            }
             break;
         }
         case LSF_TX_lookup_command:
-            command(&v, field(value, "command"), field(request, "command"));
+            command(&v, field(value, "command"), field(request, "command"), (tx_value){0});
             if (has(field(request, "attempt_id"))) check(&v, equal(field(field(value, "command"), "attempt_id"), field(request, "attempt_id")));
             break;
         case LSF_TX_lookup_commit:
-            command(&v, field(value, "command"), field(request, "command"));
+            command(&v, field(value, "command"), field(request, "command"), (tx_value){0});
             check(&v, equal(field(field(field(value, "command"), "commit"), "receipt_id"), field(request, "receipt_id"))); break;
         case LSF_TX_get_effect: effect(&v, field(value, "effect"), field(request, "effect_id")); break;
         case LSF_TX_list_effect_history: {
@@ -536,7 +561,7 @@ bool lsf_transaction_response_valid(latent_profile_call *call) {
         case LSF_TX_cancel_command: {
             int32_t disposition = enumeration(&v, field(value, "disposition"), 5, "command.cancel.disposition");
             tx_value cmd = field(value, "command");
-            if (has(cmd)) { command(&v, cmd, field(field(request, "command"), "command"));
+            if (has(cmd)) { command(&v, cmd, field(field(request, "command"), "command"), (tx_value){0});
                 check(&v, disposition != 2 || enumeration(&v, field(cmd, "outcome"), 7, "command.outcome") == 2); }
             else check(&v, disposition == 4);
             break;

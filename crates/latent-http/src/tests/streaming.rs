@@ -22,6 +22,116 @@ fn input(port: u16, length: Option<u64>) -> StreamingHttpRequest {
     }
 }
 #[tokio::test]
+async fn requested_read_maximum_is_limited_by_the_original_provider_window() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let server = tokio::spawn(async move {
+        let (mut stream, _) = listener.accept().await.unwrap();
+        read_request(&mut stream).await;
+        stream
+            .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 8\r\nConnection: close\r\n\r\nabcdefgh")
+            .await
+            .unwrap();
+    });
+    let f = fixture(port, 1);
+    let (session, _) = f.session(5000);
+    let observer = session.observer();
+    let upload = f
+        .streaming
+        .as_ref()
+        .unwrap()
+        .start(&session, input(port, Some(0)))
+        .unwrap()
+        .await
+        .unwrap();
+    let mut body = upload.finish().await.unwrap();
+
+    // A zero maximum is still rejected before verified EOF and does not
+    // poison the response. The configured four-byte window remains owned.
+    assert!(body.read(0).await.is_err());
+    let first = body.read(4096).await.unwrap().unwrap();
+    assert!(!first.bytes().is_empty() && first.bytes().len() <= 4);
+    let retained = f.io.snapshot();
+    assert!(matches!(
+        body.read(4096).await,
+        Err(Error::Http(HttpError::BudgetExhausted))
+    ));
+    assert_eq!(f.io.snapshot(), retained);
+    let mut output = first.bytes().to_vec();
+    drop(first);
+    while let Some(chunk) = body.read(4096).await.unwrap() {
+        assert!(!chunk.bytes().is_empty() && chunk.bytes().len() <= 4);
+        output.extend_from_slice(chunk.bytes());
+    }
+    assert_eq!(output, b"abcdefgh");
+    assert!(body.read(4096).await.unwrap().is_none());
+    assert!(body.read(0).await.unwrap().is_none());
+    drop(body);
+    drop(session);
+    assert!(observer.is_quiescent());
+    server.await.unwrap();
+    f.clean().await;
+}
+
+#[tokio::test]
+async fn requested_read_maximum_does_not_expand_total_response_budget() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let (send_more, wait) = tokio::sync::oneshot::channel();
+    let server = tokio::spawn(async move {
+        let (mut stream, _) = listener.accept().await.unwrap();
+        read_request(&mut stream).await;
+        stream
+            .write_all(b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n4\r\nabcd\r\n")
+            .await
+            .unwrap();
+        wait.await.unwrap();
+        stream.write_all(b"4\r\nefgh\r\n0\r\n\r\n").await.unwrap();
+    });
+    let mut config = config(port);
+    config.destinations[0].redirect_destinations.clear();
+    let f = Fixture::streaming(
+        config,
+        HttpStreamLimits {
+            maximum_input_bytes: 4,
+            maximum_output_bytes: 4,
+            maximum_chunk_bytes: 4,
+            maximum_outstanding_chunks: 1,
+        },
+    );
+    let (session, _) = f.session(5000);
+    let upload = f
+        .streaming
+        .as_ref()
+        .unwrap()
+        .start(&session, input(port, Some(0)))
+        .unwrap()
+        .await
+        .unwrap();
+    let mut body = upload.finish().await.unwrap();
+    let mut output = Vec::new();
+    while output.len() < 4 {
+        let chunk = body.read(4096).await.unwrap().unwrap();
+        assert!(!chunk.bytes().is_empty() && chunk.bytes().len() <= 4);
+        output.extend_from_slice(chunk.bytes());
+    }
+    assert_eq!(output, b"abcd");
+    send_more.send(()).unwrap();
+    assert!(matches!(
+        body.read(4096).await,
+        Err(Error::Http(HttpError::ResponseTooLarge))
+    ));
+    assert!(matches!(
+        body.read(4096).await,
+        Err(Error::Http(HttpError::ResponseTooLarge))
+    ));
+    drop(body);
+    drop(session);
+    server.await.unwrap();
+    f.clean().await;
+}
+
+#[tokio::test]
 async fn first_chunk_precedes_complete_body_and_retained_chunks_keep_ownership() {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let port = listener.local_addr().unwrap().port();
@@ -490,4 +600,112 @@ async fn finite_upload_window_stalls_without_an_unbounded_producer_queue() {
     done.send(()).unwrap();
     server.await.unwrap();
     f.clean().await;
+}
+
+// The gate is scoped to this fixture's actual provider and pauses only after
+// Sender::send has accepted the original chunk. It does not claim a kernel send.
+async fn queued_upload_write_case(cancel: bool) {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let server = tokio::spawn(async move {
+        let (mut peer, _) = listener.accept().await.unwrap();
+        if cancel {
+            let mut received = Vec::new();
+            tokio::time::timeout(Duration::from_secs(3), peer.read_to_end(&mut received))
+                .await
+                .expect("cancelled upload must retire its original connection")
+                .unwrap();
+            assert!(!received.windows(4).any(|window| window == b"abcd"));
+        } else {
+            let request = read_request(&mut peer).await;
+            assert!(request.ends_with(b"abcd"));
+            peer.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                .await
+                .unwrap();
+        }
+    });
+    let f = fixture(port, 1);
+    let (session, control) = f.session(5000);
+    let observer = session.observer();
+    let mut upload = f
+        .streaming
+        .as_ref()
+        .unwrap()
+        .start(&session, input(port, Some(4)))
+        .unwrap()
+        .await
+        .unwrap();
+    let before = f.io.snapshot();
+    let native_before = control.budget.host_memory_bytes();
+    let (entered, entered_rx) = tokio::sync::oneshot::channel();
+    let (release, release_rx) = tokio::sync::oneshot::channel();
+    assert!(f
+        .provider
+        .inner
+        .write_gate
+        .lock()
+        .unwrap()
+        .replace(crate::provider::WriteGate {
+            entered,
+            release: release_rx
+        })
+        .is_none());
+    let mut writing = upload.write(b"abcd".to_vec());
+    tokio::time::timeout(Duration::from_secs(2), async {
+        tokio::select! {
+            result = &mut writing => panic!("write finished before the queued barrier: {result:?}"),
+            entered = entered_rx => entered.expect("original chunk must be queued"),
+        }
+    })
+    .await
+    .expect("write did not reach its queued barrier");
+    let queued = f.io.snapshot();
+    assert!(queued.staged_bytes >= before.staged_bytes + 4);
+    assert!(queued.buffers > before.buffers);
+    // This is the same activation's admitted write-future backing, not a
+    // separate claim that its already-lifted input Vec has a native owner.
+    assert!(control.budget.host_memory_bytes() > native_before);
+    assert!(!observer.is_quiescent());
+    assert_eq!(f.pools.snapshot().unwrap().active_connections, 1);
+    if cancel {
+        // Dropping the sole gate sender on any test unwind also releases it.
+        drop(writing);
+        drop(release);
+        assert!(matches!(
+            upload.write(b"x".to_vec()).await,
+            Err(Error::InvalidState)
+        ));
+        assert!(matches!(upload.finish().await, Err(Error::InvalidState)));
+        assert_eq!(f.pools.snapshot().unwrap().idle_connections, 0);
+    } else {
+        release.send(()).unwrap();
+        writing.await.unwrap();
+        let mut body = upload.finish().await.unwrap();
+        assert_eq!(body.head().status(), 200);
+        assert!(body.read(4).await.unwrap().is_none());
+        drop(body);
+    }
+    drop(session);
+    assert!(observer.is_quiescent());
+    assert_eq!(
+        f.io.snapshot(),
+        latent_capabilities::broker::io::IoSnapshot::default()
+    );
+    // No claim is made about a separate kernel or remote application rollback.
+    drop(control);
+    tokio::time::timeout(Duration::from_secs(3), server)
+        .await
+        .expect("peer did not retire")
+        .unwrap();
+    f.clean().await;
+}
+
+#[tokio::test]
+async fn queued_upload_cancel_retires_original_connection_and_disallows_reuse() {
+    queued_upload_write_case(true).await;
+}
+
+#[tokio::test]
+async fn queued_upload_release_completes_with_the_same_provider() {
+    queued_upload_write_case(false).await;
 }

@@ -1343,6 +1343,10 @@ async fn call_export(
                     "validated component function index is absent",
                 )),
             };
+            #[cfg(feature = "development-go-timer-overlap")]
+            if let Some(table) = &store.data().runtime {
+                table.development_export_finished();
+            }
             timing.guest_call_micros = elapsed_micros(guest_call_started);
             result
         }

@@ -16,6 +16,9 @@ if (new Response(null, {headers}).headers.get('x-direct') !== 'present' || !init
   throw new Error('fetch-runtime-direct-initialization');
 }
 let calls = 0;
+// Empty in the compiler snapshot and at the start of every fresh activation.
+// Only the bounded retained-capture case stores invocation-local callbacks.
+let completedCombinatorCallbacks: Array<(value: number) => void> = [];
 
 // More than the pinned RootedVector's inline capacity, with each listener a
 // distinct function. Construct the mutable graph only inside an activation.
@@ -226,6 +229,96 @@ function recoveredAbortAnyFrame(source: AbortController): string {
   return 'abort-any:refusal:closed:recovered';
 }
 
+// A custom capability avoids adding an intrinsic result Promise or a job. Its
+// thenables retain the real Promise.all element callbacks until explicitly run.
+function retainedCombinators(): string {
+  const held: Array<(value: number) => void> = [];
+  const outcome: {state: string, value: unknown} = {state: 'pending', value: undefined};
+  class Collector {
+    constructor(executor: (resolve: (value: unknown) => void, reject: (error: unknown) => void) => void) {
+      executor(value => { outcome.state = 'fulfilled'; outcome.value = value; },
+               error => { outcome.state = 'rejected'; outcome.value = error; });
+    }
+    static resolve(_value: number) {
+      return {then(resolve: (value: number) => void) { held.push(resolve); }};
+    }
+  }
+  const all = Promise.all as unknown as (this: unknown, input: Iterable<number>) => unknown;
+  const result = all.call(Collector, [1, 2, 3]);
+  if (!(result instanceof Collector) || outcome.state !== 'pending' || held.length !== 3)
+    throw new Error('combinator-retained-setup');
+  held[2](3); held[0](1); held[1](2);
+  if (String(outcome.state) !== 'fulfilled' || !Array.isArray(outcome.value) || outcome.value.join(',') !== '1,2,3')
+    throw new Error('combinator-retained-result');
+  return 'combinator:retained:3:ordered';
+}
+
+// Both paths fulfill the same custom Promise.all capability by invoking all
+// three genuine element callbacks. Only one path keeps those already-called
+// callback objects reachable after this function returns.
+function completedCombinatorCapture(retain: boolean): string {
+  if (completedCombinatorCallbacks.length !== 0)
+    throw new Error('combinator-capture-not-fresh');
+  const held: Array<(value: number) => void> = [];
+  const outcome: {state: string, value: unknown} = {state: 'pending', value: undefined};
+  class Collector {
+    constructor(executor: (resolve: (value: unknown) => void, reject: (error: unknown) => void) => void) {
+      executor(value => { outcome.state = 'fulfilled'; outcome.value = value; },
+               error => { outcome.state = 'rejected'; outcome.value = error; });
+    }
+    static resolve(_value: number) {
+      return {then(resolve: (value: number) => void) { held.push(resolve); }};
+    }
+  }
+  const all = Promise.all as unknown as (this: unknown, input: Iterable<number>) => unknown;
+  const result = all.call(Collector, [1, 2, 3]);
+  if (!(result instanceof Collector) || outcome.state !== 'pending' || held.length !== 3)
+    throw new Error('combinator-capture-setup');
+  held[2](3); held[0](1); held[1](2);
+  if (String(outcome.state) !== 'fulfilled' || !Array.isArray(outcome.value) || outcome.value.join(',') !== '1,2,3')
+    throw new Error('combinator-capture-not-fulfilled');
+  if (retain) completedCombinatorCallbacks = held;
+  else held.length = 0;
+  return retain ? 'combinator:completed:retained:3' : 'combinator:completed:released:3';
+}
+
+function refusedCombinators(): void {
+  const held: Array<(value: number) => void> = [];
+  const outcome: {state: string, value: unknown} = {state: 'pending', value: undefined};
+  let next = 0, closed = 0;
+  class Collector {
+    constructor(executor: (resolve: (value: unknown) => void, reject: (error: unknown) => void) => void) {
+      executor(value => { outcome.state = 'fulfilled'; outcome.value = value; },
+               error => { outcome.state = 'rejected'; outcome.value = error; });
+    }
+    static resolve(_value: number) {
+      return {then(resolve: (value: number) => void) { held.push(resolve); }};
+    }
+  }
+  const input: Iterable<number> = {
+    [Symbol.iterator](): Iterator<number> {
+      return {
+        next(): IteratorResult<number> {
+          ++next;
+          return next <= 96 ? {done: false, value: next} : {done: true, value: undefined};
+        },
+        return(): IteratorResult<number> { ++closed; return {done: true, value: undefined}; },
+      };
+    },
+  };
+  const all = Promise.all as unknown as (this: unknown, input: Iterable<number>) => unknown;
+  const expected = 'activation-runtime-promise-native-register-denied:2';
+  try {
+    const result = all.call(Collector, input);
+    if (!(result instanceof Collector) || outcome.state !== 'rejected' ||
+        !(outcome.value instanceof Error) || outcome.value.message !== expected ||
+        held.length === 0 || held.length > 64 || next !== held.length + 1 || closed !== 1)
+      throw new Error('combinator-native-refusal-or-close-missing');
+  } finally {
+    held.length = 0;
+  }
+}
+
 function abortDefaultReason(): string {
   for (let turn = 0; turn < 2; ++turn) {
     const source = new AbortController();
@@ -326,16 +419,16 @@ function refusedAbortFanout() {
   return graph;
 }
 
-function reentrantDefaultAbortFanout(): string {
+function reentrantDefaultAbortFanout() {
   const graph = abortFanoutGraph();
   const original = DOMException;
   const descriptor = Object.getOwnPropertyDescriptor(original.prototype, 'constructor');
   if (!descriptor) throw new Error('abort-fanout-default-constructor-missing');
-  let entered = 0;
+  const observation = {entered: 0};
   Object.defineProperty(original.prototype, 'constructor', {
     ...descriptor,
     value: function(message?: string, name?: string) {
-      ++entered;
+      ++observation.entered;
       graph.source.abort(graph.reason);
       return new original(message, name);
     },
@@ -344,13 +437,12 @@ function reentrantDefaultAbortFanout(): string {
   finally { Object.defineProperty(original.prototype, 'constructor', descriptor); }
   // This probes the selected native factory, not Node's primordial factory.
   // A missing reentrant execution is a failure, never a passing fallback.
-  if (entered !== 1) throw new Error('abort-fanout-default-factory-not-reentered');
+  if (observation.entered !== 1) throw new Error('abort-fanout-default-factory-not-reentered');
   graph.verify();
-  const fresh = new AbortController();
-  fresh.abort();
-  if (!fresh.signal.aborted || fresh.signal.reason?.name !== 'AbortError' || entered !== 1)
-    throw new Error('abort-fanout-default-constructor-not-restored');
-  return 'abort-fanout:default-reentry:first-wins';
+  // Return only the counter: retaining this completed graph while allocating
+  // the independent restoration signal would require 50 graph owners plus
+  // four fresh signal owners and the still-live export/Promise owners.
+  return observation;
 }
 
 export const api: typeof Contract = {
@@ -377,16 +469,55 @@ export const api: typeof Contract = {
       return recoveredAbortAnyFrame(source);
     }
     if (mode === 26) return abortDefaultReason();
-    if (mode === 27) return ordinaryAbortFanout();
+    if (mode === 27) return retainedCombinators();
     if (mode === 28) {
-      const graph = refusedAbortFanout();
-      // Use the ordinary allocation/GC checkpoint, not a fixture-only pump.
+      refusedCombinators();
+      // The ordinary Promise allocation path triggers the existing pressure GC
+      // and checkpoint after the deliberately retained callbacks are released.
       await Promise.resolve();
-      graph.source.abort(graph.reason);
-      graph.verify();
-      return 'abort-fanout:refusal:unchanged:recovered';
+      if (retainedCombinators() !== 'combinator:retained:3:ordered')
+        throw new Error('combinator-native-recovery');
+      return 'combinator:native-refusal:closed:recovered';
     }
-    if (mode === 29) return reentrantDefaultAbortFanout();
+    if (mode === 29) return completedCombinatorCapture(true);
+    if (mode === 30) return completedCombinatorCapture(false);
+    if (mode === 31) return ordinaryAbortFanout();
+    if (mode === 32) {
+      let stage = 'refusal';
+      try {
+        const graph = refusedAbortFanout();
+        // Use the ordinary allocation/GC checkpoint, not a fixture-only pump.
+        stage = 'checkpoint';
+        await Promise.resolve();
+        // A refused fan-out must not resume itself when admission recovers.
+        stage = 'after-checkpoint';
+        if (!graph.unchanged()) throw new Error('abort-fanout-checkpoint-mutated-state');
+        stage = 'retry';
+        graph.source.abort(graph.reason);
+        stage = 'verification';
+        graph.verify();
+        return 'abort-fanout:refusal:unchanged:recovered';
+      } catch (error) {
+        // Keep a finite diagnostic instead of losing a catchable failure to
+        // the component's generic rejected-export trap. This is never the
+        // success value; the signed runner rejects every diagnostic result.
+        const cause = error instanceof Error &&
+          error.message === 'activation-runtime-promise-native-register-denied:2'
+          ? 'native-admission' : 'contract';
+        return `diagnostic:abort-fanout:${stage}:${cause}`;
+      }
+    }
+    if (mode === 33) {
+      const observation = reentrantDefaultAbortFanout();
+      // The graph has been fully verified. Release that helper frame before a
+      // normal checkpoint, then test the restored factory independently.
+      await Promise.resolve();
+      const fresh = new AbortController();
+      fresh.abort();
+      if (!fresh.signal.aborted || fresh.signal.reason?.name !== 'AbortError' || observation.entered !== 1)
+        throw new Error('abort-fanout-default-constructor-not-restored');
+      return 'abort-fanout:default-reentry:first-wins';
+    }
     if (mode !== 0) throw new TypeError('unsupported-fetch-runtime-mode');
     return `${++calls}:${await request(url)}`;
   },

@@ -11,7 +11,7 @@ from pathlib import Path
 
 from tools import guest_compiler_edges as edges
 from tools.dev_workflow.common import digest, encode, members, require, sha
-from tools.rust_capsule_project import inventory, read_file, write_json
+from tools.rust_capsule_project import inventory, read_file
 
 OUTPUT = 'compatibility-compiler-edges.json'
 MAX_QUERIES = 32
@@ -323,7 +323,10 @@ class Capture:
             'apiSupport': 'unknown', 'wholeProgramElimination': 'unknown', 'rootReachability': 'unknown', 'authority': 'none'}
         value['identity'] = digest(encode(value))
         validate(value, files=files, bindings=bindings)
-        write_json(output / OUTPUT, value)
+        # The validator and downstream material reader both enforce the
+        # canonical 64 KiB bound; indentation can exceed it for a valid value.
+        with (output / OUTPUT).open('xb') as target:
+            target.write(encode(value))
         return value
 
 

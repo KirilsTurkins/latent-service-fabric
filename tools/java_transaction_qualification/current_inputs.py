@@ -115,6 +115,30 @@ def _validate_materials(files, selected, names):
             and all(isinstance(row, dict) and isinstance(row.get("stage"), str)
                     and type(row.get("exitCode")) is int and row["exitCode"] == 0 for row in commands)
             and SUCCESS_STAGES <= {row["stage"] for row in commands}, "current-java-successful-compiler-stages")
+    from tools.transaction_guest_project import CURRENT_EVENT_PROFILE, EVENT_REQUIREMENTS, current_java_event_requirements
+    event_marker = project.get(CURRENT_EVENT_PROFILE)
+    event_requirements = project.get(EVENT_REQUIREMENTS)
+    if event_marker is not None or event_requirements is not None:
+        require(selected.variant == "aggregate" and event_marker is not None and event_requirements is not None
+                and "deferred-http-requirements.json" not in project
+                and report.get("nativeEffectProfile") == "current-v1-event"
+                and report.get("nativeEffectOperation") == "event"
+                and report.get("currentEventProfileInputDigest") == digest(event_marker)
+                and report.get("deferredEventRequirementsDigest") == digest(event_requirements),
+                "explicit-current-java-event-source-and-report")
+        marker = decode(event_marker, 8192)
+        require(isinstance(marker, dict) and set(marker) == {"schemaVersion", "idempotencyProfile"}
+                and marker["schemaVersion"] == "latent.java.current-event-source-input.v1",
+                "closed-current-java-event-marker")
+        descriptor = decode(project["capsule-project.json"])
+        expected = current_java_event_requirements(descriptor, project["transaction-binding.json"],
+                                                   marker["idempotencyProfile"])
+        require(decode(event_requirements, 8192) == expected, "exact-current-java-event-requirements")
+    else:
+        require(report.get("currentEventProfileInputDigest") is None
+                and report.get("deferredEventRequirementsDigest") is None
+                and report.get("nativeEffectProfile") != "current-v1-event"
+                and report.get("nativeEffectOperation") != "event", "unbacked-current-java-event-report")
     if selected.variant.startswith("put-once-"):
         requirements = project.get("deferred-http-requirements.json")
         require(requirements is not None and digest(requirements) == report.get("deferredHttpRequirementsDigest"),
@@ -122,7 +146,7 @@ def _validate_materials(files, selected, names):
         from tools.transaction_guest_project import CURRENT_HTTP_PROFILE, current_java_http_requirements
         if CURRENT_HTTP_PROFILE in project:
             marker = decode(project[CURRENT_HTTP_PROFILE], 8192)
-            require(set(marker) == {"schemaVersion", "idempotencyProfile"}
+            require(isinstance(marker, dict) and set(marker) == {"schemaVersion", "idempotencyProfile"}
                     and marker["schemaVersion"] == "latent.java.current-http-source-input.v1"
                     and report.get("nativeEffectProfile") == "current-v2-http"
                     and report.get("nativeEffectOperation") == "http"
@@ -153,4 +177,4 @@ def load_current(directory: Path, selected: CurrentSelection) -> ComponentInput:
     report = validate_materials(files, selected)
     return ComponentInput(selected.variant, directory, report["componentDigest"], report["companionDigest"],
                           report["sourceDigest"], selected.source_commit, report["hostAbiDigest"],
-                          report.get("deferredHttpRequirementsDigest"))
+                          report.get("deferredHttpRequirementsDigest"), report.get("deferredEventRequirementsDigest"))

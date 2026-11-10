@@ -1,11 +1,12 @@
 /* Ordinary pthread/C11 calls. The declared observe API supplies actual owner
  * witnesses; no private continuation or thread-runtime intrinsic is called. */
 #include <time.h>
+#include <sys/select.h>
 #include <unistd.h>
 
 static union { pthread_mutex_t pthread; mtx_t c11; } timed_gate;
 static union { pthread_cond_t pthread; cnd_t c11; } timed_condition;
-static unsigned timed_c11, timed_kind, timed_children_count;
+static unsigned timed_c11, timed_kind, timed_children_count, timed_select;
 #define timed_sibling fixture_counter_read(2)
 #define timed_completed fixture_counter_read(3)
 static latent_runtime_activation_observation_t timed_snapshot;
@@ -52,6 +53,25 @@ static void timed_observe(void) {
     __builtin_trap();
 }
 
+
+/* No observer sleep/timer can contaminate the selected wait. Until this
+ * returns, the root is joining the selecting child and no child has retired. */
+static void timed_select_observe(void) {
+    latent_runtime_activation_error_t error = 255;
+    for (unsigned attempt = 0; attempt < 256; ++attempt) {
+        require(latent_runtime_activation_observe(&timed_snapshot, &error));
+        require(timed_snapshot.tasks == 3 && timed_snapshot.results == 2);
+        require(timed_snapshot.native_owners == 6 && timed_snapshot.native_memory_bytes > 0);
+        require(timed_snapshot.stale_wakes == 0 && timed_snapshot.timers <= 1);
+        unsigned phase = timed_completed;
+        require(phase <= 1);
+        if (phase == 1 && timed_snapshot.timers == 1 && timed_snapshot.waits >= 2
+                && timed_snapshot.parked_tasks >= 2) return;
+        thrd_yield();
+    }
+    __builtin_trap();
+}
+
 static void *timed_worker(void *opaque) {
     struct argument *argument = opaque;
     volatile unsigned frame = 0x7194;
@@ -60,9 +80,22 @@ static void *timed_worker(void *opaque) {
     require(!pthread_equal(pthread_self(), root_id) && pthread_getspecific(key) == NULL);
     local += argument->slot + 1; errno = argument->api == 1 ? 37 : 41;
     require(pthread_setspecific(key, (void *)(uintptr_t)1) == 0); FIXTURE_ENTER();
-    if (timed_kind == 0) { /* Sleep parks one child while its sibling runs. */
-        if (argument->slot == 0) { timed_pause(200); require(timed_sibling == 1); }
-        else { timed_observe(); fixture_counter_set(2, 1); }
+    if (timed_kind == 0) { /* Sleep or select parks one child while its sibling runs. */
+        if (argument->slot == 0) {
+            if (timed_select) {
+                struct timespec deadline = timed_deadline(CLOCK_MONOTONIC, 200), after;
+                struct timeval duration = {.tv_sec = 0, .tv_usec = 200000};
+                fixture_counter_set(3, 1); /* Before entering the selected wait. */
+                require(select(0, NULL, NULL, NULL, &duration) == 0);
+                require(clock_gettime(CLOCK_MONOTONIC, &after) == 0 && timed_compare(after, deadline));
+                require(timed_completed == 2);
+            } else timed_pause(200);
+            require(timed_sibling == 1);
+        } else {
+            if (timed_select) timed_select_observe(); else timed_observe();
+            fixture_counter_set(2, 1);
+            if (timed_select) fixture_counter_set(3, 2);
+        }
     } else if (timed_kind == 1) { /* Root holds mutex throughout timeout. */
         if (argument->slot == 0) {
             struct timespec deadline = timed_deadline(CLOCK_REALTIME, 200), now;
@@ -149,10 +182,11 @@ static unsigned timed_validation(void) {
 }
 
 static bool timed_children(probe_string_t *input, probe_string_t *result, probe_string_t *error) {
+    timed_select = mode(input, "timed-select");
     timed_c11 = mode(input, "timed-sleep-c11") || mode(input, "timed-mutex-timeout-c11")
         || mode(input, "timed-mutex-notify-c11") || mode(input, "timed-condition-notify-c11")
         || mode(input, "timed-condition-timeout-c11") || mode(input, "timed-condition-broadcast-c11");
-    timed_kind = mode(input, "timed-sleep") || mode(input, "timed-sleep-c11") ? 0
+    timed_kind = timed_select || mode(input, "timed-sleep") || mode(input, "timed-sleep-c11") ? 0
         : mode(input, "timed-mutex-timeout") || mode(input, "timed-mutex-timeout-c11") ? 1
         : mode(input, "timed-mutex-notify") || mode(input, "timed-mutex-notify-c11") ? 2
         : mode(input, "timed-condition-notify") || mode(input, "timed-condition-notify-c11") ? 3
@@ -160,9 +194,11 @@ static bool timed_children(probe_string_t *input, probe_string_t *result, probe_
     timed_children_count = timed_kind == 5 ? 3 : 2;
     unsigned failure = timed_validation();
     if (failure) {
+        unsigned failure_errno = (unsigned)errno;
+        require(pthread_setspecific(key, NULL) == 0 && pthread_key_delete(key) == 0);
         char output[96], *cursor = output;
         memcpy(cursor, "timed-validation:", 17); cursor += 17;
-        number(&cursor, failure); *cursor++ = ':'; number(&cursor, (unsigned)errno); *cursor = 0;
+        number(&cursor, failure); *cursor++ = ':'; number(&cursor, failure_errno); *cursor = 0;
         probe_string_dup(error, output); probe_string_free(input); return false;
     }
     if (timed_c11) {
@@ -192,7 +228,7 @@ static bool timed_children(probe_string_t *input, probe_string_t *result, probe_
     }
     if (timed_kind == 1) timed_unlock();
     require(entered == timed_children_count && destructed == timed_children_count && timed_sibling == 1);
-    require(timed_completed == (timed_kind == 0 ? 0u : timed_kind == 5 ? 2u : 1u));
+    require(timed_completed == (timed_select ? 2u : timed_kind == 0 ? 0u : timed_kind == 5 ? 2u : 1u));
     if (timed_c11) { mtx_destroy(&timed_gate.c11); cnd_destroy(&timed_condition.c11); }
     else {
         require(pthread_mutex_destroy(&timed_gate.pthread) == 0);

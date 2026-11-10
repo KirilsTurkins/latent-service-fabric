@@ -10,10 +10,10 @@ intentionally misbehaving worker is **not** evidence of production containment.
 
 Use the pinned toolchain on Linux x86_64 and a clean tracked checkout. The default
 recipe is debug/all-features, including opt-in parent-side timing instrumentation.
-The current preparation profile is `debug-all-features-v9`; its exact feature
+The current preparation profile is `debug-all-features-v10`; its exact feature
 closure comes from [the input owner](../../tools/aot_test_inputs.py), including
-the selected Go timer-overlap observer. The manifest schema remains
-`latent.aot-test-inputs.v1`. A former v8 profile is rejected rather than relabeled;
+the selected Go timer-overlap and network-read witnesses. The manifest schema
+remains `latent.aot-test-inputs.v1`. Former v8/v9 profiles are rejected rather than relabeled;
 rebuild and prepare new inputs after a feature/cohort change. Test-only observers
 and diagnostics do not enable those profiles on an ordinary production node.
 GNU `objcopy` is needed only during preparation. No extra worker is built: Cargo's

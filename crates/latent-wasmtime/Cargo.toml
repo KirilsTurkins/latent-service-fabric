@@ -80,6 +80,7 @@ rustix = { version = "=1.1.5", features = ["process", "thread", "fs", "pipe", "m
 seccompiler = "=0.5.0"
 
 [dev-dependencies]
+latent-core = { path = "../latent-core", features = ["test-support"] }
 getrandom = "=0.4.3"
 latent-audit = { path = "../latent-audit", features = ["test-support"] }
 latent-ingress = { path = "../latent-ingress" }

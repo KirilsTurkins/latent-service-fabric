@@ -1,0 +1,108 @@
+{
+    "description":  "Experimental Rust and TypeScript Node client lookups against a combined unmerged separate node and disposable test signer",
+    "observation":  {
+                        "after":  {
+                                      "commandCount":  "1",
+                                      "encodedStateBytes":  "75",
+                                      "engineProfile":  "protected-redb-immediate-ext4-v1",
+                                      "engineProfileDigest":  "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+                                      "generation":  "3",
+                                      "namespacePolicyDigest":  "sha256:82303f927448d30b322efbeeaf33dc2469984af1bf1d55eb10362ca7cc18e4ce",
+                                      "pendingEffectCount":  "0",
+                                      "quota":  {
+                                                    "effectBytes":  "8388608",
+                                                    "effectRows":  "4096",
+                                                    "payloadBytes":  "8388608",
+                                                    "recoveryBytes":  "1048576",
+                                                    "resultBytes":  "8388608",
+                                                    "resultRows":  "4096",
+                                                    "stateBytes":  "8388608",
+                                                    "stateKeys":  "4096"
+                                                },
+                                      "retainedFormats":  [
+
+                                                          ],
+                                      "status":  "NAMESPACE_STATUS_ACTIVE",
+                                      "view":  {
+                                                   "namespace":  {
+                                                                     "incarnation":  "1",
+                                                                     "namespace":  "transactional-aggregate",
+                                                                     "tenant":  "examples"
+                                                                 },
+                                                   "stateSchema":  "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+                                                   "version":  {
+                                                                   "data":  "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAAAMAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+                                                                   "encoding":  "base64"
+                                                               }
+                                               }
+                                  },
+                        "attemptId":  "1",
+                        "before":  {
+                                       "commandCount":  "1",
+                                       "encodedStateBytes":  "75",
+                                       "engineProfile":  "protected-redb-immediate-ext4-v1",
+                                       "engineProfileDigest":  "sha256:93255d81f55c3a0f988a704c4ade9f2b288067d6d32ff27282ef639320cc3343",
+                                       "generation":  "3",
+                                       "namespacePolicyDigest":  "sha256:82303f927448d30b322efbeeaf33dc2469984af1bf1d55eb10362ca7cc18e4ce",
+                                       "pendingEffectCount":  "0",
+                                       "quota":  {
+                                                     "effectBytes":  "8388608",
+                                                     "effectRows":  "4096",
+                                                     "payloadBytes":  "8388608",
+                                                     "recoveryBytes":  "1048576",
+                                                     "resultBytes":  "8388608",
+                                                     "resultRows":  "4096",
+                                                     "stateBytes":  "8388608",
+                                                     "stateKeys":  "4096"
+                                                 },
+                                       "retainedFormats":  [
+
+                                                           ],
+                                       "status":  "NAMESPACE_STATUS_ACTIVE",
+                                       "view":  {
+                                                    "namespace":  {
+                                                                      "incarnation":  "1",
+                                                                      "namespace":  "transactional-aggregate",
+                                                                      "tenant":  "examples"
+                                                                  },
+                                                    "stateSchema":  "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+                                                    "version":  {
+                                                                    "data":  "TlYCT7u1vG9jTw56iKcQw9+C4b0r0TuX4DqBAsqw0cnoSMcBAAAAAAAAAAMAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+                                                                    "encoding":  "base64"
+                                                                }
+                                                }
+                                   },
+                        "brokerMessages":  1,
+                        "capturePinsSha256":  "sha256:e208729a32c394464c1f3abd6416b7565784e7240084f909359733596d50a9c0",
+                        "cliSha256":  "sha256:e1179de07a96719f3161f7748dbb14496151bf8b193253bf7b7a9fc819f4cec7",
+                        "commandId":  "9519180718750dc809725b7a546608e0bf15552ea311c3ac8300c1ee847c89fb",
+                        "effectAttempt":  1,
+                        "effectDisposition":  "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+                        "guestSha256":  "sha256:396784dda4174f84d3a6cb8c211dca9ad706fb826d613e5892b8140f815ad7f5",
+                        "integrationGitCommit":  "5aa6592da0fe2196db68d35510be6751597a77e5",
+                        "nodeJsSha256":  "sha256:bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+                        "nodeSha256":  "sha256:48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+                        "probeSha256":  "sha256:5bb12e3a7b7e4ec8ee2bd27cef28f4c96bad55270e6ca887c98001d8191a4a0b",
+                        "publication":  "publication:sha256:e927cc4b6b5dc9a903fb7022f467d4497d749bf1a83ef1aa230dafbe9b6b6a00",
+                        "qualification":  "experimental unmerged integration with disposable signer; not hosted or distribution qualification",
+                        "rustLookups":  2,
+                        "sdkTestSha256":  "sha256:77f2c05fedc9a25f435d3d52f0f05d925766f8da2a8b4c86ca61821eda13fabc",
+                        "syntheticArchiveGitCommit":  "631cf036f8c78f79a5be2a1c419dca074c2fedae",
+                        "testSignerSha256":  "sha256:5fbecbb71779d2c84c7688b5a5067cc903fbfe8f72b933ed4036094a432fc6a5",
+                        "typescriptLookups":  2,
+                        "typescriptProbeSha256":  "sha256:827fcd9a46a1d06a787f022fe069215477728a6ee5f7d3d58e23508bb85f4825",
+                        "verifiedMergeSourceBlobs":  13749
+                    },
+    "typeScriptTestLogSha256":  "sha256:f33413df6737b9bb25962dfbb9c2e150b0b20f29638e09ea3be95554c262ff1c",
+    "experimentScriptSha256":  "sha256:cdd95bb8ab69d8c3f804821adb739c71db7f6ec8aae52783b7acd30d66814fbe",
+    "nodeShutdown":  {
+                         "effectsPhysicallyRetired":  true,
+                         "reaped":  true,
+                         "clean":  true,
+                         "activeActivations":  0,
+                         "liveStores":  0
+                     },
+    "brokerFixtureRemoved":  true,
+    "priorAttempt":  "The preceding TypeScript attempt stopped before sending a request because the fixture supplied a bare socket address instead of the required http URL. The corrected fixture passed.",
+    "limitations":  "Combined unmerged source and disposable signer; not hosted CI, installed distribution, six-client matrix, cancellation, crash, or replay qualification."
+}

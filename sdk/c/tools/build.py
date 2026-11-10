@@ -10,12 +10,21 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import time
+import urllib.error
+import urllib.parse
 import urllib.request
 import zipfile
 
 
 SDK = Path(__file__).resolve().parents[1]
 ROOT = SDK.parents[1]
+MAX_DOWNLOAD_BYTES = 32 * 1024 * 1024
+DOWNLOAD_TIMEOUT_SECONDS = 30
+NGHTTP2_URL = "https://github.com/nghttp2/nghttp2/releases/download/v1.70.0/nghttp2-1.70.0.tar.gz"
+NGHTTP2_SHA256 = "aa317e2cf9dca6afa0aed68f8fad6ff303ec6982e25a78c75c0b65e2b9b3ded5"
+NGHTTP2_ASSET = "https://api.github.com/repos/nghttp2/nghttp2/releases/assets/494019933"
+NGHTTP2_ASSET_BYTES = 3_104_002
 
 
 def run(command, *, cwd=None, environment=None, log=None, timeout=300):
@@ -29,13 +38,63 @@ def run(command, *, cwd=None, environment=None, log=None, timeout=300):
             raise RuntimeError(f"build command failed; inspect {log}")
 
 
+class _AssetRedirect(urllib.request.HTTPRedirectHandler):
+    """The anonymous release-asset request may only reach GitHub's asset host."""
+
+    def redirect_request(self, request, fp, code, msg, headers, newurl):
+        target = urllib.parse.urlsplit(newurl)
+        if (target.scheme != "https" or target.hostname != "release-assets.githubusercontent.com"
+                or target.port not in (None, 443) or target.username is not None or target.password is not None):
+            raise RuntimeError("unapproved dependency asset redirect")
+        redirected = super().redirect_request(request, fp, code, msg, headers, newurl)
+        if redirected is None or any(key.lower() == "authorization" for key, _ in redirected.header_items()):
+            raise RuntimeError("unexpected dependency asset authorization")
+        return redirected
+
+
+def _transient(error):
+    if isinstance(error, urllib.error.HTTPError):
+        return error.code == 504
+    if isinstance(error, urllib.error.URLError):
+        return isinstance(error.reason, TimeoutError)
+    return isinstance(error, TimeoutError)
+
+
+def _asset_fallback(name, item, error, started):
+    if (name != "nghttp2.download" or item.get("url") != NGHTTP2_URL
+            or item.get("sha256") != NGHTTP2_SHA256 or not _transient(error)):
+        raise error
+    remaining = DOWNLOAD_TIMEOUT_SECONDS - (time.monotonic() - started)
+    if remaining <= 0:
+        raise error
+    if isinstance(error, urllib.error.HTTPError):
+        error.close()
+    request = urllib.request.Request(NGHTTP2_ASSET, headers={
+        "Accept": "application/octet-stream", "User-Agent": "latent-c-sdk-build"})
+    opener = urllib.request.build_opener(_AssetRedirect())
+    with opener.open(request, timeout=remaining) as response:
+        target = urllib.parse.urlsplit(response.geturl())
+        if (response.status != 200 or target.scheme != "https"
+                or target.hostname not in {"api.github.com", "release-assets.githubusercontent.com"}
+                or target.port not in (None, 443) or target.username is not None or target.password is not None):
+            raise RuntimeError("unapproved dependency asset response")
+        data = response.read(MAX_DOWNLOAD_BYTES + 1)
+    if len(data) != NGHTTP2_ASSET_BYTES:
+        raise RuntimeError(f"dependency integrity failure: {name}")
+    return data
+
+
 def download(directory, name, item):
     path = directory / name
     if not path.exists():
         request = urllib.request.Request(item["url"], headers={"User-Agent": "latent-c-sdk-build"})
-        with urllib.request.urlopen(request, timeout=30) as response:
-            data = response.read(32 * 1024 * 1024 + 1)
-        if len(data) > 32 * 1024 * 1024 or hashlib.sha256(data).hexdigest() != item["sha256"]:
+        started = time.monotonic()
+        try:
+            with urllib.request.urlopen(request, timeout=DOWNLOAD_TIMEOUT_SECONDS) as response:
+                data = response.read(MAX_DOWNLOAD_BYTES + 1)
+        except (urllib.error.URLError, TimeoutError) as error:
+            data = _asset_fallback(name, item, error, started)
+        if len(data) > MAX_DOWNLOAD_BYTES or hashlib.sha256(data).hexdigest() != item["sha256"]:
             raise RuntimeError(f"dependency integrity failure: {name}")
         path.write_bytes(data)
     if hashlib.sha256(path.read_bytes()).hexdigest() != item["sha256"]:

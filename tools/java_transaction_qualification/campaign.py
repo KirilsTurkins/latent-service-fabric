@@ -214,14 +214,13 @@ class Campaign:
     def _rejection(self, publication):
         _, current = self.query(1)
         key, condition = "java-original-rejection", precondition(current)
-        rejected = self.result(self.socket("command", original_key=key, body=command_input(5, True), condition=condition))
-        require(rejected["disposition"] == "rejected" and not rejected["effect-ids"]
-                and decode(http.canonical_base64(rejected["result"]["body-base64"], 131072)) == [{"err": "rejected"}],
-                "actual-declared-business-rejection")
-        record = lifecycle.lookup(self.client, publication, key)
-        rpc_result(record, rejected, publication, key)
-        self.originals[key] = rejected
-        self.query(1)
+        lost = self.socket("command", original_key=key, body=command_input(5, True),
+                           condition=condition, lose_body=True)
+        require(lost["status"] == 422 and lost["bodyLost"] is True,
+                "actual-rejection-response-body-loss")
+        _, after_rejection = self.query(1)
+        require(after_rejection["key-version"] == current["key-version"],
+                "rejection-preserves-business-key-version")
         next_key = "java-original-2"
         committed = self.result(self.socket("command", original_key=next_key,
             body=command_input(2), condition=condition))
@@ -229,12 +228,20 @@ class Campaign:
                 "subsequent-original-business-change")
         self.wait_effect(publication, next_key, committed)
         self.originals[next_key] = committed
+        rejected = self.original(key)
+        require(rejected["disposition"] == "rejected" and not rejected["effect-ids"]
+                and decode(http.canonical_base64(rejected["result"]["body-base64"], 131072)) == [{"err": "rejected"}],
+                "actual-declared-business-rejection")
+        record = lifecycle.lookup(self.client, publication, key)
+        rpc_result(record, rejected, publication, key)
+        self.originals[key] = rejected
         replayed = self.result(self.socket("command", original_key=key,
             body=command_input(5, True, reverse=True), condition=condition))
         http.replay(rejected, replayed)
         self.query(3)
         self.client.evidence.passed("declared-rejection-after-change", {"original": rejected,
-            "originalInspection": record, "businessChanged": committed, "rejectionReplay": replayed})
+            "originalInspection": record, "businessChanged": committed, "rejectionReplay": replayed,
+            "originalResponseBodyLost": True})
 
     def _isolation_and_preconditions(self, publication):
         _, current = self.query(3)

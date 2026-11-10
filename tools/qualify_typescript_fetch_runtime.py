@@ -18,6 +18,7 @@ if __package__ in {None, ''}:
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools.build_process_signals import owned_cancellation
+from tools.dev_workflow.node_diagnostics import original_result
 from tools.guest_runtime_profiles import profiles
 from tools.phase2_operator_process import Process, read_json, require, stopped_record, write_json
 from tools.phase2_operator_scenario import configure_node, connect, stop
@@ -29,9 +30,11 @@ from tools.qualify_typescript_dependencies import prepared_native
 from tools.qualify_typescript_fetch_component import project as compiler_project
 from tools.rust_capsule_node import RecordingClient, call, delete_all, deploy, sample
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, snapshot
+from tools.runtime_owner_refusal_diagnostic import BUCKETS, retain as retain_runtime_owner_refusals
 from tools.standard_http.observations import validate as validate_peer
 from tools.standard_http.vectors import DOMAIN, json_bytes
 from tools.static_api.node import policy
+from tools.typescript_fetch_failure import observe_case_failure
 from tools.typescript_guest.build import build
 from tools.typescript_guest.fetch_profile import PROFILE
 from tools.typescript_guest.project import validate
@@ -57,11 +60,44 @@ ABORT_ANY_VECTORS = (('abort-any-frames', 24, 'abort-any:80:nested:12:ordered'),
                      ('abort-any-fresh', 24, 'abort-any:80:nested:12:ordered'))
 ABORT_DEFAULT_VECTORS = (('abort-default-reason', 26, 'abort-default:shared:2:thrown'),
                          ('abort-default-fresh', 26, 'abort-default:shared:2:thrown'))
+COMBINATOR_VECTORS = (('combinator-retained', 27, 'combinator:retained:3:ordered'),
+                      ('combinator-refusal', 28, 'combinator:native-refusal:closed:recovered'),
+                      ('combinator-fresh', 27, 'combinator:retained:3:ordered'))
+COMPLETED_CAPTURE_VECTORS = (('combinator-completed-control', 30, 'combinator:completed:released:3'),
+                             ('combinator-completed-retained', 29, None),
+                             ('combinator-completed-fresh', 30, 'combinator:completed:released:3'))
 
-ABORT_FANOUT_VECTORS = (('abort-fanout', 27, 'abort-fanout:9:ordered'),
-                        ('abort-fanout-refusal', 28, 'abort-fanout:refusal:unchanged:recovered'),
-                        ('abort-fanout-default-reentry', 29, 'abort-fanout:default-reentry:first-wins'),
-                        ('abort-fanout-fresh', 27, 'abort-fanout:9:ordered'))
+ABORT_FANOUT_VECTORS = (('abort-fanout', 31, 'abort-fanout:9:ordered'),
+                        ('abort-fanout-refusal', 32, 'abort-fanout:refusal:unchanged:recovered'),
+                        ('abort-fanout-default-reentry', 33, 'abort-fanout:default-reentry:first-wins'),
+                        ('abort-fanout-fresh', 31, 'abort-fanout:9:ordered'))
+
+def execution_vectors(completed_capture_diagnostic):
+    require(type(completed_capture_diagnostic) is bool, 'fetch-runtime-diagnostic-selection')
+    if completed_capture_diagnostic:
+        return [(name, mode, '/conformance/json', expected, 0)
+                for name, mode, expected in COMPLETED_CAPTURE_VECTORS]
+    return [('entry', 1, '/conformance/json', 'entered', 0),
+        ('request-ready', 2, '/conformance/json', 'request-ready', 0),
+        ('promise-ready', 3, '/conformance/json', 'promise-ready', 0),
+        ('request-copy-ready', 4, '/conformance/json', 'request-copy-ready', 0),
+        *((name, mode, '/conformance/json', expected, 0)
+          for name, mode, expected in EVENT_CLONE_VECTORS),
+        *((name, mode, '/conformance/json', expected, 0)
+          for name, mode, expected in ABORT_CLONE_VECTORS),
+        *((name, mode, '/conformance/json', expected, 0)
+          for name, mode, expected in ABORT_ANY_VECTORS),
+        *((name, mode, '/conformance/json', expected, 0)
+          for name, mode, expected in ABORT_DEFAULT_VECTORS),
+        *((name, mode, '/conformance/json', expected, 0)
+          for name, mode, expected in COMBINATOR_VECTORS),
+        *((name, mode, '/conformance/json', expected, 0)
+          for name, mode, expected in ABORT_FANOUT_VECTORS),
+        ('json', 0, '/conformance/json', '1:200:'+json_bytes(DOMAIN).decode()+':used', 1),
+        ('http404', 0, '/conformance/status/404',
+            '1:404:'+json_bytes({'status':404, 'message':'domain-error'}).decode()+':used', 1),
+        ('fresh', 0, '/conformance/json', '1:200:'+json_bytes(DOMAIN).decode()+':used', 1)]
+
 
 
 def project(directory: Path) -> Path:
@@ -172,12 +208,59 @@ def require_denied(row):
         for name in ('outboundRequests', 'childCalls', 'effectCount')), 'fetch-runtime-denial-effects')
 
 
+def record_failure(path, value, failure):
+    """Keep evidence-write errors secondary to the failure being reported."""
+    try:
+        write_json(path, value)
+    except BaseException as evidence_failure:
+        failure.add_note('fetch-runtime-failure-evidence:'+type(evidence_failure).__name__)
+
+
+def require_completed_capture_refusal(row):
+    response = row.get('response') if isinstance(row, dict) else None
+    observed = original_result(response)
+    consumption = observed.get('consumption', {})
+    data = response.get('data', {}) if isinstance(response, dict) else {}
+    require(type(row) is dict and row.get('exitCode') == 4 and row.get('decoded') is None
+        and row.get('processReaped') is True and observed.get('outcomeKnown') is True
+        and observed.get('category') == 'platform-failure'
+        and observed.get('guestTrapCode') == 'runtime-lifecycle-unproven'
+        and isinstance(data, dict) and data.get('terminalState') == 'guest_trap'
+        and all(type(consumption.get(name)) is str and int(consumption[name]) > 0
+                for name in ('cpuFuel', 'peakMemoryBytes'))
+        and all(consumption.get(name) == '0' for name in ('outboundRequests', 'childCalls', 'effectCount')),
+        'fetch-runtime-completed-capture-lifecycle-refusal')
+
+
+def require_completed_capture_owners(observation):
+    require(type(observation) is dict and observation.get('formatVersion') == 1
+        and type(observation.get('formatVersion')) is int and observation.get('qualification') is False
+        and observation.get('scope') == 'host-runtime-finalization-refusals-only-no-retirement-proof'
+        and observation.get('tasksIncludesManagedIdleWorkers') is True
+        and observation.get('status') == 'observed' and observation.get('invalidMarkerCount') == 0
+        and type(observation.get('invalidMarkerCount')) is int and observation.get('atCaptureLimit') is False
+        and type(observation.get('records')) is list and len(observation['records']) == 1,
+        'fetch-runtime-completed-capture-owner-observation')
+    record = observation['records'][0]
+    limits = {'tasks': OWNER_LIMITS['tasks'], 'executors': OWNER_LIMITS['executors'],
+              'queued-work': OWNER_LIMITS['queuedWork'], 'waits': OWNER_LIMITS['waits'],
+              'timers': OWNER_LIMITS['timers'], 'results': OWNER_LIMITS['results'],
+              'native': OWNER_LIMITS['nativeOwners']}
+    require(type(record) is dict and set(record) == set(BUCKETS)
+        and all(type(record[name]) is int and 0 <= record[name] <= limits[name] for name in BUCKETS)
+        and record['native'] >= 3 and all(record[name] == 0 for name in BUCKETS if name != 'native'),
+        'fetch-runtime-completed-capture-native-bucket')
+    return record
+
+
 def retire(client, probe, target, output, name):
     value = sample(client, probe, 'after-'+name, 1)
+    # Retain the rejected sample too; host counters are not physical-custody proof.
+    write_json(output/('after-'+name+'.json'), value)
     slots = next(row for row in value['inventory']['topology']['entries'] if row['name'] == 'invocation-cleanup-slots')
     require(slots['activeCount'] == '0', 'fetch-runtime-cleanup-slots')
-    write_json(output/('after-'+name+'.json'), value)
     usage = client.call('capability', 'list', '--deployment', target['name'], '--include-node-usage')['data']['nodeUsage']
+    write_json(output/('after-'+name+'-usage.json'), usage)
     require(not usage['unavailable'] and all(name in usage['counters'] and int(usage['counters'][name]) == 0
         for name in ACTIVE_COUNTERS), 'fetch-runtime-physical-owners')
 
@@ -189,6 +272,16 @@ def peer_evidence(observation):
         and observation['rejectedRequests'] == observation['committedMutations'] == 0
         and [row.get('vector') for row in observation['requests']] == ['domain-json', 'http-404', 'domain-json']
         and all(row['role'] == 'primary' for row in observation['requests']), 'fetch-runtime-peer-contact-count')
+    return observation
+
+
+def empty_peer_evidence(observation):
+    validate_peer(observation)
+    require(observation['state'] == 'stopped'
+        and all(observation[name] == 0 for name in ('acceptedConnections', 'startedRequests',
+            'completedResponseWrites', 'rejectedRequests', 'committedMutations', 'receivedBytes'))
+        and observation['requests'] == [] and observation['events'] == [],
+        'fetch-runtime-completed-capture-peer-contact')
     return observation
 
 
@@ -221,12 +314,19 @@ def build_evidence(artifact):
     return {'component': component, 'documents': identities}
 
 
-def execute(artifact, native, output):
+def execute(artifact, native, output, *, completed_capture_diagnostic=False):
     output = fresh(output)
-    result = {'schemaVersion': 'latent.typescript.fetch-runtime.v1', 'status': 'in-progress',
-        'scope': 'finite-signed-default-fetch-json-body-subset', 'fullTicketQualification': False,
-        'unchangedPublishedClients': 'not-run', 'privateConsumer': 'not-run', 'cases': []}
+    require(type(completed_capture_diagnostic) is bool, 'fetch-runtime-diagnostic-selection')
+    if completed_capture_diagnostic:
+        result = {'schemaVersion': 'latent.typescript.completed-capture-node.v1', 'status': 'in-progress',
+            'scope': 'signed-completed-callback-lifecycle-observation', 'fullTicketQualification': False,
+            'retainedInvocationSucceeded': False, 'physicalStoreRetirementProved': False, 'cases': []}
+    else:
+        result = {'schemaVersion': 'latent.typescript.fetch-runtime.v1', 'status': 'in-progress',
+            'scope': 'finite-signed-default-fetch-json-body-subset', 'fullTicketQualification': False,
+            'unchangedPublishedClients': 'not-run', 'privateConsumer': 'not-run', 'cases': []}
     expires, stage = time.monotonic()+300, 'sign'
+    node, refusals_retained = None, False
     try:
         original = build_evidence(artifact)
         result['artifact'] = original
@@ -251,7 +351,8 @@ def execute(artifact, native, output):
             config = configuration(work/'node', signed, startup, credential)
             result['configurationIdentity'] = file_identity(config)
             stage = 'node'
-            node = connect(client, native['latentd'], work/'node', config, 'examples', 1)
+            node = connect(client, native['latentd'], work/'node', config, 'examples', 1,
+                           control_refusal_diagnostic=completed_capture_diagnostic)
             cleanup.callback(node.close)
             probe = Probe(node, file_identity(native['latentd']))
             source = signed/'typescript-fetch'
@@ -262,57 +363,64 @@ def execute(artifact, native, output):
             target = deploy(client, source/'deployment.json', publication)
             origin = startup['origins']['primary']
             address = f"http://{origin['host']}:{origin['port']}"
-            for phase, selected in (('runtime-denied', None), ('http-denied', 'runtime')):
-                stage = phase
-                if selected is not None:
-                    runtime, authorized = grants(client, node, publication, origin)
-                    target = deploy(client, source/'deployment.json', publication,
-                        generation=str(target['generation']), grants=runtime)
-                row = call(client, target, 'typescript-fetch', 'run', [1, address+'/conformance/json'], 'fetch-'+phase)
-                result[phase] = row
-                require_denied(row)
-                retire(client, probe, target, output, phase)
+            if completed_capture_diagnostic:
+                _runtime, authorized = grants(client, node, publication, origin)
+            else:
+                for phase, selected in (('runtime-denied', None), ('http-denied', 'runtime')):
+                    stage = phase
+                    if selected is not None:
+                        runtime, authorized = grants(client, node, publication, origin)
+                        target = deploy(client, source/'deployment.json', publication,
+                            generation=str(target['generation']), grants=runtime)
+                    with observe_case_failure(client, target, output, phase, result):
+                        row = call(client, target, 'typescript-fetch', 'run', [1, address+'/conformance/json'], 'fetch-'+phase)
+                        result[phase] = row
+                        require_denied(row)
+                        retire(client, probe, target, output, phase)
             target = deploy(client, source/'deployment.json', publication,
                 generation=str(target['generation']), grants=authorized)
-            vectors = [('entry', 1, '/conformance/json', 'entered', 0),
-                ('request-ready', 2, '/conformance/json', 'request-ready', 0),
-                ('promise-ready', 3, '/conformance/json', 'promise-ready', 0),
-                ('request-copy-ready', 4, '/conformance/json', 'request-copy-ready', 0),
-                *((name, mode, '/conformance/json', expected, 0)
-                  for name, mode, expected in EVENT_CLONE_VECTORS),
-                *((name, mode, '/conformance/json', expected, 0)
-                  for name, mode, expected in ABORT_CLONE_VECTORS),
-                *((name, mode, '/conformance/json', expected, 0)
-                  for name, mode, expected in ABORT_ANY_VECTORS),
-                *((name, mode, '/conformance/json', expected, 0)
-                  for name, mode, expected in ABORT_DEFAULT_VECTORS),
-                *((name, mode, '/conformance/json', expected, 0)
-                  for name, mode, expected in ABORT_FANOUT_VECTORS),
-                ('json', 0, '/conformance/json', '1:200:'+json_bytes(DOMAIN).decode()+':used', 1),
-                ('http404', 0, '/conformance/status/404',
-                    '1:404:'+json_bytes({'status':404, 'message':'domain-error'}).decode()+':used', 1),
-                ('fresh', 0, '/conformance/json', '1:200:'+json_bytes(DOMAIN).decode()+':used', 1)]
-            for name, mode, path, expected, outbound in vectors:
+            for name, mode, path, expected, outbound in execution_vectors(completed_capture_diagnostic):
                 stage = name
-                row = call(client, target, 'typescript-fetch', 'run', [mode, address+path], 'fetch-'+name)
-                require_result(row, expected, outbound)
-                result['cases'].append(name)
-                retire(client, probe, target, output, name)
+                with observe_case_failure(client, target, output, name, result):
+                    row = call(client, target, 'typescript-fetch', 'run', [mode, address+path], 'fetch-'+name)
+                    if completed_capture_diagnostic and name == 'combinator-completed-retained':
+                        require_completed_capture_refusal(row)
+                    else:
+                        require_result(row, expected, outbound)
+                    retire(client, probe, target, output, name)
+                    result['cases'].append(name)
             delete_all(client, [target['name']])
             stop(client, node)
             result['shutdown'] = stopped_record(node)
             require(result['shutdown']['reaped'] and result['shutdown']['record']['clean'], 'fetch-runtime-node-shutdown')
+            if completed_capture_diagnostic:
+                observation = retain_runtime_owner_refusals(node, output)
+                refusals_retained = True
+                owners = require_completed_capture_owners(observation)
+                result['completedCapture'] = {'controlAndFreshFulfilled': True,
+                    'retainedDisposition': 'runtime-lifecycle-unproven', 'hostOwnerBuckets': owners,
+                    'ownerAttribution': 'aggregate-native-bucket-with-matched-release-control',
+                    'physicalStoreRetirementProved': False, 'fullTicketQualification': False}
             peer.stop()
-            result['peer'] = peer_evidence(json.loads(bytes(peer.buffers[0]).splitlines()[0]))
+            peer_observation = json.loads(bytes(peer.buffers[0]).splitlines()[0])
+            result['peer'] = (empty_peer_evidence(peer_observation) if completed_capture_diagnostic
+                              else peer_evidence(peer_observation))
             require(peer.owner.finished, 'fetch-runtime-peer-not-reaped')
         require(build_evidence(artifact) == original, 'fetch-runtime-built-artifact-changed')
-        result.update(status='passed', signedExecution='passed', providerExecution='passed')
+        if completed_capture_diagnostic:
+            result.update(status='observed', signedGuestExecuted=True,
+                          retainedInvocationSucceeded=False, physicalStoreRetirementProved=False)
+        else:
+            result.update(status='passed', signedExecution='passed', providerExecution='passed')
         write_json(output/'qualification.json', result)
         return result
-    except BaseException:
+    except BaseException as failure:
         result.update(status='failed', stage=stage)
-        write_json(output/'FAILED.json', result)
+        record_failure(output/'FAILED.json', result, failure)
         raise
+    finally:
+        if completed_capture_diagnostic and node is not None and not refusals_retained:
+            retain_runtime_owner_refusals(node, output)
 
 
 def native_inputs(native, native_tuple, prepared):
@@ -322,6 +430,72 @@ def native_inputs(native, native_tuple, prepared):
     require(native is not None and native_tuple is not None, 'fetch-runtime-native-input-selection')
     binaries = {name: native/name for name in PRODUCTS}
     return binaries, ordinary_tuple(native_tuple, binaries)
+
+
+def diagnose_completed_capture(qualified, output, *, native=None, native_tuple=None, prepared=None):
+    """Observe a separate known lifecycle refusal using the already built signed-Fetch component."""
+    qualified, output = Path(qualified).resolve(), Path(output).resolve()
+    native, native_tuple, prepared = (None if path is None else Path(path).resolve()
+                                     for path in (native, native_tuple, prepared))
+    require(qualified != ROOT and ROOT not in qualified.parents and output != ROOT and ROOT not in output.parents
+        and qualified != output and qualified not in output.parents and output not in qualified.parents,
+        'fetch-runtime-completed-capture-output-separation')
+    originals, identity = native_inputs(native, native_tuple, prepared)
+    standard_path = qualified/'qualification.json'
+    standard = read_json(standard_path)
+    require(standard.get('schemaVersion') == 'latent.typescript.signed-fetch-subset.v1'
+        and standard.get('status') == 'passed' and standard.get('fullTicketQualification') is False
+        and standard.get('nativeTuple') == identity == read_json(qualified/'native-inputs.json')
+        and standard.get('runtimeProfile') == IMPORT_PROFILE and standard.get('fetchProfile') == PROFILE,
+        'fetch-runtime-completed-capture-normal-owner')
+    standard_execution = qualified/'node/qualification.json'
+    standard_node = read_json(standard_execution)
+    require(standard.get('execution') == file_identity(standard_execution)
+        and standard_node.get('status') == 'passed' and standard_node.get('signedExecution') == 'passed'
+        and standard_node.get('providerExecution') == 'passed' and standard_node.get('cases') == standard.get('cases'),
+        'fetch-runtime-completed-capture-normal-execution')
+    app, artifact = qualified/'application', qualified/'build'
+    source = inventory(snapshot(app))
+    require(digest(source) == standard.get('sourceIdentityDigest')
+        and all(read_file(app/'src'/name) == read_file(ROOT/FIXTURE/name)
+                for name in ('main.ts', 'default-client.ts'))
+        and read_file(app/'wit/world.wit') == read_file(ROOT/FIXTURE/'world.wit'),
+        'fetch-runtime-completed-capture-application-source')
+    build = build_evidence(artifact)
+    require(standard.get('component') == build['component']
+        and standard.get('build') == file_identity(artifact/'BUILD-COMPLETE.json'),
+        'fetch-runtime-completed-capture-built-component')
+    binaries = {name: qualified/'selected-native'/name for name in PRODUCTS}
+    captured = {name: file_identity(path, 512*1024*1024) for name, path in binaries.items()}
+    require(captured == {name: file_identity(path, 512*1024*1024) for name, path in originals.items()},
+        'fetch-runtime-completed-capture-native-identity')
+    output = fresh(output)
+    try:
+        observed = execute(artifact, binaries, output/'node', completed_capture_diagnostic=True)
+        require(observed.get('status') == 'observed' and observed.get('signedGuestExecuted') is True
+            and observed.get('retainedInvocationSucceeded') is False
+            and observed.get('physicalStoreRetirementProved') is False
+            and observed.get('cases') == [row[0] for row in COMPLETED_CAPTURE_VECTORS],
+            'fetch-runtime-completed-capture-observation')
+        require(source == inventory(snapshot(app)) and build == build_evidence(artifact)
+            and captured == {name: file_identity(path, 512*1024*1024) for name, path in binaries.items()}
+            and identity == native_inputs(native, native_tuple, prepared)[1]
+            and standard == read_json(standard_path), 'fetch-runtime-completed-capture-input-changed')
+        result = {'schemaVersion': 'latent.typescript.completed-capture-diagnostic.v1', 'status': 'observed',
+            'signedGuestExecuted': True, 'retainedInvocationSucceeded': False,
+            'retainedOutcome': 'runtime-lifecycle-unproven', 'physicalStoreRetirementProved': False,
+            'fullTicketQualification': False, 'sourceIdentityDigest': digest(source),
+            'component': build['component'], 'nativeTuple': identity,
+            'standardQualification': file_identity(standard_path),
+            'nodeObservation': file_identity(output/'node/qualification.json'),
+            'ownerRefusals': file_identity(output/'node/runtime-owner-refusals.json'),
+            'cases': observed['cases']}
+        write_json(output/'observation.json', result)
+        return result
+    except BaseException:
+        write_json(output/'FAILED.json', {'status': 'failed', 'fullTicketQualification': False,
+                                          'physicalStoreRetirementProved': False})
+        raise
 
 
 def qualify(output, tools, engine, splicer, native=None, native_tuple=None, prepared=None):
@@ -367,8 +541,9 @@ def qualify(output, tools, engine, splicer, native=None, native_tuple=None, prep
                 'Abort-streaming-cancellation-timeout-races', 'reaction-timer-memory-limits', 'cross-tenant-reuse']}
         write_json(output/'qualification.json', result)
         return result
-    except BaseException:
-        write_json(output/'FAILED.json', {'status': 'failed', 'stage': stage, 'fullTicketQualification': False})
+    except BaseException as failure:
+        record_failure(output/'FAILED.json', {
+            'status': 'failed', 'stage': stage, 'fullTicketQualification': False}, failure)
         raise
 
 
@@ -378,6 +553,11 @@ if __name__ == '__main__':
         parser.add_argument('--'+name, type=Path, required=True)
     for name in ('native', 'native-tuple', 'prepared-qualification'):
         parser.add_argument('--'+name, type=Path)
+    parser.add_argument('--observe-completed-capture-from', type=Path)
     args = parser.parse_args()
-    print(json.dumps(qualify(args.output, args.tools, args.engine, args.splicer,
-        args.native, args.native_tuple, args.prepared_qualification)))
+    if args.observe_completed_capture_from is not None:
+        print(json.dumps(diagnose_completed_capture(args.observe_completed_capture_from, args.output,
+            native=args.native, native_tuple=args.native_tuple, prepared=args.prepared_qualification)))
+    else:
+        print(json.dumps(qualify(args.output, args.tools, args.engine, args.splicer,
+            args.native, args.native_tuple, args.prepared_qualification)))

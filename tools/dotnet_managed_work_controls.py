@@ -329,12 +329,36 @@ TIMER_WAIT_CASES = (
     'reset_fence_refuses_managed_and_native_before_registration')
 
 
+TIMER_PUMP_CASES = (
+    'async_poll_does_not_retire_a_polled_pending_wait',
+    'async_poll_retires_only_never_polled_timers',
+    'failed_reentrant_timer_admission_retains_provisional_wait',
+    'failed_host_settlement_is_not_retried_or_a_successful_host_retirement',
+    'in_flight_owner_counts_during_reentry_and_nested_poll',
+    'interrupted_retirement_fences_final_drain_without_retry',
+    'repeated_async_polls_reuse_the_existing_capacity')
+
+
+TIMER_READY_CASES = (
+    'interrupted_ready_reap_does_not_retry_and_fences_final_drain',
+    'ready_block_retires_the_original_unpolled_timer',
+    'ready_poll_keeps_the_input_timer_alias_live_while_reaping_another',
+    'ready_poll_leaves_the_started_wait_for_the_original_drain',
+    'ready_poll_rechecks_readiness_after_reentrant_retirement',
+    'ready_poll_reentry_keeps_the_in_flight_original_owner',
+    'ready_poll_retires_the_original_unpolled_timer',
+    'ready_poll_without_a_retired_timer_does_not_create_a_pump',
+    'repeated_ready_polls_after_reap_create_no_canonical_work')
+
+
 def verify_timer_wait(output: Path) -> dict:
     """Compile the actual Rust Timer/Owner source with closed dependency ports."""
     output = fresh(Path(output).absolute())
     fixture = 'tools/fixtures/dotnet-timer-wait-control.rs'
-    names = (fixture, 'sdk/dotnet-guest/runtime/http/owner.rs', 'sdk/dotnet-guest/runtime/http/managed.rs',
-        'sdk/dotnet-guest/runtime/http/timer.rs')
+    pump_fixture = 'tools/fixtures/timer-pump-source-control.rs'
+    names = (fixture, pump_fixture, 'sdk/dotnet-guest/runtime/http/owner.rs',
+        'sdk/dotnet-guest/runtime/http/managed.rs', 'sdk/dotnet-guest/runtime/http/timer.rs',
+        'sdk/dotnet-guest/runtime/http/pump.rs')
     source = output/'source'
     for name in names:
         path = source/name; path.parent.mkdir(parents=True, exist_ok=True)
@@ -356,9 +380,48 @@ def verify_timer_wait(output: Path) -> dict:
         require(raw.count(('test '+name+' ... ok').encode('ascii')) == 1, 'timer-wait-source-control-case')
         rows.append({'control': name, 'passed': True, 'productionTimerOwnerSource': True,
             'ledgerClockPumpQuota': 'explicit-test-ports', 'guestQualified': False})
+    pump_executable = output/('timer-pump-control.exe' if sys.platform == 'win32' else 'timer-pump-control')
+    commands.run('timer-pump-source-compile', rustc, '--edition=2021', '--test', source/pump_fixture, '-o', pump_executable)
+    pump_raw = commands.run('timer-pump-source-execute', pump_executable, '--test-threads=1')
+    require(len(pump_raw) <= 16384 and b'test result: ok. 7 passed; 0 failed; 0 ignored;' in pump_raw,
+        'timer-pump-source-control-summary')
+    pump_rows = []
+    for name in TIMER_PUMP_CASES:
+        require(pump_raw.count(('test '+name+' ... ok').encode('ascii')) == 1, 'timer-pump-source-control-case')
+        pump_rows.append({'control': name, 'passed': True, 'productionTimerPumpOwnerSource': True,
+            'ledgerClockAbiQuota': 'explicit-test-ports', 'guestQualified': False})
     require(inventory(snapshot(source)) == before, 'timer-wait-source-control-source-changed')
+    # Preserve the original seven-case fixture and receipt shape. The ready-path
+    # source-splice control has a distinct, separately retained receipt.
+    original_commands = list(commands.records)
+    ready_fixture = 'tools/fixtures/timer-ready-source-control.rs'
+    ready_names = (ready_fixture, 'sdk/dotnet-guest/runtime/http/owner.rs',
+        'sdk/dotnet-guest/runtime/http/timer.rs', 'sdk/dotnet-guest/runtime/http/pump.rs',
+        'sdk/dotnet-guest/runtime/http/poll.rs')
+    ready_source = output/'ready-source'
+    for name in ready_names:
+        path = ready_source/name; path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(read_file(ROOT/name))
+    ready_before = inventory(snapshot(ready_source))
+    ready_executable = output/('timer-ready-control.exe' if sys.platform == 'win32' else 'timer-ready-control')
+    commands.run('timer-ready-source-compile', rustc, '--edition=2021', '--test',
+        ready_source/ready_fixture, '-o', ready_executable)
+    ready_raw = commands.run('timer-ready-source-execute', ready_executable, '--test-threads=1')
+    require(len(ready_raw) <= 16384 and b'test result: ok. 9 passed; 0 failed; 0 ignored;' in ready_raw,
+        'timer-ready-source-control-summary')
+    ready_rows = []
+    for name in TIMER_READY_CASES:
+        require(ready_raw.count(('test '+name+' ... ok').encode('ascii')) == 1,
+            'timer-ready-source-control-case')
+        ready_rows.append({'control': name, 'passed': True, 'productionTimerPollPumpOwnerSource': True,
+            'ledgerClockAbiResourceQuota': 'explicit-test-ports', 'guestQualified': False})
+    require(inventory(snapshot(ready_source)) == ready_before, 'timer-ready-source-control-source-changed')
+    write_json(output/'logs/timer-ready-source-controls.json', {
+        'profile': 'dotnet-ready-timer-source-controls-v1', 'source': json.loads(ready_before),
+        'cases': ready_rows, 'commands': commands.records[len(original_commands):], 'guestQualified': False,
+        'actualCanonicalBorrowAndNativeLedgerQualified': False})
     value = {'profile': 'dotnet-deferred-timer-source-controls-v1', 'source': json.loads(before),
-        'cases': rows, 'commands': commands.records, 'guestQualified': False,
+        'cases': rows, 'pumpCases': pump_rows, 'commands': original_commands, 'guestQualified': False,
         'actualHostClockAndNativeLedgerQualified': False}
     write_json(output/'timer-wait-source-controls.json', value)
     return value

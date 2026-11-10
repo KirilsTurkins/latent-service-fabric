@@ -89,7 +89,7 @@ public final class TransactionTransportTest {
             result.setApplicationStateCommitted(true).setCommit(Transaction.CommitReceipt.newBuilder().setCommandId("command-a").setAttemptId("attempt-a")
                     .setTransactionId("transaction-a").setReceiptId("receipt-a").setCommittedVersion(ByteString.copyFrom(new byte[]{1}))
                     .setCommittedAtUnixMillis(-1L).setSource(source()).addEffectIds("effect-a"));
-            if (payload) result.setSuccess(Invocation.Success.newBuilder().setPayload(ByteString.copyFrom(new byte[]{0, -1})).setMediaType("application/octet-stream"));
+            if (payload) result.setSuccess(Invocation.Success.newBuilder().setPayload(ByteString.copyFrom(new byte[]{0, -1})).setMediaType("application/octet-stream").setCommittedStateVersion("01").addEffectIds("effect-a"));
         } else if (outcome == 3 && payload) {
             result.setBusinessRejection(Invocation.DeclaredError.newBuilder().setCode("business-rejected").setMessage("expected rejection")
                     .setPayload(ByteString.copyFrom(new byte[]{0, -1})).setMediaType("application/octet-stream"));
@@ -179,7 +179,7 @@ public final class TransactionTransportTest {
         private Message reply(String name, Message request) {
             return switch (name) {
                 case "InvokeCommand" -> {
-                    var accepted = command(2, true).toBuilder().setSuccess(Invocation.Success.newBuilder().setPayload(ByteString.copyFrom(new byte[750 * 1024])).setMediaType("application/octet-stream")).build();
+                    var accepted = command(2, true).toBuilder().setSuccess(Invocation.Success.newBuilder().setPayload(ByteString.copyFrom(new byte[750 * 1024])).setMediaType("application/octet-stream").setCommittedStateVersion("01").addEffectIds("effect-a")).build();
                     yield Transaction.InvokeCommandResponse.newBuilder().setCommand(accepted).setInvocation(invoked(accepted)).build();
                 }
                 case "Query" -> Transaction.QueryResponse.newBuilder().setView(view()).setSource(source()).setInvocation(invoked(command(2, true))).setObservedAtUnixMillis(-1L).build();
@@ -443,8 +443,32 @@ public final class TransactionTransportTest {
         }
     }
 
+    private static void expectInvalid(Runnable operation, String label) {
+        try { operation.run(); throw new AssertionError(label); }
+        catch (Protocol.Invalid expected) { checks++; }
+    }
+
+    private static void inlineCommandAssociation() {
+        var full = command(2, true);
+        var inline = full.toBuilder().clearSuccess().build();
+        var invocation = invoked(full);
+        var response = Transaction.InvokeCommandResponse.newBuilder().setCommand(inline).setInvocation(invocation).build();
+        var request = TransactionWire.fromWire(invoke());
+        TransactionProtocol.response(TransactionWire.fromWire(response), request, "tenant-a");
+        var wrongVersion = response.toBuilder().setInvocation(invocation.toBuilder().setSuccess(invocation.getSuccess().toBuilder().setCommittedStateVersion("02"))).build();
+        expectInvalid(() -> TransactionProtocol.response(TransactionWire.fromWire(wrongVersion), request, "tenant-a"), "wrong committed version");
+        var wrongEffect = response.toBuilder().setInvocation(invocation.toBuilder().setSuccess(invocation.getSuccess().toBuilder().clearEffectIds().addEffectIds("other-effect"))).build();
+        expectInvalid(() -> TransactionProtocol.response(TransactionWire.fromWire(wrongEffect), request, "tenant-a"), "wrong effect");
+        var missingLookup = Transaction.LookupCommandResponse.newBuilder().setCommand(inline).build();
+        expectInvalid(() -> TransactionProtocol.response(TransactionWire.fromWire(missingLookup), TransactionWire.fromWire(lookup()), "tenant-a"), "lookup without body");
+        var rejected = command(3, true);
+        var inlineRejected = Transaction.InvokeCommandResponse.newBuilder().setCommand(rejected.toBuilder().clearBusinessRejection()).setInvocation(invoked(rejected)).build();
+        TransactionProtocol.response(TransactionWire.fromWire(inlineRejected), request, "tenant-a");
+        checks += 2;
+    }
+
     public static void main(String[] args) throws Exception {
-        sixteenOperationsAndOwnedSnapshots(); durableFormatsAuditAndExplicitRecovery(); lostResponseAndCancellationNeverResubmit(); malformedAndUnknownResponses(); localProfilesPresenceAndBounds(); effectPlansKeepOriginalCasAndIndependentFacts();
+        inlineCommandAssociation(); sixteenOperationsAndOwnedSnapshots(); durableFormatsAuditAndExplicitRecovery(); lostResponseAndCancellationNeverResubmit(); malformedAndUnknownResponses(); localProfilesPresenceAndBounds(); effectPlansKeepOriginalCasAndIndependentFacts();
         System.out.println("Java transactions: six bounded transport suites; " + checks + " checks passed");
     }
 }

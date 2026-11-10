@@ -80,7 +80,7 @@ unsafe impl wasmtime::MemoryCreator for RefusingCreator {
 # only the reviewed item; every other unsafe site remains subject to the scan.
 GO_OVERLAP_TEST = f"{CRATE}/src/development_go_timer_overlap.rs"
 GO_OVERLAP_TEST_MARKER = '#[cfg(test)]\nmod tests {\n'
-GO_OVERLAP_TEST_SHA256 = "bab2eaa593d4301fd638fd631776cb91cf8808103cbdb067ae54ee150216abf6"
+GO_OVERLAP_TEST_SHA256 = "c80771db84cd7358a595c46a3ea63a268519c70e1690bd2bb74bdb21a5671c81"
 GO_OVERLAP_TEST_ALLOCATOR = '''    #[allow(unsafe_code, reason = "test-only exact allocator-release observation")]
     unsafe impl GlobalAlloc for WatchingAllocator {
         unsafe fn alloc(&self, layout: Layout) -> *mut u8 {

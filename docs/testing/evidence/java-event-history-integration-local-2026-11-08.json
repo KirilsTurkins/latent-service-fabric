@@ -1,0 +1,112 @@
+{
+  "schemaVersion": "latent.phase4.event-history-integration-observation.v1",
+  "qualification": "local temporary integration source and isolated fixture signer; not a merged revision, distribution, or hosted qualification",
+  "integrationSource": {
+    "schemaVersion": "latent.phase4.integration-source.v1",
+    "baseSource": "aa47593fce1130d9578eb952722e7b3939bc22de",
+    "historySource": "4b8cddb22ac3f67dd68587f6cd8c2518d3383a68",
+    "coreSource": "64b81e819e36f95d0f1280e728562fa49b842dee",
+    "description": "Temporary explicit source combination for local integration only; not a merged commit",
+    "overlays": {
+      "crates/latent-core/src/activation_runtime.rs": {
+        "sha256": "sha256:c14be16aeccc026944e6bc60f2d91ec4dfdda3517f66f13a6b12ce4f412c5a2e",
+        "bytes": 26947
+      },
+      "crates/latent-core/src/activation_runtime/tests.rs": {
+        "sha256": "sha256:d32b9843962163f19ed318d3c856b840bdbe3c003fc3f4d805af6e0c9f036d9f",
+        "bytes": 44725
+      },
+      "crates/latent-core/src/budget.rs": {
+        "sha256": "sha256:14c7b687bab34a11b937c731c602620247dedf14e131d48e68bb7587315a2ece",
+        "bytes": 69645
+      },
+      "crates/latent-wire/src/phase4/state_management.rs": {
+        "sha256": "sha256:c335fb113fe88383158e07a334aa9fc5af68e9f10f1b5acc5269860e3dbc43b9",
+        "bytes": 26197
+      },
+      "crates/latent-wire/src/phase4/state_management/command_result.rs": {
+        "sha256": "sha256:3bca68771d5f1a52882e96c400b51482e60d9aed931d57da373d04e5c3bd2b89",
+        "bytes": 14407
+      },
+      "crates/latent-wire/src/phase4/state_management/command_result/audit.rs": {
+        "sha256": "sha256:82d5732780b06614f7b520897b5c787a4c224e6dd115c20caf9b95c9d6fbb6bd",
+        "bytes": 2854
+      },
+      "crates/latent-wire/src/phase4/state_management/command_result/effect.rs": {
+        "sha256": "sha256:cca08f06d001b7a2ec030a1e46aa23ba9035484e358e7cc051f74a77e7962b26",
+        "bytes": 9522
+      },
+      "crates/latent-wire/src/phase4/state_management/recovery_bindings.rs": {
+        "sha256": "sha256:cb84c727be4d54700e287849d2debeca01dd927c0cea1f1c45860f737d4d90a3",
+        "bytes": 4119
+      }
+    },
+    "binaries": {
+      "deferred_event_fault_proxy": {
+        "sha256": "sha256:5a39cc6dbf3444bb7d06c43004f29383852d1b372d14d17bdc39dfde43cf13c0",
+        "bytes": 11930720
+      },
+      "latent": {
+        "sha256": "sha256:0177ad1be1302f753977597b008d22752d32078c1c21bbb56b8c003e9eebdb7d",
+        "bytes": 79680400
+      },
+      "latent-aot-compiler": {
+        "sha256": "sha256:0db8951c27ac7de4e48c1234f6c9bf0ad289268a57eee5d61bb589e6f93a029a",
+        "bytes": 51833424
+      },
+      "latentd": {
+        "sha256": "sha256:80af0dd96cb5e004e1927724a2db7e9c4c46fbe4ff34b1b70ed1b75492b9f1e1",
+        "bytes": 205466152
+      }
+    }
+  },
+  "guestSourceCommit": "aa47593fce1130d9578eb952722e7b3939bc22de",
+  "scenario": {
+    "actualBrokerAckDropped": true,
+    "effectId": "7d5f5ff83d4e071d49d55ec3b065ecaca5c4ed5320bc94753791ae6a063b6169",
+    "firstPage": {
+      "disposition": "EFFECT_DISPOSITION_UNCERTAIN_AFTER_DISPATCH",
+      "dispatchAttempt": 1,
+      "continued": true
+    },
+    "secondPage": {
+      "disposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+      "dispatchAttempt": 2,
+      "duplicateReceipt": true,
+      "exhausted": true
+    },
+    "brokerMessageCount": 1,
+    "brokerIdentityAndPayloadMatched": true,
+    "cleanNodeRetirement": true
+  },
+  "materials": {
+    "guestCapture": {
+      "sha256": "sha256:3bbb91bc8425bd8fe92f7b05e359335fdb6aafe0c7ec6836ecd2ec00deb4adaa",
+      "bytes": 2245
+    },
+    "temporaryIntegrationSource": {
+      "sha256": "sha256:85252219f27b129c050ff7559f458433a9c3354f7e096ec0d1a10beecf702909",
+      "bytes": 2453
+    },
+    "cliHistoryPages": {
+      "sha256": "sha256:0da720e75b70c3bc0285996c6ae8c83631515e2ff20bb8374b99e19f128abeef",
+      "bytes": 2545
+    },
+    "brokerObservation": {
+      "sha256": "sha256:cb3018c67f7aef2e0719c683839adc6357d98571ef78942a948ea8bd9cc76f7d",
+      "bytes": 304
+    },
+    "droppedAckMarker": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "commandResult": {
+      "sha256": "sha256:034e32fe49e00faa5226d0f72a7615b596b3a1607eb6b174ee8172698ce82d6b",
+      "bytes": 959
+    },
+    "nodeRetirement": {
+      "sha256": "sha256:982112c43dce65e5be71004d8f07eaec3c7c99e107563b2f4592c126609268ef",
+      "bytes": 4182
+    }
+  }
+}

@@ -1,0 +1,70 @@
+package dev.latent.sdk.transport;
+
+import dev.latent.sdk.Management;
+import dev.latent.sdk.TransactionClient;
+import dev.latent.sdk.Transactions;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.HexFormat;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
+/** Explicit lost response and fresh-client recovery on a provisioned node. */
+public final class Phase4RealLostResponse {
+    private Phase4RealLostResponse() { }
+    private static String required(String key) {
+        String value = System.getenv(key);
+        if (value == null || value.isEmpty()) throw new IllegalArgumentException("missing fixture field: " + key);
+        return value;
+    }
+    private static void check(boolean value, String label) { if (!value) throw new AssertionError(label); }
+    private static String hex(ByteBuffer value) {
+        ByteBuffer copy = value.asReadOnlyBuffer(); byte[] bytes = new byte[copy.remaining()]; copy.get(bytes);
+        return HexFormat.of().formatHex(bytes);
+    }
+    public static void main(String[] args) throws Exception {
+        String tenant = required("LSF_401_TENANT"), key = "java-sdk-lost-response";
+        var namespace = new Transactions.NamespaceSelector(tenant, required("LSF_401_NAMESPACE"), required("LSF_401_INCARNATION"));
+        var selector = new Transactions.CommandSelector(Optional.of(namespace), "update", Optional.empty(), key, Optional.empty());
+        boolean cancellation = "1".equals(System.getenv("LSF_401_CANCEL_AFTER_DISPATCH"));
+        var options = new Management.CallOptions(Optional.of(cancellation ? 15000L : 5000L));
+        var config = ClientConfig.loopback("http://" + required("LSF_401_ENDPOINT"), tenant, required("LSF_401_TOKEN"));
+        var client = new RpcClient(config);
+        try {
+            if (required("LSF_401_MODE").equals("recover")) {
+                var lookup = new Transactions.LookupCommandRequest(Optional.of(Transactions.currentProfile()), Optional.of(selector), Optional.empty(),
+                        Optional.of(new Management.PublicationRef(required("LSF_401_PUBLICATION"), tenant)));
+                var value = client.lookupCommand(lookup, options).get(10, TimeUnit.SECONDS).value().command().orElseThrow();
+                check(value.outcome().equals(Transactions.CommandOutcome.COMMITTED) && value.metadataDurable() && value.applicationStateCommitted(), "durable commit");
+                check(value.commandId().equals(required("LSF_401_ORIGINAL_ID")) && value.attemptId().equals(required("LSF_401_ORIGINAL_ATTEMPT")) && hex(value.fingerprintSha256()).equals(required("LSF_401_ORIGINAL_FINGERPRINT")), "original identity");
+                var receipt=value.commit().orElseThrow(); check(receipt.receiptId().equals(required("LSF_401_ORIGINAL_RECEIPT")) && receipt.effectIds().equals(List.of(required("LSF_401_ORIGINAL_EFFECT"))), "original receipt");
+                System.out.println("LOST_COMMIT_RECOVERED");
+            } else {
+                check(required("LSF_401_MODE").equals("invoke"), "mode");
+                byte[] version = HexFormat.of().parseHex(required("LSF_401_EXPECTED_VERSION_HEX")); check(version.length > 0, "current key version");
+                var target = new Management.InvocationTarget(tenant, "examples/transaction-java-aggregate", "examples:transactional-aggregate/api@1.0.0", "update", Optional.of("transaction-java-aggregate"));
+                var budget = new Management.ResourceBudget(1_000_000_000L, 67_108_864L, 0, 0, 4_194_304L, 2_097_152L, 0, 0, 0, 1, Optional.of(120_000L));
+                var invocation = new Management.InvokeRequest(Optional.of(key), Optional.empty(), Optional.empty(), Optional.of(target),
+                        ByteBuffer.wrap("[{\"delta\":1,\"reject\":false}]".getBytes(StandardCharsets.UTF_8)), "application/vnd.latent.wit-values.v1+json", Optional.empty(), 0, Optional.empty(), Optional.of(budget), Map.of());
+                var expected = new Transactions.ExpectedVersion(ByteBuffer.wrap("aggregate/count".getBytes(StandardCharsets.UTF_8)), Optional.empty(), Optional.of(ByteBuffer.wrap(version)));
+                var request = new Transactions.InvokeCommandRequest(Optional.of(Transactions.currentProfile()), Optional.of(invocation), Optional.of(selector), "lsf-wit-values-v1", List.of(expected), Optional.empty());
+                boolean failed = false;
+                var pending = client.invokeCommand(request, options);
+                if (cancellation) { Thread.sleep(5000); check(pending.cancel(false), "local waiter cancellation"); }
+                try { pending.get(20, TimeUnit.SECONDS); }
+                catch (Exception error) {
+                    var failure=TransactionClient.clientFailure(error).orElseThrow();
+                    check(failure.transport().dispatched() && failure.transport().outcome().equals(Management.OutcomeKnowledge.UNKNOWN), "dispatched unknown");
+                    check(failure.identity().command().orElseThrow().clientKey().equals(key) && failure.observed().isEmpty(), "original identity without fabricated outcome");
+                    if (cancellation) { check(failure.transport().category().equals(Management.FailureCategory.LOCAL_CANCELLED), "caller cancellation"); System.out.println("CANCELLED_COMMIT_UNKNOWN"); }
+                    failed = true;
+                }
+                check(failed, "response must be withheld");
+                System.out.println("LOST_RESPONSE_UNKNOWN");
+            }
+        } finally { check(client.shutdown(Duration.ofSeconds(5)).clean(), "client retirement"); }
+    }
+}

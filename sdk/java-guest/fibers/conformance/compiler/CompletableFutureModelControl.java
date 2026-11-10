@@ -174,7 +174,7 @@ public final class CompletableFutureModelControl {
         require(future.getMethod(new MethodDescriptor("orTimeout", ValueType.LONG, ValueType.object(STANDARD + "TimeUnit"),
             ValueType.object(STANDARD + "CompletableFuture"))) == null, "unsupported-method-no-fallback");
         int lowered = 0, monitorBodies = 0;
-        boolean loweredResultSettlement = false;
+        boolean loweredResultSettlement = false, loweredQueuedSettlement = false;
         for (ClassHolder cls : models) for (MethodHolder method : cls.getMethods()) {
             if (method.getProgram() == null) continue;
             boolean monitor = false, ownedCall = false;
@@ -191,16 +191,26 @@ public final class CompletableFutureModelControl {
                 require(ownedCall, "result-settlement-owned-call");
                 loweredResultSettlement = true;
             }
+            if (cls.getName().equals(SDK + "CompletableFuture$Action") && method.getName().equals("closeQueued")) {
+                boolean fenced = false;
+                for (BasicBlock block : method.getProgram().getBasicBlocks()) for (Instruction instruction : block)
+                    if (instruction instanceof InvokeInstruction invoke
+                            && invoke.getMethod().getClassName().equals("dev.latent.guest.runtime.Activation")
+                            && invoke.getMethod().getName().equals("fenceUncertainQueuedWorkSettlement")) fenced = true;
+                require(ownedCall && fenced, "queued-settlement-original-owner-fence");
+                loweredQueuedSettlement = true;
+            }
             lowered++;
         }
         require(lowered >= 15, "actual-owned-monitor-coroutine-bodies");
         require(loweredResultSettlement, "actual-result-settlement-coroutine");
+        require(loweredQueuedSettlement, "actual-queued-settlement-coroutine");
         ClassHolder unrelated = new ClassHolder("outside.library.CompletableFuture");
         MethodHolder identity = new MethodHolder("untouched", ValueType.VOID);
         Program program = new Program(); program.createVariable(); program.createBasicBlock().add(new ExitInstruction());
         identity.setProgram(program); unrelated.addMethod(identity);
         transform.invoke(plugin, unrelated, context);
         require(identity.getProgram() == program && program.basicBlockCount() == 1, "application-model-identity-preserved");
-        System.out.println("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;canonical-api-and-helper-identities;resolved-reference-closure;unsupported-no-fallback;result-settlement-fence;actual-coroutine-monitors=" + monitorBodies + ";owned-callback-bodies=" + lowered + ";bodies=" + methods + ";actual-generated-callbacks=" + callbacks + ";application-identity");
+        System.out.println("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;canonical-api-and-helper-identities;resolved-reference-closure;unsupported-no-fallback;result-settlement-fence;queued-settlement-fence;actual-coroutine-monitors=" + monitorBodies + ";owned-callback-bodies=" + lowered + ";bodies=" + methods + ";actual-generated-callbacks=" + callbacks + ";application-identity");
     }
 }

@@ -1,0 +1,61 @@
+{
+  "description": "Go caller cancellation after durable rejection with response withheld, followed by fresh-context recovery",
+  "qualification": "Local normal node built from combined unmerged source, separately built client candidate and disposable signer; not hosted or distribution qualification.",
+  "harnessSha256": "3bf31029e5b80ec609e856185b23c58d7c46a796fec34278c226e2e311c48666",
+  "goLogSha256": "4bfc55829047e68304b274bd07e056ff93c5d27a7476471e3df3652973c09d48",
+  "nodeSha256": "sha256:48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "goSourceSha256": "sha256:9fe21b581cb202803cf86054227dd9b66f65de106c93b78b8b4e6a550ba3a664",
+  "goBinarySha256": "sha256:5755713dc477edc6786da80a70402d06662c8283e8e0ac9816762dba74bea17c",
+  "proxySourceSha256": "sha256:9fd5ba5c7bace82acb2eca31ef8c52a987bcd6e22dd6c6085ef2136f32b22d2a",
+  "observation": {
+    "cancelledAfterDurableObservation": true,
+    "durableCommandCount": "3",
+    "extraQueuedConnections": 0,
+    "fingerprintSha256": "847593c834d75f284974a3c0714d2248f585c51b3770ef6504aa3fe7f3be8aad",
+    "freshContextRecoveredOriginalRejection": true,
+    "laterBrokerMessages": 2,
+    "laterBusinessCount": 2,
+    "laterEffectDisposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+    "originalAttemptId": "1",
+    "originalCommandId": "5f8ff1676cc88bc570584001144400ff0dc1c7ce716af2b529a3e4ffc2a1aee6",
+    "singleObservedRequestStream": 1
+  },
+  "proxy": {
+    "extraConnections": 0,
+    "failureCategory": "EOFError",
+    "requestStreams": 1
+  },
+  "controlledCrash": {
+    "exitStatus": -9,
+    "processId": 250302,
+    "reaped": true,
+    "cleanShutdownObserved": false,
+    "nativeRetirementReportObserved": false
+  },
+  "postCrashClientRecoveries": 6,
+  "postCrashBusinessCount": 7,
+  "postCrashBrokerMessages": 7,
+  "finalShutdown": {
+    "reaped": true,
+    "clean": true,
+    "effects": {
+      "pending": 0,
+      "active": 0,
+      "acknowledged": 7,
+      "known_failed": 0,
+      "uncertain": 0,
+      "retry_scheduled": 0,
+      "blocked": 0,
+      "expired": 0,
+      "dead_lettered": 0,
+      "payload_bytes": 0,
+      "oldest_unresolved_millis": null
+    }
+  },
+  "limitations": [
+    "This covers cancellation after a durable business rejection and before its response, not cancellation before dispatch, during commit, or after a successful commit.",
+    "The proxy counted the observed request stream and no additional queued connections; this is not a universal retry proof.",
+    "The fixture makes one separate deliberate changed-input conflict probe and one distinct later business command; neither is an automatic retry.",
+    "Guest execution count was not independently measured. All later effects were acknowledged before the controlled crash."
+  ]
+}

@@ -38,7 +38,7 @@ pub use limits::{IoLimits, IoSnapshot};
 pub use stream::{IoStreamReader, IoStreamTerminal, IoStreamWriter};
 pub use transfer::{
     IoInputChunk, IoOutputChunk, IoOutputCopy, IoTransfer, IoTransferBuffer, IoTransferOptions,
-    PreparedIoCopy,
+    PreparedIoCopy, PreparedIoInput,
 };
 
 const OPERATION_METADATA: usize = 2048;

@@ -19,6 +19,10 @@ use tokio::{
 #[allow(dead_code)]
 mod component;
 use super::runtime::{package, provenance};
+#[path = "outbound/conformance.rs"]
+mod conformance;
+#[path = "outbound/cross_tenant.rs"]
+mod cross_tenant;
 
 fn configuration(port: u16) -> StreamProviderConfig {
     StreamProviderConfig {
@@ -44,13 +48,20 @@ fn configuration(port: u16) -> StreamProviderConfig {
 }
 
 async fn configured(root: &std::path::Path, port: u16) -> Fixture {
+    configured_with_configuration(root, port, configuration(port)).await
+}
+
+async fn configured_with_configuration(
+    root: &std::path::Path,
+    port: u16,
+    config: StreamProviderConfig,
+) -> Fixture {
     let caller = packages::outbound_streams(component::bytes_with_contract(
         port,
         super::component::CALLER,
     ));
     let callee = packages::callee(42);
     let signers = package::Signers::new(latent_signing::PROVENANCE_BUILD_TYPE);
-    let config = configuration(port);
     let mut uploads = vec![];
     for bundle in [&caller, &callee] {
         let mut observation = provenance::observation();
@@ -62,6 +73,8 @@ async fn configured(root: &std::path::Path, port: u16) -> Fixture {
         source.extend_from_slice(include_bytes!("component.rs"));
         source.extend_from_slice(include_bytes!("packages.rs"));
         source.extend_from_slice(include_bytes!("outbound/owners.rs"));
+        source.extend_from_slice(include_bytes!("outbound.rs"));
+        source.extend_from_slice(include_bytes!("outbound/conformance.rs"));
         source.extend_from_slice(include_bytes!(
             "../../../../wit/platform/network/package.wit"
         ));
@@ -153,10 +166,20 @@ fn replace_record(
     operation: &str,
     document: Option<&[u8]>,
 ) {
+    replace_tenant_record(f, "tenant-a", kind, id, operation, document);
+}
+fn replace_tenant_record(
+    f: &Fixture,
+    tenant: &str,
+    kind: RecordKind,
+    id: &str,
+    operation: &str,
+    document: Option<&[u8]>,
+) {
     let deadline = Instant::now() + Duration::from_secs(2);
     let revision = f
         .policies
-        .get("tenant-a", kind, id, 65536, deadline)
+        .get(tenant, kind, id, 65536, deadline)
         .unwrap()
         .value()
         .as_ref()
@@ -165,7 +188,7 @@ fn replace_record(
     f.policies
         .mutate(
             MutationRequest {
-                tenant: "tenant-a",
+                tenant,
                 actor: "operator",
                 kind,
                 id,

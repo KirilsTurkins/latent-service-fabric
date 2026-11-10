@@ -14,6 +14,14 @@ const REQUEST_METADATA_BYTES: u64 = 2 * 1024 * 1024;
 const WORK_BYTES: u64 = 4 * transaction_contract::STAGED_BYTES as u64 + 16 * 1024 * 1024;
 const RESPONSE_BYTES: u64 = 8 * transaction_contract::VALUE_BYTES as u64 + 16 * 1024;
 
+/// The minimum actual global byte charge for one accepted ordinary request.
+pub(super) const fn minimum_ingress_bytes() -> u64 {
+    REQUEST_METADATA_BYTES
+        + WORK_BYTES
+        + RESPONSE_BYTES
+        + latent_core::native_capacity::NATIVE_RESERVATION_METADATA_BYTES
+}
+
 pub(super) fn reserve_ingress(
     owner: &NativeCapacityOwner,
     encoded_request_bytes: usize,
@@ -132,6 +140,17 @@ impl TransactionRetention {
 
     pub(super) fn request_bytes(&self) -> u64 {
         self.native.request_bytes()
+    }
+
+    pub(super) fn total_native_bytes(&self) -> Result<u64, PlatformError> {
+        self.native
+            .request_bytes()
+            .checked_add(self.native.work_bytes())
+            .and_then(|bytes| bytes.checked_add(self.native.response_bytes()))
+            .and_then(|bytes| {
+                bytes.checked_add(latent_core::native_capacity::NATIVE_RESERVATION_METADATA_BYTES)
+            })
+            .ok_or_else(unavailable)
     }
 
     pub(super) fn response_bytes(&self) -> u64 {

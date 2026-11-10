@@ -41,6 +41,9 @@ pub struct Cli {
     /// Explicit JSON credential profile file; no automatic discovery.
     #[arg(long, global = true, value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
     pub config: Option<PathBuf>,
+    /// Check the opened credential configuration against a SHA-256 line read from stdin.
+    #[arg(long, global = true)]
+    pub expect_config_digest_stdin: bool,
     #[arg(long, global = true, value_name = "NAME")]
     pub profile: Option<String>,
     /// Select the supported transaction manifest profile for local preparation

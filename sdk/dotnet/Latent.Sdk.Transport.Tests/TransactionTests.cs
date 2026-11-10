@@ -53,9 +53,7 @@ internal static partial class Program
             value.TechnicalFailure = new() { Code = "cancelled", Message = "physical owner retired" };
             value.ProvenAbort = new() { CommandId = value.CommandId, AttemptId = value.AttemptId, TransactionId = "transaction-a", OwnerFence = ByteString.CopyFrom([1, 2]) };
         }
-        // Existing Invoke.Success uses an explicitly present empty stateless version;
-        // the transaction receipt carries the separately versioned state identity.
-        if (value.Success is not null) value.Success.ClearCommittedStateVersion();
+        if (value.Success is not null) { value.Success.CommittedStateVersion = "01"; value.Success.EffectIds.Add("effect-a"); }
         return value;
     }
     private static WireTx.EffectReceipt TxEffect() => new()
@@ -69,6 +67,32 @@ internal static partial class Program
         catch (Tx.TransactionException failure) { Check(failure.Failure.Transport.Category == category, "unexpected transaction failure category " + failure.Failure.Transport.Category.Value); return failure.Failure; }
         catch (Tx.TransactionCancellationException failure) { Check(failure.Failure.Transport.Category == category, "unexpected transaction cancellation category"); return failure.Failure; }
         throw new InvalidOperationException("expected independent transaction failure facts");
+    }
+
+    private static Task TransactionInlineOutcomeAssociation()
+    {
+        var original = TxInvoke();
+        var command = TxWireCommand();
+        var invocation = Peer.Success(); invocation.Success = command.Success.Clone();
+        command.Success = null;
+        var response = new WireTx.InvokeCommandResponse { Command = command, Invocation = invocation };
+        void Validate(WireTx.InvokeCommandResponse wire) => TransactionRules.Response(
+            ProfileCodec.FromWire(wire, typeof(Tx.InvokeCommandResponse)), original,
+            new CallState(Options("http://127.0.0.1:1"), original, Defaults, CancellationToken.None, transactional: true));
+        void Reject(Action operation) { try { operation(); throw new InvalidOperationException("accepted invalid association"); } catch (FormatException) { Check(true, "rejected invalid association"); } }
+        Validate(response); Check(true, "inline committed body accepted");
+        var wrongVersion = response.Clone(); wrongVersion.Invocation.Success.CommittedStateVersion = "02";
+        Reject(() => Validate(wrongVersion));
+        var wrongEffect = response.Clone(); wrongEffect.Invocation.Success.EffectIds.Clear(); wrongEffect.Invocation.Success.EffectIds.Add("other-effect");
+        Reject(() => Validate(wrongEffect));
+        var lookup = TxLookup();
+        Reject(() => TransactionRules.Response(ProfileCodec.FromWire(new WireTx.LookupCommandResponse { Command = command }, typeof(Tx.LookupCommandResponse)), lookup,
+            new CallState(Options("http://127.0.0.1:1"), lookup, Defaults, CancellationToken.None, transactional: true)));
+        var rejected = TxWireCommand(3); var rejectionInvocation = Peer.Success(); rejectionInvocation.DeclaredError = rejected.BusinessRejection.Clone();
+        rejected.BusinessRejection = null;
+        Validate(new WireTx.InvokeCommandResponse { Command = rejected, Invocation = rejectionInvocation });
+        Check(true, "inline rejected body accepted");
+        return Task.CompletedTask;
     }
 
     // A real HTTP/2 serialization peer; this does not claim signed-node execution.

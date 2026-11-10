@@ -5,10 +5,13 @@ mod inputs;
 mod policy;
 mod resource_neutral;
 
+pub(super) use current_java::sign_captured_event_java;
 pub(super) use current_java::sign_current_465_java;
+pub(super) use current_java::sign_live_event_java;
 pub(super) use current_java::sign_november_current_java;
 pub(super) use current_java::sign_poststage_http_java;
 pub(super) use current_java::sign_reconstructed_current_java;
+pub(super) use current_java::sign_recovery_event_java;
 pub(super) use current_java::sign_refreshed_current_java;
 pub(super) use current_java::sign_values_java;
 pub(super) use current_java::{
@@ -73,6 +76,25 @@ pub(super) fn directory(path: &Path) -> Result<()> {
         fs::set_permissions(path, fs::Permissions::from_mode(0o700))?;
     }
     Ok(())
+}
+
+/// Explicit local demo trust for one Rust Phase 4 transaction build.
+/// The ordinary demo path retains its existing stateless packaging profile.
+pub(super) fn sign_rust_transaction(output: &Path, input: &Path) -> Result<()> {
+    if !output.is_absolute() || output.exists() {
+        return Err("choose a fresh absolute transaction demo output".into());
+    }
+    let build = inputs::load_rust_transaction(input)?;
+    sign_checked(output, vec![build], false, None)
+}
+
+/// Explicit demo trust for one completed maintained transaction build.
+pub(super) fn sign_transaction(output: &Path, input: &Path) -> Result<()> {
+    if !output.is_absolute() || output.exists() {
+        return Err("choose a fresh absolute transaction demo output".into());
+    }
+    let build = inputs::load_transaction(input)?;
+    sign_checked(output, vec![build], false, None)
 }
 
 pub(super) fn sign_demo(output: &Path, paths: &[OsString]) -> Result<()> {

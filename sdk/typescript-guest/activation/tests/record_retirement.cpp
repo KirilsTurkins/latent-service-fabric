@@ -67,14 +67,16 @@ struct Jobs final : Accounting {
 };
 struct Native final : PromiseAccounting {
   unsigned live = 0, acknowledged = 0;
-  bool refuse = false, physical_violation = false;
-  bool beforeAllocate(JSContext*, NativeOwner& owner) override {
+  bool refuse = false, deny_admission = false, snapshot = false, physical_violation = false;
+  bool beforeAllocate(JSContext* cx, NativeOwner& owner) override {
+    if (deny_admission) { JS_ReportErrorASCII(cx, "native-limit"); return false; }
+    if (snapshot) return true;
     owner.token = {2, 9}; owner.live = true; ++live; return true;
   }
   bool acknowledgeRetirement(JSContext*, NativeOwner& owner) override {
+    if (!owner.live) return true; // compiler snapshot invokes no host acknowledgement
     if (!destroyed) physical_violation = true;
     if (refuse) return false;
-    if (!owner.live) return false;
     owner.live = false; --live; ++acknowledged; return true;
   }
 };
@@ -129,6 +131,74 @@ int main(int argc, char** argv) {
     passed = passed && records.checkpoint(&cx) && records.checkpoint(&cx) &&
              !records.hasPendingReactions() && native.live == 0 && native.acknowledged == 1 &&
              jobs.tasks == 0 && jobs.queued == 0 && allocations == before;
+  } else if (!std::strcmp(selected, "captured-native-retention")) {
+    PromiseRecords records(native);
+    void* record = nullptr;
+    JSObject captured;
+    watch_next = true;
+    if (!records.beforeAllocate(&cx, &record) || record != watched) return 3;
+    PromiseRecords::capturedCreated(&cx, &captured, record);
+    JSTracer live{};
+    records.sweep(&live);
+    passed = records.collectionCompleted() == 0 && !records.hasPendingPromises() &&
+             !records.hasUnownedCapturedFunctions() && records.checkpoint(&cx) &&
+             !destroyed && native.live == 1 && native.acknowledged == 0;
+    JSTracer dead{&captured};
+    records.sweep(&dead);
+    passed = passed && records.collectionCompleted() == 1;
+    native.refuse = true;
+    passed = passed && !records.checkpoint(&cx) && destroyed && native.live == 1 &&
+             records.hasRetainedRetirement() && !native.physical_violation;
+    void* rejected = nullptr;
+    passed = passed && !records.beforeAllocate(&cx, &rejected) && !rejected;
+    native.refuse = false;
+    passed = passed && records.checkpoint(&cx) && !records.hasRetainedRetirement() &&
+             native.live == 0 && native.acknowledged == 1;
+  } else if (!std::strcmp(selected, "snapshot-captured-retained") ||
+             !std::strcmp(selected, "snapshot-captured-collected")) {
+    PromiseRecords records(native);
+    native.snapshot = true;
+    void* record = nullptr;
+    JSObject captured;
+    watch_next = true;
+    if (!records.beforeAllocate(&cx, &record) || record != watched) return 3;
+    PromiseRecords::capturedCreated(&cx, &captured, record);
+    passed = !records.hasPendingPromises() && records.hasUnownedCapturedFunctions() &&
+             native.live == 0 && native.acknowledged == 0;
+    const bool collected = std::strstr(selected, "collected") != nullptr;
+    JSTracer tracer{collected ? &captured : nullptr};
+    records.sweep(&tracer);
+    const auto completed = records.collectionCompleted();
+    const bool fence = records.snapshotCapturesEmpty(&cx, native.live);
+    passed = passed && completed == unsigned(collected) && fence == collected &&
+             records.hasUnownedCapturedFunctions() == !collected &&
+             destroyed == collected && native.live == 0 && native.acknowledged == 0 &&
+             cx.exception == !collected;
+  } else if (!std::strcmp(selected, "snapshot-live-native-owner-denied")) {
+    PromiseRecords records(native);
+    void* record = nullptr;
+    watch_next = true;
+    if (!records.beforeAllocate(&cx, &record) || record != watched) return 3;
+    PromiseRecords::allocationFailed(record);
+    cx.exception = true;
+    cx.detail = "original-pending-exception";
+    passed = !records.snapshotCapturesEmpty(&cx, native.live) &&
+             !std::strcmp(cx.detail, "original-pending-exception") &&
+             !destroyed && native.live == 1 && native.acknowledged == 0;
+    JS_ClearPendingException(&cx);
+    passed = passed && !records.snapshotCapturesEmpty(&cx, native.live) &&
+             cx.exception && !std::strcmp(cx.detail, "activation-runtime-snapshot-native-owner-denied") &&
+             !destroyed && native.live == 1 && native.acknowledged == 0;
+    JS_ClearPendingException(&cx);
+    passed = passed && records.checkpoint(&cx) && destroyed && native.live == 0 &&
+             native.acknowledged == 1 && !native.physical_violation;
+  } else if (!std::strcmp(selected, "captured-native-denial")) {
+    PromiseRecords records(native);
+    native.deny_admission = true;
+    const auto before = allocations;
+    void* record = nullptr;
+    passed = !records.beforeAllocate(&cx, &record) && !record && cx.exception &&
+             native.live == 0 && allocations == before;
   } else {
     if (std::strcmp(selected, "job-ack-after-delete") &&
         std::strcmp(selected, "job-error-ack-after-delete") &&

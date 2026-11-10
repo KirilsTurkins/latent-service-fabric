@@ -6,7 +6,43 @@ use serde_json::{json, Value};
 
 use crate::args::Cli;
 
-use super::{decode, resolve, validation};
+use super::{decode, resolve, validation, verify_opened_config};
+
+#[test]
+fn opened_configuration_digest_is_checked_before_use_and_leaves_stdin_tail() {
+    use std::io::{Cursor, Read};
+
+    let original = serde_json::to_vec(&document()).unwrap();
+    let digest = latent_artifacts::content_digest(&original).0;
+    let mut input = Cursor::new(format!("{digest}\npayload").into_bytes());
+    verify_opened_config(&original, &mut input).unwrap();
+    let mut tail = String::new();
+    input.read_to_string(&mut tail).unwrap();
+    assert_eq!(tail, "payload");
+
+    let mut changed = original.clone();
+    changed.push(b' ');
+    for (bytes, input) in [
+        (&changed, format!("{digest}\n")),
+        (&original, format!("{digest}x")),
+        (&original, "short\n".into()),
+    ] {
+        let failure = verify_opened_config(bytes, Cursor::new(input.into_bytes())).unwrap_err();
+        assert_eq!(failure.error["code"], "configuration-identity-changed");
+        assert!(!failure.request_dispatched);
+        assert!(failure.outcome_known);
+    }
+    let args = Cli::try_parse_from([
+        "latent",
+        "--config",
+        "client.json",
+        "--expect-config-digest-stdin",
+        "node",
+        "list",
+    ])
+    .unwrap();
+    assert!(args.expect_config_digest_stdin);
+}
 
 fn profile(name: &str) -> Value {
     json!({

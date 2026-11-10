@@ -33,6 +33,8 @@ jobs:
           path: source
           persist-credentials: false
       - name: Install digest-pinned cargo-audit outside the input checkout
+        env:
+          GH_TOKEN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && github.token || '' }}
         run: python3 controls/tools/security_install.py --tool cargo-audit --destination "$RUNNER_TEMP/security-tools"
       - name: Audit the unchanged or changed resolved lockfile against fresh RustSec data
         run: python3 controls/tools/security_scan.py rustsec --repo source --tools "$RUNNER_TEMP/security-tools" --scratch "$RUNNER_TEMP/security-scan"

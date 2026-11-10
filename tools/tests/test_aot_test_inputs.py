@@ -126,7 +126,7 @@ class PreparedInputsTests(unittest.TestCase):
 
     def test_wrong_profile_and_missing_role_are_rejected(self):
         path = self.prepare()
-        for stale_profile in ("release", "debug-all-features-v8"):
+        for stale_profile in ("release", "debug-all-features-v8", "debug-all-features-v9"):
             with self.subTest(profile=stale_profile):
                 self.rewrite(path, lambda data: data.update(profile=stale_profile))
                 with self.assertRaisesRegex(inputs.InputError, "profile"):
@@ -202,8 +202,26 @@ class PreparedInputsTests(unittest.TestCase):
         with self.assertRaisesRegex(inputs.InputError, "feature"):
             self.prepare()
 
+    def test_network_witness_closure_is_exact_before_any_preparation(self):
+        inputs.inventory_inputs(self.inventory, self.repo)
+        for mutation in ("missing", "duplicate", "foreign"):
+            with self.subTest(mutation=mutation):
+                for record in self.records[:-1]:
+                    record["features"] = list(inputs.FEATURES)
+                features = self.records[0]["features"]
+                if mutation == "missing":
+                    features.remove("development-go-network-read-witness")
+                elif mutation == "duplicate":
+                    features.append("development-go-network-read-witness")
+                else:
+                    features.append("unreviewed-extra-feature")
+                self.write_inventory()
+                with self.assertRaisesRegex(inputs.InputError, "incompatible-cargo-feature-sets"):
+                    inputs.inventory_inputs(self.inventory, self.repo)
+
     def test_previous_feature_closure_is_not_the_current_profile(self):
-        for previous in (["aot-test-timings"],
+        for previous in ([name for name in inputs.FEATURES if name != "development-go-network-read-witness"],
+                         ["aot-test-timings"],
                          ["aot-test-timings", "development-test-host", "java-guest-diagnostic"],
                          ["aot-test-timings", "development-clock-fixture", "development-test-host",
                           "java-guest-diagnostic"],

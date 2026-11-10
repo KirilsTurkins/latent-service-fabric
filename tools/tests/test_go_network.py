@@ -36,10 +36,11 @@ class GoNetworkSourceTests(unittest.TestCase):
             self.assertFalse(network_context.selected(root, 'go-component-async-v1'))
             self.module(root)
             for profile in ('go-component-async-v1', 'go-component-activation-v1',
-                            'go-component-activation-v4', False, None):
+                            'go-component-activation-v4', 'go-component-activation-v6', False, None):
                 with self.subTest(profile=profile), self.assertRaisesRegex(ValueError, 'requires-managed-v5'):
                     network_context.selected(root, profile)
             self.assertTrue(network_context.selected(root, 'go-component-activation-v5'))
+            self.assertTrue(network_context.selected(root, 'go-component-activation-v7'))
             self.assertFalse((root / 'lsf').exists())
 
     def test_unknown_version_or_interface_and_aliased_or_duplicate_package_fail_closed(self):
@@ -179,6 +180,15 @@ class GoNetworkSourceTests(unittest.TestCase):
             original = before['net/dial.go'].decode()
             self.assertIn('d.resolver().resolveAddrList', original)
             self.assertNotIn('lsfStreamDial', original)
+
+    def test_ascii_endpoint_validation_precedes_case_folding_and_connect(self):
+        source = (SDK / 'runtime/net_stream.go.in').read_text()
+        endpoint = re.search(r'(?ms)^func lsfStreamEndpoint\(.*?^\}', source)[0]
+        self.assertLess(endpoint.index('host[i] >= 0x80'), endpoint.index('lsfStrings.ToLower(host)'))
+        self.assertLess(endpoint.index('len(host) > 253'), endpoint.index('lsfStrings.ToLower(host)'))
+        dial = re.search(r'(?ms)^func lsfStreamDial\(.*?^\}', source)[0]
+        self.assertLess(dial.index('lsfStreamEndpoint(address)'), dial.index('lsfNetwork.ConnectContext('))
+        self.assertRegex(dial, r'host, port, err := lsfStreamEndpoint\(address\)\n\tif err != nil \{\n\t\treturn failure\(err\)')
 
     def test_standalone_dns_and_concrete_tcp_are_closed_unsupported_without_os_fallback(self):
         with tempfile.TemporaryDirectory() as temporary:

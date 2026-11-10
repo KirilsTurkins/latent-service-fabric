@@ -19,6 +19,7 @@ TIMER_PROFILES = {TIMER_PROFILE, *INITIALIZER_PROFILES}
 CHECKPOINT_PROFILES = {CHECKPOINT_PROFILE, *TIMER_PROFILES}
 PROFILES = {PROFILE, *CHECKPOINT_PROFILES}
 PREIMAGES = {
+    'runtime/coro.go': '7196b52866a8e774feb1b67e6a71f6409c9c7ea2c0b5639ad7d5a99f8f7c62cf',
     'runtime/runtime2.go': '7d66ed912f68b1259947807ca1bdf79ee7e54c6a61a716d88db663d570af66da',
     'runtime/time.go': 'cf2ae4e953a3315c226499f553a8e8e1529d27ceac166b4fb75e8d7b3a4fa682',
     'runtime/mfinal.go': '49d40539afdd927355c9cfbfabc7130c561d0a19e68ca5e621082e58e9d96cd7',
@@ -53,6 +54,19 @@ def canonical_map_source(goroot: Path) -> str:
 def runtime_sources(goroot: Path, sources: dict[str, str], sdk: Path, *, checkpoints=False, timers=False, initializers=False):
     sources.update(checked_sources(goroot, PREIMAGES))
     sources['unique/canonmap.go'] = canonical_map_source(goroot)
+    # iter.Pull/Pull2 create a waiting goroutine and then switch directly on
+    # g0, bypassing park_m, ready and execute. Keep each existing Task owner
+    # parked across its coroutine wait. These existing imports are
+    # immediately ready and do not suspend the Go scheduler.
+    coro = sources['runtime/coro.go']
+    coro = replace_once(coro,
+        '\t\tgp = newproc1(startfv, gp, pc, true, waitReasonCoroutine)\n',
+        '\t\tgp = newproc1(startfv, gp, pc, true, waitReasonCoroutine)\n\t\tlsfTaskPark(gp)\n')
+    coro = replace_once(coro, '\t\t// Clear gp.m.\n',
+        '\t\tlsfTaskPark(gp)\n\n\t\t// Clear gp.m.\n')
+    coro = replace_once(coro, '\t// Emit the trace event after getting gnext but before changing curg.\n',
+        '\tlsfTaskWake(gnext)\n\n\t// Emit the trace event after getting gnext but before changing curg.\n')
+    sources['runtime/coro.go'] = coro
     sources['runtime/runtime2.go'] = replace_once(sources['runtime/runtime2.go'],
         '\tvalgrindStackID uintptr\n}', '\tvalgrindStackID uintptr\n\tlsfOwner [2]uint64\n\tlsfParked bool\n}')
     text = sources['runtime/proc.go']
@@ -116,11 +130,26 @@ def async_source(dependency: Path, sdk: Path, *, checkpoints=False, timers=False
     text = replace_once(text, '\t\t\treturn CALLBACK_CODE_EXIT',
         '\t\t\tlsfActivationLeave()\n\t\t\treturn CALLBACK_CODE_EXIT')
     if checkpoints:
-        text = replace_once(text, 'yielding    chan unit', 'yielding    []chan unit')
-        text = replace_once(text, '\t\tyielding <- unit{}',
-            '\t\tfor _, channel := range yielding { channel <- unit{} }')
-        text = replace_once(text, '\tstate.yielding = channel',
-            '\tstate.yielding = append(state.yielding, channel)')
+        from tools.go_guest.checkpoints import checkpoint_yield_template
+        if checkpoint_yield_template(sdk) == 'legacy':
+            # Existing captured SDKs retain their original dispatcher bytes.
+            text = replace_once(text, 'yielding    chan unit', 'yielding    []chan unit')
+            text = replace_once(text, '\t\tyielding <- unit{}',
+                '\t\tfor _, channel := range yielding { channel <- unit{} }')
+            text = replace_once(text, '\tstate.yielding = channel',
+                '\tstate.yielding = append(state.yielding, channel)')
+        else:
+            text = replace_once(text, 'yielding    chan unit',
+                'yielding    *lsfYieldWait\n\tyieldTail   *lsfYieldWait')
+            text = replace_once(text, '\t\tnil,\n\t\truntime.Pinner{},',
+                '\t\tnil,\n\t\tnil,\n\t\truntime.Pinner{},')
+            text = replace_once(text,
+                '\tyielding := state.yielding\n\tif state.yielding != nil {\n'
+                '\t\tstate.yielding = nil\n\t\tyielding <- unit{}\n\t}',
+                '\tyielding := lsfTakeYields()\n\tfor yielding != nil {\n'
+                '\t\tnext := yielding.next\n\t\tyielding.next = nil\n'
+                '\t\tyielding.channel <- unit{}\n\t\tyielding = next\n\t}')
+            text = replace_once(text, '\tstate.yielding = channel', '\tlsfQueueYield(channel)')
         text += '\n' + (sdk / 'runtime/checkpoint_async.go.in').read_text()
     if timers:
         from tools.go_guest.timers import async_source as timer_source
