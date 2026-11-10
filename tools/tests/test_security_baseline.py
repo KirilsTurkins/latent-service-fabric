@@ -196,7 +196,7 @@ class SecurityFixtureTests(unittest.TestCase):
         self.assertTrue(any(package.path == "sdk/typescript-client/package-lock.json" for package in packages))
         self.assertTrue(any(package.path == "examples/renderer-profile/package-lock.json" for package in packages))
         self.assertTrue(any(package.path == "tools/requirements.lock" for package in packages))
-        self.assertTrue(any(package.path == "sdk/go-guest/runtime/published-smtp-conformance/dependencies.lock.json"
+        self.assertTrue(any(package.path == ".github/security/graphs/published-smtp/dependencies.lock.json"
                             and package.name == "github.com/emersion/go-smtp" for package in packages))
         # The real standalone cache must use the existing pinned isolated route.
         from tools.security_inventory import cargo_inventory

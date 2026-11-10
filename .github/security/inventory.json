@@ -176,7 +176,7 @@
     {
       "absent_when_directory_missing": "sdk/go-guest/runtime/published-smtp-conformance",
       "kind": "go-locked",
-      "lock": "sdk/go-guest/runtime/published-smtp-conformance/dependencies.lock.json",
+      "lock": ".github/security/graphs/published-smtp/dependencies.lock.json",
       "module": "wit_component",
       "path": "sdk/go-guest/runtime/published-smtp-conformance/go.mod",
       "sum": "sdk/go-guest/runtime/published-smtp-conformance/go.sum"
