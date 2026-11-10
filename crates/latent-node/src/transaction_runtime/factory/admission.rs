@@ -485,17 +485,20 @@ impl NativeTransactionAdmission {
                     (&mut wait).await.map(Some)
                 }
             };
-            let next = tokio::select! {
-                biased;
-                () = self.owners.lanes.wait_for_waiter_expiry(wait_deadline) => {
-                    return Err(entity_queue_error(super::super::entity_queue::QueueError::Expired));
-                }
-                result = async {
-                    match control {
-                        Some(control) => control.wait(next).await,
-                        None => next.await,
+            let bounded = async {
+                tokio::select! {
+                    biased;
+                    () = self.owners.lanes.wait_for_waiter_expiry(wait_deadline) => {
+                        Err(entity_queue_error(super::super::entity_queue::QueueError::Expired))
                     }
-                } => result?,
+                    result = next => result,
+                }
+            };
+            // Preserve the activation control's existing cancellation winner
+            // before considering the shorter entity wait deadline.
+            let next = match control {
+                Some(control) => control.wait(bounded).await?,
+                None => bounded.await?,
             };
             if let Some(lane) = next {
                 return Ok(Some(lane));
@@ -503,17 +506,22 @@ impl NativeTransactionAdmission {
             // The read job keeps its own physical owner after waiter loss. A
             // cancellation or a duplicate result drops the queued reservation.
             let read = self.replay_existing_entity(selection, envelope, budget);
-            tokio::select! {
-                biased;
-                () = self.owners.lanes.wait_for_waiter_expiry(wait_deadline) => {
-                    return Err(entity_queue_error(super::super::entity_queue::QueueError::Expired));
-                }
-                result = async {
-                    match control {
-                        Some(control) => control.wait(read).await,
-                        None => read.await,
+            let bounded = async {
+                tokio::select! {
+                    biased;
+                    () = self.owners.lanes.wait_for_waiter_expiry(wait_deadline) => {
+                        Err(entity_queue_error(super::super::entity_queue::QueueError::Expired))
                     }
-                } => { result?; }
+                    result = read => result,
+                }
+            };
+            match control {
+                Some(control) => {
+                    control.wait(bounded).await?;
+                }
+                None => {
+                    bounded.await?;
+                }
             }
         }
     }
