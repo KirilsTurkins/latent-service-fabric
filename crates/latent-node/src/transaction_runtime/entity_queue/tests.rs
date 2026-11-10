@@ -952,3 +952,62 @@ async fn cancellation_during_authority_check_cannot_release_selected_owner_early
     let snapshot = queue.lanes.snapshot().unwrap();
     assert_eq!((snapshot.keys, snapshot.queued, snapshot.active), (0, 0, 0));
 }
+
+#[tokio::test]
+async fn duplicate_waiter_rechecks_authority_before_owner_recovery() {
+    let queue =
+        Arc::new(EntityQueue::new(limits(), Arc::new(latent_core::SystemActivationClock)).unwrap());
+    let key = CommandIdentity::parse_hex(&"88".repeat(32)).unwrap();
+    let fingerprint = CommandIdentity::parse_hex(&"99".repeat(32)).unwrap();
+    let owner = queue
+        .acquire_for_command(
+            scope("tenant-a", "hot"),
+            vec![1],
+            64,
+            deadline(),
+            Arc::new(|| true),
+            permit(),
+            Some((key, fingerprint, [1; 32], None)),
+            false,
+            None,
+        )
+        .await
+        .unwrap();
+    let current = Arc::new(AtomicBool::new(true));
+    let check = Arc::clone(&current);
+    let waiting_queue = Arc::clone(&queue);
+    let waiter = tokio::spawn(async move {
+        waiting_queue
+            .acquire_for_command(
+                scope("tenant-a", "hot"),
+                vec![2],
+                64,
+                deadline(),
+                Arc::new(move || check.load(Ordering::SeqCst)),
+                permit(),
+                Some((key, fingerprint, [1; 32], None)),
+                true,
+                None,
+            )
+            .await
+    });
+    tokio::time::timeout(Duration::from_secs(2), async {
+        while queue.duplicate_waiter_count().unwrap() != 1 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    current.store(false, Ordering::SeqCst);
+    drop(owner);
+    let result = tokio::time::timeout(Duration::from_secs(2), waiter)
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(matches!(
+        result,
+        Err(QueueError::Rejected(EntityRejection::AuthorityChanged))
+    ));
+    assert_eq!(queue.duplicate_waiter_count().unwrap(), 0);
+    assert_eq!(queue.snapshot().active, 0);
+}

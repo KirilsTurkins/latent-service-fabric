@@ -261,8 +261,18 @@ impl EntityQueue {
         let mut changes = self.signal.subscribe();
         let mut duplicate_waiter = None;
         let registration = loop {
-            if duplicate_waiter.is_some() && self.clock.monotonic_now() >= duplicate_deadline {
-                return Err(QueueError::Expired);
+            if duplicate_waiter.is_some() {
+                if self.clock.monotonic_now() >= duplicate_deadline {
+                    return Err(QueueError::Expired);
+                }
+                // Recheck the original ingress authority whenever the shared
+                // owner changes, before recovering an existing command.
+                if !(current)() {
+                    return Err(QueueError::Rejected(EntityRejection::AuthorityChanged));
+                }
+                if self.clock.monotonic_now() >= duplicate_deadline {
+                    return Err(QueueError::Expired);
+                }
             }
             let Some((identity, fingerprint, source, owner)) = &command else {
                 break None;
