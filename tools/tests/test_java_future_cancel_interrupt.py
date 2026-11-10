@@ -180,3 +180,70 @@ class FutureCancellationControl(unittest.TestCase):
             matrix.assert_not_called()
             self.assertEqual(calls, [])
             self.assertFalse(output.exists())
+
+
+class ScheduledReadyShutdownControl(unittest.TestCase):
+    @staticmethod
+    def receipt(stage):
+        if stage in ('scheduled-ready-shutdown-jdk', 'scheduled-ready-shutdown-source'):
+            return 'SCHEDULED_READY_SHUTDOWN PASS disabled;changed;elapsed;default;periodic;owners'
+        if stage == 'scheduled-ready-clock-compile': return ''
+        if stage == 'scheduled-ready-clock-boundary':
+            return ('boundary=49:cancelled=true:held=1:1:1:active=none:final=0:0:0\n'
+                    'boundary=50:cancelled=false:held=1:2:2:active=1:1:1:final=0:0:0\n'
+                    'boundary=51:cancelled=false:held=1:2:2:active=1:1:1:final=0:0:0')
+        if stage == 'scheduled-ready-clock-failure':
+            return 'clock-failure=propagated:held=1:1:1:laterCancelled=true:final=0:0:0'
+        raise AssertionError(stage)
+
+    @staticmethod
+    def sources():
+        fibers = subject.ROOT / 'sdk/java-guest/fibers'
+        return (sorted((fibers / 'dev/latent/guest/runtime/concurrent').glob('*.java')),
+                fibers / 'conformance/compiler/scheduled-source-control')
+
+    def run_control(self, root, run):
+        ports, private = self.sources()
+        output = root / 'source'; output.mkdir()
+        return subject.scheduled_ready_shutdown_control(SimpleNamespace(run=run), output, root / 'reference', ports, private)
+
+    def test_all_selected_receipts_and_limits(self):
+        calls = []
+        def run(stage, *args):
+            calls.append(stage)
+            return self.receipt(stage)
+        with tempfile.TemporaryDirectory() as temporary:
+            report = self.run_control(Path(temporary), run)
+        self.assertEqual(calls, ['scheduled-ready-shutdown-jdk', 'scheduled-ready-shutdown-source',
+            'scheduled-ready-clock-compile', 'scheduled-ready-clock-boundary', 'scheduled-ready-clock-failure'])
+        self.assertEqual(report, {'status': 'JDK-and-SDK-source-controls-passed', 'clockFailure': 'synthetic-host-only',
+            'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False})
+
+    def test_missing_and_wrong_receipts_fail_closed(self):
+        for stage in ('scheduled-ready-shutdown-jdk', 'scheduled-ready-shutdown-source',
+                      'scheduled-ready-clock-boundary', 'scheduled-ready-clock-failure'):
+            for bad in ('', 'SKIPPED'):
+                with self.subTest(stage=stage, bad=bad), tempfile.TemporaryDirectory() as temporary:
+                    calls = []
+                    def run(actual, *args):
+                        calls.append(actual)
+                        return bad if actual == stage else self.receipt(actual)
+                    with self.assertRaisesRegex(ValueError, 'Java scheduled ready .* control did not complete'):
+                        self.run_control(Path(temporary), run)
+                    self.assertEqual(calls[-1], stage)
+
+    def test_changed_clock_hook_is_rejected_before_clock_compile(self):
+        original = subject.read_file
+        def read(path, *args):
+            raw = original(path, *args)
+            if path.name == 'ScheduledThreadPoolExecutor.java':
+                return raw.replace(b'private long elapsed() { return System.nanoTime() - origin; }', b'changed clock')
+            return raw
+        calls = []
+        def run(stage, *args):
+            calls.append(stage)
+            return self.receipt(stage)
+        with tempfile.TemporaryDirectory() as temporary, patch.object(subject, 'read_file', side_effect=read):
+            with self.assertRaisesRegex(ValueError, 'clock source is ambiguous'):
+                self.run_control(Path(temporary), run)
+        self.assertEqual(calls, ['scheduled-ready-shutdown-jdk', 'scheduled-ready-shutdown-source'])
