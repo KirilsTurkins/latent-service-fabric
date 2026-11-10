@@ -30,17 +30,19 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     public CompletableFuture() { }
 
     private static final class DefaultExecutor implements Executor {
+        // The executor is returned to application code, which may use its
+        // public monitor independently of pool initialization.
+        private final Object lock = new Object();
         private Executor pool;
         @Override public void execute(Runnable command) {
             Objects.requireNonNull(command);
             Executor selected;
-            synchronized (this) {
-                if (pool == null) {
-                    try { pool = Executors.newDefaultAsyncPool(); }
-                    catch (Throwable error) { rejectedBeforeAcceptance(command, this); throw error; }
+            try {
+                synchronized (lock) {
+                    if (pool == null) pool = Executors.newDefaultAsyncPool();
+                    selected = pool;
                 }
-                selected = pool;
-            }
+            } catch (Throwable error) { rejectedBeforeAcceptance(command, this); throw error; }
             selected.execute(command);
         }
     }

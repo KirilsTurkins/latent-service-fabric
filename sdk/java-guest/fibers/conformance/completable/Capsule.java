@@ -5,6 +5,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -46,7 +47,38 @@ public final class Capsule {
         pending.toCompletableFuture().complete(20);
         require(mapped.toCompletableFuture().get(5, TimeUnit.SECONDS) == 42);
         require(CompletableFuture.runAsync(() -> { }).thenRunAsync(() -> { }).get() == null);
+        defaultExecutorPublicMonitor();
         return 42L;
+    }
+    private static void defaultExecutorPublicMonitor() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<Integer> source = new CompletableFuture<>();
+        Executor executor = source.defaultExecutor();
+        CompletableFuture<Integer> mapped = source.thenApplyAsync(value -> value + 1, executor);
+        Object gate = new Object();
+        boolean[] done = {false};
+        Throwable[] failure = {null};
+        Thread completer = new Thread(() -> {
+            try { require(source.complete(41)); }
+            catch (Throwable error) { failure[0] = error; }
+            finally { synchronized (gate) { done[0] = true; gate.notifyAll(); } }
+        });
+        try {
+            synchronized (executor) {
+                completer.start();
+                long start = System.nanoTime();
+                synchronized (gate) {
+                    while (!done[0]) {
+                        if (System.nanoTime() - start > 5_000_000_000L)
+                            throw new IllegalStateException("default-executor-public-monitor-deadline");
+                        gate.wait(5);
+                    }
+                }
+                require(failure[0] == null && mapped.get(5,TimeUnit.SECONDS) == 42);
+            }
+        } finally {
+            completer.join(5000);
+            require(!completer.isAlive());
+        }
     }
     private static final class Gate {
         private boolean entered, released, exited;
