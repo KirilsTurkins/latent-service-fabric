@@ -362,16 +362,43 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
         return "\n".join(mode + ":whileHeld=true:blocked=false:once=1:recurring=2:publicMonitor=preserved"
                          for mode in ("default", "daemon", "named"))
 
+    @staticmethod
+    def cancelled_jdk():
+        return "\n".join((
+            "capacity:automatic:before=-1:witness=-1:removed=-1:afterPurge=-1:accepted=2:afterCancel=-1:reschedule=refused:unexpected=0",
+            "capacity:purge:before=-1:witness=-1:removed=valid:afterPurge=-1:accepted=2:afterCancel=-1:reschedule=refused:unexpected=0",
+            "active:automatic:before=-1:removed=-1:afterPurge=-1:witness=-1:afterCancel=-1:reschedule=refused:callbacks=1",
+            "active:purge:before=-1:removed=valid:afterPurge=-1:witness=-1:afterCancel=-1:reschedule=refused:callbacks=1",
+            "self:before=-1:witness=-1:afterCancel=-1:reschedule=refused:callbacks=1:witnessCalls=1"))
+
+    @staticmethod
+    def cancelled_source():
+        return "\n".join((
+            "capacity:automatic:before=8:witness=2:removed=-1:afterPurge=2:accepted=2:afterCancel=1:reschedule=refused:unexpected=0",
+            "capacity:purge:before=8:witness=2:removed=0:afterPurge=2:accepted=2:afterCancel=1:reschedule=refused:unexpected=0",
+            "active:automatic:before=2:removed=-1:afterPurge=2:witness=1:afterCancel=1:reschedule=refused:callbacks=1",
+            "active:purge:before=2:removed=1:afterPurge=2:witness=1:afterCancel=1:reschedule=refused:callbacks=1",
+            "self:before=2:witness=1:afterCancel=1:reschedule=refused:callbacks=1:witnessCalls=1"))
+
+    def prelude(self):
+        return ["", self.class_monitor_receipt(), self.cancelled_jdk(), "", self.class_monitor_receipt(), self.cancelled_source()]
+
+    def successful_receipts(self):
+        settlement = lambda mode, queued: (mode + ":witness=false:poisoned=true:retained=true:queued=" + str(queued)
+            + ":executors=1:attempts=3:admission=refused")
+        return [*self.prelude(), *([self.receipt()] * 3), *self.active_receipts(), "", "TIMER_CLOCK_ORDER PASS\n",
+                settlement("refused", 1), settlement("lost", 0)]
+
     def test_incomplete_retirement_or_observables_cannot_qualify_source(self):
         for incomplete in ("42 42 42 42", self.receipt().replace(";no-live-owners", ""),
                            self.receipt().replace("42 42 42 42", "42 42 42 41")):
             with self.subTest(receipt=incomplete), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 compiler = self.fixture(root)
-                compiler.run.side_effect = ["", self.class_monitor_receipt(), "", self.class_monitor_receipt(), incomplete]
+                compiler.run.side_effect = [*self.prelude(), incomplete]
                 with self.assertRaisesRegex(ValueError, "timer source control did not complete"):
                     fibers.standard_timer_source_control(compiler, root / "control")
-                self.assertEqual(compiler.run.call_count, 5)
+                self.assertEqual(compiler.run.call_count, 7)
 
     def test_private_mapping_preserves_component_source_and_excludes_guest_claims(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -379,9 +406,7 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
             compiler = self.fixture(root)
             application = compiler.sdk / "fibers/conformance/timers/Capsule.java"
             original = application.read_bytes()
-            compiler.run.side_effect = ["", self.class_monitor_receipt(), "", self.class_monitor_receipt(),
-                                        *([self.receipt()] * 3), *self.active_receipts(),
-                                        "", "TIMER_CLOCK_ORDER PASS\n"]
+            compiler.run.side_effect = self.successful_receipts()
             report = fibers.standard_timer_source_control(compiler, root / "control")
             self.assertEqual(application.read_bytes(), original)
             mapped = (root / "control/Capsule.java").read_text()
@@ -394,6 +419,8 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
                 "fibers/conformance/compiler/standard-timer-control/TimerActiveOwnerControl.java",
                 "fibers/conformance/compiler/standard-timer-control/TimerValidationAdmissionControl.java",
                 "fibers/conformance/compiler/standard-timer-control/TimerClassMonitorReferenceControl.java",
+                "fibers/conformance/compiler/standard-timer-control/TimerCancelledQueueReferenceControl.java",
+                "fibers/conformance/compiler/standard-timer-control/TimerCancelledSettlementOwnerControl.java",
                 "fibers/conformance/compiler/standard-timer-control/FakeClock.java",
                 "fibers/conformance/compiler/standard-timer-control/ClockOrderControl.java",
                 "fibers/conformance/compiler/standard-timer-control/dev/latent/generated/Bindings.java",
@@ -403,6 +430,7 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
             })
             self.assertEqual(report["iterations"], 3)
             self.assertEqual(report["classMonitor"], "JDK-and-SDK-source-controls-passed")
+            self.assertEqual(report["cancelledTail"], "JDK-reference-and-bounded-private-ledger-passed")
             self.assertEqual(fibers.STANDARD_TIMER_ACTIVE_OWNER_CASES[-12:], (
                 "manage-before", "manage-close-refused", "manage-close-lost",
                 "start-before", "start-uncertain", "start-accepted", "start-close-refused", "start-close-lost",
@@ -414,18 +442,16 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             compiler = self.fixture(root)
-            compiler.run.side_effect = ["", self.class_monitor_receipt(), "", self.class_monitor_receipt(),
-                                        *([self.receipt()] * 3), "wrong-case\n"]
+            compiler.run.side_effect = [*self.prelude(), *([self.receipt()] * 3), "wrong-case\n"]
             with self.assertRaisesRegex(ValueError, "timer active-owner control did not complete: one-shot-normal"):
                 fibers.standard_timer_source_control(compiler, root / "control")
-            self.assertEqual(compiler.run.call_count, 8)
+            self.assertEqual(compiler.run.call_count, 10)
 
     def test_clock_order_must_return_its_exact_receipt(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             compiler = self.fixture(root)
-            compiler.run.side_effect = ["", self.class_monitor_receipt(), "", self.class_monitor_receipt(),
-                                        *([self.receipt()] * 3), *self.active_receipts(),
+            compiler.run.side_effect = [*self.prelude(), *([self.receipt()] * 3), *self.active_receipts(),
                                         "", "TIMER_CLOCK_ORDER INCOMPLETE\n"]
             with self.assertRaisesRegex(ValueError, "timer clock ordering control did not complete"):
                 fibers.standard_timer_source_control(compiler, root / "control")
@@ -437,6 +463,8 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
             def observe(stage, *args):
                 if stage in ("standard-timer-class-monitor-reference", "standard-timer-class-monitor-source"):
                     return self.class_monitor_receipt()
+                if stage == "standard-timer-cancelled-reference": return self.cancelled_jdk()
+                if stage == "standard-timer-cancelled-source": return self.cancelled_source()
                 if stage == "standard-timer-source-2":
                     port = compiler.sdk / "fibers/dev/latent/guest/runtime/util/Timer.java"
                     port.write_bytes(port.read_bytes() + b"\n// changed during control\n")
@@ -444,14 +472,29 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
             compiler.run.side_effect = observe
             with self.assertRaisesRegex(ValueError, "control inputs changed"):
                 fibers.standard_timer_source_control(compiler, root / "control")
-            self.assertEqual(compiler.run.call_count, 7)
+            self.assertEqual(compiler.run.call_count, 9)
 
     def test_class_monitor_receipt_must_match_reference_and_source(self):
-        for index, error in ((1, "class monitor reference"), (3, "class monitor source")):
+        for index, error in ((1, "class monitor reference"), (4, "class monitor source")):
             with self.subTest(index=index), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 compiler = self.fixture(root)
-                receipts = ["", self.class_monitor_receipt(), "", self.class_monitor_receipt()]
+                receipts = self.prelude()
+                receipts[index] += ";incomplete"
+                compiler.run.side_effect = receipts
+                with self.assertRaisesRegex(ValueError, error):
+                    fibers.standard_timer_source_control(compiler, root / "control")
+                self.assertEqual(compiler.run.call_count, index + 1)
+
+    def test_cancelled_tail_receipts_fail_closed(self):
+        original = self.successful_receipts()
+        for index, error in ((2, "cancelled timer reference"), (5, "cancelled timer source"),
+                             (len(original)-2, "cancelled timer settlement"),
+                             (len(original)-1, "cancelled timer settlement")):
+            with self.subTest(index=index), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                compiler = self.fixture(root)
+                receipts = self.successful_receipts()
                 receipts[index] += ";incomplete"
                 compiler.run.side_effect = receipts
                 with self.assertRaisesRegex(ValueError, error):
@@ -532,9 +575,10 @@ class StandardTimerModelIntegrity(unittest.TestCase):
 
     def test_model_receipt_requires_private_name_monitor_and_c_graph(self):
         reviewed = ("STANDARD_TIMER_MODEL_CONTROL PASS original-classlib-negative;layout-and-repeat-negatives;"
-            "canonical-api-and-private-helper;private-name-monitor;resolved-method-and-field-types;"
+            "canonical-api-and-private-helper;private-name-monitor;private-cancelled-cleanup;resolved-method-and-field-types;"
             "unsupported-no-fallback;models=3;actual-c-dependency-worker-and-callback")
         for observed in (reviewed.replace("private-name-monitor;", ""),
+                         reviewed.replace("private-cancelled-cleanup;", ""),
                          reviewed.replace("actual-c-dependency-worker-and-callback", "models-only")):
             with self.subTest(observed=observed), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
