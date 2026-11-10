@@ -48,6 +48,61 @@ fn damage(store: &EmbeddedStore, expected: &ExpectedRow) {
 }
 
 #[test]
+fn duplicate_recovery_refuses_a_view_expired_during_clock_or_authorization() {
+    for delay_authorization in [false, true] {
+        let (dir, store, _effects) = accounted::setup(8);
+        drop(store);
+        let store = open_limited(
+            &dir.path().join("state.redb"),
+            StoreLimits {
+                maximum_view_age: std::time::Duration::from_secs(1),
+                ..StoreLimits::default()
+            },
+        );
+        let scope = scope();
+        install(&store, &scope);
+        let view = store.snapshot().unwrap();
+        let AdmissionDecision::New(first) =
+            PreparedAdmission::prepare(&view, request(&scope), time(100), permission).unwrap()
+        else {
+            panic!("new")
+        };
+        let AdmissionDecision::New(second) =
+            PreparedAdmission::prepare(&view, request(&scope), time(100), permission).unwrap()
+        else {
+            panic!("new")
+        };
+        let first = first.fence_inbox_scope(&view, &scope).unwrap();
+        let second = second.fence_inbox_scope(&view, &scope).unwrap();
+        drop(view);
+        let claim = first.publish(&store, || Ok(())).unwrap();
+        match second.publish_or_existing(
+            &store,
+            || {
+                if !delay_authorization {
+                    std::thread::sleep(std::time::Duration::from_millis(1100));
+                }
+                Ok(time(101))
+            },
+            || Ok(()),
+            |access, record| {
+                if delay_authorization {
+                    std::thread::sleep(std::time::Duration::from_millis(1100));
+                }
+                permission(access, record)
+            },
+        ) {
+            Err(error) => assert_eq!(error, AtomicError::Expired),
+            Ok(PublishedAdmission::Existing(_)) => {
+                panic!("expired view returned an existing claim")
+            }
+            Ok(PublishedAdmission::New(_)) => panic!("conflicting claim was published"),
+        }
+        drop(claim);
+    }
+}
+
+#[test]
 fn missing_or_changed_source_cannot_publish_pending_or_recover_a_cas_winner() {
     let (_dir, store, _effects) = accounted::setup(8);
     let scope = scope();

@@ -409,6 +409,9 @@ impl PreparedAdmission {
                     return Err(AtomicError::Conflict);
                 }
                 time.check(existing.clock_floor)?;
+                // Clock observation and authorization may outlive the
+                // coherent source/command view used to recover this winner.
+                let _ = view.is_empty()?;
                 Ok(PublishedAdmission::Existing(existing))
             }
             Err(error) => Err(fenced_error(error)),

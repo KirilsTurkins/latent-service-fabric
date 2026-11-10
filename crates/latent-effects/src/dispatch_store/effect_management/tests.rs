@@ -63,6 +63,36 @@ fn dispatcher_inventory_stops_when_original_admission_expires() {
     DispatchCatalog::validate_view(&fixture.store().snapshot().unwrap()).unwrap();
 }
 
+#[test]
+fn dispatcher_inventory_rechecks_view_after_final_checkpoint() {
+    let fixture = Fixture::new(StoreLimits {
+        maximum_view_age: std::time::Duration::from_secs(1),
+        ..StoreLimits::default()
+    });
+    let view = fixture.store().snapshot().unwrap();
+    let mut calls = 0;
+    DispatchCatalog::validate_view_with_checkpoint(&view, &mut || {
+        calls += 1;
+        Ok(())
+    })
+    .unwrap();
+    assert!(calls > 0);
+    drop(view);
+    let view = fixture.store().snapshot().unwrap();
+    let mut observed = 0;
+    assert_eq!(
+        DispatchCatalog::validate_view_with_checkpoint(&view, &mut || {
+            observed += 1;
+            if observed == calls {
+                std::thread::sleep(std::time::Duration::from_millis(1100));
+            }
+            Ok(())
+        }),
+        Err(StoreError::SnapshotExpired)
+    );
+    assert_eq!(observed, calls);
+}
+
 struct Fixture {
     root: tempfile::TempDir,
     store: Option<EmbeddedStore>,
