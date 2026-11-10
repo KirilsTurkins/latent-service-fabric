@@ -44,7 +44,9 @@ Standalone resolver operations, concrete `*net.TCPConn` construction, UDP,
 listeners, native socket options, custom resolvers/controls/local binds,
 explicit keepalive and address-family/fallback policies are unsupported. Numeric
 `LookupPort` remains a pure local conversion. Read and write deadlines map to
-the bounded host timeout; expired deadlines fail before dispatch. Remaining
+the bounded host timeout; expired deadlines fail before dispatch. Empty reads
+return locally after the closed and overlap checks, so an expired read deadline
+alone does not make them fail. Remaining
 deadlines over 10 seconds use the provider's 10-second timeout maximum: the
 accepted profile already limits connection lifetime to at most 10 seconds and
 still enforces the original root deadline and its shorter idle bound. The guest
