@@ -84,8 +84,51 @@ public final class FutureTaskMonitorOwnerControl {
         require(!canceller.isAlive() && failure.get()==null,"scheduled-canceller-failed");
         Activation.idle();
     }
+    private static void failureReporting() throws Exception {
+        CountDownLatch doneEntered=new CountDownLatch(1), doneRelease=new CountDownLatch(1);
+        CountDownLatch callbackEntered=new CountDownLatch(1), callbackRelease=new CountDownLatch(1);
+        CountDownLatch inspected=new CountDownLatch(1);
+        AtomicReference<Throwable> failure=new AtomicReference<>();
+        Throwable cause=new RuntimeException() {
+            @Override public String toString() {
+                callbackEntered.countDown();
+                await(callbackRelease,"exception-callback-release");
+                return "controlled-exception";
+            }
+        };
+        FutureTask<Integer> future=new FutureTask<Integer>(() -> { throw (RuntimeException) cause; }) {
+            @Override protected void done() { doneEntered.countDown(); await(doneRelease,"done-release"); }
+        };
+        Thread worker=new Thread(future,"exception-owner-worker");
+        Thread getter=new Thread(() -> {
+            try { future.get(); failure.set(new AssertionError("failed-get-returned")); }
+            catch (java.util.concurrent.ExecutionException error) {
+                if (error.getCause()!=cause) failure.set(new AssertionError("wrong-cause"));
+            } catch (Throwable error) { failure.set(error); }
+        },"exception-owner-getter");
+        Thread inspector=new Thread(() -> {
+            try { require(future.isDone(),"failed-future-not-done"); }
+            catch (Throwable error) { failure.set(error); }
+            finally { inspected.countDown(); }
+        },"exception-owner-inspector");
+        boolean independent=false;
+        try {
+            worker.start(); await(doneEntered,"done-not-entered");
+            require(count(LatentRuntimeActivationOwnerKind.Result)==1,"runner-owner-not-held");
+            getter.start(); await(callbackEntered,"exception-callback-not-entered");
+            inspector.start(); independent=inspected.await(1,TimeUnit.SECONDS);
+            require(count(LatentRuntimeActivationOwnerKind.Result)==1,"runner-owner-retired-during-exception-callback");
+        } finally {
+            callbackRelease.countDown(); doneRelease.countDown();
+            worker.join(5000); getter.join(5000); inspector.join(5000);
+        }
+        require(!worker.isAlive() && !getter.isAlive() && !inspector.isAlive(),"exception-threads-not-retired");
+        require(failure.get()==null,"exception-control-failed");
+        require(independent,"future-state-locked-by-exception-callback");
+        Activation.idle();
+    }
     public static void main(String[] args) throws Exception {
-        managed(); scheduled();
-        System.out.println("FUTURE_TASK_MONITOR_OWNER PASS managed;active-owners;scheduled;retired-under-public-monitor");
+        managed(); scheduled(); failureReporting();
+        System.out.println("FUTURE_TASK_MONITOR_OWNER PASS managed;active-owners;scheduled;retired-under-public-monitor;failure-owner");
     }
 }

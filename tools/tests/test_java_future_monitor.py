@@ -8,10 +8,10 @@ from tools import qualify_java_fibers as owner
 
 
 class FutureTaskMonitorOwner(unittest.TestCase):
-    reference = 'FUTURE_TASK_MONITOR_REFERENCE PASS run;cancel;completed-get;executor;scheduled-cancel'
-    ownership = 'FUTURE_TASK_MONITOR_OWNER PASS managed;active-owners;scheduled;retired-under-public-monitor'
+    reference = 'FUTURE_TASK_MONITOR_REFERENCE PASS run;cancel;completed-get;executor;scheduled-cancel;failed-get-callback'
+    ownership = 'FUTURE_TASK_MONITOR_OWNER PASS managed;active-owners;scheduled;retired-under-public-monitor;failure-owner'
 
-    def run_owner(self, missing=None):
+    def run_owner(self, missing=None, stale=None):
         calls = []
         receipts = {'future-task-monitor-reference-jdk': self.reference,
                     'future-queue-source-control': 'FUTURE_QUEUE_OWNER PASS checks=48',
@@ -20,6 +20,7 @@ class FutureTaskMonitorOwner(unittest.TestCase):
         def run(stage, *arguments):
             calls.append(stage)
             if stage == missing: return 'SKIPPED'
+            if stage == stale: return receipts[stage].rsplit(';', 1)[0]
             return receipts.get(stage, '')
         compiler = SimpleNamespace(sdk=owner.ROOT/'sdk/java-guest', run=run)
         with TemporaryDirectory() as directory:
@@ -40,6 +41,12 @@ class FutureTaskMonitorOwner(unittest.TestCase):
                       'future-task-monitor-source','future-task-monitor-owner'):
             with self.subTest(stage=stage), self.assertRaises(ValueError):
                 self.run_owner(stage)
+
+    def test_old_monitor_receipts_do_not_substitute_for_the_callback_checks(self):
+        for stage in ('future-task-monitor-reference-jdk', 'future-task-monitor-source',
+                      'future-task-monitor-owner'):
+            with self.subTest(stage=stage), self.assertRaises(ValueError):
+                self.run_owner(stale=stage)
 
 
 if __name__ == '__main__':

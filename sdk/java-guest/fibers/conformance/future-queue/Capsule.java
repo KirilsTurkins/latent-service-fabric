@@ -158,6 +158,17 @@ public final class Capsule {
             require(scheduled.awaitTermination(5,TimeUnit.SECONDS));
         }
     }
+    private static void failedFutureResults() throws InterruptedException {
+        RuntimeException cause = new RuntimeException("future-queue-failure");
+        FutureTask<Integer> failed = new FutureTask<>(() -> { throw cause; });
+        failed.run();
+        require(failed.isDone() && !failed.isCancelled());
+        try { failed.get(); throw new IllegalStateException("failed-get-returned"); }
+        catch (java.util.concurrent.ExecutionException expected) { require(expected.getCause() == cause); }
+        try { failed.get(0, TimeUnit.NANOSECONDS); throw new IllegalStateException("failed-timed-get-returned"); }
+        catch (java.util.concurrent.ExecutionException expected) { require(expected.getCause() == cause); }
+        catch (java.util.concurrent.TimeoutException wrong) { throw new IllegalStateException(wrong); }
+    }
     private static void awaitProgress(Object gate, boolean[] progress) throws InterruptedException {
         long start = System.nanoTime();
         synchronized (gate) {
@@ -222,6 +233,7 @@ public final class Capsule {
                     return denied ? 42L : 41L;
                 }
             } else if (mode == 1) {
+                failedFutureResults();
                 publicFutureMonitors();
                 try (Pair selected = new Pair()) {
                     selected.withdrawFirst(); selected.withdrawLast();
