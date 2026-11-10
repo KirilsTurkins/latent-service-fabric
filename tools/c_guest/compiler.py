@@ -105,6 +105,9 @@ class Compiler:
         self.threading_inputs = {}
         self.threading_clock_inputs = {}
         self.threading_poll_inputs = {}
+        self.threading_time_alias_checked = False
+        self.threading_time_alias = None
+        self.threading_time_alias_identity = None
         if threading_tool is not None:
             from tools.c_guest import threading
             if not threading_tool.is_absolute() or threading_tool.is_symlink() or not threading_tool.is_file():
@@ -116,6 +119,13 @@ class Compiler:
                                    for name, path in self.threading_inputs.items()})
 
     def run(self, tool: str, *arguments: str) -> str:
+        response = getattr(self, 'threading_time_alias', None)
+        if tool == 'zig' and response is not None and '@' + str(response) in map(str, arguments):
+            from tools.c_guest import threading
+            if (threading.timed_alias_response(self.sdk) != response
+                    or file_identity(response, 'c-threading-time-alias-response', 256)
+                    != self.threading_time_alias_identity):
+                raise ValueError('c-threading-timed-symbol-response-changed')
         remaining = self.deadline - time.monotonic()
         if remaining <= 0:
             raise ValueError("C build deadline exceeded")
@@ -159,6 +169,23 @@ class Compiler:
             self.threading_poll_inputs = poll_inputs
             self.materials.update(poll_identities)
 
+        response = threading.timed_alias_response(self.sdk)
+        identity = (file_identity(response, 'c-threading-time-alias-response', 256)
+                    if response is not None else None)
+        if getattr(self, 'threading_time_alias_checked', False):
+            if response != self.threading_time_alias or identity != self.threading_time_alias_identity:
+                raise ValueError('c-threading-timed-symbol-response-changed')
+        else:
+            self.threading_time_alias_checked = True
+            self.threading_time_alias = response
+            self.threading_time_alias_identity = identity
+            if identity is not None:
+                self.materials['c-threading-time-alias-response'] = identity
+        if getattr(self, 'isolation', None) is not None:
+            self.isolation.receipt['cTimedSourceMapping'] = {
+                'mode': 'fixed-sdk-response-v1' if response is not None else 'legacy-sleep-defines',
+                'response': identity, 'selectPrecisionQualified': False}
+
     def check_unchanged(self) -> None:
         self.closed_filesystem.check_unchanged()
         if self.threading_inputs:
@@ -183,6 +210,13 @@ class Compiler:
                 if file_identity(path, threading.poll_libc_material_name(name),
                                  threading.POLL_LIBC_MAX_BYTES) != self.materials[name]:
                     raise ValueError('c-threading-libc-poll-input-changed')
+        if getattr(self, 'threading_time_alias_checked', False):
+            from tools.c_guest import threading
+            response = threading.timed_alias_response(self.sdk)
+            if (response != self.threading_time_alias or
+                    (response is not None and file_identity(response, 'c-threading-time-alias-response', 256)
+                     != self.threading_time_alias_identity)):
+                raise ValueError('c-threading-timed-symbol-response-changed')
         for name, path in self.paths.items():
             if file_identity(path, name) != self.materials[name]:
                 raise ValueError("C compiler tool changed during build")
@@ -291,6 +325,7 @@ class Compiler:
         generated, lock = generate(self.run, wit_source, world, destination, self.platform,
                                    sync_core_abi=threaded)
         public = None
+        time_response = None
         if threaded:
             graph = json.loads(self.run('wasm-tools', 'component', 'wit', '--json', str(destination / 'wit')))
             public = threading.public_export(graph)
@@ -301,7 +336,9 @@ class Compiler:
                                                standard_facilities.FETCH_STANDARD_PROFILE}
             if timed_clock:
                 self.select_threading_clock_inputs()
-                defines = threading.linked_defines(defines, timed_clock=True)
+                time_response = self.threading_time_alias
+                defines = threading.linked_defines(defines, timed_clock=True,
+                                                   time_response=time_response is not None)
             else:
                 defines = threading.linked_defines(defines)
         defines = standard_facilities.compiler_defines(runtime_profile, defines)
@@ -333,6 +370,8 @@ class Compiler:
         for directory in embed_directories:
             command.append('--embed-dir=' + str(directory))
         command.extend("-D" + define for define in defines)
+        if time_response is not None:
+            command.append('@' + str(time_response))
         command.extend(map(str, static_libraries))
         if trap:
             command.append(str(self.sdk / "src/trap.c"))
@@ -346,6 +385,8 @@ class Compiler:
             for directory in embed_directories:
                 preprocessor.append('--embed-dir=' + str(directory))
             preprocessor.extend("-D" + define for define in defines)
+            if time_response is not None:
+                preprocessor.append('@' + str(time_response))
             preprocessor.extend(thread_flags)
             selected_sources = [*sources, generated / "probe.c"]
             if trap:

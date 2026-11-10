@@ -449,15 +449,146 @@ __attribute__((export_name("poll_clock_aliases"))) int poll_clock_aliases(void) 
 
 #if defined(LSF_C_TEST_LIBC_SELECT)
 #include <sys/select.h>
+#include <poll.h>
 static void poll_libc_during_next(void) {
     require(admissions==1 && !settlements && timers==1 && !stops &&
             parks==1 && !wakes && admitted_nanos==5000000);
 }
 __attribute__((export_name("poll_clock_via_libc"))) int poll_clock_via_libc(void) {
     poll_reset(5000000);on_timer_next=poll_libc_during_next;
-    struct timeval timeout={.tv_sec=0,.tv_usec=5000};
-    CHECK(select(0,NULL,NULL,NULL,&timeout)==0);
+    CHECK(poll(NULL,0,5)==0);
     CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
     CHECK(next_calls==1 && admitted_nanos==5000000);return 0;
+}
+
+static int select_delay_control(time_t seconds,suseconds_t micros,uint64_t expected) {
+    reset();struct timeval timeout={.tv_sec=seconds,.tv_usec=micros};
+    CHECK(select(0,NULL,NULL,NULL,&timeout)==0);
+    CHECK(timeout.tv_sec==seconds && timeout.tv_usec==micros && source_errno==37);
+    if (expected) {
+        CHECK(admitted_nanos==expected && admissions==1 && settlements==1 && timers==1 && stops==1);
+        CHECK(parks==1 && wakes==1 && next_calls==1);
+    } else CHECK(!admissions && !settlements && !timers && !stops && !parks && !wakes);
+    return 0;
+}
+static int pselect_delay_control(time_t seconds,long nanos,uint64_t expected) {
+    reset();const struct timespec timeout={.tv_sec=seconds,.tv_nsec=nanos};
+    CHECK(pselect(0,NULL,NULL,NULL,&timeout,NULL)==0);
+    CHECK(timeout.tv_sec==seconds && timeout.tv_nsec==nanos && source_errno==37);
+    CHECK(admitted_nanos==expected && admissions==1 && settlements==1 && timers==1 && stops==1);
+    CHECK(parks==1 && wakes==1 && next_calls==1);return 0;
+}
+__attribute__((export_name("select_precision_via_libc"))) int select_precision_via_libc(void) {
+    int result;
+    if ((result=select_delay_control(0,0,0))) return result;
+    if ((result=select_delay_control(0,1,1000))) return result;
+    if ((result=select_delay_control(0,999,999000))) return result;
+    if ((result=select_delay_control(0,1000,1000000))) return result;
+    if ((result=select_delay_control(0,1999,1999000))) return result;
+    if ((result=select_delay_control(0,5000,5000000))) return result;
+    if ((result=select_delay_control(2592000,0,UINT64_C(2592000000000000)))) return result;
+    if ((result=pselect_delay_control(0,1,1))) return result;
+    if ((result=pselect_delay_control(0,1999999,1999999))) return result;
+    if ((result=pselect_delay_control(INT64_C(18446744073),709551615,UINT64_MAX))) return result;
+    return 0;
+}
+
+static fd_set selected_r,selected_w,selected_e;
+static void select_sets_pending(void) {
+    require(FD_ISSET(5,&selected_r) && FD_ISSET(6,&selected_w) && FD_ISSET(7,&selected_e));
+    require(admissions==1 && !settlements && timers==1 && !stops && parks==1 && !wakes);
+}
+__attribute__((export_name("select_sets_via_libc"))) int select_sets_via_libc(void) {
+    reset();FD_ZERO(&selected_r);FD_ZERO(&selected_w);FD_ZERO(&selected_e);
+    FD_SET(5,&selected_r);FD_SET(6,&selected_w);FD_SET(7,&selected_e);
+    on_timer_next=select_sets_pending;
+    struct timeval tv={0,1};
+    CHECK(select(0,&selected_r,&selected_w,&selected_e,&tv)==0);
+    CHECK(!selected_r.__nfds && !selected_w.__nfds && !selected_e.__nfds);
+    CHECK(admitted_nanos==1000 && admissions==1 && settlements==1 && timers==1 && stops==1);
+    CHECK(parks==1 && wakes==1 && source_errno==37 && tv.tv_sec==0 && tv.tv_usec==1);
+
+    reset();FD_ZERO(&selected_r);FD_ZERO(&selected_w);FD_ZERO(&selected_e);
+    const struct timespec ts={0,1};
+    CHECK(pselect(12,&selected_r,&selected_w,&selected_e,&ts,NULL)==0);
+    CHECK(!selected_r.__nfds && !selected_w.__nfds && !selected_e.__nfds);
+    CHECK(admitted_nanos==1 && admissions==1 && settlements==1 && timers==1 && stops==1);
+    CHECK(parks==1 && wakes==1 && source_errno==37 && ts.tv_sec==0 && ts.tv_nsec==1);
+
+    /* Valid entries at or above nfds are ignored, even when nfds is nonzero. */
+    reset();FD_ZERO(&selected_r);FD_ZERO(&selected_w);FD_ZERO(&selected_e);
+    FD_SET(5,&selected_r);FD_SET(6,&selected_w);FD_SET(7,&selected_e);
+    on_timer_next=select_sets_pending;tv=(struct timeval){0,1};
+    CHECK(select(5,&selected_r,&selected_w,&selected_e,&tv)==0);
+    CHECK(!selected_r.__nfds && !selected_w.__nfds && !selected_e.__nfds);
+    CHECK(admitted_nanos==1000 && admissions==1 && settlements==1 && timers==1 && stops==1);
+
+    /* A real descriptor remains on the original path and is refused by the
+     * existing clock-only bridge; no timer or readiness is fabricated. */
+    reset();FD_ZERO(&selected_r);FD_SET(0,&selected_r);tv=(struct timeval){0,1};
+    CHECK(select(1,&selected_r,NULL,NULL,&tv)==-1);
+    CHECK(FD_ISSET(0,&selected_r) && !admissions && !timers && !stops);
+    return 0;
+}
+__attribute__((export_name("select_refusals_via_libc"))) int select_refusals_via_libc(void) {
+    reset();sigset_t mask={0};const struct timespec ts={0,1};
+    CHECK(pselect(0,NULL,NULL,NULL,&ts,&mask)==-1);
+    CHECK(source_errno==ENOTSUP && !admissions && !timers && !stops);
+
+    reset();FD_ZERO(&selected_r);FD_SET(5,&selected_r);refuse_wait=1;
+    struct timeval tv={0,1};CHECK(select(0,&selected_r,NULL,NULL,&tv)==-1);
+    CHECK(source_errno==EAGAIN && FD_ISSET(5,&selected_r));
+    CHECK(admissions==1 && !settlements && !timers && !stops && !parks);
+
+    reset();FD_ZERO(&selected_r);FD_SET(5,&selected_r);refuse_timer=1;tv=(struct timeval){0,1};
+    CHECK(select(0,&selected_r,NULL,NULL,&tv)==-1);
+    CHECK(source_errno==EAGAIN && FD_ISSET(5,&selected_r));
+    CHECK(admissions==1 && settlements==1 && timers==1 && !stops && !parks);
+
+    reset();FD_ZERO(&selected_r);FD_SET(5,&selected_r);next_error=2;tv=(struct timeval){0,1};
+    CHECK(select(0,&selected_r,NULL,NULL,&tv)==-1);
+    CHECK(source_errno==EAGAIN && FD_ISSET(5,&selected_r));
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
+    return 0;
+}
+__attribute__((export_name("select_limits_via_libc"))) int select_limits_via_libc(void) {
+    reset();struct timeval tv={-1,0};
+    CHECK(select(0,NULL,NULL,NULL,&tv)==-1 && source_errno==EINVAL);
+    tv=(struct timeval){0,1000000};
+    CHECK(select(0,NULL,NULL,NULL,&tv)==-1 && source_errno==EINVAL);
+    tv=(struct timeval){INT64_MAX,999999};
+    CHECK(select(0,NULL,NULL,NULL,&tv)==-1 && source_errno==EOVERFLOW);
+    struct timespec ts={0,1000000000};
+    CHECK(pselect(0,NULL,NULL,NULL,&ts,NULL)==-1 && source_errno==EINVAL);
+    ts=(struct timespec){INT64_MAX,999999999};
+    CHECK(pselect(0,NULL,NULL,NULL,&ts,NULL)==-1 && source_errno==EOVERFLOW);
+    CHECK(!admissions && !timers && !stops);
+    /* The upstream no-subscription path still refuses an infinite wait. */
+    CHECK(select(0,NULL,NULL,NULL,NULL)==-1);
+    CHECK(!admissions && !timers && !stops);
+    CHECK(pselect(-1,NULL,NULL,NULL,NULL,NULL)==-1);
+    CHECK(!admissions && !timers && !stops);
+    return 0;
+}
+int timed_select_from_dependency(long);
+int timed_pselect_from_dependency(long);
+__attribute__((export_name("select_dependency_via_libc"))) int select_dependency_via_libc(void) {
+    reset();CHECK(timed_select_from_dependency(1)==0);
+    CHECK(admitted_nanos==1000 && admissions==1 && settlements==1 && timers==1 && stops==1);
+    reset();CHECK(timed_pselect_from_dependency(1)==0);
+    CHECK(admitted_nanos==1 && admissions==1 && settlements==1 && timers==1 && stops==1);
+    return 0;
+}
+__attribute__((export_name("select_terminal_cancel"))) int select_terminal_cancel(void) {
+    reset();FD_ZERO(&selected_r);FD_SET(5,&selected_r);next_error=3;
+    struct timeval tv={0,1};return select(0,&selected_r,NULL,NULL,&tv);
+}
+__attribute__((export_name("select_terminal_deadline"))) int select_terminal_deadline(void) {
+    reset();FD_ZERO(&selected_r);FD_SET(5,&selected_r);next_error=4;
+    struct timeval tv={0,1};return select(0,&selected_r,NULL,NULL,&tv);
+}
+__attribute__((export_name("select_terminal_state"))) int select_terminal_state(void) {
+    CHECK(FD_ISSET(5,&selected_r) && admissions==1 && !settlements && timers==1 && !stops);
+    CHECK(parks==1 && !wakes && next_calls==1);return 0;
 }
 #endif

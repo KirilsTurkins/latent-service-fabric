@@ -113,25 +113,54 @@ claim canonical execution, original-ledger execution or signed qualification.
 
 The selected timed-thread and standard-clock profiles now bridge the pinned
 WASI libc's single relative REALTIME clock subscription to the existing owned
-sleep. This supplies the descriptor-free select call used by the pinned
-libcurl source's wait. Zero delay completes without a host call. A positive
-delay admits the original Wait and Timer, and publishes one clock event only
-after the existing timer wait has actually returned and retired. Admission
-refusal leaves the result untouched; cancellation and activation deadline do
-not become elapsed-time success. The subscription is copied and output ranges
-validated before any timer admission or await.
+sleep for the supported `poll` clock case. Zero delay completes without a
+host call. A positive delay admits the original Wait and Timer, and publishes
+one clock event only after the existing timer wait has actually returned and
+retired. Admission refusal leaves the result untouched; cancellation and
+activation deadline do not become elapsed-time success. The subscription is
+copied and output ranges validated before any timer admission or await.
+
+For finite `select` and `pselect` calls without selected descriptors, the
+timed profile maps compiled source calls to its own implementation. It copies
+the requested duration before suspension and uses the same owned sleep directly,
+rather than inheriting the pinned libc's downward millisecond truncation and
+`INT_MAX` millisecond cap. Empty sets and entries outside `nfds` are cleared only after
+successful completion; checking the pinned set representation is bounded by
+`FD_SETSIZE`. Invalid duration fields return
+`EINVAL`, an unrepresentable nanosecond interval returns `EOVERFLOW`, and a
+non-null `pselect` signal mask returns `ENOTSUP`. Other descriptor shapes and
+infinite waits retain the original libc path and existing refusal behavior.
+
+The mapping applies to application and captured dependency source compiled
+with this timed profile when the captured SDK includes the exact compiler-owned
+`timed-symbols.rsp`. That file is in the SDK source inventory and is checked
+before compiler use and again after the build. Its one fixed response argument
+replaces the previous two sleep-symbol arguments; the outer subprocess limit
+stays unchanged. Older captured SDKs without this file retain the two legacy
+sleep mappings and the original libc select behavior, and do not acquire this
+precision qualification. The compiler receipt reports which mode was selected.
+
+The response-selected profile reserves compiler command-line definitions for
+`select` and `pselect` and their private names; source that deliberately
+undefines the mapping is outside this path. Static archives are already
+rejected for this profile. The mapping is not an interposition guarantee for
+calls inside the precompiled libc or for opaque external archives. It does not
+add signals, descriptors, sockets, readiness, or libcurl qualification.
 
 This is deliberately not descriptor readiness. FD subscriptions, multiple
 subscriptions, absolute deadlines and other clock types return ENOTSUP;
 zero subscriptions and overlapping result ranges return EINVAL. No socket,
 ambient WASI host, connection grant, or polling of stdout/stderr is added.
-The selected libc ABI, polling/select sources and generated WASI wrapper have
-their own pinned and rechecked compiler material identities.
+The selected libc ABI, polling/select sources, generated WASI wrapper and
+three directly used `fd_set` headers have pinned and rechecked compiler
+material identities; this is not an attestation of every transitive header.
 
 The existing timed source owner exercises the actual C bridge with serialized
 broker and timer doubles, including ownership refusal, terminal cancellation
-and deadline, input mutation while awaiting, and the pinned libc's ordinary
-select path. These checks are not a signed component, original ledger or proof
+and deadline, input mutation while awaiting, exact sub-millisecond and long
+select durations, invalid and overflowing inputs, signal-mask refusal, empty
+sets, a separately compiled dependency and the descriptor fallback. These
+checks are not a signed component, original ledger or proof
 of physical retirement. An earlier [current-source timed owner
 run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/42525327883)
 on 14a55263ca17359603df3691f20a1dcac25ca17e reached the timed-sleep case and
