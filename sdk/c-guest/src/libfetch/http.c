@@ -322,7 +322,8 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
     else if (!strcmp(method, "OPTIONS")) operation = LATENT_HTTP_STREAMING_METHOD_OPTIONS;
     else { unsupported(); return NULL; }
     const size_t body_length = body ? strnlen(body, LSF_FETCH_BODY_BYTES + 1) : 0;
-    const size_t media_length = content_type ? strnlen(content_type, 257) : 0;
+    /* The pinned frontend only uses Content-Type when body is non-NULL. */
+    const size_t media_length = body && content_type ? strnlen(content_type, 257) : 0;
     if (body_length > LSF_FETCH_BODY_BYTES || media_length > 256) {
         failure(FETCH_FULL, EFBIG, "HTTP input exceeds its bound"); return NULL;
     }
@@ -353,7 +354,7 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
         .headers = {headers, header_count},
         .url = {(uint8_t *)target, strlen(target)}, .body_length = {true, body_length},
         .timeout_millis = {fetchTimeout != 0, (uint64_t)fetchTimeout * 1000}};
-    if (content_type) {
+    if (body && content_type) {
         metadata.body_media_type.is_some = true;
         metadata.body_media_type.val = (probe_string_t){(uint8_t *)content_type, media_length};
     }
