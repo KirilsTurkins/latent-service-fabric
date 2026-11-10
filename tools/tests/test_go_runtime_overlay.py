@@ -569,6 +569,26 @@ class GoRuntimeOverlayTests(unittest.TestCase):
                 checkpoints.transform(compiler, source.parent,
                     [{'Dir': str(source.parent), 'GoFiles': [source.name]}], {source}, root)
 
+    def test_checkpoint_parser_cannot_omit_selected_application_or_dependency(self):
+        from tools.go_guest import checkpoints
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            generated, output = root / 'module', root / 'overlay'
+            app = generated / 'main.go'
+            dependency = generated / 'vendor/example.org/worker/worker.go'
+            for path in (app, dependency):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text('package fixture\nfunc Run(){\nagain:\ngoto again\n}\n')
+            output.mkdir()
+            packages = [{'Dir': str(path.parent), 'GoFiles': [path.name]} for path in (app, dependency)]
+            for index, retained in enumerate((app, dependency)):
+                run_output = output / str(index)
+                run_output.mkdir()
+                compiler = SimpleNamespace(run=lambda *args: json.dumps([{'path': str(retained)}]))
+                with self.subTest(retained=retained), self.assertRaisesRegex(ValueError, 'returned-unselected-source'):
+                    checkpoints.transform(compiler, generated, packages, {app}, run_output)
+
     def test_collected_timer_drain_retires_exact_slot_before_original_fence(self):
         import re
         source = (runtime.ROOT / 'sdk/go-guest/runtime/timer_bridge.go.in').read_text()
