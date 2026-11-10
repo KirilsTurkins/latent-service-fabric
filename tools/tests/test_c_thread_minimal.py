@@ -20,8 +20,30 @@ def before_exit_trap(raw):
   raise AssertionError('closed-file-original-abi-source')
  return original
 
+def before_fragment_target(raw):
+ import hashlib
+ if hashlib.sha256(raw).hexdigest() != '906a26d42fad5eb071b02191282f1a3da60a8cfa117782cd125a34f6ad02ab1d':
+  raise AssertionError('libfetch-fragment-target-exact-source')
+ changes = (
+  (b'    const size_t path = strnlen(url->doc, LSF_FETCH_URL_BYTES + 1);',
+   b'    const size_t document = strnlen(url->doc, LSF_FETCH_URL_BYTES + 1);'),
+  (b'    if (path > LSF_FETCH_URL_BYTES || host == sizeof(url->host) ||\n        path + host + scheme + 10 > LSF_FETCH_URL_BYTES) {',
+   b'    if (document > LSF_FETCH_URL_BYTES || host == sizeof(url->host) ||\n        document + host + scheme + 10 > LSF_FETCH_URL_BYTES) {'),
+  (b'', b"    /* A literal fragment is client-side only. Keep encoded %23 and queries\n     * intact, without modifying the caller's original parsed URL. */\n    const char *fragment = memchr(url->doc, '#', document);\n    const size_t path = fragment ? (size_t)(fragment - url->doc) : document;\n"),
+  (b'    if (url->port) snprintf(text, path + host + scheme + 11, "%s://%s:%d%s", url->scheme, url->host, url->port, url->doc);\n    else snprintf(text, path + host + scheme + 11, "%s://%s%s", url->scheme, url->host, url->doc);',
+   b'    if (url->port) snprintf(text, path + host + scheme + 11, "%s://%s:%d%.*s", url->scheme, url->host, url->port, (int)path, url->doc);\n    else snprintf(text, path + host + scheme + 11, "%s://%s%.*s", url->scheme, url->host, (int)path, url->doc);'),
+ )
+ for previous, current in reversed(changes):
+  if raw.count(current) != 1:
+   raise AssertionError('libfetch-fragment-target-exact-addendum')
+  raw = raw.replace(current, previous, 1)
+ if hashlib.sha256(raw).hexdigest() != 'b3bc3ee9c9299b56f92d8b768da82ca062cd2087796e770d78c7aee53bddb41c':
+  raise AssertionError('libfetch-fragment-target-prior-source')
+ return raw
+
 def before_unsolicited_partial(raw):
  import hashlib
+ raw = before_fragment_target(raw)
  # Reconstruct the exact previously reviewed Range source before applying its
  # historical inverse. Reject partial or unreviewed changes first.
  if hashlib.sha256(raw).hexdigest() != 'b3bc3ee9c9299b56f92d8b768da82ca062cd2087796e770d78c7aee53bddb41c':
@@ -89,7 +111,7 @@ class CThreadMinimal(unittest.TestCase):
   self.assertEqual(hashlib.sha256(before_unsolicited_partial(raw)).hexdigest(),
                    'c81b948e74babf3edbc97a25473597daf24cba87ce48abda828f2e753c64185d')
   for altered in (raw+b'\n',raw.replace(b'requested_offset > 0 && known_length',b'requested_offset >= 0 && known_length'),raw.replace(b'actual_offset < (uint64_t)partial_length',b'actual_offset <= (uint64_t)partial_length')):
-   with self.assertRaisesRegex(AssertionError,'libfetch-unsolicited-partial-exact-source'):
+   with self.assertRaisesRegex(AssertionError,'libfetch-fragment-target-exact-source'):
     before_unsolicited_partial(altered)
  def test_minimal_overlay_preserves_every_original_byte_and_full_standard_lifecycle_calls(self):
   raw=(ROOT/(original.FIXTURE+'main.c')).read_bytes();derived=selected.selected_source(raw)

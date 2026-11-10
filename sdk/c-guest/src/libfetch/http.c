@@ -160,17 +160,21 @@ static char *request_url(const struct url *url) {
         url->port < 0 || url->port > 65535) {
         unsupported(); return NULL;
     }
-    const size_t path = strnlen(url->doc, LSF_FETCH_URL_BYTES + 1);
+    const size_t document = strnlen(url->doc, LSF_FETCH_URL_BYTES + 1);
     const size_t host = strnlen(url->host, sizeof(url->host));
     const size_t scheme = strlen(url->scheme);
-    if (path > LSF_FETCH_URL_BYTES || host == sizeof(url->host) ||
-        path + host + scheme + 10 > LSF_FETCH_URL_BYTES) {
+    if (document > LSF_FETCH_URL_BYTES || host == sizeof(url->host) ||
+        document + host + scheme + 10 > LSF_FETCH_URL_BYTES) {
         failure(FETCH_URL, ENAMETOOLONG, "HTTP URL exceeds its bound"); return NULL;
     }
+    /* A literal fragment is client-side only. Keep encoded %23 and queries
+     * intact, without modifying the caller's original parsed URL. */
+    const char *fragment = memchr(url->doc, '#', document);
+    const size_t path = fragment ? (size_t)(fragment - url->doc) : document;
     char *text = malloc(path + host + scheme + 11);
     if (!text) { fetch_syserr(); return NULL; }
-    if (url->port) snprintf(text, path + host + scheme + 11, "%s://%s:%d%s", url->scheme, url->host, url->port, url->doc);
-    else snprintf(text, path + host + scheme + 11, "%s://%s%s", url->scheme, url->host, url->doc);
+    if (url->port) snprintf(text, path + host + scheme + 11, "%s://%s:%d%.*s", url->scheme, url->host, url->port, (int)path, url->doc);
+    else snprintf(text, path + host + scheme + 11, "%s://%s%.*s", url->scheme, url->host, (int)path, url->doc);
     return text;
 }
 
