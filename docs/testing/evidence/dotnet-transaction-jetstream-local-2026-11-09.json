@@ -1,0 +1,25 @@
+{
+  "description": ".NET transactional aggregate with actual local JetStream provider",
+  "qualification": "normal local combined-source Linux node and ephemeral demo trust",
+  "buildType": "https://latent.dev/build/dotnet-capsule/v1",
+  "sourceSnapshotDigest": "sha256:bae408834247e954cd89935353e16f4bf2f1a0781e3b5f90263f204e757adf94",
+  "componentDigest": "sha256:eca193432a1d7e44766345e6f7883d9cbe8ead4e3b65857b709def4a9adb325d",
+  "companionDigest": "sha256:42013a7b811c1e790f9837d4ce1db15e08536b4927a57836c548dc9e012586cc",
+  "buildObservationSha256": "90716bcf461cda6cb16a72e2ff8b389b37ffe81f57ea93cb4aec7636d1188a39",
+  "signedReleaseSetSha256": "4d5694d7c5cd647972a2f5244169a9e93aebaab7fdf3e65f2b8ff2a2dc15e802",
+  "publication": "publication:sha256:226d3792a2c1a6bf5a7b77c4bee6c8c3136ab53d654f742e67e597506b77ec61",
+  "observedProviderProfile": "js-window-v1:8c4081545c1e78c3104c570da387400b23bf1f6930eb6b653677f57b45e25293",
+  "normalNodeSha256": "48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "fixtureSha256": "3e318d3bb6f1da9cf043fdd9a0584374c15a184e2f4652090f4ca5f1258d7009",
+  "observations": [
+    "The .NET authoring capture pinned the actual disposable JetStream profile and companion-linked requirements. The maintained NativeAOT compiler packaged the component, the explicit demo signer signed it, and the normal node admitted it with separately scoped monotonic clock, state and event authority.",
+    "An update committed one effect and received provider acknowledgement. A declared rejection left count and key version unchanged, and a stale edit returned a fenced abort.",
+    "The fixture deliberately dropped a second committed response body, recovered its original result through authorized lookup, and replayed both that result and the earlier rejection after state changed.",
+    "A fresh query returned count two and the actual broker held two messages for the two successful updates. The node was reaped cleanly with state and effect owners physically retired, and the fixture removed its own broker and TLS resources."
+  ],
+  "limitations": [
+    "The run did not count guest executions; matching retained outcomes and broker messages do not prove there was no extra execution.",
+    "This is one local .NET scenario, not cancellation, memory/fuel, crash-persistence or complete .NET guest qualification. The overall conformance matrix remains open.",
+    "The normal node is a verified local combined-source binary containing unmerged work. Production trust, hosted CI and installed-distribution qualification are not established."
+  ]
+}

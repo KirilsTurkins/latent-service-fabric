@@ -1,0 +1,30 @@
+{
+  "admissionOperationRecovered": true,
+  "cliSha256": "sha256:e1179de07a96719f3161f7748dbb14496151bf8b193253bf7b7a9fc819f4cec7",
+  "componentDigest": "sha256:316827c86428a24325f615acd5cbcea1c50017edcc0b507db2a0087a9ff764ed",
+  "guestExecuted": false,
+  "nodeSha256": "sha256:48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "packageDigest": "sha256:d362f52384caea383632597956eb9d846918a8559242caed2949f1f738f5e767",
+  "packagedDistributionQualified": false,
+  "publication": "publication:sha256:5359f5d1a90afeeb1a6f88898727070a943e93a86bcbcb9975f296b7417c5dfa",
+  "qualification": "local normal combined-source node, ephemeral demo trust; admission only",
+  "signerSha256": "sha256:a9d42b2ad429cca608e9a19b8d0137d05155bf040ea97e438e53be826731a7be",
+  "sourceSnapshotDigest": "sha256:b3449ea62ee38bca454f6dc1fbc0104a3ed097739a0aa3fa3391bc7995f7989b",
+  "source": "Normal node built from the locally verified combined-source snapshot; this snapshot contains unmerged work and is not an installed distribution.",
+  "procedure": [
+    "Published the signed Rust transaction package with the normal CLI and ephemeral local demo trust.",
+    "Recovered the original admission receipt by operation ID and checked the release digest and publication.",
+    "Stopped and reaped the node; the shutdown report recorded clean effect and state physical retirement."
+  ],
+  "shutdown": {
+    "processReaped": true,
+    "clean": true,
+    "effectsPhysicallyRetired": true,
+    "stateStorePhysicallyRetired": true,
+    "stateNativePhysicallyRetired": true
+  },
+  "limitations": [
+    "Admission alone does not execute the guest or qualify transactional operations.",
+    "The trust and node are local; hosted CI and packaged-distribution qualification remain outstanding."
+  ]
+}

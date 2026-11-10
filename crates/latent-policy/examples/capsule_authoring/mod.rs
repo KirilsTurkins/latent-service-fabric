@@ -78,6 +78,25 @@ pub(super) fn directory(path: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Explicit local demo trust for one Rust Phase 4 transaction build.
+/// The ordinary demo path retains its existing stateless packaging profile.
+pub(super) fn sign_rust_transaction(output: &Path, input: &Path) -> Result<()> {
+    if !output.is_absolute() || output.exists() {
+        return Err("choose a fresh absolute transaction demo output".into());
+    }
+    let build = inputs::load_rust_transaction(input)?;
+    sign_checked(output, vec![build], false, None)
+}
+
+/// Explicit demo trust for one completed maintained transaction build.
+pub(super) fn sign_transaction(output: &Path, input: &Path) -> Result<()> {
+    if !output.is_absolute() || output.exists() {
+        return Err("choose a fresh absolute transaction demo output".into());
+    }
+    let build = inputs::load_transaction(input)?;
+    sign_checked(output, vec![build], false, None)
+}
+
 pub(super) fn sign_demo(output: &Path, paths: &[OsString]) -> Result<()> {
     sign(output, paths, false)
 }

@@ -244,6 +244,22 @@ class CurrentJavaEventInputs(unittest.TestCase):
             self.assertEqual({grant['capability'] for grant in complete['deploymentGrants']}, {
                 'latent:intents/staging@0.1.0', 'latent:state/key-value@0.2.0',
                 'latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0'})
+            random_host = copy.deepcopy(host)
+            random_host['configuredProviders'].append({'id':'random','tenant':TENANT,'service':'runtime-host',
+                'capability':'latent:random/random@0.1.0','profile':'system-random-v1',
+                'configurationDigest':'sha256:'+'9'*64,'configurationEpoch':'1'})
+            random_observed = ObservedEventHost.read(random_host, preview, operations, files[EVENT_REQUIREMENTS])
+            with self.assertRaisesRegex(ValueError, 'exact-event-clock-http-provider-set'):
+                complete_policy_documents(random_observed, random_host, operations[0])
+            go_complete = complete_policy_documents(random_observed, random_host, operations[0], go_random=True)
+            self.assertIn({'capability':'latent:random/random@0.1.0','policy':'random-allow'},
+                          go_complete['deploymentGrants'])
+            self.assertEqual(go_complete['bindings']['random-installed']['restriction']['operations'], ['u64-value'])
+            bad_random = copy.deepcopy(random_host)
+            bad_random['configuredProviders'][-1]['profile'] = 'unknown'
+            bad_observed = ObservedEventHost.read(bad_random, preview, operations, files[EVENT_REQUIREMENTS])
+            with self.assertRaisesRegex(ValueError, 'exact-observed-random-provider'):
+                complete_policy_documents(bad_observed, bad_random, operations[0], go_random=True)
             changed_host = copy.deepcopy(host)
             changed_host['stateConfigurationDigest'] = 'sha256:' + '9' * 64
             with self.assertRaises(ValueError):

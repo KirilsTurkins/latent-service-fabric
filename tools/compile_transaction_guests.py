@@ -36,7 +36,44 @@ JAVA_POSTSTAGE_HTTP_VARIANT = 'put-once-poststage-http-denial'
 
 
 def authored_project(language: str, variant: str, output: Path, *, java_current_http_profile: str | None = None,
-                     java_current_event_profile: str | None = None) -> Path:
+                     java_current_event_profile: str | None = None,
+                     rust_current_event_profile: str | None = None,
+                     c_current_event_profile: str | None = None,
+                     go_current_event_profile: str | None = None,
+                     typescript_current_event_profile: str | None = None,
+                     dotnet_current_event_profile: str | None = None) -> Path:
+    if dotnet_current_event_profile is not None:
+        if (language != "dotnet" or variant != "aggregate" or any(value is not None for value in
+                (java_current_http_profile, java_current_event_profile, rust_current_event_profile,
+                 c_current_event_profile, go_current_event_profile, typescript_current_event_profile))):
+            raise ValueError("current .NET event profile requires the exclusive .NET aggregate")
+        from tools.dotnet_guest.project import create
+        return create(output, TEMPLATE, "transaction-dotnet-aggregate", event_profile=dotnet_current_event_profile)
+    if typescript_current_event_profile is not None:
+        if (language != "typescript" or variant != "aggregate" or java_current_http_profile is not None
+                or java_current_event_profile is not None or rust_current_event_profile is not None
+                or c_current_event_profile is not None or go_current_event_profile is not None):
+            raise ValueError("current TypeScript event profile requires the exclusive TypeScript aggregate")
+        from tools.typescript_guest.project import create
+        return create(output, TEMPLATE, "transaction-typescript-aggregate", event_profile=typescript_current_event_profile)
+    if go_current_event_profile is not None:
+        if (language != "go" or variant != "aggregate" or java_current_http_profile is not None
+                or java_current_event_profile is not None or rust_current_event_profile is not None
+                or c_current_event_profile is not None):
+            raise ValueError("current Go event profile requires the exclusive Go aggregate")
+        from tools.go_capsule_project import create
+        return create(output, TEMPLATE, "transaction-go-aggregate", event_profile=go_current_event_profile)
+    if c_current_event_profile is not None:
+        if (language != "c" or variant != "aggregate" or java_current_http_profile is not None
+                or java_current_event_profile is not None or rust_current_event_profile is not None):
+            raise ValueError("current C event profile requires the exclusive C aggregate")
+        from tools.c_capsule_project import create
+        return create(output, TEMPLATE, "transaction-c-aggregate", event_profile=c_current_event_profile)
+    if rust_current_event_profile is not None:
+        if language != "rust" or variant != "aggregate" or java_current_http_profile is not None or java_current_event_profile is not None:
+            raise ValueError("current Rust event profile requires the exclusive Rust aggregate")
+        from tools.rust_capsule_project import create
+        return create(output, TEMPLATE, "transaction-rust-aggregate", event_profile=rust_current_event_profile)
     if java_current_event_profile is not None:
         if language != "java" or variant != "aggregate" or java_current_http_profile is not None:
             raise ValueError("current event profile requires the exclusive Java aggregate")
@@ -195,7 +232,10 @@ def compile_project(language: str, work: Path, output: Path, command: Commands,
 def compile_guests(language: str, output: Path, *, tools: Path | None = None, wasi_sdk: Path | None = None,
                    java_schema_put_once: bool = False, java_post_stage_diagnostic: bool = False,
                    java_state_acceptance: bool = False, java_current_http_profile: str | None = None,
-                   java_current_event_profile: str | None = None, java_read_only_cache: Path | None = None, java_early_http_denial: bool = False,
+                   java_current_event_profile: str | None = None, rust_current_event_profile: str | None = None,
+                   c_current_event_profile: str | None = None, go_current_event_profile: str | None = None,
+                   typescript_current_event_profile: str | None = None, dotnet_current_event_profile: str | None = None,
+                   java_read_only_cache: Path | None = None, java_early_http_denial: bool = False,
                    java_poststage_http_denial: bool = False) -> None:
     if type(java_poststage_http_denial) is not bool or (java_poststage_http_denial and
             (language != 'java' or java_schema_put_once or java_post_stage_diagnostic
@@ -226,13 +266,48 @@ def compile_guests(language: str, output: Path, *, tools: Path | None = None, wa
                 or not isinstance(java_current_event_profile, str)
                 or re.fullmatch(r"js-window-v1:[0-9a-f]{64}", java_current_event_profile) is None):
             raise ValueError("current event profile requires the exclusive explicit Java aggregate")
+    if rust_current_event_profile is not None:
+        import re
+        if (language != "rust" or java_current_event_profile is not None or java_current_http_profile is not None
+                or not isinstance(rust_current_event_profile, str)
+                or re.fullmatch(r"js-window-v1:[0-9a-f]{64}", rust_current_event_profile) is None):
+            raise ValueError("current event profile requires the exclusive explicit Rust aggregate")
+    if c_current_event_profile is not None:
+        import re
+        if (language != "c" or java_current_event_profile is not None or rust_current_event_profile is not None
+                or java_current_http_profile is not None or not isinstance(c_current_event_profile, str)
+                or re.fullmatch(r"js-window-v1:[0-9a-f]{64}", c_current_event_profile) is None):
+            raise ValueError("current event profile requires the exclusive explicit C aggregate")
+    if go_current_event_profile is not None:
+        import re
+        if (language != "go" or java_current_event_profile is not None or rust_current_event_profile is not None
+                or c_current_event_profile is not None or java_current_http_profile is not None
+                or not isinstance(go_current_event_profile, str)
+                or re.fullmatch(r"js-window-v1:[0-9a-f]{64}", go_current_event_profile) is None):
+            raise ValueError("current event profile requires the exclusive explicit Go aggregate")
+    if typescript_current_event_profile is not None:
+        import re
+        if (language != "typescript" or any(value is not None for value in
+                (java_current_event_profile, rust_current_event_profile, c_current_event_profile,
+                 go_current_event_profile, java_current_http_profile))
+                or not isinstance(typescript_current_event_profile, str)
+                or re.fullmatch(r"js-window-v1:[0-9a-f]{64}", typescript_current_event_profile) is None):
+            raise ValueError("current event profile requires the exclusive explicit TypeScript aggregate")
+    if dotnet_current_event_profile is not None:
+        import re
+        if (language != "dotnet" or any(value is not None for value in
+                (java_current_event_profile, rust_current_event_profile, c_current_event_profile,
+                 go_current_event_profile, typescript_current_event_profile, java_current_http_profile))
+                or not isinstance(dotnet_current_event_profile, str)
+                or re.fullmatch(r"js-window-v1:[0-9a-f]{64}", dotnet_current_event_profile) is None):
+            raise ValueError("current event profile requires the exclusive explicit .NET aggregate")
     if java_read_only_cache is not None and (
             language != "java" or not isinstance(java_read_only_cache, Path)
             or not java_read_only_cache.is_absolute() or not java_read_only_cache.is_dir()
             or java_read_only_cache.is_symlink()):
         raise ValueError("read-only Java cache requires an existing explicit absolute directory and Java compiler")
     output = fresh(output)
-    variants = (("aggregate",) if java_current_event_profile is not None else (JAVA_POSTSTAGE_HTTP_VARIANT,) if java_poststage_http_denial else (JAVA_EARLY_HTTP_VARIANT,) if java_early_http_denial else JAVA_ACCEPTANCE_VARIANTS if java_state_acceptance else (JAVA_DIAGNOSTIC_VARIANT,) if java_post_stage_diagnostic
+    variants = (("aggregate",) if any(value is not None for value in (java_current_event_profile, rust_current_event_profile, c_current_event_profile, go_current_event_profile, typescript_current_event_profile, dotnet_current_event_profile)) else (JAVA_POSTSTAGE_HTTP_VARIANT,) if java_poststage_http_denial else (JAVA_EARLY_HTTP_VARIANT,) if java_early_http_denial else JAVA_ACCEPTANCE_VARIANTS if java_state_acceptance else (JAVA_DIAGNOSTIC_VARIANT,) if java_post_stage_diagnostic
                 else (*VARIANTS, *JAVA_SCHEMA_VARIANTS) if java_schema_put_once else VARIANTS)
     for variant in variants:
         if variant == "result-boundary" and language != "rust":
@@ -244,7 +319,17 @@ def compile_guests(language: str, output: Path, *, tools: Path | None = None, wa
             "world": WORLD, "hostAbiDigest": json.loads(read_file(ROOT / "wit/host-abi-phase4-v1.json"))["digest"]}
         command = None
         try:
-            profile_selection = ({"java_current_event_profile": java_current_event_profile}
+            profile_selection = ({"dotnet_current_event_profile": dotnet_current_event_profile}
+                                 if dotnet_current_event_profile is not None else
+                                 {"typescript_current_event_profile": typescript_current_event_profile}
+                                 if typescript_current_event_profile is not None else
+                                 {"go_current_event_profile": go_current_event_profile}
+                                 if go_current_event_profile is not None else
+                                 {"c_current_event_profile": c_current_event_profile}
+                                 if c_current_event_profile is not None else
+                                 {"rust_current_event_profile": rust_current_event_profile}
+                                 if rust_current_event_profile is not None else
+                                 {"java_current_event_profile": java_current_event_profile}
                                  if java_current_event_profile is not None else
                                  {} if java_current_http_profile is None else
                                  {"java_current_http_profile": java_current_http_profile})
@@ -253,10 +338,12 @@ def compile_guests(language: str, output: Path, *, tools: Path | None = None, wa
             source = inventory(captured)
             (current / "source-inputs.json").write_bytes(source)
             report["sourceDigest"] = digest(source)
-            from tools.transaction_guest_project import CURRENT_EVENT_PROFILE, CURRENT_HTTP_PROFILE, EVENT_REQUIREMENTS
-            if CURRENT_EVENT_PROFILE in captured:
+            from tools.transaction_guest_project import CURRENT_EVENT_PROFILE, RUST_EVENT_PROFILE, C_EVENT_PROFILE, GO_EVENT_PROFILE, TYPESCRIPT_EVENT_PROFILE, DOTNET_EVENT_PROFILE, CURRENT_HTTP_PROFILE, EVENT_REQUIREMENTS
+            selected_event = next((name for name in (CURRENT_EVENT_PROFILE, RUST_EVENT_PROFILE, C_EVENT_PROFILE, GO_EVENT_PROFILE, TYPESCRIPT_EVENT_PROFILE, DOTNET_EVENT_PROFILE)
+                                   if name in captured), None)
+            if selected_event in captured:
                 report.update(nativeEffectProfile="current-v1-event", nativeEffectOperation="event",
-                              currentEventProfileInputDigest=digest(captured[CURRENT_EVENT_PROFILE]),
+                              currentEventProfileInputDigest=digest(captured[selected_event]),
                               deferredEventRequirementsDigest=digest(captured[EVENT_REQUIREMENTS]))
             if CURRENT_HTTP_PROFILE in captured:
                 report.update(nativeEffectProfile="current-v2-http", nativeEffectOperation="http",
@@ -360,6 +447,16 @@ def main() -> None:
                         help="exact constructor-derived native HTTP profile for fresh Java captures; never an approval")
     parser.add_argument("--java-current-event-profile",
                         help="exact constructor-derived native event profile for the Java aggregate; never an approval")
+    parser.add_argument("--rust-current-event-profile",
+                        help="exact constructor-derived native event profile for the Rust aggregate; never an approval")
+    parser.add_argument("--c-current-event-profile",
+                        help="exact constructor-derived native event profile for the C aggregate; never an approval")
+    parser.add_argument("--go-current-event-profile",
+                        help="exact constructor-derived native event profile for the Go aggregate; never an approval")
+    parser.add_argument("--typescript-current-event-profile",
+                        help="exact constructor-derived native event profile for the TypeScript aggregate; never an approval")
+    parser.add_argument("--dotnet-current-event-profile",
+                        help="exact constructor-derived native event profile for the .NET aggregate; never an approval")
     parser.add_argument("--java-read-only-cache", type=Path,
                         help="existing pinned Java compiler cache; verify through the current read-only cache owner")
     arguments = parser.parse_args()
@@ -369,6 +466,11 @@ def main() -> None:
                    java_state_acceptance=arguments.java_state_acceptance,
                    java_current_http_profile=arguments.java_current_http_profile,
                    java_current_event_profile=arguments.java_current_event_profile,
+                   rust_current_event_profile=arguments.rust_current_event_profile,
+                   c_current_event_profile=arguments.c_current_event_profile,
+                   go_current_event_profile=arguments.go_current_event_profile,
+                   typescript_current_event_profile=arguments.typescript_current_event_profile,
+                   dotnet_current_event_profile=arguments.dotnet_current_event_profile,
                    java_read_only_cache=arguments.java_read_only_cache,
                    java_early_http_denial=arguments.java_early_http_denial,
                    java_poststage_http_denial=arguments.java_poststage_http_denial)

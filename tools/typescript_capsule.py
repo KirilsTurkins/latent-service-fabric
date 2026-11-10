@@ -47,6 +47,7 @@ def parser() -> argparse.ArgumentParser:
     new.add_argument("--name")
     new.add_argument('--runtime-profile', choices=('spidermonkey-public-sync-v1', 'spidermonkey-activation-promises-v1', 'spidermonkey-activation-promises-clocks-v1','spidermonkey-activation-promises-clocks-imports-v1'),
                      help='Explicit compiler runtime selection; the Promise candidate remains unqualified')
+    new.add_argument('--event-profile', help='Exact observed event idempotency profile for the transaction template; grants no authority')
     capture = commands.add_parser("resolve", help="Explicitly fetch a native application npm lock without package lifecycle scripts")
     capture.add_argument("project", type=Path)
     capture.add_argument("--candidate", type=Path, required=True)
@@ -123,7 +124,8 @@ def main(argv: list[str] | None = None):
             result = install(args.directory)
         elif args.command == "new":
             result = create(args.directory, args.template, args.name,
-                            **({'runtime_profile': args.runtime_profile} if args.runtime_profile is not None else {}))
+                            **({'runtime_profile': args.runtime_profile} if args.runtime_profile is not None else {}),
+                            **({'event_profile': args.event_profile} if args.event_profile is not None else {}))
         elif authoring:
             from tools import typescript_dependency_authoring as dependencies
             from tools.build_snapshot import canonical

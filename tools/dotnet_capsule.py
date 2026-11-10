@@ -85,6 +85,7 @@ def parser():
     new.add_argument("directory", type=Path)
     new.add_argument("--template", choices=AUTHORING_TEMPLATES, default="greeting")
     new.add_argument("--name")
+    new.add_argument('--event-profile', help='Exact observed event idempotency profile for the transaction template; grants no authority')
     resolve_ = commands.add_parser('resolve')
     resolve_.add_argument('project', type=Path)
     resolve_.add_argument('--candidate', type=Path, required=True)
@@ -176,7 +177,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "install-tools":
             result = install(args.directory, args.wasi_sdk)
         elif args.command == "new":
-            result = create(args.directory, args.template, args.name)
+            result = create(args.directory, args.template, args.name,
+                            **({'event_profile': args.event_profile} if args.event_profile is not None else {}))
         else:
             result = build(args.project, args.output, args.contracts_tool, args.packager, args.repository, tools=args.tools,
                 executable_approval=args.executable_approval,

@@ -215,7 +215,7 @@ def _host_digest(host: dict) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
-def complete_policy_documents(observed: ObservedEventHost, host: dict, operation: dict) -> dict:
+def complete_policy_documents(observed: ObservedEventHost, host: dict, operation: dict, *, go_random=False) -> dict:
     """Propose state, clock, and event rules for one unchanged native observation."""
     from .configuration import CLOCKS, OPERATOR
     from .policies import (DATA_OPERATIONS, MANAGEMENT_OPERATIONS, RECOVERY_OPERATIONS,
@@ -226,7 +226,8 @@ def complete_policy_documents(observed: ObservedEventHost, host: dict, operation
     proposals = policy_documents(observed, operation)
     operator = _caller(host['configuredTransportCallers'], OPERATOR, 'administrator')
     rows = host['configuredProviders']
-    require(isinstance(rows, list) and len(rows) == 4, 'exact-event-clock-http-provider-set')
+    require(type(go_random) is bool and isinstance(rows, list) and len(rows) == (5 if go_random else 4),
+            'exact-event-clock-http-provider-set')
     clocks = {}
     for name, (capability, clock_operation) in CLOCKS.items():
         selected = [row for row in rows if isinstance(row, dict) and row.get('id') == name]
@@ -257,6 +258,20 @@ def complete_policy_documents(observed: ObservedEventHost, host: dict, operation
             rule('clock', 'user', ALICE, [publication], capability, [clock_operation], {'kind': 'clock'},
                  input_bytes=0, output_bytes=32768, calls=4096, wall=120000)]}
         proposals['deploymentGrants'].append({'capability': capability, 'policy': policy_name + '-allow'})
+    if go_random:
+        random = [row for row in rows if isinstance(row, dict) and row.get('id') == 'random']
+        capability = 'latent:random/random@0.1.0'
+        require(len(random) == 1 and set(random[0]) == PROVIDER_FIELDS
+                and random[0]['tenant'] == TENANT and random[0]['service'] == 'runtime-host'
+                and random[0]['capability'] == capability and random[0]['profile'] == 'system-random-v1',
+                'exact-observed-random-provider')
+        descriptor = random[0]
+        proposals['bindings']['random-installed'] = binding(capability, descriptor['profile'],
+            descriptor['configurationDigest'], epoch(descriptor['configurationEpoch'], decimal=True), ['u64-value'])
+        proposals['policies']['random-allow'] = {'formatVersion': 1, 'tenant': TENANT, 'rules': [
+            rule('random', 'user', ALICE, [publication], capability, ['u64-value'], {'kind': 'random'},
+                 input_bytes=8, output_bytes=32768, calls=4096, wall=120000)]}
+        proposals['deploymentGrants'].append({'capability': capability, 'policy': 'random-allow'})
     return proposals
 
 

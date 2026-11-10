@@ -1,0 +1,26 @@
+{
+  "description": "Rust transaction rejection, stale edit and lost-response recovery with local JetStream",
+  "qualification": "normal local combined-source Linux node and ephemeral demo trust",
+  "eventAuthoringBranchCommit": "eba2c833ea44",
+  "authoringSourceSnapshotDigest": "sha256:b90ff8661f2d5598ae121cac3325c6590fdb5b8ec03b15ef9450c0bc0f6c5109",
+  "buildObservationSha256": "937678cfadeee096368586a65ec506ab0dbd78acba52cf676a4dc557cb0708bd",
+  "componentDigest": "sha256:3ece2da55eb9e22e50127ae4836da7d90803abe0c2035bb5e879701f63e3ef38",
+  "companionDigest": "sha256:7476e5920630fba7c45f5da8acc63cf0b086f8c15d3ede2769b9c74695b06b4d",
+  "signedReleaseSetSha256": "870edc6c6c3fa02738bec3521a1ef0500a536d4526d54595ff908fe9eeee47b6",
+  "publication": "publication:sha256:d383a4774d60ead5108a88f8c49bc48c030fcabfb123d3e41e7951d7b216d1e6",
+  "observedProviderProfile": "js-window-v1:086b8d6704b086e03d45b77260466c1b874bd0b48e145b25506b65f014df22dc",
+  "normalNodeSha256": "48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "fixtureSha256": "7b0c8dc2360c532ca85b901c5a468da70eede3eb38d98198148ecc9254cd702c",
+  "observations": [
+    "A captured Rust project pinned the actual disposable JetStream profile, was built and demo-signed, and was admitted to the normal node with observed scoped policies.",
+    "An initial update committed and its effect was acknowledged. A declared rejection after staged work returned the rejected result with no effect IDs; a fresh query retained count one and the same key version.",
+    "A stale absent-key precondition returned a fenced abort, followed by the same fresh state.",
+    "A second committed response body was deliberately dropped; the original committed result was recovered through the authorized result route and matched durable command lookup. Replaying both the original rejection after the state change and the recovered commit returned their retained outcomes.",
+    "A final fresh query returned count two and the actual stream held two messages, matching the two successful commands. The node was reaped with state and effect owners physically retired, and the fixture removed its own broker and TLS resources."
+  ],
+  "limitations": [
+    "This run does not count guest executions; retained outcomes and broker count alone do not prove absence of an extra guest execution.",
+    "It does not establish cancellation, crash during persistence, memory/fuel boundaries, forged handles, all languages, production trust or packaged-distribution qualification.",
+    "The normal node is from a verified local combined-source snapshot containing unmerged work; hosted CI remains separate."
+  ]
+}
