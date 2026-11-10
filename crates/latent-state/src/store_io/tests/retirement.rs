@@ -482,7 +482,9 @@ fn ordinary_native_destructor_panic_keeps_original_owner_and_no_retirement_proof
     }
     let (store, _, _) = store();
     let owner = StoreIoOwner::new(store, limits(), |_| Ok(())).unwrap();
-    let global = NativeCapacityOwner::new(Default::default()).unwrap();
+    let global =
+        NativeCapacityOwner::new(latent_core::native_capacity::NativeCapacityLimits::default())
+            .unwrap();
     let original = Arc::new(
         global
             .reserve(
