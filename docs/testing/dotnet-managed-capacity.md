@@ -57,3 +57,30 @@ and three clean/reaped nodes. Each individual timer is counted independently:
 births1..8 and disposal returns7..0. Periodic2 passes with its original100 ms
 period and all original limits. One fresh normal AOT guest was compiled; no
 native host or previous HTTP/client programme was rebuilt.
+
+## Optional earlier-rearm diagnostic
+
+`tools/qualify_dotnet_managed_capacity.py --timer-rearm-diagnostic` runs the
+unchanged seventeen mandatory cases and adds an explicitly separate diagnostic
+pair on the same captured component and native products. The selected diagnostic
+derives its extra mode from the exact authenticated original fixture and an
+identity-bound snippet; the default and historical fixture bytes stay unchanged.
+One activation creates
+one ordinary `Timer`, changes it twice to strictly earlier deadlines, and reports
+the original activation Wait and Timer counts after creation, each change, and
+disposal. It requires the guest `Environment.TickCount64` elapsed time through
+the changes to remain below the 10-second separation between requested delays,
+and reports that value. It verifies that no callback has fired at each sample,
+and the existing node owner
+checks the exact signed result, budget and post-call counters before a separate
+fresh activation. The original Task, Wait, Timer, queue and other ceilings are
+unchanged. A refusal, trap, unexpected callback, failed cleanup or missing fresh
+activation remains a failed run; the raw result is retained where available.
+
+The observation is diagnostic: growth does not by itself prove permanent
+retention, and no growth does not qualify the timer implementation or its
+physical custody. The original 17-case selection and success checks remain unchanged when the
+option is not selected. The hosted workflow's existing manual selector currently also
+depends on the workflow being available on the repository default branch; a
+task-owned selector-only child can run the same job on a reviewed branch without
+changing the production workflow. No signed execution is claimed by this code.
