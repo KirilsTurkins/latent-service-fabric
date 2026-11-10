@@ -81,12 +81,12 @@ fn recover_inventory(inner: &Inner) -> Result<State> {
     let object_capacity = limits
         .maximum_objects
         .min((limits.maximum_metadata_bytes - OWNER_BYTES) / OBJECT_BYTES);
-    for key in inner.objects.names(object_capacity)? {
+    inner.objects.visit_names(object_capacity, |key| {
         inner.room(&state, OBJECT_BYTES)?;
-        if !model::hex(&key, 64) {
+        if !model::hex(key, 64) {
             return Err(LocalBlobError::Corrupt);
         }
-        let directory = inner.objects.child(&key, false)?;
+        let directory = inner.objects.child(key, false)?;
         let names = inventory(&directory, true, limits.maximum_object_bytes)?;
         let released = names.is_empty() || names.iter().any(|n| n == "RELEASED");
         let object = if released {
@@ -124,21 +124,22 @@ fn recover_inventory(inner: &Inner) -> Result<State> {
             .checked_add(object.bytes)
             .filter(|n| *n <= limits.maximum_disk_bytes)
             .ok_or(LocalBlobError::Capacity)?;
-        state.objects.insert(key, Arc::new(object));
-    }
+        state.objects.insert(key.to_owned(), Arc::new(object));
+        Ok(())
+    })?;
     let stage_capacity = limits
         .maximum_stages
         .min((limits.maximum_metadata_bytes - inner.metadata(&state)?) / STAGE_BYTES);
-    for name in inner.staging.names(stage_capacity)? {
+    inner.staging.visit_names(stage_capacity, |name| {
         inner.room(&state, STAGE_BYTES)?;
-        if !model::hex(&name, 16) {
+        if !model::hex(name, 16) {
             return Err(LocalBlobError::Corrupt);
         }
-        let id = u64::from_str_radix(&name, 16).map_err(|_| LocalBlobError::Corrupt)?;
+        let id = u64::from_str_radix(name, 16).map_err(|_| LocalBlobError::Corrupt)?;
         if id == 0 {
             return Err(LocalBlobError::Corrupt);
         }
-        let directory = inner.staging.child(&name, false)?;
+        let directory = inner.staging.child(name, false)?;
         inventory(&directory, false, limits.maximum_object_bytes)?;
         let maximum = payload_size(&directory)?;
         inner.disk_room(&state, 1, maximum)?;
@@ -162,7 +163,8 @@ fn recover_inventory(inner: &Inner) -> Result<State> {
                 active: Arc::new(AtomicBool::new(false)),
             },
         );
-    }
+        Ok(())
+    })?;
     Ok(state)
 }
 pub(super) fn inventory(directory: &Directory, object: bool, maximum: u64) -> Result<Vec<String>> {

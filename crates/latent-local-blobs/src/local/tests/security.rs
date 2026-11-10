@@ -9,6 +9,28 @@ fn data_path(owner: &LocalBlobStore, root: &Path) -> std::path::PathBuf {
 }
 
 #[test]
+fn directory_walk_bounds_callbacks_and_propagates_failure() {
+    let root = temporary_root();
+    std::fs::write(root.path().join("first"), b"").unwrap();
+    std::fs::write(root.path().join("second"), b"").unwrap();
+    let directory = super::super::fs::Directory::root(root.path()).unwrap();
+    let mut visited = 0;
+    assert_eq!(
+        directory.visit_names(1, |_| {
+            visited += 1;
+            Ok(())
+        }),
+        Err(LocalBlobError::Capacity)
+    );
+    assert_eq!(visited, 1);
+    assert_eq!(
+        directory.visit_names(2, |_| Err(LocalBlobError::Unavailable)),
+        Err(LocalBlobError::Unavailable)
+    );
+    assert_eq!(directory.names(2).unwrap().len(), 2);
+}
+
+#[test]
 fn insecure_roots_and_symlink_ancestors_are_rejected() {
     let parent = temporary_root();
     let root = parent.path().join("root");

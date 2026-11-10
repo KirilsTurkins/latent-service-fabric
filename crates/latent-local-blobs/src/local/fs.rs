@@ -153,24 +153,39 @@ impl Directory {
         Ok(result)
     }
     pub fn names(&self, maximum: usize) -> Result<Vec<String>> {
+        let mut result = Vec::new();
+        self.visit_names(maximum, |name| {
+            result.push(name.to_owned());
+            Ok(())
+        })?;
+        Ok(result)
+    }
+    /// Visit names without retaining a second copy of a whole directory.
+    /// A callback failure or changed directory owner makes the walk fail.
+    pub fn visit_names(
+        &self,
+        maximum: usize,
+        mut visit: impl FnMut(&str) -> Result<()>,
+    ) -> Result<()> {
         self.validate()?;
         let reader = fs::Dir::read_from(&self.file).map_err(errno)?;
-        let mut result = Vec::new();
+        let mut visited = 0;
         for entry in reader {
             let entry = entry.map_err(errno)?;
             let name = entry.file_name().to_bytes();
             if name == b"." || name == b".." {
                 continue;
             }
-            if result.len() == maximum || name.len() > 128 {
+            if visited == maximum || name.len() > 128 {
                 return Err(Error::Capacity);
             }
             let name = std::str::from_utf8(name).map_err(|_| Error::Corrupt)?;
             name_valid(name)?;
-            result.push(name.to_owned());
+            visit(name)?;
+            visited += 1;
         }
         self.validate()?;
-        Ok(result)
+        Ok(())
     }
     pub fn present(&self, name: &str) -> Result<bool> {
         name_valid(name)?;
