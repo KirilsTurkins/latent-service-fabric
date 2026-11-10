@@ -127,9 +127,10 @@ rather than inheriting the pinned libc's downward millisecond truncation and
 `INT_MAX` millisecond cap. Empty sets and entries outside `nfds` are cleared only after
 successful completion; checking the pinned set representation is bounded by
 `FD_SETSIZE`. Invalid duration fields return
-`EINVAL`, an unrepresentable nanosecond interval returns `EOVERFLOW`, and a
-non-null `pselect` signal mask returns `ENOTSUP`. Other descriptor shapes and
-infinite waits retain the original libc path and existing refusal behavior.
+`EINVAL`, and an unrepresentable nanosecond interval returns `EOVERFLOW`.
+With nonnegative `nfds`, a non-null `pselect` signal mask returns `ENOTSUP`;
+a negative `nfds` retains the original `EINVAL` precedence. Other descriptor
+shapes and infinite waits retain the original libc path and refusal behavior.
 
 The mapping applies to application and captured dependency source compiled
 with this timed profile when the captured SDK includes the exact compiler-owned
