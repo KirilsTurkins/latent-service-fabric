@@ -188,14 +188,36 @@ def stage(source: Path, world: str, destination: Path, platform: Path) -> Path:
     return standard_facilities.stage_imports(source, world, destination, platform, IMPORTS)
 
 
-def public_export(graph):
+def public_export(graph, selected_world=None):
     """Read the real generated graph; the selected public async effect uses a synchronous Core ABI."""
     def require(value):
         if not value:
             raise ValueError('c-threading-finite-public-contract-required')
     require(type(graph) is dict and set(graph) == {'worlds', 'interfaces', 'types', 'packages'})
-    require(type(graph['worlds']) is list and len(graph['worlds']) == 1)
-    exports = graph['worlds'][0]['exports']
+    require(type(graph['worlds']) is list and 1 <= len(graph['worlds']) <= 32
+            and type(graph['packages']) is list)
+    if selected_world is None:
+        require(len(graph['worlds']) == 1)
+        selected = graph['worlds'][0]
+    else:
+        require(type(selected_world) is str)
+        qualified = re.fullmatch(r'([a-z][a-z0-9-]*:[a-z][a-z0-9-]*)/([a-z][a-z0-9-]*)@([0-9]+\.[0-9]+\.[0-9]+)', selected_world)
+        if qualified:
+            package, leaf = qualified.group(1) + '@' + qualified.group(3), qualified.group(2)
+        else:
+            require(re.fullmatch(r'[a-z][a-z0-9-]*', selected_world) is not None)
+            package, leaf = None, selected_world
+        matches = []
+        for candidate in graph['worlds']:
+            require(type(candidate) is dict and type(candidate.get('package')) is int
+                    and 0 <= candidate['package'] < len(graph['packages'])
+                    and type(graph['packages'][candidate['package']]) is dict)
+            if (candidate.get('name') == leaf and (package is None
+                    or graph['packages'][candidate['package']].get('name') == package)):
+                matches.append(candidate)
+        require(len(matches) == 1)
+        selected = matches[0]
+    exports = selected['exports']
     require(type(exports) is dict and len(exports) == 1)
     key, value = next(iter(exports.items()))
     index = value.get('interface', {}).get('id')
