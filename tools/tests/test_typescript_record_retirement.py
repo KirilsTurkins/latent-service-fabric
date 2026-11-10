@@ -199,10 +199,9 @@ def write_owner_retry_includes(directory: Path) -> None:
 class OwnerRetryTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++')
+        compiler = (os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or
+                    shutil.which('c++') or shutil.which('cl'))
         if compiler is None:
-            if os.name == 'nt':
-                raise unittest.SkipTest('Set LSF_TYPESCRIPT_RECORD_CXX for finite native controls')
             raise RuntimeError('C++ compiler is required for native owner retry controls')
         cls.temporary = tempfile.TemporaryDirectory()
         cls.addClassCleanup(cls.temporary.cleanup)
@@ -250,10 +249,9 @@ class OwnerRetryTests(unittest.TestCase):
 class QueueCancellationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++')
+        compiler = (os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or
+                    shutil.which('c++') or shutil.which('cl'))
         if compiler is None:
-            if os.name == 'nt':
-                raise unittest.SkipTest('Set LSF_TYPESCRIPT_RECORD_CXX for finite native controls')
             raise RuntimeError('C++ compiler is required for queue cancellation controls')
         cls.temporary = tempfile.TemporaryDirectory()
         cls.addClassCleanup(cls.temporary.cleanup)

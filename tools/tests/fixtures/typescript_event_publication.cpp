@@ -63,8 +63,10 @@ template<class T, class... Args> T* js_new(Args&&... args) {
 }
 struct Terminator {
   lsf::typescript::activation::NativeObjectLease owner;
+  RefPtr<EventListener> listener;
   Terminator(lsf::typescript::activation::NativeObjectLease&& value,
-             JSContext*, void*, Value, Value, Value) : owner(std::move(value)) {}
+             void*, const RefPtr<EventListener>& listener)
+      : owner(std::move(value)), listener(listener) {}
 };
 namespace js {
 template<class T, class... Args> std::unique_ptr<T> MakeUnique(Args&&... args) {
@@ -120,7 +122,6 @@ struct List {
 
 bool emitted_body(JSContext* cx, List* list, Value callback_val, Value signal_val) {
   const std::string_view type = "event";
-  const Value type_val{}, opts_val{};
   void* self = nullptr;
   const bool capture = false, passive = false, once = false;
   // INSERT_EMITTED_EVENT_BODY
@@ -160,13 +161,20 @@ int main(int argc, char** argv) {
   } else if (!std::strcmp(name, "successful-registration-retains-both-owners")) {
     passed = emitted_body(&cx, &list, callback, with_signal) && list.size == 1 &&
              signal.algorithms.size() == 1 && live == 2 && !list.values[0]->removed;
-  } else if (!std::strcmp(name, "once-listener-reinserted-after-original-neighbor")) {
+  } else if (!std::strcmp(name, "once-listener-replaced-after-original-neighbor")) {
     auto first = existing(1, true);
     auto second = existing(2, false);
     if (!list.append(first) || !list.append(second)) return 3;
     passed = emitted_body(&cx, &list, callback, Value{}) && list.size == 2 &&
-             list.values[0].get() == second.get() && list.values[1].get() == first.get() &&
-             !first->removed;
+             list.values[0].get() == second.get() && list.values[1].get() != first.get() &&
+             first->removed && !list.values[1]->removed && live == 1;
+  } else if (!std::strcmp(name, "duplicate-active-ignores-new-signal")) {
+    auto first = existing(1, false);
+    if (!list.append(first)) return 3;
+    deny_at = 1;
+    passed = emitted_body(&cx, &list, callback, with_signal) && list.size == 1 &&
+             list.values[0].get() == first.get() && !first->removed &&
+             signal.algorithms.empty() && admissions == 0 && live == 0;
   } else if (!std::strcmp(name, "reactivation-refusal-keeps-existing-listener")) {
     auto first = existing(1, true);
     auto second = existing(2, false);

@@ -4,6 +4,8 @@
 #include <cstring>
 
 struct JSContext {};
+static bool pending = false;
+static bool JS_IsExceptionPending(JSContext*) { return pending; }
 struct Target {};
 enum class EventFlag { Dispatch, StopPropagation, StopImmediatePropagation, Canceled };
 struct Event {
@@ -44,11 +46,12 @@ int main(int argc, char** argv) {
   const char* selected = argv[1];
   invoke_result = std::strcmp(selected, "lookup-error-resets-dispatch") != 0;
   event.canceled = std::strcmp(selected, "success-preserves-canceled-result") == 0;
+  pending = std::strcmp(selected, "success-pending-resets-dispatch") == 0;
   const bool returned = finish_dispatch(&event, result);
   const bool cleared = event.phase == Event::Phase::NONE && !event.dispatch && !event.stop &&
                        !event.immediate && event.current == nullptr && event.related == nullptr;
   bool passed;
-  if (!std::strcmp(selected, "lookup-error-resets-dispatch"))
+  if (!std::strcmp(selected, "lookup-error-resets-dispatch") || pending)
     passed = !returned && !result.set && cleared;
   else if (!std::strcmp(selected, "success-resets-dispatch"))
     passed = returned && result.set && result.value && cleared;
