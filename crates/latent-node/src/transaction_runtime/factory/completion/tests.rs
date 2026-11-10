@@ -2,6 +2,7 @@ use super::*;
 use latent_core::{ActivationTerminalState, ErrorDetail};
 use std::cell::Cell;
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod pre_host_conflict;
 
 fn charged() -> BudgetConsumption {
