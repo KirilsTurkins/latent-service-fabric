@@ -347,6 +347,25 @@ fn duplicate_seal_without_inventory_change_preserves_the_cursor() {
 }
 
 #[test]
+fn root_replacement_during_checkpoint_cannot_publish_a_page() {
+    let parent = temporary_root();
+    let root = parent.path().join("payload");
+    let owner = store(&root);
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    let calls = std::cell::Cell::new(0);
+    let checkpoint = || {
+        calls.set(calls.get() + 1);
+        if calls.get() == 2 {
+            std::fs::rename(&root, parent.path().join("original")).unwrap();
+            std::fs::create_dir(&root).unwrap();
+        }
+        Ok(())
+    };
+    assert!(inventory.next_page(&owner, 4, &checkpoint).is_err());
+    assert_eq!(calls.get(), 2);
+}
+
+#[test]
 fn owner_close_during_checkpoint_cannot_publish_a_page() {
     let root = temporary_root();
     let owner = store(root.path());

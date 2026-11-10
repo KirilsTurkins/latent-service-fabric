@@ -246,7 +246,7 @@ impl RequiredBlobInventory {
         // The admission checkpoint may itself block until the snapshot has
         // expired; do not publish a completed observation from that view.
         let _ = view.is_empty().map_err(storage)?;
-        store.inner.check()?;
+        store.check_owner()?;
         let count = page.references.len();
         self.after = page.resume;
         self.complete = self.after.is_none();
@@ -382,7 +382,7 @@ impl LocalBlobStore {
         drop(reader);
         checkpoint()?;
         let _ = view.is_empty().map_err(storage)?;
-        self.inner.check()
+        self.check_owner()
     }
 
     /// Trusted setup on the fixed native storage owner. The actual selected

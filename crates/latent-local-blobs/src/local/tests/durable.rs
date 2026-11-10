@@ -1057,6 +1057,34 @@ fn empty_recovery_page_requires_live_admission_and_local_owner() {
 }
 
 #[test]
+fn empty_recovery_page_refuses_root_replacement_during_final_checkpoint() {
+    let state_root = temporary_root();
+    let parent = temporary_root();
+    let root = parent.path().join("payload");
+    let state = database(state_root.path(), true, "payload-state-a");
+    let owner = LocalBlobStore::open_durable(&root, "private", limits(), &state).unwrap();
+    let view = state.snapshot().unwrap();
+    let mut inventory = RequiredBlobInventory::begin(&owner, &view).unwrap();
+    let calls = std::cell::Cell::new(0);
+    let replace_on_completion = || {
+        calls.set(calls.get() + 1);
+        if calls.get() == 2 {
+            std::fs::rename(&root, parent.path().join("original")).unwrap();
+            std::fs::create_dir(&root).unwrap();
+        }
+        Ok(())
+    };
+    assert!(inventory
+        .next_page(&owner, &view, 1, 1024, &replace_on_completion)
+        .is_err());
+    assert_eq!(calls.get(), 2);
+    assert_eq!(
+        inventory.next_page(&owner, &view, 1, 1024, &|| Ok(())),
+        Err(LocalBlobError::PermissionDenied)
+    );
+}
+
+#[test]
 fn bounded_recovery_pages_stay_with_original_view_and_refuse_corruption() {
     let state_root = temporary_root();
     let blob_root = temporary_root();

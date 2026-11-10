@@ -152,6 +152,13 @@ impl LocalBlobStore {
             latent_core::digest::HexDigest(hash.finalize())
         ))
     }
+    /// Check the original protected root and owner after a bounded observation.
+    /// This does not grant read, publication or reclamation authority.
+    pub fn check_owner(&self) -> Result<()> {
+        self.inner.check()?;
+        self.inner.root.validate()?;
+        self.inner.check()
+    }
     pub fn snapshot(&self) -> Result<LocalBlobSnapshot> {
         let state = self.inner.state()?;
         Ok(LocalBlobSnapshot {

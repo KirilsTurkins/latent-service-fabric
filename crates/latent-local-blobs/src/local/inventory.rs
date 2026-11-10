@@ -38,7 +38,7 @@ impl LocalReferenceInventory {
         if !Arc::ptr_eq(&self.work.inner, &store.inner) {
             return Err(LocalBlobError::PermissionDenied);
         }
-        store.inner.check()?;
+        store.check_owner()?;
         let state = store.inner.state()?;
         if store.inner.publishing.load(Ordering::Acquire)
             || state.inventory_generation != self.generation
@@ -126,7 +126,7 @@ impl LocalReferenceInventory {
             (references, after, visited < maximum_entries)
         };
         checkpoint()?;
-        store.inner.check()?;
+        store.check_owner()?;
         {
             let state = store.inner.state()?;
             if store.inner.publishing.load(Ordering::Acquire)
