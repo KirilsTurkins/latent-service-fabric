@@ -73,11 +73,11 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
         derived, _ = derive()
         source = derived['StarlingMonkey/builtins/web/event/event-target.cpp']
         listener = source.index(b'js_new<EventListener>(')
-        self.assertLess(source.rindex(b'admit_native_object(cx, accepted)', 0, listener), listener)
+        self.assertLess(source.rindex(b'admit_native_object(cx, listener_owner)', 0, listener), listener)
         terminator = source.index(b'js::MakeUnique<Terminator>(')
         self.assertLess(source.rindex(b'admit_native_object(cx, accepted)', 0, terminator), terminator)
         self.assertIn(b'if (!AbortSignal::add_algorithm(signal, std::move(terminator))) {', source)
-        self.assertLess(source.index(b'if (!list->reserve(list->length() + 1))'), terminator)
+        self.assertLess(source.index(b'if (!list->reserve(list->length() + (replacing_removed ? 0 : 1)))'), terminator)
         self.assertLess(terminator, source.index(b'list->infallibleAppend(staged);', terminator))
         self.assertLess(source.index(b'if (!AbortSignal::add_algorithm(signal, std::move(terminator)))'),
                         source.index(b'staged->callback = callback_val;'))
@@ -95,7 +95,12 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
                 original = original[:original.index(b'\n};')]
                 derived = derived[:derived.index(b'\n};')]
                 self.assertEqual(derived.count(b'AbortAlgorithm(std::move(owner))'), 1)
-                self.assertEqual(original[original.index(b'  bool run('):], derived[derived.index(b'  bool run('):])
+                if name.endswith('event-target.cpp'):
+                    self.assertIn(b'it->get() == listener.get()', derived)
+                    self.assertIn(b'listener->trace(trc)', derived)
+                    self.assertNotIn(b'EventTarget::remove_listener(', derived)
+                else:
+                    self.assertEqual(original[original.index(b'  bool run('):], derived[derived.index(b'  bool run('):])
         header = selected['StarlingMonkey/builtins/web/abort/abort-signal.h']
         self.assertNotIn(b'\n  AbortAlgorithm() = default;', header)
         self.assertIn(b'AbortAlgorithm(const AbortAlgorithm &) = delete;', header)
@@ -568,7 +573,8 @@ class EventPublicationControls(unittest.TestCase):
             'algorithm-refusal-before-listener-publication',
             'vector-refusal-before-algorithm-publication',
             'successful-registration-retains-both-owners',
-            'once-listener-reinserted-after-original-neighbor',
+            'once-listener-replaced-after-original-neighbor',
+            'duplicate-active-ignores-new-signal',
             'reactivation-refusal-keeps-existing-listener',
             'signal-aborted-during-type-conversion',
         ):
@@ -616,6 +622,48 @@ class EventPublicationControls(unittest.TestCase):
                 self.assertEqual(result.returncode, 1, (result.stdout + result.stderr)[:65536])
                 self.assertEqual(json.loads(result.stdout),
                                  {'case': case, 'passed': False, 'engineQualified': False})
+
+
+class AbortListenerIdentityControls(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++') or shutil.which('g++')
+        if not compiler:
+            raise unittest.SkipTest('C++ compiler required for emitted abort-listener controls')
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.temporary.cleanup)
+        output = Path(cls.temporary.name)
+        root = Path(__file__).resolve().parents[2]
+        template = (root/'tools/tests/fixtures/typescript_abort_listener_identity.cpp').read_bytes()
+        selected = derive()[0]['StarlingMonkey/builtins/web/event/event-target.cpp']
+        start = selected.index(b'struct Terminator : AbortAlgorithm {')
+        end = selected.index(b'\n};', start) + len(b'\n};')
+        marker = b'// INSERT_EMITTED_ABORT_TERMINATOR'
+        if template.count(marker) != 1:
+            raise AssertionError('unique emitted Terminator insertion point required')
+        source = output/'identity.cpp'
+        source.write_bytes(template.replace(marker, selected[start:end]))
+        cls.binary = output/('identity.exe' if os.name == 'nt' else 'identity')
+        if Path(compiler).stem.lower() == 'cl':
+            args = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX', '/I'+str(root),
+                    str(source), '/Fe:'+str(cls.binary), '/Fo:'+str(output/'identity.obj')]
+        else:
+            args = [compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror', '-I'+str(root),
+                    str(source), '-o', str(cls.binary)]
+        result = subprocess.run(args, capture_output=True, timeout=60)
+        if result.returncode or len(result.stdout) + len(result.stderr) > 65536:
+            raise AssertionError((result.stdout + result.stderr)[:65536].decode(errors='replace'))
+
+    def test_exact_identity_tracing_physical_custody_and_refused_acknowledgement(self):
+        for case in ('exact-removal-and-idempotence', 'old-abort-cannot-remove-replacement',
+                     'detached-record-remains-traced-and-owned',
+                     'dispatch-clone-outlives-abort-algorithm', 'refused-ack-retains-physical-custody'):
+            with self.subTest(case=case):
+                result = subprocess.run([str(self.binary), case], capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 0, result.stderr.decode(errors='replace'))
+                record = json.loads(result.stdout)
+                self.assertTrue(record['passed'])
+                self.assertFalse(record['engineQualified'])
 
 
 if __name__ == '__main__':

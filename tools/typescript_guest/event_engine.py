@@ -35,6 +35,11 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         b'  using ListenerList = JS::GCVector<ListenerRef, 0, js::SystemAllocPolicy>;\n'
         b'  using OwnedListenerList = lsf::typescript::activation::NativeContainer<ListenerList>;\n',
         'physical-listener-list-container')
+    source = replace_once(source,
+        b'class EventTarget : public BuiltinImpl<EventTarget, TraceableClassPolicy> {\n',
+        b'class EventTarget : public BuiltinImpl<EventTarget, TraceableClassPolicy> {\n'
+        b'  friend struct Terminator; // removes the exact admitted record without JS conversion\n',
+        'abort-terminator-private-list-access')
     result[name] = source
 
     name = 'StarlingMonkey/builtins/web/event/global-event-target.cpp'
@@ -80,13 +85,39 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
     result[name] = source
 
     name = 'StarlingMonkey/builtins/web/event/event-target.cpp'
-    source = replace_once(original[name],
-        b'  Terminator(JSContext *cx, HandleObject target, HandleValue type, HandleValue callback, HandleValue opts)\n'
-        b'      : target(target), type(type), callback(callback), opts(opts) {}',
-        b'  Terminator(lsf::typescript::activation::NativeObjectLease&& owner, JSContext *cx,\n'
-        b'             HandleObject target, HandleValue type, HandleValue callback, HandleValue opts)\n'
-        b'      : AbortAlgorithm(std::move(owner)), target(target), type(type), callback(callback), opts(opts) {}',
-        'terminator-admitted-owner')
+    original_terminator_start = original[name].index(b'struct Terminator : AbortAlgorithm {')
+    original_terminator_end = original[name].index(b'\n};', original_terminator_start) + len(b'\n};')
+    source = replace_once(original[name], original[name][original_terminator_start:original_terminator_end],
+        b'''struct Terminator : AbortAlgorithm {
+  Heap<JSObject *> target;
+  // A strong native reference prevents ABA reuse after remove/re-add. The
+  // listener's own lease stays live until this reference is physically gone.
+  RefPtr<EventListener> listener;
+
+  Terminator(lsf::typescript::activation::NativeObjectLease&& owner,
+             HandleObject target, const RefPtr<EventListener>& listener)
+      : AbortAlgorithm(std::move(owner)), target(target), listener(listener) {}
+
+  bool run(JSContext *cx) override {
+    // DOM abort steps capture the listener record, not mutable WebIDL inputs.
+    // No ToString, option getter, allocation, or callback can run during removal.
+    RootedObject self(cx, target);
+    auto *list = EventTarget::listeners(self);
+    listener->removed = true;
+    for (auto it = list->begin(); it != list->end(); ++it) {
+      if (it->get() == listener.get()) {
+        list->erase(it);
+        break;
+      }
+    }
+    return true;
+  }
+
+  void trace(JSTracer *trc) override {
+    JS::TraceEdge(trc, &target, "EventTarget Terminator target");
+    listener->trace(trc);
+  }
+};''', 'abort-terminator-captures-exact-physical-listener')
     source = replace_once(source,
         b'  auto *list = static_cast<ListenerList *>(\n'
         b'      JS::GetReservedSlot(self, static_cast<size_t>(EventTarget::Slots::Listeners)).toPrivate());\n',
@@ -127,33 +158,38 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
     AbortSignal::add_algorithm(signal, std::move(terminator));
   }
 ''',
-        b'''  const bool new_listener = it == list->end();
-  RefPtr<EventListener> staged;
-  if (new_listener) {
-    lsf::typescript::activation::NativeObjectLease accepted;
-    if (!lsf::typescript::activation::admit_native_object(cx, accepted)) return false;
-    staged = js_new<EventListener>(std::move(accepted));
-    if (!staged) { JS_ReportOutOfMemory(cx); return false; }
-    staged->type = type;
-    staged->passive = passive;
-    staged->capture = capture;
-    staged->once = once;
-    staged->removed = false;
-    // No fallible listener-vector growth can follow abort registration.
-    if (!list->reserve(list->length() + 1)) { JS_ReportOutOfMemory(cx); return false; }
-  } else if ((*it)->removed) {
-    // Retain the actual element before erase invalidates its iterator.
-    staged = *it;
-  }
-
+        b'''  // Duplicate active registrations do not adopt a new signal or an abort
+  // algorithm. Removed records may still be in a dispatch snapshot: never
+  // reactivate their identity or let an old signal remove their replacement.
+  if (it != list->end() && !(*it)->removed) return true;
   if (signal_val.isObject() && AbortSignal::is_instance(signal_val)) {
     RootedObject signal(cx, &signal_val.toObject());
     // Converting the event type may have run script after the earlier check.
     if (AbortSignal::is_aborted(signal)) return true;
+  }
+  const bool replacing_removed = it != list->end();
+  lsf::typescript::activation::NativeObjectLease listener_owner;
+  if (!lsf::typescript::activation::admit_native_object(cx, listener_owner)) return false;
+  RefPtr<EventListener> staged = js_new<EventListener>(std::move(listener_owner));
+  if (!staged) { JS_ReportOutOfMemory(cx); return false; }
+  staged->type = type;
+  staged->passive = passive;
+  staged->capture = capture;
+  staged->once = once;
+  staged->removed = false;
+  // No fallible listener-vector growth can follow abort registration. reserve
+  // can invalidate `it`, so retain only the index of an old removed record.
+  const size_t removed_index = replacing_removed ? size_t(it - list->begin()) : 0;
+  if (!list->reserve(list->length() + (replacing_removed ? 0 : 1))) {
+    JS_ReportOutOfMemory(cx);
+    return false;
+  }
+
+  if (signal_val.isObject() && AbortSignal::is_instance(signal_val)) {
+    RootedObject signal(cx, &signal_val.toObject());
     lsf::typescript::activation::NativeObjectLease accepted;
     if (!lsf::typescript::activation::admit_native_object(cx, accepted)) return false;
-    auto terminator = js::MakeUnique<Terminator>(
-        std::move(accepted), cx, self, type_val, callback_val, opts_val);
+    auto terminator = js::MakeUnique<Terminator>(std::move(accepted), self, staged);
     if (!terminator) { JS_ReportOutOfMemory(cx); return false; }
     if (!AbortSignal::add_algorithm(signal, std::move(terminator))) {
       JS_ReportOutOfMemory(cx);
@@ -161,22 +197,13 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
     }
   }
 
-  // All fallible admission and allocation has succeeded. Erasing one existing
-  // element leaves enough vector capacity for its infallible re-insertion.
-  if (new_listener) {
-    // Handle values stay rooted until the record is attached to the traced
-    // listener vector; do not leave untraced Heap edges across admission.
-    staged->callback = callback_val;
-    staged->signal = signal_val;
-    list->infallibleAppend(staged);
-  } else if (staged) {
-    staged->signal = signal_val;
-    staged->passive = passive;
-    staged->once = once;
-    staged->removed = false;
-    list->erase(it);
-    list->infallibleAppend(staged);
-  }
+  // All fallible admission and allocation has succeeded. The old record remains
+  // removed in any active dispatch clone or old signal's abort algorithm.
+  // Heap edges are initialized only after admission, with inputs still rooted.
+  staged->callback = callback_val;
+  staged->signal = signal_val;
+  if (replacing_removed) list->erase(list->begin() + removed_index);
+  list->infallibleAppend(staged);
 ''', 'listener-and-abort-publication-after-admission')
     source = replace_once(source,
         b'  auto *list = listeners(target);\n'
@@ -393,5 +420,10 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         'dispatchCloneOwner':'one-original-native-count-not-byte-accurate',
         'uncatchableListenerFailure':'cleanup-then-fence-dispatch-and-abort-dependents',
         'catchableListenerException':'original-DOM-reporting-retained',
-        'hostImportsDuringGC':False,'originalAPIAndListenerAlgorithmsRetained':True,
+        'hostImportsDuringGC':False,
+        'abortListenerIdentity': 'exact-record-not-reconverted-type-callback-or-options',
+        'abortListenerCustody': 'strong-native-ref-retains-original-listener-lease-until-destruction',
+        'duplicateListenerSignal': 'ignored-without-new-native-admission',
+        'removedListenerReregistration': 'fresh-identity-without-reactivating-dispatch-snapshot',
+        'originalPublicAPISurfaceRetained':True,
         'snapshotMutableGraphs':'denied','supportedAsyncProfile':False,'signedLSFComponentQualified':False}
