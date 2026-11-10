@@ -1,6 +1,6 @@
 # TypeScript runtime #745: integration qualification ledger
 
-Status observed on **2026-11-09: blocked; not merge-ready**. This ledger supports
+Status observed on **2026-11-10: blocked; not merge-ready**. This ledger supports
 [PR #1928](https://github.com/KirilsTurkins/latent-service-fabric/pull/1928), targeting
 `feat/typescript-runtime-745`, and the still-draft
 [PR #1852](https://github.com/KirilsTurkins/latent-service-fabric/pull/1852).
@@ -14,6 +14,48 @@ The [audit record](evidence/typescript-runtime-745-audit-2026-11-09.json)
 binds the downloaded archives, engine/patch/compiler/component/native identities,
 provider bindings and local attempts. Reusing those bytes does not rebuild them.
 A later integration must record its own exact head and tested merge separately.
+
+## Completed exact-head CI and qualification-infrastructure follow-up — 2026-11-10
+
+The historical integrated source head `183f1db349c29744cced7eb07813d829dd529473`
+was tested as synthetic merge `52ac8d24e5d294836467c2b90189120c47b0c4af`.
+The [source-specific completed CI observation](evidence/typescript-runtime-745-ci-2026-11-10.json)
+retains the selected engine, pinned compiler/splicer, patch derivations, native products,
+component and provider/configuration identities. It does **not** qualify later commits.
+
+| Historical run | Exact result |
+| --- | --- |
+| TypeScript guest `42705015452` | Compiler `129459424696`, boundary `129459425462`, patched engine `129484536739` and component `129563532734` passed; signed Fetch `129601085022` failed; six downstream jobs skipped. |
+| Ownership `42705015468` | GCC `129459422512`, Clang `129459422968` and ASan+UBSan `129459422732` passed; host/source controls only. |
+| General `42705015475` | Python contracts `129526527628`, documentation `129526527485`, Rust tests `129526527547` and final aggregator `129618278086` failed. |
+| Developer tools `42705015526`; IntelliJ `42705015499` | Completed successfully; skipped jobs/steps are not signed qualification. |
+
+Signed artifact `13737870869` (ZIP SHA-256
+`783a6bcd15a947ac56eefb926ec215d6f56052007ddaa4201c631d2beee33733`;
+component SHA-256 `37ac4a4f0bf6619d7de5953b94e0133cc4fd79817381fb5a5dd1bd658488838c`)
+records 15 completed cases followed by real `guest-trap/unreachable-code` at
+`abort-fanout-refusal`. There was **no** post-failure cleanup sample; default
+factory reentry, fresh follow-up and published npm clients were not reached.
+
+Two follow-up commits, `2b85273e27e585a5f4eac568785173a171da94de` and
+`b6d080f4bd4285b13145593c30868cf65defc9fc`, address only
+qualification infrastructure: missing C++/Clang/Node prerequisites now fail
+instead of taking the three new `SkipTest` paths; the AOT producer/consumer
+profile is versioned `debug-all-features-v10` and includes the existing Cargo
+`development-go-network-read-witness` feature. A failed signed Fetch case
+attempts at most two read-only host counter observations, within the original
+campaign deadline and a shared three-second limit. Failures cannot become
+successful results, be retried, or erase the original trap. These counters
+are **not** byte accounting or Store/physical-retirement proof.
+
+Against a verified historical-source archive plus these edits (not a complete
+checkout), local GCC controls ran 120 tests; focused Clang and ASan+UBSan
+controls ran 43 each; Fetch and prerequisite controls ran 31. The new
+AOT closure/contract tests passed in focused validation. Local tests requiring
+owned AOT preparation stopped at `owned-accounting-unavailable` and were
+**not** reported as successful. No new signed execution, compiler-source rebuild,
+Rust compilation, or final-head CI pass is claimed for the follow-up. The source
+head after this ledger revision must be re-read and its CI assessed separately.
 
 ## Staged review integration — 2026-11-09
 

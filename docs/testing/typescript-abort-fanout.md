@@ -109,3 +109,17 @@ through Store retirement and quarantine, the remaining unchanged-library
 qualification, and approved stream/DNS/socket/TLS mappings are not established
 here. The source derivation remains explicitly unqualified; #745's remaining
 acceptance criteria must not be checked off on the strength of these controls.
+
+
+## Failure-case observations on subsequent source
+
+The runner change made after the failed historical signed job records
+`after-failed-<case>.json` and binds that file identity to `FAILED.json`
+when it can safely read the node inventory and provider counters. It does
+not restart the trapped guest, extend any deadline, fabricate zero counters
+or establish original-owner physical retirement. The historical artifact had
+no such sample. An observed sample on a future job still requires independent
+Store and native-owner evidence; never promote counter counts into custody.
+
+Exact historical engine, compiler, component and provider identities remain in
+the [completed CI observation](evidence/typescript-runtime-745-ci-2026-11-10.json).
