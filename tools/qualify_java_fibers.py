@@ -349,18 +349,21 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
     executor_reference = fixture / "CompletableFutureExecutorThrowReferenceControl.java"
     executor_owners = fixture / "CompletableFutureExecutorAcceptanceOwnerControl.java"
     uncertain_owners = fixture / "CompletableFutureExecutorUncertainOwnerControl.java"
+    monitor_reference = fixture / "CompletableMonitorReferenceControl.java"
+    monitor_owner = fixture / "CompletableMonitorOwnerControl.java"
     stubs = [fixture / "source-control" / name for name in (
         "PrivateSourceRunner.java", "dev/latent/generated/Bindings.java",
         "dev/latent/guest/runtime/Activation.java", "dev/latent/guest/runtime/concurrent/Executors.java")]
     ports = [compiler.sdk / ("fibers/dev/latent/guest/runtime/concurrent/" + name + ".java")
              for name in ("CompletableFuture", "CompletionStage", "CompletionException")]
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
-              for path in (native, owners, executor_reference, executor_owners, uncertain_owners, *stubs, *ports)}
+              for path in (native, owners, executor_reference, executor_owners, uncertain_owners,
+                           monitor_reference, monitor_owner, *stubs, *ports)}
     output.mkdir()
     reference, private = output / "reference", output / "private"
     reference.mkdir(); private.mkdir()
     compiler.run("completable-reference-compile", "javac", "-proc:none", "--release", "25", "-d", reference,
-                 native, executor_reference)
+                 native, executor_reference, monitor_reference)
     expected = "COMPLETABLE_FUTURE_SOURCE_CONTROL PASS observables=82"
     observed = compiler.run("completable-reference-run", "java", "-Xmx256m", "-cp", reference,
                             "CompletableFutureNativeControl").strip()
@@ -369,6 +372,10 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
                                      "CompletableFutureExecutorThrowReferenceControl").strip()
     executor_cases = [json.loads(line) for line in executor_expected.splitlines()]
     if len(executor_cases) != 6: raise ValueError("Java CompletableFuture executor reference cases did not complete")
+    monitor_expected = "COMPLETABLE_FUTURE_MONITOR_REFERENCE PASS completion;exception-callbacks=7;cause-once=6"
+    observed = compiler.run("completable-monitor-reference-jdk", "java", "-Xmx256m", "-cp", reference,
+                            "CompletableMonitorReferenceControl").strip()
+    if observed != monitor_expected: raise ValueError("Java CompletableFuture monitor reference did not complete")
     text = read_file(native).decode("utf-8")
     for name in ("CompletableFuture", "CompletionStage", "CompletionException"):
         original = "import java.util.concurrent." + name + ";"
@@ -389,8 +396,16 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
         text = text.replace(original, "import dev.latent.guest.runtime.concurrent." + name + ";")
     private_executor = private / executor_reference.name
     private_executor.write_text(text, encoding="utf-8")
+    text = read_file(monitor_reference).decode("utf-8")
+    for name in ("CompletableFuture", "CompletionException"):
+        original = "import java.util.concurrent." + name + ";"
+        if text.count(original) != 1: raise ValueError("Java CompletableFuture monitor control import is ambiguous")
+        text = text.replace(original, "import dev.latent.guest.runtime.concurrent." + name + ";")
+    private_monitor = private / monitor_reference.name
+    private_monitor.write_text(text, encoding="utf-8")
     compiler.run("completable-source-compile", "javac", "-proc:none", "--release", "25", "-d", private,
-                 private_native, private_executor, owners, executor_owners, uncertain_owners, *stubs, *ports)
+                 private_native, private_executor, private_monitor, monitor_owner,
+                 owners, executor_owners, uncertain_owners, *stubs, *ports)
     owner_result = "COMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=419;raceRounds=32"
     observed = compiler.run("completable-source-run", "java", "-Xmx256m", "-cp", private,
                             "PrivateSourceRunner").strip()
@@ -409,6 +424,14 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
     if observed != ("COMPLETABLE_FUTURE_EXECUTOR_UNCERTAIN_OWNER PASS observables=30;"
                     "queued=8;results=8;cleanup-denied;activation-retirement-unqualified"):
         raise ValueError("Java CompletableFuture uncertain executor capacity control did not complete")
+    observed = compiler.run("completable-monitor-source", "java", "-Xmx256m", "-cp", private,
+                            "CompletableMonitorReferenceControl").strip()
+    if observed != monitor_expected: raise ValueError("Java CompletableFuture monitor source differs from JDK")
+    observed = compiler.run("completable-monitor-owner", "java", "-Xmx256m", "-cp", private,
+                            "CompletableMonitorOwnerControl").strip()
+    if observed != ("COMPLETABLE_FUTURE_MONITOR_OWNER PASS callback-retirement;"
+                    "cancelled-queued-retirement;subscribe-race"):
+        raise ValueError("Java CompletableFuture monitor ownership control did not complete")
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError("Java CompletableFuture control inputs changed during execution")
     return {"status": "reference-and-SDK-source-controls-passed", "referenceObservables": 82,
@@ -416,6 +439,7 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
             "executorReferenceCases": 6, "executorAcceptanceOwnershipObservables": 49,
             "uncertainExecutorOwnershipObservables": 30,
             "uncertainAcceptanceAtOriginalOwnerCapacity": True, "uncertainActivationRetirementQualified": False,
+            "futureMonitor": "JDK-and-SDK-source-controls-passed",
             "componentExecutionPerformed": False, "actualGuestBindingsUsed": False}
 
 
