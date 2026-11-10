@@ -5,6 +5,7 @@ from pathlib import Path
 import unittest
 
 from tools import qualify_go_synchronization as owner
+from tools import qualify_go_activation as activation
 
 
 def signed_output():
@@ -22,6 +23,29 @@ def witness():
             b'LSF-GO-ZERO-CLOCK-V1|wait-pending|0|5\n'
             b'LSF-GO-ZERO-CLOCK-V1|advance|0|5\n'
             b'LSF-GO-NODE-STOP-TIMER-V1|pending|root-close|3|1|0|0\n')
+
+
+def ticker_output():
+    row = dict(case='zero-clock-ticker-coalescing', outcome='success', pendingDeadlines=[5, 10, 30],
+               advances=[5, 29, 30], nominalMissedPeriods=3, liveStores=0, liveInstances=0,
+               reservations=0, reservedFuel=0, reservedMemory=0, pendingProviderWaits=0)
+    return ('\n'.join([f'test {owner.TICKER_CLOCK_CASE} ... ok',
+                       'GO_TICKER_CATCHUP_CASE ' + json.dumps(row),
+                       'test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 38 filtered out;']) + '\n').encode()
+
+
+def ticker_witness():
+    return (b'LSF-GO-NODE-STOP-TIMER-V1|pending|start-accepted|1|1|0|1\n'
+            b'LSF-GO-NODE-STOP-TIMER-V1|pending|next-entered|2|1|1|1\n'
+            b'LSF-GO-TICKER-CLOCK-V1|wait-pending|0|5\n'
+            b'LSF-GO-TICKER-CLOCK-V1|advance|0|5\n'
+            b'LSF-GO-NODE-STOP-TIMER-V1|pending|next-entered|3|1|1|1\n'
+            b'LSF-GO-TICKER-CLOCK-V1|wait-pending|5|10\n'
+            b'LSF-GO-TICKER-CLOCK-V1|advance|5|29\n'
+            b'LSF-GO-NODE-STOP-TIMER-V1|pending|next-entered|4|1|1|1\n'
+            b'LSF-GO-TICKER-CLOCK-V1|wait-pending|29|30\n'
+            b'LSF-GO-TICKER-CLOCK-V1|advance|29|30\n'
+            b'LSF-GO-NODE-STOP-TIMER-V1|pending|root-close|5|1|0|0\n')
 
 
 class ZeroClockControls(unittest.TestCase):
@@ -96,3 +120,65 @@ class ZeroClockControls(unittest.TestCase):
                 owner.zero_clock_observations(bad, witness(), 37)
         with self.assertRaises(ValueError):
             owner.zero_clock_observations(signed_output(), witness(), 38)
+
+
+    def test_ticker_campaign_reuses_the_source_bound_zero_clock_component(self):
+        path = Path('fixture')
+        self.assertEqual(owner.campaign('ticker-clock-v7', path, None),
+            {'case': owner.TICKER_CLOCK_CASE, 'fixture': 'zero-clock',
+             'variable': 'LSF_GO_V7_ZERO_CLOCK_FIXTURE',
+             'inputs': [(path, 'go-component-activation-v7')]})
+        with self.assertRaises(ValueError):
+            owner.campaign('ticker-clock-v7', path, Path('unexpected'))
+
+    def test_ticker_requires_all_three_ordered_original_waits(self):
+        result = owner.ticker_clock_observations(ticker_output(), ticker_witness(), 38)
+        self.assertEqual(result['cases'][0]['pendingDeadlines'], [5, 10, 30])
+        lines = ticker_witness().splitlines(keepends=True)
+        bad = [b''.join(lines[:4]+lines[5:]),
+               b''.join(lines[:5]+[lines[5], lines[5]]+lines[6:]),
+               b''.join(lines[:5]+[lines[6], lines[5]]+lines[7:]),
+               ticker_witness().replace(b'wait-pending|29|30', b'wait-pending|29|15'),
+               ticker_witness().replace(b'advance|5|29', b'advance|5|30'),
+               ticker_witness().replace(b'next-entered|3|1|1|1', b'next-entered|3|1|0|1'),
+               ticker_witness().replace(b'root-close|5|1|0|0', b'root-close|5|1|1|0')]
+        for value in bad:
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                owner.ticker_clock_observations(ticker_output(), value, 38)
+
+    def test_ticker_rejects_duplicate_or_foreign_results_and_unsettled_owners(self):
+        bad = [ticker_output().replace(owner.TICKER_CLOCK_CASE.encode(), b'foreign'),
+               ticker_output().replace(b'"nominalMissedPeriods": 3', b'"nominalMissedPeriods": 2'),
+               ticker_output().replace(b'"nominalMissedPeriods": 3', b'"nominalMissedPeriods": 3, "nominalMissedPeriods": 3'),
+               ticker_output().replace(b'"liveStores": 0', b'"liveStores": 1'),
+               ticker_output()+ticker_output()]
+        for value in bad:
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                owner.ticker_clock_observations(value, ticker_witness(), 38)
+        with self.assertRaises(ValueError):
+            owner.ticker_clock_observations(ticker_output(), ticker_witness(), 39)
+
+
+    def test_native_ticker_reference_is_strictly_parsed_and_source_bound(self):
+        def encoded(rows):
+            return b'\n'.join(json.dumps(row).encode() for row in rows) + b'\n'
+        package, case = 'command-line-arguments', activation.TICKER_REFERENCE_CASE
+        rows = [dict(Package=package, Action='start'), dict(Package=package, Action='run', Test=case),
+                dict(Package=package, Action='pass', Test=case), dict(Package=package, Action='pass')]
+        self.assertTrue(activation.ticker_reference_result(encoded(rows)))
+        for bad in (rows[:-1], rows+[rows[-1]], [rows[0]]+rows, [dict(rows[0], Action='skip')]+rows[1:],
+                    [dict(rows[0], Package='foreign')]+rows[1:]):
+            with self.assertRaises(ValueError): activation.ticker_reference_result(encoded(bad))
+        with self.assertRaisesRegex(ValueError, 'duplicate-field'):
+            activation.ticker_reference_result(b'{"Package":"command-line-arguments","Action":"pass","Action":"fail"}')
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / activation.TICKER_REFERENCE
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b'reviewed native fixture')
+            native = {'tickerReference': {'case': case, 'sourceDigest': 'sha256:' + owner.digest(source.read_bytes()),
+                                          'fakeClock': 'go-testing-synctest', 'passed': True}}
+            owner.require_ticker_native_reference(native, root)
+            for bad in ({}, {'tickerReference': dict(native['tickerReference'], passed=1)},
+                        {'tickerReference': dict(native['tickerReference'], sourceDigest='sha256:changed')}):
+                with self.assertRaises(ValueError): owner.require_ticker_native_reference(bad, root)

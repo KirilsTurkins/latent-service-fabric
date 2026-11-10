@@ -75,3 +75,80 @@ async fn signed_zero_origin_five_nanosecond_timer_retires_original_wait() {
         })
     );
 }
+
+#[tokio::test]
+#[ignore = "requires the pinned zero-clock Go ticker and finite manual-clock fixture"]
+async fn signed_zero_clock_ticker_coalesces_missed_periods() {
+    assert_eq!(std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(), Ok("go"));
+    assert_eq!(
+        std::env::var("LSF_GO_NODE_STOP_TIMER_OBSERVER").as_deref(),
+        Ok("1")
+    );
+    let root = tempfile::tempdir().unwrap();
+    let clock = Arc::new(super::super::super::fixture::zero_clock::ZeroClock::for_ticker());
+    let f = prepare_owned_fixture_with_clock(
+        root.path(),
+        "LSF_GO_V7_ZERO_CLOCK_FIXTURE",
+        "go-component-activation-v7",
+        16,
+        Some(clock.clone()),
+    )
+    .await;
+    assert_eq!(clock.monotonic_now(), clock.origin());
+    assert_eq!(clock.pending_waiters(), 0);
+    let mut invocation = Box::pin(f.manager.start(f.request("node-stop-pending", 1)).unwrap());
+    for (stage, before, after) in [(1, 0, 5), (2, 5, 29), (3, 29, 30)] {
+        tokio::time::timeout(Duration::from_secs(15), async {
+            tokio::select! {
+                result = &mut invocation => panic!("activation exited before ticker wait: {:?}", result.outcome),
+                () = clock.ticker_pending(stage) => {}
+            }
+        }).await.expect("real ticker wait was not observed");
+        assert_eq!(
+            clock.monotonic_now(),
+            clock.origin() + Duration::from_nanos(before)
+        );
+        assert_eq!(clock.pending_waiters(), 1);
+        assert!(clock.target_live());
+        assert_eq!(f.read_wait.active.load(Ordering::Acquire), 1);
+        f.assert_single_cell_occupied_without_queue();
+        writeln!(
+            std::io::stderr().lock(),
+            "LSF-GO-TICKER-CLOCK-V1|advance|{before}|{after}"
+        )
+        .expect("write ticker advance witness");
+        clock.advance(Duration::from_nanos(after - before));
+    }
+    let result = tokio::time::timeout(Duration::from_secs(15), &mut invocation)
+        .await
+        .expect("ticker did not complete after the next period");
+    let receipt = success(result);
+    assert_eq!(
+        serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),
+        [42]
+    );
+    assert!(receipt.consumption.cpu_fuel > 0);
+    assert!(receipt.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
+    f.idle().await;
+    assert_eq!(clock.pending_waiters(), 0);
+    assert!(!clock.target_live());
+    assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
+    let state = f.backend.resource_snapshot();
+    assert_eq!(state.stores_created, 1);
+    assert_eq!(state.live_stores, 0);
+    assert_eq!(state.live_component_instances, 0);
+    assert_eq!(f.backend.active_instance_reservations(), 0);
+    let quota = f.quotas.usage().unwrap();
+    assert_eq!(quota.active_activations, 0);
+    assert_eq!(quota.reserved_cpu_fuel, 0);
+    assert_eq!(quota.reserved_memory_bytes, 0);
+    println!(
+        "GO_TICKER_CATCHUP_CASE {}",
+        serde_json::json!({
+            "case":"zero-clock-ticker-coalescing", "outcome":"success",
+            "pendingDeadlines":[5,10,30], "advances":[5,29,30], "nominalMissedPeriods":3,
+            "liveStores":0, "liveInstances":0, "reservations":0, "reservedFuel":0,
+            "reservedMemory":0, "pendingProviderWaits":0
+        })
+    );
+}
