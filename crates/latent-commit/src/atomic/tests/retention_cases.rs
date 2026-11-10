@@ -194,6 +194,39 @@ fn response_expiry_preserves_uncertain_effect_inbox_source_and_original_key_afte
 }
 
 #[test]
+fn result_expiry_works_when_engine_value_limit_is_below_codec_limit() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .open(dir.path().join("state.redb"))
+        .unwrap();
+    let store = EmbeddedStore::open_file(
+        file,
+        StoreLimits {
+            maximum_key_bytes: 4096,
+            maximum_value_bytes: 64 * 1024,
+            maximum_batch_rows: 1024,
+            ..StoreLimits::default()
+        },
+    )
+    .unwrap();
+    let effects = seed(&store);
+    let record = completed(&store, &effects, "small-engine-result-expiry");
+    let owner = ResultMaintenanceOwner::default();
+    owner
+        .anchor(&store, None, observation(1000, 0), maintenance)
+        .unwrap();
+    let progress = owner
+        .step(&store, observation(1100, 100), maintenance)
+        .unwrap();
+    assert_eq!((progress.visited, progress.retired), (1, 1));
+    assert!(result_bytes(&store, &record).starts_with(b"LCE\0\x01"));
+}
+
+#[test]
 fn oversized_result_refuses_expiry_without_advancing_maintenance_or_replacing_the_row() {
     let (_dir, store, effects) = setup();
     let record = completed(&store, &effects, "oversized-result");
