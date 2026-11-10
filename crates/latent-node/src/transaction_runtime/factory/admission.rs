@@ -440,7 +440,11 @@ impl NativeTransactionAdmission {
                     let waiter = self
                         .owners
                         .lanes
-                        .reserve_authorizing_duplicate(&scope)
+                        .reserve_authorizing_duplicate(
+                            &scope,
+                            retained_bytes,
+                            envelope.activation_id.0.len(),
+                        )
                         .map_err(entity_queue_error)?;
                     let authorized = self.authorize_entity_duplicate(selection, envelope, budget);
                     tokio::select! {

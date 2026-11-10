@@ -52,20 +52,28 @@ type CommandSelection = (
 );
 type Commands = Arc<Mutex<BTreeMap<CommandIdentity, Arc<CommandEntry>>>>;
 type DuplicateWaiters = Arc<Mutex<BTreeMap<EntityScope, usize>>>;
+type Waiting = Arc<Mutex<BTreeMap<EntityScope, WaitingUsage>>>;
+#[derive(Clone, Copy, Default)]
+struct WaitingUsage {
+    count: usize,
+    bytes: u64,
+}
 
 // Count both ordinary queued work and duplicate observers under the same
 // configured limits. A slot is held until selection or cancellation, and
 // never keeps a physical lane owner alive.
 pub(super) struct WaitingSlot {
-    waiters: DuplicateWaiters,
+    waiters: Waiting,
     scope: EntityScope,
+    bytes: u64,
 }
 impl Drop for WaitingSlot {
     fn drop(&mut self) {
         if let Ok(mut waiters) = self.waiters.lock() {
-            if let Some(count) = waiters.get_mut(&self.scope) {
-                *count -= 1;
-                if *count == 0 {
+            if let Some(usage) = waiters.get_mut(&self.scope) {
+                usage.count -= 1;
+                usage.bytes -= self.bytes;
+                if usage.count == 0 {
                     waiters.remove(&self.scope);
                 }
             }
@@ -154,7 +162,10 @@ pub(super) struct EntityQueue {
     maximum_commands: usize,
     next_command_generation: AtomicU64,
     duplicate_waiters: DuplicateWaiters,
-    waiting: DuplicateWaiters,
+    waiting: Waiting,
+    maximum_global_wait_bytes: u64,
+    maximum_tenant_wait_bytes: u64,
+    maximum_entity_wait_bytes: u64,
     maximum_global_waiters: usize,
     maximum_tenant_waiters: usize,
     maximum_entity_waiters: usize,
@@ -188,6 +199,9 @@ impl EntityQueue {
         let maximum_tenant_waiters = limits.tenant_queued;
         let maximum_entity_waiters = limits.entity_queued;
         let maximum_wait_age = limits.maximum_wait_age;
+        let maximum_global_wait_bytes = limits.global_bytes;
+        let maximum_tenant_wait_bytes = limits.tenant_bytes;
+        let maximum_entity_wait_bytes = limits.entity_bytes;
         let lanes = EntityLanes::new(limits).map_err(QueueError::Lane)?;
         let (signal, _) = watch::channel(0);
         let (claims, _) = watch::channel(0);
@@ -204,6 +218,9 @@ impl EntityQueue {
             next_command_generation: AtomicU64::new(1),
             duplicate_waiters: Arc::new(Mutex::new(BTreeMap::new())),
             waiting: Arc::new(Mutex::new(BTreeMap::new())),
+            maximum_global_wait_bytes,
+            maximum_tenant_wait_bytes,
+            maximum_entity_wait_bytes,
             maximum_global_waiters: maximum_turn,
             maximum_tenant_waiters,
             maximum_entity_waiters,
@@ -211,40 +228,70 @@ impl EntityQueue {
         })
     }
 
-    pub(super) fn reserve_waiting(&self, scope: &EntityScope) -> Result<WaitingSlot, QueueError> {
+    fn reserve_waiting(&self, scope: &EntityScope, bytes: u64) -> Result<WaitingSlot, QueueError> {
         let mut waiters = self.waiting.lock().map_err(|_| QueueError::Unavailable)?;
-        let mut global = 0_usize;
-        let mut tenant = 0_usize;
-        for (key, count) in waiters.iter() {
-            global = global.saturating_add(*count);
+        let mut global = WaitingUsage::default();
+        let mut tenant = WaitingUsage::default();
+        for (key, usage) in waiters.iter() {
+            global.count = global.count.saturating_add(usage.count);
+            global.bytes = global.bytes.saturating_add(usage.bytes);
             if key.tenant() == scope.tenant() {
-                tenant = tenant.saturating_add(*count);
+                tenant.count = tenant.count.saturating_add(usage.count);
+                tenant.bytes = tenant.bytes.saturating_add(usage.bytes);
             }
         }
-        let limit = if global >= self.maximum_global_waiters {
+        let entity = waiters.get(scope).copied().unwrap_or_default();
+        let limit = if global.count >= self.maximum_global_waiters {
             Some(EntityLaneLimit::GlobalQueue)
-        } else if tenant >= self.maximum_tenant_waiters {
+        } else if tenant.count >= self.maximum_tenant_waiters {
             Some(EntityLaneLimit::TenantQueue)
-        } else if waiters.get(scope).copied().unwrap_or(0) >= self.maximum_entity_waiters {
+        } else if entity.count >= self.maximum_entity_waiters {
             Some(EntityLaneLimit::EntityQueue)
+        } else if global
+            .bytes
+            .checked_add(bytes)
+            .is_none_or(|value| value > self.maximum_global_wait_bytes)
+        {
+            Some(EntityLaneLimit::GlobalBytes)
+        } else if tenant
+            .bytes
+            .checked_add(bytes)
+            .is_none_or(|value| value > self.maximum_tenant_wait_bytes)
+        {
+            Some(EntityLaneLimit::TenantBytes)
+        } else if entity
+            .bytes
+            .checked_add(bytes)
+            .is_none_or(|value| value > self.maximum_entity_wait_bytes)
+        {
+            Some(EntityLaneLimit::EntityBytes)
         } else {
             None
         };
         if let Some(limit) = limit {
             return Err(QueueError::Lane(EntityLaneError::Backpressure(limit)));
         }
-        *waiters.entry(scope.clone()).or_default() += 1;
+        let usage = waiters.entry(scope.clone()).or_default();
+        usage.count += 1;
+        usage.bytes += bytes;
         Ok(WaitingSlot {
             waiters: Arc::clone(&self.waiting),
             scope: scope.clone(),
+            bytes,
         })
     }
 
     pub(super) fn reserve_authorizing_duplicate(
         &self,
         scope: &EntityScope,
+        retained_bytes: u64,
+        identity_bytes: usize,
     ) -> Result<AuthorizingWaiter, QueueError> {
-        let waiting = self.reserve_waiting(scope)?;
+        let metadata = waiting_metadata(scope, identity_bytes)?;
+        let bytes = retained_bytes
+            .checked_add(metadata)
+            .ok_or(QueueError::Unavailable)?;
+        let waiting = self.reserve_waiting(scope, bytes)?;
         let mut waiters = self
             .duplicate_waiters
             .lock()
@@ -326,23 +373,9 @@ impl EntityQueue {
         // Cover the queue's own objects and the lane's bounded copies before
         // building the channel or inserting the request. The trusted caller
         // obtains this permit from the original ingress reservation first.
-        let scope_bytes = scope
-            .tenant()
-            .0
-            .len()
-            .checked_add(scope.namespace().0.len())
-            .and_then(|n| n.checked_add(scope.entity().0.len()))
-            .ok_or(QueueError::Unavailable)?;
-        let charge = scope_bytes
-            .checked_mul(8)
-            .and_then(|n| {
-                identity
-                    .len()
-                    .checked_mul(2)
-                    .and_then(|ids| n.checked_add(ids))
-            })
-            .and_then(|n| n.checked_add(4096))
-            .and_then(|n| u64::try_from(n).ok())
+        let charge = waiting_metadata(&scope, identity.len())?;
+        let wait_bytes = retained_bytes
+            .checked_add(charge)
             .ok_or(QueueError::Unavailable)?;
         // `retained_bytes` is separately held by the permit's original global
         // reservation; the subpermit covers these additional lane objects.
@@ -434,7 +467,7 @@ impl EntityQueue {
                 break Some(next);
             }
             if duplicate_waiter.is_none() {
-                waiting_slot = Some(self.reserve_waiting(&scope).map_err(|error| {
+                waiting_slot = Some(self.reserve_waiting(&scope, wait_bytes).map_err(|error| {
                     if matches!(error, QueueError::Lane(EntityLaneError::Backpressure(_))) {
                         QueueError::DuplicateCapacity
                     } else {
@@ -483,7 +516,7 @@ impl EntityQueue {
         // the slot across enqueue and release it on selection or cancellation.
         let _waiting_slot = match waiting_slot {
             Some(slot) => slot,
-            None => self.reserve_waiting(&scope)?,
+            None => self.reserve_waiting(&scope, wait_bytes)?,
         };
         let enqueued_at = self.clock.monotonic_now();
         let queue_wait_until = enqueued_at
@@ -600,6 +633,26 @@ impl EntityQueue {
             .send_modify(|version| *version = version.wrapping_add(1));
         Ok(())
     }
+}
+
+fn waiting_metadata(scope: &EntityScope, identity_bytes: usize) -> Result<u64, QueueError> {
+    let scope_bytes = scope
+        .tenant()
+        .0
+        .len()
+        .checked_add(scope.namespace().0.len())
+        .and_then(|n| n.checked_add(scope.entity().0.len()))
+        .ok_or(QueueError::Unavailable)?;
+    scope_bytes
+        .checked_mul(8)
+        .and_then(|n| {
+            identity_bytes
+                .checked_mul(2)
+                .and_then(|ids| n.checked_add(ids))
+        })
+        .and_then(|n| n.checked_add(4096))
+        .and_then(|n| u64::try_from(n).ok())
+        .ok_or(QueueError::Unavailable)
 }
 
 async fn wait_until(deadline: Instant, clock: &dyn ActivationClock) {

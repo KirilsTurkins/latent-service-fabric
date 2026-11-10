@@ -843,8 +843,12 @@ async fn queued_wait_age_uses_the_original_injected_clock() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn concurrent_cancellation_and_owner_retirement_reclaim_all_lane_metadata() {
     for iteration in 0..50_u8 {
+        let mut bounds = limits();
+        // Four simultaneous waiters must fit under the conservative shared
+        // queued-byte accounting as well as the count limit.
+        bounds.entity_bytes = 32 * 1024;
         let queue = Arc::new(
-            EntityQueue::new(limits(), Arc::new(latent_core::SystemActivationClock)).unwrap(),
+            EntityQueue::new(bounds, Arc::new(latent_core::SystemActivationClock)).unwrap(),
         );
         let owner = queue
             .acquire(
@@ -1285,10 +1289,10 @@ fn duplicate_authorization_counts_against_shared_wait_limits() {
     bounds.entity_queued = 1;
     let queue = EntityQueue::new(bounds, Arc::new(latent_core::SystemActivationClock)).unwrap();
     let key = scope("tenant-a", "hot");
-    let authorization = queue.reserve_authorizing_duplicate(&key).unwrap();
+    let authorization = queue.reserve_authorizing_duplicate(&key, 64, 1).unwrap();
     assert_eq!(queue.duplicate_waiter_count().unwrap(), 1);
     assert!(matches!(
-        queue.reserve_waiting(&key),
+        queue.reserve_waiting(&key, 64),
         Err(QueueError::Lane(EntityLaneError::Backpressure(
             EntityLaneLimit::EntityQueue
         )))
@@ -1328,4 +1332,24 @@ async fn duplicate_authorization_timeout_uses_the_injected_clock() {
         .await
         .unwrap()
         .unwrap();
+}
+
+#[test]
+fn duplicate_and_ordinary_waiters_share_queued_byte_limits() {
+    let mut bounds = limits();
+    bounds.entity_bytes = 9_000;
+    let queue = EntityQueue::new(bounds, Arc::new(latent_core::SystemActivationClock)).unwrap();
+    let key = scope("tenant-a", "hot");
+    let authorizing = queue.reserve_authorizing_duplicate(&key, 100, 1).unwrap();
+    let ordinary = queue.reserve_waiting(&key, 4_000).unwrap();
+    assert!(matches!(
+        queue.reserve_waiting(&key, 1_000),
+        Err(QueueError::Lane(EntityLaneError::Backpressure(
+            EntityLaneLimit::EntityBytes
+        )))
+    ));
+    drop(authorizing);
+    let replacement = queue.reserve_waiting(&key, 1_000).unwrap();
+    drop((ordinary, replacement));
+    assert!(queue.waiting.lock().unwrap().is_empty());
 }
