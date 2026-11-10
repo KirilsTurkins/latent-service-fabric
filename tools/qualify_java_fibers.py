@@ -1146,7 +1146,8 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
                 raise ValueError('Java executor close interruption control did not complete')
     result = compiler.run('scheduled-source-control', 'java', '-Xmx256m', '-cp', output, 'ScheduledOwnerControl').strip()
     expected = ('SCHEDULED_OWNER_CONTROL PASS preadmission;actual-result;running-cancel-held;periodic-nonoverlap;'
-        'original-error-suppresses-repeat;timed-wait-cancel-and-interrupt;shutdown-policy;factory-rollback;all-retired')
+        'original-error-suppresses-repeat;timed-wait-cancel-and-interrupt;shutdown-policy;factory-rollback;'
+        'worker-retirement-snapshot;copy-failure-retained;all-retired')
     if result != expected: raise ValueError('Java scheduled source control did not complete')
     result = compiler.run('scheduled-completable-owner-control', 'java', '-Xmx256m', '-cp', output,
         'ScheduledCompletableOwnerControl').strip()

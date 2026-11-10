@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
@@ -20,7 +21,9 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     private final ThreadFactory factory;
     private final long origin = System.nanoTime();
     private final ArrayList<Entry> queue = new ArrayList<>();
-    private final ArrayList<Thread> workers = new ArrayList<>();
+    // The root coordinator cannot acquire the pool monitor, and interrupting
+    // a worker can retire it before the coordinator reaches the next one.
+    private final List<Thread> workers = new CopyOnWriteArrayList<>();
     private volatile Activation.Lease owner;
     private final java.util.concurrent.atomic.AtomicBoolean ownerSettlementStarted =
         new java.util.concurrent.atomic.AtomicBoolean();
