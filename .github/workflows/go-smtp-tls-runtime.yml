@@ -14,9 +14,9 @@ on:
         type: choice
         required: true
         default: standard
-        options: [standard, published]
+        options: [standard, published, published-lost-reply]
   push:
-    branches: ['feat/go-smtp-starttls-20261020', 'feat/go-smtp-v7-20261110', 'feat/go-published-smtp-v7-20261110', 'fix/go-smtp-reference-pin-20261110']
+    branches: ['feat/go-smtp-starttls-20261020', 'feat/go-smtp-v7-20261110', 'feat/go-published-smtp-v7-20261110', 'fix/go-smtp-reference-pin-20261110', 'test/go-smtp-lost-reply-20261110']
 
 permissions:
   contents: read
@@ -40,7 +40,7 @@ jobs:
       - name: Install pinned source controls
         run: python3 -m pip install -r tools/requirements.lock
       - name: Install captured Go compiler namespace for published client
-        if: ${{ github.ref_name == 'feat/go-published-smtp-v7-20261110' || github.ref_name == 'fix/go-smtp-reference-pin-20261110' || (github.event_name == 'workflow_dispatch' && inputs.program == 'published') }}
+        if: ${{ github.ref_name == 'feat/go-published-smtp-v7-20261110' || github.ref_name == 'fix/go-smtp-reference-pin-20261110' || github.ref_name == 'test/go-smtp-lost-reply-20261110' || (github.event_name == 'workflow_dispatch' && (inputs.program == 'published' || inputs.program == 'published-lost-reply')) }}
         run: |
           sudo apt-get update
           sudo apt-get install --yes bubblewrap
