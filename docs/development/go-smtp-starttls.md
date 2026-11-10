@@ -84,3 +84,12 @@ This advances the finite networking/TLS portion of
 supplies future protocol controls for
 [#738](https://github.com/KirilsTurkins/latent-service-fabric/issues/738).
 Both issues remain open.
+
+The existing owner can also select the v7 declared-stream compiler/profile. The
+same unchanged six SMTP/STARTTLS cases use the original v7 Task16, Executor2,
+Queue16, Wait4, Timer2, Result2 and Native2 bounds; v5 remains the default with
+Queue2. A separate v7 receipt and exact limits witness bind this composition.
+The historical v5 receipt above does not establish a v7 result. The dedicated
+v7 push branch selects it; the manual choice requires the workflow to exist on
+the repository's default branch. These controls do not establish a published
+third-party client, production provider availability or kernel final-free.

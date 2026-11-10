@@ -75,7 +75,7 @@ def prepare(goroot: Path, sdk: Path, output: Path, module: str) -> dict[str, str
     # Only the removed public DNS bodies referenced this package. Preserve its
     # original dependency/initialization edge instead of deleting the import.
     lookup = replace_once(lookup, '\t"internal/stringslite"\n', '\t_ "internal/stringslite"\n')
-    # Only the declared-stream managed-v5 path uses this bounded private cache.
+    # Only selected declared-stream profiles use this bounded private cache.
     # Its whole upstream file was authenticated before any overlay is published.
     # Application cleanup callbacks remain explicitly refused by activation.py.
     cert_cache = (sdk / 'runtime/tls_cert_cache.go.in').read_text(encoding='utf-8')

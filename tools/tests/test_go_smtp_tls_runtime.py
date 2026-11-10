@@ -4,6 +4,7 @@ from pathlib import Path
 import unittest
 
 from tools import qualify_go_smtp_tls_runtime as runtime
+from tools import go_network_read_barrier as network_runtime
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -37,6 +38,39 @@ class GoSmtpTlsRuntimeTests(unittest.TestCase):
         self.assertIs(value['completion']['hostTlsQualified'], False)
         self.assertIs(value['completion']['kernelRetirementQualified'], False)
 
+    def test_v7_limits_bind_the_new_receipt_and_fail_closed(self):
+        marker = b'GO_V7_NETWORK_LIMITS ' + json.dumps(network_runtime.V7_LIMITS).encode() + b'\n'
+        self.assertIsNone(runtime.profile_witness(self.output(), runtime.MANAGED_PROFILE))
+        self.assertEqual(runtime.profile_witness(self.output() + marker, runtime.STACK_PROFILE), network_runtime.V7_LIMITS)
+        self.assertEqual(runtime.outcomes(self.output() + marker), runtime.outcomes(self.output()))
+        for raw, profile in ((self.output(), runtime.STACK_PROFILE),
+                             (self.output() + marker + marker, runtime.STACK_PROFILE),
+                             (self.output() + marker, runtime.MANAGED_PROFILE),
+                             (self.output() + marker, 'go-component-activation-v6'),
+                             (self.output() + marker.replace(b'"queuedWork": 16', b'"queuedWork": 2'), runtime.STACK_PROFILE),
+                             (self.output() + marker.replace(b'"tasks": 16', b'"tasks": true'), runtime.STACK_PROFILE)):
+            with self.subTest(profile=profile, tail=raw[-150:]), self.assertRaises(ValueError):
+                runtime.profile_witness(raw, profile)
+
+    def test_workflow_selection_keeps_v5_and_requires_an_explicit_v7_route(self):
+        self.assertEqual(runtime.workflow_profile('push', runtime.V5_PUSH_BRANCH, ''), runtime.MANAGED_PROFILE)
+        self.assertEqual(runtime.workflow_profile('push', runtime.V7_PUSH_BRANCH, ''), runtime.STACK_PROFILE)
+        for choice in ('', 'v5'):
+            self.assertEqual(runtime.workflow_profile('workflow_dispatch', 'development', choice), runtime.MANAGED_PROFILE)
+        self.assertEqual(runtime.workflow_profile('workflow_dispatch', 'development', 'v7'), runtime.STACK_PROFILE)
+        for event, branch, choice in (('push', 'development', ''), ('push', runtime.V5_PUSH_BRANCH, 'v7'),
+                ('workflow_dispatch', 'development', 'v6'), ('workflow_dispatch', 'development', 'V7'),
+                ('pull_request', runtime.V7_PUSH_BRANCH, ''), ('', '', '')):
+            with self.subTest(event=event, branch=branch, choice=choice):
+                with self.assertRaisesRegex(ValueError, 'workflow-selection'):
+                    runtime.workflow_profile(event, branch, choice)
+        workflow = (ROOT / '.github/workflows/go-smtp-tls-runtime.yml').read_text()
+        for branch in (runtime.V5_PUSH_BRANCH, runtime.V7_PUSH_BRANCH):
+            self.assertIn("'" + branch + "'", workflow)
+        for expected in ('default: v5', 'options: [v5, v7]',
+                         'LSF_GO_SMTP_TLS_DISPATCH_PROFILE: ${{ inputs.profile }}', '--workflow-selection'):
+            self.assertIn(expected, workflow)
+
     def test_missing_reordered_duplicate_or_incorrect_verification_results_fail(self):
         variants = []
         rows = self.rows(); rows.pop(1); variants.append(rows)
@@ -47,6 +81,18 @@ class GoSmtpTlsRuntimeTests(unittest.TestCase):
         for rows in variants:
             with self.assertRaises(ValueError):
                 runtime.outcomes(self.output(rows))
+
+    def test_hidden_or_reordered_reserved_events_and_extra_test_cannot_pass(self):
+        rows = self.rows()
+        rows[1], rows[2] = rows[2], rows[1]  # Each per-kind sequence stays unchanged.
+        for raw in (self.output(rows),
+                    self.output() + b'GO_SMTP_UNKNOWN {}\n',
+                    self.output() + b'GO_SMTP_CASE\t{}\n',
+                    self.output() + b' GO_SMTP_OWNER {}\n',
+                    self.output() + b'test unexpected ... FAILED\n',
+                    self.output() + b'GO_SMTP_OWNER ' + b'x' * 4097 + b'\n'):
+            with self.subTest(tail=raw[-100:]), self.assertRaises(ValueError):
+                runtime.outcomes(raw)
 
     def test_unknown_private_duplicate_and_numeric_aliases_are_not_evidence(self):
         for key, value in (('private', 'fixture-secret'), ('mode', False), ('contacts', 1.0)):
@@ -85,8 +131,8 @@ class GoSmtpTlsRuntimeTests(unittest.TestCase):
                 '"EHLO localhost\\r\\n"', 'secure.is_err()', 'stores_created, 6'):
             self.assertIn(expression, peer)
         setup = (ROOT / 'crates/latent-wasmtime/tests/go_smtp_tls/setup.rs').read_text()
-        for bound in ('tasks: 16', 'executors: 2', 'queued_work: 2', 'waits: 4',
-                      'timers: 2', 'results: 2', 'native_owners: 2'):
+        for bound in ('tasks: 16', 'executors: 2', 'PROFILE => 2', 'V7_PROFILE => 16', 'queued_work,', 'waits: 4',
+                      'timers: 2', 'results: 2', 'native_owners: 2', 'GO_V7_NETWORK_LIMITS'):
             self.assertIn(bound, setup)
         self.assertIn('tls: None', setup)  # Only TCP provider; TLS is inside Go.
         controller = (ROOT / 'tools/qualify_go_smtp_tls_runtime.py').read_text()

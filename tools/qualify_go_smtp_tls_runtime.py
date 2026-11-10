@@ -23,7 +23,8 @@ from tools import ci_rust_artifacts as artifacts
 from tools import ci_suite_discovery as discovery
 from tools import ci_suite_inventory as registry
 from tools.go_capsule_build import RECIPE as BUILD_RECIPE
-from tools.go_guest.activation import MANAGED_PROFILE
+from tools.go_guest.activation import MANAGED_PROFILE, STACK_PROFILE
+from tools.go_network_read_barrier import profile_witness
 from tools.go_guest.compiler import Compiler
 from tools.owned_test_process import ProcessFailure, run_owned
 from tools.rust_capsule_build import Commands
@@ -41,6 +42,8 @@ REFERENCE_GO_SHA = '548d3c32f83fa81152f543eb1526be7884cfe0526eb5e9ce29d3eca14786
 
 CASE = 'signed_ordinary_go_smtp_starttls_preserves_trust_hostname_and_fresh_connection'
 SUITE = 'latent-wasmtime.test.go_smtp_tls'
+V5_PUSH_BRANCH = 'feat/go-smtp-starttls-20261020'
+V7_PUSH_BRANCH = 'feat/go-smtp-v7-20261110'
 EXPECTED = (
     ('ordinary-smtp-plain', 0, 'ordinary-smtp-plain', 1),
     ('ordinary-starttls13', 1, 'ordinary-smtp-tls13', 1),
@@ -49,6 +52,21 @@ EXPECTED = (
     ('ordinary-starttls12', 4, 'ordinary-smtp-tls12', 1),
     ('fresh-starttls13', 5, 'ordinary-smtp-tls13', 1),
 )
+
+
+def workflow_profile(event: str, branch: str, choice: str) -> str:
+    """Select the original v5 branch, dedicated v7 branch or bounded manual choice."""
+    if event == 'push' and not choice:
+        if branch == V5_PUSH_BRANCH:
+            return MANAGED_PROFILE
+        if branch == V7_PUSH_BRANCH:
+            return STACK_PROFILE
+    elif event == 'workflow_dispatch':
+        if choice in ('', 'v5'):
+            return MANAGED_PROFILE
+        if choice == 'v7':
+            return STACK_PROFILE
+    raise ValueError('Go-smtp-tls-runtime-workflow-selection')
 
 
 def encoded(value: dict) -> bytes:
@@ -85,10 +103,16 @@ def source_inputs(root: Path) -> dict:
 def outcomes(raw: bytes, filtered: int = 0) -> dict:
     if not isinstance(raw, bytes) or len(raw) > 1024 * 1024:
         raise ValueError('Go-smtp-tls-runtime-output-bound')
-    passed = re.findall(rb'^test ([A-Za-z0-9_:]+) \.\.\. ok$', raw, re.M)
-    totals = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;', raw, re.M)
-    if passed != [CASE.encode()] or totals != [(b'1', b'0', b'0', b'0', str(filtered).encode())]:
+    if type(filtered) is not int or filtered < 0:
+        raise ValueError('Go-smtp-tls-runtime-invalid-filtered-count')
+    tests = [line for line in raw.split(b'\n')
+             if line.lstrip(b' \t') == b'test' or line.lstrip(b' \t').startswith((b'test ', b'test\t'))]
+    summary = re.compile(rb'test result: ok\. 1 passed; 0 failed; 0 ignored; 0 measured; '
+                         + str(filtered).encode() + rb' filtered out; finished in [0-9]+(?:\.[0-9]+)?s')
+    if (len(tests) != 2 or tests[0] != b'test ' + CASE.encode() + b' ... ok'
+            or summary.fullmatch(tests[1]) is None):
         raise ValueError('Go-smtp-tls-runtime-exact-native-case-required')
+
     def unique(pairs):
         result = {}
         for key, value in pairs:
@@ -96,25 +120,51 @@ def outcomes(raw: bytes, filtered: int = 0) -> dict:
                 raise ValueError('Go-smtp-tls-runtime-duplicate-observation-field')
             result[key] = value
         return result
-    def decode(row):
-        return json.loads(row, object_pairs_hook=unique)
+
+    def nonfinite(_):
+        raise ValueError('Go-smtp-tls-runtime-nonfinite-observation')
+
     def same(actual, expected):
-        # Python considers True == 1 and 0.0 == 0; the closed wire evidence does not.
-        return json.dumps(actual, sort_keys=True) == json.dumps(expected, sort_keys=True)
-    rows = [decode(row) for row in re.findall(rb'^GO_SMTP_CASE (.+)$', raw, re.M)]
-    wanted = [dict(zip(('case', 'mode', 'result', 'contacts'), row)) for row in EXPECTED]
-    if not same(rows, wanted):
-        raise ValueError('Go-smtp-tls-runtime-exact-ordinary-observations-required')
-    owners = [decode(row) for row in re.findall(rb'^GO_SMTP_OWNER (.+)$', raw, re.M)]
-    wanted_owners = [{'case': row[0], 'stores': 0, 'instances': 0, 'streamOwners': 0,
-                      'ioOwners': 0, 'kernelRetirementQualified': False} for row in EXPECTED]
-    if not same(owners, wanted_owners):
-        raise ValueError('Go-smtp-tls-runtime-exact-user-owner-retirement-required')
-    complete = [decode(row) for row in re.findall(rb'^GO_SMTP_COMPLETE (.+)$', raw, re.M)]
-    if not same(complete, [{'cases': 6, 'contacts': 6, 'cleanLogicalProviderStop': True,
-                     'kernelRetirementQualified': False, 'normalProviderInstalled': False, 'hostTlsQualified': False}]):
-        raise ValueError('Go-smtp-tls-runtime-completion-or-kernel-claim')
-    return {'cases': rows, 'userSpaceOwners': owners, 'completion': complete[0]}
+        return (type(actual) is dict and actual.keys() == expected.keys()
+                and all(type(actual[key]) is type(value) and actual[key] == value
+                        for key, value in expected.items()))
+
+    observed = []
+    for line in raw.split(b'\n'):
+        if not line.lstrip().startswith(b'GO_SMTP_'):
+            continue
+        if len(line) > 4096:
+            raise ValueError('Go-smtp-tls-runtime-record-bound')
+        name, separator, payload = line.partition(b' ')
+        if (separator != b' ' or name not in {b'GO_SMTP_OWNER', b'GO_SMTP_CASE', b'GO_SMTP_COMPLETE'}
+                or not payload):
+            raise ValueError('Go-smtp-tls-runtime-malformed-observation')
+        try:
+            value = json.loads(payload.decode('utf-8'), object_pairs_hook=unique, parse_constant=nonfinite)
+        except (json.JSONDecodeError, UnicodeDecodeError, RecursionError):
+            raise ValueError('Go-smtp-tls-runtime-malformed-observation') from None
+        observed.append((name, value))
+        if len(observed) > 2 * len(EXPECTED) + 1:
+            raise ValueError('Go-smtp-tls-runtime-exact-event-order-required')
+
+    expected = []
+    for label, mode, result, contacts in EXPECTED:
+        expected.append((b'GO_SMTP_OWNER', {'case': label, 'stores': 0, 'instances': 0,
+            'streamOwners': 0, 'ioOwners': 0, 'kernelRetirementQualified': False}))
+        expected.append((b'GO_SMTP_CASE', {'case': label, 'mode': mode, 'result': result, 'contacts': contacts}))
+    expected.append((b'GO_SMTP_COMPLETE', {'cases': 6, 'contacts': 6, 'cleanLogicalProviderStop': True,
+        'kernelRetirementQualified': False, 'normalProviderInstalled': False, 'hostTlsQualified': False}))
+    if [name for name, _ in observed] != [name for name, _ in expected]:
+        raise ValueError('Go-smtp-tls-runtime-exact-event-order-required')
+    reasons = {b'GO_SMTP_CASE': 'Go-smtp-tls-runtime-exact-ordinary-observations-required',
+               b'GO_SMTP_OWNER': 'Go-smtp-tls-runtime-exact-user-owner-retirement-required',
+               b'GO_SMTP_COMPLETE': 'Go-smtp-tls-runtime-completion-or-kernel-claim'}
+    for (name, value), (_, wanted) in zip(observed, expected):
+        if not same(value, wanted):
+            raise ValueError(reasons[name])
+    return {'cases': [value for name, value in observed if name == b'GO_SMTP_CASE'],
+            'userSpaceOwners': [value for name, value in observed if name == b'GO_SMTP_OWNER'],
+            'completion': observed[-1][1]}
 
 
 def cache_reference_source(raw: bytes) -> bytes:
@@ -148,9 +198,12 @@ def cache_reference_outcomes(raw: bytes) -> list[str]:
     return cases
 
 
-def qualify(root: Path, output: Path, revision: str, reference_go: Path) -> dict:
+def qualify(root: Path, output: Path, revision: str, reference_go: Path, profile: str = MANAGED_PROFILE) -> dict:
+    if profile not in (MANAGED_PROFILE, STACK_PROFILE):
+        raise ValueError('Go-smtp-tls-runtime-profile-not-selected')
     environment = dict(os.environ, CARGO_BUILD_JOBS='2', CARGO_INCREMENTAL='0',
-                       CARGO_TARGET_DIR=str(root / 'target'), LSF_GUEST_SDK_LANGUAGE='go')
+                       CARGO_TARGET_DIR=str(root / 'target'), LSF_GUEST_SDK_LANGUAGE='go',
+                       LSF_GO_SMTP_TLS_PROFILE=profile)
     artifacts.require_source(root, revision, environment)
     if sys.platform != 'linux':
         raise ValueError('Go-smtp-tls-runtime-linux-required')
@@ -158,7 +211,8 @@ def qualify(root: Path, output: Path, revision: str, reference_go: Path) -> dict
     before = source_inputs(root)
     inputs = encoded(before)
     (output / 'native-inputs.json').write_bytes(inputs)
-    record = {'schemaVersion': 'latent.go.smtp-tls.runtime.v1', 'sourceRevision': revision,
+    record = {'schemaVersion': ('latent.go.smtp-tls.runtime.v1' if profile == MANAGED_PROFILE
+                                else 'latent.go.smtp-tls.runtime.v7.v1'), 'sourceRevision': revision,
               'status': 'in-progress', 'sourceDigest': digest(inputs), 'normalProviderInstalled': False,
               'kernelAccountingQualified': False, 'fullGoNetworkingQualified': False, 'hostTlsAccountingQualified': False}
     deadline = time.monotonic() + 1800
@@ -220,13 +274,13 @@ def qualify(root: Path, output: Path, revision: str, reference_go: Path) -> dict
             (prepared / name).write_bytes(read_file(root / 'sdk/go-guest/runtime-deps' / name))
         stage(prepared / 'wit', fixture)
         commands = Commands(prepared, prepared, environment, deadline_seconds=900, command_seconds=600)
-        compiler = Compiler(prepared / 'compiler', root / 'sdk/go-guest', commands, runtime_profile=MANAGED_PROFILE)
+        compiler = Compiler(prepared / 'compiler', root / 'sdk/go-guest', commands, runtime_profile=profile)
         component, _ = compiler.compile(prepared / 'src', prepared / 'wit',
-            'examples:go-standard-network/service@1.0.0', prepared / 'build', runtime_profile=MANAGED_PROFILE)
+            'examples:go-standard-network/service@1.0.0', prepared / 'build', runtime_profile=profile)
         compiler.check_unchanged()
         if source != snapshot(fixture):
             raise ValueError('Go-smtp-tls-runtime-source-changed')
-        compiled = {'profile': MANAGED_PROFILE, 'sourceUnchanged': True,
+        compiled = {'profile': profile, 'sourceUnchanged': True,
                     'sourceDigest': digest(source['main.go']), 'componentDigest': digest(read_file(component, 64 * 1024 * 1024)),
                     'tools': compiler.materials, 'compilerInputsDigest': digest(inventory(source))}
         (prepared / 'GO-SMTP-TLS-COMPILE.json').write_bytes(encoded(compiled))
@@ -252,6 +306,9 @@ def qualify(root: Path, output: Path, revision: str, reference_go: Path) -> dict
         raw = command([str(native.executable), '--ignored', '--exact', CASE, '--show-output', '--test-threads=1'],
                       'native', 300, 1024 * 1024)
         record['observations'] = outcomes(raw, filtered=len(available) - 1)
+        selected_limits = profile_witness(raw, profile)
+        if selected_limits is not None:
+            record['selectedRuntimeLimits'] = selected_limits
         if before != source_inputs(root):
             raise ValueError('Go-smtp-tls-runtime-native-inputs-changed')
         compiler.check_unchanged()
@@ -270,5 +327,13 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--reference-go', type=Path, required=True)
     parser.add_argument('--source-commit', default=os.environ.get('GITHUB_SHA'))
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument('--profile', choices=(MANAGED_PROFILE, STACK_PROFILE))
+    selection.add_argument('--workflow-selection', action='store_true')
     arguments = parser.parse_args()
-    print(json.dumps(qualify(ROOT, arguments.output.resolve(), arguments.source_commit, arguments.reference_go)))
+    if arguments.workflow_selection:
+        profile = workflow_profile(os.environ.get('GITHUB_EVENT_NAME', ''), os.environ.get('GITHUB_REF_NAME', ''),
+                                   os.environ.get('LSF_GO_SMTP_TLS_DISPATCH_PROFILE', ''))
+    else:
+        profile = arguments.profile or MANAGED_PROFILE
+    print(json.dumps(qualify(ROOT, arguments.output.resolve(), arguments.source_commit, arguments.reference_go, profile)))

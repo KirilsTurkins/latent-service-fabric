@@ -38,7 +38,17 @@ pub(super) async fn configured(root: &std::path::Path, port: u16) -> Fixture {
         std::fs::read_to_string(prepared.join("wit/world.wit")).unwrap(),
         WORLD
     );
-    assert_eq!(record["profile"], PROFILE);
+    let profile = match std::env::var("LSF_GO_SMTP_TLS_PROFILE") {
+        Ok(value) => value,
+        Err(std::env::VarError::NotPresent) => PROFILE.to_owned(),
+        Err(std::env::VarError::NotUnicode(_)) => panic!("non-Unicode Go SMTP/TLS runtime profile"),
+    };
+    let queued_work = match profile.as_str() {
+        PROFILE => 2,
+        V7_PROFILE => 16,
+        _ => panic!("unsupported Go SMTP/TLS runtime profile"),
+    };
+    assert_eq!(record["profile"], profile.as_str());
     assert_eq!(record["sourceUnchanged"], true);
     assert_eq!(
         record["sourceDigest"],
@@ -95,20 +105,25 @@ pub(super) async fn configured(root: &std::path::Path, port: u16) -> Fixture {
             .await
             .unwrap();
     }
-    Fixture::with_runtime_outbound_streams(
-        (catalog, caller, callee),
-        latent_core::activation_runtime::RuntimeLimits {
-            tasks: 16,
-            executors: 2,
-            queued_work: 2,
-            waits: 4,
-            timers: 2,
-            results: 2,
-            native_owners: 2,
-        },
-        configuration(port),
-    )
-    .await
+    let limits = latent_core::activation_runtime::RuntimeLimits {
+        tasks: 16,
+        executors: 2,
+        queued_work,
+        waits: 4,
+        timers: 2,
+        results: 2,
+        native_owners: 2,
+    };
+    if profile == V7_PROFILE {
+        println!(
+            "GO_V7_NETWORK_LIMITS {}",
+            json!({"profile": profile, "tasks": limits.tasks, "executors": limits.executors,
+                "queuedWork": limits.queued_work, "waits": limits.waits, "timers": limits.timers,
+                "results": limits.results, "nativeOwners": limits.native_owners})
+        );
+    }
+    Fixture::with_runtime_outbound_streams((catalog, caller, callee), limits, configuration(port))
+        .await
 }
 
 pub(super) fn request(
