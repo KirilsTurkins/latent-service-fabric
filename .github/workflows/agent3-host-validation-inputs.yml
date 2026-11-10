@@ -1,0 +1,36 @@
+name: Agent 3 host validation inputs
+on:
+  push:
+    branches: ['fix/typescript-745-activation-resource-ownership']
+    paths: ['.github/workflows/agent3-host-validation-inputs.yml']
+permissions:
+  contents: read
+jobs:
+  inputs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - name: Fetch exact locked native dependencies
+        run: cargo +1.97.1 fetch --locked --target x86_64-unknown-linux-gnu
+      - name: Retain compiler and offline dependency inputs
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/agent3-host-inputs"
+          mkdir -p "$output"
+          rustc +1.97.1 -Vv > "$output/rustc.txt"
+          cargo +1.97.1 -V > "$output/cargo.txt"
+          sha256sum Cargo.lock rust-toolchain.toml > "$output/source.sha256"
+          tar -czf "$output/toolchain.tar.gz" -C "$(rustc +1.97.1 --print sysroot)" bin lib libexec
+          tar -czf "$output/registry.tar.gz" -C "${CARGO_HOME:-$HOME/.cargo}" registry
+          (cd "$output" && sha256sum toolchain.tar.gz registry.tar.gz > archives.sha256)
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: agent3-host-compiler-inputs-${{ github.sha }}
+          path: ${{ runner.temp }}/agent3-host-inputs/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
