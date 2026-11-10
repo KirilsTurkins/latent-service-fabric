@@ -132,6 +132,59 @@ class ManagedCapacityTests(unittest.TestCase):
             with self.subTest(native=native, selected=selected), self.assertRaises(WorkflowError):
                 node.case_plan(native, selected)
 
+    def test_ready_witness_derives_only_from_exact_original_and_is_separately_selected(self):
+        from tools import dotnet_managed_capacity_fixture as fixture
+        from tools.rust_capsule_project import ROOT, digest, read_file
+        original = read_file(ROOT/fixture.SOURCE); snippet = read_file(ROOT/fixture.READY_SOURCE)
+        selected = fixture.ready_source(original, snippet)
+        case = b'        case 9: return ReadyRetirementWitness();\n'
+        self.assertEqual(selected.count(case), 1)
+        self.assertEqual(selected.count(snippet), 1)
+        self.assertEqual(selected.replace(case, b'', 1).replace(snippet, b'', 1), original)
+        for before, witness in ((original+b' ', snippet), (original, snippet+b' ')):
+            with self.assertRaises(WorkflowError):fixture.ready_source(before, witness)
+        def standard(directory):
+            directory.mkdir(); (directory/'src').mkdir()
+            (directory/'sdk-lock.json').write_text('{"template":{"sourceDigest":"old"}}', encoding='utf8')
+            return directory
+        with tempfile.TemporaryDirectory() as temporary, patch.object(fixture, 'standard_project', standard):
+            root = Path(temporary)
+            for enabled, expected in ((False, original), (True, selected)):
+                app = fixture.project(root/str(enabled), ready_witness=enabled)
+                self.assertEqual((app/'src/Main.cs').read_bytes(), expected)
+                self.assertEqual(json.loads((app/'sdk-lock.json').read_text())['template']['sourceDigest'], digest(expected))
+            with self.assertRaises(WorkflowError):fixture.project(root/'both', rearm_diagnostic=True, ready_witness=True)
+            with self.assertRaises(WorkflowError):fixture.project(root/'wrong', ready_witness=1)
+        for native in (0, 1):
+            self.assertEqual(node.case_plan(native, False, True), node.case_plan(native, False))
+        self.assertEqual(node.case_plan(2, False, True), node.case_plan(2, False) + [
+            ('capacity-2-ready-9', 9, True), ('capacity-2-ready-9-fresh', 7, True)])
+        for native, rearm, ready in ((2, True, True), (2, False, 1), (True, False, True)):
+            with self.assertRaises(WorkflowError):node.case_plan(native, rearm, ready)
+
+    def test_ready_witness_requires_the_original_wait_transition_and_rejects_a_trap(self):
+        budget = {'cpuFuel': 1000000000, 'memoryBytes': 134217728}
+        row = self.row(); row['decoded'] = ['1:ready-retirement:0:1:2:2:1:1:0']
+        with self.assertRaises(WorkflowError):node.checked(row, 9, {'exact': True}, budget)
+        result = node.checked(row, 9, {'exact': True}, budget, ready_witness=True)
+        self.assertEqual((result['droppedWaits'], result['reapedWaits'], result['finalWaits']), (2, 1, 0))
+        self.assertFalse(result['ordinaryTimerDriverQualified'])
+        self.assertFalse(result['postRetirementPhysicalCustodyQualified'])
+        for value in ('1:ready-retirement:0:1:2:2:2:2:1',  # prior ready-path behavior
+                      '1:ready-retirement:0:1:2:1:1:1:0',  # premature release
+                      '1:ready-retirement:0:1:2:2:1:2:0',  # repeated call changed count
+                      '1:ready-retirement:0:1:2:2:1:1:1',  # ready owner not retired
+                      '1:ready-retirement:0:1:2:2:1:1:0:extra',
+                      '1:ready-retirement:00:1:2:2:1:1:0',
+                      '1:ready-retirement:15:16:17:17:16:16:15'):
+            changed = copy.deepcopy(row); changed['decoded'] = [value]
+            with self.subTest(value=value), self.assertRaises(WorkflowError):
+                node.checked(changed, 9, {'exact': True}, budget, ready_witness=True)
+        trap = copy.deepcopy(row); trap['exitCode'] = 4
+        trap['response'].update(category='platform-failure', error={'code': 'guest-trap'})
+        with self.assertRaises(WorkflowError):node.checked(trap, 9, {'exact': True}, budget, ready_witness=True)
+        with self.assertRaises(WorkflowError):node.checked(row, 8, {'exact': True}, budget, ready_witness=True)
+
     def test_rearm_observation_is_opt_in_bounded_and_never_qualifies_a_fix(self):
         budget = {'cpuFuel': 1000000000, 'memoryBytes': 134217728}
         row = self.row(); row['decoded'] = ['1:timer-rearm:0:0:1,2,3,3:1,1,1,0:42:0']
@@ -165,7 +218,7 @@ class ManagedCapacityTests(unittest.TestCase):
         from types import SimpleNamespace
         from tools.rust_capsule_project import read_json
 
-        def exercise(selected, fail=False):
+        def exercise(selected, fail=False, ready=False):
             calls = []; peers = []
             class Peer:
                 def __init__(self, *_args, **_kwargs):self.index = len(peers); peers.append(self)
@@ -180,7 +233,7 @@ class ManagedCapacityTests(unittest.TestCase):
                     return {'data': {'operation': {'publication': {'id': 'stub'}}}}
             def invoke(_client, _node, _target, _peer, _probe, mode, label, **kwargs):
                 calls.append((label, mode, kwargs))
-                if fail and mode == 8:raise ValueError('diagnostic-trap')
+                if fail and mode in (8, 9):raise ValueError('diagnostic-trap')
                 return {'case': label, 'receipt': {'path': 'controls/'+label+'.json'}}
             target = {'name': 'fixture', 'generation': 1}
             replacements = [(node.shared, 'identities', lambda _x: {'component.wasm': {'sha256': 'stub'}}),
@@ -203,13 +256,16 @@ class ManagedCapacityTests(unittest.TestCase):
                 native = {key: Path(key) for key in ('capsule_authoring', 'latent', 'latentd')}
                 if fail:
                     with self.assertRaisesRegex(ValueError, 'diagnostic-trap'):
-                        node.run(Path('artifact'), native, output, deadline=10**20, rearm_diagnostic=selected)
-                    self.assertEqual(read_json(output/'FAILED.json')['stage'], 'capacity-2-rearm-8')
+                        node.run(Path('artifact'), native, output, deadline=10**20,
+                            rearm_diagnostic=selected, ready_witness=ready)
+                    stage = 'capacity-2-ready-9' if ready else 'capacity-2-rearm-8'
+                    self.assertEqual(read_json(output/'FAILED.json')['stage'], stage)
                     self.assertFalse((output/'qualification.json').exists())
-                    self.assertFalse(any(label == 'capacity-2-rearm-8-fresh' for label, _, _ in calls))
+                    self.assertFalse(any(label == stage+'-fresh' for label, _, _ in calls))
                     return
-                result = node.run(Path('artifact'), native, output, deadline=10**20, rearm_diagnostic=selected)
-                self.assertEqual(result['invocations'], 19 if selected else 17)
+                result = node.run(Path('artifact'), native, output, deadline=10**20,
+                    rearm_diagnostic=selected, ready_witness=ready)
+                self.assertEqual(result['invocations'], 19 if selected or ready else 17)
                 self.assertEqual(len(result['cases']), 17)
                 self.assertEqual(sum(mode == 8 for _, mode, _ in calls), int(selected))
                 if selected:
@@ -218,7 +274,13 @@ class ManagedCapacityTests(unittest.TestCase):
                     selected_call = next(kwargs for _, mode, kwargs in calls if mode == 8)
                     self.assertIs(selected_call['rearm_diagnostic'], True)
                 else:self.assertNotIn('timerRearmDiagnostic', result)
+                if ready:
+                    self.assertEqual(len(result['readyTimerRetirementWitness']['cases']), 2)
+                    self.assertFalse(result['readyTimerRetirementWitness']['ordinaryTimerDriverQualified'])
+                    self.assertIs(next(kwargs for _, mode, kwargs in calls if mode == 9)['ready_witness'], True)
+                else:self.assertNotIn('readyTimerRetirementWitness', result)
         exercise(False); exercise(True); exercise(True, fail=True)
+        exercise(False, ready=True); exercise(False, fail=True, ready=True)
 
     def row(self):
         return {'processReaped': True, 'exitCode': 0, 'decoded': ['1:'+node.EXPECTED[0]],
