@@ -84,3 +84,25 @@ option is not selected. The hosted workflow's existing manual selector currently
 depends on the workflow being available on the repository default branch; a
 task-owned selector-only child can run the same job on a reviewed branch without
 changing the production workflow. No signed execution is claimed by this code.
+
+## Ready-poll retirement of an unpolled timer
+
+An async WASI poll or pollable block can return an already-ready input before
+entering the Pump's normal poll loop. If an earlier, never-polled Timer was
+dropped, the ready path now invokes the existing guarded unpolled-timer reap
+before sampling readiness. Live input readiness owners are cloned before local
+input wrappers are dropped; the component-model borrow remains in force for the
+call. A Timer still referenced by an input pollable cannot be the Timer whose
+final `Rc` drop queued that retirement. Started timers and other retirement
+classes still use the original final drain.
+
+A per-activation monotone marker is set only after an unpolled retirement is
+queued. Without such a timer, a ready closed pollable still does not create a
+Pump or canonical waitable set. After the marker has been set, each ready
+poll/block can scan at most the existing 32 retirement entries, even when none
+are eligible; it does not create another waitable set or expand any owner limit.
+The existing seven Pump controls and their historical receipt remain separate;
+the added nine-case source-port receipt is retained under the existing logs
+artifact path. The controls use fake ABI, ledger, resource and clock ports and
+do not prove a canonical guest call, physical retirement or signed execution.
+This does not replace an earlier live driver on `Timer.Change`.
