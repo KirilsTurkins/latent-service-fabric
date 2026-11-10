@@ -142,6 +142,10 @@ class FutureCancellationControl(unittest.TestCase):
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/FutureTaskNullFailureOwnerControl.java', argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/FutureTaskMonitorOwnerControl.java', argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/DefaultExecutorOwnerControl.java', argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ExecutorInvokeAllOwnerControl.java', argv)
+        reference_argv = next(args for stage, args in calls if stage == 'scheduled-stopped-reference-compile')
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ExecutorInvokeAllWaitReferenceControl.java',
+                      reference_argv)
         for missing in ('executor-invoke-interrupt-reference-jdk', 'executor-invoke-interrupt-source',
                         'executor-invoke-interrupt-owner', 'executor-await-termination-reference-jdk',
                         'executor-await-termination-source', 'executor-await-termination-owner',
@@ -330,3 +334,135 @@ class ScheduledNoopCancellationControl(unittest.TestCase):
         self.assertIs(caught.exception, failure)
         self.assertEqual(calls.count('scheduled-noop-inflight-refused'), 1)
         self.assertNotIn('scheduled-noop-inflight-lost', calls)
+
+
+class ExecutorInvokeAllWaitControl(unittest.TestCase):
+    @staticmethod
+    def receipt(stage):
+        if stage in ('executor-invoke-all-wait-jdk', 'executor-invoke-all-wait-source'):
+            return ('INVOKE_ALL_WAIT PASS completed;subclass;late;negative-get;timeout-suffix;'
+                    'exception;done-failure;nonpositive;first-submission;untimed-order')
+        if stage in ('executor-invoke-all-owner-timeout', 'executor-invoke-all-owner-optimistic',
+                     'executor-invoke-all-owner-prefix', 'executor-invoke-all-owner-first-prepared',
+                     'executor-invoke-all-owner-construction-failure', 'executor-invoke-all-owner-accept-then-throw'):
+            mode = stage.removeprefix('executor-invoke-all-owner-')
+            return ('INVOKE_ALL_OWNER ' + mode + ' held=1:1:' + ('1' if mode == 'prefix' else '0')
+                    + ' retired=0:0:0 result-settle=1')
+        raise AssertionError(stage)
+
+    def test_original_source_and_owner_cases_are_required(self):
+        calls = []
+        def run(stage, *args):
+            calls.append((stage, args)); return self.receipt(stage)
+        report = subject.executor_invoke_all_wait_control(SimpleNamespace(run=run), Path('source'), Path('jdk'))
+        self.assertEqual([stage for stage, _ in calls], ['executor-invoke-all-wait-jdk',
+            'executor-invoke-all-wait-source', 'executor-invoke-all-owner-timeout',
+            'executor-invoke-all-owner-optimistic', 'executor-invoke-all-owner-prefix',
+            'executor-invoke-all-owner-first-prepared', 'executor-invoke-all-owner-construction-failure',
+            'executor-invoke-all-owner-accept-then-throw'])
+        self.assertEqual(calls[0][1], ('java', '-Xmx256m', '-cp', Path('jdk'),
+                                      'ExecutorInvokeAllWaitReferenceControl'))
+        self.assertEqual(calls[1][1], ('java', '-Xmx256m', '-cp', Path('source'),
+                                      'ExecutorInvokeAllWaitReferenceControl'))
+        self.assertEqual(calls[2][1][-2:], ('ExecutorInvokeAllOwnerControl', 'timeout'))
+        self.assertEqual(calls[3][1][-2:], ('ExecutorInvokeAllOwnerControl', 'optimistic'))
+        self.assertEqual(calls[4][1][-2:], ('ExecutorInvokeAllOwnerControl', 'prefix'))
+        self.assertEqual(calls[5][1][-2:], ('ExecutorInvokeAllOwnerControl', 'first-prepared'))
+        self.assertEqual(calls[6][1][-2:], ('ExecutorInvokeAllOwnerControl', 'construction-failure'))
+        self.assertEqual(calls[7][1][-2:], ('ExecutorInvokeAllOwnerControl', 'accept-then-throw'))
+        self.assertEqual(report, {'status': 'JDK-and-SDK-source-controls-passed',
+            'ownership': 'synthetic-host-ledger-only', 'firstSubmissionDeadline': 'original-positive-then-elapsed',
+            'untimedSubmissionOrder': 'construct-record-submit',
+            'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False})
+
+    def test_missing_wrong_and_duplicate_receipts_fail_closed(self):
+        stages = ('executor-invoke-all-wait-jdk', 'executor-invoke-all-wait-source',
+                  'executor-invoke-all-owner-timeout', 'executor-invoke-all-owner-optimistic',
+                  'executor-invoke-all-owner-prefix', 'executor-invoke-all-owner-first-prepared',
+                  'executor-invoke-all-owner-construction-failure', 'executor-invoke-all-owner-accept-then-throw')
+        for missing in stages:
+            for bad in ('', 'SKIPPED', self.receipt(missing) + '\n' + self.receipt(missing)):
+                with self.subTest(stage=missing, bad=bad):
+                    calls = []
+                    def run(stage, *args):
+                        calls.append(stage); return bad if stage == missing else self.receipt(stage)
+                    with self.assertRaisesRegex(ValueError, 'Java executor invokeAll .* control did not complete'):
+                        subject.executor_invoke_all_wait_control(SimpleNamespace(run=run), Path('source'), Path('jdk'))
+                    self.assertEqual(calls[-1], missing)
+
+    def test_process_failure_is_not_retried(self):
+        failure = RuntimeError('owned-process-failed'); calls = []
+        def run(stage, *args):
+            calls.append(stage)
+            if stage == 'executor-invoke-all-owner-timeout': raise failure
+            return self.receipt(stage)
+        with self.assertRaises(RuntimeError) as caught:
+            subject.executor_invoke_all_wait_control(SimpleNamespace(run=run), Path('source'), Path('jdk'))
+        self.assertIs(caught.exception, failure)
+        self.assertEqual(calls.count('executor-invoke-all-owner-timeout'), 1)
+        self.assertNotIn('executor-invoke-all-owner-optimistic', calls)
+
+
+class ExecutorInvokeAnyReadyControl(unittest.TestCase):
+    @staticmethod
+    def receipt(stage):
+        if stage in ('executor-invoke-any-ready-jdk', 'executor-invoke-any-ready-source'):
+            return ('EXECUTOR_INVOKE_ANY_READY PASS one;zero;failure;rejection;all-failed;'
+                    'null-rule;iterator-observed')
+        owners = {
+            'parallel': 'parallel:result=42:held=1:0:1:pending=true:cancelInterrupt=true:after=0:0:0',
+            'timeout': 'timeout:outcome=timeout:held=1:2:0:pending=true:after=0:0:0',
+            'interrupt': 'interrupt:outcome=interrupted:held=1:2:0:pending=true:after=0:0:0',
+            'accepted-throw': 'accepted-throw:held=1:1:0:pending=true:callbacks=0:after=0:0:0',
+        }
+        if stage.startswith('executor-invoke-any-owner-'):
+            return owners[stage.removeprefix('executor-invoke-any-owner-')]
+        raise AssertionError(stage)
+
+    def test_all_selected_receipts_and_limits(self):
+        calls = []
+        def run(stage, *args):
+            calls.append((stage, args))
+            return self.receipt(stage)
+        source = Path('source'); reference = Path('reference')
+        report = subject.executor_invoke_any_ready_control(SimpleNamespace(run=run), source, reference)
+        self.assertEqual([stage for stage, _ in calls], ['executor-invoke-any-ready-jdk',
+            'executor-invoke-any-ready-source', 'executor-invoke-any-owner-parallel',
+            'executor-invoke-any-owner-timeout', 'executor-invoke-any-owner-interrupt',
+            'executor-invoke-any-owner-accepted-throw'])
+        self.assertEqual(calls[0][1], ('java', '-Xmx256m', '-cp', reference,
+                                       'ExecutorInvokeAnyReadyReferenceControl', 'jdk'))
+        self.assertEqual(calls[1][1], ('java', '-Xmx256m', '-cp', source,
+                                       'ExecutorInvokeAnyReadyReferenceControl', 'source'))
+        self.assertEqual(calls[3][1][-2:], ('InvokeAnyPendingOwnerProbe', 'timeout'))
+        self.assertEqual(calls[4][1][-2:], ('InvokeAnyPendingOwnerProbe', 'interrupt'))
+        self.assertEqual(report, {'status': 'JDK-and-SDK-source-controls-passed',
+            'iterator': 'SDK-validates-after-ready-JDK-returns-early', 'ownership': 'synthetic-host-ledger-only',
+            'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False})
+
+    def test_every_missing_wrong_or_duplicate_receipt_fails_closed(self):
+        stages = ('executor-invoke-any-ready-jdk', 'executor-invoke-any-ready-source',
+                  'executor-invoke-any-owner-parallel', 'executor-invoke-any-owner-timeout',
+                  'executor-invoke-any-owner-interrupt', 'executor-invoke-any-owner-accepted-throw')
+        for missing in stages:
+            for bad in ('', 'SKIPPED', self.receipt(missing) + '\n' + self.receipt(missing)):
+                with self.subTest(stage=missing, bad=bad):
+                    calls = []
+                    def run(stage, *args):
+                        calls.append(stage)
+                        return bad if stage == missing else self.receipt(stage)
+                    with self.assertRaisesRegex(ValueError, 'Java executor invokeAny .* control did not complete'):
+                        subject.executor_invoke_any_ready_control(SimpleNamespace(run=run), Path('source'), Path('reference'))
+                    self.assertEqual(calls[-1], missing)
+
+    def test_failure_is_propagated_without_retry(self):
+        failure = RuntimeError('owned-process-failed'); calls = []
+        def run(stage, *args):
+            calls.append(stage)
+            if stage == 'executor-invoke-any-owner-timeout': raise failure
+            return self.receipt(stage)
+        with self.assertRaises(RuntimeError) as caught:
+            subject.executor_invoke_any_ready_control(SimpleNamespace(run=run), Path('source'), Path('reference'))
+        self.assertIs(caught.exception, failure)
+        self.assertEqual(calls.count('executor-invoke-any-owner-timeout'), 1)
+        self.assertNotIn('executor-invoke-any-owner-interrupt', calls)

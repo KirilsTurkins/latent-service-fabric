@@ -1,0 +1,25 @@
+{
+  "description": "TypeScript transactional aggregate with actual local JetStream provider",
+  "qualification": "normal local combined-source Linux node and ephemeral demo trust",
+  "buildType": "https://latent.dev/build/typescript-capsule/v1",
+  "sourceSnapshotDigest": "sha256:1594fdbc21998eb89c946deee161dbba4170b75bb8c9bb0bf8b6f7a0b5326dba",
+  "componentDigest": "sha256:03146e291b3f13fc527c4580fabe68b09d475bce4580044a7e63f5392180afc0",
+  "companionDigest": "sha256:ffc450bf7e4183458c31552003748f2b7a9b2ea83e310eb7b28281822dcafbb5",
+  "buildObservationSha256": "69b89afa453ef3740bb1c086dcc184e2b916ce788b25b3005cd64cc309bb081e",
+  "signedReleaseSetSha256": "bfcb3a38e0bafc048333311f098c95bd9d4026b72c79131c52637491a88ca52d",
+  "publication": "publication:sha256:44f622f132c85193a0efc82ffa85f9432ec571d49633353b1140f46b7f399182",
+  "observedProviderProfile": "js-window-v1:73655433507764b22dbe6c3164b85ab069b277b670cded4a891c54bb12c9c6e2",
+  "normalNodeSha256": "48430d284afb644308b3fcc1a35559710b80c54bb8a31f2bed0c38679c7a78c9",
+  "fixtureSha256": "2dcda35a7fdca19c284560ec2b3c731f4d3f3d722d35f84127cff65af64a20ab",
+  "observations": [
+    "The TypeScript authoring capture pinned the actual disposable JetStream profile and companion-linked requirements. The maintained compiler packaged the component, the explicit demo signer signed it, and the normal node admitted it.",
+    "An update committed one effect and received provider acknowledgement. A declared rejection left count and key version unchanged, and a stale edit returned a fenced abort.",
+    "The fixture deliberately dropped a second committed response body, recovered its original result through authorized lookup, and replayed both that result and the earlier rejection after state changed.",
+    "A fresh query returned count two and the actual broker held two messages for the two successful updates. The node was reaped cleanly with state and effect owners physically retired, and the fixture removed its own broker and TLS resources."
+  ],
+  "limitations": [
+    "The run did not count guest executions; matching retained outcomes and broker messages do not prove there was no extra execution.",
+    "This is one local TypeScript scenario, not cancellation, memory/fuel, crash-persistence or complete TypeScript guest qualification. The overall conformance matrix remains open.",
+    "The normal node is a verified local combined-source binary containing unmerged work. Production trust, hosted CI and installed-distribution qualification are not established."
+  ]
+}

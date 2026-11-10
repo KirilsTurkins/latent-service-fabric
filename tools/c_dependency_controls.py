@@ -186,6 +186,63 @@ class Controls:
                 expected = "dependency-artifact-integrity"
             self.rejected_build("actual-" + name, project, expected)
 
+    def source_capacity(self):
+        """Compile 195 captured source units offline under the original owner."""
+        self.stage = "actual-captured-source-capacity"
+        count = 195
+        origin = self.output / "source-capacity-original"
+        origin.mkdir(mode=0o700)
+        names = [f"unit-{index:03}.c" for index in range(count)]
+        for index, name in enumerate(names, 1):
+            (origin / name).write_text(f"int lsf_capacity_{index:03}(void) {{ return {index}; }}\n", encoding="ascii")
+        (origin / "capacity.h").write_text(
+            "".join(f"int lsf_capacity_{index:03}(void);\n" for index in range(1, count + 1)), encoding="ascii")
+        project = create(self.output / "project-source-capacity", "greeting", "c-source-capacity")
+        source = project / "src/main.c"
+        before = source.read_text(encoding="utf-8")
+        include = '#include "lsf/text.h"'
+        statement = "    size_t first = name->len, end = 0, offset = 0;"
+        if before.count(include) != 1 or before.count(statement) != 1:
+            raise ValueError("C source-capacity template preimage changed")
+        terms = " + ".join(f"lsf_capacity_{index:03}()" for index in range(1, count + 1))
+        source.write_text(before.replace(include, include + '\n#include "capacity.h"').replace(
+            statement, f"    lsf_require(({terms}) == {count * (count + 1) // 2});\n" + statement),
+            encoding="utf-8")
+        manifest = {"formatVersion": 1, "language": "c", "selection": {"target": "wasm32-wasi"},
+            "nativeLocks": [], "artifacts": [{"id": "developer-owned/finite-capacity/1",
+                "role": "application", "format": "directory", "mount": "dependencies/capacity",
+                "source": {"path": str(origin)}, "dependencies": [],
+                "metadata": {"cSources": names, "includeDirectories": ["."], "license": "Apache-2.0"}}],
+            "transformations": []}
+        (project / MANIFEST).write_bytes(canonical(manifest) + b"\n")
+        lock = capture(project)
+        (project / LOCK).write_bytes(canonical(lock) + b"\n")
+        origin.rename(self.output / "source-capacity-offline")
+        if origin.exists():
+            raise AssertionError("C source-capacity original path remained available")
+        built = self.output / "build-source-capacity"
+        build_component(project, built, self.contracts, None,
+            "https://github.com/KirilsTurkins/latent-service-fabric",
+            installed=self.installed, _deadline=self.started + 900)
+        marker = read_json(built / "BUILD-COMPLETE.json")
+        inputs = read_json(built / "compiler-inputs.json", 8 * 1024 * 1024)
+        compiled = inputs["dependencyCompilation"]
+        objects, responses = compiled["objects"], compiled["linkResponseFiles"]
+        if (len(objects) != count or len(responses) != 1
+                or responses[0]["objectOrdinals"] != list(range(count))
+                or sum(row["object"]["size"] for row in objects) > 4 * 1024 * 1024
+                or any(row["exitCode"] != 0 for row in marker["commands"])
+                or marker["packageAssembled"] or inputs["network"] != "denied"
+                or inputs["ambientHome"] != "absent"
+                or digest((built / "component.wasm").read_bytes()) != marker["componentDigest"]):
+            raise AssertionError("C captured source-capacity evidence mismatch")
+        self.passed("actual-195-captured-C-source-link",
+            sourceUnits=count, capturedFiles=len(lock["artifacts"][0]["files"]),
+            sourceDigest=digest(source.read_bytes()), componentDigest=marker["componentDigest"],
+            objectBytes=sum(row["object"]["size"] for row in objects),
+            responseDigest=responses[0]["digest"], responseBytes=responses[0]["size"],
+            originalPathUnavailable=True, guestExecution=False, packageAssembled=False)
+
     def source_project(self, name, source, *, generated=None, provenance=None):
         project = create(self.output / ("project-" + name), "greeting")
         origin = self.output / ("original-library-" + name)
@@ -345,6 +402,7 @@ def qualify(project, output, contracts, packager, *, installed=None):
     try:
         suite = Controls(project, output, contracts, packager, installed)
         suite.objects_and_closure()
+        suite.source_capacity()
         suite.generated_headers()
         suite.stage = "final-integrity"
         suite.compiler.check_unchanged()

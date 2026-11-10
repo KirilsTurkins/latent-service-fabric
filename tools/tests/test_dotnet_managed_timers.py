@@ -49,6 +49,26 @@ class ManagedTimerContractTests(unittest.TestCase):
         task_wait.validate_receipt(old, finite=True, managed=True)
         self.assertEqual(old['generatedHelperCount'], 77)
 
+    def test_ready_retirement_entries_remain_async_in_all_selected_adapters(self):
+        examples = ROOT/'tools/toolchain-smoke/examples'
+        expected = {'dotnet_'+name+'.rs' for name in (
+            'activation_runtime', 'activation_logging_runtime', 'http_runtime', 'http_logging_runtime',
+            'managed_activation_runtime', 'managed_activation_logging_runtime',
+            'managed_http_runtime', 'managed_http_logging_runtime')}
+        sources = {path.name: path.read_text(encoding='utf8') for path in examples.glob('dotnet_*runtime.rs')
+            if 'sdk/dotnet-guest/runtime/http/poll.rs' in path.read_text(encoding='utf8')}
+        self.assertEqual(set(sources), expected)
+        for name, source in sources.items():
+            with self.subTest(adapter=name):
+                self.assertEqual(source.count('async fn poll(inputs: Vec<io::poll::PollableBorrow'), 1)
+                self.assertEqual(source.count('ClosedPoll::poll(inputs)'), 1)
+                self.assertNotIn('export:wasi:io/poll@0.2.6', source)
+        poll = (ROOT/'sdk/dotnet-guest/runtime/http/poll.rs').read_text(encoding='utf8')
+        self.assertEqual(poll.count('async fn block(&self)'), 1)
+        self.assertEqual(poll.count('Self::wait(&sources)'), 1)
+        self.assertEqual(poll.count('Self::wait(&[source])'), 1)
+        self.assertLess(poll.index('drop(inputs);'), poll.index('Self::wait(&sources)'))
+
     def test_producer_ports_are_explicit_and_each_causal_state_has_a_control(self):
         self.assertEqual(len(TIMER_CASES), len(set(TIMER_CASES)))
         self.assertEqual(len(TIMER_CASES), 42)

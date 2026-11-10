@@ -291,7 +291,15 @@ impl HttpFixture {
     }
 
     pub(in crate::standalone::state) async fn setup(&self) -> Setup {
-        Setup::configured_installation(Some(self.requirements()), false, false, Some(self)).await
+        Setup::configured_installation(
+            Some(self.requirements()),
+            false,
+            false,
+            Some(self),
+            false,
+            None,
+        )
+        .await
     }
 
     pub(in crate::standalone::state) async fn finish(self) {

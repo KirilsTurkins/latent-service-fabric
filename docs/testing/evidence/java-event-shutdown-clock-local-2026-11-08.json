@@ -1,0 +1,168 @@
+{
+  "schemaVersion": "latent.phase4.event-shutdown-clock-local-observation.v1",
+  "qualification": "Temporary combined source and experimental signed guest; local observation only, not merged-source or hosted qualification.",
+  "integrationSource": {
+    "schemaVersion": "latent.phase4.integration-source.v1",
+    "baseSource": "aa47593fce1130d9578eb952722e7b3939bc22de",
+    "historySource": "4b8cddb22ac3f67dd68587f6cd8c2518d3383a68",
+    "coreSource": "64b81e819e36f95d0f1280e728562fa49b842dee",
+    "description": "Temporary explicit source combination for local integration only; not a merged commit",
+    "overlays": {
+      "crates/latent-core/src/activation_runtime.rs": {
+        "sha256": "sha256:c14be16aeccc026944e6bc60f2d91ec4dfdda3517f66f13a6b12ce4f412c5a2e",
+        "bytes": 26947
+      },
+      "crates/latent-core/src/activation_runtime/tests.rs": {
+        "sha256": "sha256:d32b9843962163f19ed318d3c856b840bdbe3c003fc3f4d805af6e0c9f036d9f",
+        "bytes": 44725
+      },
+      "crates/latent-core/src/budget.rs": {
+        "sha256": "sha256:14c7b687bab34a11b937c731c602620247dedf14e131d48e68bb7587315a2ece",
+        "bytes": 69645
+      },
+      "crates/latent-wire/src/phase4/state_management.rs": {
+        "sha256": "sha256:c335fb113fe88383158e07a334aa9fc5af68e9f10f1b5acc5269860e3dbc43b9",
+        "bytes": 26197
+      },
+      "crates/latent-wire/src/phase4/state_management/command_result.rs": {
+        "sha256": "sha256:3bca68771d5f1a52882e96c400b51482e60d9aed931d57da373d04e5c3bd2b89",
+        "bytes": 14407
+      },
+      "crates/latent-wire/src/phase4/state_management/command_result/audit.rs": {
+        "sha256": "sha256:82d5732780b06614f7b520897b5c787a4c224e6dd115c20caf9b95c9d6fbb6bd",
+        "bytes": 2854
+      },
+      "crates/latent-wire/src/phase4/state_management/command_result/effect.rs": {
+        "sha256": "sha256:cca08f06d001b7a2ec030a1e46aa23ba9035484e358e7cc051f74a77e7962b26",
+        "bytes": 9522
+      },
+      "crates/latent-wire/src/phase4/state_management/recovery_bindings.rs": {
+        "sha256": "sha256:cb84c727be4d54700e287849d2debeca01dd927c0cea1f1c45860f737d4d90a3",
+        "bytes": 4119
+      }
+    },
+    "binaries": {
+      "deferred_event_fault_proxy": {
+        "sha256": "sha256:5a39cc6dbf3444bb7d06c43004f29383852d1b372d14d17bdc39dfde43cf13c0",
+        "bytes": 11930720
+      },
+      "latent": {
+        "sha256": "sha256:0177ad1be1302f753977597b008d22752d32078c1c21bbb56b8c003e9eebdb7d",
+        "bytes": 79680400
+      },
+      "latent-aot-compiler": {
+        "sha256": "sha256:0db8951c27ac7de4e48c1234f6c9bf0ad289268a57eee5d61bb589e6f93a029a",
+        "bytes": 51833424
+      },
+      "latentd": {
+        "sha256": "sha256:80af0dd96cb5e004e1927724a2db7e9c4c46fbe4ff34b1b70ed1b75492b9f1e1",
+        "bytes": 205466152
+      }
+    }
+  },
+  "candidateOverlay": {
+    "apps/latentd/src/standalone.rs": {
+      "sha256": "sha256:21b58780fc62c11b6755a50021bc75f0a7220f8b5d7c92eb605064acb6dae6fb",
+      "bytes": 6209
+    },
+    "apps/latentd/src/standalone/shutdown.rs": {
+      "sha256": "sha256:1b185829323176d205367fc0c2cd6ffd5d832b0a4200b49af1d610408b1db063",
+      "bytes": 20925
+    },
+    "crates/latent-policy/src/supply_chain.rs": {
+      "sha256": "sha256:79399beb06340d3c12bd401d609519b01b3cfd73eb35d5a03f7548f32156d6fc",
+      "bytes": 27358
+    },
+    "crates/latent-policy/src/supply_chain/tests/clock_source.rs": {
+      "sha256": "sha256:da84c6cc99b7f8132869c0ec7e35baf6c009143ffa766e8e40bd2c5c054cb550",
+      "bytes": 15556
+    }
+  },
+  "candidateBinary": {
+    "sha256": "sha256:42f9f92c9b4c91fb2dffd9c5e4b13037d15979552e262d296cdec24f0caa9b16",
+    "bytes": 205466928
+  },
+  "instrumentedProxyBinary": {
+    "sha256": "sha256:947d477eedb5d579f31293bd381cefce0891b21743e96a53bf3dc1a4373d905c",
+    "bytes": 11935880
+  },
+  "guestSourceCommit": "aa47593fce1130d9578eb952722e7b3939bc22de",
+  "baselineRun": {
+    "ackHeld": true,
+    "shutdownFinishedBeforeRelease": true,
+    "ackForwarded": false,
+    "shutdownErrors": [
+      "WorkflowError('node-shutdown-exit')"
+    ],
+    "publicError": "deadline-exceeded",
+    "cleanRetirementReportObserved": false
+  },
+  "diagnosticRun": {
+    "experimentalCode": true,
+    "firstFailure": "Store(Authority(ClockDiscontinuity))",
+    "dispatcherPhysicallyRetired": true,
+    "dispatcherQuarantined": true,
+    "activeDurableEffectsInSnapshot": 1,
+    "cleanShutdownReportObserved": false
+  },
+  "candidateRun": {
+    "ackHeld": true,
+    "shutdownFinishedBeforeRelease": true,
+    "ackForwarded": false,
+    "clean": true,
+    "processReaped": true,
+    "effects": {
+      "clean": true,
+      "physicallyRetired": true,
+      "schedulingOwnerRetired": true,
+      "workerThreadsJoined": 3,
+      "workerThreadsRemaining": 0,
+      "snapshot": {
+        "durable": {
+          "pending": 0,
+          "active": 0,
+          "acknowledged": 0,
+          "known_failed": 0,
+          "uncertain": 0,
+          "retry_scheduled": 1,
+          "blocked": 0,
+          "expired": 0,
+          "dead_lettered": 0,
+          "payload_bytes": 8,
+          "oldest_unresolved_millis": 1794164057551
+        },
+        "countsObservedAtMillis": 1794164057996,
+        "queued": 0,
+        "activeJobs": 0,
+        "retainedAttemptBytes": 0,
+        "liveWorkers": 0,
+        "acceptedEffects": 0,
+        "liveTenants": 0,
+        "claims": 1,
+        "physicalOwners": 0,
+        "commandOwners": 0,
+        "commandClockFloor": 1794164057982,
+        "quarantinedPhysicalOwners": 0,
+        "paused": false,
+        "control": {
+          "generation": {
+            "ownerEpoch": 4,
+            "revision": 2
+          },
+          "pending": false,
+          "restoreReviewRequired": false
+        },
+        "admissionClosed": true,
+        "quarantined": false,
+        "failure": null
+      }
+    },
+    "brokerMessages": 1,
+    "brokerIdentityAndPayloadVerified": true
+  },
+  "limits": [
+    "The broker accepted the event before shutdown; the held acknowledgement was not delivered.",
+    "Retry scheduled is a durable snapshot, not proof of a subsequent retry or delivery.",
+    "The live run uses a temporary source combination and an isolated experimental signing fixture."
+  ]
+}

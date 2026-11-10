@@ -21,6 +21,7 @@ use std::time::{Duration, Instant};
 
 // Reuse the existing actual package, signature, provenance and trust fixture.
 mod compact;
+mod event;
 mod http;
 #[path = "../../../../../../crates/latent-policy/src/supply_chain/tests/support.rs"]
 #[allow(
@@ -40,6 +41,53 @@ fn declaration() -> Vec<u8> {
         "namespace":"orders","stateSchema":format!("sha256:{}","1".repeat(64)),"operations":[
             {"operation":"inspect","mode":"fresh-query","inputFormat":"lsf-wit-values-v1","resultFormat":"lsf-wit-values-v1"},
             {"operation":"uninstalled","mode":"fresh-query","inputFormat":"lsf-wit-values-v1","resultFormat":"lsf-wit-values-v1"}]})).unwrap()
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn mixed_effect_installations_reject_duplicate_dispatch_profiles_at_startup() {
+    let fixture = KernelFixture::new();
+    let provider = startup::HttpFixture::new().await;
+    let installed = provider.installation();
+    // Reuse the actual installed adapter in both classes. If either class is
+    // dropped during startup, the dispatcher's duplicate-profile fence would
+    // incorrectly admit the configuration.
+    let duplicate = Arc::clone(&installed.adapters[0])
+        as Arc<dyn latent_effects::runtime::DeferredEffectAdapter>;
+    let result = StateKernel::start(
+        fixture.bootstrap(),
+        &fixture.settings,
+        fixture.authority.clone(),
+        installed.dispatcher_adapters_with_events(std::iter::once(duplicate)),
+        &installed.clock,
+        tokio::runtime::Handle::current(),
+    )
+    .await;
+    assert!(result.is_err());
+    drop(installed);
+    provider.finish().await;
+}
+
+#[test]
+fn configured_deferred_events_require_the_original_installed_provider() {
+    let events: crate::config::providers::EventInstallation = serde_json::from_value(json!({
+        "identity": {"id":"events", "tenant":"tests", "service":"event-host", "epoch":1},
+        "configuration": {
+            "formatVersion":1,
+            "endpoint":{"serverName":"localhost", "peer":"127.0.0.1:4222", "allowNonPublicPeer":true},
+            "publicRoots":false, "extraRoots":[[1]],
+            "topics":[{"tenant":"tests", "topic":"updated", "subject":"events.updated", "stream":"EVENTS", "duplicateWindowMillis":30000}],
+            "idempotencyNamespace":"test", "maximumPayloadBytes":8192, "timeoutMillis":1000
+        },
+        "credentialDirectory":"private-events", "credentialReference":"peer", "credentialFile":"token",
+        "deferred":[{"topic":"updated", "qualification":{
+            "formatVersion":1, "serverVersion":"2.14.6", "streamCreated":"2026-01-01T00:00:00Z",
+            "maximumMessages":1000, "maximumBytes":1_000_000,
+            "maximumAgeMillis":60000, "maximumMessageBytes":8192
+        }}]
+    }))
+    .unwrap();
+    assert!(super::InstalledHttpEffects::new(None, None, Some(&events)).is_err());
+    assert!(super::InstalledHttpEffects::new(None, None, None).is_ok());
 }
 
 pub(in crate::standalone::state) struct Setup {
@@ -69,7 +117,7 @@ impl Setup {
         executable: bool,
         compact: bool,
     ) -> Self {
-        Self::configured_installation(document, executable, compact, None).await
+        Self::configured_installation(document, executable, compact, None, false, None).await
     }
 
     #[expect(
@@ -81,12 +129,29 @@ impl Setup {
         executable: bool,
         compact: bool,
         deferred: Option<&startup::HttpFixture>,
+        event_document: bool,
+        event: Option<&event::EventFixture>,
     ) -> Self {
         let mut fixture = KernelFixture::new();
-        let companion = deferred.map_or_else(declaration, |_| startup::declaration());
+        let companion = if deferred.is_some() || event.is_some() {
+            startup::declaration()
+        } else {
+            declaration()
+        };
         let deferred_configuration =
             deferred.map(|deferred| deferred.configuration(document.as_deref().unwrap()));
+        let event_configuration =
+            event.map(|fixture| fixture.configuration(document.as_deref().unwrap()));
         let signed = match document {
+            Some(document) if event.is_some() => {
+                signed::Fixture::transactional_deferred_event_with_companion(
+                    companion.clone(),
+                    document,
+                )
+            }
+            Some(document) if event_document => {
+                signed::Fixture::transactional_with_event_companion(companion.clone(), document)
+            }
             Some(document) if deferred.is_some() => {
                 signed::Fixture::transactional_deferred_http_with_companion(
                     companion.clone(),
@@ -176,6 +241,9 @@ impl Setup {
         if let Some(configuration) = deferred_configuration {
             operation["deferredHttp"] = configuration;
         }
+        if let Some(configuration) = event_configuration {
+            operation["deferredEvent"] = configuration;
+        }
         fixture.settings =
             crate::config::state::derive(&serde_json::from_value(input).unwrap(), fixture.root())
                 .unwrap();
@@ -205,6 +273,9 @@ impl Setup {
         install_policy(&policy, &fixture.settings, &publication);
         if let Some(deferred) = deferred {
             deferred.install_policy(&policy, &publication);
+        }
+        if let Some(event) = event {
+            event.install_policy(&policy, &publication);
         }
         let deployments = Arc::new(
             DirectoryDeploymentRepository::open_with_catalog(
@@ -242,7 +313,7 @@ impl Setup {
             deployment["spec"]["grants"][0]["operations"] =
                 json!(["acquire-query", "query-info", "read-result"]);
         }
-        if deferred.is_some() {
+        if deferred.is_some() || event.is_some() {
             deployment["spec"]["grants"]
                 .as_array_mut()
                 .unwrap()
@@ -254,24 +325,27 @@ impl Setup {
             .decode_deployment(&serde_json::to_vec(&deployment).unwrap())
             .unwrap();
         deployments.apply(manifest).await.unwrap();
-        let http = deferred.map_or_else(
-            super::super::InstalledHttpEffects::empty,
-            startup::HttpFixture::installation,
-        );
-        let (kernel, effects) = StateKernel::start(
-            bootstrap,
-            &fixture.settings,
-            fixture.authority.clone(),
-            http.adapters
-                .iter()
-                .cloned()
-                .map(|adapter| adapter as Arc<dyn latent_effects::runtime::DeferredEffectAdapter>)
-                .collect(),
-            &http.clock,
-            tokio::runtime::Handle::current(),
-        )
-        .await
-        .unwrap();
+        let http = if let Some(event) = event {
+            event.installation()
+        } else {
+            deferred.map_or_else(
+                super::super::InstalledHttpEffects::empty,
+                startup::HttpFixture::installation,
+            )
+        };
+        let (kernel, effects) =
+            StateKernel::start(
+                bootstrap,
+                &fixture.settings,
+                fixture.authority.clone(),
+                http.dispatcher_adapters_with_events(http.events.iter().cloned().map(|adapter| {
+                    adapter as Arc<dyn latent_effects::runtime::DeferredEffectAdapter>
+                })),
+                &http.clock,
+                tokio::runtime::Handle::current(),
+            )
+            .await
+            .unwrap();
         let owners = kernel
             .admission_owners(Arc::clone(&policy), &effects)
             .unwrap();
@@ -301,7 +375,9 @@ impl Setup {
             http: super::super::InstalledHttpEffects {
                 clock: Arc::clone(&self.services.http.clock),
                 adapters: self.services.http.adapters.clone(),
+                events: self.services.http.events.clone(),
                 registry: Arc::clone(&self.services.http.registry),
+                event_registry: Arc::clone(&self.services.http.event_registry),
             },
         }
     }
@@ -373,10 +449,15 @@ fn operator() -> latent_core::InvocationPrincipal {
 }
 
 #[tokio::test]
-async fn signed_http_document_capture_keeps_original_native_owner_and_refuses_oversize() {
-    for size in [8192, 8193] {
+async fn signed_effect_documents_keep_original_native_owner_and_refuse_oversize() {
+    for (event, size) in [(false, 8192), (false, 8193), (true, 8192), (true, 8193)] {
         let bytes = vec![b' '; size];
-        let setup = Setup::with_http_document(Some(bytes.clone())).await;
+        let setup = if event {
+            Setup::configured_installation(Some(bytes.clone()), false, false, None, true, None)
+                .await
+        } else {
+            Setup::with_http_document(Some(bytes.clone())).await
+        };
         let original = Arc::new(
             setup
                 .kernel
@@ -422,7 +503,13 @@ async fn signed_http_document_capture_keeps_original_native_owner_and_refuses_ov
         if size == 8192 {
             let captured = captured.unwrap();
             assert!(captured.get().is_from_reservation(&original));
-            let (digest, actual) = captured.get().deferred_http_requirements().unwrap();
+            let (digest, actual) = if event {
+                assert!(captured.get().deferred_http_requirements().is_none());
+                captured.get().deferred_event_requirements().unwrap()
+            } else {
+                assert!(captured.get().deferred_event_requirements().is_none());
+                captured.get().deferred_http_requirements().unwrap()
+            };
             assert_eq!(actual, bytes);
             assert_eq!(
                 *digest,

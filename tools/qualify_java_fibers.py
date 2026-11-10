@@ -942,6 +942,52 @@ def scheduled_noop_cancel_control(compiler: Compiler, output: Path, reference: P
             'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 
+def executor_invoke_any_ready_control(compiler: Compiler, output: Path, reference: Path) -> dict:
+    """Check ready-first execution and original owners using only private host ports."""
+    expected = ('EXECUTOR_INVOKE_ANY_READY PASS one;zero;failure;rejection;all-failed;'
+                'null-rule;iterator-observed')
+    for scope, directory in (('jdk', reference), ('source', output)):
+        result = compiler.run('executor-invoke-any-ready-' + scope, 'java', '-Xmx256m', '-cp', directory,
+                              'ExecutorInvokeAnyReadyReferenceControl', scope).strip()
+        if result != expected: raise ValueError('Java executor invokeAny ready reference control did not complete')
+    owners = (
+        ('parallel', 'InvokeAnyParallelOwnerProbe', (),
+         'parallel:result=42:held=1:0:1:pending=true:cancelInterrupt=true:after=0:0:0'),
+        ('timeout', 'InvokeAnyPendingOwnerProbe', ('timeout',),
+         'timeout:outcome=timeout:held=1:2:0:pending=true:after=0:0:0'),
+        ('interrupt', 'InvokeAnyPendingOwnerProbe', ('interrupt',),
+         'interrupt:outcome=interrupted:held=1:2:0:pending=true:after=0:0:0'),
+        ('accepted-throw', 'InvokeAnyAcceptedThrowOwnerProbe', (),
+         'accepted-throw:held=1:1:0:pending=true:callbacks=0:after=0:0:0'))
+    for mode, main, arguments, expected in owners:
+        result = compiler.run('executor-invoke-any-owner-' + mode, 'java', '-Xmx256m', '-cp', output,
+                              main, *arguments).strip()
+        if result != expected: raise ValueError('Java executor invokeAny ownership control did not complete')
+    return {'status': 'JDK-and-SDK-source-controls-passed', 'iterator': 'SDK-validates-after-ready-JDK-returns-early',
+            'ownership': 'synthetic-host-ledger-only', 'componentExecutionPerformed': False,
+            'actualGuestBindingsUsed': False}
+
+
+def executor_invoke_all_wait_control(compiler: Compiler, output: Path, reference: Path) -> dict:
+    """Compare completed/timeout results and retain actual source-owned work."""
+    expected = ('INVOKE_ALL_WAIT PASS completed;subclass;late;negative-get;timeout-suffix;'
+                'exception;done-failure;nonpositive;first-submission;untimed-order')
+    for scope, directory in (('jdk', reference), ('source', output)):
+        result = compiler.run('executor-invoke-all-wait-' + scope, 'java', '-Xmx256m', '-cp', directory,
+                              'ExecutorInvokeAllWaitReferenceControl').strip()
+        if result != expected: raise ValueError('Java executor invokeAll wait ' + scope + ' control did not complete')
+    for mode in ('timeout', 'optimistic', 'prefix', 'first-prepared', 'construction-failure', 'accept-then-throw'):
+        result = compiler.run('executor-invoke-all-owner-' + mode, 'java', '-Xmx256m', '-cp', output,
+                              'ExecutorInvokeAllOwnerControl', mode).strip()
+        expected = ('INVOKE_ALL_OWNER ' + mode + ' held=1:1:' + ('1' if mode == 'prefix' else '0')
+                    + ' retired=0:0:0 result-settle=1')
+        if result != expected: raise ValueError('Java executor invokeAll owner control did not complete')
+    return {'status': 'JDK-and-SDK-source-controls-passed', 'ownership': 'synthetic-host-ledger-only',
+            'firstSubmissionDeadline': 'original-positive-then-elapsed',
+            'untimedSubmissionOrder': 'construct-record-submit', 'componentExecutionPerformed': False,
+            'actualGuestBindingsUsed': False}
+
+
 def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     """Real port source with a private host ledger, never injected guest bindings."""
     private = compiler.sdk / 'fibers/conformance/compiler/scheduled-source-control'
@@ -957,25 +1003,29 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'FutureTaskNullFailureOwnerControl.java', 'FutureTaskMonitorOwnerControl.java',
         'DefaultExecutorOwnerControl.java', 'ScheduledReadyClockControl.java', 'ScheduledReadyFakeClock.java',
         'ScheduledNoopCancelOwnerControl.java', 'ScheduledNoopInflightControl.java',
+        'InvokeAnyParallelOwnerProbe.java', 'InvokeAnyPendingOwnerProbe.java', 'InvokeAnyAcceptedThrowOwnerProbe.java',
+        'ExecutorInvokeAllOwnerControl.java',
         'dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
     noop_reference = private / 'ScheduledNoopCancelReferenceControl.java'
     ready_reference = private / 'ScheduledReadyShutdownReferenceControl.java'
     reference = private / 'ScheduledStoppedReferenceControl.java'
     periodic_reference = private / 'ScheduledPeriodicReferenceControl.java'
     invoke_reference = private / 'ExecutorInvokeInterruptReferenceControl.java'
+    invoke_any_reference = private / 'ExecutorInvokeAnyReadyReferenceControl.java'
+    invoke_all_reference = private / 'ExecutorInvokeAllWaitReferenceControl.java'
     termination_reference = private / 'ExecutorAwaitTerminationReferenceControl.java'
     null_failure_reference = private / 'FutureTaskNullFailureReferenceControl.java'
     monitor_reference = private / 'FutureTaskMonitorReferenceControl.java'
     default_monitor_reference = private / 'DefaultExecutorMonitorReferenceControl.java'
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
-        for path in (*ports, *controls, noop_reference, ready_reference, reference, periodic_reference, invoke_reference, termination_reference,
+        for path in (*ports, *controls, noop_reference, ready_reference, reference, periodic_reference, invoke_reference, invoke_any_reference, invoke_all_reference, termination_reference,
                      null_failure_reference, monitor_reference, default_monitor_reference)}
     output.mkdir()
     jdk_output = output / 'reference-jdk'
     jdk_output.mkdir()
     compiler.run('scheduled-stopped-reference-compile', 'javac', '-proc:none', '--release', '25',
         '-d', jdk_output, reference, periodic_reference, invoke_reference, termination_reference,
-        null_failure_reference, monitor_reference, default_monitor_reference, ready_reference, noop_reference)
+        null_failure_reference, monitor_reference, default_monitor_reference, ready_reference, noop_reference, invoke_any_reference, invoke_all_reference)
     expected_stopped = ('SCHEDULED_STOPPED_REFERENCE PASS delayed;fixed-rate;fixed-delay;nested;future;'
         'running;shutdown;shutdown-policy;physical-runner')
     result = compiler.run('scheduled-stopped-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
@@ -1026,6 +1076,18 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     selected_invoke = output / 'ExecutorInvokeInterruptReferenceControl.java'
     selected_invoke.write_bytes(text.replace(original,
         'import dev.latent.guest.runtime.concurrent.AbstractExecutorService;').encode('utf-8'))
+    text = read_file(invoke_any_reference).decode('utf-8')
+    if text.count(original) != 1: raise ValueError('Java executor invokeAny reference import is ambiguous')
+    selected_invoke_any = output / 'ExecutorInvokeAnyReadyReferenceControl.java'
+    selected_invoke_any.write_bytes(text.replace(original,
+        'import dev.latent.guest.runtime.concurrent.AbstractExecutorService;').encode('utf-8'))
+    text = read_file(invoke_all_reference).decode('utf-8')
+    for name in ('AbstractExecutorService', 'FutureTask'):
+        original = 'import java.util.concurrent.' + name + ';'
+        if text.count(original) != 1: raise ValueError('Java executor invokeAll reference import is ambiguous')
+        text = text.replace(original, 'import dev.latent.guest.runtime.concurrent.' + name + ';')
+    selected_invoke_all = output / 'ExecutorInvokeAllWaitReferenceControl.java'
+    selected_invoke_all.write_bytes(text.encode('utf-8'))
     text = read_file(termination_reference).decode('utf-8')
     for name in ('Executors', 'ScheduledThreadPoolExecutor'):
         original = 'import java.util.concurrent.' + name + ';'
@@ -1066,7 +1128,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'import dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor;').encode('utf-8'))
     compiler.run('scheduled-source-compile', 'javac', '-proc:none', '--release', '25',
         '-d', output, *ports, *controls, selected, selected_periodic, selected_invoke, selected_termination,
-        selected_null_failure, selected_monitor, selected_default_monitor, selected_ready, selected_noop)
+        selected_null_failure, selected_monitor, selected_default_monitor, selected_ready, selected_noop, selected_invoke_any, selected_invoke_all)
     result = compiler.run('executor-invoke-interrupt-source', 'java', '-Xmx256m', '-cp', output,
         'ExecutorInvokeInterruptReferenceControl', 'source').strip()
     if result != expected_invoke: raise ValueError('Java executor invoke source differs from reference')
@@ -1113,7 +1175,8 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
                 raise ValueError('Java executor close interruption control did not complete')
     result = compiler.run('scheduled-source-control', 'java', '-Xmx256m', '-cp', output, 'ScheduledOwnerControl').strip()
     expected = ('SCHEDULED_OWNER_CONTROL PASS preadmission;actual-result;running-cancel-held;periodic-nonoverlap;'
-        'original-error-suppresses-repeat;timed-wait-cancel-and-interrupt;shutdown-policy;factory-rollback;all-retired')
+        'original-error-suppresses-repeat;timed-wait-cancel-and-interrupt;shutdown-policy;factory-rollback;'
+        'worker-retirement-snapshot;copy-failure-retained;all-retired')
     if result != expected: raise ValueError('Java scheduled source control did not complete')
     result = compiler.run('scheduled-completable-owner-control', 'java', '-Xmx256m', '-cp', output,
         'ScheduledCompletableOwnerControl').strip()
@@ -1176,6 +1239,8 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     if result != expected_periodic: raise ValueError('Java periodic scheduled source differs from reference')
     ready_shutdown = scheduled_ready_shutdown_control(compiler, output, jdk_output, ports, private)
     noop_cancel = scheduled_noop_cancel_control(compiler, output, jdk_output)
+    invoke_any_ready = executor_invoke_any_ready_control(compiler, output, jdk_output)
+    invoke_all_wait = executor_invoke_all_wait_control(compiler, output, jdk_output)
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError('Java scheduled source control inputs changed')
     return {'status': 'SDK-source-controls-passed', 'referenceJdk': 'matched-stopped-and-periodic-observables', 'sourceInputs': inputs,
@@ -1185,7 +1250,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'futureTaskNullFailure': 'matched-JDK-null-failure-and-retained-running-result',
         'futureTaskPublicMonitor': 'JDK-and-SDK-source-controls-passed',
         'defaultExecutorPublicMonitor': 'JDK-and-SDK-source-controls-passed', 'readyShutdown': ready_shutdown,
-        'noopCancel': noop_cancel,
+        'noopCancel': noop_cancel, 'invokeAnyReady': invoke_any_ready, 'invokeAllWait': invoke_all_wait,
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 

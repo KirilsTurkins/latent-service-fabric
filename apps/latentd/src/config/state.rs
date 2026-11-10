@@ -76,7 +76,7 @@ macro_rules! configuration_object {
     };
 }
 mod effects;
-pub use effects::DeferredHttpConfig;
+pub use effects::{DeferredEventConfig, DeferredHttpConfig};
 mod owners;
 pub use owners::{
     DispatcherLimitsConfig, NativeLimitsConfig, NativePartitionConfig, StorageLimitsConfig,
@@ -124,6 +124,8 @@ pub struct StateOperationConfig {
     pub entity: Option<String>,
     #[serde(default, deserialize_with = "effects::present")]
     pub deferred_http: Option<DeferredHttpConfig>,
+    #[serde(default, deserialize_with = "effects::event_present")]
+    pub deferred_event: Option<DeferredEventConfig>,
 }
 }
 
@@ -167,6 +169,7 @@ pub(crate) struct OperationSettings {
     pub policies: Vec<String>,
     pub entity: Option<String>,
     pub deferred_http: Option<DeferredHttpConfig>,
+    pub deferred_event: Option<DeferredEventConfig>,
 }
 
 pub(super) fn derive_optional(
@@ -270,6 +273,12 @@ fn derive_operations(
         if let Some(effect) = &input.deferred_http {
             effect.validate()?;
         }
+        if let Some(effect) = &input.deferred_event {
+            effect.validate()?;
+        }
+        if input.deferred_http.is_some() && input.deferred_event.is_some() {
+            return Err(super::invalid("state.deferredEffects"));
+        }
         if input.incarnation == 0
             || input.state_policies.is_empty()
             || input.state_policies.len() > 8
@@ -309,6 +318,7 @@ fn derive_operations(
             policies: input.state_policies.clone(),
             entity: input.entity.clone(),
             deferred_http: input.deferred_http.clone(),
+            deferred_event: input.deferred_event.clone(),
         });
     }
     Ok(operations)

@@ -8,15 +8,56 @@ import shutil
 import time
 import tomllib
 
+from tools.c_application_dependencies import MAX_SOURCE_UNITS
 from tools.build_process import run_bounded
 from tools.build_observation import build_environment, file_identity
 from tools.c_guest.bindings import digest, generate
-from tools.c_guest import closed_filesystem, standard_facilities
+from tools.c_guest import closed_filesystem, closed_headers, standard_facilities
 from tools.c_guest.language import DEFAULT as C_STANDARD, selected_standard
 
 ROOT = Path(__file__).resolve().parents[2]
 SDK = ROOT / "sdk/c-guest"
 CAPABILITIES = ("blob", "callee", "events", "http", "metrics", "random", "secrets", "service", "streaming")
+
+MAX_LINK_RESPONSE_BYTES = 1024 * 1024
+
+
+def _link_response_bytes(paths: list[Path]) -> bytes:
+    """Encode owned paths using the pinned Zig response-file tokenizer."""
+    if not 1 <= len(paths) <= MAX_SOURCE_UNITS:
+        raise ValueError("C dependency link response count exceeded")
+    parts, used = [], 0
+    for path in paths:
+        value = str(path)
+        # Zig's response iterator accepts single quotes as delimiters too;
+        # reject them rather than permitting a differently tokenized object.
+        if (not path.is_absolute() or "'" in value
+                or any(ord(char) < 32 or ord(char) == 127 for char in value)):
+            raise ValueError("invalid C dependency object response path")
+        try:
+            if len(value.encode('utf-8')) > 32768:
+                raise ValueError("invalid C dependency object response path")
+            encoded, backslashes = ['"'], 0
+            for char in value:
+                if char == '\\':
+                    backslashes += 1
+                    continue
+                if char == '"':
+                    encoded.append('\\' * (2 * backslashes + 1))
+                else:
+                    encoded.append('\\' * backslashes)
+                encoded.append(char)
+                backslashes = 0
+            encoded.append('\\' * (2 * backslashes))
+            encoded.append('"\n')
+            token = ''.join(encoded).encode('utf-8')
+        except UnicodeError as error:
+            raise ValueError("invalid C dependency object response path") from error
+        used += len(token)
+        if used > MAX_LINK_RESPONSE_BYTES:
+            raise ValueError("C dependency link response byte limit exceeded")
+        parts.append(token)
+    return b''.join(parts)
 
 
 class Compiler:
@@ -63,6 +104,12 @@ class Compiler:
         self.materials.update(self.closed_filesystem.materials)
         self.threading_inputs = {}
         self.threading_clock_inputs = {}
+        self.threading_poll_inputs = {}
+        self.threading_time_alias_checked = False
+        self.threading_time_alias = None
+        self.threading_time_alias_identity = None
+        self.closed_header_boundary = None
+        self.closed_header_stage = None
         if threading_tool is not None:
             from tools.c_guest import threading
             if not threading_tool.is_absolute() or threading_tool.is_symlink() or not threading_tool.is_file():
@@ -74,6 +121,17 @@ class Compiler:
                                    for name, path in self.threading_inputs.items()})
 
     def run(self, tool: str, *arguments: str) -> str:
+        if tool == 'zig' and getattr(self, 'closed_header_boundary', None) is not None:
+            self.closed_header_boundary.check_unchanged()
+            if getattr(self, 'closed_header_stage', None) is not None:
+                self.closed_header_stage.check_unchanged()
+        response = getattr(self, 'threading_time_alias', None)
+        if tool == 'zig' and response is not None and '@' + str(response) in map(str, arguments):
+            from tools.c_guest import threading
+            if (threading.timed_alias_response(self.sdk) != response
+                    or file_identity(response, 'c-threading-time-alias-response', 256)
+                    != self.threading_time_alias_identity):
+                raise ValueError('c-threading-timed-symbol-response-changed')
         remaining = self.deadline - time.monotonic()
         if remaining <= 0:
             raise ValueError("C build deadline exceeded")
@@ -105,8 +163,75 @@ class Compiler:
             self.threading_clock_inputs = inputs
             self.materials.update(identities)
 
+        poll_inputs = threading.poll_libc_inputs(self.paths['zig'])
+        poll_identities = {name: file_identity(path, threading.poll_libc_material_name(name),
+                                               threading.POLL_LIBC_MAX_BYTES)
+                           for name, path in poll_inputs.items()}
+        if self.threading_poll_inputs:
+            if poll_inputs != self.threading_poll_inputs or any(
+                    self.materials[name] != identity for name, identity in poll_identities.items()):
+                raise ValueError('c-threading-libc-poll-input-changed')
+        else:
+            self.threading_poll_inputs = poll_inputs
+            self.materials.update(poll_identities)
+
+        response = threading.timed_alias_response(self.sdk)
+        identity = (file_identity(response, 'c-threading-time-alias-response', 256)
+                    if response is not None else None)
+        if getattr(self, 'threading_time_alias_checked', False):
+            if response != self.threading_time_alias or identity != self.threading_time_alias_identity:
+                raise ValueError('c-threading-timed-symbol-response-changed')
+        else:
+            self.threading_time_alias_checked = True
+            self.threading_time_alias = response
+            self.threading_time_alias_identity = identity
+            if identity is not None:
+                self.materials['c-threading-time-alias-response'] = identity
+        if getattr(self, 'isolation', None) is not None:
+            self.isolation.receipt['cTimedSourceMapping'] = {
+                'mode': 'fixed-sdk-response-v1' if response is not None else 'legacy-sleep-defines',
+                'response': identity, 'selectPrecisionQualified': False}
+
+    def select_closed_header_inputs(self) -> None:
+        boundary = closed_headers.prepare(self.paths['zig'], self.sdk)
+        previous = getattr(self, 'closed_header_boundary', None)
+        if previous is not None:
+            if boundary != previous:
+                raise ValueError('c-closed-headers-original-input-changed')
+        else:
+            self.closed_header_boundary = boundary
+            self.materials.update(boundary.materials)
+
+    def stage_closed_headers(self, destination: Path):
+        if self.isolation is None or self.closed_header_boundary is None:
+            raise ValueError('c-closed-headers-require-captured-isolation')
+        if getattr(self, 'closed_header_stage', None) is not None:
+            raise ValueError('c-closed-headers-require-fresh-stage')
+        stage = self.closed_header_boundary.stage(destination / 'closed-headers')
+        self.closed_header_stage = stage
+        guard = self.sdk / closed_headers.GUARD
+        guard_object = stage.directory / 'guard.o'
+        flags = ['cc', '-std=c11', '-target', 'wasm32-wasi', '-O2', '-Wall', '-Wextra', '-Werror',
+                 '-matomics', '-mbulk-memory', '-pthread', '-fno-lto', '-D_GNU_SOURCE=1',
+                 '-I', str(stage.directory)]
+        depfile = destination / 'closed-header-guard.d'
+        self.run('zig', *flags, '-M', '-MT', 'lsf-inputs', '-MF', str(depfile), str(guard))
+        observed = self.isolation.observe_inputs(depfile)
+        self.run('zig', *flags, '-c', str(guard), '-o', str(guard_object))
+        stage.accept_guard()
+        self.isolation.protect_inputs(stage.directory)
+        self.isolation.receipt['cClosedHeaderDeclarations'] = {
+            'profile': closed_headers.PROFILE, 'signalOperations': 'unavailable',
+            'nonlocalJumps': 'unavailable', 'guardObject': stage.guard_object,
+            'signedQualification': False}
+        return guard_object, observed
+
     def check_unchanged(self) -> None:
         self.closed_filesystem.check_unchanged()
+        if getattr(self, 'closed_header_boundary', None) is not None:
+            self.closed_header_boundary.check_unchanged()
+        if getattr(self, 'closed_header_stage', None) is not None:
+            self.closed_header_stage.check_unchanged()
         if self.threading_inputs:
             from tools.c_guest import threading
             if threading.libc_inputs(self.paths['zig']) != self.threading_inputs:
@@ -121,6 +246,21 @@ class Compiler:
             for name, path in self.threading_clock_inputs.items():
                 if file_identity(path, threading.clock_libc_material_name(name), 32768) != self.materials[name]:
                     raise ValueError('c-threading-libc-clock-input-changed')
+        if getattr(self, 'threading_poll_inputs', None):
+            from tools.c_guest import threading
+            if threading.poll_libc_inputs(self.paths['zig']) != self.threading_poll_inputs:
+                raise ValueError('c-threading-libc-poll-input-changed')
+            for name, path in self.threading_poll_inputs.items():
+                if file_identity(path, threading.poll_libc_material_name(name),
+                                 threading.POLL_LIBC_MAX_BYTES) != self.materials[name]:
+                    raise ValueError('c-threading-libc-poll-input-changed')
+        if getattr(self, 'threading_time_alias_checked', False):
+            from tools.c_guest import threading
+            response = threading.timed_alias_response(self.sdk)
+            if (response != self.threading_time_alias or
+                    (response is not None and file_identity(response, 'c-threading-time-alias-response', 256)
+                     != self.threading_time_alias_identity)):
+                raise ValueError('c-threading-timed-symbol-response-changed')
         for name, path in self.paths.items():
             if file_identity(path, name) != self.materials[name]:
                 raise ValueError("C compiler tool changed during build")
@@ -202,21 +342,31 @@ class Compiler:
                 runtime_profile: str = standard_facilities.DEFAULT, language_standard: str = C_STANDARD,
                 embed_directories: tuple[Path, ...] = (),
                 dependency_sources: tuple[Path, ...] = (),
-                threading_profile: str = 'single-threaded') -> tuple[Path, dict]:
+                threading_profile: str = 'single-threaded',
+                header_profile: str = closed_headers.DEFAULT) -> tuple[Path, dict]:
         standard_facilities.selected_profile({'runtimeProfile': runtime_profile})
         selected_standard({'languageStandard': language_standard})
         threaded = threading_profile != 'single-threaded'
+        use_closed_headers = closed_headers.selected({'headerProfile': header_profile,
+                                                       'threadingProfile': threading_profile})
+        if use_closed_headers:
+            if self.isolation is None:
+                raise ValueError('c-closed-headers-require-captured-isolation')
+            closed_headers.check_defines(defines)
+            self.select_closed_header_inputs()
         if threaded:
             from tools.c_guest import threading
             threading.selected({'threadingProfile': threading_profile})
         if runtime_profile in standard_facilities.FETCH_PROFILES and not threaded:
             raise ValueError('c-libfetch-http-requires-cooperative-threading')
+        if runtime_profile == standard_facilities.STREAM_PROFILE and not threaded:
+            raise ValueError('c-stream-network-requires-cooperative-threading')
         if threaded and ('c-threading-transformer' not in self.paths or static_libraries):
             raise ValueError('c-threading-requires-transformer-and-no-static-archives')
         if embed_directories and (language_standard != 'c23' or len(embed_directories) > 64):
             raise ValueError('c-embed-directories-require-bounded-c23-selection')
-        if not sources or len(sources) > 64:
-            raise ValueError("C source count must be between 1 and 64")
+        if not sources or len(sources) > MAX_SOURCE_UNITS:
+            raise ValueError(f"C source count must be between 1 and {MAX_SOURCE_UNITS}")
         if any(path.is_symlink() or not path.is_file() or path.stat().st_size > 262144 for path in sources):
             raise ValueError("invalid or oversized C source")
         if (not isinstance(dependency_sources, tuple) or len(set(dependency_sources)) != len(dependency_sources)
@@ -229,17 +379,24 @@ class Compiler:
         generated, lock = generate(self.run, wit_source, world, destination, self.platform,
                                    sync_core_abi=threaded)
         public = None
+        time_response = None
+        header_object, header_observed = None, []
+        if use_closed_headers:
+            header_object, header_observed = self.stage_closed_headers(destination)
         if threaded:
             graph = json.loads(self.run('wasm-tools', 'component', 'wit', '--json', str(destination / 'wit')))
-            public = threading.public_export(graph)
+            public = threading.public_export(graph, world)
             runtime = self.sdk / 'runtime'
             sources = [*sources, runtime / 'threads.c', runtime / 'tls-keys.c', runtime / 'template-copy.c']
             include_directories = (*include_directories, runtime)
             timed_clock = runtime_profile in {standard_facilities.PROFILE, standard_facilities.COMBINED_PROFILE,
-                                               standard_facilities.FETCH_STANDARD_PROFILE}
+                                               standard_facilities.FETCH_STANDARD_PROFILE,
+                                               standard_facilities.STREAM_PROFILE}
             if timed_clock:
                 self.select_threading_clock_inputs()
-                defines = threading.linked_defines(defines, timed_clock=True)
+                time_response = self.threading_time_alias
+                defines = threading.linked_defines(defines, timed_clock=True,
+                                                   time_response=time_response is not None)
             else:
                 defines = threading.linked_defines(defines)
         defines = standard_facilities.compiler_defines(runtime_profile, defines)
@@ -250,6 +407,11 @@ class Compiler:
                    "-Wl,--no-entry", "-Wl,--export-memory", "-Wl,-z,stack-size=65536",
                    f"-Wl,--max-memory={memory_bytes}", "-I", str(generated),
                    "-I", str(self.sdk / "include"), *map(str, sources)]
+        if use_closed_headers:
+            command[command.index('-I'):command.index('-I')] = ['-I', str(self.closed_header_stage.directory)]
+            command.insert(command.index(str(sources[0])), str(header_object))
+        if runtime_profile == standard_facilities.STREAM_PROFILE:
+            command.extend(['-include', str(self.sdk / standard_facilities.STREAM_HEADER)])
         if runtime_profile in standard_facilities.FETCH_PROFILES:
             # Zig maps this to wasm-ld -s: omit debug/name metadata, not code.
             command.append('-Wl,--strip-debug')
@@ -271,6 +433,8 @@ class Compiler:
         for directory in embed_directories:
             command.append('--embed-dir=' + str(directory))
         command.extend("-D" + define for define in defines)
+        if time_response is not None:
+            command.append('@' + str(time_response))
         command.extend(map(str, static_libraries))
         if trap:
             command.append(str(self.sdk / "src/trap.c"))
@@ -279,16 +443,23 @@ class Compiler:
         if self.isolation is not None:
             preprocessor = ["cc", "-std=" + language_standard, "-target", "wasm32-wasi", "-I", str(generated),
                             "-I", str(self.sdk / "include")]
+            if use_closed_headers:
+                preprocessor[preprocessor.index('-I'):preprocessor.index('-I')] = [
+                    '-I', str(self.closed_header_stage.directory)]
+            if runtime_profile == standard_facilities.STREAM_PROFILE:
+                preprocessor.extend(['-include', str(self.sdk / standard_facilities.STREAM_HEADER)])
             for directory in include_directories:
                 preprocessor.extend(["-I", str(directory)])
             for directory in embed_directories:
                 preprocessor.append('--embed-dir=' + str(directory))
             preprocessor.extend("-D" + define for define in defines)
+            if time_response is not None:
+                preprocessor.append('@' + str(time_response))
             preprocessor.extend(thread_flags)
             selected_sources = [*sources, generated / "probe.c"]
             if trap:
                 selected_sources.append(self.sdk / "src/trap.c")
-            observed = []
+            observed = list(header_observed)
             for index, source in enumerate(selected_sources):
                 depfile = destination / f"inputs-{index:04}.d"
                 self.run("zig", *preprocessor, "-M", "-MT", "lsf-inputs", "-MF", str(depfile), str(source))
@@ -301,7 +472,7 @@ class Compiler:
             # imposing the SDK/application's warning-as-error policy on it.
             # Fresh objects use the same target, O2, headers and thread ABI;
             # this does not admit opaque archives or caller-provided flags.
-            link_inputs = [*sources, *static_libraries, generated / 'probe.c', generated / 'probe_component_type.o']
+            link_inputs = [*([header_object] if header_object else []), *sources, *static_libraries, generated / 'probe.c', generated / 'probe_component_type.o']
             if trap:
                 link_inputs.append(self.sdk / 'src/trap.c')
             options = self.translation_options(command, link_inputs)
@@ -322,7 +493,20 @@ class Compiler:
             command = [replacements.get(value, value) for value in command]
             self.isolation.receipt['dependencyCompilation'] = {
                 'warningPolicy': 'visible-warnings-without-werror', 'objects': rows}
-        self.run("zig", *command)
+        # Preserve the global 256-argument subprocess bound. Only the new
+        # larger captured-source path uses response files; existing inputs
+        # retain their original direct linker argv and ordering.
+        link_command, responses = command, []
+        if len(dependency_objects) > 64:
+            link_command, responses = self._dependency_link_responses(command, dependency_objects, destination)
+            if responses:
+                self.isolation.receipt['dependencyCompilation']['linkResponseFiles'] = [
+                    {'digest': identity['digest'], 'size': identity['size'], 'objectOrdinals': ordinals}
+                    for _path, identity, ordinals in responses]
+        self.run("zig", *link_command)
+        for response_path, identity, _ordinals in responses:
+            if file_identity(response_path, 'c-dependency-link-response', MAX_LINK_RESPONSE_BYTES) != identity:
+                raise ValueError('C dependency link response changed during compilation')
         if runtime_profile in standard_facilities.FETCH_PROFILES and self.commands is not None:
             from tools.rust_capsule_project import read_file
             payload = read_file(core, 64 * 1024 * 1024)
@@ -378,12 +562,54 @@ class Compiler:
                 'publicExport': public, 'finalComponent': component}
         self.check_unchanged()
         if self.compiler_edges is not None:
-            link_inputs = [*sources, *dependency_objects, *static_libraries,
+            link_inputs = [*([header_object] if header_object else []), *sources, *dependency_objects, *static_libraries,
                            generated / 'probe.c', generated / 'probe_component_type.o']
             if trap:
                 link_inputs.append(self.sdk / 'src/trap.c')
             self.observe_compiler_edges(command, destination, link_inputs, dependency_sources=dependency_sources)
         return component, lock
+
+    def _dependency_link_responses(self, command, objects, destination):
+        """Replace consecutive owned-object runs in place, without reordering."""
+        if not 1 <= len(objects) <= MAX_SOURCE_UNITS or self.isolation is None:
+            raise ValueError('C dependency link response requires bounded owned objects')
+        indexes = {}
+        for ordinal, path in enumerate(objects):
+            if (not path.is_absolute() or path.parent != destination
+                    or path.name != f'dependency-{ordinal:04}.o' or str(path) in indexes):
+                raise ValueError('C dependency link response requires bounded owned objects')
+            indexes[str(path)] = ordinal
+        compacted, responses, seen, used = [], [], [], 0
+        index = 0
+        while index < len(command):
+            if command[index] not in indexes:
+                compacted.append(command[index])
+                index += 1
+                continue
+            end = index
+            while end < len(command) and command[end] in indexes:
+                end += 1
+            run = command[index:end]
+            ordinals = [indexes[value] for value in run]
+            seen.extend(ordinals)
+            if len(run) == 1:
+                compacted.extend(run)
+            else:
+                payload = _link_response_bytes([Path(value) for value in run])
+                used += len(payload)
+                if used > MAX_LINK_RESPONSE_BYTES:
+                    raise ValueError('C dependency link response byte limit exceeded')
+                path = destination / f'dependency-link-{len(responses):04}.rsp'
+                with path.open('xb') as output:
+                    output.write(payload)
+                identity = file_identity(path, 'c-dependency-link-response', MAX_LINK_RESPONSE_BYTES)
+                self.isolation.protect_inputs(path)
+                compacted.append('@' + str(path))
+                responses.append((path, identity, ordinals))
+            index = end
+        if sorted(seen) != list(range(len(objects))):
+            raise ValueError('C dependency link response objects changed')
+        return compacted, responses
 
     @staticmethod
     def translation_options(original, link_inputs):

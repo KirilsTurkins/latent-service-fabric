@@ -42,11 +42,13 @@ REFERENCE_GO_SHA = '5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f7968
 
 CASE = 'signed_ordinary_go_smtp_starttls_preserves_trust_hostname_and_fresh_connection'
 PUBLISHED_CASE = 'signed_published_go_smtp_and_separate_worker_timer_preserve_original_owners'
+LOST_REPLY_CASE = 'signed_published_go_smtp_lost_reply_does_not_replay_and_fresh_succeeds'
 SUITE = 'latent-wasmtime.test.go_smtp_tls'
 V5_PUSH_BRANCH = 'feat/go-smtp-starttls-20261020'
 V7_PUSH_BRANCH = 'feat/go-smtp-v7-20261110'
 PUBLISHED_PUSH_BRANCH = 'feat/go-published-smtp-v7-20261110'
 REFERENCE_PIN_PUSH_BRANCH = 'fix/go-smtp-reference-pin-20261110'
+LOST_REPLY_PUSH_BRANCH = 'test/go-smtp-lost-reply-20261110'
 EXPECTED = (
     ('ordinary-smtp-plain', 0, 'ordinary-smtp-plain', 1),
     ('ordinary-starttls13', 1, 'ordinary-smtp-tls13', 1),
@@ -63,6 +65,10 @@ PUBLISHED_EXPECTED = (
     ('published-starttls12', 4, 'published-smtp-tls12', 1),
     ('published-fresh-starttls13', 5, 'published-smtp-tls13', 1),
 )
+LOST_REPLY_EXPECTED = (
+    ('published-lost-reply', 0, 'published-smtp-delivery-unknown', 1),
+    ('published-fresh-after-lost-reply', 1, 'published-smtp-fresh', 1),
+)
 
 
 def workflow_profile(event: str, branch: str, choice: str) -> str:
@@ -70,7 +76,7 @@ def workflow_profile(event: str, branch: str, choice: str) -> str:
     if event == 'push' and not choice:
         if branch == V5_PUSH_BRANCH:
             return MANAGED_PROFILE
-        if branch in (V7_PUSH_BRANCH, PUBLISHED_PUSH_BRANCH, REFERENCE_PIN_PUSH_BRANCH):
+        if branch in (V7_PUSH_BRANCH, PUBLISHED_PUSH_BRANCH, REFERENCE_PIN_PUSH_BRANCH, LOST_REPLY_PUSH_BRANCH):
             return STACK_PROFILE
     elif event == 'workflow_dispatch':
         if choice in ('', 'v5'):
@@ -86,11 +92,15 @@ def workflow_program(event: str, branch: str, choice: str) -> str:
             return 'standard'
         if branch in (PUBLISHED_PUSH_BRANCH, REFERENCE_PIN_PUSH_BRANCH):
             return 'published'
+        if branch == LOST_REPLY_PUSH_BRANCH:
+            return 'published-lost-reply'
     elif event == 'workflow_dispatch':
         if choice in ('', 'standard'):
             return 'standard'
         if choice == 'published':
             return 'published'
+        if choice == 'published-lost-reply':
+            return 'published-lost-reply'
     raise ValueError('Go-smtp-tls-runtime-workflow-program')
 
 
@@ -136,6 +146,8 @@ def outcomes(raw: bytes, filtered: int = 0, program: str = 'standard') -> dict:
         selected_case, selected_rows = CASE, EXPECTED
     elif program == 'published':
         selected_case, selected_rows = PUBLISHED_CASE, PUBLISHED_EXPECTED
+    elif program == 'published-lost-reply':
+        selected_case, selected_rows = LOST_REPLY_CASE, LOST_REPLY_EXPECTED
     else:
         raise ValueError('Go-smtp-tls-runtime-program-not-selected')
     if not isinstance(raw, bytes) or len(raw) > 1024 * 1024:
@@ -189,8 +201,13 @@ def outcomes(raw: bytes, filtered: int = 0, program: str = 'standard') -> dict:
         expected.append((b'GO_SMTP_OWNER', {'case': label, 'stores': 0, 'instances': 0,
             'streamOwners': 0, 'ioOwners': 0, 'kernelRetirementQualified': False}))
         expected.append((b'GO_SMTP_CASE', {'case': label, 'mode': mode, 'result': result, 'contacts': contacts}))
-    expected.append((b'GO_SMTP_COMPLETE', {'cases': 6, 'contacts': 6, 'cleanLogicalProviderStop': True,
-        'kernelRetirementQualified': False, 'normalProviderInstalled': False, 'hostTlsQualified': False}))
+    complete = {'cases': 6, 'contacts': 6, 'cleanLogicalProviderStop': True,
+        'kernelRetirementQualified': False, 'normalProviderInstalled': False, 'hostTlsQualified': False}
+    if program == 'published-lost-reply':
+        complete = {'cases': 2, 'contacts': 2, 'peerMutations': 1, 'postCompletionReplayWindowMillis': 250,
+            'cleanLogicalProviderStop': True, 'kernelRetirementQualified': False,
+            'normalProviderInstalled': False, 'hostTlsQualified': False}
+    expected.append((b'GO_SMTP_COMPLETE', complete))
     if [name for name, _ in observed] != [name for name, _ in expected]:
         raise ValueError('Go-smtp-tls-runtime-exact-event-order-required')
     reasons = {b'GO_SMTP_CASE': 'Go-smtp-tls-runtime-exact-ordinary-observations-required',
@@ -283,7 +300,7 @@ def qualify(root: Path, output: Path, revision: str, reference_go: Path, profile
             program: str = 'standard') -> dict:
     if profile not in (MANAGED_PROFILE, STACK_PROFILE):
         raise ValueError('Go-smtp-tls-runtime-profile-not-selected')
-    if program not in ('standard', 'published') or program == 'published' and profile != STACK_PROFILE:
+    if program not in ('standard', 'published', 'published-lost-reply') or program != 'standard' and profile != STACK_PROFILE:
         raise ValueError('Go-smtp-tls-runtime-program-not-selected')
     environment = dict(os.environ, CARGO_BUILD_JOBS='2', CARGO_INCREMENTAL='0',
                        CARGO_TARGET_DIR=str(root / 'target'), LSF_GUEST_SDK_LANGUAGE='go',
@@ -295,7 +312,8 @@ def qualify(root: Path, output: Path, revision: str, reference_go: Path, profile
     before = source_inputs(root)
     inputs = encoded(before)
     (output / 'native-inputs.json').write_bytes(inputs)
-    schema = ('latent.go.published-smtp.runtime.v1' if program == 'published' else
+    schema = ('latent.go.published-smtp.lost-reply.v1' if program == 'published-lost-reply' else
+              'latent.go.published-smtp.runtime.v1' if program == 'published' else
               'latent.go.smtp-tls.runtime.v1' if profile == MANAGED_PROFILE else 'latent.go.smtp-tls.runtime.v7.v1')
     record = {'schemaVersion': schema, 'sourceRevision': revision,
               'status': 'in-progress', 'sourceDigest': digest(inputs), 'normalProviderInstalled': False,
@@ -351,7 +369,7 @@ def qualify(root: Path, output: Path, revision: str, reference_go: Path, profile
             raise ValueError('Go-smtp-tls-runtime-rust-compiler')
         prepared = output / 'fixture'
         compiler = None
-        if program == 'published':
+        if program in ('published', 'published-lost-reply'):
             # Build only the maintained authoring contracts example, then
             # select its source-bound product from this exact Cargo inventory.
             cargo = command(['cargo', 'build', '--locked', '-p', 'latent-packaging',
@@ -361,17 +379,22 @@ def qualify(root: Path, output: Path, revision: str, reference_go: Path, profile
             remaining = min(1100, int(deadline - time.monotonic()) - 5)
             if remaining < 30:
                 raise ValueError('Go-smtp-tls-runtime-overall-deadline')
-            command([sys.executable, str(root / 'tools/qualify_go_published_smtp.py'),
+            args = [sys.executable, str(root / 'tools/qualify_go_published_smtp.py'),
                      '--output', str(prepared), '--contracts-tool', str(contracts),
-                     '--deadline-seconds', str(remaining)], 'published-compile', remaining, 1024 * 1024)
+                     '--deadline-seconds', str(remaining)]
+            if program == 'published-lost-reply': args.append('--lost-reply')
+            command(args, 'published-compile', remaining, 1024 * 1024)
             compiled = json.loads(read_file(prepared / 'GO-SMTP-PUBLISHED-COMPILE.json', 4 * 1024 * 1024))
             fixture = root / 'sdk/go-guest/runtime/published-smtp-conformance'
-            source = snapshot(fixture)
+            original_source = snapshot(fixture)
+            source = dict(original_source)
+            if program == 'published-lost-reply':
+                source['main.go'] = read_file(root / 'sdk/go-guest/runtime/published-smtp-lost-reply/main.go', 65536)
             if (compiled.get('profile') != STACK_PROFILE or compiled.get('sourceUnchanged') is not True
                     or compiled.get('sourceDigest') != digest(source['main.go'])
                     or compiled.get('componentDigest') != digest(read_file(prepared / 'build/component.wasm', 64 * 1024 * 1024))):
                 raise ValueError('Go-published-smtp-compiled-inputs-disagree')
-            record['program'] = 'published'
+            record['program'] = program
             record['contractsExecutableDigest'] = digest(read_file(contracts, 512 * 1024 * 1024))
         else:
             # Preserve the original ordinary standard-library fixture and path.
@@ -399,7 +422,8 @@ def qualify(root: Path, output: Path, revision: str, reference_go: Path, profile
         command(['cargo', 'test', '--locked', '-p', 'latent-wasmtime', '--test', 'go_smtp_tls',
                  '--no-run', '--message-format=json'], 'cargo', 1200, 16 * 1024 * 1024)
         suite, = [row for row in registry.load(root / 'tools/ci/suites.json')['suites'] if row['id'] == SUITE]
-        selected_case = PUBLISHED_CASE if program == 'published' else CASE
+        selected_case = (LOST_REPLY_CASE if program == 'published-lost-reply' else
+                         PUBLISHED_CASE if program == 'published' else CASE)
         if selected_case not in suite['expectedIgnored']:
             raise ValueError('Go-smtp-tls-runtime-suite-contract')
         descriptor = artifacts.Suite(suite['manifest'], suite['target'], suite['source'],
@@ -423,7 +447,9 @@ def qualify(root: Path, output: Path, revision: str, reference_go: Path, profile
             raise ValueError('Go-smtp-tls-runtime-native-inputs-changed')
         if compiler is not None:
             compiler.check_unchanged()
-        if source != snapshot(fixture):
+        if ((original_source if program in ('published', 'published-lost-reply') else source) != snapshot(fixture)
+                or program == 'published-lost-reply' and source['main.go'] !=
+                read_file(root / 'sdk/go-guest/runtime/published-smtp-lost-reply/main.go', 65536)):
             raise ValueError('Go-smtp-tls-runtime-source-changed')
         record.update(status='passed', sourceUnchanged=True, nativeCompiler=compiler_version,
                       nativeExecutableDigest=digest(read_file(native.executable, 1024 * 1024 * 1024)))
@@ -443,7 +469,7 @@ if __name__ == '__main__':
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument('--profile', choices=(MANAGED_PROFILE, STACK_PROFILE))
     selection.add_argument('--workflow-selection', action='store_true')
-    parser.add_argument('--program', choices=('standard', 'published'))
+    parser.add_argument('--program', choices=('standard', 'published', 'published-lost-reply'))
     arguments = parser.parse_args()
     if arguments.workflow_selection:
         if arguments.program is not None:

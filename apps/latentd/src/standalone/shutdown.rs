@@ -107,7 +107,7 @@ impl StandaloneNode {
         if let Some(effects) = &self.effects {
             effects.close();
         }
-        self.supply_chain.retire();
+        self.supply_chain.close_admission();
         self.capabilities.retire();
         if let Some(providers) = &self.providers {
             providers.retire();
@@ -241,6 +241,9 @@ impl StandaloneNode {
         } else {
             None
         };
+        // The original covered clock and ledger must remain owned until the
+        // accepted effects have finished recording receipts or timed out.
+        self.supply_chain.retire();
         // Effects have positively observed their scheduling/provider cleanup
         // before their final metadata source releases the shared store role.
         // Lower state retirement remains truthful if any physical owner lives.

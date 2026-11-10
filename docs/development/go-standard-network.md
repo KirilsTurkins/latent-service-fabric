@@ -54,7 +54,10 @@ samples its remaining time before dispatch and passes a relative timeout; delay
 between that sample and host admission can therefore outlast the original Go
 deadline. This conversion does not establish exact wall-clock deadline behavior
 at that boundary. Dial context cancellation retains its existing path. Re-arming a
-deadline while its direction is active is explicitly unsupported. `CloseWrite`
+deadline while its direction is active is explicitly unsupported. An equivalent
+deadline remains accepted only when it uses the same monotonic or wall-clock
+basis; stripping a monotonic reading can change the effective deadline after a
+wall-clock adjustment even when `time.Time.Equal` reports equal. `CloseWrite`
 does not use the Go write deadline; the original connection, idle, provider and
 activation bounds still apply to send shutdown. The WIT exposes no local endpoint, so
 `LocalAddr` is nil; `RemoteAddr` describes the declared target, not a resolved
