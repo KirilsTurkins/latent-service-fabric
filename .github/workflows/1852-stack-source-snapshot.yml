@@ -1,0 +1,37 @@
+name: AbortSignal stack source snapshot
+on:
+  push:
+    branches: [ci/1852-stack-reconcile-20261110]
+    paths: [.github/workflows/1852-stack-source-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Fetch immutable public source histories without credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init --bare "$RUNNER_TEMP/lsf-stack.git"
+          git -C "$RUNNER_TEMP/lsf-stack.git" fetch --depth=512 https://github.com/KirilsTurkins/latent-service-fabric.git \
+            8ea98eba85a4afa644d67654cb838ec302565c1d:refs/heads/development \
+            99156cf7410dfcf2d07650fa95884ea280259d57:refs/heads/parent \
+            1d41110ca404b833c8da4c46080646b9be0156fc:refs/heads/ownership \
+            710491c3b8fa0cf59bfc5c92e5e95d48d5ca666f:refs/heads/abort \
+            83c339673b87afabfa06f3a8e818324f46c1ae6f:refs/heads/original-parent \
+            0f808bdd3977bf09d90a66bc50bde5d17155d994:refs/heads/original-development
+          git -C "$RUNNER_TEMP/lsf-stack.git" show-ref > "$RUNNER_TEMP/lsf-stack-refs.txt"
+          git -C "$RUNNER_TEMP/lsf-stack.git" fsck --no-reflogs
+          tar -C "$RUNNER_TEMP" -czf "$RUNNER_TEMP/lsf-stack.git.tar.gz" lsf-stack.git
+          sha256sum "$RUNNER_TEMP/lsf-stack.git.tar.gz" > "$RUNNER_TEMP/lsf-stack.sha256"
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: abort-stack-exact-histories
+          path: |
+            ${{ runner.temp }}/lsf-stack.git.tar.gz
+            ${{ runner.temp }}/lsf-stack-refs.txt
+            ${{ runner.temp }}/lsf-stack.sha256
+          if-no-files-found: error
+          retention-days: 3
