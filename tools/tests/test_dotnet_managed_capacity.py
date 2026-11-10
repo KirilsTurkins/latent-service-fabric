@@ -32,6 +32,23 @@ class ManagedCapacityTests(unittest.TestCase):
         from tools.ci_lane_inventory import workflow_model
         from tools.rust_capsule_project import ROOT
         value = workflow_model(historical_checkout((ROOT/'.github/workflows/dotnet-published-http.yml').read_text(encoding='utf8')))
+        # Temporary diagnostic child: authenticate and invert only its exact
+        # branch selector before the existing complete historical comparison.
+        branch = "diag/dotnet-ready-reap-20261110"; ref = "refs/heads/" + branch
+        self.assertEqual(value['on']['push']['branches'], ['feat/dotnet-published-http-20261020', branch])
+        self.assertEqual(value['on']['push']['paths'], ['.github/workflows/dotnet-published-http.yml'])
+        value['on']['push']['branches'].remove(branch)
+        exact = "(github.event_name != 'workflow_dispatch' || !inputs.fresh_component) && !inputs.mixed_content && !inputs.owner_capacity && !inputs.periodic_diagnostic"
+        self.assertEqual(value['jobs']['exact-component']['if'], exact + " && !(github.event_name == 'push' && github.ref == '" + ref + "')")
+        value['jobs']['exact-component']['if'] = exact
+        owner = "github.event_name == 'workflow_dispatch' && inputs.owner_capacity && !inputs.periodic_diagnostic"
+        self.assertEqual(value['jobs']['owner-capacity']['if'], "(" + owner + ") || (github.event_name == 'push' && github.ref == '" + ref + "')")
+        value['jobs']['owner-capacity']['if'] = owner
+        command = 'python3 -B tools/qualify_dotnet_managed_capacity.py --native "$RUNNER_TEMP/capacity-native" --tools "$RUNNER_TEMP/capacity-tools" --output "$RUNNER_TEMP/managed-capacity"'
+        suffix = " ${{ github.event_name == 'push' && github.ref == '" + ref + "' && '--ready-retirement-witness' || '' }}"
+        steps = [step for step in value['jobs']['owner-capacity']['steps'] if 'tools/qualify_dotnet_managed_capacity.py' in step.get('run', '')]
+        self.assertEqual(len(steps), 1); self.assertEqual(steps[0]['run'], command + suffix)
+        steps[0]['run'] = command
         diagnostic = value['on']['workflow_dispatch']['inputs'].pop('periodic_diagnostic')
         self.assertEqual(diagnostic['type'], 'boolean');self.assertIs(diagnostic['default'], False)
         value['jobs'].pop('periodic-diagnostic')

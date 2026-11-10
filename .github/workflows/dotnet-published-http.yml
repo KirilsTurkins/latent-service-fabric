@@ -1,7 +1,7 @@
 name: Published managed HTTP clients
 on:
   push:
-    branches: ['feat/dotnet-published-http-20261020']
+    branches: ['feat/dotnet-published-http-20261020', 'diag/dotnet-ready-reap-20261110']
     paths: ['.github/workflows/dotnet-published-http.yml']
   workflow_dispatch:
     inputs:
@@ -232,7 +232,7 @@ jobs:
             ${{ runner.temp }}/published-http/node/*.json
             ${{ runner.temp }}/published-http/node/controls/*.json
   exact-component:
-    if: (github.event_name != 'workflow_dispatch' || !inputs.fresh_component) && !inputs.mixed_content && !inputs.owner_capacity && !inputs.periodic_diagnostic
+    if: (github.event_name != 'workflow_dispatch' || !inputs.fresh_component) && !inputs.mixed_content && !inputs.owner_capacity && !inputs.periodic_diagnostic && !(github.event_name == 'push' && github.ref == 'refs/heads/diag/dotnet-ready-reap-20261110')
     name: Original captured Flurl Refit component with corrected progress records
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -275,7 +275,7 @@ jobs:
             ${{ runner.temp }}/published-replay/original/published-http/build/*.json
 
   owner-capacity:
-    if: github.event_name == 'workflow_dispatch' && inputs.owner_capacity && !inputs.periodic_diagnostic
+    if: (github.event_name == 'workflow_dispatch' && inputs.owner_capacity && !inputs.periodic_diagnostic) || (github.event_name == 'push' && github.ref == 'refs/heads/diag/dotnet-ready-reap-20261110')
     name: Managed Task queue native and individual Timer capacity
     runs-on: ubuntu-24.04
     timeout-minutes: 40
@@ -346,7 +346,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: python3 -B tools/release_preparation_cli_native_products.py --output "$RUNNER_TEMP/capacity-native"
       - name: Compile one capacity component and execute seventeen strict owner cases
-        run: python3 -B tools/qualify_dotnet_managed_capacity.py --native "$RUNNER_TEMP/capacity-native" --tools "$RUNNER_TEMP/capacity-tools" --output "$RUNNER_TEMP/managed-capacity"
+        run: python3 -B tools/qualify_dotnet_managed_capacity.py --native "$RUNNER_TEMP/capacity-native" --tools "$RUNNER_TEMP/capacity-tools" --output "$RUNNER_TEMP/managed-capacity" ${{ github.event_name == 'push' && github.ref == 'refs/heads/diag/dotnet-ready-reap-20261110' && '--ready-retirement-witness' || '' }}
       - name: Retain bounded public capacity source build and actual owner evidence
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
