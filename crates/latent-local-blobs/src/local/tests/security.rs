@@ -34,29 +34,43 @@ fn directory_walk_bounds_callbacks_and_propagates_failure() {
 fn interrupted_recovery_preserves_the_original_payload_for_a_fresh_open() {
     let parent = temporary_root();
     let root = parent.path().join("root");
-    let owner = store(&root);
-    let reference = put(&owner, b"data");
+    let mut bounds = limits();
+    bounds.maximum_object_bytes = 16 * 1024;
+    bounds.maximum_stage_bytes = 32 * 1024;
+    bounds.maximum_disk_bytes = 128 * 1024;
+    bounds.maximum_chunk_bytes = 8192;
+    let owner = LocalBlobStore::open(&root, "private", bounds).unwrap();
+    let payload = vec![42; 9000];
+    let mut writer = owner
+        .create(&scope(), "text/plain", Some(payload.len() as u64), &|| {
+            Ok(())
+        })
+        .unwrap();
+    writer.write(0, &payload[..8192], &|| Ok(())).unwrap();
+    writer.write(8192, &payload[8192..], &|| Ok(())).unwrap();
+    let reference = writer.seal(&|| Ok(())).unwrap();
     drop(owner);
 
     let calls = std::cell::Cell::new(0);
     let checkpoint = || {
         calls.set(calls.get() + 1);
-        if calls.get() == 4 {
+        if calls.get() == 5 {
             Err(LocalBlobError::DeadlineExceeded)
         } else {
             Ok(())
         }
     };
     assert!(matches!(
-        LocalBlobStore::open_with_checkpoint(&root, "private", limits(), &checkpoint),
+        LocalBlobStore::open_with_checkpoint(&root, "private", bounds, &checkpoint),
         Err(LocalBlobError::DeadlineExceeded)
     ));
-    assert_eq!(calls.get(), 4);
-    let reopened = store(&root);
+    assert_eq!(calls.get(), 5);
+    let reopened = LocalBlobStore::open(&root, "private", bounds).unwrap();
     let reader = reopened
         .open_read(&scope(), &reference, &|| Ok(()))
         .unwrap();
-    assert_eq!(read(&reader, 0, 4).unwrap(), b"data");
+    assert_eq!(read(&reader, 0, 8192).unwrap(), payload[..8192]);
+    assert_eq!(read(&reader, 8192, 808).unwrap(), payload[8192..]);
 }
 
 #[test]
