@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 
 from tools.go_guest.runtime import replace_once
+from tools.go_guest.activation import MANAGED_PROFILE, STACK_PROFILE
 
 IDENTITY = 'latent:network/streams@0.1.0'
 PREIMAGES = {
@@ -38,8 +39,8 @@ def selected(module: Path, runtime_profile: str) -> bool:
         imported.append(path)
     if not imported:
         return False
-    if runtime_profile != 'go-component-activation-v5':
-        raise ValueError('go-network-requires-managed-v5')
+    if runtime_profile not in (MANAGED_PROFILE, STACK_PROFILE):
+        raise ValueError('go-network-requires-managed-v5-or-v7')
     if len(imported) != 1 or imported[0].parent.name != 'latent_network_streams':
         raise ValueError('go-network-generated-package-identity')
     return True

@@ -3,7 +3,7 @@ name: Execute the declared Go TCP component
 on:
   workflow_dispatch:
   push:
-    branches: ['feat/go-standard-tcp-runtime-20261020', 'feat/go-network-read-order-20261108', 'feat/go-cancel-original-read-20261109', 'feat/sdk-738-bounded-outbound-owners']
+    branches: ['feat/go-standard-tcp-runtime-20261020', 'feat/go-network-read-order-20261108', 'feat/go-cancel-original-read-20261109', 'feat/sdk-738-bounded-outbound-owners', 'feat/go-network-v7-20261110']
 
 permissions:
   contents: read
@@ -60,7 +60,9 @@ jobs:
           echo "$out" >> "$GITHUB_PATH"
           echo "$out/go-async/bin" >> "$GITHUB_PATH"
       - name: Compile the current guarded Go fixture then execute one targeted signed harness
-        run: python3 tools/qualify_go_network_runtime.py --source-commit "${{ github.sha }}" --output "$RUNNER_TEMP/go-network-runtime"
+        env:
+          LSF_GO_NETWORK_SELECTED_PROFILE: ${{ github.ref_name == 'feat/go-network-v7-20261110' && 'go-component-activation-v7' || 'go-component-activation-v5' }}
+        run: python3 tools/qualify_go_network_runtime.py --source-commit "${{ github.sha }}" --output "$RUNNER_TEMP/go-network-runtime" --profile "$LSF_GO_NETWORK_SELECTED_PROFILE"
       - name: Retain bounded compiler and owner evidence including failures
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
