@@ -98,6 +98,12 @@ def build_evidence(artifact, source):
         require(len(rows) == 1 and rows[0]['digest'] == 'sha256:' + sha256
                 and type(rows[0]['size']) is int and 0 < rows[0]['size'] <= 32768,
                 'c-timed-all-original-clock-material-pins')
+    for path, sha256 in threading.POLL_LIBC.items():
+        name = threading.poll_libc_material_name(path)
+        rows = [row for row in observed['materials'] if row['name'] == name]
+        require(len(rows) == 1 and rows[0]['digest'] == 'sha256:' + sha256
+                and type(rows[0]['size']) is int and 0 < rows[0]['size'] <= threading.POLL_LIBC_MAX_BYTES,
+                'c-timed-all-selected-poll-material-pins')
     return {'component': component, 'marker': marker, 'derivation': derivation,
             'compatibilityAssets': original.supplement_evidence(artifact, component, derivation),
             'package': package_identity(artifact, marker)}
@@ -145,8 +151,12 @@ def _qualify(prepared, output, *, current=False):
                 and record['node']['programme']['status'] == 'passed'
                 and record['node']['programme']['originalSeventeenOutcomePrefix'] == 17
                 and record['node']['programme']['originalTwentyOutcomePrefix'] == 20
-                and len(record['node']['programme']['outcomes']) == 36,
+                and record['node']['programme']['originalThirtySixOutcomePrefix'] == 36
+                and len(record['node']['programme']['outcomes']) == 37,
                 'c-timed-all-original-twenty-and-sixteen-timed-outcomes')
+        require(record['node']['programme']['outcomes'][-1]['mode'] == timed.SELECT_MODE
+                and record['node']['programme']['descriptorFreeSelectTimerCaseQualified'] is True,
+                'c-timed-exact-descriptor-free-select-outcome')
         stage = 'unchanged-source-tools-products-and-original-build'
         require(time.monotonic() - started <= 1100
                 and source_identity(ROOT) == source_proof['consumerNativeSource']
@@ -154,7 +164,7 @@ def _qualify(prepared, output, *, current=False):
                 and materials() == record['materials']
                 and inventory(snapshot(application)) == source
                 and build_evidence(artifact, source) == record['build'], 'c-thread-final-source-product-and-build-fence')
-        record.update(status='passed', observedCases=36)
+        record.update(status='passed', observedCases=37)
         write_json(output / 'qualification.json', record)
         return record
     except BaseException as error:

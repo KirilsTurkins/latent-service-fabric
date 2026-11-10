@@ -6,6 +6,7 @@ from tools.rust_capsule_project import ROOT, digest, read_file
 
 SOURCE = 'tools/fixtures/dotnet-managed-capacity/Main.cs'
 REARM_SOURCE = 'tools/fixtures/dotnet-managed-capacity/TimerRearm.cs.in'
+READY_SOURCE = 'tools/fixtures/dotnet-managed-capacity/ReadyRetirement.cs.in'
 CASES = ('task-capacity', 'queue-capacity', 'timer-instance-capacity', 'periodic-timer',
     'disposed-before-dispatch', 'closing-required-timer', 'raw-native-ledger-capacity')
 LIMITS = {'tasks': 8, 'executors': 2, 'queuedWork': 2, 'waits': 16,
@@ -27,11 +28,30 @@ def rearm_source(original, snippet):
         method, snippet + method, 1)
 
 
-def project(directory, *, rearm_diagnostic=False):
+def ready_source(original, snippet):
+    """Derive the explicit low-level witness from the frozen original fixture."""
+    require(type(original) is bytes and digest(original) ==
+        'sha256:9ae5d864dd3a49d3dabff9c16e9751cc15f3e094a3e67a80a7b810d03279ae7c',
+        'capacity-ready-exact-original-fixture')
+    require(type(snippet) is bytes and digest(snippet) ==
+        'sha256:183e74450ccdd8fb80b066aa4ff327ac43e19cbcdfaf7ddd375552f754ba672a',
+        'capacity-ready-exact-reviewed-snippet')
+    switch = b'        case 7: return await Fresh();\n'
+    method = b'    private static async Task FreshTimer()\n'
+    require(original.count(switch) == original.count(method) == 1,
+        'capacity-ready-exact-insertion-points')
+    return original.replace(switch, switch + b'        case 9: return ReadyRetirementWitness();\n', 1).replace(
+        method, snippet + method, 1)
+
+
+def project(directory, *, rearm_diagnostic=False, ready_witness=False):
     require(type(rearm_diagnostic) is bool, 'capacity-timer-rearm-selection')
+    require(type(ready_witness) is bool and not (rearm_diagnostic and ready_witness),
+        'capacity-ready-witness-selection')
     app = standard_project(directory)
     source = read_file(ROOT/SOURCE)
     if rearm_diagnostic:source = rearm_source(source, read_file(ROOT/REARM_SOURCE))
+    if ready_witness:source = ready_source(source, read_file(ROOT/READY_SOURCE))
     (app/'src/Main.cs').write_bytes(source)
     lock = json.loads(read_file(app/'sdk-lock.json'))
     lock['template']['sourceDigest'] = digest(source)

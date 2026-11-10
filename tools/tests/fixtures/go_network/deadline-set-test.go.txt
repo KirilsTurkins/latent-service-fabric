@@ -1,0 +1,82 @@
+package streamdeadline
+
+import (
+    "errors"
+    "testing"
+    "time"
+    "unsafe"
+)
+
+func TestMixedMonotonicDeadlineRefusal(t *testing.T) {
+    mono := time.Now().Add(5 * time.Second)
+    wall := mono.Round(0)
+    if !mono.Equal(wall) || mono == wall { t.Fatal("pinned time monotonic premise") }
+    for _, read := range []bool{true, false} {
+        for _, reverse := range []bool{false, true} {
+            original, replacement := mono, wall
+            if reverse { original, replacement = wall, mono }
+            c := &lsfStreamConn{readDeadline: original, writeDeadline: original,
+                readBusy: read, writeBusy: !read}
+            err := c.setDeadline(replacement, read, !read)
+            if !errors.Is(err, errors.ErrUnsupported) {
+                t.Fatalf("mixed-clock-basis-accepted: read=%v reverse=%v err=%v", read, reverse, err)
+            }
+            if c.readDeadline != original || c.writeDeadline != original {
+                t.Fatal("refused rearm changed a deadline")
+            }
+        }
+    }
+}
+
+func TestSameBasisAndZeroDeadlineRemainAllowed(t *testing.T) {
+    mono := time.Now().Add(5 * time.Second)
+    wall := mono.Round(0)
+    zero := time.Time{}
+    zone := time.FixedZone("zero-offset", 0)
+    pairs := [][2]time.Time{{mono, mono}, {wall, wall.In(zone)}, {zero, zero.In(zone)}}
+    for _, pair := range pairs {
+        if !pair[0].Equal(pair[1]) { t.Fatal("equivalent time premise") }
+        for _, read := range []bool{true, false} {
+            c := &lsfStreamConn{readDeadline: pair[0], writeDeadline: pair[0],
+                readBusy: read, writeBusy: !read}
+            if err := c.setDeadline(pair[1], read, !read); err != nil {
+                t.Fatalf("same effective deadline refused: %v", err)
+            }
+        }
+    }
+}
+
+func TestBothDirectionsClosedAndIdleRemainUnchanged(t *testing.T) {
+    mono := time.Now().Add(5 * time.Second)
+    later := mono.Add(time.Second)
+    c := &lsfStreamConn{readDeadline: mono, writeDeadline: later, readBusy: true, writeBusy: true}
+    if err := c.setDeadline(mono, true, true); !errors.Is(err, errors.ErrUnsupported) {
+        t.Fatal("two-direction change must be refused")
+    }
+    if c.readDeadline != mono || c.writeDeadline != later { t.Fatal("partial setter update") }
+    c = &lsfStreamConn{readDeadline: mono, readBusy: true, closing: true}
+    if err := c.setDeadline(mono, true, false); !errors.Is(err, ErrClosed) {
+        t.Fatal("closed precedence changed")
+    }
+    c = &lsfStreamConn{readDeadline: mono}
+    wall := mono.Round(0)
+    if err := c.setDeadline(wall, true, false); err != nil || c.readDeadline != wall {
+        t.Fatal("idle deadline update must be accepted")
+    }
+}
+
+// Test-only representation adjustment models a wall-clock step without
+// changing the actual machine clock. The two deadlines remain real Go Times.
+func TestSyntheticWallStepSeparatesEqualDeadlineBases(t *testing.T) {
+    now := time.Now()
+    if now == now.Round(0) { t.Fatal("pinned Go clock has no monotonic reading") }
+    deadline := now.Add(5 * time.Second)
+    wall := deadline.Round(0)
+    if !deadline.Equal(wall) { t.Fatal("equal wall instant required") }
+    sample := now.Add(2 * time.Second)
+    type representation struct { wall uint64; ext int64; loc *time.Location }
+    if unsafe.Sizeof(time.Time{}) != unsafe.Sizeof(representation{}) { t.Fatal("pinned time layout changed") }
+    (*representation)(unsafe.Pointer(&sample)).ext = (*representation)(unsafe.Pointer(&now)).ext
+    if got := deadline.Sub(sample); got != 5 * time.Second { t.Fatalf("monotonic duration %v", got) }
+    if got := wall.Sub(sample); got != 3 * time.Second { t.Fatalf("wall duration %v", got) }
+}

@@ -12,7 +12,7 @@ from tools.c_application_dependencies import MAX_SOURCE_UNITS
 from tools.build_process import run_bounded
 from tools.build_observation import build_environment, file_identity
 from tools.c_guest.bindings import digest, generate
-from tools.c_guest import closed_filesystem, standard_facilities
+from tools.c_guest import closed_filesystem, closed_headers, standard_facilities
 from tools.c_guest.language import DEFAULT as C_STANDARD, selected_standard
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -105,6 +105,11 @@ class Compiler:
         self.threading_inputs = {}
         self.threading_clock_inputs = {}
         self.threading_poll_inputs = {}
+        self.threading_time_alias_checked = False
+        self.threading_time_alias = None
+        self.threading_time_alias_identity = None
+        self.closed_header_boundary = None
+        self.closed_header_stage = None
         if threading_tool is not None:
             from tools.c_guest import threading
             if not threading_tool.is_absolute() or threading_tool.is_symlink() or not threading_tool.is_file():
@@ -116,6 +121,17 @@ class Compiler:
                                    for name, path in self.threading_inputs.items()})
 
     def run(self, tool: str, *arguments: str) -> str:
+        if tool == 'zig' and getattr(self, 'closed_header_boundary', None) is not None:
+            self.closed_header_boundary.check_unchanged()
+            if getattr(self, 'closed_header_stage', None) is not None:
+                self.closed_header_stage.check_unchanged()
+        response = getattr(self, 'threading_time_alias', None)
+        if tool == 'zig' and response is not None and '@' + str(response) in map(str, arguments):
+            from tools.c_guest import threading
+            if (threading.timed_alias_response(self.sdk) != response
+                    or file_identity(response, 'c-threading-time-alias-response', 256)
+                    != self.threading_time_alias_identity):
+                raise ValueError('c-threading-timed-symbol-response-changed')
         remaining = self.deadline - time.monotonic()
         if remaining <= 0:
             raise ValueError("C build deadline exceeded")
@@ -159,8 +175,63 @@ class Compiler:
             self.threading_poll_inputs = poll_inputs
             self.materials.update(poll_identities)
 
+        response = threading.timed_alias_response(self.sdk)
+        identity = (file_identity(response, 'c-threading-time-alias-response', 256)
+                    if response is not None else None)
+        if getattr(self, 'threading_time_alias_checked', False):
+            if response != self.threading_time_alias or identity != self.threading_time_alias_identity:
+                raise ValueError('c-threading-timed-symbol-response-changed')
+        else:
+            self.threading_time_alias_checked = True
+            self.threading_time_alias = response
+            self.threading_time_alias_identity = identity
+            if identity is not None:
+                self.materials['c-threading-time-alias-response'] = identity
+        if getattr(self, 'isolation', None) is not None:
+            self.isolation.receipt['cTimedSourceMapping'] = {
+                'mode': 'fixed-sdk-response-v1' if response is not None else 'legacy-sleep-defines',
+                'response': identity, 'selectPrecisionQualified': False}
+
+    def select_closed_header_inputs(self) -> None:
+        boundary = closed_headers.prepare(self.paths['zig'], self.sdk)
+        previous = getattr(self, 'closed_header_boundary', None)
+        if previous is not None:
+            if boundary != previous:
+                raise ValueError('c-closed-headers-original-input-changed')
+        else:
+            self.closed_header_boundary = boundary
+            self.materials.update(boundary.materials)
+
+    def stage_closed_headers(self, destination: Path):
+        if self.isolation is None or self.closed_header_boundary is None:
+            raise ValueError('c-closed-headers-require-captured-isolation')
+        if getattr(self, 'closed_header_stage', None) is not None:
+            raise ValueError('c-closed-headers-require-fresh-stage')
+        stage = self.closed_header_boundary.stage(destination / 'closed-headers')
+        self.closed_header_stage = stage
+        guard = self.sdk / closed_headers.GUARD
+        guard_object = stage.directory / 'guard.o'
+        flags = ['cc', '-std=c11', '-target', 'wasm32-wasi', '-O2', '-Wall', '-Wextra', '-Werror',
+                 '-matomics', '-mbulk-memory', '-pthread', '-fno-lto', '-D_GNU_SOURCE=1',
+                 '-I', str(stage.directory)]
+        depfile = destination / 'closed-header-guard.d'
+        self.run('zig', *flags, '-M', '-MT', 'lsf-inputs', '-MF', str(depfile), str(guard))
+        observed = self.isolation.observe_inputs(depfile)
+        self.run('zig', *flags, '-c', str(guard), '-o', str(guard_object))
+        stage.accept_guard()
+        self.isolation.protect_inputs(stage.directory)
+        self.isolation.receipt['cClosedHeaderDeclarations'] = {
+            'profile': closed_headers.PROFILE, 'signalOperations': 'unavailable',
+            'nonlocalJumps': 'unavailable', 'guardObject': stage.guard_object,
+            'signedQualification': False}
+        return guard_object, observed
+
     def check_unchanged(self) -> None:
         self.closed_filesystem.check_unchanged()
+        if getattr(self, 'closed_header_boundary', None) is not None:
+            self.closed_header_boundary.check_unchanged()
+        if getattr(self, 'closed_header_stage', None) is not None:
+            self.closed_header_stage.check_unchanged()
         if self.threading_inputs:
             from tools.c_guest import threading
             if threading.libc_inputs(self.paths['zig']) != self.threading_inputs:
@@ -183,6 +254,13 @@ class Compiler:
                 if file_identity(path, threading.poll_libc_material_name(name),
                                  threading.POLL_LIBC_MAX_BYTES) != self.materials[name]:
                     raise ValueError('c-threading-libc-poll-input-changed')
+        if getattr(self, 'threading_time_alias_checked', False):
+            from tools.c_guest import threading
+            response = threading.timed_alias_response(self.sdk)
+            if (response != self.threading_time_alias or
+                    (response is not None and file_identity(response, 'c-threading-time-alias-response', 256)
+                     != self.threading_time_alias_identity)):
+                raise ValueError('c-threading-timed-symbol-response-changed')
         for name, path in self.paths.items():
             if file_identity(path, name) != self.materials[name]:
                 raise ValueError("C compiler tool changed during build")
@@ -264,10 +342,18 @@ class Compiler:
                 runtime_profile: str = standard_facilities.DEFAULT, language_standard: str = C_STANDARD,
                 embed_directories: tuple[Path, ...] = (),
                 dependency_sources: tuple[Path, ...] = (),
-                threading_profile: str = 'single-threaded') -> tuple[Path, dict]:
+                threading_profile: str = 'single-threaded',
+                header_profile: str = closed_headers.DEFAULT) -> tuple[Path, dict]:
         standard_facilities.selected_profile({'runtimeProfile': runtime_profile})
         selected_standard({'languageStandard': language_standard})
         threaded = threading_profile != 'single-threaded'
+        use_closed_headers = closed_headers.selected({'headerProfile': header_profile,
+                                                       'threadingProfile': threading_profile})
+        if use_closed_headers:
+            if self.isolation is None:
+                raise ValueError('c-closed-headers-require-captured-isolation')
+            closed_headers.check_defines(defines)
+            self.select_closed_header_inputs()
         if threaded:
             from tools.c_guest import threading
             threading.selected({'threadingProfile': threading_profile})
@@ -291,6 +377,10 @@ class Compiler:
         generated, lock = generate(self.run, wit_source, world, destination, self.platform,
                                    sync_core_abi=threaded)
         public = None
+        time_response = None
+        header_object, header_observed = None, []
+        if use_closed_headers:
+            header_object, header_observed = self.stage_closed_headers(destination)
         if threaded:
             graph = json.loads(self.run('wasm-tools', 'component', 'wit', '--json', str(destination / 'wit')))
             public = threading.public_export(graph)
@@ -301,7 +391,9 @@ class Compiler:
                                                standard_facilities.FETCH_STANDARD_PROFILE}
             if timed_clock:
                 self.select_threading_clock_inputs()
-                defines = threading.linked_defines(defines, timed_clock=True)
+                time_response = self.threading_time_alias
+                defines = threading.linked_defines(defines, timed_clock=True,
+                                                   time_response=time_response is not None)
             else:
                 defines = threading.linked_defines(defines)
         defines = standard_facilities.compiler_defines(runtime_profile, defines)
@@ -312,6 +404,9 @@ class Compiler:
                    "-Wl,--no-entry", "-Wl,--export-memory", "-Wl,-z,stack-size=65536",
                    f"-Wl,--max-memory={memory_bytes}", "-I", str(generated),
                    "-I", str(self.sdk / "include"), *map(str, sources)]
+        if use_closed_headers:
+            command[command.index('-I'):command.index('-I')] = ['-I', str(self.closed_header_stage.directory)]
+            command.insert(command.index(str(sources[0])), str(header_object))
         if runtime_profile in standard_facilities.FETCH_PROFILES:
             # Zig maps this to wasm-ld -s: omit debug/name metadata, not code.
             command.append('-Wl,--strip-debug')
@@ -333,6 +428,8 @@ class Compiler:
         for directory in embed_directories:
             command.append('--embed-dir=' + str(directory))
         command.extend("-D" + define for define in defines)
+        if time_response is not None:
+            command.append('@' + str(time_response))
         command.extend(map(str, static_libraries))
         if trap:
             command.append(str(self.sdk / "src/trap.c"))
@@ -341,16 +438,21 @@ class Compiler:
         if self.isolation is not None:
             preprocessor = ["cc", "-std=" + language_standard, "-target", "wasm32-wasi", "-I", str(generated),
                             "-I", str(self.sdk / "include")]
+            if use_closed_headers:
+                preprocessor[preprocessor.index('-I'):preprocessor.index('-I')] = [
+                    '-I', str(self.closed_header_stage.directory)]
             for directory in include_directories:
                 preprocessor.extend(["-I", str(directory)])
             for directory in embed_directories:
                 preprocessor.append('--embed-dir=' + str(directory))
             preprocessor.extend("-D" + define for define in defines)
+            if time_response is not None:
+                preprocessor.append('@' + str(time_response))
             preprocessor.extend(thread_flags)
             selected_sources = [*sources, generated / "probe.c"]
             if trap:
                 selected_sources.append(self.sdk / "src/trap.c")
-            observed = []
+            observed = list(header_observed)
             for index, source in enumerate(selected_sources):
                 depfile = destination / f"inputs-{index:04}.d"
                 self.run("zig", *preprocessor, "-M", "-MT", "lsf-inputs", "-MF", str(depfile), str(source))
@@ -363,7 +465,7 @@ class Compiler:
             # imposing the SDK/application's warning-as-error policy on it.
             # Fresh objects use the same target, O2, headers and thread ABI;
             # this does not admit opaque archives or caller-provided flags.
-            link_inputs = [*sources, *static_libraries, generated / 'probe.c', generated / 'probe_component_type.o']
+            link_inputs = [*([header_object] if header_object else []), *sources, *static_libraries, generated / 'probe.c', generated / 'probe_component_type.o']
             if trap:
                 link_inputs.append(self.sdk / 'src/trap.c')
             options = self.translation_options(command, link_inputs)
@@ -453,7 +555,7 @@ class Compiler:
                 'publicExport': public, 'finalComponent': component}
         self.check_unchanged()
         if self.compiler_edges is not None:
-            link_inputs = [*sources, *dependency_objects, *static_libraries,
+            link_inputs = [*([header_object] if header_object else []), *sources, *dependency_objects, *static_libraries,
                            generated / 'probe.c', generated / 'probe_component_type.o']
             if trap:
                 link_inputs.append(self.sdk / 'src/trap.c')

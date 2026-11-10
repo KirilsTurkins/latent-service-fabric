@@ -154,9 +154,13 @@ def programme(client, node, probe, manifest, target, output):
     target = deploy(client, manifest, target['publication'], generation=str(target['generation']), grants=grants)
     outcomes.append(invoke_timed(client, probe, target, output, 'timed-sleep-c11', 'c-thread-fresh-timed'))
     require(len(outcomes) == 36, 'c-timed-original-twenty-plus-sixteen-outcomes')
+    outcomes.append(invoke_timed(client, probe, target, output, fixture.SELECT_MODE, 'c-thread-timed-select'))
+    require(len(outcomes) == 37, 'c-timed-original-thirty-six-and-select-outcome')
     return {'schemaVersion': 'latent.c.thread-runtime.v1', 'status': 'passed',
         'profile': PROFILE, 'runtimeLimits': dict(original_fixture.LIMITS), 'outcomes': outcomes,
         'originalSeventeenOutcomePrefix': 17, 'originalTwentyOutcomePrefix': 20,
+        'originalThirtySixOutcomePrefix': 36, 'descriptorFreeSelectTimerCaseQualified': True,
+        'descriptorReadinessQualified': False, 'selectCancellationQualified': False,
         'finiteTimedMutexConditionAndSleepQualified': True, 'recurringCallbacksQualified': False,
         'pthreadAndMixedBasicSynchronizationQualified': True,
         'selectedRevision': selected_revision(client, target), 'full744Qualified': False,

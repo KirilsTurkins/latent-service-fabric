@@ -86,10 +86,17 @@ func lsfStreamEndpoint(address string) (string, uint16, error) {
 		}
 		host = ip.String()
 	} else {
-		host = lsfStrings.ToLower(host)
 		if len(host) == 0 || len(host) > 253 {
 			return "", 0, &AddrError{Err: "invalid host", Addr: address}
 		}
+		// Unicode case folding can map non-ASCII input to an ASCII label.
+		// Enforce this profile's ASCII-only contract before normalization.
+		for i := 0; i < len(host); i++ {
+			if host[i] >= 0x80 {
+				return "", 0, &AddrError{Err: "invalid host label", Addr: address}
+			}
+		}
+		host = lsfStrings.ToLower(host)
 		labels := lsfStrings.Split(host, ".")
 		for _, label := range labels {
 			if len(label) == 0 || len(label) > 63 || label[0] == '-' || label[len(label)-1] == '-' {
@@ -368,13 +375,20 @@ func (c *lsfStreamConn) Close() error {
 
 func (c *lsfStreamConn) LocalAddr() Addr  { return nil }      // absent from this WIT, never fabricated
 func (c *lsfStreamConn) RemoteAddr() Addr { return c.remote } // declared endpoint, not resolved peer IP
+// Equal ignores monotonic readings when either argument lacks one. A pending
+// operation cannot be rearmed, so an apparent wall-time match must also keep
+// the same clock basis. Round(0) strips only the monotonic reading.
+func lsfStreamSameDeadline(a, b time.Time) bool {
+	return a.Equal(b) && (a == a.Round(0)) == (b == b.Round(0))
+}
+
 func (c *lsfStreamConn) setDeadline(t time.Time, read, write bool) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.closing {
 		return c.opError("set", ErrClosed)
 	}
-	if read && c.readBusy && !t.Equal(c.readDeadline) || write && c.writeBusy && !t.Equal(c.writeDeadline) {
+	if read && c.readBusy && !lsfStreamSameDeadline(t, c.readDeadline) || write && c.writeBusy && !lsfStreamSameDeadline(t, c.writeDeadline) {
 		return c.opError("set", lsfStreamUnsupported())
 	}
 	if read {

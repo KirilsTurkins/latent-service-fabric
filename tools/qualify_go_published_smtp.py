@@ -28,12 +28,20 @@ LIBRARIES = {
     'github.com/reactivex/rxgo/v2': ('v2.5.0', 'rxgo.Defer/BackOffRetry/Observe'),
     'github.com/cenkalti/backoff/v4': ('v4.0.0', 'backoff.NewConstantBackOff/WithMaxRetries'),
 }
+LOST_REPLY_LIBRARIES = {
+    'github.com/emersion/go-smtp': ('v0.25.0', 'smtp.Dial/Mail/Rcpt/Data/Noop/Quit'),
+    'github.com/reactivex/rxgo/v2': ('v2.5.0', 'captured but not exercised by the lost-reply fixture'),
+    'github.com/cenkalti/backoff/v4': ('v4.0.0', 'captured but not exercised by the lost-reply fixture'),
+}
 SASL = 'github.com/emersion/go-sasl'
 SASL_VERSION = 'v0.0.0-20241020182733-b788ff22d5a6'
+LOST_REPLY_SOURCE = 'sdk/go-guest/runtime/published-smtp-lost-reply/main.go'
 
 
-def graph_evidence(declaration: dict, native: dict, artifacts: list[dict]) -> dict:
-    direct = direct_libraries(declaration, native, artifacts, LIBRARIES)
+def graph_evidence(declaration: dict, native: dict, artifacts: list[dict], *, lost_reply: bool = False) -> dict:
+    if type(lost_reply) is not bool:
+        raise ValueError('Go-published-smtp-scenario-selection')
+    direct = direct_libraries(declaration, native, artifacts, LOST_REPLY_LIBRARIES if lost_reply else LIBRARIES)
     nodes = {row['path']: row for row in native['nodes']}
     edges = []
     for owner, dependency, path in (
@@ -65,20 +73,24 @@ def graph_evidence(declaration: dict, native: dict, artifacts: list[dict]) -> di
             raise ValueError('Go-published-smtp-source-not-captured')
         sources.append({'module': module, 'version': version, **files[0]})
     return {'applicationLibraries': direct, 'transitiveEdges': edges, 'moduleSources': sources,
-            'smtpRetryPolicy': 'none', 'workerTimer': 'separate RxGo/backoff stage before network',
+            'smtpRetryPolicy': 'none', 'workerTimer': ('not exercised by the separate lost-reply fixture' if lost_reply
+                else 'separate RxGo/backoff stage before network'),
             'generators': 'never-executed', 'acquisition': 'native-MVS-zip-h1-reviewed-lock'}
 
 
-def qualify(output: Path, contracts_tool: Path, seconds: int = 1100) -> dict:
-    if type(seconds) is not int or not 30 <= seconds <= 1200:
+def qualify(output: Path, contracts_tool: Path, seconds: int = 1100, *, lost_reply: bool = False) -> dict:
+    if type(seconds) is not int or not 30 <= seconds <= 1200 or type(lost_reply) is not bool:
         raise ValueError('Go-published-smtp-deadline-invalid')
     deadline = time.monotonic() + seconds
     output = fresh(output.resolve())
     try:
         fixture = ROOT / 'sdk/go-guest/runtime/published-smtp-conformance'
-        source = snapshot(fixture)
-        if set(source) != {'main.go', 'world.wit', 'go.mod', 'go.sum'}:
+        original = snapshot(fixture)
+        if set(original) != {'main.go', 'world.wit', 'go.mod', 'go.sum'}:
             raise ValueError('Go-published-smtp-fixture-inputs')
+        source = dict(original)
+        if lost_reply:
+            source['main.go'] = read_file(ROOT / LOST_REPLY_SOURCE, 65536)
         project = create(output / 'project', 'greeting', runtime_profile=STACK_PROFILE)
         (project / 'src/main.go').write_bytes(source['main.go'])
         for name in ('go.mod', 'go.sum'):
@@ -104,7 +116,7 @@ def qualify(output: Path, contracts_tool: Path, seconds: int = 1100) -> dict:
         env.update(GOTOOLCHAIN='local', GOENV='off', GOWORK='off')
         declaration = json.loads(run_bounded([str(go), 'mod', 'edit', '-json'], project, env,
                                              10, 1024 * 1024).stdout)
-        graph = graph_evidence(declaration, native, captured['artifacts'])
+        graph = graph_evidence(declaration, native, captured['artifacts'], lost_reply=lost_reply)
         graph['nativeGraphDigest'] = digest(native_bytes)
         graph['lockDigest'] = digest(read_file(project / 'latent.dependencies.lock.json', 16 * 1024 * 1024))
 
@@ -116,7 +128,8 @@ def qualify(output: Path, contracts_tool: Path, seconds: int = 1100) -> dict:
         observation = read_file(authoring / 'build-observation.json', 16 * 1024 * 1024)
         completion = json.loads(read_file(authoring / 'BUILD-COMPLETE.json', 1024 * 1024))
         component = read_file(authoring / 'component.wasm', 64 * 1024 * 1024)
-        if completion['componentDigest'] != digest(component) or source != snapshot(fixture):
+        if (completion['componentDigest'] != digest(component) or original != snapshot(fixture)
+                or lost_reply and source['main.go'] != read_file(ROOT / LOST_REPLY_SOURCE, 65536)):
             raise ValueError('Go-published-smtp-source-or-component-changed')
         (output / 'src').mkdir()
         (output / 'src/main.go').write_bytes(source['main.go'])
@@ -140,5 +153,6 @@ if __name__ == '__main__':
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--contracts-tool', required=True, type=Path)
     parser.add_argument('--deadline-seconds', type=int, default=1100)
+    parser.add_argument('--lost-reply', action='store_true', help='build the separate controlled lost-reply fixture')
     args = parser.parse_args()
-    print(json.dumps(qualify(args.output, args.contracts_tool, args.deadline_seconds)))
+    print(json.dumps(qualify(args.output, args.contracts_tool, args.deadline_seconds, lost_reply=args.lost_reply)))
