@@ -5,21 +5,24 @@ on:
     paths: [.github/workflows/1852-stack-source-snapshot.yml]
 permissions:
   contents: read
+concurrency:
+  group: abort-stack-source-snapshot
+  cancel-in-progress: true
 jobs:
   snapshot:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - name: Fetch immutable public source histories without credentials
+      - name: Fetch public source histories without credentials and record exact identities
         shell: bash
         run: |
           set -euo pipefail
           git init --bare "$RUNNER_TEMP/lsf-stack.git"
           git -C "$RUNNER_TEMP/lsf-stack.git" fetch --depth=512 https://github.com/KirilsTurkins/latent-service-fabric.git \
-            8ea98eba85a4afa644d67654cb838ec302565c1d:refs/heads/development \
-            99156cf7410dfcf2d07650fa95884ea280259d57:refs/heads/parent \
-            1d41110ca404b833c8da4c46080646b9be0156fc:refs/heads/ownership \
-            710491c3b8fa0cf59bfc5c92e5e95d48d5ca666f:refs/heads/abort \
+            refs/heads/development:refs/heads/development \
+            refs/heads/feat/typescript-runtime-745:refs/heads/parent \
+            refs/heads/fix/typescript-745-activation-resource-ownership:refs/heads/ownership \
+            refs/heads/fix/1852-agent2-abort-engine-audit:refs/heads/abort \
             83c339673b87afabfa06f3a8e818324f46c1ae6f:refs/heads/original-parent \
             0f808bdd3977bf09d90a66bc50bde5d17155d994:refs/heads/original-development
           git -C "$RUNNER_TEMP/lsf-stack.git" show-ref > "$RUNNER_TEMP/lsf-stack-refs.txt"
