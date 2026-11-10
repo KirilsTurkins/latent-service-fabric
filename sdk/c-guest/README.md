@@ -80,6 +80,47 @@ child result classifications. Events, randomness and metrics use the generated
 typed imports directly. Every capability has an executable source under
 `examples/` (blob ownership is in `blob.c`). No wrapper retries or grants access.
 
+## Selected literal IPv4 streams
+
+A cooperative project may select the bounded stream source profile:
+
+```sh
+python3 tools/c_capsule.py new ./my-capsule \
+  --threading-profile c-context144-sync-cooperative-v1 \
+  --runtime-profile c-stream-clock-entropy-v1
+```
+
+This creator currently uses the greeting template and emits its public `greet`
+as an async WIT export, as required by the cooperative context. Its ordinary C
+implementation remains synchronous. Other templates need a compatible public
+export before they can use this profile.
+
+The profile maps selected-source socket calls onto the existing
+`latent:network/streams@0.1.0` provider. It accepts up to eight invocation-local
+blocking IPv4 stream descriptors, and `connect` uses the actual numeric address
+and port from `sockaddr_in`. The operator must separately grant that exact TCP
+endpoint, the stream provider, clocks, entropy and the cooperative runtime.
+No hostname grant is converted to an address grant, and this profile does not
+resolve hostnames.
+
+One-descriptor `select`/`pselect` supports readable and writable interest with
+a NULL timeout; the provider and activation deadlines still apply. Finite
+descriptor wait timeouts, including zero-time polling, are refused because the
+provider's timeout result does not distinguish observation expiry from expiry
+of the original connection or activation. Concurrent use or close of a busy
+descriptor is refused. Exceptional descriptor sets, descriptor `poll`, nonblocking mode,
+socket option changes, local bind, IPv6 and unsupported message flags are refused;
+`SO_TYPE` is observable and TLS is not supplied by this profile.
+`POLLPRI` is never silently ignored. Descriptor-free timer polls retain the
+existing timed runtime. Calls inside prebuilt libc objects are not remapped.
+An error after a possible write keeps the descriptor failed; the optional
+`lsf_stream_last_error` reports its original error code, accepted prefix and
+possible-effect bit while the descriptor remains open.
+
+These are finite source-level capabilities. They do not establish signed node
+execution, physical kernel retirement, general POSIX compatibility or libcurl
+easy/multi support.
+
 ## Optional closed signal and jump declarations
 
 A cooperative C project may explicitly select `c-closed-signal-jump-headers-v1`:

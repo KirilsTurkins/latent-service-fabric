@@ -23,6 +23,8 @@ def parser() -> argparse.ArgumentParser:
                      help='Explicit finite C context profile; does not grant runtime authority')
     new.add_argument('--header-profile', choices=('c-closed-signal-jump-headers-v1',),
                      help='Expose declarations only; signal and nonlocal jumps remain unavailable')
+    new.add_argument('--runtime-profile', choices=('c-stream-clock-entropy-v1',),
+                     help='Select the bounded IPv4 stream source profile; grants remain independent')
     resolve_ = commands.add_parser("resolve", help="Explicitly capture declared C source/static library closure")
     resolve_.add_argument("project", type=Path)
     resolve_.add_argument("--candidate", type=Path, required=True)
@@ -90,7 +92,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "new":
             result = create(args.directory, args.template, args.name, threading_profile=args.threading_profile,
-                            header_profile=args.header_profile)
+                            header_profile=args.header_profile, runtime_profile=args.runtime_profile)
         elif authoring:
             from tools import c_dependency_authoring as dependencies
             from tools.application_dependencies import document

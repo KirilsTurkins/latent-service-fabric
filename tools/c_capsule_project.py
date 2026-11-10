@@ -45,7 +45,7 @@ def authoring_inputs(root: Path) -> dict[str, bytes]:
 
 
 def create(directory: Path, template: str, name: str | None = None, *, threading_profile: str | None = None,
-           header_profile: str | None = None) -> Path:
+           header_profile: str | None = None, runtime_profile: str | None = None) -> Path:
     if template not in AUTHORING_TEMPLATES:
         raise ValueError("unknown C capsule template")
     name = name or "my-" + template
@@ -57,6 +57,13 @@ def create(directory: Path, template: str, name: str | None = None, *, threading
     if threading_profile is not None:
         from tools.c_guest import threading
         selected_threading = threading.selected({'threadingProfile': threading_profile})
+    if runtime_profile is not None:
+        from tools.c_guest import standard_facilities
+        selected_runtime = standard_facilities.selected_profile({'runtimeProfile': runtime_profile})
+        if selected_runtime == standard_facilities.STREAM_PROFILE and not selected_threading:
+            raise ValueError('c-stream-network-requires-cooperative-threading')
+        if selected_runtime == standard_facilities.STREAM_PROFILE and template != 'greeting':
+            raise ValueError('c-stream-network-template-requires-greeting')
     from tools.c_guest import closed_headers
     header_selection = {'threadingProfile': threading_profile or 'single-threaded'}
     if header_profile is not None:
@@ -66,6 +73,12 @@ def create(directory: Path, template: str, name: str | None = None, *, threading
     files = {"vendor/lsf/" + path: data for path, data in vendor.items()}
     files.update({"src/main.c": read_file(ROOT / "sdk/c-guest/templates" / (template + ".c")),
                   "wit/world.wit": read_file(source / "world.wit"), ".gitignore": b"/target/\n"})
+    if runtime_profile is not None and selected_runtime == standard_facilities.STREAM_PROFILE:
+        original = b'greet: func(name: string) -> result<string, string>;'
+        if files['wit/world.wit'].count(original) != 1:
+            raise ValueError('c-stream-network-greeting-world-preimage')
+        files['wit/world.wit'] = files['wit/world.wit'].replace(original,
+            b'greet: async func(name: string) -> result<string, string>;')
     if template == "http-status":
         files["wit/deps/http/package.wit"] = read_file(ROOT / "wit/platform/http-v2/package.wit")
     limits = json.loads(read_file(ROOT / "examples/echo-contract/capsule.json"))["execution"]["limits"]
@@ -78,6 +91,8 @@ def create(directory: Path, template: str, name: str | None = None, *, threading
         project['threadingProfile'] = threading.PROFILE
     if selected_headers:
         project['headerProfile'] = closed_headers.PROFILE
+    if runtime_profile is not None:
+        project['runtimeProfile'] = runtime_profile
     lock = {"formatVersion": 1, "language": "c", "sdk": json.loads(inventory(vendor)),
             "bindings": json.loads(read_file(ROOT / "tools/guest_bindings.lock.json")),
             "template": {"name": template, "sourceDigest": digest(files["src/main.c"]),
@@ -106,8 +121,16 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     if (not isinstance(project, dict) or set(project) - {"runtimeProfile", "languageStandard", "threadingProfile", "headerProfile"} != {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
             or type(project["formatVersion"]) is not int or project["formatVersion"] != 1):
         raise ValueError("unsupported capsule project format")
-    from tools.c_guest.standard_facilities import selected_profile
-    selected_profile(project)
+    from tools.c_guest.standard_facilities import selected_profile, STREAM_PROFILE
+    runtime = selected_profile(project)
+    if runtime == STREAM_PROFILE:
+        if project.get('threadingProfile', 'single-threaded') != 'c-context144-sync-cooperative-v1':
+            raise ValueError('c-stream-network-requires-cooperative-threading')
+        required = ('vendor/lsf/sdk/c-guest/src/standard-streams.c',
+                    'vendor/lsf/sdk/c-guest/include/lsf/standard-streams.h',
+                    'vendor/lsf/wit/platform/network/package.wit')
+        if not all(path in files for path in required):
+            raise ValueError('c-stream-network-requires-captured-runtime')
     from tools.c_guest.language import selected_standard
     selected_standard(project)
     from tools.c_guest import closed_headers
