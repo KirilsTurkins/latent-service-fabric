@@ -34,7 +34,11 @@ pub(super) enum QueueError {
     Expired,
     Unavailable,
     DuplicateConflict,
-    DuplicateNeedsAuthorization { source: [u8; 32], owner: u64 },
+    DuplicateNeedsAuthorization {
+        source: [u8; 32],
+        owner: u64,
+        wait_until: Instant,
+    },
     DuplicateCapacity,
     OriginalOwnerEnded,
 }
@@ -275,7 +279,7 @@ impl EntityQueue {
             Option<Arc<super::SharedCommandOwner>>,
         )>,
         duplicate_authorized: bool,
-        mut first_owner: Option<(u64, [u8; 32])>,
+        mut first_owner: Option<(u64, [u8; 32], Instant)>,
     ) -> Result<Physical, QueueError> {
         // Cover the queue's own objects and the lane's bounded copies before
         // building the channel or inserting the request. The trusted caller
@@ -309,10 +313,16 @@ impl EntityQueue {
             .checked_add(self.maximum_wait_age)
             .ok_or(QueueError::Unavailable)?
             .min(deadline);
+        let duplicate_deadline = first_owner.map_or(duplicate_deadline, |(_, _, original)| {
+            duplicate_deadline.min(original)
+        });
         let mut changes = self.signal.subscribe();
         let mut duplicate_waiter = None;
         let mut waiting_slot = None;
         let registration = loop {
+            if first_owner.is_some() && self.clock.monotonic_now() >= duplicate_deadline {
+                return Err(QueueError::Expired);
+            }
             if duplicate_waiter.is_some() {
                 if self.clock.monotonic_now() >= duplicate_deadline {
                     return Err(QueueError::Expired);
@@ -336,17 +346,18 @@ impl EntityQueue {
                         return Err(QueueError::DuplicateNeedsAuthorization {
                             source: existing.source,
                             owner: existing.generation,
+                            wait_until: duplicate_deadline,
                         });
                     }
-                    if first_owner
-                        .is_some_and(|first| first != (existing.generation, existing.source))
-                    {
+                    if first_owner.is_some_and(|(generation, source, _)| {
+                        (generation, source) != (existing.generation, existing.source)
+                    }) {
                         return Err(QueueError::OriginalOwnerEnded);
                     }
                     if existing.fingerprint != *fingerprint {
                         return Err(QueueError::DuplicateConflict);
                     }
-                    first_owner = Some((existing.generation, existing.source));
+                    first_owner = Some((existing.generation, existing.source, duplicate_deadline));
                     (None, existing.owner.clone())
                 } else {
                     if first_owner.is_some() {

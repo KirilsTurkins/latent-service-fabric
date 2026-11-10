@@ -413,13 +413,15 @@ impl NativeTransactionAdmission {
                 if let Err(super::super::entity_queue::QueueError::DuplicateNeedsAuthorization {
                     source,
                     owner,
+                    wait_until,
                 }) = &result
                 {
                     let source = *source;
                     let owner = *owner;
+                    let wait_until = *wait_until;
                     self.authorize_entity_duplicate(selection, envelope, budget)
                         .await?;
-                    first_owner = Some((owner, source));
+                    first_owner = Some((owner, source, wait_until));
                     duplicate_authorized = true;
                     continue;
                 }

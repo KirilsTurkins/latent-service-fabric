@@ -425,6 +425,7 @@ async fn source_pin_survives_owner_loss_during_duplicate_authorization() {
     let Err(QueueError::DuplicateNeedsAuthorization {
         source,
         owner: generation,
+        wait_until,
     }) = probe
     else {
         panic!("duplicate must capture the original owner before authorization");
@@ -441,7 +442,7 @@ async fn source_pin_survives_owner_loss_during_duplicate_authorization() {
             permit(),
             Some((key, fingerprint, [2; 32], None)),
             true,
-            Some((generation, source)),
+            Some((generation, source, wait_until)),
         )
         .await;
     assert!(matches!(resumed, Err(QueueError::OriginalOwnerEnded)));
@@ -1095,4 +1096,81 @@ async fn ordinary_and_duplicate_waiters_share_the_entity_queue_limit() {
     drop(owner);
     assert!(queue.waiting.lock().unwrap().is_empty());
     assert_eq!(queue.snapshot().active, 0);
+}
+
+#[tokio::test]
+async fn duplicate_authorization_cannot_refresh_the_original_wait_age() {
+    struct FakeClock {
+        start: Instant,
+        elapsed_millis: AtomicU64,
+    }
+    impl ActivationClock for FakeClock {
+        fn sample(&self) -> latent_core::ClockSample {
+            latent_core::ClockSample::new(0, self.monotonic_now())
+        }
+        fn monotonic_now(&self) -> Instant {
+            self.start + Duration::from_millis(self.elapsed_millis.load(Ordering::SeqCst))
+        }
+    }
+    let start = Instant::now();
+    let clock = Arc::new(FakeClock {
+        start,
+        elapsed_millis: AtomicU64::new(0),
+    });
+    let queue = EntityQueue::new(limits(), clock.clone()).unwrap();
+    let key = CommandIdentity::parse_hex(&"cc".repeat(32)).unwrap();
+    let fingerprint = CommandIdentity::parse_hex(&"dd".repeat(32)).unwrap();
+    let owner = queue
+        .acquire_for_command(
+            scope("tenant-a", "hot"),
+            vec![1],
+            64,
+            start + Duration::from_secs(3),
+            Arc::new(|| true),
+            permit(),
+            Some((key, fingerprint, [1; 32], None)),
+            false,
+            None,
+        )
+        .await
+        .unwrap();
+    let probe = queue
+        .acquire_for_command(
+            scope("tenant-a", "hot"),
+            vec![2],
+            64,
+            start + Duration::from_secs(3),
+            Arc::new(|| true),
+            permit(),
+            Some((key, fingerprint, [1; 32], None)),
+            false,
+            None,
+        )
+        .await;
+    let Err(QueueError::DuplicateNeedsAuthorization {
+        source,
+        owner: generation,
+        wait_until,
+    }) = probe
+    else {
+        panic!("duplicate must require original owner authorization");
+    };
+    clock.elapsed_millis.store(101, Ordering::SeqCst);
+    let resumed = queue
+        .acquire_for_command(
+            scope("tenant-a", "hot"),
+            vec![2],
+            64,
+            start + Duration::from_secs(3),
+            Arc::new(|| true),
+            permit(),
+            Some((key, fingerprint, [1; 32], None)),
+            true,
+            Some((generation, source, wait_until)),
+        )
+        .await;
+    assert!(matches!(resumed, Err(QueueError::Expired)));
+    assert_eq!(queue.duplicate_waiter_count().unwrap(), 0);
+    assert_eq!(queue.snapshot().active, 1);
+    drop(owner);
 }
