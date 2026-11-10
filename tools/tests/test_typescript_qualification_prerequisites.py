@@ -12,6 +12,7 @@ class RequiredQualificationTools(unittest.TestCase):
         for platform in ('posix', 'nt'):
             for control, diagnostic in (
                     (events.EventCallbackFailureControls, 'callback failure controls'),
+                    (events.AbortListenerIdentityControls, 'emitted abort-listener controls'),
                     (records.OwnerRetryTests, 'native owner retry controls')):
                 with self.subTest(platform=platform, control=control.__name__), \
                         patch.dict(os.environ, {}, clear=True), \

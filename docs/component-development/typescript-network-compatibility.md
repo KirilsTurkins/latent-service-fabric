@@ -1,6 +1,7 @@
 # TypeScript networking compatibility and prerequisite boundary
 
-Status reviewed on 2026-11-09 for issue #745 and integration into
+Dependency status reviewed on 2026-11-09; compiler-gate continuation on
+2026-11-10 for issue #745 and integration into
 `feat/typescript-runtime-745`, starting at
 `83c339673b87afabfa06f3a8e818324f46c1ae6f`. The development comparison used
 `b3e296215d764d22e4c683ab32c9926072610db7`. This is a partial integration
@@ -147,36 +148,80 @@ kernel final-free. Those original receipts and failures remain unchanged.
 | Partial read/write, no-progress readiness, backpressure | Existing source/transport controls pass. Historical signed echo/held-read evidence does not cover every adversarial short-transfer schedule. |
 | Cancellation, callback exceptions, distinct cancel/borrow acknowledgements | Existing captured-initializer/host controls and narrower historical signed destroy case. They do not certify final native/kernel retirement. |
 | Idle timeout, late callback and repeated activations | Deterministic application timer model checks notification without implicit close, reset on progress, cleared timer and inert late callback across fresh model instances. Actual signed timeout/deadline races remain pending. |
-| Direct/transitive selection and fallback refusal | Resolver/source-binding controls pass; a separate actual pinned-bundler control exercises transitive CommonJS through ESM and fake npm/browser fallbacks. That new compiler control was not run because the pinned frontend was unavailable. The existing suite also skipped its two pinned frontend controls, not passed them. |
+| Direct/transitive selection and fallback refusal | Resolver/source-binding controls pass; a separate actual pinned-bundler control exercises transitive CommonJS through ESM and fake npm/browser fallbacks. The compiler gate now also checks caught CommonJS imports, side-effect imports, transitive profile disablement and relative filename lookalikes. It is selected by a separate compiler-only workflow; its new hosted result remains pending; local supplementary discovery still skips the two pre-existing frontend cases. |
 | Unchanged published library | The historical direct `is-port-reachable` programme is real. No new published-library or signed transitive execution was performed in this change. |
 
-Local validation used Node 22.16.0 for host-only controls, not the pinned
-24.19.0 qualification toolchain. The new five-test boundary module passed;
-together with the unchanged 30-test socket owner, 35 tests completed with
-33 passes and two pre-existing pinned-frontend skips. The supported
-`node:net` module emitted by the resolver was compared byte-for-byte with the
-starting resolver and is unchanged. The resolver source identity nevertheless
-changes and requires a fresh normal receipt. Host model success and emission
-equality are not a substitute for a source-matched signed run.
+The initial diagnostic slice used Node 22.16.0 for host-only controls, not the
+pinned 24.19.0 qualification toolchain: five boundary cases plus the unchanged
+30-case socket suite ran with 33 passes and two existing frontend skips. The
+2026-11-10 continuation adds two preflight/result-gate controls: 37 tests ran
+with 35 passes and those same two skips. No compiler or signed pass is inferred.
+The supported `node:net` module emission remains unchanged; its resolver source
+identity still requires a fresh normal receipt.
 
-To execute the compiler controls with the normal installed pinned frontend:
+### Fail-closed compiler gate
+
+Run the gate with the normal installed pinned frontend:
 
 ```sh
-LSF_TYPESCRIPT_FRONTEND=/absolute/path/to/normal-installed-tools \
-  python3 -B -m unittest -v tools.tests.test_typescript_node_net tools.tests.test_typescript_network_boundary
 python3 -B -m tools.tests.test_typescript_network_boundary \
   --frontend /absolute/path/to/normal-installed-tools
 ```
 
-The second command requires the pinned Node/esbuild/Acorn versions and fails
-when its tools are missing; it is a compiler control, not signed qualification.
-It is not implicitly included in the host unittest pass count.
+This checks the pinned Node version, unchanged tool manifest/lock and installed
+esbuild/Acorn/TypeScript versions before running the actual bundler controls.
+It then runs every current boundary and original socket test with the selected
+frontend and Acorn. Missing tools, zero tests, skips, expected failures and
+ordinary failures all refuse. There is no exact-test-count inventory to update
+when a test is added. Ordinary unittest discovery remains supplementary:
+
+```sh
+python3 -B -m unittest -v tools.tests.test_typescript_network_boundary \
+  tools.tests.test_typescript_node_net
+```
+
+The `TypeScript networking compiler boundary` workflow invokes the gate with
+the normal pinned tools and Python requirements. It is independent of the native
+engine/Fetch jobs, so their failures cannot skip these compiler controls. The
+new compiler-only job has a 15-minute limit and a five-minute gate limit; it
+installs the normal frontend but builds no engine or native provider. Existing
+TypeScript workflows and their source/provider/origin gates are unchanged.
+Separate `typescript-network-boundary-<source>` artifacts retain `controls.log`
+and `result.json` even if a later job fails. A failed gate can leave an empty
+result file: artifact presence alone is never a pass. Only a successful step
+and a complete `latent.typescript.network-boundary.v1` result establish this
+compiler/model observation. The result records unchanged before/after source
+hashes, observed compiler cases and actual test totals; `signedExecution` and
+`providerQualification` are explicitly false. It is not a signing attestation,
+physical-retirement receipt or qualified provider installation.
+
+The first hosted integration at `a11228373ecd403e30f71ac1a1cb9ede2e2bc57e`
+executed synthetic merge `1df7c56c2500f30a3c75f1ba7f4dff388e3dec6c` in
+[CI run 42699479553](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/42699479553).
+Retained artifact `13724619433` (ZIP SHA-256
+`154773c1189ece9b0f4144749437a864b8985d1d2d401678db13802a95294c29`)
+records the five initial boundary cases without failure; it did not invoke the
+explicit compiler control. Its four failures are in AOT input agreement,
+composition source binding and embedded/Java shared-runner preservation tests.
+The Rust lane and the separate signed Fetch lane also failed; those results
+are not green CI and do not supply signed TCP evidence. This continuation does
+not modify their runtime, budget or AbortSignal owners.
 
 The existing signed owner is `tools/qualify_typescript_borrow_signed.py
 --programme node-net`. Its authenticated source, provider and native-product
 prerequisites and fixed workflow-origin checks must be satisfied; running an old
 binary or relabelling an old receipt is not a new result. A generic successful
 Fetch run also does not qualify the socket or TLS mapping.
+
+On 2026-11-10 the signed owner's required producer run `40077087832` listed
+zero artifacts. `borrow_signed_inputs.py` still authenticates producer artifact
+`12553639081`, source `6d834e502beea33fbae9347fbaf23ff8c37223b3` and its exact
+size/digest. A fresh signed TCP run therefore requires a retained matching
+producer or a separately reviewed source-authenticated replacement chain, plus
+the owner workflow's origin and native/provider inputs. Substituting the recent
+Fetch engine, widening the allowed workflow origins or attributing the old
+client receipt to this branch would not satisfy that gate. Those checks are
+unchanged here; no fresh signed TCP execution is claimed.
 
 ## What still prevents #745 from closing
 

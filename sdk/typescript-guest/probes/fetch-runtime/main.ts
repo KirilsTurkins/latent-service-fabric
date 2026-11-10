@@ -326,16 +326,16 @@ function refusedAbortFanout() {
   return graph;
 }
 
-function reentrantDefaultAbortFanout(): string {
+function reentrantDefaultAbortFanout() {
   const graph = abortFanoutGraph();
   const original = DOMException;
   const descriptor = Object.getOwnPropertyDescriptor(original.prototype, 'constructor');
   if (!descriptor) throw new Error('abort-fanout-default-constructor-missing');
-  let entered = 0;
+  const observation = {entered: 0};
   Object.defineProperty(original.prototype, 'constructor', {
     ...descriptor,
     value: function(message?: string, name?: string) {
-      ++entered;
+      ++observation.entered;
       graph.source.abort(graph.reason);
       return new original(message, name);
     },
@@ -344,13 +344,12 @@ function reentrantDefaultAbortFanout(): string {
   finally { Object.defineProperty(original.prototype, 'constructor', descriptor); }
   // This probes the selected native factory, not Node's primordial factory.
   // A missing reentrant execution is a failure, never a passing fallback.
-  if (entered !== 1) throw new Error('abort-fanout-default-factory-not-reentered');
+  if (observation.entered !== 1) throw new Error('abort-fanout-default-factory-not-reentered');
   graph.verify();
-  const fresh = new AbortController();
-  fresh.abort();
-  if (!fresh.signal.aborted || fresh.signal.reason?.name !== 'AbortError' || entered !== 1)
-    throw new Error('abort-fanout-default-constructor-not-restored');
-  return 'abort-fanout:default-reentry:first-wins';
+  // Return only the counter: retaining this completed graph while allocating
+  // the independent restoration signal would require 50 graph owners plus
+  // four fresh signal owners and the still-live export/Promise owners.
+  return observation;
 }
 
 export const api: typeof Contract = {
@@ -403,7 +402,17 @@ export const api: typeof Contract = {
         return `diagnostic:abort-fanout:${stage}:${cause}`;
       }
     }
-    if (mode === 29) return reentrantDefaultAbortFanout();
+    if (mode === 29) {
+      const observation = reentrantDefaultAbortFanout();
+      // The graph has been fully verified. Release that helper frame before a
+      // normal checkpoint, then test the restored factory independently.
+      await Promise.resolve();
+      const fresh = new AbortController();
+      fresh.abort();
+      if (!fresh.signal.aborted || fresh.signal.reason?.name !== 'AbortError' || observation.entered !== 1)
+        throw new Error('abort-fanout-default-constructor-not-restored');
+      return 'abort-fanout:default-reentry:first-wins';
+    }
     if (mode !== 0) throw new TypeError('unsupported-fetch-runtime-mode');
     return `${++calls}:${await request(url)}`;
   },

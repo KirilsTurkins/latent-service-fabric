@@ -1,22 +1,61 @@
 """Networking boundary controls; host models are not signed-guest qualification.
 
-Run host controls with unittest. Run the separate compiler control explicitly:
+Run supplementary host controls with unittest. Run the required pinned gate with:
 python -m tools.tests.test_typescript_network_boundary --frontend /path/to/tools
-The latter requires actual frontend files and never substitutes a Node/browser shim.
+The gate runs the real bundler and both host suites, refusing missing tools,
+skips and expected failures. It is compiler/model evidence, not signed execution.
 """
 import argparse
 import copy
+import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from tools.tests import test_typescript_node_net as socket_controls
 from tools.typescript_guest import net_profile
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def require_complete_controls(result):
+    """Record observed execution without an exact test-count maintenance gate."""
+    if (result.testsRun < 1 or not result.wasSuccessful() or result.skipped
+            or result.expectedFailures or result.unexpectedSuccesses):
+        raise ValueError('network-boundary-controls-incomplete')
+    return {'testsRun': result.testsRun, 'skipped': 0, 'failures': 0, 'errors': 0,
+            'expectedFailures': 0, 'unexpectedSuccesses': 0}
+
+
+def pinned_frontend(frontend: Path):
+    """Fail before compiler execution when the normal installed lock is absent."""
+    tools = frontend.resolve(strict=True)
+    node = shutil.which('node')
+    if node is None:
+        raise ValueError('network-boundary-pinned-node-required')
+    specification = json.loads((ROOT/'sdk/typescript-guest/tools/package.json').read_bytes())
+    version = subprocess.run([node, '--version'], capture_output=True, text=True,
+                             check=True, timeout=10).stdout.strip()
+    if version != 'v' + specification['engines']['node']:
+        raise ValueError('network-boundary-pinned-node-required')
+    for name in ('package.json', 'package-lock.json'):
+        if (tools/name).read_bytes() != (ROOT/'sdk/typescript-guest/tools'/name).read_bytes():
+            raise ValueError('network-boundary-installed-lock-drift')
+    lock = json.loads((tools/'package-lock.json').read_bytes())['packages']
+    versions = {'node': version}
+    for package, entrypoint in (('esbuild', 'lib/main.js'), ('acorn', 'dist/acorn.mjs'),
+                                ('typescript', 'bin/tsc')):
+        installed = tools/'node_modules'/package
+        actual = json.loads((installed/'package.json').read_bytes())['version']
+        if actual != lock['node_modules/' + package]['version'] or not (installed/entrypoint).is_file():
+            raise ValueError('network-boundary-pinned-package-required:' + package)
+        versions[package] = actual
+    return tools, node, versions
 
 
 class TypeScriptNetworkBoundary(unittest.TestCase):
@@ -62,6 +101,37 @@ for(const enabled of [false,true]) {
  assert(backend.resolve({path:NET_PRIVATE,namespace:'lsf-owned-node-net',importer:'arbitrary'}).errors);
 }
 """)
+
+    def test_required_gate_never_counts_skips_or_expected_failures_as_passes(self):
+        # TestResult doubles check the gate only, not compiler execution.
+        def successful():
+            result = unittest.TestResult()
+            result.testsRun = 1
+            return result
+        self.assertEqual(require_complete_controls(successful())['testsRun'], 1)
+        with self.assertRaisesRegex(ValueError, 'controls-incomplete'):
+            require_complete_controls(unittest.TestResult())
+        for field in ('skipped', 'failures', 'errors', 'expectedFailures', 'unexpectedSuccesses'):
+            result = successful()
+            getattr(result, field).append(('synthetic-control', 'not an executed pass'))
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'controls-incomplete'):
+                require_complete_controls(result)
+
+    def test_pinned_frontend_rejects_missing_node_wrong_version_and_changed_lock(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            tools = Path(temporary)
+            with patch.object(shutil, 'which', return_value=None), self.assertRaisesRegex(ValueError, 'pinned-node'):
+                pinned_frontend(tools)
+            with patch.object(shutil, 'which', return_value='node'), \
+                    patch.object(subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, 'v0.0.0\n')), \
+                    self.assertRaisesRegex(ValueError, 'pinned-node'):
+                pinned_frontend(tools)
+            (tools/'package.json').write_text('{}', encoding='utf-8')
+            version = json.loads((ROOT/'sdk/typescript-guest/tools/package.json').read_bytes())['engines']['node']
+            with patch.object(shutil, 'which', return_value='node'), \
+                    patch.object(subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, 'v' + version + '\n')), \
+                    self.assertRaisesRegex(ValueError, 'installed-lock-drift'):
+                pinned_frontend(tools)
 
     def test_changed_resolver_invalidates_selected_source_receipt(self):
         identities = net_profile.identities(ROOT)
@@ -155,21 +225,11 @@ for(let activation=0;activation<2;++activation) {
 """)
 
 
-def compiler_controls(frontend: Path) -> None:
+def compiler_controls(frontend: Path) -> dict:
     """Real bundler control, required tools rather than a successful skip."""
     self = unittest.TestCase()
-    tools = frontend.resolve(strict=True)
-    node = shutil.which('node')
-    self.assertIsNotNone(node)
-    expected_node = json.loads((ROOT/'sdk/typescript-guest/tools/package.json').read_bytes())['engines']['node']
-    actual_node = subprocess.run([node, '--version'], capture_output=True, text=True, check=True, timeout=10).stdout.strip()
-    self.assertEqual(actual_node, 'v' + expected_node, 'normal pinned compiler Node required')
-    lock = json.loads((ROOT/'sdk/typescript-guest/tools/package-lock.json').read_bytes())['packages']
-    for package in ('esbuild', 'acorn'):
-        installed = json.loads((tools/'node_modules'/package/'package.json').read_bytes())
-        self.assertEqual(installed['version'], lock['node_modules/' + package]['version'])
-    for name in ('esbuild/lib/main.js', 'acorn/dist/acorn.mjs'):
-        self.assertTrue((tools/'node_modules'/name).is_file(), 'normal pinned frontend required: ' + name)
+    tools, node, versions = pinned_frontend(frontend)
+    attempts = []
     with tempfile.TemporaryDirectory() as temporary:
         work = Path(temporary)
         imports = work/'imports.json'
@@ -178,7 +238,7 @@ def compiler_controls(frontend: Path) -> None:
             'nativeClockInterfaces': ['latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0'],
             'standardNetProfile': net_profile.PROFILE, 'standardNetIdentities': net_profile.identities(ROOT)}
 
-        def bundle(source, configured=None, passed=True):
+        def bundle(label, source, configured=None, passed=True):
             (work/'src').mkdir(exist_ok=True)
             (work/'src/main.ts').write_text(source, encoding='utf-8')
             config = work/'config.json'
@@ -191,16 +251,23 @@ def compiler_controls(frontend: Path) -> None:
                 imports, config, tools/'node_modules/acorn/dist/acorn.mjs'],
                 capture_output=True, text=True, timeout=20)
             self.assertEqual(result.returncode == 0, passed, result.stdout + result.stderr)
+            attempts.append({'case': label, 'expected': 'compiled' if passed else 'refused',
+                             'returncode': result.returncode})
             if not passed:
+                for path in (output, work/'application.mjs.inputs.json', work/'application.mjs.map'):
+                    self.assertFalse(path.exists(), 'refused build left a successful-looking output')
                 return result.stderr
-            return output.read_text(encoding='utf-8'), json.loads((work/'application.mjs.inputs.json').read_bytes())
+            observation = json.loads((work/'application.mjs.inputs.json').read_bytes())
+            # Exercise the normal source-bound reader, not only a string in the bundle.
+            net_profile.selected(observation, net_profile.identities(ROOT))
+            return output.read_text(encoding='utf-8'), observation
 
         # The same compiler boundary serves ordinary direct/transitive
         # modules. Fake npm fallbacks must never satisfy a standard builtin.
         # These local packages test resolution, not published-library evidence.
         for name in ('tls', 'node:tls', 'dns', 'node:dns/promises',
                      'stream', 'node:stream/promises', 'node:stream/web', 'stream/consumers'):
-            message = bundle(f'import * as api from {json.dumps(name)}; export const value=api;', passed=False)
+            message = bundle('direct-' + name, f'import * as api from {json.dumps(name)}; export const value=api;', passed=False)
             canonical = name.removeprefix('node:')
             self.assertIn('standard-node-network-module-unavailable:node:' + canonical, message)
             self.assertIn('typescript-network-compatibility.md', message)
@@ -220,23 +287,68 @@ def compiler_controls(frontend: Path) -> None:
             target = packages/name
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(json.dumps(content) if isinstance(content, dict) else content, encoding='utf-8')
-        transitive, observation = bundle("import net from 'outer'; export const Socket=net.Socket;", captured)
+        transitive, observation = bundle('transitive-net', "import net from 'outer'; export const Socket=net.Socket;", captured)
         self.assertEqual(observation['standardNetModules'], ['node:net'])
         self.assertIn('node_modules/outer/index.js', observation['inputs'])
         self.assertIn('node_modules/inner/index.cjs', observation['inputs'])
         self.assertNotIn('browser-fallback-must-not-run', transitive)
         for name in ('dns', 'node:tls', 'node:stream/consumers'):
             (packages/'inner/index.cjs').write_text('module.exports = require(' + json.dumps(name) + ');', encoding='utf-8')
-            message = bundle("import api from 'outer'; export const value=api;", captured, passed=False)
+            message = bundle('transitive-' + name, "import api from 'outer'; export const value=api;", captured, passed=False)
+            self.assertIn('standard-node-network-module-unavailable:node:' + name.removeprefix('node:'), message)
+        # A library catching require() failures must not turn an unavailable
+        # builtin into a successful npm/browser fallback during compilation.
+        for name in ('dns', 'node:tls', 'node:stream'):
+            (packages/'inner/index.cjs').write_text(
+                'try { module.exports = require(' + json.dumps(name) +
+                '); } catch { module.exports = "fake-success"; }', encoding='utf-8')
+            message = bundle('caught-' + name, "import api from 'outer'; export const value=api;", captured, passed=False)
+            self.assertIn('standard-node-network-module-unavailable:node:' + name.removeprefix('node:'), message)
+        # The selected package can shadow a builtin name only as a file, never
+        # as standard net. Profile disablement applies at transitive depth too.
+        (packages/'inner/index.cjs').write_text("module.exports = require('net');", encoding='utf-8')
+        disabled = {key: value for key, value in captured.items() if not key.startswith('standardNet')}
+        message = bundle('transitive-disabled-net', "import api from 'outer'; export const value=api;", disabled, passed=False)
+        self.assertIn('standard-node-net-requires-exact-stream-runtime-and-declaration', message)
+        for name in ('dns', 'node:tls', 'node:stream/web'):
+            message = bundle('side-effect-' + name, 'import ' + json.dumps(name) + '; export const value=7;', passed=False)
             self.assertIn('standard-node-network-module-unavailable:node:' + name.removeprefix('node:'), message)
         # A relative filename resembling a builtin remains ordinary input.
         (packages/'inner/index.cjs').write_text("module.exports = require('./dns.cjs');", encoding='utf-8')
         (packages/'inner/dns.cjs').write_text("module.exports = 42;", encoding='utf-8')
-        _, observation = bundle("import value from 'outer'; export const answer=value;", captured)
+        _, observation = bundle('relative-lookalike', "import value from 'outer'; export const answer=value;", captured)
         self.assertNotIn('standardNetModules', observation)
+    return {'versions': versions, 'cases': attempts}
+
+
+def pinned_gate(frontend: Path) -> dict:
+    """Use the existing frontend; preserve all original socket tests unchanged."""
+    from tools.typescript_guest.build import RECIPE
+    paths = sorted(set((*RECIPE, 'tools/tests/test_typescript_node_net.py',
+        'tools/tests/test_typescript_network_boundary.py',
+        'tools/tests/fixtures/typescript_node_net_generated.json',
+        'sdk/typescript-guest/tools/package.json', 'sdk/typescript-guest/tools/package-lock.json')))
+    def source_identities():
+        return {name: 'sha256:' + hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in paths}
+    before = source_identities()
+    compiler = compiler_controls(frontend)
+    tools = frontend.resolve(strict=True)
+    with patch.dict(os.environ, {'LSF_TYPESCRIPT_FRONTEND': str(tools),
+                                 'LSF_TYPESCRIPT_ACORN': str(tools/'node_modules/acorn/dist/acorn.mjs')}):
+        suite = unittest.TestSuite((unittest.defaultTestLoader.loadTestsFromModule(socket_controls),
+                                   unittest.defaultTestLoader.loadTestsFromTestCase(TypeScriptNetworkBoundary)))
+        controls = require_complete_controls(unittest.TextTestRunner(verbosity=2).run(suite))
+    if source_identities() != before:
+        raise ValueError('network-boundary-source-drift')
+    return {'schemaVersion': 'latent.typescript.network-boundary.v1', 'status': 'passed',
+            'scope': 'compiler-and-host-controls-only', 'signedExecution': False,
+            'providerQualification': False, 'sourceInputs': before,
+            'compiler': compiler, 'hostControls': controls}
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Run the actual networking module bundler control (not signed qualification).')
+    parser = argparse.ArgumentParser(description='Run the required pinned networking compiler and host gate (not signed qualification).')
     parser.add_argument('--frontend', required=True, type=Path, help='Normal installed pinned TypeScript tools directory')
-    compiler_controls(parser.parse_args().frontend)
+    # A success observation is emitted only after every real compiler/model
+    # control passes without skips. Stderr retains the ordinary test failures.
+    print(json.dumps(pinned_gate(parser.parse_args().frontend), sort_keys=True))
