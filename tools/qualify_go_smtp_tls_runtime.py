@@ -38,7 +38,7 @@ CACHE_CASES = ('TestCacheRetainsIdentityThroughGC', 'TestCacheRejectsOversizedDE
     'TestCacheRejectsNinthDistinctCertificateAndRetainsHits', 'TestCacheAggregateDERBudgetAndNoEviction',
     'TestCacheParseFailureMatchesUpstreamAndConsumesNoEntry', 'TestFreshCacheStartsEmpty',
     'TestConcurrentSameCertificatePublishesOnce', 'TestCacheExactPerDERBoundaryAndOneByteRefusal')
-REFERENCE_GO_SHA = '548d3c32f83fa81152f543eb1526be7884cfe0526eb5e9ce29d3eca14786e7e0'
+REFERENCE_GO_SHA = '5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b'
 
 CASE = 'signed_ordinary_go_smtp_starttls_preserves_trust_hostname_and_fresh_connection'
 PUBLISHED_CASE = 'signed_published_go_smtp_and_separate_worker_timer_preserve_original_owners'
@@ -46,6 +46,7 @@ SUITE = 'latent-wasmtime.test.go_smtp_tls'
 V5_PUSH_BRANCH = 'feat/go-smtp-starttls-20261020'
 V7_PUSH_BRANCH = 'feat/go-smtp-v7-20261110'
 PUBLISHED_PUSH_BRANCH = 'feat/go-published-smtp-v7-20261110'
+REFERENCE_PIN_PUSH_BRANCH = 'fix/go-smtp-reference-pin-20261110'
 EXPECTED = (
     ('ordinary-smtp-plain', 0, 'ordinary-smtp-plain', 1),
     ('ordinary-starttls13', 1, 'ordinary-smtp-tls13', 1),
@@ -69,7 +70,7 @@ def workflow_profile(event: str, branch: str, choice: str) -> str:
     if event == 'push' and not choice:
         if branch == V5_PUSH_BRANCH:
             return MANAGED_PROFILE
-        if branch in (V7_PUSH_BRANCH, PUBLISHED_PUSH_BRANCH):
+        if branch in (V7_PUSH_BRANCH, PUBLISHED_PUSH_BRANCH, REFERENCE_PIN_PUSH_BRANCH):
             return STACK_PROFILE
     elif event == 'workflow_dispatch':
         if choice in ('', 'v5'):
@@ -83,7 +84,7 @@ def workflow_program(event: str, branch: str, choice: str) -> str:
     if event == 'push' and not choice:
         if branch in (V5_PUSH_BRANCH, V7_PUSH_BRANCH):
             return 'standard'
-        if branch == PUBLISHED_PUSH_BRANCH:
+        if branch in (PUBLISHED_PUSH_BRANCH, REFERENCE_PIN_PUSH_BRANCH):
             return 'published'
     elif event == 'workflow_dispatch':
         if choice in ('', 'standard'):
@@ -91,6 +92,12 @@ def workflow_program(event: str, branch: str, choice: str) -> str:
         if choice == 'published':
             return 'published'
     raise ValueError('Go-smtp-tls-runtime-workflow-program')
+
+
+def require_reference_go(raw: bytes) -> None:
+    """Authenticate the complete official Linux Go executable before use."""
+    if not isinstance(raw, bytes) or hashlib.sha256(raw).hexdigest() != REFERENCE_GO_SHA:
+        raise ValueError('Go-tls-cache-reference-compiler-preimage')
 
 
 def encoded(value: dict) -> bytes:
@@ -317,8 +324,7 @@ def qualify(root: Path, output: Path, revision: str, reference_go: Path, profile
     try:
         reference_go = reference_go.resolve(strict=True)
         reference_before = read_file(reference_go, 64 * 1024 * 1024)
-        if hashlib.sha256(reference_before).hexdigest() != REFERENCE_GO_SHA:
-            raise ValueError('Go-tls-cache-reference-compiler-preimage')
+        require_reference_go(reference_before)
         reference = output / 'cache-reference'; reference.mkdir()
         (reference / 'go.mod').write_bytes(b'module example.invalid/tlscache\n\ngo 1.27.3\n')
         cache_source = read_file(root / CACHE_TEMPLATE, 16384)

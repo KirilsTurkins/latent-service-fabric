@@ -1,8 +1,10 @@
 """Closed finite protocol outcomes, explicit verification and original owners."""
+import hashlib
 import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 
 from tools import qualify_go_smtp_tls_runtime as runtime
 from tools import go_network_read_barrier as network_runtime
@@ -60,7 +62,9 @@ class GoSmtpTlsRuntimeTests(unittest.TestCase):
         self.assertEqual(runtime.workflow_profile('push', runtime.V5_PUSH_BRANCH, ''), runtime.MANAGED_PROFILE)
         self.assertEqual(runtime.workflow_profile('push', runtime.V7_PUSH_BRANCH, ''), runtime.STACK_PROFILE)
         self.assertEqual(runtime.workflow_profile('push', runtime.PUBLISHED_PUSH_BRANCH, ''), runtime.STACK_PROFILE)
+        self.assertEqual(runtime.workflow_profile('push', runtime.REFERENCE_PIN_PUSH_BRANCH, ''), runtime.STACK_PROFILE)
         self.assertEqual(runtime.workflow_program('push', runtime.PUBLISHED_PUSH_BRANCH, ''), 'published')
+        self.assertEqual(runtime.workflow_program('push', runtime.REFERENCE_PIN_PUSH_BRANCH, ''), 'published')
         self.assertEqual(runtime.workflow_program('push', runtime.V7_PUSH_BRANCH, ''), 'standard')
         self.assertEqual(runtime.workflow_program('workflow_dispatch', 'development', ''), 'standard')
         self.assertEqual(runtime.workflow_program('workflow_dispatch', 'development', 'published'), 'published')
@@ -81,8 +85,9 @@ class GoSmtpTlsRuntimeTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'workflow-selection'):
                     runtime.workflow_profile(event, branch, choice)
         workflow = (ROOT / '.github/workflows/go-smtp-tls-runtime.yml').read_text()
-        for branch in (runtime.V5_PUSH_BRANCH, runtime.V7_PUSH_BRANCH, runtime.PUBLISHED_PUSH_BRANCH):
+        for branch in (runtime.V5_PUSH_BRANCH, runtime.V7_PUSH_BRANCH, runtime.PUBLISHED_PUSH_BRANCH, runtime.REFERENCE_PIN_PUSH_BRANCH):
             self.assertIn("'" + branch + "'", workflow)
+        self.assertIn("github.ref_name == '" + runtime.REFERENCE_PIN_PUSH_BRANCH + "'", workflow)
         for expected in ('default: v5', 'options: [v5, v7]',
                          'LSF_GO_SMTP_TLS_DISPATCH_PROFILE: ${{ inputs.profile }}', '--workflow-selection'):
             self.assertIn(expected, workflow)
@@ -299,6 +304,16 @@ class GoSmtpTlsRuntimeTests(unittest.TestCase):
         self.assertIn('wcc.derSize += len(der)', source)
         for absent in ('runtime.AddCleanup(', 'weak.Make(', 'go func', 'append(', 'delete(', 'wcc.used--', 'wcc.derSize -='):
             self.assertNotIn(absent, source)
+
+    def test_reference_go_pin_is_archive_derived_and_rejects_changed_bytes(self):
+        self.assertEqual(runtime.REFERENCE_GO_SHA,
+                         '5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b')
+        fixture = b'one fixed compiler preimage'
+        with mock.patch.object(runtime, 'REFERENCE_GO_SHA', hashlib.sha256(fixture).hexdigest()):
+            runtime.require_reference_go(fixture)
+            for altered in (fixture + b'!', fixture[:-1], b'', 'not bytes'):
+                with self.subTest(altered=altered), self.assertRaisesRegex(ValueError, 'compiler-preimage'):
+                    runtime.require_reference_go(altered)
 
     def test_reference_projects_only_package_declaration_and_requires_all_eight_actual_passes(self):
         source = (ROOT / runtime.CACHE_TEMPLATE).read_bytes()
