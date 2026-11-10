@@ -20,7 +20,7 @@ fn incoming_configuration_requires_private_leaf_and_refuses_incomplete_installat
             "transaction":{"processingScope":"orders", "namespace":"orders", "incarnation":1,
                 "qualification":{"formatVersion":1,"serverVersion":"2.14.6",
                     "streamCreated":"2026-10-06T00:00:00Z","maximumMessages":10000,
-                    "maximumBytes":67108864,"maximumAgeMillis":0,"maximumMessageBytes":16384},
+                    "maximumBytes":67_108_864,"maximumAgeMillis":0,"maximumMessageBytes":16384},
                 "duplicateWindowMillis":30000,"stateReadBytes":4096,"stateWriteBytes":2048,"effectCount":2}
         }], "maximumPayloadBytes":1024,"operationTimeoutMillis":1000,"pollIntervalMillis":10,
         "maximumDeliveries":3,"ackWaitMillis":3000,"redeliveryDelayMillis":100
@@ -40,9 +40,8 @@ fn incoming_configuration_requires_private_leaf_and_refuses_incomplete_installat
         }],
     });
     assert!(super::super::triggers::derive(&config).unwrap().is_some());
-    let failure = match config.derive() {
-        Ok(_) => panic!("incomplete incoming startup was accepted"),
-        Err(failure) => failure,
+    let Err(failure) = config.derive() else {
+        panic!("incomplete incoming startup was accepted");
     };
     assert!(failure
         .message

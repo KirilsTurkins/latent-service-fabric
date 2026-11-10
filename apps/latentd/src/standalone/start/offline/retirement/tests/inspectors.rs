@@ -117,7 +117,7 @@ impl Probe {
 #[tokio::test]
 async fn warm_configured_http_inspector_retires_after_graph_drop() {
     let directory = TempDir::new().unwrap();
-    let settings = fixture::warm(&directory).await;
+    let settings = Box::pin(fixture::warm(&directory)).await;
     let until = Instant::now() + settings.shutdown_grace();
     arm();
     let result = Box::pin(StandaloneNode::inspect_configured_http_effects(
@@ -156,7 +156,7 @@ async fn warm_configured_http_inspector_retires_after_graph_drop() {
 #[tokio::test]
 async fn warm_transaction_host_inspector_retires_after_graph_drop() {
     let directory = TempDir::new().unwrap();
-    let settings = fixture::warm(&directory).await;
+    let settings = Box::pin(fixture::warm(&directory)).await;
     let until = Instant::now() + settings.shutdown_grace();
     arm();
     let result = Box::pin(StandaloneNode::inspect_transaction_hosts(

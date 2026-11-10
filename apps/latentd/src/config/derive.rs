@@ -15,6 +15,10 @@ use super::{
     LOAD_MAXIMUM_AGE, MIB, TRUST_CLASS,
 };
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "Keep the complete validated startup settings and trigger custody gate together"
+)]
 pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformError> {
     super::security::validate(config)?;
     let state = super::state::derive_optional(config)?;

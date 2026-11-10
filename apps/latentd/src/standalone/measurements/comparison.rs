@@ -131,7 +131,7 @@ async fn run(
     let release = release(&node, prepared).await;
     let after_release = node.sample("after-prepared-release")?;
     let work = node.work;
-    let shutdown = node.shutdown().await?;
+    let shutdown = Box::pin(node.shutdown()).await?;
     data.close()?;
     let clean = shutdown.clean
         && shutdown.telemetry_flushed

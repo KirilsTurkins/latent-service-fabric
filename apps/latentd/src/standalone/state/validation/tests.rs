@@ -199,6 +199,10 @@ fn quota() -> TenantQuota {
 }
 
 #[test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "Keep startup source custody and corruption cases in one bounded fixture"
+)]
 fn startup_censuses_source_custody_and_refuses_corrupt_rows() {
     use latent_core::StateNamespaceId;
     use latent_state::{

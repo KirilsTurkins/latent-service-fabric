@@ -279,6 +279,10 @@ async fn missing_checkpoint_on_actual_restart_never_recreates_fresh_evidence_or_
 }
 
 #[tokio::test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "Keep checkpoint startup, restart, and original source identity checks in one scenario"
+)]
 async fn checkpoint_with_matching_source_inventory_survives_restart() {
     use latent_core::{StateNamespaceId, TenantId};
     use latent_state::{
