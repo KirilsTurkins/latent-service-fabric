@@ -194,6 +194,35 @@ fn response_expiry_preserves_uncertain_effect_inbox_source_and_original_key_afte
 }
 
 #[test]
+fn oversized_result_refuses_expiry_without_advancing_maintenance_or_replacing_the_row() {
+    let (_dir, store, effects) = setup();
+    let record = completed(&store, &effects, "oversized-result");
+    let owner = ResultMaintenanceOwner::default();
+    let initial = owner
+        .anchor(&store, None, observation(1000, 0), maintenance)
+        .unwrap();
+    let key = result_row_key(record.id, record.attempt);
+    let oversized = vec![0_u8; crate::atomic::codec::RESULT_BYTES + 1];
+    store
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: key.clone(),
+                value: Some(oversized.clone()),
+            }],
+        })
+        .unwrap();
+    assert_eq!(
+        owner.step(&store, observation(1100, 100), maintenance),
+        Err(AtomicError::Corrupt)
+    );
+    let view = store.snapshot().unwrap();
+    assert_eq!(view.get(&key).unwrap(), Some(oversized));
+    let progress = view.get(&MaintenanceProgress::key()).unwrap().unwrap();
+    assert_eq!(MaintenanceProgress::decode(&progress).unwrap(), initial);
+}
+
+#[test]
 fn current_policy_revocation_at_retention_fence_keeps_body_and_progress_unchanged() {
     let (_dir, store, effects) = setup();
     let record = completed(&store, &effects, "revoke-maintenance");

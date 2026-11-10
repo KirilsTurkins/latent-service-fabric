@@ -184,7 +184,13 @@ fn retire_body(
     batch: &mut AtomicBatch,
 ) -> Result<u64, AtomicError> {
     let result_key = result_row_key(record.id, record.attempt);
-    let old = view.get(&result_key)?.ok_or(AtomicError::Corrupt)?;
+    // Reject a malformed over-limit durable result before copying its bytes.
+    // A smaller engine maximum already bounds every readable row more tightly.
+    let old = match view.get_bounded(&result_key, crate::atomic::codec::RESULT_BYTES) {
+        Err(latent_state::embedded::StoreError::Invalid) => view.get(&result_key)?,
+        other => other?,
+    }
+    .ok_or(AtomicError::Corrupt)?;
     if old.starts_with(b"LCE\0") {
         ExpiredResult::decode(&old)?.verify(record)?;
         return Ok(0);
