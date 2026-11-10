@@ -1,4 +1,6 @@
 import java.util.ArrayList;
+import java.util.AbstractCollection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.Callable;
@@ -46,6 +48,7 @@ public final class ExecutorInvokeAllWaitReferenceControl {
     }
     private static final class Direct extends AbstractExecutorService {
         final List<Observed<?>> created = new ArrayList<>();
+        boolean requirePriorSubmission, rejectSecondConstruction;
         boolean holdSecond;
         boolean rejectSecond;
         boolean sleepAfterFirst;
@@ -56,6 +59,8 @@ public final class ExecutorInvokeAllWaitReferenceControl {
         int submissions;
         CountDownLatch preparing, continuePreparation;
         @Override protected <T> RunnableFuture<T> newTaskFor(Callable<T> task) {
+            if (!created.isEmpty() && (rejectSecondConstruction || requirePriorSubmission && submissions == 0))
+                throw new Marker();
             if (created.isEmpty() && preparing != null) {
                 preparing.countDown();
                 try {
@@ -180,8 +185,46 @@ public final class ExecutorInvokeAllWaitReferenceControl {
         need(executor.submissions == 1 && result.get().get(0).get() == 42
             && result.get().get(1).isCancelled(), "first-submission-after-preparation");
     }
+    private static void untimedConstructionOrder() throws Exception {
+        Direct sequential = new Direct(); sequential.requirePriorSubmission = true;
+        List<Future<Integer>> result = sequential.invokeAll(List.of(() -> 42, () -> 43));
+        need(sequential.submissions == 2 && result.get(0).get() == 42 && result.get(1).get() == 43,
+            "untimed-construction-order");
+        Direct failure = new Direct(); failure.rejectSecondConstruction = true;
+        try { failure.invokeAll(List.of(() -> 42, () -> 43)); throw new AssertionError("missing-construction-failure"); }
+        catch (Marker expected) {
+            need(failure.submissions == 1 && failure.created.get(0).delegate.get().equals(42)
+                && failure.created.get(0).cancelCalls == 1, "untimed-construction-failure");
+        }
+        Direct nullElement = new Direct();
+        List<Callable<Integer>> nullable = new ArrayList<>(); nullable.add(() -> 42); nullable.add(null);
+        try { nullElement.invokeAll(nullable); throw new AssertionError("missing-null-failure"); }
+        catch (NullPointerException expected) {
+            need(nullElement.submissions == 1 && nullElement.created.get(0).cancelCalls == 1, "untimed-null");
+        }
+        Direct iteration = new Direct();
+        var throwing = new AbstractCollection<Callable<Integer>>() {
+            public int size() { return 2; }
+            public Iterator<Callable<Integer>> iterator() {
+                return new Iterator<>() {
+                    int index;
+                    public boolean hasNext() { return index < 2; }
+                    public Callable<Integer> next() { if (index++ == 0) return () -> 42; throw new Marker(); }
+                };
+            }
+        };
+        try { iteration.invokeAll(throwing); throw new AssertionError("missing-iterator-failure"); }
+        catch (Marker expected) {
+            need(iteration.submissions == 1 && iteration.created.get(0).cancelCalls == 1, "untimed-iterator");
+        }
+        Direct timed = new Direct(); timed.requirePriorSubmission = true;
+        try { timed.invokeAll(List.of(() -> 42, () -> 43), 1, TimeUnit.SECONDS); throw new AssertionError("timed-order"); }
+        catch (Marker expected) {
+            need(timed.submissions == 0 && timed.created.get(0).cancelCalls == 1, "timed-materialization");
+        }
+    }
     public static void main(String[] args) throws Exception {
-        if (args.length > 1 || args.length == 1 && !List.of("untimed", "guarded", "late", "negative", "suffix", "exception", "nonpositive", "first-submission").contains(args[0]))
+        if (args.length > 1 || args.length == 1 && !List.of("untimed", "guarded", "late", "negative", "suffix", "exception", "nonpositive", "first-submission", "untimed-order").contains(args[0]))
             throw new IllegalArgumentException("control-mode");
         if (args.length == 0 || args[0].equals("untimed")) { completed(false, false); completed(false, true); }
         if (args.length == 0 || args[0].equals("guarded")) { guarded(false); guarded(true); }
@@ -191,7 +234,8 @@ public final class ExecutorInvokeAllWaitReferenceControl {
         if (args.length == 0 || args[0].equals("exception")) exceptionCancelsAll();
         if (args.length == 0 || args[0].equals("nonpositive")) nonpositive();
         if (args.length == 0 || args[0].equals("first-submission")) firstSubmissionAfterPreparation();
+        if (args.length == 0 || args[0].equals("untimed-order")) untimedConstructionOrder();
         System.out.println("INVOKE_ALL_WAIT PASS " + (args.length == 0
-            ? "completed;subclass;late;negative-get;timeout-suffix;exception;done-failure;nonpositive;first-submission" : args[0]));
+            ? "completed;subclass;late;negative-get;timeout-suffix;exception;done-failure;nonpositive;first-submission;untimed-order" : args[0]));
     }
 }

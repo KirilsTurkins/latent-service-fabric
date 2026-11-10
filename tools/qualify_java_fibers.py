@@ -971,19 +971,20 @@ def executor_invoke_any_ready_control(compiler: Compiler, output: Path, referenc
 def executor_invoke_all_wait_control(compiler: Compiler, output: Path, reference: Path) -> dict:
     """Compare completed/timeout results and retain actual source-owned work."""
     expected = ('INVOKE_ALL_WAIT PASS completed;subclass;late;negative-get;timeout-suffix;'
-                'exception;done-failure;nonpositive;first-submission')
+                'exception;done-failure;nonpositive;first-submission;untimed-order')
     for scope, directory in (('jdk', reference), ('source', output)):
         result = compiler.run('executor-invoke-all-wait-' + scope, 'java', '-Xmx256m', '-cp', directory,
                               'ExecutorInvokeAllWaitReferenceControl').strip()
         if result != expected: raise ValueError('Java executor invokeAll wait ' + scope + ' control did not complete')
-    for mode in ('timeout', 'optimistic', 'prefix', 'first-prepared'):
+    for mode in ('timeout', 'optimistic', 'prefix', 'first-prepared', 'construction-failure', 'accept-then-throw'):
         result = compiler.run('executor-invoke-all-owner-' + mode, 'java', '-Xmx256m', '-cp', output,
                               'ExecutorInvokeAllOwnerControl', mode).strip()
         expected = ('INVOKE_ALL_OWNER ' + mode + ' held=1:1:' + ('1' if mode == 'prefix' else '0')
                     + ' retired=0:0:0 result-settle=1')
         if result != expected: raise ValueError('Java executor invokeAll owner control did not complete')
     return {'status': 'JDK-and-SDK-source-controls-passed', 'ownership': 'synthetic-host-ledger-only',
-            'firstSubmissionDeadline': 'original-positive-then-elapsed', 'componentExecutionPerformed': False,
+            'firstSubmissionDeadline': 'original-positive-then-elapsed',
+            'untimedSubmissionOrder': 'construct-record-submit', 'componentExecutionPerformed': False,
             'actualGuestBindingsUsed': False}
 
 
