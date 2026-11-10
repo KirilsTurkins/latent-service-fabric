@@ -6,6 +6,7 @@ import re
 import unittest
 
 from tools import go_network_read_barrier as runtime
+from tools import qualify_go_network_runtime as controller
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -63,6 +64,32 @@ class GoNetworkRuntimeTests(unittest.TestCase):
                              (self.output() + marker.replace(b'"tasks": 16', b'"tasks": 16, "extra": 0'), runtime.V7_PROFILE)):
             with self.subTest(profile=profile, output=raw[-160:]), self.assertRaises(ValueError):
                 runtime.profile_witness(raw, profile)
+
+    def test_workflow_selection_is_bounded_and_preserves_v5_default(self):
+        for branch in controller.V5_PUSH_BRANCHES:
+            with self.subTest(branch=branch):
+                self.assertEqual(controller.workflow_profile('push', branch, ''), controller.MANAGED_PROFILE)
+        self.assertEqual(controller.workflow_profile('push', controller.V7_PUSH_BRANCH, ''), controller.STACK_PROFILE)
+        for choice in ('', 'v5'):
+            self.assertEqual(controller.workflow_profile('workflow_dispatch', 'development', choice),
+                             controller.MANAGED_PROFILE)
+        self.assertEqual(controller.workflow_profile('workflow_dispatch', 'development', 'v7'),
+                         controller.STACK_PROFILE)
+        for event, branch, choice in (
+                ('push', 'development', ''), ('push', controller.V7_PUSH_BRANCH, 'v5'),
+                ('push', next(iter(controller.V5_PUSH_BRANCHES)), 'v7'),
+                ('workflow_dispatch', 'development', 'v6'), ('workflow_dispatch', 'development', 'V7'),
+                ('pull_request', controller.V7_PUSH_BRANCH, ''), ('', '', '')):
+            with self.subTest(event=event, branch=branch, choice=choice):
+                with self.assertRaisesRegex(ValueError, 'workflow-selection'):
+                    controller.workflow_profile(event, branch, choice)
+        workflow = (ROOT / '.github/workflows/go-network-runtime.yml').read_text()
+        for branch in controller.V5_PUSH_BRANCHES | {controller.V7_PUSH_BRANCH}:
+            self.assertIn("'"+ branch +"'", workflow)
+        self.assertIn('default: v5', workflow)
+        self.assertIn('options: [v5, v7]', workflow)
+        self.assertIn('LSF_GO_NETWORK_DISPATCH_PROFILE: ${{ inputs.profile }}', workflow)
+        self.assertIn('--workflow-selection', workflow)
 
     def test_v7_owner_uses_only_the_original_profile_limits(self):
         source = (ROOT / 'tools/qualify_go_network_runtime.py').read_text()

@@ -30,6 +30,28 @@ from tools.stage_runtime_wit import stage
 from tools.test_run import redact
 
 SUITE = 'latent-wasmtime.test.go_outbound_streams'
+V5_PUSH_BRANCHES = frozenset({
+    'feat/go-standard-tcp-runtime-20261020',
+    'feat/go-network-read-order-20261108',
+    'feat/go-cancel-original-read-20261109',
+    'feat/sdk-738-bounded-outbound-owners',
+})
+V7_PUSH_BRANCH = 'feat/go-network-v7-20261110'
+
+
+def workflow_profile(event: str, branch: str, choice: str) -> str:
+    """Select only a declared push owner or the bounded manual profile choice."""
+    if event == 'push' and not choice:
+        if branch in V5_PUSH_BRANCHES:
+            return MANAGED_PROFILE
+        if branch == V7_PUSH_BRANCH:
+            return STACK_PROFILE
+    elif event == 'workflow_dispatch':
+        if choice in ('', 'v5'):
+            return MANAGED_PROFILE
+        if choice == 'v7':
+            return STACK_PROFILE
+    raise ValueError('Go-network-runtime-workflow-selection')
 
 
 def encoded(value: dict) -> bytes:
@@ -166,6 +188,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--source-commit', default=os.environ.get('GITHUB_SHA'))
-    parser.add_argument('--profile', choices=(MANAGED_PROFILE, STACK_PROFILE), default=MANAGED_PROFILE)
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument('--profile', choices=(MANAGED_PROFILE, STACK_PROFILE))
+    selection.add_argument('--workflow-selection', action='store_true')
     arguments = parser.parse_args()
-    print(json.dumps(qualify(ROOT, arguments.output.resolve(), arguments.source_commit, arguments.profile)))
+    if arguments.workflow_selection:
+        profile = workflow_profile(os.environ.get('GITHUB_EVENT_NAME', ''), os.environ.get('GITHUB_REF_NAME', ''),
+                                   os.environ.get('LSF_GO_NETWORK_DISPATCH_PROFILE', ''))
+    else:
+        profile = arguments.profile or MANAGED_PROFILE
+    print(json.dumps(qualify(ROOT, arguments.output.resolve(), arguments.source_commit, profile)))
