@@ -20,6 +20,49 @@ use crate::runtime::ProviderConfirmation;
 
 use super::*;
 
+#[test]
+fn dispatcher_inventory_stops_when_original_admission_expires() {
+    let fixture = Fixture::new(StoreLimits::default());
+    let before = fixture.record_bytes();
+    let view = fixture.store().snapshot().unwrap();
+    let mut calls = 0;
+    assert_eq!(
+        DispatchCatalog::validate_view_with_checkpoint(&view, &mut || {
+            calls += 1;
+            if calls == 5 {
+                Err(StoreError::Unavailable)
+            } else {
+                Ok(())
+            }
+        }),
+        Err(StoreError::Unavailable)
+    );
+    assert_eq!(calls, 5);
+    let mut total = 0;
+    DispatchCatalog::validate_view_with_checkpoint(&view, &mut || {
+        total += 1;
+        Ok(())
+    })
+    .unwrap();
+    assert!(total > 6);
+    let mut later = 0;
+    assert_eq!(
+        DispatchCatalog::validate_view_with_checkpoint(&view, &mut || {
+            later += 1;
+            if later == total - 1 {
+                Err(StoreError::Unavailable)
+            } else {
+                Ok(())
+            }
+        }),
+        Err(StoreError::Unavailable)
+    );
+    assert_eq!(later, total - 1);
+    drop(view);
+    assert_eq!(fixture.record_bytes(), before);
+    DispatchCatalog::validate_view(&fixture.store().snapshot().unwrap()).unwrap();
+}
+
 struct Fixture {
     root: tempfile::TempDir,
     store: Option<EmbeddedStore>,

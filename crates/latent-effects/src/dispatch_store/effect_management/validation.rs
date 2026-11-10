@@ -184,16 +184,23 @@ impl EffectManagementCatalog {
     }
 
     pub fn validate_view(view: &ReadView) -> Result<(), StoreError> {
-        walk(view, PLAN_PREFIX, |key, bytes| {
+        Self::validate_view_with_checkpoint(view, &mut || Ok(()))
+    }
+
+    pub(crate) fn validate_view_with_checkpoint(
+        view: &ReadView,
+        checkpoint: &mut dyn FnMut() -> Result<(), StoreError>,
+    ) -> Result<(), StoreError> {
+        walk(view, PLAN_PREFIX, checkpoint, |key, bytes| {
             validate_plan(view, key, bytes)
         })?;
-        walk(view, RECEIPT_PREFIX, |key, bytes| {
+        walk(view, RECEIPT_PREFIX, checkpoint, |key, bytes| {
             validate_receipt(view, key, bytes)
         })?;
-        walk(view, COUNTER_PREFIX, |key, bytes| {
+        walk(view, COUNTER_PREFIX, checkpoint, |key, bytes| {
             validate_counter(view, key, bytes)
         })?;
-        walk(view, SLOT_PREFIX, |key, bytes| {
+        walk(view, SLOT_PREFIX, checkpoint, |key, bytes| {
             Self::validate_row(key, bytes)?;
             let (effect, sequence) = slot_identity(key)?;
             let operation = bytes.try_into().map_err(|_| StoreError::Corrupt)?;
@@ -206,7 +213,7 @@ impl EffectManagementCatalog {
             }
             Ok(())
         })?;
-        walk(view, &reservation_prefix(), |key, bytes| {
+        walk(view, &reservation_prefix(), checkpoint, |key, bytes| {
             Self::validate_row(key, bytes)?;
             let operation = identity(key, &reservation_prefix())?;
             let plan = load_plan(view, &operation)?;
@@ -468,10 +475,12 @@ fn reservation_prefix() -> Vec<u8> {
 fn walk(
     view: &ReadView,
     prefix: &[u8],
+    checkpoint: &mut dyn FnMut() -> Result<(), StoreError>,
     mut verify: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
 ) -> Result<(), StoreError> {
     let mut cursor = None;
     loop {
+        checkpoint()?;
         let page = view.scan_after(
             Family::Maintenance,
             prefix,
@@ -480,9 +489,12 @@ fn walk(
             1024 * 1024,
         )?;
         for (key, bytes) in &page.rows {
+            checkpoint()?;
             verify(key, bytes)?;
         }
         cursor = page.resume;
+        checkpoint()?;
+        let _ = view.is_empty()?;
         if cursor.is_none() {
             return Ok(());
         }

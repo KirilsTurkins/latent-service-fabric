@@ -209,20 +209,39 @@ impl DispatchCatalog {
     /// Other families/prefixes are left to the complete command registry. No
     /// native view, engine owner or materialized backlog escapes this callback.
     pub fn validate_view(view: &ReadView) -> Result<(), StoreError> {
-        crate::dispatch_store::control::ControlCatalog::validate_view(view)?;
-        crate::dispatch_store::effect_management::EffectManagementCatalog::validate_view(view)?;
+        Self::validate_view_with_checkpoint(view, &mut || Ok(()))
+    }
+
+    /// Recheck the original caller's admission throughout the bounded scan.
+    /// The callback supplies no store access or authority of its own.
+    pub fn validate_view_with_checkpoint(
+        view: &ReadView,
+        checkpoint: &mut dyn FnMut() -> Result<(), StoreError>,
+    ) -> Result<(), StoreError> {
+        crate::dispatch_store::control::ControlCatalog::validate_view_with_checkpoint(
+            view, checkpoint,
+        )?;
+        crate::dispatch_store::effect_management::EffectManagementCatalog::validate_view_with_checkpoint(
+            view, checkpoint,
+        )?;
+        checkpoint()?;
         let owner = view
             .get(&OwnerRecord::key())?
             .as_deref()
             .map(OwnerRecord::decode)
             .transpose()?;
-        walk(view, Family::Outbox, EFFECT_PREFIX, |key, bytes| {
-            validate_effect(view, owner, key, bytes)
-        })?;
+        walk(
+            view,
+            Family::Outbox,
+            EFFECT_PREFIX,
+            checkpoint,
+            |key, bytes| validate_effect(view, owner, key, bytes),
+        )?;
         walk(
             view,
             Family::Maintenance,
             crate::recovery_close::RECEIPT_PREFIX,
+            checkpoint,
             |key, bytes| {
                 let receipt = crate::recovery_close::CloseReceipt::validate_row(key, bytes)?;
                 crate::recovery_close::validate_receipt_links(view, &receipt)
@@ -232,6 +251,7 @@ impl DispatchCatalog {
             view,
             Family::PayloadReference,
             PAYLOAD_PREFIX,
+            checkpoint,
             |key, bytes| {
                 validate_row(key, bytes)?;
                 let effect = effect_from_key(key, PAYLOAD_PREFIX)?;
@@ -242,34 +262,50 @@ impl DispatchCatalog {
                     .map_err(storage_error)
             },
         )?;
-        walk(view, Family::Maintenance, DUE_PREFIX, |key, bytes| {
-            let due = DueRecord::decode(key, bytes)?;
-            let record = load(view, &due.effect)?;
-            if expected_due(&record)? != Some(due) {
-                return Err(StoreError::Corrupt);
-            }
-            Ok(())
-        })?;
-        walk(view, Family::Attempt, HISTORY_PREFIX, |key, bytes| {
-            validate_history(view, key, bytes)
-        })?;
+        walk(
+            view,
+            Family::Maintenance,
+            DUE_PREFIX,
+            checkpoint,
+            |key, bytes| {
+                let due = DueRecord::decode(key, bytes)?;
+                let record = load(view, &due.effect)?;
+                if expected_due(&record)? != Some(due) {
+                    return Err(StoreError::Corrupt);
+                }
+                Ok(())
+            },
+        )?;
+        walk(
+            view,
+            Family::Attempt,
+            HISTORY_PREFIX,
+            checkpoint,
+            |key, bytes| validate_history(view, key, bytes),
+        )?;
         let mut prefix = RESERVATION_PREFIX.to_vec();
         prefix.extend_from_slice(ATTEMPT_RESERVATION_PREFIX);
-        walk(view, Family::Maintenance, &prefix, |key, bytes| {
-            validate_row(key, bytes)?;
-            let effect = effect_from_key(key, &prefix)?;
-            let record = load(view, &effect)?;
-            if record.disposition() != Disposition::Dispatching
-                || LogicalReservation::decode(bytes)?
-                    != (LogicalReservation {
-                        generation: record.claim_generation(),
-                        bytes: DISPOSITION_RESERVED_BYTES,
-                    })
-            {
-                return Err(StoreError::Corrupt);
-            }
-            Ok(())
-        })
+        walk(
+            view,
+            Family::Maintenance,
+            &prefix,
+            checkpoint,
+            |key, bytes| {
+                validate_row(key, bytes)?;
+                let effect = effect_from_key(key, &prefix)?;
+                let record = load(view, &effect)?;
+                if record.disposition() != Disposition::Dispatching
+                    || LogicalReservation::decode(bytes)?
+                        != (LogicalReservation {
+                            generation: record.claim_generation(),
+                            bytes: DISPOSITION_RESERVED_BYTES,
+                        })
+                {
+                    return Err(StoreError::Corrupt);
+                }
+                Ok(())
+            },
+        )
     }
 
     /// A persisted dispatcher epoch requires an admitted external checkpoint at
@@ -442,15 +478,20 @@ fn walk(
     view: &ReadView,
     family: Family,
     prefix: &[u8],
+    checkpoint: &mut dyn FnMut() -> Result<(), StoreError>,
     mut validate: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
 ) -> Result<(), StoreError> {
     let mut cursor = None;
     loop {
+        checkpoint()?;
         let page = view.scan_after(family, prefix, cursor.as_deref(), 16, 4 * 1024 * 1024)?;
         for (key, bytes) in &page.rows {
+            checkpoint()?;
             validate(key, bytes)?;
         }
         cursor = page.resume;
+        checkpoint()?;
+        let _ = view.is_empty()?;
         if cursor.is_none() {
             return Ok(());
         }

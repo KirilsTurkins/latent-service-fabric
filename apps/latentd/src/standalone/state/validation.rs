@@ -152,7 +152,7 @@ fn validate_inventory_inner(
     )?;
     let report = census.finish()?;
     live(original)?;
-    DispatchCatalog::validate_view(view)?;
+    DispatchCatalog::validate_view_with_checkpoint(view, &mut || live(original))?;
     finish_validation(view, original)?;
     Ok(report.inbox_custody)
 }
@@ -197,7 +197,7 @@ fn validate_global_bootstrap(
         || live(original),
     )?;
     live(original)?;
-    DispatchCatalog::validate_view(view)?;
+    DispatchCatalog::validate_view_with_checkpoint(view, &mut || live(original))?;
     finish_validation(view, original)
 }
 
