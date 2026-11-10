@@ -5,7 +5,7 @@ use latent_core::{test_support::TestClock, ActivationClock, ClockSample, SystemA
 use std::{
     future::Future,
     io::Write,
-    sync::atomic::{AtomicBool, AtomicU64, Ordering},
+    sync::atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering},
     time::{Duration, Instant},
 };
 use tokio::sync::Notify;
@@ -18,6 +18,8 @@ pub struct ZeroClock {
     seen: AtomicBool,
     pending: AtomicBool,
     target_live: AtomicBool,
+    ticker_mode: bool,
+    ticker_stage: AtomicU8,
     notify: Notify,
 }
 
@@ -30,7 +32,29 @@ impl ZeroClock {
             seen: AtomicBool::new(false),
             pending: AtomicBool::new(false),
             target_live: AtomicBool::new(false),
+            ticker_mode: false,
+            ticker_stage: AtomicU8::new(0),
             notify: Notify::new(),
+        }
+    }
+
+    /// Reuse the same bounded clock and wait registry for one ticker scenario.
+    pub fn for_ticker() -> Self {
+        let mut clock = Self::new();
+        clock.ticker_mode = true;
+        clock
+    }
+
+    pub async fn ticker_pending(&self, stage: u8) {
+        assert!(self.ticker_mode && (1..=3).contains(&stage));
+        loop {
+            let notified = self.notify.notified();
+            let observed = self.ticker_stage.load(Ordering::Acquire);
+            assert!(observed <= stage, "ticker wait stage advanced unexpectedly");
+            if observed == stage {
+                return;
+            }
+            notified.await;
         }
     }
 
@@ -86,7 +110,46 @@ impl ZeroClock {
         let mut reported = false;
         std::future::poll_fn(|cx| {
             let result = sleep.as_mut().poll(cx);
-            if result.is_pending() && !reported && deadline == self.origin + Duration::from_nanos(5)
+            if result.is_pending() && !reported && self.ticker_mode {
+                if let Some(delta) = deadline.checked_duration_since(self.origin) {
+                    if delta <= Duration::from_nanos(100) {
+                        let stage = usize::from(self.ticker_stage.load(Ordering::Acquire));
+                        let deadlines = [5, 10, 30];
+                        let before = [0, 5, 29];
+                        assert!(stage < deadlines.len(), "extra short ticker wait");
+                        assert_eq!(
+                            delta,
+                            Duration::from_nanos(deadlines[stage]),
+                            "wrong ticker deadline"
+                        );
+                        assert_eq!(
+                            self.clock.monotonic_now(),
+                            self.origin + Duration::from_nanos(before[stage]),
+                            "ticker wait entered at wrong clock edge"
+                        );
+                        assert!(
+                            !self.target_live.swap(true, Ordering::AcqRel),
+                            "overlapping ticker waits"
+                        );
+                        reported = true;
+                        target.armed = true;
+                        writeln!(
+                            std::io::stderr().lock(),
+                            "LSF-GO-TICKER-CLOCK-V1|wait-pending|{}|{}",
+                            before[stage],
+                            deadlines[stage]
+                        )
+                        .expect("write ticker wait witness");
+                        self.ticker_stage
+                            .store((stage + 1) as u8, Ordering::Release);
+                        self.notify.notify_one();
+                    }
+                }
+            }
+            if result.is_pending()
+                && !reported
+                && !self.ticker_mode
+                && deadline == self.origin + Duration::from_nanos(5)
             {
                 reported = true;
                 assert!(
@@ -154,6 +217,41 @@ mod tests {
         assert_eq!(active.load(Ordering::Acquire), 0);
         assert_eq!(clock.pending_waiters(), 0);
         assert!(!clock.target_live());
+    }
+
+    #[tokio::test]
+    async fn ticker_waits_remain_pending_at_each_controlled_clock_edge() {
+        let clock = ZeroClock::for_ticker();
+        let active = AtomicU64::new(0);
+        let entered = Notify::new();
+        for (stage, deadline, advance) in [(1, 5, 5), (2, 10, 24), (3, 30, 1)] {
+            let mut wait = Box::pin(clock.wait(
+                clock.origin() + Duration::from_nanos(deadline),
+                &active,
+                &entered,
+            ));
+            require_pending(&mut wait).await;
+            clock.ticker_pending(stage).await;
+            assert!(clock.target_live());
+            assert_eq!(active.load(Ordering::Acquire), 1);
+            assert_eq!(clock.pending_waiters(), 1);
+            clock.advance(Duration::from_nanos(advance));
+            wait.await;
+            assert!(!clock.target_live());
+            assert_eq!(active.load(Ordering::Acquire), 0);
+            assert_eq!(clock.pending_waiters(), 0);
+        }
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "wrong ticker deadline")]
+    async fn ticker_rejects_a_foreign_short_wait() {
+        let clock = ZeroClock::for_ticker();
+        let active = AtomicU64::new(0);
+        let entered = Notify::new();
+        let mut wrong =
+            Box::pin(clock.wait(clock.origin() + Duration::from_nanos(6), &active, &entered));
+        require_pending(&mut wrong).await;
     }
 
     #[tokio::test]
