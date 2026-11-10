@@ -110,7 +110,7 @@
   "semantics": "No ambient sockets, custom TLS or redirects; guest FILE allocations remain within original Store memory; local free never credits Root memory.",
   "qualification": "not-established-by-source",
   "getMetadata": {
-    "size": "Validated Content-Length, or signed off_t -1 if absent. No buffering/replay to invent length.",
+    "size": "Validated Content-Length up to the signed off_t maximum, or signed off_t -1 if absent. For HEAD, a value larger than size_t is reported in url_stat while URL.length remains the SIZE_MAX unknown sentinel. Other methods require a size_t-representable length. No buffering/replay to invent length.",
     "atimeAndMtime": "0: unknown; Last-Modified is not interpreted, and no local clock authority is acquired.",
     "scope": "Optional url_stat on successful HTTP GET and standalone Stat via a separately authorized HEAD request. A positive GET offset uses a single bounded byte Range with validated partial-response metadata; conditional requests remain unsupported."
   },

@@ -398,6 +398,7 @@ jobs:
             ${{ runner.temp }}/dotnet-reflection-boundaries/build/compiler-containment.json
             ${{ runner.temp }}/dotnet-reflection-boundaries/node/workflow.json
             ${{ runner.temp }}/dotnet-reflection-boundaries/node/FAILED.json
+            ${{ runner.temp }}/dotnet-reflection-boundaries/node/controls/*.json
             ${{ runner.temp }}/dotnet-reflection/qualification.json
             ${{ runner.temp }}/dotnet-reflection/FAILED.json
             ${{ runner.temp }}/dotnet-reflection/capture.json

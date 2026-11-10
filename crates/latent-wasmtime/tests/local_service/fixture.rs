@@ -48,6 +48,8 @@ mod guest_runtime;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[path = "outbound/owners.rs"]
 pub mod streams;
+#[path = "zero_clock.rs"]
+pub(crate) mod zero_clock;
 
 pub struct Observations {
     pub starts: Mutex<Vec<latent_telemetry::ActivationObservationContext>>,
@@ -101,12 +103,37 @@ impl ActivationIdSource for Ids {
 pub struct ObservedReadWait {
     pub active: AtomicU64,
     pub entered: tokio::sync::Notify,
+    zero_clock: Option<Arc<zero_clock::ZeroClock>>,
 }
+impl ObservedReadWait {
+    pub fn system() -> Self {
+        Self {
+            active: AtomicU64::new(0),
+            entered: tokio::sync::Notify::new(),
+            zero_clock: None,
+        }
+    }
+
+    pub fn controlled(clock: Arc<zero_clock::ZeroClock>) -> Self {
+        Self {
+            active: AtomicU64::new(0),
+            entered: tokio::sync::Notify::new(),
+            zero_clock: Some(clock),
+        }
+    }
+}
+
 impl latent_executor::PreparationReadWait for ObservedReadWait {
     fn now(&self) -> Instant {
+        if let Some(clock) = &self.zero_clock {
+            return clock.monotonic_now();
+        }
         latent_executor::PreparationReadWait::now(&latent_node::CurrentnessReadTimer)
     }
     fn wait_until(&self, deadline: Instant) -> latent_core::BoxFuture<'_, ()> {
+        if let Some(clock) = &self.zero_clock {
+            return Box::pin(clock.wait(deadline, &self.active, &self.entered));
+        }
         struct Active<'a>(&'a AtomicU64);
         impl Drop for Active<'_> {
             fn drop(&mut self) {
@@ -130,6 +157,11 @@ impl latent_executor::PreparationReadWait for ObservedReadWait {
         deadline: Instant,
         budget: &latent_core::ActivationBudget,
     ) -> Result<latent_executor::OwnedPreparationWait<'a>, PlatformError> {
+        if let Some(clock) = &self.zero_clock {
+            return latent_executor::OwnedPreparationWait::try_boxed(budget, || {
+                clock.wait(deadline, &self.active, &self.entered)
+            });
+        }
         struct Active<'a>(&'a AtomicU64);
         impl Drop for Active<'_> {
             fn drop(&mut self) {
@@ -274,6 +306,40 @@ impl Fixture {
         )
         .await
     }
+    /// The zero-origin diagnostic alone supplies a finite test clock/wait.
+    /// The real node, broker, signed component, timer and original budget remain.
+    pub async fn with_zero_clock_activation_runtime(
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        limits: latent_core::activation_runtime::RuntimeLimits,
+        call_wall_millis: u64,
+        clock: Arc<zero_clock::ZeroClock>,
+    ) -> Self {
+        Self::try_with_packages_and_load_controlled(
+            1,
+            false,
+            true,
+            None,
+            Some(provided),
+            Arc::new(ZeroClockFixtureLoad(Arc::clone(&clock))),
+            None,
+            Some((limits, call_wall_millis, None)),
+            None,
+            None,
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            None,
+            false,
+            false,
+            false,
+            Some(clock),
+        )
+        .await
+        .unwrap()
+    }
+
     pub async fn with_named_activation_runtime(
         cells: u32,
         provided: (
@@ -765,9 +831,8 @@ impl Fixture {
         .unwrap()
     }
     #[expect(
-        clippy::too_many_lines,
         clippy::too_many_arguments,
-        reason = "one explicit real catalog, broker and node ownership composition for integration tests"
+        reason = "preserve the existing fixture constructor and argument ownership"
     )]
     async fn try_with_packages_and_load(
         cells: u32,
@@ -794,6 +859,59 @@ impl Fixture {
         numeric_capture: bool,
         go_stack_ceiling: bool,
         original_provider_configuration: bool,
+    ) -> Result<Self, PlatformError> {
+        Self::try_with_packages_and_load_controlled(
+            cells,
+            foreign,
+            permit_target,
+            audit,
+            provided,
+            load,
+            identities,
+            activation_runtime,
+            additional_runtime_tenant,
+            two_tenant_admission,
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            outbound_streams,
+            numeric_capture,
+            go_stack_ceiling,
+            original_provider_configuration,
+            None,
+        )
+        .await
+    }
+
+    #[expect(
+        clippy::too_many_lines,
+        clippy::too_many_arguments,
+        reason = "one explicit real catalog, broker and node ownership composition for integration tests"
+    )]
+    async fn try_with_packages_and_load_controlled(
+        cells: u32,
+        foreign: bool,
+        permit_target: bool,
+        audit: Option<latent_audit::AuditHandle>,
+        provided: Option<(
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        )>,
+        load: Arc<dyn NodeLoadSource>,
+        identities: Option<RuntimeIdentities>,
+        activation_runtime: Option<(
+            latent_core::activation_runtime::RuntimeLimits,
+            u64,
+            Option<bool>,
+        )>,
+        additional_runtime_tenant: Option<TenantId>,
+        two_tenant_admission: Option<TwoTenantAdmission>,
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))] outbound_streams: Option<
+            Box<latent_streams::StreamProviderConfig>,
+        >,
+        numeric_capture: bool,
+        go_stack_ceiling: bool,
+        original_provider_configuration: bool,
+        zero_clock: Option<Arc<zero_clock::ZeroClock>>,
     ) -> Result<Self, PlatformError> {
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         let stream_enabled = outbound_streams.is_some();
@@ -1133,7 +1251,10 @@ impl Fixture {
                 )
                 .unwrap();
         }
-        let clock: Arc<dyn ActivationClock> = Arc::new(SystemActivationClock);
+        let clock: Arc<dyn ActivationClock> = match &zero_clock {
+            Some(clock) => clock.clone(),
+            None => Arc::new(SystemActivationClock),
+        };
         let broker_limits = CapabilityBrokerLimits::default();
         let broker = ActivationCapabilityBroker::new(
             catalog.lifecycle_authority(),
@@ -1383,6 +1504,7 @@ impl Fixture {
         let read_wait = Arc::new(ObservedReadWait {
             active: AtomicU64::new(0),
             entered: tokio::sync::Notify::new(),
+            zero_clock,
         });
         let factory = WasmtimeComponentEngineFactory::with_catalog(
             config,
@@ -1625,6 +1747,59 @@ impl NodeLoadSource for SyntheticFixtureLoad {
             queue_delay_millis: 0,
             observed_at: Instant::now(),
         })
+    }
+}
+
+/// The diagnostic load sample must use the same original clock as admission.
+/// This retains the existing synthetic healthy load and normal freshness checks.
+struct ZeroClockFixtureLoad(Arc<zero_clock::ZeroClock>);
+impl NodeLoadSource for ZeroClockFixtureLoad {
+    fn snapshot(&self) -> Result<NodeLoadSnapshot, PlatformError> {
+        Ok(NodeLoadSnapshot {
+            accepting: true,
+            cpu_pressure_milli: 0,
+            memory_pressure_milli: 0,
+            queue_delay_millis: 0,
+            observed_at: self.0.monotonic_now(),
+        })
+    }
+}
+
+#[cfg(test)]
+mod zero_clock_load_tests {
+    use super::*;
+
+    #[test]
+    fn fixture_load_uses_the_injected_admission_clock() {
+        let clock = Arc::new(zero_clock::ZeroClock::new());
+        let origin = clock.monotonic_now();
+        // The original live source observes a later domain value than this
+        // deliberately frozen clock, which admission must reject as future.
+        std::thread::sleep(Duration::from_millis(1));
+        let live = SyntheticFixtureLoad.snapshot().unwrap();
+        assert!(origin.checked_duration_since(live.observed_at).is_none());
+
+        let load = ZeroClockFixtureLoad(Arc::clone(&clock));
+        let initial = load.snapshot().unwrap();
+        assert_eq!(
+            origin.checked_duration_since(initial.observed_at),
+            Some(Duration::ZERO)
+        );
+        assert!(initial.accepting);
+        assert_eq!(
+            (
+                initial.cpu_pressure_milli,
+                initial.memory_pressure_milli,
+                initial.queue_delay_millis,
+            ),
+            (0, 0, 0)
+        );
+
+        clock.advance(Duration::from_nanos(5));
+        assert_eq!(
+            load.snapshot().unwrap().observed_at,
+            origin + Duration::from_nanos(5)
+        );
     }
 }
 fn deployment(

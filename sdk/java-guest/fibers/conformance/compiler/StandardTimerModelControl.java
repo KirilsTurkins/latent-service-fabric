@@ -66,6 +66,47 @@ public final class StandardTimerModelControl {
         var normalize = RuntimePlugin.class.getDeclaredMethod("normalizeOwnedTimerReferences", ClassHolder.class);
         normalize.setAccessible(true);
         for (ClassHolder model : models) normalize.invoke(null, model);
+        var timerModel = models.get(0);
+        var serialLock = timerModel.getField("serialLock");
+        require(serialLock != null && serialLock.getLevel() == AccessLevel.PRIVATE
+            && serialLock.hasModifier(ElementModifier.STATIC) && serialLock.hasModifier(ElementModifier.FINAL)
+            && serialLock.getType().equals(ValueType.object("java.lang.Object")), "private-static-name-lock");
+        var nextName = timerModel.getMethod(new MethodDescriptor("nextName", ValueType.object("java.lang.String")));
+        require(nextName != null && nextName.getLevel() == AccessLevel.PRIVATE
+            && nextName.hasModifier(ElementModifier.STATIC) && !nextName.hasModifier(ElementModifier.SYNCHRONIZED)
+            && nextName.getProgram() != null, "name-method-does-not-lock-public-class");
+        var aliases = new java.util.HashSet<Variable>();
+        for (BasicBlock block : nextName.getProgram().getBasicBlocks()) for (Instruction instruction : block) {
+            if (instruction instanceof GetFieldInstruction read
+                && read.getField().equals(new FieldReference("java.util.Timer", "serialLock"))
+                && read.getInstance() == null) aliases.add(read.getReceiver());
+        }
+        boolean changed;
+        do {
+            changed = false;
+            for (BasicBlock block : nextName.getProgram().getBasicBlocks()) for (Instruction instruction : block) {
+                if (instruction instanceof AssignInstruction assign && aliases.contains(assign.getAssignee()))
+                    changed |= aliases.add(assign.getReceiver());
+            }
+        } while (changed);
+        boolean entered = false;
+        for (BasicBlock block : nextName.getProgram().getBasicBlocks()) for (Instruction instruction : block) {
+            if (instruction instanceof MonitorEnterInstruction enter && aliases.contains(enter.getObjectRef())) entered = true;
+        }
+        require(entered, "private-name-lock-monitor-enter");
+        var cancelledCleanup = timerModel.getMethod(new MethodDescriptor("purgeCancelled", ValueType.INTEGER));
+        var timerWork = timerModel.getMethod(new MethodDescriptor("work", ValueType.VOID));
+        require(cancelledCleanup != null && cancelledCleanup.getLevel() == AccessLevel.PRIVATE
+            && cancelledCleanup.getProgram() != null && timerWork != null && timerWork.getProgram() != null,
+            "private-cancelled-cleanup");
+        boolean callsPrivateCleanup = false, callsPublicPurge = false;
+        for (BasicBlock block : timerWork.getProgram().getBasicBlocks()) for (Instruction instruction : block) {
+            if (instruction instanceof InvokeInstruction invoke && invoke.getMethod().getClassName().equals("java.util.Timer")) {
+                callsPrivateCleanup |= invoke.getMethod().getName().equals("purgeCancelled");
+                callsPublicPurge |= invoke.getMethod().getName().equals("purge");
+            }
+        }
+        require(callsPrivateCleanup && !callsPublicPurge, "worker-private-cancelled-cleanup-call");
         int bodies = 0, references = 0;
         for (ClassHolder model : models) {
             for (FieldHolder declaration : model.getFields()) canonical(declaration.getType());
@@ -97,6 +138,6 @@ public final class StandardTimerModelControl {
         require(source.get("java.util.Timer").getMethod(new MethodDescriptor("absentControlMethod", ValueType.VOID)) == null,
                 "unsupported-timer-member-no-fallback");
         StandardTimerCompilerGraphControl.run();
-        System.out.println("STANDARD_TIMER_MODEL_CONTROL PASS original-classlib-negative;layout-and-repeat-negatives;canonical-api-and-private-helper;resolved-method-and-field-types;unsupported-no-fallback;models=3;actual-c-dependency-worker-and-callback");
+        System.out.println("STANDARD_TIMER_MODEL_CONTROL PASS original-classlib-negative;layout-and-repeat-negatives;canonical-api-and-private-helper;private-name-monitor;private-cancelled-cleanup;resolved-method-and-field-types;unsupported-no-fallback;models=3;actual-c-dependency-worker-and-callback");
     }
 }

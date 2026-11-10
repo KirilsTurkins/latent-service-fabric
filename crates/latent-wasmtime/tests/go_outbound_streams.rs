@@ -35,6 +35,7 @@ use tokio::{
 
 const CONTRACT: &str = "examples:go-standard-network/api@1.0.0";
 const PROFILE: &str = "go-component-activation-v5";
+const V7_PROFILE: &str = "go-component-activation-v7";
 const SOURCE: &[u8] = include_bytes!("../../../sdk/go-guest/runtime/network-conformance/main.go");
 const WORLD: &str = include_str!("../../../sdk/go-guest/runtime/network-conformance/world.wit");
 
@@ -65,6 +66,16 @@ async fn configured(root: &std::path::Path, port: u16) -> Fixture {
     let prepared = std::path::PathBuf::from(
         std::env::var_os("LSF_GO_NETWORK_FIXTURE").expect("compile the guarded Go fixture"),
     );
+    let profile = match std::env::var("LSF_GO_NETWORK_PROFILE") {
+        Ok(value) => value,
+        Err(std::env::VarError::NotPresent) => PROFILE.into(),
+        Err(std::env::VarError::NotUnicode(_)) => panic!("non-UTF-8 Go network runtime profile"),
+    };
+    let queued_work = match profile.as_str() {
+        PROFILE => 2,
+        V7_PROFILE => 16,
+        _ => panic!("unsupported Go network runtime profile"),
+    };
     let record: serde_json::Value =
         serde_json::from_slice(&std::fs::read(prepared.join("GO-NETWORK-COMPILE.json")).unwrap())
             .unwrap();
@@ -75,7 +86,7 @@ async fn configured(root: &std::path::Path, port: u16) -> Fixture {
         std::fs::read_to_string(prepared.join("wit/world.wit")).unwrap(),
         WORLD
     );
-    assert_eq!(record["profile"], PROFILE);
+    assert_eq!(record["profile"], profile.as_str());
     assert_eq!(record["sourceUnchanged"], true);
     assert_eq!(
         record["sourceDigest"],
@@ -132,12 +143,12 @@ async fn configured(root: &std::path::Path, port: u16) -> Fixture {
             .await
             .unwrap();
     }
-    Fixture::with_runtime_outbound_streams(
+    let fixture = Fixture::with_runtime_outbound_streams(
         (catalog, caller, callee),
         latent_core::activation_runtime::RuntimeLimits {
             tasks: 16,
             executors: 2,
-            queued_work: 2,
+            queued_work,
             waits: 4,
             timers: 2,
             results: 2,
@@ -145,7 +156,16 @@ async fn configured(root: &std::path::Path, port: u16) -> Fixture {
         },
         configuration(port),
     )
-    .await
+    .await;
+    if profile == V7_PROFILE {
+        println!(
+            "GO_V7_NETWORK_LIMITS {}",
+            json!({"profile": V7_PROFILE, "tasks": 16, "executors": 2,
+                "queuedWork": queued_work, "waits": 4, "timers": 2,
+                "results": 2, "nativeOwners": 2})
+        );
+    }
+    fixture
 }
 
 fn request(f: &Fixture, id: &str, mode: u32, port: u16) -> ActivationRequest {

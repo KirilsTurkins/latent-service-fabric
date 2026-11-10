@@ -19,7 +19,7 @@ from tools.stage_runtime_wit import stage
 def fixture_reference(output, commands, compiler, source, fixture):
     """Run only this reviewed fixture on the pinned native Go reference."""
     if fixture == 'checkpoints':
-        modes = [0, 1, 4]
+        modes = [0, 1, 4, 5, 6]
     elif fixture == 'timers':
         # Mode 4 intentionally returns with accepted callbacks: native Go main
         # exits immediately, whereas the component profile requires drain.
@@ -29,6 +29,8 @@ def fixture_reference(output, commands, compiler, source, fixture):
         modes = [0]
     elif fixture == 'managed-idle':
         modes = [0, 1, 2]
+    elif fixture == 'zero-clock':
+        modes = [0]
     elif fixture == 'task-saturation':
         # Native Go has no managed activation Task ceiling. Only the bounded
         # release/join path is a comparable native observable.
@@ -89,12 +91,14 @@ def compile_fixture(output: Path, *, offline_cache: Path | None = None, runtime_
         raise ValueError('Go-timer-overlap-requires-v5-or-v7')
     if fixture == 'timer-fired' and runtime_profile != 'go-component-activation-v7':
         raise ValueError('Go-fired-timer-requires-v7')
+    if fixture == 'zero-clock' and runtime_profile != 'go-component-activation-v7':
+        raise ValueError('Go-zero-clock-requires-v7')
     output.mkdir(parents=True, exist_ok=False)
-    if fixture not in {'ordinary', 'checkpoints', 'timers', 'initializers', 'managed-idle', 'synchronization', 'task-saturation', 'timer-overlap', 'timer-fired'}:
+    if fixture not in {'ordinary', 'checkpoints', 'timers', 'initializers', 'managed-idle', 'synchronization', 'task-saturation', 'timer-overlap', 'timer-fired', 'zero-clock'}:
         raise ValueError('unsupported-Go-activation-fixture')
     if fixture == 'managed-idle' and runtime_profile != 'go-component-activation-v5':
         raise ValueError('Go-managed-idle-fixture-requires-v5')
-    original = ROOT / 'sdk/go-guest/runtime' / {'ordinary': 'conformance', 'checkpoints': 'checkpoints-conformance', 'timers': 'timers-conformance', 'initializers': 'initializers-conformance', 'managed-idle': 'managed-idle-conformance', 'synchronization': 'synchronization-conformance', 'task-saturation': 'task-saturation-conformance', 'timer-overlap': 'timer-overlap-conformance', 'timer-fired': 'timer-fired-conformance'}[fixture]
+    original = ROOT / 'sdk/go-guest/runtime' / {'ordinary': 'conformance', 'checkpoints': 'checkpoints-conformance', 'timers': 'timers-conformance', 'initializers': 'initializers-conformance', 'managed-idle': 'managed-idle-conformance', 'synchronization': 'synchronization-conformance', 'task-saturation': 'task-saturation-conformance', 'timer-overlap': 'timer-overlap-conformance', 'timer-fired': 'timer-fired-conformance', 'zero-clock': 'zero-clock-conformance'}[fixture]
     source = (original / 'main.go').read_bytes()
     (output / 'src').mkdir()
     (output / 'src/main.go').write_bytes(source)
@@ -170,7 +174,7 @@ def compile_fixture(output: Path, *, offline_cache: Path | None = None, runtime_
             record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)
         if fixture == 'task-saturation':
             record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)
-        if fixture in {'timer-overlap', 'timer-fired'}:
+        if fixture in {'timer-overlap', 'timer-fired', 'zero-clock'}:
             record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)
         if fixture == 'synchronization' and runtime_profile == 'go-component-activation-v5':
             record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)
@@ -186,7 +190,7 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--offline-cache', type=Path)
     parser.add_argument('--runtime-profile', choices=sorted(PROFILES), default=PROFILE)
-    parser.add_argument('--fixture', choices=('ordinary', 'checkpoints', 'timers', 'initializers', 'managed-idle', 'synchronization', 'task-saturation', 'timer-overlap', 'timer-fired'), default='ordinary')
+    parser.add_argument('--fixture', choices=('ordinary', 'checkpoints', 'timers', 'initializers', 'managed-idle', 'synchronization', 'task-saturation', 'timer-overlap', 'timer-fired', 'zero-clock'), default='ordinary')
     args = parser.parse_args()
     print(json.dumps(compile_fixture(args.output, offline_cache=args.offline_cache,
         runtime_profile=args.runtime_profile, fixture=args.fixture)))

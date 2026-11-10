@@ -525,6 +525,9 @@ impl StreamProvider {
                 ),
             });
         }
+        // Finish fallible local admission before publishing a replacement epoch.
+        // A registry refusal must leave the original installed provider live.
+        let connections = crate::connection_registry::Registry::new(&pools)?;
         let installed = pools.install(
             ProviderSetup {
                 logical_id,
@@ -544,7 +547,6 @@ impl StreamProvider {
             },
             expected_epoch,
         )?;
-        let connections = crate::connection_registry::Registry::new(&pools)?;
         Ok(Self {
             inner: Arc::new(Inner {
                 config,

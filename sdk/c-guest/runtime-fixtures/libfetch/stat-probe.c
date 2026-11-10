@@ -71,13 +71,25 @@ bool exports_examples_libfetch_api_run(probe_string_t *input, probe_string_t *re
         bool ok = range_request(copy, url, result, error);
         free(copy); return ok;
     }
+    if (!strcmp(copy, "oversized")) {
+        FILE *file = fetchGetURL(url, "A");
+        int saved = errno, code = fetchLastErrCode;
+        if (file) {
+            fclose(file); free(copy); probe_string_dup(error, "unexpected-oversized-success"); return false;
+        }
+        free(copy);
+        probe_string_dup(error, code == FETCH_FULL && saved == EFBIG
+                                ? "response-too-large" : "unexpected-oversized-error");
+        return false;
+    }
     struct url_stat stat;
     int rc = fetchStatURL(url, &stat, "A");
     int saved = errno, code = fetchLastErrCode;
     if (rc != 0) {
         const char *message = !strcmp(copy, "denied") && code == FETCH_AUTH && saved == EACCES
             ? "permission-denied" : !strcmp(copy, "not-found") && code == FETCH_UNAVAIL && saved == ENOENT
-            ? "unavailable" : "unexpected-stat-error";
+            ? "unavailable" : !strcmp(copy, "redirect") && code == FETCH_MOVED && saved == ENOTSUP
+            ? "redirect-unsupported" : "unexpected-stat-error";
         free(copy); probe_string_dup(error, message); return false;
     }
     if (strcmp(copy, "normal") && strcmp(copy, "fresh")) {

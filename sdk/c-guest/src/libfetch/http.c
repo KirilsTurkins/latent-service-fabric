@@ -160,23 +160,58 @@ static char *request_url(const struct url *url) {
         url->port < 0 || url->port > 65535) {
         unsupported(); return NULL;
     }
-    const size_t path = strnlen(url->doc, LSF_FETCH_URL_BYTES + 1);
+    const size_t document = strnlen(url->doc, LSF_FETCH_URL_BYTES + 1);
     const size_t host = strnlen(url->host, sizeof(url->host));
     const size_t scheme = strlen(url->scheme);
-    if (path > LSF_FETCH_URL_BYTES || host == sizeof(url->host) ||
-        path + host + scheme + 10 > LSF_FETCH_URL_BYTES) {
+    if (document > LSF_FETCH_URL_BYTES || host == sizeof(url->host) ||
+        document + host + scheme + 10 > LSF_FETCH_URL_BYTES) {
         failure(FETCH_URL, ENAMETOOLONG, "HTTP URL exceeds its bound"); return NULL;
     }
+    /* Host and document are separate libfetch fields. Do not let a URL
+     * component delimiter in the host change the requested document. */
+    if (memchr(url->host, '/', host) || memchr(url->host, '?', host) ||
+        memchr(url->host, '#', host) || memchr(url->host, '@', host) ||
+        memchr(url->host, '\\', host)) {
+        failure(FETCH_URL, EINVAL, "Invalid constructed HTTP host"); return NULL;
+    }
+    /* A literal fragment is client-side only. Keep encoded %23 and queries
+     * intact, without modifying the caller's original parsed URL. */
+    const char *fragment = memchr(url->doc, '#', document);
+    const size_t path = fragment ? (size_t)(fragment - url->doc) : document;
     char *text = malloc(path + host + scheme + 11);
     if (!text) { fetch_syserr(); return NULL; }
-    if (url->port) snprintf(text, path + host + scheme + 11, "%s://%s:%d%s", url->scheme, url->host, url->port, url->doc);
-    else snprintf(text, path + host + scheme + 11, "%s://%s%s", url->scheme, url->host, url->doc);
+    if (url->port) snprintf(text, path + host + scheme + 11, "%s://%s:%d%.*s", url->scheme, url->host, url->port, (int)path, url->doc);
+    else snprintf(text, path + host + scheme + 11, "%s://%s%.*s", url->scheme, url->host, (int)path, url->doc);
     return text;
 }
 
-static bool content_length(const latent_http_streaming_list_header_t *headers, size_t *length, bool *known) {
+/* Keep the upstream libfetch categories for actual HTTP errors.
+ * This does not retry a request or change the profile's existing errno values. */
+static int http_status_category(uint16_t status) {
+    switch (status) {
+    case 400: case 405: case 406: case 411: case 413: case 414: case 415:
+    case 501: case 505:
+        return FETCH_PROTO;
+    case 402: case 407:
+        return FETCH_AUTH;
+    case 408: case 504:
+        return FETCH_TIMEOUT;
+    case 409:
+        return FETCH_EXISTS;
+    case 416:
+        return FETCH_UNAVAIL;
+    case 503:
+        return FETCH_TEMP;
+    default:
+        return FETCH_SERVER;
+    }
+}
+
+static bool content_length(const latent_http_streaming_list_header_t *headers, bool head,
+                           size_t *length, off_t *representation_size, bool *known) {
     bool found = false;
     *length = SIZE_MAX; /* The original libfetch unknown-length sentinel. */
+    *representation_size = (off_t)-1;
     *known = false;
     for (size_t i = 0; i < headers->len; ++i) {
         const latent_http_streaming_header_t *header = &headers->ptr[i];
@@ -191,13 +226,18 @@ static bool content_length(const latent_http_streaming_list_header_t *headers, s
         if (!match) continue;
         if (found || !header->value.len) return false;
         found = true;
-        size_t value = 0;
+        uint64_t value = 0;
         for (size_t at = 0; at < header->value.len; ++at) {
             uint8_t digit = header->value.ptr[at];
-            if (digit < '0' || digit > '9' || value > (SIZE_MAX - (digit - '0')) / 10) return false;
+            if (digit < '0' || digit > '9' || value > ((uint64_t)INT64_MAX - (digit - '0')) / 10) return false;
             value = value * 10 + digit - '0';
         }
-        *length = value;
+        /* HEAD describes a representation, not bytes to buffer. The stat
+         * size can therefore exceed wasm32 size_t. Keep URL.length at its
+         * unknown sentinel when that field cannot represent the value. */
+        if (value > SIZE_MAX && !head) return false;
+        *length = value > SIZE_MAX ? SIZE_MAX : (size_t)value;
+        *representation_size = (off_t)value;
     }
     *known = found;
     return true;
@@ -282,7 +322,8 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
     else if (!strcmp(method, "OPTIONS")) operation = LATENT_HTTP_STREAMING_METHOD_OPTIONS;
     else { unsupported(); return NULL; }
     const size_t body_length = body ? strnlen(body, LSF_FETCH_BODY_BYTES + 1) : 0;
-    const size_t media_length = content_type ? strnlen(content_type, 257) : 0;
+    /* The pinned frontend only uses Content-Type when body is non-NULL. */
+    const size_t media_length = body && content_type ? strnlen(content_type, 257) : 0;
     if (body_length > LSF_FETCH_BODY_BYTES || media_length > 256) {
         failure(FETCH_FULL, EFBIG, "HTTP input exceeds its bound"); return NULL;
     }
@@ -313,7 +354,7 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
         .headers = {headers, header_count},
         .url = {(uint8_t *)target, strlen(target)}, .body_length = {true, body_length},
         .timeout_millis = {fetchTimeout != 0, (uint64_t)fetchTimeout * 1000}};
-    if (content_type) {
+    if (body && content_type) {
         metadata.body_media_type.is_some = true;
         metadata.body_media_type.val = (probe_string_t){(uint8_t *)content_type, media_length};
     }
@@ -343,8 +384,10 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
     const uint16_t status = completed.val.ok.status;
     size_t length;
     bool known_length;
-    const bool valid_length = content_length(&completed.val.ok.headers, &length, &known_length);
-    off_t actual_offset = 0, representation_size = known_length ? (off_t)length : (off_t)-1;
+    off_t representation_size;
+    const bool valid_length = content_length(&completed.val.ok.headers,
+        operation == LATENT_HTTP_STREAMING_METHOD_HEAD, &length, &representation_size, &known_length);
+    off_t actual_offset = 0;
     size_t partial_length = length;
     bool valid_range = true;
     if (status == 206) {
@@ -364,7 +407,7 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
         if (status >= 300 && status < 400) failure(FETCH_MOVED, ENOTSUP, "HTTP redirects are outside this profile");
         else if (status == 401 || status == 403) failure(FETCH_AUTH, EACCES, "HTTP authentication refused");
         else if (status == 404 || status == 410) failure(FETCH_UNAVAIL, ENOENT, "HTTP resource unavailable");
-        else failure(FETCH_SERVER, EIO, "HTTP server returned an error response");
+        else failure(http_status_category(status), EIO, "HTTP server returned an error response");
         snprintf(fetchLastErrString, MAXERRSTRING, "HTTP status %u%s", (unsigned)status,
                  status >= 300 && status < 400 ? ": redirects unsupported" : ": request failed");
         goto fail_file;

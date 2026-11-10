@@ -357,16 +357,80 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
         return ["TIMER_ACTIVE_OWNER_CONTROL PASS " + case + "\n"
                 for case in fibers.STANDARD_TIMER_ACTIVE_OWNER_CASES]
 
+    @staticmethod
+    def class_monitor_receipt():
+        return "\n".join(mode + ":whileHeld=true:blocked=false:once=1:recurring=2:publicMonitor=preserved"
+                         for mode in ("default", "daemon", "named"))
+
+    @staticmethod
+    def cancelled_jdk():
+        return "\n".join((
+            "capacity:automatic:before=-1:witness=-1:removed=-1:afterPurge=-1:accepted=2:afterCancel=-1:reschedule=refused:unexpected=0",
+            "capacity:purge:before=-1:witness=-1:removed=valid:afterPurge=-1:accepted=2:afterCancel=-1:reschedule=refused:unexpected=0",
+            "active:automatic:before=-1:removed=-1:afterPurge=-1:witness=-1:afterCancel=-1:reschedule=refused:callbacks=1",
+            "active:purge:before=-1:removed=valid:afterPurge=-1:witness=-1:afterCancel=-1:reschedule=refused:callbacks=1",
+            "self:before=-1:witness=-1:afterCancel=-1:reschedule=refused:callbacks=1:witnessCalls=1"))
+
+    @staticmethod
+    def cancelled_source():
+        return "\n".join((
+            "capacity:automatic:before=8:witness=2:removed=-1:afterPurge=2:accepted=2:afterCancel=1:reschedule=refused:unexpected=0",
+            "capacity:purge:before=8:witness=2:removed=0:afterPurge=2:accepted=2:afterCancel=1:reschedule=refused:unexpected=0",
+            "active:automatic:before=2:removed=-1:afterPurge=2:witness=1:afterCancel=1:reschedule=refused:callbacks=1",
+            "active:purge:before=2:removed=1:afterPurge=2:witness=1:afterCancel=1:reschedule=refused:callbacks=1",
+            "self:before=2:witness=1:afterCancel=1:reschedule=refused:callbacks=1:witnessCalls=1"))
+
+    @staticmethod
+    def interrupted_jdk():
+        return "\n".join((
+            "once-direct:survived=true:accepted=true:calls=1:error=none:flag=false:queued=-1,-1,-1:owners=-1",
+            "periodic-direct:survived=true:accepted=true:calls=2:error=none:flag=false:queued=-1,-1,-1:owners=-1",
+            "once-sleep:survived=true:accepted=true:calls=1:error=none:flag=false:queued=-1,-1,-1:owners=-1",
+            "periodic-sleep:survived=true:accepted=true:calls=2:error=none:flag=false:queued=-1,-1,-1:owners=-1",
+            "once-flag:survived=true:accepted=true:calls=1:error=none:flag=true:queued=-1,-1,-1:owners=-1",
+            "once-subclass:survived=true:accepted=true:calls=1:error=none:flag=false:queued=-1,-1,-1:owners=-1",
+            "runtime:survived=false:accepted=false:calls=1:error=IllegalStateException:flag=none:queued=-1,-1,-1:owners=-1",
+            "error:survived=false:accepted=false:calls=1:error=AssertionError:flag=none:queued=-1,-1,-1:owners=-1"))
+
+    @staticmethod
+    def interrupted_source():
+        return "\n".join((
+            "once-direct:survived=true:accepted=true:calls=1:error=none:flag=false:queued=2,1,1:owners=0",
+            "periodic-direct:survived=true:accepted=true:calls=2:error=none:flag=false:queued=1,1,1:owners=0",
+            "once-sleep:survived=true:accepted=true:calls=1:error=none:flag=false:queued=2,1,1:owners=0",
+            "periodic-sleep:survived=true:accepted=true:calls=2:error=none:flag=false:queued=1,1,1:owners=0",
+            "once-flag:survived=true:accepted=true:calls=1:error=none:flag=true:queued=2,1,1:owners=0",
+            "once-subclass:survived=true:accepted=true:calls=1:error=none:flag=false:queued=2,1,1:owners=0",
+            "runtime:survived=false:accepted=false:calls=1:error=IllegalStateException:flag=none:queued=2,0,0:owners=0",
+            "error:survived=false:accepted=false:calls=1:error=AssertionError:flag=none:queued=2,0,0:owners=0"))
+
+    @staticmethod
+    def interrupted_settlement(thrown, outcome, queued):
+        primary = "source-queued-settlement-" + outcome if thrown == "interrupt" else "guest-primary"
+        return (thrown + ":" + outcome + ":primary=" + primary + ":poisoned=true:retained=true:queued="
+                + str(queued) + ":executors=1:attempts=2")
+
+    def prelude(self):
+        return ["", self.class_monitor_receipt(), self.cancelled_jdk(), "", self.class_monitor_receipt(), self.cancelled_source()]
+
+    def successful_receipts(self):
+        settlement = lambda mode, queued: (mode + ":witness=false:poisoned=true:retained=true:queued=" + str(queued)
+            + ":executors=1:attempts=3:admission=refused")
+        return [*self.prelude(), *([self.receipt()] * 3), *self.active_receipts(), "", "TIMER_CLOCK_ORDER PASS\n",
+                settlement("refused", 1), settlement("lost", 0), self.interrupted_jdk(), self.interrupted_source(),
+                self.interrupted_settlement("interrupt", "refused", 1), self.interrupted_settlement("interrupt", "lost", 0),
+                self.interrupted_settlement("runtime", "refused", 1), self.interrupted_settlement("runtime", "lost", 0)]
+
     def test_incomplete_retirement_or_observables_cannot_qualify_source(self):
         for incomplete in ("42 42 42 42", self.receipt().replace(";no-live-owners", ""),
                            self.receipt().replace("42 42 42 42", "42 42 42 41")):
             with self.subTest(receipt=incomplete), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 compiler = self.fixture(root)
-                compiler.run.side_effect = ["", incomplete]
+                compiler.run.side_effect = [*self.prelude(), incomplete]
                 with self.assertRaisesRegex(ValueError, "timer source control did not complete"):
                     fibers.standard_timer_source_control(compiler, root / "control")
-                self.assertEqual(compiler.run.call_count, 2)
+                self.assertEqual(compiler.run.call_count, 7)
 
     def test_private_mapping_preserves_component_source_and_excludes_guest_claims(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -374,18 +438,38 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
             compiler = self.fixture(root)
             application = compiler.sdk / "fibers/conformance/timers/Capsule.java"
             original = application.read_bytes()
-            compiler.run.side_effect = ["", *([self.receipt()] * 3), *self.active_receipts()]
+            compiler.run.side_effect = self.successful_receipts()
             report = fibers.standard_timer_source_control(compiler, root / "control")
             self.assertEqual(application.read_bytes(), original)
             mapped = (root / "control/Capsule.java").read_text()
             self.assertIn("import dev.latent.guest.runtime.util.Timer;", mapped)
             self.assertNotIn("import java.util.Timer;", mapped)
-            self.assertEqual(len(report["sourceInputs"]), 8)
+            self.assertEqual(set(report["sourceInputs"]), {
+                "fibers/conformance/timers/Capsule.java", "fibers/conformance/timers/Main.java",
+                "fibers/conformance/timers/TimerValidationOrder.java",
+                "fibers/conformance/compiler/standard-timer-control/TimerModelMain.java",
+                "fibers/conformance/compiler/standard-timer-control/TimerActiveOwnerControl.java",
+                "fibers/conformance/compiler/standard-timer-control/TimerValidationAdmissionControl.java",
+                "fibers/conformance/compiler/standard-timer-control/TimerClassMonitorReferenceControl.java",
+                "fibers/conformance/compiler/standard-timer-control/TimerCancelledQueueReferenceControl.java",
+                "fibers/conformance/compiler/standard-timer-control/TimerCancelledSettlementOwnerControl.java",
+                "fibers/conformance/compiler/standard-timer-control/TimerInterruptedCallbackControl.java",
+                "fibers/conformance/compiler/standard-timer-control/TimerInterruptedSettlementOwnerControl.java",
+                "fibers/conformance/compiler/standard-timer-control/FakeClock.java",
+                "fibers/conformance/compiler/standard-timer-control/ClockOrderControl.java",
+                "fibers/conformance/compiler/standard-timer-control/dev/latent/generated/Bindings.java",
+                "fibers/conformance/compiler/standard-timer-control/dev/latent/guest/runtime/Activation.java",
+                "fibers/dev/latent/guest/runtime/util/Timer.java",
+                "fibers/dev/latent/guest/runtime/util/TimerTask.java",
+            })
             self.assertEqual(report["iterations"], 3)
-            self.assertEqual(fibers.STANDARD_TIMER_ACTIVE_OWNER_CASES[-11:], (
+            self.assertEqual(report["classMonitor"], "JDK-and-SDK-source-controls-passed")
+            self.assertEqual(report["cancelledTail"], "JDK-reference-and-bounded-private-ledger-passed")
+            self.assertEqual(report["interruptedCallback"], "JDK-reference-and-bounded-private-ledger-passed")
+            self.assertEqual(fibers.STANDARD_TIMER_ACTIVE_OWNER_CASES[-12:], (
                 "manage-before", "manage-close-refused", "manage-close-lost",
                 "start-before", "start-uncertain", "start-accepted", "start-close-refused", "start-close-lost",
-                "start-finished-ok", "start-finished-refused", "start-finished-lost"))
+                "start-finished-ok", "start-finished-refused", "start-finished-lost", "public-task-monitor"))
             self.assertFalse(report["componentExecutionPerformed"])
             self.assertFalse(report["actualGuestBindingsUsed"])
 
@@ -393,16 +477,29 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             compiler = self.fixture(root)
-            compiler.run.side_effect = ["", *([self.receipt()] * 3), "wrong-case\n"]
+            compiler.run.side_effect = [*self.prelude(), *([self.receipt()] * 3), "wrong-case\n"]
             with self.assertRaisesRegex(ValueError, "timer active-owner control did not complete: one-shot-normal"):
                 fibers.standard_timer_source_control(compiler, root / "control")
-            self.assertEqual(compiler.run.call_count, 5)
+            self.assertEqual(compiler.run.call_count, 10)
+
+    def test_clock_order_must_return_its_exact_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler = self.fixture(root)
+            compiler.run.side_effect = [*self.prelude(), *([self.receipt()] * 3), *self.active_receipts(),
+                                        "", "TIMER_CLOCK_ORDER INCOMPLETE\n"]
+            with self.assertRaisesRegex(ValueError, "timer clock ordering control did not complete"):
+                fibers.standard_timer_source_control(compiler, root / "control")
 
     def test_changed_sdk_bytes_after_completed_runs_invalidate_receipt(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             compiler = self.fixture(root)
             def observe(stage, *args):
+                if stage in ("standard-timer-class-monitor-reference", "standard-timer-class-monitor-source"):
+                    return self.class_monitor_receipt()
+                if stage == "standard-timer-cancelled-reference": return self.cancelled_jdk()
+                if stage == "standard-timer-cancelled-source": return self.cancelled_source()
                 if stage == "standard-timer-source-2":
                     port = compiler.sdk / "fibers/dev/latent/guest/runtime/util/Timer.java"
                     port.write_bytes(port.read_bytes() + b"\n// changed during control\n")
@@ -410,7 +507,52 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
             compiler.run.side_effect = observe
             with self.assertRaisesRegex(ValueError, "control inputs changed"):
                 fibers.standard_timer_source_control(compiler, root / "control")
-            self.assertEqual(compiler.run.call_count, 4)
+            self.assertEqual(compiler.run.call_count, 9)
+
+    def test_class_monitor_receipt_must_match_reference_and_source(self):
+        for index, error in ((1, "class monitor reference"), (4, "class monitor source")):
+            with self.subTest(index=index), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                compiler = self.fixture(root)
+                receipts = self.prelude()
+                receipts[index] += ";incomplete"
+                compiler.run.side_effect = receipts
+                with self.assertRaisesRegex(ValueError, error):
+                    fibers.standard_timer_source_control(compiler, root / "control")
+                self.assertEqual(compiler.run.call_count, index + 1)
+
+    def test_cancelled_tail_receipts_fail_closed(self):
+        original = self.successful_receipts()
+        for index, error in ((2, "cancelled timer reference"), (5, "cancelled timer source"),
+                             (len(original)-8, "cancelled timer settlement"),
+                             (len(original)-7, "cancelled timer settlement")):
+            with self.subTest(index=index), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                compiler = self.fixture(root)
+                receipts = self.successful_receipts()
+                receipts[index] += ";incomplete"
+                compiler.run.side_effect = receipts
+                with self.assertRaisesRegex(ValueError, error):
+                    fibers.standard_timer_source_control(compiler, root / "control")
+                self.assertEqual(compiler.run.call_count, index + 1)
+
+    def test_interrupted_callback_receipts_fail_closed(self):
+        original = self.successful_receipts()
+        for index, error in ((len(original)-6, "interrupted timer reference"),
+                             (len(original)-5, "interrupted timer source"),
+                             (len(original)-4, "interrupted timer settlement"),
+                             (len(original)-3, "interrupted timer settlement"),
+                             (len(original)-2, "interrupted timer settlement"),
+                             (len(original)-1, "interrupted timer settlement")):
+            with self.subTest(index=index), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                compiler = self.fixture(root)
+                receipts = self.successful_receipts()
+                receipts[index] += ";incomplete"
+                compiler.run.side_effect = receipts
+                with self.assertRaisesRegex(ValueError, error):
+                    fibers.standard_timer_source_control(compiler, root / "control")
+                self.assertEqual(compiler.run.call_count, index + 1)
 
     def test_ambiguous_source_mapping_fails_before_host_compilation(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -484,6 +626,28 @@ class StandardTimerModelIntegrity(unittest.TestCase):
             self.assertIn(compiler.sdk / "fibers/conformance/compiler/timer-source-control/dev/latent/generated/Bindings.java", sources)
             self.assertNotIn(compiler.sdk / "fibers/conformance/compiler/standard-timer-control/dev/latent/guest/runtime/Activation.java", sources)
 
+    def test_model_receipt_requires_private_name_monitor_and_c_graph(self):
+        reviewed = ("STANDARD_TIMER_MODEL_CONTROL PASS original-classlib-negative;layout-and-repeat-negatives;"
+            "canonical-api-and-private-helper;private-name-monitor;private-cancelled-cleanup;resolved-method-and-field-types;"
+            "unsupported-no-fallback;models=3;actual-c-dependency-worker-and-callback")
+        for observed in (reviewed.replace("private-name-monitor;", ""),
+                         reviewed.replace("private-cancelled-cleanup;", ""),
+                         reviewed.replace("actual-c-dependency-worker-and-callback", "models-only")):
+            with self.subTest(observed=observed), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                compiler, _, _ = self.fixture(root)
+                for name in ("fibers/compiler", "fibers/dev/latent/guest/runtime/util", "fibers/conformance/compiler"):
+                    shutil.copytree(fibers.ROOT / "sdk/java-guest" / name, compiler.sdk / name)
+                for name in ("fibers/dev/latent/guest/runtime/Activation.java", "fibers/dev/latent/guest/runtime/HostCalls.java",
+                             "runtime/dev/latent/guest/Option.java", "runtime/dev/latent/guest/Unsigned64.java"):
+                    destination = compiler.sdk / name
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(fibers.ROOT / "sdk/java-guest" / name, destination)
+                compiler.run.side_effect = ["", observed]
+                with self.assertRaisesRegex(ValueError, "timer model control did not complete"):
+                    fibers.standard_timer_model_control(compiler, root / "model")
+                self.assertEqual(compiler.run.call_count, 2)
+
 
 class CompletableSourceIntegrity(unittest.TestCase):
     @staticmethod
@@ -508,10 +672,35 @@ class CompletableSourceIntegrity(unittest.TestCase):
         executor = "\n".join(json.dumps(dict(zip(
             ("scenario", "exceptionPropagated", "queuedBeforeRun", "futureDoneBeforeRun",
              "supplierCallsAfterRun", "outcomeAfterRun"), values))) for values in scenarios)
-        return ["", native, executor, "", native + "\n" + owners, executor,
+        monitor = "COMPLETABLE_FUTURE_MONITOR_REFERENCE PASS completion;exception-callbacks=7;cause-once=6"
+        monitor_owner = ("COMPLETABLE_FUTURE_MONITOR_OWNER PASS callback-retirement;"
+                         "cancelled-queued-retirement;subscribe-race")
+        readiness = "COMPLETABLE_OVERRIDE_READINESS_REFERENCE PASS cases=19;public-dispatch;private-helper"
+        readmit = "COMPLETABLE_OVERRIDE_READMIT_OWNER PASS simulated-queue-copies=2;original-ledger"
+        destination = "\n".join((
+            "thenApply:42:completeCalls=0:failureCalls=0",
+            "callbackFailure:error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+            "sourceFailure:error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+            "thenCompose:42:completeCalls=0:failureCalls=0", "exceptionally:42:completeCalls=0:failureCalls=0",
+            "thenCombine:42:completeCalls=0:failureCalls=0", "applyToEither:42:completeCalls=0:failureCalls=0",
+            "runAfterEither:done=true:callbacks=1:completeCalls=0:failureCalls=0",
+            "handle:42:completeCalls=0:failureCalls=0", "whenComplete:41:completeCalls=0:failureCalls=0",
+            "whenCompleteFailure:error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+            "exceptionallyCompose:42:completeCalls=0:failureCalls=0",
+            "thenComposeFailure:error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+            "completeAsync:42:completeCalls=0:failureCalls=0",
+            "completeAsyncFailure:error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+            "publicComplete:false:null:completeCalls=1",
+            "publicFailure:false:null:failureCalls=1", "barrier:normal:before=null:after=42:completeCalls=0:failureCalls=0",
+            "barrier:failure:before=null:after=error:IllegalArgumentException:completeCalls=0:failureCalls=0",
+            "barrier:cancel:before=null:after=error:CancellationException:completeCalls=0:failureCalls=0",
+            "queuedRejection:before=error:RejectedExecutionException:after=error:RejectedExecutionException:"
+            "callbacks=0:completeCalls=0:failureCalls=0"))
+        return ["", native, executor, monitor, readiness, destination, "", native + "\n" + owners, executor,
                 "COMPLETABLE_FUTURE_EXECUTOR_ACCEPTANCE_OWNER PASS observables=49",
                 "COMPLETABLE_FUTURE_EXECUTOR_UNCERTAIN_OWNER PASS observables=30;"
-                "queued=8;results=8;cleanup-denied;activation-retirement-unqualified"]
+                "queued=8;results=8;cleanup-denied;activation-retirement-unqualified",
+                monitor, monitor_owner, readiness, readmit, destination]
 
     def test_incomplete_standard_observables_stop_before_sdk_control_compilation(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -527,7 +716,7 @@ class CompletableSourceIntegrity(unittest.TestCase):
             root = Path(directory)
             compiler = self.fixture(root)
             receipts = self.complete_receipts()
-            receipts[4] = receipts[1] + "\nCOMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=1;raceRounds=1"
+            receipts[7] = receipts[1] + "\nCOMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=1;raceRounds=1"
             compiler.run.side_effect = receipts
             with self.assertRaisesRegex(ValueError, "source ownership controls did not complete"):
                 fibers.completable_source_control(compiler, root / "control")
@@ -544,6 +733,10 @@ class CompletableSourceIntegrity(unittest.TestCase):
                     "CompletableFutureExecutorThrowReferenceControl.java",
                     "CompletableFutureExecutorAcceptanceOwnerControl.java",
                     "CompletableFutureExecutorUncertainOwnerControl.java",
+                    "CompletableMonitorReferenceControl.java", "CompletableMonitorOwnerControl.java",
+                    "CompletableOverrideReadinessReferenceControl.java",
+                    "CompletableOverrideDestinationReferenceControl.java",
+                    "source-control/dev/latent/guest/runtime/concurrent/CompletableOverrideReadmitOwnerControl.java",
                     "source-control/PrivateSourceRunner.java", "source-control/dev/latent/generated/Bindings.java",
                     "source-control/dev/latent/guest/runtime/Activation.java",
                     "source-control/dev/latent/guest/runtime/concurrent/Executors.java")
@@ -553,6 +746,10 @@ class CompletableSourceIntegrity(unittest.TestCase):
                              (82, 419, 32))
             self.assertFalse(report["componentExecutionPerformed"])
             self.assertFalse(report["actualGuestBindingsUsed"])
+            self.assertEqual(report["futureMonitor"], "JDK-and-SDK-source-controls-passed")
+            self.assertEqual(report["futureReadiness"], "JDK-and-SDK-source-controls-passed")
+            self.assertEqual(report["futureReadmit"], "simulated-queue-copies-original-source-ledger-passed")
+            self.assertEqual(report["futureDestination"], "JDK-and-SDK-source-controls-passed")
             original = (compiler.sdk / "fibers/conformance/compiler/CompletableFutureNativeControl.java").read_text()
             private = (root / "control/private/CompletableFutureNativeControl.java").read_text()
             for name in ("CompletableFuture", "CompletionStage", "CompletionException"):
@@ -575,7 +772,7 @@ class CompletableSourceIntegrity(unittest.TestCase):
             compiler.run.side_effect = observe
             with self.assertRaisesRegex(ValueError, "inputs changed during execution"):
                 fibers.completable_source_control(compiler, root / "control")
-            self.assertEqual(compiler.run.call_count, 8)
+            self.assertEqual(compiler.run.call_count, 16)
 
     def test_ambiguous_private_import_rewrite_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -586,7 +783,7 @@ class CompletableSourceIntegrity(unittest.TestCase):
             compiler.run.side_effect = self.complete_receipts()
             with self.assertRaisesRegex(ValueError, "import is ambiguous"):
                 fibers.completable_source_control(compiler, root / "control")
-            self.assertEqual(compiler.run.call_count, 3)
+            self.assertEqual(compiler.run.call_count, 6)
 
     def test_incomplete_executor_reference_receipt_stops_before_port_compilation(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -604,14 +801,14 @@ class CompletableSourceIntegrity(unittest.TestCase):
             root = Path(directory)
             compiler = self.fixture(root)
             receipts = self.complete_receipts()
-            receipts[5] = receipts[5].replace("value-42", "value-43", 1)
+            receipts[8] = receipts[8].replace("value-42", "value-43", 1)
             compiler.run.side_effect = receipts
             with self.assertRaisesRegex(ValueError, "executor behavior differs from the actual reference JDK"):
                 fibers.completable_source_control(compiler, root / "control")
-            self.assertEqual(compiler.run.call_count, 6)
+            self.assertEqual(compiler.run.call_count, 9)
 
     def test_uncertain_executor_capacity_requires_complete_physical_boundary_receipt(self):
-        original = self.complete_receipts()[-1]
+        original = self.complete_receipts()[10]
         for incomplete in (original.replace("queued=8", "queued=7"),
                            original.replace("results=8", "results=7"),
                            original.replace("cleanup-denied;", "")):
@@ -619,11 +816,49 @@ class CompletableSourceIntegrity(unittest.TestCase):
                 root = Path(directory)
                 compiler = self.fixture(root)
                 receipts = self.complete_receipts()
-                receipts[-1] = incomplete
+                receipts[10] = incomplete
                 compiler.run.side_effect = receipts
                 with self.assertRaisesRegex(ValueError, "uncertain executor capacity control did not complete"):
                     fibers.completable_source_control(compiler, root / "control")
-                self.assertEqual(compiler.run.call_count, 8)
+                self.assertEqual(compiler.run.call_count, 11)
+
+    def test_incomplete_monitor_receipt_fails_closed_at_each_stage(self):
+        for index, expected_error in ((3, "monitor reference"), (11, "monitor source"),
+                                      (12, "monitor ownership")):
+            with self.subTest(index=index), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                compiler = self.fixture(root)
+                receipts = self.complete_receipts()
+                receipts[index] += ";incomplete"
+                compiler.run.side_effect = receipts
+                with self.assertRaisesRegex(ValueError, expected_error):
+                    fibers.completable_source_control(compiler, root / "control")
+                self.assertEqual(compiler.run.call_count, index + 1)
+
+    def test_incomplete_readiness_receipt_fails_closed_at_each_stage(self):
+        for index, expected_error in ((4, "readiness reference"), (13, "readiness source"),
+                                      (14, "readiness readmission")):
+            with self.subTest(index=index), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                compiler = self.fixture(root)
+                receipts = self.complete_receipts()
+                receipts[index] += ";incomplete"
+                compiler.run.side_effect = receipts
+                with self.assertRaisesRegex(ValueError, expected_error):
+                    fibers.completable_source_control(compiler, root / "control")
+                self.assertEqual(compiler.run.call_count, index + 1)
+
+    def test_incomplete_destination_receipt_fails_closed_at_each_stage(self):
+        for index, expected_error in ((5, "destination reference"), (15, "destination source")):
+            with self.subTest(index=index), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                compiler = self.fixture(root)
+                receipts = self.complete_receipts()
+                receipts[index] += ";incomplete"
+                compiler.run.side_effect = receipts
+                with self.assertRaisesRegex(ValueError, expected_error):
+                    fibers.completable_source_control(compiler, root / "control")
+                self.assertEqual(compiler.run.call_count, index + 1)
 
     def test_unknown_component_fixture_fails_before_output_or_compiler_creation(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -638,14 +873,14 @@ class CompletableModelIntegrity(unittest.TestCase):
     def test_reviewed_executor_model_requires_exact_body_and_original_closure_fingerprints(self):
         reviewed = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;"
             "canonical-api-and-helper-identities;resolved-reference-closure;unsupported-no-fallback;"
-            "result-settlement-fence;queued-settlement-fence;actual-coroutine-monitors=28;owned-callback-bodies=32;bodies=190;"
+            "result-settlement-fence;queued-settlement-fence;actual-coroutine-monitors=29;owned-callback-bodies=33;bodies=191;"
             "actual-generated-callbacks=23;application-identity")
         fields = ("COMPLETABLE_FUTURE_FIELD_MODEL_CONTROL PASS declared-and-inherited-types;"
             "closed-read-write-references;absent-no-fallback;models=6")
-        variants = [reviewed, reviewed.replace("bodies=190;", "bodies=189;"),
-            reviewed.replace("bodies=190;", "bodies=191;"),
-            reviewed.replace("actual-coroutine-monitors=28;", "actual-coroutine-monitors=27;"),
-            reviewed.replace("owned-callback-bodies=32;", "owned-callback-bodies=31;"),
+        variants = [reviewed, reviewed.replace("bodies=191;", "bodies=190;"),
+            reviewed.replace("bodies=191;", "bodies=192;"),
+            reviewed.replace("actual-coroutine-monitors=29;", "actual-coroutine-monitors=28;"),
+            reviewed.replace("owned-callback-bodies=33;", "owned-callback-bodies=32;"),
             reviewed.replace("result-settlement-fence;", ""),
             reviewed.replace("queued-settlement-fence;", ""),
             reviewed.replace("actual-generated-callbacks=23;", "actual-generated-callbacks=24;"),
@@ -659,10 +894,10 @@ class CompletableModelIntegrity(unittest.TestCase):
                 compiler.run.side_effect = ["", observed, fields]
                 if observed == reviewed:
                     report = fibers.completable_model_control(compiler, root / "model")
-                    self.assertEqual(report["modelFingerprintVersion"], 5)
-                    self.assertEqual(report["modelMethodBodies"], 190)
-                    self.assertEqual(report["coroutineMonitorBodies"], 28)
-                    self.assertEqual(report["ownedCallbackBodies"], 32)
+                    self.assertEqual(report["modelFingerprintVersion"], 6)
+                    self.assertEqual(report["modelMethodBodies"], 191)
+                    self.assertEqual(report["coroutineMonitorBodies"], 29)
+                    self.assertEqual(report["ownedCallbackBodies"], 33)
                     self.assertEqual(report["actualGeneratedCallbacks"], 23)
                     self.assertEqual(report["fieldReferences"], "actual-declared-and-inherited-types-passed")
                     self.assertEqual(compiler.run.call_args.args[-1],
@@ -675,7 +910,7 @@ class CompletableModelIntegrity(unittest.TestCase):
     def test_valid_original_model_cannot_qualify_partial_or_changed_field_closure(self):
         reviewed = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;"
             "canonical-api-and-helper-identities;resolved-reference-closure;unsupported-no-fallback;"
-            "result-settlement-fence;queued-settlement-fence;actual-coroutine-monitors=28;owned-callback-bodies=32;bodies=190;"
+            "result-settlement-fence;queued-settlement-fence;actual-coroutine-monitors=29;owned-callback-bodies=33;bodies=191;"
             "actual-generated-callbacks=23;application-identity")
         fields = ("COMPLETABLE_FUTURE_FIELD_MODEL_CONTROL PASS declared-and-inherited-types;"
             "closed-read-write-references;absent-no-fallback;models=6")
