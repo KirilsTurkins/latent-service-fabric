@@ -127,7 +127,8 @@ HEAD and close the response body before returning metadata. They require a
 HEAD grant; a GET grant does not imply one. For a constructed URL, the backend
 omits a literal fragment from the request target without changing the caller's
 URL; query bytes and percent-encoded characters remain intact. The provider
-still applies its existing destination and encoded-path restrictions. The\n[signed C qualification](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/42399974726)
+still applies its existing destination and encoded-path restrictions. The
+[signed C qualification](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/42399974726)
 passed normal HEAD metadata, denial under a GET-only grant with no peer contact,
 HTTP 404 and a fresh successful HEAD on source `ee0b60add5af`. This finite
 local-node result is not a release-publication or complete C runtime qualification.
