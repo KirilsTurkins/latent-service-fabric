@@ -2019,6 +2019,7 @@ async fn captured_blob_cannot_be_attached_through_a_different_activation_session
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn closed_bound_session_cannot_cross_final_payload_acceptance() {
     let fixture = Fixture::new();
+    let observer = fixture.session.observer();
     let claim = fixture.claim("closed-payload-session");
     let view = fixture.state.snapshot().unwrap();
     let envelope = CompleteEnvelope::success(
@@ -2045,6 +2046,10 @@ async fn closed_bound_session_cannot_cross_final_payload_acceptance() {
         .unwrap();
     drop(view);
     fixture.session.close();
+    // These are still activation-session owners, so closing the guest Store
+    // cannot retire its capability session while the envelope retains them.
+    assert!(!observer.is_quiescent());
+    assert!(observer.retained_handles() > 0);
     assert!(matches!(
         envelope.publish_with_payloads(&fixture.state, |_, _| panic!(
             "closed session reached host acceptance"
@@ -2059,6 +2064,7 @@ async fn closed_bound_session_cannot_cross_final_payload_acceptance() {
         latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
         None
     );
+    assert!(observer.is_quiescent());
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

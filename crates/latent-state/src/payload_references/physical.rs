@@ -138,6 +138,9 @@ impl PhysicalInventory {
         if self.finished {
             return Err(StoreError::Invalid);
         }
+        // Any failed or unwound page invalidates the whole observation. Only
+        // a fully verified incomplete page may make this cursor usable again.
+        self.finished = true;
         if view.identity() != self.view
             || !view.is_bound_to(&self.binding)
             || view.get_bounded(&head_key(&self.payload)?, MAX_REFERENCE_BYTES)? != self.head
@@ -161,8 +164,9 @@ impl PhysicalInventory {
         let _ = view.is_empty()?;
         self.observed = observed;
         self.after = page.resume;
-        self.finished = self.after.is_none();
-        Ok((page.references, self.finished))
+        let complete = self.after.is_none();
+        self.finished = complete;
+        Ok((page.references, complete))
     }
 }
 pub(super) fn append_heads(

@@ -114,6 +114,10 @@ fn physical_inventory_fences_changed_generation_and_detects_missing_index() {
         inventory.next_page(&view, 8, 8 * MAX_REFERENCE_BYTES),
         Err(StoreError::Corrupt)
     ));
+    assert!(matches!(
+        inventory.next_page(&view, 8, 8 * MAX_REFERENCE_BYTES),
+        Err(StoreError::Invalid)
+    ));
     let heads = view
         .scan_after(
             Family::PayloadReference,
@@ -239,11 +243,33 @@ fn physical_inventory_rejects_another_engine_with_identical_head() {
         inventory.next_page(&another_view, 1, MAX_REFERENCE_BYTES),
         Err(StoreError::Conflict)
     ));
+    assert!(matches!(
+        inventory.next_page(&first_view, 1, MAX_REFERENCE_BYTES),
+        Err(StoreError::Invalid)
+    ));
+    let mut inventory = PhysicalInventory::begin(&first_view, &first.payload).unwrap();
+    assert!(
+        !inventory
+            .next_page(&first_view, 1, MAX_REFERENCE_BYTES)
+            .unwrap()
+            .1
+    );
     let other_view = other_store.snapshot().unwrap();
     assert!(matches!(
         inventory.next_page(&other_view, 1, MAX_REFERENCE_BYTES),
         Err(StoreError::Conflict)
     ));
+    assert!(matches!(
+        inventory.next_page(&first_view, 1, MAX_REFERENCE_BYTES),
+        Err(StoreError::Invalid)
+    ));
+    let mut inventory = PhysicalInventory::begin(&first_view, &first.payload).unwrap();
+    assert!(
+        !inventory
+            .next_page(&first_view, 1, MAX_REFERENCE_BYTES)
+            .unwrap()
+            .1
+    );
     assert!(
         inventory
             .next_page(&first_view, 1, MAX_REFERENCE_BYTES)
