@@ -47,16 +47,25 @@ public abstract class AbstractExecutorService implements java.util.concurrent.Ex
         boolean timedOut = false;
         int observed = 0;
         try {
-            // Materialize every result before executing: a null task does not
-            // accidentally turn a partially validated collection into work.
-            for (Callable<T> task : tasks) futures.add(newTaskFor(Objects.requireNonNull(task)));
-            boolean first = true;
-            for (Future<T> future : futures) {
-                // The JDK tests the original duration for the first submit;
-                // later submits use the elapsed deadline after preparation.
-                if (timed && (nanos <= 0 || !first && System.nanoTime() - started >= nanos)) return futures;
-                execute((Runnable)future);
-                first = false;
+            if (!timed) {
+                // Untimed JDK invokeAll submits each result before constructing
+                // the next. Record it first in case execute accepts then throws.
+                for (Callable<T> task : tasks) {
+                    Future<T> future = newTaskFor(Objects.requireNonNull(task));
+                    futures.add(future);
+                    execute((Runnable)future);
+                }
+            } else {
+                // The timed form materializes its results before any submission.
+                for (Callable<T> task : tasks) futures.add(newTaskFor(Objects.requireNonNull(task)));
+                boolean first = true;
+                for (Future<T> future : futures) {
+                    // Test the original duration for the first submit; later
+                    // submits use the elapsed deadline after preparation.
+                    if (nanos <= 0 || !first && System.nanoTime() - started >= nanos) return futures;
+                    execute((Runnable)future);
+                    first = false;
+                }
             }
             for (Future<T> future : futures) {
                 // Preserve custom RunnableFuture dispatch, as the JDK does:
