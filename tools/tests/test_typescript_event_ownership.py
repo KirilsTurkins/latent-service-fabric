@@ -156,6 +156,10 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
                                   b'  bool listeners_removed = false;\n', 1)
         changed = changed.replace(b'  if (JS_IsExceptionPending(cx)) return false;\n', b'', 1)
         changed = changed.replace(b'    bool called = false;\n', b'', 1)
+        changed = changed.replace(b'      RootedObject current_target(cx, Event::current_target(event));\n'
+                                  b'      called = JS::Call(cx, current_target, callback_val, args, &rval);',
+                                  b'      auto global = engine->global();\n'
+                                  b'      called = JS::Call(cx, global, callback_val, args, &rval);')
         changed = changed.replace(b'called = JS::Call(', b'JS::Call(')
         changed = changed.replace(
             b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn) ||\n'
@@ -174,6 +178,15 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
                  b'    }\n\n')
         self.assertEqual(changed.count(fence), 1)
         changed = changed.replace(fence, b'', 1)
+        # Only the reviewed receiver/reporting boundaries change; the remaining
+        # original ordering, once-removal and object-listener body is preserved.
+        report_start = changed.index(b"      // The engine's void logger")
+        report_end = changed.index(b'      JS::PrintError(stderr, report, false);\n', report_start) + len(b'      JS::PrintError(stderr, report, false);\n')
+        original_report_start = original.index(b'      // TODO: report an exception')
+        original_report_end = original.index(b'      JS_ClearPendingException(cx);\n', original_report_start) + len(b'      JS_ClearPendingException(cx);\n')
+        changed = changed[:report_start] + original[original_report_start:original_report_end] + changed[report_end:]
+        changed = changed.replace(b'    RootedValue callback_val(cx, listener->callback);',
+                                  b'    auto *engine = api::Engine::get(cx);\n    RootedValue callback_val(cx, listener->callback);')
         changed = changed.replace(b'  return !invocation_failed;\n', b'  return true;\n', 1)
         self.assertEqual(changed, original)
         dispatch_start = b'bool EventTarget::dispatch(JSContext *cx'
@@ -336,7 +349,9 @@ class AbortFailureControls(unittest.TestCase):
                      'audit-first-error-then-ack-refusal',
                      'audit-graph-mutation', 'audit-default-growth', 'audit-default-shrink',
                      'audit-default-reentry-failure', 'audit-default-reentry-fatal',
-                     'audit-boundary-empty', 'audit-boundary-inline', 'audit-boundary-heap'):
+                     'audit-boundary-empty', 'audit-boundary-inline', 'audit-boundary-heap',
+                     'algorithms-first-error', 'algorithms-later-fatal', 'algorithms-ack-refusal',
+                     'algorithms-event-failure', 'algorithms-undefined-first', 'algorithms-oom-first'):
             with self.subTest(case=case):
                 result = subprocess.run([str(self.selected_binary), case], capture_output=True, timeout=10)
                 self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
@@ -442,7 +457,9 @@ class EventCallbackFailureControls(unittest.TestCase):
 
     def test_fatal_outcome_fences_callbacks_without_changing_catchable_reporting(self):
         for case in ('success', 'function-fatal', 'object-fatal', 'catchable-continues',
-                     'success-pending-reported', 'getter-failure', 'getter-pending', 'entry-pending'):
+                     'success-pending-reported', 'getter-failure', 'getter-pending', 'entry-pending',
+                     'function-receiver', 'report-no-script', 'steal-fatal', 'steal-error',
+                     'steal-success-pending', 'report-fatal', 'report-error', 'report-success-pending'):
             with self.subTest(case=case):
                 result = subprocess.run([str(self.selected_binary), case], capture_output=True, timeout=10)
                 self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])
@@ -450,7 +467,9 @@ class EventCallbackFailureControls(unittest.TestCase):
                                  {'case': case, 'passed': True, 'engineQualified': False})
 
     def test_original_reproduces_fatal_and_pending_callback_failures(self):
-        for case in ('function-fatal', 'object-fatal', 'getter-failure', 'getter-pending', 'entry-pending'):
+        for case in ('function-fatal', 'object-fatal', 'getter-failure', 'getter-pending', 'entry-pending',
+                     'function-receiver', 'report-no-script', 'steal-fatal', 'steal-error',
+                     'steal-success-pending', 'report-fatal', 'report-error', 'report-success-pending'):
             with self.subTest(case=case):
                 result = subprocess.run([str(self.original_binary), case], capture_output=True, timeout=10)
                 self.assertEqual(result.returncode, 1, (result.stdout + result.stderr)[:65536])
@@ -666,5 +685,104 @@ class AbortListenerIdentityControls(unittest.TestCase):
                 self.assertFalse(record['engineQualified'])
 
 
-if __name__ == '__main__':
+class AbortGraphPublicationControls(unittest.TestCase):
+    """Actual emitted graph transaction with finite allocation fault injection."""
+    @classmethod
+    def setUpClass(cls):
+        compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++') or shutil.which('cl')
+        if not compiler:
+            raise RuntimeError('C++ compiler required for graph publication controls')
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.temporary.cleanup)
+        out = Path(cls.temporary.name)
+        marker = b'// INSERT_EMITTED_GRAPH_CREATION'
+        template = (Path(__file__).parent/'fixtures/typescript_abort_graph_publication.cpp').read_bytes()
+        if template.count(marker) != 1:
+            raise AssertionError('unique graph transaction marker required')
+        start = b'JSObject *AbortSignal::create_with_signals('
+        end = b'bool AbortSignal::constructor('
+        selected = derive()[0][abort_engine.PATH]
+        original = (FIXTURES/'original-abort-signal.cpp').read_bytes()
+        previous = original[original.index(start):original.index(end)]
+        # Previous selected implementation checked each insert, but published
+        # reciprocal links incrementally. Keep this negative control explicit.
+        for operation in (b'our_signals->insert(signal)', b'our_signals->insert(source)', b'their_signals->insert(self)'):
+            previous = previous.replace(operation+b';', b'if (!'+operation+b') { JS_ReportOutOfMemory(cx); return nullptr; }')
+        for label, body in (('selected', selected[selected.index(start):selected.index(end)]), ('previous', previous)):
+            src = out/(label+'.cpp')
+            # The legacy implementation has no pending-entry check.
+            text = template.replace(marker, body)
+            if label == 'previous':
+                text = text.replace(b'static bool JS_IsExceptionPending(', b'[[maybe_unused]] static bool JS_IsExceptionPending(')
+            src.write_bytes(text)
+            binary = out/(label+('.exe' if os.name == 'nt' else ''))
+            if Path(compiler).stem.lower() == 'cl':
+                command = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX', str(src), '/Fe:'+str(binary), '/Fo:'+str(out/(label+'.obj'))]
+            else:
+                command = [compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror', str(src), '-o', str(binary)]
+            result = subprocess.run(command, capture_output=True, timeout=60)
+            if result.returncode:
+                raise AssertionError((result.stdout+result.stderr)[:65536].decode(errors='replace'))
+            setattr(cls, label+'_binary', binary)
+
+    def check_case(self, binary, case, position=0, expected=True):
+        result = subprocess.run([str(binary), case, str(position)], capture_output=True, timeout=10)
+        self.assertEqual(result.returncode, 0 if expected else 1, (result.stdout+result.stderr)[:65536])
+        self.assertEqual(json.loads(result.stdout), {'case': case, 'position': position, 'passed': expected, 'engineQualified': False})
+
+    def test_complete_staging_reserves_before_every_backlink_publication(self):
+        for case in ('success', 'empty', 'already-aborted', 'entry-pending'):
+            with self.subTest(case=case):
+                self.check_case(self.selected_binary, case)
+        for case in ('stage-failure', 'reserve-failure'):
+            for position in range(1, 10):
+                with self.subTest(case=case, position=position):
+                    self.check_case(self.selected_binary, case, position)
+
+    def test_previous_incremental_publication_leaves_partial_reciprocal_links(self):
+        for case in ('stage-failure', 'reserve-failure'):
+            for position in (2, 9):
+                with self.subTest(case=case, position=position):
+                    self.check_case(self.previous_binary, case, position, expected=False)
+
+
+class AbortHandlerControls(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++') or shutil.which('cl')
+        if not compiler:
+            raise RuntimeError('C++ compiler required for onabort controls')
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.temporary.cleanup)
+        out = Path(cls.temporary.name)
+        source = derive()[0][abort_engine.PATH]
+        start = source.index(b'bool AbortSignal::onabort_invoke(')
+        end = source.index(b'// https://dom.spec.whatwg.org/#dom-abortsignal-timeout', start)
+        template = (Path(__file__).parent/'fixtures/typescript_abort_handler.cpp').read_bytes()
+        marker = b'// INSERT_EMITTED_HANDLER'
+        if template.count(marker) != 1:
+            raise AssertionError('unique onabort emission point required')
+        src = out/'handler.cpp'
+        src.write_bytes(template.replace(marker, source[start:end]))
+        cls.binary = out/('handler.exe' if os.name == 'nt' else 'handler')
+        if Path(compiler).stem.lower() == 'cl':
+            command = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX', str(src), '/Fe:'+str(cls.binary), '/Fo:'+str(out/'handler.obj')]
+        else:
+            command = [compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror', str(src), '-o', str(cls.binary)]
+        result = subprocess.run(command, capture_output=True, timeout=60)
+        if result.returncode:
+            raise AssertionError((result.stdout+result.stderr)[:65536].decode(errors='replace'))
+
+    def test_stable_handler_identity_conversion_reentry_and_failure_boundaries(self):
+        for case in ('install-failure', 'function-failure', 'function-pending', 'entry-pending',
+                     'noncallable', 'replace-order', 'remove-independent', 'remove-failure',
+                     'primitive-clears', 'callback-reentry', 'false-cancels', 'native-fatal',
+                     'callback-throws', 'success-pending'):
+            with self.subTest(case=case):
+                result = subprocess.run([str(self.binary), case], capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 0, (result.stdout+result.stderr)[:65536])
+                self.assertEqual(json.loads(result.stdout), {'case': case, 'passed': True, 'engineQualified': False})
+
+
+if __name__ == "__main__":
     unittest.main()

@@ -391,32 +391,33 @@ class TypeScriptAbortSourceTests(unittest.TestCase):
         self.assertFalse(receipt['supportedAsyncProfile'])
         self.assertFalse(receipt['signedLSFComponentQualified'])
 
-    def test_pinned_abort_reason_event_algorithms_and_other_methods_are_preserved(self):
+    def test_pinned_abort_unchanged_methods_and_reviewed_failure_transactions(self):
         from tools.typescript_guest.abort_engine import derive_abort_timeout
         raw = (FIXTURES/'original-abort-signal.cpp').read_bytes()
         after, _ = derive_abort_timeout(raw)
-        first = b'bool AbortSignal::run_abort_steps('
-        boundary = b'JSObject *AbortSignal::create_with_timeout('
-        original = raw[raw.index(first):raw.index(boundary)]
-        changed = after[after.index(first):after.index(boundary)]
-        # Check the precise failure fences without pinning the former bug that
-        # allowed a successful native boolean to hide a pending exception.
-        for replacement, previous in (
-                (b'  if (!event || JS_IsExceptionPending(cx)) return false;\n', b''),
-                (b'create_abort_exception(cx, "AbortError")',
-                 b'dom_exception::DOMException::create(cx, "AbortError", "AbortError")'),
-                (b'  if (JS_IsExceptionPending(cx)) return false;\n', b''),
-                (b'    if (!algorithm->run(cx) || JS_IsExceptionPending(cx)) {\n',
-                 b'    if (!algorithm->run(cx)) {\n'),
-                (b'  const bool dispatched = EventTarget::dispatch_event(cx, self, event_val, &res_val);\n'
-                 b'  return dispatched && !JS_IsExceptionPending(cx);\n',
-                 b'  return EventTarget::dispatch_event(cx, self, event_val, &res_val);\n')):
-            self.assertEqual(changed.count(replacement), 1)
-            changed = changed.replace(replacement, previous, 1)
+        # Preserve untouched public setup/trace methods, not the historical
+        # early-return and incremental-publication bugs being corrected.
+        constructor = b'bool AbortSignal::constructor('
+        self.assertEqual(raw[raw.index(constructor):], after[after.index(constructor):])
+        begin = b'bool AbortSignal::set_reason('
+        end = b'JSObject *AbortSignal::create_with_timeout('
+        original = raw[raw.index(begin):raw.index(end)]
+        changed = after[after.index(begin):after.index(end)]
+        changed = changed.replace(b'create_abort_exception(cx, "AbortError")',
+                                  b'dom_exception::DOMException::create(cx, "AbortError", "AbortError")')
+        changed = changed.replace(
+            b'  SetReservedSlot(self, std::to_underlying(Slots::OnAbortListener), JS::NullValue());\n', b'')
         self.assertEqual(changed, original)
-        following = b'// https://dom.spec.whatwg.org/#dom-abortsignal-any'
-        self.assertEqual(raw[raw.index(following, raw.index(boundary)):],
-                         after[after.index(following, after.index(boundary)):])
+        steps = after[after.index(b'bool AbortSignal::run_abort_steps('):after.index(begin)]
+        self.assertIn(b'if (JS_IsExceptionPending(cx)) return false;', steps)
+        self.assertLess(steps.index(b'RootedValue event_val(cx)'), steps.index(b'Maybe<JS::AutoSaveExceptionState>'))
+        self.assertIn(b'if (first_failure) first_failure->drop();', steps)
+        self.assertIn(b'first_failure->restore(); return false;', steps)
+        self.assertNotIn(b'algorithms->clear()', steps)  # failed accepted work remains owned
+        self.assertLess(steps.index(b'algorithms->erase('), steps.index(b'event = Event::create('))
+        graph = after[after.index(b'JSObject *AbortSignal::create_with_signals('):after.index(constructor)]
+        self.assertLess(graph.index(b'links.reserve('), graph.index(b'infallibleAppend(self.get())'))
+        self.assertNotIn(b'their_signals->insert(self)', graph)
         self.assertIn(b'create_abort_exception(cx, "TimeoutError")', after)
 
     def test_pinned_abort_source_change_is_rejected_before_derivation(self):
