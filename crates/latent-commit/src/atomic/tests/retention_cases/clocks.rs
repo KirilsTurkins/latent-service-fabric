@@ -1,6 +1,65 @@
 use super::*;
 
 #[test]
+fn quota_read_bounds_corrupt_rows_and_preserves_small_legacy_stores() {
+    let root = tempfile::tempdir().unwrap();
+    let row = RowKey {
+        family: Family::Maintenance,
+        key: b"quota-bound-test".to_vec(),
+    };
+    let open = |name: &str, limits| {
+        EmbeddedStore::open_file(
+            OpenOptions::new()
+                .read(true)
+                .write(true)
+                .create_new(true)
+                .open(root.path().join(name))
+                .unwrap(),
+            limits,
+        )
+        .unwrap()
+    };
+    let small = open(
+        "legacy.redb",
+        StoreLimits {
+            maximum_value_bytes: 128,
+            ..StoreLimits::default()
+        },
+    );
+    let mut legacy = b"LCU\0\x01".to_vec();
+    legacy.extend_from_slice(&[0; 56]);
+    small
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: row.clone(),
+                value: Some(legacy.clone()),
+            }],
+        })
+        .unwrap();
+    let view = small.snapshot().unwrap();
+    let (usage, _, original) = writer::Usage::read_row(&view, row.clone()).unwrap();
+    assert!(!usage.accounted);
+    assert_eq!(original, Some(legacy));
+
+    let large = open("corrupt.redb", StoreLimits::default());
+    large
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: row.clone(),
+                value: Some(vec![0; latent_state::reservation::QUOTA_BYTES + 1]),
+            }],
+        })
+        .unwrap();
+    let view = large.snapshot().unwrap();
+    assert!(matches!(
+        writer::Usage::read_row(&view, row),
+        Err(AtomicError::Corrupt)
+    ));
+}
+
+#[test]
 fn repeated_small_wall_only_jumps_hold_response_expiry_across_progress_reopen() {
     let (dir, store, effects) = setup();
     let record = completed(&store, &effects, "cumulative-clock-drift");
@@ -133,4 +192,80 @@ fn boot_recovery_requires_exact_authorized_anchor_and_does_not_extend_original_h
     assert!(response.is_none());
     assert_eq!(protected.result_expires, 1100);
     assert_eq!(protected.identity_expires, 2100);
+}
+
+#[test]
+fn same_boot_reanchor_cannot_renew_cumulative_drift_tolerance() {
+    let (_dir, store, effects) = setup();
+    let record = completed(&store, &effects, "reanchor-clock-drift");
+    let owner = ResultMaintenanceOwner::default();
+    owner
+        .anchor(&store, None, observation(100, 0), maintenance)
+        .unwrap();
+    let body = result_bytes(&store, &record);
+    let first = owner
+        .step(&store, observation(1000, 0), maintenance)
+        .unwrap();
+    let reanchored = owner
+        .anchor(
+            &store,
+            Some(first.generation),
+            observation(1000, 0),
+            maintenance,
+        )
+        .unwrap();
+    assert_eq!(
+        owner.step(&store, observation(1900, 0), maintenance),
+        Err(AtomicError::RecoveryRequired)
+    );
+    assert_eq!(
+        owner.anchor(
+            &store,
+            Some(reanchored.generation),
+            observation(1900, 0),
+            maintenance
+        ),
+        Err(AtomicError::RecoveryRequired)
+    );
+    assert_eq!(result_bytes(&store, &record), body);
+    assert_eq!(reanchored.anchor_unix_millis, 100);
+    assert_eq!(reanchored.anchor_monotonic_millis, 0);
+    let resumed = owner
+        .anchor(
+            &store,
+            Some(reanchored.generation),
+            observation(70_100, 70_000),
+            maintenance,
+        )
+        .unwrap();
+    assert_eq!(resumed.anchor_unix_millis, 100);
+    assert_eq!(
+        owner.anchor(
+            &store,
+            Some(resumed.generation),
+            observation(70_099, 70_001),
+            maintenance
+        ),
+        Err(AtomicError::RecoveryRequired)
+    );
+    assert_eq!(
+        owner.anchor(
+            &store,
+            Some(resumed.generation),
+            observation(70_101, 69_999),
+            maintenance
+        ),
+        Err(AtomicError::RecoveryRequired)
+    );
+    let persisted = store
+        .snapshot()
+        .unwrap()
+        .get(&MaintenanceProgress::key())
+        .unwrap()
+        .unwrap();
+    assert_eq!(MaintenanceProgress::decode(&persisted).unwrap(), resumed);
+    owner
+        .step(&store, observation(70_101, 70_001), maintenance)
+        .unwrap();
+    assert!(result_bytes(&store, &record).starts_with(b"LCE\0\x01"));
 }

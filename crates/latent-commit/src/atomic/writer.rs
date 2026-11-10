@@ -1423,7 +1423,12 @@ impl Usage {
         view: &ReadView,
         row: RowKey,
     ) -> Result<(Self, RowKey, Option<Vec<u8>>), AtomicError> {
-        let bytes = view.get(&row)?;
+        // A legacy store may have a value limit smaller than the fixed modern
+        // quota row. In that case the engine limit itself bounds the copy.
+        let bytes = match view.get_bounded(&row, latent_state::reservation::QUOTA_BYTES) {
+            Err(latent_state::embedded::StoreError::Invalid) => view.get(&row)?,
+            result => result?,
+        };
         let usage = if let Some(bytes) = &bytes {
             Self::decode(bytes)?
         } else {
