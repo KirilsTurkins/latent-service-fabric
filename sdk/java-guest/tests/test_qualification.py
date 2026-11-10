@@ -380,6 +380,36 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
             "active:purge:before=2:removed=1:afterPurge=2:witness=1:afterCancel=1:reschedule=refused:callbacks=1",
             "self:before=2:witness=1:afterCancel=1:reschedule=refused:callbacks=1:witnessCalls=1"))
 
+    @staticmethod
+    def interrupted_jdk():
+        return "\n".join((
+            "once-direct:survived=true:accepted=true:calls=1:error=none:flag=false:queued=-1,-1,-1:owners=-1",
+            "periodic-direct:survived=true:accepted=true:calls=2:error=none:flag=false:queued=-1,-1,-1:owners=-1",
+            "once-sleep:survived=true:accepted=true:calls=1:error=none:flag=false:queued=-1,-1,-1:owners=-1",
+            "periodic-sleep:survived=true:accepted=true:calls=2:error=none:flag=false:queued=-1,-1,-1:owners=-1",
+            "once-flag:survived=true:accepted=true:calls=1:error=none:flag=true:queued=-1,-1,-1:owners=-1",
+            "once-subclass:survived=true:accepted=true:calls=1:error=none:flag=false:queued=-1,-1,-1:owners=-1",
+            "runtime:survived=false:accepted=false:calls=1:error=IllegalStateException:flag=none:queued=-1,-1,-1:owners=-1",
+            "error:survived=false:accepted=false:calls=1:error=AssertionError:flag=none:queued=-1,-1,-1:owners=-1"))
+
+    @staticmethod
+    def interrupted_source():
+        return "\n".join((
+            "once-direct:survived=true:accepted=true:calls=1:error=none:flag=false:queued=2,1,1:owners=0",
+            "periodic-direct:survived=true:accepted=true:calls=2:error=none:flag=false:queued=1,1,1:owners=0",
+            "once-sleep:survived=true:accepted=true:calls=1:error=none:flag=false:queued=2,1,1:owners=0",
+            "periodic-sleep:survived=true:accepted=true:calls=2:error=none:flag=false:queued=1,1,1:owners=0",
+            "once-flag:survived=true:accepted=true:calls=1:error=none:flag=true:queued=2,1,1:owners=0",
+            "once-subclass:survived=true:accepted=true:calls=1:error=none:flag=false:queued=2,1,1:owners=0",
+            "runtime:survived=false:accepted=false:calls=1:error=IllegalStateException:flag=none:queued=2,0,0:owners=0",
+            "error:survived=false:accepted=false:calls=1:error=AssertionError:flag=none:queued=2,0,0:owners=0"))
+
+    @staticmethod
+    def interrupted_settlement(thrown, outcome, queued):
+        primary = "source-queued-settlement-" + outcome if thrown == "interrupt" else "guest-primary"
+        return (thrown + ":" + outcome + ":primary=" + primary + ":poisoned=true:retained=true:queued="
+                + str(queued) + ":executors=1:attempts=2")
+
     def prelude(self):
         return ["", self.class_monitor_receipt(), self.cancelled_jdk(), "", self.class_monitor_receipt(), self.cancelled_source()]
 
@@ -387,7 +417,9 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
         settlement = lambda mode, queued: (mode + ":witness=false:poisoned=true:retained=true:queued=" + str(queued)
             + ":executors=1:attempts=3:admission=refused")
         return [*self.prelude(), *([self.receipt()] * 3), *self.active_receipts(), "", "TIMER_CLOCK_ORDER PASS\n",
-                settlement("refused", 1), settlement("lost", 0)]
+                settlement("refused", 1), settlement("lost", 0), self.interrupted_jdk(), self.interrupted_source(),
+                self.interrupted_settlement("interrupt", "refused", 1), self.interrupted_settlement("interrupt", "lost", 0),
+                self.interrupted_settlement("runtime", "refused", 1), self.interrupted_settlement("runtime", "lost", 0)]
 
     def test_incomplete_retirement_or_observables_cannot_qualify_source(self):
         for incomplete in ("42 42 42 42", self.receipt().replace(";no-live-owners", ""),
@@ -421,6 +453,8 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
                 "fibers/conformance/compiler/standard-timer-control/TimerClassMonitorReferenceControl.java",
                 "fibers/conformance/compiler/standard-timer-control/TimerCancelledQueueReferenceControl.java",
                 "fibers/conformance/compiler/standard-timer-control/TimerCancelledSettlementOwnerControl.java",
+                "fibers/conformance/compiler/standard-timer-control/TimerInterruptedCallbackControl.java",
+                "fibers/conformance/compiler/standard-timer-control/TimerInterruptedSettlementOwnerControl.java",
                 "fibers/conformance/compiler/standard-timer-control/FakeClock.java",
                 "fibers/conformance/compiler/standard-timer-control/ClockOrderControl.java",
                 "fibers/conformance/compiler/standard-timer-control/dev/latent/generated/Bindings.java",
@@ -431,6 +465,7 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
             self.assertEqual(report["iterations"], 3)
             self.assertEqual(report["classMonitor"], "JDK-and-SDK-source-controls-passed")
             self.assertEqual(report["cancelledTail"], "JDK-reference-and-bounded-private-ledger-passed")
+            self.assertEqual(report["interruptedCallback"], "JDK-reference-and-bounded-private-ledger-passed")
             self.assertEqual(fibers.STANDARD_TIMER_ACTIVE_OWNER_CASES[-12:], (
                 "manage-before", "manage-close-refused", "manage-close-lost",
                 "start-before", "start-uncertain", "start-accepted", "start-close-refused", "start-close-lost",
@@ -489,8 +524,26 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
     def test_cancelled_tail_receipts_fail_closed(self):
         original = self.successful_receipts()
         for index, error in ((2, "cancelled timer reference"), (5, "cancelled timer source"),
-                             (len(original)-2, "cancelled timer settlement"),
-                             (len(original)-1, "cancelled timer settlement")):
+                             (len(original)-8, "cancelled timer settlement"),
+                             (len(original)-7, "cancelled timer settlement")):
+            with self.subTest(index=index), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                compiler = self.fixture(root)
+                receipts = self.successful_receipts()
+                receipts[index] += ";incomplete"
+                compiler.run.side_effect = receipts
+                with self.assertRaisesRegex(ValueError, error):
+                    fibers.standard_timer_source_control(compiler, root / "control")
+                self.assertEqual(compiler.run.call_count, index + 1)
+
+    def test_interrupted_callback_receipts_fail_closed(self):
+        original = self.successful_receipts()
+        for index, error in ((len(original)-6, "interrupted timer reference"),
+                             (len(original)-5, "interrupted timer source"),
+                             (len(original)-4, "interrupted timer settlement"),
+                             (len(original)-3, "interrupted timer settlement"),
+                             (len(original)-2, "interrupted timer settlement"),
+                             (len(original)-1, "interrupted timer settlement")):
             with self.subTest(index=index), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 compiler = self.fixture(root)

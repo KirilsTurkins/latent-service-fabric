@@ -245,7 +245,11 @@ public class Timer implements Activation.ManagedPool {
                 }
                 Throwable callbackFailure = null;
                 try { entry.task.run(); }
-                catch (Throwable error) { callbackFailure = error; throw error; }
+                catch (Throwable error) {
+                    // The reference Timer worker ignores an InterruptedException
+                    // from either wait or the task body, then processes its queue.
+                    if (!(error instanceof InterruptedException)) { callbackFailure = error; throw error; }
+                }
                 finally {
                     synchronized (lock) {
                         try { entry.returned(); pendingWork--; }
