@@ -174,6 +174,54 @@ fn checkpoint_component(
         record["sourceDigest"],
         latent_artifacts::package::artifact_blob_digest(&source).as_str()
     );
+    if matches!(
+        variable,
+        "LSF_GO_CHECKPOINT_FIXTURE" | "LSF_GO_NO_CHECKPOINT_FIXTURE"
+    ) {
+        let transforms: serde_json::Value = serde_json::from_slice(
+            &std::fs::read(prepared.join("go-runtime-transformations.json")).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(transforms["profile"], profile);
+        let rows = transforms["automaticTransformations"].as_array().unwrap();
+        let mut selected = rows
+            .iter()
+            .filter(|row| row["name"] == "go-compiler-checkpoints/export_tests_caller_api/main.go");
+        if profile == "go-component-activation-v2" {
+            let application = selected.next().expect("checkpointed application source");
+            assert!(
+                selected.next().is_none(),
+                "duplicate application transformation"
+            );
+            assert_eq!(
+                application["upstreamDigest"],
+                latent_artifacts::package::artifact_blob_digest(&source).as_str()
+            );
+            let needle = b"goto again";
+            let mut offsets = source
+                .windows(needle.len())
+                .enumerate()
+                .filter_map(|(offset, bytes)| (bytes == needle).then_some(offset));
+            let offset = offsets.next().expect("fixture backward goto");
+            assert!(offsets.next().is_none(), "ambiguous fixture backward goto");
+            let preceding = &source[..offset];
+            let line = 1 + preceding.iter().filter(|byte| **byte == b'\n').count();
+            let column = preceding
+                .iter()
+                .rposition(|byte| *byte == b'\n')
+                .map_or(offset + 1, |newline| offset - newline);
+            assert!(application["sites"].as_array().unwrap().iter().any(|site| {
+                site["line"].as_u64() == Some(line as u64)
+                    && site["column"].as_u64() == Some(column as u64)
+                    && site["suspendable"] == true
+            }));
+        } else {
+            assert!(
+                selected.next().is_none(),
+                "negative source was checkpointed"
+            );
+        }
+    }
     if profile == "go-component-activation-v2"
         || timers
         || initializers
@@ -205,7 +253,7 @@ fn checkpoint_component(
             } else if timers {
                 serde_json::json!([0, 1, 2, 3, 5, 6, 18, 19, 20, 9, 11, 12, 13, 14, 15, 16, 17])
             } else {
-                serde_json::json!([0, 1, 4])
+                serde_json::json!([0, 1, 4, 5, 6])
             }
         );
         if timer_overlap {
@@ -729,7 +777,7 @@ async fn signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_a
     )
     .await;
     for iteration in 0..3 {
-        for mode in [0, 1, 4] {
+        for mode in [0, 1, 4, 5, 6] {
             let receipt = success(
                 f.manager
                     .start(f.request(&format!("go-checkpoints-{iteration}-{mode}"), mode))
@@ -828,6 +876,21 @@ async fn signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_a
         failure(negative.manager.start(blocked).unwrap().await).code,
         PlatformErrorCode::ResourceExhausted
     );
+    negative.idle().await;
+    // The same admission and channel path without the spin must fit this
+    // exact fuel budget before exhaustion can serve as the goto counterfactual.
+    let mut no_spin = negative.request("go-no-checkpoint-goto-control", 6);
+    no_spin.budget.cpu_fuel = 5_000_000;
+    assert_eq!(value(negative.manager.start(no_spin).unwrap().await), 42);
+    negative.idle().await;
+    let mut blocked_goto = negative.request("go-no-checkpoint-goto-cannot-progress", 5);
+    blocked_goto.budget.cpu_fuel = 5_000_000;
+    let error = failure(negative.manager.start(blocked_goto).unwrap().await);
+    assert_eq!(error.code, PlatformErrorCode::ResourceExhausted);
+    assert!(error.details.iter().any(|detail| {
+        detail.kind == "activation.fuel-exhausted"
+            && detail.fields.get("dimension").map(String::as_str) == Some("cpu-fuel")
+    }));
     negative.idle().await;
     assert_eq!(
         value(
