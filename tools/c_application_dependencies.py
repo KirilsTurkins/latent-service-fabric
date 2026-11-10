@@ -11,6 +11,9 @@ from tools.build_snapshot import digest
 from tools.c_static_symbols import MAX_SYMBOL_BYTES, MAX_SYMBOLS, defined_symbols, strong_symbols
 
 
+MAX_SOURCE_UNITS = 256
+
+
 class CDependencyError(DependencyError):
     """A concrete maintained C input refusal; never an inferred guest operation."""
     origin = 'c-application-dependencies'
@@ -188,7 +191,7 @@ def selected(closure: Closure | None, *, compiler_digest: str, runtime_digest: s
         selected_defines = options.get("defines", {})
         if item["role"] == "resource" and (selected_sources or selected_defines):
             raise DependencyError("c-resource-cannot-declare-executable-source")
-        if (not isinstance(selected_sources, list) or len(selected_sources) > 64
+        if (not isinstance(selected_sources, list) or len(selected_sources) > MAX_SOURCE_UNITS
                 or not isinstance(selected_includes, list) or len(selected_includes) > 64
                 or not isinstance(selected_defines, dict) or len(selected_defines) > 64):
             raise DependencyError("c-dependency-recipe-limit")
@@ -245,7 +248,7 @@ def selected(closure: Closure | None, *, compiler_digest: str, runtime_digest: s
                     or not re.fullmatch(r"[A-Za-z0-9_+.-]{1,128}", value)):
                 raise DependencyError("c-preprocessor-option-invalid")
             defines.append(name + "=" + value)
-    if len(sources) > 64 or len(includes) > 64 or len(archives) > 32 or len(defines) > 64:
+    if len(sources) > MAX_SOURCE_UNITS or len(includes) > 64 or len(archives) > 32 or len(defines) > 64:
         raise DependencyError("c-dependency-recipe-limit")
     return Inputs(tuple(sources), tuple(includes), tuple(archives), tuple(defines), {
         "formatVersion": 1, "artifacts": receipts, "target": "wasm32-wasi", "networkResolution": False,

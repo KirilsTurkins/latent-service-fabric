@@ -691,3 +691,190 @@ async fn abort_both_cancels_an_accepted_send_shutdown_owner() {
     drop(fixture);
     control.assert_native_settled();
 }
+
+#[tokio::test]
+async fn dropped_read_after_consumption_fences_reuse_and_retains_pending_owner() {
+    use crate::connection::TestWritePoint;
+
+    let (fixture, listener) = fixture().await;
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let stream = fixture
+        .provider
+        .start(&session, request(&fixture))
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    let held_write = stream.write(b"held".to_vec(), None).unwrap();
+    let owner = fixture
+        .provider
+        .inner
+        .connections
+        .snapshot(0)
+        .unwrap()
+        .unwrap();
+    let (entered, release) = owner.test_write_gate(TestWritePoint::AuditPending);
+    drop(owner);
+    peer.write_all(b"X").await.unwrap();
+    let mut read = stream.read(1, None).unwrap();
+    tokio::select! {
+        _ = &mut read => panic!("read completed before audit gate"),
+        reached = tokio::time::timeout(Duration::from_secs(1), entered) => reached.expect("test gate deadline").unwrap(),
+    }
+    assert_eq!(stream.inspect().delivered_read_bytes, 1);
+    assert_eq!(fixture.provider.usage().unwrap().pending_operations, 2);
+    drop(read);
+    drop(release);
+    assert_eq!(stream.inspect().state, StreamState::Stopping);
+    assert_eq!(fixture.provider.usage().unwrap().pending_operations, 1);
+    assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+    assert!(control.budget.host_memory_bytes() > baseline);
+    assert_eq!(
+        stream.read(1, None).err().unwrap().code,
+        StreamErrorCode::Cancelled
+    );
+    drop(held_write);
+    let mut byte = [0];
+    assert_eq!(
+        tokio::time::timeout(Duration::from_secs(1), peer.read(&mut byte))
+            .await
+            .unwrap()
+            .unwrap(),
+        0
+    );
+    assert_eq!(fixture.provider.usage().unwrap().connections, 0);
+    drop((peer, stream, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
+#[tokio::test]
+async fn failed_read_audit_fences_reuse_after_consuming_bytes() {
+    let (fixture, listener) = fixture().await;
+    let (session, control) = fixture.session(5000);
+    let stream = fixture
+        .provider
+        .start(&session, request(&fixture))
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    let held_write = stream.write(b"held".to_vec(), None).unwrap();
+    let owner = fixture
+        .provider
+        .inner
+        .connections
+        .snapshot(0)
+        .unwrap()
+        .unwrap();
+    owner.test_fail_audit_once();
+    drop(owner);
+    peer.write_all(b"X").await.unwrap();
+    let failure = stream.read(1, None).unwrap().await.err().unwrap();
+    assert_eq!(failure.code, StreamErrorCode::Uncertain);
+    assert_eq!(stream.inspect().delivered_read_bytes, 1);
+    assert_eq!(stream.inspect().state, StreamState::Stopping);
+    assert_eq!(fixture.provider.usage().unwrap().pending_operations, 1);
+    assert!(stream.read(1, None).is_err());
+    drop(held_write);
+    let mut byte = [0];
+    assert_eq!(
+        tokio::time::timeout(Duration::from_secs(1), peer.read(&mut byte))
+            .await
+            .unwrap()
+            .unwrap(),
+        0
+    );
+    drop((peer, stream, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
+#[tokio::test]
+async fn dropped_read_before_consumption_keeps_connection_usable() {
+    use std::{
+        future::{poll_fn, Future},
+        pin::Pin,
+        task::Poll,
+    };
+
+    let (fixture, listener) = fixture().await;
+    let (session, control) = fixture.session(5000);
+    let stream = fixture
+        .provider
+        .start(&session, request(&fixture))
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    let mut read = stream.read(1, None).unwrap();
+    assert!(poll_fn(|cx| Poll::Ready(Pin::new(&mut read).poll(cx)))
+        .await
+        .is_pending());
+    drop(read);
+    assert_eq!(stream.inspect().state, StreamState::Open);
+    peer.write_all(b"X").await.unwrap();
+    let mut output = stream.read(1, None).unwrap().await.unwrap().unwrap();
+    let bytes = output.copy_bytes().unwrap();
+    assert_eq!(bytes.as_ref(), b"X");
+    drop(bytes);
+    drop(output);
+    stream.close().await.unwrap();
+    drop((peer, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
+#[tokio::test]
+async fn dropped_read_after_socket_consumption_fences_before_currentness_return() {
+    use crate::connection::TestWritePoint;
+
+    let (fixture, listener) = fixture().await;
+    let (session, control) = fixture.session(5000);
+    let stream = fixture
+        .provider
+        .start(&session, request(&fixture))
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    let held_write = stream.write(b"held".to_vec(), None).unwrap();
+    let owner = fixture
+        .provider
+        .inner
+        .connections
+        .snapshot(0)
+        .unwrap()
+        .unwrap();
+    let (entered, release) = owner.test_write_gate(TestWritePoint::ReadConsumed);
+    drop(owner);
+    peer.write_all(b"X").await.unwrap();
+    let mut read = stream.read(1, None).unwrap();
+    tokio::select! {
+        _ = &mut read => panic!("read completed before consumption gate"),
+        reached = tokio::time::timeout(Duration::from_secs(1), entered) => reached.expect("test gate deadline").unwrap(),
+    }
+    assert_eq!(stream.inspect().delivered_read_bytes, 0);
+    drop(read);
+    drop(release);
+    assert_eq!(stream.inspect().state, StreamState::Stopping);
+    assert_eq!(fixture.provider.usage().unwrap().pending_operations, 1);
+    assert!(stream.read(1, None).is_err());
+    drop(held_write);
+    let mut byte = [0];
+    assert_eq!(
+        tokio::time::timeout(Duration::from_secs(1), peer.read(&mut byte))
+            .await
+            .unwrap()
+            .unwrap(),
+        0
+    );
+    drop((peer, stream, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}

@@ -38,8 +38,13 @@ use tokio_rustls::TlsAcceptor;
 
 const CONTRACT: &str = "examples:go-standard-network/api@1.0.0";
 const PROFILE: &str = "go-component-activation-v5";
+const V7_PROFILE: &str = "go-component-activation-v7";
 const SOURCE: &[u8] = include_bytes!("../../../sdk/go-guest/runtime/smtp-tls-conformance/main.go");
 const WORLD: &str = include_str!("../../../sdk/go-guest/runtime/smtp-tls-conformance/world.wit");
+const PUBLISHED_SOURCE: &[u8] =
+    include_bytes!("../../../sdk/go-guest/runtime/published-smtp-conformance/main.go");
+const PUBLISHED_WORLD: &str =
+    include_str!("../../../sdk/go-guest/runtime/published-smtp-conformance/world.wit");
 
 fn identity() -> (TlsAcceptor, String) {
     let ca_key = rcgen::KeyPair::generate().unwrap();
@@ -156,6 +161,61 @@ async fn signed_ordinary_go_smtp_starttls_preserves_trust_hostname_and_fresh_con
         (3, "trust-refused", "ordinary-starttls-trust-refused"),
         (4, "ordinary-starttls12", "ordinary-smtp-tls12"),
         (5, "fresh-starttls13", "ordinary-smtp-tls13"),
+    ] {
+        let receipt = fixture
+            .manager
+            .start(setup::request(&fixture, label, mode, port, &root_pem))
+            .unwrap()
+            .await;
+        setup::returned(receipt, expected, 1);
+        setup::idle(&fixture, label).await;
+        setup::observed(label, mode, expected, 1);
+    }
+    peer.await.unwrap();
+    assert_eq!(fixture.backend.resource_snapshot().stores_created, 6);
+    fixture.streams.take().unwrap().shutdown().await;
+    println!(
+        "GO_SMTP_COMPLETE {}",
+        json!({"cases":6,"contacts":6,
+        "cleanLogicalProviderStop":true,"normalProviderInstalled":false,
+        "kernelRetirementQualified":false,"hostTlsQualified":false})
+    );
+}
+
+#[tokio::test]
+#[ignore = "requires the freshly captured published Go SMTP/TLS component"]
+async fn signed_published_go_smtp_and_separate_worker_timer_preserve_original_owners() {
+    assert_eq!(std::env::var("LSF_GUEST_SDK_LANGUAGE").unwrap(), "go");
+    let root = tempfile::tempdir().unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let (acceptor, root_pem) = identity();
+    let mut fixture = setup::configured_published(root.path(), port).await;
+    let peer = tokio::spawn(async move {
+        for mode in 0..6 {
+            tokio::time::timeout(
+                Duration::from_secs(60),
+                exchange(&listener, &acceptor, mode),
+            )
+            .await
+            .unwrap();
+        }
+    });
+    for (mode, label, expected) in [
+        (0, "published-smtp-plain", "published-smtp-plain"),
+        (1, "published-starttls13", "published-smtp-tls13"),
+        (
+            2,
+            "published-hostname-refused",
+            "published-starttls-hostname-refused",
+        ),
+        (
+            3,
+            "published-trust-refused",
+            "published-starttls-trust-refused",
+        ),
+        (4, "published-starttls12", "published-smtp-tls12"),
+        (5, "published-fresh-starttls13", "published-smtp-tls13"),
     ] {
         let receipt = fixture
             .manager

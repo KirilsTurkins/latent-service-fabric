@@ -2,8 +2,21 @@ name: Execute ordinary Go SMTP and guest STARTTLS
 
 on:
   workflow_dispatch:
+    inputs:
+      profile:
+        description: Go runtime profile
+        type: choice
+        required: true
+        default: v5
+        options: [v5, v7]
+      program:
+        description: SMTP workload
+        type: choice
+        required: true
+        default: standard
+        options: [standard, published]
   push:
-    branches: ['feat/go-smtp-starttls-20261020']
+    branches: ['feat/go-smtp-starttls-20261020', 'feat/go-smtp-v7-20261110', 'feat/go-published-smtp-v7-20261110', 'fix/go-smtp-reference-pin-20261110']
 
 permissions:
   contents: read
@@ -26,6 +39,12 @@ jobs:
           python-version: 3.13.5
       - name: Install pinned source controls
         run: python3 -m pip install -r tools/requirements.lock
+      - name: Install captured Go compiler namespace for published client
+        if: ${{ github.ref_name == 'feat/go-published-smtp-v7-20261110' || github.ref_name == 'fix/go-smtp-reference-pin-20261110' || (github.event_name == 'workflow_dispatch' && inputs.program == 'published') }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Check exact input ownership cancellation and fail-closed selection
         run: python3 -m unittest tools.tests.test_go_smtp_tls_runtime tools.tests.test_go_network_runtime -v
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
@@ -60,7 +79,10 @@ jobs:
           echo "$out" >> "$GITHUB_PATH"
           echo "$out/go-async/bin" >> "$GITHUB_PATH"
       - name: Compile ordinary SMTP guest TLS then execute one targeted signed harness
-        run: python3 tools/qualify_go_smtp_tls_runtime.py --reference-go "$RUNNER_TEMP/go-smtp-tls-tools/go/bin/go" --source-commit "${{ github.sha }}" --output "$RUNNER_TEMP/go-smtp-tls-runtime"
+        env:
+          LSF_GO_SMTP_TLS_DISPATCH_PROFILE: ${{ inputs.profile }}
+          LSF_GO_SMTP_TLS_DISPATCH_PROGRAM: ${{ inputs.program }}
+        run: python3 tools/qualify_go_smtp_tls_runtime.py --reference-go "$RUNNER_TEMP/go-smtp-tls-tools/go/bin/go" --source-commit "${{ github.sha }}" --output "$RUNNER_TEMP/go-smtp-tls-runtime" --workflow-selection
       - name: Retain bounded compiler and owner evidence including failures
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
@@ -70,6 +92,16 @@ jobs:
             ${{ runner.temp }}/go-smtp-tls-runtime/*.json
             ${{ runner.temp }}/go-smtp-tls-runtime/*.log
             ${{ runner.temp }}/go-smtp-tls-runtime/fixture/GO-SMTP-TLS-COMPILE.json
+            ${{ runner.temp }}/go-smtp-tls-runtime/fixture/GO-SMTP-PUBLISHED-COMPILE.json
+            ${{ runner.temp }}/go-smtp-tls-runtime/fixture/PUBLISHED-FAILED.json
+            ${{ runner.temp }}/go-smtp-tls-runtime/fixture/project/go.mod
+            ${{ runner.temp }}/go-smtp-tls-runtime/fixture/project/go.sum
+            ${{ runner.temp }}/go-smtp-tls-runtime/fixture/project/go-resolved.lock.json
+            ${{ runner.temp }}/go-smtp-tls-runtime/fixture/project/latent.dependencies.json
+            ${{ runner.temp }}/go-smtp-tls-runtime/fixture/project/latent.dependencies.lock.json
+            ${{ runner.temp }}/go-smtp-tls-runtime/fixture/project/dependency-inputs/objects/**
+            ${{ runner.temp }}/go-smtp-tls-runtime/fixture/authoring/*.json
+            ${{ runner.temp }}/go-smtp-tls-runtime/fixture/authoring/logs/**
             ${{ runner.temp }}/go-smtp-tls-runtime/fixture/go-runtime-transformations.json
             ${{ runner.temp }}/go-smtp-tls-runtime/fixture/logs/**
             ${{ runner.temp }}/go-smtp-tls-runtime/fixture/build/component.wasm

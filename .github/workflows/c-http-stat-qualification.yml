@@ -42,7 +42,7 @@
   },
   "jobs": {
     "ordinary-stat": {
-      "name": "Nine signed ordinary C HEAD and Range cells",
+      "name": "Thirteen signed ordinary C HTTP outcomes",
       "runs-on": "ubuntu-24.04",
       "timeout-minutes": 25,
       "steps": [
@@ -98,12 +98,18 @@
           }
         },
         {
+          "uses": "KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6", # v7.1.0 + upstream changes + LSF security fixes
+          "with": {
+            "node-version": "24.19.0"
+          }
+        },
+        {
           "name": "Prepare pinned bindings and existing compiler containment",
           "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/guest-tools\"\necho \"$RUNNER_TEMP/guest-tools\" >> \"$GITHUB_PATH\"\nsudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
         },
         {
-          "name": "Build fresh ordinary products and execute nine signed libfetch HEAD and Range cells",
-          "run": "python3 -B -m unittest tools.tests.test_c_http_stat_qualification\npython3 -B tools/c_libfetch_stat_control.py\npython3 -B tools/c_http_stat_qualification.py --zig \"$(command -v zig)\" --wit-bindgen \"$(command -v wit-bindgen)\" --wasm-tools \"$(command -v wasm-tools)\" --output \"$RUNNER_TEMP/c-http-stat\""
+          "name": "Build fresh ordinary products and execute thirteen signed libfetch HTTP outcomes",
+          "run": "python3 -B -m unittest tools.tests.test_c_http_stat_qualification\npython3 -B tools/c_libfetch_stat_control.py --wasm32 --zig \"$(command -v zig)\" --node \"$(command -v node)\"\npython3 -B tools/c_http_stat_qualification.py --zig \"$(command -v zig)\" --wit-bindgen \"$(command -v wit-bindgen)\" --wasm-tools \"$(command -v wasm-tools)\" --output \"$RUNNER_TEMP/c-http-stat\""
         },
         {
           "name": "Retain original bounded proof including failures",
@@ -111,7 +117,7 @@
           "uses": "KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f", # v7.0.2 + upstream changes + LSF security fixes
           "with": {
             "name": "c-http-stat-${{ github.run_id }}",
-            "path": "${{ runner.temp }}/c-http-stat/qualified.json\n${{ runner.temp }}/c-http-stat/FAILED.json\n${{ runner.temp }}/c-http-stat/logs/**\n${{ runner.temp }}/c-http-stat/owner-inputs/**\n${{ runner.temp }}/c-http-stat/project/**\n${{ runner.temp }}/c-http-stat/build/**\n${{ runner.temp }}/c-http-stat/native-build/logs/**\n${{ runner.temp }}/c-http-stat/native-build/native/native-tuple.json\n${{ runner.temp }}/c-http-stat/node/qualified.json\n${{ runner.temp }}/c-http-stat/node/FAILED.json\n${{ runner.temp }}/c-http-stat/node/signed/release-set.json\n${{ runner.temp }}/c-http-stat/node/signed/c-thread-runtime/package/**\n${{ runner.temp }}/c-http-stat/node/signed/c-thread-runtime/evidence/**\n${{ runner.temp }}/c-http-stat/node/signed/c-thread-runtime/deployment.json\n${{ runner.temp }}/c-http-stat/node/controls/**\n${{ runner.temp }}/c-http-stat/node/commands/logs/**\n${{ runner.temp }}/c-http-stat/node/invocation-*.json\n${{ runner.temp }}/c-http-stat/node/barrier-*.json\n${{ runner.temp }}/c-http-stat/node/peer-*.json\n${{ runner.temp }}/c-http-stat/node/retirement-*.json\n${{ runner.temp }}/c-http-stat/node/*.stdout\n${{ runner.temp }}/c-http-stat/node/*.stderr",
+            "path": "${{ runner.temp }}/c-http-stat/qualified.json\n${{ runner.temp }}/c-http-stat/FAILED.json\n${{ runner.temp }}/c-http-stat/logs/**\n${{ runner.temp }}/c-http-stat/owner-inputs/**\n${{ runner.temp }}/c-http-stat/project/**\n${{ runner.temp }}/c-http-stat/build/**\n${{ runner.temp }}/c-http-stat/native-build/logs/**\n${{ runner.temp }}/c-http-stat/native-build/native/native-tuple.json\n${{ runner.temp }}/c-http-stat/node/qualified.json\n${{ runner.temp }}/c-http-stat/node/FAILED.json\n${{ runner.temp }}/c-http-stat/node/signed/release-set.json\n${{ runner.temp }}/c-http-stat/node/signed/c-thread-runtime/package/**\n${{ runner.temp }}/c-http-stat/node/signed/c-thread-runtime/evidence/**\n${{ runner.temp }}/c-http-stat/node/signed/c-thread-runtime/deployment.json\n${{ runner.temp }}/c-http-stat/node/controls/**\n${{ runner.temp }}/c-http-stat/node/commands/logs/**\n${{ runner.temp }}/c-http-stat/node/invocation-*.json\n${{ runner.temp }}/c-http-stat/node/barrier-*.json\n${{ runner.temp }}/c-http-stat/node/peer-*.json\n${{ runner.temp }}/c-http-stat/node/retirement-*.json\n${{ runner.temp }}/c-http-stat/node/missing-provider/**\n${{ runner.temp }}/c-http-stat/node/*.stdout\n${{ runner.temp }}/c-http-stat/node/*.stderr",
             "if-no-files-found": "error",
             "retention-days": 7
           }

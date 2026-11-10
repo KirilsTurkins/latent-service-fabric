@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Qualify ordinary libfetch HEAD and Range with one signed C component."""
+"""Qualify ordinary libfetch HEAD, Range and redirect refusal with one signed C component."""
 from __future__ import annotations
 
 import argparse
@@ -32,7 +32,7 @@ from tools.standard_http.peer import Peer
 from tools.standard_http.vectors import DOMAIN, head, json_bytes
 from tools.static_api.node import policy
 
-CASES = ('normal', 'denied', 'not-found', 'fresh', 'range', 'range-ignored', 'range-denied',
+CASES = ('missing-grant', 'normal', 'denied', 'not-found', 'redirect', 'oversized', 'fresh', 'range', 'range-ignored', 'range-denied',
          'range-unsolicited', 'range-before')
 PROBE = 'sdk/c-guest/runtime-fixtures/libfetch/stat-probe.c'
 SELF = 'tools/c_http_stat_qualification.py'
@@ -66,11 +66,15 @@ class RangePeer(Peer):
         self.range_requests = 0
         self.unsolicited_requests = 0
         self.early_range_requests = 0
+        self.oversized_requests = 0
 
     def _start_request(self, stream, record):
         super()._start_request(stream, record)
         if record.parser.method == b'GET':
-            if record.vector.identity == 'domain-json' and b'range' not in record.parser.headers:
+            if record.vector.identity == 'oversized-body':
+                require(b'range' not in record.parser.headers, 'c-oversized-unexpected-range')
+                self.oversized_requests += 1
+            elif record.vector.identity == 'domain-json' and b'range' not in record.parser.headers:
                 self.unsolicited_requests += 1
             else:
                 require(record.parser.headers.get(b'range') == b'bytes=5-', 'c-range-exact-request')
@@ -108,8 +112,9 @@ def install(client, node, target, origin):
         'configurationDigest': descriptor['configurationDigest'], 'configurationEpoch': 1,
         'restriction': {'operations': []}})
     rules = []
-    for method, paths in [('HEAD', ['/conformance/json', '/conformance/status/404']),
-                          ('GET', ['/conformance/echo', '/conformance/json', '/conformance/body/boundary'])]:
+    for method, paths in [('HEAD', ['/conformance/json', '/conformance/status/404', '/conformance/redirect']),
+                          ('GET', ['/conformance/echo', '/conformance/json', '/conformance/body/boundary',
+                                   '/conformance/body/oversized'])]:
         rules.append({'id': 'ordinary-libfetch-' + method.lower(), 'effect': 'allow',
             'principals': [{'kind': 'administrator', 'subject': 'workflow-operator'}],
             'services': [target['service']], 'publications': [target['publication']],
@@ -123,15 +128,17 @@ def install(client, node, target, origin):
 
 
 def cell(client, probe, target, peer, output, case):
-    vectors = {'normal': 'domain-json', 'denied': 'method-bytes',
-               'not-found': 'http-404', 'fresh': 'domain-json', 'range': 'domain-json',
+    vectors = {'missing-grant': 'domain-json', 'normal': 'domain-json', 'denied': 'method-bytes',
+               'not-found': 'http-404', 'redirect': 'redirect', 'oversized': 'oversized-body',
+               'fresh': 'domain-json', 'range': 'domain-json',
                'range-ignored': 'response-boundary', 'range-denied': 'http-404',
                'range-unsolicited': 'domain-json', 'range-before': 'method-bytes'}
     require(case in CASES, 'c-stat-closed-case-set')
     before, revision = peer.observation(), owner.selected_revision(client, target)
     validate(before)
     activation = 'c-stat-' + case
-    process = owner.start_http_call(client, target, case + '\n' + peer.url(vectors[case]), activation)
+    mode = 'normal' if case == 'missing-grant' else case
+    process = owner.start_http_call(client, target, mode + '\n' + peer.url(vectors[case]), activation)
     deadline, primary = min(client.deadline, time.monotonic() + 8), False
     try:
         while not process.owner.exited():
@@ -141,9 +148,11 @@ def cell(client, probe, target, peer, output, case):
         row = owner.finish_call(client, process)
         write_json(output / ('invocation-' + activation + '.json'), row)
         response = row['response']
-        require(row['processReaped'] is True and response['outcomeKnown'] is True
-                and response['requestDispatched'] is True
-                and response['data']['resolvedRevision'] == revision, 'c-stat-known-current-invocation')
+        require(row['processReaped'] is True and response['outcomeKnown'] is True,
+                'c-stat-known-current-invocation')
+        if case != 'missing-grant':
+            require(response['requestDispatched'] is True
+                    and response['data']['resolvedRevision'] == revision, 'c-stat-known-current-invocation')
         def range_result(offset, total, data):
             checksum = 0
             for byte in data: checksum = (checksum * 33 + byte) & 0xffffffff
@@ -154,20 +163,31 @@ def cell(client, probe, target, peer, output, case):
             'fresh': (0, [{'ok': f'{len(json_bytes(DOMAIN))}:0:0'}]),
             'denied': (3, [{'err': 'permission-denied'}]),
             'not-found': (3, [{'err': 'unavailable'}]),
+            'redirect': (3, [{'err': 'redirect-unsupported'}]),
+            'oversized': (3, [{'err': 'response-too-large'}]),
             'range': range_result(5, len(domain), domain[5:]),
             'range-ignored': range_result(0, 8192, b'x' * 8192),
             'range-denied': (3, [{'err': 'permission-denied'}]),
             'range-unsolicited': (3, [{'err': 'invalid-content-range'}]),
             'range-before': (3, [{'err': 'invalid-content-range'}]),
         }
-        require(type(row['exitCode']) is int and (row['exitCode'], row['decoded']) == expected[case],
-                'c-stat-exact-ordinary-result')
         consumed = response['data']['consumption']
-        require(0 < owner.integer(consumed['cpuFuel']) <= 1_000_000_000
-                and 0 < owner.integer(consumed['peakMemoryBytes']) <= 32 * 1024**2
-                and all(owner.integer(consumed[key]) == 0 for key in ('stateReadBytes', 'stateWriteBytes',
-                    'blobReadBytes', 'blobWriteBytes', 'logBytes', 'effectCount', 'childCalls')),
-                'c-stat-original-budget-and-unrelated-authority')
+        if case == 'missing-grant':
+            # The required HTTP import is denied before entering the guest;
+            # no libfetch errno or guest-level error is fabricated here.
+            require(type(row['exitCode']) is int and row['exitCode'] == 4 and row['decoded'] is None
+                    and response['error']['code'] == 'permission-denied'
+                    and all(owner.integer(consumed[key]) == 0 for key in
+                            ('cpuFuel', 'peakMemoryBytes', 'outboundRequests')),
+                    'c-stat-missing-http-grant-prevents-guest')
+        else:
+            require(type(row['exitCode']) is int and (row['exitCode'], row['decoded']) == expected[case],
+                    'c-stat-exact-ordinary-result')
+            require(0 < owner.integer(consumed['cpuFuel']) <= 1_000_000_000
+                    and 0 < owner.integer(consumed['peakMemoryBytes']) <= 32 * 1024**2
+                    and all(owner.integer(consumed[key]) == 0 for key in ('stateReadBytes', 'stateWriteBytes',
+                        'blobReadBytes', 'blobWriteBytes', 'logBytes', 'effectCount', 'childCalls')),
+                    'c-stat-original-budget-and-unrelated-authority')
         for _ in range(128):
             observed = peer.observation()
             if observed['openConnections'] == 0: break
@@ -175,20 +195,30 @@ def cell(client, probe, target, peer, output, case):
             peer.poll(min(0.02, max(0, deadline - time.monotonic())))
         observed = peer.observation(); validate(observed)
         change = delta(before, observed)
-        if case in ('denied', 'range-denied'):
+        if case in ('missing-grant', 'denied', 'range-denied'):
             require_zero_contact(before, observed)
         else:
             require(change['startedRequests'] == 1 and len(change['requests']) == 1
                     and change['requests'][0]['vector'] == vectors[case]
-                    and change['requests'][0]['method'] == ('GET' if case.startswith('range') else 'HEAD')
+                    and change['requests'][0]['method'] == ('GET' if case.startswith('range') or case == 'oversized' else 'HEAD')
                     and change['requests'][0]['role'] == 'primary'
                     and change['requests'][0]['authorizationPresent'] is True
                     and change['rejectedRequests'] == change['connectionBoundRejections'] == 0,
                     'c-stat-one-authenticated-head-no-replay')
         require(observed['openConnections'] == 0, 'c-stat-no-peer-owners-left')
         write_json(output / ('peer-' + activation + '.json'), observed)
+        retirement = owner.retire(client, probe, target, output, activation)
+        if case == 'redirect':
+            # Both origins remain live. Drain any immediately pending contact
+            # after the original activation is retired, then fail on any new
+            # connection or request instead of treating an idle snapshot as a fence.
+            peer.poll(0.05)
+            after_retirement = peer.observation()
+            require_zero_contact(observed, after_retirement)
+            require(after_retirement['openConnections'] == 0, 'c-redirect-no-late-peer-owners')
+            write_json(output / ('peer-post-retirement-' + activation + '.json'), after_retirement)
         return {'case': case, 'activation': activation, 'exitCode': row['exitCode'],
-                'peerDelta': change, 'retirement': owner.retire(client, probe, target, output, activation)}
+                'peerDelta': change, 'retirement': retirement}
     except BaseException:
         primary = True
         write_json(output / ('peer-failed-' + activation + '.json'), peer.observation())
@@ -197,6 +227,172 @@ def cell(client, probe, target, peer, output, case):
         raise
     finally:
         owner.close_call(process, primary_failure=primary)
+
+
+def exercise_cells(client, node, probe, source, target, peer, output):
+    # Install the same original provider policies once, but first deploy only
+    # the two C-runtime grants. The otherwise-allowed HEAD then has no HTTP
+    # grant at all. Regrant the original HTTP policy before the positive cells.
+    grants = install(client, node, target, peer.origin())
+    runtime_grants = [grant for grant in grants if grant['capability'] != owner.HTTP]
+    http_grants = [grant for grant in grants if grant['capability'] == owner.HTTP]
+    require(len(http_grants) == 1 and len(runtime_grants) == len(owner.PROVIDERS)
+            and {grant['capability'] for grant in runtime_grants} == set(owner.PROVIDERS),
+            'c-stat-exact-runtime-only-grants')
+    runtime_target = deploy(client, source / 'deployment.json', target['publication'],
+                            generation=str(target['generation']), grants=runtime_grants)
+    require(runtime_target['grants'] == runtime_grants, 'c-stat-http-grant-absent')
+    cases = [cell(client, probe, runtime_target, peer, output, 'missing-grant')]
+    target = deploy(client, source / 'deployment.json', target['publication'],
+                    generation=str(runtime_target['generation']), grants=grants)
+    require(target['grants'] == grants, 'c-stat-original-http-grant-restored')
+    cases.extend(cell(client, probe, target, peer, output, case) for case in CASES[1:])
+    return target, cases
+
+
+class FollowupClient(RecordingClient):
+    """Bound second-node controls before dispatch and its invocation process separately."""
+    def __init__(self, *args, primary_attempts, **kwargs):
+        require(type(primary_attempts) is int and 0 <= primary_attempts < 384,
+                'c-stat-followup-primary-control-bound')
+        self.primary_attempts = primary_attempts
+        self.invocation_attempts = 0
+        super().__init__(*args, **kwargs)
+
+    def _control_call(self, *args, **kwargs):
+        # RecordingClient diagnostics also route through this method. Count
+        # control attempts separately from the bounded guest invocation.
+        require(self.control_attempts < 128 and self.primary_attempts + self.control_attempts < 384,
+                'c-stat-followup-control-bound')
+        return super()._control_call(*args, **kwargs)
+
+    def reserve_invocation(self):
+        require(self.invocation_attempts == 0, 'c-stat-followup-invocation-bound')
+        self.invocation_attempts += 1
+
+
+def omit_http_provider(settings):
+    providers = settings['providers']
+    bindings = providers['bindings']
+    selected = [row for row in bindings if row['contract'] == owner.HTTP]
+    require('httpStreaming' in providers and len(selected) == 1
+            and {row['contract'] for row in bindings if row['contract'] != owner.HTTP} == set(owner.PROVIDERS)
+            and len(bindings) == len(owner.PROVIDERS) + 1,
+            'c-stat-exact-http-provider-to-omit')
+    bindings.remove(selected[0])
+    del providers['httpStreaming']
+
+
+def require_missing_provider_result(row):
+    response = row['response']
+    consumption = response['data']['consumption']
+    require(type(row['exitCode']) is int and row['exitCode'] == 4 and row['processReaped'] is True
+            and row['decoded'] is None and response['outcomeKnown'] is True
+            and response['error']['code'] == 'incompatible-contract'
+            and response['data']['terminalState'] == 'rejected'
+            and {'cpuFuel', 'peakMemoryBytes', 'outboundRequests'} <= consumption.keys()
+            and all(owner.integer(value) == 0 for key, value in consumption.items()
+                    if key != 'wallTimeMicros'),
+            'c-stat-missing-provider-rejected-before-guest')
+
+
+def missing_provider(artifact, signed, native, output, deadline, primary_attempts):
+    """Reuse the same signed component on a second node with no HTTP provider."""
+    output = fresh(output)
+    record = {'status': 'incomplete', 'httpProviderInstalled': False,
+              'unavailableCountersCountedAsZero': False}
+    try:
+        with owned_cancellation() as cancellation, tempfile.TemporaryDirectory(prefix='lsf-c-stat-absent-') as temporary, \
+                owner.owned_cleanup(record) as cleanup:
+            work = Path(temporary)
+            for name in ('client', 'node', 'credentials'): (work / name).mkdir(mode=0o700)
+            secret = b'Bearer ' + secrets.token_hex(32).encode('ascii')
+            credential = work / 'credentials/peer'
+            credential.write_bytes(secret); credential.chmod(0o600)
+            peer = RangePeer(secret, maximum_seconds=max(1, min(300, int(deadline - time.monotonic()))))
+            cleanup.callback(peer.close)
+            client = FollowupClient(native['latent'], work / 'client', cancellation,
+                min(deadline, time.monotonic() + 120), primary_attempts=primary_attempts,
+                evidence=output / 'controls')
+            config, settings = configure_base(work / 'node', signed, peer.origin()['port'], language='c')
+            source = signed / owner.SERVICE
+            owner.configure_http(settings, read_json(artifact / 'capsule.json'), peer, credential)
+            omit_http_provider(settings)
+            config.write_bytes((json.dumps(settings, sort_keys=True, separators=(',', ':')) + '\n').encode())
+            node = connect(client, native['latentd'], work / 'node', config, 'examples', 1)
+            cleanup.callback(node.close)
+            require(all(row['capability'] != owner.HTTP for row in node.startup_record['providers']),
+                    'c-stat-http-provider-actually-absent')
+            record['startup'] = node.startup_record
+            probe = Probe(node, file_identity(native['latentd']))
+            published = client.call('release', 'publish-package', source / 'package',
+                '--evidence', source / 'evidence/index.json', '--operation-id', 'c-stat-absent-publish',
+                '--expected-generation', '0')
+            require(published['outcomeKnown'] is True
+                    and published['data']['release']['digest'] == file_identity(artifact / 'component.wasm', 8 * 1024**2)['sha256'],
+                    'c-stat-absent-signed-admission')
+            publication = published['data']['operation']['publication']['id']
+            target = deploy(client, source / 'deployment.json', publication)
+            grants = owner.install(client, node, target)
+            require(len(grants) == len(owner.PROVIDERS)
+                    and {grant['capability'] for grant in grants} == set(owner.PROVIDERS),
+                    'c-stat-absent-exact-runtime-grants')
+            target = deploy(client, source / 'deployment.json', publication,
+                            generation=str(target['generation']), grants=grants)
+            require(target['grants'] == grants, 'c-stat-absent-runtime-grants-selected')
+            activation = 'c-stat-missing-provider'
+            before = peer.observation(); validate(before)
+            client.reserve_invocation()
+            process = owner.start_http_call(client, target, 'normal\n' + peer.url('domain-json'), activation)
+            primary = False
+            try:
+                while not process.owner.exited():
+                    cancellation.check()
+                    require(time.monotonic() < client.deadline, 'c-stat-absent-cell-deadline')
+                    process.drain(); peer.poll(min(0.02, max(0, client.deadline - time.monotonic())))
+                row = owner.finish_call(client, process)
+                write_json(output / 'invocation.json', row)
+                require_missing_provider_result(row)
+            except BaseException:
+                primary = True
+                write_json(output / 'peer-failed.json', peer.observation())
+                try: owner.retain_partial(process, output, activation)
+                except BaseException: pass
+                raise
+            finally:
+                owner.close_call(process, primary_failure=primary)
+            peer.poll(0.05)
+            observed = peer.observation()
+            require_zero_contact(before, observed)
+            record['idleObservation'] = sample(client, probe, 'c-stat-provider-absent-idle', 1)
+            record['providerObservation'] = client.call('capability', 'list', '--deployment', target['name'],
+                '--include-node-usage')['data']['nodeUsage']
+            peer.poll(0.05)
+            after_idle = peer.observation()
+            require_zero_contact(observed, after_idle)
+            write_json(output / 'peer-after-idle.json', after_idle)
+            delete_all(client, [target['name']]); stop(client, node)
+            record['shutdown'] = stopped_record(node)
+            require(record['shutdown']['reaped'] is True and record['shutdown']['record']['clean'] is True,
+                    'c-stat-absent-provider-clean-stop')
+            final_peer = peer.close(); validate(final_peer)
+            require(final_peer['state'] == 'stopped' and final_peer['acceptedConnections'] == 0
+                    and final_peer['startedRequests'] == 0 and not final_peer['requests'],
+                    'c-stat-absent-provider-zero-contact')
+            write_json(output / 'peer-final.json', final_peer)
+            cancellation.check()
+            require(client.control_attempts <= 128 and client.invocation_attempts == 1
+                    and primary_attempts + client.control_attempts <= 384
+                    and time.monotonic() < deadline, 'c-stat-absent-original-bound')
+            record.update(status='passed', invocation=row, cliCalls=client.control_attempts,
+                          controlAttempts=client.control_attempts, invocationAttempts=client.invocation_attempts)
+        write_json(output / 'qualified.json', record)
+        return record
+    except BaseException:
+        record['status'] = 'failed'
+        try: write_json(output / 'FAILED.json', record)
+        except OSError: pass
+        raise
 
 
 def run_node(artifact, native, output, deadline):
@@ -229,7 +425,11 @@ def run_node(artifact, native, output, deadline):
             config, settings = configure_base(work / 'node', signed, peer.origin()['port'], language='c')
             owner.configure_http(settings, read_json(artifact / 'capsule.json'), peer, credential)
             destinations = settings['providers']['httpStreaming']['configuration']['destinations']
-            require(destinations[0]['origin'] == peer.origin()
+            require(len(destinations) == 2 and destinations[0]['origin'] == peer.origin()
+                    and destinations[1]['origin'] == peer.origin('secondary')
+                    and destinations[0]['redirectDestinations'] == []
+                    and destinations[1]['redirectDestinations'] == []
+                    and settings['providers']['httpStreaming']['configuration']['limits']['maximumRedirects'] == 0
                     and 'range' not in destinations[0]['allowedRequestHeaders'], 'c-range-provider-shape')
             destinations[0]['allowedRequestHeaders'].append('range')
             config.write_bytes((json.dumps(settings, sort_keys=True, separators=(',', ':')) + '\n').encode())
@@ -246,17 +446,21 @@ def run_node(artifact, native, output, deadline):
                     'c-stat-signed-admission')
             target = deploy(client, source / 'deployment.json', published['data']['operation']['publication']['id'])
             require(target['grants'] == [], 'c-stat-no-ambient-grants')
-            grants = install(client, node, target, peer.origin())
-            target = deploy(client, source / 'deployment.json', target['publication'],
-                            generation=str(target['generation']), grants=grants)
-            stage = 'nine-signed-head-and-range-cells'
-            record['cases'] = [cell(client, probe, target, peer, output, case) for case in CASES]
-            require(peer.observation()['startedRequests'] == 7 and peer.range_requests == 3
-                    and peer.unsolicited_requests == 1 and peer.early_range_requests == 1,
-                    'c-stat-seven-contacts-three-ranges-one-unsolicited-one-early')
+            stage = 'twelve-signed-head-range-redirect-and-oversized-cells'
+            target, record['cases'] = exercise_cells(client, node, probe, source, target, peer, output)
+            require(len(CASES) == 12 and [row['case'] for row in record['cases']] == list(CASES),
+                    'c-stat-twelve-primary-invocations')
+            final_peer = peer.observation()
+            validate(final_peer)
+            require(final_peer['acceptedConnections'] == final_peer['startedRequests'] == 9
+                    and all(row['role'] == 'primary' for row in final_peer['requests'])
+                    and peer.range_requests == 3 and peer.unsolicited_requests == 1
+                    and peer.early_range_requests == 1 and peer.oversized_requests == 1,
+                    'c-stat-nine-primary-contacts-three-ranges-one-unsolicited-one-early-one-oversized')
             record['exactRangeRequests'] = peer.range_requests
             record['unsolicitedRequests'] = peer.unsolicited_requests
             record['earlyRangeRequests'] = peer.early_range_requests
+            record['oversizedRequests'] = peer.oversized_requests
             delete_all(client, [target['name']])
             record['afterDeletes'] = sample(client, probe, 'c-stat-after-deletes', 0)
             stop(client, node); record['nodeShutdown'] = stopped_record(node)
@@ -264,11 +468,23 @@ def run_node(artifact, native, output, deadline):
             require(record['peerShutdown']['openConnections'] == record['peerShutdown']['listeningOrigins'] == 0,
                     'c-stat-stopped-peer')
             cancellation.check()
+        stage = 'missing-provider-on-second-node'
+        record['missingProvider'] = missing_provider(artifact, signed, native, output / 'missing-provider',
+                                                     commands.deadline, max(client.calls, client.control_attempts))
+        require(record['missingProvider']['status'] == 'passed', 'c-stat-missing-provider-qualified')
         require(component == file_identity(artifact / 'component.wasm', 8 * 1024**2)
                 and before == {name: file_identity(path) for name, path in native.items()}
-                and time.monotonic() < commands.deadline and client.calls <= 384,
+                and time.monotonic() < commands.deadline
+                and max(client.calls, client.control_attempts)
+                    + record['missingProvider']['controlAttempts'] <= 384
+                and record['missingProvider']['invocationAttempts'] == 1,
                 'c-stat-final-original-inputs-and-deadline')
-        record.update(status='passed', cliCalls=client.calls, commands=commands.records)
+        record.update(status='passed', cliCalls=max(client.calls, client.control_attempts)
+                          + record['missingProvider']['controlAttempts'],
+                      controlAttempts=max(client.calls, client.control_attempts)
+                          + record['missingProvider']['controlAttempts'],
+                      invocationProcesses=len(record['cases']) + record['missingProvider']['invocationAttempts'],
+                      commands=commands.records)
         write_json(output / 'qualified.json', record)
         return record
     except BaseException:
@@ -303,7 +519,7 @@ def qualify(args):
               'full690Qualified': False, 'fullCCostModelQualified': False,
               'publisherAuthenticated': False, 'releasePublished': False,
               'limits': {'parentSeconds': 1320, 'commandSeconds': 900, 'cleanupReserveSeconds': 5,
-                         'jobs': 2, 'components': 1, 'cells': 9, 'clientCalls': 384}}
+                         'jobs': 2, 'components': 1, 'cells': 13, 'clientCalls': 384, 'invocationProcesses': 13}}
     stage = 'source'
     def source_inputs(capture=False):
         rows = http_sources(commands, output, capture=capture, runtime_profile=FETCH_PROFILE)
@@ -340,10 +556,11 @@ def qualify(args):
         c_capsule_build.build(project, artifact, native['capsule_contracts'], native['package'],
             'https://github.com/KirilsTurkins/latent-service-fabric', installed=installed, _deadline=commands.deadline)
         result['build'] = http_build_evidence(artifact, original, runtime_profile=FETCH_PROFILE)
-        stage = 'nine-signed-head-and-range-cells'
+        stage = 'twelve-signed-head-range-redirect-and-oversized-cells'
         result['node'] = run_node(artifact, native, output / 'node', commands.deadline)
         require(result['node']['status'] == 'passed'
-                and [row['case'] for row in result['node']['cases']] == list(CASES), 'c-stat-exact-nine-outcomes')
+                and [row['case'] for row in result['node']['cases']] == list(CASES)
+                and result['node']['missingProvider']['status'] == 'passed', 'c-stat-exact-thirteen-outcomes')
         require(helpers == source_inputs() and source_identity(ROOT) == source
                 and sdk == inventory(c_capsule_project.sdk_inputs(ROOT, threading=True))
                 and original == inventory(snapshot(project))

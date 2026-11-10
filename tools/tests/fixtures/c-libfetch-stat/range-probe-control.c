@@ -7,7 +7,8 @@
 #include "lsf/streaming.h"
 
 static int status, aborts, reads;
-static bool deny, expect_range;
+static int expected_method = LATENT_HTTP_STREAMING_METHOD_GET;
+static bool deny, expect_range, fail_finish;
 static const char *payload, *reply_range, *reply_length;
 static size_t position, chunk_length;
 
@@ -19,7 +20,7 @@ bool exports_examples_libfetch_api_run(probe_string_t *, probe_string_t *, probe
 
 bool latent_http_streaming_open(const latent_http_streaming_request_t *request, int *out, http_error *error) {
     bool found = false;
-    assert(request->method == LATENT_HTTP_STREAMING_METHOD_GET);
+    assert(request->method == expected_method);
     for (size_t i = 0; i < request->headers.len; ++i) {
         latent_http_streaming_header_t header = request->headers.ptr[i];
         if (header.name.len == 5 && !memcmp(header.name.ptr, "range", 5)) {
@@ -40,11 +41,14 @@ static void header(latent_http_streaming_header_t *out, const char *name, const 
     assert(out->name.ptr && out->value.ptr);
 }
 bool latent_http_streaming_finish(int upload, response *out, http_error *error) {
-    (void)error; assert(upload == 17); out->status = status; out->body = 23;
-    out->headers.len = status == 206 ? 2 : 1;
+    assert(upload == 17);
+    if (fail_finish) { error->tag = LATENT_HTTP_STREAMING_HTTP_ERROR_RESPONSE_TOO_LARGE; return false; }
+    out->status = status; out->body = 23;
+    out->headers.len = status == 206 || status == 302 ? 2 : 1;
     out->headers.ptr = calloc(out->headers.len, sizeof(*out->headers.ptr)); assert(out->headers.ptr);
     header(&out->headers.ptr[0], "Content-Length", reply_length);
     if (status == 206) header(&out->headers.ptr[1], "Content-Range", reply_range);
+    if (status == 302) header(&out->headers.ptr[1], "Location", "http://other.test/redirect-target");
     return true;
 }
 bool latent_http_streaming_read(int body, uint32_t maximum, optional_chunk *out, http_error *error) {
@@ -90,5 +94,11 @@ int main(void) {
     call("range-unsolicited", "invalid-content-range", false); assert(aborts == 1 && reads == 0);
     position = aborts = reads = 0; expect_range = true; reply_range = "bytes 0-3/4";
     call("range-before", "invalid-content-range", false); assert(aborts == 1 && reads == 0);
-    puts("C signed Range fixture source controls passed (fake HTTP ports)");
+    status = 302; reply_length = "0"; payload = ""; position = aborts = reads = 0;
+    expected_method = LATENT_HTTP_STREAMING_METHOD_HEAD; expect_range = false;
+    call("redirect", "redirect-unsupported", false); assert(aborts == 1 && reads == 0);
+    expected_method = LATENT_HTTP_STREAMING_METHOD_GET; fail_finish = true;
+    position = aborts = reads = 0;
+    call("oversized", "response-too-large", false); assert(aborts == 0 && reads == 0);
+    puts("C signed Range, redirect and oversized-response fixture controls passed (fake HTTP ports)");
 }
