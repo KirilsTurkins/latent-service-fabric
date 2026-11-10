@@ -120,19 +120,20 @@ class FutureCancellationControl(unittest.TestCase):
                 subject.scheduled_source_control(compiler, output)
             self.assertIs(caught.exception, failure)
             matrix.assert_called_once_with(compiler, output)
-        self.assertEqual([stage for stage, _ in calls[-14:]], ['scheduled-source-compile',
+        self.assertEqual([stage for stage, _ in calls[-15:]], ['scheduled-source-compile',
             'executor-invoke-interrupt-source', 'executor-invoke-interrupt-owner',
             'executor-await-termination-source', 'executor-await-termination-owner',
             'future-task-null-failure-source', 'future-task-null-failure-owner',
             'future-task-monitor-source', 'future-task-monitor-owner', 'default-executor-monitor-source',
             'default-executor-monitor-owner-denied', 'default-executor-monitor-owner-manage',
-            'default-executor-monitor-owner-uncertain', 'default-executor-monitor-owner-concurrent'])
+            'default-executor-monitor-owner-uncertain', 'default-executor-monitor-owner-concurrent',
+            'default-executor-monitor-owner-rejection-lock'])
         self.assertIn('executor-invoke-interrupt-reference-jdk', [stage for stage, _ in calls])
         self.assertIn('executor-await-termination-reference-jdk', [stage for stage, _ in calls])
         self.assertIn('future-task-null-failure-reference-jdk', [stage for stage, _ in calls])
         self.assertIn('future-task-monitor-reference-jdk', [stage for stage, _ in calls])
         self.assertIn('default-executor-monitor-reference-jdk', [stage for stage, _ in calls])
-        argv = calls[-14][1]
+        argv = calls[-15][1]
         self.assertEqual(argv[:4], ('javac', '-proc:none', '--release', '25'))
         self.assertEqual(argv.count(control), 1)
         self.assertIn(sdk / 'fibers/dev/latent/guest/runtime/concurrent/FutureTask.java', argv)
@@ -149,7 +150,8 @@ class FutureCancellationControl(unittest.TestCase):
                         'future-task-monitor-source', 'future-task-monitor-owner',
                         'default-executor-monitor-reference-jdk', 'default-executor-monitor-source',
                         'default-executor-monitor-owner-denied', 'default-executor-monitor-owner-manage',
-                        'default-executor-monitor-owner-uncertain', 'default-executor-monitor-owner-concurrent'):
+                        'default-executor-monitor-owner-uncertain', 'default-executor-monitor-owner-concurrent',
+                        'default-executor-monitor-owner-rejection-lock'):
             with self.subTest(missing=missing), tempfile.TemporaryDirectory() as temporary, \
                     patch.object(subject, 'future_cancel_interrupt_control') as matrix:
                 def incomplete(stage, *arguments):

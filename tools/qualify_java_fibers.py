@@ -840,7 +840,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     result = compiler.run('default-executor-monitor-source', 'java', '-Xmx256m', '-cp', output,
         'DefaultExecutorMonitorReferenceControl', 'source').strip()
     if result != expected_default_monitor: raise ValueError('Java default executor monitor source differs from JDK')
-    for mode in ('denied', 'manage', 'uncertain', 'concurrent'):
+    for mode in ('denied', 'manage', 'uncertain', 'concurrent', 'rejection-lock'):
         result = compiler.run('default-executor-monitor-owner-' + mode, 'java', '-Xmx256m', '-cp', output,
             'DefaultExecutorOwnerControl', mode).strip()
         if result != 'DEFAULT_EXECUTOR_OWNER PASS ' + mode:

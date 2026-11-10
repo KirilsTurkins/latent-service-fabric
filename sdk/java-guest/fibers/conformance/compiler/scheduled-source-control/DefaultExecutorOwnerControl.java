@@ -87,8 +87,40 @@ public final class DefaultExecutorOwnerControl {
         }
         System.out.println("DEFAULT_EXECUTOR_OWNER PASS concurrent");
     }
+    static void rejectionLock() throws Exception {
+        CompletableFuture<Integer> source=new CompletableFuture<>();
+        Executor facade=source.defaultExecutor();
+        Object monitor;
+        try {
+            Field field=facade.getClass().getDeclaredField("lock"); field.setAccessible(true);
+            monitor=field.get(facade);
+        } catch (NoSuchFieldException oldSource) { monitor=facade; }
+        Object selected=monitor;
+        CountDownLatch acquired=new CountDownLatch(1);
+        AtomicReference<Thread> contender=new AtomicReference<>();
+        boolean[] freeDuringRetirement={false};
+        CompletableFuture<Integer> failed=source.thenApplyAsync(value -> value+1,facade);
+        Activation.denyNext="Executor";
+        Activation.closeObservationKind="QueuedWork";
+        Activation.closeObservation=() -> {
+            Thread thread=new Thread(() -> { synchronized (selected) { acquired.countDown(); } },"facade-lock-contender");
+            contender.set(thread); thread.start();
+            try { freeDuringRetirement[0]=acquired.await(1,TimeUnit.SECONDS); }
+            catch (InterruptedException error) { Thread.currentThread().interrupt(); }
+        };
+        require(source.complete(41),"source-completion-refused");
+        try { failed.get(5,TimeUnit.SECONDS); throw new AssertionError("failed-initialization-returned"); }
+        catch (ExecutionException expected) { require(expected.getCause() instanceof IllegalStateException,"wrong-error-type"); }
+        require(contender.get()!=null,"retirement-observation-not-called");
+        join(contender.get());
+        counts(0,0,0); Activation.idle();
+        require(freeDuringRetirement[0],"facade-lock-held-during-rejection");
+        System.out.println("DEFAULT_EXECUTOR_OWNER PASS rejection-lock");
+    }
     public static void main(String[] args) throws Exception {
         require(args.length==1,"mode-required");
-        if (args[0].equals("concurrent")) concurrentInitialization(); else failedInitialization(args[0]);
+        if (args[0].equals("concurrent")) concurrentInitialization();
+        else if (args[0].equals("rejection-lock")) rejectionLock();
+        else failedInitialization(args[0]);
     }
 }
