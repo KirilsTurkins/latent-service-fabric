@@ -216,6 +216,9 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         private void abandon() { synchronized (stateLock) { released = true; releaseActionIfIdle(); } }
         @Override public boolean cancel(boolean interrupt) {
             boolean changed = super.cancel(interrupt);
+            // Completion forbids new queue copies. Existing physical claims
+            // and in-flight settlements retain their original owners.
+            if (!changed && !hasQueueCopies()) return false;
             synchronized (ScheduledThreadPoolExecutor.this) {
                 try {
                     for (int index = queue.size() - 1; index >= 0; --index) {
