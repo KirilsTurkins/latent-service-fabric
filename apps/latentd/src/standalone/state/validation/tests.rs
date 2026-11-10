@@ -22,6 +22,8 @@ use std::{
 struct Clock {
     start: Instant,
     elapsed_millis: AtomicU64,
+    calls: AtomicU64,
+    delay_at: AtomicU64,
 }
 
 impl ActivationClock for Clock {
@@ -30,6 +32,10 @@ impl ActivationClock for Clock {
     }
 
     fn monotonic_now(&self) -> Instant {
+        let call = self.calls.fetch_add(1, Ordering::SeqCst) + 1;
+        if call == self.delay_at.load(Ordering::SeqCst) {
+            std::thread::sleep(Duration::from_millis(1100));
+        }
         self.start + Duration::from_millis(self.elapsed_millis.load(Ordering::SeqCst))
     }
 }
@@ -45,11 +51,16 @@ struct Fixture {
 
 impl Fixture {
     fn new() -> Self {
-        let store = EmbeddedStore::open_file(tempfile::tempfile().unwrap(), StoreLimits::default())
-            .unwrap();
+        Self::with_limits(StoreLimits::default())
+    }
+
+    fn with_limits(limits: StoreLimits) -> Self {
+        let store = EmbeddedStore::open_file(tempfile::tempfile().unwrap(), limits).unwrap();
         let clock = Arc::new(Clock {
             start: Instant::now(),
             elapsed_millis: AtomicU64::new(0),
+            calls: AtomicU64::new(0),
+            delay_at: AtomicU64::new(0),
         });
         let projection: Arc<dyn ActivationClock> = clock.clone();
         let capacity =
@@ -135,6 +146,35 @@ impl Fixture {
             );
         }
         rows
+    }
+}
+
+#[test]
+fn startup_validation_rechecks_view_after_final_admission() {
+    for installed in [false, true] {
+        let fixture = Fixture::with_limits(StoreLimits {
+            maximum_view_age: Duration::from_secs(1),
+            ..StoreLimits::default()
+        });
+        fixture.initialize_identity();
+        let quotas = if installed { vec![quota()] } else { vec![] };
+        if installed {
+            fixture.install(&quotas);
+        }
+        let view = fixture.store.snapshot().unwrap();
+        fixture.clock.calls.store(0, Ordering::SeqCst);
+        validate_inventory(&view, &fixture.identity, &quotas, &fixture.original).unwrap();
+        let final_call = fixture.clock.calls.load(Ordering::SeqCst);
+        assert!(final_call > 0);
+        drop(view);
+        let view = fixture.store.snapshot().unwrap();
+        fixture.clock.calls.store(0, Ordering::SeqCst);
+        fixture.clock.delay_at.store(final_call, Ordering::SeqCst);
+        assert_eq!(
+            validate_inventory(&view, &fixture.identity, &quotas, &fixture.original),
+            Err(StoreError::SnapshotExpired)
+        );
+        assert_eq!(fixture.clock.calls.load(Ordering::SeqCst), final_call);
     }
 }
 

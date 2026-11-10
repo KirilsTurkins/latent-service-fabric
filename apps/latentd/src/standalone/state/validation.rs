@@ -118,7 +118,7 @@ fn validate_inventory_inner(
         if addition.is_some() {
             return Err(StoreError::Conflict);
         }
-        live(original)?;
+        finish_validation(view, original)?;
         return Ok(None);
     }
     if current.is_none() {
@@ -153,7 +153,7 @@ fn validate_inventory_inner(
     let report = census.finish()?;
     live(original)?;
     DispatchCatalog::validate_view(view)?;
-    live(original)?;
+    finish_validation(view, original)?;
     Ok(report.inbox_custody)
 }
 
@@ -198,7 +198,15 @@ fn validate_global_bootstrap(
     )?;
     live(original)?;
     DispatchCatalog::validate_view(view)?;
-    live(original)
+    finish_validation(view, original)
+}
+
+fn finish_validation(view: &ReadView, original: &NativeReservation) -> Result<(), StoreError> {
+    live(original)?;
+    // The final admission check can block; an expired view cannot establish a
+    // completed startup observation or an inbox custody watermark.
+    let _ = view.is_empty()?;
+    Ok(())
 }
 
 // Standalone has not yet installed the same-root physical blob inventory at
