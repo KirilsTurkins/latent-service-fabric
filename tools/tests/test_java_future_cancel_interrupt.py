@@ -269,3 +269,64 @@ class ScheduledReadyShutdownControl(unittest.TestCase):
                 self.run_control(Path(temporary), run)
         self.assertEqual(calls[-1], 'scheduled-ready-clock-post')
         self.assertNotIn('scheduled-ready-manual-clock-compile', calls)
+
+
+class ScheduledNoopCancellationControl(unittest.TestCase):
+    @staticmethod
+    def receipt(stage):
+        if stage in ('scheduled-noop-cancel-jdk', 'scheduled-noop-cancel-source'):
+            return 'SCHEDULED_NOOP_CANCEL_REFERENCE PASS completed;cancelled;public-monitor'
+        owners = {
+            'copy': 'completed-copy:cancel=false:withdrawn=true:settled-once=true',
+            'cancelled': 'cancelled:returnedWhileHeld=true:settled-once=true',
+            'running': 'running:returnedWhileHeld=false:original-owners-held=true:settled-once=true',
+            'manual': 'manual:returnedWhileHeld=true:result-held=true:settled-once=true',
+            'refused': 'refused:returnedWhileHeld=true:poisoned=true:original-retained=true:attempts=1',
+            'lost': 'lost:returnedWhileHeld=true:poisoned=true:original-retained=true:attempts=1'}
+        if stage.startswith('scheduled-noop-owner-'): return owners[stage.removeprefix('scheduled-noop-owner-')]
+        inflight = {'success': ('0:0:0', 'false'), 'refused': ('1:1:0', 'true'), 'lost': ('1:0:0', 'true')}
+        if stage.startswith('scheduled-noop-inflight-'):
+            mode = stage.removeprefix('scheduled-noop-inflight-'); remaining, poisoned = inflight[mode]
+            return (mode + ':secondReturnedWhileSettlementPending=true:held=1:1:0:settlementAttempts=1:poisoned='
+                    + poisoned + ':remaining=' + remaining)
+        raise AssertionError(stage)
+
+    def test_all_selected_receipts_and_limits(self):
+        calls = []
+        def run(stage, *args):
+            calls.append(stage)
+            return self.receipt(stage)
+        report = subject.scheduled_noop_cancel_control(SimpleNamespace(run=run), Path('source'), Path('reference'))
+        self.assertEqual(calls, ['scheduled-noop-cancel-jdk', 'scheduled-noop-cancel-source',
+            'scheduled-noop-owner-copy', 'scheduled-noop-owner-cancelled', 'scheduled-noop-owner-running',
+            'scheduled-noop-owner-manual', 'scheduled-noop-owner-refused', 'scheduled-noop-owner-lost', 'scheduled-noop-inflight-success',
+            'scheduled-noop-inflight-refused', 'scheduled-noop-inflight-lost'])
+        self.assertEqual(report, {'status': 'JDK-and-SDK-source-controls-passed', 'inflight': 'synthetic-host-only',
+            'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False})
+
+    def test_missing_and_wrong_receipts_fail_closed(self):
+        for stage in ('scheduled-noop-cancel-jdk', 'scheduled-noop-cancel-source', 'scheduled-noop-owner-copy',
+                      'scheduled-noop-owner-cancelled', 'scheduled-noop-owner-running', 'scheduled-noop-owner-manual', 'scheduled-noop-owner-refused',
+                      'scheduled-noop-owner-lost', 'scheduled-noop-inflight-success', 'scheduled-noop-inflight-refused',
+                      'scheduled-noop-inflight-lost'):
+            for bad in ('', 'SKIPPED'):
+                with self.subTest(stage=stage, bad=bad):
+                    calls = []
+                    def run(actual, *args):
+                        calls.append(actual)
+                        return bad if actual == stage else self.receipt(actual)
+                    with self.assertRaisesRegex(ValueError, 'Java scheduled no-op .* control did not complete'):
+                        subject.scheduled_noop_cancel_control(SimpleNamespace(run=run), Path('source'), Path('reference'))
+                    self.assertEqual(calls[-1], stage)
+
+    def test_process_failure_is_propagated_without_retry(self):
+        failure = RuntimeError('owned-process-failed');calls = []
+        def run(stage, *args):
+            calls.append(stage)
+            if stage == 'scheduled-noop-inflight-refused': raise failure
+            return self.receipt(stage)
+        with self.assertRaises(RuntimeError) as caught:
+            subject.scheduled_noop_cancel_control(SimpleNamespace(run=run), Path('source'), Path('reference'))
+        self.assertIs(caught.exception, failure)
+        self.assertEqual(calls.count('scheduled-noop-inflight-refused'), 1)
+        self.assertNotIn('scheduled-noop-inflight-lost', calls)
