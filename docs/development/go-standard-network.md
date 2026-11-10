@@ -43,8 +43,10 @@ or ASCII DNS names. DNS is performed only inside an authorized host connect.
 Standalone resolver operations, concrete `*net.TCPConn` construction, UDP,
 listeners, native socket options, custom resolvers/controls/local binds,
 explicit keepalive and address-family/fallback policies are unsupported. Numeric
-`LookupPort` remains a pure local conversion. Next-operation deadlines map to
-the bounded host timeout; expired deadlines fail before dispatch. Remaining
+`LookupPort` remains a pure local conversion. Read and write deadlines map to
+the bounded host timeout; expired deadlines fail before dispatch. Empty reads
+return locally after the closed and overlap checks, so an expired read deadline
+alone does not make them fail. Remaining
 deadlines over 10 seconds use the provider's 10-second timeout maximum: the
 accepted profile already limits connection lifetime to at most 10 seconds and
 still enforces the original root deadline and its shorter idle bound. The guest
@@ -52,8 +54,9 @@ samples its remaining time before dispatch and passes a relative timeout; delay
 between that sample and host admission can therefore outlast the original Go
 deadline. This conversion does not establish exact wall-clock deadline behavior
 at that boundary. Dial context cancellation retains its existing path. Re-arming a
-deadline while its direction is active is explicitly unsupported. Send shutdown
-uses an actual context deadline. The WIT exposes no local endpoint, so
+deadline while its direction is active is explicitly unsupported. `CloseWrite`
+does not use the Go write deadline; the original connection, idle, provider and
+activation bounds still apply to send shutdown. The WIT exposes no local endpoint, so
 `LocalAddr` is nil; `RemoteAddr` describes the declared target, not a resolved
 peer address. This is not full `net.Conn` compatibility.
 
