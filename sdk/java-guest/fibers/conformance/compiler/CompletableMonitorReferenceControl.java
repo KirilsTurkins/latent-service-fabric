@@ -96,10 +96,35 @@ public final class CompletableMonitorReferenceControl {
         require(!completer.isAlive() && error.get()==null && result.get()==42,"completion-outcome");
         require(complete,"completion-blocked-by-public-monitor");
     }
+    static void causeIdentity(String mode, boolean nullSecond) throws Exception {
+        Throwable first=new IllegalArgumentException("first"), second=new IllegalStateException("second");
+        int[] calls={0};
+        CompletionException failure=new CompletionException("controlled",first) {
+            @Override public synchronized Throwable getCause() {
+                calls[0]++;
+                return calls[0]==1 ? first : nullSecond ? null : second;
+            }
+        };
+        CompletableFuture<Integer> future=new CompletableFuture<>();
+        future.completeExceptionally(failure);
+        Throwable selected=null;
+        try {
+            switch (mode) {
+                case "get" -> future.get();
+                case "timed" -> future.get(0,TimeUnit.NANOSECONDS);
+                case "exceptionNow" -> selected=future.exceptionNow();
+                default -> throw new AssertionError("unknown-cause-mode");
+            }
+        } catch (ExecutionException error) { selected=error.getCause(); }
+        require(calls[0]==1 && selected==first,"cause-not-captured-once:"+mode);
+    }
     public static void main(String[] args) throws Exception {
         completion();
         for (String mode : new String[]{"unwrap-get","unwrap-timed","unwrap-exception-now",
                 "execution-get","execution-timed","wrap-join","wrap-get-now"}) test(mode);
-        System.out.println("COMPLETABLE_FUTURE_MONITOR_REFERENCE PASS completion;exception-callbacks=7");
+        for (String mode : new String[]{"get","timed","exceptionNow"}) {
+            causeIdentity(mode,false); causeIdentity(mode,true);
+        }
+        System.out.println("COMPLETABLE_FUTURE_MONITOR_REFERENCE PASS completion;exception-callbacks=7;cause-once=6");
     }
 }

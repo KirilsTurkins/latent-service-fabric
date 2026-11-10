@@ -369,7 +369,11 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
             if (!completed || failure == null || failure instanceof CancellationException) throw new IllegalStateException();
             error = failure;
         }
-        return error instanceof CompletionException && error.getCause() != null ? error.getCause() : error;
+        if (error instanceof CompletionException) {
+            Throwable cause = error.getCause();
+            if (cause != null) error = cause;
+        }
+        return error;
     }
     @Override public java.util.concurrent.Future.State state() {
         synchronized (stateLock) {
@@ -381,8 +385,13 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     }
     private T getResult(T result, Throwable error) throws ExecutionException {
         if (error instanceof CancellationException) throw (CancellationException)error;
-        if (error != null) throw new ExecutionException(
-            error instanceof CompletionException && error.getCause() != null ? error.getCause() : error);
+        if (error != null) {
+            if (error instanceof CompletionException) {
+                Throwable cause = error.getCause();
+                if (cause != null) error = cause;
+            }
+            throw new ExecutionException(error);
+        }
         return result;
     }
     private T joinResult(T result, Throwable error) {

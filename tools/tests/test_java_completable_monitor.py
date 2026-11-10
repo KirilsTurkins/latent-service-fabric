@@ -9,7 +9,7 @@ from tools import qualify_java_fibers as owner
 
 
 class CompletableMonitorOwner(unittest.TestCase):
-    monitor = 'COMPLETABLE_FUTURE_MONITOR_REFERENCE PASS completion;exception-callbacks=7'
+    monitor = 'COMPLETABLE_FUTURE_MONITOR_REFERENCE PASS completion;exception-callbacks=7;cause-once=6'
     custody = ('COMPLETABLE_FUTURE_MONITOR_OWNER PASS callback-retirement;'
                'cancelled-queued-retirement;subscribe-race')
     existing = 'COMPLETABLE_FUTURE_SOURCE_CONTROL PASS observables=82'

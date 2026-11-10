@@ -372,7 +372,7 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
                                      "CompletableFutureExecutorThrowReferenceControl").strip()
     executor_cases = [json.loads(line) for line in executor_expected.splitlines()]
     if len(executor_cases) != 6: raise ValueError("Java CompletableFuture executor reference cases did not complete")
-    monitor_expected = "COMPLETABLE_FUTURE_MONITOR_REFERENCE PASS completion;exception-callbacks=7"
+    monitor_expected = "COMPLETABLE_FUTURE_MONITOR_REFERENCE PASS completion;exception-callbacks=7;cause-once=6"
     observed = compiler.run("completable-monitor-reference-jdk", "java", "-Xmx256m", "-cp", reference,
                             "CompletableMonitorReferenceControl").strip()
     if observed != monitor_expected: raise ValueError("Java CompletableFuture monitor reference did not complete")
