@@ -155,6 +155,8 @@ impl PreparedAdmission {
                 return Err(AtomicError::Conflict);
             }
             time.check(existing.clock_floor)?;
+            // Replay authorization can outlive the coherent admission view.
+            let _ = view.is_empty()?;
             return Ok(AdmissionDecision::Existing(existing));
         }
         let (mut namespace, namespace_key, namespace_bytes) =
@@ -562,6 +564,7 @@ impl PreparedAdmission {
                 if installed_tenant || receipt.is_accounted() || record.attempt != receipt.attempt {
                     return Err(AtomicError::UnsupportedFormat);
                 }
+                let _ = view.is_empty()?;
                 return Ok(AdmissionDecision::Existing(record));
             }
             let index_key = super::retention::RetryIndex::row_key(identity, receipt.attempt);

@@ -48,6 +48,43 @@ fn damage(store: &EmbeddedStore, expected: &ExpectedRow) {
 }
 
 #[test]
+fn existing_inbox_admission_refuses_a_view_expired_during_authorization() {
+    let (dir, store, _effects) = accounted::setup(8);
+    drop(store);
+    let store = open_limited(
+        &dir.path().join("state.redb"),
+        StoreLimits {
+            maximum_view_age: std::time::Duration::from_secs(1),
+            ..StoreLimits::default()
+        },
+    );
+    let scope = scope();
+    install(&store, &scope);
+    let view = store.snapshot().unwrap();
+    let AdmissionDecision::New(first) =
+        PreparedAdmission::prepare(&view, request(&scope), time(100), permission).unwrap()
+    else {
+        panic!("new")
+    };
+    let first = first.fence_inbox_scope(&view, &scope).unwrap();
+    drop(view);
+    let claim = first.publish(&store, || Ok(())).unwrap();
+    let view = store.snapshot().unwrap();
+    match PreparedAdmission::prepare(&view, request(&scope), time(101), |access, record| {
+        if access == CommandAccess::Replay {
+            std::thread::sleep(std::time::Duration::from_millis(1100));
+        }
+        permission(access, record)
+    }) {
+        Err(error) => assert_eq!(error, AtomicError::Expired),
+        Ok(AdmissionDecision::Existing(_)) => panic!("expired view returned an existing claim"),
+        Ok(AdmissionDecision::New(_)) => panic!("existing claim was forgotten"),
+    }
+    drop(view);
+    drop(claim);
+}
+
+#[test]
 fn duplicate_recovery_refuses_a_view_expired_during_clock_or_authorization() {
     for delay_authorization in [false, true] {
         let (dir, store, _effects) = accounted::setup(8);

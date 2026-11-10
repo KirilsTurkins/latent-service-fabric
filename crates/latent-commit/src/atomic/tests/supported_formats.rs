@@ -186,10 +186,38 @@ fn original_lcm3_lct1_retry_receipt_replays_without_a_retention_index_or_implici
         bytes
     );
     assert_eq!(before.get(&usage_key).unwrap(), original_usage);
+    let original_abort = retry.expected_abort;
     let mut changed = retry;
     changed.expected_abort = Identity([9; 32]);
     assert!(matches!(
         PreparedAdmission::retry(&before, &request_input, &changed, time(104), permission),
         Err(AtomicError::Conflict)
     ));
+    drop(before);
+    drop(store);
+    let store = open_limited(
+        &_dir.path().join("state.redb"),
+        StoreLimits {
+            maximum_view_age: std::time::Duration::from_secs(1),
+            ..StoreLimits::default()
+        },
+    );
+    changed.expected_abort = original_abort;
+    let view = store.snapshot().unwrap();
+    match PreparedAdmission::retry(
+        &view,
+        &request_input,
+        &changed,
+        time(104),
+        |access, record| {
+            if access == CommandAccess::Replay {
+                std::thread::sleep(std::time::Duration::from_millis(1100));
+            }
+            permission(access, record)
+        },
+    ) {
+        Err(error) => assert_eq!(error, AtomicError::Expired),
+        Ok(AdmissionDecision::Existing(_)) => panic!("expired view returned a historical retry"),
+        Ok(AdmissionDecision::New(_)) => panic!("historical retry was renewed"),
+    }
 }
