@@ -27,7 +27,7 @@ impl ResultMaintenanceOwner {
         authorize(None)?;
         clock.validate()?;
         let view = store.snapshot()?;
-        let old = view.get(&MaintenanceProgress::key())?;
+        let old = view.get_bounded(&MaintenanceProgress::key(), super::clock::PROGRESS_BYTES)?;
         let previous = old
             .as_deref()
             .map(MaintenanceProgress::decode)
@@ -68,7 +68,7 @@ impl ResultMaintenanceOwner {
         let view = store.snapshot()?;
         latent_state::recovery::require_ready(&view)?;
         let old = view
-            .get(&MaintenanceProgress::key())?
+            .get_bounded(&MaintenanceProgress::key(), super::clock::PROGRESS_BYTES)?
             .ok_or(AtomicError::RecoveryRequired)?;
         let mut progress = MaintenanceProgress::decode(&old)?;
         clock.next(&progress)?;
