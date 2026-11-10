@@ -9,6 +9,7 @@ import java.util.Objects;
 /** One managed logical worker and an admitted finite queue per ordinary timer. */
 public class Timer implements Activation.ManagedPool {
     private static int serial;
+    private static final Object serialLock = new Object();
     private final Object lock = new Object();
     private final ArrayList<Entry> queue = new ArrayList<>();
     private final Thread worker;
@@ -61,7 +62,11 @@ public class Timer implements Activation.ManagedPool {
         void clear() { timer = null; }
     }
 
-    private static synchronized String nextName() { return "Timer-" + serial++; }
+    private static String nextName() {
+        int value;
+        synchronized (serialLock) { value = serial++; }
+        return "Timer-" + value;
+    }
     public Timer() { this(nextName(), false); }
     public Timer(boolean daemon) { this(nextName(), daemon); }
     public Timer(String name) { this(name, false); }

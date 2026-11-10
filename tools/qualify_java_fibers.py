@@ -565,6 +565,7 @@ def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
     main = fixture / "timers/Main.java"
     validation = fixture / "timers/TimerValidationOrder.java"
     private = fixture / "compiler/standard-timer-control"
+    class_monitor = private / "TimerClassMonitorReferenceControl.java"
     sources = [private / name for name in (
         "TimerModelMain.java", "TimerActiveOwnerControl.java", "TimerValidationAdmissionControl.java",
         "dev/latent/generated/Bindings.java", "dev/latent/guest/runtime/Activation.java")]
@@ -572,7 +573,7 @@ def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
     ports = [compiler.sdk / ("fibers/dev/latent/guest/runtime/util/" + name + ".java")
              for name in ("Timer", "TimerTask")]
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
-              for path in (application, main, validation, *sources, *ports, *clock_sources)}
+              for path in (application, main, validation, class_monitor, *sources, *ports, *clock_sources)}
     output.mkdir()
     mapped = output / "Capsule.java"
     text = read_file(application).decode("utf-8")
@@ -588,8 +589,29 @@ def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
         if text.count(original) != 1: raise ValueError("Java timer validation control import is ambiguous")
         text = text.replace(original, "import dev.latent.guest.runtime.util." + name + ";")
     mapped_validation.write_text(text, encoding="utf-8")
+    mapped_class_monitor = output / "TimerClassMonitorReferenceControl.java"
+    text = read_file(class_monitor).decode("utf-8")
+    for name in ("Timer", "TimerTask"):
+        original = "import java.util." + name + ";"
+        if text.count(original) != 1: raise ValueError("Java timer class monitor control import is ambiguous")
+        text = text.replace(original, "import dev.latent.guest.runtime.util." + name + ";")
+    mapped_class_monitor.write_text(text, encoding="utf-8")
+    reference = output / "class-monitor-reference"
+    reference.mkdir()
+    compiler.run("standard-timer-class-monitor-reference-compile", "javac", "-proc:none", "--release", "25",
+                 "-d", reference, class_monitor)
+    class_monitor_expected = [mode + ":whileHeld=true:blocked=false:once=1:recurring=2:publicMonitor=preserved"
+                              for mode in ("default", "daemon", "named")]
+    result = compiler.run("standard-timer-class-monitor-reference", "java", "-Xmx256m", "-cp", reference,
+                          "TimerClassMonitorReferenceControl")
+    if result.strip().splitlines() != class_monitor_expected:
+        raise ValueError("Java timer class monitor reference did not complete")
     compiler.run("standard-timer-source-compile", "javac", "-proc:none", "--release", "25",
-                 "-d", output, mapped, mapped_validation, main, *sources, *ports)
+                 "-d", output, mapped, mapped_validation, mapped_class_monitor, main, *sources, *ports)
+    result = compiler.run("standard-timer-class-monitor-source", "java", "-Xmx256m", "-cp", output,
+                          "TimerClassMonitorReferenceControl", "source")
+    if result.strip().splitlines() != class_monitor_expected:
+        raise ValueError("Java timer class monitor source differs from reference")
     expected = ["42 42 42 42",
         "TIMER_SOURCE_CONTROL PASS reference-observables;queue-rollback;cancel-drain;idle-finally;no-live-owners"]
     for iteration in range(3):
@@ -623,7 +645,8 @@ def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError("Java timer control inputs changed during execution")
     return {"status": "SDK-source-controls-passed", "iterations": 3, "modes": [0, 1, 2, 3],
-            "sourceInputs": inputs, "validationOrder": {"observations": 35, "referenceAndSource": "passed",
+            "sourceInputs": inputs, "classMonitor": "JDK-and-SDK-source-controls-passed",
+            "validationOrder": {"observations": 35, "referenceAndSource": "passed",
                 "preAdmission": "passed", "syntheticClock": "passed"},
             "componentExecutionPerformed": False, "actualGuestBindingsUsed": False}
 
@@ -649,7 +672,7 @@ def standard_timer_model_control(compiler: Compiler, output: Path) -> dict:
                  "-d", output, *sources)
     result = compiler.run("standard-timer-model-control", "java", "-Xmx256m", "-cp",
         str(output) + os.pathsep + classpath, "dev.latent.guest.runtime.compiler.StandardTimerModelControl").strip()
-    if result != ("STANDARD_TIMER_MODEL_CONTROL PASS original-classlib-negative;layout-and-repeat-negatives;canonical-api-and-private-helper;"
+    if result != ("STANDARD_TIMER_MODEL_CONTROL PASS original-classlib-negative;layout-and-repeat-negatives;canonical-api-and-private-helper;private-name-monitor;"
                   "resolved-method-and-field-types;unsupported-no-fallback;models=3;actual-c-dependency-worker-and-callback"):
         raise ValueError("Java standard timer model control did not complete")
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:

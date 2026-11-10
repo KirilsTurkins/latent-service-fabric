@@ -37,6 +37,8 @@ public final class StandardTimerCompilerGraphControl {
         var output = new MemoryBuildTarget();
         vm.build(output, "timer-graph");
         require(vm.getProblemProvider().getProblems().isEmpty(), "actual-timer-compiler-problems");
+        require(vm.getMethods().contains(new MethodReference("java.util.Timer", "nextName", ValueType.object("java.lang.String"))),
+            "actual-timer-private-name-monitor-reachable");
         for (String cls : List.of("java.util.Timer", "dev.latent.guest.runtime.util.Timer$Worker", App.class.getName() + "$1")) {
             String method = cls.equals("java.util.Timer") ? "work" : "run";
             require(vm.getMethods().contains(new MethodReference(cls, method, ValueType.VOID)),
@@ -50,9 +52,11 @@ public final class StandardTimerCompilerGraphControl {
 
     public static final class App {
         public static void main(String[] args) {
-            var timer = new java.util.Timer("compiler-graph", true);
+            var timer = new java.util.Timer(true);
+            var namedTimer = new java.util.Timer("compiler-graph", true);
             timer.schedule(new java.util.TimerTask() { @Override public void run() { } }, 0);
             timer.cancel();
+            namedTimer.cancel();
         }
     }
 }
