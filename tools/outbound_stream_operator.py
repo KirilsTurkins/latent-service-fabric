@@ -739,6 +739,7 @@ class StreamOperator:
             result = self.client.call("capability", "list", "--deployment", deployment,
                 "--provider", PROFILE, "--contract-prefix", CAPABILITY,
                 "--include-node-usage", "--page-size", "1")
+            self._owned()
             value = successful(result)
             revision = value.get("revision")
             require(value.get("executionPermission") is False

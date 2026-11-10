@@ -440,6 +440,34 @@ class StreamOperator(unittest.TestCase):
         operator.grant(); operator.grant()
         self.assertEqual(len(self.mutations()), 2)
 
+    def test_inspection_refuses_owner_change_during_observation(self):
+        operator = self.operator()
+        original_call = self.client.call
+        def replace_owner(*arguments, stdin=None):
+            result = original_call(*arguments, stdin=stdin)
+            changed = copy.deepcopy(operator.owner)
+            changed['consumer'] = 'examples/other'
+            state.atomic(self.operator_root, 'stream-operator-owner.json', changed)
+            return result
+        self.client.call = replace_owner
+        with self.assertRaisesRegex(DevError, 'stream-operator-owner-changed'):
+            operator.inspect('mail-deployment')
+        self.assertEqual(len(self.client.calls), 1)
+        self.assertEqual(self.mutations(), [])
+
+    def test_inspection_refuses_client_config_change_during_observation(self):
+        operator = self.operator()
+        original_call = self.client.call
+        def replace_config(*arguments, stdin=None):
+            result = original_call(*arguments, stdin=stdin)
+            self.config.write_bytes(encode({'profile': 'changed', 'credential': 'PUBLIC-SOURCE-CONTROL-ONLY'}))
+            return result
+        self.client.call = replace_config
+        with self.assertRaisesRegex(DevError, 'stream-operator-client-identity-changed'):
+            operator.inspect('mail-deployment')
+        self.assertEqual(len(self.client.calls), 1)
+        self.assertEqual(self.mutations(), [])
+
     def test_grant_checks_room_for_both_receipts_before_any_mutation(self):
         for count in (stream.MAXIMUM_RECORDS - 1, stream.MAXIMUM_RECORDS):
             with self.subTest(count=count):
