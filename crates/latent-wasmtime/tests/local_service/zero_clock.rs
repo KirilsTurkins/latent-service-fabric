@@ -5,7 +5,11 @@ use latent_core::{test_support::TestClock, ActivationClock, ClockSample, SystemA
 use std::{
     future::Future,
     io::Write,
-    sync::atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering},
+    sync::{
+        atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering},
+        Mutex,
+    },
+    task::Waker,
     time::{Duration, Instant},
 };
 use tokio::sync::Notify;
@@ -20,20 +24,31 @@ pub struct ZeroClock {
     target_live: AtomicBool,
     ticker_mode: bool,
     ticker_stage: AtomicU8,
+    wall_mode: bool,
+    wall_base: u64,
+    wall_requested: AtomicU8,
+    wall_acknowledged: AtomicU8,
+    wall_waker: Mutex<Option<Waker>>,
     notify: Notify,
 }
 
 impl ZeroClock {
     pub fn new() -> Self {
         let origin = Instant::now();
+        let wall_base = SystemActivationClock.sample().unix_millis();
         Self {
-            clock: TestClock::new(SystemActivationClock.sample().unix_millis(), origin, 8),
+            clock: TestClock::new(wall_base, origin, 8),
             origin,
             seen: AtomicBool::new(false),
             pending: AtomicBool::new(false),
             target_live: AtomicBool::new(false),
             ticker_mode: false,
             ticker_stage: AtomicU8::new(0),
+            wall_mode: false,
+            wall_base,
+            wall_requested: AtomicU8::new(0),
+            wall_acknowledged: AtomicU8::new(0),
+            wall_waker: Mutex::new(None),
             notify: Notify::new(),
         }
     }
@@ -43,6 +58,76 @@ impl ZeroClock {
         let mut clock = Self::new();
         clock.ticker_mode = true;
         clock
+    }
+
+    /// The wall scenario wakes, but never completes, the original pending wait.
+    pub fn for_wall_jump() -> Self {
+        let mut clock = Self::new();
+        clock.wall_mode = true;
+        clock
+    }
+
+    fn wall_for(&self, stage: u8) -> u64 {
+        match stage {
+            1 => self
+                .wall_base
+                .checked_add(60_000)
+                .expect("wall forward range"),
+            2 => self
+                .wall_base
+                .checked_sub(60_000)
+                .expect("wall backward range"),
+            _ => panic!("unsupported wall-jump stage"),
+        }
+    }
+
+    pub fn jump_wall_and_wake(&self, stage: u8) {
+        assert!(self.wall_mode && (1..=2).contains(&stage));
+        assert_eq!(self.wall_requested.load(Ordering::Acquire), stage - 1);
+        assert_eq!(self.wall_acknowledged.load(Ordering::Acquire), stage - 1);
+        assert!(self.target_live());
+        self.clock.set_wall_unix_millis(self.wall_for(stage));
+        assert_eq!(self.clock.sample().unix_millis(), self.wall_for(stage));
+        assert_eq!(self.clock.monotonic_now(), self.origin);
+        let waker = self
+            .wall_waker
+            .lock()
+            .unwrap()
+            .clone()
+            .expect("live original wait waker");
+        writeln!(
+            std::io::stderr().lock(),
+            "LSF-GO-WALL-CLOCK-V1|jump|{}|0",
+            stage
+        )
+        .expect("write wall jump witness");
+        self.wall_requested.store(stage, Ordering::Release);
+        waker.wake();
+    }
+
+    pub fn restore_wall(&self) {
+        assert!(self.wall_mode && self.target_live());
+        assert_eq!(self.wall_acknowledged.load(Ordering::Acquire), 2);
+        self.clock.set_wall_unix_millis(self.wall_base);
+        assert_eq!(self.clock.sample().unix_millis(), self.wall_base);
+        writeln!(std::io::stderr().lock(), "LSF-GO-WALL-CLOCK-V1|restore|0")
+            .expect("write wall restore witness");
+    }
+
+    pub async fn wall_repolled(&self, stage: u8) {
+        assert!(self.wall_mode && (1..=2).contains(&stage));
+        loop {
+            let notified = self.notify.notified();
+            let observed = self.wall_acknowledged.load(Ordering::Acquire);
+            assert!(
+                observed <= stage,
+                "wall acknowledgement advanced unexpectedly"
+            );
+            if observed == stage {
+                return;
+            }
+            notified.await;
+        }
     }
 
     pub async fn ticker_pending(&self, stage: u8) {
@@ -96,6 +181,9 @@ impl ZeroClock {
             fn drop(&mut self) {
                 if self.armed {
                     self.clock.target_live.store(false, Ordering::Release);
+                    if self.clock.wall_mode {
+                        *self.clock.wall_waker.lock().unwrap() = None;
+                    }
                 }
             }
         }
@@ -110,6 +198,28 @@ impl ZeroClock {
         let mut reported = false;
         std::future::poll_fn(|cx| {
             let result = sleep.as_mut().poll(cx);
+            if self.wall_mode
+                && result.is_pending()
+                && deadline == self.origin + Duration::from_nanos(5)
+            {
+                *self.wall_waker.lock().unwrap() = Some(cx.waker().clone());
+                let requested = self.wall_requested.load(Ordering::Acquire);
+                let acknowledged = self.wall_acknowledged.load(Ordering::Acquire);
+                if requested > acknowledged {
+                    assert_eq!(requested, acknowledged + 1, "wall pulse sequence");
+                    assert!(target.armed && self.target_live());
+                    assert_eq!(self.clock.monotonic_now(), self.origin);
+                    assert_eq!(self.clock.sample().unix_millis(), self.wall_for(requested));
+                    writeln!(
+                        std::io::stderr().lock(),
+                        "LSF-GO-WALL-CLOCK-V1|repoll|{}|0|5",
+                        requested
+                    )
+                    .expect("write wall repoll witness");
+                    self.wall_acknowledged.store(requested, Ordering::Release);
+                    self.notify.notify_one();
+                }
+            }
             if result.is_pending() && !reported && self.ticker_mode {
                 if let Some(delta) = deadline.checked_duration_since(self.origin) {
                     if delta <= Duration::from_nanos(100) {
@@ -217,6 +327,32 @@ mod tests {
         assert_eq!(active.load(Ordering::Acquire), 0);
         assert_eq!(clock.pending_waiters(), 0);
         assert!(!clock.target_live());
+    }
+
+    #[tokio::test]
+    async fn wall_jumps_repoll_the_original_wait_without_completing_it() {
+        let clock = ZeroClock::for_wall_jump();
+        let active = AtomicU64::new(0);
+        let entered = Notify::new();
+        let mut wait =
+            Box::pin(clock.wait(clock.origin() + Duration::from_nanos(5), &active, &entered));
+        require_pending(&mut wait).await;
+        clock.target_pending().await;
+        for stage in 1..=2 {
+            clock.jump_wall_and_wake(stage);
+            require_pending(&mut wait).await;
+            clock.wall_repolled(stage).await;
+            assert_eq!(clock.monotonic_now(), clock.origin());
+            assert!(clock.target_live());
+            assert_eq!(active.load(Ordering::Acquire), 1);
+            assert_eq!(clock.pending_waiters(), 1);
+        }
+        clock.restore_wall();
+        clock.advance(Duration::from_nanos(5));
+        wait.await;
+        assert!(!clock.target_live());
+        assert_eq!(active.load(Ordering::Acquire), 0);
+        assert_eq!(clock.pending_waiters(), 0);
     }
 
     #[tokio::test]
