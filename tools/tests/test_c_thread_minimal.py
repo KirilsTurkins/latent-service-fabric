@@ -20,8 +20,21 @@ def before_exit_trap(raw):
   raise AssertionError('closed-file-original-abi-source')
  return original
 
+def before_host_boundary(raw):
+ import hashlib
+ if hashlib.sha256(raw).hexdigest() != '14f71c8141d2170f757b9c78a6b206095cb3d0ad86958de501f5e2a3663bc70e':
+  raise AssertionError('libfetch-host-boundary-exact-source')
+ current = b'    /* Host and document are separate libfetch fields. Do not let a URL\n     * component delimiter in the host change the requested document. */\n    if (memchr(url->host, \'/\', host) || memchr(url->host, \'?\', host) ||\n        memchr(url->host, \'#\', host) || memchr(url->host, \'@\', host) ||\n        memchr(url->host, \'\\\\\', host)) {\n        failure(FETCH_URL, EINVAL, "Invalid constructed HTTP host"); return NULL;\n    }\n'
+ if raw.count(current) != 1:
+  raise AssertionError('libfetch-host-boundary-exact-addendum')
+ raw = raw.replace(current, b'', 1)
+ if hashlib.sha256(raw).hexdigest() != '1418689760e50035c1bb3cc1979e5170a2cc11fa763a5f87889102e9684b0b03':
+  raise AssertionError('libfetch-host-boundary-prior-source')
+ return raw
+
 def before_http_status_categories(raw):
  import hashlib
+ raw = before_host_boundary(raw)
  if hashlib.sha256(raw).hexdigest() != '1418689760e50035c1bb3cc1979e5170a2cc11fa763a5f87889102e9684b0b03':
   raise AssertionError('libfetch-http-status-exact-source')
  changes = (
@@ -122,6 +135,16 @@ def before_head_stat(path, raw):
  return raw
 
 class CThreadMinimal(unittest.TestCase):
+ def test_host_boundary_inverse_requires_exact_reviewed_source(self):
+  import hashlib
+  raw=(ROOT/'sdk/c-guest/src/libfetch/http.c').read_bytes()
+  self.assertEqual(hashlib.sha256(before_host_boundary(raw)).hexdigest(),
+                   '1418689760e50035c1bb3cc1979e5170a2cc11fa763a5f87889102e9684b0b03')
+  altered=raw.replace(b"memchr(url->host, '?', host)",b"memchr(url->host, 'x', host)")
+  self.assertNotEqual(altered, raw)
+  for candidate in (raw+b'\n', altered):
+   with self.assertRaisesRegex(AssertionError,'libfetch-host-boundary-exact-source'):
+    before_host_boundary(candidate)
  def test_http_status_inverse_requires_exact_reviewed_source(self):
   import hashlib
   raw=(ROOT/'sdk/c-guest/src/libfetch/http.c').read_bytes()
@@ -130,7 +153,7 @@ class CThreadMinimal(unittest.TestCase):
   altered_category=raw.replace(b'case 503:\n        return FETCH_TEMP;',b'case 503:\n        return FETCH_SERVER;')
   self.assertNotEqual(altered_category, raw)
   for altered in (raw+b'\n', altered_category):
-   with self.assertRaisesRegex(AssertionError,'libfetch-http-status-exact-source'):
+   with self.assertRaisesRegex(AssertionError,'libfetch-host-boundary-exact-source'):
     before_http_status_categories(altered)
  def test_unsolicited_partial_inverse_requires_exact_reviewed_source(self):
   import hashlib
@@ -138,7 +161,7 @@ class CThreadMinimal(unittest.TestCase):
   self.assertEqual(hashlib.sha256(before_unsolicited_partial(raw)).hexdigest(),
                    'c81b948e74babf3edbc97a25473597daf24cba87ce48abda828f2e753c64185d')
   for altered in (raw+b'\n',raw.replace(b'requested_offset > 0 && known_length',b'requested_offset >= 0 && known_length'),raw.replace(b'actual_offset < (uint64_t)partial_length',b'actual_offset <= (uint64_t)partial_length')):
-   with self.assertRaisesRegex(AssertionError,'libfetch-http-status-exact-source'):
+   with self.assertRaisesRegex(AssertionError,'libfetch-host-boundary-exact-source'):
     before_unsolicited_partial(altered)
  def test_minimal_overlay_preserves_every_original_byte_and_full_standard_lifecycle_calls(self):
   raw=(ROOT/(original.FIXTURE+'main.c')).read_bytes();derived=selected.selected_source(raw)
