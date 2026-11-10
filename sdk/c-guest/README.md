@@ -80,6 +80,30 @@ child result classifications. Events, randomness and metrics use the generated
 typed imports directly. Every capability has an executable source under
 `examples/` (blob ownership is in `blob.c`). No wrapper retries or grants access.
 
+## Optional closed signal and jump declarations
+
+A cooperative C project may explicitly select `c-closed-signal-jump-headers-v1`:
+
+```sh
+python3 tools/c_capsule.py new ./my-capsule \
+  --threading-profile c-context144-sync-cooperative-v1 \
+  --header-profile c-closed-signal-jump-headers-v1
+```
+
+The captured SDK and pinned Zig headers provide declarations for dependencies
+that include `signal.h` or `setjmp.h` without using their operations. The compiler
+places its separately compiled guard before application and captured dependency
+objects; reachable SDK `signal`, `raise`, and nonlocal jump calls fail to link.
+If an application supplies the guard's private refusal symbol, the signal call
+traps. Static archives are unsupported for this selection. The normal profile
+and its header errors remain unchanged.
+
+This is a source-compilation boundary, not signal delivery or setjmp support.
+Source that deliberately supplies its own macros or implementations is outside
+that guarantee. The selected headers do not add sockets, descriptor readiness,
+or a qualified libcurl library. The control uses a real captured compiler with
+minimal binding and runtime stand-ins; it is not a signed component result.
+
 ## Verification
 
 With the pinned tools installed, from the repository root:

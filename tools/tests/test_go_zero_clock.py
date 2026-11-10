@@ -2,7 +2,9 @@
 import json
 import tempfile
 from pathlib import Path
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 from tools import qualify_go_synchronization as owner
 from tools import qualify_go_activation as activation
@@ -68,6 +70,26 @@ def wall_witness():
             b'LSF-GO-WALL-CLOCK-V1|restore|0\n'
             b'LSF-GO-WALL-CLOCK-V1|advance|0|5\n'
             b'LSF-GO-NODE-STOP-TIMER-V1|pending|root-close|3|1|0|0\n')
+
+
+def sleep_output():
+    row = dict(case='accepted-before-sleep-edge', outcome='cancelled', fresh='success',
+               monotonicAtCancel=0, monotonicAfter=5, pendingOriginalWait=True,
+               liveStores=0, liveInstances=0, reservations=0, reservedFuel=0,
+               reservedMemory=0, pendingProviderWaits=0)
+    return ('\n'.join([f'test {owner.SLEEP_CANCEL_CASE} ... ok',
+                       'GO_SLEEP_CANCEL_CASE ' + json.dumps(row),
+                       'test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 40 filtered out;']) + '\n').encode()
+
+
+def sleep_witness():
+    return (b'LSF-GO-ZERO-CLOCK-V1|wait-pending|0|5\n'
+            b'LSF-GO-NODE-STOP-TIMER-V1|pending|wait-pending|1|1|0|1\n'
+            b'LSF-GO-SLEEP-CANCEL-V1|pending|0|5\n'
+            b'LSF-GO-SLEEP-CANCEL-V1|accepted|0|5\n'
+            b'LSF-GO-SLEEP-CANCEL-V1|advance|0|5\n'
+            b'LSF-GO-SLEEP-CANCEL-V1|retired|5|0\n'
+            b'LSF-GO-SLEEP-CANCEL-V1|fresh|5|0\n')
 
 
 class ZeroClockControls(unittest.TestCase):
@@ -217,6 +239,76 @@ class ZeroClockControls(unittest.TestCase):
                 owner.wall_clock_observations(value, wall_witness(), 39)
         with self.assertRaises(ValueError):
             owner.wall_clock_observations(wall_output(), wall_witness(), 40)
+
+    def test_sleep_cancel_campaign_uses_the_same_source_bound_component(self):
+        path = Path('fixture')
+        self.assertEqual(owner.campaign('sleep-cancel-v7', path, None),
+            {'case': owner.SLEEP_CANCEL_CASE, 'fixture': 'zero-clock',
+             'variable': 'LSF_GO_V7_ZERO_CLOCK_FIXTURE',
+             'inputs': [(path, 'go-component-activation-v7')]})
+        with self.assertRaises(ValueError):
+            owner.campaign('sleep-cancel-v7', path, Path('unexpected'))
+
+    def test_sleep_cancel_requires_pending_wait_and_cancellation_before_edge(self):
+        self.assertEqual(owner.sleep_cancel_observations(sleep_output(), sleep_witness(), 40)['cases'][0]['outcome'], 'cancelled')
+        lines = sleep_witness().splitlines(keepends=True)
+        # Cancellation can dispose the original wait immediately, and the
+        # root-close observation is allowed but never required.
+        optional = lines[:4] + [b'LSF-GO-NODE-STOP-TIMER-V1|pending|root-close|2|1|0|0\n'] + lines[4:]
+        owner.sleep_cancel_observations(sleep_output(), b''.join(optional), 40)
+        # The clock wakes the controller before the outer host observer may
+        # run; accepted cancellation can also retire the logical task first.
+        late_observer = lines[:1] + lines[2:4] + [lines[1].replace(b'|1|1|0|1', b'|1|0|0|1')] + lines[4:]
+        owner.sleep_cancel_observations(sleep_output(), b''.join(late_observer), 40)
+        bad = [b''.join(lines[:1] + lines[2:]),
+               b''.join(lines[:2] + [lines[2], lines[2]] + lines[3:]),
+               b''.join(lines[:3] + [lines[4], lines[3]] + lines[5:]),
+               sleep_witness().replace(b'wait-pending|1|1|0|1', b'wait-pending|1|1|0|0'),
+               sleep_witness().replace(b'accepted|0|5', b'accepted|5|5'),
+               sleep_witness().replace(b'retired|5|0', b'retired|5|1')]
+        for value in bad:
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                owner.sleep_cancel_observations(sleep_output(), value, 40)
+
+    def test_sleep_cancel_rejects_bad_results_and_unsettled_owners(self):
+        bad = [sleep_output().replace(owner.SLEEP_CANCEL_CASE.encode(), b'foreign'),
+               sleep_output().replace(b'"outcome": "cancelled"', b'"outcome": "success"'),
+               sleep_output().replace(b'"monotonicAtCancel": 0', b'"monotonicAtCancel": 0, "monotonicAtCancel": 0'),
+               sleep_output().replace(b'"pendingOriginalWait": true', b'"pendingOriginalWait": 1'),
+               sleep_output().replace(b'"liveStores": 0', b'"liveStores": 1'),
+               sleep_output()+sleep_output()]
+        for value in bad:
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                owner.sleep_cancel_observations(value, sleep_witness(), 40)
+        with self.assertRaises(ValueError):
+            owner.sleep_cancel_observations(sleep_output(), sleep_witness(), 41)
+
+    def test_sleep_receipt_counts_both_original_and_fresh_activations(self):
+        available = {owner.SLEEP_CANCEL_CASE, *(f'other_{index}' for index in range(40))}
+        suite = {'id': 'latent-wasmtime.test.local-service',
+                 'expectedIgnored': [owner.SLEEP_CANCEL_CASE], 'timeoutSeconds': 900}
+        listed = SimpleNamespace(returncode=0, output=b'', stderr=b'')
+        def owned(command, **_kwargs):
+            if command[0] == 'git' or '--list' in command:
+                return listed
+            return SimpleNamespace(returncode=0, output=sleep_output(), stderr=sleep_witness())
+        with tempfile.TemporaryDirectory() as temporary, \
+                patch.object(owner.sys, 'platform', 'linux'), \
+                patch.object(owner.artifacts, 'require_source'), \
+                patch.object(owner, 'source_snapshot', return_value={'digest': 'unchanged'}), \
+                patch.object(owner, 'compile_identity', return_value={'digest': 'fixture'}), \
+                patch.object(owner.registry, 'load', return_value={'suites': [suite]}), \
+                patch.object(owner.discovery, 'listing', side_effect=[available, {owner.SLEEP_CANCEL_CASE}]), \
+                patch.object(owner.discovery, 'validate_cases'), \
+                patch.object(owner, 'run_owned', side_effect=owned):
+            out = Path(temporary) / 'output'
+            receipt = owner.qualify(Path(temporary), out, Path(temporary) / 'fixture', None,
+                                    'test-revision', 'sleep-cancel-v7')
+            self.assertEqual(receipt, json.loads((out / 'receipt.json').read_text(encoding='utf-8')))
+            self.assertEqual(receipt['signedInvocations'], 2)
+            self.assertEqual(receipt['signedCases'][0]['outcome'], 'cancelled')
+            self.assertEqual(receipt['signedCases'][0]['fresh'], 'success')
+            self.assertIn('original-wait-retired', receipt['providerObservations'])
 
     def test_native_ticker_reference_is_strictly_parsed_and_source_bound(self):
         def encoded(rows):
