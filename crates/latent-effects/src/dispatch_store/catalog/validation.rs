@@ -235,14 +235,16 @@ impl DispatchCatalog {
             Family::Outbox,
             EFFECT_PREFIX,
             checkpoint,
-            |key, bytes| validate_effect(view, owner, key, bytes),
+            |key, bytes, checkpoint| {
+                validate_effect_with_checkpoint(view, owner, key, bytes, checkpoint)
+            },
         )?;
         walk(
             view,
             Family::Maintenance,
             crate::recovery_close::RECEIPT_PREFIX,
             checkpoint,
-            |key, bytes| {
+            |key, bytes, _| {
                 let receipt = crate::recovery_close::CloseReceipt::validate_row(key, bytes)?;
                 crate::recovery_close::validate_receipt_links(view, &receipt)
             },
@@ -252,7 +254,7 @@ impl DispatchCatalog {
             Family::PayloadReference,
             PAYLOAD_PREFIX,
             checkpoint,
-            |key, bytes| {
+            |key, bytes, _| {
                 validate_row(key, bytes)?;
                 let effect = effect_from_key(key, PAYLOAD_PREFIX)?;
                 let record = load(view, &effect)?;
@@ -267,7 +269,7 @@ impl DispatchCatalog {
             Family::Maintenance,
             DUE_PREFIX,
             checkpoint,
-            |key, bytes| {
+            |key, bytes, _| {
                 let due = DueRecord::decode(key, bytes)?;
                 let record = load(view, &due.effect)?;
                 if expected_due(&record)? != Some(due) {
@@ -281,7 +283,7 @@ impl DispatchCatalog {
             Family::Attempt,
             HISTORY_PREFIX,
             checkpoint,
-            |key, bytes| validate_history(view, key, bytes),
+            |key, bytes, _| validate_history(view, key, bytes),
         )?;
         let mut prefix = RESERVATION_PREFIX.to_vec();
         prefix.extend_from_slice(ATTEMPT_RESERVATION_PREFIX);
@@ -290,7 +292,7 @@ impl DispatchCatalog {
             Family::Maintenance,
             &prefix,
             checkpoint,
-            |key, bytes| {
+            |key, bytes, _| {
                 validate_row(key, bytes)?;
                 let effect = effect_from_key(key, &prefix)?;
                 let record = load(view, &effect)?;
@@ -331,6 +333,16 @@ pub(super) fn validate_effect(
     key: &RowKey,
     bytes: &[u8],
 ) -> Result<(), StoreError> {
+    validate_effect_with_checkpoint(view, owner, key, bytes, &mut || Ok(()))
+}
+
+pub(super) fn validate_effect_with_checkpoint(
+    view: &ReadView,
+    owner: Option<OwnerRecord>,
+    key: &RowKey,
+    bytes: &[u8],
+    checkpoint: &mut dyn FnMut() -> Result<(), StoreError>,
+) -> Result<(), StoreError> {
     validate_row(key, bytes)?;
     let effect = effect_from_key(key, EFFECT_PREFIX)?;
     let record = EffectRecord::decode(bytes).map_err(storage_error)?;
@@ -367,6 +379,7 @@ pub(super) fn validate_effect(
         }
     }
     for sequence in 1..=record.history_sequence() {
+        checkpoint()?;
         let key = history_key(&effect, sequence)?;
         let bytes = view.get(&key)?.ok_or(StoreError::Corrupt)?;
         let history = HistoryRecord::decode(&key, &bytes)?;
@@ -479,7 +492,11 @@ fn walk(
     family: Family,
     prefix: &[u8],
     checkpoint: &mut dyn FnMut() -> Result<(), StoreError>,
-    mut validate: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
+    mut validate: impl FnMut(
+        &RowKey,
+        &[u8],
+        &mut dyn FnMut() -> Result<(), StoreError>,
+    ) -> Result<(), StoreError>,
 ) -> Result<(), StoreError> {
     let mut cursor = None;
     loop {
@@ -487,7 +504,7 @@ fn walk(
         let page = view.scan_after(family, prefix, cursor.as_deref(), 16, 4 * 1024 * 1024)?;
         for (key, bytes) in &page.rows {
             checkpoint()?;
-            validate(key, bytes)?;
+            validate(key, bytes, checkpoint)?;
         }
         cursor = page.resume;
         checkpoint()?;
