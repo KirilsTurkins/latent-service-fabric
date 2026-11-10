@@ -99,6 +99,51 @@ int main(void) {
     assert(stat.size == -1 && stat.atime == 0 && stat.mtime == 0 && aborts == 1);
     reset(); assert(fetchStatURL(url, NULL, "A") == 0 && aborts == 1);
 
+    /* The actual status is never retried or turned into a transport timeout.
+     * Preserve the profile's existing errno while matching libfetch categories. */
+    const struct { int status, category, error; } errors[] = {
+        {400, FETCH_PROTO, EIO}, {401, FETCH_AUTH, EACCES},
+        {402, FETCH_AUTH, EIO}, {403, FETCH_AUTH, EACCES},
+        {404, FETCH_UNAVAIL, ENOENT}, {405, FETCH_PROTO, EIO},
+        {406, FETCH_PROTO, EIO}, {407, FETCH_AUTH, EIO},
+        {408, FETCH_TIMEOUT, EIO}, {409, FETCH_EXISTS, EIO},
+        {410, FETCH_UNAVAIL, ENOENT}, {411, FETCH_PROTO, EIO},
+        {412, FETCH_SERVER, EIO}, {413, FETCH_PROTO, EIO},
+        {414, FETCH_PROTO, EIO}, {415, FETCH_PROTO, EIO},
+        {416, FETCH_UNAVAIL, EIO}, {417, FETCH_SERVER, EIO},
+        {418, FETCH_SERVER, EIO}, {500, FETCH_SERVER, EIO},
+        {501, FETCH_PROTO, EIO}, {502, FETCH_SERVER, EIO},
+        {503, FETCH_TEMP, EIO}, {504, FETCH_TIMEOUT, EIO},
+        {505, FETCH_PROTO, EIO}, {599, FETCH_SERVER, EIO},
+    };
+    for (size_t index = 0; index < sizeof(errors) / sizeof(errors[0]); ++index) {
+        reset();
+        status = errors[index].status;
+        /* An abort failure cannot replace the first actual HTTP outcome. */
+        abort_failure = status == 503;
+        assert(fetchStatURL(url, &stat, "A") == -1);
+        assert(fetchLastErrCode == errors[index].category);
+        assert(errno == errors[index].error);
+        char expected_status[32];
+        snprintf(expected_status, sizeof(expected_status), "HTTP status %d", status);
+        assert(strstr(fetchLastErrString, expected_status));
+        assert(opens == 1 && finishes == 1 && aborts == 1);
+
+        /* Same frontend/port, fresh explicit request; no automatic replay. */
+        status = 200; abort_failure = false;
+        assert(fetchStatURL(url, &stat, "A") == 0);
+        assert(opens == 2 && finishes == 2 && aborts == 2);
+    }
+    reset(); expected_method = LATENT_HTTP_STREAMING_METHOD_GET;
+    status = 503; abort_failure = true;
+    assert(!fetchXGetURL(url, &stat, "A"));
+    assert(fetchLastErrCode == FETCH_TEMP && errno == EIO);
+    assert(opens == 1 && finishes == 1 && aborts == 1);
+    status = 200; abort_failure = false;
+    FILE *after_error = fetchXGetURL(url, &stat, "A");
+    assert(after_error && fclose(after_error) == 0);
+    assert(opens == 2 && finishes == 2 && aborts == 2);
+
     reset(); status = 404;
     assert(fetchStatURL(url, &stat, "A") == -1 && errno == ENOENT && fetchLastErrCode == FETCH_UNAVAIL);
     assert(opens == 1 && finishes == 1 && aborts == 1);
