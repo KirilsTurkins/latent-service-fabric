@@ -1,6 +1,65 @@
 use super::*;
 
 #[test]
+fn quota_read_bounds_corrupt_rows_and_preserves_small_legacy_stores() {
+    let root = tempfile::tempdir().unwrap();
+    let row = RowKey {
+        family: Family::Maintenance,
+        key: b"quota-bound-test".to_vec(),
+    };
+    let open = |name: &str, limits| {
+        EmbeddedStore::open_file(
+            OpenOptions::new()
+                .read(true)
+                .write(true)
+                .create_new(true)
+                .open(root.path().join(name))
+                .unwrap(),
+            limits,
+        )
+        .unwrap()
+    };
+    let small = open(
+        "legacy.redb",
+        StoreLimits {
+            maximum_value_bytes: 128,
+            ..StoreLimits::default()
+        },
+    );
+    let mut legacy = b"LCU\0\x01".to_vec();
+    legacy.extend_from_slice(&[0; 56]);
+    small
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: row.clone(),
+                value: Some(legacy.clone()),
+            }],
+        })
+        .unwrap();
+    let view = small.snapshot().unwrap();
+    let (usage, _, original) = writer::Usage::read_row(&view, row.clone()).unwrap();
+    assert!(!usage.accounted);
+    assert_eq!(original, Some(legacy));
+
+    let large = open("corrupt.redb", StoreLimits::default());
+    large
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: row.clone(),
+                value: Some(vec![0; latent_state::reservation::QUOTA_BYTES + 1]),
+            }],
+        })
+        .unwrap();
+    let view = large.snapshot().unwrap();
+    assert!(matches!(
+        writer::Usage::read_row(&view, row),
+        Err(AtomicError::Corrupt)
+    ));
+}
+
+#[test]
 fn repeated_small_wall_only_jumps_hold_response_expiry_across_progress_reopen() {
     let (dir, store, effects) = setup();
     let record = completed(&store, &effects, "cumulative-clock-drift");
