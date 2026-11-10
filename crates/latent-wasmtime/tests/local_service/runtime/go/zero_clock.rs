@@ -249,3 +249,114 @@ async fn signed_zero_clock_timer_survives_wall_jumps() {
         })
     );
 }
+
+#[tokio::test]
+#[ignore = "requires the pinned zero-clock Go component and finite manual-clock fixture"]
+async fn signed_sleep_cancellation_precedes_elapsed_edge() {
+    assert_eq!(std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(), Ok("go"));
+    assert_eq!(
+        std::env::var("LSF_GO_NODE_STOP_TIMER_OBSERVER").as_deref(),
+        Ok("1")
+    );
+    let root = tempfile::tempdir().unwrap();
+    let clock = Arc::new(super::super::super::fixture::zero_clock::ZeroClock::new());
+    let f = prepare_owned_fixture_with_clock(
+        root.path(),
+        "LSF_GO_V7_ZERO_CLOCK_FIXTURE",
+        "go-component-activation-v7",
+        16,
+        Some(clock.clone()),
+    )
+    .await;
+    let id = ActivationId("node-stop-pending".into());
+    let mut invocation = Box::pin(f.manager.start(f.request(&id.0, 2)).unwrap());
+    tokio::time::timeout(Duration::from_secs(15), async {
+        tokio::select! {
+            result = &mut invocation => panic!("activation exited before the original sleep wait: {:?}", result.outcome),
+            () = clock.target_pending() => {}
+        }
+    }).await.expect("sleep wait was not observed pending");
+    assert_eq!(clock.monotonic_now(), clock.origin());
+    assert!(clock.target_live());
+    assert_eq!(clock.pending_waiters(), 1);
+    assert_eq!(f.read_wait.active.load(Ordering::Acquire), 1);
+    f.assert_single_cell_occupied_without_queue();
+    writeln!(
+        std::io::stderr().lock(),
+        "LSF-GO-SLEEP-CANCEL-V1|pending|0|5"
+    )
+    .expect("write pending sleep witness");
+    assert_eq!(
+        f.manager
+            .cancel_for(&TenantId("tenant-a".into()), &id, "go-sleep-cancel")
+            .unwrap(),
+        latent_core::CancelDisposition::Accepted
+    );
+    // Cancellation can retire the original wait immediately. Do not require it
+    // to remain live while this test advances the controlled clock.
+    assert_eq!(clock.monotonic_now(), clock.origin());
+    writeln!(
+        std::io::stderr().lock(),
+        "LSF-GO-SLEEP-CANCEL-V1|accepted|0|5"
+    )
+    .expect("write accepted cancellation witness");
+    writeln!(
+        std::io::stderr().lock(),
+        "LSF-GO-SLEEP-CANCEL-V1|advance|0|5"
+    )
+    .expect("write monotonic advance witness");
+    clock.advance(Duration::from_nanos(5));
+    let receipt = tokio::time::timeout(Duration::from_secs(15), &mut invocation)
+        .await
+        .expect("cancelled sleep did not settle");
+    assert_eq!(failure(receipt).code, PlatformErrorCode::Cancelled);
+    f.idle().await;
+    assert_eq!(clock.pending_waiters(), 0);
+    assert!(!clock.target_live());
+    assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
+    let state = f.backend.resource_snapshot();
+    assert_eq!(state.stores_created, 1);
+    assert_eq!(state.live_stores, 0);
+    assert_eq!(state.live_component_instances, 0);
+    assert_eq!(f.backend.active_instance_reservations(), 0);
+    let quota = f.quotas.usage().unwrap();
+    assert_eq!(quota.active_activations, 0);
+    assert_eq!(quota.reserved_cpu_fuel, 0);
+    assert_eq!(quota.reserved_memory_bytes, 0);
+    writeln!(
+        std::io::stderr().lock(),
+        "LSF-GO-SLEEP-CANCEL-V1|retired|5|0"
+    )
+    .expect("write original retirement witness");
+    let fresh = tokio::time::timeout(
+        Duration::from_secs(15),
+        f.manager
+            .start(f.request("go-sleep-cancel-fresh", 3))
+            .unwrap(),
+    )
+    .await
+    .expect("fresh activation did not finish");
+    assert_eq!(value(fresh), 42);
+    f.idle().await;
+    assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
+    let state = f.backend.resource_snapshot();
+    assert_eq!(state.stores_created, 2);
+    assert_eq!(state.live_stores, 0);
+    assert_eq!(state.live_component_instances, 0);
+    assert_eq!(f.backend.active_instance_reservations(), 0);
+    let quota = f.quotas.usage().unwrap();
+    assert_eq!(quota.active_activations, 0);
+    assert_eq!(quota.reserved_cpu_fuel, 0);
+    assert_eq!(quota.reserved_memory_bytes, 0);
+    writeln!(std::io::stderr().lock(), "LSF-GO-SLEEP-CANCEL-V1|fresh|5|0")
+        .expect("write fresh activation witness");
+    println!(
+        "GO_SLEEP_CANCEL_CASE {}",
+        serde_json::json!({
+            "case":"accepted-before-sleep-edge", "outcome":"cancelled", "fresh":"success",
+            "monotonicAtCancel":0, "monotonicAfter":5, "pendingOriginalWait":true,
+            "liveStores":0, "liveInstances":0, "reservations":0,
+            "reservedFuel":0, "reservedMemory":0, "pendingProviderWaits":0
+        })
+    );
+}
