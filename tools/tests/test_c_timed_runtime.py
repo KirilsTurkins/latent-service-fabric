@@ -131,13 +131,21 @@ class CTimedRuntime(unittest.TestCase):
             key = next(iter(threading.CLOCK_LIBC))
             compiler = Compiler.__new__(Compiler)
             compiler.paths = {'zig': Path(directory) / 'zig'}
-            compiler.threading_clock_inputs = {}; compiler.materials = {}
-            with patch.object(threading, 'clock_libc_inputs', return_value={key: path}):
+            poll_path = Path(directory) / 'poll.h'; poll_path.write_bytes(b'first-poll-input-double')
+            poll_key = next(iter(threading.POLL_LIBC))
+            compiler.threading_clock_inputs = {}; compiler.threading_poll_inputs = {}; compiler.materials = {}
+            with patch.object(threading, 'clock_libc_inputs', return_value={key: path}), \
+                    patch.object(threading, 'poll_libc_inputs', return_value={poll_key: poll_path}):
                 compiler.select_threading_clock_inputs()
                 frozen = copy.deepcopy(compiler.materials)
                 compiler.select_threading_clock_inputs(); self.assertEqual(compiler.materials, frozen)
                 path.write_bytes(b'changed-after-observation')
                 with self.assertRaisesRegex(ValueError, 'clock-input-changed'):
+                    compiler.select_threading_clock_inputs()
+                self.assertEqual(compiler.materials, frozen)
+                path.write_bytes(b'first-authenticated-input-double')
+                poll_path.write_bytes(b'changed-poll-after-observation')
+                with self.assertRaisesRegex(ValueError, 'poll-input-changed'):
                     compiler.select_threading_clock_inputs()
                 self.assertEqual(compiler.materials, frozen)
         source = (fixture.ROOT / 'tools/c_capsule_build.py').read_text()

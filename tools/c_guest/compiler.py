@@ -104,6 +104,7 @@ class Compiler:
         self.materials.update(self.closed_filesystem.materials)
         self.threading_inputs = {}
         self.threading_clock_inputs = {}
+        self.threading_poll_inputs = {}
         if threading_tool is not None:
             from tools.c_guest import threading
             if not threading_tool.is_absolute() or threading_tool.is_symlink() or not threading_tool.is_file():
@@ -146,6 +147,18 @@ class Compiler:
             self.threading_clock_inputs = inputs
             self.materials.update(identities)
 
+        poll_inputs = threading.poll_libc_inputs(self.paths['zig'])
+        poll_identities = {name: file_identity(path, threading.poll_libc_material_name(name),
+                                               threading.POLL_LIBC_MAX_BYTES)
+                           for name, path in poll_inputs.items()}
+        if self.threading_poll_inputs:
+            if poll_inputs != self.threading_poll_inputs or any(
+                    self.materials[name] != identity for name, identity in poll_identities.items()):
+                raise ValueError('c-threading-libc-poll-input-changed')
+        else:
+            self.threading_poll_inputs = poll_inputs
+            self.materials.update(poll_identities)
+
     def check_unchanged(self) -> None:
         self.closed_filesystem.check_unchanged()
         if self.threading_inputs:
@@ -162,6 +175,14 @@ class Compiler:
             for name, path in self.threading_clock_inputs.items():
                 if file_identity(path, threading.clock_libc_material_name(name), 32768) != self.materials[name]:
                     raise ValueError('c-threading-libc-clock-input-changed')
+        if getattr(self, 'threading_poll_inputs', None):
+            from tools.c_guest import threading
+            if threading.poll_libc_inputs(self.paths['zig']) != self.threading_poll_inputs:
+                raise ValueError('c-threading-libc-poll-input-changed')
+            for name, path in self.threading_poll_inputs.items():
+                if file_identity(path, threading.poll_libc_material_name(name),
+                                 threading.POLL_LIBC_MAX_BYTES) != self.materials[name]:
+                    raise ValueError('c-threading-libc-poll-input-changed')
         for name, path in self.paths.items():
             if file_identity(path, name) != self.materials[name]:
                 raise ValueError("C compiler tool changed during build")

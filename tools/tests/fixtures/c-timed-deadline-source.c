@@ -34,7 +34,7 @@ struct token_result { uint8_t tag,pad[7];union { struct lsf_c_token token;uint8_
 struct unit_result { uint8_t tag,error; };
 static struct lsf_c_thread root,child,*active;
 static unsigned admissions,settlements,parks,wakes,suspends,resumes,timers,stops;
-static unsigned next_error,global_cancel,next_calls,wake_attempts;
+static unsigned next_error,global_cancel,next_calls,wake_attempts,refuse_wait,refuse_timer;
 static uint64_t admitted_nanos;
 static void (*on_suspend)(void),(*on_timer_next)(void);
 static void require(int value) { if (!value) __builtin_trap(); }
@@ -45,6 +45,7 @@ static int ensure_root_owners(struct lsf_c_thread *value) {
 }
 static int acquire(unsigned kind,const struct lsf_c_token *parent,struct lsf_c_token *out) {
     require(kind==LSF_C_WAIT && parent && parent->id);++admissions;
+    if (refuse_wait) return EAGAIN;
     *out=(struct lsf_c_token){1,11};return 0;
 }
 static void settle(struct lsf_c_token *token) {
@@ -64,7 +65,9 @@ void sync_host_timer_start(uint64_t delay,uint32_t has_period,uint64_t period,
                            uint32_t has_parent,uint64_t generation,uint64_t id,
                            struct token_result *out) {
     require(!has_period && !period && has_parent && generation==1 && id==11);
-    ++timers;admitted_nanos=delay;out->tag=0;out->value.token=(struct lsf_c_token){1,13};
+    ++timers;admitted_nanos=delay;
+    if (refuse_timer) { out->tag=1;out->value.error=2;return; }
+    out->tag=0;out->value.token=(struct lsf_c_token){1,13};
 }
 void sync_host_timer_next(uint64_t generation,uint64_t id,struct sync_timer_result *out) {
     require(generation==1 && id==13);++next_calls;
@@ -91,7 +94,7 @@ static void reset(void) {
     active=&root;sample=(struct timespec){2000000000,500000000};
     admissions=settlements=parks=wakes=suspends=resumes=timers=stops=0;
     admitted_nanos=0;clock_calls=clock_failure=0;source_errno=37;
-    next_error=global_cancel=next_calls=wake_attempts=0;on_suspend=on_timer_next=NULL;
+    next_error=global_cancel=next_calls=wake_attempts=refuse_wait=refuse_timer=0;on_suspend=on_timer_next=NULL;
     memset(&mutex,0,sizeof(mutex));memset(&cond,0,sizeof(cond));
     memset(&c11_mutex,0,sizeof(c11_mutex));memset(&c11_cond,0,sizeof(c11_cond));
     memset(&queued,0,sizeof(queued));
@@ -314,3 +317,147 @@ __attribute__((export_name("terminal_state"))) int terminal_state(void) {
     } else CHECK((next_error==3 || next_error==4) && !stops && !wake_attempts);
     return 0;
 }
+
+
+/* Explicit broker/timer doubles; not an engine, real ledger, or signed run. */
+static __wasi_subscription_t poll_request;
+static __wasi_event_t poll_event;
+static __wasi_size_t poll_count;
+static void poll_reset(uint64_t nanos) {
+    reset();
+    memset(&poll_request,0,sizeof(poll_request));
+    memset(&poll_event,0,sizeof(poll_event));
+    poll_request.userdata=UINT64_C(0x1122334455667788);
+    poll_request.u.tag=__WASI_EVENTTYPE_CLOCK;
+    poll_request.u.u.clock.id=__WASI_CLOCKID_REALTIME;
+    poll_request.u.u.clock.timeout=nanos;
+    poll_event.userdata=UINT64_C(0x9988776655443322);
+    poll_event.type=77;
+    poll_count=99;
+}
+static int poll_call(int count) {
+    return __imported_wasi_snapshot_preview1_poll_oneoff((int32_t)(uintptr_t)&poll_request,
+             (int32_t)(uintptr_t)&poll_event,count,(int32_t)(uintptr_t)&poll_count);
+}
+static int poll_unchanged(void) {
+    return poll_event.userdata==UINT64_C(0x9988776655443322) && poll_event.type==77 && poll_count==99;
+}
+static void poll_during_next(void) {
+    require(poll_unchanged() && admissions==1 && settlements==0 && timers==1 &&
+            stops==0 && parks==1 && wakes==0 && admitted_nanos==5000000);
+    /* Mutation during the host wait must not alter the selected input. */
+    poll_request.userdata=0;
+    poll_request.u.u.clock.timeout=0;
+}
+__attribute__((export_name("poll_clock_zero"))) int poll_clock_zero(void) {
+    poll_reset(0);
+    CHECK(poll_call(1)==0 && poll_count==1 && poll_event.type==__WASI_EVENTTYPE_CLOCK);
+    CHECK(poll_event.userdata==UINT64_C(0x1122334455667788) && !poll_event.error);
+    CHECK(!admissions && !timers && !parks && !stops && !settlements && source_errno==37);
+    return 0;
+}
+__attribute__((export_name("poll_clock_elapsed"))) int poll_clock_elapsed(void) {
+    poll_reset(5000000);on_timer_next=poll_during_next;
+    CHECK(poll_call(1)==0 && poll_count==1 && poll_event.type==__WASI_EVENTTYPE_CLOCK);
+    CHECK(poll_event.userdata==UINT64_C(0x1122334455667788) && !poll_event.error);
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
+    CHECK(next_calls==1 && admitted_nanos==5000000 && source_errno==37);return 0;
+}
+__attribute__((export_name("poll_clock_refusals"))) int poll_clock_refusals(void) {
+    poll_reset(5000000);refuse_wait=1;
+    CHECK(poll_call(1)==__WASI_ERRNO_AGAIN && poll_unchanged());
+    CHECK(admissions==1 && !settlements && !timers && !parks);
+    poll_reset(5000000);refuse_timer=1;
+    CHECK(poll_call(1)==__WASI_ERRNO_AGAIN && poll_unchanged());
+    CHECK(admissions==1 && settlements==1 && timers==1 && !stops && !parks);
+    poll_reset(5000000);next_error=2;
+    CHECK(poll_call(1)==__WASI_ERRNO_AGAIN && poll_unchanged());
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
+    return 0;
+}
+__attribute__((export_name("poll_clock_invalid"))) int poll_clock_invalid(void) {
+    poll_reset(5000000);
+    CHECK(poll_call(0)==__WASI_ERRNO_INVAL);
+    CHECK(poll_call(2)==__WASI_ERRNO_NOTSUP);
+    poll_request.u.tag=__WASI_EVENTTYPE_FD_READ;CHECK(poll_call(1)==__WASI_ERRNO_NOTSUP);
+    poll_request.u.tag=__WASI_EVENTTYPE_FD_WRITE;CHECK(poll_call(1)==__WASI_ERRNO_NOTSUP);
+    poll_request.u.tag=__WASI_EVENTTYPE_CLOCK;
+    poll_request.u.u.clock.id=__WASI_CLOCKID_MONOTONIC;CHECK(poll_call(1)==__WASI_ERRNO_NOTSUP);
+    poll_request.u.u.clock.id=__WASI_CLOCKID_REALTIME;poll_request.u.u.clock.flags=1;
+    CHECK(poll_call(1)==__WASI_ERRNO_NOTSUP);poll_request.u.u.clock.flags=0;
+    CHECK(__imported_wasi_snapshot_preview1_poll_oneoff(-1,(int32_t)(uintptr_t)&poll_event,1,
+          (int32_t)(uintptr_t)&poll_count)==__WASI_ERRNO_FAULT);
+    CHECK(__imported_wasi_snapshot_preview1_poll_oneoff((int32_t)(uintptr_t)&poll_request,-1,1,
+          (int32_t)(uintptr_t)&poll_count)==__WASI_ERRNO_FAULT);
+    CHECK(__imported_wasi_snapshot_preview1_poll_oneoff((int32_t)(uintptr_t)&poll_request,
+          (int32_t)(uintptr_t)&poll_event,1,-1)==__WASI_ERRNO_FAULT);
+    CHECK(__imported_wasi_snapshot_preview1_poll_oneoff((int32_t)(uintptr_t)&poll_request,
+          (int32_t)(uintptr_t)&poll_event,1,(int32_t)(uintptr_t)&poll_event)==__WASI_ERRNO_INVAL);
+    CHECK(poll_unchanged() && !admissions && !timers && source_errno==37);
+    return 0;
+}
+__attribute__((export_name("poll_terminal_cancel"))) int poll_terminal_cancel(void) {
+    poll_reset(5000000);next_error=3;return poll_call(1);
+}
+__attribute__((export_name("poll_terminal_deadline"))) int poll_terminal_deadline(void) {
+    poll_reset(5000000);next_error=4;return poll_call(1);
+}
+__attribute__((export_name("poll_terminal_state"))) int poll_terminal_state(void) {
+    CHECK(poll_unchanged() && admissions==1 && !settlements && timers==1 && !stops);
+    CHECK(parks==1 && !wakes && next_calls==1);return 0;
+}
+
+
+static union {
+    __wasi_subscription_t input;
+    __wasi_event_t output;
+} poll_alias;
+static void poll_event_alias_pending(void) {
+    require(poll_count==99 && admissions==1 && !settlements && timers==1 && !stops);
+    require(poll_alias.input.userdata==UINT64_C(0x1122334455667788));
+    poll_alias.input.userdata=0;
+}
+static void poll_count_alias_pending(void) {
+    require(poll_unchanged() && admissions==1 && !settlements && timers==1 && !stops);
+    require(poll_request.userdata==UINT64_C(0x1122334455667788));
+    poll_request.userdata=0;
+}
+__attribute__((export_name("poll_clock_max"))) int poll_clock_max(void) {
+    poll_reset(UINT64_MAX);
+    CHECK(poll_call(1)==0 && poll_count==1 && poll_event.type==__WASI_EVENTTYPE_CLOCK);
+    CHECK(poll_event.userdata==UINT64_C(0x1122334455667788) && !poll_event.error);
+    CHECK(admitted_nanos==UINT64_MAX && admissions==1 && settlements==1 &&
+          timers==1 && stops==1 && parks==1 && wakes==1);
+    return 0;
+}
+__attribute__((export_name("poll_clock_aliases"))) int poll_clock_aliases(void) {
+    poll_reset(5000000);poll_alias.input=poll_request;on_timer_next=poll_event_alias_pending;
+    CHECK(__imported_wasi_snapshot_preview1_poll_oneoff((int32_t)(uintptr_t)&poll_alias.input,
+          (int32_t)(uintptr_t)&poll_alias.output,1,(int32_t)(uintptr_t)&poll_count)==0);
+    CHECK(poll_count==1 && poll_alias.output.userdata==UINT64_C(0x1122334455667788) &&
+          poll_alias.output.type==__WASI_EVENTTYPE_CLOCK && !poll_alias.output.error);
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && admitted_nanos==5000000);
+    poll_reset(5000000);on_timer_next=poll_count_alias_pending;
+    CHECK(__imported_wasi_snapshot_preview1_poll_oneoff((int32_t)(uintptr_t)&poll_request,
+          (int32_t)(uintptr_t)&poll_event,1,(int32_t)(uintptr_t)&poll_request)==0);
+    __wasi_size_t count;memcpy(&count,&poll_request,sizeof(count));
+    CHECK(count==1 && poll_event.userdata==UINT64_C(0x1122334455667788) &&
+          poll_event.type==__WASI_EVENTTYPE_CLOCK && !poll_event.error);
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && admitted_nanos==5000000);
+    return 0;
+}
+
+#if defined(LSF_C_TEST_LIBC_SELECT)
+#include <sys/select.h>
+static void poll_libc_during_next(void) {
+    require(admissions==1 && !settlements && timers==1 && !stops &&
+            parks==1 && !wakes && admitted_nanos==5000000);
+}
+__attribute__((export_name("poll_clock_via_libc"))) int poll_clock_via_libc(void) {
+    poll_reset(5000000);on_timer_next=poll_libc_during_next;
+    struct timeval timeout={.tv_sec=0,.tv_usec=5000};
+    CHECK(select(0,NULL,NULL,NULL,&timeout)==0);
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
+    CHECK(next_calls==1 && admitted_nanos==5000000);return 0;
+}
+#endif
