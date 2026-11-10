@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "latent.java.event-lost-ack-local-observation.v1",
+  "sourceCommit": "aa47593fce1130d9578eb952722e7b3939bc22de",
+  "qualification": "local experimental fixture signer with temporary pins; not distribution or hosted qualification",
+  "fault": "proxy dropped first actual JetStream publication acknowledgement",
+  "observedEffects": [
+    {
+      "call": "cli-031.stdout",
+      "disposition": "EFFECT_DISPOSITION_DISPATCHING",
+      "dispatchAttempt": 1,
+      "providerReceipt": null
+    },
+    {
+      "call": "cli-032.stdout",
+      "disposition": "EFFECT_DISPOSITION_DISPATCHING",
+      "dispatchAttempt": 2,
+      "providerReceipt": null
+    },
+    {
+      "call": "cli-033.stdout",
+      "disposition": "EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED",
+      "dispatchAttempt": 2,
+      "providerReceipt": "DURABLE@2026-11-08T16:35:02.517012377Z:1:duplicate=1"
+    }
+  ],
+  "brokerMessageCount": 1,
+  "brokerIdentityAndPayloadMatched": true,
+  "historyRpc": "unavailable",
+  "cleanNodeRetirement": true,
+  "materials": {
+    "compilerCapture": {
+      "sha256": "sha256:f33bd51970f5d2470bcdc6439db97bd5b3c2f356f12515fc33f4f55e83a8d769",
+      "bytes": 2245
+    },
+    "committedResult": {
+      "sha256": "sha256:5b31716c134aec714d29210aa0f6f43947e861f765fae912662b364f3118bf45",
+      "bytes": 931
+    },
+    "acknowledgementDropped": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "finalEffect": {
+      "sha256": "sha256:3dcace69c6f24057d44f637e9a0ec683e2150f41c23d202b52fe3420a1f0b689",
+      "bytes": 1280
+    },
+    "historyUnavailable": {
+      "sha256": "sha256:7637013890cb9297a4466a160bca3db4bd2615b87b3665129912d6d985b8ebf9",
+      "bytes": 274
+    },
+    "brokerObservation": {
+      "sha256": "sha256:cb3018c67f7aef2e0719c683839adc6357d98571ef78942a948ea8bd9cc76f7d",
+      "bytes": 304
+    },
+    "cleanRetirement": {
+      "sha256": "sha256:995e5ccbeb2617a37270452617f397786ea0164405af6a4e345248c084e2efd4",
+      "bytes": 4182
+    }
+  },
+  "nativeTools": {
+    "deferred_event_fault_proxy": {
+      "sha256": "sha256:5a39cc6dbf3444bb7d06c43004f29383852d1b372d14d17bdc39dfde43cf13c0",
+      "bytes": 11930720
+    },
+    "latent": {
+      "sha256": "sha256:66f92c4fbad60d7d3e6dbfb8346a4d39f4a152540e3544d5a3b2084dffb5cce2",
+      "bytes": 79680232
+    },
+    "latent-aot-compiler": {
+      "sha256": "sha256:0db8951c27ac7de4e48c1234f6c9bf0ad289268a57eee5d61bb589e6f93a029a",
+      "bytes": 51833424
+    },
+    "latentd": {
+      "sha256": "sha256:86ff2271b9ea8f06c8f4fc58f440db0908c89ee59d9cfab409c4a1fc3adfa8e5",
+      "bytes": 205441392
+    }
+  }
+}

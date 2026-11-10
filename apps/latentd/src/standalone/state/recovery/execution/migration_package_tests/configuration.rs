@@ -143,6 +143,7 @@ pub(super) fn operation(
             dispatch_policies: vec!["native".into()],
             dispatch_authority: None,
         }),
+        deferred_event: None,
     }
 }
 

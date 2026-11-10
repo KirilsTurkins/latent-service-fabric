@@ -193,7 +193,11 @@ The fixture stream has file storage, one replica, 64 messages/1 MiB, discard-new
 a 30-second duplicate window, and delete/purge denied. The runner owns one
 256 MiB, one-CPU broker with 64 process slots, bounded storage/logs, TLS and
 explicit credentials. Its immutable container identity and random ownership
-label gate cleanup. No external account or ambient credential is used.
+label gate cleanup. No external account or ambient credential is used. The
+optional `--standalone-token` campaign uses an isolated broker with one public
+test token to exercise the standalone provider's existing token-credential
+path. That token is broker-wide inside the disposable fixture; it does not
+establish a production broker authorization policy.
 
 A first success fixture used its pre-Pending admission snapshot for completion;
 the real OCC engine correctly rejected the newly published command row. The
@@ -202,6 +206,31 @@ Earlier host disk/Docker failures, that rejected fixture attempt, and one
 historical immediate-campaign build that exceeded its finite fixture lifetime
 remain unsuccessful evidence. They do not replace required immediate/trigger
 CI execution or establish a product regression.
+
+Standalone state startup includes the qualified event adapters from its existing
+provider owner in the shared dispatcher, using the same protected startup clock
+as deferred HTTP. This installs no event-operation authority by itself.
+The selected signed transaction package can also retain a separate
+`deferred-event-requirements.json` asset of at most 8,192 bytes. Its digest and
+bytes establish package provenance; the standalone installation also requires
+an explicit signed-service-integration configuration, matching provider and
+credential identity, a current namespace selection and current staging and
+dispatch policies. The installed adapter consults the current dispatch policy
+before provider work and again before publication. Event and deferred HTTP
+configuration cannot yet be combined on the same installed operation.
+`latentd inspect-configured-event-effects --config <node.json>` opens the real
+configured provider and returns its bounded profile, configuration digest and
+epoch. It does not grant publication authority or prove a broker connection;
+the protected credential itself is not returned. Use the reported
+`profile.idempotency_profile` as the explicit Java source input and the configuration
+digest when pinning the node operation.
+
+The signed-package fixture verifies the installation with the actual protected
+provider owner; it does not execute a guest or connect to a broker. The Java
+transaction schema author accepts an explicit `--event-profile` containing the
+constructor-derived `js-window-v1` profile. Its normal package assembly checks
+and carries the exact matching event requirements and companion. This creates no
+grant and does not qualify signed guest execution or broker delivery.
 
 This native campaign executes trusted fixture source labels directly through
 the captured-intent writer. Actual verified guest component identities and

@@ -59,6 +59,26 @@ class FoundationRecipeTests(unittest.TestCase):
             "run: echo disabled # python3 tools/ci_cargo.py run bindings latent-rpc latent-component-bindings"))
         self.assertIn("CI workflow does not invoke foundation recipe: bindings", self.foundation.ERRORS)
 
+    def test_unrelated_multiline_shell_does_not_break_recipe_validation(self):
+        import yaml
+        document = yaml.load(self.workflow, Loader=yaml.BaseLoader)
+        document['jobs']['rust']['steps'].append({
+            'name': 'Unrelated multiline download',
+            'run': "printf '%s' \\\n  fixture\n",
+        })
+        self.foundation.validate_cargo_workflow(yaml.safe_dump(document))
+        self.assertEqual(self.foundation.ERRORS, [])
+
+    def test_unrelated_multiline_python_does_not_break_recipe_validation(self):
+        import yaml
+        document = yaml.load(self.workflow, Loader=yaml.BaseLoader)
+        document['jobs']['rust']['steps'].append({
+            'name': 'Unrelated multiline Python',
+            'run': "python3 -m unrelated \\\n  fixture\n",
+        })
+        self.foundation.validate_cargo_workflow(yaml.safe_dump(document))
+        self.assertEqual(self.foundation.ERRORS, [])
+
     def test_conditionally_skipped_binding_step_does_not_satisfy_foundation(self):
         self.foundation.validate_cargo_workflow(self.workflow.replace(
             "run: python3 tools/ci_cargo.py run bindings",

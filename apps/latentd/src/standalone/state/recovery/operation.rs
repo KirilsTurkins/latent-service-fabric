@@ -35,6 +35,7 @@ pub(in crate::standalone) struct RecoveryOwners<'a> {
     pub clock: Arc<dyn ActivationClock>,
     pub providers: Option<&'a crate::standalone::providers::ProviderRuntime>,
     pub http: Option<&'a crate::config::HttpInstallation>,
+    pub events: Option<&'a crate::config::providers::EventInstallation>,
 }
 
 pub(in crate::standalone) async fn recover(
@@ -202,6 +203,13 @@ async fn prepare(
         (_, None) => Vec::new(),
         _ => return Err(super::denied()),
     };
+    let event_adapters = match (owners.providers, owners.events) {
+        (Some(provider), Some(events)) => {
+            provider.typed_deferred_event_adapters(events, clock.clone())?
+        }
+        (_, None) => Vec::new(),
+        _ => return Err(super::denied()),
+    };
     let keeper = Arc::clone(&original);
     let job = store
         .with_store_retaining(
@@ -228,7 +236,9 @@ async fn prepare(
                     }
                     let mut profiles = Vec::new();
                     for source in &sources {
-                        if let Some(profile) = super::selection::profile(source, &adapters)? {
+                        if let Some(profile) =
+                            super::selection::profile(source, &adapters, &event_adapters)?
+                        {
                             profiles.push(profile);
                         }
                     }

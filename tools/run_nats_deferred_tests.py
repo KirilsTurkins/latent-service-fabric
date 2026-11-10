@@ -21,6 +21,19 @@ IMAGE = "nats@sha256:065e8355c20a5575b3c77224be1855e8103fd148b68fba05130b9b8ddfa
 LABEL = "io.latent.nats-conformance"
 
 
+def authorization(standalone_token):
+    if type(standalone_token) is not bool:
+        raise ValueError("explicit fixture authentication mode required")
+    if standalone_token:
+        # This isolated broker has a public test token. Native policy still
+        # selects the approved topic; the token itself is not a guest grant.
+        return {"token": PASSWORD}
+    return {"users": [
+        {"user":"operator", "password":PASSWORD, "permissions":{"publish":["$JS.API.>"], "subscribe":["_INBOX.ADMIN.>"]}},
+        {"user":"publisher", "password":PASSWORD, "permissions":{"publish":["lsf.deferred.allowed", "$JS.API.STREAM.INFO.DURABLE"], "subscribe":["_INBOX.LSF.>"]}},
+    ]}
+
+
 def close(name, token, identity):
     found = subprocess.run(["docker", "inspect", name], capture_output=True, text=True, timeout=15)
     if found.returncode:
@@ -75,9 +88,7 @@ def run(args, directory):
             "max_payload":65536,"write_deadline":"1s",
             "jetstream":{"store_dir":"/data","max_memory_store":16777216,"max_file_store":16777216},
             "tls":{"cert_file":"/fixtures/server.pem","key_file":"/fixtures/server.key","handshake_first":True},
-            "authorization":{"users":[
-                {"user":"operator","password":PASSWORD,"permissions":{"publish":["$JS.API.>"],"subscribe":["_INBOX.ADMIN.>"]}},
-                {"user":"publisher","password":PASSWORD,"permissions":{"publish":["lsf.deferred.allowed","$JS.API.STREAM.INFO.DURABLE"],"subscribe":["_INBOX.LSF.>"]}}]}}
+            "authorization":authorization(args.standalone_token)}
         (directory/"nats.conf").write_text(json.dumps(config),encoding="ascii")
         (directory/"nats.conf").chmod(0o644)
         identity=command(["docker","run","--detach","--name",name,"--label",f"{LABEL}={token}",*network,
@@ -89,19 +100,23 @@ def run(args, directory):
             command(["docker","exec",args.cargo_container,"mkdir","-m","700",remote]);remote_created=True
             for source,target in [(directory/"ca.pem","ca.pem"),(directory/"ca.der","ca.der"),(ROOT/"tools/nats_test_support.py","nats_test_support.py"),(ROOT/"tools/nats_deferred_support.py","control.py")]:
                 command(["docker","cp",str(source),f"{args.cargo_container}:{remote}/{target}"])
-            command(["docker","exec",args.cargo_container,"python3",remote+"/control.py",str(port),remote+"/ca.pem","setup"],timeout=40)
+            token_mode = "1" if args.standalone_token else "0"
+            command(["docker","exec","-e",f"LSF_NATS_TEST_TOKEN_AUTH={token_mode}",args.cargo_container,
+                     "python3",remote+"/control.py",str(port),remote+"/ca.pem","setup"],timeout=40)
             launch=["docker","exec","-w",args.workspace,"-e",f"LSF_NATS_TEST_PORT={port}","-e",f"LSF_NATS_TEST_CA={remote}/ca.der",
-                "-e",f"LSF_NATS_TEST_PEM={remote}/ca.pem","-e",f"LSF_NATS_TEST_CONTROL={remote}/control.py",args.cargo_container]
+                "-e",f"LSF_NATS_TEST_PEM={remote}/ca.pem","-e",f"LSF_NATS_TEST_CONTROL={remote}/control.py",
+                "-e",f"LSF_NATS_TEST_TOKEN_AUTH={token_mode}",args.cargo_container]
             env=None
         else:
             info=json.loads(command(["docker","inspect",identity]))[0]
             mapping=info["NetworkSettings"]["Ports"]["4222/tcp"]
             if len(mapping)!=1 or mapping[0]["HostIp"]!="127.0.0.1": raise RuntimeError("NATS fixture requires one loopback mapping")
             port=int(mapping[0]["HostPort"])
-            Client(port,directory/"ca.pem").prepare()
+            Client(port,directory/"ca.pem",token_auth=args.standalone_token).prepare()
             launch=[]
             env=dict(os.environ,LSF_NATS_TEST_PORT=str(port),LSF_NATS_TEST_CA=str(directory/"ca.der"),
-                LSF_NATS_TEST_PEM=str(directory/"ca.pem"),LSF_NATS_TEST_CONTROL=str(ROOT/"tools/nats_deferred_support.py"))
+                LSF_NATS_TEST_PEM=str(directory/"ca.pem"),LSF_NATS_TEST_CONTROL=str(ROOT/"tools/nats_deferred_support.py"),
+                LSF_NATS_TEST_TOKEN_AUTH="1" if args.standalone_token else "0")
         return subprocess.run([*launch,*test_command(args.test_manifest, args.suite)],cwd=ROOT,env=env,timeout=300).returncode
     finally:
         close(name,token,identity)
@@ -117,6 +132,8 @@ def main():
     parser.add_argument("--workspace", default="/phase3-current")
     parser.add_argument("--test-manifest", type=Path, help="reuse the built workspace test harness in CI")
     parser.add_argument("--suite", choices=("deferred_events",), default="deferred_events")
+    parser.add_argument("--standalone-token", action="store_true",
+                        help="exercise the existing standalone token credential on the private broker")
     args = parser.parse_args()
     if args.cargo_container and args.test_manifest:
         parser.error("a local Cargo manifest cannot address another container's filesystem")

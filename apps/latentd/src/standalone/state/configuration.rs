@@ -95,7 +95,44 @@ pub(super) fn identity(settings: &StateSettings) -> [u8; 32] {
             policies(&mut result, &effect.dispatch_policies);
         }
     }
+    extended_dispatch(&mut result, settings);
     result.0.finalize().into()
+}
+
+fn extended_dispatch(result: &mut Identity, settings: &StateSettings) {
+    // Preserve historical identities when no new dispatch authority is present.
+    // The tagged extension binds the exact operation index and all newly
+    // supported dispatch pins without making the digest an authority grant.
+    for (index, operation) in settings.operations.iter().enumerate() {
+        if let Some(effect) = &operation.deferred_event {
+            result.bytes(b"latent.standalone-state.event-pins.v1\0");
+            result.number(index as u128);
+            for text in [
+                &effect.requirements_digest,
+                &effect.provider_id,
+                &effect.provider_incarnation,
+                &effect.credential_reference,
+                &effect.staging_binding,
+                &effect.dispatch_binding,
+                &effect.dispatch_authority.mode,
+            ] {
+                result.text(text);
+            }
+            result.number(u128::from(effect.dispatch_authority.format_version));
+            policies(result, &effect.staging_policies);
+            policies(result, &effect.dispatch_policies);
+        }
+        if let Some(authority) = operation
+            .deferred_http
+            .as_ref()
+            .and_then(|effect| effect.dispatch_authority.as_ref())
+        {
+            result.bytes(b"latent.standalone-state.http-authority.v1\0");
+            result.number(index as u128);
+            result.number(u128::from(authority.format_version));
+            result.text(&authority.mode);
+        }
+    }
 }
 
 fn policies(result: &mut Identity, policies: &[String]) {
@@ -185,4 +222,94 @@ fn dispatcher(result: &mut Identity, settings: &StateSettings) {
     }
     result.number(u128::from(dispatcher.start_paused));
     result.number(u128::from(dispatcher.start_in_restore_review));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn identity_pins_event_provider_authority_and_http_dispatch_mode() {
+        let mut wire = crate::config::state::tests::input();
+        let event = serde_json::json!({"requirementsDigest":format!("sha256:{}", "d".repeat(64)),
+            "providerId":"events","providerIncarnation":"e".repeat(64),"credentialReference":"event-secret",
+            "stagingBinding":"intent-stage","stagingPolicies":["stage"],"dispatchBinding":"intent-dispatch",
+            "dispatchPolicies":["dispatch"],"dispatchAuthority":{"formatVersion":1,"mode":"signed-service-integration"}});
+        let base: crate::config::state::StateConfig = serde_json::from_value(wire.clone()).unwrap();
+        let original =
+            crate::config::state::derive(&base, &std::env::temp_dir().join("state-settings"))
+                .unwrap();
+        let original_identity = identity(&original);
+        wire["operations"][0]["deferredEvent"] = event.clone();
+        let config = serde_json::from_value(wire.clone()).unwrap();
+        let selected =
+            crate::config::state::derive(&config, &std::env::temp_dir().join("state-settings"))
+                .unwrap();
+        let selected_identity = identity(&selected);
+        assert_ne!(selected_identity, original_identity);
+        let clock: std::sync::Arc<dyn latent_core::ActivationClock> =
+            std::sync::Arc::new(latent_core::SystemActivationClock);
+        let bootstrap =
+            super::super::bootstrap::StateBootstrap::new_state(&selected, &clock).unwrap();
+        assert!(bootstrap.matches(&selected));
+        assert!(!bootstrap.matches(&original));
+        for field in [
+            "requirementsDigest",
+            "providerId",
+            "providerIncarnation",
+            "credentialReference",
+            "stagingBinding",
+            "dispatchBinding",
+            "stagingPolicies",
+            "dispatchPolicies",
+        ] {
+            let mut changed = wire.clone();
+            changed["operations"][0]["deferredEvent"][field] = match field {
+                "requirementsDigest" => format!("sha256:{}", "a".repeat(64)).into(),
+                "providerIncarnation" => "f".repeat(64).into(),
+                "stagingPolicies" | "dispatchPolicies" => serde_json::json!(["other"]),
+                _ => "other".into(),
+            };
+            let config = serde_json::from_value(changed).unwrap();
+            let candidate =
+                crate::config::state::derive(&config, &std::env::temp_dir().join("state-settings"))
+                    .unwrap();
+            assert_ne!(identity(&candidate), selected_identity, "{field}");
+        }
+        let mut changed_authority = selected.clone();
+        changed_authority.operations[0]
+            .deferred_event
+            .as_mut()
+            .unwrap()
+            .dispatch_authority
+            .mode = "other".into();
+        assert_ne!(identity(&changed_authority), selected_identity);
+        assert!(!bootstrap.matches(&changed_authority));
+        changed_authority = selected.clone();
+        changed_authority.operations[0]
+            .deferred_event
+            .as_mut()
+            .unwrap()
+            .dispatch_authority
+            .format_version += 1;
+        assert_ne!(identity(&changed_authority), selected_identity);
+        let mut http = crate::config::state::tests::input();
+        let mut http_effect = event;
+        http_effect
+            .as_object_mut()
+            .unwrap()
+            .remove("dispatchAuthority");
+        http["operations"][0]["deferredHttp"] = http_effect;
+        let config = serde_json::from_value(http.clone()).unwrap();
+        let old =
+            crate::config::state::derive(&config, &std::env::temp_dir().join("state-settings"))
+                .unwrap();
+        http["operations"][0]["deferredHttp"]["dispatchAuthority"] =
+            serde_json::json!({"formatVersion":1,"mode":"signed-service-integration"});
+        let config = serde_json::from_value(http).unwrap();
+        let explicit =
+            crate::config::state::derive(&config, &std::env::temp_dir().join("state-settings"))
+                .unwrap();
+        assert_ne!(identity(&old), identity(&explicit));
+    }
 }
