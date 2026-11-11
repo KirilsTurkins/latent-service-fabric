@@ -1303,9 +1303,9 @@ impl Connection {
             .await
             .map_err(Into::into)
     }
-    // A readiness-only timeout is nonterminal only after the same original
-    // call remains current. Busy/failed authority checks fail closed; they are
-    // not reclassified as an ordinary socket timeout.
+    // Successful readiness and readiness-only timeouts both require the same
+    // original call to remain current after audit. Busy/failed authority checks
+    // fail closed; they are not reclassified as an ordinary socket timeout.
     fn ready_timeout_current(
         &self,
         pending: &Pending,
@@ -1691,7 +1691,7 @@ impl OutboundStream for Handle {
                     if matches!(interest, StreamInterest::Readable | StreamInterest::Either)
                         && pending.socket.buffered_readable()?
                     {
-                        connection.audit(call, true).await?;
+                        connection.complete_readiness_observation(pending, call, true).await?;
                         return Ok(StreamReadiness {
                             readable: true,
                             writable: false,
@@ -1728,11 +1728,7 @@ impl OutboundStream for Handle {
                     };
                     match result {
                         Ok(Some(ready)) => {
-                            if pending.observation_immediate {
-                                connection.complete_readiness_observation(pending, call, true).await?;
-                            } else {
-                                connection.audit(call, true).await?;
-                            }
+                            connection.complete_readiness_observation(pending, call, true).await?;
                             Ok(StreamReadiness {
                                 readable: ready.is_readable() || ready.is_read_closed(),
                                 writable: ready.is_writable() || ready.is_write_closed(),
@@ -2056,3 +2052,7 @@ mod read_witness_tests {
         .expect("bounded read witness control");
     }
 }
+
+#[cfg(all(test, unix))]
+#[path = "connection/readiness_tests.rs"]
+mod readiness_tests;

@@ -8,6 +8,8 @@ use latent_wasmtime::WasmtimeComponentEngineFactory;
 mod fixture;
 #[path = "../../../latent-packaging/tests/fixtures/host.rs"]
 mod host_fixture;
+#[path = "nonblocking.rs"]
+mod nonblocking;
 
 fn artifact(spec: &latent_core::HostInterfaceSpec) -> latent_artifacts::CapsuleArtifact {
     let bytes = fixture::with_host(

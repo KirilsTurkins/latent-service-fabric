@@ -232,6 +232,14 @@ impl Encoder<'_> {
                 self.host.ty().defined_type().variant(cases);
                 index
             }
+            TypeDefKind::Flags(flags) => {
+                let index = self.host.type_count();
+                self.host
+                    .ty()
+                    .defined_type()
+                    .flags(flags.flags.iter().map(|flag| flag.name.as_str()));
+                index
+            }
             TypeDefKind::Enum(value) => {
                 let index = self.host.type_count();
                 self.host

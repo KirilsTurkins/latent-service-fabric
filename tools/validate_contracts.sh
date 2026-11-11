@@ -31,6 +31,11 @@ esac
 
 case "${VALIDATION_LANE}" in
   all|bindings)
+    # Uninstalled research contracts still need real parser and validator coverage.
+    python3 -m unittest discover -s research/standard-outbound -p test_validate_contracts.py
+    python3 research/standard-outbound/validate_contracts.py \
+        --output "${OUTPUT}/outbound-contract"
+
     wasm-tools parse crates/latent-wasmtime/src/values/types.wat \
         -o "${OUTPUT}/wit/value-types.wasm"
     cmp "${OUTPUT}/wit/value-types.wasm" crates/latent-wasmtime/src/values/types.wasm
@@ -155,6 +160,15 @@ esac
 
 case "${VALIDATION_LANE}" in
   all|runtime)
+    # Existing v1 readiness must retain and fence its original owners after audit.
+    cargo test -p latent-streams --lib --locked -- \
+        connection::readiness_tests:: --nocapture --test-threads=1
+
+    # Run the uninstalled companion's typed rejection controls independently of
+    # the workspace suite, which may stop early on an unrelated crate failure.
+    cargo test -p latent-wasmtime --test generic_backend --locked -- \
+        host_abi::nonblocking:: --nocapture --test-threads=1
+
     # The registered local/CI selection supplies the same four exact cases and
     # fixture paths. Earlier explicit builders are reused; run never invokes Cargo.
     # This invocation owns a fresh inventory under the already-cleared OUTPUT.
