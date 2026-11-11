@@ -38,6 +38,12 @@ crates.io. This is a Development source boundary, separate from alpha.5.
    explicit eligible release/reclamation synchronizes file removal and refunds
    capacity. Cancellation and a lost response do not prove a mutation failed.
 
+Once a staged write reaches physical I/O, an error or an unwinding completion
+checkpoint permanently disables that writer: it cannot resume or seal. Its
+original stage, descriptors and capacity remain owned until the writer retires;
+only explicit reclamation refunds an abandoned stage. A refused pre-write
+checkpoint leaves the untouched writer reusable.
+
 The [local-blob guide](../../docs/runtime/local-blobs.md) owns the exact ABI,
 filesystem requirements and independent stage/disk/metadata/work limits.
 
@@ -96,6 +102,13 @@ finite capacity, retained pins, engine/view substitution, required-file inventor
 and uncertain filesystem boundaries. The facade's type-identity tests live in
 [latent-blobs](../latent-blobs/src/lib.rs). Registered cases and source review
 are distinct from executed signed-node or storage-device qualification.
+
+The [write-unwind cases](src/local/write/tests.rs) are also selected by
+`tools/qualify_local_payload_recovery.py` before its actual committed-payload
+producer and protected-startup consumer. This focused lane rejects zero-match
+Cargo success without freezing the module's test count or names. Its Python
+protocol tests exercise output checks and process-result handling, not native
+storage behavior or proof of child retirement.
 
 ## Related documentation
 
