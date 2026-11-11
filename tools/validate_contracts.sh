@@ -160,6 +160,10 @@ esac
 
 case "${VALIDATION_LANE}" in
   all|runtime)
+    # Existing v1 readiness must retain and fence its original owners after audit.
+    cargo test -p latent-streams --lib --locked -- \
+        connection::readiness_tests:: --nocapture --test-threads=1
+
     # Run the uninstalled companion's typed rejection controls independently of
     # the workspace suite, which may stop early on an unrelated crate failure.
     cargo test -p latent-wasmtime --test generic_backend --locked -- \
