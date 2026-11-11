@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "latent.typescript.store-custody-observation.v1",
+  "observedOn": "2026-11-11",
+  "sourceHead": "56790ab62501218940aefaedea4f653a36d1cce2",
+  "sourceTree": "7abddf3bf5f32c6de27be5a89cfc0eaa207fbb9b",
+  "compiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "wasmTools": "wasm-tools 1.254.0 (bb58fdf91 2026-07-20)",
+  "commands": [
+    "cargo test -p latent-wasmtime --locked --offline --lib backend::store::tests",
+    "cargo test -p latent-wasmtime --locked --offline --lib"
+  ],
+  "fixture": {
+    "source": "crates/latent-wasmtime/src/host/native-stream-outers.wat",
+    "environment": "LSF_TEST_STREAM_OUTERS_COMPONENT",
+    "bytes": 788,
+    "sha256": "084a1996a2debcd8cd949096561cf8b2140845a3c24e14d629447973e9289869"
+  },
+  "runs": [
+    {
+      "log": "owners-rust-restacked.log",
+      "sha256": "5bcc74d427440746bc94be802741f442a6e10d4ae25298a828c205782de8177c",
+      "bytes": 11428,
+      "passed": 8,
+      "failed": 0,
+      "ignored": 0,
+      "filteredOut": 511
+    },
+    {
+      "log": "owners-full-lib-current.log",
+      "sha256": "fa23865c6667d6fd02cb7694ab5c6b73119997f861725b7e093027564094299b",
+      "bytes": 68081,
+      "passed": 508,
+      "failed": 0,
+      "ignored": 11,
+      "filteredOut": 0
+    }
+  ],
+  "qualifiedScope": "real-pinned-Wasmtime-Store-owner-order-and-trusted-reuse-veto",
+  "failedDecommitCustodyProved": false,
+  "signedSpiderMonkeyQualified": false,
+  "aggregateByteAttributionComplete": false,
+  "fullTicketQualification": false
+}
