@@ -22,7 +22,13 @@ fn terminal(
     let claim = fenced_claim(store, scope);
     let view = store.snapshot().unwrap();
     let envelope = if rejected {
-        CompleteEnvelope::rejection(&view, claim, "rejected".into(), value(b"original"), time(101))
+        CompleteEnvelope::rejection(
+            &view,
+            claim,
+            "rejected".into(),
+            value(b"original"),
+            time(101),
+        )
     } else {
         CompleteEnvelope::success(
             &view,
@@ -232,15 +238,22 @@ fn existing_source_does_not_replace_current_result_permission_or_clock_continuit
     let view = store.snapshot().unwrap();
     let mut calls = 0;
     assert!(matches!(
-        inspect_inbox(&view, &input.key, inbox, &scope, time(102), |access, record| {
-            calls += 1;
-            permission(access, record)?;
-            if record.is_some() {
-                Err(AtomicError::PermissionDenied)
-            } else {
-                Ok(())
+        inspect_inbox(
+            &view,
+            &input.key,
+            inbox,
+            &scope,
+            time(102),
+            |access, record| {
+                calls += 1;
+                permission(access, record)?;
+                if record.is_some() {
+                    Err(AtomicError::PermissionDenied)
+                } else {
+                    Ok(())
+                }
             }
-        }),
+        ),
         Err(AtomicError::PermissionDenied)
     ));
     assert_eq!(calls, 2);

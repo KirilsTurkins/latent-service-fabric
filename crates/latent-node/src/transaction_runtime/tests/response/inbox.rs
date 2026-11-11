@@ -9,6 +9,8 @@ use latent_state::{
 };
 use sha2::{Digest, Sha256};
 
+mod entity;
+
 fn attach(
     admission: Arc<NativeTransactionAdmission>,
     identity: &InboxIdentity,
@@ -25,8 +27,7 @@ fn attach(
     )
 }
 
-async fn committed_input() -> (Fixture, InboxScope, InboxIdentity, CommandRecord) {
-    let fixture = Box::pin(Fixture::with_scoped_trigger()).await;
+fn source() -> (InboxScope, InboxIdentity) {
     let scope = InboxScope {
         tenant: "a".into(),
         namespace: "orders".into(),
@@ -46,6 +47,10 @@ async fn committed_input() -> (Fixture, InboxScope, InboxIdentity, CommandRecord
         ))
         .unwrap(),
     };
+    (scope, identity)
+}
+
+async fn install_source(fixture: &Fixture, scope: &InboxScope) {
     let approved = scope.clone();
     fixture
         .protected_store()
@@ -59,9 +64,34 @@ async fn committed_input() -> (Fixture, InboxScope, InboxIdentity, CommandRecord
         .await
         .unwrap()
         .unwrap();
-    let (first, mut envelope, budget) = fixture.invocation(false, &identity.command_key().unwrap());
+}
+
+fn invocation(
+    fixture: &Fixture,
+    scope: &InboxScope,
+    identity: &InboxIdentity,
+    entity: Option<&str>,
+) -> (
+    Arc<NativeTransactionAdmission>,
+    latent_activation::ActivationEnvelope,
+    latent_core::ActivationBudget,
+) {
+    let key = identity.command_key().unwrap();
+    let (admission, mut envelope, budget) = match entity {
+        Some(entity) => fixture.entity_invocation(&key, entity),
+        None => fixture.invocation(false, &key),
+    };
     envelope.principal.kind = latent_core::PrincipalKind::Trigger;
-    let first = attach(first, &identity, &scope);
+    (attach(admission, identity, scope), envelope, budget)
+}
+
+async fn committed_input(
+    entity: Option<&str>,
+) -> (Fixture, InboxScope, InboxIdentity, CommandRecord) {
+    let fixture = Box::pin(Fixture::with_scoped_trigger()).await;
+    let (scope, identity) = source();
+    install_source(&fixture, &scope).await;
+    let (first, envelope, budget) = invocation(&fixture, &scope, &identity, entity);
     let guest = first.admit(&envelope, &budget).await.unwrap();
     guest.acquire(Mode::Command).unwrap();
     guest.finish_guest_access();
@@ -83,6 +113,7 @@ async fn committed_input() -> (Fixture, InboxScope, InboxIdentity, CommandRecord
     assert_eq!(command.inbox_identity(), Some(&identity));
     drop((guest, original, first, envelope, budget));
     assert!(fixture.native.snapshot().unwrap().physically_retired());
+    assert_eq!(fixture.owners.lanes.snapshot().keys, 0);
     (fixture, scope, identity, command)
 }
 
@@ -109,62 +140,69 @@ async fn replace_source(fixture: &Fixture, scope: InboxScope, bytes: Option<Vec<
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn source_loss_after_admission_refuses_full_and_expired_inbox_replay() {
-    for expired_body in [false, true] {
-        let (fixture, scope, identity, original) = Box::pin(committed_input()).await;
-        if expired_body {
-            fixture.set_result_time(original.result_expires(), true);
+    for entity in [None, Some("hot")] {
+        for expired_body in [false, true] {
+            Box::pin(source_loss_after_admission(entity, expired_body)).await;
         }
-        let (replay, mut envelope, budget) =
-            fixture.invocation(false, &identity.command_key().unwrap());
-        envelope.principal.kind = latent_core::PrincipalKind::Trigger;
-        let replay = attach(replay, &identity, &scope);
-        assert_eq!(
-            replay.admit(&envelope, &budget).await.err().unwrap().code,
-            latent_core::PlatformErrorCode::AlreadyExists
-        );
-        replace_source(&fixture, scope, None).await;
-        let _ = budget.finalize_at(None, std::time::Instant::now());
-        replay
-            .complete(
-                success(b"must not execute or acknowledge"),
-                fixture.commit_control(&envelope, &budget),
-            )
-            .await;
-        let response = replay.take_owned_completion().unwrap().unwrap();
-        let TransactionCompletionResult::Existing {
-            command,
-            result: Err(error),
-            ..
-        } = &response.result
-        else {
-            panic!("missing source must not publish a successful duplicate result");
-        };
-        assert_eq!(error.code, latent_core::PlatformErrorCode::StateConflict);
-        assert_eq!(command.id(), original.id());
-        assert_eq!(command.attempt(), original.attempt());
-        assert_eq!(command.source(), original.source());
-        assert_eq!(command.inbox_identity(), Some(&identity));
-        assert_eq!(command.outcome(), Outcome::Committed);
-        for family in [Family::Command, Family::Result, Family::Inbox] {
-            assert_eq!(fixture.rows(family).await, 1);
-        }
-        for family in [Family::State, Family::Outbox] {
-            assert_eq!(fixture.rows(family).await, 0);
-        }
-        assert!(fixture.protected_store().failure().is_none());
-        drop((response, replay, envelope, budget));
-        assert!(fixture.native.snapshot().unwrap().physically_retired());
-        fixture.shutdown().await;
     }
+}
+
+async fn source_loss_after_admission(entity: Option<&str>, expired_body: bool) {
+    let (fixture, scope, identity, original) = Box::pin(committed_input(entity)).await;
+    if expired_body {
+        fixture.set_result_time(original.result_expires(), true);
+    }
+    let (replay, envelope, budget) = invocation(&fixture, &scope, &identity, entity);
+    assert_eq!(
+        replay.admit(&envelope, &budget).await.err().unwrap().code,
+        latent_core::PlatformErrorCode::AlreadyExists
+    );
+    replace_source(&fixture, scope, None).await;
+    let _ = budget.finalize_at(None, std::time::Instant::now());
+    replay
+        .complete(
+            success(b"must not execute or acknowledge"),
+            fixture.commit_control(&envelope, &budget),
+        )
+        .await;
+    let response = replay.take_owned_completion().unwrap().unwrap();
+    let TransactionCompletionResult::Existing {
+        command,
+        result: Err(error),
+        ..
+    } = &response.result
+    else {
+        panic!("missing source must not publish a successful duplicate result");
+    };
+    assert_eq!(error.code, latent_core::PlatformErrorCode::StateConflict);
+    assert_eq!(command.id(), original.id());
+    assert_eq!(command.attempt(), original.attempt());
+    assert_eq!(command.source(), original.source());
+    assert_eq!(command.inbox_identity(), Some(&identity));
+    assert_eq!(command.outcome(), Outcome::Committed);
+    for family in [Family::Command, Family::Result, Family::Inbox] {
+        assert_eq!(fixture.rows(family).await, 1);
+    }
+    for family in [Family::State, Family::Outbox] {
+        assert_eq!(fixture.rows(family).await, 0);
+    }
+    assert!(fixture.protected_store().failure().is_none());
+    drop((response, replay, envelope, budget));
+    assert_eq!(fixture.owners.lanes.snapshot().keys, 0);
+    assert!(fixture.native.snapshot().unwrap().physically_retired());
+    fixture.shutdown().await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn corrupt_source_after_admission_quarantines_inbox_replay() {
-    let (fixture, scope, identity, _original) = Box::pin(committed_input()).await;
-    let (replay, mut envelope, budget) =
-        fixture.invocation(false, &identity.command_key().unwrap());
-    envelope.principal.kind = latent_core::PrincipalKind::Trigger;
-    let replay = attach(replay, &identity, &scope);
+    for entity in [None, Some("hot")] {
+        Box::pin(corrupt_source_after_admission(entity)).await;
+    }
+}
+
+async fn corrupt_source_after_admission(entity: Option<&str>) {
+    let (fixture, scope, identity, _original) = Box::pin(committed_input(entity)).await;
+    let (replay, envelope, budget) = invocation(&fixture, &scope, &identity, entity);
     assert_eq!(
         replay.admit(&envelope, &budget).await.err().unwrap().code,
         latent_core::PlatformErrorCode::AlreadyExists
@@ -189,6 +227,7 @@ async fn corrupt_source_after_admission_quarantines_inbox_replay() {
         ));
     }
     drop((response, replay, envelope, budget));
+    assert_eq!(fixture.owners.lanes.snapshot().keys, 0);
     assert!(fixture.native.snapshot().unwrap().physically_retired());
     fixture.shutdown_uncertain_writer().await;
 }

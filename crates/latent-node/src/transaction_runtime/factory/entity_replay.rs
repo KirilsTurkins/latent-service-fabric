@@ -37,7 +37,16 @@ impl NativeTransactionAdmission {
             &self.installation.declaration.state_schema,
         )?;
         self.seal(initial.before, namespace, envelope, budget, None)?
-            .authorize("read-result", 0, 0, || Ok(()))
+            .authorize("read-result", 0, 0, || Ok(()))?;
+        if self.inbox_scope.is_some() {
+            // The first read may predate queue registration. Do not join an
+            // in-memory duplicate owner using source history that has since
+            // disappeared. A newly visible claim follows ordinary replay,
+            // not another lane or a replacement guest.
+            self.replay_existing_entity(selection, envelope, budget)
+                .await?;
+        }
+        Ok(())
     }
     #[expect(
         clippy::too_many_lines,
@@ -98,6 +107,8 @@ impl NativeTransactionAdmission {
         let auth = Arc::clone(&before);
         let time = Arc::clone(&self.owners.time);
         let policy = self.installation.result_read_policy.clone();
+        let inbox = self.inbox.clone();
+        let inbox_scope = self.inbox_scope.clone();
         let retained = self.retained_capacity()?;
         let keeper: Arc<dyn std::any::Any + Send + Sync> =
             Arc::new((auth.clone(), retained.clone()));
@@ -111,7 +122,7 @@ impl NativeTransactionAdmission {
                 move |store| {
                     let observed = time.sample();
                     let view = store.snapshot()?;
-                    let read = durable::inspect(&view, &key, observed, |_, record| {
+                    let authorize = |_, record: Option<&CommandRecord>| {
                         if record.is_some_and(|r| r.result_read_policy() != policy) {
                             return Err(AtomicError::PermissionDenied);
                         }
@@ -122,7 +133,14 @@ impl NativeTransactionAdmission {
                         };
                         auth.authorize(operation, 0, 0, || Ok(()))
                             .map_err(|_| AtomicError::PermissionDenied)
-                    });
+                    };
+                    let read = match (&inbox, &inbox_scope) {
+                        (Some(inbox), Some(scope)) => {
+                            durable::inspect_inbox(&view, &key, inbox, scope, observed, authorize)
+                        }
+                        (None, Some(_)) => Err(AtomicError::PermissionDenied),
+                        (_, None) => durable::inspect(&view, &key, observed, authorize),
+                    };
                     match read {
                         Ok((record, _result)) if record.fingerprint() == expected => {
                             Ok(Ok(Some(record)))
