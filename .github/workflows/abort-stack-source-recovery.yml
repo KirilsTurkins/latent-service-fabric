@@ -1,0 +1,37 @@
+name: Abort stack source recovery
+on:
+  push:
+    branches: ['ci/abort-stack-source-20261111']
+    paths: ['.github/workflows/abort-stack-source-recovery.yml']
+permissions:
+  contents: read
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Capture exact source stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/abort-stack-source"
+          git fetch --no-tags --depth=8 origin \
+            +refs/heads/development:refs/heads/captured-development \
+            +refs/heads/feat/typescript-runtime-745:refs/heads/captured-parent \
+            +refs/heads/fix/typescript-745-activation-resource-ownership:refs/heads/captured-ownership \
+            +refs/heads/fix/1852-agent2-abort-engine-audit:refs/heads/captured-engine
+          git show-ref --heads > "$RUNNER_TEMP/abort-stack-source/refs.txt"
+          git bundle create "$RUNNER_TEMP/abort-stack-source/stack.bundle" \
+            captured-development captured-parent captured-ownership captured-engine
+          test "$(stat -c %s "$RUNNER_TEMP/abort-stack-source/stack.bundle")" -lt 500000000
+          sha256sum "$RUNNER_TEMP/abort-stack-source/stack.bundle" > "$RUNNER_TEMP/abort-stack-source/sha256.txt"
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: abort-stack-source-${{ github.sha }}
+          path: ${{ runner.temp }}/abort-stack-source/
+          if-no-files-found: error
+          retention-days: 3
