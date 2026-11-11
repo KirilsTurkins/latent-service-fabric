@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -202,6 +203,49 @@ class ContractValidationTests(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         validate_contracts.validate(self.repository, output, "wasm-tools")
                 run.assert_not_called()
+
+    def test_real_children_exit_or_time_out_without_leaving_live_processes(self) -> None:
+        # Portable Python children exercise actual spawn/kill/wait behavior.
+        # Their version and compiler behavior are doubles, not WIT evidence.
+        component = self.repository / "component"
+        component.write_text(
+            "from pathlib import Path\nimport sys\n"
+            "Path(sys.argv[-1]).write_bytes(b'child-output')\n", encoding="utf-8",
+        )
+        validator = self.repository / "validate"
+        validator.write_text("raise SystemExit(0)\n", encoding="utf-8")
+        real_run, real_popen = subprocess.run, subprocess.Popen
+        children = []
+
+        def spawn(*args, **kwargs):
+            child = real_popen(*args, **kwargs)
+            children.append(child)
+            return child
+
+        def run(arguments, **options):
+            if arguments[1:] == ["--version"]:
+                return subprocess.CompletedProcess(arguments, 0, "wasm-tools 1.254.0\n")
+            return real_run(arguments, **options)
+
+        with patch.object(validate_contracts.subprocess, "run", side_effect=run):
+            with patch.object(subprocess, "Popen", side_effect=spawn):
+                with patch("builtins.print"):
+                    validate_contracts.validate(self.repository, self.output, sys.executable)
+                    self.assertTrue((self.output / "validation.json").is_file())
+                    validator.write_text("raise SystemExit(17)\n", encoding="utf-8")
+                    failed = self.root / "real-failure"
+                    with self.assertRaises(subprocess.CalledProcessError) as error:
+                        validate_contracts.validate(self.repository, failed, sys.executable)
+                    self.assertEqual(error.exception.returncode, 17)
+                    self.assertEqual(list(failed.iterdir()), [])
+                    component.write_text("import time\ntime.sleep(10)\n", encoding="utf-8")
+                    timed = self.root / "real-timeout"
+                    with patch.object(validate_contracts, "COMMAND_TIMEOUT_SECONDS", 0.25):
+                        with self.assertRaises(subprocess.TimeoutExpired):
+                            validate_contracts.validate(self.repository, timed, sys.executable)
+                    self.assertEqual(list(timed.iterdir()), [])
+        self.assertTrue(children)
+        self.assertTrue(all(child.returncode is not None for child in children))
 
     def test_changed_source_or_pin_cannot_receive_a_success_observation(self) -> None:
         for path in (self.companion, self.repository / "tools/toolchain.toml"):
