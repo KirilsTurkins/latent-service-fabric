@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
-      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
           components: rustfmt
       - name: Retain complete immutable source and exact formatter
@@ -27,10 +27,30 @@ jobs:
           rustfmt +1.97.1 --version > "$output/rustfmt.txt"
           tar -czf "$output/formatter.tar.gz" -C "$(rustc +1.97.1 --print sysroot)" bin/rustfmt bin/cargo-fmt
           (cd "$output" && sha256sum source.tar.gz formatter.tar.gz > archives.sha256)
-      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+          test "$(stat -c %s "$output/source.tar.gz")" -lt 480000000
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: agent3-complete-source-${{ github.sha }}
           path: ${{ runner.temp }}/agent3-complete-inputs/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+      - name: Retain the current locked host registry without credentials
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/agent3-registry-inputs"
+          mkdir -p "$output"
+          cp Cargo.lock "$output/Cargo.lock"
+          cargo +1.97.1 fetch --locked --target x86_64-unknown-linux-gnu
+          cmp Cargo.lock "$output/Cargo.lock"
+          tar -czf "$output/registry.tar.gz" -C "${CARGO_HOME:-$HOME/.cargo}" registry/cache registry/index
+          git rev-parse HEAD > "$output/commit.txt"
+          (cd "$output" && sha256sum Cargo.lock registry.tar.gz > archives.sha256)
+          test "$(stat -c %s "$output/registry.tar.gz")" -lt 480000000
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: agent3-locked-registry-${{ github.sha }}
+          path: ${{ runner.temp }}/agent3-registry-inputs/
           if-no-files-found: error
           retention-days: 7
           compression-level: 0
