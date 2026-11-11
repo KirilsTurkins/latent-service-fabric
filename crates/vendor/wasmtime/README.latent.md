@@ -844,3 +844,25 @@ module is selected only when that feature is enabled, so non-pooling test builds
 can compile. The change is confined to `cfg(test)` and leaves production runtime
 behavior and the v37 native cohort unchanged. The recorded upstream file identity
 remains immutable; the patch and exact maintained postimage include the gate.
+
+## v38: preserve original host custody through consuming teardown panic
+
+`Store::into_data` now disables the ordinary Store destructor before manual
+component/fiber cleanup starts. A panic cannot reenter those routines through
+ordinary `Store::drop`. After manual cleanup, the original host data stays in
+`ManuallyDrop` while engine backing, the original native-memory binding, and
+Store-header allocation guards are retired. Only a fully returning teardown
+transfers that data to the caller. This is a fail-closed terminal path: a panic
+retains outstanding original reservations until process termination rather than
+inventing a physical acknowledgement, replaying cleanup, or permitting reuse.
+Normal return and the ordinary `Store::drop` contract are unchanged.
+
+The LSF Store-custody regression injects a panic in the real Wasmtime table
+allocation destructor and inspects the original ActivationRuntime Native owner.
+The previous implementation refunded that owner while unwinding; the selected
+implementation retains it and leaves the trusted reuse witness incomplete.
+Both pooled and on-demand allocation are exercised. Existing real return,
+Wasm-trap, future-cancellation, outer-unwind, and setup-refusal controls remain.
+These tests are not signed SpiderMonkey execution or an OS-decommit witness.
+Failed decommit retention and retry are separate obligations; this change does
+not reinterpret the pool's zeroing fallback as successful decommit.

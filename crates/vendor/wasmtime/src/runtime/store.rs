@@ -930,43 +930,37 @@ impl<T> Store<T> {
     }
 
     /// Consumes this [`Store`], destroying it, and returns the underlying data.
-    pub fn into_data(mut self) -> T {
-        self.run_manual_drop_routines();
+    ///
+    /// If engine teardown panics, the host data and any not-yet-retired native
+    /// allocation guards remain retained. A panic is not a retirement witness;
+    /// this terminal path does not retry teardown or permit Store reuse.
+    pub fn into_data(self) -> T {
+        // Suppress the ordinary destructor BEFORE running manual cleanup. A
+        // panic there must not reenter that cleanup or drop the host's owners
+        // while engine work may still refer to their backing.
+        let mut store = ManuallyDrop::new(self);
+        store.run_manual_drop_routines();
 
-        // This is an unsafe operation because we want to avoid having a runtime
-        // check or boolean for whether the data is actually contained within a
-        // `Store`. The data itself is stored as `ManuallyDrop` since we're
-        // manually managing the memory here, and there's also a `ManuallyDrop`
-        // around the `Box<StoreInner<T>>`. The way this works though is a bit
-        // tricky, so here's how things get dropped appropriately:
+        // SAFETY: the boxed StoreInner stays at its original stable address
+        // throughout manual cleanup. Once cleanup succeeds, take each field
+        // exactly once; `store` can no longer run its ordinary destructor.
         //
-        // * When a `Store<T>` is normally dropped, the custom destructor for
-        //   `Store<T>` will drop `T`, then the `self.inner` field. The
-        //   rustc-glue destructor runs for `Box<StoreInner<T>>` which drops
-        //   `StoreInner<T>`. This cleans up all internal fields and doesn't
-        //   touch `T` because it's wrapped in `ManuallyDrop`.
-        //
-        // * When calling this method we skip the top-level destructor for
-        //   `Store<T>` with `mem::forget`. This skips both the destructor for
-        //   `T` and the destructor for `StoreInner<T>`. We do, however, run the
-        //   destructor for `Box<StoreInner<T>>` which, like above, will skip
-        //   the destructor for `T` since it's `ManuallyDrop`.
-        //
-        // In both cases all the other fields of `StoreInner<T>` should all get
-        // dropped, and the manual management of destructors is basically
-        // between this method and `Drop for Store<T>`. Note that this also
-        // means that `Drop for StoreInner<T>` cannot access `self.data`, so
-        // there is a comment indicating this as well.
+        // StoreInner's destructor must not access T (as with the ordinary
+        // Store destructor). Keep T in ManuallyDrop while destroying engine
+        // backing and its guards: otherwise unwinding from an inner destructor
+        // would release original host reservations without proving retirement.
+        // Only the fully completed path transfers T to the caller. A panic
+        // deliberately retains outstanding owners until process termination,
+        // just like the existing native-memory/allocation failure guards.
         unsafe {
-            let mut inner = ManuallyDrop::take(&mut self.inner);
-            let mut allocation = ManuallyDrop::new(ManuallyDrop::take(&mut self.allocation));
-            let mut native_memory = ManuallyDrop::new(ManuallyDrop::take(&mut self.native_memory));
-            core::mem::forget(self);
-            let data = ManuallyDrop::take(&mut inner.data_no_provenance);
+            let mut inner = ManuallyDrop::take(&mut store.inner);
+            let mut allocation = ManuallyDrop::new(ManuallyDrop::take(&mut store.allocation));
+            let mut native_memory = ManuallyDrop::new(ManuallyDrop::take(&mut store.native_memory));
+            let data = ManuallyDrop::new(ManuallyDrop::take(&mut inner.data_no_provenance));
             drop(inner);
             ManuallyDrop::drop(&mut native_memory);
             ManuallyDrop::drop(&mut allocation);
-            data
+            ManuallyDrop::into_inner(data)
         }
     }
 
