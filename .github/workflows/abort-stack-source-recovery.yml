@@ -16,22 +16,26 @@ jobs:
           fetch-depth: 1
           ref: 85fc96390e3921dfaa7fe8c45da7aa6370369b5e
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
-      - name: Capture locked current host dependencies
+        with:
+          components: rustfmt
+      - name: Capture pinned formatter and engine unit dependencies
         shell: bash
         run: |
           set -euo pipefail
           export CARGO_HOME="$RUNNER_TEMP/abort-cargo"
-          cargo fetch --locked --target x86_64-unknown-linux-gnu
+          cargo fetch --locked --manifest-path crates/vendor/wasmtime/Cargo.toml --target x86_64-unknown-linux-gnu
           mkdir -p "$RUNNER_TEMP/abort-registry"
           tar -C "$CARGO_HOME" -czf "$RUNNER_TEMP/abort-registry/registry.tar.gz" registry
+          cp "$(rustup which rustfmt)" "$RUNNER_TEMP/abort-registry/rustfmt"
           git rev-parse HEAD > "$RUNNER_TEMP/abort-registry/head.txt"
-          cp Cargo.lock "$RUNNER_TEMP/abort-registry/Cargo.lock"
+          cp crates/vendor/wasmtime/Cargo.lock "$RUNNER_TEMP/abort-registry/Cargo.lock"
           rustc -Vv > "$RUNNER_TEMP/abort-registry/rustc.txt"
+          rustfmt --version > "$RUNNER_TEMP/abort-registry/rustfmt.txt"
           test "$(stat -c %s "$RUNNER_TEMP/abort-registry/registry.tar.gz")" -lt 500000000
-          sha256sum "$RUNNER_TEMP/abort-registry/registry.tar.gz" > "$RUNNER_TEMP/abort-registry/sha256.txt"
+          sha256sum "$RUNNER_TEMP/abort-registry/registry.tar.gz" "$RUNNER_TEMP/abort-registry/rustfmt" > "$RUNNER_TEMP/abort-registry/sha256.txt"
       - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
         with:
-          name: abort-stack-registry-${{ github.sha }}
+          name: abort-stack-vendor-unit-inputs-${{ github.sha }}
           path: ${{ runner.temp }}/abort-registry/
           if-no-files-found: error
           retention-days: 3
