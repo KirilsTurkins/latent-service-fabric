@@ -10,9 +10,9 @@ disabled until review and implementation-backed qualification.
 Parse/encode the exact comparison WIT with the pinned `wasm-tools`:
 
 ```powershell
-New-Item -ItemType Directory -Force target/outbound-contract | Out-Null
-wasm-tools component wit research/standard-outbound --wasm --output target/outbound-contract/profile.wasm
-wasm-tools validate --features all target/outbound-contract/profile.wasm
+New-Item -ItemType Directory -Force target/outbound-comparison | Out-Null
+wasm-tools component wit research/standard-outbound --wasm --output target/outbound-comparison/profile.wasm
+wasm-tools validate --features all target/outbound-comparison/profile.wasm
 ```
 
 The generated type-only component is ABI evidence, not executing library/socket
@@ -59,21 +59,48 @@ From the repository root, with the repository-pinned `wasm-tools` on PATH:
 ```console
 python research/standard-outbound/validate_contracts.py
 python -m unittest discover -s research/standard-outbound -p test_validate_contracts.py
+cargo test -p latent-wasmtime --test generic_backend --locked -- host_abi::nonblocking::
 ```
 
-The validator first encodes and validates the original v1 comparison directory.
-It then stages the companion in a fresh temporary directory with an exact copy
-of the WIT files in `wit/platform/network` as its v1 dependency, encodes it and
-validates the resulting type-only component. It never writes dependencies into
-the source tree, never substitutes hand-maintained v1 resource definitions, and
-removes the temporary staging directory on success or failure. Generated
-`v1.wasm` and `v2.wasm` go to `target/outbound-contract`; `--output` may select a
-different directory outside the WIT source trees. `--wasm-tools` may select the
-pinned executable explicitly. A nonzero exit is failure; existing output files
-from an earlier invocation are not a success receipt for a failed invocation.
+The validator checks `wasm-tools --version` against `tools/toolchain.toml`, then
+encodes and validates the original v1 comparison directory. It stages the
+companion with an exact copy of the WIT files in `wit/platform/network` as its v1
+dependency, encodes it and validates the resulting type-only component. It never
+writes dependencies into the source tree or substitutes hand-maintained v1
+resource definitions. Each compiler command has a 30-second timeout, and
+intermediate artifacts and dependencies are removed on success or failure.
 
-The unit tests exercise staging, source-tree protection, command sequencing and
-failure cleanup with a mocked subprocess. They do not parse WIT and cannot
-replace the first command, runtime import-denial controls, owner approval or
-physical socket qualification. Successful type validation does not install the
-companion, widen v1 grants or close the ordinary-library acceptance gates.
+The output directory must be **new**, even when an existing directory is empty.
+The first invocation defaults to `target/outbound-contract`; subsequent attempts
+must select a fresh path with `--output`, outside the WIT source trees. Existing
+artifacts, symlinks and earlier observations are not overwritten. `--wasm-tools`
+may select the pinned executable explicitly. Version matching is not binary
+authentication; CI's separate checksum-verified installation still applies.
+
+Only after both artifacts validate does the helper publish `v1.wasm`, `v2.wasm`
+and `validation.json`. The JSON is also printed in the job log. It records the
+observed compiler version, toolchain and input WIT hashes, artifact sizes and
+hashes, and the explicit `type-only-contract-validation` evidence kind with
+`runtimeQualification: false`. Changed inputs, missing or empty compiler outputs,
+nonzero exits and timeouts are failures, not completed observations. A failed
+attempt may leave an empty output directory; select a new path for the next run.
+
+The Python tests exercise staging, source protection, tool-version refusal,
+command sequencing, fresh-output ownership and failure cleanup with a mocked
+compiler. They cannot establish WIT validity. The required `bindings` lane in
+`tools/validate_contracts.sh` runs those controls **and** the real pinned compiler;
+the `runtime` lane runs the focused Rust tests independently of an earlier
+workspace-crate test failure.
+
+The Rust controls parse the committed WIT and verify original v1 type aliases,
+owned connect/chunk handoffs, borrowed observations, asynchronous guarded errors,
+independent readiness flags and distinct EOF/would-block/elapsed outcomes. A
+separate single-interface fixture encodes the companion's full type closure,
+including flags, and validates its binary before checking default runtime denial.
+Required imports, optional imports and a manifest relabelled as v1 must all fail
+before Store creation or cache installation. Cross-package alias identity is
+checked by the parser controls, not inferred from this single-interface fixture.
+
+None of these checks installs the companion, widens v1 grants, establishes
+physical socket behavior or closes the ordinary-library acceptance gates.
+Owner approval and implementation-backed qualification remain required.
