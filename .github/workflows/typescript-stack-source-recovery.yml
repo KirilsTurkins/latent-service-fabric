@@ -17,28 +17,39 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 1
-      - name: Capture immutable parent and exact stacked deltas
+      - name: Capture registry inputs from the unchanged lock
         shell: bash
         run: |
           set -euo pipefail
-          output="$RUNNER_TEMP/typescript-stack-source"
-          mkdir -p "$output"
-          parent=c480be742b070220a6aee27ebd2d8f9b6d57ce22
-          owners=c34ff183a039dab3fd6aadbf9693135a0d5c1ac6
-          engine=de25926b54b6d909fa69656d9bc5879ffca66b9e
-          git fetch --no-tags --depth=1 origin "$parent" "$owners" "$engine"
-          git archive --format=tar.gz "$parent" > "$output/parent.tar.gz"
-          git diff --binary "$parent" "$owners" > "$output/owners.patch"
-          git diff --binary "$parent" "$engine" > "$output/engine.patch"
-          for ref in "$parent" "$owners" "$engine"; do
-            git ls-tree -r "$ref" > "$output/$ref.tree"
-            git rev-parse "$ref^{tree}" > "$output/$ref.root"
-          done
-          cd "$output"
-          sha256sum parent.tar.gz owners.patch engine.patch *.tree *.root > SHA256SUMS
+          python3 - <<'PY'
+          import hashlib, os, pathlib, tomllib, urllib.request
+          output = pathlib.Path(os.environ['RUNNER_TEMP']) / 'typescript-stack-crates'
+          output.mkdir()
+          names = {'combine', 'fiat-crypto', 'macro-string', 'prettyplease', 'rustversion',
+                   'same-file', 'serde_spanned', 'simd_cesu8', 'simdutf8', 'toml',
+                   'toml_datetime', 'toml_parser', 'toml_writer', 'tonic-build',
+                   'tonic-prost-build', 'valuable', 'walkdir', 'wasm-encoder',
+                   'wasm-metadata', 'webpki-root-certs', 'wit-bindgen',
+                   'wit-bindgen-core', 'wit-bindgen-rust', 'wit-bindgen-rust-macro',
+                   'wit-component'}
+          lock = tomllib.loads(pathlib.Path('Cargo.lock').read_text())
+          rows = []
+          for package in lock['package']:
+              if package['name'] not in names or not package.get('source', '').startswith('registry+'):
+                  continue
+              filename = package['name'] + '-' + package['version'] + '.crate'
+              url = 'https://static.crates.io/crates/' + package['name'] + '/' + filename
+              with urllib.request.urlopen(url, timeout=60) as response:
+                  data = response.read(16 * 1024 * 1024 + 1)
+              assert len(data) <= 16 * 1024 * 1024
+              assert hashlib.sha256(data).hexdigest() == package['checksum'], filename
+              (output / filename).write_bytes(data)
+              rows.append(package['checksum'] + '  ' + filename)
+          (output / 'SHA256SUMS').write_text('\n'.join(rows) + '\n')
+          PY
       - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
         with:
-          name: typescript-stack-source-${{ github.sha }}
-          path: ${{ runner.temp }}/typescript-stack-source/
+          name: typescript-stack-crates-${{ github.sha }}
+          path: ${{ runner.temp }}/typescript-stack-crates/
           if-no-files-found: error
           retention-days: 2
