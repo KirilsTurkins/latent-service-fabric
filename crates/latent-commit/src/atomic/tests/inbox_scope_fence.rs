@@ -1,4 +1,5 @@
 mod replay;
+mod retry;
 
 use super::*;
 use latent_state::{

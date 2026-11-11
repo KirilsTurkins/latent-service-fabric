@@ -3,7 +3,7 @@ use super::*;
 use latent_core::{BoxFuture, PlatformError, PlatformErrorCode};
 use std::{future::poll_fn, task::Poll, time::Duration};
 
-async fn observe_wait(
+pub(super) async fn observe_wait(
     fixture: &Fixture,
     pending: &mut BoxFuture<'_, Result<Arc<dyn TransactionHost>, PlatformError>>,
     queued: usize,
@@ -92,11 +92,19 @@ async fn commit_once(rejected: bool) {
     let (first, envelope, budget) = invocation(&fixture, &scope, &identity, Some("hot"));
     let guest = first.admit(&envelope, &budget).await.unwrap();
     guest.acquire(Mode::Command).unwrap();
-    guest.put(b"counter".to_vec(), value(b"once")).await.unwrap();
+    guest
+        .put(b"counter".to_vec(), value(b"once"))
+        .await
+        .unwrap();
 
     let (duplicate, input, allowance) = invocation(&fixture, &scope, &identity, Some("hot"));
     assert_eq!(
-        duplicate.admit(&input, &allowance).await.err().unwrap().code,
+        duplicate
+            .admit(&input, &allowance)
+            .await
+            .err()
+            .unwrap()
+            .code,
         PlatformErrorCode::AlreadyExists
     );
     let Some(TransactionAdmissionResult::Existing { command, .. }) =
@@ -186,12 +194,22 @@ async fn missing_source_never_registers_an_entity_lane_or_command() {
     let (scope, identity) = source();
     let (admission, envelope, budget) = invocation(&fixture, &scope, &identity, Some("hot"));
     assert_eq!(
-        admission.admit(&envelope, &budget).await.err().unwrap().code,
+        admission
+            .admit(&envelope, &budget)
+            .await
+            .err()
+            .unwrap()
+            .code,
         PlatformErrorCode::StateConflict
     );
     assert!(admission.take_result().unwrap().is_none());
     assert_eq!(fixture.owners.lanes.snapshot().keys, 0);
-    for family in [Family::Command, Family::Result, Family::Inbox, Family::Outbox] {
+    for family in [
+        Family::Command,
+        Family::Result,
+        Family::Inbox,
+        Family::Outbox,
+    ] {
         assert_eq!(fixture.rows(family).await, 0);
     }
     drop((admission, envelope, budget));

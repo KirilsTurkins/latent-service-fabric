@@ -304,7 +304,9 @@ impl PreparedAdmission {
     pub fn batch(&self) -> &AtomicBatch {
         &self.batch
     }
-    /// Attach the current matching source row to the pending and final writers.
+    /// Attach the current matching source row to the pending and final writers,
+    /// including an explicitly prepared retry. This adds a source expectation,
+    /// not an abort proof or permission to start another attempt.
     pub fn fence_inbox_scope(
         mut self,
         view: &ReadView,
@@ -312,8 +314,7 @@ impl PreparedAdmission {
     ) -> Result<Self, AtomicError> {
         let inbox = self.record.inbox.as_ref().ok_or(AtomicError::Invalid)?;
         let expected = verify_inbox_scope(view, &self.record.key, inbox, scope)?;
-        if self.record.attempt != 1
-            || self.scope_guard.is_some()
+        if self.scope_guard.is_some()
             || self
                 .batch
                 .expectations
@@ -477,10 +478,18 @@ impl PreparedAdmission {
             }
             Err(FencedStoreError::Store(latent_state::embedded::StoreError::Conflict)) => {
                 let view = store.snapshot()?;
+                if let Some(guard) = &self.scope_guard {
+                    if view.get(&guard.key)? != guard.value {
+                        return Err(AtomicError::Conflict);
+                    }
+                }
                 match Self::retry(&view, input, request, current_time()?, &mut authorize)? {
                     AdmissionDecision::Existing(record)
                         if record.attempt == self.record.attempt =>
                     {
+                        // A matching retry receipt cannot outlive the same
+                        // source/command view after clock and policy callbacks.
+                        let _ = view.is_empty()?;
                         Ok(PublishedAdmission::Existing(record))
                     }
                     _ => Err(AtomicError::Conflict),

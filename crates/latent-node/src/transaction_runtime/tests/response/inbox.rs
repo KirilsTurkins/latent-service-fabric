@@ -10,6 +10,7 @@ use latent_state::{
 use sha2::{Digest, Sha256};
 
 mod entity;
+mod retry;
 
 fn attach(
     admission: Arc<NativeTransactionAdmission>,
