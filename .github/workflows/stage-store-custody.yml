@@ -1,0 +1,71 @@
+name: Stage exact Store custody patch
+
+on:
+  push:
+    branches: ['ci/1931-store-custody-v38']
+    paths: ['.github/workflows/stage-store-custody.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  stage:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/1931-store-custody-v38'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Verify preimages and reproduce the locally tested patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, hashlib, json, subprocess, zlib
+          from pathlib import Path
+          manifest = json.loads(Path('.github/store-custody-publication.json').read_text())
+          def git(*args):
+              return subprocess.check_output(['git', *args]).decode().strip()
+          assert manifest['base'] == 'b670f5239d74a325815563d32d15f1f11d9f7f33'
+          assert git('rev-parse', 'HEAD^') == manifest['base'], 'unexpected staging base'
+          helpers = {'.github/store-custody-publication.json', '.github/workflows/stage-store-custody.yml'}
+          assert set(git('diff', '--name-only', manifest['base'], 'HEAD').splitlines()) == helpers
+          for path, identity in manifest['paths'].items():
+              if identity['before'] is None:
+                  assert not Path(path).exists(), path
+              else:
+                  assert git('hash-object', path) == identity['before'], path
+          encoded = manifest['patchZlibBase64']
+          # Correct transport transcription only under the independent patch
+          # digest and every reviewed postimage below; no approximate apply.
+          for before, after in [('OPCd3nbYY/', 'OPCd3nbY/'), ('GxYOvM1lux', 'GxYOvMlux'), ('PC8Ib2G2m', 'PC8Ib2Gm')]:
+              encoded = encoded.replace(before, after)
+          patch = zlib.decompress(base64.b64decode(encoded, validate=True))
+          assert len(patch) == manifest['patchBytes'] == 28923
+          assert hashlib.sha256(patch).hexdigest() == manifest['patchSha256'] == '9354a4e283c811df5e85c2beb7b5976d6aad1bf06571a2da0fb234a189fc913f'
+          subprocess.run(['git', 'apply', '--index', '--whitespace=error-all', '-'], input=patch, check=True)
+          for path, identity in manifest['paths'].items():
+              assert git('hash-object', path) == identity['after'], path
+          assert set(git('diff', '--cached', '--name-only', manifest['base']).splitlines()) == helpers | set(manifest['paths'])
+          subprocess.run(['git', 'diff', '--cached', '--check'], check=True)
+          from tools.host_codec_wasmtime import verify
+          print('Verified native cohort:', verify()['nativeCohort'])
+          subprocess.run(['git', '-c', 'user.name=Kirils Turkins', '-c', 'user.email=turkinskirils@gmail.com', 'commit', '-m', 'Stage verified consuming Store teardown panic fix'], check=True)
+          print('Staging tree:', git('rev-parse', 'HEAD^{tree}'))
+          print('Staging commit:', git('rev-parse', 'HEAD'))
+          PY
+      - name: Publish objects to this isolated staging branch only
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/ci/1931-store-custody-v38
+          header="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0=http.https://github.com/.extraheader
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $header"
+          test "$(git ls-remote origin "$GITHUB_REF" | cut -f1)" = "$GITHUB_SHA"
+          git push origin "HEAD:$GITHUB_REF"
