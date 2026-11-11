@@ -50,6 +50,7 @@ on:
       - 'tools/c_capsule_project.py'
       - 'tools/c_dependency_authoring.py'
       - 'tools/c_generator_authoring.py'
+      - 'tools/c_guest/closed_headers.py'
       - 'tools/c_guest/__init__.py'
       - 'tools/c_guest/bindings.py'
       - 'tools/c_guest/closed_filesystem.py'

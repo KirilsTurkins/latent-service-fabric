@@ -101,7 +101,11 @@ class GoWriteProgressTests(unittest.TestCase):
         materials={name:(ROOT/name).read_bytes() for name in deadline.MATERIALS}
         deadline.contract((ROOT/q.TEMPLATE).read_bytes(),materials)
         for name, marker in ((deadline.MATERIALS[0],b'self.limits.absolute_timeout_millis > 10_000'),
-                             (deadline.MATERIALS[3],b'r := raw.ConnectContext(ctx, request)')):
+                             (deadline.MATERIALS[3],b'r := raw.ConnectContext(ctx, request)'),
+                             (deadline.MATERIALS[2],b'value > 10_000 || (value == 0 && direction != 2)'),
+                             (deadline.MATERIALS[2],b'if !observation {\n            if let Some(requested) = requested {'),
+                             (deadline.MATERIALS[2],b'deadline = deadline.min(requested);'),
+                             (deadline.MATERIALS[2],b'let mut deadline = self.deadline.min(state.last_progress + self.idle);')):
             altered=dict(materials);altered[name]=altered[name].replace(marker,b'changed',1)
             with self.assertRaises(ValueError):deadline.contract((ROOT/q.TEMPLATE).read_bytes(),altered)
     def test_close_guard_is_inside_each_fragment_and_has_a_pinned_actual_counterexample(self):
