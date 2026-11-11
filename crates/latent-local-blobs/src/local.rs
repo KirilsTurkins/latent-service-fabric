@@ -51,6 +51,7 @@ struct Inner {
     state: Mutex<State>,
     handles: AtomicUsize,
     work: AtomicUsize,
+    inventory_bytes: AtomicUsize,
     publishing: AtomicBool,
     pending_objects: AtomicUsize,
     poisoned: AtomicBool,
@@ -280,6 +281,7 @@ impl Inner {
                         .checked_mul(HANDLE_BYTES)?,
                 )
             })
+            .and_then(|n| n.checked_add(self.inventory_bytes.load(Ordering::Acquire)))
             .and_then(|n| n.checked_add(OWNER_BYTES))
             .ok_or(LocalBlobError::Capacity)
     }

@@ -15,6 +15,9 @@ use latent_state::{
 };
 use serde::{Deserialize, Serialize};
 
+mod required;
+pub use required::RequiredBlobInventory;
+
 #[derive(Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(super) struct ModeRecord {
@@ -45,18 +48,6 @@ pub struct LocalDurablePin {
     store_binding: StoreBinding,
 }
 
-/// A single-view physical recovery walk. The held original local-store owner
-/// and opaque cursor cannot be rebound to another root or engine snapshot.
-/// A failed or panicking page invalidates the cursor; restart with a fresh
-/// cursor and a live admission.
-pub struct RequiredBlobInventory {
-    owner: Arc<super::Inner>,
-    view: usize,
-    after: Option<Vec<u8>>,
-    complete: bool,
-    invalid: bool,
-}
-
 /// A descriptive observation on one retained state view. None of these values
 /// proves current ownership, byte integrity, or authority to reclaim.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -71,8 +62,9 @@ pub enum LocalReferenceDisposition {
 
 /// Retains the original charged reference page while its observations are used.
 pub struct LocalReferenceAuditPage {
-    page: LocalReferencePage,
+    // Retire observations before the page refunds their shared reservation.
     dispositions: Vec<LocalReferenceDisposition>,
+    page: LocalReferencePage,
 }
 impl LocalReferenceAuditPage {
     #[must_use]
@@ -107,7 +99,8 @@ impl LocalReferenceAudit {
         // Reserve the cursor before inspecting any durable state, then reuse
         // the actual root, configuration and live-engine checks.
         let inventory = LocalReferenceInventory::begin(store, scope, checkpoint)?;
-        drop(RequiredBlobInventory::begin(store, view)?);
+        // Reuse the binding check, not a second independently charged cursor.
+        required::validate_binding(store, view)?;
         checkpoint()?;
         let _ = view.is_empty().map_err(storage)?;
         inventory.ensure_current(store)?;
@@ -134,7 +127,15 @@ impl LocalReferenceAudit {
         }
         // Any early return or panic makes the advanced cursor unusable.
         self.invalid = true;
+        self.inventory.ensure_current(store)?;
         let _ = view.is_empty().map_err(storage)?;
+        // State-index decoding/reciprocal checks are transient work, not part
+        // of the retained reference page. Reserve before either allocation.
+        let _scratch = super::inventory::InventoryMemory::reserve(
+            &store.inner,
+            4 * RECORD_BYTES,
+            0,
+        )?;
         let page = self
             .inventory
             .next_page(store, maximum_entries, checkpoint)?;
@@ -171,87 +172,7 @@ impl LocalReferenceAudit {
         let _ = view.is_empty().map_err(storage)?;
         self.inventory.ensure_current(store)?;
         self.invalid = false;
-        Ok(LocalReferenceAuditPage { page, dispositions })
-    }
-}
-impl RequiredBlobInventory {
-    pub fn begin(store: &LocalBlobStore, view: &ReadView) -> Result<Self> {
-        store.inner.check()?;
-        let mode = store
-            .inner
-            .durable
-            .as_ref()
-            .ok_or(LocalBlobError::Invalid)?;
-        let binding = store
-            .inner
-            .durable_binding
-            .as_ref()
-            .ok_or(LocalBlobError::PermissionDenied)?;
-        if !view.is_bound_to(binding) {
-            return Err(LocalBlobError::PermissionDenied);
-        }
-        let identity = StoreIdentity::inspect(view)
-            .map_err(storage)?
-            .ok_or(LocalBlobError::Corrupt)?;
-        if identity.as_str() != mode.store_identity
-            || store.configuration_digest()? != mode.configuration_digest
-        {
-            return Err(LocalBlobError::PermissionDenied);
-        }
-        Ok(Self {
-            owner: Arc::clone(&store.inner),
-            view: view.identity(),
-            after: None,
-            complete: false,
-            invalid: false,
-        })
-    }
-    /// Inspect at most `maximum_rows` owners on the original bounded worker.
-    /// The host must hold its startup fence and validate semantic closure.
-    pub fn next_page(
-        &mut self,
-        store: &LocalBlobStore,
-        view: &ReadView,
-        maximum_rows: usize,
-        maximum_bytes: usize,
-        checkpoint: &dyn Fn() -> Result<()>,
-    ) -> Result<(usize, bool)> {
-        if self.invalid || self.complete {
-            return Err(LocalBlobError::PermissionDenied);
-        }
-        // A failed or panicking admission cannot be replaced by a later
-        // callback and used to complete the same recovery observation.
-        self.invalid = true;
-        if self.view != view.identity() || !Arc::ptr_eq(&self.owner, &store.inner) {
-            return Err(LocalBlobError::PermissionDenied);
-        }
-        // Empty pages are still observations. They cannot complete after the
-        // original admission or local physical owner has already retired.
-        checkpoint()?;
-        store.inner.check()?;
-        let page = payload_references::required_owner_page(
-            view,
-            self.after.as_deref(),
-            maximum_rows,
-            maximum_bytes,
-        )
-        .map_err(storage)?;
-        for reference in &page.references {
-            checkpoint()?;
-            let key = reference.owner_key().map_err(storage)?;
-            let bytes = reference.encode().map_err(storage)?;
-            store.verify_required_reference(view, &key, &bytes, checkpoint)?;
-        }
-        checkpoint()?;
-        // The admission checkpoint may itself block until the snapshot has
-        // expired; do not publish a completed observation from that view.
-        let _ = view.is_empty().map_err(storage)?;
-        store.check_owner()?;
-        let count = page.references.len();
-        self.after = page.resume;
-        self.complete = self.after.is_none();
-        self.invalid = false;
-        Ok((count, self.complete))
+        Ok(LocalReferenceAuditPage { dispositions, page })
     }
 }
 impl LocalDurablePin {

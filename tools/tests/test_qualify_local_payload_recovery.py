@@ -23,11 +23,19 @@ class TestOutputControls(unittest.TestCase):
     def test_exact_export_runs_once(self):
         qualification.verify_test_output(output(["export"]), "export", exact=True)
 
-    def test_current_writer_cases_do_not_require_a_frozen_count(self):
+    def test_current_local_cases_do_not_require_a_frozen_count(self):
         for count in (1, 2, 5):
             with self.subTest(count=count):
                 names = [f"local::write::tests::case_{number}" for number in range(count)]
-                qualification.verify_test_output(output(names), "local::write::tests::", exact=False)
+                qualification.verify_test_output(output(names), "local::", exact=False)
+
+    def test_local_filter_accepts_tests_from_multiple_storage_modules(self):
+        qualification.verify_test_output(output([
+            "local::write::tests::write_case",
+            "local::inventory::tests::accounting_case",
+            "local::recovery::tests::corruption_case",
+            "local::durable::required::tests::prepaid_case",
+        ]), "local::", exact=False)
 
     def test_successful_zero_match_is_not_evidence(self):
         for exact in (False, True):
@@ -38,13 +46,13 @@ class TestOutputControls(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             qualification.verify_test_output(output(["other"]), "export", exact=True)
 
-    def test_writer_filter_cannot_be_satisfied_by_an_unrelated_test(self):
+    def test_local_filter_cannot_be_satisfied_by_an_unrelated_test(self):
         with self.assertRaises(RuntimeError):
-            qualification.verify_test_output(output(["other::case"]), "local::write::tests::", exact=False)
+            qualification.verify_test_output(output(["other::case"]), "local::", exact=False)
 
     def test_bare_prefix_is_not_an_executed_case(self):
         with self.assertRaises(RuntimeError):
-            qualification.verify_test_output(output(["local::write::tests::"]), "local::write::tests::", exact=False)
+            qualification.verify_test_output(output(["local::"]), "local::", exact=False)
 
     def test_duplicate_execution_is_rejected(self):
         for exact in (False, True):
@@ -82,7 +90,7 @@ class QualificationProcessControls(unittest.TestCase):
                 contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             qualification.main()
 
-    def test_writer_regressions_precede_real_export_and_recovery_under_original_bounds(self):
+    def test_local_regressions_precede_real_export_and_recovery_under_original_bounds(self):
         calls = []
         def runner(command, repository, environment, timeout, maximum):
             calls.append((command, repository, environment.copy(), timeout, maximum))
@@ -103,12 +111,14 @@ class QualificationProcessControls(unittest.TestCase):
                 self.assertEqual(environment["LSF_LINKED_PAYLOAD_REPORT"], str(root / "producer-root.txt"))
                 self.assertIn("--locked", command)
                 self.assertIn("--test-threads=1", command)
+            self.assertEqual(calls[0][0][6], "local::")
+            self.assertNotIn("--exact", calls[0][0])
             self.assertNotIn("--ignored", calls[0][0])
             for command, *_ in calls[1:]:
                 self.assertIn("--ignored", command)
                 self.assertIn("--exact", command)
 
-    def test_zero_writer_tests_stop_before_export_and_clean_only_retired_files(self):
+    def test_zero_local_tests_stop_before_export_and_clean_only_retired_files(self):
         roots = []
         def runner(command, _repository, environment, _timeout, _maximum):
             roots.append(Path(environment["TMPDIR"]))

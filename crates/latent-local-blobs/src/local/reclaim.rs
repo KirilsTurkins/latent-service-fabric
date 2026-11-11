@@ -93,7 +93,7 @@ impl LocalBlobStore {
         }
         let result = (|| {
             let directory = self.inner.objects.child(&key, false)?;
-            directory.write_new("RELEASED", b"LSF blob reference released v1\n")?;
+            directory.write_new("RELEASED", recovery::RELEASE_MARKER)?;
             directory.sync()
         })();
         result.map_err(|_| self.inner.uncertain())?;

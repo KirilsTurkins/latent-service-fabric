@@ -52,13 +52,13 @@ def main() -> None:
         environment["TMPDIR"] = str(root)
         environment["LSF_LINKED_PAYLOAD_REPORT"] = str(root / "producer-root.txt")
         commands = (
-            # Keep physical-write regressions in this focused lane even when an
-            # unrelated earlier workspace test binary fails. Discover this
-            # module's current cases rather than freezing a test-name inventory.
+            # Keep all local storage regressions in this focused lane even when
+            # an unrelated earlier workspace test binary fails. Discover current
+            # cases, including recovery and inventory, without freezing names.
             ([
                 "cargo", "test", "--locked", "-p", "latent-local-blobs", "--lib",
-                "local::write::tests::", "--", "--test-threads=1",
-            ], "local::write::tests::", False),
+                "local::", "--", "--test-threads=1",
+            ], "local::", False),
             ([
                 "cargo", "test", "--locked", "-p", "latent-commit", "--lib",
                 "atomic::tests::payloads::export_standalone_linked_payload",

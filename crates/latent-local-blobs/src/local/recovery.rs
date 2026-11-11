@@ -7,6 +7,10 @@ use super::{
     OWNER_BYTES, RECORD_BYTES, STAGE_BYTES,
 };
 
+// A filename alone is not a valid release record. Keep publication and recovery
+// on the same exact, versioned bytes; malformed markers never authorize removal.
+pub(super) const RELEASE_MARKER: &[u8] = b"LSF blob reference released v1\n";
+
 pub(super) fn open(
     path: &Path,
     namespace: &str,
@@ -58,6 +62,7 @@ pub(super) fn open(
         state: Mutex::new(State::default()),
         handles: AtomicUsize::new(0),
         work: AtomicUsize::new(0),
+        inventory_bytes: AtomicUsize::new(0),
         publishing: AtomicBool::new(false),
         pending_objects: AtomicUsize::new(0),
         poisoned: AtomicBool::new(false),
@@ -187,7 +192,12 @@ pub(super) fn inventory(directory: &Directory, object: bool, maximum: u64) -> Re
         let bound = match name.as_str() {
             "data" => maximum,
             "STAGE.json" | "REFERENCE.json" => RECORD_BYTES as u64,
-            "RELEASED" if object => 64,
+            "RELEASED" if object => {
+                if directory.small(name, RELEASE_MARKER.len())?.as_slice() != RELEASE_MARKER {
+                    return Err(LocalBlobError::Corrupt);
+                }
+                continue;
+            }
             _ => return Err(LocalBlobError::Corrupt),
         };
         directory.open_file(name, false, false, bound)?;
@@ -220,3 +230,6 @@ fn validate_stage(stage: &StageRecord, reference: &ReferenceRecord, maximum: u64
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests;

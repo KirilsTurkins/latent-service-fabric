@@ -1,7 +1,42 @@
 //! Bounded descriptive inventory. It never grants deletion or read authority.
-use super::{tenant, Arc, LocalBlobError, LocalBlobStore, Ordering, Result, TenantId, Work};
+use super::{
+    tenant, Arc, Inner, LocalBlobError, LocalBlobStore, Ordering, Result, TenantId, Work,
+    HANDLE_BYTES, OBJECT_BYTES,
+};
 use crate::BlobReference;
 use std::ops::Bound::{Excluded, Unbounded};
+
+// Conservative metadata reservations, independent of the finite work-slot cap.
+// HANDLE_BYTES covers a cursor or page plus its bounded continuation/guard;
+// OBJECT_BYTES covers each copied reference and its bounded tenant/media/digest.
+// Audit dispositions also fit in the page's per-reference allowance.
+pub(super) struct InventoryMemory {
+    inner: Arc<Inner>,
+    bytes: usize,
+}
+impl InventoryMemory {
+    pub(super) fn reserve(inner: &Arc<Inner>, bytes: usize, headroom: usize) -> Result<Self> {
+        let state = inner.state()?;
+        inner.room(
+            &state,
+            bytes.checked_add(headroom).ok_or(LocalBlobError::Capacity)?,
+        )?;
+        // All admissions share the state lock with object/stage/handle growth.
+        // Drop only subtracts, so fetch_add also preserves concurrent refunds.
+        inner.inventory_bytes.fetch_add(bytes, Ordering::AcqRel);
+        Ok(Self {
+            inner: Arc::clone(inner),
+            bytes,
+        })
+    }
+}
+impl Drop for InventoryMemory {
+    fn drop(&mut self) {
+        self.inner
+            .inventory_bytes
+            .fetch_sub(self.bytes, Ordering::AcqRel);
+    }
+}
 
 /// One page of references belonging to the requested tenant. `complete` says
 /// only that this exact in-memory generation was traversed, not that any object
@@ -11,6 +46,8 @@ pub struct LocalReferencePage {
     pub complete: bool,
     // The copied page remains charged until its actual owner retires.
     _work: Work,
+    // Declared last so the copied references retire before their reservation.
+    _memory: InventoryMemory,
 }
 
 impl LocalReferencePage {
@@ -22,7 +59,7 @@ impl LocalReferencePage {
 
 /// A bounded physical inventory bound to its original local owner, tenant and
 /// mutation generation. The trusted host must authorize the tenant separately.
-/// Holding it consumes an existing native work slot; it grants no blob access.
+/// Holding it consumes a native work slot and metadata; it grants no blob access.
 /// Page boundaries can reflect other tenants' entries, so neither the cursor
 /// nor its pagination observations may be exposed to an untrusted caller.
 pub struct LocalReferenceInventory {
@@ -31,6 +68,8 @@ pub struct LocalReferenceInventory {
     generation: u64,
     after: Option<String>,
     complete: bool,
+    // The tenant and continuation retire before this reservation.
+    _memory: InventoryMemory,
 }
 
 impl LocalReferenceInventory {
@@ -62,6 +101,13 @@ impl LocalReferenceInventory {
             return Err(LocalBlobError::Capacity);
         }
         let work = store.inner.work()?;
+        // Do not admit a cursor that by itself makes even a one-entry page
+        // unaffordable. Headroom is checked, not charged to the cursor.
+        let memory = InventoryMemory::reserve(
+            &store.inner,
+            HANDLE_BYTES,
+            HANDLE_BYTES + OBJECT_BYTES,
+        )?;
         checkpoint()?;
         let generation = {
             let state = store.inner.state()?;
@@ -77,6 +123,7 @@ impl LocalReferenceInventory {
             generation,
             after: None,
             complete: false,
+            _memory: memory,
         };
         inventory.ensure_current(store)?;
         Ok(inventory)
@@ -84,6 +131,9 @@ impl LocalReferenceInventory {
 
     /// Visit at most 64 physical entries per call, including entries for other
     /// tenants and released records. A mutation invalidates the entire cursor.
+    /// Reserve the requested page's metadata before copying, even if few or no
+    /// references match. Capacity refusal leaves the cursor unadvanced; retry
+    /// with a smaller page or after actually dropping another retained owner.
     pub fn next_page(
         &mut self,
         store: &LocalBlobStore,
@@ -99,6 +149,11 @@ impl LocalReferenceInventory {
         }
         checkpoint()?;
         let page_work = store.inner.work()?;
+        let page_bytes = maximum_entries
+            .checked_mul(OBJECT_BYTES)
+            .and_then(|bytes| bytes.checked_add(HANDLE_BYTES))
+            .ok_or(LocalBlobError::Capacity)?;
+        let page_memory = InventoryMemory::reserve(&store.inner, page_bytes, 0)?;
         let (references, after, complete) = {
             let state = store.inner.state()?;
             if store.inner.publishing.load(Ordering::Acquire)
@@ -141,6 +196,10 @@ impl LocalReferenceInventory {
             references,
             complete,
             _work: page_work,
+            _memory: page_memory,
         })
     }
 }
+
+#[cfg(test)]
+mod tests;
