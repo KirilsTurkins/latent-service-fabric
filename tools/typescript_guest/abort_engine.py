@@ -148,7 +148,9 @@ static JSObject *create_abort_exception(JSContext *cx, const char *name) {
   using Exception = dom_exception::DOMException;
   if (JS_IsExceptionPending(cx)) return nullptr;
   RootedString text(cx, JS_NewStringCopyZ(cx, name));
-  if (!text) return nullptr;
+  // A rooted string result is not permission to look up a mutable constructor
+  // with a pending exception. Preserve the failure before any possible reentry.
+  if (!text || JS_IsExceptionPending(cx)) return nullptr;
   JS::RootedValueArray<2> args(cx);
   args[0].setString(text);
   args[1].setString(text);

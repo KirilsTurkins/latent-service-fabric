@@ -326,6 +326,7 @@ class AbortFailureControls(unittest.TestCase):
 
     def test_actual_emitted_factory_guards_all_native_result_boundaries(self):
         for case in ('success-abort', 'success-timeout', 'string-oom',
+                     'string-pending-abort', 'string-pending-timeout',
                      'constructor-lookup-failure', 'constructor-lookup-terminal',
                      'constructor-lookup-pending', 'constructor-throw', 'constructor-terminal',
                      'constructor-pending', 'constructor-wrong-class', 'constructor-null-result',
