@@ -1,0 +1,44 @@
+name: TypeScript stacked source recovery
+
+on:
+  push:
+    branches: ['feat/typescript-runtime-745']
+    paths: ['.github/workflows/typescript-stack-source-recovery.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Capture immutable parent and exact stacked deltas
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/typescript-stack-source"
+          mkdir -p "$output"
+          parent=c480be742b070220a6aee27ebd2d8f9b6d57ce22
+          owners=c34ff183a039dab3fd6aadbf9693135a0d5c1ac6
+          engine=de25926b54b6d909fa69656d9bc5879ffca66b9e
+          git fetch --no-tags --depth=1 origin "$parent" "$owners" "$engine"
+          git archive --format=tar.gz "$parent" > "$output/parent.tar.gz"
+          git diff --binary "$parent" "$owners" > "$output/owners.patch"
+          git diff --binary "$parent" "$engine" > "$output/engine.patch"
+          for ref in "$parent" "$owners" "$engine"; do
+            git ls-tree -r "$ref" > "$output/$ref.tree"
+            git rev-parse "$ref^{tree}" > "$output/$ref.root"
+          done
+          cd "$output"
+          sha256sum parent.tar.gz owners.patch engine.patch *.tree *.root > SHA256SUMS
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: typescript-stack-source-${{ github.sha }}
+          path: ${{ runner.temp }}/typescript-stack-source/
+          if-no-files-found: error
+          retention-days: 2
