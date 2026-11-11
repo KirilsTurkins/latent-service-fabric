@@ -8,30 +8,30 @@ permissions:
 jobs:
   capture:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
         with:
           persist-credentials: false
           fetch-depth: 1
-      - name: Capture exact source stack
+          ref: 85fc96390e3921dfaa7fe8c45da7aa6370369b5e
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - name: Capture locked current host dependencies
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/abort-stack-source"
-          git fetch --no-tags --depth=8 origin \
-            +refs/heads/development:refs/heads/captured-development \
-            +refs/heads/feat/typescript-runtime-745:refs/heads/captured-parent \
-            +refs/heads/fix/typescript-745-activation-resource-ownership:refs/heads/captured-ownership \
-            +refs/heads/fix/1852-agent2-abort-engine-audit:refs/heads/captured-engine
-          git show-ref --heads > "$RUNNER_TEMP/abort-stack-source/refs.txt"
-          git bundle create "$RUNNER_TEMP/abort-stack-source/stack.bundle" \
-            captured-development captured-parent captured-ownership captured-engine
-          test "$(stat -c %s "$RUNNER_TEMP/abort-stack-source/stack.bundle")" -lt 500000000
-          sha256sum "$RUNNER_TEMP/abort-stack-source/stack.bundle" > "$RUNNER_TEMP/abort-stack-source/sha256.txt"
+          export CARGO_HOME="$RUNNER_TEMP/abort-cargo"
+          cargo fetch --locked --target x86_64-unknown-linux-gnu
+          mkdir -p "$RUNNER_TEMP/abort-registry"
+          tar -C "$CARGO_HOME" -czf "$RUNNER_TEMP/abort-registry/registry.tar.gz" registry
+          git rev-parse HEAD > "$RUNNER_TEMP/abort-registry/head.txt"
+          cp Cargo.lock "$RUNNER_TEMP/abort-registry/Cargo.lock"
+          rustc -Vv > "$RUNNER_TEMP/abort-registry/rustc.txt"
+          test "$(stat -c %s "$RUNNER_TEMP/abort-registry/registry.tar.gz")" -lt 500000000
+          sha256sum "$RUNNER_TEMP/abort-registry/registry.tar.gz" > "$RUNNER_TEMP/abort-registry/sha256.txt"
       - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
         with:
-          name: abort-stack-source-${{ github.sha }}
-          path: ${{ runner.temp }}/abort-stack-source/
+          name: abort-stack-registry-${{ github.sha }}
+          path: ${{ runner.temp }}/abort-registry/
           if-no-files-found: error
           retention-days: 3
