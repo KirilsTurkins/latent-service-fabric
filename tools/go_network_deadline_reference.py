@@ -87,6 +87,41 @@ def observed(raw: bytes, old: bool) -> list[str]:
     return passed
 
 
+def pending_deadline_contract(connection: bytes) -> None:
+    """Check the selected pending-operation deadline split, not unrelated Rust text.
+
+    These source controls complement the live provider tests; they do not prove
+    physical timing. Read/write deadlines still narrow the original lifetime.
+    Only plain-TCP readiness has a separate, non-renewing observation deadline.
+    """
+    rows = re.findall(rb'(?ms)^    fn pending\(\n.*?^    \}', connection)
+    if len(rows) != 1:
+        raise ValueError('go-network-deadline-pending-shape')
+    pending = b' '.join(rows[0].split())
+    required = (
+        b'if timeout.is_some_and(|value| value > 10_000 || (value == 0 && direction != 2)) { '
+        b'return Err(error(StreamErrorCode::InvalidInput)); }',
+        b'let mut deadline = self.deadline.min(state.last_progress + self.idle);',
+        b'let observation = direction == 2 && !socket.host_tls() && !socket.protected_owner();',
+        b'let requested = timeout.map(|value| now + Duration::from_millis(u64::from(value))); '
+        b'if !observation { if let Some(requested) = requested { '
+        b'deadline = deadline.min(requested); } } '
+        b'if now >= deadline { '
+        b'return Err(error(StreamErrorCode::Timeout).uncertain(state.attempted_write)); }',
+        b'deadline, observation_deadline: if observation { requested } else { None }, '
+        b'observation_immediate: observation && timeout == Some(0),',
+    )
+    if any(pending.count(marker) != 1 for marker in required):
+        raise ValueError('go-network-deadline-pending-drift')
+    # The exception must not move to Go's read or write operation. Checking the
+    # actual caller bindings also prevents a direction renumbering from passing.
+    for operation, direction in (('read', 0), ('write_from', 1), ('ready', 2)):
+        bodies = re.findall(rb'(?ms)^    fn ' + operation.encode() + rb'\(\n.*?^    \}', connection)
+        marker = f'let pending = self.connection.pending({direction}, timeout)?;'.encode()
+        if len(bodies) != 1 or bodies[0].count(marker) != 1:
+            raise ValueError('go-network-deadline-pending-directions')
+
+
 def contract(template: bytes, materials: dict[str, bytes]) -> None:
     """Fail closed if the selected provider or unchanged context port drifts."""
     if set(materials) != set(MATERIALS) or any(not isinstance(v, bytes) or len(v) > 1024 * 1024 for v in materials.values()):
@@ -102,13 +137,11 @@ def contract(template: bytes, materials: dict[str, bytes]) -> None:
                 (provider, b'if timeout == 0 || timeout > 10_000'),
                 (provider, b'deadline = deadline.min(now + Duration::from_millis(u64::from(timeout)));'),
                 (connection, b'deadline: deadline.min(validity),'),
-                (connection, b'if timeout.is_some_and(|value| value == 0 || value > 10_000)'),
-                (connection, b'let mut deadline = self.deadline.min(state.last_progress + self.idle);'),
-                (connection, b'deadline = deadline.min(now + Duration::from_millis(u64::from(value)));'),
                 (facade, b'r := raw.ConnectContext(ctx, request)'),
                 (context, b'witAsync.SubtaskWaitContext(ctx, uint32('))
     if any(source.count(marker) != 1 for source, marker in required):
         raise ValueError('go-network-deadline-provider-or-context-drift')
+    pending_deadline_contract(connection)
     dial = re.findall(rb'(?ms)^func lsfStreamDial\(ctx context.Context, d \*Dialer, network, address string\) \(Conn, error\) \{\n.*?^\}', template)
     if (len(dial) != 1 or b'if err := ctx.Err(); err != nil' not in dial[0]
             or b'lsfNetwork.ConnectContext(ctx,' not in dial[0]):

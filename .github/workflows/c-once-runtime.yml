@@ -39,6 +39,7 @@ on:
       - 'tools/c_guest/__init__.py'
       - 'tools/c_guest/bindings.py'
       - 'tools/c_guest/closed_filesystem.py'
+      - 'tools/c_guest/closed_headers.py'
       - 'tools/c_guest/compiler.py'
       - 'tools/c_guest/language.py'
       - 'tools/c_guest/standard_facilities.py'
