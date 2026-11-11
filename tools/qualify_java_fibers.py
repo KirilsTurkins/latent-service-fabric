@@ -829,8 +829,16 @@ def executor_activation_settlement_control(compiler: Compiler, classes: Path, cl
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 
+OWNER_SETTLEMENT_CASES = (
+    'normal', 'refused', 'lost-before', 'lost-after', 'error-after', 'null',
+    'reentry', 'post-ack-reentry', 'duplicate', 'duplicate-throws',
+    'capacity', 'teardown', 'nested', 'out-of-order', 'refused-reentry',
+    'retention', 'try-resources',
+)
+
+
 def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> dict:
-    """Run the actual sleep owner against a private, two-Timer host ledger."""
+    """Run actual admission and cleanup against a private, two-Timer host ledger."""
     classpath, identities = locked_model_classpath(compiler, include_platform=True)
     sdk = compiler.sdk
     fixture = sdk / 'fibers/conformance/compiler/timer-source-control'
@@ -839,7 +847,7 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
         'fibers/dev/latent/guest/runtime/Activation.java', 'fibers/dev/latent/guest/runtime/HostCalls.java',
         'fibers/dev/latent/guest/runtime/Monitors.java')]
     sources += [fixture / 'dev/latent/generated/Bindings.java', fixture / 'TimerSleepAdmissionSourceControl.java',
-                fixture / 'OwnerAdmissionSourceControl.java']
+                fixture / 'OwnerAdmissionSourceControl.java', fixture / 'OwnerSettlementSourceControl.java']
     sources += sorted((sdk / 'fibers/dev/latent/guest/runtime/concurrent').glob('*.java'))
     inputs = {path.relative_to(sdk).as_posix(): digest(read_file(path)) for path in sources}
     output.mkdir()
@@ -855,10 +863,15 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
             str(output) + os.pathsep + classpath, 'OwnerAdmissionSourceControl', case).strip()
         if actual != 'OWNER_ADMISSION_SOURCE PASS ' + case:
             raise ValueError('Java owner admission source control did not complete: ' + case)
+    for case in OWNER_SETTLEMENT_CASES:
+        actual = compiler.run('owner-settlement-source-' + case, 'java', '-Xmx256m', '-cp',
+            str(output) + os.pathsep + classpath, 'OwnerSettlementSourceControl', case).strip()
+        if actual != 'OWNER_SETTLEMENT_SOURCE PASS ' + case:
+            raise ValueError('Java owner settlement source control did not complete: ' + case)
     if inputs != {name: digest(read_file(sdk / name)) for name in inputs}:
         raise ValueError('Java timer sleep admission source inputs changed')
     return {'status': 'SDK-source-control-passed', 'sourceInputs': inputs, 'jarDigests': identities,
-        'ownerAdmissionCases': list(owner_cases),
+        'ownerAdmissionCases': list(owner_cases), 'ownerSettlementCases': list(OWNER_SETTLEMENT_CASES),
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 

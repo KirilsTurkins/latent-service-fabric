@@ -35,6 +35,8 @@ public final class Activation {
     private static int pendingTimerStops;
     private static int pendingTimerStarts;
     private static int pendingRegistrations;
+    private static int pendingOwnerSettlements;
+    private static Lease settlingOwners;
 
     private Activation() { }
 
@@ -235,19 +237,52 @@ public final class Activation {
     public static class Lease implements AutoCloseable {
         private Bindings.LatentRuntimeActivationToken token;
         private Lease nextFailedQueued;
+        private final java.util.concurrent.atomic.AtomicBoolean failedQueuedRetained =
+            new java.util.concurrent.atomic.AtomicBoolean();
+        private Lease previousSettling;
+        private Lease nextSettling;
+        private boolean settlementPending;
         private Lease(Bindings.LatentRuntimeActivationToken token) { this.token = token; }
         @Override public void close() {
             if (token == null) return;
-            var settled = Bindings.LatentRuntimeActivation.settle(token);
-            if (settled.isError()) throw new IllegalStateException("activation-runtime-owner-settle-" + settled.error());
-            token = null;
+            int admission = beginOwnerSettlement(this);
+            if (admission != 1) {
+                fenceUncertainQueuedWorkSettlement(this);
+                throw new IllegalStateException("activation-runtime-owner-settle-"
+                    + (admission == 2 ? "capacity" : admission == 3 ? "teardown" : "unconfirmed"));
+            }
+            boolean returned = false;
+            try {
+                var settled = Bindings.LatentRuntimeActivation.settle(token);
+                if (settled.isError()) {
+                    // Construct the error before releasing in-flight custody:
+                    // exception construction can itself fail or suspend.
+                    var refusal = new IllegalStateException("activation-runtime-owner-settle-" + settled.error());
+                    if (!endOwnerSettlement(this, false)) throw refusal;
+                    returned = true;
+                    // Healthy typed refusals are retryable. Once teardown has
+                    // fenced the Store, retain this still-live owner instead.
+                    if (poisoned || finishingInvocation || !entered) fenceUncertainQueuedWorkSettlement(this);
+                    throw refusal;
+                }
+                if (!endOwnerSettlement(this, true))
+                    throw new IllegalStateException("activation-runtime-owner-settle-unconfirmed");
+                returned = true;
+            } catch (Throwable error) {
+                if (!returned) fenceUncertainQueuedWorkSettlement(this);
+                throw error;
+            }
         }
     }
 
     public static Lease owner(Bindings.LatentRuntimeActivationOwnerKind kind) {
         requireHealthyAdmission();
         if (!entered) throw new IllegalStateException("activation-runtime-entry-required");
-        return new Lease(register(kind));
+        // Allocate both custody and its one-time retention guard before the
+        // host can publish a token. No constructor allocation follows admission.
+        Lease owner = new Lease(null);
+        owner.token = register(kind);
+        return owner;
     }
 
     /** No current or later invocation may succeed after ownership becomes uncertain. */
@@ -258,14 +293,50 @@ public final class Activation {
      * This intrusive custody also covers executor and timer owners. */
     public static void fenceUncertainQueuedWorkSettlement(Lease owner) {
         poisoned = true;
-        // The lease and list head were allocated before admission. Each failed
-        // constructor links its own lease once; no failure-path allocation or
-        // second settlement is needed, even when acknowledgement was lost.
+        // A lease can be reported here by both close() and its caller. Claim
+        // membership once before touching its link; duplicate reports must not
+        // rewrite an already-published node or create a self-cycle. The atomic
+        // guard, lease and list head were all allocated before admission.
+        if (!owner.failedQueuedRetained.compareAndSet(false, true)) return;
         Lease previous;
         do {
             previous = failedQueuedOwners.get();
             owner.nextFailedQueued = previous;
         } while (!failedQueuedOwners.compareAndSet(previous, owner));
+    }
+
+    // Straight-line, allocation-free transitions in the owned cooperative
+    // runtime. Root the original lease before crossing the host boundary and
+    // retain it across suspension, teardown observation, or lost acknowledgement.
+    private static int beginOwnerSettlement(Lease owner) {
+        if (owner.settlementPending || owner.failedQueuedRetained.get()) return 0;
+        if (!entered || finishingInvocation) return 3;
+        if (pendingOwnerSettlements == Integer.MAX_VALUE) return 2;
+        pendingOwnerSettlements++;
+        owner.settlementPending = true;
+        owner.nextSettling = settlingOwners;
+        if (settlingOwners != null) settlingOwners.previousSettling = owner;
+        settlingOwners = owner;
+        return 1;
+    }
+
+    private static boolean endOwnerSettlement(Lease owner, boolean settled) {
+        if (!owner.settlementPending || pendingOwnerSettlements <= 0
+                || (owner.previousSettling == null ? settlingOwners != owner : owner.previousSettling.nextSettling != owner)
+                || owner.nextSettling != null && owner.nextSettling.previousSettling != owner) {
+            poisoned = true;
+            return false;
+        }
+        if (settled) owner.token = null;
+        if (owner.previousSettling == null) settlingOwners = owner.nextSettling;
+        else owner.previousSettling.nextSettling = owner.nextSettling;
+        if (owner.nextSettling != null) owner.nextSettling.previousSettling = owner.previousSettling;
+        owner.previousSettling = owner.nextSettling = null;
+        owner.settlementPending = false;
+        pendingOwnerSettlements--;
+        // A definite acknowledgement may complete cleanup after a teardown
+        // collision; it never clears the Store's sticky poison flag.
+        return true;
     }
 
     private static void requireHealthyAdmission() {
@@ -286,10 +357,14 @@ public final class Activation {
     private static void fencePendingRegistrations() {
         if (pendingRegistrations != 0) poisoned = true;
     }
+    private static void fencePendingOwnerSettlements() {
+        if (pendingOwnerSettlements != 0 || settlingOwners != null) poisoned = true;
+    }
     private static void requireHealthyCompletion() {
         fencePendingTimerStops();
         fencePendingTimerStarts();
         fencePendingRegistrations();
+        fencePendingOwnerSettlements();
         if (poisoned) throw new IllegalStateException("activation-runtime-owner-settlement-uncertain");
     }
 
@@ -726,11 +801,13 @@ public final class Activation {
         fencePendingTimerStops();
         fencePendingTimerStarts();
         fencePendingRegistrations();
+        fencePendingOwnerSettlements();
         boolean liveTimers = !timers.isEmpty();
         // A stop or start may change state while the registry was observed.
         fencePendingTimerStops();
         fencePendingTimerStarts();
         fencePendingRegistrations();
+        fencePendingOwnerSettlements();
         if (failedStarts != null || poisoned || liveTimers) {
             // The host must destroy this Store; retain every original reference
             // and reject re-entry while registration settlement is uncertain.
