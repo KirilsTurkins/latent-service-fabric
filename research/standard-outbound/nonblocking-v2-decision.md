@@ -1,12 +1,15 @@
 # Proposed companion contract for nonblocking outbound streams
 
-Status: **proposed, owner decision required**. The accompanying WIT is an
-uninstalled research contract, not an ABI recognition, runtime capability,
-policy grant, implementation or qualification. The accepted
+Status: **proposed, owner decision required**. The accompanying
+[WIT](nonblocking-v2/package.wit) is an uninstalled research contract, not an
+ABI recognition, runtime capability, policy grant, implementation or qualification.
+The accepted
 [ADR-0061](../../adr/0061-bound-standard-outbound-streams.md), the
 [v1 profile](../../docs/runtime/outbound-stream-profile.md), its exact WIT and
 existing grants remain unchanged. Production remains disabled. This proposal
 does not resolve the named-host association required by the ordinary C client.
+[Validation instructions](README.md#nonblocking-companion-proposal) keep the two
+package identities in separate parse directories and stage the exact v1 dependency.
 
 ## Trigger and identity
 
@@ -99,6 +102,8 @@ meanings and no hidden retry.
 attempts under the existing activation connection cap. Duplicate watches are
 allowed. One prepaid readiness waiter per distinct underlying resource is shared
 among its duplicates; the ordered result has one event mask per input entry.
+Concurrent v1 and companion operations share the existing per-direction waiter
+limits; duplicate watches and interface selection do not create extra allowances.
 Only requested readable/writable/priority bits are returned, while actual
 hangup/error bits and a terminal attempt's `connect-complete` may be returned
 regardless of interest. `connect-complete` is never returned for an established
@@ -146,10 +151,11 @@ literal-IP profile remains limited and cannot satisfy named-host libcurl.
 
 Owner review must explicitly accept or reject the new identity, attempt and
 waiter lifecycle, event surface, timeout precedence, per-operation audit fences
-and unchanged resource/authority bounds. `priority` observation adds an event
-to the frozen v1 interface; it does not authorize `MSG_OOB` data, raw sockets,
-UDP, listener/bind, ambient DNS, replay or a new TLS placement. The proposal
-does not convert v1 grants or authorize any of those unsupported operations.
+and unchanged resource/authority bounds. `priority` observation extends the
+separate companion's event surface, not the frozen v1 interface. It does not
+authorize `MSG_OOB` data, raw sockets, UDP, listener/bind, ambient DNS, replay or
+a new TLS placement. The proposal does not convert v1 grants or authorize any
+of those unsupported operations.
 
 Only a backend with proven physical semantics may implement each operation.
 Plain host TCP is a candidate for an initial development-only implementation;
