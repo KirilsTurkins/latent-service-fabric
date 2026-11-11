@@ -45,3 +45,35 @@ and #738 own those mappings and explicit unsupported-operation behavior.
 Positive provider evidence belongs to #738. All-six ordinary library execution
 belongs to the language ports and #740/#694. Production installation remains
 disabled pending architecture/security review and implementation qualification.
+
+## Nonblocking companion proposal
+
+The [owner-decision proposal](nonblocking-v2-decision.md) and its
+[companion WIT](nonblocking-v2/package.wit) remain unapproved and uninstalled.
+The companion has a different package identity and therefore lives in its own
+parse directory. Do not move its WIT back alongside `streams.wit`: parsing this
+comparison directory must continue to select only the original v1 package.
+
+From the repository root, with the repository-pinned `wasm-tools` on PATH:
+
+```console
+python research/standard-outbound/validate_contracts.py
+python -m unittest discover -s research/standard-outbound -p test_validate_contracts.py
+```
+
+The validator first encodes and validates the original v1 comparison directory.
+It then stages the companion in a fresh temporary directory with an exact copy
+of the WIT files in `wit/platform/network` as its v1 dependency, encodes it and
+validates the resulting type-only component. It never writes dependencies into
+the source tree, never substitutes hand-maintained v1 resource definitions, and
+removes the temporary staging directory on success or failure. Generated
+`v1.wasm` and `v2.wasm` go to `target/outbound-contract`; `--output` may select a
+different directory outside the WIT source trees. `--wasm-tools` may select the
+pinned executable explicitly. A nonzero exit is failure; existing output files
+from an earlier invocation are not a success receipt for a failed invocation.
+
+The unit tests exercise staging, source-tree protection, command sequencing and
+failure cleanup with a mocked subprocess. They do not parse WIT and cannot
+replace the first command, runtime import-denial controls, owner approval or
+physical socket qualification. Successful type validation does not install the
+companion, widen v1 grants or close the ordinary-library acceptance gates.
