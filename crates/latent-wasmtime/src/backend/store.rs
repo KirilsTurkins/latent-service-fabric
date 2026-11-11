@@ -82,6 +82,8 @@ impl<T: 'static> Drop for StoreCustody<'_, T> {
     fn drop(&mut self) {
         if let Some(store) = self.store.take() {
             // Consume once, without unsafe extraction or reconstructed tokens.
+            // The pinned consuming path retains data on an internal teardown
+            // panic; no completed witness is published in that case.
             // This is not a witness of successful OS decommit on every path.
             let data = store.into_data();
             drop(data);

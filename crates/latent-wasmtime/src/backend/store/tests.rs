@@ -9,7 +9,7 @@ use std::{
     future::Future,
     panic::{catch_unwind, AssertUnwindSafe},
     sync::{
-        atomic::{AtomicU32, Ordering},
+        atomic::{AtomicBool, AtomicU32, Ordering},
         Arc,
     },
     task::{Context, Poll, Waker},
@@ -31,6 +31,7 @@ impl BudgetCancellationProbe for Signal {
 struct Observation {
     allocation_drops: AtomicU32,
     native_at_allocation_drop: AtomicU32,
+    panic_at_allocation_drop: AtomicBool,
 }
 
 struct Allocation {
@@ -52,6 +53,13 @@ impl Drop for Allocation {
         self.observation
             .allocation_drops
             .fetch_add(1, Ordering::SeqCst);
+        if self
+            .observation
+            .panic_at_allocation_drop
+            .swap(false, Ordering::SeqCst)
+        {
+            panic!("injected physical allocation retirement panic");
+        }
     }
 }
 struct Limiter {
@@ -80,13 +88,15 @@ impl ResourceLimiter for Limiter {
         &mut self,
         bytes: usize,
     ) -> wasmtime::Result<Option<Box<dyn wasmtime::TableAllocation>>> {
-        Ok(crate::native_tables::reserve(&self.budget, bytes)?.map(|memory| {
-            Box::new(Allocation {
-                runtime: self.runtime.clone(),
-                observation: self.observation.clone(),
-                _memory: memory,
-            }) as Box<dyn wasmtime::TableAllocation>
-        }))
+        Ok(
+            crate::native_tables::reserve(&self.budget, bytes)?.map(|memory| {
+                Box::new(Allocation {
+                    runtime: self.runtime.clone(),
+                    observation: self.observation.clone(),
+                    _memory: memory,
+                }) as Box<dyn wasmtime::TableAllocation>
+            }),
+        )
     }
 }
 struct Data {
@@ -209,7 +219,9 @@ fn store(
     let table = instance.get_table(&mut store, "table").unwrap();
     let function = wasmtime::Func::wrap(&mut store, || 42i32);
     table.set(&mut store, 0, Ref::Func(Some(function))).unwrap();
-    let trap = instance.get_typed_func::<(), ()>(&mut store, "trap").unwrap();
+    let trap = instance
+        .get_typed_func::<(), ()>(&mut store, "trap")
+        .unwrap();
     assert!(budget.host_memory_bytes() > baseline);
     assert_eq!(runtime.snapshot().owners[6], 1);
     (store, runtime, observation, baseline, trap)
@@ -251,7 +263,9 @@ fn custody_survives_return_trap_future_cancellation_and_outer_unwind() {
                         drop(custody);
                     });
                     assert!(matches!(
-                        future.as_mut().poll(&mut Context::from_waker(Waker::noop())),
+                        future
+                            .as_mut()
+                            .poll(&mut Context::from_waker(Waker::noop())),
                         Poll::Pending
                     ));
                     assert_eq!(observed.allocation_drops.load(Ordering::SeqCst), 0);
@@ -427,3 +441,5 @@ fn failed_store_setup_keeps_custody_and_cannot_claim_reuse() {
         ));
     }
 }
+
+mod failure;
