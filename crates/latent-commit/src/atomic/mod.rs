@@ -6,6 +6,7 @@ mod accounting;
 mod captured;
 mod census;
 mod codec;
+mod inbox_replay;
 mod ownership;
 mod payload_links;
 mod record;
@@ -15,6 +16,7 @@ mod validation;
 mod writer;
 pub use captured::{CapturedIntent, IntentCaptureContext};
 pub use census::tenant_census_contribution;
+pub use inbox_replay::inspect_inbox;
 pub use ownership::{AttemptRetirement, PhysicalAttemptWork, RetiredAttempt};
 pub use payload_links::inspect_payload_reference;
 pub use record::{

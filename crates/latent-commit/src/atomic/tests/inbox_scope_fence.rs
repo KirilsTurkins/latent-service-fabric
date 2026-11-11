@@ -1,3 +1,5 @@
+mod replay;
+
 use super::*;
 use latent_state::{
     embedded::ExpectedRow,
