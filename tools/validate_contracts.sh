@@ -124,7 +124,7 @@ case "${VALIDATION_LANE}" in
     for fixture in "${ROOT}"/crates/latent-wasmtime/tests/fixtures/*.wat; do
         name="$(basename "${fixture}" .wat)"
         wasm-tools parse "${fixture}" -o "${GENERIC_FIXTURES}/${name}.wasm"
-        wasm-tools validate "${component}"
+        wasm-tools validate "${GENERIC_FIXTURES}/${name}.wasm"
     done
 
     cargo build -p latent-toolchain-smoke --example capabilities-capsule \
