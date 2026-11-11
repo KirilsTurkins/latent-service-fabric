@@ -126,7 +126,7 @@ async fn warm_configured_http_inspector_retires_after_graph_drop() {
     ))
     .await;
     let probe = take();
-    probe.finish(until).await;
+    Box::pin(probe.finish(until)).await;
     if result.is_err() {
         assert!(probe.native.snapshot().unwrap().physically_retired());
     }
@@ -165,7 +165,7 @@ async fn warm_transaction_host_inspector_retires_after_graph_drop() {
     ))
     .await;
     let probe = take();
-    probe.finish(until).await;
+    Box::pin(probe.finish(until)).await;
     if result.is_err() {
         assert!(probe.native.snapshot().unwrap().physically_retired());
     }
