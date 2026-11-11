@@ -216,7 +216,8 @@ def timer_start_admission_projection(source: str) -> str:
         ("            long now = monotonicMillis();\n", "            TimerStartHooks.clock();\n", True),
         ("            timers.add(timer);\n", "            TimerStartHooks.list();\n", False),
         ("        return threads.get(thread);\n", "        TimerStartHooks.lookup();\n", True),
-        ("                var refusal = new IllegalStateException(\"activation-runtime-settle-\" + settled.error());\n",
+        ("                var refusal = new IllegalStateException((rootSettlement\n"
+         "                    ? \"activation-runtime-root-settle-\" : \"activation-runtime-settle-\") + settled.error());\n",
          "                TimerStartHooks.refusal();\n", True),
     )
     for point, hook, before in points:
@@ -321,7 +322,7 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
     claim = compiler.run("timer-start-claim-ir-control", "java", "-Xmx256m", "-cp",
                          str(output) + os.pathsep + str(timer_output) + os.pathsep + classpath,
                          "dev.latent.guest.runtime.compiler.TimerClaimIrControl").strip()
-    if claim != "TIMER_CLAIM_IR PASS selected-loop-positive;four-helpers-no-checkpoint-or-split-kind;not-guest":
+    if claim != "TIMER_CLAIM_IR PASS selected-loop-positive;ownership-helpers-no-checkpoint-or-split-kind;not-guest":
         raise ValueError("Java timer claim IR control did not complete")
     timer_teardown_source_control(compiler, output / "timer-teardown-projection", classpath)
     timer_post_ack_source_control(compiler, output / "timer-post-ack-projection", classpath)
@@ -837,6 +838,16 @@ OWNER_SETTLEMENT_CASES = (
 )
 
 
+WORK_FINISH_CASES = tuple((kind, mode)
+    for kind in ('task', 'managed', 'root')
+    for mode in ('normal', 'refused', 'lost-before', 'lost-after', 'error-after', 'null',
+                 'reentry', 'post-ack-reentry', 'duplicate', 'duplicate-throws',
+                 'capacity', 'teardown', 'refused-reentry')) + (
+    ('managed', 'cleanup'), ('managed', 'cleanup-throws'),
+    ('task', 'nested'), ('task', 'out-of-order'),
+)
+
+
 def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> dict:
     """Run actual admission and cleanup against a private, two-Timer host ledger."""
     classpath, identities = locked_model_classpath(compiler, include_platform=True)
@@ -847,7 +858,8 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
         'fibers/dev/latent/guest/runtime/Activation.java', 'fibers/dev/latent/guest/runtime/HostCalls.java',
         'fibers/dev/latent/guest/runtime/Monitors.java')]
     sources += [fixture / 'dev/latent/generated/Bindings.java', fixture / 'TimerSleepAdmissionSourceControl.java',
-                fixture / 'OwnerAdmissionSourceControl.java', fixture / 'OwnerSettlementSourceControl.java']
+                fixture / 'OwnerAdmissionSourceControl.java', fixture / 'OwnerSettlementSourceControl.java',
+                fixture / 'WorkFinishSourceControl.java']
     sources += sorted((sdk / 'fibers/dev/latent/guest/runtime/concurrent').glob('*.java'))
     inputs = {path.relative_to(sdk).as_posix(): digest(read_file(path)) for path in sources}
     output.mkdir()
@@ -868,10 +880,16 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
             str(output) + os.pathsep + classpath, 'OwnerSettlementSourceControl', case).strip()
         if actual != 'OWNER_SETTLEMENT_SOURCE PASS ' + case:
             raise ValueError('Java owner settlement source control did not complete: ' + case)
+    for kind, mode in WORK_FINISH_CASES:
+        actual = compiler.run('work-finish-source-' + kind + '-' + mode, 'java', '-Xmx256m', '-cp',
+            str(output) + os.pathsep + classpath, 'WorkFinishSourceControl', kind, mode).strip()
+        if actual != 'WORK_FINISH_SOURCE PASS ' + kind + ' ' + mode:
+            raise ValueError('Java work finish source control did not complete: ' + kind + ' ' + mode)
     if inputs != {name: digest(read_file(sdk / name)) for name in inputs}:
         raise ValueError('Java timer sleep admission source inputs changed')
     return {'status': 'SDK-source-control-passed', 'sourceInputs': inputs, 'jarDigests': identities,
         'ownerAdmissionCases': list(owner_cases), 'ownerSettlementCases': list(OWNER_SETTLEMENT_CASES),
+        'workFinishCases': [list(case) for case in WORK_FINISH_CASES],
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 

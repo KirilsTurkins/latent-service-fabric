@@ -10,6 +10,7 @@ from tools import qualify_java_fibers as preparation
 
 OWNER_CASES = ('normal', 'refused', 'lost', 'null', 'reentry', 'capacity')
 SETTLEMENT_CASES = preparation.OWNER_SETTLEMENT_CASES
+WORK_CASES = preparation.WORK_FINISH_CASES
 SLEEP_RESULT = ('TIMER_SLEEP_ADMISSION_SOURCE PASS zero-raw-frame;zero-interrupt;typed-refusal;'
                 'wait-return;same-work-retry;raw-hook-finally')
 
@@ -32,6 +33,8 @@ class RecordingCompiler:
             return 'OWNER_ADMISSION_SOURCE PASS ' + argv[-1]
         if stage.startswith('owner-settlement-source-'):
             return 'OWNER_SETTLEMENT_SOURCE PASS ' + argv[-1]
+        if stage.startswith('work-finish-source-'):
+            return 'WORK_FINISH_SOURCE PASS ' + argv[-2] + ' ' + argv[-1]
         return ''
 
 
@@ -47,13 +50,15 @@ class OwnerAdmissionPreparation(unittest.TestCase):
         self.assertEqual([stage for stage, _ in compiler.calls], [
             'timer-sleep-admission-source-compile', 'timer-sleep-admission-source-control',
             *('owner-admission-source-' + case for case in OWNER_CASES),
-            *('owner-settlement-source-' + case for case in SETTLEMENT_CASES)])
+            *('owner-settlement-source-' + case for case in SETTLEMENT_CASES),
+            *('work-finish-source-' + kind + '-' + mode for kind, mode in WORK_CASES)])
         compile_args = compiler.calls[0][1]
         self.assertEqual(compile_args[:4], ('javac', '-proc:none', '--release', '25'))
         required = (
             'fibers/dev/latent/guest/runtime/Activation.java',
             'fibers/conformance/compiler/timer-source-control/OwnerAdmissionSourceControl.java',
             'fibers/conformance/compiler/timer-source-control/OwnerSettlementSourceControl.java',
+            'fibers/conformance/compiler/timer-source-control/WorkFinishSourceControl.java',
             'fibers/conformance/compiler/timer-source-control/dev/latent/generated/Bindings.java',
         )
         for name in required:
@@ -63,9 +68,13 @@ class OwnerAdmissionPreparation(unittest.TestCase):
         for case, (_, argv) in zip(OWNER_CASES, compiler.calls[2:2 + len(OWNER_CASES)], strict=True):
             self.assertEqual(argv[:3], ('java', '-Xmx256m', '-cp'))
             self.assertEqual(argv[-2:], ('OwnerAdmissionSourceControl', case))
-        for case, (_, argv) in zip(SETTLEMENT_CASES, compiler.calls[2 + len(OWNER_CASES):], strict=True):
+        for case, (_, argv) in zip(SETTLEMENT_CASES, compiler.calls[2 + len(OWNER_CASES):2 + len(OWNER_CASES) + len(SETTLEMENT_CASES)], strict=True):
             self.assertEqual(argv[:3], ('java', '-Xmx256m', '-cp'))
             self.assertEqual(argv[-2:], ('OwnerSettlementSourceControl', case))
+        for case, (_, argv) in zip(WORK_CASES, compiler.calls[2 + len(OWNER_CASES) + len(SETTLEMENT_CASES):], strict=True):
+            self.assertEqual(argv[:3], ('java', '-Xmx256m', '-cp'))
+            self.assertEqual(argv[-3:], ('WorkFinishSourceControl', *case))
+        self.assertEqual(receipt['workFinishCases'], [list(case) for case in WORK_CASES])
         self.assertEqual(receipt['ownerAdmissionCases'], list(OWNER_CASES))
         self.assertEqual(receipt['ownerSettlementCases'], list(SETTLEMENT_CASES))
         self.assertEqual(receipt['status'], 'SDK-source-control-passed')
@@ -86,10 +95,23 @@ class OwnerAdmissionPreparation(unittest.TestCase):
                             self.run_control(compiler)
                         self.assertEqual(compiler.calls[-1][0], stage)
 
+    def test_work_finish_outputs_cannot_omit_duplicate_or_mislabel_a_case(self):
+        for kind, mode in WORK_CASES:
+            stage = 'work-finish-source-' + kind + '-' + mode
+            good = 'WORK_FINISH_SOURCE PASS ' + kind + ' ' + mode
+            for invalid in ('', good + '\n' + good, good + '\nunexpected',
+                            'WORK_FINISH_SOURCE PASS other ' + mode, 'WORK_FINISH_SOURCE PASS ' + kind + ' other'):
+                with self.subTest(kind=kind, mode=mode, output=invalid):
+                    compiler = RecordingCompiler(lambda actual: invalid if actual == stage else None)
+                    with self.assertRaisesRegex(ValueError, 'work finish source control did not complete: ' + kind + ' ' + mode):
+                        self.run_control(compiler)
+                    self.assertEqual(compiler.calls[-1][0], stage)
+
     def test_compiler_sleep_and_owner_failures_preserve_the_primary_error(self):
         stages = ('timer-sleep-admission-source-compile', 'timer-sleep-admission-source-control',
                   *('owner-admission-source-' + case for case in OWNER_CASES),
-                  *('owner-settlement-source-' + case for case in SETTLEMENT_CASES))
+                  *('owner-settlement-source-' + case for case in SETTLEMENT_CASES),
+                  *('work-finish-source-' + kind + '-' + mode for kind, mode in WORK_CASES))
         for stage in stages:
             with self.subTest(stage=stage):
                 error = subprocess.CalledProcessError(1, stage)
@@ -106,6 +128,7 @@ class OwnerAdmissionPreparation(unittest.TestCase):
         for name in ('fibers/dev/latent/guest/runtime/Activation.java',
                      'fibers/conformance/compiler/timer-source-control/OwnerAdmissionSourceControl.java',
                      'fibers/conformance/compiler/timer-source-control/OwnerSettlementSourceControl.java',
+                     'fibers/conformance/compiler/timer-source-control/WorkFinishSourceControl.java',
                      'fibers/conformance/compiler/timer-source-control/dev/latent/generated/Bindings.java'):
             with self.subTest(source=name):
                 compiler = RecordingCompiler()

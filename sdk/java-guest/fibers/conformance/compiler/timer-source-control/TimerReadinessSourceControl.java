@@ -203,9 +203,18 @@ public final class TimerReadinessSourceControl {
             "failed-start-poisons-and-preserves-owner");
         try { Activation.invoke(0, null, 0); throw new AssertionError("failed-start-store-reentered"); }
         catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-runtime-poisoned-store"), "failed-start-reentry-error"); }
-        // Test-only simulation of physical completion and a fresh Store.
-        Activation.finished(thread);
-        require(get("failedStarts") == null, "physical-completion-unlinks-before-fresh-store");
+        int attempts = Bindings.LatentRuntimeActivation.settlementAttempts;
+        denied(() -> Activation.finished(thread));
+        require(attempts == Bindings.LatentRuntimeActivation.settlementAttempts && Activation.alive(thread),
+            "worker-finish-after-teardown-never-dispatches");
+        // Test-only ledger reset between cases, not guest cleanup after teardown.
+        Map<?, ?> threads = (Map<?, ?>)get("threads");
+        Object work = threads.get(thread);
+        require(get("failedStarts") == work && field(workClass(), "nextFailed").get(work) == null,
+            "private-reset-has-exact-failed-work");
+        Map<?, ?> ledger = (Map<?, ?>)field(Bindings.LatentRuntimeActivation.class, "owners").get(null);
+        require(ledger.remove(field(workClass(), "token").get(work)) != null, "private-reset-has-host-owner");
+        threads.remove(thread); set("failedStarts", null);
         set("poisoned", false); set("entered", true); resetFinishingModel();
         pool.retire();
     }
@@ -260,9 +269,17 @@ public final class TimerReadinessSourceControl {
             "uncertain-queued-store-retains-owners");
         try { Activation.invoke(0, null, 0); throw new AssertionError("uncertain-queued-store-reentered"); }
         catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-runtime-poisoned-store"), "uncertain-queued-reentry-refused"); }
-        // Private source-control teardown simulates destroying the poisoned Store.
+        // A poisoned lease cannot be retried, even by a source fixture. Check
+        // that rule before discarding only the private ledger's Store records.
+        int attempts = Bindings.LatentRuntimeActivation.settlementAttempts;
+        for (Activation.Lease lease : leases) denied(lease::close);
+        require(Bindings.LatentRuntimeActivation.settlementAttempts == attempts
+            && owners() == original + count, "poisoned-queued-cleanup-never-retries-host");
+        Map<?, ?> ledger = (Map<?, ?>)field(Bindings.LatentRuntimeActivation.class, "owners").get(null);
+        for (Activation.Lease lease : leases)
+            require(ledger.remove(field(Activation.Lease.class, "token").get(lease)) != null,
+                "private-store-destruction-removes-original-owner");
         head.set(null);
-        for (Activation.Lease lease : leases) lease.close();
         set("poisoned", false); set("entered", true); resetFinishingModel();
         require(owners() == original, "queued-retention-control-cleanup");
     }

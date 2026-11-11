@@ -37,6 +37,8 @@ public final class Activation {
     private static int pendingRegistrations;
     private static int pendingOwnerSettlements;
     private static Lease settlingOwners;
+    private static int pendingWorkFinishes;
+    private static Work finishingWorks;
 
     private Activation() { }
 
@@ -51,6 +53,9 @@ public final class Activation {
         boolean rollbackPending;
         boolean finishing;
         boolean finishRefused;
+        boolean finishPending;
+        Work previousFinishing;
+        Work nextFinishing;
         TimerLease timer;
         Work(Bindings.LatentRuntimeActivationToken token) { this.token = token; }
     }
@@ -360,11 +365,15 @@ public final class Activation {
     private static void fencePendingOwnerSettlements() {
         if (pendingOwnerSettlements != 0 || settlingOwners != null) poisoned = true;
     }
+    private static void fencePendingWorkFinishes() {
+        if (pendingWorkFinishes != 0 || finishingWorks != null) poisoned = true;
+    }
     private static void requireHealthyCompletion() {
         fencePendingTimerStops();
         fencePendingTimerStarts();
         fencePendingRegistrations();
         fencePendingOwnerSettlements();
+        fencePendingWorkFinishes();
         if (poisoned) throw new IllegalStateException("activation-runtime-owner-settlement-uncertain");
     }
 
@@ -548,43 +557,83 @@ public final class Activation {
         timer.rawFrame = false;
     }
 
-    private static int beginWorkFinish(Work work) {
+    // These claim/release transitions must not allocate, invoke, or suspend.
+    // The compiler IR control checks them before and after checkpoint insertion.
+    private static int beginWorkFinish(Work work, boolean rootSettlement) {
+        if (work.finishPending) { poisoned = true; return 0; }
         if (work.complete || work.rollbackPending || work.finishing && !work.finishRefused) return 0;
         if (work.timer != null && work.timer.startPending) { poisoned = true; return 2; }
+        if (!entered || finishingInvocation != rootSettlement || rootSettlement && work != root) {
+            poisoned = true;
+            return 3;
+        }
+        if (pendingWorkFinishes == Integer.MAX_VALUE) { poisoned = true; return 4; }
+        pendingWorkFinishes++;
+        work.finishPending = true;
+        work.nextFinishing = finishingWorks;
+        if (finishingWorks != null) finishingWorks.previousFinishing = work;
+        finishingWorks = work;
         work.finishing = true;
         work.finishRefused = false;
         return 1;
+    }
+
+    private static boolean endWorkFinish(Work work) {
+        if (!work.finishPending || pendingWorkFinishes <= 0
+                || (work.previousFinishing == null ? finishingWorks != work : work.previousFinishing.nextFinishing != work)
+                || work.nextFinishing != null && work.nextFinishing.previousFinishing != work) {
+            poisoned = true;
+            return false;
+        }
+        if (work.previousFinishing == null) finishingWorks = work.nextFinishing;
+        else work.previousFinishing.nextFinishing = work.nextFinishing;
+        if (work.nextFinishing != null) work.nextFinishing.previousFinishing = work.previousFinishing;
+        work.previousFinishing = work.nextFinishing = null;
+        work.finishPending = false;
+        pendingWorkFinishes--;
+        return true;
     }
 
     /** Runs after the original Thread finally block has restored identity. */
     public static void finished(Thread thread) {
         Work work = lookup(thread);
         if (work == null) throw new IllegalStateException("activation-runtime-thread-owner");
-        int admission = beginWorkFinish(work);
-        if (admission == 2) return; // Preserve a primary exception and the original owner.
+        finishWork(thread, work, false);
+    }
+
+    private static void finishWork(Thread thread, Work work, boolean rootSettlement) {
+        int admission = beginWorkFinish(work, rootSettlement);
+        if (admission == 2 && !rootSettlement) return; // Preserve a primary exception and the original owner.
         if (admission != 1) throw new IllegalStateException("activation-runtime-thread-owner");
-        boolean refused = false;
+        boolean returned = false;
         try {
             var settled = Bindings.LatentRuntimeActivation.settle(work.token);
             if (settled.isError()) {
                 // Build the refusal while the Work remains closed to new
                 // timers, including any reentry from exception allocation.
-                var refusal = new IllegalStateException("activation-runtime-settle-" + settled.error());
-                refused = true;
+                var refusal = new IllegalStateException((rootSettlement
+                    ? "activation-runtime-root-settle-" : "activation-runtime-settle-") + settled.error());
                 work.finishRefused = true;
+                if (!endWorkFinish(work)) throw refusal;
+                returned = true;
                 throw refusal;
             }
             work.token = null;
             work.complete = true;
+            ManagedPool pool = work.pool;
+            work.pool = null;
+            if (work.failedThread != null) unlinkFailedStart(work);
+            if (pool != null) unmanageRetired(pool);
+            if (thread != null) synchronized (thread) { thread.notifyAll(); }
+            // Keep the original Work rooted even after host acknowledgement:
+            // pool retirement and join notification can still throw or suspend.
+            if (!endWorkFinish(work))
+                throw new IllegalStateException("activation-runtime-work-finish-unconfirmed");
+            returned = true;
         } catch (Throwable error) {
-            if (!refused) fenceUncertainCompletion();
+            if (!returned) fenceUncertainCompletion();
             throw error;
         }
-        ManagedPool pool = work.pool;
-        work.pool = null;
-        if (work.failedThread != null) unlinkFailedStart(work);
-        if (pool != null) unmanageRetired(pool);
-        synchronized (thread) { thread.notifyAll(); }
     }
 
     public static boolean alive(Thread thread) {
@@ -771,9 +820,7 @@ public final class Activation {
             // the original root, so the two gates cannot pass in opposite order.
             finishingInvocation = true;
             requireHealthyCompletion();
-            var settled = Bindings.LatentRuntimeActivation.settle(root.token);
-            if (settled.isError()) throw new IllegalStateException("activation-runtime-root-settle-" + settled.error());
-            root.complete = true;
+            finishWork(null, root, true);
             Address output = result;
             result = null;
             returning = true;
@@ -802,12 +849,14 @@ public final class Activation {
         fencePendingTimerStarts();
         fencePendingRegistrations();
         fencePendingOwnerSettlements();
+        fencePendingWorkFinishes();
         boolean liveTimers = !timers.isEmpty();
         // A stop or start may change state while the registry was observed.
         fencePendingTimerStops();
         fencePendingTimerStarts();
         fencePendingRegistrations();
         fencePendingOwnerSettlements();
+        fencePendingWorkFinishes();
         if (failedStarts != null || poisoned || liveTimers) {
             // The host must destroy this Store; retain every original reference
             // and reject re-entry while registration settlement is uncertain.

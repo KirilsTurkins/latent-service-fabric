@@ -50,3 +50,32 @@ orchestration and receipt validation using mocked compiler results. Those tests
 provide no Java execution credit. Neither these fixtures nor a host-JDK source
 run establish signed component execution, real Wasm trap catchability, host
 physical retirement, or completion of the Java standard concurrency profile.
+
+## Work retirement
+
+`WorkFinishSourceControl` exercises the actual worker/root settlement helper
+against the same private ledger. Each task, managed worker and root mode runs in
+a fresh JVM. Teardown during a host call, after host mutation, or during local
+pool cleanup must refuse completion and retain the original Work records.
+Lost acknowledgements, missing replies, duplicate/reentrant completion and
+cleanup exceptions cannot enable another host settlement attempt. Definite
+refusals retain the token and permit retry while the invocation remains healthy.
+Nested and ordered out-of-order returns check independent intrusive-list entries;
+capacity and teardown admission controls prove rejection before host dispatch.
+
+The managed fixture consumes the real preparation hook without scheduling a JVM
+worker. Root controls call the production settlement helper with reflected entry
+state; they do not execute the native dispatch/Fiber pump. The out-of-order
+control uses bounded JVM latches solely to arrange sequential host-return
+interleavings, not to claim simultaneous guest execution. All new list links and
+counters live in Work custody allocated before owner registration; the production
+IR control checks claim/release helpers for calls, monitor operations and loops
+before and after checkpoint insertion.
+
+The legacy readiness fixture also checks that poisoned leases and workers
+cannot be cleaned through production APIs after teardown. Its between-case
+reset removes only private ledger entries; it is not a guest cleanup path.
+
+These controls do not establish guest component execution, real trap
+catchability, physical retirement, or closure of #741. They do not change runtime
+grants, capacity budgets, or the production Java 25 toolchain requirement.
