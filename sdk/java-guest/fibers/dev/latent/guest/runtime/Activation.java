@@ -96,6 +96,9 @@ public final class Activation {
 
     /** Called before TeaVM allocates its event/continuation for Thread.start. */
     public static void starting(Thread thread) {
+        // Prepared workers already hold a token and bypass register below.
+        // Do not consume that custody after another admission poisons the Store.
+        requireHealthyAdmission();
         if (!entered) throw new IllegalStateException("activation-runtime-entry-required");
         Work existing = lookup(thread);
         if (existing != null) {
@@ -185,6 +188,7 @@ public final class Activation {
         void closeAtRoot();
     }
     public static void manage(ManagedPool pool) {
+        requireHealthyAdmission();
         if (!entered || retiringPools || closing && !acceptedContinuation())
             throw new IllegalStateException("activation-runtime-pool-entry");
         pools.add(pool);
@@ -220,6 +224,7 @@ public final class Activation {
     /** One activation-local default pool; accepted callbacks share no host worker. */
     public static synchronized java.util.concurrent.Executor defaultAsyncExecutor(
             java.util.function.Supplier<java.util.concurrent.Executor> factory) {
+        requireHealthyAdmission();
         if (!entered || retiringPools || closing && !acceptedContinuation())
             throw new IllegalStateException("activation-runtime-default-executor-closed");
         if (defaultAsyncExecutor == null) defaultAsyncExecutor = factory.get();
