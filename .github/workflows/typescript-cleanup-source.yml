@@ -1,0 +1,36 @@
+name: TypeScript cleanup continuation inputs
+on:
+  push:
+    branches: [fix/typescript-745-activation-resource-ownership]
+    paths: [.github/workflows/typescript-cleanup-source.yml]
+permissions:
+  contents: read
+jobs:
+  capture:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/fix/typescript-745-activation-resource-ownership'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Capture exact reviewed stack sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/cleanup-inputs"
+          git archive --format=tar.gz HEAD > "$RUNNER_TEMP/cleanup-inputs/ownership.tar.gz"
+          git fetch --no-tags --depth=1 origin aafe9fe575a373aa8333285fc4ca5d5bb6b0805f 152a332a4b0e8ecb862ca0f11ee775a36fd9ef29 d61c36d91837103a3349b4abad3755ecd9699ab4
+          git archive --format=tar.gz aafe9fe575a373aa8333285fc4ca5d5bb6b0805f > "$RUNNER_TEMP/cleanup-inputs/parent.tar.gz"
+          git diff --binary d61c36d91837103a3349b4abad3755ecd9699ab4 aafe9fe575a373aa8333285fc4ca5d5bb6b0805f > "$RUNNER_TEMP/cleanup-inputs/parent.patch"
+          git diff --binary d61c36d91837103a3349b4abad3755ecd9699ab4 152a332a4b0e8ecb862ca0f11ee775a36fd9ef29 > "$RUNNER_TEMP/cleanup-inputs/engine.patch"
+          git rev-parse HEAD > "$RUNNER_TEMP/cleanup-inputs/ownership-head.txt"
+          cd "$RUNNER_TEMP/cleanup-inputs"
+          sha256sum ownership.tar.gz parent.tar.gz parent.patch engine.patch > SHA256SUMS
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: typescript-cleanup-continuation-${{ github.sha }}
+          path: ${{ runner.temp }}/cleanup-inputs/
+          retention-days: 3
+          if-no-files-found: error
