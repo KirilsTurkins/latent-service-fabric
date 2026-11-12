@@ -4,7 +4,7 @@ This is the complete crates.io Wasmtime 48.0.8 package, licensed under
 Apache-2.0 WITH LLVM-exception (see the unmodified LICENSE). The original
 archive checksum and all 250 original file identities are recorded in
 UPSTREAM.latent.json. `latent-dynamic-memory.patch` applies to that exact
-original package; it contains 37 changed upstream files and 24 added
+original package; it contains 39 changed upstream files and 24 added
 source/license files. Other Wasmtime packages use the matching 48.0.8 locked
 registry versions. The standalone development lock selects Tokio 1.51.6 for
 RUSTSEC-2026-0386; the immutable upstream inventory retains its original lock
@@ -866,3 +866,46 @@ Wasm-trap, future-cancellation, outer-unwind, and setup-refusal controls remain.
 These tests are not signed SpiderMonkey execution or an OS-decommit witness.
 Failed decommit retention and retry are separate obligations; this change does
 not reinterpret the pool's zeroing fallback as successful decommit.
+
+
+## v39: retain failed pooled decommit batches and original allocation guards
+
+A failed `decommit_pages` call no longer returns memory, table, or native-stack
+slots to their free lists. The existing queue keeps the original raw ranges,
+memory images, tables and their original allocation guards, and native stacks.
+A partial syscall failure retains the complete batch: retrying the same unused
+mappings is idempotent, while zeroing a table is not a physical acknowledgement.
+Only a successful decommit consumes the batch. No replacement reservations,
+second failure ledger, dependency pin, or resource limit are introduced.
+
+A refused local flush transfers those same entities to the existing shard.
+Outstanding entries continue to occupy finite pool slots, bounding retained
+backing by the configured pool capacity. Slot-exhaustion paths retry the retained
+shards. Shared-queue decommit runs under its shard lock so failed batches remain
+in place; successful entity release and original owner destructors occur after
+that lock is released. An empty batch issues no syscall and returns no slot.
+
+Pool shutdown now attempts queued decommit in release builds too. If the final
+attempt fails, the existing queues and all pool mappings remain in terminal
+custody until process exit. They are not reused or reported retired. This is
+a bounded fail-closed terminal path, not an unbounded retry worker. Fallible pool
+construction still uses ordinary RAII locals until every sub-pool is built,
+so a setup error does not leak unpublished mappings.
+
+Linux regressions execute actual pooled memory, tables, allocation callbacks,
+and native stacks. Only syscall refusal is injected. They cover repeated and
+partial failure, immediate and batched queues, allocation-pressure retry, clean
+fresh-Store reuse, native-stack-slot refusal/zeroing, and final shutdown refusal.
+The terminal-refusal test deliberately retains one finite pool until process
+exit; it is not a leak-free sanitizer claim.
+
+The compiled `DYNAMIC_VALUE_MEMORY_COHORT` now equals the authenticated source
+manifest cohort. Prepared/AOT engine configuration identity therefore changes
+with this implementation instead of retaining the historical v10 value.
+
+This slice preserves the guards actually held by the pool. It does not keep the
+complete HostState/ActivationRuntime owner table through an unsuccessful Store
+teardown, supply a per-Store physical-retirement receipt, or account all guest
+and host bytes. Non-Linux mapping-reset refusal, signed SpiderMonkey cleanup,
+and complete cross-tenant runtime qualification remain separate obligations.
+The v38 teardown-panic guarantee remains unchanged.

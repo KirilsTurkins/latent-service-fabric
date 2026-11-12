@@ -1,10 +1,11 @@
 //! Bounded diagnostic clock for one signed Go timer edge.
 //! The mock wait registry is test infrastructure, not physical timer evidence.
+//! Use libtest-captured diagnostics; signed qualification selects --nocapture
+//! or --show-output to retain the witnesses without corrupting harness records.
 
 use latent_core::{test_support::TestClock, ActivationClock, ClockSample, SystemActivationClock};
 use std::{
     future::Future,
-    io::Write,
     sync::{
         atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering},
         Mutex,
@@ -95,12 +96,7 @@ impl ZeroClock {
             .unwrap()
             .clone()
             .expect("live original wait waker");
-        writeln!(
-            std::io::stderr().lock(),
-            "LSF-GO-WALL-CLOCK-V1|jump|{}|0",
-            stage
-        )
-        .expect("write wall jump witness");
+        eprintln!("LSF-GO-WALL-CLOCK-V1|jump|{}|0", stage);
         self.wall_requested.store(stage, Ordering::Release);
         waker.wake();
     }
@@ -110,8 +106,7 @@ impl ZeroClock {
         assert_eq!(self.wall_acknowledged.load(Ordering::Acquire), 2);
         self.clock.set_wall_unix_millis(self.wall_base);
         assert_eq!(self.clock.sample().unix_millis(), self.wall_base);
-        writeln!(std::io::stderr().lock(), "LSF-GO-WALL-CLOCK-V1|restore|0")
-            .expect("write wall restore witness");
+        eprintln!("LSF-GO-WALL-CLOCK-V1|restore|0");
     }
 
     pub async fn wall_repolled(&self, stage: u8) {
@@ -210,12 +205,7 @@ impl ZeroClock {
                     assert!(target.armed && self.target_live());
                     assert_eq!(self.clock.monotonic_now(), self.origin);
                     assert_eq!(self.clock.sample().unix_millis(), self.wall_for(requested));
-                    writeln!(
-                        std::io::stderr().lock(),
-                        "LSF-GO-WALL-CLOCK-V1|repoll|{}|0|5",
-                        requested
-                    )
-                    .expect("write wall repoll witness");
+                    eprintln!("LSF-GO-WALL-CLOCK-V1|repoll|{}|0|5", requested);
                     self.wall_acknowledged.store(requested, Ordering::Release);
                     self.notify.notify_one();
                 }
@@ -243,13 +233,10 @@ impl ZeroClock {
                         );
                         reported = true;
                         target.armed = true;
-                        writeln!(
-                            std::io::stderr().lock(),
+                        eprintln!(
                             "LSF-GO-TICKER-CLOCK-V1|wait-pending|{}|{}",
-                            before[stage],
-                            deadlines[stage]
-                        )
-                        .expect("write ticker wait witness");
+                            before[stage], deadlines[stage]
+                        );
                         self.ticker_stage
                             .store((stage + 1) as u8, Ordering::Release);
                         self.notify.notify_one();
@@ -268,11 +255,7 @@ impl ZeroClock {
                 );
                 target.armed = true;
                 self.target_live.store(true, Ordering::Release);
-                writeln!(
-                    std::io::stderr().lock(),
-                    "LSF-GO-ZERO-CLOCK-V1|wait-pending|0|5"
-                )
-                .expect("write zero-clock witness");
+                eprintln!("LSF-GO-ZERO-CLOCK-V1|wait-pending|0|5");
                 self.pending.store(true, Ordering::Release);
                 self.notify.notify_one();
             }

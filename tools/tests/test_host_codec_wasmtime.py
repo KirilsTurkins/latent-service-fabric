@@ -179,8 +179,14 @@ class PinnedWasmtimeSource(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'unregistered-path-dependency'):
                 registry.workspace(root)
 
+    def test_compiled_and_authenticated_source_cohorts_agree(self):
+        compiled = (source.ROOT / source.PROVIDER /
+                    'src/runtime/component/mod.rs').read_text()
+        self.assertIn('pub const DYNAMIC_VALUE_MEMORY_COHORT: &str = "' +
+                      source.COHORT + '";', compiled)
+
     def test_actual_table_hook_sources_and_new_cohort_require_exact_postimages(self):
-        self.assertEqual(source.COHORT, 'wasmtime-48.0.8-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v30-authenticated-bounded-root-suspension-upstream-security-v31-consumer-poll-factory-v32-host-accept-factory-v33-consumer-inner-future-v34-producer-inner-future-v35-sync-ready-callback-v36-inline-runtime-futures-v37-store-custody-panic-v38')
+        self.assertEqual(source.COHORT, 'wasmtime-48.0.8-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v30-authenticated-bounded-root-suspension-upstream-security-v31-consumer-poll-factory-v32-host-accept-factory-v33-consumer-inner-future-v34-producer-inner-future-v35-sync-ready-callback-v36-inline-runtime-futures-v37-store-custody-panic-v38-retained-pool-decommit-v39')
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.fixture(root)
@@ -190,7 +196,9 @@ class PinnedWasmtimeSource(unittest.TestCase):
                          'src/runtime/module/registry.rs',
                          'src/runtime/vm/traphandlers/backtrace.rs',
                          'src/runtime/vm/table.rs',
-                         'src/runtime/vm/instance/allocator/pooling/table_pool.rs'):
+                         'src/runtime/vm/instance/allocator/pooling/table_pool.rs',
+                         'src/runtime/vm/instance/allocator/pooling.rs',
+                         'src/runtime/vm/instance/allocator/pooling/decommit_queue.rs'):
                 with self.subTest(name=name):
                     target = root / source.PROVIDER / name
                     original = target.read_bytes()
