@@ -80,36 +80,86 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
           python "$RUNNER_TEMP/publication-bundle/apply_and_push.py" "$GITHUB_WORKSPACE"
-      - name: Publish tested Git objects on temporary refs only
+      - name: Upload exact validated objects without changing any branch refs
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
-          import json, os, pathlib, subprocess
+          import base64, json, os, pathlib, subprocess
           root = pathlib.Path(os.environ['RUNNER_TEMP'])
+          receipts = root / 'publication-receipts'
+          receipts.mkdir(exist_ok=True)
           manifests = list((root / 'ts-publication').glob('lsf-cleanup-continuation-*/prepared-commits.json'))
           assert len(manifests) == 1
           prepared = json.loads(manifests[0].read_text())
           saved = json.loads((root / 'publication-bundle/manifest.json').read_text())
           branches = [*saved['branches'], saved['engineRestack']]
           assert [r['pr'] for r in prepared] == [1852, 1931, 1934]
-          refs = []
+          (receipts / 'local-tested-commits.json').write_text(json.dumps(prepared, indent=2) + '\n')
+          def git(*args):
+              return subprocess.check_output(['git', *args])
+          def api(endpoint, data):
+              return json.loads(subprocess.check_output([
+                  'gh', 'api', '--method', 'POST',
+                  'repos/KirilsTurkins/latent-service-fabric/' + endpoint,
+                  '--input', '-'
+              ], input=json.dumps(data).encode()))
+          uploaded = set()
+          published = {}
+          results = []
           for item, original in zip(prepared, branches):
-              output = subprocess.check_output(['git', 'ls-remote', '--heads', 'origin', 'refs/heads/' + original['branch']], text=True)
+              output = git('ls-remote', '--heads', 'origin', 'refs/heads/' + original['branch']).decode()
               assert len(output.splitlines()) == 1 and output.split()[0] == original['expectedHead']
-              temporary = 'ci/ts-cleanup-dcfaec0c-' + str(item['pr'])
-              assert not subprocess.check_output(['git', 'ls-remote', '--heads', 'origin', 'refs/heads/' + temporary], text=True).strip()
-              item['expectedHead'] = original['expectedHead']
-              item['temporaryRef'] = temporary
-              refs.append(item['commit'] + ':refs/heads/' + temporary)
-          subprocess.run(['git', '-c', 'credential.helper=', '-c', 'credential.helper=!gh auth git-credential', 'push', '--atomic', 'origin', *refs], check=True)
-          receipts = root / 'publication-receipts'
-          receipts.mkdir(exist_ok=True)
-          (receipts / 'prepared-commits.json').write_text(json.dumps(prepared, indent=2) + '\n')
-          print(json.dumps(prepared, indent=2))
-          print('Tested objects staged. The existing PR branch refs are still unchanged.')
+              commit = item['commit']
+              base = original['expectedHead']
+              local_tree = git('rev-parse', commit + '^{tree}').decode().strip()
+              paths = git('diff-tree', '--no-commit-id', '--name-only', '-r', '-z', base, commit).split(b'\0')
+              entries = []
+              for encoded_path in filter(None, paths):
+                  path = encoded_path.decode()
+                  row = git('ls-tree', '-z', commit, '--', path)
+                  if not row:
+                      old_row = git('ls-tree', '-z', base, '--', path)
+                      mode, kind, sha = old_row.split(b'\t', 1)[0].decode().split()
+                      assert kind == 'blob'
+                      entries.append({'path': path, 'mode': mode, 'type': 'blob', 'sha': None})
+                      continue
+                  mode, kind, sha = row.split(b'\t', 1)[0].decode().split()
+                  assert kind == 'blob'
+                  if sha not in uploaded:
+                      content = git('cat-file', 'blob', sha)
+                      value = api('git/blobs', {'encoding': 'base64', 'content': base64.b64encode(content).decode()})
+                      assert value['sha'] == sha, path
+                      uploaded.add(sha)
+                  entries.append({'path': path, 'mode': mode, 'type': 'blob', 'sha': sha})
+              tree = api('git/trees', {
+                  'base_tree': git('rev-parse', base + '^{tree}').decode().strip(),
+                  'tree': entries,
+              })
+              assert tree['sha'] == local_tree, (item['pr'], tree['sha'], local_tree)
+              raw_commit = git('cat-file', 'commit', commit)
+              headers, message = raw_commit.split(b'\n\n', 1)
+              parents = [line.split()[1].decode() for line in headers.splitlines() if line.startswith(b'parent ')]
+              assert parents[0] == base
+              expected_parents = [published.get(parent, parent) for parent in parents]
+              fields = git('show', '-s', '--format=%an%x00%ae%x00%aI%x00%cn%x00%ce%x00%cI', commit).decode().strip().split('\0')
+              value = api('git/commits', {
+                  'tree': local_tree, 'parents': expected_parents, 'message': message.decode(),
+                  'author': {'name': fields[0], 'email': fields[1], 'date': fields[2]},
+                  'committer': {'name': fields[3], 'email': fields[4], 'date': fields[5]},
+              })
+              assert value['tree']['sha'] == local_tree
+              assert [parent['sha'] for parent in value['parents']] == expected_parents
+              published[commit] = value['sha']
+              result = {'pr': item['pr'], 'branch': item['branch'], 'expectedHead': base,
+                        'commit': value['sha'], 'tree': local_tree, 'parents': expected_parents,
+                        'testedLocalCommit': commit}
+              results.append(result)
+              (receipts / 'prepared-commits.json').write_text(json.dumps(results, indent=2) + '\n')
+              print(json.dumps(result), flush=True)
+          print('All validated Git objects uploaded. Branch publication requires the write-enabled connection; no PR refs changed.')
           PY
       - name: Collect bounded validation logs even on failure
         if: always()
