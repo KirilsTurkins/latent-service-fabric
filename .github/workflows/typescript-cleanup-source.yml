@@ -22,15 +22,33 @@ jobs:
           mkdir -p "$RUNNER_TEMP/cleanup-inputs"
           git archive --format=tar.gz HEAD > "$RUNNER_TEMP/cleanup-inputs/ownership.tar.gz"
           git fetch --no-tags --depth=1 origin aafe9fe575a373aa8333285fc4ca5d5bb6b0805f 152a332a4b0e8ecb862ca0f11ee775a36fd9ef29 d61c36d91837103a3349b4abad3755ecd9699ab4
-          git archive --format=tar.gz aafe9fe575a373aa8333285fc4ca5d5bb6b0805f > "$RUNNER_TEMP/cleanup-inputs/parent.tar.gz"
           git diff --binary d61c36d91837103a3349b4abad3755ecd9699ab4 aafe9fe575a373aa8333285fc4ca5d5bb6b0805f > "$RUNNER_TEMP/cleanup-inputs/parent.patch"
           git diff --binary d61c36d91837103a3349b4abad3755ecd9699ab4 152a332a4b0e8ecb862ca0f11ee775a36fd9ef29 > "$RUNNER_TEMP/cleanup-inputs/engine.patch"
           git rev-parse HEAD > "$RUNNER_TEMP/cleanup-inputs/ownership-head.txt"
           cd "$RUNNER_TEMP/cleanup-inputs"
-          sha256sum ownership.tar.gz parent.tar.gz parent.patch engine.patch > SHA256SUMS
+          sha256sum ownership.tar.gz parent.patch engine.patch > SHA256SUMS
       - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
         with:
           name: typescript-cleanup-continuation-${{ github.sha }}
           path: ${{ runner.temp }}/cleanup-inputs/
+          retention-days: 3
+          if-no-files-found: error
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          components: rustfmt
+      - name: Acquire unchanged locked dependency inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo fetch --locked
+          tar -czf "$RUNNER_TEMP/cleanup-registry.tar.gz" -C "$CARGO_HOME" registry/cache registry/index
+          sysroot=$(rustc --print sysroot)
+          tar -czf "$RUNNER_TEMP/cleanup-rustfmt.tar.gz" -C "$sysroot" bin/rustfmt
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: typescript-cleanup-registry-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/cleanup-registry.tar.gz
+            ${{ runner.temp }}/cleanup-rustfmt.tar.gz
           retention-days: 3
           if-no-files-found: error
