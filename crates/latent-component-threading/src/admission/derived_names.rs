@@ -5,8 +5,8 @@
 //! after that remap. Do not sort those rows: their bytes are part of the complete
 //! source proof. This helper is not used by the public linked-core transform.
 use wasm_encoder::{
-    IndirectNameMap, NameMap, NameSection,
     reencode::{self, Reencode},
+    IndirectNameMap, NameMap, NameSection,
 };
 use wasmparser::Name;
 

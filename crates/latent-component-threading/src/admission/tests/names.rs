@@ -22,22 +22,33 @@ fn named(kind: u8, outer: &[u32], inner: &[u32]) -> NameSection {
         indirect.append(index, &locals);
     }
     match kind {
-        1 => { names.functions(&direct); }
-        2 => { names.locals(&indirect); }
-        3 => { names.labels(&indirect); }
-        4 => { names.types(&direct); }
+        1 => {
+            names.functions(&direct);
+        }
+        2 => {
+            names.locals(&indirect);
+        }
+        3 => {
+            names.labels(&indirect);
+        }
+        4 => {
+            names.types(&direct);
+        }
         _ => unreachable!(),
     }
     names
 }
 
 fn payload(input: &[u8]) -> Vec<u8> {
-    Parser::new(0).parse_all(input).find_map(|p| match p.unwrap() {
-        Payload::CustomSection(section) if section.name() == "name" => {
-            Some(section.data().to_vec())
-        }
-        _ => None,
-    }).unwrap()
+    Parser::new(0)
+        .parse_all(input)
+        .find_map(|p| match p.unwrap() {
+            Payload::CustomSection(section) if section.name() == "name" => {
+                Some(section.data().to_vec())
+            }
+            _ => None,
+        })
+        .unwrap()
 }
 
 #[test]
@@ -111,7 +122,12 @@ fn raw_rows_still_require_complete_bounded_syntax() {
     for kind in [1, 2, 3] {
         // A declared row with no index; an overflowing index; an incomplete
         // string/inner map; and a complete empty map with trailing data.
-        for malformed in [&[1][..], &[1, 0xff, 0xff, 0xff, 0xff, 0x10], &[1, 0], &[0, 0]] {
+        for malformed in [
+            &[1][..],
+            &[1, 0xff, 0xff, 0xff, 0xff, 0x10],
+            &[1, 0],
+            &[0, 0],
+        ] {
             let mut names = NameSection::new();
             names.raw(kind, malformed);
             let input = with_names(&names);
@@ -132,7 +148,11 @@ fn internal_name_compatibility_never_bypasses_preimage_or_executable_shape_check
     );
     for (native, correct, expected) in [
         (false, true, "rust-child-admission-native-import-missing"),
-        (true, false, "rust-child-admission-native-signature-or-duplicate"),
+        (
+            true,
+            false,
+            "rust-child-admission-native-signature-or-duplicate",
+        ),
     ] {
         let input = fixture(native, correct);
         assert_eq!(
