@@ -1,0 +1,133 @@
+name: Publish reviewed TypeScript cleanup patches
+on:
+  push:
+    branches: [ci/ts-cleanup-publish-dcfaec0c]
+    paths: [.github/workflows/ts-cleanup-publish-dcfaec0c.yml]
+permissions:
+  contents: write
+concurrency:
+  group: ts-cleanup-publish-dcfaec0c
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/ts-cleanup-publish-dcfaec0c'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+      RUSTUP_TOOLCHAIN: 1.97.1
+      LSF_TYPESCRIPT_RECORD_CXX: clang++
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          components: rustfmt
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
+        with:
+          python-version: 3.13.5
+      - name: Install maintained Python validation dependencies
+        run: python -m pip install --requirement tools/requirements.lock
+      - name: Recover and authenticate the exact saved delivery bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64, hashlib, json, lzma, os, pathlib, subprocess
+          chunks = [
+              '0a4fd1bbe5ba06155b3a3d0c86140c914169679a',
+              '4cafb750abffa3d1378e20df5bcaf51265e6ba40',
+              '43306a25a51feeeac5ed638e5c010176adca9784',
+              'c006244e7270ea4fc80631b532b7ba69f7c7c554',
+          ]
+          packed = bytearray()
+          for sha in chunks:
+              value = json.loads(subprocess.check_output([
+                  'gh', 'api', 'repos/KirilsTurkins/latent-service-fabric/git/blobs/' + sha
+              ], text=True))
+              data = base64.b64decode(value['content'])
+              actual = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+              assert value['encoding'] == 'base64' and actual == sha
+              packed.extend(data)
+          assert hashlib.sha256(packed).hexdigest() == 'fd36c86c556c24160224ad7abe66d515c78393602717a755a57bb82c4679a203'
+          decoded = lzma.decompress(packed)
+          assert hashlib.sha256(decoded).hexdigest() == 'dcfaec0c62b718018d025ffaf3684d381db6860330ba6284328e060ff9a426ae'
+          payload = json.loads(decoded)
+          assert set(payload) == {'manifest.json', 'apply_and_push.py', 'patches/1852.patch', 'patches/1931.patch'}
+          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'publication-bundle'
+          for name, content in payload.items():
+              path = root / name
+              assert path.resolve().is_relative_to(root.resolve())
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_text(content, encoding='utf-8')
+          print('Saved delivery bundle authenticated; no PR branch has been changed.')
+          PY
+          python "$RUNNER_TEMP/publication-bundle/apply_and_push.py" --verify-only
+      - name: Apply to genuine history, restack, validate and prepare commits
+        env:
+          TMPDIR: ${{ runner.temp }}/ts-publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$TMPDIR"
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          python "$RUNNER_TEMP/publication-bundle/apply_and_push.py" "$GITHUB_WORKSPACE"
+      - name: Publish tested Git objects on temporary refs only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, pathlib, subprocess
+          root = pathlib.Path(os.environ['RUNNER_TEMP'])
+          manifests = list((root / 'ts-publication').glob('lsf-cleanup-continuation-*/prepared-commits.json'))
+          assert len(manifests) == 1
+          prepared = json.loads(manifests[0].read_text())
+          saved = json.loads((root / 'publication-bundle/manifest.json').read_text())
+          branches = [*saved['branches'], saved['engineRestack']]
+          assert [r['pr'] for r in prepared] == [1852, 1931, 1934]
+          refs = []
+          for item, original in zip(prepared, branches):
+              output = subprocess.check_output(['git', 'ls-remote', '--heads', 'origin', 'refs/heads/' + original['branch']], text=True)
+              assert len(output.splitlines()) == 1 and output.split()[0] == original['expectedHead']
+              temporary = 'ci/ts-cleanup-dcfaec0c-' + str(item['pr'])
+              assert not subprocess.check_output(['git', 'ls-remote', '--heads', 'origin', 'refs/heads/' + temporary], text=True).strip()
+              item['expectedHead'] = original['expectedHead']
+              item['temporaryRef'] = temporary
+              refs.append(item['commit'] + ':refs/heads/' + temporary)
+          subprocess.run(['git', '-c', 'credential.helper=', '-c', 'credential.helper=!gh auth git-credential', 'push', '--atomic', 'origin', *refs], check=True)
+          receipts = root / 'publication-receipts'
+          receipts.mkdir(exist_ok=True)
+          (receipts / 'prepared-commits.json').write_text(json.dumps(prepared, indent=2) + '\n')
+          print(json.dumps(prepared, indent=2))
+          print('Tested objects staged. The existing PR branch refs are still unchanged.')
+          PY
+      - name: Collect bounded validation logs even on failure
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os, pathlib, shutil
+          root = pathlib.Path(os.environ['RUNNER_TEMP'])
+          out = root / 'publication-receipts'
+          out.mkdir(exist_ok=True)
+          for work in (root / 'ts-publication').glob('lsf-cleanup-continuation-*'):
+              for path in work.glob('*.log'):
+                  shutil.copy2(path, out / path.name)
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        if: always()
+        with:
+          name: typescript-cleanup-publication-${{ github.sha }}
+          path: ${{ runner.temp }}/publication-receipts/
+          retention-days: 7
+          if-no-files-found: warn
