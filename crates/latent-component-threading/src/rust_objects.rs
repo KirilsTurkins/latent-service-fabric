@@ -1873,7 +1873,8 @@ fn derive_source_core_with_limits(
     {
         return Err("rust-source-derived-reservation-drift");
     }
-    let (derived, _) = super::transform_owned_thread_admission(&rooted, root.derived_digest)?;
+    let (derived, _) =
+        super::admission::transform_derived_thread_admission(&rooted, root.derived_digest)?;
     let derived = if adapt_wit {
         super::rust_component::adapt_original_public_wit(&derived)?
     } else {
