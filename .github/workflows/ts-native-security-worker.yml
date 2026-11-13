@@ -30,6 +30,10 @@ jobs:
           echo "CARGO_TARGET_DIR=$RUNNER_TEMP/native-target" >> "$GITHUB_ENV"
           curl --fail --location --proto '=https' --tlsv1.2 --max-time 90 https://raw.githubusercontent.com/KirilsTurkins/latent-service-fabric/8db5d1dc1cade8cb9645dd446631d51a140e725b/tools/ci_native_security_refresh_20261113.py -o "$RUNNER_TEMP/native-refresh.py"
           echo "74a00ed959ea2aeedd52bd33a6de72528e176fbe67678ee0acbce5f95d7ce667  $RUNNER_TEMP/native-refresh.py" | sha256sum --check --strict
+          curl --fail --location --proto '=https' --tlsv1.2 --max-time 90 https://raw.githubusercontent.com/KirilsTurkins/latent-service-fabric/6652cde1b7d471bcd6838d537f6e9a2b950b3a4e/tools/ci_security_refresh_adjustments.py -o "$RUNNER_TEMP/adjust-drivers.py"
+          echo "4b9f3479a204fe06435b6b16bfe8e1ebec989054db5bcab63e93588079b3a7e7  $RUNNER_TEMP/adjust-drivers.py" | sha256sum --check --strict
+          python "$RUNNER_TEMP/adjust-drivers.py" native "$RUNNER_TEMP/native-refresh.py"
+          echo "3097637c859ac5b6c06e4de36ae102bbcc409b43a9416134bf09513ab61a727c  $RUNNER_TEMP/native-refresh.py" | sha256sum --check --strict
           curl --fail --location --proto '=https' --tlsv1.2 --max-time 180 https://dl.google.com/go/go1.27.4.linux-amd64.tar.gz -o "$RUNNER_TEMP/go.tar.gz"
           echo "7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840  $RUNNER_TEMP/go.tar.gz" | sha256sum --check --strict
           mkdir "$RUNNER_TEMP/go-original"
@@ -96,7 +100,7 @@ jobs:
             repo='KirilsTurkins/lsf-'+role
             result={'role':role,'repository':repo}
             try:
-              data=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/actions/runs?branch=fix%2Ffastxml-20261113&per_page=5'],text=True))
+              data=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/actions/runs?branch=fix%2Ffastxml-20261113&per_page=30'],text=True))
               run=next(r for r in data['workflow_runs'] if r['path']=='.github/workflows/lsf-fastxml-refresh.yml')
               result.update(run=run['id'],head=run['head_sha'],status=run['status'],conclusion=run['conclusion'])
               jobs=json.loads(subprocess.check_output(['gh','api',run['jobs_url']],text=True));result['jobs']=[{'id':j['id'],'name':j['name'],'conclusion':j['conclusion']} for j in jobs['jobs']]
