@@ -1,0 +1,49 @@
+name: Reviewed action XML security rebuild owner
+on:
+  workflow_call:
+    inputs:
+      reviewed-base:
+        type: string
+        required: true
+permissions:
+  contents: write
+jobs:
+  rebuild:
+    if: github.repository_owner == 'KirilsTurkins' && github.ref == 'refs/heads/ci/fast-xml-5-12-20261113'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      REVIEWED_BASE: ${{ inputs.reviewed-base }}
+      CI: 'true'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6
+        with:
+          node-version: 24.19.0
+          package-manager-cache: false
+      - name: Authenticate reviewed rebuild driver
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --max-time 120 --output "$RUNNER_TEMP/action_xml_repair_v2.py" https://raw.githubusercontent.com/KirilsTurkins/latent-service-fabric/591f697aa19cc14f3ef5842820761068ff695b04/.github/maintenance/action_xml_repair_v2.py
+          test "$(git hash-object "$RUNNER_TEMP/action_xml_repair_v2.py")" = d16d65b1a7c1a3fa3478505b7c9053170035963c
+      - name: Build and run unchanged behavioral and tamper controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/xml-repair-evidence"
+          python3 "$RUNNER_TEMP/action_xml_repair_v2.py" build 2>&1 | tee "$RUNNER_TEMP/xml-repair-evidence/validation.log"
+      - name: Export tested objects without updating existing refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 "$RUNNER_TEMP/action_xml_repair_v2.py" upload
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        if: always()
+        with:
+          name: xml-security-${{ github.event.repository.name }}
+          path: ${{ runner.temp }}/xml-repair-evidence/
+          retention-days: 7
+          if-no-files-found: error
