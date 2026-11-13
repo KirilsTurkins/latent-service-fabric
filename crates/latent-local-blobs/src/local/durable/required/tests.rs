@@ -61,8 +61,7 @@ fn fixture(extra_metadata: usize, maximum_work: usize) -> Fixture {
         maximum_metadata_bytes: OWNER_BYTES + extra_metadata,
         maximum_work,
     };
-    let owner =
-        LocalBlobStore::open_durable(blob_root.path(), "private", limits, &state).unwrap();
+    let owner = LocalBlobStore::open_durable(blob_root.path(), "private", limits, &state).unwrap();
     Fixture {
         owner,
         state,
@@ -75,7 +74,12 @@ fn tenant() -> TenantId {
 }
 fn put(owner: &LocalBlobStore, bytes: &[u8]) -> BlobReference {
     let mut writer = owner
-        .create(&tenant(), "text/plain", Some(bytes.len() as u64), &|| Ok(()))
+        .create(
+            &tenant(),
+            "text/plain",
+            Some(bytes.len() as u64),
+            &|| Ok(()),
+        )
         .unwrap();
     writer.write(0, bytes, &|| Ok(())).unwrap();
     writer.seal(&|| Ok(())).unwrap()
@@ -172,7 +176,10 @@ fn page_capacity_refusal_is_terminal_and_refunds_only_its_own_reservation() {
         Err(LocalBlobError::Capacity)
     );
     assert_eq!(fixture.owner.snapshot().unwrap(), before);
-    assert_eq!(next(&mut cursor, &fixture, &view), Err(LocalBlobError::PermissionDenied));
+    assert_eq!(
+        next(&mut cursor, &fixture, &view),
+        Err(LocalBlobError::PermissionDenied)
+    );
     drop(cursor);
     let mut fresh = RequiredBlobInventory::begin(&fixture.owner, &view).unwrap();
     assert_eq!(next(&mut fresh, &fixture, &view), Ok((0, true)));
@@ -267,10 +274,7 @@ fn failed_or_panicking_empty_completion_refunds_scratch_but_cannot_resume() {
                     let expected = base.metadata_bytes
                         + CURSOR_BYTES
                         + page_bytes(1, MAX_REFERENCE_BYTES).unwrap();
-                    assert_eq!(
-                        fixture.owner.snapshot().unwrap().metadata_bytes,
-                        expected
-                    );
+                    assert_eq!(fixture.owner.snapshot().unwrap().metadata_bytes, expected);
                     assert!(!unwind, "injected completion unwind");
                     return Err(LocalBlobError::DeadlineExceeded);
                 }
@@ -304,8 +308,14 @@ fn publication_between_pages_invalidates_the_original_physical_observation() {
     let mut cursor = RequiredBlobInventory::begin(&fixture.owner, &view).unwrap();
     assert_eq!(next(&mut cursor, &fixture, &view), Ok((1, false)));
     put(&fixture.owner, b"other");
-    assert_eq!(next(&mut cursor, &fixture, &view), Err(LocalBlobError::Busy));
-    assert_eq!(next(&mut cursor, &fixture, &view), Err(LocalBlobError::PermissionDenied));
+    assert_eq!(
+        next(&mut cursor, &fixture, &view),
+        Err(LocalBlobError::Busy)
+    );
+    assert_eq!(
+        next(&mut cursor, &fixture, &view),
+        Err(LocalBlobError::PermissionDenied)
+    );
 }
 
 #[test]
@@ -326,7 +336,10 @@ fn empty_completion_cannot_ignore_a_publication_from_its_final_checkpoint() {
     );
     assert_eq!(calls.get(), 2);
     assert_eq!(fixture.owner.snapshot().unwrap().objects, 1);
-    assert_eq!(next(&mut cursor, &fixture, &view), Err(LocalBlobError::PermissionDenied));
+    assert_eq!(
+        next(&mut cursor, &fixture, &view),
+        Err(LocalBlobError::PermissionDenied)
+    );
 }
 
 #[test]
@@ -352,18 +365,28 @@ fn substituting_a_view_or_owner_invalidates_the_original_cursor() {
 fn required_file_failure_never_completes_or_refunds_the_cursor_early() {
     let fixture = fixture(512 * 1024, 2);
     let blob = retain(&fixture);
-    let record =
-        crate::local::ReferenceRecord::requested("private", &tenant(), &blob, 16).unwrap();
+    let record = crate::local::ReferenceRecord::requested("private", &tenant(), &blob, 16).unwrap();
     let view = fixture.state.snapshot().unwrap();
     let mut cursor = RequiredBlobInventory::begin(&fixture.owner, &view).unwrap();
     let before = fixture.owner.snapshot().unwrap();
     std::fs::remove_file(
-        fixture.blob_root.path().join("objects").join(record.key()).join("data"),
+        fixture
+            .blob_root
+            .path()
+            .join("objects")
+            .join(record.key())
+            .join("data"),
     )
     .unwrap();
-    assert_eq!(next(&mut cursor, &fixture, &view), Err(LocalBlobError::Corrupt));
+    assert_eq!(
+        next(&mut cursor, &fixture, &view),
+        Err(LocalBlobError::Corrupt)
+    );
     assert_eq!(fixture.owner.snapshot().unwrap(), before);
-    assert_eq!(next(&mut cursor, &fixture, &view), Err(LocalBlobError::PermissionDenied));
+    assert_eq!(
+        next(&mut cursor, &fixture, &view),
+        Err(LocalBlobError::PermissionDenied)
+    );
     drop(cursor);
     assert_eq!(fixture.owner.snapshot().unwrap().active_work, 0);
     assert_eq!(
@@ -384,7 +407,10 @@ fn invalid_page_bounds_and_owner_close_cannot_publish_empty_completion() {
             Err(LocalBlobError::Capacity)
         );
         assert_eq!(fixture.owner.snapshot().unwrap(), before);
-        assert_eq!(next(&mut cursor, &fixture, &view), Err(LocalBlobError::PermissionDenied));
+        assert_eq!(
+            next(&mut cursor, &fixture, &view),
+            Err(LocalBlobError::PermissionDenied)
+        );
     }
     let mut cursor = RequiredBlobInventory::begin(&fixture.owner, &view).unwrap();
     let calls = Cell::new(0);
@@ -399,7 +425,10 @@ fn invalid_page_bounds_and_owner_close_cannot_publish_empty_completion() {
         Err(LocalBlobError::Closed)
     );
     assert_eq!(calls.get(), 2);
-    assert_eq!(next(&mut cursor, &fixture, &view), Err(LocalBlobError::PermissionDenied));
+    assert_eq!(
+        next(&mut cursor, &fixture, &view),
+        Err(LocalBlobError::PermissionDenied)
+    );
     assert_eq!(fixture.owner.snapshot().unwrap().active_work, 1);
     drop(cursor);
     assert_eq!(fixture.owner.snapshot().unwrap().active_work, 0);
