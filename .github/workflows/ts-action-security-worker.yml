@@ -45,4 +45,5 @@ jobs:
           name: action-security-${{ inputs.role }}
           path: ${{ runner.temp }}/action-security-evidence/
           retention-days: 7
+          include-hidden-files: true
           if-no-files-found: error
