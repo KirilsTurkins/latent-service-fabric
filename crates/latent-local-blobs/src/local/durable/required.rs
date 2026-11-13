@@ -29,7 +29,11 @@ fn page_bytes(rows: usize, bytes: usize) -> Result<usize> {
 
 pub(super) fn validate_binding(store: &LocalBlobStore, view: &ReadView) -> Result<()> {
     store.check_owner()?;
-    let mode = store.inner.durable.as_ref().ok_or(LocalBlobError::Invalid)?;
+    let mode = store
+        .inner
+        .durable
+        .as_ref()
+        .ok_or(LocalBlobError::Invalid)?;
     let binding = store
         .inner
         .durable_binding
