@@ -1,0 +1,62 @@
+name: Collect owned action XML repair receipts
+on:
+  push:
+    branches: [ci/typescript-stack-ci-repair-20261113]
+    paths: [.github/workflows/ci-xml-repair-observations.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  collect:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/typescript-stack-ci-repair-20261113'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Collect current finite rebuild evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib,subprocess
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'xml-receipts';out.mkdir()
+          names=['cache','deploy-pages','download-artifact','rust-cache','setup-dotnet','setup-go','setup-java','setup-node','setup-python','setup-zig','upload-artifact']
+          def api(repo,path):return json.loads(subprocess.check_output(['gh','api','repos/'+repo+'/'+path],timeout=90))
+          statuses={}
+          for short in names:
+              repo='KirilsTurkins/lsf-'+short
+              runs=api(repo,'actions/runs?branch=ci%2Ffast-xml-parser-5.12.0-20261113&per_page=20')['workflow_runs']
+              matches=[r for r in runs if r['path']=='.github/workflows/lsf-fast-xml-security.yml']
+              if not matches:statuses[repo]={'status':'no-run'};continue
+              run=matches[0];target=out/('lsf-'+short);target.mkdir()
+              jobs=api(repo,f"actions/runs/{run['id']}/jobs")['jobs']
+              status={k:run[k] for k in ('id','head_sha','status','conclusion','run_attempt')}
+              status['jobs']=jobs
+              artifacts=api(repo,f"actions/runs/{run['id']}/artifacts")['artifacts']
+              status['artifacts']=artifacts
+              for artifact in artifacts:
+                  if not artifact['name'].startswith('fast-xml-parser-repair-'):continue
+                  result=subprocess.run(['gh','api',f"repos/{repo}/actions/artifacts/{artifact['id']}/zip"],capture_output=True,timeout=90)
+                  if result.returncode:
+                      (target/'artifact-acquisition-error.txt').write_bytes(result.stderr)
+                  else:
+                      assert len(result.stdout)<=32*1024*1024
+                      assert 'sha256:'+hashlib.sha256(result.stdout).hexdigest()==artifact['digest']
+                      (target/'evidence.zip').write_bytes(result.stdout)
+              for job in jobs:
+                  if job['conclusion']!='failure':continue
+                  result=subprocess.run(['gh','api','--allow-escape-sequences',f"repos/{repo}/actions/jobs/{job['id']}/logs"],capture_output=True,timeout=90)
+                  if result.returncode==0:(target/'failure.log').write_bytes(result.stdout[-150000:])
+              statuses[repo]=status
+              (out/'statuses.json').write_text(json.dumps(statuses,indent=2)+'\n')
+          print(json.dumps({k:{p:v.get(p) for p in ('id','status','conclusion')} for k,v in statuses.items()},indent=2))
+          PY
+      - name: Retain observed results
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: owned-xml-repair-observations-${{ github.sha }}
+          path: ${{ runner.temp }}/xml-receipts/
+          retention-days: 7
+          if-no-files-found: error
