@@ -1,0 +1,48 @@
+name: Maintained action XML security rebuild
+on:
+  workflow_call:
+    inputs:
+      role:
+        required: true
+        type: string
+      base:
+        required: true
+        type: string
+permissions:
+  contents: write
+jobs:
+  rebuild:
+    if: github.repository_owner == 'KirilsTurkins' && github.ref == 'refs/heads/fix/fastxml-20261113'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: ${{ inputs.base }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6
+        with:
+          node-version: 24.19.0
+      - name: Acquire exact reviewed maintenance driver
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --proto '=https' --tlsv1.2 --max-time 90 https://raw.githubusercontent.com/KirilsTurkins/latent-service-fabric/c2c6f6a4222e311427d67f1cbdd24fc665cbd582/tools/ci_action_security_refresh_20261113.py -o "$RUNNER_TEMP/action-refresh.py"
+          echo "f925f337ee6847e35647b9a11273f5809c74aec82747ea0b680a7c2441ebdd45  $RUNNER_TEMP/action-refresh.py" | sha256sum --check --strict
+      - name: Reproduce, upgrade, rebuild and run existing controls
+        env:
+          ROLE: ${{ inputs.role }}
+        run: python "$RUNNER_TEMP/action-refresh.py" prepare "$ROLE"
+      - name: Export exact tested objects without changing any refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ROLE: ${{ inputs.role }}
+        run: python "$RUNNER_TEMP/action-refresh.py" export "$ROLE"
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        if: always()
+        with:
+          name: action-security-${{ inputs.role }}
+          path: ${{ runner.temp }}/action-security-evidence/
+          retention-days: 7
+          if-no-files-found: error
