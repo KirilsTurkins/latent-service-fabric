@@ -11,6 +11,8 @@ use latent_state::{
     embedded::{AtomicBatch, EmbeddedStore, ExpectedRow, RowMutation, StoreLimits},
     tenant::TenantRecord,
 };
+#[cfg(target_os = "linux")]
+use std::os::unix::fs::PermissionsExt;
 use std::{
     sync::{
         atomic::{AtomicU64, Ordering},
@@ -18,6 +20,12 @@ use std::{
     },
     time::{Duration, Instant},
 };
+
+#[cfg(target_os = "linux")]
+fn digest(text: &str) -> [u8; 32] {
+    let text = text.strip_prefix("sha256:").unwrap();
+    std::array::from_fn(|index| u8::from_str_radix(&text[index * 2..index * 2 + 2], 16).unwrap())
+}
 
 struct Clock {
     start: Instant,
@@ -213,6 +221,100 @@ fn standalone_refuses_unverified_required_payload_rows() {
     for (key, bytes) in page.rows {
         assert_eq!(reject_unverified_payload(&key, &bytes), Ok(()));
     }
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn qualified_payload_owner_checks_provider_identity_and_physical_bytes() {
+    use latent_blobs::local::{LocalBlobLimits, LocalBlobStore};
+    use latent_state::payload_references::{
+        LocalPayloadIdentity, PayloadOwner, PayloadOwnerKind, PayloadReference,
+        PreparedPayloadReferences,
+    };
+    let fixture = Fixture::new();
+    fixture.initialize_identity();
+    let root = tempfile::tempdir().unwrap();
+    std::fs::set_permissions(root.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+    let store = LocalBlobStore::open_durable(
+        root.path(),
+        "private",
+        LocalBlobLimits::default(),
+        &fixture.store,
+    )
+    .unwrap();
+    let tenant = TenantId("tenant".into());
+    let mut writer = store
+        .create(&tenant, "text/plain", Some(4), &|| Ok(()))
+        .unwrap();
+    writer.write(0, b"data", &|| Ok(())).unwrap();
+    let blob = writer.seal(&|| Ok(())).unwrap();
+    let mode: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(root.path().join("DURABLE.json")).unwrap()).unwrap();
+    let reference = PayloadReference {
+        owner: PayloadOwner {
+            tenant: tenant.0.clone(),
+            namespace: "business".into(),
+            incarnation: 1,
+            kind: PayloadOwnerKind::Result,
+            identity: [1; 32],
+            generation: 1,
+            format: "v1".into(),
+        },
+        payload: LocalPayloadIdentity {
+            tenant: tenant.0.clone(),
+            provider: "local".into(),
+            provider_epoch: 3,
+            provider_configuration: digest(mode["configurationDigest"].as_str().unwrap()),
+            blob_namespace: "private".into(),
+            digest: digest(&blob.digest.0),
+            size: blob.size_bytes,
+            media_type: blob.media_type.clone(),
+        },
+    };
+    let view = fixture.store.snapshot().unwrap();
+    let plan =
+        PreparedPayloadReferences::prepare(&view, &[(None, Some(reference.clone()))]).unwrap();
+    let mut batch = AtomicBatch::default();
+    plan.append_to(&mut batch).unwrap();
+    drop(view);
+    fixture.store.apply(batch).unwrap();
+    let view = fixture.store.snapshot().unwrap();
+    let key = reference.owner_key().unwrap();
+    let bytes = view.get(&key).unwrap().unwrap();
+    let mut provider = crate::config::ProviderIdentity {
+        id: "local".into(),
+        tenant: tenant.0.clone(),
+        service: "blob".into(),
+        epoch: 3,
+    };
+    let verify = |provider: &crate::config::ProviderIdentity| {
+        LocalPayloadVerifier {
+            store: &store,
+            provider,
+            original: &fixture.original,
+        }
+        .verify(&view, &key, &bytes)
+    };
+    assert_eq!(verify(&provider), Ok(()));
+    provider.epoch = 4;
+    assert_eq!(verify(&provider), Err(StoreError::UnsupportedFormat));
+    provider.epoch = 3;
+    provider.id = "other".into();
+    assert_eq!(verify(&provider), Err(StoreError::UnsupportedFormat));
+    provider.id = "local".into();
+    provider.tenant = "other".into();
+    assert_eq!(verify(&provider), Err(StoreError::UnsupportedFormat));
+    provider.tenant = tenant.0.clone();
+    let object = std::fs::read_dir(root.path().join("objects"))
+        .unwrap()
+        .next()
+        .unwrap()
+        .unwrap()
+        .path();
+    std::fs::write(object.join("data"), b"wrong").unwrap();
+    assert_eq!(verify(&provider), Err(StoreError::Corrupt));
+    std::fs::remove_file(object.join("data")).unwrap();
+    assert!(verify(&provider).is_err());
 }
 
 #[test]

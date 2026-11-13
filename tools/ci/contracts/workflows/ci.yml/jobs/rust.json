@@ -190,6 +190,15 @@
         "timeout-minutes": 12
       },
       {
+        "env": {
+          "TMPDIR": "${{ runner.temp }}"
+        },
+        "if": "matrix.lane == 'qualification'",
+        "name": "Verify linked local payload recovery and corruption refusal",
+        "run": "python3 tools/qualify_local_payload_recovery.py",
+        "timeout-minutes": 15
+      },
+      {
         "if": "always() && matrix.lane == 'qualification'",
         "name": "Retain the bounded Phase 3 security receipt",
         "uses": "KirilsTurkins/lsf-upload-artifact",
@@ -465,7 +474,7 @@
   },
   "jobId": "rust",
   "kind": "job",
-  "reviewReason": "Retry the pinned compiler asset and use the same verified public release as a bounded fallback.",
+  "reviewReason": "Preserve bounded retention lanes while retrying and verifying the pinned compiler asset.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }

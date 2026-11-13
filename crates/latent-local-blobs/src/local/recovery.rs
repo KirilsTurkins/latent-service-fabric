@@ -7,11 +7,17 @@ use super::{
     OWNER_BYTES, RECORD_BYTES, STAGE_BYTES,
 };
 
+// A filename alone is not a valid release record. Keep publication and recovery
+// on the same exact, versioned bytes; malformed markers never authorize removal.
+pub(super) const RELEASE_MARKER: &[u8] = b"LSF blob reference released v1\n";
+
 pub(super) fn open(
     path: &Path,
     namespace: &str,
     limits: LocalBlobLimits,
+    checkpoint: &dyn Fn() -> Result<()>,
 ) -> Result<Arc<LocalBlobStore>> {
+    checkpoint()?;
     let root = Directory::root(path)?;
     let lock = root.open_file("LOCK", true, !root.present("LOCK")?, 0)?;
     lock.try_lock().map_err(|_| LocalBlobError::Busy)?;
@@ -56,6 +62,7 @@ pub(super) fn open(
         state: Mutex::new(State::default()),
         handles: AtomicUsize::new(0),
         work: AtomicUsize::new(0),
+        inventory_bytes: AtomicUsize::new(0),
         publishing: AtomicBool::new(false),
         pending_objects: AtomicUsize::new(0),
         poisoned: AtomicBool::new(false),
@@ -64,15 +71,16 @@ pub(super) fn open(
         durable,
         durable_binding: None,
     });
-    let state = recover_inventory(&inner)?;
+    let state = recover_inventory(&inner, checkpoint)?;
     // Re-establish the directory durability boundary before admitting recovered
     // references, including a rename that may have outlived a lost response.
     inner.objects.sync()?;
     inner.staging.sync()?;
+    checkpoint()?;
     *inner.state()? = state;
     Ok(Arc::new(LocalBlobStore { inner }))
 }
-fn recover_inventory(inner: &Inner) -> Result<State> {
+fn recover_inventory(inner: &Inner, checkpoint: &dyn Fn() -> Result<()>) -> Result<State> {
     let limits = inner.limits;
     let mut state = State {
         durable_mode: inner.durable.is_some(),
@@ -81,12 +89,18 @@ fn recover_inventory(inner: &Inner) -> Result<State> {
     let object_capacity = limits
         .maximum_objects
         .min((limits.maximum_metadata_bytes - OWNER_BYTES) / OBJECT_BYTES);
-    for key in inner.objects.names(object_capacity)? {
+    // Refuse an oversized directory before hashing any of its objects. The
+    // second walk rechecks the same cap without keeping all names in memory.
+    inner
+        .objects
+        .visit_names(object_capacity, |_| checkpoint())?;
+    inner.objects.visit_names(object_capacity, |key| {
+        checkpoint()?;
         inner.room(&state, OBJECT_BYTES)?;
-        if !model::hex(&key, 64) {
+        if !model::hex(key, 64) {
             return Err(LocalBlobError::Corrupt);
         }
-        let directory = inner.objects.child(&key, false)?;
+        let directory = inner.objects.child(key, false)?;
         let names = inventory(&directory, true, limits.maximum_object_bytes)?;
         let released = names.is_empty() || names.iter().any(|n| n == "RELEASED");
         let object = if released {
@@ -107,7 +121,7 @@ fn recover_inventory(inner: &Inner) -> Result<State> {
             let source: StageRecord = parse(&directory, "STAGE.json")?;
             validate_stage(&source, &reference, limits.maximum_object_bytes)?;
             state.next = state.next.max(source.id);
-            let (_, identity) = read::verify(&directory, &reference, &|| Ok(()))?;
+            let (_, identity) = read::verify(&directory, &reference, checkpoint)?;
             state.referenced += 1;
             Object {
                 bytes: reference.size,
@@ -124,21 +138,26 @@ fn recover_inventory(inner: &Inner) -> Result<State> {
             .checked_add(object.bytes)
             .filter(|n| *n <= limits.maximum_disk_bytes)
             .ok_or(LocalBlobError::Capacity)?;
-        state.objects.insert(key, Arc::new(object));
-    }
+        state.objects.insert(key.to_owned(), Arc::new(object));
+        Ok(())
+    })?;
     let stage_capacity = limits
         .maximum_stages
         .min((limits.maximum_metadata_bytes - inner.metadata(&state)?) / STAGE_BYTES);
-    for name in inner.staging.names(stage_capacity)? {
+    inner
+        .staging
+        .visit_names(stage_capacity, |_| checkpoint())?;
+    inner.staging.visit_names(stage_capacity, |name| {
+        checkpoint()?;
         inner.room(&state, STAGE_BYTES)?;
-        if !model::hex(&name, 16) {
+        if !model::hex(name, 16) {
             return Err(LocalBlobError::Corrupt);
         }
-        let id = u64::from_str_radix(&name, 16).map_err(|_| LocalBlobError::Corrupt)?;
+        let id = u64::from_str_radix(name, 16).map_err(|_| LocalBlobError::Corrupt)?;
         if id == 0 {
             return Err(LocalBlobError::Corrupt);
         }
-        let directory = inner.staging.child(&name, false)?;
+        let directory = inner.staging.child(name, false)?;
         inventory(&directory, false, limits.maximum_object_bytes)?;
         let maximum = payload_size(&directory)?;
         inner.disk_room(&state, 1, maximum)?;
@@ -162,7 +181,9 @@ fn recover_inventory(inner: &Inner) -> Result<State> {
                 active: Arc::new(AtomicBool::new(false)),
             },
         );
-    }
+        Ok(())
+    })?;
+    checkpoint()?;
     Ok(state)
 }
 pub(super) fn inventory(directory: &Directory, object: bool, maximum: u64) -> Result<Vec<String>> {
@@ -171,7 +192,12 @@ pub(super) fn inventory(directory: &Directory, object: bool, maximum: u64) -> Re
         let bound = match name.as_str() {
             "data" => maximum,
             "STAGE.json" | "REFERENCE.json" => RECORD_BYTES as u64,
-            "RELEASED" if object => 64,
+            "RELEASED" if object => {
+                if directory.small(name, RELEASE_MARKER.len())?.as_slice() != RELEASE_MARKER {
+                    return Err(LocalBlobError::Corrupt);
+                }
+                continue;
+            }
             _ => return Err(LocalBlobError::Corrupt),
         };
         directory.open_file(name, false, false, bound)?;
@@ -204,3 +230,6 @@ fn validate_stage(stage: &StageRecord, reference: &ReferenceRecord, maximum: u64
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests;

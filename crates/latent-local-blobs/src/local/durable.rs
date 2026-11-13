@@ -2,8 +2,8 @@
 //! GC acquires the original publication guard before a fresh same-engine view;
 //! each verified provisional pin stays alive through actual commit retirement.
 use super::{
-    model, record, Arc, LocalBlobError, LocalBlobLimits, LocalBlobReader, LocalBlobStore, Ordering,
-    Path, Result, TenantId, RECORD_BYTES,
+    model, record, Arc, LocalBlobError, LocalBlobLimits, LocalBlobReader, LocalBlobStore,
+    LocalReferenceInventory, LocalReferencePage, Ordering, Path, Result, TenantId, RECORD_BYTES,
 };
 use crate::BlobReference;
 use latent_state::{
@@ -14,6 +14,9 @@ use latent_state::{
     store_identity::StoreIdentity,
 };
 use serde::{Deserialize, Serialize};
+
+mod required;
+pub use required::RequiredBlobInventory;
 
 #[derive(Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -45,75 +48,128 @@ pub struct LocalDurablePin {
     store_binding: StoreBinding,
 }
 
-/// A single-view physical recovery walk. The held original local-store owner
-/// and opaque cursor cannot be rebound to another root or engine snapshot.
-pub struct RequiredBlobInventory {
-    owner: Arc<super::Inner>,
-    view: usize,
-    after: Option<Vec<u8>>,
-    complete: bool,
+/// A descriptive observation on one retained state view. None of these values
+/// proves current ownership, byte integrity, or authority to reclaim.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LocalReferenceDisposition {
+    /// The retained view has neither a head nor a physical-owner index.
+    Unreviewed,
+    /// A zero-owner head exists and no physical-owner index was observed.
+    ZeroOwners,
+    /// A positive head and at least one reciprocal physical-owner row exist.
+    HasOwners,
 }
-impl RequiredBlobInventory {
-    pub fn begin(store: &LocalBlobStore, view: &ReadView) -> Result<Self> {
+
+/// Retains the original charged reference page while its observations are used.
+pub struct LocalReferenceAuditPage {
+    // Retire observations before the page refunds their shared reservation.
+    dispositions: Vec<LocalReferenceDisposition>,
+    page: LocalReferencePage,
+}
+impl LocalReferenceAuditPage {
+    #[must_use]
+    pub fn complete(&self) -> bool {
+        self.page.complete
+    }
+    pub fn entries(&self) -> impl Iterator<Item = (&BlobReference, LocalReferenceDisposition)> {
+        self.page
+            .references()
+            .iter()
+            .zip(self.dispositions.iter().copied())
+    }
+}
+
+/// Host-internal comparison of local references to one retained state view.
+/// The view can be historical even while valid; results never establish current
+/// ownership. An expired view, changed local generation, error or panic
+/// invalidates progress; restart with fresh owners. Pagination can reveal
+/// aggregate tenant activity. The caller retains and funds the original view.
+pub struct LocalReferenceAudit {
+    inventory: LocalReferenceInventory,
+    view: usize,
+    invalid: bool,
+}
+impl LocalReferenceAudit {
+    pub fn begin(
+        store: &LocalBlobStore,
+        view: &ReadView,
+        scope: &TenantId,
+        checkpoint: &dyn Fn() -> Result<()>,
+    ) -> Result<Self> {
+        // Reserve the cursor before inspecting any durable state, then reuse
+        // the actual root, configuration and live-engine checks.
+        let inventory = LocalReferenceInventory::begin(store, scope, checkpoint)?;
+        // Reuse the binding check, not a second independently charged cursor.
+        required::validate_binding(store, view)?;
+        checkpoint()?;
+        let _ = view.is_empty().map_err(storage)?;
+        inventory.ensure_current(store)?;
+        Ok(Self {
+            inventory,
+            view: view.identity(),
+            invalid: false,
+        })
+    }
+
+    pub fn next_page(
+        &mut self,
+        store: &LocalBlobStore,
+        view: &ReadView,
+        maximum_entries: usize,
+        checkpoint: &dyn Fn() -> Result<()>,
+    ) -> Result<LocalReferenceAuditPage> {
+        if self.invalid {
+            return Err(LocalBlobError::Invalid);
+        }
+        if self.view != view.identity() {
+            self.invalid = true;
+            return Err(LocalBlobError::Invalid);
+        }
+        // Any early return or panic makes the advanced cursor unusable.
+        self.invalid = true;
+        self.inventory.ensure_current(store)?;
+        let _ = view.is_empty().map_err(storage)?;
+        // State-index decoding/reciprocal checks are transient work, not part
+        // of the retained reference page. Reserve before either allocation.
+        let _scratch =
+            super::inventory::InventoryMemory::reserve(&store.inner, 4 * RECORD_BYTES, 0)?;
+        let page = self
+            .inventory
+            .next_page(store, maximum_entries, checkpoint)?;
         let mode = store
             .inner
             .durable
             .as_ref()
             .ok_or(LocalBlobError::Invalid)?;
-        let binding = store
-            .inner
-            .durable_binding
-            .as_ref()
-            .ok_or(LocalBlobError::PermissionDenied)?;
-        if !view.is_bound_to(binding) {
-            return Err(LocalBlobError::PermissionDenied);
-        }
-        let identity = StoreIdentity::inspect(view)
-            .map_err(storage)?
-            .ok_or(LocalBlobError::Corrupt)?;
-        if identity.as_str() != mode.store_identity
-            || store.configuration_digest()? != mode.configuration_digest
-        {
-            return Err(LocalBlobError::PermissionDenied);
-        }
-        Ok(Self {
-            owner: Arc::clone(&store.inner),
-            view: view.identity(),
-            after: None,
-            complete: false,
-        })
-    }
-    /// Inspect at most `maximum_rows` owners on the original bounded worker.
-    /// The host must hold its startup fence and validate semantic closure.
-    pub fn next_page(
-        &mut self,
-        store: &LocalBlobStore,
-        view: &ReadView,
-        maximum_rows: usize,
-        maximum_bytes: usize,
-        checkpoint: &dyn Fn() -> Result<()>,
-    ) -> Result<(usize, bool)> {
-        if self.complete || self.view != view.identity() || !Arc::ptr_eq(&self.owner, &store.inner)
-        {
-            return Err(LocalBlobError::PermissionDenied);
-        }
-        let page = payload_references::required_owner_page(
-            view,
-            self.after.as_deref(),
-            maximum_rows,
-            maximum_bytes,
-        )
-        .map_err(storage)?;
-        for reference in &page.references {
+        let mut dispositions = Vec::with_capacity(page.references().len());
+        for reference in page.references() {
             checkpoint()?;
-            let key = reference.owner_key().map_err(storage)?;
-            let bytes = reference.encode().map_err(storage)?;
-            store.verify_required_reference(view, &key, &bytes, checkpoint)?;
+            let physical = LocalPayloadIdentity {
+                tenant: reference.tenant.0.clone(),
+                provider: "local-retention-inventory".into(),
+                provider_epoch: 1,
+                provider_configuration: decode_digest(&mode.configuration_digest)?,
+                blob_namespace: store.namespace().into(),
+                digest: decode_digest(&reference.digest.0)?,
+                size: reference.size_bytes,
+                media_type: reference.media_type.clone(),
+            };
+            let required =
+                required_physical_page(view, &physical, None, 1, RECORD_BYTES).map_err(storage)?;
+            let count = physical_owner_count(view, &physical).map_err(storage)?;
+            let disposition = match (count, required.references.is_empty()) {
+                (None, true) => LocalReferenceDisposition::Unreviewed,
+                (Some(0), true) => LocalReferenceDisposition::ZeroOwners,
+                (Some(n), false) if n > 0 => LocalReferenceDisposition::HasOwners,
+                _ => return Err(LocalBlobError::Corrupt),
+            };
+            dispositions.push(disposition);
         }
-        let count = page.references.len();
-        self.after = page.resume;
-        self.complete = self.after.is_none();
-        Ok((count, self.complete))
+        checkpoint()?;
+        let _ = view.is_empty().map_err(storage)?;
+        self.inventory.ensure_current(store)?;
+        self.invalid = false;
+        Ok(LocalReferenceAuditPage { dispositions, page })
     }
 }
 impl LocalDurablePin {
@@ -242,7 +298,9 @@ impl LocalBlobStore {
                 other => other,
             })?;
         drop(reader);
-        checkpoint()
+        checkpoint()?;
+        let _ = view.is_empty().map_err(storage)?;
+        self.check_owner()
     }
 
     /// Trusted setup on the fixed native storage owner. The actual selected
@@ -265,41 +323,96 @@ impl LocalBlobStore {
         limits: LocalBlobLimits,
         view: &ReadView,
     ) -> Result<Arc<Self>> {
-        let identity = StoreIdentity::inspect(view)
+        StoreIdentity::inspect(view)
             .map_err(storage)?
             .ok_or(LocalBlobError::Invalid)?;
         let mut owner = Self::open(root, namespace, limits)?;
+        Self::enable_durable_for_view(&mut owner, view)?;
+        Ok(owner)
+    }
+
+    /// Opt an exclusively held local owner into durable retention for this
+    /// actual engine. The trusted host must authorize this irreversible mode
+    /// transition and finish semantic startup validation before publication.
+    /// Existing readers, handles or another owner prevent the transition.
+    pub fn enable_durable_for_view(owner: &mut Arc<Self>, view: &ReadView) -> Result<()> {
+        Self::enable_durable_for_view_inner(owner, view, || {})
+    }
+
+    #[cfg(test)]
+    pub(super) fn enable_durable_for_view_after_publish(
+        owner: &mut Arc<Self>,
+        view: &ReadView,
+        after_publish: impl FnOnce(),
+    ) -> Result<()> {
+        Self::enable_durable_for_view_inner(owner, view, after_publish)
+    }
+
+    fn enable_durable_for_view_inner(
+        owner: &mut Arc<Self>,
+        view: &ReadView,
+        after_publish: impl FnOnce(),
+    ) -> Result<()> {
+        owner.inner.check()?;
+        if Arc::get_mut(owner)
+            .and_then(|owner| Arc::get_mut(&mut owner.inner))
+            .is_none()
+            || owner.inner.durable_binding.is_some()
+        {
+            return Err(LocalBlobError::Busy);
+        }
+        let identity = StoreIdentity::inspect(view)
+            .map_err(storage)?
+            .ok_or(LocalBlobError::Invalid)?;
         let mode = ModeRecord {
             version: 1,
             store_identity: identity.as_str().into(),
             configuration_digest: owner.configuration_digest()?,
         };
         mode.validate()?;
-        if let Some(existing) = &owner.inner.durable {
+        let encoded = record(&mode)?;
+        let created = if let Some(existing) = &owner.inner.durable {
             if existing != &mode {
                 return Err(LocalBlobError::PermissionDenied);
             }
+            false
         } else {
+            let _ = view.is_empty().map_err(storage)?;
             {
                 let mut state = owner.inner.state()?;
                 state.durable_mode = true;
-                owner.inner.disk_room(&state, 0, 0)?;
+                if let Err(error) = owner.inner.disk_room(&state, 0, 0) {
+                    state.durable_mode = false;
+                    return Err(error);
+                }
             }
             owner
                 .inner
                 .root
-                .write_new("DURABLE.json", &record(&mode)?)?;
+                .write_new("DURABLE.json", &encoded)
+                .map_err(|_| owner.inner.uncertain())?;
             owner
                 .inner
                 .root
                 .sync()
                 .map_err(|_| owner.inner.uncertain())?;
-        }
-        let inner = Arc::get_mut(&mut Arc::get_mut(&mut owner).ok_or(LocalBlobError::Busy)?.inner)
+            true
+        };
+        let inner = Arc::get_mut(&mut Arc::get_mut(owner).ok_or(LocalBlobError::Busy)?.inner)
             .ok_or(LocalBlobError::Busy)?;
         inner.durable = Some(mode);
         inner.durable_binding = Some(view.binding());
-        Ok(owner)
+        if created {
+            after_publish();
+        }
+        if let Err(error) = view.is_empty() {
+            return Err(if created {
+                owner.inner.uncertain()
+            } else {
+                storage(error)
+            });
+        }
+        Ok(())
     }
     /// Native provider work verifies length/media/digest and acquires its real
     /// reader handle before the envelope can receive a provisional pin.
@@ -320,6 +433,11 @@ impl LocalBlobStore {
         }
         let mut reader = self.open_read(scope, reference, checkpoint)?;
         reader.make_durable()?;
+        // The real reader and provisional pin are already owned here. Refuse
+        // to hand them off if the original admission or local owner retired
+        // while that pin was being acquired; dropping the reader retires both.
+        checkpoint()?;
+        self.inner.check()?;
         Ok(LocalDurablePin {
             reader,
             configuration: decode_digest(&self.configuration_digest()?)?,
@@ -399,7 +517,14 @@ impl LocalBlobStore {
         if owners != 0 || !required.references.is_empty() {
             return Err(LocalBlobError::Busy);
         }
-        self.release_reference_checked(scope, reference, checkpoint)
+        // The zero-owner observation must still be live at the release fence.
+        // In particular, a delayed caller cannot use an expired read view to
+        // retire the physical reference after its bounded observation ended.
+        self.release_reference_checked(scope, reference, &|| {
+            checkpoint()?;
+            let _ = view.is_empty().map_err(storage)?;
+            self.inner.check()
+        })
     }
 }
 fn decode_digest(value: &str) -> Result<[u8; 32]> {

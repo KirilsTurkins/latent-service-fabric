@@ -1,10 +1,15 @@
 """Exact edges retain compatible exports without WAC plug's duplicate argument."""
+import contextlib
+import io
 import json
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
 import unittest
+import urllib.error
+from unittest.mock import patch
 
+from tools.dotnet_guest import composer
 from tools.dotnet_guest.composer import compose_exact
 from tools.rust_capsule_project import digest
 
@@ -13,6 +18,87 @@ RANDOM = "latent:random/random@0.1.0"
 SECURE = "wasi:random/random@0.2.6"
 INSECURE = "wasi:random/insecure@0.2.6"
 OLDER = "wasi:random/insecure@0.2.0"
+
+
+class ComposerDownload(unittest.TestCase):
+    def test_timeout_uses_only_the_pinned_asset_and_discards_partial_bytes(self):
+        class PartialTimeout(io.BytesIO):
+            def __init__(self):
+                super().__init__(b'partial')
+                self.calls = 0
+
+            def read(self, size=-1):
+                self.calls += 1
+                if self.calls > 1:
+                    raise TimeoutError('read timed out')
+                return super().read(size)
+
+        primary, fallback = PartialTimeout(), io.BytesIO(b'asset')
+
+        def open_response(request, *, timeout):
+            self.assertGreater(timeout, 0)
+            if request.full_url == composer.URL:
+                return primary
+            self.assertEqual(request.full_url, composer.ASSET_URL)
+            self.assertEqual(request.get_header('Accept'), 'application/octet-stream')
+            self.assertTrue(primary.closed)
+            return fallback
+
+        with patch.object(composer.urllib.request, 'urlopen', side_effect=open_response) as fetch, \
+             contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(composer.download(), b'asset')
+        self.assertEqual(fetch.call_count, 2)
+        self.assertTrue(primary.closed and fallback.closed)
+
+    def test_http_504_uses_fallback_but_other_errors_do_not(self):
+        error = urllib.error.HTTPError(composer.URL, 504, 'gateway timeout', {}, None)
+        with patch.object(composer.urllib.request, 'urlopen', side_effect=[error, io.BytesIO(b'asset')]) as fetch, \
+             contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(composer.download(), b'asset')
+        self.assertEqual(fetch.call_count, 2)
+        for error in (urllib.error.HTTPError(composer.URL, 403, 'forbidden', {}, None),
+                      urllib.error.URLError('unavailable')):
+            with patch.object(composer.urllib.request, 'urlopen', side_effect=error) as fetch:
+                with self.assertRaises(type(error)):
+                    composer.download()
+            self.assertEqual(fetch.call_count, 1)
+
+    def test_size_and_original_deadline_remain_bounded(self):
+        with patch.object(composer, 'SIZE', 3), \
+             patch.object(composer.urllib.request, 'urlopen', return_value=io.BytesIO(b'four')) as fetch:
+            with self.assertRaisesRegex(ValueError, 'fetch bound exceeded'):
+                composer.download()
+            self.assertEqual(fetch.call_count, 1)
+        with patch.object(composer.time, 'monotonic', side_effect=[0, 181]), \
+             patch.object(composer.urllib.request, 'urlopen') as fetch:
+            with self.assertRaisesRegex(ValueError, 'fetch bound exceeded'):
+                composer.download()
+            fetch.assert_not_called()
+        error = urllib.error.HTTPError(composer.URL, 504, 'gateway timeout', {}, None)
+        with patch.object(composer.time, 'monotonic', side_effect=[0, 1, 181]), \
+             patch.object(composer.urllib.request, 'urlopen', side_effect=error) as fetch, \
+             contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaisesRegex(ValueError, 'fetch bound exceeded'):
+                composer.download()
+            self.assertEqual(fetch.call_count, 1)
+
+    def test_failed_fallback_is_not_retried(self):
+        with patch.object(composer.urllib.request, 'urlopen',
+                          side_effect=[TimeoutError('primary'), TimeoutError('fallback')]) as fetch, \
+             contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaisesRegex(TimeoutError, 'fallback'):
+                composer.download()
+        self.assertEqual(fetch.call_count, 2)
+
+    def test_unverified_bytes_never_create_a_binary(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            pin = {'digest': 'sha256:' + '0' * 64}
+            with patch.object(composer, 'selection', return_value=pin), \
+                 patch.object(composer, 'SIZE', 4), patch.object(composer, 'download', return_value=b'bad!'):
+                with self.assertRaisesRegex(ValueError, 'download identity mismatch'):
+                    composer.install(directory, directory, None)
+            self.assertFalse((directory / 'component-composer').exists())
 
 
 def graph(imports=(), exports=()):

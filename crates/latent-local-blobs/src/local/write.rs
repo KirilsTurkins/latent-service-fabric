@@ -155,6 +155,11 @@ impl LocalBlobWriter {
             self.failed = true;
             return Err(LocalBlobError::Corrupt);
         }
+        // Arm failure before physical I/O: an unwinding checkpoint must not
+        // leave a partially accepted writer reusable or sealable. Only a fully
+        // successful return below re-arms it; the original stage lease stays
+        // charged until the actual writer retires.
+        self.failed = true;
         let result = (|| {
             self.data
                 .write_all_at(bytes, offset)
@@ -168,9 +173,7 @@ impl LocalBlobWriter {
             checkpoint()?;
             Ok(bytes.len() as u64)
         })();
-        if result.is_err() {
-            self.failed = true;
-        }
+        self.failed = result.is_err();
         result
     }
     pub fn seal(self, checkpoint: &dyn Fn() -> Result<()>) -> Result<BlobReference> {
@@ -212,11 +215,13 @@ impl LocalBlobWriter {
             return Ok(result);
         }
         let mut pending = {
-            let state = inner.state()?;
+            let mut state = inner.state()?;
             if state.objects.len() == inner.limits.maximum_objects {
                 return Err(LocalBlobError::Capacity);
             }
             inner.room(&state, OBJECT_BYTES)?;
+            // Invalidate descriptive inventories before an irreversible publish.
+            state.advance_inventory()?;
             inner.pending_objects.fetch_add(1, Ordering::AcqRel);
             PendingObject {
                 inner: inner.clone(),
@@ -295,3 +300,6 @@ impl LocalBlobWriter {
         ))
     }
 }
+
+#[cfg(test)]
+mod tests;

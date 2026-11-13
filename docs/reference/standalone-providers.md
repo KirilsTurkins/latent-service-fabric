@@ -48,7 +48,16 @@ typed HTTP 0.3 provider. `activationRuntime` selects explicit finite ownership
 and wait limits for the optional V5 runtime bridge. S3 has no installation entry
 here. The
 [configuration schema](../../schemas/node-providers.schema.json) describes the
-closed input. This example is the provider section of a protected node file:
+closed input.
+
+An optional `providers.blob.durableRetention: true` prepares the local blob
+owner for state-bound retention and requires configured state. The mode marker
+persists across restarts; removing the option does not revert an existing
+durable root. Startup fails if the original state identity or required bytes
+cannot be verified. This preparation does not yet expose guest payload
+attachment or authorize orphan deletion; those paths remain under development.
+
+This example is the provider section of a protected node file:
 
 ```json
 {

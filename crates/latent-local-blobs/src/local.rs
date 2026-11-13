@@ -3,13 +3,18 @@
 //! Public references are data; capability adapters supply current tenant authority.
 mod durable;
 pub(crate) mod fs;
+mod inventory;
 mod model;
 mod read;
 mod reclaim;
 mod recovery;
 mod write;
 
-pub use durable::{LocalDurablePin, RequiredBlobInventory};
+pub use durable::{
+    LocalDurablePin, LocalReferenceAudit, LocalReferenceAuditPage, LocalReferenceDisposition,
+    RequiredBlobInventory,
+};
+pub use inventory::{LocalReferenceInventory, LocalReferencePage};
 use latent_core::TenantId;
 pub use model::{LocalBlobError, LocalBlobLimits, LocalBlobSnapshot};
 use model::{ReferenceRecord, Result};
@@ -46,6 +51,7 @@ struct Inner {
     state: Mutex<State>,
     handles: AtomicUsize,
     work: AtomicUsize,
+    inventory_bytes: AtomicUsize,
     publishing: AtomicBool,
     pending_objects: AtomicUsize,
     poisoned: AtomicBool,
@@ -57,12 +63,25 @@ struct Inner {
 #[derive(Default)]
 struct State {
     objects: BTreeMap<String, Arc<Object>>,
+    inventory_generation: u64,
     stages: BTreeMap<u64, Stage>,
+    reclaim_object_after: Option<String>,
+    reclaim_stage_after: Option<u64>,
+    reclaim_stages_first: bool,
     next: u64,
     resident: u64,
     reserved: u64,
     referenced: usize,
     durable_mode: bool,
+}
+impl State {
+    fn advance_inventory(&mut self) -> Result<()> {
+        self.inventory_generation = self
+            .inventory_generation
+            .checked_add(1)
+            .ok_or(LocalBlobError::Capacity)?;
+        Ok(())
+    }
 }
 struct Object {
     record: Option<ReferenceRecord>,
@@ -105,9 +124,19 @@ impl LocalBlobStore {
     /// Opens/reconciles a bounded inventory synchronously. Unknown entries and
     /// unsafe files are preserved and reject opening. No guest chooses this path.
     pub fn open(root: &Path, namespace: &str, limits: LocalBlobLimits) -> Result<Arc<Self>> {
+        Self::open_with_checkpoint(root, namespace, limits, &|| Ok(()))
+    }
+    /// Recheck the original host admission while walking and hashing the local
+    /// inventory. A failed observation never publishes the partially built owner.
+    pub fn open_with_checkpoint(
+        root: &Path,
+        namespace: &str,
+        limits: LocalBlobLimits,
+        checkpoint: &dyn Fn() -> Result<()>,
+    ) -> Result<Arc<Self>> {
         limits.validate()?;
         model::text(namespace)?;
-        recovery::open(root, namespace, limits)
+        recovery::open(root, namespace, limits, checkpoint)
     }
     #[must_use]
     pub fn limits(&self) -> LocalBlobLimits {
@@ -133,6 +162,13 @@ impl LocalBlobStore {
             "sha256:{:x}",
             latent_core::digest::HexDigest(hash.finalize())
         ))
+    }
+    /// Check the original protected root and owner after a bounded observation.
+    /// This does not grant read, publication or reclamation authority.
+    pub fn check_owner(&self) -> Result<()> {
+        self.inner.check()?;
+        self.inner.root.validate()?;
+        self.inner.check()
     }
     pub fn snapshot(&self) -> Result<LocalBlobSnapshot> {
         let state = self.inner.state()?;
@@ -245,6 +281,7 @@ impl Inner {
                         .checked_mul(HANDLE_BYTES)?,
                 )
             })
+            .and_then(|n| n.checked_add(self.inventory_bytes.load(Ordering::Acquire)))
             .and_then(|n| n.checked_add(OWNER_BYTES))
             .ok_or(LocalBlobError::Capacity)
     }

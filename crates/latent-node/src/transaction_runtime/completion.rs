@@ -151,7 +151,7 @@ impl CommandCompletion {
                 .with_view(handoff.view, self.host.retained_bytes, move |view| {
                     // Logical rejection remains nested; it cannot poison/quarantine the
                     // protected engine as though it were native corruption.
-                    Ok(CompleteEnvelope::success_captured(
+                    let result = CompleteEnvelope::success_captured(
                         view,
                         self.claim,
                         Some(handoff.plan),
@@ -159,7 +159,11 @@ impl CommandCompletion {
                         value,
                         &effects,
                         time,
-                    ))
+                    );
+                    #[cfg(target_os = "linux")]
+                    let result = result
+                        .and_then(|envelope| envelope.reconcile_replaced_state_payloads(view));
+                    Ok(result)
                 });
         match result {
             Ok(job) => match job.await {

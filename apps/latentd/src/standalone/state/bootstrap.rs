@@ -27,6 +27,8 @@ pub(in crate::standalone) struct StateBootstrap {
     configuration: [u8; 32],
     original: Arc<NativeReservation>,
     pub(super) opened_store: Option<Arc<ProtectedStoreOwner>>,
+    #[cfg(target_os = "linux")]
+    pub(super) local_payload_selection: Option<Box<super::store::LocalPayloadSelection>>,
     pub(super) namespaces: Option<Arc<NamespaceCatalog>>,
     _application_memory: NativeBufferPermit,
 }
@@ -119,6 +121,8 @@ impl StateBootstrap {
             configuration,
             original,
             opened_store: None,
+            #[cfg(target_os = "linux")]
+            local_payload_selection: None,
             namespaces: None,
             _application_memory: application_memory,
         })
@@ -146,6 +150,28 @@ impl StateBootstrap {
         settings: &crate::config::state::StateSettings,
     ) -> bool {
         self.configuration == super::configuration::identity(settings)
+    }
+
+    /// An early physical validation is usable only with the same configured
+    /// provider and root that will be installed for the final node.
+    pub(in crate::standalone) fn matches_local_payload(&self, settings: &NodeSettings) -> bool {
+        #[cfg(target_os = "linux")]
+        {
+            if self.opened_store.is_none() {
+                return true;
+            }
+            let selected = settings.providers.as_ref().and_then(|p| p.blob.as_ref());
+            match (&self.local_payload_selection, selected) {
+                (None, None) => true,
+                (Some(original), Some(blob)) => original.matches(settings, blob),
+                _ => false,
+            }
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            let _ = settings;
+            true
+        }
     }
 
     /// The initializer's actual buffers have retired before readiness is
