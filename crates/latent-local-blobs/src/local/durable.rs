@@ -131,11 +131,8 @@ impl LocalReferenceAudit {
         let _ = view.is_empty().map_err(storage)?;
         // State-index decoding/reciprocal checks are transient work, not part
         // of the retained reference page. Reserve before either allocation.
-        let _scratch = super::inventory::InventoryMemory::reserve(
-            &store.inner,
-            4 * RECORD_BYTES,
-            0,
-        )?;
+        let _scratch =
+            super::inventory::InventoryMemory::reserve(&store.inner, 4 * RECORD_BYTES, 0)?;
         let page = self
             .inventory
             .next_page(store, maximum_entries, checkpoint)?;
