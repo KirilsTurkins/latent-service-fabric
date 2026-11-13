@@ -1,0 +1,137 @@
+name: Rebuilt action functional security controls
+on:
+  push:
+    branches: [ci/typescript-security-refresh-20261113]
+    paths: [.github/workflows/ts-action-security-smoke.yml]
+permissions:
+  contents: read
+jobs:
+  save:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/security
+      - uses: KirilsTurkins/lsf-setup-node@4c54f99c80ce8343c6fc2b0e6516dc933ee39cb6
+        with:
+          node-version: 24.19.0
+      - uses: KirilsTurkins/lsf-setup-python@9b7e6f4e7edba89e09643cc976f1eb552bc74e5a
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-go@0305f0dd02cc64fd4953ba25ce44b3cdd410ac49
+        with:
+          go-version: 1.27.4
+          cache: false
+      - uses: KirilsTurkins/lsf-setup-java@25cdb4fbd09e6ea69d7dccd16c2decb226fe2f49
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: KirilsTurkins/lsf-setup-dotnet@1325be6fa84cc73c1d3ce0be536c035b2089b157
+        with:
+          dotnet-version: 8.0.428
+      - uses: KirilsTurkins/lsf-setup-zig@fe1cf24d538afa401503cfc8c66a64fe76f56938
+        with:
+          version: 0.15.2
+      - name: Verify installed tools
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v24.19.0
+          test "$(python --version)" = 'Python 3.13.5'
+          test "$(go version)" = 'go version go1.27.4 linux/amd64'
+          test "$(dotnet --version)" = 8.0.428
+          test "$(zig version)" = 0.15.2
+          java -version
+      - uses: KirilsTurkins/lsf-cache/restore@d1b57751648351eb49459f7504d0a85f9639d2f9
+        id: cache
+        with:
+          path: .security-roundtrip
+          key: security-fastxml-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Require a fresh cache miss and create a transfer witness
+        env:
+          CACHE_HIT: ${{ steps.cache.outputs.cache-hit }}
+        run: |
+          test "$CACHE_HIT" != true
+          mkdir .security-roundtrip
+          printf 'verified-action-security-roundtrip\n' > .security-roundtrip/witness.txt
+          sha256sum .security-roundtrip/witness.txt > .security-roundtrip/SHA256SUMS
+      - uses: KirilsTurkins/lsf-cache/save@d1b57751648351eb49459f7504d0a85f9639d2f9
+        with:
+          path: .security-roundtrip
+          key: security-fastxml-${{ github.run_id }}-${{ github.run_attempt }}
+      - uses: KirilsTurkins/lsf-upload-artifact@06dfe2de8e406c74d8e62730bcd18c498d48549c
+        with:
+          name: verified-action-roundtrip
+          path: .security-roundtrip/
+          if-no-files-found: error
+          retention-days: 3
+  restore:
+    needs: save
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: KirilsTurkins/lsf-cache/restore@d1b57751648351eb49459f7504d0a85f9639d2f9
+        id: cache
+        with:
+          path: .security-roundtrip
+          key: security-fastxml-${{ github.run_id }}-${{ github.run_attempt }}
+      - uses: KirilsTurkins/lsf-download-artifact@1a53f5d5e7ed5d5967ba64f577543fdbe523e15e
+        with:
+          name: verified-action-roundtrip
+          path: downloaded
+      - name: Require cache hit and byte-identical artifact contents
+        env:
+          CACHE_HIT: ${{ steps.cache.outputs.cache-hit }}
+        run: |
+          test "$CACHE_HIT" = true
+          sha256sum --check .security-roundtrip/SHA256SUMS
+          cmp .security-roundtrip/witness.txt downloaded/witness.txt
+          cmp .security-roundtrip/SHA256SUMS downloaded/SHA256SUMS
+  rust-save:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - name: Create a deterministic isolated Cargo workspace
+        run: |
+          mkdir -p src
+          printf '[package]\nname="action-security-probe"\nversion="0.1.0"\nedition="2024"\n' > Cargo.toml
+          printf 'fn main() { assert_eq!(2 + 2, 4); }\n' > src/main.rs
+          cargo generate-lockfile
+      - uses: KirilsTurkins/lsf-rust-cache@a234d11e60216d980a2b2680d8859c031d7e90c5
+        id: rust
+        with:
+          shared-key: security-fastxml-${{ github.run_id }}-${{ github.run_attempt }}
+          cache-workspace-crates: true
+      - name: Verify initial miss and execute the compiled probe
+        env:
+          CACHE_HIT: ${{ steps.rust.outputs.cache-hit }}
+        run: |
+          test "$CACHE_HIT" != true
+          cargo run --locked
+  rust-restore:
+    needs: rust-save
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - name: Recreate the identical isolated Cargo workspace
+        run: |
+          mkdir -p src
+          printf '[package]\nname="action-security-probe"\nversion="0.1.0"\nedition="2024"\n' > Cargo.toml
+          printf 'fn main() { assert_eq!(2 + 2, 4); }\n' > src/main.rs
+          cargo generate-lockfile
+      - uses: KirilsTurkins/lsf-rust-cache@a234d11e60216d980a2b2680d8859c031d7e90c5
+        id: rust
+        with:
+          shared-key: security-fastxml-${{ github.run_id }}-${{ github.run_attempt }}
+          cache-workspace-crates: true
+          save-if: false
+      - name: Require restored cache and execute its binary
+        env:
+          CACHE_HIT: ${{ steps.rust.outputs.cache-hit }}
+        run: |
+          test "$CACHE_HIT" = true
+          test -x target/debug/action-security-probe
+          cargo run --locked
