@@ -14,7 +14,9 @@ use latent_state::{
     store_io::StoreIoShutdown,
 };
 
-use super::super::effects::{EffectRuntime, ProtectedEffectClock, ProtectedEffectStartup};
+use super::super::effects::{
+    EffectRuntime, ProtectedEffectClock, ProtectedEffectStartup, ProtectedInboxInventory,
+};
 use super::{bootstrap::StateBootstrap, clock::AdapterClock, preparation};
 use crate::config::state::StateSettings;
 use crate::standalone::startup_observation::{platform, record, record_platform, Stage};
@@ -124,6 +126,10 @@ impl StateKernel {
     /// The early empty authority in `bootstrap` is the same owner already
     /// attached to the original artifact and policy rejection observers. This
     /// method installs no rule from configuration or a retained policy stamp.
+    #[expect(
+        clippy::too_many_lines,
+        reason = "Startup keeps bootstrap ownership and cleanup visible through dispatcher admission"
+    )]
     pub(super) async fn start(
         mut bootstrap: StateBootstrap,
         settings: &StateSettings,
@@ -192,6 +198,20 @@ impl StateKernel {
         // hold before spawning; durable operator intent remains separate.
         let mut dispatcher = settings.dispatcher.clone();
         dispatcher.start_paused = false;
+        let inventory_identity = settings.store_identity.clone();
+        let inventory_quotas = super::validation::quotas(settings);
+        let inventory_original = bootstrap.original();
+        let inventory = ProtectedInboxInventory::new(
+            crate::config::state::STARTUP_VALIDATOR_BYTES,
+            move |view| {
+                super::validation::validate_inventory(
+                    view,
+                    &inventory_identity,
+                    &inventory_quotas,
+                    &inventory_original,
+                )
+            },
+        )?;
         let protected = EffectRuntime::start_protected(ProtectedEffectStartup {
             dispatcher,
             store: Arc::clone(&store),
@@ -204,6 +224,7 @@ impl StateKernel {
             },
             identity: settings.store_identity.clone(),
             preparation,
+            inventory: Some(inventory),
             original_deadline: bootstrap.deadline,
             control_runtime,
         })

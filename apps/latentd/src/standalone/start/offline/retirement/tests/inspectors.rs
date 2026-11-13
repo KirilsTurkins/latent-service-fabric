@@ -117,7 +117,7 @@ impl Probe {
 #[tokio::test]
 async fn warm_configured_http_inspector_retires_after_graph_drop() {
     let directory = TempDir::new().unwrap();
-    let settings = fixture::warm(&directory).await;
+    let settings = Box::pin(fixture::warm(&directory)).await;
     let until = Instant::now() + settings.shutdown_grace();
     arm();
     let result = Box::pin(StandaloneNode::inspect_configured_http_effects(
@@ -126,7 +126,7 @@ async fn warm_configured_http_inspector_retires_after_graph_drop() {
     ))
     .await;
     let probe = take();
-    probe.finish(until).await;
+    Box::pin(probe.finish(until)).await;
     if result.is_err() {
         assert!(probe.native.snapshot().unwrap().physically_retired());
     }
@@ -156,7 +156,7 @@ async fn warm_configured_http_inspector_retires_after_graph_drop() {
 #[tokio::test]
 async fn warm_configured_event_inspector_retires_after_graph_drop() {
     let directory = TempDir::new().unwrap();
-    let settings = fixture::warm(&directory).await;
+    let settings = Box::pin(fixture::warm(&directory)).await;
     let until = Instant::now() + settings.shutdown_grace();
     arm();
     let result = Box::pin(StandaloneNode::inspect_configured_event_effects(
@@ -206,7 +206,7 @@ fn install_event_fixture(settings: &mut NodeSettings, directory: &TempDir) {
 #[tokio::test]
 async fn configured_event_inspector_uses_real_installed_provider_and_retires_it() {
     let directory = TempDir::new().unwrap();
-    let mut settings = fixture::warm(&directory).await;
+    let mut settings = Box::pin(fixture::warm(&directory)).await;
     install_event_fixture(&mut settings, &directory);
     let until = Instant::now() + settings.shutdown_grace();
     arm();
@@ -236,7 +236,7 @@ async fn configured_event_inspector_uses_real_installed_provider_and_retires_it(
 #[tokio::test]
 async fn invalid_event_profile_retires_the_original_inspection_graph() {
     let directory = TempDir::new().unwrap();
-    let mut settings = fixture::warm(&directory).await;
+    let mut settings = Box::pin(fixture::warm(&directory)).await;
     install_event_fixture(&mut settings, &directory);
     settings
         .providers
@@ -264,7 +264,7 @@ async fn invalid_event_profile_retires_the_original_inspection_graph() {
 #[tokio::test]
 async fn warm_transaction_host_inspector_retires_after_graph_drop() {
     let directory = TempDir::new().unwrap();
-    let settings = fixture::warm(&directory).await;
+    let settings = Box::pin(fixture::warm(&directory)).await;
     let until = Instant::now() + settings.shutdown_grace();
     arm();
     let result = Box::pin(StandaloneNode::inspect_transaction_hosts(
@@ -273,7 +273,7 @@ async fn warm_transaction_host_inspector_retires_after_graph_drop() {
     ))
     .await;
     let probe = take();
-    probe.finish(until).await;
+    Box::pin(probe.finish(until)).await;
     if result.is_err() {
         assert!(probe.native.snapshot().unwrap().physically_retired());
     }

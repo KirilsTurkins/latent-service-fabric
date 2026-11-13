@@ -113,6 +113,21 @@ impl InboxIdentity {
         );
         Ok(row_key(Family::Inbox, b"inbox-v1\0", identity, None))
     }
+    /// Stable command key for this already scoped input identity. The payload
+    /// digest is deliberately excluded: changed bytes must conflict with the
+    /// original command rather than select a second execution owner.
+    pub fn command_key(&self) -> Result<String, AtomicError> {
+        self.validate()?;
+        let identity = Identity::derive(
+            b"lsf-inbox-command-key-v1\0",
+            &[
+                self.provider.as_bytes(),
+                self.binding.as_bytes(),
+                self.message.as_bytes(),
+            ],
+        );
+        Ok(format!("inbox-{}", identity.hex()))
+    }
     fn encode(&self, out: &mut Encoder) -> Result<(), AtomicError> {
         for text in [&self.provider, &self.binding, &self.message] {
             out.text(text)?;

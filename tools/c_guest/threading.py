@@ -88,7 +88,10 @@ CLOCK_LIBC = {
 # Pinned libc path underlying the clock-only select/poll bridge. Its labels are
 # separate, so existing thread/clock material identities remain stable.
 POLL_LIBC = {
-    'lib/libc/include/wasm-wasi-musl/wasi/api.h': '8cf2859277ea2fc984780a00048686955805fd8a00c7be1d8f916105becf0174',
+    # Public Zig libc source digest, not an API credential.
+    'lib/libc/include/wasm-wasi-musl/wasi/api.h': (
+        '8cf2859277ea2fc984780a00048686955805fd8a00c7be1d8f916105becf0174'
+    ),
     'lib/libc/include/wasm-wasi-musl/poll.h': '66229496e3f0e33a22af24e5a67cb0b8fe9982b840ccb4ac2d33f15823d1ffb7',
     'lib/libc/include/wasm-wasi-musl/sys/select.h': 'd9790464bc8f5541dc3ce8355fb54bd6562c3c0f9f0eb82961dc9658188bc1fa',
     'lib/libc/wasi/libc-bottom-half/cloudlibc/src/libc/sys/select/select.c': '4ed4bcf6b13f12e6fbf9964d4e72dc2681cd3545a5e2b1ab54b4877aac89164b',

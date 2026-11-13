@@ -11,7 +11,7 @@ const MAXIMUM_IDENTITY_BYTES: usize = 128;
 pub const MAXIMUM_ENCODED_BYTES: usize = FORMAT.len() + 2 + MAXIMUM_IDENTITY_BYTES;
 
 mod checkpoint;
-pub use checkpoint::ExternalCheckpoint;
+pub use checkpoint::{ExternalCheckpoint, InboxCustodyWatermark};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StoreIdentity(String);

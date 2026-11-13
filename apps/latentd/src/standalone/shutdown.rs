@@ -25,6 +25,9 @@ pub struct ShutdownReport {
     pub metrics: Option<super::providers::MetricObservation>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub http: Option<super::http::HttpSnapshot>,
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub triggers: Option<super::TriggerShutdownReport>,
     pub clean: bool,
     pub active_connections: usize,
     pub active_rpcs: usize,
@@ -66,6 +69,16 @@ impl ShutdownReport {
             && self.providers.is_none_or(|report| report.clean)
             && self.effects.is_none_or(|report| report.clean)
             && self.state.is_none_or(|report| report.clean)
+            && {
+                #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+                {
+                    self.triggers.is_none_or(|report| report.clean)
+                }
+                #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+                {
+                    true
+                }
+            }
             && self
                 .rollouts
                 .is_none_or(super::RolloutShutdownReport::clean)
@@ -104,6 +117,16 @@ impl StandaloneNode {
         reason = "one ordered teardown keeps forced cleanup, resource observations and native joins together"
     )]
     pub async fn shutdown(mut self) -> Result<ShutdownReport, PlatformError> {
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        let trigger_result = if let Some(triggers) = self.triggers.take() {
+            let proposed = std::time::Instant::now() + self.shutdown_grace;
+            let deadline = self
+                .startup_deadline
+                .map_or(proposed, |old| proposed.min(old));
+            Some(triggers.shutdown(deadline).await)
+        } else {
+            None
+        };
         if let Some(effects) = &self.effects {
             effects.close();
         }
@@ -178,6 +201,25 @@ impl StandaloneNode {
             })
         );
         let mut failure = transport_result.err();
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        let trigger_report = match trigger_result {
+            Some(Ok(report)) => {
+                if !report.clean {
+                    failure.get_or_insert_with(|| {
+                        error(
+                            PlatformErrorCode::DeadlineExceeded,
+                            "incoming owner did not retire cleanly",
+                        )
+                    });
+                }
+                Some(report)
+            }
+            Some(Err(error)) => {
+                failure.get_or_insert(error);
+                None
+            }
+            None => None,
+        };
         if let Err(error) = http_result {
             failure.get_or_insert(error);
         }
@@ -345,6 +387,10 @@ impl StandaloneNode {
             report.effects = effect_report;
             report.state = state_report;
             report.http = http_handle.as_ref().map(super::http::HttpHandle::snapshot);
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            {
+                report.triggers = trigger_report;
+            }
         }
         // This diagnostic contains no caller identifiers, payload, or private error.
         let _ = self.telemetry.try_emit_log(LogRecord {
@@ -436,6 +482,8 @@ impl StandaloneNode {
             effects: None,
             state: None,
             http: None,
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            triggers: None,
             clean: false,
             active_connections: transport.active_connections,
             active_rpcs: transport.active_rpcs,

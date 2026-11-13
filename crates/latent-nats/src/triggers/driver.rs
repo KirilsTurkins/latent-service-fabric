@@ -91,6 +91,10 @@ impl NatsTriggers {
         }
         None
     }
+    #[expect(
+        clippy::too_many_lines,
+        reason = "One physical delivery and acknowledgement retain their original owners"
+    )]
     async fn delivery(
         &mut self,
         manager: &LocalActivationManager,
@@ -98,7 +102,7 @@ impl NatsTriggers {
         tenant: usize,
         index: usize,
     ) -> Result<Option<TriggerStep>> {
-        let (reservation, deadline, inbox) = self.reserve(manager, index)?;
+        let (mut reservation, deadline, inbox) = self.reserve(manager, index)?;
         self.monitor.0.active.fetch_add(1, Ordering::AcqRel);
         let _active = Active(self.monitor.0.clone());
         let super::connection::Open {
@@ -119,6 +123,17 @@ impl NatsTriggers {
             ),
         )
         .await?;
+        let qualified = if binding.transaction.is_some() {
+            Some(
+                interruptible(
+                    stop,
+                    super::inbox::qualify(connection.resource(), &request, binding, &inbox),
+                )
+                .await?,
+            )
+        } else {
+            None
+        };
         reservation.publication_eligibility()?;
         network::check_current(credential, &auth.stamp)?;
         tick(&self.monitor.0.pulls);
@@ -137,14 +152,51 @@ impl NatsTriggers {
             let _ = connection.park();
             return Ok(None);
         };
+        if qualified.is_some() {
+            // A history observation before pull cannot identify a stream that
+            // was replaced while the broker delivered these physical bytes.
+            interruptible(
+                stop,
+                super::inbox::qualify(connection.resource(), &request, binding, &inbox),
+            )
+            .await?;
+            network::check_current(credential, &auth.stamp)?;
+            reservation.publication_eligibility()?;
+        }
         let route_generation = reservation.revision().route_generation.0;
-        let (mut terminal, mut ack, shutdown) =
+        let delivery = if let Some(qualified) = qualified {
+            Some(super::InboxDelivery::capture(
+                &self.installed,
+                binding,
+                qualified,
+                identity.sequence,
+                message.payload(),
+            )?)
+        } else {
+            None
+        };
+        let (mut terminal, mut ack, shutdown, completion) =
             if identity.delivery > self.config.maximum_deliveries {
                 drop(reservation);
-                (TriggerTerminal::Exhausted, Ack::Terminate, false)
+                if delivery.is_some() {
+                    (TriggerTerminal::RecoveryRequired, Ack::Hold, false, None)
+                } else {
+                    (TriggerTerminal::Exhausted, Ack::Terminate, false, None)
+                }
             } else {
+                let transaction = if let Some(delivery) = &delivery {
+                    let factory = self
+                        .transaction_admission
+                        .as_ref()
+                        .ok_or(EventError::PermissionDenied)?;
+                    let admission = factory.admission(&reservation, delivery)?;
+                    reservation.bind_transaction(admission.clone())?;
+                    Some((delivery, admission))
+                } else {
+                    None
+                };
                 tick(&self.monitor.0.executions);
-                execute(reservation, message.payload(), stop).await
+                execute(reservation, message.payload(), stop, transaction).await
             };
         if shutdown {
             return Ok(Some(TriggerStep {
@@ -159,11 +211,30 @@ impl NatsTriggers {
             }));
         }
         if ack == Ack::Retry && identity.delivery >= self.config.maximum_deliveries {
-            terminal = TriggerTerminal::Exhausted;
-            ack = Ack::Terminate;
+            if delivery.is_some() {
+                terminal = TriggerTerminal::RecoveryRequired;
+                ack = Ack::Hold;
+            } else {
+                terminal = TriggerTerminal::Exhausted;
+                ack = Ack::Terminate;
+            }
         }
         if terminal == TriggerTerminal::Exhausted {
             tick(&self.monitor.0.exhausted);
+        }
+        if delivery.is_some() && ack == Ack::Success {
+            // A committed old input must never acknowledge a visibly recreated
+            // stream after guest execution. Preserve the disposition and hold.
+            if interruptible(
+                stop,
+                super::inbox::qualify(connection.resource(), &request, binding, &inbox),
+            )
+            .await
+            .is_err()
+            {
+                terminal = TriggerTerminal::RecoveryRequired;
+                ack = Ack::Hold;
+            }
         }
         let (acknowledgement, error) = super::acknowledgement::finish(
             super::acknowledgement::Pending {
@@ -174,6 +245,7 @@ impl NatsTriggers {
                 response: &message,
                 inbox: &inbox,
                 delay_millis: self.config.redelivery_delay_millis,
+                authority: completion.as_ref().map(|owned| owned.authority.as_ref()),
             },
             &self.monitor.0,
             ack,

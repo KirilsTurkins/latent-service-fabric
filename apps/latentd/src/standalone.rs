@@ -18,6 +18,8 @@ mod startup_observation;
 mod state;
 mod telemetry;
 pub mod transport;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod triggers;
 
 use std::net::SocketAddr;
 use std::sync::atomic::AtomicUsize;
@@ -60,6 +62,8 @@ pub use state::{
 };
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 pub use state::{NativeRecoveryReport, NativeRecoveryRequest};
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub use triggers::{TriggerShutdownReport, TriggerStatus};
 
 /// Runtime builder callbacks count actual node-owned runtime and blocking threads.
 #[derive(Default)]
@@ -77,6 +81,8 @@ pub struct StandaloneNode {
     audit: Option<audit::AuditRuntime>,
     effects: Option<effects::EffectRuntime>,
     state: Option<state::StandaloneStateRuntime>,
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    triggers: Option<triggers::TriggerOwner>,
     // Present only during protected startup. Failed service installation keeps
     // the original boot cutoff instead of manufacturing a new drain interval.
     startup_deadline: Option<std::time::Instant>,

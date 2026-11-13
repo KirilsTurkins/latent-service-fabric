@@ -1,7 +1,10 @@
 use latent_core::native_capacity::NativeReservation;
 use std::sync::Arc;
 
-use super::{CheckpointInspection, ProtectedCheckpointConfig, StoreInitializationWitness};
+use super::{
+    CheckpointInspection, InventoryObservation, ProtectedCheckpointConfig,
+    StoreInitializationWitness,
+};
 use crate::embedded::{ReadView, StoreError};
 use crate::protected_store::physical::{FailureLatch, PhysicalStore};
 use crate::store_identity::{ExternalCheckpoint, StoreIdentity};
@@ -227,12 +230,17 @@ impl CheckpointFile {
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "Retain the exact store, file and observation owners together"
+    )]
     pub(in crate::protected_store) fn open(
         store: &PhysicalStore,
         config: ProtectedCheckpointConfig,
         identity: StoreIdentity,
         fresh: Option<StoreInitializationWitness>,
         dispatch: Option<(u64, u64)>,
+        inventory: InventoryObservation,
         failure: Arc<FailureLatch>,
         original: Arc<NativeReservation>,
     ) -> Result<Self, StoreError> {
@@ -280,6 +288,9 @@ impl CheckpointFile {
             (file, fence, false)
         };
         let current = if created_here {
+            if matches!(inventory, InventoryObservation::Observed(Some(_))) {
+                return Err(StoreError::Conflict);
+            }
             if file.metadata().map_err(|_| StoreError::Unavailable)?.len() != 0 {
                 return Err(StoreError::Corrupt);
             }
@@ -289,8 +300,7 @@ impl CheckpointFile {
             if current.identity() != &identity {
                 return Err(StoreError::Corrupt);
             }
-            let (epoch, floor) = dispatch.ok_or(StoreError::Conflict)?;
-            current.check_store(&identity, epoch, floor)?;
+            Self::check_observation(&current, &identity, dispatch, inventory)?;
             Some(current)
         };
         root.check_mutable_file(&lock_fence)
@@ -312,12 +322,17 @@ impl CheckpointFile {
     }
 
     #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "Match the native bounded opening interface"
+    )]
     pub(in crate::protected_store) fn open(
         _: &PhysicalStore,
         _: ProtectedCheckpointConfig,
         _: StoreIdentity,
         _: Option<StoreInitializationWitness>,
         _: Option<(u64, u64)>,
+        _: InventoryObservation,
         _: Arc<FailureLatch>,
         _: Arc<NativeReservation>,
     ) -> Result<Self, StoreError> {
@@ -360,10 +375,65 @@ impl CheckpointFile {
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    fn check_observation(
+        current: &ExternalCheckpoint,
+        identity: &StoreIdentity,
+        dispatch: Option<(u64, u64)>,
+        inventory: InventoryObservation,
+    ) -> Result<(), StoreError> {
+        let (epoch, floor) = dispatch.ok_or(StoreError::Conflict)?;
+        match (current.inbox_custody(), inventory) {
+            (_, InventoryObservation::NotObserved)
+            | (None, InventoryObservation::Observed(None)) => {
+                current.check_store(identity, epoch, floor)
+            }
+            (Some(_), InventoryObservation::Observed(Some(actual))) => {
+                current.check_store_with_inbox_custody(identity, epoch, floor, actual)
+            }
+            _ => Err(StoreError::Conflict),
+        }
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     pub(in crate::protected_store) fn inspect(
         &self,
         view: &ReadView,
         dispatch: Option<(u64, u64)>,
+    ) -> Result<CheckpointInspection, StoreError> {
+        self.inspect_inner(view, dispatch, InventoryObservation::NotObserved)
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(in crate::protected_store) fn inspect_with_inventory(
+        &self,
+        view: &ReadView,
+        dispatch: Option<(u64, u64)>,
+        inventory: InventoryObservation,
+        keeper: &Arc<NativeReservation>,
+    ) -> Result<CheckpointInspection, StoreError> {
+        self.require_original(keeper)?;
+        self.inspect_inner(view, dispatch, inventory)
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(in crate::protected_store) fn require_original(
+        &self,
+        keeper: &Arc<NativeReservation>,
+    ) -> Result<(), StoreError> {
+        if !Arc::ptr_eq(&self.original, keeper) {
+            return Err(StoreError::Conflict);
+        }
+        self.original
+            .with_live(|| ())
+            .map_err(|_| StoreError::Conflict)
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    fn inspect_inner(
+        &self,
+        view: &ReadView,
+        dispatch: Option<(u64, u64)>,
+        inventory: InventoryObservation,
     ) -> Result<CheckpointInspection, StoreError> {
         self.original
             .with_live(|| ())
@@ -372,8 +442,9 @@ impl CheckpointFile {
         let current = self.current.lock().map_err(|_| StoreError::Unavailable)?;
         self.exact_current(current.as_ref())?;
         if let Some(checkpoint) = current.as_ref() {
-            let (epoch, floor) = dispatch.ok_or(StoreError::Conflict)?;
-            checkpoint.check_store(&self.identity, epoch, floor)?;
+            Self::check_observation(checkpoint, &self.identity, dispatch, inventory)?;
+        } else if matches!(inventory, InventoryObservation::Observed(Some(_))) {
+            return Err(StoreError::Conflict);
         }
         Ok(CheckpointInspection {
             checkpoint: current.clone(),
@@ -391,6 +462,27 @@ impl CheckpointFile {
         Err(StoreError::UnsupportedFormat)
     }
 
+    #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+    #[allow(clippy::unused_self)]
+    pub(in crate::protected_store) fn inspect_with_inventory(
+        &self,
+        _: &ReadView,
+        _: Option<(u64, u64)>,
+        _: InventoryObservation,
+        _: &Arc<NativeReservation>,
+    ) -> Result<CheckpointInspection, StoreError> {
+        Err(StoreError::UnsupportedFormat)
+    }
+
+    #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+    #[allow(clippy::unused_self)]
+    pub(in crate::protected_store) fn require_original(
+        &self,
+        _: &Arc<NativeReservation>,
+    ) -> Result<(), StoreError> {
+        Err(StoreError::UnsupportedFormat)
+    }
+
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     pub(super) fn advance(
         &self,
@@ -399,7 +491,35 @@ impl CheckpointFile {
         protected_clock_epoch: u64,
         dispatch: Option<(u64, u64)>,
     ) -> Result<ExternalCheckpoint, StoreError> {
-        self.advance_inner(view, expected, protected_clock_epoch, dispatch, || {})
+        self.advance_inner(
+            view,
+            expected,
+            protected_clock_epoch,
+            dispatch,
+            InventoryObservation::NotObserved,
+            || {},
+        )
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(super) fn advance_with_inventory(
+        &self,
+        view: &ReadView,
+        expected: Option<&ExternalCheckpoint>,
+        protected_clock_epoch: u64,
+        dispatch: Option<(u64, u64)>,
+        inventory: InventoryObservation,
+        keeper: &Arc<NativeReservation>,
+    ) -> Result<ExternalCheckpoint, StoreError> {
+        self.require_original(keeper)?;
+        self.advance_inner(
+            view,
+            expected,
+            protected_clock_epoch,
+            dispatch,
+            inventory,
+            || {},
+        )
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -409,6 +529,7 @@ impl CheckpointFile {
         expected: Option<&ExternalCheckpoint>,
         protected_clock_epoch: u64,
         dispatch: Option<(u64, u64)>,
+        inventory: InventoryObservation,
         after_write: impl FnOnce(),
     ) -> Result<ExternalCheckpoint, StoreError> {
         self.original
@@ -419,6 +540,19 @@ impl CheckpointFile {
         self.exact_current(current.as_ref())?;
         if current.as_ref() != expected {
             return Err(StoreError::Conflict);
+        }
+        match (
+            current.as_ref().and_then(ExternalCheckpoint::inbox_custody),
+            inventory,
+        ) {
+            (Some(_), InventoryObservation::NotObserved) => {
+                return Err(StoreError::UnsupportedFormat)
+            }
+            (_, InventoryObservation::NotObserved)
+            | (None, InventoryObservation::Observed(None)) => {}
+            (Some(expected), InventoryObservation::Observed(Some(actual)))
+                if expected == actual => {}
+            _ => return Err(StoreError::Conflict),
         }
         let (epoch, floor) = dispatch.ok_or(StoreError::Conflict)?;
         let next = if let Some(original) = current.as_ref() {
@@ -456,7 +590,14 @@ impl CheckpointFile {
         dispatch: Option<(u64, u64)>,
         after_write: impl FnOnce(),
     ) -> Result<ExternalCheckpoint, StoreError> {
-        self.advance_inner(view, expected, protected_clock_epoch, dispatch, after_write)
+        self.advance_inner(
+            view,
+            expected,
+            protected_clock_epoch,
+            dispatch,
+            InventoryObservation::NotObserved,
+            after_write,
+        )
     }
 
     #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
@@ -467,6 +608,20 @@ impl CheckpointFile {
         _: Option<&ExternalCheckpoint>,
         _: u64,
         _: Option<(u64, u64)>,
+    ) -> Result<ExternalCheckpoint, StoreError> {
+        Err(StoreError::UnsupportedFormat)
+    }
+
+    #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+    #[allow(clippy::unused_self)]
+    pub(super) fn advance_with_inventory(
+        &self,
+        _: &ReadView,
+        _: Option<&ExternalCheckpoint>,
+        _: u64,
+        _: Option<(u64, u64)>,
+        _: InventoryObservation,
+        _: &Arc<NativeReservation>,
     ) -> Result<ExternalCheckpoint, StoreError> {
         Err(StoreError::UnsupportedFormat)
     }

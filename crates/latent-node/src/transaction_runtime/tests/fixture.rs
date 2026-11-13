@@ -83,6 +83,18 @@ impl Fixture {
         Self::with_native_configuration(
             latent_core::native_capacity::NativeCapacityLimits::default(),
             true,
+            false,
+            false,
+        )
+        .await
+    }
+
+    pub async fn with_trigger() -> Self {
+        Self::with_native_configuration(
+            latent_core::native_capacity::NativeCapacityLimits::default(),
+            false,
+            true,
+            false,
         )
         .await
     }
@@ -90,12 +102,24 @@ impl Fixture {
     pub async fn with_native_limits(
         limits: latent_core::native_capacity::NativeCapacityLimits,
     ) -> Self {
-        Self::with_native_configuration(limits, false).await
+        Self::with_native_configuration(limits, false, false, false).await
+    }
+
+    pub async fn with_scoped_trigger() -> Self {
+        Self::with_native_configuration(
+            latent_core::native_capacity::NativeCapacityLimits::default(),
+            false,
+            true,
+            true,
+        )
+        .await
     }
 
     async fn with_native_configuration(
         limits: latent_core::native_capacity::NativeCapacityLimits,
         enable_staging: bool,
+        trigger: bool,
+        install_quotas: bool,
     ) -> Self {
         let base = std::env::var_os("LATENT_STATE_TEST_ROOT")
             .map_or_else(std::env::temp_dir, PathBuf::from);
@@ -103,7 +127,7 @@ impl Fixture {
         fs::set_permissions(root.path(), fs::Permissions::from_mode(0o700)).unwrap();
         let (catalog, metadata, publication, deployment, declaration) =
             publication::publish(root.path()).await;
-        let (policy, binding) = policy::create(root.path(), &catalog, &publication);
+        let (policy, binding) = policy::create(root.path(), &catalog, &publication, trigger);
         let policy = Arc::new(policy);
         let state_root = root.path().join("state");
         fs::create_dir(&state_root).unwrap();
@@ -113,6 +137,39 @@ impl Fixture {
         let store = Arc::new(ProtectedStoreOwner::start(config).unwrap().await.unwrap());
         let native = latent_core::native_capacity::NativeCapacityOwner::new(limits).unwrap();
         store.bind_native_capacity(&native).unwrap();
+        if install_quotas {
+            store
+                .with_store(StoreIoKind::Write, 8192, |store| {
+                    use latent_state::tenant::{self, TenantQuota, TenantUsage};
+                    let quotas = [TenantQuota {
+                        tenant: latent_core::TenantId("a".into()),
+                        limits: TenantUsage {
+                            state_keys: 64,
+                            state_bytes: 1024 * 1024,
+                            tombstone_keys: 64,
+                            tombstone_bytes: 1024 * 1024,
+                            result_rows: 64,
+                            result_bytes: 8 * 1024 * 1024,
+                            effect_rows: 64,
+                            effect_bytes: 8 * 1024 * 1024,
+                            payload_bytes: 8 * 1024 * 1024,
+                            recovery_bytes: 4 * 1024 * 1024,
+                            metadata_rows: 64,
+                            metadata_bytes: 1024 * 1024,
+                        },
+                    }];
+                    let view = store.snapshot()?;
+                    let plan = tenant::prepare_install(&view, &quotas)?;
+                    drop(view);
+                    plan.publish(store, || Ok::<_, ()>(()))
+                        .map_err(|_| latent_state::embedded::StoreError::Unavailable)?;
+                    Ok(())
+                })
+                .unwrap()
+                .await
+                .unwrap()
+                .unwrap();
+        }
         let namespaces = Arc::new(NamespaceCatalog::new());
         Self::create_namespace(&store, &namespaces).await;
         let effects = EffectAuthorityOwner::new(128, 16, 100).unwrap();

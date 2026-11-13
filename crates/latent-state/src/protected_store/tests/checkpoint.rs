@@ -1,5 +1,5 @@
 use super::*;
-use crate::store_identity::{ExternalCheckpoint, StoreIdentity};
+use crate::store_identity::{ExternalCheckpoint, InboxCustodyWatermark, StoreIdentity};
 use latent_core::native_capacity::{
     NativeAdmissionClass, NativeCapacityLimits, NativeCapacityOwner, NativeReservationRequest,
 };
@@ -210,6 +210,332 @@ fn checkpoint_initialization_binds_real_floors_and_reopens_without_fresh_permiss
     assert_eq!(inspected.unwrap().checkpoint, Some(record));
     wait(checkpoint.retire());
     assert!(finish(&reopened).clean);
+}
+
+#[test]
+fn legacy_checkpoint_owner_refuses_custody_watermark_without_inventory_proof() {
+    let (_business, config) = fixture();
+    let external = external();
+    let owner = bound(config.clone());
+    let checkpoint = open(&owner, &external, witness(&owner));
+    seed_owner(&owner, 3, 4000);
+    let (checkpoint, record) = wait(
+        owner
+            .advance_checkpoint(checkpoint, None, 2, observed)
+            .unwrap(),
+    )
+    .unwrap();
+    let extended = record
+        .unwrap()
+        .advance_inbox_custody(InboxCustodyWatermark {
+            generation: 1,
+            digest: [7; 32],
+        })
+        .unwrap()
+        .encode();
+    wait(checkpoint.retire());
+    assert!(finish(&owner).clean);
+    let path = external.path().join(CHECKPOINT_NAME);
+    fs::write(&path, &extended).unwrap();
+    let reopened = bound(config);
+    let (checkpoint, result) = wait(
+        reopened
+            .open_checkpoint(
+                ProtectedCheckpointConfig {
+                    root: external.path().to_path_buf(),
+                },
+                identity(),
+                None,
+                keeper(&reopened),
+                observed,
+            )
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        result,
+        Err(ProtectedStoreError::Store(StoreError::UnsupportedFormat))
+    );
+    assert_eq!(fs::read(&path).unwrap(), extended);
+    wait(checkpoint.retire());
+    assert!(!finish(&reopened).clean);
+}
+
+#[test]
+fn custody_checkpoint_open_compares_same_view_inventory_and_legacy_operations_stay_closed() {
+    for matching in [true, false] {
+        let (_business, config) = fixture();
+        let external = external();
+        let owner = bound(config.clone());
+        let checkpoint = open(&owner, &external, witness(&owner));
+        seed_owner(&owner, 3, 4000);
+        let (checkpoint, record) = wait(
+            owner
+                .advance_checkpoint(checkpoint, None, 2, observed)
+                .unwrap(),
+        )
+        .unwrap();
+        let watermark = InboxCustodyWatermark {
+            generation: 1,
+            digest: [7; 32],
+        };
+        let record = record.unwrap().advance_inbox_custody(watermark).unwrap();
+        wait(checkpoint.retire());
+        assert!(finish(&owner).clean);
+        let path = external.path().join(CHECKPOINT_NAME);
+        let mut encoded = record.encode();
+        fs::write(&path, &encoded).unwrap();
+        let reopened = bound(config);
+        let actual = if matching {
+            watermark
+        } else {
+            InboxCustodyWatermark {
+                generation: 1,
+                digest: [8; 32],
+            }
+        };
+        let original = keeper(&reopened);
+        let (checkpoint, result) = wait(
+            reopened
+                .open_checkpoint_with_inbox_inventory(
+                    ProtectedCheckpointConfig {
+                        root: external.path().to_path_buf(),
+                    },
+                    identity(),
+                    None,
+                    Arc::clone(&original),
+                    4096,
+                    observed,
+                    move |view| {
+                        assert_eq!(observed(view)?, Some((3, 4000)));
+                        Ok(Some(actual))
+                    },
+                )
+                .unwrap(),
+        )
+        .unwrap();
+        if matching {
+            result.unwrap();
+            let (checkpoint, mismatch) = wait(
+                reopened
+                    .inspect_checkpoint_with_inbox_inventory(
+                        checkpoint,
+                        Arc::clone(&original),
+                        4096,
+                        observed,
+                        |_| {
+                            Ok(Some(InboxCustodyWatermark {
+                                generation: 1,
+                                digest: [9; 32],
+                            }))
+                        },
+                    )
+                    .unwrap(),
+            )
+            .unwrap();
+            assert_eq!(
+                mismatch,
+                Err(ProtectedStoreError::Store(StoreError::Conflict))
+            );
+            let (checkpoint, inspection) = wait(
+                reopened
+                    .inspect_checkpoint_with_inbox_inventory(
+                        checkpoint,
+                        Arc::clone(&original),
+                        4096,
+                        observed,
+                        move |view| {
+                            assert_eq!(observed(view)?, Some((3, 4000)));
+                            Ok(Some(watermark))
+                        },
+                    )
+                    .unwrap(),
+            )
+            .unwrap();
+            assert_eq!(inspection.unwrap().checkpoint, Some(record.clone()));
+            let (checkpoint, mismatch) = wait(
+                reopened
+                    .advance_checkpoint_with_inbox_inventory(
+                        checkpoint,
+                        Some(record.clone()),
+                        2,
+                        Arc::clone(&original),
+                        4096,
+                        observed,
+                        |_| {
+                            Ok(Some(InboxCustodyWatermark {
+                                generation: 1,
+                                digest: [9; 32],
+                            }))
+                        },
+                    )
+                    .unwrap(),
+            )
+            .unwrap();
+            assert_eq!(
+                mismatch,
+                Err(ProtectedStoreError::Store(StoreError::Conflict))
+            );
+            assert_eq!(fs::read(&path).unwrap(), encoded);
+            // A new dispatcher may legitimately advance its owner epoch before
+            // this protected floor is persisted; custody must stay unchanged.
+            seed_owner(&reopened, 4, 5000);
+            let (checkpoint, advanced) = wait(
+                reopened
+                    .advance_checkpoint_with_inbox_inventory(
+                        checkpoint,
+                        Some(record.clone()),
+                        2,
+                        Arc::clone(&original),
+                        4096,
+                        observed,
+                        move |_| Ok(Some(watermark)),
+                    )
+                    .unwrap(),
+            )
+            .unwrap();
+            let next = advanced.unwrap();
+            assert_eq!(next.inbox_custody(), Some(watermark));
+            assert_eq!(next.dispatch_owner_epoch(), 4);
+            assert_eq!(next.clock_floor_millis(), 5000);
+            encoded = next.encode();
+            let (checkpoint, legacy) = wait(
+                reopened
+                    .advance_checkpoint(checkpoint, Some(next), 2, observed)
+                    .unwrap(),
+            )
+            .unwrap();
+            assert_eq!(
+                legacy,
+                Err(ProtectedStoreError::Store(StoreError::UnsupportedFormat))
+            );
+            wait(checkpoint.retire());
+        } else {
+            assert_eq!(
+                result,
+                Err(ProtectedStoreError::Store(StoreError::Conflict))
+            );
+            wait(checkpoint.retire());
+        }
+        assert_eq!(fs::read(&path).unwrap(), encoded);
+        let _ = finish(&reopened);
+    }
+}
+
+#[test]
+fn legacy_checkpoint_refuses_an_unanchored_nonempty_source_inventory() {
+    let (_business, config) = fixture();
+    let external = external();
+    let owner = bound(config.clone());
+    let checkpoint = open(&owner, &external, witness(&owner));
+    seed_owner(&owner, 3, 4000);
+    let (checkpoint, record) = wait(
+        owner
+            .advance_checkpoint(checkpoint, None, 2, observed)
+            .unwrap(),
+    )
+    .unwrap();
+    let encoded = record.unwrap().encode();
+    wait(checkpoint.retire());
+    assert!(finish(&owner).clean);
+    let reopened = bound(config);
+    let watermark = InboxCustodyWatermark {
+        generation: 1,
+        digest: [7; 32],
+    };
+    let (checkpoint, result) = wait(
+        reopened
+            .open_checkpoint_with_inbox_inventory(
+                ProtectedCheckpointConfig {
+                    root: external.path().to_path_buf(),
+                },
+                identity(),
+                None,
+                keeper(&reopened),
+                4096,
+                observed,
+                move |_| Ok(Some(watermark)),
+            )
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        result,
+        Err(ProtectedStoreError::Store(StoreError::Conflict))
+    );
+    assert_eq!(
+        fs::read(external.path().join(CHECKPOINT_NAME)).unwrap(),
+        encoded
+    );
+    wait(checkpoint.retire());
+    let _ = finish(&reopened);
+}
+
+#[test]
+fn custody_inspection_refuses_another_recovery_reservation() {
+    let (_business, config) = fixture();
+    let external = external();
+    let owner = bound(config);
+    let original = keeper(&owner);
+    let (checkpoint, opened) = wait(
+        owner
+            .open_checkpoint_with_inbox_inventory(
+                ProtectedCheckpointConfig {
+                    root: external.path().to_path_buf(),
+                },
+                identity(),
+                witness(&owner),
+                Arc::clone(&original),
+                4096,
+                observed,
+                |_| Ok(None),
+            )
+            .unwrap(),
+    )
+    .unwrap();
+    opened.unwrap();
+    let other = keeper(&owner);
+    let observed_inventory = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let observed_by_callback = Arc::clone(&observed_inventory);
+    let (checkpoint, result) = wait(
+        owner
+            .advance_checkpoint_with_inbox_inventory(
+                checkpoint,
+                None,
+                1,
+                Arc::clone(&other),
+                4096,
+                observed,
+                move |_| {
+                    observed_by_callback.store(true, std::sync::atomic::Ordering::SeqCst);
+                    Ok(None)
+                },
+            )
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        result,
+        Err(ProtectedStoreError::Store(StoreError::Conflict))
+    );
+    assert!(!observed_inventory.load(std::sync::atomic::Ordering::SeqCst));
+    let observed_by_callback = Arc::clone(&observed_inventory);
+    let (checkpoint, result) = wait(
+        owner
+            .inspect_checkpoint_with_inbox_inventory(checkpoint, other, 4096, observed, move |_| {
+                observed_by_callback.store(true, std::sync::atomic::Ordering::SeqCst);
+                Ok(None)
+            })
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        result,
+        Err(ProtectedStoreError::Store(StoreError::Conflict))
+    );
+    assert!(!observed_inventory.load(std::sync::atomic::Ordering::SeqCst));
+    wait(checkpoint.retire());
+    let _ = finish(&owner);
 }
 
 #[test]

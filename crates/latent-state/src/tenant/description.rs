@@ -54,6 +54,9 @@ pub fn census_contribution(
         // These lower rows contribute their metadata only.
         return metadata(tenant, key, bytes);
     }
+    if key.family == Family::Maintenance && key.key.starts_with(b"inbox-source-v1\0") {
+        return crate::inbox_scope::census_contribution(view, key, bytes);
+    }
     if key.family == Family::Maintenance
         && key
             .key

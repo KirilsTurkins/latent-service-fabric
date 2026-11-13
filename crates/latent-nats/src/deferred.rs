@@ -2,7 +2,7 @@
 //! This profile is unordered and qualifies a finite stream duplicate window.
 
 mod attempt;
-mod qualification;
+pub(crate) mod qualification;
 mod redrive;
 pub use qualification::JetStreamQualification;
 

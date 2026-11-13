@@ -22,6 +22,8 @@ use std::{
 struct Clock {
     start: Instant,
     elapsed_millis: AtomicU64,
+    calls: AtomicU64,
+    delay_at: AtomicU64,
 }
 
 impl ActivationClock for Clock {
@@ -30,6 +32,10 @@ impl ActivationClock for Clock {
     }
 
     fn monotonic_now(&self) -> Instant {
+        let call = self.calls.fetch_add(1, Ordering::SeqCst) + 1;
+        if call == self.delay_at.load(Ordering::SeqCst) {
+            std::thread::sleep(Duration::from_millis(1100));
+        }
         self.start + Duration::from_millis(self.elapsed_millis.load(Ordering::SeqCst))
     }
 }
@@ -45,11 +51,16 @@ struct Fixture {
 
 impl Fixture {
     fn new() -> Self {
-        let store = EmbeddedStore::open_file(tempfile::tempfile().unwrap(), StoreLimits::default())
-            .unwrap();
+        Self::with_limits(StoreLimits::default())
+    }
+
+    fn with_limits(limits: StoreLimits) -> Self {
+        let store = EmbeddedStore::open_file(tempfile::tempfile().unwrap(), limits).unwrap();
         let clock = Arc::new(Clock {
             start: Instant::now(),
             elapsed_millis: AtomicU64::new(0),
+            calls: AtomicU64::new(0),
+            delay_at: AtomicU64::new(0),
         });
         let projection: Arc<dyn ActivationClock> = clock.clone();
         let capacity =
@@ -138,6 +149,35 @@ impl Fixture {
     }
 }
 
+#[test]
+fn startup_validation_rechecks_view_after_final_admission() {
+    for installed in [false, true] {
+        let fixture = Fixture::with_limits(StoreLimits {
+            maximum_view_age: Duration::from_secs(1),
+            ..StoreLimits::default()
+        });
+        fixture.initialize_identity();
+        let quotas = if installed { vec![quota()] } else { vec![] };
+        if installed {
+            fixture.install(&quotas);
+        }
+        let view = fixture.store.snapshot().unwrap();
+        fixture.clock.calls.store(0, Ordering::SeqCst);
+        validate_inventory(&view, &fixture.identity, &quotas, &fixture.original).unwrap();
+        let final_call = fixture.clock.calls.load(Ordering::SeqCst);
+        assert!(final_call > 0);
+        drop(view);
+        let view = fixture.store.snapshot().unwrap();
+        fixture.clock.calls.store(0, Ordering::SeqCst);
+        fixture.clock.delay_at.store(final_call, Ordering::SeqCst);
+        assert_eq!(
+            validate_inventory(&view, &fixture.identity, &quotas, &fixture.original),
+            Err(StoreError::SnapshotExpired)
+        );
+        assert_eq!(fixture.clock.calls.load(Ordering::SeqCst), final_call);
+    }
+}
+
 fn quota() -> TenantQuota {
     TenantQuota {
         tenant: TenantId("tenant".into()),
@@ -156,6 +196,128 @@ fn quota() -> TenantQuota {
             metadata_bytes: 256 * 1024,
         },
     }
+}
+
+#[test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "Keep startup source custody and corruption cases in one bounded fixture"
+)]
+fn startup_censuses_source_custody_and_refuses_corrupt_rows() {
+    use latent_core::StateNamespaceId;
+    use latent_state::{
+        inbox_scope::{InboxScope, PreparedInboxScope},
+        namespace::{
+            catalog::{NamespaceCatalog, NamespaceMutation, NamespaceOperationContext},
+            NamespaceQuota,
+        },
+    };
+    let fixture = Fixture::new();
+    fixture.initialize_identity();
+    let quotas = [quota()];
+    fixture.install(&quotas);
+    let namespace = NamespaceCatalog::new()
+        .prepare(
+            &fixture.store,
+            NamespaceOperationContext {
+                tenant: TenantId("tenant".into()),
+                actor: "operator".into(),
+                operation_id: "create".into(),
+            },
+            &NamespaceMutation::Create {
+                id: StateNamespaceId("orders".into()),
+                state_schema: format!("sha256:{}", "1".repeat(64)),
+                quota: NamespaceQuota::default(),
+            },
+            0,
+        )
+        .unwrap();
+    fixture.store.apply(namespace.batch).unwrap();
+    let record = InboxScope {
+        tenant: "tenant".into(),
+        namespace: "orders".into(),
+        incarnation: 1,
+        processing_scope: "primary".into(),
+        provider: "private-nats".into(),
+        stream: "orders".into(),
+        stream_created: "2026-01-01T00:00:00Z".into(),
+    };
+    let view = fixture.store.snapshot().unwrap();
+    let batch = PreparedInboxScope::prepare(&view, &record)
+        .unwrap()
+        .into_batch();
+    let key = batch
+        .mutations
+        .iter()
+        .find(|row| row.key.key.starts_with(b"inbox-source-v1\0"))
+        .unwrap()
+        .key
+        .clone();
+    drop(view);
+    fixture.store.apply(batch).unwrap();
+    fixture.validate(&quotas).unwrap();
+    let view = fixture.store.snapshot().unwrap();
+    let observed = validate_inventory(&view, &fixture.identity, &quotas, &fixture.original)
+        .unwrap()
+        .unwrap();
+    assert_eq!(observed.generation, 1);
+    assert_eq!(
+        validate_inventory_addition(
+            &view,
+            &fixture.identity,
+            &quotas,
+            &fixture.original,
+            &record,
+            None,
+        ),
+        Ok(observed)
+    );
+    assert_eq!(
+        validate_inventory_addition(
+            &view,
+            &fixture.identity,
+            &quotas,
+            &fixture.original,
+            &record,
+            Some(observed),
+        ),
+        Err(StoreError::Conflict)
+    );
+    let mut changed = record.clone();
+    changed.provider = "other-provider".into();
+    assert_eq!(
+        validate_inventory_addition(
+            &view,
+            &fixture.identity,
+            &quotas,
+            &fixture.original,
+            &changed,
+            None,
+        ),
+        Err(StoreError::Conflict)
+    );
+    let checkpoint = latent_state::store_identity::ExternalCheckpoint::initial(
+        fixture.identity.clone(),
+        1,
+        1,
+        1000,
+    )
+    .unwrap()
+    .advance_inbox_custody(observed)
+    .unwrap();
+    assert_eq!(
+        checkpoint.check_store_with_inbox_custody(&fixture.identity, 1, 1000, observed),
+        Ok(())
+    );
+    let mut older = observed;
+    older.digest[0] ^= 1;
+    assert_eq!(
+        checkpoint.check_store_with_inbox_custody(&fixture.identity, 1, 1000, older),
+        Err(StoreError::Conflict)
+    );
+    drop(view);
+    fixture.replace(key, Some(b"corrupt".to_vec()));
+    assert_eq!(fixture.validate(&quotas), Err(StoreError::Corrupt));
 }
 
 #[test]

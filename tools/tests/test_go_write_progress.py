@@ -101,6 +101,11 @@ class GoWriteProgressTests(unittest.TestCase):
         materials={name:(ROOT/name).read_bytes() for name in deadline.MATERIALS}
         deadline.contract((ROOT/q.TEMPLATE).read_bytes(),materials)
         for name, marker in ((deadline.MATERIALS[0],b'self.limits.absolute_timeout_millis > 10_000'),
+                             (deadline.MATERIALS[2],b'value > 10_000 || (value == 0 && direction != 2)'),
+                             (deadline.MATERIALS[2],b'direction == 2 && !socket.host_tls() && !socket.protected_owner()'),
+                             (deadline.MATERIALS[2],b'now + Duration::from_millis(u64::from(value))'),
+                             (deadline.MATERIALS[2],b'if !observation {'),
+                             (deadline.MATERIALS[2],b'deadline = deadline.min(requested);'),
                              (deadline.MATERIALS[3],b'r := raw.ConnectContext(ctx, request)')):
             altered=dict(materials);altered[name]=altered[name].replace(marker,b'changed',1)
             with self.assertRaises(ValueError):deadline.contract((ROOT/q.TEMPLATE).read_bytes(),altered)

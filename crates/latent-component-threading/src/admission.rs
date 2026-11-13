@@ -3,6 +3,8 @@
 use super::*;
 use wasmparser::{ElementItems, ElementKind};
 
+mod names;
+
 const NATIVE: &str = "latent:runtime-native/threads@0.1.0";
 const NEW: &str = "[thread-new-indirect-v0]";
 const PREPARED: i32 = 1;
@@ -176,6 +178,13 @@ struct RewriteAdmission {
 }
 impl Reencode for RewriteAdmission {
     type Error = &'static str;
+    fn parse_custom_name_subsection(
+        &mut self,
+        names: &mut wasm_encoder::NameSection,
+        section: wasmparser::Name<'_>,
+    ) -> Result<(), reencode::Error<Self::Error>> {
+        self.preserve_function_names(names, section)
+    }
     fn function_index(&mut self, function: u32) -> Result<u32, reencode::Error<Self::Error>> {
         if function == self.plan.raw {
             self.references += 1;

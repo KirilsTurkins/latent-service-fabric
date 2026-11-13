@@ -36,6 +36,8 @@ pub struct TenantCensusReport {
     pub logical_bytes: u64,
     pub global_rows: u64,
     pub global_bytes: u64,
+    /// Digest of every validated source row seen by this exact ordered scan.
+    pub inbox_custody: Option<crate::store_identity::InboxCustodyWatermark>,
 }
 struct Counter {
     tenant: TenantId,
@@ -53,6 +55,11 @@ pub struct TenantCensus {
     previous: Option<RowKey>,
     deadline: Instant,
     failed: bool,
+    inbox_inventory: crate::inbox_scope::InboxScopeInventory,
+    inbox_addition: Option<(
+        crate::inbox_scope::InboxScopeAddition,
+        Option<crate::store_identity::InboxCustodyWatermark>,
+    )>,
 }
 impl TenantCensus {
     pub fn capture(
@@ -99,11 +106,38 @@ impl TenantCensus {
                 logical_bytes: 0,
                 global_rows: 0,
                 global_bytes: 0,
+                inbox_custody: None,
             },
             previous: None,
             deadline,
             failed: false,
+            inbox_inventory: crate::inbox_scope::InboxScopeInventory::default(),
+            inbox_addition: None,
         })
+    }
+
+    /// Include a one-source transition in this same producer-validated scan.
+    /// This descriptive comparison does not authorize the addition or a write.
+    pub fn track_inbox_addition(
+        &mut self,
+        source: &crate::inbox_scope::InboxScope,
+        expected_before: Option<crate::store_identity::InboxCustodyWatermark>,
+    ) -> Result<(), StoreError> {
+        let result = (|| {
+            self.checkpoint()?;
+            if self.failed || self.previous.is_some() || self.inbox_addition.is_some() {
+                return Err(StoreError::Conflict);
+            }
+            self.inbox_addition = Some((
+                crate::inbox_scope::InboxScopeAddition::new(source)?,
+                expected_before,
+            ));
+            Ok(())
+        })();
+        if result.is_err() {
+            self.failed = true;
+        }
+        result
     }
 
     /// Call exactly once for every row, after that row's installed codec/link
@@ -137,6 +171,10 @@ impl TenantCensus {
             (prior.family, prior.key.as_slice()) >= (key.family, key.key.as_slice())
         }) {
             return Err(StoreError::Corrupt);
+        }
+        self.inbox_inventory.observe(key, bytes)?;
+        if let Some((addition, _)) = self.inbox_addition.as_mut() {
+            addition.observe(key, bytes)?;
         }
         self.report.rows = self
             .report
@@ -228,7 +266,7 @@ impl TenantCensus {
             Ok(())
         }
     }
-    pub fn finish(self) -> Result<TenantCensusReport, StoreError> {
+    pub fn finish(mut self) -> Result<TenantCensusReport, StoreError> {
         self.checkpoint()?;
         if self.failed
             || !self.guard_seen
@@ -238,6 +276,12 @@ impl TenantCensus {
                 .any(|counter| !counter.seen || counter.observed != counter.expected)
         {
             return Err(StoreError::Corrupt);
+        }
+        self.report.inbox_custody = self.inbox_inventory.finish()?;
+        if let Some((addition, previous)) = self.inbox_addition {
+            if Some(addition.finish(previous)?) != self.report.inbox_custody {
+                return Err(StoreError::Corrupt);
+            }
         }
         Ok(self.report)
     }

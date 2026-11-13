@@ -278,6 +278,18 @@ class CThreadMinimal(unittest.TestCase):
     self.assertEqual(left[path], right[path], path)
     self.assertEqual(hashlib.sha256(left[path]).hexdigest(), expected, path)
     del left[path]; del right[path]
+   # The current SDK capture also carries the optional stream sources and
+   # timed-symbol response file. Authenticate the same additions in both
+   # projects before comparing the unchanged historical fixture inventory.
+   capture_addendum = {
+    'vendor/lsf/sdk/c-guest/include/lsf/standard-streams.h': '1848522da6da8be599eedcda024b7162560343ebb77caa5634344a59f61b2a94',
+    'vendor/lsf/sdk/c-guest/src/standard-streams.c': '955c42563ee4c0417de4dcbab9d8c644f53b7b41b1613ed91e1c1ff4f3b4076c',
+    'vendor/lsf/sdk/c-guest/runtime/timed-symbols.rsp': '69c7c419534b95f697f185acf531bdd3dde31b506af5e5cc6ba1f2f789a63214',
+   }
+   for path, expected in capture_addendum.items():
+    self.assertEqual(left[path], right[path], path)
+    self.assertEqual(hashlib.sha256(left[path]).hexdigest(), expected, path)
+    del left[path]; del right[path]
    self.assertEqual(set(left),set(right));self.assertEqual(len(left),65)
    self.assertEqual([n for n in left if left[n]!=right[n]],['src/main.c'])
    self.assertEqual(read_json(a/'capsule-project.json'),read_json(b/'capsule-project.json'))

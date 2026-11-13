@@ -70,6 +70,7 @@ fn initialize(
         plan.config.identity.clone(),
         None,
         dispatch,
+        crate::protected_store::checkpoint::InventoryObservation::NotObserved,
         Arc::clone(&store.failure),
         plan.stage.input.original(),
     )

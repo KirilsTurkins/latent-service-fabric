@@ -54,7 +54,7 @@ fn settings(directory: &TempDir) -> NodeSettings {
 #[tokio::test]
 async fn warm_configured_binding_graph_retires_before_policy_reader_observation() {
     let directory = TempDir::new().unwrap();
-    let (settings, catalogs) = fixture::warm(&directory).await;
+    let (settings, catalogs) = Box::pin(fixture::warm(&directory)).await;
     let policy = catalogs.policies.as_ref().unwrap().handle().store().clone();
     assert_eq!(catalogs.deployments.binding_inventory().2, 1);
     assert!(policy.retained_read_owners() > 0);
@@ -66,7 +66,7 @@ async fn warm_configured_binding_graph_retires_before_policy_reader_observation(
 #[tokio::test]
 async fn retained_original_compiled_plan_prevents_clean_retirement_until_actual_drop() {
     let directory = TempDir::new().unwrap();
-    let (settings, catalogs) = fixture::warm(&directory).await;
+    let (settings, catalogs) = Box::pin(fixture::warm(&directory)).await;
     let policy = catalogs.policies.as_ref().unwrap().handle().store().clone();
     let target = InvocationTarget {
         tenant: TenantId("tests".into()),

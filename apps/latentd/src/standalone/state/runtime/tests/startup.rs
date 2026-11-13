@@ -118,6 +118,7 @@ async fn actual_installed_http_readiness_preserves_saved_pause_after_new_dispatc
         },
         identity: setup.fixture.settings.store_identity.clone(),
         preparation: None,
+        inventory: None,
         original_deadline: deadline,
         control_runtime: tokio::runtime::Handle::current(),
     })
