@@ -1,0 +1,136 @@
+name: Integrate reviewed TypeScript security repairs
+on:
+  push:
+    branches: [ci/typescript-security-refresh-20261113]
+    paths: [.github/workflows/ts-security-integrate.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: 68bd53e20eeeae109f7816c8e81a1f959158a93b
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Recover exact reviewed edits and their executed build inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, hashlib, io, json, lzma, os, pathlib, shutil, subprocess, zipfile
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])/'security-refresh';root.mkdir()
+          def api(endpoint):
+              return subprocess.check_output(['gh','api',endpoint],timeout=180)
+          blob=json.loads(api('repos/KirilsTurkins/latent-service-fabric/git/blobs/fc7fa527126d497f15d6aba435d71755b9c8e3e1'))
+          raw=base64.b64decode(blob['content'])
+          assert hashlib.sha256(raw).hexdigest()=='d001c4ca66a4a035bc7c3e1efdc20d25cea9ee8a07a52e7b9a9f96f9f7936317'
+          payload=json.loads(lzma.decompress(raw))
+          for name,text in payload.items():
+              assert '/' not in name and '\\' not in name
+              (root/name).write_text(text)
+          def unpack(raw,target):
+              target.mkdir(parents=True,exist_ok=True)
+              with zipfile.ZipFile(io.BytesIO(raw)) as z:
+                  assert sum(v.file_size for v in z.infolist()) < 50*1024*1024
+                  for v in z.infolist():
+                      assert not pathlib.PurePosixPath(v.filename).is_absolute() and '..' not in pathlib.PurePosixPath(v.filename).parts
+                      assert (v.external_attr >> 16) & 0o170000 != 0o120000
+                  z.extractall(target)
+          sources=[
+            ('native2', 'KirilsTurkins/latent-service-fabric',14039241430,'42fd934a080f8c1b495d8eece2dec992cc35f4f3972517eedfd13af9a60788b9'),
+            ('collected2','KirilsTurkins/latent-service-fabric',14040000106,'75151a3952d1919ad42c5397cf8e47f2cdb62c2385250cbf4a817465733a8915'),
+          ]
+          for name,repo,artifact,digest in sources:
+              raw=api(f'repos/{repo}/actions/artifacts/{artifact}/zip')
+              assert hashlib.sha256(raw).hexdigest()==digest
+              unpack(raw,root/name)
+          for archive in (root/'collected2').glob('*.zip'):
+              unpack(archive.read_bytes(),root/'actions2'/archive.stem)
+          for role,repo,artifact,digest in [
+            ('rust-cache','KirilsTurkins/lsf-rust-cache',14039816987,'70718154523c060cb4ef7bbe134be8e09495ab7a795989c677c484f266738f93'),
+            ('setup-java','KirilsTurkins/lsf-setup-java',14040173557,'bee3b7ae2307d94e656a1983a90e1b9eb481b3272ec06f6e21da600c8ede68fa')]:
+              raw=api(f'repos/{repo}/actions/artifacts/{artifact}/zip')
+              assert hashlib.sha256(raw).hexdigest()==digest
+              shutil.rmtree(root/'actions2'/role,ignore_errors=True)
+              unpack(raw,root/'actions2'/role)
+          print('Exact native candidate and all eleven executed action builds authenticated.')
+          PY
+      - name: Reconstruct and require every postimage to match the reviewed local candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config core.autocrlf false
+          printf '* -text\n' >> .git/info/attributes
+          git apply --index --whitespace=nowarn "$RUNNER_TEMP/security-refresh/native2/patch.patch"
+          python3 - <<'PY'
+          import pathlib
+          p=pathlib.Path('global.json');raw=p.read_bytes();assert b'8.0.427' in raw;p.write_bytes(raw.replace(b'8.0.427',b'8.0.428'))
+          PY
+          python3 "$RUNNER_TEMP/security-refresh/integrate.py"
+          python3 - <<'PY'
+          import json,os,pathlib,pprint
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])/'security-refresh'
+          source=(root/'security_action_build.py').read_text()
+          source=source.replace('EXECUTIONS = {}','EXECUTIONS = '+pprint.pformat(json.loads((root/'sealed_builds.json').read_text()),width=115,sort_dicts=False))
+          pathlib.Path('tools/security_action_build.py').write_text(source)
+          pathlib.Path('tools/tests/test_security_action_build.py').write_text((root/'test_security_action_build.py').read_text())
+          PY
+          python3 "$RUNNER_TEMP/security-refresh/fixtures.py"
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib,subprocess
+          root=pathlib.Path.cwd()
+          for p in (root/'tools/ci/history').rglob('*'):
+              if p.is_file():
+                  p.write_bytes(subprocess.check_output(['git','show','HEAD:'+p.relative_to(root).as_posix()]))
+          for p in (root/'.github/security').glob('*.json'):
+              old=subprocess.check_output(['git','show','HEAD:'+p.relative_to(root).as_posix()])
+              if json.loads(p.read_bytes())==json.loads(old):p.write_bytes(old)
+          subprocess.run(['git','add','--all'],check=True)
+          paths=subprocess.check_output(['git','diff','--cached','--name-only'],text=True).splitlines()
+          actual={p:hashlib.sha256((root/p).read_bytes()).hexdigest() for p in paths}
+          digest=hashlib.sha256(json.dumps(actual,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+          expected=(pathlib.Path(os.environ['RUNNER_TEMP'])/'security-refresh/targetDigest').read_text()
+          assert digest==expected,(digest,expected)
+          subprocess.run(['git','-c','core.whitespace=cr-at-eol','diff','--cached','--check'],check=True)
+          print('All',len(paths),'postimages match:',digest)
+          PY
+      - name: Export exact candidate objects without modifying any PR branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64,hashlib,json,os,pathlib,subprocess
+          repo='KirilsTurkins/latent-service-fabric'
+          def git(*args):return subprocess.check_output(['git',*args],text=True).strip()
+          def api(kind,value):
+              p=subprocess.run(['gh','api','--method','POST',f'repos/{repo}/git/{kind}','--input','-'],input=json.dumps(value),text=True,capture_output=True,timeout=180,check=True)
+              return json.loads(p.stdout)
+          rows=[]
+          for line in git('diff','--cached','--raw','--no-abbrev','--no-renames').splitlines():
+              meta,path=line.split('\t');fields=meta.split();mode=fields[1];sha=fields[3]
+              assert mode!='000000'
+              data=subprocess.check_output(['git','cat-file','blob',sha])
+              got=api('blobs',{'encoding':'base64','content':base64.b64encode(data).decode()})
+              assert got['sha']==sha
+              rows.append({'path':path,'mode':mode,'type':'blob','sha':sha})
+          tree=api('trees',{'base_tree':git('rev-parse','HEAD^{tree}'),'tree':rows})
+          assert tree['sha']==git('write-tree')
+          commit=api('commits',{'parents':[git('rev-parse','HEAD')],'tree':tree['sha'],'message':'fix(security): patch native toolchains and rebuild action dependencies'})
+          output={'commit':commit['sha'],'tree':tree['sha'],'parent':git('rev-parse','HEAD'),'files':len(rows),'branchRefsChanged':False}
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'integration-receipt';out.mkdir()
+          (out/'candidate.json').write_text(json.dumps(output,indent=2)+'\n')
+          print(json.dumps(output,indent=2))
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@06dfe2de8e406c74d8e62730bcd18c498d48549c
+        if: always()
+        with:
+          name: integrated-security-candidate
+          path: ${{ runner.temp }}/integration-receipt/
+          retention-days: 7
+          if-no-files-found: warn
