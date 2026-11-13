@@ -1,0 +1,95 @@
+name: Validate Go security source and SDK
+on:
+  push:
+    branches: [ci/typescript-stack-ci-repair-20261113]
+    paths: [.github/workflows/ci-go-security-repair.yml]
+permissions:
+  contents: read
+jobs:
+  go:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/typescript-stack-ci-repair-20261113'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Restore reviewed source edits and verified pinned Buf
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64,hashlib,json,os,pathlib,subprocess
+          root=pathlib.Path(os.environ['RUNNER_TEMP']);out=root/'go-security-evidence';out.mkdir()
+          parent='68bd53e20eeeae109f7816c8e81a1f959158a93b'
+          subprocess.run(['git','fetch','--quiet','--no-tags','--depth=1','origin',parent],check=True)
+          work=root/'go-security-work';subprocess.run(['git','worktree','add','--detach',str(work),parent],check=True)
+          subprocess.run(['python3','-m','pip','install','-r','tools/requirements.lock'],cwd=work,check=True)
+          for name,sha in [('toolchains','04f22254efa2ca5a88c95971ac91e2d30fcd91bd'),('go-preimage','c90027f75da59686e335b3fc2705e87f5904a89d')]:
+              value=json.loads(subprocess.check_output(['gh','api','repos/KirilsTurkins/latent-service-fabric/git/blobs/'+sha]))
+              data=base64.b64decode(value['content']);assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()==sha
+              script=root/(name+'.py');script.write_bytes(data);subprocess.run(['python3',str(script)],cwd=work,check=True)
+          (out/'implementation.patch').write_bytes(subprocess.check_output(['git','diff','--binary','--full-index'],cwd=work))
+          (out/'parent.txt').write_text(parent+'\n')
+          PY
+          archive="$RUNNER_TEMP/buf.tar.gz"
+          timeout 120s gh api -H 'Accept: application/octet-stream' repos/bufbuild/buf/releases/assets/480772583 | head -c 37851982 > "$archive"
+          test "$(stat --format=%s "$archive")" = 37851981
+          echo "a9c6186cf6fcf062b247345e1b7b12c26f580c1b2a4bbf4d3fe080abf85ceee8  $archive" | sha256sum --check --strict
+          mkdir "$RUNNER_TEMP/buf-tools"
+          tar -xzf "$archive" -C "$RUNNER_TEMP/buf-tools" buf/bin/buf
+          echo "8720830e26a733da55bb89bcd3cb44849c0965fc0c44fb5d691cccdc64dca5af  $RUNNER_TEMP/buf-tools/buf/bin/buf" | sha256sum --check --strict
+          echo "$RUNNER_TEMP/buf-tools/buf/bin" >> "$GITHUB_PATH"
+      - name: Acquire and authenticate the patched upstream Go archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --max-time 180 --max-filesize 70680823 --output "$RUNNER_TEMP/go.tar.gz" https://dl.google.com/go/go1.27.4.linux-amd64.tar.gz
+          test "$(stat --format=%s "$RUNNER_TEMP/go.tar.gz")" = 70680823
+          echo "7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840  $RUNNER_TEMP/go.tar.gz" | sha256sum --check --strict
+          mkdir "$RUNNER_TEMP/patched-go"
+          tar -xzf "$RUNNER_TEMP/go.tar.gz" -C "$RUNNER_TEMP/patched-go"
+          echo "$RUNNER_TEMP/patched-go/go/bin" >> "$GITHUB_PATH"
+      - name: Execute real generation, SDK tests and exact source overlays
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/go-security-work"
+          out="$RUNNER_TEMP/go-security-evidence"
+          export GOTOOLCHAIN=local GOWORK=off GOFLAGS=-mod=readonly
+          go version > "$out/go-version.txt"
+          python3 sdk/go/dependencies.py --check > "$out/go-dependencies.log" 2>&1
+          python3 sdk/go/generate.py > "$out/go-generate.log" 2>&1
+          python3 sdk/go/generate.py --check > "$out/go-regenerate.log" 2>&1
+          (cd sdk/go && go test ./...) > "$out/go-sdk-tests.log" 2>&1
+          python3 tools/go_guest/runtime.py --prepare-compiler "$RUNNER_TEMP/patched-go/go" --output "$RUNNER_TEMP/go-async" > "$out/go-overlay.log" 2>&1
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib,sys,tempfile
+          sys.path.insert(0,'.')
+          from tools.go_guest import network
+          root=pathlib.Path(os.environ['RUNNER_TEMP']);goroot=root/'patched-go/go';out=root/'go-security-evidence'
+          earlier=json.loads(pathlib.Path('docs/testing/evidence/go-1.27.3-source-audit-2026-10-21.json').read_text())
+          rows=[]
+          for entry in earlier['rows']:
+              source=goroot/'src'/entry['path'];value=hashlib.sha256(source.read_bytes()).hexdigest()
+              if entry['path']=='net/dial.go':assert value=='b1213168e51f9daa3ad11c8e1612144dc430d681b62c9a4c3e3292136d8997fd'
+              else:assert value==entry['sha256'],entry['path']
+              rows.append({'path':entry['path'],'sha256':value,'bytes':source.stat().st_size})
+          replacements=network.prepare(goroot,pathlib.Path('sdk/go-guest'),root/'network-overlay','example.test/ordinary')
+          (out/'go-1.27.4-source-audit.json').write_text(json.dumps({'compiler':'go1.27.4','archiveSha256':'7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840','rows':rows,'networkOverlayFiles':len(replacements)},indent=2)+'\n')
+          PY
+          python3 -m unittest tools.tests.test_security_sdk_graphs tools.tests.test_check_tool_versions tools.tests.test_go_runtime_overlay tools.tests.test_go_native_authoring tools.tests.test_go_application_dependencies tools.tests.test_go_network tools.tests.test_go_network_runtime -v > "$out/python-controls.log" 2>&1
+          python3 tools/ci_coverage.py > "$out/ci-contracts.log" 2>&1
+          git diff --exit-code -- sdk/go/go.sum sdk/go-guest/go.sum
+          git diff --check
+      - name: Retain exact validation observations
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: go-security-repair-${{ github.sha }}
+          path: ${{ runner.temp }}/go-security-evidence/
+          retention-days: 7
+          if-no-files-found: error
