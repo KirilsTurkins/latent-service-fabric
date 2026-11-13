@@ -24,7 +24,7 @@ jobs:
         with:
           go-version: 1.27.4
           cache: false
-      - uses: KirilsTurkins/lsf-setup-java@25cdb4fbd09e6ea69d7dccd16c2decb226fe2f49
+      - uses: KirilsTurkins/lsf-setup-java@829ab1f33328c8eb542ad93cdd2cb5f71909516c
         with:
           distribution: temurin
           java-version: '25'
@@ -34,9 +34,10 @@ jobs:
       - uses: KirilsTurkins/lsf-setup-zig@fe1cf24d538afa401503cfc8c66a64fe76f56938
         with:
           version: 0.15.2
-      - name: Verify installed tools
+      - name: Verify installed tools with the exact selected SDK
         run: |
           set -euo pipefail
+          printf '{"sdk":{"version":"8.0.428","rollForward":"disable"}}\n' > global.json
           test "$(node --version)" = v24.19.0
           test "$(python --version)" = 'Python 3.13.5'
           test "$(go version)" = 'go version go1.27.4 linux/amd64'
@@ -104,12 +105,15 @@ jobs:
         with:
           shared-key: security-fastxml-${{ github.run_id }}-${{ github.run_attempt }}
           cache-workspace-crates: true
-      - name: Verify initial miss and execute the compiled probe
+          cache-directories: .rust-cache-witness
+      - name: Verify initial miss, execute the compiled probe and save a witness
         env:
           CACHE_HIT: ${{ steps.rust.outputs.cache-hit }}
         run: |
           test "$CACHE_HIT" != true
           cargo run --locked
+          mkdir .rust-cache-witness
+          printf 'original-rust-cache-backing\n' > .rust-cache-witness/value
   rust-restore:
     needs: rust-save
     runs-on: ubuntu-24.04
@@ -127,11 +131,12 @@ jobs:
         with:
           shared-key: security-fastxml-${{ github.run_id }}-${{ github.run_attempt }}
           cache-workspace-crates: true
+          cache-directories: .rust-cache-witness
           save-if: false
-      - name: Require restored cache and execute its binary
+      - name: Require restored cache content and execute the probe
         env:
           CACHE_HIT: ${{ steps.rust.outputs.cache-hit }}
         run: |
           test "$CACHE_HIT" = true
-          test -x target/debug/action-security-probe
+          test "$(cat .rust-cache-witness/value)" = original-rust-cache-backing
           cargo run --locked
