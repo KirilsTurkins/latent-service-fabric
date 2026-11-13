@@ -1,0 +1,114 @@
+name: TypeScript stack security repair
+on:
+  push:
+    branches: [ci/ts-stack-security-20261113]
+    paths: [.github/workflows/ts-security-repair.yml]
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: ts-stack-security-repair
+  cancel-in-progress: false
+jobs:
+  runtime:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/ts-stack-security-20261113'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+      CARGO_TARGET_DIR: ${{ runner.temp }}/rust-security-target
+      RUSTUP_TOOLCHAIN: 1.97.1
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-dotnet@258c927924210be905f8908a4be714e5d0daffa8
+        with:
+          dotnet-version: 8.0.428
+      - run: python3 -m pip install -r tools/requirements.lock
+      - name: Prepare and validate the exact runtime patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/runtime-security-evidence"
+          python3 .github/maintenance/runtime_security_repair.py build 2>&1 | tee "$RUNNER_TEMP/runtime-security-evidence/validation.log"
+      - name: Export tested objects without updating PR refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/maintenance/runtime_security_repair.py upload
+      - name: Preserve exact candidate and diagnostics
+        if: always()
+        run: python3 .github/maintenance/runtime_security_repair.py collect
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        if: always()
+        with:
+          name: runtime-security-evidence
+          path: ${{ runner.temp }}/runtime-security-evidence/
+          retention-days: 7
+          if-no-files-found: error
+  action-receipts:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/ts-stack-security-20261113'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Collect exact action build receipts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import io,json,os,pathlib,subprocess,zipfile
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'action-receipts';out.mkdir()
+          heads={
+            'cache':'2c3a208fa938ad8538143163bfa796059e5115f5',
+            'deploy-pages':'6924d0c9fb50b587dc5d0f799b0297f9bb0c72ab',
+            'download-artifact':'7a34041226716865a668e421216c4efe3c4fc5b1',
+            'rust-cache':'36033a53e1322ff2696aa7b0f4fa836bc4477dfa',
+            'setup-dotnet':'dc44430bef578e79d3d1fd77c106bccc10d45fad',
+            'setup-go':'e99e7a5fe3385229fc82b5acad64a97a0afe551b',
+            'setup-java':'d1f3639eff4531d151d647bcc988a25e16f25dbe',
+            'setup-node':'730d46053b9046405487097a4cc5b1d397fbf030',
+            'setup-python':'613c1da86263eda795bea9d3b6f68388d6062ebe',
+            'setup-zig':'22bf9da63cd54a0ce47cfacdac6d1bbb40e50d5b',
+            'upload-artifact':'6623be79cb7997159e5b8e0a7898bee600b39ab8'}
+          def api(path):return json.loads(subprocess.check_output(['gh','api',path],text=True))
+          summary={}
+          for name,head in heads.items():
+            repo='KirilsTurkins/lsf-'+name;prefix='repos/'+repo
+            runs=api(prefix+'/actions/runs?branch=ci%2Ffast-xml-5-12-20261113&per_page=30')['workflow_runs']
+            matches=[r for r in runs if r['head_sha']==head and r['name']=='LSF XML parser security rebuild'];assert len(matches)==1
+            run=matches[0];record={'repository':repo,'head':head,'run':run['id'],'conclusion':run['conclusion'],'status':run['status']}
+            jobs=api(prefix+'/actions/runs/'+str(run['id'])+'/jobs')['jobs'];record['jobs']=jobs
+            if run['status']=='completed':
+              artifacts=api(prefix+'/actions/runs/'+str(run['id'])+'/artifacts')['artifacts']
+              record['artifacts']=artifacts
+              for artifact in artifacts:
+                data=subprocess.check_output(['gh','api',prefix+'/actions/artifacts/'+str(artifact['id'])+'/zip'])
+                (out/(name+'.zip')).write_bytes(data)
+              for job in jobs:
+                if job['conclusion']=='failure':
+                  result=subprocess.run(['gh','api',prefix+'/actions/jobs/'+str(job['id'])+'/logs'],capture_output=True)
+                  (out/(name+'-job.log')).write_bytes(result.stdout+result.stderr)
+            summary[name]=record
+            print(name,record['conclusion'],run['id'])
+          (out/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        if: always()
+        with:
+          name: action-security-receipts
+          path: ${{ runner.temp }}/action-receipts/
+          retention-days: 7
+          if-no-files-found: error
