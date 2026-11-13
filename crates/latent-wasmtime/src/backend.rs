@@ -715,13 +715,14 @@ impl WasmtimeBackend {
                     .as_ref()
                     .and_then(crate::development_borrow_admission::Observer::snapshot),
             );
+        let lift_proven = codec_capacity_error.is_none();
         let lifecycle_error = store
             .data_mut()
             .runtime
             .as_mut()
             .and_then(|runtime| runtime.finalize().err())
             .or(codec_capacity_error);
-        store.runtime_finalized(lifecycle_error.is_none());
+        store.runtime_finalized(lifecycle_error.is_none(), lift_proven);
         let memory_exhausted = call_result
             .as_ref()
             .err()

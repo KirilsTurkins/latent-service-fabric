@@ -128,6 +128,13 @@ impl Table {
         table.allocation.confirm();
         Ok(table)
     }
+    /// Existing original ledger, retained without allocating a replacement.
+    /// Only the backend's completed physical Store retirement may use this to
+    /// prove cleanup after a guest failed to settle its logical owners.
+    pub(crate) fn retirement_runtime(&self) -> ActivationRuntime {
+        self.runtime.clone()
+    }
+
     pub(crate) fn finalize(&mut self) -> Result<(), PlatformError> {
         self.runtime.begin_drain();
         match &self.native_stacks {

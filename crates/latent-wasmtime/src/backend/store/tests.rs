@@ -100,7 +100,7 @@ impl ResourceLimiter for Limiter {
     }
 }
 struct Data {
-    _owner: RuntimeOwner,
+    _owner: Option<RuntimeOwner>,
     limiter: Limiter,
 }
 
@@ -205,7 +205,7 @@ fn store(
     let mut store = Store::new(
         engine,
         Data {
-            _owner: owner,
+            _owner: Some(owner),
             limiter: Limiter {
                 budget: budget.clone(),
                 runtime: runtime.clone(),
@@ -443,3 +443,4 @@ fn failed_store_setup_keeps_custody_and_cannot_claim_reuse() {
 }
 
 mod failure;
+mod physical;

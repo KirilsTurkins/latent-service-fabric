@@ -103,6 +103,7 @@ impl WasmtimeBackend {
             report
         };
         report.host_result = host_result;
+        runtime_retirement.after_store_dropped();
         runtime_retirement.apply(report)
     }
 }
