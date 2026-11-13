@@ -19,7 +19,9 @@ impl InventoryMemory {
         let state = inner.state()?;
         inner.room(
             &state,
-            bytes.checked_add(headroom).ok_or(LocalBlobError::Capacity)?,
+            bytes
+                .checked_add(headroom)
+                .ok_or(LocalBlobError::Capacity)?,
         )?;
         // All admissions share the state lock with object/stage/handle growth.
         // Drop only subtracts, so fetch_add also preserves concurrent refunds.
@@ -103,11 +105,8 @@ impl LocalReferenceInventory {
         let work = store.inner.work()?;
         // Do not admit a cursor that by itself makes even a one-entry page
         // unaffordable. Headroom is checked, not charged to the cursor.
-        let memory = InventoryMemory::reserve(
-            &store.inner,
-            HANDLE_BYTES,
-            HANDLE_BYTES + OBJECT_BYTES,
-        )?;
+        let memory =
+            InventoryMemory::reserve(&store.inner, HANDLE_BYTES, HANDLE_BYTES + OBJECT_BYTES)?;
         checkpoint()?;
         let generation = {
             let state = store.inner.state()?;
