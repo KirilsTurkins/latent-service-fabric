@@ -19,7 +19,7 @@ jobs:
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_DEV_DEBUG: 0
       CARGO_PROFILE_TEST_DEBUG: 0
-      CARGO_TARGET_DIR: ${{ runner.temp }}/rust-security-target
+      CARGO_TARGET_DIR: /tmp/lsf-rust-security-target
       RUSTUP_TOOLCHAIN: 1.97.1
     steps:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
