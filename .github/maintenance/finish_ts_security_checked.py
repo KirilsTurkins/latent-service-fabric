@@ -36,5 +36,8 @@ change("    driver=TMP/'reviewed-action-integration.py';driver.write_text(script
         paths=sorted(path for path in record['files'] if path.startswith('dist/') and path.endswith('.js')) if name=='rust-cache' else [value.get('source',path) for path,value in selection.items()]
 '''
     script=script[:begin]+bundle_code+script[end:]
+    transitions={}
+    exec(compile((ROOT/'.github/maintenance/action_integration_boundaries.py').read_text(),'reviewed_boundaries.py','exec'),transitions)
+    script=transitions['repair'](script)
     driver=TMP/'reviewed-action-integration.py';driver.write_text(script)""")
 exec(compile(source,'checked_finish_ts_security.py','exec'))
