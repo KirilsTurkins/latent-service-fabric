@@ -30,6 +30,10 @@ jobs:
           set -euo pipefail
           curl --fail --location --proto '=https' --tlsv1.2 --max-time 90 https://raw.githubusercontent.com/KirilsTurkins/latent-service-fabric/c2c6f6a4222e311427d67f1cbdd24fc665cbd582/tools/ci_action_security_refresh_20261113.py -o "$RUNNER_TEMP/action-refresh.py"
           echo "f925f337ee6847e35647b9a11273f5809c74aec82747ea0b680a7c2441ebdd45  $RUNNER_TEMP/action-refresh.py" | sha256sum --check --strict
+          curl --fail --location --proto '=https' --tlsv1.2 --max-time 90 https://raw.githubusercontent.com/KirilsTurkins/latent-service-fabric/6652cde1b7d471bcd6838d537f6e9a2b950b3a4e/tools/ci_security_refresh_adjustments.py -o "$RUNNER_TEMP/adjust-drivers.py"
+          echo "4b9f3479a204fe06435b6b16bfe8e1ebec989054db5bcab63e93588079b3a7e7  $RUNNER_TEMP/adjust-drivers.py" | sha256sum --check --strict
+          python "$RUNNER_TEMP/adjust-drivers.py" action "$RUNNER_TEMP/action-refresh.py"
+          echo "df9e8e4c198f73da6ac2f8a5e395a6dc87e3164f6988e6e14a650e6008c2997e  $RUNNER_TEMP/action-refresh.py" | sha256sum --check --strict
       - name: Reproduce, upgrade, rebuild and run existing controls
         env:
           ROLE: ${{ inputs.role }}
