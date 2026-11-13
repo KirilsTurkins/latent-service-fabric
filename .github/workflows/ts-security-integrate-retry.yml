@@ -27,15 +27,28 @@ jobs:
           for i in (1,2,3):
               script=steps[i]['run']
               if i==2:
+                  script=script.replace("printf '* -text\\n' >> .git/info/attributes", "printf '* -text\\n' >> .git/info/attributes\ngit checkout-index --all --force")
                   marker='assert digest==expected,(digest,expected)'
                   assert script.count(marker)==1
                   script=script.replace(marker,"out=pathlib.Path(os.environ['RUNNER_TEMP'])/'integration-receipt';out.mkdir(exist_ok=True)\n(out/'actual-postimages.json').write_text(json.dumps(actual,indent=2)+'\\n')\n"+marker)
+              if i==3:
+                  script=script.replace('out.mkdir()', 'out.mkdir(exist_ok=True)')
               (root/f'step-{i}.sh').write_text(script)
           PY
       - name: Recover authenticated implementation inputs
         env:
           GH_TOKEN: ${{ github.token }}
         run: bash "$RUNNER_TEMP/step-1.sh"
+      - name: Resolve byte-identical log ties deterministically
+        run: |
+          python3 - <<'PY'
+          import os,pathlib
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'security-refresh/integrate.py'
+          s=p.read_text()
+          old="(DATA/role).glob('*.log')"
+          assert s.count(old)==1
+          p.write_text(s.replace(old,"sorted((DATA/role).glob('*.log'), reverse=True)"))
+          PY
       - name: Reconstruct and enforce the original postimage guard
         run: bash "$RUNNER_TEMP/step-2.sh"
       - name: Export guarded objects without changing PR refs
