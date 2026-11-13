@@ -1,0 +1,72 @@
+name: TypeScript stack security upgrade validation
+on:
+  push:
+    branches: [ci/ts-stack-security-20261113]
+    paths: [.github/workflows/ts-security-repair-v3.yml]
+permissions:
+  contents: write
+jobs:
+  validate:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/ts-stack-security-20261113'
+    strategy:
+      fail-fast: false
+      matrix:
+        kind: [runtime, go]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+      CARGO_TARGET_DIR: /tmp/lsf-security-target
+      RUSTUP_TOOLCHAIN: 1.97.1
+      LSF_REQUIRE_COMPILER_ISOLATION: '1'
+      REPAIR_KIND: ${{ matrix.kind }}
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        if: matrix.kind == 'runtime'
+      - uses: KirilsTurkins/lsf-setup-dotnet@258c927924210be905f8908a4be714e5d0daffa8
+        if: matrix.kind == 'runtime'
+        with:
+          dotnet-version: 8.0.428
+      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
+        with:
+          python-version: 3.13.5
+      - run: python3 -m pip install -r tools/requirements.lock
+      - name: Install and authenticate Go qualification prerequisites
+        if: matrix.kind == 'go'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get -o Acquire::Retries=3 update
+          sudo apt-get -o Acquire::Retries=3 install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          curl --fail --location --retry 3 --max-time 180 --output "$RUNNER_TEMP/go-security.tar.gz" https://dl.google.com/go/go1.27.4.linux-amd64.tar.gz
+          echo "7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840  $RUNNER_TEMP/go-security.tar.gz" | sha256sum --check --strict
+          mkdir "$RUNNER_TEMP/go-distribution"
+          tar -xzf "$RUNNER_TEMP/go-security.tar.gz" -C "$RUNNER_TEMP/go-distribution"
+      - name: Run unchanged regression suites on corrected candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/$REPAIR_KIND-security-evidence"
+          python3 .github/maintenance/security_repair_v3.py "$REPAIR_KIND" build 2>&1 | tee "$RUNNER_TEMP/$REPAIR_KIND-security-evidence/validation.log"
+      - name: Export exact tested objects without changing PR refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/maintenance/security_repair_v3.py "$REPAIR_KIND" upload
+      - name: Retain exact candidate and diagnostics
+        if: always()
+        run: python3 .github/maintenance/security_repair_v3.py "$REPAIR_KIND" collect
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        if: always()
+        with:
+          name: security-upgrade-${{ matrix.kind }}
+          path: ${{ runner.temp }}/${{ matrix.kind }}-security-evidence/
+          retention-days: 7
+          if-no-files-found: error
