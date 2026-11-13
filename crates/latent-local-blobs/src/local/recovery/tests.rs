@@ -55,7 +55,10 @@ fn malformed_release_markers_preserve_all_files_and_refuse_reopen() {
         let stage_record = std::fs::read(directory.join("STAGE.json")).unwrap();
         std::fs::write(directory.join("RELEASED"), &marker).unwrap();
 
-        assert_eq!(owner.reclaim(64, &|| Ok(())), Err(LocalBlobError::Uncertain));
+        assert_eq!(
+            owner.reclaim(64, &|| Ok(())),
+            Err(LocalBlobError::Uncertain)
+        );
         let snapshot = owner.snapshot().unwrap();
         assert!(snapshot.poisoned);
         assert_eq!(snapshot.objects, 1);
@@ -99,7 +102,10 @@ fn every_interrupted_release_unlink_boundary_recovers_without_resurrecting_bytes
             RELEASE_MARKER
         );
         owner.inner.root.fail_after(operation, skip);
-        assert_eq!(owner.reclaim(64, &|| Ok(())), Err(LocalBlobError::Uncertain));
+        assert_eq!(
+            owner.reclaim(64, &|| Ok(())),
+            Err(LocalBlobError::Uncertain)
+        );
         assert!(owner.snapshot().unwrap().poisoned);
         let limits = owner.limits();
         drop(owner);
