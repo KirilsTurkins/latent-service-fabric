@@ -16,7 +16,7 @@ jobs:
       - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6
         with:
           node-version: '24'
-      - name: Authenticate the fixed repair program
+      - name: Authenticate the fixed repair program and reviewed source-binding corrections
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -24,10 +24,17 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import base64,gzip,hashlib,json,os,pathlib,subprocess
-          value=json.loads(subprocess.check_output(['gh','api','repos/KirilsTurkins/latent-service-fabric/git/blobs/636ca791063363feedd2aad8d2a9b52c71bf20e7']))
-          data=gzip.decompress(base64.b64decode(value['content']))
+          def blob(sha):
+              value=json.loads(subprocess.check_output(['gh','api','repos/KirilsTurkins/latent-service-fabric/git/blobs/'+sha]))
+              data=base64.b64decode(value['content'])
+              assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()==sha
+              return data
+          data=gzip.decompress(blob('636ca791063363feedd2aad8d2a9b52c71bf20e7'))
           assert hashlib.sha256(data).hexdigest()=='23059ca71434126a9afa8e09ce319322626129908b28488721f3eef28285dfa2'
-          (pathlib.Path(os.environ['RUNNER_TEMP'])/'xml-repair.py').write_bytes(data)
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])
+          script=root/'xml-repair.py';script.write_bytes(data)
+          correction=root/'xml-recipe-corrections.py';correction.write_bytes(blob('9fbcd139591f6074ffc13842f90e0087ecb78072'))
+          subprocess.run(['python3',str(correction),str(script)],check=True)
           PY
       - name: Resolve minimal graph, execute controls and rebuild twice
         shell: bash
