@@ -5,7 +5,6 @@ on:
     paths: [.github/workflows/typescript-stack-ci-repair.yml]
 permissions:
   contents: read
-  actions: read
 concurrency:
   group: typescript-stack-ci-repair-20261113
   cancel-in-progress: false
@@ -19,7 +18,7 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
-      - name: Capture actual trees, signed Go fixture metadata and owned action revisions
+      - name: Capture primary release metadata and affected action source
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -27,28 +26,7 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import json, os, pathlib, subprocess, urllib.request
-          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'repair-inputs'
-          out.mkdir()
-          def api(path):
-              return json.loads(subprocess.check_output(['gh','api',path], timeout=120))
-          repo='repos/KirilsTurkins/latent-service-fabric/'
-          heads={'1852':'68bd53e20eeeae109f7816c8e81a1f959158a93b','1931':'c994185a24cdaa1de36b6b1e325d8c1753979254','1934':'5bb73cf78320c3f130d89f47b8ceb48f24abd4ee'}
-          subprocess.run(['git','fetch','--no-tags','--depth=1','origin',*heads.values()],check=True)
-          for name,sha in heads.items():
-              (out/(name+'-tree.txt')).write_bytes(subprocess.check_output(['git','ls-tree','-r','--full-tree',sha]))
-          artifacts=api(repo+'actions/runs/43309461902/artifacts?per_page=100')
-          (out/'go-fixture-artifacts.json').write_text(json.dumps(artifacts,indent=2))
-          policy=json.loads(pathlib.Path('.github/security/actions.json').read_text())['actions']
-          found={}
-          for key in policy:
-              name='/'.join(key.split('@')[0].split('/')[:2])
-              if name in found or not name.startswith('KirilsTurkins/lsf-'): continue
-              metadata=api('repos/'+name)
-              branch=metadata['default_branch']
-              current=api('repos/'+name+'/commits/'+branch)
-              found[name]={'pin':key.split('@')[1],'defaultBranch':branch,'current':current}
-              (out/(name.split('/')[1]+'-package.json')).write_bytes(subprocess.check_output(['gh','api','repos/'+name+'/contents/package.json?ref='+current['sha'],'--jq','.content | @base64d'],timeout=120))
-          (out/'owned-actions.json').write_text(json.dumps(found,indent=2))
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'security-inputs';out.mkdir()
           public={
             'go-releases.json':'https://go.dev/dl/?mode=json&include=all',
             'dotnet-releases.json':'https://builds.dotnet.microsoft.com/dotnet/release-metadata/8.0/releases.json',
@@ -57,15 +35,36 @@ jobs:
           for name,url in public.items():
               with urllib.request.urlopen(url,timeout=90) as response:data=response.read(16*1024*1024+1)
               assert len(data)<=16*1024*1024
-              json.loads(data)
-              (out/name).write_bytes(data)
-          print('Captured exact tree manifests and primary release metadata.')
+              json.loads(data);(out/name).write_bytes(data)
+          names=['cache','deploy-pages','download-artifact','rust-cache','setup-dotnet','setup-go','setup-java','setup-node','setup-python','setup-zig','upload-artifact']
+          def api(path):return json.loads(subprocess.check_output(['gh','api',path],timeout=120))
+          policy=json.loads(pathlib.Path('.github/security/actions.json').read_text())['actions']
+          found={}
+          for short in names:
+              name='KirilsTurkins/lsf-'+short
+              keys=[k for k in policy if k.startswith(name+'@') or k.startswith(name+'/')]
+              pins={k.split('@')[1] for k in keys};assert len(pins)==1
+              pin=pins.pop()
+              metadata=api('repos/'+name);branch=metadata['default_branch']
+              current=api('repos/'+name+'/commits/'+branch)
+              found[name]={'pin':pin,'defaultBranch':branch,'current':current}
+              target=out/('lsf-'+short);target.mkdir()
+              subprocess.run(['git','clone','--quiet','--no-checkout','--filter=blob:none','https://github.com/'+name+'.git',str(target/'repo')],check=True)
+              subprocess.run(['git','-C',str(target/'repo'),'fetch','--quiet','--depth=1','origin',pin],check=True)
+              for path in ['package.json','package-lock.json','action.yml']:
+                  data=subprocess.run(['git','-C',str(target/'repo'),'show',pin+':'+path],capture_output=True,check=False)
+                  if data.returncode==0:(target/path).write_bytes(data.stdout)
+              with (target/'source.tar.gz').open('wb') as f:
+                  subprocess.run(['git','-C',str(target/'repo'),'archive','--format=tar.gz',pin],stdout=f,check=True)
+              import shutil;shutil.rmtree(target/'repo')
+              (out/'owned-actions.json').write_text(json.dumps(found,indent=2))
+          print(json.dumps({k:{'pin':v['pin'],'latest':v['current']['sha']} for k,v in found.items()},indent=2))
           PY
-      - name: Retain authenticated inspection inputs
+      - name: Retain exact security inputs
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
         with:
-          name: typescript-ci-repair-inputs-${{ github.sha }}
-          path: ${{ runner.temp }}/repair-inputs/
+          name: typescript-security-inputs-${{ github.sha }}
+          path: ${{ runner.temp }}/security-inputs/
           retention-days: 7
           if-no-files-found: error
