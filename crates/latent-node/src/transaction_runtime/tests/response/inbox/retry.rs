@@ -119,8 +119,12 @@ async fn replay_retry(
     if expired {
         fixture.set_result_time(original.result_expires(), true);
     }
-    let (replay, envelope, budget) =
-        retry_invocation(fixture, scope, identity, selection(original, "approved-retry"));
+    let (replay, envelope, budget) = retry_invocation(
+        fixture,
+        scope,
+        identity,
+        selection(original, "approved-retry"),
+    );
     assert_eq!(
         replay.admit(&envelope, &budget).await.err().unwrap().code,
         PlatformErrorCode::AlreadyExists
@@ -247,8 +251,7 @@ async fn refused_retry(variant: u8) {
             .unwrap();
         }
     }
-    let (retry, mut envelope, budget) =
-        retry_invocation(&fixture, &scope, &identity, selected);
+    let (retry, mut envelope, budget) = retry_invocation(&fixture, &scope, &identity, selected);
     if variant == 3 {
         envelope.input = b"different".to_vec();
     }

@@ -54,12 +54,7 @@ fn aborted(
     assert!(command.abort_proof().is_some());
     let inbox = command.inbox_identity().unwrap();
     let key = inbox.row_key(command.key()).unwrap();
-    assert!(store
-        .snapshot()
-        .unwrap()
-        .get(&key)
-        .unwrap()
-        .is_none());
+    assert!(store.snapshot().unwrap().get(&key).unwrap().is_none());
     command
 }
 
@@ -172,7 +167,12 @@ fn scoped_equal_retries_share_one_attempt_and_keep_original_source_and_expiry() 
         view.get(&attempt_row_key(original.id(), 1)).unwrap(),
         Some(original.encode().unwrap())
     );
-    for family in [Family::Command, Family::State, Family::Outbox, Family::Inbox] {
+    for family in [
+        Family::Command,
+        Family::State,
+        Family::Outbox,
+        Family::Inbox,
+    ] {
         assert_eq!(view.scan(family, b"", 16, 1024 * 1024).unwrap().len(), 1);
     }
 }
@@ -203,10 +203,9 @@ fn source_loss_refuses_scoped_retry_publication_and_cas_winner_recovery() {
             Err(AtomicError::Conflict)
         ));
         let view = store.snapshot().unwrap();
-        let retained = CommandRecord::decode(
-            &view.get(&command_row_key(original.id())).unwrap().unwrap(),
-        )
-        .unwrap();
+        let retained =
+            CommandRecord::decode(&view.get(&command_row_key(original.id())).unwrap().unwrap())
+                .unwrap();
         assert_eq!(retained.attempt(), if winner_present { 2 } else { 1 });
         assert!(view.scan(Family::Inbox, b"", 16, 1024).unwrap().is_empty());
         drop(winner);
@@ -236,26 +235,27 @@ fn retry_source_fence_survives_final_disposition_and_physical_retirement() {
                 time(103),
             )
         } else {
-            CompleteEnvelope::rejection(
-                &view,
-                claim,
-                "rejected".into(),
-                value(b"no"),
-                time(103),
-            )
+            CompleteEnvelope::rejection(&view, claim, "rejected".into(), value(b"no"), time(103))
         }
         .unwrap();
         drop(view);
         damage(&store, &source);
         assert!(matches!(
-            envelope.publish(&store, |_| panic!("changed source reached disposition fence")),
+            envelope.publish(&store, |_| panic!(
+                "changed source reached disposition fence"
+            )),
             PreparedDisposition::KnownNotCommitted {
                 reason: AtomicError::Conflict,
                 ..
             }
         ));
-        let (record, result) =
-            inspect(&store.snapshot().unwrap(), original.key(), time(104), permission).unwrap();
+        let (record, result) = inspect(
+            &store.snapshot().unwrap(),
+            original.key(),
+            time(104),
+            permission,
+        )
+        .unwrap();
         assert_eq!(record.outcome(), Outcome::Pending);
         assert_eq!(record.attempt(), 2);
         assert!(result.is_none());
@@ -283,14 +283,10 @@ fn scoped_retry_keeps_abort_proof_clock_and_original_attempt_limits() {
             continuity_proven: false,
         },
     ] {
-        assert!(PreparedAdmission::retry(
-            &view,
-            &request(&scope),
-            &retry,
-            observed,
-            permission,
-        )
-        .is_err());
+        assert!(
+            PreparedAdmission::retry(&view, &request(&scope), &retry, observed, permission,)
+                .is_err()
+        );
     }
     drop(view);
     let mut previous = original;
