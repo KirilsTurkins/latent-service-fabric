@@ -1,0 +1,120 @@
+name: TypeScript security candidate completion
+on:
+  push:
+    branches: [ci/ts-stack-security-20261113]
+    paths: [.github/workflows/ts-security-repair-v4.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  runtime:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/ts-stack-security-20261113'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Recover and export the exact already-tested runtime tree
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,io,json,os,pathlib,subprocess,zipfile
+          root=pathlib.Path(os.environ['RUNNER_TEMP']);out=root/'runtime-export';out.mkdir()
+          def run(args):return subprocess.check_output(args,text=True).strip()
+          repo='repos/KirilsTurkins/latent-service-fabric'
+          data=subprocess.check_output(['gh','api',repo+'/actions/artifacts/14084852501/zip'])
+          assert hashlib.sha256(data).hexdigest()=='be222aa479e42cadffd9de4a27dc5b2be074973aaf8b8b219a19b405202dcc6a'
+          with zipfile.ZipFile(io.BytesIO(data)) as z:
+              for info in z.infolist():
+                  p=out/info.filename;assert p.resolve().is_relative_to(out.resolve());z.extract(info,out)
+          record=json.loads((out/'build.json').read_text())
+          assert record['completed'] is True and record['run']==43524527844
+          assert record['base']=='68bd53e20eeeae109f7816c8e81a1f959158a93b' and record['tree']=='10ee76eb23e9d3a81f3c9295ff523742be4fb92f'
+          run(['git','fetch','--no-tags','origin',record['base']])
+          run(['git','checkout','--detach',record['base']])
+          run(['git','apply','--index','--whitespace=error-all',str(out/'changes.patch')])
+          assert run(['git','write-tree'])==record['tree']
+          entries=[]
+          for name in run(['git','diff','--cached','--no-renames','--name-only']).splitlines():
+              raw=pathlib.Path(name).read_bytes()
+              assert raw==(out/'files'/name).read_bytes()
+              entries.append({'path':name,'mode':run(['git','ls-files','--stage','--',name]).split()[0],'type':'blob','content':raw.decode()})
+          def api(kind,value):
+              p=root/'request.json';p.write_text(json.dumps(value))
+              response=json.loads(run(['gh','api','--method','POST',repo+'/git/'+kind,'--input',str(p)]));p.unlink();return response
+          tree=api('trees',{'base_tree':run(['git','rev-parse',record['base']+'^{tree}']),'tree':entries})
+          assert tree['sha']==record['tree'], (tree['sha'],record['tree'])
+          commit=api('commits',{'tree':tree['sha'],'parents':[record['base']],'message':'fix(security): update rustix and pinned .NET 8 runtime'})
+          record['commit']=commit['sha'];record['exportRun']=int(os.environ['GITHUB_RUN_ID'])
+          (out/'published.json').write_text(json.dumps(record,indent=2)+'\n');print(json.dumps(record))
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        if: always()
+        with:
+          name: runtime-security-export
+          path: ${{ runner.temp }}/runtime-export/
+          retention-days: 7
+          if-no-files-found: error
+  go:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/ts-stack-security-20261113'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      LSF_REQUIRE_COMPILER_ISOLATION: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: 3.13.5
+      - run: python3 -m pip install -r tools/requirements.lock
+      - name: Install required containment and verified compiler/generator
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get -o Acquire::Retries=3 update
+          sudo apt-get -o Acquire::Retries=3 install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          curl --fail --location --retry 3 --max-time 180 --output "$RUNNER_TEMP/go-security.tar.gz" https://dl.google.com/go/go1.27.4.linux-amd64.tar.gz
+          echo "7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840  $RUNNER_TEMP/go-security.tar.gz" | sha256sum --check --strict
+          mkdir "$RUNNER_TEMP/go-distribution"
+          tar -xzf "$RUNNER_TEMP/go-security.tar.gz" -C "$RUNNER_TEMP/go-distribution"
+          archive="$RUNNER_TEMP/lsf-buf.tar.gz"
+          timeout 120s gh api -H 'Accept: application/octet-stream' repos/bufbuild/buf/releases/assets/480772583 | head -c 37851982 > "$archive"
+          unset GH_TOKEN
+          test "$(stat --format=%s "$archive")" = 37851981
+          printf '%s  %s\n' a9c6186cf6fcf062b247345e1b7b12c26f580c1b2a4bbf4d3fe080abf85ceee8 "$archive" | sha256sum --check --strict
+          mkdir "$RUNNER_TEMP/buf"
+          tar -xzf "$archive" -C "$RUNNER_TEMP/buf" buf/bin/buf
+          printf '%s  %s\n' 8720830e26a733da55bb89bcd3cb44849c0965fc0c44fb5d691cccdc64dca5af "$RUNNER_TEMP/buf/buf/bin/buf" | sha256sum --check --strict
+          chmod 755 "$RUNNER_TEMP/buf/buf/bin/buf"
+          printf '%s\n' "$RUNNER_TEMP/buf/buf/bin" >> "$GITHUB_PATH"
+      - name: Execute compiler overlay, generated SDK and regression controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/go-security-evidence"
+          python3 .github/maintenance/security_repair_v4.py go build 2>&1 | tee "$RUNNER_TEMP/go-security-evidence/validation.log"
+      - name: Export exact tested candidate without changing PR refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/maintenance/security_repair_v4.py go upload
+      - name: Retain candidate and diagnostics
+        if: always()
+        run: python3 .github/maintenance/security_repair_v4.py go collect
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        if: always()
+        with:
+          name: go-security-completion
+          path: ${{ runner.temp }}/go-security-evidence/
+          retention-days: 7
+          if-no-files-found: error
