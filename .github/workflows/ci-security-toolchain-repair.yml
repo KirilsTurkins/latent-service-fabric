@@ -1,0 +1,117 @@
+name: Validate patched SDK toolchains
+on:
+  push:
+    branches: [ci/typescript-stack-ci-repair-20261113]
+    paths: [.github/workflows/ci-security-toolchain-repair.yml]
+permissions:
+  contents: read
+jobs:
+  toolchain:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/typescript-stack-ci-repair-20261113'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [go, dotnet]
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Restore reviewed source update on the real parent
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64,hashlib,json,os,pathlib,subprocess
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])
+          out=root/'toolchain-evidence';out.mkdir()
+          head='68bd53e20eeeae109f7816c8e81a1f959158a93b'
+          subprocess.run(['git','fetch','--no-tags','--depth=1','origin',head],check=True)
+          work=root/'toolchain-work';subprocess.run(['git','worktree','add','--detach',str(work),head],check=True)
+          value=json.loads(subprocess.check_output(['gh','api','repos/KirilsTurkins/latent-service-fabric/git/blobs/04f22254efa2ca5a88c95971ac91e2d30fcd91bd']))
+          data=base64.b64decode(value['content'])
+          assert hashlib.sha256(data).hexdigest()=='ab1a2f859f0cc5c999c73f539ec4acaf990b0926cb04da9c5893e0a7fd2c53ee'
+          script=root/'toolchain_patch.py';script.write_bytes(data)
+          subprocess.run(['python3','-m','pip','install','-r','tools/requirements.lock'],cwd=work,check=True)
+          subprocess.run(['python3',str(script)],cwd=work,check=True)
+          (out/'implementation.patch').write_bytes(subprocess.check_output(['git','diff','--binary','--full-index'],cwd=work))
+          (out/'parent.txt').write_text(head+'\n')
+          PY
+      - name: Acquire exact official patched Go and verify all selected source preimages
+        if: matrix.language == 'go'
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/toolchain-evidence"
+          curl --fail --location --retry 3 --max-time 180 --max-filesize 70680823 --output "$RUNNER_TEMP/go.tar.gz" https://dl.google.com/go/go1.27.4.linux-amd64.tar.gz
+          test "$(stat --format=%s "$RUNNER_TEMP/go.tar.gz")" = 70680823
+          echo "7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840  $RUNNER_TEMP/go.tar.gz" | sha256sum --check --strict
+          mkdir "$RUNNER_TEMP/patched-go"
+          tar -xzf "$RUNNER_TEMP/go.tar.gz" -C "$RUNNER_TEMP/patched-go"
+          echo "$RUNNER_TEMP/patched-go/go/bin" >> "$GITHUB_PATH"
+          cd "$RUNNER_TEMP/toolchain-work"
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib
+          root=pathlib.Path(os.environ['RUNNER_TEMP']);out=root/'toolchain-evidence'
+          goroot=root/'patched-go/go'
+          old=json.loads(pathlib.Path('docs/testing/evidence/go-1.27.3-source-audit-2026-10-21.json').read_text())
+          rows=[]
+          for entry in old['rows']:
+              data=(goroot/'src'/entry['path']).read_bytes()
+              row={'path':entry['path'],'sha256':hashlib.sha256(data).hexdigest(),'bytes':len(data),'previousSha256':entry['sha256']}
+              row['matchesPrevious']=row['sha256']==row['previousSha256'];rows.append(row)
+              target=out/'go-source'/entry['path'];target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
+          (out/'go-source-audit.json').write_text(json.dumps({'version':'go1.27.4','archiveSha256':'7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840','rows':rows},indent=2)+'\n')
+          print('Changed upstream source preimages:',json.dumps([r for r in rows if not r['matchesPrevious']],indent=2))
+          PY
+          python3 tools/go_guest/runtime.py --prepare-compiler "$RUNNER_TEMP/patched-go/go" --output "$RUNNER_TEMP/go-async" > "$out/go-overlay.log" 2>&1
+      - name: Execute Go SDK and existing source controls without resolver drift
+        if: matrix.language == 'go'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/toolchain-work"
+          out="$RUNNER_TEMP/toolchain-evidence"
+          export GOTOOLCHAIN=local GOWORK=off GOFLAGS=-mod=readonly
+          go version > "$out/go-version.txt"
+          python3 sdk/go/dependencies.py --check > "$out/go-dependencies.log" 2>&1
+          (cd sdk/go && go test ./...) > "$out/go-sdk-tests.log" 2>&1
+          python3 -m unittest tools.tests.test_security_sdk_graphs tools.tests.test_check_tool_versions tools.tests.test_go_runtime_overlay tools.tests.test_go_native_authoring tools.tests.test_go_application_dependencies -v > "$out/python-controls.log" 2>&1
+          python3 tools/ci_coverage.py > "$out/ci-contracts.log" 2>&1
+          git diff --check
+      - name: Acquire exact patched .NET SDK with its official digest
+        if: matrix.language == 'dotnet'
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --max-time 180 --max-filesize 300000000 --output "$RUNNER_TEMP/dotnet.tar.gz" https://builds.dotnet.microsoft.com/dotnet/Sdk/8.0.428/dotnet-sdk-8.0.428-linux-x64.tar.gz
+          echo "33212bb99a2bf003973d41106c7e8fe94208a12958ff601d4a476be379403c85a7dc9183a6ec64dfb44ded7102965be09f35add1758e68e9251bae7891d7b7bf  $RUNNER_TEMP/dotnet.tar.gz" | sha512sum --check --strict
+          mkdir "$RUNNER_TEMP/patched-dotnet"
+          tar -xzf "$RUNNER_TEMP/dotnet.tar.gz" -C "$RUNNER_TEMP/patched-dotnet"
+          echo "$RUNNER_TEMP/patched-dotnet" >> "$GITHUB_PATH"
+          echo "DOTNET_ROOT=$RUNNER_TEMP/patched-dotnet" >> "$GITHUB_ENV"
+      - name: Execute two clean locked .NET generations, native tests and signature/advisory checks
+        if: matrix.language == 'dotnet'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/toolchain-work"
+          out="$RUNNER_TEMP/toolchain-evidence"
+          dotnet --info > "$out/dotnet-info.txt"
+          python3 sdk/dotnet/validate.py --dotnet "$RUNNER_TEMP/patched-dotnet/dotnet" --check --osv > "$out/dotnet-validation.log" 2>&1
+          cp sdk/dotnet/target/validation-evidence.json sdk/dotnet/target/osv-evidence.json "$out/"
+          cp sdk/dotnet/protobuf.lock.json "$out/protobuf.lock.json"
+          git diff --check
+          git diff --exit-code -- sdk/dotnet/**/packages.lock.json
+      - name: Retain actual validation and source observations
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: security-toolchain-${{ matrix.language }}-${{ github.sha }}
+          path: ${{ runner.temp }}/toolchain-evidence/
+          retention-days: 7
+          if-no-files-found: error
