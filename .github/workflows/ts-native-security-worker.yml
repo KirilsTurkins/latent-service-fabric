@@ -16,7 +16,6 @@ jobs:
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_DEV_DEBUG: 0
       CARGO_PROFILE_TEST_DEBUG: 0
-      CARGO_TARGET_DIR: ${{ runner.temp }}/native-target
     steps:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
         with:
@@ -28,6 +27,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo "CARGO_TARGET_DIR=$RUNNER_TEMP/native-target" >> "$GITHUB_ENV"
           curl --fail --location --proto '=https' --tlsv1.2 --max-time 90 https://raw.githubusercontent.com/KirilsTurkins/latent-service-fabric/8db5d1dc1cade8cb9645dd446631d51a140e725b/tools/ci_native_security_refresh_20261113.py -o "$RUNNER_TEMP/native-refresh.py"
           echo "74a00ed959ea2aeedd52bd33a6de72528e176fbe67678ee0acbce5f95d7ce667  $RUNNER_TEMP/native-refresh.py" | sha256sum --check --strict
           curl --fail --location --proto '=https' --tlsv1.2 --max-time 180 https://dl.google.com/go/go1.27.4.linux-amd64.tar.gz -o "$RUNNER_TEMP/go.tar.gz"
@@ -52,22 +52,18 @@ jobs:
           python - <<'PY'
           import os, pathlib
           from tools.go_guest.runtime import prepare_compiler
-          source=pathlib.Path(os.environ['LSF_VERIFIED_GOROOT'])
-          output=pathlib.Path(os.environ['RUNNER_TEMP'])/'go-async-verified'
-          prepare_compiler(source,output)
+          prepare_compiler(pathlib.Path(os.environ['LSF_VERIFIED_GOROOT']),pathlib.Path(os.environ['RUNNER_TEMP'])/'go-async-verified')
           print('Actual Go 1.27.4 archive passed every selected scheduler preimage and postimage check.')
           PY
       - name: Execute source, host, SDK, compiler and native library controls
         run: python "$RUNNER_TEMP/native-refresh.py" validate
       - name: Capture precise candidate even on validation refusal
         if: always()
-        shell: bash
         run: |
           python - <<'PY'
           import hashlib,json,os,pathlib,subprocess,tarfile
           root=pathlib.Path.cwd();out=pathlib.Path(os.environ['RUNNER_TEMP'])/'native-security-evidence';out.mkdir(exist_ok=True)
-          patch=subprocess.check_output(['git','diff','--binary','--full-index'])
-          (out/'patch.patch').write_bytes(patch)
+          (out/'patch.patch').write_bytes(subprocess.check_output(['git','diff','--binary','--full-index']))
           paths=subprocess.check_output(['git','diff','--name-only'],text=True).splitlines()
           with tarfile.open(out/'changed-files.tar.gz','w:gz') as archive:
             for name in paths:
@@ -101,14 +97,13 @@ jobs:
             result={'role':role,'repository':repo}
             try:
               data=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/actions/runs?branch=fix%2Ffastxml-20261113&per_page=5'],text=True))
-              runs=[r for r in data['workflow_runs'] if r['path']=='.github/workflows/lsf-fastxml-refresh.yml']
-              run=runs[0];result.update(run=run['id'],head=run['head_sha'],status=run['status'],conclusion=run['conclusion'])
+              run=next(r for r in data['workflow_runs'] if r['path']=='.github/workflows/lsf-fastxml-refresh.yml')
+              result.update(run=run['id'],head=run['head_sha'],status=run['status'],conclusion=run['conclusion'])
               jobs=json.loads(subprocess.check_output(['gh','api',run['jobs_url']],text=True));result['jobs']=[{'id':j['id'],'name':j['name'],'conclusion':j['conclusion']} for j in jobs['jobs']]
               artifacts=json.loads(subprocess.check_output(['gh','api',run['artifacts_url']],text=True));result['artifacts']=artifacts['artifacts']
               for artifact in artifacts['artifacts']:
                 if artifact['name']=='action-security-'+role:
-                  target=root/(role+'.zip')
-                  with target.open('wb') as out:subprocess.run(['gh','api',artifact['archive_download_url']],stdout=out,check=True)
+                  with (root/(role+'.zip')).open('wb') as out:subprocess.run(['gh','api',artifact['archive_download_url']],stdout=out,check=True)
             except Exception as error:result['captureError']=str(error)
             results.append(result)
           (root/'results.json').write_text(json.dumps(results,indent=2)+'\n')
