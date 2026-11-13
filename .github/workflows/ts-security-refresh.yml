@@ -1,0 +1,38 @@
+name: TypeScript security refresh inputs
+on:
+  push:
+    branches: [ci/typescript-security-refresh-20261113]
+    paths: [.github/workflows/ts-security-refresh.yml]
+permissions:
+  contents: read
+jobs:
+  inputs:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/typescript-security-refresh-20261113'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: 68bd53e20eeeae109f7816c8e81a1f959158a93b
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Capture unchanged source and public maintenance metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/security-inputs"
+          git archive --format=tar.gz HEAD > "$RUNNER_TEMP/security-inputs/parent.tar.gz"
+          git fetch --no-tags --depth=1 origin f682c3c8c8ff2fc1ee44df2ed681098e263bd800 5bb73cf78320c3f130d89f47b8ceb48f24abd4ee
+          git diff --binary HEAD f682c3c8c8ff2fc1ee44df2ed681098e263bd800 > "$RUNNER_TEMP/security-inputs/ownership.patch"
+          git diff --binary HEAD 5bb73cf78320c3f130d89f47b8ceb48f24abd4ee > "$RUNNER_TEMP/security-inputs/engine.patch"
+          curl --fail --location --proto '=https' --tlsv1.2 --max-time 90 'https://go.dev/dl/?mode=json&include=all' -o "$RUNNER_TEMP/security-inputs/go-releases.json"
+          curl --fail --location --proto '=https' --tlsv1.2 --max-time 90 https://builds.dotnet.microsoft.com/dotnet/release-metadata/8.0/releases.json -o "$RUNNER_TEMP/security-inputs/dotnet-releases.json"
+          curl --fail --location --proto '=https' --tlsv1.2 --max-time 90 https://vuln.go.dev/ID/GO-2026-6859.json -o "$RUNNER_TEMP/security-inputs/go-advisory.json"
+          cd "$RUNNER_TEMP/security-inputs"
+          sha256sum parent.tar.gz ownership.patch engine.patch go-releases.json dotnet-releases.json go-advisory.json > SHA256SUMS
+      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: typescript-security-inputs
+          path: ${{ runner.temp }}/security-inputs/
+          retention-days: 3
+          if-no-files-found: error
