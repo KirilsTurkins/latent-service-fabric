@@ -1,0 +1,47 @@
+name: Rebuild reviewed action XML dependency
+on:
+  workflow_call:
+permissions:
+  contents: write
+jobs:
+  rebuild:
+    if: startsWith(github.repository, 'KirilsTurkins/lsf-') && github.ref == 'refs/heads/ci/fast-xml-parser-5.12.0-20261113'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6
+        with:
+          node-version: '24'
+      - name: Authenticate the fixed repair program
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64,gzip,hashlib,json,os,pathlib,subprocess
+          value=json.loads(subprocess.check_output(['gh','api','repos/KirilsTurkins/latent-service-fabric/git/blobs/636ca791063363feedd2aad8d2a9b52c71bf20e7']))
+          data=gzip.decompress(base64.b64decode(value['content']))
+          assert hashlib.sha256(data).hexdigest()=='23059ca71434126a9afa8e09ce319322626129908b28488721f3eef28285dfa2'
+          (pathlib.Path(os.environ['RUNNER_TEMP'])/'xml-repair.py').write_bytes(data)
+          PY
+      - name: Resolve minimal graph, execute controls and rebuild twice
+        shell: bash
+        run: python3 "$RUNNER_TEMP/xml-repair.py" prepare
+      - name: Upload tested objects without changing any existing branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: python3 "$RUNNER_TEMP/xml-repair.py" publish
+      - name: Retain source, tests and exact compiled identities
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: fast-xml-parser-repair-${{ github.repository_id }}-${{ github.sha }}
+          path: ${{ runner.temp }}/xml-repair-evidence/
+          retention-days: 7
+          if-no-files-found: error
