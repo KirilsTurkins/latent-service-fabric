@@ -1,0 +1,136 @@
+name: Validate TypeScript post-Store retirement
+on:
+  push:
+    branches: [ci/typescript-post-store-receipt-20261113]
+    paths: [.github/workflows/typescript-post-store-receipt.yml]
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: typescript-post-store-receipt-20261113
+  cancel-in-progress: false
+jobs:
+  validate:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/typescript-post-store-receipt-20261113'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+      CARGO_TERM_COLOR: never
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          components: rustfmt
+      - name: Restore exact patch and original failing Go fixture
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64,gzip,hashlib,json,os,pathlib,subprocess,zipfile
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])
+          out=root/'retirement-evidence';out.mkdir()
+          repo='repos/KirilsTurkins/latent-service-fabric/'
+          head='c994185a24cdaa1de36b6b1e325d8c1753979254'
+          ref=json.loads(subprocess.check_output(['gh','api',repo+'git/ref/heads/fix/typescript-745-activation-resource-ownership']))
+          assert ref['object']['sha']==head
+          subprocess.run(['git','fetch','--no-tags','--depth=1','origin',head],check=True)
+          work=root/'retirement-work';subprocess.run(['git','worktree','add','--detach',str(work),head],check=True)
+          value=json.loads(subprocess.check_output(['gh','api',repo+'git/blobs/8d2ec8aa26beda214d018fdbc0c9120005398d73']))
+          patch=gzip.decompress(base64.b64decode(value['content']))
+          assert hashlib.sha256(patch).hexdigest()=='15aa04ae1a7e168ab66753b12f9aab4a6b380de666d4c46588cbea4976f5723f'
+          (out/'implementation.patch').write_bytes(patch)
+          subprocess.run(['git','apply','--check',str(out/'implementation.patch')],cwd=work,check=True)
+          subprocess.run(['git','apply',str(out/'implementation.patch')],cwd=work,check=True)
+          with (out/'original-go-fixture.zip').open('wb') as f:
+              subprocess.run(['gh','api',repo+'actions/artifacts/13984619713/zip'],stdout=f,check=True,timeout=120)
+          archive=out/'original-go-fixture.zip'
+          assert hashlib.sha256(archive.read_bytes()).hexdigest()=='41a864827fe459ad989afe5c3f7e5e9088b298a83050b96eee513b640208aef5'
+          with zipfile.ZipFile(archive) as z:
+              for item in z.infolist():
+                  if not item.filename.startswith('go-activation/'):continue
+                  path=root/'original-fixture'/item.filename
+                  assert path.resolve().is_relative_to((root/'original-fixture').resolve())
+                  assert item.file_size<32*1024*1024
+                  if item.is_dir():continue
+                  path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(z.read(item))
+          archive.unlink()
+          (out/'source-parent.txt').write_text(head+'\n')
+          PY
+      - name: Validate exact original-source controls and unchanged lifecycle assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/retirement-work"
+          python3 -m pip install -r tools/requirements.lock
+          out="$RUNNER_TEMP/retirement-evidence"
+          cargo fmt --check --package latent-wasmtime > "$out/format.log" 2>&1
+          cargo test --locked -p latent-wasmtime --lib backend::store > "$out/store-tests.log" 2>&1
+          cargo test --locked -p latent-wasmtime --test local_service > "$out/local-service-tests.log" 2>&1
+          python3 -m unittest tools.tests.test_host_codec_wasmtime -v > "$out/source-controls.log" 2>&1
+          LSF_GUEST_SDK_LANGUAGE=go LSF_GO_ACTIVATION_FIXTURE="$RUNNER_TEMP/original-fixture/go-activation" cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::go::signed_standard_goroutines_sleep_and_drain_use_original_activation_owners -- --ignored --exact --nocapture > "$out/go-signed-replay.log" 2>&1
+          git diff --check
+          git diff --exit-code -- Cargo.lock crates/vendor/wasmtime/Cargo.lock
+      - name: Export exact tested Git objects without moving the PR ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/retirement-work"
+          python3 - <<'PY'
+          import base64,hashlib,json,os,pathlib,subprocess
+          repo='repos/KirilsTurkins/latent-service-fabric/'
+          parent='c994185a24cdaa1de36b6b1e325d8c1753979254'
+          allowed={'crates/latent-wasmtime/src/backend.rs','crates/latent-wasmtime/src/backend/input.rs','crates/latent-wasmtime/src/backend/store.rs','crates/latent-wasmtime/src/backend/store/tests.rs','crates/latent-wasmtime/src/backend/store/tests/physical.rs','crates/latent-wasmtime/src/host/runtime.rs','docs/testing/typescript-post-store-retirement.md'}
+          def git(*args):return subprocess.check_output(['git',*args])
+          def api(path,body):
+              return json.loads(subprocess.check_output(['gh','api',repo+path,'--method','POST','--input','-'],input=json.dumps(body).encode(),timeout=120))
+          assert git('rev-parse','HEAD').decode().strip()==parent
+          subprocess.run(['git','add','--',*sorted(allowed)],check=True)
+          assert set(git('diff','--cached','--name-only').decode().splitlines())==allowed
+          subprocess.run(['git','-c','user.name=github-actions[bot]','-c','user.email=41898282+github-actions[bot]@users.noreply.github.com','commit','-m','fix(wasmtime): prove on-demand retirement after physical Store cleanup'],check=True)
+          head=git('rev-parse','HEAD').decode().strip()
+          new={line.split()[0] for line in git('rev-list','--objects',head,'^'+parent).decode().splitlines()}
+          uploaded=set()
+          def upload(sha):
+              if sha not in new or sha in uploaded:return
+              kind=git('cat-file','-t',sha).decode().strip()
+              if kind=='blob':
+                  result=api('git/blobs',{'encoding':'base64','content':base64.b64encode(git('cat-file','blob',sha)).decode()})
+              elif kind=='tree':
+                  entries=[]
+                  for row in git('ls-tree','-z',sha).split(b'\0'):
+                      if not row:continue
+                      meta,path=row.split(b'\t',1);mode,typ,obj=meta.decode().split();upload(obj)
+                      entries.append({'path':path.decode(),'mode':mode,'type':typ,'sha':obj})
+                  result=api('git/trees',{'tree':entries})
+              elif kind=='commit':
+                  fields=git('show','-s','--format=%T%n%P%n%an%n%ae%n%aI%n%cn%n%ce%n%cI%n%B',sha).decode().split('\n',8)
+                  upload(fields[0])
+                  result=api('git/commits',{'tree':fields[0],'parents':fields[1].split(),'author':{'name':fields[2],'email':fields[3],'date':fields[4]},'committer':{'name':fields[5],'email':fields[6],'date':fields[7]},'message':fields[8].rstrip('\n')+'\n'})
+              else:raise AssertionError(kind)
+              assert result['sha']==sha,(sha,result['sha']);uploaded.add(sha)
+          upload(head)
+          evidence=pathlib.Path(os.environ['RUNNER_TEMP'])/'retirement-evidence'
+          record={'parent':parent,'commit':head,'tree':git('rev-parse','HEAD^{tree}').decode().strip(),'files':{p:git('rev-parse','HEAD:'+p).decode().strip() for p in sorted(allowed)},'run':os.environ['GITHUB_RUN_ID']}
+          (evidence/'publication.json').write_text(json.dumps(record,indent=2)+'\n')
+          print(json.dumps(record,indent=2))
+          print('Tested objects uploaded; target branch has NOT been moved.')
+          PY
+      - name: Retain validation and publication receipt
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
+        with:
+          name: typescript-post-store-retirement-${{ github.sha }}
+          path: ${{ runner.temp }}/retirement-evidence/
+          retention-days: 7
+          if-no-files-found: error
