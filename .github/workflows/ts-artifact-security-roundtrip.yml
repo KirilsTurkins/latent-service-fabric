@@ -1,0 +1,72 @@
+name: Rebuilt artifact security roundtrip
+on:
+  push:
+    branches: [ci/typescript-security-refresh-20261113]
+    paths: [.github/workflows/ts-artifact-security-roundtrip.yml]
+permissions:
+  contents: read
+jobs:
+  save:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Create non-hidden artifact and Pages witnesses
+        run: |
+          mkdir -p security-roundtrip pages
+          printf 'verified-action-security-roundtrip\n' > security-roundtrip/witness.txt
+          sha256sum security-roundtrip/witness.txt > security-roundtrip/SHA256SUMS
+          printf '<p>security fixture</p>\n' > pages/index.html
+      - uses: KirilsTurkins/lsf-cache/restore@d1b57751648351eb49459f7504d0a85f9639d2f9
+        id: cache
+        with:
+          path: cache-witness
+          key: verified-xml-${{ github.run_id }}
+      - name: Verify miss and prepare original cache backing
+        env:
+          HIT: ${{ steps.cache.outputs.cache-hit }}
+        run: |
+          test "$HIT" != true
+          mkdir cache-witness
+          cp security-roundtrip/witness.txt cache-witness/witness.txt
+      - uses: KirilsTurkins/lsf-cache/save@d1b57751648351eb49459f7504d0a85f9639d2f9
+        with:
+          path: cache-witness
+          key: verified-xml-${{ github.run_id }}
+      - uses: KirilsTurkins/lsf-upload-artifact@06dfe2de8e406c74d8e62730bcd18c498d48549c
+        with:
+          name: verified-action-roundtrip
+          path: security-roundtrip/
+          if-no-files-found: error
+          retention-days: 3
+      - uses: KirilsTurkins/lsf-upload-pages-artifact@a154be839e1f48006dcbcf0b87c283dc31eb0c20
+        with:
+          name: verified-pages-fixture
+          path: pages
+          retention-days: 3
+  restore:
+    needs: save
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: KirilsTurkins/lsf-cache/restore@d1b57751648351eb49459f7504d0a85f9639d2f9
+        id: cache
+        with:
+          path: cache-witness
+          key: verified-xml-${{ github.run_id }}
+      - uses: KirilsTurkins/lsf-download-artifact@1a53f5d5e7ed5d5967ba64f577543fdbe523e15e
+        with:
+          name: verified-action-roundtrip
+          path: security-roundtrip
+      - uses: KirilsTurkins/lsf-download-artifact@1a53f5d5e7ed5d5967ba64f577543fdbe523e15e
+        with:
+          name: verified-pages-fixture
+          path: pages-download
+      - name: Require original cache and artifact bytes and inspect Pages archive
+        env:
+          HIT: ${{ steps.cache.outputs.cache-hit }}
+        run: |
+          set -euo pipefail
+          test "$HIT" = true
+          sha256sum --check security-roundtrip/SHA256SUMS
+          cmp cache-witness/witness.txt security-roundtrip/witness.txt
+          test "$(tar -xOf pages-download/artifact.tar ./index.html)" = '<p>security fixture</p>'
