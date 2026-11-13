@@ -102,9 +102,14 @@ def contract(template: bytes, materials: dict[str, bytes]) -> None:
                 (provider, b'if timeout == 0 || timeout > 10_000'),
                 (provider, b'deadline = deadline.min(now + Duration::from_millis(u64::from(timeout)));'),
                 (connection, b'deadline: deadline.min(validity),'),
-                (connection, b'if timeout.is_some_and(|value| value == 0 || value > 10_000)'),
+                (connection, b'if timeout.is_some_and(|value| value > 10_000 || (value == 0 && direction != 2))'),
                 (connection, b'let mut deadline = self.deadline.min(state.last_progress + self.idle);'),
-                (connection, b'deadline = deadline.min(now + Duration::from_millis(u64::from(value)));'),
+                # Raw-TCP shutdown observations have their own requested deadline;
+                # ordinary I/O still clamps to the original absolute/idle limit.
+                (connection, b'let observation = direction == 2 && !socket.host_tls() && !socket.protected_owner();'),
+                (connection, b'let requested = timeout.map(|value| now + Duration::from_millis(u64::from(value)));'),
+                (connection, b'if !observation {\n            if let Some(requested) = requested {\n                deadline = deadline.min(requested);\n            }\n        }'),
+                (connection, b'observation_deadline: if observation { requested } else { None }'),
                 (facade, b'r := raw.ConnectContext(ctx, request)'),
                 (context, b'witAsync.SubtaskWaitContext(ctx, uint32('))
     if any(source.count(marker) != 1 for source, marker in required):

@@ -222,6 +222,7 @@ class RepositoryInventoryTests(unittest.TestCase):
     def test_python_preservation_inputs_fetch_only_exact_frozen_source_commits(self):
         import shlex
         from tools.ci_lane_inventory import workflow_model
+        from tools import activation_stack_native_products
         from tools import go_http_tenant_native_products, http_phase_native_products
         from tools import http_tenant_native_products, java_phase_native_products
         from tools import wait_runtime_native_products, wasmtime_48_0_7_native_products
@@ -248,7 +249,8 @@ class RepositoryInventoryTests(unittest.TestCase):
         self.assertEqual(len([line for line in logical.splitlines() if line.strip()]), 1)
         words = shlex.split(logical)
         self.assertEqual(words[:5], ['git', 'fetch', '--no-tags', '--depth=1', 'origin'])
-        expected = {module.SOURCE for module in (go_http_tenant_native_products,
+        # The activation-stack origin remains live when the Rust thread origin rotates.
+        expected = {module.SOURCE for module in (activation_stack_native_products, go_http_tenant_native_products,
             http_phase_native_products, http_tenant_native_products, java_phase_native_products,
             wait_runtime_native_products, wasmtime_48_0_7_native_products)}
         expected.add(rust_thread_source)

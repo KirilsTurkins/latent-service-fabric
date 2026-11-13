@@ -26,12 +26,27 @@ public final class Bindings {
         public static int waits, stops;
         public static long lastNanos;
         public static boolean denyNext, denyStop, denySettle;
-        public static RuntimeException settleFailure;
+        public static boolean denyRegistration, nullRegistration;
+        public static RuntimeException registrationFailure;
+        public static Runnable registrationObservation;
+        public static int registrationAttempts;
+        public static RuntimeException settleFailure, settleAcknowledgementFailure;
+        public static java.lang.Error settleAcknowledgementError;
+        public static boolean nullSettlement;
+        public static int settlementAttempts;
+        public static Runnable settledObservation;
         public static Runnable stopObservation, settleObservation;
         public static int timers() { return (int)owners.values().stream().filter(kind -> kind == LatentRuntimeActivationOwnerKind.Timer).count(); }
+        public static int owners(LatentRuntimeActivationOwnerKind kind) { return (int)owners.values().stream().filter(value -> value == kind).count(); }
         public static Reply<LatentRuntimeActivationToken> register(LatentRuntimeActivationOwnerKind kind, Option<LatentRuntimeActivationToken> continuation) {
+            registrationAttempts++;
+            if (denyRegistration) return new Reply<>(null, Error.ResourceExhausted);
             if (kind == LatentRuntimeActivationOwnerKind.Timer && timers() >= 2) return new Reply<>(null, Error.ResourceExhausted);
-            var token = new LatentRuntimeActivationToken(1, ++next); owners.put(token, kind); return new Reply<>(token, null);
+            var token = new LatentRuntimeActivationToken(1, ++next); owners.put(token, kind);
+            Runnable observation = registrationObservation; registrationObservation = null;
+            if (observation != null) observation.run();
+            if (registrationFailure != null) throw registrationFailure;
+            return new Reply<>(nullRegistration ? null : token, null);
         }
         public static Reply<LatentRuntimeActivationToken> timerStart(Unsigned64 nanos, Option<Unsigned64> period, Option<LatentRuntimeActivationToken> continuation) {
             lastNanos = nanos.bits(); return register(LatentRuntimeActivationOwnerKind.Timer, continuation);
@@ -48,11 +63,17 @@ public final class Bindings {
             return settle(token);
         }
         public static Reply<Void> settle(LatentRuntimeActivationToken token) {
+            settlementAttempts++;
             Runnable observation = settleObservation; settleObservation = null;
             if (observation != null) observation.run();
             if (settleFailure != null) throw settleFailure;
             if (denySettle) return new Reply<>(null, Error.Cancelled);
-            return new Reply<>(null, owners.remove(token) == null ? Error.InvalidToken : null);
+            Error error = owners.remove(token) == null ? Error.InvalidToken : null;
+            observation = settledObservation; settledObservation = null;
+            if (observation != null) observation.run();
+            if (settleAcknowledgementFailure != null) throw settleAcknowledgementFailure;
+            if (settleAcknowledgementError != null) throw settleAcknowledgementError;
+            return nullSettlement ? null : new Reply<>(null, error);
         }
         public static Reply<Void> park(LatentRuntimeActivationToken token) { return new Reply<>(null, null); }
         public static Reply<Void> wake(LatentRuntimeActivationToken token) { return new Reply<>(null, null); }
