@@ -45,7 +45,10 @@ fn retained_pages_remain_charged_independently_of_their_cursor_and_owner_closure
     put(&owner, &tenant, b"two");
     let base = owner.snapshot().unwrap().metadata_bytes;
     let mut cursor = LocalReferenceInventory::begin(&owner, &tenant, &|| Ok(())).unwrap();
-    assert_eq!(owner.snapshot().unwrap().metadata_bytes, base + HANDLE_BYTES);
+    assert_eq!(
+        owner.snapshot().unwrap().metadata_bytes,
+        base + HANDLE_BYTES
+    );
     let first = cursor.next_page(&owner, 1, &|| Ok(())).unwrap();
     let second = cursor.next_page(&owner, 1, &|| Ok(())).unwrap();
     assert!(!first.complete && !second.complete);
@@ -60,9 +63,15 @@ fn retained_pages_remain_charged_independently_of_their_cursor_and_owner_closure
     let empty = cursor.next_page(&owner, 1, &|| Ok(())).unwrap();
     assert!(empty.complete && empty.references().is_empty());
     drop(cursor);
-    assert_eq!(owner.snapshot().unwrap().metadata_bytes, base + 2 * PAGE_BYTES);
+    assert_eq!(
+        owner.snapshot().unwrap().metadata_bytes,
+        base + 2 * PAGE_BYTES
+    );
     owner.close();
-    assert_eq!(owner.snapshot().unwrap().metadata_bytes, base + 2 * PAGE_BYTES);
+    assert_eq!(
+        owner.snapshot().unwrap().metadata_bytes,
+        base + 2 * PAGE_BYTES
+    );
     drop(second);
     assert_eq!(owner.snapshot().unwrap().metadata_bytes, base + PAGE_BYTES);
     drop(empty);
@@ -134,7 +143,10 @@ fn failed_or_unwound_page_construction_refunds_only_its_own_reservation() {
         if unwind {
             assert!(result.is_err());
         } else {
-            assert!(matches!(result.unwrap(), Err(LocalBlobError::DeadlineExceeded)));
+            assert!(matches!(
+                result.unwrap(),
+                Err(LocalBlobError::DeadlineExceeded)
+            ));
         }
         assert_eq!(owner.snapshot().unwrap(), before);
         assert!(cursor.after.is_none() && !cursor.complete);
@@ -208,7 +220,10 @@ fn a_paused_page_cannot_lend_its_metadata_to_a_concurrent_inventory() {
         assert_eq!(before.metadata_bytes, owner.limits().maximum_metadata_bytes);
         assert!(matches!(refused, Err(LocalBlobError::Capacity)));
         assert_eq!(before, after);
-        assert_eq!(owner.snapshot().unwrap().metadata_bytes, before.metadata_bytes);
+        assert_eq!(
+            owner.snapshot().unwrap().metadata_bytes,
+            before.metadata_bytes
+        );
         drop(page);
         let next = second.next_page(&owner, 1, &|| Ok(())).unwrap();
         assert!(next.complete);
@@ -273,7 +288,10 @@ fn retained_audit_page_keeps_its_charge_after_the_audit_and_view_retire() {
         })
         .unwrap();
     assert!(saw_charged_scratch.get());
-    assert_eq!(owner.snapshot().unwrap().metadata_bytes, base + HANDLE_BYTES + PAGE_BYTES);
+    assert_eq!(
+        owner.snapshot().unwrap().metadata_bytes,
+        base + HANDLE_BYTES + PAGE_BYTES
+    );
     assert_eq!(
         page.entries().collect::<Vec<_>>(),
         vec![(&reference, LocalReferenceDisposition::Unreviewed)]
