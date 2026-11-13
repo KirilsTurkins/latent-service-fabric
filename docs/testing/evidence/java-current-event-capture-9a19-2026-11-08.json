@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "latent.java.current-event-capture.v1",
+  "description": "Original Java compiler capture using a now-retired private JetStream fixture. This is source custody only.",
+  "captures": {
+    "sourceCommit": "9a19b0239ae66f88ec2b2f51013f7b60c3d3c71f",
+    "nativeIdempotencyProfile": "js-window-v1:94c859368e06236a91d6f00be73bd3018bb49d3a06b5d763fa67b49cd573a459",
+    "variants": {
+      "aggregate": {
+        "materials": {
+          "report": {
+            "sha256": "sha256:2bbb098612c0d57ae299fadd3f78d769ad97e0b82e7f7d8cc6c30c3112a602ee",
+            "bytes": 79266
+          },
+          "component": {
+            "sha256": "sha256:396784dda4174f84d3a6cb8c211dca9ad706fb826d613e5892b8140f815ad7f5",
+            "bytes": 1077276
+          },
+          "sourceInputs": {
+            "sha256": "sha256:d44762b3aa70d64d67110102959bdb3aafa3677106e3832c0e03b037ee09341f",
+            "bytes": 46139
+          },
+          "recipeInputs": {
+            "sha256": "sha256:17988ae053c90c652e427cc52e8b7aa291692477d90d46699f332fe7feef3dfd",
+            "bytes": 11864
+          },
+          "compilerInputs": {
+            "sha256": "sha256:90084065888bd8044720b7c6c4319af94ff429d45976ab38e2730d687beb2250",
+            "bytes": 2912190
+          },
+          "companion": {
+            "sha256": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d",
+            "bytes": 959
+          },
+          "capsuleSource": {
+            "sha256": "sha256:28939cbc29ad95e2f963cc2e7e6b13fe126368427ee70b0206a3012ad5006039",
+            "bytes": 3684
+          },
+          "currentEventMarker": {
+            "sha256": "sha256:97f39c345865852860ffed8f983b986cc856bda34b031b1501a8175a87591234",
+            "bytes": 172
+          },
+          "eventRequirements": {
+            "sha256": "sha256:9d4f9f8e6189034933be6e18bffa170f610b80cfbef0a3a9d1d6270fb6d8e717",
+            "bytes": 779
+          },
+          "applicationSchemaInputs": {
+            "sha256": "sha256:88f04d81694d8e74bafee0e34f7aa77d6c426343803d5656274292ae3ee740e0",
+            "bytes": 505
+          }
+        }
+      }
+    }
+  },
+  "signingQualified": false,
+  "executionQualified": false,
+  "packagedDistributionQualified": false
+}

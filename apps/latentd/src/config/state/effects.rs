@@ -25,6 +25,21 @@ pub struct DeferredDispatchAuthority {
     pub mode: String,
 }
 }
+
+configuration_object! {
+#[derive(Clone)]
+pub struct DeferredEventConfig {
+    pub requirements_digest: String,
+    pub provider_id: String,
+    pub provider_incarnation: String,
+    pub credential_reference: String,
+    pub staging_binding: String,
+    pub staging_policies: Vec<String>,
+    pub dispatch_binding: String,
+    pub dispatch_policies: Vec<String>,
+    pub dispatch_authority: DeferredDispatchAuthority,
+}
+}
 fn authority_present<'de, D: serde::Deserializer<'de>>(
     source: D,
 ) -> Result<Option<DeferredDispatchAuthority>, D::Error> {
@@ -35,6 +50,54 @@ pub(super) fn present<'de, D: serde::Deserializer<'de>>(
     source: D,
 ) -> Result<Option<DeferredHttpConfig>, D::Error> {
     DeferredHttpConfig::deserialize(source).map(Some)
+}
+pub(super) fn event_present<'de, D: serde::Deserializer<'de>>(
+    source: D,
+) -> Result<Option<DeferredEventConfig>, D::Error> {
+    DeferredEventConfig::deserialize(source).map(Some)
+}
+
+impl DeferredEventConfig {
+    pub(super) fn validate(&self) -> Result<(), PlatformError> {
+        super::checked_digest(&self.requirements_digest)?;
+        if self.dispatch_authority.format_version != 1
+            || self.dispatch_authority.mode != "signed-service-integration"
+        {
+            return Err(super::super::invalid(
+                "state.deferredEvent.dispatchAuthority",
+            ));
+        }
+        if self.provider_incarnation.len() != 64
+            || !self
+                .provider_incarnation
+                .bytes()
+                .all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
+        {
+            return Err(super::super::invalid(
+                "state.deferredEvent.providerIncarnation",
+            ));
+        }
+        for text in [
+            &self.provider_id,
+            &self.credential_reference,
+            &self.staging_binding,
+            &self.dispatch_binding,
+        ] {
+            super::checked_identity(text)?;
+        }
+        for policies in [&self.staging_policies, &self.dispatch_policies] {
+            if policies.is_empty() || policies.len() > 8 {
+                return Err(super::super::invalid("state.deferredEvent.policies"));
+            }
+            for (index, policy) in policies.iter().enumerate() {
+                super::checked_identity(policy)?;
+                if policies[..index].contains(policy) {
+                    return Err(super::super::invalid("state.deferredEvent.policies"));
+                }
+            }
+        }
+        Ok(())
+    }
 }
 impl DeferredHttpConfig {
     pub(super) fn validate(&self) -> Result<(), PlatformError> {

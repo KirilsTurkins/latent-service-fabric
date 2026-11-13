@@ -133,6 +133,21 @@ class StreamOperator(unittest.TestCase):
         self.assertTrue(policy["requireAudit"])
         self.assertEqual(policy["ceiling"], stream.CEILING)
 
+    def test_scoped_ipv6_is_rejected_before_owner_or_policy_mutation(self):
+        self.assertEqual(stream.endpoint({"host": "2001:db8::1", "port": 443, "transport": "tcp"})["host"],
+                         "2001:db8::1")
+        for index, host in enumerate(("fe80::1%eth0", "::1%1", "2001:db8::1%2")):
+            with self.subTest(host=host):
+                root = self.root / ("scoped-ipv6-" + str(index))
+                paths.new_directory(root)
+                client = PolicyRpc(self.config)
+                destination = {"host": host, "port": 443, "transport": "tcp"}
+                with self.assertRaisesRegex(DevError, "stream-operator-noncanonical-host"):
+                    stream.StreamOperator(root, client, **{**self.options, "destination": destination})
+                self.assertEqual(client.calls, [])
+                self.assertFalse((root / "stream-operator-owner.json").exists())
+                self.assertFalse((root / "operations.json").exists())
+
     def test_publication_is_canonical_before_any_owner_or_policy_mutation(self):
         invalid = (
             "publication-v1:sha256:" + "b" * 64,
@@ -424,6 +439,86 @@ class StreamOperator(unittest.TestCase):
         operator = self.operator()
         operator.grant(); operator.grant()
         self.assertEqual(len(self.mutations()), 2)
+
+    def test_inspection_refuses_owner_change_during_observation(self):
+        operator = self.operator()
+        original_call = self.client.call
+        def replace_owner(*arguments, stdin=None):
+            result = original_call(*arguments, stdin=stdin)
+            changed = copy.deepcopy(operator.owner)
+            changed['consumer'] = 'examples/other'
+            state.atomic(self.operator_root, 'stream-operator-owner.json', changed)
+            return result
+        self.client.call = replace_owner
+        with self.assertRaisesRegex(DevError, 'stream-operator-owner-changed'):
+            operator.inspect('mail-deployment')
+        self.assertEqual(len(self.client.calls), 1)
+        self.assertEqual(self.mutations(), [])
+
+    def test_inspection_refuses_client_config_change_during_observation(self):
+        operator = self.operator()
+        original_call = self.client.call
+        def replace_config(*arguments, stdin=None):
+            result = original_call(*arguments, stdin=stdin)
+            self.config.write_bytes(encode({'profile': 'changed', 'credential': 'PUBLIC-SOURCE-CONTROL-ONLY'}))
+            return result
+        self.client.call = replace_config
+        with self.assertRaisesRegex(DevError, 'stream-operator-client-identity-changed'):
+            operator.inspect('mail-deployment')
+        self.assertEqual(len(self.client.calls), 1)
+        self.assertEqual(self.mutations(), [])
+
+    def test_grant_checks_room_for_both_receipts_before_any_mutation(self):
+        for count in (stream.MAXIMUM_RECORDS - 1, stream.MAXIMUM_RECORDS):
+            with self.subTest(count=count):
+                root = self.root / ("full-receipts-" + str(count))
+                paths.new_directory(root)
+                client = PolicyRpc(self.config)
+                operator = stream.StreamOperator(root, client, **self.options)
+                records = {"prior:" + str(index): {} for index in range(count)}
+                state.atomic(root, "stream-policy-receipts.json", records)
+                with self.assertRaisesRegex(DevError, "stream-operator-retained-record-bound"):
+                    operator.grant()
+                self.assertEqual(client.calls, [])
+                self.assertEqual(state.load(root, "stream-policy-receipts.json"), records)
+                self.assertIsNone(operator.journal.read()["pending"])
+                self.assertFalse((root / "selected-stream-policy.json").exists())
+
+    def test_full_receipt_store_allows_owned_updates_and_one_missing_record(self):
+        operator = self.operator()
+        with state.lock(self.operator_root, "stream-operator.lock"):
+            operator._apply("provider-binding", self.options["binding_id"], operator._binding())
+        records = operator._records()
+        records.update({"prior:" + str(index): {} for index in range(stream.MAXIMUM_RECORDS - 2)})
+        state.atomic(self.operator_root, "stream-policy-receipts.json", records)
+        operator.grant()  # One remaining slot admits the missing policy.
+        self.assertEqual(len(operator._records()), stream.MAXIMUM_RECORDS)
+        self.assertEqual(len(self.mutations()), 2)
+        operator.grant()  # A confirmed repeat needs no new slot.
+        operator.revoke()  # An existing policy can be updated at capacity.
+        self.assertEqual(len(self.mutations()), 3)
+        self.assertEqual(self.client.records["policy:stream-allow"]["document"]["rules"][0]["effect"], "deny")
+        self.assertIsNone(operator.journal.read()["pending"])
+
+    def test_each_apply_rechecks_capacity_after_an_intervening_state_change(self):
+        operator = self.operator()
+        records = {"prior:" + str(index): {} for index in range(stream.MAXIMUM_RECORDS - 2)}
+        state.atomic(self.operator_root, "stream-policy-receipts.json", records)
+        original_call = self.client.call
+        def add_unrelated_record(*arguments, stdin=None):
+            result = original_call(*arguments, stdin=stdin)
+            if "apply" in arguments and "provider-binding" in arguments:
+                changed = state.load(self.operator_root, "stream-policy-receipts.json")
+                changed["prior:intervening"] = {}
+                state.atomic(self.operator_root, "stream-policy-receipts.json", changed)
+            return result
+        self.client.call = add_unrelated_record
+        with self.assertRaisesRegex(DevError, "stream-operator-retained-record-bound"):
+            operator.grant()
+        self.assertEqual(len(self.mutations()), 1)
+        self.assertIn("provider-binding:stream-installed", self.client.records)
+        self.assertNotIn("policy:stream-allow", self.client.records)
+        self.assertIsNone(operator.journal.read()["pending"])
 
     def test_foreign_policy_or_changed_owned_record_is_not_overwritten(self):
         operator = self.operator()

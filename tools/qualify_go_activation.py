@@ -16,6 +16,36 @@ from tools.rust_capsule_project import ROOT, digest, inventory, snapshot, write_
 from tools.stage_runtime_wit import stage
 
 
+TICKER_REFERENCE = 'sdk/go-guest/runtime/zero-clock-conformance/ticker-reference_test.go.txt'
+TICKER_REFERENCE_CASE = 'TestNativeTickerCoalescesMissedPeriods'
+
+
+def ticker_reference_result(raw):
+    """Require the one real Go synctest result; reject setup failures and skips."""
+    if not isinstance(raw, bytes) or len(raw) > 1024 * 1024:
+        raise ValueError('Go-native-ticker-output-bound')
+    events = []
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError('Go-native-ticker-duplicate-field')
+            result[key] = value
+        return result
+    for line in raw.splitlines():
+        row = json.loads(line, object_pairs_hook=unique)
+        if not isinstance(row, dict) or row.get('Package') != 'command-line-arguments':
+            raise ValueError('Go-native-ticker-package')
+        action, case = row.get('Action'), row.get('Test')
+        if action not in {'start', 'run', 'output', 'pass'} or case not in (None, TICKER_REFERENCE_CASE):
+            raise ValueError('Go-native-ticker-unexpected-event')
+        if action in {'start', 'run', 'pass'}:
+            events.append((action, case))
+    if events != [('start', None), ('run', TICKER_REFERENCE_CASE), ('pass', TICKER_REFERENCE_CASE), ('pass', None)]:
+        raise ValueError('Go-native-ticker-exact-result-required')
+    return True
+
+
 def fixture_reference(output, commands, compiler, source, fixture):
     """Run only this reviewed fixture on the pinned native Go reference."""
     if fixture == 'checkpoints':
@@ -67,6 +97,19 @@ def fixture_reference(output, commands, compiler, source, fixture):
             if value not in allowed:
                 raise ValueError('Go-native-reference-output')
             outputs.append(int(value))
+        ticker_reference = None
+        if fixture == 'zero-clock':
+            ticker_source = (ROOT / TICKER_REFERENCE).read_bytes()
+            if not ticker_source or len(ticker_source) > 65536:
+                raise ValueError('Go-native-ticker-source-bound')
+            ticker_test = reference / 'ticker_reference_test.go'
+            ticker_test.write_bytes(ticker_source)
+            ticker_result = commands.run('zero-clock-native-ticker', compiler.paths['go'], 'test',
+                                         '-json', '-timeout=10s', '-count=1', ticker_test,
+                                         max_output_bytes=1024 * 1024)
+            ticker_reference_result(ticker_result)
+            ticker_reference = {'case': TICKER_REFERENCE_CASE, 'sourceDigest': digest(ticker_source),
+                                'fakeClock': 'go-testing-synctest', 'passed': True}
     finally:
         commands.environment.clear()
         commands.environment.update(previous)
@@ -76,6 +119,8 @@ def fixture_reference(output, commands, compiler, source, fixture):
         result['outputs'] = outputs
     else:
         result['output'] = 42
+    if ticker_reference is not None:
+        result['tickerReference'] = ticker_reference
     return result
 
 

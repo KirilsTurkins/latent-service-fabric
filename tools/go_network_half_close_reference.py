@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import re
 
+from tools import go_network_deadline_set_reference as deadline_set
 from tools.owned_test_process import ProcessFailure, run_owned
 from tools.test_run import redact
 
@@ -110,11 +111,17 @@ def methods(raw: bytes, patterns: tuple[bytes, ...]) -> tuple[bytes, ...]:
 
 
 def projected(raw: bytes) -> bytes:
+    selected = methods(raw, PATTERNS)
+    # The current setter calls an additional source-owned helper; the pinned
+    # historical setter predates it. Preserve each original body exactly.
+    deadline = deadline_set.methods(raw, current=b'lsfStreamSameDeadline(' in selected[-1])
+    if deadline[-1] != selected[-1]:
+        raise ValueError('go-half-close-deadline-setter-mismatch')
     return (b'package halfclose\n'
             b'import ("context"; lsfOS "os"; "time"; '
             b'lsfWit "example.invalid/halfclose/wit"; '
             b'lsfNetwork "example.invalid/halfclose/network")\n'
-            + b'\n\n'.join(methods(raw, PATTERNS)) + b'\n')
+            + b'\n\n'.join((*deadline[:-1], *selected)) + b'\n')
 
 
 def projected_sdk(raw: bytes) -> bytes:

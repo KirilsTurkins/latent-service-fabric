@@ -9,8 +9,10 @@ import tempfile
 import unittest
 from tools import qualify_go_write_progress as q
 from tools import go_network_deadline_reference as deadline
+from tools import go_network_deadline_set_reference as deadline_set
 from tools import go_network_empty_read_reference as empty_read
 from tools import go_network_half_close_reference as half_close
+from tools import go_network_endpoint_reference as endpoint
 
 ROOT=Path(__file__).resolve().parents[2]
 
@@ -99,6 +101,11 @@ class GoWriteProgressTests(unittest.TestCase):
         materials={name:(ROOT/name).read_bytes() for name in deadline.MATERIALS}
         deadline.contract((ROOT/q.TEMPLATE).read_bytes(),materials)
         for name, marker in ((deadline.MATERIALS[0],b'self.limits.absolute_timeout_millis > 10_000'),
+                             (deadline.MATERIALS[2],b'value > 10_000 || (value == 0 && direction != 2)'),
+                             (deadline.MATERIALS[2],b'direction == 2 && !socket.host_tls() && !socket.protected_owner()'),
+                             (deadline.MATERIALS[2],b'now + Duration::from_millis(u64::from(value))'),
+                             (deadline.MATERIALS[2],b'if !observation {'),
+                             (deadline.MATERIALS[2],b'deadline = deadline.min(requested);'),
                              (deadline.MATERIALS[3],b'r := raw.ConnectContext(ctx, request)')):
             altered=dict(materials);altered[name]=altered[name].replace(marker,b'changed',1)
             with self.assertRaises(ValueError):deadline.contract((ROOT/q.TEMPLATE).read_bytes(),altered)
@@ -166,6 +173,19 @@ class GoWriteProgressTests(unittest.TestCase):
                         sdk.replace(b'func (c *Connection) ShutdownContext(',b'func renamed(')):
             with self.assertRaises(ValueError):half_close.methods(invalid,half_close.SDK_PATTERNS)
 
+    def test_half_close_projection_retains_required_deadline_helper_only_for_current_source(self):
+        raw=(ROOT/q.TEMPLATE).read_bytes()
+        helper,setter=deadline_set.methods(raw,current=True)
+        self.assertEqual(half_close.projected(raw).count(helper),1)
+        self.assertEqual(half_close.projected(raw).count(setter),1)
+        for invalid in (raw.replace(helper,b''), raw+helper):
+            with self.assertRaises(ValueError):half_close.projected(invalid)
+        old=raw.replace(helper,b'').replace(b'!lsfStreamSameDeadline(t, c.readDeadline)',b'!t.Equal(c.readDeadline)')
+        old=old.replace(b'!lsfStreamSameDeadline(t, c.writeDeadline)',b'!t.Equal(c.writeDeadline)')
+        old_setter=deadline_set.methods(old,current=False)[0]
+        self.assertEqual(half_close.projected(old).count(old_setter),1)
+        self.assertNotIn(helper,half_close.projected(old))
+
     def test_half_close_counterexample_and_full_controls_fail_closed(self):
         package='example.invalid/halfclose'
         old=[{'Package':package,'Action':'output','Test':half_close.CASES[0],
@@ -182,6 +202,37 @@ class GoWriteProgressTests(unittest.TestCase):
             with self.assertRaises(ValueError):half_close.observed(self.encoded(rows),old_flag)
         duplicate=b'{"Package":"example.invalid/halfclose","Action":"pass","Action":"fail"}'
         with self.assertRaisesRegex(ValueError,'duplicate-field'):half_close.observed(duplicate,False)
+
+    def test_endpoint_projection_and_counterexample_are_source_bound(self):
+        raw=(ROOT/q.TEMPLATE).read_bytes()
+        body=endpoint.method(raw)
+        self.assertEqual(raw.count(body),1)
+        self.assertEqual(endpoint.projected(raw).count(body),1)
+        old=subprocess.check_output(['git','show',q.BASELINE+':'+q.TEMPLATE],cwd=ROOT)
+        self.assertEqual(hashlib.sha256(endpoint.method(old)).hexdigest(),endpoint.OLD_METHOD_SHA)
+        fixture=(ROOT/endpoint.TESTS).read_text()
+        for case in endpoint.CASES:
+            self.assertEqual(fixture.count('func '+case+'('),1)
+        for invalid in (raw+body,raw.replace(b'\n',b'\r\n'),b'x'*65537,
+                        raw.replace(b'func lsfStreamEndpoint(',b'func renamedEndpoint(')):
+            with self.assertRaises(ValueError):endpoint.method(invalid)
+
+    def test_endpoint_receipt_requires_exact_counterexample_and_all_controls(self):
+        package='example.invalid/endpoint'
+        old=[{'Package':package,'Action':'output','Test':endpoint.CASES[0],
+              'Output':'non-ASCII endpoint accepted as "k.example":443'},
+             {'Package':package,'Action':'fail','Test':endpoint.CASES[0]},
+             {'Package':package,'Action':'fail'}]
+        current=[{'Package':package,'Action':'pass','Test':case} for case in endpoint.CASES]
+        current.append({'Package':package,'Action':'pass'})
+        self.assertEqual(endpoint.observed(self.encoded(old),True),[endpoint.CASES[0]])
+        self.assertEqual(endpoint.observed(self.encoded(current),False),list(endpoint.CASES))
+        for rows,old_flag in ((old[1:],True),(current[:-2]+current[-1:],False),
+                              (current+[current[0]],False),([dict(current[0],Action='skip')]+current[1:],False),
+                              ([dict(current[0],Package='unexpected')]+current[1:],False)):
+            with self.assertRaises(ValueError):endpoint.observed(self.encoded(rows),old_flag)
+        duplicate=b'{"Package":"example.invalid/endpoint","Action":"pass","Action":"fail"}'
+        with self.assertRaisesRegex(ValueError,'duplicate-field'):endpoint.observed(duplicate,False)
 
     def test_direct_help_works_outside_repo_without_import_path_environment(self):
         with tempfile.TemporaryDirectory() as directory:

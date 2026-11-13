@@ -24,6 +24,7 @@ struct sync_wait {
 };
 #if LSF_C_TIMED_CLOCK
 #include <time.h>
+#include <sys/select.h>
 #include <wasi/api.h>
 _Static_assert(sizeof(time_t)==8 && sizeof(clockid_t)==4 && sizeof(struct timespec)==16,
                "pinned clock and timespec ABI");
@@ -640,6 +641,76 @@ static int sync_sleep(const struct timespec *duration,struct timespec *remaining
     }
     if (remaining) *remaining=(struct timespec){0};
     return 0;
+}
+
+/* The pinned libc rounds select/pselect down to whole milliseconds (and caps
+ * long intervals). Route only finite calls with no selected descriptors to
+ * the same owned sleep, preserving the requested precision. All other shapes
+ * retain the original libc path; non-NULL signal masks are unsupported.
+ *
+ * Input duration is copied before suspension. The descriptor sets are
+ * modified only after the timer really completes and its owners retire.
+ */
+extern int sync_original_select(int,fd_set *restrict,fd_set *restrict,fd_set *restrict,
+                                struct timeval *restrict) __asm__("select");
+extern int sync_original_pselect(int,fd_set *restrict,fd_set *restrict,fd_set *restrict,
+                                 const struct timespec *restrict,
+                                 const sigset_t *restrict) __asm__("pselect");
+static int sync_inactive_fd_set(const fd_set *set,int nfds) {
+    if (!set) return 1;
+    if (set->__nfds>FD_SETSIZE) return 0;
+    for (size_t index=0;index<set->__nfds;++index) {
+        int fd=set->__fds[index];
+        if (fd>=0 && fd<nfds) return 0;
+    }
+    return 1;
+}
+static int sync_select_timer_only(int nfds,const fd_set *readfds,
+                                  const fd_set *writefds,const fd_set *errorfds) {
+    return nfds>=0 && (nfds==0 || (sync_inactive_fd_set(readfds,nfds) &&
+        sync_inactive_fd_set(writefds,nfds) && sync_inactive_fd_set(errorfds,nfds)));
+}
+static void sync_clear_fd_sets(fd_set *readfds,fd_set *writefds,fd_set *errorfds) {
+    if (readfds) FD_ZERO(readfds);
+    if (writefds) FD_ZERO(writefds);
+    if (errorfds) FD_ZERO(errorfds);
+}
+#if defined(LSF_C_STREAM_NETWORK) && LSF_C_STREAM_NETWORK
+int __lsf_c_net_select(int,fd_set *,fd_set *,fd_set *,const struct timeval *);
+int __lsf_c_net_pselect(int,fd_set *,fd_set *,fd_set *,const struct timespec *);
+#endif
+int __lsf_c_select(int nfds,fd_set *restrict readfds,fd_set *restrict writefds,
+                   fd_set *restrict errorfds,struct timeval *restrict timeout) {
+    if (timeout && sync_select_timer_only(nfds,readfds,writefds,errorfds)) {
+        struct timeval value=*timeout;
+        if (value.tv_usec<0 || value.tv_usec>=1000000) { errno=EINVAL;return -1; }
+        struct timespec delay={.tv_sec=value.tv_sec,.tv_nsec=value.tv_usec*1000};
+        int saved=errno,error=sync_sleep(&delay,NULL);
+        if (!error) sync_clear_fd_sets(readfds,writefds,errorfds);
+        errno=error?error:saved;return error?-1:0;
+    }
+#if defined(LSF_C_STREAM_NETWORK) && LSF_C_STREAM_NETWORK
+    return __lsf_c_net_select(nfds,readfds,writefds,errorfds,timeout);
+#else
+    return sync_original_select(nfds,readfds,writefds,errorfds,timeout);
+#endif
+}
+int __lsf_c_pselect(int nfds,fd_set *restrict readfds,fd_set *restrict writefds,
+                    fd_set *restrict errorfds,const struct timespec *restrict timeout,
+                    const sigset_t *restrict sigmask) {
+    if (nfds<0) return sync_original_pselect(nfds,readfds,writefds,errorfds,timeout,sigmask);
+    if (sigmask) { errno=ENOTSUP;return -1; }
+    if (timeout && sync_select_timer_only(nfds,readfds,writefds,errorfds)) {
+        struct timespec value=*timeout;
+        int saved=errno,error=sync_sleep(&value,NULL);
+        if (!error) sync_clear_fd_sets(readfds,writefds,errorfds);
+        errno=error?error:saved;return error?-1:0;
+    }
+#if defined(LSF_C_STREAM_NETWORK) && LSF_C_STREAM_NETWORK
+    return __lsf_c_net_pselect(nfds,readfds,writefds,errorfds,timeout);
+#else
+    return sync_original_pselect(nfds,readfds,writefds,errorfds,timeout,sigmask);
+#endif
 }
 
 /* The pinned libc's select(0, ...) and poll without descriptors request one

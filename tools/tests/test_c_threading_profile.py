@@ -13,7 +13,7 @@ from tools.rust_capsule_project import snapshot
 
 
 def graph():
-    return {'worlds': [{'exports': {'interface-0': {'interface': {'id': 0}}}}],
+    return {'worlds': [{'name': 'service', 'package': 0, 'exports': {'interface-0': {'interface': {'id': 0}}}}],
             'interfaces': [{'name': 'api', 'package': 0, 'types': {}, 'functions': {
                 'greet': {'name': 'greet', 'kind': 'async-freestanding',
                           'params': [{'name': 'name', 'type': 'string'}], 'result': 0}}}],
@@ -49,7 +49,18 @@ class CThreadingProfile(unittest.TestCase):
             self.assertTrue(threading.selected(actual))
             selected = {name for name in files if name.startswith('vendor/lsf/sdk/c-guest/runtime/')}
             self.assertEqual(selected, {'vendor/lsf/sdk/c-guest/runtime/' + name for name in
-                                       ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c', 'template-copy.c', 'synchronization.c')})
+                                       ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c', 'template-copy.c', 'synchronization.c', 'timed-symbols.rsp')})
+            # A previously captured SDK without the new optional response
+            # remains a valid legacy input when its lock matches those bytes.
+            from tools.rust_capsule_project import inventory
+            legacy = dict(files)
+            legacy.pop('vendor/lsf/sdk/c-guest/runtime/timed-symbols.rsp')
+            legacy_lock = json.loads(legacy['sdk-lock.json'])
+            vendor = {name.removeprefix('vendor/lsf/'): value for name, value in legacy.items()
+                      if name.startswith('vendor/lsf/')}
+            legacy_lock['sdk'] = json.loads(inventory(vendor))
+            legacy['sdk-lock.json'] = json.dumps(legacy_lock).encode()
+            c_capsule_project.validate(legacy)
             # This normal greeting never creates a child, but still captures
             # the selected PAL's original creation/import/entry-address owner.
             self.assertNotIn(b'pthread_create', files['src/main.c'])
@@ -120,13 +131,31 @@ class CThreadingProfile(unittest.TestCase):
         actual = threading.linked_defines((), timed_clock=True)
         self.assertEqual(actual, (plain[0], 'LSF_C_TIMED_CLOCK=1', *plain[1:],
             'nanosleep=__lsf_c_nanosleep', 'thrd_sleep=__lsf_c_thrd_sleep'))
+        packed = threading.linked_defines((), timed_clock=True, time_response=True)
+        self.assertEqual(packed, (plain[0], 'LSF_C_TIMED_CLOCK=1', *plain[1:]))
+        # One fixed @response replaces the two legacy sleep arguments; the
+        # outer captured compiler invocation therefore loses one argument.
+        self.assertEqual(len(packed) + 1, len(actual) - 1)
+        self.assertIn('select=custom', threading.linked_defines(('select=custom',), timed_clock=True))
         for selected in (False, True):
             with self.subTest(selected=selected), self.assertRaisesRegex(ValueError, 'compiler-owned'):
                 threading.linked_defines(('LSF_C_TIMED_CLOCK=1',), timed_clock=selected)
-        for name in ('nanosleep', 'thrd_sleep', '__lsf_c_nanosleep', '__lsf_c_thrd_sleep',
+        for name in ('nanosleep', 'thrd_sleep', 'select', 'pselect',
+                     '__lsf_c_nanosleep', '__lsf_c_thrd_sleep', '__lsf_c_select', '__lsf_c_pselect',
                      '__imported_wasi_snapshot_preview1_poll_oneoff'):
             with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'compiler-owned'):
-                threading.linked_defines((name + '=foreign',), timed_clock=True)
+                threading.linked_defines((name + '=foreign',), timed_clock=True, time_response=True)
+        with self.assertRaisesRegex(ValueError, 'selection'):
+            threading.linked_defines((), timed_clock=False, time_response=True)
+        with tempfile.TemporaryDirectory() as directory:
+            sdk = Path(directory) / 'sdk'; (sdk / 'runtime').mkdir(parents=True)
+            self.assertIsNone(threading.timed_alias_response(sdk))
+            response = sdk / 'runtime/timed-symbols.rsp'
+            response.write_bytes(threading.TIME_RESPONSE)
+            self.assertEqual(threading.timed_alias_response(sdk), response)
+            response.write_bytes(threading.TIME_RESPONSE + b'-Wl,--allow-undefined\n')
+            with self.assertRaisesRegex(ValueError, 'response-preimage'):
+                threading.timed_alias_response(sdk)
         for selected in (1, None, 'true'):
             with self.subTest(selected=selected), self.assertRaisesRegex(ValueError, 'selection'):
                 threading.linked_defines((), timed_clock=selected)
@@ -159,15 +188,26 @@ class CThreadingProfile(unittest.TestCase):
             original = b'original-poll-header\n'
             path = root / 'poll.h'
             path.write_bytes(original)
-            with patch.object(threading, 'POLL_LIBC', {'poll.h': hashlib.sha256(original).hexdigest()}):
-                self.assertEqual(threading.poll_libc_inputs(root / 'zig'), {'poll.h': path})
+            fd_path = root / 'fd.h'
+            fd_path.write_bytes(original)
+            with patch.object(threading, 'POLL_LIBC', {'poll.h': hashlib.sha256(original).hexdigest()}), \
+                    patch.object(threading, 'POLL_FD_LIBC', {'fd.h': hashlib.sha256(original).hexdigest()}):
+                self.assertEqual(threading.poll_libc_inputs(root / 'zig'), {'poll.h': path, 'fd.h': fd_path})
                 self.assertEqual(threading.poll_libc_material_name('poll.h'), 'c-threading-poll-0')
+                self.assertEqual(threading.poll_libc_material_name('fd.h'), 'c-threading-select-fd-0')
                 path.write_bytes(original + b'changed')
+                with self.assertRaisesRegex(ValueError, 'poll-preimage'):
+                    threading.poll_libc_inputs(root / 'zig')
+                path.write_bytes(original)
+                fd_path.write_bytes(original + b'changed')
                 with self.assertRaisesRegex(ValueError, 'poll-preimage'):
                     threading.poll_libc_inputs(root / 'zig')
                 with self.assertRaisesRegex(ValueError, 'poll-material-path'):
                     threading.poll_libc_material_name('foreign.h')
         self.assertEqual(len(threading.POLL_LIBC), 7)
+        self.assertEqual(len(threading.POLL_FD_LIBC), 3)
+        names = (*threading.POLL_LIBC, *threading.POLL_FD_LIBC)
+        self.assertEqual(len({threading.poll_libc_material_name(name) for name in names}), len(names))
 
     def test_installed_recipe_ships_optional_helper_and_exact_runtime_without_default_selection(self):
         from tools import dev_tool_distribution
@@ -177,7 +217,7 @@ class CThreadingProfile(unittest.TestCase):
             dev_tool_distribution.recipe(payload, 'c')
             recipe = payload / 'recipe'
             for name in (*threading.RECIPE, *threading_compatibility.RECIPE, *('sdk/c-guest/runtime/' + name for name in
-                         ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c', 'template-copy.c', 'synchronization.c'))):
+                         ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c', 'template-copy.c', 'synchronization.c', 'timed-symbols.rsp'))):
                 self.assertEqual((recipe / name).read_bytes(), (c_capsule_project.ROOT / name).read_bytes())
             with patch.object(c_capsule_project, 'ROOT', recipe):
                 c_capsule_project.create(Path(root) / 'ordinary', 'greeting')
@@ -205,6 +245,23 @@ class CThreadingProfile(unittest.TestCase):
             mutation(changed)
             with self.assertRaisesRegex(ValueError, 'finite-public-contract'):
                 threading.public_export(changed)
+
+    def test_public_export_selects_only_the_requested_world_in_a_dependency_graph(self):
+        original = graph()
+        original['packages'].append({'name': 'latent:network@0.1.0'})
+        original['worlds'].insert(0, {'name': 'contract-probe', 'package': 1, 'exports': {}})
+        expected = 'examples:ordinary/api@1.0.0#greet'
+        self.assertEqual(threading.public_export(original, 'service'), expected)
+        self.assertEqual(threading.public_export(original, 'examples:ordinary/service@1.0.0'), expected)
+        with self.assertRaisesRegex(ValueError, 'finite-public-contract'):
+            threading.public_export(original)
+        with self.assertRaisesRegex(ValueError, 'finite-public-contract'):
+            threading.public_export(original, 'latent:network/service@0.1.0')
+        ambiguous = copy.deepcopy(original)
+        ambiguous['worlds'].append({'name': 'service', 'package': 1, 'exports': {}})
+        with self.assertRaisesRegex(ValueError, 'finite-public-contract'):
+            threading.public_export(ambiguous, 'service')
+        self.assertEqual(threading.public_export(ambiguous, 'examples:ordinary/service@1.0.0'), expected)
 
     def test_sync_core_binding_selection_is_explicit_and_default_arguments_remain_unchanged(self):
         from tools.c_guest.bindings import generate

@@ -1,0 +1,37 @@
+    // A deliberately low-level WASI witness. These are the same private
+    // component imports already used by the pinned NativeAOT runtime, not
+    // public application authority or an ordinary Timer.Change scenario.
+    [System.Runtime.InteropServices.DllImport("wasi:clocks/monotonic-clock@0.2.6", EntryPoint = "subscribe-duration"),
+        System.Runtime.InteropServices.WasmImportLinkage]
+    private static extern int ReadyWitnessSubscribe(long nanos);
+    [System.Runtime.InteropServices.DllImport("wasi:io/poll@0.2.6", EntryPoint = "[method]pollable.block"),
+        System.Runtime.InteropServices.WasmImportLinkage]
+    private static extern void ReadyWitnessBlock(int pollable);
+    [System.Runtime.InteropServices.DllImport("wasi:io/poll@0.2.6", EntryPoint = "[resource-drop]pollable"),
+        System.Runtime.InteropServices.WasmImportLinkage]
+    private static extern void ReadyWitnessDrop(int pollable);
+
+    private static string ReadyRetirementWitness()
+    {
+        uint initial = Observe().waits;
+        int ready = ReadyWitnessSubscribe(0);
+        uint held, admitted, dropped, reaped, repeated;
+        try {
+            // The same owned pollable remains valid after this genuine wait
+            // completes, so the second block enters the already-ready path.
+            ReadyWitnessBlock(ready);
+            held = Observe().waits;
+            int pending = ReadyWitnessSubscribe(60000000000L);
+            try { admitted = Observe().waits; }
+            finally { ReadyWitnessDrop(pending); }
+            dropped = Observe().waits;
+            ReadyWitnessBlock(ready);
+            reaped = Observe().waits;
+            ReadyWitnessBlock(ready);
+            repeated = Observe().waits;
+        }
+        finally { ReadyWitnessDrop(ready); }
+        uint final = Observe().waits;
+        return "ready-retirement:" + initial + ":" + held + ":" + admitted + ":" + dropped
+            + ":" + reaped + ":" + repeated + ":" + final;
+    }

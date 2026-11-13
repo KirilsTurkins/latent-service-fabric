@@ -5,12 +5,14 @@
       "boundary": "runtime",
       "expectedIgnored": [
         "signed_ordinary_go_smtp_starttls_preserves_trust_hostname_and_fresh_connection",
-        "signed_published_go_smtp_and_separate_worker_timer_preserve_original_owners"
+        "signed_published_go_smtp_and_separate_worker_timer_preserve_original_owners",
+        "signed_published_go_smtp_lost_reply_does_not_replay_and_fresh_succeeds"
       ],
       "id": "latent-wasmtime.test.go_smtp_tls",
       "ignoredLeaves": [
         "signed_ordinary_go_smtp_starttls_preserves_trust_hostname_and_fresh_connection",
-        "signed_published_go_smtp_and_separate_worker_timer_preserve_original_owners"
+        "signed_published_go_smtp_and_separate_worker_timer_preserve_original_owners",
+        "signed_published_go_smtp_lost_reply_does_not_replay_and_fresh_succeeds"
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",

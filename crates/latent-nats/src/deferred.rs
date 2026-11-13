@@ -27,6 +27,13 @@ use std::{io, sync::Arc};
 
 pub const NATS_DEFERRED_PROFILE: &str = "nats-jetstream-effect-v1";
 
+/// The installed node checks the current publication and policy for this
+/// original grant and logical topic. The callback performs no network I/O;
+/// any error blocks the effect rather than granting a provider retry.
+pub trait DeferredEventAuthorization: Send + Sync {
+    fn check_current(&self, grant: &DispatchGrant, topic: &str) -> Result<(), EventError>;
+}
+
 /// One exact approved tenant/topic mapping on an already installed publisher.
 /// No separate client, credential owner or application worker is created.
 pub struct JetStreamEffectAdapter {
@@ -36,6 +43,7 @@ pub struct JetStreamEffectAdapter {
     qualification: JetStreamQualification,
     profile: DispatchProfile,
     time: Arc<dyn EffectTimeSource>,
+    authorization: Option<Arc<dyn DeferredEventAuthorization>>,
     client: Arc<ProviderClient<Connection>>,
     _metadata: ProviderMetadata,
 }
@@ -99,6 +107,7 @@ impl NatsPublisher {
             qualification,
             profile,
             time,
+            authorization: None,
             client,
             _metadata: metadata,
         })
@@ -136,6 +145,7 @@ impl DeferredEffectAdapter for JetStreamEffectAdapter {
             row: self.row,
             credential: self.credential,
             time: Arc::clone(&self.time),
+            authorization: self.authorization.clone(),
             event,
             request,
             attempt,
@@ -154,6 +164,21 @@ impl DeferredEffectAdapter for JetStreamEffectAdapter {
 }
 
 impl JetStreamEffectAdapter {
+    #[must_use]
+    pub fn with_authorization(
+        mut self,
+        authorization: Arc<dyn DeferredEventAuthorization>,
+    ) -> Self {
+        self.authorization = Some(authorization);
+        self
+    }
+
+    /// Exact installed provider identity; it is descriptive and grants no call.
+    #[must_use]
+    pub fn provider_reference(&self) -> latent_capabilities::broker::ProviderReference {
+        self.publisher.reference()
+    }
+
     /// Constructs metadata for a trusted node policy binding. Publishing it into
     /// the current authority owner still requires the node's current-policy check.
     pub fn rule(
