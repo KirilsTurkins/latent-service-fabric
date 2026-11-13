@@ -6,155 +6,66 @@ on:
 permissions:
   contents: read
   actions: read
-  checks: read
 concurrency:
   group: typescript-stack-ci-repair-20261113
   cancel-in-progress: false
 jobs:
-  source:
+  inspect:
     if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/typescript-stack-ci-repair-20261113'
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    env:
-      CARGO_BUILD_JOBS: 2
-      CARGO_INCREMENTAL: 0
-      CARGO_PROFILE_DEV_DEBUG: 0
-      CARGO_PROFILE_TEST_DEBUG: 0
-      CARGO_TERM_COLOR: never
+    timeout-minutes: 15
     steps:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
         with:
           fetch-depth: 1
           persist-credentials: false
-      - name: Capture exact source deltas
+      - name: Capture actual trees, signed Go fixture metadata and owned action revisions
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import json, os, pathlib, subprocess
-          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'ci-source'
+          import json, os, pathlib, subprocess, urllib.request
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'repair-inputs'
           out.mkdir()
           def api(path):
-              return json.loads(subprocess.check_output(['gh','api','repos/KirilsTurkins/latent-service-fabric/'+path], timeout=120))
-          heads = {'1852':'3c9ceb80c006133a71f2a833410811600387e88a','1931':'12aa36d6cdd6eec5f5eb76e2acb9875dae93763e','1934':'93019580a604a9ef02217a5046352f573cb210da'}
-          base = 'b1d535399b40d6a1389693652ccb855521fec5fa'
-          development = api('git/ref/heads/development')['object']['sha']
-          subprocess.run(['git','fetch','--no-tags','--depth=1','origin',base,*heads.values(),development], check=True)
-          for number, head in heads.items():
-              with (out/f'{number}-from-b1.patch').open('wb') as f:
-                  subprocess.run(['git','diff','--binary',base,head], stdout=f, check=True)
-              (out/f'{number}-commit.json').write_text(json.dumps(api('git/commits/'+head), indent=2))
-          (out/'development-head.txt').write_text(development+'\n')
-          (out/'recent-development.json').write_text(json.dumps(api('commits?sha=development&per_page=30'), indent=2))
-          subprocess.run(['git','diff','--stat',heads['1852'],development], stdout=(out/'development.stat').open('w'), check=True)
-          PY
-      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
-      - name: Reproduce stale standalone lock and resolve only the shared path package
-        shell: bash
-        run: |
-          set -euo pipefail
-          out="$RUNNER_TEMP/ci-source"
-          lock=sdk/rust-standard-runtime/stack-transform/Cargo.lock
-          manifest=sdk/rust-standard-runtime/stack-transform/Cargo.toml
-          cp "$lock" "$out/stack-transform-before.lock"
-          set +e
-          cargo metadata --manifest-path "$manifest" --locked --format-version 1 > "$out/locked-before.stdout" 2> "$out/locked-before.stderr"
-          status=$?
-          set -e
-          test "$status" -eq 101
-          grep -F 'lock file' "$out/locked-before.stderr"
-          cargo update --manifest-path "$manifest" -p latent-component-threading > "$out/lock-update.log" 2>&1
-          git diff --exit-code -- Cargo.lock
-          git diff -- "$lock" > "$out/rust-lock.patch"
-          cp "$lock" "$out/stack-transform-after.lock"
-          cargo test --manifest-path "$manifest" --locked > "$out/stack-transform-test.log" 2>&1
-          cargo test -p latent-component-threading --lib --all-features --locked > "$out/threading-test.log" 2>&1
-          cargo metadata --manifest-path "$manifest" --locked --format-version 1 > "$out/stack-transform-metadata.json"
-          git diff --check
-      - name: Retain source and validation observations
-        if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
-        with:
-          name: typescript-ci-source-${{ github.sha }}
-          path: ${{ runner.temp }}/ci-source/
-          retention-days: 7
-          if-no-files-found: error
-  diagnose:
-    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/typescript-stack-ci-repair-20261113'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - name: Capture failed jobs and exact check annotations
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import json, os, pathlib, re, subprocess, urllib.request
-          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'ci-diagnostics'
-          out.mkdir()
-          repo = 'repos/KirilsTurkins/latent-service-fabric/'
-          def api(path):
-              return json.loads(subprocess.check_output(['gh','api',repo+path], timeout=120))
-          observations = []
-          runs = [43309461555,43309448549,43309461437,43309482774,43309448614,43309461902,43309448555,43309482846,43309448751]
-          for run_id in runs:
-              run = api(f'actions/runs/{run_id}')
-              jobs = []
-              for page in range(1,6):
-                  values = api(f'actions/runs/{run_id}/jobs?filter=latest&per_page=100&page={page}')['jobs']
-                  jobs.extend(values)
-                  if len(values)<100: break
-              row = {key:run.get(key) for key in ('id','head_sha','status','conclusion','run_attempt','check_suite_id')}
-              row['jobs'] = [{key:job.get(key) for key in ('id','name','conclusion','check_run_url')} for job in jobs]
-              row['failures'] = []
-              for job in jobs:
-                  if job['conclusion'] not in ('failure','timed_out','cancelled'): continue
-                  row['failures'].append({'id':job['id'],'name':job['name'],'steps':[s for s in job.get('steps',[]) if s.get('conclusion')=='failure']})
-                  result = subprocess.run(['gh','api','--allow-escape-sequences',repo+f"actions/jobs/{job['id']}/logs"], capture_output=True, timeout=120)
-                  if result.returncode:
-                      (out/f"{job['id']}-acquisition-error.txt").write_bytes(result.stderr)
-                      continue
-                  log = result.stdout
-                  assert len(log)<=32*1024*1024
-                  (out/f"{run_id}-{job['id']}.log").write_bytes(log)
-                  lines = log.decode('utf-8-sig',errors='replace').splitlines()
-                  selected = set(range(max(0,len(lines)-60),len(lines)))
-                  for i,line in enumerate(lines):
-                      if re.search(r'##\[error\]|Traceback|panicked at|error:|FAILED|download failed|cannot update|unresolved package',line):
-                          selected.update(range(max(0,i-3),min(len(lines),i+12)))
-                  excerpt = '\n'.join(lines[i] for i in sorted(selected))
-                  (out/f"{run_id}-{job['id']}-excerpt.txt").write_text(excerpt[-150000:])
-              checks = api(f"check-suites/{run['check_suite_id']}/check-runs?per_page=100")['check_runs']
-              row['failedChecks'] = []
-              for check in checks:
-                  if check.get('conclusion')=='failure':
-                      row['failedChecks'].append({'id':check['id'],'name':check['name'],'output':check['output'],'annotations':api(f"check-runs/{check['id']}/annotations?per_page=100")})
-              observations.append(row)
-              (out/'failures.json').write_text(json.dumps(observations,indent=2))
-          public = {
-            'fast-xml-advisory.json':'https://api.github.com/advisories/GHSA-474x-hrwr-fgx4',
-            'go-advisory.json':'https://vuln.go.dev/ID/GO-2026-6859.json',
-            'fast-xml-latest.json':'https://registry.npmjs.org/fast-xml-parser/latest'
+              return json.loads(subprocess.check_output(['gh','api',path], timeout=120))
+          repo='repos/KirilsTurkins/latent-service-fabric/'
+          heads={'1852':'68bd53e20eeeae109f7816c8e81a1f959158a93b','1931':'c994185a24cdaa1de36b6b1e325d8c1753979254','1934':'5bb73cf78320c3f130d89f47b8ceb48f24abd4ee'}
+          subprocess.run(['git','fetch','--no-tags','--depth=1','origin',*heads.values()],check=True)
+          for name,sha in heads.items():
+              (out/(name+'-tree.txt')).write_bytes(subprocess.check_output(['git','ls-tree','-r','--full-tree',sha]))
+          artifacts=api(repo+'actions/runs/43309461902/artifacts?per_page=100')
+          (out/'go-fixture-artifacts.json').write_text(json.dumps(artifacts,indent=2))
+          policy=json.loads(pathlib.Path('.github/security/actions.json').read_text())['actions']
+          found={}
+          for key in policy:
+              name='/'.join(key.split('@')[0].split('/')[:2])
+              if name in found or not name.startswith('KirilsTurkins/lsf-'): continue
+              metadata=api('repos/'+name)
+              branch=metadata['default_branch']
+              current=api('repos/'+name+'/commits/'+branch)
+              found[name]={'pin':key.split('@')[1],'defaultBranch':branch,'current':current}
+              (out/(name.split('/')[1]+'-package.json')).write_bytes(subprocess.check_output(['gh','api','repos/'+name+'/contents/package.json?ref='+current['sha'],'--jq','.content | @base64d'],timeout=120))
+          (out/'owned-actions.json').write_text(json.dumps(found,indent=2))
+          public={
+            'go-releases.json':'https://go.dev/dl/?mode=json&include=all',
+            'dotnet-releases.json':'https://builds.dotnet.microsoft.com/dotnet/release-metadata/8.0/releases.json',
+            'fast-xml-5.12.0.json':'https://registry.npmjs.org/fast-xml-parser/5.12.0'
           }
           for name,url in public.items():
-              try:
-                  with urllib.request.urlopen(url,timeout=60) as response: data=response.read(4*1024*1024+1)
-                  assert len(data)<=4*1024*1024
-                  json.loads(data)
-                  (out/name).write_bytes(data)
-              except Exception as error:
-                  (out/(name+'.error')).write_text(str(error))
-          print(json.dumps([{'run':r['id'],'failures':r['failures'],'status':r['conclusion']} for r in observations],indent=2))
+              with urllib.request.urlopen(url,timeout=90) as response:data=response.read(16*1024*1024+1)
+              assert len(data)<=16*1024*1024
+              json.loads(data)
+              (out/name).write_bytes(data)
+          print('Captured exact tree manifests and primary release metadata.')
           PY
-      - name: Retain failed-job diagnostics
+      - name: Retain authenticated inspection inputs
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
         with:
-          name: typescript-ci-diagnostics-${{ github.sha }}
-          path: ${{ runner.temp }}/ci-diagnostics/
+          name: typescript-ci-repair-inputs-${{ github.sha }}
+          path: ${{ runner.temp }}/repair-inputs/
           retention-days: 7
           if-no-files-found: error
