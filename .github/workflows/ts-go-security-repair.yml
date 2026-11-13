@@ -13,15 +13,24 @@ jobs:
     if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/ts-stack-security-20261113'
     runs-on: ubuntu-24.04
     timeout-minutes: 35
+    env:
+      LSF_REQUIRE_COMPILER_ISOLATION: '1'
     steps:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           persist-credentials: false
       - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8
         with:
           python-version: 3.13.5
       - run: python3 -m pip install -r tools/requirements.lock
+      - name: Install required generator containment
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get -o Acquire::Retries=3 update
+          sudo apt-get -o Acquire::Retries=3 install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Authenticate upstream Go compiler bytes
         shell: bash
         run: |
