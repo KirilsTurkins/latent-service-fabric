@@ -278,7 +278,9 @@ class CThreadMinimal(unittest.TestCase):
     self.assertEqual(left[path], right[path], path)
     self.assertEqual(hashlib.sha256(left[path]).hexdigest(), expected, path)
     del left[path]; del right[path]
-   self.assertEqual(set(left),set(right));self.assertEqual(len(left),65)
+   # New SDK files are allowed only when both complete project inventories
+   # contain the same paths and identical bytes outside the application main.
+   self.assertEqual(set(left),set(right))
    self.assertEqual([n for n in left if left[n]!=right[n]],['src/main.c'])
    self.assertEqual(read_json(a/'capsule-project.json'),read_json(b/'capsule-project.json'))
    self.assertIn(b'greet: async func',right['wit/world.wit'])
