@@ -1,0 +1,87 @@
+name: TypeScript security verified integration
+on:
+  push:
+    branches: [ci/ts-stack-security-20261113]
+    paths:
+      - .github/workflows/ts-security-final-checked.yml
+      - .github/maintenance/finish_ts_security_checked.py
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: ts-security-final-checked
+  cancel-in-progress: false
+jobs:
+  integrate:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/ts-stack-security-20261113'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+      CARGO_TARGET_DIR: /tmp/lsf-security-final-target
+      RUSTUP_TOOLCHAIN: 1.97.1
+      LSF_TYPESCRIPT_RECORD_CXX: clang++
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a
+        with:
+          node-version: 24.19.0
+          package-manager-cache: false
+      - run: python3 -m pip install -r tools/requirements.lock
+      - name: Prepare exact tested source patches and action rebuilds
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          mkdir -p "$RUNNER_TEMP/final-security-evidence"
+          python3 .github/maintenance/finish_ts_security_checked.py prepare 2>&1 | tee "$RUNNER_TEMP/final-security-evidence/prepare.log"
+      - name: Install unchanged authenticated scanner
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 "$RUNNER_TEMP/security-integrated/tools/security_install.py" --tool cargo-audit --destination "$RUNNER_TEMP/security-tools"
+      - name: Validate controls and current security databases
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/maintenance/finish_ts_security_checked.py validate 2>&1 | tee "$RUNNER_TEMP/final-security-evidence/validate.log"
+      - name: Restack, test and export exact Git objects without changing refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/maintenance/finish_ts_security_checked.py publish-objects 2>&1 | tee "$RUNNER_TEMP/final-security-evidence/export.log"
+      - name: Retain exact candidate diagnostics
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os,pathlib,subprocess
+          root=pathlib.Path(os.environ['RUNNER_TEMP']);out=root/'final-security-evidence';out.mkdir(exist_ok=True)
+          for name in ['security-integrated','security-1931','security-1934']:
+              work=root/name
+              if not work.is_dir():continue
+              for suffix,command in [('status.txt',['git','status','--porcelain']),('patch',['git','diff','--binary','68bd53e20eeeae109f7816c8e81a1f959158a93b'])]:
+                  p=subprocess.run(command,cwd=work,capture_output=True);(out/(name+'.'+suffix)).write_bytes(p.stdout+p.stderr)
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        if: always()
+        with:
+          name: final-typescript-security-evidence
+          path: ${{ runner.temp }}/final-security-evidence/
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: error
