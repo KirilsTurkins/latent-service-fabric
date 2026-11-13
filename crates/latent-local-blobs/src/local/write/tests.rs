@@ -58,7 +58,10 @@ fn post_write_unwind_cannot_resume_or_publish_and_keeps_the_original_stage_lease
         assert_eq!(owner.reclaim(64, &|| Ok(())).unwrap().stages, 0);
         assert_eq!(writer.seal(&|| Ok(())), Err(LocalBlobError::Closed));
         assert_eq!(owner.snapshot().unwrap().handles, 0);
-        assert_eq!(owner.snapshot().unwrap().reserved_stage_bytes, expected_size);
+        assert_eq!(
+            owner.snapshot().unwrap().reserved_stage_bytes,
+            expected_size
+        );
         let reclaimed = owner.reclaim(64, &|| Ok(())).unwrap();
         assert_eq!(reclaimed.stages, 1);
         assert_eq!(reclaimed.released_payload_reservations, expected_size);
