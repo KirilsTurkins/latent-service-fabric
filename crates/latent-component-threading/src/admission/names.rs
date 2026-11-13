@@ -161,7 +161,10 @@ mod tests {
             };
             let original = section(&[3, 1, 0]);
             let output = rewrite(&original).unwrap();
-            assert_eq!(output.as_custom().data, section(&[3, 4, 0]).as_custom().data);
+            assert_eq!(
+                output.as_custom().data,
+                section(&[3, 4, 0]).as_custom().data
+            );
         }
     }
 
@@ -209,8 +212,10 @@ mod tests {
         let mut names = function_section(&[0]);
         names.functions(&NameMap::new());
         assert!(rewrite(&names).is_err());
-        assert!(writer()
-            .custom_name_section(NameSectionReader::new(BinaryReader::new(&[1, 2, 1], 0)))
-            .is_err());
+        assert!(
+            writer()
+                .custom_name_section(NameSectionReader::new(BinaryReader::new(&[1, 2, 1], 0)))
+                .is_err()
+        );
     }
 }
