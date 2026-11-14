@@ -1,0 +1,111 @@
+name: PR 1934 merged-stack validation
+on:
+  push:
+    branches: [ci/pr1934-restack-20261114]
+    paths: [.github/workflows/pr1934-restack-validation.yml]
+permissions:
+  contents: read
+jobs:
+  ownership:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [gcc, clang, sanitizers]
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v6.0.2
+        with:
+          ref: 9e351e194988f4a35d699eec2c1fe7663bd3df86
+          fetch-depth: 8
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v6.2.0
+        with:
+          python-version: '3.13.5'
+      - name: Verify the real three-way merge and exact retained source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p target/ci/stack-validation
+          test "$(git rev-parse HEAD)" = 9e351e194988f4a35d699eec2c1fe7663bd3df86
+          test "$(git rev-parse HEAD^1)" = 5591107c97a391a919b42d9a29b5f5d89365e621
+          test "$(git rev-parse HEAD^2)" = 9aa5a997cdce36cd6cfe6ef642cd52784205c28a
+          test "$(git merge-base HEAD^1 HEAD^2)" = 006a58adde2b4c5ed6a750d0c8e0775a3cbcb380
+          git merge-tree --write-tree HEAD^1 HEAD^2 > target/ci/stack-validation/merge-tree.txt
+          test "$(cat target/ci/stack-validation/merge-tree.txt)" = "$(git rev-parse HEAD^{tree})"
+          git diff --check HEAD^1 HEAD
+          git diff --check HEAD^2 HEAD
+          git status --porcelain > target/ci/stack-validation/status.txt
+          test ! -s target/ci/stack-validation/status.txt
+          git show --no-patch --format=fuller HEAD > target/ci/stack-validation/commit.txt
+          git diff --stat HEAD^1 HEAD > target/ci/stack-validation/parent-additions.txt
+          git diff --stat HEAD^2 HEAD > target/ci/stack-validation/audit-retained.txt
+          python -m pip install --requirement tools/requirements.lock
+      - name: Execute combined AbortSignal DOMException and cleanup controls
+        shell: bash
+        env:
+          MODE: ${{ matrix.mode }}
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          set -euo pipefail
+          case "$MODE" in
+            gcc) export LSF_TYPESCRIPT_RECORD_CXX=g++ ;;
+            clang) export LSF_TYPESCRIPT_RECORD_CXX=clang++ ;;
+            sanitizers)
+              printf '%s\n' '#!/usr/bin/env bash' 'exec clang++ -fsanitize=address,undefined -fno-omit-frame-pointer -g "$@"' > "$RUNNER_TEMP/stack-sanitized-cxx"
+              chmod 700 "$RUNNER_TEMP/stack-sanitized-cxx"
+              export LSF_TYPESCRIPT_RECORD_CXX="$RUNNER_TEMP/stack-sanitized-cxx"
+              ;;
+          esac
+          python -m unittest tools.tests.test_typescript_event_ownership tools.tests.test_typescript_abort_any_ownership tools.tests.test_typescript_record_retirement -v 2>&1 | tee target/ci/stack-validation/ownership.log
+      - name: Verify engine source identities and preserved Linux setup contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest tools.tests.test_host_codec_wasmtime tools.tests.test_dev_rust_toolchain tools.tests.test_ci_contracts -v 2>&1 | tee target/ci/stack-validation/source-contracts.log
+          python tools/ci_coverage.py --receipt target/ci/stack-validation/coverage.json 2>&1 | tee target/ci/stack-validation/coverage.log
+          test -z "$(git status --porcelain)"
+      - name: Retain actual validation results on every exit
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.0
+        with:
+          name: pr1934-stack-${{ matrix.mode }}
+          path: target/ci/stack-validation/
+          if-no-files-found: error
+          retention-days: 7
+  store:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v6.0.2
+        with:
+          ref: 9e351e194988f4a35d699eec2c1fe7663bd3df86
+          persist-credentials: false
+      - name: Own a complete isolated pinned Rust installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          isolated="$(mktemp -d "$RUNNER_TEMP/lsf-stack-rustup.XXXXXX")"
+          printf 'RUSTUP_HOME=%s\n' "$isolated" >> "$GITHUB_ENV"
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          toolchain: '1.97.1'
+          components: clippy,rustfmt
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - name: Execute actual Store custody and reuse controls on the merged source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p target/ci/stack-validation
+          git show --no-patch --format=fuller HEAD > target/ci/stack-validation/commit.txt
+          cargo test --locked -p latent-wasmtime --lib backend::store::tests 2>&1 | tee target/ci/stack-validation/store.log
+          test -z "$(git status --porcelain)"
+      - name: Retain actual Store results on every exit
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.0
+        with:
+          name: pr1934-stack-store
+          path: target/ci/stack-validation/
+          if-no-files-found: error
+          retention-days: 7
