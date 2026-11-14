@@ -48,15 +48,28 @@ jobs:
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
           mkdir -p "$RUNNER_TEMP/final-security-evidence"
           python3 .github/maintenance/finish_ts_security_checked.py prepare 2>&1 | tee "$RUNNER_TEMP/final-security-evidence/prepare.log"
-      - name: Install unchanged authenticated scanner
+      - name: Install unchanged authenticated scanners
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 "$RUNNER_TEMP/security-integrated/tools/security_install.py" --tool cargo-audit --destination "$RUNNER_TEMP/security-tools"
+        shell: bash
+        run: |
+          set -euo pipefail
+          for scanner in cargo-audit gitleaks zizmor; do
+            python3 "$RUNNER_TEMP/security-integrated/tools/security_install.py" --tool "$scanner" --destination "$RUNNER_TEMP/security-tools"
+          done
+      - name: Reproduce exact expired findings and execute real-scanner canaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/maintenance/review_expired_security_findings.py 2>&1 | tee "$RUNNER_TEMP/final-security-evidence/false-positive-review.log"
       - name: Validate controls and current security databases
         shell: bash
         run: |
           set -euo pipefail
           python3 .github/maintenance/finish_ts_security_checked.py validate 2>&1 | tee "$RUNNER_TEMP/final-security-evidence/validate.log"
+          for mode in secrets static; do
+            python3 "$RUNNER_TEMP/security-integrated/tools/security_scan.py" "$mode" --repo "$RUNNER_TEMP/security-integrated" --tools "$RUNNER_TEMP/security-tools" --scratch "$RUNNER_TEMP/security-scan" > "$RUNNER_TEMP/final-security-evidence/parent-$mode.log"
+          done
       - name: Restack, test and export exact Git objects without changing refs
         env:
           GH_TOKEN: ${{ github.token }}
