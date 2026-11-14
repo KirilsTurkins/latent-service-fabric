@@ -1,0 +1,199 @@
+name: Java audit cleanup repair validation
+on:
+  push:
+    branches: [ci/java-audit-cleanup-20261114]
+    paths: [.github/workflows/java-audit-cleanup-validation.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_INCREMENTAL: '0'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          python-version: '3.13.5'
+      - name: Reconstruct only the reviewed two-file repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp tools/ci/java-audit-cleanup-repair.patch "$RUNNER_TEMP/repair.patch"
+          echo "e2e11a25394f783762670a0875775eebeadd556f11391c847a02e12a0ac750e3  $RUNNER_TEMP/repair.patch" | sha256sum --check --strict
+          git fetch --no-tags --depth=4 origin 9aa5a997cdce36cd6cfe6ef642cd52784205c28a 9e351e194988f4a35d699eec2c1fe7663bd3df86
+          git checkout --detach 9aa5a997cdce36cd6cfe6ef642cd52784205c28a
+          git apply --check "$RUNNER_TEMP/repair.patch"
+          git apply "$RUNNER_TEMP/repair.patch"
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          expected = {'tools/java_server_lifecycle.py': '4a65a878c0a94b0a8278100993acb16787676a9eb33c8e17d2f92fcd44ccde1c', 'tools/tests/test_java_server_lifecycle.py': 'dfe9a17b51cb444aafc75a2c822dde23596bd241d519dfbe6928e1377ffb8202'}
+          for path, digest in expected.items():
+              assert hashlib.sha256(Path(path).read_bytes()).hexdigest() == digest, path
+          PY
+          git diff --check
+          git add tools/java_server_lifecycle.py tools/tests/test_java_server_lifecycle.py
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'fix(ci): wait for original audit owners before Java trigger cleanup'
+          mkdir -p target/ci/java-cleanup
+          cp "$RUNNER_TEMP/repair.patch" target/ci/java-cleanup/repair.patch
+      - name: Execute mandatory regressions and unchanged coverage contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --requirement tools/requirements.lock
+          python -m unittest tools.tests.test_java_server_lifecycle tools.tests.test_java_server_source tools.tests.test_java_server_tenants tools.tests.test_ci_contracts -v 2>&1 | tee target/ci/java-cleanup/regressions.log
+          python - <<'PY'
+          from pathlib import Path
+          from tools.ci_python_policy import verify_source_tree
+          verify_source_tree(Path.cwd(), '9aa5a997cdce36cd6cfe6ef642cd52784205c28a')
+          PY
+          python tools/ci_coverage.py --receipt target/ci/java-cleanup/coverage.json
+      - name: Export exact parent and restacked child without moving PR references
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os, subprocess, urllib.request
+          from pathlib import Path
+          root = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric'
+          token = os.environ['GH_TOKEN']
+          def api(path, data):
+              request = urllib.request.Request(root + path, data=json.dumps(data).encode(), method='POST', headers={'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'})
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  return json.load(response)
+          def git(*args):
+              return subprocess.check_output(['git', *args], text=True).strip()
+          parent = '9aa5a997cdce36cd6cfe6ef642cd52784205c28a'
+          child = '9e351e194988f4a35d699eec2c1fe7663bd3df86'
+          paths = ['tools/java_server_lifecycle.py', 'tools/tests/test_java_server_lifecycle.py']
+          elements = [{'path': p, 'mode': '100644', 'type': 'blob', 'content': Path(p).read_text()} for p in paths]
+          tree = api('/git/trees', {'base_tree': 'c5e5f8c20d760f04f3f5e7326bae3ea928647f8e', 'tree': elements})['sha']
+          assert tree == git('rev-parse', 'HEAD^{tree}')
+          fixed = api('/git/commits', {'message': 'fix(ci): wait for original audit owners before Java trigger cleanup', 'tree': tree, 'parents': [parent]})['sha']
+          subprocess.run(['git', 'fetch', '--no-tags', '--depth=4', 'origin', fixed], check=True)
+          child_tree = api('/git/trees', {'base_tree': '2757d87bd66f8c856d9307b7d5f46e09ca391f1f', 'tree': elements})['sha']
+          merged = git('merge-tree', '--write-tree', child, fixed)
+          assert merged == child_tree, (merged, child_tree)
+          restacked = api('/git/commits', {'message': 'merge: retain audit engine changes on tested Java cleanup repair', 'tree': child_tree, 'parents': [child, fixed]})['sha']
+          record = {'parent': {'before': parent, 'after': fixed, 'tree': tree}, 'child': {'before': child, 'after': restacked, 'tree': child_tree}, 'files': {p: hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in paths}}
+          Path('target/ci/java-cleanup/candidates.json').write_text(json.dumps(record, indent=2) + '\n')
+          subprocess.run(['git', 'checkout', '--detach', fixed], check=True)
+          print(json.dumps(record))
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: java-audit-cleanup-candidates
+          path: target/ci/java-cleanup/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Own the complete pinned Rust installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          isolated="$(mktemp -d "$RUNNER_TEMP/java-cleanup-rustup.XXXXXX")"
+          printf 'RUSTUP_HOME=%s\n' "$isolated" >> "$GITHUB_ENV"
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          components: clippy,rustfmt
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - uses: KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2 # v6.1.0 + upstream changes + LSF security fixes
+        with:
+          distribution: temurin
+          java-version: '25.0.4+101.0.LTS'
+      - name: Restore compiled Rust dependencies without publishing a cache
+        uses: KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334 # v2.9.3 + upstream changes + LSF security fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Install the exact maintained wasm-tools asset
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/java-wasm-tools.tar.gz"
+          bindir="$RUNNER_TEMP/java-wasm-tools-bin"
+          mkdir "$bindir"
+          timeout 90s gh api -H 'Accept: application/octet-stream' repos/bytecodealliance/wasm-tools/releases/assets/483720667 | head -c 5862465 > "$archive"
+          test "$(stat --format=%s "$archive")" = 5862464
+          printf '%s  %s\n' d0efb16c9c859137b7ab3e99151c299cd47caee106ed4594561002f7a04945bd "$archive" | sha256sum --check --strict
+          tar -xOzf "$archive" wasm-tools-1.254.0-x86_64-linux/wasm-tools > "$bindir/wasm-tools"
+          test "$(stat --format=%s "$bindir/wasm-tools")" = 20231696
+          printf '%s  %s\n' cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6 "$bindir/wasm-tools" | sha256sum --check --strict
+          chmod 755 "$bindir/wasm-tools"
+          test "$("$bindir/wasm-tools" --version)" = 'wasm-tools 1.254.0 (bb58fdf91 2026-07-20)'
+          printf '%s\n' "$bindir" >> "$GITHUB_PATH"
+          printf 'LSF_DEV_COMPILER_CACHE=%s\n' "$RUNNER_TEMP/compiler-archives" >> "$GITHUB_ENV"
+      - name: Restore untrusted source-pinned Java prepared inputs
+        uses: KirilsTurkins/lsf-cache/restore@2571c499f8aa6b4db4b4b5632bea291d6be58dc8 # v6.1.0 + upstream changes + LSF security fixes
+        with:
+          path: ${{ runner.temp }}/compiler-archives/java-prepared
+          key: java-prepared-compiler-v1-${{ runner.os }}-${{ hashFiles('tools/data/java-compiler-profile.json') }}
+      - name: Stage the unchanged authenticated compiler and generator
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --max-time 180 https://services.gradle.org/distributions/gradle-9.1.0-bin.zip -o "$RUNNER_TEMP/gradle.zip"
+          echo "a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip" | sha256sum --check --strict
+          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gradle-9.1.0/bin" >> "$GITHUB_PATH"
+          compiler_root=$(mktemp -d /tmp/latent-java-audit.XXXXXXXX)
+          timeout --signal=TERM --kill-after=5 1195 python3 -B tools/java_guest/compiler_profile_distribution.py stage --root "$compiler_root" --output "$RUNNER_TEMP/java-normal-compiler-product.json" > "$RUNNER_TEMP/java-normal-compiler-path.txt"
+          compiler_sdk=$(cat "$RUNNER_TEMP/java-normal-compiler-path.txt")
+          test "$compiler_sdk" = "$compiler_root/work/installed/wasi-sdk"
+          printf 'LSF_JAVA_WASI_SDK=%s\n' "$compiler_sdk" >> "$GITHUB_ENV"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/java-bindgen"
+          echo "$RUNNER_TEMP/java-bindgen" >> "$GITHUB_PATH"
+      - name: Compile sign and execute the full unchanged lifecycle cases twice
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2; do
+            python3 tools/qualify_java_server_lifecycle_suite.py --output "$RUNNER_TEMP/java-audit-lifecycle-$attempt" --wasi-sdk "$LSF_JAVA_WASI_SDK" 2>&1 | tee "target/ci/java-cleanup/signed-lifecycle-$attempt.log"
+          done
+          git diff --exit-code HEAD --
+      - name: Test the exact restacked audit branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          child=$(python -c "import json; print(json.load(open('target/ci/java-cleanup/candidates.json'))['child']['after'])")
+          git fetch --no-tags --depth=4 origin "$child"
+          git checkout --detach "$child"
+          python -m unittest tools.tests.test_java_server_lifecycle tools.tests.test_typescript_event_ownership tools.tests.test_typescript_dom_exception_ownership tools.tests.test_typescript_record_retirement -v 2>&1 | tee target/ci/java-cleanup/restacked-tests.log
+          python tools/ci_coverage.py --receipt target/ci/java-cleanup/child-coverage.json
+          git diff --check HEAD^1 HEAD
+          git diff --check HEAD^2 HEAD
+          git diff --exit-code HEAD --
+      - name: Retain exact validation including failures
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
+        with:
+          name: java-audit-cleanup-validation
+          path: |
+            target/ci/java-cleanup/
+            ${{ runner.temp }}/java-audit-lifecycle-*/suite.json
+            ${{ runner.temp }}/java-audit-lifecycle-*/FAILED.json
+            ${{ runner.temp }}/java-audit-lifecycle-*/execution/lifecycle-qualified.json
+            ${{ runner.temp }}/java-audit-lifecycle-*/execution/native-tuple-observation.json
+            ${{ runner.temp }}/java-audit-lifecycle-*/execution/lifecycle/control/*.json
+          retention-days: 7
+          if-no-files-found: error
