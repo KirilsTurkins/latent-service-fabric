@@ -376,5 +376,132 @@ class ServerLifecyclePeer(unittest.TestCase):
         self.assertEqual(peer.listener.fileno(), -1)
 
 
+
+class ServerLifecycleAuditDrain(unittest.TestCase):
+    """Finite CLI doubles: audit observation is separate from guest retirement."""
+
+    def setUp(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock, patch
+        from tools import java_server_lifecycle as lifecycle
+        self.lifecycle = lifecycle
+        self.now = 100.
+        self.sleeps = []
+        self.client = SimpleNamespace(deadline=200., call=Mock())
+        self.competing = {"trigger": {"generation": "40"}, "stateVersion": "40"}
+        self.read = ("capability", "list", "--deployment", "original-deployment", "--include-node-usage")
+        self.delete = ("trigger", "delete", "competing-trigger",
+            "--operation-id", "server-lifecycle-competing-cleanup",
+            "--expected-generation", "40", "--expected-state-version", "40")
+        self.enterContext(patch.object(lifecycle.time, "monotonic", side_effect=lambda: self.now))
+        self.enterContext(patch.object(lifecycle.time, "sleep", side_effect=self.sleep))
+
+    def sleep(self, delay):
+        self.sleeps.append(delay)
+        self.now += delay
+
+    def observation(self, **counters):
+        values = {name: "0" for name in (*self.lifecycle.audit_idle.COUNTERS, *self.lifecycle.audit_idle.STATES)}
+        values.update(counters)
+        return {"schemaVersion": "latent.cli.result.v1", "command": "capability list",
+            "category": "success", "error": None, "outcomeKnown": True, "requestDispatched": True,
+            "data": {"nextPageToken": None, "nodeUsage": {"scope": "node", "unavailable": [], "counters": values}}}
+
+    def cleanup(self):
+        return self.lifecycle.delete_competing_trigger_when_audit_idle(
+            self.client, "original-deployment", "competing-trigger", self.competing)
+
+    def test_every_live_audit_owner_delays_the_same_fenced_single_mutation(self):
+        import copy
+        original = copy.deepcopy(self.competing)
+        for name in self.lifecycle.audit_idle.COUNTERS:
+            with self.subTest(counter=name):
+                self.client.call.reset_mock()
+                receipt = {"original": "mutation receipt"}
+                self.client.call.side_effect = [self.observation(**{name: "1"}), self.observation(), receipt]
+                self.assertIs(self.cleanup(), receipt)
+                self.assertEqual([call.args for call in self.client.call.call_args_list],
+                                 [self.read, self.read, self.delete])
+                self.assertEqual([call.kwargs for call in self.client.call.call_args_list],
+                                 [{"timeout": 1}, {"timeout": 1}, {}])
+                self.assertEqual(self.competing, original)
+
+    def test_busy_audit_queue_is_bounded_without_a_cleanup_attempt(self):
+        self.client.call.return_value = self.observation(audit_queued_operations="1", audit_queued_bytes="32768",
+            audit_reserved_records="2", audit_reserved_bytes="32768")
+        with self.assertRaisesRegex(RuntimeError, "audit-drain-observation-limit"):
+            self.cleanup()
+        self.assertEqual(self.client.call.call_count, self.lifecycle.audit_idle.MAX_OBSERVATIONS)
+        self.assertTrue(all(call.args == self.read for call in self.client.call.call_args_list))
+        self.assertEqual(len(self.sleeps), self.lifecycle.audit_idle.MAX_OBSERVATIONS - 1)
+        self.assertLessEqual(self.now, 100 + self.lifecycle.audit_idle.MAX_SECONDS)
+
+    def test_original_deadline_and_late_idle_response_cannot_authorize_deletion(self):
+        self.client.deadline = self.now
+        with self.assertRaisesRegex(ValueError, "audit-drain-deadline"):
+            self.cleanup()
+        self.client.call.assert_not_called()
+        self.client.deadline = self.now + .02
+        def late(*arguments, **kwargs):
+            self.assertEqual(arguments, self.read)
+            self.assertAlmostEqual(kwargs["timeout"], .02)
+            self.now += .03
+            return self.observation()
+        self.client.call.side_effect = late
+        with self.assertRaisesRegex(ValueError, "audit-drain-deadline"):
+            self.cleanup()
+        self.assertEqual(self.client.call.call_count, 1)
+
+    def test_five_second_observation_deadline_is_not_extended_by_progress(self):
+        def slow(*arguments, **kwargs):
+            self.assertEqual(arguments, self.read)
+            self.assertLessEqual(kwargs["timeout"], 1)
+            self.now += 1
+            return self.observation(audit_pending_attempts="1")
+        self.client.call.side_effect = slow
+        with self.assertRaisesRegex(ValueError, "audit-drain-deadline"):
+            self.cleanup()
+        self.assertEqual(self.client.call.call_count, 5)
+        self.assertEqual(len(self.sleeps), 4)
+
+    def test_unavailable_incomplete_malformed_or_closed_observations_never_delete(self):
+        bad = []
+        value = self.observation(); value["outcomeKnown"] = False; bad.append(value)
+        value = self.observation(); value["data"]["nextPageToken"] = "more"; bad.append(value)
+        value = self.observation(); value["data"]["nodeUsage"]["unavailable"] = ["audit"]; bad.append(value)
+        value = self.observation(); del value["data"]["nodeUsage"]["counters"]["audit_reserved_bytes"]; bad.append(value)
+        bad += [self.observation(audit_reserved_bytes=True), self.observation(audit_closed="1"),
+                self.observation(audit_recovery_pending="1")]
+        for index, value in enumerate(bad):
+            with self.subTest(case=index):
+                self.client.call.reset_mock()
+                self.client.call.return_value = value
+                with self.assertRaises(ValueError):
+                    self.cleanup()
+                self.assertEqual(self.client.call.call_count, 1)
+                self.assertEqual(self.client.call.call_args.args, self.read)
+
+    def test_refused_or_uncertain_delete_after_idle_is_not_retried_or_recovered(self):
+        from tools.dev_workflow.common import DevError
+        for uncertain in (False, True):
+            with self.subTest(uncertain=uncertain):
+                self.client.call.reset_mock()
+                failure = DevError("audit-capacity" if not uncertain else "transport-failure", uncertain=uncertain)
+                self.client.call.side_effect = [self.observation(), failure]
+                with self.assertRaises(DevError) as raised:
+                    self.cleanup()
+                self.assertIs(raised.exception, failure)
+                self.assertEqual([call.args for call in self.client.call.call_args_list], [self.read, self.delete])
+
+    def test_read_failure_is_not_a_cleanup_receipt(self):
+        failure = TimeoutError("read-only failure")
+        self.client.call.side_effect = failure
+        with self.assertRaises(TimeoutError) as raised:
+            self.cleanup()
+        self.assertIs(raised.exception, failure)
+        self.assertEqual(self.client.call.call_count, 1)
+        self.assertEqual(self.client.call.call_args.args, self.read)
+
+
 if __name__ == "__main__":
     unittest.main()
