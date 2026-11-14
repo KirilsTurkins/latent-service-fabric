@@ -2,6 +2,7 @@
 import hashlib
 from pathlib import Path
 import tempfile
+import tomllib
 import unittest
 
 from tools import rust_standard_thread_profile as profile
@@ -19,6 +20,24 @@ class StandardThreadSource(unittest.TestCase):
 
     def runtime(self):
         return {name: (ROOT / name).read_bytes() for name in profile.RECIPE}
+
+    def test_standalone_transform_lock_matches_exact_shared_dependency_pins(self):
+        # This is an independent workspace: a root lock refresh cannot repair
+        # its --locked build. Compare direct exact pins, not a package count.
+        manifest = tomllib.loads((ROOT / 'crates/latent-component-threading/Cargo.toml').read_text())
+        standalone = tomllib.loads((ROOT / 'sdk/rust-standard-runtime/stack-transform/Cargo.lock').read_text())
+        workspace = tomllib.loads((ROOT / 'Cargo.lock').read_text())
+        for name, dependency in manifest['dependencies'].items():
+            version = dependency if isinstance(dependency, str) else dependency.get('version', '')
+            if not version.startswith('='):
+                continue
+            with self.subTest(dependency=name):
+                locked = [item for item in standalone['package'] if item['name'] == name]
+                self.assertEqual([item['version'] for item in locked], [version[1:]])
+                original = next(item for item in workspace['package']
+                                if item['name'] == name and item['version'] == version[1:])
+                self.assertEqual(locked[0]['source'], original['source'])
+                self.assertEqual(locked[0]['checksum'], original['checksum'])
 
     def test_composed_tls_thread_and_packet_selectors_preserve_original_other_targets(self):
         original, runtime = self.originals(), self.runtime()

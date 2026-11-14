@@ -108,10 +108,17 @@ def _libtest_outcomes(lines: list[str], available: set[str] | frozenset[str],
             match = re.fullmatch(r"test (.+) \.\.\. (ok|ignored|FAILED)(?:, .*)?", line)
             if not match:
                 errors.append("malformed-outcome")
-            elif match.group(1) not in available:
-                errors.append("unknown-outcome")
             else:
-                outcomes[match.group(2)].append(match.group(1))
+                name = match.group(1)
+                # libtest decorates #[should_panic] results, but --list returns
+                # the undecorated identity. Normalize only this exact label;
+                # discovery, duplicate accounting and failed outcomes still apply.
+                if name not in available and name.endswith(" - should panic"):
+                    name = name.removesuffix(" - should panic")
+                if name not in available:
+                    errors.append("unknown-outcome")
+                else:
+                    outcomes[match.group(2)].append(name)
     active = set(available) - set(ignored)
     passed, skipped, failed = outcomes["ok"], outcomes["ignored"], outcomes["FAILED"]
     counts = Counter(passed + skipped)

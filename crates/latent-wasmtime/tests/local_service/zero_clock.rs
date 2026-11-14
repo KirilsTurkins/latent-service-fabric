@@ -18,6 +18,7 @@ use tokio::sync::Notify;
 /// The registry is finite and exists only in this isolated test fixture.
 pub struct ZeroClock {
     clock: TestClock,
+    emit_witnesses: bool,
     origin: Instant,
     seen: AtomicBool,
     pending: AtomicBool,
@@ -38,6 +39,7 @@ impl ZeroClock {
         let wall_base = SystemActivationClock.sample().unix_millis();
         Self {
             clock: TestClock::new(wall_base, origin, 8),
+            emit_witnesses: true,
             origin,
             seen: AtomicBool::new(false),
             pending: AtomicBool::new(false),
@@ -65,6 +67,12 @@ impl ZeroClock {
         let mut clock = Self::new();
         clock.wall_mode = true;
         clock
+    }
+
+    fn witness(&self, message: std::fmt::Arguments<'_>) {
+        if self.emit_witnesses {
+            writeln!(std::io::stderr().lock(), "{message}").expect("write clock witness");
+        }
     }
 
     fn wall_for(&self, stage: u8) -> u64 {
@@ -95,12 +103,7 @@ impl ZeroClock {
             .unwrap()
             .clone()
             .expect("live original wait waker");
-        writeln!(
-            std::io::stderr().lock(),
-            "LSF-GO-WALL-CLOCK-V1|jump|{}|0",
-            stage
-        )
-        .expect("write wall jump witness");
+        self.witness(format_args!("LSF-GO-WALL-CLOCK-V1|jump|{stage}|0"));
         self.wall_requested.store(stage, Ordering::Release);
         waker.wake();
     }
@@ -110,8 +113,7 @@ impl ZeroClock {
         assert_eq!(self.wall_acknowledged.load(Ordering::Acquire), 2);
         self.clock.set_wall_unix_millis(self.wall_base);
         assert_eq!(self.clock.sample().unix_millis(), self.wall_base);
-        writeln!(std::io::stderr().lock(), "LSF-GO-WALL-CLOCK-V1|restore|0")
-            .expect("write wall restore witness");
+        self.witness(format_args!("LSF-GO-WALL-CLOCK-V1|restore|0"));
     }
 
     pub async fn wall_repolled(&self, stage: u8) {
@@ -210,12 +212,7 @@ impl ZeroClock {
                     assert!(target.armed && self.target_live());
                     assert_eq!(self.clock.monotonic_now(), self.origin);
                     assert_eq!(self.clock.sample().unix_millis(), self.wall_for(requested));
-                    writeln!(
-                        std::io::stderr().lock(),
-                        "LSF-GO-WALL-CLOCK-V1|repoll|{}|0|5",
-                        requested
-                    )
-                    .expect("write wall repoll witness");
+                    self.witness(format_args!("LSF-GO-WALL-CLOCK-V1|repoll|{requested}|0|5"));
                     self.wall_acknowledged.store(requested, Ordering::Release);
                     self.notify.notify_one();
                 }
@@ -243,13 +240,11 @@ impl ZeroClock {
                         );
                         reported = true;
                         target.armed = true;
-                        writeln!(
-                            std::io::stderr().lock(),
+                        self.witness(format_args!(
                             "LSF-GO-TICKER-CLOCK-V1|wait-pending|{}|{}",
                             before[stage],
                             deadlines[stage]
-                        )
-                        .expect("write ticker wait witness");
+                        ));
                         self.ticker_stage
                             .store((stage + 1) as u8, Ordering::Release);
                         self.notify.notify_one();
@@ -268,11 +263,7 @@ impl ZeroClock {
                 );
                 target.armed = true;
                 self.target_live.store(true, Ordering::Release);
-                writeln!(
-                    std::io::stderr().lock(),
-                    "LSF-GO-ZERO-CLOCK-V1|wait-pending|0|5"
-                )
-                .expect("write zero-clock witness");
+                self.witness(format_args!("LSF-GO-ZERO-CLOCK-V1|wait-pending|0|5"));
                 self.pending.store(true, Ordering::Release);
                 self.notify.notify_one();
             }
@@ -296,6 +287,15 @@ mod tests {
     use super::*;
     use std::task::Poll;
 
+    // These controls assert the clock state directly. Raw stderr witnesses are
+    // for the signed runner, which reads stdout and stderr separately. Emitting
+    // them here races libtest's partial result lines in Cargo's merged CI log.
+    // Keep the ordinary constructors (and all signed runner witnesses) unchanged.
+    fn unit_clock(mut clock: ZeroClock) -> ZeroClock {
+        clock.emit_witnesses = false;
+        clock
+    }
+
     async fn require_pending<F: Future + Unpin>(future: &mut F) {
         std::future::poll_fn(|cx| match std::pin::Pin::new(&mut *future).poll(cx) {
             Poll::Pending => Poll::Ready(()),
@@ -306,7 +306,7 @@ mod tests {
 
     #[tokio::test]
     async fn five_nanosecond_wait_only_fires_after_shared_clock_reaches_deadline() {
-        let clock = ZeroClock::new();
+        let clock = unit_clock(ZeroClock::new());
         let active = AtomicU64::new(0);
         let entered = Notify::new();
         let mut wait =
@@ -331,7 +331,7 @@ mod tests {
 
     #[tokio::test]
     async fn wall_jumps_repoll_the_original_wait_without_completing_it() {
-        let clock = ZeroClock::for_wall_jump();
+        let clock = unit_clock(ZeroClock::for_wall_jump());
         let active = AtomicU64::new(0);
         let entered = Notify::new();
         let mut wait =
@@ -357,7 +357,7 @@ mod tests {
 
     #[tokio::test]
     async fn ticker_waits_remain_pending_at_each_controlled_clock_edge() {
-        let clock = ZeroClock::for_ticker();
+        let clock = unit_clock(ZeroClock::for_ticker());
         let active = AtomicU64::new(0);
         let entered = Notify::new();
         for (stage, deadline, advance) in [(1, 5, 5), (2, 10, 24), (3, 30, 1)] {
@@ -382,7 +382,7 @@ mod tests {
     #[tokio::test]
     #[should_panic(expected = "wrong ticker deadline")]
     async fn ticker_rejects_a_foreign_short_wait() {
-        let clock = ZeroClock::for_ticker();
+        let clock = unit_clock(ZeroClock::for_ticker());
         let active = AtomicU64::new(0);
         let entered = Notify::new();
         let mut wrong =
@@ -392,7 +392,7 @@ mod tests {
 
     #[tokio::test]
     async fn dropping_pending_wait_removes_registration_and_active_owner() {
-        let clock = ZeroClock::new();
+        let clock = unit_clock(ZeroClock::new());
         let active = AtomicU64::new(0);
         let entered = Notify::new();
         let mut wait =
