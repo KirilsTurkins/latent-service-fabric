@@ -5,6 +5,7 @@ on:
     paths:
       - .github/workflows/ts-stack-followup.yml
       - .github/maintenance/ts_followup_repair.py
+      - .github/maintenance/ts_followup_java.py
 permissions:
   contents: write
   actions: read
@@ -59,6 +60,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 .github/maintenance/ts_followup_java.py 2>&1 | tee "$RUNNER_TEMP/ts-followup-evidence/java-repair.log"
           python3 .github/maintenance/ts_followup_repair.py test 2>&1 | tee "$RUNNER_TEMP/ts-followup-evidence/test.log"
           cd "$RUNNER_TEMP/ts-followup-parent"
           node --test tools/cross-origin/contract.test.mjs tools/cross-origin/native-network.test.mjs > "$RUNNER_TEMP/ts-followup-evidence/cors-node.log"
