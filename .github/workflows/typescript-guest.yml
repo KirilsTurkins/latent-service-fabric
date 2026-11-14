@@ -315,10 +315,10 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
-      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a # v7.1.0 + upstream changes + LSF security fixes
         with:
           node-version: 24.19.0
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
@@ -331,7 +331,7 @@ jobs:
       - name: Compile and transpile the actual derived source splicer
         run: python3 tools/build_typescript_source_splicer.py --tools "$RUNNER_TEMP/typescript-splicer-tools" --output "$RUNNER_TEMP/typescript-source-splicer"
       - name: Freeze reusable source compiler products
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-source-splicer-input-${{ github.sha }}
           path: |
@@ -342,7 +342,7 @@ jobs:
           retention-days: 7
       - name: Retain actual source compiler products and failed attempts
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-source-splicer-${{ github.sha }}
           path: |
@@ -366,10 +366,10 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
-      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a # v7.1.0 + upstream changes + LSF security fixes
         with:
           node-version: 24.19.0
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
@@ -393,14 +393,14 @@ jobs:
       - name: Link the actual source-owned Promise and clock engine
         run: python3 tools/build_typescript_native_engine.py --library "$RUNNER_TEMP/typescript-promise-library" --output "$RUNNER_TEMP/typescript-native-engine" --wit-bindgen "$RUNNER_TEMP/typescript-promise-tools/wit-bindgen"
       - name: Read the completed source compiler products from this exact run
-        uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389 # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-source-splicer-input-${{ github.sha }}
           path: ${{ runner.temp }}/typescript-source-splicer-input
       - name: Link the explicit source-owned asynchronous import engine
         run: python3 tools/build_typescript_native_engine.py --library "$RUNNER_TEMP/typescript-promise-library" --source-splicer-build "$RUNNER_TEMP/typescript-source-splicer-input" --output "$RUNNER_TEMP/typescript-native-import-engine" --wit-bindgen "$RUNNER_TEMP/typescript-promise-tools/wit-bindgen"
       - name: Freeze the exact engine for actual Fetch component construction
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-fetch-engine-input-${{ github.sha }}
           path: |
@@ -410,7 +410,7 @@ jobs:
           retention-days: 7
       - name: Retain source identities, normal products and failed attempts
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-promise-library-${{ github.sha }}
           path: |
@@ -458,10 +458,10 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
-      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a # v7.1.0 + upstream changes + LSF security fixes
         with:
           node-version: 24.19.0
       - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
@@ -477,12 +477,12 @@ jobs:
       - name: Install the original locked compiler namespace
         run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-fetch-tools"
       - name: Read the source compiler from this exact run
-        uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389 # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-source-splicer-input-${{ github.sha }}
           path: ${{ runner.temp }}/typescript-fetch-splicer
       - name: Read the actual import engine from this exact run
-        uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389 # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-fetch-engine-input-${{ github.sha }}
           path: ${{ runner.temp }}/typescript-fetch-engine
@@ -490,7 +490,7 @@ jobs:
         run: python3 tools/qualify_typescript_fetch_component.py --tools "$RUNNER_TEMP/typescript-fetch-tools" --engine "$RUNNER_TEMP/typescript-fetch-engine" --splicer "$RUNNER_TEMP/typescript-fetch-splicer" --output "$RUNNER_TEMP/typescript-fetch-component"
       - name: Retain actual component, input identities and failed attempts
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-fetch-component-${{ github.sha }}
           path: |
@@ -522,7 +522,7 @@ jobs:
           test "$(stat --format=%s "$RUNNER_TEMP/typescript-guest-source.tar.gz")" -le 134217728
           git rev-parse HEAD > "$RUNNER_TEMP/typescript-guest-source.sha"
       - name: Retain the exact reviewed command contract input
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-guest-command-contract-${{ github.sha }}
           path: |
@@ -531,16 +531,16 @@ jobs:
             ${{ runner.temp }}/typescript-guest-source.sha
           if-no-files-found: error
           retention-days: 7
-      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a # v7.1.0 + upstream changes + LSF security fixes
         with:
           node-version: 24.19.0
           cache: npm
           cache-dependency-path: sdk/typescript-guest/tools/package-lock.json
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
-      - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334 # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: host-correctness
@@ -646,7 +646,7 @@ jobs:
       - name: Sign approved and undeclared Math.random components with the exact normal products
         run: python3 -B tools/qualify_typescript_standard_entropy.py --prepared-qualification "$RUNNER_TEMP/typescript-capsule-dependencies" --tools "$RUNNER_TEMP/typescript-guest-tools" --output "$RUNNER_TEMP/typescript-standard-entropy"
       - name: Freeze exact-source existing native products for signed Fetch
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-fetch-native-input-${{ github.sha }}
           path: |
@@ -662,7 +662,7 @@ jobs:
           retention-days: 7
       - name: Preserve attempted runtime test evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-guest-runtime-${{ github.sha }}
           path: |
@@ -751,10 +751,10 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
-      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a # v7.1.0 + upstream changes + LSF security fixes
         with:
           node-version: 24.19.0
       - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
@@ -776,17 +776,17 @@ jobs:
       - name: Check exact native metadata contention and cleanup before signed Fetch
         run: LSF_TYPESCRIPT_FRONTEND="$RUNNER_TEMP/typescript-signed-fetch-tools" python3 -m unittest tools.tests.test_typescript_native_task_meta -v
       - name: Read the existing native qualification from this exact run
-        uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389 # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-fetch-native-input-${{ github.sha }}
           path: ${{ runner.temp }}/typescript-signed-fetch-native
       - name: Read the source compiler from this exact run
-        uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389 # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-source-splicer-input-${{ github.sha }}
           path: ${{ runner.temp }}/typescript-signed-fetch-splicer
       - name: Read the actual import engine from this exact run
-        uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389 # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-fetch-engine-input-${{ github.sha }}
           path: ${{ runner.temp }}/typescript-signed-fetch-engine
@@ -794,7 +794,7 @@ jobs:
         run: python3 tools/qualify_typescript_fetch_runtime.py --tools "$RUNNER_TEMP/typescript-signed-fetch-tools" --engine "$RUNNER_TEMP/typescript-signed-fetch-engine" --splicer "$RUNNER_TEMP/typescript-signed-fetch-splicer" --prepared-qualification "$RUNNER_TEMP/typescript-signed-fetch-native" --output "$RUNNER_TEMP/typescript-signed-fetch"
       - name: Retain finite signed Fetch attempts and exact input identities
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-signed-fetch-${{ github.sha }}
           path: |
@@ -818,7 +818,7 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Install the existing locked Python source-control dependencies
@@ -832,7 +832,7 @@ jobs:
           ref: ba62bf8f266e589971a03e496b18b8f2cb5e5d85
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
-      - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334 # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: host-correctness
@@ -847,14 +847,14 @@ jobs:
           sudo apt-get install --yes bubblewrap
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Read the original failed component and bounded build documents
-        uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389 # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-signed-fetch-ba62bf8f266e589971a03e496b18b8f2cb5e5d85
           run-id: 39247171188
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/typescript-original-fetch
       - name: Read the original exact-source native products
-        uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389 # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-fetch-native-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85
           run-id: 39247171188
@@ -866,7 +866,7 @@ jobs:
           python3 -B "$RUNNER_TEMP/diagnose-typescript-fetch.py" --attempt "$RUNNER_TEMP/typescript-original-fetch" --native "$RUNNER_TEMP/typescript-original-native" --output "$RUNNER_TEMP/typescript-fetch-frames"
       - name: Retain only closed observations and original public CLI rows
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-fetch-private-frames-${{ github.sha }}
           path: |
@@ -887,10 +887,10 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
-      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a # v7.1.0 + upstream changes + LSF security fixes
         with:
           node-version: 24.19.0
       - name: Install the existing locked Python dependencies
@@ -918,21 +918,21 @@ jobs:
       - name: Install the original locked compiler namespace
         run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-boundary-tools"
       - name: Read the authenticated original native products
-        uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389 # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-fetch-native-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85
           run-id: 39247171188
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/typescript-boundary-native
       - name: Read the authenticated original source-owned engine
-        uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389 # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-fetch-engine-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85
           run-id: 39247171188
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/typescript-boundary-engine
       - name: Read the authenticated original source compiler
-        uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389 # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-source-splicer-input-ba62bf8f266e589971a03e496b18b8f2cb5e5d85
           run-id: 39247171188
@@ -942,7 +942,7 @@ jobs:
         run: python3 -B "$RUNNER_TEMP/diagnose-typescript-boundaries.py" --probes "$RUNNER_TEMP/typescript-boundary-probes" --native "$RUNNER_TEMP/typescript-boundary-native" --engine "$RUNNER_TEMP/typescript-boundary-engine" --splicer "$RUNNER_TEMP/typescript-boundary-splicer" --tools "$RUNNER_TEMP/typescript-boundary-tools" --output "$RUNNER_TEMP/typescript-fetch-boundaries"
       - name: Retain closed same-SDK observations and actual application build evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-fetch-boundaries-${{ github.sha }}
           path: |
@@ -967,7 +967,7 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Install the existing locked Python dependencies
@@ -983,7 +983,7 @@ jobs:
         run: python3 -B tools/replay_typescript_standard_entropy.py --inputs "$RUNNER_TEMP/typescript-entropy-original-inputs" --output "$RUNNER_TEMP/typescript-entropy-policy-replay"
       - name: Retain source-bound policy transitions outcomes and physical cleanup
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-entropy-policy-replay-${{ github.sha }}
           path: |
@@ -1005,10 +1005,10 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
-      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a # v7.1.0 + upstream changes + LSF security fixes
         with:
           node-version: 24.19.0
       - name: Install original isolated compiler prerequisites
@@ -1035,7 +1035,7 @@ jobs:
         run: python3 -B tools/qualify_typescript_standard_clocks.py --acquired "$RUNNER_TEMP/typescript-clock-original-inputs" --engine "$RUNNER_TEMP/typescript-clock-original-engine" --tools "$RUNNER_TEMP/typescript-clock-tools" --output "$RUNNER_TEMP/typescript-standard-clocks"
       - name: Retain source-bound compiler refusals authority results and physical cleanup
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-standard-clocks-${{ github.sha }}
           path: |
@@ -1063,10 +1063,10 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
-      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a # v7.1.0 + upstream changes + LSF security fixes
         with:
           node-version: 24.19.0
       - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
@@ -1095,7 +1095,7 @@ jobs:
           --output "$RUNNER_TEMP/typescript-scratch-refusals"
       - name: Retain bounded public refusal and source identity receipts
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-scratch-refusals-${{ github.sha }}
           path: |
@@ -1121,15 +1121,15 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
-      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a # v7.1.0 + upstream changes + LSF security fixes
         with:
           node-version: 24.19.0
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - name: Restore compiled Rust dependencies for only the original local_service target
-        uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334 # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: host-correctness
@@ -1169,7 +1169,7 @@ jobs:
           --output "$RUNNER_TEMP/typescript-runtime-retirement"
       - name: Retain bounded component provenance actual pending owners and every idle boundary
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: typescript-runtime-retirement-${{ github.sha }}
           path: |

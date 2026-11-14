@@ -52,7 +52,7 @@ unsafe_code = "deny"
 [lints.clippy]
 all = "warn"
 [target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dependencies]
-rustix = { version = "=1.1.5", features = ["fs"] }
+rustix = { version = "=1.1.6", features = ["fs"] }
 '''
         self.write(f"{boundary.STREAM_FACTORY}/Cargo.toml", manifest)
         self.write(f"{boundary.STREAM_FACTORY}/src/lib.rs", source)
@@ -66,7 +66,8 @@ rustix = { version = "=1.1.5", features = ["fs"] }
         for changed in (manifest.replace('unsafe_code = "deny"', 'unsafe_code = "allow"'),
                         manifest.replace('unsafe_code = "deny"', ''),
                         manifest.replace('name = "latent-stream-factory-native"', 'name = "unknown-native"'),
-                        manifest.replace('=1.1.5', '=1.1.6'),
+                        manifest.replace('=1.1.6', '=1.1.5'),
+                        manifest.replace('=1.1.6', '=1.1.7'),
                         manifest + '\n[lib]\npath = "../outside.rs"\n',
                         manifest.replace('[package]', '[package]\nbuild = "../outside.rs"')):
             with self.subTest(manifest=changed):
@@ -78,6 +79,12 @@ rustix = { version = "=1.1.5", features = ["fs"] }
         self.write(f"{boundary.STREAM_FACTORY}/src/lib.rs", source)
         self.write(f"{boundary.STREAM_FACTORY}/src/extra.rs", "fn another_target() {}\n")
         self.assertTrue(boundary.validate(self.root))
+
+    def test_actual_stream_factory_matches_the_reviewed_target(self) -> None:
+        import tomllib
+        actual = Path(__file__).resolve().parents[2]
+        workspace = tomllib.loads((actual / "Cargo.toml").read_text())['workspace']
+        self.assertEqual(boundary.validate_stream_factory(actual, workspace['lints']['clippy']), [])
 
     def test_actual_guest_matches_the_two_closed_profile_generators(self) -> None:
         self.assertEqual(boundary.validate_guest(Path(__file__).resolve().parents[2]), [])

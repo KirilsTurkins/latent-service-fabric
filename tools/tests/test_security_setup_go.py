@@ -32,7 +32,7 @@ class SetupGoSourceRepairTests(unittest.TestCase):
         identities = {path: sources.source_identity(value) for path, value in self.runtime.items()}
         build_path = self.root / go.MINI_MATERIAL["build"][0]
         evidence = json.loads(build_path.read_bytes())
-        evidence["bundles"] = identities
+        evidence["outputs"] = identities
         build_path.write_text(json.dumps(evidence), encoding="utf-8")
         changed = copy.deepcopy(go.MINI_MATERIAL)
         original = changed["build"]
@@ -113,7 +113,7 @@ class SetupGoSourceRepairTests(unittest.TestCase):
                 with self.assertRaises(SecurityError):
                     self.verify(fetch=lambda pin: self.fetch(pin) + (b"drift" if pin["name"] == package else b""))
         for reference, source in ((go.REFERENCE, "dist/other/index.js"),
-                                  (go.REFERENCE.replace("10200427", "00200427"), "dist/setup/index.js")):
+                                  (go.REFERENCE.replace("92a5903f", "00200427"), "dist/setup/index.js")):
             with self.assertRaises(SecurityError): sources.action_runtime(reference, source)
 
     def test_profiles_cannot_be_reused_on_other_graphs_or_unselected_sources(self):

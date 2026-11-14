@@ -1,49 +1,124 @@
 {
-  "schema": 1,
+  "schema": 2,
   "repository": "KirilsTurkins/lsf-deploy-pages",
-  "publishedRevision": "e249fe4e7520b3d7aa16ef72f45eeb05de6cf4f6",
-  "publishedTree": "79d01754bcbda86178d60a411e8256696a265f5c",
-  "sourceHead": "28eb881c437639997329a63ba203044a1e930cef",
-  "diagnosticHead": "cac159f297ebd83907e26e57ad07c139d1f03cf8",
-  "diagnosticTree": "3cc77d0178fe62389be42f6a2ef144ad2f39f780",
-  "diagnosticOnlyPath": ".github/workflows/deploy-pages-linux-probe.yml",
-  "run": 42116676439,
-  "job": 127558041486,
+  "publishedRevision": "f596449d219e8fe3fe62b26b0a4dfc4fbb89334b",
+  "publishedTree": "7dceed127681e55bdc8e163ae2f8f4f42d01c0d7",
+  "base": "e249fe4e7520b3d7aa16ef72f45eeb05de6cf4f6",
+  "testedCommit": "edade818739da0ec4981c353f52e395d5566c46e",
+  "diagnosticHead": "b19d83269232300a1a1f25cdd1e3a31aa30ab233",
+  "run": 43523076094,
   "jobConclusion": "success",
-  "node": "24.19.0",
-  "npm": "11.17.0",
-  "sourceControls": 7,
-  "formatPassed": true,
-  "rebuiltFilesIdentical": true,
-  "artifact": {
-    "id": 13457066659,
-    "bytes": 2265006,
-    "sha256": "488468c35d1aa563165495cf451e36932ba28c045682a5d3b58fc34593a75157",
-    "crcVerified": true
+  "toolchain": {
+    "node": "24.19.0"
   },
-  "earlierJest": {
-    "sourceHead": "ce5657b184ecb0534e41b6814f1ef8ce74783319",
-    "run": 42115832424,
-    "job": 127555089232,
-    "tests": 32,
-    "suites": 2,
-    "artifact": {
-      "id": 13456511299,
-      "bytes": 2265002,
-      "sha256": "949f9976f8103c7b307635293457c928d867e07ff963b3dac80617ecdb46aff3",
-      "crcVerified": true
+  "artifact": {
+    "id": 14083337324,
+    "bytes": 36831,
+    "sha256": "198295a9c2e59b458d36ed1452c27e6b165bec70c19cc3217ad889913b9221a7"
+  },
+  "validationLog": {
+    "bytes": 8637,
+    "sha256": "f55de4bd6c7d7f219f086baa6d68eb7e88735a5649a533dd3fa4b1abffbe03d0",
+    "gitBlob": "d60a1a29d9b55896b34e24a5c03ba1da1e16f818"
+  },
+  "validation": {
+    "sourceControlsPassed": true,
+    "xmlRegressionPassed": true,
+    "unitTests": 32,
+    "unitSuites": 2
+  },
+  "sourceFiles": {
+    "action.yml": {
+      "bytes": 1244,
+      "sha256": "64c44539fba53559a157b5de16c01d3ab91dbc999c1b98b5c0b2fc3528d5d059",
+      "gitBlob": "9640517bb026e0790a53bd6d35fd13a94617c48e"
+    },
+    "package.json": {
+      "bytes": 3187,
+      "sha256": "946fe222a91b4d81ecd2e1f6df1004da9db8d9bb98c64b0bf501b4a8c1d16bf0",
+      "gitBlob": "fdc8b35238867c19fcf1434e74fdc6ae0d88da0b"
+    },
+    "package-lock.json": {
+      "bytes": 352898,
+      "sha256": "f7e5a943e5e67a9e814c42e556d9fe229cb0c6d2f025c120d1604a3b6c261da6",
+      "gitBlob": "c4fd7a63470b1bb9a63d5cc07e3486f2d46e5765"
+    },
+    ".lsf-source/apply-verified-sources.cjs": {
+      "bytes": 11309,
+      "sha256": "8ae219bc741b1dd5f4c16bb52b3db1ec4229b9acd3136f792f04d1870a69b41d",
+      "gitBlob": "e638ca79faeef301c73a1032fc8dd91c9d7c695b"
+    },
+    ".lsf-source/security-controls.test.cjs": {
+      "bytes": 17298,
+      "sha256": "89329f4116bf44f7f0c7b744e1ec51124737b5816c78999005dbee4ef096d948",
+      "gitBlob": "f3fa3304490b4c930fd7bf88fb77b5e420982727"
+    },
+    ".lsf-source/verify-installed-deepmerge.mjs": {
+      "bytes": 2422,
+      "sha256": "dd16c19390bedda6e22581e7e53f61696c76a7cb5da3ba39d6511dc078a3c269",
+      "gitBlob": "f356447a8ccf49b9b908d9e7b74bc933e48b4573"
+    },
+    ".lsf-source/glob-10.5.0-lsf-abort-v1.repair.json": {
+      "bytes": 1470,
+      "sha256": "beb9c5bed151b7a67f3b7b384e04ae0c01ca52e093795c042b9b3a3542a54e0f",
+      "gitBlob": "396c3adcb261b1504f361500cf16e0e178ba15cf"
+    },
+    ".lsf-source/glob-10.5.0-lsf-abort-v1.tar": {
+      "bytes": 542720,
+      "sha256": "b2f6d5fb3bd7b63df8454989bfb9d812a29ea67bbbbe81cc5e0e2c4c32e06d68",
+      "gitBlob": "b9f322ede35edfb0f22919ad42e66a325b7486f1"
+    },
+    ".lsf-source/glob-10.5.0.original.tgz": {
+      "bytes": 74227,
+      "sha256": "18b75cb9c66c8c08bab5cacccd09013c31d3182f1e001c19d8815c5bb46e0802",
+      "gitBlob": "ee1534658a09ff7dd850426ccc27187b675be337"
+    },
+    ".lsf-source/minimatch-9.0.9-lsf-bound-v1.repair.json": {
+      "bytes": 2126,
+      "sha256": "67f874fd66ff2bbc9930e5a3529cf15fb7eb9fc15bd7e7d82969c0289b12a207",
+      "gitBlob": "033a35702e8b0723f5cc1e876224f060d7097eff"
+    },
+    ".lsf-source/minimatch-9.0.9-lsf-bound-v1.tar": {
+      "bytes": 522240,
+      "sha256": "66bcb5a384e44e094efb868280fa4607660da97bbd9d0489eb7cc69eb2da93b2",
+      "gitBlob": "b5bda540f93f99efa6ec3e7f48ec882e8cba564e"
+    },
+    ".lsf-source/minimatch-9.0.9.original.tgz": {
+      "bytes": 101396,
+      "sha256": "7d28c9a3ef17ce542093c78ec191481503e2711d29db1bd1522062303ab40478",
+      "gitBlob": "3037809c7ece9cb78a316dc322ba4dbeb2df52b6"
+    },
+    ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.repair.json": {
+      "bytes": 3064,
+      "sha256": "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7",
+      "gitBlob": "52602f18647aa2f2bd30f046e05bcce2705a761f"
+    },
+    ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.source.json": {
+      "bytes": 6925,
+      "sha256": "b4b0b79fa2bc84c6f1e1c61ddcc1ab228df629f9fce4b1067d3ac8b3d1c42892",
+      "gitBlob": "0685ff353f65174eb5a97cfcb385720dd4a5874c"
+    },
+    ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar": {
+      "bytes": 51200,
+      "sha256": "c4ca0f4eb3a2464c026bc3dec5d9eaf04544aed24c3fd1d77da95f85e36c369f",
+      "gitBlob": "30e23fad3a82fd30bc3f08e26704a0c0bc84c704"
+    },
+    ".lsf-source/deepmerge-4.3.1.original.tgz": {
+      "bytes": 8452,
+      "sha256": "4003a0a348276a95543fa969f561f6b5968629acbbb59d66018dd23e7b8f1d5c",
+      "gitBlob": "1d1560e971dfc484bbe0cb9e8c86bde9140e45b5"
     }
   },
-  "bundles": {
+  "outputs": {
     "dist/index.js": {
-      "bytes": 5032045,
-      "sha256": "6afca1e03014a24815b1bd07b000af7d409ff50deaeb39336d981fd86dc8317e",
-      "gitBlob": "9739ab7250dc1fd371faa5a990405213b9243900"
+      "bytes": 5033010,
+      "sha256": "d1638046304c6e137b61fe23cd2617f07bc4e115cda0ad190521d9af0f3359d4",
+      "gitBlob": "bba2e3724d0386cd97be0469074494df1f0a0fb3"
     },
     "dist/index.js.map": {
-      "bytes": 5946146,
-      "sha256": "41100efb5feee01b35d10f4c825e010ea703c79287e773756e2a770402a5cb96",
-      "gitBlob": "1004a34997339803856978e2100a66ab6b8d14fe"
+      "bytes": 5947100,
+      "sha256": "bcaaa13ab7b74bfe22767e59ee4c5901d47ae24d3ce96ee968b55a0f2ce2615f",
+      "gitBlob": "e7b438ebbf81e391094b5d13205cead036af9928"
     },
     "dist/835.index.js": {
       "bytes": 660750,
@@ -65,5 +140,90 @@
       "sha256": "c2a14a81784d12c15b7baeed88c1faae3457e84890d1e5244cbfc0f4455b5e06",
       "gitBlob": "cb1fb13627f07ab9250566c7069e0756f882663a"
     }
-  }
+  },
+  "installedSourceAssertions": [
+    {
+      "kind": "installed-source-assertion",
+      "sourceCommit": "b19d83269232300a1a1f25cdd1e3a31aa30ab233",
+      "node": "24.19.0",
+      "packageVersion": "4.3.1",
+      "repairSha256": "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7",
+      "installedPostimages": {
+        "index.js": "ba2a6c79e67e10f45a32cfe8f5ea5c5607dc4718be2b37956e9202ea4cdbe1bc",
+        "dist/cjs.js": "c5e9c1f08e7a3b589010133108a3c625806358fa9e1bdaa11f07e9e756f19da0",
+        "dist/umd.js": "b12652d3654f47b08ae43e8b390b66c55987ace6d9a6167c3240744ffa0f28f9"
+      },
+      "actionBuildOrSignedSDKQualified": false
+    }
+  ],
+  "previousEvidence": {
+    "schema": 1,
+    "repository": "KirilsTurkins/lsf-deploy-pages",
+    "publishedRevision": "e249fe4e7520b3d7aa16ef72f45eeb05de6cf4f6",
+    "publishedTree": "79d01754bcbda86178d60a411e8256696a265f5c",
+    "sourceHead": "28eb881c437639997329a63ba203044a1e930cef",
+    "diagnosticHead": "cac159f297ebd83907e26e57ad07c139d1f03cf8",
+    "diagnosticTree": "3cc77d0178fe62389be42f6a2ef144ad2f39f780",
+    "diagnosticOnlyPath": ".github/workflows/deploy-pages-linux-probe.yml",
+    "run": 42116676439,
+    "job": 127558041486,
+    "jobConclusion": "success",
+    "node": "24.19.0",
+    "npm": "11.17.0",
+    "sourceControls": 7,
+    "formatPassed": true,
+    "rebuiltFilesIdentical": true,
+    "artifact": {
+      "id": 13457066659,
+      "bytes": 2265006,
+      "sha256": "488468c35d1aa563165495cf451e36932ba28c045682a5d3b58fc34593a75157",
+      "crcVerified": true
+    },
+    "earlierJest": {
+      "sourceHead": "ce5657b184ecb0534e41b6814f1ef8ce74783319",
+      "run": 42115832424,
+      "job": 127555089232,
+      "tests": 32,
+      "suites": 2,
+      "artifact": {
+        "id": 13456511299,
+        "bytes": 2265002,
+        "sha256": "949f9976f8103c7b307635293457c928d867e07ff963b3dac80617ecdb46aff3",
+        "crcVerified": true
+      }
+    },
+    "bundles": {
+      "dist/index.js": {
+        "bytes": 5032045,
+        "sha256": "6afca1e03014a24815b1bd07b000af7d409ff50deaeb39336d981fd86dc8317e",
+        "gitBlob": "9739ab7250dc1fd371faa5a990405213b9243900"
+      },
+      "dist/index.js.map": {
+        "bytes": 5946146,
+        "sha256": "41100efb5feee01b35d10f4c825e010ea703c79287e773756e2a770402a5cb96",
+        "gitBlob": "1004a34997339803856978e2100a66ab6b8d14fe"
+      },
+      "dist/835.index.js": {
+        "bytes": 660750,
+        "sha256": "ef21ce95aa5da03df4d6f256d2fe6cfe59b38198d6331a12371ae15221e61c02",
+        "gitBlob": "72fe4fa3ffa01eefdb4f2de4f6ce9f43229dc328"
+      },
+      "dist/835.index.js.map": {
+        "bytes": 782267,
+        "sha256": "a07018c68de28b43de69c576b6674b2195379da0c458cf16ecc68e8192328b87",
+        "gitBlob": "abe24ee659129171cca2322a8af083cfb9418ed7"
+      },
+      "dist/licenses.txt": {
+        "bytes": 22765,
+        "sha256": "7a844415f5cd040c903e71f4316cdcdcd70efc31ccf2193cfc5e74a2bcab09ee",
+        "gitBlob": "f1eea4fc0237f4040c98ad934cc07cf32e459471"
+      },
+      "dist/sourcemap-register.js": {
+        "bytes": 41053,
+        "sha256": "c2a14a81784d12c15b7baeed88c1faae3457e84890d1e5244cbfc0f4455b5e06",
+        "gitBlob": "cb1fb13627f07ab9250566c7069e0756f882663a"
+      }
+    }
+  },
+  "scope": "Exact source/bundle rebuild and finite controls; no signed SDK or release qualification."
 }
