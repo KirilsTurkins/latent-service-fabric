@@ -1,41 +1,154 @@
 {
-  "schema": 1,
+  "schema": 2,
   "repository": "KirilsTurkins/lsf-download-artifact",
-  "publishedRevision": "dd4ebbadbf12ed34441db2712be7a193490b7fc5",
-  "publishedTree": "ab1166196538fbdab37cd72ca51557320ae95d35",
-  "sourceHead": "39d52ac2a2c6731c2d836e923b5221ebd0d4d8e9",
-  "diagnosticHead": "b1b184f23784f8b32b6d454764a51b1b87e00e06",
-  "diagnosticTree": "4afa10c0827dde75934dd82621dc44bcf54a192a",
-  "diagnosticOnlyPath": ".github/workflows/lsf-download-security-owner.yml",
-  "run": 42113357120,
-  "job": 127546428787,
+  "publishedRevision": "fc27fb5305d2042f110912a9d6a2924a98084389",
+  "publishedTree": "c364969955b05974728ffd6cd02db6d0f6b672d1",
+  "base": "dd4ebbadbf12ed34441db2712be7a193490b7fc5",
+  "testedCommit": "fe76677895d14df51c286c469d18020328755541",
+  "diagnosticHead": "683183d2b4666960d04186433dde107bfb20bec9",
+  "run": 43523093794,
   "jobConclusion": "success",
-  "node": "24.19.0",
-  "npm": "11.17.0",
-  "jestSuites": 1,
-  "jestTests": 21,
-  "sourceControls": 3,
-  "rebuiltBundleIdentical": true,
-  "artifactDownloadMatched": true,
+  "toolchain": {
+    "node": "24.19.0"
+  },
   "artifact": {
-    "id": 13455382700,
-    "bytes": 1704956,
-    "sha256": "9429625c4ca047ce699d6eebefd4d6b7145ca80e5e010a66c77c68872bb33b84",
-    "members": 25,
-    "checkedFiles": 24,
-    "crcVerified": true
+    "id": 14084640639,
+    "bytes": 38346,
+    "sha256": "fe64b54751cd45ca551bde6e34d6180eea46747e267167b1fa268109686c3cf8"
   },
-  "markerArtifact": {
-    "id": 13454928092,
-    "bytes": 168,
-    "sha256": "41bb45641ad6ea12b6a1f200744c1ce0f815497558f6fdd61cdcf1cfef002fc6",
-    "crcVerified": true
+  "validationLog": {
+    "bytes": 4426,
+    "sha256": "4e844ae91540089d767c7f4dcdae3e0e151e2f84b2ea10a2e938351c02291376",
+    "gitBlob": "3e7f33a5c1a47d3d0f82517ebd9f37d90f0bafe2"
   },
-  "bundles": {
-    "dist/index.js": {
-      "bytes": 4683804,
-      "sha256": "caac8449a3cfb152b39fc3d21c1089a134a235e9ed9fcfd0ed2b5530e9cfc2ab",
-      "gitBlob": "bab2149e86267e2bed9b887d9a9322150f61861c"
+  "validation": {
+    "sourceControlsPassed": true,
+    "xmlRegressionPassed": true,
+    "unitTests": 21,
+    "unitSuites": 1
+  },
+  "sourceFiles": {
+    "action.yml": {
+      "bytes": 2635,
+      "sha256": "e98559b7a31ba31be4709f20d22102dc2737fa630f69a339eb89981151e505fe",
+      "gitBlob": "8b8c65029ccad20750a29fecb438eca5a607fc57"
+    },
+    "package.json": {
+      "bytes": 3068,
+      "sha256": "78b6410cf1b683b8e427ba55d4ec652e294f37057829f1f3ee43177395637053",
+      "gitBlob": "f561b830c08e2b58fb892466e3e3d722e10120b9"
+    },
+    "package-lock.json": {
+      "bytes": 346889,
+      "sha256": "9fc87ce6c1e741a1745b5f1d633cc7f5d9cf44e598f99beed75a542a273b1621",
+      "gitBlob": "8ad83c0a98219ffd2f8778aa4bfc127b6b0b83a8"
+    },
+    ".lsf-source/verify-installed-deepmerge.mjs": {
+      "bytes": 2381,
+      "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
+      "gitBlob": "99d75a2ea3895eb8acc8018984ca9826e4edff51"
+    },
+    ".lsf-source/verify-download-sources.mjs": {
+      "bytes": 3536,
+      "sha256": "fe16f71556c969a8c078d2a2d0f73bf9d809fa363827f8e33d9862df8e09b10d",
+      "gitBlob": "69c18a026f5161f086648fb2b364c6be176c6ec5"
+    },
+    ".lsf-source/download-source.test.mjs": {
+      "bytes": 3742,
+      "sha256": "082f28d2c9dbb70dfe638c7ef1383a961e6a32ce6c11e0116141ed20006803a0",
+      "gitBlob": "ce104437c6f15160abbcab97c6f183a907918bbb"
     }
-  }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "bytes": 4688595,
+      "sha256": "217c23b5c1de6f12d7a0185448f6146b41d3994356549851e903bc1e844d22b1",
+      "gitBlob": "bc3ea4f74d325418265cd3d51a403a81f4e8ed5e"
+    }
+  },
+  "installedSourceAssertions": [
+    {
+      "kind": "installed-source-assertion",
+      "sourceCommit": "683183d2b4666960d04186433dde107bfb20bec9",
+      "node": "24.19.0",
+      "packageVersion": "4.3.1",
+      "repairSha256": "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7",
+      "installedPostimages": {
+        "index.js": "ba2a6c79e67e10f45a32cfe8f5ea5c5607dc4718be2b37956e9202ea4cdbe1bc",
+        "dist/cjs.js": "c5e9c1f08e7a3b589010133108a3c625806358fa9e1bdaa11f07e9e756f19da0",
+        "dist/umd.js": "b12652d3654f47b08ae43e8b390b66c55987ace6d9a6167c3240744ffa0f28f9"
+      },
+      "actionBuildOrSignedSDKQualified": false
+    },
+    {
+      "kind": "installed-download-source-assertion",
+      "sourceCommit": "683183d2b4666960d04186433dde107bfb20bec9",
+      "node": "24.19.0",
+      "lockSha256": "9fc87ce6c1e741a1745b5f1d633cc7f5d9cf44e598f99beed75a542a273b1621",
+      "packages": [
+        {
+          "name": "glob",
+          "version": "10.5.0",
+          "files": 65
+        },
+        {
+          "name": "minimatch",
+          "version": "9.0.9",
+          "files": 53
+        },
+        {
+          "name": "minimatch",
+          "version": "9.0.9",
+          "files": 53
+        },
+        {
+          "name": "minimatch",
+          "version": "10.2.6",
+          "files": 53
+        }
+      ]
+    }
+  ],
+  "previousEvidence": {
+    "schema": 1,
+    "repository": "KirilsTurkins/lsf-download-artifact",
+    "publishedRevision": "dd4ebbadbf12ed34441db2712be7a193490b7fc5",
+    "publishedTree": "ab1166196538fbdab37cd72ca51557320ae95d35",
+    "sourceHead": "39d52ac2a2c6731c2d836e923b5221ebd0d4d8e9",
+    "diagnosticHead": "b1b184f23784f8b32b6d454764a51b1b87e00e06",
+    "diagnosticTree": "4afa10c0827dde75934dd82621dc44bcf54a192a",
+    "diagnosticOnlyPath": ".github/workflows/lsf-download-security-owner.yml",
+    "run": 42113357120,
+    "job": 127546428787,
+    "jobConclusion": "success",
+    "node": "24.19.0",
+    "npm": "11.17.0",
+    "jestSuites": 1,
+    "jestTests": 21,
+    "sourceControls": 3,
+    "rebuiltBundleIdentical": true,
+    "artifactDownloadMatched": true,
+    "artifact": {
+      "id": 13455382700,
+      "bytes": 1704956,
+      "sha256": "9429625c4ca047ce699d6eebefd4d6b7145ca80e5e010a66c77c68872bb33b84",
+      "members": 25,
+      "checkedFiles": 24,
+      "crcVerified": true
+    },
+    "markerArtifact": {
+      "id": 13454928092,
+      "bytes": 168,
+      "sha256": "41bb45641ad6ea12b6a1f200744c1ce0f815497558f6fdd61cdcf1cfef002fc6",
+      "crcVerified": true
+    },
+    "bundles": {
+      "dist/index.js": {
+        "bytes": 4683804,
+        "sha256": "caac8449a3cfb152b39fc3d21c1089a134a235e9ed9fcfd0ed2b5530e9cfc2ab",
+        "gitBlob": "bab2149e86267e2bed9b887d9a9322150f61861c"
+      }
+    }
+  },
+  "scope": "Exact source/bundle rebuild and finite controls; no signed SDK or release qualification."
 }

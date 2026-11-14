@@ -30,7 +30,7 @@ class CapturedGoto(unittest.TestCase):
         self.assertLess(worker.index('close(started)'), worker.index('goto again'))
         self.assertNotIn('Gosched', worker)
         self.assertEqual((FIXTURE / 'module/go.mod').read_text(),
-                         'module example.invalid/worker\n\ngo 1.27.3\n')
+                         'module example.invalid/worker\n\ngo 1.27.4\n')
 
     def test_exact_v2_transformation_and_v1_negative_fail_closed(self):
         source = (FIXTURE / 'module/worker.go').read_bytes()

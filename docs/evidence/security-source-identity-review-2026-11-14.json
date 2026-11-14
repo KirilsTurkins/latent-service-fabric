@@ -1,0 +1,129 @@
+{
+  "schema": 1,
+  "reviewedAt": "2026-11-14T09:59:37.786965+00:00",
+  "reviewer": "coordinating automated agent under user-authorized CI repair; not human approval",
+  "sourceBase": "68bd53e20eeeae109f7816c8e81a1f959158a93b",
+  "workflowRun": 43582995296,
+  "sourceInspection": {
+    "docs/testing/evidence/stream-credential-handoff-2026-11-08.json": {
+      "kind": "authenticated-public-Python-Git-blobs",
+      "objects": {
+        "tools/outbound_stream_credential_scenario.py": {
+          "gitBlob": "c862534633da35294ec655de14f1da315a50f6d0",
+          "bytes": 15482,
+          "sha256": "380319accdc77594f36b1a75becde3d7eda69469c10c0cb92c8cb6e49ebc4bc5"
+        },
+        "tools/tests/test_outbound_stream_credential_scenario.py": {
+          "gitBlob": "7a22687f4328ec88c2239505954c2db306ce3ef8",
+          "bytes": 6854,
+          "sha256": "3e7164d25dea5c3b8d34e4aaca4f440e3e55890081457402c620a6d4bb5646ee"
+        }
+      }
+    },
+    "docs/testing/evidence/stream-credential-handoff-ready-2026-11-08.json": {
+      "kind": "authenticated-public-Python-Git-blobs",
+      "objects": {
+        "tools/outbound_stream_credential_scenario.py": {
+          "gitBlob": "0a780e4ee82517386176d4068b9a1211a9a4a8d0",
+          "bytes": 15582,
+          "sha256": "029e97399a3dcd70c4161d525f70023870c2c708b1d269e4720df764cc451626"
+        },
+        "tools/tests/test_outbound_stream_credential_scenario.py": {
+          "gitBlob": "ff521676b4f17804bf4c7cfa047af9bbf2ad5605",
+          "bytes": 8127,
+          "sha256": "bea2b2a4f155f9dc9ce03832ce5d1b44fcb0b550ddde3e9143ed4bb2c1748635"
+        }
+      }
+    },
+    "tools/c_guest/threading.py": {
+      "kind": "libc-source-SHA256-preimage-check",
+      "constant": "POLL_LIBC",
+      "consumer": "poll_libc_inputs",
+      "path": "lib/libc/include/wasm-wasi-musl/wasi/api.h",
+      "sha256": "8cf2859277ea2fc984780a00048686955805fd8a00c7be1d8f916105becf0174"
+    },
+    "tools/qualify_c_http_media.py": {
+      "kind": "runtime-credential-reference-not-hardcoded-secret",
+      "source": "os.environ.get",
+      "variable": "token",
+      "literal": "GH_PROMPT_DISABLED=1",
+      "tokenValueReadOrRecorded": false
+    }
+  },
+  "findings": [
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "docs/testing/evidence/stream-credential-handoff-2026-11-08.json",
+      "package": "",
+      "fingerprint": "3f3625c889b4f1f37296ea7bdbb08ac9daddd096b4b65762d63a29901d7262f8",
+      "line": 19,
+      "column": 13
+    },
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "docs/testing/evidence/stream-credential-handoff-2026-11-08.json",
+      "package": "",
+      "fingerprint": "7fa563c4b29a4470a319b2ceb2bdc14516a1244c9f4544cf0f935ae8a6dcce8b",
+      "line": 21,
+      "column": 19
+    },
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "docs/testing/evidence/stream-credential-handoff-ready-2026-11-08.json",
+      "package": "",
+      "fingerprint": "0670b003c6f2c89c64320a0376978dab73817b5e4f9855abb211ee59f507ff76",
+      "line": 122,
+      "column": 19
+    },
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "docs/testing/evidence/stream-credential-handoff-ready-2026-11-08.json",
+      "package": "",
+      "fingerprint": "0bbaed15a02968939489f3986dbc7d22d43e83a2c85bd0a30356868fd4accab4",
+      "line": 119,
+      "column": 13
+    },
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "tools/c_guest/threading.py",
+      "package": "",
+      "fingerprint": "c283fe4693e5e9a90c8af1e3fda8ff61b782e4d5bbb0198d280ccb8c896958cc",
+      "line": 91,
+      "column": 44
+    },
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "tools/qualify_c_http_media.py",
+      "package": "",
+      "fingerprint": "ce2bf2a6c8faf386f12e9cc3e00b377f0abf6165d40263bef12ed82043ce2ac8",
+      "line": 182,
+      "column": 38
+    }
+  ],
+  "sourceIdentities": {
+    "docs/testing/evidence/stream-credential-handoff-2026-11-08.json": {
+      "bytes": 5043,
+      "sha256": "dd8ca87b7d331667e643d0c23e46a75cfab855875d8dd4765a3548996c581397"
+    },
+    "docs/testing/evidence/stream-credential-handoff-ready-2026-11-08.json": {
+      "bytes": 5160,
+      "sha256": "a21182d98cffdff732f0602846e6d30b023eb540626ad6b52870ae18e3a49560"
+    },
+    "tools/c_guest/threading.py": {
+      "bytes": 14179,
+      "sha256": "c01e428243b1c09083875e0410e3d3bacad75e09aacd50f44118ef86487f5fbf"
+    },
+    "tools/qualify_c_http_media.py": {
+      "bytes": 12821,
+      "sha256": "fa8aaf2d541731bfaba68d9b90e7ec4f0d36b903c126db0788c4e58431dd956a"
+    }
+  },
+  "expiresExclusive": "2026-11-28",
+  "scope": "Six exact non-secret expression fingerprints only. No real token is read, recorded or exempted; no dependency advisory is waived."
+}

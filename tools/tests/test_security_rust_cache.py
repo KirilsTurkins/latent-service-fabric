@@ -33,7 +33,7 @@ class RustCacheSourceRepairTests(unittest.TestCase):
         identities = {path: sources.source_identity(value) for path, value in self.runtime.items()}
         build_path = self.root / cache.BUILD_PATH
         evidence = json.loads(build_path.read_bytes())
-        evidence["artifact"]["payloads"].update(identities)
+        evidence["outputs"].update(identities)
         build_path.write_text(json.dumps(evidence), encoding="utf-8")
         for name, value in (("RUNTIME", identities), ("BUILD_IDENTITY", sources.source_identity(build_path.read_bytes()))):
             patcher = patch.object(cache, name, value)
@@ -119,7 +119,7 @@ class RustCacheSourceRepairTests(unittest.TestCase):
         with self.assertRaises(OSError):
             self.verify(runtime=lambda _ref, _path: (_ for _ in ()).throw(OSError("unavailable")))
         for reference, path in ((cache.REFERENCE, "dist/other.js"),
-                                (cache.REFERENCE.replace("38534d49", "08534d49"), "dist/save.js")):
+                                (cache.REFERENCE.replace("65397265", "08534d49"), "dist/save.js")):
             with self.assertRaises(SecurityError):
                 sources.action_runtime(reference, path)
 
@@ -154,7 +154,7 @@ class RustCacheSourceRepairTests(unittest.TestCase):
                 with self.assertRaises(SecurityError):
                     security_actions.verify(self.root, [".github/workflows/fixture.yml"])
         workflow = self.root / ".github/workflows/fixture.yml"
-        for stale in (cache.REFERENCE.replace("38534d49940bc6c6aef1e8dfd45349a99d37f14e", "0" * 40),
+        for stale in (cache.REFERENCE.replace("653972653a76770ab9b45cca67e4db8221bed334", "0" * 40),
                       cache.REFERENCE.replace("lsf-rust-cache", "other-action")):
             with self.subTest(stale=stale):
                 value = copy.deepcopy(baseline)
@@ -168,8 +168,8 @@ class RustCacheSourceRepairTests(unittest.TestCase):
 
     def test_historical_inverse_refuses_stale_mixed_and_future_pins(self):
         current = cache.REFERENCE
-        previous = current.replace("38534d49940bc6c6aef1e8dfd45349a99d37f14e", "476b290465f7c84db317df6e6a6e2d3c12ea3477")
-        future = current.replace("38534d49940bc6c6aef1e8dfd45349a99d37f14e", "0" * 40)
+        previous = current.replace("653972653a76770ab9b45cca67e4db8221bed334", "476b290465f7c84db317df6e6a6e2d3c12ea3477")
+        future = current.replace("653972653a76770ab9b45cca67e4db8221bed334", "0" * 40)
         for value in (current, current.encode()):
             self.assertEqual(historical_security_actions(value), previous if isinstance(value, str) else previous.encode())
         for value in (previous, current + "\n" + previous, future):

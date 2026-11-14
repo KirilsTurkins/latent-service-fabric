@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "profile": "minimatch-action-source-v1",
-  "action": "KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8",
+  "action": "KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee",
   "advisories": [
     {
       "id": "GHSA-g3hv-75wg-m249",
@@ -39,24 +39,24 @@
     },
     "build": {
       "snapshot": ".github/security/actions/setup-python-minimatch/fork-build.json",
-      "source": "https://github.com/KirilsTurkins/lsf-setup-python/actions/runs/42010605694",
-      "bytes": 3036,
-      "sha256": "0031441630253140eed878e0be984ab6cfa5dfb6aecea60af6d04f82f35daefb",
-      "gitBlob": "bd169fe4cfba82a9181e7719c6f539cff86fd63f"
+      "source": "https://github.com/KirilsTurkins/lsf-setup-python/actions/runs/43523184991",
+      "bytes": 6922,
+      "sha256": "6a9b0fac7fc724bc2650055178270a51cf5146b8ab21742b0a9ae920db753821",
+      "gitBlob": "762388a6154538be10910c2bc70189636d0e5c77"
     }
   },
   "runtime": {
     "runtime_setup": {
       "source": "dist/setup/index.js",
-      "bytes": 3675836,
-      "sha256": "e3bbbcbb7ab676335857f03b50e89f8e7bf5423f594a4b2212b966dde55fe8b7",
-      "gitBlob": "aef6783f257e77b06e518b7c6e5a9b2384c62cd2"
+      "bytes": 3680627,
+      "sha256": "8a4dbd28e56c4bab5e64273bb90c841d6f58ddaf7f0a3e16c790cb3245144bcc",
+      "gitBlob": "3bb61501b2f4547d8c704dd21552803eff3abd2f"
     },
     "runtime_cache": {
       "source": "dist/cache-save/index.js",
-      "bytes": 3581654,
-      "sha256": "06f010acee2ff7034243f3dbdac1907923d004f370597501e762b452af26c0f0",
-      "gitBlob": "2c6014773ffb3c51eb8307d36641ce6691c2c4e8"
+      "bytes": 3586445,
+      "sha256": "ca6175f0bb0ca81bdeb41ffb4fc69a08929ff6d85cd745f3ec62592f3a07b6b8",
+      "gitBlob": "8131835e309b500432423d77f0f7d28f8e8e9b00"
     }
   }
 }

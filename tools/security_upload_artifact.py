@@ -3,15 +3,16 @@ from __future__ import annotations
 
 from pathlib import Path
 from tools import security_setup_go
+from tools.security_action_rebuild import verify_rebuild
 from tools.security_common import decode_json, digest, read_file, require
 
-REFERENCE = "KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f"
+REFERENCE = 'KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc'
 PREFIX = ".github/security/actions/upload-artifact/"
 DEEP_PROFILE = "upload-artifact-deepmerge-source-v1"
 PROFILE = "upload-artifact-glob-minimatch-source-v1"
 DEEP_VERIFIER = ".lsf-source/verify-installed-deepmerge.mjs"
-TREE = "64df5da8b886f3a6b13fe2afde407a694ce9187f"
-RUN = 42108047459
+TREE = "671a59ec07208d10b7e56b65c4905a3e5182cbe0"
+RUN = 43523231069
 GLOB_ADVISORIES = [{"id": "GHSA-3g3m-2fjr-6pw4", "modified": "2026-10-30T23:15:04.503965Z"}]
 MINI_ADVISORIES = [{"id": "GHSA-g3hv-75wg-m249", "modified": "2026-11-04T17:01:25.850114Z"}]
 
@@ -21,29 +22,29 @@ ACTION_INPUTS = {'action.yml': ('.github/security/actions/upload-artifact/action
                 '7cb4d1e81db55320b41217e1a78a1a46e3d2baef'),
  'package.json': ('.github/security/actions/upload-artifact/package.json',
                   2922,
-                  'c8bd2ac29a524d7069736c7710df87643553369e77040b0a205708dc300c1936',
-                  '1adf3c30a5243d6d897d1e5e78277d6bec73f5f5'),
+                  '81625816f3d06ad20e697c1080c24a9920e434bceb653062e948053194994b99',
+                  '33963c8ce0b8ba90d7397300d757b5d4fc763aba'),
  'package-lock.json': ('.github/security/actions/upload-artifact/package-lock.json',
                        352042,
-                       '6596c32794b08b4f9859449abc3374998ad691607d284fe55dd5e6a38cfa7370',
-                       '062c00b3145fb1c1dd0d4a3191c87103bef74119'),
+                       'f9ddfd3bac09c291181898b71b52d0f5024bdfdf43169999ca3dd2d76d8166cb',
+                       '5cd0bdb369839cdf35da2fe020870b2efe5404d5'),
  '.lsf-source/verify-installed-deepmerge.mjs': ('.github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot',
                                                 2381,
                                                 '55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7',
                                                 '99d75a2ea3895eb8acc8018984ca9826e4edff51'),
  '.lsf-source/verify-upload-sources.mjs': ('.github/security/actions/upload-artifact/installed-verifier.mjs.snapshot',
                                            3379,
-                                           'cc31303b77279b283e811081252a446e0a3e722493c39dcc7873b29504358a6f',
-                                           '2c554d6cf2985cd198765a2b951caac5ebe27fe7'),
+                                           '8f2ea6fbd697895126301d2e52efa1122893c616cae83f68f388cb170a6fba03',
+                                           'afae31dc92975b8bd43f097930fdfc2023ecf9d9'),
  '.lsf-source/upload-source.test.mjs': ('.github/security/actions/upload-artifact/source.test.mjs.snapshot',
                                         3482,
                                         '4d459c993e9e80a7f555fbcc05e2fe03cda3cd834b01a21de7eba91bba65bdd0',
                                         '2e43956cff1cdda12a30e36a14be14749865438e')}
 
 MATERIAL = {'fork-build.json': ('.github/security/actions/upload-artifact-source/fork-build.json',
-                     1506,
-                     '07398107f680c860f03284aef36ba220d3fc5d05a776b3b624fe5f382637af48',
-                     '378a011a565263ff5908dcd8d399fafe981531d9'),
+                     5598,
+                     '1d6c450b74b6b6f2d3f5b22ba494055ae140f5c742f193e0947bdeaae77bf8c3',
+                     '89cf5da33281e1e3b63dec1cd32461a51b8c85b4'),
  'glob-10.5.0-lsf-abort-v1.repair.json': ('.github/security/actions/upload-artifact-source/glob-10.5.0-lsf-abort-v1.repair.json',
                                           1470,
                                           'beb9c5bed151b7a67f3b7b384e04ae0c01ca52e093795c042b9b3a3542a54e0f',
@@ -85,12 +86,12 @@ MATERIAL = {'fork-build.json': ('.github/security/actions/upload-artifact-source
                               'b991a3713ac8f768f7c794d63dea0b8c9f7ef9b772b606b850c02eb7c15685a7',
                               '975c8dfecb59cdebb2ed6468f89ec882432ddbc6')}
 
-RUNTIME = {'dist/upload/index.js': {'bytes': 4677723,
-                          'sha256': 'f345b0bc958552d1b1a96b9cf9b736bb7902d30015a21c9f80407954e2c66408',
-                          'gitBlob': 'b8ea4e7e8480039dbab87d14edf3e729e5cdf3f8'},
- 'dist/merge/index.js': {'bytes': 4774992,
-                         'sha256': '9991c3e7faca109d7c8aa2f1f8fe7942e66aceb394c6bfe024608a4aae678a3d',
-                         'gitBlob': 'aa1678747afe96853db0e7dc14632a6a08206280'}}
+RUNTIME = {'dist/upload/index.js': {'bytes': 4682514,
+                          'sha256': 'c0664af834ce822489f7975d46910d2cf88e0afab9e42f3d83cedb85cbd34b56',
+                          'gitBlob': 'b62ad93c277fc35ce61ee7a78860601e31768cca'},
+ 'dist/merge/index.js': {'bytes': 4779783,
+                         'sha256': 'afb70515ca97f068d994ad92497e740680c2254f84943e9dc92457e15f2c7903',
+                         'gitBlob': '282adc271c5c99c65b28d1ba6652343f987bd49f'}}
 
 PACKAGES = [{'name': 'glob',
   'version': '10.5.0',
@@ -195,21 +196,7 @@ def source_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> dict:
                   and str(row.get("version", "")).startswith(major)}
         require(actual == expected_paths, "unreviewed-upload-action-shadow-source")
     build = decode_json(material["fork-build.json"])
-    require(build["schema"] == 1 and build["repository"] == "KirilsTurkins/lsf-upload-artifact"
-            and build["publishedRevision"] == REFERENCE.split("@")[1] and build["publishedTree"] == TREE
-            and build["sourceHead"] == "73b1877b79981ac2fbd8084701ef38a2c94ba050"
-            and build["diagnosticHead"] == "430a8f8913d8f52901016bcff9f50ff38afef58a"
-            and build["diagnosticTree"] == "23db126b98a44b9f1565343a19d51cf1193cfda1"
-            and build["diagnosticOnlyPath"] == ".github/workflows/lsf-upload-security-owner.yml"
-            and build["run"] == RUN and build["job"] == 127527998145 and build["jobConclusion"] == "success"
-            and build["node"] == "24.19.0" and build["npm"] == "11.17.0"
-            and build["jestSuites"] == 3 and build["jestTests"] == 31 and build["sourceControls"] == 3
-            and build["rebuiltBundlesIdentical"] is True and build["artifactUploadDownloadMatched"] is True
-            and build["artifact"] == {"id": 13452562766, "bytes": 1086,
-                "sha256": "ae18988d352cd9b71fdf98697d277322d1bbe5c34bfdc401af8c9164cea98801", "members": 5, "crcVerified": True}
-            and build["markerArtifact"] == {"id": 13451429090, "bytes": 166,
-                "sha256": "f2d8ee55f0b5cb0e10c64de355026d7500923171a22ec58ffc98b6642308ef43", "crcVerified": True}
-            and build["bundles"] == RUNTIME, "upload-action-build-evidence-drift")
+    verify_rebuild(repo, build, REFERENCE, RUNTIME)
     return {"policy": {"advisories": security_setup_go.DEEP_ADVISORIES}, "material": deep,
             "reference": REFERENCE, "checkout": False, "upload_artifact": True, "repaired": material}
 

@@ -3,9 +3,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tools.security_action_rebuild import verify_rebuild
 from tools.security_common import decode_json, digest, read_file, require
 
-REFERENCE = "KirilsTurkins/lsf-setup-go@1020042799f722e9ef016bf63106367879587a49"
+REFERENCE = 'KirilsTurkins/lsf-setup-go@92a5903f5ff2b45e67c517d23c18501025a55a12'
 PREFIX = ".github/security/actions/setup-go/"
 DEEP_PROFILE = "setup-go-deepmerge-source-v1"
 MINI_PROFILE = "setup-go-minimatch-source-v1"
@@ -16,30 +17,58 @@ MINI_VERIFIER = ".lsf-source/verify-installed-minimatch.mjs"
 BOUNDS = ".lsf-source/minimatch-bounds.test.mjs"
 
 # Each tuple is a repository snapshot, exact byte count, SHA-256 and Git blob.
-ACTION_INPUTS = {
-    "action.yml": (PREFIX + "action.yml.snapshot", 2788, "216efbacabe9911f4de0714f00f57e45470469c52c2d3e70e8d6165f32939585", "79299e5525f5b737d28c7a5ffdcadf91d391f797"),
-    "package.json": (PREFIX + "package.json", 2523, "435344c44656f7642f8a467c786c623e24ad22032df2a14f0835bd6673f44b93", "1bc75d1219b4b6d7729853b72976ae60f069949d"),
-    "package-lock.json": (PREFIX + "package-lock.json", 225970, "058e6d5773b07dfa02e9fb15a46f6d101ee1d18d123b7d22aabecb3e991c5a4d", "c823d455d4ca3dc50226b11476ccefccb46aa10d"),
-    DEEP_VERIFIER: (".github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot", 2381, "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7", "99d75a2ea3895eb8acc8018984ca9826e4edff51"),
-    MINI_VERIFIER: (".github/security/actions/setup-python-minimatch/installed-verifier.mjs.snapshot", 3386, "4fcbcba0f46fed80b09c6cdb1a2a54eeff2e0a3690b4d0a5b566762169f1f826", "ab204a63dd0ddf065b00ae7c3ab0531b35d5d300"),
-    BOUNDS: (".github/security/actions/setup-go-minimatch/bounds.test.mjs.snapshot", 2854, "f65c9af8d0d6b2abfd728d803e223396e746850f564003e93b223c4f084f987b", "9601c04f3210fa02ee4ae91183f2a5538b1e9374"),
-}
+ACTION_INPUTS = {'action.yml': ('.github/security/actions/setup-go/action.yml.snapshot',
+                2788,
+                '216efbacabe9911f4de0714f00f57e45470469c52c2d3e70e8d6165f32939585',
+                '79299e5525f5b737d28c7a5ffdcadf91d391f797'),
+ 'package.json': ('.github/security/actions/setup-go/package.json',
+                  2523,
+                  '5cd3573fb4e1a6b3cf680b46cf3cd5dbafc293abc2bea4fc078925d89c2ef18e',
+                  'd82f4446ea676f4b4f16d00627d3aafa4d549a5b'),
+ 'package-lock.json': ('.github/security/actions/setup-go/package-lock.json',
+                       225454,
+                       '0ab055419bedc5c0b561cc30632279aa8d38edd2fdced86d122939457e9e2869',
+                       '5ac85cf63c31df0b05825d74280c5e5889f5c46d'),
+ '.lsf-source/verify-installed-deepmerge.mjs': ('.github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot',
+                                                2381,
+                                                '55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7',
+                                                '99d75a2ea3895eb8acc8018984ca9826e4edff51'),
+ '.lsf-source/verify-installed-minimatch.mjs': ('.github/security/actions/setup-python-minimatch/installed-verifier.mjs.snapshot',
+                                                3386,
+                                                '4fcbcba0f46fed80b09c6cdb1a2a54eeff2e0a3690b4d0a5b566762169f1f826',
+                                                'ab204a63dd0ddf065b00ae7c3ab0531b35d5d300'),
+ '.lsf-source/minimatch-bounds.test.mjs': ('.github/security/actions/setup-go-minimatch/bounds.test.mjs.snapshot',
+                                           2854,
+                                           'f65c9af8d0d6b2abfd728d803e223396e746850f564003e93b223c4f084f987b',
+                                           '9601c04f3210fa02ee4ae91183f2a5538b1e9374')}
 DEEP_MATERIAL = {
     "archive": (".github/security/actions/checkout-source/deepmerge-4.3.1.repaired.tar", 51200, "c4ca0f4eb3a2464c026bc3dec5d9eaf04544aed24c3fd1d77da95f85e36c369f", "30e23fad3a82fd30bc3f08e26704a0c0bc84c704"),
     "repair": (".github/security/actions/checkout-source/repair.json", 3064, "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7", "52602f18647aa2f2bd30f046e05bcce2705a761f"),
     "declaration": (".github/security/actions/checkout-source/declaration.json", 6925, "b4b0b79fa2bc84c6f1e1c61ddcc1ab228df629f9fce4b1067d3ac8b3d1c42892", "0685ff353f65174eb5a97cfcb385720dd4a5874c"),
     "upstream": (".github/security/actions/checkout-source/deepmerge-4.3.1.original.tgz", 8452, "4003a0a348276a95543fa969f561f6b5968629acbbb59d66018dd23e7b8f1d5c", "1d1560e971dfc484bbe0cb9e8c86bde9140e45b5"),
 }
-MINI_MATERIAL = {
-    "archive": (".github/security/actions/setup-python-minimatch/minimatch-10.2.5.repaired.tar", 583680, "8ed155c4f29d451728efaaf60bc0ed7249ceb93d21eb81171068342621287a68", "93a1d4e2d4c2935624af7aa91fe9a113c56e5932"),
-    "repair": (".github/security/actions/setup-python-minimatch/repair.json", 2129, "b340bb0502087bb0df18c8ec276ee61f58aedc6c54fcc6b022d174817d7d27a9", "679352aace8de2eb661a5a9665d6152033833cbb"),
-    "upstream": (".github/security/actions/setup-python-minimatch/minimatch-10.2.5.original.tgz", 117062, "a6cea46915bfc6c3fae60f9bd003ea4f9d6a4233aa59a9ca729474d3824ca9e5", "dd98b4079e660933500de9f03d0bbbab1f44f295"),
-    "build": (".github/security/actions/setup-go-minimatch/fork-build.json", 5155, "7269a40aaf067f1097c9029524489d1e123aaf585dc5ec221bb5977d627c812f", "3d8b730bd1202d22b2a1b30a5e6f0bce74bb0829"),
-}
-RUNTIME = {
-    "dist/setup/index.js": {"bytes": 3524152, "sha256": "7f48af95ce77cec176b4280338431d244eff2582e3fdcc7399108ec3ae6fb1ec", "gitBlob": "0ea73efad446214b94a2a620e70cc5a211f57e33"},
-    "dist/cache-save/index.js": {"bytes": 3462700, "sha256": "2788fcd2e048d57304f4a7f896468d1c5dbc0e983d6f41aad89e9422e8f7ecfb", "gitBlob": "9b3464443d5066f0d4fed1421aed8cbd9d197e3f"},
-}
+MINI_MATERIAL = {'archive': ('.github/security/actions/setup-python-minimatch/minimatch-10.2.5.repaired.tar',
+             583680,
+             '8ed155c4f29d451728efaaf60bc0ed7249ceb93d21eb81171068342621287a68',
+             '93a1d4e2d4c2935624af7aa91fe9a113c56e5932'),
+ 'repair': ('.github/security/actions/setup-python-minimatch/repair.json',
+            2129,
+            'b340bb0502087bb0df18c8ec276ee61f58aedc6c54fcc6b022d174817d7d27a9',
+            '679352aace8de2eb661a5a9665d6152033833cbb'),
+ 'upstream': ('.github/security/actions/setup-python-minimatch/minimatch-10.2.5.original.tgz',
+              117062,
+              'a6cea46915bfc6c3fae60f9bd003ea4f9d6a4233aa59a9ca729474d3824ca9e5',
+              'dd98b4079e660933500de9f03d0bbbab1f44f295'),
+ 'build': ('.github/security/actions/setup-go-minimatch/fork-build.json',
+           9459,
+           'cd8f6e92ebccbd3ac2e7fb6e07c09aa57fa9c31693c6014e0a8e7db83ba6c75d',
+           '33dbb24ca00b2632c71c5b53843a202555fd5e04')}
+RUNTIME = {'dist/setup/index.js': {'bytes': 3520107,
+                         'sha256': '17484a2d85761ff8c2b1ede7716ec58d235d3a272fbc5fd32ff5785b182eb669',
+                         'gitBlob': '8783bf713f49b338b84d3f3d9473d8d0bbed56a6'},
+ 'dist/cache-save/index.js': {'bytes': 3458655,
+                              'sha256': '06a971fbaa132dc7e21d21769c47eb3f929624a867b575168d9965cf3c9afdac',
+                              'gitBlob': '4ffddc7e1a98a429357c1dd0029d2ded97ab3c4f'}}
 
 
 def _material(repo: Path, identities: dict) -> dict:
@@ -97,21 +126,7 @@ def source_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> dict:
             and lock["packages"]["node_modules/glob"].get("dev") is True,
             "unlocked-setup-go-minimatch")
     build = decode_json(mini["build"])
-    require(build["schema"] == 1 and build["repository"] == "KirilsTurkins/lsf-setup-go"
-            and build["publishedRevision"] == REFERENCE.split("@")[1]
-            and build["publishedTree"] == "586d487e144d8cf393893459b6678118d0b5dc92"
-            and build["sourceHead"] == "390622e7ee1bf62f65e663253868c5d78d2d0f7d"
-            and build["diagnosticHead"] == "dec0ffefad2e934819c5d8f10e44bfd8a0623a79"
-            and build["diagnosticTree"] == "1a2d7f307cabbe51dc51dd0e5840011ac9013ab2"
-            and build["diagnosticOnlyPath"] == ".github/workflows/setup-go-security-linux-owner.yml"
-            and build["run"] == 42024368583 and build["job"] == 127234749396
-            and build["jobConclusion"] == "success" and build["node"] == "24.19.0" and build["npm"] == "11.17.0"
-            and build["jestSuites"] == 6 and build["jestTests"] == 131 and build["sourceControls"] == 2
-            and build["artifact"]["id"] == 13413795581 and build["artifact"]["bytes"] == 24800
-            and build["artifact"]["sha256"] == "0ac56d93118b189b38dda2bb69c0ec1b591f59d621a2b8b1ad8e9bce74191437"
-            and build["artifact"]["crcVerified"] is True and len(build["artifact"]["members"]) == 7
-            and len(build["tamperRefusals"]) == 15 and all(row["refused"] is True for row in build["tamperRefusals"])
-            and build["bundles"] == RUNTIME, "setup-go-build-evidence-drift")
+    verify_rebuild(repo, build, REFERENCE, RUNTIME)
     return {"policy": {"advisories": DEEP_ADVISORIES}, "material": deep,
             "reference": REFERENCE, "checkout": False, "setup_go": True, "mini": mini}
 
@@ -154,6 +169,6 @@ def verify_minimatch_sources(repo: Path, packages: list, configuration: dict, fe
                          "upstream_integrity": sources.MINIMATCH_UPSTREAM, "derived_integrity": sources.MINIMATCH_DERIVED,
                          "repair_sha256": digest(material["repair"]), "files": len(repair["files"]),
                          "locks": [entry["lock"]], "advisories": MINI_ADVISORIES, "action": REFERENCE,
-                         "source_role": "action-runtime-and-build", "built_tree": "586d487e144d8cf393893459b6678118d0b5dc92",
-                         "build_run": 42024368583})
+                         "source_role": "action-runtime-and-build", "built_tree": "71e010c88065728c2175f28330d8ea5aab035e60",
+                         "build_run": 43523168939})
     return receipts

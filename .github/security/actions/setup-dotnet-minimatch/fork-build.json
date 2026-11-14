@@ -1,83 +1,184 @@
 {
-  "schema": 1,
+  "schema": 2,
   "repository": "KirilsTurkins/lsf-setup-dotnet",
-  "publishedRevision": "258c927924210be905f8908a4be714e5d0daffa8",
-  "publishedTree": "95a225c1d0707ebd764371b3d2a470bd5ac1271a",
-  "sourceHead": "b5df2c787220be374497e1fbbee09ac583849c80",
-  "sourceTree": "95a225c1d0707ebd764371b3d2a470bd5ac1271a",
-  "diagnosticHead": "02dfed81f2103cf05fd7fecac38141f3813dff97",
-  "diagnosticTree": "1d6dff64b8b80a025524c957c7ee9e667eaf634d",
-  "diagnosticOnlyPath": ".github/workflows/setup-dotnet-security-linux-owner.yml",
-  "diagnosticWorkflowBlob": "2a37150f4cb8f605b3e9548a53f2406b8d41ebc0",
-  "run": 42023417095,
-  "job": 127231597179,
+  "publishedRevision": "2382c9e63a3b678b643c7e715d023e7fa42fbbef",
+  "publishedTree": "a7213dbf0726cd05b7191f6d81e8fb0d14a0dcb0",
+  "base": "258c927924210be905f8908a4be714e5d0daffa8",
+  "testedCommit": "b44d78d890155c7d53156954a68c34a85b10c8f2",
+  "diagnosticHead": "0656b700c78ee0905c07c8b66c330d727bb828d5",
+  "run": 43523131630,
   "jobConclusion": "success",
-  "node": "24.19.0",
-  "npm": "11.17.0",
-  "jestSuites": 9,
-  "jestTests": 242,
-  "focusedTests": 2,
-  "tamperChecks": 15,
-  "jobLogSha256": "00dfe776f105229ae41f63b7bbed2ed84b0eb1f781233dc0f1c785c4bbb568a7",
+  "toolchain": {
+    "node": "24.19.0"
+  },
   "artifact": {
-    "id": 13411749303,
-    "bytes": 33194,
-    "sha256": "5eb17cdd8964f58e84f8793c575b9c8d623bac66a32deeda14b5798de3a7ee56",
-    "members": 7,
-    "crcVerified": true,
-    "payloads": {
-      "bundle-sha256.txt": {
-        "bytes": 177,
-        "sha256": "d55afeb366c4fea6314b47a19365fe7158e5a1e0494cb621668a9f347449c6ca"
+    "id": 14084246508,
+    "bytes": 60403,
+    "sha256": "7599f3c0b77d1fe1fc2554c25d12151a27178c3a210baba8a2280c24409300df"
+  },
+  "validationLog": {
+    "bytes": 35484,
+    "sha256": "6b7a5857f07fcd6b514bff03243bc82aedb6d2ebb0e989c83297633b37ad1dd8",
+    "gitBlob": "758b085f546188a7cd0312985f0802ea05ed69aa"
+  },
+  "validation": {
+    "sourceControlsPassed": true,
+    "xmlRegressionPassed": true,
+    "unitTests": 242,
+    "unitSuites": 9
+  },
+  "sourceFiles": {
+    "action.yml": {
+      "bytes": 3237,
+      "sha256": "c96dc8e11d5e6f64fb48a3221e7b1446821955cdcbecb1bf5697c93e24d4f9f2",
+      "gitBlob": "3a55f282966e7c8262ef8a45ddecf414a51dd062"
+    },
+    "package.json": {
+      "bytes": 2910,
+      "sha256": "51c9956410387a680bc59345c151c10c3fe996005a879b87bf47a6c1d857f93c",
+      "gitBlob": "806be79faf68f8562b02c499fc4596e1e3d070b9"
+    },
+    "package-lock.json": {
+      "bytes": 234146,
+      "sha256": "4c6958592285a8e60537929b6834632c6e4c5a5e977eea7f4b7d2a9d319c66d7",
+      "gitBlob": "25e13333306c14879f50a4a9957457f9f13baecb"
+    },
+    ".lsf-source/verify-installed-deepmerge.mjs": {
+      "bytes": 2381,
+      "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
+      "gitBlob": "99d75a2ea3895eb8acc8018984ca9826e4edff51"
+    },
+    ".lsf-source/verify-installed-minimatch.mjs": {
+      "bytes": 3386,
+      "sha256": "4fcbcba0f46fed80b09c6cdb1a2a54eeff2e0a3690b4d0a5b566762169f1f826",
+      "gitBlob": "ab204a63dd0ddf065b00ae7c3ab0531b35d5d300"
+    },
+    ".lsf-source/minimatch-bounds.test.mjs": {
+      "bytes": 2854,
+      "sha256": "f65c9af8d0d6b2abfd728d803e223396e746850f564003e93b223c4f084f987b",
+      "gitBlob": "9601c04f3210fa02ee4ae91183f2a5538b1e9374"
+    }
+  },
+  "outputs": {
+    "dist/setup/index.js": {
+      "bytes": 3858563,
+      "sha256": "2b0330c6857ab98f591c7814939945553e2353caabaa8e521493937dfd077e80",
+      "gitBlob": "e874a6f5cb31931ee253d79e034bb461710db695"
+    },
+    "dist/cache-save/index.js": {
+      "bytes": 3424689,
+      "sha256": "a0e2b9916c9e80a130b9793ea862f92d23b4e7593ae99f32d1ff98ba2c22a602",
+      "gitBlob": "7c3953cb705713a2d36cd75ef05b8b7ab95fce65"
+    }
+  },
+  "installedSourceAssertions": [
+    {
+      "kind": "installed-source-assertion",
+      "sourceCommit": "0656b700c78ee0905c07c8b66c330d727bb828d5",
+      "node": "24.19.0",
+      "packageVersion": "4.3.1",
+      "repairSha256": "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7",
+      "installedPostimages": {
+        "index.js": "ba2a6c79e67e10f45a32cfe8f5ea5c5607dc4718be2b37956e9202ea4cdbe1bc",
+        "dist/cjs.js": "c5e9c1f08e7a3b589010133108a3c625806358fa9e1bdaa11f07e9e756f19da0",
+        "dist/umd.js": "b12652d3654f47b08ae43e8b390b66c55987ace6d9a6167c3240744ffa0f28f9"
       },
-      "dist-actual.txt": {
-        "bytes": 98,
-        "sha256": "0630ff46bfeccc9ed40b1dd2e67cf7514e9a16feb8d3f2448b6baa91149b27f1"
-      },
-      "dist-expected.txt": {
-        "bytes": 98,
-        "sha256": "0630ff46bfeccc9ed40b1dd2e67cf7514e9a16feb8d3f2448b6baa91149b27f1"
-      },
-      "jest.json": {
-        "bytes": 237204,
-        "sha256": "08b8d36f0c39cd491b93c6c017c1e1ff859c7ec34046d73c106c15a598626d51"
-      },
-      "npm-ls.txt": {
-        "bytes": 47198,
-        "sha256": "3abd8c3ab27b2f0163cee14821f5dd81cd799dc9da3402736f9d06b885ed7b46"
-      },
-      "reconstruction.json": {
-        "bytes": 632,
-        "sha256": "ec5d869d9e91334c3f969ab3cb8e6f418f41ab9d76ec3f79939896b098dd9191"
-      },
-      "tamper.json": {
-        "bytes": 1993,
-        "sha256": "d21d916f015786a516a7b504c2829cbf511b0ed134b5976cb549d1467eb9b4d7"
+      "actionBuildOrSignedSDKQualified": false
+    },
+    {
+      "kind": "installed-minimatch-source-assertion",
+      "sourceCommit": "0656b700c78ee0905c07c8b66c330d727bb828d5",
+      "node": "24.19.0",
+      "version": "10.2.5",
+      "repairSha256": "b340bb0502087bb0df18c8ec276ee61f58aedc6c54fcc6b022d174817d7d27a9",
+      "installedPostimages": {
+        "dist/commonjs/index.js": "7e835c0a30f7b4f29f4ad8cf8c3e92b97ab23ed854a7a777f240d6bdf3d19231",
+        "dist/esm/index.js": "37ba4ff4010cda499e890975983b78ebd5f2be2dd8506d938472de4af8e9ed25"
       }
     }
-  },
-  "installedMinimatch": {
-    "kind": "installed-minimatch-source-assertion",
-    "sourceCommit": "02dfed81f2103cf05fd7fecac38141f3813dff97",
+  ],
+  "previousEvidence": {
+    "schema": 1,
+    "repository": "KirilsTurkins/lsf-setup-dotnet",
+    "publishedRevision": "258c927924210be905f8908a4be714e5d0daffa8",
+    "publishedTree": "95a225c1d0707ebd764371b3d2a470bd5ac1271a",
+    "sourceHead": "b5df2c787220be374497e1fbbee09ac583849c80",
+    "sourceTree": "95a225c1d0707ebd764371b3d2a470bd5ac1271a",
+    "diagnosticHead": "02dfed81f2103cf05fd7fecac38141f3813dff97",
+    "diagnosticTree": "1d6dff64b8b80a025524c957c7ee9e667eaf634d",
+    "diagnosticOnlyPath": ".github/workflows/setup-dotnet-security-linux-owner.yml",
+    "diagnosticWorkflowBlob": "2a37150f4cb8f605b3e9548a53f2406b8d41ebc0",
+    "run": 42023417095,
+    "job": 127231597179,
+    "jobConclusion": "success",
     "node": "24.19.0",
-    "version": "10.2.5",
-    "repairSha256": "b340bb0502087bb0df18c8ec276ee61f58aedc6c54fcc6b022d174817d7d27a9",
-    "installedPostimages": {
-      "dist/commonjs/index.js": "7e835c0a30f7b4f29f4ad8cf8c3e92b97ab23ed854a7a777f240d6bdf3d19231",
-      "dist/esm/index.js": "37ba4ff4010cda499e890975983b78ebd5f2be2dd8506d938472de4af8e9ed25"
+    "npm": "11.17.0",
+    "jestSuites": 9,
+    "jestTests": 242,
+    "focusedTests": 2,
+    "tamperChecks": 15,
+    "jobLogSha256": "00dfe776f105229ae41f63b7bbed2ed84b0eb1f781233dc0f1c785c4bbb568a7",
+    "artifact": {
+      "id": 13411749303,
+      "bytes": 33194,
+      "sha256": "5eb17cdd8964f58e84f8793c575b9c8d623bac66a32deeda14b5798de3a7ee56",
+      "members": 7,
+      "crcVerified": true,
+      "payloads": {
+        "bundle-sha256.txt": {
+          "bytes": 177,
+          "sha256": "d55afeb366c4fea6314b47a19365fe7158e5a1e0494cb621668a9f347449c6ca"
+        },
+        "dist-actual.txt": {
+          "bytes": 98,
+          "sha256": "0630ff46bfeccc9ed40b1dd2e67cf7514e9a16feb8d3f2448b6baa91149b27f1"
+        },
+        "dist-expected.txt": {
+          "bytes": 98,
+          "sha256": "0630ff46bfeccc9ed40b1dd2e67cf7514e9a16feb8d3f2448b6baa91149b27f1"
+        },
+        "jest.json": {
+          "bytes": 237204,
+          "sha256": "08b8d36f0c39cd491b93c6c017c1e1ff859c7ec34046d73c106c15a598626d51"
+        },
+        "npm-ls.txt": {
+          "bytes": 47198,
+          "sha256": "3abd8c3ab27b2f0163cee14821f5dd81cd799dc9da3402736f9d06b885ed7b46"
+        },
+        "reconstruction.json": {
+          "bytes": 632,
+          "sha256": "ec5d869d9e91334c3f969ab3cb8e6f418f41ab9d76ec3f79939896b098dd9191"
+        },
+        "tamper.json": {
+          "bytes": 1993,
+          "sha256": "d21d916f015786a516a7b504c2829cbf511b0ed134b5976cb549d1467eb9b4d7"
+        }
+      }
+    },
+    "installedMinimatch": {
+      "kind": "installed-minimatch-source-assertion",
+      "sourceCommit": "02dfed81f2103cf05fd7fecac38141f3813dff97",
+      "node": "24.19.0",
+      "version": "10.2.5",
+      "repairSha256": "b340bb0502087bb0df18c8ec276ee61f58aedc6c54fcc6b022d174817d7d27a9",
+      "installedPostimages": {
+        "dist/commonjs/index.js": "7e835c0a30f7b4f29f4ad8cf8c3e92b97ab23ed854a7a777f240d6bdf3d19231",
+        "dist/esm/index.js": "37ba4ff4010cda499e890975983b78ebd5f2be2dd8506d938472de4af8e9ed25"
+      }
+    },
+    "installedDeepmerge": {
+      "kind": "installed-source-assertion",
+      "sourceCommit": "02dfed81f2103cf05fd7fecac38141f3813dff97",
+      "node": "24.19.0",
+      "packageVersion": "4.3.1",
+      "repairSha256": "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7",
+      "installedPostimages": {
+        "index.js": "ba2a6c79e67e10f45a32cfe8f5ea5c5607dc4718be2b37956e9202ea4cdbe1bc",
+        "dist/cjs.js": "c5e9c1f08e7a3b589010133108a3c625806358fa9e1bdaa11f07e9e756f19da0",
+        "dist/umd.js": "b12652d3654f47b08ae43e8b390b66c55987ace6d9a6167c3240744ffa0f28f9"
+      },
+      "actionBuildOrSignedSDKQualified": false
     }
   },
-  "installedDeepmerge": {
-    "kind": "installed-source-assertion",
-    "sourceCommit": "02dfed81f2103cf05fd7fecac38141f3813dff97",
-    "node": "24.19.0",
-    "packageVersion": "4.3.1",
-    "repairSha256": "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7",
-    "installedPostimages": {
-      "index.js": "ba2a6c79e67e10f45a32cfe8f5ea5c5607dc4718be2b37956e9202ea4cdbe1bc",
-      "dist/cjs.js": "c5e9c1f08e7a3b589010133108a3c625806358fa9e1bdaa11f07e9e756f19da0",
-      "dist/umd.js": "b12652d3654f47b08ae43e8b390b66c55987ace6d9a6167c3240744ffa0f28f9"
-    },
-    "actionBuildOrSignedSDKQualified": false
-  }
+  "scope": "Exact source/bundle rebuild and finite controls; no signed SDK or release qualification."
 }
