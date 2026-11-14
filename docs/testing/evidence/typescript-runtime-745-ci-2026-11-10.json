@@ -1,0 +1,233 @@
+{
+  "schemaVersion": "latent.typescript.integration-ci-observation.v1",
+  "status": "failed",
+  "fullTicketQualification": false,
+  "sourceHead": "183f1db349c29744cced7eb07813d829dd529473",
+  "checkout": "52ac8d24e5d294836467c2b90189120c47b0c4af",
+  "run": 42705015452,
+  "signedJob": 129601085022,
+  "artifact": {
+    "id": 13737870869,
+    "sha256": "sha256:783a6bcd15a947ac56eefb926ec215d6f56052007ddaa4201c631d2beee33733",
+    "bytes": 4673635
+  },
+  "selectionDocument": {
+    "sha256": "sha256:036a41d85899d2a4a8797a6a01e90f65bfd3c6d43a1c02e0cdbc075ed693249b",
+    "bytes": 15690
+  },
+  "compilerDocument": {
+    "sha256": "sha256:ede44057df04b22b2db421f913f2072b3c2b2c615c817979c4a57e5cbfc5238b",
+    "bytes": 926886
+  },
+  "engine": {
+    "profile": "spidermonkey-activation-promises-clocks-imports-v1",
+    "coreDigest": "sha256:3d5acbb2def4e7d5e03d8921d0a3f140d74c5fe9e93a61def233ea47ed0dac1a",
+    "coreBytes": 10178995,
+    "runtimeWitDigest": "sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946",
+    "upstream": {
+      "componentizeTree": "4b8d6eb465b5cded6b97c67aaf6fdaa8b62001e2",
+      "starlingCommit": "9dda8ba7fcda2e17c6795d402f0478cf4c1f7f37",
+      "firefoxCommit": "9dab3d6f643e926a340c391ea30968e940390dec",
+      "publicSpiderMonkeyArchiveDigest": "sha256:c57dc83d93dc04198882b44fea49cd3cb01e0b267bf99fae3b058cb158da684b",
+      "publicSDK30ArchiveDigest": "sha256:0507679dff16814b74516cd969a9b16d2ced1347388024bc7966264648c78bfb"
+    },
+    "sourceDerivationDigest": "sha256:742967f88499bc179fe12552d774f27522866e64bc122cb583cc4f0f884835ec",
+    "buildReceiptDigest": "sha256:ffd481a9d0c26b0045baf655a58e9a23f174dc971dec4b88e2b6518ae2232dfd",
+    "compilerSplicerInputDigest": "sha256:22f40d725035889628dee5d3897a4fd1844b4d86381e7d2796d81944a56e77b7",
+    "qualification": "unknown",
+    "apiSupport": "not-evaluated"
+  },
+  "compilerSplicer": {
+    "componentizeTree": "4b8d6eb465b5cded6b97c67aaf6fdaa8b62001e2",
+    "sourceDerivationDigest": "sha256:08b87ae574621a8130e4f995e89c7e7ccd025c1f964e348a29b7683f95986510",
+    "buildReceiptDigest": "sha256:a5e16c059f3f3f826d1ec28a0db9e5b6780e600d5eeba59179f6fc501349722b",
+    "transpileReceiptDigest": "sha256:9450456ff7bc6c018d1bec4b8cad156274d524364a57e51b98f9c64ce6d2292e",
+    "qualification": "unknown",
+    "apiSupport": "not-evaluated"
+  },
+  "component": {
+    "sha256": "sha256:37ac4a4f0bf6619d7de5953b94e0133cc4fd79817381fb5a5dd1bd658488838c",
+    "bytes": 12404252
+  },
+  "native": {
+    "sourceIdentityDigest": "sha256:84bfee7b243bfcb2d4cef16ad83c24b191fa8b0412f7bf8c43b2b3c0465421ec",
+    "qualificationDigest": "sha256:d9a62d0313ebed91ddb4ec411ee1e9e9f37fe9b5aa47e318eb48154abc1be359",
+    "products": {
+      "latent": {
+        "sha256": "sha256:3418dedf263e6098d3391f9fac3bb308daf258748cdcd7728ae1481835d8b8b0",
+        "bytes": 77974456
+      },
+      "latentd": {
+        "sha256": "sha256:13ecc6776e699f1ddabc48b39944879ead7f469d86da88968e0c772326da6202",
+        "bytes": 202834056
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:1fb0c000c96278a331bf0cfcdbde2d1d979bf1d1fde003705f94e8b8425a63a4",
+        "bytes": 14138440
+      },
+      "package": {
+        "sha256": "sha256:3acbcdf2cdad1fee8709ddaf1dd4fb38123010412206d6f580825533f1af1f89",
+        "bytes": 21367416
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:daaf016c6573b87055778f2f39658b7c9141bca0aa146c6b3a8e8039956e3250",
+        "bytes": 27695480
+      }
+    }
+  },
+  "providerBindings": [
+    {
+      "capability": "latent:clock/monotonic@0.1.0",
+      "configurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+      "configurationEpoch": 1,
+      "providerProfile": "activation-monotonic-v1",
+      "tenant": "examples",
+      "operations": [
+        "now-nanos"
+      ]
+    },
+    {
+      "capability": "latent:clock/wall@0.1.0",
+      "configurationDigest": "sha256:612ecae604c724b431f79fcf330e97d7be6fde82165e000c88c3de3d441ba618",
+      "configurationEpoch": 1,
+      "providerProfile": "activation-wall-v1",
+      "tenant": "examples",
+      "operations": [
+        "now-unix-millis"
+      ]
+    },
+    {
+      "capability": "latent:runtime/activation@0.1.0",
+      "configurationDigest": "sha256:fadc73f5ef6d89ff8ba5b586e4af7144f1ffb75005d1998c99e9ad81b8e918f6",
+      "configurationEpoch": 1,
+      "providerProfile": "activation-owned-v1",
+      "tenant": "examples",
+      "operations": [
+        "register",
+        "park",
+        "wake",
+        "settle",
+        "close",
+        "timer-start",
+        "timer-next",
+        "timer-stop"
+      ]
+    },
+    {
+      "capability": "latent:http/streaming@0.3.0",
+      "configurationDigest": "sha256:405405a5cb8652ca3b7a289c84769618b8482143aa9b45938a5993fa9f49e970",
+      "configurationEpoch": 1,
+      "providerProfile": "bounded-streaming-http-identity-v1",
+      "tenant": "examples",
+      "operations": []
+    }
+  ],
+  "configurationIdentity": {
+    "sha256": "sha256:4460a44142355c2c4bdf6f2a844755713b34e9c48334c3215fc8a4e95bfe2e1c",
+    "bytes": 6168
+  },
+  "completedCases": [
+    "entry",
+    "request-ready",
+    "promise-ready",
+    "request-copy-ready",
+    "event-clone-repeated",
+    "event-clone-nested",
+    "abort-clone-normal",
+    "abort-clone-refusal",
+    "abort-clone-fresh",
+    "abort-any-frames",
+    "abort-any-refusal",
+    "abort-any-fresh",
+    "abort-default-reason",
+    "abort-default-fresh",
+    "abort-fanout"
+  ],
+  "failure": {
+    "stage": "abort-fanout-refusal",
+    "exitCode": 4,
+    "code": "guest-trap",
+    "trapKind": "unreachable-code",
+    "postFailureCleanupObservation": false,
+    "physicalRetirementProven": false
+  },
+  "unreached": [
+    "abort-fanout-default-reentry",
+    "abort-fanout-fresh",
+    "published-npm-clients"
+  ],
+  "ci": [
+    {
+      "run": 42705015452,
+      "result": "failure",
+      "passedJobs": [
+        129459424696,
+        129459425462,
+        129484536739,
+        129563532734
+      ],
+      "failedJobs": [
+        129601085022
+      ],
+      "skippedJobs": 6
+    },
+    {
+      "run": 42705015468,
+      "result": "success",
+      "passedJobs": [
+        129459422512,
+        129459422968,
+        129459422732
+      ],
+      "scope": "host-source-controls"
+    },
+    {
+      "run": 42705015475,
+      "result": "failure",
+      "failedJobs": [
+        129526527628,
+        129526527485,
+        129526527547,
+        129618278086
+      ]
+    },
+    {
+      "run": 42705015526,
+      "result": "success",
+      "scope": "developer-tools"
+    },
+    {
+      "run": 42705015499,
+      "result": "success",
+      "scope": "intellij"
+    }
+  ],
+  "followup": {
+    "scope": "qualification-infrastructure-only",
+    "baseSourceHead": "183f1db349c29744cced7eb07813d829dd529473",
+    "commits": [
+      "2b85273e27e585a5f4eac568785173a171da94de",
+      "b6d080f4bd4285b13145593c30868cf65defc9fc"
+    ],
+    "signedExecution": "not-run",
+    "modifiedGuestOrEngine": false,
+    "profile": "debug-all-features-v10",
+    "localControls": {
+      "gccCount": 120,
+      "clangCount": 43,
+      "asanUbsanCount": 43,
+      "fetchAndPrerequisiteCount": 31
+    },
+    "unavailableLocalAot": "owned-accounting-unavailable; Rust compilation and fresh signed execution not run",
+    "expectedNewHeadCI": "pending; evidence ledger commit changes source head"
+  },
+  "remaining": [
+    "signed-await-refusal-trap",
+    "aggregate-byte-accounting",
+    "physical-Store-pool-quarantine-custody",
+    "unchanged-published-transitive-npm",
+    "networking-738-739",
+    "parent-development-conflict",
+    "fresh-final-head-CI"
+  ]
+}

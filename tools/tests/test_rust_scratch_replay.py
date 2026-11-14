@@ -2,6 +2,7 @@
 import copy
 import hashlib
 import json
+import re
 from pathlib import Path
 import tempfile
 import unittest
@@ -14,9 +15,26 @@ from tools.tests.test_sdk_scratch_qualification import ordinary, replace_json
 from tools.tests.test_sdk_scratch_qualification import historical_security_actions
 
 
+def historical_zig_setup(value):
+    """Invert only the source-reviewed XML rebuild for this frozen Rust guard."""
+    if type(value) not in (str, bytes):
+        raise AssertionError('historical-rust-exact-current-zig-required')
+    prefix = 'KirilsTurkins/lsf-setup-zig@'
+    current = prefix + 'adb5ed78414674f693e8fe00982f83df9badcdb3'
+    previous = prefix + 'e064b42fa88ad0859d8b54838b44f672ffd5ea7a'
+    terminal = r'(?=$|[\s\x22\x27])'
+    if type(value) is bytes:
+        prefix, current, previous, terminal = (
+            part.encode('ascii') for part in (prefix, current, previous, terminal))
+    if value.count(prefix) != len(re.findall(re.escape(current) + terminal, value)):
+        raise AssertionError('historical-rust-exact-current-zig-required')
+    return value.replace(current, previous)
+
+
 def historical_checkout(value):
     """Authenticate the current action before the exact historical pin inverse."""
     value = historical_security_actions(value)
+    value = historical_zig_setup(value)
     prefix = 'KirilsTurkins/lsf-checkout@'
     current = prefix + '4d310727149d3abacc52b5dcb0a1c4d18b345d13'
     previous = prefix + 'c3024dfac542bb46ebccc7829ddf1f95e0be8da9'
@@ -28,6 +46,24 @@ def historical_checkout(value):
 
 
 class RustScratchReplay(unittest.TestCase):
+    def test_zig_history_accepts_only_the_reviewed_complete_revision(self):
+        prefix = 'KirilsTurkins/lsf-setup-zig@'
+        current = prefix + 'adb5ed78414674f693e8fe00982f83df9badcdb3'
+        previous = prefix + 'e064b42fa88ad0859d8b54838b44f672ffd5ea7a'
+        for encode in (str, str.encode):
+            for suffix in ('', '\n', '"', "'"):
+                self.assertEqual(historical_zig_setup(encode(current + suffix)),
+                                 encode(previous + suffix))
+            self.assertEqual(historical_zig_setup(encode('no Zig action')), encode('no Zig action'))
+            for value in (previous, prefix + '0' * 40, prefix + 'v2.2.1',
+                          current + '0', current + '/other', current + '\n' + previous):
+                with self.subTest(value=value, encode=encode), self.assertRaisesRegex(
+                        AssertionError, 'historical-rust-exact-current-zig-required'):
+                    historical_zig_setup(encode(value))
+        for value in (None, {}, 1):
+            with self.subTest(value=value), self.assertRaises(AssertionError):
+                historical_zig_setup(value)
+
     def test_current_composed_runner_uses_actual_normal_inventory_identity_shape(self):
         observed = gate.current_inputs('rust')['helpers']['run_rust_capsule_workflow.py']
         if observed != gate.COMPOSED_RUNNER:

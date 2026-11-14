@@ -356,7 +356,7 @@ impl WasmtimeBackend {
     pub fn prepare_development_test(
         &self,
         input: &latent_artifacts::DevelopmentTestArtifact,
-        key: &PreparationKey,
+        key: &'_ PreparationKey,
     ) -> Result<PreparedComponent, PlatformError> {
         let job = self.shared.preparation_observer.begin(&key.release);
         let runtime = self.prepare_runtime_with_integrity(
@@ -481,6 +481,7 @@ impl WasmtimeBackend {
         capability_observer: &mut Option<latent_capabilities::broker::CapabilitySessionObserver>,
         host_result: &mut latent_executor::HostResultDisposition,
         native_stack_observer: &mut Option<Arc<crate::native_stacks::StackContext>>,
+        runtime_retirement: &mut store::RuntimeRetirement,
     ) -> Result<GuestOutcome, PlatformError> {
         let cancellation = ownership.cancellation;
         let setup_started = Instant::now();
@@ -631,14 +632,15 @@ impl WasmtimeBackend {
             &request.activation.target.contract.0,
             &request.activation.target.function.0,
         );
-        let mut store = AccountedStore::new(self.invocation_store(
+        let mut store = self.invocation_store(
             request,
             &stop,
             accounting,
             capabilities,
             ownership.transaction,
             &runtime,
-        )?);
+            runtime_retirement,
+        )?;
         *native_stack_observer = store
             .data()
             .runtime
@@ -713,12 +715,14 @@ impl WasmtimeBackend {
                     .as_ref()
                     .and_then(crate::development_borrow_admission::Observer::snapshot),
             );
+        let lift_proven = codec_capacity_error.is_none();
         let lifecycle_error = store
             .data_mut()
             .runtime
             .as_mut()
             .and_then(|runtime| runtime.finalize().err())
             .or(codec_capacity_error);
+        store.runtime_finalized(lifecycle_error.is_none(), lift_proven);
         let memory_exhausted = call_result
             .as_ref()
             .err()
@@ -838,7 +842,11 @@ impl WasmtimeBackend {
         Ok(function)
     }
 
-    fn invocation_store(
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "Transfer the original retirement evidence at Store construction before fallible setup"
+    )]
+    fn invocation_store<'a>(
         &self,
         request: ExecutionRequest,
         stop: &Arc<StopControl>,
@@ -846,7 +854,8 @@ impl WasmtimeBackend {
         capabilities: Option<latent_capabilities::broker::CapabilitySession>,
         mut transaction: transaction_access::GuestAccess,
         runtime: &PreparedRuntime,
-    ) -> Result<Store<HostState>, PlatformError> {
+        retirement: &'a mut store::RuntimeRetirement,
+    ) -> Result<AccountedStore<'a>, PlatformError> {
         let effective_memory = request
             .budget
             .memory_bytes
@@ -926,7 +935,7 @@ impl WasmtimeBackend {
                 .cpu_fuel;
             host_state.accounting.reset_fuel_watermark(initial_fuel);
         }
-        let mut store = if matches!(
+        let store = if matches!(
             host_state.accounting.budget().profile(),
             latent_core::BudgetProfile::Phase3 | latent_core::BudgetProfile::Phase4
         ) {
@@ -944,6 +953,9 @@ impl WasmtimeBackend {
         } else {
             Store::new(&self.engine, host_state)
         };
+        // Setup failures after Store creation must use the same physical
+        // destruction order and cannot escape without a retirement disposition.
+        let mut store = AccountedStore::new(store, retirement);
         store.set_hostcall_fuel(runtime.surface.hostcall_fuel);
         store.limiter(|state| &mut state.limiter);
         store.set_fuel(initial_fuel).map_err(|error| {

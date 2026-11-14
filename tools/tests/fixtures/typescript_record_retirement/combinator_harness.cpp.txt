@@ -2,7 +2,14 @@
 #include <cstring>
 #include <cstdint>
 #include <cstddef>
-struct JSContext { bool exception = false; };
+#include <memory>
+struct JSFunction;
+// The finite context owns its fake GC heap. RootedFunction below is only a
+// borrowed root, exactly as in the emitted function; it must not delete it.
+struct JSContext {
+ bool exception = false;
+ std::unique_ptr<JSFunction> functions[16];
+};
 struct JSObject {};
 struct PromiseCombinatorDataHolder : JSObject {};
 struct Value { int tag=0; int data=0; bool isObject() const { return tag==1; } };
@@ -22,7 +29,13 @@ static JSContext* activationPromiseContext=nullptr; static Hooks* activationProm
 static int limit=0, admitted=0, created=0, failed=0, allocs=0; static bool fail_native=false; static int owner[16];
 bool before(JSContext* cx,void** out){if(admitted>=limit){cx->exception=true;return false;} *out=&owner[admitted++];return true;}
 void failed_alloc(void*){++failed;} void created_obj(JSContext*,JSObject*,void*){++created;}
-JSFunction* NewNativeFunction(JSContext* cx, Native, int, std::nullptr_t, gc::AllocKind, int){if(fail_native){cx->exception=true;return nullptr;} ++allocs;return new JSFunction;}
+JSFunction* NewNativeFunction(JSContext* cx, Native, int, std::nullptr_t, gc::AllocKind, int){
+ if(fail_native || allocs==16){cx->exception=true;return nullptr;}
+ auto& function=cx->functions[allocs];
+ function=std::make_unique<JSFunction>();
+ ++allocs;
+ return function.get();
+}
 /* LSF_COMBINATOR_TARGET */
 
 int main(int argc,char** argv){
@@ -53,6 +66,9 @@ int main(int argc,char** argv){
   auto* b=NewPromiseCombinatorElementFunction(&cx,0,data,7,prior);
   ok=a&&!b&&cx.exception&&admitted==1&&created==1&&allocs==1&&a->slot[0].data==7;
  } else return 2;
+ // Destroy the fake GC objects on negative controls as well as positive ones.
+ // This is harness cleanup, not a collector or production retirement witness.
+ for(auto& function:cx.functions) function.reset();
  std::printf("{\"case\":\"%s\",\"passed\":%s,\"admitted\":%d,\"created\":%d,\"allocations\":%d,\"engineQualified\":false}\n",argv[1],ok?"true":"false",admitted,created,allocs);
  return ok?0:1;
 }

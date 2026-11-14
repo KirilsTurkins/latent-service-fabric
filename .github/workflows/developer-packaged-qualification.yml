@@ -57,7 +57,7 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Check archive rejection and bounded conductor processes
@@ -80,7 +80,7 @@ jobs:
           LSF_RUNTIME_RUN: ${{ inputs.runtime_run }}
           GH_TOKEN: ${{ github.token }}
         run: python3 -B tools/prepare_dev_packaged_probe.py
-      - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: packaged-qualification-support
           path: ${{ runner.temp }}/packaged-support/
@@ -94,11 +94,11 @@ jobs:
     runs-on: windows-2025
     timeout-minutes: 150
     steps:
-      - uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389 # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: packaged-qualification-support
           path: ${{ runner.temp }}/packaged-support
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Download only selected exact-source candidate inputs
@@ -156,7 +156,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Packaged recovery failed; retain the original operation intent.' }
       - name: Retain bounded public success or failure receipts
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: packaged-windows-observation-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -173,7 +173,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 160
     steps:
-      - uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389 # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: packaged-qualification-support
           path: ${{ runner.temp }}/packaged-support
@@ -215,7 +215,7 @@ jobs:
         run: |
           cd "$RUNNER_TEMP/packaged-support"
           python3 -I -B dev_packaged_linux_host.py --inputs inputs.json --output "$RUNNER_TEMP/packaged-linux"
-      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a # v7.1.0 + upstream changes + LSF security fixes
         with:
           node-version: 24.19.0
       - name: Execute the generated terminal devcontainer against a separate explicit SSH peer
@@ -225,7 +225,7 @@ jobs:
             --linux-output "$RUNNER_TEMP/packaged-linux" --output "$RUNNER_TEMP/packaged-devcontainer"
       - name: Retain bounded public Linux success or failure receipts
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: packaged-linux-observation-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -247,10 +247,10 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
-      - uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389 # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: packaged-qualification-support
           path: ${{ runner.temp }}/packaged-support
@@ -309,7 +309,7 @@ jobs:
             --output "$RUNNER_TEMP/packaged-java-composition" "${diagnostic_args[@]}"
       - name: Preserve bounded original success or failure evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: packaged-java-composition-${{ github.run_id }}-${{ github.run_attempt }}
           path: |

@@ -32,7 +32,7 @@ socket2 = "=0.6.5"
 tokio = { workspace = true, features = ["net", "io-util"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-rustix = { version = "=1.1.5", features = ["event", "fs", "time"] }
+rustix = { version = "=1.1.6", features = ["event", "fs", "time"] }
 latent-stream-factory-native = { path = "../latent-stream-factory-native" }
 
 [dev-dependencies]
