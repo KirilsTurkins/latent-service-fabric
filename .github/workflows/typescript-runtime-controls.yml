@@ -16,6 +16,7 @@ on:
       - 'tools/typescript_guest/**'
       - 'sdk/typescript-guest/activation/**'
       - 'tools/tests/test_typescript_event_ownership.py'
+      - 'tools/tests/test_typescript_dom_exception_ownership.py'
       - 'tools/tests/test_typescript_record_retirement.py'
       - 'tools/tests/test_typescript_abort_any_ownership.py'
       - 'tools/tests/fixtures/typescript_*.cpp'
@@ -69,6 +70,7 @@ jobs:
         run: |
           python3 -B -m unittest \
             tools.tests.test_typescript_event_ownership \
+            tools.tests.test_typescript_dom_exception_ownership \
             tools.tests.test_typescript_record_retirement \
             tools.tests.test_typescript_abort_any_ownership \
             tools.tests.test_typescript_qualification_prerequisites \

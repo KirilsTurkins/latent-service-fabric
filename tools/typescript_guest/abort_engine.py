@@ -148,7 +148,9 @@ static JSObject *create_abort_exception(JSContext *cx, const char *name) {
   using Exception = dom_exception::DOMException;
   if (JS_IsExceptionPending(cx)) return nullptr;
   RootedString text(cx, JS_NewStringCopyZ(cx, name));
-  if (!text) return nullptr;
+  // A rooted string result is not permission to look up a mutable constructor
+  // with a pending exception. Preserve the failure before any possible reentry.
+  if (!text || JS_IsExceptionPending(cx)) return nullptr;
   JS::RootedValueArray<2> args(cx);
   args[0].setString(text);
   args[1].setString(text);
@@ -330,7 +332,7 @@ bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason) {
 
   // Stage/deduplicate sources in the result's already admitted native set.
   // Publishing backlinks here would retain an unreachable partial result after
-  // an allocation failure (the pinned weak sets conservatively trace strongly).
+  // an allocation failure. Weak sweep is not a transaction rollback.
   // No second temporary heap vector or additional owner is needed.
   auto *our_signals = source_signals(self);
   for (size_t i = 0; i < signals.length(); ++i) {
