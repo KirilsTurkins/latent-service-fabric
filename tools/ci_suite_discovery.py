@@ -108,10 +108,16 @@ def _libtest_outcomes(lines: list[str], available: set[str] | frozenset[str],
             match = re.fullmatch(r"test (.+) \.\.\. (ok|ignored|FAILED)(?:, .*)?", line)
             if not match:
                 errors.append("malformed-outcome")
-            elif match.group(1) not in available:
-                errors.append("unknown-outcome")
             else:
-                outcomes[match.group(2)].append(match.group(1))
+                # libtest appends this presentation suffix to successful
+                # #[should_panic] cases, while --list reports the canonical
+                # test name without it. Compare canonical identities so the
+                # execution receipt remains bound to the exact discovered case.
+                name = match.group(1).removesuffix(" - should panic")
+                if name not in available:
+                    errors.append("unknown-outcome")
+                else:
+                    outcomes[match.group(2)].append(name)
     active = set(available) - set(ignored)
     passed, skipped, failed = outcomes["ok"], outcomes["ignored"], outcomes["FAILED"]
     counts = Counter(passed + skipped)
