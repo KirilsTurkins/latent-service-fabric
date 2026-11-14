@@ -145,7 +145,9 @@ fn consuming_handoffs_and_borrowed_observations_have_distinct_ownership() {
         v1.types["connection"],
         true,
     );
-    assert!(result(&resolve, &v2.functions["cancel-connect"]).0.is_none());
+    assert!(result(&resolve, &v2.functions["cancel-connect"])
+        .0
+        .is_none());
     for name in ["try-read", "try-write"] {
         handle(
             &resolve,
