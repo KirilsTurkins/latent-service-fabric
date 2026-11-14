@@ -12,8 +12,8 @@ const root = path.resolve(__dirname, '..')
 const sha256 = bytes => crypto.createHash('sha256').update(bytes).digest('hex')
 const sha512 = bytes => `sha512-${crypto.createHash('sha512').update(bytes).digest('base64')}`
 const pins = {
-  'package.json': '1f1ba01a30c2f8aa80e60493e6e154bb59e4ff94b1010371447816f609eac771',
-  'package-lock.json': '88d39a5c99be6e0ba2af6cd8ca6535acd4ef645ee297c51735c64078246513fa'
+  'package.json': '946fe222a91b4d81ecd2e1f6df1004da9db8d9bb98c64b0bf501b4a8c1d16bf0',
+  'package-lock.json': 'f7e5a943e5e67a9e814c42e556d9fe229cb0c6d2f025c120d1604a3b6c261da6'
 }
 const profiles = [
   {

@@ -3,15 +3,16 @@ from __future__ import annotations
 
 from pathlib import Path
 from tools import security_setup_go
+from tools.security_action_rebuild import verify_rebuild
 from tools.security_common import decode_json, digest, read_file, require
 
-REFERENCE = "KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5"
+REFERENCE = 'KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389'
 PREFIX = ".github/security/actions/download-artifact/"
 DEEP_PROFILE = "download-artifact-deepmerge-source-v1"
 PROFILE = "download-artifact-glob-minimatch-source-v1"
 DEEP_VERIFIER = ".lsf-source/verify-installed-deepmerge.mjs"
-TREE = "ab1166196538fbdab37cd72ca51557320ae95d35"
-RUN = 42113357120
+TREE = "c364969955b05974728ffd6cd02db6d0f6b672d1"
+RUN = 43523093794
 GLOB_ADVISORIES = [{"id": "GHSA-3g3m-2fjr-6pw4", "modified": "2026-10-30T23:15:04.503965Z"}]
 MINI_ADVISORIES = [{"id": "GHSA-g3hv-75wg-m249", "modified": "2026-11-04T17:01:25.850114Z"}]
 
@@ -21,20 +22,20 @@ ACTION_INPUTS = {'action.yml': ('.github/security/actions/download-artifact/acti
                 '8b8c65029ccad20750a29fecb438eca5a607fc57'),
  'package.json': ('.github/security/actions/download-artifact/package.json',
                   3068,
-                  'e78c659838e884b95965d6f4c611741cdbda89cdc14ba69820a06ca4eab12a9f',
-                  'b73a87af8b508ef22313630289a2cf40040772a1'),
+                  '78b6410cf1b683b8e427ba55d4ec652e294f37057829f1f3ee43177395637053',
+                  'f561b830c08e2b58fb892466e3e3d722e10120b9'),
  'package-lock.json': ('.github/security/actions/download-artifact/package-lock.json',
                        346889,
-                       '8253ed2e30ad4f60d1cad063f5971b0c4c8a2ff5ff8dbd9a5dd4cf31d004a377',
-                       'c899f385007adaf40972971ded30af1488c6a678'),
+                       '9fc87ce6c1e741a1745b5f1d633cc7f5d9cf44e598f99beed75a542a273b1621',
+                       '8ad83c0a98219ffd2f8778aa4bfc127b6b0b83a8'),
  '.lsf-source/verify-installed-deepmerge.mjs': ('.github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot',
                                                 2381,
                                                 '55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7',
                                                 '99d75a2ea3895eb8acc8018984ca9826e4edff51'),
  '.lsf-source/verify-download-sources.mjs': ('.github/security/actions/download-artifact/installed-verifier.mjs.snapshot',
                                              3536,
-                                             '07f2ee09c6c2fd1f9ec66c86002f97a2fd1cabe4584b54a9d9e7e4c294b78442',
-                                             'cba7c91e618d7c25fa6e396042df7f4740cbdcaa'),
+                                             'fe16f71556c969a8c078d2a2d0f73bf9d809fa363827f8e33d9862df8e09b10d',
+                                             '69c18a026f5161f086648fb2b364c6be176c6ec5'),
  '.lsf-source/download-source.test.mjs': ('.github/security/actions/download-artifact/source.test.mjs.snapshot',
                                           3742,
                                           '082f28d2c9dbb70dfe638c7ef1383a961e6a32ce6c11e0116141ed20006803a0',
@@ -45,9 +46,9 @@ MATERIAL = {'download-source-files.json': ('.github/security/actions/download-ar
                                 '8ecad9f742c58b6fb49ea17c0d5dcc90e5be3b9d7a6f3c5eaa6349f5e2c89f66',
                                 'ee65ae6fcd990cb3362551870f18dca42f3bad65'),
  'fork-build.json': ('.github/security/actions/download-artifact-source/fork-build.json',
-                     1320,
-                     'd36f53916e56cdb9067fbadc2ae8737226c7b8e5b6b5925fdad3610b5845c95f',
-                     '91c2ffcc607a76a834399a0d109e1f0fa5916ac3'),
+                     5305,
+                     'fedca06d96775ccf08d4c7b2cf2188934518fe71c1c6dd2b8e3aed389080aa3b',
+                     '77329c63ad3387b30b6e2df1ef1b86cd2b9ca0af'),
  'glob-10.5.0-lsf-abort-v1.repair.json': ('.github/security/actions/download-artifact-source/glob-10.5.0-lsf-abort-v1.repair.json',
                                           1470,
                                           'beb9c5bed151b7a67f3b7b384e04ae0c01ca52e093795c042b9b3a3542a54e0f',
@@ -85,9 +86,9 @@ MATERIAL = {'download-source-files.json': ('.github/security/actions/download-ar
                                   '7d28c9a3ef17ce542093c78ec191481503e2711d29db1bd1522062303ab40478',
                                   '3037809c7ece9cb78a316dc322ba4dbeb2df52b6')}
 
-RUNTIME = {'dist/index.js': {'bytes': 4683804,
-                   'sha256': 'caac8449a3cfb152b39fc3d21c1089a134a235e9ed9fcfd0ed2b5530e9cfc2ab',
-                   'gitBlob': 'bab2149e86267e2bed9b887d9a9322150f61861c'}}
+RUNTIME = {'dist/index.js': {'bytes': 4688595,
+                   'sha256': '217c23b5c1de6f12d7a0185448f6146b41d3994356549851e903bc1e844d22b1',
+                   'gitBlob': 'bc3ea4f74d325418265cd3d51a403a81f4e8ed5e'}}
 
 PACKAGES = [{'name': 'glob',
   'version': '10.5.0',
@@ -209,22 +210,7 @@ def source_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> dict:
                   and str(row.get("version", "")).startswith(major)}
         require(actual == expected_paths, "unreviewed-download-action-shadow-source")
     build = decode_json(material["fork-build.json"])
-    require(build["schema"] == 1 and build["repository"] == "KirilsTurkins/lsf-download-artifact"
-            and build["publishedRevision"] == REFERENCE.split("@")[1] and build["publishedTree"] == TREE
-            and build["sourceHead"] == "39d52ac2a2c6731c2d836e923b5221ebd0d4d8e9"
-            and build["diagnosticHead"] == "b1b184f23784f8b32b6d454764a51b1b87e00e06"
-            and build["diagnosticTree"] == "4afa10c0827dde75934dd82621dc44bcf54a192a"
-            and build["diagnosticOnlyPath"] == ".github/workflows/lsf-download-security-owner.yml"
-            and build["run"] == RUN and build["job"] == 127546428787 and build["jobConclusion"] == "success"
-            and build["node"] == "24.19.0" and build["npm"] == "11.17.0"
-            and build["jestSuites"] == 1 and build["jestTests"] == 21 and build["sourceControls"] == 3
-            and build["rebuiltBundleIdentical"] is True and build["artifactDownloadMatched"] is True
-            and build["artifact"] == {"id": 13455382700, "bytes": 1704956,
-                "sha256": "9429625c4ca047ce699d6eebefd4d6b7145ca80e5e010a66c77c68872bb33b84",
-                "members": 25, "checkedFiles": 24, "crcVerified": True}
-            and build["markerArtifact"] == {"id": 13454928092, "bytes": 168,
-                "sha256": "41bb45641ad6ea12b6a1f200744c1ce0f815497558f6fdd61cdcf1cfef002fc6", "crcVerified": True}
-            and build["bundles"] == RUNTIME, "download-action-build-evidence-drift")
+    verify_rebuild(repo, build, REFERENCE, RUNTIME)
     return {"policy": {"advisories": security_setup_go.DEEP_ADVISORIES}, "material": deep,
             "reference": REFERENCE, "checkout": False, "download_artifact": True, "repaired": material}
 

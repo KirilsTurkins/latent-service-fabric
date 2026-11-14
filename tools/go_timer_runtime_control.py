@@ -43,7 +43,7 @@ def run(go, vendor, cache, output, source_commit):
         raise ValueError('go-timer-control-source-inputs-dirty')
     go, vendor, cache, output = map(lambda path: path.resolve(), (go, vendor, cache, output))
     goroot = go.parent.parent
-    if (goroot / 'VERSION').read_text(encoding='utf-8').splitlines()[0] != 'go1.27.3':
+    if (goroot / 'VERSION').read_text(encoding='utf-8').splitlines()[0] != 'go1.27.4':
         raise ValueError('go-timer-control-compiler-version-drift')
     runtime.checked_sources(goroot, runtime.PREIMAGES)
     if not cache.is_dir():

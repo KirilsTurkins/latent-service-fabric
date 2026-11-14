@@ -173,13 +173,13 @@ class JavaSpiManualWorkflow(unittest.TestCase):
         self.assertTrue(java_steps)
         for step in java_steps:
             self.assertEqual(step['uses'], 'actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6')
-            step['uses'] = 'KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c'
+            step['uses'] = 'KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2'
         action_migrations = {
             'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1': 'KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13',
-            'actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97': 'KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8',
-            'actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333': 'KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5',
-            'actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9': 'KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f',
-            'Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6': 'KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e',
+            'actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97': 'KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee',
+            'actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333': 'KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389',
+            'actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9': 'KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc',
+            'Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6': 'KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334',
             'bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613': 'KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce',
         }
         migrated = set()

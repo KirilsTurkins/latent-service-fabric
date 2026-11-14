@@ -80,7 +80,7 @@ def qualify(output: Path, compiler: Path, environment: dict, old: bytes,
     for name, source in (('endpoint-old', old), ('endpoint-current', current)):
         module = output / name
         module.mkdir()
-        (module / 'go.mod').write_bytes(b'module example.invalid/endpoint\n\ngo 1.27.3\n')
+        (module / 'go.mod').write_bytes(b'module example.invalid/endpoint\n\ngo 1.27.4\n')
         (module / 'production.go').write_bytes(projected(source))
         (module / 'endpoint_test.go').write_bytes(tests)
         args = [str(compiler), 'test', '-json', '-timeout=10s', '-count=1']

@@ -18,6 +18,7 @@ from time import monotonic
 
 from tools import security_dotnet_minimatch as dotnet_sources
 from tools import security_setup_go, security_upload_artifact, security_rust_cache, security_download_artifact, security_deploy_pages, security_attest
+from tools.security_action_rebuild import verify_rebuild
 from tools.security_common import POLICY, decode_json, digest, read_file, require
 
 
@@ -219,26 +220,24 @@ BCA_MATERIAL = {
         "c1a5e4e6e8802d173f2e2badee53d489bc4569e1d6766c36828ed49e8dfa374f", "180edbd64e2609ac8d30c69b58987097398d77b1"),
 }
 CACHE_PREFIX = ".github/security/actions/cache/"
-CACHE_RESTORE_REFERENCE = "KirilsTurkins/lsf-cache/restore@ec176dce9471270c8a9be1289040c0a8fd6aa708"
-CACHE_SAVE_REFERENCE = "KirilsTurkins/lsf-cache/save@ec176dce9471270c8a9be1289040c0a8fd6aa708"
-CACHE_SOURCE_SHA256 = {
-    "package.json": "8e8b46d08a417276c9c979e66f78f1de5b4e0af637c9e60128c738a65b8b64f8",
-    "package-lock.json": "e979985c5b09e89732e1c75abdf62c6f166d8238e4aed768c2fefcf7c44d7131",
-    ACTION_VERIFIER_SOURCE: "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
-    "restore/action.yml": "bb552a94cec165255080b7e13fe3d2051c6c79e321e99435b5859dc7de5e9057",
-    "save/action.yml": "5da400e1a7551cee617339fd1a5281483d71e6c56d86dd117fbd354f047308ec",
-}
+CACHE_RESTORE_REFERENCE = 'KirilsTurkins/lsf-cache/restore@2571c499f8aa6b4db4b4b5632bea291d6be58dc8'
+CACHE_SAVE_REFERENCE = 'KirilsTurkins/lsf-cache/save@2571c499f8aa6b4db4b4b5632bea291d6be58dc8'
+CACHE_SOURCE_SHA256 = {'package.json': '72afb8c05073d17066e5a37c6957fb7b88d763941f618cf33a25b74089de0b20',
+ 'package-lock.json': '5622f9dcf49092770b3d69f247629c83784abb1ab79b086c1aba33aff3364435',
+ '.lsf-source/verify-installed-deepmerge.mjs': '55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7',
+ 'restore/action.yml': 'bb552a94cec165255080b7e13fe3d2051c6c79e321e99435b5859dc7de5e9057',
+ 'save/action.yml': '5da400e1a7551cee617339fd1a5281483d71e6c56d86dd117fbd354f047308ec'}
 ACTION_REFERENCES = {
     CACHE_PREFIX: CACHE_RESTORE_REFERENCE,
     dotnet_sources.PREFIX: dotnet_sources.REFERENCE,
     ".github/security/actions/setup-java/":
-        "KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c",
+        "KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2",
     ".github/security/actions/setup-node/":
-        "KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6",
+        "KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a",
     ".github/security/actions/setup-python/":
-        "KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8",
+        "KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee",
     ".github/security/actions/upload-artifact/":
-        "KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f",
+        "KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc",
 }
 
 
@@ -270,18 +269,18 @@ MINIMATCH_ASSETS = {'upstream': {'snapshot': '.github/security/actions/setup-pyt
               'sha256': '4fcbcba0f46fed80b09c6cdb1a2a54eeff2e0a3690b4d0a5b566762169f1f826',
               'gitBlob': 'ab204a63dd0ddf065b00ae7c3ab0531b35d5d300'},
  'build': {'snapshot': '.github/security/actions/setup-python-minimatch/fork-build.json',
-           'source': 'https://github.com/KirilsTurkins/lsf-setup-python/actions/runs/42010605694',
-           'bytes': 3036,
-           'sha256': '0031441630253140eed878e0be984ab6cfa5dfb6aecea60af6d04f82f35daefb',
-           'gitBlob': 'bd169fe4cfba82a9181e7719c6f539cff86fd63f'}}
+           'source': 'https://github.com/KirilsTurkins/lsf-setup-python/actions/runs/43523184991',
+           'bytes': 6922,
+           'sha256': '6a9b0fac7fc724bc2650055178270a51cf5146b8ab21742b0a9ae920db753821',
+           'gitBlob': '762388a6154538be10910c2bc70189636d0e5c77'}}
 MINIMATCH_RUNTIME = {'runtime_setup': {'source': 'dist/setup/index.js',
-                   'bytes': 3675836,
-                   'sha256': 'e3bbbcbb7ab676335857f03b50e89f8e7bf5423f594a4b2212b966dde55fe8b7',
-                   'gitBlob': 'aef6783f257e77b06e518b7c6e5a9b2384c62cd2'},
+                   'bytes': 3680627,
+                   'sha256': '8a4dbd28e56c4bab5e64273bb90c841d6f58ddaf7f0a3e16c790cb3245144bcc',
+                   'gitBlob': '3bb61501b2f4547d8c704dd21552803eff3abd2f'},
  'runtime_cache': {'source': 'dist/cache-save/index.js',
-                   'bytes': 3581654,
-                   'sha256': '06f010acee2ff7034243f3dbdac1907923d004f370597501e762b452af26c0f0',
-                   'gitBlob': '2c6014773ffb3c51eb8307d36641ce6691c2c4e8'}}
+                   'bytes': 3586445,
+                   'sha256': 'ca6175f0bb0ca81bdeb41ffb4fc69a08929ff6d85cd745f3ec62592f3a07b6b8',
+                   'gitBlob': '8131835e309b500432423d77f0f7d28f8e8e9b00'}}
 MINIMATCH_RUNTIME_LIMIT = 8 * 1024 * 1024
 
 
@@ -316,22 +315,22 @@ JAVA_MINIMATCH_ASSETS = {'upstream': {'snapshot': '.github/security/actions/setu
            'sha256': '4fd2675946ecfa56ccf5a3c59e76ef50a5dc7d84f0a37fefd47e0037c50a4492',
            'gitBlob': '11a4cf916b01dfa3af9af699aa7ec641b39505d3'},
  'build': {'snapshot': '.github/security/actions/setup-java-minimatch/fork-build.json',
-           'source': 'https://github.com/KirilsTurkins/lsf-setup-java/actions/runs/42018824336',
-           'bytes': 4502,
-           'sha256': '5ef60e180638361b91cccb232626b72cd464ba7b8273853a549337c4ceada659',
-           'gitBlob': '3664d7808bde355ab0d81def683c16827bb3bab1'}}
+           'source': 'https://github.com/KirilsTurkins/lsf-setup-java/actions/runs/43523148275',
+           'bytes': 9095,
+           'sha256': '0f34de4cb413309f63e8c118e73b779ddb120c015e4eb9720112dd272f437c89',
+           'gitBlob': 'd6ba013a9c60673a91b6e6ec7eeecb61eba5cc1f'}}
 JAVA_MINIMATCH_RUNTIME = {'runtime_setup': {'source': 'dist/setup/index.js',
                    'bytes': 1251705,
                    'sha256': 'ff49684899199004e6e3380d810250c997a7cb048e3745da83fda98f453e9676',
                    'gitBlob': '30825bde03691bc19d0bedf4940502dd88b9eb3c'},
  'runtime_cleanup': {'source': 'dist/cleanup/index.js',
                      'bytes': 1218262,
-                     'sha256': 'a80e9a57c660b86e26f33ff4eb9d82dd21fc1b1e9e86f56356a7c81940d74199',
-                     'gitBlob': 'ca82b3e3ea8bbb19bffdf17d561d21ebea122737'},
+                     'sha256': 'b730e0928718991f1e912a914ac2c0916a529e50ab40e1b6fd4f4066d83331c0',
+                     'gitBlob': 'f99bedac337101e7b873f29ec743820aa2dc77cb'},
  'runtime_setup_chunk': {'source': 'dist/setup/971.index.js',
-                         'bytes': 2110720,
-                         'sha256': '9e2349fe3b6710fe498e054cee0fe370c0f890b6797075eb418c78a2ec35ce66',
-                         'gitBlob': '6a9586ecbde45df1f4eedae5fab7cec16a644bb4'},
+                         'bytes': 2111333,
+                         'sha256': 'd4423f5c84f7e51f339d4fb2431f781ff6a868093f73ab2d79fdbb3d9c91be8c',
+                         'gitBlob': 'b35af4903d3d85298a9cb6cb66564e22910b08be'},
  'runtime_cleanup_chunk': {'source': 'dist/cleanup/767.index.js',
                            'bytes': 2337528,
                            'sha256': '491ce8398cfdd5123602e3765a3f70e7ce559c3f66d831cad7eba78e3ab42f8f',
@@ -368,18 +367,18 @@ NODE_MINIMATCH_ASSETS = {'upstream': {'snapshot': '.github/security/actions/setu
            'sha256': '4fd2675946ecfa56ccf5a3c59e76ef50a5dc7d84f0a37fefd47e0037c50a4492',
            'gitBlob': '11a4cf916b01dfa3af9af699aa7ec641b39505d3'},
  'build': {'snapshot': '.github/security/actions/setup-node-minimatch/fork-build.json',
-           'source': 'https://github.com/KirilsTurkins/lsf-setup-node/actions/runs/42024002011',
-           'bytes': 4192,
-           'sha256': 'd7ee2d1bbac34657eaff166f41f73241d2f8949ad9d4b66f81dbec9ca2b141a6',
-           'gitBlob': '4671842ffc93cb16243f9524b9c42e928d5f5ac6'}}
+           'source': 'https://github.com/KirilsTurkins/lsf-setup-node/actions/runs/43520897619',
+           'bytes': 8352,
+           'sha256': '913ae02ff43d2ad7cc229168d8021dd46ea71aae60c9d3e668413a5bbd8e3776',
+           'gitBlob': 'd8c9b65ee2817438f5248771f4c40446d5008bee'}}
 NODE_MINIMATCH_RUNTIME = {'runtime_setup': {'source': 'dist/setup/index.js',
-                   'bytes': 3555939,
-                   'sha256': '18ead6d4a193f3fc6fce80fdd43e2c9bf520f3d55e3ec42079fe95f1933a69c5',
-                   'gitBlob': '6735142fc160300df2fb85d4bc933fa0a4365804'},
+                   'bytes': 3629453,
+                   'sha256': '87f88f5625fce89ad4a45bcd193abecc08db21c47a9fad7e642489a437b99dea',
+                   'gitBlob': '9a9baa5effd8e39efcdab6cb85d596bd2fc2ff2b'},
  'runtime_cache': {'source': 'dist/cache-save/index.js',
-                   'bytes': 3287509,
-                   'sha256': '33f37c286e9765085b6780714206fb1591676cf388b0db9ea9d36670df47aab5',
-                   'gitBlob': '68100fddb4b9fc91fe6ba7f1f46e6f29a1dd4bf8'}}
+                   'bytes': 3361023,
+                   'sha256': '119a805504ff25e557f63b5e340d4743d587dd52588d86fe7c98467908f45717',
+                   'gitBlob': 'bc0fd89d0e24d5e057986098dfaf2ba88b370186'}}
 
 def source_identity(raw: bytes) -> dict:
     return {"bytes": len(raw), "sha256": digest(raw),
@@ -879,7 +878,7 @@ def verify_action_sources(repo: Path, packages: list, configuration: dict, fetch
             receipt.update({"built_tree": build["builtTree"], "build_run": build["run"]})
         elif selected.get("setup_go"):
             receipt.update({"verifier_sha256": security_setup_go.ACTION_INPUTS[security_setup_go.DEEP_VERIFIER][2],
-                            "built_tree": "586d487e144d8cf393893459b6678118d0b5dc92", "build_run": 42024368583})
+                            "built_tree": "71e010c88065728c2175f28330d8ea5aab035e60", "build_run": 43523168939})
         elif selected.get("upload_artifact"):
             receipt.update({"verifier_sha256": security_upload_artifact.ACTION_INPUTS[security_upload_artifact.DEEP_VERIFIER][2],
                             "built_tree": security_upload_artifact.TREE, "build_run": security_upload_artifact.RUN})
@@ -974,38 +973,7 @@ def verify_minimatch_action_sources(repo: Path, packages: list, configuration: d
                 and integrity(material["archive"]) == MINIMATCH_DERIVED,
                 "minimatch-action-reconstruction-drift")
         build = decode_json(material["build"])
-        artifact = build["artifact"]
-        installed = build["installed"]
-        require(build["schema"] == 1 and build["repository"] == "KirilsTurkins/lsf-setup-python"
-                and build["publishedRevision"] == selected["reference"].split("@")[1]
-                and build["publishedTree"] == build["sourceTree"] == "bb7f6e0323dbc034b8d11ba691e3c4f3ac76355e"
-                and build["sourceHead"] == "cc883652b3ad6f47c0fe0139ef4b0981f50ad59d"
-                and build["diagnosticHead"] == installed["sourceCommit"] == "04f6cab165742580f50af5336587b8ddf6ccc063"
-                and build["diagnosticTree"] == "5d6209aaa9b89357d4cc7233e46a94d5a1308e51"
-                and build["diagnosticOnlyPath"] == ".github/workflows/lsf-setup-python-runtime-owner.yml"
-                and build["run"] == 42010605694 and build["job"] == 127188354270
-                and build["jobConclusion"] == "success" and build["node"] == installed["node"] == "24.19.0"
-                and build["npm"] == "11.17.0" and build["jestSuites"] == 11 and build["jestTests"] == 249
-                and build["focusedTests"] == 2
-                and artifact["id"] == 13406518961 and artifact["bytes"] == 1817044
-                and artifact["sha256"] == "62e0ab9584d507a4217d9d10ce03d3054babd1171c6b6abc0b1ef4fa7e7ee85d"
-                and artifact["members"] == 11 and artifact["crcVerified"] is True
-                and installed["version"] == "10.2.5" and installed["repairSha256"] == digest(material["repair"])
-                and installed["installedPostimages"] == {row["path"]: row["afterSha256"] for row in repair["files"]},
-                "minimatch-action-build-evidence-drift")
-        expected_payloads = {
-            "package.json": source_identity(read_file(repo, entry["path"])),
-            "package-lock.json": source_identity(read_file(repo, entry["lock"])),
-            **{MINIMATCH_ASSETS[name]["source"]: MINIMATCH_ASSETS[name]
-               for name in ("upstream", "archive", "repair", "verifier")},
-            **{row["source"]: row for row in MINIMATCH_RUNTIME.values()},
-            ".lsf-source/minimatch-bounds.test.mjs": {"bytes": 2854, "sha256": "f65c9af8d0d6b2abfd728d803e223396e746850f564003e93b223c4f084f987b"},
-            "installed-minimatch.json": {"bytes": 427, "sha256": "8ac9a2cf9039bfbc29c2f74d85271721259e062e208df9bdc52f9715d3c70337"},
-        }
-        require(set(artifact["payloads"]) == set(expected_payloads)
-                and all(artifact["payloads"][path] == {key: identity[key] for key in ("bytes", "sha256")}
-                        for path, identity in expected_payloads.items()),
-                "minimatch-action-built-input-drift")
+        verify_rebuild(repo, build, selected["reference"], MINIMATCH_RUNTIME)
         receipts.append({"name": pin["name"], "version": pin["version"], "profile": MINIMATCH_PROFILE,
                          "upstream_integrity": MINIMATCH_UPSTREAM, "derived_integrity": MINIMATCH_DERIVED,
                          "repair_sha256": digest(material["repair"]), "files": len(repair["files"]),
@@ -1052,44 +1020,7 @@ def verify_java_minimatch_action_sources(repo: Path, packages: list, configurati
                 and integrity(material["archive"]) == JAVA_MINIMATCH_DERIVED,
                 "java-minimatch-action-reconstruction-drift")
         build = decode_json(material["build"])
-        artifact, installed = build["artifact"], build["installed"]
-        require(build["schema"] == 1 and build["repository"] == "KirilsTurkins/lsf-setup-java"
-                and build["publishedRevision"] == selected["reference"].split("@")[1]
-                and build["publishedTree"] == build["sourceTree"] == "da1077784074c8a0e949947c4607452c36574dc1"
-                and build["sourceHead"] == "10dfad9fb7484f2f1b39c5b50ffa86f9e56d8f63"
-                and build["diagnosticHead"] == installed["sourceCommit"] == "eaa32fe679a4d1ab0dbee73cf502e7890ca8a3df"
-                and build["diagnosticTree"] == "993c8fb074c123fb8eac870ba992bf2783ba70c2"
-                and build["diagnosticOnlyPath"] == ".github/workflows/lsf-setup-java-security-owner.yml"
-                and build["run"] == 42018824336 and build["job"] == 127216070011
-                and build["jobConclusion"] == "success" and build["node"] == installed["node"] == "24.19.0"
-                and build["npm"] == "11.17.0" and build["jestSuites"] == 45 and build["jestTests"] == 1596
-                and build["focusedTests"] == 2
-                and artifact["id"] == 13411055962 and artifact["bytes"] == 1784025
-                and artifact["sha256"] == "b9fc7c65de7bac2b146e09f00f3ef8f9b5e42b4eee9e3f2d4d588a76d3cdce42"
-                and artifact["members"] == 25 and artifact["crcVerified"] is True
-                and installed["kind"] == "installed-minimatch-source-assertion"
-                and installed["version"] == "10.2.6" and installed["repairSha256"] == digest(material["repair"])
-                and installed["installedPostimages"] == {row["path"]: row["afterSha256"] for row in repair["files"]},
-                "java-minimatch-action-build-evidence-drift")
-        deep_policy = deepmerge["policy"]
-        deep_assets = [deep_policy["assets"][name] for name in ("archive", "repair", "declaration")]
-        deep_assets.append(deep_policy["additional_actions"]["verifier"])
-        expected_payloads = {
-            "action.yml": source_identity(read_file(repo, JAVA_MINIMATCH_PREFIX + "action.yml.snapshot")),
-            "package.json": source_identity(read_file(repo, entry["path"])),
-            "package-lock.json": source_identity(read_file(repo, entry["lock"])),
-            **{JAVA_MINIMATCH_ASSETS[name]["source"]: JAVA_MINIMATCH_ASSETS[name]
-               for name in ("upstream", "archive", "repair", "verifier", "tests")},
-            **{row["source"]: row for row in JAVA_MINIMATCH_RUNTIME.values()},
-            **{row["source"]: row for row in deep_assets},
-            "installed-minimatch.json": {"bytes": 427, "sha256": "54ac8017be7e2e70e951d5da094afa1125e6fafa4be2fa3404c48784d5281266"},
-            "installed-deepmerge.json": {"bytes": 524, "sha256": "b4728f29efd94c5698267321d3d838744ea3e47a7f433a1a7b92770ffb1aa362"},
-            "source-identities.txt": {"bytes": 123, "sha256": "11fce0fce872b0f3e3e7fd3b4f03c403133d48c4c669e62fc54cf87badd23035"},
-        }
-        require(set(artifact["payloads"]) == set(expected_payloads)
-                and all(artifact["payloads"][path] == {key: identity[key] for key in ("bytes", "sha256")}
-                        for path, identity in expected_payloads.items()),
-                "java-minimatch-action-built-input-drift")
+        verify_rebuild(repo, build, selected["reference"], JAVA_MINIMATCH_RUNTIME)
         receipts.append({"name": pin["name"], "version": pin["version"], "profile": JAVA_MINIMATCH_PROFILE,
                          "upstream_integrity": JAVA_MINIMATCH_UPSTREAM, "derived_integrity": JAVA_MINIMATCH_DERIVED,
                          "repair_sha256": digest(material["repair"]), "files": len(repair["files"]),
@@ -1136,44 +1067,7 @@ def verify_node_minimatch_action_sources(repo: Path, packages: list, configurati
                 and integrity(material["archive"]) == NODE_MINIMATCH_DERIVED,
                 "node-minimatch-action-reconstruction-drift")
         build = decode_json(material["build"])
-        artifact, installed = build["artifact"], build["installed"]
-        require(build["schema"] == 1 and build["repository"] == "KirilsTurkins/lsf-setup-node"
-                and build["publishedRevision"] == selected["reference"].split("@")[1]
-                and build["publishedTree"] == build["sourceTree"] == "b1591bf1668591f5e54cfac62c28b70304661927"
-                and build["sourceHead"] == "213657803ca67186bcfee4e67e0f466d76429ec5"
-                and build["diagnosticHead"] == installed["sourceCommit"] == "58d8ccfb60ec5f8f0d1e8bb0f6e066c3a1755345"
-                and build["diagnosticTree"] == "ba58d4e2da95e7b681428ae05eaa97d1e506d9fc"
-                and build["diagnosticOnlyPath"] == ".github/workflows/lsf-setup-node-security-owner.yml"
-                and build["run"] == 42024002011 and build["job"] == 127233536085
-                and build["jobConclusion"] == "success" and build["node"] == installed["node"] == "24.19.0"
-                and build["npm"] == "11.17.0" and build["jestSuites"] == 11 and build["jestTests"] == 235
-                and build["focusedTests"] == 2
-                and artifact["id"] == 13412972464 and artifact["bytes"] == 1690846
-                and artifact["sha256"] == "a321014ab2ece7b01175ca8362c97af218cda5c284470ebc6601f6af9e1a7a52"
-                and artifact["members"] == 23 and artifact["crcVerified"] is True
-                and installed["kind"] == "installed-minimatch-source-assertion"
-                and installed["version"] == "10.2.6" and installed["repairSha256"] == digest(material["repair"])
-                and installed["installedPostimages"] == {row["path"]: row["afterSha256"] for row in repair["files"]},
-                "node-minimatch-action-build-evidence-drift")
-        deep_policy = deepmerge["policy"]
-        deep_assets = [deep_policy["assets"][name] for name in ("archive", "repair", "declaration")]
-        deep_assets.append(deep_policy["additional_actions"]["verifier"])
-        expected_payloads = {
-            "action.yml": source_identity(read_file(repo, NODE_MINIMATCH_PREFIX + "action.yml.snapshot")),
-            "package.json": source_identity(read_file(repo, entry["path"])),
-            "package-lock.json": source_identity(read_file(repo, entry["lock"])),
-            **{NODE_MINIMATCH_ASSETS[name]["source"]: NODE_MINIMATCH_ASSETS[name]
-               for name in ("upstream", "archive", "repair", "verifier", "tests")},
-            **{row["source"]: row for row in NODE_MINIMATCH_RUNTIME.values()},
-            **{row["source"]: row for row in deep_assets},
-            "installed-minimatch.json": {"bytes": 427, "sha256": "2dff1c036d311a0b9988fc0f14bad2bf5dfdea1bb542ff2dd4719d39ab50b6c3"},
-            "installed-deepmerge.json": {"bytes": 524, "sha256": "93dd39de82cac77a040c0541e1e5450a921f368b14376717260487d627d69e9c"},
-            "source-identities.txt": {"bytes": 123, "sha256": "043f5017b6e3bfe2e7a6251ed269ef5fd078548b778d5724f048aa80fb016180"},
-        }
-        require(set(artifact["payloads"]) == set(expected_payloads)
-                and all(artifact["payloads"][path] == {key: identity[key] for key in ("bytes", "sha256")}
-                        for path, identity in expected_payloads.items()),
-                "node-minimatch-action-built-input-drift")
+        verify_rebuild(repo, build, selected["reference"], NODE_MINIMATCH_RUNTIME)
         receipts.append({"name": pin["name"], "version": pin["version"], "profile": NODE_MINIMATCH_PROFILE,
                          "upstream_integrity": NODE_MINIMATCH_UPSTREAM, "derived_integrity": NODE_MINIMATCH_DERIVED,
                          "repair_sha256": digest(material["repair"]), "files": len(repair["files"]),

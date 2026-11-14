@@ -125,7 +125,7 @@ def qualify(output: Path) -> dict:
         compiler = Path(compiler).resolve(strict=True)
         identity = file_identity(compiler, 'go')
         version = subprocess.check_output([str(compiler), 'version'], timeout=30).decode().strip()
-        if version != 'go version go1.27.3 linux/amd64':
+        if version != 'go version go1.27.4 linux/amd64':
             raise ValueError('go-write-reference-compiler-identity')
         environment = dict(os.environ, GOTOOLCHAIN='local', GOWORK='off', GOENV='off',
             GOOS='linux', GOARCH='amd64', CGO_ENABLED='0', GOPROXY='off', GOSUMDB='off',
@@ -133,7 +133,7 @@ def qualify(output: Path) -> dict:
         results = {}
         for name, source in (('old', upstream), ('before-close-guard', before_close), ('current', before[TEMPLATE])):
             module = output / name; module.mkdir()
-            (module / 'go.mod').write_bytes(b'module example.invalid/streamwrite\n\ngo 1.27.3\n')
+            (module / 'go.mod').write_bytes(b'module example.invalid/streamwrite\n\ngo 1.27.4\n')
             (module / 'write.go').write_bytes(projected(source))
             (module / 'write_test.go').write_bytes(before[TESTS])
             args = [str(compiler), 'test', '-json', '-timeout=10s', '-count=1']

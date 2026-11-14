@@ -1,0 +1,211 @@
+{
+  "schema": 1,
+  "reviewedAt": "2026-11-14T09:59:37.008447+00:00",
+  "reviewer": "automated coordinating agent under user-authorized CI repair; not human owner approval",
+  "sourceBase": "68bd53e20eeeae109f7816c8e81a1f959158a93b",
+  "workflowRun": 43582995296,
+  "previousExceptionsSha256": "132eec5494b560cc64a4c8e015e5db0af87c50fb31563317559517e8fbb7d3a4",
+  "unchangedFingerprints": [
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "benchmarks/optimization/kubernetes-comparison/2026-09-11-container-linux-8b0441f/README.md",
+      "package": "",
+      "fingerprint": "c7f5809c456e100555aaae6234284aaeeeb48f6da405083695d7eeb0d087d013",
+      "line": 122,
+      "column": 113
+    },
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/behavior/aggregate.json",
+      "package": "",
+      "fingerprint": "17224c27c85221d9382e7be939f807dbacc50b9b92dd76b0e22bedc68a250f61",
+      "line": 1,
+      "column": 11180
+    },
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/behavior/aggregate.json",
+      "package": "",
+      "fingerprint": "25b09e21d9f08ca070a3bf779b298fdd0c2b0c86cc38316227d4fd20557b08dc",
+      "line": 1,
+      "column": 705
+    },
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/behavior/aggregate.json",
+      "package": "",
+      "fingerprint": "264b2075f3fd0fcaa92c6b3a6ed839c432fcf69bc7f7930baa36383ac74e3824",
+      "line": 1,
+      "column": 6234
+    },
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/behavior/aggregate.json",
+      "package": "",
+      "fingerprint": "265029986a0136a4f43727d0ff6c0a085fad546b602035574886837948b09dc3",
+      "line": 1,
+      "column": 17842
+    },
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/behavior/aggregate.json",
+      "package": "",
+      "fingerprint": "32bbf567e447e208b53176b8f79bb3332bfe4a47cafa98aaf1533c3f4366544c",
+      "line": 1,
+      "column": 4970
+    },
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/behavior/aggregate.json",
+      "package": "",
+      "fingerprint": "3fef0df9ba2e4d740f8295f5596101c8f6e8edf7e98526f93b50224f83278dac",
+      "line": 1,
+      "column": 12366
+    },
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/behavior/aggregate.json",
+      "package": "",
+      "fingerprint": "56de140252d6b65eb1682eb328eda432d83ecd2101d8af5b45a8ecfa8ce9a08d",
+      "line": 1,
+      "column": 20826
+    },
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/behavior/aggregate.json",
+      "package": "",
+      "fingerprint": "59f295c9201bfd54d39c8143ba8f2b6bd7e3c3bed813daff45db1758ac293eac",
+      "line": 1,
+      "column": 23923
+    },
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/behavior/aggregate.json",
+      "package": "",
+      "fingerprint": "72638e6ff97a0e4937b64ad933b4d0b2291c34e152e1c0e4fa1582cacfd3ef7a",
+      "line": 1,
+      "column": 27103
+    },
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/behavior/aggregate.json",
+      "package": "",
+      "fingerprint": "72b695f2f30b9e744f9e476ef162b74206fd1985d71b3e9ad4b22911934bb57a",
+      "line": 1,
+      "column": 6793
+    },
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/behavior/aggregate.json",
+      "package": "",
+      "fingerprint": "7d4e0304ff4d56a41c7c4a647dbb3fdaaa8ed8993019ad5e936d33e8634bb643",
+      "line": 1,
+      "column": 3772
+    },
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/behavior/aggregate.json",
+      "package": "",
+      "fingerprint": "cefa36141ed09713fe7a8e5728535c8a89900963ecc138309cd4a0bd9d66a701",
+      "line": 1,
+      "column": 9195
+    },
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/behavior/aggregate.json",
+      "package": "",
+      "fingerprint": "da1367658a56f37aca28c0e2ff9eb5dc3d41fc78acacf8d0648af9821626178a",
+      "line": 1,
+      "column": 15444
+    },
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/behavior/aggregate.json",
+      "package": "",
+      "fingerprint": "db44033cbfb0220afee7b3cbfcb2afff81cbc740b5d962220d145b1e84098336",
+      "line": 1,
+      "column": 8044
+    },
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "crates/latent-wasmtime/tests/local_secrets/environment.rs",
+      "package": "",
+      "fingerprint": "4999f52ef0c372bd8c641c37c8b2b07cac1e3099c3a2a987a6f7d1e74cca2c54",
+      "line": 71,
+      "column": 18
+    },
+    {
+      "scanner": "gitleaks",
+      "finding": "generic-api-key",
+      "path": "sdk/c-guest/runtime-fixtures/libucl/upstream/src/mum.h",
+      "package": "",
+      "fingerprint": "09fe13d6f3a012f51dc743d3cbdc4997835fc8c3aead62800c3bea7a29c90723",
+      "line": 91,
+      "column": 18
+    }
+  ],
+  "unchangedSourceFiles": {
+    "benchmarks/optimization/kubernetes-comparison/2026-09-11-container-linux-8b0441f/README.md": {
+      "sha256": "7709ab177a0d5e1fe8e64967236a94a5947abf5f51a8aa92795844313e9ac963",
+      "bytes": 21956
+    },
+    "benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/behavior/aggregate.json": {
+      "sha256": "9a23855482dc2b23fcf0fe912a3a2cc89c4e6aa13e76ebdbfff9f2e74b71177b",
+      "bytes": 1179332
+    },
+    "crates/latent-wasmtime/tests/local_secrets/environment.rs": {
+      "sha256": "38999c393fe166fc8ad2539c5634db0802290e9f6d91175d9526cc1c283c6ed1",
+      "bytes": 3670
+    },
+    "sdk/c-guest/runtime-fixtures/libucl/upstream/src/mum.h": {
+      "sha256": "406a4e6242f8cdc6068f428944cf838fdb84572d43ac0f3f2e0c7fb867bc1593",
+      "bytes": 13645
+    }
+  },
+  "typedChecks": [
+    "labelled API journal SHA256",
+    "fourteen direct_execution prepared-handle digest identities",
+    "synthetic denied environment-variable name",
+    "public integer MUM hash-mixing prime"
+  ],
+  "scannerCanaries": {
+    "schema": 1,
+    "status": "pass",
+    "database": {
+      "url": "https://github.com/RustSec/advisory-db.git",
+      "commit": "4ef2df8e806a65e2f1ecc14f56f51249062b23d6",
+      "commit_timestamp": 1794573183,
+      "verified_at": "2026-11-14T09:59:35.813597+00:00",
+      "max_age_seconds": 1209600
+    },
+    "canaries": [
+      "clean-lock",
+      "RUSTSEC-2020-0071",
+      "unavailable-database",
+      "clean-documentation",
+      "synthetic-secret-despite-inline-ignore",
+      "svg-secret",
+      "source-pass-and-fail",
+      "workflow-pass-and-fail"
+    ]
+  },
+  "created": "2026-11-14",
+  "expiresExclusive": "2026-11-28",
+  "scope": "Same exact seventeen full-content/location fingerprints only. No advisory waiver, scanner rule, source payload, synthetic canary or expiry enforcement is weakened."
+}

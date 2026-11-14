@@ -1,7 +1,7 @@
 {
     "schemaVersion":  1,
-    "sdkVersion":  "8.0.427",
-    "runtimeVersion":  "8.0.33",
+    "sdkVersion":  "8.0.428",
+    "runtimeVersion":  "8.0.34",
     "grpcToolsVersion":  "2.71.0",
     "protocVersion":  "libprotoc 29.0",
     "tools":  {

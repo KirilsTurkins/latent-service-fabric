@@ -7,11 +7,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tools.security_action_rebuild import verify_rebuild
 from tools.security_common import decode_json, digest, read_file, require
 
 PROFILE = 'setup-dotnet-minimatch-action-source-v1'
 PREFIX = ".github/security/actions/setup-dotnet/"
-REFERENCE = 'KirilsTurkins/lsf-setup-dotnet@258c927924210be905f8908a4be714e5d0daffa8'
+REFERENCE = 'KirilsTurkins/lsf-setup-dotnet@2382c9e63a3b678b643c7e715d023e7fa42fbbef'
 ASSETS = {'upstream': {'snapshot': '.github/security/actions/setup-python-minimatch/minimatch-10.2.5.original.tgz',
               'source': '.lsf-source/minimatch-10.2.5.original.tgz',
               'bytes': 117062,
@@ -38,21 +39,21 @@ ASSETS = {'upstream': {'snapshot': '.github/security/actions/setup-python-minima
            'sha256': 'f65c9af8d0d6b2abfd728d803e223396e746850f564003e93b223c4f084f987b',
            'gitBlob': '9601c04f3210fa02ee4ae91183f2a5538b1e9374'},
  'build': {'snapshot': '.github/security/actions/setup-dotnet-minimatch/fork-build.json',
-           'source': 'https://github.com/KirilsTurkins/lsf-setup-dotnet/actions/runs/42023417095',
-           'bytes': 3230,
-           'sha256': 'a12054c6c2f0b82ec4a7885b26a4941e507ec3363608f709f837c91aefd1498d',
-           'gitBlob': '491f1fc1d0633ff047a93d129ee431fc4a5d225e'}}
+           'source': 'https://github.com/KirilsTurkins/lsf-setup-dotnet/actions/runs/43523131630',
+           'bytes': 7342,
+           'sha256': '142035ba393a0291c96ef29abf09ca57b6006dc7f1ea8869b79653a287fcd60e',
+           'gitBlob': '165ffff422b1f889dc3c187ecc7dcb0e4ef6e7f0'}}
 RUNTIME = {'runtime_setup': {'source': 'dist/setup/index.js',
-                   'bytes': 3862594,
-                   'sha256': 'fbaaffdb229027601428143fb31a41faf4f1ff8b8d88fb8fe84e39d7cb20dbaf',
-                   'gitBlob': 'b8ff05db0b6bd4e8c82d9e297f5d867befbf8220'},
+                   'bytes': 3858563,
+                   'sha256': '2b0330c6857ab98f591c7814939945553e2353caabaa8e521493937dfd077e80',
+                   'gitBlob': 'e874a6f5cb31931ee253d79e034bb461710db695'},
  'runtime_cache': {'source': 'dist/cache-save/index.js',
-                   'bytes': 3428734,
-                   'sha256': '483385c7bdfa8fd34f7b5b46f465a7f742b43256dfa3f823f124d9ea90a91aa5',
-                   'gitBlob': '5cf7135233a3da7bc5cbc9fa013dc4897272f259'}}
+                   'bytes': 3424689,
+                   'sha256': 'a0e2b9916c9e80a130b9793ea862f92d23b4e7593ae99f32d1ff98ba2c22a602',
+                   'gitBlob': '7c3953cb705713a2d36cd75ef05b8b7ab95fce65'}}
 SOURCE_SHA256 = {'action.yml': 'c96dc8e11d5e6f64fb48a3221e7b1446821955cdcbecb1bf5697c93e24d4f9f2',
- 'package.json': '9be7cb32ee3db4f5b122552fa8522c6ec0802236667094205806f5eabe92d732',
- 'package-lock.json': 'f30f154929ab439bd594caad80f151a3b06e480a795c90c9c2513cd2e6d19d6a',
+ 'package.json': '51c9956410387a680bc59345c151c10c3fe996005a879b87bf47a6c1d857f93c',
+ 'package-lock.json': '4c6958592285a8e60537929b6834632c6e4c5a5e977eea7f4b7d2a9d319c66d7',
  '.lsf-source/verify-installed-deepmerge.mjs': '55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7',
  '.lsf-source/verify-installed-minimatch.mjs': '4fcbcba0f46fed80b09c6cdb1a2a54eeff2e0a3690b4d0a5b566762169f1f826',
  '.lsf-source/minimatch-bounds.test.mjs': 'f65c9af8d0d6b2abfd728d803e223396e746850f564003e93b223c4f084f987b'}
@@ -169,41 +170,7 @@ def verify_sources(repo: Path, packages: list, configuration: dict, fetch, fetch
                 and sources.integrity(material["archive"]) == sources.MINIMATCH_DERIVED,
                 "dotnet-minimatch-action-reconstruction-drift")
         build = decode_json(material["build"])
-        artifact = build["artifact"]
-        installed = build["installedMinimatch"]
-        deep_installed = build["installedDeepmerge"]
-        deep_repair = decode_json(deepmerge["material"]["repair"])
-        bundle_sums = "".join(f"{row['sha256']}  {row['source']}\n" for row in RUNTIME.values()).encode()
-        require(artifact["payloads"].get("bundle-sha256.txt")
-                == {"bytes": len(bundle_sums), "sha256": digest(bundle_sums)},
-                "dotnet-minimatch-action-bundle-receipt-drift")
-        require(build["schema"] == 1 and build["repository"] == "KirilsTurkins/lsf-setup-dotnet"
-                and build["publishedRevision"] == REFERENCE.split("@")[1]
-                and build["publishedTree"] == build["sourceTree"] == "95a225c1d0707ebd764371b3d2a470bd5ac1271a"
-                and build["sourceHead"] == "b5df2c787220be374497e1fbbee09ac583849c80"
-                and build["diagnosticHead"] == installed["sourceCommit"] == deep_installed["sourceCommit"]
-                    == "02dfed81f2103cf05fd7fecac38141f3813dff97"
-                and build["diagnosticTree"] == "1d6dff64b8b80a025524c957c7ee9e667eaf634d"
-                and build["diagnosticOnlyPath"] == ".github/workflows/setup-dotnet-security-linux-owner.yml"
-                and build["diagnosticWorkflowBlob"] == "2a37150f4cb8f605b3e9548a53f2406b8d41ebc0"
-                and build["run"] == 42023417095 and build["job"] == 127231597179
-                and build["jobConclusion"] == "success" and build["node"] == installed["node"]
-                    == deep_installed["node"] == "24.19.0"
-                and build["npm"] == "11.17.0" and build["jestSuites"] == 9 and build["jestTests"] == 242
-                and build["focusedTests"] == 2 and build["tamperChecks"] == 15
-                and build["jobLogSha256"] == "00dfe776f105229ae41f63b7bbed2ed84b0eb1f781233dc0f1c785c4bbb568a7"
-                and artifact["id"] == 13411749303 and artifact["bytes"] == 33194
-                and artifact["sha256"] == "5eb17cdd8964f58e84f8793c575b9c8d623bac66a32deeda14b5798de3a7ee56"
-                and artifact["members"] == 7 and artifact["crcVerified"] is True
-                and artifact["payloads"] == ARTIFACT_PAYLOADS
-                and installed["kind"] == "installed-minimatch-source-assertion"
-                and installed["version"] == "10.2.5" and installed["repairSha256"] == digest(material["repair"])
-                and installed["installedPostimages"] == {row["path"]: row["afterSha256"] for row in repair["files"]}
-                and deep_installed["kind"] == "installed-source-assertion"
-                and deep_installed["packageVersion"] == "4.3.1"
-                and deep_installed["repairSha256"] == digest(deepmerge["material"]["repair"])
-                and deep_installed["installedPostimages"] == {row["path"]: row["afterSha256"] for row in deep_repair["files"]},
-                "dotnet-minimatch-action-build-evidence-drift")
+        verify_rebuild(repo, build, REFERENCE, RUNTIME)
         receipts.append({"name": pin["name"], "version": pin["version"], "profile": PROFILE,
                          "upstream_integrity": sources.MINIMATCH_UPSTREAM,
                          "derived_integrity": sources.MINIMATCH_DERIVED,

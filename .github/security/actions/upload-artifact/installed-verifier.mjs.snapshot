@@ -7,7 +7,7 @@ import {fileURLToPath, pathToFileURL} from 'node:url'
 const defaultRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const hash = b => createHash('sha256').update(b).digest('hex')
 const manifestHash = 'b991a3713ac8f768f7c794d63dea0b8c9f7ef9b772b606b850c02eb7c15685a7'
-const lockHash = '6596c32794b08b4f9859449abc3374998ad691607d284fe55dd5e6a38cfa7370'
+const lockHash = 'f9ddfd3bac09c291181898b71b52d0f5024bdfdf43169999ca3dd2d76d8166cb'
 
 export function verify(root = defaultRoot) {
   const read = path => readFileSync(join(root, path))

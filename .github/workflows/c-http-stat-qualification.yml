@@ -57,7 +57,7 @@
           }
         },
         {
-          "uses": "KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8", # v7.1.0 + upstream changes + LSF security fixes
+          "uses": "KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee", # v7.1.0 + upstream changes + LSF security fixes
           "with": {
             "python-version": "3.13.5"
           }
@@ -70,7 +70,7 @@
         },
         {
           "name": "Restore compiled Rust dependencies",
-          "uses": "KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e", # v2.9.3 + upstream changes + LSF security fixes
+          "uses": "KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334", # v2.9.3 + upstream changes + LSF security fixes
           "with": {
             "prefix-key": "lsf-ci-dependencies-v2",
             "shared-key": "host-correctness",
@@ -92,13 +92,13 @@
           "run": "set -euo pipefail\narchive=\"$RUNNER_TEMP/c-http-wasm-tools.tar.gz\"\nbindir=\"$RUNNER_TEMP/c-http-wasm-tools-bin\"\nmkdir \"$bindir\"\ntimeout 90s gh api -H 'Accept: application/octet-stream' repos/bytecodealliance/wasm-tools/releases/assets/483720667 | head -c 5862465 > \"$archive\"\nunset GH_TOKEN\ntest \"$(stat --format=%s \"$archive\")\" = 5862464\nprintf '%s  %s\\n' d0efb16c9c859137b7ab3e99151c299cd47caee106ed4594561002f7a04945bd \"$archive\" | sha256sum --check --strict\ntar -xOzf \"$archive\" wasm-tools-1.254.0-x86_64-linux/wasm-tools > \"$bindir/wasm-tools\"\ntest \"$(stat --format=%s \"$bindir/wasm-tools\")\" = 20231696\nprintf '%s  %s\\n' cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6 \"$bindir/wasm-tools\" | sha256sum --check --strict\nchmod 755 \"$bindir/wasm-tools\"\ntest \"$(\"$bindir/wasm-tools\" --version)\" = 'wasm-tools 1.254.0 (bb58fdf91 2026-07-20)'\nprintf '%s\\n' \"$bindir\" >> \"$GITHUB_PATH\"\n"
         },
         {
-          "uses": "KirilsTurkins/lsf-setup-zig@e064b42fa88ad0859d8b54838b44f672ffd5ea7a", # v2.2.1 + upstream changes + LSF security fixes
+          "uses": "KirilsTurkins/lsf-setup-zig@adb5ed78414674f693e8fe00982f83df9badcdb3", # v2.2.1 + upstream changes + LSF security fixes
           "with": {
             "version": "0.16.0"
           }
         },
         {
-          "uses": "KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6", # v7.1.0 + upstream changes + LSF security fixes
+          "uses": "KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a", # v7.1.0 + upstream changes + LSF security fixes
           "with": {
             "node-version": "24.19.0"
           }
@@ -114,7 +114,7 @@
         {
           "name": "Retain original bounded proof including failures",
           "if": "always()",
-          "uses": "KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f", # v7.0.2 + upstream changes + LSF security fixes
+          "uses": "KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc", # v7.0.2 + upstream changes + LSF security fixes
           "with": {
             "name": "c-http-stat-${{ github.run_id }}",
             "path": "${{ runner.temp }}/c-http-stat/qualified.json\n${{ runner.temp }}/c-http-stat/FAILED.json\n${{ runner.temp }}/c-http-stat/logs/**\n${{ runner.temp }}/c-http-stat/owner-inputs/**\n${{ runner.temp }}/c-http-stat/project/**\n${{ runner.temp }}/c-http-stat/build/**\n${{ runner.temp }}/c-http-stat/native-build/logs/**\n${{ runner.temp }}/c-http-stat/native-build/native/native-tuple.json\n${{ runner.temp }}/c-http-stat/node/qualified.json\n${{ runner.temp }}/c-http-stat/node/FAILED.json\n${{ runner.temp }}/c-http-stat/node/signed/release-set.json\n${{ runner.temp }}/c-http-stat/node/signed/c-thread-runtime/package/**\n${{ runner.temp }}/c-http-stat/node/signed/c-thread-runtime/evidence/**\n${{ runner.temp }}/c-http-stat/node/signed/c-thread-runtime/deployment.json\n${{ runner.temp }}/c-http-stat/node/controls/**\n${{ runner.temp }}/c-http-stat/node/commands/logs/**\n${{ runner.temp }}/c-http-stat/node/invocation-*.json\n${{ runner.temp }}/c-http-stat/node/barrier-*.json\n${{ runner.temp }}/c-http-stat/node/peer-*.json\n${{ runner.temp }}/c-http-stat/node/retirement-*.json\n${{ runner.temp }}/c-http-stat/node/missing-provider/**\n${{ runner.temp }}/c-http-stat/node/*.stdout\n${{ runner.temp }}/c-http-stat/node/*.stderr",

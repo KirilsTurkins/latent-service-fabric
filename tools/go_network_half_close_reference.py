@@ -175,7 +175,7 @@ def qualify(output: Path, compiler: Path, environment: dict, old: bytes,
     for name, source in (('half-close-old', old), ('half-close-current', current)):
         module = output / name
         module.mkdir()
-        (module / 'go.mod').write_bytes(b'module example.invalid/halfclose\n\ngo 1.27.3\n')
+        (module / 'go.mod').write_bytes(b'module example.invalid/halfclose\n\ngo 1.27.4\n')
         (module / 'production.go').write_bytes(projected(source))
         (module / 'half_close_test.go').write_bytes(tests)
         for directory in ('wit', 'raw', 'network'):

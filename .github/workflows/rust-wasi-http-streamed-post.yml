@@ -40,13 +40,13 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
           targets: wasm32-unknown-unknown
-      - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334 # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: host-correctness
@@ -60,7 +60,7 @@ jobs:
       - uses: KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce # v1.1.3 + upstream changes + LSF security fixes
         with:
           version: 1.254.0
-      - uses: KirilsTurkins/lsf-setup-zig@e064b42fa88ad0859d8b54838b44f672ffd5ea7a # v2.2.1 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-zig@adb5ed78414674f693e8fe00982f83df9badcdb3 # v2.2.1 + upstream changes + LSF security fixes
         with:
           version: '0.16.0'
       - name: Prepare the normal captured compiler sandbox and pinned binding tool only
@@ -80,7 +80,7 @@ jobs:
       - name: Acquire only locked SDK sources for the unchanged compiler-owned forwarding root
         run: cargo fetch --locked --target wasm32-unknown-unknown --target x86_64-unknown-linux-gnu
       - name: Restore the exact already compiled current110 backend without rebuilding it
-        uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389 # v8.0.2 + upstream changes + LSF security fixes
         with:
           name: rust-wasi-http-runtime-52654f7b86ef0043a8250dea39093d955ee9f480
           run-id: '39606039445'
@@ -101,7 +101,7 @@ jobs:
           --output "$RUNNER_TEMP/rust-http-runtime-qualification"
       - name: Retain bounded public source build invocation and cleanup observations
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: rust-wasi-http-runtime-${{ github.sha }}
           path: |
