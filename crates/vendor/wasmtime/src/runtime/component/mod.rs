@@ -818,4 +818,4 @@ mod dynamic_memory;
 pub use dynamic_memory::DynamicValueMemory;
 
 /// Native source cohort for the maintained original-owner dynamic value extension.
-pub const DYNAMIC_VALUE_MEMORY_COHORT: &str = "wasmtime-48.0.7-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-memory-v10";
+pub const DYNAMIC_VALUE_MEMORY_COHORT: &str = "wasmtime-48.0.8-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v30-authenticated-bounded-root-suspension-upstream-security-v31-consumer-poll-factory-v32-host-accept-factory-v33-consumer-inner-future-v34-producer-inner-future-v35-sync-ready-callback-v36-inline-runtime-futures-v37-store-custody-panic-v38-retained-pool-decommit-v39";
