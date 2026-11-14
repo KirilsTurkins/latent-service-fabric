@@ -112,7 +112,7 @@ class ActionGraphTests(unittest.TestCase):
             verify(self.root, self.paths)
 
     def test_six_source_java_binding_requires_the_exact_revision_and_source_set(self):
-        revision = '63c7977881fc344a6ed464f7ed5e242aedc8d56c'
+        revision = '8aaa4ea8191b36cb3f394e91d099da0d31dc02c2'
         reference = 'KirilsTurkins/lsf-setup-java@' + revision
         self.write('.github/workflows/ci.yml', 'jobs:\n  test:\n    steps:\n      - uses: ' + reference + '\n')
         self.row.update(repository='KirilsTurkins/lsf-setup-java', revision=revision)
@@ -134,7 +134,7 @@ class ActionGraphTests(unittest.TestCase):
 
 
     def test_six_source_node_binding_requires_the_exact_revision_and_source_set(self):
-        revision = '34275fdec80b5be172c3327cadef76aa2f3b31c6'
+        revision = '791d25988f7dc57f537b82342f7af452cd59cd6a'
         reference = 'KirilsTurkins/lsf-setup-node@' + revision
         self.write('.github/workflows/ci.yml', 'jobs:\n  test:\n    steps:\n      - uses: ' + reference + '\n')
         self.row.update(repository='KirilsTurkins/lsf-setup-node', revision=revision)

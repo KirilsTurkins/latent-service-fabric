@@ -37,7 +37,7 @@ class MinMatchActionSourceTests(unittest.TestCase):
         build_path = self.root / sources.MINIMATCH_ASSETS['build']['snapshot']
         build = json.loads(build_path.read_bytes())
         for row in runtime_policy.values():
-            build['artifact']['payloads'][row['source']] = {key: row[key] for key in ('bytes', 'sha256')}
+            build['outputs'][row['source']] = {key: row[key] for key in ('bytes', 'sha256', 'gitBlob')}
         build_path.write_text(json.dumps(build), encoding='utf-8')
         asset_policy = copy.deepcopy(sources.MINIMATCH_ASSETS)
         asset_policy['build'].update(sources.source_identity(build_path.read_bytes()))

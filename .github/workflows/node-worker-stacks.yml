@@ -71,7 +71,7 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
@@ -81,7 +81,7 @@ jobs:
         run: python3 tools/qualify_node_worker_stacks.py --source-commit "${{ github.sha }}" --output "$RUNNER_TEMP/node-worker-stack-reference"
       - name: Retain finite numeric stack evidence and bounded compiler failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: node-worker-stack-reference-${{ github.sha }}
           path: |
@@ -113,7 +113,7 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - name: Restore compiled Rust dependencies
-        uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334 # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: host-correctness
@@ -138,7 +138,7 @@ jobs:
           grep -F 'test result: ok. 1 passed; 0 failed; 0 ignored;' "$RUNNER_TEMP/standalone-topology-config.log"
       - name: Retain exact reporter and capacity results
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: standalone-topology-capacity-${{ github.sha }}
           path: |

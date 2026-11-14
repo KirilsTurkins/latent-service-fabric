@@ -81,7 +81,7 @@ runs:
 
     - name: Upload artifact
       id: upload-artifact
-      uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + reviewed security repairs
+      uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + reviewed security repairs
       with:
         name: ${{ inputs.name }}
         path: ${{ runner.temp }}/artifact.tar

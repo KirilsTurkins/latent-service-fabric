@@ -1,115 +1,226 @@
 {
-  "schema": 1,
+  "schema": 2,
   "repository": "KirilsTurkins/lsf-setup-java",
-  "publishedRevision": "63c7977881fc344a6ed464f7ed5e242aedc8d56c",
-  "publishedTree": "da1077784074c8a0e949947c4607452c36574dc1",
-  "sourceHead": "10dfad9fb7484f2f1b39c5b50ffa86f9e56d8f63",
-  "sourceTree": "da1077784074c8a0e949947c4607452c36574dc1",
-  "diagnosticHead": "eaa32fe679a4d1ab0dbee73cf502e7890ca8a3df",
-  "diagnosticTree": "993c8fb074c123fb8eac870ba992bf2783ba70c2",
-  "diagnosticOnlyPath": ".github/workflows/lsf-setup-java-security-owner.yml",
-  "run": 42018824336,
-  "job": 127216070011,
+  "publishedRevision": "8aaa4ea8191b36cb3f394e91d099da0d31dc02c2",
+  "publishedTree": "0689f86f2bfec18fd20c80b0d90c751f63fbaaad",
+  "base": "63c7977881fc344a6ed464f7ed5e242aedc8d56c",
+  "testedCommit": "08aec9caa01ce81f154433b3f8984d3cdced965d",
+  "diagnosticHead": "9253794cae45fcca4a5b041e1b0a9d4395d1cc4b",
+  "run": 43523148275,
   "jobConclusion": "success",
-  "node": "24.19.0",
-  "npm": "11.17.0",
-  "jestSuites": 45,
-  "jestTests": 1596,
-  "focusedTests": 2,
+  "toolchain": {
+    "node": "24.19.0"
+  },
   "artifact": {
-    "id": 13411055962,
-    "bytes": 1784025,
-    "sha256": "b9fc7c65de7bac2b146e09f00f3ef8f9b5e42b4eee9e3f2d4d588a76d3cdce42",
-    "members": 25,
-    "crcVerified": true,
-    "payloads": {
-      "action.yml": {
-        "bytes": 9659,
-        "sha256": "503fe82e787d5ff15e17934e2efab346fa2facfad7261a8ea6ed9b05cb14f9e8"
+    "id": 14084750338,
+    "bytes": 531630,
+    "sha256": "58d98b140e38c507ad5953f6ac5208d1b85673f9d641c03f01d1bbfa0cbcc96e"
+  },
+  "validationLog": {
+    "bytes": 139942,
+    "sha256": "d00977e49384e7123b5e8dd3b55376db5b3e162a045161ac09072a0a552546f8",
+    "gitBlob": "40cf133c143803338a037fcb0cb57022962dce7f"
+  },
+  "validation": {
+    "sourceControlsPassed": true,
+    "xmlRegressionPassed": true,
+    "unitTests": 1596,
+    "unitSuites": 45
+  },
+  "sourceFiles": {
+    "action.yml": {
+      "bytes": 9659,
+      "sha256": "503fe82e787d5ff15e17934e2efab346fa2facfad7261a8ea6ed9b05cb14f9e8",
+      "gitBlob": "eb32ec42c40a6db84d001764c097cde818401285"
+    },
+    "package.json": {
+      "bytes": 3034,
+      "sha256": "dde88e51553ccdd6d8997dea48da5885ba30ddf93dcaa996234fab8fbf730d39",
+      "gitBlob": "3b2491332dbc1627c42819a8bae516eed59f7102"
+    },
+    "package-lock.json": {
+      "bytes": 237193,
+      "sha256": "04088126045de0f2b4052435aabe1012133517b508ec102448550c957f2939c5",
+      "gitBlob": "e57c94425bd0729c7c58a5d52fe806931e1849fc"
+    },
+    ".lsf-source/verify-installed-deepmerge.mjs": {
+      "bytes": 2381,
+      "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
+      "gitBlob": "99d75a2ea3895eb8acc8018984ca9826e4edff51"
+    },
+    ".lsf-source/verify-installed-minimatch.mjs": {
+      "bytes": 3386,
+      "sha256": "4af8eaff4b0b6f6b4b084ceeab68932ba8940048c9e49f9ed8fdc400e9e2f72d",
+      "gitBlob": "de5fadac0ee90bd532c5683fd4bcb919634a4314"
+    },
+    ".lsf-source/minimatch-bounds.test.mjs": {
+      "bytes": 2854,
+      "sha256": "4fd2675946ecfa56ccf5a3c59e76ef50a5dc7d84f0a37fefd47e0037c50a4492",
+      "gitBlob": "11a4cf916b01dfa3af9af699aa7ec641b39505d3"
+    }
+  },
+  "outputs": {
+    "dist/setup/index.js": {
+      "bytes": 1251705,
+      "sha256": "ff49684899199004e6e3380d810250c997a7cb048e3745da83fda98f453e9676",
+      "gitBlob": "30825bde03691bc19d0bedf4940502dd88b9eb3c"
+    },
+    "dist/cleanup/index.js": {
+      "bytes": 1218262,
+      "sha256": "b730e0928718991f1e912a914ac2c0916a529e50ab40e1b6fd4f4066d83331c0",
+      "gitBlob": "f99bedac337101e7b873f29ec743820aa2dc77cb"
+    },
+    "dist/setup/971.index.js": {
+      "bytes": 2111333,
+      "sha256": "d4423f5c84f7e51f339d4fb2431f781ff6a868093f73ab2d79fdbb3d9c91be8c",
+      "gitBlob": "b35af4903d3d85298a9cb6cb66564e22910b08be"
+    },
+    "dist/cleanup/767.index.js": {
+      "bytes": 2337528,
+      "sha256": "491ce8398cfdd5123602e3765a3f70e7ce559c3f66d831cad7eba78e3ab42f8f",
+      "gitBlob": "e934099b2849c0ece1ad64514da7b2d3a4f4ce2e"
+    }
+  },
+  "installedSourceAssertions": [
+    {
+      "kind": "installed-source-assertion",
+      "sourceCommit": "9253794cae45fcca4a5b041e1b0a9d4395d1cc4b",
+      "node": "24.19.0",
+      "packageVersion": "4.3.1",
+      "repairSha256": "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7",
+      "installedPostimages": {
+        "index.js": "ba2a6c79e67e10f45a32cfe8f5ea5c5607dc4718be2b37956e9202ea4cdbe1bc",
+        "dist/cjs.js": "c5e9c1f08e7a3b589010133108a3c625806358fa9e1bdaa11f07e9e756f19da0",
+        "dist/umd.js": "b12652d3654f47b08ae43e8b390b66c55987ace6d9a6167c3240744ffa0f28f9"
       },
-      "package.json": {
-        "bytes": 2990,
-        "sha256": "f7723547bb87097415558bdc8088f047c3b64221dabdfb7785269343d4e9d6f6"
-      },
-      "package-lock.json": {
-        "bytes": 237194,
-        "sha256": "9419ff87d9fce7ae84f37bd082cef91646e722f95aec1896aa695b3e2b31e2df"
-      },
-      "dist/setup/index.js": {
-        "bytes": 1251705,
-        "sha256": "ff49684899199004e6e3380d810250c997a7cb048e3745da83fda98f453e9676"
-      },
-      "dist/cleanup/index.js": {
-        "bytes": 1218262,
-        "sha256": "a80e9a57c660b86e26f33ff4eb9d82dd21fc1b1e9e86f56356a7c81940d74199"
-      },
-      "dist/setup/971.index.js": {
-        "bytes": 2110720,
-        "sha256": "9e2349fe3b6710fe498e054cee0fe370c0f890b6797075eb418c78a2ec35ce66"
-      },
-      "dist/cleanup/767.index.js": {
-        "bytes": 2337528,
-        "sha256": "491ce8398cfdd5123602e3765a3f70e7ce559c3f66d831cad7eba78e3ab42f8f"
-      },
-      ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.repair.json": {
-        "bytes": 3064,
-        "sha256": "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7"
-      },
-      ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.source.json": {
-        "bytes": 6925,
-        "sha256": "b4b0b79fa2bc84c6f1e1c61ddcc1ab228df629f9fce4b1067d3ac8b3d1c42892"
-      },
-      ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar": {
-        "bytes": 51200,
-        "sha256": "c4ca0f4eb3a2464c026bc3dec5d9eaf04544aed24c3fd1d77da95f85e36c369f"
-      },
-      ".lsf-source/verify-installed-deepmerge.mjs": {
-        "bytes": 2381,
-        "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7"
-      },
-      ".lsf-source/minimatch-10.2.6.original.tgz": {
-        "bytes": 117068,
-        "sha256": "5a3d2c8074a28229665727e47b8a1090941856a7962905efe05d20d3760355f8"
-      },
-      ".lsf-source/minimatch-10.2.6-lsf-bound-v1.tar": {
-        "bytes": 583680,
-        "sha256": "bb2b80a4759baaee01d49528b2d7d0c05fc29c1cf0d3fea41ec243de04bceedb"
-      },
-      ".lsf-source/minimatch-10.2.6-lsf-bound-v1.repair.json": {
-        "bytes": 2129,
-        "sha256": "d6ede52113aa8cb2d4b6ee008885fd2de0d37e06d822e444846f6f905f088bf3"
-      },
-      ".lsf-source/verify-installed-minimatch.mjs": {
-        "bytes": 3386,
-        "sha256": "4af8eaff4b0b6f6b4b084ceeab68932ba8940048c9e49f9ed8fdc400e9e2f72d"
-      },
-      ".lsf-source/minimatch-bounds.test.mjs": {
-        "bytes": 2854,
-        "sha256": "4fd2675946ecfa56ccf5a3c59e76ef50a5dc7d84f0a37fefd47e0037c50a4492"
-      },
-      "installed-minimatch.json": {
-        "bytes": 427,
-        "sha256": "54ac8017be7e2e70e951d5da094afa1125e6fafa4be2fa3404c48784d5281266"
-      },
-      "installed-deepmerge.json": {
-        "bytes": 524,
-        "sha256": "b4728f29efd94c5698267321d3d838744ea3e47a7f433a1a7b92770ffb1aa362"
-      },
-      "source-identities.txt": {
-        "bytes": 123,
-        "sha256": "11fce0fce872b0f3e3e7fd3b4f03c403133d48c4c669e62fc54cf87badd23035"
+      "actionBuildOrSignedSDKQualified": false
+    },
+    {
+      "kind": "installed-minimatch-source-assertion",
+      "sourceCommit": "9253794cae45fcca4a5b041e1b0a9d4395d1cc4b",
+      "node": "24.19.0",
+      "version": "10.2.6",
+      "repairSha256": "d6ede52113aa8cb2d4b6ee008885fd2de0d37e06d822e444846f6f905f088bf3",
+      "installedPostimages": {
+        "dist/commonjs/index.js": "7e835c0a30f7b4f29f4ad8cf8c3e92b97ab23ed854a7a777f240d6bdf3d19231",
+        "dist/esm/index.js": "37ba4ff4010cda499e890975983b78ebd5f2be2dd8506d938472de4af8e9ed25"
+      }
+    }
+  ],
+  "previousEvidence": {
+    "schema": 1,
+    "repository": "KirilsTurkins/lsf-setup-java",
+    "publishedRevision": "63c7977881fc344a6ed464f7ed5e242aedc8d56c",
+    "publishedTree": "da1077784074c8a0e949947c4607452c36574dc1",
+    "sourceHead": "10dfad9fb7484f2f1b39c5b50ffa86f9e56d8f63",
+    "sourceTree": "da1077784074c8a0e949947c4607452c36574dc1",
+    "diagnosticHead": "eaa32fe679a4d1ab0dbee73cf502e7890ca8a3df",
+    "diagnosticTree": "993c8fb074c123fb8eac870ba992bf2783ba70c2",
+    "diagnosticOnlyPath": ".github/workflows/lsf-setup-java-security-owner.yml",
+    "run": 42018824336,
+    "job": 127216070011,
+    "jobConclusion": "success",
+    "node": "24.19.0",
+    "npm": "11.17.0",
+    "jestSuites": 45,
+    "jestTests": 1596,
+    "focusedTests": 2,
+    "artifact": {
+      "id": 13411055962,
+      "bytes": 1784025,
+      "sha256": "b9fc7c65de7bac2b146e09f00f3ef8f9b5e42b4eee9e3f2d4d588a76d3cdce42",
+      "members": 25,
+      "crcVerified": true,
+      "payloads": {
+        "action.yml": {
+          "bytes": 9659,
+          "sha256": "503fe82e787d5ff15e17934e2efab346fa2facfad7261a8ea6ed9b05cb14f9e8"
+        },
+        "package.json": {
+          "bytes": 2990,
+          "sha256": "f7723547bb87097415558bdc8088f047c3b64221dabdfb7785269343d4e9d6f6"
+        },
+        "package-lock.json": {
+          "bytes": 237194,
+          "sha256": "9419ff87d9fce7ae84f37bd082cef91646e722f95aec1896aa695b3e2b31e2df"
+        },
+        "dist/setup/index.js": {
+          "bytes": 1251705,
+          "sha256": "ff49684899199004e6e3380d810250c997a7cb048e3745da83fda98f453e9676"
+        },
+        "dist/cleanup/index.js": {
+          "bytes": 1218262,
+          "sha256": "a80e9a57c660b86e26f33ff4eb9d82dd21fc1b1e9e86f56356a7c81940d74199"
+        },
+        "dist/setup/971.index.js": {
+          "bytes": 2110720,
+          "sha256": "9e2349fe3b6710fe498e054cee0fe370c0f890b6797075eb418c78a2ec35ce66"
+        },
+        "dist/cleanup/767.index.js": {
+          "bytes": 2337528,
+          "sha256": "491ce8398cfdd5123602e3765a3f70e7ce559c3f66d831cad7eba78e3ab42f8f"
+        },
+        ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.repair.json": {
+          "bytes": 3064,
+          "sha256": "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7"
+        },
+        ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.source.json": {
+          "bytes": 6925,
+          "sha256": "b4b0b79fa2bc84c6f1e1c61ddcc1ab228df629f9fce4b1067d3ac8b3d1c42892"
+        },
+        ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar": {
+          "bytes": 51200,
+          "sha256": "c4ca0f4eb3a2464c026bc3dec5d9eaf04544aed24c3fd1d77da95f85e36c369f"
+        },
+        ".lsf-source/verify-installed-deepmerge.mjs": {
+          "bytes": 2381,
+          "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7"
+        },
+        ".lsf-source/minimatch-10.2.6.original.tgz": {
+          "bytes": 117068,
+          "sha256": "5a3d2c8074a28229665727e47b8a1090941856a7962905efe05d20d3760355f8"
+        },
+        ".lsf-source/minimatch-10.2.6-lsf-bound-v1.tar": {
+          "bytes": 583680,
+          "sha256": "bb2b80a4759baaee01d49528b2d7d0c05fc29c1cf0d3fea41ec243de04bceedb"
+        },
+        ".lsf-source/minimatch-10.2.6-lsf-bound-v1.repair.json": {
+          "bytes": 2129,
+          "sha256": "d6ede52113aa8cb2d4b6ee008885fd2de0d37e06d822e444846f6f905f088bf3"
+        },
+        ".lsf-source/verify-installed-minimatch.mjs": {
+          "bytes": 3386,
+          "sha256": "4af8eaff4b0b6f6b4b084ceeab68932ba8940048c9e49f9ed8fdc400e9e2f72d"
+        },
+        ".lsf-source/minimatch-bounds.test.mjs": {
+          "bytes": 2854,
+          "sha256": "4fd2675946ecfa56ccf5a3c59e76ef50a5dc7d84f0a37fefd47e0037c50a4492"
+        },
+        "installed-minimatch.json": {
+          "bytes": 427,
+          "sha256": "54ac8017be7e2e70e951d5da094afa1125e6fafa4be2fa3404c48784d5281266"
+        },
+        "installed-deepmerge.json": {
+          "bytes": 524,
+          "sha256": "b4728f29efd94c5698267321d3d838744ea3e47a7f433a1a7b92770ffb1aa362"
+        },
+        "source-identities.txt": {
+          "bytes": 123,
+          "sha256": "11fce0fce872b0f3e3e7fd3b4f03c403133d48c4c669e62fc54cf87badd23035"
+        }
+      }
+    },
+    "installed": {
+      "kind": "installed-minimatch-source-assertion",
+      "sourceCommit": "eaa32fe679a4d1ab0dbee73cf502e7890ca8a3df",
+      "node": "24.19.0",
+      "version": "10.2.6",
+      "repairSha256": "d6ede52113aa8cb2d4b6ee008885fd2de0d37e06d822e444846f6f905f088bf3",
+      "installedPostimages": {
+        "dist/commonjs/index.js": "7e835c0a30f7b4f29f4ad8cf8c3e92b97ab23ed854a7a777f240d6bdf3d19231",
+        "dist/esm/index.js": "37ba4ff4010cda499e890975983b78ebd5f2be2dd8506d938472de4af8e9ed25"
       }
     }
   },
-  "installed": {
-    "kind": "installed-minimatch-source-assertion",
-    "sourceCommit": "eaa32fe679a4d1ab0dbee73cf502e7890ca8a3df",
-    "node": "24.19.0",
-    "version": "10.2.6",
-    "repairSha256": "d6ede52113aa8cb2d4b6ee008885fd2de0d37e06d822e444846f6f905f088bf3",
-    "installedPostimages": {
-      "dist/commonjs/index.js": "7e835c0a30f7b4f29f4ad8cf8c3e92b97ab23ed854a7a777f240d6bdf3d19231",
-      "dist/esm/index.js": "37ba4ff4010cda499e890975983b78ebd5f2be2dd8506d938472de4af8e9ed25"
-    }
-  }
+  "scope": "Exact source/bundle rebuild and finite controls; no signed SDK or release qualification."
 }

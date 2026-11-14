@@ -29,7 +29,7 @@ jobs:
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
-      - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334 # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-ci-dependencies-v2
           shared-key: host-correctness
@@ -52,7 +52,7 @@ jobs:
           grep -F 'test rust_component::tests::rust_combined_graph_recomputes_original_without_enabling_a_runtime ... ok' "$RUNNER_TEMP/rust-combined-preview-proof/combined.log"
       - name: Retain bounded proof output including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: rust-combined-preview-proof-${{ github.sha }}
           retention-days: 7

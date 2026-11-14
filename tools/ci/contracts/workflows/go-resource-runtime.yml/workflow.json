@@ -30,7 +30,7 @@
 "requiredJobs":[
 "joined-resources"
 ],
-"reviewReason":"Publish the explicitly approved finite Go joined resource/goroutine programme with one fresh pinned Go1.27.3 v5 component, frozen357e SDK5 products, original13 outcomes and all TypeScript/default owner limits preserved; no native rebuild or qualification claim before actual results.",
+"reviewReason":"Publish the explicitly approved finite Go joined resource/goroutine programme with one fresh pinned Go1.27.4 v5 component, frozen357e SDK5 products, original13 outcomes and all TypeScript/default owner limits preserved; no native rebuild or qualification claim before actual results.",
 "schemaVersion":"latent.ci.contracts.v1",
 "workflow":".github/workflows/go-resource-runtime.yml"
 }

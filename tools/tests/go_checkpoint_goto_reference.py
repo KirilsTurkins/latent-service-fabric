@@ -60,7 +60,7 @@ def reference(go):
     with tempfile.TemporaryDirectory(prefix='go-checkpoint-goto-') as temporary:
         root = Path(temporary)
         _, version, _ = run_bounded([str(go), 'version'], env, root, 30)
-        if version.strip() != b'go version go1.27.3 linux/amd64':
+        if version.strip() != b'go version go1.27.4 linux/amd64':
             raise ValueError('go-checkpoint-reference-version')
         pragma_source = root / 'directives.go'
         pragma_source.write_bytes(directives)
@@ -111,8 +111,8 @@ def reference(go):
         worker.write_bytes(dependency)
         (dispatcher / 'async.go').write_text('package async\nfunc Dummy(){}\n')
         (standard / 'runtime.go').write_text('package runtime\nfunc Dummy(){}\n')
-        (module / 'go.mod').write_text('module example.invalid/app\n\ngo 1.27.3\n\nrequire example.invalid/worker v0.0.0\n')
-        (module / 'vendor/modules.txt').write_text('# example.invalid/worker v0.0.0\n## explicit; go 1.27.3\nexample.invalid/worker\n')
+        (module / 'go.mod').write_text('module example.invalid/app\n\ngo 1.27.4\n\nrequire example.invalid/worker v0.0.0\n')
+        (module / 'vendor/modules.txt').write_text('# example.invalid/worker v0.0.0\n## explicit; go 1.27.4\nexample.invalid/worker\n')
         packages = [{'Dir': str(module), 'GoFiles': ['main.go']},
                     {'Dir': str(vendor), 'GoFiles': ['worker.go']},
                     {'Dir': str(dispatcher), 'GoFiles': ['async.go']},

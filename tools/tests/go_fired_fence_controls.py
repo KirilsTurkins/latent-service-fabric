@@ -122,7 +122,7 @@ def returned_controls(go: str, root: Path, environment: dict, derived: str) -> N
                         ('selected-returned', bodies['lsfActivationTimerFence'])):
         folder = root / name
         folder.mkdir()
-        (folder / 'go.mod').write_text('module returnedport\n\ngo 1.27.3\n', encoding='utf-8')
+        (folder / 'go.mod').write_text('module returnedport\n\ngo 1.27.4\n', encoding='utf-8')
         source = RETURNED_PREFIX + '\n' + '\n'.join(fence if key == 'lsfActivationTimerFence' else bodies[key] for key in names)
         (folder / 'port.go').write_text(source, encoding='utf-8')
         (folder / 'port_test.go').write_text(RETURNED_TEST, encoding='utf-8')
@@ -184,7 +184,7 @@ def returned_park_controls(go: str, root: Path, environment: dict) -> None:
     for name, body in (('weakened-park', park.replace(selected, 'true', 1)), ('selected-park', park)):
         folder = root / name
         folder.mkdir()
-        (folder / 'go.mod').write_text('module parkport\n\ngo 1.27.3\n', encoding='utf-8')
+        (folder / 'go.mod').write_text('module parkport\n\ngo 1.27.4\n', encoding='utf-8')
         (folder / 'port.go').write_text(PARK_PREFIX + '\n' + body + '\n', encoding='utf-8')
         (folder / 'port_test.go').write_text(PARK_TEST, encoding='utf-8')
         result = subprocess.run([go, 'test', '-count=1', '-v', './...'], cwd=folder, env=environment,
@@ -226,7 +226,7 @@ def main() -> None:
     if go is None:
         raise ValueError('Go-fired-fence-control-pinned-go-missing')
     version = subprocess.run([go, 'version'], check=True, capture_output=True, text=True, timeout=10).stdout.split()
-    if len(version) < 3 or version[2] != 'go1.27.3':
+    if len(version) < 3 or version[2] != 'go1.27.4':
         raise ValueError('Go-fired-fence-control-unreviewed-go')
     raw = (ROOT / 'sdk/go-guest/runtime/timer_async.go.in').read_bytes()
     if len(raw) > 16384:
@@ -246,7 +246,7 @@ def main() -> None:
         for name, selected_fence in (('weakened', weakened), ('selected', fence)):
             folder = root / name
             folder.mkdir()
-            (folder / 'go.mod').write_text('module firedport\n\ngo 1.27.3\n', encoding='utf-8')
+            (folder / 'go.mod').write_text('module firedport\n\ngo 1.27.4\n', encoding='utf-8')
             (folder / 'port.go').write_text(PREFIX + '\n' + stop + '\n' + selected_fence + '\n', encoding='utf-8')
             (folder / 'port_test.go').write_text(TEST, encoding='utf-8')
             result = subprocess.run([go, 'test', '-count=1', '-v', './...'], cwd=folder, env=environment,

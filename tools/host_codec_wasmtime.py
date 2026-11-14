@@ -13,12 +13,12 @@ PROVIDER = "crates/vendor/wasmtime"
 NAME = "wasmtime"
 VERSION = "48.0.8"
 COHORT = "wasmtime-48.0.8-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v30-authenticated-bounded-root-suspension-upstream-security-v31-consumer-poll-factory-v32-host-accept-factory-v33-consumer-inner-future-v34-producer-inner-future-v35-sync-ready-callback-v36-inline-runtime-futures-v37"
-RECORD_SHA256 = "c6d6db619250817c516677c710dd6f7d852371a1b21a9795d2817889a792d628"
+RECORD_SHA256 = "e080261b165dd1fac3288566475775d4efc48ef7de1c558cd2f93071c81bf473"
 # Explicit reviewed postimages; the remaining original files use the immutable
 # registry inventory. Changing a claimed record or patch cannot authorize bytes.
 POSTIMAGES = {
     "Cargo.lock": {
-        "sha256": "0d671e7a76239c58f372317fefbc224fc325c912ebf55528af3cf942d882a146",
+        "sha256": "4428e6f8002d4cfeb7eb6b841ebde47f9241b77fdd18c0265ca57f6fddce40c2",
         "bytes": 60137
     },
     "Cargo.toml": {
@@ -26,8 +26,8 @@ POSTIMAGES = {
         "bytes": 11138
     },
     "latent-dynamic-memory.patch": {
-        "sha256": "3e61057bcb435564d34617ff9e29ada7d92f6c4b2480b94d66292f7bc0aaa27e",
-        "bytes": 750161
+        "sha256": "fd5318a81dd16c9810b4dca6b3be2f991f6738a6959c03195c74528b0a39b035",
+        "bytes": 750546
     },
     "README.latent.md": {
         "sha256": "fdf7b2f84c2801cb4bcae484cd1cf72da633a42538c0b6774fd4c4181ef5bf07",

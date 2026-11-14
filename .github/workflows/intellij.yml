@@ -29,7 +29,7 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         id: setup_python
         continue-on-error: ${{ runner.os == 'Windows' }}
         with:
@@ -61,7 +61,7 @@ jobs:
           $python = Join-Path $cache 'Python\3.13.5\x64\python.exe'
           if (!(Test-Path -LiteralPath (Join-Path $cache 'Python\3.13.5\x64.complete'))) { throw 'Python tool cache is incomplete' }
           if ((& $python --version) -ne 'Python 3.13.5') { throw 'Python version mismatch' }
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         if: runner.os == 'Windows' && steps.setup_python.outcome == 'failure'
         with:
           python-version: 3.13.5
@@ -82,7 +82,7 @@ jobs:
         run: python tools/intellij.py run help
       - name: Select the website Node runtime for native Windows execution
         if: runner.os == 'Windows'
-        uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a # v7.1.0 + upstream changes + LSF security fixes
         with:
           node-version-file: website/package.json
           package-manager-cache: false
@@ -100,7 +100,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Retain review proposal, not machine settings
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: intellij-review-${{ matrix.os }}-${{ github.sha }}
           path: ${{ runner.temp }}/intellij-review/

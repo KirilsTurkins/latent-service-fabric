@@ -130,7 +130,7 @@ def qualify(output: Path, compiler: Path, environment: dict, old: bytes,
     for name, source in (('deadline-old', old), ('deadline-current', current)):
         module = output / name
         module.mkdir()
-        (module / 'go.mod').write_bytes(b'module example.invalid/streamdeadline\n\ngo 1.27.3\n')
+        (module / 'go.mod').write_bytes(b'module example.invalid/streamdeadline\n\ngo 1.27.4\n')
         (module / 'deadline.go').write_bytes(projected(source))
         (module / 'deadline_test.go').write_bytes(tests)
         (module / 'wit').mkdir()

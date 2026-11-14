@@ -31,7 +31,7 @@ class DeployPagesSourceRepairTests(unittest.TestCase):
         identities = {name: sources.source_identity(value) for name, value in self.runtime.items()}
         build_path = self.root / deploy.BUILD[0]
         build = json.loads(build_path.read_bytes())
-        build["bundles"] = identities
+        build["outputs"] = identities
         build_path.write_text(json.dumps(build), encoding="utf-8")
         build_identity = sources.source_identity(build_path.read_bytes())
         replacement = (deploy.BUILD[0], build_identity["bytes"], build_identity["sha256"], build_identity["gitBlob"])

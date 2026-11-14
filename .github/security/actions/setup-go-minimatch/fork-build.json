@@ -1,181 +1,282 @@
 {
-  "schema": 1,
+  "schema": 2,
   "repository": "KirilsTurkins/lsf-setup-go",
-  "publishedRevision": "1020042799f722e9ef016bf63106367879587a49",
-  "publishedTree": "586d487e144d8cf393893459b6678118d0b5dc92",
-  "sourceHead": "390622e7ee1bf62f65e663253868c5d78d2d0f7d",
-  "diagnosticHead": "dec0ffefad2e934819c5d8f10e44bfd8a0623a79",
-  "diagnosticTree": "1a2d7f307cabbe51dc51dd0e5840011ac9013ab2",
-  "diagnosticOnlyPath": ".github/workflows/setup-go-security-linux-owner.yml",
-  "run": 42024368583,
-  "job": 127234749396,
+  "publishedRevision": "92a5903f5ff2b45e67c517d23c18501025a55a12",
+  "publishedTree": "71e010c88065728c2175f28330d8ea5aab035e60",
+  "base": "1020042799f722e9ef016bf63106367879587a49",
+  "testedCommit": "f6d9f50a33f6b3048546e4b649f82a49c3279394",
+  "diagnosticHead": "84aa054ec50e2ba927afb881eb763053e3423bf0",
+  "run": 43523168939,
   "jobConclusion": "success",
-  "node": "24.19.0",
-  "npm": "11.17.0",
-  "jestSuites": 6,
-  "jestTests": 131,
-  "sourceControls": 2,
-  "artifact": {
-    "id": 13413795581,
-    "bytes": 24800,
-    "sha256": "0ac56d93118b189b38dda2bb69c0ec1b591f59d621a2b8b1ad8e9bce74191437",
-    "members": {
-      "bundle-sha256.txt": {
-        "bytes": 177,
-        "sha256": "0079ea54dddb34c93c3909b93690d6d8b608b7efaba84b9b8c1ad31b7213aafa"
-      },
-      "dist-actual.txt": {
-        "bytes": 98,
-        "sha256": "0630ff46bfeccc9ed40b1dd2e67cf7514e9a16feb8d3f2448b6baa91149b27f1"
-      },
-      "dist-expected.txt": {
-        "bytes": 98,
-        "sha256": "0630ff46bfeccc9ed40b1dd2e67cf7514e9a16feb8d3f2448b6baa91149b27f1"
-      },
-      "jest.json": {
-        "bytes": 132158,
-        "sha256": "c748aca70f9550bbd9f054a7edaf285e7f9be483e16fee60e853fb4f05b0c286"
-      },
-      "npm-ls.txt": {
-        "bytes": 45903,
-        "sha256": "32169ca42a0b46568de32a943496b095fc7969aaf1c638349f0c10d2971684ea"
-      },
-      "reconstruction.json": {
-        "bytes": 632,
-        "sha256": "ec5d869d9e91334c3f969ab3cb8e6f418f41ab9d76ec3f79939896b098dd9191"
-      },
-      "tamper.json": {
-        "bytes": 1993,
-        "sha256": "d21d916f015786a516a7b504c2829cbf511b0ed134b5976cb549d1467eb9b4d7"
-      }
-    },
-    "crcVerified": true
+  "toolchain": {
+    "node": "24.19.0"
   },
-  "reconstruction": [
-    {
-      "name": "deepmerge",
-      "files": 11,
-      "repaired": [
-        "index.js",
-        "dist/cjs.js",
-        "dist/umd.js"
-      ],
-      "original_sha256": "4003a0a348276a95543fa969f561f6b5968629acbbb59d66018dd23e7b8f1d5c",
-      "derived_sha256": "c4ca0f4eb3a2464c026bc3dec5d9eaf04544aed24c3fd1d77da95f85e36c369f"
+  "artifact": {
+    "id": 14083841811,
+    "bytes": 62260,
+    "sha256": "399e84076473de39784ad27e5ab64cddd3a84b22160f0651286c3a60372fac27"
+  },
+  "validationLog": {
+    "bytes": 14707,
+    "sha256": "4882830197f7fa36bf9113867cdb6ccdec831dbc962d007b78908a8c1a41b8e6",
+    "gitBlob": "e93bd0e5ff4f14adfcb8435a3b65168cfb23640c"
+  },
+  "validation": {
+    "sourceControlsPassed": true,
+    "xmlRegressionPassed": true,
+    "unitTests": 131,
+    "unitSuites": 6
+  },
+  "sourceFiles": {
+    "action.yml": {
+      "bytes": 2788,
+      "sha256": "216efbacabe9911f4de0714f00f57e45470469c52c2d3e70e8d6165f32939585",
+      "gitBlob": "79299e5525f5b737d28c7a5ffdcadf91d391f797"
     },
-    {
-      "name": "minimatch",
-      "files": 53,
-      "repaired": [
-        "dist/commonjs/index.js",
-        "dist/esm/index.js"
-      ],
-      "original_sha256": "a6cea46915bfc6c3fae60f9bd003ea4f9d6a4233aa59a9ca729474d3824ca9e5",
-      "derived_sha256": "8ed155c4f29d451728efaaf60bc0ed7249ceb93d21eb81171068342621287a68"
+    "package.json": {
+      "bytes": 2523,
+      "sha256": "5cd3573fb4e1a6b3cf680b46cf3cd5dbafc293abc2bea4fc078925d89c2ef18e",
+      "gitBlob": "d82f4446ea676f4b4f16d00627d3aafa4d549a5b"
+    },
+    "package-lock.json": {
+      "bytes": 225454,
+      "sha256": "0ab055419bedc5c0b561cc30632279aa8d38edd2fdced86d122939457e9e2869",
+      "gitBlob": "5ac85cf63c31df0b05825d74280c5e5889f5c46d"
+    },
+    ".lsf-source/verify-installed-deepmerge.mjs": {
+      "bytes": 2381,
+      "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
+      "gitBlob": "99d75a2ea3895eb8acc8018984ca9826e4edff51"
+    },
+    ".lsf-source/verify-installed-minimatch.mjs": {
+      "bytes": 3386,
+      "sha256": "4fcbcba0f46fed80b09c6cdb1a2a54eeff2e0a3690b4d0a5b566762169f1f826",
+      "gitBlob": "ab204a63dd0ddf065b00ae7c3ab0531b35d5d300"
+    },
+    ".lsf-source/minimatch-bounds.test.mjs": {
+      "bytes": 2854,
+      "sha256": "f65c9af8d0d6b2abfd728d803e223396e746850f564003e93b223c4f084f987b",
+      "gitBlob": "9601c04f3210fa02ee4ae91183f2a5538b1e9374"
     }
-  ],
-  "tamperRefusals": [
-    {
-      "verifier": "deepmerge",
-      "path": "node_modules/deepmerge/index.js",
-      "change": "bytes",
-      "refused": true
-    },
-    {
-      "verifier": "deepmerge",
-      "path": "node_modules/deepmerge/dist/cjs.js",
-      "change": "bytes",
-      "refused": true
-    },
-    {
-      "verifier": "deepmerge",
-      "path": "node_modules/deepmerge/dist/umd.js",
-      "change": "bytes",
-      "refused": true
-    },
-    {
-      "verifier": "deepmerge",
-      "path": ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar",
-      "change": "bytes",
-      "refused": true
-    },
-    {
-      "verifier": "deepmerge",
-      "path": ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.repair.json",
-      "change": "bytes",
-      "refused": true
-    },
-    {
-      "verifier": "deepmerge",
-      "path": "package.json",
-      "change": "deep-manifest",
-      "refused": true
-    },
-    {
-      "verifier": "deepmerge",
-      "path": "package-lock.json",
-      "change": "deep-lock",
-      "refused": true
-    },
-    {
-      "verifier": "minimatch",
-      "path": "node_modules/minimatch/dist/commonjs/index.js",
-      "change": "bytes",
-      "refused": true
-    },
-    {
-      "verifier": "minimatch",
-      "path": "node_modules/minimatch/dist/esm/index.js",
-      "change": "bytes",
-      "refused": true
-    },
-    {
-      "verifier": "minimatch",
-      "path": ".lsf-source/minimatch-10.2.5-lsf-bound-v1.tar",
-      "change": "bytes",
-      "refused": true
-    },
-    {
-      "verifier": "minimatch",
-      "path": ".lsf-source/minimatch-10.2.5.original.tgz",
-      "change": "bytes",
-      "refused": true
-    },
-    {
-      "verifier": "minimatch",
-      "path": ".lsf-source/minimatch-10.2.5-lsf-bound-v1.repair.json",
-      "change": "bytes",
-      "refused": true
-    },
-    {
-      "verifier": "minimatch",
-      "path": "package.json",
-      "change": "mini-manifest",
-      "refused": true
-    },
-    {
-      "verifier": "minimatch",
-      "path": "package-lock.json",
-      "change": "mini-lock",
-      "refused": true
-    },
-    {
-      "verifier": "minimatch",
-      "path": "package-lock.json",
-      "change": "mini-duplicate",
-      "refused": true
-    }
-  ],
-  "bundles": {
+  },
+  "outputs": {
     "dist/setup/index.js": {
-      "bytes": 3524152,
-      "sha256": "7f48af95ce77cec176b4280338431d244eff2582e3fdcc7399108ec3ae6fb1ec",
-      "gitBlob": "0ea73efad446214b94a2a620e70cc5a211f57e33"
+      "bytes": 3520107,
+      "sha256": "17484a2d85761ff8c2b1ede7716ec58d235d3a272fbc5fd32ff5785b182eb669",
+      "gitBlob": "8783bf713f49b338b84d3f3d9473d8d0bbed56a6"
     },
     "dist/cache-save/index.js": {
-      "bytes": 3462700,
-      "sha256": "2788fcd2e048d57304f4a7f896468d1c5dbc0e983d6f41aad89e9422e8f7ecfb",
-      "gitBlob": "9b3464443d5066f0d4fed1421aed8cbd9d197e3f"
+      "bytes": 3458655,
+      "sha256": "06a971fbaa132dc7e21d21769c47eb3f929624a867b575168d9965cf3c9afdac",
+      "gitBlob": "4ffddc7e1a98a429357c1dd0029d2ded97ab3c4f"
     }
-  }
+  },
+  "installedSourceAssertions": [
+    {
+      "kind": "installed-source-assertion",
+      "sourceCommit": "84aa054ec50e2ba927afb881eb763053e3423bf0",
+      "node": "24.19.0",
+      "packageVersion": "4.3.1",
+      "repairSha256": "e402617d1e791c4bed35768b6c34ba68c370c076551495e738de0731ad2049c7",
+      "installedPostimages": {
+        "index.js": "ba2a6c79e67e10f45a32cfe8f5ea5c5607dc4718be2b37956e9202ea4cdbe1bc",
+        "dist/cjs.js": "c5e9c1f08e7a3b589010133108a3c625806358fa9e1bdaa11f07e9e756f19da0",
+        "dist/umd.js": "b12652d3654f47b08ae43e8b390b66c55987ace6d9a6167c3240744ffa0f28f9"
+      },
+      "actionBuildOrSignedSDKQualified": false
+    },
+    {
+      "kind": "installed-minimatch-source-assertion",
+      "sourceCommit": "84aa054ec50e2ba927afb881eb763053e3423bf0",
+      "node": "24.19.0",
+      "version": "10.2.5",
+      "repairSha256": "b340bb0502087bb0df18c8ec276ee61f58aedc6c54fcc6b022d174817d7d27a9",
+      "installedPostimages": {
+        "dist/commonjs/index.js": "7e835c0a30f7b4f29f4ad8cf8c3e92b97ab23ed854a7a777f240d6bdf3d19231",
+        "dist/esm/index.js": "37ba4ff4010cda499e890975983b78ebd5f2be2dd8506d938472de4af8e9ed25"
+      }
+    }
+  ],
+  "previousEvidence": {
+    "schema": 1,
+    "repository": "KirilsTurkins/lsf-setup-go",
+    "publishedRevision": "1020042799f722e9ef016bf63106367879587a49",
+    "publishedTree": "586d487e144d8cf393893459b6678118d0b5dc92",
+    "sourceHead": "390622e7ee1bf62f65e663253868c5d78d2d0f7d",
+    "diagnosticHead": "dec0ffefad2e934819c5d8f10e44bfd8a0623a79",
+    "diagnosticTree": "1a2d7f307cabbe51dc51dd0e5840011ac9013ab2",
+    "diagnosticOnlyPath": ".github/workflows/setup-go-security-linux-owner.yml",
+    "run": 42024368583,
+    "job": 127234749396,
+    "jobConclusion": "success",
+    "node": "24.19.0",
+    "npm": "11.17.0",
+    "jestSuites": 6,
+    "jestTests": 131,
+    "sourceControls": 2,
+    "artifact": {
+      "id": 13413795581,
+      "bytes": 24800,
+      "sha256": "0ac56d93118b189b38dda2bb69c0ec1b591f59d621a2b8b1ad8e9bce74191437",
+      "members": {
+        "bundle-sha256.txt": {
+          "bytes": 177,
+          "sha256": "0079ea54dddb34c93c3909b93690d6d8b608b7efaba84b9b8c1ad31b7213aafa"
+        },
+        "dist-actual.txt": {
+          "bytes": 98,
+          "sha256": "0630ff46bfeccc9ed40b1dd2e67cf7514e9a16feb8d3f2448b6baa91149b27f1"
+        },
+        "dist-expected.txt": {
+          "bytes": 98,
+          "sha256": "0630ff46bfeccc9ed40b1dd2e67cf7514e9a16feb8d3f2448b6baa91149b27f1"
+        },
+        "jest.json": {
+          "bytes": 132158,
+          "sha256": "c748aca70f9550bbd9f054a7edaf285e7f9be483e16fee60e853fb4f05b0c286"
+        },
+        "npm-ls.txt": {
+          "bytes": 45903,
+          "sha256": "32169ca42a0b46568de32a943496b095fc7969aaf1c638349f0c10d2971684ea"
+        },
+        "reconstruction.json": {
+          "bytes": 632,
+          "sha256": "ec5d869d9e91334c3f969ab3cb8e6f418f41ab9d76ec3f79939896b098dd9191"
+        },
+        "tamper.json": {
+          "bytes": 1993,
+          "sha256": "d21d916f015786a516a7b504c2829cbf511b0ed134b5976cb549d1467eb9b4d7"
+        }
+      },
+      "crcVerified": true
+    },
+    "reconstruction": [
+      {
+        "name": "deepmerge",
+        "files": 11,
+        "repaired": [
+          "index.js",
+          "dist/cjs.js",
+          "dist/umd.js"
+        ],
+        "original_sha256": "4003a0a348276a95543fa969f561f6b5968629acbbb59d66018dd23e7b8f1d5c",
+        "derived_sha256": "c4ca0f4eb3a2464c026bc3dec5d9eaf04544aed24c3fd1d77da95f85e36c369f"
+      },
+      {
+        "name": "minimatch",
+        "files": 53,
+        "repaired": [
+          "dist/commonjs/index.js",
+          "dist/esm/index.js"
+        ],
+        "original_sha256": "a6cea46915bfc6c3fae60f9bd003ea4f9d6a4233aa59a9ca729474d3824ca9e5",
+        "derived_sha256": "8ed155c4f29d451728efaaf60bc0ed7249ceb93d21eb81171068342621287a68"
+      }
+    ],
+    "tamperRefusals": [
+      {
+        "verifier": "deepmerge",
+        "path": "node_modules/deepmerge/index.js",
+        "change": "bytes",
+        "refused": true
+      },
+      {
+        "verifier": "deepmerge",
+        "path": "node_modules/deepmerge/dist/cjs.js",
+        "change": "bytes",
+        "refused": true
+      },
+      {
+        "verifier": "deepmerge",
+        "path": "node_modules/deepmerge/dist/umd.js",
+        "change": "bytes",
+        "refused": true
+      },
+      {
+        "verifier": "deepmerge",
+        "path": ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar",
+        "change": "bytes",
+        "refused": true
+      },
+      {
+        "verifier": "deepmerge",
+        "path": ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.repair.json",
+        "change": "bytes",
+        "refused": true
+      },
+      {
+        "verifier": "deepmerge",
+        "path": "package.json",
+        "change": "deep-manifest",
+        "refused": true
+      },
+      {
+        "verifier": "deepmerge",
+        "path": "package-lock.json",
+        "change": "deep-lock",
+        "refused": true
+      },
+      {
+        "verifier": "minimatch",
+        "path": "node_modules/minimatch/dist/commonjs/index.js",
+        "change": "bytes",
+        "refused": true
+      },
+      {
+        "verifier": "minimatch",
+        "path": "node_modules/minimatch/dist/esm/index.js",
+        "change": "bytes",
+        "refused": true
+      },
+      {
+        "verifier": "minimatch",
+        "path": ".lsf-source/minimatch-10.2.5-lsf-bound-v1.tar",
+        "change": "bytes",
+        "refused": true
+      },
+      {
+        "verifier": "minimatch",
+        "path": ".lsf-source/minimatch-10.2.5.original.tgz",
+        "change": "bytes",
+        "refused": true
+      },
+      {
+        "verifier": "minimatch",
+        "path": ".lsf-source/minimatch-10.2.5-lsf-bound-v1.repair.json",
+        "change": "bytes",
+        "refused": true
+      },
+      {
+        "verifier": "minimatch",
+        "path": "package.json",
+        "change": "mini-manifest",
+        "refused": true
+      },
+      {
+        "verifier": "minimatch",
+        "path": "package-lock.json",
+        "change": "mini-lock",
+        "refused": true
+      },
+      {
+        "verifier": "minimatch",
+        "path": "package-lock.json",
+        "change": "mini-duplicate",
+        "refused": true
+      }
+    ],
+    "bundles": {
+      "dist/setup/index.js": {
+        "bytes": 3524152,
+        "sha256": "7f48af95ce77cec176b4280338431d244eff2582e3fdcc7399108ec3ae6fb1ec",
+        "gitBlob": "0ea73efad446214b94a2a620e70cc5a211f57e33"
+      },
+      "dist/cache-save/index.js": {
+        "bytes": 3462700,
+        "sha256": "2788fcd2e048d57304f4a7f896468d1c5dbc0e983d6f41aad89e9422e8f7ecfb",
+        "gitBlob": "9b3464443d5066f0d4fed1421aed8cbd9d197e3f"
+      }
+    }
+  },
+  "scope": "Exact source/bundle rebuild and finite controls; no signed SDK or release qualification."
 }

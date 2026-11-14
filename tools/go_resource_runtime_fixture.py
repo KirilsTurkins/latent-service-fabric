@@ -142,7 +142,7 @@ def project(directory: Path, outside: Path, *, late_completion=False, runtime_pr
     outside.mkdir(mode=0o700)
     for name,identity in zip(('library','data'),PACKAGES,strict=True):
         target=outside/name;target.mkdir()
-        manifest='module '+identity+'\n\ngo 1.27.3\n'
+        manifest='module '+identity+'\n\ngo 1.27.4\n'
         if name=='library':manifest+='require '+PACKAGES[1]+' v0.0.0\n'
         (target/'go.mod').write_bytes(manifest.encode())
     library = LIBRARY_SOURCE
