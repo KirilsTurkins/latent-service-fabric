@@ -1,0 +1,84 @@
+name: TypeScript validated security publication objects
+on:
+  push:
+    branches: [ci/ts-stack-security-20261113]
+    paths:
+      - .github/workflows/ts-security-publication.yml
+      - .github/maintenance/export_validated_ts_security.py
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: ts-security-publication
+  cancel-in-progress: true
+jobs:
+  objects:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/ts-stack-security-20261113'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      LSF_TYPESCRIPT_RECORD_CXX: clang++
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+      CARGO_TARGET_DIR: /tmp/lsf-security-publication-target
+      RUSTUP_TOOLCHAIN: 1.97.1
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: 3.13.5
+      - run: python3 -m pip install -r tools/requirements.lock
+      - name: Reconstruct scanned tree, test restacks and export objects without moving refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          mkdir -p "$RUNNER_TEMP/final-security-evidence"
+          python3 .github/maintenance/export_validated_ts_security.py 2>&1 | tee "$RUNNER_TEMP/final-security-evidence/publication.log"
+      - name: Retain candidate objects before runtime compilation
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: typescript-security-publication-objects
+          path: ${{ runner.temp }}/final-security-evidence/
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: error
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - name: Run Store custody regressions on the exported tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,pathlib,subprocess
+          root=pathlib.Path(os.environ['RUNNER_TEMP']);out=root/'final-security-evidence';work=root/'security-1931'
+          record=json.loads((out/'1931-objects.json').read_text())
+          def git(*args):return subprocess.check_output(['git',*args],cwd=work,text=True).strip()
+          assert git('rev-parse','HEAD^{tree}')==record['tree']
+          assert git('rev-parse','HEAD')==record['testedLocalCommit']
+          assert not git('status','--porcelain','--untracked-files=normal')
+          command=['cargo','test','-p','latent-wasmtime','--lib','backend::store','--locked']
+          with (out/'1931-store.log').open('wb') as log:
+              result=subprocess.run(command,cwd=work,stdout=log,stderr=subprocess.STDOUT,timeout=2400)
+          record.update(command=command,exitCode=result.returncode)
+          (out/'1931-store-result.json').write_text(json.dumps(record,indent=2)+'\n')
+          print((out/'1931-store.log').read_text(errors='replace')[-18000:])
+          raise SystemExit(result.returncode)
+          PY
+      - name: Retain all publication and runtime evidence
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: typescript-security-publication-runtime
+          path: ${{ runner.temp }}/final-security-evidence/
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: error
