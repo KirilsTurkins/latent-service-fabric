@@ -22,7 +22,7 @@ def historical_cache_selection(steps):
     for action in ('restore', 'save'):
         prefix = 'KirilsTurkins/lsf-cache/' + action + '@'
         matches = [step for step in result if step.get('uses', '').startswith(prefix)]
-        if len(matches) != 1 or matches[0]['uses'] != prefix + 'ec176dce9471270c8a9be1289040c0a8fd6aa708':
+        if len(matches) != 1 or matches[0]['uses'] != prefix + '2571c499f8aa6b4db4b4b5632bea291d6be58dc8':
             raise AssertionError('historical-cache-selection-exact-current-required')
         matches[0]['uses'] = prefix + '2ff27e45011b8bcf31ef566ae84c1c923c8aea69'
     return result
@@ -136,7 +136,8 @@ class JavaScratchWiring(unittest.TestCase):
         expected = 'f145f3a3fbb98a7473f7c35bb07b1b3fd82b3f82a5e54003fc04f72755bad476'
         self.assertEqual(signature(historical_cache_selection(selected)), expected)
         for action in ('restore', 'save'):
-            for suffix in ('2ff27e45011b8bcf31ef566ae84c1c923c8aea69', '0' * 40):
+            for suffix in ('ec176dce9471270c8a9be1289040c0a8fd6aa708',
+                           '2ff27e45011b8bcf31ef566ae84c1c923c8aea69', '0' * 40):
                 altered = copy.deepcopy(selected)
                 row = next(step for step in altered if step.get('uses', '').startswith('KirilsTurkins/lsf-cache/' + action + '@'))
                 row['uses'] = 'KirilsTurkins/lsf-cache/' + action + '@' + suffix

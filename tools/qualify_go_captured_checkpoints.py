@@ -29,8 +29,8 @@ MODULE = 'example.invalid/worker'
 VERSION = 'v0.0.0'
 PROFILES = {'go-component-activation-v1', 'go-component-activation-v2'}
 TRANSFORM = 'go-compiler-checkpoints/vendor/example.invalid/worker/worker.go'
-GO_IDENTITY = {'name': 'go', 'digest': 'sha256:5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b',
-               'size': 17164222}
+GO_IDENTITY = {'name': 'go', 'digest': 'sha256:de0ae3e082ce7599eae4fb69fa2ef1e43b8f31ffd3fce62cdf81930aa9005050',
+               'size': 17256487}
 
 
 def authenticate_go(path: Path) -> dict:

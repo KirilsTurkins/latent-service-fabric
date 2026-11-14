@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "workflowRun": 43589963822,
+  "factorySourceSha256": "47233b07b205adfd04cfbd22b47632576cf564d56effd6e21e675defec1b88f7",
+  "archives": {
+    "1.1.5": {
+      "sha256": "891efababe418670775f199f0d233d84843c227a0949a883ce15b37c78d6629d",
+      "bytes": 425681
+    },
+    "1.1.6": {
+      "sha256": "e5e76742e5294153d4dde1207dbec5bdd81eef6fabdc0d2118babadabfd858aa",
+      "bytes": 426484
+    }
+  },
+  "unchangedBoundaryFiles": {
+    "src/backend/libc/io/errno.rs": {
+      "sha256": "355f9e7c6e617e62494e97f0a5e03ebc341dc4b28b66b30d2a25ba54ee9fb451",
+      "bytes": 30663
+    },
+    "src/backend/libc/io/mod.rs": {
+      "sha256": "746647bd864e4ec7717925b6d176cebdb392b7d015070244cc48d92780351dd6",
+      "bytes": 142
+    },
+    "src/backend/libc/io/syscalls.rs": {
+      "sha256": "d04c8b7b25ef9c1ab41b7180b7de89b1780b3f36f4bc471a6b5aa0475b02a715",
+      "bytes": 9125
+    },
+    "src/backend/libc/io/types.rs": {
+      "sha256": "a966b120932df9533410143d926a0140002ecf41051cd82673d17a04bbe48f0b",
+      "bytes": 2058
+    },
+    "src/backend/libc/io/windows_syscalls.rs": {
+      "sha256": "dd9e7e10aa02ae1f83bf6dd4b22b0ea472389dce762815593a3994ca6567f396",
+      "bytes": 1529
+    },
+    "src/backend/linux_raw/arch/x86_64.rs": {
+      "sha256": "823327d5f16bd33c586b2641817169d216f308d15a4b70eb3a77432623aa3b16",
+      "bytes": 6997
+    },
+    "src/backend/linux_raw/conv.rs": {
+      "sha256": "1bd94a915370530ef5883c16b984680c7dacb0100a660408716f4b86d0f5ea79",
+      "bytes": 29838
+    },
+    "src/backend/linux_raw/io/errno.rs": {
+      "sha256": "556a8b7df8c1de133871b61afa8db60298ab9b0164c4efebac1cc9f4834f21d9",
+      "bytes": 20230
+    },
+    "src/backend/linux_raw/io/mod.rs": {
+      "sha256": "7ae2324427892cca6f5ab53858d847b165f790a72ec25f3d99fb15f0506c9f27",
+      "bytes": 69
+    },
+    "src/backend/linux_raw/io/syscalls.rs": {
+      "sha256": "872548d81710cd5d27e4ddeaad91bca73b473bdead95738641388946db689693",
+      "bytes": 10190
+    },
+    "src/backend/linux_raw/io/types.rs": {
+      "sha256": "f08b224f483815ecd843d9aec9b0b4d5682409adee2c8e728ebbb874b71204a2",
+      "bytes": 1856
+    },
+    "src/backend/linux_raw/reg.rs": {
+      "sha256": "3e321750d91d77c835abd09b06b5851ebf3134d3affb3cce306e38329871bec4",
+      "bytes": 7187
+    },
+    "src/ioctl/bsd.rs": {
+      "sha256": "614e647caad5d7f81b2d570ca0dc77cd942f53a2544e4d1252155370e6fe364a",
+      "bytes": 746
+    },
+    "src/ioctl/linux.rs": {
+      "sha256": "8b78fd0d1b2c078a25a49b7e85d8b2c03c5258c57662b3e3bdd8b7999a685a61",
+      "bytes": 3280
+    },
+    "src/ioctl/mod.rs": {
+      "sha256": "430acf575ad2eb49ee300efd1630b55cca1ef7197be7a0c0d4f2fd7feb80f791",
+      "bytes": 12625
+    },
+    "src/ioctl/patterns.rs": {
+      "sha256": "8bc7f5020c68ef67667b9078a867eb9bc5ad6ab7c674c577541d360052a299d3",
+      "bytes": 7078
+    }
+  },
+  "scope": "Exact 1.1.6 target selection retains the unchanged protected ioctl and std OwnedFd adoption/drop boundary. Source mutation, dependency downgrade/unreviewed upgrade, target/build/lint changes remain refused. Native regular-file refusal and real FD adoption/drop executed; no custom-kernel factory mint, decommit or cross-tenant qualification claimed."
+}
