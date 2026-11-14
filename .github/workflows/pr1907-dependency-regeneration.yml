@@ -7,79 +7,133 @@ permissions:
 jobs:
   regenerate:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
+    permissions:
+      contents: write
     steps:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
         with:
-          ref: cc11bc216ca92f898edecb9015e3dcf76993dddd
+          ref: e1c785beb83d5a66216b2443fa253e0275bad2e7
           persist-credentials: false
-      - name: Retain the exact reviewed source before generation
-        run: |
-          mkdir -p "$RUNNER_TEMP/pr1907-dependencies"
-          git archive --format=tar.gz HEAD -o "$RUNNER_TEMP/pr1907-dependencies/source.tar.gz"
-          git rev-parse HEAD > "$RUNNER_TEMP/pr1907-dependencies/source-revision.txt"
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
-        with:
-          toolchain: 1.97.1
-      - name: Regenerate the four affected Rust locks without running project code
+      - name: Generate only rustix pins and the four audited locks
         run: |
           python3 - <<'PY'
-          import hashlib, json, os, pathlib, subprocess
-          root = pathlib.Path.cwd()
+          import hashlib, json, os, pathlib, re, subprocess, tomllib
           out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1907-dependencies'
-          cases = [('Cargo.toml', '1.1.5'),
-                   ('crates/vendor/wasmtime/Cargo.toml', '1.1.4'),
-                   ('crates/vendor/wasmtime-cache/Cargo.toml', '1.1.4'),
-                   ('tools/native-fixture/Cargo.toml', '1.1.5')]
+          out.mkdir()
+          tracked = subprocess.check_output(['git', 'ls-files', '-z']).decode().split('\0')
+          changed = []
+          pattern = re.compile(r'(?m)^(rustix\s*=\s*\{\s*version\s*=\s*\")=1\.1\.5(\"[^\n]*)$')
+          for name in tracked:
+              if not name.endswith('Cargo.toml') or name.startswith('crates/vendor/'):
+                  continue
+              path = pathlib.Path(name)
+              before = path.read_text()
+              after, count = pattern.subn(r'\g<1>=1.1.6\2', before)
+              if count:
+                  assert count == 1, name
+                  tomllib.loads(after)
+                  path.write_text(after)
+                  changed.append(name)
+          assert changed, 'no exact rustix pins found'
+          print('UPDATED_MANIFESTS', json.dumps(changed))
+          cases = [('Cargo.toml', '1.1.5'), ('crates/vendor/wasmtime/Cargo.toml', '1.1.4'),
+                   ('crates/vendor/wasmtime-cache/Cargo.toml', '1.1.4'), ('tools/native-fixture/Cargo.toml', '1.1.5')]
           report = []
           for manifest, old in cases:
               lock = pathlib.Path(manifest).with_name('Cargo.lock')
-              before = lock.read_bytes()
-              command = ['cargo', 'update', '--manifest-path', manifest,
-                         '--package', 'rustix@' + old, '--precise', '1.1.6']
-              result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                      timeout=150, check=False)
-              after = lock.read_bytes()
-              target = out / 'generated' / lock
-              target.parent.mkdir(parents=True, exist_ok=True)
-              target.write_bytes(after)
-              target.with_suffix('.log').write_bytes(result.stdout)
-              row = dict(manifest=manifest, command=command, status=result.returncode,
-                         beforeSha256=hashlib.sha256(before).hexdigest(),
-                         afterSha256=hashlib.sha256(after).hexdigest())
+              before = tomllib.loads(lock.read_text())
+              command = ['cargo', 'update', '--manifest-path', manifest, '--package', 'rustix@' + old, '--precise', '1.1.6']
+              result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=180)
+              print(result.stdout.decode())
+              assert result.returncode == 0, manifest
+              after = tomllib.loads(lock.read_text())
+              rustix = [p for p in after['package'] if p['name'] == 'rustix' and p['version'].startswith('1.')]
+              assert len(rustix) == 1 and rustix[0]['version'] == '1.1.6', manifest
+              keys = lambda doc: {(p['name'], p['version'], p.get('source')): p for p in doc['package']}
+              left, right = keys(before), keys(after)
+              removed = sorted(str(k) for k in left if k not in right)
+              added = sorted(str(k) for k in right if k not in left)
+              altered = sorted(str(k) for k in left.keys() & right.keys() if left[k] != right[k])
+              row = dict(manifest=manifest, removed=removed, added=added, altered=altered, rustix=rustix[0])
               report.append(row)
-              print(json.dumps(row))
-          (out / 'rust-lock-report.json').write_text(json.dumps(report, indent=2) + '\n')
-          (out / 'rust-locks.patch').write_bytes(subprocess.check_output(['git', 'diff', '--binary']))
+              print('LOCK_REVIEW', json.dumps(row))
+              changed.append(str(lock))
+          actual = subprocess.check_output(['git', 'diff', '--name-only']).decode().splitlines()
+          assert set(actual) == set(changed), actual
+          subprocess.run(['git', 'diff', '--check'], check=True)
+          patch = subprocess.check_output(['git', 'diff', '--binary'])
+          assert len(patch) < 512 * 1024
+          (out / 'rust-locks.patch').write_bytes(patch)
+          (out / 'candidate.json').write_text(json.dumps(dict(base='e1c785beb83d5a66216b2443fa253e0275bad2e7', paths=changed, locks=report), indent=2) + '\n')
           PY
-      - name: Retain official dependency metadata for review
+      - name: Check changed native package resolution and protected file behavior
+        run: |
+          cargo metadata --locked --no-deps --format-version 1 > "$RUNNER_TEMP/pr1907-dependencies/metadata.json"
+          cargo test -p latent-protected-files --lib --locked
+          cargo check --manifest-path tools/native-fixture/Cargo.toml --locked
+      - name: Publish an unreferenced review commit, never move a branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess, urllib.request
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1907-dependencies'
+          record = json.loads((out / 'candidate.json').read_text())
+          assert subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip() == record['base']
+          root = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric'
+          def api(path, data=None):
+              req = urllib.request.Request(root + path, data=None if data is None else json.dumps(data).encode(),
+                    headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json',
+                             'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2022-11-28'})
+              with urllib.request.urlopen(req, timeout=45) as response:
+                  return json.load(response)
+          base = api('/git/commits/' + record['base'])
+          tree = []
+          for name in record['paths']:
+              assert name.endswith('Cargo.toml') or name in ['Cargo.lock', 'crates/vendor/wasmtime/Cargo.lock', 'crates/vendor/wasmtime-cache/Cargo.lock', 'tools/native-fixture/Cargo.lock']
+              data = pathlib.Path(name).read_text()
+              assert len(data) < 256 * 1024
+              blob = api('/git/blobs', {'content': data, 'encoding': 'utf-8'})
+              tree.append(dict(path=name, mode='100644', type='blob', sha=blob['sha']))
+          result = api('/git/trees', {'base_tree': base['tree']['sha'], 'tree': tree})
+          commit = api('/git/commits', {'message': 'fix(deps): update rustix pins and audited locks to 1.1.6', 'tree': result['sha'], 'parents': [record['base']]})
+          print('REVIEW_CANDIDATE', json.dumps(dict(commit=commit['sha'], tree=result['sha'], files=tree)))
+          PY
+      - name: Print bounded official dependency and provenance metadata
         if: always()
         run: |
           python3 - <<'PY'
-          import json, os, pathlib, urllib.request
-          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1907-dependencies'
+          import json, pathlib, subprocess, urllib.request
           urls = {
-              'rustix-1.1.6.json': 'https://crates.io/api/v1/crates/rustix/1.1.6',
-              'fast-xml-parser-5.12.0.json': 'https://registry.npmjs.org/fast-xml-parser/5.12.0',
-              'dotnet-8-releases.json': 'https://builds.dotnet.microsoft.com/dotnet/release-metadata/8.0/releases.json',
-              'go-advisory.json': 'https://vuln.go.dev/ID/GO-2026-6859.json',
+              'rustix': 'https://crates.io/api/v1/crates/rustix/1.1.6',
+              'xml': 'https://api.osv.dev/v1/vulns/GHSA-474x-hrwr-fgx4',
+              'go': 'https://vuln.go.dev/ID/GO-2026-6859.json',
+              'dotnet': 'https://api.osv.dev/v1/vulns/GHSA-3g4v-f5gv-c7xf',
           }
           for name, url in urls.items():
               try:
-                  req = urllib.request.Request(url, headers={'User-Agent': 'LSF-dependency-repair-review'})
-                  with urllib.request.urlopen(req, timeout=30) as response:
-                      data = response.read(8 * 1024 * 1024 + 1)
-                  if len(data) > 8 * 1024 * 1024:
-                      raise ValueError('metadata exceeds bounded input')
-                  json.loads(data)
-                  (out / name).write_bytes(data)
+                  with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent':'LSF-dependency-review'}), timeout=30) as response:
+                      data = json.load(response)
+                  if name == 'rustix':
+                      data = {k:data['version'].get(k) for k in ('num','checksum','rust_version')}
+                  else:
+                      data = {k:data.get(k) for k in ('id','summary','affected','references')}
+                  print('OFFICIAL_METADATA', name, json.dumps(data))
               except Exception as error:
-                  (out / (name + '.error')).write_text(str(error) + '\n')
+                  print('METADATA_ERROR', name, str(error))
+          for name in ['crates/vendor/wasmtime/UPSTREAM.json', 'crates/vendor/wasmtime-cache/UPSTREAM.json']:
+              path = pathlib.Path(name)
+              if path.exists() and path.stat().st_size < 32000:
+                  print('PROVENANCE', name, path.read_text())
+          result = subprocess.run(['git','grep','-n','rustix','--','tools/*','docs/development/*'], stdout=subprocess.PIPE)
+          print('PIN_REFERENCES', result.stdout.decode()[:24000])
           PY
       - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f
         if: always()
         with:
-          name: pr1907-dependency-regeneration
+          name: pr1907-rustix-review
           path: ${{ runner.temp }}/pr1907-dependencies
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 3
