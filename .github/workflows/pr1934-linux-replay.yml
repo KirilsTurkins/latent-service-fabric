@@ -1,0 +1,150 @@
+name: PR 1934 repaired Linux replay
+on:
+  push:
+    branches: [ci/pr1934-rustup-20261114]
+    paths: [.github/workflows/pr1934-linux-replay.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  linux-replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      ARTIFACT_SOURCE: 3e2e815281de48e21e369669a3a7627ffaa8134a
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+          ref: e393404cdb3861650e5568cac860e0fb0ec6ab84
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: 3.13.5
+      - run: python -m pip install --requirement tools/requirements.lock
+      - name: Reconstruct and validate the exact reviewed three-file candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          from tools.ci_lane_inventory import workflow_model
+          steps = workflow_model(Path('.github/workflows/pr1934-rustup-validation.yml').read_text())['jobs']['linux-portable-repair']['steps']
+          selected = [next(s['run'] for s in steps if s.get('name') == name) for name in ('Reconstruct only the reviewed workflow repair on the exact PR head', 'Validate setup behavior and the reviewed workflow contract')]
+          for command in selected:
+              subprocess.run(['bash', '--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', command], check=True)
+          PY
+      - name: Export content objects for separate authorized publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import base64, hashlib, json, os, subprocess, urllib.request
+          paths = ['.github/workflows/developer-tools.yml', 'tools/ci/contracts/workflows/developer-tools.yml/jobs/linux-portable.json', 'tools/tests/test_dev_rust_toolchain.py']
+          objects = []
+          for path in paths:
+              raw = Path(path).read_bytes()
+              body = {'encoding': 'base64', 'content': base64.b64encode(raw).decode()}
+              request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs', data=json.dumps(body).encode(), method='POST', headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'})
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  result = json.load(response)
+              expected = hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
+              assert result['sha'] == expected
+              objects.append({'path': path, 'sha': expected, 'sha256': hashlib.sha256(raw).hexdigest()})
+          record = {'parent': '3e2c179cc66cf9bfc13c6ca4a7c16e3b657073c0', 'localCommit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(), 'tree': subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}'], text=True).strip(), 'objects': objects, 'artifactRun': 43591474858, 'artifactSource': os.environ['ARTIFACT_SOURCE']}
+          Path('target/pr1934-evidence/candidate.json').write_text(json.dumps(record, indent=2) + '\n')
+          print(json.dumps(record))
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr1934-rustup-candidate
+          path: target/pr1934-evidence/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Execute the production isolation step
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          from tools.ci_lane_inventory import workflow_model
+          steps = workflow_model(Path('.github/workflows/developer-tools.yml').read_text())['jobs']['linux-portable']['steps']
+          step = next(s for s in steps if s.get('name') == 'Isolate the Linux portable Rust toolchain')
+          subprocess.run(['bash', '--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', step['run']], check=True)
+          PY
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          components: clippy,rustfmt
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - name: Verify the complete pinned installation and build the Linux frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUSTUP_HOME#"$RUNNER_TEMP/lsf-linux-portable-rustup."}" != "$RUSTUP_HOME"
+          rustup component list --installed | tee target/pr1934-evidence/rust-components.txt
+          rustup target list --installed | tee target/pr1934-evidence/rust-targets.txt
+          cargo --version
+          cargo clippy --version
+          cargo fmt --version
+          python -m pip install --require-hashes -r tools/dev-frontend-linux.lock
+          python tools/build_dev_frontend.py --output target/dev-linux-frontend 2>&1 | tee target/pr1934-evidence/frontend.log
+      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389
+        with:
+          github-token: ${{ github.token }}
+          run-id: 43591474858
+          pattern: developer-*-applications-3e2e815281de48e21e369669a3a7627ffaa8134a
+          path: target/dev-applications/
+      - name: Build the real portable host with the unchanged release recipe
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo build -p latent-portable-test-host --release --locked 2>&1 | tee target/pr1934-evidence/native-build.log
+      - name: Execute production packaging and all six retained tutorial sets
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' 2>&1 | tee target/pr1934-evidence/tutorials.log
+          from pathlib import Path
+          import os, subprocess
+          from tools.ci_lane_inventory import workflow_model
+          steps = workflow_model(Path('.github/workflows/developer-tools.yml').read_text())['jobs']['linux-portable']['steps']
+          for name in ('Assemble Linux frontend and portable host with the shared distribution owner', 'Execute all maintained tutorial applications on Linux'):
+              step = next(s for s in steps if s.get('name') == name)
+              env = dict(os.environ)
+              # Select only the original retained artifact directory. Source
+              # provenance is recorded from the actual checkout, not this selector.
+              if name.startswith('Execute all'):
+                  env['GITHUB_SHA'] = os.environ['ARTIFACT_SOURCE']
+              print(name, flush=True)
+              subprocess.run(['bash', '--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', step['run']], env=env, check=True)
+          PY
+      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389
+        with:
+          github-token: ${{ github.token }}
+          run-id: 43591474858
+          name: windows-portable-subset-3e2e815281de48e21e369669a3a7627ffaa8134a
+          path: target/windows/
+      - name: Compare exact component identities and outcomes with Windows
+        shell: bash
+        run: |
+          set -euo pipefail
+          for language in rust c java dotnet go typescript; do
+            python tools/compare_portable_guest_tests.py --windows "target/windows/dev-portable-$language-applications.json" --linux "target/dev-portable-$language-applications.json" --output "target/$language-differential.json"
+          done
+          git diff --exit-code
+          git rev-parse HEAD > target/pr1934-evidence/tested-commit.txt
+      - name: Retain source-bound results including failures
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr1934-linux-replay
+          path: |
+            target/pr1934-evidence/
+            target/ci/pr1934-observed-inventory.json
+            target/dev-portable-*-applications.json
+            target/*-differential.json
+          retention-days: 7
+          if-no-files-found: error
