@@ -162,7 +162,10 @@ mod tests {
         for kind in [2, 3] {
             for indices in [[1, 0], [0, 0]] {
                 let input = fixture(kind, &[3, 1], &indices);
-                assert!(matches!(rewrite(&input), Err(reencode::Error::ParseError(_))));
+                assert!(matches!(
+                    rewrite(&input),
+                    Err(reencode::Error::ParseError(_))
+                ));
             }
         }
     }
