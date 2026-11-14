@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Fail closed on non-conflict Git failures during reviewed stack preparation."""
 from pathlib import Path
+import sys
 source=Path('.github/maintenance/finish_ts_security.py').read_text()
 def change(before,after):
     global source
@@ -45,4 +46,10 @@ change("    driver=TMP/'reviewed-action-integration.py';driver.write_text(script
     exec(compile((ROOT/'.github/maintenance/action_integration_constants.py').read_text(),'reviewed_constants.py','exec'),constants)
     script=constants['repair_constants'](script)
     driver=TMP/'reviewed-action-integration.py';driver.write_text(script)""")
+if sys.argv[1]=='publish-candidates':
+    # Export source-checked PR candidates before the separate, still-required
+    # Store regression step. This is not a runtime qualification receipt.
+    sys.argv[1]='publish-objects'
+    change("        if number==1931:log_test('1931-store',['cargo','test','-p','latent-wasmtime','--lib','backend::store','--locked'],cwd=child)",
+           "        if number==1931:write_json(OUT/'1931-store-pending.json',{'status':'pending','command':['cargo','test','-p','latent-wasmtime','--lib','backend::store','--locked'],'reason':'Executed by the following required workflow step on the exact exported tree; not a pass.'})")
 exec(compile(source,'checked_finish_ts_security.py','exec'))
