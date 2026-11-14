@@ -1,0 +1,45 @@
+name: PR 2026 security replay
+on:
+  push:
+    branches: [ci/pr2026-security-replay-20261114]
+    paths:
+      - '.github/maintenance/pr2026_security_replay.py'
+      - '.github/workflows/pr2026-security-replay.yml'
+permissions:
+  contents: write
+concurrency:
+  group: pr2026-security-replay
+  cancel-in-progress: false
+jobs:
+  replay:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/pr2026-security-replay-20261114'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a
+        with:
+          node-version: 24.19.0
+          package-manager-cache: false
+      - name: Replay only the two immutable security commits onto the exact PR head
+        run: python3 .github/maintenance/pr2026_security_replay.py derive
+      - name: Validate this branch's source and current advisories without bypasses
+        run: python3 .github/maintenance/pr2026_security_replay.py validate
+      - name: Export validated Git objects without updating any branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/maintenance/pr2026_security_replay.py publish
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        if: always()
+        with:
+          name: pr2026-security-replay-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2026-security-evidence/
+          if-no-files-found: error
+          retention-days: 7
