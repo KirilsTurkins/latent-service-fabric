@@ -56,6 +56,17 @@ class SelectionTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 discovery.execution_cases(bad, frozenset({'tests::works', 'tests::external'}),
                                           frozenset({'tests::external'}))
+
+    def test_should_panic_outcome_suffix_matches_canonical_discovery_name(self):
+        discovered = frozenset({'tests::rejects_foreign_wait', 'tests::ordinary'})
+        raw = (b'test tests::rejects_foreign_wait - should panic ... ok\\n'
+               b'test tests::ordinary ... ok\\n'
+               b'test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;\\n')
+        self.assertEqual(discovery.execution_cases(raw, discovered, frozenset()),
+                         (['tests::ordinary', 'tests::rejects_foreign_wait'], []))
+        with self.assertRaisesRegex(ValueError, 'host-suite-case-result-mismatch'):
+            discovery.execution_cases(raw.replace(b' - should panic', b' - unexpected'),
+                                      discovered, frozenset())
         receipt = {"schemaVersion": "latent.ci.discovery.v1", "sourceRevision": "a" * 40,
                    "suites": [{"id": "one", "artifact": "one-abc", "cases": ["a", "b"], "ignored": ["b"]},
                               {"id": "empty", "artifact": "empty-abc", "cases": [], "ignored": []},
