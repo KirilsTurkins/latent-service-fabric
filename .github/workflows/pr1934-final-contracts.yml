@@ -22,9 +22,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p target/pr1934-final
+          mkdir -p target/ci/pr1934-final
           python -m pip install -r tools/requirements.lock
-          python - <<'PY' | tee target/pr1934-final/preservation.log
+          python - <<'PY' | tee target/ci/pr1934-final/preservation.log
           from pathlib import Path
           import copy, json, subprocess
           from tools.ci_python_policy import verify_source_tree
@@ -39,16 +39,16 @@ jobs:
           assert definition == prior['definition']
           print('Source suppression policy passed; all original execution commands, permissions and timeouts preserved.')
           PY
-          python -m unittest tools.tests.test_dev_rust_toolchain tools.tests.test_dev_frontend_native_wheel tools.tests.test_dev_frontend_preflight_packaging tools.tests.test_ci_contracts -v 2>&1 | tee target/pr1934-final/regressions.log
-          python tools/ci_coverage.py --receipt target/pr1934-final/observed-inventory.json 2>&1 | tee target/pr1934-final/coverage.log
+          python -m unittest tools.tests.test_dev_rust_toolchain tools.tests.test_dev_frontend_native_wheel tools.tests.test_dev_frontend_preflight_packaging tools.tests.test_ci_contracts -v 2>&1 | tee target/ci/pr1934-final/regressions.log
+          python tools/ci_coverage.py --receipt target/ci/pr1934-final/observed-inventory.json 2>&1 | tee target/ci/pr1934-final/coverage.log
           git diff --exit-code
-          git rev-parse HEAD > target/pr1934-final/commit.txt
-          git rev-parse 'HEAD^{tree}' > target/pr1934-final/tree.txt
+          git rev-parse HEAD > target/ci/pr1934-final/commit.txt
+          git rev-parse 'HEAD^{tree}' > target/ci/pr1934-final/tree.txt
       - name: Retain exact source-bound validation
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
         with:
           name: pr1934-final-contracts
-          path: target/pr1934-final/
+          path: target/ci/pr1934-final/
           if-no-files-found: error
           retention-days: 7
