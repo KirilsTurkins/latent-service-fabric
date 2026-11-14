@@ -1,0 +1,57 @@
+name: TypeScript stack CI follow-up
+on:
+  push:
+    branches: [ci/ts-stack-followup-20261114]
+    paths: [.github/workflows/ts-stack-followup.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  diagnose:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/ts-stack-followup-20261114'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Collect failed job logs bound to the three published heads
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import concurrent.futures,json,os,pathlib,subprocess
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'ts-ci-diagnostics';out.mkdir()
+          repo='repos/KirilsTurkins/latent-service-fabric'
+          heads={1852:'9e633f701982ce3345e7ebba0519d48f624f4afd',1931:'2bdec4779be9791ccdae28aa30f253ceca481c5d',1934:'8c6e235274009cbb08c17612749dd85b81f50e8d'}
+          def api(path):return json.loads(subprocess.check_output(['gh','api',repo+path],timeout=90))
+          jobs=[];snapshot={}
+          for number,head in heads.items():
+              pr=api('/pulls/'+str(number));assert pr['head']['sha']==head,(number,'head-moved')
+              runs=api('/actions/runs?head_sha='+head+'&event=pull_request&per_page=100')['workflow_runs']
+              selected=[]
+              for run in runs:
+                  rows=[];page=1
+                  while True:
+                      part=api('/actions/runs/'+str(run['id'])+'/jobs?per_page=100&page='+str(page))['jobs'];rows.extend(part)
+                      if len(part)<100:break
+                      page+=1
+                  selected.append({'id':run['id'],'name':run['name'],'status':run['status'],'conclusion':run['conclusion'],'jobs':rows})
+                  jobs.extend((number,run['name'],j) for j in rows if j['conclusion'] in ('failure','timed_out'))
+              snapshot[number]={'head':head,'merge':pr['merge_commit_sha'],'runs':selected}
+          (out/'snapshot.json').write_text(json.dumps(snapshot,indent=2)+'\n')
+          def logs(item):
+              number,name,j=item
+              p=subprocess.run(['gh','api',repo+'/actions/jobs/'+str(j['id'])+'/logs'],capture_output=True,timeout=120)
+              (out/(str(number)+'-'+str(j['id'])+'.log')).write_bytes(p.stdout if p.returncode==0 else p.stderr)
+              return {'pr':number,'workflow':name,'job':j['name'],'id':j['id'],'logExit':p.returncode}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:results=list(pool.map(logs,jobs))
+          (out/'failures.json').write_text(json.dumps(results,indent=2)+'\n');print(json.dumps(results,indent=2))
+          assert all(row['logExit']==0 for row in results)
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        if: always()
+        with:
+          name: ts-stack-ci-diagnostics
+          path: ${{ runner.temp }}/ts-ci-diagnostics/
+          retention-days: 7
+          if-no-files-found: error
