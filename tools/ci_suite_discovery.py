@@ -91,6 +91,16 @@ def execution_cases(raw: bytes, available: frozenset[str], ignored: frozenset[st
 
 def _libtest_outcomes(lines: list[str], available: set[str] | frozenset[str],
                       ignored: set[str] | frozenset[str], nested_cases=()) -> tuple[list[str], list[str], list[str], list[str]]:
+    def discovered_name(displayed: str) -> str | None:
+        # libtest's --list prints the case identity; its pretty execution
+        # formatter appends this annotation for #[should_panic] cases. Resolve
+        # only to a discovered identity, never by dropping arbitrary suffixes.
+        annotated = displayed.endswith(" - should panic")
+        original = displayed.removesuffix(" - should panic")
+        if annotated and original in available:
+            return original if displayed not in available else None
+        return displayed if displayed in available else None
+
     outcomes = {"ok": [], "ignored": [], "FAILED": []}
     summaries = []
     errors = []
@@ -102,22 +112,16 @@ def _libtest_outcomes(lines: list[str], available: set[str] | frozenset[str],
         elif line.startswith("test "):
             progress = re.fullmatch(r"test (.+) has been running for over 60 seconds", line)
             if progress:
-                if progress.group(1) not in available - ignored:
+                if discovered_name(progress.group(1)) not in available - ignored:
                     errors.append("unknown-progress")
                 continue
             match = re.fullmatch(r"test (.+) \.\.\. (ok|ignored|FAILED)(?:, .*)?", line)
             if not match:
                 errors.append("malformed-outcome")
+            elif (name := discovered_name(match.group(1))) is None:
+                errors.append("unknown-outcome")
             else:
-                # libtest appends this presentation suffix to successful
-                # #[should_panic] cases, while --list reports the canonical
-                # test name without it. Compare canonical identities so the
-                # execution receipt remains bound to the exact discovered case.
-                name = match.group(1).removesuffix(" - should panic")
-                if name not in available:
-                    errors.append("unknown-outcome")
-                else:
-                    outcomes[match.group(2)].append(name)
+                outcomes[match.group(2)].append(name)
     active = set(available) - set(ignored)
     passed, skipped, failed = outcomes["ok"], outcomes["ignored"], outcomes["FAILED"]
     counts = Counter(passed + skipped)
