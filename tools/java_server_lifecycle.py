@@ -8,12 +8,14 @@ from __future__ import annotations
 
 import copy
 import http.client
+import json
 from pathlib import Path
 import socket
 import threading
 import time
 
 from tools import server_routes, server_source
+from tools import wait_capsule_audit_idle as audit_idle
 from tools.dev_workflow import state
 from tools.dev_workflow.common import DevError, digest, encode, require
 from tools.phase2_operator_process import read_json, write_json
@@ -24,6 +26,34 @@ from tools.phase3_resource_identity import file_identity
 
 HTTP = "latent:http/streaming@0.3.0"
 HTTP_OPERATIONS = ["open", "write", "finish", "read", "chunk-bytes", "trailers", "abort-upload", "abort-body"]
+
+
+def delete_competing_trigger_when_audit_idle(client, deployment, name, competing):
+    """Observe retirement of HTTP audit owners, then attempt the fenced delete once.
+
+    Guest/HTTP retirement does not imply that the asynchronous audit writer has
+    released its queue reservation. Keep that original owner and wait read-only;
+    an idle observation is not admission authority or permission to retry a
+    refused/uncertain mutation. The recorded CLI outcomes remain unchanged.
+    """
+    deadline = min(client.deadline, time.monotonic() + audit_idle.MAX_SECONDS)
+    for observation in range(audit_idle.MAX_OBSERVATIONS):
+        remaining = deadline - time.monotonic()
+        require(remaining > 0, "server-lifecycle-audit-drain-deadline")
+        value = client.call("capability", "list", "--deployment", deployment,
+                            "--include-node-usage", timeout=min(1, remaining))
+        counters = audit_idle.counters(json.dumps(value).encode("utf-8"))
+        require(time.monotonic() < deadline, "server-lifecycle-audit-drain-deadline")
+        if not any(counters.values()):
+            return client.call("trigger", "delete", name,
+                "--operation-id", "server-lifecycle-competing-cleanup",
+                "--expected-generation", competing["trigger"]["generation"],
+                "--expected-state-version", competing["stateVersion"])
+        if observation + 1 < audit_idle.MAX_OBSERVATIONS:
+            remaining = deadline - time.monotonic()
+            require(remaining > 0, "server-lifecycle-audit-drain-deadline")
+            time.sleep(min(0.05, remaining))
+    raise RuntimeError("server-lifecycle-audit-drain-observation-limit")
 
 
 def roots(client, service):
@@ -414,9 +444,7 @@ class RevisionControls:
                 "server-lifecycle-competing-owner-denial-mutated-state")
         check("GET", "/hey", 200, b"Hey!", authority="competing.server.test")
         # Explicit cleanup by the actor that changed the contested generation.
-        client.call("trigger", "delete", name, "--operation-id", "server-lifecycle-competing-cleanup",
-            "--expected-generation", competing["trigger"]["generation"],
-            "--expected-state-version", competing["stateVersion"])
+        delete_competing_trigger_when_audit_idle(client, restored["name"], name, competing)
         client.call("trigger", "operation", "server-lifecycle-competing-cleanup")
         require(competing_routes.observe(name)["trigger"] is None, "server-lifecycle-competing-cleanup-not-observed")
         for other in competition[1:]:
