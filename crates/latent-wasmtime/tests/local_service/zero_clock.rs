@@ -242,8 +242,7 @@ impl ZeroClock {
                         target.armed = true;
                         self.witness(format_args!(
                             "LSF-GO-TICKER-CLOCK-V1|wait-pending|{}|{}",
-                            before[stage],
-                            deadlines[stage]
+                            before[stage], deadlines[stage]
                         ));
                         self.ticker_stage
                             .store((stage + 1) as u8, Ordering::Release);
