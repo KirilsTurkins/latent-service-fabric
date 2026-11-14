@@ -6,6 +6,8 @@ from tools.typescript_guest.activation_engine import identity, replace_once, STA
 FETCH_SOURCE_SHA256 = '0992832f377bd45986e79447f463f1de2ff609f32d53723e0ef04de2c7178cf2'
 
 PREIMAGES = {
+    'StarlingMonkey/builtins/web/dom-exception.cpp': '7d51a56e77de10c80d90611056695a517af312120543e60c3d230cc1ae6632f7',
+    'StarlingMonkey/builtins/web/abort/weak-index-set.h': '0a919f6ee4c6625708370d7778d054ab809b2d844a862f563090ce4697041967',
     'StarlingMonkey/builtins/web/event/event-target.cpp': '0b22572ccb4de19fb1476073d0586d1afe03c856454a466d0d2c6607ace20ffd',
     'StarlingMonkey/builtins/web/event/event-target.h': 'ca9f9ed1fc9facad0308be0e8e86daada19d8b1715c727f90da8db4e60141e63',
     'StarlingMonkey/builtins/web/abort/abort-signal.h': 'ba8b1ce78deaabf0e86dae56b9eaf79e59e55f179b8a0deda3ef6bed4f8f9b46',
@@ -22,6 +24,40 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         if hashlib.sha256(original[name]).hexdigest() != expected:
             raise ValueError('unreviewed-original-Event-source:'+name)
     result = dict(original)
+    # A weak GCVector is not weak merely because its element policy offers
+    # traceWeak(). Register it with the engine's sweep list; never sweep it
+    # from an object's marking hook. The cache is intrusive and allocation-free.
+    name = 'StarlingMonkey/builtins/web/abort/weak-index-set.h'
+    source = replace_once(original[name], b'#include "js/GCVector.h"\n',
+        b'#include "js/GCVector.h"\n#include "js/SweepingAPI.h"\n'
+        b'#include "mozilla/Maybe.h"\n', 'registered-weak-cache-includes')
+    source = replace_once(source,
+        b'// Default GC policy_ for `js::GCVector<T>` is _appropriate for weak references_:\n'
+        b'// it invokes `GCPolicy<T>::traceWeak` to drop unreachable elements automatically.\n',
+        b'// GCVector supplies the weak sweep operation; WeakCache schedules it in\n'
+        b'// the actual runtime sweep phase and updates relocated entries.\n',
+        'weak-policy-does-not-itself-register-a-sweep')
+    source = replace_once(source, b'  WeakVec items_;\n',
+        b'  mozilla::Maybe<JS::WeakCache<WeakVec>> cache_;\n', 'intrusive-runtime-weak-cache')
+    source = replace_once(source, b'  WeakIndexSet()  = default;\n',
+        b'  WeakIndexSet() = default;\n'
+        b'  WeakIndexSet(const WeakIndexSet&) = delete;\n'
+        b'  WeakIndexSet& operator=(const WeakIndexSet&) = delete;\n'
+        b'  void init(JSContext* cx) {\n'
+        b'    MOZ_RELEASE_ASSERT(!cache_);\n'
+        b'    cache_.emplace(JS_GetRuntime(cx));\n'
+        b'  }\n', 'initialize-admitted-weak-set-before-publication')
+    source = source.replace(b'items_.', b'items().')
+    source = replace_once(source,
+        b'  WeakVec &items() { return items_;}\n'
+        b'  [[nodiscard]] const WeakVec &items() const { return items_; }\n\n'
+        b'  void trace(JSTracer* trc) { items().trace(trc); }\n\n'
+        b'  bool traceWeak(JSTracer* trc) { return items().traceWeak(trc); }\n',
+        b'  WeakVec &items() { MOZ_ASSERT(cache_); return cache_->get(); }\n'
+        b'  [[nodiscard]] const WeakVec &items() const { MOZ_ASSERT(cache_); return cache_->get(); }\n'
+        b'  // Cache destruction unregisters it before its physical native lease dies.\n',
+        'only-registered-engine-sweep-may-visit-weak-entries')
+    result[name] = source
     name = 'StarlingMonkey/builtins/web/event/event-target.h'
     source = replace_once(original[name], b'#include "extension-api.h"\n',
         b'#include "extension-api.h"\n#include "native_objects.h"\n', 'event-owned-declarations')
@@ -40,6 +76,20 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         b'class EventTarget : public BuiltinImpl<EventTarget, TraceableClassPolicy> {\n'
         b'  friend struct Terminator; // removes the exact admitted record without JS conversion\n',
         'abort-terminator-private-list-access')
+    source = replace_once(source,
+        b'class EventTarget : public BuiltinImpl<EventTarget, TraceableClassPolicy> {\n',
+        b'// Listener leases mutate the activation-local retirement list.\n'
+        b'struct EventTargetClassPolicy : TraceableClassPolicy {\n'
+        b'  static constexpr uint32_t class_flags() { return JSCLASS_FOREGROUND_FINALIZE; }\n'
+        b'};\n\n'
+        b'class EventTarget : public BuiltinImpl<EventTarget, EventTargetClassPolicy> {\n',
+        'listener-container-and-lease-finalization-on-foreground')
+    source = replace_once(source,
+        b'  static bool add_listener(JSContext *cx, HandleObject self, HandleValue type, HandleValue callback,\n',
+        b'  // Allocation-free marking predicate; never calls JavaScript.\n'
+        b'  static bool has_listener(JSObject *self, const char *type);\n\n'
+        b'  static bool add_listener(JSContext *cx, HandleObject self, HandleValue type, HandleValue callback,\n',
+        'observed-dependent-listener-predicate-declaration')
     result[name] = source
 
     name = 'StarlingMonkey/builtins/web/event/global-event-target.cpp'
@@ -68,7 +118,15 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
     result[name] = source
 
     name = 'StarlingMonkey/builtins/web/abort/abort-signal.h'
-    source = replace_once(original[name], b'  AbortAlgorithm() = default;\n',
+    source = replace_once(original[name],
+        b'class AbortSignal : public BuiltinImpl<AbortSignal, TraceableClassPolicy> {\n',
+        b'// Runtime weak-cache links and native leases are foreground-owned.\n'
+        b'struct AbortSignalClassPolicy : TraceableClassPolicy {\n'
+        b'  static constexpr uint32_t class_flags() { return JSCLASS_FOREGROUND_FINALIZE; }\n'
+        b'};\n\n'
+        b'class AbortSignal : public BuiltinImpl<AbortSignal, AbortSignalClassPolicy> {\n',
+        'weak-cache-unlink-and-native-retirement-on-foreground')
+    source = replace_once(source, b'  AbortAlgorithm() = default;\n',
         b'  lsf::typescript::activation::NativeObjectLease native_owner;\n'
         b'  explicit AbortAlgorithm(lsf::typescript::activation::NativeObjectLease&& owner)\n'
         b'      : native_owner(std::move(owner)) {}\n', 'original-algorithm-owner-before-derived-captures')
@@ -234,15 +292,6 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         b'  bool listeners_removed = false;\n  bool invocation_failed = false;\n',
         'retain-once-listener-cleanup-on-callback-lookup-error')
     source = replace_once(source,
-        b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn)) {\n'
-        b'        return false;\n'
-        b'      }\n',
-        b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn)) {\n'
-        b'        Event::set_flag(event, Event::EventFlag::InPassiveListener, false);\n'
-        b'        invocation_failed = true;\n'
-        b'        break;\n'
-        b'      }\n', 'finish-once-listener-retirement-after-callback-lookup-error')
-    source = replace_once(source,
         b'                               JS::HandleVector<ListenerRef> list, bool *found) {\n',
         b'                               JS::HandleVector<ListenerRef> list, bool *found) {\n'
         b'  if (JS_IsExceptionPending(cx)) return false;\n',
@@ -256,9 +305,16 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         source = replace_once(source, b'      '+call+b';\n',
             b'      called = '+call+b';\n', 'check-each-native-callback-outcome')
     source = replace_once(source,
-        b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn)) {\n',
-        b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn) ||\n'
-        b'          JS_IsExceptionPending(cx)) {\n', 'callback-lookup-cannot-hide-pending-failure')
+        b'      if (!JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn)) {\n'
+        b'        return false;\n'
+        b'      }\n'
+        b'      called = JS::Call(cx, callback_val, handle_fn, args, &rval);\n',
+        b'      // WebIDL callback-operation lookup is part of the invocation.\n'
+        b'      // Report catchable getter errors just like callback exceptions.\n'
+        b'      called = JS_GetProperty(cx, callback_obj, "handleEvent", &handle_fn);\n'
+        b'      if (called && !JS_IsExceptionPending(cx)) {\n'
+        b'        called = JS::Call(cx, callback_val, handle_fn, args, &rval);\n'
+        b'      }\n', 'report-catchable-operation-lookup-errors-without-hiding-termination')
     source = replace_once(source,
         b'      auto global = engine->global();\n      called = JS::Call(cx, global, callback_val, args, &rval);\n',
         b'      RootedObject current_target(cx, Event::current_target(event));\n'
@@ -337,6 +393,79 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         b'    delete static_cast<OwnedListenerList *>(slot.toPrivate());\n'
         b'    JS::SetReservedSlot(self, std::to_underlying(Slots::Listeners), JS::UndefinedValue());\n'
         b'  }\n', 'physical-listener-vector-destruction-before-safe-ack')
+    source += b'''
+namespace builtins::web::event {
+bool EventTarget::has_listener(JSObject *self, const char *type) {
+  const auto *list = listeners(self);
+  if (!list) return false; // partial AbortSignal initialization
+  for (const auto &listener : *list) {
+    if (!listener->removed && listener->type == type) return true;
+  }
+  return false;
+}
+} // namespace builtins::web::event
+'''
+    result[name] = source
+
+    name = 'StarlingMonkey/builtins/web/dom-exception.cpp'
+    source = original[name]
+    start = source.index(b'JSObject *DOMException::create(')
+    end = source.index(b'bool DOMException::init_class(', start)
+    source = replace_once(source, source[start:end],
+        b'''JSObject *DOMException::create(JSContext *cx, std::string_view message, std::string_view name) {
+  if (JS_IsExceptionPending(cx)) return nullptr;
+  JS::RootedString message_string(cx, JS_NewStringCopyN(cx, message.data(), message.size()));
+  if (!message_string || JS_IsExceptionPending(cx)) return nullptr;
+  JS::RootedString name_string(cx, JS_NewStringCopyN(cx, name.data(), name.size()));
+  if (!name_string || JS_IsExceptionPending(cx)) return nullptr;
+  JS::RootedValueArray<2> args(cx);
+  args[0].setString(message_string);
+  args[1].setString(name_string);
+  JS::RootedObject ctor_object(cx, JS_GetConstructor(cx, proto_obj));
+  if (!ctor_object || JS_IsExceptionPending(cx)) return nullptr;
+  JS::RootedValue ctor(cx, JS::ObjectValue(*ctor_object));
+  JS::RootedObject instance(cx);
+  if (!JS::Construct(cx, ctor, args, &instance) || JS_IsExceptionPending(cx)) return nullptr;
+  if (!instance || !is_instance(instance)) {
+    api::throw_error(cx, api::Errors::TypeError, "DOMException", "constructor",
+                     "return a DOMException");
+    return nullptr;
+  }
+  // Preserve the pinned observable constructor lookup/reentry. Validate the
+  // native class before writing slots, then neither allocate nor invoke script.
+  JS::SetReservedSlot(instance, std::to_underlying(Slots::Message), args[0]);
+  JS::SetReservedSlot(instance, std::to_underlying(Slots::Name), args[1]);
+  return instance;
+}
+
+bool DOMException::raise(JSContext *cx, std::string_view message, std::string_view name) {
+  if (JS_IsExceptionPending(cx)) return false;
+  JS::RootedObject error(cx, create(cx, message, name));
+  if (!error || JS_IsExceptionPending(cx)) return false;
+  JS::RootedValue value(cx, JS::ObjectValue(*error));
+  JS_SetPendingException(cx, value);
+  return false;
+}
+
+// constructor(optional DOMString message = "", optional DOMString name = "Error");
+bool DOMException::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
+  if (JS_IsExceptionPending(cx)) return false;
+  CTOR_HEADER("DOMException", 0);
+  JS::RootedObject instance(cx, JS_NewObjectForConstructor(cx, &class_, args));
+  if (!instance || JS_IsExceptionPending(cx)) return false;
+  JS::RootedString message(cx, args.hasDefined(0) ? JS::ToString(cx, args.get(0))
+                                               : JS_GetEmptyString(cx));
+  if (!message || JS_IsExceptionPending(cx)) return false;
+  JS::SetReservedSlot(instance, std::to_underlying(Slots::Message), JS::StringValue(message));
+  JS::RootedString name(cx, args.hasDefined(1) ? JS::ToString(cx, args.get(1))
+                                            : JS_NewStringCopyZ(cx, "Error"));
+  if (!name || JS_IsExceptionPending(cx)) return false;
+  JS::SetReservedSlot(instance, std::to_underlying(Slots::Name), JS::StringValue(name));
+  args.rval().setObject(*instance);
+  return true;
+}
+
+''', 'guard-native-DOMException-factory-raise-and-default-name')
     result[name] = source
 
     # The pinned carrier has two more AbortAlgorithm subclasses in fetch.
@@ -426,7 +555,9 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         b'  auto sources = lsf::typescript::activation::make_native_container<WeakIndexSet>(cx);\n'
         b'  if (!sources) return nullptr;\n'
         b'  auto dependents = lsf::typescript::activation::make_native_container<WeakIndexSet>(cx);\n'
-        b'  if (!dependents) return nullptr;\n'+anchor, 'all-abort-containers-before-graph-publication')
+        b'  if (!dependents) return nullptr;\n'
+        b'  sources->value.init(cx);\n'
+        b'  dependents->value.init(cx);\n'+anchor, 'all-abort-containers-before-graph-publication')
     for old,new,label in [
         (b'JS::PrivateValue(new AlgorithmList)',b'JS::PrivateValue(algorithms.release())','owned-algorithm-publication'),
         (b'JS::PrivateValue(new WeakIndexSet)',b'JS::PrivateValue(sources.release())','owned-source-set-publication')]:
@@ -447,6 +578,42 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         b'    JS::SetReservedSlot(self, std::to_underlying(slot), JS::UndefinedValue());\n'
         b'  }\n'
         b'  EventTarget::finalize(gcx, self);\n', 'actual-three-abort-container-destructions')
+    trace_start = source.index(b'void AbortSignal::trace(')
+    trace_end = source.index(b'bool AbortSignal::init_class(', trace_start)
+    source = source[:trace_start] + b'''void AbortSignal::trace(JSTracer *trc, JSObject *self) {
+  MOZ_ASSERT(is_instance(self));
+  EventTarget::trace(trc, self);
+
+  // Source edges are weak: retaining a dependent must not keep an otherwise
+  // unreachable controller alive. Runtime WeakCaches sweep/update both sets.
+  // DOM retains a non-aborted dependent with observable abort work. In
+  // addition, failed/unrun native algorithms keep custody even after abort;
+  // the failure drain has not completed or cancelled their captured work.
+  const auto deps = JS::GetReservedSlot(self, std::to_underlying(Slots::DependentSignals));
+  if (!deps.isNullOrUndefined()) {
+    for (auto &edge : dependent_signals(self)->items()) {
+      // Relocation/tenuring tracers must update the pointer before anyone can
+      // inspect a possibly forwarded object. Nursery survival is conservative;
+      // the engine's major sweep establishes weak reachability.
+      if (!trc->isMarkingTracer()) {
+        JS::TraceEdge(trc, &edge, "AbortSignal dependent relocation");
+        continue;
+      }
+      // A GC tracing hook must not perform a mutator read barrier on a weak
+      // edge merely to decide whether that edge is strong for this collection.
+      JSObject *signal = edge.unbarrieredGet();
+      const auto slot = JS::GetReservedSlot(signal, std::to_underlying(Slots::Algorithms));
+      const bool has_algorithms = !slot.isNullOrUndefined() && !algorithms(signal)->empty();
+      if (has_algorithms || (!is_aborted(signal) && EventTarget::has_listener(signal, "abort")))
+        JS::TraceEdge(trc, &edge, "AbortSignal observed dependent");
+    }
+  }
+
+  const auto slot = JS::GetReservedSlot(self, std::to_underlying(Slots::Algorithms));
+  if (!slot.isNullOrUndefined()) algorithms(self)->trace(trc);
+}
+
+''' + source[trace_end:]
     result[name] = source
     return result, {'format':'latent.typescript.event-native-source-derivation.v1',
         'starlingCommit':STARLING_COMMIT,'originalSource':identity(original),
@@ -461,6 +628,11 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         'listenerErrorReportFailure':'preserved-and-fences-later-callbacks',
         'functionListenerReceiver':'event-current-target',
         'hostImportsDuringGC':False,
+        'eventFinalizationOwner':'foreground-native-lease-retirement',
+        'DOMExceptionNativeFactory':'checked-rooted-native-class-and-preserved-failure',
+        'abortWeakEdges':'runtime-WeakCache-sweep-not-object-marking-hook',
+        'abortDependentLiveness':'reachable-source-retains-observed-live-signals-and-pending-algorithm-custody',
+        'abortSourceLiveness':'weak-no-reverse-strong-retention',
         'abortListenerIdentity': 'exact-record-not-reconverted-type-callback-or-options',
         'abortListenerCustody': 'strong-native-ref-retains-original-listener-lease-until-destruction',
         'duplicateListenerSignal': 'ignored-without-new-native-admission',
