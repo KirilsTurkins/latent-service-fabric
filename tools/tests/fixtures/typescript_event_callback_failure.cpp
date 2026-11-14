@@ -13,7 +13,7 @@
 struct JSContext { int pending = 0; };
 struct JSObject {
   bool callable = true, fatal = false, throws = false, success_pending = false;
-  bool getter_failure = false, getter_pending = false;
+  bool getter_failure = false, getter_pending = false, getter_fatal = false;
 };
 struct Value { JSObject* object = nullptr; JSObject& toObject() const { return *object; } };
 struct RootedValue : Value {
@@ -45,7 +45,7 @@ static void JS_ClearPendingException(JSContext* cx) { cx->pending = 0; }
 static bool JS_GetProperty(JSContext* cx, JSObject* object, const char*, RootedValue* value) {
   if (object->getter_failure || object->getter_pending) cx->pending = 7;
   value->object = object;
-  return !object->getter_failure;
+  return !object->getter_failure && !object->getter_fatal;
 }
 namespace JS {
 struct ExceptionStack { explicit ExceptionStack(JSContext*) {} };
@@ -137,13 +137,15 @@ int main(int argc, char** argv) {
   const auto is = [&](const char* name) { return std::strcmp(argv[1], name) == 0; };
   JSContext cx;
   JSObject first, second;
-  first.callable = !is("object-fatal") && !is("getter-failure") && !is("getter-pending");
+  const bool getter = std::strncmp(argv[1], "getter-", 7) == 0;
+  first.callable = !is("object-fatal") && !getter;
   first.fatal = is("function-fatal") || is("object-fatal");
-  steal_mode = is("steal-fatal") ? 1 : is("steal-error") ? 2 : is("steal-success-pending") ? 3 : 0;
-  report_mode = is("report-fatal") ? 1 : is("report-error") ? 2 : is("report-success-pending") ? 3 : 0;
+  steal_mode = (is("steal-fatal") || is("getter-steal-fatal")) ? 1 : is("steal-error") ? 2 : is("steal-success-pending") ? 3 : 0;
+  report_mode = (is("report-fatal") || is("getter-report-fatal")) ? 1 : (is("report-error") || is("getter-report-error")) ? 2 : is("report-success-pending") ? 3 : 0;
   first.throws = is("catchable-continues") || is("report-no-script") || steal_mode || report_mode;
   first.success_pending = is("success-pending-reported");
-  first.getter_failure = is("getter-failure");
+  first.getter_failure = getter && !is("getter-pending") && !is("getter-fatal");
+  first.getter_fatal = is("getter-fatal");
   first.getter_pending = is("getter-pending");
   if (is("entry-pending")) cx.pending = 9;
   Target target;
@@ -164,12 +166,14 @@ int main(int argc, char** argv) {
   if (steal_mode || report_mode) {
     const int mode = steal_mode ? steal_mode : report_mode;
     passed &= !result && cx.pending == (mode >= 2 ? (steal_mode ? 11 : 12) : 0) &&
-      calls == 1 && reports == 0 && !report_side_effects && target.list.values.size() == 1 && first_record.expired();
+      calls == (getter ? 0 : 1) && reports == 0 && !report_side_effects && target.list.values.size() == 1 && first_record.expired();
   }
   else if (first.fatal) passed &= !result && !cx.pending && calls == 1 && reports == 0 &&
       target.list.values.size() == 1 && first_record.expired();
-  else if (first.getter_failure || first.getter_pending) passed &= !result && cx.pending == 7 &&
+  else if (first.getter_fatal) passed &= !result && !cx.pending &&
       calls == 0 && reports == 0 && target.list.values.size() == 1 && first_record.expired();
+  else if (first.getter_failure || first.getter_pending) passed &= result && !cx.pending &&
+      calls == 1 && reports == 1 && target.list.values.empty() && first_record.expired();
   else if (is("entry-pending")) passed &= !result && cx.pending == 9 && !found && calls == 0 &&
       reports == 0 && target.list.values.size() == 2 && !first_record.expired();
   else if (is("success") || is("function-receiver") || first.throws || first.success_pending) {

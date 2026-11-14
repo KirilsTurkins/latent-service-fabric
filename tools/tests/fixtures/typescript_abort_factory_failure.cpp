@@ -29,7 +29,7 @@ struct RootedValue : Value {
 };
 static struct {
   int phase = 0, allocations = 0, lookups = 0, constructs = 0, slot_writes = 0;
-  bool invalid_slot = false;
+  bool invalid_slot = false, lookup_with_pending = false;
   JSString text{""};
   JSObject constructor, exception;
 } state;
@@ -37,11 +37,12 @@ static bool JS_IsExceptionPending(JSContext* cx) { return cx->pending != 0; }
 static JSString* JS_NewStringCopyZ(JSContext* cx, const char* text) {
   ++state.allocations;
   if (state.phase == 1) { cx->pending = 101; return nullptr; }
+  if (state.phase == 11) cx->pending = 111; // pointer does not imply a clean context
   state.text.text = text;
   return &state.text;
 }
 static JSObject* JS_GetConstructor(JSContext* cx, JSObject*) {
-  assert(!cx->pending);
+  state.lookup_with_pending |= cx->pending != 0;
   ++state.lookups;
   if (state.phase == 2) { cx->pending = 202; return nullptr; }
   if (state.phase == 3) return nullptr; // native false/no-pending lookup
@@ -92,6 +93,7 @@ int main(int argc, char** argv) {
   struct Case { const char* name; int phase; int pending; int lookups; int constructs; };
   const Case cases[] = {
     {"success-abort", 0, 0, 1, 1}, {"success-timeout", 0, 0, 1, 1},
+    {"string-pending-abort", 11, 111, 0, 0}, {"string-pending-timeout", 11, 111, 0, 0},
     {"string-oom", 1, 101, 0, 0}, {"constructor-lookup-failure", 2, 202, 1, 0},
     {"constructor-lookup-terminal", 3, 0, 1, 0}, {"constructor-lookup-pending", 4, 204, 1, 0},
     {"constructor-throw", 5, 505, 1, 1}, {"constructor-terminal", 6, 0, 1, 1},
@@ -103,11 +105,11 @@ int main(int argc, char** argv) {
     state.phase = selected.phase;
     JSContext cx;
     if (selected.phase == 10) cx.pending = 999;
-    const char* reason = !std::strcmp(argv[1], "success-timeout") ? "TimeoutError" : "AbortError";
+    const char* reason = std::strstr(argv[1], "timeout") != nullptr ? "TimeoutError" : "AbortError";
     JSObject* result = create_abort_exception(&cx, reason);
     bool passed = (result != nullptr) == (selected.phase == 0) &&
         cx.pending == selected.pending && state.lookups == selected.lookups &&
-        state.constructs == selected.constructs && !state.invalid_slot &&
+        state.constructs == selected.constructs && !state.invalid_slot && !state.lookup_with_pending &&
         state.slot_writes == (selected.phase == 0 ? 2 : 0) &&
         state.allocations == (selected.phase == 10 ? 0 : 1);
     if (result) passed &= !std::strcmp(state.text.text, reason);
