@@ -1,0 +1,39 @@
+name: PR 1794 fixed repair inputs
+on:
+  push:
+    branches: [ci/pr1794-repair-inputs-20261114]
+    paths: [.github/workflows/pr1794-repair-inputs.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: 4c49f07b438421fb761725b696e2f86bd2f96414
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Export only fixed repository source and Git objects
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 4c49f07b438421fb761725b696e2f86bd2f96414
+          git fetch --no-tags --depth=2 origin 9e633f701982ce3345e7ebba0519d48f624f4afd 006a58adde2b4c5ed6a750d0c8e0775a3cbcb380 3c9ceb80c006133a71f2a833410811600387e88a
+          mkdir "$RUNNER_TEMP/pr1794-fixed-inputs"
+          out="$RUNNER_TEMP/pr1794-fixed-inputs"
+          git archive HEAD | gzip -n > "$out/source.tar.gz"
+          tar -czf "$out/git-objects.tar.gz" .git/objects .git/shallow .git/HEAD .git/refs
+          git ls-tree -r HEAD > "$out/tree.txt"
+          for revision in 9e633f701982ce3345e7ebba0519d48f624f4afd 006a58adde2b4c5ed6a750d0c8e0775a3cbcb380 3c9ceb80c006133a71f2a833410811600387e88a; do
+            git show --format=fuller --binary --full-index "$revision" > "$out/$revision.patch"
+          done
+          (cd "$out" && sha256sum *.gz *.patch tree.txt > SHA256SUMS)
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr1794-fixed-repair-inputs
+          path: ${{ runner.temp }}/pr1794-fixed-inputs
+          retention-days: 2
+          if-no-files-found: error
+          compression-level: 0
