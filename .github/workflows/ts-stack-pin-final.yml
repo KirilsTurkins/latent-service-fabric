@@ -1,0 +1,148 @@
+name: TypeScript stack repaired contracts
+on:
+  push:
+    branches: [ci/ts-stack-followup-20261114]
+    paths:
+      - .github/workflows/ts-stack-pin-final.yml
+      - .github/maintenance/ts_followup_rust.py
+permissions:
+  contents: write
+  actions: read
+jobs:
+  contracts:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/ts-stack-followup-20261114'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      RUSTUP_TOOLCHAIN: 1.97.1
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+      LSF_PYTHON_POLICY_BASE: 110f6d0a30a20aa2514621b012c4e40aa1ddb2e9
+      LSF_TYPESCRIPT_RECORD_CXX: clang++
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - uses: KirilsTurkins/lsf-setup-zig@adb5ed78414674f693e8fe00982f83df9badcdb3
+        with:
+          version: 0.16.0
+      - uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a
+        with:
+          node-version: 24.19.0
+          package-manager-cache: false
+      - uses: KirilsTurkins/lsf-setup-go@92a5903f5ff2b45e67c517d23c18501025a55a12
+        with:
+          go-version: 1.27.4
+          cache: false
+      - uses: KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2
+        with:
+          distribution: temurin
+          java-version: 25.0.4+101.0.LTS
+      - uses: KirilsTurkins/lsf-setup-dotnet@2382c9e63a3b678b643c7e715d023e7fa42fbbef
+        with:
+          dotnet-version: 8.0.428
+      - run: python3 -m pip install -r tools/requirements.lock
+      - name: Reconstruct the exact complete-suite candidate without substituting evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          python3 - <<'PY'
+          import hashlib,io,json,os,pathlib,subprocess,zipfile
+          root=pathlib.Path(os.environ['RUNNER_TEMP']);work=root/'ts-followup-parent';out=root/'ts-followup-evidence';out.mkdir()
+          data=subprocess.check_output(['gh','api','repos/KirilsTurkins/latent-service-fabric/actions/artifacts/14111833692/zip'],timeout=120)
+          assert hashlib.sha256(data).hexdigest()=='70000415a7e3bef115a870607e0049c73bb4785aec39d39ba68edb8388e42225'
+          with zipfile.ZipFile(io.BytesIO(data)) as z:
+              patch=z.read('parent.patch')
+              assert z.read('python-source.txt').decode().splitlines()[1]=='6bd73ac2293ead8187f6dd5e56cb822933d9f2b8'
+              receipt=json.loads(z.read('python-discovery.json'));assert receipt['errors']==['test-failure']
+              assert len(receipt['failed'])==1 and 'test_only_explicit_manual_replay_skips_original_nine_complete_jobs' in str(receipt['failed'])
+              for name in ('native-boundary-source.log','java-wiring.log','native-fd-owner.log','rustix-boundary-review.json'):
+                  (out/('prior-'+name)).write_bytes(z.read(name))
+          base='9e633f701982ce3345e7ebba0519d48f624f4afd'
+          subprocess.run(['git','fetch','--no-tags','origin',base],check=True)
+          subprocess.run(['git','worktree','add','--detach',str(work),base],check=True)
+          p=root/'authenticated-parent.patch';p.write_bytes(patch)
+          subprocess.run(['git','apply','--index','--whitespace=error-all',str(p)],cwd=work,check=True)
+          tree=subprocess.check_output(['git','write-tree'],cwd=work,text=True).strip();assert tree=='6bd73ac2293ead8187f6dd5e56cb822933d9f2b8',tree
+          subprocess.run(['git','commit','-m','fix(ci): retain tested SDK selectors and reviewed native dependency guard'],cwd=work,check=True)
+          PY
+      - name: Verify the sole remaining failure and strict revision rejection
+        run: python3 .github/maintenance/ts_followup_rust.py
+      - name: Restack and export tested Git objects without moving PR references
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/maintenance/ts_followup_repair.py export > "$RUNNER_TEMP/ts-followup-evidence/export.log" 2>&1
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: ts-stack-final-candidate-commits
+          path: ${{ runner.temp }}/ts-followup-evidence/
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: error
+      - name: Install the original authenticated contract tools and history
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/ts-followup-parent"
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess,yaml
+          workflow=yaml.safe_load(Path('.github/workflows/ci.yml').read_text())
+          jobs=[j for j in workflow['jobs'].values() if 'python' in j.get('strategy',{}).get('matrix',{}).get('lane',[])]
+          assert len(jobs)==1
+          names={'Fetch exact historical source inputs for Python preservation controls','Install the verified wasm-tools release asset','Install the verified Buf release asset','Install verified guest binding generator'}
+          selected=[s for s in jobs[0]['steps'] if s.get('name') in names]
+          assert {s['name'] for s in selected}==names
+          for step in selected:
+              print(step['name'],flush=True)
+              subprocess.run(['bash','-euo','pipefail','-c',step['run']],check=True,timeout=600)
+          PY
+      - name: Execute the complete unchanged Python contract lane on the exported tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/ts-followup-parent"
+          git rev-parse HEAD HEAD^{tree} > "$RUNNER_TEMP/ts-followup-evidence/python-source.txt"
+          tools/validate_contracts.sh python > "$RUNNER_TEMP/ts-followup-evidence/python-contracts.log" 2>&1
+      - name: Preserve diagnostics, execution receipt and exact source on every exit
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/ts-followup-evidence"
+          if test -f "$RUNNER_TEMP/ts-followup-parent/target/ci/python-discovery.json"; then
+            cp "$RUNNER_TEMP/ts-followup-parent/target/ci/python-discovery.json" "$RUNNER_TEMP/ts-followup-evidence/"
+          fi
+          if test -d "$RUNNER_TEMP/ts-followup-parent"; then
+            git -C "$RUNNER_TEMP/ts-followup-parent" diff --binary 9e633f701982ce3345e7ebba0519d48f624f4afd > "$RUNNER_TEMP/ts-followup-evidence/parent.patch"
+          fi
+          for log in python-contracts export; do
+            if test -f "$RUNNER_TEMP/ts-followup-evidence/$log.log"; then
+              tail -c 24000 "$RUNNER_TEMP/ts-followup-evidence/$log.log"
+            fi
+          done
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        if: always()
+        with:
+          name: ts-stack-final-python-evidence
+          path: ${{ runner.temp }}/ts-followup-evidence/
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: error
