@@ -215,11 +215,10 @@ public:
   bool isDrainingStopped() const override { return stopped_; }
 
   bool cancelQueued(JSContext* cx) {
-    // Cancellation closes admission even when requested reentrantly from the
-    // executing callback. Refusing physical retirement must not permit another
-    // job or checkpoint; the current frame and all roots retain their owners.
-    stopped_ = true;
+    // The caller closes admission first. A callback cannot be cancelled while
+    // its native frame executes, and a cancel request alone refunds no owner.
     if (running_) return false;
+    stopped_ = true;
     if (rollback_pending_) {
       if (!accounting_.rollback(cx, rollback_) || live(rollback_)) return false;
       rollback_pending_ = false;

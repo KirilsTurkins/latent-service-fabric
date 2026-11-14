@@ -1,0 +1,516 @@
+use super::*;
+
+#[test]
+fn reclamation_resumes_across_a_real_inventory_of_live_objects() {
+    let root = temporary_root();
+    let mut bounded = limits();
+    bounded.maximum_objects = 70;
+    bounded.maximum_disk_bytes = 4 * 1024 * 1024;
+    bounded.maximum_metadata_bytes = 1024 * 1024;
+    let owner = LocalBlobStore::open(root.path(), "private", bounded).unwrap();
+    for number in 0..70 {
+        put(&owner, format!("{number:03}").as_bytes());
+    }
+    let last = {
+        let state = owner.inner.state().unwrap();
+        state
+            .objects
+            .last_key_value()
+            .unwrap()
+            .1
+            .record
+            .as_ref()
+            .unwrap()
+            .reference()
+    };
+    owner
+        .release_reference(&scope(), &last, &|| Ok(()))
+        .unwrap();
+
+    assert_eq!(owner.reclaim(1, &|| Ok(())).unwrap().objects, 0);
+    assert_eq!(owner.reclaim(1, &|| Ok(())).unwrap().objects, 0);
+    assert_eq!(owner.reclaim(1, &|| Ok(())).unwrap().objects, 1);
+    assert_eq!(owner.snapshot().unwrap().objects, 69);
+}
+
+#[test]
+fn bounded_reclamation_alternates_between_objects_and_retired_stages() {
+    let root = temporary_root();
+    let owner = store(root.path());
+    let first = put(&owner, b"first");
+    let second = put(&owner, b"second");
+    owner
+        .release_reference(&scope(), &first, &|| Ok(()))
+        .unwrap();
+    owner
+        .release_reference(&scope(), &second, &|| Ok(()))
+        .unwrap();
+    let writer = owner
+        .create(&scope(), "text/plain", Some(1), &|| Ok(()))
+        .unwrap();
+    drop(writer);
+
+    let first_turn = owner.reclaim(1, &|| Ok(())).unwrap();
+    assert_eq!((first_turn.objects, first_turn.stages), (1, 0));
+    let second_turn = owner.reclaim(1, &|| Ok(())).unwrap();
+    assert_eq!((second_turn.objects, second_turn.stages), (0, 1));
+    let third_turn = owner.reclaim(1, &|| Ok(())).unwrap();
+    assert_eq!((third_turn.objects, third_turn.stages), (1, 0));
+}
+
+#[test]
+fn pages_are_tenant_scoped_bounded_and_bound_to_the_original_owner() {
+    let root = temporary_root();
+    let other_root = temporary_root();
+    let owner = store(root.path());
+    let other = store(other_root.path());
+    let first = put(&owner, b"first");
+    let second = put(&owner, b"second");
+    let bob = TenantId("bob".into());
+    let mut writer = owner
+        .create(&bob, "text/plain", Some(3), &|| Ok(()))
+        .unwrap();
+    writer.write(0, b"bob", &|| Ok(())).unwrap();
+    writer.seal(&|| Ok(())).unwrap();
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    assert!(matches!(
+        inventory.next_page(&other, 1, &|| Ok(())),
+        Err(LocalBlobError::Invalid)
+    ));
+    assert!(matches!(
+        inventory.next_page(&owner, 0, &|| Ok(())),
+        Err(LocalBlobError::Invalid)
+    ));
+    let mut found = Vec::new();
+    let mut pages = 0;
+    loop {
+        let page = inventory.next_page(&owner, 1, &|| Ok(())).unwrap();
+        pages += 1;
+        assert!(page.references().len() <= 1);
+        found.extend(page.references().iter().cloned());
+        if page.complete {
+            break;
+        }
+    }
+    assert_eq!(pages, 4); // The final empty page proves an exactly full traversal ended.
+    assert_eq!(found.len(), 2);
+    assert!(found.contains(&first));
+    assert!(found.contains(&second));
+    assert!(matches!(
+        inventory.next_page(&owner, 1, &|| Ok(())),
+        Err(LocalBlobError::Invalid)
+    ));
+}
+
+#[test]
+fn publish_release_and_physical_reclamation_invalidate_old_cursors() {
+    let root = temporary_root();
+    let owner = store(root.path());
+    let first = put(&owner, b"first");
+    let mut before_publish = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    let first_page = before_publish.next_page(&owner, 1, &|| Ok(())).unwrap();
+    assert!(!first_page.complete);
+    assert_eq!(first_page.references(), std::slice::from_ref(&first));
+    drop(first_page);
+    let second = put(&owner, b"second");
+    assert!(matches!(
+        before_publish.next_page(&owner, 1, &|| Ok(())),
+        Err(LocalBlobError::Busy)
+    ));
+    let mut before_release = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    owner
+        .release_reference(&scope(), &first, &|| Ok(()))
+        .unwrap();
+    assert!(matches!(
+        before_release.next_page(&owner, 1, &|| Ok(())),
+        Err(LocalBlobError::Busy)
+    ));
+    let mut before_reclaim = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    assert_eq!(owner.reclaim(1, &|| Ok(())).unwrap().objects, 1);
+    assert!(matches!(
+        before_reclaim.next_page(&owner, 1, &|| Ok(())),
+        Err(LocalBlobError::Busy)
+    ));
+    let mut fresh = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    let page = fresh.next_page(&owner, 4, &|| Ok(())).unwrap();
+    assert!(page.complete);
+    assert_eq!(page.references(), &[second]);
+}
+
+#[test]
+fn cursor_uses_bounded_work_and_refuses_in_progress_publication() {
+    let root = temporary_root();
+    let mut bounded = limits();
+    bounded.maximum_work = 2;
+    let owner = LocalBlobStore::open(root.path(), "private", bounded).unwrap();
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    let page = inventory.next_page(&owner, 1, &|| Ok(())).unwrap();
+    assert!(matches!(
+        LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())),
+        Err(LocalBlobError::Capacity)
+    ));
+    drop(inventory);
+    assert!(LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).is_ok());
+    drop(page);
+    let publication = owner.inner.publication().unwrap();
+    assert!(matches!(
+        LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())),
+        Err(LocalBlobError::Busy)
+    ));
+    drop(publication);
+    inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    let publication = owner.inner.publication().unwrap();
+    assert!(matches!(
+        inventory.next_page(&owner, 1, &|| Ok(())),
+        Err(LocalBlobError::Busy)
+    ));
+    drop(publication);
+    assert!(inventory.next_page(&owner, 1, &|| Ok(())).unwrap().complete);
+}
+
+#[test]
+fn a_single_work_slot_cannot_be_occupied_by_an_unusable_cursor() {
+    let root = temporary_root();
+    let mut bounded = limits();
+    bounded.maximum_work = 1;
+    let owner = LocalBlobStore::open(root.path(), "private", bounded).unwrap();
+    assert!(matches!(
+        LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())),
+        Err(LocalBlobError::Capacity)
+    ));
+    // The refused inventory does not consume the slot needed by real work.
+    let blob = put(&owner, b"ok");
+    let reader = owner.open_read(&scope(), &blob, &|| Ok(())).unwrap();
+    assert_eq!(read(&reader, 0, 2).unwrap(), b"ok");
+    drop(reader);
+    owner.close();
+    assert!(matches!(
+        LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())),
+        Err(LocalBlobError::Closed)
+    ));
+}
+
+#[test]
+fn exhausted_generation_never_removes_a_physical_object() {
+    let root = temporary_root();
+    let owner = store(root.path());
+    let blob = put(&owner, b"keep");
+    owner
+        .release_reference(&scope(), &blob, &|| Ok(()))
+        .unwrap();
+    owner.inner.state().unwrap().inventory_generation = u64::MAX;
+    assert_eq!(owner.reclaim(1, &|| Ok(())), Err(LocalBlobError::Capacity));
+    assert_eq!(owner.snapshot().unwrap().objects, 1);
+    drop(owner);
+    let reopened = store(root.path());
+    assert_eq!(reopened.snapshot().unwrap().objects, 1);
+    assert_eq!(reopened.reclaim(1, &|| Ok(())).unwrap().objects, 1);
+}
+
+#[test]
+fn sealed_uncommitted_reference_is_discoverable_after_reopen_but_not_deletable() {
+    use latent_state::{
+        embedded::{EmbeddedStore, StoreLimits},
+        store_identity::StoreIdentity,
+    };
+    let state_root = temporary_root();
+    let blob_root = temporary_root();
+    let file = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create_new(true)
+        .open(state_root.path().join("state.redb"))
+        .unwrap();
+    let state = EmbeddedStore::open_file(
+        file,
+        StoreLimits {
+            cache_bytes: 1024 * 1024,
+            ..StoreLimits::default()
+        },
+    )
+    .unwrap();
+    let view = state.snapshot().unwrap();
+    let initial = StoreIdentity::new("inventory-recovery".into())
+        .unwrap()
+        .prepare_initialization(&view)
+        .unwrap()
+        .unwrap();
+    drop(view);
+    state.apply(initial).unwrap();
+    let owner =
+        LocalBlobStore::open_durable(blob_root.path(), "private", limits(), &state).unwrap();
+    let blob = put(&owner, b"orphan");
+    drop(owner);
+    let reopened =
+        LocalBlobStore::open_durable(blob_root.path(), "private", limits(), &state).unwrap();
+    let mut inventory = LocalReferenceInventory::begin(&reopened, &scope(), &|| Ok(())).unwrap();
+    let page = inventory.next_page(&reopened, 4, &|| Ok(())).unwrap();
+    assert!(page.complete);
+    assert_eq!(page.references(), std::slice::from_ref(&blob));
+    drop(page);
+    drop(inventory);
+    assert_eq!(
+        reopened.release_durable_reference(&scope(), &blob, &state, &|| Ok(())),
+        Err(LocalBlobError::Corrupt)
+    );
+    assert_eq!(reopened.reclaim(4, &|| Ok(())).unwrap().objects, 0);
+    let reader = reopened.open_read(&scope(), &blob, &|| Ok(())).unwrap();
+    assert_eq!(read(&reader, 0, 6).unwrap(), b"orphan");
+}
+
+#[test]
+fn exhausted_generation_refuses_mutation_without_releasing_the_reference() {
+    let root = temporary_root();
+    let owner = store(root.path());
+    let blob = put(&owner, b"keep");
+    owner.inner.state().unwrap().inventory_generation = u64::MAX;
+    assert_eq!(
+        owner.release_reference(&scope(), &blob, &|| Ok(())),
+        Err(LocalBlobError::Capacity)
+    );
+    let reader = owner.open_read(&scope(), &blob, &|| Ok(())).unwrap();
+    assert_eq!(read(&reader, 0, 4).unwrap(), b"keep");
+    drop(reader);
+    let mut writer = owner
+        .create(&scope(), "text/plain", Some(3), &|| Ok(()))
+        .unwrap();
+    writer.write(0, b"new", &|| Ok(())).unwrap();
+    assert!(matches!(
+        writer.seal(&|| Ok(())),
+        Err(LocalBlobError::Capacity)
+    ));
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    let page = inventory.next_page(&owner, 4, &|| Ok(())).unwrap();
+    assert_eq!(page.references(), &[blob]);
+}
+
+#[test]
+fn failed_checkpoint_does_not_advance_the_inventory() {
+    let root = temporary_root();
+    let owner = store(root.path());
+    let blob = put(&owner, b"one");
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    let calls = std::cell::Cell::new(0);
+    let checkpoint = || {
+        calls.set(calls.get() + 1);
+        if calls.get() == 2 {
+            Err(LocalBlobError::DeadlineExceeded)
+        } else {
+            Ok(())
+        }
+    };
+    assert!(matches!(
+        inventory.next_page(&owner, 1, &checkpoint),
+        Err(LocalBlobError::DeadlineExceeded)
+    ));
+    let page = inventory.next_page(&owner, 1, &|| Ok(())).unwrap();
+    assert!(!page.complete);
+    assert_eq!(page.references(), &[blob]);
+    drop(page);
+    assert!(inventory.next_page(&owner, 1, &|| Ok(())).unwrap().complete);
+}
+
+#[test]
+fn mutation_during_checkpoint_cannot_publish_a_stale_completed_page() {
+    let root = temporary_root();
+    let owner = store(root.path());
+    put(&owner, b"one");
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    let calls = std::cell::Cell::new(0);
+    let checkpoint = || {
+        calls.set(calls.get() + 1);
+        if calls.get() == 2 {
+            put(&owner, b"two");
+        }
+        Ok(())
+    };
+    assert!(matches!(
+        inventory.next_page(&owner, 4, &checkpoint),
+        Err(LocalBlobError::Busy)
+    ));
+    let mut fresh = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    let page = fresh.next_page(&owner, 4, &|| Ok(())).unwrap();
+    assert!(page.complete);
+    assert_eq!(page.references().len(), 2);
+}
+
+#[test]
+fn duplicate_seal_without_inventory_change_preserves_the_cursor() {
+    let root = temporary_root();
+    let owner = store(root.path());
+    let blob = put(&owner, b"same");
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    assert_eq!(put(&owner, b"same"), blob);
+    let page = inventory.next_page(&owner, 4, &|| Ok(())).unwrap();
+    assert!(page.complete);
+    assert_eq!(page.references(), &[blob]);
+}
+
+#[test]
+fn root_replacement_during_checkpoint_cannot_publish_a_page() {
+    let parent = temporary_root();
+    let root = parent.path().join("payload");
+    let owner = store(&root);
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    let calls = std::cell::Cell::new(0);
+    let checkpoint = || {
+        calls.set(calls.get() + 1);
+        if calls.get() == 2 {
+            std::fs::rename(&root, parent.path().join("original")).unwrap();
+            std::fs::create_dir(&root).unwrap();
+        }
+        Ok(())
+    };
+    assert!(inventory.next_page(&owner, 4, &checkpoint).is_err());
+    assert_eq!(calls.get(), 2);
+}
+
+#[test]
+fn owner_close_during_checkpoint_cannot_publish_a_page() {
+    let root = temporary_root();
+    let owner = store(root.path());
+    put(&owner, b"one");
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    let calls = std::cell::Cell::new(0);
+    let checkpoint = || {
+        calls.set(calls.get() + 1);
+        if calls.get() == 2 {
+            owner.close();
+        }
+        Ok(())
+    };
+    assert!(matches!(
+        inventory.next_page(&owner, 4, &checkpoint),
+        Err(LocalBlobError::Closed)
+    ));
+}
+
+#[test]
+fn inventory_setup_honors_checkpoint_and_drops_its_work_on_failure() {
+    let root = temporary_root();
+    let owner = store(root.path());
+    let calls = std::cell::Cell::new(0);
+    let expire = || {
+        calls.set(calls.get() + 1);
+        if calls.get() == 2 {
+            Err(LocalBlobError::DeadlineExceeded)
+        } else {
+            Ok(())
+        }
+    };
+    assert!(matches!(
+        LocalReferenceInventory::begin(&owner, &scope(), &expire),
+        Err(LocalBlobError::DeadlineExceeded)
+    ));
+    assert_eq!(owner.inner.work.load(Ordering::Acquire), 0);
+    let calls = std::cell::Cell::new(0);
+    let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _ = LocalReferenceInventory::begin(&owner, &scope(), &|| {
+            calls.set(calls.get() + 1);
+            assert_ne!(calls.get(), 2, "test interruption");
+            Ok(())
+        });
+    }));
+    assert!(panic.is_err());
+    assert_eq!(owner.inner.work.load(Ordering::Acquire), 0);
+    let calls = std::cell::Cell::new(0);
+    let mutate = || {
+        calls.set(calls.get() + 1);
+        if calls.get() == 3 {
+            put(&owner, b"new");
+        }
+        Ok(())
+    };
+    assert!(matches!(
+        LocalReferenceInventory::begin(&owner, &scope(), &mutate),
+        Err(LocalBlobError::Busy)
+    ));
+    assert_eq!(owner.inner.work.load(Ordering::Acquire), 0);
+}
+
+#[test]
+fn actual_paused_seal_blocks_inventory_then_invalidates_its_cursor() {
+    let root = temporary_root();
+    let owner = store(root.path());
+    put(&owner, b"one");
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    let mut writer = owner
+        .create(&scope(), "text/plain", Some(3), &|| Ok(()))
+        .unwrap();
+    writer.write(0, b"two", &|| Ok(())).unwrap();
+    let (entered, observed) = std::sync::mpsc::channel();
+    let (release, blocked) = std::sync::mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        let once = AtomicBool::new(false);
+        writer.seal(&|| {
+            if !once.swap(true, Ordering::AcqRel) {
+                entered.send(()).unwrap();
+                blocked
+                    .recv_timeout(std::time::Duration::from_secs(5))
+                    .unwrap();
+            }
+            Ok(())
+        })
+    });
+    observed
+        .recv_timeout(std::time::Duration::from_secs(5))
+        .unwrap();
+    assert!(matches!(
+        inventory.next_page(&owner, 4, &|| Ok(())),
+        Err(LocalBlobError::Busy)
+    ));
+    release.send(()).unwrap();
+    let published = worker.join().unwrap().unwrap();
+    assert!(matches!(
+        inventory.next_page(&owner, 4, &|| Ok(())),
+        Err(LocalBlobError::Busy)
+    ));
+    let mut fresh = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    let page = fresh.next_page(&owner, 4, &|| Ok(())).unwrap();
+    assert!(page.references().contains(&published));
+}
+
+#[test]
+fn actual_paused_reclamation_blocks_inventory_then_invalidates_its_cursor() {
+    let root = temporary_root();
+    let owner = store(root.path());
+    let blob = put(&owner, b"old");
+    owner
+        .release_reference(&scope(), &blob, &|| Ok(()))
+        .unwrap();
+    let mut inventory = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    let (entered, observed) = std::sync::mpsc::channel();
+    let (release, blocked) = std::sync::mpsc::channel();
+    let worker_owner = owner.clone();
+    let worker = std::thread::spawn(move || {
+        let once = AtomicBool::new(false);
+        worker_owner.reclaim(1, &|| {
+            if !once.swap(true, Ordering::AcqRel) {
+                entered.send(()).unwrap();
+                blocked
+                    .recv_timeout(std::time::Duration::from_secs(5))
+                    .unwrap();
+            }
+            Ok(())
+        })
+    });
+    observed
+        .recv_timeout(std::time::Duration::from_secs(5))
+        .unwrap();
+    assert!(matches!(
+        inventory.next_page(&owner, 4, &|| Ok(())),
+        Err(LocalBlobError::Busy)
+    ));
+    release.send(()).unwrap();
+    assert_eq!(worker.join().unwrap().unwrap().objects, 1);
+    assert!(matches!(
+        inventory.next_page(&owner, 4, &|| Ok(())),
+        Err(LocalBlobError::Busy)
+    ));
+    let mut fresh = LocalReferenceInventory::begin(&owner, &scope(), &|| Ok(())).unwrap();
+    assert!(fresh
+        .next_page(&owner, 4, &|| Ok(()))
+        .unwrap()
+        .references()
+        .is_empty());
+}

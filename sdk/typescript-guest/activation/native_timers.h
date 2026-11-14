@@ -79,12 +79,6 @@ class Timers final {
   }
 
   bool collect(JSContext* cx) {
-    // This scalar owns already-destroyed storage whose original broker ACK
-    // failed. Drain it before destroying another record: overwriting it would
-    // lose the exact token while its original activation remains charged.
-    if (retired_native_.live &&
-        (!native_.acknowledgeRetirement(cx, retired_native_) || retired_native_.live))
-      return false;
     auto* link = &records_;
     while (*link) {
       auto* record = link->get();
@@ -200,18 +194,6 @@ public:
     if (next_id_ == INT32_MAX) exhausted_ids_ = true;
     else ++next_id_;
 
-    // Materialize rooted captures under the admitted Native/linear-memory
-    // owners before creating any externally observable host timer. A capture
-    // allocation failure must not require a fallible timer-stop to undo it.
-    if (!record->arguments.initCapacity(arguments.length())) {
-      JS_ReportOutOfMemory(cx);
-      record->closing = true;
-      if (!collect(cx)) stopped_ = true;
-      return false;
-    }
-    for (size_t index = 0; index < arguments.length(); ++index)
-      record->arguments.infallibleAppend(arguments[index]);
-
     Token inherited{};
     const bool has_parent = jobs_.currentContinuation(inherited);
     latent_runtime_activation_token_t parent{inherited.generation, inherited.id};
@@ -225,6 +207,16 @@ public:
       return fail(cx, "start", error);
     }
     record->timer_live = true;
+    if (!record->arguments.initCapacity(arguments.length())) {
+      JS_ReportOutOfMemory(cx);
+      // A refused stop retains the original timer and capture record. Close
+      // timer admission until cancellation can retire that exact ownership.
+      if (!stop(cx, *record)) { stopped_ = true; return false; }
+      if (!collect(cx)) stopped_ = true;
+      return false;
+    }
+    for (size_t index = 0; index < arguments.length(); ++index)
+      record->arguments.infallibleAppend(arguments[index]);
     if (!begin_next(cx, *record)) {
       stopped_ = true;
       (void)stop(cx, *record);
@@ -288,6 +280,9 @@ public:
     }
     if (!collect(cx)) return false;
     if (records_) return false; // actual pending subtasks still own their storage
+    if (retired_native_.live &&
+        (!native_.acknowledgeRetirement(cx, retired_native_) || retired_native_.live))
+      return false;
     if (&readiness_ != &local_readiness_) return true;
     return readiness_.retire(cx);
   }

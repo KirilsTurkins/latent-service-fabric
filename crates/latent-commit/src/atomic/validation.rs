@@ -226,12 +226,7 @@ fn validate_command(view: &ReadView, bytes: &[u8]) -> Result<(), AtomicError> {
             attempt_row_key(command.id, generation),
             result_row_key(command.id, generation),
         ] {
-            let present = if key.family == Family::Result {
-                read_result(view, &key)?.is_some()
-            } else {
-                view.get(&key)?.is_some()
-            };
-            if present {
+            if view.get(&key)?.is_some() {
                 return Err(AtomicError::Corrupt);
             }
         }
@@ -399,12 +394,7 @@ fn validate_floor(view: &ReadView, bytes: &[u8]) -> Result<(), AtomicError> {
             result_row_key(floor.command, generation),
             super::retention::RetryIndex::row_key(floor.command, generation),
         ] {
-            let present = if key.family == Family::Result {
-                read_result(view, &key)?.is_some()
-            } else {
-                view.get(&key)?.is_some()
-            };
-            if present {
+            if view.get(&key)?.is_some() {
                 return Err(AtomicError::Corrupt);
             }
         }
@@ -700,22 +690,8 @@ fn inbox(bytes: &[u8]) -> Result<InboxMarker, AtomicError> {
         completed_at,
     })
 }
-// Result bytes can be much larger than other record types. Bound them before
-// copying, including linked-record validation performed before maintenance.
-pub(super) fn read_result(view: &ReadView, key: &RowKey) -> Result<Option<Vec<u8>>, StoreError> {
-    match view.get_bounded(key, super::codec::RESULT_BYTES) {
-        Err(StoreError::Invalid) => view.get(key),
-        result => result,
-    }
-}
-
 fn required(view: &ReadView, key: &RowKey) -> Result<Vec<u8>, AtomicError> {
-    let value = if key.family == Family::Result {
-        read_result(view, key)?
-    } else {
-        view.get(key)?
-    };
-    value.ok_or(AtomicError::Corrupt)
+    view.get(key)?.ok_or(AtomicError::Corrupt)
 }
 fn namespace_usage_key(bytes: &[u8]) -> Result<(), AtomicError> {
     let mut rest = bytes.strip_prefix(b"ns-v1\0").ok_or(AtomicError::Corrupt)?;

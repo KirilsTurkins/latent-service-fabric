@@ -225,7 +225,7 @@ class RepositoryInventoryTests(unittest.TestCase):
         from tools import go_http_tenant_native_products, http_phase_native_products
         from tools import http_tenant_native_products, java_phase_native_products
         from tools import wait_runtime_native_products, wasmtime_48_0_7_native_products
-        from tools import qualify_go_write_progress, activation_stack_native_source
+        from tools import qualify_go_write_progress
         import ast
         # The frozen Rust reader authenticates historical producer source on import.
         # This inventory check runs before the Python lane fetches that source, so
@@ -252,9 +252,6 @@ class RepositoryInventoryTests(unittest.TestCase):
             http_phase_native_products, http_tenant_native_products, java_phase_native_products,
             wait_runtime_native_products, wasmtime_48_0_7_native_products)}
         expected.add(rust_thread_source)
-        # Rust thread products no longer share the C/ordinary-worker origin.
-        # Its independently frozen source still needs the historical object.
-        expected.add(activation_stack_native_source.SOURCE)
         expected.update((qualify_go_write_progress.BASELINE,
             qualify_go_write_progress.CLOSE_BASELINE, 'aa56bdebad8c12f20acce4ec4ecfeca73cf554be'))
         # These exact additional C/codec/Buffer origins are needed by the preservation
@@ -280,6 +277,7 @@ class RepositoryInventoryTests(unittest.TestCase):
             'b422af24d86344ac7abb8b8fa56c3782aab63915',
             '95b8d8b16c29d94755262345a305401ee99a801f',
             'e3f0edf822c10e84bbeede276174ac3217542afc',
+            'c7134289f446cb3171eb0ffd800a94afc2a5209f',
         ))
         self.assertEqual(len(words[5:]), len(expected))
         self.assertEqual(set(words[5:]), expected)

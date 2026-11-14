@@ -64,15 +64,6 @@ class Imports final {
 
   bool collect(JSContext* cx) {
     if (failed_observer_completion_) return invalid(cx, "borrow-quarantined");
-    // Keep one bounded retry slot, not a second owner ledger. Its buffers and
-    // roots have already died; only these exact original acknowledgements may
-    // refund it. Do not destroy another record until the slot is fully drained.
-    // A partial success updates its live flags and must never refund twice.
-    BrokerImportAccounting retired(jobs_, native_);
-    if (!retired.physicallyRetired(cx, failed_retirement_.native, failed_retirement_.result) ||
-        failed_retirement_.native.live || failed_retirement_.result.live ||
-        !native_.acknowledgeRetirement(cx, failed_record_owner_) || failed_record_owner_.live)
-      return false;
     auto* link = &records_;
     while (*link) {
       auto* item = link->get();
@@ -98,8 +89,7 @@ class Imports final {
       physical.reset(); // JS roots/captures/result and C++ record are gone first
       BrokerImportAccounting accounting(jobs_, native_);
       if (!accounting.physicallyRetired(cx, retirement.native, retirement.result) ||
-          retirement.native.live || retirement.result.live ||
-          !native_.acknowledgeRetirement(cx, record_owner) || record_owner.live) {
+          !native_.acknowledgeRetirement(cx, record_owner)) {
         failed_retirement_ = retirement;
         failed_record_owner_ = record_owner;
         if (*observer_link) {
@@ -261,7 +251,6 @@ public:
     return item && item->lifecycle.phase() == ImportLifecycle::Phase::Reserved ? item->parameters : nullptr;
   }
   bool beginLowering(JSContext* cx, uint32_t id) {
-    if (stopped_) return invalid(cx, "lower-after-stop");
     auto* item = find(id);
     if (!item || !item->disposer) return invalid(cx, "lower-record");
     return item->lifecycle.beginLowering(cx);
@@ -282,10 +271,6 @@ public:
     return true;
   }
   bool turn(JSContext* cx) {
-    // cancelAll fences the entire manager before its first fallible operation.
-    // An earlier cleanup refusal must not leave later records eligible to
-    // resolve Promises. Cleanup progresses through cancelAll, never dispatch.
-    if (stopped_) return invalid(cx, "turn-after-stop");
     if (!collect(cx)) return false;
     for (auto* item = records_.get(); item; item = item->following.get()) {
       auto phase = item->lifecycle.phase();
@@ -307,7 +292,6 @@ public:
     return true;
   }
   bool beginLifting(JSContext* cx, uint32_t id, void*& buffer) {
-    if (stopped_) return invalid(cx, "lift-after-stop");
     auto* item = find(id);
     if (!item || !item->promise_settled) return invalid(cx, "lift-record");
     if (!item->lifecycle.beginLifting(cx)) return false;

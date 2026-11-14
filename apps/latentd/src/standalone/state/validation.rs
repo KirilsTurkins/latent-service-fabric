@@ -59,6 +59,16 @@ pub(super) fn validate(
     quotas: &[TenantQuota],
     original: &NativeReservation,
 ) -> Result<(), StoreError> {
+    validate_with_payloads(view, identity, quotas, original, &RejectPayloads)
+}
+
+fn validate_with_payloads(
+    view: &ReadView,
+    identity: &StoreIdentity,
+    quotas: &[TenantQuota],
+    original: &NativeReservation,
+    payloads: &dyn PayloadVerifier,
+) -> Result<(), StoreError> {
     live(original)?;
     if !quotas.is_empty() {
         tenant::configuration_digest(quotas)?;
@@ -89,7 +99,7 @@ pub(super) fn validate(
         foreign_row,
         |view, key, bytes| {
             live(original)?;
-            reject_unverified_payload(key, bytes)?;
+            payloads.verify(view, key, bytes)?;
             census.observe(key, bytes, contribution(view, key, bytes)?)
         },
         || live(original),
@@ -98,6 +108,68 @@ pub(super) fn validate(
     live(original)?;
     DispatchCatalog::validate_view(view)?;
     live(original)
+}
+
+#[cfg(target_os = "linux")]
+pub(super) fn validate_with_local_payloads(
+    view: &ReadView,
+    identity: &StoreIdentity,
+    quotas: &[TenantQuota],
+    original: &NativeReservation,
+    payloads: &LocalPayloadVerifier<'_>,
+) -> Result<(), StoreError> {
+    validate_with_payloads(view, identity, quotas, original, payloads)
+}
+
+trait PayloadVerifier {
+    fn verify(&self, view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError>;
+}
+
+struct RejectPayloads;
+impl PayloadVerifier for RejectPayloads {
+    fn verify(&self, _: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+        reject_unverified_payload(key, bytes)
+    }
+}
+
+/// The actual provider owner is already bound to this engine view. Logical
+/// closure is validated separately by the surrounding closed startup walk.
+#[cfg(target_os = "linux")]
+pub(super) struct LocalPayloadVerifier<'a> {
+    pub store: &'a latent_blobs::local::LocalBlobStore,
+    pub provider: &'a crate::config::ProviderIdentity,
+    pub original: &'a NativeReservation,
+}
+
+#[cfg(target_os = "linux")]
+impl PayloadVerifier for LocalPayloadVerifier<'_> {
+    fn verify(&self, view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+        use latent_blobs::local::LocalBlobError;
+        if !latent_state::payload_references::owns_row(key) {
+            return Ok(());
+        }
+        let Some(reference) = latent_state::payload_references::owner_reference(key, bytes)? else {
+            return Ok(());
+        };
+        if reference.payload.tenant != self.provider.tenant
+            || reference.payload.provider != self.provider.id
+            || reference.payload.provider_epoch != self.provider.epoch
+        {
+            return Err(StoreError::UnsupportedFormat);
+        }
+        let checkpoint = || live(self.original).map_err(|_| LocalBlobError::DeadlineExceeded);
+        self.store
+            .verify_required_reference(view, key, bytes, &checkpoint)
+            .map_err(|error| match error {
+                LocalBlobError::Corrupt | LocalBlobError::NotFound | LocalBlobError::Invalid => {
+                    StoreError::Corrupt
+                }
+                LocalBlobError::PermissionDenied => StoreError::UnsupportedFormat,
+                LocalBlobError::Capacity => StoreError::Capacity,
+                _ => StoreError::Unavailable,
+            })?;
+        live(self.original)
+    }
 }
 
 fn validate_global_bootstrap(

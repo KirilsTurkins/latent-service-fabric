@@ -57,6 +57,7 @@ pub struct CompleteEnvelope {
     authorities: Vec<DurableEffectAuthority>,
     old_state_payloads: Vec<latent_state::payload_references::StatePayloadLink>,
     state_binding: Option<latent_state::embedded::StoreBinding>,
+    state_detach_only: bool,
     #[cfg(target_os = "linux")]
     payloads: Vec<latent_blobs::provider::CapturedLocalPayload>,
 }
@@ -917,10 +918,23 @@ impl CompleteEnvelope {
         store: &EmbeddedStore,
         final_accept: impl FnOnce(&[DurableEffectAuthority]) -> Result<(), AtomicError>,
     ) -> PreparedDisposition {
-        if !self.old_state_payloads.is_empty() || self.state_binding.is_some() {
+        if !self.old_state_payloads.is_empty()
+            || (self.state_binding.is_some() && !self.state_detach_only)
+        {
             return PreparedDisposition::KnownNotCommitted {
                 command: Box::new(self.claim),
                 reason: AtomicError::UnsupportedFormat,
+            };
+        }
+        if self.state_detach_only
+            && !self
+                .state_binding
+                .as_ref()
+                .is_some_and(|binding| store.is_bound_to(binding))
+        {
+            return PreparedDisposition::KnownNotCommitted {
+                command: Box::new(self.claim),
+                reason: AtomicError::PermissionDenied,
             };
         }
         #[cfg(target_os = "linux")]
@@ -1268,6 +1282,7 @@ impl CompleteEnvelope {
             authorities,
             old_state_payloads,
             state_binding,
+            state_detach_only: false,
             #[cfg(target_os = "linux")]
             payloads: Vec::new(),
         })
@@ -1423,12 +1438,7 @@ impl Usage {
         view: &ReadView,
         row: RowKey,
     ) -> Result<(Self, RowKey, Option<Vec<u8>>), AtomicError> {
-        // A legacy store may have a value limit smaller than the fixed modern
-        // quota row. In that case the engine limit itself bounds the copy.
-        let bytes = match view.get_bounded(&row, latent_state::reservation::QUOTA_BYTES) {
-            Err(latent_state::embedded::StoreError::Invalid) => view.get(&row)?,
-            result => result?,
-        };
+        let bytes = view.get(&row)?;
         let usage = if let Some(bytes) = &bytes {
             Self::decode(bytes)?
         } else {

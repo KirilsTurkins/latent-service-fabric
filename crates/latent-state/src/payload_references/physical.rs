@@ -83,17 +83,19 @@ pub fn validate_physical_inventory_head_with_checkpoint(
         )?;
         if complete {
             checkpoint()?;
+            let _ = view.is_empty()?;
             return Ok(true);
         }
     }
 }
 
 /// A bounded, generation-fenced inventory of one physical object's owners.
-/// Each page is checked against the original live engine and head bytes.
+/// Each page is checked against the original live view, engine and head bytes.
 /// Completion is an observation, not authority to delete or read an object.
 pub struct PhysicalInventory {
     payload: LocalPayloadIdentity,
     binding: crate::embedded::StoreBinding,
+    view: usize,
     head: Option<Vec<u8>>,
     expected: u64,
     observed: u64,
@@ -115,6 +117,7 @@ impl PhysicalInventory {
         Ok(Self {
             payload: payload.clone(),
             binding: view.binding(),
+            view: view.identity(),
             head,
             expected,
             observed: 0,
@@ -135,7 +138,11 @@ impl PhysicalInventory {
         if self.finished {
             return Err(StoreError::Invalid);
         }
-        if !view.is_bound_to(&self.binding)
+        // Any failed or unwound page invalidates the whole observation. Only
+        // a fully verified incomplete page may make this cursor usable again.
+        self.finished = true;
+        if view.identity() != self.view
+            || !view.is_bound_to(&self.binding)
             || view.get_bounded(&head_key(&self.payload)?, MAX_REFERENCE_BYTES)? != self.head
         {
             return Err(StoreError::Conflict);
@@ -154,10 +161,12 @@ impl PhysicalInventory {
         if observed > self.expected || (page.resume.is_none() && observed != self.expected) {
             return Err(StoreError::Corrupt);
         }
+        let _ = view.is_empty()?;
         self.observed = observed;
         self.after = page.resume;
-        self.finished = self.after.is_none();
-        Ok((page.references, self.finished))
+        let complete = self.after.is_none();
+        self.finished = complete;
+        Ok((page.references, complete))
     }
 }
 pub(super) fn append_heads(

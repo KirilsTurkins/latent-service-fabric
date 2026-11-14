@@ -55,7 +55,7 @@ impl ResultMaintenanceOwner {
         }
         authorize(&namespace)?;
         let original = view
-            .get_bounded(&MaintenanceProgress::key(), super::clock::PROGRESS_BYTES)?
+            .get(&MaintenanceProgress::key())?
             .ok_or(AtomicError::RecoveryRequired)?;
         clock.next(&MaintenanceProgress::decode(&original)?)?;
         checks.push(ExpectedRow {
