@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-import shutil
 import stat
 import subprocess
 import tempfile
@@ -46,8 +45,6 @@ class LinuxPortableRustToolchain(unittest.TestCase):
             self.assertNotIn("if", step)
             self.assertFalse(step.get("continue-on-error", False))
 
-    @unittest.skipUnless(os.name == "posix" and shutil.which("bash"),
-                         "requires the Linux workflow shell")
     def test_repeated_setup_owns_fresh_private_homes_without_touching_inherited_tools(self):
         with tempfile.TemporaryDirectory(prefix="portable rustup ") as temporary:
             root = Path(temporary)
