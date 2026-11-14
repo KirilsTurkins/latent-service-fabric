@@ -15,7 +15,7 @@ from tools.go_guest import checkpoints
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / 'tools/tests/fixtures/go-checkpoint-goto'
 TRANSFORMER = ROOT / 'sdk/go-guest/runtime/checkpoint_transform.go.in'
-GO_SHA256 = '5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b'
+GO_SHA256 = 'de0ae3e082ce7599eae4fb69fa2ef1e43b8f31ffd3fce62cdf81930aa9005050'
 TAIL = re.compile(rb'//go:linkname ([A-Za-z0-9_]+) runtime\.lsfCheckpoint\nfunc \1\(\)\n'
                   rb'//go:linkname ([A-Za-z0-9_]+) runtime\.lsfUnsupportedCheckpoint\n'
                   rb'//go:nosplit\nfunc \2\(\)\n')

@@ -38,7 +38,7 @@ CACHE_CASES = ('TestCacheRetainsIdentityThroughGC', 'TestCacheRejectsOversizedDE
     'TestCacheRejectsNinthDistinctCertificateAndRetainsHits', 'TestCacheAggregateDERBudgetAndNoEviction',
     'TestCacheParseFailureMatchesUpstreamAndConsumesNoEntry', 'TestFreshCacheStartsEmpty',
     'TestConcurrentSameCertificatePublishesOnce', 'TestCacheExactPerDERBoundaryAndOneByteRefusal')
-REFERENCE_GO_SHA = '5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b'
+REFERENCE_GO_SHA = 'de0ae3e082ce7599eae4fb69fa2ef1e43b8f31ffd3fce62cdf81930aa9005050'
 
 CASE = 'signed_ordinary_go_smtp_starttls_preserves_trust_hostname_and_fresh_connection'
 PUBLISHED_CASE = 'signed_published_go_smtp_and_separate_worker_timer_preserve_original_owners'
