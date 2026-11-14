@@ -57,16 +57,51 @@ class SelectionTests(unittest.TestCase):
                 discovery.execution_cases(bad, frozenset({'tests::works', 'tests::external'}),
                                           frozenset({'tests::external'}))
 
-    def test_should_panic_outcome_suffix_matches_canonical_discovery_name(self):
-        discovered = frozenset({'tests::rejects_foreign_wait', 'tests::ordinary'})
-        raw = (b'test tests::rejects_foreign_wait - should panic ... ok\\n'
-               b'test tests::ordinary ... ok\\n'
-               b'test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;\\n')
-        self.assertEqual(discovery.execution_cases(raw, discovered, frozenset()),
-                         (['tests::ordinary', 'tests::rejects_foreign_wait'], []))
-        with self.assertRaisesRegex(ValueError, 'host-suite-case-result-mismatch'):
-            discovery.execution_cases(raw.replace(b' - should panic', b' - unexpected'),
-                                      discovered, frozenset())
+    def test_should_panic_annotation_resolves_only_the_discovered_case(self):
+        available = frozenset({'tests::panic', 'tests::ordinary', 'tests::external'})
+        ignored = frozenset({'tests::external'})
+        observed = (b'test tests::panic - should panic ... ok\\n'
+                    b'test tests::ordinary ... ok\\n'
+                    b'test tests::external ... ignored, needs fixture\\n'
+                    b'test result: ok. 2 passed; 0 failed; 1 ignored;\\n')
+        self.assertEqual(discovery.execution_cases(observed, available, ignored),
+                         (['tests::ordinary', 'tests::panic'], ['tests::external']))
+        progress = b'test tests::panic - should panic has been running for over 60 seconds\\n'
+        self.assertEqual(discovery.execution_cases(progress + observed, available, ignored),
+                         (['tests::ordinary', 'tests::panic'], ['tests::external']))
+        for bad in (
+            observed.replace(b'panic - should panic ... ok', b'panic - should panic ... FAILED'),
+            observed.replace(b'panic - should panic', b'foreign - should panic'),
+            observed.replace(b'panic - should panic', b'panic - compile fail'),
+            observed.replace(b'test tests::panic - should panic ... ok\\n', b''),
+            b'test tests::panic ... ok\\n' + observed,
+            b'test tests::external - should panic has been running for over 60 seconds\\n' + observed,
+            b'test foreign - should panic has been running for over 60 seconds\\n' + observed,
+        ):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                discovery.execution_cases(bad, available, ignored)
+        # An ambiguous hand-written harness cannot alias two discovered cases.
+        ambiguous = available | {'tests::panic - should panic'}
+        with self.assertRaises(ValueError):
+            discovery.execution_cases(observed, ambiguous, ignored)
+
+    def test_should_panic_workspace_receipt_keeps_failures_and_ignore_state(self):
+        receipt = {'schemaVersion': 'latent.ci.discovery.v1', 'sourceRevision': 'a' * 40,
+                   'suites': [{'id': 'one', 'artifact': 'one-abc',
+                               'cases': ['tests::panic'], 'ignored': []}]}
+        log = ('    Running unittests lib.rs (target/debug/deps/one-abc)\\n'
+               'test tests::panic - should panic ... ok\\n'
+               'test result: ok. 1 passed; 0 failed; 0 ignored;\\n')
+        report, errors = discovery.workspace_execution(receipt, log)
+        self.assertEqual(errors, [])
+        self.assertEqual(report['suites'][0]['executed'], ['tests::panic'])
+        for bad in (log.replace(' ... ok', ' ... FAILED'),
+                    log.replace(' ... ok', ' ... ignored'),
+                    log.replace('test tests::panic - should panic ... ok\\n', ''),
+                    log.replace('test tests::panic - should panic ... ok\\n',
+                                'CLOCK|test tests::panic - should panic ... 5|10\\nok\\n')):
+            with self.subTest(bad=bad):
+                self.assertTrue(discovery.workspace_execution(receipt, bad)[1])
         receipt = {"schemaVersion": "latent.ci.discovery.v1", "sourceRevision": "a" * 40,
                    "suites": [{"id": "one", "artifact": "one-abc", "cases": ["a", "b"], "ignored": ["b"]},
                               {"id": "empty", "artifact": "empty-abc", "cases": [], "ignored": []},
