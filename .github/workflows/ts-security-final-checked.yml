@@ -5,12 +5,13 @@ on:
     paths:
       - .github/workflows/ts-security-final-checked.yml
       - .github/maintenance/finish_ts_security_checked.py
+      - .github/maintenance/review_new_security_findings.py
 permissions:
   contents: write
   actions: read
 concurrency:
   group: ts-security-final-checked
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   integrate:
     if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/ts-stack-security-20261113'
@@ -70,13 +71,41 @@ jobs:
           for mode in secrets static; do
             python3 "$RUNNER_TEMP/security-integrated/tools/security_scan.py" "$mode" --repo "$RUNNER_TEMP/security-integrated" --tools "$RUNNER_TEMP/security-tools" --scratch "$RUNNER_TEMP/security-scan" > "$RUNNER_TEMP/final-security-evidence/parent-$mode.log"
           done
-      - name: Restack, test and export exact Git objects without changing refs
+      - name: Restack, source-test and export candidate Git objects without changing refs
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          python3 .github/maintenance/finish_ts_security_checked.py publish-objects 2>&1 | tee "$RUNNER_TEMP/final-security-evidence/export.log"
+          python3 .github/maintenance/finish_ts_security_checked.py publish-candidates 2>&1 | tee "$RUNNER_TEMP/final-security-evidence/export.log"
+      - name: Retain candidate commit identities before runtime compilation
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: typescript-security-candidate-commits
+          path: ${{ runner.temp }}/final-security-evidence/
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: error
+      - name: Execute Store regressions on the exact exported ownership tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,pathlib,subprocess
+          root=pathlib.Path(os.environ['RUNNER_TEMP']);out=root/'final-security-evidence';work=root/'security-1931'
+          record=json.loads((out/'1931.json').read_text())
+          def git(*args):return subprocess.check_output(['git',*args],cwd=work,text=True).strip()
+          assert git('rev-parse','HEAD^{tree}')==record['tree']
+          assert git('rev-parse','HEAD')==record['testedLocalCommit']
+          assert not git('status','--porcelain','--untracked-files=normal')
+          command=json.loads((out/'1931-store-pending.json').read_text())['command']
+          with (out/'1931-store.log').open('wb') as log:
+              result=subprocess.run(command,cwd=work,stdout=log,stderr=subprocess.STDOUT,timeout=2400)
+          record.update(command=command,exitCode=result.returncode)
+          (out/'1931-store-result.json').write_text(json.dumps(record,indent=2)+'\n')
+          print((out/'1931-store.log').read_text(errors='replace')[-18000:])
+          raise SystemExit(result.returncode)
+          PY
       - name: Retain exact candidate diagnostics
         if: always()
         shell: bash
