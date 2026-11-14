@@ -40,32 +40,32 @@ jobs:
           end = text.index('\n  portable-differential:', start)
           job = text[start:end]
           old = '      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1\n'
-          new = '''      # Do not extend a partially installed toolchain from the hosted image at
-                # the first cargo invocation. Own the installation for this job instead.
-                - name: Isolate the Linux portable Rust toolchain
-                  shell: bash
-                  run: |
-                    set -euo pipefail
-                    isolated="$(mktemp -d "$RUNNER_TEMP/lsf-linux-portable-rustup.XXXXXX")"
-                    printf 'RUSTUP_HOME=%s\\n' "$isolated" >> "$GITHUB_ENV"
-                - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
-                  with:
-                    components: clippy,rustfmt
-                    targets: wasm32-wasip2,wasm32-unknown-unknown
-          '''
-          # Remove the additional YAML-source indentation inside the Python string.
-          lines = new.splitlines(True)
-          new = lines[0] + ''.join(line[10:] if line.startswith('          ') else line for line in lines[1:])
+          new = (
+              '      # Do not extend a partially installed toolchain from the hosted image at\n'
+              '      # the first cargo invocation. Own the installation for this job instead.\n'
+              '      - name: Isolate the Linux portable Rust toolchain\n'
+              '        shell: bash\n'
+              '        run: |\n'
+              '          set -euo pipefail\n'
+              '          isolated="$(mktemp -d "$RUNNER_TEMP/lsf-linux-portable-rustup.XXXXXX")"\n'
+              '          printf \'RUSTUP_HOME=%s\\n\' "$isolated" >> "$GITHUB_ENV"\n'
+              + old +
+              '        with:\n'
+              '          components: clippy,rustfmt\n'
+              '          targets: wasm32-wasip2,wasm32-unknown-unknown\n')
           assert job.count(old) == 1
           p.write_text(text[:start] + job.replace(old, new) + text[end:])
+          assert hashlib.sha256(p.read_bytes()).hexdigest() == '2158e61e4851f812a0366891e3ccd5387f67996ceaaa9125f2809098fbf86a4d'
           PY
           python tools/ci_contracts.py propose job .github/workflows/developer-tools.yml --job linux-portable --reason 'Own a fresh per-job Rustup home and install all repository-declared components and targets before the unchanged locked Linux portable build.'
           python - <<'PY'
           from pathlib import Path
-          import json
+          import json, hashlib
           source = Path('target/ci/proposals/workflows/developer-tools.yml/jobs/linux-portable.json')
           target = Path('tools/ci/contracts/workflows/developer-tools.yml/jobs/linux-portable.json')
           target.write_text(json.dumps(json.loads(source.read_text()), separators=(',', ':'), sort_keys=True) + '\n')
+          assert hashlib.sha256(target.read_bytes()).hexdigest() == 'dee9629f462c67c202d598c93280c3afa6315633507516cefcd5725b9e03ee46'
+          assert hashlib.sha256(Path('tools/tests/test_dev_rust_toolchain.py').read_bytes()).hexdigest() == '3d453625398f42f56f5fefd45adb6acc00f2df867228986cbb6e42d9fec04ad5'
           PY
           git diff --check
           git add .github/workflows/developer-tools.yml tools/ci/contracts/workflows/developer-tools.yml/jobs/linux-portable.json tools/tests/test_dev_rust_toolchain.py
