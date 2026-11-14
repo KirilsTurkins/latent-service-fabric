@@ -60,6 +60,12 @@ def derive():
     run(['git', 'fetch', '--no-tags', '--depth=1', 'origin', BASE, PARENT, SECURITY, SELECTORS],
         cwd=ROOT, timeout=240)
     run(['git', 'worktree', 'add', '--detach', str(WORK), BASE], cwd=ROOT)
+    # These workflows belong only to the donor's TypeScript feature branch.
+    # They are absent on the PR head; do not introduce them just to update pins.
+    excluded = ('.github/workflows/typescript-network-boundary.yml',
+                '.github/workflows/typescript-runtime-controls.yml')
+    for path in excluded:
+        assert run(['git', 'cat-file', '-e', BASE + ':' + path], check=False).returncode != 0
     allowed = set()
     for old, new in [(PARENT, SECURITY), (SECURITY, SELECTORS)]:
         assert ('parent ' + old) in text(['git', 'cat-file', '-p', new]).splitlines()
@@ -68,7 +74,8 @@ def derive():
         assert len(patch) < 8 * 1024 * 1024
         patch_path = OUT / (new[:8] + '.patch')
         patch_path.write_bytes(patch)
-        applied = run(['git', 'apply', '--3way', '--index', str(patch_path)], check=False)
+        applied = run(['git', 'apply', '--3way', '--index',
+                       *('--exclude=' + path for path in excluded), str(patch_path)], check=False)
         (OUT / (new[:8] + '-apply.log')).write_bytes(applied.stdout + applied.stderr)
         if applied.returncode:
             (OUT / 'conflicts.txt').write_bytes(run(['git', 'ls-files', '--unmerged']).stdout)
@@ -104,8 +111,9 @@ def derive():
     candidate = text(['git', 'rev-parse', 'HEAD'])
     tree = text(['git', 'rev-parse', 'HEAD^{tree}'])
     save('candidate.json', {'base': BASE, 'sourceCommits': [SECURITY, SELECTORS],
-                           'localCommit': candidate, 'tree': tree, 'paths': paths,
+                           'localCommit': candidate, 'tree': tree, 'paths': paths, 'excludedAbsentWorkflows': excluded,
                            'run': int(os.environ['GITHUB_RUN_ID'])})
+    run(['git', 'archive', '--format=tar.gz', '-o', str(OUT / 'changed-files.tar.gz'), 'HEAD', *paths])
     (OUT / 'candidate.patch').write_bytes(run(['git', 'diff', '--binary', '--full-index', BASE, 'HEAD']).stdout)
 
 
