@@ -152,12 +152,14 @@ async fn completion_case(completion: Completion, timeout: Option<u32>) {
     if matches!(completion, Completion::Current) {
         assert_eq!(stream.inspect().state, StreamState::Open);
         // A later observation reuses the same connection, not a new dial.
-        assert!(stream
-            .ready(StreamInterest::Writable, None)
-            .unwrap()
-            .await
-            .unwrap()
-            .writable);
+        assert!(
+            stream
+                .ready(StreamInterest::Writable, None)
+                .unwrap()
+                .await
+                .unwrap()
+                .writable
+        );
         drop(held_read);
         stream.close().await.unwrap();
     } else {
