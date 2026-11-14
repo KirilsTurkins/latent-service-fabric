@@ -41,7 +41,7 @@ jobs:
           (out/'snapshot.json').write_text(json.dumps(snapshot,indent=2)+'\n')
           def logs(item):
               number,name,j=item
-              p=subprocess.run(['gh','api',repo+'/actions/jobs/'+str(j['id'])+'/logs'],capture_output=True,timeout=120)
+              p=subprocess.run(['gh','api','--allow-escape-sequences',repo+'/actions/jobs/'+str(j['id'])+'/logs'],capture_output=True,timeout=120)
               (out/(str(number)+'-'+str(j['id'])+'.log')).write_bytes(p.stdout if p.returncode==0 else p.stderr)
               return {'pr':number,'workflow':name,'job':j['name'],'id':j['id'],'logExit':p.returncode}
           with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:results=list(pool.map(logs,jobs))
