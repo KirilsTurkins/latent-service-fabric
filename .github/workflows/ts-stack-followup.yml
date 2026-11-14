@@ -2,56 +2,91 @@ name: TypeScript stack CI follow-up
 on:
   push:
     branches: [ci/ts-stack-followup-20261114]
-    paths: [.github/workflows/ts-stack-followup.yml]
+    paths:
+      - .github/workflows/ts-stack-followup.yml
+      - .github/maintenance/ts_followup_repair.py
 permissions:
-  contents: read
+  contents: write
   actions: read
+concurrency:
+  group: ts-stack-pin-closure-followup
+  cancel-in-progress: false
 jobs:
-  diagnose:
+  repair:
     if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/ci/ts-stack-followup-20261114'
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 35
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+      RUSTUP_TOOLCHAIN: 1.97.1
+      LSF_TYPESCRIPT_RECORD_CXX: clang++
     steps:
-      - name: Collect failed job logs bound to the three published heads
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          targets: wasm32-wasip2
+      - uses: KirilsTurkins/lsf-setup-dotnet@2382c9e63a3b678b643c7e715d023e7fa42fbbef
+        with:
+          dotnet-version: 8.0.428
+      - uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a
+        with:
+          node-version: 24.19.0
+          package-manager-cache: false
+      - run: python3 -m pip install -r tools/requirements.lock
+      - name: Reconstruct reviewed source edits and authenticate the selected Go executable
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          mkdir -p "$RUNNER_TEMP/ts-followup-evidence"
+          python3 .github/maintenance/ts_followup_repair.py prepare 2>&1 | tee "$RUNNER_TEMP/ts-followup-evidence/prepare.log"
+      - name: Regenerate and verify the .NET SDK on the selected runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/maintenance/ts_followup_repair.py generate 2>&1 | tee "$RUNNER_TEMP/ts-followup-evidence/generate.log"
+      - name: Execute the failed source checks and real native checkpoint reference
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/maintenance/ts_followup_repair.py test 2>&1 | tee "$RUNNER_TEMP/ts-followup-evidence/test.log"
+          cd "$RUNNER_TEMP/ts-followup-parent"
+          node --test tools/cross-origin/contract.test.mjs tools/cross-origin/native-network.test.mjs > "$RUNNER_TEMP/ts-followup-evidence/cors-node.log"
+      - name: Restack source-test and export exact Git objects without moving PR refs
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
+          python3 .github/maintenance/ts_followup_repair.py export 2>&1 | tee "$RUNNER_TEMP/ts-followup-evidence/export.log"
+      - name: Retain exact source differences on every exit
+        if: always()
+        shell: bash
+        run: |
           python3 - <<'PY'
-          import concurrent.futures,json,os,pathlib,subprocess
-          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'ts-ci-diagnostics';out.mkdir()
-          repo='repos/KirilsTurkins/latent-service-fabric'
-          heads={1852:'9e633f701982ce3345e7ebba0519d48f624f4afd',1931:'2bdec4779be9791ccdae28aa30f253ceca481c5d',1934:'8c6e235274009cbb08c17612749dd85b81f50e8d'}
-          def api(path):return json.loads(subprocess.check_output(['gh','api',repo+path],timeout=90))
-          jobs=[];snapshot={}
-          for number,head in heads.items():
-              pr=api('/pulls/'+str(number));assert pr['head']['sha']==head,(number,'head-moved')
-              runs=api('/actions/runs?head_sha='+head+'&event=pull_request&per_page=100')['workflow_runs']
-              selected=[]
-              for run in runs:
-                  rows=[];page=1
-                  while True:
-                      part=api('/actions/runs/'+str(run['id'])+'/jobs?per_page=100&page='+str(page))['jobs'];rows.extend(part)
-                      if len(part)<100:break
-                      page+=1
-                  selected.append({'id':run['id'],'name':run['name'],'status':run['status'],'conclusion':run['conclusion'],'jobs':rows})
-                  jobs.extend((number,run['name'],j) for j in rows if j['conclusion'] in ('failure','timed_out'))
-              snapshot[number]={'head':head,'merge':pr['merge_commit_sha'],'runs':selected}
-          (out/'snapshot.json').write_text(json.dumps(snapshot,indent=2)+'\n')
-          def logs(item):
-              number,name,j=item
-              p=subprocess.run(['gh','api','--allow-escape-sequences',repo+'/actions/jobs/'+str(j['id'])+'/logs'],capture_output=True,timeout=120)
-              (out/(str(number)+'-'+str(j['id'])+'.log')).write_bytes(p.stdout if p.returncode==0 else p.stderr)
-              return {'pr':number,'workflow':name,'job':j['name'],'id':j['id'],'logExit':p.returncode}
-          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:results=list(pool.map(logs,jobs))
-          (out/'failures.json').write_text(json.dumps(results,indent=2)+'\n');print(json.dumps(results,indent=2))
-          assert all(row['logExit']==0 for row in results)
+          import os,pathlib,subprocess
+          root=pathlib.Path(os.environ['RUNNER_TEMP']);out=root/'ts-followup-evidence';out.mkdir(exist_ok=True)
+          for name in ('ts-followup-parent','ts-followup-1931','ts-followup-1934'):
+              path=root/name
+              if not path.is_dir():continue
+              result=subprocess.run(['git','diff','--binary','9e633f701982ce3345e7ebba0519d48f624f4afd'],cwd=path,capture_output=True)
+              (out/(name+'.patch')).write_bytes(result.stdout+result.stderr)
           PY
       - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
         if: always()
         with:
-          name: ts-stack-ci-diagnostics
-          path: ${{ runner.temp }}/ts-ci-diagnostics/
+          name: ts-stack-pin-closure-evidence
+          path: ${{ runner.temp }}/ts-followup-evidence/
+          include-hidden-files: true
           retention-days: 7
           if-no-files-found: error
