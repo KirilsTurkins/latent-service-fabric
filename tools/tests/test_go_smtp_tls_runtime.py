@@ -344,8 +344,10 @@ class GoSmtpTlsRuntimeTests(unittest.TestCase):
             self.assertNotIn(absent, source)
 
     def test_reference_go_pin_is_archive_derived_and_rejects_changed_bytes(self):
-        self.assertEqual(runtime.REFERENCE_GO_SHA,
-                         '5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b')
+        from tools import qualify_go_captured_checkpoints as captured
+        from tools.tests import go_checkpoint_goto_reference as goto
+        self.assertEqual(runtime.REFERENCE_GO_SHA, goto.GO_SHA256)
+        self.assertEqual(captured.GO_IDENTITY['digest'], 'sha256:' + runtime.REFERENCE_GO_SHA)
         fixture = b'one fixed compiler preimage'
         with mock.patch.object(runtime, 'REFERENCE_GO_SHA', hashlib.sha256(fixture).hexdigest()):
             runtime.require_reference_go(fixture)

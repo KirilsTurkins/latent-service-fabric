@@ -15,6 +15,29 @@ from tools.security_sdk_graphs import c_packages, go_packages, legacy_c_tree, le
 
 
 class SdkGraphTests(unittest.TestCase):
+    def test_dotnet_host_selectors_and_generation_use_the_selected_toolchain(self):
+        import ast
+        import tomllib
+        import xml.etree.ElementTree as xml
+        root = Path(__file__).resolve().parents[2]
+        sdk = tomllib.loads((root / 'tools/toolchain.toml').read_text())['sdk']['dotnet']
+        for name in ('global.json', 'sdk/dotnet/global.json'):
+            with self.subTest(selector=name):
+                self.assertEqual(json.loads((root / name).read_text())['sdk'],
+                                 {'version': sdk, 'rollForward': 'disable'})
+        module = ast.parse((root / 'sdk/dotnet/validate.py').read_text())
+        pins = {target.id: ast.literal_eval(node.value)
+                for node in module.body if isinstance(node, ast.Assign)
+                for target in node.targets if isinstance(target, ast.Name)
+                and target.id in {'SDK_VERSION', 'RUNTIME_VERSION'}}
+        self.assertEqual(pins['SDK_VERSION'], sdk)
+        generation = json.loads((root / 'sdk/dotnet/protobuf.lock.json').read_text())
+        self.assertEqual(generation['sdkVersion'], sdk)
+        self.assertEqual(generation['runtimeVersion'], pins['RUNTIME_VERSION'])
+        project = xml.parse(root / 'sdk/dotnet/Latent.Sdk.Transport/Latent.Sdk.Transport.csproj')
+        self.assertEqual(project.findtext('./PropertyGroup/RuntimeFrameworkVersion'),
+                         pins['RUNTIME_VERSION'])
+
     def test_compiler_metadata_helper_has_one_exact_framework_only_manifest_and_no_orphan_allowance(self):
         import xml.etree.ElementTree as xml
         from tools.security_common import POLICY, read_file, tracked_paths
