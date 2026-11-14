@@ -3,6 +3,9 @@
 use super::*;
 use wasmparser::{ElementItems, ElementKind};
 
+#[path = "admission_names.rs"]
+mod names;
+
 const NATIVE: &str = "latent:runtime-native/threads@0.1.0";
 const NEW: &str = "[thread-new-indirect-v0]";
 const PREPARED: i32 = 1;
@@ -183,6 +186,13 @@ impl Reencode for RewriteAdmission {
         } else {
             Ok(function)
         }
+    }
+    fn parse_custom_name_subsection(
+        &mut self,
+        names: &mut wasm_encoder::NameSection,
+        section: wasmparser::Name<'_>,
+    ) -> Result<(), reencode::Error<Self::Error>> {
+        self.parse_names(names, section)
     }
     fn parse_function_section(
         &mut self,
