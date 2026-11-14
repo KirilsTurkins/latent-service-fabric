@@ -17,7 +17,7 @@ const upstream = {
 test('reviewed lock and Windows line endings pass the exact graph guard', () => {
   assert.equal(verifyLock(original).deepmergePaths[0], 'node_modules/deepmerge')
   assert.equal(verifyLock(Buffer.from(original.toString('utf8').replaceAll('\n', '\r\n'))).lockSha256,
-    '73ab20e6b215286eaf3c3060dfe66c4e9e426b0533ab907299bf9386aa91022a')
+    '89427e5af8052d1d52b918e9a95e46b363ae51ee2e80bcc4b72ae618c4602906')
 })
 
 test('nested, named and resolved aliases cannot pass the graph guard', () => {

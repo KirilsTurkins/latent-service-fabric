@@ -246,7 +246,7 @@
       "configuration": [
         {
           "path": "sdk/dotnet/global.json",
-          "sha256": "486f72cefddf1a313cb040785ac9ac571c86a626ad3fc5a30ebbe609c1ddfd73"
+          "sha256": "fb21e5c3c690bb880374ed4ec8517639d8e73fd887022142ae60897fa73e1893"
         },
         {
           "path": "sdk/dotnet/nuget.transport.config",
@@ -255,7 +255,7 @@
       ],
       "kind": "nuget-locked",
       "lock": "sdk/dotnet/Latent.Sdk.Transport/packages.lock.json",
-      "manifest_sha256": "63d5e6e9bec1edf5fdb7c979928108d3849258fedcc040620b4a489cc263eae4",
+      "manifest_sha256": "1712f32c386e00da5b14b48326de0a5504a787155187713d716a15b0877d7dfe",
       "path": "sdk/dotnet/Latent.Sdk.Transport/Latent.Sdk.Transport.csproj",
       "runtime_identifier": "linux-x64"
     },
@@ -263,7 +263,7 @@
       "absent_when_directory_missing": "sdk/dotnet/Latent.Sdk.Transport.Tests",
       "kind": "nuget-locked",
       "lock": "sdk/dotnet/Latent.Sdk.Transport.Tests/packages.lock.json",
-      "manifest_sha256": "bd7cf044799d7f3c02a45d46cc2b778b0cc31714048391d23941d6a4499eeada",
+      "manifest_sha256": "94178f91f726748debb3ff1b8c3178319e3b4797e803192e3e01a6158ace3242",
       "path": "sdk/dotnet/Latent.Sdk.Transport.Tests/Latent.Sdk.Transport.Tests.csproj",
       "runtime_identifier": "linux-x64"
     },
@@ -271,7 +271,7 @@
       "absent_when_directory_missing": "sdk/dotnet/Latent.Sdk.ProviderWorkflow",
       "kind": "nuget-locked",
       "lock": "sdk/dotnet/Latent.Sdk.ProviderWorkflow/packages.lock.json",
-      "manifest_sha256": "af3b347652cf6fa375511c148af11a006998ee4186df91dbcd9492da140ed2bc",
+      "manifest_sha256": "a39678c5530d322ea56f44e9c07c159769b8d3897088cad1537b1f1d3584e9c9",
       "path": "sdk/dotnet/Latent.Sdk.ProviderWorkflow/Latent.Sdk.ProviderWorkflow.csproj",
       "runtime_identifier": "linux-x64"
     },
@@ -466,7 +466,7 @@
       "absent_when_directory_missing": "sdk/dotnet/Latent.Sdk.Phase4RealCommand",
       "kind": "nuget-locked",
       "lock": "sdk/dotnet/Latent.Sdk.Phase4RealCommand/packages.lock.json",
-      "manifest_sha256": "65ff4afac47c8c7682e162fb74534548ea3deeae06a54a723e76ca61ad4bfe86",
+      "manifest_sha256": "457efe94aaecbbb74e0244f3642ac8c5f02ad9d2eff218ec7b3a2240edd8adb8",
       "path": "sdk/dotnet/Latent.Sdk.Phase4RealCommand/Latent.Sdk.Phase4RealCommand.csproj",
       "runtime_identifier": "linux-x64"
     },
@@ -474,7 +474,7 @@
       "absent_when_directory_missing": "sdk/dotnet/Latent.Sdk.Phase4RealLostRejection",
       "kind": "nuget-locked",
       "lock": "sdk/dotnet/Latent.Sdk.Phase4RealLostRejection/packages.lock.json",
-      "manifest_sha256": "65ff4afac47c8c7682e162fb74534548ea3deeae06a54a723e76ca61ad4bfe86",
+      "manifest_sha256": "457efe94aaecbbb74e0244f3642ac8c5f02ad9d2eff218ec7b3a2240edd8adb8",
       "path": "sdk/dotnet/Latent.Sdk.Phase4RealLostRejection/Latent.Sdk.Phase4RealLostRejection.csproj",
       "runtime_identifier": "linux-x64"
     },
@@ -482,7 +482,7 @@
       "absent_when_directory_missing": "sdk/dotnet/Latent.Sdk.Phase4RealLostResponse",
       "kind": "nuget-locked",
       "lock": "sdk/dotnet/Latent.Sdk.Phase4RealLostResponse/packages.lock.json",
-      "manifest_sha256": "65ff4afac47c8c7682e162fb74534548ea3deeae06a54a723e76ca61ad4bfe86",
+      "manifest_sha256": "457efe94aaecbbb74e0244f3642ac8c5f02ad9d2eff218ec7b3a2240edd8adb8",
       "path": "sdk/dotnet/Latent.Sdk.Phase4RealLostResponse/Latent.Sdk.Phase4RealLostResponse.csproj",
       "runtime_identifier": "linux-x64"
     },
@@ -490,7 +490,7 @@
       "absent_when_directory_missing": "sdk/dotnet/Latent.Sdk.Phase4RealNode",
       "kind": "nuget-locked",
       "lock": "sdk/dotnet/Latent.Sdk.Phase4RealNode/packages.lock.json",
-      "manifest_sha256": "65ff4afac47c8c7682e162fb74534548ea3deeae06a54a723e76ca61ad4bfe86",
+      "manifest_sha256": "457efe94aaecbbb74e0244f3642ac8c5f02ad9d2eff218ec7b3a2240edd8adb8",
       "path": "sdk/dotnet/Latent.Sdk.Phase4RealNode/Latent.Sdk.Phase4RealNode.csproj",
       "runtime_identifier": "linux-x64"
     },
@@ -498,7 +498,7 @@
       "absent_when_directory_missing": "sdk/dotnet/Latent.Sdk.Phase4RealRejection",
       "kind": "nuget-locked",
       "lock": "sdk/dotnet/Latent.Sdk.Phase4RealRejection/packages.lock.json",
-      "manifest_sha256": "65ff4afac47c8c7682e162fb74534548ea3deeae06a54a723e76ca61ad4bfe86",
+      "manifest_sha256": "457efe94aaecbbb74e0244f3642ac8c5f02ad9d2eff218ec7b3a2240edd8adb8",
       "path": "sdk/dotnet/Latent.Sdk.Phase4RealRejection/Latent.Sdk.Phase4RealRejection.csproj",
       "runtime_identifier": "linux-x64"
     },
@@ -506,7 +506,7 @@
       "absent_when_directory_missing": "sdk/dotnet/Latent.Sdk.Phase4RealScope",
       "kind": "nuget-locked",
       "lock": "sdk/dotnet/Latent.Sdk.Phase4RealScope/packages.lock.json",
-      "manifest_sha256": "65ff4afac47c8c7682e162fb74534548ea3deeae06a54a723e76ca61ad4bfe86",
+      "manifest_sha256": "457efe94aaecbbb74e0244f3642ac8c5f02ad9d2eff218ec7b3a2240edd8adb8",
       "path": "sdk/dotnet/Latent.Sdk.Phase4RealScope/Latent.Sdk.Phase4RealScope.csproj",
       "runtime_identifier": "linux-x64"
     },
@@ -514,7 +514,7 @@
       "absent_when_directory_missing": "sdk/go-guest/runtime/checkpoints-captured-conformance/module",
       "kind": "no-external-packages",
       "path": "sdk/go-guest/runtime/checkpoints-captured-conformance/module/go.mod",
-      "sha256": "5c2311eabf7ca52bc87173a6545e3896d08e18776fea7b4c33efc089086fb874"
+      "sha256": "981aadab465b88e66c56b3dfa027ceae9b573188c7539f7e87356b089f3fecd7"
     }
   ],
   "non_manifest_modules": [

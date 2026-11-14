@@ -30,20 +30,18 @@ class DotnetMinimatchActionSourceTests(unittest.TestCase):
                         for name, row in profile.RUNTIME.items()}
         runtime_policy = {name: {'source': row['source'], **sources.source_identity(self.runtime[row['source']])}
                           for name, row in profile.RUNTIME.items()}
-        payloads = copy.deepcopy(profile.ARTIFACT_PAYLOADS)
-        sums = ''.join(f"{row['sha256']}  {row['source']}\n" for row in runtime_policy.values()).encode()
-        payloads['bundle-sha256.txt'] = {'bytes': len(sums), 'sha256': sources.digest(sums)}
         policy_path = controls / 'minimatch-dotnet-action-source-repairs.json'
         policy = json.loads(policy_path.read_bytes())
         build_path = self.root / profile.ASSETS['build']['snapshot']
         build = json.loads(build_path.read_bytes())
-        build['artifact']['payloads'] = payloads
+        build['outputs'] = {row['source']: {key: row[key] for key in ('bytes', 'sha256', 'gitBlob')}
+                            for row in runtime_policy.values()}
         build_path.write_text(json.dumps(build), encoding='utf-8')
         asset_policy = copy.deepcopy(profile.ASSETS)
         asset_policy['build'].update(sources.source_identity(build_path.read_bytes()))
         policy['assets'], policy['runtime'] = asset_policy, runtime_policy
         policy_path.write_text(json.dumps(policy), encoding='utf-8')
-        for name, value in (('RUNTIME', runtime_policy), ('ASSETS', asset_policy), ('ARTIFACT_PAYLOADS', payloads)):
+        for name, value in (('RUNTIME', runtime_policy), ('ASSETS', asset_policy)):
             patcher = patch.object(profile, name, value)
             patcher.start()
             self.addCleanup(patcher.stop)
@@ -130,7 +128,7 @@ class DotnetMinimatchActionSourceTests(unittest.TestCase):
                 policy = json.loads(policy_before)
                 if change == 'advisory': policy['advisories'][0]['modified'] = 'future-revision'
                 elif change == 'runtime': policy['runtime']['runtime_setup']['sha256'] = '0' * 64
-                else: policy['action'] = policy['action'].replace('258c9279', 'f5bcdac7')
+                else: policy['action'] = policy['action'].replace('2382c9e6', 'f5bcdac7')
                 policy_path.write_text(json.dumps(policy), encoding='utf-8')
                 with self.assertRaisesRegex(SecurityError, 'dotnet-minimatch-action-policy'):
                     self.verify()
@@ -193,7 +191,7 @@ class DotnetMinimatchActionSourceTests(unittest.TestCase):
             for path in self.runtime:
                 self.assertEqual(sources.action_runtime(profile.REFERENCE, path), b'fixture')
             with self.assertRaises(SecurityError):
-                sources.action_runtime(profile.REFERENCE.replace('258c9279', 'f5bcdac7'), 'dist/setup/index.js')
+                sources.action_runtime(profile.REFERENCE.replace('2382c9e6', 'f5bcdac7'), 'dist/setup/index.js')
             with self.assertRaises(SecurityError):
                 sources.action_runtime(profile.REFERENCE, 'dist/unreviewed.js')
             with self.assertRaises(SecurityError):

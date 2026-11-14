@@ -32,10 +32,10 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
-      - uses: KirilsTurkins/lsf-setup-dotnet@258c927924210be905f8908a4be714e5d0daffa8 # v6.0.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-dotnet@2382c9e63a3b678b643c7e715d023e7fa42fbbef # v6.0.0 + upstream changes + LSF security fixes
         with:
           dotnet-version: '10.0.100'
       - name: Fetch the exact pre-feature tool source
@@ -48,7 +48,7 @@ jobs:
         run: python3 -B tools/run_dotnet_aggregate_wait_reference.py --admit-evidence --output "$RUNNER_TEMP/dotnet-aggregate-reference-public"
       - name: Retain admitted public reference evidence
         if: always() && steps.evidence.outcome == 'success'
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-aggregate-wait-reference-${{ github.sha }}
           retention-days: 3
@@ -66,7 +66,7 @@ jobs:
             ${{ runner.temp }}/dotnet-aggregate-reference-admission.json
       - name: Retain only the closed admission failure projection
         if: always() && steps.evidence.outcome != 'success'
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-aggregate-wait-reference-${{ github.sha }}
           retention-days: 3

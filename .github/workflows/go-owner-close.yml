@@ -20,9 +20,9 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-go@1020042799f722e9ef016bf63106367879587a49 # v7.0.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-go@92a5903f5ff2b45e67c517d23c18501025a55a12 # v7.0.0 + upstream changes + LSF security fixes
         with:
-          go-version: 1.27.3
+          go-version: 1.27.4
           cache: false
       - name: Check ordinary concurrent close and the existing ownership contract
         shell: bash
@@ -36,7 +36,7 @@ jobs:
           sha256sum --check --strict "$RUNNER_TEMP/go-owner-close/source.sha256"
       - name: Retain bounded native-control evidence
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: go-owner-close-${{ github.sha }}
           retention-days: 7

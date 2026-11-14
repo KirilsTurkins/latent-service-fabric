@@ -13,271 +13,137 @@ PROVIDER = "crates/vendor/wasmtime"
 NAME = "wasmtime"
 VERSION = "48.0.8"
 COHORT = "wasmtime-48.0.8-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v30-authenticated-bounded-root-suspension-upstream-security-v31-consumer-poll-factory-v32-host-accept-factory-v33-consumer-inner-future-v34-producer-inner-future-v35-sync-ready-callback-v36-inline-runtime-futures-v37-store-custody-panic-v38-retained-pool-decommit-v39"
-RECORD_SHA256 = "112775eb3add905fe86f07886c8daa1c1c0d530c2e5f5e38715d54e4a3ef51a6"
+RECORD_SHA256 = "15b560110878651804e18cfd2d1d1c891c321af01d419d2d1a854b4df5eda9fe"
 # Explicit reviewed postimages; the remaining original files use the immutable
 # registry inventory. Changing a claimed record or patch cannot authorize bytes.
-POSTIMAGES = {
-    "Cargo.lock": {
-        "sha256": "0d671e7a76239c58f372317fefbc224fc325c912ebf55528af3cf942d882a146",
-        "bytes": 60137
-    },
-    "Cargo.toml": {
-        "sha256": "0dcb5c72f573de3cda491e285e0262c7b3771bda0881afae93b3132c7e62001f",
-        "bytes": 11138
-    },
-    "latent-dynamic-memory.patch": {
-        "sha256": "2b2738d67f29a3f19a4d7ea5d4399b4818190392dcc29920115be2b21eb5d04e",
-        "bytes": 784812
-    },
-    "README.latent.md": {
-        "sha256": "6e449a9e0c047ebbea58a6098c4059720c6d25cd6b4a3a8e5c7b9ad5fdefd538",
-        "bytes": 59705
-    },
-    "src/runtime/component/concurrent/abort.rs": {
-        "sha256": "3e15b4c7493da1e268efdc3979cda4d8db628a7a1bfef308f8d04250d53600ef",
-        "bytes": 27109
-    },
-    "src/runtime/component/concurrent/call_future.rs": {
-        "sha256": "555032577499fb6827ff9e79c44aed89d98edb94f6a5a4772caa4cb369be15b0",
-        "bytes": 9465
-    },
-    "src/runtime/component/concurrent/func.rs": {
-        "sha256": "f702bfbbc9b1dae7511eea811bb38b70536e297a23ffbeac2f372f6e0dd224e3",
-        "bytes": 21595
-    },
-    "src/runtime/component/concurrent/futures_and_streams/stream_outer_tests.rs": {
-        "sha256": "7830afbec9e2eec42a8f2a4b81ef37b304ae163de355862484720b16dc2e700d",
-        "bytes": 75098
-    },
-    "src/runtime/component/concurrent/futures_and_streams.rs": {
-        "sha256": "f892cd1a4a0e81e1c251a089cc5d48cde32f1b53b8a2e5b262183f283b9fcec7",
-        "bytes": 254315
-    },
-    "src/runtime/component/concurrent/host_futures/abort.rs": {
-        "sha256": "bdfece9f91accafd5122be36d628c37c5b219ac0eecec181267840fbb1e95a45",
-        "bytes": 251
-    },
-    "src/runtime/component/concurrent/host_futures/call_result_channel.rs": {
-        "sha256": "6e2b50b37dbbe9515c2a1c9e79eda6d7562c5687ee30680646d6a5ec3ab91ab0",
-        "bytes": 15691
-    },
-    "src/runtime/component/concurrent/host_futures/LICENSE-APACHE": {
-        "sha256": "275c491d6d1160553c32fd6127061d7f9606c3ea25abfad6ca3f6ed088785427",
-        "bytes": 10874
-    },
-    "src/runtime/component/concurrent/host_futures/LICENSE-MIT": {
-        "sha256": "6652c868f35dfe5e8ef636810a4e576b9d663f3a17fb0f5613ad73583e1b88fd",
-        "bytes": 1094
-    },
-    "src/runtime/component/concurrent/host_futures/mod.rs": {
-        "sha256": "1ba25ca7993824020374671961551d6f87d3d0f946a07360aeeb2011a975806b",
-        "bytes": 2786
-    },
-    "src/runtime/component/concurrent/host_futures/paid/iter.rs": {
-        "sha256": "22ab512e0b07e12f5a45643b4ca1999eab765dddec7b6a08b6b9ad0d7bbb19b7",
-        "bytes": 5843
-    },
-    "src/runtime/component/concurrent/host_futures/paid/mod.rs": {
-        "sha256": "21bdf31da0641181a23f9bc52c7ca844e469bd01ec15f0b2e41764d18a8412f6",
-        "bytes": 27999
-    },
-    "src/runtime/component/concurrent/host_futures/paid/ready_to_run_queue.rs": {
-        "sha256": "0e20b4406023c00aeb23c7ed1d6c5eadef33c1cbee3ca1dfaa075eb4919ca20b",
-        "bytes": 3692
-    },
-    "src/runtime/component/concurrent/host_futures/paid/task.rs": {
-        "sha256": "b9736892c67cbf05035d9c6651e3116a3ec303a0fa2665feee8b9f5a738cef22",
-        "bytes": 9353
-    },
-    "src/runtime/component/concurrent/host_futures/paid_arc.rs": {
-        "sha256": "6e73d28aa2f7ad007ba926d87edd66063d9e882da66d4ed104025bbe71ee19ad",
-        "bytes": 7503
-    },
-    "src/runtime/component/concurrent/host_futures/tests.rs": {
-        "sha256": "ebc37f82291509b19c1444fc912f27d88dadc90b2d1d166ef725eea017bdcabe",
-        "bytes": 12181
-    },
-    "src/runtime/component/concurrent/inline_future_tests.rs": {
-        "sha256": "7e43524326ae99495d1c5436dc66349cb44297b39dccb5f75e7d89da932d28d2",
-        "bytes": 13644
-    },
-    "src/runtime/component/concurrent/pending_future.rs": {
-        "sha256": "3daf6c6252f684830bc40b86065096b65e50d2a40fceb8db97c76a6e6a614164",
-        "bytes": 13771
-    },
-    "src/runtime/component/concurrent/sync_result.rs": {
-        "sha256": "306ac053b5fb9fdd5b01697ecbd3aaeabbcaf05015b7f447b89c0ccb4ed12f5e",
-        "bytes": 15651
-    },
-    "src/runtime/component/concurrent/work_queue.rs": {
-        "sha256": "b9f2db05b9f27c6e6e88da558651e002101c2228eafd46ea9c2d386c45bf3ad8",
-        "bytes": 17922
-    },
-    "src/runtime/component/concurrent/worker_function.rs": {
-        "sha256": "385115039479020f0c648fdbadc0f130d42ef863eeda77ab2fde8d3cc5e7a79e",
-        "bytes": 13734
-    },
-    "src/runtime/component/concurrent.rs": {
-        "sha256": "a3091e7907104533241a0f0c4f5e3ef961ccc1a209a3bd53ccc93445a9968c2d",
-        "bytes": 334979
-    },
-    "src/runtime/component/dynamic_memory.rs": {
-        "sha256": "70ab7ecf2fba9a29be46f4750e28ef404acc991d36d708939b022bce1872d57d",
-        "bytes": 7317
-    },
-    "src/runtime/component/func/host.rs": {
-        "sha256": "565be85a100d3ffc8436eae8f54b380ef35833d5b11bebebbf372cd851aa8400",
-        "bytes": 53876
-    },
-    "src/runtime/component/func/options.rs": {
-        "sha256": "e3ad26a2f114ba5b904e6425894a26eabab49f85a876c94ab5490f95987e05c1",
-        "bytes": 21116
-    },
-    "src/runtime/component/func/typed.rs": {
-        "sha256": "b14c2d2d86f277ab6fdd5f1cb2281df3ddccf5d388bb6b5c6fb5ac2bc76a2382",
-        "bytes": 125862
-    },
-    "src/runtime/component/func.rs": {
-        "sha256": "2960155a7902b0cf22e554fcf26f1ec085e3035942691ed0ca4db998be624f8d",
-        "bytes": 30426
-    },
-    "src/runtime/component/instance.rs": {
-        "sha256": "3e509517c45b4cb855b3cadfda2df1ee3bd171f6319e1cf13b4ffd9476e17c4c",
-        "bytes": 47912
-    },
-    "src/runtime/component/linker.rs": {
-        "sha256": "64cfd587747010f281df5192cd50ac8f052ee256e7df9ec100840f8d791f8e75",
-        "bytes": 42444
-    },
-    "src/runtime/component/matching.rs": {
-        "sha256": "6f7a6165a8efe819f49de8e6f95d8b6b28dba5c4eaee400f0af70d74a3017f4f",
-        "bytes": 9471
-    },
-    "src/runtime/component/mod.rs": {
-        "sha256": "e70252d4a2c7a8b8296c88b8f1742643e343f711d03dd4bddfe2bd731d8fa79d",
-        "bytes": 33503
-    },
-    "src/runtime/component/resource_table.rs": {
-        "sha256": "488174f61d1af70d63012f28cafa305a2558e5d383d947a4abc5420dcc15cc74",
-        "bytes": 35816
-    },
-    "src/runtime/component/resource_types.rs": {
-        "sha256": "4e37f8fb059389b694fec202163830b98a9ae033003be03ef5e3da42641d4988",
-        "bytes": 5025
-    },
-    "src/runtime/component/store.rs": {
-        "sha256": "a80ca7dea6b93c3318d62c0dea7a9bc558af6b0aa55b7a8215a25edc5cb902d0",
-        "bytes": 23722
-    },
-    "src/runtime/component/types.rs": {
-        "sha256": "3f3a0d08bceb6f2981a92d377a884a5d92c70502d5f1b3c90037fc14574e2b5c",
-        "bytes": 43048
-    },
-    "src/runtime/component/values/accounted.rs": {
-        "sha256": "6c5c5699f9780139658a9d8b326ac1ba2fe337bdbce76f9fc10284f8fa2b6c09",
-        "bytes": 16605
-    },
-    "src/runtime/component/values.rs": {
-        "sha256": "05e63166d688ce034b5151b960be030186c4575d6c0ec6eb8db6cba85f7dcc32",
-        "bytes": 57284
-    },
-    "src/runtime/func.rs": {
-        "sha256": "0cb8b3810aeac6e6d2cef30fe0a5852170395061547e259e23918c7d530d1d22",
-        "bytes": 113497
-    },
-    "src/runtime/instance.rs": {
-        "sha256": "e86218a7b6117a5e4c082c6d16f7e5c6ee9ef25bc8d83f9036d4b5baafdb47f7",
-        "bytes": 42435
-    },
-    "src/runtime/limits.rs": {
-        "sha256": "31574a4d07197ce56dfc9b22dffd1b479007df865cf29b55c1883858c387dfee",
-        "bytes": 23706
-    },
-    "src/runtime/linker.rs": {
-        "sha256": "41499b3851bdbd98914642ad4e143c6f6bad4282489b400380096f33ca7395b0",
-        "bytes": 58811
-    },
-    "src/runtime/module/native_registry.rs": {
-        "sha256": "2f638a74b19ab83d1f03b9b3aee8b5f8c10951d933b1d606863bea5f70291469",
-        "bytes": 8389
-    },
-    "src/runtime/module/registry.rs": {
-        "sha256": "b489ce99448623ba6c1208076791dae8fe24177359e4d445cde0cd13e8141f9d",
-        "bytes": 26202
-    },
-    "src/runtime/module.rs": {
-        "sha256": "7fff202d7ccf20d683f6b8e6a646c6aeae2216a4ca28abdef98c2e6d1d509e14",
-        "bytes": 50980
-    },
-    "src/runtime/native_memory.rs": {
-        "sha256": "0670c370bb25265f7236329c0aa91eb7ff357cd2a53b84c052a7487c6b27bdd2",
-        "bytes": 11864
-    },
-    "src/runtime/store/data.rs": {
-        "sha256": "2203688a431803aebf3c227ec5e663e2a7bb42695455ce51920ea9f9240d3b32",
-        "bytes": 8766
-    },
-    "src/runtime/store/func_refs/native.rs": {
-        "sha256": "045b053a93f9ecd26af08e0c6d56aa871a9591b749bf3ddf4dd941d5079845ce",
-        "bytes": 3903
-    },
-    "src/runtime/store/func_refs.rs": {
-        "sha256": "d587e606ffde4bf61a4fe7cfc8003bac032ee7cd92b67a1cfb5ae8f511d71f41",
-        "bytes": 10778
-    },
-    "src/runtime/store.rs": {
-        "sha256": "328edb2dfaf74491ba41d940d93edbdcf2d118a178822381312c2c7e511b8dea",
-        "bytes": 106133
-    },
-    "src/runtime/vm/component/resources.rs": {
-        "sha256": "6d61eb899bdc31c2ee2a13fc44bd9dc129685e4a1894b4901d3364940f2079a1",
-        "bytes": 14681
-    },
-    "src/runtime/vm/component.rs": {
-        "sha256": "1a5ef94428a9356e9e6167ed0317683fe23b2db76c468ba10d2897ba04768682",
-        "bytes": 44649
-    },
-    "src/runtime/vm/cow.rs": {
-        "sha256": "af6601762a2f489d41f8a0f3ae2dc8dceca378f6ab32ae5605f178c143f7bce8",
-        "bytes": 52926
-    },
-    "src/runtime/vm/instance/allocator/pooling/table_pool.rs": {
-        "sha256": "70a7ee51b01d163536063a61d7204b6725394679b484b63388344a3d2f6cd734",
-        "bytes": 13753
-    },
-    "src/runtime/vm/instance/allocator.rs": {
-        "sha256": "360ad3f4336eaeb39e43815125f9559980f64b458dd0e942f3c7b6eb0b1b5641",
-        "bytes": 19538
-    },
-    "src/runtime/vm/instance.rs": {
-        "sha256": "6439cc8b5987b6559b8be5c3df7380689d9257e24226deb8ec95f32e6a8779f8",
-        "bytes": 82927
-    },
-    "src/runtime/vm/memory.rs": {
-        "sha256": "a1e2fcb14ff1583d3f919e83adcc3e9c55da4aa858def138ae99c566f917e0c0",
-        "bytes": 31758
-    },
-    "src/runtime/vm/table.rs": {
-        "sha256": "6fb4ebe0d1fbd139073270a5195053b0ca956f787ae18586c5eea7dc2899a14b",
-        "bytes": 40109
-    },
-    "src/runtime/vm/traphandlers/backtrace.rs": {
-        "sha256": "639c4eee08ad84ba93e45bcd696a1f3cc3238642f932f3f38d6c08a6f161c921",
-        "bytes": 21633
-    },
-    "src/runtime.rs": {
-        "sha256": "3290f57919f6dc6b6f797ee55cd62504ce31e91500741501e261f2c7e4eac970",
-        "bytes": 6393
-    },
-    "src/runtime/vm/instance/allocator/pooling.rs": {
-        "sha256": "bc84d98ad65b8449664832654d910a1bec054476200ce74e05de104002de1d06",
-        "bytes": 37311
-    },
-    "src/runtime/vm/instance/allocator/pooling/decommit_queue.rs": {
-        "sha256": "539428a41459250af83e86cee89b4ce81007dc54dd8488a9b36f31efbd00d486",
-        "bytes": 20385
-    }
-}
+POSTIMAGES = {'Cargo.lock': {'bytes': 60137, 'sha256': '4428e6f8002d4cfeb7eb6b841ebde47f9241b77fdd18c0265ca57f6fddce40c2'},
+ 'Cargo.toml': {'sha256': '0dcb5c72f573de3cda491e285e0262c7b3771bda0881afae93b3132c7e62001f', 'bytes': 11138},
+ 'latent-dynamic-memory.patch': {'bytes': 785197,
+                                 'sha256': '7c46ee7de97eb661bc84384c53e0c9b013c4df6998dae7c8b9d6d3a9129086f9'},
+ 'README.latent.md': {'sha256': '6e449a9e0c047ebbea58a6098c4059720c6d25cd6b4a3a8e5c7b9ad5fdefd538',
+                      'bytes': 59705},
+ 'src/runtime/component/concurrent/abort.rs': {'sha256': '3e15b4c7493da1e268efdc3979cda4d8db628a7a1bfef308f8d04250d53600ef',
+                                               'bytes': 27109},
+ 'src/runtime/component/concurrent/call_future.rs': {'sha256': '555032577499fb6827ff9e79c44aed89d98edb94f6a5a4772caa4cb369be15b0',
+                                                     'bytes': 9465},
+ 'src/runtime/component/concurrent/func.rs': {'sha256': 'f702bfbbc9b1dae7511eea811bb38b70536e297a23ffbeac2f372f6e0dd224e3',
+                                              'bytes': 21595},
+ 'src/runtime/component/concurrent/futures_and_streams/stream_outer_tests.rs': {'sha256': '7830afbec9e2eec42a8f2a4b81ef37b304ae163de355862484720b16dc2e700d',
+                                                                                'bytes': 75098},
+ 'src/runtime/component/concurrent/futures_and_streams.rs': {'sha256': 'f892cd1a4a0e81e1c251a089cc5d48cde32f1b53b8a2e5b262183f283b9fcec7',
+                                                             'bytes': 254315},
+ 'src/runtime/component/concurrent/host_futures/abort.rs': {'sha256': 'bdfece9f91accafd5122be36d628c37c5b219ac0eecec181267840fbb1e95a45',
+                                                            'bytes': 251},
+ 'src/runtime/component/concurrent/host_futures/call_result_channel.rs': {'sha256': '6e2b50b37dbbe9515c2a1c9e79eda6d7562c5687ee30680646d6a5ec3ab91ab0',
+                                                                          'bytes': 15691},
+ 'src/runtime/component/concurrent/host_futures/LICENSE-APACHE': {'sha256': '275c491d6d1160553c32fd6127061d7f9606c3ea25abfad6ca3f6ed088785427',
+                                                                  'bytes': 10874},
+ 'src/runtime/component/concurrent/host_futures/LICENSE-MIT': {'sha256': '6652c868f35dfe5e8ef636810a4e576b9d663f3a17fb0f5613ad73583e1b88fd',
+                                                               'bytes': 1094},
+ 'src/runtime/component/concurrent/host_futures/mod.rs': {'sha256': '1ba25ca7993824020374671961551d6f87d3d0f946a07360aeeb2011a975806b',
+                                                          'bytes': 2786},
+ 'src/runtime/component/concurrent/host_futures/paid/iter.rs': {'sha256': '22ab512e0b07e12f5a45643b4ca1999eab765dddec7b6a08b6b9ad0d7bbb19b7',
+                                                                'bytes': 5843},
+ 'src/runtime/component/concurrent/host_futures/paid/mod.rs': {'sha256': '21bdf31da0641181a23f9bc52c7ca844e469bd01ec15f0b2e41764d18a8412f6',
+                                                               'bytes': 27999},
+ 'src/runtime/component/concurrent/host_futures/paid/ready_to_run_queue.rs': {'sha256': '0e20b4406023c00aeb23c7ed1d6c5eadef33c1cbee3ca1dfaa075eb4919ca20b',
+                                                                              'bytes': 3692},
+ 'src/runtime/component/concurrent/host_futures/paid/task.rs': {'sha256': 'b9736892c67cbf05035d9c6651e3116a3ec303a0fa2665feee8b9f5a738cef22',
+                                                                'bytes': 9353},
+ 'src/runtime/component/concurrent/host_futures/paid_arc.rs': {'sha256': '6e73d28aa2f7ad007ba926d87edd66063d9e882da66d4ed104025bbe71ee19ad',
+                                                               'bytes': 7503},
+ 'src/runtime/component/concurrent/host_futures/tests.rs': {'sha256': 'ebc37f82291509b19c1444fc912f27d88dadc90b2d1d166ef725eea017bdcabe',
+                                                            'bytes': 12181},
+ 'src/runtime/component/concurrent/inline_future_tests.rs': {'sha256': '7e43524326ae99495d1c5436dc66349cb44297b39dccb5f75e7d89da932d28d2',
+                                                             'bytes': 13644},
+ 'src/runtime/component/concurrent/pending_future.rs': {'sha256': '3daf6c6252f684830bc40b86065096b65e50d2a40fceb8db97c76a6e6a614164',
+                                                        'bytes': 13771},
+ 'src/runtime/component/concurrent/sync_result.rs': {'sha256': '306ac053b5fb9fdd5b01697ecbd3aaeabbcaf05015b7f447b89c0ccb4ed12f5e',
+                                                     'bytes': 15651},
+ 'src/runtime/component/concurrent/work_queue.rs': {'sha256': 'b9f2db05b9f27c6e6e88da558651e002101c2228eafd46ea9c2d386c45bf3ad8',
+                                                    'bytes': 17922},
+ 'src/runtime/component/concurrent/worker_function.rs': {'sha256': '385115039479020f0c648fdbadc0f130d42ef863eeda77ab2fde8d3cc5e7a79e',
+                                                         'bytes': 13734},
+ 'src/runtime/component/concurrent.rs': {'sha256': 'a3091e7907104533241a0f0c4f5e3ef961ccc1a209a3bd53ccc93445a9968c2d',
+                                         'bytes': 334979},
+ 'src/runtime/component/dynamic_memory.rs': {'sha256': '70ab7ecf2fba9a29be46f4750e28ef404acc991d36d708939b022bce1872d57d',
+                                             'bytes': 7317},
+ 'src/runtime/component/func/host.rs': {'sha256': '565be85a100d3ffc8436eae8f54b380ef35833d5b11bebebbf372cd851aa8400',
+                                        'bytes': 53876},
+ 'src/runtime/component/func/options.rs': {'sha256': 'e3ad26a2f114ba5b904e6425894a26eabab49f85a876c94ab5490f95987e05c1',
+                                           'bytes': 21116},
+ 'src/runtime/component/func/typed.rs': {'sha256': 'b14c2d2d86f277ab6fdd5f1cb2281df3ddccf5d388bb6b5c6fb5ac2bc76a2382',
+                                         'bytes': 125862},
+ 'src/runtime/component/func.rs': {'sha256': '2960155a7902b0cf22e554fcf26f1ec085e3035942691ed0ca4db998be624f8d',
+                                   'bytes': 30426},
+ 'src/runtime/component/instance.rs': {'sha256': '3e509517c45b4cb855b3cadfda2df1ee3bd171f6319e1cf13b4ffd9476e17c4c',
+                                       'bytes': 47912},
+ 'src/runtime/component/linker.rs': {'sha256': '64cfd587747010f281df5192cd50ac8f052ee256e7df9ec100840f8d791f8e75',
+                                     'bytes': 42444},
+ 'src/runtime/component/matching.rs': {'sha256': '6f7a6165a8efe819f49de8e6f95d8b6b28dba5c4eaee400f0af70d74a3017f4f',
+                                       'bytes': 9471},
+ 'src/runtime/component/mod.rs': {'sha256': 'e70252d4a2c7a8b8296c88b8f1742643e343f711d03dd4bddfe2bd731d8fa79d',
+                                  'bytes': 33503},
+ 'src/runtime/component/resource_table.rs': {'sha256': '488174f61d1af70d63012f28cafa305a2558e5d383d947a4abc5420dcc15cc74',
+                                             'bytes': 35816},
+ 'src/runtime/component/resource_types.rs': {'sha256': '4e37f8fb059389b694fec202163830b98a9ae033003be03ef5e3da42641d4988',
+                                             'bytes': 5025},
+ 'src/runtime/component/store.rs': {'sha256': 'a80ca7dea6b93c3318d62c0dea7a9bc558af6b0aa55b7a8215a25edc5cb902d0',
+                                    'bytes': 23722},
+ 'src/runtime/component/types.rs': {'sha256': '3f3a0d08bceb6f2981a92d377a884a5d92c70502d5f1b3c90037fc14574e2b5c',
+                                    'bytes': 43048},
+ 'src/runtime/component/values/accounted.rs': {'sha256': '6c5c5699f9780139658a9d8b326ac1ba2fe337bdbce76f9fc10284f8fa2b6c09',
+                                               'bytes': 16605},
+ 'src/runtime/component/values.rs': {'sha256': '05e63166d688ce034b5151b960be030186c4575d6c0ec6eb8db6cba85f7dcc32',
+                                     'bytes': 57284},
+ 'src/runtime/func.rs': {'sha256': '0cb8b3810aeac6e6d2cef30fe0a5852170395061547e259e23918c7d530d1d22',
+                         'bytes': 113497},
+ 'src/runtime/instance.rs': {'sha256': 'e86218a7b6117a5e4c082c6d16f7e5c6ee9ef25bc8d83f9036d4b5baafdb47f7',
+                             'bytes': 42435},
+ 'src/runtime/limits.rs': {'sha256': '31574a4d07197ce56dfc9b22dffd1b479007df865cf29b55c1883858c387dfee',
+                           'bytes': 23706},
+ 'src/runtime/linker.rs': {'sha256': '41499b3851bdbd98914642ad4e143c6f6bad4282489b400380096f33ca7395b0',
+                           'bytes': 58811},
+ 'src/runtime/module/native_registry.rs': {'sha256': '2f638a74b19ab83d1f03b9b3aee8b5f8c10951d933b1d606863bea5f70291469',
+                                           'bytes': 8389},
+ 'src/runtime/module/registry.rs': {'sha256': 'b489ce99448623ba6c1208076791dae8fe24177359e4d445cde0cd13e8141f9d',
+                                    'bytes': 26202},
+ 'src/runtime/module.rs': {'sha256': '7fff202d7ccf20d683f6b8e6a646c6aeae2216a4ca28abdef98c2e6d1d509e14',
+                           'bytes': 50980},
+ 'src/runtime/native_memory.rs': {'sha256': '0670c370bb25265f7236329c0aa91eb7ff357cd2a53b84c052a7487c6b27bdd2',
+                                  'bytes': 11864},
+ 'src/runtime/store/data.rs': {'sha256': '2203688a431803aebf3c227ec5e663e2a7bb42695455ce51920ea9f9240d3b32',
+                               'bytes': 8766},
+ 'src/runtime/store/func_refs/native.rs': {'sha256': '045b053a93f9ecd26af08e0c6d56aa871a9591b749bf3ddf4dd941d5079845ce',
+                                           'bytes': 3903},
+ 'src/runtime/store/func_refs.rs': {'sha256': 'd587e606ffde4bf61a4fe7cfc8003bac032ee7cd92b67a1cfb5ae8f511d71f41',
+                                    'bytes': 10778},
+ 'src/runtime/store.rs': {'sha256': '328edb2dfaf74491ba41d940d93edbdcf2d118a178822381312c2c7e511b8dea',
+                          'bytes': 106133},
+ 'src/runtime/vm/component/resources.rs': {'sha256': '6d61eb899bdc31c2ee2a13fc44bd9dc129685e4a1894b4901d3364940f2079a1',
+                                           'bytes': 14681},
+ 'src/runtime/vm/component.rs': {'sha256': '1a5ef94428a9356e9e6167ed0317683fe23b2db76c468ba10d2897ba04768682',
+                                 'bytes': 44649},
+ 'src/runtime/vm/cow.rs': {'sha256': 'af6601762a2f489d41f8a0f3ae2dc8dceca378f6ab32ae5605f178c143f7bce8',
+                           'bytes': 52926},
+ 'src/runtime/vm/instance/allocator/pooling/table_pool.rs': {'sha256': '70a7ee51b01d163536063a61d7204b6725394679b484b63388344a3d2f6cd734',
+                                                             'bytes': 13753},
+ 'src/runtime/vm/instance/allocator.rs': {'sha256': '360ad3f4336eaeb39e43815125f9559980f64b458dd0e942f3c7b6eb0b1b5641',
+                                          'bytes': 19538},
+ 'src/runtime/vm/instance.rs': {'sha256': '6439cc8b5987b6559b8be5c3df7380689d9257e24226deb8ec95f32e6a8779f8',
+                                'bytes': 82927},
+ 'src/runtime/vm/memory.rs': {'sha256': 'a1e2fcb14ff1583d3f919e83adcc3e9c55da4aa858def138ae99c566f917e0c0',
+                              'bytes': 31758},
+ 'src/runtime/vm/table.rs': {'sha256': '6fb4ebe0d1fbd139073270a5195053b0ca956f787ae18586c5eea7dc2899a14b',
+                             'bytes': 40109},
+ 'src/runtime/vm/traphandlers/backtrace.rs': {'sha256': '639c4eee08ad84ba93e45bcd696a1f3cc3238642f932f3f38d6c08a6f161c921',
+                                              'bytes': 21633},
+ 'src/runtime.rs': {'sha256': '3290f57919f6dc6b6f797ee55cd62504ce31e91500741501e261f2c7e4eac970',
+                    'bytes': 6393},
+ 'src/runtime/vm/instance/allocator/pooling.rs': {'sha256': 'bc84d98ad65b8449664832654d910a1bec054476200ce74e05de104002de1d06',
+                                                  'bytes': 37311},
+ 'src/runtime/vm/instance/allocator/pooling/decommit_queue.rs': {'sha256': '539428a41459250af83e86cee89b4ce81007dc54dd8488a9b36f31efbd00d486',
+                                                                 'bytes': 20385}}
 DEPENDENCY = {"path": PROVIDER, "version": "=48.0.8", "default-features": False,
     "features": ["component-model", "component-model-async", "cranelift",
                  "pooling-allocator", "runtime", "std", "wit-parser"]}

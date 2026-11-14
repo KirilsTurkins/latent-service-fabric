@@ -5,7 +5,7 @@ import {dirname, join, resolve} from 'node:path'
 import {fileURLToPath, pathToFileURL} from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const expectedLockSha256 = '73ab20e6b215286eaf3c3060dfe66c4e9e426b0533ab907299bf9386aa91022a'
+const expectedLockSha256 = '89427e5af8052d1d52b918e9a95e46b363ae51ee2e80bcc4b72ae618c4602906'
 const sha256 = value => createHash('sha256').update(value).digest('hex')
 const deepmergeSource = /(?:^|[/\\:])deepmerge(?:[/\\@-]|$)/i
 const deepmergeAlias = /^npm:deepmerge(?:@|$)/i
