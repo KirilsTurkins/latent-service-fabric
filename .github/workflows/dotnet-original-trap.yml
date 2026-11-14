@@ -49,13 +49,13 @@ jobs:
         timeout-minutes: 1
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         timeout-minutes: 1
         with:
           python-version: 3.13.5
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         timeout-minutes: 2
-      - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334 # v2.9.3 + upstream changes + LSF security fixes
         timeout-minutes: 1
         with:
           prefix-key: lsf-ci-dependencies-v2
@@ -91,7 +91,7 @@ jobs:
       - name: Retain admitted observations including failures
         if: always()
         timeout-minutes: 2
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: dotnet-original-trap-${{ github.sha }}
           path: ${{ runner.temp }}/dotnet-original-fault/public/**

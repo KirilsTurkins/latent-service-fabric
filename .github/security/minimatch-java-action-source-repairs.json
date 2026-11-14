@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "profile": "setup-java-minimatch-action-source-v1",
-  "action": "KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c",
+  "action": "KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2",
   "advisories": [
     {
       "id": "GHSA-g3hv-75wg-m249",
@@ -46,10 +46,10 @@
     },
     "build": {
       "snapshot": ".github/security/actions/setup-java-minimatch/fork-build.json",
-      "source": "https://github.com/KirilsTurkins/lsf-setup-java/actions/runs/42018824336",
-      "bytes": 4502,
-      "sha256": "5ef60e180638361b91cccb232626b72cd464ba7b8273853a549337c4ceada659",
-      "gitBlob": "3664d7808bde355ab0d81def683c16827bb3bab1"
+      "source": "https://github.com/KirilsTurkins/lsf-setup-java/actions/runs/43523148275",
+      "bytes": 9095,
+      "sha256": "0f34de4cb413309f63e8c118e73b779ddb120c015e4eb9720112dd272f437c89",
+      "gitBlob": "d6ba013a9c60673a91b6e6ec7eeecb61eba5cc1f"
     }
   },
   "runtime": {
@@ -62,14 +62,14 @@
     "runtime_cleanup": {
       "source": "dist/cleanup/index.js",
       "bytes": 1218262,
-      "sha256": "a80e9a57c660b86e26f33ff4eb9d82dd21fc1b1e9e86f56356a7c81940d74199",
-      "gitBlob": "ca82b3e3ea8bbb19bffdf17d561d21ebea122737"
+      "sha256": "b730e0928718991f1e912a914ac2c0916a529e50ab40e1b6fd4f4066d83331c0",
+      "gitBlob": "f99bedac337101e7b873f29ec743820aa2dc77cb"
     },
     "runtime_setup_chunk": {
       "source": "dist/setup/971.index.js",
-      "bytes": 2110720,
-      "sha256": "9e2349fe3b6710fe498e054cee0fe370c0f890b6797075eb418c78a2ec35ce66",
-      "gitBlob": "6a9586ecbde45df1f4eedae5fab7cec16a644bb4"
+      "bytes": 2111333,
+      "sha256": "d4423f5c84f7e51f339d4fb2431f781ff6a868093f73ab2d79fdbb3d9c91be8c",
+      "gitBlob": "b35af4903d3d85298a9cb6cb66564e22910b08be"
     },
     "runtime_cleanup_chunk": {
       "source": "dist/cleanup/767.index.js",

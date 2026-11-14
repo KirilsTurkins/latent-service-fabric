@@ -391,7 +391,7 @@ version = "0.1.0-alpha.5"
 dependencies = [
  "sha2",
  "wasm-encoder",
- "wasmparser 0.259.0",
+ "wasmparser",
 ]
 
 [[package]]
@@ -448,7 +448,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "spdx",
- "wasmparser 0.262.0",
+ "wasmparser",
  "wit-parser",
 ]
 
@@ -577,9 +577,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "1.1.5"
+version = "1.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "891efababe418670775f199f0d233d84843c227a0949a883ce15b37c78d6629d"
+checksum = "e5e76742e5294153d4dde1207dbec5bdd81eef6fabdc0d2118babadabfd858aa"
 dependencies = [
  "bitflags",
  "errno",
@@ -758,25 +758,12 @@ checksum = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
 
 [[package]]
 name = "wasm-encoder"
-version = "0.259.0"
+version = "0.262.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1d0246511d901aacf25d2dc9111f0054947de5e093fe662099e709ff7530dc3"
+checksum = "4495a6f85dd94c411c749303efcbc5defade0b0cbdbc0541495241ab917a9b5a"
 dependencies = [
  "leb128fmt",
- "wasmparser 0.259.0",
-]
-
-[[package]]
-name = "wasmparser"
-version = "0.259.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f7c12eac7bb587801590f6a67ff0bc84d0748513864b71108e4b311cc3df694"
-dependencies = [
- "bitflags",
- "hashbrown",
- "indexmap",
- "semver",
- "serde",
+ "wasmparser",
 ]
 
 [[package]]
@@ -977,7 +964,7 @@ dependencies = [
  "log",
  "semver",
  "unicode-ident",
- "wasmparser 0.262.0",
+ "wasmparser",
 ]
 
 [[package]]
