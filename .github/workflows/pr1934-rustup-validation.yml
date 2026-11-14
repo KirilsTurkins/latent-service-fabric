@@ -1,0 +1,202 @@
+name: PR 1934 Linux portable toolchain repair
+on:
+  push:
+    branches: [ci/pr1934-rustup-20261114]
+    paths: [.github/workflows/pr1934-rustup-validation.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  linux-portable-repair:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      ARTIFACT_SOURCE: 3e2e815281de48e21e369669a3a7627ffaa8134a
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: 3.13.5
+      - run: python -m pip install --requirement tools/requirements.lock
+      - name: Reconstruct only the reviewed workflow repair on the exact PR head
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp tools/tests/test_dev_rust_toolchain.py "$RUNNER_TEMP/test_dev_rust_toolchain.py"
+          git fetch --no-tags --depth=1 origin 3e2c179cc66cf9bfc13c6ca4a7c16e3b657073c0
+          git checkout --detach 3e2c179cc66cf9bfc13c6ca4a7c16e3b657073c0
+          cp "$RUNNER_TEMP/test_dev_rust_toolchain.py" tools/tests/test_dev_rust_toolchain.py
+          mkdir -p target/pr1934-evidence
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          p = Path('.github/workflows/developer-tools.yml')
+          raw = p.read_bytes()
+          assert hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest() == '2f07761b4435c1d08efed34e1ef10aab5ef70a61'
+          text = raw.decode()
+          start = text.index('  linux-portable:\n')
+          end = text.index('\n  portable-differential:', start)
+          job = text[start:end]
+          old = '      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1\n'
+          new = '''      # Do not extend a partially installed toolchain from the hosted image at
+                # the first cargo invocation. Own the installation for this job instead.
+                - name: Isolate the Linux portable Rust toolchain
+                  shell: bash
+                  run: |
+                    set -euo pipefail
+                    isolated="$(mktemp -d "$RUNNER_TEMP/lsf-linux-portable-rustup.XXXXXX")"
+                    printf 'RUSTUP_HOME=%s\\n' "$isolated" >> "$GITHUB_ENV"
+                - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+                  with:
+                    components: clippy,rustfmt
+                    targets: wasm32-wasip2,wasm32-unknown-unknown
+          '''
+          # Remove the additional YAML-source indentation inside the Python string.
+          lines = new.splitlines(True)
+          new = lines[0] + ''.join(line[10:] if line.startswith('          ') else line for line in lines[1:])
+          assert job.count(old) == 1
+          p.write_text(text[:start] + job.replace(old, new) + text[end:])
+          PY
+          python tools/ci_contracts.py propose job .github/workflows/developer-tools.yml --job linux-portable --reason 'Own a fresh per-job Rustup home and install all repository-declared components and targets before the unchanged locked Linux portable build.'
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          source = Path('target/ci/proposals/workflows/developer-tools.yml/jobs/linux-portable.json')
+          target = Path('tools/ci/contracts/workflows/developer-tools.yml/jobs/linux-portable.json')
+          target.write_text(json.dumps(json.loads(source.read_text()), separators=(',', ':'), sort_keys=True) + '\n')
+          PY
+          git diff --check
+          git add .github/workflows/developer-tools.yml tools/ci/contracts/workflows/developer-tools.yml/jobs/linux-portable.json tools/tests/test_dev_rust_toolchain.py
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'fix(ci): isolate and complete Linux portable Rust setup'
+          git diff 3e2c179cc66cf9bfc13c6ca4a7c16e3b657073c0 HEAD > target/pr1934-evidence/repair.patch
+      - name: Validate setup behavior and the reviewed workflow contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest tools.tests.test_dev_rust_toolchain tools.tests.test_dev_frontend_native_wheel tools.tests.test_dev_frontend_preflight_packaging tools.tests.test_ci_contracts -v 2>&1 | tee target/pr1934-evidence/regressions.log
+          python tools/ci_coverage.py --receipt target/ci/pr1934-observed-inventory.json 2>&1 | tee target/pr1934-evidence/coverage.log
+      - name: Export exact candidate Git objects without changing PR references
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os, subprocess, urllib.request
+          from pathlib import Path
+          base = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric'
+          token = os.environ['GH_TOKEN']
+          def api(endpoint, data):
+              request = urllib.request.Request(base + endpoint, data=json.dumps(data).encode(), method='POST', headers={'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'})
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  return json.load(response)
+          paths = ['.github/workflows/developer-tools.yml', 'tools/ci/contracts/workflows/developer-tools.yml/jobs/linux-portable.json', 'tools/tests/test_dev_rust_toolchain.py']
+          elements = [{'path': p, 'mode': '100644', 'type': 'blob', 'content': Path(p).read_text()} for p in paths]
+          tree = api('/git/trees', {'base_tree': '829a526b436e5cc206f778c63c6621c8f35f2eab', 'tree': elements})
+          local_tree = subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}'], text=True).strip()
+          assert tree['sha'] == local_tree
+          commit = api('/git/commits', {'message': 'fix(ci): isolate and complete Linux portable Rust setup', 'tree': tree['sha'], 'parents': ['3e2c179cc66cf9bfc13c6ca4a7c16e3b657073c0']})
+          record = {'candidate': commit['sha'], 'tree': tree['sha'], 'parent': '3e2c179cc66cf9bfc13c6ca4a7c16e3b657073c0', 'files': {p: hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in paths}, 'artifactRun': 43591474858, 'artifactSource': os.environ['ARTIFACT_SOURCE'], 'qualification': 'workflow repair; unchanged tutorial components replayed from the original run'}
+          Path('target/pr1934-evidence/candidate.json').write_text(json.dumps(record, indent=2) + '\n')
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write('CANDIDATE_SHA=' + commit['sha'] + '\n')
+          print(json.dumps(record))
+          subprocess.run(['git', 'fetch', '--no-tags', '--depth=1', 'origin', commit['sha']], check=True)
+          subprocess.run(['git', 'checkout', '--detach', commit['sha']], check=True)
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr1934-rustup-candidate
+          path: target/pr1934-evidence/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Execute the production isolation step
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          from tools.ci_lane_inventory import workflow_model
+          steps = workflow_model(Path('.github/workflows/developer-tools.yml').read_text())['jobs']['linux-portable']['steps']
+          step = next(s for s in steps if s.get('name') == 'Isolate the Linux portable Rust toolchain')
+          subprocess.run(['bash', '--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', step['run']], check=True)
+          PY
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          components: clippy,rustfmt
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - name: Verify the actual complete pinned installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUSTUP_HOME#"$RUNNER_TEMP/lsf-linux-portable-rustup."}" != "$RUSTUP_HOME"
+          rustup component list --installed | tee target/pr1934-evidence/rust-components.txt
+          rustup target list --installed | tee target/pr1934-evidence/rust-targets.txt
+          cargo --version
+          cargo clippy --version
+          cargo fmt --version
+      - name: Build the unchanged Linux frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --require-hashes -r tools/dev-frontend-linux.lock
+          python tools/build_dev_frontend.py --output target/dev-linux-frontend 2>&1 | tee target/pr1934-evidence/frontend.log
+      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389
+        with:
+          github-token: ${{ github.token }}
+          run-id: 43591474858
+          pattern: developer-*-applications-3e2e815281de48e21e369669a3a7627ffaa8134a
+          path: target/dev-applications/
+      - name: Build the real portable host with the unchanged release recipe
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo build -p latent-portable-test-host --release --locked 2>&1 | tee target/pr1934-evidence/native-build.log
+      - name: Execute production packaging and all six retained tutorial sets
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' 2>&1 | tee target/pr1934-evidence/tutorials.log
+          from pathlib import Path
+          import os, subprocess
+          from tools.ci_lane_inventory import workflow_model
+          steps = workflow_model(Path('.github/workflows/developer-tools.yml').read_text())['jobs']['linux-portable']['steps']
+          for name in ('Assemble Linux frontend and portable host with the shared distribution owner', 'Execute all maintained tutorial applications on Linux'):
+              step = next(s for s in steps if s.get('name') == name)
+              env = dict(os.environ)
+              # Only the retained artifact-directory selector uses the original
+              # merge SHA. Native build/packaging provenance uses actual git HEAD.
+              if name.startswith('Execute all'):
+                  env['GITHUB_SHA'] = os.environ['ARTIFACT_SOURCE']
+              print(name, flush=True)
+              subprocess.run(['bash', '--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', step['run']], env=env, check=True)
+          PY
+      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389
+        with:
+          github-token: ${{ github.token }}
+          run-id: 43591474858
+          name: windows-portable-subset-3e2e815281de48e21e369669a3a7627ffaa8134a
+          path: target/windows/
+      - name: Compare exact tutorial component identities and outcomes with Windows
+        shell: bash
+        run: |
+          set -euo pipefail
+          for language in rust c java dotnet go typescript; do
+            python tools/compare_portable_guest_tests.py --windows "target/windows/dev-portable-$language-applications.json" --linux "target/dev-portable-$language-applications.json" --output "target/$language-differential.json"
+          done
+          git diff --exit-code
+          git rev-parse HEAD > target/pr1934-evidence/tested-commit.txt
+      - name: Retain source-bound results including any failures
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr1934-rustup-validation
+          path: |
+            target/pr1934-evidence/
+            target/ci/pr1934-observed-inventory.json
+            target/dev-portable-*-applications.json
+            target/*-differential.json
+          retention-days: 7
+          if-no-files-found: error
