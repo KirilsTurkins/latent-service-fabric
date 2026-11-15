@@ -124,10 +124,13 @@ jobs:
           from pathlib import Path
           import re, subprocess
           raw = Path('.github/workflows/ci.yml').read_text()
-          refs = sorted(set(re.findall(r'^\s+([0-9a-f]{40})\s*$', raw, re.M)))
-          for ref in refs:
-              if subprocess.run(['git', 'cat-file', '-e', ref + '^{commit}'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode:
-                  subprocess.run(['git', 'fetch', '--no-tags', '--depth=1', 'origin', ref], check=True)
+          tokens = [line.strip().removesuffix(chr(92)).strip() for line in raw.splitlines()]
+          refs = sorted({token for token in tokens if re.fullmatch(r'[0-9a-f]{40}', token)})
+          missing = [ref for ref in refs if subprocess.run(
+              ['git', 'cat-file', '-e', ref + '^{commit}'],
+              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode]
+          if missing:
+              subprocess.run(['git', 'fetch', '--no-tags', '--depth=1', 'origin', *missing], check=True)
           print('Historical workflow inputs available:', len(refs))
           PY
       - name: Validate conflict resolutions, exception dates and retained regression controls
