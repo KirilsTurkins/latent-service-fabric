@@ -1,0 +1,2 @@
+Run the retained Java HTTP replay for product commit 18e0ad200c838c7eada31186603a18af5dfc8501.
+Diagnostic branch only; no signing keys or compiled products are committed.
