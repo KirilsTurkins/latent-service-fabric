@@ -76,28 +76,28 @@ def verify(repo: Path, paths: list[str]) -> list[dict]:
                             ".lsf-source/verify-installed-deepmerge.mjs", ".lsf-source/verify-installed-minimatch.mjs"},
                         "unreviewed-additional-action-source")
             if len(row["files"]) == 6 and source == "KirilsTurkins/lsf-upload-artifact":
-                require(value == "KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f"
+                require(value == "KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc"
                         and {item.get("source") for item in row["files"]} == {
                             "action.yml", "package.json", "package-lock.json",
                             ".lsf-source/verify-installed-deepmerge.mjs", ".lsf-source/verify-upload-sources.mjs",
                             ".lsf-source/upload-source.test.mjs"}, "unreviewed-additional-action-source")
             elif len(row["files"]) == 6 and source == "KirilsTurkins/lsf-download-artifact":
-                require(value == "KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5"
+                require(value == "KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389"
                         and {item.get("source") for item in row["files"]} == {
                             "action.yml", "package.json", "package-lock.json",
                             ".lsf-source/verify-installed-deepmerge.mjs", ".lsf-source/verify-download-sources.mjs",
                             ".lsf-source/download-source.test.mjs"}, "unreviewed-additional-action-source")
             elif len(row["files"]) == 6:
-                require(value in {"KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c",
-                                  "KirilsTurkins/lsf-setup-dotnet@258c927924210be905f8908a4be714e5d0daffa8",
-                                  "KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6",
-                                  "KirilsTurkins/lsf-setup-go@1020042799f722e9ef016bf63106367879587a49"}
+                require(value in {"KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2",
+                                  "KirilsTurkins/lsf-setup-dotnet@2382c9e63a3b678b643c7e715d023e7fa42fbbef",
+                                  "KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a",
+                                  "KirilsTurkins/lsf-setup-go@92a5903f5ff2b45e67c517d23c18501025a55a12"}
                         and {item.get("source") for item in row["files"]} == {
                             "action.yml", "package.json", "package-lock.json", ".lsf-source/minimatch-bounds.test.mjs",
                             ".lsf-source/verify-installed-deepmerge.mjs", ".lsf-source/verify-installed-minimatch.mjs"},
                         "unreviewed-additional-action-source")
             if len(row["files"]) == 8:
-                require(value == "KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e"
+                require(value == "KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334"
                         and {item.get("source") for item in row["files"]} == {
                             "action.yml", "package.json", "package-lock.json",
                             ".lsf-source/verify-installed-deepmerge.mjs", ".lsf-source/verify-installed-minimatch.mjs",

@@ -36,7 +36,7 @@ class NodeMinimatchActionSourceTests(unittest.TestCase):
         build_path = self.root / sources.NODE_MINIMATCH_ASSETS['build']['snapshot']
         build = json.loads(build_path.read_bytes())
         for row in runtime_policy.values():
-            build['artifact']['payloads'][row['source']] = {key: row[key] for key in ('bytes', 'sha256')}
+            build['outputs'][row['source']] = {key: row[key] for key in ('bytes', 'sha256', 'gitBlob')}
         build_path.write_text(json.dumps(build), encoding='utf-8')
         asset_policy = copy.deepcopy(sources.NODE_MINIMATCH_ASSETS)
         asset_policy['build'].update(sources.source_identity(build_path.read_bytes()))
@@ -77,7 +77,7 @@ class NodeMinimatchActionSourceTests(unittest.TestCase):
         fixed = next(row for row in receipts if row['name'] == 'minimatch')
         self.assertEqual(fixed['action'], sources.ACTION_REFERENCES[sources.NODE_MINIMATCH_PREFIX])
         self.assertEqual(fixed['locks'], [self.entry['lock']])
-        self.assertEqual(fixed['built_tree'], 'b1591bf1668591f5e54cfac62c28b70304661927')
+        self.assertEqual(fixed['built_tree'], '8fc2bd4b5d6fcc22906340cb7cf313e80b9f8393')
         known = finding('osv', 'GHSA-g3hv-75wg-m249', self.entry['lock'], 'npm:minimatch@10.2.6')
         foreign = finding('osv', known.finding, '.github/security/actions/setup-java/package-lock.json', known.package)
         version = finding('osv', known.finding, self.entry['lock'], 'npm:minimatch@10.2.5')
@@ -133,7 +133,7 @@ class NodeMinimatchActionSourceTests(unittest.TestCase):
                 elif change == 'runtime':
                     policy['runtime']['runtime_setup']['sha256'] = '0' * 64
                 else:
-                    policy['action'] = policy['action'].replace('34275fde', 'fdae00b1')
+                    policy['action'] = policy['action'].replace('791d2598', 'fdae00b1')
                 policy_path.write_text(json.dumps(policy), encoding='utf-8')
                 with self.assertRaisesRegex(SecurityError, 'node-minimatch-action-policy'):
                     self.verify()
@@ -222,7 +222,7 @@ class NodeMinimatchActionSourceTests(unittest.TestCase):
             for path in self.runtime:
                 self.assertEqual(sources.action_runtime(reference, path), b'fixture')
             with self.assertRaises(SecurityError):
-                sources.action_runtime(reference.replace('34275fde', 'fdae00b1'), 'dist/setup/index.js')
+                sources.action_runtime(reference.replace('791d2598', 'fdae00b1'), 'dist/setup/index.js')
             with self.assertRaises(SecurityError):
                 sources.action_runtime(reference, 'dist/unreviewed.js')
             with self.assertRaises(SecurityError):

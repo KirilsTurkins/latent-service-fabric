@@ -32,7 +32,7 @@ class DownloadActionSourceRepairTests(unittest.TestCase):
         self.runtime = {path: ("synthetic download runtime " + path).encode() for path in download.RUNTIME}
         identities = {path: sources.source_identity(value) for path, value in self.runtime.items()}
         build_path = self.root / download.MATERIAL["fork-build.json"][0]
-        evidence = json.loads(build_path.read_bytes()); evidence["bundles"] = identities
+        evidence = json.loads(build_path.read_bytes()); evidence["outputs"] = identities
         build_path.write_text(json.dumps(evidence), encoding="utf-8")
         changed = copy.deepcopy(download.MATERIAL); old = changed["fork-build.json"]
         identity = sources.source_identity(build_path.read_bytes())

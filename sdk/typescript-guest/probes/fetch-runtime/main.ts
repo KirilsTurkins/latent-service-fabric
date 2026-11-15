@@ -2,6 +2,7 @@ import type * as Contract from '../generated/interfaces/examples-typescript-fetc
 import {request, requestReady, promiseReady, requestCopyReady, initialized} from './default-client.js';
 
 // Probe-local declarations for the native globals; no broader DOM API claim.
+declare class DOMException extends Error { constructor(message?: string, name?: string); }
 declare class Event { constructor(type: string); }
 declare class EventTarget {
   addEventListener(type: string, listener: () => void): void;
@@ -345,6 +346,105 @@ function abortDefaultReason(): string {
   return 'abort-default:shared:2:thrown';
 }
 
+// Nine distinct dependent signals exceed the native fan-out vector's inline
+// capacity while preserving the qualification programme's 64-owner ceiling.
+function abortFanoutGraph() {
+  const source = new AbortController();
+  const dependents = Array.from({length: 9}, () => AbortSignal.any([source.signal]));
+  const reason = {kind: 'fanout'};
+  const seen: number[] = [];
+  let readyAtRoot = false;
+  source.signal.addEventListener('abort', () => {
+    readyAtRoot = dependents.every(signal => signal.aborted && signal.reason === reason);
+    seen.push(-1);
+    source.abort({kind: 'ignored-reentrant-abort'});
+  });
+  for (let index = 0; index < dependents.length; ++index) {
+    dependents[index].addEventListener('abort', () => { seen.push(index); });
+  }
+  return {
+    source, reason,
+    unchanged() {
+      return !source.signal.aborted && source.signal.reason === undefined && seen.length === 0 &&
+        dependents.every(signal => !signal.aborted && signal.reason === undefined);
+    },
+    verify() {
+      if (!readyAtRoot || !source.signal.aborted || source.signal.reason !== reason ||
+          !dependents.every(signal => signal.aborted && signal.reason === reason) ||
+          seen.join(',') !== '-1,0,1,2,3,4,5,6,7,8') throw new Error('abort-fanout-publication-or-order');
+      for (const signal of [source.signal, ...dependents]) {
+        let caught: unknown;
+        try { signal.throwIfAborted(); } catch (error) { caught = error; }
+        if (caught !== reason) throw new Error('abort-fanout-reason-identity');
+      }
+    },
+  };
+}
+
+function ordinaryAbortFanout(): string {
+  const graph = abortFanoutGraph();
+  graph.source.abort(graph.reason);
+  graph.source.abort({kind: 'ignored-after-fanout'});
+  graph.verify();
+  return 'abort-fanout:9:ordered';
+}
+
+function refusedAbortFanout() {
+  const graph = abortFanoutGraph();
+  const filler = new EventTarget();
+  const held: Array<() => void> = [];
+  const expected = 'activation-runtime-promise-native-register-denied:2';
+  let fillDenied = false, abortDenied = false;
+  try {
+    for (let index = 0; index < 128; ++index) {
+      const listener = () => {};
+      try { filler.addEventListener('fanout-fill', listener); held.push(listener); }
+      catch (error) {
+        if (!(error instanceof Error) || error.message !== expected) throw error;
+        fillDenied = true;
+        break;
+      }
+    }
+    if (!fillDenied || held.length === 0 || held.length >= 128)
+      throw new Error('abort-fanout-fill-boundary-missing');
+    try { graph.source.abort(graph.reason); }
+    catch (error) {
+      if (!(error instanceof Error) || error.message !== expected) throw error;
+      abortDenied = true;
+    }
+    if (!abortDenied || !graph.unchanged()) throw new Error('abort-fanout-refusal-mutated-state');
+  } finally {
+    for (const listener of held) filler.removeEventListener('fanout-fill', listener);
+  }
+  return graph;
+}
+
+function reentrantDefaultAbortFanout() {
+  const graph = abortFanoutGraph();
+  const original = DOMException;
+  const descriptor = Object.getOwnPropertyDescriptor(original.prototype, 'constructor');
+  if (!descriptor) throw new Error('abort-fanout-default-constructor-missing');
+  const observation = {entered: 0};
+  Object.defineProperty(original.prototype, 'constructor', {
+    ...descriptor,
+    value: function(message?: string, name?: string) {
+      ++observation.entered;
+      graph.source.abort(graph.reason);
+      return new original(message, name);
+    },
+  });
+  try { graph.source.abort(); }
+  finally { Object.defineProperty(original.prototype, 'constructor', descriptor); }
+  // This probes the selected native factory, not Node's primordial factory.
+  // A missing reentrant execution is a failure, never a passing fallback.
+  if (observation.entered !== 1) throw new Error('abort-fanout-default-factory-not-reentered');
+  graph.verify();
+  // Return only the counter: retaining this completed graph while allocating
+  // the independent restoration signal would require 50 graph owners plus
+  // four fresh signal owners and the still-live export/Promise owners.
+  return observation;
+}
+
 export const api: typeof Contract = {
   async run(mode, url) {
     if (mode === 1) return 'entered';
@@ -381,6 +481,43 @@ export const api: typeof Contract = {
     }
     if (mode === 29) return completedCombinatorCapture(true);
     if (mode === 30) return completedCombinatorCapture(false);
+    if (mode === 31) return ordinaryAbortFanout();
+    if (mode === 32) {
+      let stage = 'refusal';
+      try {
+        const graph = refusedAbortFanout();
+        // Use the ordinary allocation/GC checkpoint, not a fixture-only pump.
+        stage = 'checkpoint';
+        await Promise.resolve();
+        // A refused fan-out must not resume itself when admission recovers.
+        stage = 'after-checkpoint';
+        if (!graph.unchanged()) throw new Error('abort-fanout-checkpoint-mutated-state');
+        stage = 'retry';
+        graph.source.abort(graph.reason);
+        stage = 'verification';
+        graph.verify();
+        return 'abort-fanout:refusal:unchanged:recovered';
+      } catch (error) {
+        // Keep a finite diagnostic instead of losing a catchable failure to
+        // the component's generic rejected-export trap. This is never the
+        // success value; the signed runner rejects every diagnostic result.
+        const cause = error instanceof Error &&
+          error.message === 'activation-runtime-promise-native-register-denied:2'
+          ? 'native-admission' : 'contract';
+        return `diagnostic:abort-fanout:${stage}:${cause}`;
+      }
+    }
+    if (mode === 33) {
+      const observation = reentrantDefaultAbortFanout();
+      // The graph has been fully verified. Release that helper frame before a
+      // normal checkpoint, then test the restored factory independently.
+      await Promise.resolve();
+      const fresh = new AbortController();
+      fresh.abort();
+      if (!fresh.signal.aborted || fresh.signal.reason?.name !== 'AbortError' || observation.entered !== 1)
+        throw new Error('abort-fanout-default-constructor-not-restored');
+      return 'abort-fanout:default-reentry:first-wins';
+    }
     if (mode !== 0) throw new TypeError('unsupported-fetch-runtime-mode');
     return `${++calls}:${await request(url)}`;
   },

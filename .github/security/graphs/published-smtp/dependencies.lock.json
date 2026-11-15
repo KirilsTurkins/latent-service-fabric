@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "module": "wit_component",
-  "goVersion": "1.27.3",
-  "manifestSha256": "3b4e335acb617d73692ed595a1d594c5854989c9641ef52f663ffee5c6f0f5a6",
+  "goVersion": "1.27.4",
+  "manifestSha256": "cbf7109535a882d52b185e97db94b2e2f1b7103797b07bcb0eb3b1f7f01251a9",
   "sumSha256": "210496761ab4979b656396ecfcc1223a254d2bfd0c51bc6ecb16c9aa7ebc49f2",
   "modules": [
     {

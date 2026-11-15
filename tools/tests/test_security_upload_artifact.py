@@ -32,7 +32,7 @@ class UploadActionSourceRepairTests(unittest.TestCase):
         self.runtime = {path: ("synthetic upload runtime " + path).encode() for path in upload.RUNTIME}
         identities = {path: sources.source_identity(value) for path, value in self.runtime.items()}
         build_path = self.root / upload.MATERIAL["fork-build.json"][0]
-        evidence = json.loads(build_path.read_bytes()); evidence["bundles"] = identities
+        evidence = json.loads(build_path.read_bytes()); evidence["outputs"] = identities
         build_path.write_text(json.dumps(evidence), encoding="utf-8")
         changed = copy.deepcopy(upload.MATERIAL); old = changed["fork-build.json"]
         identity = sources.source_identity(build_path.read_bytes())
@@ -109,7 +109,7 @@ class UploadActionSourceRepairTests(unittest.TestCase):
     def test_nested_pages_action_resolves_to_the_same_reviewed_upload(self):
         policy_path = self.root / ".github/security/actions.json"
         policy = json.loads(policy_path.read_bytes())
-        pages_ref = "KirilsTurkins/lsf-upload-pages-artifact@28d7597d6f6497a5d34e5ecaa1d97c510ce3556b"
+        pages_ref = "KirilsTurkins/lsf-upload-pages-artifact@e6e68b294bf8395e09cb1979426d1b579ef1760d"
         policy["actions"] = {r: policy["actions"][r] for r in (upload.REFERENCE, pages_ref)}
         policy_path.write_text(json.dumps(policy), encoding="utf-8")
         workflow = self.root / ".github/workflows/fixture.yml"

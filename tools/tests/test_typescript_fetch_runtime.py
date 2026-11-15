@@ -1,7 +1,6 @@
 """Finite evidence guards and real adapter/peer controls, not native qualification."""
 from copy import deepcopy
 from contextlib import closing
-import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -55,9 +54,21 @@ class TypeScriptFetchRuntimeTests(unittest.TestCase):
                          list(fetch.COMPLETED_CAPTURE_VECTORS))
         self.assertTrue(all(row[4] == 0 for row in diagnostic))
         ordinary = fetch.execution_vectors(False)
-        self.assertEqual(len(ordinary), 20)
-        self.assertEqual(hashlib.sha256(json.dumps(ordinary, separators=(',', ':')).encode()).hexdigest(),
-                         'c952d6ed1f30da648221945f606081d03a6a43f3a9f9d577f973d20919d123fa')
+        # Diagnostic selection must not replace or mutate the ordinary programme.
+        # Test that boundary directly; a whole-programme count/hash prevents
+        # unrelated signed regressions (such as abort fan-out) from being added.
+        names = [row[0] for row in ordinary]
+        self.assertEqual(len(names), len(set(names)))
+        self.assertTrue(set(names).isdisjoint(row[0] for row in diagnostic))
+        self.assertTrue(all(row[1] not in {29, 30} and isinstance(row[3], str)
+                            for row in ordinary))
+        by_name = {row[0]: row for row in ordinary}
+        for name, mode, expected in fetch.COMBINATOR_VECTORS:
+            self.assertEqual(by_name[name], (name, mode, '/conformance/json', expected, 0))
+        self.assertEqual([row[0] for row in ordinary if row[4]], ['json', 'http404', 'fresh'])
+        before = deepcopy(ordinary)
+        fetch.execution_vectors(True)
+        self.assertEqual(fetch.execution_vectors(False), before)
         with self.assertRaises(WorkflowError): fetch.execution_vectors(1)
 
     def test_completed_capture_requires_the_exact_lifecycle_trap(self):

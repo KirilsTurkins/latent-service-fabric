@@ -7,12 +7,12 @@
     "profile": "deepmerge-action-source-v1",
     "source_role": "development-build-tool",
     "references": {
-      ".github/security/actions/cache/": "KirilsTurkins/lsf-cache/restore@ec176dce9471270c8a9be1289040c0a8fd6aa708",
-      ".github/security/actions/setup-dotnet/": "KirilsTurkins/lsf-setup-dotnet@258c927924210be905f8908a4be714e5d0daffa8",
-      ".github/security/actions/setup-java/": "KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c",
-      ".github/security/actions/setup-node/": "KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6",
-      ".github/security/actions/setup-python/": "KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8",
-      ".github/security/actions/upload-artifact/": "KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f"
+      ".github/security/actions/cache/": "KirilsTurkins/lsf-cache/restore@2571c499f8aa6b4db4b4b5632bea291d6be58dc8",
+      ".github/security/actions/setup-dotnet/": "KirilsTurkins/lsf-setup-dotnet@2382c9e63a3b678b643c7e715d023e7fa42fbbef",
+      ".github/security/actions/setup-java/": "KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2",
+      ".github/security/actions/setup-node/": "KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a",
+      ".github/security/actions/setup-python/": "KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee",
+      ".github/security/actions/upload-artifact/": "KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc"
     },
     "verifier": {
       "snapshot": ".github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot",
