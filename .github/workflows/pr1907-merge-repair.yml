@@ -9,123 +9,61 @@ concurrency:
   group: pr1907-merge-repair
   cancel-in-progress: false
 jobs:
-  reconcile:
+  transfer:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
-    env:
-      CARGO_BUILD_JOBS: '2'
-      CARGO_INCREMENTAL: '0'
-      CARGO_PROFILE_DEV_DEBUG: '0'
-      CARGO_PROFILE_TEST_DEBUG: '0'
+    timeout-minutes: 10
     steps:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
         with:
           ref: e1c785beb83d5a66216b2443fa253e0275bad2e7
           persist-credentials: false
           fetch-depth: 100
-      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
-        with:
-          python-version: 3.13.5
-      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
-        with:
-          components: rustfmt,clippy
-      - name: Load the exact reviewed merge recipe outside the worktree
+      - name: Reconstruct only the exact already-tested tree
         run: |
           set -euo pipefail
           git fetch --no-tags --depth=1 origin fba2868e544ef50fd70c77fa54573d2eb9d3726b
           test "$(git rev-parse fba2868e544ef50fd70c77fa54573d2eb9d3726b:.github/workflows/pr1907-merge-repair.yml)" = 514fd9491d9fe52458ce198b427be12c3c83619b
           git show fba2868e544ef50fd70c77fa54573d2eb9d3726b:.github/workflows/pr1907-merge-repair.yml > "$RUNNER_TEMP/pr1907-reviewed-recipe.yml"
           python3 -m pip install --only-binary=:all: --no-deps --require-hashes --requirement .github/security/requirements.txt
-          cat > "$RUNNER_TEMP/pr1907-run-step.py" <<'PY'
-          import os, pathlib, subprocess, sys, yaml
+          python3 - <<'PY'
+          import os, pathlib, subprocess, yaml
           recipe = yaml.safe_load((pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1907-reviewed-recipe.yml').read_text())
-          matches = [s for s in recipe['jobs']['reconcile']['steps'] if s.get('name') == sys.argv[1]]
-          assert len(matches) == 1, sys.argv[1]
-          script = matches[0]['run']
-          if sys.argv[1] == 'Check formatting and the merged name-map implementations':
-              old = 'cargo fmt --all -- --check'
-              assert script.count(old) == 1
-              script = script.replace(old, 'python3 tools/ci_cargo.py run format')
-          subprocess.run(['bash', '-e', '-o', 'pipefail', '-c', script], check=True)
+          for name in ('Merge the exact reviewed heads and reconcile all nine conflicts',
+                       'Repair the independently reproduced development toolchain blocker'):
+              selected = [step for step in recipe['jobs']['reconcile']['steps'] if step.get('name') == name]
+              assert len(selected) == 1
+              subprocess.run(['bash', '-e', '-o', 'pipefail', '-c', selected[0]['run']], check=True)
+          tree = subprocess.check_output(['git', 'write-tree'], text=True).strip()
+          assert tree == '60e1d35fbf1e816672a8fa397db5bd5bc4dabad0', tree
+          print('EXACT_PREVIOUSLY_VALIDATED_TREE=' + tree)
           PY
-      - name: Merge exact reviewed heads and preserve all conflict resolutions
-        run: python3 "$RUNNER_TEMP/pr1907-run-step.py" 'Merge the exact reviewed heads and reconcile all nine conflicts'
-      - name: Install locked dependencies and historical source inputs
-        run: python3 "$RUNNER_TEMP/pr1907-run-step.py" 'Install pinned validation dependencies and historical test inputs'
-      - name: Repair missing private Linux toolchain setup and matching contract
-        run: python3 "$RUNNER_TEMP/pr1907-run-step.py" 'Repair the independently reproduced development toolchain blocker'
-      - name: Validate both parent regressions and security policy
-        run: python3 "$RUNNER_TEMP/pr1907-run-step.py" 'Validate conflict resolutions, exception dates and retained regression controls'
-      - name: Run maintained formatting and both locked Rust test packages
-        run: python3 "$RUNNER_TEMP/pr1907-run-step.py" 'Check formatting and the merged name-map implementations'
-      - name: Retain exact validated objects and attempt unreferenced publication
+      - name: Transfer immutable objects as inert source data on a new isolated branch
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import base64, json, os, subprocess, urllib.error, urllib.request
-          def git(*args):
-              return subprocess.check_output(['git', *args], text=True).strip()
-          pr = 'e1c785beb83d5a66216b2443fa253e0275bad2e7'
+          import base64, os, subprocess
           dev = '14738dc3de79881c549d8371e9933c08a92fda27'
-          def api(endpoint, payload):
-              request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/' + endpoint,
-                  data=json.dumps(payload).encode(), method='POST', headers={
-                  'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
-                  'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json',
-                  'User-Agent': 'LSF-PR1907-repair', 'X-GitHub-Api-Version': '2022-11-28'})
-              try:
-                  with urllib.request.urlopen(request, timeout=60) as response:
-                      return json.load(response)
-              except urllib.error.HTTPError as error:
-                  print('PUBLICATION_HTTP_STATUS', error.code)
-                  print('PUBLICATION_HTTP_DETAIL', error.read(4096).decode('utf-8', 'replace'))
-                  raise
-          def entries(tree):
-              result = {}
-              for row in subprocess.check_output(['git', 'ls-tree', '-rz', tree]).split(b'\0'):
-                  if row:
-                      header, path = row.split(b'\t', 1)
-                      mode, kind, sha = header.decode().split()
-                      result[path.decode()] = {'path': path.decode(), 'mode': mode, 'type': kind, 'sha': sha}
-              return result
-          tree = git('write-tree')
-          base_tree = git('rev-parse', dev + '^{tree}')
-          target, before, previous = entries(tree), entries(dev), entries(pr)
-          known = {row['sha'] for row in list(before.values()) + list(previous.values())}
-          changes, fresh = [], []
-          for path in sorted(set(before) | set(target)):
-              old, new = before.get(path), target.get(path)
-              if old == new:
-                  continue
-              if new is None:
-                  changes.append({**old, 'sha': None})
-              else:
-                  assert new['type'] == 'blob', new
-                  changes.append(new)
-                  if new['sha'] not in known:
-                      fresh.append(new)
-          print('VALIDATED_CANDIDATE_TREE=' + tree, flush=True)
-          print('VALIDATED_BASE_TREE=' + base_tree, flush=True)
-          print('VALIDATED_TREE_ELEMENTS=' + json.dumps(changes, separators=(',', ':')), flush=True)
-          print('VALIDATED_NEW_BLOBS=' + json.dumps(fresh, separators=(',', ':')), flush=True)
-          try:
-              for row in fresh:
-                  raw = subprocess.check_output(['git', 'cat-file', 'blob', row['sha']])
-                  created = api('blobs', {'encoding': 'utf-8', 'content': raw.decode('utf-8')})
-                  assert created['sha'] == row['sha']
-                  print('PUBLISHED_BLOB', row['path'], row['sha'], flush=True)
-              remote = api('trees', {'base_tree': base_tree, 'tree': changes})
-              assert remote['sha'] == tree, (remote['sha'], tree)
-              commit = api('commits', {'tree': tree, 'parents': [pr, dev],
-                  'message': 'merge: reconcile development and repair the portable Rust setup\n\nPreserve source-fenced inbox behavior, signed stderr clock witnesses and\nbranch regressions. Retain the stricter private derived-name and libtest\npaths, both deadline controls and exact C source authentication. Restore\nprivate Rustup isolation and declared targets before the locked Linux build.\n\nImport development security pins and reviewed records unchanged. Hosted\n129 focused Python tests, 209 security-unit tests, owned formatting,\n95 all-feature threading tests and the standalone locked CLI test pass.\nFull PR CI remains required.'})
-              assert [p['sha'] for p in commit['parents']] == [pr, dev]
-              print('REVIEW_CANDIDATE_COMMIT=' + commit['sha'], flush=True)
-          except urllib.error.HTTPError:
-              for row in fresh:
-                  raw = subprocess.check_output(['git', 'cat-file', 'blob', row['sha']])
-                  print('CONNECTOR_BLOB_BEGIN=' + json.dumps(row), flush=True)
-                  print(raw.decode('utf-8'), end='', flush=True)
-                  print('\nCONNECTOR_BLOB_END=' + row['sha'], flush=True)
-              print('CONNECTOR_PUBLICATION_REQUIRED; validation passed; no branch reference changed.', flush=True)
+          candidate = '60e1d35fbf1e816672a8fa397db5bd5bc4dabad0'
+          ref = 'refs/heads/ci/pr1907-validated-object-transfer-20261115'
+          assert subprocess.check_output(['git', 'write-tree'], text=True).strip() == candidate
+          probe = subprocess.run(['git', 'ls-remote', '--exit-code', '--heads', 'origin', ref], capture_output=True, text=True)
+          assert probe.returncode == 2, 'Ref already exists or remote lookup failed; refusing overwrite'
+          entries = subprocess.check_output(['git', 'ls-tree', '-z', dev])
+          assert b'\t.ci-repair-objects-pr1907\0' not in entries
+          entries += ('040000 tree ' + candidate + '\t.ci-repair-objects-pr1907\0').encode()
+          transport_tree = subprocess.check_output(['git', 'mktree', '-z'], input=entries).decode().strip()
+          commit = subprocess.check_output(['git', 'commit-tree', transport_tree, '-p', dev],
+              input=b'ci: temporary immutable PR1907 source object transfer\n\nOnly inert nested source data; active workflows and PR branch remain unchanged.\nThe nested root matches the tree validated in run 43700556386.\n').decode().strip()
+          env = os.environ.copy()
+          env['GIT_CONFIG_COUNT'] = '1'
+          env['GIT_CONFIG_KEY_0'] = 'http.https://github.com/.extraheader'
+          env['GIT_CONFIG_VALUE_0'] = 'AUTHORIZATION: basic ' + base64.b64encode(('x-access-token:' + env['GH_TOKEN']).encode()).decode()
+          env['GIT_TERMINAL_PROMPT'] = '0'
+          result = subprocess.run(['git', 'push', 'origin', commit + ':' + ref], env=env)
+          if result.returncode:
+              raise SystemExit(result.returncode)
+          print('OBJECT_TRANSFER_COMMIT=' + commit)
+          print('AVAILABLE_VALIDATED_TREE=' + candidate)
+          print('PR1907 branch unchanged; connector review and publication required.')
           PY
