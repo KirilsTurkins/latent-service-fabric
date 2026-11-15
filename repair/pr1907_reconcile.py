@@ -1,6 +1,5 @@
 """Apply the reviewed PR 1907 reconciliation in an isolated hosted checkout."""
 from pathlib import Path
-import json
 import subprocess
 
 HEAD = 'b5e25076abc98c6a57f7078bdc335a5e916c5851'
@@ -39,8 +38,10 @@ path = 'tools/go_network_deadline_reference.py'
 Path(path).write_text(original(DEV, path))
 path = 'tools/tests/test_go_write_progress.py'
 s = original(DEV, path)
-s = replace(s, "                             (deadline.MATERIALS[2],b'if !observation {'),",
-    "                             (deadline.MATERIALS[2],b'now + Duration::from_millis(u64::from(value))'),\n"
+needle = "(deadline.MATERIALS[2],b'if !observation {'),"
+print('GO_MUTATION_PREIMAGE', [line for line in s.splitlines() if 'MATERIALS[2]' in line], flush=True)
+s = replace(s, needle,
+    "(deadline.MATERIALS[2],b'now + Duration::from_millis(u64::from(value))'),\n"
     "                             (deadline.MATERIALS[2],b'if !observation {'),\n"
     "                             (deadline.MATERIALS[2],b'if !observation {\\n            if let Some(requested) = requested {'),")
 Path(path).write_text(s)
