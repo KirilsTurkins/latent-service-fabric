@@ -45,15 +45,10 @@ jobs:
           signature = '    ) -> (Arc<latent_blobs::local::LocalBlobStore>, crate::config::ProviderIdentity) {'
           assert s.count(signature) == 1
           s = s.replace(signature, '    ) -> InventoryPayloads {')
-          marker = 'pub(super) struct LocalPayloadSelection {'
-          assert s.count(marker) == 1
-          s = s.replace(marker, '''pub(super) type InventoryPayloads = (
-              Arc<latent_blobs::local::LocalBlobStore>,
-              crate::config::ProviderIdentity,
-          );
-
-          ''' + marker)
-          p.write_text(s)
+          marker = '#[cfg(target_os = "linux")]\n#[derive(Clone)]\npub(super) struct LocalPayloadSelection {'
+          assert s.count(marker) == 1, s[s.index('pub(super) struct LocalPayloadSelection')-100:s.index('pub(super) struct LocalPayloadSelection')+100]
+          alias = '#[cfg(target_os = "linux")]\npub(super) type InventoryPayloads = (\n    Arc<latent_blobs::local::LocalBlobStore>,\n    crate::config::ProviderIdentity,\n);\n\n'
+          p.write_text(s.replace(marker, alias + marker))
           PY
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
         with:
@@ -76,7 +71,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cargo fmt --package latentd --package latent-commit --package latent-node
+          git add -u
+          cargo fmt --all
+          echo '=== FORMATTING-ONLY DELTA ==='
+          git diff --stat
+          git diff
           cargo fmt --all -- --check
           git diff --check
           git add -u
@@ -129,88 +128,3 @@ jobs:
           gh auth setup-git
           git push origin "$transfer:refs/heads/ci/pr1907-objects-20261115-afternoon"
           echo "TRANSFER_COMMIT=$transfer"
-  java-resolver:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
-        with:
-          ref: b5e25076abc98c6a57f7078bdc335a5e916c5851
-          persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
-        with:
-          python-version: 3.13.5
-      - uses: KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2
-        with:
-          distribution: temurin
-          java-version: 25.0.4+101.0.LTS
-      - name: Reuse the existing reviewed SDK Gradle installation
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 -m pip install -r tools/requirements.lock
-          python3 - <<'PY'
-          from pathlib import Path
-          import subprocess, yaml
-          data = yaml.safe_load(Path('.github/workflows/ci.yml').read_text())
-          steps = [step for job in data['jobs'].values() for step in job.get('steps', []) if step.get('name') == 'Install the checksum-pinned Java-compatible Gradle']
-          assert len(steps) == 1
-          print('REUSED_GRADLE_SETUP\n' + steps[0]['run'], flush=True)
-          subprocess.run(['bash', '-euo', 'pipefail', '-c', steps[0]['run']], check=True)
-          PY
-      - name: Require exact native resolution with reviewed Gradle
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import os, sys, tempfile, subprocess
-          from pathlib import Path
-          from tools.build_observation import build_environment
-          from tools.java_standard_http_library import project, CANDIDATE
-          from tools.rust_capsule_build import Commands
-          from tools.rust_capsule_project import ROOT, fresh, digest, read_file
-          with tempfile.TemporaryDirectory(prefix='pr1907-resolver-') as name:
-              root = Path(name)
-              environment = build_environment(root)
-              environment['JAVA_HOME'] = os.environ['JAVA_HOME']
-              commands = Commands(ROOT, fresh(root/'commands'), environment, deadline_seconds=600, command_seconds=300)
-              app = project(root/'application')
-              candidate = root/'candidate.json'
-              try:
-                  commands.run('default-client-native-resolve', sys.executable, ROOT/'tools/java_capsule.py', 'resolve', app, '--candidate', candidate, '--gradle', 'gradle')
-                  assert digest(read_file(candidate)) == CANDIDATE
-                  print('RESOLVER_RESULT=passed-exact-original-closure', flush=True)
-              finally:
-                  for path in sorted((root/'commands').rglob('*')):
-                      if path.is_file() and path.stat().st_size <= 256*1024:
-                          print('=== DIAGNOSTIC', path.name, '===\n' + path.read_text(errors='replace')[-20000:], flush=True)
-          PY
-  inspect:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
-        with:
-          ref: b5e25076abc98c6a57f7078bdc335a5e916c5851
-          persist-credentials: false
-      - name: Inspect original deletion and exact workflow prerequisites
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          import subprocess
-          def matches(pattern, *paths):
-              result = subprocess.run(['git','grep','-n', '-E', pattern, '--', *paths], text=True, stdout=subprocess.PIPE)
-              assert result.returncode in (0,1)
-              print('=== SEARCH', pattern, '===\n' + result.stdout[:22000], flush=True)
-          matches('delete_deployment|fn delete|ResourceExhausted', 'crates/latent-node/src/deployments*', 'crates/latent-node/src/deployment*', 'apps/latentd/src/*deployment*')
-          matches('deployment delete|delete_deployment|deployment_delete', 'crates/latent-node/src', 'apps/latentd/src')
-          matches('gradle|published-http', '.github/workflows/java*')
-          matches('operator-fixture|run_phase2_operator_workflow.py|zot|Prepare publication toolchain', '.github/workflows/ci.yml', 'tools/run_phase2_operator_workflow.py')
-          matches('dependency-link-denied', 'tools/application_dependency_store.py')
-          for path in ('tools/run_phase2_operator_workflow.py', 'tools/phase2_operator_support.py'):
-              p = Path(path)
-              if p.exists():
-                  print('=== SOURCE', path, '===\n' + p.read_text()[:28000], flush=True)
-          PY
