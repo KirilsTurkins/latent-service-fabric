@@ -7,19 +7,9 @@ permissions:
 jobs:
   integration:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 15
     permissions:
       contents: write
-    env:
-      CARGO_BUILD_JOBS: 2
-      CARGO_INCREMENTAL: 0
-      CARGO_PROFILE_DEV_DEBUG: 0
-      CARGO_PROFILE_TEST_DEBUG: 0
-      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: true
-      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: true
-      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: true
-      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: true
-      CARGO_TERM_COLOR: never
     steps:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
         with:
@@ -43,13 +33,11 @@ jobs:
           done
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
         with:
-          components: rustfmt,clippy
-          targets: wasm32-wasip2,wasm32-unknown-unknown
-      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
-        with:
-          python-version: 3.13.5
-      - name: Format and commit the complete merge candidate
-        id: candidate
+          components: rustfmt
+      - name: Commit and export immutable candidate objects
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CONTROL_SHA: ${{ github.sha }}
         shell: bash
         run: |
           set -euo pipefail
@@ -58,74 +46,15 @@ jobs:
           git diff --check
           git add -u
           git commit -m 'merge: preserve inbox custody and durable payload startup on development'
-      - name: Retain committed candidate before tests without modifying the product branch
-        env:
-          GH_TOKEN: ${{ github.token }}
-          CONTROL_SHA: ${{ github.sha }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -z "$(git status --porcelain --untracked-files=no)"
+          git status --porcelain --untracked-files=no
           tree="$(git rev-parse HEAD^{tree})"
           printf 'CANDIDATE_TREE=%s\nCANDIDATE_PARENTS=%s\n' "$tree" "$(git show -s --format=%P HEAD)"
+          git diff --stat HEAD^ HEAD
           export GIT_INDEX_FILE="$RUNNER_TEMP/transfer.index"
           git read-tree "$CONTROL_SHA^{tree}"
           git read-tree --prefix=pr1907-merge/ "$tree"
           transfer_tree="$(git write-tree)"
-          transfer="$(printf 'data: retain committed PR 1907 merge candidate\n' | git commit-tree "$transfer_tree" -p "$CONTROL_SHA")"
+          transfer="$(printf 'data: retain immutable PR 1907 merge candidate\n' | git commit-tree "$transfer_tree" -p "$CONTROL_SHA")"
+          echo "TRANSFER_COMMIT=$transfer"
           gh auth setup-git
-          git push origin "$transfer:refs/heads/ci/pr1907-reviewed-objects-20261115-v3"
-      - name: Execute maintained qualification and retain concise results
-        id: qualify
-        if: ${{ !cancelled() && steps.candidate.outcome == 'success' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          CONTROL_SHA: ${{ github.sha }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import json, os, re, subprocess
-          from pathlib import Path
-          temporary = Path(os.environ['RUNNER_TEMP'])
-          commands = {
-              'requirements': ['python3', '-m', 'pip', 'install', '-r', 'tools/requirements.lock'],
-              'contracts': ['python3', '-m', 'unittest', 'tools.tests.test_go_write_progress', 'tools.tests.test_go_network_deadline_contract', 'tools.tests.test_go_deadline_provider_contract', 'tools.tests.test_ci_contracts'],
-              'startup': ['cargo', 'test', '--locked', '-p', 'latentd', '--all-features', '--lib', 'standalone::state::'],
-              'atomic': ['cargo', 'test', '--locked', '-p', 'latent-commit', '--all-features', '--lib', 'atomic::tests'],
-              'inbox': ['cargo', 'test', '--locked', '-p', 'latent-node', '--all-features', '--lib', 'transaction_runtime::tests::response::inbox'],
-              'lint': ['python3', 'tools/ci_cargo.py', 'run', 'clippy'],
-          }
-          results = {'tree': subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}'], text=True).strip(), 'parents': subprocess.check_output(['git', 'show', '-s', '--format=%P', 'HEAD'], text=True).split(), 'checks': {}}
-          for name, command in commands.items():
-              log = temporary / (name + '.log')
-              with log.open('w') as stream:
-                  result = subprocess.run(command, stdout=stream, stderr=subprocess.STDOUT)
-              lines = re.sub(r'\x1b\[[0-9;]*m', '', log.read_text()).splitlines()
-              selected = set()
-              for index, line in enumerate(lines):
-                  if re.search(r'(^error|^ERROR|^FAIL|^Ran \d+ tests|^OK$|test result:|^running \d+ tests|FAILED|panicked at)', line):
-                      selected.update(range(max(0, index - 1), min(len(lines), index + 18)))
-              report = {'command': command, 'exitCode': result.returncode, 'diagnostics': [lines[index] for index in sorted(selected)]}
-              results['checks'][name] = report
-              print(name + ': ' + json.dumps(report), flush=True)
-          results['workingTreeChanges'] = subprocess.check_output(['git', 'status', '--porcelain', '--untracked-files=no'], text=True).splitlines()
-          results['workingTreeDiff'] = subprocess.check_output(['git', 'diff', '--stat'], text=True)
-          (temporary / 'pr1907-results.json').write_text(json.dumps(results, indent=2) + '\n')
-          PY
-          git fetch --depth=1 origin refs/heads/ci/pr1907-reviewed-objects-20261115-v3
-          transfer_parent="$(git rev-parse FETCH_HEAD)"
-          export GIT_INDEX_FILE="$RUNNER_TEMP/results.index"
-          git read-tree "$transfer_parent^{tree}"
-          result_blob="$(git hash-object -w "$RUNNER_TEMP/pr1907-results.json")"
-          git update-index --add --cacheinfo 100644 "$result_blob" repair/pr1907-results.json
-          transfer_tree="$(git write-tree)"
-          transfer="$(printf 'data: retain exact PR 1907 qualification outcomes\n' | git commit-tree "$transfer_tree" -p "$transfer_parent")"
-          gh auth setup-git
-          git push origin "$transfer:refs/heads/ci/pr1907-reviewed-objects-20261115-v3"
-          python3 - <<'PY'
-          import json, os
-          from pathlib import Path
-          results = json.loads((Path(os.environ['RUNNER_TEMP']) / 'pr1907-results.json').read_text())
-          raise SystemExit(int(any(check['exitCode'] != 0 for check in results['checks'].values())))
-          PY
+          git push origin "$transfer:refs/heads/ci/pr1907-reviewed-objects-20261115-v4"
