@@ -133,6 +133,61 @@ jobs:
               subprocess.run(['git', 'fetch', '--no-tags', '--depth=1', 'origin', *missing], check=True)
           print('Historical workflow inputs available:', len(refs))
           PY
+      - name: Repair the independently reproduced development toolchain blocker
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import copy, json, subprocess, tomllib
+          from tools.ci_lane_inventory import workflow_model
+          workflow = Path('.github/workflows/developer-tools.yml')
+          contract = Path('tools/ci/contracts/workflows/developer-tools.yml/jobs/linux-portable.json')
+          for path, expected in [(workflow, '2f07761b4435c1d08efed34e1ef10aab5ef70a61'),
+                                 (contract, '003eae3141c7130bae776afd038feb4096479c3b')]:
+              actual = subprocess.check_output(['git', 'hash-object', str(path)], text=True).strip()
+              assert actual == expected, (path, actual)
+          raw = workflow.read_text()
+          before = workflow_model(raw)
+          start = raw.index('\n  linux-portable:\n')
+          end = raw.index('\n  portable-differential:\n', start)
+          section = raw[start:end]
+          old = '      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1\n'
+          assert section.count(old) == 1
+          toolchain = tomllib.loads(Path('rust-toolchain.toml').read_text())['toolchain']
+          isolation = {
+              'name': 'Isolate the Linux portable Rust toolchain',
+              'shell': 'bash',
+              'run': 'set -euo pipefail\nhome="$(mktemp -d "$RUNNER_TEMP/lsf-linux-portable-rustup.XXXXXX")"\nprintf \'RUSTUP_HOME=%s\\n\' "$home" >> "$GITHUB_ENV"\n',
+          }
+          replacement = ('      - name: ' + isolation['name'] + '\n'
+                         '        shell: bash\n        run: |\n'
+                         + ''.join('          ' + line + '\n' for line in isolation['run'].splitlines())
+                         + old + '        with:\n'
+                         + ''.join('          ' + key + ': ' + ','.join(toolchain[key]) + '\n'
+                                   for key in ('components', 'targets')))
+          updated = raw[:start] + section.replace(old, replacement, 1) + raw[end:]
+          workflow.write_text(updated)
+          after = workflow_model(updated)
+          expected_model = copy.deepcopy(before)
+          steps = expected_model['jobs']['linux-portable']['steps']
+          index = next(i for i, step in enumerate(steps) if step.get('uses', '').startswith('dtolnay/rust-toolchain@'))
+          steps[index]['with'] = {key: ','.join(toolchain[key]) for key in ('components', 'targets')}
+          steps.insert(index, isolation)
+          assert after == expected_model, 'unrelated workflow change'
+          recorded = json.loads(contract.read_text())
+          expected_job = copy.deepcopy(after['jobs']['linux-portable'])
+          for step in expected_job['steps']:
+              if 'uses' in step:
+                  step['uses'] = step['uses'].split('@', 1)[0]
+          previous = copy.deepcopy(recorded['definition'])
+          previous['steps'][index]['with'] = steps[index + 1]['with']
+          previous['steps'].insert(index, isolation)
+          assert previous == expected_job, 'unrelated contract change'
+          recorded['definition'] = expected_job
+          recorded['reviewReason'] = 'Restore required fresh private Rustup home and complete declared toolchain before the unchanged locked Linux host build; retain every qualification step.'
+          contract.write_text(json.dumps(recorded, sort_keys=True, separators=(',', ':')) + '\n')
+          subprocess.run(['git', 'add', '--', str(workflow), str(contract)], check=True)
+          print('LINUX_TOOLCHAIN_ISOLATION_REPAIRED_WITHOUT_TEST_CHANGES')
+          PY
       - name: Validate conflict resolutions, exception dates and retained regression controls
         run: |
           python3 - <<'PY'
@@ -141,7 +196,7 @@ jobs:
           print('SECURITY_EXCEPTION_VALIDATION_OK')
           PY
           python3 tools/validate_workflow_actions.py
-          python3 -B -m unittest tools.tests.test_ci_libtest_outcomes tools.tests.test_ci_suite_inventory tools.tests.test_ci_lane_inventory tools.tests.test_go_write_progress tools.tests.test_c_thread_minimal tools.tests.test_c_once_runtime tools.tests.test_c_timed_current_products -v
+          python3 -B -m unittest tools.tests.test_dev_rust_toolchain tools.tests.test_ci_contracts tools.tests.test_ci_libtest_outcomes tools.tests.test_ci_suite_inventory tools.tests.test_ci_lane_inventory tools.tests.test_go_write_progress tools.tests.test_c_thread_minimal tools.tests.test_c_once_runtime tools.tests.test_c_timed_current_products -v
           python3 -B -m unittest discover -s tools/tests -p 'test_security*.py'
       - name: Check formatting and the merged name-map implementations
         run: |
@@ -198,7 +253,7 @@ jobs:
           remote = api('trees', {'base_tree': git('rev-parse', dev + '^{tree}'), 'tree': changes})
           assert remote['sha'] == tree, (remote['sha'], tree)
           commit = api('commits', {'tree': tree, 'parents': [pr, dev],
-              'message': 'merge: reconcile development security repairs into transactional inbox\n\nPreserve source-fenced inbox behavior, signed stderr clock witnesses and\nall branch regressions. Use the stricter private derived-name path and\nambiguity-aware libtest parser. Reconcile closed-header workflow contracts,\nretain both deadline mutation controls, and remove only the stale C count.\n\nImport development security pins and reviewed records without adding or\nextending exceptions. Isolated hosted Python, security and locked Rust\nchecks passed before publishing this candidate. Full PR CI remains required.'})
+              'message': 'merge: reconcile development and repair the portable Rust setup\n\nPreserve source-fenced inbox behavior, signed stderr clock witnesses and\nbranch regressions. Use the stricter private derived-name path and\nambiguity-aware libtest parser. Reconcile closed-header workflow contracts,\nretain both deadline mutation controls, and remove only the stale C count.\n\nRestore missing private Rustup isolation and all declared components and\ntargets before the unchanged locked Linux host build, with matching contract.\nThe original two development regression tests remain unchanged.\n\nImport development security pins and reviewed records without adding or\nextending exceptions. Focused hosted Python, security-unit and locked Rust\nchecks passed before publishing this candidate. Full PR CI remains required.'})
           assert [p['sha'] for p in commit['parents']] == [pr, dev]
           print('REVIEW_CANDIDATE_COMMIT=' + commit['sha'])
           print('REVIEW_CANDIDATE_TREE=' + tree)
