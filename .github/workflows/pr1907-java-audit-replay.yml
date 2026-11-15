@@ -1,0 +1,102 @@
+name: PR1907 retained Java audit replay
+on:
+  push:
+    branches: [diagnostic/pr1907-java-audit-drain-20261115]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  replay:
+    name: Retained Java HTTP replay (${{ matrix.variant }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [original, fixed]
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: 18e0ad200c838c7eada31186603a18af5dfc8501
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: '3.13.5'
+      - name: Qualify audit observation and mutation ordering
+        if: matrix.variant == 'fixed'
+        run: python3 -m unittest tools.tests.test_java_control_refusal_diagnostic tools.tests.test_java_server_lifecycle tools.tests.test_dotnet_capsule_authoring.AuditDrainTests -v
+      - name: Receive exact failed-run inputs without a compiler or cache rebuild
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh run download 43759364717 --repo KirilsTurkins/latent-service-fabric --name java-guest-feasibility-25f92e638a1bb7f10fd6e5051084e9d69f600f6b --dir "$RUNNER_TEMP/failure"
+          gh run download 43759364717 --repo KirilsTurkins/latent-service-fabric --name java-scratch-prepared-25f92e638a1bb7f10fd6e5051084e9d69f600f6b --dir "$RUNNER_TEMP/prepared"
+      - name: Run fresh nodes with unchanged limits and signed retained guest bytes
+        env:
+          VARIANT: ${{ matrix.variant }}
+        run: |
+          set -euo pipefail
+          if [ "$VARIANT" = original ]; then
+            git show dccfa47b5580df47063a7a0c1b7f3d6ce0cb5a73:tools/java_http_composition/node.py > tools/java_http_composition/node.py
+          fi
+          python3 - <<'PY'
+          import hashlib,json,os,shutil,subprocess
+          from pathlib import Path
+          from tools.java_http_composition.qualify import run_node
+          temp=Path(os.environ['RUNNER_TEMP'])
+          failure=temp/'failure/java-http-composition'
+          binaries_root=temp/'prepared/native-binaries'
+          expected={
+            'latent':'2602f6d653f2121736c20e6ca45122e9318cf6ef7bb40fc6d6ae0e5704e04e19',
+            'latentd':'32b80d726e57737b1de571a181ae02f27a9016b25bd2374ffb90a670112089fa',
+            'examples/package':'09df15015a688a0f430173a2bc0634ce2acdbe08ad7f9c2e32dcd2dc5f4fd2f0',
+            'examples/capsule_contracts':'ff6d40c53bc60da005cdfba8c887d74dcbeedc2e476f486f12cce079d213fbef',
+            'examples/capsule_authoring':'846e1b79feed5e82a952757d083b6562333cd83467631eb0329713af51d59799'}
+          binaries={name:binaries_root/name.replace('/','-') for name in expected}
+          for name,path in binaries.items():
+            assert hashlib.sha256(path.read_bytes()).hexdigest()==expected[name],name
+            path.chmod(0o700)
+          output=temp/'replay'
+          output.mkdir(mode=0o700)
+          projects=output/'projects/adapter/http'
+          projects.mkdir(parents=True)
+          shutil.copyfile(failure/'projects/adapter/http/client.mjs',projects/'client.mjs')
+          names=('domain','context-required','adapter','adapter-next')
+          builds=[failure/'builds'/name for name in names]
+          original=json.loads((failure/'QUALIFICATION-FAILED.json').read_text())
+          for name,build in zip(names,builds,strict=True):
+            expected_guest=original['builds'][name]['componentDigest']
+            assert 'sha256:'+hashlib.sha256((build/'component.wasm').read_bytes()).hexdigest()==expected_guest,name
+          subprocess.run([str(binaries['examples/capsule_authoring']),'demo-sign-separated',str(output/'releases'),*map(str,builds)],check=True,timeout=60)
+          rows=[]
+          for attempt in range(2):
+            evidence=output/f'{os.environ["VARIANT"]}-{attempt}'
+            try:
+              result=run_node(binaries,output/'releases',evidence,http=True)
+              row={'attempt':attempt,'status':result['status'],'nodeStopped':result.get('nodeStopped')}
+            except Exception as error:
+              row={'attempt':attempt,'status':'failed','reason':str(error)}
+            rows.append(row)
+            print('RETAINED_REPLAY',json.dumps(row),flush=True)
+          summary={'variant':os.environ['VARIANT'],'candidate':'18e0ad200c838c7eada31186603a18af5dfc8501',
+            'nativeAndGuestSource':'25f92e638a1bb7f10fd6e5051084e9d69f600f6b',
+            'freshCompilation':False,'runtimeLimitsChanged':False,'binarySha256':expected,'attempts':rows}
+          (output/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')
+          if os.environ['VARIANT']=='fixed':
+            assert all(row['status']=='passed' and row['nodeStopped'] for row in rows),rows
+          PY
+      - name: Retain observations without signing keys or compiler caches
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr1907-java-audit-${{ matrix.variant }}
+          path: |
+            ${{ runner.temp }}/replay/summary.json
+            ${{ runner.temp }}/replay/*/workflow.json
+            ${{ runner.temp }}/replay/*/node.stderr.log
+            ${{ runner.temp }}/replay/*/management-refusals.json
+            ${{ runner.temp }}/replay/*/controls/*.json
+          retention-days: 3
+          if-no-files-found: warn
