@@ -1,4 +1,5 @@
 from pathlib import Path
+import subprocess
 
 def replace(text, old, new):
     assert text.count(old) == 1, (old, text.count(old))
@@ -26,4 +27,7 @@ p.write_text(s)
 p = Path('apps/latentd/src/standalone/state/kernel.rs')
 s = replace(p.read_text(), '.map(|selection| selection.inventory_payloads());', '.and_then(|selection| selection.inventory_payloads());')
 p.write_text(s)
+for ref in ('fb79a7ab6ea86f53baec78ee341aca075c14a2ef', '955da9c7465b88541e39b043203abb92782ae26a'):
+    subprocess.run(['git', 'fetch', '--no-tags', '--depth=1', 'origin', ref], check=True)
+    subprocess.run(['git', 'cat-file', '-e', ref + ':sdk/go-guest/runtime/net_stream.go.in'], check=True)
 print('EPHEMERAL_OWNER_REMAINS_UNIQUE; DURABLE_INVENTORY_STILL_VERIFIED', flush=True)
