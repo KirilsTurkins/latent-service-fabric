@@ -391,21 +391,34 @@ class TypeScriptAbortSourceTests(unittest.TestCase):
         self.assertFalse(receipt['supportedAsyncProfile'])
         self.assertFalse(receipt['signedLSFComponentQualified'])
 
-    def test_pinned_abort_reason_event_algorithms_and_other_methods_are_preserved(self):
+    def test_pinned_abort_unchanged_methods_and_reviewed_failure_transactions(self):
         from tools.typescript_guest.abort_engine import derive_abort_timeout
         raw = (FIXTURES/'original-abort-signal.cpp').read_bytes()
         after, _ = derive_abort_timeout(raw)
-        first = b'bool AbortSignal::run_abort_steps('
-        boundary = b'JSObject *AbortSignal::create_with_timeout('
-        original = raw[raw.index(first):raw.index(boundary)]
-        changed = after[after.index(first):after.index(boundary)]
-        null_check = b'  if (!event) return false;\n'
-        self.assertEqual(changed.count(null_check), 1)
-        self.assertEqual(changed.replace(null_check, b'', 1), original)
-        following = b'// https://dom.spec.whatwg.org/#dom-abortsignal-any'
-        self.assertEqual(raw[raw.index(following, raw.index(boundary)):],
-                         after[after.index(following, after.index(boundary)):])
-        self.assertIn(b'DOMException::create(cx, "TimeoutError", "TimeoutError")', after)
+        # Preserve untouched public setup/trace methods, not the historical
+        # early-return and incremental-publication bugs being corrected.
+        constructor = b'bool AbortSignal::constructor('
+        self.assertEqual(raw[raw.index(constructor):], after[after.index(constructor):])
+        begin = b'bool AbortSignal::set_reason('
+        end = b'JSObject *AbortSignal::create_with_timeout('
+        original = raw[raw.index(begin):raw.index(end)]
+        changed = after[after.index(begin):after.index(end)]
+        changed = changed.replace(b'create_abort_exception(cx, "AbortError")',
+                                  b'dom_exception::DOMException::create(cx, "AbortError", "AbortError")')
+        changed = changed.replace(
+            b'  SetReservedSlot(self, std::to_underlying(Slots::OnAbortListener), JS::NullValue());\n', b'')
+        self.assertEqual(changed, original)
+        steps = after[after.index(b'bool AbortSignal::run_abort_steps('):after.index(begin)]
+        self.assertIn(b'if (JS_IsExceptionPending(cx)) return false;', steps)
+        self.assertLess(steps.index(b'RootedValue event_val(cx)'), steps.index(b'Maybe<JS::AutoSaveExceptionState>'))
+        self.assertIn(b'if (first_failure) first_failure->drop();', steps)
+        self.assertIn(b'first_failure->restore(); return false;', steps)
+        self.assertNotIn(b'algorithms->clear()', steps)  # failed accepted work remains owned
+        self.assertLess(steps.index(b'algorithms->erase('), steps.index(b'event = Event::create('))
+        graph = after[after.index(b'JSObject *AbortSignal::create_with_signals('):after.index(constructor)]
+        self.assertLess(graph.index(b'links.reserve('), graph.index(b'infallibleAppend(self.get())'))
+        self.assertNotIn(b'their_signals->insert(self)', graph)
+        self.assertIn(b'create_abort_exception(cx, "TimeoutError")', after)
 
     def test_pinned_abort_source_change_is_rejected_before_derivation(self):
         from tools.typescript_guest.abort_engine import derive_abort_timeout
@@ -420,7 +433,7 @@ class TypeScriptAbortSourceTests(unittest.TestCase):
         start = after.index(b'bool AbortSignal::set_reason(')
         end = after.index(b'JSObject *AbortSignal::create(', start)
         body = after[start:end]
-        allocation = body.index(b'DOMException::create(cx, "AbortError", "AbortError")')
+        allocation = body.index(b'create_abort_exception(cx, "AbortError")')
         failure = body.index(b'if (!exception) {\n      return false;\n    }', allocation)
         slot = body.index(b'SetReservedSlot(self, std::to_underlying(Slots::Reason)', failure)
         self.assertLess(allocation, failure)

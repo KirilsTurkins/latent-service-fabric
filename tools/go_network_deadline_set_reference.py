@@ -91,7 +91,7 @@ def qualify(output: Path, compiler: Path, environment: dict, old: bytes,
     for label, source in (('deadline-set-old', old), ('deadline-set-current', current)):
         module = output / label
         module.mkdir()
-        (module / 'go.mod').write_bytes(b'module example.invalid/streamdeadline\n\ngo 1.27.3\n')
+        (module / 'go.mod').write_bytes(b'module example.invalid/streamdeadline\n\ngo 1.27.4\n')
         (module / 'set.go').write_bytes(projected(source, current=label.endswith('current')))
         (module / 'set_test.go').write_bytes(tests)
         args = [str(compiler), 'test', '-json', '-timeout=10s', '-count=1']

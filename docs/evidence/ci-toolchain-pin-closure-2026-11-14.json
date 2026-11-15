@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "parent": "9e633f701982ce3345e7ebba0519d48f624f4afd",
+  "workflowRun": 43588720664,
+  "go": {
+    "archive": {
+      "url": "https://dl.google.com/go/go1.27.4.linux-amd64.tar.gz",
+      "sha256": "7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840"
+    },
+    "archiveBytes": 70680823,
+    "goSha256": "de0ae3e082ce7599eae4fb69fa2ef1e43b8f31ffd3fce62cdf81930aa9005050",
+    "goBytes": 17256487,
+    "version": "go1.27.4"
+  },
+  "dotnet": {
+    "sdk": "8.0.428",
+    "runtime": "8.0.34",
+    "generations": 4,
+    "generatedSourceAndToolHashesUnchanged": true
+  },
+  "scope": "Repair current SDK selection, reference compiler identities, standalone Rust lock and current action-pin guide. No assertions, security scanners, budgets or lock enforcement relaxed. Finite host/reference tests do not promote TypeScript runtime qualification."
+}

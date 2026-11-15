@@ -65,7 +65,7 @@ use std::borrow::Cow;
 use std::fmt::Display;
 use std::sync::{Mutex, MutexGuard};
 use std::{
-    mem,
+    mem::{self, ManuallyDrop},
     sync::atomic::{AtomicU64, Ordering},
 };
 use wasmtime_environ::{
@@ -208,21 +208,21 @@ pub struct PoolingInstanceAllocator {
     /// (assigned round-robin at first use) and flushes that shard when it
     /// reaches the configured batch size. Slot-exhaustion paths flush all
     /// shards.
-    decommit_queues: Box<[CachePadded<Mutex<DecommitQueue>>]>,
+    decommit_queues: ManuallyDrop<Box<[CachePadded<Mutex<DecommitQueue>>]>>,
 
-    memories: MemoryPool,
+    memories: ManuallyDrop<MemoryPool>,
     live_memories: AtomicUsize,
 
-    tables: TablePool,
+    tables: ManuallyDrop<TablePool>,
     live_tables: AtomicUsize,
 
     #[cfg(feature = "gc")]
-    gc_heaps: Option<GcHeapPool>,
+    gc_heaps: ManuallyDrop<Option<GcHeapPool>>,
     #[cfg(feature = "gc")]
     live_gc_heaps: AtomicUsize,
 
     #[cfg(feature = "async")]
-    stacks: StackPool,
+    stacks: ManuallyDrop<StackPool>,
     #[cfg(feature = "async")]
     live_stacks: AtomicUsize,
 
@@ -232,18 +232,18 @@ pub struct PoolingInstanceAllocator {
 
 impl Drop for PoolingInstanceAllocator {
     fn drop(&mut self) {
-        if !cfg!(debug_assertions) {
+        // Retry in release builds too. A persistent refusal is not permission
+        // to release the original guards or unmap only part of their backing.
+        // Keep the bounded node pool and its existing queues in terminal custody
+        // until process exit if the final retry still fails. No slots are reused.
+        self.flush_all_decommit_queues();
+        if self
+            .decommit_queues
+            .iter()
+            .any(|queue| !queue.0.lock().unwrap().is_empty())
+        {
             return;
         }
-
-        // NB: when cfg(not(debug_assertions)) it is okay that we don't flush
-        // the queue, as the sub-pools will unmap those ranges anyways, so
-        // there's no point in decommitting them. But we do need to flush the
-        // queue when debug assertions are enabled to make sure that all
-        // entities get returned to their associated sub-pools and we can
-        // differentiate between a leaking slot and an enqueued-for-decommit
-        // slot.
-        self.flush_all_decommit_queues();
 
         debug_assert_eq!(self.live_component_instances.load(Ordering::Acquire), 0);
         debug_assert_eq!(self.live_core_instances.load(Ordering::Acquire), 0);
@@ -254,7 +254,7 @@ impl Drop for PoolingInstanceAllocator {
         debug_assert!(self.tables.is_empty());
 
         #[cfg(feature = "gc")]
-        if let Some(gc_heaps) = &self.gc_heaps {
+        if let Some(gc_heaps) = &*self.gc_heaps {
             debug_assert!(gc_heaps.is_empty());
             debug_assert_eq!(self.live_gc_heaps.load(Ordering::Acquire), 0);
         }
@@ -264,44 +264,65 @@ impl Drop for PoolingInstanceAllocator {
             debug_assert!(self.stacks.is_empty());
             debug_assert_eq!(self.live_stacks.load(Ordering::Acquire), 0);
         }
+        // SAFETY: no queued backings remain. These fields are consumed exactly
+        // once; ManuallyDrop also retains them if a preceding destructor panics.
+        unsafe {
+            ManuallyDrop::drop(&mut self.decommit_queues);
+            ManuallyDrop::drop(&mut self.memories);
+            ManuallyDrop::drop(&mut self.tables);
+            #[cfg(feature = "gc")]
+            ManuallyDrop::drop(&mut self.gc_heaps);
+            #[cfg(feature = "async")]
+            ManuallyDrop::drop(&mut self.stacks);
+        }
     }
 }
 
 impl PoolingInstanceAllocator {
     /// Creates a new pooling instance allocator with the given strategy and limits.
     pub fn new(config: &PoolingAllocationConfig, tunables: &Tunables) -> Result<Self> {
+        // Complete fallible setup with ordinary locals. Wrapping fields before
+        // a later allocation failed would leak unpublished pool mappings.
+        let decommit_queues = (0..default_shard_count())
+            .map(|_| CachePadded(Mutex::new(DecommitQueue::default())))
+            .try_collect::<Box<[_]>, OutOfMemory>()?;
+        let memories = MemoryPool::new(config, tunables)?;
+        let tables = TablePool::new(config)?;
+        #[cfg(feature = "gc")]
+        let gc_heaps = if tunables.collector.is_some() {
+            Some(GcHeapPool::new(config, tunables)?)
+        } else {
+            None
+        };
+        #[cfg(feature = "async")]
+        let stacks = StackPool::new(config)?;
+        let pagemap = match config.pagemap_scan {
+            Enabled::Auto => PageMap::new(),
+            Enabled::Yes => Some(PageMap::new().ok_or_else(|| {
+                format_err!(
+                    "required to enable PAGEMAP_SCAN but this system \
+                     does not support it"
+                )
+            })?),
+            Enabled::No => None,
+        };
         Ok(Self {
             live_component_instances: AtomicU64::new(0),
             live_core_instances: AtomicU64::new(0),
-            decommit_queues: (0..default_shard_count())
-                .map(|_| CachePadded(Mutex::new(DecommitQueue::default())))
-                .try_collect::<Box<[_]>, OutOfMemory>()?,
-            memories: MemoryPool::new(config, tunables)?,
+            decommit_queues: ManuallyDrop::new(decommit_queues),
+            memories: ManuallyDrop::new(memories),
             live_memories: AtomicUsize::new(0),
-            tables: TablePool::new(config)?,
+            tables: ManuallyDrop::new(tables),
             live_tables: AtomicUsize::new(0),
             #[cfg(feature = "gc")]
-            gc_heaps: if tunables.collector.is_some() {
-                Some(GcHeapPool::new(config, tunables)?)
-            } else {
-                None
-            },
+            gc_heaps: ManuallyDrop::new(gc_heaps),
             #[cfg(feature = "gc")]
             live_gc_heaps: AtomicUsize::new(0),
             #[cfg(feature = "async")]
-            stacks: StackPool::new(config)?,
+            stacks: ManuallyDrop::new(stacks),
             #[cfg(feature = "async")]
             live_stacks: AtomicUsize::new(0),
-            pagemap: match config.pagemap_scan {
-                Enabled::Auto => PageMap::new(),
-                Enabled::Yes => Some(PageMap::new().ok_or_else(|| {
-                    format_err!(
-                        "required to enable PAGEMAP_SCAN but this system \
-                         does not support it"
-                    )
-                })?),
-                Enabled::No => None,
-            },
+            pagemap,
             config: config.clone(),
         })
     }
@@ -413,11 +434,18 @@ impl PoolingInstanceAllocator {
     }
 
     fn flush_decommit_queue(&self, mut locked_queue: MutexGuard<'_, DecommitQueue>) -> bool {
-        // Take the queue out of the mutex and drop the lock, to minimize
-        // contention.
-        let queue = mem::take(&mut *locked_queue);
+        // Keep failed allocations in their original shard. Taking the batch
+        // out would require a fallible requeue after refusal and hide its
+        // outstanding custody from concurrent drainers. A syscall serializes
+        // only this shard; no other shard or index-allocation lock is held.
+        if !locked_queue.decommit_all_raw() {
+            return false;
+        }
+        let mut retired = mem::take(&mut *locked_queue);
         drop(locked_queue);
-        queue.flush(self)
+        // Physical acknowledgement precedes extraction. Original allocation
+        // destructors and free-list callbacks run without the shard lock.
+        retired.release(self)
     }
 
     /// Flush every shard of the decommit queue, e.g. on allocator drop.
@@ -442,9 +470,8 @@ impl PoolingInstanceAllocator {
     /// the chances that another thread steals the freshly-flushed slots
     /// before we get a chance to grab one, in which case we keep flushing).
     ///
-    /// Note that [`Self::flush_decommit_queue`] takes the shard's queue out
-    /// of its mutex and drops the lock immediately, so no queue lock is held
-    /// while decommitting or while `f` runs.
+    /// Each shard remains locked while decommitting to retain failed batches
+    /// in place. No queue lock is held while `f` runs.
     #[cfg(feature = "async")]
     fn with_flush_and_retry<T>(&self, mut f: impl FnMut() -> Result<T>) -> Result<T> {
         let mut result = f();
@@ -462,36 +489,23 @@ impl PoolingInstanceAllocator {
     }
 
     fn merge_or_flush(&self, mut local_queue: DecommitQueue) {
-        match local_queue.raw_len() {
-            // If we didn't enqueue any regions for decommit, then we must have
-            // either memset the whole entity or eagerly remapped it to zero
-            // because we don't have linux's `madvise(DONTNEED)` semantics. In
-            // either case, the entity slot is ready for reuse immediately.
-            0 => {
-                local_queue.flush(self);
+        let attempted =
+            local_queue.raw_len() == 0 || local_queue.raw_len() >= self.config.decommit_batch_size;
+        if attempted {
+            local_queue.flush(self);
+            if local_queue.is_empty() {
+                return;
             }
+        }
 
-            // We enqueued at least our batch size of regions for decommit, so
-            // flush the local queue immediately. Don't bother inspecting (or
-            // locking!) the shared queue.
-            n if n >= self.config.decommit_batch_size => {
-                local_queue.flush(self);
-            }
-
-            // If we enqueued some regions for decommit, but did not reach our
-            // batch size, so we don't want to flush it yet, then merge the
-            // local queue into this thread's shard of the shared queue.
-            n => {
-                debug_assert!(n < self.config.decommit_batch_size);
-                let shard = thread_shard(self.decommit_queues.len());
-                let mut shared_queue = self.decommit_queue(shard).lock().unwrap();
-                shared_queue.append(&mut local_queue);
-                // And if this shard now has at least as many regions enqueued
-                // for decommit as our batch size, then we can flush it.
-                if shared_queue.raw_len() >= self.config.decommit_batch_size {
-                    self.flush_decommit_queue(shared_queue);
-                }
-            }
+        // Use the existing bounded queue, not a second failure ledger. Failed
+        // entities still occupy their pool slots, so new admissions cannot
+        // turn repeated refusal into an unbounded backlog.
+        let shard = thread_shard(self.decommit_queues.len());
+        let mut shared_queue = self.decommit_queue(shard).lock().unwrap();
+        shared_queue.append(&mut local_queue);
+        if !attempted && shared_queue.raw_len() >= self.config.decommit_batch_size {
+            self.flush_decommit_queue(shared_queue);
         }
     }
 

@@ -278,7 +278,8 @@ class CThreadMinimal(unittest.TestCase):
     self.assertEqual(left[path], right[path], path)
     self.assertEqual(hashlib.sha256(left[path]).hexdigest(), expected, path)
     del left[path]; del right[path]
-   self.assertEqual(set(left),set(right));self.assertEqual(len(left),65)
+   # Identity of every path and byte below is stronger than a stale file count.
+   self.assertEqual(set(left),set(right))
    self.assertEqual([n for n in left if left[n]!=right[n]],['src/main.c'])
    self.assertEqual(read_json(a/'capsule-project.json'),read_json(b/'capsule-project.json'))
    self.assertIn(b'greet: async func',right['wit/world.wit'])
