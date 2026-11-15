@@ -6,6 +6,112 @@ use fixture::Fixture;
 const CHILD_BOUNDARY: &[u8] = b"PAYLOAD_PROCESS_BOUNDARY";
 const CHILD_TEST: &str = "atomic::tests::payloads::owned_payload_process_child";
 
+/// Producer for the separate standalone protected-startup qualification. The
+/// orchestrator owns and removes the temporary parent after both processes exit.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[ignore = "Requires the standalone linked-payload qualification orchestrator"]
+async fn export_standalone_linked_payload() {
+    use std::io::Write;
+    let report = std::path::PathBuf::from(
+        std::env::var_os("LSF_LINKED_PAYLOAD_REPORT").expect("orchestrator report path"),
+    );
+    assert_eq!(
+        std::fs::canonicalize(report.parent().unwrap()).unwrap(),
+        std::fs::canonicalize(std::env::temp_dir()).unwrap()
+    );
+    let fixture = Fixture::for_standalone_recovery();
+    let claim = fixture.claim("standalone-recovery-proof");
+    let view = fixture.state.snapshot().unwrap();
+    let state = state_mutation(&view, Some(b"body"));
+    let envelope = CompleteEnvelope::success(
+        &view,
+        claim,
+        Some(state),
+        vec![StagedIntent {
+            binding: "approved-event".into(),
+            operation: "event".into(),
+            payload: value(b"body"),
+            expires_at_millis: None,
+        }],
+        value(b"body"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap();
+    let result_pin = fixture.capture().await;
+    let state_pin = fixture.capture().await;
+    let effect_pin = fixture.capture().await;
+    let envelope = envelope
+        .attach_verified_payloads(
+            &view,
+            &fixture.session,
+            vec![
+                PayloadAttachment {
+                    target: PayloadAttachmentTarget::Result,
+                    payload: result_pin,
+                },
+                PayloadAttachment {
+                    target: PayloadAttachmentTarget::State(b"attached".to_vec()),
+                    payload: state_pin,
+                },
+                PayloadAttachment {
+                    target: PayloadAttachmentTarget::Effect(0),
+                    payload: effect_pin,
+                },
+            ],
+        )
+        .unwrap();
+    drop(view);
+    assert!(matches!(
+        envelope.publish_with_payloads(&fixture.state, |authorities, payloads| {
+            fixture
+                .session
+                .check_liveness()
+                .map_err(|_| AtomicError::PermissionDenied)?;
+            for payload in payloads {
+                if !payload.uses_session(&fixture.session)
+                    || !payload
+                        .matches_provider(&fixture.session)
+                        .map_err(|_| AtomicError::PermissionDenied)?
+                {
+                    return Err(AtomicError::PermissionDenied);
+                }
+            }
+            let _fence = fixture.effects.commit_fence(
+                authorities,
+                EffectTime {
+                    unix_millis: 200,
+                    continuity_proven: true,
+                },
+            )?;
+            Ok(())
+        }),
+        PreparedDisposition::Confirmed { .. }
+    ));
+    let Fixture {
+        authority,
+        provider,
+        state,
+        blob: _,
+        session,
+        effects,
+        _root: root,
+    } = fixture;
+    drop(session);
+    drop(provider);
+    drop(effects);
+    drop(authority);
+    drop(state);
+    let path = root.keep();
+    std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(report)
+        .unwrap()
+        .write_all(path.as_os_str().as_encoded_bytes())
+        .unwrap();
+}
+
 fn stop_at_boundary() -> ! {
     use std::io::Write;
     println!("{}", std::str::from_utf8(CHILD_BOUNDARY).unwrap());
@@ -406,6 +512,270 @@ fn state_mutation(
             .unwrap();
     }
     session.seal(view, |_, _| Ok(())).unwrap()
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn ordinary_state_replacement_retires_only_its_old_payload_after_commit() {
+    let fixture = Fixture::new();
+    let cell_key =
+        latent_state::session::state_payload_cell_key(&state_scope_a(), b"attached").unwrap();
+    let claim = fixture.claim("ordinary-detach-seed");
+    let view = fixture.state.snapshot().unwrap();
+    let state = state_mutation(&view, Some(b"body"));
+    let envelope = CompleteEnvelope::success(
+        &view,
+        claim,
+        Some(state),
+        vec![],
+        value(b"ok"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap();
+    let pin = fixture.capture().await;
+    let physical = pin.identity().clone();
+    let envelope = envelope
+        .attach_verified_payloads(
+            &view,
+            &fixture.session,
+            vec![PayloadAttachment {
+                target: PayloadAttachmentTarget::State(b"attached".to_vec()),
+                payload: pin,
+            }],
+        )
+        .unwrap();
+    drop(view);
+    publish_payload_envelope(&fixture, envelope);
+    let reader = fixture
+        .provider
+        .store()
+        .open_read(&TenantId("a".into()), &fixture.blob, &|| Ok(()))
+        .unwrap();
+
+    let claim = fixture.claim("ordinary-detach-rebind");
+    let view = fixture.state.snapshot().unwrap();
+    let state = state_mutation(&view, Some(b"body"));
+    let envelope = CompleteEnvelope::success_captured(
+        &view,
+        claim,
+        Some(state),
+        vec![],
+        value(b"ok"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap()
+    .reconcile_replaced_state_payloads(&view)
+    .unwrap();
+    let pin = fixture.capture().await;
+    assert!(matches!(
+        envelope.attach_verified_payloads(
+            &view,
+            &fixture.session,
+            vec![PayloadAttachment {
+                target: PayloadAttachmentTarget::State(b"attached".to_vec()),
+                payload: pin,
+            }],
+        ),
+        Err(AtomicError::Invalid)
+    ));
+    drop(view);
+
+    let claim = fixture.claim_unbound("ordinary-detach-foreign");
+    let view = fixture.state.snapshot().unwrap();
+    let state = state_mutation(&view, Some(b"new"));
+    let envelope = CompleteEnvelope::success_captured(
+        &view,
+        claim,
+        Some(state),
+        vec![],
+        value(b"ok"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap();
+    drop(view);
+    let foreign = open(&fixture._root.path().join("foreign-ordinary-detach.redb"));
+    let foreign_view = foreign.snapshot().unwrap();
+    assert!(matches!(
+        envelope.reconcile_replaced_state_payloads(&foreign_view),
+        Err(AtomicError::PermissionDenied)
+    ));
+    drop(foreign_view);
+
+    let claim = fixture.claim_unbound("ordinary-detach-replace");
+    let view = fixture.state.snapshot().unwrap();
+    let state = state_mutation(&view, Some(b"new"));
+    let envelope = CompleteEnvelope::success_captured(
+        &view,
+        claim,
+        Some(state),
+        vec![],
+        value(b"ok"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap();
+    drop(view);
+    let claim = match envelope.publish(&fixture.state, |_| panic!("unreconciled owner accepted")) {
+        PreparedDisposition::KnownNotCommitted {
+            command,
+            reason: AtomicError::UnsupportedFormat,
+        } => *command,
+        _ => panic!("expected unreconciled state reference refusal"),
+    };
+    let view = fixture.state.snapshot().unwrap();
+    let state = state_mutation(&view, Some(b"new"));
+    let envelope = CompleteEnvelope::success_captured(
+        &view,
+        claim,
+        Some(state),
+        vec![],
+        value(b"ok"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap()
+    .reconcile_replaced_state_payloads(&view)
+    .unwrap();
+    drop(view);
+    let claim = match envelope.publish(&foreign, |_| panic!("foreign store reached acceptance")) {
+        PreparedDisposition::KnownNotCommitted {
+            command,
+            reason: AtomicError::PermissionDenied,
+        } => *command,
+        _ => panic!("expected original engine binding refusal"),
+    };
+    let view = fixture.state.snapshot().unwrap();
+    let state = state_mutation(&view, Some(b"new"));
+    let envelope = CompleteEnvelope::success_captured(
+        &view,
+        claim,
+        Some(state),
+        vec![],
+        value(b"ok"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap()
+    .reconcile_replaced_state_payloads(&view)
+    .unwrap();
+    drop(view);
+    // A concurrent accepted command advances the namespace and usage fences.
+    // The stale replacement must not retire the old payload owner.
+    drop(fixture.claim_unbound("ordinary-detach-competing"));
+    let claim = match envelope.publish(&fixture.state, |_| Ok(())) {
+        PreparedDisposition::KnownNotCommitted {
+            command,
+            reason: AtomicError::Conflict,
+        } => *command,
+        _ => panic!("expected stale replacement conflict"),
+    };
+    let view = fixture.state.snapshot().unwrap();
+    assert!(
+        latent_state::session::retained_state_payload_reference(&view, &cell_key)
+            .unwrap()
+            .is_some()
+    );
+    let state = state_mutation(&view, Some(b"new"));
+    let envelope = CompleteEnvelope::success_captured(
+        &view,
+        claim,
+        Some(state),
+        vec![],
+        value(b"ok"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap()
+    .reconcile_replaced_state_payloads(&view)
+    .unwrap();
+    drop(view);
+    let claim = match envelope.publish(&fixture.state, |_| Err(AtomicError::PermissionDenied)) {
+        PreparedDisposition::KnownNotCommitted {
+            command,
+            reason: AtomicError::PermissionDenied,
+        } => *command,
+        _ => panic!("expected state authority refusal"),
+    };
+    let view = fixture.state.snapshot().unwrap();
+    assert!(
+        latent_state::session::retained_state_payload_reference(&view, &cell_key)
+            .unwrap()
+            .is_some()
+    );
+    assert_eq!(validate_payload_census(&view).payload_bytes, 4);
+    let state = state_mutation(&view, Some(b"new"));
+    let envelope = CompleteEnvelope::success_captured(
+        &view,
+        claim,
+        Some(state),
+        vec![],
+        value(b"ok"),
+        &fixture.effects,
+        time(200),
+    )
+    .unwrap()
+    .reconcile_replaced_state_payloads(&view)
+    .unwrap();
+    drop(view);
+    assert!(matches!(
+        envelope.publish(&fixture.state, |_| Ok(())),
+        PreparedDisposition::Confirmed { .. }
+    ));
+    let view = fixture.state.snapshot().unwrap();
+    assert!(
+        latent_state::session::retained_state_payload_reference(&view, &cell_key)
+            .unwrap()
+            .is_none()
+    );
+    assert_eq!(validate_payload_census(&view).payload_bytes, 0);
+    assert_eq!(
+        latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
+        Some(0)
+    );
+    drop(view);
+    assert!(fixture
+        .provider
+        .store()
+        .release_durable_reference(
+            &TenantId("a".into()),
+            &fixture.blob,
+            &fixture.state,
+            &|| Ok(()),
+        )
+        .unwrap());
+    assert_eq!(
+        fixture
+            .provider
+            .store()
+            .reclaim(1, &|| Ok(()))
+            .unwrap()
+            .objects,
+        0
+    );
+    let mut bytes = [0; 4];
+    reader
+        .read(
+            &latent_blobs::BlobRange {
+                offset: 0,
+                length: 4,
+            },
+            &mut bytes,
+            &|| Ok(()),
+        )
+        .unwrap();
+    assert_eq!(&bytes, b"body");
+    drop(reader);
+    assert_eq!(
+        fixture
+            .provider
+            .store()
+            .reclaim(1, &|| Ok(()))
+            .unwrap()
+            .objects,
+        1
+    );
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -1035,6 +1405,13 @@ async fn response_expiry_keeps_real_shared_effect_blobs_until_reviewed_purge() {
         .unwrap();
     drop(view);
     publish_payload_envelope(&fixture, envelope);
+    // The original physical reader remains live while the response expires
+    // and both independent effects go through reviewed terminal handling.
+    let reader = fixture
+        .provider
+        .store()
+        .open_read(&TenantId("a".into()), &fixture.blob, &|| Ok(()))
+        .unwrap();
     let effect_clock = |now| EffectTime {
         unix_millis: now,
         continuity_proven: true,
@@ -1209,6 +1586,28 @@ async fn response_expiry_keeps_real_shared_effect_blobs_until_reviewed_purge() {
             &|| Ok(())
         )
         .unwrap());
+    assert_eq!(
+        fixture
+            .provider
+            .store()
+            .reclaim(1, &|| Ok(()))
+            .unwrap()
+            .objects,
+        0
+    );
+    let mut bytes = [0; 4];
+    reader
+        .read(
+            &latent_blobs::BlobRange {
+                offset: 0,
+                length: 4,
+            },
+            &mut bytes,
+            &|| Ok(()),
+        )
+        .unwrap();
+    assert_eq!(&bytes, b"body");
+    drop(reader);
     assert_eq!(
         fixture
             .provider
@@ -1620,6 +2019,7 @@ async fn captured_blob_cannot_be_attached_through_a_different_activation_session
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn closed_bound_session_cannot_cross_final_payload_acceptance() {
     let fixture = Fixture::new();
+    let observer = fixture.session.observer();
     let claim = fixture.claim("closed-payload-session");
     let view = fixture.state.snapshot().unwrap();
     let envelope = CompleteEnvelope::success(
@@ -1646,6 +2046,10 @@ async fn closed_bound_session_cannot_cross_final_payload_acceptance() {
         .unwrap();
     drop(view);
     fixture.session.close();
+    // These are still activation-session owners, so closing the guest Store
+    // cannot retire its capability session while the envelope retains them.
+    assert!(!observer.is_quiescent());
+    assert!(observer.retained_handles() > 0);
     assert!(matches!(
         envelope.publish_with_payloads(&fixture.state, |_, _| panic!(
             "closed session reached host acceptance"
@@ -1660,6 +2064,7 @@ async fn closed_bound_session_cannot_cross_final_payload_acceptance() {
         latent_state::payload_references::physical_owner_count(&view, &physical).unwrap(),
         None
     );
+    assert!(observer.is_quiescent());
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

@@ -46,11 +46,108 @@ struct StartingStore {
     delivered: bool,
 }
 
+#[cfg(target_os = "linux")]
+struct StartingPayloadPromotion {
+    store: Arc<ProtectedStoreOwner>,
+    native: NativeCapacityOwner,
+    delivered: bool,
+}
+
+#[cfg(target_os = "linux")]
+impl Drop for StartingPayloadPromotion {
+    fn drop(&mut self) {
+        if !self.delivered {
+            self.store.quarantine();
+            self.native.quarantine();
+        }
+    }
+}
+
+enum StartupPayload {
+    None,
+    #[cfg(target_os = "linux")]
+    Local {
+        owner: Arc<latent_blobs::local::LocalBlobStore>,
+        provider: crate::config::ProviderIdentity,
+        returned: std::sync::mpsc::SyncSender<(Arc<latent_blobs::local::LocalBlobStore>, bool)>,
+    },
+}
+
+#[cfg(target_os = "linux")]
+pub(super) struct LocalPayloadSelection {
+    provider: crate::config::ProviderIdentity,
+    namespace: String,
+    root: std::path::PathBuf,
+    durable_retention: bool,
+}
+
+#[cfg(target_os = "linux")]
+impl LocalPayloadSelection {
+    pub(super) fn matches(
+        &self,
+        settings: &crate::config::NodeSettings,
+        blob: &crate::config::BlobInstallation,
+    ) -> bool {
+        self.provider.id == blob.identity.id
+            && self.provider.tenant == blob.identity.tenant
+            && self.provider.service == blob.identity.service
+            && self.provider.epoch == blob.identity.epoch
+            && self.namespace == blob.namespace
+            && self.durable_retention == blob.durable_retention
+            && self.root
+                == settings
+                    .data_directory
+                    .join(format!("provider-blobs-{}", blob.identity.id))
+    }
+}
+
 impl Drop for StartingStore {
     fn drop(&mut self) {
         if !self.delivered {
             self.startup.quarantine();
             self.native.quarantine();
+        }
+    }
+}
+
+fn validate_startup_payload(
+    view: &latent_state::embedded::ReadView,
+    identity: &latent_state::store_identity::StoreIdentity,
+    quotas: &[latent_state::tenant::TenantQuota],
+    original: &latent_core::native_capacity::NativeReservation,
+    payload: StartupPayload,
+) -> Result<(), StoreError> {
+    match payload {
+        StartupPayload::None => validation::validate(view, identity, quotas, original),
+        #[cfg(target_os = "linux")]
+        StartupPayload::Local {
+            mut owner,
+            provider,
+            returned,
+        } => {
+            let durable = latent_blobs::local::LocalBlobStore::bind_existing_durable_for_view(
+                &mut owner, view,
+            )
+            .map_err(|_| StoreError::Unavailable)?;
+            if durable {
+                validation::validate_with_local_payloads(
+                    view,
+                    identity,
+                    quotas,
+                    original,
+                    &validation::LocalPayloadVerifier {
+                        store: &owner,
+                        provider: &provider,
+                        original,
+                    },
+                )?;
+            } else {
+                validation::validate(view, identity, quotas, original)?;
+            }
+            validation::live(original)?;
+            returned
+                .send((owner, durable))
+                .map_err(|_| StoreError::Unavailable)
         }
     }
 }
@@ -63,14 +160,114 @@ impl StateBootstrap {
         &mut self,
         settings: &StateSettings,
     ) -> Result<Arc<ProtectedStoreOwner>, PlatformError> {
-        self.open_store_inner(settings, None, false).await
+        self.open_store_inner(settings, None, false, StartupPayload::None)
+            .await
     }
 
     pub(in crate::standalone::state) async fn open_store_offline(
         &mut self,
         settings: &StateSettings,
     ) -> Result<Arc<ProtectedStoreOwner>, PlatformError> {
-        self.open_store_inner(settings, None, true).await
+        self.open_store_inner(settings, None, true, StartupPayload::None)
+            .await
+    }
+
+    /// Transfer the unique already-open provider owner into the initializing
+    /// worker. A timeout never returns that owner while physical work survives.
+    #[cfg(target_os = "linux")]
+    pub(in crate::standalone) async fn open_store_with_local_payloads(
+        &mut self,
+        settings: &StateSettings,
+        owner: Arc<latent_blobs::local::LocalBlobStore>,
+        provider: crate::config::ProviderIdentity,
+        root: std::path::PathBuf,
+        durable_retention: bool,
+    ) -> Result<Arc<latent_blobs::local::LocalBlobStore>, PlatformError> {
+        self.open_store_with_local_payloads_inner(
+            settings,
+            owner,
+            provider,
+            root,
+            durable_retention,
+            None,
+        )
+        .await
+    }
+
+    #[cfg(target_os = "linux")]
+    async fn open_store_with_local_payloads_inner(
+        &mut self,
+        settings: &StateSettings,
+        owner: Arc<latent_blobs::local::LocalBlobStore>,
+        provider: crate::config::ProviderIdentity,
+        root: std::path::PathBuf,
+        durable_retention: bool,
+        before_promotion: Option<Box<dyn FnOnce() + Send>>,
+    ) -> Result<Arc<latent_blobs::local::LocalBlobStore>, PlatformError> {
+        let selection = LocalPayloadSelection {
+            provider: provider.clone(),
+            namespace: owner.namespace().to_owned(),
+            root,
+            durable_retention,
+        };
+        let (returned, receiver) = std::sync::mpsc::sync_channel(1);
+        let store = self
+            .open_store_inner(
+                settings,
+                None,
+                false,
+                StartupPayload::Local {
+                    owner,
+                    provider,
+                    returned,
+                },
+            )
+            .await?;
+        self.check_live()?;
+        let (mut owner, already_durable) = receiver.try_recv().map_err(|_| super::unavailable())?;
+        if durable_retention && !already_durable {
+            use latent_core::native_capacity::NativeBufferClass;
+            use latent_state::store_io::StoreIoKind;
+            // A dropped startup waiter cannot expose the store while the
+            // accepted physical mode transition is still running.
+            let mut guard = StartingPayloadPromotion {
+                store: Arc::clone(&store),
+                native: self.native.clone(),
+                delivered: false,
+            };
+            let original = self.original();
+            let buffer = original
+                .reserve_buffer(NativeBufferClass::Work, 4096)
+                .map_err(|_| super::unavailable())?;
+            let current = Arc::clone(&original);
+            let job = store
+                .with_store_retaining(StoreIoKind::RecoveryWrite, 4096, original, move |engine| {
+                    let _buffer = buffer;
+                    validation::live(&current)?;
+                    if let Some(observe) = before_promotion {
+                        observe();
+                    }
+                    validation::live(&current)?;
+                    let view = engine.snapshot()?;
+                    let result = latent_blobs::local::LocalBlobStore::enable_durable_for_view(
+                        &mut owner, &view,
+                    );
+                    validation::live(&current)?;
+                    Ok((owner, result))
+                })
+                .map_err(|_| super::unavailable())?;
+            owner = if let Ok(Ok(Ok((owner, Ok(()))))) =
+                tokio::time::timeout_at(self.deadline.into(), job).await
+            {
+                owner
+            } else {
+                return Err(super::unavailable());
+            };
+            self.check_live()?;
+            guard.delivered = true;
+        }
+        self.local_payload_selection = Some(Box::new(selection));
+        Ok(owner)
     }
 
     async fn open_store_inner(
@@ -78,6 +275,7 @@ impl StateBootstrap {
         settings: &StateSettings,
         before_validation: Option<Box<dyn FnOnce() + Send>>,
         offline: bool,
+        payload: StartupPayload,
     ) -> Result<Arc<ProtectedStoreOwner>, PlatformError> {
         self.check_live()?;
         if self.opened_store.is_some() || !self.matches(settings) {
@@ -106,7 +304,7 @@ impl StateBootstrap {
                 if let Some(observe) = before_validation {
                     observe();
                 }
-                validation::validate(view, &identity, &quotas, &original)
+                validate_startup_payload(view, &identity, &quotas, &original, payload)
             },
             Arc::clone(&self.clock),
         )

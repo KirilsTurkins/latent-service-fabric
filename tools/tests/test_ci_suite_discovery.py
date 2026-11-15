@@ -143,6 +143,45 @@ class SelectionTests(unittest.TestCase):
             with self.subTest(bad=bad):
                 self.assertTrue(discovery.workspace_execution(receipt, bad)[1])
 
+    def test_expected_panic_label_keeps_the_discovered_identity_and_failure_checks(self):
+        available = frozenset({"tests::rejects_foreign_wait", "tests::ordinary"})
+        raw = (b"test tests::rejects_foreign_wait - should panic ... ok\n"
+               b"test tests::ordinary ... ok\n"
+               b"test result: ok. 2 passed; 0 failed; 0 ignored;\n")
+        self.assertEqual(discovery.execution_cases(raw, available, frozenset()),
+                         (["tests::ordinary", "tests::rejects_foreign_wait"], []))
+        for bad in (
+            raw.replace(b"rejects_foreign_wait", b"unknown"),
+            raw.replace(b" - should panic", b" - should panic twice"),
+            raw.replace(b" - should panic", b" - should panic - should panic"),
+            raw.replace(b" - should panic ... ok", b" - should panic ... FAILED"),
+            raw.replace(b"test tests::ordinary ... ok\n", b""),
+            raw + b"test tests::rejects_foreign_wait ... ok\n",
+        ):
+            with self.subTest(raw=bad), self.assertRaisesRegex(ValueError, "case-result-mismatch"):
+                discovery.execution_cases(bad, available, frozenset())
+
+    def test_expected_panic_workspace_results_are_not_unknown_or_missing_cases(self):
+        receipt = {"schemaVersion": "latent.ci.discovery.v1", "suites": [
+            {"id": "clock", "artifact": "clock-abcd", "cases": ["clock::rejects"], "ignored": []}]}
+        raw = ("    Running tests/clock.rs (target/debug/deps/clock-abcd)\n"
+               "test clock::rejects - should panic ... ok\n"
+               "test result: ok. 1 passed; 0 failed; 0 ignored;\n")
+        report, errors = discovery.workspace_execution(receipt, raw)
+        self.assertEqual(errors, [])
+        self.assertEqual(report["suites"][0]["executed"], ["clock::rejects"])
+        for bad in (raw.replace("clock::rejects - should panic", "clock::foreign - should panic"),
+                    raw.replace("... ok", "... FAILED"),
+                    raw.replace("... ok", "... ignored")):
+            with self.subTest(raw=bad):
+                self.assertTrue(discovery.workspace_execution(receipt, bad)[1])
+
+    def test_interleaved_diagnostic_bytes_cannot_be_invented_into_a_passing_result(self):
+        raw = (b"test clock::wait ... LSF-GO-ZERO-CLOCK-V1|wait-pending|0|5\n"
+               b"ok\ntest result: ok. 1 passed; 0 failed; 0 ignored;\n")
+        with self.assertRaisesRegex(ValueError, "case-result-mismatch"):
+            discovery.execution_cases(raw, frozenset({"clock::wait"}), frozenset())
+
     def test_explicit_doctests_and_compatibility_feature_must_execute_nonempty_cases(self):
         data = registry.load()
         doctests = ('   Doc-tests latent_admission\nrunning 1 test\n'

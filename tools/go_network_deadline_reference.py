@@ -137,11 +137,16 @@ def contract(template: bytes, materials: dict[str, bytes]) -> None:
                 (provider, b'if timeout == 0 || timeout > 10_000'),
                 (provider, b'deadline = deadline.min(now + Duration::from_millis(u64::from(timeout)));'),
                 (connection, b'deadline: deadline.min(validity),'),
+                (connection, b'observation_deadline: if observation { requested } else { None }'),
                 (facade, b'r := raw.ConnectContext(ctx, request)'),
                 (context, b'witAsync.SubtaskWaitContext(ctx, uint32('))
     if any(source.count(marker) != 1 for source, marker in required):
         raise ValueError('go-network-deadline-provider-or-context-drift')
-    pending_deadline_contract(connection)
+    try:
+        pending_deadline_contract(connection)
+    except ValueError as failure:
+        # Keep the contract's public refusal category and the scoped cause.
+        raise ValueError('go-network-deadline-provider-or-context-drift') from failure
     dial = re.findall(rb'(?ms)^func lsfStreamDial\(ctx context.Context, d \*Dialer, network, address string\) \(Conn, error\) \{\n.*?^\}', template)
     if (len(dial) != 1 or b'if err := ctx.Err(); err != nil' not in dial[0]
             or b'lsfNetwork.ConnectContext(ctx,' not in dial[0]):

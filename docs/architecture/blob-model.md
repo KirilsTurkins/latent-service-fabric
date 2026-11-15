@@ -43,3 +43,48 @@ payload retention, snapshot support or reference-based provider dispatch.
 Strict commands reject unreviewed immediate writes; they stage approved intents
 instead. Snapshot/GC must preserve the actual linked payload closure in the
 selected engine, independently of application result expiry or raw-cache eviction.
+
+For an existing qualified local retention root, standalone startup binds the
+same opened blob owner to the initializing state engine. Before publishing the
+provider or state consumers, it checks the linked ownership records, current
+provider identity and epoch, and the actual immutable bytes under the original
+startup deadline. Missing, corrupt, foreign, or unverified required payloads
+refuse startup. An ordinary local root does not acquire durable retention mode
+implicitly, and S3 references are not qualified for this durable path.
+
+On Linux, replacing or deleting a state cell that already owns a retained local
+payload removes that cell's old reference in the same fenced state commit. A
+refused or conflicted commit retains the old owner. Physical readers and other
+durable owners continue to pin the bytes; removal of the state link alone does
+not delete the blob or grant access to it.
+
+The lower-level commit and recovery owners can retain verified local payload
+attachments, but attaching them through the guest transaction runtime remains
+unimplemented. Orphan reconciliation and complete backup/migration closure also
+remain separate work. On Linux, `python3 tools/qualify_local_payload_recovery.py`
+exercises committed local result, state and pending-effect attachments across
+protected startup and checks that subsequent physical corruption refuses recovery.
+
+The local provider also exposes a tenant-scoped, bounded reference inventory for
+trusted recovery owners. Each cursor and returned page retains a native work
+slot; pages visit at most 64 physical entries and become stale after publication,
+release or reclamation changes. The host must authorize the tenant separately.
+Starting an inventory requires capacity for both its cursor and a page; a
+single-slot configuration refuses the cursor without consuming that slot.
+Setup and each page honor the caller's original checkpoint before returning.
+Pagination observations remain host-internal because page boundaries can reflect
+entries owned by other tenants.
+This inventory describes references only; it does not reverify payload bytes.
+An absent reference or a completed walk grants neither blob access nor
+permission to reclaim an orphan. A future
+reconciliation owner must still establish current durable closure and physical
+retirement before any deletion.
+
+A bounded audit can compare those local references with one retained view of
+the same durable engine. It reports a missing head, a zero-owner head, or a
+positive head with an observed reciprocal index; inconsistent observed heads
+and indexes fail the audit. The caller retains and funds the original view,
+and pages retain their work charge. Progress
+is discarded on an expired or different view, local mutation, error, or panic.
+The view may be historical even when valid, and the audit does not verify all
+owners or payload bytes. Its observations never authorize reclamation.
