@@ -38,6 +38,23 @@ jobs:
           git config user.email 'noreply@users.noreply.github.com'
           git merge --no-commit --no-ff 2ad1b0a952642e296c76a95d687962d0dccbf071 || test -n "$(git diff --name-only --diff-filter=U)"
           python3 "$RUNNER_TEMP/reconcile.py"
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('apps/latentd/src/standalone/state/store.rs')
+          s = p.read_text()
+          signature = '    ) -> (Arc<latent_blobs::local::LocalBlobStore>, crate::config::ProviderIdentity) {'
+          assert s.count(signature) == 1
+          s = s.replace(signature, '    ) -> InventoryPayloads {')
+          marker = 'pub(super) struct LocalPayloadSelection {'
+          assert s.count(marker) == 1
+          s = s.replace(marker, '''pub(super) type InventoryPayloads = (
+              Arc<latent_blobs::local::LocalBlobStore>,
+              crate::config::ProviderIdentity,
+          );
+
+          ''' + marker)
+          p.write_text(s)
+          PY
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
         with:
           components: rustfmt,clippy
@@ -77,7 +94,6 @@ jobs:
           git add contracts/dev/composition-support-v1.json
           git commit -m 'docs: bind composition evidence to the merged provider configuration'
           git show --stat HEAD~1
-          git diff 2ad1b0a952642e296c76a95d687962d0dccbf071 -- apps/latentd/src/standalone/state/validation.rs apps/latentd/src/standalone/state/store.rs apps/latentd/src/standalone/state/kernel.rs
       - name: Check workflow contracts and deadline regression controls
         shell: bash
         run: |
@@ -127,8 +143,22 @@ jobs:
       - uses: KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2
         with:
           distribution: temurin
-          java-version: 25
-      - name: Run the exact published-client native resolution with retained diagnostics
+          java-version: 25.0.4+101.0.LTS
+      - name: Reuse the existing reviewed SDK Gradle installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install -r tools/requirements.lock
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess, yaml
+          data = yaml.safe_load(Path('.github/workflows/ci.yml').read_text())
+          steps = [step for job in data['jobs'].values() for step in job.get('steps', []) if step.get('name') == 'Install the checksum-pinned Java-compatible Gradle']
+          assert len(steps) == 1
+          print('REUSED_GRADLE_SETUP\n' + steps[0]['run'], flush=True)
+          subprocess.run(['bash', '-euo', 'pipefail', '-c', steps[0]['run']], check=True)
+          PY
+      - name: Require exact native resolution with reviewed Gradle
         shell: bash
         run: |
           set -euo pipefail
@@ -150,9 +180,37 @@ jobs:
                   commands.run('default-client-native-resolve', sys.executable, ROOT/'tools/java_capsule.py', 'resolve', app, '--candidate', candidate, '--gradle', 'gradle')
                   assert digest(read_file(candidate)) == CANDIDATE
                   print('RESOLVER_RESULT=passed-exact-original-closure', flush=True)
-              except Exception as failure:
-                  print('RESOLVER_RESULT=' + type(failure).__name__ + ':' + str(failure), flush=True)
-              for path in sorted((root/'commands').rglob('*')):
-                  if path.is_file() and path.stat().st_size <= 256*1024:
-                      print('=== DIAGNOSTIC', path.name, '===\n' + path.read_text(errors='replace')[-20000:], flush=True)
+              finally:
+                  for path in sorted((root/'commands').rglob('*')):
+                      if path.is_file() and path.stat().st_size <= 256*1024:
+                          print('=== DIAGNOSTIC', path.name, '===\n' + path.read_text(errors='replace')[-20000:], flush=True)
+          PY
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: b5e25076abc98c6a57f7078bdc335a5e916c5851
+          persist-credentials: false
+      - name: Inspect original deletion and exact workflow prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+          def matches(pattern, *paths):
+              result = subprocess.run(['git','grep','-n', '-E', pattern, '--', *paths], text=True, stdout=subprocess.PIPE)
+              assert result.returncode in (0,1)
+              print('=== SEARCH', pattern, '===\n' + result.stdout[:22000], flush=True)
+          matches('delete_deployment|fn delete|ResourceExhausted', 'crates/latent-node/src/deployments*', 'crates/latent-node/src/deployment*', 'apps/latentd/src/*deployment*')
+          matches('deployment delete|delete_deployment|deployment_delete', 'crates/latent-node/src', 'apps/latentd/src')
+          matches('gradle|published-http', '.github/workflows/java*')
+          matches('operator-fixture|run_phase2_operator_workflow.py|zot|Prepare publication toolchain', '.github/workflows/ci.yml', 'tools/run_phase2_operator_workflow.py')
+          matches('dependency-link-denied', 'tools/application_dependency_store.py')
+          for path in ('tools/run_phase2_operator_workflow.py', 'tools/phase2_operator_support.py'):
+              p = Path(path)
+              if p.exists():
+                  print('=== SOURCE', path, '===\n' + p.read_text()[:28000], flush=True)
           PY
