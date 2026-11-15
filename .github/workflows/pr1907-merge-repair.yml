@@ -4,154 +4,115 @@ on:
     branches: [ci/pr1907-merge-repair-20261115]
     paths: [.github/workflows/pr1907-merge-repair.yml]
 permissions:
-  contents: write
-  actions: read
+  contents: read
 concurrency:
   group: pr1907-merge-repair
   cancel-in-progress: false
 jobs:
-  transfer:
+  dotnet-admission:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
         with:
-          ref: e1c785beb83d5a66216b2443fa253e0275bad2e7
+          ref: 3d6eb7130aec2087b376d8be4b31a7a6b6c4c970
           persist-credentials: false
-          fetch-depth: 100
       - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
         with:
           python-version: 3.13.5
-      - name: Recover exact validation objects without moving the PR reference
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - uses: KirilsTurkins/lsf-setup-dotnet@2382c9e63a3b678b643c7e715d023e7fa42fbbef
+        with:
+          dotnet-version: 8.0.428
+          skip-lts-prepass: true
+      - name: Reproduce the original fixture with admission-state diagnostics
         run: |
           set -euo pipefail
-          git config user.name 'LSF CI repair'
-          git config user.email 'ci-repair@users.noreply.github.com'
-          git fetch --no-tags --depth=100 origin 14738dc3de79881c549d8371e9933c08a92fda27
-          git fetch --no-tags --depth=1 origin fba2868e544ef50fd70c77fa54573d2eb9d3726b
-          git show fba2868e544ef50fd70c77fa54573d2eb9d3726b:.github/workflows/pr1907-merge-repair.yml > "$RUNNER_TEMP/pr1907-reviewed-recipe.yml"
-          test "$(git rev-parse fba2868e544ef50fd70c77fa54573d2eb9d3726b:.github/workflows/pr1907-merge-repair.yml)" = 514fd9491d9fe52458ce198b427be12c3c83619b
-          python3 -m pip install --only-binary=:all: --no-deps --require-hashes --requirement .github/security/requirements.txt
+          test "$(git rev-parse HEAD)" = 3d6eb7130aec2087b376d8be4b31a7a6b6c4c970
+          test "$(git hash-object sdk/dotnet/Latent.Sdk.Transport.Tests/LifecycleTests.cs)" = d0a0a6089a671a8ed07c2738d522b94b58b0920f
           python3 - <<'PY'
-          import hashlib, json, os, pathlib, re, subprocess, yaml
-          dev = '14738dc3de79881c549d8371e9933c08a92fda27'
-          def git(*args, data=None):
-              return subprocess.check_output(['git', *args], input=data)
-          run = json.loads(subprocess.check_output(['gh', 'api', 'repos/KirilsTurkins/latent-service-fabric/actions/runs/43700556386']))
-          assert run['status'] == 'completed' and run['conclusion'] == 'success'
-          assert run['head_sha'] == 'a791e469afdfb826f0b913835c38c739f882e060'
-          raw = subprocess.check_output(['gh', 'api', '--allow-escape-sequences', 'repos/KirilsTurkins/latent-service-fabric/actions/jobs/132770528730/logs']).decode('utf-8-sig')
-          lines = [re.sub(r'^\d{4}-\d{2}-\d{2}T\S+Z ', '', line) for line in raw.splitlines()]
-          def single(prefix):
-              found = [line[len(prefix):] for line in lines if line.startswith(prefix)]
-              assert len(found) == 1, (prefix, len(found))
-              return found[0]
-          target = single('VALIDATED_CANDIDATE_TREE=')
-          assert re.fullmatch(r'[0-9a-f]{40}', target), target
-          base = single('VALIDATED_BASE_TREE=')
-          assert base == git('rev-parse', dev + '^{tree}').decode().strip()
-          changes = json.loads(single('VALIDATED_TREE_ELEMENTS='))
-          fresh = json.loads(single('VALIDATED_NEW_BLOBS='))
-          print('AUTHENTICATED_VALIDATED_TREE=' + target, flush=True)
-          print('AUTHENTICATED_BASE_TREE=' + base, flush=True)
-          print('AUTHENTICATED_NEW_BLOBS=' + json.dumps(fresh, separators=(',', ':')), flush=True)
-          allowed = {
-              '.github/workflows/developer-tools.yml',
-              'crates/latent-component-threading/src/admission.rs',
-              'crates/latent-component-threading/src/admission/names.rs',
-              'sdk/rust-standard-runtime/stack-transform/Cargo.lock',
-              'tools/c_guest/threading.py',
-              'tools/ci/contracts/workflows/developer-tools.yml/jobs/linux-portable.json',
-              'tools/go_network_deadline_reference.py',
-              'tools/tests/test_c_thread_minimal.py',
-              'tools/tests/test_go_write_progress.py',
-              'tools/tests/test_live_security_gate.py',
-          }
-          expected = {row['path']: row['sha'] for row in fresh}
-          assert len(expected) == len(fresh) and set(expected) <= allowed
-          assert all(re.fullmatch(r'[0-9a-f]{40}', sha) for sha in expected.values())
-          recipe = yaml.safe_load((pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1907-reviewed-recipe.yml').read_text())
-          for name in ('Merge the exact reviewed heads and reconcile all nine conflicts', 'Repair the independently reproduced development toolchain blocker'):
-              selected = [step for step in recipe['jobs']['reconcile']['steps'] if step.get('name') == name]
-              assert len(selected) == 1
-              subprocess.run(['bash', '-e', '-o', 'pipefail', '-c', selected[0]['run']], check=True)
-          reconstructed = git('write-tree').decode().strip()
-          recovered = set()
-          for i, line in enumerate(lines):
-              if not line.startswith('CONNECTOR_BLOB_BEGIN='):
-                  continue
-              row = json.loads(line.split('=', 1)[1])
-              assert expected[row['path']] == row['sha'] and row['path'] not in recovered
-              end = i + 1
-              while end < len(lines) and lines[end] != 'CONNECTOR_BLOB_END=' + row['sha']:
-                  end += 1
-              assert end < len(lines)
-              content = '\n'.join(lines[i + 1:end]).encode()
-              digest = hashlib.sha1(b'blob ' + str(len(content)).encode() + b'\0' + content).hexdigest()
-              assert digest == row['sha'], (row['path'], digest, row['sha'])
-              assert git('hash-object', '-w', '--stdin', data=content).decode().strip() == digest
-              recovered.add(row['path'])
-          assert recovered == set(expected)
-          git('read-tree', dev)
-          records, paths = [], set()
-          for row in changes:
-              path = row['path']
-              assert row['mode'] == '100644' and row['type'] == 'blob'
-              assert '\n' not in path and '\t' not in path and '\0' not in path and '..' not in path.split('/')
-              assert not path.startswith('/') and path not in paths
-              paths.add(path)
-              assert re.fullmatch(r'[0-9a-f]{40}', row['sha'])
-              git('cat-file', '-e', row['sha'])
-              records.append(row['mode'] + ' ' + row['sha'] + '\t' + path + '\n')
-          git('update-index', '--index-info', data=''.join(records).encode())
-          assert git('write-tree').decode().strip() == target
-          delta_paths = set(git('diff', '--name-only', reconstructed, target).decode().splitlines())
-          assert delta_paths <= allowed, sorted(delta_paths)
-          print('EXACT_VALIDATED_TREE_RECOVERED=' + target, flush=True)
-          print('DIFFERENCE_FROM_RECONSTRUCTION:', flush=True)
-          subprocess.run(['git', 'diff', '--stat', reconstructed, target], check=True)
-          diff = git('diff', '--no-ext-diff', '--unified=3', reconstructed, target).decode()
-          assert len(diff) <= 50000, 'unexpectedly large validation-tree delta'
-          print(diff, flush=True)
-          print('RECORDED_VALIDATION_SUMMARIES:', flush=True)
-          for i, line in enumerate(lines):
-              if re.match(r'^(Ran \d+ tests? in |test result: |NORMALIZED_AUDIT=)', line):
+          from pathlib import Path
+          import subprocess
+          program = Path('sdk/dotnet/Latent.Sdk.Transport.Tests/Program.cs')
+          source = program.read_text()
+          first = source.index('            foreach (Func<Task> scenario')
+          last = source.index('            Console.WriteLine($"PASS .NET native transport:', first)
+          source = source[:first] + '''            for (int iteration = 0; iteration < 100; iteration++)
+                      {
+                          await CancellationAndQueue().WaitAsync(TimeSpan.FromSeconds(30));
+                          Console.WriteLine("PASS admission iteration " + iteration);
+                      }
+          ''' + source[last:]
+          program.write_text(source)
+          client = Path('sdk/dotnet/Latent.Sdk.Transport/BoundedClient.cs')
+          source = client.read_text()
+          needle = '                        if (queued >= config.MaxQueued) throw state.Error(Profile.FailureCategory.Limit, "client admission queue is full");'
+          assert source.count(needle) == 1
+          source = source.replace(needle, '''                        if (queued >= config.MaxQueued)
+                                  {
+                                      Console.Error.WriteLine($"ADMISSION-STATE recovery={state.Recovery} ready={capacity.Ready} maximum={capacity.Maximum} streams={capacity.Streams} active={active} normal={normal} queued={queued}");
+                                      throw state.Error(Profile.FailureCategory.Limit, "client admission queue is full");
+                                  }''')
+          client.write_text(source)
+          result = subprocess.run(['python3', 'sdk/dotnet/validate.py', '--check'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=600)
+          output = result.stdout.decode()
+          print('PARENT_DIAGNOSTIC_EXIT=' + str(result.returncode), flush=True)
+          lines = output.splitlines()
+          for line in lines:
+              if line.startswith(('PASS admission iteration ', 'ADMISSION-STATE')):
                   print(line, flush=True)
-                  if line.startswith('NORMALIZED_AUDIT=') and i + 1 < len(lines):
-                      print(lines[i + 1], flush=True)
-          (pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1907-verified-tree.json').write_text(json.dumps({'tree': target, 'run': run['id'], 'source': run['head_sha']}))
+          print('\n'.join(lines[-45:]), flush=True)
+          if result.returncode and 'client admission queue is full' not in output:
+              raise SystemExit('parent failed outside the reported queue boundary')
           PY
-      - name: Transfer immutable objects as inert source data on a new isolated branch
-        env:
-          GH_TOKEN: ${{ github.token }}
+          git restore -- sdk/dotnet/Latent.Sdk.Transport/BoundedClient.cs sdk/dotnet/Latent.Sdk.Transport.Tests/Program.cs
+      - name: Qualify the fixture with an observed handshake before queue saturation
         run: |
+          set -euo pipefail
           python3 - <<'PY'
-          import base64, json, os, pathlib, re, subprocess
-          dev = '14738dc3de79881c549d8371e9933c08a92fda27'
-          verified = json.loads((pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1907-verified-tree.json').read_text())
-          assert verified['run'] == 43700556386 and verified['source'] == 'a791e469afdfb826f0b913835c38c739f882e060'
-          candidate = verified['tree']
-          assert re.fullmatch(r'[0-9a-f]{40}', candidate)
-          ref = 'refs/heads/ci/pr1907-validated-object-transfer-20261115'
-          assert subprocess.check_output(['git', 'write-tree'], text=True).strip() == candidate
-          probe = subprocess.run(['git', 'ls-remote', '--exit-code', '--heads', 'origin', ref], capture_output=True, text=True)
-          assert probe.returncode == 2, 'Ref already exists or lookup failed; refusing overwrite'
-          entries = subprocess.check_output(['git', 'ls-tree', '-z', dev])
-          assert b'\t.ci-repair-objects-pr1907\0' not in entries
-          entries += ('040000 tree ' + candidate + '\t.ci-repair-objects-pr1907\0').encode()
-          transport_tree = subprocess.check_output(['git', 'mktree', '-z'], input=entries).decode().strip()
-          commit = subprocess.check_output(['git', 'commit-tree', transport_tree, '-p', dev], input=b'ci: temporary immutable PR1907 source object transfer\n\nOnly inert nested source data; active workflows and PR branch remain unchanged.\nThe nested root matches the tree validated in run 43700556386.\n').decode().strip()
-          env = os.environ.copy()
-          env['GIT_CONFIG_COUNT'] = '1'
-          env['GIT_CONFIG_KEY_0'] = 'http.https://github.com/.extraheader'
-          env['GIT_CONFIG_VALUE_0'] = 'AUTHORIZATION: basic ' + base64.b64encode(('x-access-token:' + env['GH_TOKEN']).encode()).decode()
-          env['GIT_TERMINAL_PROMPT'] = '0'
-          result = subprocess.run(['git', 'push', 'origin', commit + ':' + ref], env=env)
-          if result.returncode:
-              raise SystemExit(result.returncode)
-          print('OBJECT_TRANSFER_COMMIT=' + commit)
-          print('AVAILABLE_VALIDATED_TREE=' + candidate)
-          print('PR1907 branch unchanged; connector review and publication required.')
+          from pathlib import Path
+          path = Path('sdk/dotnet/Latent.Sdk.Transport.Tests/LifecycleTests.cs')
+          source = path.read_text()
+          needle = '        await started.Task.WaitAsync(TimeSpan.FromSeconds(3));\n        using var waiting = new CancellationTokenSource();'
+          assert source.count(needle) == 1
+          replacement = '''        await started.Task.WaitAsync(TimeSpan.FromSeconds(3));
+                  // Server-side dispatch does not prove that the client has observed SETTINGS.
+                  // Complete one recovery round trip before filling the sole waiting slot;
+                  // the later recovery call must still bypass that full ordinary queue.
+                  Check((await client.GetActivationAsync(new("held-a"), Defaults)).Value.Phase == "running", "initial recovery round trip failed");
+                  Check(client.Snapshot() is { InFlight: 1, Queued: 0, WireStreams: 1 }, "initial recovery retained admission or stream ownership");
+                  using var waiting = new CancellationTokenSource();'''
+          source = source.replace(needle, replacement)
+          source = source.replace('Check(peer.Requests.Count == 2, "local cancellation sent an implicit Cancel");',
+                                  'Check(peer.Requests.Count == 2 && peer.Requests.Values.Sum() == 3, "local cancellation sent an implicit Cancel or replayed a request");')
+          source = source.replace('peer.Requests.Values.Sum() == 3, "hidden reconnect or RPC replay"',
+                                  'peer.Requests.Values.Sum() == 4, "hidden reconnect or RPC replay"')
+          path.write_text(source)
           PY
+          git diff --check
+          python3 sdk/dotnet/validate.py --check
+          git diff -- sdk/dotnet/Latent.Sdk.Transport.Tests/LifecycleTests.cs
+          echo "QUALIFIED_FIXTURE_BLOB=$(git hash-object sdk/dotnet/Latent.Sdk.Transport.Tests/LifecycleTests.cs)"
+      - name: Repeat the repaired bounded cancellation and queue scenario
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          program = Path('sdk/dotnet/Latent.Sdk.Transport.Tests/Program.cs')
+          source = program.read_text()
+          first = source.index('            foreach (Func<Task> scenario')
+          last = source.index('            Console.WriteLine($"PASS .NET native transport:', first)
+          source = source[:first] + '''            for (int iteration = 0; iteration < 100; iteration++)
+                      {
+                          await CancellationAndQueue().WaitAsync(TimeSpan.FromSeconds(30));
+                          Console.WriteLine("PASS admission iteration " + iteration);
+                      }
+          ''' + source[last:]
+          program.write_text(source)
+          PY
+          python3 sdk/dotnet/validate.py --check
+          git restore -- sdk/dotnet/Latent.Sdk.Transport.Tests/Program.cs
+          test "$(git diff --name-only | wc -l)" = 1
+          test "$(git diff --name-only)" = sdk/dotnet/Latent.Sdk.Transport.Tests/LifecycleTests.cs
+          git diff --check
+          echo "VERIFIED_FIXTURE_BLOB=$(git hash-object sdk/dotnet/Latent.Sdk.Transport.Tests/LifecycleTests.cs)"
+          echo 'Production admission, deadlines, queue/stream limits, SDK pins and all other source files remain unchanged.'
