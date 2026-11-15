@@ -9,9 +9,9 @@ concurrency:
   group: pr1907-merge-repair
   cancel-in-progress: false
 jobs:
-  dotnet-admission:
+  delayed-settings:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
         with:
@@ -24,95 +24,69 @@ jobs:
         with:
           dotnet-version: 8.0.428
           skip-lts-prepass: true
-      - name: Reproduce the original fixture with admission-state diagnostics
+      - name: Require the original ordering to fail and the observed-handshake fixture to pass
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = 3d6eb7130aec2087b376d8be4b31a7a6b6c4c970
-          test "$(git hash-object sdk/dotnet/Latent.Sdk.Transport.Tests/LifecycleTests.cs)" = d0a0a6089a671a8ed07c2738d522b94b58b0920f
           python3 - <<'PY'
           from pathlib import Path
-          import subprocess
-          program = Path('sdk/dotnet/Latent.Sdk.Transport.Tests/Program.cs')
-          source = program.read_text()
+          import hashlib, subprocess
+          root = Path('sdk/dotnet')
+          fixture = root / 'Latent.Sdk.Transport.Tests/LifecycleTests.cs'
+          program = root / 'Latent.Sdk.Transport.Tests/Program.cs'
+          client = root / 'Latent.Sdk.Transport/BoundedClient.cs'
+          wire = root / 'Latent.Sdk.Transport/Http2WireState.cs'
+          originals = {path: path.read_text() for path in (fixture, program, client, wire)}
+          assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == '3d6eb7130aec2087b376d8be4b31a7a6b6c4c970'
+          source = originals[program]
           first = source.index('            foreach (Func<Task> scenario')
           last = source.index('            Console.WriteLine($"PASS .NET native transport:', first)
-          source = source[:first] + '''            for (int iteration = 0; iteration < 100; iteration++)
-                      {
-                          await CancellationAndQueue().WaitAsync(TimeSpan.FromSeconds(30));
-                          Console.WriteLine("PASS admission iteration " + iteration);
-                      }
-          ''' + source[last:]
+          source = source[:first] + '            await CancellationAndQueue().WaitAsync(TimeSpan.FromSeconds(30));\n' + source[last:]
           program.write_text(source)
-          client = Path('sdk/dotnet/Latent.Sdk.Transport/BoundedClient.cs')
-          source = client.read_text()
+          source = originals[wire]
+          needle = '    internal void Settings(uint? value)\n    {\n'
+          assert source.count(needle) == 1
+          wire.write_text(source.replace(needle, needle + '        if (!settingsReceived) Thread.Sleep(250); // diagnostic-only scheduling control\n'))
+          source = originals[client]
           needle = '                        if (queued >= config.MaxQueued) throw state.Error(Profile.FailureCategory.Limit, "client admission queue is full");'
           assert source.count(needle) == 1
-          source = source.replace(needle, '''                        if (queued >= config.MaxQueued)
+          client.write_text(source.replace(needle, '''                        if (queued >= config.MaxQueued)
                                   {
                                       Console.Error.WriteLine($"ADMISSION-STATE recovery={state.Recovery} ready={capacity.Ready} maximum={capacity.Maximum} streams={capacity.Streams} active={active} normal={normal} queued={queued}");
                                       throw state.Error(Profile.FailureCategory.Limit, "client admission queue is full");
-                                  }''')
-          client.write_text(source)
-          result = subprocess.run(['python3', 'sdk/dotnet/validate.py', '--check'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=600)
+                                  }'''))
+          result = subprocess.run(['python3', 'sdk/dotnet/validate.py', '--check'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=240)
           output = result.stdout.decode()
-          print('PARENT_DIAGNOSTIC_EXIT=' + str(result.returncode), flush=True)
-          lines = output.splitlines()
-          for line in lines:
-              if line.startswith(('PASS admission iteration ', 'ADMISSION-STATE')):
+          print('DELAYED_PARENT_EXIT=' + str(result.returncode), flush=True)
+          for line in output.splitlines():
+              if line.startswith('ADMISSION-STATE') or 'client admission queue is full' in line:
                   print(line, flush=True)
-          print('\n'.join(lines[-45:]), flush=True)
-          if result.returncode and 'client admission queue is full' not in output:
-              raise SystemExit('parent failed outside the reported queue boundary')
-          PY
-          git restore -- sdk/dotnet/Latent.Sdk.Transport/BoundedClient.cs sdk/dotnet/Latent.Sdk.Transport.Tests/Program.cs
-      - name: Qualify the fixture with an observed handshake before queue saturation
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('sdk/dotnet/Latent.Sdk.Transport.Tests/LifecycleTests.cs')
-          source = path.read_text()
+          assert result.returncode != 0 and 'ADMISSION-STATE recovery=True ready=False' in output, output[-12000:]
+          print('NEGATIVE_CONTROL_CONFIRMED=server request arrived before client SETTINGS admission', flush=True)
+          source = originals[fixture]
           needle = '        await started.Task.WaitAsync(TimeSpan.FromSeconds(3));\n        using var waiting = new CancellationTokenSource();'
           assert source.count(needle) == 1
-          replacement = '''        await started.Task.WaitAsync(TimeSpan.FromSeconds(3));
+          source = source.replace(needle, '''        await started.Task.WaitAsync(TimeSpan.FromSeconds(3));
                   // Server-side dispatch does not prove that the client has observed SETTINGS.
                   // Complete one recovery round trip before filling the sole waiting slot;
                   // the later recovery call must still bypass that full ordinary queue.
                   Check((await client.GetActivationAsync(new("held-a"), Defaults)).Value.Phase == "running", "initial recovery round trip failed");
                   Check(client.Snapshot() is { InFlight: 1, Queued: 0, WireStreams: 1 }, "initial recovery retained admission or stream ownership");
-                  using var waiting = new CancellationTokenSource();'''
-          source = source.replace(needle, replacement)
+                  using var waiting = new CancellationTokenSource();''')
           source = source.replace('Check(peer.Requests.Count == 2, "local cancellation sent an implicit Cancel");',
                                   'Check(peer.Requests.Count == 2 && peer.Requests.Values.Sum() == 3, "local cancellation sent an implicit Cancel or replayed a request");')
           source = source.replace('peer.Requests.Values.Sum() == 3, "hidden reconnect or RPC replay"',
                                   'peer.Requests.Values.Sum() == 4, "hidden reconnect or RPC replay"')
-          path.write_text(source)
+          fixture.write_text(source)
+          assert subprocess.check_output(['git', 'hash-object', str(fixture)], text=True).strip() == 'f1b49ce667cbdef2d8176d13f30e70fe8715b3e1'
+          result = subprocess.run(['python3', 'sdk/dotnet/validate.py', '--check'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=240)
+          output = result.stdout.decode()
+          print('DELAYED_REPAIRED_EXIT=' + str(result.returncode), flush=True)
+          print(output, flush=True)
+          assert result.returncode == 0
+          for path in (program, client, wire):
+              path.write_text(originals[path])
+          assert subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines() == [str(fixture)]
+          subprocess.run(['git', 'diff', '--check'], check=True)
+          print('DELAYED_SETTINGS_FIXTURE_BLOB=f1b49ce667cbdef2d8176d13f30e70fe8715b3e1', flush=True)
+          print('All diagnostic production instrumentation restored; only tested fixture change remains.', flush=True)
           PY
-          git diff --check
-          python3 sdk/dotnet/validate.py --check
-          git diff -- sdk/dotnet/Latent.Sdk.Transport.Tests/LifecycleTests.cs
-          echo "QUALIFIED_FIXTURE_BLOB=$(git hash-object sdk/dotnet/Latent.Sdk.Transport.Tests/LifecycleTests.cs)"
-      - name: Repeat the repaired bounded cancellation and queue scenario
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          program = Path('sdk/dotnet/Latent.Sdk.Transport.Tests/Program.cs')
-          source = program.read_text()
-          first = source.index('            foreach (Func<Task> scenario')
-          last = source.index('            Console.WriteLine($"PASS .NET native transport:', first)
-          source = source[:first] + '''            for (int iteration = 0; iteration < 100; iteration++)
-                      {
-                          await CancellationAndQueue().WaitAsync(TimeSpan.FromSeconds(30));
-                          Console.WriteLine("PASS admission iteration " + iteration);
-                      }
-          ''' + source[last:]
-          program.write_text(source)
-          PY
-          python3 sdk/dotnet/validate.py --check
-          git restore -- sdk/dotnet/Latent.Sdk.Transport.Tests/Program.cs
-          test "$(git diff --name-only | wc -l)" = 1
-          test "$(git diff --name-only)" = sdk/dotnet/Latent.Sdk.Transport.Tests/LifecycleTests.cs
-          git diff --check
-          echo "VERIFIED_FIXTURE_BLOB=$(git hash-object sdk/dotnet/Latent.Sdk.Transport.Tests/LifecycleTests.cs)"
-          echo 'Production admission, deadlines, queue/stream limits, SDK pins and all other source files remain unchanged.'
