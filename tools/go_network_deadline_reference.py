@@ -109,6 +109,7 @@ def contract(template: bytes, materials: dict[str, bytes]) -> None:
                 (connection, b'let observation = direction == 2 && !socket.host_tls() && !socket.protected_owner();'),
                 (connection, b'let requested = timeout.map(|value| now + Duration::from_millis(u64::from(value)));'),
                 (connection, b'if !observation {\n            if let Some(requested) = requested {\n                deadline = deadline.min(requested);\n            }\n        }'),
+                (connection, b'observation_deadline: if observation { requested } else { None }'),
                 (facade, b'r := raw.ConnectContext(ctx, request)'),
                 (context, b'witAsync.SubtaskWaitContext(ctx, uint32('))
     if any(source.count(marker) != 1 for source, marker in required):

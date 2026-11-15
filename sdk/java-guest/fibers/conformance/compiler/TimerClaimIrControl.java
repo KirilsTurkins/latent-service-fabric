@@ -15,7 +15,7 @@ import org.teavm.parsing.substitution.DefaultSubstituteClassNameMapping;
 /** Inspect the candidate class with the locked plugin and IR parser, not a guest run. */
 public final class TimerClaimIrControl {
     static final String CLASS="dev.latent.guest.runtime.Activation";
-    static final Set<String> HELPERS=Set.of("beginTimerStart","abandonUnstartedTimer","publishStartedTimer","beginWorkFinish");
+    static final Set<String> HELPERS=Set.of("beginTimerStart","abandonUnstartedTimer","publishStartedTimer","beginWorkFinish","endWorkFinish");
     static void check(ClassHolder cls,String phase) {
         Set<String> found=new HashSet<>();int instructions=0;
         for(var method:cls.getMethods()) {
@@ -56,6 +56,6 @@ public final class TimerClaimIrControl {
         Method transform=RuntimePlugin.class.getDeclaredMethod("transform",ClassHolder.class,ClassHolderTransformerContext.class);
         transform.setAccessible(true);transform.invoke(plugin,cls,null);check(cls,"runtime-plugin-selected");
         if(checkpoints(cls)==0)throw new AssertionError("selected-loop-positive-control");
-        System.out.println("TIMER_CLAIM_IR PASS selected-loop-positive;four-helpers-no-checkpoint-or-split-kind;not-guest");
+        System.out.println("TIMER_CLAIM_IR PASS selected-loop-positive;ownership-helpers-no-checkpoint-or-split-kind;not-guest");
     }
 }
