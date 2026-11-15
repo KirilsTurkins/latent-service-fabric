@@ -11,73 +11,47 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
-        with:
-          ref: b5e25076abc98c6a57f7078bdc335a5e916c5851
-          fetch-depth: 4
-          persist-credentials: false
-      - name: Export tracked sources and exact conflict stages
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch --no-tags --depth=4 origin 35ab1b776df07f0fa1c1bb64d3699915afffb38b
-          test "$(git merge-base HEAD FETCH_HEAD)" = 14738dc3de79881c549d8371e9933c08a92fda27
-          git config user.name 'PR 1907 diagnostics'
-          git config user.email 'diagnostics@localhost'
-          mkdir "$RUNNER_TEMP/pr1907-followup"
-          git archive HEAD | gzip -1 > "$RUNNER_TEMP/pr1907-followup/head-source.tar.gz"
-          set +e
-          git merge --no-commit --no-ff 35ab1b776df07f0fa1c1bb64d3699915afffb38b > "$RUNNER_TEMP/pr1907-followup/merge.log" 2>&1
-          status=$?
-          set -e
-          test "$status" -le 1
-          cat "$RUNNER_TEMP/pr1907-followup/merge.log"
-          git diff --name-only --diff-filter=U | tee "$RUNNER_TEMP/pr1907-followup/conflicts.txt"
-          git diff --cc > "$RUNNER_TEMP/pr1907-followup/conflicts.diff"
-          git ls-files -u > "$RUNNER_TEMP/pr1907-followup/unmerged-index.txt"
-          git ls-files --stage -z > "$RUNNER_TEMP/pr1907-followup/merge-index.bin"
-          git diff --cached --binary > "$RUNNER_TEMP/pr1907-followup/auto-merge.patch"
-          git ls-files -z --deduplicate | tar --null -T - -czf "$RUNNER_TEMP/pr1907-followup/merged-source.tar.gz"
-          python3 - <<'PY'
-          import os, pathlib, subprocess
-          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1907-followup'
-          for line in subprocess.check_output(['git', 'ls-files', '-u'], text=True).splitlines():
-              metadata, path = line.split('\t', 1)
-              mode, sha, stage = metadata.split()
-              target = root / 'conflict-stages' / stage / path
-              target.parent.mkdir(parents=True, exist_ok=True)
-              target.write_bytes(subprocess.check_output(['git', 'cat-file', 'blob', sha]))
-          PY
-          sha256sum "$RUNNER_TEMP/pr1907-followup/"*.tar.gz
-      - name: Extract bounded failure context
+      - name: Retain bounded changed sources from the exact inspected merge
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: KirilsTurkins/latent-service-fabric
         run: |
           set -euo pipefail
-          timeout 90s gh api --allow-escape-sequences repos/KirilsTurkins/latent-service-fabric/actions/jobs/132794418021/logs > "$RUNNER_TEMP/pr1907-followup/java.log"
-          timeout 90s gh api --allow-escape-sequences repos/KirilsTurkins/latent-service-fabric/actions/jobs/132794454341/logs > "$RUNNER_TEMP/pr1907-followup/publications.log"
+          timeout 180s gh run download 43720314823 -n pr1907-followup-sources -D "$RUNNER_TEMP/pr1907-source"
           unset GH_TOKEN
           python3 - <<'PY'
-          import os, pathlib, re
-          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1907-followup'
-          for name in ('java', 'publications'):
-              raw = (root / (name + '.log')).read_bytes()
-              assert len(raw) <= 32 * 1024 * 1024
-              lines = re.sub(r'\x1b\[[0-9;]*m', '', raw.decode('utf-8-sig')).splitlines()
-              matches = [i for i, line in enumerate(lines) if re.search(r'##\[error\]|Traceback|workflow failed|qualification failed|AssertionError|FAILED|Exception:', line, re.I)]
-              indexes = set()
-              for i in matches[-8:]:
-                  indexes.update(range(max(0, i - 12), min(len(lines), i + 8)))
-              text = '\n'.join(lines[i] for i in sorted(indexes))
-              (root / (name + '-failures.txt')).write_text(text + '\n')
-              print('\n=== ' + name + ' ===\n' + text, flush=True)
+          import os, pathlib, re, shutil, tarfile
+          source = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1907-source'
+          output = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1907-small'
+          output.mkdir()
+          for path in source.iterdir():
+              if path.is_file() and path.suffix in ('.txt', '.bin', '.diff', '.patch', '.log'):
+                  assert path.stat().st_size <= 32 * 1024 * 1024
+                  shutil.copyfile(path, output / path.name)
+          shutil.copytree(source / 'conflict-stages', output / 'conflict-stages')
+          paths = set((source / 'conflicts.txt').read_text().splitlines())
+          for line in (source / 'auto-merge.patch').read_text().splitlines():
+              if line.startswith('diff --git a/'):
+                  paths.add(line.split(' b/', 1)[1])
+          with tarfile.open(source / 'merged-source.tar.gz', 'r:gz') as archive:
+              for member in archive:
+                  if member.name not in paths:
+                      continue
+                  assert member.isfile() and member.size <= 4 * 1024 * 1024
+                  target = output / 'selected-files' / member.name
+                  assert '..' not in pathlib.PurePosixPath(member.name).parts and not member.name.startswith('/')
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  target.write_bytes(archive.extractfile(member).read())
+          for name in ('java-failures.txt', 'publications-failures.txt', 'conflicts.txt'):
+              print('\n=== ' + name + ' ===\n' + (output / name).read_text(), flush=True)
+          print('SELECTED_FILES=' + str(len(paths)), flush=True)
           PY
       - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
         if: always()
         with:
-          name: pr1907-followup-sources
-          path: ${{ runner.temp }}/pr1907-followup/
+          name: pr1907-followup-small
+          path: ${{ runner.temp }}/pr1907-small/
           retention-days: 3
           if-no-files-found: error
           include-hidden-files: true
