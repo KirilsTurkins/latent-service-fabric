@@ -22,7 +22,7 @@ jobs:
       - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
         with:
           python-version: 3.13.5
-      - name: Materialize the exact hash-verified validation result
+      - name: Recover exact validation objects without moving the PR reference
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -37,47 +37,53 @@ jobs:
           python3 - <<'PY'
           import hashlib, json, os, pathlib, re, subprocess, yaml
           dev = '14738dc3de79881c549d8371e9933c08a92fda27'
-          target = '60de48fecfe0d728991830b4ceb71da8502c0598'
           def git(*args, data=None):
               return subprocess.check_output(['git', *args], input=data)
           run = json.loads(subprocess.check_output(['gh', 'api', 'repos/KirilsTurkins/latent-service-fabric/actions/runs/43700556386']))
           assert run['status'] == 'completed' and run['conclusion'] == 'success'
           assert run['head_sha'] == 'a791e469afdfb826f0b913835c38c739f882e060'
-          recipe = yaml.safe_load((pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1907-reviewed-recipe.yml').read_text())
-          for name in ('Merge the exact reviewed heads and reconcile all nine conflicts', 'Repair the independently reproduced development toolchain blocker'):
-              selected = [step for step in recipe['jobs']['reconcile']['steps'] if step.get('name') == name]
-              assert len(selected) == 1
-              subprocess.run(['bash', '-e', '-o', 'pipefail', '-c', selected[0]['run']], check=True)
-          reconstructed = git('write-tree').decode().strip()
           raw = subprocess.check_output(['gh', 'api', '--allow-escape-sequences', 'repos/KirilsTurkins/latent-service-fabric/actions/jobs/132770528730/logs']).decode('utf-8-sig')
           lines = [re.sub(r'^\d{4}-\d{2}-\d{2}T\S+Z ', '', line) for line in raw.splitlines()]
           def single(prefix):
               found = [line[len(prefix):] for line in lines if line.startswith(prefix)]
               assert len(found) == 1, (prefix, len(found))
               return found[0]
-          assert single('VALIDATED_CANDIDATE_TREE=') == target
-          assert single('VALIDATED_BASE_TREE=') == git('rev-parse', dev + '^{tree}').decode().strip()
+          target = single('VALIDATED_CANDIDATE_TREE=')
+          assert re.fullmatch(r'[0-9a-f]{40}', target), target
+          base = single('VALIDATED_BASE_TREE=')
+          assert base == git('rev-parse', dev + '^{tree}').decode().strip()
           changes = json.loads(single('VALIDATED_TREE_ELEMENTS='))
           fresh = json.loads(single('VALIDATED_NEW_BLOBS='))
-          expected = {
-              '.github/workflows/developer-tools.yml': 'c88bd5236a624c3186805a14f04ceeb8c67c02ea2',
-              'crates/latent-component-threading/src/admission.rs': '6f2b2dc3b68efaec443cf1c11ebd70c5ee2548a55',
-              'crates/latent-component-threading/src/admission/names.rs': '6630805657103487ba8898fd2bcebce42f4686b79',
-              'sdk/rust-standard-runtime/stack-transform/Cargo.lock': '79d7be58428c314166ba06a5a608f5a6116c2e5fd',
-              'tools/c_guest/threading.py': '90eec38bfdd78e19282d8a5ce425624a23bc52dd5',
-              'tools/ci/contracts/workflows/developer-tools.yml/jobs/linux-portable.json': '106f56336d8b4b8e9731f6a867d5b5bf635da7b88',
-              'tools/go_network_deadline_reference.py': '1c36624983339b107b9d4bd44a2182e63dd382fd1',
-              'tools/tests/test_c_thread_minimal.py': '43c82a855d2933338151028768cea574a7dd5f91e8',
-              'tools/tests/test_go_write_progress.py': '9494239729a218ac651e11ebdedc0a2654dcb28d4',
-              'tools/tests/test_live_security_gate.py': '692028745388591067916d3f3ae99274ab8c1890a',
+          print('AUTHENTICATED_VALIDATED_TREE=' + target, flush=True)
+          print('AUTHENTICATED_BASE_TREE=' + base, flush=True)
+          print('AUTHENTICATED_NEW_BLOBS=' + json.dumps(fresh, separators=(',', ':')), flush=True)
+          allowed = {
+              '.github/workflows/developer-tools.yml',
+              'crates/latent-component-threading/src/admission.rs',
+              'crates/latent-component-threading/src/admission/names.rs',
+              'sdk/rust-standard-runtime/stack-transform/Cargo.lock',
+              'tools/c_guest/threading.py',
+              'tools/ci/contracts/workflows/developer-tools.yml/jobs/linux-portable.json',
+              'tools/go_network_deadline_reference.py',
+              'tools/tests/test_c_thread_minimal.py',
+              'tools/tests/test_go_write_progress.py',
+              'tools/tests/test_live_security_gate.py',
           }
-          assert {row['path']: row['sha'] for row in fresh} == expected
+          expected = {row['path']: row['sha'] for row in fresh}
+          assert len(expected) == len(fresh) and set(expected) <= allowed
+          assert all(re.fullmatch(r'[0-9a-f]{40}', sha) for sha in expected.values())
+          recipe = yaml.safe_load((pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1907-reviewed-recipe.yml').read_text())
+          for name in ('Merge the exact reviewed heads and reconcile all nine conflicts', 'Repair the independently reproduced development toolchain blocker'):
+              selected = [step for step in recipe['jobs']['reconcile']['steps'] if step.get('name') == name]
+              assert len(selected) == 1
+              subprocess.run(['bash', '-e', '-o', 'pipefail', '-c', selected[0]['run']], check=True)
+          reconstructed = git('write-tree').decode().strip()
           recovered = set()
           for i, line in enumerate(lines):
               if not line.startswith('CONNECTOR_BLOB_BEGIN='):
                   continue
               row = json.loads(line.split('=', 1)[1])
-              assert expected[row['path']] == row['sha']
+              assert expected[row['path']] == row['sha'] and row['path'] not in recovered
               end = i + 1
               while end < len(lines) and lines[end] != 'CONNECTOR_BLOB_END=' + row['sha']:
                   end += 1
@@ -89,16 +95,20 @@ jobs:
               recovered.add(row['path'])
           assert recovered == set(expected)
           git('read-tree', dev)
-          records = []
+          records, paths = [], set()
           for row in changes:
               path = row['path']
               assert row['mode'] == '100644' and row['type'] == 'blob'
               assert '\n' not in path and '\t' not in path and '\0' not in path and '..' not in path.split('/')
+              assert not path.startswith('/') and path not in paths
+              paths.add(path)
               assert re.fullmatch(r'[0-9a-f]{40}', row['sha'])
               git('cat-file', '-e', row['sha'])
               records.append(row['mode'] + ' ' + row['sha'] + '\t' + path + '\n')
           git('update-index', '--index-info', data=''.join(records).encode())
           assert git('write-tree').decode().strip() == target
+          delta_paths = set(git('diff', '--name-only', reconstructed, target).decode().splitlines())
+          assert delta_paths <= allowed, sorted(delta_paths)
           print('EXACT_VALIDATED_TREE_RECOVERED=' + target, flush=True)
           print('DIFFERENCE_FROM_RECONSTRUCTION:', flush=True)
           subprocess.run(['git', 'diff', '--stat', reconstructed, target], check=True)
@@ -111,15 +121,19 @@ jobs:
                   print(line, flush=True)
                   if line.startswith('NORMALIZED_AUDIT=') and i + 1 < len(lines):
                       print(lines[i + 1], flush=True)
+          (pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1907-verified-tree.json').write_text(json.dumps({'tree': target, 'run': run['id'], 'source': run['head_sha']}))
           PY
       - name: Transfer immutable objects as inert source data on a new isolated branch
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import base64, os, subprocess
+          import base64, json, os, pathlib, re, subprocess
           dev = '14738dc3de79881c549d8371e9933c08a92fda27'
-          candidate = '60de48fecfe0d728991830b4ceb71da8502c0598'
+          verified = json.loads((pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1907-verified-tree.json').read_text())
+          assert verified['run'] == 43700556386 and verified['source'] == 'a791e469afdfb826f0b913835c38c739f882e060'
+          candidate = verified['tree']
+          assert re.fullmatch(r'[0-9a-f]{40}', candidate)
           ref = 'refs/heads/ci/pr1907-validated-object-transfer-20261115'
           assert subprocess.check_output(['git', 'write-tree'], text=True).strip() == candidate
           probe = subprocess.run(['git', 'ls-remote', '--exit-code', '--heads', 'origin', ref], capture_output=True, text=True)
