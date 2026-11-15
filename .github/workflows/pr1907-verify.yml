@@ -1,0 +1,112 @@
+name: PR 1907 exact integration verification
+on:
+  push:
+    branches: [ci/pr1907-followup-20261115]
+    paths: [.github/workflows/pr1907-verify.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: true
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: true
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: true
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: true
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: b5e25076abc98c6a57f7078bdc335a5e916c5851
+          persist-credentials: false
+      - name: Load only the reviewed source data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          timeout 120s gh api --allow-escape-sequences repos/KirilsTurkins/latent-service-fabric/actions/artifacts/14165142298/zip > "$RUNNER_TEMP/sources.zip"
+          unset GH_TOKEN
+          echo "d6441a3cb9cbde75ac3daed598da53ec0a24be3c0c3d10cd87c9787bf5ae3c10  $RUNNER_TEMP/sources.zip" | sha256sum --check --strict
+          python3 - <<'PY'
+          import os, subprocess, zipfile
+          from pathlib import Path
+          with zipfile.ZipFile(Path(os.environ['RUNNER_TEMP'])/'sources.zip') as archive:
+              patch = archive.read('integration.patch')
+          assert len(patch) <= 4*1024*1024
+          subprocess.run(['git','apply','--index','--binary','-'],input=patch,check=True)
+          assert subprocess.check_output(['git','write-tree'],text=True).strip() == '13f563c0bc91468ca4c7bc7df4385ccaa48221d0'
+          path = Path('apps/latentd/src/standalone/state/store/tests.rs')
+          source = path.read_text()
+          old = 'assert_eq!(refused, Err(StoreError::Unavailable));'
+          assert source.count(old) == 1
+          source = source.replace(old, 'assert_eq!(refused, Err(latent_state::protected_store::ProtectedStoreError::Store(StoreError::Unavailable)));')
+          path.write_text(source)
+          PY
+          git fetch --no-tags --depth=1 origin 955da9c7465b88541e39b043203abb92782ae26a fb79a7ab6ea86f53baec78ee341aca075c14a2ef
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          components: clippy,rustfmt
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: 3.13.5
+      - name: Verify exact source and workflow contracts
+        run: |
+          set -euo pipefail
+          cargo fmt --package latentd
+          git add -u
+          git diff --cached --check
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -m unittest tools.tests.test_go_write_progress tools.tests.test_go_deadline_provider_contract tools.tests.test_go_network_deadline_contract tools.tests.test_node_providers_schema tools.tests.test_qualify_local_payload_recovery tools.tests.test_java_owner_admission tools.tests.test_dotnet_exact_composition tools.tests.test_java_published_http tools.tests.test_java_published_replay -v
+          python3 - <<'PY'
+          from tools.dev_workflow.composition_contract import changed_matrix_sources
+          assert not changed_matrix_sources(), changed_matrix_sources()
+          PY
+      - name: Exercise protected startup and real linked payload recovery
+        run: |
+          set -euo pipefail
+          cargo test -p latentd --lib --all-features --locked standalone::state:: -- --test-threads=2
+          python3 tools/qualify_local_payload_recovery.py
+      - name: Exercise scoped inbox and readiness ownership
+        run: |
+          set -euo pipefail
+          cargo test -p latent-commit --lib --all-features --locked atomic::tests::inbox_scope_fence
+          cargo test -p latent-node --lib --all-features --locked transaction_runtime::tests::response::inbox
+          cargo test -p latent-streams --lib --all-features --locked readiness_tests
+      - name: Check startup lint without relaxing warnings
+        run: cargo clippy -p latentd --lib --all-features --locked --no-deps -- -D warnings
+      - name: Retain exact source objects for publication
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/pr1907-verified"
+          git diff --cached --binary HEAD > "$RUNNER_TEMP/pr1907-verified/integration.patch"
+          git write-tree | tee "$RUNNER_TEMP/pr1907-verified/tree.txt"
+          python3 - <<'PY'
+          import os, json, subprocess
+          from pathlib import Path
+          output = Path(os.environ['RUNNER_TEMP'])/'pr1907-verified'
+          rows = []
+          for row in subprocess.check_output(['git','diff','--cached','--raw','--no-abbrev','HEAD'],text=True).splitlines():
+              fields, name = row.split('\t',1)
+              old_mode, mode, old, sha, status = fields.split()
+              assert status in ('A','M','D')
+              rows.append({'path':name, 'mode':mode, 'sha':sha, 'old':old, 'status':status})
+              if status != 'D':
+                  path = output/'files'/name
+                  path.parent.mkdir(parents=True, exist_ok=True)
+                  path.write_bytes(subprocess.check_output(['git','cat-file','blob',sha]))
+          (output/'entries.json').write_text(json.dumps(rows,indent=2)+'\n')
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        if: always()
+        with:
+          name: pr1907-verified-sources
+          path: ${{ runner.temp }}/pr1907-verified/
+          retention-days: 3
+          include-hidden-files: true
+          if-no-files-found: error
