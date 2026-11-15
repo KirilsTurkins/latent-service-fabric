@@ -25,7 +25,7 @@ jobs:
           ref: b5e25076abc98c6a57f7078bdc335a5e916c5851
           fetch-depth: 128
           persist-credentials: false
-      - name: Apply reviewed three-way reconciliation
+      - name: Apply reviewed reconciliation and unique-owner correction
         env:
           CONTROL_SHA: ${{ github.sha }}
         shell: bash
@@ -33,23 +33,13 @@ jobs:
           set -euo pipefail
           git fetch --no-tags --depth=128 origin 2ad1b0a952642e296c76a95d687962d0dccbf071
           git fetch --no-tags --depth=1 origin "$CONTROL_SHA"
-          git show "$CONTROL_SHA:repair/pr1907_reconcile.py" > "$RUNNER_TEMP/reconcile.py"
           git config user.name 'PR 1907 repair'
           git config user.email 'noreply@users.noreply.github.com'
           git merge --no-commit --no-ff 2ad1b0a952642e296c76a95d687962d0dccbf071 || test -n "$(git diff --name-only --diff-filter=U)"
-          python3 "$RUNNER_TEMP/reconcile.py"
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('apps/latentd/src/standalone/state/store.rs')
-          s = p.read_text()
-          signature = '    ) -> (Arc<latent_blobs::local::LocalBlobStore>, crate::config::ProviderIdentity) {'
-          assert s.count(signature) == 1
-          s = s.replace(signature, '    ) -> InventoryPayloads {')
-          marker = '#[cfg(target_os = "linux")]\npub(super) struct LocalPayloadSelection {'
-          assert s.count(marker) == 1
-          alias = '#[cfg(target_os = "linux")]\npub(super) type InventoryPayloads = (\n    Arc<latent_blobs::local::LocalBlobStore>,\n    crate::config::ProviderIdentity,\n);\n\n'
-          p.write_text(s.replace(marker, alias + marker))
-          PY
+          for name in pr1907_reconcile pr1907_owner_fix; do
+            git show "$CONTROL_SHA:repair/$name.py" > "$RUNNER_TEMP/$name.py"
+            python3 "$RUNNER_TEMP/$name.py"
+          done
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
         with:
           components: rustfmt,clippy
@@ -67,48 +57,26 @@ jobs:
       - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
         with:
           python-version: 3.13.5
-      - name: Format the reconciliation and bind provider provenance
+      - name: Format and commit the complete merge candidate
         shell: bash
         run: |
           set -euo pipefail
-          git add -u
           cargo fmt --all
-          echo '=== FORMATTING-ONLY DELTA ==='
-          git diff --stat
-          git diff
           cargo fmt --all -- --check
           git diff --check
           git add -u
-          git commit -m 'merge: reconcile current development with inbox custody and durable payload startup'
-          python3 - <<'PY'
-          from pathlib import Path
-          import hashlib, json, subprocess
-          path = Path('contracts/dev/composition-support-v1.json')
-          data = json.loads(path.read_text())
-          source = data['sources']['provider-configuration']
-          source['digest'] = 'sha256:' + hashlib.sha256(Path(source['path']).read_bytes()).hexdigest()
-          source['commit'] = subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
-          path.write_text(json.dumps(data, indent=2) + '\n')
-          PY
-          git add contracts/dev/composition-support-v1.json
-          git commit -m 'docs: bind composition evidence to the merged provider configuration'
-          git show --stat HEAD~1
-      - name: Check workflow contracts and deadline regression controls
+          git commit -m 'merge: preserve inbox custody and durable payload startup on current development'
+      - name: Validate contracts and combined startup owners
         shell: bash
         run: |
           set -euo pipefail
           python3 -m pip install -r tools/requirements.lock
           python3 -m unittest tools.tests.test_go_write_progress tools.tests.test_go_network_deadline_contract tools.tests.test_go_deadline_provider_contract tools.tests.test_ci_contracts
-          python3 tools/ci_coverage.py --receipt "$RUNNER_TEMP/integration-coverage.json"
-      - name: Validate combined protected startup and inbox owners
-        shell: bash
-        run: |
-          set -euo pipefail
           cargo test --locked -p latentd --all-features --bin latentd standalone::state::
           cargo test --locked -p latent-commit --all-features --lib atomic::tests
           cargo test --locked -p latent-node --all-features --lib transaction_runtime::tests::response::inbox
           cargo clippy --locked -p latentd -p latent-commit -p latent-node --all-features --all-targets --no-deps -- -D warnings
-      - name: Retain qualified objects without changing product refs
+      - name: Retain qualified tree without modifying a product ref
         env:
           GH_TOKEN: ${{ github.token }}
           CONTROL_SHA: ${{ github.sha }}
@@ -116,35 +84,15 @@ jobs:
         run: |
           set -euo pipefail
           test -z "$(git status --porcelain --untracked-files=no)"
-          candidate="$(git rev-parse HEAD)"
           tree="$(git rev-parse HEAD^{tree})"
-          echo "QUALIFIED_CANDIDATE=$candidate"
           echo "QUALIFIED_TREE=$tree"
-          echo "QUALIFIED_MERGE_TREE=$(git rev-parse HEAD~1^{tree})"
+          echo "QUALIFIED_PARENTS=$(git show -s --format=%P HEAD)"
+          git diff --stat HEAD^ HEAD
           export GIT_INDEX_FILE="$RUNNER_TEMP/transfer.index"
           git read-tree "$CONTROL_SHA^{tree}"
-          git read-tree --prefix=pr1907-candidate/ "$tree"
-          git read-tree --prefix=pr1907-merge/ HEAD~1^{tree}
+          git read-tree --prefix=pr1907-merge/ "$tree"
           transfer_tree="$(git write-tree)"
-          transfer="$(printf 'data: retain tested PR 1907 reconciliation without changing a product branch\n' | git commit-tree "$transfer_tree" -p "$CONTROL_SHA")"
+          transfer="$(printf 'data: retain the qualified PR 1907 merge tree\n' | git commit-tree "$transfer_tree" -p "$CONTROL_SHA")"
           gh auth setup-git
-          git push origin "$transfer:refs/heads/ci/pr1907-objects-20261115-afternoon"
+          git push origin "$transfer:refs/heads/ci/pr1907-qualified-objects-20261115"
           echo "TRANSFER_COMMIT=$transfer"
-          python3 - <<'PY'
-          import json, subprocess
-          def git(*args):
-              return subprocess.check_output(['git', *args], text=True).strip()
-          for ref in ('HEAD~1', 'HEAD'):
-              sha = git('rev-parse', ref)
-              data = {
-                  'message': subprocess.check_output(['git', 'show', '-s', '--format=%B', ref], text=True).rstrip('\n') + '\n',
-                  'tree': git('rev-parse', ref + '^{tree}'),
-                  'parents': git('show', '-s', '--format=%P', ref).split(),
-                  'author': dict(zip(('name','email','date'), git('show','-s','--format=%an%x00%ae%x00%aI',ref).split('\x00'))),
-                  'committer': dict(zip(('name','email','date'), git('show','-s','--format=%cn%x00%ce%x00%cI',ref).split('\x00'))),
-              }
-              response = subprocess.check_output(['gh','api','--method','POST','repos/KirilsTurkins/latent-service-fabric/git/commits','--input','-'], input=json.dumps(data), text=True)
-              result = json.loads(response)
-              print('PUBLISHED_OBJECT=' + result['sha'] + ' EXPECTED=' + sha, flush=True)
-              assert result['sha'] == sha, 'commit metadata changed during object publication'
-          PY
