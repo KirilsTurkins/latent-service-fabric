@@ -45,8 +45,8 @@ jobs:
           signature = '    ) -> (Arc<latent_blobs::local::LocalBlobStore>, crate::config::ProviderIdentity) {'
           assert s.count(signature) == 1
           s = s.replace(signature, '    ) -> InventoryPayloads {')
-          marker = '#[cfg(target_os = "linux")]\n#[derive(Clone)]\npub(super) struct LocalPayloadSelection {'
-          assert s.count(marker) == 1, s[s.index('pub(super) struct LocalPayloadSelection')-100:s.index('pub(super) struct LocalPayloadSelection')+100]
+          marker = '#[cfg(target_os = "linux")]\npub(super) struct LocalPayloadSelection {'
+          assert s.count(marker) == 1
           alias = '#[cfg(target_os = "linux")]\npub(super) type InventoryPayloads = (\n    Arc<latent_blobs::local::LocalBlobStore>,\n    crate::config::ProviderIdentity,\n);\n\n'
           p.write_text(s.replace(marker, alias + marker))
           PY
