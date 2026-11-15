@@ -110,7 +110,7 @@ jobs:
           print('PRESERVED_BRANCH_ONLY_PATHS', len(left - right - {names}))
           print('PRESERVED_DEVELOPMENT_ONLY_PATHS', len(right - left))
           PY
-          git diff --cached --check
+          git diff --cached --check 14738dc3de79881c549d8371e9933c08a92fda27
           git diff --cached --stat 14738dc3de79881c549d8371e9933c08a92fda27
       - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
         with:
@@ -144,9 +144,9 @@ jobs:
         run: |
           cargo fmt --all -- --check
           cargo test -p latent-component-threading --locked --lib --all-features
-          cargo test --manifest-path sdk/rust-standard-runtime/stack-transform/Cargo.toml --locked --lib
+          cargo test --manifest-path sdk/rust-standard-runtime/stack-transform/Cargo.toml --locked
           git diff --exit-code
-          git diff --cached --check
+          git diff --cached --check 14738dc3de79881c549d8371e9933c08a92fda27
       - name: Publish only an unreferenced reviewed-tree candidate
         env:
           GH_TOKEN: ${{ github.token }}
