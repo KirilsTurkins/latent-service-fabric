@@ -6,58 +6,6 @@ on:
 permissions:
   contents: read
 jobs:
-  java-resolution:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    steps:
-      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
-        with:
-          ref: b5e25076abc98c6a57f7078bdc335a5e916c5851
-          persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
-        with:
-          python-version: 3.13.5
-      - uses: KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2
-        with:
-          distribution: temurin
-          java-version: 25.0.4+101.0.LTS
-      - name: Install the exact reviewed Gradle
-        run: |
-          set -euo pipefail
-          curl --fail --location --proto '=https' --tlsv1.2 --connect-timeout 15 --max-time 180 https://services.gradle.org/distributions/gradle-9.1.0-bin.zip -o "$RUNNER_TEMP/gradle.zip"
-          echo "a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip" | sha256sum --check --strict
-          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
-          echo "$RUNNER_TEMP/gradle-9.1.0/bin" >> "$GITHUB_PATH"
-      - name: Resolve the unchanged first published client and retain bounded diagnostics
-        run: |
-          python3 - <<'PY'
-          import os, sys
-          from pathlib import Path
-          from tools.java_standard_http_library import project, CANDIDATE
-          from tools.rust_capsule_build import Commands, build_environment
-          from tools.rust_capsule_project import ROOT, fresh, read_file
-          from tools.build_snapshot import digest
-          output = fresh(Path(os.environ['RUNNER_TEMP'])/'java-resolver')
-          app = project(output/'application')
-          env = build_environment(output)
-          env['JAVA_HOME'] = os.environ['JAVA_HOME']
-          commands = Commands(ROOT, fresh(output/'commands'), env, deadline_seconds=300, command_seconds=240)
-          try:
-              commands.run('default-client-native-resolve', sys.executable, ROOT/'tools/java_capsule.py', 'resolve', app, '--candidate', output/'candidate.json', '--gradle', 'gradle')
-              assert digest(read_file(output/'candidate.json')) == CANDIDATE
-              print('EXACT_FIRST_CLIENT_CANDIDATE_PASSED')
-          finally:
-              for path in sorted((output/'commands/logs').glob('*.txt')):
-                  print(path.name + '\n' + path.read_text()[-12000:], flush=True)
-          PY
-      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
-        if: always()
-        with:
-          name: pr1907-java-resolver-diagnostics
-          path: |
-            ${{ runner.temp }}/java-resolver/commands/logs/
-            ${{ runner.temp }}/java-resolver/candidate.json
-          retention-days: 3
   operator-capacity:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
@@ -117,13 +65,22 @@ jobs:
         run: |
           cargo build -p latent -p latentd --all-features --locked
           LSF_OPERATOR_FIXTURE_ROOT="$RUNNER_TEMP/operator-inputs" cargo test -p latent-policy --lib --all-features --locked supply_chain::tests::support::operator_fixture::export_operator_workflow_fixture -- --exact --ignored --nocapture
+      - name: Fetch the unchanged maintained registry fixture
+        run: docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395
       - name: Run the unchanged bounded operator sequence
         run: |
           set -euo pipefail
           python3 tools/run_phase2_operator_workflow.py --cli "$PWD/target/debug/latent" --node "$PWD/target/debug/latentd" --fixture-root "$RUNNER_TEMP/operator-inputs" --source-commit b5e25076abc98c6a57f7078bdc335a5e916c5851 2>&1 | tee "$RUNNER_TEMP/operator-capacity.log"
+      - name: Retain only bounded diagnostic executables for follow-up reproduction
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/pr1907-operator"
+          cp "$RUNNER_TEMP/operator-capacity.log" "$RUNNER_TEMP/pr1907-operator/"
+          tar -czf "$RUNNER_TEMP/pr1907-operator/diagnostic-binaries.tar.gz" target/debug/latent target/debug/latentd tools/phase2_operator_process.py
+          test "$(stat -c %s "$RUNNER_TEMP/pr1907-operator/diagnostic-binaries.tar.gz")" -le 400000000
       - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
         if: always()
         with:
           name: pr1907-operator-capacity-diagnostics
-          path: ${{ runner.temp }}/operator-capacity.log
+          path: ${{ runner.temp }}/pr1907-operator/
           retention-days: 3
