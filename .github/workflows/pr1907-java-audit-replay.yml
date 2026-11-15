@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [original, fixed]
+        variant: [fixed]
     steps:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
         with:
@@ -24,8 +24,10 @@ jobs:
         with:
           python-version: '3.13.5'
       - name: Qualify audit observation and mutation ordering
-        if: matrix.variant == 'fixed'
-        run: python3 -m unittest tools.tests.test_java_control_refusal_diagnostic tools.tests.test_java_server_lifecycle tools.tests.test_dotnet_capsule_authoring.AuditDrainTests -v
+        run: |
+          set -euo pipefail
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -m unittest tools.tests.test_java_control_refusal_diagnostic tools.tests.test_java_server_lifecycle tools.tests.test_dotnet_capsule_authoring.AuditDrainTests -v
       - name: Receive exact failed-run inputs without a compiler or cache rebuild
         env:
           GH_TOKEN: ${{ github.token }}
@@ -38,9 +40,6 @@ jobs:
           VARIANT: ${{ matrix.variant }}
         run: |
           set -euo pipefail
-          if [ "$VARIANT" = original ]; then
-            git show dccfa47b5580df47063a7a0c1b7f3d6ce0cb5a73:tools/java_http_composition/node.py > tools/java_http_composition/node.py
-          fi
           python3 - <<'PY'
           import hashlib,json,os,shutil,subprocess
           from pathlib import Path
@@ -84,8 +83,7 @@ jobs:
             'nativeAndGuestSource':'25f92e638a1bb7f10fd6e5051084e9d69f600f6b',
             'freshCompilation':False,'runtimeLimitsChanged':False,'binarySha256':expected,'attempts':rows}
           (output/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')
-          if os.environ['VARIANT']=='fixed':
-            assert all(row['status']=='passed' and row['nodeStopped'] for row in rows),rows
+          assert all(row['status']=='passed' and row['nodeStopped'] for row in rows),rows
           PY
       - name: Retain observations without signing keys or compiler caches
         if: always()
