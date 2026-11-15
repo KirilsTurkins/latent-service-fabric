@@ -46,7 +46,7 @@ jobs:
               assert len(selected) == 1
               subprocess.run(['bash', '-e', '-o', 'pipefail', '-c', selected[0]['run']], check=True)
           reconstructed = git('write-tree').decode().strip()
-          raw = subprocess.check_output(['gh', 'api', 'repos/KirilsTurkins/latent-service-fabric/actions/jobs/132770528730/logs']).decode('utf-8-sig')
+          raw = subprocess.check_output(['gh', 'api', '--allow-escape-sequences', 'repos/KirilsTurkins/latent-service-fabric/actions/jobs/132770528730/logs']).decode('utf-8-sig')
           lines = [re.sub(r'^\d{4}-\d{2}-\d{2}T\S+Z ', '', line) for line in raw.splitlines()]
           def single(prefix):
               found = [line[len(prefix):] for line in lines if line.startswith(prefix)]
