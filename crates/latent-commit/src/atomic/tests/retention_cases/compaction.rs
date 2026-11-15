@@ -60,6 +60,25 @@ fn bounded_fixture(
 }
 
 #[test]
+fn compaction_refuses_an_oversized_clock_without_starting_the_engine() {
+    let (_dir, store, status, _record, owner, scope) = bounded_fixture("oversized-clock");
+    store
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: MaintenanceProgress::key(),
+                value: Some(vec![0; 147]),
+            }],
+        })
+        .unwrap();
+    assert!(matches!(
+        owner.compact(&store, &scope, limits(), observation(2200, 100), |_| Ok(())),
+        Err(AtomicError::Corrupt)
+    ));
+    assert_eq!(status.last_compaction().unwrap(), None);
+}
+
+#[test]
 fn compaction_borrows_the_original_shared_maintenance_guard_and_preserves_linked_evidence() {
     let (_dir, store, status, record, owner, scope) = bounded_fixture("shared-compactor");
     let before = store.snapshot().unwrap();

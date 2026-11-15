@@ -3,8 +3,7 @@
 use super::*;
 use wasmparser::{ElementItems, ElementKind};
 
-#[path = "admission_names.rs"]
-mod names;
+mod derived_names;
 
 const NATIVE: &str = "latent:runtime-native/threads@0.1.0";
 const NEW: &str = "[thread-new-indirect-v0]";
@@ -176,6 +175,7 @@ impl Admission {
 struct RewriteAdmission {
     plan: Admission,
     references: u64,
+    derived_names: bool,
 }
 impl Reencode for RewriteAdmission {
     type Error = &'static str;
@@ -192,7 +192,11 @@ impl Reencode for RewriteAdmission {
         names: &mut wasm_encoder::NameSection,
         section: wasmparser::Name<'_>,
     ) -> Result<(), reencode::Error<Self::Error>> {
-        self.parse_names(names, section)
+        if self.derived_names {
+            derived_names::subsection(self, names, section)
+        } else {
+            reencode::utils::parse_custom_name_subsection(self, names, section)
+        }
     }
     fn parse_function_section(
         &mut self,
@@ -335,6 +339,23 @@ pub fn transform_owned_thread_admission(
     input: &[u8],
     expected_preimage: [u8; 32],
 ) -> Result<(Vec<u8>, AdmissionReceipt), &'static str> {
+    transform(input, expected_preimage, false)
+}
+
+// Only the authenticated original-object derivation may retain the historical
+// name-row order of its own intermediate. This is not a guest-selectable mode.
+pub(super) fn transform_derived_thread_admission(
+    input: &[u8],
+    expected_preimage: [u8; 32],
+) -> Result<(Vec<u8>, AdmissionReceipt), &'static str> {
+    transform(input, expected_preimage, true)
+}
+
+fn transform(
+    input: &[u8],
+    expected_preimage: [u8; 32],
+    derived_names: bool,
+) -> Result<(Vec<u8>, AdmissionReceipt), &'static str> {
     let original_digest = Sha256::digest(input).into();
     if original_digest != expected_preimage {
         return Err("rust-stack-input-preimage-mismatch");
@@ -343,6 +364,7 @@ pub fn transform_owned_thread_admission(
     let mut rewrite = RewriteAdmission {
         plan: admission,
         references: 0,
+        derived_names,
     };
     let mut module = Module::new();
     rewrite
@@ -374,6 +396,8 @@ pub fn transform_owned_thread_admission(
 
 #[cfg(test)]
 mod tests {
+    mod names;
+
     use super::*;
     use std::borrow::Cow;
     use wasm_encoder::{

@@ -34,6 +34,7 @@ from tools.runtime_owner_refusal_diagnostic import BUCKETS, retain as retain_run
 from tools.standard_http.observations import validate as validate_peer
 from tools.standard_http.vectors import DOMAIN, json_bytes
 from tools.static_api.node import policy
+from tools.typescript_fetch_failure import observe_case_failure
 from tools.typescript_guest.build import build
 from tools.typescript_guest.fetch_profile import PROFILE
 from tools.typescript_guest.project import validate
@@ -66,6 +67,10 @@ COMPLETED_CAPTURE_VECTORS = (('combinator-completed-control', 30, 'combinator:co
                              ('combinator-completed-retained', 29, None),
                              ('combinator-completed-fresh', 30, 'combinator:completed:released:3'))
 
+ABORT_FANOUT_VECTORS = (('abort-fanout', 31, 'abort-fanout:9:ordered'),
+                        ('abort-fanout-refusal', 32, 'abort-fanout:refusal:unchanged:recovered'),
+                        ('abort-fanout-default-reentry', 33, 'abort-fanout:default-reentry:first-wins'),
+                        ('abort-fanout-fresh', 31, 'abort-fanout:9:ordered'))
 
 def execution_vectors(completed_capture_diagnostic):
     require(type(completed_capture_diagnostic) is bool, 'fetch-runtime-diagnostic-selection')
@@ -86,10 +91,13 @@ def execution_vectors(completed_capture_diagnostic):
           for name, mode, expected in ABORT_DEFAULT_VECTORS),
         *((name, mode, '/conformance/json', expected, 0)
           for name, mode, expected in COMBINATOR_VECTORS),
+        *((name, mode, '/conformance/json', expected, 0)
+          for name, mode, expected in ABORT_FANOUT_VECTORS),
         ('json', 0, '/conformance/json', '1:200:'+json_bytes(DOMAIN).decode()+':used', 1),
         ('http404', 0, '/conformance/status/404',
             '1:404:'+json_bytes({'status':404, 'message':'domain-error'}).decode()+':used', 1),
         ('fresh', 0, '/conformance/json', '1:200:'+json_bytes(DOMAIN).decode()+':used', 1)]
+
 
 
 def project(directory: Path) -> Path:
@@ -200,6 +208,14 @@ def require_denied(row):
         for name in ('outboundRequests', 'childCalls', 'effectCount')), 'fetch-runtime-denial-effects')
 
 
+def record_failure(path, value, failure):
+    """Keep evidence-write errors secondary to the failure being reported."""
+    try:
+        write_json(path, value)
+    except BaseException as evidence_failure:
+        failure.add_note('fetch-runtime-failure-evidence:'+type(evidence_failure).__name__)
+
+
 def require_completed_capture_refusal(row):
     response = row.get('response') if isinstance(row, dict) else None
     observed = original_result(response)
@@ -239,10 +255,12 @@ def require_completed_capture_owners(observation):
 
 def retire(client, probe, target, output, name):
     value = sample(client, probe, 'after-'+name, 1)
+    # Retain the rejected sample too; host counters are not physical-custody proof.
+    write_json(output/('after-'+name+'.json'), value)
     slots = next(row for row in value['inventory']['topology']['entries'] if row['name'] == 'invocation-cleanup-slots')
     require(slots['activeCount'] == '0', 'fetch-runtime-cleanup-slots')
-    write_json(output/('after-'+name+'.json'), value)
     usage = client.call('capability', 'list', '--deployment', target['name'], '--include-node-usage')['data']['nodeUsage']
+    write_json(output/('after-'+name+'-usage.json'), usage)
     require(not usage['unavailable'] and all(name in usage['counters'] and int(usage['counters'][name]) == 0
         for name in ACTIVE_COUNTERS), 'fetch-runtime-physical-owners')
 
@@ -354,21 +372,23 @@ def execute(artifact, native, output, *, completed_capture_diagnostic=False):
                         runtime, authorized = grants(client, node, publication, origin)
                         target = deploy(client, source/'deployment.json', publication,
                             generation=str(target['generation']), grants=runtime)
-                    row = call(client, target, 'typescript-fetch', 'run', [1, address+'/conformance/json'], 'fetch-'+phase)
-                    result[phase] = row
-                    require_denied(row)
-                    retire(client, probe, target, output, phase)
+                    with observe_case_failure(client, target, output, phase, result):
+                        row = call(client, target, 'typescript-fetch', 'run', [1, address+'/conformance/json'], 'fetch-'+phase)
+                        result[phase] = row
+                        require_denied(row)
+                        retire(client, probe, target, output, phase)
             target = deploy(client, source/'deployment.json', publication,
                 generation=str(target['generation']), grants=authorized)
             for name, mode, path, expected, outbound in execution_vectors(completed_capture_diagnostic):
                 stage = name
-                row = call(client, target, 'typescript-fetch', 'run', [mode, address+path], 'fetch-'+name)
-                if completed_capture_diagnostic and name == 'combinator-completed-retained':
-                    require_completed_capture_refusal(row)
-                else:
-                    require_result(row, expected, outbound)
-                result['cases'].append(name)
-                retire(client, probe, target, output, name)
+                with observe_case_failure(client, target, output, name, result):
+                    row = call(client, target, 'typescript-fetch', 'run', [mode, address+path], 'fetch-'+name)
+                    if completed_capture_diagnostic and name == 'combinator-completed-retained':
+                        require_completed_capture_refusal(row)
+                    else:
+                        require_result(row, expected, outbound)
+                    retire(client, probe, target, output, name)
+                    result['cases'].append(name)
             delete_all(client, [target['name']])
             stop(client, node)
             result['shutdown'] = stopped_record(node)
@@ -394,9 +414,9 @@ def execute(artifact, native, output, *, completed_capture_diagnostic=False):
             result.update(status='passed', signedExecution='passed', providerExecution='passed')
         write_json(output/'qualification.json', result)
         return result
-    except BaseException:
+    except BaseException as failure:
         result.update(status='failed', stage=stage)
-        write_json(output/'FAILED.json', result)
+        record_failure(output/'FAILED.json', result, failure)
         raise
     finally:
         if completed_capture_diagnostic and node is not None and not refusals_retained:
@@ -521,8 +541,9 @@ def qualify(output, tools, engine, splicer, native=None, native_tuple=None, prep
                 'Abort-streaming-cancellation-timeout-races', 'reaction-timer-memory-limits', 'cross-tenant-reuse']}
         write_json(output/'qualification.json', result)
         return result
-    except BaseException:
-        write_json(output/'FAILED.json', {'status': 'failed', 'stage': stage, 'fullTicketQualification': False})
+    except BaseException as failure:
+        record_failure(output/'FAILED.json', {
+            'status': 'failed', 'stage': stage, 'fullTicketQualification': False}, failure)
         raise
 
 

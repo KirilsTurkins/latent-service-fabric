@@ -27,7 +27,7 @@ impl ResultMaintenanceOwner {
         authorize(None)?;
         clock.validate()?;
         let view = store.snapshot()?;
-        let old = view.get(&MaintenanceProgress::key())?;
+        let old = view.get_bounded(&MaintenanceProgress::key(), super::clock::PROGRESS_BYTES)?;
         let previous = old
             .as_deref()
             .map(MaintenanceProgress::decode)
@@ -39,12 +39,7 @@ impl ResultMaintenanceOwner {
             clock.time.check(p.unix_millis)?;
             p.generation.checked_add(1).ok_or(AtomicError::Limit)
         })?;
-        let mut progress = MaintenanceProgress::anchor(clock, generation);
-        if let Some(previous) = previous {
-            progress.visited = previous.visited;
-            progress.retired = previous.retired;
-            progress.reclaimed_bytes = previous.reclaimed_bytes;
-        }
+        let progress = MaintenanceProgress::reanchor(clock, generation, previous)?;
         let mut batch = AtomicBatch::default();
         replace(
             &mut batch,
@@ -73,7 +68,7 @@ impl ResultMaintenanceOwner {
         let view = store.snapshot()?;
         latent_state::recovery::require_ready(&view)?;
         let old = view
-            .get(&MaintenanceProgress::key())?
+            .get_bounded(&MaintenanceProgress::key(), super::clock::PROGRESS_BYTES)?
             .ok_or(AtomicError::RecoveryRequired)?;
         let mut progress = MaintenanceProgress::decode(&old)?;
         clock.next(&progress)?;
@@ -189,7 +184,8 @@ fn retire_body(
     batch: &mut AtomicBatch,
 ) -> Result<u64, AtomicError> {
     let result_key = result_row_key(record.id, record.attempt);
-    let old = view.get(&result_key)?.ok_or(AtomicError::Corrupt)?;
+    let old =
+        crate::atomic::validation::read_result(view, &result_key)?.ok_or(AtomicError::Corrupt)?;
     if old.starts_with(b"LCE\0") {
         ExpiredResult::decode(&old)?.verify(record)?;
         return Ok(0);

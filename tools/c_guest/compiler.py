@@ -359,6 +359,8 @@ class Compiler:
             threading.selected({'threadingProfile': threading_profile})
         if runtime_profile in standard_facilities.FETCH_PROFILES and not threaded:
             raise ValueError('c-libfetch-http-requires-cooperative-threading')
+        if runtime_profile == standard_facilities.STREAM_PROFILE and not threaded:
+            raise ValueError('c-stream-network-requires-cooperative-threading')
         if threaded and ('c-threading-transformer' not in self.paths or static_libraries):
             raise ValueError('c-threading-requires-transformer-and-no-static-archives')
         if embed_directories and (language_standard != 'c23' or len(embed_directories) > 64):
@@ -383,12 +385,13 @@ class Compiler:
             header_object, header_observed = self.stage_closed_headers(destination)
         if threaded:
             graph = json.loads(self.run('wasm-tools', 'component', 'wit', '--json', str(destination / 'wit')))
-            public = threading.public_export(graph)
+            public = threading.public_export(graph, world)
             runtime = self.sdk / 'runtime'
             sources = [*sources, runtime / 'threads.c', runtime / 'tls-keys.c', runtime / 'template-copy.c']
             include_directories = (*include_directories, runtime)
             timed_clock = runtime_profile in {standard_facilities.PROFILE, standard_facilities.COMBINED_PROFILE,
-                                               standard_facilities.FETCH_STANDARD_PROFILE}
+                                               standard_facilities.FETCH_STANDARD_PROFILE,
+                                               standard_facilities.STREAM_PROFILE}
             if timed_clock:
                 self.select_threading_clock_inputs()
                 time_response = self.threading_time_alias
@@ -407,6 +410,8 @@ class Compiler:
         if use_closed_headers:
             command[command.index('-I'):command.index('-I')] = ['-I', str(self.closed_header_stage.directory)]
             command.insert(command.index(str(sources[0])), str(header_object))
+        if runtime_profile == standard_facilities.STREAM_PROFILE:
+            command.extend(['-include', str(self.sdk / standard_facilities.STREAM_HEADER)])
         if runtime_profile in standard_facilities.FETCH_PROFILES:
             # Zig maps this to wasm-ld -s: omit debug/name metadata, not code.
             command.append('-Wl,--strip-debug')
@@ -441,6 +446,8 @@ class Compiler:
             if use_closed_headers:
                 preprocessor[preprocessor.index('-I'):preprocessor.index('-I')] = [
                     '-I', str(self.closed_header_stage.directory)]
+            if runtime_profile == standard_facilities.STREAM_PROFILE:
+                preprocessor.extend(['-include', str(self.sdk / standard_facilities.STREAM_HEADER)])
             for directory in include_directories:
                 preprocessor.extend(["-I", str(directory)])
             for directory in embed_directories:

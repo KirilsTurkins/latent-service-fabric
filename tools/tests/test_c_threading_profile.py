@@ -13,7 +13,7 @@ from tools.rust_capsule_project import snapshot
 
 
 def graph():
-    return {'worlds': [{'exports': {'interface-0': {'interface': {'id': 0}}}}],
+    return {'worlds': [{'name': 'service', 'package': 0, 'exports': {'interface-0': {'interface': {'id': 0}}}}],
             'interfaces': [{'name': 'api', 'package': 0, 'types': {}, 'functions': {
                 'greet': {'name': 'greet', 'kind': 'async-freestanding',
                           'params': [{'name': 'name', 'type': 'string'}], 'result': 0}}}],
@@ -245,6 +245,23 @@ class CThreadingProfile(unittest.TestCase):
             mutation(changed)
             with self.assertRaisesRegex(ValueError, 'finite-public-contract'):
                 threading.public_export(changed)
+
+    def test_public_export_selects_only_the_requested_world_in_a_dependency_graph(self):
+        original = graph()
+        original['packages'].append({'name': 'latent:network@0.1.0'})
+        original['worlds'].insert(0, {'name': 'contract-probe', 'package': 1, 'exports': {}})
+        expected = 'examples:ordinary/api@1.0.0#greet'
+        self.assertEqual(threading.public_export(original, 'service'), expected)
+        self.assertEqual(threading.public_export(original, 'examples:ordinary/service@1.0.0'), expected)
+        with self.assertRaisesRegex(ValueError, 'finite-public-contract'):
+            threading.public_export(original)
+        with self.assertRaisesRegex(ValueError, 'finite-public-contract'):
+            threading.public_export(original, 'latent:network/service@0.1.0')
+        ambiguous = copy.deepcopy(original)
+        ambiguous['worlds'].append({'name': 'service', 'package': 1, 'exports': {}})
+        with self.assertRaisesRegex(ValueError, 'finite-public-contract'):
+            threading.public_export(ambiguous, 'service')
+        self.assertEqual(threading.public_export(ambiguous, 'examples:ordinary/service@1.0.0'), expected)
 
     def test_sync_core_binding_selection_is_explicit_and_default_arguments_remain_unchanged(self):
         from tools.c_guest.bindings import generate

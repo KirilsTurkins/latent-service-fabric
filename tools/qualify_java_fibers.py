@@ -846,7 +846,7 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
         '-cp', classpath, '-d', output, *sources)
     actual = compiler.run('timer-sleep-admission-source-control', 'java', '-Xmx256m', '-cp',
         str(output) + os.pathsep + classpath, 'TimerSleepAdmissionSourceControl').strip()
-    if actual != 'TIMER_SLEEP_ADMISSION_SOURCE PASS typed-refusal;wait-return;same-work-retry;raw-hook-finally':
+    if actual != 'TIMER_SLEEP_ADMISSION_SOURCE PASS zero-raw-frame;zero-interrupt;typed-refusal;wait-return;same-work-retry;raw-hook-finally':
         raise ValueError('Java timer sleep admission source control did not complete')
     if inputs != {name: digest(read_file(sdk / name)) for name in inputs}:
         raise ValueError('Java timer sleep admission source inputs changed')

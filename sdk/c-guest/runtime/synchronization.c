@@ -675,6 +675,10 @@ static void sync_clear_fd_sets(fd_set *readfds,fd_set *writefds,fd_set *errorfds
     if (writefds) FD_ZERO(writefds);
     if (errorfds) FD_ZERO(errorfds);
 }
+#if defined(LSF_C_STREAM_NETWORK) && LSF_C_STREAM_NETWORK
+int __lsf_c_net_select(int,fd_set *,fd_set *,fd_set *,const struct timeval *);
+int __lsf_c_net_pselect(int,fd_set *,fd_set *,fd_set *,const struct timespec *);
+#endif
 int __lsf_c_select(int nfds,fd_set *restrict readfds,fd_set *restrict writefds,
                    fd_set *restrict errorfds,struct timeval *restrict timeout) {
     if (timeout && sync_select_timer_only(nfds,readfds,writefds,errorfds)) {
@@ -685,7 +689,11 @@ int __lsf_c_select(int nfds,fd_set *restrict readfds,fd_set *restrict writefds,
         if (!error) sync_clear_fd_sets(readfds,writefds,errorfds);
         errno=error?error:saved;return error?-1:0;
     }
+#if defined(LSF_C_STREAM_NETWORK) && LSF_C_STREAM_NETWORK
+    return __lsf_c_net_select(nfds,readfds,writefds,errorfds,timeout);
+#else
     return sync_original_select(nfds,readfds,writefds,errorfds,timeout);
+#endif
 }
 int __lsf_c_pselect(int nfds,fd_set *restrict readfds,fd_set *restrict writefds,
                     fd_set *restrict errorfds,const struct timespec *restrict timeout,
@@ -698,7 +706,11 @@ int __lsf_c_pselect(int nfds,fd_set *restrict readfds,fd_set *restrict writefds,
         if (!error) sync_clear_fd_sets(readfds,writefds,errorfds);
         errno=error?error:saved;return error?-1:0;
     }
+#if defined(LSF_C_STREAM_NETWORK) && LSF_C_STREAM_NETWORK
+    return __lsf_c_net_pselect(nfds,readfds,writefds,errorfds,timeout);
+#else
     return sync_original_pselect(nfds,readfds,writefds,errorfds,timeout,sigmask);
+#endif
 }
 
 /* The pinned libc's select(0, ...) and poll without descriptors request one
