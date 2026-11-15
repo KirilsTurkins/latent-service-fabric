@@ -1,0 +1,38 @@
+name: PR 1794 historical source inputs
+on:
+  push:
+    branches: [ci/pr1794-conflict-repair-20261115]
+    paths: [.github/workflows/pr1794-historical-inputs.yml]
+permissions:
+  contents: read
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          persist-credentials: false
+          ref: a68552d98c24a914ec36b29bf941c0d42339272a
+      - name: Retain only authentic commit objects and the selected source path
+        shell: bash
+        run: |
+          set -euo pipefail
+          revisions='955da9c7465b88541e39b043203abb92782ae26a fb79a7ab6ea86f53baec78ee341aca075c14a2ef'
+          git fetch --no-tags --depth=1 origin $revisions
+          out="$RUNNER_TEMP/pr1794-history"
+          mkdir "$out"
+          for rev in $revisions; do
+            printf '%s\n' "$rev" >> "$out/shallow"
+            git rev-parse "$rev" "$rev^{tree}" "$rev:sdk" "$rev:sdk/go-guest" "$rev:sdk/go-guest/runtime" "$rev:sdk/go-guest/runtime/net_stream.go.in" >> "$out/objects.txt"
+          done
+          sort -u "$out/objects.txt" -o "$out/objects.txt"
+          git pack-objects --stdout < "$out/objects.txt" > "$out/inputs.pack"
+          test "$(stat --format=%s "$out/inputs.pack")" -le 1048576
+          (cd "$out" && sha256sum inputs.pack shallow objects.txt > SHA256SUMS)
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr1794-historical-source-inputs
+          path: ${{ runner.temp }}/pr1794-history/
+          if-no-files-found: error
+          retention-days: 2
