@@ -188,6 +188,7 @@ impl ProviderRuntime {
         deployments: &Arc<DirectoryDeploymentRepository>,
         policies: Arc<PolicyStore>,
         services: ProviderServices,
+        mut state_bootstrap: Option<&mut crate::standalone::state::StateBootstrap>,
     ) -> Result<Self, PlatformError> {
         let empty;
         let config = if let Some(config) = &settings.providers {
@@ -384,13 +385,40 @@ impl ProviderRuntime {
                         let root = root.clone();
                         let namespace = blob.namespace.clone();
                         owner.pools.control_blocking(move || {
-                            LocalBlobStore::open(&root, &namespace, LocalBlobLimits::default())
+                            LocalBlobStore::open_with_checkpoint(
+                                &root,
+                                &namespace,
+                                LocalBlobLimits::default(),
+                                &|| {
+                                    if Instant::now() >= deadline {
+                                        Err(latent_blobs::local::LocalBlobError::DeadlineExceeded)
+                                    } else {
+                                        Ok(())
+                                    }
+                                },
+                            )
                         })
                     },
                     deadline,
                 )
                 .await?;
                 let store = job.wait().await?.map_err(|_| unavailable())?;
+                let store = if let Some(bootstrap) = state_bootstrap.as_deref_mut() {
+                    bootstrap
+                        .open_store_with_local_payloads(
+                            settings.state.as_ref().ok_or_else(unavailable)?,
+                            store,
+                            blob.identity.clone(),
+                            root.clone(),
+                            blob.durable_retention,
+                        )
+                        .await?
+                } else {
+                    if blob.durable_retention {
+                        return Err(unavailable());
+                    }
+                    store
+                };
                 let provider = LocalBlobProvider::install(
                     owner.pools.clone(),
                     &blob.identity.id,

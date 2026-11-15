@@ -180,22 +180,43 @@ class WaitFrameModelIntegrity(unittest.TestCase):
                 fibers.wait_frame_model_control(compiler, root / "model")
             self.assertEqual(compiler.run.call_count, 2)
 
+    @staticmethod
+    def frame_receipts():
+        """Successful independent model/source receipts, before settlement runs."""
+        return [
+            "",
+            (
+                "WAIT_FRAME_MODEL_CONTROL PASS original-native-negative;real-native-callback-pairs;"
+                "resumed-java-frame-owners;throws-and-standard-owners;actual-platform-order;"
+                "async-lowered-owned-pairs;platform-first-negative;shape-and-repeat-negatives;"
+                "application-identity;coroutine-wrappers=6;coroutine-monitors=2;coroutine-native-pairs=2;"
+                "entry-layout-negative\n"
+            ),
+            (
+                "QUEUE_DEADLINE_MODEL_CONTROL PASS actual-locked-queue;first-sample-delays;"
+                "second-sample-comparison;owned-clock-hooks=2;negative-shapes=4\n"
+            ),
+            (
+                "QUEUE_HEAP_CONTROL PASS actual-original-regression;actual-corrected-order;up;down;ties;"
+                "root;single-child;signed-min;last;singleton;empty;missing;repeat;model;preimage-negative;"
+                "repeat-negative;donor-body-negative;donor-layout-negative;donor-node-negative\n"
+            ),
+            "",
+            (
+                "TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;"
+                "first-clock-latch;stable-ties;fired-and-closing-exclusion;confirmed-stop;"
+                "cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;"
+                "uncertain-queued-owner-fence;timer-stop-uncertain-completion-fence;nested-stop-count-guard;"
+                "timer-finally-return-fence;timer-teardown-admission-fence\n"
+            ),
+            "TIMER_CLAIM_IR PASS selected-loop-positive;ownership-helpers-no-checkpoint-or-split-kind;not-guest\n",
+        ]
+
     def test_model_receipt_requires_both_actual_standard_api_pairs_and_closed_shape_negatives(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             compiler, _, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
-            compiler.run.side_effect = ["", ("WAIT_FRAME_MODEL_CONTROL PASS original-native-negative;"
-                "real-native-callback-pairs;resumed-java-frame-owners;throws-and-standard-owners;"
-                "actual-platform-order;async-lowered-owned-pairs;platform-first-negative;"
-                "shape-and-repeat-negatives;application-identity;"
-                "coroutine-wrappers=6;coroutine-monitors=2;coroutine-native-pairs=2;entry-layout-negative\n"),
-                ("QUEUE_DEADLINE_MODEL_CONTROL PASS actual-locked-queue;first-sample-delays;"
-                 "second-sample-comparison;owned-clock-hooks=2;negative-shapes=4\n"),
-                ("QUEUE_HEAP_CONTROL PASS actual-original-regression;actual-corrected-order;"
-                 "up;down;ties;root;single-child;signed-min;last;singleton;empty;missing;repeat;model;preimage-negative;repeat-negative;donor-body-negative;donor-layout-negative;donor-node-negative\n"), "",
-                ("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;"
-                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence;timer-stop-uncertain-completion-fence;nested-stop-count-guard;timer-finally-return-fence;timer-teardown-admission-fence\n"),
-                "TIMER_CLAIM_IR PASS selected-loop-positive;four-helpers-no-checkpoint-or-split-kind;not-guest\n"] + [
+            compiler.run.side_effect = self.frame_receipts() + [
                 f"EXECUTOR_ACTIVATION_SETTLEMENT PASS {kind} {mode}" for kind in ("managed", "scheduled")
                 for mode in fibers.EXECUTOR_ACTIVATION_SETTLEMENT_CASES]
             with (patch.object(fibers, "timer_teardown_source_control") as teardown_control,
@@ -241,6 +262,27 @@ class WaitFrameModelIntegrity(unittest.TestCase):
             self.assertEqual(heap_call.args[-1], "dev.latent.guest.runtime.compiler.QueueHeapControl")
             self.assertEqual(timer_compile.args[:3], ("timer-readiness-source-compile", "javac", "-proc:none"))
             self.assertEqual(timer_call.args[-1], "TimerReadinessSourceControl")
+
+    def test_timer_claim_ir_rejects_obsolete_or_incomplete_ownership_receipts(self):
+        current = self.frame_receipts()[-1]
+        for invalid in (
+                current.replace("ownership-helpers", "four-helpers"),
+                "TIMER_CLAIM_IR PASS selected-loop-positive;not-guest\n",
+                current + current,
+                ""):
+            with self.subTest(receipt=invalid), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                compiler, _, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+                compiler.run.side_effect = self.frame_receipts()[:-1] + [invalid]
+                with (patch.object(fibers, "timer_teardown_source_control") as teardown_control,
+                      patch.object(fibers, "timer_post_ack_source_control") as post_ack_control,
+                      patch.object(fibers, "timer_start_admission_source_control") as start_control):
+                    with self.assertRaisesRegex(ValueError, "Java timer claim IR control did not complete"):
+                        fibers.wait_frame_model_control(compiler, root / "model")
+                self.assertEqual(compiler.run.call_count, 7)
+                teardown_control.assert_not_called()
+                post_ack_control.assert_not_called()
+                start_control.assert_not_called()
 
     def test_teardown_projection_rejects_source_drift(self):
         activation = Path(__file__).resolve().parents[1] / "fibers/dev/latent/guest/runtime/Activation.java"

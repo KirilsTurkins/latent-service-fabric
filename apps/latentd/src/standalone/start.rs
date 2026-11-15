@@ -79,6 +79,7 @@ impl Catalogs {
                 .state
                 .as_ref()
                 .is_none_or(|settings| !state.matches(settings))
+                || !state.matches_local_payload(settings)
                 || !self
                     .artifacts
                     .lifecycle_authority()
@@ -253,7 +254,7 @@ impl Catalogs {
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, PlatformError> {
         let profile = platform(Stage::Configuration, settings.check_config())?;
-        let state = platform(
+        let mut state = platform(
             Stage::NativeCapacity,
             super::state::StateBootstrap::new(settings, &clock),
         )?;
@@ -450,6 +451,7 @@ impl Catalogs {
                             control: runtime.ok_or_else(mode_error)?.clone(),
                             telemetry: telemetry.as_ref().map(|owner| owner.handle.clone()),
                         },
+                        state.as_mut(),
                     )
                     .await
                     .inspect_err(|error| record_platform(Stage::ProviderCatalog, error))?,

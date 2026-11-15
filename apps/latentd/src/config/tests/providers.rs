@@ -26,12 +26,23 @@ fn phase4_provider_configuration_keeps_protected_files_audit_policy_and_state_ow
     let mut value = document();
     value["budgetProfile"] = json!({"mode":"phase4","maximumStateReadBytes":4096,"maximumStateWriteBytes":2048,"maximumEffectCount":1});
     value["state"] = super::super::state::tests::input();
+    value["providers"]["blob"]["durableRetention"] = json!(true);
     value["supplyChain"] =
         json!({"mode":"enforced","policyFile":"policy.json","clockLeaseSeconds":5});
     std::fs::write(&path, serde_json::to_vec(&value).unwrap()).unwrap();
     std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
     let config = super::NodeConfig::load(&path).unwrap();
     assert!(super::super::providers::derive(&config).unwrap().is_some());
+    assert!(
+        config
+            .providers
+            .as_ref()
+            .unwrap()
+            .blob
+            .as_ref()
+            .unwrap()
+            .durable_retention
+    );
     assert!(super::super::state::derive_optional(&config)
         .unwrap()
         .is_some());
@@ -39,6 +50,10 @@ fn phase4_provider_configuration_keeps_protected_files_audit_policy_and_state_ow
         &super::input::decode(&serde_json::to_vec(&value).unwrap()).unwrap()
     )
     .is_err());
+    let mut without_state = value.clone();
+    without_state.as_object_mut().unwrap().remove("state");
+    std::fs::write(&path, serde_json::to_vec(&without_state).unwrap()).unwrap();
+    assert!(super::super::providers::derive(&super::NodeConfig::load(&path).unwrap()).is_err());
     for field in ["audit", "capabilityPolicies"] {
         let mut missing = value.clone();
         missing.as_object_mut().unwrap().remove(field);

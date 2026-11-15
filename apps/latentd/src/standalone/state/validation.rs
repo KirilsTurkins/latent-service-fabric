@@ -70,7 +70,7 @@ pub(super) fn validate_inventory(
     quotas: &[TenantQuota],
     original: &NativeReservation,
 ) -> Result<Option<latent_state::store_identity::InboxCustodyWatermark>, StoreError> {
-    validate_inventory_inner(view, identity, quotas, original, None)
+    validate_inventory_inner(view, identity, quotas, original, None, &RejectPayloads)
 }
 
 /// Describes a single addition only after the same complete producer and quota
@@ -90,6 +90,7 @@ pub(super) fn validate_inventory_addition(
         quotas,
         original,
         Some((source, expected_before)),
+        &RejectPayloads,
     )?
     .ok_or(StoreError::Conflict)
 }
@@ -103,6 +104,7 @@ fn validate_inventory_inner(
         &latent_state::inbox_scope::InboxScope,
         Option<latent_state::store_identity::InboxCustodyWatermark>,
     )>,
+    payloads: &dyn PayloadVerifier,
 ) -> Result<Option<latent_state::store_identity::InboxCustodyWatermark>, StoreError> {
     live(original)?;
     if !quotas.is_empty() {
@@ -145,7 +147,7 @@ fn validate_inventory_inner(
         foreign_row,
         |view, key, bytes| {
             live(original)?;
-            reject_unverified_payload(key, bytes)?;
+            payloads.verify(view, key, bytes)?;
             census.observe(key, bytes, contribution(view, key, bytes)?)
         },
         || live(original),
@@ -155,6 +157,80 @@ fn validate_inventory_inner(
     DispatchCatalog::validate_view_with_checkpoint(view, &mut || live(original))?;
     finish_validation(view, original)?;
     Ok(report.inbox_custody)
+}
+
+#[cfg(target_os = "linux")]
+pub(super) fn validate_with_local_payloads(
+    view: &ReadView,
+    identity: &StoreIdentity,
+    quotas: &[TenantQuota],
+    original: &NativeReservation,
+    payloads: &LocalPayloadVerifier<'_>,
+) -> Result<(), StoreError> {
+    validate_inventory_with_local_payloads(view, identity, quotas, original, payloads).map(|_| ())
+}
+
+trait PayloadVerifier {
+    fn verify(&self, view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError>;
+}
+
+struct RejectPayloads;
+impl PayloadVerifier for RejectPayloads {
+    fn verify(&self, _: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+        reject_unverified_payload(key, bytes)
+    }
+}
+
+/// The actual provider owner is already bound to this engine view. Logical
+/// closure is validated separately by the surrounding closed startup walk.
+#[cfg(target_os = "linux")]
+pub(super) struct LocalPayloadVerifier<'a> {
+    pub store: &'a latent_blobs::local::LocalBlobStore,
+    pub provider: &'a crate::config::ProviderIdentity,
+    pub original: &'a NativeReservation,
+}
+
+#[cfg(target_os = "linux")]
+impl PayloadVerifier for LocalPayloadVerifier<'_> {
+    fn verify(&self, view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+        use latent_blobs::local::LocalBlobError;
+        if !latent_state::payload_references::owns_row(key) {
+            return Ok(());
+        }
+        let Some(reference) = latent_state::payload_references::owner_reference(key, bytes)? else {
+            return Ok(());
+        };
+        if reference.payload.tenant != self.provider.tenant
+            || reference.payload.provider != self.provider.id
+            || reference.payload.provider_epoch != self.provider.epoch
+        {
+            return Err(StoreError::UnsupportedFormat);
+        }
+        let checkpoint = || live(self.original).map_err(|_| LocalBlobError::DeadlineExceeded);
+        self.store
+            .verify_required_reference(view, key, bytes, &checkpoint)
+            .map_err(|error| match error {
+                LocalBlobError::Corrupt | LocalBlobError::NotFound | LocalBlobError::Invalid => {
+                    StoreError::Corrupt
+                }
+                LocalBlobError::PermissionDenied => StoreError::UnsupportedFormat,
+                LocalBlobError::Capacity => StoreError::Capacity,
+                _ => StoreError::Unavailable,
+            })?;
+        live(self.original)
+    }
+}
+
+/// Return an inbox watermark only after the same physical payload checks.
+#[cfg(target_os = "linux")]
+pub(super) fn validate_inventory_with_local_payloads(
+    view: &ReadView,
+    identity: &StoreIdentity,
+    quotas: &[TenantQuota],
+    original: &NativeReservation,
+    payloads: &LocalPayloadVerifier<'_>,
+) -> Result<Option<latent_state::store_identity::InboxCustodyWatermark>, StoreError> {
+    validate_inventory_inner(view, identity, quotas, original, None, payloads)
 }
 
 fn validate_global_bootstrap(
@@ -209,8 +285,8 @@ fn finish_validation(view: &ReadView, original: &NativeReservation) -> Result<()
     Ok(())
 }
 
-// Standalone has not yet installed the same-root physical blob inventory at
-// startup. Logical closure alone cannot prove that required bytes exist.
+// Without an admitted same-root physical provider, logical closure alone
+// cannot prove that required payload bytes exist.
 fn reject_unverified_payload(key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
     if latent_state::payload_references::owns_row(key)
         && latent_state::payload_references::owner_reference(key, bytes)?.is_some()
