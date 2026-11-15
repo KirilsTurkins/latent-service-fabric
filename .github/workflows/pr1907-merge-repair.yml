@@ -5,6 +5,7 @@ on:
     paths: [.github/workflows/pr1907-merge-repair.yml]
 permissions:
   contents: write
+  actions: read
 concurrency:
   group: pr1907-merge-repair
   cancel-in-progress: false
@@ -21,24 +22,86 @@ jobs:
       - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
         with:
           python-version: 3.13.5
-      - name: Reconstruct only the exact already-tested tree
+      - name: Materialize the exact hash-verified validation result
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          git config user.name 'LSF CI repair'
+          git config user.email 'ci-repair@users.noreply.github.com'
+          git fetch --no-tags --depth=100 origin 14738dc3de79881c549d8371e9933c08a92fda27
           git fetch --no-tags --depth=1 origin fba2868e544ef50fd70c77fa54573d2eb9d3726b
-          test "$(git rev-parse fba2868e544ef50fd70c77fa54573d2eb9d3726b:.github/workflows/pr1907-merge-repair.yml)" = 514fd9491d9fe52458ce198b427be12c3c83619b
           git show fba2868e544ef50fd70c77fa54573d2eb9d3726b:.github/workflows/pr1907-merge-repair.yml > "$RUNNER_TEMP/pr1907-reviewed-recipe.yml"
+          test "$(git rev-parse fba2868e544ef50fd70c77fa54573d2eb9d3726b:.github/workflows/pr1907-merge-repair.yml)" = 514fd9491d9fe52458ce198b427be12c3c83619b
           python3 -m pip install --only-binary=:all: --no-deps --require-hashes --requirement .github/security/requirements.txt
           python3 - <<'PY'
-          import os, pathlib, subprocess, yaml
+          import hashlib, json, os, pathlib, re, subprocess, yaml
+          dev = '14738dc3de79881c549d8371e9933c08a92fda27'
+          target = '60e1d35fbf1e816672a8fa397db5bd5bc4dabad0'
+          def git(*args, data=None):
+              return subprocess.check_output(['git', *args], input=data)
           recipe = yaml.safe_load((pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1907-reviewed-recipe.yml').read_text())
-          for name in ('Merge the exact reviewed heads and reconcile all nine conflicts',
-                       'Repair the independently reproduced development toolchain blocker'):
+          for name in ('Merge the exact reviewed heads and reconcile all nine conflicts', 'Repair the independently reproduced development toolchain blocker'):
               selected = [step for step in recipe['jobs']['reconcile']['steps'] if step.get('name') == name]
               assert len(selected) == 1
               subprocess.run(['bash', '-e', '-o', 'pipefail', '-c', selected[0]['run']], check=True)
-          tree = subprocess.check_output(['git', 'write-tree'], text=True).strip()
-          assert tree == '60e1d35fbf1e816672a8fa397db5bd5bc4dabad0', tree
-          print('EXACT_PREVIOUSLY_VALIDATED_TREE=' + tree)
+          reconstructed = git('write-tree').decode().strip()
+          raw = subprocess.check_output(['gh', 'api', 'repos/KirilsTurkins/latent-service-fabric/actions/jobs/132770528730/logs']).decode('utf-8-sig')
+          lines = [re.sub(r'^\d{4}-\d{2}-\d{2}T\S+Z ', '', line) for line in raw.splitlines()]
+          def single(prefix):
+              found = [line[len(prefix):] for line in lines if line.startswith(prefix)]
+              assert len(found) == 1, (prefix, len(found))
+              return found[0]
+          assert single('VALIDATED_CANDIDATE_TREE=') == target
+          assert single('VALIDATED_BASE_TREE=') == git('rev-parse', dev + '^{tree}').decode().strip()
+          changes = json.loads(single('VALIDATED_TREE_ELEMENTS='))
+          fresh = json.loads(single('VALIDATED_NEW_BLOBS='))
+          expected = {
+              '.github/workflows/developer-tools.yml': '9dd2c29aef2b040b01b2117831578bfeee0cbfac',
+              'crates/latent-component-threading/src/admission.rs': 'a9b15cae30f0c3e2d7829e223e185724a71d8d3a',
+              'crates/latent-component-threading/src/admission/names.rs': '2a3fab89fc3279167619fb7e9a607f9bda79332e',
+              'sdk/rust-standard-runtime/stack-transform/Cargo.lock': '7fadd9900ded04c921e0abf8d4ba6dbcd5b9db75',
+              'tools/c_guest/threading.py': '2bfaee826c07cfb8c0745c9d7f6c449b2ce1c682',
+              'tools/ci/contracts/workflows/developer-tools.yml/jobs/linux-portable.json': 'ee068cbef8b6d429bf2f4b64a75a590c14ceb11e0',
+              'tools/go_network_deadline_reference.py': '21d15f3a2253544784300aaee70e44f148d61d32',
+              'tools/tests/test_c_thread_minimal.py': 'f1c0b7a1d448dfa5db26d55565a8c0fee8483543',
+              'tools/tests/test_go_write_progress.py': '9f6526ee8f7cd9c9b50d12b09bb42c7cee9b788b',
+              'tools/tests/test_live_security_gate.py': '274908d854aa727879e206742fa43bb762df2345',
+          }
+          assert {row['path']: row['sha'] for row in fresh} == expected
+          recovered = set()
+          for i, line in enumerate(lines):
+              if not line.startswith('CONNECTOR_BLOB_BEGIN='):
+                  continue
+              row = json.loads(line.split('=', 1)[1])
+              assert expected[row['path']] == row['sha']
+              end = i + 1
+              while end < len(lines) and lines[end] != 'CONNECTOR_BLOB_END=' + row['sha']:
+                  end += 1
+              assert end < len(lines)
+              content = '\n'.join(lines[i + 1:end]).encode()
+              digest = hashlib.sha1(b'blob ' + str(len(content)).encode() + b'\0' + content).hexdigest()
+              assert digest == row['sha'], (row['path'], digest, row['sha'])
+              assert git('hash-object', '-w', '--stdin', data=content).decode().strip() == digest
+              recovered.add(row['path'])
+          assert recovered == set(expected)
+          git('read-tree', dev)
+          records = []
+          for row in changes:
+              path = row['path']
+              assert row['mode'] == '100644' and row['type'] == 'blob'
+              assert '\n' not in path and '\t' not in path and '\0' not in path and '..' not in path.split('/')
+              assert re.fullmatch(r'[0-9a-f]{40}', row['sha'])
+              git('cat-file', '-e', row['sha'])
+              records.append(row['mode'] + ' ' + row['sha'] + '\t' + path + '\n')
+          git('update-index', '--index-info', data=''.join(records).encode())
+          assert git('write-tree').decode().strip() == target
+          print('EXACT_VALIDATED_TREE_RECOVERED=' + target, flush=True)
+          print('DIFFERENCE_FROM_RECONSTRUCTION:', flush=True)
+          subprocess.run(['git', 'diff', '--stat', reconstructed, target], check=True)
+          diff = git('diff', '--no-ext-diff', '--unified=3', reconstructed, target).decode()
+          assert len(diff) <= 50000, 'unexpectedly large validation-tree delta'
+          print(diff, flush=True)
           PY
       - name: Transfer immutable objects as inert source data on a new isolated branch
         env:
@@ -51,13 +114,12 @@ jobs:
           ref = 'refs/heads/ci/pr1907-validated-object-transfer-20261115'
           assert subprocess.check_output(['git', 'write-tree'], text=True).strip() == candidate
           probe = subprocess.run(['git', 'ls-remote', '--exit-code', '--heads', 'origin', ref], capture_output=True, text=True)
-          assert probe.returncode == 2, 'Ref already exists or remote lookup failed; refusing overwrite'
+          assert probe.returncode == 2, 'Ref already exists or lookup failed; refusing overwrite'
           entries = subprocess.check_output(['git', 'ls-tree', '-z', dev])
           assert b'\t.ci-repair-objects-pr1907\0' not in entries
           entries += ('040000 tree ' + candidate + '\t.ci-repair-objects-pr1907\0').encode()
           transport_tree = subprocess.check_output(['git', 'mktree', '-z'], input=entries).decode().strip()
-          commit = subprocess.check_output(['git', 'commit-tree', transport_tree, '-p', dev],
-              input=b'ci: temporary immutable PR1907 source object transfer\n\nOnly inert nested source data; active workflows and PR branch remain unchanged.\nThe nested root matches the tree validated in run 43700556386.\n').decode().strip()
+          commit = subprocess.check_output(['git', 'commit-tree', transport_tree, '-p', dev], input=b'ci: temporary immutable PR1907 source object transfer\n\nOnly inert nested source data; active workflows and PR branch remain unchanged.\nThe nested root matches the tree validated in run 43700556386.\n').decode().strip()
           env = os.environ.copy()
           env['GIT_CONFIG_COUNT'] = '1'
           env['GIT_CONFIG_KEY_0'] = 'http.https://github.com/.extraheader'
