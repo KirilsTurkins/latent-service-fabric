@@ -37,7 +37,7 @@ jobs:
           set -e
           test "$status" = 1
           python3 "$RUNNER_TEMP/reconcile.py"
-          git fetch --no-tags --depth=1 origin 955da9c7465b88541e39b043203abb92782ae26a
+          git fetch --no-tags --depth=1 origin 955da9c7465b88541e39b043203abb92782ae26a fb79a7ab6ea86f53baec78ee341aca075c14a2ef
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
         with:
           components: clippy,rustfmt
@@ -51,14 +51,33 @@ jobs:
           key: ubuntu-24.04
           save-if: false
           cache-bin: false
+      - name: Preserve bounded public Java resolver diagnostics
+        run: |
+          set -euo pipefail
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 - <<'PY'
+          from pathlib import Path
+          from tools import ci_contracts
+          root = Path.cwd()
+          workflow = '.github/workflows/java-guest-feasibility.yml'
+          path = root / workflow
+          source = path.read_text()
+          needle = '            ${{ runner.temp }}/java-published-http/FAILED.json\n'
+          assert source.count(needle) == 1
+          source = source.replace(needle, needle + '            ${{ runner.temp }}/java-published-http/commands/logs/*.txt\n')
+          path.write_text(source)
+          proposal = ci_contracts.propose(root, 'job', workflow, 'compiler-component', root / 'target/ci/proposals/pr1907-java',
+              'Retain the bounded published-client resolver logs on failure; all execution steps, pins, deadlines and required commands are unchanged.')
+          target = root / 'tools/ci/contracts/workflows/java-guest-feasibility.yml/jobs/compiler-component.json'
+          target.write_bytes(proposal.read_bytes())
+          PY
       - name: Format the combined startup and exercise source regressions
         run: |
           set -euo pipefail
           cargo fmt --package latentd
           git add -u
           git diff --cached --check
-          python3 -m pip install --requirement tools/requirements.lock
-          python3 -m unittest tools.tests.test_go_write_progress tools.tests.test_go_deadline_provider_contract tools.tests.test_node_providers_schema tools.tests.test_qualify_local_payload_recovery tools.tests.test_java_owner_admission tools.tests.test_dotnet_exact_composition -v
+          python3 -m unittest tools.tests.test_go_write_progress tools.tests.test_go_deadline_provider_contract tools.tests.test_node_providers_schema tools.tests.test_qualify_local_payload_recovery tools.tests.test_java_owner_admission tools.tests.test_dotnet_exact_composition tools.tests.test_java_published_http tools.tests.test_java_published_replay -v
           python3 - <<'PY'
           from tools.dev_workflow.composition_contract import changed_matrix_sources
           assert not changed_matrix_sources(), changed_matrix_sources()
@@ -91,8 +110,7 @@ jobs:
               fields, name = row.split('\t',1)
               old_mode, mode, old, sha, status = fields.split()
               assert status in ('A','M','D')
-              entry = {'path':name, 'mode':mode, 'sha':sha, 'old':old, 'status':status}
-              rows.append(entry)
+              rows.append({'path':name, 'mode':mode, 'sha':sha, 'old':old, 'status':status})
               if status != 'D':
                   path = output/'files'/name
                   path.parent.mkdir(parents=True, exist_ok=True)
