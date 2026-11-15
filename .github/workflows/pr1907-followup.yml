@@ -5,10 +5,11 @@ on:
     paths: [.github/workflows/pr1907-followup.yml]
 permissions:
   contents: read
+  actions: read
 jobs:
-  operator-capacity:
+  operator-repetitions:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 20
     env:
       CARGO_BUILD_JOBS: 2
       CARGO_INCREMENTAL: 0
@@ -24,63 +25,63 @@ jobs:
           ref: b5e25076abc98c6a57f7078bdc335a5e916c5851
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
-      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+      - uses: KirilsTurkins/lsf-setup-python@e0788870abf74690a1d3f187ba206c395748aee
         with:
           python-version: 3.13.5
-      - uses: KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334
-        with:
-          prefix-key: lsf-ci-dependencies-v2
-          shared-key: host-correctness
-          key: ubuntu-24.04
-          save-if: false
-          cache-bin: false
-      - name: Add diagnostic-only fixed capacity-site labels
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          count = 0
-          for path in Path('crates').rglob('*.rs'):
-              source = path.read_text()
-              changed, hits = re.subn(r'(fn capacity\(\)[^{\n]*\{\n)', r'\1    eprintln!("LSF-CAPACITY-SITE:{}", module_path!());\n', source)
-              if hits:
-                  path.write_text(changed)
-                  count += hits
-          print('DIAGNOSTIC_SITES=' + str(count))
-          path = Path('tools/phase2_operator_process.py')
-          source = path.read_text()
-          needle = '        except WorkflowError:\n'
-          assert source.count(needle) == 1
-          source = source.replace(needle, needle + '''            if self.node:
-                          for line in bytes(self.node.buffers[1]).splitlines():
-                              if re.fullmatch(rb'LSF-CAPACITY-SITE:[A-Za-z0-9_:]{1,200}', line):
-                                  print(line.decode(), flush=True)
-                      message = (value or {}).get('error', {}).get('message', '')
-                      if isinstance(message, str) and re.fullmatch(r'[a-z-]{1,100}', message):
-                          print('PUBLIC_FAILURE_TOKEN=' + message, flush=True)
-          ''')
-          path.write_text(source)
-          PY
-      - name: Build the actual CLI node and fixture owner
-        run: |
-          cargo build -p latent -p latentd --all-features --locked
-          LSF_OPERATOR_FIXTURE_ROOT="$RUNNER_TEMP/operator-inputs" cargo test -p latent-policy --lib --all-features --locked supply_chain::tests::support::operator_fixture::export_operator_workflow_fixture -- --exact --ignored --nocapture
-      - name: Fetch the unchanged maintained registry fixture
-        run: docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395
-      - name: Run the unchanged bounded operator sequence
+      - name: Retrieve exact diagnostic executables as bounded data
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          python3 tools/run_phase2_operator_workflow.py --cli "$PWD/target/debug/latent" --node "$PWD/target/debug/latentd" --fixture-root "$RUNNER_TEMP/operator-inputs" --source-commit b5e25076abc98c6a57f7078bdc335a5e916c5851 2>&1 | tee "$RUNNER_TEMP/operator-capacity.log"
-      - name: Retain only bounded diagnostic executables for follow-up reproduction
-        if: always()
+          timeout 180s gh api --allow-escape-sequences repos/KirilsTurkins/latent-service-fabric/actions/artifacts/14165435194/zip > "$RUNNER_TEMP/diagnostic.zip"
+          unset GH_TOKEN
+          echo "fde2c4db0a39f844070862353e888f0b41275aa3e34e2303afc7158b8868d549  $RUNNER_TEMP/diagnostic.zip" | sha256sum --check --strict
+          python3 - <<'PY'
+          import io, os, tarfile, zipfile
+          from pathlib import Path
+          allowed = {'target/debug/latent', 'target/debug/latentd', 'tools/phase2_operator_process.py'}
+          with zipfile.ZipFile(Path(os.environ['RUNNER_TEMP'])/'diagnostic.zip') as archive:
+              raw = archive.read('diagnostic-binaries.tar.gz')
+          assert len(raw) <= 400000000
+          with tarfile.open(fileobj=io.BytesIO(raw), mode='r:gz') as archive:
+              members = archive.getmembers()
+              assert len(members) == len(allowed) and {m.name for m in members} == allowed
+              for member in members:
+                  assert member.isfile() and member.size <= 400000000
+                  path = Path(member.name)
+                  path.parent.mkdir(parents=True, exist_ok=True)
+                  path.write_bytes(archive.extractfile(member).read())
+                  path.chmod(0o755 if member.name.startswith('target/') else 0o644)
+          PY
+      - name: Export fresh signed operator fixture with the unchanged source owner
         run: |
-          mkdir -p "$RUNNER_TEMP/pr1907-operator"
-          cp "$RUNNER_TEMP/operator-capacity.log" "$RUNNER_TEMP/pr1907-operator/"
-          tar -czf "$RUNNER_TEMP/pr1907-operator/diagnostic-binaries.tar.gz" target/debug/latent target/debug/latentd tools/phase2_operator_process.py
-          test "$(stat -c %s "$RUNNER_TEMP/pr1907-operator/diagnostic-binaries.tar.gz")" -le 400000000
+          LSF_OPERATOR_FIXTURE_ROOT="$RUNNER_TEMP/operator-inputs" cargo test -p latent-policy --lib --all-features --locked supply_chain::tests::support::operator_fixture::export_operator_workflow_fixture -- --exact --ignored --nocapture
+          docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395
+      - name: Exercise independent fresh workflows without retrying any mutation
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess, sys
+          root = pathlib.Path.cwd()
+          output = pathlib.Path(os.environ['RUNNER_TEMP'])/'operator-repetitions'
+          output.mkdir()
+          outcomes = []
+          for iteration in range(8):
+              result = subprocess.run([sys.executable, 'tools/run_phase2_operator_workflow.py', '--cli', str(root/'target/debug/latent'), '--node', str(root/'target/debug/latentd'), '--fixture-root', str(output.parent/'operator-inputs'), '--source-commit', 'b5e25076abc98c6a57f7078bdc335a5e916c5851'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=180)
+              assert len(result.stdout) <= 2*1024*1024
+              (output/f'attempt-{iteration}.log').write_bytes(result.stdout)
+              outcomes.append(result.returncode)
+              print('OPERATOR_ATTEMPT=' + str(iteration) + ' EXIT=' + str(result.returncode), flush=True)
+              if result.returncode:
+                  print(result.stdout.decode()[-16000:], flush=True)
+                  break
+          (output/'outcomes.json').write_text(json.dumps(outcomes)+'\n')
+          if any(outcomes):
+              raise SystemExit(1)
+          PY
       - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
         if: always()
         with:
-          name: pr1907-operator-capacity-diagnostics
-          path: ${{ runner.temp }}/pr1907-operator/
+          name: pr1907-operator-repetitions
+          path: ${{ runner.temp }}/operator-repetitions/
           retention-days: 3
+          if-no-files-found: error
