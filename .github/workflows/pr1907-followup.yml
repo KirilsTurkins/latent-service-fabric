@@ -1,0 +1,70 @@
+name: PR 1907 follow-up diagnostics
+on:
+  push:
+    branches: [ci/pr1907-followup-20261115]
+    paths: [.github/workflows/pr1907-followup.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: b5e25076abc98c6a57f7078bdc335a5e916c5851
+          fetch-depth: 4
+          persist-credentials: false
+      - name: Reproduce exact integration without changing a remote ref
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=4 origin 35ab1b776df07f0fa1c1bb64d3699915afffb38b
+          test "$(git merge-base HEAD FETCH_HEAD)" = 14738dc3de79881c549d8371e9933c08a92fda27
+          git config user.name 'PR 1907 diagnostics'
+          git config user.email 'diagnostics@localhost'
+          mkdir "$RUNNER_TEMP/pr1907-followup"
+          set +e
+          git merge --no-commit --no-ff 35ab1b776df07f0fa1c1bb64d3699915afffb38b > "$RUNNER_TEMP/pr1907-followup/merge.log" 2>&1
+          status=$?
+          set -e
+          test "$status" -le 1
+          cat "$RUNNER_TEMP/pr1907-followup/merge.log"
+          git diff --name-only --diff-filter=U | tee "$RUNNER_TEMP/pr1907-followup/conflicts.txt"
+          git diff --cc > "$RUNNER_TEMP/pr1907-followup/conflicts.diff"
+          git ls-files -u > "$RUNNER_TEMP/pr1907-followup/unmerged-index.txt"
+          git diff --cached --binary > "$RUNNER_TEMP/pr1907-followup/auto-merge.patch"
+          tar -czf "$RUNNER_TEMP/pr1907-followup/git-objects.tar.gz" .git/objects .git/shallow
+          sha256sum "$RUNNER_TEMP/pr1907-followup/git-objects.tar.gz"
+      - name: Extract bounded failure context from retained public job logs
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          timeout 90s gh api repos/KirilsTurkins/latent-service-fabric/actions/jobs/132794418021/logs > "$RUNNER_TEMP/pr1907-followup/java.log"
+          timeout 90s gh api repos/KirilsTurkins/latent-service-fabric/actions/jobs/132794454341/logs > "$RUNNER_TEMP/pr1907-followup/publications.log"
+          unset GH_TOKEN
+          python3 - <<'PY'
+          import os, pathlib, re
+          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1907-followup'
+          for name in ('java', 'publications'):
+              raw = (root / (name + '.log')).read_bytes()
+              assert len(raw) <= 32 * 1024 * 1024
+              lines = raw.decode('utf-8-sig').splitlines()
+              matches = [i for i, line in enumerate(lines) if re.search(r'##\[error\]|Traceback|workflow failed|qualification failed|AssertionError|FAILED|Exception:', line, re.I)]
+              indexes = set()
+              for i in matches[-8:]:
+                  indexes.update(range(max(0, i - 12), min(len(lines), i + 8)))
+              text = '\n'.join(lines[i] for i in sorted(indexes))
+              (root / (name + '-failures.txt')).write_text(text + '\n')
+              print('\n=== ' + name + ' ===\n' + text, flush=True)
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        if: always()
+        with:
+          name: pr1907-followup-inspection
+          path: ${{ runner.temp }}/pr1907-followup/
+          retention-days: 3
+          if-no-files-found: error
