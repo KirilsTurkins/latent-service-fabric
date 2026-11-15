@@ -18,6 +18,9 @@ jobs:
           ref: e1c785beb83d5a66216b2443fa253e0275bad2e7
           persist-credentials: false
           fetch-depth: 100
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: 3.13.5
       - name: Reconstruct only the exact already-tested tree
         run: |
           set -euo pipefail
