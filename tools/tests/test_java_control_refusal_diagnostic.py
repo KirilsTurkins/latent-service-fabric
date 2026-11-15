@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 from pathlib import Path
 import tempfile
@@ -254,6 +255,14 @@ class CanaryPromotionLookupTests(unittest.TestCase):
                              {"qualification": False, "status": "matching-committed-promotion"})
 
 
+def audit_observation(**counters):
+    values = {name: "0" for name in (*composition.audit_idle.COUNTERS, *composition.audit_idle.STATES)}
+    values.update(counters)
+    return {"schemaVersion": "latent.cli.result.v1", "command": "capability list",
+        "category": "success", "error": None, "outcomeKnown": True, "requestDispatched": True,
+        "data": {"nextPageToken": None, "nodeUsage": {"scope": "node", "unavailable": [], "counters": values}}}
+
+
 class TriggerAuditSnapshotTests(unittest.TestCase):
     class Client:
         def __init__(self, directory, applied, recovered, *, snapshot_fails=False):
@@ -263,11 +272,14 @@ class TriggerAuditSnapshotTests(unittest.TestCase):
             self.snapshot_fails = snapshot_fails
             self.calls = 0
             self.requests = []
+            self.deadline = time.monotonic() + 30
 
         def call(self, *args, **kwargs):
             self.calls += 1
             self.requests.append((args[:2], kwargs))
             command = args[:2]
+            if command == ("capability", "list"):
+                return audit_observation()
             if command == ("route", "get"):
                 return {"data": {"snapshot": {"services": [{"service": composition.ADAPTER,
                     "routeId": "java-http-adapter", "revisions": [{"revisionId": "revision"}]}]}}}
@@ -300,7 +312,7 @@ class TriggerAuditSnapshotTests(unittest.TestCase):
                 with self.assertRaisesRegex(WorkflowError, "java-http-original-trigger-operation-recovery"):
                     composition.route(client, "localhost:1234", "publication")
                 self.assertEqual([command for command, _ in client.requests], [
-                    ("route", "get"), ("deployment", "get"), ("trigger", "get"),
+                    ("route", "get"), ("deployment", "get"), ("capability", "list"), ("trigger", "get"),
                     ("trigger", "apply"), ("trigger", "operation"), ("node", "get")])
                 self.assertEqual(client.requests[-1][1]["timeout"], 2)
                 self.assertEqual(applied["category"], "platform-failure")
@@ -314,7 +326,7 @@ class TriggerAuditSnapshotTests(unittest.TestCase):
             with self.assertRaisesRegex(WorkflowError, "java-http-original-trigger-operation-recovery"):
                 composition.route(client, "localhost:1234", "publication")
             self.assertEqual(client.requests[-1][0], ("trigger", "operation"))
-            self.assertEqual(len(client.requests), 5)
+            self.assertEqual(len(client.requests), 6)
 
     def test_successful_trigger_pair_does_not_read_node_again(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -326,6 +338,153 @@ class TriggerAuditSnapshotTests(unittest.TestCase):
             self.assertNotIn(("node", "get"), [command for command, _ in client.requests])
             self.assertEqual(sum(command == ("trigger", "apply") for command, _ in client.requests), 2)
             self.assertEqual(sum(command == ("trigger", "operation") for command, _ in client.requests), 2)
+
+
+class TriggerAuditDrainTests(unittest.TestCase):
+    def setUp(self):
+        self.now = 100.
+        self.sleeps = []
+        self.client = SimpleNamespace(deadline=200., call=mock.Mock())
+        self.read = ("capability", "list", "--deployment", "java-http-adapter", "--include-node-usage")
+        self.enterContext(mock.patch.object(composition.time, "monotonic", side_effect=lambda: self.now))
+        self.enterContext(mock.patch.object(composition.time, "sleep", side_effect=self.sleep))
+
+    def sleep(self, delay):
+        self.sleeps.append(delay)
+        self.now += delay
+
+    def wait(self):
+        composition.wait_trigger_audit_idle(self.client, "java-http-adapter")
+
+    def test_each_live_owner_delays_audit_idle_without_mutating(self):
+        for name in composition.audit_idle.COUNTERS:
+            with self.subTest(counter=name):
+                self.client.call.reset_mock()
+                self.client.call.side_effect = [audit_observation(**{name: "1"}), audit_observation()]
+                self.wait()
+                self.assertEqual(self.client.call.call_args_list,
+                                 [mock.call(*self.read, timeout=1), mock.call(*self.read, timeout=1)])
+
+    def test_busy_audit_has_a_finite_read_bound_and_no_mutation(self):
+        self.client.call.return_value = audit_observation(audit_queued_operations="1")
+        with self.assertRaisesRegex(RuntimeError, "audit-drain-observation-limit"):
+            self.wait()
+        self.assertEqual(self.client.call.call_count, composition.audit_idle.MAX_OBSERVATIONS)
+        self.assertTrue(all(call.args == self.read for call in self.client.call.call_args_list))
+        self.assertEqual(len(self.sleeps), composition.audit_idle.MAX_OBSERVATIONS - 1)
+        self.assertLessEqual(self.now, 100 + composition.audit_idle.MAX_SECONDS)
+
+    def test_original_deadline_bounds_reads_and_rejects_late_idle(self):
+        self.client.deadline = self.now
+        with self.assertRaisesRegex(WorkflowError, "audit-drain-deadline"):
+            self.wait()
+        self.client.call.assert_not_called()
+        self.client.deadline = self.now + .02
+        def late(*args, **kwargs):
+            self.assertEqual(args, self.read)
+            self.assertAlmostEqual(kwargs["timeout"], .02)
+            self.now += .03
+            return audit_observation()
+        self.client.call.side_effect = late
+        with self.assertRaisesRegex(WorkflowError, "audit-drain-deadline"):
+            self.wait()
+        self.client.call.assert_called_once()
+
+    def test_five_second_limit_cannot_extend_the_original_wait(self):
+        def slow(*args, **kwargs):
+            self.assertEqual(args, self.read)
+            self.assertLessEqual(kwargs["timeout"], 1)
+            self.now += 1
+            return audit_observation(audit_reserved_records="1")
+        self.client.call.side_effect = slow
+        with self.assertRaisesRegex(WorkflowError, "audit-drain-deadline"):
+            self.wait()
+        self.assertEqual(self.client.call.call_count, 5)
+        self.assertEqual(self.client.deadline, 200.)
+
+    def test_failed_partial_unavailable_and_invalid_observations_fail_closed(self):
+        cases = []
+        for key, value in (("category", "platform-failure"), ("outcomeKnown", False),
+                           ("requestDispatched", False), ("error", {"code": "resource-exhausted"})):
+            row = audit_observation()
+            row[key] = value
+            cases.append(row)
+        for mutate in (
+                lambda data: data.update(nextPageToken="more"),
+                lambda data: data.pop("nodeUsage"),
+                lambda data: data["nodeUsage"].update(unavailable=["audit-unavailable"]),
+                lambda data: data["nodeUsage"]["counters"].pop("audit_queued_operations"),
+                lambda data: data["nodeUsage"]["counters"].update(audit_queued_bytes="-1")):
+            row = audit_observation()
+            mutate(row["data"])
+            cases.append(row)
+        cases += [audit_observation(audit_closed="1"), audit_observation(audit_recovery_pending="1")]
+        for index, row in enumerate(cases):
+            with self.subTest(case=index):
+                self.client.call.reset_mock()
+                self.client.call.return_value = row
+                with self.assertRaises(ValueError):
+                    self.wait()
+                self.client.call.assert_called_once_with(*self.read, timeout=1)
+
+    def test_read_failure_is_not_retried(self):
+        failure = TimeoutError("read-only failure")
+        self.client.call.side_effect = failure
+        with self.assertRaises(TimeoutError) as raised:
+            self.wait()
+        self.assertIs(raised.exception, failure)
+        self.client.call.assert_called_once_with(*self.read, timeout=1)
+
+    def test_route_waits_before_each_fence_and_preserves_both_single_applies(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            receipt = {"operationId": "original"}
+            client = TriggerAuditSnapshotTests.Client(Path(temporary),
+                {"category": "success", "outcomeKnown": True, "data": {"receipt": receipt}},
+                {"outcomeKnown": True, "data": {"receipt": receipt}})
+            original = client.call
+            calls, documents = [], []
+            observations = iter([audit_observation(audit_queued_operations="1"), audit_observation(),
+                                 audit_observation(audit_reserved_records="2"), audit_observation()])
+            def call(*args, **kwargs):
+                calls.append((args, kwargs))
+                if args[:2] == ("capability", "list"):
+                    client.calls += 1
+                    return next(observations)
+                if args[:2] == ("trigger", "apply"):
+                    documents.append(json.loads(args[2].read_text()))
+                return original(*args, **kwargs)
+            client.call = call
+            target = composition.route(client, "localhost:1234", "publication", path="/original", function="handle")
+            self.assertEqual([args[:2] for args, _ in calls], [
+                ("route", "get"), ("deployment", "get"),
+                ("capability", "list"), ("capability", "list"), ("trigger", "get"),
+                ("trigger", "apply"), ("trigger", "operation"),
+                ("capability", "list"), ("capability", "list"), ("trigger", "get"),
+                ("trigger", "apply"), ("trigger", "operation")])
+            applies = [args for args, _ in calls if args[:2] == ("trigger", "apply")]
+            lookups = [args for args, _ in calls if args[:2] == ("trigger", "operation")]
+            for apply, lookup in zip(applies, lookups, strict=True):
+                self.assertEqual(apply[3:], ("--operation-id", lookup[2],
+                    "--expected-generation", 0, "--expected-state-version", "3"))
+            self.assertEqual([doc["spec"]["configuration"]["method"] for doc in documents], ["GET", "POST"])
+            for doc in documents:
+                self.assertEqual(doc["spec"]["target"], target)
+                self.assertEqual(doc["spec"]["configuration"]["path"], "/original")
+            self.assertEqual(target["publication"], "publication")
+            self.assertEqual(target["deploymentGeneration"], 3)
+
+    def test_unknown_apply_still_fails_after_idle_and_a_matching_lookup(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            receipt = {"operationId": "original"}
+            applied = {"category": "transport-failure", "outcomeKnown": False, "data": {"receipt": receipt}}
+            before = copy.deepcopy(applied)
+            client = TriggerAuditSnapshotTests.Client(Path(temporary), applied,
+                {"outcomeKnown": True, "data": {"receipt": receipt}})
+            with self.assertRaisesRegex(WorkflowError, "java-http-original-trigger-operation-recovery"):
+                composition.route(client, "localhost:1234", "publication")
+            self.assertEqual(sum(command == ("trigger", "apply") for command, _ in client.requests), 1)
+            self.assertEqual(sum(command == ("trigger", "operation") for command, _ in client.requests), 1)
+            self.assertEqual(applied, before)
 
 
 if __name__ == "__main__":

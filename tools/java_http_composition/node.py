@@ -9,6 +9,7 @@ from pathlib import Path
 import socket
 import time
 
+from tools import wait_capsule_audit_idle as audit_idle
 from tools.guest_runtime_profiles import profiles
 from tools.phase2_operator_process import Process, require, read_json, write_json
 from tools.phase2_operator_scenario import NODE_ID, configure_node
@@ -132,6 +133,31 @@ def observe_trigger_audit_capacity(client, applied):
         pass
 
 
+def wait_trigger_audit_idle(client, deployment):
+    """Observe asynchronous audit retirement before a single fenced apply.
+
+    A completed Java invocation need not have drained its audit writer. Keep
+    those owners charged and observe them read-only within the original client
+    deadline. An idle snapshot is not admission authority: a refused or unknown
+    trigger mutation still fails qualification and is never retried.
+    """
+    deadline = min(client.deadline, time.monotonic() + audit_idle.MAX_SECONDS)
+    for observation in range(audit_idle.MAX_OBSERVATIONS):
+        remaining = deadline - time.monotonic()
+        require(remaining > 0, "java-http-trigger-audit-drain-deadline")
+        value = client.call("capability", "list", "--deployment", deployment,
+                            "--include-node-usage", timeout=min(1, remaining))
+        counters = audit_idle.counters(json.dumps(value).encode("utf-8"))
+        require(time.monotonic() < deadline, "java-http-trigger-audit-drain-deadline")
+        if not any(counters.values()):
+            return
+        if observation + 1 < audit_idle.MAX_OBSERVATIONS:
+            remaining = deadline - time.monotonic()
+            require(remaining > 0, "java-http-trigger-audit-drain-deadline")
+            time.sleep(min(0.05, remaining))
+    raise RuntimeError("java-http-trigger-audit-drain-observation-limit")
+
+
 def route(client, host, publication, *, path="/api", function="handle"):
     snapshot = client.call("route", "get")["data"]["snapshot"]
     rows = [row for row in snapshot["services"] if row["service"] == ADAPTER and row["revisions"]]
@@ -143,6 +169,7 @@ def route(client, host, publication, *, path="/api", function="handle"):
         "route": selected["routeId"], "publication": publication, "revision": revision["revisionId"],
         "deploymentGeneration": int(deployment["generation"])}
     for method in ("GET", "POST"):
+        wait_trigger_audit_idle(client, selected["routeId"])
         name = "java-api-" + method.lower()
         state = client.call("trigger", "get", name, codes=(0, 6))["data"]
         source = client.directory / f"{name}-{client.calls}.json"
