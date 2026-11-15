@@ -16,7 +16,7 @@ jobs:
           ref: b5e25076abc98c6a57f7078bdc335a5e916c5851
           fetch-depth: 4
           persist-credentials: false
-      - name: Reproduce exact integration without changing a remote ref
+      - name: Export tracked sources and exact conflict stages
         shell: bash
         run: |
           set -euo pipefail
@@ -25,6 +25,7 @@ jobs:
           git config user.name 'PR 1907 diagnostics'
           git config user.email 'diagnostics@localhost'
           mkdir "$RUNNER_TEMP/pr1907-followup"
+          git archive HEAD | gzip -1 > "$RUNNER_TEMP/pr1907-followup/head-source.tar.gz"
           set +e
           git merge --no-commit --no-ff 35ab1b776df07f0fa1c1bb64d3699915afffb38b > "$RUNNER_TEMP/pr1907-followup/merge.log" 2>&1
           status=$?
@@ -34,17 +35,28 @@ jobs:
           git diff --name-only --diff-filter=U | tee "$RUNNER_TEMP/pr1907-followup/conflicts.txt"
           git diff --cc > "$RUNNER_TEMP/pr1907-followup/conflicts.diff"
           git ls-files -u > "$RUNNER_TEMP/pr1907-followup/unmerged-index.txt"
+          git ls-files --stage -z > "$RUNNER_TEMP/pr1907-followup/merge-index.bin"
           git diff --cached --binary > "$RUNNER_TEMP/pr1907-followup/auto-merge.patch"
-          tar -czf "$RUNNER_TEMP/pr1907-followup/git-objects.tar.gz" .git/objects .git/shallow
-          sha256sum "$RUNNER_TEMP/pr1907-followup/git-objects.tar.gz"
-      - name: Extract bounded failure context from retained public job logs
+          git ls-files -z --deduplicate | tar --null -T - -czf "$RUNNER_TEMP/pr1907-followup/merged-source.tar.gz"
+          python3 - <<'PY'
+          import os, pathlib, subprocess
+          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1907-followup'
+          for line in subprocess.check_output(['git', 'ls-files', '-u'], text=True).splitlines():
+              metadata, path = line.split('\t', 1)
+              mode, sha, stage = metadata.split()
+              target = root / 'conflict-stages' / stage / path
+              target.parent.mkdir(parents=True, exist_ok=True)
+              target.write_bytes(subprocess.check_output(['git', 'cat-file', 'blob', sha]))
+          PY
+          sha256sum "$RUNNER_TEMP/pr1907-followup/"*.tar.gz
+      - name: Extract bounded failure context
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          timeout 90s gh api repos/KirilsTurkins/latent-service-fabric/actions/jobs/132794418021/logs > "$RUNNER_TEMP/pr1907-followup/java.log"
-          timeout 90s gh api repos/KirilsTurkins/latent-service-fabric/actions/jobs/132794454341/logs > "$RUNNER_TEMP/pr1907-followup/publications.log"
+          timeout 90s gh api --allow-escape-sequences repos/KirilsTurkins/latent-service-fabric/actions/jobs/132794418021/logs > "$RUNNER_TEMP/pr1907-followup/java.log"
+          timeout 90s gh api --allow-escape-sequences repos/KirilsTurkins/latent-service-fabric/actions/jobs/132794454341/logs > "$RUNNER_TEMP/pr1907-followup/publications.log"
           unset GH_TOKEN
           python3 - <<'PY'
           import os, pathlib, re
@@ -52,7 +64,7 @@ jobs:
           for name in ('java', 'publications'):
               raw = (root / (name + '.log')).read_bytes()
               assert len(raw) <= 32 * 1024 * 1024
-              lines = raw.decode('utf-8-sig').splitlines()
+              lines = re.sub(r'\x1b\[[0-9;]*m', '', raw.decode('utf-8-sig')).splitlines()
               matches = [i for i, line in enumerate(lines) if re.search(r'##\[error\]|Traceback|workflow failed|qualification failed|AssertionError|FAILED|Exception:', line, re.I)]
               indexes = set()
               for i in matches[-8:]:
@@ -64,7 +76,8 @@ jobs:
       - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
         if: always()
         with:
-          name: pr1907-followup-inspection
+          name: pr1907-followup-sources
           path: ${{ runner.temp }}/pr1907-followup/
           retention-days: 3
           if-no-files-found: error
+          include-hidden-files: true
