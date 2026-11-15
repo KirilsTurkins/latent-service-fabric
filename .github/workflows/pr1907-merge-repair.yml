@@ -4,21 +4,26 @@ on:
     branches: [ci/pr1907-merge-repair-20261115]
     paths: [.github/workflows/pr1907-merge-repair.yml]
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: pr1907-merge-repair
   cancel-in-progress: false
 jobs:
-  inspect:
+  reconcile:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 25
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
     steps:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
         with:
           ref: e1c785beb83d5a66216b2443fa253e0275bad2e7
           persist-credentials: false
           fetch-depth: 100
-      - name: Inspect exact merge and overlapping changes without moving any refs
+      - name: Merge the exact reviewed heads and reconcile all nine conflicts
         shell: bash
         run: |
           set -euo pipefail
@@ -31,30 +36,169 @@ jobs:
           git merge --no-commit --no-ff 14738dc3de79881c549d8371e9933c08a92fda27
           result=$?
           set -e
-          test "$result" -le 1
-          echo '=== CONFLICT INDEX ==='
-          git ls-files -u
-          echo '=== CONFLICT DIFF ==='
-          git diff --cc
-          echo '=== COMPLETE OVERLAP INVENTORY ==='
+          test "$result" = 1
           python3 - <<'PY'
-          import json, subprocess
+          from pathlib import Path
+          import subprocess
           def git(*args):
               return subprocess.check_output(['git', *args], text=True)
-          base = '110f6d0a30a20aa2514621b012c4e40aa1ddb2e9'
           pr = 'e1c785beb83d5a66216b2443fa253e0275bad2e7'
           dev = '14738dc3de79881c549d8371e9933c08a92fda27'
-          def paths(ref):
+          base = '110f6d0a30a20aa2514621b012c4e40aa1ddb2e9'
+          development = [
+              'crates/latent-component-threading/src/admission.rs',
+              'tools/ci/contracts/workflows/c-once-runtime.yml/workflow.json',
+              'tools/ci/contracts/workflows/c-timed-runtime.yml/workflow.json',
+              'tools/ci_suite_discovery.py',
+              'tools/tests/test_ci_lane_inventory.py',
+          ]
+          branch = [
+              'crates/latent-wasmtime/tests/local_service/zero_clock.rs',
+              'tools/go_network_deadline_reference.py',
+              'tools/tests/test_c_thread_minimal.py',
+              'tools/tests/test_go_write_progress.py',
+          ]
+          conflicts = set(git('diff', '--name-only', '--diff-filter=U').splitlines())
+          assert conflicts == set(development + branch), sorted(conflicts)
+          workflows = ['.github/workflows/c-once-runtime.yml', '.github/workflows/c-timed-runtime.yml']
+          for ref, paths in [(dev, development + workflows), (pr, branch)]:
+              for path in paths:
+                  Path(path).write_bytes(subprocess.check_output(['git', 'show', f'{ref}:{path}']))
+          def replace(path, old, new):
+              p = Path(path)
+              raw = p.read_text()
+              assert raw.count(old) == 1, (path, old)
+              p.write_text(raw.replace(old, new, 1))
+          # Preserve the branch's four regression tests, but exercise the stricter
+          # development implementation instead of retaining a second production parser.
+          names = 'crates/latent-component-threading/src/admission/names.rs'
+          p = Path(names)
+          original = p.read_text()
+          marker = '#[cfg(test)]\nmod tests {'
+          assert original.count(marker) == 1
+          tests = original[original.index(marker):]
+          assert tests.count('            references: 0,') == 1
+          tests = tests.replace('            references: 0,', '            references: 0,\n            derived_names: true,', 1)
+          p.write_text('//! Retained inbox-branch regressions for the private derived-name parser.\nuse super::*;\n\n' + tests)
+          replace('crates/latent-component-threading/src/admission.rs',
+                  'mod derived_names;\n', 'mod derived_names;\n#[cfg(test)]\nmod names;\n')
+          # Keep the contiguous deadline guard while adopting the repaired toolchain.
+          replace('tools/go_network_deadline_reference.py', 'go 1.27.3', 'go 1.27.4')
+          replace('tools/tests/test_go_write_progress.py',
+                  "                             (deadline.MATERIALS[2],b'if !observation {'),",
+                  "                             (deadline.MATERIALS[2],b'if !observation {'),\n"
+                  "                             (deadline.MATERIALS[2],b'if !observation {\\n            if let Some(requested) = requested {'),\n"
+                  "                             (deadline.MATERIALS[2],b'let mut deadline = self.deadline.min(state.last_progress + self.idle);'),")
+          # Keep exact captured-source authentication and byte comparisons, but
+          # do not restore the inventory count removed by development.
+          replace('tools/tests/test_c_thread_minimal.py',
+                  '   self.assertEqual(set(left),set(right));self.assertEqual(len(left),65)',
+                  '   # Compare all remaining paths and bytes without a frozen file count.\n   self.assertEqual(set(left),set(right))')
+          subprocess.run(['git', 'add', '--', *development, *branch, *workflows, names], check=True)
+          assert not git('ls-files', '-u').strip()
+          candidate = git('write-tree').strip()
+          def changed(ref):
               return set(git('diff', '--name-only', base, ref).splitlines())
-          overlap = sorted(paths(pr) & paths(dev))
-          print(json.dumps(overlap, indent=2))
-          for path in overlap:
-              print('\n=== OVERLAP', path, '===')
-              print(git('diff', '--stat', pr, dev, '--', path))
-              if not path.endswith('Cargo.lock'):
-                  diff = git('diff', '--no-ext-diff', '--unified=3', pr, dev, '--', path)
-                  if len(diff) <= 40000:
-                      print(diff)
-                  else:
-                      print('Full overlap diff exceeds diagnostic bound:', len(diff))
+          # Every path changed on only one side must survive byte-for-byte,
+          # except the explicitly migrated regression-only module above.
+          left, right = changed(pr), changed(dev)
+          for ref, paths in [(pr, left - right - {names}), (dev, right - left)]:
+              for path in paths:
+                  assert git('ls-tree', ref, '--', path) == git('ls-tree', candidate, '--', path), path
+          assert not Path('.github/workflows/pr1907-merge-repair.yml').exists()
+          print('MERGED_TREE', candidate)
+          print('PRESERVED_BRANCH_ONLY_PATHS', len(left - right - {names}))
+          print('PRESERVED_DEVELOPMENT_ONLY_PATHS', len(right - left))
+          PY
+          git diff --cached --check
+          git diff --cached --stat 14738dc3de79881c549d8371e9933c08a92fda27
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - name: Install pinned validation dependencies and historical test inputs
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -m pip install --only-binary=:all: --no-deps --require-hashes --requirement .github/security/requirements.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess
+          raw = Path('.github/workflows/ci.yml').read_text()
+          refs = sorted(set(re.findall(r'^\s+([0-9a-f]{40})\s*$', raw, re.M)))
+          for ref in refs:
+              if subprocess.run(['git', 'cat-file', '-e', ref + '^{commit}'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode:
+                  subprocess.run(['git', 'fetch', '--no-tags', '--depth=1', 'origin', ref], check=True)
+          print('Historical workflow inputs available:', len(refs))
+          PY
+      - name: Validate conflict resolutions, exception dates and retained regression controls
+        run: |
+          python3 - <<'PY'
+          from tools.security_findings import load_exceptions
+          load_exceptions()
+          print('SECURITY_EXCEPTION_VALIDATION_OK')
+          PY
+          python3 tools/validate_workflow_actions.py
+          python3 -B -m unittest tools.tests.test_ci_libtest_outcomes tools.tests.test_ci_suite_inventory tools.tests.test_ci_lane_inventory tools.tests.test_go_write_progress tools.tests.test_c_thread_minimal tools.tests.test_c_once_runtime tools.tests.test_c_timed_current_products -v
+          python3 -B -m unittest discover -s tools/tests -p 'test_security*.py'
+      - name: Check formatting and the merged name-map implementations
+        run: |
+          cargo fmt --all -- --check
+          cargo test -p latent-component-threading --locked --lib --all-features
+          cargo test --manifest-path sdk/rust-standard-runtime/stack-transform/Cargo.toml --locked --lib
+          git diff --exit-code
+          git diff --cached --check
+      - name: Publish only an unreferenced reviewed-tree candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64, json, os, subprocess, urllib.request
+          def git(*args):
+              return subprocess.check_output(['git', *args], text=True).strip()
+          pr = 'e1c785beb83d5a66216b2443fa253e0275bad2e7'
+          dev = '14738dc3de79881c549d8371e9933c08a92fda27'
+          def api(endpoint, payload):
+              request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/' + endpoint,
+                  data=json.dumps(payload).encode(), method='POST', headers={
+                  'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                  'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json',
+                  'X-GitHub-Api-Version': '2022-11-28'})
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  return json.load(response)
+          def entries(tree):
+              rows = subprocess.check_output(['git', 'ls-tree', '-rz', tree]).split(b'\0')
+              result = {}
+              for row in rows:
+                  if row:
+                      header, path = row.split(b'\t', 1)
+                      mode, kind, sha = header.decode().split()
+                      result[path.decode()] = {'path': path.decode(), 'mode': mode, 'type': kind, 'sha': sha}
+              return result
+          tree = git('write-tree')
+          target, before, previous = entries(tree), entries(dev), entries(pr)
+          known = {row['sha'] for row in list(before.values()) + list(previous.values())}
+          changes = []
+          for path in sorted(set(before) | set(target)):
+              old, new = before.get(path), target.get(path)
+              if old == new:
+                  continue
+              if new is None:
+                  changes.append({**old, 'sha': None})
+                  continue
+              assert new['type'] == 'blob', new
+              if new['sha'] not in known:
+                  raw = subprocess.check_output(['git', 'cat-file', 'blob', new['sha']])
+                  created = api('blobs', {'encoding': 'base64', 'content': base64.b64encode(raw).decode()})
+                  assert created['sha'] == new['sha']
+                  known.add(new['sha'])
+              changes.append(new)
+          remote = api('trees', {'base_tree': git('rev-parse', dev + '^{tree}'), 'tree': changes})
+          assert remote['sha'] == tree, (remote['sha'], tree)
+          commit = api('commits', {'tree': tree, 'parents': [pr, dev],
+              'message': 'merge: reconcile development security repairs into transactional inbox\n\nPreserve source-fenced inbox behavior, signed stderr clock witnesses and\nall branch regressions. Use the stricter private derived-name path and\nambiguity-aware libtest parser. Reconcile closed-header workflow contracts,\nretain both deadline mutation controls, and remove only the stale C count.\n\nImport development security pins and reviewed records without adding or\nextending exceptions. Isolated hosted Python, security and locked Rust\nchecks passed before publishing this candidate. Full PR CI remains required.'})
+          assert [p['sha'] for p in commit['parents']] == [pr, dev]
+          print('REVIEW_CANDIDATE_COMMIT=' + commit['sha'])
+          print('REVIEW_CANDIDATE_TREE=' + tree)
+          print('REVIEW_CANDIDATE_PATHS=' + str(len(changes)))
+          print('No branch reference was changed.')
           PY
