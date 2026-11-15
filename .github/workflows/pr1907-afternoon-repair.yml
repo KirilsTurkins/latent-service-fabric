@@ -1,0 +1,55 @@
+name: PR 1907 afternoon repair
+on:
+  push:
+    branches: [ci/pr1907-repair-20261115-afternoon]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: b5e25076abc98c6a57f7078bdc335a5e916c5851
+          fetch-depth: 128
+          persist-credentials: false
+      - name: Inspect exact three-way merge
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=128 origin 2ad1b0a952642e296c76a95d687962d0dccbf071
+          test "$(git merge-base HEAD FETCH_HEAD)" = 14738dc3de79881c549d8371e9933c08a92fda27
+          git config user.name 'PR 1907 repair'
+          git config user.email 'noreply@users.noreply.github.com'
+          git merge --no-commit --no-ff 2ad1b0a952642e296c76a95d687962d0dccbf071 || test -n "$(git diff --name-only --diff-filter=U)"
+          echo '=== ACTUAL CONFLICTS ==='
+          git diff --name-only --diff-filter=U
+          git diff --cc
+          echo '=== REPOSITORY AGENT GUIDANCE ==='
+          git ls-files '*AGENTS.md' '*agents.md' | while read -r file; do printf '\n=== %s ===\n' "$file"; cat "$file"; done
+          echo '=== OPERATOR/RESOURCE FILES ==='
+          git ls-files 'tools/*operator*' 'tools/*phase2*' 'tools/java_standard_http_library.py' 'tools/java_guest/*resolve*'
+      - name: Inspect retained public failure receipts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api repos/KirilsTurkins/latent-service-fabric/actions/artifacts/14160300330/zip > "$RUNNER_TEMP/phase2.zip"
+          gh api repos/KirilsTurkins/latent-service-fabric/actions/artifacts/14161786821/zip > "$RUNNER_TEMP/java.zip"
+          python3 - <<'PY'
+          import os, zipfile
+          from pathlib import Path
+          for kind in ('phase2', 'java'):
+              with zipfile.ZipFile(Path(os.environ['RUNNER_TEMP']) / (kind + '.zip')) as archive:
+                  selected = [item for item in archive.infolist() if not item.is_dir() and
+                              (kind == 'phase2' or 'java-published-http/' in item.filename or 'default-client-native-resolve' in item.filename)]
+                  print('=== ARTIFACT', kind, 'FILES', [(item.filename, item.file_size) for item in selected], flush=True)
+                  for item in selected:
+                      if item.file_size > 128 * 1024 or not item.filename.endswith(('.json', '.log', '.txt')):
+                          continue
+                      text = archive.read(item).decode('utf-8', errors='replace')
+                      print('=== FILE', item.filename, '===\n' + text[-16000:], flush=True)
+          PY
