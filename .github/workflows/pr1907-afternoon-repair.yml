@@ -108,7 +108,7 @@ jobs:
           cargo test --locked -p latent-commit --all-features --lib atomic::tests
           cargo test --locked -p latent-node --all-features --lib transaction_runtime::tests::response::inbox
           cargo clippy --locked -p latentd -p latent-commit -p latent-node --all-features --all-targets --no-deps -- -D warnings
-      - name: Retain qualified candidate on an isolated data branch
+      - name: Retain qualified objects without changing product refs
         env:
           GH_TOKEN: ${{ github.token }}
           CONTROL_SHA: ${{ github.sha }}
@@ -120,11 +120,31 @@ jobs:
           tree="$(git rev-parse HEAD^{tree})"
           echo "QUALIFIED_CANDIDATE=$candidate"
           echo "QUALIFIED_TREE=$tree"
+          echo "QUALIFIED_MERGE_TREE=$(git rev-parse HEAD~1^{tree})"
           export GIT_INDEX_FILE="$RUNNER_TEMP/transfer.index"
           git read-tree "$CONTROL_SHA^{tree}"
           git read-tree --prefix=pr1907-candidate/ "$tree"
+          git read-tree --prefix=pr1907-merge/ HEAD~1^{tree}
           transfer_tree="$(git write-tree)"
-          transfer="$(printf 'data: retain tested PR 1907 reconciliation without changing a product branch\n' | git commit-tree "$transfer_tree" -p "$CONTROL_SHA" -p "$candidate")"
+          transfer="$(printf 'data: retain tested PR 1907 reconciliation without changing a product branch\n' | git commit-tree "$transfer_tree" -p "$CONTROL_SHA")"
           gh auth setup-git
           git push origin "$transfer:refs/heads/ci/pr1907-objects-20261115-afternoon"
           echo "TRANSFER_COMMIT=$transfer"
+          python3 - <<'PY'
+          import json, subprocess
+          def git(*args):
+              return subprocess.check_output(['git', *args], text=True).strip()
+          for ref in ('HEAD~1', 'HEAD'):
+              sha = git('rev-parse', ref)
+              data = {
+                  'message': subprocess.check_output(['git', 'show', '-s', '--format=%B', ref], text=True).rstrip('\n') + '\n',
+                  'tree': git('rev-parse', ref + '^{tree}'),
+                  'parents': git('show', '-s', '--format=%P', ref).split(),
+                  'author': dict(zip(('name','email','date'), git('show','-s','--format=%an%x00%ae%x00%aI',ref).split('\x00'))),
+                  'committer': dict(zip(('name','email','date'), git('show','-s','--format=%cn%x00%ce%x00%cI',ref).split('\x00'))),
+              }
+              response = subprocess.check_output(['gh','api','--method','POST','repos/KirilsTurkins/latent-service-fabric/git/commits','--input','-'], input=json.dumps(data), text=True)
+              result = json.loads(response)
+              print('PUBLISHED_OBJECT=' + result['sha'] + ' EXPECTED=' + sha, flush=True)
+              assert result['sha'] == sha, 'commit metadata changed during object publication'
+          PY
