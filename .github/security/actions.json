@@ -228,86 +228,6 @@
       "upstream_repository": "bytecodealliance/actions",
       "upstream_revision": "7ee36389ead2e51422087f820a7e17e39811b05f"
     },
-    "KirilsTurkins/lsf-cache/restore@ec176dce9471270c8a9be1289040c0a8fd6aa708": {
-      "files": [
-        {
-          "sha256": "bb552a94cec165255080b7e13fe3d2051c6c79e321e99435b5859dc7de5e9057",
-          "snapshot": ".github/security/actions/cache/restore/action.yml.snapshot",
-          "source": "restore/action.yml",
-          "source_sha256": "bb552a94cec165255080b7e13fe3d2051c6c79e321e99435b5859dc7de5e9057"
-        },
-        {
-          "sha256": "8e8b46d08a417276c9c979e66f78f1de5b4e0af637c9e60128c738a65b8b64f8",
-          "snapshot": ".github/security/actions/cache/package.json",
-          "source": "package.json",
-          "source_sha256": "8e8b46d08a417276c9c979e66f78f1de5b4e0af637c9e60128c738a65b8b64f8"
-        },
-        {
-          "sha256": "e979985c5b09e89732e1c75abdf62c6f166d8238e4aed768c2fefcf7c44d7131",
-          "snapshot": ".github/security/actions/cache/package-lock.json",
-          "source": "package-lock.json",
-          "source_sha256": "e979985c5b09e89732e1c75abdf62c6f166d8238e4aed768c2fefcf7c44d7131"
-        },
-        {
-          "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
-          "snapshot": ".github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot",
-          "source": ".lsf-source/verify-installed-deepmerge.mjs",
-          "source_sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7"
-        }
-      ],
-      "kind": "npm",
-      "metadata": {
-        "sha256": "bb552a94cec165255080b7e13fe3d2051c6c79e321e99435b5859dc7de5e9057",
-        "snapshot": ".github/security/actions/cache/restore/action.yml.snapshot",
-        "source": "restore/action.yml",
-        "source_sha256": "bb552a94cec165255080b7e13fe3d2051c6c79e321e99435b5859dc7de5e9057"
-      },
-      "repository": "KirilsTurkins/lsf-cache",
-      "revision": "ec176dce9471270c8a9be1289040c0a8fd6aa708",
-      "security_pr": "https://github.com/KirilsTurkins/lsf-cache/pull/1",
-      "upstream_repository": "actions/cache",
-      "upstream_revision": "3edfce9056124e459a23f683a21433670d47daca"
-    },
-    "KirilsTurkins/lsf-cache/save@ec176dce9471270c8a9be1289040c0a8fd6aa708": {
-      "files": [
-        {
-          "sha256": "5da400e1a7551cee617339fd1a5281483d71e6c56d86dd117fbd354f047308ec",
-          "snapshot": ".github/security/actions/cache/save/action.yml.snapshot",
-          "source": "save/action.yml",
-          "source_sha256": "5da400e1a7551cee617339fd1a5281483d71e6c56d86dd117fbd354f047308ec"
-        },
-        {
-          "sha256": "8e8b46d08a417276c9c979e66f78f1de5b4e0af637c9e60128c738a65b8b64f8",
-          "snapshot": ".github/security/actions/cache/package.json",
-          "source": "package.json",
-          "source_sha256": "8e8b46d08a417276c9c979e66f78f1de5b4e0af637c9e60128c738a65b8b64f8"
-        },
-        {
-          "sha256": "e979985c5b09e89732e1c75abdf62c6f166d8238e4aed768c2fefcf7c44d7131",
-          "snapshot": ".github/security/actions/cache/package-lock.json",
-          "source": "package-lock.json",
-          "source_sha256": "e979985c5b09e89732e1c75abdf62c6f166d8238e4aed768c2fefcf7c44d7131"
-        },
-        {
-          "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
-          "snapshot": ".github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot",
-          "source": ".lsf-source/verify-installed-deepmerge.mjs",
-          "source_sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7"
-        }
-      ],
-      "kind": "npm",
-      "metadata": {
-        "sha256": "5da400e1a7551cee617339fd1a5281483d71e6c56d86dd117fbd354f047308ec",
-        "snapshot": ".github/security/actions/cache/save/action.yml.snapshot",
-        "source": "save/action.yml",
-        "source_sha256": "5da400e1a7551cee617339fd1a5281483d71e6c56d86dd117fbd354f047308ec"
-      },
-      "repository": "KirilsTurkins/lsf-cache",
-      "revision": "ec176dce9471270c8a9be1289040c0a8fd6aa708",
-      "security_pr": "https://github.com/KirilsTurkins/lsf-cache/pull/1",
-      "upstream_repository": "actions/cache",
-      "upstream_revision": "3edfce9056124e459a23f683a21433670d47daca"
-    },
     "KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13": {
       "files": [
         {
@@ -342,7 +262,108 @@
       "upstream_repository": "actions/checkout",
       "upstream_revision": "f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a"
     },
-    "KirilsTurkins/lsf-deploy-pages@e249fe4e7520b3d7aa16ef72f45eeb05de6cf4f6": {
+    "dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5": {
+      "files": [
+        {
+          "sha256": "79f143939c626525fa9e8f73156a1ac8c459a9ddb1ba2e56d48a9cb1363d226e",
+          "snapshot": ".github/security/actions/rust-toolchain/action.yml.snapshot",
+          "source": "action.yml",
+          "source_sha256": "79f143939c626525fa9e8f73156a1ac8c459a9ddb1ba2e56d48a9cb1363d226e"
+        }
+      ],
+      "kind": "composite",
+      "metadata": {
+        "sha256": "79f143939c626525fa9e8f73156a1ac8c459a9ddb1ba2e56d48a9cb1363d226e",
+        "snapshot": ".github/security/actions/rust-toolchain/action.yml.snapshot",
+        "source": "action.yml",
+        "source_sha256": "79f143939c626525fa9e8f73156a1ac8c459a9ddb1ba2e56d48a9cb1363d226e"
+      },
+      "repository": "dtolnay/rust-toolchain",
+      "revision": "4716b85f2fac3e324e64fa2810f6b5c3905760a5",
+      "upstream_repository": "dtolnay/rust-toolchain",
+      "upstream_revision": "4716b85f2fac3e324e64fa2810f6b5c3905760a5"
+    },
+    "KirilsTurkins/lsf-cache/restore@2571c499f8aa6b4db4b4b5632bea291d6be58dc8": {
+      "files": [
+        {
+          "sha256": "bb552a94cec165255080b7e13fe3d2051c6c79e321e99435b5859dc7de5e9057",
+          "snapshot": ".github/security/actions/cache/restore/action.yml.snapshot",
+          "source": "restore/action.yml",
+          "source_sha256": "bb552a94cec165255080b7e13fe3d2051c6c79e321e99435b5859dc7de5e9057"
+        },
+        {
+          "sha256": "72afb8c05073d17066e5a37c6957fb7b88d763941f618cf33a25b74089de0b20",
+          "snapshot": ".github/security/actions/cache/package.json",
+          "source": "package.json",
+          "source_sha256": "72afb8c05073d17066e5a37c6957fb7b88d763941f618cf33a25b74089de0b20"
+        },
+        {
+          "sha256": "5622f9dcf49092770b3d69f247629c83784abb1ab79b086c1aba33aff3364435",
+          "snapshot": ".github/security/actions/cache/package-lock.json",
+          "source": "package-lock.json",
+          "source_sha256": "5622f9dcf49092770b3d69f247629c83784abb1ab79b086c1aba33aff3364435"
+        },
+        {
+          "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
+          "snapshot": ".github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot",
+          "source": ".lsf-source/verify-installed-deepmerge.mjs",
+          "source_sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7"
+        }
+      ],
+      "kind": "npm",
+      "metadata": {
+        "sha256": "bb552a94cec165255080b7e13fe3d2051c6c79e321e99435b5859dc7de5e9057",
+        "snapshot": ".github/security/actions/cache/restore/action.yml.snapshot",
+        "source": "restore/action.yml",
+        "source_sha256": "bb552a94cec165255080b7e13fe3d2051c6c79e321e99435b5859dc7de5e9057"
+      },
+      "repository": "KirilsTurkins/lsf-cache",
+      "revision": "2571c499f8aa6b4db4b4b5632bea291d6be58dc8",
+      "security_pr": "https://github.com/KirilsTurkins/lsf-cache/pull/1",
+      "upstream_repository": "actions/cache",
+      "upstream_revision": "3edfce9056124e459a23f683a21433670d47daca"
+    },
+    "KirilsTurkins/lsf-cache/save@2571c499f8aa6b4db4b4b5632bea291d6be58dc8": {
+      "files": [
+        {
+          "sha256": "5da400e1a7551cee617339fd1a5281483d71e6c56d86dd117fbd354f047308ec",
+          "snapshot": ".github/security/actions/cache/save/action.yml.snapshot",
+          "source": "save/action.yml",
+          "source_sha256": "5da400e1a7551cee617339fd1a5281483d71e6c56d86dd117fbd354f047308ec"
+        },
+        {
+          "sha256": "72afb8c05073d17066e5a37c6957fb7b88d763941f618cf33a25b74089de0b20",
+          "snapshot": ".github/security/actions/cache/package.json",
+          "source": "package.json",
+          "source_sha256": "72afb8c05073d17066e5a37c6957fb7b88d763941f618cf33a25b74089de0b20"
+        },
+        {
+          "sha256": "5622f9dcf49092770b3d69f247629c83784abb1ab79b086c1aba33aff3364435",
+          "snapshot": ".github/security/actions/cache/package-lock.json",
+          "source": "package-lock.json",
+          "source_sha256": "5622f9dcf49092770b3d69f247629c83784abb1ab79b086c1aba33aff3364435"
+        },
+        {
+          "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
+          "snapshot": ".github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot",
+          "source": ".lsf-source/verify-installed-deepmerge.mjs",
+          "source_sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7"
+        }
+      ],
+      "kind": "npm",
+      "metadata": {
+        "sha256": "5da400e1a7551cee617339fd1a5281483d71e6c56d86dd117fbd354f047308ec",
+        "snapshot": ".github/security/actions/cache/save/action.yml.snapshot",
+        "source": "save/action.yml",
+        "source_sha256": "5da400e1a7551cee617339fd1a5281483d71e6c56d86dd117fbd354f047308ec"
+      },
+      "repository": "KirilsTurkins/lsf-cache",
+      "revision": "2571c499f8aa6b4db4b4b5632bea291d6be58dc8",
+      "security_pr": "https://github.com/KirilsTurkins/lsf-cache/pull/1",
+      "upstream_repository": "actions/cache",
+      "upstream_revision": "3edfce9056124e459a23f683a21433670d47daca"
+    },
+    "KirilsTurkins/lsf-deploy-pages@f596449d219e8fe3fe62b26b0a4dfc4fbb89334b": {
       "files": [
         {
           "sha256": "64c44539fba53559a157b5de16c01d3ab91dbc999c1b98b5c0b2fc3528d5d059",
@@ -351,22 +372,22 @@
           "source_sha256": "64c44539fba53559a157b5de16c01d3ab91dbc999c1b98b5c0b2fc3528d5d059"
         },
         {
-          "sha256": "1f1ba01a30c2f8aa80e60493e6e154bb59e4ff94b1010371447816f609eac771",
+          "sha256": "946fe222a91b4d81ecd2e1f6df1004da9db8d9bb98c64b0bf501b4a8c1d16bf0",
           "snapshot": ".github/security/actions/deploy-pages/package.json",
           "source": "package.json",
-          "source_sha256": "1f1ba01a30c2f8aa80e60493e6e154bb59e4ff94b1010371447816f609eac771"
+          "source_sha256": "946fe222a91b4d81ecd2e1f6df1004da9db8d9bb98c64b0bf501b4a8c1d16bf0"
         },
         {
-          "sha256": "88d39a5c99be6e0ba2af6cd8ca6535acd4ef645ee297c51735c64078246513fa",
+          "sha256": "f7e5a943e5e67a9e814c42e556d9fe229cb0c6d2f025c120d1604a3b6c261da6",
           "snapshot": ".github/security/actions/deploy-pages/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "88d39a5c99be6e0ba2af6cd8ca6535acd4ef645ee297c51735c64078246513fa"
+          "source_sha256": "f7e5a943e5e67a9e814c42e556d9fe229cb0c6d2f025c120d1604a3b6c261da6"
         },
         {
-          "sha256": "48dc90cb16ed138f1da2672e018bf35602f8bdd22adbde4caf6c7e3e5da9ce6b",
+          "sha256": "8ae219bc741b1dd5f4c16bb52b3db1ec4229b9acd3136f792f04d1870a69b41d",
           "snapshot": ".github/security/actions/deploy-pages/applied-source-guard.cjs.snapshot",
           "source": ".lsf-source/apply-verified-sources.cjs",
-          "source_sha256": "48dc90cb16ed138f1da2672e018bf35602f8bdd22adbde4caf6c7e3e5da9ce6b"
+          "source_sha256": "8ae219bc741b1dd5f4c16bb52b3db1ec4229b9acd3136f792f04d1870a69b41d"
         },
         {
           "sha256": "89329f4116bf44f7f0c7b744e1ec51124737b5816c78999005dbee4ef096d948",
@@ -449,12 +470,12 @@
         "source_sha256": "64c44539fba53559a157b5de16c01d3ab91dbc999c1b98b5c0b2fc3528d5d059"
       },
       "repository": "KirilsTurkins/lsf-deploy-pages",
-      "revision": "e249fe4e7520b3d7aa16ef72f45eeb05de6cf4f6",
+      "revision": "f596449d219e8fe3fe62b26b0a4dfc4fbb89334b",
       "security_pr": "https://github.com/KirilsTurkins/lsf-deploy-pages/pull/1",
       "upstream_repository": "actions/deploy-pages",
       "upstream_revision": "368f82528645a54fb793d4d04e342629a3f51346"
     },
-    "KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5": {
+    "KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389": {
       "files": [
         {
           "sha256": "e98559b7a31ba31be4709f20d22102dc2737fa630f69a339eb89981151e505fe",
@@ -463,16 +484,16 @@
           "source_sha256": "e98559b7a31ba31be4709f20d22102dc2737fa630f69a339eb89981151e505fe"
         },
         {
-          "sha256": "e78c659838e884b95965d6f4c611741cdbda89cdc14ba69820a06ca4eab12a9f",
+          "sha256": "78b6410cf1b683b8e427ba55d4ec652e294f37057829f1f3ee43177395637053",
           "snapshot": ".github/security/actions/download-artifact/package.json",
           "source": "package.json",
-          "source_sha256": "e78c659838e884b95965d6f4c611741cdbda89cdc14ba69820a06ca4eab12a9f"
+          "source_sha256": "78b6410cf1b683b8e427ba55d4ec652e294f37057829f1f3ee43177395637053"
         },
         {
-          "sha256": "8253ed2e30ad4f60d1cad063f5971b0c4c8a2ff5ff8dbd9a5dd4cf31d004a377",
+          "sha256": "9fc87ce6c1e741a1745b5f1d633cc7f5d9cf44e598f99beed75a542a273b1621",
           "snapshot": ".github/security/actions/download-artifact/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "8253ed2e30ad4f60d1cad063f5971b0c4c8a2ff5ff8dbd9a5dd4cf31d004a377"
+          "source_sha256": "9fc87ce6c1e741a1745b5f1d633cc7f5d9cf44e598f99beed75a542a273b1621"
         },
         {
           "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
@@ -481,10 +502,10 @@
           "source_sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7"
         },
         {
-          "sha256": "07f2ee09c6c2fd1f9ec66c86002f97a2fd1cabe4584b54a9d9e7e4c294b78442",
+          "sha256": "fe16f71556c969a8c078d2a2d0f73bf9d809fa363827f8e33d9862df8e09b10d",
           "snapshot": ".github/security/actions/download-artifact/installed-verifier.mjs.snapshot",
           "source": ".lsf-source/verify-download-sources.mjs",
-          "source_sha256": "07f2ee09c6c2fd1f9ec66c86002f97a2fd1cabe4584b54a9d9e7e4c294b78442"
+          "source_sha256": "fe16f71556c969a8c078d2a2d0f73bf9d809fa363827f8e33d9862df8e09b10d"
         },
         {
           "sha256": "082f28d2c9dbb70dfe638c7ef1383a961e6a32ce6c11e0116141ed20006803a0",
@@ -501,12 +522,12 @@
         "source_sha256": "e98559b7a31ba31be4709f20d22102dc2737fa630f69a339eb89981151e505fe"
       },
       "repository": "KirilsTurkins/lsf-download-artifact",
-      "revision": "dd4ebbadbf12ed34441db2712be7a193490b7fc5",
+      "revision": "fc27fb5305d2042f110912a9d6a2924a98084389",
       "security_pr": "https://github.com/KirilsTurkins/lsf-download-artifact/pull/1",
       "upstream_repository": "actions/download-artifact",
       "upstream_revision": "9000827ccba6bdab643e8b6fd33ac0654aef8333"
     },
-    "KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e": {
+    "KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334": {
       "files": [
         {
           "sha256": "0bf18e525796c2e43b4cccbc5c914e745de700a4e56735f53a8f1b0e6504aa2a",
@@ -515,16 +536,16 @@
           "source_sha256": "0bf18e525796c2e43b4cccbc5c914e745de700a4e56735f53a8f1b0e6504aa2a"
         },
         {
-          "sha256": "2aba49452ea432f269e679216b426c9e2e9459d1211745b06bbc9692dcab89ff",
+          "sha256": "0d872f68edf5ffa14a1966246682e7bf87e53fe936cec08bb7f0dbdcad8efc38",
           "snapshot": ".github/security/actions/rust-cache/package.json",
           "source": "package.json",
-          "source_sha256": "2aba49452ea432f269e679216b426c9e2e9459d1211745b06bbc9692dcab89ff"
+          "source_sha256": "0d872f68edf5ffa14a1966246682e7bf87e53fe936cec08bb7f0dbdcad8efc38"
         },
         {
-          "sha256": "73ab20e6b215286eaf3c3060dfe66c4e9e426b0533ab907299bf9386aa91022a",
+          "sha256": "89427e5af8052d1d52b918e9a95e46b363ae51ee2e80bcc4b72ae618c4602906",
           "snapshot": ".github/security/actions/rust-cache/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "73ab20e6b215286eaf3c3060dfe66c4e9e426b0533ab907299bf9386aa91022a"
+          "source_sha256": "89427e5af8052d1d52b918e9a95e46b363ae51ee2e80bcc4b72ae618c4602906"
         },
         {
           "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
@@ -545,16 +566,16 @@
           "source_sha256": "4fd2675946ecfa56ccf5a3c59e76ef50a5dc7d84f0a37fefd47e0037c50a4492"
         },
         {
-          "sha256": "93437849b770f19a97251121d354f55705cff9f3771e9faad36db85cd0472841",
+          "sha256": "88b2877bb42f8b0a67d9b21f69581cd1e74b19cb7c2a5a069625ecdd80217b10",
           "snapshot": ".github/security/actions/rust-cache-source/verify-rust-cache-lock.mjs.snapshot",
           "source": ".lsf-source/verify-rust-cache-lock.mjs",
-          "source_sha256": "93437849b770f19a97251121d354f55705cff9f3771e9faad36db85cd0472841"
+          "source_sha256": "88b2877bb42f8b0a67d9b21f69581cd1e74b19cb7c2a5a069625ecdd80217b10"
         },
         {
-          "sha256": "4610bfc55e9451600b3acf8ad67639ad6800b86802f3634b5e06afe3d20e6684",
+          "sha256": "3cfb04f5083673c41ab08466d61c989f2cc14545edaf74600c963ea9a4989473",
           "snapshot": ".github/security/actions/rust-cache-source/rust-cache-lock.test.mjs.snapshot",
           "source": ".lsf-source/rust-cache-lock.test.mjs",
-          "source_sha256": "4610bfc55e9451600b3acf8ad67639ad6800b86802f3634b5e06afe3d20e6684"
+          "source_sha256": "3cfb04f5083673c41ab08466d61c989f2cc14545edaf74600c963ea9a4989473"
         }
       ],
       "kind": "npm",
@@ -565,12 +586,12 @@
         "source_sha256": "0bf18e525796c2e43b4cccbc5c914e745de700a4e56735f53a8f1b0e6504aa2a"
       },
       "repository": "KirilsTurkins/lsf-rust-cache",
-      "revision": "38534d49940bc6c6aef1e8dfd45349a99d37f14e",
+      "revision": "653972653a76770ab9b45cca67e4db8221bed334",
       "security_pr": "https://github.com/KirilsTurkins/lsf-rust-cache/pull/1",
       "upstream_repository": "Swatinem/rust-cache",
       "upstream_revision": "c8037a86dde8214a8310e9f54a8fc61ab362aa31"
     },
-    "KirilsTurkins/lsf-setup-dotnet@258c927924210be905f8908a4be714e5d0daffa8": {
+    "KirilsTurkins/lsf-setup-dotnet@2382c9e63a3b678b643c7e715d023e7fa42fbbef": {
       "files": [
         {
           "sha256": "c96dc8e11d5e6f64fb48a3221e7b1446821955cdcbecb1bf5697c93e24d4f9f2",
@@ -579,16 +600,16 @@
           "source_sha256": "c96dc8e11d5e6f64fb48a3221e7b1446821955cdcbecb1bf5697c93e24d4f9f2"
         },
         {
-          "sha256": "9be7cb32ee3db4f5b122552fa8522c6ec0802236667094205806f5eabe92d732",
+          "sha256": "51c9956410387a680bc59345c151c10c3fe996005a879b87bf47a6c1d857f93c",
           "snapshot": ".github/security/actions/setup-dotnet/package.json",
           "source": "package.json",
-          "source_sha256": "9be7cb32ee3db4f5b122552fa8522c6ec0802236667094205806f5eabe92d732"
+          "source_sha256": "51c9956410387a680bc59345c151c10c3fe996005a879b87bf47a6c1d857f93c"
         },
         {
-          "sha256": "f30f154929ab439bd594caad80f151a3b06e480a795c90c9c2513cd2e6d19d6a",
+          "sha256": "4c6958592285a8e60537929b6834632c6e4c5a5e977eea7f4b7d2a9d319c66d7",
           "snapshot": ".github/security/actions/setup-dotnet/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "f30f154929ab439bd594caad80f151a3b06e480a795c90c9c2513cd2e6d19d6a"
+          "source_sha256": "4c6958592285a8e60537929b6834632c6e4c5a5e977eea7f4b7d2a9d319c66d7"
         },
         {
           "source": ".lsf-source/verify-installed-deepmerge.mjs",
@@ -617,12 +638,12 @@
         "source_sha256": "c96dc8e11d5e6f64fb48a3221e7b1446821955cdcbecb1bf5697c93e24d4f9f2"
       },
       "repository": "KirilsTurkins/lsf-setup-dotnet",
-      "revision": "258c927924210be905f8908a4be714e5d0daffa8",
+      "revision": "2382c9e63a3b678b643c7e715d023e7fa42fbbef",
       "security_pr": "https://github.com/actions/setup-dotnet/pull/795",
       "upstream_repository": "actions/setup-dotnet",
       "upstream_revision": "349aa191ae05aee6d53db4bcba37bd6980e812fe"
     },
-    "KirilsTurkins/lsf-setup-go@1020042799f722e9ef016bf63106367879587a49": {
+    "KirilsTurkins/lsf-setup-go@92a5903f5ff2b45e67c517d23c18501025a55a12": {
       "files": [
         {
           "sha256": "216efbacabe9911f4de0714f00f57e45470469c52c2d3e70e8d6165f32939585",
@@ -631,16 +652,16 @@
           "source_sha256": "216efbacabe9911f4de0714f00f57e45470469c52c2d3e70e8d6165f32939585"
         },
         {
-          "sha256": "435344c44656f7642f8a467c786c623e24ad22032df2a14f0835bd6673f44b93",
+          "sha256": "5cd3573fb4e1a6b3cf680b46cf3cd5dbafc293abc2bea4fc078925d89c2ef18e",
           "snapshot": ".github/security/actions/setup-go/package.json",
           "source": "package.json",
-          "source_sha256": "435344c44656f7642f8a467c786c623e24ad22032df2a14f0835bd6673f44b93"
+          "source_sha256": "5cd3573fb4e1a6b3cf680b46cf3cd5dbafc293abc2bea4fc078925d89c2ef18e"
         },
         {
-          "sha256": "058e6d5773b07dfa02e9fb15a46f6d101ee1d18d123b7d22aabecb3e991c5a4d",
+          "sha256": "0ab055419bedc5c0b561cc30632279aa8d38edd2fdced86d122939457e9e2869",
           "snapshot": ".github/security/actions/setup-go/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "058e6d5773b07dfa02e9fb15a46f6d101ee1d18d123b7d22aabecb3e991c5a4d"
+          "source_sha256": "0ab055419bedc5c0b561cc30632279aa8d38edd2fdced86d122939457e9e2869"
         },
         {
           "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
@@ -669,12 +690,12 @@
         "source_sha256": "216efbacabe9911f4de0714f00f57e45470469c52c2d3e70e8d6165f32939585"
       },
       "repository": "KirilsTurkins/lsf-setup-go",
-      "revision": "1020042799f722e9ef016bf63106367879587a49",
+      "revision": "92a5903f5ff2b45e67c517d23c18501025a55a12",
       "security_pr": "https://github.com/actions/setup-go/pull/805",
       "upstream_repository": "actions/setup-go",
       "upstream_revision": "90ad2b35f69faf97585ad74d28fa006d2739b7af"
     },
-    "KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c": {
+    "KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2": {
       "files": [
         {
           "sha256": "503fe82e787d5ff15e17934e2efab346fa2facfad7261a8ea6ed9b05cb14f9e8",
@@ -683,16 +704,16 @@
           "source_sha256": "503fe82e787d5ff15e17934e2efab346fa2facfad7261a8ea6ed9b05cb14f9e8"
         },
         {
-          "sha256": "f7723547bb87097415558bdc8088f047c3b64221dabdfb7785269343d4e9d6f6",
+          "sha256": "dde88e51553ccdd6d8997dea48da5885ba30ddf93dcaa996234fab8fbf730d39",
           "snapshot": ".github/security/actions/setup-java/package.json",
           "source": "package.json",
-          "source_sha256": "f7723547bb87097415558bdc8088f047c3b64221dabdfb7785269343d4e9d6f6"
+          "source_sha256": "dde88e51553ccdd6d8997dea48da5885ba30ddf93dcaa996234fab8fbf730d39"
         },
         {
-          "sha256": "9419ff87d9fce7ae84f37bd082cef91646e722f95aec1896aa695b3e2b31e2df",
+          "sha256": "04088126045de0f2b4052435aabe1012133517b508ec102448550c957f2939c5",
           "snapshot": ".github/security/actions/setup-java/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "9419ff87d9fce7ae84f37bd082cef91646e722f95aec1896aa695b3e2b31e2df"
+          "source_sha256": "04088126045de0f2b4052435aabe1012133517b508ec102448550c957f2939c5"
         },
         {
           "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
@@ -721,12 +742,12 @@
         "source_sha256": "503fe82e787d5ff15e17934e2efab346fa2facfad7261a8ea6ed9b05cb14f9e8"
       },
       "repository": "KirilsTurkins/lsf-setup-java",
-      "revision": "63c7977881fc344a6ed464f7ed5e242aedc8d56c",
+      "revision": "8aaa4ea8191b36cb3f394e91d099da0d31dc02c2",
       "security_pr": "https://github.com/actions/setup-java/pull/1296",
       "upstream_repository": "actions/setup-java",
       "upstream_revision": "816722acf8fd27c9d1e9ae6ee6085da07e0d44c1"
     },
-    "KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6": {
+    "KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a": {
       "files": [
         {
           "sha256": "84cd55863dbadfb83ed786c0bb4336553c2f4ceb52e102fccec01848f1977387",
@@ -735,16 +756,16 @@
           "source_sha256": "84cd55863dbadfb83ed786c0bb4336553c2f4ceb52e102fccec01848f1977387"
         },
         {
-          "sha256": "a3cb820cc5caa0aad9b58007876688fff69149668a02538779de78bac6add083",
+          "sha256": "19f89256369975fbf6191bffd1608de74ee4bb539d64cc99688f5c9cb3ee0612",
           "snapshot": ".github/security/actions/setup-node/package.json",
           "source": "package.json",
-          "source_sha256": "a3cb820cc5caa0aad9b58007876688fff69149668a02538779de78bac6add083"
+          "source_sha256": "19f89256369975fbf6191bffd1608de74ee4bb539d64cc99688f5c9cb3ee0612"
         },
         {
-          "sha256": "90c9a190094f6078757b940c2f271699f845b5adece4f7ceb9e91d5495c5ff7d",
+          "sha256": "5107a7be7450a2f8922ea8bf29fc1f843cbd8f94449e41294ba27247b31d63d2",
           "snapshot": ".github/security/actions/setup-node/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "90c9a190094f6078757b940c2f271699f845b5adece4f7ceb9e91d5495c5ff7d"
+          "source_sha256": "5107a7be7450a2f8922ea8bf29fc1f843cbd8f94449e41294ba27247b31d63d2"
         },
         {
           "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
@@ -773,12 +794,12 @@
         "source_sha256": "84cd55863dbadfb83ed786c0bb4336553c2f4ceb52e102fccec01848f1977387"
       },
       "repository": "KirilsTurkins/lsf-setup-node",
-      "revision": "34275fdec80b5be172c3327cadef76aa2f3b31c6",
+      "revision": "791d25988f7dc57f537b82342f7af452cd59cd6a",
       "security_pr": "https://github.com/actions/setup-node/pull/1653",
       "upstream_repository": "actions/setup-node",
       "upstream_revision": "949feb2413d6458794dcd2491c4babbbce0c15c1"
     },
-    "KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8": {
+    "KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee": {
       "files": [
         {
           "sha256": "0829b3f54d769f8b25cefd4d856c735bc8e097d6597835b838ebb4da497c838d",
@@ -787,16 +808,16 @@
           "source_sha256": "0829b3f54d769f8b25cefd4d856c735bc8e097d6597835b838ebb4da497c838d"
         },
         {
-          "sha256": "4d22b6c0283bec4e47b42b798fd1746f86824787b030e60e8a9acce3af2f9755",
+          "sha256": "7ac86b05839d12bdb0fef8af26da26a0ef27e65cacd86f5fd14d6364bf39e288",
           "snapshot": ".github/security/actions/setup-python/package.json",
           "source": "package.json",
-          "source_sha256": "4d22b6c0283bec4e47b42b798fd1746f86824787b030e60e8a9acce3af2f9755"
+          "source_sha256": "7ac86b05839d12bdb0fef8af26da26a0ef27e65cacd86f5fd14d6364bf39e288"
         },
         {
-          "sha256": "e694ec7b8006a19f7d2141c4533ba79a64b2b4608a871992e7e5a58e006bb780",
+          "sha256": "dcbed40b39017d88d5dcbc9c1e6357de67bdb791c013ff510d0148afa1d87918",
           "snapshot": ".github/security/actions/setup-python/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "e694ec7b8006a19f7d2141c4533ba79a64b2b4608a871992e7e5a58e006bb780"
+          "source_sha256": "dcbed40b39017d88d5dcbc9c1e6357de67bdb791c013ff510d0148afa1d87918"
         },
         {
           "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
@@ -819,12 +840,12 @@
         "source_sha256": "0829b3f54d769f8b25cefd4d856c735bc8e097d6597835b838ebb4da497c838d"
       },
       "repository": "KirilsTurkins/lsf-setup-python",
-      "revision": "164c4cbba5d1b03a046ac8bc25ae695bee0667a8",
+      "revision": "e0788870ab0f74690a1d3f187ba206c395748aee",
       "security_pr": "https://github.com/actions/setup-python/pull/1381",
       "upstream_repository": "actions/setup-python",
       "upstream_revision": "6d4fd22b20465ccc0f7354476588e8df7c9ca0e0"
     },
-    "KirilsTurkins/lsf-setup-zig@e064b42fa88ad0859d8b54838b44f672ffd5ea7a": {
+    "KirilsTurkins/lsf-setup-zig@adb5ed78414674f693e8fe00982f83df9badcdb3": {
       "files": [
         {
           "sha256": "821fa3e350bc579c3ceeb0d50d8616a30c07012ba1d5398682b79b7c5711826f",
@@ -833,16 +854,16 @@
           "source_sha256": "821fa3e350bc579c3ceeb0d50d8616a30c07012ba1d5398682b79b7c5711826f"
         },
         {
-          "sha256": "a2374f6c4dd1664a104c9819e5156602485ae2bdcedaa6368feb929fa6bd6e5e",
+          "sha256": "63aad1759e84b61765af5c1d3b16df87d8ea2d5f0bd48857bf1f59c26be4552d",
           "snapshot": ".github/security/actions/setup-zig/package.json",
           "source": "package.json",
-          "source_sha256": "a2374f6c4dd1664a104c9819e5156602485ae2bdcedaa6368feb929fa6bd6e5e"
+          "source_sha256": "63aad1759e84b61765af5c1d3b16df87d8ea2d5f0bd48857bf1f59c26be4552d"
         },
         {
-          "sha256": "39f11efce247ca47b88f2a56e9125c5b9c0a47e73c291fc4f40afa7a16bddd49",
+          "sha256": "46a8c3156c9efc0d331fc73122915eb09587e514641ef48339eda27d7968db6f",
           "snapshot": ".github/security/actions/setup-zig/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "39f11efce247ca47b88f2a56e9125c5b9c0a47e73c291fc4f40afa7a16bddd49"
+          "source_sha256": "46a8c3156c9efc0d331fc73122915eb09587e514641ef48339eda27d7968db6f"
         }
       ],
       "kind": "npm",
@@ -853,12 +874,12 @@
         "source_sha256": "821fa3e350bc579c3ceeb0d50d8616a30c07012ba1d5398682b79b7c5711826f"
       },
       "repository": "KirilsTurkins/lsf-setup-zig",
-      "revision": "e064b42fa88ad0859d8b54838b44f672ffd5ea7a",
+      "revision": "adb5ed78414674f693e8fe00982f83df9badcdb3",
       "security_pr": "https://github.com/KirilsTurkins/lsf-setup-zig/pull/1",
       "upstream_repository": "mlugg/setup-zig",
       "upstream_revision": "d1434d08867e3ee9daa34448df10607b98908d29"
     },
-    "KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f": {
+    "KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc": {
       "files": [
         {
           "sha256": "c5979822866a72362e609844b6ebe77d4b7e759af68cc1c2c425dcf51481fab4",
@@ -867,16 +888,16 @@
           "source_sha256": "c5979822866a72362e609844b6ebe77d4b7e759af68cc1c2c425dcf51481fab4"
         },
         {
-          "sha256": "c8bd2ac29a524d7069736c7710df87643553369e77040b0a205708dc300c1936",
+          "sha256": "81625816f3d06ad20e697c1080c24a9920e434bceb653062e948053194994b99",
           "snapshot": ".github/security/actions/upload-artifact/package.json",
           "source": "package.json",
-          "source_sha256": "c8bd2ac29a524d7069736c7710df87643553369e77040b0a205708dc300c1936"
+          "source_sha256": "81625816f3d06ad20e697c1080c24a9920e434bceb653062e948053194994b99"
         },
         {
-          "sha256": "6596c32794b08b4f9859449abc3374998ad691607d284fe55dd5e6a38cfa7370",
+          "sha256": "f9ddfd3bac09c291181898b71b52d0f5024bdfdf43169999ca3dd2d76d8166cb",
           "snapshot": ".github/security/actions/upload-artifact/package-lock.json",
           "source": "package-lock.json",
-          "source_sha256": "6596c32794b08b4f9859449abc3374998ad691607d284fe55dd5e6a38cfa7370"
+          "source_sha256": "f9ddfd3bac09c291181898b71b52d0f5024bdfdf43169999ca3dd2d76d8166cb"
         },
         {
           "sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7",
@@ -885,10 +906,10 @@
           "source_sha256": "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7"
         },
         {
-          "sha256": "cc31303b77279b283e811081252a446e0a3e722493c39dcc7873b29504358a6f",
+          "sha256": "8f2ea6fbd697895126301d2e52efa1122893c616cae83f68f388cb170a6fba03",
           "snapshot": ".github/security/actions/upload-artifact/installed-verifier.mjs.snapshot",
           "source": ".lsf-source/verify-upload-sources.mjs",
-          "source_sha256": "cc31303b77279b283e811081252a446e0a3e722493c39dcc7873b29504358a6f"
+          "source_sha256": "8f2ea6fbd697895126301d2e52efa1122893c616cae83f68f388cb170a6fba03"
         },
         {
           "sha256": "4d459c993e9e80a7f555fbcc05e2fe03cda3cd834b01a21de7eba91bba65bdd0",
@@ -905,53 +926,32 @@
         "source_sha256": "c5979822866a72362e609844b6ebe77d4b7e759af68cc1c2c425dcf51481fab4"
       },
       "repository": "KirilsTurkins/lsf-upload-artifact",
-      "revision": "d74a697ce553b389f4219545e07c97fb8542c64f",
+      "revision": "c37718fd4e24a4c372572ce4f21b3969a72ba8dc",
       "security_pr": "https://github.com/KirilsTurkins/lsf-upload-artifact/pull/1",
       "upstream_repository": "actions/upload-artifact",
       "upstream_revision": "cf430e030ddbb5b0abf93d22962f4752f3646cd9"
     },
-    "KirilsTurkins/lsf-upload-pages-artifact@28d7597d6f6497a5d34e5ecaa1d97c510ce3556b": {
+    "KirilsTurkins/lsf-upload-pages-artifact@e6e68b294bf8395e09cb1979426d1b579ef1760d": {
       "files": [
         {
-          "sha256": "02172d806d3c7d7c6c049789d61d90fa1b9531eee2cfe0a9e9a36b05f2920ee5",
+          "sha256": "89b0ca0337e914aefbc12165f7f9bcf78f7587cb87772ef1a21c407625cb2c02",
           "snapshot": ".github/security/actions/upload-pages-artifact/action.yml.snapshot",
           "source": "action.yml",
-          "source_sha256": "02172d806d3c7d7c6c049789d61d90fa1b9531eee2cfe0a9e9a36b05f2920ee5"
+          "source_sha256": "89b0ca0337e914aefbc12165f7f9bcf78f7587cb87772ef1a21c407625cb2c02"
         }
       ],
       "kind": "composite",
       "metadata": {
-        "sha256": "02172d806d3c7d7c6c049789d61d90fa1b9531eee2cfe0a9e9a36b05f2920ee5",
+        "sha256": "89b0ca0337e914aefbc12165f7f9bcf78f7587cb87772ef1a21c407625cb2c02",
         "snapshot": ".github/security/actions/upload-pages-artifact/action.yml.snapshot",
         "source": "action.yml",
-        "source_sha256": "02172d806d3c7d7c6c049789d61d90fa1b9531eee2cfe0a9e9a36b05f2920ee5"
+        "source_sha256": "89b0ca0337e914aefbc12165f7f9bcf78f7587cb87772ef1a21c407625cb2c02"
       },
       "repository": "KirilsTurkins/lsf-upload-pages-artifact",
-      "revision": "28d7597d6f6497a5d34e5ecaa1d97c510ce3556b",
+      "revision": "e6e68b294bf8395e09cb1979426d1b579ef1760d",
       "security_pr": "https://github.com/KirilsTurkins/lsf-upload-pages-artifact/pull/1",
       "upstream_repository": "actions/upload-pages-artifact",
       "upstream_revision": "5f327015a708106f6f1b7c9a633901af30fe80cb"
-    },
-    "dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5": {
-      "files": [
-        {
-          "sha256": "79f143939c626525fa9e8f73156a1ac8c459a9ddb1ba2e56d48a9cb1363d226e",
-          "snapshot": ".github/security/actions/rust-toolchain/action.yml.snapshot",
-          "source": "action.yml",
-          "source_sha256": "79f143939c626525fa9e8f73156a1ac8c459a9ddb1ba2e56d48a9cb1363d226e"
-        }
-      ],
-      "kind": "composite",
-      "metadata": {
-        "sha256": "79f143939c626525fa9e8f73156a1ac8c459a9ddb1ba2e56d48a9cb1363d226e",
-        "snapshot": ".github/security/actions/rust-toolchain/action.yml.snapshot",
-        "source": "action.yml",
-        "source_sha256": "79f143939c626525fa9e8f73156a1ac8c459a9ddb1ba2e56d48a9cb1363d226e"
-      },
-      "repository": "dtolnay/rust-toolchain",
-      "revision": "4716b85f2fac3e324e64fa2810f6b5c3905760a5",
-      "upstream_repository": "dtolnay/rust-toolchain",
-      "upstream_revision": "4716b85f2fac3e324e64fa2810f6b5c3905760a5"
     }
   },
   "schema": 1

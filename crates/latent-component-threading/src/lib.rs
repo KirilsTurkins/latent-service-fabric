@@ -22,7 +22,6 @@ use wasmparser::{Encoding, ExternalKind, Operator, Parser, Payload, TypeRef, Val
 #[path = "../build-support/legacy_delta.rs"]
 mod legacy_delta_tests;
 
-mod function_names;
 mod thread_entry;
 pub use thread_entry::{ThreadEntryReceipt, transform_owned_thread_entry};
 mod admission;

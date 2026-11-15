@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <new>
 
 using namespace lsf::typescript::activation;
 unsigned rooted_callables = 0;
@@ -13,18 +14,29 @@ static bool destroyed = false;
 static bool watch_next = false;
 static unsigned allocations = 0;
 
-void* operator new(std::size_t size) {
-  void* value = std::malloc(size);
-  if (!value) std::abort();
+// Pair every scalar allocation form used by the maintained records with the
+// same allocator. Sanitizers intercept the library's nothrow new otherwise,
+// bypassing this watch and pairing operator-new storage with our free below.
+static void* tracked_allocate(std::size_t size) noexcept {
+  void* value = std::malloc(size ? size : 1);
+  if (!value) return nullptr;
   ++allocations;
   if (watch_next) { watched = value; destroyed = false; watch_next = false; }
   return value;
+}
+void* operator new(std::size_t size) {
+  if (void* value = tracked_allocate(size)) return value;
+  throw std::bad_alloc();
+}
+void* operator new(std::size_t size, const std::nothrow_t&) noexcept {
+  return tracked_allocate(size);
 }
 void operator delete(void* value) noexcept {
   if (value == watched) destroyed = true;
   std::free(value);
 }
 void operator delete(void* value, std::size_t) noexcept { ::operator delete(value); }
+void operator delete(void* value, const std::nothrow_t&) noexcept { ::operator delete(value); }
 
 struct Jobs final : Accounting {
   unsigned tasks = 0, queued = 0, completed_count = 0, cancelled_count = 0;

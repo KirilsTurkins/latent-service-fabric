@@ -222,11 +222,10 @@ class RepositoryInventoryTests(unittest.TestCase):
     def test_python_preservation_inputs_fetch_only_exact_frozen_source_commits(self):
         import shlex
         from tools.ci_lane_inventory import workflow_model
-        from tools import activation_stack_native_products
         from tools import go_http_tenant_native_products, http_phase_native_products
         from tools import http_tenant_native_products, java_phase_native_products
         from tools import wait_runtime_native_products, wasmtime_48_0_7_native_products
-        from tools import qualify_go_write_progress
+        from tools import qualify_go_write_progress, activation_stack_native_source
         import ast
         # The frozen Rust reader authenticates historical producer source on import.
         # This inventory check runs before the Python lane fetches that source, so
@@ -249,11 +248,13 @@ class RepositoryInventoryTests(unittest.TestCase):
         self.assertEqual(len([line for line in logical.splitlines() if line.strip()]), 1)
         words = shlex.split(logical)
         self.assertEqual(words[:5], ['git', 'fetch', '--no-tags', '--depth=1', 'origin'])
-        # The activation-stack origin remains live when the Rust thread origin rotates.
-        expected = {module.SOURCE for module in (activation_stack_native_products, go_http_tenant_native_products,
+        expected = {module.SOURCE for module in (go_http_tenant_native_products,
             http_phase_native_products, http_tenant_native_products, java_phase_native_products,
             wait_runtime_native_products, wasmtime_48_0_7_native_products)}
         expected.add(rust_thread_source)
+        # Rust thread products no longer share the C/ordinary-worker origin.
+        # Its independently frozen source still needs the historical object.
+        expected.add(activation_stack_native_source.SOURCE)
         expected.update((qualify_go_write_progress.BASELINE,
             qualify_go_write_progress.CLOSE_BASELINE, 'aa56bdebad8c12f20acce4ec4ecfeca73cf554be'))
         # These exact additional C/codec/Buffer origins are needed by the preservation

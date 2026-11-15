@@ -102,10 +102,10 @@ def contract(template: bytes, materials: dict[str, bytes]) -> None:
                 (provider, b'if timeout == 0 || timeout > 10_000'),
                 (provider, b'deadline = deadline.min(now + Duration::from_millis(u64::from(timeout)));'),
                 (connection, b'deadline: deadline.min(validity),'),
+                # Zero is reserved for an immediate readiness observation (direction 2),
+                # not a zero-duration read/write or a renewed operation deadline.
                 (connection, b'if timeout.is_some_and(|value| value > 10_000 || (value == 0 && direction != 2))'),
                 (connection, b'let mut deadline = self.deadline.min(state.last_progress + self.idle);'),
-                # Raw-TCP shutdown observations have their own requested deadline;
-                # ordinary I/O still clamps to the original absolute/idle limit.
                 (connection, b'let observation = direction == 2 && !socket.host_tls() && !socket.protected_owner();'),
                 (connection, b'let requested = timeout.map(|value| now + Duration::from_millis(u64::from(value)));'),
                 (connection, b'if !observation {\n            if let Some(requested) = requested {\n                deadline = deadline.min(requested);\n            }\n        }'),
@@ -131,7 +131,7 @@ def qualify(output: Path, compiler: Path, environment: dict, old: bytes,
     for name, source in (('deadline-old', old), ('deadline-current', current)):
         module = output / name
         module.mkdir()
-        (module / 'go.mod').write_bytes(b'module example.invalid/streamdeadline\n\ngo 1.27.3\n')
+        (module / 'go.mod').write_bytes(b'module example.invalid/streamdeadline\n\ngo 1.27.4\n')
         (module / 'deadline.go').write_bytes(projected(source))
         (module / 'deadline_test.go').write_bytes(tests)
         (module / 'wit').mkdir()

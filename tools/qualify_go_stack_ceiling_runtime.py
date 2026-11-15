@@ -145,7 +145,7 @@ def qualify(root,output,revision):
         reference = output/'reference';reference.mkdir()
         project = reference/'project';project.mkdir()
         (project/'main.go').write_bytes(fixture.reference_source())
-        (project/'go.mod').write_bytes(b'module lsf-stack-v7-proof\n\ngo 1.27.3\n')
+        (project/'go.mod').write_bytes(b'module lsf-stack-v7-proof\n\ngo 1.27.4\n')
         reference_env = build_environment(reference)
         reference_env.update(GOOS='wasip1',GOARCH='wasm',GOTOOLCHAIN='local',GOWORK='off',
             GOFLAGS='-mod=readonly',GOPROXY='off',GOSUMDB='off',CGO_ENABLED='0',
@@ -153,7 +153,7 @@ def qualify(root,output,revision):
         remaining = deadline-time.monotonic();oracle.require(remaining > 0,'reference-deadline')
         c = Commands(project,reference,reference_env,deadline_seconds=min(240,remaining),command_seconds=180)
         go = shutil.which('go',path=environment['PATH']);oracle.require(go is not None,'pinned-Go-required')
-        oracle.require(c.run('compiler-version',go,'version').strip() == b'go version go1.27.3 linux/amd64','reference-Go-version')
+        oracle.require(c.run('compiler-version',go,'version').strip() == b'go version go1.27.4 linux/amd64','reference-Go-version')
         c.run('compile-only',go,'build','-gcflags=lsf-stack-v7-proof=-m=2 -S','-o',reference/'not-executed.wasm','.')
         diagnostics = read_file(reference/'logs/01-compile-only.stderr.txt',1024*1024)
         record['placementReference'] = {**placement(diagnostics),'sourceDigest':digest(fixture.reference_source()),

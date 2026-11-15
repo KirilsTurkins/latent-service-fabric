@@ -3,6 +3,8 @@
 use super::*;
 use wasmparser::{ElementItems, ElementKind};
 
+mod derived_names;
+
 const NATIVE: &str = "latent:runtime-native/threads@0.1.0";
 const NEW: &str = "[thread-new-indirect-v0]";
 const PREPARED: i32 = 1;
@@ -173,25 +175,27 @@ impl Admission {
 struct RewriteAdmission {
     plan: Admission,
     references: u64,
+    derived_names: bool,
 }
 impl Reencode for RewriteAdmission {
     type Error = &'static str;
-    fn parse_custom_name_subsection(
-        &mut self,
-        names: &mut wasm_encoder::NameSection,
-        section: wasmparser::Name<'_>,
-    ) -> Result<(), reencode::Error<Self::Error>> {
-        // Debug names are not executable references and must not inflate the
-        // admission receipt's call/export/element reference count.
-        let remappings = [(self.plan.raw, self.plan.function)];
-        function_names::parse(self, names, section, &remappings)
-    }
     fn function_index(&mut self, function: u32) -> Result<u32, reencode::Error<Self::Error>> {
         if function == self.plan.raw {
             self.references += 1;
             Ok(self.plan.function)
         } else {
             Ok(function)
+        }
+    }
+    fn parse_custom_name_subsection(
+        &mut self,
+        names: &mut wasm_encoder::NameSection,
+        section: wasmparser::Name<'_>,
+    ) -> Result<(), reencode::Error<Self::Error>> {
+        if self.derived_names {
+            derived_names::subsection(self, names, section)
+        } else {
+            reencode::utils::parse_custom_name_subsection(self, names, section)
         }
     }
     fn parse_function_section(
@@ -335,6 +339,23 @@ pub fn transform_owned_thread_admission(
     input: &[u8],
     expected_preimage: [u8; 32],
 ) -> Result<(Vec<u8>, AdmissionReceipt), &'static str> {
+    transform(input, expected_preimage, false)
+}
+
+// Only the authenticated original-object derivation may retain the historical
+// name-row order of its own intermediate. This is not a guest-selectable mode.
+pub(super) fn transform_derived_thread_admission(
+    input: &[u8],
+    expected_preimage: [u8; 32],
+) -> Result<(Vec<u8>, AdmissionReceipt), &'static str> {
+    transform(input, expected_preimage, true)
+}
+
+fn transform(
+    input: &[u8],
+    expected_preimage: [u8; 32],
+    derived_names: bool,
+) -> Result<(Vec<u8>, AdmissionReceipt), &'static str> {
     let original_digest = Sha256::digest(input).into();
     if original_digest != expected_preimage {
         return Err("rust-stack-input-preimage-mismatch");
@@ -343,6 +364,7 @@ pub fn transform_owned_thread_admission(
     let mut rewrite = RewriteAdmission {
         plan: admission,
         references: 0,
+        derived_names,
     };
     let mut module = Module::new();
     rewrite
@@ -374,6 +396,8 @@ pub fn transform_owned_thread_admission(
 
 #[cfg(test)]
 mod tests {
+    mod names;
+
     use super::*;
     use std::borrow::Cow;
     use wasm_encoder::{
@@ -511,130 +535,6 @@ mod tests {
         }
         assert_eq!(bodies, [vec![4], vec![2, 1]]);
         verify(&output, inspect(&input).unwrap()).unwrap();
-    }
-
-    #[test]
-    fn historical_function_local_and_label_names_keep_order_without_counting_as_references() {
-        use wasm_encoder::{IndirectNameMap, NameMap, NameSection};
-        for order in [[1, 3], [3, 1]] {
-            let mut names = NameSection::new();
-            names.module("original");
-            let mut functions = NameMap::new();
-            let mut indirect = IndirectNameMap::new();
-            for index in order {
-                functions.append(index, if index == 1 { "creation" } else { "run" });
-                let mut inner = NameMap::new();
-                inner.append(0, "unchanged-inner");
-                indirect.append(index, &inner);
-            }
-            names.functions(&functions);
-            names.locals(&indirect);
-            names.labels(&indirect);
-            let mut metadata = Module::new();
-            metadata.section(&names);
-            let mut input = fixture(true, true);
-            input.extend_from_slice(&metadata.finish()[8..]);
-            let (output, receipt) = transform_owned_thread_admission(&input, hash(&input)).unwrap();
-            assert_eq!(receipt.remapped_references, 4);
-            let expected = order.map(|index| if index == 1 { 4 } else { index });
-            let mut seen = 0;
-            for payload in Parser::new(0).parse_all(&output) {
-                if let Payload::CustomSection(section) = payload.unwrap()
-                    && let wasmparser::KnownCustom::Name(names) = section.as_known()
-                {
-                    for subsection in names {
-                        match subsection.unwrap() {
-                            wasmparser::Name::Module { name, .. } => assert_eq!(name, "original"),
-                            wasmparser::Name::Function(map) => {
-                                let entries = map.names.collect::<Result<Vec<_>, _>>().unwrap();
-                                assert_eq!(
-                                    entries.iter().map(|entry| entry.index).collect::<Vec<_>>(),
-                                    expected
-                                );
-                                for entry in entries {
-                                    assert_eq!(
-                                        entry.name,
-                                        if entry.index == 4 { "creation" } else { "run" }
-                                    );
-                                }
-                                seen += 1;
-                            }
-                            wasmparser::Name::Local(map) | wasmparser::Name::Label(map) => {
-                                let entries = map.names.collect::<Result<Vec<_>, _>>().unwrap();
-                                assert_eq!(
-                                    entries.iter().map(|entry| entry.index).collect::<Vec<_>>(),
-                                    expected
-                                );
-                                for entry in entries {
-                                    let inner = entry.names.collect::<Result<Vec<_>, _>>().unwrap();
-                                    assert_eq!(inner.len(), 1);
-                                    assert_eq!(
-                                        (inner[0].index, inner[0].name),
-                                        (0, "unchanged-inner")
-                                    );
-                                }
-                                seen += 1;
-                            }
-                            _ => panic!("unexpected name subsection"),
-                        }
-                    }
-                }
-            }
-            assert_eq!(seen, 3);
-        }
-    }
-
-    #[test]
-    fn legacy_name_compatibility_rejects_ambiguous_and_malformed_maps() {
-        use wasm_encoder::{IndirectNameMap, NameMap, NameSection};
-        let mut cases = Vec::new();
-        for indices in [[1, 1], [1, 4]] {
-            let mut map = NameMap::new();
-            for index in indices {
-                map.append(index, "ambiguous");
-            }
-            let mut names = NameSection::new();
-            names.functions(&map);
-            cases.push(names);
-        }
-        for locals in [true, false] {
-            for duplicate_outer in [true, false] {
-                let mut inner = NameMap::new();
-                inner.append(0, "inner");
-                if !duplicate_outer {
-                    inner.append(0, "duplicate");
-                }
-                let mut map = IndirectNameMap::new();
-                map.append(1, &inner);
-                if duplicate_outer {
-                    map.append(1, &inner);
-                }
-                let mut names = NameSection::new();
-                if locals {
-                    names.locals(&map);
-                } else {
-                    names.labels(&map);
-                }
-                cases.push(names);
-            }
-        }
-        for malformed in [&[1, 1, 1, 0xff][..], &[1, 1, 2, b'x'][..]] {
-            let mut names = NameSection::new();
-            names.raw(1, malformed);
-            cases.push(names);
-        }
-        for names in cases {
-            let mut metadata = Module::new();
-            metadata.section(&names);
-            let mut input = fixture(true, true);
-            input.extend_from_slice(&metadata.finish()[8..]);
-            let original = input.clone();
-            assert_eq!(
-                transform_owned_thread_admission(&input, hash(&input)).unwrap_err(),
-                "rust-child-admission-reencode-failed"
-            );
-            assert_eq!(input, original);
-        }
     }
 
     #[test]

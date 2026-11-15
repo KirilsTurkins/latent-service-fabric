@@ -364,7 +364,7 @@ def validate_stream_factory(root: Path, clippy: dict) -> list[str]:
     if manifest.get("lints") != {"rust": {"unsafe_code": "deny"}, "clippy": clippy}:
         errors.append("stream factory must retain deny and all workspace Clippy lints")
     target = {'cfg(all(target_os = "linux", target_arch = "x86_64"))':
-        {"dependencies": {"rustix": {"version": "=1.1.5", "features": ["fs"]}}}}
+        {"dependencies": {"rustix": {"version": "=1.1.6", "features": ["fs"]}}}}
     if manifest.get("package", {}).get("name") != "latent-stream-factory-native" or manifest.get("target") != target:
         errors.append("fixed stream factory identity or pinned rustix target changed; review its FD ownership ABI")
     sources = sorted(path.relative_to(crate).as_posix() for path in crate.rglob("*.rs"))

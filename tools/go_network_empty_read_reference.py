@@ -100,7 +100,7 @@ def qualify(output: Path, compiler: Path, environment: dict, old: bytes,
     for name, source in (('empty-read-old', old), ('empty-read-current', current)):
         module = output / name
         module.mkdir()
-        (module / 'go.mod').write_bytes(b'module example.invalid/emptyread\n\ngo 1.27.3\n')
+        (module / 'go.mod').write_bytes(b'module example.invalid/emptyread\n\ngo 1.27.4\n')
         (module / 'production.go').write_bytes(projected(source))
         (module / 'empty_read_test.go').write_bytes(tests)
         (module / 'wit').mkdir()

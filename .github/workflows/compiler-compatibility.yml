@@ -40,10 +40,10 @@ jobs:
         persist-credentials: false
     - name: Fetch the exact historical native source before bounded verification
       run: git fetch --no-tags --depth=1 origin c7134289f446cb3171eb0ffd800a94afc2a5209f
-    - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
       with:
         python-version: 3.13.5
-    - uses: KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c # v6.1.0 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2 # v6.1.0 + upstream changes + LSF security fixes
       with:
         distribution: temurin
         java-version: 25.0.4+101.0.LTS
@@ -82,7 +82,7 @@ jobs:
           --output "$RUNNER_TEMP/java-compiler-diagnostics"
     - name: Retain bounded public identities, actual results and signable package for causal replay
       if: always()
-      uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+      uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
       with:
         name: java-compiler-diagnostics-${{ github.sha }}
         retention-days: 3
@@ -171,16 +171,16 @@ jobs:
         persist-credentials: false
     - name: Fetch the exact historical native source before bounded verification
       run: git fetch --no-tags --depth=1 origin c7134289f446cb3171eb0ffd800a94afc2a5209f
-    - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
       with:
         python-version: 3.13.5
-    - uses: KirilsTurkins/lsf-setup-dotnet@258c927924210be905f8908a4be714e5d0daffa8 # v6.0.0 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-setup-dotnet@2382c9e63a3b678b643c7e715d023e7fa42fbbef # v6.0.0 + upstream changes + LSF security fixes
       with:
         dotnet-version: 10.0.100
     - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       with:
         targets: wasm32-unknown-unknown
-    - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334 # v2.9.3 + upstream changes + LSF security fixes
       with:
         prefix-key: lsf-ci-dependencies-v2
         shared-key: host-correctness
@@ -227,7 +227,7 @@ jobs:
           --output "$RUNNER_TEMP/dotnet-compiler-diagnostics"
     - name: Retain bounded public identities, actual results and signable package for causal replay
       if: always()
-      uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+      uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
       with:
         name: dotnet-compiler-diagnostics-${{ github.sha }}
         retention-days: 3
@@ -300,7 +300,7 @@ jobs:
     - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
       with:
         persist-credentials: false
-    - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
       with:
         python-version: 3.13.5
     - name: Bind original qualified native source and locked reader dependencies
@@ -315,7 +315,7 @@ jobs:
       if: ${{ matrix.cell == 'go' }}
       with:
         version: 1.254.0
-    - uses: KirilsTurkins/lsf-setup-zig@e064b42fa88ad0859d8b54838b44f672ffd5ea7a # v2.2.1 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-setup-zig@adb5ed78414674f693e8fe00982f83df9badcdb3 # v2.2.1 + upstream changes + LSF security fixes
       if: ${{ contains(fromJSON('["c","rust"]'), matrix.cell) }}
       with:
         version: 0.16.0
@@ -331,16 +331,16 @@ jobs:
         python3 -B tools/install_guest_bindgen.py "$RUNNER_TEMP/compatibility-bindgen"
 
         echo "$RUNNER_TEMP/compatibility-bindgen" >> "$GITHUB_PATH"'
-    - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a # v7.1.0 + upstream changes + LSF security fixes
       if: ${{ contains(fromJSON('["typescript","typescript-initializer"]'), matrix.cell) }}
       with:
         node-version: 24.19.0
-    - uses: KirilsTurkins/lsf-setup-java@63c7977881fc344a6ed464f7ed5e242aedc8d56c # v6.1.0 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2 # v6.1.0 + upstream changes + LSF security fixes
       if: ${{ contains(fromJSON('["java"]'), matrix.cell) }}
       with:
         distribution: temurin
         java-version: 25.0.4+101.0.LTS
-    - uses: KirilsTurkins/lsf-setup-dotnet@258c927924210be905f8908a4be714e5d0daffa8 # v6.0.0 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-setup-dotnet@2382c9e63a3b678b643c7e715d023e7fa42fbbef # v6.0.0 + upstream changes + LSF security fixes
       if: ${{ contains(fromJSON('["dotnet"]'), matrix.cell) && !matrix.retained }}
       with:
         dotnet-version: 10.0.100
@@ -381,7 +381,7 @@ jobs:
     - name: Install original normal TypeScript tools without an engine build
       if: ${{ contains(fromJSON('["typescript","typescript-initializer"]'), matrix.cell) }}
       run: python3 -B tools/typescript_capsule.py install-tools "$RUNNER_TEMP/compatibility-typescript-tools"
-    - name: Authenticate original Go1.27.3 and componentize-go0.4.3 and prepare the maintained v5 compiler
+    - name: Authenticate original Go1.27.4 and componentize-go0.4.3 and prepare the maintained v5 compiler
       run: 'set -euo pipefail
 
         out="$RUNNER_TEMP/go-http-tenant-tools"
@@ -390,9 +390,9 @@ jobs:
 
         mkdir "$out"
 
-        curl --fail --location --proto ''=https'' --tlsv1.2 --max-time 180 --output "$out/go.tar.gz" https://dl.google.com/go/go1.27.3.linux-amd64.tar.gz
+        curl --fail --location --proto ''=https'' --tlsv1.2 --max-time 180 --output "$out/go.tar.gz" https://dl.google.com/go/go1.27.4.linux-amd64.tar.gz
 
-        echo "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40  $out/go.tar.gz" | sha256sum --check
+        echo "7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840  $out/go.tar.gz" | sha256sum --check
         --strict
 
         tar -xzf "$out/go.tar.gz" -C "$out"
@@ -462,7 +462,7 @@ jobs:
         "$RUNNER_TEMP/compatibility-public"
 
         echo ''admitted=true'' >> "$GITHUB_OUTPUT"'
-    - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
       if: ${{ always() && steps.public.outputs.admitted == 'true' }}
       with:
         name: compatibility-closure-${{ github.sha }}-${{ matrix.cell }}
@@ -477,16 +477,16 @@ jobs:
     - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
       with:
         persist-credentials: false
-    - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
       with:
         python-version: 3.13.5
     - name: Install only locked readers
       run: python3 -m pip install --requirement tools/requirements.lock
-    - uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389 # v8.0.2 + upstream changes + LSF security fixes
       with:
         name: compatibility-closure-${{ github.sha }}-go
         path: ${{ runner.temp }}/compatibility-inputs/go
-    - uses: KirilsTurkins/lsf-download-artifact@dd4ebbadbf12ed34441db2712be7a193490b7fc5 # v8.0.2 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389 # v8.0.2 + upstream changes + LSF security fixes
       with:
         name: compatibility-closure-${{ github.sha }}-dotnet
         path: ${{ runner.temp }}/compatibility-inputs/dotnet
@@ -500,7 +500,7 @@ jobs:
       run: python3 -B tools/compatibility_closure_matrix.py assemble --inputs "$RUNNER_TEMP/compatibility-inputs"
         --source-commit "$SOURCE_COMMIT" --preserved "$RUNNER_TEMP/compatibility-preserved"
         --diagnostics "$RUNNER_TEMP/compatibility-current-diagnostics" --output "$RUNNER_TEMP/compatibility-completion.json"
-    - uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+    - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
       with:
         name: compatibility-closure-matrix-${{ github.sha }}
         path: ${{ runner.temp }}/compatibility-completion.json
