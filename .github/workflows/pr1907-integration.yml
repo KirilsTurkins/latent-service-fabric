@@ -21,13 +21,12 @@ jobs:
     steps:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
         with:
-          fetch-depth: 8
           persist-credentials: false
       - name: Reconstruct the reviewed merge without publishing a ref
         run: |
           set -euo pipefail
           cp .github/pr1907-reconcile.py "$RUNNER_TEMP/reconcile.py"
-          git fetch --no-tags --depth=4 origin 35ab1b776df07f0fa1c1bb64d3699915afffb38b
+          git fetch --no-tags --depth=4 origin b5e25076abc98c6a57f7078bdc335a5e916c5851 35ab1b776df07f0fa1c1bb64d3699915afffb38b
           git checkout --detach b5e25076abc98c6a57f7078bdc335a5e916c5851
           test "$(git merge-base HEAD 35ab1b776df07f0fa1c1bb64d3699915afffb38b)" = 14738dc3de79881c549d8371e9933c08a92fda27
           git config user.name 'PR 1907 qualification'
@@ -65,7 +64,8 @@ jobs:
           assert not changed_matrix_sources(), changed_matrix_sources()
           PY
       - name: Test actual protected startup including inbox custody
-        run: cargo test -p latentd --lib --all-features --locked standalone::state:: -- --test-threads=2
+        run: |
+          cargo test -p latentd --lib --all-features --locked standalone::state:: -- --test-threads=2
       - name: Qualify real linked payloads and the later custody scan
         run: python3 tools/qualify_local_payload_recovery.py
       - name: Test native scoped inbox retry and terminal writer ownership
