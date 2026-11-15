@@ -25,7 +25,7 @@ jobs:
           ref: b5e25076abc98c6a57f7078bdc335a5e916c5851
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
-      - uses: KirilsTurkins/lsf-setup-python@e0788870abf74690a1d3f187ba206c395748aee
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
         with:
           python-version: 3.13.5
       - name: Retrieve exact diagnostic executables as bounded data
