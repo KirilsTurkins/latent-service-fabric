@@ -1,0 +1,98 @@
+name: PR 1907 blocker controls
+on:
+  push:
+    branches: [ci/pr1907-blocker-controls-20261115]
+permissions:
+  contents: read
+jobs:
+  operator:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: true
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: true
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: true
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: true
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: b5e25076abc98c6a57f7078bdc335a5e916c5851
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          components: rustfmt,clippy
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - uses: KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          save-if: false
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: 3.13.5
+      - name: Locate exact finite deployment owners and fixture export
+        shell: bash
+        run: |
+          set -euo pipefail
+          git grep -n -E 'impl DeploymentOperationStore|fn prepare_operation|fn commit_operation' -- crates | head -100
+          git grep -n -E 'ResourceExhausted|resource_exhausted|resource-exhausted' -- crates/latent-control-store crates/latent-catalog crates/latent-rollout crates/latent-wire/src/management/deployment | head -150 || true
+          sed -n '515,590p' .github/workflows/ci.yml
+          sed -n '270,365p' tools/phase2_operator_process.py
+          sed -n '1,180p' crates/latent-wire/src/management/deployment/managed/response.rs
+      - name: Build the unchanged original product and key-free operator fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo build --locked --all-features -p latent -p latentd
+          LSF_OPERATOR_FIXTURE_ROOT="$RUNNER_TEMP/operator-inputs" cargo test --locked --all-features -p latent-policy --lib supply_chain::tests::support::operator_fixture::export_operator_workflow_fixture -- --exact
+          docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395
+      - name: Observe original operator failure with source-matched public reasons
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import contextlib, io, json, os, subprocess, sys, hashlib
+          from pathlib import Path
+          from tools import phase2_operator_process as process
+          from tools import run_phase2_operator_workflow as workflow
+          original = process.failed_call_record
+          files = subprocess.check_output(['git','ls-files','*.rs'],text=True).splitlines()
+          def observed(value, call, status):
+              result = original(value, call, status)
+              error = value.get('error', {}) if isinstance(value, dict) else {}
+              message = error.get('message') if isinstance(error, dict) else None
+              found = []
+              if isinstance(message, str) and 4 <= len(message) <= 1024:
+                  for name in files:
+                      for number, line in enumerate(Path(name).read_text().splitlines(), 1):
+                          if message in line:
+                              found.append({'file': name, 'line': number})
+                  print('STATIC_REASON_MATCHES=' + json.dumps(found[:32]), file=sys.stderr, flush=True)
+                  print('REASON_DIGEST=' + hashlib.sha256(message.encode()).hexdigest(), file=sys.stderr, flush=True)
+              print('ORIGINAL_FAILURE=' + json.dumps(result), file=sys.stderr, flush=True)
+              return result
+          process.failed_call_record = observed
+          for attempt in range(3):
+              sys.argv = ['run_phase2_operator_workflow.py', '--cli', str(Path('target/debug/latent').resolve()),
+                          '--node', str(Path('target/debug/latentd').resolve()), '--fixture-root', os.environ['RUNNER_TEMP'] + '/operator-inputs',
+                          '--source-commit', 'b5e25076abc98c6a57f7078bdc335a5e916c5851']
+              output = io.StringIO()
+              try:
+                  with contextlib.redirect_stdout(output):
+                      workflow.main()
+              except Exception as failure:
+                  print('ATTEMPT=' + str(attempt) + ' FAILED=' + (str(failure) if isinstance(failure, process.WorkflowError) else type(failure).__name__), flush=True)
+              else:
+                  receipt = json.loads(output.getvalue())
+                  print('ATTEMPT=' + str(attempt) + ' PASSED=' + str(receipt['passed']) + ' CALLS=' + str(receipt['cliProcesses']), flush=True)
+              Path(os.environ['RUNNER_TEMP'], 'operator-control-' + str(attempt) + '.json').write_text(output.getvalue())
+          PY
