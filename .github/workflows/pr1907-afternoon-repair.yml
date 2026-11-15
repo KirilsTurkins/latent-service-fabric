@@ -4,52 +4,155 @@ on:
     branches: [ci/pr1907-repair-20261115-afternoon]
 permissions:
   contents: read
-  actions: read
 jobs:
-  diagnose:
+  integration:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: true
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: true
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: true
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: true
     steps:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
         with:
           ref: b5e25076abc98c6a57f7078bdc335a5e916c5851
           fetch-depth: 128
           persist-credentials: false
-      - name: Inspect exact three-way merge
+      - name: Apply reviewed three-way reconciliation
+        env:
+          CONTROL_SHA: ${{ github.sha }}
         shell: bash
         run: |
           set -euo pipefail
           git fetch --no-tags --depth=128 origin 2ad1b0a952642e296c76a95d687962d0dccbf071
-          test "$(git merge-base HEAD FETCH_HEAD)" = 14738dc3de79881c549d8371e9933c08a92fda27
+          git fetch --no-tags --depth=1 origin "$CONTROL_SHA"
+          git show "$CONTROL_SHA:repair/pr1907_reconcile.py" > "$RUNNER_TEMP/reconcile.py"
           git config user.name 'PR 1907 repair'
           git config user.email 'noreply@users.noreply.github.com'
           git merge --no-commit --no-ff 2ad1b0a952642e296c76a95d687962d0dccbf071 || test -n "$(git diff --name-only --diff-filter=U)"
-          echo '=== ACTUAL CONFLICTS ==='
-          git diff --name-only --diff-filter=U
-          git diff --cc
-          echo '=== REPOSITORY AGENT GUIDANCE ==='
-          git ls-files '*AGENTS.md' '*agents.md' | while read -r file; do printf '\n=== %s ===\n' "$file"; cat "$file"; done
-          echo '=== OPERATOR/RESOURCE FILES ==='
-          git ls-files 'tools/*operator*' 'tools/*phase2*' 'tools/java_standard_http_library.py' 'tools/java_guest/*resolve*'
-      - name: Inspect retained public failure receipts
-        env:
-          GH_TOKEN: ${{ github.token }}
+          python3 "$RUNNER_TEMP/reconcile.py"
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          components: rustfmt,clippy
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - uses: KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          save-if: false
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: 3.13.5
+      - name: Format the reconciliation and bind provider provenance
         shell: bash
         run: |
           set -euo pipefail
-          gh api repos/KirilsTurkins/latent-service-fabric/actions/artifacts/14160300330/zip > "$RUNNER_TEMP/phase2.zip"
-          gh api repos/KirilsTurkins/latent-service-fabric/actions/artifacts/14161786821/zip > "$RUNNER_TEMP/java.zip"
+          cargo fmt --package latentd --package latent-commit --package latent-node
+          cargo fmt --all -- --check
+          git diff --check
+          git add -u
+          git commit -m 'merge: reconcile current development with inbox custody and durable payload startup'
           python3 - <<'PY'
-          import os, zipfile
           from pathlib import Path
-          for kind in ('phase2', 'java'):
-              with zipfile.ZipFile(Path(os.environ['RUNNER_TEMP']) / (kind + '.zip')) as archive:
-                  selected = [item for item in archive.infolist() if not item.is_dir() and
-                              (kind == 'phase2' or 'java-published-http/' in item.filename or 'default-client-native-resolve' in item.filename)]
-                  print('=== ARTIFACT', kind, 'FILES', [(item.filename, item.file_size) for item in selected], flush=True)
-                  for item in selected:
-                      if item.file_size > 128 * 1024 or not item.filename.endswith(('.json', '.log', '.txt')):
-                          continue
-                      text = archive.read(item).decode('utf-8', errors='replace')
-                      print('=== FILE', item.filename, '===\n' + text[-16000:], flush=True)
+          import hashlib, json, subprocess
+          path = Path('contracts/dev/composition-support-v1.json')
+          data = json.loads(path.read_text())
+          source = data['sources']['provider-configuration']
+          source['digest'] = 'sha256:' + hashlib.sha256(Path(source['path']).read_bytes()).hexdigest()
+          source['commit'] = subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          path.write_text(json.dumps(data, indent=2) + '\n')
+          PY
+          git add contracts/dev/composition-support-v1.json
+          git commit -m 'docs: bind composition evidence to the merged provider configuration'
+          git show --stat HEAD~1
+          git diff 2ad1b0a952642e296c76a95d687962d0dccbf071 -- apps/latentd/src/standalone/state/validation.rs apps/latentd/src/standalone/state/store.rs apps/latentd/src/standalone/state/kernel.rs
+      - name: Check workflow contracts and deadline regression controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install -r tools/requirements.lock
+          python3 -m unittest tools.tests.test_go_write_progress tools.tests.test_go_network_deadline_contract tools.tests.test_go_deadline_provider_contract tools.tests.test_ci_contracts
+          python3 tools/ci_coverage.py --receipt "$RUNNER_TEMP/integration-coverage.json"
+      - name: Validate combined protected startup and inbox owners
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked -p latentd --all-features --bin latentd standalone::state::
+          cargo test --locked -p latent-commit --all-features --lib atomic::tests
+          cargo test --locked -p latent-node --all-features --lib transaction_runtime::tests::response::inbox
+          cargo clippy --locked -p latentd -p latent-commit -p latent-node --all-features --all-targets --no-deps -- -D warnings
+      - name: Retain qualified candidate on an isolated data branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CONTROL_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git status --porcelain --untracked-files=no)"
+          candidate="$(git rev-parse HEAD)"
+          tree="$(git rev-parse HEAD^{tree})"
+          echo "QUALIFIED_CANDIDATE=$candidate"
+          echo "QUALIFIED_TREE=$tree"
+          export GIT_INDEX_FILE="$RUNNER_TEMP/transfer.index"
+          git read-tree "$CONTROL_SHA^{tree}"
+          git read-tree --prefix=pr1907-candidate/ "$tree"
+          transfer_tree="$(git write-tree)"
+          transfer="$(printf 'data: retain tested PR 1907 reconciliation without changing a product branch\n' | git commit-tree "$transfer_tree" -p "$CONTROL_SHA" -p "$candidate")"
+          gh auth setup-git
+          git push origin "$transfer:refs/heads/ci/pr1907-objects-20261115-afternoon"
+          echo "TRANSFER_COMMIT=$transfer"
+  java-resolver:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: b5e25076abc98c6a57f7078bdc335a5e916c5851
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2
+        with:
+          distribution: temurin
+          java-version: 25
+      - name: Run the exact published-client native resolution with retained diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, sys, tempfile, subprocess
+          from pathlib import Path
+          from tools.build_observation import build_environment
+          from tools.java_standard_http_library import project, CANDIDATE
+          from tools.rust_capsule_build import Commands
+          from tools.rust_capsule_project import ROOT, fresh, digest, read_file
+          with tempfile.TemporaryDirectory(prefix='pr1907-resolver-') as name:
+              root = Path(name)
+              environment = build_environment(root)
+              environment['JAVA_HOME'] = os.environ['JAVA_HOME']
+              commands = Commands(ROOT, fresh(root/'commands'), environment, deadline_seconds=600, command_seconds=300)
+              app = project(root/'application')
+              candidate = root/'candidate.json'
+              try:
+                  commands.run('default-client-native-resolve', sys.executable, ROOT/'tools/java_capsule.py', 'resolve', app, '--candidate', candidate, '--gradle', 'gradle')
+                  assert digest(read_file(candidate)) == CANDIDATE
+                  print('RESOLVER_RESULT=passed-exact-original-closure', flush=True)
+              except Exception as failure:
+                  print('RESOLVER_RESULT=' + type(failure).__name__ + ':' + str(failure), flush=True)
+              for path in sorted((root/'commands').rglob('*')):
+                  if path.is_file() and path.stat().st_size <= 256*1024:
+                      print('=== DIAGNOSTIC', path.name, '===\n' + path.read_text(errors='replace')[-20000:], flush=True)
           PY
