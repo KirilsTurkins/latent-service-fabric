@@ -123,6 +123,49 @@ test('an inconsistent HTTP status cannot install a terminal command result', asy
   assert.throws(() => app.finishOriginal(), /original-command-not-terminal/);
 });
 
+test('an older recovery response cannot downgrade a terminal command', async () => {
+  let count = 0;
+  const app = client(async () => ++count === 1 ? response('committed') : new Response(await response('in-progress').text(), {status: 202}));
+  const original = app.prepare('demo', '0', 3);
+  await app.submit();
+  const terminalView = app.view;
+  await assert.rejects(app.recover(), /terminal-command-regression/);
+  assert.equal(app.status, 'committed');
+  assert.equal(app.view, terminalView);
+  assert.equal(app.pending.key, original);
+  app.finishOriginal();
+});
+
+test('a late submission cannot overwrite a recovered terminal command', async () => {
+  let release;
+  let count = 0;
+  const app = client(async () => ++count === 1
+    ? new Promise(resolve => { release = resolve; }) : response('committed'));
+  app.prepare('demo', '0', 3);
+  const submission = app.submit();
+  await app.recover();
+  release(new Response(await response('in-progress').text(), {status: 202}));
+  await assert.rejects(submission, /terminal-command-regression/);
+  assert.equal(app.status, 'committed');
+  app.finishOriginal();
+});
+
+test('a finished command cannot overwrite a newly prepared command', async () => {
+  let release;
+  let count = 0;
+  const app = client(async () => ++count === 1
+    ? new Promise(resolve => { release = resolve; }) : response('committed'));
+  app.prepare('demo', '0', 3);
+  const oldSubmission = app.submit();
+  await app.recover();
+  app.finishOriginal();
+  const next = app.prepare('demo', '1', 4);
+  release(new Response(await response('in-progress').text(), {status: 202}));
+  await assert.rejects(oldSubmission, /original-command-changed/);
+  assert.equal(app.status, 'prepared');
+  assert.equal(app.pending.key, next);
+});
+
 test('uncertain delivery retains the original body, precondition and key and only recovery is sent', async () => {
   const requests = [];
   const app = client(async (url, options) => {

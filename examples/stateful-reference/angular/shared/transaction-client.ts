@@ -229,6 +229,8 @@ export class DraftClient {
     if (response.disposition !== 'query') {
       if (!response['command-id']) throw new Error('missing-command-identity');
       if (this.last?.['command-id'] && response['command-id'] !== this.last['command-id']) throw new Error('foreign-command-response');
+      if (this.last && ['committed', 'rejected'].includes(this.last.disposition) &&
+          response.disposition !== this.last.disposition) throw new Error('terminal-command-regression');
       this.status = response.disposition;
       this.last = response;
     }
@@ -236,21 +238,27 @@ export class DraftClient {
     if (response.disposition === 'committed' && response['state-view']) this.minimumView = response['state-view'];
     return {status, disposition: response.disposition, value, effectIds: response['effect-ids'] ?? []};
   }
+  private applyCommand(reply: FetchReply, original: Readonly<Original>): Reply {
+    if (this.pending !== original) throw new Error('original-command-changed');
+    return this.apply(reply, original.draftId);
+  }
   async submit(): Promise<Reply> {
     if (!this.pending || this.status !== 'prepared') throw new Error('command-must-be-explicitly-prepared');
-    const {key, body, ifMatch, draftId} = this.pending;
+    const original = this.pending;
+    const {key, body, ifMatch} = original;
     this.status = 'pending';
     try {
-      return this.apply(await this.request(this.routes.command, {method: 'POST', body,
-        headers: {'content-type': VALUE_MEDIA, 'idempotency-key': key, ...(ifMatch ? {'if-match': ifMatch} : {})}}), draftId);
+      return this.applyCommand(await this.request(this.routes.command, {method: 'POST', body,
+        headers: {'content-type': VALUE_MEDIA, 'idempotency-key': key, ...(ifMatch ? {'if-match': ifMatch} : {})}}), original);
     } catch (error) {
-      if (this.status !== 'permission-denied') this.status = 'uncertain';
+      if (this.pending === original && this.status !== 'permission-denied' && !['committed', 'rejected'].includes(this.status)) this.status = 'uncertain';
       throw error;
     }
   }
   async recover(): Promise<Reply> {
     if (!this.pending) throw new Error('no-original-command');
-    return this.apply(await this.request(this.routes.result, {method: 'GET', headers: {'idempotency-key': this.pending.key}}), this.pending.draftId);
+    const original = this.pending;
+    return this.applyCommand(await this.request(this.routes.result, {method: 'GET', headers: {'idempotency-key': original.key}}), original);
   }
   async query(draftId: string): Promise<Reply> {
     boundedId(draftId);
@@ -267,8 +275,10 @@ export class DraftClient {
   async effectStatus(effectId: string): Promise<EffectStatus> {
     if (!this.pending || !/^[0-9a-f]{64}$/.test(effectId) || !this.last?.['effect-ids']?.includes(effectId))
       throw new Error('original-command-effect-required');
+    const original = this.pending;
     const reply = await this.request(this.routes.result, {method: 'GET',
-      headers: {'idempotency-key': this.pending.key, 'effect-id': effectId}});
+      headers: {'idempotency-key': original.key, 'effect-id': effectId}});
+    if (this.pending !== original) throw new Error('original-command-changed');
     const effect = reply.envelope.effect;
     const allowed = ['pending', 'dispatching', 'provider-acknowledged', 'known-failure', 'uncertain',
       'expired', 'policy-blocked', 'administratively-terminated', 'retry-scheduled', 'dead-lettered'];
@@ -292,10 +302,10 @@ export class DraftClient {
     const original = this.pending;
     this.status = 'pending';
     try {
-      return this.apply(await this.request(this.routes.command, {method: 'POST', body: original.body,
+      return this.applyCommand(await this.request(this.routes.command, {method: 'POST', body: original.body,
         headers: {'content-type': VALUE_MEDIA, 'idempotency-key': original.key, 'command-retry-key': retryKey,
-          'command-abort-fence': encoded, ...(original.ifMatch ? {'if-match': original.ifMatch} : {})}}), original.draftId);
-    } catch (error) { if (this.status !== 'permission-denied') this.status = 'uncertain'; throw error; }
+          'command-abort-fence': encoded, ...(original.ifMatch ? {'if-match': original.ifMatch} : {})}}), original);
+    } catch (error) { if (this.pending === original && this.status !== 'permission-denied' && !['committed', 'rejected'].includes(this.status)) this.status = 'uncertain'; throw error; }
   }
   finishOriginal(): void {
     if (!this.last || !['committed', 'rejected'].includes(this.last.disposition)) throw new Error('original-command-not-terminal');
