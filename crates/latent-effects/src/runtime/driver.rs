@@ -79,6 +79,13 @@ pub(super) async fn drive(
         // Exactly one scheduling owner and timer; receipt persistence is served
         // first. Fixed workers wait on bounded receipt slots, never own timers.
         tokio::select! {
+            // Notifications may coalesce when several workers finish together.
+            // Receiving directly keeps already queued receipts moving without
+            // waiting for another poll interval. A backpressured receipt stays
+            // the sole pending owner and is retried on the normal schedule.
+            receipt = receipts.recv(), if pending_receipt.is_none() => {
+                pending_receipt = receipt;
+            },
             () = services.shared.notify.notified() => {},
             () = tokio::time::sleep(config.poll_interval) => {},
         }
