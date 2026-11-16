@@ -1426,3 +1426,371 @@ fn observed(fixture: &Fixture) -> latent_capabilities::broker::network::StreamNo
         .streams
         .unwrap()
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn provider_retirement_continues_after_multiple_connection_waker_panics() {
+    use std::panic::{catch_unwind, AssertUnwindSafe};
+    struct PanicOnce {
+        label: &'static str,
+        retirement_thread: std::thread::ThreadId,
+        armed: AtomicBool,
+        woke: AtomicBool,
+    }
+    impl Wake for PanicOnce {
+        fn wake(self: Arc<Self>) {
+            self.wake_by_ref();
+        }
+        fn wake_by_ref(self: &Arc<Self>) {
+            if std::thread::current().id() == self.retirement_thread
+                && self.armed.swap(false, Ordering::AcqRel)
+            {
+                self.woke.store(true, Ordering::Release);
+                std::panic::panic_any(self.label);
+            }
+        }
+    }
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut configuration = config();
+    configuration.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let endpoint = configuration.destinations[0].endpoint.clone();
+    // Include a real configured resolver, but never dispatch DNS to it.
+    let mut dns = configuration.destinations[0].clone();
+    dns.endpoint.host = "unused.example".into();
+    dns.resolution = crate::StreamResolution::Dns {
+        server: "127.0.0.1:53".parse().unwrap(),
+        maximum_ttl_seconds: 1,
+    };
+    configuration.destinations.push(dns);
+    let fixture = Fixture::new(configuration);
+    let lifecycle =
+        StreamLifecycle::from_installed_for_qualification("streams", fixture.provider.clone())
+            .unwrap();
+    let (session, control) = fixture.session(5000);
+    let session_bytes = control.native_session_bytes();
+    let request = || StreamConnectRequest {
+        endpoint: endpoint.clone(),
+        timeout_millis: None,
+    };
+    let first = lifecycle.start(&session, request()).unwrap().await.unwrap();
+    let (peer1, _) = listener.accept().await.unwrap();
+    let second = lifecycle.start(&session, request()).unwrap().await.unwrap();
+    let (peer2, _) = listener.accept().await.unwrap();
+    assert!(
+        !fixture.provider.inner.resolvers[1]
+            .as_ref()
+            .unwrap()
+            .usage()
+            .closed
+    );
+    let waker1 = Arc::new(PanicOnce {
+        label: "first original connection wake failed",
+        retirement_thread: std::thread::current().id(),
+        armed: AtomicBool::new(false),
+        woke: AtomicBool::new(false),
+    });
+    let waker2 = Arc::new(PanicOnce {
+        label: "second original connection wake failed",
+        retirement_thread: std::thread::current().id(),
+        armed: AtomicBool::new(false),
+        woke: AtomicBool::new(false),
+    });
+    let wake1 = Waker::from(waker1.clone());
+    let wake2 = Waker::from(waker2.clone());
+    let mut pending1 = Box::pin(first.read(1, None).unwrap());
+    let mut pending2 = Box::pin(second.read(1, None).unwrap());
+    assert!(matches!(
+        pending1.as_mut().poll(&mut Context::from_waker(&wake1)),
+        Poll::Pending
+    ));
+    assert!(matches!(
+        pending2.as_mut().poll(&mut Context::from_waker(&wake2)),
+        Poll::Pending
+    ));
+    waker1.armed.store(true, Ordering::Release);
+    waker2.armed.store(true, Ordering::Release);
+    let outcome = catch_unwind(AssertUnwindSafe(|| lifecycle.retire()));
+    let preserved_first_panic = outcome
+        .as_ref()
+        .err()
+        .and_then(|payload| payload.downcast_ref::<&str>())
+        .copied();
+    let first_state = first.inspect().state;
+    let second_state = second.inspect().state;
+    let resolver_closed = fixture.provider.inner.resolvers[1]
+        .as_ref()
+        .unwrap()
+        .usage()
+        .closed;
+    let first_woke = waker1.woke.load(Ordering::Acquire);
+    let second_woke = waker2.woke.load(Ordering::Acquire);
+    let retained = lifecycle.status().unwrap().usage;
+    let original_budget_held = control.budget.host_memory_bytes() > session_bytes;
+    // Cleanup before assertions also keeps a failing baseline from leaking sockets.
+    drop((pending1, pending2));
+    lifecycle.retire();
+    drop((first, second, peer1, peer2, lifecycle, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+    assert!(
+        first_woke && second_woke,
+        "both original read wakers must run"
+    );
+    assert_eq!(
+        preserved_first_panic,
+        Some("first original connection wake failed")
+    );
+    assert_ne!(
+        first_state,
+        latent_capabilities::broker::network::StreamState::Open
+    );
+    assert_ne!(
+        second_state,
+        latent_capabilities::broker::network::StreamState::Open
+    );
+    assert_eq!(retained.connections, 2);
+    assert_eq!(retained.pending_operations, 2);
+    assert!(original_budget_held);
+    assert!(
+        resolver_closed,
+        "the configured resolver must close after both wake panics"
+    );
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn lifecycle_retirement_visits_older_generation_after_current_wake_panics() {
+    use latent_capabilities::broker::{
+        network::{STREAM_CAPABILITY, STREAM_PROFILE},
+        CapabilityBindingSpec,
+    };
+    use latent_policy::capability::{MutationRequest, RecordKind};
+    use std::panic::{catch_unwind, AssertUnwindSafe};
+    struct PanicOnRetirement {
+        thread: std::thread::ThreadId,
+        armed: AtomicBool,
+        woke: AtomicBool,
+    }
+    impl Wake for PanicOnRetirement {
+        fn wake(self: Arc<Self>) {
+            self.wake_by_ref();
+        }
+        fn wake_by_ref(self: &Arc<Self>) {
+            if std::thread::current().id() == self.thread
+                && self.armed.swap(false, Ordering::AcqRel)
+            {
+                self.woke.store(true, Ordering::Release);
+                panic!("current generation wake failed");
+            }
+        }
+    }
+    struct ObserveOld {
+        thread: std::thread::ThreadId,
+        armed: AtomicBool,
+        woke: AtomicBool,
+    }
+    impl Wake for ObserveOld {
+        fn wake(self: Arc<Self>) {
+            self.wake_by_ref();
+        }
+        fn wake_by_ref(self: &Arc<Self>) {
+            if std::thread::current().id() == self.thread && self.armed.load(Ordering::Acquire) {
+                self.woke.store(true, Ordering::Release);
+            }
+        }
+    }
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut configuration = config();
+    configuration.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let endpoint = configuration.destinations[0].endpoint.clone();
+    let fixture = Fixture::new(configuration.clone());
+    let lifecycle =
+        StreamLifecycle::from_installed_for_qualification("streams", fixture.provider.clone())
+            .unwrap();
+    let (old_session, old_control) = fixture.session(5000);
+    let old_baseline = old_control.native_session_bytes();
+    let request = || StreamConnectRequest {
+        endpoint: endpoint.clone(),
+        timeout_millis: None,
+    };
+    let old_stream = lifecycle
+        .start(&old_session, request())
+        .unwrap()
+        .await
+        .unwrap();
+    let (old_peer, _) = listener.accept().await.unwrap();
+    let old_pending = old_stream.read(1, None).unwrap(); // keep this original socket retained
+    let old_connection = fixture
+        .provider
+        .inner
+        .connections
+        .snapshot(0)
+        .unwrap()
+        .unwrap();
+    let reference = lifecycle.rotate(1, 2, configuration).unwrap();
+    assert_eq!(reference.configuration_epoch(), 2);
+    assert_eq!(lifecycle.status().unwrap().retired_generations, 1);
+
+    // Grant the real replacement epoch independently; no old binding widens authority.
+    let binding = serde_json::json!({"formatVersion":1,"tenant":"a","capability":STREAM_CAPABILITY,
+        "providerProfile":STREAM_PROFILE,"configurationDigest":reference.configuration_digest(),
+        "configurationEpoch":2,"restriction":{"operations":[]}});
+    fixture
+        .policies
+        .mutate(
+            MutationRequest {
+                tenant: "a",
+                actor: "operator",
+                id: "retirement-next-binding",
+                kind: RecordKind::ProviderBinding,
+                operation_id: "retirement-next-binding",
+                expected_revision: 0,
+                document: Some(&serde_json::to_vec(&binding).unwrap()),
+            },
+            Instant::now() + Duration::from_secs(2),
+            |_| Ok(()),
+        )
+        .unwrap();
+    let plan = fixture
+        .broker
+        .compile_invocation_plan(
+            &fixture.revision,
+            Some(&latent_core::DeploymentId("retirement-next".into())),
+            &[CapabilityBindingSpec {
+                definition_digest: Some(&latent_artifacts::package::artifact_blob_digest(
+                    b"retirement-next-binding",
+                )),
+                provider: &reference,
+                imported_operations: &super::fixture::OPERATIONS.map(str::to_owned),
+                policy_ids: &["p".into()],
+                provider_binding_id: "retirement-next-binding",
+                deployment_restriction_json: br#"{"operations":[]}"#,
+            }],
+            &fixture.publication,
+            &[],
+            &[],
+            &[],
+            None,
+            Instant::now() + Duration::from_secs(2),
+        )
+        .unwrap();
+    let (mut new_request, new_control) = fixture.request("retirement-next", 5000);
+    new_request.cell.id = latent_core::CellId("retirement-next-cell".into());
+    let new_session = fixture
+        .broker
+        .open_session(plan, &new_request, &new_control, &fixture.publication)
+        .unwrap();
+    let new_baseline = new_control.native_session_bytes();
+    let new_stream = lifecycle
+        .start(&new_session, request())
+        .unwrap()
+        .await
+        .unwrap();
+    let (new_peer, _) = listener.accept().await.unwrap();
+    let mut new_pending = Box::pin(new_stream.read(1, None).unwrap());
+    let panic_wake = Arc::new(PanicOnRetirement {
+        thread: std::thread::current().id(),
+        armed: AtomicBool::new(false),
+        woke: AtomicBool::new(false),
+    });
+    let wake = Waker::from(panic_wake.clone());
+    assert!(matches!(
+        new_pending.as_mut().poll(&mut Context::from_waker(&wake)),
+        Poll::Pending
+    ));
+
+    // Observe a fresh notification from the old, already-retired connection.
+    let old_wake = Arc::new(ObserveOld {
+        thread: std::thread::current().id(),
+        armed: AtomicBool::new(false),
+        woke: AtomicBool::new(false),
+    });
+    let old_waker = Waker::from(old_wake.clone());
+    let mut old_notice = Box::pin(old_connection.retirement_notification_for_test());
+    old_notice.as_mut().enable();
+    assert!(matches!(
+        old_notice
+            .as_mut()
+            .poll(&mut Context::from_waker(&old_waker)),
+        Poll::Pending
+    ));
+    old_wake.armed.store(true, Ordering::Release);
+    panic_wake.armed.store(true, Ordering::Release);
+    let outcome = catch_unwind(AssertUnwindSafe(|| lifecycle.retire()));
+    let first = outcome
+        .as_ref()
+        .err()
+        .and_then(|payload| payload.downcast_ref::<&str>())
+        .copied();
+    let visited_old = old_wake.woke.load(Ordering::Acquire);
+    let woke_current = panic_wake.woke.load(Ordering::Acquire);
+    let status = lifecycle.status().unwrap();
+    let old_paid = old_control.budget.host_memory_bytes() > old_baseline;
+    let new_paid = new_control.budget.host_memory_bytes() > new_baseline;
+
+    // Remove waiters and settle the exact original owners before assertions.
+    drop(old_notice);
+    drop((old_pending, new_pending));
+    lifecycle.retire();
+    drop((
+        old_connection,
+        old_stream,
+        new_stream,
+        old_peer,
+        new_peer,
+        lifecycle,
+        old_session,
+        new_session,
+    ));
+    drop((
+        old_waker,
+        wake,
+        old_wake,
+        panic_wake,
+        reference,
+        new_request,
+    ));
+    fixture.clean().await;
+    drop(fixture);
+    old_control.assert_native_settled();
+    new_control.assert_native_settled();
+    assert!(woke_current && visited_old);
+    assert_eq!(first, Some("current generation wake failed"));
+    assert!(status.stopped);
+    assert_eq!(status.retired_generations, 1);
+    assert_eq!(status.usage.connections, 2);
+    assert_eq!(status.usage.pending_operations, 2);
+    assert!(old_paid && new_paid);
+}
+
+#[test]
+fn secondary_panic_payload_destructor_can_interrupt_the_retirement_walk() {
+    use std::panic::{catch_unwind, AssertUnwindSafe};
+    struct BadPayload;
+    impl Drop for BadPayload {
+        fn drop(&mut self) {
+            panic!("secondary panic payload destructor failed");
+        }
+    }
+    let mut first = None;
+    crate::provider::attempt_retirement(&mut first, || panic!("first callback panic"));
+    let mut visited_next = false;
+    let second = catch_unwind(AssertUnwindSafe(|| {
+        crate::provider::attempt_retirement(&mut first, || std::panic::panic_any(BadPayload));
+        visited_next = true;
+    }));
+    let second_message = second
+        .as_ref()
+        .err()
+        .and_then(|payload| payload.downcast_ref::<&str>())
+        .copied();
+    let first_message = first
+        .as_ref()
+        .and_then(|payload| payload.downcast_ref::<&str>())
+        .copied();
+    assert_eq!(first_message, Some("first callback panic"));
+    assert_eq!(
+        second_message,
+        Some("secondary panic payload destructor failed")
+    );
+    assert!(!visited_next);
+}

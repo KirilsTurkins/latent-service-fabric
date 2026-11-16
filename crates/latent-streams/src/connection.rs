@@ -1219,6 +1219,11 @@ impl ConnectionOwner {
     }
 
     #[cfg(all(test, unix))]
+    pub(crate) fn retirement_notification_for_test(&self) -> tokio::sync::futures::Notified<'_> {
+        self.changed.notified()
+    }
+
+    #[cfg(all(test, unix))]
     pub(crate) fn wake_in_drop_tail(&self, waker: std::task::Waker) {
         assert!(self.drop_tail.wake.lock().unwrap().replace(waker).is_none());
     }

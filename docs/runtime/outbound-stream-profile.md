@@ -117,6 +117,12 @@ byte counts, evidence/uncertainty and rejection class. Never inspect/store paylo
 protocol replies, keys or invented SQL/mail/HTTP attribution. No capacity means
 no new dispatch. Credential/revocation/rotation fences deny new work while
 already accepted physical work retains its original charge until destruction.
+During provider retirement, each captured connection and configured resolver is
+visited even if a wake panics. The first panic still reaches the caller; pending
+operations and unretired physical owners keep their original charges. If a
+secondary panic payload itself panics during destruction, the walk can stop;
+no double-panic recovery is claimed. This is not proof that a panicking
+operation or native kernel has physically retired.
 
 ## Caps, suspension and physical retirement
 
