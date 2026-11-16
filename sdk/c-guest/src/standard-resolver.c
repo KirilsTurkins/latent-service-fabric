@@ -30,6 +30,20 @@ static int numeric_ipv4(const char *name, uint8_t bytes[4]) {
     return 0;
 }
 
+/* Format only the parsed address; do not associate it with a hostname. */
+static size_t numeric_canonical_name(const uint8_t bytes[4], char output[16]) {
+    size_t length = 0;
+    for (unsigned index = 0; index < 4; ++index) {
+        unsigned value = bytes[index];
+        if (index) output[length++] = '.';
+        if (value >= 100) output[length++] = (char)('0' + value / 100);
+        if (value >= 10) output[length++] = (char)('0' + (value / 10) % 10);
+        output[length++] = (char)('0' + value % 10);
+    }
+    output[length++] = '\0';
+    return length;
+}
+
 static int numeric_port(const char *service, int flags, uint16_t *port) {
     if (!service) { *port = 0; return 0; }
     unsigned value = 0, count = 0;
@@ -51,7 +65,7 @@ int getaddrinfo(const char *restrict name, const char *restrict service,
     if (!result) return EAI_FAIL;
     *result = NULL;
     int flags = hints ? hints->ai_flags : 0;
-    if ((flags & ~(AI_NUMERICHOST | AI_NUMERICSERV)) ||
+    if ((flags & ~(AI_NUMERICHOST | AI_NUMERICSERV | AI_CANONNAME)) ||
         (hints && (hints->ai_addrlen || hints->ai_addr || hints->ai_canonname || hints->ai_next)))
         return EAI_BADFLAGS;
     if (hints && hints->ai_family != AF_UNSPEC && hints->ai_family != AF_INET) return EAI_FAMILY;
@@ -62,9 +76,16 @@ int getaddrinfo(const char *restrict name, const char *restrict service,
     if (!numeric_ipv4(name, bytes)) return EAI_NONAME;
     int service_error = numeric_port(service, flags, &port);
     if (service_error) return service_error;
-    struct numeric_address *owned = malloc(sizeof(*owned));
+    char canonical[16];
+    size_t canonical_length = (flags & AI_CANONNAME) ? numeric_canonical_name(bytes, canonical) : 0;
+    struct numeric_address *owned = malloc(sizeof(*owned) + canonical_length);
     if (!owned) return EAI_MEMORY;
     *owned = (struct numeric_address){0};
+    if (canonical_length) {
+        owned->info.ai_canonname = (char *)(owned + 1);
+        for (size_t index = 0; index < canonical_length; ++index)
+            owned->info.ai_canonname[index] = canonical[index];
+    }
     owned->info.ai_flags = flags;
     owned->info.ai_family = AF_INET;
     owned->info.ai_socktype = SOCK_STREAM;
