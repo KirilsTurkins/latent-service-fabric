@@ -125,7 +125,9 @@ source-level calls. Do not combine it with another descriptor producer until
 the profiles share a coordinated descriptor namespace.
 After a successful send half-close, later sends return `EPIPE` without another
 provider write, while reads remain available; repeated send half-close is local
-and idempotent.
+and idempotent. `SHUT_RD` and `SHUT_RDWR` return `ENOTSUP` without changing
+the descriptor: the v1 provider's `both` operation stops the transport and does
+not preserve previously buffered input for a subsequent read.
 An error after a possible write keeps the descriptor failed; the optional
 `lsf_stream_last_error` reports its original error code, accepted prefix and
 possible-effect bit while the descriptor remains open.

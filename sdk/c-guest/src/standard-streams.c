@@ -260,16 +260,16 @@ ssize_t __lsf_c_net_write(int fd, const void *buffer, size_t length) {
 int __lsf_c_net_shutdown(int fd, int how) {
     struct descriptor *slot = ready_descriptor(fd);
     if (!slot) return -1;
-    if (how != SHUT_WR && how != SHUT_RDWR) return fail(ENOTSUP);
-    if (how == SHUT_WR && slot->write_shut) return 0;
+    /* The v1 provider's BOTH stops the transport; it does not implement a
+     * POSIX receive shutdown or preserve buffered input for later reads. */
+    if (how != SHUT_WR) return fail(ENOTSUP);
+    if (slot->write_shut) return 0;
     latent_network_streams_observation_t observation;
     latent_network_streams_stream_error_t error;
     slot->busy = true;
-    if (!latent_network_streams_shutdown(borrow(slot), how == SHUT_WR ?
-            LATENT_NETWORK_STREAMS_SHUTDOWN_MODE_SEND : LATENT_NETWORK_STREAMS_SHUTDOWN_MODE_BOTH,
+    if (!latent_network_streams_shutdown(borrow(slot), LATENT_NETWORK_STREAMS_SHUTDOWN_MODE_SEND,
             &observation, &error)) return failed_call(slot, error);
-    if (how == SHUT_WR) slot->write_shut = true;
-    if (how == SHUT_RDWR) slot->failed = true;
+    slot->write_shut = true;
     slot->busy = false;
     return 0;
 }
