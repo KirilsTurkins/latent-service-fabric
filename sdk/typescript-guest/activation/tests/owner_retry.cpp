@@ -17,8 +17,9 @@ std::array<unsigned,8> counts{}, peaks{}, limits{16,2,2,16,8,8,8,64};
 uint64_t generation=1, next_owner=1, refuse_id=0, last_native=0;
 uint32_t next_wait=1;
 int refuse_kind=-1, deny_kind=-1;
-bool closed=false, immediate=true, deferred=false, refuse_stop=false, refuse_disposer=false;
+bool closed=false, immediate=true, deferred=false, refuse_stop=false, refuse_disposer=false, refuse_park=false;
 unsigned registrations=0, starts=0, stops=0, nexts=0, drops=0, cancellations=0, set_new=0, set_drop=0, disposals=0;
+unsigned import_dispatches=0;
 jobs_event_t event{};
 const char* selected=nullptr;
 #define CHECK(condition) do { if (!(condition)) { std::fprintf(stderr,"%s:%d: %s\n",selected,__LINE__,#condition); return false; } } while(false)
@@ -92,6 +93,7 @@ bool latent_runtime_activation_register(latent_runtime_activation_owner_kind_t k
   *out={generation,id}; return true;
 }
 bool latent_runtime_activation_park(latent_runtime_activation_token_t* t,latent_runtime_activation_error_t* e) {
+  if (refuse_park) return failure(e,LATENT_RUNTIME_ACTIVATION_ERROR_UNAVAILABLE);
   return valid(t) || failure(e,LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_TOKEN);
 }
 bool latent_runtime_activation_wake(latent_runtime_activation_token_t* t,latent_runtime_activation_error_t* e) {
@@ -279,6 +281,120 @@ bool import_partial(bool buffers) {
   else CHECK(fixture::buffers==1 && fixture::buffer_bytes==16);
   deny_kind=-1; CHECK(e.finish()); return true;
 }
+bool import_readiness_denied() {
+  Environment e; CHECK(e.begin()); uint32_t id=0; CHECK(e.reserve(id));
+  // The generated adapter invokes its host import only after beginLowering.
+  // Deny the readiness owner while both original record owners are live.
+  limits[7]=counts[7];
+  const bool begin=e.imports.beginLowering(&e.cx,id);
+  if (begin) ++import_dispatches;
+  CHECK(!begin && e.cx.exception && import_dispatches==0 && set_new==0 &&
+        fixture::buffers==2 && fixture::roots==2 && counts[7]==2 && counts[6]==1);
+  // This is the generated wrapper's ordinary finally for a failed begin.
+  CHECK(e.imports.liftCompleted(&e.cx,id) && !e.imports.hasPending());
+  CHECK(import_dispatches==0 && fixture::buffers==0 && fixture::roots==0);
+  limits[7]=8; CHECK(e.finish()); return true;
+}
+bool import_immediate_readiness_retired() {
+  Environment e; CHECK(e.begin()); uint32_t id=0; CHECK(e.reserve(id));
+  CHECK(e.imports.beginLowering(&e.cx,id) && set_new==1 && counts[7]==3);
+  const auto set_owner=last_native;
+  JS::RootedObject promise(&e.cx); ++import_dispatches;
+  CHECK(e.imports.started(&e.cx,id,JOBS_SUBTASK_RETURNED,&promise) && promise.get());
+  CHECK(e.imports.turn(&e.cx) && fixture::resolutions==1);
+  void* result=nullptr;
+  CHECK(e.imports.beginLifting(&e.cx,id,result) && result &&
+        e.imports.delivered(&e.cx,id) && e.imports.liftCompleted(&e.cx,id));
+  CHECK(!e.imports.hasPending() && e.readiness.physical() && owners[set_owner].live &&
+        counts[7]==1 && fixture::buffers==0 && fixture::roots==0);
+  // The production timer turn retires an unused shared set without invoking
+  // application code when neither a timer nor a joined subtask remains.
+  CHECK(e.timers.turn(&e.cx,false) && !e.readiness.physical() &&
+        !owners[set_owner].live && owners[set_owner].refunds==1 && set_drop==1);
+  CHECK(e.finish()); return true;
+}
+bool import_start_refused(bool park, bool returned) {
+  Environment e; CHECK(e.begin()); uint32_t id=0; CHECK(e.reserve(id));
+  CHECK(e.imports.beginLowering(&e.cx,id));
+  const bool readiness_before_dispatch=set_new==1 && counts[7]==3;
+  const auto wait=next_wait++; waits[wait].live=true; ++import_dispatches;
+  if (park) refuse_park=true; else refuse_kind=3;
+  JS::RootedObject promise(&e.cx);
+  CHECK(!e.imports.started(&e.cx,id,(wait<<4)|JOBS_SUBTASK_STARTED,&promise));
+  CHECK(readiness_before_dispatch && e.cx.exception && !promise.get() && waits[wait].live && waits[wait].joined &&
+        fixture::buffers==2 && fixture::roots==2 && counts[7]==3 && counts[6]==1);
+  const char* original=e.cx.detail;
+  deferred=true;
+  // The generated wrapper's finally requests cancellation. The real host
+  // still owns the result buffer until the selected terminal notification.
+  CHECK(e.imports.liftCompleted(&e.cx,id));
+  CHECK(e.cx.exception && e.cx.detail==original && cancellations==1 &&
+        waits[wait].live && waits[wait].joined && drops==0 && disposals==0 &&
+        fixture::buffers==2 && fixture::roots==2 && counts[7]==3 && counts[6]==1);
+  refuse_park=false; refuse_kind=-1; JS_ClearPendingException(&e.cx);
+  event={JOBS_EVENT_SUBTASK,wait,returned ? JOBS_SUBTASK_RETURNED : JOBS_SUBTASK_STARTED_CANCELLED};
+  CHECK(e.readiness.dispatch(&e.cx,true) && e.imports.turn(&e.cx));
+  CHECK(!e.imports.hasPending() && !waits[wait].live && !waits[wait].joined &&
+        drops==1 && disposals==unsigned(returned) && fixture::rejections==0 && fixture::resolutions==0 &&
+        fixture::buffers==0 && fixture::roots==0 && counts[7]==1 && counts[6]==0);
+  CHECK(e.finish()); CHECK(import_dispatches==1 && set_drop==1); return true;
+}
+bool import_immediate_start_refused(bool park) {
+  Environment e; CHECK(e.begin()); uint32_t id=0; CHECK(e.reserve(id));
+  const auto result=next_owner-1, native=result-1, queued=result-2,
+             task=result-3, record=result-4;
+  CHECK(e.imports.beginLowering(&e.cx,id) && set_new==1 && counts[7]==3);
+  const auto set_owner=last_native;
+  if (park) refuse_park=true; else refuse_kind=3;
+  JS::RootedObject promise(&e.cx); ++import_dispatches;
+  CHECK(!e.imports.started(&e.cx,id,JOBS_SUBTASK_RETURNED,&promise));
+  CHECK(e.cx.exception && !promise.get() && fixture::rejections==0 && fixture::resolutions==0 &&
+        owners[result].live && owners[native].live && owners[record].live &&
+        owners[queued].live && owners[task].live && owners[set_owner].live);
+  const char* original=e.cx.detail;
+  // The generated finally must dispose this produced result once. Refuse the
+  // work ACK after disposal to check that a later retry never disposes twice.
+  refuse_kind=3;
+  CHECK(!e.imports.liftCompleted(&e.cx,id));
+  CHECK(e.cx.exception && e.cx.detail==original && disposals==1 && drops==0 &&
+        fixture::rejections==0 && fixture::resolutions==0 && fixture::buffers==2 &&
+        fixture::roots==2 && owners[result].live && owners[native].live &&
+        owners[record].live && owners[queued].live && owners[task].live && owners[set_owner].live);
+  refuse_park=false; refuse_kind=-1; JS_ClearPendingException(&e.cx);
+  CHECK(e.imports.turn(&e.cx));
+  CHECK(!e.imports.hasPending() && disposals==1 && fixture::rejections==0 &&
+        fixture::resolutions==0 && fixture::buffers==0 && fixture::roots==0 &&
+        owners[result].refunds==1 && owners[native].refunds==1 && owners[record].refunds==1 &&
+        owners[queued].refunds==1 && owners[task].refunds==1 && owners[set_owner].live);
+  CHECK(e.timers.turn(&e.cx,false) && owners[set_owner].refunds==1 && set_drop==1);
+  CHECK(e.finish()); CHECK(import_dispatches==1 && disposals==1); return true;
+}
+bool import_join_refused() {
+  Environment e; CHECK(e.begin()); uint32_t id=0; CHECK(e.reserve(id));
+  CHECK(e.imports.beginLowering(&e.cx,id) && set_new==1);
+  // Inject loss of the pre-admitted set between synchronous bridge steps to
+  // exercise the failure branch; normal lowering cannot run JS between them.
+  CHECK(e.readiness.retire(&e.cx)); limits[7]=counts[7];
+  const auto wait=next_wait++; waits[wait].live=true; ++import_dispatches;
+  JS::RootedObject promise(&e.cx);
+  CHECK(!e.imports.started(&e.cx,id,(wait<<4)|JOBS_SUBTASK_STARTED,&promise));
+  CHECK(e.cx.exception && !promise.get() && waits[wait].live && !waits[wait].joined &&
+        fixture::buffers==2 && fixture::roots==2 && counts[7]==2 && counts[6]==1);
+  const char* original=e.cx.detail;
+  deferred=true;
+  CHECK(!e.imports.liftCompleted(&e.cx,id));
+  CHECK(e.cx.exception && e.cx.detail==original && cancellations==1 && drops==0 &&
+        waits[wait].live && !waits[wait].joined && fixture::buffers==2 &&
+        fixture::roots==2 && counts[7]==2 && counts[6]==1);
+  limits[7]=8; JS_ClearPendingException(&e.cx);
+  CHECK(e.imports.turn(&e.cx) && waits[wait].joined && set_new==2);
+  event={JOBS_EVENT_SUBTASK,wait,JOBS_SUBTASK_STARTED_CANCELLED};
+  CHECK(e.readiness.dispatch(&e.cx,true) && e.imports.turn(&e.cx));
+  CHECK(!e.imports.hasPending() && drops==1 && disposals==0 &&
+        fixture::rejections==0 && fixture::resolutions==0 && fixture::buffers==0 &&
+        fixture::roots==0 && counts[7]==1 && counts[6]==0);
+  CHECK(e.finish()); CHECK(import_dispatches==1 && set_drop==2); return true;
+}
 bool import_quarantine() {
   Environment e; CHECK(e.begin()); uint32_t id=0; CHECK(e.reserve(id)); CHECK(e.returned(id));
   refuse_disposer=true;
@@ -368,6 +484,15 @@ bool run(const char* name) {
   if (!std::strcmp(name,"import-lift-fence")) return import_fence("lift");
   if (!std::strcmp(name,"import-partial-admission")) return import_partial(false);
   if (!std::strcmp(name,"import-partial-buffer")) return import_partial(true);
+  if (!std::strcmp(name,"import-readiness-denied-before-dispatch")) return import_readiness_denied();
+  if (!std::strcmp(name,"import-immediate-readiness-retired")) return import_immediate_readiness_retired();
+  if (!std::strcmp(name,"import-park-refused-late-return")) return import_start_refused(true,true);
+  if (!std::strcmp(name,"import-park-refused-late-cancel")) return import_start_refused(true,false);
+  if (!std::strcmp(name,"import-queue-refused-late-return")) return import_start_refused(false,true);
+  if (!std::strcmp(name,"import-queue-refused-late-cancel")) return import_start_refused(false,false);
+  if (!std::strcmp(name,"import-park-refused-immediate-return")) return import_immediate_start_refused(true);
+  if (!std::strcmp(name,"import-queue-refused-immediate-return")) return import_immediate_start_refused(false);
+  if (!std::strcmp(name,"import-join-refusal-retains-subtask")) return import_join_refused();
   if (!std::strcmp(name,"import-disposer-quarantine")) return import_quarantine();
   if (!std::strcmp(name,"lazy-synchronous")) return lazy();
   if (!std::strcmp(name,"repeated-generations")) return repeated();

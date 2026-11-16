@@ -73,6 +73,21 @@ def require(value,reason):
     if not value:raise ValueError(reason)
 
 
+def lifecycle_jsapi_stub(original:bytes)->bytes:
+    # The lifetime fixture now maintains exception state. This standalone
+    # lifecycle harness supplies its own implementations of both functions.
+    replacements=(
+        (b'inline bool JS_IsExceptionPending(JSContext* cx) { return cx->exception; }',
+         b'bool JS_IsExceptionPending(JSContext*);'),
+        (b'inline void JS_ReportErrorASCII(JSContext* cx, const char* detail, ...) { cx->exception = true; cx->detail = detail; }',
+         b'void JS_ReportErrorASCII(JSContext*,const char*,...);'),
+    )
+    for before,after in replacements:
+        require(original.count(before)==1,'own-controls-lifecycle-stub-preimage')
+        original=original.replace(before,after)
+    return original
+
+
 class Deadline:
     def __init__(self,seconds=5400):self.end=time.monotonic()+seconds
     def remaining(self,maximum):
@@ -273,9 +288,9 @@ def lifecycle_case(row:dict,case:str)->None:
     counters=('subtaskDrops','joined','resultOwners','nativeOwners','tasks','idleWaits')
     require(all(type(row.get(name)) is int and 0<=row[name]<=256 for name in counters)
             and row['joined']==row['resultOwners']==row['tasks']==0
-            # The unchanged reference retains its original initialized
-            # readiness-set owner; immediate handle-zero cases create no set.
-            and row['nativeOwners']==(0 if case in LIFECYCLE_CASES[:2] else 1),
+            # Readiness is now reserved before dispatch even for a handle-zero
+            # immediate result. These controls retain that one shared owner.
+            and row['nativeOwners']==1,
             'own-controls-lifecycle-retirement')
     require(row['subtaskDrops']==(0 if case in LIFECYCLE_CASES[:2] else 1),
             'own-controls-lifecycle-original-handle-drop')
@@ -327,10 +342,7 @@ def compile_native_fixture(output,wasi,engine,support,run,deadline,record,wasm_t
         # it does not execute JS or establish component/runtime qualification.
         stubs=output/'lifecycle-includes';(stubs/'js').mkdir(parents=True)
         original=read_file(ROOT/'tools/tests/fixtures/typescript_record_retirement/jsapi.h')
-        anchor=b'inline void JS_ReportErrorASCII(JSContext*, const char*) {}'
-        require(original.count(anchor)==1,'own-controls-lifecycle-stub-preimage')
-        (stubs/'jsapi.h').write_bytes(original.replace(anchor,
-            b'bool JS_IsExceptionPending(JSContext*);\nvoid JS_ReportErrorASCII(JSContext*,const char*,...);'))
+        (stubs/'jsapi.h').write_bytes(lifecycle_jsapi_stub(original))
         (stubs/'js/TypeDecls.h').write_bytes(read_file(ROOT/'tools/tests/fixtures/typescript_record_retirement/js/TypeDecls.h'))
         lifecycle=output/'own-lifecycle.wasm'
         phase('own-compile-lifecycle',wasi/'bin/clang++','-std=c++20','-O0',
