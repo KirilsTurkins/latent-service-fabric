@@ -51,6 +51,18 @@ class AsyncImportSourceTests(unittest.TestCase):
         self.assertTrue(names <= set(NATIVE_SOURCES))
         self.assertTrue({'sdk/typescript-guest/activation/'+name for name in names} <= set(engine_input_paths()))
 
+        # Link the native pre-dispatch denial control to the actual selected
+        # adapter builder: its failed begin returns before the host import.
+        root = Path(__file__).resolve().parents[2]
+        splice = (root/'sdk/typescript-guest/activation/async_import_splice.rs').read_text()
+        builder = splice.split('pub fn synthesize_with_partial(', 1)[1].split('#[cfg(test)]', 1)[0]
+        refusal = ('function.call(begin);function.i32_eqz();\n'
+                   '    function.if_stmt(BlockType::Empty);function.i32_const(0);'
+                   'function.return_stmt();function.end();')
+        self.assertEqual(builder.count(refusal), 1)
+        self.assertEqual(builder.count('function.call(import);'), 1)
+        self.assertLess(builder.index(refusal), builder.index('function.call(import);'))
+
         # The pinned Engine starts Uninitialized. Its private initializer runs
         # before ScriptPreInitializing, so the selected import derivation must
         # enter EngineInitializing rather than accepting an uninitialized
@@ -58,7 +70,6 @@ class AsyncImportSourceTests(unittest.TestCase):
         # a SpiderMonkey execution substitute.
         from tools.typescript_guest.import_engine import (
             extend_native_import_source, NATIVE_IMPORT_SOURCES)
-        root = Path(__file__).resolve().parents[2]
         constructor = (b'  config_ = std::move(config);\n'
                        b'  if (!init_js(*config_)) { abort("init"); }\n'
                        b'  JS_SetContextPrivate(cx(), this);\n'

@@ -63,24 +63,30 @@ public:
   }
   bool beginLowering(JSContext* cx) {
     if (phase_ != Phase::Reserved || cancelled_) return invalid(cx);
+    // A host import can return a pending subtask immediately. Reserve the
+    // shared readiness set before dispatch so a later budget refusal cannot
+    // strand that already-running subtask without a way to observe its end.
+    if (!readiness_.initialize(cx)) return false;
     phase_ = Phase::Lowering;
     return true;
   }
   bool started(JSContext* cx, jobs_subtask_status_t status) {
     if (phase_ != Phase::Lowering || cancelled_ || !subtask_.started(cx, status))
       return invalid(cx);
-    if (!accounting_.park(cx, work_)) return false;
     if (subtask_.pending()) {
       if (!readiness_.join(cx, subtask_)) return false;
-      phase_ = Phase::Pending;
-    } else {
-      phase_ = subtask_.resultReady() ? Phase::Returned : Phase::Cancelled;
     }
+    // Keep a pending subtask observable even when parking or the original
+    // queued-work acknowledgement refuses after the host call has started.
+    if (!accounting_.park(cx, work_)) return false;
+    phase_ = subtask_.pending() ? Phase::Pending :
+        subtask_.resultReady() ? Phase::Returned : Phase::Cancelled;
     return true;
   }
   bool observe(JSContext* cx) {
     if (phase_ != Phase::Pending) return invalid(cx);
-    if (subtask_.pending()) return true;
+    if (subtask_.pending())
+      return subtask_.joinedTo(readiness_) || readiness_.join(cx, subtask_);
     // Cancellation remains cancellation even if a late physical result wins.
     phase_ = cancelled_ || subtask_.cancelledReady() ? Phase::Cancelled : Phase::Returned;
     return true;
@@ -110,7 +116,10 @@ public:
     if (subtask_.uncertain()) return invalid(cx);
     if (subtask_.physical()) {
       if (!subtask_.cancel(cx)) return false;
-      if (subtask_.pending()) { phase_ = Phase::Pending; return true; }
+      if (subtask_.pending()) {
+        phase_ = Phase::Pending;
+        return subtask_.joinedTo(readiness_) || readiness_.join(cx, subtask_);
+      }
       // A real Returned outcome owns its canonical result independently of
       // the subtask. The embedding must dispose those typed OWN slots first.
       if (subtask_.resultReady()) { phase_ = Phase::Cancelled; return true; }

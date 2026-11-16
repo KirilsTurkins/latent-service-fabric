@@ -38,6 +38,7 @@ class Imports final {
     size_t parameter_size = 0;
     uint32_t id = 0;
     bool promise_settled = false;
+    bool promise_exposed = false;
     Disposition disposition = Disposition::Unproduced;
     ResourceDisposer disposer = nullptr;
     ImportRawResult raw_kind = ImportRawResult::None;
@@ -170,7 +171,9 @@ class Imports final {
     return false;
   }
   bool rejectCancelled(JSContext* cx, Record& item) {
-    if (item.promise_settled) return true;
+    // If startup failed, its private Promise was never returned to JS. Do
+    // not manufacture an unhandled rejection while retiring its subtask.
+    if (!item.promise_exposed || item.promise_settled) return true;
     JS::RootedString message(cx, JS_NewStringCopyZ(cx, "activation-runtime-import-cancelled"));
     if (!message) return false;
     JS::RootedValue reason(cx, JS::StringValue(message));
@@ -279,6 +282,7 @@ public:
     if (!item) return invalid(cx, "start-record");
     if (!item->lifecycle.started(cx, status)) return false;
     promise.set(item->promise);
+    item->promise_exposed = true;
     return true;
   }
   bool turn(JSContext* cx) {
