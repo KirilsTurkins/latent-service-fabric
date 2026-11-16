@@ -216,7 +216,8 @@ def timer_start_admission_projection(source: str) -> str:
         ("            long now = monotonicMillis();\n", "            TimerStartHooks.clock();\n", True),
         ("            timers.add(timer);\n", "            TimerStartHooks.list();\n", False),
         ("        return threads.get(thread);\n", "        TimerStartHooks.lookup();\n", True),
-        ("                var refusal = new IllegalStateException(\"activation-runtime-settle-\" + settled.error());\n",
+        ("                var refusal = new IllegalStateException((rootSettlement\n"
+         "                    ? \"activation-runtime-root-settle-\" : \"activation-runtime-settle-\") + settled.error());\n",
          "                TimerStartHooks.refusal();\n", True),
     )
     for point, hook, before in points:
@@ -316,12 +317,12 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
     timer = compiler.run("timer-readiness-source-control", "java", "-Xmx256m", "-cp",
                          str(timer_output) + os.pathsep + classpath, "TimerReadinessSourceControl").strip()
     if timer != ("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;"
-                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence;timer-stop-uncertain-completion-fence;nested-stop-count-guard;timer-finally-return-fence;timer-teardown-admission-fence"):
+                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence;timer-stop-uncertain-completion-fence;nested-stop-count-guard;timer-finally-return-fence;timer-teardown-admission-fence;opaque-owner-order"):
         raise ValueError("Java timer readiness source control did not complete")
     claim = compiler.run("timer-start-claim-ir-control", "java", "-Xmx256m", "-cp",
                          str(output) + os.pathsep + str(timer_output) + os.pathsep + classpath,
                          "dev.latent.guest.runtime.compiler.TimerClaimIrControl").strip()
-    if claim != "TIMER_CLAIM_IR PASS selected-loop-positive;four-helpers-no-checkpoint-or-split-kind;not-guest":
+    if claim != "TIMER_CLAIM_IR PASS selected-loop-positive;ownership-helpers-no-checkpoint-or-split-kind;not-guest":
         raise ValueError("Java timer claim IR control did not complete")
     timer_teardown_source_control(compiler, output / "timer-teardown-projection", classpath)
     timer_post_ack_source_control(compiler, output / "timer-post-ack-projection", classpath)
@@ -368,7 +369,7 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
     reference.mkdir(); private.mkdir()
     compiler.run("completable-reference-compile", "javac", "-proc:none", "--release", "25", "-d", reference,
                  native, executor_reference, monitor_reference, readiness_reference, destination_reference)
-    expected = "COMPLETABLE_FUTURE_SOURCE_CONTROL PASS observables=82"
+    expected = "COMPLETABLE_FUTURE_SOURCE_CONTROL PASS observables=96"
     observed = compiler.run("completable-reference-run", "java", "-Xmx256m", "-cp", reference,
                             "CompletableFutureNativeControl").strip()
     if observed != expected: raise ValueError("Java CompletableFuture reference control did not complete")
@@ -452,7 +453,7 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
                  private_native, private_executor, private_monitor, private_readiness, private_destination,
                  monitor_owner, readmit_owner,
                  owners, executor_owners, uncertain_owners, *stubs, *ports)
-    owner_result = "COMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=419;raceRounds=32"
+    owner_result = "COMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=429;raceRounds=32"
     observed = compiler.run("completable-source-run", "java", "-Xmx256m", "-cp", private,
                             "PrivateSourceRunner").strip()
     if observed.splitlines() != [expected, owner_result]:
@@ -490,8 +491,8 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
     if observed != destination_expected: raise ValueError("Java CompletableFuture destination source differs from JDK")
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError("Java CompletableFuture control inputs changed during execution")
-    return {"status": "reference-and-SDK-source-controls-passed", "referenceObservables": 82,
-            "sourceOwnershipObservables": 419, "raceRounds": 32, "sourceInputs": inputs,
+    return {"status": "reference-and-SDK-source-controls-passed", "referenceObservables": 96,
+            "sourceOwnershipObservables": 429, "raceRounds": 32, "sourceInputs": inputs,
             "executorReferenceCases": 6, "executorAcceptanceOwnershipObservables": 49,
             "uncertainExecutorOwnershipObservables": 30,
             "uncertainAcceptanceAtOriginalOwnerCapacity": True, "uncertainActivationRetirementQualified": False,
@@ -829,8 +830,26 @@ def executor_activation_settlement_control(compiler: Compiler, classes: Path, cl
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 
+OWNER_SETTLEMENT_CASES = (
+    'normal', 'refused', 'lost-before', 'lost-after', 'error-after', 'null',
+    'reentry', 'post-ack-reentry', 'duplicate', 'duplicate-throws',
+    'capacity', 'teardown', 'nested', 'out-of-order', 'refused-reentry',
+    'retention', 'try-resources',
+)
+
+
+WORK_FINISH_CASES = tuple((kind, mode)
+    for kind in ('task', 'managed', 'root')
+    for mode in ('normal', 'refused', 'lost-before', 'lost-after', 'error-after', 'null',
+                 'reentry', 'post-ack-reentry', 'duplicate', 'duplicate-throws',
+                 'capacity', 'teardown', 'refused-reentry')) + (
+    ('managed', 'cleanup'), ('managed', 'cleanup-throws'),
+    ('task', 'nested'), ('task', 'out-of-order'),
+)
+
+
 def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> dict:
-    """Run the actual sleep owner against a private, two-Timer host ledger."""
+    """Run actual admission and cleanup against a private, two-Timer host ledger."""
     classpath, identities = locked_model_classpath(compiler, include_platform=True)
     sdk = compiler.sdk
     fixture = sdk / 'fibers/conformance/compiler/timer-source-control'
@@ -838,7 +857,9 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
         'runtime/dev/latent/guest/Option.java', 'runtime/dev/latent/guest/Unsigned64.java',
         'fibers/dev/latent/guest/runtime/Activation.java', 'fibers/dev/latent/guest/runtime/HostCalls.java',
         'fibers/dev/latent/guest/runtime/Monitors.java')]
-    sources += [fixture / 'dev/latent/generated/Bindings.java', fixture / 'TimerSleepAdmissionSourceControl.java']
+    sources += [fixture / 'dev/latent/generated/Bindings.java', fixture / 'TimerSleepAdmissionSourceControl.java',
+                fixture / 'OwnerAdmissionSourceControl.java', fixture / 'OwnerSettlementSourceControl.java',
+                fixture / 'WorkFinishSourceControl.java']
     sources += sorted((sdk / 'fibers/dev/latent/guest/runtime/concurrent').glob('*.java'))
     inputs = {path.relative_to(sdk).as_posix(): digest(read_file(path)) for path in sources}
     output.mkdir()
@@ -848,9 +869,27 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
         str(output) + os.pathsep + classpath, 'TimerSleepAdmissionSourceControl').strip()
     if actual != 'TIMER_SLEEP_ADMISSION_SOURCE PASS zero-raw-frame;zero-interrupt;typed-refusal;wait-return;same-work-retry;raw-hook-finally':
         raise ValueError('Java timer sleep admission source control did not complete')
+    owner_cases = ('normal', 'refused', 'lost', 'null', 'reentry', 'capacity')
+    for case in owner_cases:
+        actual = compiler.run('owner-admission-source-' + case, 'java', '-Xmx256m', '-cp',
+            str(output) + os.pathsep + classpath, 'OwnerAdmissionSourceControl', case).strip()
+        if actual != 'OWNER_ADMISSION_SOURCE PASS ' + case:
+            raise ValueError('Java owner admission source control did not complete: ' + case)
+    for case in OWNER_SETTLEMENT_CASES:
+        actual = compiler.run('owner-settlement-source-' + case, 'java', '-Xmx256m', '-cp',
+            str(output) + os.pathsep + classpath, 'OwnerSettlementSourceControl', case).strip()
+        if actual != 'OWNER_SETTLEMENT_SOURCE PASS ' + case:
+            raise ValueError('Java owner settlement source control did not complete: ' + case)
+    for kind, mode in WORK_FINISH_CASES:
+        actual = compiler.run('work-finish-source-' + kind + '-' + mode, 'java', '-Xmx256m', '-cp',
+            str(output) + os.pathsep + classpath, 'WorkFinishSourceControl', kind, mode).strip()
+        if actual != 'WORK_FINISH_SOURCE PASS ' + kind + ' ' + mode:
+            raise ValueError('Java work finish source control did not complete: ' + kind + ' ' + mode)
     if inputs != {name: digest(read_file(sdk / name)) for name in inputs}:
         raise ValueError('Java timer sleep admission source inputs changed')
     return {'status': 'SDK-source-control-passed', 'sourceInputs': inputs, 'jarDigests': identities,
+        'ownerAdmissionCases': list(owner_cases), 'ownerSettlementCases': list(OWNER_SETTLEMENT_CASES),
+        'workFinishCases': [list(case) for case in WORK_FINISH_CASES],
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 
@@ -988,6 +1027,65 @@ def executor_invoke_all_wait_control(compiler: Compiler, output: Path, reference
             'actualGuestBindingsUsed': False}
 
 
+def scheduled_compare_control(compiler: Compiler, output: Path, ports: list[Path], private: Path) -> dict:
+    """Compare real scheduled futures and retain owners in a synthetic clock projection."""
+    control = private / 'ScheduledCompareReferenceControl.java'
+    fake = private / 'ScheduledCompareFakeClock.java'
+    clock_control = private / 'ScheduledCompareClockControl.java'
+    bindings = private / 'dev/latent/generated/Bindings.java'
+    activation = private / 'dev/latent/guest/runtime/Activation.java'
+    jdk = output / 'scheduled-compare-jdk'; jdk.mkdir()
+    compiler.run('scheduled-compare-jdk-compile', 'javac', '-proc:none', '--release', '25', '-d', jdk, control)
+    result = compiler.run('scheduled-compare-jdk', 'java', '--add-opens=java.base/java.util.concurrent=ALL-UNNAMED',
+                          '-Xmx256m', '-cp', jdk, 'ScheduledCompareReferenceControl', 'jdk').strip()
+    if result != 'SCHEDULED_COMPARE_REFERENCE PASS close;fifo;maximum;transitive;retired;global-submission-order;reentrant-factory':
+        raise ValueError('Java scheduled comparison reference did not complete')
+
+    source = output / 'scheduled-compare-source'; source.mkdir()
+    text = read_file(control).decode('utf-8')
+    original = 'import java.util.concurrent.ScheduledThreadPoolExecutor;'
+    if text.count(original) != 1: raise ValueError('Java scheduled comparison source import is ambiguous')
+    selected = source / 'ScheduledCompareReferenceControl.java'
+    selected.write_bytes(text.replace(original,
+        'import dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor;').encode('utf-8'))
+    compiler.run('scheduled-compare-source-compile', 'javac', '-proc:none', '--release', '25', '-d', source,
+                 selected, *ports, bindings, activation)
+    result = compiler.run('scheduled-compare-source', 'java', '-Xmx256m', '-cp', source,
+                          'ScheduledCompareReferenceControl', 'source').strip()
+    if result != 'SCHEDULED_COMPARE_REFERENCE PASS close;fifo;maximum;transitive;retired;global-submission-order;reentrant-factory':
+        raise ValueError('Java scheduled comparison source did not complete')
+
+    timer = next(path for path in ports if path.name == 'ScheduledThreadPoolExecutor.java')
+    text = read_file(timer).decode('utf-8')
+    for original, replacement in (
+            ('private final long origin = System.nanoTime();', 'private final long origin = ScheduledCompareFakeClock.nanoTime();'),
+            ('private long elapsed() { return System.nanoTime() - origin; }',
+             'private long elapsed() { return ScheduledCompareFakeClock.nanoTime() - origin; }'),
+            ('long now = System.nanoTime();', 'long now = ScheduledCompareFakeClock.nanoTime();')):
+        if text.count(original) != 1: raise ValueError('Java scheduled comparison clock source is ambiguous')
+        text = text.replace(original, replacement)
+    clock = output / 'scheduled-compare-clock'; clock.mkdir()
+    mapped = clock / 'ScheduledThreadPoolExecutor.java'; mapped.write_bytes(text.encode('utf-8'))
+    compiler.run('scheduled-compare-clock-compile', 'javac', '-proc:none', '--release', '25', '-d', clock,
+                 *[path for path in ports if path != timer], mapped, fake, clock_control, bindings, activation)
+    result = compiler.run('scheduled-compare-clock', 'java', '-Xmx256m', '-cp', clock,
+                          'ScheduledCompareClockControl').strip()
+    if result != 'SCHEDULED_COMPARE_CLOCK PASS close;tie-transitive;fifo;maximum;overdue;wrap;retired;unsigned;periodic;reentrant;same-pool-reentrant;overflow;owners;rollback':
+        raise ValueError('Java scheduled comparison clock control did not complete')
+    result = compiler.run('scheduled-compare-key-uncertain', 'java', '-Xmx256m', '-cp', clock,
+                          'ScheduledCompareClockControl', 'uncertain').strip()
+    if result != 'SCHEDULED_COMPARE_KEY_UNCERTAIN PASS original-owner-held;single-attempt':
+        raise ValueError('Java scheduled comparison key custody control did not complete')
+    result = compiler.run('scheduled-compare-overflow-uncertain', 'java', '-Xmx256m', '-cp', clock,
+                          'ScheduledCompareClockControl', 'overflow-uncertain').strip()
+    if result != 'SCHEDULED_COMPARE_OVERFLOW_UNCERTAIN PASS original-owner-held;single-attempt':
+        raise ValueError('Java scheduled comparison overflow custody control did not complete')
+    return {'status': 'JDK-and-SDK-source-controls-passed',
+            'equalCrossPoolDeadlines': 'activation-queued-work-admission-order',
+            'clockWrapAndOwners': 'synthetic-host-ledger-only',
+            'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
+
+
 def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     """Real port source with a private host ledger, never injected guest bindings."""
     private = compiler.sdk / 'fibers/conformance/compiler/scheduled-source-control'
@@ -1017,8 +1115,10 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     null_failure_reference = private / 'FutureTaskNullFailureReferenceControl.java'
     monitor_reference = private / 'FutureTaskMonitorReferenceControl.java'
     default_monitor_reference = private / 'DefaultExecutorMonitorReferenceControl.java'
+    comparison_inputs = [private / name for name in ('ScheduledCompareReferenceControl.java',
+        'ScheduledCompareFakeClock.java', 'ScheduledCompareClockControl.java')]
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
-        for path in (*ports, *controls, noop_reference, ready_reference, reference, periodic_reference, invoke_reference, invoke_any_reference, invoke_all_reference, termination_reference,
+        for path in (*ports, *controls, *comparison_inputs, noop_reference, ready_reference, reference, periodic_reference, invoke_reference, invoke_any_reference, invoke_all_reference, termination_reference,
                      null_failure_reference, monitor_reference, default_monitor_reference)}
     output.mkdir()
     jdk_output = output / 'reference-jdk'
@@ -1241,6 +1341,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     noop_cancel = scheduled_noop_cancel_control(compiler, output, jdk_output)
     invoke_any_ready = executor_invoke_any_ready_control(compiler, output, jdk_output)
     invoke_all_wait = executor_invoke_all_wait_control(compiler, output, jdk_output)
+    comparison = scheduled_compare_control(compiler, output, ports, private)
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError('Java scheduled source control inputs changed')
     return {'status': 'SDK-source-controls-passed', 'referenceJdk': 'matched-stopped-and-periodic-observables', 'sourceInputs': inputs,
@@ -1251,6 +1352,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'futureTaskPublicMonitor': 'JDK-and-SDK-source-controls-passed',
         'defaultExecutorPublicMonitor': 'JDK-and-SDK-source-controls-passed', 'readyShutdown': ready_shutdown,
         'noopCancel': noop_cancel, 'invokeAnyReady': invoke_any_ready, 'invokeAllWait': invoke_all_wait,
+        'scheduledComparison': comparison,
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 

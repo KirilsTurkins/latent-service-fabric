@@ -5,36 +5,71 @@ import re
 from pathlib import Path
 
 from tools import security_setup_go as go
+from tools.security_action_rebuild import verify_rebuild
 from tools.security_common import decode_json, digest, read_file, require
 
-REFERENCE = "KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e"
+REFERENCE = 'KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334'
 PROFILE = "rust-cache-dual-source-v1"
 PREFIX = ".github/security/actions/rust-cache/"
 BUILD_PATH = ".github/security/actions/rust-cache-source/fork-build.json"
-BUILD_IDENTITY = {"bytes": 5509, "sha256": "ec5f4637c8ce3a45aeb87b11a2e276d2cf409e21a4bcc6c5adcd77b84d816640", "gitBlob": "296e24c351a3cd392c88ba82b72714b907c0949b"}
-TREE = "9f98acbfd89e15eac6e8614c2a7f394575d3590e"
+BUILD_IDENTITY = {'bytes': 11248,
+ 'sha256': '12969e03a3b5b3a78b7b9c4cb3481ac7d8e3ccb6767c869eb542f0b2a6835b39',
+ 'gitBlob': '8be120f1cbacb5f47fa9c368cfbb48554bee0118'}
+TREE = "fb4a72987f276746eb086692f7eea90d9f21575f"
 DEEP_ADVISORIES = [{"id": "GHSA-gcqx-w48m-w2h4", "modified": "2026-10-27T21:45:04.256048Z"}]
 MINI_ADVISORIES = [{"id": "GHSA-g3hv-75wg-m249", "modified": "2026-11-04T17:01:25.850114Z"}]
 
 # Each tuple is the snapshot, byte count, SHA-256 and Git blob of the published source.
-ACTION_INPUTS = {
-    "action.yml": (PREFIX + "action.yml.snapshot", 3246, "0bf18e525796c2e43b4cccbc5c914e745de700a4e56735f53a8f1b0e6504aa2a", "1481945d779f128e201b6aa5498c53fe4ae9632c"),
-    "package.json": (PREFIX + "package.json", 2190, "2aba49452ea432f269e679216b426c9e2e9459d1211745b06bbc9692dcab89ff", "84d8f31b759b456e71a67781dc362c12569e675f"),
-    "package-lock.json": (PREFIX + "package-lock.json", 112753, "73ab20e6b215286eaf3c3060dfe66c4e9e426b0533ab907299bf9386aa91022a", "703d3fbc2e0decadb810f6decda4bfa8cd42e5a7"),
-    ".lsf-source/verify-installed-deepmerge.mjs": (".github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot", 2381, "55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7", "99d75a2ea3895eb8acc8018984ca9826e4edff51"),
-    ".lsf-source/verify-installed-minimatch.mjs": (".github/security/actions/setup-node-minimatch/installed-verifier.mjs.snapshot", 3386, "4af8eaff4b0b6f6b4b084ceeab68932ba8940048c9e49f9ed8fdc400e9e2f72d", "de5fadac0ee90bd532c5683fd4bcb919634a4314"),
-    ".lsf-source/minimatch-bounds.test.mjs": (".github/security/actions/setup-node-minimatch/bounds.test.mjs.snapshot", 2854, "4fd2675946ecfa56ccf5a3c59e76ef50a5dc7d84f0a37fefd47e0037c50a4492", "11a4cf916b01dfa3af9af699aa7ec641b39505d3"),
-    ".lsf-source/verify-rust-cache-lock.mjs": (".github/security/actions/rust-cache-source/verify-rust-cache-lock.mjs.snapshot", 2211, "93437849b770f19a97251121d354f55705cff9f3771e9faad36db85cd0472841", "d9cdca37d2c5b4c417cde7496a85e7c8f177dc8a"),
-    ".lsf-source/rust-cache-lock.test.mjs": (".github/security/actions/rust-cache-source/rust-cache-lock.test.mjs.snapshot", 2387, "4610bfc55e9451600b3acf8ad67639ad6800b86802f3634b5e06afe3d20e6684", "32b758f19fd9ad50cafa0f96929f1190185209ac"),
-}
-RUNTIME = {
-    "dist/cache-DqPewXTO.js": {"bytes": 1728166, "sha256": "07db20548a8d1d06f2a7b9de443858d49a8a313d81078e22c5a170a4974c1878", "gitBlob": "b1af9eab8c5970cbe70dbaab9b53c86ef63f78eb"},
-    "dist/cache-Dt0HXnmv.js": {"bytes": 5097394, "sha256": "a56045b2899b9e84b07a4a474c58e4cfba4834e83103fc7d71c326ca5f5e9ed5", "gitBlob": "bb21bf2d76378a180d6a509edcfba2a36c098c2c"},
-    "dist/cleanup-BaklJKZS.js": {"bytes": 1266081, "sha256": "c258ac9bdbb42caedc86dee803f24fd1f11687848a903b6ab010d20b44a75317", "gitBlob": "05daf2e05bc5099227e37557cf57df549fd3b3a4"},
-    "dist/restore.js": {"bytes": 3218, "sha256": "79132962e0c05a3cf89cd4f4afa9b397e1cb4b3f464596fcb3532e48bc6deed7", "gitBlob": "ff6a978b49030c31d9981beff6aa3e60c5605499"},
-    "dist/save.js": {"bytes": 3886, "sha256": "692deadfb87ebc4522b6b478d1f95d10b9861052c53325a5d7dac7fa53254662", "gitBlob": "999256ab23222b71758198d7ddfa96e490c64295"},
-    "dist/state-cjs-DX0ePKGg.js": {"bytes": 53327, "sha256": "adf7c2c7259a366203dd55940761d50529982bb61c344f4d389f7c587d6ea04d", "gitBlob": "3d2c29249aa189db9a92c1d087e4df2bc88e27c3"},
-}
+ACTION_INPUTS = {'action.yml': ('.github/security/actions/rust-cache/action.yml.snapshot',
+                3246,
+                '0bf18e525796c2e43b4cccbc5c914e745de700a4e56735f53a8f1b0e6504aa2a',
+                '1481945d779f128e201b6aa5498c53fe4ae9632c'),
+ 'package.json': ('.github/security/actions/rust-cache/package.json',
+                  2225,
+                  '0d872f68edf5ffa14a1966246682e7bf87e53fe936cec08bb7f0dbdcad8efc38',
+                  'bd44e5b4e6b7ba44fe64494fed3e99b10ff18e7e'),
+ 'package-lock.json': ('.github/security/actions/rust-cache/package-lock.json',
+                       112753,
+                       '89427e5af8052d1d52b918e9a95e46b363ae51ee2e80bcc4b72ae618c4602906',
+                       '54d9b2aa20801ec25a83ad862c04fda0f5b9257c'),
+ '.lsf-source/verify-installed-deepmerge.mjs': ('.github/security/actions/deepmerge-source/installed-verifier.mjs.snapshot',
+                                                2381,
+                                                '55367db845fb579dd45a1a16924bf017c0ddc8f84162d833e368c24a7d629cf7',
+                                                '99d75a2ea3895eb8acc8018984ca9826e4edff51'),
+ '.lsf-source/verify-installed-minimatch.mjs': ('.github/security/actions/setup-node-minimatch/installed-verifier.mjs.snapshot',
+                                                3386,
+                                                '4af8eaff4b0b6f6b4b084ceeab68932ba8940048c9e49f9ed8fdc400e9e2f72d',
+                                                'de5fadac0ee90bd532c5683fd4bcb919634a4314'),
+ '.lsf-source/minimatch-bounds.test.mjs': ('.github/security/actions/setup-node-minimatch/bounds.test.mjs.snapshot',
+                                           2854,
+                                           '4fd2675946ecfa56ccf5a3c59e76ef50a5dc7d84f0a37fefd47e0037c50a4492',
+                                           '11a4cf916b01dfa3af9af699aa7ec641b39505d3'),
+ '.lsf-source/verify-rust-cache-lock.mjs': ('.github/security/actions/rust-cache-source/verify-rust-cache-lock.mjs.snapshot',
+                                            2211,
+                                            '88b2877bb42f8b0a67d9b21f69581cd1e74b19cb7c2a5a069625ecdd80217b10',
+                                            '6cf1db29d5b3a96ad46b19c5ca89a9b016170e75'),
+ '.lsf-source/rust-cache-lock.test.mjs': ('.github/security/actions/rust-cache-source/rust-cache-lock.test.mjs.snapshot',
+                                          2387,
+                                          '3cfb04f5083673c41ab08466d61c989f2cc14545edaf74600c963ea9a4989473',
+                                          'c3ef584122ed06554bacc2a0e8f56b962993fced')}
+RUNTIME = {'dist/cache-BpHML6ak.js': {'bytes': 1732587,
+                            'sha256': 'a69f79bdb3f91b11e82cdf6077b21367c46b532e14c2baa76105fd510a6d0d5a',
+                            'gitBlob': '3a65a39936209e3bea62529d3c352100994a5fd6'},
+ 'dist/cache-Dst5U3RU.js': {'bytes': 5098377,
+                            'sha256': '87ddb0cbd6d6a52c8846aa98cf97a01f30062003af155a392227d909a2111d3f',
+                            'gitBlob': '61e9dea13d42eec0bd6945ae3334e2f05974e1f3'},
+ 'dist/cleanup-wBggDijl.js': {'bytes': 1266081,
+                              'sha256': 'beb0e2d10c3eb8e683068094355531a0ccbb2524417aa298654bbd98e037ad61',
+                              'gitBlob': 'e578c9a6cfca26759cf2b311e40195023a122539'},
+ 'dist/restore.js': {'bytes': 3218,
+                     'sha256': 'fbbab1f1f49c5d76baf691933af28e3a677e08edbe34e23308091e6b9ea6b7b4',
+                     'gitBlob': '185e0f818156374c6603615b70d182ca6a93b874'},
+ 'dist/save.js': {'bytes': 3886,
+                  'sha256': 'a8fe0adb1ce0e813e322f910d30a200472e8e2a0b87c43900600385b0c6fc83b',
+                  'gitBlob': '4b3d24f7eefdb99be2370cadbe952b8cd3a98390'},
+ 'dist/state-cjs-DX0ePKGg.js': {'bytes': 53327,
+                                'sha256': 'adf7c2c7259a366203dd55940761d50529982bb61c344f4d389f7c587d6ea04d',
+                                'gitBlob': '3d2c29249aa189db9a92c1d087e4df2bc88e27c3'}}
 DEEP_SOURCES = {
     ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.tar": "archive",
     ".lsf-source/deepmerge-4.3.1-lsf-prototype-v1.repair.json": "repair",
@@ -127,26 +162,7 @@ def source_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> dict:
     build_raw = read_file(repo, BUILD_PATH)
     require(sources.source_identity(build_raw) == BUILD_IDENTITY, "rust-cache-build-evidence-drift")
     build = decode_json(build_raw)
-    artifact = build["artifact"]
-    expected_payloads = {name: {"bytes": size, "sha256": sha, "gitBlob": blob}
-                         for name, (_, size, sha, blob) in ACTION_INPUTS.items()}
-    expected_payloads.update({name: sources.source_identity(deep[key]) for name, key in DEEP_SOURCES.items()})
-    expected_payloads.update({name: sources.source_identity(mini[key]) for name, key in MINI_SOURCES.items()})
-    expected_payloads.update(RUNTIME)
-    require(build["schema"] == 1 and build["repository"] == "KirilsTurkins/lsf-rust-cache"
-            and build["publishedRevision"] == REFERENCE.split("@")[1] and build["publishedTree"] == TREE
-            and build["sourceHead"] == "2a5441298775042332ac1da9e478ffcce3e075f2" and build["sourceTree"] == TREE
-            and build["diagnosticHead"] == "9f57c751fbc99dc4acc824398d68588cf565d59d"
-            and build["diagnosticOnlyPath"] == ".github/workflows/lsf-rust-cache-security-owner.yml"
-            and build["diagnosticWorkflowBlob"] == "0adb276eddaee72bbe863d5265ffe607ec069131"
-            and build["run"] == 42111587240 and build["sourceJob"] == 127540248819
-            and build["saveJob"] == 127540495921 and build["restoreJob"] == 127541234496
-            and build["conclusion"] == "success" and build["node"] == "24.19.0" and build["npm"] == "11.17.0"
-            and build["sourceTests"] == 5 and build["cacheMissSaveHitRestore"] is True
-            and artifact["id"] == 13455276891 and artifact["bytes"] == 1920974
-            and artifact["sha256"] == "d519344459ab521d725a229bdd7b43ef30350e5c070790fbcb645d9109d7fed2"
-            and artifact["members"] == 31 and artifact["checksums"] == 30 and artifact["crcVerified"] is True
-            and artifact["payloads"] == expected_payloads, "rust-cache-build-evidence-drift")
+    verify_rebuild(repo, build, REFERENCE, RUNTIME)
     return {"deep": deep, "mini": mini}
 
 
@@ -212,5 +228,5 @@ def verify_sources(repo: Path, packages: list, configuration: dict, fetch, fetch
                              "upstream_integrity": pin["integrity"], "derived_integrity": sources.integrity(material["archive"]),
                              "repair_sha256": digest(material["repair"]), "files": len(repair["files"]),
                              "locks": [entry["lock"]], "advisories": advisory, "action": REFERENCE,
-                             "source_role": role, "built_tree": TREE, "build_run": 42111587240})
+                             "source_role": role, "built_tree": TREE, "build_run": 43524567232})
     return receipts

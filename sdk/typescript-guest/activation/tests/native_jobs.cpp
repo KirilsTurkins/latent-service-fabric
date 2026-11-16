@@ -100,6 +100,41 @@ static bool native_failure(JSContext* cx, unsigned, JS::Value*) {
   return false;
 }
 
+// An actual JS::Call invokes this native callback while the production queue
+// owns its frame. The fixture broker is still not a host activation ledger.
+static FixtureAccounting* cancelling_accounting = nullptr;
+static const char* cancellation_case = nullptr;
+static bool cancellation_observed = false;
+static bool reentrant_cancel(JSContext* cx, unsigned argc, JS::Value* vp) {
+  auto& accounting = *cancelling_accounting;
+  auto& queue = *accounting.queue;
+  const auto admissions = accounting.admissions;
+  const auto entries = accounting.entries;
+  const auto tasks = accounting.tasks;
+  const auto queued = accounting.queued;
+  const bool refused = !queue.cancelQueued(cx);
+  const bool fenced = queue.isDrainingStopped();
+  const bool retained = accounting.tasks == tasks && accounting.queued == queued &&
+                        tasks == 2 && queued == 1 && accounting.exits == 0;
+  JS::RootedFunction late(cx, JS_NewFunction(cx, native_failure, 0, 0, "lateJob"));
+  if (!late) return false;
+  JS::RootedObject callable(cx, JS_GetFunctionObject(late));
+  JS::RootedObject none(cx);
+  const bool rejected = !queue.enqueuePromiseJob(cx, none, callable, none, none);
+  const bool rejection_reported = JS_IsExceptionPending(cx);
+  JS_ClearPendingException(cx);
+  queue.runJobs(cx);
+  cancellation_observed = refused && fenced && retained && rejected && rejection_reported &&
+      accounting.admissions == admissions && accounting.entries == entries &&
+      accounting.tasks == tasks && accounting.queued == queued;
+  JS::CallArgsFromVp(argc, vp).rval().setUndefined();
+  if (std::strstr(cancellation_case, "exception")) {
+    JS_ReportErrorASCII(cx, "expected-reentrant-callback-error");
+    return false;
+  }
+  return cancellation_observed && !std::strstr(cancellation_case, "false");
+}
+
 int main(int argc, char** argv) {
   if (argc != 2) return 2;
   // The pinned engine's alternate JSMicroTask queue bypasses enqueuePromiseJob.
@@ -209,6 +244,35 @@ int main(int argc, char** argv) {
       status = queue.empty() && accounting.tasks == 0 && accounting.queued == 0 &&
                accounting.admissions == accounting.entries && accounting.entries == accounting.exits &&
                expect(cx, "answer===42") ? 0 : 1;
+    } else if (!std::strcmp(selected, "reentrant-cancel-success") ||
+               !std::strcmp(selected, "reentrant-cancel-false") ||
+               !std::strcmp(selected, "reentrant-cancel-exception") ||
+               !std::strcmp(selected, "reentrant-cancel-ack-refusal")) {
+      cancelling_accounting = &accounting;
+      cancellation_case = selected;
+      accounting.reject_completion = std::strstr(selected, "refusal") != nullptr;
+      JS::RootedFunction first(cx, JS_NewFunction(cx, reentrant_cancel, 0, 0, "cancelJob"));
+      JS::RootedFunction sibling(cx, JS_NewFunction(cx, native_failure, 0, 0, "siblingJob"));
+      if (!first || !sibling) return 8;
+      JS::RootedObject callable(cx, JS_GetFunctionObject(first));
+      JS::RootedObject other(cx, JS_GetFunctionObject(sibling));
+      JS::RootedObject none(cx);
+      if (!queue.enqueuePromiseJob(cx, none, callable, none, none) ||
+          !queue.enqueuePromiseJob(cx, none, other, none, none)) return 8;
+      js::RunJobs(cx);
+      bool correct = cancellation_observed && queue.isDrainingStopped() && !queue.empty() &&
+                     accounting.entries == 1 && accounting.queued == 1 &&
+                     JS_IsExceptionPending(cx) == (std::strstr(selected, "exception") != nullptr);
+      if (accounting.reject_completion) {
+        correct = correct && accounting.tasks == 2 && accounting.exits == 0 &&
+                  !queue.cancelQueued(cx) && accounting.tasks == 2 && accounting.queued == 1;
+        accounting.reject_completion = false;
+      }
+      correct = correct && queue.cancelQueued(cx) && queue.empty() &&
+                accounting.tasks == 0 && accounting.queued == 0 && accounting.exits == 1 &&
+                accounting.entries == 1 && queue.cancelQueued(cx);
+      status = correct ? 0 : 1;
+      cancelling_accounting = nullptr;
     } else if (!std::strcmp(selected, "native-frame-error")) {
       JS::RootedFunction callback(cx, JS_NewFunction(cx, native_failure, 0, 0,
                                                    "nativeFailure"));

@@ -7,7 +7,7 @@ import { basename, dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { coreIntegerLowering } from './signed64.mjs';
 import { explicitResourceOwners } from './resources.mjs';
-import { selectedSourceSplicer } from './source_splicer.mjs';
+import { selectedSourceSplicer, inlineExportTaskMeta } from './source_splicer.mjs';
 import { lazySyncImportWaiters, retireGeneratedTaskSlots, applicationRealmImportPromises, fuseNativeImportAwaits, directIdleTaskSlots, nativeCarrierImports } from './async_waiters.mjs';
 import { borrowReleaseHandoff } from './import_cancellation.mjs';
 import { borrowProbeBindings, borrowProbeProfile, borrowProbeSpliceCapture } from './borrow_probe.mjs';
@@ -163,6 +163,7 @@ const result = await componentize({
       generatedBindings = directIdleTaskSlots(generatedBindings);
       generatedBindings = fuseNativeImportAwaits(generatedBindings, parseBindings);
       generatedBindings = nativeCarrierImports(generatedBindings, parseBindings);
+      generatedBindings = inlineExportTaskMeta(generatedBindings, parseBindings);
       generatedBindings = borrowReleaseHandoff(generatedBindings, parseBindings);
       generatedBindings = borrowProbeBindings(generatedBindings, parseBindings, diagnosticProfile);
       generatedBindings = nodeNetBindings(generatedBindings, parseBindings, netSelection?.profile, netExports);

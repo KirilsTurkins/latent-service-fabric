@@ -472,6 +472,100 @@ assert.equal(socket.bytesWritten,3);f.transport.assertEmpty();
 }
 """)
 
+    def test_backpressure_drain_order_and_end_match_real_node(self):
+        self.javascript(r"""
+const real=await import('node:net');
+// The reference uses actual loopback backpressure; the finite guest below uses
+// the real Socket facade and explicit logical-result/borrow-ACK doubles.
+async function reference(mode) {
+ let peer;const acceptedPeer=deferred(),events=[];
+ const server=real.createServer(value=>{peer=value;peer.on('error',()=>{});peer.on('data',()=>{});peer.pause();acceptedPeer.resolve()});
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const socket=new real.Socket({highWaterMark:2}),connected=deferred();
+ socket.on('error',connected.reject).once('connect',connected.resolve).connect(server.address().port,'127.0.0.1');
+ await connected.promise;await acceptedPeer.promise;
+ socket.on('finish',()=>events.push('finish'));
+ socket.once('drain',()=>{
+  events.push('drain');
+  if(mode==='reentrant'||mode==='empty-reentrant')socket.write('z',error=>{assert(error==null);events.push('extra')});
+  if(mode==='destroy'||mode==='empty-destroy')socket.destroy();
+ });
+ let accepted=true,count=0;const bytes=globalThis.Buffer.alloc(65536);
+ while(accepted && count<1024) {
+  const index=++count;
+  accepted=socket.write(bytes,error=>{assert(error==null);events.push('callback:'+index)});
+ }
+ assert.equal(accepted,false,'reference must reach real backpressure');
+ if(mode.startsWith('empty'))socket.write('',error=>{assert(error==null);events.push('empty')});
+ if(mode==='queued')socket.write('cd',error=>{assert(error==null);events.push('queued')});
+ if(mode==='end')socket.end();
+ peer.resume();const deadline=Date.now()+5000;
+ while(Date.now()<deadline && (!events.includes('callback:'+count) ||
+       ((mode==='reentrant'||mode==='empty-reentrant') && !events.includes('extra')) ||
+       (mode.startsWith('empty') && !events.includes('empty')) ||
+       (mode==='queued' && !events.includes('queued')) ||
+       (mode==='end' && !events.includes('finish')))) await turn();
+ assert(events.includes('callback:'+count),'reference final callback missing');
+ if(mode==='reentrant'||mode==='empty-reentrant')assert(events.includes('extra'));
+ if(mode.startsWith('empty'))assert(events.includes('empty'));
+ if(mode==='queued')assert(events.includes('queued'));
+ if(mode==='end')assert(events.includes('finish'));
+ const trace=events.filter(value=>['drain','extra','empty','queued','finish','callback:'+count].includes(value))
+  .map(value=>value==='callback:'+count?'write-callback':value);
+ socket.destroy();peer.destroy();await new Promise(resolve=>server.close(resolve));
+ return trace;
+}
+async function guest(mode) {
+ const logical=deferred(),ack=deferred(),started=deferred(),connected=deferred(),closed=deferred(),events=[];
+ let writes=0,cancels=0;
+ const f=fixture({write(_connection,bytes){
+  if(++writes===1){assert.equal(bytes.length,2);started.resolve();return {
+   promise:logical.promise,borrowReleased:ack.promise,cancel(){++cancels;return Promise.resolve()}}}
+  assert.equal(bytes.length,mode==='queued'?2:1);return settled(bytes.length);
+ }});
+ const socket=new f.net.Socket({highWaterMark:2});
+ socket.on('error',closed.reject).once('connect',connected.resolve).once('close',()=>{
+  assert(events.includes('write-callback'),'consuming close cannot precede the original callback');
+  if(mode.startsWith('empty'))assert(events.includes('empty'),'empty callback retains its close tail');
+  if(mode==='reentrant'||mode==='empty-reentrant')assert(events.includes('extra'),'reentrant callback retains its close tail');
+  closed.resolve();
+ });
+ socket.on('finish',()=>events.push('finish'));
+ socket.once('drain',()=>{
+  events.push('drain');
+  if(mode==='reentrant'||mode==='empty-reentrant')socket.write('z',error=>{assert.equal(error,undefined);events.push('extra');socket.destroy()});
+  if(mode==='destroy'||mode==='empty-destroy')socket.destroy();
+ });
+ socket.connect(32123,'127.0.0.1');await connected.promise;
+ assert.equal(socket.write('ab',error=>{assert.equal(error,undefined);events.push('write-callback');if(mode==='plain')socket.destroy()}),false);
+ await started.promise;
+ if(mode.startsWith('empty'))assert.equal(socket.write('',error=>{
+  assert.equal(error,undefined);events.push('empty');if(mode!=='empty-reentrant')socket.destroy()
+ }),false);
+ if(mode==='queued')assert.equal(socket.write('cd',error=>{assert.equal(error,undefined);events.push('queued');socket.destroy()}),false);
+ if(mode==='end')socket.end();
+ logical.resolve(2);await turn();assert.deepEqual(events,[],'result without borrow ACK cannot complete a write');
+ assert(!f.calls.includes('close'));assert.throws(f.transport.assertEmpty,/unclosed/);
+ ack.resolve();await closed.promise;
+ assert.equal(cancels,0);assert.equal(f.calls.filter(value=>value==='close').length,1);
+ f.transport.assertEmpty();return events;
+}
+for(const mode of ['plain','reentrant','destroy','empty','empty-destroy','empty-reentrant','queued','end']) {
+ const expected=await reference(mode);
+ const actual=await guest(mode);
+ if(mode==='queued') {
+  // Node may batch an earlier native write with the final queued write;
+  // its earlier callback can then land on either side of drain. The final
+  // callback must follow both the earlier callback and drain on either path.
+  for(const trace of [expected,actual]) {
+   assert.equal(trace.length,3);assert(trace.includes('write-callback'));
+   assert(trace.indexOf('drain')>=0 && trace.indexOf('drain')<trace.indexOf('queued'));
+   assert(trace.indexOf('write-callback')<trace.indexOf('queued'));
+  }
+ } else assert.deepEqual(actual,expected,mode);
+}
+""")
+
     def test_zero_progress_waits_real_writable_hint_and_backpressure_drains(self):
         self.javascript(r"""
 const sequence=[];let writes=0;
@@ -479,7 +573,7 @@ const f=fixture({write(_,bytes){sequence.push('write');return settled(++writes==
 const socket=new f.net.Socket({highWaterMark:2}),events=[];socket.connect(32123,'localhost');
 const done=deferred();socket.on('error',done.reject).on('drain',()=>{events.push('drain');socket.destroy()}).on('close',done.resolve);
 assert.equal(socket.write('ab',error=>{assert.equal(error,undefined);events.push('written')}),false);
-await done.promise;assert.deepEqual(sequence,['write','ready','write']);assert.deepEqual(events,['written','drain']);f.transport.assertEmpty();
+await done.promise;assert.deepEqual(sequence,['write','ready','write']);assert.deepEqual(events,['drain','written']);f.transport.assertEmpty();
 """)
 
     def test_actual_captured_initializer_and_export_guard_fail_closed(self):

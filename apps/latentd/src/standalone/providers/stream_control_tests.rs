@@ -545,7 +545,7 @@ fn explicit_drain_retires_current_owner_and_requires_a_normal_restart_for_fresh_
     assert!(execution.budget.host_memory_bytes() > 0);
     drop(stream);
     let result = invocation.block_on(drain).unwrap();
-    assert_eq!(result.outcome, "drained");
+    assert_eq!(result.outcome, "retirement-unconfirmed");
     assert!(result.stream.stopped);
     assert!(result.stream.current_generation_retired);
     assert_eq!(result.stream.usage.owners, 0);

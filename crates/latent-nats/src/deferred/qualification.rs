@@ -20,6 +20,17 @@ pub struct JetStreamQualification {
 
 impl JetStreamQualification {
     pub fn validate(&self, mapping: &TopicMapping, config: &NatsConfig) -> Result<()> {
+        self.validate_limits(
+            config.maximum_payload_bytes,
+            mapping.duplicate_window_millis,
+        )
+    }
+
+    pub(crate) fn validate_limits(
+        &self,
+        maximum_payload_bytes: usize,
+        minimum_retention_millis: u64,
+    ) -> Result<()> {
         if self.format_version != 1
             || !text(&self.server_version, 64)
             || self.server_version.capacity() > 64
@@ -29,11 +40,11 @@ impl JetStreamQualification {
             || !(1..=100_000).contains(&self.maximum_messages)
             || !(4096..=64 * 1024 * 1024).contains(&self.maximum_bytes)
             || (self.maximum_age_millis != 0
-                && (self.maximum_age_millis < mapping.duplicate_window_millis
+                && (self.maximum_age_millis < minimum_retention_millis
                     || self.maximum_age_millis > 604_800_000))
             || u64::from(self.maximum_message_bytes) > self.maximum_bytes
             || usize::try_from(self.maximum_message_bytes)
-                .is_ok_and(|maximum| maximum < config.maximum_payload_bytes + 4096)
+                .is_ok_and(|maximum| maximum < maximum_payload_bytes + 4096)
             || self.maximum_message_bytes > 1024 * 1024
         {
             return Err(EventError::InvalidEvent);
@@ -139,20 +150,37 @@ pub(super) fn validate_response(
     config: &NatsConfig,
 ) -> Result<()> {
     protocol::guard(bytes)?;
-    let info: StreamInfo<'_> =
-        serde_json::from_slice(bytes).map_err(|_| EventError::Unavailable)?;
-    let stream = info.config;
     let expected: Vec<_> = config
         .topics
         .iter()
         .filter(|topic| topic.stream == mapping.stream)
         .map(|topic| topic.subject.as_str())
         .collect();
+    validate_stream_response(
+        bytes,
+        qualification,
+        &mapping.stream,
+        &expected,
+        mapping.duplicate_window_millis,
+    )
+}
+
+pub(crate) fn validate_stream_response(
+    bytes: &[u8],
+    qualification: &JetStreamQualification,
+    name: &str,
+    expected: &[&str],
+    duplicate_window_millis: u64,
+) -> Result<()> {
+    protocol::guard(bytes)?;
+    let info: StreamInfo<'_> =
+        serde_json::from_slice(bytes).map_err(|_| EventError::Unavailable)?;
+    let stream = info.config;
     // 8192-byte framing bounds decoding before allocation; the admitted
     // request prepays 128 KiB of protocol/descriptor scratch as well as its body.
     if info.kind != "io.nats.jetstream.api.v1.stream_info_response"
         || info.created != qualification.stream_created
-        || stream.name != mapping.stream
+        || stream.name != name
         || stream.subjects.len() > 16
         || stream
             .subjects
@@ -169,7 +197,7 @@ pub(super) fn validate_response(
         || u64::try_from(stream.max_bytes).ok() != Some(qualification.maximum_bytes)
         || stream.max_age != qualification.maximum_age_millis * 1_000_000
         || u32::try_from(stream.max_msg_size).ok() != Some(qualification.maximum_message_bytes)
-        || stream.duplicate_window != mapping.duplicate_window_millis * 1_000_000
+        || stream.duplicate_window != duplicate_window_millis * 1_000_000
         || !stream.deny_delete
         || !stream.deny_purge
         || stream.sealed

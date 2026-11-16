@@ -2,16 +2,17 @@
 from __future__ import annotations
 
 from pathlib import Path
+from tools.security_action_rebuild import verify_rebuild
 from tools.security_common import decode_json, digest, read_file, require
 
-REFERENCE = "KirilsTurkins/lsf-deploy-pages@e249fe4e7520b3d7aa16ef72f45eeb05de6cf4f6"
+REFERENCE = 'KirilsTurkins/lsf-deploy-pages@f596449d219e8fe3fe62b26b0a4dfc4fbb89334b'
 PREFIX = ".github/security/actions/deploy-pages/"
 DEEP_PROFILE = "deploy-pages-deepmerge-source-v1"
 PROFILE = "deploy-pages-glob-minimatch-source-v1"
 GUARD = ".lsf-source/apply-verified-sources.cjs"
 DEEP_VERIFIER = ".lsf-source/verify-installed-deepmerge.mjs"
-TREE = "79d01754bcbda86178d60a411e8256696a265f5c"
-RUN = 42116676439
+TREE = "7dceed127681e55bdc8e163ae2f8f4f42d01c0d7"
+RUN = 43523076094
 GLOB_ADVISORIES = [{"id": "GHSA-3g3m-2fjr-6pw4", "modified": "2026-10-30T23:15:04.503965Z"}]
 MINI_ADVISORIES = [{"id": "GHSA-g3hv-75wg-m249", "modified": "2026-11-04T17:01:25.850114Z"}]
 DEEP_ADVISORIES = [{"id": "GHSA-gcqx-w48m-w2h4", "modified": "2026-10-27T21:45:04.256048Z"}]
@@ -21,17 +22,17 @@ ACTION_INPUTS = {'action.yml': ('.github/security/actions/deploy-pages/action.ym
                 '64c44539fba53559a157b5de16c01d3ab91dbc999c1b98b5c0b2fc3528d5d059',
                 '9640517bb026e0790a53bd6d35fd13a94617c48e'),
  'package.json': ('.github/security/actions/deploy-pages/package.json',
-                  3152,
-                  '1f1ba01a30c2f8aa80e60493e6e154bb59e4ff94b1010371447816f609eac771',
-                  '290c1789c2fa671677f2c373607dbf465f109d70'),
+                  3187,
+                  '946fe222a91b4d81ecd2e1f6df1004da9db8d9bb98c64b0bf501b4a8c1d16bf0',
+                  'fdc8b35238867c19fcf1434e74fdc6ae0d88da0b'),
  'package-lock.json': ('.github/security/actions/deploy-pages/package-lock.json',
                        352898,
-                       '88d39a5c99be6e0ba2af6cd8ca6535acd4ef645ee297c51735c64078246513fa',
-                       'd15b47b7845bdc35305ff3b86bc44942bc742b8d'),
+                       'f7e5a943e5e67a9e814c42e556d9fe229cb0c6d2f025c120d1604a3b6c261da6',
+                       'c4fd7a63470b1bb9a63d5cc07e3486f2d46e5765'),
  '.lsf-source/apply-verified-sources.cjs': ('.github/security/actions/deploy-pages/applied-source-guard.cjs.snapshot',
                                             11309,
-                                            '48dc90cb16ed138f1da2672e018bf35602f8bdd22adbde4caf6c7e3e5da9ce6b',
-                                            '5ce26529acb6b82aedf2ff49fdaef5603d405b14'),
+                                            '8ae219bc741b1dd5f4c16bb52b3db1ec4229b9acd3136f792f04d1870a69b41d',
+                                            'e638ca79faeef301c73a1032fc8dd91c9d7c695b'),
  '.lsf-source/security-controls.test.cjs': ('.github/security/actions/deploy-pages/security-controls.test.cjs.snapshot',
                                             17298,
                                             '89329f4116bf44f7f0c7b744e1ec51124737b5816c78999005dbee4ef096d948',
@@ -81,12 +82,12 @@ ACTION_INPUTS = {'action.yml': ('.github/security/actions/deploy-pages/action.ym
                                               '4003a0a348276a95543fa969f561f6b5968629acbbb59d66018dd23e7b8f1d5c',
                                               '1d1560e971dfc484bbe0cb9e8c86bde9140e45b5')}
 
-RUNTIME = {'dist/index.js': {'bytes': 5032045,
-                   'sha256': '6afca1e03014a24815b1bd07b000af7d409ff50deaeb39336d981fd86dc8317e',
-                   'gitBlob': '9739ab7250dc1fd371faa5a990405213b9243900'},
- 'dist/index.js.map': {'bytes': 5946146,
-                       'sha256': '41100efb5feee01b35d10f4c825e010ea703c79287e773756e2a770402a5cb96',
-                       'gitBlob': '1004a34997339803856978e2100a66ab6b8d14fe'},
+RUNTIME = {'dist/index.js': {'bytes': 5033010,
+                   'sha256': 'd1638046304c6e137b61fe23cd2617f07bc4e115cda0ad190521d9af0f3359d4',
+                   'gitBlob': 'bba2e3724d0386cd97be0469074494df1f0a0fb3'},
+ 'dist/index.js.map': {'bytes': 5947100,
+                       'sha256': 'bcaaa13ab7b74bfe22767e59ee4c5901d47ae24d3ce96ee968b55a0f2ce2615f',
+                       'gitBlob': 'e7b438ebbf81e391094b5d13205cead036af9928'},
  'dist/835.index.js': {'bytes': 660750,
                        'sha256': 'ef21ce95aa5da03df4d6f256d2fe6cfe59b38198d6331a12371ae15221e61c02',
                        'gitBlob': '72fe4fa3ffa01eefdb4f2de4f6ce9f43229dc328'},
@@ -101,9 +102,9 @@ RUNTIME = {'dist/index.js': {'bytes': 5032045,
                                 'gitBlob': 'cb1fb13627f07ab9250566c7069e0756f882663a'}}
 
 BUILD = ('.github/security/actions/deploy-pages-source/fork-build.json',
- 2414,
- '7112a31fcfa232234407846b4c942b039fd8fb5a736cdcac8ec17d7edbddefa9',
- 'd44fa67170e40db46cd47612a12aa1c0f94deddf')
+ 9073,
+ '2f9d8971d20c8749a318e179502238bcdb50a3544273bbe2b1840e332a1a41ed',
+ '225cbf3006b3faf2ec32e0e7dfc2178f4c551bdc')
 
 PACKAGES = [{'name': 'glob',
   'version': '10.5.0',
@@ -223,24 +224,7 @@ def source_inputs(repo: Path, entry: dict, owner: dict, lock: dict) -> dict:
             and lock["packages"].get("node_modules/@typescript-eslint/typescript-estree", {})
                 .get("dependencies", {}).get("minimatch") == "^9.0.4", "deploy-pages-consumer-graph-drift")
     build = decode_json(_read_bound(repo, BUILD))
-    require(build == {
-        "schema": 1, "repository": "KirilsTurkins/lsf-deploy-pages",
-        "publishedRevision": REFERENCE.split("@")[1], "publishedTree": TREE,
-        "sourceHead": "28eb881c437639997329a63ba203044a1e930cef",
-        "diagnosticHead": "cac159f297ebd83907e26e57ad07c139d1f03cf8",
-        "diagnosticTree": "3cc77d0178fe62389be42f6a2ef144ad2f39f780",
-        "diagnosticOnlyPath": ".github/workflows/deploy-pages-linux-probe.yml",
-        "run": RUN, "job": 127558041486, "jobConclusion": "success", "node": "24.19.0", "npm": "11.17.0",
-        "sourceControls": 7, "formatPassed": True, "rebuiltFilesIdentical": True,
-        "artifact": {"id": 13457066659, "bytes": 2265006,
-                     "sha256": "488468c35d1aa563165495cf451e36932ba28c045682a5d3b58fc34593a75157", "crcVerified": True},
-        "earlierJest": {"sourceHead": "ce5657b184ecb0534e41b6814f1ef8ce74783319", "run": 42115832424,
-                        "job": 127555089232, "tests": 32, "suites": 2,
-                        "artifact": {"id": 13456511299, "bytes": 2265002,
-                                     "sha256": "949f9976f8103c7b307635293457c928d867e07ff963b3dac80617ecdb46aff3",
-                                     "crcVerified": True}},
-        "bundles": RUNTIME,
-    }, "deploy-pages-build-evidence-drift")
+    verify_rebuild(repo, build, REFERENCE, RUNTIME)
     deep_material = {
         "upstream": inputs[".lsf-source/deepmerge-4.3.1.original.tgz"],
         "archive": inputs[deep_archive],

@@ -3,6 +3,41 @@ use super::{
     TenantId,
 };
 use crate::BlobReference;
+use std::{
+    collections::BTreeMap,
+    ops::Bound::{Excluded, Unbounded},
+};
+
+// A turn visits a fixed number of physical records, including records which
+// are still live. A cursor is only a scheduling hint, never deletion proof.
+fn select<K: Ord + Clone, V>(
+    entries: &BTreeMap<K, V>,
+    after: Option<&K>,
+    visits: usize,
+    maximum: usize,
+    eligible: impl Fn(&V) -> bool,
+) -> (Vec<K>, Option<K>) {
+    let mut selected = Vec::new();
+    let mut last = after.cloned();
+    let mut visited = 0;
+    for (key, value) in entries
+        .range((after.map_or(Unbounded, Excluded), Unbounded))
+        .take(visits)
+    {
+        visited += 1;
+        last = Some(key.clone());
+        if eligible(value) {
+            selected.push(key.clone());
+            if selected.len() == maximum {
+                break;
+            }
+        }
+    }
+    if visited < visits && selected.len() < maximum {
+        last = None;
+    }
+    (selected, last)
+}
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct LocalBlobReclamation {
@@ -44,22 +79,30 @@ impl LocalBlobStore {
         let key = record.key();
         {
             let mut state = self.inner.state()?;
-            let object = state.objects.get(&key).ok_or(LocalBlobError::NotFound)?;
-            if !object.referenced.swap(false, Ordering::AcqRel) {
+            let object = state
+                .objects
+                .get(&key)
+                .cloned()
+                .ok_or(LocalBlobError::NotFound)?;
+            if !object.referenced.load(Ordering::Acquire) {
                 return Ok(false);
             }
+            state.advance_inventory()?;
+            object.referenced.store(false, Ordering::Release);
             state.referenced -= 1;
         }
         let result = (|| {
             let directory = self.inner.objects.child(&key, false)?;
-            directory.write_new("RELEASED", b"LSF blob reference released v1\n")?;
+            directory.write_new("RELEASED", recovery::RELEASE_MARKER)?;
             directory.sync()
         })();
         result.map_err(|_| self.inner.uncertain())?;
         Ok(true)
     }
-    /// At most 64 entries per explicit maintenance turn. No recursive deletion,
-    /// active-stage removal, reader eviction, automatic retry or Drop-time I/O.
+    /// Visit at most 64 physical entries per explicit maintenance turn. A turn
+    /// may reclaim nothing even when later entries are eligible; repeated turns
+    /// resume and eventually wrap. No recursive deletion, active-stage removal,
+    /// reader eviction, automatic retry or Drop-time I/O.
     pub fn reclaim(
         &self,
         maximum_entries: usize,
@@ -90,30 +133,50 @@ impl LocalBlobStore {
         let _publication = self.inner.publication()?;
         checkpoint()?;
         let (objects, stages) = {
-            let state = self.inner.state()?;
-            let objects = state
-                .objects
-                .iter()
-                .filter(|(_, o)| {
-                    include_objects
-                        && !o.referenced.load(Ordering::Acquire)
-                        && o.pins.load(Ordering::Acquire) == 0
-                })
-                .take(maximum_entries)
-                .map(|(key, _)| key.clone())
-                .collect::<Vec<_>>();
-            let stages = state
-                .stages
-                .iter()
-                .filter(|(_, s)| !s.active.load(Ordering::Acquire))
-                .take(maximum_entries - objects.len())
-                .map(|(id, _)| *id)
-                .collect::<Vec<_>>();
+            let mut state = self.inner.state()?;
+            let mut objects = Vec::new();
+            let mut stages = Vec::new();
+            let stages_first = !include_objects || state.reclaim_stages_first;
+            if include_objects {
+                state.reclaim_stages_first = !state.reclaim_stages_first;
+            }
+            for scan_stages in [stages_first, !stages_first] {
+                let remaining = maximum_entries - objects.len() - stages.len();
+                if remaining == 0 {
+                    break;
+                }
+                if scan_stages {
+                    let (found, after) = select(
+                        &state.stages,
+                        state.reclaim_stage_after.as_ref(),
+                        if include_objects { 32 } else { 64 },
+                        remaining,
+                        |stage| !stage.active.load(Ordering::Acquire),
+                    );
+                    state.reclaim_stage_after = after;
+                    stages = found;
+                } else if include_objects {
+                    let (found, after) = select(
+                        &state.objects,
+                        state.reclaim_object_after.as_ref(),
+                        32,
+                        remaining,
+                        |object| {
+                            !object.referenced.load(Ordering::Acquire)
+                                && object.pins.load(Ordering::Acquire) == 0
+                        },
+                    );
+                    state.reclaim_object_after = after;
+                    objects = found;
+                }
+            }
             (objects, stages)
         };
         let mut result = LocalBlobReclamation::default();
         for key in objects {
             checkpoint()?;
+            // A failed physical retirement still invalidates an observation.
+            self.inner.state()?.advance_inventory()?;
             remove(
                 &self.inner.objects,
                 &key,
@@ -173,4 +236,33 @@ fn remove(parent: &Arc<fs::Directory>, name: &str, object: bool, maximum: u64) -
     parent.unlink(name, true)?;
     drop(directory);
     parent.sync()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::select;
+    use std::{cell::Cell, collections::BTreeMap};
+
+    #[test]
+    fn selection_counts_live_entries_and_resumes_without_starvation() {
+        let entries: BTreeMap<_, _> = (0..100).map(|n| (n, n == 95)).collect();
+        let mut after = None;
+        for turn in 0..4 {
+            let seen = Cell::new(0);
+            let (selected, next) = select(&entries, after.as_ref(), 32, 1, |eligible| {
+                seen.set(seen.get() + 1);
+                *eligible
+            });
+            assert!(seen.get() <= 32);
+            if turn < 2 {
+                assert!(selected.is_empty());
+            } else if turn == 2 {
+                assert_eq!(selected, vec![95]);
+            } else {
+                assert!(selected.is_empty());
+                assert_eq!(next, None);
+            }
+            after = next;
+        }
+    }
 }

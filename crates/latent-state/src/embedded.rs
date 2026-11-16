@@ -622,6 +622,16 @@ impl ReadView {
         self.get_bounded_at_age(key, maximum_bytes, self.opened.elapsed())
     }
 
+    /// A closed codec may impose a stricter bound than the engine. A smaller
+    /// configured engine limit is already an equally strict physical bound.
+    pub(crate) fn get_typed_bounded(
+        &self,
+        key: &RowKey,
+        maximum_bytes: usize,
+    ) -> Result<Option<Vec<u8>>, StoreError> {
+        self.get_bounded(key, maximum_bytes.min(self.limits.maximum_value_bytes))
+    }
+
     // The public entry always samples the original monotonic lifetime. Engine
     // tests can exercise the same boundary without timing a native disk flush.
     fn get_at_age(&self, key: &RowKey, age: Duration) -> Result<Option<Vec<u8>>, StoreError> {

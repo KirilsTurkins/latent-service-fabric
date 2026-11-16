@@ -12,7 +12,7 @@ use latent_capabilities::broker::{
 #[cfg(any(test, feature = "development-outbound"))]
 use latent_capabilities::broker::{
     network::{STREAM_CAPABILITY, STREAM_PROFILE},
-    pools::ProviderSetup,
+    pools::{DeferredProviderInstall, ProviderSetup},
     ProviderBudgetRequirement, ProviderConfiguration,
 };
 #[cfg(any(test, feature = "development-outbound"))]
@@ -21,9 +21,32 @@ use latent_network::dns::Resolver;
 #[cfg(any(test, feature = "development-outbound"))]
 use sha2::{Digest, Sha256};
 use std::{
+    future::Future,
+    pin::Pin,
     sync::{Arc, Mutex},
+    task::{Context, Poll},
     time::{Duration, Instant},
 };
+
+pin_project_lite::pin_project! {
+    /// The existing paid connect future plus its same original opening row.
+    struct OpeningFuture<F> {
+        #[pin]
+        future: F,
+        custody: crate::connection_registry::RetirementCustody,
+    }
+    impl<F> PinnedDrop for OpeningFuture<F> {
+        fn drop(this: Pin<&mut Self>) {
+            this.project().custody.begin_drop();
+        }
+    }
+}
+impl<F: Future> Future for OpeningFuture<F> {
+    type Output = F::Output;
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        self.project().future.poll(cx)
+    }
+}
 
 #[derive(Clone)]
 pub struct StreamProvider {
@@ -43,13 +66,23 @@ pub(crate) struct Inner {
     pub(crate) native_bank: Option<Arc<crate::kernel::native::StreamBank>>,
     _configuration: ProviderMetadata,
 }
-#[cfg(any(test, feature = "development-outbound"))]
+#[cfg(test)]
 pub(crate) type ProviderInstaller = fn(
     Arc<ProviderPools>,
     &str,
     u64,
     u64,
     StreamProviderConfig,
+) -> Result<StreamProvider, StreamError>;
+
+#[cfg(any(test, feature = "development-outbound"))]
+pub(crate) type DeferredProviderInstaller = for<'a, 'b> fn(
+    Arc<ProviderPools>,
+    &str,
+    u64,
+    u64,
+    StreamProviderConfig,
+    &'a mut DeferredProviderInstall<'b>,
 ) -> Result<StreamProvider, StreamError>;
 
 #[cfg(any(test, feature = "development-outbound"))]
@@ -412,6 +445,27 @@ impl StreamProvider {
         )
     }
 
+    #[cfg(any(test, feature = "development-outbound"))]
+    pub(crate) fn install_for_rotation(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: StreamProviderConfig,
+        completion: &mut DeferredProviderInstall<'_>,
+    ) -> Result<Self, StreamError> {
+        Self::install_with_modes_deferred(
+            pools,
+            logical_id,
+            epoch,
+            expected_epoch,
+            config,
+            TlsInstallMode::Qualified,
+            crate::kernel::Mode::LogicalReference,
+            Some(completion),
+        )
+    }
+
     // Only unit-test code can select this reference experiment. It does not
     // exist in a normal or development-outbound provider binary.
     #[cfg(test)]
@@ -429,6 +483,27 @@ impl StreamProvider {
             expected_epoch,
             config,
             TlsInstallMode::AccountingReference,
+        )
+    }
+
+    #[cfg(test)]
+    pub(crate) fn install_tls_for_rotation_reference(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: StreamProviderConfig,
+        completion: &mut DeferredProviderInstall<'_>,
+    ) -> Result<Self, StreamError> {
+        Self::install_with_modes_deferred(
+            pools,
+            logical_id,
+            epoch,
+            expected_epoch,
+            config,
+            TlsInstallMode::AccountingReference,
+            crate::kernel::Mode::LogicalReference,
+            Some(completion),
         )
     }
 
@@ -461,6 +536,33 @@ impl StreamProvider {
         config: StreamProviderConfig,
         tls_mode: TlsInstallMode,
         kernel_mode: crate::kernel::Mode,
+    ) -> Result<Self, StreamError> {
+        Self::install_with_modes_deferred(
+            pools,
+            logical_id,
+            epoch,
+            expected_epoch,
+            config,
+            tls_mode,
+            kernel_mode,
+            None,
+        )
+    }
+
+    #[cfg(any(test, feature = "development-outbound"))]
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "retain the original profile and optional deferred publication"
+    )]
+    fn install_with_modes_deferred(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: StreamProviderConfig,
+        tls_mode: TlsInstallMode,
+        kernel_mode: crate::kernel::Mode,
+        completion: Option<&mut DeferredProviderInstall<'_>>,
     ) -> Result<Self, StreamError> {
         config.validate()?;
         let limits = pools.limits()?;
@@ -528,25 +630,26 @@ impl StreamProvider {
         // Finish fallible local admission before publishing a replacement epoch.
         // A registry refusal must leave the original installed provider live.
         let connections = crate::connection_registry::Registry::new(&pools)?;
-        let installed = pools.install(
-            ProviderSetup {
-                logical_id,
-                credentials: &[],
-                authority: ProviderConfiguration {
-                    capability: STREAM_CAPABILITY,
-                    profile: STREAM_PROFILE,
-                    configuration_digest: &digest,
-                    configuration_epoch: epoch,
-                    restriction_json: &restriction,
-                    minimum_call_charges: &[ProviderBudgetRequirement {
-                        operation: "connect",
-                        dimension: BudgetDimension::OutboundRequests,
-                        minimum: 1,
-                    }],
-                },
+        let setup = ProviderSetup {
+            logical_id,
+            credentials: &[],
+            authority: ProviderConfiguration {
+                capability: STREAM_CAPABILITY,
+                profile: STREAM_PROFILE,
+                configuration_digest: &digest,
+                configuration_epoch: epoch,
+                restriction_json: &restriction,
+                minimum_call_charges: &[ProviderBudgetRequirement {
+                    operation: "connect",
+                    dimension: BudgetDimension::OutboundRequests,
+                    minimum: 1,
+                }],
             },
-            expected_epoch,
-        )?;
+        };
+        let installed = match completion {
+            Some(completion) => pools.install_deferred(setup, expected_epoch, completion)?,
+            None => pools.install(setup, expected_epoch)?,
+        };
         Ok(Self {
             inner: Arc::new(Inner {
                 config,
@@ -572,6 +675,10 @@ impl StreamProvider {
     /// not release charges held by a pending operation or retained chunk.
     pub fn retire(&self) {
         self.inner.installed.retire();
+        // Close registration and capture all original owners atomically. A
+        // pre-admitted connect cannot publish after this snapshot, and a
+        // contended registry cannot make retirement silently skip an owner.
+        let connections = self.inner.connections.close_and_snapshot();
         #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
         {
             let owner = self
@@ -582,11 +689,8 @@ impl StreamProvider {
                 .take();
             drop(owner);
         }
-        for index in 0..32 {
-            let connection = self.inner.connections.snapshot(index).ok().flatten();
-            if let Some(connection) = connection {
-                connection.abort(StreamErrorCode::Revoked);
-            }
+        for connection in connections.into_iter().flatten() {
+            connection.abort(StreamErrorCode::Revoked);
         }
         for resolver in self.inner.resolvers.iter().flatten() {
             let _ = resolver.close();
@@ -604,7 +708,12 @@ impl StreamProvider {
             ..Default::default()
         };
         for index in 0..32 {
-            let connection = self.inner.connections.snapshot(index)?;
+            let (connection, pending) = self.inner.connections.observe(index)?;
+            if pending {
+                // The same prepaid opening row is still held by its original
+                // future or physical owner; this is not a new connection.
+                result.owners += 1;
+            }
             if let Some(connection) = connection {
                 let usage = connection.usage()?;
                 result.owners += usage.owners;
@@ -714,14 +823,25 @@ impl OutboundStreamInvoker for StreamProvider {
             }
             deadline = deadline.min(now + Duration::from_millis(u64::from(timeout)));
         }
+        // Claim the existing fixed registry row before creating any admission,
+        // future or physical owner. Retirement closes this same gate.
+        let opening = self.inner.connections.reserve_opening()?;
+        let custody = opening.try_clone_custody()?;
         let inner = Arc::clone(&self.inner);
         let prepared = session.prepare_io_future_with(
-            move |(scope, client, admission): (
+            move |(scope, client, admission, opening, custody): (
                 StreamScope,
                 Arc<ProviderClient<Socket>>,
                 PoolAdmission,
+                crate::connection_registry::OpeningTicket,
+                crate::connection_registry::RetirementCustody,
             )| {
-                connection::connect(inner, scope, index, client, admission, deadline)
+                OpeningFuture {
+                    future: connection::connect(
+                        inner, scope, index, client, admission, deadline, opening,
+                    ),
+                    custody,
+                }
             },
         )?;
         let scope = session.reserve_stream()?;
@@ -730,19 +850,69 @@ impl OutboundStreamInvoker for StreamProvider {
             u16::try_from(index).map_err(|_| error(StreamErrorCode::InvalidInput))?,
         )?;
         let admission = self.inner.pools.admit_until(&client, session, deadline)?;
-        Ok(prepared.finish((scope, client, admission)))
+        Ok(prepared.finish((scope, client, admission, opening, custody)))
     }
 }
 impl Drop for Inner {
     fn drop(&mut self) {
         self.installed.retire();
-        for index in 0..crate::connection_registry::CAPACITY {
-            if let Ok(Some(connection)) = self.connections.snapshot(index) {
-                connection.abort(StreamErrorCode::Revoked);
-            }
+        let connections = self.connections.close_and_snapshot();
+        for connection in connections.into_iter().flatten() {
+            connection.abort(StreamErrorCode::Revoked);
         }
         for resolver in self.resolvers.iter().flatten() {
             let _ = resolver.close();
         }
+    }
+}
+
+#[cfg(all(test, unix))]
+mod opening_future_tests {
+    use super::*;
+    use crate::{
+        connection_registry::OpeningTicket,
+        tests::{config, fixture::Fixture},
+        StreamLifecycle,
+    };
+
+    struct PanicDuringDrop {
+        _opening: OpeningTicket,
+    }
+    impl Future for PanicDuringDrop {
+        type Output = ();
+        fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<()> {
+            Poll::Pending
+        }
+    }
+    impl Drop for PanicDuringDrop {
+        fn drop(&mut self) {
+            panic!("simulated inner future destructor failure");
+        }
+    }
+
+    #[tokio::test]
+    async fn new_inner_destructor_panic_keeps_row_without_leaking_marker() {
+        let fixture = Fixture::new(config());
+        let lifecycle =
+            StreamLifecycle::from_installed_for_qualification("streams", fixture.provider.clone())
+                .unwrap();
+        let opening = fixture
+            .provider
+            .inner
+            .connections
+            .reserve_opening()
+            .unwrap();
+        let marker = opening.marker_weak_for_test();
+        let custody = opening.try_clone_custody().unwrap();
+        let future = Box::pin(OpeningFuture {
+            future: PanicDuringDrop { _opening: opening },
+            custody,
+        });
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(future))).is_err());
+        assert_eq!(lifecycle.status().unwrap().usage.owners, 1);
+        drop(lifecycle);
+        fixture.clean().await;
+        drop(fixture);
+        assert!(marker.upgrade().is_none());
     }
 }

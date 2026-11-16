@@ -115,6 +115,7 @@ pub(super) async fn warm(directory: &TempDir) -> (NodeSettings, Catalogs) {
                 control: runtime.clone(),
                 telemetry: None,
             },
+            None,
         )
         .await
         .unwrap(),

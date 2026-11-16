@@ -31,6 +31,11 @@ internal static partial class Program
         using var local = new CancellationTokenSource();
         Task held = client.InvokeAsync(Invoke("held-a"), Defaults, local.Token).AsTask();
         await started.Task.WaitAsync(TimeSpan.FromSeconds(3));
+        // Server-side dispatch does not prove that the client has observed SETTINGS.
+        // Complete one recovery round trip before filling the sole waiting slot;
+        // the later recovery call must still bypass that full ordinary queue.
+        Check((await client.GetActivationAsync(new("held-a"), Defaults)).Value.Phase == "running", "initial recovery round trip failed");
+        Check(client.Snapshot() is { InFlight: 1, Queued: 0, WireStreams: 1 }, "initial recovery retained admission or stream ownership");
         using var waiting = new CancellationTokenSource();
         Task queued = client.GetPolicyAsync(new("policy-a", Profile.CapabilityPolicyRecordKind.Policy), Defaults, waiting.Token).AsTask();
         await Until(() => client.Snapshot().Queued == 1);
@@ -42,9 +47,9 @@ internal static partial class Program
         Profile.ClientFailure failure = await Failure(held, Profile.FailureCategory.LocalCancelled, true);
         Check(failure.Identity.ActivationId == "held-a" && failure.Outcome == Profile.OutcomeKnowledge.Unknown, "cancellation lost original identity or uncertainty");
         await retired.Task.WaitAsync(TimeSpan.FromSeconds(3));
-        Check(peer.Requests.Count == 2, "local cancellation sent an implicit Cancel");
+        Check(peer.Requests.Count == 2 && peer.Requests.Values.Sum() == 3, "local cancellation sent an implicit Cancel or replayed a request");
         Check((await client.CancelAsync(new("held-a", "explicit"), Defaults)).Value.Disposition == Profile.CancelDisposition.Accepted, "fresh cancellation token could not recover");
-        Check(peer.Connections.Count == 1 && peer.Requests.Values.Sum() == 3, "hidden reconnect or RPC replay");
+        Check(peer.Connections.Count == 1 && peer.Requests.Values.Sum() == 4, "hidden reconnect or RPC replay");
     }
 
     private static async Task DeadlinesAndShutdown()

@@ -15,7 +15,7 @@ from tools.go_guest import checkpoints
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / 'tools/tests/fixtures/go-checkpoint-goto'
 TRANSFORMER = ROOT / 'sdk/go-guest/runtime/checkpoint_transform.go.in'
-GO_SHA256 = '5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b'
+GO_SHA256 = 'de0ae3e082ce7599eae4fb69fa2ef1e43b8f31ffd3fce62cdf81930aa9005050'
 TAIL = re.compile(rb'//go:linkname ([A-Za-z0-9_]+) runtime\.lsfCheckpoint\nfunc \1\(\)\n'
                   rb'//go:linkname ([A-Za-z0-9_]+) runtime\.lsfUnsupportedCheckpoint\n'
                   rb'//go:nosplit\nfunc \2\(\)\n')
@@ -60,7 +60,7 @@ def reference(go):
     with tempfile.TemporaryDirectory(prefix='go-checkpoint-goto-') as temporary:
         root = Path(temporary)
         _, version, _ = run_bounded([str(go), 'version'], env, root, 30)
-        if version.strip() != b'go version go1.27.3 linux/amd64':
+        if version.strip() != b'go version go1.27.4 linux/amd64':
             raise ValueError('go-checkpoint-reference-version')
         pragma_source = root / 'directives.go'
         pragma_source.write_bytes(directives)
@@ -111,8 +111,8 @@ def reference(go):
         worker.write_bytes(dependency)
         (dispatcher / 'async.go').write_text('package async\nfunc Dummy(){}\n')
         (standard / 'runtime.go').write_text('package runtime\nfunc Dummy(){}\n')
-        (module / 'go.mod').write_text('module example.invalid/app\n\ngo 1.27.3\n\nrequire example.invalid/worker v0.0.0\n')
-        (module / 'vendor/modules.txt').write_text('# example.invalid/worker v0.0.0\n## explicit; go 1.27.3\nexample.invalid/worker\n')
+        (module / 'go.mod').write_text('module example.invalid/app\n\ngo 1.27.4\n\nrequire example.invalid/worker v0.0.0\n')
+        (module / 'vendor/modules.txt').write_text('# example.invalid/worker v0.0.0\n## explicit; go 1.27.4\nexample.invalid/worker\n')
         packages = [{'Dir': str(module), 'GoFiles': ['main.go']},
                     {'Dir': str(vendor), 'GoFiles': ['worker.go']},
                     {'Dir': str(dispatcher), 'GoFiles': ['async.go']},

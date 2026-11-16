@@ -60,12 +60,8 @@ impl CompleteEnvelope {
     /// owner and verified bytes must match before any batch plan is changed.
     /// The trusted runtime must have bound the originating attempt to this
     /// session before capture; that association cannot later be replaced.
-    #[expect(
-        clippy::too_many_lines,
-        reason = "Validate and charge all physical attachments as one atomic envelope"
-    )]
     pub fn attach_verified_payloads(
-        mut self,
+        self,
         view: &ReadView,
         original_session: &CapabilitySession,
         attachments: Vec<PayloadAttachment>,
@@ -76,6 +72,7 @@ impl CompleteEnvelope {
                 .saturating_add(self.old_state_payloads.len())
                 > MAX_REFERENCE_UPDATES
             || !self.payloads.is_empty()
+            || self.state_detach_only
             || !matches!(
                 self.terminal.outcome,
                 Outcome::Committed | Outcome::Rejected
@@ -83,7 +80,6 @@ impl CompleteEnvelope {
         {
             return Err(AtomicError::Invalid);
         }
-        let store_identity = StoreIdentity::inspect(view)?.ok_or(AtomicError::Invalid)?;
         original_session
             .check_liveness()
             .map_err(|_| AtomicError::PermissionDenied)?;
@@ -102,6 +98,42 @@ impl CompleteEnvelope {
         {
             return Err(AtomicError::PermissionDenied);
         }
+        self.reconcile_payload_updates(view, Some(original_session), attachments)
+    }
+
+    /// Reconcile only old state links displaced by this sealed state plan. This
+    /// grants no blob read or physical deletion authority; the same-engine
+    /// state commit and the host's current state authority fence remain required.
+    pub fn reconcile_replaced_state_payloads(self, view: &ReadView) -> Result<Self, AtomicError> {
+        if self.old_state_payloads.is_empty() {
+            return Ok(self);
+        }
+        if !self.payloads.is_empty()
+            || self.state_detach_only
+            || self.terminal.outcome != Outcome::Committed
+            || !self
+                .state_binding
+                .as_ref()
+                .is_some_and(|binding| view.is_bound_to(binding))
+        {
+            return Err(AtomicError::PermissionDenied);
+        }
+        let mut envelope = self.reconcile_payload_updates(view, None, Vec::new())?;
+        envelope.state_detach_only = true;
+        Ok(envelope)
+    }
+
+    #[expect(
+        clippy::too_many_lines,
+        reason = "Validate and charge all payload ownership changes as one atomic envelope"
+    )]
+    fn reconcile_payload_updates(
+        mut self,
+        view: &ReadView,
+        original_session: Option<&CapabilitySession>,
+        attachments: Vec<PayloadAttachment>,
+    ) -> Result<Self, AtomicError> {
+        let store_identity = StoreIdentity::inspect(view)?.ok_or(AtomicError::Invalid)?;
         let mut updates = Vec::with_capacity(attachments.len() + self.old_state_payloads.len());
         let mut state_links = Vec::new();
         let mut removed_bytes = 0u64;
@@ -129,6 +161,7 @@ impl CompleteEnvelope {
         )
         .map_err(|_| AtomicError::Corrupt)?;
         for attachment in attachments {
+            let original_session = original_session.ok_or(AtomicError::PermissionDenied)?;
             let payload = attachment.payload;
             if !payload.uses_session(original_session)
                 || !payload.uses_store_view(view)

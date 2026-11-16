@@ -321,6 +321,11 @@ def verify_node_net_project(source):
     return files
 
 
+def require_node_net_source_controls(controls):
+    require(type(controls) is dict and controls=={'testsRun':31,'skipped':0,'failures':0,'errors':0}
+            and all(type(value) is int for value in controls.values()), 'node-net-all-thirty-one-no-skips')
+
+
 def node_net_records(raw):
     from tools.dev_workflow import node_diagnostics
     cases = []
@@ -487,11 +492,10 @@ def qualify_node_net(tools, material_directory, output, prepared_native):
         source_before=inventory(snapshot(source))
         stage='no-skip-pinned-source-controls'
         parser=tools/'node_modules/acorn/dist/acorn.mjs';require(parser.is_file() and not parser.is_symlink(),'node-net-pinned-parser')
-        program="import unittest,json,sys;s=unittest.defaultTestLoader.loadTestsFromName('tools.tests.test_typescript_node_net');r=unittest.TextTestRunner(verbosity=2).run(s);print(json.dumps(dict(testsRun=r.testsRun,skipped=len(r.skipped),failures=len(r.failures),errors=len(r.errors))));sys.exit(0 if r.wasSuccessful() else 1)"
+        program="import unittest,json,sys;s=unittest.defaultTestLoader.loadTestsFromName('tools.tests.test_typescript_node_net');r=unittest.TextTestRunner(verbosity=2).run(s);print(json.dumps(dict(testsRun=r.testsRun,skipped=len(r.skipped),failures=len(r.failures),errors=len(r.errors))));sys.exit(0 if r.wasSuccessful() and not r.expectedFailures else 1)"
         controls=json.loads(run('normal-source-controls',sys.executable,'-c',program,
             env={**environment,'LSF_TYPESCRIPT_FRONTEND':str(tools)},seconds=60))
-        require(controls=={'testsRun':30,'skipped':0,'failures':0,'errors':0}
-                and all(type(v) is int for v in controls.values()),'node-net-all-thirty-no-skips')
+        require_node_net_source_controls(controls)
         record['sourceControls']=controls
         stage='one-normal-build-and-package'
         artifact=build(source,prepared/'typescript-node-net-service',binaries['capsule_contracts'],binaries['package'],

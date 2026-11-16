@@ -52,6 +52,12 @@ impl TransactionInstallation {
         &self.declaration.state_schema
     }
 
+    /// Descriptive installed protection window; this creates no retention grant.
+    #[must_use]
+    pub fn identity_retention_millis(&self) -> u64 {
+        self.result_policy.identity_millis
+    }
+
     /// Descriptive selection from the trusted installed manifest and companion.
     /// Actual admission still resolves and seals this publication and policy.
     #[must_use]

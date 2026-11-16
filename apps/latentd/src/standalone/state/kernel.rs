@@ -14,7 +14,9 @@ use latent_state::{
     store_io::StoreIoShutdown,
 };
 
-use super::super::effects::{EffectRuntime, ProtectedEffectClock, ProtectedEffectStartup};
+use super::super::effects::{
+    EffectRuntime, ProtectedEffectClock, ProtectedEffectStartup, ProtectedInboxInventory,
+};
 use super::{bootstrap::StateBootstrap, clock::AdapterClock, preparation};
 use crate::config::state::StateSettings;
 use crate::standalone::startup_observation::{platform, record, record_platform, Stage};
@@ -41,6 +43,31 @@ pub(super) struct StateShutdownReport {
     pub native: NativeCapacityShutdown,
     pub namespace_owners: usize,
     pub clean: bool,
+}
+
+async fn initial_store(
+    bootstrap: &mut StateBootstrap,
+    settings: &StateSettings,
+) -> Result<Arc<ProtectedStoreOwner>, PlatformError> {
+    if let Some(store) = bootstrap.opened_store.as_ref() {
+        // The blob provider may have transferred its original owner through
+        // protected initialization before registering configured bindings.
+        bootstrap.check_live()?;
+        let snapshot = store.snapshot().map_err(|_| super::unavailable())?;
+        if snapshot.admission_closed
+            || snapshot.quarantined
+            || snapshot.physically_retired()
+            || !store.uses_native_capacity(&bootstrap.native)
+        {
+            return Err(super::unavailable());
+        }
+        Ok(Arc::clone(store))
+    } else {
+        bootstrap
+            .open_store(settings)
+            .await
+            .inspect_err(|error| record_platform(Stage::ProtectedStoreOpen, error))
+    }
 }
 
 impl StateKernel {
@@ -124,6 +151,10 @@ impl StateKernel {
     /// The early empty authority in `bootstrap` is the same owner already
     /// attached to the original artifact and policy rejection observers. This
     /// method installs no rule from configuration or a retained policy stamp.
+    #[expect(
+        clippy::too_many_lines,
+        reason = "Startup keeps bootstrap ownership and cleanup visible through dispatcher admission"
+    )]
     pub(super) async fn start(
         mut bootstrap: StateBootstrap,
         settings: &StateSettings,
@@ -138,10 +169,7 @@ impl StateKernel {
             record_platform(Stage::StateKernelPrecondition, &failure);
             return Err(failure);
         }
-        let store = bootstrap
-            .open_store(settings)
-            .await
-            .inspect_err(|error| record_platform(Stage::ProtectedStoreOpen, error))?;
+        let store = initial_store(&mut bootstrap, settings).await?;
         let namespaces = match bootstrap.open_namespaces(settings) {
             Ok(namespaces) => namespaces,
             Err(failure) => {
@@ -192,6 +220,39 @@ impl StateKernel {
         // hold before spawning; durable operator intent remains separate.
         let mut dispatcher = settings.dispatcher.clone();
         dispatcher.start_paused = false;
+        let inventory_identity = settings.store_identity.clone();
+        let inventory_quotas = super::validation::quotas(settings);
+        let inventory_original = bootstrap.original();
+        #[cfg(target_os = "linux")]
+        let inventory_payloads = bootstrap
+            .local_payload_selection
+            .as_ref()
+            .and_then(|selection| selection.inventory_payloads());
+        let inventory = ProtectedInboxInventory::new(
+            crate::config::state::STARTUP_VALIDATOR_BYTES,
+            move |view| {
+                #[cfg(target_os = "linux")]
+                if let Some((owner, provider)) = inventory_payloads.as_ref() {
+                    return super::validation::validate_inventory_with_local_payloads(
+                        view,
+                        &inventory_identity,
+                        &inventory_quotas,
+                        &inventory_original,
+                        &super::validation::LocalPayloadVerifier {
+                            store: owner,
+                            provider,
+                            original: &inventory_original,
+                        },
+                    );
+                }
+                super::validation::validate_inventory(
+                    view,
+                    &inventory_identity,
+                    &inventory_quotas,
+                    &inventory_original,
+                )
+            },
+        )?;
         let protected = EffectRuntime::start_protected(ProtectedEffectStartup {
             dispatcher,
             store: Arc::clone(&store),
@@ -204,6 +265,7 @@ impl StateKernel {
             },
             identity: settings.store_identity.clone(),
             preparation,
+            inventory: Some(inventory),
             original_deadline: bootstrap.deadline,
             control_runtime,
         })

@@ -30,8 +30,9 @@ WORKFLOW = '.github/workflows/java-published-workers.yml'
 CASE = observed.WORKER_CASE
 GRADLE_SHA = 'a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806'
 # Each successful compiler command produces a log and a command record.  The
-# scheduled-library programme observed 178 commands (at least 356 files).
-MAX_COMPILER_LOG_FILES = 512
+# current scheduled-library programme observed 298 commands (596 files).
+# The existing per-file and aggregate byte limits still apply independently.
+MAX_COMPILER_LOG_FILES = 1024
 PUBLIC_FILES = ('src/Capsule.java', 'wit/service.wit', 'build/component.wasm',
                 'FIBERS-COMPILE.json', 'compiler-inputs.json',
                 'library-inputs/receipts/capture.json', 'library-inputs/receipts/java-classpath.json',

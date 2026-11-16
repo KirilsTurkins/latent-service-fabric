@@ -63,6 +63,14 @@ class NodeProvidersSchema(unittest.TestCase):
 
     def test_null_unknown_future_profiles_and_path_escape_are_rejected(self):
         valid = self.example()
+        for enabled in (True, False):
+            configured = copy.deepcopy(valid)
+            configured["blob"]["durableRetention"] = enabled
+            VALIDATOR.validate(configured)
+        for enabled in (None, "true", 1):
+            configured = copy.deepcopy(valid)
+            configured["blob"]["durableRetention"] = enabled
+            self.assertFalse(VALIDATOR.is_valid(configured))
         for value in (None, {}, dict(valid, extra=True), dict(valid, http=None),
                       dict(valid, blob=None), dict(valid, formatVersion=2), dict(valid, bindings=[]),
                       dict(valid, bindings=valid["bindings"] * 17)):

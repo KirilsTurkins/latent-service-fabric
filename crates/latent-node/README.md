@@ -30,6 +30,22 @@ The crate does not open network listeners or bootstrap provider credentials. The
 
 A local service call creates a fresh child Store, principal, admission and accounting delegation; it is not inline fusion. A waiting parent retains its cell. Transport waiter drop, explicit cancellation, deadline and durable transaction disposition must not be collapsed into one abort claim. `Phase0ActivationRunner` is a compatibility facade. `transaction-test-observation` exposes controlled observations rather than another production state path.
 
+### Explicit scoped inbox retries
+
+`NativeTransactionAdmission::with_trusted_inbox_retry` attaches authenticated
+input identity and an exact existing source to an explicitly selected retry.
+The first-attempt attachment remains separate. The normal command owner checks
+the original durable abort receipt, attempt/transaction association, payload
+fingerprint, publication/schema/formats, policy and finite retry limits before
+publishing another attempt. Source custody stays in the pending and final
+atomic expectations, including concurrent retry-receipt recovery. This path
+reuses the existing admission reservation, deadline and entity lane.
+
+A delivery count, negative acknowledgement, timeout or unknown commitment is
+not an abort proof. This native API does not select an automatic broker retry
+policy, create a source, or open the standalone transactional-trigger gate.
+Real JetStream crash/redelivery and six-guest qualification remain separate.
+
 ## Dependencies and build
 
 Direct workspace dependencies: [latent-activation](../latent-activation/README.md), [latent-admission](../latent-admission/README.md), [latent-artifacts](../latent-artifacts/README.md), [latent-capabilities](../latent-capabilities/README.md), [latent-commit](../latent-commit/README.md), [latent-core](../latent-core/README.md), [latent-executor](../latent-executor/README.md), [latent-effects](../latent-effects/README.md), [latent-manifest](../latent-manifest/README.md), [latent-policy](../latent-policy/README.md), [latent-routing](../latent-routing/README.md), [latent-scheduler](../latent-scheduler/README.md), [latent-state](../latent-state/README.md), [latent-telemetry](../latent-telemetry/README.md).
