@@ -31,8 +31,11 @@ pub use future::{
     StreamRetirementGuard, StreamRetirementObserver,
 };
 mod memory;
+mod output_slot;
 pub(in crate::broker) use memory::HttpInputOrigin;
 pub use memory::IoMemory;
+#[doc(hidden)]
+pub use output_slot::stream_chunk_owner_allocation_bytes;
 mod stream;
 mod transfer;
 pub use buffer::IoBuffer;

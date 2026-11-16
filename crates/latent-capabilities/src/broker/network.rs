@@ -5,7 +5,7 @@ use super::{
 };
 use latent_core::{PlatformError, PlatformErrorCode};
 use latent_policy::capability::StreamEndpoint;
-use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicU32, AtomicU64, AtomicUsize, Ordering};
 
 pub const STREAM_CAPABILITY: &str = "latent:network/streams@0.1.0";
 pub const STREAM_PROFILE: &str = "lsf-outbound-streams-v1";
@@ -184,11 +184,34 @@ pub(super) struct NetworkUsage {
     bytes: AtomicU64,
     chunks: AtomicUsize,
     resident_bytes: AtomicUsize,
+    scope_sequence: AtomicU32,
 }
 
 pub struct StreamChunkReservation {
     table: super::SessionResourceTableReservation,
     bytes: usize,
+}
+/// A stream chunk window paired with its exact originating connection scope.
+#[doc(hidden)]
+pub struct BoundStreamChunkReservation {
+    scope_tag: u32,
+    window: StreamChunkReservation,
+}
+impl BoundStreamChunkReservation {
+    pub(in crate::broker) fn belongs_to(
+        &self,
+        scope_tag: u32,
+        session: &CapabilitySession,
+    ) -> bool {
+        scope_tag != 0
+            && self.scope_tag == scope_tag
+            && self.window.table.with_session(|original| {
+                super::session::Shared::ptr_eq(&original.core, &session.core)
+            })
+    }
+    pub(in crate::broker) fn into_window(self) -> StreamChunkReservation {
+        self.window
+    }
 }
 impl Drop for StreamChunkReservation {
     fn drop(&mut self) {
@@ -221,7 +244,18 @@ impl CapabilitySession {
     }
     pub fn reserve_stream(&self) -> Result<StreamScope, PlatformError> {
         self.check_liveness()?;
-        let table = self.reserve_resource_table(17 * 1024)?;
+        let mut table = self.reserve_resource_table(17 * 1024)?;
+        // Never recycle an identity within the same SessionCore. Exhaustion
+        // fails closed rather than making a stale scope equal a later scope.
+        let previous = self
+            .core
+            .network
+            .scope_sequence
+            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
+                value.checked_add(1)
+            })
+            .map_err(|_| super::capacity())?;
+        table.set_stream_scope_tag(previous + 1);
         self.core
             .network
             .connections
@@ -233,6 +267,14 @@ impl CapabilitySession {
     }
 }
 impl StreamScope {
+    pub(in crate::broker) fn identity_tag(&self) -> u32 {
+        self.table.stream_scope_tag()
+    }
+    pub(in crate::broker) fn belongs_to(&self, session: &CapabilitySession) -> bool {
+        self.table
+            .with_session(|original| super::session::Shared::ptr_eq(&original.core, &session.core))
+    }
+
     /// Four resident payload owners, with at most 64 KiB including read copies,
     /// across all threads/connections/closed-but-retained chunks of this Store.
     pub fn reserve_chunk(&self, bytes: usize) -> Result<StreamChunkReservation, PlatformError> {
@@ -263,6 +305,17 @@ impl StreamScope {
                 return Err(super::capacity());
             }
             Ok(StreamChunkReservation { table, bytes })
+        })
+    }
+    /// Bind a genuine chunk admission to this exact scope for output custody.
+    #[doc(hidden)]
+    pub fn reserve_bound_chunk(
+        &self,
+        bytes: usize,
+    ) -> Result<BoundStreamChunkReservation, PlatformError> {
+        Ok(BoundStreamChunkReservation {
+            scope_tag: self.identity_tag(),
+            window: self.reserve_chunk(bytes)?,
         })
     }
     pub fn reserve_host_memory(
@@ -316,5 +369,30 @@ impl Drop for StreamScope {
                 .connections
                 .fetch_sub(1, Ordering::AcqRel);
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::broker::{tests::fixture::Fixture, CapabilityBrokerLimits};
+
+    #[test]
+    fn stream_scope_identity_exhaustion_never_wraps_or_leaks_admission() {
+        let fixture = Fixture::new(CapabilityBrokerLimits::default());
+        let (request, control) = fixture.request("stream-scope-sequence");
+        let session = fixture.session(&request, &control);
+        session
+            .core
+            .network
+            .scope_sequence
+            .store(u32::MAX - 1, Ordering::Release);
+        let last = session.reserve_stream().unwrap();
+        assert_eq!(last.identity_tag(), u32::MAX);
+        let before = fixture.broker.snapshot();
+        assert!(session.reserve_stream().is_err());
+        assert_eq!(fixture.broker.snapshot(), before);
+        drop(last);
+        assert!(session.reserve_stream().is_err());
     }
 }

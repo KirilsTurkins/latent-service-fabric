@@ -8,8 +8,8 @@ use crate::{
 };
 use latent_capabilities::broker::{
     io::{
-        IoCall, IoFuture, IoInputChunk, IoOutputChunk, IoTransfer, IoTransferBuffer,
-        IoTransferOptions,
+        stream_chunk_owner_allocation_bytes, IoCall, IoFuture, IoInputChunk, IoOutputChunk,
+        IoTransfer, IoTransferBuffer, IoTransferOptions,
     },
     network::{
         OutboundStream, StreamInterest, StreamObservation, StreamReadiness, StreamScope,
@@ -371,6 +371,8 @@ pub(crate) struct Connection {
     fail_audit_once: std::sync::atomic::AtomicBool,
     #[cfg(all(test, unix))]
     write_drop_gate: Mutex<Option<(std::sync::mpsc::Sender<()>, std::sync::mpsc::Receiver<()>)>>,
+    #[cfg(all(test, unix))]
+    chunk_drop_gate: Mutex<Option<(std::sync::mpsc::Sender<()>, std::sync::mpsc::Receiver<()>)>>,
     // Last test field: all original value fields have retired before this
     // pauses the final Arc value destructor, while its header remains live.
     #[cfg(all(test, unix))]
@@ -444,8 +446,21 @@ struct PendingGuard {
     direction: usize,
 }
 struct ChunkOwner {
+    #[cfg(all(test, unix))]
+    _drop_tail: ChunkDropTail,
     _connection: ConnectionOwner,
-    _window: latent_capabilities::broker::network::StreamChunkReservation,
+}
+
+#[cfg(all(test, unix))]
+struct ChunkDropTail(Mutex<Option<(std::sync::mpsc::Sender<()>, std::sync::mpsc::Receiver<()>)>>);
+#[cfg(all(test, unix))]
+impl Drop for ChunkDropTail {
+    fn drop(&mut self) {
+        if let Some((reached, resume)) = self.0.get_mut().unwrap().take() {
+            let _ = reached.send(());
+            let _ = resume.recv_timeout(Duration::from_secs(20));
+        }
+    }
 }
 
 #[cfg(all(test, unix))]
@@ -461,7 +476,8 @@ impl Drop for WriteDropTail {
 }
 
 pub(crate) fn prepaid_layout_bytes() -> (usize, usize) {
-    let chunk_bytes = crate::connection_registry::arc_bytes::<ChunkOwner>() + 64;
+    let chunk_bytes =
+        stream_chunk_owner_allocation_bytes::<ChunkOwner>().expect("fixed stream chunk layout");
     let owner_bytes = ConnectionOwner::allocation_bytes()
         + std::mem::size_of::<Handle>()
         + 4 * 64
@@ -625,10 +641,13 @@ pub(crate) async fn connect(
         return Err(error(StreamErrorCode::Uncertain));
     }
     let (socket, validity) = result?;
-    let transfer = call.io().transfer_with_host_memory(IoTransferOptions {
-        maximum_chunk_bytes: MAXIMUM_CHUNK_BYTES,
-        maximum_outstanding_chunks: 4,
-    })?;
+    let transfer = call.io().transfer_for_stream(
+        IoTransferOptions {
+            maximum_chunk_bytes: MAXIMUM_CHUNK_BYTES,
+            maximum_outstanding_chunks: 4,
+        },
+        &scope,
+    )?;
     let owner_metadata = inner.pools.reserve_protocol_metadata(16 * 1024)?;
     let owner_memory = scope.reserve_host_memory(16 * 1024)?;
     // Include the three connection Arc allocations, returned Box and up to
@@ -677,6 +696,8 @@ pub(crate) async fn connect(
             fail_audit_once: std::sync::atomic::AtomicBool::new(false),
             #[cfg(all(test, unix))]
             write_drop_gate: Mutex::new(None),
+            #[cfg(all(test, unix))]
+            chunk_drop_gate: Mutex::new(None),
             #[cfg(all(test, unix))]
             drop_tail: ConnectionDropTail {
                 pause: Mutex::new(None),
@@ -1154,6 +1175,35 @@ impl ConnectionOwner {
     #[cfg(all(test, unix))]
     pub(crate) fn wake_in_drop_tail(&self, waker: std::task::Waker) {
         assert!(self.drop_tail.wake.lock().unwrap().replace(waker).is_none());
+    }
+
+    #[cfg(all(test, unix))]
+    pub(crate) fn pause_next_chunk_drop(
+        &self,
+    ) -> (std::sync::mpsc::Receiver<()>, std::sync::mpsc::Sender<()>) {
+        let (reached, wait) = std::sync::mpsc::channel();
+        let (resume, release) = std::sync::mpsc::channel();
+        assert!(self
+            .chunk_drop_gate
+            .lock()
+            .unwrap()
+            .replace((reached, release))
+            .is_none());
+        (wait, resume)
+    }
+
+    #[cfg(all(test, unix))]
+    fn take_chunk_drop_tail(&self) -> ChunkDropTail {
+        ChunkDropTail(Mutex::new(self.chunk_drop_gate.lock().unwrap().take()))
+    }
+
+    #[cfg(all(test, unix))]
+    pub(crate) fn try_foreign_chunk_window(
+        &self,
+        window: latent_capabilities::broker::network::BoundStreamChunkReservation,
+    ) -> Result<(), latent_core::PlatformError> {
+        let mut buffer = self.transfer.output_buffer(1)?;
+        buffer.retain_stream_owner((), window)
     }
 
     // The last copied transport reference retires before PendingGuard calls
@@ -1664,12 +1714,16 @@ impl OutboundStream for Handle {
             },
         )?;
         let pending = self.connection.pending(0, timeout)?;
-        let window = self.connection.scope.reserve_chunk(maximum * 2)?;
+        let window = self.connection.scope.reserve_bound_chunk(maximum * 2)?;
         let mut buffer = self.connection.transfer.output_buffer(maximum)?;
-        buffer.retain_owner(Arc::new(ChunkOwner {
-            _connection: self.connection.clone(),
-            _window: window,
-        }))?;
+        buffer.retain_stream_owner(
+            ChunkOwner {
+                _connection: self.connection.clone(),
+                #[cfg(all(test, unix))]
+                _drop_tail: self.connection.take_chunk_drop_tail(),
+            },
+            window,
+        )?;
         let future = prepared.finish((pending, buffer));
         #[cfg(feature = "development-read-witness")]
         {

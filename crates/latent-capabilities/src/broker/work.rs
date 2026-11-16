@@ -299,6 +299,14 @@ impl OwnedCapabilityResponse {
     }
 }
 impl ProviderCall {
+    pub(super) fn is_original_stream_connect(&self) -> bool {
+        let work = self.work.as_ref().expect("affine call");
+        let provider = &work.session.plan.bindings[work.row.binding].provider;
+        provider.capability == super::network::STREAM_CAPABILITY
+            && provider.profile == super::network::STREAM_PROFILE
+            && work.row.operation == "connect"
+    }
+
     /// Revalidate the accepted call's original pinned publication, provider and
     /// policy dependencies immediately before a later physical operation. This
     /// cannot widen its resource, mint charges, or replay an earlier dispatch.
