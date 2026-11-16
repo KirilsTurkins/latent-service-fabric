@@ -8,6 +8,66 @@ artifact IDs in `dependencies`; arbitrary configure/shell/compiler hooks are not
 executed. Use the separately [approved source and header generation step](c-generators.md)
 for executable tools, then build offline from its captured output and provenance.
 
+## Captured CMake feature probes
+
+For a separate CMake configuration step, the selected C SDK can prepare the
+numeric IPv4 resolver as a link probe. This uses the project's verified SDK
+snapshot and pinned compiler inside the existing Linux compiler sandbox:
+
+```bash
+python3 tools/c_capsule.py feature-probes "$LSF_C_PROJECT" --output "$LSF_FEATURE_KIT"
+# Review feature-probes.json and compiler-inputs.json before selecting this kit.
+LSF_FEATURE_EXPECT=$(python3 -c 'import hashlib,sys; print("sha256:" + hashlib.sha256(open(sys.argv[1], "rb").read()).hexdigest())' "$LSF_FEATURE_KIT/feature-probes.json")
+```
+
+For CMake 3.24 or newer, pass the following arguments to the **separate**
+approved configuration stage, along with its normal source and output paths.
+`LSF_SDK_RECIPE` is the authenticated SDK recipe root, `LSF_ZIG` is its pinned
+Zig executable, and `LSF_PYTHON` is the SDK's Python executable:
+
+```bash
+-DCMAKE_SYSTEM_NAME=WASI
+-DCMAKE_C_COMPILER="$LSF_ZIG"
+-DCMAKE_C_COMPILER_ARG1=cc
+-DCMAKE_C_COMPILER_TARGET=wasm32-wasi
+-DCMAKE_PROJECT_TOP_LEVEL_INCLUDES="$LSF_SDK_RECIPE/tools/c_guest/feature_loader.cmake"
+-DLSF_C_FEATURE_PROJECT="$LSF_C_PROJECT"
+-DLSF_C_FEATURE_KIT="$LSF_FEATURE_KIT"
+-DLSF_C_FEATURE_EXPECT="$LSF_FEATURE_EXPECT"
+-DLSF_C_FEATURE_PYTHON="$LSF_PYTHON"
+```
+
+The fixed SDK loader checks the reviewed receipt, current captured project,
+resolver source and complete Zig distribution before adding the probe object.
+It does not execute a generated CMake include. Configure inside a read-only
+isolated environment for the project, kit and compiler, with network denied,
+and recheck the inputs before accepting its output. Outside that environment,
+another process could replace the object after verification and before a link.
+The loader is trusted SDK recipe code; its own integrity depends on the
+authenticated SDK installation. Paths containing quotes, semicolons, dollar
+signs, backticks, control characters or POSIX backslashes are refused. Spaces
+are supported when passed as individual arguments.
+
+An older verified capture without the resolver produces a kit with no probe
+object; its feature checks do not acquire the API from the SDK. Detection indicates a numeric-only
+`getaddrinfo` implementation, not DNS, nonblocking sockets, or an endpoint
+grant. The kit does not run CMake or alter the project. Adopt configuration
+outputs through the existing approved generator and dependency-review flow;
+the kit receipt alone does not authenticate the external configure process or
+qualify an HTTP client. The approved stage must make the captured project, kit,
+SDK recipe, Python and exact Zig distribution available read-only inside its
+own sandbox; the kit does not create those mounts. If the stage cannot expose
+them, it cannot use the kit. After configuration, recheck those same inputs:
+
+```bash
+python3 tools/c_capsule.py feature-probes-verify "$LSF_C_PROJECT" \
+  --kit "$LSF_FEATURE_KIT" --expect "$LSF_FEATURE_EXPECT" --zig "$LSF_ZIG"
+```
+
+Regenerate the kit after changing the project or SDK recipe.
+
+## Capturing C libraries
+
 ```json
 {
   "id": "developer/pure-library/1.0.0",

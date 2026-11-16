@@ -49,6 +49,7 @@ RECIPE += guest_resources.RECIPE
 RECIPE += ("tools/c_generator_authoring.py",)
 RECIPE += standard_facilities.RECIPE
 RECIPE += language.RECIPE + c_resource_inputs.RECIPE + closed_headers.RECIPE
+RECIPE += ('tools/c_guest/feature_detection.py', 'tools/c_guest/feature_loader.cmake')
 
 
 def dependency_materials(output: Path, has_closure: bool, runtime_profile: str) -> list[dict]:

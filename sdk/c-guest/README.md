@@ -121,11 +121,10 @@ in the project's verified SDK snapshot. Previously captured projects without
 the source retain their original behavior: a call to this API fails to link.
 To use the new source, create a project with the current tool bundle and migrate
 the application source, WIT and dependency declarations through normal review;
-editing a project's vendored SDK invalidates its lock. An external dependency's
-configuration step does not yet receive a resolver object for feature-detection
-links, so it may report `getaddrinfo` unavailable even when the source is
-captured. A manual probe with that object does not qualify the dependency or
-its complete client behavior.
+editing a project's vendored SDK invalidates its lock. The SDK can prepare a
+verified [CMake feature-probe kit](../../docs/component-development/c-dependencies.md#captured-cmake-feature-probes)
+for a separate dependency configuration step. Detection exposes only this
+numeric subset and does not qualify a client or its complete behavior.
 
 One-descriptor `select`/`pselect` supports readable and writable interest with
 a NULL timeout; the provider and activation deadlines still apply. Finite

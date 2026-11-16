@@ -349,8 +349,9 @@ jobs:
         id: c-stream-stdio-composition
         if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031'
         run: |
-          python3 -m unittest tools.tests.test_c_stream_profile
+          python3 -m unittest tools.tests.test_c_stream_profile tools.tests.test_c_feature_detection
           python3 -B tools/c_stream_source_controls.py --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --node "$(command -v node)" --output "$RUNNER_TEMP/c-stream-stdio-source"
+          python3 -B tools/c_feature_probe_controls.py --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --cmake "$(command -v cmake)" --output "$RUNNER_TEMP/c-feature-probes"
           python3 -B tools/c_stream_stdio_component_controls.py --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --contracts "$RUNNER_TEMP/c-standard-facilities/native-build/native/capsule_contracts" --output "$RUNNER_TEMP/c-stream-stdio-component"
       - name: Execute captured C23 raw resources and physical trap retirement
         if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031'
@@ -500,6 +501,9 @@ jobs:
             ${{ runner.temp }}/c-standard-combined/node/public-workflow.json
             ${{ runner.temp }}/c-stream-stdio-source/*.json
             ${{ runner.temp }}/c-stream-stdio-source/logs/**
+            ${{ runner.temp }}/c-feature-probes/feature-controls.json
+            ${{ runner.temp }}/c-feature-probes/*-configure/*.txt
+            ${{ runner.temp }}/c-feature-probes/kit with spaces/feature-probes.json
             ${{ runner.temp }}/c-stream-stdio-component/component-controls.json
             ${{ runner.temp }}/c-stream-stdio-component/supported-build/BUILD-COMPLETE.json
             ${{ runner.temp }}/c-stream-stdio-component/supported-build/BUILD-FAILED.json
