@@ -511,6 +511,35 @@ fn mark_failed_without_notification(lifetime: &mut ConnectionLifetime) -> Option
     }
     None
 }
+fn retain_failed_stream_remainder<T: Send + 'static>(
+    mut remainder: ConnectionReservation<T>,
+    custody: StreamRetirementGuard,
+    already_quarantined: bool,
+    panic: Box<dyn Any + Send>,
+) -> ! {
+    let notify = mark_failed_without_notification(
+        remainder
+            .lifetime
+            .as_mut()
+            .expect("original connection quota"),
+    );
+    let client = Arc::clone(&remainder.client);
+    client.retain_failed_stream_retirement(
+        Retained::FailedStreamRetirement {
+            _reservation: remainder,
+        },
+        already_quarantined,
+    );
+    // Publish the exact surviving owners first. A consumed lease or resource
+    // is never reconstructed when its destructor has already started.
+    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| custody.retain_failed()));
+    if let Some(owner) = notify {
+        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            owner.changed.notify_waiters()
+        }));
+    }
+    std::panic::resume_unwind(panic);
+}
 // The original table entry remains affine while its fixed synchronous native
 // step runs outside locks. Unwind puts it back BEFORE original fields can Drop.
 // The same connection quota reserves its existing VecDeque place throughout.
@@ -662,10 +691,7 @@ impl<T: Send + 'static> PooledConnection<T> {
         }
         custody.begin_drop();
         let physical = self.physical.take().expect("original connection owner");
-        let Physical {
-            value,
-            mut lifetime,
-        } = physical;
+        let Physical { value, lifetime } = physical;
         let mut finalizer = Finalizer {
             owner: Some(self),
             custody: Some(custody),
@@ -679,9 +705,7 @@ impl<T: Send + 'static> PooledConnection<T> {
             }
         }));
         if let Err(panic) = dropped {
-            let notify = mark_failed_without_notification(&mut lifetime);
             let owner = finalizer.owner.take().expect("original pooled owner");
-            let client = Arc::clone(&owner.client);
             let custody = finalizer.custody.take().expect("original stream custody");
             let PooledConnection {
                 physical: _,
@@ -690,36 +714,60 @@ impl<T: Send + 'static> PooledConnection<T> {
                 maintenance,
                 ingress,
             } = owner;
-            client.retain_failed_stream_retirement(
-                Retained::FailedStreamRetirement {
-                    _reservation: ConnectionReservation {
-                        client: original_client,
-                        lifetime: Some(lifetime),
-                        activation,
-                        maintenance,
-                        ingress,
-                        success: true,
-                        finished: true,
-                    },
+            retain_failed_stream_remainder(
+                ConnectionReservation {
+                    client: original_client,
+                    lifetime: Some(lifetime),
+                    activation,
+                    maintenance,
+                    ingress,
+                    success: true,
+                    finished: true,
                 },
+                custody,
                 already_quarantined,
+                panic,
             );
-            // The original lease and slot are published first, even if a
-            // trusted observer's own destructor unexpectedly unwinds.
-            let _ =
-                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| custody.retain_failed()));
-            if let Some(owner) = notify {
-                let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                    owner.changed.notify_waiters()
-                }));
-            }
-            std::panic::resume_unwind(panic);
         }
+        // Each original lease may itself notify while dropping. If one
+        // unwinds, retain the still-live quota and the remaining untouched
+        // owners; the taken lease is already consumed and cannot be restored.
+        let owner = finalizer.owner.take().expect("original pooled owner");
+        let PooledConnection {
+            physical: _,
+            client,
+            activation,
+            maintenance,
+            ingress,
+        } = owner;
+        let mut remainder = ConnectionReservation {
+            client,
+            lifetime: Some(lifetime),
+            activation,
+            maintenance,
+            ingress,
+            success: true,
+            finished: true,
+        };
+        let released = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            drop(remainder.activation.take());
+            drop(remainder.maintenance.take());
+            drop(remainder.ingress.take());
+        }));
+        if let Err(panic) = released {
+            let custody = finalizer.custody.take().expect("original stream custody");
+            retain_failed_stream_remainder(remainder, custody, already_quarantined, panic);
+        }
+        let mut lifetime = remainder
+            .lifetime
+            .take()
+            .expect("original connection quota");
+        let _client = Arc::clone(&remainder.client);
+        drop(remainder);
         // The original lease retires while its connection quota is still held.
         // Defer the lifetime's post-quota wake until after the quarantined
         // count and the original custody are settled, so a reentrant/panicking
         // waiter cannot strand an entry that has already been retired.
-        drop(finalizer.owner.take());
         let post_quota_wake = lifetime.client.owner.upgrade();
         lifetime.defer_notification = true;
         drop(lifetime);
