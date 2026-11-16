@@ -16,6 +16,7 @@ PATCH = 'latent.dotnet.stackful-task-wait.v1'
 SOURCE = 'sha256:29e4bd3f70bfb0e0ea00fb2511e28ee9832b56caf9ddb5cd60906fe3bcaad735'
 MAX_ASSEMBLY = 8 * 1024 * 1024
 METHOD = 'System.Boolean System.Threading.Tasks.Task::InternalWaitCore(System.Int32,System.Threading.CancellationToken)'
+FINITE_OBSERVATION = 'actual-task-and-token-before-caller-context-restore'
 BODY_IDENTITIES = {
     'originalWaitBodyDigest': 'sha256:9b5bc35a1a68b80111c7eddc9cbc0903e6062d4e5e3b8f84e8f359445dd6e875',
     'originalLoopBodyDigest': 'sha256:1631857d71d2e5ecca2e22c95a6421aaecf016d9cba018412388b2d1c6646e19',
@@ -135,6 +136,11 @@ def validate_receipt(value: dict, *, finite: bool = False, managed: bool = False
             unchangedOriginalMethods=44709 - int(inline_pop),
             timerDriverScheduledToFire='positive-batch-detachment-before-original-enumerator',
             aggregateTaskWait=value['aggregateTaskWait'])
+    if 'finiteWaitObservation' in value:
+        if not finite:
+            raise ValueError('task-wait-rewrite-receipt')
+        fixed['finiteWaitObservation'] = FINITE_OBSERVATION
+        fixed['generatedHelperCount'] += 1
     bodies = value.get('timerDriverOriginalBodies')
     cache_bodies = value.get('zeroCacheOriginalBodies')
     if aggregate and (not aggregate_task_wait.exact(bodies, aggregate_task_wait.TIMER_BODIES)
@@ -156,8 +162,14 @@ def validate_receipt(value: dict, *, finite: bool = False, managed: bool = False
 
 
 def validate_current_receipt(value: dict, *, finite: bool = False,
-                             managed: bool = False, aggregate: bool = False) -> None:
+                             managed: bool = False, aggregate: bool = False,
+                             require_finite_observation: bool = False) -> None:
+    """Validate current producers; historical inspection may omit the finite observation requirement."""
     validate_receipt(value, finite=finite, managed=managed, aggregate=aggregate)
+    if type(require_finite_observation) is not bool:
+        raise ValueError('task-wait-finite-observation-selection')
+    if finite and require_finite_observation and value.get('finiteWaitObservation') != FINITE_OBSERVATION:
+        raise ValueError('task-wait-current-finite-observation-required')
     if managed and value['managedAcceptedWork']['patch'] != 'latent.dotnet.managed-accepted-work.v15':
         raise ValueError('task-wait-current-managed-readiness-required')
     if aggregate and value['aggregateTaskWait']['patch'] != 'latent.dotnet.wait-all.v3':
@@ -183,8 +195,9 @@ class Port:
             'targetsDigest', 'nativeAotReferenceBinding', 'selection'}
         finite = self.evidence.get('finiteAndCancellableWaits') == 'original-Task-WhenAny-Delay'
         managed = 'managedAcceptedWork' in self.evidence
-        validate_receipt({key: value for key, value in self.evidence.items() if key not in fields},
-            finite=finite, managed=managed, aggregate='aggregateTaskWait' in self.evidence)
+        validate_current_receipt({key: value for key, value in self.evidence.items() if key not in fields},
+            finite=finite, managed=managed, aggregate='aggregateTaskWait' in self.evidence,
+            require_finite_observation=True)
         declarations = (runtime.CLOCK, runtime.ACTIVATION, runtime.WALL, runtime.RANDOM) if finite else (runtime.CLOCK, runtime.ACTIVATION)
         if (self.evidence['derived'] != self.identity or self.evidence['outputDigest'] != self.identity['digest']
                 or self.evidence['selection']['requiredDeclarations'] != sorted(declarations)):
@@ -258,7 +271,8 @@ def prepare(sdk: Path, tools: Path, packages: Path, dotnet: Path, declared: list
     run('task-wait-rewrite', dotnet, tools / 'http-errors/HttpErrors.dll',
         '--aggregate-task-wait' if managed else '--finite-task-wait' if finite else '--task-wait', source, assembly, receipt)
     result = json.loads(read_file(receipt, http_errors.MAX_RECEIPT))
-    validate_current_receipt(result, finite=finite, managed=managed, aggregate=managed)
+    validate_current_receipt(result, finite=finite, managed=managed, aggregate=managed,
+                             require_finite_observation=True)
     identity = file_identity(assembly, 'task-wait-derived-corelib', MAX_ASSEMBLY)
     if identity['digest'] != result['outputDigest']:
         raise ValueError('task-wait-rewrite-output-drift')

@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from tools import qualify_dotnet_finite_waits as qualification
+from tools.dotnet_guest import aggregate_task_wait
 from tools.dotnet_guest.managed_work import INLINE_PRIMARY_REWRITE_RECEIPT
 from tools.phase2_operator_process import WorkflowError
 from tools.rust_capsule_project import ROOT
@@ -25,20 +26,23 @@ class CurrentAggregateFilesystemChain(unittest.TestCase):
             extras = {'profile', 'frameworkInput', 'tool', 'derived', 'sourceCaptureDigest',
                 'targetsDigest', 'nativeAotReferenceBinding', 'selection'}
             controlled.update({key: before[key] for key in extras})
-            controlled.update(outputDigest=before['outputDigest'], generatedHelperCount=108,
-                unchangedOriginalMethods=44708, managedAcceptedWork=copy.deepcopy(INLINE_PRIMARY_REWRITE_RECEIPT))
+            controlled.update(outputDigest=before['outputDigest'], generatedHelperCount=109,
+                finiteWaitObservation=qualification.task_wait.FINITE_OBSERVATION,
+                unchangedOriginalMethods=44708, managedAcceptedWork=copy.deepcopy(INLINE_PRIMARY_REWRITE_RECEIPT),
+                aggregateTaskWait=copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_EXPECTED))
             docs['task-wait-port.json'] = controlled
-            docs['closed-filesystem-port.json']['unchangedBaseMethods'] = 44852
+            docs['closed-filesystem-port.json']['unchangedBaseMethods'] = 44853
             docs['runtime-profile.json']['profile'] = 'runtime-managed'
             selection = docs['compiler-patches.json']['patches'][0]['selection']
-            selection.update(generatedHelperCount=108, aggregateTaskWait=controlled['aggregateTaskWait'])
+            selection.update(generatedHelperCount=109, finiteWaitObservation=qualification.task_wait.FINITE_OBSERVATION,
+                             aggregateTaskWait=controlled['aggregateTaskWait'])
             def publish(values):
                 for name, value in values.items():
                     (root / name).write_bytes((json.dumps(value) + '\n').encode('utf-8'))
                 refresh()
             publish(docs)
             qualification.build_evidence(root, aggregate=True)
-            for changed in (44851, 44853, True):
+            for changed in (44852, 44854, True):
                 wrong = copy.deepcopy(docs)
                 wrong['closed-filesystem-port.json']['unchangedBaseMethods'] = changed
                 publish(wrong)
@@ -47,6 +51,12 @@ class CurrentAggregateFilesystemChain(unittest.TestCase):
             wrong = copy.deepcopy(docs)
             wrong['task-wait-port.json']['generatedHelperCount'] = 95
             wrong['compiler-patches.json']['patches'][0]['selection']['generatedHelperCount'] = 95
+            publish(wrong)
+            with self.assertRaises((ValueError, WorkflowError)):
+                qualification.build_evidence(root, aggregate=True)
+            wrong = copy.deepcopy(docs)
+            del wrong['task-wait-port.json']['finiteWaitObservation']
+            wrong['task-wait-port.json']['generatedHelperCount'] = 108
             publish(wrong)
             with self.assertRaises((ValueError, WorkflowError)):
                 qualification.build_evidence(root, aggregate=True)

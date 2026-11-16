@@ -170,8 +170,9 @@ class RootReturnNormalControls(unittest.TestCase):
         from tools.phase2_operator_process import WorkflowError
         port = {'profile': task_wait.PROFILE,
             'managedAcceptedWork': copy.deepcopy(managed_work.INLINE_PRIMARY_REWRITE_RECEIPT),
-            'generatedHelperCount': 108, 'completion': 'actual-task-only',
+            'generatedHelperCount': 109, 'completion': 'actual-task-only',
             'finiteAndCancellableWaits': 'original-Task-WhenAny-Delay',
+            'finiteWaitObservation': task_wait.FINITE_OBSERVATION,
             'completeOriginalWaitRemainderPreserved': True,
             'nativeAotReferenceBinding': {'responseFiles': [{'controlled': 'parser-only'}]}}
         with tempfile.TemporaryDirectory() as temporary:
@@ -179,7 +180,7 @@ class RootReturnNormalControls(unittest.TestCase):
             path = artifact / 'task-wait-port.json'
             path.write_text(json.dumps(port))
             self.assertEqual(selected.current_managed_port(artifact), port)
-            for changed in ('dated', 'previous-v3', 'previous-v4', 'previous-v5', 'previous-v10', 'previous-v11', 'previous-v12', 'previous-v13', 'previous-v14', 'readiness', 'task-identity', 'count', 'bool-count', 'response', 'remainder'):
+            for changed in ('dated', 'previous-v3', 'previous-v4', 'previous-v5', 'previous-v10', 'previous-v11', 'previous-v12', 'previous-v13', 'previous-v14', 'readiness', 'task-identity', 'count', 'bool-count', 'finite-observation', 'response', 'remainder'):
                 bad = copy.deepcopy(port)
                 if changed == 'dated': bad['managedAcceptedWork'] = copy.deepcopy(managed_work.TIMER_REWRITE_RECEIPT)
                 elif changed == 'previous-v3': bad['managedAcceptedWork'] = copy.deepcopy(managed_work.PREFETCH_REWRITE_RECEIPT)
@@ -194,6 +195,7 @@ class RootReturnNormalControls(unittest.TestCase):
                 elif changed == 'task-identity': bad['managedAcceptedWork']['taskLookup'] = 'unproved'
                 elif changed == 'count': bad['generatedHelperCount'] = 95
                 elif changed == 'bool-count': bad['generatedHelperCount'] = True
+                elif changed == 'finite-observation': bad['finiteWaitObservation'] = 'after-context-restore'
                 elif changed == 'response': bad['nativeAotReferenceBinding']['responseFiles'] *= 2
                 else: bad['completeOriginalWaitRemainderPreserved'] = 1
                 path.write_text(json.dumps(bad))
