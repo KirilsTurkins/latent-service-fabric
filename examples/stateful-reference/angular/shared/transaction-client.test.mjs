@@ -42,6 +42,21 @@ test('failed query cannot install an application body from an error response', a
   assert.equal(app.view, undefined);
 });
 
+test('fragmented query bodies remain bounded and decode correctly', async () => {
+  const payload = new TextEncoder().encode(await response('query').text());
+  const app = client(async () => new Response(new ReadableStream({
+    start(controller) {
+      for (let index = 0; index < 100; index++) controller.enqueue(new Uint8Array());
+      for (const byte of payload) controller.enqueue(Uint8Array.of(byte));
+      controller.close();
+    },
+  }), {status: 200}));
+  const result = await app.query('demo');
+  assert.equal(result.value.draftId, 'demo');
+  const oversized = client(async () => new Response(new Uint8Array(192 * 1024 + 1), {status: 200}));
+  await assert.rejects(oversized.query('demo'), /response-byte-limit/);
+});
+
 test('uncertain delivery retains the original body, precondition and key and only recovery is sent', async () => {
   const requests = [];
   const app = client(async (url, options) => {

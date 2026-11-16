@@ -125,19 +125,16 @@ export function projection(result: unknown): DraftView | {error: string} {
 async function limitedBody(response: Response): Promise<string> {
   if (!response.body) return '';
   const reader = response.body.getReader();
-  const chunks: Uint8Array[] = []; let count = 0;
+  const bytes = new Uint8Array(MAX_RESPONSE); let count = 0;
   try {
     for (;;) {
       const {done, value} = await reader.read();
       if (done) break;
-      count += value.length;
-      if (count > MAX_RESPONSE) throw new Error('response-byte-limit');
-      chunks.push(value);
+      if (value.length > MAX_RESPONSE - count) throw new Error('response-byte-limit');
+      bytes.set(value, count); count += value.length;
     }
   } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
-  const bytes = new Uint8Array(count); let offset = 0;
-  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
-  return decoder.decode(bytes);
+  return decoder.decode(bytes.subarray(0, count));
 }
 function envelope(value: unknown): Envelope {
   if (!record(value) || value['profile'] !== PROFILE) throw new Error('unsupported-transaction-response');
