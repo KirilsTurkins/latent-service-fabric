@@ -33,6 +33,15 @@ test('unavailable query is reported without discarding the original command', as
   assert.equal(app.status, 'prepared');
 });
 
+test('failed query cannot install an application body from an error response', async () => {
+  const app = client(async () => {
+    const body = await response('query').text();
+    return new Response(body, {status: 503});
+  });
+  await assert.rejects(app.query('demo'), /query-unavailable/);
+  assert.equal(app.view, undefined);
+});
+
 test('uncertain delivery retains the original body, precondition and key and only recovery is sent', async () => {
   const requests = [];
   const app = client(async (url, options) => {

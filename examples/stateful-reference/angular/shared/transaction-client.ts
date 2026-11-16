@@ -245,7 +245,8 @@ export class DraftClient {
       headers: this.minimumView ? {'if-state-view': this.minimumView} : {}});
     // A receipt-only failure is not a fresh draft. Keep any original command
     // for recovery and make the unavailable read visible to the application.
-    if (reply.envelope.disposition !== 'query' || !reply.envelope.result) throw new Error('query-unavailable');
+    if (reply.envelope.disposition !== 'query' || !reply.envelope.result ||
+        (reply.status !== 200 && reply.status !== 422)) throw new Error('query-unavailable');
     return this.apply(reply, draftId);
   }
   async retryAborted(): Promise<Reply> {
