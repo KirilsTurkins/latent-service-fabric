@@ -125,11 +125,15 @@ export function projection(result: unknown): DraftView | {error: string} {
 async function limitedBody(response: Response): Promise<string> {
   if (!response.body) return '';
   const reader = response.body.getReader();
-  const bytes = new Uint8Array(MAX_RESPONSE); let count = 0;
+  const bytes = new Uint8Array(MAX_RESPONSE); let count = 0; let emptyChunks = 0;
   try {
     for (;;) {
       const {done, value} = await reader.read();
       if (done) break;
+      if (value.length === 0) {
+        if (++emptyChunks > 1024) throw new Error('response-fragment-limit');
+        continue;
+      }
       if (value.length > MAX_RESPONSE - count) throw new Error('response-byte-limit');
       bytes.set(value, count); count += value.length;
     }

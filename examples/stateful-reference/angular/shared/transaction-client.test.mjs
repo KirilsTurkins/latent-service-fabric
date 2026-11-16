@@ -55,6 +55,13 @@ test('fragmented query bodies remain bounded and decode correctly', async () => 
   assert.equal(result.value.draftId, 'demo');
   const oversized = client(async () => new Response(new Uint8Array(192 * 1024 + 1), {status: 200}));
   await assert.rejects(oversized.query('demo'), /response-byte-limit/);
+  const empty = client(async () => new Response(new ReadableStream({
+    start(controller) {
+      for (let index = 0; index < 1025; index++) controller.enqueue(new Uint8Array());
+      controller.close();
+    },
+  }), {status: 200}));
+  await assert.rejects(empty.query('demo'), /response-fragment-limit/);
 });
 
 test('uncertain delivery retains the original body, precondition and key and only recovery is sent', async () => {
