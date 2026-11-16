@@ -317,7 +317,7 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
     timer = compiler.run("timer-readiness-source-control", "java", "-Xmx256m", "-cp",
                          str(timer_output) + os.pathsep + classpath, "TimerReadinessSourceControl").strip()
     if timer != ("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;"
-                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence;timer-stop-uncertain-completion-fence;nested-stop-count-guard;timer-finally-return-fence;timer-teardown-admission-fence"):
+                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence;timer-stop-uncertain-completion-fence;nested-stop-count-guard;timer-finally-return-fence;timer-teardown-admission-fence;opaque-owner-order"):
         raise ValueError("Java timer readiness source control did not complete")
     claim = compiler.run("timer-start-claim-ir-control", "java", "-Xmx256m", "-cp",
                          str(output) + os.pathsep + str(timer_output) + os.pathsep + classpath,
@@ -1027,6 +1027,61 @@ def executor_invoke_all_wait_control(compiler: Compiler, output: Path, reference
             'actualGuestBindingsUsed': False}
 
 
+def scheduled_compare_control(compiler: Compiler, output: Path, ports: list[Path], private: Path) -> dict:
+    """Compare real scheduled futures and retain owners in a synthetic clock projection."""
+    control = private / 'ScheduledCompareReferenceControl.java'
+    fake = private / 'ScheduledCompareFakeClock.java'
+    clock_control = private / 'ScheduledCompareClockControl.java'
+    bindings = private / 'dev/latent/generated/Bindings.java'
+    activation = private / 'dev/latent/guest/runtime/Activation.java'
+    jdk = output / 'scheduled-compare-jdk'; jdk.mkdir()
+    compiler.run('scheduled-compare-jdk-compile', 'javac', '-proc:none', '--release', '25', '-d', jdk, control)
+    result = compiler.run('scheduled-compare-jdk', 'java', '--add-opens=java.base/java.util.concurrent=ALL-UNNAMED',
+                          '-Xmx256m', '-cp', jdk, 'ScheduledCompareReferenceControl', 'jdk').strip()
+    if result != 'SCHEDULED_COMPARE_REFERENCE PASS close;fifo;maximum;transitive;retired;tie-jdk-global-order':
+        raise ValueError('Java scheduled comparison reference did not complete')
+
+    source = output / 'scheduled-compare-source'; source.mkdir()
+    text = read_file(control).decode('utf-8')
+    original = 'import java.util.concurrent.ScheduledThreadPoolExecutor;'
+    if text.count(original) != 1: raise ValueError('Java scheduled comparison source import is ambiguous')
+    selected = source / 'ScheduledCompareReferenceControl.java'
+    selected.write_bytes(text.replace(original,
+        'import dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor;').encode('utf-8'))
+    compiler.run('scheduled-compare-source-compile', 'javac', '-proc:none', '--release', '25', '-d', source,
+                 selected, *ports, bindings, activation)
+    result = compiler.run('scheduled-compare-source', 'java', '-Xmx256m', '-cp', source,
+                          'ScheduledCompareReferenceControl', 'source').strip()
+    if result != 'SCHEDULED_COMPARE_REFERENCE PASS close;fifo;maximum;transitive;retired;tie-source-pool-order':
+        raise ValueError('Java scheduled comparison source did not complete')
+
+    timer = next(path for path in ports if path.name == 'ScheduledThreadPoolExecutor.java')
+    text = read_file(timer).decode('utf-8')
+    for original, replacement in (
+            ('private final long origin = System.nanoTime();', 'private final long origin = ScheduledCompareFakeClock.nanoTime();'),
+            ('private long elapsed() { return System.nanoTime() - origin; }',
+             'private long elapsed() { return ScheduledCompareFakeClock.nanoTime() - origin; }'),
+            ('long now = System.nanoTime();', 'long now = ScheduledCompareFakeClock.nanoTime();')):
+        if text.count(original) != 1: raise ValueError('Java scheduled comparison clock source is ambiguous')
+        text = text.replace(original, replacement)
+    clock = output / 'scheduled-compare-clock'; clock.mkdir()
+    mapped = clock / 'ScheduledThreadPoolExecutor.java'; mapped.write_bytes(text.encode('utf-8'))
+    compiler.run('scheduled-compare-clock-compile', 'javac', '-proc:none', '--release', '25', '-d', clock,
+                 *[path for path in ports if path != timer], mapped, fake, clock_control, bindings, activation)
+    result = compiler.run('scheduled-compare-clock', 'java', '-Xmx256m', '-cp', clock,
+                          'ScheduledCompareClockControl').strip()
+    if result != 'SCHEDULED_COMPARE_CLOCK PASS close;tie-transitive;fifo;maximum;overdue;wrap;retired;unsigned;owners;rollback':
+        raise ValueError('Java scheduled comparison clock control did not complete')
+    result = compiler.run('scheduled-compare-key-uncertain', 'java', '-Xmx256m', '-cp', clock,
+                          'ScheduledCompareClockControl', 'uncertain').strip()
+    if result != 'SCHEDULED_COMPARE_KEY_UNCERTAIN PASS original-owner-held;single-attempt':
+        raise ValueError('Java scheduled comparison key custody control did not complete')
+    return {'status': 'JDK-and-SDK-source-controls-passed',
+            'equalCrossPoolDeadlines': 'SDK-pool-owner-order-JDK-global-task-order',
+            'clockWrapAndOwners': 'synthetic-host-ledger-only',
+            'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
+
+
 def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     """Real port source with a private host ledger, never injected guest bindings."""
     private = compiler.sdk / 'fibers/conformance/compiler/scheduled-source-control'
@@ -1056,8 +1111,10 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     null_failure_reference = private / 'FutureTaskNullFailureReferenceControl.java'
     monitor_reference = private / 'FutureTaskMonitorReferenceControl.java'
     default_monitor_reference = private / 'DefaultExecutorMonitorReferenceControl.java'
+    comparison_inputs = [private / name for name in ('ScheduledCompareReferenceControl.java',
+        'ScheduledCompareFakeClock.java', 'ScheduledCompareClockControl.java')]
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
-        for path in (*ports, *controls, noop_reference, ready_reference, reference, periodic_reference, invoke_reference, invoke_any_reference, invoke_all_reference, termination_reference,
+        for path in (*ports, *controls, *comparison_inputs, noop_reference, ready_reference, reference, periodic_reference, invoke_reference, invoke_any_reference, invoke_all_reference, termination_reference,
                      null_failure_reference, monitor_reference, default_monitor_reference)}
     output.mkdir()
     jdk_output = output / 'reference-jdk'
@@ -1280,6 +1337,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     noop_cancel = scheduled_noop_cancel_control(compiler, output, jdk_output)
     invoke_any_ready = executor_invoke_any_ready_control(compiler, output, jdk_output)
     invoke_all_wait = executor_invoke_all_wait_control(compiler, output, jdk_output)
+    comparison = scheduled_compare_control(compiler, output, ports, private)
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError('Java scheduled source control inputs changed')
     return {'status': 'SDK-source-controls-passed', 'referenceJdk': 'matched-stopped-and-periodic-observables', 'sourceInputs': inputs,
@@ -1290,6 +1348,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'futureTaskPublicMonitor': 'JDK-and-SDK-source-controls-passed',
         'defaultExecutorPublicMonitor': 'JDK-and-SDK-source-controls-passed', 'readyShutdown': ready_shutdown,
         'noopCancel': noop_cancel, 'invokeAnyReady': invoke_any_ready, 'invokeAllWait': invoke_all_wait,
+        'scheduledComparison': comparison,
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
 

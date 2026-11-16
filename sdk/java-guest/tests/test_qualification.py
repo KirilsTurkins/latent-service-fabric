@@ -207,7 +207,7 @@ class WaitFrameModelIntegrity(unittest.TestCase):
                 "first-clock-latch;stable-ties;fired-and-closing-exclusion;confirmed-stop;"
                 "cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;"
                 "uncertain-queued-owner-fence;timer-stop-uncertain-completion-fence;nested-stop-count-guard;"
-                "timer-finally-return-fence;timer-teardown-admission-fence\n"
+                "timer-finally-return-fence;timer-teardown-admission-fence;opaque-owner-order\n"
             ),
             "TIMER_CLAIM_IR PASS selected-loop-positive;ownership-helpers-no-checkpoint-or-split-kind;not-guest\n",
         ]

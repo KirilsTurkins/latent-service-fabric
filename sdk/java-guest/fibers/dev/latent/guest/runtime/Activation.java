@@ -238,6 +238,26 @@ public final class Activation {
         return defaultAsyncExecutor;
     }
 
+    /** Immutable ordering only; it is not an owner and cannot authorize work. */
+    public static final class OwnerOrder implements Comparable<OwnerOrder> {
+        private final long generation;
+        private final long id;
+        private OwnerOrder(long generation, long id) { this.generation = generation; this.id = id; }
+        @Override public int compareTo(OwnerOrder other) {
+            int compared = Long.compareUnsigned(generation, other.generation);
+            return compared != 0 ? compared : Long.compareUnsigned(id, other.id);
+        }
+    }
+
+    // Capture the already-admitted owner's descriptive identity before its
+    // lease settles. The key occupies the existing bounded Java heap and owns
+    // no additional host registration or authority.
+    public static OwnerOrder ownerOrder(Lease owner) {
+        var token = owner.token;
+        if (token == null) throw new IllegalStateException("activation-runtime-owner-retired");
+        return new OwnerOrder(token.generation().bits(), token.id().bits());
+    }
+
     /** Linear logical ownership; payloads remain in the accounted Java heap. */
     public static class Lease implements AutoCloseable {
         private Bindings.LatentRuntimeActivationToken token;
