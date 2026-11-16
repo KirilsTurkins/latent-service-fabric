@@ -19891,3 +19891,383 @@
 -    }
 -
      pub fn debug_assert_all_zero(&self) {
+--- a/src/runtime/component/concurrent/futures_and_streams.rs
++++ b/src/runtime/component/concurrent/futures_and_streams.rs
+@@ -3437,6 +3437,16 @@
+                 // admission fails. The same guard follows the retained Box.
+-                let accept = own_host_accept_factory(&factory_memory, move |input| {
+-                    let consume = consume_with_buffer.clone();
+-                    async move { consume(Some(input.get_mut::<C::Item>()?)).await }.boxed()
+-                })?;
++                let accept = if factory_memory.is_none() {
++                    own_host_accept_factory(&factory_memory, move |input| {
++                        let consume = consume_with_buffer.clone();
++                        async move { consume(Some(input.get_mut::<C::Item>()?)).await }.boxed()
++                    })?
++                } else {
++                    let future_memory = factory_memory.clone();
++                    own_typed_host_accept_factory(&factory_memory, move |input| {
++                        prepare_host_accept_future(&future_memory, input, |input| {
++                            let consume = consume_with_buffer.clone();
++                            async move { consume(Some(input.get_mut::<C::Item>()?)).await }
++                        })
++                    })?
++                };
+                 // Reserve the first paid producer future while the original
+@@ -3669,3 +3679,3 @@
+                 state = accept
+-                    .invoke_accept(&mut UntypedWriteBuffer::new(&mut slice_buffer))
++                    .invoke_accept(&mut UntypedWriteBuffer::new(&mut slice_buffer))?
+                     .await?;
+@@ -3680,3 +3690,3 @@
+                     state = accept
+-                        .invoke_accept(&mut UntypedWriteBuffer::new(buffer))
++                        .invoke_accept(&mut UntypedWriteBuffer::new(buffer))?
+                         .await?;
+@@ -5810,16 +5820,3 @@
+ type ConsumerPollFactory = ProducerFactory<dyn ConsumerFactory>;
+-type HostAccept = Box<
+-    dyn for<'a> Fn(
+-            &'a mut UntypedWriteBuffer<'a>,
+-        ) -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'a>>
+-        + Send
+-        + Sync,
+->;
+-type HostAcceptFactory = ProducerFactory<
+-    dyn for<'a> Fn(
+-            &'a mut UntypedWriteBuffer<'a>,
+-        ) -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'a>>
+-        + Send
+-        + Sync,
+->;
++type HostAcceptFactory = ProducerFactory<dyn HostAccept>;
+ type ProducerConversionFactory =
+@@ -6213,1 +6210,104 @@
++type BoxedHostAcceptFuture<'a> = Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'a>>;
++
++struct OwnedHostAcceptFuture<'a> {
++    future: ManuallyDrop<BoxedHostAcceptFuture<'a>>,
++    allocation: ManuallyDrop<Option<Box<dyn crate::NativeAllocation>>>,
++}
++
++impl Unpin for OwnedHostAcceptFuture<'_> {}
++
++impl<'a> OwnedHostAcceptFuture<'a> {
++    fn from_parts(
++        future: BoxedHostAcceptFuture<'a>,
++        allocation: Option<Box<dyn crate::NativeAllocation>>,
++    ) -> Self {
++        let mut owner = Self {
++            future: ManuallyDrop::new(future),
++            allocation: ManuallyDrop::new(allocation),
++        };
++        if let Some(allocation) = owner.allocation.as_mut() {
++            allocation.allocated();
++        }
++        owner
++    }
++}
++
++impl Future for OwnedHostAcceptFuture<'_> {
++    type Output = Result<StreamResult>;
++
++    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
++        self.get_mut().future.as_mut().poll(cx)
++    }
++}
++
++impl Drop for OwnedHostAcceptFuture<'_> {
++    fn drop(&mut self) {
++        // The inline guard remains live while the pinned Box and its borrowed
++        // payload are dropped. On a payload unwind, Box's drop glue still
++        // deallocates that Box before unwinding reaches this local guard.
++        // Separately owned captures retain their own independent charges.
++        unsafe {
++            let allocation = ManuallyDrop::take(&mut self.allocation);
++            ManuallyDrop::drop(&mut self.future);
++            drop(allocation);
++        }
++    }
++}
++
++trait HostAccept: Send + Sync {
++    fn invoke<'a>(
++        &self,
++        input: &'a mut UntypedWriteBuffer<'a>,
++    ) -> Result<OwnedHostAcceptFuture<'a>>;
++}
++
++#[repr(transparent)]
++struct LegacyHostAccept<F>(F);
++
++impl<F> HostAccept for LegacyHostAccept<F>
++where
++    F: for<'a> Fn(&'a mut UntypedWriteBuffer<'a>) -> BoxedHostAcceptFuture<'a> + Send + Sync,
++{
++    fn invoke<'a>(
++        &self,
++        input: &'a mut UntypedWriteBuffer<'a>,
++    ) -> Result<OwnedHostAcceptFuture<'a>> {
++        Ok(OwnedHostAcceptFuture::from_parts((self.0)(input), None))
++    }
++}
++
++#[repr(transparent)]
++struct TypedHostAccept<F>(F);
++
++impl<F> HostAccept for TypedHostAccept<F>
++where
++    F: for<'a> Fn(&'a mut UntypedWriteBuffer<'a>) -> Result<OwnedHostAcceptFuture<'a>>
++        + Send
++        + Sync,
++{
++    fn invoke<'a>(
++        &self,
++        input: &'a mut UntypedWriteBuffer<'a>,
++    ) -> Result<OwnedHostAcceptFuture<'a>> {
++        (self.0)(input)
++    }
++}
++
++fn prepare_host_accept_future<'a, F, Fut>(
++    memory: &crate::runtime::native_memory::Memory,
++    input: &'a mut UntypedWriteBuffer<'a>,
++    create: F,
++) -> Result<OwnedHostAcceptFuture<'a>>
++where
++    F: FnOnce(&'a mut UntypedWriteBuffer<'a>) -> Fut,
++    Fut: Future<Output = Result<StreamResult>> + Send + 'a,
++{
++    // Compute the actual future layout from its concrete return type, before
++    // invoking the factory, cloning captures, allocating, or polling.
++    let allocation =
++        crate::runtime::native_memory::reserve(memory, core::alloc::Layout::new::<Fut>().size())?;
++    let future: BoxedHostAcceptFuture<'a> = Box::pin(create(input));
++    Ok(OwnedHostAcceptFuture::from_parts(future, allocation))
++}
++
+ impl HostAcceptFactory {
+@@ -6216,4 +6316,4 @@
+         input: &'a mut UntypedWriteBuffer<'a>,
+-    ) -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'a>> {
+-        (self.function)(input)
++    ) -> Result<OwnedHostAcceptFuture<'a>> {
++        self.function.invoke(input)
+     }
+@@ -6236,3 +6336,22 @@
+         crate::runtime::native_memory::reserve(memory, core::alloc::Layout::new::<F>().size())?;
+-    let function: HostAccept = Box::new(function);
++    let function: Box<dyn HostAccept> = Box::new(LegacyHostAccept(function));
++    Ok(ProducerFactory::from_parts(function, allocation))
++}
++
++fn own_typed_host_accept_factory<F>(
++    memory: &crate::runtime::native_memory::Memory,
++    function: F,
++) -> Result<HostAcceptFactory>
++where
++    F: for<'a> Fn(&'a mut UntypedWriteBuffer<'a>) -> Result<OwnedHostAcceptFuture<'a>>
++        + Send
++        + Sync
++        + 'static,
++{
++    if memory.is_none() {
++        bail_bug!("typed host accept requires its original memory");
++    }
++    let allocation =
++        crate::runtime::native_memory::reserve(memory, core::alloc::Layout::new::<F>().size())?;
++    let function: Box<dyn HostAccept> = Box::new(TypedHostAccept(function));
+     Ok(ProducerFactory::from_parts(function, allocation))
+--- a/src/runtime/component/concurrent/futures_and_streams/stream_outer_tests.rs
++++ b/src/runtime/component/concurrent/futures_and_streams/stream_outer_tests.rs
+@@ -1802,1 +1802,184 @@
++// This future really borrows the input across polls. Its over-aligned layout
++// makes an erased-pointer-sized or unpadded reservation distinguishable.
++#[repr(align(256))]
++struct BorrowedAcceptFutureProbe<'a> {
++    input: &'a mut UntypedWriteBuffer<'a>,
++    probe: Arc<ConsumerCellProbe>,
++    polls: Arc<AtomicUsize>,
++    address: Arc<AtomicUsize>,
++    mode: u8,
++    panic_drop: bool,
++    _pinned: core::marker::PhantomPinned,
++}
++
++impl Future for BorrowedAcceptFutureProbe<'_> {
++    type Output = Result<StreamResult>;
++
++    fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Self::Output> {
++        // SAFETY: no field moves while this original boxed future is pinned.
++        let this = unsafe { self.get_unchecked_mut() };
++        let address = this as *const Self as usize;
++        assert_eq!(address % 256, 0);
++        match this.address.compare_exchange(0, address, SeqCst, SeqCst) {
++            Ok(_) => {}
++            Err(old) => assert_eq!(old, address),
++        }
++        this.polls.fetch_add(1, SeqCst);
++        match this.mode {
++            0 => Poll::Pending,
++            1 => {
++                let input = this.input.get_mut::<u8>().unwrap();
++                assert_eq!(input.remaining(), &[42]);
++                input.skip(1);
++                Poll::Ready(Ok(StreamResult::Completed))
++            }
++            _ => Poll::Ready(Err(crate::Error::msg(FAILURE))),
++        }
++    }
++}
++
++impl Drop for BorrowedAcceptFutureProbe<'_> {
++    fn drop(&mut self) {
++        assert!(self.probe.live.load(SeqCst) >= core::mem::size_of::<Self>());
++        self.probe.value_drops.fetch_add(1, SeqCst);
++        assert!(!self.panic_drop, "borrowed-accept-future-drop");
++    }
++}
++
++fn borrowed_accept_probe_factory(
++    probe: Arc<ConsumerCellProbe>,
++    calls: Arc<AtomicUsize>,
++    polls: Arc<AtomicUsize>,
++    address: Arc<AtomicUsize>,
++    mode: u8,
++    panic_drop: bool,
++) -> impl for<'a> Fn(&'a mut UntypedWriteBuffer<'a>) -> Result<OwnedHostAcceptFuture<'a>>
+++ Send
+++ Sync
+++ 'static {
++    let memory = consumer_cell_memory(&probe);
++    move |input| {
++        prepare_host_accept_future(&memory, input, |input| {
++            calls.fetch_add(1, SeqCst);
++            BorrowedAcceptFutureProbe {
++                input,
++                probe: probe.clone(),
++                polls: polls.clone(),
++                address: address.clone(),
++                mode,
++                panic_drop,
++                _pinned: core::marker::PhantomPinned,
++            }
++        })
++    }
++}
++
++#[test]
++fn borrowed_host_accept_exact_admission_and_original_retirement() {
++    let exact = core::alloc::Layout::new::<BorrowedAcceptFutureProbe<'static>>();
++    assert_eq!(exact.align(), 256);
++    assert_eq!(exact.size() % exact.align(), 0);
++    for mode in 0..3 {
++        let probe = Arc::new(ConsumerCellProbe::default());
++        let calls = Arc::new(AtomicUsize::new(0));
++        let polls = Arc::new(AtomicUsize::new(0));
++        let address = Arc::new(AtomicUsize::new(0));
++        let function = borrowed_accept_probe_factory(
++            probe.clone(),
++            calls.clone(),
++            polls.clone(),
++            address.clone(),
++            mode,
++            false,
++        );
++        let factory =
++            own_typed_host_accept_factory(&consumer_cell_memory(&probe), function).unwrap();
++        let factory_bytes = probe.live.load(SeqCst);
++        assert!(factory_bytes > 0);
++        probe.refuse.store(2, SeqCst);
++        let mut buffer = SliceBuffer::new(vec![42], 0, 1);
++        {
++            let mut untyped = UntypedWriteBuffer::new(&mut buffer);
++            assert!(factory.invoke_accept(&mut untyped).is_err());
++        }
++        assert_eq!(calls.load(SeqCst), 0);
++        assert_eq!(polls.load(SeqCst), 0);
++        assert_eq!(probe.live.load(SeqCst), factory_bytes);
++        assert_eq!(probe.requests.lock().unwrap()[1], exact.size());
++        assert_eq!(buffer.remaining(), &[42]);
++
++        probe.refuse.store(0, SeqCst);
++        {
++            let mut untyped = UntypedWriteBuffer::new(&mut buffer);
++            let mut future = factory.invoke_accept(&mut untyped).unwrap();
++            assert_eq!(probe.requests.lock().unwrap()[2], exact.size());
++            assert_eq!(probe.live.load(SeqCst), factory_bytes + exact.size());
++            assert_eq!(calls.load(SeqCst), 1);
++            let mut cx = Context::from_waker(Waker::noop());
++            let result = Pin::new(&mut future).poll(&mut cx);
++            match mode {
++                0 => assert!(result.is_pending()),
++                1 => assert!(matches!(result, Poll::Ready(Ok(StreamResult::Completed)))),
++                _ => assert!(matches!(result, Poll::Ready(Err(_)))),
++            }
++            assert_eq!(probe.live.load(SeqCst), factory_bytes + exact.size());
++            probe.check_value_drop.store(true, SeqCst);
++            drop(future);
++            probe.check_value_drop.store(false, SeqCst);
++        }
++        assert_eq!(probe.value_drops.load(SeqCst), 1);
++        assert_eq!(probe.live.load(SeqCst), factory_bytes);
++        assert_ne!(address.load(SeqCst), 0);
++        assert_eq!(buffer.remaining().len(), if mode == 1 { 0 } else { 1 });
++        drop(factory);
++        assert_eq!(probe.live.load(SeqCst), 0);
++    }
++}
++
++#[test]
++fn borrowed_host_accept_confirmation_and_destructor_unwind_keep_original_owner() {
++    let exact = core::mem::size_of::<BorrowedAcceptFutureProbe<'static>>();
++    for confirmation_unwinds in [true, false] {
++        let probe = Arc::new(ConsumerCellProbe::default());
++        let calls = Arc::new(AtomicUsize::new(0));
++        let function = borrowed_accept_probe_factory(
++            probe.clone(),
++            calls.clone(),
++            Arc::new(AtomicUsize::new(0)),
++            Arc::new(AtomicUsize::new(0)),
++            0,
++            !confirmation_unwinds,
++        );
++        let factory =
++            own_typed_host_accept_factory(&consumer_cell_memory(&probe), function).unwrap();
++        let factory_bytes = probe.live.load(SeqCst);
++        let mut buffer = SliceBuffer::new(vec![42], 0, 1);
++        probe.check_value_drop.store(confirmation_unwinds, SeqCst);
++        if confirmation_unwinds {
++            probe.panic_confirmation.store(2, SeqCst);
++            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
++                let mut input = UntypedWriteBuffer::new(&mut buffer);
++                drop(factory.invoke_accept(&mut input));
++            }));
++            assert!(result.is_err());
++            assert_eq!(probe.value_drops.load(SeqCst), 1);
++            assert_eq!(probe.live.load(SeqCst), factory_bytes);
++        } else {
++            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
++                let mut input = UntypedWriteBuffer::new(&mut buffer);
++                let future = factory.invoke_accept(&mut input).unwrap();
++                drop(future);
++            }));
++            assert!(result.is_err());
++            assert_eq!(probe.value_drops.load(SeqCst), 1);
++            assert_eq!(probe.live.load(SeqCst), factory_bytes);
++        }
++        assert_eq!(probe.requests.lock().unwrap()[1], exact);
++        probe.check_value_drop.store(false, SeqCst);
++        drop(factory);
++        assert_eq!(probe.live.load(SeqCst), 0);
++        assert_eq!(calls.load(SeqCst), 1);
++    }
++}
++
+ #[test]
+--- a/src/runtime/component/mod.rs
++++ b/src/runtime/component/mod.rs
+@@ -820,2 +820,2 @@
+ /// Native source cohort for the maintained original-owner dynamic value extension.
+-pub const DYNAMIC_VALUE_MEMORY_COHORT: &str = "wasmtime-48.0.8-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v30-authenticated-bounded-root-suspension-upstream-security-v31-consumer-poll-factory-v32-host-accept-factory-v33-consumer-inner-future-v34-producer-inner-future-v35-sync-ready-callback-v36-inline-runtime-futures-v37-store-custody-panic-v38-retained-pool-decommit-v39";
++pub const DYNAMIC_VALUE_MEMORY_COHORT: &str = "wasmtime-48.0.8-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v30-authenticated-bounded-root-suspension-upstream-security-v31-consumer-poll-factory-v32-host-accept-factory-v33-consumer-inner-future-v34-producer-inner-future-v35-sync-ready-callback-v36-inline-runtime-futures-v37-store-custody-panic-v38-retained-pool-decommit-v39-borrowed-accept-future-v40";

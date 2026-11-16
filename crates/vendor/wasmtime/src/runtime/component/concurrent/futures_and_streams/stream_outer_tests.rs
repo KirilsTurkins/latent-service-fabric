@@ -1799,6 +1799,189 @@ fn host_accept_factory_none_keeps_literal_box_and_no_reservation() {
     assert_eq!(*trace.lock().unwrap(), ["call", "legacy"]);
 }
 
+// This future really borrows the input across polls. Its over-aligned layout
+// makes an erased-pointer-sized or unpadded reservation distinguishable.
+#[repr(align(256))]
+struct BorrowedAcceptFutureProbe<'a> {
+    input: &'a mut UntypedWriteBuffer<'a>,
+    probe: Arc<ConsumerCellProbe>,
+    polls: Arc<AtomicUsize>,
+    address: Arc<AtomicUsize>,
+    mode: u8,
+    panic_drop: bool,
+    _pinned: core::marker::PhantomPinned,
+}
+
+impl Future for BorrowedAcceptFutureProbe<'_> {
+    type Output = Result<StreamResult>;
+
+    fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Self::Output> {
+        // SAFETY: no field moves while this original boxed future is pinned.
+        let this = unsafe { self.get_unchecked_mut() };
+        let address = this as *const Self as usize;
+        assert_eq!(address % 256, 0);
+        match this.address.compare_exchange(0, address, SeqCst, SeqCst) {
+            Ok(_) => {}
+            Err(old) => assert_eq!(old, address),
+        }
+        this.polls.fetch_add(1, SeqCst);
+        match this.mode {
+            0 => Poll::Pending,
+            1 => {
+                let input = this.input.get_mut::<u8>().unwrap();
+                assert_eq!(input.remaining(), &[42]);
+                input.skip(1);
+                Poll::Ready(Ok(StreamResult::Completed))
+            }
+            _ => Poll::Ready(Err(crate::Error::msg(FAILURE))),
+        }
+    }
+}
+
+impl Drop for BorrowedAcceptFutureProbe<'_> {
+    fn drop(&mut self) {
+        assert!(self.probe.live.load(SeqCst) >= core::mem::size_of::<Self>());
+        self.probe.value_drops.fetch_add(1, SeqCst);
+        assert!(!self.panic_drop, "borrowed-accept-future-drop");
+    }
+}
+
+fn borrowed_accept_probe_factory(
+    probe: Arc<ConsumerCellProbe>,
+    calls: Arc<AtomicUsize>,
+    polls: Arc<AtomicUsize>,
+    address: Arc<AtomicUsize>,
+    mode: u8,
+    panic_drop: bool,
+) -> impl for<'a> Fn(&'a mut UntypedWriteBuffer<'a>) -> Result<OwnedHostAcceptFuture<'a>>
++ Send
++ Sync
++ 'static {
+    let memory = consumer_cell_memory(&probe);
+    move |input| {
+        prepare_host_accept_future(&memory, input, |input| {
+            calls.fetch_add(1, SeqCst);
+            BorrowedAcceptFutureProbe {
+                input,
+                probe: probe.clone(),
+                polls: polls.clone(),
+                address: address.clone(),
+                mode,
+                panic_drop,
+                _pinned: core::marker::PhantomPinned,
+            }
+        })
+    }
+}
+
+#[test]
+fn borrowed_host_accept_exact_admission_and_original_retirement() {
+    let exact = core::alloc::Layout::new::<BorrowedAcceptFutureProbe<'static>>();
+    assert_eq!(exact.align(), 256);
+    assert_eq!(exact.size() % exact.align(), 0);
+    for mode in 0..3 {
+        let probe = Arc::new(ConsumerCellProbe::default());
+        let calls = Arc::new(AtomicUsize::new(0));
+        let polls = Arc::new(AtomicUsize::new(0));
+        let address = Arc::new(AtomicUsize::new(0));
+        let function = borrowed_accept_probe_factory(
+            probe.clone(),
+            calls.clone(),
+            polls.clone(),
+            address.clone(),
+            mode,
+            false,
+        );
+        let factory =
+            own_typed_host_accept_factory(&consumer_cell_memory(&probe), function).unwrap();
+        let factory_bytes = probe.live.load(SeqCst);
+        assert!(factory_bytes > 0);
+        probe.refuse.store(2, SeqCst);
+        let mut buffer = SliceBuffer::new(vec![42], 0, 1);
+        {
+            let mut untyped = UntypedWriteBuffer::new(&mut buffer);
+            assert!(factory.invoke_accept(&mut untyped).is_err());
+        }
+        assert_eq!(calls.load(SeqCst), 0);
+        assert_eq!(polls.load(SeqCst), 0);
+        assert_eq!(probe.live.load(SeqCst), factory_bytes);
+        assert_eq!(probe.requests.lock().unwrap()[1], exact.size());
+        assert_eq!(buffer.remaining(), &[42]);
+
+        probe.refuse.store(0, SeqCst);
+        {
+            let mut untyped = UntypedWriteBuffer::new(&mut buffer);
+            let mut future = factory.invoke_accept(&mut untyped).unwrap();
+            assert_eq!(probe.requests.lock().unwrap()[2], exact.size());
+            assert_eq!(probe.live.load(SeqCst), factory_bytes + exact.size());
+            assert_eq!(calls.load(SeqCst), 1);
+            let mut cx = Context::from_waker(Waker::noop());
+            let result = Pin::new(&mut future).poll(&mut cx);
+            match mode {
+                0 => assert!(result.is_pending()),
+                1 => assert!(matches!(result, Poll::Ready(Ok(StreamResult::Completed)))),
+                _ => assert!(matches!(result, Poll::Ready(Err(_)))),
+            }
+            assert_eq!(probe.live.load(SeqCst), factory_bytes + exact.size());
+            probe.check_value_drop.store(true, SeqCst);
+            drop(future);
+            probe.check_value_drop.store(false, SeqCst);
+        }
+        assert_eq!(probe.value_drops.load(SeqCst), 1);
+        assert_eq!(probe.live.load(SeqCst), factory_bytes);
+        assert_ne!(address.load(SeqCst), 0);
+        assert_eq!(buffer.remaining().len(), if mode == 1 { 0 } else { 1 });
+        drop(factory);
+        assert_eq!(probe.live.load(SeqCst), 0);
+    }
+}
+
+#[test]
+fn borrowed_host_accept_confirmation_and_destructor_unwind_keep_original_owner() {
+    let exact = core::mem::size_of::<BorrowedAcceptFutureProbe<'static>>();
+    for confirmation_unwinds in [true, false] {
+        let probe = Arc::new(ConsumerCellProbe::default());
+        let calls = Arc::new(AtomicUsize::new(0));
+        let function = borrowed_accept_probe_factory(
+            probe.clone(),
+            calls.clone(),
+            Arc::new(AtomicUsize::new(0)),
+            Arc::new(AtomicUsize::new(0)),
+            0,
+            !confirmation_unwinds,
+        );
+        let factory =
+            own_typed_host_accept_factory(&consumer_cell_memory(&probe), function).unwrap();
+        let factory_bytes = probe.live.load(SeqCst);
+        let mut buffer = SliceBuffer::new(vec![42], 0, 1);
+        probe.check_value_drop.store(confirmation_unwinds, SeqCst);
+        if confirmation_unwinds {
+            probe.panic_confirmation.store(2, SeqCst);
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                let mut input = UntypedWriteBuffer::new(&mut buffer);
+                drop(factory.invoke_accept(&mut input));
+            }));
+            assert!(result.is_err());
+            assert_eq!(probe.value_drops.load(SeqCst), 1);
+            assert_eq!(probe.live.load(SeqCst), factory_bytes);
+        } else {
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                let mut input = UntypedWriteBuffer::new(&mut buffer);
+                let future = factory.invoke_accept(&mut input).unwrap();
+                drop(future);
+            }));
+            assert!(result.is_err());
+            assert_eq!(probe.value_drops.load(SeqCst), 1);
+            assert_eq!(probe.live.load(SeqCst), factory_bytes);
+        }
+        assert_eq!(probe.requests.lock().unwrap()[1], exact);
+        probe.check_value_drop.store(false, SeqCst);
+        drop(factory);
+        assert_eq!(probe.live.load(SeqCst), 0);
+        assert_eq!(calls.load(SeqCst), 1);
+    }
+}
+
 #[test]
 fn producer_factory_pair_admission_precedes_builders_and_unused_refunds() {
     for refuse in [1, 2, 0] {
