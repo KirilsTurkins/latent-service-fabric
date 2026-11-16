@@ -2,6 +2,7 @@
 // applications select normal imports, never a transport/caller id/resource.
 export function createNodeNetModule(transport, Buffer, snapshotActive, target = globalThis) {
   const queue = target.queueMicrotask.bind(target);
+  const sameValue = Object.is;
   const setTimer = target.setTimeout.bind(target), clearTimer = target.clearTimeout.bind(target);
   let queuedBytes = 0, queuedRecords = 0;
   const maxQueuedBytes = 65536, maxQueuedRecords = 16, windowBytes = 16384;
@@ -65,7 +66,7 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
     return Buffer.from(data);
   }
   class Socket {
-    #token; #listeners = new Map(); #writes = [];
+    #token; #listeners = new Map(); #writes = []; #dataAdmission;
     #readBusy = false; #writeBusy = false; #connectBusy = false; #chunk; #quietRead = false;
     #progressing = false; #stopReady = false; #closeStarted = false; #nativeClosed = false;
     #cleanupFailed = false; #notificationQueued = false; #notificationDone = false;
@@ -142,8 +143,32 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       if (!['connect', 'ready', 'data', 'drain', 'end', 'finish', 'error', 'close', 'timeout'].includes(name) ||
           typeof listener !== 'function') throw error('ERR_INVALID_ARG_VALUE', 'listener');
       const rows = this.#listeners.get(name) || [];
-      rows.push({listener, once}); this.#listeners.set(name, rows);
-      if (name === 'data') this.resume();
+      const row = name === 'data'
+        ? {listener, once, admissionFailed: false, admissionFault: undefined}
+        : {listener, once};
+      rows.push(row); this.#listeners.set(name, rows);
+      if (name === 'data') {
+        const previous = this.#dataAdmission;
+        this.#dataAdmission = row;
+        try { this.resume(); }
+        catch (cause) {
+          if (row.admissionFailed && sameValue(row.admissionFault, cause)) {
+            // Only the built-in resume admission can be rolled back here.
+            // Preserve reentrant replacements and avoid allocating in refusal.
+            // A now-empty private array may remain as this socket's state.
+            for (let index = 0; index < rows.length; ++index) {
+              if (rows[index] !== row) continue;
+              for (let next = index + 1; next < rows.length; ++next) rows[next - 1] = rows[next];
+              --rows.length;
+              break;
+            }
+          }
+          throw cause;
+        } finally {
+          this.#dataAdmission = previous;
+          row.admissionFailed = false; row.admissionFault = undefined;
+        }
+      }
       return this;
     }
     off(name, listener) { return this.removeListener(name, listener); }
@@ -220,8 +245,22 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
     }
     pause() { this.#flowing = false; return this; }
     resume() {
-      this.#flowing = true;
-      queue(() => this.#owned(this.#onResume));
+      // A callback retained by an enqueue-then-throw implementation remains
+      // on its original queue but must not act after this call was refused.
+      let admitted = false;
+      try { queue(() => { if (admitted) this.#owned(this.#onResume); }); }
+      catch (cause) {
+        if (this.#dataAdmission) {
+          this.#dataAdmission.admissionFailed = true;
+          this.#dataAdmission.admissionFault = cause;
+        }
+        throw cause;
+      }
+      if (this.#dataAdmission) {
+        this.#dataAdmission.admissionFailed = false;
+        this.#dataAdmission.admissionFault = undefined;
+      }
+      this.#flowing = true; admitted = true;
       return this;
     }
     #onResume() {

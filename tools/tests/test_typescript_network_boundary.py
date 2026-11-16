@@ -247,7 +247,7 @@ function observe(Socket, event, scenario) {
  } else throw new Error('unknown event scenario');
  return {trace,left:socket.listenerCount(event)};
 }
-for(const event of ['ready','timeout','drain','connect']) {
+for(const event of ['ready','timeout','drain','connect','data']) {
  for(const scenario of ['duplicate-once-first','duplicate-once-last',
      'nested-earlier-listener','nested-same-function','duplicate-once-registrations']) {
   const f=fixture(), expected=observe(ReferenceSocket,event,scenario);
@@ -289,6 +289,143 @@ for(const order of [['on','once'],['once','on']])for(const method of ['off','rem
   return {calls,left:socket.listenerCount('ready')};
  }
  const f=fixture();assert.deepEqual(removed(f.net.Socket),removed(ReferenceSocket));f.transport.assertEmpty();
+}
+""")
+
+    def test_data_listener_job_refusal_preserves_ownership_and_reentry(self):
+        self.javascript(r"""
+import {Socket as ReferenceSocket} from 'node:net';
+function controlled(...faults) {
+ const fault=faults.length?faults[0]:Object.freeze({admission:'original'}),retained=[],calls=[];let mode='normal',reads=0,cancels=0,onQueue;
+ const t={...target(),queueMicrotask(callback){
+  if(mode==='before')throw fault;
+  if(mode==='after'){retained.push(callback);throw fault}
+  if(mode==='reenter'){retained.push(callback);onQueue();throw fault}
+  return queueMicrotask(callback);
+ }};
+ const native={connect(){calls.push('connect');return settled({})},read(){
+  ++reads;const logical=deferred(),ack=deferred();return {promise:logical.promise,borrowReleased:ack.promise,
+   cancel(){++cancels;logical.resolve(undefined);ack.resolve();return Promise.resolve()}}},
+  close(){calls.push('close');return settled({})}};
+ const transport=createNodeNetTransport(native,t,()=>({}));
+ const net=createNodeNetModule(transport,Buffer,()=>false,t);
+ return {fault,retained,calls,transport,net,get reads(){return reads},get cancels(){return cancels},
+  setMode(value){mode=value},reenter(callback){onQueue=callback;mode='reenter'}};
+}
+async function finish(f,socket) {
+ f.setMode('normal');const closed=deferred();socket.once('close',closed.resolve);socket.destroy();
+ await closed.promise;f.transport.assertEmpty();
+}
+for(const method of ['on','once','addListener'])for(const mode of ['before','after']) {
+ const f=controlled(),socket=new f.net.Socket(),connected=deferred();let delivered=0;
+ f.setMode(mode);
+ assert.throws(()=>socket[method]('data',()=>++delivered),error=>error===f.fault);
+ assert.equal(socket.listenerCount('data'),0,'refused listener must not remain published');
+ assert.equal(f.retained.length,Number(mode==='after'));
+ f.setMode('normal');socket.once('connect',connected.resolve).connect(32123,'127.0.0.1');
+ await connected.promise;await turn();assert.equal(f.reads,0);assert.equal(delivered,0);
+ // An adversarial enqueue-then-throw double still owns its one original job;
+ // executing it must not turn the failed admission into a read or callback.
+ for(const task of f.retained.splice(0))task();
+ await turn();assert.equal(f.reads,0);assert.equal(delivered,0);
+ await finish(f,socket);assert.deepEqual(f.calls,['connect','close']);
+}
+for(const mode of ['before','after']) {
+ const f=controlled(),socket=new f.net.Socket(),connected=deferred();
+ socket.pause();f.setMode(mode);assert.throws(()=>socket.resume(),error=>error===f.fault);
+ f.setMode('normal');socket.once('connect',connected.resolve).connect(32123,'127.0.0.1');
+ await connected.promise;await turn();assert.equal(f.reads,0);
+ for(const task of f.retained.splice(0))task();await turn();assert.equal(f.reads,0);
+ await finish(f,socket);assert.deepEqual(f.calls,['connect','close']);
+}
+for(const fault of [undefined,null,false,0,'']) {
+ const f=controlled(fault),socket=new f.net.Socket();let caught=false;
+ f.setMode('before');try{socket.on('data',()=>{})}catch(value){caught=true;assert.equal(value,fault)}
+ assert(caught);assert.equal(socket.listenerCount('data'),0);await finish(f,socket);
+}
+// Rollback uses the original private array without allocation or calling
+// mutable array helpers after the queue has refused the new job.
+{
+ const f=controlled(),socket=new f.net.Socket(),index=Array.prototype.indexOf,splice=Array.prototype.splice;
+ const replacement=Object.freeze({wrongFailure:true});let caught=false,original;
+ f.reenter(()=>{Array.prototype.indexOf=()=>{throw replacement};Array.prototype.splice=()=>{throw replacement}});
+ try{socket.on('data',()=>{})}catch(value){caught=true;original=value}
+ finally{Array.prototype.indexOf=index;Array.prototype.splice=splice}
+ assert(caught);assert.equal(original,f.fault);assert.equal(socket.listenerCount('data'),0);
+ for(const task of f.retained.splice(0))task();f.setMode('normal');await finish(f,socket);
+}
+// An existing paused data listener survives refusal; only the attempted row
+// is removed and no extra read is started. A prior admitted job may still run.
+{
+ const f=controlled(),socket=new f.net.Socket(),connected=deferred(),events=[];
+ socket.on('data',value=>events.push('old:'+value));socket.pause();
+ f.setMode('after');assert.throws(()=>socket.once('data',()=>events.push('new')),error=>error===f.fault);
+ assert.equal(socket.listenerCount('data'),1);f.setMode('normal');
+ socket.once('connect',connected.resolve).connect(32123,'127.0.0.1');await connected.promise;await turn();
+ for(const task of f.retained.splice(0))task();await turn();assert.equal(f.reads,0);
+ socket.emit('data','manual');assert.deepEqual(events,['old:manual']);await finish(f,socket);
+}
+// Refusing an additional listener must not pause an already-flowing socket or
+// lose the original read/cancellation acknowledgements used by close.
+{
+ const f=controlled(),socket=new f.net.Socket(),connected=deferred(),events=[];
+ socket.on('data',value=>events.push('old:'+value));f.setMode('after');
+ assert.throws(()=>socket.once('data',()=>events.push('new')),error=>error===f.fault);
+ assert.equal(socket.listenerCount('data'),1);f.setMode('normal');
+ socket.once('connect',connected.resolve).connect(32123,'127.0.0.1');await connected.promise;await turn();
+ assert.equal(f.reads,1);for(const task of f.retained.splice(0))task();await turn();assert.equal(f.reads,1);
+ await finish(f,socket);assert.equal(f.cancels,1);assert.deepEqual(events,[]);
+}
+// Node keeps a listener if an application-supplied resume override throws.
+function overridden(Socket) {
+ const socket=new Socket(),fault={},listener=()=>{};socket.resume=()=>{throw fault};let caught;
+ try{socket.on('data',listener)}catch(error){caught=error}
+ const result={same:caught===fault,count:socket.listenerCount('data')};socket.destroy();return result;
+}
+{
+ const f=controlled();assert.deepEqual(overridden(f.net.Socket),overridden(ReferenceSocket));
+ await turn();f.transport.assertEmpty();
+}
+// A forwarding override does not hide refusal by the built-in resume. If the
+// override replaces that exception, it owns the exception and the registration.
+{
+ const f=controlled();class Wrapped extends f.net.Socket{resume(){return super.resume()}}
+ const socket=new Wrapped(),connected=deferred();f.setMode('after');
+ assert.throws(()=>socket.on('data',()=>{}),error=>error===f.fault);
+ assert.equal(socket.listenerCount('data'),0);f.setMode('normal');
+ socket.once('connect',connected.resolve).connect(32123,'127.0.0.1');await connected.promise;await turn();
+ for(const task of f.retained.splice(0))task();await turn();assert.equal(f.reads,0);await finish(f,socket);
+}
+{
+ const f=controlled(),replacement={override:true};
+ class Wrapped extends f.net.Socket{resume(){try{super.resume()}catch{}throw replacement}}
+ const socket=new Wrapped();f.setMode('before');
+ assert.throws(()=>socket.on('data',()=>{}),error=>error===replacement);
+ assert.equal(socket.listenerCount('data'),1);await finish(f,socket);
+}
+{
+ const f=controlled();class Wrapped extends f.net.Socket{resume(){
+  let refusal;try{super.resume()}catch(error){refusal=error}
+  f.setMode('normal');super.resume();throw refusal;
+ }}
+ const socket=new Wrapped(),connected=deferred();f.setMode('before');
+ assert.throws(()=>socket.on('data',()=>{}),error=>error===f.fault);
+ assert.equal(socket.listenerCount('data'),1);
+ socket.once('connect',connected.resolve).connect(32123,'127.0.0.1');await connected.promise;await turn();
+ assert.equal(f.reads,1);await finish(f,socket);assert.equal(f.cancels,1);
+}
+// Reentry may replace the entire listener array before a refused built-in
+// resume returns. Roll back the exact old row, never the replacement array.
+{
+ const f=controlled(),socket=new f.net.Socket(),events=[];
+ f.reenter(()=>{
+  socket.removeAllListeners('data');socket.resume=()=>socket;
+  socket.on('data',value=>events.push('replacement:'+value));delete socket.resume;
+ });
+ assert.throws(()=>socket.on('data',()=>events.push('refused')),error=>error===f.fault);
+ assert.equal(socket.listenerCount('data'),1);socket.emit('data','manual');
+ assert.deepEqual(events,['replacement:manual']);
+ for(const task of f.retained.splice(0))task();f.setMode('normal');await finish(f,socket);
 }
 """)
 
