@@ -175,6 +175,11 @@ Standard output and error use descriptors 1 and 2 and the existing bounded,
 UTF-8 log implementation; socket descriptors remain 3 through 10. Selected-source
 `write` routes those standard descriptors to that implementation and socket
 descriptors to the stream provider; libc `close` uses the same bounded table.
+Each stdio write submits at most 256 UTF-8 bytes in one log record. Longer
+writes return the accepted prefix length at a character boundary, so callers
+can continue with the remaining bytes; each accepted record uses its original
+log budget. A rejected record reports no bytes written. An incomplete UTF-8
+scalar at the end of the supplied input is not buffered across calls.
 The four selected libc stdio calls are linked within the component core, with
 no ambient WASI filesystem imports. Selected-source `read` of stdin returns
 `EBADF`; an unchanged libc `fread(stdin, ...)` requires the unsupported preview1

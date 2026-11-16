@@ -1,6 +1,7 @@
 """Captured logging profile authority and ordinary outside-library ownership."""
 import json
 from pathlib import Path
+import re
 import tempfile
 import unittest
 
@@ -15,6 +16,16 @@ class StandardLogging(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(); self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
+
+    def test_stdio_record_bound_fits_the_actual_log_host(self):
+        guest = (project.ROOT / 'sdk/c-guest/src/standard-stdio.c').read_text()
+        host = (project.ROOT / 'crates/latent-wasmtime/src/host/logging.rs').read_text()
+        guest_bound = re.search(r'#define LSF_STDIO_MAX_BYTES\s+(\d+)u', guest)
+        host_bound = re.search(r'const MAX_LOG_MESSAGE_BYTES: usize\s*=\s*(\d+);', host)
+        self.assertIsNotNone(guest_bound)
+        self.assertIsNotNone(host_bound)
+        self.assertGreaterEqual(int(guest_bound.group(1)), 4)
+        self.assertLessEqual(int(guest_bound.group(1)), int(host_bound.group(1)))
 
     def test_profile_derives_only_logging_without_granting_clock_entropy_or_files(self):
         root = project.create(self.root / 'project', 'greeting')
