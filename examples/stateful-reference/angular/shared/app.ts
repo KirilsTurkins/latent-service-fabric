@@ -45,7 +45,7 @@ export const PAGE = new InjectionToken<Page>('order-draft-page', {
       <button id="recover-draft" type="button" (click)="recover()" [disabled]="busy() || !originalRetained()">Recover original command</button>
       <button id="query-draft" type="button" (click)="refresh()" [disabled]="busy()">Read current draft</button>
       <button id="check-effects" type="button" (click)="refreshEffects()" [disabled]="busy() || !originalRetained() || effectIds().length === 0">Check effect status</button>
-      <button id="retry-aborted-draft" type="button" (click)="retryAborted()" [disabled]="busy() || status() !== 'aborted'">Retry proven abort</button>
+      <button id="retry-aborted-draft" type="button" (click)="retryAborted()" [disabled]="busy() || !canRetryAborted()">Retry proven abort</button>
       <button id="finish-original-draft" type="button" (click)="finishOriginal()" [disabled]="busy() || !terminal()">Start another edit</button>
     </div>
   </main>`,
@@ -72,6 +72,7 @@ export class App {
     }
   }
   terminal() { return this.client?.canFinishOriginal() ?? false; }
+  canRetryAborted() { return this.client?.canRetryAborted() ?? false; }
   chooseUnits(event: Event) {
     const value = Number((event.target as HTMLInputElement).value);
     if (Number.isInteger(value) && value >= 0 && value <= 10000) this.chosenUnits.set(value);

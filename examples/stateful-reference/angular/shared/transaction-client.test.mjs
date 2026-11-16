@@ -219,6 +219,7 @@ test('a proven abort can be explicitly finished without retry', async () => {
   app.prepare('demo', '0', 3);
   await app.submit();
   assert.equal(app.canFinishOriginal(), true);
+  assert.equal(app.canRetryAborted(), true);
   app.finishOriginal();
   assert.equal(app.status, 'idle');
   assert.equal(app.pending, undefined);
@@ -234,6 +235,7 @@ test('an abort without its original fence cannot be finished or retried', async 
   const original = app.prepare('demo', '0', 3);
   await app.submit();
   assert.equal(app.canFinishOriginal(), false);
+  assert.equal(app.canRetryAborted(), false);
   assert.throws(() => app.finishOriginal(), /original-command-not-terminal/);
   await assert.rejects(app.retryAborted(), /affirmative-original-abort-proof-required/);
   assert.equal(app.pending.key, original);

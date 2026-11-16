@@ -299,10 +299,12 @@ export class DraftClient {
       throw new Error('foreign-abort-proof');
     return proof;
   }
+  canRetryAborted(): boolean {
+    try { this.abortProof(); return true; } catch { return false; }
+  }
   canFinishOriginal(): boolean {
     if (!this.last) return false;
-    if (['committed', 'rejected'].includes(this.last.disposition)) return true;
-    try { this.abortProof(); return true; } catch { return false; }
+    return ['committed', 'rejected'].includes(this.last.disposition) || this.canRetryAborted();
   }
   async retryAborted(): Promise<Reply> {
     const proof = this.abortProof();
