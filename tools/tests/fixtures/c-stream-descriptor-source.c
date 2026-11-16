@@ -116,6 +116,7 @@ int original_poll(struct pollfd *fds,nfds_t count,int timeout) {
 }
 
 #define CHECK(value) do { if(!(value))return __LINE__; } while(0)
+_Static_assert(MSG_NOSIGNAL == 0x4000, "unexpected stream profile flag");
 static struct sockaddr_in address(void) {
     struct sockaddr_in result={.sin_family=AF_INET};
     unsigned char octets[]={127,0,0,1},port[]={0x1f,0x90};
@@ -155,6 +156,36 @@ __attribute__((export_name("descriptor_controls"))) int descriptor_controls(void
     CHECK(diagnostic.code==LATENT_NETWORK_STREAMS_ERROR_CODE_UNCERTAIN && diagnostic.accepted_prefix_bytes==1);
     CHECK(__lsf_c_net_send(current_fd,"xyz",3,0)==-1 && lsf_test_errno==EIO);
     CHECK(__lsf_c_net_close(current_fd)==0 && close_calls==1);
+    return 0;
+}
+
+__attribute__((export_name("send_nosignal_controls"))) int send_nosignal_controls(void) {
+    mode=0;allow_host=1;current_fd=__lsf_c_net_socket(AF_INET,SOCK_STREAM,0);
+    struct sockaddr_in peer=address();CHECK(__lsf_c_net_connect(current_fd,(struct sockaddr *)&peer,sizeof(peer))==0);
+    int before=host_calls;
+    CHECK(__lsf_c_net_send(current_fd,"xyz",3,0x40)==-1 && lsf_test_errno==ENOTSUP);
+    CHECK(__lsf_c_net_send(current_fd,"xyz",3,MSG_NOSIGNAL|0x40)==-1 && lsf_test_errno==ENOTSUP);
+    CHECK(__lsf_c_net_send(current_fd,"xyz",3,-1)==-1 && lsf_test_errno==ENOTSUP);
+    CHECK(host_calls==before);
+    struct lsf_stream_error diagnostic;
+    CHECK(lsf_stream_last_error(current_fd,&diagnostic)==-1 && lsf_test_errno==ENOENT);
+    CHECK(send(current_fd,"xyz",3,MSG_NOSIGNAL)==2 && reentry_ok);
+    CHECK(host_calls==before+1);
+    mode=1;CHECK(__lsf_c_net_send(current_fd,"xyz",3,MSG_NOSIGNAL)==1);
+    CHECK(lsf_stream_last_error(current_fd,&diagnostic)==0 && diagnostic.may_have_applied);
+    CHECK(diagnostic.code==LATENT_NETWORK_STREAMS_ERROR_CODE_UNCERTAIN && diagnostic.accepted_prefix_bytes==1);
+    before=host_calls;
+    CHECK(__lsf_c_net_send(current_fd,"xyz",3,MSG_NOSIGNAL)==-1 && lsf_test_errno==EIO);
+    CHECK(host_calls==before && __lsf_c_net_close(current_fd)==0);
+
+    mode=0;current_fd=__lsf_c_net_socket(AF_INET,SOCK_STREAM,0);
+    CHECK(__lsf_c_net_connect(current_fd,(struct sockaddr *)&peer,sizeof(peer))==0);
+    CHECK(__lsf_c_net_shutdown(current_fd,SHUT_WR)==0);
+    before=host_calls;
+    CHECK(__lsf_c_net_send(current_fd,"xyz",3,MSG_NOSIGNAL)==-1 && lsf_test_errno==EPIPE);
+    CHECK(__lsf_c_net_send(current_fd,NULL,0,MSG_NOSIGNAL)==-1 && lsf_test_errno==EPIPE);
+    CHECK(host_calls==before && __lsf_c_net_close(current_fd)==0);
+    CHECK(__lsf_c_net_send(current_fd,"xyz",3,MSG_NOSIGNAL)==-1 && lsf_test_errno==EBADF);
     return 0;
 }
 

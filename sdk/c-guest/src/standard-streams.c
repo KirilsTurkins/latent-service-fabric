@@ -196,7 +196,8 @@ int __lsf_c_net_bind(int fd, const struct sockaddr *address, socklen_t length) {
 ssize_t __lsf_c_net_send(int fd, const void *buffer, size_t length, int flags) {
     struct descriptor *slot = ready_descriptor(fd);
     if (!slot) return -1;
-    if (flags != 0) return fail(ENOTSUP);
+    /* This adapter never raises SIGPIPE; NOSIGNAL needs no new action. */
+    if (flags & ~MSG_NOSIGNAL) return fail(ENOTSUP);
     if (slot->write_shut) return fail(EPIPE);
     if (!length) return 0;
     if (!buffer) return fail(EINVAL);
