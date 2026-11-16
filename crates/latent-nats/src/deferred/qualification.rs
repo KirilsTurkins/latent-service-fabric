@@ -123,6 +123,8 @@ struct StreamConfig<'a> {
     max_msg_size: i32,
     duplicate_window: u64,
     #[serde(default)]
+    no_ack: bool,
+    #[serde(default)]
     deny_delete: bool,
     #[serde(default)]
     deny_purge: bool,
@@ -165,6 +167,7 @@ pub(super) fn validate_response(
         &mapping.stream,
         &expected,
         mapping.duplicate_window_millis,
+        true,
     )
 }
 
@@ -174,6 +177,7 @@ pub(crate) fn validate_stream_response(
     name: &str,
     expected: &[&str],
     duplicate_window_millis: u64,
+    require_publish_ack: bool,
 ) -> Result<()> {
     protocol::guard(bytes)?;
     let info: StreamInfo<'_> =
@@ -206,6 +210,7 @@ pub(crate) fn validate_stream_response(
         || stream.max_age != qualification.maximum_age_millis * 1_000_000
         || u32::try_from(stream.max_msg_size).ok() != Some(qualification.maximum_message_bytes)
         || stream.duplicate_window != duplicate_window_millis * 1_000_000
+        || (require_publish_ack && stream.no_ack)
         || !stream.deny_delete
         || !stream.deny_purge
         || stream.sealed

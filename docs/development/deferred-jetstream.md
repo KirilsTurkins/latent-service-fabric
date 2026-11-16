@@ -34,7 +34,7 @@ A trusted `JetStreamQualification` binds format version 1, exact TLS INFO
 software version, canonical UTC `stream.created`, bounded message/byte/age/size
 limits and the configured duplicate window. Before every business publication,
 the adapter queries the exact stream through the same authenticated connection.
-Only file storage with the default persistence mode, one replica, limits retention and discard-new are supported. Asynchronous persistence is rejected because the broker can acknowledge before flushing.
+Only file storage with the default persistence mode, one replica, limits retention and discard-new are supported. Asynchronous persistence is rejected because the broker can acknowledge before flushing, and publish acknowledgements must be enabled.
 Delete/purge are disabled; age eviction must cover the duplicate window. A per-subject message limit must be disabled or greater than the global message limit, so it cannot evict accepted history before discard-new applies.
 Rollups, transforms, republish, mirrors/sources, per-message TTL, atomic batch,
 counter and scheduled-message features are rejected. Every qualified field and

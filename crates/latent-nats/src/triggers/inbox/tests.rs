@@ -236,9 +236,13 @@ fn literal_input_stream_requires_original_incarnation_and_protected_finite_histo
             &binding.stream,
             &[&binding.filter_subject],
             selected.duplicate_window_millis,
+            false,
         )
     };
     check(&response).unwrap();
+    let mut without_publish_ack = response.clone();
+    without_publish_ack["config"]["no_ack"] = json!(true);
+    check(&without_publish_ack).unwrap();
     for (field, value) in [
         ("subjects", json!(["orders.>"])),
         ("storage", json!("memory")),

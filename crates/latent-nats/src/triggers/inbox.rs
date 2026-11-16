@@ -254,6 +254,7 @@ pub(super) async fn qualify(
         &binding.stream,
         &[&binding.filter_subject],
         selected.duplicate_window_millis,
+        false,
     )?;
     Ok(QualifiedStream {
         binding: binding_identity(binding)?,

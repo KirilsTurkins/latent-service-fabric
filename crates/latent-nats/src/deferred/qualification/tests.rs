@@ -83,6 +83,7 @@ fn qualified_stream_rejects_recreation_eviction_retention_transform_and_window_c
         ("max_age", json!(1)),
         ("max_msg_size", json!(32768)),
         ("duplicate_window", json!(60_000_000_000_u64)),
+        ("no_ack", json!(true)),
         ("deny_delete", json!(false)),
         ("deny_purge", json!(false)),
         ("sealed", json!(true)),
