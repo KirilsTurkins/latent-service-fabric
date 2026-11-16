@@ -218,6 +218,11 @@ export class DraftClient {
   private apply(reply: FetchReply, requestedDraft: string): Reply {
     const {status, envelope: response} = reply;
     if (response.disposition === 'effect') throw new Error('unexpected-effect-response');
+    const allowedStatus: Record<Exclude<Disposition, 'effect'>, number[]> = {
+      query: [200, 422], 'in-progress': [202], 'recovery-required': [503],
+      committed: [200], rejected: [422], aborted: [409],
+    };
+    if (!allowedStatus[response.disposition].includes(status)) throw new Error('inconsistent-transaction-status');
     const value = response.result ? projection(response.result) : undefined;
     if (value && !('error' in value) && value.draftId !== requestedDraft) throw new Error('foreign-draft-response');
     if (response.disposition !== 'query') {

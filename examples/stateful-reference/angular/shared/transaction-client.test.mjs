@@ -104,6 +104,16 @@ test('effect status uses the original command and accepts only its bounded effec
   await assert.rejects(app.effectStatus(id), /invalid-effect-status/);
 });
 
+test('an inconsistent HTTP status cannot install a terminal command result', async () => {
+  const app = client(async () => new Response(await response('committed').text(), {status: 503}));
+  const original = app.prepare('demo', '0', 3);
+  await assert.rejects(app.submit(), /inconsistent-transaction-status/);
+  assert.equal(app.status, 'uncertain');
+  assert.equal(app.pending.key, original);
+  assert.equal(app.view, undefined);
+  assert.throws(() => app.finishOriginal(), /original-command-not-terminal/);
+});
+
 test('uncertain delivery retains the original body, precondition and key and only recovery is sent', async () => {
   const requests = [];
   const app = client(async (url, options) => {
