@@ -473,10 +473,11 @@ class ScheduledComparisonControl(unittest.TestCase):
     def receipt(stage):
         if stage.endswith('-compile'): return ''
         values = {
-            'scheduled-compare-jdk': 'SCHEDULED_COMPARE_REFERENCE PASS close;fifo;maximum;transitive;retired;tie-jdk-global-order',
-            'scheduled-compare-source': 'SCHEDULED_COMPARE_REFERENCE PASS close;fifo;maximum;transitive;retired;tie-source-pool-order',
-            'scheduled-compare-clock': 'SCHEDULED_COMPARE_CLOCK PASS close;tie-transitive;fifo;maximum;overdue;wrap;retired;unsigned;owners;rollback',
+            'scheduled-compare-jdk': 'SCHEDULED_COMPARE_REFERENCE PASS close;fifo;maximum;transitive;retired;global-submission-order;reentrant-factory',
+            'scheduled-compare-source': 'SCHEDULED_COMPARE_REFERENCE PASS close;fifo;maximum;transitive;retired;global-submission-order;reentrant-factory',
+            'scheduled-compare-clock': 'SCHEDULED_COMPARE_CLOCK PASS close;tie-transitive;fifo;maximum;overdue;wrap;retired;unsigned;periodic;reentrant;same-pool-reentrant;overflow;owners;rollback',
             'scheduled-compare-key-uncertain': 'SCHEDULED_COMPARE_KEY_UNCERTAIN PASS original-owner-held;single-attempt',
+            'scheduled-compare-overflow-uncertain': 'SCHEDULED_COMPARE_OVERFLOW_UNCERTAIN PASS original-owner-held;single-attempt',
         }
         return values[stage]
 
@@ -497,10 +498,11 @@ class ScheduledComparisonControl(unittest.TestCase):
         self.assertEqual([stage for stage, _ in calls], [
             'scheduled-compare-jdk-compile', 'scheduled-compare-jdk',
             'scheduled-compare-source-compile', 'scheduled-compare-source',
-            'scheduled-compare-clock-compile', 'scheduled-compare-clock', 'scheduled-compare-key-uncertain'])
+            'scheduled-compare-clock-compile', 'scheduled-compare-clock', 'scheduled-compare-key-uncertain',
+            'scheduled-compare-overflow-uncertain'])
         self.assertIn('--add-opens=java.base/java.util.concurrent=ALL-UNNAMED', calls[1][1])
         self.assertIn(private / 'ScheduledCompareClockControl.java', calls[4][1])
-        self.assertEqual(report['equalCrossPoolDeadlines'], 'SDK-pool-owner-order-JDK-global-task-order')
+        self.assertEqual(report['equalCrossPoolDeadlines'], 'activation-queued-work-admission-order')
         self.assertEqual(report['clockWrapAndOwners'], 'synthetic-host-ledger-only')
         self.assertFalse(report['componentExecutionPerformed'])
         self.assertFalse(report['actualGuestBindingsUsed'])
@@ -508,7 +510,7 @@ class ScheduledComparisonControl(unittest.TestCase):
     def test_missing_comparison_receipts_fail_closed(self):
         ports, private = self.sources()
         for missing in ('scheduled-compare-jdk', 'scheduled-compare-source', 'scheduled-compare-clock',
-                        'scheduled-compare-key-uncertain'):
+                        'scheduled-compare-key-uncertain', 'scheduled-compare-overflow-uncertain'):
             with self.subTest(stage=missing), tempfile.TemporaryDirectory() as temporary:
                 calls = []
                 def run(stage, *args):

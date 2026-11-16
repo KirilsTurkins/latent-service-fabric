@@ -2,6 +2,8 @@ import java.lang.reflect.Field;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /** JDK and real source comparison; reflection controls only the exact test deadlines. */
 public final class ScheduledCompareReferenceControl {
@@ -18,6 +20,29 @@ public final class ScheduledCompareReferenceControl {
     }
     private static void before(ScheduledFuture<?> first, ScheduledFuture<?> second, String reason) {
         require(first.compareTo(second) < 0 && second.compareTo(first) > 0, reason);
+    }
+    private static void reentrantFactory(boolean source) throws Exception {
+        var poolRef = new AtomicReference<ScheduledThreadPoolExecutor>();
+        var nested = new AtomicReference<ScheduledFuture<?>>();
+        var once = new AtomicBoolean();
+        var pool = new ScheduledThreadPoolExecutor(1, work -> {
+            if (once.compareAndSet(false, true))
+                nested.set(poolRef.get().schedule(() -> {}, 1, TimeUnit.HOURS));
+            return new Thread(work);
+        });
+        poolRef.set(pool);
+        try {
+            synchronized (pool) {
+                var outer = pool.schedule(() -> {}, 1, TimeUnit.HOURS);
+                require(nested.get() != null, "factory-reentry-submitted");
+                long target = System.nanoTime() + TimeUnit.HOURS.toNanos(1);
+                deadline(outer, pool, target, source); deadline(nested.get(), pool, target, source);
+                before(outer, nested.get(), "factory-reentry-fifo");
+                require(outer.cancel(false) && nested.get().cancel(false), "factory-reentry-cancel");
+            }
+        } finally {
+            pool.shutdownNow(); require(pool.awaitTermination(5, TimeUnit.SECONDS), "factory-reentry-retire");
+        }
     }
     public static void main(String[] args) throws Exception {
         boolean source = args.length == 1 && args[0].equals("source");
@@ -38,8 +63,7 @@ public final class ScheduledCompareReferenceControl {
                 before(a, samePool, "same-pool-fifo-tie");
                 deadline(b, right, target, source);
                 before(a, b, "cross-pool-tie");
-                if (source) before(samePool, b, "source-pool-tie-transitive");
-                else before(b, samePool, "jdk-global-submission-tie");
+                before(b, samePool, "global-submission-tie");
                 saved[0] = a; saved[1] = b; saved[2] = samePool;
                 var maximum = right.schedule(() -> {}, Long.MAX_VALUE, TimeUnit.NANOSECONDS);
                 before(a, maximum, "near-before-maximum");
@@ -51,8 +75,8 @@ public final class ScheduledCompareReferenceControl {
         }
         // The Executor lease has settled; retained futures still have stable keys.
         before(saved[0], saved[1], "retired-cross-pool-tie");
-        if (source) before(saved[2], saved[1], "retired-source-pool-order");
-        else before(saved[1], saved[2], "retired-jdk-global-order");
-        System.out.println("SCHEDULED_COMPARE_REFERENCE PASS close;fifo;maximum;transitive;retired;tie-" + (source ? "source-pool-order" : "jdk-global-order"));
+        before(saved[1], saved[2], "retired-global-order");
+        reentrantFactory(source);
+        System.out.println("SCHEDULED_COMPARE_REFERENCE PASS close;fifo;maximum;transitive;retired;global-submission-order;reentrant-factory");
     }
 }

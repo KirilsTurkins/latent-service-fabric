@@ -1038,7 +1038,7 @@ def scheduled_compare_control(compiler: Compiler, output: Path, ports: list[Path
     compiler.run('scheduled-compare-jdk-compile', 'javac', '-proc:none', '--release', '25', '-d', jdk, control)
     result = compiler.run('scheduled-compare-jdk', 'java', '--add-opens=java.base/java.util.concurrent=ALL-UNNAMED',
                           '-Xmx256m', '-cp', jdk, 'ScheduledCompareReferenceControl', 'jdk').strip()
-    if result != 'SCHEDULED_COMPARE_REFERENCE PASS close;fifo;maximum;transitive;retired;tie-jdk-global-order':
+    if result != 'SCHEDULED_COMPARE_REFERENCE PASS close;fifo;maximum;transitive;retired;global-submission-order;reentrant-factory':
         raise ValueError('Java scheduled comparison reference did not complete')
 
     source = output / 'scheduled-compare-source'; source.mkdir()
@@ -1052,7 +1052,7 @@ def scheduled_compare_control(compiler: Compiler, output: Path, ports: list[Path
                  selected, *ports, bindings, activation)
     result = compiler.run('scheduled-compare-source', 'java', '-Xmx256m', '-cp', source,
                           'ScheduledCompareReferenceControl', 'source').strip()
-    if result != 'SCHEDULED_COMPARE_REFERENCE PASS close;fifo;maximum;transitive;retired;tie-source-pool-order':
+    if result != 'SCHEDULED_COMPARE_REFERENCE PASS close;fifo;maximum;transitive;retired;global-submission-order;reentrant-factory':
         raise ValueError('Java scheduled comparison source did not complete')
 
     timer = next(path for path in ports if path.name == 'ScheduledThreadPoolExecutor.java')
@@ -1070,14 +1070,18 @@ def scheduled_compare_control(compiler: Compiler, output: Path, ports: list[Path
                  *[path for path in ports if path != timer], mapped, fake, clock_control, bindings, activation)
     result = compiler.run('scheduled-compare-clock', 'java', '-Xmx256m', '-cp', clock,
                           'ScheduledCompareClockControl').strip()
-    if result != 'SCHEDULED_COMPARE_CLOCK PASS close;tie-transitive;fifo;maximum;overdue;wrap;retired;unsigned;owners;rollback':
+    if result != 'SCHEDULED_COMPARE_CLOCK PASS close;tie-transitive;fifo;maximum;overdue;wrap;retired;unsigned;periodic;reentrant;same-pool-reentrant;overflow;owners;rollback':
         raise ValueError('Java scheduled comparison clock control did not complete')
     result = compiler.run('scheduled-compare-key-uncertain', 'java', '-Xmx256m', '-cp', clock,
                           'ScheduledCompareClockControl', 'uncertain').strip()
     if result != 'SCHEDULED_COMPARE_KEY_UNCERTAIN PASS original-owner-held;single-attempt':
         raise ValueError('Java scheduled comparison key custody control did not complete')
+    result = compiler.run('scheduled-compare-overflow-uncertain', 'java', '-Xmx256m', '-cp', clock,
+                          'ScheduledCompareClockControl', 'overflow-uncertain').strip()
+    if result != 'SCHEDULED_COMPARE_OVERFLOW_UNCERTAIN PASS original-owner-held;single-attempt':
+        raise ValueError('Java scheduled comparison overflow custody control did not complete')
     return {'status': 'JDK-and-SDK-source-controls-passed',
-            'equalCrossPoolDeadlines': 'SDK-pool-owner-order-JDK-global-task-order',
+            'equalCrossPoolDeadlines': 'activation-queued-work-admission-order',
             'clockWrapAndOwners': 'synthetic-host-ledger-only',
             'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
 
