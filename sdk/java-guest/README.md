@@ -186,6 +186,12 @@ If a manually run periodic future reaches a throwing factory while requeueing,
 its new occurrence and advanced deadline remain owned. The SDK returns each
 owned occurrence from `shutdownNow()`. In the tested JDK 25 duplicate-reference
 case, that call returned fewer entries than the queue held.
+Fixed and cached managed pools also count an in-progress factory call toward
+their worker limit. A nested task already accepted by such a pool keeps its
+original owners if the outer factory fails, until it runs or is withdrawn.
+Managed-pool factories that return `null` still reject the submission; the
+tested JDK retains it. A reentrant `shutdownNow()` can also withdraw an outer
+SDK submission that then returns, while the tested JDK rejects it.
 Compiler progress checks distinguish suspendable checkpoints from finite
 nonsuspendable loops; source that cannot establish bounded progress is rejected.
 GC roots across parked continuations have a separate

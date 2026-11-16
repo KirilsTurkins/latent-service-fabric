@@ -2,10 +2,15 @@ import dev.latent.generated.Bindings;
 import dev.latent.generated.Bindings.LatentRuntimeActivationOwnerKind;
 import dev.latent.guest.Option;
 import dev.latent.guest.runtime.Activation;
+import dev.latent.guest.runtime.concurrent.Executors;
 import dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -349,6 +354,54 @@ public final class ScheduledNullFactoryActivationControl {
         invoke("retireIdlePools");
         finishRoot(root);
     }
+    private static void managedFactoryRetirement(String mode) throws Exception {
+        Object root = enter();
+        AtomicReference<ExecutorService> selected = new AtomicReference<>();
+        AtomicReference<List<Runnable>> removed = new AtomicReference<>();
+        AtomicReference<Thread> worker = new AtomicReference<>();
+        var failure = new IllegalStateException("managed-factory-after-shutdown");
+        var pool = Executors.newFixedThreadPool(1, target -> {
+            var current = selected.get();
+            removed.set(current.shutdownNow());
+            require(removed.get().size() == 1, "managed-withdrawal-count");
+            held(0, 0, 1);
+            try {
+                closeRoot();
+                require((boolean)invoke("pending") && !(boolean)invoke("retireIdlePools")
+                    && ((Activation.ManagedPool)current).hasPendingWork()
+                    && !((Activation.ManagedPool)current).isRetired(), "managed-start-not-fenced");
+            } catch (Exception error) { throw new AssertionError(error); }
+            if (mode.equals("throw")) throw failure;
+            if (mode.equals("null")) return null;
+            // A host JVM does not install the TeaVM Thread hooks itself.
+            Thread thread = new Thread(() -> {
+                try { Activation.starting(Thread.currentThread()); target.run(); }
+                finally { Activation.finished(Thread.currentThread()); }
+            });
+            worker.set(thread); return thread;
+        });
+        selected.set(pool);
+        if (mode.equals("thread")) pool.submit(() -> { throw new AssertionError("withdrawn-managed-ran"); });
+        else {
+            try { pool.submit(() -> { throw new AssertionError("withdrawn-managed-ran"); });
+                throw new AssertionError("managed-factory-failure-missing"); }
+            catch (RuntimeException error) {
+                require(mode.equals("null") ? error instanceof RejectedExecutionException : error == failure,
+                    "wrong-managed-factory-failure");
+            }
+        }
+        require(pool.awaitTermination(5, TimeUnit.SECONDS), "managed-pool-not-retired");
+        if (worker.get() != null) {
+            worker.get().join(5000);
+            require(!worker.get().isAlive() && owners(LatentRuntimeActivationOwnerKind.ManagedIdleWorker) == 0,
+                "managed-worker-owner-not-retired");
+        }
+        held(0, 0, 0);
+        var task = (Future<?>)removed.get().get(0);
+        require(!task.isDone() && task.cancel(false), "managed-withdrawn-future-not-cancelled");
+        invoke("retireIdlePools");
+        finishRoot(root);
+    }
     public static void main(String[] args) throws Exception {
         String mode = args[0];
         if (mode.equals("scan-mutation") || mode.equals("retirement-scan-mutation"))
@@ -360,6 +413,9 @@ public final class ScheduledNullFactoryActivationControl {
         else if (mode.equals("worker-admission-denied")) workerAdmissionDenied();
         else if (mode.equals("manual-factory-throw") || mode.equals("manual-worker-admission-denied"))
             manualFactoryFailure(mode.equals("manual-worker-admission-denied"));
+        else if (mode.equals("managed-factory-thread") || mode.equals("managed-factory-null")
+                || mode.equals("managed-factory-throw"))
+            managedFactoryRetirement(mode.substring("managed-factory-".length()));
         else if (mode.equals("recovery") || mode.equals("reentrant")) recovery(mode.equals("reentrant"));
         else if (mode.equals("cancel") || mode.equals("remove") || mode.equals("factory-throw") || mode.equals("wait-denied")
                 || mode.equals("settle-result-denied") || mode.equals("settle-queue-denied")) noWorker(mode);
