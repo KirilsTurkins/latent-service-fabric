@@ -20,7 +20,7 @@
 
 #include <lsf/standard-streams.h>
 
-enum { FIRST_FD = 3, SLOT_COUNT = 8, MAX_TRANSFER = 16384 };
+enum { FIRST_FD = 3, SLOT_COUNT = 8, MAX_TRANSFER = 16384, MAX_INACTIVE_POLL_FDS = 64 };
 
 /* Static storage belongs to this component instance's charged linear memory.
  * A busy slot cannot be closed or reused across a suspended canonical call.
@@ -373,9 +373,16 @@ int __lsf_c_net_pselect(int nfds, fd_set *readfds, fd_set *writefds,
  */
 extern int net_original_poll(struct pollfd *, nfds_t, int) __asm__("poll");
 int __lsf_c_net_poll(struct pollfd *fds, nfds_t count, int timeout) {
-    if (count > SLOT_COUNT) return fail(ENOTSUP);
+    if (count > MAX_INACTIVE_POLL_FDS) return fail(ENOTSUP);
     if (count && !fds) return fail(EINVAL);
     for (nfds_t index = 0; index < count; ++index)
         if (fds[index].fd >= 0) return fail(ENOTSUP);
-    return net_original_poll(fds, count, timeout);
+    if (count <= SLOT_COUNT) return net_original_poll(fds, count, timeout);
+    /* All entries are ignored descriptors. Reuse one original timer wait
+     * without growing libc's per-entry subscription array; publish cleared
+     * revents only after the wait succeeds. */
+    int result = net_original_poll(NULL, 0, timeout);
+    if (result != 0) return result;
+    for (nfds_t index = 0; index < count; ++index) fds[index].revents = 0;
+    return 0;
 }

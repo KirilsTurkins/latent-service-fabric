@@ -143,8 +143,9 @@ are refused.
 `SOCK_CLOEXEC` at creation and `F_GETFD`/`F_SETFD` retain the descriptor's
 `FD_CLOEXEC` flag. Other descriptor flags and duplication remain unsupported;
 this profile does not provide process execution or descriptor inheritance.
-`POLLPRI` is never silently ignored. Descriptor-free timer polls retain the
-existing timed runtime. Calls inside prebuilt libc objects are not remapped.
+`POLLPRI` for a live descriptor is never silently ignored. Descriptor-free
+timer polls retain the existing timed runtime and accept at most 64 ignored
+negative-descriptor entries. Calls inside prebuilt libc objects are not remapped.
 Selected-source `read`, `write` and `close` route only to this socket table;
 stdin, stdout and stderr are not socket descriptors and return `EBADF` through
 those calls. This profile does not combine the separate standard-stdio logging

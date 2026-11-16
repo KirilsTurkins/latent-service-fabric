@@ -28,7 +28,7 @@ void *memset(void *out,int value,size_t size) {
 }
 
 static int current_fd,mode,host_calls,close_calls,drop_calls,free_calls,reentry_ok;
-static int last_timeout,interest_seen,allow_host,timer_polls,inspect_calls,send_shut,shutdown_calls;
+static int last_timeout,interest_seen,allow_host,timer_polls,timer_fail,inspect_calls,send_shut,shutdown_calls;
 static uint8_t message[]={'a','b','c'};
 static bool host_equals(probe_string_t host,const char *text,size_t size) {
     if(host.len!=size)return false;
@@ -112,7 +112,9 @@ bool latent_network_streams_close(latent_network_streams_own_connection_t connec
 }
 int original_poll(struct pollfd *,nfds_t,int) __asm__("poll");
 int original_poll(struct pollfd *fds,nfds_t count,int timeout) {
-    (void)fds;if(count!=0 || timeout!=2)__builtin_trap();++timer_polls;return 0;
+    (void)fds;if(count!=0 || timeout!=2)__builtin_trap();++timer_polls;
+    if(timer_fail) { lsf_test_errno=timer_fail;return -1; }
+    return 0;
 }
 
 #define CHECK(value) do { if(!(value))return __LINE__; } while(0)
@@ -274,6 +276,25 @@ __attribute__((export_name("readiness_controls"))) int readiness_controls(void) 
     CHECK(__lsf_c_net_poll(&urgent,1,0)==-1 && lsf_test_errno==ENOTSUP);
     CHECK(urgent.revents==123 && host_calls==before);
     CHECK(__lsf_c_net_poll(NULL,0,2)==0 && timer_polls==1);
+    struct pollfd inactive[65];
+    for(size_t i=0;i<65;++i) inactive[i]=(struct pollfd){.fd=i%2?-1:-5,.events=POLLIN|POLLPRI,.revents=123};
+    CHECK(__lsf_c_net_poll(inactive,9,2)==0 && timer_polls==2);
+    for(size_t i=0;i<65;++i) CHECK(inactive[i].revents==(i<9?0:123));
+    for(size_t i=0;i<64;++i) inactive[i].revents=123;
+    timer_fail=EAGAIN;
+    CHECK(__lsf_c_net_poll(inactive,64,2)==-1 && lsf_test_errno==EAGAIN && timer_polls==3);
+    for(size_t i=0;i<64;++i) CHECK(inactive[i].revents==123);
+    timer_fail=ECANCELED;
+    CHECK(__lsf_c_net_poll(inactive,64,2)==-1 && lsf_test_errno==ECANCELED && timer_polls==4);
+    for(size_t i=0;i<64;++i) CHECK(inactive[i].revents==123);
+    timer_fail=0;inactive[63].fd=3;
+    CHECK(__lsf_c_net_poll(inactive,64,2)==-1 && lsf_test_errno==ENOTSUP && timer_polls==4);
+    inactive[63].fd=-1;
+    CHECK(__lsf_c_net_poll(inactive,64,2)==0 && timer_polls==5);
+    for(size_t i=0;i<64;++i) CHECK(inactive[i].revents==0);
+    CHECK(__lsf_c_net_poll(inactive,65,2)==-1 && lsf_test_errno==ENOTSUP && timer_polls==5);
+    CHECK(__lsf_c_net_poll(NULL,9,2)==-1 && lsf_test_errno==EINVAL && timer_polls==5);
+    CHECK(host_calls==before);
     return 0;
 }
 
