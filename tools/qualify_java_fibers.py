@@ -1127,7 +1127,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         '-d', jdk_output, reference, periodic_reference, invoke_reference, termination_reference,
         null_failure_reference, monitor_reference, default_monitor_reference, ready_reference, noop_reference, invoke_any_reference, invoke_all_reference)
     expected_stopped = ('SCHEDULED_STOPPED_REFERENCE PASS delayed;fixed-rate;fixed-delay;nested;future;'
-        'running;shutdown;shutdown-policy;physical-runner')
+        'running;shutdown;shutdown-policy;physical-runner;worker-capacity;factory-failure-retry')
     result = compiler.run('scheduled-stopped-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'ScheduledStoppedReferenceControl').strip()
     if result != expected_stopped: raise ValueError('Java stopped scheduled reference did not complete')
@@ -1276,7 +1276,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     result = compiler.run('scheduled-source-control', 'java', '-Xmx256m', '-cp', output, 'ScheduledOwnerControl').strip()
     expected = ('SCHEDULED_OWNER_CONTROL PASS preadmission;actual-result;running-cancel-held;periodic-nonoverlap;'
         'original-error-suppresses-repeat;timed-wait-cancel-and-interrupt;shutdown-policy;factory-rollback;'
-        'worker-retirement-snapshot;copy-failure-retained;all-retired')
+        'worker-retirement-snapshot;copy-failure-retained;reentrant-worker-admission;all-retired')
     if result != expected: raise ValueError('Java scheduled source control did not complete')
     result = compiler.run('scheduled-completable-owner-control', 'java', '-Xmx256m', '-cp', output,
         'ScheduledCompletableOwnerControl').strip()

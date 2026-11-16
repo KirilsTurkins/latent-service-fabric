@@ -172,6 +172,10 @@ Scheduled futures from different pools compare their deadlines at one monotonic
 clock reading. Equal deadlines use each task's original queued-work admission
 identity, including across pools. As with concurrently submitted JDK tasks,
 overlapping or reentrant submissions need not have a predetermined order.
+Scheduled pools count a worker being constructed by a `ThreadFactory` toward
+their configured parallelism. A nested accepted task keeps its original owners
+if the factory fails. When no worker remains, that task needs a later successful
+worker admission to run.
 Compiler progress checks distinguish suspendable checkpoints from finite
 nonsuspendable loops; source that cannot establish bounded progress is rejected.
 GC roots across parked continuations have a separate

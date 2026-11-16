@@ -36,6 +36,9 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     // Retain the original per-pool admission bound under reentry.
     private long sequence;
     private int running;
+    // Factories may reenter this pool before their thread is registered.
+    // Root retirement observes this without acquiring the pool monitor.
+    private volatile int startingWorkers;
 
     public ScheduledThreadPoolExecutor(int corePoolSize) {
         this(corePoolSize, Executors.defaultThreadFactory());
@@ -388,34 +391,57 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     }
 
     private void startWorker() {
-        Worker worker = new Worker(this);
-        Thread thread = null;
-        int addedAt = -1;
+        // All callers hold the pool monitor, including reentrant admissions.
+        // Reserve capacity before calling the application-supplied factory.
+        if (workers.size() >= parallelism - startingWorkers) return;
+        startingWorkers++;
+        boolean transferred = false;
+        Throwable failure = null;
         try {
-            thread = factory.newThread(worker::run);
-            if (thread == null || thread.isAlive())
-                throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
-            if (Activation.alive(thread)) throw new IllegalThreadStateException();
-            addedAt = workers.size();
-            workers.add(thread);
-            worker.prepare(thread);
-        } catch (Throwable error) {
-            // Admission has not started, so the retained target cannot own a
-            // managed worker. Preserve any pre-existing worker identity.
-            worker.clear();
-            if (addedAt >= 0 && addedAt < workers.size() && workers.get(addedAt) == thread)
-                workers.remove(addedAt);
-            throw error;
-        }
-        try { Activation.startManaged(thread, this); }
-        catch (Throwable error) {
-            // Accepted or rollback-uncertain work keeps both its thread and its
-            // target for root interruption and eventual physical settlement.
-            if (!Activation.ownsManaged(thread, this)) {
-                removeWorker(thread);
+            Worker worker = new Worker(this);
+            Thread thread = null;
+            int addedAt = -1;
+            try {
+                thread = factory.newThread(worker::run);
+                if (thread == null || thread.isAlive())
+                    throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
+                if (Activation.alive(thread)) throw new IllegalThreadStateException();
+                addedAt = workers.size();
+                workers.add(thread);
+                worker.prepare(thread);
+            } catch (Throwable error) {
+                // Admission has not started, so the retained target cannot own a
+                // managed worker. Preserve any pre-existing worker identity.
                 worker.clear();
+                if (addedAt >= 0 && addedAt < workers.size() && workers.get(addedAt) == thread)
+                    workers.remove(addedAt);
+                throw error;
             }
+            // The worker registry now carries this capacity and root custody.
+            startingWorkers--;
+            transferred = true;
+            try { Activation.startManaged(thread, this); }
+            catch (Throwable error) {
+                // Accepted or rollback-uncertain work keeps both its thread and its
+                // target for root interruption and eventual physical settlement.
+                if (!Activation.ownsManaged(thread, this)) {
+                    removeWorker(thread);
+                    worker.clear();
+                }
+                throw error;
+            }
+        } catch (Throwable error) {
+            failure = error;
             throw error;
+        } finally {
+            if (!transferred) startingWorkers--;
+            try { settleIfTerminated(); }
+            catch (Throwable uncertain) {
+                // The original admission error takes precedence; settlement
+                // already fenced uncertain ownership before throwing.
+                if (failure == null) throw uncertain;
+            }
+            notifyAll();
         }
     }
 
@@ -575,7 +601,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     }
     private void settleIfTerminated() { settleIfTerminated(false); }
     private void settleIfTerminated(boolean root) {
-        if ((shutdown || retiring) && pendingWork == 0 && workers.isEmpty()) settleOwner(root);
+        if ((shutdown || retiring) && pendingWork == 0 && startingWorkers == 0 && workers.isEmpty()) settleOwner(root);
     }
     private void settleOwner(boolean rootOrRollback) {
         if (owner != null) {
@@ -618,7 +644,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
             return true;
         }
     }
-    @Override public boolean hasPendingWork() { return pendingWork != 0; }
+    @Override public boolean hasPendingWork() { return pendingWork != 0 || startingWorkers != 0; }
     @Override public void closeAtRoot() {
         retiring = true;
         for (Thread worker : workers) worker.interrupt();
