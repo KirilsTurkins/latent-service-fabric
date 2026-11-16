@@ -115,7 +115,12 @@ impl AcceptedPublish {
                 )
                 .map_err(|_| EventError::PermissionDenied)?;
         }
-        let receipt = protocol::publish(
+        // Qualification and subscription can consume the rest of a retry's
+        // duplicate window. Fence the first possible publish write against the
+        // original horizon and bound the whole socket future by the remaining
+        // monotonic time. A timeout after possible transmission is uncertain.
+        let deadline = self.retry_deadline()?;
+        let publish = protocol::publish(
             connection.resource(),
             &self.request,
             &self.event,
@@ -123,10 +128,32 @@ impl AcceptedPublish {
             &publish_inbox,
             &self.event.idempotency_key,
             wrote,
-        )
-        .await?;
+        );
+        let receipt = within_retry_window(deadline, publish, qualified).await?;
         let _ = connection.park();
         Ok(receipt)
+    }
+
+    fn retry_deadline(&self) -> crate::Result<Option<std::time::Instant>> {
+        let now = self.time.observe();
+        if !now.continuity_proven
+            || now.unix_millis < self.request.grant().committed_at_millis()
+            || now.unix_millis >= self.request.grant().expires_at_millis()
+        {
+            return Err(EventError::PermissionDenied);
+        }
+        self.attempt
+            .retry_horizon_millis()
+            .map(|horizon| {
+                let remaining = horizon
+                    .checked_sub(now.unix_millis)
+                    .filter(|remaining| *remaining > 0)
+                    .ok_or(EventError::PermissionDenied)?;
+                std::time::Instant::now()
+                    .checked_add(std::time::Duration::from_millis(remaining))
+                    .ok_or(EventError::PermissionDenied)
+            })
+            .transpose()
     }
 
     async fn qualify(&self, connection: &mut Connection) -> crate::Result<()> {
@@ -224,6 +251,56 @@ impl AcceptedPublish {
             },
             retry,
         }
+    }
+}
+
+async fn within_retry_window<T>(
+    deadline: Option<std::time::Instant>,
+    future: impl std::future::Future<Output = crate::Result<T>>,
+    qualified: &mut bool,
+) -> crate::Result<T> {
+    if let Some(deadline) = deadline {
+        match tokio::time::timeout_at(deadline.into(), future).await {
+            Ok(result) => result,
+            Err(_) => {
+                // The original socket future has been dropped, but it may
+                // have transmitted bytes before its monotonic window ended.
+                *qualified = false;
+                Err(EventError::Uncertain)
+            }
+        }
+    } else {
+        future.await
+    }
+}
+
+#[cfg(test)]
+mod retry_tests {
+    use super::*;
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    #[tokio::test]
+    async fn expired_retry_cancels_the_original_future_and_disables_redrive_proof() {
+        struct Dropped(Arc<AtomicBool>);
+        impl Drop for Dropped {
+            fn drop(&mut self) {
+                self.0.store(true, Ordering::Release);
+            }
+        }
+        let dropped = Arc::new(AtomicBool::new(false));
+        let owner = Dropped(Arc::clone(&dropped));
+        let pending = async move {
+            let _owner = owner;
+            std::future::pending::<crate::Result<()>>().await
+        };
+        let mut qualified = true;
+        let deadline = std::time::Instant::now() + std::time::Duration::from_millis(10);
+        assert_eq!(
+            within_retry_window(Some(deadline), pending, &mut qualified).await,
+            Err(EventError::Uncertain)
+        );
+        assert!(!qualified);
+        assert!(dropped.load(Ordering::Acquire));
     }
 }
 
