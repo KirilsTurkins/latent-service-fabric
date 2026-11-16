@@ -1,0 +1,40 @@
+# Verify the captured SDK kit, then append only its verified probe object.
+foreach(_lsf_required LSF_C_FEATURE_PROJECT LSF_C_FEATURE_KIT LSF_C_FEATURE_EXPECT LSF_C_FEATURE_PYTHON CMAKE_C_COMPILER)
+  if(NOT DEFINED ${_lsf_required} OR "${${_lsf_required}}" STREQUAL "")
+    message(FATAL_ERROR "Missing LSF C feature verification input: ${_lsf_required}")
+  endif()
+endforeach()
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "WASI" OR NOT CMAKE_C_COMPILER_ARG1 STREQUAL "cc" OR
+   NOT CMAKE_C_COMPILER_TARGET STREQUAL "wasm32-wasi")
+  message(FATAL_ERROR "LSF C feature probes require the captured Zig wasm32-wasi compiler")
+endif()
+get_filename_component(_lsf_tools "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
+execute_process(
+  COMMAND "${LSF_C_FEATURE_PYTHON}" -I -B "${_lsf_tools}/c_capsule.py" feature-probes-verify
+          "${LSF_C_FEATURE_PROJECT}" --kit "${LSF_C_FEATURE_KIT}"
+          --expect "${LSF_C_FEATURE_EXPECT}" --zig "${CMAKE_C_COMPILER}"
+  RESULT_VARIABLE _lsf_status OUTPUT_VARIABLE _lsf_output ERROR_VARIABLE _lsf_error
+  OUTPUT_STRIP_TRAILING_WHITESPACE TIMEOUT 120)
+if(NOT _lsf_status STREQUAL "0")
+  message(FATAL_ERROR "LSF C feature verification failed (${_lsf_status}): ${_lsf_error}")
+endif()
+if(NOT _lsf_output STREQUAL "not-selected")
+  string(LENGTH "${_lsf_output}" _lsf_length)
+  if(NOT _lsf_length EQUAL 71 OR NOT _lsf_output MATCHES "^sha256:[0-9a-f]+$")
+    message(FATAL_ERROR "LSF C feature verifier returned an invalid result")
+  endif()
+  set(_lsf_object "${LSF_C_FEATURE_KIT}/numeric-resolver.o")
+  file(SHA256 "${_lsf_object}" _lsf_object_digest)
+  if(NOT "sha256:${_lsf_object_digest}" STREQUAL "${_lsf_output}")
+    message(FATAL_ERROR "LSF C feature probe object changed")
+  endif()
+  list(APPEND CMAKE_REQUIRED_LIBRARIES "${_lsf_object}")
+  unset(_lsf_object)
+  unset(_lsf_object_digest)
+  unset(_lsf_length)
+endif()
+unset(_lsf_tools)
+unset(_lsf_status)
+unset(_lsf_output)
+unset(_lsf_error)
+unset(_lsf_required)

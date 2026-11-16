@@ -45,6 +45,14 @@ def parser() -> argparse.ArgumentParser:
     review.add_argument("--expect", required=True, help="Exact sha256:<64 hex> of the reviewed candidate bytes")
     status = commands.add_parser("dependencies", help="Verify the offline reviewed closure without opening original feeds")
     status.add_argument("project", type=Path)
+    feature_probes = commands.add_parser('feature-probes', help='Prepare captured SDK inputs for CMake feature checks')
+    feature_probes.add_argument('project', type=Path)
+    feature_probes.add_argument('--output', type=Path, required=True)
+    feature_verify = commands.add_parser('feature-probes-verify', help='Verify a reviewed CMake feature-probe kit')
+    feature_verify.add_argument('project', type=Path)
+    feature_verify.add_argument('--kit', type=Path, required=True)
+    feature_verify.add_argument('--expect', required=True)
+    feature_verify.add_argument('--zig', type=Path, required=True)
     for operation in ("test", "watch"):
         command = commands.add_parser(operation, help="Run the maintained latent-dev command for an authenticated C project")
         command.add_argument("project", type=Path)
@@ -148,6 +156,14 @@ def main(argv: list[str] | None = None) -> int:
             receipt = dependencies.record(args.project, result)
             print(canonical({**result, 'receipt': str(receipt)}).decode())
             return 0
+        elif args.command == 'feature-probes':
+            from tools.c_dependency_authoring import application_root
+            from tools.c_guest.feature_detection import prepare
+            result = prepare(application_root(args.project), args.output)
+        elif args.command == 'feature-probes-verify':
+            from tools.c_dependency_authoring import application_root
+            from tools.c_guest.feature_detection import verify
+            result = verify(application_root(args.project), args.kit, args.expect, args.zig)
         elif args.command == "archive":
             from tools.c_static_archive_build import build as build_archive
             from tools.c_dependency_authoring import application_root
