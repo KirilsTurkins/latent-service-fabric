@@ -2202,6 +2202,7 @@ dependencies = [
  "latent-routing",
  "latent-rustls-outbound",
  "latent-stream-factory-native",
+ "pin-project-lite",
  "rcgen",
  "rustix",
  "rustls",

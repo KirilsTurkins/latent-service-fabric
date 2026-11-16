@@ -157,10 +157,23 @@ For a retained stream observation, the authenticated node-operator usage result
 includes optional `nodeUsage.streamQuarantinedConnections` as a decimal string.
 It counts original quarantined connections across the current and up to eight
 retired provider generations using checked addition, which refuses overflow.
-The bounded scan samples generations separately and is not an atomic view
-across them. This count is
-already included in `stream_owners` and `stream_connections`; do not add it
-again. It reports
+The bounded scan samples registry slots, quarantine and generations separately.
+An opening that moves or a slot that is reused during the scan can be missed;
+an opening in quarantine can be counted both as an opening and as a quarantined
+connection. Consequently `stream_owners` is not an atomic observation or a
+complete lower or upper bound on owners at any single instant. The observed
+quarantine count is already included in `stream_owners` and
+`stream_connections`; do not add it again.
+An outstanding opening can exist before any physical socket is created.
+Each provider's 32 registry rows are shared by live or retiring connections
+and pre-registration openings. A connect can therefore return `Exhausted`
+before pool admission if those rows are occupied, even when the pool has room.
+An unexpected destructor unwind can leave its bounded opening row outstanding
+until that provider is destroyed. During connected-pool cleanup the socket can
+drop before the original pool lease; an empty row snapshot can also precede
+retirement of the outer future allocation. Neither establishes physical
+retirement.
+The quarantine count reports
 retained connection slots, not bytes or proof of kernel retirement. The field
 is absent when the node has no valid retained quarantine observation or uses
 an older protocol; absence is not zero. An inconsistent custom observation is
@@ -362,10 +375,10 @@ owner and all finite ceilings remain fixed. No receipt recovery resubmits a
 mutation or repeats a side effect.
 
 `SIGUSR2` explicitly retires/drains streams under the existing 30-second
-deadline. A retained owner remains charged and visible; a timeout is not a
-refund. A zero registered-owner count is reported as `retirement-unconfirmed`:
-an already admitted connection can still be opening before it is registered,
-so this snapshot does not establish physical retirement. A nonzero count is
+deadline. Retained work remains charged; a timeout is not a refund. The owner
+count includes the registered connections and opening rows described above.
+A zero owner count is reported as `retirement-unconfirmed`: an empty
+logical snapshot does not establish physical kernel retirement. A nonzero count is
 reported as `retained-owners-not-refunded`. Drain permanently stops this stream
 manager, so fresh work requires a normal node restart. `SIGINT` and `SIGTERM`
 retain their original shutdown path and interrupt a pending control operation.

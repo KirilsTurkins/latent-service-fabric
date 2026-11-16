@@ -78,6 +78,15 @@ and request metadata cannot manufacture that role. The response includes
 `stream_owners`, `stream_connections`, `stream_pending_operations`,
 `stream_retained_chunks`, `stream_maintenance_owners` and two live byte counters.
 Live bytes follow the retained connection owners, not a cumulative audit total.
+The owner total samples registry slots, quarantine and provider generations
+separately. It can miss a moving or reused opening and can count a quarantined
+opening twice, so it is neither a complete lower nor upper bound at one instant.
+A zero count does not establish physical retirement. An outstanding opening
+does not necessarily mean a physical socket has been created. Each provider's
+32 registry rows are shared by live or retiring connections and openings; a
+connect can return `Exhausted` before pool admission when all rows are occupied.
+The pending operations field retains its registered-operation meaning; it does not count
+unregistered openings or a socket retained after its operations have ended.
 These observations carry no endpoint, payload or credential data and grant no
 permission. Busy inspection returns a bounded error. Missing physical observation
 is explicit as `outbound-streams-no-retained-observation`, rather than fabricated
