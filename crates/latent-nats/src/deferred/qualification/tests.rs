@@ -70,6 +70,8 @@ fn qualified_stream_rejects_recreation_eviction_retention_transform_and_window_c
         ("name", json!("OTHER")),
         ("subjects", json!(["other.subject"])),
         ("storage", json!("memory")),
+        ("persist_mode", json!("async")),
+        ("persist_mode", json!("unknown")),
         ("retention", json!("interest")),
         ("discard", json!("old")),
         ("num_replicas", json!(2)),

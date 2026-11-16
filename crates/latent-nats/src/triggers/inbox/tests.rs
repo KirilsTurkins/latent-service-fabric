@@ -242,6 +242,7 @@ fn literal_input_stream_requires_original_incarnation_and_protected_finite_histo
     for (field, value) in [
         ("subjects", json!(["orders.>"])),
         ("storage", json!("memory")),
+        ("persist_mode", json!("async")),
         ("retention", json!("workqueue")),
         ("discard", json!("old")),
         ("max_msgs", json!(-1)),

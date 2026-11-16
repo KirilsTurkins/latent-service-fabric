@@ -111,6 +111,8 @@ struct StreamConfig<'a> {
     #[serde(borrow)]
     subjects: Vec<&'a str>,
     storage: &'a str,
+    #[serde(default, borrow)]
+    persist_mode: Option<&'a str>,
     retention: &'a str,
     discard: &'a str,
     num_replicas: u32,
@@ -191,6 +193,7 @@ pub(crate) fn validate_stream_response(
             .iter()
             .any(|subject| !stream.subjects.contains(subject))
         || stream.storage != "file"
+        || stream.persist_mode.is_some_and(|mode| mode != "default")
         || stream.retention != "limits"
         || stream.discard != "new"
         || stream.num_replicas != 1
