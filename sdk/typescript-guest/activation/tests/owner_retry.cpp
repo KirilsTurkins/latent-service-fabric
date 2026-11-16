@@ -18,7 +18,7 @@ uint64_t generation=1, next_owner=1, refuse_id=0, last_native=0;
 uint32_t next_wait=1;
 int refuse_kind=-1, deny_kind=-1;
 bool closed=false, immediate=true, deferred=false, refuse_stop=false, refuse_disposer=false;
-unsigned registrations=0, starts=0, stops=0, drops=0, cancellations=0, set_new=0, set_drop=0, disposals=0;
+unsigned registrations=0, starts=0, stops=0, nexts=0, drops=0, cancellations=0, set_new=0, set_drop=0, disposals=0;
 jobs_event_t event{};
 const char* selected=nullptr;
 #define CHECK(condition) do { if (!(condition)) { std::fprintf(stderr,"%s:%d: %s\n",selected,__LINE__,#condition); return false; } } while(false)
@@ -63,11 +63,18 @@ struct Environment {
 Environment* nested=nullptr;
 int32_t nested_id=0, neighbour_id=0;
 bool nested_ok=false;
+unsigned nested_error_behavior=0;
 bool nested_clear(JSContext* cx) {
   const unsigned live=counts[7];
   nested_ok=nested->timers.clear(cx,nested_id) && counts[7]==live &&
       nested->timers.clear(cx,neighbour_id) && counts[7]+1==live && fixture::roots==1;
   return nested_ok;
+}
+bool nested_clear_refused(JSContext* cx) {
+  nested_ok=!nested->timers.clear(cx,neighbour_id) && JS_IsExceptionPending(cx);
+  if (nested_error_behavior != 1) JS_ClearPendingException(cx); // model a JS catch
+  if (nested_error_behavior == 2) JS_ReportErrorASCII(cx,"original-callback-error");
+  return nested_ok && nested_error_behavior == 0;
 }
 }
 extern "C" {
@@ -110,6 +117,7 @@ bool latent_runtime_activation_timer_stop(latent_runtime_activation_token_t* t,l
 }
 jobs_subtask_status_t latent_runtime_activation_timer_next(latent_runtime_activation_token_t,
     latent_runtime_activation_result_u64_error_t* out) {
+  ++nexts;
   *out={};
   if (immediate) return JOBS_SUBTASK_RETURNED;
   if (next_wait==waits.size()) std::abort();
@@ -185,6 +193,43 @@ bool timer_nested() {
   CHECK(e.timers.turn(&e.cx,false)); CHECK(nested_ok && fixture::calls==1);
   fixture::callback=nullptr; nested=nullptr;
   CHECK(e.finish()); return true;
+}
+bool timer_caught_clear_refusal(bool native_ack, unsigned behavior) {
+  Environment e; CHECK(e.begin()); nested=&e; nested_error_behavior=behavior;
+  CHECK(e.timers.start(&e.cx,&e.callback,{},0,true,&nested_id));
+  const auto interval_native=last_native, interval_timer=next_owner-1;
+  CHECK(e.timers.start(&e.cx,&e.callback,{},0,false,&neighbour_id));
+  const auto other_native=last_native, other_timer=next_owner-1;
+  const auto next_before=nexts;
+  const auto callback_task=next_owner;
+  if (native_ack) refuse_id=other_native; else refuse_stop=true;
+  fixture::callback=nested_clear_refused;
+  const bool result=e.timers.turn(&e.cx,false);
+  if (result || nexts!=next_before || !e.cx.exception)
+    std::fprintf(stderr,"turn=%d next-before=%u next-after=%u exception=%d\n",
+                 result,next_before,nexts,e.cx.exception);
+  CHECK(!result && e.cx.exception && nested_ok && nexts==next_before && fixture::calls==1);
+  if (behavior==1) CHECK(std::strcmp(e.cx.detail,native_ack ?
+      "activation-runtime-promise-%s-denied:%u" : "activation-runtime-timer-%s-denied:%u")==0);
+  if (behavior==2) CHECK(std::strcmp(e.cx.detail,"original-callback-error")==0);
+  const bool interval_live=!native_ack || behavior==0;
+  CHECK(owners[interval_native].live && owners[interval_timer].live==interval_live && owners[other_native].live);
+  CHECK(owners[other_timer].live==!native_ack && counts[7]==2 &&
+        counts[5]==static_cast<unsigned>(interval_live)+static_cast<unsigned>(!native_ack));
+  CHECK(fixture::roots==(native_ack ? 1u : 2u));
+  CHECK(!owners[callback_task].live && owners[callback_task].refunds==1 &&
+        !owners[callback_task+1].live && owners[callback_task+1].refunds==1);
+  if (native_ack) CHECK(owners[other_native].attempts==(behavior ? 2u : 1u) && owners[other_native].refunds==0);
+  JS_ClearPendingException(&e.cx); int32_t rejected=99; const auto admitted=registrations;
+  CHECK(!e.timers.start(&e.cx,&e.callback,{},0,false,&rejected));
+  CHECK(rejected==0 && registrations==admitted);
+  JS_ClearPendingException(&e.cx); CHECK(!e.timers.turn(&e.cx,false));
+  CHECK(fixture::calls==1 && nexts==next_before);
+  fixture::callback=nullptr; nested=nullptr; refuse_stop=false; refuse_id=0;
+  CHECK(e.finish());
+  CHECK(owners[interval_native].refunds==1 && owners[interval_timer].refunds==1 &&
+        owners[other_native].refunds==1 && owners[other_timer].refunds==1);
+  return true;
 }
 bool timer_limit() {
   Environment e; CHECK(e.begin()); limits[7]=1; int32_t first=0,second=99;
@@ -308,6 +353,12 @@ bool run(const char* name) {
   if (!std::strcmp(name,"timer-capture-refused-retirement")) return timer_capture(true);
   if (!std::strcmp(name,"timer-late-return")) return timer_pending();
   if (!std::strcmp(name,"timer-nested-clear")) return timer_nested();
+  if (!std::strcmp(name,"timer-stop-refusal-caught")) return timer_caught_clear_refusal(false,0);
+  if (!std::strcmp(name,"timer-stop-refusal-uncaught")) return timer_caught_clear_refusal(false,1);
+  if (!std::strcmp(name,"timer-stop-refusal-rethrow")) return timer_caught_clear_refusal(false,2);
+  if (!std::strcmp(name,"timer-native-refusal-caught")) return timer_caught_clear_refusal(true,0);
+  if (!std::strcmp(name,"timer-native-refusal-uncaught")) return timer_caught_clear_refusal(true,1);
+  if (!std::strcmp(name,"timer-native-refusal-rethrow")) return timer_caught_clear_refusal(true,2);
   if (!std::strcmp(name,"timer-native-limit")) return timer_limit();
   if (!std::strcmp(name,"import-result-retry")) return import_retry(0);
   if (!std::strcmp(name,"import-lowering-retry")) return import_retry(1);
