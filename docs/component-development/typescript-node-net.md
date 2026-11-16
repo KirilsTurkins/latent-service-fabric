@@ -25,6 +25,12 @@ operations per Socket, 16 queued write records (including empty writes),
 65,536 queued write bytes and 16,384 bytes per transfer. Queued empty-write
 callback records remain reserved until their actual callback job returns;
 original runtime budgets can refuse earlier than these port ceilings.
+If the built-in resume job is refused and that same refusal escapes listener
+registration without a later successful resume, the new data listener is
+removed. Overridden resume methods that replace the exception retain the
+listener. The failed resume itself does not change flowing state. A job retained
+by its scheduler is not cancelled or refunded here and is inert if scheduling
+threw.
 These bounds describe this module, not a universal activation ledger or a
 whole-cost accounting qualification. Original native, request, memory, fuel,
 task, deadline and endpoint limits continue to apply independently. A normal
