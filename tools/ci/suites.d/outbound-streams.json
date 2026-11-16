@@ -23,6 +23,7 @@
         "tests::lifecycle::refused_rotation_preserves_original_epoch_connection_and_new_admissions",
         "tests::lifecycle::retirement_refuses_connect_held_before_registry_publication",
         "tests::lifecycle::retirement_waits_for_registry_contention_and_stops_original_connection",
+        "tests::rotation_install::queued_connect_wakes_after_rotation_unlock_and_postpublication_failures",
         "tests::sockets::dropped_read_after_consumption_fences_reuse_and_retains_pending_owner",
         "tests::sockets::dropped_read_after_socket_consumption_fences_before_currentness_return",
         "tests::sockets::dropped_read_before_consumption_keeps_connection_usable",
