@@ -311,7 +311,9 @@ public final class ScheduledPeriodicOwnerControl {
             selected.set(future); long before = future.getDelay(TimeUnit.HOURS);
             try { ((Runnable)future).run(); throw new AssertionError("missing-factory-failure"); }
             catch (IllegalStateException expected) { require(expected == failure); }
-            require(attempts.get() == 3 && calls.get() == 2 && !future.isDone());
+            // The in-progress second factory owns the remaining worker slot.
+            // Its nested manual occurrence stays queued without a third worker.
+            require(attempts.get() == 2 && calls.get() == 2 && !future.isDone());
             require(future.getDelay(TimeUnit.HOURS) >= before + 47); held(2, 1);
             entries(pool.shutdownNow(), future, 2); require(pool.awaitTermination(5, TimeUnit.SECONDS)); held(0, 0);
         } finally { stop(pool); }
