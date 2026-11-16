@@ -2,7 +2,7 @@ name: Physical result owner retirement
 
 on:
   push:
-    branches: ['feat/result-box-retirement-20261023']
+    branches: ['feat/result-box-retirement-20261023', 'development']
     paths:
       - 'crates/vendor/bytes/**'
       - 'crates/latent-core/src/result_payload.rs'
@@ -12,6 +12,16 @@ on:
       - 'crates/latent-http/src/tests/protocol.rs'
       - 'crates/latent-capabilities/src/broker/pools.rs'
       - 'crates/latent-capabilities/src/broker/pools/**'
+      - 'crates/latent-capabilities/src/broker/network.rs'
+      - 'crates/latent-capabilities/src/broker/session.rs'
+      - 'crates/latent-capabilities/src/broker/session/**'
+      - 'crates/latent-capabilities/src/broker/tests/fixture.rs'
+      - 'crates/latent-core/src/budget.rs'
+      - 'crates/latent-core/src/budget/**'
+      - 'crates/latent-streams/src/connection.rs'
+      - 'crates/latent-manifest/tests/fixtures/valid-capsule-v1alpha1.json'
+      - 'tools/stream_scope_retirement_witness.py'
+      - 'tools/stream_scope_retirement_witness.rs'
       - 'Cargo.lock'
       - 'rust-toolchain.toml'
       - 'crates/latent-blobs/src/s3/provider/handles.rs'
@@ -30,6 +40,16 @@ on:
       - 'crates/latent-http/src/tests/protocol.rs'
       - 'crates/latent-capabilities/src/broker/pools.rs'
       - 'crates/latent-capabilities/src/broker/pools/**'
+      - 'crates/latent-capabilities/src/broker/network.rs'
+      - 'crates/latent-capabilities/src/broker/session.rs'
+      - 'crates/latent-capabilities/src/broker/session/**'
+      - 'crates/latent-capabilities/src/broker/tests/fixture.rs'
+      - 'crates/latent-core/src/budget.rs'
+      - 'crates/latent-core/src/budget/**'
+      - 'crates/latent-streams/src/connection.rs'
+      - 'crates/latent-manifest/tests/fixtures/valid-capsule-v1alpha1.json'
+      - 'tools/stream_scope_retirement_witness.py'
+      - 'tools/stream_scope_retirement_witness.rs'
       - 'Cargo.lock'
       - 'rust-toolchain.toml'
       - 'crates/latent-blobs/src/s3/provider/handles.rs'
@@ -78,3 +98,14 @@ jobs:
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - name: Observe managed and legacy protocol page allocations
         run: python3 tools/protocol_page_retirement_witness.py
+  stream-scope-owner:
+    name: Actual stream scope allocation retirement
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - name: Observe managed and legacy stream scope allocations
+        run: python3 tools/stream_scope_retirement_witness.py
