@@ -56,15 +56,95 @@ impl ProtocolPage {
     }
 }
 pub struct ProtocolBody {
+    pages: Vec<PageEntry>,
+    index: usize,
+    offset: usize,
+    remaining: usize,
+    _metadata: ProviderMetadata,
+}
+// One possible frame per page. Its original node guard is admitted before the
+// infallible Body poll and moved to Bytes only if that page is emitted.
+struct PageEntry {
+    page: Arc<ProtocolPage>,
+    retirement: Option<ProviderMetadata>,
+}
+
+// Reproduce the previous body fields and their drop glue without constructing
+// this type; reject changes to its value, Option or Result layout.
+#[allow(dead_code)]
+struct OriginalProtocolBodyLayout {
     pages: Vec<Arc<ProtocolPage>>,
     index: usize,
     offset: usize,
     remaining: usize,
     _metadata: ProviderMetadata,
 }
+const _: () = {
+    assert!(
+        std::mem::size_of::<ProtocolBody>() == std::mem::size_of::<OriginalProtocolBodyLayout>()
+    );
+    assert!(
+        std::mem::align_of::<ProtocolBody>() == std::mem::align_of::<OriginalProtocolBodyLayout>()
+    );
+    assert!(
+        std::mem::size_of::<Option<ProtocolBody>>()
+            == std::mem::size_of::<Option<OriginalProtocolBodyLayout>>()
+    );
+    assert!(
+        std::mem::size_of::<Result<ProtocolBody, HttpError>>()
+            == std::mem::size_of::<Result<OriginalProtocolBodyLayout, HttpError>>()
+    );
+};
 struct Slice {
     page: Arc<ProtocolPage>,
     range: Range<usize>,
+}
+
+fn frame_allocation_bytes() -> Result<usize, HttpError> {
+    bytes::Bytes::owner_with_retirement_allocation_size::<Slice, ProviderMetadata>()
+        .checked_add(64)
+        .ok_or(HttpError::RequestTooLarge)
+}
+
+#[cfg(test)]
+pub(crate) fn protocol_accounting_layout() -> (usize, usize) {
+    (
+        std::mem::size_of::<PageEntry>(),
+        frame_allocation_bytes().unwrap(),
+    )
+}
+
+#[cfg(test)]
+type SliceDropHook = Box<dyn FnOnce() + Send>;
+#[cfg(test)]
+static SLICE_DROP_HOOK: std::sync::Mutex<Option<(usize, SliceDropHook)>> =
+    std::sync::Mutex::new(None);
+
+#[cfg(test)]
+pub(crate) fn observe_slice_drop(page: &Arc<ProtocolPage>, hook: SliceDropHook) {
+    let mut slot = SLICE_DROP_HOOK.lock().unwrap();
+    assert!(slot.is_none());
+    *slot = Some((Arc::as_ptr(page) as usize, hook));
+}
+
+#[cfg(test)]
+impl Drop for Slice {
+    fn drop(&mut self) {
+        let hook = {
+            let mut slot = SLICE_DROP_HOOK.lock().unwrap();
+            if slot
+                .as_ref()
+                .is_some_and(|(page, _)| *page == Arc::as_ptr(&self.page) as usize)
+            {
+                slot.take()
+            } else {
+                None
+            }
+        };
+        if let Some((_, hook)) = hook {
+            hook();
+        }
+    }
 }
 impl AsRef<[u8]> for Slice {
     fn as_ref(&self) -> &[u8] {
@@ -84,15 +164,58 @@ impl ProtocolBody {
         if range.end > total {
             return Err(HttpError::InvalidRequest);
         }
-        let metadata = pools.reserve_protocol_metadata(1024 + pages.len() * 32)?;
         let mut index = 0;
         let mut offset = range.start;
         while index < pages.len() && offset >= pages[index].bytes().len() {
             offset -= pages[index].bytes().len();
             index += 1;
         }
+        // Mirror poll_frame exactly: even an empty page between nonempty pages
+        // produces a frame, while an empty range produces no frame at all.
+        let mut end = index;
+        let mut pending = range.len();
+        let mut first_offset = offset;
+        while pending != 0 {
+            let page = pages.get(end).ok_or(HttpError::InvalidRequest)?;
+            let length = (page.bytes().len() - first_offset).min(pending);
+            pending -= length;
+            first_offset = 0;
+            end += 1;
+        }
+        // The old body prepaid 32 bytes per page plus 1 KiB. Increase this
+        // only where the actual typed vector entry needs more than 32 bytes.
+        let entry_bytes = std::mem::size_of::<PageEntry>().max(32);
+        let metadata_bytes = pages
+            .len()
+            .checked_mul(entry_bytes)
+            .and_then(|n| n.checked_add(1024))
+            .ok_or(HttpError::RequestTooLarge)?;
+        let metadata = pools.reserve_protocol_metadata(metadata_bytes)?;
+        let frame_bytes = frame_allocation_bytes()?;
+        let mut entries = Vec::new();
+        // The pinned Rust 1.97.1 Global allocator and grow_exact request the
+        // exact typed layout prepaid above; reject a different reported capacity.
+        // https://github.com/rust-lang/rust/blob/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/alloc/src/raw_vec/mod.rs#L725-L750
+        // https://github.com/rust-lang/rust/blob/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/alloc/src/alloc.rs#L188-L199
+        entries
+            .try_reserve_exact(pages.len())
+            .map_err(|_| HttpError::BudgetExhausted)?;
+        if entries.capacity() != pages.len() {
+            return Err(HttpError::Unavailable);
+        }
+        for (position, page) in pages.iter().enumerate() {
+            let retirement = if (index..end).contains(&position) {
+                Some(pools.reserve_protocol_metadata(frame_bytes)?)
+            } else {
+                None
+            };
+            entries.push(PageEntry {
+                page: Arc::clone(page),
+                retirement,
+            });
+        }
         Ok(Self {
-            pages: pages.to_vec(),
+            pages: entries,
             index,
             offset,
             remaining: range.len(),
@@ -118,16 +241,22 @@ impl Body for ProtocolBody {
         if this.remaining == 0 {
             return Poll::Ready(None);
         }
-        let page = this.pages[this.index].clone();
+        let entry = &mut this.pages[this.index];
+        let page = Arc::clone(&entry.page);
+        let retirement = entry
+            .retirement
+            .take()
+            .expect("each emitted page is prepaid");
         let length = (page.bytes().len() - this.offset).min(this.remaining);
         let range = this.offset..this.offset + length;
         this.index += 1;
         this.offset = 0;
         this.remaining -= length;
-        Poll::Ready(Some(Ok(Frame::data(Bytes::from_owner(Slice {
-            page,
-            range,
-        })))))
+        Poll::Ready(Some(Ok(Frame::data(Bytes::from_owner_with_retirement(
+            Slice { page, range },
+            retirement,
+            |_| {},
+        )))))
     }
     fn is_end_stream(&self) -> bool {
         self.remaining == 0

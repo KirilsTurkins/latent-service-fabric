@@ -3,6 +3,8 @@
 mod body;
 mod exchange;
 use crate::{dns::Answers, network::Network, HttpError, HttpProviderConfig, HttpResolution};
+#[cfg(test)]
+pub(crate) use body::{observe_slice_drop, protocol_accounting_layout};
 pub use body::{ProtocolBody, ProtocolPage, MAXIMUM_PROTOCOL_BODY_BYTES, PROTOCOL_PAGE_BYTES};
 use latent_capabilities::broker::{
     pools::{

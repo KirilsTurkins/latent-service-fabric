@@ -75,6 +75,15 @@ fixed for the registry generation. Quotas are ownership bounds, not total RSS
 limits: concrete protocol adapters must also account for their buffers and driver
 resources through the I/O and worker owners.
 
+Trusted HTTP protocol bodies prepay their page-frame owners from the same pool
+before polling. On pinned Linux x86-64, each emitted page frame reserves 120
+bytes (56-byte owner plus 64-byte bookkeeping), including an empty page frame.
+Other targets use their actual layout. An empty range needs no frame reservation;
+unused reservations return when the body drops, and emitted frames retain theirs
+through their final transport clone. These additional reservations can cause
+earlier refusal under the existing metadata limit. They cover these frame owners,
+not all protocol, page-header or kernel allocations.
+
 `admit` reserves queue and metadata space before staging input. Its tenant comes
 from the sealed execution plan. The queue rotates between tenants, then providers
 within a tenant, with FIFO ordering within each group. A tenant cannot acquire
