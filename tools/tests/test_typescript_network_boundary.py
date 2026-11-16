@@ -117,6 +117,18 @@ for(const enabled of [false,true]) {
             with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'controls-incomplete'):
                 require_complete_controls(result)
 
+    def test_signed_socket_source_gate_requires_all_31_clean_controls(self):
+        from tools.phase2_operator_process import WorkflowError
+        from tools.typescript_guest.borrow_signed_controls import require_node_net_source_controls
+        complete = {'testsRun': 31, 'skipped': 0, 'failures': 0, 'errors': 0}
+        require_node_net_source_controls(complete)
+        for changed in ({**complete, 'testsRun': 30}, {**complete, 'testsRun': 32},
+                        {**complete, 'skipped': 1}, {**complete, 'failures': 1},
+                        {**complete, 'errors': 1}, {**complete, 'skipped': False},
+                        {**complete, 'extra': 0}, {'testsRun': 31}, None):
+            with self.subTest(changed=changed), self.assertRaisesRegex(WorkflowError, 'node-net-all-thirty-one-no-skips'):
+                require_node_net_source_controls(changed)
+
     def test_pinned_frontend_rejects_missing_node_wrong_version_and_changed_lock(self):
         with tempfile.TemporaryDirectory() as temporary:
             tools = Path(temporary)
