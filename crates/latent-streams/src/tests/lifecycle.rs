@@ -41,6 +41,115 @@ struct ReentrantWake {
     lifecycle: Arc<StreamLifecycle>,
     stopped_without_lock: AtomicBool,
 }
+
+#[cfg(unix)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn write_input_retirement_keeps_the_original_window_until_its_tail() {
+    use tokio::io::AsyncWriteExt;
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut configuration = config();
+    configuration.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let request = StreamConnectRequest {
+        endpoint: configuration.destinations[0].endpoint.clone(),
+        timeout_millis: None,
+    };
+    let fixture = Fixture::new(configuration);
+    let (session, control) = fixture.session(5000);
+    let stream = fixture
+        .provider
+        .start(&session, request)
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    peer.write_all(b"abc").await.unwrap();
+    let mut held = Vec::new();
+    for _ in 0..3 {
+        held.push(stream.read(1, None).unwrap().await.unwrap().unwrap());
+    }
+    let connection = fixture
+        .provider
+        .inner
+        .connections
+        .snapshot(0)
+        .unwrap()
+        .unwrap();
+    let (reached, resume) = connection.pause_next_write_retirement();
+    drop(connection);
+    let before_write = control.budget.host_memory_bytes();
+    let write = stream.write(b"x".to_vec(), None).unwrap();
+    let admitted = control.budget.host_memory_bytes();
+    let dropping = std::thread::spawn(move || drop(write));
+    reached.recv_timeout(Duration::from_secs(2)).unwrap();
+    let during = control.budget.host_memory_bytes();
+    let refusal = match stream.read(1, None) {
+        Ok(future) => {
+            drop(future);
+            None
+        }
+        Err(failure) => Some(failure.code),
+    };
+    resume.send(()).unwrap();
+    dropping.join().unwrap();
+    drop(held);
+    drop(stream);
+    drop(session);
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+    eprintln!(
+        "write admission delta={} during_tail={during}",
+        admitted - before_write
+    );
+    assert_eq!(refusal, Some(StreamErrorCode::Exhausted));
+}
+
+#[cfg(unix)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn retired_write_input_keeps_the_original_connection_charge() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut configuration = config();
+    configuration.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let request = StreamConnectRequest {
+        endpoint: configuration.destinations[0].endpoint.clone(),
+        timeout_millis: None,
+    };
+    let fixture = Fixture::new(configuration);
+    let (session, control) = fixture.session(5000);
+    let stream = fixture
+        .provider
+        .start(&session, request)
+        .unwrap()
+        .await
+        .unwrap();
+    let (_peer, _) = listener.accept().await.unwrap();
+    let connection = fixture
+        .provider
+        .inner
+        .connections
+        .snapshot(0)
+        .unwrap()
+        .unwrap();
+    let (reached, resume) = connection.pause_next_write_retirement();
+    let write = stream.write(b"x".to_vec(), None).unwrap();
+    drop(connection);
+    drop(stream);
+    drop(session);
+    let pools = fixture.pools.clone();
+    let dropping = std::thread::spawn(move || drop(write));
+    reached.recv_timeout(Duration::from_secs(2)).unwrap();
+    let activation_during = control.budget.host_memory_bytes();
+    let metadata_during = pools.snapshot().unwrap().metadata_bytes;
+    resume.send(()).unwrap();
+    dropping.join().unwrap();
+    let metadata_after = pools.snapshot().unwrap().metadata_bytes;
+    fixture.clean().await;
+    drop(fixture);
+    drop(pools);
+    control.assert_native_settled();
+    assert!(activation_during >= 16 * 1024);
+    assert!(metadata_during >= metadata_after + 16 * 1024);
+}
 impl Wake for ReentrantWake {
     fn wake(self: Arc<Self>) {
         self.wake_by_ref();

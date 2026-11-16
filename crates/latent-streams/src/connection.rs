@@ -369,6 +369,8 @@ pub(crate) struct Connection {
     write_none_once: std::sync::atomic::AtomicBool,
     #[cfg(test)]
     fail_audit_once: std::sync::atomic::AtomicBool,
+    #[cfg(all(test, unix))]
+    write_drop_gate: Mutex<Option<(std::sync::mpsc::Sender<()>, std::sync::mpsc::Receiver<()>)>>,
     // Last test field: all original value fields have retired before this
     // pauses the final Arc value destructor, while its header remains live.
     #[cfg(all(test, unix))]
@@ -446,6 +448,18 @@ struct ChunkOwner {
     _window: latent_capabilities::broker::network::StreamChunkReservation,
 }
 
+#[cfg(all(test, unix))]
+struct WriteDropTail(Mutex<Option<(std::sync::mpsc::Sender<()>, std::sync::mpsc::Receiver<()>)>>);
+#[cfg(all(test, unix))]
+impl Drop for WriteDropTail {
+    fn drop(&mut self) {
+        if let Some((reached, resume)) = self.0.get_mut().unwrap().take() {
+            let _ = reached.send(());
+            let _ = resume.recv_timeout(Duration::from_secs(20));
+        }
+    }
+}
+
 pub(crate) fn prepaid_layout_bytes() -> (usize, usize) {
     let chunk_bytes = crate::connection_registry::arc_bytes::<ChunkOwner>() + 64;
     let owner_bytes = ConnectionOwner::allocation_bytes()
@@ -495,8 +509,18 @@ impl Drop for ReadFlight {
 // terminal observation. On an abandoned possible dispatch, stop admission
 // while all of those original owners still exist. Their fields then retire in
 // declaration order; Pending drops its transport before its operation guard.
-struct WriteFlight {
+// The input never leaves this already-prepaid future. Keep its original chunk
+// admission and connection after it, rather than allocating an Arc whose last
+// header could outlive both guards.
+struct WriteInput {
     input: IoInputChunk,
+    #[cfg(all(test, unix))]
+    _write_tail: WriteDropTail,
+    _window: latent_capabilities::broker::network::StreamChunkReservation,
+    _connection: ConnectionOwner,
+}
+struct WriteFlight {
+    input: WriteInput,
     call: ProviderCall,
     pending: Pending,
     connection: ConnectionOwner,
@@ -651,6 +675,8 @@ pub(crate) async fn connect(
             write_none_once: std::sync::atomic::AtomicBool::new(false),
             #[cfg(test)]
             fail_audit_once: std::sync::atomic::AtomicBool::new(false),
+            #[cfg(all(test, unix))]
+            write_drop_gate: Mutex::new(None),
             #[cfg(all(test, unix))]
             drop_tail: ConnectionDropTail {
                 pause: Mutex::new(None),
@@ -1103,6 +1129,26 @@ impl ConnectionOwner {
         self.drop_tail
             .panic
             .store(true, std::sync::atomic::Ordering::Release);
+    }
+
+    #[cfg(all(test, unix))]
+    pub(crate) fn pause_next_write_retirement(
+        &self,
+    ) -> (std::sync::mpsc::Receiver<()>, std::sync::mpsc::Sender<()>) {
+        let (reached, wait) = std::sync::mpsc::channel();
+        let (resume, release) = std::sync::mpsc::channel();
+        assert!(self
+            .write_drop_gate
+            .lock()
+            .unwrap()
+            .replace((reached, release))
+            .is_none());
+        (wait, resume)
+    }
+
+    #[cfg(all(test, unix))]
+    fn take_write_drop_tail(&self) -> WriteDropTail {
+        WriteDropTail(Mutex::new(self.write_drop_gate.lock().unwrap().take()))
     }
 
     #[cfg(all(test, unix))]
@@ -1661,9 +1707,11 @@ impl OutboundStream for Handle {
         }
         let connection = self.connection.clone();
         let prepared = self.connection.call.prepare_io_future_with(
-            move |(pending, input, cost): (Pending, IoInputChunk, CapabilityCallCost)| async move {
+            move |(pending, input, cost): (Pending, WriteInput, CapabilityCallCost)| async move {
                 let call = connection.authorize("write", cost).await?;
-                connection.scope.charge_transfer(input.as_ref().len())?;
+                connection
+                    .scope
+                    .charge_transfer(input.input.as_ref().len())?;
                 let mut flight = WriteFlight {
                     input,
                     call,
@@ -1676,7 +1724,7 @@ impl OutboundStream for Handle {
                 let deadline = flight.call.deadline();
                 let result = {
                     let pending = &flight.pending;
-                    let input = &flight.input;
+                    let input = &flight.input.input;
                     let call = &mut flight.call;
                     let possible = &mut flight.possible;
                     let accepted = &mut flight.accepted;
@@ -1781,14 +1829,18 @@ impl OutboundStream for Handle {
         )?;
         let pending = self.connection.pending(1, timeout)?;
         let window = self.connection.scope.reserve_chunk(maximum)?;
-        let mut input: IoInputChunk = self.connection.transfer.input_with(maximum, produce)?;
-        let cost = CapabilityCallCost::new(0)
-            .with_typed_input_bytes(input.as_ref().len())
-            .with_typed_request_digest(CapabilityRequestDigest::from_parts(&[input.as_ref()])?);
-        input.retain_owner(Arc::new(ChunkOwner {
-            _connection: self.connection.clone(),
+        let input = WriteInput {
+            input: self.connection.transfer.input_with(maximum, produce)?,
+            #[cfg(all(test, unix))]
+            _write_tail: self.connection.take_write_drop_tail(),
             _window: window,
-        }))?;
+            _connection: self.connection.clone(),
+        };
+        let cost = CapabilityCallCost::new(0)
+            .with_typed_input_bytes(input.input.as_ref().len())
+            .with_typed_request_digest(CapabilityRequestDigest::from_parts(&[input
+                .input
+                .as_ref()])?);
         Ok(prepared.finish((pending, input, cost)))
     }
     fn ready(

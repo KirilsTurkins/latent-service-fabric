@@ -148,6 +148,18 @@ data. Guest TLS/parser storage has a separate allocator/guest-memory bound;
 transport bytes are insufficient to bound a hostile protocol parser. Logical
 reservations do not measure RSS/allocator/kernel peak usage.
 
+The write future keeps its input, original chunk admission and connection
+until that input is destroyed. On the pinned Rust 1.97.1 Linux x86-64 non-test
+build with `development-outbound` enabled, this changes the measured
+write-future allocation from 4,896 to 5,216 bytes;
+with the existing 64-byte bookkeeping allowance its original activation
+reservation changes from 4,960 to 5,280 bytes. Admission reserves the actual
+compiled future before constructing the input or dispatching, so an activation
+with less than the extra 320 bytes available can refuse a write earlier. These
+measurements are compiler-layout specific, not a new fixed profile limit; the
+16 KiB connection-owner allowance is unchanged. Read and lowering-copy
+retirement still require separate qualification.
+
 #736 readiness records park only the calling logical thread with sealed Store
 generation; siblings/nested calls may progress. No mutable Store borrow spans
 external I/O. Only positive read/write progress renews idle time; polling, DNS,
