@@ -55,7 +55,7 @@ fn qualified_stream_rejects_recreation_eviction_retention_transform_and_window_c
     };
     check(&response).unwrap();
     let mut global_limit = response.clone();
-    global_limit["config"]["max_msgs_per_subject"] = json!(64);
+    global_limit["config"]["max_msgs_per_subject"] = json!(65);
     check(&global_limit).unwrap();
     let mut missing_limit = response.clone();
     missing_limit["config"]
@@ -77,6 +77,7 @@ fn qualified_stream_rejects_recreation_eviction_retention_transform_and_window_c
         ("num_replicas", json!(2)),
         ("max_msgs", json!(63)),
         ("max_msgs_per_subject", json!(1)),
+        ("max_msgs_per_subject", json!(64)),
         ("max_msgs_per_subject", json!(0)),
         ("max_bytes", json!(65536)),
         ("max_age", json!(1)),

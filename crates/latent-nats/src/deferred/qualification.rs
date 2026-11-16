@@ -201,7 +201,7 @@ pub(crate) fn validate_stream_response(
         // A tighter subject limit can evict accepted history before the
         // global discard-new limit is reached. The broker must report it.
         || (stream.max_msgs_per_subject != -1
-            && stream.max_msgs_per_subject < stream.max_msgs)
+            && stream.max_msgs_per_subject <= stream.max_msgs)
         || u64::try_from(stream.max_bytes).ok() != Some(qualification.maximum_bytes)
         || stream.max_age != qualification.maximum_age_millis * 1_000_000
         || u32::try_from(stream.max_msg_size).ok() != Some(qualification.maximum_message_bytes)
