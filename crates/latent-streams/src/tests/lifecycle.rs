@@ -204,6 +204,293 @@ async fn status_releases_lifecycle_lock_before_dropping_last_observed_owner() {
     control.assert_native_settled();
 }
 
+#[cfg(unix)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn chunk_header_tails_keep_original_four_slot_admission() {
+    use tokio::io::AsyncWriteExt;
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut configuration = config();
+    configuration.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let request = StreamConnectRequest {
+        endpoint: configuration.destinations[0].endpoint.clone(),
+        timeout_millis: None,
+    };
+    let fixture = Fixture::new(configuration);
+    let (session, control) = fixture.session(5000);
+    let stream = fixture
+        .provider
+        .start(&session, request)
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    peer.write_all(b"abcd").await.unwrap();
+    let connection = fixture
+        .provider
+        .inner
+        .connections
+        .snapshot(0)
+        .unwrap()
+        .unwrap();
+    let mut held = Vec::new();
+    for _ in 0..4 {
+        let (reached, resume) = connection.pause_next_chunk_drop();
+        let mut chunk = stream.read(1, None).unwrap().await.unwrap().unwrap();
+        let copy = chunk.copy_bytes().unwrap();
+        drop(chunk);
+        let thread = std::thread::spawn(move || drop(copy));
+        reached.recv_timeout(Duration::from_secs(2)).unwrap();
+        held.push((resume, thread));
+    }
+    // Each thread pauses in the original chunk owner destructor while its
+    // original window remains owned by the output-slot billing value.
+    let refusal = match stream.read(1, None) {
+        Ok(future) => {
+            drop(future);
+            None
+        }
+        Err(failure) => Some(failure.code),
+    };
+    for (resume, thread) in held {
+        resume.send(()).unwrap();
+        thread.join().unwrap();
+    }
+    drop(connection);
+    drop(stream);
+    drop(session);
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+    assert_eq!(
+        refusal,
+        Some(StreamErrorCode::Exhausted),
+        "four retiring original owners must keep the four chunk slots"
+    );
+}
+
+#[cfg(unix)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn last_output_copy_keeps_original_connection_charge_during_retirement() {
+    use tokio::io::AsyncWriteExt;
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut configuration = config();
+    configuration.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let request = StreamConnectRequest {
+        endpoint: configuration.destinations[0].endpoint.clone(),
+        timeout_millis: None,
+    };
+    let fixture = Fixture::new(configuration);
+    let (session, control) = fixture.session(5000);
+    let stream = fixture
+        .provider
+        .start(&session, request)
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    peer.write_all(b"x").await.unwrap();
+    let connection = fixture
+        .provider
+        .inner
+        .connections
+        .snapshot(0)
+        .unwrap()
+        .unwrap();
+    let (reached, resume) = connection.pause_next_chunk_drop();
+    let mut chunk = stream.read(1, None).unwrap().await.unwrap().unwrap();
+    let copy = chunk.copy_bytes().unwrap();
+    drop(chunk);
+    drop(connection);
+    drop(stream);
+    drop(session);
+    let pools = fixture.pools.clone();
+    let thread = std::thread::spawn(move || drop(copy));
+    reached.recv_timeout(Duration::from_secs(2)).unwrap();
+    let activation_during_tail = control.budget.host_memory_bytes();
+    let metadata_during_tail = pools.snapshot().unwrap().metadata_bytes;
+    resume.send(()).unwrap();
+    thread.join().unwrap();
+    let metadata_after = pools.snapshot().unwrap().metadata_bytes;
+    eprintln!("chunk tail: activation={activation_during_tail} provider_metadata_during={metadata_during_tail} provider_metadata_after={metadata_after}");
+    fixture.clean().await;
+    drop(fixture);
+    drop(pools);
+    control.assert_native_settled();
+    assert!(
+        activation_during_tail >= 16 * 1024,
+        "the original activation charge must cover the retiring connection"
+    );
+    assert!(
+        metadata_during_tail >= metadata_after + 16 * 1024,
+        "the original provider charge must cover the retiring connection"
+    );
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn same_session_foreign_scope_cannot_supply_stream_chunk_custody() {
+    use tokio::io::AsyncWriteExt;
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut configuration = config();
+    configuration.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let request = StreamConnectRequest {
+        endpoint: configuration.destinations[0].endpoint.clone(),
+        timeout_millis: None,
+    };
+    let fixture = Fixture::new(configuration);
+    let (session, control) = fixture.session(5000);
+    let stream = fixture
+        .provider
+        .start(&session, request)
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    let connection = fixture
+        .provider
+        .inner
+        .connections
+        .snapshot(0)
+        .unwrap()
+        .unwrap();
+    let foreign = Arc::new(session.reserve_stream().unwrap());
+    let window = foreign.reserve_bound_chunk(1).unwrap();
+    let before = control.budget.host_memory_bytes();
+    let error = connection.try_foreign_chunk_window(window).err().unwrap();
+    assert_eq!(error.code, latent_core::PlatformErrorCode::PermissionDenied);
+    assert_eq!(control.budget.host_memory_bytes(), before);
+    drop(foreign);
+    peer.write_all(b"x").await.unwrap();
+    let mut chunk = stream.read(1, None).unwrap().await.unwrap().unwrap();
+    assert!(chunk.retain_owner(Arc::new(())).is_err());
+    let copy = chunk.copy_bytes().unwrap();
+    drop(chunk);
+    assert_eq!(copy.as_ref(), b"x");
+    drop(copy);
+    drop(connection);
+    drop(stream);
+    drop(session);
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
+#[cfg(unix)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn output_copy_connection_panic_retains_only_original_bounded_row() {
+    use tokio::io::AsyncWriteExt;
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut configuration = config();
+    configuration.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let request = StreamConnectRequest {
+        endpoint: configuration.destinations[0].endpoint.clone(),
+        timeout_millis: None,
+    };
+    let fixture = Fixture::new(configuration.clone());
+    let lifecycle =
+        StreamLifecycle::from_installed_for_qualification("streams", fixture.provider.clone())
+            .unwrap();
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let stream = lifecycle.start(&session, request).unwrap().await.unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    peer.write_all(b"x").await.unwrap();
+    let mut chunk = stream.read(1, None).unwrap().await.unwrap().unwrap();
+    let copy = chunk.copy_bytes().unwrap();
+    drop(chunk);
+    let registry = fixture.provider.inner.connections.clone();
+    let connection = registry.snapshot(0).unwrap().unwrap();
+    connection.panic_in_drop_tail();
+    drop(connection);
+    lifecycle.rotate(1, 2, configuration.clone()).unwrap();
+    drop(stream);
+    assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(copy))).is_err());
+    assert_eq!(lifecycle.status().unwrap().usage.owners, 1);
+    assert!(control.budget.host_memory_bytes() >= baseline + 16 * 1024);
+    lifecycle.rotate(2, 3, configuration).unwrap();
+    assert_eq!(lifecycle.status().unwrap().retired_generations, 2);
+    let pools = fixture.pools.clone();
+    drop(fixture);
+    drop(lifecycle);
+    drop(registry);
+    drop(session);
+    let snapshot = pools
+        .shutdown(Instant::now() + Duration::from_secs(2))
+        .await
+        .unwrap();
+    assert!(snapshot.is_clean(), "{snapshot:?}");
+    drop(pools);
+    control.assert_native_settled();
+}
+
+#[cfg(unix)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn concurrent_chunk_and_copy_retire_one_original_window() {
+    use tokio::io::AsyncWriteExt;
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut configuration = config();
+    configuration.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let request = StreamConnectRequest {
+        endpoint: configuration.destinations[0].endpoint.clone(),
+        timeout_millis: None,
+    };
+    let fixture = Fixture::new(configuration);
+    let (session, control) = fixture.session(5000);
+    let stream = fixture
+        .provider
+        .start(&session, request)
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    peer.write_all(b"abcd").await.unwrap();
+    let mut held = Vec::new();
+    for _ in 0..3 {
+        held.push(stream.read(1, None).unwrap().await.unwrap().unwrap());
+    }
+    let connection = fixture
+        .provider
+        .inner
+        .connections
+        .snapshot(0)
+        .unwrap()
+        .unwrap();
+    let (reached, resume) = connection.pause_next_chunk_drop();
+    let mut chunk = stream.read(1, None).unwrap().await.unwrap().unwrap();
+    let copy = chunk.copy_bytes().unwrap();
+    let barrier = Arc::new(std::sync::Barrier::new(3));
+    let first_barrier = barrier.clone();
+    let first = std::thread::spawn(move || {
+        first_barrier.wait();
+        drop(chunk);
+    });
+    let second_barrier = barrier.clone();
+    let second = std::thread::spawn(move || {
+        second_barrier.wait();
+        drop(copy);
+    });
+    barrier.wait();
+    reached.recv_timeout(Duration::from_secs(2)).unwrap();
+    let refusal = match stream.read(1, None) {
+        Ok(future) => {
+            drop(future);
+            None
+        }
+        Err(failure) => Some(failure.code),
+    };
+    resume.send(()).unwrap();
+    first.join().unwrap();
+    second.join().unwrap();
+    drop(held);
+    drop(connection);
+    drop(stream);
+    drop(session);
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+    assert_eq!(refusal, Some(StreamErrorCode::Exhausted));
+}
+
 #[tokio::test]
 async fn rotation_fences_old_grants_and_drain_reports_actual_retained_owners() {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
