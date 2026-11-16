@@ -140,7 +140,12 @@ join handles until actual completion. Dropping a result waiter does not abort a
 blocking job or release its leases. Cleanup has separate reserved capacity, so
 ordinary workers cannot consume every cleanup slot. Successful cleanup destroys
 the resource; failed cleanup returns the still-owned, charged connection for
-explicit recovery or destruction. A failed close never invents a refund.
+explicit recovery or destruction. A failed close never invents a refund. A
+quarantined failed stream dial retains its original connection quota and leases
+until its socket owner finishes destruction. If that destruction or a lease
+wake panics, the surviving original owners remain in the same prepaid slot;
+consumed owners cannot be reconstructed. This is bounded by the original pool,
+not a process-wide bound across separately recreated pools.
 
 ## Shutdown and observations
 
