@@ -272,6 +272,9 @@ impl StreamLifecycle {
         config: StreamProviderConfig,
         install: crate::provider::ProviderInstaller,
     ) -> Result<ProviderReference, StreamError> {
+        // Keep removed generations alive until the lifecycle lock has been
+        // released, including on a later installation failure.
+        let mut removed: [Option<StreamProvider>; MAX_RETIRED] = std::array::from_fn(|_| None);
         let mut state = self.state.lock().map_err(|_| unavailable())?;
         if state.stopped
             || state.current.reference().configuration_epoch() != expected_epoch
@@ -279,12 +282,12 @@ impl StreamLifecycle {
         {
             return Err(unavailable());
         }
-        for retired in &mut state.retired {
+        for (retired, removed) in state.retired.iter_mut().zip(&mut removed) {
             if retired
                 .as_ref()
                 .is_some_and(|p| p.usage().is_ok_and(|u| u.owners == 0))
             {
-                *retired = None;
+                *removed = retired.take();
             }
         }
         let index = state
@@ -299,12 +302,15 @@ impl StreamLifecycle {
             expected_epoch,
             config,
         )?;
-        // Installation fenced the old epoch first; abort now wakes accepted
-        // original work and retains physical charges through its final Drop.
-        state.current.retire();
         let retired = std::mem::replace(&mut state.current, replacement);
-        state.retired[index] = Some(retired);
-        Ok(state.current.reference())
+        state.retired[index] = Some(retired.clone());
+        let reference = state.current.reference();
+        drop(state);
+        drop(removed);
+        // Installation fenced the old epoch first. Wake its accepted work
+        // outside the lifecycle lock; the original physical owners are kept.
+        retired.retire();
+        Ok(reference)
     }
     pub fn status(&self) -> Result<StreamStatus, StreamError> {
         let state = self.state.try_lock().map_err(crate::snapshot_lock_error)?;
@@ -348,13 +354,17 @@ impl StreamLifecycle {
         })
     }
     pub fn retire(&self) {
-        let mut state = self
-            .state
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        state.stopped = true;
-        state.current.retire();
-        for retired in state.retired.iter().flatten() {
+        let (current, retired) = {
+            let mut state = self
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            state.stopped = true;
+            (state.current.clone(), state.retired.clone())
+        };
+        // Abort can wake arbitrary waiters; no lifecycle lock is held here.
+        current.retire();
+        for retired in retired.iter().flatten() {
             retired.retire();
         }
     }
