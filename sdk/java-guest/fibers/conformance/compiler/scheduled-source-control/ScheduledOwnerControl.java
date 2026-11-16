@@ -60,6 +60,7 @@ public final class ScheduledOwnerControl {
     }
     private static void factoryRejectionTargets() throws Exception {
         for (boolean scheduled : new boolean[]{false, true}) for (String mode : new String[]{"null", "throws", "live", "add-before", "add-after"}) {
+            if (scheduled && mode.equals("null")) continue; // Accepted scheduled work is covered below.
             AtomicReference<Runnable> target = new AtomicReference<>();
             var original = new IllegalStateException("source-factory-failure-" + mode);
             CountDownLatch liveStarted = new CountDownLatch(1), liveRelease = new CountDownLatch(1);
@@ -349,22 +350,27 @@ public final class ScheduledOwnerControl {
         });
         selected.set(pool);
         try {
-            try { pool.schedule(() -> {}, 0, TimeUnit.NANOSECONDS); throw new AssertionError("expected-factory-failure"); }
-            catch (RuntimeException expected) {
-                if (mode.equals("factory-null")) require(expected instanceof java.util.concurrent.RejectedExecutionException);
-                else require(expected == failure);
+            java.util.concurrent.ScheduledFuture<?> outer = null;
+            if (mode.equals("factory-null")) {
+                outer = pool.schedule(() -> {}, 0, TimeUnit.NANOSECONDS);
+                require(!outer.isDone());
+                held(2, 2);
+            } else {
+                try { pool.schedule(() -> {}, 0, TimeUnit.NANOSECONDS); throw new AssertionError("expected-factory-failure"); }
+                catch (RuntimeException expected) { require(expected == failure); }
+                held(1, 1);
             }
             require(attempts.get() == 1 && nested.get() != null && !nested.get().isDone() && pool.hasPendingWork());
-            held(1, 1);
             require(Activation.count(LatentRuntimeActivationOwnerKind.Executor) == 1);
             pool.schedule(() -> {}, 0, TimeUnit.NANOSECONDS).get(5, TimeUnit.SECONDS);
             nested.get().get(5, TimeUnit.SECONDS);
+            if (outer != null) outer.get(5, TimeUnit.SECONDS);
             require(attempts.get() == 2 && calls.get() == 1);
         } finally { finish(pool); }
       }
     }
     private static void reentrantFactoryRetirement() throws Exception {
-        for (boolean fail : new boolean[]{false, true}) {
+        for (String mode : new String[]{"thread", "throw", "null"}) {
             AtomicReference<ScheduledThreadPoolExecutor> selected = new AtomicReference<>();
             var failure = new IllegalStateException("factory-after-retirement");
             var pool = new ScheduledThreadPoolExecutor(1, target -> {
@@ -374,12 +380,13 @@ public final class ScheduledOwnerControl {
                     && Activation.count(LatentRuntimeActivationOwnerKind.Executor) == 1);
                 current.closeAtRoot();
                 require(current.hasPendingWork() && !current.isRetired());
-                if (fail) throw failure;
+                if (mode.equals("throw")) throw failure;
+                if (mode.equals("null")) return null;
                 return new Thread(target);
             });
             selected.set(pool);
             try {
-                if (fail) {
+                if (mode.equals("throw")) {
                     try { pool.schedule(() -> { throw new AssertionError("retired-task-ran"); }, 0, TimeUnit.NANOSECONDS);
                         throw new AssertionError("expected-factory-failure"); }
                     catch (IllegalStateException expected) { require(expected == failure); }
@@ -477,9 +484,13 @@ public final class ScheduledOwnerControl {
         pool.shutdown(); require(delayed.isCancelled());
         require(pool.awaitTermination(5, TimeUnit.SECONDS)); Activation.idle();
 
-        pool = new ScheduledThreadPoolExecutor(1, task -> null);
-        try { pool.schedule(() -> { throw new AssertionError("failed-worker-callback"); }, 0, TimeUnit.NANOSECONDS); throw new AssertionError(); }
-        catch (java.util.concurrent.RejectedExecutionException expected) { held(0, 0); }
+        AtomicReference<Runnable> declined = new AtomicReference<>();
+        pool = new ScheduledThreadPoolExecutor(1, task -> { declined.set(task); return null; });
+        var withoutWorker = pool.schedule(() -> { throw new AssertionError("failed-worker-callback"); }, 0, TimeUnit.NANOSECONDS);
+        require(!withoutWorker.isDone() && pool.hasPendingWork() && workers(pool).isEmpty());
+        held(1, 1); clearedWorkerTarget(declined.get());
+        require(pool.shutdownNow().contains(withoutWorker) && !withoutWorker.isDone());
+        held(0, 0); require(withoutWorker.cancel(false));
         finish(pool);
         workerTargets();
         factoryRejectionTargets();
@@ -493,6 +504,6 @@ public final class ScheduledOwnerControl {
         identityRemoval();
         reentrantFactoryFailureKeepsNestedOwner();
         reentrantFactoryRetirement();
-        System.out.println("SCHEDULED_OWNER_CONTROL PASS preadmission;actual-result;running-cancel-held;periodic-nonoverlap;original-error-suppresses-repeat;timed-wait-cancel-and-interrupt;shutdown-policy;factory-rollback;worker-retirement-snapshot;copy-failure-retained;reentrant-worker-admission;all-retired");
+        System.out.println("SCHEDULED_OWNER_CONTROL PASS preadmission;actual-result;running-cancel-held;periodic-nonoverlap;original-error-suppresses-repeat;timed-wait-cancel-and-interrupt;shutdown-policy;factory-rollback;worker-retirement-snapshot;copy-failure-retained;reentrant-worker-admission;null-factory-keeps-queue;all-retired");
     }
 }

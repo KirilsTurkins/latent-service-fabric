@@ -918,7 +918,7 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
         'fibers/dev/latent/guest/runtime/Monitors.java')]
     sources += [fixture / 'dev/latent/generated/Bindings.java', fixture / 'TimerSleepAdmissionSourceControl.java',
                 fixture / 'OwnerAdmissionSourceControl.java', fixture / 'OwnerSettlementSourceControl.java',
-                fixture / 'WorkFinishSourceControl.java']
+                fixture / 'WorkFinishSourceControl.java', fixture / 'ScheduledNullFactoryActivationControl.java']
     sources += sorted((sdk / 'fibers/dev/latent/guest/runtime/concurrent').glob('*.java'))
     timer_worker_sources = [sdk / ('fibers/dev/latent/guest/runtime/util/' + name + '.java')
                             for name in ('Timer', 'TimerTask')]
@@ -933,6 +933,15 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
         str(output) + os.pathsep + classpath, 'TimerSleepAdmissionSourceControl').strip()
     if actual != 'TIMER_SLEEP_ADMISSION_SOURCE PASS zero-raw-frame;zero-interrupt;typed-refusal;wait-return;same-work-retry;raw-hook-finally':
         raise ValueError('Java timer sleep admission source control did not complete')
+    null_factory_modes = ('cancel', 'remove', 'wait-denied', 'settle-result-denied',
+                          'settle-queue-denied', 'recovery', 'reentrant', 'scan-mutation',
+                          'retirement-scan-mutation', 'idle-scan-mutation', 'repeated-idle-scan-mutation',
+                          'exhausted-scan-retry', 'retry-with-live-work')
+    for mode in null_factory_modes:
+        actual = compiler.run('scheduled-null-factory-activation-' + mode, 'java', '-Xmx256m', '-cp',
+            str(output) + os.pathsep + classpath, 'ScheduledNullFactoryActivationControl', mode).strip()
+        if actual != 'SCHEDULED_NULL_FACTORY_ACTIVATION PASS ' + mode:
+            raise ValueError('Java null-factory activation control did not complete: ' + mode)
     timer_wait_admission_source_control(compiler, output / 'timer-worker-admission', output, classpath)
     owner_cases = ('normal', 'refused', 'lost', 'null', 'reentry', 'capacity')
     for case in owner_cases:
@@ -954,6 +963,7 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
         raise ValueError('Java timer sleep admission source inputs changed')
     return {'status': 'SDK-source-control-passed', 'sourceInputs': inputs, 'jarDigests': identities,
         'timerWorkerAdmission': 'private-ledger-refusal-and-root-fence-passed',
+        'scheduledNullFactoryActivation': list(null_factory_modes),
         'ownerAdmissionCases': list(owner_cases), 'ownerSettlementCases': list(OWNER_SETTLEMENT_CASES),
         'workFinishCases': [list(case) for case in WORK_FINISH_CASES],
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
@@ -1175,6 +1185,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     reference = private / 'ScheduledStoppedReferenceControl.java'
     periodic_reference = private / 'ScheduledPeriodicReferenceControl.java'
     validation_reference = private / 'ScheduledPeriodicValidationReferenceControl.java'
+    null_factory_reference = private / 'ScheduledNullFactoryReferenceControl.java'
     invoke_reference = private / 'ExecutorInvokeInterruptReferenceControl.java'
     invoke_any_reference = private / 'ExecutorInvokeAnyReadyReferenceControl.java'
     invoke_all_reference = private / 'ExecutorInvokeAllWaitReferenceControl.java'
@@ -1185,13 +1196,13 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     comparison_inputs = [private / name for name in ('ScheduledCompareReferenceControl.java',
         'ScheduledCompareFakeClock.java', 'ScheduledCompareClockControl.java')]
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
-        for path in (*ports, *controls, *comparison_inputs, noop_reference, ready_reference, reference, periodic_reference, validation_reference, invoke_reference, invoke_any_reference, invoke_all_reference, termination_reference,
+        for path in (*ports, *controls, *comparison_inputs, noop_reference, ready_reference, reference, periodic_reference, validation_reference, null_factory_reference, invoke_reference, invoke_any_reference, invoke_all_reference, termination_reference,
                      null_failure_reference, monitor_reference, default_monitor_reference)}
     output.mkdir()
     jdk_output = output / 'reference-jdk'
     jdk_output.mkdir()
     compiler.run('scheduled-stopped-reference-compile', 'javac', '-proc:none', '--release', '25',
-        '-d', jdk_output, reference, periodic_reference, validation_reference, invoke_reference, termination_reference,
+        '-d', jdk_output, reference, periodic_reference, validation_reference, null_factory_reference, invoke_reference, termination_reference,
         null_failure_reference, monitor_reference, default_monitor_reference, ready_reference, noop_reference, invoke_any_reference, invoke_all_reference)
     expected_stopped = ('SCHEDULED_STOPPED_REFERENCE PASS delayed;fixed-rate;fixed-delay;nested;future;'
         'running;shutdown;shutdown-policy;physical-runner;worker-capacity;factory-failure-retry')
@@ -1207,6 +1218,10 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     result = compiler.run('scheduled-periodic-validation-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'ScheduledPeriodicValidationReferenceControl').strip()
     if result != expected_validation: raise ValueError('Java periodic validation reference did not complete')
+    expected_null_factory = 'SCHEDULED_NULL_FACTORY PASS accepted;recovery;cancel;shutdown-now;reentrant'
+    result = compiler.run('scheduled-null-factory-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
+        'ScheduledNullFactoryReferenceControl').strip()
+    if result != expected_null_factory: raise ValueError('Java null-factory reference did not complete')
     expected_invoke = ('EXECUTOR_INVOKE_INTERRUPT PASS preinterrupted-ready;empty;zero;pending-cancel;'
         'blocked-interrupt')
     result = compiler.run('executor-invoke-interrupt-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
@@ -1245,6 +1260,11 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     if text.count(original) != 1: raise ValueError('Java periodic validation source import is ambiguous')
     selected_validation = output / 'ScheduledPeriodicValidationReferenceControl.java'
     selected_validation.write_bytes(text.replace(original,
+        'import dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor;').encode('utf-8'))
+    text = read_file(null_factory_reference).decode('utf-8')
+    if text.count(original) != 1: raise ValueError('Java null-factory source import is ambiguous')
+    selected_null_factory = output / 'ScheduledNullFactoryReferenceControl.java'
+    selected_null_factory.write_bytes(text.replace(original,
         'import dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor;').encode('utf-8'))
     text = read_file(invoke_reference).decode('utf-8')
     original = 'import java.util.concurrent.AbstractExecutorService;'
@@ -1303,11 +1323,14 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     selected_noop.write_bytes(text.replace(original,
         'import dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor;').encode('utf-8'))
     compiler.run('scheduled-source-compile', 'javac', '-proc:none', '--release', '25',
-        '-d', output, *ports, *controls, selected, selected_periodic, selected_validation, selected_invoke, selected_termination,
+        '-d', output, *ports, *controls, selected, selected_periodic, selected_validation, selected_null_factory, selected_invoke, selected_termination,
         selected_null_failure, selected_monitor, selected_default_monitor, selected_ready, selected_noop, selected_invoke_any, selected_invoke_all)
     validation_result = compiler.run('scheduled-periodic-validation-source', 'java', '-Xmx256m', '-cp', output,
         'ScheduledPeriodicValidationReferenceControl').strip()
     if validation_result != expected_validation: raise ValueError('Java periodic validation source differs from reference')
+    null_factory_result = compiler.run('scheduled-null-factory-source', 'java', '-Xmx256m', '-cp', output,
+        'ScheduledNullFactoryReferenceControl').strip()
+    if null_factory_result != expected_null_factory: raise ValueError('Java null-factory source differs from reference')
     result = compiler.run('executor-invoke-interrupt-source', 'java', '-Xmx256m', '-cp', output,
         'ExecutorInvokeInterruptReferenceControl', 'source').strip()
     if result != expected_invoke: raise ValueError('Java executor invoke source differs from reference')
@@ -1355,7 +1378,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     result = compiler.run('scheduled-source-control', 'java', '-Xmx256m', '-cp', output, 'ScheduledOwnerControl').strip()
     expected = ('SCHEDULED_OWNER_CONTROL PASS preadmission;actual-result;running-cancel-held;periodic-nonoverlap;'
         'original-error-suppresses-repeat;timed-wait-cancel-and-interrupt;shutdown-policy;factory-rollback;'
-        'worker-retirement-snapshot;copy-failure-retained;reentrant-worker-admission;all-retired')
+        'worker-retirement-snapshot;copy-failure-retained;reentrant-worker-admission;null-factory-keeps-queue;all-retired')
     if result != expected: raise ValueError('Java scheduled source control did not complete')
     result = compiler.run('scheduled-completable-owner-control', 'java', '-Xmx256m', '-cp', output,
         'ScheduledCompletableOwnerControl').strip()
@@ -1425,6 +1448,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         raise ValueError('Java scheduled source control inputs changed')
     return {'status': 'SDK-source-controls-passed', 'referenceJdk': 'matched-stopped-and-periodic-observables', 'sourceInputs': inputs,
         'periodicValidation': 'matched-jdk-before-owner-admission',
+        'nullFactory': 'matched-jdk-accept-cancel-and-later-recovery',
         'futureCancelInterrupt': interrupt_control, 'executorOwnerSettlement': executor_settlement,
         'executorInvokeInterrupt': 'matched-14-preinterrupted-and-two-blocked-JDK-cases',
         'executorAwaitTermination': 'matched-16-preinterrupted-two-blocked-and-overridden-state-JDK-cases',
