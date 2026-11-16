@@ -33,21 +33,21 @@ class ScheduledLibraryOwnership(unittest.TestCase):
             prepared = root / 'prepared'
             compiler = prepared / 'compiler'
             compiler.mkdir(parents=True)
-            # The scheduled-library failure recorded 178 successful commands;
+            # The scheduled-library failure recorded 298 successful commands;
             # a successful command normally leaves both of these public files.
-            for index in range(178):
+            for index in range(298):
                 (compiler / f'{index}-stage.command.json').write_bytes(b'{}')
                 (compiler / f'{index}-stage.log').write_bytes(b'log')
             (compiler / 'private.txt').write_bytes(b'not selected')
             first = owner.retain(prepared, root / 'observed')
-            self.assertEqual(len(first), 356)
-            self.assertEqual((root / 'observed/compiler/177-stage.log').read_bytes(), b'log')
+            self.assertEqual(len(first), 596)
+            self.assertEqual((root / 'observed/compiler/297-stage.log').read_bytes(), b'log')
             self.assertFalse((root / 'observed/compiler/private.txt').exists())
 
-            for index in range(178, 256):
+            for index in range(298, 512):
                 (compiler / f'{index}-stage.command.json').write_bytes(b'{}')
                 (compiler / f'{index}-stage.log').write_bytes(b'log')
-            self.assertEqual(len(owner.retain(prepared, root / 'at-limit')), 512)
+            self.assertEqual(len(owner.retain(prepared, root / 'at-limit')), 1024)
             (compiler / 'overflow.log').write_bytes(b'overflow')
             with self.assertRaisesRegex(ValueError, 'compiler-log-count'):
                 owner.retain(prepared, root / 'over-limit')
