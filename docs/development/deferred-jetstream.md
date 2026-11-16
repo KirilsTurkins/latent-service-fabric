@@ -35,7 +35,7 @@ software version, canonical UTC `stream.created`, bounded message/byte/age/size
 limits and the configured duplicate window. Before every business publication,
 the adapter queries the exact stream through the same authenticated connection.
 Only file storage, one replica, limits retention and discard-new are supported.
-Delete/purge are disabled; age eviction must cover the duplicate window.
+Delete/purge are disabled; age eviction must cover the duplicate window. A per-subject message limit must be disabled or at least as large as the global message limit, so it cannot evict accepted history before discard-new applies.
 Rollups, transforms, republish, mirrors/sources, per-message TTL, atomic batch,
 counter and scheduled-message features are rejected. Every qualified field and
 all mapped subjects must match. An incompatible retained decoder/profile cannot

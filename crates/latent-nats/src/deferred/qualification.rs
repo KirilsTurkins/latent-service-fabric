@@ -115,6 +115,7 @@ struct StreamConfig<'a> {
     discard: &'a str,
     num_replicas: u32,
     max_msgs: i64,
+    max_msgs_per_subject: i64,
     max_bytes: i64,
     max_age: u64,
     max_msg_size: i32,
@@ -194,6 +195,10 @@ pub(crate) fn validate_stream_response(
         || stream.discard != "new"
         || stream.num_replicas != 1
         || u64::try_from(stream.max_msgs).ok() != Some(qualification.maximum_messages)
+        // A tighter subject limit can evict accepted history before the
+        // global discard-new limit is reached. The broker must report it.
+        || (stream.max_msgs_per_subject != -1
+            && stream.max_msgs_per_subject < stream.max_msgs)
         || u64::try_from(stream.max_bytes).ok() != Some(qualification.maximum_bytes)
         || stream.max_age != qualification.maximum_age_millis * 1_000_000
         || u32::try_from(stream.max_msg_size).ok() != Some(qualification.maximum_message_bytes)

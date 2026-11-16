@@ -227,7 +227,7 @@ fn literal_input_stream_requires_original_incarnation_and_protected_finite_histo
     let response = json!({"type":"io.nats.jetstream.api.v1.stream_info_response",
         "created":selected.qualification.stream_created, "config":{
             "name":"ORDERS", "subjects":["orders.new"], "storage":"file", "retention":"limits", "discard":"new",
-            "num_replicas":1,"max_msgs":10_000,"max_bytes":64*1024*1024,"max_age":0,"max_msg_size":16_384,
+            "num_replicas":1,"max_msgs":10_000,"max_msgs_per_subject":-1,"max_bytes":64*1024*1024,"max_age":0,"max_msg_size":16_384,
             "duplicate_window":30_000_000_000u64,"deny_delete":true,"deny_purge":true}});
     let check = |value: &serde_json::Value| {
         qualification::validate_stream_response(
@@ -245,6 +245,7 @@ fn literal_input_stream_requires_original_incarnation_and_protected_finite_histo
         ("retention", json!("workqueue")),
         ("discard", json!("old")),
         ("max_msgs", json!(-1)),
+        ("max_msgs_per_subject", json!(1)),
         ("deny_delete", json!(false)),
         ("deny_purge", json!(false)),
         ("max_age", json!(1)),
