@@ -4,10 +4,11 @@ use bytes::Bytes;
 use http_body::{Body, Frame, SizeHint};
 use latent_capabilities::broker::pools::{ProviderMetadata, ProviderPools};
 use std::{
+    alloc::Layout,
     convert::Infallible,
     ops::Range,
     pin::Pin,
-    sync::Arc,
+    sync::{atomic::AtomicUsize, Arc},
     task::{Context, Poll},
 };
 use zeroize::Zeroizing;
@@ -55,6 +56,148 @@ impl ProtocolPage {
         Ok(())
     }
 }
+
+#[cfg(test)]
+type PageDropHook = Box<dyn FnOnce() + Send>;
+#[cfg(test)]
+static PAGE_DROP_HOOK: std::sync::Mutex<Option<(usize, PageDropHook)>> =
+    std::sync::Mutex::new(None);
+
+#[cfg(test)]
+pub(crate) fn observe_shared_page_drop(page: &SharedProtocolPage, hook: PageDropHook) {
+    let mut slot = PAGE_DROP_HOOK.lock().unwrap();
+    assert!(slot.is_none());
+    *slot = Some((page.page().data.as_ptr() as usize, hook));
+}
+
+#[cfg(test)]
+impl Drop for ProtocolPage {
+    fn drop(&mut self) {
+        let hook = {
+            let mut slot = PAGE_DROP_HOOK.lock().unwrap();
+            if slot
+                .as_ref()
+                .is_some_and(|(page, _)| *page == self.data.as_ptr() as usize)
+            {
+                slot.take()
+            } else {
+                None
+            }
+        };
+        if let Some((_, hook)) = hook {
+            hook();
+        }
+    }
+}
+
+/// A protocol page whose private Arc is retired before its original pool charge.
+/// Only the handle is cloneable; its Arc and Weak handles never escape.
+///
+/// ```compile_fail
+/// use latent_http::protocol::SharedProtocolPage;
+/// fn cannot_downgrade(page: &SharedProtocolPage) {
+///     let _ = std::sync::Arc::downgrade(page);
+/// }
+/// ```
+///
+/// ```compile_fail
+/// use latent_http::protocol::{ProtocolPage, SharedProtocolPage};
+/// fn cannot_replace(page: &mut SharedProtocolPage, other: ProtocolPage) {
+///     let _ = std::mem::replace(page.get_mut().unwrap(), other);
+/// }
+/// ```
+pub struct SharedProtocolPage(Option<Arc<ProtocolPage>>);
+
+impl SharedProtocolPage {
+    pub fn allocate(pools: &ProviderPools, capacity: usize) -> Result<Self, HttpError> {
+        // The existing capacity + 512 reservation must cover BOTH the actual
+        // page Arc and the Vec, including one 64-byte allowance for each.
+        // Pinned Rust 1.97.1 uses this repr(C) ArcInner field order:
+        // https://github.com/rust-lang/rust/blob/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/alloc/src/sync.rs#L365-L386
+        let arc = Layout::new::<[AtomicUsize; 2]>()
+            .extend(Layout::new::<ProtocolPage>())
+            .map_err(|_| HttpError::RequestTooLarge)?
+            .0
+            .pad_to_align()
+            .size();
+        if arc.checked_add(128).is_none_or(|bytes| bytes > 512) {
+            return Err(HttpError::BudgetExhausted);
+        }
+        let page = ProtocolPage::allocate(pools, capacity)?;
+        Ok(Self(Some(Arc::new(page))))
+    }
+
+    fn page(&self) -> &ProtocolPage {
+        self.0.as_deref().expect("live protocol page")
+    }
+
+    #[must_use]
+    pub fn capacity(&self) -> usize {
+        self.page().capacity()
+    }
+
+    #[must_use]
+    pub fn bytes(&self) -> &[u8] {
+        self.page().bytes()
+    }
+
+    /// Return None if another handle currently owns this page; no mutable
+    /// page reference is exposed or allowed to replace the prepaid owner.
+    pub fn try_append(&mut self, bytes: &[u8]) -> Option<Result<(), HttpError>> {
+        Arc::get_mut(self.0.as_mut()?).map(|page| page.append(bytes))
+    }
+}
+
+impl Clone for SharedProtocolPage {
+    fn clone(&self) -> Self {
+        Self(Some(Arc::clone(
+            self.0.as_ref().expect("live protocol page"),
+        )))
+    }
+}
+
+impl Drop for SharedProtocolPage {
+    fn drop(&mut self) {
+        if let Some(page) = self.0.take() {
+            // Every managed strong handle uses into_inner, and no Weak can be
+            // created. On the last handle the Arc allocation is freed before
+            // the returned page drops its Vec and original metadata charge.
+            // https://github.com/rust-lang/rust/blob/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/alloc/src/sync.rs#L1176-L1199
+            drop(Arc::into_inner(page));
+        }
+    }
+}
+
+const _: () = {
+    assert!(std::mem::size_of::<SharedProtocolPage>() == std::mem::size_of::<Arc<ProtocolPage>>());
+    assert!(
+        std::mem::align_of::<SharedProtocolPage>() == std::mem::align_of::<Arc<ProtocolPage>>()
+    );
+};
+
+// Only these two source forms are accepted. The raw-Arc form remains supported
+// for existing callers, but its external Weak references are not covered by
+// the managed handle's retirement guarantee.
+trait PageSource {
+    fn page(&self) -> &ProtocolPage;
+    fn retained(&self) -> SharedProtocolPage;
+}
+impl PageSource for Arc<ProtocolPage> {
+    fn page(&self) -> &ProtocolPage {
+        self.as_ref()
+    }
+    fn retained(&self) -> SharedProtocolPage {
+        SharedProtocolPage(Some(Arc::clone(self)))
+    }
+}
+impl PageSource for SharedProtocolPage {
+    fn page(&self) -> &ProtocolPage {
+        SharedProtocolPage::page(self)
+    }
+    fn retained(&self) -> SharedProtocolPage {
+        self.clone()
+    }
+}
 pub struct ProtocolBody {
     pages: Vec<PageEntry>,
     index: usize,
@@ -65,7 +208,7 @@ pub struct ProtocolBody {
 // One possible frame per page. Its original node guard is admitted before the
 // infallible Body poll and moved to Bytes only if that page is emitted.
 struct PageEntry {
-    page: Arc<ProtocolPage>,
+    page: SharedProtocolPage,
     retirement: Option<ProviderMetadata>,
 }
 
@@ -96,7 +239,7 @@ const _: () = {
     );
 };
 struct Slice {
-    page: Arc<ProtocolPage>,
+    page: SharedProtocolPage,
     range: Range<usize>,
 }
 
@@ -112,6 +255,63 @@ pub(crate) fn protocol_accounting_layout() -> (usize, usize) {
         std::mem::size_of::<PageEntry>(),
         frame_allocation_bytes().unwrap(),
     )
+}
+
+#[cfg(test)]
+mod shared_page_layout_tests {
+    use super::*;
+
+    struct OriginalSlice {
+        page: Arc<ProtocolPage>,
+        range: Range<usize>,
+    }
+    impl AsRef<[u8]> for OriginalSlice {
+        fn as_ref(&self) -> &[u8] {
+            &self.page.bytes()[self.range.clone()]
+        }
+    }
+    impl Drop for OriginalSlice {
+        fn drop(&mut self) {}
+    }
+
+    #[test]
+    fn shared_page_preserves_original_handle_and_frame_layouts() {
+        let arc = Layout::new::<[AtomicUsize; 2]>()
+            .extend(Layout::new::<ProtocolPage>())
+            .unwrap()
+            .0
+            .pad_to_align()
+            .size();
+        assert!(arc + 128 <= 512);
+        assert_eq!(
+            std::mem::size_of::<SharedProtocolPage>(),
+            std::mem::size_of::<Arc<ProtocolPage>>()
+        );
+        assert_eq!(
+            std::mem::align_of::<SharedProtocolPage>(),
+            std::mem::align_of::<Arc<ProtocolPage>>()
+        );
+        assert_eq!(
+            std::mem::size_of::<Slice>(),
+            std::mem::size_of::<OriginalSlice>()
+        );
+        assert_eq!(
+            std::mem::align_of::<Slice>(),
+            std::mem::align_of::<OriginalSlice>()
+        );
+        assert_eq!(
+            bytes::Bytes::owner_with_retirement_allocation_size::<Slice, ProviderMetadata>(),
+            bytes::Bytes::owner_with_retirement_allocation_size::<OriginalSlice, ProviderMetadata>(
+            )
+        );
+        eprintln!(
+            "ProtocolPage={}, Arc backing={arc}, handle={}, Slice={}, frame charge={}",
+            std::mem::size_of::<ProtocolPage>(),
+            std::mem::size_of::<SharedProtocolPage>(),
+            std::mem::size_of::<Slice>(),
+            frame_allocation_bytes().unwrap()
+        );
+    }
 }
 
 #[cfg(test)]
@@ -132,10 +332,9 @@ impl Drop for Slice {
     fn drop(&mut self) {
         let hook = {
             let mut slot = SLICE_DROP_HOOK.lock().unwrap();
-            if slot
-                .as_ref()
-                .is_some_and(|(page, _)| *page == Arc::as_ptr(&self.page) as usize)
-            {
+            if slot.as_ref().is_some_and(|(page, _)| {
+                *page == Arc::as_ptr(self.page.0.as_ref().unwrap()) as usize
+            }) {
                 slot.take()
             } else {
                 None
@@ -157,17 +356,34 @@ impl ProtocolBody {
         pages: &[Arc<ProtocolPage>],
         range: Range<usize>,
     ) -> Result<Self, HttpError> {
+        Self::from_page_source(pools, pages, range)
+    }
+
+    /// Build from pages whose private Arc headers retire before their charges.
+    pub fn from_shared_pages(
+        pools: &ProviderPools,
+        pages: &[SharedProtocolPage],
+        range: Range<usize>,
+    ) -> Result<Self, HttpError> {
+        Self::from_page_source(pools, pages, range)
+    }
+
+    fn from_page_source<T: PageSource>(
+        pools: &ProviderPools,
+        pages: &[T],
+        range: Range<usize>,
+    ) -> Result<Self, HttpError> {
         if pages.len() > 512 || range.end < range.start || range.end > MAXIMUM_PROTOCOL_BODY_BYTES {
             return Err(HttpError::InvalidRequest);
         }
-        let total: usize = pages.iter().map(|p| p.bytes().len()).sum();
+        let total: usize = pages.iter().map(|p| p.page().bytes().len()).sum();
         if range.end > total {
             return Err(HttpError::InvalidRequest);
         }
         let mut index = 0;
         let mut offset = range.start;
-        while index < pages.len() && offset >= pages[index].bytes().len() {
-            offset -= pages[index].bytes().len();
+        while index < pages.len() && offset >= pages[index].page().bytes().len() {
+            offset -= pages[index].page().bytes().len();
             index += 1;
         }
         // Mirror poll_frame exactly: even an empty page between nonempty pages
@@ -177,7 +393,7 @@ impl ProtocolBody {
         let mut first_offset = offset;
         while pending != 0 {
             let page = pages.get(end).ok_or(HttpError::InvalidRequest)?;
-            let length = (page.bytes().len() - first_offset).min(pending);
+            let length = (page.page().bytes().len() - first_offset).min(pending);
             pending -= length;
             first_offset = 0;
             end += 1;
@@ -210,7 +426,7 @@ impl ProtocolBody {
                 None
             };
             entries.push(PageEntry {
-                page: Arc::clone(page),
+                page: page.retained(),
                 retirement,
             });
         }
@@ -242,7 +458,7 @@ impl Body for ProtocolBody {
             return Poll::Ready(None);
         }
         let entry = &mut this.pages[this.index];
-        let page = Arc::clone(&entry.page);
+        let page = entry.page.clone();
         let retirement = entry
             .retirement
             .take()

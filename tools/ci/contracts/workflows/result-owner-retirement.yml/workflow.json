@@ -11,6 +11,19 @@
 "paths":[
 "crates/vendor/bytes/**",
 "crates/latent-core/src/result_payload.rs",
+"crates/latent-http/src/protocol.rs",
+"crates/latent-http/src/protocol/**",
+"crates/latent-http/src/deferred/request.rs",
+"crates/latent-http/src/tests/protocol.rs",
+"crates/latent-capabilities/src/broker/pools.rs",
+"crates/latent-capabilities/src/broker/pools/**",
+"Cargo.lock",
+"rust-toolchain.toml",
+"crates/latent-blobs/src/s3/provider/handles.rs",
+"crates/latent-blobs/src/s3/provider/remote.rs",
+"crates/latent-blobs/src/s3/provider/seal.rs",
+"tools/protocol_page_retirement_witness.py",
+"tools/protocol_page_retirement_witness.rs",
 ".github/workflows/result-owner-retirement.yml"
 ]
 },
@@ -21,6 +34,19 @@
 "paths":[
 "crates/vendor/bytes/**",
 "crates/latent-core/src/result_payload.rs",
+"crates/latent-http/src/protocol.rs",
+"crates/latent-http/src/protocol/**",
+"crates/latent-http/src/deferred/request.rs",
+"crates/latent-http/src/tests/protocol.rs",
+"crates/latent-capabilities/src/broker/pools.rs",
+"crates/latent-capabilities/src/broker/pools/**",
+"Cargo.lock",
+"rust-toolchain.toml",
+"crates/latent-blobs/src/s3/provider/handles.rs",
+"crates/latent-blobs/src/s3/provider/remote.rs",
+"crates/latent-blobs/src/s3/provider/seal.rs",
+"tools/protocol_page_retirement_witness.py",
+"tools/protocol_page_retirement_witness.rs",
 ".github/workflows/result-owner-retirement.yml"
 ]
 },
@@ -31,9 +57,10 @@
 }
 },
 "requiredJobs":[
-"physical-owner"
+"physical-owner",
+"protocol-page-owner"
 ],
-"reviewReason":"Add a finite std-only allocator-observed physical result owner regression; preserve all existing CI obligations.",
+"reviewReason":"Add the original-pool protocol page physical-retirement witness without removing the existing result owner control.",
 "schemaVersion":"latent.ci.contracts.v1",
 "workflow":".github/workflows/result-owner-retirement.yml"
 }
