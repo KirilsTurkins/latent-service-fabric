@@ -39,6 +39,26 @@ public final class TimerReadinessSourceControl {
     private static int owners() throws ReflectiveOperationException {
         return ((Map<?, ?>)field(Bindings.LatentRuntimeActivation.class, "owners").get(null)).size();
     }
+    private static void ownerOrderIdentity() throws Exception {
+        int original = owners();
+        var first = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Executor);
+        var second = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Executor);
+        var firstKey = Activation.ownerOrder(first);
+        var secondKey = Activation.ownerOrder(second);
+        require(firstKey.compareTo(secondKey) < 0 && secondKey.compareTo(firstKey) > 0, "owner-order-live");
+        require(owners() == original + 2, "owner-order-no-extra-host-admission");
+        first.close(); second.close();
+        require(owners() == original && firstKey.compareTo(secondKey) < 0, "owner-order-survives-settlement");
+        denied(() -> Activation.ownerOrder(first));
+        var ctor = Activation.OwnerOrder.class.getDeclaredConstructor(long.class, long.class);
+        ctor.setAccessible(true);
+        var lowId = ctor.newInstance(1L, Long.MAX_VALUE);
+        var highId = ctor.newInstance(1L, Long.MIN_VALUE);
+        var lowGeneration = ctor.newInstance(Long.MAX_VALUE, 1L);
+        var highGeneration = ctor.newInstance(Long.MIN_VALUE, 1L);
+        require(lowId.compareTo(highId) < 0 && lowGeneration.compareTo(highGeneration) < 0,
+            "owner-order-unsigned-scalars");
+    }
     private static void managedStartRollback() throws Exception {
         Map<?, ?> threads = (Map<?, ?>)get("threads");
         int original = owners();
@@ -203,9 +223,18 @@ public final class TimerReadinessSourceControl {
             "failed-start-poisons-and-preserves-owner");
         try { Activation.invoke(0, null, 0); throw new AssertionError("failed-start-store-reentered"); }
         catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-runtime-poisoned-store"), "failed-start-reentry-error"); }
-        // Test-only simulation of physical completion and a fresh Store.
-        Activation.finished(thread);
-        require(get("failedStarts") == null, "physical-completion-unlinks-before-fresh-store");
+        int attempts = Bindings.LatentRuntimeActivation.settlementAttempts;
+        denied(() -> Activation.finished(thread));
+        require(attempts == Bindings.LatentRuntimeActivation.settlementAttempts && Activation.alive(thread),
+            "worker-finish-after-teardown-never-dispatches");
+        // Test-only ledger reset between cases, not guest cleanup after teardown.
+        Map<?, ?> threads = (Map<?, ?>)get("threads");
+        Object work = threads.get(thread);
+        require(get("failedStarts") == work && field(workClass(), "nextFailed").get(work) == null,
+            "private-reset-has-exact-failed-work");
+        Map<?, ?> ledger = (Map<?, ?>)field(Bindings.LatentRuntimeActivation.class, "owners").get(null);
+        require(ledger.remove(field(workClass(), "token").get(work)) != null, "private-reset-has-host-owner");
+        threads.remove(thread); set("failedStarts", null);
         set("poisoned", false); set("entered", true); resetFinishingModel();
         pool.retire();
     }
@@ -260,9 +289,17 @@ public final class TimerReadinessSourceControl {
             "uncertain-queued-store-retains-owners");
         try { Activation.invoke(0, null, 0); throw new AssertionError("uncertain-queued-store-reentered"); }
         catch (IllegalStateException expected) { require(expected.getMessage().equals("activation-runtime-poisoned-store"), "uncertain-queued-reentry-refused"); }
-        // Private source-control teardown simulates destroying the poisoned Store.
+        // A poisoned lease cannot be retried, even by a source fixture. Check
+        // that rule before discarding only the private ledger's Store records.
+        int attempts = Bindings.LatentRuntimeActivation.settlementAttempts;
+        for (Activation.Lease lease : leases) denied(lease::close);
+        require(Bindings.LatentRuntimeActivation.settlementAttempts == attempts
+            && owners() == original + count, "poisoned-queued-cleanup-never-retries-host");
+        Map<?, ?> ledger = (Map<?, ?>)field(Bindings.LatentRuntimeActivation.class, "owners").get(null);
+        for (Activation.Lease lease : leases)
+            require(ledger.remove(field(Activation.Lease.class, "token").get(lease)) != null,
+                "private-store-destruction-removes-original-owner");
         head.set(null);
-        for (Activation.Lease lease : leases) lease.close();
         set("poisoned", false); set("entered", true); resetFinishingModel();
         require(owners() == original, "queued-retention-control-cleanup");
     }
@@ -577,6 +614,7 @@ public final class TimerReadinessSourceControl {
             timerStopCase(mode);
         resetTimerStopModel(); // private fake teardown; production never resets uncertainty.
         set("entered", true); set("root", work(Thread.currentThread()));
+        ownerOrderIdentity();
         long deadline = Activation.monotonicMillis() + 200;
         var first = Activation.timer(deadline); var second = otherTimer(deadline);
         require(Bindings.LatentRuntimeActivation.timers() == 2 && ((List<?>)get("timers")).size() == 2, "two-original-timer-reservations");
@@ -630,6 +668,6 @@ public final class TimerReadinessSourceControl {
         uncertainResultPoisons();
         failedStartedWorkerPoisons();
         failedInsertionsAndPoison();
-        System.out.println("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence;timer-stop-uncertain-completion-fence;nested-stop-count-guard;timer-finally-return-fence;timer-teardown-admission-fence");
+        System.out.println("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence;timer-stop-uncertain-completion-fence;nested-stop-count-guard;timer-finally-return-fence;timer-teardown-admission-fence;opaque-owner-order");
     }
 }

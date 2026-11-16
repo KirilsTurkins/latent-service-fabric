@@ -33,6 +33,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     private boolean executeDelayed = true;
     private volatile boolean retiring;
     private volatile int pendingWork;
+    // Retain the original per-pool admission bound under reentry.
     private long sequence;
     private int running;
 
@@ -115,7 +116,9 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     }
 
     private final class Task<V> extends FutureTask<V> implements ScheduledFuture<V> {
-        final long order;
+        // Captured from this task's original QueuedWork owner before it can
+        // settle. All of its later periodic copies retain the same order.
+        final Activation.OwnerOrder order;
         final long period; // positive=fixed rate, negative=fixed delay, zero=once
         volatile long next;
         long scheduleRevision;
@@ -124,7 +127,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         RunnableCall<?> runnableCall;
         boolean actionAccepted;
         boolean futureAccepted;
-        Task(Callable<V> callable, Runnable action, long next, long period, long order) {
+        Task(Callable<V> callable, Runnable action, long next, long period, Activation.OwnerOrder order) {
             super(callable);
             this.action = action;
             this.runnableCall = callable instanceof RunnableCall<?> call ? call : null;
@@ -135,10 +138,22 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         }
         @Override public int compareTo(Delayed other) {
             if (other == this) return 0;
-            if (other instanceof ScheduledThreadPoolExecutor.Task<?> task
-                    && task.executor() == ScheduledThreadPoolExecutor.this) {
-                int compared = Long.compare(next, task.next);
-                return compared != 0 ? compared : Long.compare(order, task.order);
+            if (other instanceof ScheduledThreadPoolExecutor.Task<?> task) {
+                ScheduledThreadPoolExecutor otherPool = task.executor();
+                if (otherPool == ScheduledThreadPoolExecutor.this) {
+                    int compared = Long.compare(next, task.next);
+                    return compared != 0 ? compared : order.compareTo(task.order);
+                }
+                // Compare both pool-relative deadlines at the same instant.
+                // Separate clock reads can reverse a pair with close deadlines.
+                long now = System.nanoTime();
+                long delay = next - (now - origin);
+                long otherDelay = task.next - (now - otherPool.origin);
+                int compared = Long.compare(delay, otherDelay);
+                if (compared != 0) return compared;
+                // The original QueuedWork identity gives each task a stable
+                // activation-wide admission order, even after settlement.
+                return order.compareTo(task.order);
             }
             return Long.compare(getDelay(TimeUnit.NANOSECONDS), other.getDelay(TimeUnit.NANOSECONDS));
         }
@@ -248,7 +263,13 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
                 throw new java.util.concurrent.RejectedExecutionException("activation-scheduled-executor-closed");
             if (sequence == Long.MAX_VALUE) throw new java.util.concurrent.RejectedExecutionException("scheduled-sequence-overflow");
             queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
-            task = new Task<>(command, action, after(delay), period, sequence++);
+            Activation.OwnerOrder order = Activation.ownerOrder(queued);
+            long deadline = after(delay);
+            // Reentrant admission may have consumed the last permitted value
+            // while this call held its own QueuedWork lease.
+            if (sequence == Long.MAX_VALUE) throw new java.util.concurrent.RejectedExecutionException("scheduled-sequence-overflow");
+            sequence++;
+            task = new Task<>(command, action, deadline, period, order);
             accepted = task.acceptQueueCopy();
             entry = new Entry(task, queued, accepted);
             pendingWork++; counted = true;
@@ -402,7 +423,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         int first = 0;
         for (int i = 1; i < queue.size(); ++i) {
             Task<?> a = queue.get(i).task, b = queue.get(first).task;
-            if (a.next < b.next || a.next == b.next && a.order < b.order) first = i;
+            if (a.next < b.next || a.next == b.next && a.order.compareTo(b.order) < 0) first = i;
         }
         return first;
     }

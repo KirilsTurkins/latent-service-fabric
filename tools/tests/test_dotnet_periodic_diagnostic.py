@@ -22,11 +22,11 @@ class PeriodicDiagnosticTests(unittest.TestCase):
         # Migrate only these reviewed immutable action identities in the frozen
         # comparison; retain the original Git blob and every other model field.
         pins={
-            'Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6':'KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e',
+            'Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6':'KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334',
             'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1':'KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13',
-            'actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68':'KirilsTurkins/lsf-setup-dotnet@258c927924210be905f8908a4be714e5d0daffa8',
-            'actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97':'KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8',
-            'actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9':'KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f',
+            'actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68':'KirilsTurkins/lsf-setup-dotnet@2382c9e63a3b678b643c7e715d023e7fa42fbbef',
+            'actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97':'KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee',
+            'actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9':'KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc',
             'bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613':'KirilsTurkins/lsf-bytecodealliance-actions/wasm-tools/setup@1ce6e3461b7d83b4b5a5a6557870b4fdfd4386ce',
         }
         migrated=set()

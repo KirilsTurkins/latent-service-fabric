@@ -24,6 +24,7 @@ latent-network = { path = "../latent-network" }
 latent-capabilities = { path = "../latent-capabilities" }
 latent-policy = { path = "../latent-policy" }
 latent-protected-files = { path = "../latent-protected-files" }
+pin-project-lite = "=0.2.17"
 rustls = { package = "latent-rustls-outbound", path = "../vendor/rustls-outbound", version = "=0.23.46", default-features = false, features = ["ring", "std", "tls12"] }
 serde.workspace = true
 serde_json.workspace = true
@@ -32,7 +33,7 @@ socket2 = "=0.6.5"
 tokio = { workspace = true, features = ["net", "io-util"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-rustix = { version = "=1.1.5", features = ["event", "fs", "time"] }
+rustix = { version = "=1.1.6", features = ["event", "fs", "time"] }
 latent-stream-factory-native = { path = "../latent-stream-factory-native" }
 
 [dev-dependencies]

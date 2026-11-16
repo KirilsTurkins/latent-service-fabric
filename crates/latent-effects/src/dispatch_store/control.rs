@@ -246,6 +246,14 @@ impl ControlCatalog {
     }
 
     pub fn validate_view(view: &ReadView) -> Result<(), StoreError> {
+        Self::validate_view_with_checkpoint(view, &mut || Ok(()))
+    }
+
+    pub(crate) fn validate_view_with_checkpoint(
+        view: &ReadView,
+        checkpoint: &mut dyn FnMut() -> Result<(), StoreError>,
+    ) -> Result<(), StoreError> {
+        checkpoint()?;
         let owner = view
             .get(&OwnerRecord::key())?
             .as_deref()
@@ -261,6 +269,7 @@ impl ControlCatalog {
         }
         let mut after = None;
         loop {
+            checkpoint()?;
             let page = view.scan_after(
                 Family::Maintenance,
                 CONTROL_RECEIPT_PREFIX,
@@ -269,6 +278,7 @@ impl ControlCatalog {
                 1024 * 1024,
             )?;
             for (key, bytes) in page.rows {
+                checkpoint()?;
                 Self::validate_row(&key, &bytes)?;
                 let receipt = DispatcherControlReceipt::decode(&bytes)?;
                 if owner.is_none_or(|owner| owner.epoch < receipt.generation().owner_epoch()) {
@@ -276,6 +286,8 @@ impl ControlCatalog {
                 }
             }
             after = page.resume;
+            checkpoint()?;
+            let _ = view.is_empty()?;
             if after.is_none() {
                 return Ok(());
             }

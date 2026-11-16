@@ -55,6 +55,21 @@ public final class TimerSleepAdmissionSourceControl {
         Activation.Lease first = syntheticOtherTimer(), second = syntheticOtherTimer();
         require(Bindings.LatentRuntimeActivation.timers() == 2 && waitOwners() == 0, "initial-owners");
         try {
+            Monitors.ownedSleep(0);
+            throw new AssertionError("zero-source-hook-unexpectedly-ran");
+        } catch (IllegalStateException error) {
+            require("activation-sleep-compiler-hook-required".equals(error.getMessage()), "zero-reaches-raw-hook");
+        }
+        require(Bindings.LatentRuntimeActivation.timers() == 2 && waitOwners() == 0, "zero-keeps-other-timers");
+        Thread.currentThread().interrupt();
+        try {
+            Monitors.ownedSleep(0);
+            throw new AssertionError("interrupted-zero-succeeded");
+        } catch (InterruptedException expected) {
+            require(!Thread.currentThread().isInterrupted(), "zero-interrupt-cleared");
+        }
+        require(Bindings.LatentRuntimeActivation.timers() == 2 && waitOwners() == 0, "interrupted-zero-owners");
+        try {
             Monitors.ownedSleep(1);
             throw new AssertionError("third-timer-was-admitted");
         } catch (IllegalStateException error) {
@@ -73,6 +88,15 @@ public final class TimerSleepAdmissionSourceControl {
         require(field(root.getClass(), "timer").get(root) == null, "retry-restores-work-slot");
         second.close();
         require(Bindings.LatentRuntimeActivation.timers() == 0 && waitOwners() == 0, "final-owners");
-        System.out.println("TIMER_SLEEP_ADMISSION_SOURCE PASS typed-refusal;wait-return;same-work-retry;raw-hook-finally");
+        long deadline = Activation.monotonicMillis() + 60_000;
+        try (Activation.Lease outer = Activation.timer(deadline)) {
+            Activation.beginTimedFrame(outer);
+            try {
+                require(Monitors.absoluteSleepDeadline(123, 0) == 123, "zero-ignores-outer-timer-frame");
+                require(Monitors.absoluteWaitDeadline(123, 0, 0) == deadline, "indefinite-wait-helper-unchanged");
+            }
+            finally { Activation.endTimedFrame(outer); }
+        }
+        System.out.println("TIMER_SLEEP_ADMISSION_SOURCE PASS zero-raw-frame;zero-interrupt;typed-refusal;wait-return;same-work-retry;raw-hook-finally");
     }
 }

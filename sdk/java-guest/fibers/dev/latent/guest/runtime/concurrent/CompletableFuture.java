@@ -466,7 +466,9 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     }
     public int getNumberOfDependents() { synchronized (stateLock) { return dependents.size(); } }
     @Override public CompletableFuture<T> toCompletableFuture() { return this; }
-    public CompletableFuture<T> copy() { return thenApply(Function.identity()); }
+    // Do not dispatch through an overridable thenApply. The private stage
+    // path still honors the source's newIncompleteFuture factory.
+    public CompletableFuture<T> copy() { return unary(Function.identity(), null); }
 
     private static <U> void submit(CompletableFuture<U> destination, Executor executor,
             Supplier<? extends U> supplier, boolean evenIfCompleted) {

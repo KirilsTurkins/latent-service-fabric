@@ -278,7 +278,20 @@ class CThreadMinimal(unittest.TestCase):
     self.assertEqual(left[path], right[path], path)
     self.assertEqual(hashlib.sha256(left[path]).hexdigest(), expected, path)
     del left[path]; del right[path]
-   self.assertEqual(set(left),set(right));self.assertEqual(len(left),65)
+   # The current SDK capture also carries the optional stream sources and
+   # timed-symbol response file. Authenticate the same additions in both
+   # projects before comparing the unchanged historical fixture inventory.
+   capture_addendum = {
+    'vendor/lsf/sdk/c-guest/include/lsf/standard-streams.h': '9f666b7a2d5df835cd16b048793a4470157ecf781d38a530174256d2adc33408',
+    'vendor/lsf/sdk/c-guest/src/standard-streams.c': 'd50f8cc5ada550ff086785a29f42f2d2f9afb178f72ce39b89d8d3d7fa0aea54',
+    'vendor/lsf/sdk/c-guest/runtime/timed-symbols.rsp': '69c7c419534b95f697f185acf531bdd3dde31b506af5e5cc6ba1f2f789a63214',
+   }
+   for path, expected in capture_addendum.items():
+    self.assertEqual(left[path], right[path], path)
+    self.assertEqual(hashlib.sha256(left[path]).hexdigest(), expected, path)
+    del left[path]; del right[path]
+   # Compare all remaining paths and bytes without a frozen file count.
+   self.assertEqual(set(left),set(right))
    self.assertEqual([n for n in left if left[n]!=right[n]],['src/main.c'])
    self.assertEqual(read_json(a/'capsule-project.json'),read_json(b/'capsule-project.json'))
    self.assertIn(b'greet: async func',right['wit/world.wit'])

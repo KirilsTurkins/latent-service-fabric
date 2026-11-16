@@ -79,6 +79,7 @@ impl Catalogs {
                 .state
                 .as_ref()
                 .is_none_or(|settings| !state.matches(settings))
+                || !state.matches_local_payload(settings)
                 || !self
                     .artifacts
                     .lifecycle_authority()
@@ -122,7 +123,8 @@ impl Catalogs {
             || settings.audit.is_some() != self.audit.is_some()
             || settings.rollouts.is_some() != self.rollouts.is_some()
             || settings.capability_policies.is_some() != self.policies.is_some()
-            || settings.providers.is_some() != self.providers.is_some()
+            || (settings.providers.is_some() || settings.transactional_triggers.is_some())
+                != self.providers.is_some()
             || self.policies.as_ref().is_some_and(|owner| {
                 let handle = owner.handle();
                 !handle
@@ -252,7 +254,7 @@ impl Catalogs {
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, PlatformError> {
         let profile = platform(Stage::Configuration, settings.check_config())?;
-        let state = platform(
+        let mut state = platform(
             Stage::NativeCapacity,
             super::state::StateBootstrap::new(settings, &clock),
         )?;
@@ -424,7 +426,7 @@ impl Catalogs {
                 .await
                 .inspect_err(|error| record_platform(Stage::CatalogAuditReconciliation, error))?;
             }
-            if settings.providers.is_some() {
+            if settings.providers.is_some() || settings.transactional_triggers.is_some() {
                 if settings
                     .providers
                     .as_ref()
@@ -449,6 +451,7 @@ impl Catalogs {
                             control: runtime.ok_or_else(mode_error)?.clone(),
                             telemetry: telemetry.as_ref().map(|owner| owner.handle.clone()),
                         },
+                        state.as_mut(),
                     )
                     .await
                     .inspect_err(|error| record_platform(Stage::ProviderCatalog, error))?,
@@ -666,6 +669,25 @@ impl StandaloneNode {
             (None, None) => {}
             _ => return Err(mode_error()),
         }
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        if let Some(settings) = &settings.transactional_triggers {
+            let admission = self
+                .state
+                .as_ref()
+                .ok_or_else(mode_error)?
+                .inbox_factory(&settings.configuration)?;
+            let deadline = self.startup_deadline.ok_or_else(mode_error)?;
+            let poller = self
+                .providers
+                .as_mut()
+                .ok_or_else(mode_error)?
+                .install_incoming(settings, admission, deadline)
+                .await?;
+            self.triggers = Some(super::triggers::TriggerOwner::start(
+                poller,
+                self.manager.clone(),
+            ));
+        }
         if let Some(capabilities) = &catalogs.capabilities {
             capabilities
                 .broker()
@@ -796,6 +818,10 @@ impl StandaloneNode {
         if let Some(http) = &self.http {
             http.handle().start_accepting()?;
         }
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        if let Some(triggers) = &self.triggers {
+            triggers.start_accepting();
+        }
         self.startup_deadline = None;
         Ok(())
     }
@@ -919,6 +945,8 @@ impl StandaloneNode {
             rollouts: None,
             effects: None,
             state: None,
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            triggers: None,
             startup_deadline: catalogs.state.as_ref().map(|state| state.deadline),
             policies: None,
             providers: None,

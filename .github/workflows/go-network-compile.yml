@@ -21,7 +21,7 @@ jobs:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
         with:
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: 3.13.5
       - name: Install pinned source controls
@@ -37,8 +37,8 @@ jobs:
           out="$RUNNER_TEMP/go-network-tools"
           test ! -e "$out"
           mkdir "$out"
-          curl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output "$out/go.tar.gz" https://dl.google.com/go/go1.27.3.linux-amd64.tar.gz
-          echo "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40  $out/go.tar.gz" | sha256sum --check --strict
+          curl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output "$out/go.tar.gz" https://dl.google.com/go/go1.27.4.linux-amd64.tar.gz
+          echo "7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840  $out/go.tar.gz" | sha256sum --check --strict
           tar -xzf "$out/go.tar.gz" -C "$out"
           curl --fail --location --proto '=https' --tlsv1.2 --max-time 180 --output "$out/componentize-go.tar.gz" https://github.com/bytecodealliance/componentize-go/releases/download/v0.4.3/componentize-go-linux-amd64.tar.gz
           echo "1061d845f550df5d9477612a7d458a31b1e2b8bdc95823704e42e5064deb0c52  $out/componentize-go.tar.gz" | sha256sum --check --strict
@@ -54,7 +54,7 @@ jobs:
         run: python3 tools/qualify_go_network_compile.py --output "$RUNNER_TEMP/go-network-construction"
       - name: Retain bounded compiler and owner evidence including failures
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: go-network-construction-${{ github.sha }}
           path: |

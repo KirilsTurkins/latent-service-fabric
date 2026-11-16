@@ -135,7 +135,7 @@ async fn run(
     };
     let before_shutdown = node.sample("before-revision-shutdown")?;
     let work = node.work;
-    let shutdown = node.shutdown().await?;
+    let shutdown = Box::pin(node.shutdown()).await?;
     data.close()?;
     let clean = shutdown.clean
         && shutdown.telemetry_flushed

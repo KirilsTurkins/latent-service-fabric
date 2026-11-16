@@ -19,6 +19,8 @@ mod maintenance;
 #[cfg(all(unix, feature = "development-read-witness"))]
 mod read_progress;
 #[cfg(unix)]
+mod rotation_install;
+#[cfg(unix)]
 mod sockets;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod tls;

@@ -1,7 +1,7 @@
 //! Authorized terminal reads reuse the original prepaid physical reservation.
 use super::{atomic, authorization, NativeTransactionAdmission, TransactionCompletionResult};
 use crate::transaction_runtime::observation::{self, Phase};
-use latent_commit::atomic::{AtomicError, CommandRecord, DurableResult};
+use latent_commit::atomic::{AtomicError, CommandAccess, CommandRecord, DurableResult};
 use latent_core::PlatformError;
 use latent_state::store_io::StoreIoKind;
 use std::sync::Arc;
@@ -15,6 +15,7 @@ impl NativeTransactionAdmission {
         authority.with_current(&mut || {})?;
         let selected = selected.clone();
         let key = selected.key().clone();
+        let inbox_scope = self.inbox_scope.clone();
         let time = Arc::clone(&self.owners.time);
         let retained = Arc::clone(&authority);
         let keeper: Arc<dyn std::any::Any + Send + Sync> = Arc::new(Arc::clone(&authority));
@@ -30,7 +31,7 @@ impl NativeTransactionAdmission {
                     .with_current(&mut || {})
                     .map_err(|_| latent_state::embedded::StoreError::Invalid)?;
                 let view = store.snapshot()?;
-                let read = latent_commit::atomic::inspect(&view, &key, observed, |_, record| {
+                let authorize = |_: CommandAccess, record: Option<&CommandRecord>| {
                     if record.is_some_and(|record| {
                         record.result_read_policy() != selected.result_read_policy()
                             || record.id() != selected.id()
@@ -43,7 +44,16 @@ impl NativeTransactionAdmission {
                     retained
                         .with_current(&mut || {})
                         .map_err(|_| AtomicError::PermissionDenied)
-                });
+                };
+                let read = match inbox_scope.as_ref() {
+                    Some(scope) => match selected.inbox_identity() {
+                        Some(inbox) => latent_commit::atomic::inspect_inbox(
+                            &view, &key, inbox, scope, observed, authorize,
+                        ),
+                        None => Err(AtomicError::Invalid),
+                    },
+                    None => latent_commit::atomic::inspect(&view, &key, observed, authorize),
+                };
                 let result = observation::atomic(
                     Phase::ExistingReplay,
                     read.and_then(|(command, result)| {

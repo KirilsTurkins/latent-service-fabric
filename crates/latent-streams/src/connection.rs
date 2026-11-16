@@ -1,6 +1,9 @@
 //! Socket ownership is affine even when its readiness handle is shared. The
 //! pool connection survives every pending Arc<TcpStream> and is never parked.
-use crate::{error, provider::Inner, StreamError, StreamErrorCode, StreamResolution, StreamUsage};
+use crate::{
+    connection_registry::RetirementCustody, error, provider::Inner, StreamError, StreamErrorCode,
+    StreamResolution, StreamUsage,
+};
 use latent_capabilities::broker::{
     io::{
         IoCall, IoFuture, IoInputChunk, IoOutputChunk, IoTransfer, IoTransferBuffer,
@@ -120,6 +123,13 @@ pub(crate) struct Socket {
     // Only the original pool's explicit quarantine may retain a lost registry
     // owner. This is the SAME Connection/PoolCall/IoCall, never replacement work.
     _quarantined_connection: Option<Arc<Connection>>,
+    // Last: every physical socket and its original allocations retire first.
+    _opening: RetirementCustody,
+}
+impl Drop for Socket {
+    fn drop(&mut self) {
+        self._opening.begin_drop();
+    }
 }
 impl Socket {
     // The ONLY registered callback is this fixed private host function. No
@@ -332,6 +342,13 @@ pub(crate) struct Connection {
     write_none_once: std::sync::atomic::AtomicBool,
     #[cfg(test)]
     fail_audit_once: std::sync::atomic::AtomicBool,
+    // Last: owner memory, transfer and original call retire before this row.
+    _opening: RetirementCustody,
+}
+impl Drop for Connection {
+    fn drop(&mut self) {
+        self._opening.begin_drop();
+    }
 }
 
 #[cfg(test)]
@@ -474,7 +491,11 @@ pub(crate) async fn connect(
     client: Arc<ProviderClient<Socket>>,
     admission: PoolAdmission,
     requested_deadline: Instant,
+    opening: crate::connection_registry::OpeningTicket,
 ) -> Result<Box<dyn OutboundStream>, StreamError> {
+    // The opening is the first initialized local and the last captured input.
+    // The original connect locals retire before its row on cancellation.
+    let opening_owner = opening;
     let scope = Arc::new(scope);
     let ready = admission.wait().await?;
     let destination = &inner.config.destinations[index];
@@ -495,7 +516,16 @@ pub(crate) async fn connect(
         .await?;
     scope.dispatched_connect()?;
     let deadline = requested_deadline.min(call.io().deadline());
-    let result = create_socket(&inner, &scope, index, &client, &call, deadline).await;
+    let result = create_socket(
+        &inner,
+        &scope,
+        index,
+        &client,
+        &call,
+        deadline,
+        &opening_owner,
+    )
+    .await;
     call.io_mut().record_provider_outcome(if result.is_ok() {
         AuditProviderOutcome::HostCompleted
     } else {
@@ -548,6 +578,7 @@ pub(crate) async fn connect(
         owner_memory,
         registry: inner.connections.downgrade(),
         _owner_metadata: owner_metadata,
+        _opening: opening_owner.try_clone_custody()?,
         #[cfg(feature = "development-read-witness")]
         read_drop_starts: std::sync::atomic::AtomicU8::new(0),
         #[cfg(test)]
@@ -563,7 +594,7 @@ pub(crate) async fn connect(
         .expect("new owner")
         .owner_memory
         .confirm();
-    inner.connections.register(&connection)?;
+    inner.connections.register(&opening_owner, &connection)?;
     Ok(Box::new(Handle { connection }))
 }
 
@@ -578,6 +609,7 @@ async fn create_socket(
     client: &Arc<ProviderClient<Socket>>,
     call: &PoolCall,
     deadline: Instant,
+    opening: &crate::connection_registry::OpeningTicket,
 ) -> Result<(PhysicalSocket, Instant), StreamError> {
     let destination = &inner.config.destinations[index];
     let reservation = client.reserve_connection_wait(call).await?;
@@ -600,6 +632,7 @@ async fn create_socket(
             protected_selected: false,
             _kernel_scope: Arc::clone(scope),
             _quarantined_connection: None,
+            _opening: opening.try_clone_custody()?,
         }),
         armed: false,
     };
@@ -1303,9 +1336,9 @@ impl Connection {
             .await
             .map_err(Into::into)
     }
-    // A readiness-only timeout is nonterminal only after the same original
-    // call remains current. Busy/failed authority checks fail closed; they are
-    // not reclassified as an ordinary socket timeout.
+    // Successful readiness and readiness-only timeouts both require the same
+    // original call to remain current after audit. Busy/failed authority checks
+    // fail closed; they are not reclassified as an ordinary socket timeout.
     fn ready_timeout_current(
         &self,
         pending: &Pending,
@@ -1691,7 +1724,7 @@ impl OutboundStream for Handle {
                     if matches!(interest, StreamInterest::Readable | StreamInterest::Either)
                         && pending.socket.buffered_readable()?
                     {
-                        connection.audit(call, true).await?;
+                        connection.complete_readiness_observation(pending, call, true).await?;
                         return Ok(StreamReadiness {
                             readable: true,
                             writable: false,
@@ -1728,11 +1761,7 @@ impl OutboundStream for Handle {
                     };
                     match result {
                         Ok(Some(ready)) => {
-                            if pending.observation_immediate {
-                                connection.complete_readiness_observation(pending, call, true).await?;
-                            } else {
-                                connection.audit(call, true).await?;
-                            }
+                            connection.complete_readiness_observation(pending, call, true).await?;
                             Ok(StreamReadiness {
                                 readable: ready.is_readable() || ready.is_read_closed(),
                                 writable: ready.is_writable() || ready.is_write_closed(),
@@ -2056,3 +2085,7 @@ mod read_witness_tests {
         .expect("bounded read witness control");
     }
 }
+
+#[cfg(all(test, unix))]
+#[path = "connection/readiness_tests.rs"]
+mod readiness_tests;

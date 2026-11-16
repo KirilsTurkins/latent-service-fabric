@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <netinet/in.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -28,6 +29,7 @@ struct descriptor {
     bool allocated;
     bool busy;
     bool has_connection;
+    bool close_on_exec;
     bool write_shut;
     bool failed;
     bool has_error;
@@ -94,11 +96,13 @@ static struct descriptor *ready_descriptor(int fd) {
 
 int __lsf_c_net_socket(int domain, int type, int protocol) {
     if (domain != AF_INET) return fail(EAFNOSUPPORT);
-    if (type != SOCK_STREAM || (protocol != 0 && protocol != IPPROTO_TCP)) return fail(ENOTSUP);
+    bool close_on_exec = type == (SOCK_STREAM | SOCK_CLOEXEC);
+    if ((type != SOCK_STREAM && !close_on_exec) || (protocol != 0 && protocol != IPPROTO_TCP))
+        return fail(ENOTSUP);
     for (int index = 0; index < SLOT_COUNT; ++index) {
         struct descriptor *slot = &descriptors[index];
         if (!slot->allocated) {
-            *slot = (struct descriptor){ .allocated = true };
+            *slot = (struct descriptor){ .allocated = true, .close_on_exec = close_on_exec };
             return FIRST_FD + index;
         }
     }
@@ -106,10 +110,20 @@ int __lsf_c_net_socket(int domain, int type, int protocol) {
 }
 
 int __lsf_c_net_fcntl(int fd, int command, ...) {
-    if (!find_descriptor(fd)) return fail(EBADF);
+    struct descriptor *slot = find_descriptor(fd);
+    if (!slot) return fail(EBADF);
     if (command == F_GETFL) return O_RDWR;
-    if (command == F_GETFD) return 0;
-    /* In particular, no nonblocking mode or close-on-exec behavior is faked. */
+    if (command == F_GETFD) return slot->close_on_exec ? FD_CLOEXEC : 0;
+    if (command == F_SETFD) {
+        va_list arguments;
+        va_start(arguments, command);
+        int flags = va_arg(arguments, int);
+        va_end(arguments);
+        if (flags & ~FD_CLOEXEC) return fail(ENOTSUP);
+        slot->close_on_exec = (flags & FD_CLOEXEC) != 0;
+        return 0;
+    }
+    /* Nonblocking mode, descriptor duplication and unknown flags are unavailable. */
     return fail(ENOTSUP);
 }
 
@@ -182,7 +196,8 @@ int __lsf_c_net_bind(int fd, const struct sockaddr *address, socklen_t length) {
 ssize_t __lsf_c_net_send(int fd, const void *buffer, size_t length, int flags) {
     struct descriptor *slot = ready_descriptor(fd);
     if (!slot) return -1;
-    if (flags != 0) return fail(ENOTSUP);
+    /* This adapter never raises SIGPIPE; NOSIGNAL needs no new action. */
+    if (flags & ~MSG_NOSIGNAL) return fail(ENOTSUP);
     if (slot->write_shut) return fail(EPIPE);
     if (!length) return 0;
     if (!buffer) return fail(EINVAL);
@@ -246,16 +261,16 @@ ssize_t __lsf_c_net_write(int fd, const void *buffer, size_t length) {
 int __lsf_c_net_shutdown(int fd, int how) {
     struct descriptor *slot = ready_descriptor(fd);
     if (!slot) return -1;
-    if (how != SHUT_WR && how != SHUT_RDWR) return fail(ENOTSUP);
-    if (how == SHUT_WR && slot->write_shut) return 0;
+    /* The v1 provider's BOTH stops the transport; it does not implement a
+     * POSIX receive shutdown or preserve buffered input for later reads. */
+    if (how != SHUT_WR) return fail(ENOTSUP);
+    if (slot->write_shut) return 0;
     latent_network_streams_observation_t observation;
     latent_network_streams_stream_error_t error;
     slot->busy = true;
-    if (!latent_network_streams_shutdown(borrow(slot), how == SHUT_WR ?
-            LATENT_NETWORK_STREAMS_SHUTDOWN_MODE_SEND : LATENT_NETWORK_STREAMS_SHUTDOWN_MODE_BOTH,
+    if (!latent_network_streams_shutdown(borrow(slot), LATENT_NETWORK_STREAMS_SHUTDOWN_MODE_SEND,
             &observation, &error)) return failed_call(slot, error);
-    if (how == SHUT_WR) slot->write_shut = true;
-    if (how == SHUT_RDWR) slot->failed = true;
+    slot->write_shut = true;
     slot->busy = false;
     return 0;
 }

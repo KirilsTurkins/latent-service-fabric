@@ -44,6 +44,9 @@ public final class Monitors {
 
     public static long absoluteSleepDeadline(long now, long millis) {
         if (millis < 0) throw new IllegalArgumentException();
+        // A zero sleep queues an immediately eligible continuation of its own.
+        // It must not inherit another raw timer frame's later deadline.
+        if (millis == 0) return now;
         // The original event queue represents absolute instants as signed
         // milliseconds. Saturate at that boundary instead of wrapping into an
         // already elapsed instant; the original activation deadline still wins.
@@ -52,6 +55,9 @@ public final class Monitors {
 
     public static long absoluteWaitDeadline(long now, long millis, int nanos) {
         validateWait(millis, nanos);
+        // The maintained Object.wait handler never requests a deadline for an
+        // indefinite wait. Preserve this helper's existing behavior anyway.
+        if (millis == 0 && nanos == 0) return Activation.timerDeadline(now);
         if (nanos > 0 && millis != Long.MAX_VALUE) millis++;
         return absoluteSleepDeadline(now, millis);
     }
@@ -69,7 +75,8 @@ public final class Monitors {
         // the actual Java wait frame, resumed by the maintained callback, rather
         // than invoking it from an EventQueue callback outside that frame.
         try (Activation.Lease wait = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Wait);
-             Activation.Lease timer = Activation.timer(absoluteSleepDeadline(Activation.monotonicMillis(), millis))) {
+             Activation.Lease timer = millis == 0 ? null
+                 : Activation.timer(absoluteSleepDeadline(Activation.monotonicMillis(), millis))) {
             Activation.beginTimedFrame(timer);
             try { rawSleep(millis); }
             finally { Activation.endTimedFrame(timer); }

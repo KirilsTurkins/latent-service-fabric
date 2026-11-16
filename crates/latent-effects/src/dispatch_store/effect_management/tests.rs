@@ -20,6 +20,103 @@ use crate::runtime::ProviderConfirmation;
 
 use super::*;
 
+#[test]
+fn dispatcher_inventory_stops_when_original_admission_expires() {
+    let fixture = Fixture::new(StoreLimits::default());
+    let before = fixture.record_bytes();
+    let view = fixture.store().snapshot().unwrap();
+    let mut calls = 0;
+    assert_eq!(
+        DispatchCatalog::validate_view_with_checkpoint(&view, &mut || {
+            calls += 1;
+            if calls == 5 {
+                Err(StoreError::Unavailable)
+            } else {
+                Ok(())
+            }
+        }),
+        Err(StoreError::Unavailable)
+    );
+    assert_eq!(calls, 5);
+    let mut total = 0;
+    DispatchCatalog::validate_view_with_checkpoint(&view, &mut || {
+        total += 1;
+        Ok(())
+    })
+    .unwrap();
+    assert!(total > 6);
+    let mut later = 0;
+    assert_eq!(
+        DispatchCatalog::validate_view_with_checkpoint(&view, &mut || {
+            later += 1;
+            if later == total - 1 {
+                Err(StoreError::Unavailable)
+            } else {
+                Ok(())
+            }
+        }),
+        Err(StoreError::Unavailable)
+    );
+    assert_eq!(later, total - 1);
+    drop(view);
+    assert_eq!(fixture.record_bytes(), before);
+    DispatchCatalog::validate_view(&fixture.store().snapshot().unwrap()).unwrap();
+}
+
+#[test]
+fn management_counter_scan_observes_the_original_checkpoint() {
+    let fixture = Fixture::new(StoreLimits::default());
+    fixture.complete(false);
+    fixture.plan(
+        fixture.request("checkpoint-counter", EffectManagementAction::Redrive),
+        None,
+    );
+    let view = fixture.store().snapshot().unwrap();
+    let identity = crate::effect_identity::parse(fixture.effect()).unwrap();
+    let key = codec::row(COUNTER_PREFIX, &identity);
+    let bytes = view.get(&key).unwrap().unwrap();
+    let mut calls = 0;
+    assert_eq!(
+        super::validation::validate_counter_with_checkpoint(&view, &key, &bytes, &mut || {
+            calls += 1;
+            Err(StoreError::Unavailable)
+        }),
+        Err(StoreError::Unavailable)
+    );
+    assert_eq!(calls, 1);
+    DispatchCatalog::validate_view(&view).unwrap();
+}
+
+#[test]
+fn dispatcher_inventory_rechecks_view_after_final_checkpoint() {
+    let fixture = Fixture::new(StoreLimits {
+        maximum_view_age: std::time::Duration::from_secs(1),
+        ..StoreLimits::default()
+    });
+    let view = fixture.store().snapshot().unwrap();
+    let mut calls = 0;
+    DispatchCatalog::validate_view_with_checkpoint(&view, &mut || {
+        calls += 1;
+        Ok(())
+    })
+    .unwrap();
+    assert!(calls > 0);
+    drop(view);
+    let view = fixture.store().snapshot().unwrap();
+    let mut observed = 0;
+    assert_eq!(
+        DispatchCatalog::validate_view_with_checkpoint(&view, &mut || {
+            observed += 1;
+            if observed == calls {
+                std::thread::sleep(std::time::Duration::from_millis(1100));
+            }
+            Ok(())
+        }),
+        Err(StoreError::SnapshotExpired)
+    );
+    assert_eq!(observed, calls);
+}
+
 struct Fixture {
     root: tempfile::TempDir,
     store: Option<EmbeddedStore>,

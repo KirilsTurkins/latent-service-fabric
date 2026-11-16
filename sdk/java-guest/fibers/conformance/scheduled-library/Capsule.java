@@ -183,6 +183,21 @@ public final class Capsule {
             awaitTimerWorker(probe, 1, false);
             long[] before = timerObservation();
             timerProbeRequire(before[0] == 2 && before[1] == 0 && before[2] == 2, "sleep-two-held");
+            try { Thread.sleep(0); }
+            catch (InterruptedException interrupted) { throw new IllegalStateException("sleep-zero-interrupted", interrupted); }
+            long[] zero = timerObservation();
+            timerProbeRequire(zero[0] == before[0] && zero[1] == before[1] && zero[2] == before[2],
+                "zero-sleep-returns-original-wait");
+
+            Thread root = Thread.currentThread();
+            root.interrupt();
+            boolean zeroInterrupted = false;
+            try { Thread.sleep(0); }
+            catch (InterruptedException expected) { zeroInterrupted = true; }
+            timerProbeRequire(zeroInterrupted && !root.isInterrupted(), "zero-preexisting-interrupt");
+            long[] afterZero = timerObservation();
+            timerProbeRequire(afterZero[0] == before[0] && afterZero[1] == before[1]
+                && afterZero[2] == before[2], "zero-interrupt-returns-owners");
             boolean refused = false;
             try {
                 Thread.sleep(1);

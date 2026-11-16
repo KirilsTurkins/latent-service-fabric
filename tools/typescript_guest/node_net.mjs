@@ -2,6 +2,7 @@
 // applications select normal imports, never a transport/caller id/resource.
 export function createNodeNetModule(transport, Buffer, snapshotActive, target = globalThis) {
   const queue = target.queueMicrotask.bind(target);
+  const sameValue = Object.is;
   const setTimer = target.setTimeout.bind(target), clearTimer = target.clearTimeout.bind(target);
   let queuedBytes = 0, queuedRecords = 0;
   const maxQueuedBytes = 65536, maxQueuedRecords = 16, windowBytes = 16384;
@@ -65,7 +66,7 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
     return Buffer.from(data);
   }
   class Socket {
-    #token; #listeners = new Map(); #writes = [];
+    #token; #listeners = new Map(); #writes = []; #dataAdmission;
     #readBusy = false; #writeBusy = false; #connectBusy = false; #chunk; #quietRead = false;
     #progressing = false; #stopReady = false; #closeStarted = false; #nativeClosed = false;
     #cleanupFailed = false; #notificationQueued = false; #notificationDone = false;
@@ -90,7 +91,16 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       if (held) transport.enterTail(this.#token);
       try {
         for (const row of rows.slice()) {
-          if (row.once) this.removeListener(name, row.listener);
+          // false = persistent, true = pending once, null = consumed once.
+          // Nested emit can consume a row still held by this snapshot. Remove
+          // this registration, not the last registration of the same function;
+          // a replacement array/listener installed during emit must survive.
+          if (row.once === null) continue;
+          if (row.once) {
+            row.once = null;
+            const index = rows.indexOf(row);
+            if (index >= 0) rows.splice(index, 1);
+          }
           Reflect.apply(row.listener, this, args);
         }
         return true;
@@ -133,8 +143,32 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       if (!['connect', 'ready', 'data', 'drain', 'end', 'finish', 'error', 'close', 'timeout'].includes(name) ||
           typeof listener !== 'function') throw error('ERR_INVALID_ARG_VALUE', 'listener');
       const rows = this.#listeners.get(name) || [];
-      rows.push({listener, once}); this.#listeners.set(name, rows);
-      if (name === 'data') this.resume();
+      const row = name === 'data'
+        ? {listener, once, admissionFailed: false, admissionFault: undefined}
+        : {listener, once};
+      rows.push(row); this.#listeners.set(name, rows);
+      if (name === 'data') {
+        const previous = this.#dataAdmission;
+        this.#dataAdmission = row;
+        try { this.resume(); }
+        catch (cause) {
+          if (row.admissionFailed && sameValue(row.admissionFault, cause)) {
+            // Only the built-in resume admission can be rolled back here.
+            // Preserve reentrant replacements and avoid allocating in refusal.
+            // A now-empty private array may remain as this socket's state.
+            for (let index = 0; index < rows.length; ++index) {
+              if (rows[index] !== row) continue;
+              for (let next = index + 1; next < rows.length; ++next) rows[next - 1] = rows[next];
+              --rows.length;
+              break;
+            }
+          }
+          throw cause;
+        } finally {
+          this.#dataAdmission = previous;
+          row.admissionFailed = false; row.admissionFault = undefined;
+        }
+      }
       return this;
     }
     off(name, listener) { return this.removeListener(name, listener); }
@@ -154,6 +188,9 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       if (this.#token || this.#connecting || this.#connected || this.#destroyed)
         throw error('ERR_SOCKET_CLOSED', 'connect');
       const [request, listener] = destination(args);
+      // Refresh the configured idle clock before publishing a listener or
+      // reserving a native socket: timer refusal must not leave a half-connect.
+      this.#touch();
       if (listener) this.once('connect', listener);
       this.#token = transport.reserve(this.#afterTail, this); // BEFORE CAP connect.
       this.#connecting = true; this.#connectBusy = true; this.#remotePort = request.port;
@@ -176,25 +213,54 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       this.#emit('connect'); this.#emit('ready');
     }
     #touch() {
-      if (this.#timer !== undefined) { clearTimer(this.#timer); this.#timer = undefined; }
-      if (this.#timeout && !this.#destroyed)
-        this.#timer = setTimer(() => this.#owned(this.#onTimeout), this.#timeout);
+      if (this.#timer !== undefined) {
+        const previous = this.#timer; this.#timer = undefined; clearTimer(previous);
+      }
+      if (this.#timeout && !this.#destroyed) {
+        // Activation timer ids are not reused. An already selected callback
+        // from a cleared/replaced timer must not consume the new timer's slot.
+        const timer = setTimer(() => {
+          if (this.#timer === timer) this.#owned(this.#onTimeout);
+        }, this.#timeout);
+        this.#timer = timer;
+      }
     }
     #onTimeout() {
       this.#timer = undefined; if (!this.#destroyed) this.#emit('timeout');
     }
     setTimeout(milliseconds, callback) {
+      if (this.#destroyed) return this;
       if (!Number.isInteger(milliseconds) || milliseconds < 0 || milliseconds > 2147483647 ||
           callback !== undefined && typeof callback !== 'function') throw error('ERR_INVALID_ARG_VALUE', 'setTimeout');
-      if (callback) this.once('timeout', callback);
+      if (milliseconds && snapshotActive()) throw error('ERR_LSF_SNAPSHOT_EFFECT', 'setTimeout');
       this.#timeout = milliseconds;
-      if (this.#connected) this.#touch();
+      // Socket idle notification applies before and during connect as well.
+      // Do not publish a supplied callback if timer admission refuses.
+      this.#touch();
+      if (callback) {
+        if (milliseconds) this.once('timeout', callback);
+        else this.removeListener('timeout', callback);
+      }
       return this;
     }
     pause() { this.#flowing = false; return this; }
     resume() {
-      this.#flowing = true;
-      queue(() => this.#owned(this.#onResume));
+      // A callback retained by an enqueue-then-throw implementation remains
+      // on its original queue but must not act after this call was refused.
+      let admitted = false;
+      try { queue(() => { if (admitted) this.#owned(this.#onResume); }); }
+      catch (cause) {
+        if (this.#dataAdmission) {
+          this.#dataAdmission.admissionFailed = true;
+          this.#dataAdmission.admissionFault = cause;
+        }
+        throw cause;
+      }
+      if (this.#dataAdmission) {
+        this.#dataAdmission.admissionFailed = false;
+        this.#dataAdmission.admissionFault = undefined;
+      }
+      this.#flowing = true; admitted = true;
       return this;
     }
     #onResume() {
@@ -297,6 +363,17 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
         else --queuedRecords;
       } else {
         --queuedRecords;
+        // Node emits drain before the callback that emptied a backpressured
+        // write buffer. The current native result and borrow ACK still own this
+        // entire callback tail, including reentrant writes or destruction.
+        if (this.#queued === 0 && this.#needDrain && !this.#ending) {
+          // Empty writes already accepted behind this write have completed
+          // too. Retain their callback jobs before a drain listener can destroy
+          // the socket; they must not be flushed as failed pending writes.
+          while (this.#writes.length && this.#writes[0].bytes.length === 0)
+            this.#finishWrite(this.#writes[0], false);
+          this.#needDrain = false; this.#emit('drain');
+        }
         if (item.callback) this.#user(item.callback, []);
       }
       if (failed) this.destroy(cause);
@@ -310,7 +387,9 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
         if (this.#destroyed) return;
       }
       if (!this.#writes.length && this.#needDrain) {
-        this.#needDrain = false; this.#emit('drain');
+        // Ended streams do not emit a late drain for prior backpressure.
+        this.#needDrain = false;
+        if (!this.#ending) this.#emit('drain');
         if (this.#destroyed) return;
         // A drain listener may enqueue/end. Its tail has now returned.
         while (this.#writes.length && this.#writes[0].bytes.length === 0)
@@ -460,7 +539,9 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
     destroy(cause) {
       if (this.#destroyed) return this;
       this.#destroyed = true; this.#connected = false; this.#connecting = false; this.#error = cause;
-      if (this.#timer !== undefined) { clearTimer(this.#timer); this.#timer = undefined; }
+      if (this.#timer !== undefined) {
+        const previous = this.#timer; this.#timer = undefined; clearTimer(previous);
+      }
       if (!this.#token) { this.#closed = true; this.#notifyClose(); return this; }
       transport.acceptTerminal(this.#token);
       transport.holdNotification(this.#token);

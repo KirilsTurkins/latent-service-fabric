@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "profile": "setup-node-minimatch-action-source-v1",
-  "action": "KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6",
+  "action": "KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a",
   "advisories": [
     {
       "id": "GHSA-g3hv-75wg-m249",
@@ -46,24 +46,24 @@
     },
     "build": {
       "snapshot": ".github/security/actions/setup-node-minimatch/fork-build.json",
-      "source": "https://github.com/KirilsTurkins/lsf-setup-node/actions/runs/42024002011",
-      "bytes": 4192,
-      "sha256": "d7ee2d1bbac34657eaff166f41f73241d2f8949ad9d4b66f81dbec9ca2b141a6",
-      "gitBlob": "4671842ffc93cb16243f9524b9c42e928d5f5ac6"
+      "source": "https://github.com/KirilsTurkins/lsf-setup-node/actions/runs/43520897619",
+      "bytes": 8352,
+      "sha256": "913ae02ff43d2ad7cc229168d8021dd46ea71aae60c9d3e668413a5bbd8e3776",
+      "gitBlob": "d8c9b65ee2817438f5248771f4c40446d5008bee"
     }
   },
   "runtime": {
     "runtime_setup": {
       "source": "dist/setup/index.js",
-      "bytes": 3555939,
-      "sha256": "18ead6d4a193f3fc6fce80fdd43e2c9bf520f3d55e3ec42079fe95f1933a69c5",
-      "gitBlob": "6735142fc160300df2fb85d4bc933fa0a4365804"
+      "bytes": 3629453,
+      "sha256": "87f88f5625fce89ad4a45bcd193abecc08db21c47a9fad7e642489a437b99dea",
+      "gitBlob": "9a9baa5effd8e39efcdab6cb85d596bd2fc2ff2b"
     },
     "runtime_cache": {
       "source": "dist/cache-save/index.js",
-      "bytes": 3287509,
-      "sha256": "33f37c286e9765085b6780714206fb1591676cf388b0db9ea9d36670df47aab5",
-      "gitBlob": "68100fddb4b9fc91fe6ba7f1f46e6f29a1dd4bf8"
+      "bytes": 3361023,
+      "sha256": "119a805504ff25e557f63b5e340d4743d587dd52588d86fe7c98467908f45717",
+      "gitBlob": "bc0fd89d0e24d5e057986098dfaf2ba88b370186"
     }
   }
 }

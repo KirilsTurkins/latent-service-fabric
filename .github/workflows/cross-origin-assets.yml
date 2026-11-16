@@ -61,15 +61,15 @@ jobs:
         with:
           components: rustfmt, clippy
           targets: wasm32-wasip2,wasm32-unknown-unknown
-      - uses: KirilsTurkins/lsf-setup-python@164c4cbba5d1b03a046ac8bc25ae695bee0667a8 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee # v7.1.0 + upstream changes + LSF security fixes
         with:
           python-version: '3.13.5'
-      - uses: KirilsTurkins/lsf-rust-cache@38534d49940bc6c6aef1e8dfd45349a99d37f14e # v2.9.3 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334 # v2.9.3 + upstream changes + LSF security fixes
         with:
           prefix-key: lsf-cross-origin-assets-v1
           cache-workspace-crates: false
           save-if: ${{ github.ref == 'refs/heads/development' }}
-      - uses: KirilsTurkins/lsf-setup-node@34275fdec80b5be172c3327cadef76aa2f3b31c6 # v7.1.0 + upstream changes + LSF security fixes
+      - uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a # v7.1.0 + upstream changes + LSF security fixes
         with:
           node-version: 24.19.0
           cache: npm
@@ -116,7 +116,7 @@ jobs:
           python3 tools/ci_cargo.py run clippy
       - name: Retain native diagnostics
         if: always()
-        uses: KirilsTurkins/lsf-upload-artifact@d74a697ce553b389f4219545e07c97fb8542c64f # v7.0.2 + upstream changes + LSF security fixes
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
         with:
           name: cross-origin-native-${{ github.sha }}
           path: target/cross-origin-native/
