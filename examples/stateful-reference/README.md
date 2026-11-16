@@ -68,6 +68,12 @@ the user explicitly finishes that command. The client preserves all u64 bits,
 limits response bytes and request time, refuses foreign origins and clears
 private observations when current authority refuses access.
 
+For effects returned with the original command, **Check effect status** performs
+an explicit read through the result route. Current `inspect-effect` permission
+and the original command/effect association are required; the browser does not
+receive provider receipts or poll automatically. Provider acknowledgement does
+not establish consumer processing.
+
 `angular/angular-build.json` uses the maintained `angular-ssr-component-v1`
 and `scoped-http-get-v1` profiles. The renderer prepares only the two fixed
 fresh-query URLs selected from sealed user/tenant context. Deployment must
