@@ -484,6 +484,7 @@ async fn retiring_the_broker_wakes_existing_queues_and_denies_new_waiters() {
 }
 
 mod transfer;
+mod http_body;
 
 pub(super) fn native_request(
     fixture: &Fixture,
