@@ -144,6 +144,166 @@ async fn guarded_quarantine_is_published_before_a_waker_panics() {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn last_original_lease_request_wake_panic_retains_the_remaining_quota() {
+    use crate::broker::io::StreamRetirementObserver;
+    use std::{
+        future::Future,
+        sync::{
+            atomic::{AtomicBool, AtomicUsize},
+            mpsc,
+        },
+        task::{Context, Poll, Wake, Waker},
+    };
+    struct GuardedTcp {
+        _socket: TcpStream,
+        custody: Option<StreamRetirementGuard>,
+    }
+    struct Observer(Arc<AtomicUsize>);
+    impl StreamRetirementObserver for Observer {
+        fn release_stream_retirement(&self, _: u64) {
+            self.0.fetch_add(1, Ordering::SeqCst);
+        }
+    }
+    struct Gate {
+        reached: mpsc::Sender<()>,
+        resume: Mutex<mpsc::Receiver<()>>,
+    }
+    impl Wake for Gate {
+        fn wake(self: Arc<Self>) {
+            let _ = self.reached.send(());
+            let _ = self
+                .resume
+                .lock()
+                .unwrap()
+                .recv_timeout(Duration::from_secs(5));
+        }
+    }
+    struct RequestWake {
+        client: Arc<ProviderClient<GuardedTcp>>,
+        reached: AtomicBool,
+    }
+    impl Wake for RequestWake {
+        fn wake(self: Arc<Self>) {
+            // Request::drop has settled its own counters, while the original
+            // connection quota and dequeued quarantine remain outstanding.
+            assert_eq!(
+                self.client
+                    .core
+                    .epoch
+                    .usage
+                    .requests
+                    .load(Ordering::Acquire),
+                0
+            );
+            assert_eq!(self.client.core.connections.load(Ordering::Acquire), 1);
+            assert_eq!(
+                self.client.core.epoch.quarantined.load(Ordering::Acquire),
+                1
+            );
+            self.reached.store(true, Ordering::Release);
+            panic!("last request wake failed");
+        }
+    }
+    fn retired(value: &mut GuardedTcp) -> Option<StreamRetirementGuard> {
+        value.custody.take()
+    }
+
+    let setup = Setup::new(single());
+    let client = setup
+        .pools
+        .client::<GuardedTcp>(&setup.provider, 1)
+        .unwrap();
+    let (session, _control) = setup.session("last-original-lease-request-wake");
+    let observer = session.observer();
+    let call = start(&setup.pools, &client, &session).await;
+    let reservation = client.reserve_connection(&call).unwrap();
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let stream = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
+    let (_peer, _) = listener.accept().unwrap();
+    let released = Arc::new(AtomicUsize::new(0));
+    let custody = StreamRetirementGuard::new(Arc::new(Observer(released.clone())), 17);
+    let connection = reservation
+        .connected(GuardedTcp {
+            _socket: stream,
+            custody: Some(custody),
+        })
+        .unwrap_or_else(|failure| panic!("original connection refused: {failure:?}"));
+    connection.quarantine_with_stream_guard(retired);
+    drop(call);
+    drop(session);
+    assert!(!observer.is_quiescent());
+    assert_eq!(client.core.epoch.usage.requests.load(Ordering::Acquire), 1);
+
+    let (reached_tx, reached) = mpsc::channel();
+    let (resume, held) = mpsc::channel();
+    let first = Waker::from(Arc::new(Gate {
+        reached: reached_tx,
+        resume: Mutex::new(held),
+    }));
+    let mut first_notified = Box::pin(setup.pools.inner.changed.notified());
+    first_notified.as_mut().enable();
+    assert!(matches!(
+        first_notified
+            .as_mut()
+            .poll(&mut Context::from_waker(&first)),
+        Poll::Pending
+    ));
+    let runner = client.clone();
+    let thread = std::thread::spawn(move || {
+        catch_unwind(AssertUnwindSafe(|| {
+            runner.progress_original_stream_quarantine()
+        }))
+    });
+    reached.recv_timeout(Duration::from_secs(2)).unwrap();
+    let request_wake = Arc::new(RequestWake {
+        client: client.clone(),
+        reached: AtomicBool::new(false),
+    });
+    let second = Waker::from(request_wake.clone());
+    let mut second_notified = Box::pin(setup.pools.inner.changed.notified());
+    second_notified.as_mut().enable();
+    assert!(matches!(
+        second_notified
+            .as_mut()
+            .poll(&mut Context::from_waker(&second)),
+        Poll::Pending
+    ));
+    resume.send(()).unwrap();
+    assert!(thread.join().unwrap().is_err());
+    assert!(request_wake.reached.load(Ordering::Acquire));
+
+    assert_eq!(client.core.epoch.quarantined.load(Ordering::Acquire), 1);
+    assert_eq!(client.core.connections.load(Ordering::Acquire), 1);
+    assert_eq!(released.load(Ordering::SeqCst), 0);
+    let retained = client
+        .idle
+        .lock()
+        .unwrap()
+        .pop_front()
+        .expect("same paid failed row");
+    let Retained::FailedStreamRetirement { _reservation } = &retained else {
+        panic!("expected the original remaining connection reservation");
+    };
+    assert!(
+        _reservation.activation.is_none(),
+        "the consumed IoLease cannot be reconstructed"
+    );
+    assert!(_reservation.lifetime.is_some());
+    assert!(observer.is_quiescent());
+
+    // Test-only release of the fake retained remainder; no native retirement
+    // or recovered lease is asserted by this fixture.
+    drop(first_notified);
+    drop(second_notified);
+    client.core.epoch.quarantined.fetch_sub(1, Ordering::AcqRel);
+    drop(retained);
+    assert_eq!(client.core.connections.load(Ordering::Acquire), 0);
+    drop(request_wake);
+    drop(client);
+    super::super::tests::fixture::clean(&setup.pools).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn post_quota_wake_panic_does_not_leave_a_phantom_quarantine() {
     use crate::broker::io::StreamRetirementObserver;
     use std::{
