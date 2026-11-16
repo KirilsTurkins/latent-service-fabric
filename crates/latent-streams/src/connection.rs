@@ -12,8 +12,8 @@ use latent_capabilities::broker::{
         IoTransfer, IoTransferBuffer, IoTransferOptions,
     },
     network::{
-        OutboundStream, StreamInterest, StreamObservation, StreamReadiness, StreamScope,
-        StreamShutdown, StreamState, MAXIMUM_CHUNK_BYTES, STREAM_CAPABILITY,
+        OutboundStream, SharedStreamScope, StreamInterest, StreamObservation, StreamReadiness,
+        StreamScope, StreamShutdown, StreamState, MAXIMUM_CHUNK_BYTES, STREAM_CAPABILITY,
     },
     pools::{
         ConnectionReservation, PoolAdmission, PoolCall, PooledConnection, ProviderClient,
@@ -121,15 +121,60 @@ pub(crate) struct Socket {
     kernel_mode: crate::kernel::Mode,
     // Fixed internal selection, never serialized or supplied by the caller.
     protected_selected: bool,
-    _kernel_scope: Arc<StreamScope>,
+    _kernel_scope: SharedStreamScope,
     // Only the original pool's explicit quarantine may retain a lost registry
     // owner. This is the SAME Connection/PoolCall/IoCall, never replacement work.
     _quarantined_connection: Option<ConnectionOwner>,
     // Last: every physical socket and its original allocations retire first.
     _opening: Option<RetirementCustody>,
 }
+
+#[cfg(test)]
+type SocketDropHook = Box<dyn FnOnce() + Send>;
+#[cfg(test)]
+static SOCKET_DROP_HOOK: Mutex<
+    Option<(
+        std::sync::Weak<latent_capabilities::broker::CapabilitySession>,
+        SocketDropHook,
+    )>,
+> = Mutex::new(None);
+
+#[cfg(test)]
+pub(crate) fn observe_socket_drop(
+    session: &Arc<latent_capabilities::broker::CapabilitySession>,
+    hook: SocketDropHook,
+) {
+    let mut slot = SOCKET_DROP_HOOK.lock().unwrap();
+    assert!(slot.is_none());
+    *slot = Some((Arc::downgrade(session), hook));
+}
+
+#[cfg(test)]
+pub(crate) fn clear_socket_drop_observer() {
+    SOCKET_DROP_HOOK.lock().unwrap().take();
+}
+
 impl Drop for Socket {
     fn drop(&mut self) {
+        #[cfg(test)]
+        {
+            let hook = {
+                let mut slot = SOCKET_DROP_HOOK.lock().unwrap();
+                if slot.as_ref().is_some_and(|(weak, _)| {
+                    weak.upgrade().is_some_and(|original| {
+                        self._kernel_scope
+                            .with_session(|session| session.is_same_session(&original))
+                    })
+                }) {
+                    slot.take()
+                } else {
+                    None
+                }
+            };
+            if let Some((_, hook)) = hook {
+                hook();
+            }
+        }
         if let Some(opening) = &mut self._opening {
             opening.begin_drop();
         }
@@ -192,13 +237,13 @@ enum SocketMemory {
 }
 impl SocketMemory {
     fn reserve(
-        scope: &Arc<StreamScope>,
+        scope: &SharedStreamScope,
         call: &PoolCall,
         bytes: u64,
         mode: crate::kernel::Mode,
     ) -> Result<Self, latent_core::PlatformError> {
         if mode.retains_unproved() {
-            call.reserve_stream_kernel_ownership(scope, bytes)
+            call.reserve_shared_stream_kernel_ownership(scope, bytes)
                 .map(Self::Kernel)
         } else {
             scope.reserve_host_memory(bytes).map(Self::Logical)
@@ -215,8 +260,9 @@ impl SocketMemory {
 // failed currentness and ordinary errors all drop those futures before moving
 // these exact original leases into the bounded non-reusable client owner table.
 struct SocketOwner {
-    reservation: Option<ConnectionReservation<Socket>>,
     value: Option<Socket>,
+    // On ordinary destruction, the physical value retires before its lease.
+    reservation: Option<ConnectionReservation<Socket>>,
     armed: bool,
 }
 impl SocketOwner {
@@ -357,7 +403,7 @@ pub(crate) struct Connection {
     idle: Duration,
     transfer: IoTransfer,
     call: PoolCall,
-    scope: Arc<StreamScope>,
+    scope: SharedStreamScope,
     registry: crate::connection_registry::RegistryWeak,
     // The first read-specific drop action records an inert,
     // monotone edge before the original transport or guard can be dropped.
@@ -602,7 +648,7 @@ pub(crate) async fn connect(
     // The opening is the first initialized local and the last captured input.
     // The original connect locals retire before its row on cancellation.
     let opening_owner = opening;
-    let scope = Arc::new(scope);
+    let scope = scope.share()?;
     let ready = admission.wait().await?;
     let destination = &inner.config.destinations[index];
     let maximum = inner.config.limits.maximum_transfer_bytes;
@@ -719,7 +765,7 @@ pub(crate) async fn connect(
 )]
 async fn create_socket(
     inner: &Inner,
-    scope: &Arc<StreamScope>,
+    scope: &SharedStreamScope,
     index: usize,
     client: &Arc<ProviderClient<Socket>>,
     call: &PoolCall,
@@ -745,7 +791,7 @@ async fn create_socket(
             protected_selected: inner.native_bank.is_some(),
             #[cfg(not(all(target_os = "linux", any(test, feature = "development-outbound"))))]
             protected_selected: false,
-            _kernel_scope: Arc::clone(scope),
+            _kernel_scope: scope.clone(),
             _quarantined_connection: None,
             _opening: Some(opening.try_clone_custody()?),
         }),

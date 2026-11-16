@@ -5,7 +5,14 @@ use super::{
 };
 use latent_core::{PlatformError, PlatformErrorCode};
 use latent_policy::capability::StreamEndpoint;
-use std::sync::atomic::{AtomicU32, AtomicU64, AtomicUsize, Ordering};
+use std::{
+    alloc::Layout,
+    ops::Deref,
+    sync::{
+        atomic::{AtomicU32, AtomicU64, AtomicUsize, Ordering},
+        Arc,
+    },
+};
 
 pub const STREAM_CAPABILITY: &str = "latent:network/streams@0.1.0";
 pub const STREAM_PROFILE: &str = "lsf-outbound-streams-v1";
@@ -231,6 +238,59 @@ impl Drop for StreamChunkReservation {
 pub struct StreamScope {
     table: super::SessionResourceTableReservation,
 }
+
+// The Arc is private: exposing a raw Arc or Weak would let its allocation
+// outlive the original scope and its separately prepaid backing reservation.
+struct SharedStreamScopeBacking {
+    scope: StreamScope,
+    _allocation: latent_core::budget::HostMemoryReservation,
+}
+
+fn shared_scope_allocation_bytes() -> Result<u64, PlatformError> {
+    // Pinned Rust's ArcInner uses two AtomicUsize headers followed by T.
+    let layout = Layout::new::<[AtomicUsize; 2]>()
+        .extend(Layout::new::<SharedStreamScopeBacking>())
+        .map_err(|_| super::capacity())?
+        .0
+        .pad_to_align();
+    u64::try_from(layout.size())
+        .ok()
+        .and_then(|size| size.checked_add(64))
+        .ok_or_else(super::capacity)
+}
+
+/// Shares one original stream scope while keeping its allocation charged
+/// until the final strong owner has physically retired its Arc backing.
+pub struct SharedStreamScope {
+    backing: Option<Arc<SharedStreamScopeBacking>>,
+}
+
+impl Clone for SharedStreamScope {
+    fn clone(&self) -> Self {
+        Self {
+            backing: Some(Arc::clone(
+                self.backing.as_ref().expect("live stream scope"),
+            )),
+        }
+    }
+}
+
+impl Deref for SharedStreamScope {
+    type Target = StreamScope;
+    fn deref(&self) -> &StreamScope {
+        &self.backing.as_ref().expect("live stream scope").scope
+    }
+}
+
+impl Drop for SharedStreamScope {
+    fn drop(&mut self) {
+        if let Some(backing) = self.backing.take() {
+            // The last value moves out after the Arc allocation is freed.
+            // No weak reference can escape this private owner.
+            drop(Arc::into_inner(backing));
+        }
+    }
+}
 impl CapabilitySession {
     pub fn reserve_host_memory(
         &self,
@@ -267,6 +327,21 @@ impl CapabilitySession {
     }
 }
 impl StreamScope {
+    /// Prepay the actual Arc backing before sharing this original scope.
+    pub fn share(self) -> Result<SharedStreamScope, PlatformError> {
+        let allocation = self.reserve_host_memory(shared_scope_allocation_bytes()?)?;
+        let mut shared = SharedStreamScope {
+            backing: Some(Arc::new(SharedStreamScopeBacking {
+                scope: self,
+                _allocation: allocation,
+            })),
+        };
+        Arc::get_mut(shared.backing.as_mut().expect("live stream scope"))
+            .expect("new stream scope is unique")
+            ._allocation
+            .confirm();
+        Ok(shared)
+    }
     pub(in crate::broker) fn identity_tag(&self) -> u32 {
         self.table.stream_scope_tag()
     }
@@ -376,6 +451,67 @@ impl Drop for StreamScope {
 mod tests {
     use super::*;
     use crate::broker::{tests::fixture::Fixture, CapabilityBrokerLimits};
+    #[test]
+    fn shared_stream_scope_keeps_original_charge_until_last_clone() {
+        use latent_core::{
+            ActivationBudget, BudgetProfile, ClockSample, EffectiveActivationBudget,
+        };
+        let fixture = Fixture::new(CapabilityBrokerLimits::default());
+        let (request, mut control) = fixture.request("shared-stream-scope");
+        let deadline = control.budget.deadline();
+        let sample = ClockSample::new(
+            deadline.admitted_at_unix_millis(),
+            deadline.admitted_at_monotonic(),
+        );
+        control.budget = ActivationBudget::with_profile(
+            EffectiveActivationBudget::admit_profile_at(
+                BudgetProfile::Phase3,
+                &request.budget,
+                &request.budget,
+                &request.budget,
+                request.activation.deadline_unix_millis,
+                sample,
+            )
+            .unwrap(),
+            BudgetProfile::Phase3,
+        )
+        .unwrap();
+        let session = fixture.session(&request, &control);
+        let baseline = control.budget.host_memory_bytes();
+        let scope = session.reserve_stream().unwrap();
+        let reserved = control.budget.host_memory_bytes();
+        let shared = scope.share().unwrap();
+        let allocation = shared_scope_allocation_bytes().unwrap();
+        eprintln!("shared stream scope allocation: {allocation} bytes including bookkeeping");
+        assert_eq!(control.budget.host_memory_bytes(), reserved + allocation);
+        let clones: Vec<_> = (0..8).map(|_| shared.clone()).collect();
+        drop(shared);
+        assert_eq!(control.budget.host_memory_bytes(), reserved + allocation);
+        std::thread::scope(|threads| {
+            for owner in clones {
+                threads.spawn(move || drop(owner));
+            }
+        });
+        assert_eq!(control.budget.host_memory_bytes(), baseline);
+        assert_eq!(session.core.network.connections.load(Ordering::Acquire), 0);
+
+        // A one-byte-short original budget must refuse before sharing and
+        // return the unshared scope's connection/table reservation.
+        let refused = session.reserve_stream().unwrap();
+        let reserved = control.budget.host_memory_bytes();
+        let padding = control
+            .budget
+            .reserve_host_memory(request.budget.memory_bytes - reserved - allocation + 1)
+            .unwrap();
+        assert!(refused.share().is_err());
+        assert_eq!(session.core.network.connections.load(Ordering::Acquire), 0);
+        assert_eq!(
+            control.budget.host_memory_bytes(),
+            baseline + padding.bytes()
+        );
+        drop(padding);
+        assert_eq!(control.budget.host_memory_bytes(), baseline);
+    }
 
     #[test]
     fn stream_scope_identity_exhaustion_never_wraps_or_leaks_admission() {
