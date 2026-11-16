@@ -6008,10 +6008,13 @@ impl Future for OwnedProducerFuture {
 
 impl Drop for OwnedProducerFuture {
     fn drop(&mut self) {
-        // Destruction and deallocation precede the original guard refund.
+        // SAFETY: both fields are taken/dropped exactly once. Keep the original
+        // guard on the stack while Box drop destroys and deallocates its payload;
+        // Box drop glue also deallocates on a payload-destructor unwind.
         unsafe {
+            let allocation = ManuallyDrop::take(&mut self.allocation);
             ManuallyDrop::drop(&mut self.future);
-            ManuallyDrop::drop(&mut self.allocation);
+            drop(allocation);
         }
     }
 }

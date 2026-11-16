@@ -925,7 +925,21 @@ invokes the [Box destructor](https://github.com/rust-lang/rust/blob/8bab26f4f68e
 on both the normal and the payload-unwind edge. Its reservation guard therefore
 runs after that deallocation even if the future destructor unwinds. This concerns
 only the Box allocation, not the retirement or node-wide bound of separate captures.
-The existing outer producer-future guard still retains its charge on an uncertain
-destructor unwind; this slice does not establish a node-wide bound on such guards.
+At v40 the outer producer-future guard still retained its charge on a
+destructor unwind; that slice did not establish a node-wide bound on such guards.
 Allocator-retained RSS, transitive buffers, whole-runtime accounting and signed
 guest qualification remain outside this slice.
+
+## v41: retire the outer producer-future Box on destructor unwind
+
+The selected producer future retains its original reservation in a stack local
+while its pinned Box is destroyed. The pinned Rust Box drop glue deallocates the
+Box on both normal and payload-destructor unwind edges, before that local guard
+is refunded. This changes only the outer future's own Box reservation; captures,
+buffers and other owners retain their original independent accounting.
+
+The source-private controls exercise original admission, pinning, confirmation
+unwind, destructor unwind and an over-aligned allocation through the real global
+deallocator. They do not establish an RSS bound or a node-wide bound on other
+retained owners. The legacy no-memory producer path and resource limits are
+unchanged.
