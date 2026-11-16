@@ -21,9 +21,32 @@ use latent_network::dns::Resolver;
 #[cfg(any(test, feature = "development-outbound"))]
 use sha2::{Digest, Sha256};
 use std::{
+    future::Future,
+    pin::Pin,
     sync::{Arc, Mutex},
+    task::{Context, Poll},
     time::{Duration, Instant},
 };
+
+pin_project_lite::pin_project! {
+    /// The existing paid connect future plus its same original opening row.
+    struct OpeningFuture<F> {
+        #[pin]
+        future: F,
+        custody: crate::connection_registry::RetirementCustody,
+    }
+    impl<F> PinnedDrop for OpeningFuture<F> {
+        fn drop(this: Pin<&mut Self>) {
+            this.project().custody.begin_drop();
+        }
+    }
+}
+impl<F: Future> Future for OpeningFuture<F> {
+    type Output = F::Output;
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        self.project().future.poll(cx)
+    }
+}
 
 #[derive(Clone)]
 pub struct StreamProvider {
@@ -685,7 +708,12 @@ impl StreamProvider {
             ..Default::default()
         };
         for index in 0..32 {
-            let connection = self.inner.connections.snapshot(index)?;
+            let (connection, pending) = self.inner.connections.observe(index)?;
+            if pending {
+                // The same prepaid opening row is still held by its original
+                // future or physical owner; this is not a new connection.
+                result.owners += 1;
+            }
             if let Some(connection) = connection {
                 let usage = connection.usage()?;
                 result.owners += usage.owners;
@@ -795,14 +823,25 @@ impl OutboundStreamInvoker for StreamProvider {
             }
             deadline = deadline.min(now + Duration::from_millis(u64::from(timeout)));
         }
+        // Claim the existing fixed registry row before creating any admission,
+        // future or physical owner. Retirement closes this same gate.
+        let opening = self.inner.connections.reserve_opening()?;
+        let custody = opening.try_clone_custody()?;
         let inner = Arc::clone(&self.inner);
         let prepared = session.prepare_io_future_with(
-            move |(scope, client, admission): (
+            move |(scope, client, admission, opening, custody): (
                 StreamScope,
                 Arc<ProviderClient<Socket>>,
                 PoolAdmission,
+                crate::connection_registry::OpeningTicket,
+                crate::connection_registry::RetirementCustody,
             )| {
-                connection::connect(inner, scope, index, client, admission, deadline)
+                OpeningFuture {
+                    future: connection::connect(
+                        inner, scope, index, client, admission, deadline, opening,
+                    ),
+                    custody,
+                }
             },
         )?;
         let scope = session.reserve_stream()?;
@@ -811,7 +850,7 @@ impl OutboundStreamInvoker for StreamProvider {
             u16::try_from(index).map_err(|_| error(StreamErrorCode::InvalidInput))?,
         )?;
         let admission = self.inner.pools.admit_until(&client, session, deadline)?;
-        Ok(prepared.finish((scope, client, admission)))
+        Ok(prepared.finish((scope, client, admission, opening, custody)))
     }
 }
 impl Drop for Inner {
@@ -824,5 +863,56 @@ impl Drop for Inner {
         for resolver in self.resolvers.iter().flatten() {
             let _ = resolver.close();
         }
+    }
+}
+
+#[cfg(all(test, unix))]
+mod opening_future_tests {
+    use super::*;
+    use crate::{
+        connection_registry::OpeningTicket,
+        tests::{config, fixture::Fixture},
+        StreamLifecycle,
+    };
+
+    struct PanicDuringDrop {
+        _opening: OpeningTicket,
+    }
+    impl Future for PanicDuringDrop {
+        type Output = ();
+        fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<()> {
+            Poll::Pending
+        }
+    }
+    impl Drop for PanicDuringDrop {
+        fn drop(&mut self) {
+            panic!("simulated inner future destructor failure");
+        }
+    }
+
+    #[tokio::test]
+    async fn new_inner_destructor_panic_keeps_row_without_leaking_marker() {
+        let fixture = Fixture::new(config());
+        let lifecycle =
+            StreamLifecycle::from_installed_for_qualification("streams", fixture.provider.clone())
+                .unwrap();
+        let opening = fixture
+            .provider
+            .inner
+            .connections
+            .reserve_opening()
+            .unwrap();
+        let marker = opening.marker_weak_for_test();
+        let custody = opening.try_clone_custody().unwrap();
+        let future = Box::pin(OpeningFuture {
+            future: PanicDuringDrop { _opening: opening },
+            custody,
+        });
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(future))).is_err());
+        assert_eq!(lifecycle.status().unwrap().usage.owners, 1);
+        drop(lifecycle);
+        fixture.clean().await;
+        drop(fixture);
+        assert!(marker.upgrade().is_none());
     }
 }

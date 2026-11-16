@@ -230,7 +230,12 @@ async fn retirement_refuses_connect_held_before_registry_publication() {
         .unwrap()
         .unwrap();
     assert!(control.budget.host_memory_bytes() > base_bytes);
+    let before = lifecycle.status().unwrap();
+    assert_eq!(before.usage.owners, 1);
+    assert_eq!(before.usage.pending_operations, 0);
     lifecycle.retire();
+    let stopped = lifecycle.status().unwrap();
+    assert_eq!(stopped.usage.owners, 1);
     resume.send(()).unwrap();
     match connecting.await.unwrap() {
         Err(error) => assert_eq!(error.code, StreamErrorCode::Revoked),
@@ -245,6 +250,247 @@ async fn retirement_refuses_connect_held_before_registry_publication() {
         Err(error) if error.kind() == std::io::ErrorKind::ConnectionReset => {}
         value => panic!("unpublished connection must be stopped: {value:?}"),
     }
+    assert_eq!(lifecycle.status().unwrap().usage.owners, 0);
+    drop(lifecycle);
+    drop(session);
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
+#[tokio::test]
+async fn unpolled_connect_retains_its_prepaid_opening_through_retirement() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut config = config();
+    config.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let request = StreamConnectRequest {
+        endpoint: config.destinations[0].endpoint.clone(),
+        timeout_millis: None,
+    };
+    let fixture = Fixture::new(config);
+    let lifecycle =
+        StreamLifecycle::from_installed_for_qualification("streams", fixture.provider.clone())
+            .unwrap();
+    let (session, control) = fixture.session(5000);
+    let original = control.native_session_bytes();
+    let invocation = lifecycle.start(&session, request).unwrap();
+    let status = lifecycle.status().unwrap();
+    assert_eq!(status.usage.owners, 1);
+    assert_eq!(status.usage.pending_operations, 0);
+    assert_eq!(status.usage.connections, 0);
+    lifecycle.retire();
+    assert_eq!(lifecycle.status().unwrap().usage.owners, 1);
+    drop(invocation);
+    assert_eq!(lifecycle.status().unwrap().usage.owners, 0);
+    assert_eq!(control.budget.host_memory_bytes(), original);
+    drop(lifecycle);
+    drop(session);
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn unpolled_and_parked_connect_drop_original_admission_before_opening_row() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut configuration = config();
+    configuration.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let request = || StreamConnectRequest {
+        endpoint: configuration.destinations[0].endpoint.clone(),
+        timeout_millis: None,
+    };
+    let fixture = Fixture::new(configuration.clone());
+    let mut limits = fixture.pools.limits().unwrap();
+    limits.maximum_running_per_provider = 1;
+    fixture.pools.lower_limits(limits).unwrap();
+    let lifecycle =
+        StreamLifecycle::from_installed_for_qualification("streams", fixture.provider.clone())
+            .unwrap();
+    let (first_session, first_control) = fixture.session(5000);
+    let first = lifecycle
+        .start(&first_session, request())
+        .unwrap()
+        .await
+        .unwrap();
+    let (_peer, _) = listener.accept().await.unwrap();
+    let (second_session, second_control) = fixture.session(5000);
+    for poll in [false, true] {
+        let mut waiting = Box::pin(lifecycle.start(&second_session, request()).unwrap());
+        if poll {
+            assert!(matches!(
+                waiting
+                    .as_mut()
+                    .poll(&mut Context::from_waker(Waker::noop())),
+                Poll::Pending
+            ));
+        }
+        let before = fixture.pools.snapshot().unwrap();
+        assert_eq!(before.running_requests, 1);
+        assert_eq!(before.pending_requests, 1);
+        assert_eq!(lifecycle.status().unwrap().usage.owners, 2);
+        let (reached, resume) = fixture.provider.inner.connections.pause_next_release();
+        let thread = std::thread::spawn(move || drop(waiting));
+        reached.recv_timeout(Duration::from_secs(2)).unwrap();
+        let at_release = fixture.pools.snapshot().unwrap();
+        assert_eq!(at_release.running_requests, 1);
+        assert_eq!(
+            at_release.pending_requests, 0,
+            "the original admission must drop before its opening row"
+        );
+        assert_eq!(lifecycle.status().unwrap().usage.owners, 2);
+        resume.send(()).unwrap();
+        thread.join().unwrap();
+        assert_eq!(lifecycle.status().unwrap().usage.owners, 1);
+    }
+    drop(first);
+    drop(lifecycle);
+    drop(first_session);
+    drop(second_session);
+    fixture.clean().await;
+    drop(fixture);
+    first_control.assert_native_settled();
+    second_control.assert_native_settled();
+}
+
+#[tokio::test]
+async fn caller_panic_releases_unpolled_and_parked_openings() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut configuration = config();
+    configuration.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let request = || StreamConnectRequest {
+        endpoint: configuration.destinations[0].endpoint.clone(),
+        timeout_millis: None,
+    };
+    let fixture = Fixture::new(configuration.clone());
+    let mut limits = fixture.pools.limits().unwrap();
+    limits.maximum_running_per_provider = 1;
+    fixture.pools.lower_limits(limits).unwrap();
+    let lifecycle =
+        StreamLifecycle::from_installed_for_qualification("streams", fixture.provider.clone())
+            .unwrap();
+    let (first_session, first_control) = fixture.session(5000);
+    let first = lifecycle
+        .start(&first_session, request())
+        .unwrap()
+        .await
+        .unwrap();
+    let (_peer, _) = listener.accept().await.unwrap();
+    let (second_session, second_control) = fixture.session(5000);
+    for poll in [false, true] {
+        // A sticky row on each caught panic would exhaust all 32 slots.
+        for _ in 0..=crate::connection_registry::CAPACITY {
+            let mut waiting = Box::pin(lifecycle.start(&second_session, request()).unwrap());
+            if poll {
+                assert!(matches!(
+                    waiting
+                        .as_mut()
+                        .poll(&mut Context::from_waker(Waker::noop())),
+                    Poll::Pending
+                ));
+            }
+            assert_eq!(fixture.pools.snapshot().unwrap().pending_requests, 1);
+            let caught = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                let _waiting = waiting;
+                panic!("unrelated caller panic");
+            }));
+            assert!(caught.is_err());
+            assert_eq!(fixture.pools.snapshot().unwrap().pending_requests, 0);
+            assert_eq!(lifecycle.status().unwrap().usage.owners, 1);
+        }
+    }
+    drop(first);
+    drop(lifecycle);
+    drop(first_session);
+    drop(second_session);
+    fixture.clean().await;
+    drop(fixture);
+    first_control.assert_native_settled();
+    second_control.assert_native_settled();
+}
+
+#[tokio::test]
+async fn refused_start_during_existing_unwind_releases_opening() {
+    struct StartOnUnwind<'a> {
+        lifecycle: &'a StreamLifecycle,
+        session: &'a latent_capabilities::broker::CapabilitySession,
+        request: Option<StreamConnectRequest>,
+        refused: &'a AtomicBool,
+    }
+    impl Drop for StartOnUnwind<'_> {
+        fn drop(&mut self) {
+            if let Some(request) = self.request.take() {
+                let refused = self
+                    .lifecycle
+                    .start(self.session, request)
+                    .is_err_and(|error| error.code == StreamErrorCode::Exhausted);
+                self.refused
+                    .store(std::thread::panicking() && refused, Ordering::Release);
+            }
+        }
+    }
+
+    let configuration = config();
+    let endpoint = configuration.destinations[0].endpoint.clone();
+    let fixture = Fixture::new(configuration);
+    let lifecycle =
+        StreamLifecycle::from_installed_for_qualification("streams", fixture.provider.clone())
+            .unwrap();
+    let (session, control) = fixture.session(5000);
+    let remaining = control.budget.granted().memory_bytes - control.budget.host_memory_bytes();
+    let padding = control.budget.reserve_host_memory(remaining).unwrap();
+    let refused = AtomicBool::new(false);
+    for _ in 0..=crate::connection_registry::CAPACITY {
+        refused.store(false, Ordering::Release);
+        let caught = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _starter = StartOnUnwind {
+                lifecycle: &lifecycle,
+                session: &session,
+                request: Some(StreamConnectRequest {
+                    endpoint: endpoint.clone(),
+                    timeout_millis: None,
+                }),
+                refused: &refused,
+            };
+            panic!("unrelated caller panic");
+        }));
+        assert!(caught.is_err());
+        assert!(refused.load(Ordering::Acquire));
+        assert_eq!(lifecycle.status().unwrap().usage.owners, 0);
+    }
+    drop(padding);
+    drop(lifecycle);
+    drop(session);
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
+#[tokio::test]
+async fn rotation_keeps_the_original_unpolled_opening_generation() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut configuration = config();
+    configuration.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let request = StreamConnectRequest {
+        endpoint: configuration.destinations[0].endpoint.clone(),
+        timeout_millis: None,
+    };
+    let fixture = Fixture::new(configuration.clone());
+    let lifecycle =
+        StreamLifecycle::from_installed_for_qualification("streams", fixture.provider.clone())
+            .unwrap();
+    let (session, control) = fixture.session(5000);
+    let invocation = lifecycle.start(&session, request).unwrap();
+    lifecycle.rotate(1, 2, configuration.clone()).unwrap();
+    let status = lifecycle.status().unwrap();
+    assert_eq!(status.retired_generations, 1);
+    assert_eq!(status.usage.owners, 1);
+    lifecycle.rotate(2, 3, configuration.clone()).unwrap();
+    assert!(lifecycle.status().unwrap().retired_generations >= 1);
+    assert_eq!(lifecycle.status().unwrap().usage.owners, 1);
+    drop(invocation);
+    assert_eq!(lifecycle.status().unwrap().usage.owners, 0);
+    lifecycle.rotate(3, 4, configuration).unwrap();
+    assert_eq!(lifecycle.status().unwrap().retired_generations, 1);
     drop(lifecycle);
     drop(session);
     fixture.clean().await;
