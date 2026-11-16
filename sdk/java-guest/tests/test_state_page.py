@@ -1,4 +1,4 @@
-﻿"""State page ownership using the real Java wrapper and stubbed host bindings."""
+"""State page ownership using the real Java wrapper and stubbed host bindings."""
 from pathlib import Path
 import shutil
 import subprocess
